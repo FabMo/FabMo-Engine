@@ -4,10 +4,13 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
+systemctl enable ntpd
+systemctl start ntpd
+
 pacman -Sy
 
 # Install system dependencies
-pacman -S --needed nginx memcached gnu-netcat
+pacman -S --needed nginx memcached gnu-netcat ntpd
 
 # Install python dependencies
 pacman -S --needed python2 python2-pip
