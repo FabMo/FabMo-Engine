@@ -154,7 +154,7 @@ Engine.prototype.start = function(callback) {
 
             // Configure local directory for uploading files
             log.info("Cofiguring upload directory...");
-            server.use(restify.bodyParser({'uploadDir':config.engine.get('upload_dir')}));
+            server.use(restify.bodyParser({'uploadDir':config.engine.get('upload_dir') || '/tmp'}));
             server.pre(restify.pre.sanitizePath());
 
             // Import the routes module and apply the routes to the server
