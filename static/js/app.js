@@ -3,6 +3,8 @@ App = Ember.Application.create();
 
 App.Router.map(function() {
     this.resource('tools');
+    this.resource('app');
+    this.resource('about');
 });
 
 App.Tool = DS.Model.extend({
@@ -11,6 +13,11 @@ App.Tool = DS.Model.extend({
     ypos : DS.attr('number'),
     zpos : DS.attr('number'),
     status : DS.attr('string'),
+
+    didLoad: function(){
+        var self = this;
+        setInterval(function() {self.reload()}, 1000); //every 5 minutes
+    }
 });
 
 App.Tool.FIXTURES = [{

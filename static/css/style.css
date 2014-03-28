@@ -2,3 +2,7 @@
 .ember-application {
     margin: 20px;
 }
+
+.app-heading {
+    font-weight: bold;
+}
