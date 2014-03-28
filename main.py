@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from fixtures import make_tools
 from tinyg import TinyGDriver
 
@@ -29,8 +29,28 @@ class Machine(object):
                 'zpos':self.zpos,
                 'status':'idle'}
 
-g2 = TinyGDriver('COM18')
+    def run_file(self, s):
+        print s
+        #self.g2.status_report()
+        for line in s.split('\n'):
+            line = str(line)
+            self.g2.command(line)
+            print repr(line)
+
+g2 = TinyGDriver('/dev/cu.usbmodem001', verbose=True)
+g2.run_in_thread()
 machine = Machine(g2)
+
+
+for motor, unit_value in [('1', 4000), ('2', 4000), ('3', 4000)]:
+    motor_settings = {}
+    g2.command({motor + 'sa' : 1.8})
+    g2.command({motor + 'tr' : unit_value/200.0})
+    g2.command({motor + 'mi' : 1})
+    g2.command({motor + 'pm' : 1})
+    g2.command({'xtm' : 0})
+    g2.command({'ytm' : 0})
+    g2.command({'ztm' : 0})
 
 def get_tools():
     state = machine.state
@@ -47,7 +67,14 @@ def tools():
 
 @app.route('/tools/<id>')
 def tools_by_id(id):
-    return jsonify({'tool':get_tools()[0]})
+    tool = get_tools()[0]
+    return jsonify({'tool':tool})
+
+@app.route('/gcode', methods=['POST'])
+def gcode():
+    g_code = request.form['data']
+    machine.run_file(g_code)
+    return jsonify({'status':'OK'})
 
 if __name__ == '__main__':
     app.run()

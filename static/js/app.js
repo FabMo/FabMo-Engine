@@ -1,3 +1,4 @@
+var UPDATE_INTERVAL = 100 //ms
 App = Ember.Application.create();
 //App.ApplicationAdapter = DS.FixtureAdapter.extend();
 
@@ -16,8 +17,18 @@ App.Tool = DS.Model.extend({
 
     didLoad: function(){
         var self = this;
-        setInterval(function() {self.reload()}, 1000); //every 5 minutes
+        setInterval(function() {self.reload()}, UPDATE_INTERVAL); 
     }
+});
+
+App.AppController = Ember.ObjectController.extend({
+  actions: {
+    cut: function() {
+        gcode = 'G0 Z0.5\nG0 X-10 Y0 F70\nG1 Z-1 F50\nG2 I10\nG0 Z0.5 F70\nG0 X0 Y0 F70\nM30\n'
+        console.log('Cut button was clicked!')
+        $.post( "/gcode", {'data' : gcode});
+    }
+  }
 });
 
 App.Tool.FIXTURES = [{
