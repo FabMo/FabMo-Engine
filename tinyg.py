@@ -4,6 +4,8 @@ from contextlib import contextmanager
 from Queue import Queue, Empty
 from threading import RLock, Thread
 
+BUFFER_SKID = 4
+
 class ThreadWorker(Thread):
     def __init__(self, callable, *args, **kwargs):
         super(ThreadWorker, self).__init__()
@@ -34,10 +36,14 @@ class TinyGDriver(object):
                 self.error_codes = {int(x):y for x,y in error_codes.items()}
         except:
             self.error_codes = {}
-        self.output_queue = Queue()
+        self.json_queue = Queue()
+        self.gcode_queue = Queue()
         self.response = []
         self.connected = False
         self.response_listeners = []
+        self.qr = 28
+        self.qi = 0
+        self.qo = 0
         self.lock = RLock()
 
     def add_response_listener(self, listener):
@@ -48,15 +54,29 @@ class TinyGDriver(object):
         with self.lock:
             self.response_listeners.remove(listener)
 
+    def _on_connect(self):
+        self.command({'qv':2})  # Set triple queue reports
+
+    def _on_disconnect(self):
+        pass
+
+    def _on_response(self, response):
+        self.qr = response.get('qr', self.qr)
+        self.qi = response.get('qi', self.qi)
+        self.qo = response.get('qo', self.qo)
+
     def connect(self):
         self.port = serial.Serial(self.portname,timeout=3)
         self.connected = True
+        self._on_connect()
 
     def disconnect(self):
         self.connected = False
         self.port.close()
+        self._on_disconnect()
 
     def poll(self):
+
         if not self.connected:
             return
 
@@ -70,17 +90,33 @@ class TinyGDriver(object):
                 else:
                     self.handle_response(''.join(self.response))
                     self.response = []
-        # WRITE
+
+        # WRITE (JSON)
         try:
-            command = self.output_queue.get(block=False)
-            self.log('--G2--> %s' % repr(command))
+            command = self.json_queue.get(block=False)
+            self.log('--> %s' % repr(command))
             self.port.write(command)
         except Empty:
             pass
 
+        # WRITE (GCODE)
+        if self.qr > BUFFER_SKID:
+            print "trying to write gcode"
+            try:
+                command = self.gcode_queue.get(block=False)
+                self.log('--> %s' % repr(command))
+                self.port.write(command)
+            except Empty:
+                pass
+            except Exception, e:
+                print e
+
     def run(self):
-        while True:
-            self.poll()
+        try:
+            while True:
+                self.poll()
+        except:
+            print "EPIC FAIL"
 
     def run_in_thread(self):
         self.connect()
@@ -91,31 +127,23 @@ class TinyGDriver(object):
     def handle_response(self, s):
         try:
             response = json.loads(s)
-            self.log('<--G2-- %s' % s)
+            self.log('<--- %s' % s)
+            self._on_response(response)
             for listener in self.response_listeners:
                 listener(response)
-        except:
+        except Exception, e:
+            print e
             self.log(s)
 
-    def format_command(self, d):
-        if isinstance(d, dict):
-            return json.dumps(d) + '\n'
-        else:
-            return str(d).strip() + '\n'
-
-    def check_footer(self, footer):
-        revision, status, bytes, checksum = footer
-        if self.revision == None:
-            self.revision = revision
-        else:
-            if self.revision != revision:
-                raise Exception('Revision mismatch. Expected %s but got %s' % (self.revision, revision))
-        if status != 0:
-            error, msg = self.error_codes.get(status, ('UNKNOWN_ERROR_%d' % status, 'Unknown error code (%d)' % status))
-            raise TinyGException(error)
-
     def command(self, cmd):
-        self.output_queue.put(self.format_command(cmd))
+        if isinstance(cmd, dict):
+            self.json_queue.put(str(json.dumps(cmd) + '\n'))
+        else:
+            self.gcode_queue.put(str(cmd.strip() + '\n'))
+
+#        if status != 0:
+#            error, msg = self.error_codes.get(status, ('UNKNOWN_ERROR_%d' % status, 'Unknown error code (%d)' % status))
+#            raise TinyGException(error)
 
     def log(self, s):
         if self.verbose:
@@ -123,17 +151,7 @@ class TinyGDriver(object):
 
     def status_report(self):
         self.command({'sr':''})
-        
-def handle_response(x):
-    print x
 
-if __name__ == '__main__':
-    g2 = TinyGDriver('COM18', verbose=True)
-    g2.add_response_listener(handle_response)
-    g2.connect()
-    thread = ThreadWorker(g2.run)
-    thread.start()
-
-    while True:
-        s = raw_input('TinyG> ')
-        g2.command(s)
+    def send_file(self, s):
+        for line in s.split('\n'):
+            self.command(line)

@@ -21,6 +21,10 @@ App.Tool = DS.Model.extend({
     }
 });
 
+Ember.Handlebars.helper('position', function(value, options) {
+  return new Handlebars.SafeString(value.toFixed(3));
+});
+
 App.AppController = Ember.ObjectController.extend({
   actions: {
     cut: function() {
