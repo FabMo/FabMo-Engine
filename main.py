@@ -7,7 +7,8 @@ app.debug = True
 
 class Machine(object):
     def __init__(self, g2, name='My Tool'):
-        g2.add_response_listener(self.response_listener)
+        if g2:
+            g2.add_response_listener(self.response_listener)
         self.g2 = g2
         self.xpos = 0
         self.ypos = 0
@@ -37,20 +38,22 @@ class Machine(object):
             self.g2.command(line)
             print repr(line)
 
-g2 = TinyGDriver('/dev/cu.usbmodem001', verbose=True)
-g2.run_in_thread()
+try:
+    g2 = TinyGDriver('/dev/cu.usbmodem001', verbose=True)
+    g2.run_in_thread()
+    for motor, unit_value in [('1', 4000), ('2', 4000), ('3', 4000)]:
+        motor_settings = {}
+        g2.command({motor + 'sa' : 1.8})
+        g2.command({motor + 'tr' : unit_value/200.0})
+        g2.command({motor + 'mi' : 1})
+        g2.command({motor + 'pm' : 1})
+        g2.command({'xtm' : 0})
+        g2.command({'ytm' : 0})
+        g2.command({'ztm' : 0})
+except:
+    g2 = None
+
 machine = Machine(g2)
-
-
-for motor, unit_value in [('1', 4000), ('2', 4000), ('3', 4000)]:
-    motor_settings = {}
-    g2.command({motor + 'sa' : 1.8})
-    g2.command({motor + 'tr' : unit_value/200.0})
-    g2.command({motor + 'mi' : 1})
-    g2.command({motor + 'pm' : 1})
-    g2.command({'xtm' : 0})
-    g2.command({'ytm' : 0})
-    g2.command({'ztm' : 0})
 
 def get_tools():
     state = machine.state
