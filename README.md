@@ -7,6 +7,7 @@ Prerequisites
 -------------
 * Python
 * Flask
+* Pyserial
 * Running the app requires internet access currently, due to web dependencies (bootstrap)
 
 Running
