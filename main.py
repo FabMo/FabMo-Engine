@@ -1,9 +1,8 @@
+import os, time
 from flask import Flask, jsonify, request, redirect, send_file
-from fixtures import make_tools
 from werkzeug.contrib.fixers import ProxyFix
 from werkzeug.contrib.cache import MemcachedCache
 from werkzeug.utils import secure_filename
-import os, time
 from werkzeug.contrib.cache import SimpleCache
 
 UPLOAD_FOLDER = '/tmp'

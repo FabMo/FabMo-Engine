@@ -43,13 +43,18 @@ ln -s /etc/nginx/sites-available/nginx-shopbot.conf /etc/nginx/sites-enabled/ngi
 # Configure gunicorn
 cp /opt/shopbot/app/conf/gunicorn.* /usr/lib/systemd/system
 
+# Configure shopbotd which talks to the tool
+cp /opt/shopbot/app/conf/shopbotd.service /usr/lib/systemd/system
+
 chown -R shopbot /opt/shopbot 
 
 # Start up server
 systemctl enable memcached
 systemctl enable gunicorn
 systemctl enable nginx
+systemctl enable shopbotd
 systemctl start memcached
 systemctl start gunicorn
 systemctl start nginx
+systemctl start shopbotd
 
