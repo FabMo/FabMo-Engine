@@ -38,6 +38,7 @@ ln -s /etc/nginx/sites-available/nginx-shopbot.conf /etc/nginx/sites-enabled/ngi
 # Configure gunicorn
 cp /opt/shopbot/app/conf/gunicorn.* /etc/systemd/system
 
+chown -R shopbot /opt/shopbot 
 # Start up server
 systemctl enable gunicorn
 systemctl enable nginx
