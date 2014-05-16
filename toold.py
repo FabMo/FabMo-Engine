@@ -86,7 +86,7 @@ while True:
         if new_t != t:
             response = requests.get(URL_GETFILE)
             t = new_t
-            g2.send_file(response.text)
+            g2.send_file_string(response.text)
     except Exception, e:
         print e
     time.sleep(2.0)

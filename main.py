@@ -15,8 +15,10 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.debug = True
 app.wsgi_app = ProxyFix(app.wsgi_app)
 
-#cache = MemcachedCache([MEMCACHE_ADDRESS])
-cache = SimpleCache()
+if app.debug:
+    cache = SimpleCache()
+else:
+    cache = MemcachedCache([MEMCACHE_ADDRESS])
 app.cache = cache
 
 fileinfo = {}
@@ -27,7 +29,7 @@ def allowed_file(filename):
 
 def get_tools():
     return cache.get('tools')
-    
+
 @app.route('/')
 def index():
     print "INDEX"
@@ -56,7 +58,6 @@ def tools():
 @app.route('/tools/<id>')
 def tools_by_id(id):
     tool = get_tools()[0]
-    print tool
     return jsonify({'tool':tool})
 
 @app.route('/upload', methods=['POST'])

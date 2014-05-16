@@ -5,6 +5,7 @@ from Queue import Queue, Empty
 from threading import RLock, Thread
 
 BUFFER_SKID = 4
+MAX_THROTTLE = 20
 
 class ThreadWorker(Thread):
     def __init__(self, callable, *args, **kwargs):
@@ -44,6 +45,7 @@ class TinyGDriver(object):
         self.qr = 28
         self.qi = 0
         self.qo = 0
+        self.throttle_count = 0
         self.lock = RLock()
 
     def add_response_listener(self, listener):
@@ -64,7 +66,13 @@ class TinyGDriver(object):
         self.qr = response.get('qr', self.qr)
         self.qi = response.get('qi', self.qi)
         self.qo = response.get('qo', self.qo)
-
+        if 'qr' in response:
+            self.throttle_count = 0
+        id, status, rx, checksum = response.get('f',[0,0,0,0])
+        if status:
+            error, msg = self.error_codes.get(status, ('UNKNOWN_ERROR_%d' % status, 'Unknown error code (%d)' % status))
+            self.log(msg)
+                        
     def connect(self):
         self.port = serial.Serial(self.portname,timeout=3)
         self.connected = True
@@ -72,7 +80,10 @@ class TinyGDriver(object):
 
     def disconnect(self):
         self.connected = False
-        self.port.close()
+        try:
+            self.port.close()
+        except:
+            pass
         self._on_disconnect()
 
     def poll(self):
@@ -100,12 +111,12 @@ class TinyGDriver(object):
             pass
 
         # WRITE (GCODE)
-        if self.qr > BUFFER_SKID:
-            #print "trying to write gcode"
+        if self.qr > BUFFER_SKID and self.throttle_count < MAX_THROTTLE:
             try:
                 command = self.gcode_queue.get(block=False)
                 self.log('--> %s' % repr(command))
                 self.port.write(command)
+                self.throttle_count += 1;
             except Empty:
                 pass
             except Exception, e:
@@ -115,8 +126,8 @@ class TinyGDriver(object):
         try:
             while True:
                 self.poll()
-        except:
-            print "EPIC FAIL"
+        except Exception, e:
+            print "EPIC FAIL:" + str(e)
 
     def run_in_thread(self):
         self.connect()
@@ -152,6 +163,11 @@ class TinyGDriver(object):
     def status_report(self):
         self.command({'sr':''})
 
-    def send_file(self, s):
+    def send_file(self, f):
+        for line in f.readlines():
+            self.command(line)
+
+    def send_file_string(self, s):
         for line in s.split('\n'):
             self.command(line)
+            
