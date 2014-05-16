@@ -101,7 +101,7 @@ class TinyGDriver(object):
 
         # WRITE (GCODE)
         if self.qr > BUFFER_SKID:
-            print "trying to write gcode"
+            #print "trying to write gcode"
             try:
                 command = self.gcode_queue.get(block=False)
                 self.log('--> %s' % repr(command))

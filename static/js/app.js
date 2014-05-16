@@ -28,7 +28,8 @@ Ember.Handlebars.helper('position', function(value, options) {
 App.AppController = Ember.ObjectController.extend({
   actions: {
     cut: function() {
-        gcode = 'G0 Z0.5\nG0 X-10 Y0 F70\nG1 Z-1 F50\nG2 I10\nG0 Z0.5 F70\nG0 X0 Y0 F70\nM30\n'
+	
+        gcode = 'G01 X0 Y0 F50000\nG02 I100 F5000000\n'
         console.log('Cut button was clicked!')
         $.post( "/gcode", {'data' : gcode});
     }

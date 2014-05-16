@@ -3,7 +3,7 @@ from fixtures import make_tools
 from tinyg import TinyGDriver
 
 app = Flask(__name__)
-app.debug = True
+app.debug = False
 
 class Machine(object):
     def __init__(self, g2, name='My Tool'):
@@ -39,7 +39,7 @@ class Machine(object):
             print repr(line)
 
 try:
-    g2 = TinyGDriver('/dev/cu.usbmodem001', verbose=True)
+    g2 = TinyGDriver('/dev/ttyACM0', verbose=True)
     g2.run_in_thread()
     for motor, unit_value in [('1', 4000), ('2', 4000), ('3', 4000)]:
         motor_settings = {}
@@ -80,4 +80,4 @@ def gcode():
     return jsonify({'status':'OK'})
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0')

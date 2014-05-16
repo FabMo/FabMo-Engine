@@ -1,0 +1,12 @@
+[Unit]
+Description=gunicorn daemon
+
+[Service]
+Type=forking
+PIDFile=/opt/shopbot/pid/gunicorn.pid
+User=root
+WorkingDirectory=/opt/shopbot/env/app
+ExecStart=/opt/shopbot/env/bin/gunicorn -p /opt/shopbot/pid/gunicorn.pid- main:app
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s QUIT $MAINPID
+PrivateTmp=true
