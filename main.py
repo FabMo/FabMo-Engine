@@ -1,9 +1,11 @@
 from flask import Flask, jsonify, request
 from fixtures import make_tools
 from tinyg import TinyGDriver
+from werkzeug.contrib.fixers import Proxy
 
 app = Flask(__name__)
-app.debug = False
+#app.debug = False
+pp.wsgi_app = ProxyFix(app.wsgi_app)
 
 class Machine(object):
     def __init__(self, g2, name='My Tool'):
