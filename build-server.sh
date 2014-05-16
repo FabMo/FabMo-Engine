@@ -7,7 +7,7 @@ fi
 pacman -Sy
 
 # Install system dependencies
-pacman -S --needed nginx
+pacman -S --needed nginx memcached gnu-netcat
 
 # Install python dependencies
 pacman -S --needed python2 python2-pip
@@ -21,12 +21,14 @@ mkdir -p /opt/shopbot/pid
 
 # Create the virtualenv that will house the python application
 virtualenv --no-site-packages /opt/shopbot/env
-source /opt/shopbot/env/bin/activate
-pip install flask gunicorn pyserial
-deactivate
 
 # Get the code
 git clone https://github.com/ShopbotTools/shopbot-example-app.git /opt/shopbot/app
+
+# Configure the python environment
+source /opt/shopbot/env/bin/activate
+pip install -r /opt/shopbot/app/conf/requirements.txt
+deactivate
 
 # Configure the webserver
 mkdir -p /etc/nginx/sites-available
@@ -39,9 +41,12 @@ ln -s /etc/nginx/sites-available/nginx-shopbot.conf /etc/nginx/sites-enabled/ngi
 cp /opt/shopbot/app/conf/gunicorn.* /etc/systemd/system
 
 chown -R shopbot /opt/shopbot 
+
 # Start up server
+systemctl enable memcached
 systemctl enable gunicorn
 systemctl enable nginx
+systemctl start memcached
 systemctl start gunicorn
 systemctl start nginx
 
