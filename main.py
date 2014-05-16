@@ -32,15 +32,12 @@ def get_tools():
 
 @app.route('/')
 def index():
-    print "INDEX"
     return app.send_static_file('index.html')
 
 @app.route('/update', methods=['POST'])
 def update():
     tools = request.json
-    print tools
     cache.set('tools',[tools])
-    print cache.get('tools')
     return jsonify({'err':0})
 
 @app.route('/fileinfo', methods=['GET'])
