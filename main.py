@@ -12,7 +12,7 @@ MEMCACHE_ADDRESS = '127.0.0.1:11211'
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.debug = True
+#app.debug = True
 app.wsgi_app = ProxyFix(app.wsgi_app)
 
 if app.debug:
