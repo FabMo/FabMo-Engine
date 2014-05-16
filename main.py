@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from fixtures import make_tools
 from tinyg import TinyGDriver
-from werkzeug.contrib.fixers import Proxy
+from werkzeug.contrib.fixers import ProxyFix
 
 app = Flask(__name__)
 #app.debug = False
