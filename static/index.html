@@ -30,7 +30,7 @@
           <li class="dropdown">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Apps <b class="caret"></b></a>
             <ul class="dropdown-menu">
-              <li>{{#link-to 'app'}}Universal Circle Cutter{{/link-to}}</li>
+              <li>{{#link-to 'app'}}G-Code Streamer{{/link-to}}</li>
             </ul>
           </li>
           <li>{{#link-to 'tools'}}Tools{{/link-to}}</li>
@@ -71,19 +71,10 @@
         <p>
         This is a simple application that cuts a circle of the specified diameter and depth.
         </p>
-        <table class="table">
-          <tr>
-            <td><strong>Diameter:</strong></td> 
-            <td>{{input value="1.0"}}</td>
-          </tr>
-          <tr>
-            <td><strong>Depth:</strong></td> 
-            <td>{{input value="0.25"}}</td>
-          </tr>
-        </table>
-        <button type="button" class="btn btn-default btn-lg pull-right" {{action 'cut'}}>
-        <span class="glyphicon glyphicon-wrench"></span> Cut Circle
-        </button>
+        <form action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <input type="submit" value="Upload" class="btn btn-default btn-lg pull-right">
+        </form>
       </div>
     </div>
   </script>
@@ -100,8 +91,17 @@
   <script src="static/js/libs/handlebars-1.1.2.js"></script>
   <script src="static/js/libs/ember-1.4.0.js"></script>
   <script src="static/js/libs/ember-data.js"></script>
-  <script src="static/js/app.js"></script>
+  <script src="static/js/libs/bootstrap.file-input.js"></script>
+
+  <script src="static/js/app.js"></script>  
   <!-- to activate the test runner, add the "?test" query string parameter -->
   <script src="static/tests/runner.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function(){
+      $('input[type=file]').bootstrapFileInput();
+    })
+  </script>
+
 </body>
 </html>

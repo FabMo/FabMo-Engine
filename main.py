@@ -1,45 +1,76 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, redirect, send_file
 from fixtures import make_tools
 from werkzeug.contrib.fixers import ProxyFix
 from werkzeug.contrib.cache import MemcachedCache
+from werkzeug.utils import secure_filename
+import os, time
+from werkzeug.contrib.cache import SimpleCache
 
+UPLOAD_FOLDER = '/tmp'
+ALLOWED_EXTENSIONS = set(['nc','g','sbp','gc','gcode'])
+MEMCACHE_ADDRESS = '127.0.0.1:11211'
 
 app = Flask(__name__)
-app.debug = False
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.debug = True
 app.wsgi_app = ProxyFix(app.wsgi_app)
-cache = MemcachedCache(['127.0.0.1:11211'])
+
+#cache = MemcachedCache([MEMCACHE_ADDRESS])
+cache = SimpleCache()
 app.cache = cache
 
-def get_tools():
-    tools = cache.get('tools')
-    print "getting tools"
-    print tools
-    return tools or []
+fileinfo = {}
 
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
+def get_tools():
+    return cache.get('tools')
+    
 @app.route('/')
 def index():
+    print "INDEX"
     return app.send_static_file('index.html')
 
 @app.route('/update', methods=['POST'])
 def update():
     tools = request.json
     print tools
-    cache.set('tools',tools)
+    cache.set('tools',[tools])
+    print cache.get('tools')
+    return jsonify({'err':0})
+
+@app.route('/fileinfo', methods=['GET'])
+def get_fileinfo():
+    return jsonify(fileinfo)
+
+@app.route('/getfile', methods=['GET'])
+def get_file():
+    return send_file(fileinfo['full_path'])
 
 @app.route('/tools')
 def tools():
-    return jsonify({'tools':[get_tools()]})
+    return jsonify({'tools':get_tools()})
 
 @app.route('/tools/<id>')
 def tools_by_id(id):
     tool = get_tools()[0]
+    print tool
     return jsonify({'tool':tool})
 
-@app.route('/gcode', methods=['POST'])
-def gcode():
-    g_code = request.form['data']
-    machine.run_file(g_code)
-    return jsonify({'status':'OK'})
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    global fileinfo
+    if request.method == 'POST':
+        file = request.files['file']
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            print "Saving: %s" % filename
+            full_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(full_path)
+            fileinfo = {'name':filename, 'time':time.time(), 'full_path':full_path}
+        return redirect('/')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
