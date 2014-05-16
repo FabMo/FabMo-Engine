@@ -41,7 +41,7 @@ cp /opt/shopbot/app/conf/nginx-shopbot.conf /etc/nginx/sites-available/nginx-sho
 ln -s /etc/nginx/sites-available/nginx-shopbot.conf /etc/nginx/sites-enabled/nginx-shopbot.conf
 
 # Configure gunicorn
-cp /opt/shopbot/app/conf/gunicorn.* /etc/systemd/system
+cp /opt/shopbot/app/conf/gunicorn.* /usr/lib/systemd/system
 
 chown -R shopbot /opt/shopbot 
 
