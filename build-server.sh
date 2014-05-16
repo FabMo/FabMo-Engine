@@ -20,7 +20,6 @@ pip2 install virtualenv
 rm -rf /opt/shopbot
 mkdir -p /opt/shopbot
 mkdir -p /opt/shopbot/logs
-mkdir -p /opt/shopbot/pid
 
 # Create the virtualenv that will house the python application
 virtualenv --no-site-packages /opt/shopbot/env
@@ -41,10 +40,10 @@ cp /opt/shopbot/app/conf/nginx-shopbot.conf /etc/nginx/sites-available/nginx-sho
 ln -s /etc/nginx/sites-available/nginx-shopbot.conf /etc/nginx/sites-enabled/nginx-shopbot.conf
 
 # Configure gunicorn
-cp /opt/shopbot/app/conf/gunicorn.* /usr/lib/systemd/system
+cp /opt/shopbot/app/conf/gunicorn.* /etc/systemd/system
 
 # Configure shopbotd which talks to the tool
-cp /opt/shopbot/app/conf/shopbotd.service /usr/lib/systemd/system
+cp /opt/shopbot/app/conf/shopbotd.service /etc/systemd/system
 
 chown -R shopbot /opt/shopbot 
 
