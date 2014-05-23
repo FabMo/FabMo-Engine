@@ -1,60 +1,78 @@
-import os, time
+import os, time, sys
+import zmq
 from flask import Flask, jsonify, request, redirect, send_file
 from werkzeug.contrib.fixers import ProxyFix
 from werkzeug.contrib.cache import MemcachedCache
 from werkzeug.utils import secure_filename
 from werkzeug.contrib.cache import SimpleCache
+from util import jsonp
+import glob
 
-UPLOAD_FOLDER = '/tmp'
+#UPLOAD_FOLDER = '/tmp'
+UPLOAD_FOLDER = 'c:\\work\\shopbot'
 ALLOWED_EXTENSIONS = set(['nc','g','sbp','gc','gcode'])
-MEMCACHE_ADDRESS = '127.0.0.1:11211'
+ZMQ_PORT = 5556
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-#app.debug = True
-app.wsgi_app = ProxyFix(app.wsgi_app)
 
-if app.debug:
-    cache = SimpleCache()
-else:
-    cache = MemcachedCache([MEMCACHE_ADDRESS])
-app.cache = cache
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.debug = True
+context = zmq.Context()
+
+if not app.debug:
+    app.wsgi_app = ProxyFix(app.wsgi_app)
 
 fileinfo = {}
+
+def shopbotd(d):
+    '''
+    Connect to shopbotd, send the provided python object, and read the response
+    '''
+    socket = context.socket(zmq.PAIR)
+    socket.connect("tcp://localhost:%d" % ZMQ_PORT)
+    socket.send_pyobj(d)
+    response = socket.recv_pyobj()
+    socket.close()
+    return response
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
-def get_tools():
-    return cache.get('tools')
-
 @app.route('/')
 def index():
     return app.send_static_file('index.html')
 
-@app.route('/update', methods=['POST'])
-def update():
-    tools = request.json
-    cache.set('tools',[tools])
+@jsonp
+@app.route('/files', methods=['GET'])
+def files():
+    full_paths = glob.glob(os.path.join(app.config['UPLOAD_FOLDER'], '*.nc'))
+    filenames = [fn for path,fn in map(os.path.split, full_paths)]
+    filedict = dict([(filename, idx) for (idx,filename) in enumerate(filenames)])
+    return jsonify({'files':filedict})
+
+@app.route('/run_file', methods=['GET'])
+def run_file():
+    id = int(request.args.get('id'))
+    full_paths = glob.glob(os.path.join(app.config['UPLOAD_FOLDER'], '*.nc'))
+    filenames = [fn for path,fn in map(os.path.split, full_paths)]
+    filedict = dict([(idx, full_path) for (idx,full_path) in enumerate(full_paths)])
+    full_path = filedict[id]
+    print full_path
+    shopbotd({'cmd':'run','path':full_path})
+    return redirect('/')
+
+@jsonp
+@app.route('/status')
+def status():
+    s = shopbotd({'cmd':'status'})
+    return jsonify({'status':s})
+
+@app.route('/stop')
+def stop():
+    s = shopbotd({'cmd':'stop'})
+    print s
     return jsonify({'err':0})
-
-@app.route('/fileinfo', methods=['GET'])
-def get_fileinfo():
-    return jsonify(fileinfo)
-
-@app.route('/getfile', methods=['GET'])
-def get_file():
-    return send_file(fileinfo['full_path'])
-
-@app.route('/tools')
-def tools():
-    return jsonify({'tools':get_tools()})
-
-@app.route('/tools/<id>')
-def tools_by_id(id):
-    tool = get_tools()[0]
-    return jsonify({'tool':tool})
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -68,6 +86,7 @@ def upload_file():
             file.save(full_path)
             fileinfo = {'name':filename, 'time':time.time(), 'full_path':full_path}
         return redirect('/')
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')

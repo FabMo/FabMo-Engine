@@ -4,14 +4,11 @@
   <meta charset="utf-8">
   <title>Shopbot Example App</title>
   <!-- From bootstrap -->
-  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
-
+  <link rel="stylesheet" href="static/css/bootstrap.min.css">
   <link rel="stylesheet" href="static/css/normalize.css">
   <link rel="stylesheet" href="static/css/style.css">
 </head>
 <body>
-  hello, world
-  <script type="text/x-handlebars">
     <nav class="navbar navbar-default" role="navigation">
     <div class="container-fluid">
       <!-- Brand and toggle get grouped for better mobile display -->
@@ -28,80 +25,91 @@
       <!-- Collect the nav links, forms, and other content for toggling -->
       <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
         <ul class="nav navbar-nav">
-          <li class="dropdown">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Apps <b class="caret"></b></a>
-            <ul class="dropdown-menu">
-              <li>{{#link-to 'app'}}G-Code Streamer{{/link-to}}</li>
-            </ul>
-          </li>
-          <li>{{#link-to 'tools'}}Tools{{/link-to}}</li>
-          <li>{{#link-to 'about'}}About{{/link-to}}</li>
+          <li><a><span class="label status-label label-default tool-state">&nbsp;</span></a></li>
+          <li><a><strong>X: </strong><span class="xpos"></span></a></li>
+          <li><a><strong>Y: </strong><span class="ypos"></span></a></li>
+          <li><a><strong>Z: </strong><span class="zpos"></span></a></li>
         </ul>
+
+        <button type="button" class="btn btn-danger navbar-btn navbar-right stop-button hide">STOP TOOL</button>
       </div><!-- /.navbar-collapse -->
     </div><!-- /.container-fluid -->
   </nav>
-  {{outlet}}
-  </script>
 
-  <script type="text/x-handlebars" id="tools">
-    <h2>Shopbot Tools</h2>
-    <table class="table">
-    <tr>
-      <th>Name</th>
-      <th>Xpos</th>
-      <th>Ypos</th>
-      <th>Zpos</th>
-      <th>status</th>
-    </tr>
-    {{#each model}}
-    <tr>
-      <td>{{name}}</td>
-      <td>{{position xpos}}</td>
-      <td>{{position ypos}}</td>
-      <td>{{position zpos}}</td>
-      <td>{{status}}</td>
-    </tr>
-    {{/each}}
-    </table>
-  </script>
+  <div class="container">
 
-  <script type="text/x-handlebars" id="app">
     <div class="panel panel-default">
-      <div class="panel-heading app-heading">G-Code Streamer</div>
+      <div class="panel-heading app-heading">Shopbot G-Code Streamer</div>
       <div class="panel-body">
+        
         <p>
         This is a simple application for streaming a G-Code file.
         </p>
-        <form action="/upload" method="post" enctype="multipart/form-data">
-        <input type="file" name="file">
-        <input type="submit" value="Upload" class="btn btn-default btn-lg pull-right">
-        </form>
+        
+
+        
+        <table class="table table-hover table-bordered" id="files">
+          <tr><th>Files on the tool (click to run)</th></tr>
+        </table>
+
+        <strong>Upload a file...</strong>
+        <p>
+          <form action="/upload" method="post" enctype="multipart/form-data">
+            <div class="pull-left">
+          <input type="file" name="file" data-filename-placement="inside" title="Browse for a file to upload...">
+        </div>
+        <div class="pull-right">
+          <input type="submit" value="Upload" class="btn btn-default btn-primary">
+          </div>
+          </form>
+        </p>
+
       </div>
     </div>
-  </script>
 
-  <script type="text/x-handlebars" id="about">
-  <h2>About This Application</h2>
-  <p>The purpose of this example application is to demonstrate one strategy for providing an "apps framework" for Shopbot.  Rather than being an example app, this tool is an example framework which demonstrates how multiple apps might be structured to live in an "apps ecosystem" that potentially exists even when access to the web is intermittent or nonexistant.  Apps under this scheme run in the browser, but depend very little on code that runs remotely on a server, maximizing portability, and minimizing network dependence.</p>
-  </script>
-
+  </div>
 
   <script src="static/js/libs/jquery-1.10.2.js"></script>
-  <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-
-  <script src="static/js/libs/handlebars-1.1.2.js"></script>
-  <script src="static/js/libs/ember-1.4.0.js"></script>
-  <script src="static/js/libs/ember-data.js"></script>
+  <script src="static/js/bootstrap.min.js"></script>
   <script src="static/js/libs/bootstrap.file-input.js"></script>
-
-  <script src="static/js/app.js"></script>  
-  <!-- to activate the test runner, add the "?test" query string parameter -->
-  <script src="static/tests/runner.js"></script>
-
   <script type="text/javascript">
     $(document).ready(function(){
+
+      // Style the file input so it looks nice
       $('input[type=file]').bootstrapFileInput();
-    })
+
+      // Load the list of files available on the tool
+      $.getJSON( "/files", function( data ) {
+        $.each( data.files, function( key, val ) {
+          $("#files").append( "<tr><td id='file" + key + "'><a href='/run_file?id=" + val + "' >" + key + "</a></td></tr>" );
+        });
+      });
+    timer();
+    });
+
+    function timer() {
+      $.getJSON( "/status", function( data ) {
+        $('.xpos').html(data.status.xpos.toFixed(3));
+        $('.ypos').html(data.status.ypos.toFixed(3));
+        $('.zpos').html(data.status.zpos.toFixed(3));
+        if(data.status.state == 'idle') {
+          $('.status-label').removeClass('label-success');
+          $('.status-label').addClass('label-default');
+          $('.tool-state').html('Tool State: Idle');
+          $('.stop-button').addClass('hide');
+        } else {
+          $('.status-label').removeClass('label-default');
+          $('.status-label').addClass('label-success');         
+          $('.tool-state').html('Tool State: Running');
+          $('.stop-button').removeClass('hide');
+        }
+      });
+      setTimeout(timer, 500);
+    }
+
+    $('.stop-button').click(function() {
+      $.getJSON("/stop", function(data) {});
+    });
   </script>
 
 </body>

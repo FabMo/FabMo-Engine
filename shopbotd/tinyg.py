@@ -3,9 +3,35 @@ import serial
 from contextlib import contextmanager
 from Queue import Queue, Empty
 from threading import RLock, Thread
+import platform
 
 BUFFER_SKID = 4
 MAX_THROTTLE = 20
+DEVICE_STRINGS = {  'Darwin':['/dev/cu.usbmodem%03d' % port for port in range(1,11)], 
+                    'Linux': ['/dev/ttyACM%d' % port for port in range(10)], 
+                    'Windows':['COM%d' % port for port in range(3,51)]}
+
+def G2():
+    system = platform.system()
+    comports = DEVICE_STRINGS.get(system, None)
+    g2 = None
+    print "Creating G2 object"
+    if comports:
+        # Try each one in turn
+        for port in comports:
+            try:
+                g2 = TinyGDriver(port, verbose=True)
+            except Exception, e:
+                print e
+                continue
+            # Start running the first one that seems valid
+            if g2:
+                g2.run_in_thread()
+                return g2
+            else:
+                raise Exception('Could not find G2 connected to host.')
+    else:
+        raise Exception('Platform Unsupported')
 
 class ThreadWorker(Thread):
     def __init__(self, callable, *args, **kwargs):
@@ -47,6 +73,9 @@ class TinyGDriver(object):
         self.qo = 0
         self.throttle_count = 0
         self.lock = RLock()
+
+    def __del__(self):
+        self.disconnect()
 
     def add_response_listener(self, listener):
         with self.lock:
@@ -124,7 +153,7 @@ class TinyGDriver(object):
 
     def run(self):
         try:
-            while True:
+            while self.connected:
                 self.poll()
         except Exception, e:
             print "EPIC FAIL:" + str(e)
@@ -156,6 +185,10 @@ class TinyGDriver(object):
 #            error, msg = self.error_codes.get(status, ('UNKNOWN_ERROR_%d' % status, 'Unknown error code (%d)' % status))
 #            raise TinyGException(error)
 
+    def stop(self):
+        while not self.gcode_queue.empty():
+            self.gcode_queue.get()
+            
     def log(self, s):
         if self.verbose:
             print s
@@ -165,9 +198,9 @@ class TinyGDriver(object):
 
     def send_file(self, f):
         for line in f.readlines():
-            self.command(line)
+            self.gcode_queue.put(line)
 
     def send_file_string(self, s):
         for line in s.split('\n'):
-            self.command(line)
+            self.gcode_queue.put(line)
             
