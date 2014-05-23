@@ -8,8 +8,8 @@ from werkzeug.contrib.cache import SimpleCache
 from util import jsonp
 import glob
 
-#UPLOAD_FOLDER = '/tmp'
-UPLOAD_FOLDER = 'c:\\work\\shopbot'
+UPLOAD_FOLDER = '/opt/shopbot/parts'
+#UPLOAD_FOLDER = 'c:\\work\\shopbot'
 ALLOWED_EXTENSIONS = set(['nc','g','sbp','gc','gcode'])
 ZMQ_PORT = 5556
 
