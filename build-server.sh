@@ -47,6 +47,10 @@ cp /opt/shopbot/app/conf/shopbotd.service /etc/systemd/system
 
 chown -R shopbot /opt/shopbot 
 
+# Kill apache in case it's running - it can't run alongside nginx
+systemctl disable httpd
+systemctl stop httpd
+
 # Start up server
 systemctl enable memcached
 systemctl enable gunicorn
