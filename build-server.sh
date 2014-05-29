@@ -16,8 +16,6 @@ pacman -S --needed memcached gnu-netcat ntpd
 pacman -S --needed python2 python2-pip
 pip2 install virtualenv
 
-#install nodejs dependencies
-pacman -S --needed nodejs
 
 # Clear out any old installation and create environment directories
 rm -rf /opt/shopbot
@@ -29,6 +27,14 @@ virtualenv --no-site-packages /opt/shopbot/env
 
 # Get the code
 git clone -b node.js https://github.com/jlucidar/shopbot-example-app.git /opt/shopbot/app
+
+
+#install nodejs dependencies
+pacman -S --needed nodejs
+cd /opt/shopbot/app/shopbot-api/
+npm install restify
+
+
 
 # Configure the python environment
 source /opt/shopbot/env/bin/activate
