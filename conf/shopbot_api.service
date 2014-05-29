@@ -1,0 +1,14 @@
+[Unit]
+Description=shopbot-api
+
+[Service]
+ExecStart=node /opt/shopbot/app/shopbot-api/server.js
+Type=forking
+User=root
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+WorkingDirectory = /opt/shopbot/app/
+
+[Install]
+WantedBy=multi-user.target

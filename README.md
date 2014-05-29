@@ -6,9 +6,9 @@ The purpose of this project is to provide a simple application framework for dev
 Prerequisites
 -------------
 * Python
-* Flask
+* NodeJs
 * Pyserial
-* Running the app requires internet access currently, due to web dependencies (bootstrap)
+
 
 Running
 -------
@@ -16,7 +16,7 @@ Once the prerequisites are installed, to run the application, simply run main.py
 
 Notes
 -----
-main.py will look for a tinyg board on startup.  If it encounters an error on communicating with one, it will simply run the web portion of the app without connection to a tool. 
+server.js will look for a tinyg board on startup.  If it encounters an error on communicating with one, it will simply run the web portion of the app without connection to a tool. 
 
 https://github.com/ShopBotTools/shopbot-example-app/blob/master/main.py#L42
 
