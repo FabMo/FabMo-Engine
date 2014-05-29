@@ -2,7 +2,7 @@
 Description=shopbot-api
 
 [Service]
-ExecStart=node /opt/shopbot/app/shopbot-api/server.js
+ExecStart=/bin/node /opt/shopbot/app/shopbot-api/server.js
 Type=forking
 User=root
 Restart=always
