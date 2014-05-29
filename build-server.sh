@@ -28,7 +28,7 @@ mkdir -p /opt/shopbot/logs
 virtualenv --no-site-packages /opt/shopbot/env
 
 # Get the code
-git clone https://github.com/jlucidar/shopbot-example-app.git /opt/shopbot/app
+git clone -b node.js https://github.com/jlucidar/shopbot-example-app.git /opt/shopbot/app
 
 # Configure the python environment
 source /opt/shopbot/env/bin/activate
