@@ -54,7 +54,7 @@
 
         <strong>Upload a file...</strong>
         <p>
-          <form action="http://localhost:8080/upload" method="post" enctype="multipart/form-data">
+          <form action="/upload" method="post" enctype="multipart/form-data">
             <div class="pull-left">
           <input type="file" name="file" data-filename-placement="inside" title="Browse for a file to upload...">
         </div>
@@ -74,22 +74,22 @@
   <script src="./js/libs/bootstrap.file-input.js"></script>
   <script type="text/javascript">
     $(document).ready(function(){
-
+      $('form').attr('action',"http://"+location.hostname+":8080/upload");
       // Style the file input so it looks nice
       $('input[type=file]').bootstrapFileInput();
 
       // Load the list of files available on the tool
-      $.getJSON( "http://localhost:8080/files", function( data ) {
+      $.getJSON("http://"+location.hostname+":8080/files", function( data ) {
         $.each( data.files, function( key, val ) {
 	  console.log(key +" : " +val)
-          $("#files").append( "<tr><td id='file" + key + "'><a href='http://localhost:8080/run_file/" + val + "' >" + key + "</a></td></tr>" );
+          $("#files").append( "<tr><td id='file" + key + "'><a href='"+"http://"+location.hostname+":8080/run_file/" + val + "' >" + key + "</a></td></tr>" );
         });
       });
     timer();
     });
 
     function timer() {
-      $.getJSON( "http://localhost:8080/status", function( data ) {
+      $.getJSON( "http://"+location.hostname+":8080/status", function( data ) {
        	$('.xpos').html(data.status.xpos.toFixed(3));
         $('.ypos').html(data.status.ypos.toFixed(3));
         $('.zpos').html(data.status.zpos.toFixed(3));
@@ -109,7 +109,7 @@
     }
 
     $('.stop-button').click(function() {
-      $.getJSON("http://localhost:8080/stop", function(data) {});
+      $.getJSON("http://"+location.hostname+":8080/stop", function(data) {});
     });
   </script>
 
