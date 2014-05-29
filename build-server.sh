@@ -20,7 +20,11 @@ pip2 install virtualenv
 # Clear out any old installation and create environment directories
 rm -rf /opt/shopbot
 mkdir -p /opt/shopbot
-mkdir -p /opt/shopbot/logs
+mkdir /opt/shopbot/logs
+mkdir /opt/shopbot/parts
+mkdir /opt/shopbot/tmp
+
+
 
 # Create the virtualenv that will house the python application
 virtualenv --no-site-packages /opt/shopbot/env
@@ -49,9 +53,16 @@ cp /opt/shopbot/app/conf/shopbotd.service /etc/systemd/system
 
 chown -R shopbot /opt/shopbot 
 
-# Kill apache in case it's running - it can't run alongside nginx
-systemctl disable httpd
-systemctl stop httpd
+## INSTALL THE UPLOAD APP
+echo "DO YOU WANT TO INSTALL THE LOCAL APP FOR UPLOADING FILE (need a Apache server, will ERASE the former content in /var/http) ? (y/n) "
+read answer
+if [ answer == "y" ]
+then
+	systemctl enable httpd
+	systemctl start httpd
+	rm -rf /srv/http
+	ln -s /opt/shopbot/app/static /srv/http
+fi
 
 # Start up server
 systemctl enable memcached
