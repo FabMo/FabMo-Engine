@@ -47,9 +47,9 @@ exports.run_file = function(req, res, next) {
 
 exports.upload_file = function(req, res, next) {
 	var file = req.files.file;
-    if(file && allowed_file(file.filename))
+    if(file && allowed_file(file.name))
     {
-    	var filename=file.filename;
+    	var filename=file.name;
     	console.log("Saving: " + filename);
        	var full_path = path.join(upload_folder, filename);
        	fs.rename(file.path, full_path, function(err) {
@@ -60,7 +60,8 @@ exports.upload_file = function(req, res, next) {
         	fs.unlink(file.path, function() {
         		if (err) {throw err;}
         		fileinfo = {'name':filename, 'time':Date.now(), 'full_path':full_path};
-        		res.header('Location', req.headers['referer']);
+        		console.log("referer : "+ req.headers['referer']);
+			res.header('Location', req.headers['referer']);
         		res.send(302);
         	});
         });
