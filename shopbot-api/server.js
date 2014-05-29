@@ -12,7 +12,7 @@ server.use(
     return next();
   }
 );
-server.use(restify.bodyParser());// for uploading files
+server.use(restify.bodyParser({'uploadDir':'/opt/shopbot/tmp'}));// for uploading files
 
 var routes = require('./routes')(server);
 
