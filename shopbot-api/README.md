@@ -1,11 +1,6 @@
-
-
 # device-api
 
-
-
 ## Usage
-
 
 Documentation of the API [here](http://docs.shopbotlocalapi.apiary.io/)
 

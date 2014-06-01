@@ -1,9 +1,9 @@
-var path = require('path');
-var fs = require('fs');
-var shopbotd_lib = require('./shopbotd_library');
+path = require('path');
+fs = require('fs');
+machine = require('./machine');
 
-var upload_folder = '/opt/shopbot/parts';
-var ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
+upload_folder = '/opt/shopbot/parts';
+ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
 var fileinfo;
 
 function allowed_file(filename){
@@ -15,9 +15,7 @@ function allowed_file(filename){
 	{
 		return false;
 	}
-}
-
-
+};
 
 exports.get_files = function(req, res, next) {
 	fs.readdir(upload_folder, function(err, files){
@@ -39,7 +37,7 @@ exports.run_file = function(req, res, next) {
 			filearray.push([i++ , upload_folder+'/'+file]);
 		}
 		var full_path = filearray[req.id];
-		shopbotd_lib.shopbotd({'cmd':'run','path':full_path});
+		machine.driver.runFile(full_path);
 	});
 	res.header('Location', req.headers['referer']);
 	res.send(302);

@@ -1,6 +1,6 @@
-var shopbotd_lib = require('./shopbotd_library');
+machine = require('./machine');
 
 exports.get_status = function(req, res, next) {
-	var s =  shopbotd_lib.shopbotd({'cmd':'status'});
+	var s = machine.driver.status
     res.json({'status':s});
 };
