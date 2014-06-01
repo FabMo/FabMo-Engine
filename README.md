@@ -6,7 +6,8 @@ This is the server software that runs the G2-Based shopbot platform.  This imple
 
 * restify
 * process
-
+* lazy
+* serialport
 
 ## Installation
 
