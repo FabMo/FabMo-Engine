@@ -1,5 +1,5 @@
-G2 = require('./g2').G2
-PLATFORM = require('process').platform
+var G2 = require('./g2').G2
+var PLATFORM = require('process').platform
 
 console.log('require(./machine)');
 

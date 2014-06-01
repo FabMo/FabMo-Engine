@@ -8,11 +8,11 @@
  * TODO: Implement a streamer that honors the g2 queue (And doesn't just blast the serial port with all the data at once)
  * TODO: Subclass EventEmitter and emit events for things like location, etc.
  */
-serialport = require("serialport");
-fs = require("fs");
-lazy = require("lazy");
-events = require('events');
-util = require('util');
+var serialport = require("serialport");
+var fs = require("fs");
+var lazy = require("lazy");
+var events = require('events');
+var util = require('util');
 
 // Constant Data
 try {
@@ -24,7 +24,7 @@ try {
 // G2 Constructor
 function G2() {
 	this.current_data = new Array();
-	this.status = {};
+	this.status = {'state':'idle'};
   	events.EventEmitter.call(this);	
 };
 util.inherits(G2, events.EventEmitter);
@@ -97,6 +97,24 @@ G2.prototype.onResponse = function(response) {
 		for (var key in r.sr) {
 		    this.status[key] = r.sr[key];
 		}
+
+		switch(this.status.stat) {
+			case 1:
+				this.status.state = 'idle';
+				break;
+			case 5:
+				this.status.state = 'running';
+				break;
+			case 4:
+				this.status.state = 'idle';
+				break;
+			case 3:
+				this.status.state = 'idle';
+				break;
+			default:
+				this.status.state = 'idle';
+				break;
+		} 
 		this.emit('status', this.status);
 	}
 	this.emit('message', response);

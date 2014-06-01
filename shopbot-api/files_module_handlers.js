@@ -1,6 +1,6 @@
-path = require('path');
-fs = require('fs');
-machine = require('./machine');
+var path = require('path');
+var fs = require('fs');
+var machine = require('./machine');
 
 upload_folder = '/opt/shopbot/parts';
 ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
@@ -30,14 +30,16 @@ exports.get_files = function(req, res, next) {
 };
 
 exports.run_file = function(req, res, next) {
+	console.log('Running file');
 	fs.readdir(upload_folder, function(err, files){
 		var filearray = [], i=0;
-		for(var file in files)
+		for(var i=0; i<files.length; i++)
 		{
-			filearray.push([i++ , upload_folder+'/'+file]);
-		}
-		var full_path = filearray[req.id];
-		machine.driver.runFile(full_path);
+			filearray.push([i , upload_folder+'/'+files[i]]);
+		}		
+		var full_path = filearray[req.params.id];
+		console.log(full_path);
+		machine.driver.runFile(full_path[1]);
 	});
 	res.header('Location', req.headers['referer']);
 	res.send(302);
