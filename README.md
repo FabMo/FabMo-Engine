@@ -1,14 +1,33 @@
-# device-api
+# Shopbot Tool Platform
+
+This is the server software that runs the G2-Based shopbot platform.  This implementation uses node.js for both the web-service as well as the logic for communicating with the tool.
+
+## Dependencies
+
+* restify
+* process
+
+
+## Installation
+
+To install on the raspberry pi, beaglebone, or other Archlinux-ARM powered SBC, simply run `build-server.sh` while connected to the network.  All of the appropriate dependencies should be downloaded and installed automatically, and the source of the application pulled from github and placed in `/opt/shopbot/app`
 
 ## Usage
 
-Documentation of the API [here](http://docs.shopbotlocalapi.apiary.io/)
+To run the server from source (without installing), simply invoke `server.js` with node:
 
-## Developing
+```
+node server.js
+```
 
-develloped by [jlucidar](github.com/jlucidar)
+If you have installed the application and want to run it as a system service, use `systemctl`:
 
-### Tools
+```
+systemctl start shopbot-api
+```
 
-Created with [Nodeclipse](http://www.nodeclipse.org)  
-Using [Restify](http://mcavage.me/node-restify/)
+To enable the service at startup:
+
+```
+systemctl enable shopbot-api
+```
