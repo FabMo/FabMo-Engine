@@ -1,23 +1,14 @@
-The Shopbot Example Application Framework
-=========================================
+# device-api
 
-The purpose of this project is to provide a simple application framework for developing and testing the technical details of running a shopbot app ecosystem.
+## Usage
 
-Prerequisites
--------------
-* Python
-* NodeJs
-* Pyserial
+Documentation of the API [here](http://docs.shopbotlocalapi.apiary.io/)
 
+## Developing
 
-Running
--------
-Once the prerequisites are installed, to run the application, simply run main.py.  If you are on windows, you may get a network warning.  Click 'Allow'  To view the app UI, navigate your browser to http://localhost:5000/
+develloped by [jlucidar](github.com/jlucidar)
 
-Notes
------
-server.js will look for a tinyg board on startup.  If it encounters an error on communicating with one, it will simply run the web portion of the app without connection to a tool. 
+### Tools
 
-https://github.com/ShopBotTools/shopbot-example-app/blob/master/main.py#L42
-
-Check the above source code line, and adjust for your G2 board in order to get a proper connection.
+Created with [Nodeclipse](http://www.nodeclipse.org)  
+Using [Restify](http://mcavage.me/node-restify/)

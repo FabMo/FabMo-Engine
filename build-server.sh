@@ -3,19 +3,15 @@ if [[ $EUID -ne 0 ]]; then
    echo "This script must be run as root" 1>&2
    exit 1
 fi
-# sytem time setings
-systemctl enable ntpd
-systemctl start ntpd
 
 pacman -Sy
 
 # Install system dependencies
-pacman -S --needed memcached gnu-netcat ntpd
+pacman -S --needed gnu-netcat ntpd
 
-# Install python dependencies
-pacman -S --needed python2 python2-pip
-pip2 install virtualenv
-
+# sytem time setings
+systemctl enable ntpd
+systemctl start ntpd
 
 # Clear out any old installation and create environment directories
 rm -rf /opt/shopbot
@@ -24,32 +20,17 @@ mkdir /opt/shopbot/logs
 mkdir /opt/shopbot/parts
 mkdir /opt/shopbot/tmp
 
-
-
-# Create the virtualenv that will house the python application
-virtualenv --no-site-packages /opt/shopbot/env
-
 # Get the code
 git clone -b node.js https://github.com/jlucidar/shopbot-example-app.git /opt/shopbot/app
-
 
 #install nodejs dependencies
 pacman -S --needed nodejs
 cd /opt/shopbot/app/shopbot-api/
-npm install restify
-
-
-
-# Configure the python environment
-source /opt/shopbot/env/bin/activate
-pip install -r /opt/shopbot/app/conf/requirements.txt
-deactivate
+# TODO - We should rely on local packages only, checked into git, for stability
+npm install restify process serialport lazy
 
 # Configure the webserver
 cp /opt/shopbot/app/conf/shopbot_api.service /etc/systemd/system
-
-# Configure shopbotd which talks to the tool
-cp /opt/shopbot/app/conf/shopbotd.service /etc/systemd/system
 
 chown -R shopbot /opt/shopbot 
 
@@ -65,10 +46,6 @@ then
 fi
 
 # Start up server
-systemctl enable memcached
 systemctl enable shopbot_api
-systemctl enable shopbotd
-systemctl start memcached
 systemctl start shopbot_api
-systemctl start shopbotd
 
