@@ -37,6 +37,8 @@ git clone -b node.js https://github.com/jlucidar/shopbot-example-app.git /opt/sh
 pacman -S --needed nodejs
 cd /opt/shopbot/app/shopbot-api/
 npm install restify
+pacman -S --needed zeromq
+npm install zmq
 
 
 

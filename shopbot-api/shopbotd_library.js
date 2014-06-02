@@ -1,15 +1,23 @@
-var net =require('net');
-var port = 5556;
+var zmq =require('zmq');
+var util = require('util');
+var EventEmitter = require('events').EventEmitter;
+var port = '5556';
+
 //Connect to shopbotd, send the provided object, and read the response
-exports.shopbotd = function shopbotd(d){
-    /*
-    var socket = new net.Socket();
-    socket.connect(port); // on localhost
-    socket.write(JSON.stringify(d));
-    socket.on('data',function(data){
-        socket.end();
-        return JSON.parse(data);
+var shopbotd = function(d){
+    var self = this;
+    var socket = zmq.socket('pair');
+    socket.connect("tcp://localhost:" + port); // on localhost
+    socket.send(JSON.stringify(d));
+    socket.on('message',function(msg){
+        console.log('message : '+ msg);
+        var data = JSON.parse(msg);
+        socket.close();
+        self.emit('getmessage',data);
     });
-    */
-	return {"xpos":0,"ypos":0,"zpos":0,"a":0,"b":0,"c":0,"state":"idle"} ;
+    this.on('newListener', function(listener) {
+     });
 };
+util.inherits(shopbotd , EventEmitter);
+module.exports = shopbotd;
+
