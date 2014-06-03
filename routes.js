@@ -7,7 +7,7 @@ var restify = require('restify');
 var files_module = require('./files_module_handlers');
 var status_module = require('./status_module_handlers');
 var file_commands_module = require('./file_commands_module_handlers');
-var direct_commands_module = require('direct_commands_module_handlers');
+var direct_commands_module = require('./direct_commands_module_handlers');
 
 module.exports = function(server) {
 
@@ -38,7 +38,7 @@ module.exports = function(server) {
 	/************** file commands module ****************/
 
 	/* run a file by id */
-	server.get('/run/:id', files_commands_module.run); //OK
+	server.get('/run/:id', file_commands_module.run); //OK
 
 	/* abort the execution of the current running file */
 	server.get('/quit',file_commands_module.quit); //TODO
