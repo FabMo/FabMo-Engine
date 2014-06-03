@@ -1,6 +1,0 @@
-MarkupSafe==0.23
-itsdangerous==0.24
-pyserial==2.7
-python-memcached==1.53
-requests==2.3.0
-wsgiref==0.1.2
