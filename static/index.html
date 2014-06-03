@@ -26,9 +26,9 @@
       <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
         <ul class="nav navbar-nav">
           <li><a><span class="label status-label label-default tool-state">&nbsp;</span></a></li>
-          <li><a><strong>X: </strong><span class="xpos"></span></a></li>
-          <li><a><strong>Y: </strong><span class="ypos"></span></a></li>
-          <li><a><strong>Z: </strong><span class="zpos"></span></a></li>
+          <li><a><strong>X: </strong><span class="posx"></span></a></li>
+          <li><a><strong>Y: </strong><span class="posy"></span></a></li>
+          <li><a><strong>Z: </strong><span class="posz"></span></a></li>
         </ul>
 
         <button type="button" class="btn btn-danger navbar-btn navbar-right stop-button hide">STOP TOOL</button>
@@ -72,6 +72,7 @@
   <script src="./js/libs/jquery-1.10.2.js"></script>
   <script src="./js/bootstrap.min.js"></script>
   <script src="./js/libs/bootstrap.file-input.js"></script>
+  
   <script type="text/javascript">
     $(document).ready(function(){
       $('form').attr('action',"http://"+location.hostname+":8080/upload");
@@ -90,9 +91,10 @@
 
     function timer() {
       $.getJSON( "http://"+location.hostname+":8080/status", function( data ) {
-       	$('.xpos').html(data.status.xpos.toFixed(3));
-        $('.ypos').html(data.status.ypos.toFixed(3));
-        $('.zpos').html(data.status.zpos.toFixed(3));
+      	console.log(data);
+       	$('.posx').html(data.status.posx.toFixed(3));
+        $('.posy').html(data.status.posy.toFixed(3));
+        $('.posz').html(data.status.posz.toFixed(3));
         if(data.status.state == 'idle') {
           $('.status-label').removeClass('label-success');
           $('.status-label').addClass('label-default');
