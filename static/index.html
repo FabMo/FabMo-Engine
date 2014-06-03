@@ -75,15 +75,15 @@
   
   <script type="text/javascript">
     $(document).ready(function(){
-      $('form').attr('action',"http://"+location.hostname+":8080/upload");
+      $('form').attr('action',"http://"+location.hostname+":8080/file");
       // Style the file input so it looks nice
       $('input[type=file]').bootstrapFileInput();
 
       // Load the list of files available on the tool
-      $.getJSON("http://"+location.hostname+":8080/files", function( data ) {
+      $.getJSON("http://"+location.hostname+":8080/file", function( data ) {
         $.each( data.files, function( key, val ) {
 	  console.log(key +" : " +val)
-          $("#files").append( "<tr><td id='file" + key + "'><a href='"+"http://"+location.hostname+":8080/run_file/" + val + "' >" + key + "</a></td></tr>" );
+          $("#files").append( "<tr><td id='file" + key + "'><a href='"+"http://"+location.hostname+":8080/run/" + val + "' >" + key + "</a></td></tr>" );
         });
       });
     timer();
@@ -111,7 +111,7 @@
     }
 
     $('.stop-button').click(function() {
-      $.getJSON("http://"+location.hostname+":8080/stop", function(data) {});
+      $.getJSON("http://"+location.hostname+":8080/quit", function(data) {});
     });
   </script>
 
