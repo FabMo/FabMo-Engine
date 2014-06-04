@@ -65,7 +65,7 @@ module.exports = function(server) {
 	server.post('/direct/jog',direct_commands_module.jog); //TODO
 
 	/* move the tool to a given position */
-	server.post('/direct/goto',direct_commands_module.goto); //TODO
+	server.post('/direct/goto',direct_commands_module.goto); //OK
 
 	/****************************************************/
 
