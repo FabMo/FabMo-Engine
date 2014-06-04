@@ -56,13 +56,13 @@ module.exports = function(server) {
 	/************* Direct commands module ***************/
 	
 	/* send a gcode command to the tool */
-	server.post('/direct/gcode',direct_commands_module.send_gcode); //TODO 
+	server.post('/direct/gcode',direct_commands_module.send_gcode); //OK
 
 	/* move the tool in the given direction */
-	server.post('/direct/move',direct_commands_module.move); //TODO 
+	server.post('/direct/move',direct_commands_module.move); //TODO :improve it
 
 	/* jog the tool in the given direction */
-	server.post('/direct/jog',direct_commands_module.jog); //TODO
+	server.post('/direct/jog',direct_commands_module.jog); //TODO  :improve it
 
 	/* move the tool to a given position */
 	server.post('/direct/goto',direct_commands_module.goto); //OK
