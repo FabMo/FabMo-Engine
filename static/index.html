@@ -24,13 +24,13 @@
 
       <!-- Collect the nav links, forms, and other content for toggling -->
       <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-        <ul class="nav navbar-nav">
+        <ul class="nav navbar-nav" style="margin-right: 20%;">
           <li><a><span class="label status-label label-default tool-state">&nbsp;</span></a></li>
           <li><a><strong>X: </strong><span class="posx"></span></a></li>
           <li><a><strong>Y: </strong><span class="posy"></span></a></li>
           <li><a><strong>Z: </strong><span class="posz"></span></a></li>
         </ul>
-
+	<button id="keypad" type="button" class="btn navbar-btn"   style="opacity:0.2;"><img src="./images/arrow_key.png" /></button>
         <button type="button" class="btn btn-danger navbar-btn navbar-right stop-button hide">STOP TOOL</button>
       </div><!-- /.navbar-collapse -->
     </div><!-- /.container-fluid -->
@@ -54,7 +54,7 @@
 
         <strong>Upload a file...</strong>
         <p>
-          <form action="/upload" method="post" enctype="multipart/form-data">
+          <form action="/run" method="post" enctype="multipart/form-data">
             <div class="pull-left">
           <input type="file" name="file" data-filename-placement="inside" title="Browse for a file to upload...">
         </div>
@@ -74,6 +74,77 @@
   <script src="./js/libs/bootstrap.file-input.js"></script>
   
   <script type="text/javascript">
+	var keypad_allow=false;
+	var lock_right = false,lock_left = false ,lock_up = false ,lock_down = false,lock_page_up = false,lock_page_down = false;
+	$(document).keydown(function(e) {
+	if (keypad_allow){
+		if (e.which === 37 && !lock_left && !lock_right) //left
+		{
+			lock_left=true;
+			 $.post( "http://"+location.hostname+":8080/direct/move",{"move" : "-x"});
+		}
+		if (e.which === 38 && !lock_up && !lock_down) //up
+		{
+			 lock_up=true;
+			 $.post( "http://"+location.hostname+":8080/direct/move",{"move" : "y"});
+		}
+		if (e.which === 39 && !lock_right && !lock_left) //right
+		{
+			 lock_right=true;
+			 $.post( "http://"+location.hostname+":8080/direct/move",{"move" : "x"});
+		}
+		if (e.which === 40  && !lock_up && !lock_down) //down
+		{
+			 lock_down=true;
+			 $.post( "http://"+location.hostname+":8080/direct/move",{"move" : "-y"});
+		}
+		if (e.which === 33  && !lock_page_up && !lock_page_down) //page_up
+		{
+			 lock_page_up=true;
+			 $.post( "http://"+location.hostname+":8080/direct/move",{"move" : "z"});
+		}
+		if (e.which === 34 && !lock_page_up && !lock_page_down) //page_down
+		{
+			 lock_page_down=true;
+			 $.post( "http://"+location.hostname+":8080/direct/move",{"move" : "-z"});
+		}
+	}
+	});
+    	$(document).keyup(function(e) {
+	if (keypad_allow){
+		if (e.which === 37 ) //left
+		{
+			lock_left=false;
+			$.post( "http://"+location.hostname+":8080/direct/move",{"move" : "stop"});
+		}
+		if (e.which === 38 ) //up
+		{
+			lock_up=false;
+			$.post( "http://"+location.hostname+":8080/direct/move",{"move" : "stop"});
+		}
+		if (e.which === 39 ) //right
+		{
+			lock_right=false;
+			$.post( "http://"+location.hostname+":8080/direct/move",{"move" : "stop"});
+		}
+		if (e.which === 40 ) //down
+		{
+			lock_down=false;
+			$.post( "http://"+location.hostname+":8080/direct/move",{"move" : "stop"});
+		}
+		if (e.which === 33 ) //page_up
+		{
+			lock_page_up=false;
+			$.post( "http://"+location.hostname+":8080/direct/move",{"move" : "stop"});
+		}
+		if (e.which === 34 ) //page_down
+		{
+			lock_page_down=false;
+			$.post( "http://"+location.hostname+":8080/direct/move",{"move" : "stop"});
+		}
+	}
+    	});
+
     $(document).ready(function(){
       $('form').attr('action',"http://"+location.hostname+":8080/file");
       // Style the file input so it looks nice
@@ -82,7 +153,6 @@
       // Load the list of files available on the tool
       $.getJSON("http://"+location.hostname+":8080/file", function( data ) {
         $.each( data.files, function( key, val ) {
-	  console.log(key +" : " +val)
           $("#files").append( "<tr><td id='file" + key + "'><a href='"+"http://"+location.hostname+":8080/run/" + val + "' >" + key + "</a></td></tr>" );
         });
       });
@@ -91,7 +161,6 @@
 
     function timer() {
       $.getJSON( "http://"+location.hostname+":8080/status", function( data ) {
-      	console.log(data);
        	$('.posx').html(data.status.posx.toFixed(3));
         $('.posy').html(data.status.posy.toFixed(3));
         $('.posz').html(data.status.posz.toFixed(3));
@@ -112,6 +181,18 @@
 
     $('.stop-button').click(function() {
       $.getJSON("http://"+location.hostname+":8080/quit", function(data) {});
+    });
+    $('#keypad').click(function() {
+	if (keypad_allow)
+        {
+	    $(this).css('opacity',0.2);
+	    keypad_allow = false;
+	}
+	else
+        {
+	    $(this).css('opacity',1);
+	    keypad_allow = true;
+	}
     });
   </script>
 
