@@ -8,7 +8,6 @@
  */
 var serialport = require("serialport");
 var fs = require("fs");
-var lazy = require("lazy");
 var events = require('events');
 var util = require('util');
 var Queue = require('./util').Queue;
@@ -45,7 +44,7 @@ G2.prototype.connect = function(path, callback) {
 G2.prototype.onOpen = function(callback) {
 	// prototype.bind makes sure that the 'this' in the method is this object, not the event emitter
 	this.port.on('data', this.onData.bind(this));
-	this.command({'qv':1});				// Configure queue reports
+	this.command({'qv':2});				// Configure queue reports
 	this.requestStatusReport(); 		// Initial status check
 	if (this.connect_callback && typeof(this.connect_callback) === "function") {
 	    this.connect_callback();
@@ -84,15 +83,6 @@ G2.prototype.onData = function(data) {
 // Called once a proper JSON response is decoded from the chunks of data that come back from G2
 G2.prototype.onResponse = function(response) {
 	
-	// Deal with errors first.
-	if(response.f) {
-		if(response.f[1] != 0) {
-			var err_code = response.f[1];
-			var err_msg = G2_ERRORS[err_code];
-			this.emit('error', [err_code, err_msg[0], err_msg[1]]);
-		}		
-	}
-
 	// TODO more elegant way of dealing with "response" data.
 	if(response.r) {
 		r = response.r;
@@ -102,11 +92,25 @@ G2.prototype.onResponse = function(response) {
 
 	// Handle a queue report, which determines how much g-code we're allowed to send.
 	qr = r.qr;
-	if (qr != undefined) {
+	if ((qr != undefined) && (qr > G2_SKID)) {
+		var msg = r.qi + ' ' + r.qr + ' ' + r.qo + '  :' + (qr-G2_SKID);
+		console.log(msg);
+		var cmds = [];
 		while(qr > G2_SKID) {
 			if(this.gcode_queue.isEmpty()) {break;}
-			this.gcode(this.gcode_queue.dequeue())
+			cmds.push(this.gcode_queue.dequeue());
+			qr-=1;
 		}
+		cmds.push('\n');
+		this.port.write(cmds.join('\n')); 
+	}
+
+	if(response.f) {
+		if(response.f[1] != 0) {
+			var err_code = response.f[1];
+			var err_msg = G2_ERRORS[err_code];
+			this.emit('error', [err_code, err_msg[0], err_msg[1]]);
+		}		
 	}
 
  	// Deal with G2 status
@@ -149,6 +153,17 @@ G2.prototype.gcode = function(s) {
 	this.port.write(s.trim() + '\n');
 };
 
+G2.prototype.runString = function(data) {
+	lines = data.split('\n');
+	for(var i=0; i<lines.length; i++) {
+		line = lines[i].trim();
+		if(line != '') {
+			this.gcode_queue.enqueue(line);
+		}
+	}
+	this.command({'qr':null})
+};
+
 // Read a file from disk and stream it to the device
 // TODO: Might be more efficient not to do lazy evalulation of the file and just read the whole thing
 //       especially for highly segmented moves that might thrash the disk
@@ -157,13 +172,7 @@ G2.prototype.runFile = function(filename) {
 		  if (err) {
 		    return console.log(err);
 		  }
-		  lines = data.split('\n');
-		  for(var i=0; i<lines.length; i++) {
-		  	this.gcode_queue.enqueue(lines[i]);
-		  }
-
-		  this.command({'qr':null});
-		  //this.requestQueueReport();
+		  this.runString(data);
 		}.bind(this));
 	};
 

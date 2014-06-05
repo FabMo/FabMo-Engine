@@ -53,20 +53,29 @@
         </table>
 
         <strong>Upload a file...</strong>
-        <p>
-          <form action="/run" method="post" enctype="multipart/form-data">
-            <div class="pull-left">
-          <input type="file" name="file" data-filename-placement="inside" title="Browse for a file to upload...">
-        </div>
-        <div class="pull-right">
-          <input type="submit" value="Upload" class="btn btn-default btn-primary">
+        
+	<p>
+        <form action="/run" method="post" enctype="multipart/form-data">
+          <div class="pull-left">
+            <input type="file" name="file" data-filename-placement="inside" title="Browse for a file to upload...">
           </div>
-          </form>
+          <div class="pull-right">
+            <input type="submit" value="Upload" class="btn btn-default btn-primary">
+          </div>
+        </form>
         </p>
-
-      </div>
+	
+      
+	</div>
     </div>
-
+    <div class="panel panel-default">
+	<div class="panel-heading app-heading">Single G-Code</div>
+	<p>
+        <form action="/run" method="post" enctype="multipart/form-data">
+		<input id="gcode-input" class="form-control" type="text">
+	</form>
+	</p>
+    </div>
   </div>
 
   <script src="./js/libs/jquery-1.10.2.js"></script>
