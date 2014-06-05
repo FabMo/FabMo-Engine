@@ -3,9 +3,8 @@
  * 
  * TinyG2 driver for node.js
  * 
- * Dependencies: lazy, serialport
+ * Dependencies: serialport
  *
- * TODO: Implement a streamer that honors the g2 queue (And doesn't just blast the serial port with all the data at once)
  */
 var serialport = require("serialport");
 var fs = require("fs");
