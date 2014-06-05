@@ -160,20 +160,35 @@
     });
 
     function timer() {
-      $.getJSON( "http://"+location.hostname+":8080/status", function( data ) {
+      $.ajax( {
+        url: "http://"+location.hostname+":8080/status", 
+        dataType : 'json', 
+        success: function( data ) {
        	$('.posx').html(data.status.posx.toFixed(3));
         $('.posy').html(data.status.posy.toFixed(3));
         $('.posz').html(data.status.posz.toFixed(3));
         if(data.status.state == 'idle') {
           $('.status-label').removeClass('label-success');
+          $('.status-label').removeClass('label-danger');
           $('.status-label').addClass('label-default');
           $('.tool-state').html('Tool State: Idle');
           $('.stop-button').addClass('hide');
         } else {
           $('.status-label').removeClass('label-default');
+          $('.status-label').removeClass('label-danger');
           $('.status-label').addClass('label-success');         
           $('.tool-state').html('Tool State: Running');
           $('.stop-button').removeClass('hide');
+        }}, 
+        error: function(data) {
+          $('.status-label').removeClass('label-success');
+          $('.status-label').removeClass('label-default');
+          $('.status-label').addClass('label-danger');
+          $('.tool-state').html('Tool State: Disconnected');
+          $('.stop-button').addClass('hide');
+          $('.posx').html('???');
+          $('.posy').html('???');
+          $('.posz').html('???');
         }
       });
       setTimeout(timer, 500);
