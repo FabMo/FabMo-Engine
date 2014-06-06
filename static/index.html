@@ -163,7 +163,7 @@
       $.getJSON("http://"+location.hostname+":8080/file", function( data ) {
         $.each( data.files, function( key, val ) {
           $("#files").append( "<tr>"+
-"<td id='file" + val._id + "'><a href='"+"http://"+location.hostname+":8080/run/" + val.filename + "' >" + val._id + "</a></td>"
+"<td id='file" + val._id + "'><a href='"+"http://"+location.hostname+":8080/run/" + val.filename + "' >" + val._id + "</a></td>" +
 "<td class='download-button' value='" + val._id + "' style='text-align: right;width: 3%;'><img src='./images/download.png'></td>" +
 "<td class='delete-button' value='" + val._id + "' style='text-align: right;width: 3%;'><img src='./images/delete.png'></td>"+
 "</tr>");
