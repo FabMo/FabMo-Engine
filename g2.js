@@ -3,28 +3,29 @@
  * 
  * TinyG2 driver for node.js
  * 
- * Dependencies: lazy, serialport
+ * Dependencies: serialport
  *
- * TODO: Implement a streamer that honors the g2 queue (And doesn't just blast the serial port with all the data at once)
  */
 var serialport = require("serialport");
 var fs = require("fs");
-var lazy = require("lazy");
 var events = require('events');
 var util = require('util');
+var Queue = require('./util').Queue;
 
 // Constant Data
 try {
-	var TINYG_ERRORS = JSON.parse(fs.readFileSync('./data/g2_errors.json','utf8'));
+	var G2_ERRORS = JSON.parse(fs.readFileSync('./data/g2_errors.json','utf8'));
 } catch(e) {
-	var TINYG_ERRORS = {};
+	var G2_ERRORS = {};
 }
 
 // G2 Constructor
 function G2() {
 	this.current_data = new Array();
 	this.status = {'state':'idle'};
-  	events.EventEmitter.call(this);	
+	this.gcode_queue = new Queue();
+  	this.pause_flag = false;
+	events.EventEmitter.call(this);	
 };
 util.inherits(G2, events.EventEmitter);
 
@@ -39,12 +40,14 @@ G2.prototype.connect = function(path, callback) {
 G2.prototype.onOpen = function(callback) {
 	// prototype.bind makes sure that the 'this' in the method is this object, not the event emitter
 	this.port.on('data', this.onData.bind(this));
-	this.command({'qv':2});    	// Triple queue reports
-	this.command({'sr':null}); 	// Initial status check
+	this.command({'qv':2});				// Configure queue reports
+	this.requestStatusReport(); 		// Initial status check
 	if (this.connect_callback && typeof(this.connect_callback) === "function") {
 	    this.connect_callback();
 	}
 };
+
+G2.prototype.requestStatusReport = function() { this.command({'sr':null}); }
 
 // Called for every chunk of data returned from G2
 G2.prototype.onData = function(data) {
@@ -74,16 +77,7 @@ G2.prototype.onData = function(data) {
 
 // Called once a proper JSON response is decoded from the chunks of data that come back from G2
 G2.prototype.onResponse = function(response) {
-	console.log(response);
-	// Deal with errors
-	if(response.f) {
-		if(response.f[1] != 0) {
-			var err_code = response.f[1];
-			var err_msg = TINYG_ERRORS[err_code];
-			this.emit('error', [err_code, err_msg[0], err_msg[1]]);
-		}		
-	}
-
+	
 	// TODO more elegant way of dealing with "response" data.
 	if(response.r) {
 		r = response.r;
@@ -91,7 +85,46 @@ G2.prototype.onResponse = function(response) {
 		r = response;
 	}
 
-	// Deal with G2 status
+	var MIN_FLOOD_LEVEL = 20;
+	var MIN_QR_LEVEL = 5;
+
+	var qr = r.qr;
+	var qo = r.qo || 0;
+	var qi = r.qi || 0;
+	if(this.pause_flag == true) {
+		this.port.write('!\n');
+		console.log('I SEE THE PAUSE FLAG');
+	}
+	else if((qr != undefined)) {
+		var lines_to_send = 0 ;
+		if(qr > MIN_FLOOD_LEVEL) {
+			lines_to_send = qr;
+		} else if((qo > 0)/* && (qr > MIN_QR_LEVEL)*/) {
+			lines_to_send = 2*qo;
+		}  
+
+		if(lines_to_send > 0) {
+			console.log('Writing ' + lines_to_send + ' lines.');
+			var cmds = [];
+			while(lines_to_send > 0) {
+				if(this.gcode_queue.isEmpty()) {break;}
+				cmds.push(this.gcode_queue.dequeue());
+				lines_to_send -= 1;
+			}
+			cmds.push('\n');
+			this.port.write(cmds.join('\n')); 
+		}
+	}
+
+	if(response.f) {
+		if(response.f[1] != 0) {
+			var err_code = response.f[1];
+			var err_msg = G2_ERRORS[err_code];
+			this.emit('error', [err_code, err_msg[0], err_msg[1]]);
+		}		
+	}
+
+ 	// Deal with G2 status
 	if(r.sr) {
 		for (var key in r.sr) {
 		    this.status[key] = r.sr[key];
@@ -120,10 +153,21 @@ G2.prototype.onResponse = function(response) {
 
 };
 
+G2.prototype.pause = function() {
+	this.pause_flag = true;
+	this.gcode('!');
+}
+
+G2.prototype.stop = function() {
+	console.log('STOPPING THE TOOL');
+	this.pause_flag = true;
+	this.gcode_queue.clear();
+}
+
+
 // Send a command to G2 (accepts javascript object and converts to JSON)
 G2.prototype.command = function(obj) {
 	var cmd = JSON.stringify(obj) + '\n';
-	console.log(cmd);
 	this.port.write(cmd);
 };
 
@@ -132,17 +176,29 @@ G2.prototype.gcode = function(s) {
 	this.port.write(s.trim() + '\n');
 };
 
+G2.prototype.runString = function(data) {
+	lines = data.split('\n');
+	for(var i=0; i<lines.length; i++) {
+		line = lines[i].trim();
+		if(line != '') {
+			this.gcode_queue.enqueue(line);
+		}
+	}
+	this.pause_flag = false;
+	this.command({'qr':null})
+};
+
 // Read a file from disk and stream it to the device
 // TODO: Might be more efficient not to do lazy evalulation of the file and just read the whole thing
 //       especially for highly segmented moves that might thrash the disk
 G2.prototype.runFile = function(filename) {
-	new lazy(fs.createReadStream(filename))
-	 .lines
-	 .forEach(function(line){
-	 	 this.gcode(line.toString('utf8'));
-	 }.bind(this)
-	);
-};
+	fs.readFile(filename, 'utf8', function (err,data) {
+		  if (err) {
+		    return console.log(err);
+		  }
+		  this.runString(data);
+		}.bind(this));
+	};
 
 // export the class
 exports.G2 = G2;
