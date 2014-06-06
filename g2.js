@@ -19,17 +19,13 @@ try {
 	var G2_ERRORS = {};
 }
 
-// G2_SKID is how much space is left in the planner buffer before we STOP sending G-Code Lines
-// There are as many as four planner buffer slots occupied by each g-code line
-// So for now, 5 is a good number
-G2_SKID = 5;
-
 // G2 Constructor
 function G2() {
 	this.current_data = new Array();
 	this.status = {'state':'idle'};
 	this.gcode_queue = new Queue();
-  	events.EventEmitter.call(this);	
+  	this.pause_flag = false;
+	events.EventEmitter.call(this);	
 };
 util.inherits(G2, events.EventEmitter);
 
@@ -51,7 +47,6 @@ G2.prototype.onOpen = function(callback) {
 	}
 };
 
-G2.prototype.requestQueueReport = function() { this.command({'qv':2}); }
 G2.prototype.requestStatusReport = function() { this.command({'sr':null}); }
 
 // Called for every chunk of data returned from G2
@@ -90,19 +85,35 @@ G2.prototype.onResponse = function(response) {
 		r = response;
 	}
 
-	// Handle a queue report, which determines how much g-code we're allowed to send.
-	qr = r.qr;
-	if ((qr != undefined) && (qr > G2_SKID)) {
-		var msg = r.qi + ' ' + r.qr + ' ' + r.qo + '  :' + (qr-G2_SKID);
-		console.log(msg);
-		var cmds = [];
-		while(qr > G2_SKID) {
-			if(this.gcode_queue.isEmpty()) {break;}
-			cmds.push(this.gcode_queue.dequeue());
-			qr-=1;
+	var MIN_FLOOD_LEVEL = 20;
+	var MIN_QR_LEVEL = 5;
+
+	var qr = r.qr;
+	var qo = r.qo || 0;
+	var qi = r.qi || 0;
+	if(this.pause_flag == true) {
+		this.port.write('!\n');
+		console.log('I SEE THE PAUSE FLAG');
+	}
+	else if((qr != undefined)) {
+		var lines_to_send = 0 ;
+		if(qr > MIN_FLOOD_LEVEL) {
+			lines_to_send = qr;
+		} else if((qo > 0)/* && (qr > MIN_QR_LEVEL)*/) {
+			lines_to_send = 2*qo;
+		}  
+
+		if(lines_to_send > 0) {
+			console.log('Writing ' + lines_to_send + ' lines.');
+			var cmds = [];
+			while(lines_to_send > 0) {
+				if(this.gcode_queue.isEmpty()) {break;}
+				cmds.push(this.gcode_queue.dequeue());
+				lines_to_send -= 1;
+			}
+			cmds.push('\n');
+			this.port.write(cmds.join('\n')); 
 		}
-		cmds.push('\n');
-		this.port.write(cmds.join('\n')); 
 	}
 
 	if(response.f) {
@@ -142,6 +153,18 @@ G2.prototype.onResponse = function(response) {
 
 };
 
+G2.prototype.pause = function() {
+	this.pause_flag = true;
+	this.gcode('!');
+}
+
+G2.prototype.stop = function() {
+	console.log('STOPPING THE TOOL');
+	this.pause_flag = true;
+	this.gcode_queue.clear();
+}
+
+
 // Send a command to G2 (accepts javascript object and converts to JSON)
 G2.prototype.command = function(obj) {
 	var cmd = JSON.stringify(obj) + '\n';
@@ -161,6 +184,7 @@ G2.prototype.runString = function(data) {
 			this.gcode_queue.enqueue(line);
 		}
 	}
+	this.pause_flag = false;
 	this.command({'qr':null})
 };
 

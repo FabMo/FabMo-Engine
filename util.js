@@ -28,6 +28,10 @@ function Queue(){
   this.peek = function(){
     return (queue.length > 0 ? queue[offset] : undefined);
   }
+  this.clear = function() {
+	this.queue = [];
+	this.offset = 0;
+	}
 }
 
 exports.Queue = Queue
