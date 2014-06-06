@@ -31,9 +31,9 @@ module.exports = function(server) {
 	/* upload a file */
 	server.post('/file',files_module.upload_file); //OK
 
-	server.del('/file/:id',files_module.delete_file);
+	server.del('/file/:id',files_module.delete_file); //OK
 
-	server.get('/file/:id',files_module.download_file);
+	server.get('/file/:id',files_module.download_file); //OK
 
 	/****************************************************/
 
