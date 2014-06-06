@@ -6,8 +6,9 @@ var File=db.File;
 ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
 
 exports.quit = function(req, res, next) {
+    machine.driver.stop();
     res.header('Location', req.headers['referer']);
-    res.json({'error':'Not implemented yet.'});
+    res.json({'success':true});
 };
 
 exports.pause = function(req, res, next) {

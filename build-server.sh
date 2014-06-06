@@ -34,7 +34,7 @@ git clone -b node.js https://github.com/jlucidar/shopbot-example-app.git /opt/sh
 
 #install nodejs dependencies
 pacman -S --needed nodejs
-cd /opt/shopbot/app/shopbot-api/
+cd /opt/shopbot/app/
 # TODO - We should rely on local packages only, checked into git, for stability
 npm install restify serialport tingodb
 

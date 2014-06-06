@@ -118,8 +118,11 @@ exports.send_gcode = function(req, res, next) {
 	{
 		if (req.params.cmd !== undefined )
 		{
-			machine.driver.gcode(req.params.cmd);
+			machine.driver.runString(req.params.cmd);
     			res.json({'success': req.params.cmd})
+		}
+		else if (req.body) {
+			machine.driver.runString(req.body);
 		}
 		else
 		{
