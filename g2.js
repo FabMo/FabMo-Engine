@@ -92,19 +92,19 @@ G2.prototype.onResponse = function(response) {
 	var qo = r.qo || 0;
 	var qi = r.qi || 0;
 	if(this.pause_flag == true) {
-		this.port.write('!\n');
-		console.log('I SEE THE PAUSE FLAG');
+		this.port.write('!');
+		//console.log('I SEE THE PAUSE FLAG');
 	}
 	else if((qr != undefined)) {
 		var lines_to_send = 0 ;
 		if(qr > MIN_FLOOD_LEVEL) {
 			lines_to_send = qr;
 		} else if((qo > 0)/* && (qr > MIN_QR_LEVEL)*/) {
-			lines_to_send = 2*qo;
+			lines_to_send = qo;
 		}  
-
+		//lines_to_send = 10000;
 		if(lines_to_send > 0) {
-			console.log('Writing ' + lines_to_send + ' lines.');
+			//console.log('qi: ' + qi + '  qr: ' + qr + '  qo: ' + qo + '   lines: ' + lines_to_send);
 			var cmds = [];
 			while(lines_to_send > 0) {
 				if(this.gcode_queue.isEmpty()) {break;}
@@ -112,7 +112,9 @@ G2.prototype.onResponse = function(response) {
 				lines_to_send -= 1;
 			}
 			cmds.push('\n');
-			this.port.write(cmds.join('\n')); 
+			var outstring = cmds.join('\n');
+			this.port.write(outstring); 
+			//console.log('    ' + cmds.join(' '));
 		}
 	}
 

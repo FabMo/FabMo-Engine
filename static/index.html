@@ -165,7 +165,7 @@
           $("#files").append( "<tr><td id='file" + key + "'><a href='"+"http://"+location.hostname+":8080/run/" + val + "' >" + key + "</a></td></tr>" );
         });
       });
-    timer();
+    setInterval(timer, 100);
     });
 
     function timer() {
@@ -200,7 +200,7 @@
           $('.posz').html('???');
         }
       });
-      setTimeout(timer, 500);
+      //setTimeout(timer, 500);
     }
 
     $('.stop-button').click(function() {
