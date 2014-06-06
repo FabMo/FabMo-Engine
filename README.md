@@ -8,6 +8,8 @@ This is the server software that runs the G2-Based shopbot platform.  This imple
 * process
 * lazy
 * serialport
+* TingoDB
+* 
 
 ## Installation
 
@@ -17,18 +19,18 @@ To install on the raspberry pi, beaglebone, or other Archlinux-ARM powered SBC, 
 
 To run the server from source (without installing), simply invoke `server.js` with node:
 
-```
+```bash
 node server.js
 ```
 
 If you have installed the application and want to run it as a system service, use `systemctl`:
 
-```
+```bash
 systemctl start shopbot-api
 ```
 
 To enable the service at startup:
 
-```
+```bash
 systemctl enable shopbot-api
 ```
