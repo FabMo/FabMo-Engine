@@ -14,20 +14,29 @@ systemctl enable ntpd
 systemctl start ntpd
 
 # Clear out any old installation and create environment directories
-rm -rf /opt/shopbot
+rm -rf /opt/shopbot/app
+
 mkdir -p /opt/shopbot
-mkdir /opt/shopbot/logs
-mkdir /opt/shopbot/parts
-mkdir /opt/shopbot/tmp
+
+if [ $1 == "--factory-reset" ]
+then
+	rm -rf /opt/shopbot/parts
+	rm -rf /opt/shopbot/db
+fi
+
+mkdir /opt/shopbot/logs #log files folder
+mkdir /opt/shopbot/parts #file storage folder
+mkdir /opt/shopbot/tmp #temporary folder
+mkdir /opt/shopbot/db #database folder
 
 # Get the code
 git clone -b node.js https://github.com/jlucidar/shopbot-example-app.git /opt/shopbot/app
 
 #install nodejs dependencies
 pacman -S --needed nodejs
-cd /opt/shopbot/app/shopbot-api/
+cd /opt/shopbot/app/
 # TODO - We should rely on local packages only, checked into git, for stability
-npm install restify process serialport lazy
+npm install restify serialport tingodb
 
 # Configure the webserver
 cp /opt/shopbot/app/conf/shopbot_api.service /etc/systemd/system
@@ -35,7 +44,7 @@ cp /opt/shopbot/app/conf/shopbot_api.service /etc/systemd/system
 chown -R shopbot /opt/shopbot 
 
 ## INSTALL THE UPLOAD APP
-echo "DO YOU WANT TO INSTALL THE LOCAL APP FOR UPLOADING FILE (need a Apache server, will ERASE the former content in /var/http) ? (y/n) "
+echo "DO YOU WANT TO INSTALL THE BASIC LOCAL APP ON THE DEVICE (need a Apache server, will ERASE the former content in /var/http) ? (y/n) "
 read answer
 if [ answer == "y" ]
 then

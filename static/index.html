@@ -162,7 +162,11 @@
       // Load the list of files available on the tool
       $.getJSON("http://"+location.hostname+":8080/file", function( data ) {
         $.each( data.files, function( key, val ) {
-          $("#files").append( "<tr><td id='file" + key + "'><a href='"+"http://"+location.hostname+":8080/run/" + val + "' >" + key + "</a></td></tr>" );
+          $("#files").append( "<tr>"+
+"<td id='file" + val._id + "'><a href='"+"http://"+location.hostname+":8080/run/" + val.filename + "' >" + val._id + "</a></td>" +
+"<td class='download-button' value='" + val._id + "' style='text-align: right;width: 3%;'><img src='./images/download.png'></td>" +
+"<td class='delete-button' value='" + val._id + "' style='text-align: right;width: 3%;'><img src='./images/delete.png'></td>"+
+"</tr>");
         });
       });
     setInterval(timer, 100);
@@ -206,6 +210,20 @@
     $('.stop-button').click(function() {
       $.getJSON("http://"+location.hostname+":8080/quit", function(data) {});
     });
+
+
+    $(' tbody').on( "click", 'tr .delete-button', function() {	
+	$.ajax({
+		url: "http://"+location.hostname+":8080/file/" + $(this).attr('value'),
+		type: 'DELETE',
+		success: function(){location.reload()}
+	});
+   });
+
+    $(' tbody').on( "click", 'tr .download-button', function() {	
+	window.location ="http://"+location.hostname+":8080/file/"+ $(this).attr('value');
+});
+
     $('#keypad').click(function() {
 	if (keypad_allow)
         {

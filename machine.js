@@ -1,5 +1,7 @@
 var G2 = require('./g2').G2
 var PLATFORM = require('process').platform
+var Engine = require('tingodb')(),
+    assert = require('assert');
 
 
 switch(PLATFORM) {

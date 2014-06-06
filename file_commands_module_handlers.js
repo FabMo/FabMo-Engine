@@ -1,6 +1,8 @@
 var fs = require('fs');
 var machine = require('./machine');
 upload_folder = '/opt/shopbot/parts';
+var db = require('./db');
+var File=db.File;
 ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
 
 exports.quit = function(req, res, next) {
@@ -21,17 +23,11 @@ exports.resume = function(req, res, next) {
 
 exports.run = function(req, res, next) {
 	console.log('Running file');
-	fs.readdir(upload_folder, function(err, files){
-		var filearray = [], i=0;
-		for(var i=0; i<files.length; i++)
-		{
-			filearray.push([i , upload_folder+'/'+files[i]]);
-		}		
-		var full_path = filearray[req.params.id];
-		console.log(full_path);
-		machine.driver.runFile(full_path[1]);
+	File.get_by_id(req.params.id,function(file){
+		file.saverun();//update last run and run count information
+		machine.driver.runFile(file.path);
 	});
-	res.header('Location', req.headers['referer']);
+res.header('Location', req.headers['referer']);
 res.send(302);
 };
 
