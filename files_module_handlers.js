@@ -1,10 +1,12 @@
 var path = require('path');
 var fs = require('fs');
 var machine = require('./machine');
+var db = require('./db');
+var File=db.File; // link to the files database collection
 
 upload_folder = '/opt/shopbot/parts';
 ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
-var fileinfo;
+
 
 function allowed_file(filename){
 	if (ALLOWED_EXTENSIONS.indexOf(path.extname(filename)) !== -1)
@@ -18,14 +20,8 @@ function allowed_file(filename){
 };
 
 exports.get_files = function(req, res, next) {
-	fs.readdir(upload_folder, function(err, files){
-		if (err){ throw err;}
-		var filearray = {};
-		for(var file in files)
-		{		
-			filearray[files[file]]=file; // transmit an array of object {filename : index} 
-		}
-		res.json({'files':filearray});
+	File.list_all(function(result){
+		res.json({'files':result});
 });
 };
 
@@ -43,11 +39,51 @@ exports.upload_file = function(req, res, next) {
         	// delete the temporary file, so that the explicitly set temporary upload dir does not get filled with unwanted files
         	fs.unlink(file.path, function() {
         		if (err) {throw err;}
-        		fileinfo = {'name':filename, 'time':Date.now(), 'full_path':full_path};
-        		console.log("referer : "+ req.headers['referer']);
+        		new File(filename, full_path).save(); //save in db
 			res.header('Location', req.headers['referer']);
-        		res.send(302);
+        		res.send(302); // file saved
         	});
         });
     }
+    else if (file){
+	res.header('Location', req.headers['referer']);
+	res.send(415); // wrong format
+    }
+    else{
+	res.header('Location', req.headers['referer']);
+	res.send(400);// problem reciving the file (bad request)	
+    }
 };
+
+exports.delete_file = function(req, res, next) {
+	console.log('Deleting file');
+	File.get_by_id(req.params.id,function(file){
+		fs.unlink(file.path, function(){ //delete file on hdd
+			file.delete(); // delete file in db
+			res.header('Location', req.headers['referer']);	
+			res.send(204);
+		});
+	});
+};
+
+
+exports.download_file = function(req, res, next) {
+	File.get_by_id(req.params.id,function(file){
+		console.log('Downloading file');
+		fs.readFile((file.path),function (err, data){
+			if (err) throw err;
+			res.header('Content-Description','File Transfer');
+			res.header('Content-Type','application/octet-stream');
+			res.header('Content-Disposition','attachment; filename='+file.filename);
+			res.header('Content-Transfer-Encoding','binary');
+			res.header('Expires', 0);
+			res.header('Cache-Control','must-revalidate, post-check=0, pre-check=0');
+			res.header('Pragma','public');
+			res.header('Content-Length', file.size);
+			res.header('Location', req.headers['referer']);	
+			res.send(data.toString());
+		});
+	});
+	
+};
+
