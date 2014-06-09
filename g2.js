@@ -11,6 +11,7 @@ var fs = require("fs");
 var events = require('events');
 var util = require('util');
 var Queue = require('./util').Queue;
+var config = require('./configuration')
 
 // Constant Data
 try {
@@ -42,6 +43,12 @@ G2.prototype.onOpen = function(callback) {
 	this.port.on('data', this.onData.bind(this));
 	this.command({'qv':2});				// Configure queue reports
 	this.requestStatusReport(); 		// Initial status check
+	
+	// Load the configuration file
+	for(var i=0; i<config.length; i++) {
+		this.command(config[i]);
+	}
+	
 	if (this.connect_callback && typeof(this.connect_callback) === "function") {
 	    this.connect_callback();
 	}
@@ -167,10 +174,14 @@ G2.prototype.stop = function() {
 }
 
 
-// Send a command to G2 (accepts javascript object and converts to JSON)
+// Send a command to G2
 G2.prototype.command = function(obj) {
-	var cmd = JSON.stringify(obj) + '\n';
-	this.port.write(cmd);
+	if((typeof obj) == 'string') {
+		var cmd = obj.trim();
+	} else {
+		var cmd = JSON.stringify(obj);
+	}
+	this.port.write(cmd + '\n');
 };
 
 // Send a g-code line to G2 (just a plain old string)
