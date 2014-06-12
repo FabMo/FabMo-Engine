@@ -55,7 +55,7 @@
         <strong>Upload a file...</strong>
         
 	<p>
-        <form id="file-form" action="/run" method="post" enctype="multipart/form-data">
+        <form action="/run" method="post" enctype="multipart/form-data">
           <div class="pull-left">
             <input type="file" name="file" data-filename-placement="inside" title="Browse for a file to upload...">
           </div>
@@ -71,7 +71,7 @@
     <div class="panel panel-default">
 	<div class="panel-heading app-heading">Single G-Code</div>
 	<p>
-        <form id="gcode-form" action="/direct/gcode" method="post" enctype="multipart/form-data">
+        <form id="gcode_sender" action="/run" method="post" enctype="multipart/form-data">
 		<input id="gcode-input" class="form-control" type="text">
 	</form>
 	</p>
@@ -81,8 +81,12 @@
   <script src="./js/libs/jquery-1.10.2.js"></script>
   <script src="./js/bootstrap.min.js"></script>
   <script src="./js/libs/bootstrap.file-input.js"></script>
+  <script src="./js/makermo.js"></script>
   
   <script type="text/javascript">
+	var tool = new MakerMo(location.hostname, '8080');
+	
+	/*************************************** keypad move section ****************************************/
 	var keypad_allow=false;
 	var lock_right = false,lock_left = false ,lock_up = false ,lock_down = false,lock_page_up = false,lock_page_down = false;
 	$(document).keydown(function(e) {
@@ -90,32 +94,32 @@
 		if (e.which === 37 && !lock_left && !lock_right) //left
 		{
 			lock_left=true;
-			 $.post( "http://"+location.hostname+":8080/direct/move",{"move" : "-x"});
+			tool.start_move("-x");
 		}
 		if (e.which === 38 && !lock_up && !lock_down) //up
 		{
 			 lock_up=true;
-			 $.post( "http://"+location.hostname+":8080/direct/move",{"move" : "y"});
+			 tool.start_move("y");
 		}
 		if (e.which === 39 && !lock_right && !lock_left) //right
 		{
 			 lock_right=true;
-			 $.post( "http://"+location.hostname+":8080/direct/move",{"move" : "x"});
+			 tool.start_move("x");
 		}
 		if (e.which === 40  && !lock_up && !lock_down) //down
 		{
 			 lock_down=true;
-			 $.post( "http://"+location.hostname+":8080/direct/move",{"move" : "-y"});
+			tool.start_move("-y");
 		}
 		if (e.which === 33  && !lock_page_up && !lock_page_down) //page_up
 		{
 			 lock_page_up=true;
-			 $.post( "http://"+location.hostname+":8080/direct/move",{"move" : "z"});
+			tool.start_move("z");
 		}
 		if (e.which === 34 && !lock_page_up && !lock_page_down) //page_down
 		{
 			 lock_page_down=true;
-			 $.post( "http://"+location.hostname+":8080/direct/move",{"move" : "-z"});
+			 tool.start_move("-z");
 		}
 	}
 	});
@@ -124,114 +128,130 @@
 		if (e.which === 37 ) //left
 		{
 			lock_left=false;
-			$.post( "http://"+location.hostname+":8080/direct/move",{"move" : "stop"});
+			tool.stop_move();
 		}
 		if (e.which === 38 ) //up
 		{
 			lock_up=false;
-			$.post( "http://"+location.hostname+":8080/direct/move",{"move" : "stop"});
+			tool.stop_move();
 		}
 		if (e.which === 39 ) //right
 		{
 			lock_right=false;
-			$.post( "http://"+location.hostname+":8080/direct/move",{"move" : "stop"});
+			tool.stop_move();
 		}
 		if (e.which === 40 ) //down
 		{
 			lock_down=false;
-			$.post( "http://"+location.hostname+":8080/direct/move",{"move" : "stop"});
+			tool.stop_move();
 		}
 		if (e.which === 33 ) //page_up
 		{
 			lock_page_up=false;
-			$.post( "http://"+location.hostname+":8080/direct/move",{"move" : "stop"});
+			tool.stop_move();
 		}
 		if (e.which === 34 ) //page_down
 		{
 			lock_page_down=false;
-			$.post( "http://"+location.hostname+":8080/direct/move",{"move" : "stop"});
+			tool.stop_move();
 		}
 	}
     	});
+	/************************************* end keypad move section **************************************/
 
     $(document).ready(function(){
-      $('#file-form').attr('action',"http://"+location.hostname+":8080/file");
-      $('#gcode-form').submit(function(event) {
-		$.post("http://"+location.hostname+":8080/direct/gcode",
-			$('#gcode-input').val()
-			);
-		event.preventDefault();
-	});
-
+      $('form').attr('action',"http://"+location.hostname+":8080/file");
       // Style the file input so it looks nice
       $('input[type=file]').bootstrapFileInput();
 
       // Load the list of files available on the tool
-      $.getJSON("http://"+location.hostname+":8080/file", function( data ) {
-        $.each( data.files, function( key, val ) {
+      tool.list_files(function(files){
+        $.each( files, function( key, val ) {
           $("#files").append( "<tr>"+
-"<td id='file" + val._id + "'><a href='"+"http://"+location.hostname+":8080/run/" + val._id + "' >" + val.filename + "</a></td>" +
-"<td class='download-button' value='" + val._id + "' style='text-align: right;width: 3%;'><img src='./images/download.png'></td>" +
-"<td class='delete-button' value='" + val._id + "' style='text-align: right;width: 3%;'><img src='./images/delete.png'></td>"+
-"</tr>");
+		"<td class='run-button' value='" + val._id + "'><a>" + val.filename + "</a></td>" +
+		"<td class='download-button' value='" + val._id + "' style='text-align: right;width: 3%;'><img src='./images/download.png'></td>" +
+		"<td class='delete-button' value='" + val._id + "' style='text-align: right;width: 3%;'><img src='./images/delete.png'></td>"+
+		"</tr>");
         });
       });
     setInterval(timer, 50);
     });
 
     function timer() {
-      $.ajax( {
-        url: "http://"+location.hostname+":8080/status", 
-        dataType : 'json', 
-        success: function( data ) {
-       	$('.posx').html(data.status.posx.toFixed(3));
-        $('.posy').html(data.status.posy.toFixed(3));
-        $('.posz').html(data.status.posz.toFixed(3));
-        if(data.status.state == 'idle') {
-          $('.status-label').removeClass('label-success');
-          $('.status-label').removeClass('label-danger');
-          $('.status-label').addClass('label-default');
-          $('.tool-state').html('Tool State: Idle');
-          $('.stop-button').addClass('hide');
-        } else {
-          $('.status-label').removeClass('label-default');
-          $('.status-label').removeClass('label-danger');
-          $('.status-label').addClass('label-success');         
-          $('.tool-state').html('Tool State: Running');
-          $('.stop-button').removeClass('hide');
-        }}, 
-        error: function(data) {
-          $('.status-label').removeClass('label-success');
-          $('.status-label').removeClass('label-default');
-          $('.status-label').addClass('label-danger');
-          $('.tool-state').html('Tool State: Disconnected');
-          $('.stop-button').addClass('hide');
-          $('.posx').html('???');
-          $('.posy').html('???');
-          $('.posz').html('???');
+
+	tool.get_status(function(status){
+	try{
+       	$('.posx').html(status.posx.toFixed(3));
+        $('.posy').html(status.posy.toFixed(3));
+        $('.posz').html(status.posz.toFixed(3));}
+	catch(e){
+	$('.posx').html('???');
+        $('.posy').html('???');
+        $('.posz').html('???');
+	}
+        if(status.state === 'idle') {
+            $('.status-label').removeClass('label-success');
+            $('.status-label').removeClass('label-danger');
+            $('.status-label').addClass('label-default');
+            $('.tool-state').html('Tool State: Idle');
+            $('.stop-button').addClass('hide');
         }
-      });
-      //setTimeout(timer, 500);
+	else if(status.state === 'disconnected'){
+	    $('.status-label').removeClass('label-success');
+            $('.status-label').removeClass('label-default');
+            $('.status-label').addClass('label-danger');
+            $('.tool-state').html('Tool State: Disconnected');
+            $('.stop-button').addClass('hide');
+
+	}
+	else {
+            $('.status-label').removeClass('label-default');
+            $('.status-label').removeClass('label-danger');
+            $('.status-label').addClass('label-success');         
+            $('.tool-state').html('Tool State: Running');
+            $('.stop-button').removeClass('hide');
+            }
+    	});
     }
 
-    $('.stop-button').click(function() {
-      $.getJSON("http://"+location.hostname+":8080/quit", function(data) {});
+    $('.stop-button').click(function(e) {
+      	tool.stop();
     });
 
 
-    $(' tbody').on( "click", 'tr .delete-button', function() {	
-	$.ajax({
-		url: "http://"+location.hostname+":8080/file/" + $(this).attr('value'),
-		type: 'DELETE',
-		success: function(){location.reload()}
+    $(' tbody').on( "click", 'tr .delete-button', function(e) {	
+	tool.delete_by_id($(this).attr('value'),function(err) {
+	if(!err)	
+		location.reload();
+	else
+		alert(err);
 	});
    });
 
-    $(' tbody').on( "click", 'tr .download-button', function() {	
-	window.location ="http://"+location.hostname+":8080/file/"+ $(this).attr('value');
+    $(' tbody').on( "click", 'tr .download-button', function(e) {	
+	tool.download_by_id($(this).attr('value'));
 });
 
-    $('#keypad').click(function() {
+    $(' tbody').on( "click", 'tr .run-button', function(e) {	
+	tool.run_by_id($(this).attr('value'),function(err){
+	if(!err)	
+		location.reload();
+	else
+		alert(err);
+	});
+
+});
+    $('#gcode_sender').submit(function(e) {
+	e.preventDefault();
+	tool.gcode($('#gcode-input').val(),function(err,data){
+	    if(!err)	
+		console.log(data);
+            else
+		alert(err);
+	});
+    });
+
+    $('#keypad').click(function(e) {
 	if (keypad_allow)
         {
 	    $(this).css('opacity',0.2);
