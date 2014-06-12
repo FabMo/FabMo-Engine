@@ -4,60 +4,57 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-systemctl enable ntpd
-systemctl start ntpd
-
 pacman -Sy
 
 # Install system dependencies
-pacman -S --needed nginx memcached gnu-netcat ntpd
+pacman -S --needed gnu-netcat ntpd
 
-# Install python dependencies
-pacman -S --needed python2 python2-pip
-pip2 install virtualenv
+# sytem time setings
+systemctl enable ntpd
+systemctl start ntpd
 
 # Clear out any old installation and create environment directories
-rm -rf /opt/shopbot
-mkdir -p /opt/shopbot
-mkdir -p /opt/shopbot/logs
+rm -rf /opt/shopbot/app
 
-# Create the virtualenv that will house the python application
-virtualenv --no-site-packages /opt/shopbot/env
+mkdir -p /opt/shopbot
+
+if [ $1 == "--factory-reset" ]
+then
+	rm -rf /opt/shopbot/parts
+	rm -rf /opt/shopbot/db
+fi
+
+mkdir /opt/shopbot/logs #log files folder
+mkdir /opt/shopbot/parts #file storage folder
+mkdir /opt/shopbot/tmp #temporary folder
+mkdir /opt/shopbot/db #database folder
 
 # Get the code
-git clone https://github.com/ShopbotTools/shopbot-example-app.git /opt/shopbot/app
+git clone -b node.js https://github.com/jlucidar/shopbot-example-app.git /opt/shopbot/app
 
-# Configure the python environment
-source /opt/shopbot/env/bin/activate
-pip install -r /opt/shopbot/app/conf/requirements.txt
-deactivate
+#install nodejs dependencies
+pacman -S --needed nodejs
+cd /opt/shopbot/app/
+# TODO - We should rely on local packages only, checked into git, for stability
+npm install restify serialport tingodb
 
 # Configure the webserver
-mkdir -p /etc/nginx/sites-available
-mkdir -p /etc/nginx/sites-enabled
-cp /opt/shopbot/app/conf/nginx.conf /etc/nginx/nginx.conf
-cp /opt/shopbot/app/conf/nginx-shopbot.conf /etc/nginx/sites-available/nginx-shopbot.conf
-ln -s /etc/nginx/sites-available/nginx-shopbot.conf /etc/nginx/sites-enabled/nginx-shopbot.conf
-
-# Configure gunicorn
-cp /opt/shopbot/app/conf/gunicorn.* /etc/systemd/system
-
-# Configure shopbotd which talks to the tool
-cp /opt/shopbot/app/conf/shopbotd.service /etc/systemd/system
+cp /opt/shopbot/app/conf/shopbot_api.service /etc/systemd/system
 
 chown -R shopbot /opt/shopbot 
 
-# Kill apache in case it's running - it can't run alongside nginx
-systemctl disable httpd
-systemctl stop httpd
+## INSTALL THE UPLOAD APP
+echo "DO YOU WANT TO INSTALL THE BASIC LOCAL APP ON THE DEVICE (need a Apache server, will ERASE the former content in /var/http) ? (y/n) "
+read answer
+if [ answer == "y" ]
+then
+	systemctl enable httpd
+	systemctl start httpd
+	rm -rf /srv/http
+	ln -s /opt/shopbot/app/static /srv/http
+fi
 
 # Start up server
-systemctl enable memcached
-systemctl enable gunicorn
-systemctl enable nginx
-systemctl enable shopbotd
-systemctl start memcached
-systemctl start gunicorn
-systemctl start nginx
-systemctl start shopbotd
+systemctl enable shopbot_api
+systemctl start shopbot_api
 

@@ -1,23 +1,15 @@
-The Shopbot Example Application Framework
-=========================================
+The Shopbot Host Software
 
-The purpose of this project is to provide a simple application framework for developing and testing the technical details of running a shopbot app ecosystem.
+This is the server software that runs the G2-Based shopbot platform.  This implementation uses node.js for both the web-service as well as the logic for communicating with the tool.
 
-Prerequisites
--------------
-* Python
-* Flask
-* Pyserial
-* Running the app requires internet access currently, due to web dependencies (bootstrap)
+## Dependencies
 
-Running
--------
-Once the prerequisites are installed, to run the application, simply run main.py.  If you are on windows, you may get a network warning.  Click 'Allow'  To view the app UI, navigate your browser to http://localhost:5000/
+* restify
+* process
+* lazy
+* serialport
+* TingoDB
 
-Notes
------
-main.py will look for a tinyg board on startup.  If it encounters an error on communicating with one, it will simply run the web portion of the app without connection to a tool. 
+## Installation
 
-https://github.com/ShopBotTools/shopbot-example-app/blob/master/main.py#L42
-
-Check the above source code line, and adjust for your G2 board in order to get a proper connection.
+To install on the raspberry pi, beaglebone, or other Archlinux-ARM powered SBC, simply run `build-server.sh` while connected to the network.  All of the appropriate dependencies should be downloaded and installed automatically, and the source of the application pulled from github and placed in `/opt/shopbot/app`
