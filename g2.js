@@ -25,7 +25,7 @@ function G2() {
 	this.current_data = new Array();
 	this.status = {'state':'idle'};
 	this.gcode_queue = new Queue();
-  	this.pause_flag = false;
+	this.pause_flag = false;
 	events.EventEmitter.call(this);	
 };
 util.inherits(G2, events.EventEmitter);
@@ -77,39 +77,26 @@ G2.prototype.onData = function(data) {
 		    }
 			this.current_data = new Array();
 		} else {
-			this.current_data.push(c);			
+			this.current_data.push(c);
 		}
 	}
 };
 
-// Called once a proper JSON response is decoded from the chunks of data that come back from G2
-G2.prototype.onResponse = function(response) {
-	
-	// TODO more elegant way of dealing with "response" data.
-	if(response.r) {
-		r = response.r;
-	} else {
-		r = response;
-	}
-
+G2.prototype.handleQueueReport = function(r) {
 	var MIN_FLOOD_LEVEL = 20;
 	var MIN_QR_LEVEL = 5;
 
 	var qr = r.qr;
 	var qo = r.qo || 0;
 	var qi = r.qi || 0;
-	if(this.pause_flag == true) {
-		this.port.write('!');
-		//console.log('I SEE THE PAUSE FLAG');
-	}
-	else if((qr != undefined)) {
+	
+	if((qr != undefined)) {
 		var lines_to_send = 0 ;
 		if(qr > MIN_FLOOD_LEVEL) {
 			lines_to_send = qr;
 		} else if((qo > 0)/* && (qr > MIN_QR_LEVEL)*/) {
 			lines_to_send = qo;
 		}  
-		//lines_to_send = 10000;
 		if(lines_to_send > 0) {
 			//console.log('qi: ' + qi + '  qr: ' + qr + '  qo: ' + qo + '   lines: ' + lines_to_send);
 			var cmds = [];
@@ -124,7 +111,9 @@ G2.prototype.onResponse = function(response) {
 			//console.log('    ' + cmds.join(' '));
 		}
 	}
+}
 
+G2.prototype.handleFooter = function(response) {
 	if(response.f) {
 		if(response.f[1] != 0) {
 			var err_code = response.f[1];
@@ -132,8 +121,22 @@ G2.prototype.onResponse = function(response) {
 			this.emit('error', [err_code, err_msg[0], err_msg[1]]);
 		}		
 	}
+}
 
- 	// Deal with G2 status
+// Called once a proper JSON response is decoded from the chunks of data that come back from G2
+G2.prototype.onResponse = function(response) {
+	
+	// TODO more elegant way of dealing with "response" data.
+	if(response.r) {
+		r = response.r;
+	} else {
+		r = response;
+	}
+
+	this.handleQueueReport(r);
+ 	this.handleFooter(response);
+
+	// Deal with G2 status
 	if(r.sr) {
 		for (var key in r.sr) {
 		    this.status[key] = r.sr[key];
@@ -201,9 +204,6 @@ G2.prototype.runString = function(data) {
 	this.command({'qr':null})
 };
 
-// Read a file from disk and stream it to the device
-// TODO: Might be more efficient not to do lazy evalulation of the file and just read the whole thing
-//       especially for highly segmented moves that might thrash the disk
 G2.prototype.runFile = function(filename) {
 	fs.readFile(filename, 'utf8', function (err,data) {
 		  if (err) {

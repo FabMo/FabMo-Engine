@@ -55,7 +55,7 @@
         <strong>Upload a file...</strong>
         
 	<p>
-        <form action="/run" method="post" enctype="multipart/form-data">
+        <form id="file-form" action="/run" method="post" enctype="multipart/form-data">
           <div class="pull-left">
             <input type="file" name="file" data-filename-placement="inside" title="Browse for a file to upload...">
           </div>
@@ -71,7 +71,7 @@
     <div class="panel panel-default">
 	<div class="panel-heading app-heading">Single G-Code</div>
 	<p>
-        <form action="/run" method="post" enctype="multipart/form-data">
+        <form id="gcode-form" action="/direct/gcode" method="post" enctype="multipart/form-data">
 		<input id="gcode-input" class="form-control" type="text">
 	</form>
 	</p>
@@ -155,7 +155,14 @@
     	});
 
     $(document).ready(function(){
-      $('form').attr('action',"http://"+location.hostname+":8080/file");
+      $('#file-form').attr('action',"http://"+location.hostname+":8080/file");
+      $('#gcode-form').submit(function(event) {
+		$.post("http://"+location.hostname+":8080/direct/gcode",
+			$('#gcode-input').val()
+			);
+		event.preventDefault();
+	});
+
       // Style the file input so it looks nice
       $('input[type=file]').bootstrapFileInput();
 
