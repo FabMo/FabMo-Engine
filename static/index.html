@@ -57,7 +57,7 @@
 	<p>
         <form id="add_file" action="/file" method="post" enctype="multipart/form-data">
           <div class="pull-left">
-            <input type="file" name="file" data-filename-placement="inside" title="Browse for a file to upload...">
+            <input id='file_selector' type="file" name="file" data-filename-placement="inside" title="Browse for a file to upload...">
           </div>
           <div class="pull-right">
             <input type="submit" value="Upload" class="btn btn-default btn-primary">
@@ -228,6 +228,8 @@
     $('#add_file').submit(function(e){
 	e.preventDefault();
         tool.upload_file($(this),function(file){
+	    $('#file_selector').replaceWith($('#file_selector').clone(true)); //reset file field
+	    $('#file_selector').prev().html('Browse for a file to upload...');
        	    refresh_files_list();
 	});
     });
