@@ -115,8 +115,8 @@ function stop()
 
 exports.send_gcode = function(req, res, next) {
 	console.log('Sending gcode');
-	console.log(req.headers);
-	console.log(req.body);	
+	//console.log(req.headers);
+	//console.log(req.body);	
 	if (machine.driver.status.state === 'idle')
 	{
 		if (req.params.cmd !== undefined )

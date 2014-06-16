@@ -55,7 +55,7 @@
         <strong>Upload a file...</strong>
         
 	<p>
-        <form action="/run" method="post" enctype="multipart/form-data">
+        <form id="add_file" action="/file" method="post" enctype="multipart/form-data">
           <div class="pull-left">
             <input type="file" name="file" data-filename-placement="inside" title="Browse for a file to upload...">
           </div>
@@ -81,10 +81,10 @@
   <script src="./js/libs/jquery-1.10.2.js"></script>
   <script src="./js/bootstrap.min.js"></script>
   <script src="./js/libs/bootstrap.file-input.js"></script>
-  <script src="./js/makermo.js"></script>
+  <script src="./js/FabMo-1.0.3.js"></script>
   
   <script type="text/javascript">
-	var tool = new MakerMo(location.hostname, '8080');
+	var tool = new FabMo(location.hostname||'localhost', '8080');
 	
 	/*************************************** keypad move section ****************************************/
 	var keypad_allow=false;
@@ -160,21 +160,13 @@
 	/************************************* end keypad move section **************************************/
 
     $(document).ready(function(){
-      $('form').attr('action',"http://"+location.hostname+":8080/file");
       // Style the file input so it looks nice
       $('input[type=file]').bootstrapFileInput();
 
       // Load the list of files available on the tool
-      tool.list_files(function(files){
-        $.each( files, function( key, val ) {
-          $("#files").append( "<tr>"+
-		"<td class='run-button' value='" + val._id + "'><a>" + val.filename + "</a></td>" +
-		"<td class='download-button' value='" + val._id + "' style='text-align: right;width: 3%;'><img src='./images/download.png'></td>" +
-		"<td class='delete-button' value='" + val._id + "' style='text-align: right;width: 3%;'><img src='./images/delete.png'></td>"+
-		"</tr>");
-        });
-      });
-    setInterval(timer, 50);
+      refresh_files_list();
+
+      setInterval(timer, 1000);
     });
 
     function timer() {
@@ -214,15 +206,38 @@
     	});
     }
 
+    function refresh_files_list(){
+      // Load the list of files available on the tool
+      tool.list_files(function(files){
+	$(".files_list").remove();
+        $.each( files, function( key, val ) {
+          $("#files").append( "<tr class='files_list'>"+
+		"<td class='run-button' value='" + val._id + "'><a>" + val.filename + "</a></td>" +
+		"<td class='download-button' value='" + val._id + "' style='text-align: right;width: 3%;'><img src='./images/download.png'></td>" +
+		"<td class='delete-button' value='" + val._id + "' style='text-align: right;width: 3%;'><img src='./images/delete.png'></td>"+
+		"</tr>");
+        });
+      });
+    }
+
     $('.stop-button').click(function(e) {
       	tool.stop();
     });
 
 
+    $('#add_file').submit(function(e){
+	e.preventDefault();
+        tool.upload_file($(this),function(file){
+       	    refresh_files_list();
+	});
+    });
+
+
+
     $(' tbody').on( "click", 'tr .delete-button', function(e) {	
 	tool.delete_by_id($(this).attr('value'),function(err) {
 	if(!err)	
-		location.reload();
+		refresh_files_list();
 	else
 		alert(err);
 	});
@@ -235,7 +250,7 @@
     $(' tbody').on( "click", 'tr .run-button', function(e) {	
 	tool.run_by_id($(this).attr('value'),function(err){
 	if(!err)	
-		location.reload();
+		console.log('file is running !');
 	else
 		alert(err);
 	});
@@ -263,6 +278,8 @@
 	    keypad_allow = true;
 	}
     });
+
+
   </script>
 
 </body>

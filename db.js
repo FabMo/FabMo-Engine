@@ -26,12 +26,34 @@ function File(filename,path){
 	});
 }
 
-File.prototype.save = function(){
-	files.insert(this);
+File.prototype.save = function(callback){
+	var that = this;
+	files.findOne({path: that.path},function(err,document){
+	if (err){
+       		throw err;
+       	}
+	else if(document){
+		// update the current entry in the database instead of creating a new one.
+		files.update({_id : document._id},that,function(){
+					callback(that);
+		});
+
+	}
+	else{
+		files.insert(that, function(err,records){
+			if(!err)
+				callback(records[0]);
+			else
+				throw err;	
+		});
+
+	}
+	});
 }
 
-File.prototype.delete = function(){
-	files.remove({_id : this._id});
+File.prototype.delete = function(callback){
+	files.remove({_id : this._id},function(err){if(!err)callback();else callback(err);});
+
 }
 
 File.prototype.saverun = function(){
@@ -49,8 +71,9 @@ File.list_all = function(callback){
 File.get_by_id = function(id,callback)
 {
 	files.findOne({_id: id},function(err,document){
-		if (err){
-       			throw err;
+		if (!document){
+       			callback(undefined);
+			return;
        		}
 		var file = document;
 		file.__proto__ = File.prototype;
