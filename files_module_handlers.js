@@ -76,6 +76,7 @@ exports.delete_file = function(req, res, next) {
 
 exports.download_file = function(req, res, next) {
 	File.get_by_id(req.params.id,function(file){
+		if(!file){res.send(404);return;}
 		console.log('Downloading file');
 		fs.readFile((file.path),function (err, data){
 			if (err) throw err;
