@@ -9,15 +9,16 @@ function FabMo(ip,port) //ip and port of the tool
 	this.url.status=this.url.base+'/status';
 	this.url.config=this.url.base+'/config';
 	this.url.run=this.url.base+'/run';
-		//this.url.pause=this.url.base + '/pause';
+	this.url.pause=this.url.base + '/pause';
 	this.url.quit=this.url.base + '/quit' ;
-		//this.url.resume=this.url.base + '/resume';
+	this.url.resume=this.url.base + '/resume';
 	this.url.direct=this.url.base + '/direct';
 	this.url.gcode=this.url.direct+'/gcode';
 	this.url.move=this.url.direct+'/move';
 	this.url.jog=this.url.direct+'/jog';
 	this.url.goto=this.url.direct+'/goto';
-
+	this.url.stop = this.url.quit;
+	
 	// default error message definitions
 	this.default_error = {};
 	this.default_error.status = 
@@ -155,8 +156,35 @@ FabMo.prototype.stop = function(){
 			}
 	});
 }
+FabMo.prototype.quit = FabMo.prototype.stop;
 
+FabMo.prototype.pause = function(){
+	$.ajax({
+		url: this.url.pause,
+		type: "GET",
+		dataType : 'json', 
+		success: function( data ) {
+			return true;
+			},
+		error: function(data) {
+	    		return false;
+			}
+	});
+}
 
+FabMo.prototype.resume = function(){
+	$.ajax({
+		url: this.url.resume,
+		type: "GET",
+		dataType : 'json', 
+		success: function( data ) {
+			return true;
+			},
+		error: function(data) {
+	    		return false;
+			}
+	});
+}
 
 FabMo.prototype.goto =  function(x,y,z)
 {

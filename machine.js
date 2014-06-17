@@ -26,7 +26,7 @@ if(path) {
 	});
 
 	//driver.on('message', function(msg) { console.log('G2_MSG:  ');console.log(msg);});
-	//driver.on('error', function(msg) { console.log('G2_ERR:  ');console.log(msg);});
+	driver.on('error', function(msg) { console.log('G2_ERR:  ');console.log(msg);});
 	//driver.on('status', function(msg) { console.log('G2_STAT: ');console.log(msg);});
 	driver.on('error', function(msg) {});
 } else {

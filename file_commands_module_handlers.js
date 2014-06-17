@@ -6,19 +6,24 @@ var File=db.File;
 ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
 
 exports.quit = function(req, res, next) {
-    machine.driver.stop();
+    machine.driver.quit();
     res.header('Location', req.headers['referer']);
     res.json({'success':true});
+    res.send(200);
 };
 
 exports.pause = function(req, res, next) {
+    machine.driver.feedHold();
     res.header('Location', req.headers['referer']);
-    res.json({'error':'Not implemented yet.'});
+    res.json({'success':true});
+    res.send(200);
 };
 
 exports.resume = function(req, res, next) {
+    machine.driver.resume();
     res.header('Location', req.headers['referer']);
-    res.json({'error':'Not implemented yet.'});
+    res.json({'success':true});
+    res.send(200);
 };
 
 exports.run = function(req, res, next) {
@@ -27,7 +32,7 @@ exports.run = function(req, res, next) {
 		file.saverun();//update last run and run count information
 		machine.driver.runFile(file.path);
 	});
-res.header('Location', req.headers['referer']);
-res.send(302);
+    res.header('Location', req.headers['referer']);
+    res.send(200);
 };
 

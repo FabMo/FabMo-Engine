@@ -31,7 +31,9 @@
           <li><a><strong>Z: </strong><span class="posz"></span></a></li>
         </ul>
 	      <a class="navbar-right" id="keypad" style="opacity:0.2;"><img src="./images/arrow_key.png" /></a>
-        <button type="button" class="btn btn-danger navbar-btn navbar-right stop-button hide">STOP TOOL</button>
+        <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-warning navbar-btn navbar-right pause-button hide">PAUSE</button>
+        <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-success navbar-btn navbar-right resume-button hide">RESUME</button>
+        <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-danger navbar-btn navbar-right stop-button hide">STOP</button>
       </div><!-- /.navbar-collapse -->
     </div><!-- /.container-fluid -->
   </nav>
@@ -177,32 +179,67 @@
         $('.posy').html(status.posy.toFixed(3));
         $('.posz').html(status.posz.toFixed(3));}
 	catch(e){
-	$('.posx').html('???');
+        console.log(e);
+	      $('.posx').html('???');
         $('.posy').html('???');
         $('.posz').html('???');
 	}
-        if(status.state === 'idle') {
-            $('.status-label').removeClass('label-success');
-            $('.status-label').removeClass('label-danger');
-            $('.status-label').addClass('label-default');
-            $('.tool-state').html('Tool State: Idle');
-            $('.stop-button').addClass('hide');
-        }
-	else if(status.state === 'disconnected'){
-	    $('.status-label').removeClass('label-success');
-            $('.status-label').removeClass('label-default');
-            $('.status-label').addClass('label-danger');
-            $('.tool-state').html('Tool State: Disconnected');
-            $('.stop-button').addClass('hide');
-
-	}
-	else {
-            $('.status-label').removeClass('label-default');
-            $('.status-label').removeClass('label-danger');
-            $('.status-label').addClass('label-success');         
-            $('.tool-state').html('Tool State: Running');
-            $('.stop-button').removeClass('hide');
+	if(status.state == 'idle') {
+                $('.status-label').removeClass('label-success');
+                $('.status-label').removeClass('label-danger');
+                $('.status-label').removeClass('label-default');
+                $('.status-label').addClass('label-info');
+                $('.tool-state').html('Tool State: Idle');
+                $('.pause-button').addClass('hide');
+                $('.stop-button').addClass('hide');
+                $('.resume-button').addClass('hide');
             }
+            else if(status.state == 'disconnected') {
+                    $('.status-label').removeClass('label-success');
+                    $('.status-label').removeClass('label-info');
+                    $('.status-label').removeClass('label-danger');
+                    $('.status-label').addClass('label-default');
+                    $('.tool-state').html('Tool State: Disconnected');
+                $('.pause-button').addClass('hide');
+                $('.stop-button').addClass('hide');
+                $('.resume-button').addClass('hide');
+            }
+            else if(status.state == 'running' || status.state == 'homing') {
+                    $('.status-label').removeClass('label-default');
+                    $('.status-label').removeClass('label-danger');
+                    $('.status-label').removeClass('label-info');
+                    $('.status-label').addClass('label-success');
+                    $('.tool-state').html('Tool State: ' + status.state);
+                    // TODO: Get stop to work, then show the stop button.
+                    //$('.stop-button').removeClass('hide');
+                    $('.pause-button').removeClass('hide');
+                    $('.resume-button').addClass('hide');
+
+            }
+            else if(status.state == 'hold') {
+                    $('.status-label').removeClass('label-success');
+                    $('.status-label').removeClass('label-info');
+                    $('.status-label').removeClass('label-default');
+                    $('.status-label').addClass('label-danger');
+                    $('.tool-state').html('Tool State: Hold');
+                    // TODO: Get stop to work, then show the stop button.
+                    //$('.stop-button').removeClass('hide');
+                    $('.pause-button').addClass('hide');
+                    $('.resume-button').removeClass('hide');
+            } 
+            else if(status.state == 'limit') {
+                    $('.status-label').removeClass('label-success');
+                    $('.status-label').removeClass('label-info');
+                    $('.status-label').removeClass('label-default');
+                    $('.status-label').addClass('label-danger');
+                    $('.tool-state').html('Tool State: Limit');
+                    // TODO: Get stop to work, then show the stop button.
+                    //$('.stop-button').removeClass('hide');
+                    $('.pause-button').addClass('hide');
+                    $('.resume-button').addClass('hide');
+                    $('.stop-button').addClass('hide');
+
+            } 
     	});
     }
 
@@ -220,13 +257,21 @@
       });
     }
 
+
+    $('.pause-button').click(function(e) {
+        tool.pause();
+    });
+    $('.resume-button').click(function(e) {
+        tool.resume();
+    });
     $('.stop-button').click(function(e) {
-      	tool.stop();
+        tool.quit();
     });
 
 
+
     $('#add_file').submit(function(e){
-	e.preventDefault();
+	     e.preventDefault();
         tool.upload_file($(this),function(file){
 	    $('#file_selector').replaceWith($('#file_selector').clone(true)); //reset file field
 	    $('#file_selector').prev().html('Browse for a file to upload...');

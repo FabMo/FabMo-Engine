@@ -2,6 +2,11 @@
  * @author jimmy
  */
 var restify = require('restify');
+var process = require('process');
+
+process.argv.forEach(function (val, index, array) {
+  console.log(index + ': ' + val);
+});
 
 var server = restify.createServer({name:"device_api"});
 // allow JSON over Cross-origin resource sharing 
