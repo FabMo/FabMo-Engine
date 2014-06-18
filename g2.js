@@ -23,7 +23,7 @@ try {
 // G2 Constructor
 function G2() {
 	this.current_data = new Array();
-	this.status = {'state':'idle'};
+	this.status = {'state':'idle', 'posx':0, 'posy':0, 'posz':0};
 	this.gcode_queue = new Queue();
 	this.pause_flag = false;
 	events.EventEmitter.call(this);	
@@ -49,12 +49,16 @@ G2.prototype.onOpen = function(callback) {
 		this.command(config[i]);
 	}
 	
+	// Flush 
+	this.command("%\n");
+
 	if (this.connect_callback && typeof(this.connect_callback) === "function") {
 	    this.connect_callback();
 	}
 };
 
 G2.prototype.requestStatusReport = function() { this.command({'sr':null}); }
+G2.prototype.requestQueueReport = function() { this.command({'qr':null}); }
 
 // Called for every chunk of data returned from G2
 G2.prototype.onData = function(data) {
@@ -86,6 +90,10 @@ G2.prototype.handleQueueReport = function(r) {
 	var MIN_FLOOD_LEVEL = 20;
 	var MIN_QR_LEVEL = 5;
 
+	if(this.pause_flag) {
+		// If we're here, a pause is requested, and we don't send anymore g-codes.
+		return;
+	}
 	var qr = r.qr;
 	var qo = r.qo || 0;
 	var qi = r.qi || 0;
@@ -119,10 +127,53 @@ G2.prototype.handleFooter = function(response) {
 			var err_code = response.f[1];
 			var err_msg = G2_ERRORS[err_code];
 			this.emit('error', [err_code, err_msg[0], err_msg[1]]);
-		}		
+		}
 	}
 }
+/*
+0	machine is initializing
+1	machine is ready for use
+2	machine is in alarm state (shut down)
+3	program stop or no more blocks (M0, M1, M60)
+4	program end via M2, M30
+5	motion is running
+6	motion is holding
+7	probe cycle active
+8	machine is running (cycling)
+9	machine is homing
+*/
+G2.prototype.handleStatusReport = function(response) {
+	if(response.sr) {
+		for (var key in response.sr) {
+			this.status[key] = r.sr[key];
+		}
+		this.emit('status', response.sr);
+		//console.log(this.status.stat);
+		switch(this.status.stat) {
+			case 0:
+			case 1:
+			case 4:
+				this.status.state = 'idle';
+				break;
+			case 2:
+			case 3:
+				this.status.state = 'hold';
+				break;
+			case 6:
+				this.status.state = 'limit';
+				break;
+			case 5:
+			case 9:
+				this.status.state = 'running';
+				break;
+			default:
+				this.status.state = 'idle';
+				break;
+		} 
+		this.emit('status', this.status);
+	}
 
+}
 // Called once a proper JSON response is decoded from the chunks of data that come back from G2
 G2.prototype.onResponse = function(response) {
 	
@@ -133,47 +184,51 @@ G2.prototype.onResponse = function(response) {
 		r = response;
 	}
 
+	// Deal with streaming (if response contains a queue report)
 	this.handleQueueReport(r);
- 	this.handleFooter(response);
 
+	// Deal with footer
+	this.handleFooter(response);
+
+	this.handleStatusReport(response);
 	// Deal with G2 status
-	if(r.sr) {
-		for (var key in r.sr) {
-		    this.status[key] = r.sr[key];
-		}
+	this.emit('status', r.sr);
 
-		switch(this.status.stat) {
-			case 1:
-				this.status.state = 'idle';
-				break;
-			case 5:
-				this.status.state = 'running';
-				break;
-			case 4:
-				this.status.state = 'idle';
-				break;
-			case 3:
-				this.status.state = 'idle';
-				break;
-			default:
-				this.status.state = 'idle';
-				break;
-		} 
-		this.emit('status', this.status);
-	}
+	// Emitted everytime a message is received, regardless of content
 	this.emit('message', response);
-
 };
 
-G2.prototype.pause = function() {
+G2.prototype.feedHold = function(callback) {
 	this.pause_flag = true;
-	this.gcode('!');
+	this.port.write('!');
 }
 
-G2.prototype.stop = function() {
-	console.log('STOPPING THE TOOL');
-	this.pause_flag = true;
+G2.prototype.resume = function() {
+	if(this.pause_flag) {
+		this.port.write('~\n');
+		this.pause_flag = false;
+		this.requestQueueReport();
+	} else {
+		//console.log('SKIPPING RESUME BECAUSE TOOL IS NOT PAUSED');
+	}
+}
+
+G2.prototype.quit = function() {
+/*
 	this.gcode_queue.clear();
+	if(this.pause_flag) {
+		console.log('just clearing the queue because we"re paused')
+		this.port.write('\n%\n');
+		console.log('thats better');
+		this.pause_flag = false;
+		this.requestStatusReport();
+	} else {
+		this.port.write('!%');
+		this.pause_flag = false;
+		this.requestStatusReport();
+	}
+	*/
+	//TODO: Fix this function, not working currently.
 }
 
 
@@ -190,6 +245,7 @@ G2.prototype.command = function(obj) {
 // Send a g-code line to G2 (just a plain old string)
 G2.prototype.gcode = function(s) {
 	this.port.write(s.trim() + '\n');
+	this.requestStatusReport();
 };
 
 G2.prototype.runString = function(data) {
@@ -200,6 +256,7 @@ G2.prototype.runString = function(data) {
 			this.gcode_queue.enqueue(line);
 		}
 	}
+	this.gcode_queue.enqueue('M2');
 	this.pause_flag = false;
 	this.command({'qr':null})
 };
@@ -211,7 +268,8 @@ G2.prototype.runFile = function(filename) {
 		  }
 		  this.runString(data);
 		}.bind(this));
-	};
+};
+
 
 // export the class
 exports.G2 = G2;

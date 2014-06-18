@@ -9,9 +9,9 @@ function FabMo(ip,port) //ip and port of the tool
 	this.url.status=this.url.base+'/status';
 	this.url.config=this.url.base+'/config';
 	this.url.run=this.url.base+'/run';
-		//this.url.pause=this.url.base + '/pause';
+	this.url.pause=this.url.base + '/pause';
 	this.url.quit=this.url.base + '/quit' ;
-		//this.url.resume=this.url.base + '/resume';
+	this.url.resume=this.url.base + '/resume';
 	this.url.direct=this.url.base + '/direct';
 	this.url.gcode=this.url.direct+'/gcode';
 	this.url.move=this.url.direct+'/move';
@@ -220,7 +220,43 @@ FabMo.prototype.quit = function(callback){
 	});
 }
 
-
+FabMo.prototype.pause = function(callback){
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.pause,
+		type: "GET",
+		dataType : 'json', 
+		success: function( data ) {
+			callback(undefined);
+			},
+		error: function(data, err) {
+    			var error = that.default_error.no_device;
+			error.sys_err = err;
+		 	callback(error);
+		}
+	});
+}
+ 
+FabMo.prototype.resume = function(callback){
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.resume,
+		type: "GET",
+		dataType : 'json', 
+		success: function( data ) {
+			callback(undefined);
+			},
+		error: function(data, err) {
+    			var error = that.default_error.no_device;
+			error.sys_err = err;
+		 	callback(error);
+		}
+	});
+}
 
 FabMo.prototype.goto =  function(x,y,z,callback)
 {
