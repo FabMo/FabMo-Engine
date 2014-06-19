@@ -41,7 +41,7 @@ G2.prototype.connect = function(path, callback) {
 G2.prototype.onOpen = function(callback) {
 	// prototype.bind makes sure that the 'this' in the method is this object, not the event emitter
 	this.port.on('data', this.onData.bind(this));
-	this.command({'qv':2});				// Configure queue reports
+	this.command({'qv':2});				// Configure queue reports to verbose
 	this.requestStatusReport(); 		// Initial status check
 	
 	// Load the configuration file
@@ -56,8 +56,9 @@ G2.prototype.onOpen = function(callback) {
 	    this.connect_callback();
 	}
 };
-
+// request the status of G2
 G2.prototype.requestStatusReport = function() { this.command({'sr':null}); }
+//request a queue report of G2
 G2.prototype.requestQueueReport = function() { this.command({'qr':null}); }
 
 // Called for every chunk of data returned from G2
@@ -66,14 +67,14 @@ G2.prototype.onData = function(data) {
 	var len = s.length;
 	for(var i=0; i<len; i++) {
 		c = s[i];
-		if(c == '\n') {
+		if(c === '\n') {
 			var json_string = this.current_data.join('');
 		    try {
 		    	obj = JSON.parse(json_string);
 		    	this.onResponse(obj);
 		    }catch(e){
 		    	// A JSON parse error usually means the asynchronous LOADER SEGMENT NOT READY MESSAGE
-		    	if(json_string.trim() == '######## LOADER - SEGMENT NOT READY') {
+		    	if(json_string.trim() === '######## LOADER - SEGMENT NOT READY') {
 		    		this.emit('error', [-1, 'LOADER_SEGMENT_NOT_READY', 'Asynchronous error: Segment not ready.'])
 		    	} else {
 		    		this.emit('error', [-1, 'JSON_PARSE_ERROR', 'Could not parse response: ' + json_string + '(' + e.toString() + ')'])
@@ -200,12 +201,12 @@ G2.prototype.onResponse = function(response) {
 
 G2.prototype.feedHold = function(callback) {
 	this.pause_flag = true;
-	this.port.write('!');
+	this.port.write('!'); // feedhold command character
 }
 
 G2.prototype.resume = function() {
 	if(this.pause_flag) {
-		this.port.write('~\n');
+		this.port.write('~\n'); //cycle start command character
 		this.pause_flag = false;
 		this.requestQueueReport();
 	} else {
@@ -218,7 +219,7 @@ G2.prototype.quit = function() {
 	this.gcode_queue.clear();
 	if(this.pause_flag) {
 		console.log('just clearing the queue because we"re paused')
-		this.port.write('\n%\n');
+		this.port.write('\n%\n'); // Queue Flush command character
 		console.log('thats better');
 		this.pause_flag = false;
 		this.requestStatusReport();
@@ -229,6 +230,7 @@ G2.prototype.quit = function() {
 	}
 	*/
 	//TODO: Fix this function, not working currently.
+	// what about deenergize all the motors ?
 }
 
 
