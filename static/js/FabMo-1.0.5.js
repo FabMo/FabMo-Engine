@@ -4,6 +4,7 @@ function FabMo(ip,port) //ip and port of the tool
 	this.ip = ip || '127.0.0.1';
 	this.port = port || '8080';
 	this.url = {};
+	this.tool_moving = undefined;//for the moving thing
 	this.url.base = 'http://'+this.ip+':'+this.port;
 	this.url.file=this.url.base+"/file";
 	this.url.status=this.url.base+'/status';
@@ -292,7 +293,7 @@ FabMo.prototype.gcode = function(gcode_line,callback)
 		success: function( data ) {
 			callback(undefined,data);
 		},
-		error: function(data) {
+		error: function(data,err) {
 			var error = that.default_error.no_device;
 			error.sys_err = err;
 			callback(error);
@@ -312,7 +313,10 @@ FabMo.prototype.start_move =  function(dir,callback)
 		dataType : 'json', 
 		data :{"move" : dir},
 		success: function( data ) {
-			callback(undefined);
+			if(!that.tool_moving){
+				that.tool_moving=setInterval(that.start_move.bind(that,dir,function(){}),250);
+				callback(undefined);
+			}
 		},
 		error: function(data,err) {
 	    		var error = that.default_error.no_device;
@@ -327,6 +331,8 @@ FabMo.prototype.stop_move =  function(callback)
 	if (!callback)
 		throw "this function need a callback to work !";
 	var that=this;
+	clearInterval(that.tool_moving);
+	that.tool_moving = undefined;
 	$.ajax({
 		url: this.url.move,
 		type: "POST",
@@ -342,7 +348,6 @@ FabMo.prototype.stop_move =  function(callback)
 		}
 	});
 }
-
 
 // take a form data, look for a file field, and upload the file load in it
 FabMo.prototype.upload_file =  function(formdata,callback)
@@ -414,19 +419,20 @@ FabMo.prototype.upload_file =  function(formdata,callback)
 }
 
 // non persistent mode : upload, run & delete.
-FabMo.prototype.run_local_file =  function(file,callback)
+FabMo.prototype.run_local_file =  function(file,ext,callback)
 {
+
 	if (!callback)
 		throw "this function need a callback to work !";
-	var that=this;
-	var formData = new FormData();
-	formData.append('file', file, file.name);
+	var blob = new Blob([file]);
+	var fD = new FormData();
+	fD.append('file', blob, 'temp.'+ ext);
 	var that = this;
-	that.upload_file(formData,function(file_obj,callback){
+	that.upload_file(fD,function(err,file_obj){
 		that.run_by_id(file_obj._id,function(){
 			that.delete(file_obj,function(){
-				if (callback)
-					callback(undefined, 'file executed once');
+				if (callback){
+					callback('file executed once');}
 			});
 		});
 	});
@@ -533,4 +539,5 @@ function SelectATool(list_tools,callback){
 	}
  
 }
+
 
