@@ -35,9 +35,12 @@ function G2() {
 	this.jog_heartbeat = null;
 	this.quit_pending = false;
 
-	// Related to streaming
+	// Hacky stuff related to streaming
 	this.flooded = false;
 	this.send_rate = 1;
+
+	// Hacky stuff related to jogging
+	this.quit_lock = false;
 
 	events.EventEmitter.call(this);	
 };
@@ -92,6 +95,10 @@ G2.prototype.configure = function(configuration) {
 }
 
 G2.prototype.jog = function(direction) {
+
+	// Hack due to g2 flush-queue weirdness
+	if(this.quit_lock) {return;}
+
 	var MOVES = 10;
 	var FEED_RATE = 60.0;			// in/min
 	var MOVE_DISTANCE = 0.1;		// in
@@ -303,7 +310,7 @@ G2.prototype.handleStatusReport = function(response) {
 				if(true/*response.sr['vel'] == 0*/) {
 					setTimeout(function() {
 						//console.log('executing flush');
-						this.write('%%\nM30\n');
+						this.writeAndDrain('%%\nM30\n', function(error) {this.quit_lock = false;});
 					}.bind(this), 15);
 					this.quit_pending = false;
 				}
@@ -370,10 +377,19 @@ G2.prototype.quit = function() {
 	//console.log('Quit');
 	this.gcode_queue.clear();
 	if(this.pause_flag) {
-		this.write('%\n');
+		this.quit_lock = true;
+		this.writeAndDrain('%\n', function(error) {
+			this.quit_lock = false;
+		});
 		this.pause_flag = false;
 	} else {
-		this.writeAndDrain('!\n', function(error) {this.quit_pending = true}.bind(this)); 
+		this.quit_lock = true;
+		this.writeAndDrain('!\n', function(error) {
+			setTimeout(function() {
+				this.quit_lock = false;
+			}.bind(this), 500);
+			this.quit_pending = true; // This is a hack due to g2 issues #16
+		}.bind(this)); 
 		this.pause_flag = false;
 	}
 }
