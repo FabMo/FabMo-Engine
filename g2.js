@@ -52,7 +52,7 @@ G2.prototype.onOpen = function(callback) {
 	this.port.on('data', this.onData.bind(this));
 	this.command("!%");
 	this.command("M30");
-	this.command({'qv':2});				// Configure queue reports
+	this.command({'qv':2});				// Configure queue reports to verbose
 	this.requestStatusReport(); 		// Initial status check
 	this.connected = true;
 
@@ -151,6 +151,7 @@ G2.prototype.stopJog = function() {
 }
 
 G2.prototype.requestStatusReport = function() { this.command({'sr':null}); }
+//request a queue report of G2
 G2.prototype.requestQueueReport = function() { this.command({'qr':null}); }
 
 // Called for every chunk of data returned from G2
@@ -159,14 +160,14 @@ G2.prototype.onData = function(data) {
 	var len = s.length;
 	for(var i=0; i<len; i++) {
 		c = s[i];
-		if(c == '\n') {
+		if(c === '\n') {
 			var json_string = this.current_data.join('');
 		    try {
 		    	obj = JSON.parse(json_string);
 		    	this.onMessage(obj);
 		    }catch(e){
 		    	// A JSON parse error usually means the asynchronous LOADER SEGMENT NOT READY MESSAGE
-		    	if(json_string.trim() == '######## LOADER - SEGMENT NOT READY') {
+		    	if(json_string.trim() === '######## LOADER - SEGMENT NOT READY') {
 		    		this.emit('error', [-1, 'LOADER_SEGMENT_NOT_READY', 'Asynchronous error: Segment not ready.'])
 		    	} else {
 		    		this.emit('error', [-1, 'JSON_PARSE_ERROR', 'Could not parse response: ' + json_string + '(' + e.toString() + ')'])
@@ -340,7 +341,7 @@ G2.prototype.feedHold = function(callback) {
 G2.prototype.resume = function() {
 	console.log('Resume');
 	if(this.pause_flag) {
-		this.write('~\n');
+		this.write('~\n'); //cycle start command character
 		this.pause_flag = false;
 		this.requestQueueReport();
 	} else {
