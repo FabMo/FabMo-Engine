@@ -34,6 +34,11 @@ function G2() {
 	this.jog_command = null;
 	this.jog_heartbeat = null;
 	this.quit_pending = false;
+
+	// Related to streaming
+	this.flooded = false;
+	this.send_rate = 1;
+
 	events.EventEmitter.call(this);	
 };
 util.inherits(G2, events.EventEmitter);
@@ -41,17 +46,17 @@ util.inherits(G2, events.EventEmitter);
 G2.prototype.connect = function(path, callback) {
 	this.path = path;
 	this.connect_callback = callback;
- 	this.port = new serialport.SerialPort(path);
+ 	this.port = new serialport.SerialPort(path, {rtscts:true});
 	this.port.on("open", this.onOpen.bind(this));
+	this.port.on("error", this.onSerialError.bind(this));
 	this.on("connect", callback);
 }
 
 // Called when the serial port is actually opened.
-G2.prototype.onOpen = function(callback) {
+G2.prototype.onOpen = function(data) {
 	// prototype.bind makes sure that the 'this' in the method is this object, not the event emitter
 	this.port.on('data', this.onData.bind(this));
-	this.command("!%");
-	this.command("M30");
+	this.quit();
 	this.command({'qv':2});				// Configure queue reports to verbose
 	this.requestStatusReport(); 		// Initial status check
 	this.connected = true;
@@ -62,13 +67,18 @@ G2.prototype.onOpen = function(callback) {
 	this.emit("connect", false, this);
 };
 
+G2.prototype.onSerialError = function(data) {
+	console.log('SERIAL ERROR');
+	console.log(data);
+}
+
 G2.prototype.write = function(s) {
-	console.log('----> ' + s);
+	//console.log('----> ' + s);
 	this.port.write(s);
 }
 
 G2.prototype.writeAndDrain = function(s, callback) {
-	console.log('----> ' + s);
+	//console.log('----> ' + s);
 	this.port.write(s, function () {
 		this.port.drain(callback);
 	}.bind(this));
@@ -82,39 +92,35 @@ G2.prototype.configure = function(configuration) {
 }
 
 G2.prototype.jog = function(direction) {
-	console.log('jogging ' + direction)
 	var MOVES = 10;
 	var FEED_RATE = 60.0;			// in/min
 	var MOVE_DISTANCE = 0.1;		// in
-	var START_DISTANCE = 0.010; 	// in
+	var START_DISTANCE = 0.020; 	// in
 
-	if(!direction) {
-		this.stopJog();
-		return;
-	}
-
-	direction = direction.trim().toLowerCase().replace(/\+/g,"");
+	direction = String(direction).trim().toLowerCase().replace(/\+/g,"");
 	axes = {'x':'X', 
 	        '-x':'X-', 
 	        'y':'Y',
 	        '-y':'Y-',
 	        'z':'Z',
 	        '-z':'Z-'}
+
 	if (!(direction in axes)) {
 		this.stopJog();
 		return;
 	}
 	if(this.jog_direction == null) {
 		// Construct g-codes
+		// A G91 (go to relative mode)
+		// A starter move, which plans down to a stop no matter what, so we make it short
+		// Followed by a short flood of relatively short, but reasonably sized moves
 		var d = axes[direction];
 		var starting_move = 'G1' + d + START_DISTANCE + 'F' + FEED_RATE;
 		var move = 'G1' + d + MOVE_DISTANCE + 'F' + FEED_RATE;
 		var codes = ['G91', starting_move];
 
 		// Repeat g-codes to fill the buffer
-		for(var i=0; i<MOVES; i++) {
-			codes.push(move);
-		}
+		for(var i=0; i<MOVES; i++) {codes.push(move);}
 
 		// The queue report handler will keep up the jog if these are set
 		this.jog_command = move;
@@ -126,7 +132,6 @@ G2.prototype.jog = function(direction) {
 		// Timeout jogging if we don't get a keepalive from the client
 		this.jog_heartbeat = setTimeout(this.stopJog.bind(this), JOG_TIMEOUT);
 	} else {
-		console.log('jog direction is not null')
 		if(direction == this.jog_direction) {
 			this.jog_keepalive();
 		}
@@ -134,16 +139,13 @@ G2.prototype.jog = function(direction) {
 }
 
 G2.prototype.jog_keepalive = function() {
-	console.log('keepalive');
 	clearTimeout(this.jog_heartbeat);
 	this.jog_heartbeat = setTimeout(this.stopJog.bind(this), JOG_TIMEOUT);
 }
 
 G2.prototype.stopJog = function() {
-	console.log('stopJog');
 	if(this.jog_direction) {
 		clearTimeout(this.jog_heartbeat);
-		console.log('stopJog inner()');
 		this.jog_direction = null;
 		this.jog_command = null;
 		this.quit();
@@ -151,7 +153,6 @@ G2.prototype.stopJog = function() {
 }
 
 G2.prototype.requestStatusReport = function() { this.command({'sr':null}); }
-//request a queue report of G2
 G2.prototype.requestQueueReport = function() { this.command({'qr':null}); }
 
 // Called for every chunk of data returned from G2
@@ -181,7 +182,7 @@ G2.prototype.onData = function(data) {
 };
 
 G2.prototype.handleQueueReport = function(r) {
-	var MIN_FLOOD_LEVEL = 20;
+	var FLOOD_LEVEL = 20;
 	var MIN_QR_LEVEL = 5;
 
 	if(this.pause_flag) {
@@ -195,23 +196,41 @@ G2.prototype.handleQueueReport = function(r) {
 	if((qr != undefined)) {
 
 		// Deal with jog mode
-		if(this.jog_command) {
-			console.log('jog cmd')
+		if(this.jog_command && (qo > 0)) {
 			this.write(this.jog_command + '\n');
 			return;
 		}
 
+
+		// This is complex and it still doesn't work as well as we'd like:
+		this.send_rate -= qi;
+		this.send_rate += qo;
+
 		var lines_to_send = 0 ;
-		if(qr > MIN_FLOOD_LEVEL) {
-			lines_to_send = qr;
-		} else if((qo > 0)/* && (qr > MIN_QR_LEVEL)*/) {
-			lines_to_send = qo;
-		}  
+		if(this.flooded) {
+			if(qr > 5) {
+				if(this.send_rate < 0) {
+					lines_to_send = qr-4;
+				} else {
+					lines_to_send = 0;
+				}
+			} else {
+				lines_to_send = 1;
+			}
+		} else {
+			lines_to_send = FLOOD_LEVEL;
+			this.flooded = true;
+		}
+
 		if(lines_to_send > 0) {
 			//console.log('qi: ' + qi + '  qr: ' + qr + '  qo: ' + qo + '   lines: ' + lines_to_send);
 			var cmds = [];
 			while(lines_to_send > 0) {
-				if(this.gcode_queue.isEmpty()) {break;}
+				if(this.gcode_queue.isEmpty()) {
+					this.flooded = false;
+					this.send_rate = 0;
+					break;
+				}
 				cmds.push(this.gcode_queue.dequeue());
 				lines_to_send -= 1;
 			}
@@ -249,12 +268,13 @@ G2.prototype.handleFooter = function(response) {
 */
 G2.prototype.handleStatusReport = function(response) {
 	if(response.sr) {
+
 		for (var key in response.sr) {
 			this.status[key] = r.sr[key];
 		}
 		this.emit('status', response.sr);
-		//console.log(this.status.stat);
 		var state = null;
+
 		switch(this.status.stat) {
 			case 0:
 			case 1:
@@ -278,18 +298,17 @@ G2.prototype.handleStatusReport = function(response) {
 		}
 
 		if(state != 'running') {
-			console.log('Checking for pending quit in the ' + state + ' state');
+			//console.log('Checking for pending quit in the ' + state + ' state');
 			if(this.quit_pending) {
 				if(true/*response.sr['vel'] == 0*/) {
 					setTimeout(function() {
-						this.write('%%\n')
-					}.bind(this), 10);
+						//console.log('executing flush');
+						this.write('%%\nM30\n');
+					}.bind(this), 15);
 					this.quit_pending = false;
 				}
 				else {
-					/*setTimeout(function() {
-						this.requestStatusReport();
-					}.bind(this), 10);*/
+
 				}
 			}
 		}
@@ -322,8 +341,8 @@ G2.prototype.onMessage = function(response) {
 	// Deal with footer
 	this.handleFooter(response);
 
-	this.handleStatusReport(response);
 	// Deal with G2 status
+	this.handleStatusReport(response);
 	this.emit('status', r.sr);
 
 	// Emitted everytime a message is received, regardless of content
@@ -331,15 +350,13 @@ G2.prototype.onMessage = function(response) {
 };
 
 G2.prototype.feedHold = function(callback) {
-	console.log('Feedhold');
 	this.pause_flag = true;
-	this.writeAndDrain('!\n', function(error) {
-		console.log('Feedhold sent');
-	});
+	this.flooded = false;
+	this.writeAndDrain('!\n', function(error) {});
 }
 
 G2.prototype.resume = function() {
-	console.log('Resume');
+	//console.log('Resume');
 	if(this.pause_flag) {
 		this.write('~\n'); //cycle start command character
 		this.pause_flag = false;
@@ -350,19 +367,14 @@ G2.prototype.resume = function() {
 }
 
 G2.prototype.quit = function() {
-	console.log('Quit');
+	//console.log('Quit');
 	this.gcode_queue.clear();
 	if(this.pause_flag) {
 		this.write('%\n');
 		this.pause_flag = false;
-		//this.requestStatusReport();
 	} else {
-		this.writeAndDrain('!\n', function(error) {
-			console.log('Quit feedhold sent');
-			this.quit_pending = true
-		}.bind(this));
+		this.writeAndDrain('!\n', function(error) {this.quit_pending = true}.bind(this)); 
 		this.pause_flag = false;
-		//this.requestStatusReport();
 	}
 }
 
@@ -403,6 +415,7 @@ G2.prototype.runString = function(data) {
 G2.prototype.runFile = function(filename) {
 	fs.readFile(filename, 'utf8', function (err,data) {
 		  if (err) {
+		  	console.log('Error reading file ' + filename);
 		    return console.log(err);
 		  }
 		  this.runString(data);

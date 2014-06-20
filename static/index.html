@@ -168,7 +168,7 @@
       // Load the list of files available on the tool
       refresh_files_list();
 
-      //setInterval(timer, 100);
+      setInterval(timer, 100);
     });
 
     function timer() {
@@ -218,7 +218,7 @@
                     // TODO: Get stop to work, then show the stop button.
                     //$('.stop-button').removeClass('hide');
                     $('.pause-button').addClass('hide');
-                    $('.resume-button').addClass('hide');
+                    $('.resume-button').removeClass('hide');
                     $('.stop-button').addClass('hide');
 
             	}
