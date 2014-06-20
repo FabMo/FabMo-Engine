@@ -38,7 +38,7 @@ cd /opt/shopbot/app/
 
 # Python is needed by node-gyp to build serialport, but archlinux defaults to python 3
 export PYTHON=`which python2`
-npm install process open restify serialport tingodb
+npm install process restify serialport tingodb
 
 # Configure the service 
 cp /opt/shopbot/app/conf/shopbot_api.service /etc/systemd/system
