@@ -146,9 +146,8 @@ G2.prototype.stopJog = function() {
 		console.log('stopJog inner()');
 		this.jog_direction = null;
 		this.jog_command = null;
-		this.write('!\n%\n');
+		this.quit();
 	}
-	//this.quit();
 }
 
 G2.prototype.requestStatusReport = function() { this.command({'sr':null}); }
@@ -277,6 +276,23 @@ G2.prototype.handleStatusReport = function(response) {
 				break;
 		}
 
+		if(state != 'running') {
+			console.log('Checking for pending quit in the ' + state + ' state');
+			if(this.quit_pending) {
+				if(true/*response.sr['vel'] == 0*/) {
+					setTimeout(function() {
+						this.write('%%\n')
+					}.bind(this), 10);
+					this.quit_pending = false;
+				}
+				else {
+					/*setTimeout(function() {
+						this.requestStatusReport();
+					}.bind(this), 10);*/
+				}
+			}
+		}
+
 		// Experimental emit an event every time the state of the tool changes
 		this.status.state = state;
 		if(this.prev_state != state) {
@@ -340,9 +356,10 @@ G2.prototype.quit = function() {
 		this.pause_flag = false;
 		//this.requestStatusReport();
 	} else {
-		this.writeAndDrain('!%\nM30\n', function(error) {
+		this.writeAndDrain('!\n', function(error) {
 			console.log('Quit feedhold sent');
-		});
+			this.quit_pending = true
+		}.bind(this));
 		this.pause_flag = false;
 		//this.requestStatusReport();
 	}
