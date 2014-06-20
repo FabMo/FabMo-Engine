@@ -11,7 +11,7 @@ var fs = require("fs");
 var events = require('events');
 var util = require('util');
 var Queue = require('./util').Queue;
-var config = require('./configuration')
+var config = require('./config_loader');
 
 // Constants
 var JOG_TIMEOUT = 500;
@@ -57,7 +57,7 @@ G2.prototype.onOpen = function(callback) {
 	this.connected = true;
 
 	// Load configuration from disk
-	this.configure(config);
+	config.load();
 
 	this.emit("connect", false, this);
 };
@@ -72,13 +72,6 @@ G2.prototype.writeAndDrain = function(s, callback) {
 	this.port.write(s, function () {
 		this.port.drain(callback);
 	}.bind(this));
-}
-
-G2.prototype.configure = function(configuration) {
-	// Load the configuration file
-	for(var i=0; i<configuration.length; i++) {
-		this.command(configuration[i]);
-	}
 }
 
 G2.prototype.jog = function(direction) {

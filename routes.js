@@ -5,7 +5,7 @@ var restify = require('restify');
 
 // Load the route handlers
 var files_module = require('./files_module_handlers');
-var status_module = require('./status_module_handlers');
+var config_module = require('./config_module_handlers');
 var file_commands_module = require('./file_commands_module_handlers');
 var direct_commands_module = require('./direct_commands_module_handlers');
 
@@ -14,10 +14,13 @@ module.exports = function(server) {
 	/************** Status & config module **************/
 
 	/* get the status of the tool */
-	server.get('/status', status_module.get_status); //OK
+	server.get('/status', config_module.get_status); //OK
 
 	/* get the config of the tool */
-	server.get('/config',status_module.get_config); //TODO 
+	server.get('/config',config_module.get_config); //TODO 
+
+	/* get the informations of the tool */
+	server.get('/info',config_module.get_info); //TODO 
 
 	/****************************************************/
 
