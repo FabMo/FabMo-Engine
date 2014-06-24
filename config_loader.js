@@ -29,7 +29,9 @@ exports.load = function(){
 		
 			if (allowed_commands(key))
 			{
-				machine.driver.command({key:val[key]});
+				var cmd = {};
+				cmd[key]=val[key];
+				machine.driver.command(cmd);
 				//console.log('load conf : '+ key + ' : '+ val[key]);
 			}
 			else
@@ -44,7 +46,11 @@ exports.single_load =function(cmd_obj){
 	for(var key in cmd_obj)
 		{
 			if (allowed_commands(key))
-				machine.driver.command({key:val[key]});
+			{
+				var cmd = {};
+				cmd[key]=val[key];
+				machine.driver.command(cmd);
+			}
 			else
 				throw new Error('command "'+key+'" is not a valid command');
 		}
