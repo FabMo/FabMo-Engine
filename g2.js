@@ -159,7 +159,11 @@ G2.prototype.stopJog = function() {
 	}
 }
 
-G2.prototype.requestStatusReport = function() { this.command({'sr':null}); }
+G2.prototype.requestStatusReport = function(callback) {
+	// Register the callback to be called when the next status report comes in
+	typeof callback === 'function' && this.once('status', callback);
+	this.command({'sr':null}); 
+}
 G2.prototype.requestQueueReport = function() { this.command({'qr':null}); }
 
 // Called for every chunk of data returned from G2
@@ -279,7 +283,6 @@ G2.prototype.handleStatusReport = function(response) {
 		for (var key in response.sr) {
 			this.status[key] = r.sr[key];
 		}
-		this.emit('status', response.sr);
 		var state = null;
 
 		switch(this.status.stat) {
@@ -350,7 +353,7 @@ G2.prototype.onMessage = function(response) {
 
 	// Deal with G2 status
 	this.handleStatusReport(response);
-	this.emit('status', r.sr);
+	//this.emit('status', r.sr);
 
 	// Emitted everytime a message is received, regardless of content
 	this.emit('message', response);
@@ -441,3 +444,14 @@ G2.prototype.runFile = function(filename) {
 
 // export the class
 exports.G2 = G2;
+
+exports.STAT_INIT = 0;
+exports.STATE_READY = 1;
+exports.STAT_ALARM = 2
+exports.STAT_STOP = 3;
+exports.STAT_END = 4;
+exports.STAT_RUNNING = 5;
+exports.STAT_HOLDING = 6;
+exports.STAT_PROBE = 7;
+exports.STAT_CYCLING = 8;
+exports.STAT_HOMING = 9;
