@@ -38,7 +38,7 @@ mkfs.ext4 -v -F 16 $1"2"
 wget http://archlinuxarm.org/os/omap/BeagleBone-bootloader.tar.gz -O /tmp/bootloader.tar.gz
 mkdir /tmp/boot
 mount $1"1" /tmp/boot
-tar -xvf /tmp/bootloader.tar.gz -C boot
+tar -xvf /tmp/bootloader.tar.gz -C /tmp/boot
 umount /tmp/boot
 rm -rf /tmp/boot
 
