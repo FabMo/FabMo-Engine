@@ -39,18 +39,17 @@ exports.upload_file = function(req, res, next) {
         	// delete the temporary file, so that the explicitly set temporary upload dir does not get filled with unwanted files
         	fs.unlink(file.path, function() {
         		if (err) {throw err;}
-        		new File(filename, full_path).save(); //save in db
-			res.header('Location', req.headers['referer']);
-        		res.send(302); // file saved
+        		new File(filename, full_path).save(function(file){
+				res.send(302,file); // file saved
+			}); //save in db
+        		
         	});
         });
     }
     else if (file){
-	res.header('Location', req.headers['referer']);
 	res.send(415); // wrong format
     }
     else{
-	res.header('Location', req.headers['referer']);
 	res.send(400);// problem reciving the file (bad request)	
     }
 };
@@ -58,17 +57,26 @@ exports.upload_file = function(req, res, next) {
 exports.delete_file = function(req, res, next) {
 	console.log('Deleting file');
 	File.get_by_id(req.params.id,function(file){
-		fs.unlink(file.path, function(){ //delete file on hdd
-			file.delete(); // delete file in db
-			res.header('Location', req.headers['referer']);	
-			res.send(204);
-		});
+		if(file)
+		{
+			fs.unlink(file.path, function(){ //delete file on hdd
+				file.delete(function(){res.send(204);}); // delete file in db
+				
+			});
+		}
+		else
+		{
+			console.log("file not found ! cannot delete");
+			res.send(404);
+		}
 	});
+	
 };
 
 
 exports.download_file = function(req, res, next) {
 	File.get_by_id(req.params.id,function(file){
+		if(!file){res.send(404);return;}
 		console.log('Downloading file');
 		fs.readFile((file.path),function (err, data){
 			if (err) throw err;

@@ -24,5 +24,6 @@
 	{"zjm":5000000},  
 	{"xTM":25.0},
 	{"yTM":19.0},
-	{"zTM":6.5}
+	{"zTM":6.5},
+	{"sr":{"posx":true, "posy":true, "posz":true, "posa":true, "posb":true, "vel":true, "stat":true, "hold":true}}
 ]

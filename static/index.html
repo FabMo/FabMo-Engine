@@ -31,7 +31,9 @@
           <li><a><strong>Z: </strong><span class="posz"></span></a></li>
         </ul>
 	      <a class="navbar-right" id="keypad" style="opacity:0.2;"><img src="./images/arrow_key.png" /></a>
-        <button type="button" class="btn btn-danger navbar-btn navbar-right stop-button hide">STOP TOOL</button>
+        <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-warning navbar-btn navbar-right pause-button hide">PAUSE</button>
+        <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-success navbar-btn navbar-right resume-button hide">RESUME</button>
+        <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-danger navbar-btn navbar-right stop-button hide">STOP</button>
       </div><!-- /.navbar-collapse -->
     </div><!-- /.container-fluid -->
   </nav>
@@ -55,9 +57,9 @@
         <strong>Upload a file...</strong>
         
 	<p>
-        <form action="/run" method="post" enctype="multipart/form-data">
+        <form id="add_file" action="/file" method="post" enctype="multipart/form-data">
           <div class="pull-left">
-            <input type="file" name="file" data-filename-placement="inside" title="Browse for a file to upload...">
+            <input id='file_selector' type="file" name="file" data-filename-placement="inside" title="Browse for a file to upload...">
           </div>
           <div class="pull-right">
             <input type="submit" value="Upload" class="btn btn-default btn-primary">
@@ -81,10 +83,10 @@
   <script src="./js/libs/jquery-1.10.2.js"></script>
   <script src="./js/bootstrap.min.js"></script>
   <script src="./js/libs/bootstrap.file-input.js"></script>
-  <script src="./js/makermo.js"></script>
+  <script src="./js/FabMo-1.0.5.js"></script>
   
   <script type="text/javascript">
-	var tool = new MakerMo(location.hostname, '8080');
+	var tool = new FabMo(location.hostname||'localhost', '8080');
 	
 	/*************************************** keypad move section ****************************************/
 	var keypad_allow=false;
@@ -94,32 +96,32 @@
 		if (e.which === 37 && !lock_left && !lock_right) //left
 		{
 			lock_left=true;
-			tool.start_move("-x");
+			tool.start_move("-x",function(){});
 		}
 		if (e.which === 38 && !lock_up && !lock_down) //up
 		{
 			 lock_up=true;
-			 tool.start_move("y");
+			 tool.start_move("y",function(){});
 		}
 		if (e.which === 39 && !lock_right && !lock_left) //right
 		{
 			 lock_right=true;
-			 tool.start_move("x");
+			 tool.start_move("x",function(){});
 		}
 		if (e.which === 40  && !lock_up && !lock_down) //down
 		{
 			 lock_down=true;
-			tool.start_move("-y");
+			tool.start_move("-y",function(){});
 		}
 		if (e.which === 33  && !lock_page_up && !lock_page_down) //page_up
 		{
 			 lock_page_up=true;
-			tool.start_move("z");
+			tool.start_move("z",function(){});
 		}
 		if (e.which === 34 && !lock_page_up && !lock_page_down) //page_down
 		{
 			 lock_page_down=true;
-			 tool.start_move("-z");
+			 tool.start_move("-z",function(){});
 		}
 	}
 	});
@@ -128,101 +130,169 @@
 		if (e.which === 37 ) //left
 		{
 			lock_left=false;
-			tool.stop_move();
+			tool.stop_move(function(){});
 		}
 		if (e.which === 38 ) //up
 		{
 			lock_up=false;
-			tool.stop_move();
+			tool.stop_move(function(){});
 		}
 		if (e.which === 39 ) //right
 		{
 			lock_right=false;
-			tool.stop_move();
+			tool.stop_move(function(){});
 		}
 		if (e.which === 40 ) //down
 		{
 			lock_down=false;
-			tool.stop_move();
+			tool.stop_move(function(){});
 		}
 		if (e.which === 33 ) //page_up
 		{
 			lock_page_up=false;
-			tool.stop_move();
+			tool.stop_move(function(){});
 		}
 		if (e.which === 34 ) //page_down
 		{
 			lock_page_down=false;
-			tool.stop_move();
+			tool.stop_move(function(){});
 		}
 	}
     	});
 	/************************************* end keypad move section **************************************/
 
     $(document).ready(function(){
-      $('form').attr('action',"http://"+location.hostname+":8080/file");
       // Style the file input so it looks nice
       $('input[type=file]').bootstrapFileInput();
 
       // Load the list of files available on the tool
-      tool.list_files(function(files){
+      refresh_files_list();
+
+      setInterval(timer, 100);
+    });
+
+    function timer() {
+	tool.get_status(function(err,status){
+	if(!err){
+	       	$('.posx').html(status.posx.toFixed(3));
+		$('.posy').html(status.posy.toFixed(3));
+		$('.posz').html(status.posz.toFixed(3));
+		if(status.state === 'idle') {
+		    $('.status-label').removeClass('label-success');
+		    $('.status-label').removeClass('label-danger');
+		    $('.status-label').addClass('label-default');
+		    $('.tool-state').html('Tool State: Idle');
+		    $('.stop-button').addClass('hide');
+		    $('.resume-button').addClass('hide');
+		    $('.pause-button').addClass('hide');
+		}
+		else if(status.state == 'running' || status.state == 'homing') {
+                    $('.status-label').removeClass('label-default');
+                    $('.status-label').removeClass('label-danger');
+                    $('.status-label').removeClass('label-info');
+                    $('.status-label').addClass('label-success');
+                    $('.tool-state').html('Tool State: ' + status.state);
+                    // TODO: Get stop to work, then show the stop button.
+                    //$('.stop-button').removeClass('hide');
+                    $('.pause-button').removeClass('hide');
+                    $('.resume-button').addClass('hide');
+
+           	}
+            	else if(status.state == 'hold') {
+                    $('.status-label').removeClass('label-success');
+                    $('.status-label').removeClass('label-info');
+                    $('.status-label').removeClass('label-default');
+                    $('.status-label').addClass('label-danger');
+                    $('.tool-state').html('Tool State: Hold');
+                    // TODO: Get stop to work, then show the stop button.
+                    //$('.stop-button').removeClass('hide');
+                    $('.pause-button').addClass('hide');
+                    $('.resume-button').removeClass('hide');
+            	} 
+            	else if(status.state == 'limit') {
+                    $('.status-label').removeClass('label-success');
+                    $('.status-label').removeClass('label-info');
+                    $('.status-label').removeClass('label-default');
+                    $('.status-label').addClass('label-danger');
+                    $('.tool-state').html('Tool State: Limit');
+                    // TODO: Get stop to work, then show the stop button.
+                    //$('.stop-button').removeClass('hide');
+                    $('.pause-button').addClass('hide');
+                    $('.resume-button').removeClass('hide');
+                    $('.stop-button').addClass('hide');
+
+            	}
+		else {
+		    console.log('unknown status');
+		}
+	}
+	else if(err == tool.default_error.no_device){
+		$('.posx').html('???');
+		$('.posy').html('???');
+		$('.posz').html('???');
+		$('.status-label').removeClass('label-success');
+		$('.status-label').removeClass('label-default');
+		$('.status-label').addClass('label-danger');
+		$('.tool-state').html('Tool State: Disconnected');
+		$('.stop-button').addClass('hide');
+	}
+	else{
+		$('.posx').html('???');
+		$('.posy').html('???');
+		$('.posz').html('???');
+		$('.status-label').removeClass('label-success');
+		$('.status-label').removeClass('label-default');
+		$('.status-label').addClass('label-danger');
+		$('.tool-state').html('Error');
+		$('.stop-button').addClass('hide');
+	}
+
+    	});
+    }
+
+    function refresh_files_list(){
+      // Load the list of files available on the tool
+      tool.list_files(function(err,files){
+	$(".files_list").remove();
         $.each( files, function( key, val ) {
-          $("#files").append( "<tr>"+
+          $("#files").append( "<tr class='files_list'>"+
 		"<td class='run-button' value='" + val._id + "'><a>" + val.filename + "</a></td>" +
 		"<td class='download-button' value='" + val._id + "' style='text-align: right;width: 3%;'><img src='./images/download.png'></td>" +
 		"<td class='delete-button' value='" + val._id + "' style='text-align: right;width: 3%;'><img src='./images/delete.png'></td>"+
 		"</tr>");
         });
       });
-    setInterval(timer, 50);
-    });
-
-    function timer() {
-
-	tool.get_status(function(status){
-	try{
-       	$('.posx').html(status.posx.toFixed(3));
-        $('.posy').html(status.posy.toFixed(3));
-        $('.posz').html(status.posz.toFixed(3));}
-	catch(e){
-	$('.posx').html('???');
-        $('.posy').html('???');
-        $('.posz').html('???');
-	}
-        if(status.state === 'idle') {
-            $('.status-label').removeClass('label-success');
-            $('.status-label').removeClass('label-danger');
-            $('.status-label').addClass('label-default');
-            $('.tool-state').html('Tool State: Idle');
-            $('.stop-button').addClass('hide');
-        }
-	else if(status.state === 'disconnected'){
-	    $('.status-label').removeClass('label-success');
-            $('.status-label').removeClass('label-default');
-            $('.status-label').addClass('label-danger');
-            $('.tool-state').html('Tool State: Disconnected');
-            $('.stop-button').addClass('hide');
-
-	}
-	else {
-            $('.status-label').removeClass('label-default');
-            $('.status-label').removeClass('label-danger');
-            $('.status-label').addClass('label-success');         
-            $('.tool-state').html('Tool State: Running');
-            $('.stop-button').removeClass('hide');
-            }
-    	});
     }
 
-    $('.stop-button').click(function(e) {
-      	tool.stop();
+
+    $('.pause-button').click(function(e) {
+        tool.pause(function(){});
     });
+    $('.resume-button').click(function(e) {
+        tool.resume(function(){});
+    });
+    $('.stop-button').click(function(e) {
+      	tool.quit(function(){});
+    });
+
+
+
+    $('#add_file').submit(function(e){
+	e.preventDefault();
+        tool.upload_file($(this),function(err,file){
+	    if(err){console.log(err);return;}
+	    $('#file_selector').replaceWith($('#file_selector').clone(true)); //reset file field
+	    $('#file_selector').prev().html('Browse for a file to upload...');
+       	    refresh_files_list();
+	});
+    });
+
 
 
     $(' tbody').on( "click", 'tr .delete-button', function(e) {	
 	tool.delete_by_id($(this).attr('value'),function(err) {
 	if(!err)	
-		location.reload();
+		refresh_files_list();
 	else
 		alert(err);
 	});
@@ -235,7 +305,7 @@
     $(' tbody').on( "click", 'tr .run-button', function(e) {	
 	tool.run_by_id($(this).attr('value'),function(err){
 	if(!err)	
-		location.reload();
+		console.log('file is running !');
 	else
 		alert(err);
 	});
@@ -263,6 +333,8 @@
 	    keypad_allow = true;
 	}
     });
+
+
   </script>
 
 </body>
