@@ -1,34 +1,34 @@
-var machine = require('./machine');
+var machine = require('./machine').machine;
 var default_feed_rate = 300;
 var default_move_step = 0.1;
 var default_jog_step = 0.2;
 
 function move_direction(direction)
 {
-	machine.driver.jog(direction);
+	machine.jog(direction);
 }
 
 function jog_direction(direction)
 {
-	machine.driver.jog(direction);
+	machine.jog(direction);
 }
 
 function stop()
 {
-	machine.driver.jog(null);
+	machine.stopJog();
 }
 
 
 exports.send_gcode = function(req, res, next) {
-	if (machine.driver.status.state === 'idle')
+	if (machine.status.state === 'idle')
 	{
 		if (req.params.cmd !== undefined )
 		{
-			machine.driver.runString(req.params.cmd);
+			machine.runString(req.params.cmd);
     		res.json({'success': req.params.cmd})
 		}
 		else if (req.body) {
-			machine.driver.runString(req.body);
+			machine.runString(req.body);
 			res.json({'success': req.params.cmd})
 
 		}
@@ -71,7 +71,7 @@ exports.jog = function(req, res, next) {
 };
 
 exports.goto = function(req, res, next) {
-   	if (machine.driver.status.state === 'idle')
+   	if (machine.state === 'idle')
 	{
 		if (req.params.x !== undefined || req.params.y !== undefined || req.params.z !== undefined || req.params.a !== undefined || req.params.b !== undefined || req.params.c !== undefined)
 		{

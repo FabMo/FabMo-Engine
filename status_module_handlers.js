@@ -1,7 +1,7 @@
-machine = require('./machine');
+machine = require('./machine').machine;
 
 exports.get_status = function(req, res, next) {
-	var s = machine.driver.status
+	var s = machine.status
     res.json({'status':s});
 };
 

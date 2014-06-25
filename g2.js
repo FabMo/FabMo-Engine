@@ -13,6 +13,17 @@ var util = require('util');
 var Queue = require('./util').Queue;
 var config = require('./configuration')
 
+var STAT_INIT = 0;
+var STATE_READY = 1;
+var STAT_ALARM = 2
+var STAT_STOP = 3;
+var STAT_END = 4;
+var STAT_RUNNING = 5;
+var STAT_HOLDING = 6;
+var STAT_PROBE = 7;
+var STAT_CYCLING = 8;
+var STAT_HOMING = 9;
+
 // Constants
 var JOG_TIMEOUT = 500;
 
@@ -26,7 +37,7 @@ try {
 // G2 Constructor
 function G2() {
 	this.current_data = new Array();
-	this.status = {'state':'idle', 'posx':0, 'posy':0, 'posz':0};
+	this.status = {'stat':null, 'posx':0, 'posy':0, 'posz':0};
 	this.gcode_queue = new Queue();
 	this.pause_flag = false;
 	this.connected = false;
@@ -34,6 +45,7 @@ function G2() {
 	this.jog_command = null;
 	this.jog_heartbeat = null;
 	this.quit_pending = false;
+	this.path = "";
 
 	// Hacky stuff related to streaming
 	this.flooded = false;
@@ -45,6 +57,11 @@ function G2() {
 	events.EventEmitter.call(this);	
 };
 util.inherits(G2, events.EventEmitter);
+
+// toString override added to prototype of Foo class
+G2.prototype.toString = function() {
+    return "[G2 Driver on '" + this.path + "']";
+}
 
 G2.prototype.connect = function(path, callback) {
 	this.path = path;
@@ -59,7 +76,7 @@ G2.prototype.connect = function(path, callback) {
 G2.prototype.onOpen = function(data) {
 	// prototype.bind makes sure that the 'this' in the method is this object, not the event emitter
 	this.port.on('data', this.onData.bind(this));
-	this.quit();
+	//this.quit();
 	this.command({'qv':2});				// Configure queue reports to verbose
 	this.requestStatusReport(); 		// Initial status check
 	this.connected = true;
@@ -110,7 +127,13 @@ G2.prototype.jog = function(direction) {
 	        'y':'Y',
 	        '-y':'Y-',
 	        'z':'Z',
-	        '-z':'Z-'}
+	        '-z':'Z-',
+	    	'a':'A',
+	    	'-a':'A-',
+	    	'b':'B',
+	    	'-b':'B-',
+	    	'c':'C',
+	    	'-c':'C-'}
 
 	if (!(direction in axes)) {
 		this.stopJog();
@@ -134,7 +157,7 @@ G2.prototype.jog = function(direction) {
 		this.jog_direction = direction;
 
 		// Build serial string and send
-		this.gcode(codes.join('\n'));
+		this.port.write(codes.join('\n'));
 
 		// Timeout jogging if we don't get a keepalive from the client
 		this.jog_heartbeat = setTimeout(this.stopJog.bind(this), JOG_TIMEOUT);
@@ -164,6 +187,7 @@ G2.prototype.requestStatusReport = function(callback) {
 	typeof callback === 'function' && this.once('status', callback);
 	this.command({'sr':null}); 
 }
+
 G2.prototype.requestQueueReport = function() { this.command({'qr':null}); }
 
 // Called for every chunk of data returned from G2
@@ -175,6 +199,7 @@ G2.prototype.onData = function(data) {
 		if(c === '\n') {
 			var json_string = this.current_data.join('');
 		    try {
+		    	console.log(json_string);
 		    	obj = JSON.parse(json_string);
 		    	this.onMessage(obj);
 		    }catch(e){
@@ -182,7 +207,7 @@ G2.prototype.onData = function(data) {
 		    	if(json_string.trim() === '######## LOADER - SEGMENT NOT READY') {
 		    		this.emit('error', [-1, 'LOADER_SEGMENT_NOT_READY', 'Asynchronous error: Segment not ready.'])
 		    	} else {
-		    		this.emit('error', [-1, 'JSON_PARSE_ERROR', 'Could not parse response: ' + json_string + '(' + e.toString() + ')'])
+		    		this.emit('error', [-1, 'JSON_PARSE_ERROR', "Could not parse response: '" + json_string + "' (" + e.toString() + ")"])
 		    	}
 		    }
 			this.current_data = new Array();
@@ -280,34 +305,12 @@ G2.prototype.handleFooter = function(response) {
 G2.prototype.handleStatusReport = function(response) {
 	if(response.sr) {
 
+		// Update our copy of the system status
 		for (var key in response.sr) {
 			this.status[key] = r.sr[key];
 		}
-		var state = null;
 
-		switch(this.status.stat) {
-			case 0:
-			case 1:
-			case 4:
-				state = 'idle';
-				break;
-			case 2:
-			case 3:
-				state = 'hold';
-				break;
-			case 6:
-				state = 'limit';
-				break;
-			case 5:
-			case 9:
-				state = 'running';
-				break;
-			default:
-				state = 'idle';
-				break;
-		}
-
-		if(state != 'running') {
+		if(this.status.stat !== STAT_RUNNING) {
 			//console.log('Checking for pending quit in the ' + state + ' state');
 			if(this.quit_pending) {
 				if(true/*response.sr['vel'] == 0*/) {
@@ -323,13 +326,13 @@ G2.prototype.handleStatusReport = function(response) {
 			}
 		}
 
-		// Experimental emit an event every time the state of the tool changes
-		this.status.state = state;
-		if(this.prev_state != state) {
-			this.emit('state', [this.prev_state, state]);
+		// Alert subscribers of machine state changes
+		if(this.prev_stat != this.status.stat) {
+			this.emit('state', [this.prev_stat, this.status.stat]);
+			this.prev_stat = this.status.stat;
 		}
-		this.prev_state = state;
 
+		// Emit status no matter what
 		this.emit('status', this.status);
 	}
 
@@ -349,10 +352,10 @@ G2.prototype.onMessage = function(response) {
 	this.handleQueueReport(r);
 
 	// Deal with footer
-	this.handleFooter(response);
+	this.handleFooter(response); 
 
 	// Deal with G2 status
-	this.handleStatusReport(response);
+	this.handleStatusReport(r);
 	//this.emit('status', r.sr);
 
 	// Emitted everytime a message is received, regardless of content
@@ -381,7 +384,7 @@ G2.prototype.quit = function() {
 	this.gcode_queue.clear();
 	if(this.pause_flag) {
 		this.quit_lock = true;
-		this.writeAndDrain('%\n', function(error) {
+		this.writeAndDrain('%%\n', function(error) {
 			this.quit_lock = false;
 		});
 		this.pause_flag = false;
@@ -408,50 +411,38 @@ G2.prototype.command = function(obj) {
 	this.write(cmd + '\n');
 };
 
-// Send a g-code line to G2 (just a plain old string)
-G2.prototype.gcode = function(s) {
-	this.command(s);
-	this.requestStatusReport();
-};
-
 // Send a (possibly multi-line) string
 // String will be stripped of comments and blank lines
 // And only G-Codes and M-Codes will be sent to G2
+// And an M30 will be placed at the end to put the machine back in a 'good' place
 G2.prototype.runString = function(data) {
 	lines = data.split('\n');
 	for(var i=0; i<lines.length; i++) {
 		line = lines[i].trim().toUpperCase();
-		// Ignore commantes
+		
+		// Ignore comments
 		if((line[0] == 'G') || (line[0] == 'M') || (line[0] == 'N')) {
 			this.gcode_queue.enqueue(line);
 		}
 	}
-	this.gcode_queue.enqueue('M30');
+	this.gcode_queue.enqueue("M30");
 	this.pause_flag = false;
 	this.requestQueueReport();
 };
 
-G2.prototype.runFile = function(filename) {
-	fs.readFile(filename, 'utf8', function (err,data) {
-		  if (err) {
-		  	console.log('Error reading file ' + filename);
-		    return console.log(err);
-		  }
-		  this.runString(data);
-		}.bind(this));
-};
+
 
 
 // export the class
 exports.G2 = G2;
 
-exports.STAT_INIT = 0;
-exports.STATE_READY = 1;
-exports.STAT_ALARM = 2
-exports.STAT_STOP = 3;
-exports.STAT_END = 4;
-exports.STAT_RUNNING = 5;
-exports.STAT_HOLDING = 6;
-exports.STAT_PROBE = 7;
-exports.STAT_CYCLING = 8;
-exports.STAT_HOMING = 9;
+exports.STAT_INIT = STAT_INIT;
+exports.STATE_READY = STATE_READY;
+exports.STAT_ALARM = STAT_ALARM
+exports.STAT_STOP = STAT_STOP;
+exports.STAT_END = STAT_END;
+exports.STAT_RUNNING = STAT_RUNNING;
+exports.STAT_HOLDING = STAT_HOLDING;
+exports.STAT_PROBE = STAT_PROBE;
+exports.STAT_CYCLING = STAT_CYCLING;
+exports.STAT_HOMING = STAT_HOMING;
