@@ -3,6 +3,7 @@
  */
 var restify = require('restify');
 var process = require('process');
+var detection_daemon = require('./detection_daemon');
 
 process.argv.forEach(function (val, index, array) {
   console.log(index + ': ' + val);
@@ -24,3 +25,5 @@ var routes = require('./routes')(server);
 server.listen(8080, function() {
   console.log('%s listening at %s', server.name, server.url);
 });
+
+detection_daemon.start(24862); // start on port 24862
