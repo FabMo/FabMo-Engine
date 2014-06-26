@@ -1,6 +1,6 @@
-The Shopbot Host Software
-
-This is the server software that runs the G2-Based shopbot platform.  This implementation uses node.js for both the web-service as well as the logic for communicating with the tool.
+The FabMo Engine
+===========
+This is the server software that runs the G2-Based shopbot platform and provide a full API to allow high level applications to talk with the tool.  This implementation uses node.js for both the web-service as well as the logic for communicating with the tool.
 
 ## Dependencies
 
