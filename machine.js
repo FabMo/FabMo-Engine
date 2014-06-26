@@ -101,12 +101,13 @@ Machine.prototype._onG2StateChange = function(states) {
 							this.emit('job_complete', this);
 							break;
 						case g2.STAT_HOLDING:
-							this.status.state = "paused";
+							console.log("JOB PAUSE");
+							this.status.state = "hold";
 							this.emit('job_pause', this);
 							break;
 					}
 					break;
-					
+
 				case g2.STAT_STOP:
 				case g2.STAT_HOLDING:
 					switch(new_state) {
@@ -117,6 +118,41 @@ Machine.prototype._onG2StateChange = function(states) {
 						case g2.STAT_END:
 							this.status.state = "idle";
 							this.emit('job_complete', this);
+							break;
+					} // new_state
+					break;
+			} // old_state
+			break;
+
+		case "idle":
+			switch(old_state) {
+				case g2.STAT_STOP:
+				case g2.STAT_HOLDING:
+					switch(new_state) {
+						case g2.STAT_RUNNING:
+							this.status.state = "running";
+							this.emit('job_resume', this);
+							break;
+						case g2.STAT_END:
+							console.log('Got an unexpected switch to END from IDLE');
+							break;
+					} // new_state
+					break;
+			} // old_state
+			break;
+
+		case "hold":
+			switch(old_state) {
+				case g2.STAT_STOP:
+				case g2.STAT_HOLDING:
+					switch(new_state) {
+						case g2.STAT_RUNNING:
+							this.status.state = "running";
+							this.emit('job_resume', this);
+							break;
+						case g2.STAT_END:
+							this.status.state = "idle";
+							this.emit('job_complete', this);							
 							break;
 					} // new_state
 					break;
@@ -144,6 +180,22 @@ Machine.prototype.jog = function(direction) {
 Machine.prototype.stopJog = function() {
 	this.driver.stopJog();
 } 
+
+Machine.prototype.pause = function() {
+	console.log('Pausing');
+	if(this.status.state === "running") {
+		this.driver.feedHold();
+	}
+}
+
+Machine.prototype.quit = function() {
+	this.driver.quit();
+}
+
+Machine.prototype.resume = function() {
+	console.log('Resuming');
+	this.driver.resume();
+}
 
 exports.connect = connect;
 

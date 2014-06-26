@@ -11,12 +11,12 @@ exports.quit = function(req, res, next) {
 };
 
 exports.pause = function(req, res, next) {
-    machine.driver.feedHold();
+    machine.pause();
     res.json(200,{'success':true});
 };
 
 exports.resume = function(req, res, next) {
-    machine.driver.resume();
+    machine.resume();
     res.json(200,{'success':true});
 };
 

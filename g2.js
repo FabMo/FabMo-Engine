@@ -220,7 +220,9 @@ G2.prototype.onData = function(data) {
 G2.prototype.handleQueueReport = function(r) {
 	var FLOOD_LEVEL = 20;
 	var MIN_QR_LEVEL = 5;
+	var MIN_FLOOD_LEVEL = 20;
 
+	console.log(this.gcode_queue.getLength())
 	if(this.pause_flag) {
 		// If we're here, a pause is requested, and we don't send anymore g-codes.
 		return;
@@ -238,25 +240,13 @@ G2.prototype.handleQueueReport = function(r) {
 		}
 
 
-		// This is complex and it still doesn't work as well as we'd like:
-		this.send_rate -= qi;
-		this.send_rate += qo;
-
 		var lines_to_send = 0 ;
-		if(this.flooded) {
-			if(qr > 5) {
-				if(this.send_rate < 0) {
-					lines_to_send = qr-4;
-				} else {
-					lines_to_send = 0;
-				}
-			} else {
-				lines_to_send = 1;
-			}
-		} else {
-			lines_to_send = FLOOD_LEVEL;
-			this.flooded = true;
-		}
+		if(qr > MIN_FLOOD_LEVEL) {
+			lines_to_send = qr;
+		} else if((qo > 0)/* && (qr > MIN_QR_LEVEL)*/) {
+			lines_to_send = qo;
+		}  
+
 
 		if(lines_to_send > 0) {
 			//console.log('qi: ' + qi + '  qr: ' + qr + '  qo: ' + qo + '   lines: ' + lines_to_send);
@@ -310,7 +300,8 @@ G2.prototype.handleStatusReport = function(response) {
 			this.status[key] = r.sr[key];
 		}
 
-		if(this.status.stat !== STAT_RUNNING) {
+		// Hack allows for quitsies for realsies
+		if(this.status.hold === 4) {
 			//console.log('Checking for pending quit in the ' + state + ' state');
 			if(this.quit_pending) {
 				if(true/*response.sr['vel'] == 0*/) {
@@ -365,6 +356,7 @@ G2.prototype.onMessage = function(response) {
 G2.prototype.feedHold = function(callback) {
 	this.pause_flag = true;
 	this.flooded = false;
+	typeof callback === 'function' && this.once('state', callback);
 	this.writeAndDrain('!\n', function(error) {});
 }
 
