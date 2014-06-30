@@ -65,10 +65,9 @@ Machine.prototype.toString = function() {
 Machine.prototype.runString = function(string, callback) {
 	if(this.status.state === 'idle') {
 		this.status.state = "running";
-		typeof callback === "function" && this.once('job_complete', callback);
-		this.driver.runString(string);		
+		this.driver.runString(string, callback);
 	} else {
-		typeof callback === "function" && callback(true, "Cannot run when in '" + this.state + "' state.");		
+		typeof callback === "function" && callback(true, "Cannot run when in '" + this.status.state + "' state.");		
 	}
 }
 
@@ -81,10 +80,15 @@ Machine.prototype._onG2Status = function(status) {
 	}
 }
 
+Machine.prototype._idle = function() {
+	this.status.state = 'idle';
+	this.status.current_file = null;
+};
+
 Machine.prototype._onG2StateChange = function(states) {
 	old_state = states[0];
 	new_state = states[1];
-	console.log(this.status.state + ' ' + states);
+	//console.log(this.status.state + ' ' + states);
 
 	switch(this.status.state) {
 		case "not_ready":
@@ -96,13 +100,14 @@ Machine.prototype._onG2StateChange = function(states) {
 			switch(old_state) {
 				case g2.STAT_RUNNING:
 					switch(new_state) {
+						case g2.STAT_STOP:
 						case g2.STAT_END:
-							this.status.state = "idle";
+							this._idle();
 							this.emit('job_complete', this);
 							break;
 						case g2.STAT_HOLDING:
 							console.log("JOB PAUSE");
-							this.status.state = "hold";
+							this.status.state = "paused";
 							this.emit('job_pause', this);
 							break;
 					}
@@ -116,7 +121,40 @@ Machine.prototype._onG2StateChange = function(states) {
 							this.emit('job_resume', this);
 							break;
 						case g2.STAT_END:
-							this.status.state = "idle";
+							this._idle();
+							this.emit('job_complete', this);
+							break;
+					} // new_state
+					break;
+			} // old_state
+			break;
+
+		case "homing":
+			switch(old_state) {
+				case g2.STAT_RUNNING:
+					switch(new_state) {
+						case g2.STAT_END:
+							this._idle();
+							this.emit('job_complete', this);
+							break;
+						case g2.STAT_STOP:	
+						case g2.STAT_HOLDING:
+							console.log("JOB PAUSE");
+							this.status.state = "paused";
+							this.emit('job_pause', this);
+							break;
+					}
+					break;
+
+				case g2.STAT_STOP:
+				case g2.STAT_HOLDING:
+					switch(new_state) {
+						case g2.STAT_RUNNING:
+							this.status.state = "running";
+							this.emit('job_resume', this);
+							break;
+						case g2.STAT_END:
+							this._idle();
 							this.emit('job_complete', this);
 							break;
 					} // new_state
@@ -141,18 +179,45 @@ Machine.prototype._onG2StateChange = function(states) {
 			} // old_state
 			break;
 
-		case "hold":
+		case "paused":
 			switch(old_state) {
 				case g2.STAT_STOP:
 				case g2.STAT_HOLDING:
-					switch(new_state) {
+					switch(new_state) { 
 						case g2.STAT_RUNNING:
 							this.status.state = "running";
 							this.emit('job_resume', this);
 							break;
 						case g2.STAT_END:
-							this.status.state = "idle";
+							this._idle();
 							this.emit('job_complete', this);							
+							break;
+					} // new_state
+					break;
+			} // old_state
+			break;
+
+		case "manual":
+			switch(old_state) {
+				case g2.STAT_RUNNING:
+					switch(new_state) {
+						case g2.STAT_END:
+							this._idle();
+							break;
+						case g2.STAT_HOLDING:
+							this.status.state = "paused";
+							break;
+					}
+					break;
+
+				case g2.STAT_STOP:
+				case g2.STAT_HOLDING:
+					switch(new_state) {
+						case g2.STAT_RUNNING:
+							this.status.state = "manual";
+							break;
+						case g2.STAT_END:
+							this._idle();
 							break;
 					} // new_state
 					break;
@@ -167,14 +232,22 @@ Machine.prototype.runFile = function(filename) {
 		  if (err) {
 		  	console.log('Error reading file ' + filename);
 		    return console.log(err);
+		  } else {
+		  	this.status.current_file = filename;
+		  	this.runString(data);
 		  }
-		  this.runString(data);
 		}.bind(this));
 };
 
-Machine.prototype.jog = function(direction) {
-	this.status.state = "running";
-	this.driver.jog(direction);
+Machine.prototype.jog = function(direction, callback) {
+	if(this.status.state === "idle") {
+		this.status.state = "manual";
+		this.driver.jog(direction);
+
+	} else {
+		typeof callback === "function" && callback(true, "Cannot jog when in '" + this.status.state + "' state.");		
+	}
+
 }
 
 Machine.prototype.stopJog = function() {
@@ -189,6 +262,7 @@ Machine.prototype.pause = function() {
 }
 
 Machine.prototype.quit = function() {
+	console.log('Quitting!');
 	this.driver.quit();
 }
 

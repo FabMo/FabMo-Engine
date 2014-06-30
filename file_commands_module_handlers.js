@@ -6,7 +6,7 @@ var File=db.File;
 ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
 
 exports.quit = function(req, res, next) {
-    machine.driver.quit();
+    machine.quit();
     res.json(200,{'success':true});
 };
 

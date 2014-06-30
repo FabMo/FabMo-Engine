@@ -186,26 +186,26 @@
 		    $('.resume-button').addClass('hide');
 		    $('.pause-button').addClass('hide');
 		}
-		else if(status.state == 'running' || status.state == 'homing') {
+		else if(status.state === 'running' || status.state === 'homing' || status.state === 'manual') {
                     $('.status-label').removeClass('label-default');
                     $('.status-label').removeClass('label-danger');
                     $('.status-label').removeClass('label-info');
                     $('.status-label').addClass('label-success');
                     $('.tool-state').html('Tool State: ' + status.state);
                     // TODO: Get stop to work, then show the stop button.
-                    //$('.stop-button').removeClass('hide');
+                    $('.stop-button').removeClass('hide');
                     $('.pause-button').removeClass('hide');
                     $('.resume-button').addClass('hide');
 
            	}
-            	else if(status.state == 'hold') {
+            	else if(status.state == 'paused') {
                     $('.status-label').removeClass('label-success');
                     $('.status-label').removeClass('label-info');
                     $('.status-label').removeClass('label-default');
                     $('.status-label').addClass('label-danger');
-                    $('.tool-state').html('Tool State: Hold');
+                    $('.tool-state').html('Tool State: Paused');
                     // TODO: Get stop to work, then show the stop button.
-                    //$('.stop-button').removeClass('hide');
+                    $('.stop-button').addClass('hide');
                     $('.pause-button').addClass('hide');
                     $('.resume-button').removeClass('hide');
             	} 
@@ -216,7 +216,7 @@
                     $('.status-label').addClass('label-danger');
                     $('.tool-state').html('Tool State: Limit');
                     // TODO: Get stop to work, then show the stop button.
-                    //$('.stop-button').removeClass('hide');
+                    $('.stop-button').removeClass('hide');
                     $('.pause-button').addClass('hide');
                     $('.resume-button').removeClass('hide');
                     $('.stop-button').addClass('hide');

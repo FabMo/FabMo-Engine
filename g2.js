@@ -199,7 +199,6 @@ G2.prototype.onData = function(data) {
 		if(c === '\n') {
 			var json_string = this.current_data.join('');
 		    try {
-		    	console.log(json_string);
 		    	obj = JSON.parse(json_string);
 		    	this.onMessage(obj);
 		    }catch(e){
@@ -222,23 +221,23 @@ G2.prototype.handleQueueReport = function(r) {
 	var MIN_QR_LEVEL = 5;
 	var MIN_FLOOD_LEVEL = 20;
 
-	console.log(this.gcode_queue.getLength())
-	if(this.pause_flag) {
+	if(this.pause_flag || this.quit_pending) {
 		// If we're here, a pause is requested, and we don't send anymore g-codes.
 		return;
+		console.log('nope!');
 	}
 	var qr = r.qr;
 	var qo = r.qo || 0;
 	var qi = r.qi || 0;
-	
+	console.log(this.gcode_queue.getLength());
 	if((qr != undefined)) {
-
+		console.log('qr is defined');
 		// Deal with jog mode
 		if(this.jog_command && (qo > 0)) {
 			this.write(this.jog_command + '\n');
 			return;
 		}
-
+		console.log(qi + ',' + qr + ',' + qo);
 
 		var lines_to_send = 0 ;
 		if(qr > MIN_FLOOD_LEVEL) {
@@ -266,6 +265,9 @@ G2.prototype.handleQueueReport = function(r) {
 				this.write(outstring);
 			} 
 			//console.log('    ' + cmds.join(' '));
+		}
+		else {
+			console.log('no lines to send');
 		}
 	}
 }
@@ -300,20 +302,11 @@ G2.prototype.handleStatusReport = function(response) {
 			this.status[key] = r.sr[key];
 		}
 
-		// Hack allows for quitsies for realsies
+		// Hack allows for a flush when quitting (must wait for the hold state to reach 4)
 		if(this.status.hold === 4) {
-			//console.log('Checking for pending quit in the ' + state + ' state');
 			if(this.quit_pending) {
-				if(true/*response.sr['vel'] == 0*/) {
-					setTimeout(function() {
-						//console.log('executing flush');
-						this.writeAndDrain('%%\nM30\n', function(error) {this.quit_lock = false;});
-					}.bind(this), 15);
-					this.quit_pending = false;
-				}
-				else {
-
-				}
+				console.log('Handling a pending quit');
+				this.writeAndDrain('\%\nM30\n', function(error) {console.log('HANDLED A QUIT.'); this.quit_pending = false;});
 			}
 		}
 
@@ -367,29 +360,17 @@ G2.prototype.resume = function() {
 		this.pause_flag = false;
 		this.requestQueueReport();
 	} else {
+		this.requestQueueReport();
 		//console.log('SKIPPING RESUME BECAUSE TOOL IS NOT PAUSED');
 	}
 }
 
 G2.prototype.quit = function() {
-	//console.log('Quit');
+	console.log('DRIVER Quit');
 	this.gcode_queue.clear();
-	if(this.pause_flag) {
-		this.quit_lock = true;
-		this.writeAndDrain('%%\n', function(error) {
-			this.quit_lock = false;
-		});
-		this.pause_flag = false;
-	} else {
-		this.quit_lock = true;
-		this.writeAndDrain('!\n', function(error) {
-			setTimeout(function() {
-				this.quit_lock = false;
-			}.bind(this), 500);
-			this.quit_pending = true; // This is a hack due to g2 issues #16
-		}.bind(this)); 
-		this.pause_flag = false;
-	}
+	this.write('!\n');
+	this.quit_pending = true; // This is a hack due to g2 issues #16
+	this.pause_flag = false;
 }
 
 
@@ -407,19 +388,29 @@ G2.prototype.command = function(obj) {
 // String will be stripped of comments and blank lines
 // And only G-Codes and M-Codes will be sent to G2
 // And an M30 will be placed at the end to put the machine back in a 'good' place
-G2.prototype.runString = function(data) {
+G2.prototype.runString = function(data, callback) {
+	line_count = 0;
 	lines = data.split('\n');
 	for(var i=0; i<lines.length; i++) {
 		line = lines[i].trim().toUpperCase();
 		
-		// Ignore comments
+		// Quick sanity check (ignore comments, queue only G,M,N codes)
 		if((line[0] == 'G') || (line[0] == 'M') || (line[0] == 'N')) {
+			line_count += 1;
 			this.gcode_queue.enqueue(line);
 		}
 	}
-	this.gcode_queue.enqueue("M30");
-	this.pause_flag = false;
-	this.requestQueueReport();
+	if(line_count > 0) {
+		this.gcode_queue.enqueue("M30");
+		this.pause_flag = false;
+		typeof callback === "function" && callback(false, this);		
+		this.writeAndDrain('\%\n', function(err, data) {
+			console.log('flush!');
+			this.requestQueueReport();					
+		}.bind(this))
+	} else {
+		typeof callback === "function" && callback(true, "No G-codes were present in the provided string");				
+	}
 };
 
 
