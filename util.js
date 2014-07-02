@@ -29,8 +29,8 @@ function Queue(){
     return (queue.length > 0 ? queue[offset] : undefined);
   }
   this.clear = function() {
-	this.queue = [];
-	this.offset = 0;
+	queue = [];
+	offset = 0;
 	}
 }
 

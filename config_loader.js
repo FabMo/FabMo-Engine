@@ -1,5 +1,5 @@
 var configuration = require('./configuration');
-var machine=require('./machine');
+var machine=require('./machine').machine;
 var ALLOWED_COMMANDS = ["1ma","1sa","1tr","1mi","1po","1pm","2ma","2sa",
 "2tr","2mi","2po","2pm","3ma","3sa","3tr","3mi","3po","3pm","4ma",
 "4sa","4tr","4mi","4po","4pm","5ma","5sa","5tr","5mi","5po","5pm",
@@ -19,11 +19,11 @@ var ALLOWED_COMMANDS = ["1ma","1sa","1tr","1mi","1po","1pm","2ma","2sa",
 "zlb","zzb","asn","asx"];
 
 
-exports.load = function(){
+exports.load = function(driver){
 	
 	configuration.forEach(function(val,index,array)
 	{
-		console.log(val);
+//		console.log(val);
 		for(var key in val)
 		{
 		
@@ -31,7 +31,7 @@ exports.load = function(){
 			{
 				var cmd = {};
 				cmd[key]=val[key];
-				machine.driver.command(cmd);
+				driver.command(cmd);
 				//console.log('load conf : '+ key + ' : '+ val[key]);
 			}
 			else
@@ -42,14 +42,14 @@ exports.load = function(){
 	});
 }
 
-exports.single_load =function(cmd_obj){
+exports.single_load =function(driver, cmd_obj){
 	for(var key in cmd_obj)
 		{
 			if (allowed_commands(key))
 			{
 				var cmd = {};
 				cmd[key]=val[key];
-				machine.driver.command(cmd);
+				driver.command(cmd);
 			}
 			else
 				throw new Error('command "'+key+'" is not a valid command');
