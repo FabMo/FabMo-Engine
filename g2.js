@@ -358,7 +358,7 @@ G2.prototype.resume = function() {
 
 G2.prototype.quit = function() {
 	this.gcode_queue.clear();
-	if(this.status.stat === 5) {
+	if(this.status.stat === STAT_RUNNING) {
 		this.quit_pending = true;
 		this.feedHold();
 	} else {
