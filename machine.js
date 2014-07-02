@@ -106,7 +106,6 @@ Machine.prototype._onG2StateChange = function(states) {
 							this.emit('job_complete', this);
 							break;
 						case g2.STAT_HOLDING:
-							console.log("JOB PAUSE");
 							this.status.state = "paused";
 							this.emit('job_pause', this);
 							break;
@@ -139,7 +138,6 @@ Machine.prototype._onG2StateChange = function(states) {
 							break;
 						case g2.STAT_STOP:	
 						case g2.STAT_HOLDING:
-							console.log("JOB PAUSE");
 							this.status.state = "paused";
 							this.emit('job_pause', this);
 							break;
@@ -172,7 +170,7 @@ Machine.prototype._onG2StateChange = function(states) {
 							this.emit('job_resume', this);
 							break;
 						case g2.STAT_END:
-							console.log('Got an unexpected switch to END from IDLE');
+							//console.log('Got an unexpected switch to END from IDLE');
 							break;
 					} // new_state
 					break;
@@ -205,6 +203,7 @@ Machine.prototype._onG2StateChange = function(states) {
 							this._idle();
 							break;
 						case g2.STAT_HOLDING:
+							//this._idle();
 							this.status.state = "paused";
 							break;
 					}
@@ -240,7 +239,7 @@ Machine.prototype.runFile = function(filename) {
 };
 
 Machine.prototype.jog = function(direction, callback) {
-	if(this.status.state === "idle") {
+	if(this.status.state === "idle" || this.status.state === "manual") {
 		this.status.state = "manual";
 		this.driver.jog(direction);
 
@@ -255,19 +254,16 @@ Machine.prototype.stopJog = function() {
 } 
 
 Machine.prototype.pause = function() {
-	console.log('Pausing');
 	if(this.status.state === "running") {
 		this.driver.feedHold();
 	}
 }
 
 Machine.prototype.quit = function() {
-	console.log('Quitting!');
 	this.driver.quit();
 }
 
 Machine.prototype.resume = function() {
-	console.log('Resuming');
 	this.driver.resume();
 }
 

@@ -71,12 +71,12 @@
 	</div>
     </div>
     <div class="panel panel-default">
-	<div class="panel-heading app-heading">Single G-Code</div>
-	<p>
-        <form id="gcode_sender" action="/run" method="post" enctype="multipart/form-data">
-		<input id="gcode-input" class="form-control" type="text">
-	</form>
-	</p>
+		<div class="panel-heading app-heading">Single G-Code</div>
+		<div class="panel-body">
+    		<form id="gcode-sender" action="/run" method="post" enctype="multipart/form-data" role="form" class="">
+				<input id="gcode-input" class="form-control input-lg" type="text" onclick="this.select();">
+			</form>
+		</div>
     </div>
   </div>
 
@@ -192,7 +192,6 @@
                     $('.status-label').removeClass('label-info');
                     $('.status-label').addClass('label-success');
                     $('.tool-state').html('Tool State: ' + status.state);
-                    // TODO: Get stop to work, then show the stop button.
                     $('.stop-button').removeClass('hide');
                     $('.pause-button').removeClass('hide');
                     $('.resume-button').addClass('hide');
@@ -204,8 +203,7 @@
                     $('.status-label').removeClass('label-default');
                     $('.status-label').addClass('label-danger');
                     $('.tool-state').html('Tool State: Paused');
-                    // TODO: Get stop to work, then show the stop button.
-                    $('.stop-button').addClass('hide');
+                    $('.stop-button').removeClass('hide');
                     $('.pause-button').addClass('hide');
                     $('.resume-button').removeClass('hide');
             	} 
@@ -215,7 +213,6 @@
                     $('.status-label').removeClass('label-default');
                     $('.status-label').addClass('label-danger');
                     $('.tool-state').html('Tool State: Limit');
-                    // TODO: Get stop to work, then show the stop button.
                     $('.stop-button').removeClass('hide');
                     $('.pause-button').addClass('hide');
                     $('.resume-button').removeClass('hide');
@@ -235,6 +232,9 @@
 		$('.status-label').addClass('label-danger');
 		$('.tool-state').html('Tool State: Disconnected');
 		$('.stop-button').addClass('hide');
+		$('.pause-button').addClass('hide');
+		$('.resume-button').addClass('hide');
+
 	}
 	else{
 		$('.posx').html('???');
@@ -245,6 +245,8 @@
 		$('.status-label').addClass('label-danger');
 		$('.tool-state').html('Error');
 		$('.stop-button').addClass('hide');
+		$('.pause-button').addClass('hide');
+		$('.resume-button').addClass('hide');
 	}
 
     	});
@@ -311,13 +313,31 @@
 	});
 
 });
-    $('#gcode_sender').submit(function(e) {
+
+    function flash_gcode(value, duration) {
+    	if(value === 'error') {
+	    	$('#gcode-sender').addClass('has-success');	    	
+	    	$('#gcode-sender').removeClass('has-error');	    	
+    	} else if(value === 'success') {
+	    	$('#gcode-sender').addClass('has-success');	    	
+	    	$('#gcode-sender').removeClass('has-error');	    	
+    	}
+    	setTimeout(function() {
+	    	$('#gcode-sender').removeClass('has-error');	    	
+	    	$('#gcode-sender').removeClass('has-success');	    	
+    	}, duration);
+    }
+
+    $('#gcode-sender').submit(function(e) {
 	e.preventDefault();
 	tool.gcode($('#gcode-input').val(),function(err,data){
-	    if(!err)	
-		console.log(data);
-            else
-		alert(err);
+	    if(!err) {
+	    	console.log('success');
+	    	flash_gcode('success', 500);
+	    } else {
+	    	console.log('failure');
+	    	flash_gcode('error', 500);
+	    }
 	});
     });
 
