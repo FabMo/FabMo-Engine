@@ -29,6 +29,7 @@
           <li><a><strong>X: </strong><span class="posx"></span></a></li>
           <li><a><strong>Y: </strong><span class="posy"></span></a></li>
           <li><a><strong>Z: </strong><span class="posz"></span></a></li>
+          <li class="hide filename-display"><a><strong>File: </strong><span class="filename"></span></a></li>
         </ul>
 	      <a class="navbar-right" id="keypad" style="opacity:0.2;"><img src="./images/arrow_key.png" /></a>
         <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-warning navbar-btn navbar-right pause-button hide">PAUSE</button>
@@ -177,6 +178,14 @@
 	       	$('.posx').html(status.posx.toFixed(3));
 		$('.posy').html(status.posy.toFixed(3));
 		$('.posz').html(status.posz.toFixed(3));
+
+        if(status.current_file) {
+            $('.filename-display').removeClass('hide');
+        	$('.filename').html(status.current_file)
+        } else {
+            $('.filename-display').addClass('hide');
+        }
+
 		if(status.state === 'idle') {
 		    $('.status-label').removeClass('label-success');
 		    $('.status-label').removeClass('label-danger');
