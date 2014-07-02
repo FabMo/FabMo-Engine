@@ -12,35 +12,38 @@ var default_port = 24862; // = 7777 without conversion
 var start = function(port) {
 	var socket = dgram.createSocket('udp4');
 	var that = this;
-	var Port= port || default_port;
-	
+	var Port = port || default_port;	
 		socket.bind(Port);
 		
 		socket.on("message", function ( data, rinfo ) {
-			console.log('scan in progress by '+ rinfo.address);
 			if(data.toString() == REQ)
 			{
-				console.log("are you a sbt asked");
-				socket.send(new Buffer(OK), 0, OK.length, Port, rinfo.address, function (err) {
-							if (err) console.log(err);
-							console.log("reply yes");
+				console.log('scan in progress by '+ rinfo.address);
+				socket.send(new Buffer(OK), 0, OK.length, rinfo.port, rinfo.address, function (err) {
+							if (err) {
+								console.log(err);
+							}
+							else {
+								//console.log("reply yes to "+rinfo.address+" on port "+rinfo.port);
+							}
 						});
 			}
 			else if(data.toString() == HOSTNAME) // if the device is a sbt, continue the dialog.
 			{
-				console.log("hostname");
+				//console.log("hostname asked");
 				var result = {};
 				result.hostname= os.hostname();
 				result.networks=[];
-				os.networkInterfaces().forEach(function(val,key,arr){ //val = ip adresses , key = name of interface
-					val.forEach(function(val2,key2,arr2){
+				Object.keys(os.networkInterfaces()).forEach(function(key,index,arr){ //val = ip adresses , key = name of interface
+					var networks_list = this;
+					networks_list[key].forEach(function(val2,key2,arr2){
 						if (val2.internal === false && val2.family === 'IPv4')
 						{
 							result.networks.push({'interface' : key , 'ip_address' : val2.address});
 						}
 					});
-				});
-				socket.send(new Buffer(JSON.stringify(result)), 0, JSON.stringify(result).length, Port, rinfo.address, function (err) {
+				},os.networkInterfaces());
+				socket.send(new Buffer(JSON.stringify(result)), 0, JSON.stringify(result).length, rinfo.port, rinfo.address, function (err) {
 					if (err) console.log(err);
 							//console.log("ask info");
 					});
@@ -54,8 +57,8 @@ var start = function(port) {
 
 
 
-	//this.on('newListener', function(listener) {});
+	this.on('newListener', function(listener) {});
 
 };
 util.inherits(start , EventEmitter);
-module.exports.start = start;
+module.exports = start;

@@ -1,6 +1,6 @@
 var path = require('path');
 var fs = require('fs');
-var machine = require('./machine');
+var machine = require('./machine').machine;
 var db = require('./db');
 var File=db.File; // link to the files database collection
 

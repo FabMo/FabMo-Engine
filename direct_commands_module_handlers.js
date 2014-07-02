@@ -1,45 +1,41 @@
-var machine = require('./machine');
+var machine = require('./machine').machine;
 var default_feed_rate = 300;
-var default_move_step = 0.1;
-var default_jog_step = 0.2;
 
 function move_direction(direction)
 {
-	machine.driver.jog(direction);
+	machine.jog(direction);
 }
 
 function jog_direction(direction)
 {
-	machine.driver.jog(direction);
+	machine.jog(direction);
 }
 
 function stop()
 {
-	machine.driver.jog(null);
+	machine.stopJog();
 }
 
 
 exports.send_gcode = function(req, res, next) {
-	if (machine.driver.status.state === 'idle')
+	if (machine.status.state === 'idle')
 	{
 		if (req.params.cmd !== undefined )
 		{
-			machine.driver.runString(req.params.cmd);
+			machine.runString(req.params.cmd);
     		res.json({'success': req.params.cmd})
 		}
 		else if (req.body) {
-			machine.driver.runString(req.body);
+			machine.runString(req.body);
 			res.json({'success': req.params.cmd})
 
 		}
-		else
-		{
-			res.json({'error':'no cmd argument.'});	
+		else {
+			res.json({'error':'No cmd argument'});	
 		}
 	}
-	else
-	{
-		res.json({'error':'a file keeps running.'});	
+	else {
+		res.json({'error':'A file is running'});	
 	}
 };
 
@@ -50,28 +46,25 @@ exports.move = function(req, res, next) {
 		move_direction(req.params.move);			
 		res.json({'success': 'moving in '+req.params.move+' direction'});
 	}
-	else
-	{
+	else {
 		stop();
-		res.json({'error':'need at least one argument'});	
+		res.json({'error':'Need at least one argument'});	
 	}
 };
 
 exports.jog = function(req, res, next) {
-	if (req.params.move !== undefined )
-	{
+	if (req.params.move !== undefined ) {
 		jog_direction(req.params.move);
-		res.json({'success': 'moving in '+req.params.move+' direction'});
+		res.json({'success': 'Moving in '+req.params.move+' direction'});
 	}
-	else
-	{
+	else {
 		stop();
-		res.json({'error':'need at least one argument'});	
+		res.json({'error':'Need at least one argument'});	
 	}
 };
 
 exports.goto = function(req, res, next) {
-   	if (machine.driver.status.state === 'idle')
+   	if (machine.state === 'idle')
 	{
 		if (req.params.x !== undefined || req.params.y !== undefined || req.params.z !== undefined || req.params.a !== undefined || req.params.b !== undefined || req.params.c !== undefined)
 		{
@@ -98,12 +91,12 @@ exports.goto = function(req, res, next) {
 		}
 		else
 		{
-			res.json({'error':'need at least one argument'});	
+			res.json({'error':'Need at least one argument'});	
 		}
 	}
 	else
 	{
-		res.json({'error':'a file keeps running.'});	
+		res.json({'error':'A file is running'});	
 	}
 };
 
