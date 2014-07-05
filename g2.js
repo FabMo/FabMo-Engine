@@ -12,6 +12,7 @@ var events = require('events');
 var util = require('util');
 var Queue = require('./util').Queue;
 var config = require('./config_loader');
+var log = require('./log')
 
 var STAT_INIT = 0;
 var STATE_READY = 1;
@@ -94,12 +95,12 @@ G2.prototype.onSerialError = function(data) {
 }
 
 G2.prototype.write = function(s) {
-	//console.log('----> ' + s);
+	log.debug('----> ' + s);
 	this.port.write(s);
 }
 
 G2.prototype.writeAndDrain = function(s, callback) {
-	//console.log('----> ' + s);
+	log.debug('----> ' + s);
 	this.port.write(s, function () {
 		this.port.drain(callback);
 	}.bind(this));
@@ -194,7 +195,7 @@ G2.prototype.onData = function(data) {
 		c = s[i];
 		if(c === '\n') {
 			var json_string = this.current_data.join('');
-		    //console.log('<---- ' + json_string);
+		    log.debug('<---- ' + json_string);
 		    try {
 		    	obj = JSON.parse(json_string);
 		    	this.onMessage(obj);
@@ -226,6 +227,8 @@ G2.prototype.handleQueueReport = function(r) {
 	var qi = r.qi || 0;
 
 	if((qr != undefined)) {
+
+		log.info('GCode Queue Size: ' + this.gcode_queue.getLength())
 		// Deal with jog mode
 		if(this.jog_command && (qo > 0)) {
 			this.write(this.jog_command + '\n');
@@ -241,7 +244,6 @@ G2.prototype.handleQueueReport = function(r) {
 
 
 		if(lines_to_send > 0) {
-			//console.log('qi: ' + qi + '  qr: ' + qr + '  qo: ' + qo + '   lines: ' + lines_to_send);
 			var cmds = [];
 			while(lines_to_send > 0) {
 				if(this.gcode_queue.isEmpty()) {
@@ -261,6 +263,8 @@ G2.prototype.handleQueueReport = function(r) {
 		else {
 			//console.log('no lines to send');
 		}
+		log.info('qi: ' + qi + '  qr: ' + qr + '  qo: ' + qo + '   lines: ' + lines_to_send);
+
 	}
 }
 
