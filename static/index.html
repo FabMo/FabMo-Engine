@@ -5,6 +5,7 @@
   <link rel="stylesheet" href="./css/bootstrap.min.css">
   <link rel="stylesheet" href="./css/normalize.css">
   <link rel="stylesheet" href="./css/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
     <nav class="navbar navbar-default" role="navigation">
@@ -40,22 +41,16 @@
   <div class="container">
 
     <div class="panel panel-default">
-      <div class="panel-heading app-heading">Shopbot G-Code Streamer</div>
+      <div class="panel-heading app-heading">FabMo G-Code Streamer</div>
       <div class="panel-body">
         
-        <p>
-        This is a simple application for streaming a G-Code file.
-        </p>
-        
-
-        
         <table class="table table-hover table-bordered" id="files">
-          <tr><th>Files on the tool (click to run)</th></tr>
+          <tr><th colspan="3">Files on the tool (click to run)</th></tr>
         </table>
 
         <strong>Upload a file...</strong>
         
-	<p>
+		<p>
         <form id="add_file" action="/file" method="post" enctype="multipart/form-data">
           <div class="pull-left">
             <input id='file_selector' type="file" name="file" data-filename-placement="inside" title="Browse for a file to upload...">
@@ -256,9 +251,9 @@
 	$(".files_list").remove();
         $.each( files, function( key, val ) {
           $("#files").append( "<tr class='files_list'>"+
-		"<td class='run-button' value='" + val._id + "'><a>" + val.filename + "</a></td>" +
-		"<td class='download-button' value='" + val._id + "' style='text-align: right;width: 3%;'><img src='./images/download.png'></td>" +
-		"<td class='delete-button' value='" + val._id + "' style='text-align: right;width: 3%;'><img src='./images/delete.png'></td>"+
+		"<td class='run-button' value='" + val._id + "'><a style='cursor: pointer;'>" + val.filename + "</a></td>" +
+		"<td class='download-button' value='" + val._id + "' style='text-align: right;width: 3%;'><span style='cursor: pointer;' class='glyphicon glyphicon-download-alt'></span></td>" +
+		"<td class='delete-button' value='" + val._id + "' style='text-align: right;width: 3%;'><span style='cursor: pointer;' class='glyphicon glyphicon-remove'></span></td>"+
 		"</tr>");
         });
       });
