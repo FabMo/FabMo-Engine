@@ -31,9 +31,9 @@
           <li class="hide filename-display"><a><strong>File: </strong><span class="filename"></span></a></li>
         </ul>
 	      <a class="navbar-right" id="keypad" style="opacity:0.2;"><img src="./images/arrow_key.png" /></a>
-        <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-warning navbar-btn navbar-right pause-button hide">PAUSE</button>
-        <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-success navbar-btn navbar-right resume-button hide">RESUME</button>
-        <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-danger navbar-btn navbar-right stop-button hide">STOP</button>
+          <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-warning navbar-btn navbar-right pause-button hide"><span class="glyphicon glyphicon-pause"></span></button>
+          <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-success navbar-btn navbar-right resume-button hide"><span class="glyphicon glyphicon-play"></span></button>
+        <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-danger navbar-btn navbar-right stop-button hide"><span class="glyphicon glyphicon-stop"></span></button>
       </div><!-- /.navbar-collapse -->
     </div><!-- /.container-fluid -->
   </nav>
@@ -182,7 +182,7 @@
 		if(status.state === 'idle') {
 		    $('.status-label').removeClass('label-success label-danger label-info label-warning');
 		    $('.status-label').addClass('label-default');
-		    $('.tool-state').html('Tool State: Idle');
+		    $('.tool-state').html('Idle');
 		    $('.stop-button').addClass('hide');
 		    $('.resume-button').addClass('hide');
 		    $('.pause-button').addClass('hide');
@@ -190,7 +190,7 @@
 		else if(status.state === 'running' || status.state === 'homing' || status.state === 'manual') {
                     $('.status-label').removeClass('label-default label-danger label-info label-warning');
                     $('.status-label').addClass('label-success');
-                    $('.tool-state').html('Tool State: ' + status.state);
+                    $('.tool-state').html('' + status.state);
                     $('.stop-button').removeClass('hide');
                     $('.pause-button').removeClass('hide');
                     $('.resume-button').addClass('hide');
@@ -199,7 +199,7 @@
             	else if(status.state == 'paused') {
                     $('.status-label').removeClass('label-success label-info label-default label-danger');
                     $('.status-label').addClass('label-warning');
-                    $('.tool-state').html('Tool State: Paused');
+                    $('.tool-state').html('Paused');
                     $('.stop-button').removeClass('hide');
                     $('.pause-button').addClass('hide');
                     $('.resume-button').removeClass('hide');
@@ -207,7 +207,7 @@
             	else if(status.state == 'limit') {
                     $('.status-label').removeClass('label-success label-info label-default label-danger');
                     $('.status-label').addClass('label-warning');
-                    $('.tool-state').html('Tool State: Limit');
+                    $('.tool-state').html('Limit');
                     $('.stop-button').removeClass('hide');
                     $('.pause-button').addClass('hide');
                     $('.resume-button').removeClass('hide');
@@ -224,7 +224,7 @@
 		$('.posz').html('???');
 		$('.status-label').removeClass('label-success label-default label-warning label-info');
 		$('.status-label').addClass('label-danger');
-		$('.tool-state').html('Tool State: Disconnected');
+		$('.tool-state').html('Disconnected');
 		$('.stop-button').addClass('hide');
 		$('.pause-button').addClass('hide');
 		$('.resume-button').addClass('hide');

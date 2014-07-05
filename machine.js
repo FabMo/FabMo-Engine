@@ -5,32 +5,34 @@ var PLATFORM = require('process').platform
 var Engine = require('tingodb')(),
     assert = require('assert');
 var fs = require('fs');
+var path = require('path');
+var log = require('./log');
 
 function connect(callback) {
 
 	switch(PLATFORM) {
 
 		case 'linux':
-			path = '/dev/ttyACM0';
+			serial_path = '/dev/ttyACM0';
 			break;
 
 		case 'darwin':
-			path = '/dev/cu.usbmodem001';
+			serial_path = '/dev/cu.usbmodem001';
 			break;
 
 		default:
-			path = null;
+			serial_path = null;
 			break;
 	}
-	if(path) {
-		return new Machine(path, callback);
+	if(serial_path) {
+		return new Machine(serial_path, callback);
 	} else {
 		typeof callback === "function" && callback(true, "No supported serial path for platform " + PLATFORM);		
 		return null;
 	}
 }
 
-function Machine(path, callback) {
+function Machine(serial_path, callback) {
 
 	// Handle Inheritance
 	events.EventEmitter.call(this);
@@ -45,7 +47,7 @@ function Machine(path, callback) {
 
 	this.driver = new g2.G2();
 	this.driver.on("error", function(data) {console.log(data)});
-	this.driver.connect(path, function(err, data) {
+	this.driver.connect(serial_path, function(err, data) {
 		this.status.state = "idle";
 		this.driver.on('state', this._onG2StateChange.bind(this));
 		this.driver.on('status', this._onG2Status.bind(this));
@@ -232,7 +234,10 @@ Machine.prototype.runFile = function(filename) {
 		  	console.log('Error reading file ' + filename);
 		    return console.log(err);
 		  } else {
-		  	this.status.current_file = filename;
+            parts = filename.split(path.sep)
+            log.debug(filename);
+            log.debug(parts);
+		  	this.status.current_file = parts[parts.length-1]
 		  	this.runString(data);
 		  }
 		}.bind(this));
