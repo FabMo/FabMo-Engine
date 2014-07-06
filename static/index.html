@@ -30,7 +30,7 @@
           <li><a><strong>Z: </strong><span class="posz"></span></a></li>
           <li class="hide filename-display"><a><strong>File: </strong><span class="filename"></span></a></li>
         </ul>
-	      <a class="navbar-right" id="keypad" style="opacity:0.2;"><img src="./images/arrow_key.png" /></a>
+          <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-default navbar-btn navbar-right" id="keypad" data-target="#manual-modal" data-toggle="modal"><span class="glyphicon glyphicon-screenshot"></span>
           <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-warning navbar-btn navbar-right pause-button hide"><span class="glyphicon glyphicon-pause"></span></button>
           <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-success navbar-btn navbar-right resume-button hide"><span class="glyphicon glyphicon-play"></span></button>
         <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-danger navbar-btn navbar-right stop-button hide"><span class="glyphicon glyphicon-stop"></span></button>
@@ -53,10 +53,10 @@
 		<p>
         <form id="add_file" action="/file" method="post" enctype="multipart/form-data">
           <div class="pull-left">
-            <input id='file_selector' type="file" name="file" data-filename-placement="inside" title="Browse for a file to upload...">
+            <input id='file_selector' type="file" name="file" data-filename-placement="inside" title="Browse...">
           </div>
           <div class="pull-right">
-            <input type="submit" value="Upload" class="btn btn-default btn-primary">
+            <button type="submit" class="btn btn-default btn-primary"><span class="glyphicon glyphicon-upload"></span> Upload</button>
           </div>
         </form>
         </p>
@@ -74,6 +74,79 @@
     </div>
   </div>
 
+<!-- KEYBOARD DIALOG -->
+<div class="modal fade" id="manual-modal" tabindex="-1" role="dialog" aria-labelledby="manual-modal-label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                	<span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title" id="manual-modal-label">Manual Control</h4>
+                <!--<span class="label status-label label-default tool-state pull-right">&nbsp;</span>-->
+            </div>
+            <div class="modal-body">
+            	<div class="container-fluid">
+            		<div class="row">
+            			<div class="col-xs-6">
+		  
+		            		<form class="form-horizontal" role="form">
+		            			<div class="form-group">
+		            				<label for="modal-posx" class="col-sm-2 control-label">X:</label>
+		            				<div class="col-sm-10">
+			            				<div class="input-group">
+			            					<input type="text" class="form-control posx" id="modal-posx"></input>
+			            					<div class="input-group-addon homex-button" style="cursor: pointer;"><span class="glyphicon glyphicon-home"></span></div>
+			            				</div>
+		            				</div>
+		            			</div>
+		            			<div class="form-group">
+		            				<label for="modal-posy" class="col-sm-2 control-label">Y:</label>
+		            				<div class="col-sm-10">
+			            				<div class="input-group">
+			            					<input type="text" class="form-control posy" id="modal-posy"></input>
+			            					<div class="input-group-addon homey-button" style="cursor: pointer;"><span class="glyphicon glyphicon-home"></span></div>
+			            				</div>
+		            				</div>
+		            			</div>
+		            			<div class="form-group">
+		            				<label for="modal-posz" class="col-sm-2 control-label">Z:</label>
+		            				<div class="col-sm-10">
+			            				<div class="input-group">
+			            					<input type="text" class="form-control posz" id="modal-posz"></input>
+											<div class="input-group-addon probez-button" style="cursor: pointer;"><span class="glyphicon glyphicon-arrow-down"></span></div>
+			            					<div class="input-group-addon homez-button" style="cursor: pointer;"><span class="glyphicon glyphicon-home"></span></div>
+
+			            				</div>
+		            				</div>
+		            			</div>
+		            		</form>
+		            		<div class="pull-right">
+		            		<button class="btn btn-default">
+		            			<span class="glyphicon glyphicon-home"></span> Home XY
+		            		</button>
+							<button class="btn btn-default">
+		            			<span class="glyphicon glyphicon-home"></span> Home XYZ
+		            		</button>
+		            		</div>
+		            	</div>
+		            	<div class="col-xs-6">
+		            		Use the keyboard to control the position of the tool.
+		            	</div>
+
+            		</div>
+            	</div>
+            </div> <!-- modal-body -->
+            <!--
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save changes</button>
+            </div> -->
+        </div>
+    </div>
+</div>
+
+
   <script src="./js/libs/jquery-1.10.2.js"></script>
   <script src="./js/bootstrap.min.js"></script>
   <script src="./js/libs/bootstrap.file-input.js"></script>
@@ -81,11 +154,20 @@
   
   <script type="text/javascript">
 	var tool = new FabMo(location.hostname||'localhost', '8080');
-	
 	/*************************************** keypad move section ****************************************/
 	var keypad_allow=false;
 	var lock_right = false,lock_left = false ,lock_up = false ,lock_down = false,lock_page_up = false,lock_page_down = false;
-	$(document).keydown(function(e) {
+
+	$('#manual-modal').on('show.bs.modal', function (e) {
+		keypad_allow = true;
+	})
+
+
+	$('#manual-modal').on('hide.bs.modal', function (e) {
+		keypad_allow = false;
+	})
+
+	$('#manual-modal').keydown(function(e) {
 	if (keypad_allow){
 		if (e.which === 37 && !lock_left && !lock_right) //left
 		{
@@ -168,9 +250,16 @@
     function timer() {
 	tool.get_status(function(err,status){
 	if(!err){
-	       	$('.posx').html(status.posx.toFixed(3));
-		$('.posy').html(status.posy.toFixed(3));
-		$('.posz').html(status.posz.toFixed(3));
+	    x = status.posx.toFixed(3);
+	    y = status.posy.toFixed(3);
+	    z = status.posz.toFixed(3);
+
+	    $('.posx').text(x);
+		$('.posy').text(y);
+		$('.posz').text(z);
+	    $('.posx').val(x);
+	    $('.posy').val(y);
+	    $('.posz').val(z);
 
         if(status.current_file) {
             $('.filename-display').removeClass('hide');
@@ -187,33 +276,39 @@
 		    $('.resume-button').addClass('hide');
 		    $('.pause-button').addClass('hide');
 		}
-		else if(status.state === 'running' || status.state === 'homing' || status.state === 'manual') {
-                    $('.status-label').removeClass('label-default label-danger label-info label-warning');
-                    $('.status-label').addClass('label-success');
-                    $('.tool-state').html('' + status.state);
-                    $('.stop-button').removeClass('hide');
-                    $('.pause-button').removeClass('hide');
-                    $('.resume-button').addClass('hide');
-
-           	}
-            	else if(status.state == 'paused') {
-                    $('.status-label').removeClass('label-success label-info label-default label-danger');
-                    $('.status-label').addClass('label-warning');
-                    $('.tool-state').html('Paused');
-                    $('.stop-button').removeClass('hide');
-                    $('.pause-button').addClass('hide');
-                    $('.resume-button').removeClass('hide');
-            	} 
-            	else if(status.state == 'limit') {
-                    $('.status-label').removeClass('label-success label-info label-default label-danger');
-                    $('.status-label').addClass('label-warning');
-                    $('.tool-state').html('Limit');
-                    $('.stop-button').removeClass('hide');
-                    $('.pause-button').addClass('hide');
-                    $('.resume-button').removeClass('hide');
-                    $('.stop-button').addClass('hide');
-
-            	}
+		else if(status.state === 'running' || status.state === 'homing') {
+            $('.status-label').removeClass('label-default label-danger label-info label-warning');
+            $('.status-label').addClass('label-success');
+            $('.tool-state').html('' + status.state);
+            $('.stop-button').removeClass('hide');
+            $('.pause-button').removeClass('hide');
+            $('.resume-button').addClass('hide');
+        }
+        else if(status.state === 'manual') {
+            $('.status-label').removeClass('label-default label-danger label-info label-warning');
+            $('.status-label').addClass('label-success');
+            $('.tool-state').html('' + status.state);
+            $('.stop-button').addClass('hide');
+            $('.pause-button').addClass('hide');
+            $('.resume-button').addClass('hide');
+        }
+        else if(status.state == 'paused') {
+	        $('.status-label').removeClass('label-success label-info label-default label-danger');
+	        $('.status-label').addClass('label-warning');
+	        $('.tool-state').html('Paused');
+	        $('.stop-button').removeClass('hide');
+	        $('.pause-button').addClass('hide');
+	        $('.resume-button').removeClass('hide');
+        } 
+        else if(status.state == 'limit') {
+	        $('.status-label').removeClass('label-success label-info label-default label-danger');
+	        $('.status-label').addClass('label-warning');
+	        $('.tool-state').html('Limit');
+	        $('.stop-button').removeClass('hide');
+	        $('.pause-button').addClass('hide');
+	        $('.resume-button').removeClass('hide');
+	        $('.stop-button').addClass('hide');
+        }
 		else {
 		    console.log('unknown status');
 		}
@@ -333,7 +428,48 @@
 	    }
 	});
     });
+    
+    $('.homex-button').click(function(e) {
+		tool.gcode('G28.2 X0',function(err,data){
+		    if(!err) {
+		    	console.log('success');
+		    } else {
+		    	console.log('failure');
+		    }
+		});
+    });
 
+    $('.homey-button').click(function(e) {
+		tool.gcode('G28.2 Y0',function(err,data){
+		    if(!err) {
+		    	console.log('success');
+		    } else {
+		    	console.log('failure');
+		    }
+		});
+    });
+
+
+     $('.homez-button').click(function(e) {
+		tool.gcode('G28.2 Z0',function(err,data){
+		    if(!err) {
+		    	console.log('success');
+		    } else {
+		    	console.log('failure');
+		    }
+		});
+    });
+    
+    $('.probez-button').click(function(e) {
+		tool.gcode('G28.2 Z-1',function(err,data){
+		    if(!err) {
+		    	console.log('success');
+		    } else {
+		    	console.log('failure');
+		    }
+		});
+    });   
+    /*
     $('#keypad').click(function(e) {
 	if (keypad_allow)
         {
@@ -344,9 +480,10 @@
         {
 	    $(this).css('opacity',1);
 	    keypad_allow = true;
-	}
+	} 
+    
     });
-
+*/
 
   </script>
 

@@ -65,9 +65,14 @@ Machine.prototype.toString = function() {
 // Run the provided string
 // callback runs only when execution is complete.
 Machine.prototype.runString = function(string, callback) {
+	log.debug('Running String ' + string)
 	if(this.status.state === 'idle') {
-		this.status.state = "running";
-		this.driver.runString(string, callback);
+		this.driver.runString(string, function(error, data) {
+			if(!error) {
+				this.status.state = "running";
+			}
+			typeof callback === "function" && callback(error, data);
+		}.bind(this));
 	} else {
 		typeof callback === "function" && callback(true, "Cannot run when in '" + this.status.state + "' state.");		
 	}
@@ -125,6 +130,9 @@ Machine.prototype._onG2StateChange = function(states) {
 							this._idle();
 							this.emit('job_complete', this);
 							break;
+						case g2.STAT_HOMING:
+							this.status.state = "homing";
+							break;
 					} // new_state
 					break;
 			} // old_state
@@ -174,6 +182,9 @@ Machine.prototype._onG2StateChange = function(states) {
 						case g2.STAT_END:
 							//console.log('Got an unexpected switch to END from IDLE');
 							break;
+						case g2.STAT_HOMING:
+							this.status.state = "homing";
+							break;
 					} // new_state
 					break;
 			} // old_state
@@ -204,6 +215,7 @@ Machine.prototype._onG2StateChange = function(states) {
 						case g2.STAT_END:
 							this._idle();
 							break;
+                        case g2.STAT_STOP:
 						case g2.STAT_HOLDING:
 							//this._idle();
 							this.status.state = "paused";
@@ -225,6 +237,7 @@ Machine.prototype._onG2StateChange = function(states) {
 			} // old_state
 			break;
 	} // this.status.state
+	log.debug('State: ' + this.status.state)
 }; // _onG2StateChange
 
 

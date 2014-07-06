@@ -172,6 +172,7 @@ G2.prototype.jog_keepalive = function() {
 
 G2.prototype.stopJog = function() {
 	if(this.jog_direction) {
+        log.debug('Stopping Jogging');
 		clearTimeout(this.jog_heartbeat);
 		this.jog_direction = null;
 		this.jog_command = null;
@@ -308,8 +309,8 @@ G2.prototype.handleStatusReport = function(response) {
 		this.emit('status', this.status);
 
 		// Hack allows for a flush when quitting (must wait for the hold state to reach 4)
-		if(this.status.hold === 4) {
-			if(this.quit_pending) {
+		if(this.quit_pending) {
+			if((this.status.hold === 4) || (this.status.stat === 3)) {
 				setTimeout(function() {			
 					this.command('\%');		
 					this.command('M30');
