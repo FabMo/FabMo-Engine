@@ -135,12 +135,24 @@ Machine.prototype._onG2StateChange = function(states) {
 							break;
 					} // new_state
 					break;
+
+				case g2.STAT_END:
+					switch(new_state) {
+						case g2.STAT_HOMING:
+							this.status.state = "homing";
+							break;
+					} // new_state
+					break;
+
+				default:
+					log.error('Old state was ' + old_state + ' while running.... (' +  new_state + ')'); 
 			} // old_state
 			break;
 
 		case "homing":
 			switch(old_state) {
 				case g2.STAT_RUNNING:
+				case g2.STAT_HOMING:
 					switch(new_state) {
 						case g2.STAT_END:
 							this._idle();
@@ -172,6 +184,7 @@ Machine.prototype._onG2StateChange = function(states) {
 
 		case "idle":
 			switch(old_state) {
+				case undefined:
 				case g2.STAT_STOP:
 				case g2.STAT_HOLDING:
 					switch(new_state) {
@@ -186,6 +199,9 @@ Machine.prototype._onG2StateChange = function(states) {
 							this.status.state = "homing";
 							break;
 					} // new_state
+					break;
+				default:
+					log.error("OMG OMG OMG UNKNOWN STATE " + old_state);
 					break;
 			} // old_state
 			break;

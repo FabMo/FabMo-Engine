@@ -114,7 +114,7 @@ G2.prototype.jog = function(direction) {
 	var MOVES = 10;
 	var FEED_RATE = 60.0;			// in/min
 	var MOVE_DISTANCE = 0.1;		// in
-	var START_DISTANCE = 0.020; 	// in
+	var START_DISTANCE = 0.005; 	// in
 
 	direction = String(direction).trim().toLowerCase().replace(/\+/g,"");
 	axes = {'x':'X', 

@@ -24,5 +24,12 @@
 	{"xTM":25.0},
 	{"yTM":19.0},
 	{"zTM":6.5},
-	{"sr":{"posx":true, "posy":true, "posz":true, "posa":true, "posb":true, "vel":true, "stat":true, "hold":true}}
+	{"zsn":3},
+    {"zsx":0},
+    {"xjh":100000000},
+    {"yjh":100000000},
+    {"zjh":100000000},
+    {"zzb":0.375},
+    {"zlb":0.125},
+    {"sr":{"posx":true, "posy":true, "posz":true, "posa":true, "posb":true, "vel":true, "stat":true, "hold":true}}
 ]
