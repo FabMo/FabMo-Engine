@@ -11,7 +11,7 @@ machine.machine = machine.connect(function(error, data) {
 		console.log("There was an error connecting to the tool: " + data)
 	} else {
 		// Successful connection made to G2: Setup the server.
-		var server = restify.createServer({name:"device_api"});
+		var server = restify.createServer({name:"FabMo Engine"});
 
 		// allow JSON over Cross-origin resource sharing 
 		server.use(
