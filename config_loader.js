@@ -20,7 +20,8 @@ var ALLOWED_COMMANDS = ["1ma","1sa","1tr","1mi","1po","1pm","2ma","2sa",
 
 
 exports.load = function(driver){
-	
+	var nb_commands_send = 0;
+	var nb_commands_executed = 0;
 	configuration.forEach(function(val,index,array)
 	{
 //		console.log(val);
@@ -31,8 +32,44 @@ exports.load = function(driver){
 			{
 				var cmd = {};
 				cmd[key]=val[key];
+				nb_commands_send++;
+
 				driver.command(cmd);
-				//console.log('load conf : '+ key + ' : '+ val[key]);
+					driver.on('message',function(resp){
+					try {
+						if (resp && resp instanceof Object && !(resp instanceof String)){ // filter for response
+							if (( Object.keys(cmd)[0] === Object.keys(resp)[0] ) || ( resp && Object.keys(cmd)[0] === Object.keys(resp.r)[0]) ){ //check if response correspond to the request
+								if(resp.f || resp.r.f){ //check if there is a feedback
+									if (resp.f[1] === 0 || resp.r.f[1] === 0){
+										//console.log('cmd : ');
+										//console.log(cmd);
+										//console.log('resp : ');
+										//console.log(resp);
+										nb_commands_executed++;
+										//console.log('commands send : ' + nb_commands_send);
+										//console.log('commands executed : ' + nb_commands_executed);
+										if (nb_commands_send+1 === nb_commands_executed){
+											console.log('configuration loaded successfully');
+											driver.emit('configuration_loaded',undefined);
+										}
+										driver.removeListener('message',this);
+
+									}
+									else{
+										console.log('err : ' + cmd + 'not executed correctly! LOAD FAILED. EXIT.');
+										driver.removeListener('message',this);
+										exit(-1);
+									}
+								}
+							}
+						}
+					}
+					catch(ex){
+					}
+				});
+					//console.log('load conf : '+ key + ' : '+ val[key]);
+
+				
 			}
 			else
 			{
