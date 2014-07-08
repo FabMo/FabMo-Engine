@@ -95,12 +95,14 @@ G2.prototype.onSerialError = function(data) {
 }
 
 G2.prototype.write = function(s) {
-	log.debug('----> ' + s);
+	t = new Date().getTime();
+	log.debug('----' + t + '----> ' + s);
 	this.port.write(s);
 }
 
 G2.prototype.writeAndDrain = function(s, callback) {
-	log.debug('----> ' + s);
+	t = new Date().getTime();
+	log.debug('----' + t + '----> ' + s);
 	this.port.write(s, function () {
 		this.port.drain(callback);
 	}.bind(this));
@@ -196,7 +198,8 @@ G2.prototype.onData = function(data) {
 		c = s[i];
 		if(c === '\n') {
 			var json_string = this.current_data.join('');
-		    log.debug('<---- ' + json_string);
+			t = new Date().getTime();
+		    log.debug('<----' + t + '---- ' + json_string);
 		    try {
 		    	obj = JSON.parse(json_string);
 		    	this.onMessage(obj);

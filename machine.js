@@ -95,7 +95,7 @@ Machine.prototype._idle = function() {
 Machine.prototype._onG2StateChange = function(states) {
 	old_state = states[0];
 	new_state = states[1];
-	//console.log(this.status.state + ' ' + states);
+	log.info("STATE CHANGE: " + this.status.state + ' ' + states);
 
 	switch(this.status.state) {
 		case "not_ready":
@@ -133,6 +133,9 @@ Machine.prototype._onG2StateChange = function(states) {
 						case g2.STAT_HOMING:
 							this.status.state = "homing";
 							break;
+						case g2.STAT_PROBE:
+							this.status.state = "probing";
+							break;
 					} // new_state
 					break;
 
@@ -141,9 +144,11 @@ Machine.prototype._onG2StateChange = function(states) {
 						case g2.STAT_HOMING:
 							this.status.state = "homing";
 							break;
+						case g2.STAT_PROBE:
+							this.status.state = "probing";
+							break;
 					} // new_state
 					break;
-
 				default:
 					log.error('Old state was ' + old_state + ' while running.... (' +  new_state + ')'); 
 			} // old_state
@@ -183,6 +188,7 @@ Machine.prototype._onG2StateChange = function(states) {
 			break;
 
 		case "idle":
+				log.info('Leaving the idle state ' + old_state + ',' + new_state)
 			switch(old_state) {
 				case undefined:
 				case g2.STAT_STOP:
@@ -197,6 +203,9 @@ Machine.prototype._onG2StateChange = function(states) {
 							break;
 						case g2.STAT_HOMING:
 							this.status.state = "homing";
+							break;
+						case g2.STAT_PROBE:
+							this.status.state = "probing";
 							break;
 					} // new_state
 					break;
@@ -217,7 +226,7 @@ Machine.prototype._onG2StateChange = function(states) {
 							break;
 						case g2.STAT_END:
 							this._idle();
-							this.emit('job_complete', this);							
+							this.emit('job_complete', this);
 							break;
 					} // new_state
 					break;
@@ -252,6 +261,44 @@ Machine.prototype._onG2StateChange = function(states) {
 					break;
 			} // old_state
 			break;
+
+		case "probing":
+			switch(old_state) {
+				case g2.STAT_RUNNING:
+				case g2.STAT_PROBE:
+					switch(new_state) {
+						case g2.STAT_END:
+							this._idle();
+							this.emit('job_complete', this);
+							break;
+						case g2.STAT_STOP:	
+						case g2.STAT_HOLDING:
+							this.status.state = "paused";
+							this.emit('job_pause', this);
+							break;
+					}
+					break;
+
+				case g2.STAT_STOP:
+				case g2.STAT_HOLDING:
+					switch(new_state) {
+						case g2.STAT_RUNNING:
+							this.status.state = "running";
+							this.emit('job_resume', this);
+							break;
+						case g2.STAT_PROBE:
+							this.status.state = "probing";
+							this.emit('job_resume', this);
+							break;							
+						case g2.STAT_END:
+							this._idle();
+							this.emit('job_complete', this);
+							break;
+					} // new_state
+					break;
+			} // old_state
+			break;
+
 	} // this.status.state
 	log.debug('State: ' + this.status.state)
 }; // _onG2StateChange

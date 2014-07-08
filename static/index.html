@@ -114,8 +114,7 @@
 		            				<div class="col-sm-10">
 			            				<div class="input-group">
 			            					<input type="text" class="form-control posz" id="modal-posz"></input>
-			            					<!--
-											<div class="input-group-addon probez-button" style="cursor: pointer;"><span class="glyphicon glyphicon-arrow-down"></span></div> -->
+											<div class="input-group-addon probez-button" style="cursor: pointer;"><span class="glyphicon glyphicon-arrow-down"></span></div>
 			            					<div class="input-group-addon homez-button" style="cursor: pointer;"><span class="glyphicon glyphicon-home"></span></div>
 
 			            				</div>
@@ -232,7 +231,7 @@
 			tool.stop_move(function(){});
 		}
 	}
-    	});
+    });
 	/************************************* end keypad move section **************************************/
 
     $(document).ready(function(){
@@ -274,7 +273,7 @@
 		    $('.resume-button').addClass('hide');
 		    $('.pause-button').addClass('hide');
 		}
-		else if(status.state === 'running' || status.state === 'homing') {
+		else if(status.state === 'running' || status.state === 'homing' || status.state === 'probing') {
             $('.status-label').removeClass('label-default label-danger label-info label-warning');
             $('.status-label').addClass('label-success');
             $('.tool-state').html('' + status.state);
@@ -459,7 +458,8 @@
     });
     
     $('.probez-button').click(function(e) {
-		tool.gcode('G28.2 Z-1',function(err,data){
+    	// TODO: less hard-codey, once the probe cycle routine firms up
+		tool.gcode('G38.2 Z-10 F10',function(err,data){
 		    if(!err) {
 		    	console.log('success');
 		    } else {
