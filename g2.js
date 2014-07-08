@@ -56,6 +56,7 @@ function G2() {
 	this.quit_lock = false;
 
 	events.EventEmitter.call(this);	
+	this.setMaxListeners(50);// avoid the Listener limit warning 
 };
 util.inherits(G2, events.EventEmitter);
 
