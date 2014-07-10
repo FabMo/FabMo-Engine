@@ -289,7 +289,7 @@ Machine.prototype._onG2StateChange = function(states) {
 						case g2.STAT_PROBE:
 							this.status.state = "probing";
 							this.emit('job_resume', this);
-							break;							
+							break;
 						case g2.STAT_END:
 							this._idle();
 							this.emit('job_complete', this);
