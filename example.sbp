@@ -2,19 +2,7 @@
 
 myloop:
   MX,&pos
+  &pos = &pos+1
+  IF &pos < 10 THEN GOTO myloop
 
-
-&a = 2
-&b = 4
-
-IF &a == 3 THEN GOSUB aistwo
-IF &b == 4 THEN GOSUB bisfour
 END
-
-aistwo:
-&aistwo = 1
-RETURN
-
-bisfour:
-&bisfour = 1
-RETURN

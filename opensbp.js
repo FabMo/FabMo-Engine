@@ -42,6 +42,14 @@ SBPRuntime.prototype.tick = function() {
 	return true;
 }
 
+SBPRuntime.prototype._evaluate_args = function(args) {
+	retval = [];
+	for(i=0; i<args.length; i++) {
+		retval.push(this._eval(args[i]));
+	}
+	return retval;
+}
+
 SBPRuntime.prototype._execute = function(command) {
 	if(!command) {
 		this.pc += 1;
@@ -50,7 +58,7 @@ SBPRuntime.prototype._execute = function(command) {
 	switch(command.type) {
 		case "cmd":
 			if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
-				this[command.cmd](command.args);
+				this[command.cmd](this._evaluate_args(command.args));
 			} else {
 				this._unhandledCommand(command)
 			}
