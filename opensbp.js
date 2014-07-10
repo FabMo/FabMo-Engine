@@ -29,7 +29,7 @@ SBPRuntime.prototype.runString = function(s) {
     this.program = parser.parse(s + '\n');
     this._analyzeLabels();  // Build a table of labels
     this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table
-    console.log(this.program);
+    //console.log(this.program);
     while(this.tick());
 }
 
@@ -42,6 +42,7 @@ SBPRuntime.prototype.tick = function() {
 	return true;
 }
 
+// Evaluate a list of arguments provided (for commands)
 SBPRuntime.prototype._evaluate_args = function(args) {
 	retval = [];
 	for(i=0; i<args.length; i++) {
@@ -50,6 +51,7 @@ SBPRuntime.prototype._evaluate_args = function(args) {
 	return retval;
 }
 
+// Execute a single statement
 SBPRuntime.prototype._execute = function(command) {
 	if(!command) {
 		this.pc += 1;
@@ -121,6 +123,7 @@ SBPRuntime.prototype._execute = function(command) {
 	}
 }
 
+// Evaluate an expression
 SBPRuntime.prototype._eval = function(expr) {
 	if(expr.op == undefined) {
 		if (expr in this.user_vars) {
@@ -263,7 +266,7 @@ SBPRuntime.prototype.M5 = function(args) {
 }
 
 SBPRuntime.prototype.M6 = function(args) {
-	this.emit_gcode("G1 X" + args[0] + "Y" + args[1] + "Z" + args[2] + "A" + args[3] + "B" + args[4] + "C" " args[5]");
+	this.emit_gcode("G1 X" + args[0] + "Y" + args[1] + "Z" + args[2] + "A" + args[3] + "B" + args[4] + "C" + args[5]);
 }
 
 SBPRuntime.prototype.JX = function(args) {
@@ -307,7 +310,7 @@ SBPRuntime.prototype.J5 = function(args) {
 }
 
 SBPRuntime.prototype.J6 = function(args) {
-	this.emit_gcode("G0 X" + args[0] + "Y" + args[1] + "Z" + args[2] + "A" + args[3] + "B" + args[4] + "C" " args[5]");
+	this.emit_gcode("G0 X" + args[0] + "Y" + args[1] + "Z" + args[2] + "A" + args[3] + "B" + args[4] + "C" + args[5]);
 }
 
 runtime = new SBPRuntime();
