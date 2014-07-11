@@ -71,28 +71,26 @@ G2.prototype.connect = function(path, callback) {
  	this.port = new serialport.SerialPort(path, {rtscts:true});
 	this.port.on("open", this.onOpen.bind(this));
 	this.port.on("error", this.onSerialError.bind(this));
-	this.on("connect", callback);
+	this.port.on('data', this.onData.bind(this));
+	this.on("ready", function(driver) {
+		this.command({'qv':2});				// Configure queue reports to verbose
+		this.command('M30');
+		this.requestStatusReport(); 		// Initial status check
+		this.connected = true;
+		config.load(this);
+		callback(false, this);
+	});
 }
 
 // Called when the serial port is actually opened.
 G2.prototype.onOpen = function(data) {
 	// prototype.bind makes sure that the 'this' in the method is this object, not the event emitter
-	this.port.on('data', this.onData.bind(this));
 	//this.quit();
-	this.command({'qv':2});				// Configure queue reports to verbose
-	this.command('M30')
-	this.requestStatusReport(); 		// Initial status check
-	this.connected = true;
-
-	// Load configuration from disk
-	config.load(this);
-
 	this.emit("connect", false, this);
 };
 
 G2.prototype.onSerialError = function(data) {
-	console.log('SERIAL ERROR');
-	console.log(data);
+	log.error(data);
 }
 
 G2.prototype.write = function(s) {
@@ -339,6 +337,9 @@ G2.prototype.onMessage = function(response) {
 		r = response;
 	}
 
+	if(r.msg && (r.msg === "SYSTEM READY")) {
+		this.emit('ready', this);
+	}
 	// Deal with streaming (if response contains a queue report)
 	this.handleQueueReport(r);
 
@@ -400,7 +401,7 @@ G2.prototype.runString = function(data, callback) {
 		line = lines[i].trim().toUpperCase();
 		
 		// Quick sanity check (ignore comments, queue only G,M,N codes)
-		if((line[0] == 'G') || (line[0] == 'M') || (line[0] == 'N')) {
+		if(true) {
 			line_count += 1;
 			this.gcode_queue.enqueue(line);
 		}
