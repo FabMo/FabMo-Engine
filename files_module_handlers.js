@@ -9,12 +9,10 @@ ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
 
 
 function allowed_file(filename){
-	if (ALLOWED_EXTENSIONS.indexOf(path.extname(filename)) !== -1)
-	{
+	if (ALLOWED_EXTENSIONS.indexOf(path.extname(filename)) !== -1) {
 		return true;
 	}
-	else
-	{
+	else {
 		return false;
 	}
 };

@@ -19,7 +19,7 @@ command
      {return {type:"cmd","cmd":m,"args":args};}
 
 single
-   = name:("END" / "PAUSE" / "RETURN") 
+   = name:("END" / "RETURN") 
      {return {type:name.toLowerCase()}}
 
 conditional

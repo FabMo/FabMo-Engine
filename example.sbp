@@ -2,7 +2,10 @@
 
 myloop:
   MX,&pos
+  MY,1
+  MY,0
   &pos = &pos+1
-  IF &pos < 10 THEN GOTO myloop
+  GOTO myloop
+'  IF &pos < 10 THEN GOTO myloop
 
 END
