@@ -47,6 +47,7 @@ function G2() {
 	this.jog_heartbeat = null;
 	this.quit_pending = false;
 	this.path = "";
+	this.qtotal = 0;
 
 	// Hacky stuff related to streaming
 	this.flooded = false;
@@ -115,7 +116,7 @@ G2.prototype.jog = function(direction) {
 	var MOVES = 10;
 	var FEED_RATE = 60.0;			// in/min
 	var MOVE_DISTANCE = 0.1;		// in
-	var START_DISTANCE = 0.005; 	// in
+	var START_TIME = 0.005; 		// sec
 
 	direction = String(direction).trim().toLowerCase().replace(/\+/g,"");
 	axes = {'x':'X', 
@@ -141,9 +142,9 @@ G2.prototype.jog = function(direction) {
 		// A starter move, which plans down to a stop no matter what, so we make it short
 		// Followed by a short flood of relatively short, but reasonably sized moves
 		var d = axes[direction];
-		var starting_move = 'G1' + d + START_DISTANCE + 'F' + FEED_RATE;
+		var starting_cmd = 'G4 P' + START_TIME;
 		var move = 'G1' + d + MOVE_DISTANCE + 'F' + FEED_RATE;
-		var codes = ['G91', starting_move];
+		var codes = ['G91', starting_cmd];
 
 		this.command({'qv':2});
 
@@ -228,6 +229,9 @@ G2.prototype.handleQueueReport = function(r) {
 	var qr = r.qr;
 	var qo = r.qo || 0;
 	var qi = r.qi || 0;
+
+	this.qtotal += (qi-qo);
+	//log.info("QTOT: " + this.qtotal);
 
 	if((qr != undefined)) {
 
