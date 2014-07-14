@@ -1,5 +1,6 @@
 var parser = require('./sbp_parser');
 var fs = require('fs');
+var log = require('./log');
 
 function SBPRuntime() {
 	this.program = []
@@ -7,42 +8,81 @@ function SBPRuntime() {
 	this.user_vars = {}
 	this.label_index = {}
 	this.stack = []
+	this.current_chunk = []
+	this.running = false;
 };
 
-SBPRuntime.prototype.runFile = function(filename) {
-	fs.readFile(filename, 'utf8', function (err,data) {
-		  if (err) {
-		  	console.log('Error reading file ' + filename);
-		    return console.log(err);
-		  } else {
-		  	this.runString(data);
-		  }
-		}.bind(this));
+SBPRuntime.prototype.connect = function(machine) {
+	this.machine = machine
+	this.driver = machine.driver
+
+	this.driver.on('status', this._onG2Status.bind(this));
 }
 
-SBPRuntime.prototype.runFileSync = function(filename) {
-	data = fs.readFileSync(filename, 'utf8');
-	this.runString(data);
+SBPRuntime.prototype._onG2Status = function(status) {
+	// Update our copy of the system status
+	for (var key in this.machine.status) {
+		if(key in status) {
+			this.machine.status[key] = status[key];
+		}
+	}
 }
+
 SBPRuntime.prototype.runString = function(s) {
 	this.init();
-    this.program = parser.parse(s + '\n');
-    this._analyzeLabels();  // Build a table of labels
-    this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table
-    console.log(this.program);
-    while(this.tick());
+	try {
+    	this.program = parser.parse(s + '\n');
+	    console.log(this.program);
+	    this._analyzeLabels();  // Build a table of labels
+	    this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table    
+    } catch(err) {
+    	log.error(err);
+    }
+    this._run_until_break();
 }
 
-SBPRuntime.prototype.tick = function() {
-	if(this.pc >= this.program.length) {
-		return false;
+// Evaluate a list of arguments provided (for commands)
+SBPRuntime.prototype._evaluate_args = function(args) {
+	retval = [];
+	for(i=0; i<args.length; i++) {
+		retval.push(this._eval(args[i]));
 	}
-	line = this.program[this.pc];
-	this._execute(line);
-	return true;
+	return retval;
 }
 
+
+SBPRuntime.prototype._run_until_break = function() {
+while(true) {
+	log.info('Running until break...')
+	if(this.pc >= this.program.length) {
+		console.log("Program over (pc = " + this.pc + ")")
+		this.init();
+		return;
+	}
+
+	while(true) {
+		line = this.program[this.pc];
+		console.log("tick: " + JSON.stringify(line));
+		break_stack = this._execute(line);
+		if(break_stack) {
+			break;
+		}
+	}
+	
+	console.log("DEALING WITH CHUNK");
+	if(this.current_chunk) {
+		this.driver.runSegment(this.current_chunk.join('\n'), function() {
+			this.current_chunk = [];
+			this._run_until_break();
+		}.bind(this));
+	}
+}
+}
+
+// Execute a single statement
 SBPRuntime.prototype._execute = function(command) {
+	end_chunk = false;
+
 	if(!command) {
 		this.pc += 1;
 		return
@@ -50,7 +90,7 @@ SBPRuntime.prototype._execute = function(command) {
 	switch(command.type) {
 		case "cmd":
 			if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
-				this[command.cmd](command.args);
+				this[command.cmd](this._evaluate_args(command.args));
 			} else {
 				this._unhandledCommand(command)
 			}
@@ -58,8 +98,8 @@ SBPRuntime.prototype._execute = function(command) {
 			break;
 
 		case "return":
+			end_chunk = true
 			console.log("RETURN");
-			console.log(this.stack);
 			if(this.stack) {
 				this.pc = this.stack.pop();
 			} else {
@@ -68,10 +108,12 @@ SBPRuntime.prototype._execute = function(command) {
 			break;
 
 		case "end":
+			end_chunk = true;
 			this.pc = this.program.length;
 			break;
 
 		case "goto":
+			end_chunk = true;
 			if(command.label in this.label_index) {
 				this.pc = this.label_index[command.label];
 			} else {
@@ -80,6 +122,7 @@ SBPRuntime.prototype._execute = function(command) {
 			break;
 
 		case "gosub":
+			end_chunk = true;
 			if(command.label in this.label_index) {
 				this.pc = this.label_index[command.label];
 				this.stack.push([this.pc + 1])
@@ -94,6 +137,8 @@ SBPRuntime.prototype._execute = function(command) {
 			break;
 
 		case "cond":
+			// Here we would wait for conditional
+			end_chunk = true;
 			if(this._eval(command.cmp)) {
 				this._execute(command.stmt);
 			} else {
@@ -111,8 +156,10 @@ SBPRuntime.prototype._execute = function(command) {
 			this.pc += 1;
 			break;
 	}
+	return !end_chunk;
 }
 
+// Evaluate an expression
 SBPRuntime.prototype._eval = function(expr) {
 	if(expr.op == undefined) {
 		if (expr in this.user_vars) {
@@ -211,7 +258,7 @@ SBPRuntime.prototype._unhandledCommand = function(command) {
 }
 
 SBPRuntime.prototype.emit_gcode = function(s) {
-	console.log(s);
+	this.current_chunk.push(s);
 }
 
 /* FILE /
@@ -259,7 +306,7 @@ SBPRuntime.prototype.M5 = function(args) {
 }
 
 SBPRuntime.prototype.M6 = function(args) {
-	this.emit_gcode("G1 X" + args[0] + "Y" + args[1] + "Z" + args[2] + "A" + args[3] + "B" + args[4] + "C" " args[5]");
+	this.emit_gcode("G1 X" + args[0] + "Y" + args[1] + "Z" + args[2] + "A" + args[3] + "B" + args[4] + "C" + args[5]);
 }
 
 SBPRuntime.prototype.MH = function(args) {
@@ -310,7 +357,7 @@ SBPRuntime.prototype.J5 = function(args) {
 }
 
 SBPRuntime.prototype.J6 = function(args) {
-	this.emit_gcode("G0 X" + args[0] + "Y" + args[1] + "Z" + args[2] + "A" + args[3] + "B" + args[4] + "C" " args[5]");
+	this.emit_gcode("G0 X" + args[0] + "Y" + args[1] + "Z" + args[2] + "A" + args[3] + "B" + args[4] + "C" + args[5]);
 }
 
 SBPRuntime.prototype.JH = function(args) {
@@ -419,5 +466,7 @@ SBPRuntime.prototype.VS = function(args) {
 runtime = new SBPRuntime();
 runtime.runFileSync('example.sbp');
 console.log(runtime.user_vars);
+
+exports.SBPRuntime = SBPRuntime
 
 

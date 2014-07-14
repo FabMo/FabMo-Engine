@@ -394,27 +394,56 @@ G2.prototype.command = function(obj) {
 // And only G-Codes and M-Codes will be sent to G2
 // And an M30 will be placed at the end to put the machine back in a 'good' place
 G2.prototype.runString = function(data, callback) {
-	line_count = 0;
+	console.log("G2 RUN STRING");
 	lines = data.split('\n');
+	line_count=0;
 	for(var i=0; i<lines.length; i++) {
-		line = lines[i].trim().toUpperCase();
-		
-		// Quick sanity check (ignore comments, queue only G,M,N codes)
-		if((line[0] == 'G') || (line[0] == 'M') || (line[0] == 'N')) {
-			line_count += 1;
-			this.gcode_queue.enqueue(line);
-		}
+		line_count += 1;
+		this.gcode_queue.enqueue(lines[i]);
 	}
+	console.log(line_count);
 	if(line_count > 0) {
 		this.gcode_queue.enqueue("M30");
 		this.pause_flag = false;
-		typeof callback === "function" && callback(false, this);		
-		this.requestQueueReport();					
+		typeof callback === "function" && callback(false, this);
+		this.requestQueueReport();
+		console.log('runnnnnn')
+	} else {
+		typeof callback === "function" && callback(true, "No G-codes were present in the provided string");
+	}
+};
+
+// Send a (possibly multi-line) string
+// String will be stripped of comments and blank lines
+// And only G-Codes and M-Codes will be sent to G2
+// And an M30 will be placed at the end to put the machine back in a 'good' place
+G2.prototype.runSegment = function(data, callback) {
+	line_count = 0;
+	lines = data.split('\n');
+	for(var i=0; i<lines.length; i++) {
+		this.gcode_queue.enqueue(lines[i]);
+		line_count += 1;
+	}
+	if(line_count > 0) {
+		this.pause_flag = false;
+		
+		// This will get called when motion starts
+		this.once("state", function(old_state, new_state) {
+			if(new_state == 5) {
+				log.info("MOVING INTO THE RUN STATE WHILE RUNNING A SEGMENT")
+			}
+			// And this when motion stops
+			this.once("state", function(old_state, new_state) {
+				log.info("MOVING TO THE PAUSE STATE WHILE RUNNING A SEGMENT")
+				typeof callback === "function" && callback();
+			});
+		});
+
+		this.requestQueueReport();
 	} else {
 		typeof callback === "function" && callback(true, "No G-codes were present in the provided string");				
 	}
 };
-
 
 
 

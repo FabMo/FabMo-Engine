@@ -7,6 +7,9 @@ var Engine = require('tingodb')(),
 var fs = require('fs');
 var path = require('path');
 var log = require('./log');
+var GCodeRuntime = require('./gcode').GCodeRuntime
+var SBPRuntime = require('./opensbp').SBPRuntime
+
 
 function connect(callback) {
 
@@ -46,11 +49,17 @@ function Machine(serial_path, callback) {
 	}
 
 	this.driver = new g2.G2();
-	this.driver.on("error", function(data) {console.log(data)});
+	this.driver.on("error", function(data) {log.error(data)});
+
 	this.driver.connect(serial_path, function(err, data) {
 		this.status.state = "idle";
-		this.driver.on('state', this._onG2StateChange.bind(this));
-		this.driver.on('status', this._onG2Status.bind(this));
+
+		this.gcode_runtime = new GCodeRuntime();
+		this.gcode_runtime.connect(this);
+		
+		this.sbp_runtime = new SBPRuntime();
+		this.sbp_runtime.connect(this);
+
 		this.driver.requestStatusReport(function(err, result) {
 			typeof callback === "function" && callback(false, this);
 		}.bind(this));
@@ -62,248 +71,9 @@ Machine.prototype.toString = function() {
     return "[Machine Model on '" + driver.path + "']";
 }
 
-// Run the provided string
-// callback runs only when execution is complete.
-Machine.prototype.runString = function(string, callback) {
-	log.debug('Running String ' + string)
-	if(this.status.state === 'idle') {
-		this.driver.runString(string, function(error, data) {
-			if(!error) {
-				this.status.state = "running";
-			}
-			typeof callback === "function" && callback(error, data);
-		}.bind(this));
-	} else {
-		typeof callback === "function" && callback(true, "Cannot run when in '" + this.status.state + "' state.");		
-	}
+Machine.prototype.gcode = function(string) {
+	this.driver.runString(string);
 }
-
-Machine.prototype._onG2Status = function(status) {
-	// Update our copy of the system status
-	for (var key in this.status) {
-		if(key in status) {
-			this.status[key] = status[key];
-		}
-	}
-}
-
-Machine.prototype._idle = function() {
-	this.status.state = 'idle';
-	this.status.current_file = null;
-};
-
-Machine.prototype._onG2StateChange = function(states) {
-	old_state = states[0];
-	new_state = states[1];
-	log.info("STATE CHANGE: " + this.status.state + ' ' + states);
-
-	switch(this.status.state) {
-		case "not_ready":
-			// This shouldn't happen.
-			console.log("Got a state change event from G2 before ready");
-			break;
-
-		case "running":
-			switch(old_state) {
-				case g2.STAT_RUNNING:
-					switch(new_state) {
-						case g2.STAT_STOP:
-						case g2.STAT_END:
-							this._idle();
-							this.emit('job_complete', this);
-							break;
-						case g2.STAT_HOLDING:
-							this.status.state = "paused";
-							this.emit('job_pause', this);
-							break;
-					}
-					break;
-
-				case g2.STAT_STOP:
-				case g2.STAT_HOLDING:
-					switch(new_state) {
-						case g2.STAT_RUNNING:
-							this.status.state = "running";
-							this.emit('job_resume', this);
-							break;
-						case g2.STAT_END:
-							this._idle();
-							this.emit('job_complete', this);
-							break;
-						case g2.STAT_HOMING:
-							this.status.state = "homing";
-							break;
-						case g2.STAT_PROBE:
-							this.status.state = "probing";
-							break;
-					} // new_state
-					break;
-
-				case g2.STAT_END:
-					switch(new_state) {
-						case g2.STAT_HOMING:
-							this.status.state = "homing";
-							break;
-						case g2.STAT_PROBE:
-							this.status.state = "probing";
-							break;
-					} // new_state
-					break;
-				default:
-					log.error('Old state was ' + old_state + ' while running.... (' +  new_state + ')'); 
-			} // old_state
-			break;
-
-		case "homing":
-			switch(old_state) {
-				case g2.STAT_RUNNING:
-				case g2.STAT_HOMING:
-					switch(new_state) {
-						case g2.STAT_END:
-							this._idle();
-							this.emit('job_complete', this);
-							break;
-						case g2.STAT_STOP:	
-						case g2.STAT_HOLDING:
-							this.status.state = "paused";
-							this.emit('job_pause', this);
-							break;
-					}
-					break;
-
-				case g2.STAT_STOP:
-				case g2.STAT_HOLDING:
-					switch(new_state) {
-						case g2.STAT_RUNNING:
-							this.status.state = "running";
-							this.emit('job_resume', this);
-							break;
-						case g2.STAT_END:
-							this._idle();
-							this.emit('job_complete', this);
-							break;
-					} // new_state
-					break;
-			} // old_state
-			break;
-
-		case "idle":
-				log.info('Leaving the idle state ' + old_state + ',' + new_state)
-			switch(old_state) {
-				case undefined:
-				case g2.STAT_STOP:
-				case g2.STAT_HOLDING:
-					switch(new_state) {
-						case g2.STAT_RUNNING:
-							this.status.state = "running";
-							this.emit('job_resume', this);
-							break;
-						case g2.STAT_END:
-							//console.log('Got an unexpected switch to END from IDLE');
-							break;
-						case g2.STAT_HOMING:
-							this.status.state = "homing";
-							break;
-						case g2.STAT_PROBE:
-							this.status.state = "probing";
-							break;
-					} // new_state
-					break;
-				default:
-					log.error("OMG OMG OMG UNKNOWN STATE " + old_state);
-					break;
-			} // old_state
-			break;
-
-		case "paused":
-			switch(old_state) {
-				case g2.STAT_STOP:
-				case g2.STAT_HOLDING:
-					switch(new_state) { 
-						case g2.STAT_RUNNING:
-							this.status.state = "running";
-							this.emit('job_resume', this);
-							break;
-						case g2.STAT_END:
-							this._idle();
-							this.emit('job_complete', this);
-							break;
-					} // new_state
-					break;
-			} // old_state
-			break;
-
-		case "manual":
-			switch(old_state) {
-				case g2.STAT_RUNNING:
-					switch(new_state) {
-						case g2.STAT_END:
-							this._idle();
-							break;
-                        case g2.STAT_STOP:
-						case g2.STAT_HOLDING:
-							//this._idle();
-							this.status.state = "paused";
-							break;
-					}
-					break;
-
-				case g2.STAT_STOP:
-				case g2.STAT_HOLDING:
-					switch(new_state) {
-						case g2.STAT_RUNNING:
-							this.status.state = "manual";
-							break;
-						case g2.STAT_END:
-							this._idle();
-							break;
-					} // new_state
-					break;
-			} // old_state
-			break;
-
-		case "probing":
-			switch(old_state) {
-				case g2.STAT_RUNNING:
-				case g2.STAT_PROBE:
-					switch(new_state) {
-						case g2.STAT_END:
-							this._idle();
-							this.emit('job_complete', this);
-							break;
-						case g2.STAT_STOP:	
-						case g2.STAT_HOLDING:
-							this.status.state = "paused";
-							this.emit('job_pause', this);
-							break;
-					}
-					break;
-
-				case g2.STAT_STOP:
-				case g2.STAT_HOLDING:
-					switch(new_state) {
-						case g2.STAT_RUNNING:
-							this.status.state = "running";
-							this.emit('job_resume', this);
-							break;
-						case g2.STAT_PROBE:
-							this.status.state = "probing";
-							this.emit('job_resume', this);
-							break;
-						case g2.STAT_END:
-							this._idle();
-							this.emit('job_complete', this);
-							break;
-					} // new_state
-					break;
-			} // old_state
-			break;
-
-	} // this.status.state
-	log.debug('State: ' + this.status.state)
-}; // _onG2StateChange
-
-
 Machine.prototype.runFile = function(filename) {
 	fs.readFile(filename, 'utf8', function (err,data) {
 		  if (err) {
@@ -311,10 +81,19 @@ Machine.prototype.runFile = function(filename) {
 		    return console.log(err);
 		  } else {
             parts = filename.split(path.sep)
+        	ext = path.extname(filename).toLowerCase();
             log.debug(filename);
             log.debug(parts);
 		  	this.status.current_file = parts[parts.length-1]
-		  	this.runString(data);
+
+		  	if(ext == '.sbp') {
+		  		this.current_runtime = this.sbp_runtime;
+		  	} else {
+		  		this.current_runtime = this.gcode_runtime;
+		  	}
+
+		  	this.current_runtime.runString(data);
+
 		  }
 		}.bind(this));
 };
@@ -325,7 +104,7 @@ Machine.prototype.jog = function(direction, callback) {
 		this.driver.jog(direction);
 
 	} else {
-		typeof callback === "function" && callback(true, "Cannot jog when in '" + this.status.state + "' state.");		
+		typeof callback === "function" && callback(true, "Cannot jog when in '" + this.status.state + "' state.");
 	}
 
 }
