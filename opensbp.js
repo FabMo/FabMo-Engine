@@ -214,6 +214,10 @@ SBPRuntime.prototype.emit_gcode = function(s) {
 	console.log(s);
 }
 
+/* FILE /
+
+/* MOVE */
+
 SBPRuntime.prototype.MX = function(args) {
 	this.emit_gcode("G1 X" + args[0]);
 }
@@ -258,6 +262,13 @@ SBPRuntime.prototype.M6 = function(args) {
 	this.emit_gcode("G1 X" + args[0] + "Y" + args[1] + "Z" + args[2] + "A" + args[3] + "B" + args[4] + "C" " args[5]");
 }
 
+SBPRuntime.prototype.MH = function(args) {
+	//this.emit_gcode("G1 Z" + safe_Z);
+	this.emit_gcode("G1 X0 Y0");
+}
+
+/* JOG */
+
 SBPRuntime.prototype.JX = function(args) {
 	this.emit_gcode("G0 X" + args[0]);
 }
@@ -301,6 +312,109 @@ SBPRuntime.prototype.J5 = function(args) {
 SBPRuntime.prototype.J6 = function(args) {
 	this.emit_gcode("G0 X" + args[0] + "Y" + args[1] + "Z" + args[2] + "A" + args[3] + "B" + args[4] + "C" " args[5]");
 }
+
+SBPRuntime.prototype.JH = function(args) {
+	//this.emit_gcode("G0 Z" + safe_Z);
+	this.emit_gcode("G0 X0 Y0");
+}
+
+SBPRuntime.prototype.JS = function(args) {
+	this.emit_gcode("F" + args[0]);
+}
+
+/* CUTS */
+
+/* ZERO */
+
+SBPRuntime.prototype.ZX = function(args) {
+//	this.emit_gcode("G10 L2 P2 X?");
+ 	this.emit_gcode("G54");
+}
+
+SBPRuntime.prototype.ZY = function(args) {
+//	this.emit_gcode("G10 L2 P2 Y?");
+ 	this.emit_gcode("G54");
+}
+
+SBPRuntime.prototype.ZZ = function(args) {
+//	this.emit_gcode("G10 L2 P2 Z?");
+ 	this.emit_gcode("G54");
+}
+
+SBPRuntime.prototype.ZA = function(args) {
+//	this.emit_gcode("G10 L2 P2 A?");
+ 	this.emit_gcode("G54");
+}
+
+SBPRuntime.prototype.ZB = function(args) {
+//	this.emit_gcode("G10 L2 P2 B?");
+ 	this.emit_gcode("G54");
+}
+
+SBPRuntime.prototype.ZC = function(args) {
+//	this.emit_gcode("G10 L2 P2 Z?");
+ 	this.emit_gcode("G54");
+}
+
+SBPRuntime.prototype.Z2 = function(args) {
+//	this.emit_gcode("G10 L2 P2 X? Y?");
+ 	this.emit_gcode("G54");
+}
+
+SBPRuntime.prototype.Z3 = function(args) {
+//	this.emit_gcode("G10 L2 P2 X? Y? Z?");
+ 	this.emit_gcode("G54");
+}
+
+SBPRuntime.prototype.Z4 = function(args) {
+//	this.emit_gcode("G10 L2 P2 X? Y? Z? A?");
+ 	this.emit_gcode("G54");
+}
+
+SBPRuntime.prototype.Z5 = function(args) {
+//	this.emit_gcode("G10 L2 P2 X? Y? Z? A? B?");
+ 	this.emit_gcode("G54");
+}
+
+SBPRuntime.prototype.Z6 = function(args) {
+//	this.emit_gcode("G10 L2 P2 X? Y? Z? A? B? C?");
+ 	this.emit_gcode("G54");
+}
+
+SBPRuntime.prototype.ZT = function(args) {
+//	this.emit_gcode("G28.1");
+}
+
+/* SETTINGS */
+
+// Set to table base coordinates
+SBPRuntime.prototype.ST = function(args) {
+	this.emit_gcode("G54");
+}
+
+/* VALUES */
+
+SBPRuntime.prototype.VC = function(args) {
+//	this.emit_gcode("G28.1");
+}
+
+SBPRuntime.prototype.VP = function(args) {
+//	this.emit_gcode("G28.1");
+}
+
+SBPRuntime.prototype.VR = function(args) {
+//	this.emit_gcode("G28.1");
+}
+
+SBPRuntime.prototype.VS = function(args) {
+//	this.emit_gcode("G28.1");
+}
+
+/* TOOLS */
+
+/* UTILITIES */
+
+/* HELP */
 
 runtime = new SBPRuntime();
 runtime.runFileSync('example.sbp');
