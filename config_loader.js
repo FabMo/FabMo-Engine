@@ -48,7 +48,7 @@ exports.load = function(driver){
 										nb_commands_executed++;
 										//console.log('commands send : ' + nb_commands_send);
 										//console.log('commands executed : ' + nb_commands_executed);
-										if (nb_commands_send+1 === nb_commands_executed){
+										if (nb_commands_send === nb_commands_executed){
 											console.log('configuration loaded successfully');
 											driver.emit('configuration_loaded',undefined);
 										}
