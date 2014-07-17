@@ -29,6 +29,7 @@ SBPRuntime.prototype._onG2Status = function(status) {
 	}
 }
 
+// Run the provided string as a program
 SBPRuntime.prototype.runString = function(s) {
 	this.init();
 	try {
@@ -51,18 +52,22 @@ SBPRuntime.prototype._evaluate_args = function(args) {
 	return retval;
 }
 
+// Start the stored program running
 SBPRuntime.prototype._run = function() {
 	this.started = true;
 	this._continue();
 }
 
+// Continue running the current program (until the end of the next chunk)
+// _continue() will dispatch the next chunk if appropriate, once the current chunk is finished
 SBPRuntime.prototype._continue = function() {
 	log.info('Running until break...')
 
+	// Continue is only for resuming an already running program.  It's not a substitute for _run()
 	if(!this.started) {
 		return;
 	}
-	
+
 	while(true) {
 	
 		if(this.pc >= this.program.length) {
@@ -82,6 +87,9 @@ SBPRuntime.prototype._continue = function() {
 	}	
 }
 
+// Pack up the current chunk and send it to G2
+// Setup callbacks so that when the chunk is done, the program can be resumed
+// 
 SBPRuntime.prototype._dispatch = function() {
 	var runtime = this;
 	this.break_chunk = false;
@@ -111,6 +119,7 @@ SBPRuntime.prototype._dispatch = function() {
 }
 
 // Execute a single statement
+// Accepts a parsed statement, and returns nothing
 SBPRuntime.prototype._execute = function(command) {
 	this.break_chunk = false;
 
@@ -188,14 +197,15 @@ SBPRuntime.prototype._execute = function(command) {
 			break;
 
 		default:
-			console.log("GOT UNKNOWN COMMAND TYPE " + command.type)
+			log.error("Unknown command: " + JSON.stringify(command))
 			this.pc += 1;
 			break;
 	}
 	return;
 }
 
-// Evaluate an expression
+// Evaluate an expression.  Return the result.
+// TODO: Make this robust to undefined user variables
 SBPRuntime.prototype._eval = function(expr) {
 	if(expr.op == undefined) {
 		if (expr in this.user_vars) {
@@ -252,6 +262,8 @@ SBPRuntime.prototype.init = function() {
 }
 
 // Compile an index of all the labels in the program
+// this.label_index will map labels to line numbers
+// An error is thrown on duplicate labels
 SBPRuntime.prototype._analyzeLabels = function() {
 	this.label_index = {}
 	for(i=0; i<this.program.length; i++) {
@@ -270,6 +282,7 @@ SBPRuntime.prototype._analyzeLabels = function() {
 }
 
 // Check all the GOTOS/GOSUBS in the program and make sure their labels exist
+// Throw an error for undefined labels.
 SBPRuntime.prototype._analyzeGOTOs = function() {
 	for(i=0; i<this.program.length; i++) {
 			line = this.program[i];
@@ -283,7 +296,8 @@ SBPRuntime.prototype._analyzeGOTOs = function() {
 						if (line.label in this.label_index) {
 							
 						} else {
-							throw "Unknown label " + line.label + " on line " + i;
+							// Add one to the line number so they start at 1
+							throw "Undefined label " + line.label + " on line " + (i+1);
 						}
 						break;
 				}
@@ -291,11 +305,12 @@ SBPRuntime.prototype._analyzeGOTOs = function() {
 		}
 }
 
-
+// Called for any valid shopbot mnemonic that doesn't have a handler registered
 SBPRuntime.prototype._unhandledCommand = function(command) {
-	console.log('Unhandled Command: ' + JSON.stringify(command));
+	log.error('Unhandled Command: ' + JSON.stringify(command));
 }
 
+// Add GCode to the current chunk, which is dispatched on a break or end of program
 SBPRuntime.prototype.emit_gcode = function(s) {
 	this.current_chunk.push(s);
 }
