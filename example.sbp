@@ -5,7 +5,5 @@ myloop:
   MY,1
   MY,0
   &pos = &pos+1
-  GOTO myloop
-'  IF &pos < 10 THEN GOTO myloop
-
+  IF &pos < 10 THEN GOTO myloop
 END

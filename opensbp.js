@@ -1,6 +1,7 @@
 var parser = require('./sbp_parser');
 var fs = require('fs');
 var log = require('./log');
+var g2 = require('./g2');
 
 function SBPRuntime() {
 	this.program = []
@@ -38,7 +39,7 @@ SBPRuntime.prototype.runString = function(s) {
     } catch(err) {
     	log.error(err);
     }
-    this._run_until_break();
+    this._run();
 }
 
 // Evaluate a list of arguments provided (for commands)
@@ -50,38 +51,68 @@ SBPRuntime.prototype._evaluate_args = function(args) {
 	return retval;
 }
 
+SBPRuntime.prototype._run = function() {
+	this.started = true;
+	this._continue();
+}
 
-SBPRuntime.prototype._run_until_break = function() {
-while(true) {
+SBPRuntime.prototype._continue = function() {
 	log.info('Running until break...')
-	if(this.pc >= this.program.length) {
-		console.log("Program over (pc = " + this.pc + ")")
-		this.init();
+
+	if(!this.started) {
 		return;
 	}
-
-	while(true) {
-		line = this.program[this.pc];
-		console.log("tick: " + JSON.stringify(line));
-		break_stack = this._execute(line);
-		if(break_stack) {
-			break;
-		}
-	}
 	
-	console.log("DEALING WITH CHUNK");
-	if(this.current_chunk) {
-		this.driver.runSegment(this.current_chunk.join('\n'), function() {
-			this.current_chunk = [];
-			this._run_until_break();
-		}.bind(this));
-	}
+	while(true) {
+	
+		if(this.pc >= this.program.length) {
+			this._dispatch();
+			console.log("Program over. (pc = " + this.pc + ")")
+			this.init();
+			return;
+		}
+
+		line = this.program[this.pc];
+		this._execute(line);
+
+		if(this.break_chunk) {
+			this._dispatch();
+			return;				
+		} 
+	}	
 }
+
+SBPRuntime.prototype._dispatch = function() {
+	var runtime = this;
+	this.break_chunk = false;
+	if(this.current_chunk) {
+		this.driver.expectStateChange({
+			"running" : function(driver) {
+				console.log("Expected a running state change and got one.");
+				driver.expectStateChange({
+					"stop" : function(driver) { 
+						runtime._continue();
+					},
+					null : function(driver) {
+						log.info("Expected a stop but didn't get one.");
+					}
+				});
+			},
+			null : function(t) {
+				log.info("Expected a start but didn't get one."); 
+				console.log(t.status);
+			}
+		});
+		log.info("Dispatching...");
+		console.log(this.current_chunk);
+		this.driver.runSegment(this.current_chunk.join('\n'));
+		this.current_chunk = [];
+	}		
 }
 
 // Execute a single statement
 SBPRuntime.prototype._execute = function(command) {
-	end_chunk = false;
+	this.break_chunk = false;
 
 	if(!command) {
 		this.pc += 1;
@@ -98,7 +129,7 @@ SBPRuntime.prototype._execute = function(command) {
 			break;
 
 		case "return":
-			end_chunk = true
+			this.break_chunk = true
 			console.log("RETURN");
 			if(this.stack) {
 				this.pc = this.stack.pop();
@@ -108,12 +139,12 @@ SBPRuntime.prototype._execute = function(command) {
 			break;
 
 		case "end":
-			end_chunk = true;
+			this.break_chunk = true;
 			this.pc = this.program.length;
 			break;
 
 		case "goto":
-			end_chunk = true;
+			this.break_chunk = true;
 			if(command.label in this.label_index) {
 				this.pc = this.label_index[command.label];
 			} else {
@@ -122,7 +153,7 @@ SBPRuntime.prototype._execute = function(command) {
 			break;
 
 		case "gosub":
-			end_chunk = true;
+			this.break_chunk = true;
 			if(command.label in this.label_index) {
 				this.pc = this.label_index[command.label];
 				this.stack.push([this.pc + 1])
@@ -138,7 +169,7 @@ SBPRuntime.prototype._execute = function(command) {
 
 		case "cond":
 			// Here we would wait for conditional
-			end_chunk = true;
+			this.break_chunk = true;
 			if(this._eval(command.cmp)) {
 				this._execute(command.stmt);
 			} else {
@@ -151,12 +182,17 @@ SBPRuntime.prototype._execute = function(command) {
 			this.pc += 1;
 			break;
 
+		case "pause":
+			this.pc += 1;
+			this.break_chunk = true;
+			break;
+
 		default:
 			console.log("GOT UNKNOWN COMMAND TYPE " + command.type)
 			this.pc += 1;
 			break;
 	}
-	return !end_chunk;
+	return;
 }
 
 // Evaluate an expression
@@ -210,6 +246,9 @@ SBPRuntime.prototype.init = function() {
 	this.pc = 0;
 	this.stack = []
 	this.label_index = {}
+	this.break_chunk = false;
+	this.current_chunk = [];
+	this.started = false;
 }
 
 // Compile an index of all the labels in the program
@@ -462,11 +501,11 @@ SBPRuntime.prototype.VS = function(args) {
 /* UTILITIES */
 
 /* HELP */
-
+/*
 runtime = new SBPRuntime();
 runtime.runFileSync('example.sbp');
 console.log(runtime.user_vars);
-
+*/
 exports.SBPRuntime = SBPRuntime
 
 

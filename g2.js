@@ -15,7 +15,7 @@ var config = require('./config_loader');
 var log = require('./log')
 
 var STAT_INIT = 0;
-var STATE_READY = 1;
+var STAT_READY = 1;
 var STAT_ALARM = 2
 var STAT_STOP = 3;
 var STAT_END = 4;
@@ -47,6 +47,9 @@ function G2() {
 	this.jog_heartbeat = null;
 	this.quit_pending = false;
 	this.path = "";
+
+	// Array of assoc-arrays that detail callbacks for state changes
+	this.expectations = [];
 
 	// Hacky stuff related to streaming
 	this.flooded = false;
@@ -303,8 +306,29 @@ G2.prototype.handleStatusReport = function(response) {
 			this.status[key] = r.sr[key];
 		}
 
-		// Alert subscribers of machine state changes
-		if(this.prev_stat != this.status.stat) {
+		stat = this.status.stat;
+
+		if(this.prev_stat != stat) {
+			
+			l = this.expectations.length
+			// Handle subscribers expecting a specific state change
+			while(l-- > 0) {
+				stat_name = states[stat];
+				log.info("Stat change: " + stat_name)
+				handlers = this.expectations.shift();
+				if(stat_name in handlers) {
+					callback = handlers[stat_name];
+				} else if (null in handlers) {
+					callback = handlers[null];
+				} else {
+					callback = null;
+				}
+				if(callback) {
+					callback(this);
+				}
+			}
+
+			// Alert subscribers of machine state changes
 			this.emit('state', [this.prev_stat, this.status.stat]);
 			this.prev_stat = this.status.stat;
 		}
@@ -326,8 +350,8 @@ G2.prototype.handleStatusReport = function(response) {
 		}
 
 	}
-
 }
+
 // Called once a proper JSON response is decoded from the chunks of data that come back from G2
 G2.prototype.onMessage = function(response) {
 	
@@ -390,33 +414,12 @@ G2.prototype.command = function(obj) {
 };
 
 // Send a (possibly multi-line) string
-// String will be stripped of comments and blank lines
-// And only G-Codes and M-Codes will be sent to G2
-// And an M30 will be placed at the end to put the machine back in a 'good' place
+// An M30 will be placed at the end to put the machine back in the "idle" state
 G2.prototype.runString = function(data, callback) {
-	console.log("G2 RUN STRING");
-	lines = data.split('\n');
-	line_count=0;
-	for(var i=0; i<lines.length; i++) {
-		line_count += 1;
-		this.gcode_queue.enqueue(lines[i]);
-	}
-	console.log(line_count);
-	if(line_count > 0) {
-		this.gcode_queue.enqueue("M30");
-		this.pause_flag = false;
-		typeof callback === "function" && callback(false, this);
-		this.requestQueueReport();
-		console.log('runnnnnn')
-	} else {
-		typeof callback === "function" && callback(true, "No G-codes were present in the provided string");
-	}
+	this.runSegment(data + "\nM30\n", callback);
 };
 
 // Send a (possibly multi-line) string
-// String will be stripped of comments and blank lines
-// And only G-Codes and M-Codes will be sent to G2
-// And an M30 will be placed at the end to put the machine back in a 'good' place
 G2.prototype.runSegment = function(data, callback) {
 	line_count = 0;
 	lines = data.split('\n');
@@ -445,13 +448,48 @@ G2.prototype.runSegment = function(data, callback) {
 	}
 };
 
+// Function works like "once()" for a state change
+// callbacks is an associative array mapping states to callbacks
+// If the *next* state change matches a state in the associative array, the callback it maps to is called.
+// If null is specified in the array, this callback is used for any state that is unspecified
+//
+// eg:
+// this.expectStateChange {
+//                          STAT_END : end_callback,
+//                          STAT_PAUSE : pause_callback,
+//                          null : other_callback};
+//
+// In the above example, when the next change of state happens, the appropriate callback is called in the case
+// that the new state is either STAT_END or STAT_PAUSE.  If the new state is neither, other_callback is called.
 
+G2.prototype.expectStateChange = function(callbacks) {
+	console.log(this.expectations);
+	this.expectations.push(callbacks);
+}
+
+states = {
+	0 : "init",
+	1 : "ready",
+	2 : "alarm",
+	3 : "stop",
+	4 : "end" ,
+	5 : "running",
+	6 : "holding",
+	7 : "probe",
+	8 : "cycling",
+	9 : "homing"
+}
+
+console.log(states);
+state = function(s) {
+	return states[s];
+}
 
 // export the class
 exports.G2 = G2;
 
 exports.STAT_INIT = STAT_INIT;
-exports.STATE_READY = STATE_READY;
+exports.STAT_READY = STAT_READY;
 exports.STAT_ALARM = STAT_ALARM
 exports.STAT_STOP = STAT_STOP;
 exports.STAT_END = STAT_END;
