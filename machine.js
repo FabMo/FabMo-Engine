@@ -55,10 +55,9 @@ function Machine(serial_path, callback) {
 		this.status.state = "idle";
 
 		this.gcode_runtime = new GCodeRuntime();
-		this.gcode_runtime.connect(this);
-		
 		this.sbp_runtime = new SBPRuntime();
-		this.sbp_runtime.connect(this);
+
+		this.setRuntime(this.gcode_runtime);
 
 		this.driver.requestStatusReport(function(err, result) {
 			typeof callback === "function" && callback(false, this);
@@ -72,7 +71,8 @@ Machine.prototype.toString = function() {
 }
 
 Machine.prototype.gcode = function(string) {
-	this.driver.runString(string);
+	this.setRuntime(this.gcode_runtime);
+	this.current_runtime.runString(string);
 }
 Machine.prototype.runFile = function(filename) {
 	fs.readFile(filename, 'utf8', function (err,data) {
@@ -87,9 +87,9 @@ Machine.prototype.runFile = function(filename) {
 		  	this.status.current_file = parts[parts.length-1]
 
 		  	if(ext == '.sbp') {
-		  		this.current_runtime = this.sbp_runtime;
+		  		this.setRuntime(this.sbp_runtime);
 		  	} else {
-		  		this.current_runtime = this.gcode_runtime;
+		  		this.setRuntime(this.gcode_runtime);
 		  	}
 
 		  	this.current_runtime.runString(data);
@@ -100,7 +100,7 @@ Machine.prototype.runFile = function(filename) {
 
 Machine.prototype.jog = function(direction, callback) {
 	if(this.status.state === "idle" || this.status.state === "manual") {
-		this.status.state = "manual";
+		this.setState("manual");
 		this.driver.jog(direction);
 
 	} else {
@@ -108,6 +108,23 @@ Machine.prototype.jog = function(direction, callback) {
 	}
 
 }
+
+Machine.prototype.setRuntime = function(runtime) {
+	try {
+		this.current_runtime.disconnect();
+	} catch (e) {
+
+	} finally {
+		this.current_runtime = runtime;
+		runtime.connect(this);
+	}
+}
+Machine.prototype.setState = function(source, newstate) {
+	if ((source === this) || (source === this.current_runtime)) {
+		this.status.state = newstate;
+	}
+}
+
 
 Machine.prototype.stopJog = function() {
 	this.driver.stopJog();

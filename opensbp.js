@@ -11,14 +11,18 @@ function SBPRuntime() {
 	this.stack = []
 	this.current_chunk = []
 	this.running = false;
-
-};
+}
 
 SBPRuntime.prototype.connect = function(machine) {
 	this.machine = machine
 	this.driver = machine.driver
 	this._update();
 	this.driver.on('status', this._onG2Status.bind(this));
+	log.info('Connected shopbot runtime');
+}
+
+SBPRuntime.prototype.disconnect = function() {
+
 }
 
 SBPRuntime.prototype._onG2Status = function(status) {
@@ -45,14 +49,14 @@ SBPRuntime.prototype._update = function() {
 SBPRuntime.prototype.runString = function(s) {
 	this.init();
 	try {
-    	this.program = parser.parse(s + '\n');
-	    console.log(this.program);
-	    this._analyzeLabels();  // Build a table of labels
-	    this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table    
-    } catch(err) {
-    	log.error(err);
-    }
-    this._run();
+		this.program = parser.parse(s + '\n');
+		console.log(this.program);
+		this._analyzeLabels();  // Build a table of labels
+		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table    
+		this._run();
+	} catch(err) {
+		log.error(err);
+	}
 }
 
 // Evaluate a list of arguments provided (for commands)
@@ -66,8 +70,11 @@ SBPRuntime.prototype._evaluate_args = function(args) {
 
 // Start the stored program running
 SBPRuntime.prototype._run = function() {
+	console.log('run')
 	this.started = true;
+	this.machine.setState(this, "running");
 	this._continue();
+	console.log('running')
 }
 
 // Continue running the current program (until the end of the next chunk)
@@ -80,38 +87,43 @@ SBPRuntime.prototype._continue = function() {
 
 	// Continue is only for resuming an already running program.  It's not a substitute for _run()
 	if(!this.started) {
+		cosnole.log('Ooops already started...');
 		return;
 	}
 
 	while(true) {
-	
 		if(this.pc >= this.program.length) {
-			this._dispatch();
 			console.log("Program over. (pc = " + this.pc + ")")
+			if(this.current_chunk.length > 0) {
+				console.log("dispatching a chunk: " + this.current_chunk)
+				this._dispatch();
+				return;
+			}
 			this.init();
 			return;
 		}
 
+		
 		line = this.program[this.pc];
+		console.log("executing line: " + line);
 		this._execute(line);
 
 		if(this.break_chunk) {
 			this._dispatch();
-			return;				
+			return;
 		} 
 	}	
 }
 
 // Pack up the current chunk and send it to G2
 // Setup callbacks so that when the chunk is done, the program can be resumed
-// 
 SBPRuntime.prototype._dispatch = function() {
 	var runtime = this;
 	this.break_chunk = false;
-	if(this.current_chunk) {
+	if(this.current_chunk.length > 0) {
 		this.driver.expectStateChange({
 			"running" : function(driver) {
-				console.log("Expected a running state change and got one.");
+				log.info("Expected a running state change and got one.");
 				driver.expectStateChange({
 					"stop" : function(driver) { 
 						runtime._continue();
@@ -123,14 +135,13 @@ SBPRuntime.prototype._dispatch = function() {
 			},
 			null : function(t) {
 				log.info("Expected a start but didn't get one."); 
-				console.log(t.status);
 			}
 		});
-		log.info("Dispatching...");
-		console.log(this.current_chunk);
 		this.driver.runSegment(this.current_chunk.join('\n'));
 		this.current_chunk = [];
-	}		
+	} else {
+		runtime._continue();
+	}
 }
 
 // Execute a single statement
@@ -154,7 +165,6 @@ SBPRuntime.prototype._execute = function(command) {
 
 		case "return":
 			this.break_chunk = true
-			console.log("RETURN");
 			if(this.stack) {
 				this.pc = this.stack.pop();
 			} else {
@@ -274,6 +284,7 @@ SBPRuntime.prototype.init = function() {
 	this.break_chunk = false;
 	this.current_chunk = [];
 	this.started = false;
+	this.machine.setState(this, "idle");
 }
 
 // Compile an index of all the labels in the program

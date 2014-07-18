@@ -451,6 +451,7 @@ G2.prototype.runSegment = function(data, callback) {
 			// And this when motion stops
 			this.once("state", function(old_state, new_state) {
 				log.info("MOVING TO THE PAUSE STATE WHILE RUNNING A SEGMENT")
+				console.log(callback)
 				typeof callback === "function" && callback();
 			});
 		});

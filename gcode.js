@@ -10,11 +10,18 @@ function GCodeRuntime() {
 GCodeRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;
-	
-	this.driver.on('state', this._onG2StateChange.bind(this));
-	this.driver.on('status', this._onG2Status.bind(this));
+
+	this.state_change_handler =this._onG2StateChange.bind(this);
+	this.status_handler =  this._onG2Status.bind(this);
+
+	this.driver.on('state', this.state_change_handler);
+	this.driver.on('status',this.status_handler);
 }
 
+GCodeRuntime.prototype.disconnect = function() {
+	this.driver.removeListener('state', this.state_change_handler);
+	this.driver.removeListener('status', this.status_handler);
+}
 
 GCodeRuntime.prototype._onG2Status = function(status) {
 	// Update our copy of the system status
@@ -26,7 +33,7 @@ GCodeRuntime.prototype._onG2Status = function(status) {
 }
 
 GCodeRuntime.prototype._idle = function() {
-	this.machine.status.state = 'idle';
+	this.machine.setState(this, 'idle');
 	this.machine.status.current_file = null;
 };
 
@@ -51,7 +58,7 @@ GCodeRuntime.prototype._onG2StateChange = function(states) {
 							this.machine.emit('job_complete', this);
 							break;
 						case g2.STAT_HOLDING:
-							this.machine.status.state = "paused";
+							this.machine.setState(this, "paused");
 							this.machine.emit('job_pause', this);
 							break;
 					}
@@ -61,7 +68,7 @@ GCodeRuntime.prototype._onG2StateChange = function(states) {
 				case g2.STAT_HOLDING:
 					switch(new_state) {
 						case g2.STAT_RUNNING:
-							this.machine.status.state = "running";
+							this.machine.setState(this,"running");
 							this.machine.emit('job_resume', this);
 							break;
 						case g2.STAT_END:
@@ -69,10 +76,10 @@ GCodeRuntime.prototype._onG2StateChange = function(states) {
 							this.machine.emit('job_complete', this);
 							break;
 						case g2.STAT_HOMING:
-							this.machine.status.state = "homing";
+							this.machine.setState(this,"homing");
 							break;
 						case g2.STAT_PROBE:
-							this.machine.status.state = "probing";
+							this.machine.setState(this, "probing");
 							break;
 					} // new_state
 					break;
@@ -80,10 +87,10 @@ GCodeRuntime.prototype._onG2StateChange = function(states) {
 				case g2.STAT_END:
 					switch(new_state) {
 						case g2.STAT_HOMING:
-							this.machine.status.state = "homing";
+							this.machine.setState(this, "homing");
 							break;
 						case g2.STAT_PROBE:
-							this.machine.status.state = "probing";
+							this.machine.setState(this, "probing");
 							break;
 					} // new_state
 					break;
@@ -103,7 +110,7 @@ GCodeRuntime.prototype._onG2StateChange = function(states) {
 							break;
 						case g2.STAT_STOP:	
 						case g2.STAT_HOLDING:
-							this.machine.status.state = "paused";
+							this.machine.setState(this,"paused");
 							this.machine.emit('job_pause', this);
 							break;
 					}
@@ -113,7 +120,7 @@ GCodeRuntime.prototype._onG2StateChange = function(states) {
 				case g2.STAT_HOLDING:
 					switch(new_state) {
 						case g2.STAT_RUNNING:
-							this.machine.status.state = "running";
+							this.machine.setState(this, "running");
 							this.machine.emit('job_resume', this);
 							break;
 						case g2.STAT_END:
@@ -131,24 +138,25 @@ GCodeRuntime.prototype._onG2StateChange = function(states) {
 				case undefined:
 				case g2.STAT_STOP:
 				case g2.STAT_HOLDING:
+				case g2.STAT_END:
 					switch(new_state) {
 						case g2.STAT_RUNNING:
-							this.machine.status.state = "running";
+							this.machine.setState(this, "running");
 							this.machine.emit('job_resume', this);
 							break;
 						case g2.STAT_END:
 							//console.log('Got an unexpected switch to END from IDLE');
 							break;
 						case g2.STAT_HOMING:
-							this.machine.status.state = "homing";
+							this.machine.setState(this, "homing");
 							break;
 						case g2.STAT_PROBE:
-							this.machine.status.state = "probing";
+							this.machine.setState(this, "probing");
 							break;
 					} // new_state
 					break;
 				default:
-					log.error("OMG OMG OMG UNKNOWN STATE " + old_state);
+					log.error("UNKNOWN STATE " + old_state);
 					break;
 			} // old_state
 			break;
@@ -159,7 +167,7 @@ GCodeRuntime.prototype._onG2StateChange = function(states) {
 				case g2.STAT_HOLDING:
 					switch(new_state) { 
 						case g2.STAT_RUNNING:
-							this.machine.status.state = "running";
+							this.machine.setState(this, "running");
 							this.machine.emit('job_resume', this);
 							break;
 						case g2.STAT_END:
@@ -181,7 +189,7 @@ GCodeRuntime.prototype._onG2StateChange = function(states) {
                         case g2.STAT_STOP:
 						case g2.STAT_HOLDING:
 							//this._idle();
-							this.machine.status.state = "paused";
+							this.machine.setState(this, "paused");
 							break;
 					}
 					break;
@@ -190,7 +198,7 @@ GCodeRuntime.prototype._onG2StateChange = function(states) {
 				case g2.STAT_HOLDING:
 					switch(new_state) {
 						case g2.STAT_RUNNING:
-							this.machine.status.state = "manual";
+							this.machine.setState(this, "manual");
 							break;
 						case g2.STAT_END:
 							this._idle();
@@ -211,7 +219,7 @@ GCodeRuntime.prototype._onG2StateChange = function(states) {
 							break;
 						case g2.STAT_STOP:	
 						case g2.STAT_HOLDING:
-							this.machine.status.state = "paused";
+							this.machine.setState(this, "paused");
 							this.machine.emit('job_pause', this);
 							break;
 					}
@@ -221,11 +229,11 @@ GCodeRuntime.prototype._onG2StateChange = function(states) {
 				case g2.STAT_HOLDING:
 					switch(new_state) {
 						case g2.STAT_RUNNING:
-							this.machine.status.state = "running";
+							this.machine.setState(this, "running");
 							this.machine.emit('job_resume', this);
 							break;
 						case g2.STAT_PROBE:
-							this.machine.status.state = "probing";
+							this.machine.setState(this, "probing");
 							this.machine.emit('job_resume', this);
 							break;
 						case g2.STAT_END:
@@ -246,15 +254,9 @@ GCodeRuntime.prototype._onG2StateChange = function(states) {
 GCodeRuntime.prototype.runString = function(string, callback) {
 	//log.debug('Running String ' + string)
 	if(this.machine.status.state === 'idle') {
-		this.driver.runString(string, function(error, data) {
-			if(!error) {
-				this.machine.status.state = "running";
-			}
-			typeof callback === "function" && callback(error, data);
-		}.bind(this));
-	} else {
-		typeof callback === "function" && callback(true, "Cannot run when in '" + this.machine.status.state + "' state.");		
+		this.driver.runString(string);
 	}
+
 }
 
 exports.GCodeRuntime = GCodeRuntime
