@@ -40,15 +40,11 @@ function G2() {
 	this.jog_heartbeat = null;
 	this.quit_pending = false;
 	this.path = "";
-<<<<<<< HEAD
-
 	// Array of assoc-arrays that detail callbacks for state changes
 	this.expectations = [];
 
 	// Hacky stuff related to streaming
-=======
 	this.qtotal = 0;
->>>>>>> master
 	this.flooded = false;
 	this.send_rate = 1;
 
