@@ -1,5 +1,7 @@
 var configuration = require('./configuration');
 var machine=require('./machine').machine;
+var log=require('./log');
+
 var ALLOWED_COMMANDS = ["1ma","1sa","1tr","1mi","1po","1pm","2ma","2sa",
 "2tr","2mi","2po","2pm","3ma","3sa","3tr","3mi","3po","3pm","4ma",
 "4sa","4tr","4mi","4po","4pm","5ma","5sa","5tr","5mi","5po","5pm",
@@ -18,81 +20,46 @@ var ALLOWED_COMMANDS = ["1ma","1sa","1tr","1mi","1po","1pm","2ma","2sa",
 "ytm","ysv","ylv","ylb","yzb","zjh","zsn","zsx","ztm","zsv","zlv",
 "zlb","zzb","asn","asx"];
 
-
-exports.load = function(driver){
-	var nb_commands_send = 0;
-	var nb_commands_executed = 0;
-	configuration.forEach(function(val,index,array)
-	{
-//		console.log(val);
-		for(var key in val)
-		{
-		
-			if (allowed_commands(key))
-			{
-				var cmd = {};
-				cmd[key]=val[key];
-				nb_commands_send++;
-
-				driver.command(cmd);
-					driver.on('message',function(resp){
-					try {
-						if (resp && resp instanceof Object && !(resp instanceof String)){ // filter for response
-							if (( Object.keys(cmd)[0] === Object.keys(resp)[0] ) || ( resp && Object.keys(cmd)[0] === Object.keys(resp.r)[0]) ){ //check if response correspond to the request
-								if(resp.f || resp.r.f){ //check if there is a feedback
-									if (resp.f[1] === 0 || resp.r.f[1] === 0){
-										//console.log('cmd : ');
-										//console.log(cmd);
-										//console.log('resp : ');
-										//console.log(resp);
-										nb_commands_executed++;
-										//console.log('commands send : ' + nb_commands_send);
-										//console.log('commands executed : ' + nb_commands_executed);
-										if (nb_commands_send === nb_commands_executed){
-											console.log('configuration loaded successfully');
-											driver.emit('configuration_loaded',undefined);
-										}
-										driver.removeListener('message',this);
-
-									}
-									else{
-										console.log('err : ' + cmd + 'not executed correctly! LOAD FAILED. EXIT.');
-										driver.removeListener('message',this);
-										exit(-1);
-									}
-								}
-							}
-						}
+var sent = 0;
+var recv = 0;
+function config_single(driver, cmd, success_callback) {
+	driver.on('message', function handler(resp) {
+		if (resp && (resp instanceof Object) && ('r' in resp)) { // filter for response
+			r = resp.r
+			cmd_key = Object.keys(cmd)[0].toLowerCase();
+			r_key = Object.keys(r)[0].toLowerCase();
+			if ( cmd_key === r_key ) { //check if response correspond to the request
+				if(resp.f) { //check if there is a feedback
+					if (resp.f[1] === 0) {
+						driver.removeListener('message', handler)
+						recv += 1;
+						typeof success_callback === 'function' && success_callback(driver);
 					}
-					catch(ex){
+					else {
+						driver.removeListener('message', handler)
+						log.error(cmd + 'not executed correctly! LOAD FAILED. EXIT.');
+						exit(-1);
 					}
-				});
-					//console.log('load conf : '+ key + ' : '+ val[key]);
-
-				
-			}
-			else
-			{
-				throw new Error('configuration file at line '+(index+1)+': command "'+key+'" is not a valid command');
+				}
 			}
 		}
 	});
-}
-
-exports.single_load =function(driver, cmd_obj){
-	for(var key in cmd_obj)
-		{
-			if (allowed_commands(key))
-			{
-				var cmd = {};
-				cmd[key]=val[key];
-				driver.command(cmd);
-			}
-			else
-				throw new Error('command "'+key+'" is not a valid command');
-		}
-
+	sent += 1;
+	driver.command(cmd);
 };
+
+exports.load = function(driver, callback) {
+	// HARD CODED QUEUE REPORT VERBOSITY
+	configuration.push({'qv':2});
+	config_single(driver, configuration.shift(), function next() {
+		next_cmd = configuration.shift()
+		if(next_cmd) {
+			config_single(driver, next_cmd, next);
+		} else {
+			typeof callback === 'function' && callback(driver);
+		}
+	});
+}
 
 function allowed_commands(command){
 	if (ALLOWED_COMMANDS.indexOf(command.toLowerCase())!== -1)

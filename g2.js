@@ -1,11 +1,3 @@
-/*
- * g2.js
- * 
- * TinyG2 driver for node.js
- * 
- * Dependencies: serialport
- *
- */
 var serialport = require("serialport");
 var fs = require("fs");
 var events = require('events');
@@ -14,6 +6,7 @@ var Queue = require('./util').Queue;
 var config = require('./config_loader');
 var log = require('./log')
 
+// Values of the *stat* field that is returned from G2 status reports
 var STAT_INIT = 0;
 var STATE_READY = 1;
 var STAT_ALARM = 2
@@ -25,10 +18,10 @@ var STAT_PROBE = 7;
 var STAT_CYCLING = 8;
 var STAT_HOMING = 9;
 
-// Constants
+// When jogging, "keepalive" jog commands must arrive faster than this interval (ms)
 var JOG_TIMEOUT = 500;
 
-// Constant Data
+// Error codes defined by G2
 try {
 	var G2_ERRORS = JSON.parse(fs.readFileSync('./data/g2_errors.json','utf8'));
 } catch(e) {
@@ -48,24 +41,20 @@ function G2() {
 	this.quit_pending = false;
 	this.path = "";
 	this.qtotal = 0;
-
-	// Hacky stuff related to streaming
 	this.flooded = false;
 	this.send_rate = 1;
 
-	// Hacky stuff related to jogging
-	this.quit_lock = false;
-
 	events.EventEmitter.call(this);	
-	this.setMaxListeners(50);// avoid the Listener limit warning 
+	this.setMaxListeners(50);
 };
 util.inherits(G2, events.EventEmitter);
 
-// toString override added to prototype of Foo class
+// Informative summary string
 G2.prototype.toString = function() {
     return "[G2 Driver on '" + this.path + "']";
 }
 
+// Actually open the serial port and configure G2 based on stored settings
 G2.prototype.connect = function(path, callback) {
 	this.path = path;
 	this.connect_callback = callback;
@@ -74,12 +63,17 @@ G2.prototype.connect = function(path, callback) {
 	this.port.on("error", this.onSerialError.bind(this));
 	this.port.on('data', this.onData.bind(this));
 	this.on("ready", function(driver) {
-		this.command({'qv':2});				// Configure queue reports to verbose
-		this.command('M30');
-		this.requestStatusReport(); 		// Initial status check
-		this.connected = true;
-		config.load(this);
-		callback(false, this);
+		// Set queue reports to verbose (needed for g-code streaming)
+		//this.command({'qv':2});
+		// End any program that might be running
+		//this.command('M30');
+
+		config.load(this, function(driver) {
+			driver.requestStatusReport();
+			driver.connected = true;
+			callback(false, driver);
+		});
+
 	});
 }
 
@@ -96,7 +90,7 @@ G2.prototype.onSerialError = function(data) {
 
 G2.prototype.write = function(s) {
 	t = new Date().getTime();
-	log.debug('----' + t + '----> ' + s);
+	log.debug('----' + t + '----> ' + s.trim());
 	this.port.write(s);
 }
 
@@ -109,9 +103,6 @@ G2.prototype.writeAndDrain = function(s, callback) {
 }
 
 G2.prototype.jog = function(direction) {
-
-	// Hack due to g2 flush-queue weirdness
-	if(this.quit_lock) {return;}
 
 	var MOVES = 10;
 	var FEED_RATE = 60.0;			// in/min
@@ -201,15 +192,19 @@ G2.prototype.onData = function(data) {
 			var json_string = this.current_data.join('');
 			t = new Date().getTime();
 		    log.debug('<----' + t + '---- ' + json_string);
+		    obj = null;
 		    try {
 		    	obj = JSON.parse(json_string);
-		    	this.onMessage(obj);
 		    }catch(e){
 		    	// A JSON parse error usually means the asynchronous LOADER SEGMENT NOT READY MESSAGE
 		    	if(json_string.trim() === '######## LOADER - SEGMENT NOT READY') {
 		    		this.emit('error', [-1, 'LOADER_SEGMENT_NOT_READY', 'Asynchronous error: Segment not ready.'])
 		    	} else {
 		    		this.emit('error', [-1, 'JSON_PARSE_ERROR', "Could not parse response: '" + json_string + "' (" + e.toString() + ")"])
+		    	}
+		    } finally {
+		    	if(obj) {
+		    		this.onMessage(obj);
 		    	}
 		    }
 			this.current_data = new Array();
@@ -342,9 +337,6 @@ G2.prototype.onMessage = function(response) {
 		r = response;
 	}
 
-	if(r.msg && (r.msg === "SYSTEM READY")) {
-		this.emit('ready', this);
-	}
 	// Deal with streaming (if response contains a queue report)
 	this.handleQueueReport(r);
 
@@ -356,6 +348,11 @@ G2.prototype.onMessage = function(response) {
 
 	// Emitted everytime a message is received, regardless of content
 	this.emit('message', response);
+
+	// Special message type for initial system ready message
+	if(r.msg && (r.msg === "SYSTEM READY")) {
+		this.emit('ready', this);
+	}
 };
 
 G2.prototype.feedHold = function(callback) {
