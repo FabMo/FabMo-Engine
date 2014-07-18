@@ -1,0 +1,2 @@
+doc: *.js
+	docco *.js
