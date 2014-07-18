@@ -11,12 +11,13 @@ function SBPRuntime() {
 	this.stack = []
 	this.current_chunk = []
 	this.running = false;
+
 };
 
 SBPRuntime.prototype.connect = function(machine) {
 	this.machine = machine
 	this.driver = machine.driver
-
+	this._update();
 	this.driver.on('status', this._onG2Status.bind(this));
 }
 
@@ -27,6 +28,17 @@ SBPRuntime.prototype._onG2Status = function(status) {
 			this.machine.status[key] = status[key];
 		}
 	}
+}
+
+// Update the internal state of the runtime with data from the tool
+SBPRuntime.prototype._update = function() {
+	status = this.machine.status || {}
+	this.posx = status.posx || 0.0
+	this.posy = status.posy || 0.0
+	this.posz = status.posz || 0.0
+	this.posa = status.posa || 0.0
+	this.posb = status.posb || 0.0
+	this.posc = status.posc || 0.0
 }
 
 // Run the provided string as a program
@@ -61,6 +73,9 @@ SBPRuntime.prototype._run = function() {
 // Continue running the current program (until the end of the next chunk)
 // _continue() will dispatch the next chunk if appropriate, once the current chunk is finished
 SBPRuntime.prototype._continue = function() {
+
+	this._update();
+
 	log.info('Running until break...')
 
 	// Continue is only for resuming an already running program.  It's not a substitute for _run()
@@ -345,6 +360,7 @@ SBPRuntime.prototype.FS = function(args) {
 
 SBPRuntime.prototype.MX = function(args) {
 	this.emit_gcode("G1 X" + args[0]);
+	this.posx += args[0];
 }
 
 SBPRuntime.prototype.MY = function(args) {
