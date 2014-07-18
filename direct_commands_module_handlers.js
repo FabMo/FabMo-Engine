@@ -18,7 +18,6 @@ function stop()
 
 
 exports.send_gcode = function(req, res, next) {
-	console.log(machine);
 	if (machine.status.state === 'idle')
 	{
 		if (req.params.cmd !== undefined )

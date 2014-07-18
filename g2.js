@@ -115,8 +115,8 @@ G2.prototype.jog = function(direction) {
 
 	var MOVES = 10;
 	var FEED_RATE = 60.0;			// in/min
-	var MOVE_DISTANCE = 0.1;		// in
-	var START_TIME = 0.005; 		// sec
+	var MOVE_DISTANCE = 0.5;		// in
+	var START_TIME = 0.010; 		// sec
 
 	direction = String(direction).trim().toLowerCase().replace(/\+/g,"");
 	axes = {'x':'X', 
@@ -142,9 +142,10 @@ G2.prototype.jog = function(direction) {
 		// A starter move, which plans down to a stop no matter what, so we make it short
 		// Followed by a short flood of relatively short, but reasonably sized moves
 		var d = axes[direction];
-		var starting_cmd = 'G4 P' + START_TIME;
-		var move = 'G1' + d + MOVE_DISTANCE + 'F' + FEED_RATE;
-		var codes = ['G91', starting_cmd];
+		var starting_cmd = 'G1 ' + d + 0.010 + ' F' + 30.0;
+		//var starting_cmd = 'G4 P0.01'
+		var move = 'G1' + d + MOVE_DISTANCE + ' F' + FEED_RATE;
+		var codes = ['G91',starting_cmd];
 
 		this.command({'qv':2});
 
