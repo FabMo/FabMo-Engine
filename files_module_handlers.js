@@ -13,8 +13,7 @@ function allowed_file(filename){
 	{
 		return true;
 	}
-	else
-	{
+	else {
 		return false;
 	}
 };

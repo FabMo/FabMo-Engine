@@ -6,9 +6,9 @@ var Queue = require('./util').Queue;
 var config = require('./config_loader');
 var log = require('./log')
 
-// Values of the *stat* field that is returned from G2 status reports
+// Values of the **stat** field that is returned from G2 status reports
 var STAT_INIT = 0;
-var STATE_READY = 1;
+var STAT_READY = 1;
 var STAT_ALARM = 2
 var STAT_STOP = 3;
 var STAT_END = 4;
@@ -20,6 +20,19 @@ var STAT_HOMING = 9;
 
 // When jogging, "keepalive" jog commands must arrive faster than this interval (ms)
 var JOG_TIMEOUT = 500;
+
+var JOG_AXES = {'x':'X', 
+				'-x':'X-', 
+				'y':'Y',
+				'-y':'Y-',
+				'z':'Z',
+				'-z':'Z-',
+				'a':'A',
+				'-a':'A-',
+				'b':'B',
+				'-b':'B-',
+				'c':'C',
+				'-c':'C-'}
 
 // Error codes defined by G2
 try {
@@ -40,10 +53,15 @@ function G2() {
 	this.jog_heartbeat = null;
 	this.quit_pending = false;
 	this.path = "";
+	// Array of assoc-arrays that detail callbacks for state changes
+	this.expectations = [];
+
+	// Members related to streaming
 	this.qtotal = 0;
 	this.flooded = false;
 	this.send_rate = 1;
 
+	// Event emitter inheritance and behavior setup
 	events.EventEmitter.call(this);	
 	this.setMaxListeners(50);
 };
@@ -59,41 +77,33 @@ G2.prototype.connect = function(path, callback) {
 	this.path = path;
 	this.connect_callback = callback;
  	this.port = new serialport.SerialPort(path, {rtscts:true});
-	this.port.on("open", this.onOpen.bind(this));
+	//this.port.on("open", this.onOpen.bind(this));
 	this.port.on("error", this.onSerialError.bind(this));
 	this.port.on('data', this.onData.bind(this));
 	this.on("ready", function(driver) {
-		// Set queue reports to verbose (needed for g-code streaming)
-		//this.command({'qv':2});
-		// End any program that might be running
-		//this.command('M30');
-
 		config.load(this, function(driver) {
+			driver.command('M30');
 			driver.requestStatusReport();
 			driver.connected = true;
-			callback(false, driver);
+			callback(false, driver);  // TODO, maybe this should come after the first status report
 		});
 
 	});
 }
 
-// Called when the serial port is actually opened.
-G2.prototype.onOpen = function(data) {
-	// prototype.bind makes sure that the 'this' in the method is this object, not the event emitter
-	//this.quit();
-	this.emit("connect", false, this);
-};
-
+// Log serial errors.  Most of these are exit-able offenses, though.
 G2.prototype.onSerialError = function(data) {
 	log.error(data);
 }
 
+// Write data to the serial port.  Log to the system logger.
 G2.prototype.write = function(s) {
 	t = new Date().getTime();
 	log.debug('----' + t + '----> ' + s.trim());
 	this.port.write(s);
 }
 
+// Write data to the serial port.  Log to the system logger.  Execute **callback** when transfer is complete.
 G2.prototype.writeAndDrain = function(s, callback) {
 	t = new Date().getTime();
 	log.debug('----' + t + '----> ' + s);
@@ -102,45 +112,38 @@ G2.prototype.writeAndDrain = function(s, callback) {
 	}.bind(this));
 }
 
+// Start or continue jogging in the direction provided, which is one of x,-x,y,-y,z-z,a,-a,b,-b,c,-c
 G2.prototype.jog = function(direction) {
 
 	var MOVES = 10;
 	var FEED_RATE = 60.0;			// in/min
 	var MOVE_DISTANCE = 0.5;		// in
-	var START_TIME = 0.010; 		// sec
+	var START_MOVE = 0.010; 		// sec
 
+	// Normalize the direction provided by the user
 	direction = String(direction).trim().toLowerCase().replace(/\+/g,"");
-	axes = {'x':'X', 
-	        '-x':'X-', 
-	        'y':'Y',
-	        '-y':'Y-',
-	        'z':'Z',
-	        '-z':'Z-',
-	    	'a':'A',
-	    	'-a':'A-',
-	    	'b':'B',
-	    	'-b':'B-',
-	    	'c':'C',
-	    	'-c':'C-'}
+	
 
-	if (!(direction in axes)) {
+	if (!(direction in JOG_AXES)) {
 		this.stopJog();
 		return;
 	}
 	if(this.jog_direction == null) {
-		// Construct g-codes
-		// A G91 (go to relative mode)
-		// A starter move, which plans down to a stop no matter what, so we make it short
-		// Followed by a short flood of relatively short, but reasonably sized moves
-		var d = axes[direction];
-		var starting_cmd = 'G1 ' + d + 0.010 + ' F' + 30.0;
-		//var starting_cmd = 'G4 P0.01'
+
+		// Build a block of short moves to start jogging
+		//
+		// Starter move (plans down to zero no matter what so we make it short)
+		var d = JOG_AXES[direction];
+		var starting_cmd = 'G1 ' + d + START_MOVE + ' F' + 30.0;
+
+		// Continued burst of short moves
+		/*var starting_cmd = 'G4 P0.01'*/
 		var move = 'G1' + d + MOVE_DISTANCE + ' F' + FEED_RATE;
+
+		// Compile moves into a list
 		var codes = ['G91',starting_cmd];
 
-		this.command({'qv':2});
-
-		// Repeat g-codes to fill the buffer
+		// Create string buffer of moves from list
 		for(var i=0; i<MOVES; i++) {codes.push(move);}
 
 		// The queue report handler will keep up the jog if these are set
@@ -148,10 +151,12 @@ G2.prototype.jog = function(direction) {
 		this.jog_direction = direction;
 
 		// Build serial string and send
-		this.write(codes.join('\n'));
-
-		// Timeout jogging if we don't get a keepalive from the client
-		this.jog_heartbeat = setTimeout(this.stopJog.bind(this), JOG_TIMEOUT);
+		try {
+			this.write(codes.join('\n'));
+		} finally {
+			// Timeout jogging if we don't get a keepalive from the client
+			this.jog_heartbeat = setTimeout(this.stopJog.bind(this), JOG_TIMEOUT);
+		}
 	} else {
 		if(direction == this.jog_direction) {
 			this.jog_keepalive();
@@ -301,8 +306,29 @@ G2.prototype.handleStatusReport = function(response) {
 			this.status[key] = r.sr[key];
 		}
 
-		// Alert subscribers of machine state changes
-		if(this.prev_stat != this.status.stat) {
+		stat = this.status.stat;
+
+		if(this.prev_stat != stat) {
+			
+			l = this.expectations.length
+			// Handle subscribers expecting a specific state change
+			while(l-- > 0) {
+				stat_name = states[stat];
+				log.info("Stat change: " + stat_name)
+				handlers = this.expectations.shift();
+				if(stat_name in handlers) {
+					callback = handlers[stat_name];
+				} else if (null in handlers) {
+					callback = handlers[null];
+				} else {
+					callback = null;
+				}
+				if(callback) {
+					callback(this);
+				}
+			}
+
+			// Alert subscribers of machine state changes
 			this.emit('state', [this.prev_stat, this.status.stat]);
 			this.prev_stat = this.status.stat;
 		}
@@ -324,8 +350,8 @@ G2.prototype.handleStatusReport = function(response) {
 		}
 
 	}
-
 }
+
 // Called once a proper JSON response is decoded from the chunks of data that come back from G2
 G2.prototype.onMessage = function(response) {
 	
@@ -393,39 +419,90 @@ G2.prototype.command = function(obj) {
 };
 
 // Send a (possibly multi-line) string
-// String will be stripped of comments and blank lines
-// And only G-Codes and M-Codes will be sent to G2
-// And an M30 will be placed at the end to put the machine back in a 'good' place
+// An M30 will be placed at the end to put the machine back in the "idle" state
 G2.prototype.runString = function(data, callback) {
+	this.runSegment(data + "\nM30\n", callback);
+};
+
+// Send a (possibly multi-line) string
+G2.prototype.runSegment = function(data, callback) {
 	line_count = 0;
+
+	// Divide string into a list of lines
 	lines = data.split('\n');
+
+	// Cleanup the lines and enqueue
 	for(var i=0; i<lines.length; i++) {
+		line_count += 1;
 		line = lines[i].trim().toUpperCase();
-		
-		// Quick sanity check (ignore comments, queue only G,M,N codes)
-		if(true) {
-			line_count += 1;
-			this.gcode_queue.enqueue(line);
-		}
+		this.gcode_queue.enqueue(line);
 	}
+
+	// Switch to the running state if any lines were queued
 	if(line_count > 0) {
-		this.gcode_queue.enqueue("M30");
 		this.pause_flag = false;
-		typeof callback === "function" && callback(false, this);		
-		this.requestQueueReport();					
+		
+		// This will get called when motion starts
+		// TODO use the expectStateChange function here, much nicer
+		this.once("state", function(old_state, new_state) {
+			if(new_state == 5) {
+				log.info("MOVING INTO THE RUN STATE WHILE RUNNING A SEGMENT")
+			}
+			// And this when motion stops
+			this.once("state", function(old_state, new_state) {
+				log.info("MOVING TO THE PAUSE STATE WHILE RUNNING A SEGMENT")
+				console.log(callback)
+				typeof callback === "function" && callback();
+			});
+		});
+
+		this.requestQueueReport();
 	} else {
 		typeof callback === "function" && callback(true, "No G-codes were present in the provided string");				
 	}
 };
 
+// Function works like "once()" for a state change
+// callbacks is an associative array mapping states to callbacks
+// If the *next* state change matches a state in the associative array, the callback it maps to is called.
+// If null is specified in the array, this callback is used for any state that is unspecified
+//
+// eg:
+// this.expectStateChange {
+//                          STAT_END : end_callback,
+//                          STAT_PAUSE : pause_callback,
+//                          null : other_callback};
+//
+// In the above example, when the next change of state happens, the appropriate callback is called in the case
+// that the new state is either STAT_END or STAT_PAUSE.  If the new state is neither, other_callback is called.
 
+G2.prototype.expectStateChange = function(callbacks) {
+	this.expectations.push(callbacks);
+}
 
+states = {
+	0 : "init",
+	1 : "ready",
+	2 : "alarm",
+	3 : "stop",
+	4 : "end" ,
+	5 : "running",
+	6 : "holding",
+	7 : "probe",
+	8 : "cycling",
+	9 : "homing"
+}
+
+console.log(states);
+state = function(s) {
+	return states[s];
+}
 
 // export the class
 exports.G2 = G2;
 
 exports.STAT_INIT = STAT_INIT;
-exports.STATE_READY = STATE_READY;
+exports.STAT_READY = STAT_READY;
 exports.STAT_ALARM = STAT_ALARM
 exports.STAT_STOP = STAT_STOP;
 exports.STAT_END = STAT_END;

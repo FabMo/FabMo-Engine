@@ -22,11 +22,11 @@ exports.send_gcode = function(req, res, next) {
 	{
 		if (req.params.cmd !== undefined )
 		{
-			machine.runString(req.params.cmd);
+			machine.gcode(req.params.cmd);
     		res.json({'success': req.params.cmd})
 		}
 		else if (req.body) {
-			machine.runString(req.body);
+			machine.gcode(req.body);
 			res.json({'success': req.params.cmd})
 
 		}

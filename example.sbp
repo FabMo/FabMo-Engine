@@ -1,0 +1,9 @@
+&pos = 0
+
+myloop:
+  MX,&pos
+  MY,1
+  MY,0
+  &pos = &pos+1
+  IF &pos < 4 THEN GOTO myloop
+END
