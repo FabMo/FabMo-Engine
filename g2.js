@@ -6,7 +6,7 @@ var Queue = require('./util').Queue;
 var config = require('./config_loader');
 var log = require('./log')
 
-// Values of the *stat* field that is returned from G2 status reports
+// Values of the **stat** field that is returned from G2 status reports
 var STAT_INIT = 0;
 var STAT_READY = 1;
 var STAT_ALARM = 2
@@ -20,6 +20,19 @@ var STAT_HOMING = 9;
 
 // When jogging, "keepalive" jog commands must arrive faster than this interval (ms)
 var JOG_TIMEOUT = 500;
+
+var JOG_AXES = {'x':'X', 
+				'-x':'X-', 
+				'y':'Y',
+				'-y':'Y-',
+				'z':'Z',
+				'-z':'Z-',
+				'a':'A',
+				'-a':'A-',
+				'b':'B',
+				'-b':'B-',
+				'c':'C',
+				'-c':'C-'}
 
 // Error codes defined by G2
 try {
@@ -43,11 +56,12 @@ function G2() {
 	// Array of assoc-arrays that detail callbacks for state changes
 	this.expectations = [];
 
-	// Hacky stuff related to streaming
+	// Members related to streaming
 	this.qtotal = 0;
 	this.flooded = false;
 	this.send_rate = 1;
 
+	// Event emitter inheritance and behavior setup
 	events.EventEmitter.call(this);	
 	this.setMaxListeners(50);
 };
@@ -63,41 +77,33 @@ G2.prototype.connect = function(path, callback) {
 	this.path = path;
 	this.connect_callback = callback;
  	this.port = new serialport.SerialPort(path, {rtscts:true});
-	this.port.on("open", this.onOpen.bind(this));
+	//this.port.on("open", this.onOpen.bind(this));
 	this.port.on("error", this.onSerialError.bind(this));
 	this.port.on('data', this.onData.bind(this));
 	this.on("ready", function(driver) {
-		// Set queue reports to verbose (needed for g-code streaming)
-		//this.command({'qv':2});
-		// End any program that might be running
-		//this.command('M30');
-
 		config.load(this, function(driver) {
+			driver.command('M30');
 			driver.requestStatusReport();
 			driver.connected = true;
-			callback(false, driver);
+			callback(false, driver);  // TODO, maybe this should come after the first status report
 		});
 
 	});
 }
 
-// Called when the serial port is actually opened.
-G2.prototype.onOpen = function(data) {
-	// prototype.bind makes sure that the 'this' in the method is this object, not the event emitter
-	//this.quit();
-	this.emit("connect", false, this);
-};
-
+// Log serial errors.  Most of these are exit-able offenses, though.
 G2.prototype.onSerialError = function(data) {
 	log.error(data);
 }
 
+// Write data to the serial port.  Log to the system logger.
 G2.prototype.write = function(s) {
 	t = new Date().getTime();
 	log.debug('----' + t + '----> ' + s.trim());
 	this.port.write(s);
 }
 
+// Write data to the serial port.  Log to the system logger.  Execute **callback** when transfer is complete.
 G2.prototype.writeAndDrain = function(s, callback) {
 	t = new Date().getTime();
 	log.debug('----' + t + '----> ' + s);
@@ -106,45 +112,38 @@ G2.prototype.writeAndDrain = function(s, callback) {
 	}.bind(this));
 }
 
+// Start or continue jogging in the direction provided, which is one of x,-x,y,-y,z-z,a,-a,b,-b,c,-c
 G2.prototype.jog = function(direction) {
 
 	var MOVES = 10;
 	var FEED_RATE = 60.0;			// in/min
 	var MOVE_DISTANCE = 0.5;		// in
-	var START_TIME = 0.010; 		// sec
+	var START_MOVE = 0.010; 		// sec
 
+	// Normalize the direction provided by the user
 	direction = String(direction).trim().toLowerCase().replace(/\+/g,"");
-	axes = {'x':'X', 
-	        '-x':'X-', 
-	        'y':'Y',
-	        '-y':'Y-',
-	        'z':'Z',
-	        '-z':'Z-',
-	    	'a':'A',
-	    	'-a':'A-',
-	    	'b':'B',
-	    	'-b':'B-',
-	    	'c':'C',
-	    	'-c':'C-'}
+	
 
-	if (!(direction in axes)) {
+	if (!(direction in JOG_AXES)) {
 		this.stopJog();
 		return;
 	}
 	if(this.jog_direction == null) {
-		// Construct g-codes
-		// A G91 (go to relative mode)
-		// A starter move, which plans down to a stop no matter what, so we make it short
-		// Followed by a short flood of relatively short, but reasonably sized moves
-		var d = axes[direction];
-		var starting_cmd = 'G1 ' + d + 0.010 + ' F' + 30.0;
-		//var starting_cmd = 'G4 P0.01'
+
+		// Build a block of short moves to start jogging
+		//
+		// Starter move (plans down to zero no matter what so we make it short)
+		var d = JOG_AXES[direction];
+		var starting_cmd = 'G1 ' + d + START_MOVE + ' F' + 30.0;
+
+		// Continued burst of short moves
+		/*var starting_cmd = 'G4 P0.01'*/
 		var move = 'G1' + d + MOVE_DISTANCE + ' F' + FEED_RATE;
+
+		// Compile moves into a list
 		var codes = ['G91',starting_cmd];
 
-		this.command({'qv':2});
-
-		// Repeat g-codes to fill the buffer
+		// Create string buffer of moves from list
 		for(var i=0; i<MOVES; i++) {codes.push(move);}
 
 		// The queue report handler will keep up the jog if these are set
@@ -152,10 +151,12 @@ G2.prototype.jog = function(direction) {
 		this.jog_direction = direction;
 
 		// Build serial string and send
-		this.write(codes.join('\n'));
-
-		// Timeout jogging if we don't get a keepalive from the client
-		this.jog_heartbeat = setTimeout(this.stopJog.bind(this), JOG_TIMEOUT);
+		try {
+			this.write(codes.join('\n'));
+		} finally {
+			// Timeout jogging if we don't get a keepalive from the client
+			this.jog_heartbeat = setTimeout(this.stopJog.bind(this), JOG_TIMEOUT);
+		}
 	} else {
 		if(direction == this.jog_direction) {
 			this.jog_keepalive();
