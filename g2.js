@@ -1,11 +1,3 @@
-/*
- * g2.js
- * 
- * TinyG2 driver for node.js
- * 
- * Dependencies: serialport
- *
- */
 var serialport = require("serialport");
 var fs = require("fs");
 var events = require('events');
@@ -14,6 +6,7 @@ var Queue = require('./util').Queue;
 var config = require('./config_loader');
 var log = require('./log')
 
+// Values of the *stat* field that is returned from G2 status reports
 var STAT_INIT = 0;
 var STAT_READY = 1;
 var STAT_ALARM = 2
@@ -25,10 +18,10 @@ var STAT_PROBE = 7;
 var STAT_CYCLING = 8;
 var STAT_HOMING = 9;
 
-// Constants
+// When jogging, "keepalive" jog commands must arrive faster than this interval (ms)
 var JOG_TIMEOUT = 500;
 
-// Constant Data
+// Error codes defined by G2
 try {
 	var G2_ERRORS = JSON.parse(fs.readFileSync('./data/g2_errors.json','utf8'));
 } catch(e) {
@@ -47,60 +40,65 @@ function G2() {
 	this.jog_heartbeat = null;
 	this.quit_pending = false;
 	this.path = "";
+<<<<<<< HEAD
 
 	// Array of assoc-arrays that detail callbacks for state changes
 	this.expectations = [];
 
 	// Hacky stuff related to streaming
+=======
+	this.qtotal = 0;
+>>>>>>> master
 	this.flooded = false;
 	this.send_rate = 1;
 
-	// Hacky stuff related to jogging
-	this.quit_lock = false;
-
 	events.EventEmitter.call(this);	
-	this.setMaxListeners(50);// avoid the Listener limit warning 
+	this.setMaxListeners(50);
 };
 util.inherits(G2, events.EventEmitter);
 
-// toString override added to prototype of Foo class
+// Informative summary string
 G2.prototype.toString = function() {
     return "[G2 Driver on '" + this.path + "']";
 }
 
+// Actually open the serial port and configure G2 based on stored settings
 G2.prototype.connect = function(path, callback) {
 	this.path = path;
 	this.connect_callback = callback;
  	this.port = new serialport.SerialPort(path, {rtscts:true});
 	this.port.on("open", this.onOpen.bind(this));
 	this.port.on("error", this.onSerialError.bind(this));
-	this.on("connect", callback);
+	this.port.on('data', this.onData.bind(this));
+	this.on("ready", function(driver) {
+		// Set queue reports to verbose (needed for g-code streaming)
+		//this.command({'qv':2});
+		// End any program that might be running
+		//this.command('M30');
+
+		config.load(this, function(driver) {
+			driver.requestStatusReport();
+			driver.connected = true;
+			callback(false, driver);
+		});
+
+	});
 }
 
 // Called when the serial port is actually opened.
 G2.prototype.onOpen = function(data) {
 	// prototype.bind makes sure that the 'this' in the method is this object, not the event emitter
-	this.port.on('data', this.onData.bind(this));
 	//this.quit();
-	this.command({'qv':2});				// Configure queue reports to verbose
-	this.command('M30')
-	this.requestStatusReport(); 		// Initial status check
-	this.connected = true;
-
-	// Load configuration from disk
-	config.load(this);
-
 	this.emit("connect", false, this);
 };
 
 G2.prototype.onSerialError = function(data) {
-	console.log('SERIAL ERROR');
-	console.log(data);
+	log.error(data);
 }
 
 G2.prototype.write = function(s) {
 	t = new Date().getTime();
-	log.debug('----' + t + '----> ' + s);
+	log.debug('----' + t + '----> ' + s.trim());
 	this.port.write(s);
 }
 
@@ -114,13 +112,10 @@ G2.prototype.writeAndDrain = function(s, callback) {
 
 G2.prototype.jog = function(direction) {
 
-	// Hack due to g2 flush-queue weirdness
-	if(this.quit_lock) {return;}
-
 	var MOVES = 10;
 	var FEED_RATE = 60.0;			// in/min
-	var MOVE_DISTANCE = 0.1;		// in
-	var START_DISTANCE = 0.005; 	// in
+	var MOVE_DISTANCE = 0.5;		// in
+	var START_TIME = 0.010; 		// sec
 
 	direction = String(direction).trim().toLowerCase().replace(/\+/g,"");
 	axes = {'x':'X', 
@@ -146,9 +141,10 @@ G2.prototype.jog = function(direction) {
 		// A starter move, which plans down to a stop no matter what, so we make it short
 		// Followed by a short flood of relatively short, but reasonably sized moves
 		var d = axes[direction];
-		var starting_move = 'G1' + d + START_DISTANCE + 'F' + FEED_RATE;
-		var move = 'G1' + d + MOVE_DISTANCE + 'F' + FEED_RATE;
-		var codes = ['G91', starting_move];
+		var starting_cmd = 'G1 ' + d + 0.010 + ' F' + 30.0;
+		//var starting_cmd = 'G4 P0.01'
+		var move = 'G1' + d + MOVE_DISTANCE + ' F' + FEED_RATE;
+		var codes = ['G91',starting_cmd];
 
 		this.command({'qv':2});
 
@@ -204,15 +200,19 @@ G2.prototype.onData = function(data) {
 			var json_string = this.current_data.join('');
 			t = new Date().getTime();
 		    log.debug('<----' + t + '---- ' + json_string);
+		    obj = null;
 		    try {
 		    	obj = JSON.parse(json_string);
-		    	this.onMessage(obj);
 		    }catch(e){
 		    	// A JSON parse error usually means the asynchronous LOADER SEGMENT NOT READY MESSAGE
 		    	if(json_string.trim() === '######## LOADER - SEGMENT NOT READY') {
 		    		this.emit('error', [-1, 'LOADER_SEGMENT_NOT_READY', 'Asynchronous error: Segment not ready.'])
 		    	} else {
 		    		this.emit('error', [-1, 'JSON_PARSE_ERROR', "Could not parse response: '" + json_string + "' (" + e.toString() + ")"])
+		    	}
+		    } finally {
+		    	if(obj) {
+		    		this.onMessage(obj);
 		    	}
 		    }
 			this.current_data = new Array();
@@ -233,6 +233,9 @@ G2.prototype.handleQueueReport = function(r) {
 	var qr = r.qr;
 	var qo = r.qo || 0;
 	var qi = r.qi || 0;
+
+	this.qtotal += (qi-qo);
+	//log.info("QTOT: " + this.qtotal);
 
 	if((qr != undefined)) {
 
@@ -374,6 +377,11 @@ G2.prototype.onMessage = function(response) {
 
 	// Emitted everytime a message is received, regardless of content
 	this.emit('message', response);
+
+	// Special message type for initial system ready message
+	if(r.msg && (r.msg === "SYSTEM READY")) {
+		this.emit('ready', this);
+	}
 };
 
 G2.prototype.feedHold = function(callback) {
@@ -422,15 +430,23 @@ G2.prototype.runString = function(data, callback) {
 // Send a (possibly multi-line) string
 G2.prototype.runSegment = function(data, callback) {
 	line_count = 0;
+
+	// Divide string into a list of lines
 	lines = data.split('\n');
+
+	// Cleanup the lines and enqueue
 	for(var i=0; i<lines.length; i++) {
-		this.gcode_queue.enqueue(lines[i]);
 		line_count += 1;
+		line = lines[i].trim().toUpperCase();
+		this.gcode_queue.enqueue(line);
 	}
+
+	// Switch to the running state if any lines were queued
 	if(line_count > 0) {
 		this.pause_flag = false;
 		
 		// This will get called when motion starts
+		// TODO use the expectStateChange function here, much nicer
 		this.once("state", function(old_state, new_state) {
 			if(new_state == 5) {
 				log.info("MOVING INTO THE RUN STATE WHILE RUNNING A SEGMENT")
@@ -463,7 +479,6 @@ G2.prototype.runSegment = function(data, callback) {
 // that the new state is either STAT_END or STAT_PAUSE.  If the new state is neither, other_callback is called.
 
 G2.prototype.expectStateChange = function(callbacks) {
-	console.log(this.expectations);
 	this.expectations.push(callbacks);
 }
 

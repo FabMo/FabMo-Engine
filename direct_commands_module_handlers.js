@@ -64,7 +64,7 @@ exports.jog = function(req, res, next) {
 };
 
 exports.goto = function(req, res, next) {
-   	if (machine.state === 'idle')
+   	if (machine.status.state === 'idle')
 	{
 		if (req.params.x !== undefined || req.params.y !== undefined || req.params.z !== undefined || req.params.a !== undefined || req.params.b !== undefined || req.params.c !== undefined)
 		{
