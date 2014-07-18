@@ -438,24 +438,9 @@ G2.prototype.runSegment = function(data, callback) {
 		this.gcode_queue.enqueue(line);
 	}
 
-	// Switch to the running state if any lines were queued
+	// Kick off the run if any lines were queued
 	if(line_count > 0) {
 		this.pause_flag = false;
-		
-		// This will get called when motion starts
-		// TODO use the expectStateChange function here, much nicer
-		this.once("state", function(old_state, new_state) {
-			if(new_state == 5) {
-				log.info("MOVING INTO THE RUN STATE WHILE RUNNING A SEGMENT")
-			}
-			// And this when motion stops
-			this.once("state", function(old_state, new_state) {
-				log.info("MOVING TO THE PAUSE STATE WHILE RUNNING A SEGMENT")
-				console.log(callback)
-				typeof callback === "function" && callback();
-			});
-		});
-
 		this.requestQueueReport();
 	} else {
 		typeof callback === "function" && callback(true, "No G-codes were present in the provided string");				

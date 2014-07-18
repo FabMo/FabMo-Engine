@@ -50,7 +50,8 @@ function config_single(driver, cmd, success_callback) {
 
 exports.load = function(driver, callback) {
 	// HARD CODED QUEUE REPORT VERBOSITY
-	configuration.push({'qv':2});
+	configuration.unshift({"sr":{"posx":true, "posy":true, "posz":true, "posa":true, "posb":true, "vel":true, "stat":true, "hold":true, "line":true}})
+	configuration.unshift({'qv':2});
 	config_single(driver, configuration.shift(), function next() {
 		next_cmd = configuration.shift()
 		if(next_cmd) {
