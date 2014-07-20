@@ -117,8 +117,8 @@ G2.prototype.jog = function(direction) {
 
 	var MOVES = 10;
 	var FEED_RATE = 60.0;			// in/min
-	var MOVE_DISTANCE = 0.5;		// in
-	var START_MOVE = 0.010; 		// sec
+	var MOVE_DISTANCE = 0.05;		// in
+	var START_MOVE = 0.001; 		// sec
 
 		console.log("JOG DIRECTION: " + direction)
 		console.log("THIS.JOG_DIRECTION: " + this.jog_direction)
@@ -137,7 +137,7 @@ G2.prototype.jog = function(direction) {
 		//
 		// Starter move (plans down to zero no matter what so we make it short)
 		var d = JOG_AXES[direction];
-		var starting_cmd = 'G91 G1 ' + ' A' + START_MOVE + ' F' + 60.0;
+		var starting_cmd = 'G91 G1 ' + d + START_MOVE + ' F' + 10.0;
 
 		// Continued burst of short moves
 		//var starting_cmd = 'G4 P0.01'
