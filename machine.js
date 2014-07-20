@@ -9,6 +9,7 @@ var path = require('path');
 var log = require('./log');
 var GCodeRuntime = require('./gcode').GCodeRuntime
 var SBPRuntime = require('./opensbp').SBPRuntime
+var ManualRuntime = require('./manual').ManualRuntime
 
 
 function connect(callback) {
@@ -56,6 +57,7 @@ function Machine(serial_path, callback) {
 
 		this.gcode_runtime = new GCodeRuntime();
 		this.sbp_runtime = new SBPRuntime();
+		this.manual_runtime = new ManualRuntime();
 
 		this.setRuntime(this.gcode_runtime);
 
@@ -99,9 +101,11 @@ Machine.prototype.runFile = function(filename) {
 };
 
 Machine.prototype.jog = function(direction, callback) {
-	if(this.status.state === "idle" || this.status.state === "manual") {
+	log.info('machine jog')
+	if((this.status.state === "idle") || (this.status.state === "manual")) {
 		this.setState("manual");
-		this.driver.jog(direction);
+		this.setRuntime(this.manual_runtime);
+		this.current_runtime.jog(direction);
 
 	} else {
 		typeof callback === "function" && callback(true, "Cannot jog when in '" + this.status.state + "' state.");
@@ -110,13 +114,15 @@ Machine.prototype.jog = function(direction, callback) {
 }
 
 Machine.prototype.setRuntime = function(runtime) {
-	try {
-		this.current_runtime.disconnect();
-	} catch (e) {
+	if(this.current_runtime != runtime) {
+		try {
+			this.current_runtime.disconnect();
+		} catch (e) {
 
-	} finally {
-		this.current_runtime = runtime;
-		runtime.connect(this);
+		} finally {
+			this.current_runtime = runtime;
+			runtime.connect(this);
+		}
 	}
 }
 Machine.prototype.setState = function(source, newstate) {
@@ -127,7 +133,7 @@ Machine.prototype.setState = function(source, newstate) {
 
 
 Machine.prototype.stopJog = function() {
-	this.driver.stopJog();
+	this.current_runtime.stopJog();
 } 
 
 Machine.prototype.pause = function() {

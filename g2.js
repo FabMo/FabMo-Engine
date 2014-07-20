@@ -120,28 +120,31 @@ G2.prototype.jog = function(direction) {
 	var MOVE_DISTANCE = 0.5;		// in
 	var START_MOVE = 0.010; 		// sec
 
+		console.log("JOG DIRECTION: " + direction)
+		console.log("THIS.JOG_DIRECTION: " + this.jog_direction)
 	// Normalize the direction provided by the user
 	direction = String(direction).trim().toLowerCase().replace(/\+/g,"");
-	
 
 	if (!(direction in JOG_AXES)) {
+		console.error("JOG invalid direction");
 		this.stopJog();
 		return;
 	}
+
 	if(this.jog_direction == null) {
 
 		// Build a block of short moves to start jogging
 		//
 		// Starter move (plans down to zero no matter what so we make it short)
 		var d = JOG_AXES[direction];
-		var starting_cmd = 'G1 ' + d + START_MOVE + ' F' + 30.0;
+		var starting_cmd = 'G91 G1 ' + ' A' + START_MOVE + ' F' + 60.0;
 
 		// Continued burst of short moves
-		/*var starting_cmd = 'G4 P0.01'*/
-		var move = 'G1' + d + MOVE_DISTANCE + ' F' + FEED_RATE;
+		//var starting_cmd = 'G4 P0.01'
+		var move = 'G91 G1 ' + d + MOVE_DISTANCE + ' F' + FEED_RATE;
 
 		// Compile moves into a list
-		var codes = ['G91',starting_cmd];
+		var codes = [starting_cmd];
 
 		// Create string buffer of moves from list
 		for(var i=0; i<MOVES; i++) {codes.push(move);}
@@ -158,6 +161,7 @@ G2.prototype.jog = function(direction) {
 			this.jog_heartbeat = setTimeout(this.stopJog.bind(this), JOG_TIMEOUT);
 		}
 	} else {
+
 		if(direction == this.jog_direction) {
 			this.jog_keepalive();
 		}
@@ -166,12 +170,13 @@ G2.prototype.jog = function(direction) {
 
 G2.prototype.jog_keepalive = function() {
 	clearTimeout(this.jog_heartbeat);
+	log.info("JOG keepalive!!!!!!!!!!!!!!!!");
 	this.jog_heartbeat = setTimeout(this.stopJog.bind(this), JOG_TIMEOUT);
 }
 
 G2.prototype.stopJog = function() {
 	if(this.jog_direction) {
-        log.debug('Stopping Jogging');
+        log.debug('JOG stop.');
 		clearTimeout(this.jog_heartbeat);
 		this.jog_direction = null;
 		this.jog_command = null;
@@ -223,7 +228,9 @@ G2.prototype.handleQueueReport = function(r) {
 	var FLOOD_LEVEL = 20;
 	var MIN_QR_LEVEL = 5;
 	var MIN_FLOOD_LEVEL = 20;
+
 	if(this.pause_flag || this.quit_pending) {
+		log.info('Not handling this queue report because pause or quit pending');
 		// If we're here, a pause is requested, and we don't send anymore g-codes.
 		return;
 	}
@@ -239,6 +246,7 @@ G2.prototype.handleQueueReport = function(r) {
 		log.info('GCode Queue Size: ' + this.gcode_queue.getLength())
 		// Deal with jog mode
 		if(this.jog_command && (qo > 0)) {
+			log.info("JOGGING, UPDATING QUEUE");
 			this.write(this.jog_command + '\n');
 			return;
 		}

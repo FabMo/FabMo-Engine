@@ -40,12 +40,12 @@ GCodeRuntime.prototype._idle = function() {
 GCodeRuntime.prototype._onG2StateChange = function(states) {
 	old_state = states[0];
 	new_state = states[1];
-	log.info("STATE CHANGE: " + this.machine.status.state + ' ' + states);
+	log.debug("State change: " + this.machine.status.state + ' -> ' + states);
 
 	switch(this.machine.status.state) {
 		case "not_ready":
 			// This shouldn't happen.
-			console.log("Got a state change event from G2 before ready");
+			log.error("Got a state change event from G2 before ready");
 			break;
 
 		case "running":
@@ -246,7 +246,6 @@ GCodeRuntime.prototype._onG2StateChange = function(states) {
 			break;
 
 	} // this.status.state
-	log.debug('State: ' + this.machine.status.state)
 }; // _onG2StateChange
 
 // Run the provided string
