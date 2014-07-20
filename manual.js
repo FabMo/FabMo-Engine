@@ -24,8 +24,13 @@ ManualRuntime.prototype._onG2StateChange = function(states) {
 
 }
 
-ManualRuntime.prototype._onG2Status = function(driver) {
-
+ManualRuntime.prototype._onG2Status = function(status) {
+	// Update our copy of the system status
+	for (var key in this.machine.status) {
+		if(key in status) {
+			this.machine.status[key] = status[key];
+		}
+	}
 }
 
 ManualRuntime.prototype.stopJog = function() {

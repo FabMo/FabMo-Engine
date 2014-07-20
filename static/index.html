@@ -8,139 +8,149 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-    <nav class="navbar navbar-default" role="navigation">
-    <div class="container-fluid">
-      <!-- Brand and toggle get grouped for better mobile display -->
-      <div class="navbar-header">
-        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-          <span class="sr-only">Toggle navigation</span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-        </button>
-        <a class="brand" href="/"><img src="./images/shopbot_logo.png"></a>
-      </div>
-
-      <!-- Collect the nav links, forms, and other content for toggling -->
-      <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-        <ul class="nav navbar-nav" style="margin-right: 20%;">
-          <li><a><span class="label status-label label-default tool-state">&nbsp;</span></a></li>
-          <li><a><strong>X: </strong><span class="posx"></span></a></li>
-          <li><a><strong>Y: </strong><span class="posy"></span></a></li>
-          <li><a><strong>Z: </strong><span class="posz"></span></a></li>
-          <li class="hide filename-display"><a><strong>File: </strong><span class="filename"></span></a></li>
-        </ul>
-          <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-default navbar-btn navbar-right" id="keypad" data-target="#manual-modal" data-toggle="modal"><span class="glyphicon glyphicon-screenshot"></span>
-          <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-warning navbar-btn navbar-right pause-button hide"><span class="glyphicon glyphicon-pause"></span></button>
-          <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-success navbar-btn navbar-right resume-button hide"><span class="glyphicon glyphicon-play"></span></button>
-        <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-danger navbar-btn navbar-right stop-button hide"><span class="glyphicon glyphicon-stop"></span></button>
-      </div><!-- /.navbar-collapse -->
-    </div><!-- /.container-fluid -->
+	<nav class="navbar navbar-default" role="navigation">
+	<div class="container-fluid">
+	  <div class="navbar-header">
+		<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+		  <span class="sr-only">Toggle navigation</span>
+		  <span class="icon-bar"></span>
+		  <span class="icon-bar"></span>
+		  <span class="icon-bar"></span>
+		</button>
+		<a class="brand" href="/"><img src="./images/shopbot_logo.png"></a>
+	  </div>
+	  <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+		<ul class="nav navbar-nav" style="margin-right: 20%;">
+		  <li><a><span class="label status-label label-default tool-state">&nbsp;</span></a></li>
+		  <li><a><strong>X: </strong><span class="posx"></span></a></li>
+		  <li><a><strong>Y: </strong><span class="posy"></span></a></li>
+		  <li><a><strong>Z: </strong><span class="posz"></span></a></li>
+		  <li class="hide filename-display"><a><strong>File: </strong><span class="filename"></span></a></li>
+		</ul>
+		  <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-default navbar-btn navbar-right" id="keypad" data-target="#manual-modal" data-toggle="modal"><span class="glyphicon glyphicon-screenshot"></span>
+		  <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-warning navbar-btn navbar-right pause-button hide"><span class="glyphicon glyphicon-pause"></span></button>
+		  <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-success navbar-btn navbar-right resume-button hide"><span class="glyphicon glyphicon-play"></span></button>
+		<button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-danger navbar-btn navbar-right stop-button hide"><span class="glyphicon glyphicon-stop"></span></button>
+	  </div><!-- /.navbar-collapse -->
+	</div><!-- /.container-fluid -->
   </nav>
 
   <div class="container">
-
-    <div class="panel panel-default">
-      <div class="panel-heading app-heading">FabMo G-Code Streamer</div>
-      <div class="panel-body">
-        
-        <table class="table table-hover table-bordered" id="files">
-          <tr><th colspan="3">Files on the tool (click to run)</th></tr>
-        </table>
-
-        <strong>Upload a file...</strong>
-        
+	<div class="panel panel-default">
+	  <div class="panel-heading app-heading">FabMo G-Code Streamer</div>
+	  <div class="panel-body">
+		<table class="table table-hover table-bordered" id="files">
+		  <tr><th colspan="3">Files on the tool (click to run)</th></tr>
+		</table>
+		<strong>Upload a file...</strong>
 		<p>
-        <form id="add_file" action="/file" method="post" enctype="multipart/form-data">
-          <div class="pull-left">
-            <input id='file_selector' type="file" name="file" data-filename-placement="inside" title="Browse...">
-          </div>
-          <div class="pull-right">
-            <button type="submit" class="btn btn-default btn-primary"><span class="glyphicon glyphicon-upload"></span> Upload</button>
-          </div>
-        </form>
-        </p>
-	
-      
+		<form id="add_file" action="/file" method="post" enctype="multipart/form-data">
+		  <div class="pull-left">
+			<input id='file_selector' type="file" name="file" data-filename-placement="inside" title="Browse...">
+		  </div>
+		  <div class="pull-right">
+			<button type="submit" class="btn btn-default btn-primary">
+				<span class="glyphicon glyphicon-upload"></span>Upload
+			</button>
+		  </div>
+		</form>
+		</p>
 	</div>
-    </div>
-    <div class="panel panel-default">
+	</div>
+	<div class="panel panel-default">
 		<div class="panel-heading app-heading">Single G-Code</div>
 		<div class="panel-body">
-    		<form id="gcode-sender" action="/run" method="post" enctype="multipart/form-data" role="form" class="">
+			<form id="gcode-sender" action="/run" method="post" enctype="multipart/form-data" role="form" class="">
 				<input id="gcode-input" class="form-control input-lg" type="text" onclick="this.select();">
 			</form>
 		</div>
-    </div>
+	</div>
   </div>
 
 <!-- KEYBOARD DIALOG -->
 <div class="modal fade" id="manual-modal" tabindex="-1" role="dialog" aria-labelledby="manual-modal-label" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">
-                	<span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
-                </button>
-                <h4 class="modal-title" id="manual-modal-label">Manual Control</h4>
-                <!--<span class="label status-label label-default tool-state pull-right">&nbsp;</span>-->
-            </div>
-            <div class="modal-body">
-            	<div class="container-fluid">
-            		<div class="row">
-            			<div class="col-xs-6">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+					<span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+				</button>
+				<h4 class="modal-title" id="manual-modal-label">Manual Control</h4>
+				<!--<span class="label status-label label-default tool-state pull-right">&nbsp;</span>-->
+			</div>
+			<div class="modal-body">
+				<div class="container-fluid">
+					<div class="row">
+						<div class="col-xs-6">
 		  
-		            		<form class="form-horizontal" role="form">
-		            			<div class="form-group">
-		            				<label for="modal-posx" class="col-sm-2 control-label">X:</label>
-		            				<div class="col-sm-10">
-			            				<div class="input-group">
-			            					<input type="text" class="form-control posx" id="modal-posx"></input>
-			            					<div class="input-group-addon homex-button" style="cursor: pointer;"><span class="glyphicon glyphicon-home"></span></div>
-			            				</div>
-		            				</div>
-		            			</div>
-		            			<div class="form-group">
-		            				<label for="modal-posy" class="col-sm-2 control-label">Y:</label>
-		            				<div class="col-sm-10">
-			            				<div class="input-group">
-			            					<input type="text" class="form-control posy" id="modal-posy"></input>
-			            					<div class="input-group-addon homey-button" style="cursor: pointer;"><span class="glyphicon glyphicon-home"></span></div>
-			            				</div>
-		            				</div>
-		            			</div>
-		            			<div class="form-group">
-		            				<label for="modal-posz" class="col-sm-2 control-label">Z:</label>
-		            				<div class="col-sm-10">
-			            				<div class="input-group">
-			            					<input type="text" class="form-control posz" id="modal-posz"></input>
-											<div class="input-group-addon probez-button" style="cursor: pointer;"><span class="glyphicon glyphicon-arrow-down"></span></div>
-			            					<div class="input-group-addon homez-button" style="cursor: pointer;"><span class="glyphicon glyphicon-home"></span></div>
+							<form class="form-horizontal" role="form">
+								<div class="form-group">
+									<label for="modal-posx" class="col-sm-2 control-label">X:</label>
+									<div class="col-sm-10">
+										<div class="input-group">
+											<input type="text" class="form-control posx dropdown" id="modal-posx"></input>
+											<div class="input-group-addon dropdown-toggle" data-toggle="dropdown" style="cursor: pointer;" id="dropdownMenu1">
+											<span class="caret"></span>
+											</div>
+											<ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1">
+												<li role="presentation"><a role="menuitem" tabindex="-1" href="#" class="homex-button">Home Axis</a></li>
+												<li role="presentation"><a role="menuitem" tabindex="-1" href="#" class="zerox-button">Zero Axis</a></li>
+											</ul>
+										</div>
+									</div>
+								</div>
+								<div class="form-group">
+									<label for="modal-posy" class="col-sm-2 control-label">Y:</label>
+									<div class="col-sm-10">
+										<div class="input-group">
+											<input type="text" class="form-control posy" id="modal-posy"></input>
+											<div class="input-group-addon dropdown-toggle" data-toggle="dropdown" style="cursor: pointer;" id="dropdownMenu1">
+											<span class="caret"></span>
+											</div>
+											<ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1">
+												<li role="presentation"><a role="menuitem" tabindex="-1" href="#" class="homey-button">Home Axis</a></li>
+												<li role="presentation"><a role="menuitem" tabindex="-1" href="#" class="zeroy-button">Zero Axis</a></li>
+											</ul>
+										</div>
+									</div>
+								</div>
+								<div class="form-group">
+									<label for="modal-posz" class="col-sm-2 control-label">Z:</label>
+									<div class="col-sm-10">
+										<div class="input-group">
+											<input type="text" class="form-control posz" id="modal-posz"></input>
+											<div class="input-group-addon dropdown-toggle" data-toggle="dropdown" style="cursor: pointer;" id="dropdownMenu1">
+											<span class="caret"></span>
+											</div>
+											<ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1">
+												<li role="presentation"><a role="menuitem" tabindex="-1" href="#" class="homez-button">Home Axis</a></li>
+												<li role="presentation"><a role="menuitem" tabindex="-1" href="#" class="zeroz-button">Zero Axis</a></li>
+												<li role="presentation"><a role="menuitem" tabindex="-1" href="#" class="probez-button">Probe Axis</a></li>
+											</ul>
+										</div>
+									</div>
+								</div>
+							</form>
+							<div class="pull-right">
+							<button class="btn btn-default homexy-button">
+								<span class="glyphicon glyphicon-home"></span> Home XY
+							</button>
+							</div>
+						</div>
+						<div class="col-xs-6">
+							Use the keyboard to control the position of the tool.
+						</div>
 
-			            				</div>
-		            				</div>
-		            			</div>
-		            		</form>
-		            		<div class="pull-right">
-		            		<button class="btn btn-default">
-		            			<span class="glyphicon glyphicon-home"></span> Home XY
-		            		</button>
-		            		</div>
-		            	</div>
-		            	<div class="col-xs-6">
-		            		Use the keyboard to control the position of the tool.
-		            	</div>
-
-            		</div>
-            	</div>
-            </div> <!-- modal-body -->
-            <!--
-            <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary">Save changes</button>
-            </div> -->
-        </div>
-    </div>
+					</div>
+				</div>
+			</div> <!-- modal-body -->
+			<!--
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+				<button type="button" class="btn btn-primary">Save changes</button>
+			</div> -->
+		</div>
+	</div>
 </div>
 
 
@@ -154,6 +164,16 @@
 	/*************************************** keypad move section ****************************************/
 	var keypad_allow=false;
 	var lock_right = false,lock_left = false ,lock_up = false ,lock_down = false,lock_page_up = false,lock_page_down = false;
+
+	function gcode(string) {
+		tool.gcode(string,function(err,data){
+			if(!err) {
+				console.log('Success: ' + string);
+			} else {
+				console.log('Failure: ' + string);
+			}
+		});
+	}
 
 	$('#manual-modal').on('show.bs.modal', function (e) {
 		keypad_allow = true;
@@ -198,7 +218,7 @@
 		}
 	}
 	});
-    	$(document).keyup(function(e) {
+		$(document).keyup(function(e) {
 	if (keypad_allow){
 		if (e.which === 37 ) //left
 		{
@@ -231,83 +251,90 @@
 			tool.stop_move(function(){});
 		}
 	}
-    });
+	});
 	/************************************* end keypad move section **************************************/
 
-    $(document).ready(function(){
-      // Style the file input so it looks nice
-      $('input[type=file]').bootstrapFileInput();
+	$(document).ready(function(){
+	  // Style the file input so it looks nice
+	  $('input[type=file]').bootstrapFileInput();
 
-      // Load the list of files available on the tool
-      refresh_files_list();
+	  // Load the list of files available on the tool
+	  refresh_files_list();
 
-      setInterval(timer, 100);
-    });
+	  setInterval(timer, 100);
+	});
 
-    function timer() {
+	function update_text(control, txt) {
+		t = control.text();
+		v = control.val();
+		if(t != txt) {
+			control.text(txt);
+		}
+		if(v != txt) {
+			control.val(txt);
+		}
+	}
+	function timer() {
 	tool.get_status(function(err,status){
 	if(!err){
-	    x = status.posx.toFixed(3);
-	    y = status.posy.toFixed(3);
-	    z = status.posz.toFixed(3);
+		x = status.posx.toFixed(3);
+		y = status.posy.toFixed(3);
+		z = status.posz.toFixed(3);
 
-	    $('.posx').text(x);
-		$('.posy').text(y);
-		$('.posz').text(z);
-	    $('.posx').val(x);
-	    $('.posy').val(y);
-	    $('.posz').val(z);
+		update_text($('.posx'), x);
+		update_text($('.posy'), y);
+		update_text($('.posz'), z);
 
-        if(status.current_file) {
-            $('.filename-display').removeClass('hide');
-        	$('.filename').html(status.current_file)
-        } else {
-            $('.filename-display').addClass('hide');
-        }
+		if(status.current_file) {
+			$('.filename-display').removeClass('hide');
+			$('.filename').html(status.current_file)
+		} else {
+			$('.filename-display').addClass('hide');
+		}
 
 		if(status.state === 'idle') {
-		    $('.status-label').removeClass('label-success label-danger label-info label-warning');
-		    $('.status-label').addClass('label-default');
-		    $('.tool-state').html('Idle');
-		    $('.stop-button').addClass('hide');
-		    $('.resume-button').addClass('hide');
-		    $('.pause-button').addClass('hide');
+			$('.status-label').removeClass('label-success label-danger label-info label-warning');
+			$('.status-label').addClass('label-default');
+			$('.tool-state').html('Idle');
+			$('.stop-button').addClass('hide');
+			$('.resume-button').addClass('hide');
+			$('.pause-button').addClass('hide');
 		}
 		else if(status.state === 'running' || status.state === 'homing' || status.state === 'probing') {
-            $('.status-label').removeClass('label-default label-danger label-info label-warning');
-            $('.status-label').addClass('label-success');
-            $('.tool-state').html('' + status.state);
-            $('.stop-button').removeClass('hide');
-            $('.pause-button').removeClass('hide');
-            $('.resume-button').addClass('hide');
-        }
-        else if(status.state === 'manual') {
-            $('.status-label').removeClass('label-default label-danger label-info label-warning');
-            $('.status-label').addClass('label-success');
-            $('.tool-state').html('' + status.state);
-            $('.stop-button').addClass('hide');
-            $('.pause-button').addClass('hide');
-            $('.resume-button').addClass('hide');
-        }
-        else if(status.state == 'paused') {
-	        $('.status-label').removeClass('label-success label-info label-default label-danger');
-	        $('.status-label').addClass('label-warning');
-	        $('.tool-state').html('Paused');
-	        $('.stop-button').removeClass('hide');
-	        $('.pause-button').addClass('hide');
-	        $('.resume-button').removeClass('hide');
-        } 
-        else if(status.state == 'limit') {
-	        $('.status-label').removeClass('label-success label-info label-default label-danger');
-	        $('.status-label').addClass('label-warning');
-	        $('.tool-state').html('Limit');
-	        $('.stop-button').removeClass('hide');
-	        $('.pause-button').addClass('hide');
-	        $('.resume-button').removeClass('hide');
-	        $('.stop-button').addClass('hide');
-        }
+			$('.status-label').removeClass('label-default label-danger label-info label-warning');
+			$('.status-label').addClass('label-success');
+			$('.tool-state').html('' + status.state);
+			$('.stop-button').removeClass('hide');
+			$('.pause-button').removeClass('hide');
+			$('.resume-button').addClass('hide');
+		}
+		else if(status.state === 'manual') {
+			$('.status-label').removeClass('label-default label-danger label-info label-warning');
+			$('.status-label').addClass('label-success');
+			$('.tool-state').html('' + status.state);
+			$('.stop-button').addClass('hide');
+			$('.pause-button').addClass('hide');
+			$('.resume-button').addClass('hide');
+		}
+		else if(status.state == 'paused') {
+			$('.status-label').removeClass('label-success label-info label-default label-danger');
+			$('.status-label').addClass('label-warning');
+			$('.tool-state').html('Paused');
+			$('.stop-button').removeClass('hide');
+			$('.pause-button').addClass('hide');
+			$('.resume-button').removeClass('hide');
+		} 
+		else if(status.state == 'limit') {
+			$('.status-label').removeClass('label-success label-info label-default label-danger');
+			$('.status-label').addClass('label-warning');
+			$('.tool-state').html('Limit');
+			$('.stop-button').removeClass('hide');
+			$('.pause-button').addClass('hide');
+			$('.resume-button').removeClass('hide');
+			$('.stop-button').addClass('hide');
+		}
 		else {
-		    console.log('unknown status');
+			console.log('unknown status');
 		}
 	}
 	else if(err == tool.default_error.no_device){
@@ -334,49 +361,49 @@
 		$('.resume-button').addClass('hide');
 	}
 
-    	});
-    }
+		});
+	}
 
-    function refresh_files_list(){
-      // Load the list of files available on the tool
-      tool.list_files(function(err,files){
+	function refresh_files_list(){
+	  // Load the list of files available on the tool
+	  tool.list_files(function(err,files){
 	$(".files_list").remove();
-        $.each( files, function( key, val ) {
-          $("#files").append( "<tr class='files_list'>"+
+		$.each( files, function( key, val ) {
+		  $("#files").append( "<tr class='files_list'>"+
 		"<td class='run-button' value='" + val._id + "'><a style='cursor: pointer;'>" + val.filename + "</a></td>" +
 		"<td class='download-button' value='" + val._id + "' style='text-align: right;width: 3%;'><span style='cursor: pointer;' class='glyphicon glyphicon-download-alt'></span></td>" +
 		"<td class='delete-button' value='" + val._id + "' style='text-align: right;width: 3%;'><span style='cursor: pointer;' class='glyphicon glyphicon-remove'></span></td>"+
 		"</tr>");
-        });
-      });
-    }
+		});
+	  });
+	}
 
 
-    $('.pause-button').click(function(e) {
-        tool.pause(function(){});
-    });
-    $('.resume-button').click(function(e) {
-        tool.resume(function(){});
-    });
-    $('.stop-button').click(function(e) {
-      	tool.quit(function(){});
-    });
-
-
-
-    $('#add_file').submit(function(e){
-	e.preventDefault();
-        tool.upload_file($(this),function(err,file){
-	    if(err){console.log(err);return;}
-	    $('#file_selector').replaceWith($('#file_selector').clone(true)); //reset file field
-	    $('#file_selector').prev().html('Browse for a file to upload...');
-       	    refresh_files_list();
+	$('.pause-button').click(function(e) {
+		tool.pause(function(){});
 	});
-    });
+	$('.resume-button').click(function(e) {
+		tool.resume(function(){});
+	});
+	$('.stop-button').click(function(e) {
+		tool.quit(function(){});
+	});
 
 
 
-    $(' tbody').on( "click", 'tr .delete-button', function(e) {	
+	$('#add_file').submit(function(e){
+	e.preventDefault();
+		tool.upload_file($(this),function(err,file){
+		if(err){console.log(err);return;}
+		$('#file_selector').replaceWith($('#file_selector').clone(true)); //reset file field
+		$('#file_selector').prev().html('Browse for a file to upload...');
+			refresh_files_list();
+	});
+	});
+
+
+
+	$(' tbody').on( "click", 'tr .delete-button', function(e) {	
 	tool.delete_by_id($(this).attr('value'),function(err) {
 	if(!err)	
 		refresh_files_list();
@@ -385,11 +412,11 @@
 	});
    });
 
-    $(' tbody').on( "click", 'tr .download-button', function(e) {	
+	$(' tbody').on( "click", 'tr .download-button', function(e) {	
 	tool.download_by_id($(this).attr('value'));
 });
 
-    $(' tbody').on( "click", 'tr .run-button', function(e) {	
+	$(' tbody').on( "click", 'tr .run-button', function(e) {	
 	tool.run_by_id($(this).attr('value'),function(err){
 	if(!err)	
 		console.log('file is running !');
@@ -399,88 +426,58 @@
 
 });
 
-    function flash_gcode(value, duration) {
-    	if(value === 'error') {
-	    	$('#gcode-sender').addClass('has-success');	    	
-	    	$('#gcode-sender').removeClass('has-error');	    	
-    	} else if(value === 'success') {
-	    	$('#gcode-sender').addClass('has-success');	    	
-	    	$('#gcode-sender').removeClass('has-error');	    	
-    	}
-    	setTimeout(function() {
-	    	$('#gcode-sender').removeClass('has-error');	    	
-	    	$('#gcode-sender').removeClass('has-success');	    	
-    	}, duration);
-    }
+	function flash_gcode(value, duration) {
+		if(value === 'error') {
+			$('#gcode-sender').addClass('has-success');
+			$('#gcode-sender').removeClass('has-error');
+		} else if(value === 'success') {
+			$('#gcode-sender').addClass('has-success');
+			$('#gcode-sender').removeClass('has-error');
+		}
+		setTimeout(function() {
+			$('#gcode-sender').removeClass('has-error');
+			$('#gcode-sender').removeClass('has-success');
+		}, duration);
+	}
 
-    $('#gcode-sender').submit(function(e) {
+	$('#gcode-sender').submit(function(e) {
 	e.preventDefault();
 	tool.gcode($('#gcode-input').val(),function(err,data){
-	    if(!err) {
-	    	console.log('success');
-	    	flash_gcode('success', 500);
-	    } else {
-	    	console.log('failure');
-	    	flash_gcode('error', 500);
-	    }
+		if(!err) {
+			console.log('success');
+			flash_gcode('success', 500);
+		} else {
+			console.log('failure');
+			flash_gcode('error', 500);
+		}
 	});
-    });
-    
-    $('.homex-button').click(function(e) {
-		tool.gcode('G28.2 X0',function(err,data){
-		    if(!err) {
-		    	console.log('success');
-		    } else {
-		    	console.log('failure');
-		    }
-		});
-    });
+	});
+	
+	$('.homex-button').click(function(e) {gcode('G28.2 X0'); });
+	$('.homey-button').click(function(e) {gcode('G28.2 Y0'); });
+	$('.homez-button').click(function(e) {gcode('G28.2 Z0'); });
+	$('.homexy-button').click(function(e) {gcode('G28.2 X0 Y0'); });
 
-    $('.homey-button').click(function(e) {
-		tool.gcode('G28.2 Y0',function(err,data){
-		    if(!err) {
-		    	console.log('success');
-		    } else {
-		    	console.log('failure');
-		    }
-		});
-    });
+	$('.probez-button').click(function(e) {gcode('G38.2 Z-4 F10'); });   
 
+	$('.zerox-button').click(function(e) {gcode('G28.3 X0'); });  
+	$('.zeroy-button').click(function(e) {gcode('G28.3 Y0'); });  
+	$('.zeroz-button').click(function(e) {gcode('G28.3 Z0'); });  
 
-     $('.homez-button').click(function(e) {
-		tool.gcode('G28.2 Z0',function(err,data){
-		    if(!err) {
-		    	console.log('success');
-		    } else {
-		    	console.log('failure');
-		    }
-		});
-    });
-    
-    $('.probez-button').click(function(e) {
-    	// TODO: less hard-codey, once the probe cycle routine firms up
-		tool.gcode('G38.2 Z-10 F10',function(err,data){
-		    if(!err) {
-		    	console.log('success');
-		    } else {
-		    	console.log('failure');
-		    }
-		});
-    });   
-    /*
-    $('#keypad').click(function(e) {
+	/*
+	$('#keypad').click(function(e) {
 	if (keypad_allow)
-        {
-	    $(this).css('opacity',0.2);
-	    keypad_allow = false;
+		{
+		$(this).css('opacity',0.2);
+		keypad_allow = false;
 	}
 	else
-        {
-	    $(this).css('opacity',1);
-	    keypad_allow = true;
+		{
+		$(this).css('opacity',1);
+		keypad_allow = true;
 	} 
-    
-    });
+	
+	});
 */
 
   </script>

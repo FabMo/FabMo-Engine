@@ -331,6 +331,26 @@ SBPRuntime.prototype._analyzeGOTOs = function() {
 		}
 }
 
+SBPRuntime.prototype.evaluateSystemVariable = function(n) {
+	switch(n) {
+		case 1: // X Location
+			return this.machine.status.posx;
+		break;
+
+		case 2: // Y Location
+			return this.machine.status.posy;
+		break;
+
+		case 3: // Z Location
+			return this.machine.status.posz;
+		break;
+
+		default:
+			throw "Unkown system variable %" + n;
+		break;
+	}
+}
+
 // Called for any valid shopbot mnemonic that doesn't have a handler registered
 SBPRuntime.prototype._unhandledCommand = function(command) {
 	log.error('Unhandled Command: ' + JSON.stringify(command));

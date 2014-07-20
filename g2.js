@@ -120,8 +120,8 @@ G2.prototype.jog = function(direction) {
 	var MOVE_DISTANCE = 0.05;		// in
 	var START_MOVE = 0.001; 		// sec
 
-		console.log("JOG DIRECTION: " + direction)
-		console.log("THIS.JOG_DIRECTION: " + this.jog_direction)
+	console.log("JOG DIRECTION: " + direction)
+	console.log("THIS.JOG_DIRECTION: " + this.jog_direction)
 	// Normalize the direction provided by the user
 	direction = String(direction).trim().toLowerCase().replace(/\+/g,"");
 
@@ -137,7 +137,7 @@ G2.prototype.jog = function(direction) {
 		//
 		// Starter move (plans down to zero no matter what so we make it short)
 		var d = JOG_AXES[direction];
-		var starting_cmd = 'G91 G1 ' + d + START_MOVE + ' F' + 10.0;
+		var starting_cmd = 'G91 G1 ' + d + START_MOVE + ' F' + 20.0;
 
 		// Continued burst of short moves
 		//var starting_cmd = 'G4 P0.01'
