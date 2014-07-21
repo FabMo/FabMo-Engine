@@ -535,7 +535,7 @@ SBPRuntime.prototype.JH = function(args) {
 	//this.emit_gcode("G0 Z" + safe_Z);
 	this.emit_gcode("G0 X0 Y0");
 	this.posx = 0;
-	this.posx = 0;
+	this.posy = 0;
 }
 
 SBPRuntime.prototype.JS = function(args) {
@@ -545,30 +545,56 @@ SBPRuntime.prototype.JS = function(args) {
 /* CUTS */
 
 SBPRuntime.prototype.CG = function(args) {
-    // - Need to handle I-O-T option
+    // - Should we handle I-O-T option??
     // - How to implement spiral plunge in G-code????
-    // - Need variable for start location for multiple rep arcs (right now will only work for circles)
-    // - 
-    if (args[7] != 0 ){
-    	for (i=0; i<args[8];i++){
-    		this.emit_gcode("G1 Z" + (args[7] * (i+1)));
-    		if (args[6] == 1 ){
-    			this.emit_gcode("G2 X" + args[1] + "Y" + args[2] + "I" + args[3] + "K" + args[4]);
-    		}
-    		else {
-    			this.emit_gcode("G3 X" + args[1] + "Y" + args[2] + "I" + args[3] + "K" + args[4]);	
-    		}
-    		// if - args[1] AND args[2] don't equal add a move to the start position
-    	}
+
+    startX = this.posx;
+    startY = this.posy;
+    startZ = this.posz;
+    if(args[13] == 1){
+    	plgZ = 0;
     }
     else{
-    	if (args[6] == 1 ) {
-    		this.emit_gcode("G2 X" + args[1] + "Y" + args[2] + "I" + args[3] + "K" + args[4] );
+    	plgZ = startZ;
+    }
+    currentZ = plgZ;
+    endX = args[1];
+    endY = args[2];
+    centerX = args[3];
+    centerY = args[4];
+    //OIT = args[5];
+    Dr = args[6];
+    Plg = args[7];
+    reps = args[8];
+    noPullUp = args[12];
+    
+    for (i=0; i<reps;i++){
+    	if (Plg != 0 ){		// If plunge depth is specified move to that depth * number of reps
+    		currentZ += Plg;
+    		this.emit_gcode("G1 Z" + currentZ);
     	}
-    	else {
-			this.emit_gcode("G3 X" + args[1] + "Y" + args[2] + "I" + args[3] + "K" + args[4] );
+    	if (Dr == 1 ){		// Clockwise circle/arc
+    		this.emit_gcode("G2 X" + endX + "Y" + endY + "I" + centerX + "K" + centerY);
+    	}
+    	else {      		// CounterClockwise circle/arc
+    		this.emit_gcode("G3 X" + endX + "Y" + endY + "I" + centerX + "K" + centerY);	
+    	}
+    	if(endX != startX OR endY != startY){	//If an arc, pullup and jog back to the start position
+    		this.emit_gcode("G0 Z" + safe_Z )
+    	   	this.emit_gcode("G0 X" + startX + "Y" + startY);		
     	}
     }
+
+    if(noPullUp == 0){    	//If No pull-up is set to YES, pull up to the starting Z location
+    	this.emit_gcode("G1 Z" + startZ);
+    	this.posz = startZ;
+    }
+    else{				    //If not, stay at the ending Z height
+  		this.posz = currentZ;
+    }
+
+    this.posx = endX;
+	this.posy = endY;
 }
 
 SBPRuntime.prototype.CR = function(args) {
