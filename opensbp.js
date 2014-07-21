@@ -371,52 +371,79 @@ SBPRuntime.prototype.FS = function(args) {
 
 SBPRuntime.prototype.MX = function(args) {
 	this.emit_gcode("G1 X" + args[0]);
-	this.posx += args[0];
+	this.posx = args[0];
 }
 
 SBPRuntime.prototype.MY = function(args) {
 	this.emit_gcode("G1 Y" + args[0]);
+    this.posy = args[0];
 }
 
 SBPRuntime.prototype.MZ = function(args) {
 	this.emit_gcode("G1 Z" + args[0]);
+	this.posz = args[0];
 }
 
 SBPRuntime.prototype.MA = function(args) {
 	this.emit_gcode("G1 A" + args[0]);
+	this.posa = args[0];
 }
 
 SBPRuntime.prototype.MB = function(args) {
 	this.emit_gcode("G1 B" + args[0]);
+	this.posb = args[0];
 }
 
 SBPRuntime.prototype.MC = function(args) {
 	this.emit_gcode("G1 C" + args[0]);
+	this.posc = args[0];
 }
 
 SBPRuntime.prototype.M2 = function(args) {
 	this.emit_gcode("G1 X" + args[0] + " Y" + args[1]);
+	this.posx = args[0];
+	this.posy = args[1];
 }
 
 SBPRuntime.prototype.M3 = function(args) {
 	this.emit_gcode("G1 X" + args[0] + "Y" + args[1] + "Z" + args[2]);
+	this.posx = args[0];
+	this.posy = args[1];
+	this.posz = args[2];
 }
 
 SBPRuntime.prototype.M4 = function(args) {
 	this.emit_gcode("G1 X" + args[0] + "Y" + args[1] + "Z" + args[2] + "A" + args[3]);
+	this.posx = args[0];
+	this.posy = args[1];
+	this.posz = args[2];
+	this.posa = args[3];
 }
 
 SBPRuntime.prototype.M5 = function(args) {
 	this.emit_gcode("G1 X" + args[0] + "Y" + args[1] + "Z" + args[2] + "A" + args[3] + "B" + args[4]);
+	this.posx = args[0];
+	this.posy = args[1];
+	this.posz = args[2];
+	this.posa = args[3];
+	this.posb = args[4];
 }
 
 SBPRuntime.prototype.M6 = function(args) {
 	this.emit_gcode("G1 X" + args[0] + "Y" + args[1] + "Z" + args[2] + "A" + args[3] + "B" + args[4] + "C" + args[5]);
+	this.posx = args[0];
+	this.posy = args[1];
+	this.posz = args[2];
+	this.posa = args[3];
+	this.posb = args[4];
+	this.posc = args[5];
 }
 
 SBPRuntime.prototype.MH = function(args) {
 	//this.emit_gcode("G1 Z" + safe_Z);
 	this.emit_gcode("G1 X0 Y0");
+	this.posx = 0;
+	this.posy = 0;
 }
 
 SBPRuntime.prototype.MS = function(args) {
@@ -436,51 +463,79 @@ SBPRuntime.prototype.MO = function(args) {
 
 SBPRuntime.prototype.JX = function(args) {
 	this.emit_gcode("G0 X" + args[0]);
+	this.posx = args[0];
 }
 
 SBPRuntime.prototype.JY = function(args) {
 	this.emit_gcode("G0 Y" + args[0]);
+	this.posy = args[0];
 }
 
 SBPRuntime.prototype.JZ = function(args) {
 	this.emit_gcode("G0 Z" + args[0]);
+	this.posz = args[0];
 }
 
 SBPRuntime.prototype.JA = function(args) {
 	this.emit_gcode("G0 A" + args[0]);
+	this.posa = args[0];
 }
 
 SBPRuntime.prototype.JB = function(args) {
 	this.emit_gcode("G0 B" + args[0]);
+	this.posb = args[0];
 }
 
 SBPRuntime.prototype.JC = function(args) {
 	this.emit_gcode("G0 C" + args[0]);
+	this.posc = args[0];
 }
 
 SBPRuntime.prototype.J2 = function(args) {
 	this.emit_gcode("G0 X" + args[0] + " Y" + args[1]);
+	this.posx = args[0];
+	this.posy = args[1];
 }
 
 SBPRuntime.prototype.J3 = function(args) {
 	this.emit_gcode("G0 X" + args[0] + "Y" + args[1] + "Z" + args[2]);
+	this.posx = args[0];
+	this.posy = args[1];
+	this.posz = args[2];
 }
 
 SBPRuntime.prototype.J4 = function(args) {
 	this.emit_gcode("G0 X" + args[0] + "Y" + args[1] + "Z" + args[2] + "A" + args[3]);
+	this.posx = args[0];
+	this.posy = args[1];
+	this.posz = args[2];
+	this.posa = args[3];
 }
 
 SBPRuntime.prototype.J5 = function(args) {
 	this.emit_gcode("G0 X" + args[0] + "Y" + args[1] + "Z" + args[2] + "A" + args[3] + "B" + args[4]);
+	this.posx = args[0];
+	this.posy = args[1];
+	this.posz = args[2];
+	this.posa = args[3];
+	this.posb = args[4];
 }
 
 SBPRuntime.prototype.J6 = function(args) {
 	this.emit_gcode("G0 X" + args[0] + "Y" + args[1] + "Z" + args[2] + "A" + args[3] + "B" + args[4] + "C" + args[5]);
+	this.posx = args[0];
+	this.posy = args[1];
+	this.posz = args[2];
+	this.posa = args[3];
+	this.posb = args[4];
+	this.posc = args[5];
 }
 
 SBPRuntime.prototype.JH = function(args) {
 	//this.emit_gcode("G0 Z" + safe_Z);
 	this.emit_gcode("G0 X0 Y0");
+	this.posx = 0;
+	this.posx = 0;
 }
 
 SBPRuntime.prototype.JS = function(args) {

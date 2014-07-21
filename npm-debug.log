@@ -1,0 +1,2190 @@
+0 info it worked if it ends with ok
+1 verbose cli [ 'C:\\Program Files\\nodejs\\\\node.exe',
+1 verbose cli   'C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js',
+1 verbose cli   'install',
+1 verbose cli   'serialport' ]
+2 info using npm@1.4.14
+3 info using node@v0.10.29
+4 verbose node symlink C:\Program Files\nodejs\\node.exe
+5 verbose cache add [ 'serialport', null ]
+6 verbose cache add name=undefined spec="serialport" args=["serialport",null]
+7 verbose parsed url { protocol: null,
+7 verbose parsed url   slashes: null,
+7 verbose parsed url   auth: null,
+7 verbose parsed url   host: null,
+7 verbose parsed url   port: null,
+7 verbose parsed url   hostname: null,
+7 verbose parsed url   hash: null,
+7 verbose parsed url   search: null,
+7 verbose parsed url   query: null,
+7 verbose parsed url   pathname: 'serialport',
+7 verbose parsed url   path: 'serialport',
+7 verbose parsed url   href: 'serialport' }
+8 silly lockFile de62b558-serialport serialport
+9 verbose lock serialport C:\Users\gordon\AppData\Roaming\npm-cache\de62b558-serialport.lock
+10 silly lockFile de62b558-serialport serialport
+11 silly lockFile de62b558-serialport serialport
+12 verbose addNamed [ 'serialport', '' ]
+13 verbose addNamed [ null, '*' ]
+14 silly lockFile 54883da9-serialport serialport@
+15 verbose lock serialport@ C:\Users\gordon\AppData\Roaming\npm-cache\54883da9-serialport.lock
+16 silly addNameRange { name: 'serialport', range: '*', hasData: false }
+17 verbose url raw serialport
+18 verbose url resolving [ 'https://registry.npmjs.org/', './serialport' ]
+19 verbose url resolved https://registry.npmjs.org/serialport
+20 info trying registry request attempt 1 at 11:40:11
+21 verbose etag "1RXPROH67U2US9NX5PR33U4V8"
+22 http GET https://registry.npmjs.org/serialport
+23 http 304 https://registry.npmjs.org/serialport
+24 silly registry.get cb [ 304,
+24 silly registry.get   { date: 'Fri, 18 Jul 2014 15:40:10 GMT',
+24 silly registry.get     server: 'Apache',
+24 silly registry.get     via: '1.1 varnish',
+24 silly registry.get     'last-modified': 'Fri, 18 Jul 2014 15:40:10 GMT',
+24 silly registry.get     'cache-control': 'max-age=60',
+24 silly registry.get     etag: '"1RXPROH67U2US9NX5PR33U4V8"',
+24 silly registry.get     'x-served-by': 'cache-at50-ATL',
+24 silly registry.get     'x-cache': 'MISS',
+24 silly registry.get     'x-cache-hits': '0',
+24 silly registry.get     'x-timer': 'S1405698010.147487,VS0,VE27',
+24 silly registry.get     vary: 'Accept',
+24 silly registry.get     'content-length': '0',
+24 silly registry.get     'keep-alive': 'timeout=10, max=50',
+24 silly registry.get     connection: 'Keep-Alive' } ]
+25 verbose etag serialport from cache
+26 silly addNameRange number 2 { name: 'serialport', range: '*', hasData: true }
+27 silly addNameRange versions [ 'serialport',
+27 silly addNameRange   [ '0.1.0',
+27 silly addNameRange     '0.1.1',
+27 silly addNameRange     '0.1.3',
+27 silly addNameRange     '0.2.0',
+27 silly addNameRange     '0.2.2',
+27 silly addNameRange     '0.2.3',
+27 silly addNameRange     '0.2.4',
+27 silly addNameRange     '0.2.5',
+27 silly addNameRange     '0.2.6',
+27 silly addNameRange     '0.2.7',
+27 silly addNameRange     '0.2.8',
+27 silly addNameRange     '0.2.9',
+27 silly addNameRange     '0.3.0',
+27 silly addNameRange     '0.6.0',
+27 silly addNameRange     '0.6.1',
+27 silly addNameRange     '0.6.2',
+27 silly addNameRange     '0.6.3',
+27 silly addNameRange     '0.6.5',
+27 silly addNameRange     '0.6.6',
+27 silly addNameRange     '0.6.7',
+27 silly addNameRange     '0.7.0',
+27 silly addNameRange     '0.7.1',
+27 silly addNameRange     '0.7.2',
+27 silly addNameRange     '0.7.3',
+27 silly addNameRange     '0.7.4',
+27 silly addNameRange     '0.7.5',
+27 silly addNameRange     '1.0.0',
+27 silly addNameRange     '1.0.1',
+27 silly addNameRange     '1.0.2',
+27 silly addNameRange     '1.0.3',
+27 silly addNameRange     '1.0.4',
+27 silly addNameRange     '1.0.5',
+27 silly addNameRange     '1.0.6',
+27 silly addNameRange     '1.0.7',
+27 silly addNameRange     '1.0.8',
+27 silly addNameRange     '1.1.0',
+27 silly addNameRange     '1.1.1',
+27 silly addNameRange     '1.1.3',
+27 silly addNameRange     '1.2.0',
+27 silly addNameRange     '1.2.1',
+27 silly addNameRange     '1.2.2',
+27 silly addNameRange     '1.2.3',
+27 silly addNameRange     '1.2.4',
+27 silly addNameRange     '1.2.5',
+27 silly addNameRange     '1.3.0',
+27 silly addNameRange     '1.3.1',
+27 silly addNameRange     '1.4.0',
+27 silly addNameRange     '1.4.1',
+27 silly addNameRange     '1.4.2' ] ]
+28 verbose addNamed [ 'serialport', '1.4.2' ]
+29 verbose addNamed [ '1.4.2', '1.4.2' ]
+30 silly lockFile ed6303e5-serialport-1-4-2 serialport@1.4.2
+31 verbose lock serialport@1.4.2 C:\Users\gordon\AppData\Roaming\npm-cache\ed6303e5-serialport-1-4-2.lock
+32 silly lockFile ed6303e5-serialport-1-4-2 serialport@1.4.2
+33 silly lockFile ed6303e5-serialport-1-4-2 serialport@1.4.2
+34 silly lockFile 54883da9-serialport serialport@
+35 silly lockFile 54883da9-serialport serialport@
+36 silly resolved [ { name: 'serialport',
+36 silly resolved     version: '1.4.2',
+36 silly resolved     description: 'Welcome your robotic javascript overlords. Better yet, program them!',
+36 silly resolved     author:
+36 silly resolved      { name: 'Chris Williams',
+36 silly resolved        email: 'voodootikigod@gmail.com',
+36 silly resolved        url: 'http://www.voodootikigod.com' },
+36 silly resolved     binary:
+36 silly resolved      { module_name: 'serialport',
+36 silly resolved        module_path: './build/{module_name}/v{version}/{configuration}/{node_abi}-{platform}-{arch}/',
+36 silly resolved        remote_path: './{module_name}/v{version}/{configuration}/',
+36 silly resolved        package_name: '{node_abi}-{platform}-{arch}.tar.gz',
+36 silly resolved        host: 'https://node-serialport.s3.amazonaws.com' },
+36 silly resolved     main: './serialport',
+36 silly resolved     repository:
+36 silly resolved      { type: 'git',
+36 silly resolved        url: 'git://github.com/voodootikigod/node-serialport.git' },
+36 silly resolved     maintainers: [ [Object] ],
+36 silly resolved     dependencies:
+36 silly resolved      { 'node-pre-gyp': '0.5.x',
+36 silly resolved        bindings: '1.1.1',
+36 silly resolved        async: '0.1.18',
+36 silly resolved        sf: '0.1.6',
+36 silly resolved        optimist: '~0.3.4',
+36 silly resolved        nan: '~0.7.0' },
+36 silly resolved     devDependencies:
+36 silly resolved      { mocha: '*',
+36 silly resolved        chai: '*',
+36 silly resolved        'sinon-chai': '*',
+36 silly resolved        sinon: '*',
+36 silly resolved        grunt: '*',
+36 silly resolved        'grunt-cli': '*',
+36 silly resolved        'grunt-mocha-test': '*',
+36 silly resolved        'grunt-contrib-jshint': '*',
+36 silly resolved        'sandboxed-module': '~0.3.0' },
+36 silly resolved     engines: { node: '>= 0.8.0' },
+36 silly resolved     bin:
+36 silly resolved      { serialportlist: './bin/serialportList.js',
+36 silly resolved        serialportterm: './bin/serialportTerminal.js' },
+36 silly resolved     scripts:
+36 silly resolved      { install: 'node-pre-gyp install --fallback-to-build',
+36 silly resolved        test: 'grunt --verbose' },
+36 silly resolved     contributors:
+36 silly resolved      [ [Object],
+36 silly resolved        [Object],
+36 silly resolved        [Object],
+36 silly resolved        [Object],
+36 silly resolved        [Object],
+36 silly resolved        [Object],
+36 silly resolved        [Object],
+36 silly resolved        [Object],
+36 silly resolved        [Object],
+36 silly resolved        [Object],
+36 silly resolved        [Object],
+36 silly resolved        [Object] ],
+36 silly resolved     gitHead: '1e20c19c056d57f84994ede11c63662e33c0c07d',
+36 silly resolved     bugs: { url: 'https://github.com/voodootikigod/node-serialport/issues' },
+36 silly resolved     homepage: 'https://github.com/voodootikigod/node-serialport',
+36 silly resolved     bundleDependencies: [ 'node-pre-gyp' ],
+36 silly resolved     _id: 'serialport@1.4.2',
+36 silly resolved     _shasum: '1d2a2b28604de12bc760a6b6cb10f99cf74abe48',
+36 silly resolved     _from: 'serialport@',
+36 silly resolved     _npmVersion: '1.4.16',
+36 silly resolved     _npmUser: { name: 'voodootikigod', email: 'voodootikigod@gmail.com' },
+36 silly resolved     dist:
+36 silly resolved      { shasum: '1d2a2b28604de12bc760a6b6cb10f99cf74abe48',
+36 silly resolved        tarball: 'http://registry.npmjs.org/serialport/-/serialport-1.4.2.tgz' },
+36 silly resolved     directories: {},
+36 silly resolved     _resolved: 'https://registry.npmjs.org/serialport/-/serialport-1.4.2.tgz',
+36 silly resolved     readme: 'ERROR: No README data found!' } ]
+37 info install serialport@1.4.2 into C:\Users\gordon\Documents\GitHub\FabMo-Engine
+38 info installOne serialport@1.4.2
+39 info C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport unbuild
+40 verbose tar unpack C:\Users\gordon\AppData\Roaming\npm-cache\serialport\1.4.2\package.tgz
+41 silly lockFile c859b9a5-o-Engine-node-modules-serialport tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport
+42 verbose lock tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport C:\Users\gordon\AppData\Roaming\npm-cache\c859b9a5-o-Engine-node-modules-serialport.lock
+43 silly lockFile 9c3ada2b-che-serialport-1-4-2-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\serialport\1.4.2\package.tgz
+44 verbose lock tar://C:\Users\gordon\AppData\Roaming\npm-cache\serialport\1.4.2\package.tgz C:\Users\gordon\AppData\Roaming\npm-cache\9c3ada2b-che-serialport-1-4-2-package-tgz.lock
+45 silly gunzTarPerm modes [ '755', '644' ]
+46 silly gunzTarPerm extractEntry package.json
+47 silly gunzTarPerm extractEntry .npmignore
+48 silly gunzTarPerm extractEntry README.md
+49 silly gunzTarPerm extractEntry LICENSE
+50 silly gunzTarPerm extractEntry Gruntfile.js
+51 silly gunzTarPerm extractEntry parsers.js
+52 silly gunzTarPerm extractEntry serialport.js
+53 silly gunzTarPerm extractEntry appveyor.yml
+54 silly gunzTarPerm extractEntry arduinoTest/requiresComPort.js
+55 silly gunzTarPerm extractEntry arduinoTest/stress.js
+56 silly gunzTarPerm extractEntry arduinoTest/arduinoEcho/arduinoEcho.ino
+57 silly gunzTarPerm extractEntry bin/serialportList.js
+58 silly gunzTarPerm extractEntry bin/serialportTerminal.js
+59 silly gunzTarPerm extractEntry binding.gyp
+60 silly gunzTarPerm extractEntry .travis.yml
+61 silly gunzTarPerm extractEntry changelog.md
+62 silly gunzTarPerm extractEntry examples/drain.js
+63 silly gunzTarPerm extractEntry examples/logger.js
+64 silly gunzTarPerm extractEntry examples/readdata.js
+65 silly gunzTarPerm extractEntry test/parsers.js
+66 silly gunzTarPerm extractEntry test/serialport-basic.js
+67 silly gunzTarPerm extractEntry test/serialport-c.js
+68 silly gunzTarPerm extractEntry AUTHORS
+69 silly gunzTarPerm extractEntry Makefile
+70 silly gunzTarPerm extractEntry sandbox/disconnect.js
+71 silly gunzTarPerm extractEntry test_mocks/linux-hardware.js
+72 silly gunzTarPerm extractEntry src/queue.h
+73 silly gunzTarPerm extractEntry src/serialport.cpp
+74 silly gunzTarPerm extractEntry src/serialport.h
+75 silly gunzTarPerm extractEntry src/serialport_poller.cpp
+76 silly gunzTarPerm extractEntry src/serialport_poller.h
+77 silly gunzTarPerm extractEntry src/serialport_unix.cpp
+78 silly gunzTarPerm extractEntry src/serialport_win.cpp
+79 silly gunzTarPerm extractEntry src/win/AutoHModule.h
+80 silly gunzTarPerm extractEntry src/win/AutoHandle.h
+81 silly gunzTarPerm extractEntry src/win/AutoHeapAlloc.h
+82 silly gunzTarPerm extractEntry src/win/disphelper.c
+83 silly gunzTarPerm extractEntry src/win/disphelper.h
+84 silly gunzTarPerm extractEntry src/win/enumser.cpp
+85 silly gunzTarPerm extractEntry src/win/enumser.h
+86 silly gunzTarPerm extractEntry src/win/stdafx.h
+87 silly gunzTarPerm extractEntry src/win/stdstring.h
+88 silly gunzTarPerm extractEntry build/Makefile
+89 silly gunzTarPerm extractEntry build/Release/.deps/Release/obj.target/serialport/src/serialport.o.d
+90 silly gunzTarPerm extractEntry build/Release/.deps/Release/obj.target/serialport/src/serialport_poller.o.d
+91 silly gunzTarPerm extractEntry build/Release/.deps/Release/obj.target/serialport/src/serialport_unix.o.d
+92 silly gunzTarPerm extractEntry build/Release/.deps/Release/serialport.node.d
+93 silly gunzTarPerm extractEntry build/Release/linker.lock
+94 silly gunzTarPerm extractEntry build/Release/obj.target/serialport/src/serialport.o
+95 silly gunzTarPerm extractEntry build/Release/obj.target/serialport/src/serialport_poller.o
+96 silly gunzTarPerm extractEntry build/Release/obj.target/serialport/src/serialport_unix.o
+97 silly gunzTarPerm extractEntry build/binding.Makefile
+98 silly gunzTarPerm extractEntry build/config.gypi
+99 silly gunzTarPerm extractEntry build/gyp-mac-tool
+100 silly gunzTarPerm extractEntry build/serialport.target.mk
+101 silly lockFile c859b9a5-o-Engine-node-modules-serialport tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport
+102 silly lockFile c859b9a5-o-Engine-node-modules-serialport tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport
+103 silly lockFile 9c3ada2b-che-serialport-1-4-2-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\serialport\1.4.2\package.tgz
+104 silly lockFile 9c3ada2b-che-serialport-1-4-2-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\serialport\1.4.2\package.tgz
+105 info preinstall serialport@1.4.2
+106 verbose readDependencies using package.json deps
+107 verbose readDependencies using package.json deps
+108 verbose cache add [ 'node-pre-gyp@0.5.x', null ]
+109 verbose cache add name=undefined spec="node-pre-gyp@0.5.x" args=["node-pre-gyp@0.5.x",null]
+110 verbose parsed url { protocol: null,
+110 verbose parsed url   slashes: null,
+110 verbose parsed url   auth: null,
+110 verbose parsed url   host: null,
+110 verbose parsed url   port: null,
+110 verbose parsed url   hostname: null,
+110 verbose parsed url   hash: null,
+110 verbose parsed url   search: null,
+110 verbose parsed url   query: null,
+110 verbose parsed url   pathname: 'node-pre-gyp@0.5.x',
+110 verbose parsed url   path: 'node-pre-gyp@0.5.x',
+110 verbose parsed url   href: 'node-pre-gyp@0.5.x' }
+111 verbose cache add [ 'bindings@1.1.1', null ]
+112 verbose cache add name=undefined spec="bindings@1.1.1" args=["bindings@1.1.1",null]
+113 verbose parsed url { protocol: null,
+113 verbose parsed url   slashes: null,
+113 verbose parsed url   auth: null,
+113 verbose parsed url   host: null,
+113 verbose parsed url   port: null,
+113 verbose parsed url   hostname: null,
+113 verbose parsed url   hash: null,
+113 verbose parsed url   search: null,
+113 verbose parsed url   query: null,
+113 verbose parsed url   pathname: 'bindings@1.1.1',
+113 verbose parsed url   path: 'bindings@1.1.1',
+113 verbose parsed url   href: 'bindings@1.1.1' }
+114 verbose cache add [ 'async@0.1.18', null ]
+115 verbose cache add name=undefined spec="async@0.1.18" args=["async@0.1.18",null]
+116 verbose parsed url { protocol: null,
+116 verbose parsed url   slashes: null,
+116 verbose parsed url   auth: null,
+116 verbose parsed url   host: null,
+116 verbose parsed url   port: null,
+116 verbose parsed url   hostname: null,
+116 verbose parsed url   hash: null,
+116 verbose parsed url   search: null,
+116 verbose parsed url   query: null,
+116 verbose parsed url   pathname: 'async@0.1.18',
+116 verbose parsed url   path: 'async@0.1.18',
+116 verbose parsed url   href: 'async@0.1.18' }
+117 verbose cache add [ 'sf@0.1.6', null ]
+118 verbose cache add name=undefined spec="sf@0.1.6" args=["sf@0.1.6",null]
+119 verbose parsed url { protocol: null,
+119 verbose parsed url   slashes: null,
+119 verbose parsed url   auth: null,
+119 verbose parsed url   host: null,
+119 verbose parsed url   port: null,
+119 verbose parsed url   hostname: null,
+119 verbose parsed url   hash: null,
+119 verbose parsed url   search: null,
+119 verbose parsed url   query: null,
+119 verbose parsed url   pathname: 'sf@0.1.6',
+119 verbose parsed url   path: 'sf@0.1.6',
+119 verbose parsed url   href: 'sf@0.1.6' }
+120 verbose cache add [ 'optimist@~0.3.4', null ]
+121 verbose cache add name=undefined spec="optimist@~0.3.4" args=["optimist@~0.3.4",null]
+122 verbose parsed url { protocol: null,
+122 verbose parsed url   slashes: null,
+122 verbose parsed url   auth: null,
+122 verbose parsed url   host: null,
+122 verbose parsed url   port: null,
+122 verbose parsed url   hostname: null,
+122 verbose parsed url   hash: null,
+122 verbose parsed url   search: null,
+122 verbose parsed url   query: null,
+122 verbose parsed url   pathname: 'optimist@~0.3.4',
+122 verbose parsed url   path: 'optimist@~0.3.4',
+122 verbose parsed url   href: 'optimist@~0.3.4' }
+123 verbose cache add [ 'nan@~0.7.0', null ]
+124 verbose cache add name=undefined spec="nan@~0.7.0" args=["nan@~0.7.0",null]
+125 verbose parsed url { protocol: null,
+125 verbose parsed url   slashes: null,
+125 verbose parsed url   auth: null,
+125 verbose parsed url   host: null,
+125 verbose parsed url   port: null,
+125 verbose parsed url   hostname: null,
+125 verbose parsed url   hash: null,
+125 verbose parsed url   search: null,
+125 verbose parsed url   query: null,
+125 verbose parsed url   pathname: 'nan@~0.7.0',
+125 verbose parsed url   path: 'nan@~0.7.0',
+125 verbose parsed url   href: 'nan@~0.7.0' }
+126 verbose cache add name="node-pre-gyp" spec="0.5.x" args=["node-pre-gyp","0.5.x"]
+127 verbose parsed url { protocol: null,
+127 verbose parsed url   slashes: null,
+127 verbose parsed url   auth: null,
+127 verbose parsed url   host: null,
+127 verbose parsed url   port: null,
+127 verbose parsed url   hostname: null,
+127 verbose parsed url   hash: null,
+127 verbose parsed url   search: null,
+127 verbose parsed url   query: null,
+127 verbose parsed url   pathname: '0.5.x',
+127 verbose parsed url   path: '0.5.x',
+127 verbose parsed url   href: '0.5.x' }
+128 verbose addNamed [ 'node-pre-gyp', '0.5.x' ]
+129 verbose addNamed [ null, '>=0.5.0-0 <0.6.0-0' ]
+130 silly lockFile e2d97a66-node-pre-gyp-0-5-x node-pre-gyp@0.5.x
+131 verbose lock node-pre-gyp@0.5.x C:\Users\gordon\AppData\Roaming\npm-cache\e2d97a66-node-pre-gyp-0-5-x.lock
+132 verbose cache add name="bindings" spec="1.1.1" args=["bindings","1.1.1"]
+133 verbose parsed url { protocol: null,
+133 verbose parsed url   slashes: null,
+133 verbose parsed url   auth: null,
+133 verbose parsed url   host: null,
+133 verbose parsed url   port: null,
+133 verbose parsed url   hostname: null,
+133 verbose parsed url   hash: null,
+133 verbose parsed url   search: null,
+133 verbose parsed url   query: null,
+133 verbose parsed url   pathname: '1.1.1',
+133 verbose parsed url   path: '1.1.1',
+133 verbose parsed url   href: '1.1.1' }
+134 verbose addNamed [ 'bindings', '1.1.1' ]
+135 verbose addNamed [ '1.1.1', '1.1.1' ]
+136 silly lockFile 52dd60a7-bindings-1-1-1 bindings@1.1.1
+137 verbose lock bindings@1.1.1 C:\Users\gordon\AppData\Roaming\npm-cache\52dd60a7-bindings-1-1-1.lock
+138 verbose cache add name="async" spec="0.1.18" args=["async","0.1.18"]
+139 verbose parsed url { protocol: null,
+139 verbose parsed url   slashes: null,
+139 verbose parsed url   auth: null,
+139 verbose parsed url   host: null,
+139 verbose parsed url   port: null,
+139 verbose parsed url   hostname: null,
+139 verbose parsed url   hash: null,
+139 verbose parsed url   search: null,
+139 verbose parsed url   query: null,
+139 verbose parsed url   pathname: '0.1.18',
+139 verbose parsed url   path: '0.1.18',
+139 verbose parsed url   href: '0.1.18' }
+140 verbose addNamed [ 'async', '0.1.18' ]
+141 verbose addNamed [ '0.1.18', '0.1.18' ]
+142 silly lockFile b86dcd49-async-0-1-18 async@0.1.18
+143 verbose lock async@0.1.18 C:\Users\gordon\AppData\Roaming\npm-cache\b86dcd49-async-0-1-18.lock
+144 verbose cache add name="sf" spec="0.1.6" args=["sf","0.1.6"]
+145 verbose parsed url { protocol: null,
+145 verbose parsed url   slashes: null,
+145 verbose parsed url   auth: null,
+145 verbose parsed url   host: null,
+145 verbose parsed url   port: null,
+145 verbose parsed url   hostname: null,
+145 verbose parsed url   hash: null,
+145 verbose parsed url   search: null,
+145 verbose parsed url   query: null,
+145 verbose parsed url   pathname: '0.1.6',
+145 verbose parsed url   path: '0.1.6',
+145 verbose parsed url   href: '0.1.6' }
+146 verbose addNamed [ 'sf', '0.1.6' ]
+147 verbose addNamed [ '0.1.6', '0.1.6' ]
+148 silly lockFile cae65a0c-sf-0-1-6 sf@0.1.6
+149 verbose lock sf@0.1.6 C:\Users\gordon\AppData\Roaming\npm-cache\cae65a0c-sf-0-1-6.lock
+150 verbose cache add name="optimist" spec="~0.3.4" args=["optimist","~0.3.4"]
+151 verbose parsed url { protocol: null,
+151 verbose parsed url   slashes: null,
+151 verbose parsed url   auth: null,
+151 verbose parsed url   host: null,
+151 verbose parsed url   port: null,
+151 verbose parsed url   hostname: null,
+151 verbose parsed url   hash: null,
+151 verbose parsed url   search: null,
+151 verbose parsed url   query: null,
+151 verbose parsed url   pathname: '~0.3.4',
+151 verbose parsed url   path: '~0.3.4',
+151 verbose parsed url   href: '~0.3.4' }
+152 verbose addNamed [ 'optimist', '~0.3.4' ]
+153 verbose addNamed [ null, '>=0.3.4-0 <0.4.0-0' ]
+154 silly lockFile 094c60bd-optimist-0-3-4 optimist@~0.3.4
+155 verbose lock optimist@~0.3.4 C:\Users\gordon\AppData\Roaming\npm-cache\094c60bd-optimist-0-3-4.lock
+156 verbose cache add name="nan" spec="~0.7.0" args=["nan","~0.7.0"]
+157 verbose parsed url { protocol: null,
+157 verbose parsed url   slashes: null,
+157 verbose parsed url   auth: null,
+157 verbose parsed url   host: null,
+157 verbose parsed url   port: null,
+157 verbose parsed url   hostname: null,
+157 verbose parsed url   hash: null,
+157 verbose parsed url   search: null,
+157 verbose parsed url   query: null,
+157 verbose parsed url   pathname: '~0.7.0',
+157 verbose parsed url   path: '~0.7.0',
+157 verbose parsed url   href: '~0.7.0' }
+158 verbose addNamed [ 'nan', '~0.7.0' ]
+159 verbose addNamed [ null, '>=0.7.0-0 <0.8.0-0' ]
+160 silly lockFile 9df25a33-nan-0-7-0 nan@~0.7.0
+161 verbose lock nan@~0.7.0 C:\Users\gordon\AppData\Roaming\npm-cache\9df25a33-nan-0-7-0.lock
+162 silly addNameRange { name: 'node-pre-gyp',
+162 silly addNameRange   range: '>=0.5.0-0 <0.6.0-0',
+162 silly addNameRange   hasData: false }
+163 silly addNameRange { name: 'optimist', range: '>=0.3.4-0 <0.4.0-0', hasData: false }
+164 silly addNameRange { name: 'nan', range: '>=0.7.0-0 <0.8.0-0', hasData: false }
+165 verbose url raw node-pre-gyp
+166 verbose url resolving [ 'https://registry.npmjs.org/', './node-pre-gyp' ]
+167 verbose url resolved https://registry.npmjs.org/node-pre-gyp
+168 info trying registry request attempt 1 at 11:40:12
+169 verbose etag "C4VV4L6CPRMES8HE3NT4VLNHI"
+170 http GET https://registry.npmjs.org/node-pre-gyp
+171 verbose url raw bindings
+172 verbose url resolving [ 'https://registry.npmjs.org/', './bindings' ]
+173 verbose url resolved https://registry.npmjs.org/bindings
+174 info trying registry request attempt 1 at 11:40:12
+175 verbose etag "HHDEMUMZU8OTS1DUFQCBQQ8Z"
+176 http GET https://registry.npmjs.org/bindings
+177 verbose url raw async
+178 verbose url resolving [ 'https://registry.npmjs.org/', './async' ]
+179 verbose url resolved https://registry.npmjs.org/async
+180 info trying registry request attempt 1 at 11:40:12
+181 verbose etag "AU1JWIL0PWOA8VGCJG446QHXC"
+182 http GET https://registry.npmjs.org/async
+183 verbose url raw optimist
+184 verbose url resolving [ 'https://registry.npmjs.org/', './optimist' ]
+185 verbose url resolved https://registry.npmjs.org/optimist
+186 info trying registry request attempt 1 at 11:40:12
+187 verbose etag "76ZAI9O97KGVNGML7RVRRBVJA"
+188 http GET https://registry.npmjs.org/optimist
+189 verbose url raw sf
+190 verbose url resolving [ 'https://registry.npmjs.org/', './sf' ]
+191 verbose url resolved https://registry.npmjs.org/sf
+192 info trying registry request attempt 1 at 11:40:12
+193 verbose etag "4RDTKM4OFD65QBHH3575EB7DQ"
+194 http GET https://registry.npmjs.org/sf
+195 verbose url raw nan
+196 verbose url resolving [ 'https://registry.npmjs.org/', './nan' ]
+197 verbose url resolved https://registry.npmjs.org/nan
+198 info trying registry request attempt 1 at 11:40:12
+199 verbose etag "DS2SGYRH00C3H2FASAKE38WZ4"
+200 http GET https://registry.npmjs.org/nan
+201 http 304 https://registry.npmjs.org/node-pre-gyp
+202 silly registry.get cb [ 304,
+202 silly registry.get   { date: 'Fri, 18 Jul 2014 15:40:10 GMT',
+202 silly registry.get     server: 'Apache',
+202 silly registry.get     via: '1.1 varnish',
+202 silly registry.get     'last-modified': 'Fri, 18 Jul 2014 15:40:10 GMT',
+202 silly registry.get     'cache-control': 'max-age=60',
+202 silly registry.get     etag: '"C4VV4L6CPRMES8HE3NT4VLNHI"',
+202 silly registry.get     'x-served-by': 'cache-at50-ATL',
+202 silly registry.get     'x-cache': 'HIT',
+202 silly registry.get     'x-cache-hits': '1',
+202 silly registry.get     'x-timer': 'S1405698010.682433,VS0,VE0',
+202 silly registry.get     vary: 'Accept',
+202 silly registry.get     'content-length': '0',
+202 silly registry.get     'keep-alive': 'timeout=10, max=50',
+202 silly registry.get     connection: 'Keep-Alive' } ]
+203 verbose etag node-pre-gyp from cache
+204 http 304 https://registry.npmjs.org/bindings
+205 silly registry.get cb [ 304,
+205 silly registry.get   { date: 'Fri, 18 Jul 2014 15:40:10 GMT',
+205 silly registry.get     server: 'Apache',
+205 silly registry.get     via: '1.1 varnish',
+205 silly registry.get     'last-modified': 'Fri, 18 Jul 2014 15:39:15 GMT',
+205 silly registry.get     'cache-control': 'max-age=60',
+205 silly registry.get     etag: '"HHDEMUMZU8OTS1DUFQCBQQ8Z"',
+205 silly registry.get     'x-served-by': 'cache-at50-ATL',
+205 silly registry.get     'x-cache': 'HIT',
+205 silly registry.get     'x-cache-hits': '2',
+205 silly registry.get     'x-timer': 'S1405698010.686437,VS0,VE0',
+205 silly registry.get     vary: 'Accept',
+205 silly registry.get     'content-length': '0',
+205 silly registry.get     'keep-alive': 'timeout=10, max=50',
+205 silly registry.get     connection: 'Keep-Alive' } ]
+206 verbose etag bindings from cache
+207 http 304 https://registry.npmjs.org/async
+208 silly registry.get cb [ 304,
+208 silly registry.get   { date: 'Fri, 18 Jul 2014 15:40:10 GMT',
+208 silly registry.get     server: 'Apache',
+208 silly registry.get     via: '1.1 varnish',
+208 silly registry.get     'last-modified': 'Fri, 18 Jul 2014 15:35:58 GMT',
+208 silly registry.get     'cache-control': 'max-age=60',
+208 silly registry.get     etag: '"AU1JWIL0PWOA8VGCJG446QHXC"',
+208 silly registry.get     'x-served-by': 'cache-at51-ATL',
+208 silly registry.get     'x-cache': 'HIT',
+208 silly registry.get     'x-cache-hits': '31',
+208 silly registry.get     'x-timer': 'S1405698010.688095,VS0,VE0',
+208 silly registry.get     vary: 'Accept',
+208 silly registry.get     'content-length': '0',
+208 silly registry.get     'keep-alive': 'timeout=10, max=50',
+208 silly registry.get     connection: 'Keep-Alive' } ]
+209 verbose etag async from cache
+210 http 304 https://registry.npmjs.org/optimist
+211 silly registry.get cb [ 304,
+211 silly registry.get   { date: 'Fri, 18 Jul 2014 15:40:10 GMT',
+211 silly registry.get     server: 'Apache',
+211 silly registry.get     via: '1.1 varnish',
+211 silly registry.get     'last-modified': 'Fri, 18 Jul 2014 15:35:11 GMT',
+211 silly registry.get     'cache-control': 'max-age=60',
+211 silly registry.get     etag: '"76ZAI9O97KGVNGML7RVRRBVJA"',
+211 silly registry.get     'x-served-by': 'cache-at105-ATL',
+211 silly registry.get     'x-cache': 'HIT',
+211 silly registry.get     'x-cache-hits': '31',
+211 silly registry.get     'x-timer': 'S1405698010.687305,VS0,VE0',
+211 silly registry.get     vary: 'Accept',
+211 silly registry.get     'content-length': '0',
+211 silly registry.get     'keep-alive': 'timeout=10, max=50',
+211 silly registry.get     connection: 'Keep-Alive' } ]
+212 verbose etag optimist from cache
+213 silly addNameRange number 2 { name: 'node-pre-gyp',
+213 silly addNameRange   range: '>=0.5.0-0 <0.6.0-0',
+213 silly addNameRange   hasData: true }
+214 silly addNameRange versions [ 'node-pre-gyp',
+214 silly addNameRange   [ '0.1.0',
+214 silly addNameRange     '0.1.1',
+214 silly addNameRange     '0.1.2',
+214 silly addNameRange     '0.1.3',
+214 silly addNameRange     '0.1.4',
+214 silly addNameRange     '0.1.5',
+214 silly addNameRange     '0.1.6',
+214 silly addNameRange     '0.1.7',
+214 silly addNameRange     '0.1.8',
+214 silly addNameRange     '0.1.9',
+214 silly addNameRange     '0.2.1',
+214 silly addNameRange     '0.2.2',
+214 silly addNameRange     '0.2.3',
+214 silly addNameRange     '0.2.4',
+214 silly addNameRange     '0.2.5',
+214 silly addNameRange     '0.2.6',
+214 silly addNameRange     '0.3.0',
+214 silly addNameRange     '0.3.1',
+214 silly addNameRange     '0.3.1-alpha',
+214 silly addNameRange     '0.4.0',
+214 silly addNameRange     '0.4.1',
+214 silly addNameRange     '0.4.2',
+214 silly addNameRange     '0.5.0',
+214 silly addNameRange     '0.5.1',
+214 silly addNameRange     '0.5.2',
+214 silly addNameRange     '0.5.3',
+214 silly addNameRange     '0.5.4',
+214 silly addNameRange     '0.5.5',
+214 silly addNameRange     '0.5.6',
+214 silly addNameRange     '0.5.8',
+214 silly addNameRange     '0.5.9',
+214 silly addNameRange     '0.5.10',
+214 silly addNameRange     '0.5.11',
+214 silly addNameRange     '0.5.12',
+214 silly addNameRange     '0.5.13',
+214 silly addNameRange     '0.5.14',
+214 silly addNameRange     '0.5.15',
+214 silly addNameRange     '0.5.16',
+214 silly addNameRange     '0.5.17',
+214 silly addNameRange     '0.5.18',
+214 silly addNameRange     '0.5.19' ] ]
+215 verbose addNamed [ 'node-pre-gyp', '0.5.19' ]
+216 verbose addNamed [ '0.5.19', '0.5.19' ]
+217 silly lockFile 6856d61d-node-pre-gyp-0-5-19 node-pre-gyp@0.5.19
+218 verbose lock node-pre-gyp@0.5.19 C:\Users\gordon\AppData\Roaming\npm-cache\6856d61d-node-pre-gyp-0-5-19.lock
+219 silly lockFile 6856d61d-node-pre-gyp-0-5-19 node-pre-gyp@0.5.19
+220 silly lockFile 6856d61d-node-pre-gyp-0-5-19 node-pre-gyp@0.5.19
+221 silly lockFile e2d97a66-node-pre-gyp-0-5-x node-pre-gyp@0.5.x
+222 silly lockFile e2d97a66-node-pre-gyp-0-5-x node-pre-gyp@0.5.x
+223 silly addNameRange number 2 { name: 'optimist', range: '>=0.3.4-0 <0.4.0-0', hasData: true }
+224 silly addNameRange versions [ 'optimist',
+224 silly addNameRange   [ '0.0.1',
+224 silly addNameRange     '0.0.2',
+224 silly addNameRange     '0.0.4',
+224 silly addNameRange     '0.0.5',
+224 silly addNameRange     '0.0.6',
+224 silly addNameRange     '0.0.7',
+224 silly addNameRange     '0.1.0',
+224 silly addNameRange     '0.1.1',
+224 silly addNameRange     '0.1.2',
+224 silly addNameRange     '0.1.3',
+224 silly addNameRange     '0.1.4',
+224 silly addNameRange     '0.1.5',
+224 silly addNameRange     '0.1.6',
+224 silly addNameRange     '0.1.7',
+224 silly addNameRange     '0.1.8',
+224 silly addNameRange     '0.1.9',
+224 silly addNameRange     '0.0.3',
+224 silly addNameRange     '0.2.0',
+224 silly addNameRange     '0.2.1',
+224 silly addNameRange     '0.2.2',
+224 silly addNameRange     '0.2.3',
+224 silly addNameRange     '0.2.4',
+224 silly addNameRange     '0.2.5',
+224 silly addNameRange     '0.2.6',
+224 silly addNameRange     '0.2.7',
+224 silly addNameRange     '0.2.8',
+224 silly addNameRange     '0.3.0',
+224 silly addNameRange     '0.3.1',
+224 silly addNameRange     '0.3.3',
+224 silly addNameRange     '0.3.4',
+224 silly addNameRange     '0.3.5',
+224 silly addNameRange     '0.3.6',
+224 silly addNameRange     '0.3.7',
+224 silly addNameRange     '0.4.0',
+224 silly addNameRange     '0.5.0',
+224 silly addNameRange     '0.5.1',
+224 silly addNameRange     '0.5.2',
+224 silly addNameRange     '0.6.0',
+224 silly addNameRange     '0.6.1' ] ]
+225 verbose addNamed [ 'optimist', '0.3.7' ]
+226 verbose addNamed [ '0.3.7', '0.3.7' ]
+227 silly lockFile 090e1d8d-optimist-0-3-7 optimist@0.3.7
+228 verbose lock optimist@0.3.7 C:\Users\gordon\AppData\Roaming\npm-cache\090e1d8d-optimist-0-3-7.lock
+229 silly lockFile b86dcd49-async-0-1-18 async@0.1.18
+230 silly lockFile b86dcd49-async-0-1-18 async@0.1.18
+231 silly lockFile 52dd60a7-bindings-1-1-1 bindings@1.1.1
+232 silly lockFile 52dd60a7-bindings-1-1-1 bindings@1.1.1
+233 silly lockFile 090e1d8d-optimist-0-3-7 optimist@0.3.7
+234 silly lockFile 090e1d8d-optimist-0-3-7 optimist@0.3.7
+235 silly lockFile 094c60bd-optimist-0-3-4 optimist@~0.3.4
+236 silly lockFile 094c60bd-optimist-0-3-4 optimist@~0.3.4
+237 http 304 https://registry.npmjs.org/nan
+238 silly registry.get cb [ 304,
+238 silly registry.get   { date: 'Fri, 18 Jul 2014 15:40:10 GMT',
+238 silly registry.get     server: 'Apache',
+238 silly registry.get     via: '1.1 varnish',
+238 silly registry.get     'last-modified': 'Fri, 18 Jul 2014 15:39:40 GMT',
+238 silly registry.get     'cache-control': 'max-age=60',
+238 silly registry.get     etag: '"DS2SGYRH00C3H2FASAKE38WZ4"',
+238 silly registry.get     'x-served-by': 'cache-at50-ATL',
+238 silly registry.get     'x-cache': 'HIT',
+238 silly registry.get     'x-cache-hits': '3',
+238 silly registry.get     'x-timer': 'S1405698010.726219,VS0,VE0',
+238 silly registry.get     vary: 'Accept',
+238 silly registry.get     'content-length': '0',
+238 silly registry.get     'keep-alive': 'timeout=10, max=49',
+238 silly registry.get     connection: 'Keep-Alive' } ]
+239 verbose etag nan from cache
+240 silly addNameRange number 2 { name: 'nan', range: '>=0.7.0-0 <0.8.0-0', hasData: true }
+241 silly addNameRange versions [ 'nan',
+241 silly addNameRange   [ '0.3.0-wip',
+241 silly addNameRange     '0.3.0-wip2',
+241 silly addNameRange     '0.3.0',
+241 silly addNameRange     '0.3.1',
+241 silly addNameRange     '0.3.2',
+241 silly addNameRange     '0.4.0',
+241 silly addNameRange     '0.4.1',
+241 silly addNameRange     '0.4.2',
+241 silly addNameRange     '0.4.3',
+241 silly addNameRange     '0.4.4',
+241 silly addNameRange     '0.5.0',
+241 silly addNameRange     '0.5.1',
+241 silly addNameRange     '0.5.2',
+241 silly addNameRange     '0.6.0',
+241 silly addNameRange     '0.7.0',
+241 silly addNameRange     '0.7.1',
+241 silly addNameRange     '0.8.0',
+241 silly addNameRange     '1.0.0',
+241 silly addNameRange     '1.1.0',
+241 silly addNameRange     '1.1.1',
+241 silly addNameRange     '1.1.2',
+241 silly addNameRange     '1.2.0' ] ]
+242 verbose addNamed [ 'nan', '0.7.1' ]
+243 verbose addNamed [ '0.7.1', '0.7.1' ]
+244 silly lockFile f54c0d1e-nan-0-7-1 nan@0.7.1
+245 verbose lock nan@0.7.1 C:\Users\gordon\AppData\Roaming\npm-cache\f54c0d1e-nan-0-7-1.lock
+246 silly lockFile f54c0d1e-nan-0-7-1 nan@0.7.1
+247 silly lockFile f54c0d1e-nan-0-7-1 nan@0.7.1
+248 silly lockFile 9df25a33-nan-0-7-0 nan@~0.7.0
+249 silly lockFile 9df25a33-nan-0-7-0 nan@~0.7.0
+250 http 304 https://registry.npmjs.org/sf
+251 silly registry.get cb [ 304,
+251 silly registry.get   { date: 'Fri, 18 Jul 2014 15:40:10 GMT',
+251 silly registry.get     server: 'Apache',
+251 silly registry.get     via: '1.1 varnish',
+251 silly registry.get     'last-modified': 'Fri, 18 Jul 2014 15:40:10 GMT',
+251 silly registry.get     'cache-control': 'max-age=60',
+251 silly registry.get     etag: '"4RDTKM4OFD65QBHH3575EB7DQ"',
+251 silly registry.get     'x-served-by': 'cache-at52-ATL',
+251 silly registry.get     'x-cache': 'MISS',
+251 silly registry.get     'x-cache-hits': '0',
+251 silly registry.get     'x-timer': 'S1405698010.690877,VS0,VE225',
+251 silly registry.get     vary: 'Accept',
+251 silly registry.get     'content-length': '0',
+251 silly registry.get     'keep-alive': 'timeout=10, max=50',
+251 silly registry.get     connection: 'Keep-Alive' } ]
+252 verbose etag sf from cache
+253 silly lockFile cae65a0c-sf-0-1-6 sf@0.1.6
+254 silly lockFile cae65a0c-sf-0-1-6 sf@0.1.6
+255 silly resolved [ { name: 'node-pre-gyp',
+255 silly resolved     description: 'Node.js native addon binary install tool',
+255 silly resolved     version: '0.5.19',
+255 silly resolved     keywords: [ 'native', 'addon', 'module', 'c', 'c++', 'bindings', 'binary' ],
+255 silly resolved     author: { name: 'Dane Springmeyer', email: 'dane@mapbox.com' },
+255 silly resolved     repository: { type: 'git', url: 'git://github.com/mapbox/node-pre-gyp.git' },
+255 silly resolved     bin: { 'node-pre-gyp': './bin/node-pre-gyp' },
+255 silly resolved     main: './lib/node-pre-gyp.js',
+255 silly resolved     dependencies:
+255 silly resolved      { nopt: '~2.2.0',
+255 silly resolved        npmlog: '~0.0.6',
+255 silly resolved        request: '2',
+255 silly resolved        semver: '~2.3.0',
+255 silly resolved        tar: '~0.1.19',
+255 silly resolved        'tar-pack': '~2.0.0',
+255 silly resolved        mkdirp: '~0.5.0',
+255 silly resolved        rc: '~0.4.0',
+255 silly resolved        rimraf: '~2.2.5' },
+255 silly resolved     devDependencies: { 'aws-sdk': '*' },
+255 silly resolved     engineStrict: true,
+255 silly resolved     engines: { node: '>= 0.8.0' },
+255 silly resolved     scripts:
+255 silly resolved      { 'update-crosswalk': 'node scripts/abi_crosswalk.js > lib/util/abi_crosswalk.json',
+255 silly resolved        test: './test.sh' },
+255 silly resolved     gitHead: '4584ffba7b411bd98a5a8452894159e7c200e55b',
+255 silly resolved     bugs: { url: 'https://github.com/mapbox/node-pre-gyp/issues' },
+255 silly resolved     homepage: 'https://github.com/mapbox/node-pre-gyp',
+255 silly resolved     bundleDependencies:
+255 silly resolved      [ 'nopt',
+255 silly resolved        'npmlog',
+255 silly resolved        'request',
+255 silly resolved        'semver',
+255 silly resolved        'tar',
+255 silly resolved        'tar-pack',
+255 silly resolved        'mkdirp',
+255 silly resolved        'rc',
+255 silly resolved        'rimraf' ],
+255 silly resolved     _id: 'node-pre-gyp@0.5.19',
+255 silly resolved     _shasum: '9b320edc2f0b005eff769438b648fa1e84759359',
+255 silly resolved     _from: 'node-pre-gyp@0.5.x',
+255 silly resolved     _npmVersion: '1.4.16',
+255 silly resolved     _npmUser: { name: 'springmeyer', email: 'dane@mapbox.com' },
+255 silly resolved     maintainers: [ [Object] ],
+255 silly resolved     dist:
+255 silly resolved      { shasum: '9b320edc2f0b005eff769438b648fa1e84759359',
+255 silly resolved        tarball: 'http://registry.npmjs.org/node-pre-gyp/-/node-pre-gyp-0.5.19.tgz' },
+255 silly resolved     directories: {},
+255 silly resolved     _resolved: 'https://registry.npmjs.org/node-pre-gyp/-/node-pre-gyp-0.5.19.tgz',
+255 silly resolved     readme: 'ERROR: No README data found!' },
+255 silly resolved   { name: 'bindings',
+255 silly resolved     description: 'Helper module for loading your native module\'s .node file',
+255 silly resolved     keywords: [ 'native', 'addon', 'bindings', 'gyp', 'waf', 'c', 'c++' ],
+255 silly resolved     version: '1.1.1',
+255 silly resolved     author:
+255 silly resolved      { name: 'Nathan Rajlich',
+255 silly resolved        email: 'nathan@tootallnate.net',
+255 silly resolved        url: 'http://tootallnate.net' },
+255 silly resolved     repository:
+255 silly resolved      { type: 'git',
+255 silly resolved        url: 'git://github.com/TooTallNate/node-bindings.git' },
+255 silly resolved     main: './bindings.js',
+255 silly resolved     bugs: { url: 'https://github.com/TooTallNate/node-bindings/issues' },
+255 silly resolved     _id: 'bindings@1.1.1',
+255 silly resolved     dist:
+255 silly resolved      { shasum: '951f7ae010302ffc50b265b124032017ed2bf6f3',
+255 silly resolved        tarball: 'http://registry.npmjs.org/bindings/-/bindings-1.1.1.tgz' },
+255 silly resolved     _from: 'bindings@1.1.1',
+255 silly resolved     _npmVersion: '1.3.2',
+255 silly resolved     _npmUser: { name: 'tootallnate', email: 'nathan@tootallnate.net' },
+255 silly resolved     maintainers: [ [Object], [Object] ],
+255 silly resolved     directories: {},
+255 silly resolved     _shasum: '951f7ae010302ffc50b265b124032017ed2bf6f3',
+255 silly resolved     _resolved: 'https://registry.npmjs.org/bindings/-/bindings-1.1.1.tgz',
+255 silly resolved     readme: 'ERROR: No README data found!',
+255 silly resolved     homepage: 'https://github.com/TooTallNate/node-bindings' },
+255 silly resolved   { name: 'async',
+255 silly resolved     description: 'Higher-order functions and common patterns for asynchronous code',
+255 silly resolved     main: './index',
+255 silly resolved     author: { name: 'Caolan McMahon' },
+255 silly resolved     version: '0.1.18',
+255 silly resolved     repository: { type: 'git', url: 'git://github.com/caolan/async.git' },
+255 silly resolved     bugs: { url: 'http://github.com/caolan/async/issues' },
+255 silly resolved     licenses: [ [Object] ],
+255 silly resolved     devDependencies: { nodeunit: '>0.0.0', 'uglify-js': '1.2.x', nodelint: '>0.0.0' },
+255 silly resolved     _npmUser: { name: 'caolan', email: 'caolan@caolanmcmahon.com' },
+255 silly resolved     _id: 'async@0.1.18',
+255 silly resolved     dependencies: {},
+255 silly resolved     optionalDependencies: {},
+255 silly resolved     engines: { node: '*' },
+255 silly resolved     _engineSupported: true,
+255 silly resolved     _npmVersion: '1.1.1',
+255 silly resolved     _nodeVersion: 'v0.6.11',
+255 silly resolved     _defaultsLoaded: true,
+255 silly resolved     dist:
+255 silly resolved      { shasum: 'c59c923920b76d5bf23248c04433920c4d45086a',
+255 silly resolved        tarball: 'http://registry.npmjs.org/async/-/async-0.1.18.tgz' },
+255 silly resolved     maintainers: [ [Object] ],
+255 silly resolved     directories: {},
+255 silly resolved     _shasum: 'c59c923920b76d5bf23248c04433920c4d45086a',
+255 silly resolved     _from: 'async@0.1.18',
+255 silly resolved     _resolved: 'https://registry.npmjs.org/async/-/async-0.1.18.tgz',
+255 silly resolved     readme: 'ERROR: No README data found!',
+255 silly resolved     homepage: 'https://github.com/caolan/async' },
+255 silly resolved   { name: 'optimist',
+255 silly resolved     version: '0.3.7',
+255 silly resolved     description: 'Light-weight option parsing with an argv hash. No optstrings attached.',
+255 silly resolved     main: './index.js',
+255 silly resolved     dependencies: { wordwrap: '~0.0.2' },
+255 silly resolved     devDependencies: { hashish: '~0.0.4', tap: '~0.4.0' },
+255 silly resolved     scripts: { test: 'tap ./test/*.js' },
+255 silly resolved     repository:
+255 silly resolved      { type: 'git',
+255 silly resolved        url: 'http://github.com/substack/node-optimist.git' },
+255 silly resolved     keywords:
+255 silly resolved      [ 'argument',
+255 silly resolved        'args',
+255 silly resolved        'option',
+255 silly resolved        'parser',
+255 silly resolved        'parsing',
+255 silly resolved        'cli',
+255 silly resolved        'command' ],
+255 silly resolved     author:
+255 silly resolved      { name: 'James Halliday',
+255 silly resolved        email: 'mail@substack.net',
+255 silly resolved        url: 'http://substack.net' },
+255 silly resolved     license: 'MIT/X11',
+255 silly resolved     engine: { node: '>=0.4' },
+255 silly resolved     _id: 'optimist@0.3.7',
+255 silly resolved     dist:
+255 silly resolved      { shasum: 'c90941ad59e4273328923074d2cf2e7cbc6ec0d9',
+255 silly resolved        tarball: 'http://registry.npmjs.org/optimist/-/optimist-0.3.7.tgz' },
+255 silly resolved     _from: 'optimist@~0.3.4',
+255 silly resolved     _npmVersion: '1.2.2',
+255 silly resolved     _npmUser: { name: 'substack', email: 'mail@substack.net' },
+255 silly resolved     maintainers: [ [Object] ],
+255 silly resolved     directories: {},
+255 silly resolved     _shasum: 'c90941ad59e4273328923074d2cf2e7cbc6ec0d9',
+255 silly resolved     _resolved: 'https://registry.npmjs.org/optimist/-/optimist-0.3.7.tgz',
+255 silly resolved     bugs: { url: 'https://github.com/substack/node-optimist/issues' },
+255 silly resolved     readme: 'ERROR: No README data found!',
+255 silly resolved     homepage: 'https://github.com/substack/node-optimist' },
+255 silly resolved   { name: 'nan',
+255 silly resolved     version: '0.7.1',
+255 silly resolved     description: 'Native Abstractions for Node.js: C++ header for Node 0.8->0.12 compatibility',
+255 silly resolved     main: 'include_dirs.js',
+255 silly resolved     repository: { type: 'git', url: 'git://github.com/rvagg/nan.git' },
+255 silly resolved     contributors: [ [Object], [Object], [Object], [Object], [Object], [Object] ],
+255 silly resolved     license: 'MIT',
+255 silly resolved     bugs: { url: 'https://github.com/rvagg/nan/issues' },
+255 silly resolved     homepage: 'https://github.com/rvagg/nan',
+255 silly resolved     _id: 'nan@0.7.1',
+255 silly resolved     dist:
+255 silly resolved      { shasum: 'fc576184a1037b3e5675f2ba3740dee2044ff8f4',
+255 silly resolved        tarball: 'http://registry.npmjs.org/nan/-/nan-0.7.1.tgz' },
+255 silly resolved     _from: 'nan@~0.7.0',
+255 silly resolved     _npmVersion: '1.3.21',
+255 silly resolved     _npmUser: { name: 'rvagg', email: 'rod@vagg.org' },
+255 silly resolved     maintainers: [ [Object] ],
+255 silly resolved     directories: {},
+255 silly resolved     _shasum: 'fc576184a1037b3e5675f2ba3740dee2044ff8f4',
+255 silly resolved     _resolved: 'https://registry.npmjs.org/nan/-/nan-0.7.1.tgz',
+255 silly resolved     readme: 'ERROR: No README data found!' },
+255 silly resolved   { name: 'sf',
+255 silly resolved     description: 'String formatting library for node.js',
+255 silly resolved     author: { name: 'Joe Ferner', email: 'joe.ferner@nearinfinity.com' },
+255 silly resolved     keywords: [ 'string', 'format', 'template' ],
+255 silly resolved     version: '0.1.6',
+255 silly resolved     engines: { node: '>=0.6.0' },
+255 silly resolved     maintainers: [ [Object] ],
+255 silly resolved     bugs: { url: 'https://github.com/nearinfinity/node-sf/issues' },
+255 silly resolved     license: 'MIT',
+255 silly resolved     repository:
+255 silly resolved      { type: 'git',
+255 silly resolved        url: 'https://github.com/nearinfinity/node-sf.git' },
+255 silly resolved     devDependencies: { nodeunit: '~0.7.3', 'timezone-js': '~0.4.3' },
+255 silly resolved     scripts: { test: 'nodeunit test' },
+255 silly resolved     main: './index.js',
+255 silly resolved     readme: '# sf\n\n[![Build Status](https://secure.travis-ci.org/nearinfinity/node-sf.png)](http://travis-ci.org/nearinfinity/node-sf)\n\nString formatting library for node.js.\n\n## Installation\n\n```bash\n$ npm install sf\n```\n\n## Quick Examples\n\n```javascript\nvar sf = require("sf");\n\nsf("{who} has a {what}", { who: \'dog\', what: \'tail\' });\n// returns: dog has a tail\n\nsf("{0} has a {1}", \'dog\', \'tail\');\n// returns: dog has a tail\n\nsf("{0:#,##0.00}", 2123.1);\n// returns: 2,123.10\n\nsf("{0,15:#,##0.00}", 2123.1);\n// returns:        2,123.10\n\nsf("{a.b}", { a: { b: \'test\' }});\n// returns: test\n\nsf("{a.z.c}", { a: { b: \'test\' }});\n// throws an error\n\nsf("{a.?z.?c}", { a: { b: \'test\' }});\n// returns:\n\nsf("{a[0]}", { a: [ \'foo\', \'bar\' ]});\n// returns: foo\n\nsf("{a[-1]}", { a: [ \'foo\', \'bar\' ]});\n// returns: bar\n\nsf.log("{who} has a {what}", { who: \'dog\', what: \'tail\' });\n// outputs to standard out: dog has a tail\n\nsf("{0:^d \'Days,\' h:mm:ss.fff}", new sf.TimeSpan(8173818181));\n// returns: 94 Days, 14:30:18.181\n```\n\n## Format Specifiers\n\nThe format is similar to C#\'s string.format. The text inside the curly braces is {indexOrName[,alignment][:formatString]}.\nIf alignment is positive the text is right aligned. If alignment is negative it will be left aligned.\n\n### Object\n\n| Specifier | Name                         |\n|-----------|------------------------------|\n| json      | JSON.stringify               |\n| inspect   | util.inspect                 |\n\n### Numbers\n\n| Specifier | Name                         | Example          | Output         |\n|-----------|------------------------------|------------------|----------------|\n| 0         | Zero placeholder             | {0:00.0000}      | 02.1200        |\n| #         | Digit placeholder            | {0:#,###}        | 1,234          |\n| x         | Lowercase hex                | {0:x4}           | 01fc           |\n| X         | Uppercase hex                | {0:X4}           | 01FC           |\n\n### Dates\n\n| Specifier | Name                            | Example                         |\n|-----------|---------------------------------|---------------------------------|\n| sd        | Short date                      | 10/12/2002                      |\n| D         | Long date                       | December 10, 2002               |\n| t         | Short time                      | 10:11 PM                        |\n| T         | Long time                       | 10:11:29 PM                     |\n| fdt       | Full date & time                | December 10, 2002 10:11 PM      |\n| F         | Full date & time (long)         | December 10, 2002 10:11:29 PM   |\n| g         | Default date & time             | 10/12/2002 10:11 PM             |\n| G         | Default date & time (long)      | 10/12/2002 10:11:29 PM          |\n| md        | Month day pattern               | December 10                     |\n| r         | RFC1123 date string             | Tue, 10 Dec 2002 22:11:29 +0500 |\n| s         | Sortable date string            | 2002-12-10T22:11:29             |\n| d         | Date single digit               | 1                               |\n| dd        | Date leading zero               | 01                              |\n| ddd       | Short day name                  | Mon                             |\n| dddd      | Long day name                   | Monday                          |\n| f         | Fraction of second (1 digit)    | 1                               |\n| ff        | Fraction of second (2 digit)    | 24                              |\n| fff       | Fraction of second (3 digit)    | 345                             |\n| h         | Hour 12-hour format 1 digit     | 5                               |\n| hh        | Hour 12-hour format 2 digits    | 05                              |\n| H         | Hour 24-hour format 1 digit     | 5                               |\n| HH        | Hour 24-hour format 2 digits    | 05                              |\n| mm        | Minutes 2 digits                | 23                              |\n| M         | Month single digit              | 2                               |\n| MM        | Month leading zero              | 02                              |\n| MMM       | Month short name                | Feb                             |\n| MMMM      | Month long name                 | February                        |\n| ss        | Seconds 2 digits                | 54                              |\n| tt        | AM/PM                           | AM                              |\n| yy        | Year 2 digits                   | 12                              |\n| yyyy      | Year 4 digits                   | 2012                            |\n| zz        | Time zone offset                | 05                              |\n| +zz       | Time zone offset leading +      | +05                             |\n| zzz       | Time zone offset full           | 05:00                           |\n| zzzz      | Time zone offset full           | 0500                            |\n| +zzzz     | Time zone offset full leading + | +0500                           |\n\n### sf.TimeSpan\n\n| Specifier | Name                | Example                |\n|-----------|---------------------|------------------------|\n| y         | Years               | 2                      |\n| M         | Months              | 6                      |\n| d         | Days                | 8                      |\n| h         | Hours               | 10                     |\n| m         | Minutes             | 15                     |\n| s         | Seconds             | 5                      |\n| f         | Fraction of Seconds | 9                      |\n\nIf you prefix the specifier with \'^\' you will get the total number of that value. For\nexample \'^s\' will output the total number of seconds in the time span. Where as \'s\' will\nonly output the number of seconds in a minute.\n\nIf you repeat characters the value will be prefixed with zeros.\n\n## sf.indent(str, options)\n\nHelper function to word wrap and indent a string.\n\n__Arguments__\n\n * str - The string to indent and wrap.\n * options\n  * prefix - The prefix to appear at the beginning of each new line.\n  * wordwrap - The maximum length of each line.\n\n## Helper Functions\n\n * sf.log(formatString [, args...]);\n * sf.info(formatString [, args...]);\n * sf.warn(formatString [, args...]);\n * sf.error(formatString [, args...]);\n',
+255 silly resolved     readmeFilename: 'README.md',
+255 silly resolved     _id: 'sf@0.1.6',
+255 silly resolved     dist:
+255 silly resolved      { shasum: 'e7b59aa0d8db7c0bea4d4382993a82d45d671036',
+255 silly resolved        tarball: 'http://registry.npmjs.org/sf/-/sf-0.1.6.tgz' },
+255 silly resolved     _npmVersion: '1.1.65',
+255 silly resolved     _npmUser: { name: 'joeferner', email: 'joe@fernsroth.com' },
+255 silly resolved     directories: {},
+255 silly resolved     _shasum: 'e7b59aa0d8db7c0bea4d4382993a82d45d671036',
+255 silly resolved     _from: 'sf@0.1.6',
+255 silly resolved     _resolved: 'https://registry.npmjs.org/sf/-/sf-0.1.6.tgz',
+255 silly resolved     homepage: 'https://github.com/nearinfinity/node-sf' } ]
+256 info install node-pre-gyp@0.5.19 into C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport
+257 info install bindings@1.1.1 into C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport
+258 info install async@0.1.18 into C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport
+259 info install optimist@0.3.7 into C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport
+260 info install nan@0.7.1 into C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport
+261 info install sf@0.1.6 into C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport
+262 info installOne node-pre-gyp@0.5.19
+263 info installOne bindings@1.1.1
+264 info installOne async@0.1.18
+265 info installOne optimist@0.3.7
+266 info installOne nan@0.7.1
+267 info installOne sf@0.1.6
+268 info C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp unbuild
+269 info C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\bindings unbuild
+270 info C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\async unbuild
+271 info C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\optimist unbuild
+272 info C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\nan unbuild
+273 info C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\sf unbuild
+274 verbose tar unpack C:\Users\gordon\AppData\Roaming\npm-cache\node-pre-gyp\0.5.19\package.tgz
+275 silly lockFile 0d5acbe2-alport-node-modules-node-pre-gyp tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp
+276 verbose lock tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp C:\Users\gordon\AppData\Roaming\npm-cache\0d5acbe2-alport-node-modules-node-pre-gyp.lock
+277 silly lockFile b4f83921--node-pre-gyp-0-5-19-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\node-pre-gyp\0.5.19\package.tgz
+278 verbose lock tar://C:\Users\gordon\AppData\Roaming\npm-cache\node-pre-gyp\0.5.19\package.tgz C:\Users\gordon\AppData\Roaming\npm-cache\b4f83921--node-pre-gyp-0-5-19-package-tgz.lock
+279 verbose tar unpack C:\Users\gordon\AppData\Roaming\npm-cache\bindings\1.1.1\package.tgz
+280 silly lockFile 58164d38-serialport-node-modules-bindings tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\bindings
+281 verbose lock tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\bindings C:\Users\gordon\AppData\Roaming\npm-cache\58164d38-serialport-node-modules-bindings.lock
+282 silly lockFile 82109f19-cache-bindings-1-1-1-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\bindings\1.1.1\package.tgz
+283 verbose lock tar://C:\Users\gordon\AppData\Roaming\npm-cache\bindings\1.1.1\package.tgz C:\Users\gordon\AppData\Roaming\npm-cache\82109f19-cache-bindings-1-1-1-package-tgz.lock
+284 verbose tar unpack C:\Users\gordon\AppData\Roaming\npm-cache\async\0.1.18\package.tgz
+285 silly lockFile 2b51d877-es-serialport-node-modules-async tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\async
+286 verbose lock tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\async C:\Users\gordon\AppData\Roaming\npm-cache\2b51d877-es-serialport-node-modules-async.lock
+287 silly lockFile 95186ce5-m-cache-async-0-1-18-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\async\0.1.18\package.tgz
+288 verbose lock tar://C:\Users\gordon\AppData\Roaming\npm-cache\async\0.1.18\package.tgz C:\Users\gordon\AppData\Roaming\npm-cache\95186ce5-m-cache-async-0-1-18-package-tgz.lock
+289 verbose tar unpack C:\Users\gordon\AppData\Roaming\npm-cache\optimist\0.3.7\package.tgz
+290 silly lockFile e22bdc41-serialport-node-modules-optimist tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\optimist
+291 verbose lock tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\optimist C:\Users\gordon\AppData\Roaming\npm-cache\e22bdc41-serialport-node-modules-optimist.lock
+292 silly lockFile 11923b15-cache-optimist-0-3-7-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\optimist\0.3.7\package.tgz
+293 verbose lock tar://C:\Users\gordon\AppData\Roaming\npm-cache\optimist\0.3.7\package.tgz C:\Users\gordon\AppData\Roaming\npm-cache\11923b15-cache-optimist-0-3-7-package-tgz.lock
+294 verbose tar unpack C:\Users\gordon\AppData\Roaming\npm-cache\nan\0.7.1\package.tgz
+295 silly lockFile 4679d36c-ules-serialport-node-modules-nan tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\nan
+296 verbose lock tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\nan C:\Users\gordon\AppData\Roaming\npm-cache\4679d36c-ules-serialport-node-modules-nan.lock
+297 silly lockFile 1ce65c43--npm-cache-nan-0-7-1-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\nan\0.7.1\package.tgz
+298 verbose lock tar://C:\Users\gordon\AppData\Roaming\npm-cache\nan\0.7.1\package.tgz C:\Users\gordon\AppData\Roaming\npm-cache\1ce65c43--npm-cache-nan-0-7-1-package-tgz.lock
+299 verbose tar unpack C:\Users\gordon\AppData\Roaming\npm-cache\sf\0.1.6\package.tgz
+300 silly lockFile d4e1eb04-dules-serialport-node-modules-sf tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\sf
+301 verbose lock tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\sf C:\Users\gordon\AppData\Roaming\npm-cache\d4e1eb04-dules-serialport-node-modules-sf.lock
+302 silly lockFile 170df613-g-npm-cache-sf-0-1-6-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\sf\0.1.6\package.tgz
+303 verbose lock tar://C:\Users\gordon\AppData\Roaming\npm-cache\sf\0.1.6\package.tgz C:\Users\gordon\AppData\Roaming\npm-cache\170df613-g-npm-cache-sf-0-1-6-package-tgz.lock
+304 silly gunzTarPerm modes [ '755', '644' ]
+305 silly gunzTarPerm modes [ '755', '644' ]
+306 silly gunzTarPerm modes [ '755', '644' ]
+307 silly gunzTarPerm modes [ '755', '644' ]
+308 silly gunzTarPerm modes [ '755', '644' ]
+309 silly gunzTarPerm modes [ '755', '644' ]
+310 silly gunzTarPerm extractEntry package.json
+311 silly gunzTarPerm extractEntry package.json
+312 silly gunzTarPerm extractEntry README.md
+313 silly gunzTarPerm extractEntry package.json
+314 silly gunzTarPerm extractEntry README.md
+315 silly gunzTarPerm extractEntry README.md
+316 silly gunzTarPerm extractEntry bindings.js
+317 silly gunzTarPerm extractEntry LICENSE
+318 silly gunzTarPerm extractEntry index.js
+319 silly gunzTarPerm extractEntry package.json
+320 silly gunzTarPerm extractEntry package.json
+321 silly gunzTarPerm extractEntry LICENSE
+322 silly gunzTarPerm extractEntry index.js
+323 silly gunzTarPerm extractEntry README.md
+324 silly gunzTarPerm extractEntry LICENSE
+325 silly gunzTarPerm extractEntry include_dirs.js
+326 silly gunzTarPerm extractEntry .dntrc
+327 silly gunzTarPerm extractEntry build/config.gypi
+328 silly gunzTarPerm extractEntry nan.h
+329 silly gunzTarPerm extractEntry .npmignore
+330 silly gunzTarPerm extractEntry README.md
+331 silly gunzTarPerm extractEntry example/line_count_options.js
+332 silly gunzTarPerm extractEntry CHANGELOG.md
+333 silly gunzTarPerm extractEntry appveyor.yml
+334 silly gunzTarPerm extractEntry index.js
+335 silly gunzTarPerm extractEntry lib/stringFormat.js
+336 silly gunzTarPerm extractEntry example/boolean_double.js
+337 silly gunzTarPerm extractEntry example/divide.js
+338 silly gunzTarPerm extractEntry test/stringFormatTest.js
+339 silly lockFile 58164d38-serialport-node-modules-bindings tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\bindings
+340 silly lockFile 58164d38-serialport-node-modules-bindings tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\bindings
+341 silly gunzTarPerm extractEntry test/indentTest.js
+342 silly gunzTarPerm extractEntry test/timeSpanTest.js
+343 silly gunzTarPerm extractEntry bin/node-pre-gyp
+344 silly gunzTarPerm extractEntry bin/node-pre-gyp.cmd
+345 silly gunzTarPerm extractEntry .npmignore
+346 silly gunzTarPerm extractEntry Makefile
+347 silly lockFile 82109f19-cache-bindings-1-1-1-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\bindings\1.1.1\package.tgz
+348 silly lockFile 82109f19-cache-bindings-1-1-1-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\bindings\1.1.1\package.tgz
+349 silly gunzTarPerm extractEntry example/nonopt.js
+350 silly gunzTarPerm extractEntry example/string.js
+351 info preinstall bindings@1.1.1
+352 silly gunzTarPerm extractEntry package.json
+353 silly gunzTarPerm extractEntry lib/
+354 verbose readDependencies using package.json deps
+355 verbose readDependencies using package.json deps
+356 silly resolved []
+357 verbose about to build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\bindings
+358 info build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\bindings
+359 verbose linkStuff [ false,
+359 verbose linkStuff   false,
+359 verbose linkStuff   false,
+359 verbose linkStuff   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules' ]
+360 info linkStuff bindings@1.1.1
+361 verbose linkBins bindings@1.1.1
+362 verbose linkMans bindings@1.1.1
+363 verbose rebuildBundles bindings@1.1.1
+364 info install bindings@1.1.1
+365 info postinstall bindings@1.1.1
+366 silly gunzTarPerm extractEntry lib/async.js
+367 silly gunzTarPerm extractEntry LICENSE
+368 silly gunzTarPerm extractEntry lib/build.js
+369 silly gunzTarPerm extractEntry lib/install.js
+370 silly gunzTarPerm extractEntry .travis.yml
+371 silly gunzTarPerm extractEntry example/default_hash.js
+372 silly gunzTarPerm extractEntry example/reflect.js
+373 silly gunzTarPerm extractEntry .gitmodules
+374 silly gunzTarPerm extractEntry example/default_singles.js
+375 silly gunzTarPerm extractEntry example/usage-options.js
+376 silly gunzTarPerm extractEntry lib/node-pre-gyp.js
+377 silly gunzTarPerm extractEntry lib/package.js
+378 silly gunzTarPerm extractEntry example/bool.js
+379 silly gunzTarPerm extractEntry example/short.js
+380 silly gunzTarPerm extractEntry lib/pre-binding.js
+381 silly gunzTarPerm extractEntry lib/info.js
+382 silly gunzTarPerm extractEntry example/xup.js
+383 silly gunzTarPerm extractEntry example/boolean_single.js
+384 silly gunzTarPerm extractEntry example/line_count_wrap.js
+385 silly gunzTarPerm extractEntry example/line_count.js
+386 silly gunzTarPerm extractEntry lib/rebuild.js
+387 silly gunzTarPerm extractEntry lib/reinstall.js
+388 silly gunzTarPerm extractEntry lib/testbinary.js
+389 silly gunzTarPerm extractEntry lib/testpackage.js
+390 silly gunzTarPerm extractEntry readme.markdown
+391 silly gunzTarPerm extractEntry test/parse.js
+392 silly gunzTarPerm extractEntry test/_.js
+393 silly gunzTarPerm extractEntry test/usage.js
+394 silly gunzTarPerm extractEntry lib/unpublish.js
+395 silly gunzTarPerm extractEntry lib/clean.js
+396 silly gunzTarPerm extractEntry test/_/bin.js
+397 silly gunzTarPerm extractEntry test/_/argv.js
+398 silly lockFile 4679d36c-ules-serialport-node-modules-nan tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\nan
+399 silly lockFile 4679d36c-ules-serialport-node-modules-nan tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\nan
+400 silly lockFile 1ce65c43--npm-cache-nan-0-7-1-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\nan\0.7.1\package.tgz
+401 silly lockFile 1ce65c43--npm-cache-nan-0-7-1-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\nan\0.7.1\package.tgz
+402 silly gunzTarPerm extractEntry .travis.yml
+403 silly lockFile 2b51d877-es-serialport-node-modules-async tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\async
+404 silly lockFile 2b51d877-es-serialport-node-modules-async tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\async
+405 silly lockFile 95186ce5-m-cache-async-0-1-18-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\async\0.1.18\package.tgz
+406 silly lockFile 95186ce5-m-cache-async-0-1-18-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\async\0.1.18\package.tgz
+407 silly gunzTarPerm extractEntry lib/publish.js
+408 silly gunzTarPerm extractEntry lib/util/compile.js
+409 info preinstall nan@0.7.1
+410 info preinstall async@0.1.18
+411 verbose readDependencies using package.json deps
+412 verbose readDependencies using package.json deps
+413 silly resolved []
+414 verbose about to build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\nan
+415 info build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\nan
+416 verbose linkStuff [ false,
+416 verbose linkStuff   false,
+416 verbose linkStuff   false,
+416 verbose linkStuff   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules' ]
+417 info linkStuff nan@0.7.1
+418 verbose readDependencies using package.json deps
+419 verbose readDependencies using package.json deps
+420 silly resolved []
+421 verbose about to build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\async
+422 info build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\async
+423 verbose linkStuff [ false,
+423 verbose linkStuff   false,
+423 verbose linkStuff   false,
+423 verbose linkStuff   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules' ]
+424 info linkStuff async@0.1.18
+425 verbose linkBins nan@0.7.1
+426 verbose linkMans nan@0.7.1
+427 verbose rebuildBundles nan@0.7.1
+428 info install nan@0.7.1
+429 verbose linkBins async@0.1.18
+430 verbose linkMans async@0.1.18
+431 verbose rebuildBundles async@0.1.18
+432 info install async@0.1.18
+433 info postinstall nan@0.7.1
+434 info postinstall async@0.1.18
+435 silly gunzTarPerm extractEntry lib/util/s3_setup.js
+436 silly gunzTarPerm extractEntry lib/util/versioning.js
+437 silly lockFile d4e1eb04-dules-serialport-node-modules-sf tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\sf
+438 silly lockFile d4e1eb04-dules-serialport-node-modules-sf tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\sf
+439 silly lockFile 170df613-g-npm-cache-sf-0-1-6-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\sf\0.1.6\package.tgz
+440 silly lockFile 170df613-g-npm-cache-sf-0-1-6-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\sf\0.1.6\package.tgz
+441 silly gunzTarPerm extractEntry lib/util/abi_crosswalk.json
+442 silly gunzTarPerm extractEntry lib/util/nw-pre-gyp/package.json
+443 info preinstall sf@0.1.6
+444 verbose readDependencies using package.json deps
+445 verbose readDependencies using package.json deps
+446 silly resolved []
+447 verbose about to build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\sf
+448 info build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\sf
+449 verbose linkStuff [ false,
+449 verbose linkStuff   false,
+449 verbose linkStuff   false,
+449 verbose linkStuff   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules' ]
+450 info linkStuff sf@0.1.6
+451 verbose linkBins sf@0.1.6
+452 verbose linkMans sf@0.1.6
+453 verbose rebuildBundles sf@0.1.6
+454 info install sf@0.1.6
+455 silly gunzTarPerm extractEntry lib/util/nw-pre-gyp/index.html
+456 silly gunzTarPerm extractEntry lib/util/nw_crosswalk.json
+457 info postinstall sf@0.1.6
+458 silly gunzTarPerm extractEntry node_modules/mkdirp/package.json
+459 silly gunzTarPerm extractEntry node_modules/mkdirp/.npmignore
+460 silly gunzTarPerm extractEntry node_modules/mkdirp/LICENSE
+461 silly gunzTarPerm extractEntry node_modules/mkdirp/index.js
+462 silly gunzTarPerm extractEntry node_modules/mkdirp/.travis.yml
+463 silly gunzTarPerm extractEntry node_modules/mkdirp/bin/cmd.js
+464 silly gunzTarPerm extractEntry node_modules/mkdirp/bin/usage.txt
+465 silly gunzTarPerm extractEntry node_modules/mkdirp/examples/pow.js
+466 silly gunzTarPerm extractEntry node_modules/mkdirp/readme.markdown
+467 silly gunzTarPerm extractEntry node_modules/mkdirp/test/chmod.js
+468 silly gunzTarPerm extractEntry node_modules/mkdirp/test/opts_fs_sync.js
+469 silly gunzTarPerm extractEntry node_modules/mkdirp/test/perm.js
+470 silly gunzTarPerm extractEntry node_modules/mkdirp/test/perm_sync.js
+471 silly gunzTarPerm extractEntry node_modules/mkdirp/test/opts_fs.js
+472 silly gunzTarPerm extractEntry node_modules/mkdirp/test/rel.js
+473 silly gunzTarPerm extractEntry node_modules/mkdirp/test/return.js
+474 silly gunzTarPerm extractEntry node_modules/mkdirp/test/return_sync.js
+475 silly gunzTarPerm extractEntry node_modules/mkdirp/test/root.js
+476 silly gunzTarPerm extractEntry node_modules/mkdirp/test/sync.js
+477 silly gunzTarPerm extractEntry node_modules/mkdirp/test/mkdirp.js
+478 silly gunzTarPerm extractEntry node_modules/mkdirp/test/umask.js
+479 silly gunzTarPerm extractEntry node_modules/mkdirp/test/clobber.js
+480 silly lockFile e22bdc41-serialport-node-modules-optimist tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\optimist
+481 silly lockFile e22bdc41-serialport-node-modules-optimist tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\optimist
+482 silly lockFile 11923b15-cache-optimist-0-3-7-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\optimist\0.3.7\package.tgz
+483 silly lockFile 11923b15-cache-optimist-0-3-7-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\optimist\0.3.7\package.tgz
+484 silly gunzTarPerm extractEntry node_modules/mkdirp/test/umask_sync.js
+485 silly gunzTarPerm extractEntry node_modules/mkdirp/test/race.js
+486 silly gunzTarPerm extractEntry node_modules/mkdirp/node_modules/minimist/package.json
+487 silly gunzTarPerm extractEntry node_modules/mkdirp/node_modules/minimist/LICENSE
+488 info preinstall optimist@0.3.7
+489 verbose readDependencies using package.json deps
+490 verbose readDependencies using package.json deps
+491 silly gunzTarPerm extractEntry node_modules/mkdirp/node_modules/minimist/index.js
+492 silly gunzTarPerm extractEntry node_modules/mkdirp/node_modules/minimist/.travis.yml
+493 silly gunzTarPerm extractEntry node_modules/mkdirp/node_modules/minimist/example/parse.js
+494 silly gunzTarPerm extractEntry node_modules/mkdirp/node_modules/minimist/readme.markdown
+495 silly gunzTarPerm extractEntry node_modules/mkdirp/node_modules/minimist/test/dash.js
+496 silly gunzTarPerm extractEntry node_modules/mkdirp/node_modules/minimist/test/default_bool.js
+497 silly gunzTarPerm extractEntry node_modules/mkdirp/node_modules/minimist/test/dotted.js
+498 silly gunzTarPerm extractEntry node_modules/mkdirp/node_modules/minimist/test/long.js
+499 silly gunzTarPerm extractEntry node_modules/mkdirp/node_modules/minimist/test/parse.js
+500 silly gunzTarPerm extractEntry node_modules/mkdirp/node_modules/minimist/test/parse_modified.js
+501 verbose cache add [ 'wordwrap@~0.0.2', null ]
+502 verbose cache add name=undefined spec="wordwrap@~0.0.2" args=["wordwrap@~0.0.2",null]
+503 verbose parsed url { protocol: null,
+503 verbose parsed url   slashes: null,
+503 verbose parsed url   auth: null,
+503 verbose parsed url   host: null,
+503 verbose parsed url   port: null,
+503 verbose parsed url   hostname: null,
+503 verbose parsed url   hash: null,
+503 verbose parsed url   search: null,
+503 verbose parsed url   query: null,
+503 verbose parsed url   pathname: 'wordwrap@~0.0.2',
+503 verbose parsed url   path: 'wordwrap@~0.0.2',
+503 verbose parsed url   href: 'wordwrap@~0.0.2' }
+504 verbose cache add name="wordwrap" spec="~0.0.2" args=["wordwrap","~0.0.2"]
+505 verbose parsed url { protocol: null,
+505 verbose parsed url   slashes: null,
+505 verbose parsed url   auth: null,
+505 verbose parsed url   host: null,
+505 verbose parsed url   port: null,
+505 verbose parsed url   hostname: null,
+505 verbose parsed url   hash: null,
+505 verbose parsed url   search: null,
+505 verbose parsed url   query: null,
+505 verbose parsed url   pathname: '~0.0.2',
+505 verbose parsed url   path: '~0.0.2',
+505 verbose parsed url   href: '~0.0.2' }
+506 verbose addNamed [ 'wordwrap', '~0.0.2' ]
+507 verbose addNamed [ null, '>=0.0.2-0 <0.1.0-0' ]
+508 silly lockFile 8bd42136-wordwrap-0-0-2 wordwrap@~0.0.2
+509 verbose lock wordwrap@~0.0.2 C:\Users\gordon\AppData\Roaming\npm-cache\8bd42136-wordwrap-0-0-2.lock
+510 silly addNameRange { name: 'wordwrap', range: '>=0.0.2-0 <0.1.0-0', hasData: false }
+511 verbose url raw wordwrap
+512 verbose url resolving [ 'https://registry.npmjs.org/', './wordwrap' ]
+513 verbose url resolved https://registry.npmjs.org/wordwrap
+514 info trying registry request attempt 1 at 11:40:12
+515 verbose etag "BTMN3NEF4MYXZJU4T0596BNKE"
+516 http GET https://registry.npmjs.org/wordwrap
+517 silly gunzTarPerm extractEntry node_modules/mkdirp/node_modules/minimist/test/short.js
+518 silly gunzTarPerm extractEntry node_modules/mkdirp/node_modules/minimist/test/whitespace.js
+519 silly gunzTarPerm extractEntry node_modules/nopt/package.json
+520 silly gunzTarPerm extractEntry node_modules/nopt/.npmignore
+521 silly gunzTarPerm extractEntry node_modules/nopt/README.md
+522 silly gunzTarPerm extractEntry node_modules/nopt/LICENSE
+523 silly gunzTarPerm extractEntry node_modules/nopt/bin/nopt.js
+524 silly gunzTarPerm extractEntry node_modules/nopt/examples/my-program.js
+525 silly gunzTarPerm extractEntry node_modules/nopt/lib/nopt.js
+526 silly gunzTarPerm extractEntry node_modules/nopt/test/basic.js
+527 silly gunzTarPerm extractEntry node_modules/nopt/node_modules/abbrev/package.json
+528 silly gunzTarPerm extractEntry node_modules/nopt/node_modules/abbrev/README.md
+529 silly gunzTarPerm extractEntry node_modules/nopt/node_modules/abbrev/LICENSE
+530 silly gunzTarPerm extractEntry node_modules/nopt/node_modules/abbrev/abbrev.js
+531 silly gunzTarPerm extractEntry node_modules/nopt/node_modules/abbrev/test.js
+532 silly gunzTarPerm extractEntry node_modules/nopt/node_modules/abbrev/CONTRIBUTING.md
+533 silly gunzTarPerm extractEntry node_modules/npmlog/package.json
+534 silly gunzTarPerm extractEntry node_modules/npmlog/README.md
+535 silly gunzTarPerm extractEntry node_modules/npmlog/LICENSE
+536 silly gunzTarPerm extractEntry node_modules/npmlog/example.js
+537 silly gunzTarPerm extractEntry node_modules/npmlog/log.js
+538 silly gunzTarPerm extractEntry node_modules/npmlog/test/basic.js
+539 silly gunzTarPerm extractEntry node_modules/npmlog/node_modules/ansi/package.json
+540 silly gunzTarPerm extractEntry node_modules/npmlog/node_modules/ansi/.npmignore
+541 silly gunzTarPerm extractEntry node_modules/npmlog/node_modules/ansi/README.md
+542 silly gunzTarPerm extractEntry node_modules/npmlog/node_modules/ansi/color-spaces.pl
+543 silly gunzTarPerm extractEntry node_modules/npmlog/node_modules/ansi/examples/cursorPosition.js
+544 silly gunzTarPerm extractEntry node_modules/npmlog/node_modules/ansi/examples/starwars.js
+545 silly gunzTarPerm extractEntry node_modules/npmlog/node_modules/ansi/examples/beep/index.js
+546 silly gunzTarPerm extractEntry node_modules/npmlog/node_modules/ansi/examples/clear/index.js
+547 silly gunzTarPerm extractEntry node_modules/npmlog/node_modules/ansi/examples/progress/index.js
+548 silly gunzTarPerm extractEntry node_modules/npmlog/node_modules/ansi/lib/ansi.js
+549 silly gunzTarPerm extractEntry node_modules/npmlog/node_modules/ansi/lib/newlines.js
+550 silly gunzTarPerm extractEntry node_modules/rc/package.json
+551 silly gunzTarPerm extractEntry node_modules/rc/.npmignore
+552 silly gunzTarPerm extractEntry node_modules/rc/README.md
+553 silly gunzTarPerm extractEntry node_modules/rc/index.js
+554 silly gunzTarPerm extractEntry node_modules/rc/browser.js
+555 silly gunzTarPerm extractEntry node_modules/rc/LICENSE.APACHE2
+556 silly gunzTarPerm extractEntry node_modules/rc/LICENSE.MIT
+557 silly gunzTarPerm extractEntry node_modules/rc/lib/utils.js
+558 silly gunzTarPerm extractEntry node_modules/rc/LICENSE.BSD
+559 silly gunzTarPerm extractEntry node_modules/rc/test/ini.js
+560 silly gunzTarPerm extractEntry node_modules/rc/test/test.js
+561 silly gunzTarPerm extractEntry node_modules/rc/node_modules/deep-extend/package.json
+562 silly gunzTarPerm extractEntry node_modules/rc/node_modules/deep-extend/.npmignore
+563 silly gunzTarPerm extractEntry node_modules/rc/node_modules/deep-extend/README.md
+564 silly gunzTarPerm extractEntry node_modules/rc/node_modules/deep-extend/LICENSE
+565 silly gunzTarPerm extractEntry node_modules/rc/node_modules/deep-extend/index.js
+566 silly gunzTarPerm extractEntry node_modules/rc/node_modules/deep-extend/test/index.spec.js
+567 silly gunzTarPerm extractEntry node_modules/rc/node_modules/deep-extend/test/mocha.opts
+568 silly gunzTarPerm extractEntry node_modules/rc/node_modules/ini/package.json
+569 silly gunzTarPerm extractEntry node_modules/rc/node_modules/ini/README.md
+570 silly gunzTarPerm extractEntry node_modules/rc/node_modules/ini/LICENSE
+571 silly gunzTarPerm extractEntry node_modules/rc/node_modules/ini/ini.js
+572 silly gunzTarPerm extractEntry node_modules/rc/node_modules/ini/test/bar.js
+573 silly gunzTarPerm extractEntry node_modules/rc/node_modules/ini/test/foo.js
+574 silly gunzTarPerm extractEntry node_modules/rc/node_modules/ini/test/fixtures/foo.ini
+575 silly gunzTarPerm extractEntry node_modules/rc/node_modules/minimist/package.json
+576 silly gunzTarPerm extractEntry node_modules/rc/node_modules/minimist/LICENSE
+577 silly gunzTarPerm extractEntry node_modules/rc/node_modules/minimist/index.js
+578 silly gunzTarPerm extractEntry node_modules/rc/node_modules/minimist/.travis.yml
+579 silly gunzTarPerm extractEntry node_modules/rc/node_modules/minimist/example/parse.js
+580 silly gunzTarPerm extractEntry node_modules/rc/node_modules/minimist/readme.markdown
+581 silly gunzTarPerm extractEntry node_modules/rc/node_modules/minimist/test/bool.js
+582 silly gunzTarPerm extractEntry node_modules/rc/node_modules/minimist/test/dash.js
+583 silly gunzTarPerm extractEntry node_modules/rc/node_modules/minimist/test/default_bool.js
+584 silly gunzTarPerm extractEntry node_modules/rc/node_modules/minimist/test/dotted.js
+585 silly gunzTarPerm extractEntry node_modules/rc/node_modules/minimist/test/long.js
+586 silly gunzTarPerm extractEntry node_modules/rc/node_modules/minimist/test/num.js
+587 silly gunzTarPerm extractEntry node_modules/rc/node_modules/minimist/test/parse.js
+588 silly gunzTarPerm extractEntry node_modules/rc/node_modules/minimist/test/parse_modified.js
+589 silly gunzTarPerm extractEntry node_modules/rc/node_modules/minimist/test/short.js
+590 silly gunzTarPerm extractEntry node_modules/rc/node_modules/minimist/test/whitespace.js
+591 silly gunzTarPerm extractEntry node_modules/rc/node_modules/strip-json-comments/package.json
+592 silly gunzTarPerm extractEntry node_modules/rc/node_modules/strip-json-comments/cli.js
+593 silly gunzTarPerm extractEntry node_modules/rc/node_modules/strip-json-comments/strip-json-comments.js
+594 silly gunzTarPerm extractEntry node_modules/rc/node_modules/strip-json-comments/readme.md
+595 silly gunzTarPerm extractEntry node_modules/request/package.json
+596 silly gunzTarPerm extractEntry node_modules/request/.npmignore
+597 silly gunzTarPerm extractEntry node_modules/request/README.md
+598 silly gunzTarPerm extractEntry node_modules/request/LICENSE
+599 silly gunzTarPerm extractEntry node_modules/request/index.js
+600 silly gunzTarPerm extractEntry node_modules/request/request.js
+601 silly gunzTarPerm extractEntry node_modules/request/.travis.yml
+602 silly gunzTarPerm extractEntry node_modules/request/CHANGELOG.md
+603 silly gunzTarPerm extractEntry node_modules/request/lib/cookies.js
+604 silly gunzTarPerm extractEntry node_modules/request/lib/copy.js
+605 silly gunzTarPerm extractEntry node_modules/request/lib/debug.js
+606 silly gunzTarPerm extractEntry node_modules/request/lib/getSafe.js
+607 silly gunzTarPerm extractEntry node_modules/request/lib/optional.js
+608 silly gunzTarPerm extractEntry node_modules/request/node_modules/mime/package.json
+609 silly gunzTarPerm extractEntry node_modules/request/node_modules/mime/README.md
+610 silly gunzTarPerm extractEntry node_modules/request/node_modules/mime/LICENSE
+611 silly gunzTarPerm extractEntry node_modules/request/node_modules/mime/mime.js
+612 silly gunzTarPerm extractEntry node_modules/request/node_modules/mime/test.js
+613 silly gunzTarPerm extractEntry node_modules/request/node_modules/mime/types/mime.types
+614 silly gunzTarPerm extractEntry node_modules/request/node_modules/mime/types/node.types
+615 silly gunzTarPerm extractEntry node_modules/request/node_modules/aws-sign2/package.json
+616 silly gunzTarPerm extractEntry node_modules/request/node_modules/aws-sign2/README.md
+617 silly gunzTarPerm extractEntry node_modules/request/node_modules/aws-sign2/LICENSE
+618 silly gunzTarPerm extractEntry node_modules/request/node_modules/aws-sign2/index.js
+619 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/package.json
+620 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/License
+621 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/Readme.md
+622 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/lib/form_data.js
+623 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/async/package.json
+624 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/async/README.md
+625 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/async/LICENSE
+626 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/async/component.json
+627 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/async/lib/async.js
+628 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/package.json
+629 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/.npmignore
+630 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/License
+631 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/Makefile
+632 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/Readme.md
+633 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/lib/combined_stream.js
+634 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/test/common.js
+635 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/test/run.js
+636 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/test/fixture/file1.txt
+637 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/test/fixture/file2.txt
+638 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/test/integration/test-callback-streams.js
+639 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/test/integration/test-data-size.js
+640 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/test/integration/test-delayed-streams-and-buffers-and-strings.js
+641 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/test/integration/test-delayed-streams.js
+642 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/test/integration/test-empty-string.js
+643 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/test/integration/test-is-stream-like.js
+644 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/test/integration/test-max-data-size.js
+645 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/test/integration/test-unpaused-streams.js
+646 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/node_modules/delayed-stream/package.json
+647 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/node_modules/delayed-stream/.npmignore
+648 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/node_modules/delayed-stream/License
+649 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/node_modules/delayed-stream/Makefile
+650 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/node_modules/delayed-stream/Readme.md
+651 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/node_modules/delayed-stream/lib/delayed_stream.js
+652 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/node_modules/delayed-stream/test/common.js
+653 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/node_modules/delayed-stream/test/run.js
+654 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/node_modules/delayed-stream/test/integration/test-delayed-http-upload.js
+655 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/node_modules/delayed-stream/test/integration/test-delayed-stream-auto-pause.js
+656 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/node_modules/delayed-stream/test/integration/test-delayed-stream-pause.js
+657 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/node_modules/delayed-stream/test/integration/test-delayed-stream.js
+658 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/node_modules/delayed-stream/test/integration/test-handle-source-errors.js
+659 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/node_modules/delayed-stream/test/integration/test-max-data-size.js
+660 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/node_modules/delayed-stream/test/integration/test-pipe-resumes.js
+661 http 304 https://registry.npmjs.org/wordwrap
+662 silly registry.get cb [ 304,
+662 silly registry.get   { date: 'Fri, 18 Jul 2014 15:40:11 GMT',
+662 silly registry.get     server: 'Apache',
+662 silly registry.get     via: '1.1 varnish',
+662 silly registry.get     'last-modified': 'Fri, 18 Jul 2014 15:40:11 GMT',
+662 silly registry.get     'cache-control': 'max-age=60',
+662 silly registry.get     etag: '"BTMN3NEF4MYXZJU4T0596BNKE"',
+662 silly registry.get     'x-served-by': 'cache-at52-ATL',
+662 silly registry.get     'x-cache': 'HIT',
+662 silly registry.get     'x-cache-hits': '1',
+662 silly registry.get     'x-timer': 'S1405698011.295000,VS0,VE0',
+662 silly registry.get     vary: 'Accept',
+662 silly registry.get     'content-length': '0',
+662 silly registry.get     'keep-alive': 'timeout=10, max=50',
+662 silly registry.get     connection: 'Keep-Alive' } ]
+663 verbose etag wordwrap from cache
+664 silly gunzTarPerm extractEntry node_modules/request/node_modules/form-data/node_modules/combined-stream/node_modules/delayed-stream/test/integration/test-proxy-readable.js
+665 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/package.json
+666 silly addNameRange number 2 { name: 'wordwrap', range: '>=0.0.2-0 <0.1.0-0', hasData: true }
+667 silly addNameRange versions [ 'wordwrap', [ '0.0.1', '0.0.2' ] ]
+668 verbose addNamed [ 'wordwrap', '0.0.2' ]
+669 verbose addNamed [ '0.0.2', '0.0.2' ]
+670 silly lockFile 24a694c8-wordwrap-0-0-2 wordwrap@0.0.2
+671 verbose lock wordwrap@0.0.2 C:\Users\gordon\AppData\Roaming\npm-cache\24a694c8-wordwrap-0-0-2.lock
+672 silly lockFile 24a694c8-wordwrap-0-0-2 wordwrap@0.0.2
+673 silly lockFile 24a694c8-wordwrap-0-0-2 wordwrap@0.0.2
+674 silly lockFile 8bd42136-wordwrap-0-0-2 wordwrap@~0.0.2
+675 silly lockFile 8bd42136-wordwrap-0-0-2 wordwrap@~0.0.2
+676 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/.npmignore
+677 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/README.md
+678 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/LICENSE
+679 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/index.js
+680 silly resolved [ { name: 'wordwrap',
+680 silly resolved     description: 'Wrap those words. Show them at what columns to start and stop.',
+680 silly resolved     version: '0.0.2',
+680 silly resolved     repository:
+680 silly resolved      { type: 'git',
+680 silly resolved        url: 'git://github.com/substack/node-wordwrap.git' },
+680 silly resolved     main: './index.js',
+680 silly resolved     keywords: [ 'word', 'wrap', 'rule', 'format', 'column' ],
+680 silly resolved     directories: { lib: '.', example: 'example', test: 'test' },
+680 silly resolved     scripts: { test: 'expresso' },
+680 silly resolved     devDependencies: { expresso: '=0.7.x' },
+680 silly resolved     engines: { node: '>=0.4.0' },
+680 silly resolved     license: 'MIT/X11',
+680 silly resolved     author:
+680 silly resolved      { name: 'James Halliday',
+680 silly resolved        email: 'mail@substack.net',
+680 silly resolved        url: 'http://substack.net' },
+680 silly resolved     _id: 'wordwrap@0.0.2',
+680 silly resolved     dependencies: {},
+680 silly resolved     _engineSupported: true,
+680 silly resolved     _npmVersion: '1.0.10',
+680 silly resolved     _nodeVersion: 'v0.5.0-pre',
+680 silly resolved     _defaultsLoaded: true,
+680 silly resolved     dist:
+680 silly resolved      { shasum: 'b79669bb42ecb409f83d583cad52ca17eaa1643f',
+680 silly resolved        tarball: 'http://registry.npmjs.org/wordwrap/-/wordwrap-0.0.2.tgz' },
+680 silly resolved     maintainers: [ [Object] ],
+680 silly resolved     _shasum: 'b79669bb42ecb409f83d583cad52ca17eaa1643f',
+680 silly resolved     _from: 'wordwrap@~0.0.2',
+680 silly resolved     _resolved: 'https://registry.npmjs.org/wordwrap/-/wordwrap-0.0.2.tgz',
+680 silly resolved     bugs: { url: 'https://github.com/substack/node-wordwrap/issues' },
+680 silly resolved     readme: 'ERROR: No README data found!',
+680 silly resolved     homepage: 'https://github.com/substack/node-wordwrap' } ]
+681 info install wordwrap@0.0.2 into C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\optimist
+682 info installOne wordwrap@0.0.2
+683 info C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\optimist\node_modules\wordwrap unbuild
+684 verbose tar unpack C:\Users\gordon\AppData\Roaming\npm-cache\wordwrap\0.0.2\package.tgz
+685 silly lockFile 334f77aa-s-optimist-node-modules-wordwrap tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\optimist\node_modules\wordwrap
+686 verbose lock tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\optimist\node_modules\wordwrap C:\Users\gordon\AppData\Roaming\npm-cache\334f77aa-s-optimist-node-modules-wordwrap.lock
+687 silly lockFile ce06cb33-cache-wordwrap-0-0-2-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\wordwrap\0.0.2\package.tgz
+688 verbose lock tar://C:\Users\gordon\AppData\Roaming\npm-cache\wordwrap\0.0.2\package.tgz C:\Users\gordon\AppData\Roaming\npm-cache\ce06cb33-cache-wordwrap-0-0-2-package-tgz.lock
+689 silly gunzTarPerm modes [ '755', '644' ]
+690 silly gunzTarPerm extractEntry index.js
+691 silly gunzTarPerm extractEntry .npmignore
+692 silly gunzTarPerm extractEntry package.json
+693 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/example/usage.js
+694 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/.travis.yml
+695 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/Makefile
+696 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/lib/browser.js
+697 silly gunzTarPerm extractEntry README.markdown
+698 silly gunzTarPerm extractEntry example/center.js
+699 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/lib/client.js
+700 silly gunzTarPerm extractEntry example/meat.js
+701 silly gunzTarPerm extractEntry test/wrap.js
+702 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/lib/crypto.js
+703 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/lib/index.js
+704 silly gunzTarPerm extractEntry test/break.js
+705 silly gunzTarPerm extractEntry test/idleness.txt
+706 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/lib/server.js
+707 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/lib/utils.js
+708 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/test/browser.js
+709 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/test/client.js
+710 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/test/crypto.js
+711 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/test/index.js
+712 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/test/message.js
+713 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/test/readme.js
+714 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/test/server.js
+715 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/test/uri.js
+716 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/test/utils.js
+717 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/images/hawk.png
+718 silly lockFile 334f77aa-s-optimist-node-modules-wordwrap tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\optimist\node_modules\wordwrap
+719 silly lockFile 334f77aa-s-optimist-node-modules-wordwrap tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\optimist\node_modules\wordwrap
+720 silly lockFile ce06cb33-cache-wordwrap-0-0-2-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\wordwrap\0.0.2\package.tgz
+721 silly lockFile ce06cb33-cache-wordwrap-0-0-2-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\wordwrap\0.0.2\package.tgz
+722 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/images/logo.png
+723 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/boom/package.json
+724 info preinstall wordwrap@0.0.2
+725 verbose readDependencies using package.json deps
+726 verbose readDependencies using package.json deps
+727 silly resolved []
+728 verbose about to build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\optimist\node_modules\wordwrap
+729 info build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\optimist\node_modules\wordwrap
+730 verbose linkStuff [ false,
+730 verbose linkStuff   false,
+730 verbose linkStuff   false,
+730 verbose linkStuff   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules\\optimist\\node_modules' ]
+731 info linkStuff wordwrap@0.0.2
+732 verbose linkBins wordwrap@0.0.2
+733 verbose linkMans wordwrap@0.0.2
+734 verbose rebuildBundles wordwrap@0.0.2
+735 info install wordwrap@0.0.2
+736 info postinstall wordwrap@0.0.2
+737 verbose about to build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\optimist
+738 info build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\optimist
+739 verbose linkStuff [ false,
+739 verbose linkStuff   false,
+739 verbose linkStuff   false,
+739 verbose linkStuff   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules' ]
+740 info linkStuff optimist@0.3.7
+741 verbose linkBins optimist@0.3.7
+742 verbose linkMans optimist@0.3.7
+743 verbose rebuildBundles optimist@0.3.7
+744 verbose rebuildBundles [ 'wordwrap' ]
+745 info install optimist@0.3.7
+746 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/boom/.npmignore
+747 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/boom/README.md
+748 info postinstall optimist@0.3.7
+749 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/boom/LICENSE
+750 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/boom/index.js
+751 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/boom/.travis.yml
+752 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/boom/Makefile
+753 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/boom/images/boom.png
+754 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/boom/lib/index.js
+755 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/boom/test/index.js
+756 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/cryptiles/package.json
+757 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/cryptiles/.npmignore
+758 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/cryptiles/README.md
+759 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/cryptiles/LICENSE
+760 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/cryptiles/index.js
+761 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/cryptiles/.travis.yml
+762 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/cryptiles/Makefile
+763 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/cryptiles/lib/index.js
+764 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/cryptiles/test/index.js
+765 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/hoek/package.json
+766 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/hoek/.npmignore
+767 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/hoek/README.md
+768 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/hoek/LICENSE
+769 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/hoek/index.js
+770 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/hoek/.travis.yml
+771 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/hoek/Makefile
+772 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/hoek/images/hoek.png
+773 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/hoek/lib/escape.js
+774 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/hoek/lib/index.js
+775 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/hoek/test/escaper.js
+776 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/hoek/test/index.js
+777 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/hoek/test/modules/test1.js
+778 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/hoek/test/modules/test2.js
+779 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/hoek/test/modules/test3.js
+780 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/sntp/package.json
+781 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/sntp/.npmignore
+782 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/sntp/README.md
+783 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/sntp/LICENSE
+784 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/sntp/index.js
+785 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/sntp/.travis.yml
+786 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/sntp/Makefile
+787 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/sntp/examples/offset.js
+788 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/sntp/examples/time.js
+789 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/sntp/lib/index.js
+790 silly gunzTarPerm extractEntry node_modules/request/node_modules/hawk/node_modules/sntp/test/index.js
+791 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/package.json
+792 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/.npmignore
+793 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/README.md
+794 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/LICENSE
+795 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/.dir-locals.el
+796 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/http_signing.md
+797 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/lib/index.js
+798 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/lib/parser.js
+799 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/lib/signer.js
+800 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/lib/util.js
+801 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/lib/verify.js
+802 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/asn1/package.json
+803 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/asn1/.npmignore
+804 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/asn1/README.md
+805 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/asn1/LICENSE
+806 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/asn1/lib/index.js
+807 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/asn1/lib/ber/errors.js
+808 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/asn1/lib/ber/index.js
+809 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/asn1/lib/ber/reader.js
+810 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/asn1/lib/ber/types.js
+811 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/asn1/lib/ber/writer.js
+812 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/asn1/tst/ber/reader.test.js
+813 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/asn1/tst/ber/writer.test.js
+814 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/assert-plus/package.json
+815 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/assert-plus/README.md
+816 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/assert-plus/assert.js
+817 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/package.json
+818 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/README
+819 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/LICENSE
+820 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/ctio.js
+821 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/ctf.js
+822 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/ctype.js
+823 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/CHANGELOG
+824 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/man/man3ctype/ctio.3ctype
+825 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/README.old
+826 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tools/jsl.conf
+827 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tools/jsstyle
+828 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctf/tst.float.js
+829 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctf/tst.fail.js
+830 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctf/tst.int.js
+831 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctf/tst.psinfo.js
+832 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctf/tst.struct.js
+833 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctf/tst.typedef.js
+834 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctf/psinfo.json
+835 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctf/struct.json
+836 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctf/float.json
+837 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctf/int.json
+838 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctf/typedef.json
+839 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctio/float/tst.rfloat.js
+840 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctio/float/tst.wfloat.js
+841 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctio/int/tst.64.js
+842 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctio/int/tst.rint.js
+843 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctio/int/tst.wbounds.js
+844 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctio/int/tst.wint.js
+845 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctio/uint/tst.64.js
+846 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctio/uint/tst.roundtrip.js
+847 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctio/uint/tst.ruint.js
+848 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctio/uint/tst.wuint.js
+849 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctype/tst.basicr.js
+850 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctype/tst.basicw.js
+851 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctype/tst.char.js
+852 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctype/tst.endian.js
+853 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctype/tst.oldwrite.js
+854 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctype/tst.readSize.js
+855 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctype/tst.structw.js
+856 silly gunzTarPerm extractEntry node_modules/request/node_modules/http-signature/node_modules/ctype/tst/ctype/tst.writeStruct.js
+857 silly gunzTarPerm extractEntry node_modules/request/node_modules/json-stringify-safe/package.json
+858 silly gunzTarPerm extractEntry node_modules/request/node_modules/json-stringify-safe/README.md
+859 silly gunzTarPerm extractEntry node_modules/request/node_modules/json-stringify-safe/LICENSE
+860 silly gunzTarPerm extractEntry node_modules/request/node_modules/json-stringify-safe/stringify.js
+861 silly gunzTarPerm extractEntry node_modules/request/node_modules/json-stringify-safe/test.js
+862 silly gunzTarPerm extractEntry node_modules/request/node_modules/forever-agent/package.json
+863 silly gunzTarPerm extractEntry node_modules/request/node_modules/forever-agent/README.md
+864 silly gunzTarPerm extractEntry node_modules/request/node_modules/forever-agent/LICENSE
+865 silly gunzTarPerm extractEntry node_modules/request/node_modules/forever-agent/index.js
+866 silly gunzTarPerm extractEntry node_modules/request/node_modules/node-uuid/package.json
+867 silly gunzTarPerm extractEntry node_modules/request/node_modules/node-uuid/.npmignore
+868 silly gunzTarPerm extractEntry node_modules/request/node_modules/node-uuid/README.md
+869 silly gunzTarPerm extractEntry node_modules/request/node_modules/node-uuid/uuid.js
+870 silly gunzTarPerm extractEntry node_modules/request/node_modules/node-uuid/LICENSE.md
+871 silly gunzTarPerm extractEntry node_modules/request/node_modules/node-uuid/benchmark/README.md
+872 silly gunzTarPerm extractEntry node_modules/request/node_modules/node-uuid/benchmark/benchmark.js
+873 silly gunzTarPerm extractEntry node_modules/request/node_modules/node-uuid/benchmark/bench.gnu
+874 silly gunzTarPerm extractEntry node_modules/request/node_modules/node-uuid/benchmark/bench.sh
+875 silly gunzTarPerm extractEntry node_modules/request/node_modules/node-uuid/benchmark/benchmark-native.c
+876 silly gunzTarPerm extractEntry node_modules/request/node_modules/node-uuid/component.json
+877 silly gunzTarPerm extractEntry node_modules/request/node_modules/node-uuid/test/compare_v1.js
+878 silly gunzTarPerm extractEntry node_modules/request/node_modules/node-uuid/test/test.js
+879 silly gunzTarPerm extractEntry node_modules/request/node_modules/node-uuid/test/test.html
+880 silly gunzTarPerm extractEntry node_modules/request/node_modules/oauth-sign/package.json
+881 silly gunzTarPerm extractEntry node_modules/request/node_modules/oauth-sign/README.md
+882 silly gunzTarPerm extractEntry node_modules/request/node_modules/oauth-sign/LICENSE
+883 silly gunzTarPerm extractEntry node_modules/request/node_modules/oauth-sign/index.js
+884 silly gunzTarPerm extractEntry node_modules/request/node_modules/oauth-sign/test.js
+885 silly gunzTarPerm extractEntry node_modules/request/node_modules/qs/package.json
+886 silly gunzTarPerm extractEntry node_modules/request/node_modules/qs/.npmignore
+887 silly gunzTarPerm extractEntry node_modules/request/node_modules/qs/index.js
+888 silly gunzTarPerm extractEntry node_modules/request/node_modules/qs/.gitmodules
+889 silly gunzTarPerm extractEntry node_modules/request/node_modules/qs/Readme.md
+890 silly gunzTarPerm extractEntry node_modules/request/node_modules/tough-cookie/package.json
+891 silly gunzTarPerm extractEntry node_modules/request/node_modules/tough-cookie/.npmignore
+892 silly gunzTarPerm extractEntry node_modules/request/node_modules/tough-cookie/README.md
+893 silly gunzTarPerm extractEntry node_modules/request/node_modules/tough-cookie/LICENSE
+894 silly gunzTarPerm extractEntry node_modules/request/node_modules/tough-cookie/test.js
+895 silly gunzTarPerm extractEntry node_modules/request/node_modules/tough-cookie/generate-pubsuffix.js
+896 silly gunzTarPerm extractEntry node_modules/request/node_modules/tough-cookie/lib/cookie.js
+897 silly gunzTarPerm extractEntry node_modules/request/node_modules/tough-cookie/lib/memstore.js
+898 silly gunzTarPerm extractEntry node_modules/request/node_modules/tough-cookie/lib/pubsuffix.js
+899 silly gunzTarPerm extractEntry node_modules/request/node_modules/tough-cookie/lib/store.js
+900 silly gunzTarPerm extractEntry node_modules/request/node_modules/tough-cookie/.travis.yml
+901 silly gunzTarPerm extractEntry node_modules/request/node_modules/tough-cookie/public-suffix.txt
+902 silly gunzTarPerm extractEntry node_modules/request/node_modules/tough-cookie/.jshintrc
+903 silly gunzTarPerm extractEntry node_modules/request/node_modules/tough-cookie/node_modules/punycode/package.json
+904 silly gunzTarPerm extractEntry node_modules/request/node_modules/tough-cookie/node_modules/punycode/README.md
+905 silly gunzTarPerm extractEntry node_modules/request/node_modules/tough-cookie/node_modules/punycode/punycode.js
+906 silly gunzTarPerm extractEntry node_modules/request/node_modules/tough-cookie/node_modules/punycode/punycode.min.js
+907 silly gunzTarPerm extractEntry node_modules/request/node_modules/tough-cookie/node_modules/punycode/LICENSE-GPL.txt
+908 silly gunzTarPerm extractEntry node_modules/request/node_modules/tough-cookie/node_modules/punycode/LICENSE-MIT.txt
+909 silly gunzTarPerm extractEntry node_modules/request/node_modules/tunnel-agent/package.json
+910 silly gunzTarPerm extractEntry node_modules/request/node_modules/tunnel-agent/README.md
+911 silly gunzTarPerm extractEntry node_modules/request/node_modules/tunnel-agent/LICENSE
+912 silly gunzTarPerm extractEntry node_modules/request/node_modules/tunnel-agent/index.js
+913 silly gunzTarPerm extractEntry node_modules/request/node_modules/tunnel-agent/.jshintrc
+914 silly gunzTarPerm extractEntry node_modules/rimraf/package.json
+915 silly gunzTarPerm extractEntry node_modules/rimraf/README.md
+916 silly gunzTarPerm extractEntry node_modules/rimraf/LICENSE
+917 silly gunzTarPerm extractEntry node_modules/rimraf/bin.js
+918 silly gunzTarPerm extractEntry node_modules/rimraf/rimraf.js
+919 silly gunzTarPerm extractEntry node_modules/rimraf/AUTHORS
+920 silly gunzTarPerm extractEntry node_modules/rimraf/test/test-async.js
+921 silly gunzTarPerm extractEntry node_modules/rimraf/test/test-sync.js
+922 silly gunzTarPerm extractEntry node_modules/rimraf/test/run.sh
+923 silly gunzTarPerm extractEntry node_modules/rimraf/test/setup.sh
+924 silly gunzTarPerm extractEntry node_modules/semver/package.json
+925 silly gunzTarPerm extractEntry node_modules/semver/.npmignore
+926 silly gunzTarPerm extractEntry node_modules/semver/README.md
+927 silly gunzTarPerm extractEntry node_modules/semver/LICENSE
+928 silly gunzTarPerm extractEntry node_modules/semver/semver.browser.js
+929 silly gunzTarPerm extractEntry node_modules/semver/foot.js
+930 silly gunzTarPerm extractEntry node_modules/semver/head.js
+931 silly gunzTarPerm extractEntry node_modules/semver/semver.js
+932 silly gunzTarPerm extractEntry node_modules/semver/semver.min.js
+933 silly gunzTarPerm extractEntry node_modules/semver/semver.browser.js.gz
+934 silly gunzTarPerm extractEntry node_modules/semver/Makefile
+935 silly gunzTarPerm extractEntry node_modules/semver/bin/semver
+936 silly gunzTarPerm extractEntry node_modules/semver/semver.min.js.gz
+937 silly gunzTarPerm extractEntry node_modules/semver/test/amd.js
+938 silly gunzTarPerm extractEntry node_modules/semver/test/gtr.js
+939 silly gunzTarPerm extractEntry node_modules/semver/test/index.js
+940 silly gunzTarPerm extractEntry node_modules/semver/test/ltr.js
+941 silly gunzTarPerm extractEntry node_modules/semver/test/no-module.js
+942 silly gunzTarPerm extractEntry node_modules/tar/package.json
+943 silly gunzTarPerm extractEntry node_modules/tar/.npmignore
+944 silly gunzTarPerm extractEntry node_modules/tar/README.md
+945 silly gunzTarPerm extractEntry node_modules/tar/LICENCE
+946 silly gunzTarPerm extractEntry node_modules/tar/tar.js
+947 silly gunzTarPerm extractEntry node_modules/tar/.travis.yml
+948 silly gunzTarPerm extractEntry node_modules/tar/examples/extracter.js
+949 silly gunzTarPerm extractEntry node_modules/tar/examples/reader.js
+950 silly gunzTarPerm extractEntry node_modules/tar/lib/buffer-entry.js
+951 silly gunzTarPerm extractEntry node_modules/tar/lib/entry-writer.js
+952 silly gunzTarPerm extractEntry node_modules/tar/lib/entry.js
+953 silly gunzTarPerm extractEntry node_modules/tar/lib/extended-header-writer.js
+954 silly gunzTarPerm extractEntry node_modules/tar/lib/extended-header.js
+955 silly gunzTarPerm extractEntry node_modules/tar/lib/extract.js
+956 silly gunzTarPerm extractEntry node_modules/tar/lib/global-header-writer.js
+957 silly gunzTarPerm extractEntry node_modules/tar/lib/header.js
+958 silly gunzTarPerm extractEntry node_modules/tar/lib/pack.js
+959 silly gunzTarPerm extractEntry node_modules/tar/lib/parse.js
+960 silly gunzTarPerm extractEntry node_modules/tar/test/00-setup-fixtures.js
+961 silly gunzTarPerm extractEntry node_modules/tar/test/extract.js
+962 silly gunzTarPerm extractEntry node_modules/tar/test/header.js
+963 silly gunzTarPerm extractEntry node_modules/tar/test/pack-no-proprietary.js
+964 silly gunzTarPerm extractEntry node_modules/tar/test/pack.js
+965 silly gunzTarPerm extractEntry node_modules/tar/test/parse.js
+966 silly gunzTarPerm extractEntry node_modules/tar/test/zz-cleanup.js
+967 silly gunzTarPerm extractEntry node_modules/tar/test/fixtures.tgz
+968 silly gunzTarPerm extractEntry node_modules/tar/node_modules/block-stream/package.json
+969 silly gunzTarPerm extractEntry node_modules/tar/node_modules/block-stream/README.md
+970 silly gunzTarPerm extractEntry node_modules/tar/node_modules/block-stream/LICENCE
+971 silly gunzTarPerm extractEntry node_modules/tar/node_modules/block-stream/block-stream.js
+972 silly gunzTarPerm extractEntry node_modules/tar/node_modules/block-stream/bench/block-stream-pause.js
+973 silly gunzTarPerm extractEntry node_modules/tar/node_modules/block-stream/bench/block-stream.js
+974 silly gunzTarPerm extractEntry node_modules/tar/node_modules/block-stream/bench/dropper-pause.js
+975 silly gunzTarPerm extractEntry node_modules/tar/node_modules/block-stream/bench/dropper.js
+976 silly gunzTarPerm extractEntry node_modules/tar/node_modules/block-stream/test/basic.js
+977 silly gunzTarPerm extractEntry node_modules/tar/node_modules/block-stream/test/nopad-thorough.js
+978 silly gunzTarPerm extractEntry node_modules/tar/node_modules/block-stream/test/nopad.js
+979 silly gunzTarPerm extractEntry node_modules/tar/node_modules/block-stream/test/pause-resume.js
+980 silly gunzTarPerm extractEntry node_modules/tar/node_modules/block-stream/test/thorough.js
+981 silly gunzTarPerm extractEntry node_modules/tar/node_modules/block-stream/test/two-stream.js
+982 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/package.json
+983 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/.npmignore
+984 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/README.md
+985 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/LICENSE
+986 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/fstream.js
+987 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/.travis.yml
+988 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/examples/filter-pipe.js
+989 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/examples/pipe.js
+990 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/examples/reader.js
+991 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/examples/symlink-write.js
+992 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/lib/abstract.js
+993 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/lib/dir-writer.js
+994 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/lib/file-reader.js
+995 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/lib/file-writer.js
+996 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/lib/get-type.js
+997 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/lib/dir-reader.js
+998 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/lib/link-writer.js
+999 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/lib/proxy-reader.js
+1000 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/lib/proxy-writer.js
+1001 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/lib/reader.js
+1002 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/lib/socket-reader.js
+1003 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/lib/collect.js
+1004 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/lib/writer.js
+1005 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/lib/link-reader.js
+1006 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/graceful-fs/package.json
+1007 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/graceful-fs/.npmignore
+1008 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/graceful-fs/README.md
+1009 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/graceful-fs/LICENSE
+1010 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/graceful-fs/graceful-fs.js
+1011 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/graceful-fs/polyfills.js
+1012 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/graceful-fs/test/open.js
+1013 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/graceful-fs/test/readdir-sort.js
+1014 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/mkdirp/package.json
+1015 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/mkdirp/.npmignore
+1016 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/mkdirp/LICENSE
+1017 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/mkdirp/index.js
+1018 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/mkdirp/.travis.yml
+1019 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/mkdirp/examples/pow.js
+1020 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/mkdirp/readme.markdown
+1021 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/mkdirp/test/chmod.js
+1022 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/mkdirp/test/perm.js
+1023 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/mkdirp/test/perm_sync.js
+1024 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/mkdirp/test/race.js
+1025 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/mkdirp/test/mkdirp.js
+1026 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/mkdirp/test/return.js
+1027 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/mkdirp/test/return_sync.js
+1028 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/mkdirp/test/root.js
+1029 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/mkdirp/test/sync.js
+1030 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/mkdirp/test/umask.js
+1031 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/mkdirp/test/clobber.js
+1032 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/mkdirp/test/umask_sync.js
+1033 silly gunzTarPerm extractEntry node_modules/tar/node_modules/fstream/node_modules/mkdirp/test/rel.js
+1034 silly gunzTarPerm extractEntry node_modules/tar/node_modules/inherits/package.json
+1035 silly gunzTarPerm extractEntry node_modules/tar/node_modules/inherits/README.md
+1036 silly gunzTarPerm extractEntry node_modules/tar/node_modules/inherits/LICENSE
+1037 silly gunzTarPerm extractEntry node_modules/tar/node_modules/inherits/inherits.js
+1038 silly gunzTarPerm extractEntry node_modules/tar/node_modules/inherits/inherits_browser.js
+1039 silly gunzTarPerm extractEntry node_modules/tar/node_modules/inherits/test.js
+1040 silly gunzTarPerm extractEntry node_modules/tar-pack/package.json
+1041 silly gunzTarPerm extractEntry node_modules/tar-pack/.npmignore
+1042 silly gunzTarPerm extractEntry node_modules/tar-pack/README.md
+1043 silly gunzTarPerm extractEntry node_modules/tar-pack/index.js
+1044 silly gunzTarPerm extractEntry node_modules/tar-pack/.travis.yml
+1045 silly gunzTarPerm extractEntry node_modules/tar-pack/test/index.js
+1046 silly gunzTarPerm extractEntry node_modules/tar-pack/test/fixtures/packed-file.txt
+1047 silly gunzTarPerm extractEntry node_modules/tar-pack/test/fixtures/packed.tar
+1048 silly gunzTarPerm extractEntry node_modules/tar-pack/test/fixtures/packed.tar.gz
+1049 silly gunzTarPerm extractEntry node_modules/tar-pack/test/fixtures/to-pack/bar.txt
+1050 silly gunzTarPerm extractEntry node_modules/tar-pack/test/fixtures/to-pack/foo.txt
+1051 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/debug/package.json
+1052 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/debug/debug.js
+1053 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/debug/index.js
+1054 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/debug/Readme.md
+1055 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/debug/lib/debug.js
+1056 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/package.json
+1057 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/.npmignore
+1058 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/README.md
+1059 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/LICENSE
+1060 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/fstream.js
+1061 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/.travis.yml
+1062 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/examples/filter-pipe.js
+1063 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/examples/pipe.js
+1064 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/examples/reader.js
+1065 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/examples/symlink-write.js
+1066 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/lib/abstract.js
+1067 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/lib/dir-writer.js
+1068 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/lib/file-reader.js
+1069 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/lib/file-writer.js
+1070 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/lib/get-type.js
+1071 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/lib/dir-reader.js
+1072 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/lib/link-writer.js
+1073 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/lib/proxy-reader.js
+1074 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/lib/proxy-writer.js
+1075 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/lib/reader.js
+1076 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/lib/socket-reader.js
+1077 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/lib/collect.js
+1078 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/lib/writer.js
+1079 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/lib/link-reader.js
+1080 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/graceful-fs/package.json
+1081 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/graceful-fs/.npmignore
+1082 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/graceful-fs/README.md
+1083 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/graceful-fs/LICENSE
+1084 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/graceful-fs/graceful-fs.js
+1085 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/graceful-fs/polyfills.js
+1086 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/graceful-fs/test/open.js
+1087 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/graceful-fs/test/readdir-sort.js
+1088 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/inherits/package.json
+1089 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/inherits/README.md
+1090 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/inherits/LICENSE
+1091 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/inherits/inherits.js
+1092 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/inherits/inherits_browser.js
+1093 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/inherits/test.js
+1094 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/mkdirp/package.json
+1095 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/mkdirp/.npmignore
+1096 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/mkdirp/LICENSE
+1097 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/mkdirp/index.js
+1098 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/mkdirp/.travis.yml
+1099 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/mkdirp/examples/pow.js
+1100 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/mkdirp/readme.markdown
+1101 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/mkdirp/test/chmod.js
+1102 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/mkdirp/test/perm.js
+1103 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/mkdirp/test/perm_sync.js
+1104 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/mkdirp/test/race.js
+1105 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/mkdirp/test/mkdirp.js
+1106 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/mkdirp/test/return.js
+1107 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/mkdirp/test/return_sync.js
+1108 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/mkdirp/test/root.js
+1109 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/mkdirp/test/sync.js
+1110 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/mkdirp/test/umask.js
+1111 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/mkdirp/test/clobber.js
+1112 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/mkdirp/test/umask_sync.js
+1113 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream/node_modules/mkdirp/test/rel.js
+1114 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/package.json
+1115 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/.npmignore
+1116 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/README.md
+1117 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/LICENSE
+1118 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/ignore.js
+1119 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/example/basic.js
+1120 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/test/.npmignore
+1121 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/test/00-setup.js
+1122 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/test/basic.js
+1123 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/test/common.js
+1124 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/test/ignore-most.js
+1125 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/test/nested-ignores.js
+1126 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/test/unignore-child.js
+1127 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/test/zz-cleanup.js
+1128 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/test/.ignore
+1129 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/inherits/package.json
+1130 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/inherits/README.md
+1131 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/inherits/LICENSE
+1132 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/inherits/inherits.js
+1133 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/inherits/inherits_browser.js
+1134 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/inherits/test.js
+1135 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/package.json
+1136 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/.npmignore
+1137 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/README.md
+1138 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/LICENSE
+1139 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/minimatch.js
+1140 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/test/basic.js
+1141 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/test/brace-expand.js
+1142 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/test/caching.js
+1143 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/test/defaults.js
+1144 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/test/extglob-ending-with-state-char.js
+1145 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/node_modules/lru-cache/package.json
+1146 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/node_modules/lru-cache/.npmignore
+1147 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/node_modules/lru-cache/README.md
+1148 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/node_modules/lru-cache/LICENSE
+1149 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/node_modules/lru-cache/CONTRIBUTORS
+1150 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/node_modules/lru-cache/lib/lru-cache.js
+1151 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/node_modules/lru-cache/test/basic.js
+1152 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/node_modules/lru-cache/test/foreach.js
+1153 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/node_modules/lru-cache/test/memory-leak.js
+1154 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/node_modules/sigmund/package.json
+1155 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/node_modules/sigmund/README.md
+1156 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/node_modules/sigmund/LICENSE
+1157 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/node_modules/sigmund/bench.js
+1158 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/node_modules/sigmund/sigmund.js
+1159 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/fstream-ignore/node_modules/minimatch/node_modules/sigmund/test/basic.js
+1160 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/graceful-fs/package.json
+1161 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/graceful-fs/.npmignore
+1162 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/graceful-fs/README.md
+1163 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/graceful-fs/LICENSE
+1164 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/graceful-fs/graceful-fs.js
+1165 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/graceful-fs/test/open.js
+1166 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/graceful-fs/test/ulimit.js
+1167 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/once/package.json
+1168 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/once/README.md
+1169 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/once/LICENSE
+1170 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/once/once.js
+1171 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/once/test/once.js
+1172 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/package.json
+1173 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/.npmignore
+1174 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/README.md
+1175 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/LICENSE
+1176 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/duplex.js
+1177 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/transform.js
+1178 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/passthrough.js
+1179 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/readable.js
+1180 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/writable.js
+1181 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/lib/_stream_duplex.js
+1182 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/lib/_stream_passthrough.js
+1183 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/lib/_stream_readable.js
+1184 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/lib/_stream_transform.js
+1185 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/lib/_stream_writable.js
+1186 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/core-util-is/package.json
+1187 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/core-util-is/README.md
+1188 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/core-util-is/util.js
+1189 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/core-util-is/float.patch
+1190 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/core-util-is/lib/util.js
+1191 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/inherits/package.json
+1192 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/inherits/README.md
+1193 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/inherits/LICENSE
+1194 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/inherits/inherits.js
+1195 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/inherits/inherits_browser.js
+1196 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/inherits/test.js
+1197 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/isarray/package.json
+1198 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/isarray/README.md
+1199 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/isarray/index.js
+1200 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/isarray/build/build.js
+1201 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/isarray/component.json
+1202 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/string_decoder/package.json
+1203 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/string_decoder/.npmignore
+1204 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/string_decoder/README.md
+1205 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/string_decoder/LICENSE
+1206 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/readable-stream/node_modules/string_decoder/index.js
+1207 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/uid-number/package.json
+1208 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/uid-number/README.md
+1209 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/uid-number/LICENCE
+1210 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/uid-number/get-uid-gid.js
+1211 silly gunzTarPerm extractEntry node_modules/tar-pack/node_modules/uid-number/uid-number.js
+1212 silly lockFile 0d5acbe2-alport-node-modules-node-pre-gyp tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp
+1213 silly lockFile 0d5acbe2-alport-node-modules-node-pre-gyp tar://C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp
+1214 silly lockFile b4f83921--node-pre-gyp-0-5-19-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\node-pre-gyp\0.5.19\package.tgz
+1215 silly lockFile b4f83921--node-pre-gyp-0-5-19-package-tgz tar://C:\Users\gordon\AppData\Roaming\npm-cache\node-pre-gyp\0.5.19\package.tgz
+1216 info preinstall node-pre-gyp@0.5.19
+1217 verbose readDependencies using package.json deps
+1218 verbose readDependencies using package.json deps
+1219 silly resolved []
+1220 verbose about to build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp
+1221 info build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp
+1222 verbose linkStuff [ false,
+1222 verbose linkStuff   false,
+1222 verbose linkStuff   false,
+1222 verbose linkStuff   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules' ]
+1223 info linkStuff node-pre-gyp@0.5.19
+1224 verbose linkBins node-pre-gyp@0.5.19
+1225 verbose link bins [ { 'node-pre-gyp': './bin/node-pre-gyp' },
+1225 verbose link bins   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules\\.bin',
+1225 verbose link bins   false ]
+1226 verbose linkMans node-pre-gyp@0.5.19
+1227 verbose rebuildBundles node-pre-gyp@0.5.19
+1228 verbose rebuildBundles [ 'mkdirp',
+1228 verbose rebuildBundles   'nopt',
+1228 verbose rebuildBundles   'npmlog',
+1228 verbose rebuildBundles   'rc',
+1228 verbose rebuildBundles   'request',
+1228 verbose rebuildBundles   'rimraf',
+1228 verbose rebuildBundles   'semver',
+1228 verbose rebuildBundles   'tar',
+1228 verbose rebuildBundles   'tar-pack' ]
+1229 verbose rebuild bundle C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp\node_modules\mkdirp
+1230 info build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp\node_modules\mkdirp
+1231 info preinstall mkdirp@0.5.0
+1232 verbose linkStuff [ false,
+1232 verbose linkStuff   false,
+1232 verbose linkStuff   false,
+1232 verbose linkStuff   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules\\node-pre-gyp\\node_modules' ]
+1233 info linkStuff mkdirp@0.5.0
+1234 verbose linkBins mkdirp@0.5.0
+1235 verbose link bins [ { mkdirp: 'bin/cmd.js' },
+1235 verbose link bins   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules\\node-pre-gyp\\node_modules\\.bin',
+1235 verbose link bins   false ]
+1236 verbose linkMans mkdirp@0.5.0
+1237 verbose rebuildBundles mkdirp@0.5.0
+1238 verbose rebuildBundles [ 'minimist' ]
+1239 info install mkdirp@0.5.0
+1240 info postinstall mkdirp@0.5.0
+1241 verbose rebuild bundle C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp\node_modules\nopt
+1242 info build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp\node_modules\nopt
+1243 info preinstall nopt@2.2.1
+1244 verbose linkStuff [ false,
+1244 verbose linkStuff   false,
+1244 verbose linkStuff   false,
+1244 verbose linkStuff   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules\\node-pre-gyp\\node_modules' ]
+1245 info linkStuff nopt@2.2.1
+1246 verbose linkBins nopt@2.2.1
+1247 verbose link bins [ { nopt: './bin/nopt.js' },
+1247 verbose link bins   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules\\node-pre-gyp\\node_modules\\.bin',
+1247 verbose link bins   false ]
+1248 verbose linkMans nopt@2.2.1
+1249 verbose rebuildBundles nopt@2.2.1
+1250 verbose rebuildBundles [ 'abbrev' ]
+1251 info install nopt@2.2.1
+1252 info postinstall nopt@2.2.1
+1253 verbose rebuild bundle C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp\node_modules\npmlog
+1254 info build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp\node_modules\npmlog
+1255 info preinstall npmlog@0.0.6
+1256 verbose linkStuff [ false,
+1256 verbose linkStuff   false,
+1256 verbose linkStuff   false,
+1256 verbose linkStuff   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules\\node-pre-gyp\\node_modules' ]
+1257 info linkStuff npmlog@0.0.6
+1258 verbose linkBins npmlog@0.0.6
+1259 verbose linkMans npmlog@0.0.6
+1260 verbose rebuildBundles npmlog@0.0.6
+1261 verbose rebuildBundles [ 'ansi' ]
+1262 info install npmlog@0.0.6
+1263 info postinstall npmlog@0.0.6
+1264 verbose rebuild bundle C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp\node_modules\rc
+1265 info build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp\node_modules\rc
+1266 info preinstall rc@0.4.0
+1267 verbose linkStuff [ false,
+1267 verbose linkStuff   false,
+1267 verbose linkStuff   false,
+1267 verbose linkStuff   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules\\node-pre-gyp\\node_modules' ]
+1268 info linkStuff rc@0.4.0
+1269 verbose linkBins rc@0.4.0
+1270 verbose link bins [ { rc: './index.js' },
+1270 verbose link bins   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules\\node-pre-gyp\\node_modules\\.bin',
+1270 verbose link bins   false ]
+1271 verbose linkMans rc@0.4.0
+1272 verbose rebuildBundles rc@0.4.0
+1273 verbose rebuildBundles [ 'deep-extend', 'ini', 'minimist', 'strip-json-comments' ]
+1274 info install rc@0.4.0
+1275 info postinstall rc@0.4.0
+1276 verbose rebuild bundle C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp\node_modules\request
+1277 info build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp\node_modules\request
+1278 info preinstall request@2.36.0
+1279 verbose linkStuff [ false,
+1279 verbose linkStuff   false,
+1279 verbose linkStuff   false,
+1279 verbose linkStuff   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules\\node-pre-gyp\\node_modules' ]
+1280 info linkStuff request@2.36.0
+1281 verbose linkBins request@2.36.0
+1282 verbose linkMans request@2.36.0
+1283 verbose rebuildBundles request@2.36.0
+1284 verbose rebuildBundles [ 'aws-sign2',
+1284 verbose rebuildBundles   'forever-agent',
+1284 verbose rebuildBundles   'form-data',
+1284 verbose rebuildBundles   'hawk',
+1284 verbose rebuildBundles   'http-signature',
+1284 verbose rebuildBundles   'json-stringify-safe',
+1284 verbose rebuildBundles   'mime',
+1284 verbose rebuildBundles   'node-uuid',
+1284 verbose rebuildBundles   'oauth-sign',
+1284 verbose rebuildBundles   'qs',
+1284 verbose rebuildBundles   'tough-cookie',
+1284 verbose rebuildBundles   'tunnel-agent' ]
+1285 info install request@2.36.0
+1286 info postinstall request@2.36.0
+1287 verbose rebuild bundle C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp\node_modules\rimraf
+1288 info build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp\node_modules\rimraf
+1289 info preinstall rimraf@2.2.8
+1290 verbose linkStuff [ false,
+1290 verbose linkStuff   false,
+1290 verbose linkStuff   false,
+1290 verbose linkStuff   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules\\node-pre-gyp\\node_modules' ]
+1291 info linkStuff rimraf@2.2.8
+1292 verbose linkBins rimraf@2.2.8
+1293 verbose link bins [ { rimraf: './bin.js' },
+1293 verbose link bins   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules\\node-pre-gyp\\node_modules\\.bin',
+1293 verbose link bins   false ]
+1294 verbose linkMans rimraf@2.2.8
+1295 verbose rebuildBundles rimraf@2.2.8
+1296 info install rimraf@2.2.8
+1297 info postinstall rimraf@2.2.8
+1298 verbose rebuild bundle C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp\node_modules\semver
+1299 info build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp\node_modules\semver
+1300 info preinstall semver@2.3.0
+1301 verbose linkStuff [ false,
+1301 verbose linkStuff   false,
+1301 verbose linkStuff   false,
+1301 verbose linkStuff   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules\\node-pre-gyp\\node_modules' ]
+1302 info linkStuff semver@2.3.0
+1303 verbose linkBins semver@2.3.0
+1304 verbose link bins [ { semver: './bin/semver' },
+1304 verbose link bins   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules\\node-pre-gyp\\node_modules\\.bin',
+1304 verbose link bins   false ]
+1305 verbose linkMans semver@2.3.0
+1306 verbose rebuildBundles semver@2.3.0
+1307 info install semver@2.3.0
+1308 info postinstall semver@2.3.0
+1309 verbose rebuild bundle C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp\node_modules\tar
+1310 info build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp\node_modules\tar
+1311 info preinstall tar@0.1.19
+1312 verbose linkStuff [ false,
+1312 verbose linkStuff   false,
+1312 verbose linkStuff   false,
+1312 verbose linkStuff   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules\\node-pre-gyp\\node_modules' ]
+1313 info linkStuff tar@0.1.19
+1314 verbose linkBins tar@0.1.19
+1315 verbose linkMans tar@0.1.19
+1316 verbose rebuildBundles tar@0.1.19
+1317 verbose rebuildBundles [ 'block-stream', 'fstream', 'inherits' ]
+1318 info install tar@0.1.19
+1319 info postinstall tar@0.1.19
+1320 verbose rebuild bundle C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp\node_modules\tar-pack
+1321 info build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport\node_modules\node-pre-gyp\node_modules\tar-pack
+1322 info preinstall tar-pack@2.0.0
+1323 verbose linkStuff [ false,
+1323 verbose linkStuff   false,
+1323 verbose linkStuff   false,
+1323 verbose linkStuff   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\serialport\\node_modules\\node-pre-gyp\\node_modules' ]
+1324 info linkStuff tar-pack@2.0.0
+1325 verbose linkBins tar-pack@2.0.0
+1326 verbose linkMans tar-pack@2.0.0
+1327 verbose rebuildBundles tar-pack@2.0.0
+1328 verbose rebuildBundles [ 'debug',
+1328 verbose rebuildBundles   'fstream',
+1328 verbose rebuildBundles   'fstream-ignore',
+1328 verbose rebuildBundles   'graceful-fs',
+1328 verbose rebuildBundles   'once',
+1328 verbose rebuildBundles   'readable-stream',
+1328 verbose rebuildBundles   'uid-number' ]
+1329 info install tar-pack@2.0.0
+1330 info postinstall tar-pack@2.0.0
+1331 info install node-pre-gyp@0.5.19
+1332 info postinstall node-pre-gyp@0.5.19
+1333 verbose about to build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport
+1334 info build C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport
+1335 verbose linkStuff [ false,
+1335 verbose linkStuff   false,
+1335 verbose linkStuff   false,
+1335 verbose linkStuff   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules' ]
+1336 info linkStuff serialport@1.4.2
+1337 verbose linkBins serialport@1.4.2
+1338 verbose link bins [ { serialportlist: './bin/serialportList.js',
+1338 verbose link bins     serialportterm: './bin/serialportTerminal.js' },
+1338 verbose link bins   'C:\\Users\\gordon\\Documents\\GitHub\\FabMo-Engine\\node_modules\\.bin',
+1338 verbose link bins   false ]
+1339 verbose linkMans serialport@1.4.2
+1340 verbose rebuildBundles serialport@1.4.2
+1341 verbose rebuildBundles [ '.bin',
+1341 verbose rebuildBundles   'async',
+1341 verbose rebuildBundles   'bindings',
+1341 verbose rebuildBundles   'nan',
+1341 verbose rebuildBundles   'node-pre-gyp',
+1341 verbose rebuildBundles   'optimist',
+1341 verbose rebuildBundles   'sf' ]
+1342 info install serialport@1.4.2
+1343 verbose unsafe-perm in lifecycle true
+1344 info serialport@1.4.2 Failed to exec install script
+1345 info C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\serialport unbuild
+1346 info preuninstall serialport@1.4.2
+1347 info uninstall serialport@1.4.2
+1348 verbose true,C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules,C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules unbuild serialport@1.4.2
+1349 verbose C:\Users\gordon\Documents\GitHub\FabMo-Engine\node_modules\.bin,[object Object] binRoot
+1350 info postuninstall serialport@1.4.2
+1351 error serialport@1.4.2 install: `node-pre-gyp install --fallback-to-build`
+1351 error Exit status 1
+1352 error Failed at the serialport@1.4.2 install script.
+1352 error This is most likely a problem with the serialport package,
+1352 error not with npm itself.
+1352 error Tell the author that this fails on your system:
+1352 error     node-pre-gyp install --fallback-to-build
+1352 error You can get their info via:
+1352 error     npm owner ls serialport
+1352 error There is likely additional logging output above.
+1353 error System Windows_NT 6.2.9200
+1354 error command "C:\\Program Files\\nodejs\\\\node.exe" "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js" "install" "serialport"
+1355 error cwd C:\Users\gordon\Documents\GitHub\FabMo-Engine
+1356 error node -v v0.10.29
+1357 error npm -v 1.4.14
+1358 error code ELIFECYCLE
+1359 verbose exit [ 1, true ]
