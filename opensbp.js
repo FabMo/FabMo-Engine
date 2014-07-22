@@ -457,12 +457,12 @@ SBPRuntime.prototype.FS = function(args) {
 /* MOVE */
 
 SBPRuntime.prototype.MX = function(args) {
-	this.emit_gcode("G1 X" + args[0] + " F" + sbp_settings.movex_speed);
+	this.emit_gcode("G1 X" + args[0] + " F" + sbp_settings.movexy_speed);
 	this.posx += args[0];
 }
 
 SBPRuntime.prototype.MY = function(args) {
-	this.emit_gcode("G1 Y" + args[0] + " F" + sbp_settings.movey_speed);
+	this.emit_gcode("G1 Y" + args[0] + " F" + sbp_settings.movexy_speed);
 	this.posy += args[0];
 }
 
