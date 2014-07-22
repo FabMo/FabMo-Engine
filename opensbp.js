@@ -3,6 +3,9 @@ var fs = require('fs');
 var log = require('./log');
 var g2 = require('./g2');
 
+var SYSVAR_RE = /\%\(([0-9]+)\)/i
+var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i
+
 function SBPRuntime() {
 	this.program = []
 	this.pc = 0
@@ -17,12 +20,13 @@ SBPRuntime.prototype.connect = function(machine) {
 	this.machine = machine
 	this.driver = machine.driver
 	this._update();
-	this.driver.on('status', this._onG2Status.bind(this));
+	this.status_handler = this._onG2Status.bind(this);
+	this.driver.on('status', this.status_handler);
 	log.info('Connected shopbot runtime');
 }
 
 SBPRuntime.prototype.disconnect = function() {
-
+	this.driver.removeListener(this.status_handler);
 }
 
 SBPRuntime.prototype._onG2Status = function(status) {
@@ -105,7 +109,7 @@ SBPRuntime.prototype._continue = function() {
 
 		
 		line = this.program[this.pc];
-		console.log("executing line: " + line);
+		console.log("executing line: " + JSON.stringify(line));
 		this._execute(line);
 
 		if(this.break_chunk) {
@@ -212,6 +216,7 @@ SBPRuntime.prototype._execute = function(command) {
 			break;
 
 		case "label":
+		case "comment":
 		case undefined:
 			this.pc += 1;
 			break;
@@ -232,11 +237,26 @@ SBPRuntime.prototype._execute = function(command) {
 // Evaluate an expression.  Return the result.
 // TODO: Make this robust to undefined user variables
 SBPRuntime.prototype._eval = function(expr) {
-	if(expr.op == undefined) {
-		if (expr in this.user_vars) {
-			return this.user_vars[expr];
+	expr = String(expr);
+	console.log("evaluating " + expr)
+	if(expr.op === undefined) {
+		console.log("is a leaf node")
+		sys_var = this.evaluateSystemVariable(expr);
+		if(sys_var === undefined) {
+			console.log("not a sys var")
+			user_var = this.evaluateUserVariable(expr);
+			if(user_var === undefined) {
+				console.log("not a user var")
+				return expr;
+			} else if(user_var === null) {
+				// ERROR UNDEFINED VARIABLE
+			} else {
+				return user_var;
+			}
+		} else if(sys_var === null) {
+			// ERROR UNKNOWN SYSTEM VARIABLE
 		} else {
-			return expr;
+			return sys_var
 		}
 	} else {
 		switch(expr.op) {
@@ -331,7 +351,14 @@ SBPRuntime.prototype._analyzeGOTOs = function() {
 		}
 }
 
-SBPRuntime.prototype.evaluateSystemVariable = function(n) {
+SBPRuntime.prototype.evaluateSystemVariable = function(v) {
+	console.log("about to evaluate re")
+	console.log(SYSVAR_RE)
+	console.log(v);
+	result = v.match(SYSVAR_RE);
+	console.log(result)
+	if(result === null) {return undefined};
+	n = parseInt(result[1]);
 	switch(n) {
 		case 1: // X Location
 			return this.machine.status.posx;
@@ -346,8 +373,19 @@ SBPRuntime.prototype.evaluateSystemVariable = function(n) {
 		break;
 
 		default:
-			throw "Unkown system variable %" + n;
+			return null
 		break;
+	}
+}
+
+SBPRuntime.prototype.evaluateUserVariable = function(v) {
+	log.info(v)
+	result = v.match(USERVAR_RE);
+	if(result == null) {return undefined};
+	if(v in this.user_vars) {
+		return this.user_vars[v];
+	} else {
+		return null;
 	}
 }
 
