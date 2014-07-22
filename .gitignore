@@ -3,4 +3,4 @@
 *.tmp
 node_modules
 doc
-
+npm-debug.log
