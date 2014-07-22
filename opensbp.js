@@ -2,9 +2,12 @@ var parser = require('./sbp_parser');
 var fs = require('fs');
 var log = require('./log');
 var g2 = require('./g2');
+var sbp_settings = require('./sbp_settings');
 
 var SYSVAR_RE = /\%\(([0-9]+)\)/i
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i
+
+console.log(sbp_settings);
 
 function SBPRuntime() {
 	this.program = []
@@ -54,7 +57,6 @@ SBPRuntime.prototype.runString = function(s) {
 	this.init();
 	try {
 		this.program = parser.parse(s + '\n');
-		console.log(this.program);
 		this._analyzeLabels();  // Build a table of labels
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table    
 		this._run();
@@ -74,11 +76,9 @@ SBPRuntime.prototype._evaluate_args = function(args) {
 
 // Start the stored program running
 SBPRuntime.prototype._run = function() {
-	console.log('run')
 	this.started = true;
 	this.machine.setState(this, "running");
 	this._continue();
-	console.log('running')
 }
 
 // Continue running the current program (until the end of the next chunk)
@@ -97,9 +97,9 @@ SBPRuntime.prototype._continue = function() {
 
 	while(true) {
 		if(this.pc >= this.program.length) {
-			console.log("Program over. (pc = " + this.pc + ")")
+			log.info("Program over. (pc = " + this.pc + ")")
 			if(this.current_chunk.length > 0) {
-				console.log("dispatching a chunk: " + this.current_chunk)
+				log.info("dispatching a chunk: " + this.current_chunk)
 				this._dispatch();
 				return;
 			}
@@ -109,7 +109,7 @@ SBPRuntime.prototype._continue = function() {
 
 		
 		line = this.program[this.pc];
-		console.log("executing line: " + JSON.stringify(line));
+		log.info("executing line: " + JSON.stringify(line));
 		this._execute(line);
 
 		if(this.break_chunk) {
@@ -237,26 +237,26 @@ SBPRuntime.prototype._execute = function(command) {
 // Evaluate an expression.  Return the result.
 // TODO: Make this robust to undefined user variables
 SBPRuntime.prototype._eval = function(expr) {
-	expr = String(expr);
-	console.log("evaluating " + expr)
+	log.debug("evaluating " + JSON.stringify(expr))
 	if(expr.op === undefined) {
-		console.log("is a leaf node")
+		expr = String(expr);
 		sys_var = this.evaluateSystemVariable(expr);
 		if(sys_var === undefined) {
-			console.log("not a sys var")
 			user_var = this.evaluateUserVariable(expr);
 			if(user_var === undefined) {
-				console.log("not a user var")
-				return expr;
+				log.debug("Evaluated " + expr + " as " + expr)
+				return parseFloat(expr);
 			} else if(user_var === null) {
 				// ERROR UNDEFINED VARIABLE
 			} else {
-				return user_var;
+				log.debug("Evaluated " + expr + " as " + user_var)
+				return parseFloat(user_var);
 			}
 		} else if(sys_var === null) {
 			// ERROR UNKNOWN SYSTEM VARIABLE
 		} else {
-			return sys_var
+			log.debug("Evaluated " + expr + " as " + sys_var)
+			return parseFloat(sys_var);
 		}
 	} else {
 		switch(expr.op) {
@@ -352,11 +352,7 @@ SBPRuntime.prototype._analyzeGOTOs = function() {
 }
 
 SBPRuntime.prototype.evaluateSystemVariable = function(v) {
-	console.log("about to evaluate re")
-	console.log(SYSVAR_RE)
-	console.log(v);
 	result = v.match(SYSVAR_RE);
-	console.log(result)
 	if(result === null) {return undefined};
 	n = parseInt(result[1]);
 	switch(n) {
@@ -370,6 +366,38 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 
 		case 3: // Z Location
 			return this.machine.status.posz;
+		break;
+
+		case 4:
+			return this.machine.status.posa;
+		break;
+
+		case 5:
+			return this.machine.status.posb;
+		break;
+
+		case 71:
+			return sbp_settings.movex_speed;
+		break;
+
+		case 72:
+			return sbp_settings.movey_speed;
+		break;
+
+		case 73:
+			return sbp_settings.movez_speed;
+		break;
+
+		case 74:
+			return sbp_settings.movea_speed;
+		break;
+
+		case 75:
+			return sbp_settings.moveb_speed;
+		break;
+
+		case 76:
+			return sbp_settings.movec_speed;
 		break;
 
 		default:
@@ -428,28 +456,28 @@ SBPRuntime.prototype.FS = function(args) {
 /* MOVE */
 
 SBPRuntime.prototype.MX = function(args) {
-	this.emit_gcode("G1 X" + args[0]);
+	this.emit_gcode("G1 X" + args[0] + " F" + sbp_settings.movex_speed);
 	this.posx += args[0];
 }
 
 SBPRuntime.prototype.MY = function(args) {
-	this.emit_gcode("G1 Y" + args[0]);
+	this.emit_gcode("G1 Y" + args[0] + " F" + sbp_settings.movey_speed);
 }
 
 SBPRuntime.prototype.MZ = function(args) {
-	this.emit_gcode("G1 Z" + args[0]);
+	this.emit_gcode("G1 Z" + args[0] + " F" + sbp_settings.movez_speed);
 }
 
 SBPRuntime.prototype.MA = function(args) {
-	this.emit_gcode("G1 A" + args[0]);
+	this.emit_gcode("G1 A" + args[0] + " F" + sbp_settings.movea_speed);
 }
 
 SBPRuntime.prototype.MB = function(args) {
-	this.emit_gcode("G1 B" + args[0]);
+	this.emit_gcode("G1 B" + args[0] + " F" + sbp_settings.moveb_speed);
 }
 
 SBPRuntime.prototype.MC = function(args) {
-	this.emit_gcode("G1 C" + args[0]);
+	this.emit_gcode("G1 C" + args[0] + " F" + sbp_settings.movec_speed);
 }
 
 SBPRuntime.prototype.M2 = function(args) {

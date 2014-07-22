@@ -1,0 +1,8 @@
+{	
+	"movex_speed" : 60.0,
+	"movey_speed" : 60.0,
+	"movez_speed" : 40.0,
+	"movea_speed" : 60.0,
+	"moveb_speed" : 60.0,
+	"movec_speed" : 60.0
+}
