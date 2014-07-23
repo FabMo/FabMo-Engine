@@ -8,8 +8,6 @@ var sb3_commands = require('./sb3_commands');
 var SYSVAR_RE = /\%\(([0-9]+)\)/i
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i
 
-console.log(sbp_settings);
-
 function SBPRuntime() {
 	this.program = []
 	this.pc = 0
@@ -104,6 +102,7 @@ SBPRuntime.prototype._continue = function() {
 				this._dispatch();
 				return;
 			}
+			this.machine.status.filename = null;
 			this.init();
 			return;
 		}
@@ -306,6 +305,7 @@ SBPRuntime.prototype.init = function() {
 	this.current_chunk = [];
 	this.started = false;
 	this.machine.setState(this, "idle");
+
 }
 
 // Compile an index of all the labels in the program
