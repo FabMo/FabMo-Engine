@@ -535,6 +535,8 @@ SBPRuntime.prototype.MH = function(args) {
 
 SBPRuntime.prototype.MS = function(args) {
 	this.emit_gcode("F" + args[0]);
+	sbp_settings.movex_speed = sbp_settings.movey_speed = args[0];
+	sbp_settings.movez_speed = args[1];
 }
 
 SBPRuntime.prototype.MI = function(args) {
@@ -653,6 +655,7 @@ SBPRuntime.prototype.CG = function(args) {
     Dr = args[6];
     Plg = args[7];
     reps = args[8];
+    optCG = args[11];
     noPullUp = args[12];
     
     for (i=0; i<reps;i++){
@@ -691,62 +694,77 @@ SBPRuntime.prototype.CR = function(args) {
 /* ZERO */
 
 SBPRuntime.prototype.ZX = function(args) {
-//	this.emit_gcode("G10 L2 P2 X?");
- 	this.emit_gcode("G54");
+	this.emit_gcode("G10 L2 P2 X" + this.posx);
+	this.posx = 0;
 }
 
 SBPRuntime.prototype.ZY = function(args) {
-//	this.emit_gcode("G10 L2 P2 Y?");
- 	this.emit_gcode("G54");
+	this.emit_gcode("G10 L2 P2 Y" + this.posy);
+ 	this.posy = 0;
 }
 
 SBPRuntime.prototype.ZZ = function(args) {
-//	this.emit_gcode("G10 L2 P2 Z?");
- 	this.emit_gcode("G54");
+	this.emit_gcode("G10 L2 P2 Z" + this.posz);
+ 	this.posz = 0;
 }
 
 SBPRuntime.prototype.ZA = function(args) {
-//	this.emit_gcode("G10 L2 P2 A?");
- 	this.emit_gcode("G54");
+	this.emit_gcode("G10 L2 P2 A" + this.posa);
+ 	this.posa = 0;
 }
 
 SBPRuntime.prototype.ZB = function(args) {
-//	this.emit_gcode("G10 L2 P2 B?");
- 	this.emit_gcode("G54");
+	this.emit_gcode("G10 L2 P2 B" + this.posb);
+ 	this.posb = 0;
 }
 
 SBPRuntime.prototype.ZC = function(args) {
-//	this.emit_gcode("G10 L2 P2 Z?");
- 	this.emit_gcode("G54");
+	this.emit_gcode("G10 L2 P2 Z" + this.posc);
+ 	this.posc = 0;
 }
 
 SBPRuntime.prototype.Z2 = function(args) {
-//	this.emit_gcode("G10 L2 P2 X? Y?");
- 	this.emit_gcode("G54");
+	this.emit_gcode("G10 L2 P2 X" + this.posc + " Y" + this.posy);
+ 	this.posx = 0;
+ 	this.posy = 0;
 }
 
 SBPRuntime.prototype.Z3 = function(args) {
-//	this.emit_gcode("G10 L2 P2 X? Y? Z?");
- 	this.emit_gcode("G54");
+	this.emit_gcode("G10 L2 P2 X" + this.posx + " Y" + this.posy + " Z" + this.posz);
+ 	this.posx = 0;
+ 	this.posy = 0;
+ 	this.posz = 0;
 }
 
 SBPRuntime.prototype.Z4 = function(args) {
-//	this.emit_gcode("G10 L2 P2 X? Y? Z? A?");
- 	this.emit_gcode("G54");
+	this.emit_gcode("G10 L2 P2 X" + this.posx + " Y" + this.posy + " Z" + this.posz + " A" + this.posa);
+ 	this.posx = 0;
+ 	this.posy = 0;
+ 	this.posz = 0;
+ 	this.posa = 0;
 }
 
 SBPRuntime.prototype.Z5 = function(args) {
-//	this.emit_gcode("G10 L2 P2 X? Y? Z? A? B?");
- 	this.emit_gcode("G54");
+	this.emit_gcode("G10 L2 P2 X" + this.posx + " Y" + this.posy + " Z" + this.posz + " A" + this.posa + " B" + this.posb);
+ 	this.posx = 0;
+ 	this.posy = 0;
+ 	this.posz = 0;
+ 	this.posa = 0;
+ 	this.posb = 0;
 }
 
 SBPRuntime.prototype.Z6 = function(args) {
-//	this.emit_gcode("G10 L2 P2 X? Y? Z? A? B? C?");
- 	this.emit_gcode("G54");
+	this.emit_gcode("G10 L2 P2 X" + this.posx + " Y" + this.posy + " Z" + this.posz + " A" + this.posa + " B" + this.posb + " C" + this.posc);
+ 	this.posx = 0;
+ 	this.posy = 0;
+ 	this.posz = 0;
+ 	this.posa = 0;
+ 	this.posb = 0;
+ 	this.posc = 0;
 }
 
 SBPRuntime.prototype.ZT = function(args) {
-//	this.emit_gcode("G28.1");
+    this.emit_gcode("G54")
 }
 
 /* SETTINGS */
