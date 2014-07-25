@@ -120,13 +120,10 @@ G2.prototype.jog = function(direction) {
 	var MOVE_DISTANCE = 0.05;		// in
 	var START_MOVE = 0.001; 		// sec
 
-	console.log("JOG DIRECTION: " + direction)
-	console.log("THIS.JOG_DIRECTION: " + this.jog_direction)
 	// Normalize the direction provided by the user
 	direction = String(direction).trim().toLowerCase().replace(/\+/g,"");
 
 	if (!(direction in JOG_AXES)) {
-		console.error("JOG invalid direction");
 		this.stopJog();
 		return;
 	}
@@ -170,7 +167,6 @@ G2.prototype.jog = function(direction) {
 
 G2.prototype.jog_keepalive = function() {
 	clearTimeout(this.jog_heartbeat);
-	log.info("JOG keepalive!!!!!!!!!!!!!!!!");
 	this.jog_heartbeat = setTimeout(this.stopJog.bind(this), JOG_TIMEOUT);
 }
 
@@ -230,7 +226,7 @@ G2.prototype.handleQueueReport = function(r) {
 	var MIN_FLOOD_LEVEL = 20;
 
 	if(this.pause_flag || this.quit_pending) {
-		log.info('Not handling this queue report because pause or quit pending');
+		log.debug('Not handling this queue report because pause or quit pending');
 		// If we're here, a pause is requested, and we don't send anymore g-codes.
 		return;
 	}
@@ -239,14 +235,12 @@ G2.prototype.handleQueueReport = function(r) {
 	var qi = r.qi || 0;
 
 	this.qtotal += (qi-qo);
-	//log.info("QTOT: " + this.qtotal);
 
 	if((qr != undefined)) {
 
-		log.info('GCode Queue Size: ' + this.gcode_queue.getLength())
+		log.debug('GCode Queue Size: ' + this.gcode_queue.getLength())
 		// Deal with jog mode
 		if(this.jog_command && (qo > 0)) {
-			log.info("JOGGING, UPDATING QUEUE");
 			this.write(this.jog_command + '\n');
 			return;
 		}
@@ -279,7 +273,7 @@ G2.prototype.handleQueueReport = function(r) {
 		else {
 			//console.log('no lines to send');
 		}
-		log.info('qi: ' + qi + '  qr: ' + qr + '  qo: ' + qo + '   lines: ' + lines_to_send);
+		log.debug('qi: ' + qi + '  qr: ' + qr + '  qo: ' + qo + '   lines: ' + lines_to_send);
 
 	}
 }
@@ -322,7 +316,7 @@ G2.prototype.handleStatusReport = function(response) {
 			// Handle subscribers expecting a specific state change
 			while(l-- > 0) {
 				stat_name = states[stat];
-				log.info("Stat change: " + stat_name)
+				log.debug("Stat change: " + stat_name)
 				handlers = this.expectations.shift();
 				if(stat_name in handlers) {
 					callback = handlers[stat_name];
@@ -486,7 +480,6 @@ states = {
 	9 : "homing"
 }
 
-console.log(states);
 state = function(s) {
 	return states[s];
 }

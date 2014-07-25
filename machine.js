@@ -79,8 +79,9 @@ Machine.prototype.gcode = function(string) {
 Machine.prototype.runFile = function(filename) {
 	fs.readFile(filename, 'utf8', function (err,data) {
 		  if (err) {
-		  	console.log('Error reading file ' + filename);
-		    return console.log(err);
+		  	log.error('Error reading file ' + filename);
+		    log.error(err);
+		    return
 		  } else {
             parts = filename.split(path.sep)
         	ext = path.extname(filename).toLowerCase();

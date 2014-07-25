@@ -135,7 +135,6 @@ GCodeRuntime.prototype._onG2StateChange = function(states) {
 			break;
 
 		case "idle":
-			log.info('Leaving the idle state ' + old_state + ',' + new_state)
 			switch(old_state) {
 				case undefined:
 				case g2.STAT_STOP:
