@@ -56,10 +56,10 @@ SBPRuntime.prototype.runString = function(s) {
 // Update the internal state of the runtime with data from the tool
 SBPRuntime.prototype._update = function() {
 	status = this.machine.status || {}
-	this.posx = status.posx || 0.0
-	this.posy = status.posy || 0.0
-	this.posz = status.posz || 0.0
-	this.posa = status.posa || 0.0
+	this.posx = 0.0
+	this.posy = 0.0
+	this.posz = 0.0
+	this.posa = 0.0
 	this.posb = status.posb || 0.0
 	this.posc = status.posc || 0.0
 }
