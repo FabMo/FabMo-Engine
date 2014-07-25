@@ -5,22 +5,22 @@ var g2 = require('./g2');
 var sbp_settings = require('./sbp_settings');
 var sb3_commands = require('./sb3_commands');
 
-var SYSVAR_RE = /\%\(([0-9]+)\)/i
-var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i
+var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
+var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
 
 function SBPRuntime() {
-	this.program = []
-	this.pc = 0
-	this.user_vars = {}
-	this.label_index = {}
-	this.stack = []
-	this.current_chunk = []
+	this.program = [];
+	this.pc = 0;
+	this.user_vars = {};
+	this.label_index = {};
+	this.stack = [];
+	this.current_chunk = [];
 	this.running = false;
 }
 
 SBPRuntime.prototype.connect = function(machine) {
-	this.machine = machine
-	this.driver = machine.driver
+	this.machine = machine;
+	this.driver = machine.driver;
 	this._update();
 	this.status_handler = this._onG2Status.bind(this);
 	this.driver.on('status', this.status_handler);
@@ -55,13 +55,13 @@ SBPRuntime.prototype.runString = function(s) {
 
 // Update the internal state of the runtime with data from the tool
 SBPRuntime.prototype._update = function() {
-	status = this.machine.status || {}
-	this.posx = status.posx || 0.0
-	this.posy = status.posy || 0.0
-	this.posz = status.posz || 0.0
-	this.posa = status.posa || 0.0
-	this.posb = status.posb || 0.0
-	this.posc = status.posc || 0.0
+	status = this.machine.status || {};
+	this.posx = status.posx || 0.0;
+	this.posy = status.posy || 0.0;
+	this.posz = status.posz || 0.0;
+	this.posa = status.posa || 0.0;
+	this.posb = status.posb || 0.0;
+	this.posc = status.posc || 0.0;
 }
 
 // Evaluate a list of arguments provided (for commands)
@@ -86,19 +86,19 @@ SBPRuntime.prototype._continue = function() {
 
 	this._update();
 
-	log.info('Running until break...')
+	log.info('Running until break...');
 
 	// Continue is only for resuming an already running program.  It's not a substitute for _run()
 	if(!this.started) {
-		cosnole.log('Ooops already started...');
+		console.log('Ooops already started...');
 		return;
 	}
 
 	while(true) {
 		if(this.pc >= this.program.length) {
-			log.info("Program over. (pc = " + this.pc + ")")
+			log.info("Program over. (pc = " + this.pc + ")");
 			if(this.current_chunk.length > 0) {
-				log.info("dispatching a chunk: " + this.current_chunk)
+				log.info("dispatching a chunk: " + this.current_chunk);
 				this._dispatch();
 				return;
 			}
@@ -155,20 +155,20 @@ SBPRuntime.prototype._execute = function(command) {
 
 	if(!command) {
 		this.pc += 1;
-		return
+		return;
 	}
 	switch(command.type) {
 		case "cmd":
 			if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
 				this[command.cmd](this._evaluate_args(command.args));
 			} else {
-				this._unhandledCommand(command)
+				this._unhandledCommand(command);
 			}
 			this.pc += 1;
 			break;
 
 		case "return":
-			this.break_chunk = true
+			this.break_chunk = true;
 			if(this.stack) {
 				this.pc = this.stack.pop();
 			} else {
@@ -194,7 +194,7 @@ SBPRuntime.prototype._execute = function(command) {
 			this.break_chunk = true;
 			if(command.label in this.label_index) {
 				this.pc = this.label_index[command.label];
-				this.stack.push([this.pc + 1])
+				this.stack.push([this.pc + 1]);
 			} else {
 				throw "Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc;
 			}
@@ -227,7 +227,7 @@ SBPRuntime.prototype._execute = function(command) {
 			break;
 
 		default:
-			log.error("Unknown command: " + JSON.stringify(command))
+			log.error("Unknown command: " + JSON.stringify(command));
 			this.pc += 1;
 			break;
 	}
@@ -237,25 +237,25 @@ SBPRuntime.prototype._execute = function(command) {
 // Evaluate an expression.  Return the result.
 // TODO: Make this robust to undefined user variables
 SBPRuntime.prototype._eval = function(expr) {
-	log.debug("evaluating " + JSON.stringify(expr))
+	log.debug("evaluating " + JSON.stringify(expr));
 	if(expr.op === undefined) {
 		expr = String(expr);
 		sys_var = this.evaluateSystemVariable(expr);
 		if(sys_var === undefined) {
 			user_var = this.evaluateUserVariable(expr);
 			if(user_var === undefined) {
-				log.debug("Evaluated " + expr + " as " + expr)
+				log.debug("Evaluated " + expr + " as " + expr);
 				return parseFloat(expr);
 			} else if(user_var === null) {
 				// ERROR UNDEFINED VARIABLE
 			} else {
-				log.debug("Evaluated " + expr + " as " + user_var)
+				log.debug("Evaluated " + expr + " as " + user_var);
 				return parseFloat(user_var);
 			}
 		} else if(sys_var === null) {
 			// ERROR UNKNOWN SYSTEM VARIABLE
 		} else {
-			log.debug("Evaluated " + expr + " as " + sys_var)
+			log.debug("Evaluated " + expr + " as " + sys_var);
 			return parseFloat(sys_var);
 		}
 	} else {
@@ -299,8 +299,8 @@ SBPRuntime.prototype._eval = function(expr) {
 
 SBPRuntime.prototype.init = function() {
 	this.pc = 0;
-	this.stack = []
-	this.label_index = {}
+	this.stack = [];
+	this.label_index = {};
 	this.break_chunk = false;
 	this.current_chunk = [];
 	this.started = false;
@@ -312,14 +312,14 @@ SBPRuntime.prototype.init = function() {
 // this.label_index will map labels to line numbers
 // An error is thrown on duplicate labels
 SBPRuntime.prototype._analyzeLabels = function() {
-	this.label_index = {}
+	this.label_index = {};
 	for(i=0; i<this.program.length; i++) {
 		line = this.program[i];
 		if(line) {
 			switch(line.type) {
 				case "label":
 					if (line.value in this.label_index) {
-						throw "Duplicate label."
+						throw "Duplicate label.";
 					}
 					this.label_index[line.value] = i;
 					break;
@@ -402,13 +402,13 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 		break;
 
 		default:
-			return null
+			return null;
 		break;
 	}
 }
 
 SBPRuntime.prototype.evaluateUserVariable = function(v) {
-	log.info(v)
+	log.info(v);
 	result = v.match(USERVAR_RE);
 	if(result == null) {return undefined};
 	if(v in this.user_vars) {
@@ -764,7 +764,7 @@ SBPRuntime.prototype.Z6 = function(args) {
 }
 
 SBPRuntime.prototype.ZT = function(args) {
-    this.emit_gcode("G54")
+    this.emit_gcode("G54");
 }
 
 /* SETTINGS */
@@ -802,6 +802,6 @@ runtime = new SBPRuntime();
 runtime.runFileSync('example.sbp');
 console.log(runtime.user_vars);
 */
-exports.SBPRuntime = SBPRuntime
+exports.SBPRuntime = SBPRuntime;
 
 
