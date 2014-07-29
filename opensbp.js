@@ -65,7 +65,7 @@ SBPRuntime.prototype._update = function() {
 }
 
 // Evaluate a list of arguments provided (for commands)
-SBPRuntime.prototype._evaluate_args = function(args) {
+SBPRuntime.prototype._evaluateArguments = function(args) {
 	retval = [];
 	for(i=0; i<args.length; i++) {
 		retval.push(this._eval(args[i]));
@@ -160,7 +160,8 @@ SBPRuntime.prototype._execute = function(command) {
 	switch(command.type) {
 		case "cmd":
 			if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
-				this[command.cmd](this._evaluate_args(command.args));
+				this._scrubArguments(command.cmd, command.args)
+				this[command.cmd](this._evaluateArguments(command.args));
 			} else {
 				this._unhandledCommand(command)
 			}
@@ -325,6 +326,23 @@ SBPRuntime.prototype._analyzeLabels = function() {
 					break;
 			}
 		}
+	}
+}
+
+// Using the command mnemonic, check the list of command argument, and return a 
+// "scrubbed" argument list that is of the correct length, and has coerced values
+// filled in for all arguments that were out of range or otherwise needed adjusting
+SBPRuntime.prototype._scrubArguments = function(command, args) {
+	scrubbed_args = []
+	if(command in sb3_commands) {
+		params = sb3_commands[command].params
+		for(i=0; i<params.length; i++) {
+			param = params[i];
+			scrubbed_args.push(param.default)
+		}
+		console.log(scrubbed_args);
+	} else {
+		throw "Unknown command: " + command
 	}
 }
 
