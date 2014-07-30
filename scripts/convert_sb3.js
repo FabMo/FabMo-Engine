@@ -73,19 +73,27 @@ csv().from.string(cmd).on('record', function(record, idx) {
 		switch(current_param.type) {
 			case 'ops':
 			case 'opt':
+			case 'ck':
 				if(record[6] == '') {
+					df = parseDefault(record[10]);
+					opt = {}
+					opt.value = df[0]
+					opt.desc = df[1]
+					current_param.opts.push({'value':df[0], 'desc':df[1]});
+				} else {
 					current_param = {};
 					current_param.name = record[4];
 					current_param.desc = record[5];
 					current_param.abrev = record[6];
 					current_param.typeext = parseInt(record[8]);
-					current_param.default = parseDefault(record[10]);
+					df = parseDefault(record[10]);
+					current_param.default = df[0];
+					current_param.default_desc = df[1];
 					current_param.opts = [];
 					param_list.push(current_param);
-				} else {
-					current_param.opts = [];
+					current_param.sysvar = record[13];
 				}
-				current_param.opts.push(parseDefault(record[10]));
+
 			break;
 
 			case 'sep':
@@ -101,8 +109,10 @@ csv().from.string(cmd).on('record', function(record, idx) {
 				current_param.default = record[10];
 				lo = record[11] || null;
 				hi = record[12] || null;
+				current_param.sysvar = parseInt(record[13]);
 				current_param.range = new Array(lo,hi);
 				param_list.push(current_param);
+
 			break;		
 		}
 

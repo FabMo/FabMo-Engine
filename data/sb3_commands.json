@@ -13,6 +13,7 @@
             "abrev": "fNm",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -35,6 +36,7 @@
             "abrev": "fNm",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -47,6 +49,7 @@
             "abrev": "pX",
             "typeext": 0,
             "default": "1.00",
+            "sysvar": 0,
             "range": [
                "0.00",
                "100.00"
@@ -59,6 +62,7 @@
             "abrev": "pY",
             "typeext": 0,
             "default": "1.00",
+            "sysvar": 0,
             "range": [
                "0.00",
                "100.00"
@@ -71,6 +75,7 @@
             "abrev": "pZ",
             "typeext": 0,
             "default": "1.00",
+            "sysvar": 0,
             "range": [
                "0.00",
                "100.00"
@@ -83,50 +88,31 @@
             "abrev": "Rp",
             "typeext": 0,
             "default": "1",
+            "sysvar": 0,
             "range": [
                null,
                null
             ],
-            "type": "opt",
-            "opts": [
-               [
-                  "0",
-                  "No Offset"
-               ]
-            ]
-         },
-         {
-            "name": "3D Offset",
-            "desc": "Treat starting location as temporary 0 in X&Y&Z",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "3D Offset"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "3D Offset"
-               ]
-            ],
             "type": "opt"
          },
          {
-            "name": "3D Offset",
-            "desc": "Treat starting location as temporary 0 in X&Y&Z",
-            "abrev": "",
+            "name": "Offset in 2D or 3D",
+            "desc": "Treat starting location as temporary 0 in X&Y or XY&Z",
+            "abrev": "Ofst",
             "typeext": 0,
-            "default": [
-               "2",
-               "2D Offset"
-            ],
+            "default": "0",
+            "default_desc": "No Offset",
             "opts": [
-               [
-                  "2",
-                  "2D Offset"
-               ]
+               {
+                  "value": "1",
+                  "desc": "3D Offset"
+               },
+               {
+                  "value": "2",
+                  "desc": "2D Offset"
+               }
             ],
+            "sysvar": "0",
             "type": "dist"
          },
          {
@@ -135,6 +121,7 @@
             "abrev": "plg",
             "typeext": 3,
             "default": "-0.00",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -146,11 +133,10 @@
             "desc": "Activate ShopBot's automatic tabbing feature",
             "abrev": "Tb",
             "typeext": 0,
-            "default": "0 - Off",
-            "range": [
-               null,
-               null
-            ],
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [],
+            "sysvar": "0",
             "type": "ck"
          },
          {
@@ -158,11 +144,10 @@
             "desc": "Plunge from Z zero in template files, not from current Z location",
             "abrev": "z0",
             "typeext": 0,
-            "default": "0 - Off",
-            "range": [
-               null,
-               null
-            ],
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [],
+            "sysvar": "0",
             "type": "axis"
          },
          {
@@ -171,6 +156,7 @@
             "abrev": "pA",
             "typeext": 4,
             "default": "1.00",
+            "sysvar": 0,
             "range": [
                "-100.00",
                "100.00"
@@ -183,6 +169,7 @@
             "abrev": "pB",
             "typeext": 5,
             "default": "1.00",
+            "sysvar": 0,
             "range": [
                "-100.00",
                "100.00"
@@ -201,6 +188,7 @@
             "abrev": "fNm",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -219,6 +207,7 @@
             "abrev": "path",
             "typeext": 0,
             "default": "c:\\SbParts",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -231,6 +220,7 @@
             "abrev": "",
             "typeext": 0,
             "default": " ",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -243,6 +233,7 @@
             "abrev": "Cpath",
             "typeext": 0,
             "default": "c:\\SbParts\\Custom",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -261,6 +252,7 @@
             "abrev": "mvX",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits X"
@@ -279,6 +271,7 @@
             "abrev": "mvY",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Y"
@@ -297,6 +290,7 @@
             "abrev": "mvZ",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Z"
@@ -315,6 +309,7 @@
             "abrev": "mvX",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits X"
@@ -327,6 +322,7 @@
             "abrev": "mvY",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Y"
@@ -345,6 +341,7 @@
             "abrev": "mvX",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Z"
@@ -357,6 +354,7 @@
             "abrev": "mvY",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Y"
@@ -369,6 +367,7 @@
             "abrev": "mvZ",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Z"
@@ -387,6 +386,7 @@
             "abrev": "mvDst",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -399,6 +399,7 @@
             "abrev": "mvDir",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -411,6 +412,7 @@
             "abrev": "mvZr",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -433,6 +435,7 @@
             "abrev": "mvA",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits A"
@@ -451,6 +454,7 @@
             "abrev": "mvB",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits B"
@@ -469,6 +473,7 @@
             "abrev": "mvX",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits X"
@@ -481,6 +486,7 @@
             "abrev": "mvY",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Y"
@@ -493,6 +499,7 @@
             "abrev": "mvZ",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Z"
@@ -505,6 +512,7 @@
             "abrev": "mvA",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits A"
@@ -523,6 +531,7 @@
             "abrev": "mvX",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits X"
@@ -535,6 +544,7 @@
             "abrev": "mvY",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Y"
@@ -547,6 +557,7 @@
             "abrev": "mvZ",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Z"
@@ -559,6 +570,7 @@
             "abrev": "mvA",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits A"
@@ -571,17 +583,12 @@
             "abrev": "mvB",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits B"
             ],
-            "type": "ops",
-            "opts": [
-               [
-                  "B",
-                  "Axis"
-               ]
-            ]
+            "type": "ops"
          }
       ]
    },
@@ -594,88 +601,47 @@
       "name": "move Indexer or Oscillate",
       "params": [
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Axis to Rotate or Oscillate",
+            "desc": "Rotational/Ocillatory Axis; 0 to Turn OFF",
+            "abrev": "mvAx",
             "typeext": 0,
-            "default": [
-               "A",
-               "Axis"
-            ],
+            "default": "B",
+            "default_desc": "Axis",
             "opts": [
-               [
-                  "A",
-                  "Axis"
-               ]
+               {
+                  "value": "A",
+                  "desc": "Axis"
+               },
+               {
+                  "value": "C",
+                  "desc": "Axis"
+               },
+               {
+                  "value": "Z",
+                  "desc": "Axis"
+               },
+               {
+                  "value": "O",
+                  "desc": "OFF"
+               }
             ],
-            "type": "ops"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "C",
-               "Axis"
-            ],
-            "opts": [
-               [
-                  "C",
-                  "Axis"
-               ]
-            ],
-            "type": "ops"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "Z",
-               "Axis"
-            ],
-            "opts": [
-               [
-                  "Z",
-                  "Axis"
-               ]
-            ],
-            "type": "ops"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "O",
-               "OFF"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "clockwise"
-               ]
-            ],
+            "sysvar": "0",
             "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Rotation Direction",
+            "desc": "Direction for Rotation",
+            "abrev": "Dr",
             "typeext": 0,
-            "default": [
-               "-1",
-               "counterclockwise"
-            ],
+            "default": "1",
+            "default_desc": "clockwise",
             "opts": [
-               [
-                  "-1",
-                  "counterclockwise"
-               ]
+               {
+                  "value": "-1",
+                  "desc": "counterclockwise"
+               }
             ],
+            "sysvar": "0",
             "type": "int"
          },
          {
@@ -684,6 +650,7 @@
             "abrev": "spR",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -696,6 +663,7 @@
             "abrev": "spC",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -708,6 +676,7 @@
             "abrev": "diC",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -734,6 +703,7 @@
             "abrev": "msXY",
             "typeext": 0,
             "default": "3",
+            "sysvar": 72,
             "range": [
                ".05",
                "12"
@@ -746,6 +716,7 @@
             "abrev": "msZ",
             "typeext": 0,
             "default": "1",
+            "sysvar": 73,
             "range": [
                ".05",
                "10"
@@ -758,6 +729,7 @@
             "abrev": "msA",
             "typeext": 0,
             "default": "",
+            "sysvar": 74,
             "range": [
                null,
                null
@@ -770,6 +742,7 @@
             "abrev": "msB",
             "typeext": 0,
             "default": "",
+            "sysvar": 75,
             "range": [
                null,
                null
@@ -788,6 +761,7 @@
             "abrev": "jX",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits X"
@@ -806,6 +780,7 @@
             "abrev": "jY",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Y"
@@ -824,6 +799,7 @@
             "abrev": "jZ",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Z"
@@ -842,6 +818,7 @@
             "abrev": "jX",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits X"
@@ -854,6 +831,7 @@
             "abrev": "jY",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Y"
@@ -872,6 +850,7 @@
             "abrev": "jX",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits X"
@@ -884,6 +863,7 @@
             "abrev": "jY",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Y"
@@ -896,6 +876,7 @@
             "abrev": "jZ",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Z"
@@ -918,6 +899,7 @@
             "abrev": "jA",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits A"
@@ -936,6 +918,7 @@
             "abrev": "jB",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits B"
@@ -954,6 +937,7 @@
             "abrev": "jX",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits X"
@@ -966,6 +950,7 @@
             "abrev": "jY",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Y"
@@ -978,6 +963,7 @@
             "abrev": "jZ",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Z"
@@ -990,6 +976,7 @@
             "abrev": "jA",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits A"
@@ -1008,6 +995,7 @@
             "abrev": "jX",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits X"
@@ -1020,6 +1008,7 @@
             "abrev": "jY",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Y"
@@ -1032,6 +1021,7 @@
             "abrev": "jZ",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Z"
@@ -1044,6 +1034,7 @@
             "abrev": "jA",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits A"
@@ -1056,6 +1047,7 @@
             "abrev": "jB",
             "typeext": 2,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits B"
@@ -1074,6 +1066,7 @@
             "abrev": "jsXY",
             "typeext": 0,
             "default": "12",
+            "sysvar": 77,
             "range": [
                ".05",
                "30"
@@ -1086,6 +1079,7 @@
             "abrev": "jsZ",
             "typeext": 0,
             "default": "3",
+            "sysvar": 78,
             "range": [
                ".05",
                "20"
@@ -1098,6 +1092,7 @@
             "abrev": "jsA",
             "typeext": 0,
             "default": "",
+            "sysvar": 79,
             "range": [
                null,
                null
@@ -1110,6 +1105,7 @@
             "abrev": "jsB",
             "typeext": 0,
             "default": "",
+            "sysvar": 80,
             "range": [
                null,
                null
@@ -1128,67 +1124,47 @@
             "abrev": "Dia",
             "typeext": 1,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits"
             ],
-            "type": "ops",
-            "opts": [
-               [
-                  "T",
-                  "true path"
-               ]
-            ]
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "I",
-               "Inside (holes)"
-            ],
-            "opts": [
-               [
-                  "I",
-                  "Inside (holes)"
-               ]
-            ],
             "type": "ops"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Outside-Inside-True",
+            "desc": "Offset the cutter path to the Outside, the Inside, or cut true to center line",
+            "abrev": "OIT",
             "typeext": 0,
-            "default": [
-               "O",
-               "Outside (wheels)"
-            ],
+            "default": "T",
+            "default_desc": "true path",
             "opts": [
-               [
-                  "1",
-                  "clockwise"
-               ]
+               {
+                  "value": "I",
+                  "desc": "Inside (holes)"
+               },
+               {
+                  "value": "O",
+                  "desc": "Outside (wheels)"
+               }
             ],
+            "sysvar": "0",
             "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Direction",
+            "desc": "Direction of tool movement",
+            "abrev": "Dr",
             "typeext": 0,
-            "default": [
-               "-1",
-               "counterclockwise"
-            ],
+            "default": "1",
+            "default_desc": "clockwise",
             "opts": [
-               [
-                  "-1",
-                  "counterclockwise"
-               ]
+               {
+                  "value": "-1",
+                  "desc": "counterclockwise"
+               }
             ],
+            "sysvar": "0",
             "type": "sng"
          },
          {
@@ -1197,6 +1173,7 @@
             "abrev": "Bang",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -1209,6 +1186,7 @@
             "abrev": "Eang",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -1221,6 +1199,7 @@
             "abrev": "Plg",
             "typeext": 3,
             "default": "-0.00",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Z"
@@ -1233,6 +1212,7 @@
             "abrev": "Rp",
             "typeext": 0,
             "default": "1",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -1245,6 +1225,7 @@
             "abrev": "pX",
             "typeext": 0,
             "default": "1.00",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -1257,84 +1238,39 @@
             "abrev": "pY",
             "typeext": 0,
             "default": "1.00",
+            "sysvar": 0,
             "range": [
                null,
                null
             ],
-            "type": "opt",
-            "opts": [
-               [
-                  "0",
-                  "No feature"
-               ]
-            ]
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "Tabbing On"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "Tabbing On"
-               ]
-            ],
             "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Tab, Pocket, Spiral",
+            "desc": "Activate a special feature: automatic tabbing, pocketing out, plunging with a spiral each rep, optionally with a bottom pass; select only1",
+            "abrev": "tf",
             "typeext": 0,
-            "default": [
-               "2",
-               "Pocketing"
-            ],
+            "default": "0",
+            "default_desc": "No feature",
             "opts": [
-               [
-                  "2",
-                  "Pocketing"
-               ]
+               {
+                  "value": "1",
+                  "desc": "Tabbing On"
+               },
+               {
+                  "value": "2",
+                  "desc": "Pocketing"
+               },
+               {
+                  "value": "3",
+                  "desc": "Spiral Plunge"
+               },
+               {
+                  "value": "4",
+                  "desc": "Spiral w/Bottom"
+               }
             ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "Spiral Plunge"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "Spiral Plunge"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "Spiral w/Bottom"
-            ],
-            "opts": [
-               [
-                  "4",
-                  "Spiral w/Bottom"
-               ]
-            ],
+            "sysvar": "0",
             "type": "ck"
          },
          {
@@ -1342,11 +1278,10 @@
             "desc": "Don't pull the Z up after finishing cut",
             "abrev": "0Up",
             "typeext": 0,
-            "default": "0 - Off",
-            "range": [
-               null,
-               null
-            ],
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [],
+            "sysvar": "0",
             "type": "ck"
          },
          {
@@ -1354,11 +1289,10 @@
             "desc": "Start plunges from 0 (not current Z location)",
             "abrev": "z0",
             "typeext": 0,
-            "default": "0 - Off",
-            "range": [
-               null,
-               null
-            ],
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [],
+            "sysvar": "0",
             "type": "dist"
          }
       ]
@@ -1373,6 +1307,7 @@
             "abrev": "Dia",
             "typeext": 1,
             "default": "0",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits"
@@ -1385,6 +1320,7 @@
             "abrev": "cX",
             "typeext": 1,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits "
@@ -1397,67 +1333,47 @@
             "abrev": "cY",
             "typeext": 1,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits "
             ],
-            "type": "ops",
-            "opts": [
-               [
-                  "T",
-                  "true path"
-               ]
-            ]
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "I",
-               "Inside (holes)"
-            ],
-            "opts": [
-               [
-                  "I",
-                  "Inside (holes)"
-               ]
-            ],
             "type": "ops"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Outside-Inside-True",
+            "desc": "Offset the cutter path to the Outside, the Inside, or cut true to center line",
+            "abrev": "OIT",
             "typeext": 0,
-            "default": [
-               "O",
-               "Outside (wheels)"
-            ],
+            "default": "T",
+            "default_desc": "true path",
             "opts": [
-               [
-                  "1",
-                  "clockwise"
-               ]
+               {
+                  "value": "I",
+                  "desc": "Inside (holes)"
+               },
+               {
+                  "value": "O",
+                  "desc": "Outside (wheels)"
+               }
             ],
+            "sysvar": "0",
             "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Direction",
+            "desc": "Direction of tool movement",
+            "abrev": "Dr",
             "typeext": 0,
-            "default": [
-               "-1",
-               "counterclockwise"
-            ],
+            "default": "1",
+            "default_desc": "clockwise",
             "opts": [
-               [
-                  "-1",
-                  "counterclockwise"
-               ]
+               {
+                  "value": "-1",
+                  "desc": "counterclockwise"
+               }
             ],
+            "sysvar": "0",
             "type": "sng"
          },
          {
@@ -1466,6 +1382,7 @@
             "abrev": "Bang",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -1478,6 +1395,7 @@
             "abrev": "Eang",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -1490,6 +1408,7 @@
             "abrev": "Plg",
             "typeext": 3,
             "default": "-0.00",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Z"
@@ -1502,6 +1421,7 @@
             "abrev": "Rp",
             "typeext": 0,
             "default": "1",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -1514,6 +1434,7 @@
             "abrev": "pX",
             "typeext": 0,
             "default": "1.00",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -1526,84 +1447,39 @@
             "abrev": "pY",
             "typeext": 0,
             "default": "1.00",
+            "sysvar": 0,
             "range": [
                null,
                null
             ],
-            "type": "opt",
-            "opts": [
-               [
-                  "0",
-                  "No feature"
-               ]
-            ]
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "Tabbing On"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "Tabbing On"
-               ]
-            ],
             "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Tab, Pocket, Spiral",
+            "desc": "Activate a special feature: automatic tabbing, pocketing out, plunging with a spiral each rep, optionally with a bottom pass; select only 1",
+            "abrev": "tf",
             "typeext": 0,
-            "default": [
-               "2",
-               "Pocketing"
-            ],
+            "default": "0",
+            "default_desc": "No feature",
             "opts": [
-               [
-                  "2",
-                  "Pocketing"
-               ]
+               {
+                  "value": "1",
+                  "desc": "Tabbing On"
+               },
+               {
+                  "value": "2",
+                  "desc": "Pocketing"
+               },
+               {
+                  "value": "3",
+                  "desc": "Spiral Plunge"
+               },
+               {
+                  "value": "4",
+                  "desc": "Spiral w/Bottom"
+               }
             ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "Spiral Plunge"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "Spiral Plunge"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "Spiral w/Bottom"
-            ],
-            "opts": [
-               [
-                  "4",
-                  "Spiral w/Bottom"
-               ]
-            ],
+            "sysvar": "0",
             "type": "ck"
          },
          {
@@ -1611,11 +1487,10 @@
             "desc": "Don't pull the Z up after finishing cut",
             "abrev": "0Up",
             "typeext": 0,
-            "default": "0 - Off",
-            "range": [
-               null,
-               null
-            ],
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [],
+            "sysvar": "0",
             "type": "ck"
          },
          {
@@ -1623,11 +1498,10 @@
             "desc": "Start plunges from 0 (not current Z location)",
             "abrev": "z0",
             "typeext": 0,
-            "default": "0 - Off",
-            "range": [
-               null,
-               null
-            ],
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [],
+            "sysvar": "0",
             "type": "dist"
          }
       ]
@@ -1642,6 +1516,7 @@
             "abrev": "Len",
             "typeext": 1,
             "default": "0",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits"
@@ -1654,67 +1529,47 @@
             "abrev": "Ht",
             "typeext": 1,
             "default": "0",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits"
             ],
-            "type": "ops",
-            "opts": [
-               [
-                  "T",
-                  "true path"
-               ]
-            ]
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "I",
-               "Inside (holes)"
-            ],
-            "opts": [
-               [
-                  "I",
-                  "Inside (holes)"
-               ]
-            ],
             "type": "ops"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Outside-Inside-True",
+            "desc": "Offset the cutter path to the Outside, the Inside, or cut true to center line",
+            "abrev": "OIT",
             "typeext": 0,
-            "default": [
-               "O",
-               "Outside (wheels)"
-            ],
+            "default": "T",
+            "default_desc": "true path",
             "opts": [
-               [
-                  "1",
-                  "clockwise"
-               ]
+               {
+                  "value": "I",
+                  "desc": "Inside (holes)"
+               },
+               {
+                  "value": "O",
+                  "desc": "Outside (wheels)"
+               }
             ],
+            "sysvar": "0",
             "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Direction",
+            "desc": "Direction of tool movement",
+            "abrev": "Dr",
             "typeext": 0,
-            "default": [
-               "-1",
-               "counterclockwise"
-            ],
+            "default": "1",
+            "default_desc": "clockwise",
             "opts": [
-               [
-                  "-1",
-                  "counterclockwise"
-               ]
+               {
+                  "value": "-1",
+                  "desc": "counterclockwise"
+               }
             ],
+            "sysvar": "0",
             "type": "sng"
          },
          {
@@ -1723,6 +1578,7 @@
             "abrev": "Ang",
             "typeext": 0,
             "default": "0.00",
+            "sysvar": 0,
             "range": [
                "0",
                "360"
@@ -1735,6 +1591,7 @@
             "abrev": "Plg",
             "typeext": 3,
             "default": "-0.00",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Z"
@@ -1747,6 +1604,7 @@
             "abrev": "Rp",
             "typeext": 0,
             "default": "1",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -1759,6 +1617,7 @@
             "abrev": "pX",
             "typeext": 0,
             "default": "1.00",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -1771,33 +1630,27 @@
             "abrev": "pY",
             "typeext": 0,
             "default": "1.00",
+            "sysvar": 0,
             "range": [
                null,
                null
             ],
-            "type": "opt",
-            "opts": [
-               [
-                  "0",
-                  "No feature"
-               ]
-            ]
+            "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Tab",
+            "desc": "Activate automatic tabbing",
+            "abrev": "tf",
             "typeext": 0,
-            "default": [
-               "1",
-               "Tabbing On"
-            ],
+            "default": "0",
+            "default_desc": "No feature",
             "opts": [
-               [
-                  "1",
-                  "Tabbing On"
-               ]
+               {
+                  "value": "1",
+                  "desc": "Tabbing On"
+               }
             ],
+            "sysvar": "0",
             "type": "ck"
          },
          {
@@ -1805,11 +1658,10 @@
             "desc": "Don't pull the Z up after finishing cut",
             "abrev": "0Up",
             "typeext": 0,
-            "default": "0 - Off",
-            "range": [
-               null,
-               null
-            ],
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [],
+            "sysvar": "0",
             "type": "ck"
          },
          {
@@ -1817,11 +1669,10 @@
             "desc": "Start plunges from 0 (not current Z location)",
             "abrev": "z0",
             "typeext": 0,
-            "default": "0 - Off",
-            "range": [
-               null,
-               null
-            ],
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [],
+            "sysvar": "0",
             "type": "dist"
          }
       ]
@@ -1836,6 +1687,7 @@
             "abrev": "Dia",
             "typeext": 1,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits"
@@ -1848,6 +1700,7 @@
             "abrev": "eX",
             "typeext": 1,
             "default": "0",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits X"
@@ -1860,6 +1713,7 @@
             "abrev": "eY",
             "typeext": 1,
             "default": "0",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Y"
@@ -1872,6 +1726,7 @@
             "abrev": "cX",
             "typeext": 1,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits"
@@ -1884,67 +1739,47 @@
             "abrev": "cY",
             "typeext": 1,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits"
             ],
-            "type": "ops",
-            "opts": [
-               [
-                  "T",
-                  "true path"
-               ]
-            ]
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "I",
-               "Inside (holes)"
-            ],
-            "opts": [
-               [
-                  "I",
-                  "Inside (holes)"
-               ]
-            ],
             "type": "ops"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Outside-Inside-True",
+            "desc": "Offset the cutter path to the Outside, the Inside, or cut true to center line",
+            "abrev": "OIT",
             "typeext": 0,
-            "default": [
-               "O",
-               "Outside (wheels)"
-            ],
+            "default": "T",
+            "default_desc": "true path",
             "opts": [
-               [
-                  "1",
-                  "clockwise"
-               ]
+               {
+                  "value": "I",
+                  "desc": "Inside (holes)"
+               },
+               {
+                  "value": "O",
+                  "desc": "Outside (wheels)"
+               }
             ],
+            "sysvar": "0",
             "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Direction",
+            "desc": "Direction of tool movement",
+            "abrev": "Dr",
             "typeext": 0,
-            "default": [
-               "-1",
-               "counterclockwise"
-            ],
+            "default": "1",
+            "default_desc": "clockwise",
             "opts": [
-               [
-                  "-1",
-                  "counterclockwise"
-               ]
+               {
+                  "value": "-1",
+                  "desc": "counterclockwise"
+               }
             ],
+            "sysvar": "0",
             "type": "dist"
          },
          {
@@ -1953,6 +1788,7 @@
             "abrev": "Plg",
             "typeext": 3,
             "default": "-0.00",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Z"
@@ -1965,6 +1801,7 @@
             "abrev": "Rp",
             "typeext": 0,
             "default": "1",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -1977,6 +1814,7 @@
             "abrev": "pX",
             "typeext": 0,
             "default": "1.00",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -1989,84 +1827,39 @@
             "abrev": "pY",
             "typeext": 0,
             "default": "1.00",
+            "sysvar": 0,
             "range": [
                null,
                null
             ],
-            "type": "opt",
-            "opts": [
-               [
-                  "0",
-                  "No feature"
-               ]
-            ]
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "Tabbing On"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "Tabbing On"
-               ]
-            ],
             "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Tab, Pocket, Spiral",
+            "desc": "Activate a special feature: automatic tabbing, pocketing out, plunging with a spiral each rep, optionally with a bottom pass; select only 1",
+            "abrev": "tf",
             "typeext": 0,
-            "default": [
-               "2",
-               "Pocketing"
-            ],
+            "default": "0",
+            "default_desc": "No feature",
             "opts": [
-               [
-                  "2",
-                  "Pocketing"
-               ]
+               {
+                  "value": "1",
+                  "desc": "Tabbing On"
+               },
+               {
+                  "value": "2",
+                  "desc": "Pocketing"
+               },
+               {
+                  "value": "3",
+                  "desc": "Spiral Plunge"
+               },
+               {
+                  "value": "4",
+                  "desc": "Spiral w/Bottom"
+               }
             ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "Spiral Plunge"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "Spiral Plunge"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "Spiral w/Bottom"
-            ],
-            "opts": [
-               [
-                  "4",
-                  "Spiral w/Bottom"
-               ]
-            ],
+            "sysvar": "0",
             "type": "ck"
          },
          {
@@ -2074,11 +1867,10 @@
             "desc": "Don't pull the Z up after finishing cut",
             "abrev": "0Up",
             "typeext": 0,
-            "default": "0 - Off",
-            "range": [
-               null,
-               null
-            ],
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [],
+            "sysvar": "0",
             "type": "ck"
          },
          {
@@ -2086,11 +1878,10 @@
             "desc": "Start plunges from 0 (not current Z location)",
             "abrev": "z0",
             "typeext": 0,
-            "default": "0 - Off",
-            "range": [
-               null,
-               null
-            ],
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [],
+            "sysvar": "0",
             "type": "dist"
          }
       ]
@@ -2105,6 +1896,7 @@
             "abrev": "lenX",
             "typeext": 1,
             "default": "0",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits X"
@@ -2117,67 +1909,47 @@
             "abrev": "lenY",
             "typeext": 1,
             "default": "0",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Y"
             ],
-            "type": "ops",
-            "opts": [
-               [
-                  "T",
-                  "true path"
-               ]
-            ]
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "I",
-               "Inside (holes)"
-            ],
-            "opts": [
-               [
-                  "I",
-                  "Inside (holes)"
-               ]
-            ],
             "type": "ops"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Outside-Inside-True",
+            "desc": "Offset the cutter path to the Outside, the Inside, or cut true to center line",
+            "abrev": "OIT",
             "typeext": 0,
-            "default": [
-               "O",
-               "Outside (wheels)"
-            ],
+            "default": "T",
+            "default_desc": "true path",
             "opts": [
-               [
-                  "1",
-                  "clockwise"
-               ]
+               {
+                  "value": "I",
+                  "desc": "Inside (holes)"
+               },
+               {
+                  "value": "O",
+                  "desc": "Outside (wheels)"
+               }
             ],
+            "sysvar": "0",
             "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Direction",
+            "desc": "Direction of tool movement",
+            "abrev": "Dr",
             "typeext": 0,
-            "default": [
-               "-1",
-               "counterclockwise"
-            ],
+            "default": "1",
+            "default_desc": "clockwise",
             "opts": [
-               [
-                  "-1",
-                  "counterclockwise"
-               ]
+               {
+                  "value": "-1",
+                  "desc": "counterclockwise"
+               }
             ],
+            "sysvar": "0",
             "type": "int"
          },
          {
@@ -2186,6 +1958,7 @@
             "abrev": "sCorn",
             "typeext": 0,
             "default": "4",
+            "sysvar": 0,
             "range": [
                "1",
                "4"
@@ -2198,6 +1971,7 @@
             "abrev": "Plg",
             "typeext": 3,
             "default": "-0.00",
+            "sysvar": 0,
             "range": [
                null,
                "Table limits Z"
@@ -2210,67 +1984,35 @@
             "abrev": "Rp",
             "typeext": 0,
             "default": "1",
+            "sysvar": 0,
             "range": [
                null,
                null
             ],
-            "type": "opt",
-            "opts": [
-               [
-                  "0",
-                  "No feature"
-               ]
-            ]
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "Tabbing On"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "Tabbing On"
-               ]
-            ],
             "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Tab, Pocket",
+            "desc": "Activate a special feature: automatic tabbing, pocketing out; select only 1",
+            "abrev": "tf",
             "typeext": 0,
-            "default": [
-               "2",
-               "Pocketing (outside in)"
-            ],
+            "default": "0",
+            "default_desc": "No feature",
             "opts": [
-               [
-                  "2",
-                  "Pocketing (outside in)"
-               ]
+               {
+                  "value": "1",
+                  "desc": "Tabbing On"
+               },
+               {
+                  "value": "2",
+                  "desc": "Pocketing (outside in)"
+               },
+               {
+                  "value": "3",
+                  "desc": "Pocketing (inside out)"
+               }
             ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "Pocketing (inside out)"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "Pocketing (inside out)"
-               ]
-            ],
+            "sysvar": "0",
             "type": "ck"
          },
          {
@@ -2278,11 +2020,10 @@
             "desc": "Start plunges from 0 (not current Z location)",
             "abrev": "z0",
             "typeext": 0,
-            "default": "0 - Off",
-            "range": [
-               null,
-               null
-            ],
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [],
+            "sysvar": "0",
             "type": "sng"
          },
          {
@@ -2291,33 +2032,27 @@
             "abrev": "Rang",
             "typeext": 0,
             "default": "0.00",
+            "sysvar": 0,
             "range": [
                "0",
                "360"
             ],
-            "type": "opt",
-            "opts": [
-               [
-                  "3",
-                  "Z axis"
-               ]
-            ]
+            "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Plunge Axis",
+            "desc": "Axis that will be used to Plunge",
+            "abrev": "ax",
             "typeext": 0,
-            "default": [
-               "4",
-               "A axis"
-            ],
+            "default": "3",
+            "default_desc": "Z axis",
             "opts": [
-               [
-                  "4",
-                  "A axis"
-               ]
+               {
+                  "value": "4",
+                  "desc": "A axis"
+               }
             ],
+            "sysvar": "0",
             "type": "int"
          }
       ]
@@ -2336,6 +2071,7 @@
             "abrev": "num",
             "typeext": 0,
             "default": "1",
+            "sysvar": 0,
             "range": [
                "1",
                "99"
@@ -2354,17 +2090,12 @@
             "abrev": "num",
             "typeext": 0,
             "default": "1",
+            "sysvar": 0,
             "range": [
                "1",
                "99"
             ],
-            "type": "opt",
-            "opts": [
-               [
-                  "0",
-                  "No Stack"
-               ]
-            ]
+            "type": "opt"
          }
       ]
    },
@@ -2417,37 +2148,23 @@
       "name": "set Continuous",
       "params": [
          {
-            "name": "",
+            "name": "Continuous Move Settings",
             "desc": "",
-            "abrev": "",
+            "abrev": "set",
             "typeext": 0,
-            "default": [
-               "1",
-               "Cont/Stack"
-            ],
+            "default": "0",
+            "default_desc": "No Stack",
             "opts": [
-               [
-                  "1",
-                  "Cont/Stack"
-               ]
+               {
+                  "value": "1",
+                  "desc": "Cont/Stack"
+               },
+               {
+                  "value": "2",
+                  "desc": "Break Here"
+               }
             ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "Break Here"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "Break Here"
-               ]
-            ],
+            "sysvar": "0",
             "type": "ck"
          }
       ]
@@ -2461,11 +2178,10 @@
             "desc": "Sets up software limit checking during file reading",
             "abrev": "lim",
             "typeext": 0,
-            "default": "0 - Off",
-            "range": [
-               "0",
-               "1"
-            ],
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [],
+            "sysvar": "0",
             "type": "str"
          }
       ]
@@ -2480,6 +2196,7 @@
             "abrev": "c1",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -2492,6 +2209,7 @@
             "abrev": "c2",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -2504,6 +2222,7 @@
             "abrev": "c3",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -2516,6 +2235,7 @@
             "abrev": "c4",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -2528,6 +2248,7 @@
             "abrev": "c5",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -2540,6 +2261,7 @@
             "abrev": "c6",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -2552,6 +2274,7 @@
             "abrev": "c7",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -2564,6 +2287,7 @@
             "abrev": "c8",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -2576,6 +2300,7 @@
             "abrev": "c9",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -2588,6 +2313,7 @@
             "abrev": "c10",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -2618,6 +2344,7 @@
             "abrev": "sw",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                "0",
                "12"
@@ -2629,11 +2356,10 @@
             "desc": "Set Output ON or OFF (#4 a special case, may also be -1 to -4 to set Mode, See Help Command Ref)",
             "abrev": "cond",
             "typeext": 0,
-            "default": "0 - Off",
-            "range": [
-               "-4",
-               "1"
-            ],
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [],
+            "sysvar": "0",
             "type": "sng"
          }
       ]
@@ -2668,6 +2394,7 @@
             "abrev": "dur",
             "typeext": 0,
             "default": "2",
+            "sysvar": 24,
             "range": [
                "0",
                "30"
@@ -2680,6 +2407,7 @@
             "abrev": "ps",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -2692,6 +2420,7 @@
             "abrev": "pn",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -2710,6 +2439,7 @@
             "abrev": "dia",
             "typeext": 0,
             "default": "0.25",
+            "sysvar": 23,
             "range": [
                null,
                null
@@ -2722,6 +2452,7 @@
             "abrev": "kX",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -2734,6 +2465,7 @@
             "abrev": "kY",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -2746,33 +2478,27 @@
             "abrev": "sfZ",
             "typeext": 0,
             "default": "",
+            "sysvar": 28,
             "range": [
                null,
                null
             ],
-            "type": "opt",
-            "opts": [
-               [
-                  "0",
-                  "plunge negative"
-               ]
-            ]
+            "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Plunge Direction",
+            "desc": "Whether plunging is a negative (-) or positive (+) value; only use + for special situations     ",
+            "abrev": "dirP",
             "typeext": 0,
-            "default": [
-               "1",
-               "plunge positive"
-            ],
+            "default": "0",
+            "default_desc": "plunge negative",
             "opts": [
-               [
-                  "1",
-                  "plunge positive"
-               ]
+               {
+                  "value": "1",
+                  "desc": "plunge positive"
+               }
             ],
+            "sysvar": "0",
             "type": "sng"
          },
          {
@@ -2781,6 +2507,7 @@
             "abrev": "pktLp",
             "typeext": 0,
             "default": "10",
+            "sysvar": 0,
             "range": [
                "0",
                "100"
@@ -2793,6 +2520,7 @@
             "abrev": "sfA",
             "typeext": 0,
             "default": "",
+            "sysvar": 29,
             "range": [
                null,
                null
@@ -2804,11 +2532,10 @@
             "desc": "Enable Contignet Output Switch that is triggered by vertical move; e.g. for automatic Air Drill activation",
             "abrev": "ctACT",
             "typeext": 0,
-            "default": "0 - Off",
-            "range": [
-               "0",
-               "1"
-            ],
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [],
+            "sysvar": "0",
             "type": "distm"
          },
          {
@@ -2817,6 +2544,7 @@
             "abrev": "ctLO",
             "typeext": 0,
             "default": "",
+            "sysvar": 141,
             "range": [
                null,
                null
@@ -2829,6 +2557,7 @@
             "abrev": "ctHI",
             "typeext": 0,
             "default": "",
+            "sysvar": 142,
             "range": [
                null,
                null
@@ -2841,6 +2570,7 @@
             "abrev": "ctAX",
             "typeext": 0,
             "default": "Z",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -2853,6 +2583,7 @@
             "abrev": "sw",
             "typeext": 0,
             "default": "8",
+            "sysvar": 0,
             "range": [
                "1",
                "12"
@@ -2871,6 +2602,7 @@
             "abrev": "grid",
             "typeext": 0,
             "default": "6",
+            "sysvar": 0,
             "range": [
                "1",
                "100"
@@ -2883,6 +2615,7 @@
             "abrev": "tblX",
             "typeext": 0,
             "default": "96",
+            "sysvar": 0,
             "range": [
                "4",
                "360"
@@ -2895,6 +2628,7 @@
             "abrev": "tblY",
             "typeext": 0,
             "default": "48",
+            "sysvar": 0,
             "range": [
                "4",
                "120"
@@ -2907,6 +2641,7 @@
             "abrev": "tblZ",
             "typeext": 0,
             "default": "6",
+            "sysvar": 0,
             "range": [
                "2",
                "36"
@@ -2918,11 +2653,10 @@
             "desc": "Set startup state for whether part simulation shows process of cutting",
             "abrev": "sim",
             "typeext": 0,
-            "default": "0 - Off",
-            "range": [
-               null,
-               null
-            ],
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [],
+            "sysvar": "0",
             "type": "ck"
          },
          {
@@ -2930,11 +2664,10 @@
             "desc": "Set startup conditions of whether wire frame of tool shape is drawn in simulations and step-throughs",
             "abrev": "rot",
             "typeext": 0,
-            "default": "0 - Off",
-            "range": [
-               null,
-               null
-            ],
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [],
+            "sysvar": "0",
             "type": "ck"
          },
          {
@@ -2942,11 +2675,10 @@
             "desc": "Set whether Preview starts from position of real tool",
             "abrev": "strt",
             "typeext": 0,
-            "default": "1 - On",
-            "range": [
-               null,
-               null
-            ],
+            "default": "1",
+            "default_desc": "On",
+            "opts": [],
+            "sysvar": "0",
             "type": "ck"
          },
          {
@@ -2954,85 +2686,50 @@
             "desc": "Set whether tool path lines for jogs are drawn (in red)",
             "abrev": "jog",
             "typeext": 0,
-            "default": "1 - On",
-            "range": [
-               null,
-               null
-            ],
-            "type": "opt",
-            "opts": [
-               [
-                  "-1",
-                  "Leave as is"
-               ]
-            ]
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "Force open"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "Force open"
-               ]
-            ],
+            "default": "1",
+            "default_desc": "On",
+            "opts": [],
+            "sysvar": "0",
             "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Left Panel Behavior",
+            "desc": "Left panel behavior when file sent to Preview",
+            "abrev": "lp",
             "typeext": 0,
-            "default": [
-               "0",
-               "Force closed"
-            ],
+            "default": "-1",
+            "default_desc": "Leave as is",
             "opts": [
-               [
-                  "-1",
-                  "Leave as is"
-               ]
+               {
+                  "value": "1",
+                  "desc": "Force open"
+               },
+               {
+                  "value": "0",
+                  "desc": "Force closed"
+               }
             ],
+            "sysvar": "0",
             "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Right Panel Behavior",
+            "desc": "Right panel behavior when file sent to Preview",
+            "abrev": "rp",
             "typeext": 0,
-            "default": [
-               "1",
-               "Force open"
-            ],
+            "default": "-1",
+            "default_desc": "Leave as is",
             "opts": [
-               [
-                  "1",
-                  "Force open"
-               ]
+               {
+                  "value": "1",
+                  "desc": "Force open"
+               },
+               {
+                  "value": "0",
+                  "desc": "Force closed"
+               }
             ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "0",
-               "Force closed"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "Force closed"
-               ]
-            ],
+            "sysvar": "0",
             "type": "str"
          }
       ]
@@ -3047,6 +2744,7 @@
             "abrev": "name",
             "typeext": 0,
             "default": "&variable_1",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -3059,6 +2757,7 @@
             "abrev": "val",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -3077,6 +2776,7 @@
             "abrev": "msXY",
             "typeext": 0,
             "default": "3",
+            "sysvar": 71,
             "range": [
                ".05",
                "12"
@@ -3089,6 +2789,7 @@
             "abrev": "msZ",
             "typeext": 0,
             "default": "1",
+            "sysvar": 73,
             "range": [
                ".05",
                "10"
@@ -3101,6 +2802,7 @@
             "abrev": "msA",
             "typeext": 0,
             "default": "1",
+            "sysvar": 74,
             "range": [
                "0.01",
                "5000"
@@ -3113,6 +2815,7 @@
             "abrev": "msB",
             "typeext": 0,
             "default": "50",
+            "sysvar": 75,
             "range": [
                "0.01",
                "5000"
@@ -3125,6 +2828,7 @@
             "abrev": "jsXY",
             "typeext": 0,
             "default": "12",
+            "sysvar": 76,
             "range": [
                ".05",
                "30"
@@ -3137,6 +2841,7 @@
             "abrev": "jsZ",
             "typeext": 0,
             "default": "3",
+            "sysvar": 78,
             "range": [
                ".05",
                "20"
@@ -3149,6 +2854,7 @@
             "abrev": "jsA",
             "typeext": 0,
             "default": "3",
+            "sysvar": 79,
             "range": [
                "0.01",
                "5000"
@@ -3161,6 +2867,7 @@
             "abrev": "jsB",
             "typeext": 0,
             "default": "100",
+            "sysvar": 80,
             "range": [
                "0.01",
                "5000"
@@ -3179,6 +2886,7 @@
             "abrev": "mrXY",
             "typeext": 0,
             "default": ".4",
+            "sysvar": 81,
             "range": [
                ".05",
                "2"
@@ -3191,6 +2899,7 @@
             "abrev": "mrZ",
             "typeext": 0,
             "default": ".4",
+            "sysvar": 83,
             "range": [
                ".05",
                "2"
@@ -3203,6 +2912,7 @@
             "abrev": "mrA",
             "typeext": 0,
             "default": ".4",
+            "sysvar": 84,
             "range": [
                ".05",
                "100"
@@ -3215,6 +2925,7 @@
             "abrev": "mrB",
             "typeext": 0,
             "default": ".4",
+            "sysvar": 85,
             "range": [
                ".05",
                "100"
@@ -3227,6 +2938,7 @@
             "abrev": "jrXY",
             "typeext": 0,
             "default": ".4",
+            "sysvar": 86,
             "range": [
                ".05",
                "2"
@@ -3239,6 +2951,7 @@
             "abrev": "jrZ",
             "typeext": 0,
             "default": ".4",
+            "sysvar": 88,
             "range": [
                ".05",
                "2"
@@ -3251,6 +2964,7 @@
             "abrev": "jrA",
             "typeext": 0,
             "default": ".4",
+            "sysvar": 89,
             "range": [
                ".05",
                "100"
@@ -3263,6 +2977,7 @@
             "abrev": "jrB",
             "typeext": 0,
             "default": ".4",
+            "sysvar": 90,
             "range": [
                ".05",
                "100"
@@ -3275,6 +2990,7 @@
             "abrev": "rateM",
             "typeext": 0,
             "default": ".2",
+            "sysvar": 0,
             "range": [
                ".025",
                "10"
@@ -3287,6 +3003,7 @@
             "abrev": "rateJ",
             "typeext": 0,
             "default": ".2",
+            "sysvar": 0,
             "range": [
                ".025",
                "10"
@@ -3299,6 +3016,7 @@
             "abrev": "3dT",
             "typeext": 0,
             "default": "100",
+            "sysvar": 0,
             "range": [
                "1",
                "1000"
@@ -3311,6 +3029,7 @@
             "abrev": "minD",
             "typeext": 0,
             "default": ".10",
+            "sysvar": 0,
             "range": [
                ".001",
                "1"
@@ -3323,6 +3042,7 @@
             "abrev": "crnr",
             "typeext": 0,
             "default": "65",
+            "sysvar": 0,
             "range": [
                "20",
                "99"
@@ -3335,6 +3055,7 @@
             "abrev": "fStop",
             "typeext": 0,
             "default": "0",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -3347,6 +3068,7 @@
             "abrev": "thStop",
             "typeext": 0,
             "default": "0",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -3359,6 +3081,7 @@
             "abrev": "rateK",
             "typeext": 0,
             "default": ".2",
+            "sysvar": 0,
             "range": [
                ".1",
                "2"
@@ -3377,6 +3100,7 @@
             "abrev": "up",
             "typeext": 0,
             "default": ".1",
+            "sysvar": 41,
             "range": [
                "-1",
                "1"
@@ -3389,6 +3113,7 @@
             "abrev": "nxt",
             "typeext": 0,
             "default": "4.0",
+            "sysvar": 42,
             "range": [
                ".001",
                "50"
@@ -3401,6 +3126,7 @@
             "abrev": "sz",
             "typeext": 0,
             "default": "1.0",
+            "sysvar": 43,
             "range": [
                ".001",
                "100"
@@ -3413,6 +3139,7 @@
             "abrev": "lds",
             "typeext": 0,
             "default": ".5",
+            "sysvar": 44,
             "range": [
                ".001",
                "20"
@@ -3425,6 +3152,7 @@
             "abrev": "tog",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -3437,6 +3165,7 @@
             "abrev": "num",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -3449,6 +3178,7 @@
             "abrev": "dist",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -3471,6 +3201,7 @@
             "abrev": "locX",
             "typeext": 0,
             "default": "",
+            "sysvar": 1,
             "range": [
                null,
                "Table limits X"
@@ -3483,6 +3214,7 @@
             "abrev": "locY",
             "typeext": 0,
             "default": "",
+            "sysvar": 2,
             "range": [
                null,
                "Table limits Y"
@@ -3495,6 +3227,7 @@
             "abrev": "locZ",
             "typeext": 0,
             "default": "",
+            "sysvar": 3,
             "range": [
                null,
                "Table limits Z"
@@ -3507,6 +3240,7 @@
             "abrev": "locA",
             "typeext": 0,
             "default": "",
+            "sysvar": 4,
             "range": [
                null,
                "Table limits A"
@@ -3519,6 +3253,7 @@
             "abrev": "locB",
             "typeext": 0,
             "default": "",
+            "sysvar": 5,
             "range": [
                null,
                "Table limits B"
@@ -3531,6 +3266,7 @@
             "abrev": "baseX",
             "typeext": 0,
             "default": "",
+            "sysvar": 6,
             "range": [
                null,
                "Table limits X"
@@ -3543,6 +3279,7 @@
             "abrev": "baseY",
             "typeext": 0,
             "default": "",
+            "sysvar": 7,
             "range": [
                null,
                "Table limits Y"
@@ -3555,6 +3292,7 @@
             "abrev": "baseZ",
             "typeext": 0,
             "default": "",
+            "sysvar": 8,
             "range": [
                null,
                "Table limits Z"
@@ -3567,6 +3305,7 @@
             "abrev": "baseA",
             "typeext": 0,
             "default": "",
+            "sysvar": 9,
             "range": [
                null,
                "Table limits A"
@@ -3579,6 +3318,7 @@
             "abrev": "baseB",
             "typeext": 0,
             "default": "",
+            "sysvar": 10,
             "range": [
                null,
                "Table limits B"
@@ -3591,6 +3331,7 @@
             "abrev": "locC",
             "typeext": 0,
             "default": "",
+            "sysvar": 144,
             "range": [
                null,
                "Table limits C"
@@ -3603,6 +3344,7 @@
             "abrev": "baseC",
             "typeext": 0,
             "default": "",
+            "sysvar": 145,
             "range": [
                null,
                "Table limits C"
@@ -3621,6 +3363,7 @@
             "abrev": "unX",
             "typeext": 0,
             "default": "",
+            "sysvar": 31,
             "range": [
                null,
                null
@@ -3633,6 +3376,7 @@
             "abrev": "unY",
             "typeext": 0,
             "default": "",
+            "sysvar": 32,
             "range": [
                null,
                null
@@ -3645,6 +3389,7 @@
             "abrev": "unZ",
             "typeext": 0,
             "default": "",
+            "sysvar": 33,
             "range": [
                null,
                null
@@ -3657,6 +3402,7 @@
             "abrev": "unA",
             "typeext": 0,
             "default": "",
+            "sysvar": 34,
             "range": [
                null,
                null
@@ -3669,6 +3415,7 @@
             "abrev": "CirRes",
             "typeext": 0,
             "default": ".05",
+            "sysvar": 0,
             "range": [
                ".005",
                "1.00"
@@ -3681,6 +3428,7 @@
             "abrev": "",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -3693,6 +3441,7 @@
             "abrev": "",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -3705,6 +3454,7 @@
             "abrev": "SmCir",
             "typeext": 1,
             "default": ".25",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -3717,6 +3467,7 @@
             "abrev": "unB",
             "typeext": 0,
             "default": "",
+            "sysvar": 35,
             "range": [
                null,
                null
@@ -3729,6 +3480,7 @@
             "abrev": "rmX",
             "typeext": 0,
             "default": "1",
+            "sysvar": 151,
             "range": [
                "1",
                "15"
@@ -3741,6 +3493,7 @@
             "abrev": "rmY",
             "typeext": 0,
             "default": "1",
+            "sysvar": 152,
             "range": [
                "1",
                "15"
@@ -3753,6 +3506,7 @@
             "abrev": "rmZ",
             "typeext": 0,
             "default": "1",
+            "sysvar": 153,
             "range": [
                "1",
                "15"
@@ -3765,6 +3519,7 @@
             "abrev": "rmA",
             "typeext": 0,
             "default": "1",
+            "sysvar": 154,
             "range": [
                "1",
                "15"
@@ -3777,6 +3532,7 @@
             "abrev": "rmB",
             "typeext": 0,
             "default": "1",
+            "sysvar": 155,
             "range": [
                "1",
                "15"
@@ -3789,6 +3545,7 @@
             "abrev": "sDiv",
             "typeext": 0,
             "default": "1",
+            "sysvar": 150,
             "range": [
                "1",
                "100"
@@ -3807,6 +3564,7 @@
             "abrev": "autoE",
             "typeext": 0,
             "default": "1 - ON",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -3819,6 +3577,7 @@
             "abrev": "",
             "typeext": 0,
             "default": "0 - Off",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -3831,101 +3590,67 @@
             "abrev": "nAxes",
             "typeext": 0,
             "default": "3",
+            "sysvar": 27,
             "range": [
                "0",
                "6"
             ],
-            "type": "opt",
-            "opts": [
-               [
-                  "0",
-                  "inches"
-               ]
-            ]
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "millimeters"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "Linear"
-               ]
-            ],
             "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Linear Units",
+            "desc": "Set ShopBot to inches or millimeters",
+            "abrev": "unXYZ",
             "typeext": 0,
-            "default": [
-               "1",
-               "Linear"
-            ],
+            "default": "0",
+            "default_desc": "inches",
             "opts": [
-               [
-                  "1",
-                  "Linear"
-               ]
+               {
+                  "value": "1",
+                  "desc": "millimeters"
+               }
             ],
+            "sysvar": "25",
             "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Units Type A Axis",
+            "desc": "Set A Axis to Current Linear Units [in/mm] or Rotary [degrees]",
+            "abrev": "unA",
             "typeext": 0,
-            "default": [
-               "2",
-               "Rotary (deg)"
-            ],
+            "default": "0",
+            "default_desc": "Linear",
             "opts": [
-               [
-                  "2",
-                  "Rotary (deg)"
-               ]
+               {
+                  "value": "1",
+                  "desc": "Linear"
+               },
+               {
+                  "value": "2",
+                  "desc": "Rotary (deg)"
+               }
             ],
+            "sysvar": "0",
             "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Units type B Axis",
+            "desc": "Set B Axis to Current Linear Units [in/mm] or Rotary [degrees]",
+            "abrev": "unB",
             "typeext": 0,
-            "default": [
-               "0",
-               "Linear"
-            ],
+            "default": "2",
+            "default_desc": "Rotary (deg)",
             "opts": [
-               [
-                  "0",
-                  "Linear"
-               ]
+               {
+                  "value": "0",
+                  "desc": "Linear"
+               },
+               {
+                  "value": "1",
+                  "desc": "Linear"
+               }
             ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "Linear"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "Linear"
-               ]
-            ],
+            "sysvar": "0",
             "type": "obs"
          },
          {
@@ -3934,6 +3659,7 @@
             "abrev": "cnsl",
             "typeext": 0,
             "default": "1 - Show",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -3946,6 +3672,7 @@
             "abrev": "",
             "typeext": 0,
             "default": "0 - Hide",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -3957,11 +3684,10 @@
             "desc": "Display Comment lines in Message Screen in addition to Input and Print lines when file is running",
             "abrev": "com",
             "typeext": 0,
-            "default": "0 - Off",
-            "range": [
-               null,
-               null
-            ],
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [],
+            "sysvar": "0",
             "type": "distm"
          },
          {
@@ -3970,50 +3696,31 @@
             "abrev": "fDist",
             "typeext": 0,
             "default": ".01",
+            "sysvar": 0,
             "range": [
                ".001",
                "10"
             ],
-            "type": "opt",
-            "opts": [
-               [
-                  "0",
-                  "Mouse"
-               ]
-            ]
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "ShopBot/Inputs"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "ShopBot/Inputs"
-               ]
-            ],
             "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "KeyPad Remote",
+            "desc": "Set the type or remote pendant used when the KeyPad is active",
+            "abrev": "rem",
             "typeext": 0,
-            "default": [
-               "2",
-               "other"
-            ],
+            "default": "0",
+            "default_desc": "Mouse",
             "opts": [
-               [
-                  "2",
-                  "other"
-               ]
+               {
+                  "value": "1",
+                  "desc": "ShopBot/Inputs"
+               },
+               {
+                  "value": "2",
+                  "desc": "other"
+               }
             ],
+            "sysvar": "0",
             "type": "ck"
          },
          {
@@ -4021,51 +3728,42 @@
             "desc": "Automatically Turn Off Output Switches on KeyPad Close",
             "abrev": "sOff",
             "typeext": 0,
-            "default": "0 - Off",
-            "range": [
-               null,
-               null
-            ],
-            "type": "opt",
-            "opts": [
-               [
-                  "1",
-                  "Write"
-               ]
-            ]
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "0",
-               "Don't Write"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "Write"
-               ]
-            ],
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [],
+            "sysvar": "0",
             "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Write Part File Logs",
+            "desc": "Sets whether Log files are written. These are used for info about last time file was cut.",
+            "abrev": "lgF",
             "typeext": 0,
-            "default": [
-               "0",
-               "Don't Write"
-            ],
+            "default": "1",
+            "default_desc": "Write",
             "opts": [
-               [
-                  "0",
-                  "Don't Write"
-               ]
+               {
+                  "value": "0",
+                  "desc": "Don't Write"
+               }
             ],
+            "sysvar": "0",
+            "type": "opt"
+         },
+         {
+            "name": "Write System Log",
+            "desc": "Sets whether ShopBot system log is generated. Useful for diagnostics and tool use records.",
+            "abrev": "lgS",
+            "typeext": 0,
+            "default": "1",
+            "default_desc": "Write",
+            "opts": [
+               {
+                  "value": "0",
+                  "desc": "Don't Write"
+               }
+            ],
+            "sysvar": "0",
             "type": "int"
          },
          {
@@ -4074,6 +3772,7 @@
             "abrev": "mlocX",
             "typeext": 0,
             "default": "-2500",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -4086,6 +3785,7 @@
             "abrev": "mlocY",
             "typeext": 0,
             "default": "-7500",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -4098,6 +3798,7 @@
             "abrev": "mszX",
             "typeext": 0,
             "default": "8800",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -4110,6 +3811,7 @@
             "abrev": "mszY",
             "typeext": 0,
             "default": "4600",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -4121,34 +3823,26 @@
             "desc": "Set whether image of File Progress Indicator Panel is displayed during cutting (Console must be adjusted large enough)",
             "abrev": "showP",
             "typeext": 0,
-            "default": "0 - Off",
-            "range": [
-               null,
-               null
-            ],
-            "type": "opt",
-            "opts": [
-               [
-                  "1",
-                  "ShopBotEASY"
-               ]
-            ]
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [],
+            "sysvar": "0",
+            "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Main Display Type",
+            "desc": "Sets appearance type of the ShopBot Control Display ",
+            "abrev": "dsp",
             "typeext": 0,
-            "default": [
-               "0",
-               "Standard/FULL"
-            ],
+            "default": "1",
+            "default_desc": "ShopBotEASY",
             "opts": [
-               [
-                  "0",
-                  "Standard/FULL"
-               ]
+               {
+                  "value": "0",
+                  "desc": "Standard/FULL"
+               }
             ],
+            "sysvar": "0",
             "type": "distm"
          }
       ]
@@ -4163,6 +3857,7 @@
             "abrev": "loX",
             "typeext": 0,
             "default": "-.5",
+            "sysvar": 11,
             "range": [
                null,
                null
@@ -4175,6 +3870,7 @@
             "abrev": "hiX",
             "typeext": 0,
             "default": "96.5",
+            "sysvar": 12,
             "range": [
                null,
                null
@@ -4187,6 +3883,7 @@
             "abrev": "loY",
             "typeext": 0,
             "default": "-.5",
+            "sysvar": 13,
             "range": [
                null,
                null
@@ -4199,6 +3896,7 @@
             "abrev": "hiY",
             "typeext": 0,
             "default": "48.5",
+            "sysvar": 14,
             "range": [
                null,
                null
@@ -4211,6 +3909,7 @@
             "abrev": "loZ",
             "typeext": 0,
             "default": "-3.0",
+            "sysvar": 15,
             "range": [
                null,
                null
@@ -4223,6 +3922,7 @@
             "abrev": "hiZ",
             "typeext": 0,
             "default": "8.0",
+            "sysvar": 16,
             "range": [
                null,
                null
@@ -4235,6 +3935,7 @@
             "abrev": "loA",
             "typeext": 0,
             "default": "-3.0",
+            "sysvar": 17,
             "range": [
                null,
                null
@@ -4247,33 +3948,27 @@
             "abrev": "hiA",
             "typeext": 0,
             "default": "8.0",
+            "sysvar": 18,
             "range": [
                null,
                null
             ],
-            "type": "opt",
-            "opts": [
-               [
-                  "1",
-                  "ON"
-               ]
-            ]
+            "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "File Limit Checking",
+            "desc": "Turn ON or OFF software-based limit checking",
+            "abrev": "ON",
             "typeext": 0,
-            "default": [
-               "0",
-               "0ff"
-            ],
+            "default": "1",
+            "default_desc": "ON",
             "opts": [
-               [
-                  "0",
-                  "0ff"
-               ]
+               {
+                  "value": "0",
+                  "desc": "0ff"
+               }
             ],
+            "sysvar": "0",
             "type": "distmb"
          },
          {
@@ -4282,6 +3977,7 @@
             "abrev": "loB",
             "typeext": 0,
             "default": "-500",
+            "sysvar": 19,
             "range": [
                null,
                null
@@ -4294,6 +3990,7 @@
             "abrev": "hiB",
             "typeext": 0,
             "default": "500",
+            "sysvar": 20,
             "range": [
                null,
                null
@@ -4306,6 +4003,7 @@
             "abrev": "lmNm",
             "typeext": 0,
             "default": "5",
+            "sysvar": 30,
             "range": [
                null,
                null
@@ -4332,6 +4030,7 @@
             "abrev": "comN",
             "typeext": 0,
             "default": "4",
+            "sysvar": 0,
             "range": [
                "1",
                "16"
@@ -4344,6 +4043,7 @@
             "abrev": "iniSeg",
             "typeext": 0,
             "default": "0",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -4356,6 +4056,7 @@
             "abrev": "regSeg",
             "typeext": 0,
             "default": "0",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -4368,6 +4069,7 @@
             "abrev": "corRt",
             "typeext": 0,
             "default": "0",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -4380,6 +4082,7 @@
             "abrev": "drv1",
             "typeext": 0,
             "default": "X",
+            "sysvar": 36,
             "range": [
                null,
                null
@@ -4392,6 +4095,7 @@
             "abrev": "drv2",
             "typeext": 0,
             "default": "Y",
+            "sysvar": 37,
             "range": [
                null,
                null
@@ -4404,6 +4108,7 @@
             "abrev": "drv3",
             "typeext": 0,
             "default": "Z",
+            "sysvar": 38,
             "range": [
                null,
                null
@@ -4416,67 +4121,35 @@
             "abrev": "drv4",
             "typeext": 0,
             "default": "A",
+            "sysvar": 39,
             "range": [
                null,
                null
             ],
-            "type": "opt",
-            "opts": [
-               [
-                  "5",
-                  "921.6"
-               ]
-            ]
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "115.2"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "115.2"
-               ]
-            ],
             "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Comm Speed",
+            "desc": "Serial Port Communication Speed [RESET on next connection to Control Box].",
+            "abrev": "spd",
             "typeext": 0,
-            "default": [
-               "3",
-               "230.4"
-            ],
+            "default": "5",
+            "default_desc": "921.6",
             "opts": [
-               [
-                  "3",
-                  "230.4"
-               ]
+               {
+                  "value": "2",
+                  "desc": "115.2"
+               },
+               {
+                  "value": "3",
+                  "desc": "230.4"
+               },
+               {
+                  "value": "4",
+                  "desc": "460.8"
+               }
             ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "460.8"
-            ],
-            "opts": [
-               [
-                  "4",
-                  "460.8"
-               ]
-            ],
+            "sysvar": "0",
             "type": "str"
          },
          {
@@ -4485,33 +4158,27 @@
             "abrev": "drv5",
             "typeext": 0,
             "default": "B",
+            "sysvar": 40,
             "range": [
                null,
                null
             ],
-            "type": "opt",
-            "opts": [
-               [
-                  "1",
-                  "On"
-               ]
-            ]
+            "type": "opt"
          },
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Enabled Steps & Outputs",
+            "desc": "Allows disabling of all step and output signals for diagnostic purposes.",
+            "abrev": "out0",
             "typeext": 0,
-            "default": [
-               "0",
-               "Off"
-            ],
+            "default": "1",
+            "default_desc": "On",
             "opts": [
-               [
-                  "1",
-                  "Limits ON"
-               ]
+               {
+                  "value": "0",
+                  "desc": "Off"
+               }
             ],
+            "sysvar": "0",
             "type": "opt"
          }
       ]
@@ -4521,1822 +4188,731 @@
       "name": "iNput/output switch modes",
       "params": [
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Limits ON or OFF",
+            "desc": "Turn LIMIT Switches (all those designated) ON or OFF",
+            "abrev": "limON",
             "typeext": 0,
-            "default": [
-               "0",
-               "Limits OFF"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "Nrm Closed Stop"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "Nrm Open Stop"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "Nrm Open Stop"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "not used"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "Off"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "Torch"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "Torch"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "Laser"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "Laser"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "An1 Control"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "An1 Control"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "An2 Control"
-            ],
-            "opts": [
-               [
-                  "4",
-                  "An2 Control"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "5",
-               "An1 & An2 Cont"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "Standard Switch"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "Nrm Open Limit"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "Nrm Open Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "Nrm Closed Limit"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "Nrm Closed Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "Nrm Open Stop"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "Nrm Open Stop"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "Nrm Closed Stop"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "Standard Switch"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "Nrm Open Limit"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "Nrm Open Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "Nrm Closed Limit"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "Nrm Closed Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "Nrm Open Stop"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "Nrm Open Stop"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "Nrm Closed Stop"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "Standard Switch"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "Nrm Open Limit"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "Nrm Open Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "Nrm Closed Limit"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "Nrm Closed Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "Nrm Open Stop"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "Nrm Open Stop"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "Nrm Closed Stop"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "Standard Switch"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "Nrm Open Limit"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "Nrm Open Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "Nrm Closed Limit"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "Nrm Closed Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "Nrm Open Stop"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "Nrm Open Stop"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "Nrm Closed Stop"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "Standard Switch"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "Nrm Open Limit"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "Nrm Open Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "Nrm Closed Limit"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "Nrm Closed Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "Nrm Open Stop"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "Nrm Open Stop"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "Nrm Closed Stop"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "Standard Switch"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "Nrm Open Limit"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "Nrm Open Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "Nrm Closed Limit"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "Nrm Closed Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "Nrm Open Stop"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "Nrm Open Stop"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "Nrm Closed Stop"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "Standard Switch"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "Nrm Open Limit"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "Nrm Open Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "Nrm Closed Limit"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "Nrm Closed Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "Nrm Open Stop"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "Nrm Open Stop"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "Nrm Closed Stop"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "Standard Switch"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "Nrm Open Limit"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "Nrm Open Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "Nrm Closed Limit"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "Nrm Closed Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "Nrm Open Stop"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "Nrm Open Stop"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "Nrm Closed Stop"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "Standard Switch"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "Nrm Open Limit"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "Nrm Open Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "Nrm Closed Limit"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "Nrm Closed Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "Nrm Open Stop"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "Nrm Open Stop"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "Nrm Closed Stop"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "Standard Switch"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "Nrm Open Limit"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "Nrm Open Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "Nrm Closed Limit"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "Nrm Closed Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "Nrm Open Stop"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "Nrm Open Stop"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "Nrm Closed Stop"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "Standard Switch"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "Nrm Open Limit"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "Nrm Open Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "Nrm Closed Limit"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "Nrm Closed Limit"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "Nrm Open Stop"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "Nrm Open Stop"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "Nrm Closed Stop"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "StdON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "StdON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "StdON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "StdON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "StdON/FlStpOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "AutoON/FileOFF"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "AutoON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "AutoON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "4",
-                  "AutoON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "5",
-               "AutoON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "StdON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "StdON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "StdON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "StdON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "StdON/FlStpOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "AutoON/FileOFF"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "AutoON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "AutoON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "4",
-                  "AutoON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "5",
-               "AutoON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "StdON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "StdON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "StdON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "StdON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "StdON/FlStpOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "AutoON/FileOFF"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "AutoON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "AutoON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "4",
-                  "AutoON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "5",
-               "AutoON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "StdON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "StdON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "StdON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "StdON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "StdON/FlStpOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "AutoON/FileOFF"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "AutoON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "AutoON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "4",
-                  "AutoON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "5",
-               "AutoON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "StdON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "StdON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "StdON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "StdON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "StdON/FlStpOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "AutoON/FileOFF"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "AutoON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "AutoON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "4",
-                  "AutoON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "5",
-               "AutoON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "StdON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "StdON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "StdON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "StdON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "StdON/FlStpOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "AutoON/FileOFF"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "AutoON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "AutoON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "4",
-                  "AutoON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "5",
-               "AutoON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "StdON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "StdON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "StdON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "StdON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "StdON/FlStpOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "AutoON/FileOFF"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "AutoON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "AutoON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "4",
-                  "AutoON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "5",
-               "AutoON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "StdON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "StdON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "StdON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "StdON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "StdON/FlStpOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "AutoON/FileOFF"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "AutoON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "AutoON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "4",
-                  "AutoON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "5",
-               "AutoON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "StdON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "StdON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "StdON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "StdON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "StdON/FlStpOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "AutoON/FileOFF"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "AutoON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "AutoON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "4",
-                  "AutoON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "5",
-               "AutoON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "StdON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "StdON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "StdON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "StdON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "StdON/FlStpOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "AutoON/FileOFF"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "AutoON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "AutoON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "4",
-                  "AutoON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "5",
-               "AutoON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "StdON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "1",
-               "StdON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "1",
-                  "StdON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "2",
-               "StdON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "2",
-                  "StdON/FlStpOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "3",
-               "AutoON/FileOFF"
-            ],
-            "opts": [
-               [
-                  "3",
-                  "AutoON/FileOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "4",
-               "AutoON/NoOFF"
-            ],
-            "opts": [
-               [
-                  "4",
-                  "AutoON/NoOFF"
-               ]
-            ],
-            "type": "opt"
-         },
-         {
-            "name": "",
-            "desc": "",
-            "abrev": "",
-            "typeext": 0,
-            "default": [
-               "5",
-               "AutoON/FlStpOFF"
-            ],
-            "opts": [
-               [
-                  "0",
-                  "Off"
-               ]
-            ],
+            "default": "1",
+            "default_desc": "Limits ON",
+            "opts": [
+               {
+                  "value": "0",
+                  "desc": "Limits OFF"
+               }
+            ],
+            "sysvar": "46",
+            "type": "opt"
+         },
+         {
+            "name": "Switch#4 STOP Type ",
+            "desc": "Fixed STOP/E-STOP Input; PRS tools and PRTalpha tools must be set to 0; Nomally Closed remote Stop Button",
+            "abrev": "Stop",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "Nrm Closed Stop",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "Nrm Open Stop"
+               },
+               {
+                  "value": "2",
+                  "desc": "not used"
+               }
+            ],
+            "sysvar": "94",
+            "type": "opt"
+         },
+         {
+            "name": "Torch Laser or Control",
+            "desc": "Enables Control for Plasma Cutters (Inputs #1 & #2); Laser (Input #2); or Analog Controllers; [VH] activates Control",
+            "abrev": "th",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "Off",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "Torch"
+               },
+               {
+                  "value": "2",
+                  "desc": "Laser"
+               },
+               {
+                  "value": "3",
+                  "desc": "An1 Control"
+               },
+               {
+                  "value": "4",
+                  "desc": "An2 Control"
+               },
+               {
+                  "value": "5",
+                  "desc": "An1 & An2 Cont"
+               }
+            ],
+            "sysvar": "47",
+            "type": "opt"
+         },
+         {
+            "name": "Input Switch #1 Mode",
+            "desc": "Set Input Switch #1 as: Standard Input, Normally-Open Limit, Normally-Closed Limit, Normally-Open Stop, or Normally-Closed Stop Switch",
+            "abrev": "sw1",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "Standard Switch",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "Nrm Open Limit"
+               },
+               {
+                  "value": "2",
+                  "desc": "Nrm Closed Limit"
+               },
+               {
+                  "value": "3",
+                  "desc": "Nrm Open Stop"
+               },
+               {
+                  "value": "4",
+                  "desc": "Nrm Closed Stop"
+               }
+            ],
+            "sysvar": "91",
+            "type": "opt"
+         },
+         {
+            "name": "Input Switch #2 Mode",
+            "desc": "Set Input Switch #2 as: Standard Input, Normally-Open Limit, Normally-Closed Limit, Normally-Open Stop, or Normally-Closed Stop Switch",
+            "abrev": "sw2",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "Standard Switch",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "Nrm Open Limit"
+               },
+               {
+                  "value": "2",
+                  "desc": "Nrm Closed Limit"
+               },
+               {
+                  "value": "3",
+                  "desc": "Nrm Open Stop"
+               },
+               {
+                  "value": "4",
+                  "desc": "Nrm Closed Stop"
+               }
+            ],
+            "sysvar": "92",
+            "type": "opt"
+         },
+         {
+            "name": "Input Switch #3 Mode",
+            "desc": "Set Input Switch #3 as: Standard Input, Normally-Open Limit, Normally-Closed Limit, Normally-Open Stop, or Normally-Closed Stop Switch",
+            "abrev": "sw3",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "Standard Switch",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "Nrm Open Limit"
+               },
+               {
+                  "value": "2",
+                  "desc": "Nrm Closed Limit"
+               },
+               {
+                  "value": "3",
+                  "desc": "Nrm Open Stop"
+               },
+               {
+                  "value": "4",
+                  "desc": "Nrm Closed Stop"
+               }
+            ],
+            "sysvar": "93",
+            "type": "opt"
+         },
+         {
+            "name": "Input Switch #5 Mode",
+            "desc": "Set Input Switch #5 as: Standard Input, Normally-Open Limit, Normally-Closed Limit, Normally-Open Stop, or Normally-Closed Stop Switch",
+            "abrev": "sw5",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "Standard Switch",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "Nrm Open Limit"
+               },
+               {
+                  "value": "2",
+                  "desc": "Nrm Closed Limit"
+               },
+               {
+                  "value": "3",
+                  "desc": "Nrm Open Stop"
+               },
+               {
+                  "value": "4",
+                  "desc": "Nrm Closed Stop"
+               }
+            ],
+            "sysvar": "95",
+            "type": "opt"
+         },
+         {
+            "name": "Input Switch #6 Mode",
+            "desc": "Set Input Switch #6 as: Standard Input, Normally-Open Limit, Normally-Closed Limit, Normally-Open Stop, or Normally-Closed Stop Switch",
+            "abrev": "sw6",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "Standard Switch",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "Nrm Open Limit"
+               },
+               {
+                  "value": "2",
+                  "desc": "Nrm Closed Limit"
+               },
+               {
+                  "value": "3",
+                  "desc": "Nrm Open Stop"
+               },
+               {
+                  "value": "4",
+                  "desc": "Nrm Closed Stop"
+               }
+            ],
+            "sysvar": "96",
+            "type": "opt"
+         },
+         {
+            "name": "Input Switch #7 Mode",
+            "desc": "Set Input Switch #7 as: Standard Input, Normally-Open Limit, Normally-Closed Limit, Normally-Open Stop, or Normally-Closed Stop Switch",
+            "abrev": "sw7",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "Standard Switch",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "Nrm Open Limit"
+               },
+               {
+                  "value": "2",
+                  "desc": "Nrm Closed Limit"
+               },
+               {
+                  "value": "3",
+                  "desc": "Nrm Open Stop"
+               },
+               {
+                  "value": "4",
+                  "desc": "Nrm Closed Stop"
+               }
+            ],
+            "sysvar": "97",
+            "type": "opt"
+         },
+         {
+            "name": "Input Switch #8 Mode",
+            "desc": "Set Input Switch #8 as: Standard Input, Normally-Open Limit, Normally-Closed Limit, Normally-Open Stop, or Normally-Closed Stop Switch",
+            "abrev": "sw8",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "Standard Switch",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "Nrm Open Limit"
+               },
+               {
+                  "value": "2",
+                  "desc": "Nrm Closed Limit"
+               },
+               {
+                  "value": "3",
+                  "desc": "Nrm Open Stop"
+               },
+               {
+                  "value": "4",
+                  "desc": "Nrm Closed Stop"
+               }
+            ],
+            "sysvar": "98",
+            "type": "opt"
+         },
+         {
+            "name": "Input Switch #9 Mode",
+            "desc": "Set Input Switch #9 as: Standard Input, Normally-Open Limit, Normally-Closed Limit, Normally-Open Stop, or Normally-Closed Stop Switch",
+            "abrev": "sw9",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "Standard Switch",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "Nrm Open Limit"
+               },
+               {
+                  "value": "2",
+                  "desc": "Nrm Closed Limit"
+               },
+               {
+                  "value": "3",
+                  "desc": "Nrm Open Stop"
+               },
+               {
+                  "value": "4",
+                  "desc": "Nrm Closed Stop"
+               }
+            ],
+            "sysvar": "131",
+            "type": "opt"
+         },
+         {
+            "name": "Input Switch #10 Mode",
+            "desc": "Set Input Switch #10 as: Standard Input, Normally-Open Limit, Normally-Closed Limit, Normally-Open Stop, or Normally-Closed Stop Switch",
+            "abrev": "sw10",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "Standard Switch",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "Nrm Open Limit"
+               },
+               {
+                  "value": "2",
+                  "desc": "Nrm Closed Limit"
+               },
+               {
+                  "value": "3",
+                  "desc": "Nrm Open Stop"
+               },
+               {
+                  "value": "4",
+                  "desc": "Nrm Closed Stop"
+               }
+            ],
+            "sysvar": "132",
+            "type": "opt"
+         },
+         {
+            "name": "Input Switch #11 Mode",
+            "desc": "Set Input Switch #11 as: Standard Input, Normally-Open Limit, Normally-Closed Limit, Normally-Open Stop, or Normally-Closed Stop Switch",
+            "abrev": "sw11",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "Standard Switch",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "Nrm Open Limit"
+               },
+               {
+                  "value": "2",
+                  "desc": "Nrm Closed Limit"
+               },
+               {
+                  "value": "3",
+                  "desc": "Nrm Open Stop"
+               },
+               {
+                  "value": "4",
+                  "desc": "Nrm Closed Stop"
+               }
+            ],
+            "sysvar": "133",
+            "type": "opt"
+         },
+         {
+            "name": "Input Switch #12 Mode",
+            "desc": "Set Input Switch #12 as: Standard Input, Normally-Open Limit, Normally-Closed Limit, Normally-Open Stop, or Normally-Closed Stop Switch",
+            "abrev": "sw12",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "Standard Switch",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "Nrm Open Limit"
+               },
+               {
+                  "value": "2",
+                  "desc": "Nrm Closed Limit"
+               },
+               {
+                  "value": "3",
+                  "desc": "Nrm Open Stop"
+               },
+               {
+                  "value": "4",
+                  "desc": "Nrm Closed Stop"
+               }
+            ],
+            "sysvar": "134",
+            "type": "opt"
+         },
+         {
+            "name": "*Output Switch #1 Mode",
+            "desc": "*Spindle or Router #1; leave 0",
+            "abrev": "os1",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "StdON/FileOFF",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "StdON/NoOFF"
+               },
+               {
+                  "value": "2",
+                  "desc": "StdON/FlStpOFF"
+               },
+               {
+                  "value": "3",
+                  "desc": "AutoON/FileOFF"
+               },
+               {
+                  "value": "4",
+                  "desc": "AutoON/NoOFF"
+               },
+               {
+                  "value": "5",
+                  "desc": "AutoON/FlStpOFF"
+               }
+            ],
+            "sysvar": "111",
+            "type": "opt"
+         },
+         {
+            "name": "*Output Switch #2 Mode",
+            "desc": "*Spindle or Router #2; leave 0",
+            "abrev": "os2",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "StdON/FileOFF",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "StdON/NoOFF"
+               },
+               {
+                  "value": "2",
+                  "desc": "StdON/FlStpOFF"
+               },
+               {
+                  "value": "3",
+                  "desc": "AutoON/FileOFF"
+               },
+               {
+                  "value": "4",
+                  "desc": "AutoON/NoOFF"
+               },
+               {
+                  "value": "5",
+                  "desc": "AutoON/FlStpOFF"
+               }
+            ],
+            "sysvar": "112",
+            "type": "opt"
+         },
+         {
+            "name": "Output Switch #3 Mode",
+            "desc": "Setup Output Switch #3: Specify activation: Standard ON (Cmd) or Auto ON (with File or Move); Specify termination: OFF on File End, No OFF, or OFF on File End and Stop Button",
+            "abrev": "os3",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "StdON/FileOFF",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "StdON/NoOFF"
+               },
+               {
+                  "value": "2",
+                  "desc": "StdON/FlStpOFF"
+               },
+               {
+                  "value": "3",
+                  "desc": "AutoON/FileOFF"
+               },
+               {
+                  "value": "4",
+                  "desc": "AutoON/NoOFF"
+               },
+               {
+                  "value": "5",
+                  "desc": "AutoON/FlStpOFF"
+               }
+            ],
+            "sysvar": "113",
+            "type": "opt"
+         },
+         {
+            "name": "Output Switch #5 Mode",
+            "desc": "Setup Output Switch #5: Specify activation: Standard ON (Cmd) or Auto ON (with File or Move); Specify termination: OFF on File End, No OFF, or OFF on File End and Stop Button",
+            "abrev": "os5",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "StdON/FileOFF",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "StdON/NoOFF"
+               },
+               {
+                  "value": "2",
+                  "desc": "StdON/FlStpOFF"
+               },
+               {
+                  "value": "3",
+                  "desc": "AutoON/FileOFF"
+               },
+               {
+                  "value": "4",
+                  "desc": "AutoON/NoOFF"
+               },
+               {
+                  "value": "5",
+                  "desc": "AutoON/FlStpOFF"
+               }
+            ],
+            "sysvar": "115",
+            "type": "opt"
+         },
+         {
+            "name": "Output Switch #6 Mode",
+            "desc": "Setup Output Switch #6: Specify activation: Standard ON (Cmd) or Auto ON (with File or Move); Specify termination: OFF on File End, No OFF, or OFF on File End and Stop Button",
+            "abrev": "os6",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "StdON/FileOFF",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "StdON/NoOFF"
+               },
+               {
+                  "value": "2",
+                  "desc": "StdON/FlStpOFF"
+               },
+               {
+                  "value": "3",
+                  "desc": "AutoON/FileOFF"
+               },
+               {
+                  "value": "4",
+                  "desc": "AutoON/NoOFF"
+               },
+               {
+                  "value": "5",
+                  "desc": "AutoON/FlStpOFF"
+               }
+            ],
+            "sysvar": "116",
+            "type": "opt"
+         },
+         {
+            "name": "Output Switch #7 Mode",
+            "desc": "Setup Output Switch #7: Specify activation: Standard ON (Cmd) or Auto ON (with File or Move); Specify termination: OFF on File End, No OFF, or OFF on File End and Stop Button",
+            "abrev": "os7",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "StdON/FileOFF",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "StdON/NoOFF"
+               },
+               {
+                  "value": "2",
+                  "desc": "StdON/FlStpOFF"
+               },
+               {
+                  "value": "3",
+                  "desc": "AutoON/FileOFF"
+               },
+               {
+                  "value": "4",
+                  "desc": "AutoON/NoOFF"
+               },
+               {
+                  "value": "5",
+                  "desc": "AutoON/FlStpOFF"
+               }
+            ],
+            "sysvar": "117",
+            "type": "opt"
+         },
+         {
+            "name": "Output Switch #8 Mode",
+            "desc": "Setup Output Switch #8: Specify activation: Standard ON (Cmd) or Auto ON (with File or Move); Specify termination: OFF on File End, No OFF, or OFF on File End and Stop Button",
+            "abrev": "os8",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "StdON/FileOFF",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "StdON/NoOFF"
+               },
+               {
+                  "value": "2",
+                  "desc": "StdON/FlStpOFF"
+               },
+               {
+                  "value": "3",
+                  "desc": "AutoON/FileOFF"
+               },
+               {
+                  "value": "4",
+                  "desc": "AutoON/NoOFF"
+               },
+               {
+                  "value": "5",
+                  "desc": "AutoON/FlStpOFF"
+               }
+            ],
+            "sysvar": "118",
+            "type": "opt"
+         },
+         {
+            "name": "Output Switch #9 Mode",
+            "desc": "Setup Output Switch #9: Specify activation: Standard ON (Cmd) or Auto ON (with File or Move); Specify termination: OFF on File End, No OFF, or OFF on File End and Stop Button",
+            "abrev": "os9",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "StdON/FileOFF",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "StdON/NoOFF"
+               },
+               {
+                  "value": "2",
+                  "desc": "StdON/FlStpOFF"
+               },
+               {
+                  "value": "3",
+                  "desc": "AutoON/FileOFF"
+               },
+               {
+                  "value": "4",
+                  "desc": "AutoON/NoOFF"
+               },
+               {
+                  "value": "5",
+                  "desc": "AutoON/FlStpOFF"
+               }
+            ],
+            "sysvar": "119",
+            "type": "opt"
+         },
+         {
+            "name": "Output Switch #10 Mode",
+            "desc": "Setup Output Switch #10: Specify activation: Standard ON (Cmd) or Auto ON (with File or Move); Specify termination: OFF on File End, No OFF, or OFF on File End and Stop Button",
+            "abrev": "os10",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "StdON/FileOFF",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "StdON/NoOFF"
+               },
+               {
+                  "value": "2",
+                  "desc": "StdON/FlStpOFF"
+               },
+               {
+                  "value": "3",
+                  "desc": "AutoON/FileOFF"
+               },
+               {
+                  "value": "4",
+                  "desc": "AutoON/NoOFF"
+               },
+               {
+                  "value": "5",
+                  "desc": "AutoON/FlStpOFF"
+               }
+            ],
+            "sysvar": "120",
+            "type": "opt"
+         },
+         {
+            "name": "Output Switch #11 Mode",
+            "desc": "Setup Output Switch #11: Specify activation: Standard ON (Cmd) or Auto ON (with File or Move); Specify termination: OFF on File End, No OFF, or OFF on File End and Stop Button",
+            "abrev": "os11",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "StdON/FileOFF",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "StdON/NoOFF"
+               },
+               {
+                  "value": "2",
+                  "desc": "StdON/FlStpOFF"
+               },
+               {
+                  "value": "3",
+                  "desc": "AutoON/FileOFF"
+               },
+               {
+                  "value": "4",
+                  "desc": "AutoON/NoOFF"
+               },
+               {
+                  "value": "5",
+                  "desc": "AutoON/FlStpOFF"
+               }
+            ],
+            "sysvar": "121",
+            "type": "opt"
+         },
+         {
+            "name": "Output Switch #12 Mode",
+            "desc": "Setup Output Switch #12: Specify activation: Standard ON (Cmd) or Auto ON (with File or Move); Specify termination: OFF on File End, No OFF, or OFF on File End and Stop Button",
+            "abrev": "os12",
+            "typeext": 0,
+            "default": "0",
+            "default_desc": "StdON/FileOFF",
+            "opts": [
+               {
+                  "value": "1",
+                  "desc": "StdON/NoOFF"
+               },
+               {
+                  "value": "2",
+                  "desc": "StdON/FlStpOFF"
+               },
+               {
+                  "value": "3",
+                  "desc": "AutoON/FileOFF"
+               },
+               {
+                  "value": "4",
+                  "desc": "AutoON/NoOFF"
+               },
+               {
+                  "value": "5",
+                  "desc": "AutoON/FlStpOFF"
+               }
+            ],
+            "sysvar": "122",
             "type": "opt"
          }
       ]
@@ -6346,20 +4922,19 @@
       "name": "torch Height or laser",
       "params": [
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Activate Control",
+            "desc": "Turn On or Off Torch, Lasers, or Controllers (normally used in PartFile - enable specific system in [VN])",
+            "abrev": "actH",
             "typeext": 0,
-            "default": [
-               "1",
-               "On"
-            ],
+            "default": "0",
+            "default_desc": "Off",
             "opts": [
-               [
-                  "1",
-                  "On"
-               ]
+               {
+                  "value": "1",
+                  "desc": "On"
+               }
             ],
+            "sysvar": "0",
             "type": "sng"
          },
          {
@@ -6368,6 +4943,7 @@
             "abrev": "spd",
             "typeext": 0,
             "default": ".25",
+            "sysvar": 0,
             "range": [
                ".01",
                "1.00"
@@ -6380,6 +4956,7 @@
             "abrev": "loPWM",
             "typeext": 0,
             "default": "0",
+            "sysvar": 0,
             "range": [
                "0",
                "100"
@@ -6392,6 +4969,7 @@
             "abrev": "hiPWM",
             "typeext": 0,
             "default": "0",
+            "sysvar": 0,
             "range": [
                "0",
                "100"
@@ -6404,6 +4982,7 @@
             "abrev": "hz",
             "typeext": 0,
             "default": "5.4",
+            "sysvar": 0,
             "range": [
                "5.4",
                "40"
@@ -6416,6 +4995,7 @@
             "abrev": "tmlo",
             "typeext": 0,
             "default": "3",
+            "sysvar": 0,
             "range": [
                "1",
                "10"
@@ -6428,17 +5008,12 @@
             "abrev": "tmpt",
             "typeext": 0,
             "default": "0",
+            "sysvar": 0,
             "range": [
                "0",
                "400"
             ],
-            "type": "opt",
-            "opts": [
-               [
-                  "0",
-                  "Off"
-               ]
-            ]
+            "type": "opt"
          }
       ]
    },
@@ -6447,20 +5022,19 @@
       "name": "temporary tool Offset",
       "params": [
          {
-            "name": "",
-            "desc": "",
-            "abrev": "",
+            "name": "Activate Tool Offset",
+            "desc": "Turns On or Off the Temporary Offset for a Tool (e.g. Air Drill); FOR USE IN FILES ONLY! Must be followed by a positioning move.",
+            "abrev": "offsetON",
             "typeext": 0,
-            "default": [
-               "1",
-               "On"
-            ],
+            "default": "0",
+            "default_desc": "Off",
             "opts": [
-               [
-                  "1",
-                  "On"
-               ]
+               {
+                  "value": "1",
+                  "desc": "On"
+               }
             ],
+            "sysvar": "0",
             "type": "distm"
          },
          {
@@ -6469,6 +5043,7 @@
             "abrev": "offsetX",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -6481,6 +5056,7 @@
             "abrev": "offsetY",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -6493,6 +5069,7 @@
             "abrev": "offsetZ",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -6505,6 +5082,7 @@
             "abrev": "offsetA",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -6517,6 +5095,7 @@
             "abrev": "offsetB",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -6529,6 +5108,7 @@
             "abrev": "offsetC",
             "typeext": 0,
             "default": "",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -6551,6 +5131,7 @@
             "abrev": "nmBk",
             "typeext": 0,
             "default": "1",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -6563,6 +5144,7 @@
             "abrev": "reps",
             "typeext": 0,
             "default": "1",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -6585,6 +5167,7 @@
             "abrev": "fNm",
             "typeext": 0,
             "default": "Record.sbp",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -6597,6 +5180,7 @@
             "abrev": "nmBk",
             "typeext": 0,
             "default": "All",
+            "sysvar": 0,
             "range": [
                null,
                null
@@ -6643,6 +5227,7 @@
             "abrev": "fNm",
             "typeext": 0,
             "default": "CustomSettings.sbd",
+            "sysvar": 0,
             "range": [
                null,
                null

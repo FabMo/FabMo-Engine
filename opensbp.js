@@ -24,10 +24,11 @@ SBPRuntime.prototype.connect = function(machine) {
 	this._update();
 	this.status_handler = this._onG2Status.bind(this);
 	this.driver.on('status', this.status_handler);
-	log.info('Connected shopbot runtime');
+	log.info('Connected ShopBot runtime.');
 }
 
 SBPRuntime.prototype.disconnect = function() {
+	log.info('Disconnected ShopBot runtime.');
 	this.driver.removeListener(this.status_handler);
 }
 
@@ -339,17 +340,15 @@ SBPRuntime.prototype._scrubArguments = function(command, args) {
 	scrubbed_args = []
 	if(command in sb3_commands) {
 		params = sb3_commands[command].params
-		console.log(params)
 		for(i=0; i<params.length; i++) {
 			prm_param = params[i];
 			user_param = args[i];
 			if((args[i] != undefined) && (args[i] != "")) {
 				scrubbed_args.push(args[i])
 			} else {
-				scrubbed_args.push(prm_param.default);
+				scrubbed_args.push(prm_param.default || undefined);
 			}
 		}
-		console.log(scrubbed_args);
 	} else {
 		throw "Unknown command: " + command
 	}
@@ -435,7 +434,6 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 }
 
 SBPRuntime.prototype.evaluateUserVariable = function(v) {
-	log.info(v)
 	result = v.match(USERVAR_RE);
 	if(result == null) {return undefined};
 	if(v in this.user_vars) {
