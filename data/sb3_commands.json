@@ -1,0 +1,6730 @@
+{
+   "FP": {
+      "cmd": "FP",
+      "name": "PART FILE LOAD"
+   },
+   "FE": {
+      "cmd": "FE",
+      "name": "part file Edit",
+      "params": [
+         {
+            "name": "Part File Name",
+            "desc": "Part Files have a .sbp extension",
+            "abrev": "fNm",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "partfile"
+         }
+      ]
+   },
+   "FN": {
+      "cmd": "FN",
+      "name": "New blank part file"
+   },
+   "FG": {
+      "cmd": "FG",
+      "name": "Goto line / single step",
+      "params": [
+         {
+            "name": "Part File Name",
+            "desc": "Part Files have a .sbp extension",
+            "abrev": "fNm",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Proportion X",
+            "desc": "How much to scale the axis. 1.00 = Normal Size; 2.00 = Twice Normal",
+            "abrev": "pX",
+            "typeext": 0,
+            "default": "1.00",
+            "range": [
+               "0.00",
+               "100.00"
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Proportion Y",
+            "desc": "How much to scale the axis. 1.00 = Normal Size; 2.00 = Twice Normal",
+            "abrev": "pY",
+            "typeext": 0,
+            "default": "1.00",
+            "range": [
+               "0.00",
+               "100.00"
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Proportion Z",
+            "desc": "How much to scale the axis. 1.00 = Normal Size; 2.00 = Twice Normal",
+            "abrev": "pZ",
+            "typeext": 0,
+            "default": "1.00",
+            "range": [
+               "0.00",
+               "100.00"
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Repetitions",
+            "desc": "Number of Repeats with Plunge in template files",
+            "abrev": "Rp",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "opt",
+            "opts": [
+               [
+                  "0",
+                  "No Offset"
+               ]
+            ]
+         },
+         {
+            "name": "3D Offset",
+            "desc": "Treat starting location as temporary 0 in X&Y&Z",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "3D Offset"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "3D Offset"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "3D Offset",
+            "desc": "Treat starting location as temporary 0 in X&Y&Z",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "2D Offset"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "2D Offset"
+               ]
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "Plunge (per repetition)",
+            "desc": "Use for plunging in template files without Z movements",
+            "abrev": "plg",
+            "typeext": 3,
+            "default": "-0.00",
+            "range": [
+               null,
+               null
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "Tabbing",
+            "desc": "Activate ShopBot's automatic tabbing feature",
+            "abrev": "Tb",
+            "typeext": 0,
+            "default": "0 - Off",
+            "range": [
+               null,
+               null
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "Plunge from 0",
+            "desc": "Plunge from Z zero in template files, not from current Z location",
+            "abrev": "z0",
+            "typeext": 0,
+            "default": "0 - Off",
+            "range": [
+               null,
+               null
+            ],
+            "type": "axis"
+         },
+         {
+            "name": "Proportion A",
+            "desc": "How much to scale the axis. 1.00 = Normal Size; 2.00 = Twice Normal",
+            "abrev": "pA",
+            "typeext": 4,
+            "default": "1.00",
+            "range": [
+               "-100.00",
+               "100.00"
+            ],
+            "type": "axis"
+         },
+         {
+            "name": "Proportion B",
+            "desc": "How much to scale the axis. 1.00 = Normal Size; 2.00 = Twice Normal",
+            "abrev": "pB",
+            "typeext": 5,
+            "default": "1.00",
+            "range": [
+               "-100.00",
+               "100.00"
+            ],
+            "type": "partfile"
+         }
+      ]
+   },
+   "FC": {
+      "cmd": "FC",
+      "name": "file Conversions",
+      "params": [
+         {
+            "name": "Name of File to Convert",
+            "desc": "Select File to Convert; extension defines type of conversion, or select type",
+            "abrev": "fNm",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         }
+      ]
+   },
+   "FS": {
+      "cmd": "FS",
+      "name": "file Set part file folder",
+      "params": [
+         {
+            "name": "Part File Path & Folder",
+            "desc": "Specify a different active Part File Folder by defining full Path",
+            "abrev": "path",
+            "typeext": 0,
+            "default": "c:\\SbParts",
+            "range": [
+               null,
+               null
+            ],
+            "type": "obs"
+         },
+         {
+            "name": "File Mask",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": " ",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "Custom File Path & Folder",
+            "desc": "Specify a different active Custom File Folder by defining full Path; location of Custom Cuts",
+            "abrev": "Cpath",
+            "typeext": 0,
+            "default": "c:\\SbParts\\Custom",
+            "range": [
+               null,
+               null
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "MX": {
+      "cmd": "MX",
+      "name": "move X axis",
+      "params": [
+         {
+            "name": "New X location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvX",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits X"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "MY": {
+      "cmd": "MY",
+      "name": "move Y axis",
+      "params": [
+         {
+            "name": "New Y location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvY",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Y"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "MZ": {
+      "cmd": "MZ",
+      "name": "move Z axis",
+      "params": [
+         {
+            "name": "New Z location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvZ",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Z"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "M2": {
+      "cmd": "M2",
+      "name": "move in 2 axes (X and Y)",
+      "params": [
+         {
+            "name": "New X location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvX",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits X"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New Y location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvY",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Y"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "M3": {
+      "cmd": "M3",
+      "name": "move in 3 axes",
+      "params": [
+         {
+            "name": "New X location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvX",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Z"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New Y location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvY",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Y"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New Z location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvZ",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Z"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "MD": {
+      "cmd": "MD",
+      "name": "move Distance at Angle",
+      "params": [
+         {
+            "name": "Distance to Move",
+            "desc": "Distance to go at the specified angle",
+            "abrev": "mvDst",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "Angle",
+            "desc": "Direction to go in degrees, relative degrees (use R or L), clock (4:30), or compass (WSW)",
+            "abrev": "mvDir",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "Z Move",
+            "desc": "New Z location at end or move, or Relative Z change during move (use U or D)",
+            "abrev": "mvZr",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "MH": {
+      "cmd": "MH",
+      "name": "move Home (X and Y; Z Safe Height)"
+   },
+   "MA": {
+      "cmd": "MA",
+      "name": "move A axis",
+      "params": [
+         {
+            "name": "New A location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvA",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits A"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "MB": {
+      "cmd": "MB",
+      "name": "move B axis",
+      "params": [
+         {
+            "name": "New B location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvB",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits B"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "M4": {
+      "cmd": "M4",
+      "name": "move in 4 axes",
+      "params": [
+         {
+            "name": "New X location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvX",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits X"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New Y location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvY",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Y"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New Z location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvZ",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Z"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New A location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvA",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits A"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "M5": {
+      "cmd": "M5",
+      "name": "move in 5 axes",
+      "params": [
+         {
+            "name": "New X location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvX",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits X"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New Y location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvY",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Y"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New Z location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvZ",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Z"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New A location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvA",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits A"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New B location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvB",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits B"
+            ],
+            "type": "ops",
+            "opts": [
+               [
+                  "B",
+                  "Axis"
+               ]
+            ]
+         }
+      ]
+   },
+   "MN": {
+      "cmd": "MN",
+      "name": "move Nudge"
+   },
+   "MI": {
+      "cmd": "MI",
+      "name": "move Indexer or Oscillate",
+      "params": [
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "A",
+               "Axis"
+            ],
+            "opts": [
+               [
+                  "A",
+                  "Axis"
+               ]
+            ],
+            "type": "ops"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "C",
+               "Axis"
+            ],
+            "opts": [
+               [
+                  "C",
+                  "Axis"
+               ]
+            ],
+            "type": "ops"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "Z",
+               "Axis"
+            ],
+            "opts": [
+               [
+                  "Z",
+                  "Axis"
+               ]
+            ],
+            "type": "ops"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "O",
+               "OFF"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "clockwise"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "-1",
+               "counterclockwise"
+            ],
+            "opts": [
+               [
+                  "-1",
+                  "counterclockwise"
+               ]
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Rotary Speed",
+            "desc": "Approx Range in RPM (range 3 to 500); not used for Oscillate; min max depend on motor and resolution ",
+            "abrev": "spR",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Frequency of Oscillation",
+            "desc": "(.5 - 100; But actual MIN and MAX based on Motor Capability and Length of Move)",
+            "abrev": "spC",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "Distance of Oscillation",
+            "desc": "(How far to Move in Each Oscillation)",
+            "abrev": "diC",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         }
+      ]
+   },
+   "M0": {
+      "cmd": "M0",
+      "name": "motors 0FF"
+   },
+   "MO": {
+      "cmd": "MO",
+      "name": "motors oFF"
+   },
+   "MS": {
+      "cmd": "MS",
+      "name": "move Speeds",
+      "params": [
+         {
+            "name": "Move XY Speed",
+            "desc": "Move (Cutting) Speed in Current Units for X & Y Axis Movements ",
+            "abrev": "msXY",
+            "typeext": 0,
+            "default": "3",
+            "range": [
+               ".05",
+               "12"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Move Z Speed",
+            "desc": "Move (Cutting) Speed in Current Units for Z Axis Movements ",
+            "abrev": "msZ",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               ".05",
+               "10"
+            ],
+            "type": "distma"
+         },
+         {
+            "name": "A Move Speed",
+            "desc": "Move (Cutting) Speed in Current Units for A Axis Movements ",
+            "abrev": "msA",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distmb"
+         },
+         {
+            "name": "B Move Speed",
+            "desc": "Move (Cutting) Speed in Current Units for B Axis [default for Indexer]",
+            "abrev": "msB",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "JX": {
+      "cmd": "JX",
+      "name": "jog X axis",
+      "params": [
+         {
+            "name": "New X location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jX",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits X"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "JY": {
+      "cmd": "JY",
+      "name": "jog Y axis",
+      "params": [
+         {
+            "name": "New Y location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jY",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Y"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "JZ": {
+      "cmd": "JZ",
+      "name": "jog Z axis",
+      "params": [
+         {
+            "name": "New Z location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jZ",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Z"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "J2": {
+      "cmd": "J2",
+      "name": "jog in 2 axes(X and Y)",
+      "params": [
+         {
+            "name": "New X location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jX",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits X"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New Y location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jY",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Y"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "J3": {
+      "cmd": "J3",
+      "name": "jog in 3 axes",
+      "params": [
+         {
+            "name": "New X location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jX",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits X"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New Y location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jY",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Y"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New Z location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jZ",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Z"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "JH": {
+      "cmd": "JH",
+      "name": "jog Home (X and Y; Z Safe Height)"
+   },
+   "JA": {
+      "cmd": "JA",
+      "name": "jog A axis",
+      "params": [
+         {
+            "name": "New A location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jA",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits A"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "JB": {
+      "cmd": "JB",
+      "name": "jog B axis",
+      "params": [
+         {
+            "name": "New B location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jB",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits B"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "J4": {
+      "cmd": "J4",
+      "name": "jog in 4 axes",
+      "params": [
+         {
+            "name": "New X location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jX",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits X"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New Y location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jY",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Y"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New Z location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jZ",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Z"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New A location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jA",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits A"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "J5": {
+      "cmd": "J5",
+      "name": "jog in 5 axes",
+      "params": [
+         {
+            "name": "New X location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jX",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits X"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New Y location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jY",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Y"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New Z location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jZ",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Z"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New A location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jA",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits A"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New B location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jB",
+            "typeext": 2,
+            "default": "",
+            "range": [
+               null,
+               "Table limits B"
+            ],
+            "type": "distm"
+         }
+      ]
+   },
+   "JS": {
+      "cmd": "JS",
+      "name": "jog Speeds",
+      "params": [
+         {
+            "name": "XY Jog Speed",
+            "desc": "Jog (Rapid) Speed in Current Units for X & Y Axis Movements; Do Not Set Above Default Without Safety Precautions!",
+            "abrev": "jsXY",
+            "typeext": 0,
+            "default": "12",
+            "range": [
+               ".05",
+               "30"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Z Jog Speed",
+            "desc": "Jog (Rapid) Speed in Current Units for Z Axis Movements ",
+            "abrev": "jsZ",
+            "typeext": 0,
+            "default": "3",
+            "range": [
+               ".05",
+               "20"
+            ],
+            "type": "distma"
+         },
+         {
+            "name": "A Jog Speed",
+            "desc": "Jog (Rapid) Speed in Current Units for A Axis Movements ",
+            "abrev": "jsA",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distmb"
+         },
+         {
+            "name": "B Jog Speed",
+            "desc": "Jog (Rapid) Speed in Current Units for B Axis Movements [default for Indexer] ",
+            "abrev": "jsB",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "CC": {
+      "cmd": "CC",
+      "name": "cut Circle",
+      "params": [
+         {
+            "name": "Diameter",
+            "desc": "Circle or Arc diameter",
+            "abrev": "Dia",
+            "typeext": 1,
+            "default": "",
+            "range": [
+               null,
+               "Table limits"
+            ],
+            "type": "ops",
+            "opts": [
+               [
+                  "T",
+                  "true path"
+               ]
+            ]
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "I",
+               "Inside (holes)"
+            ],
+            "opts": [
+               [
+                  "I",
+                  "Inside (holes)"
+               ]
+            ],
+            "type": "ops"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "O",
+               "Outside (wheels)"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "clockwise"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "-1",
+               "counterclockwise"
+            ],
+            "opts": [
+               [
+                  "-1",
+                  "counterclockwise"
+               ]
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Begin Angle",
+            "desc": "Starting Point of circle or arc; 0 degrees is at top of circle; may leave blank for circle; 0 = default",
+            "abrev": "Bang",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "End Angle",
+            "desc": "Ending Point of circle or arc; 0 degrees is at top of circle; may leave blank for circles; default = 360",
+            "abrev": "Eang",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "Plunge (per repetition)",
+            "desc": "Distance to plunge on each repetition",
+            "abrev": "Plg",
+            "typeext": 3,
+            "default": "-0.00",
+            "range": [
+               null,
+               "Table limits Z"
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Repetitions",
+            "desc": "Number of repetitions/passes",
+            "abrev": "Rp",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Proportion X",
+            "desc": "How much to scale the axis. 1.00 = Normal Size; 2.00 = Twice Normal",
+            "abrev": "pX",
+            "typeext": 0,
+            "default": "1.00",
+            "range": [
+               null,
+               null
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Proportion Y",
+            "desc": "How much to scale the axis. 1.00 = Normal Size; 2.00 = Twice Normal",
+            "abrev": "pY",
+            "typeext": 0,
+            "default": "1.00",
+            "range": [
+               null,
+               null
+            ],
+            "type": "opt",
+            "opts": [
+               [
+                  "0",
+                  "No feature"
+               ]
+            ]
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Tabbing On"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Tabbing On"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "Pocketing"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "Pocketing"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "Spiral Plunge"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "Spiral Plunge"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "Spiral w/Bottom"
+            ],
+            "opts": [
+               [
+                  "4",
+                  "Spiral w/Bottom"
+               ]
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "No Pull-Up",
+            "desc": "Don't pull the Z up after finishing cut",
+            "abrev": "0Up",
+            "typeext": 0,
+            "default": "0 - Off",
+            "range": [
+               null,
+               null
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "Plunge from 0",
+            "desc": "Start plunges from 0 (not current Z location)",
+            "abrev": "z0",
+            "typeext": 0,
+            "default": "0 - Off",
+            "range": [
+               null,
+               null
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "CP": {
+      "cmd": "CP",
+      "name": "cut center Point circle",
+      "params": [
+         {
+            "name": "Diameter",
+            "desc": "Circle or Arc diameter",
+            "abrev": "Dia",
+            "typeext": 1,
+            "default": "0",
+            "range": [
+               null,
+               "Table limits"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "X Center",
+            "desc": "Center point X value",
+            "abrev": "cX",
+            "typeext": 1,
+            "default": "",
+            "range": [
+               null,
+               "Table limits "
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "Y Center",
+            "desc": "Center point Y value",
+            "abrev": "cY",
+            "typeext": 1,
+            "default": "",
+            "range": [
+               null,
+               "Table limits "
+            ],
+            "type": "ops",
+            "opts": [
+               [
+                  "T",
+                  "true path"
+               ]
+            ]
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "I",
+               "Inside (holes)"
+            ],
+            "opts": [
+               [
+                  "I",
+                  "Inside (holes)"
+               ]
+            ],
+            "type": "ops"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "O",
+               "Outside (wheels)"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "clockwise"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "-1",
+               "counterclockwise"
+            ],
+            "opts": [
+               [
+                  "-1",
+                  "counterclockwise"
+               ]
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Begin Angle",
+            "desc": "Starting Point of circle or arc; 0 degrees is at top of circle; may leave blank for circle; 0 = default",
+            "abrev": "Bang",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "End Angle",
+            "desc": "Ending Point of circle or arc; 0 degrees is at top of circle; may leave blank for circles; default = 360",
+            "abrev": "Eang",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "Plunge (per repetition)",
+            "desc": "Distance to plunge on each repetition",
+            "abrev": "Plg",
+            "typeext": 3,
+            "default": "-0.00",
+            "range": [
+               null,
+               "Table limits Z"
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Repetitions",
+            "desc": "Number of repetitions/passes",
+            "abrev": "Rp",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Proportion X",
+            "desc": "How much to scale the axis. 1.00 = Normal Size; 2.00 = Twice Normal",
+            "abrev": "pX",
+            "typeext": 0,
+            "default": "1.00",
+            "range": [
+               null,
+               null
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Proportion Y",
+            "desc": "How much to scale the axis. 1.00 = Normal Size; 2.00 = Twice Normal",
+            "abrev": "pY",
+            "typeext": 0,
+            "default": "1.00",
+            "range": [
+               null,
+               null
+            ],
+            "type": "opt",
+            "opts": [
+               [
+                  "0",
+                  "No feature"
+               ]
+            ]
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Tabbing On"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Tabbing On"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "Pocketing"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "Pocketing"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "Spiral Plunge"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "Spiral Plunge"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "Spiral w/Bottom"
+            ],
+            "opts": [
+               [
+                  "4",
+                  "Spiral w/Bottom"
+               ]
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "No Pull-Up",
+            "desc": "Don't pull the Z up after finishing cut",
+            "abrev": "0Up",
+            "typeext": 0,
+            "default": "0 - Off",
+            "range": [
+               null,
+               null
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "Plunge from 0",
+            "desc": "Start plunges from 0 (not current Z location)",
+            "abrev": "z0",
+            "typeext": 0,
+            "default": "0 - Off",
+            "range": [
+               null,
+               null
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "CA": {
+      "cmd": "CA",
+      "name": "cut Arch",
+      "params": [
+         {
+            "name": "Arch Length",
+            "desc": "Length of the base of the arch",
+            "abrev": "Len",
+            "typeext": 1,
+            "default": "0",
+            "range": [
+               null,
+               "Table limits"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "Arch Height",
+            "desc": "Height of the arch at midpoint",
+            "abrev": "Ht",
+            "typeext": 1,
+            "default": "0",
+            "range": [
+               null,
+               "Table limits"
+            ],
+            "type": "ops",
+            "opts": [
+               [
+                  "T",
+                  "true path"
+               ]
+            ]
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "I",
+               "Inside (holes)"
+            ],
+            "opts": [
+               [
+                  "I",
+                  "Inside (holes)"
+               ]
+            ],
+            "type": "ops"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "O",
+               "Outside (wheels)"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "clockwise"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "-1",
+               "counterclockwise"
+            ],
+            "opts": [
+               [
+                  "-1",
+                  "counterclockwise"
+               ]
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Alignment Angle",
+            "desc": "Orientation of the arch in degrees; 0 horizontal",
+            "abrev": "Ang",
+            "typeext": 0,
+            "default": "0.00",
+            "range": [
+               "0",
+               "360"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "Plunge (per repetition)",
+            "desc": "Distance to plunge on each repetition",
+            "abrev": "Plg",
+            "typeext": 3,
+            "default": "-0.00",
+            "range": [
+               null,
+               "Table limits Z"
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Repetitions",
+            "desc": "Number of repetitions/passes",
+            "abrev": "Rp",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Proportion X",
+            "desc": "How much to scale the axis. 1.00 = Normal Size; 2.00 = Twice Normal",
+            "abrev": "pX",
+            "typeext": 0,
+            "default": "1.00",
+            "range": [
+               null,
+               null
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Proportion Y",
+            "desc": "How much to scale the axis. 1.00 = Normal Size; 2.00 = Twice Normal",
+            "abrev": "pY",
+            "typeext": 0,
+            "default": "1.00",
+            "range": [
+               null,
+               null
+            ],
+            "type": "opt",
+            "opts": [
+               [
+                  "0",
+                  "No feature"
+               ]
+            ]
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Tabbing On"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Tabbing On"
+               ]
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "No Pull-Up",
+            "desc": "Don't pull the Z up after finishing cut",
+            "abrev": "0Up",
+            "typeext": 0,
+            "default": "0 - Off",
+            "range": [
+               null,
+               null
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "Plunge from 0",
+            "desc": "Start plunges from 0 (not current Z location)",
+            "abrev": "z0",
+            "typeext": 0,
+            "default": "0 - Off",
+            "range": [
+               null,
+               null
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "CG": {
+      "cmd": "CG",
+      "name": "cut G-code circle",
+      "params": [
+         {
+            "name": "Diameter",
+            "desc": "Circle or Arc diameter [use diameter OR XY-centerpoints, not both]",
+            "abrev": "Dia",
+            "typeext": 1,
+            "default": "",
+            "range": [
+               null,
+               "Table limits"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "End X",
+            "desc": "End of Arc on X Axis",
+            "abrev": "eX",
+            "typeext": 1,
+            "default": "0",
+            "range": [
+               null,
+               "Table limits X"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "End Y",
+            "desc": "End of Arc on Y Axis",
+            "abrev": "eY",
+            "typeext": 1,
+            "default": "0",
+            "range": [
+               null,
+               "Table limits Y"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "X Center",
+            "desc": "Center point X value [do not use if diameter given]",
+            "abrev": "cX",
+            "typeext": 1,
+            "default": "",
+            "range": [
+               null,
+               "Table limits"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "Y Center",
+            "desc": "Center point Y value [do not use if diameter given]",
+            "abrev": "cY",
+            "typeext": 1,
+            "default": "",
+            "range": [
+               null,
+               "Table limits"
+            ],
+            "type": "ops",
+            "opts": [
+               [
+                  "T",
+                  "true path"
+               ]
+            ]
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "I",
+               "Inside (holes)"
+            ],
+            "opts": [
+               [
+                  "I",
+                  "Inside (holes)"
+               ]
+            ],
+            "type": "ops"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "O",
+               "Outside (wheels)"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "clockwise"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "-1",
+               "counterclockwise"
+            ],
+            "opts": [
+               [
+                  "-1",
+                  "counterclockwise"
+               ]
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "Plunge (per repetition)",
+            "desc": "Distance to plunge on each repetition",
+            "abrev": "Plg",
+            "typeext": 3,
+            "default": "-0.00",
+            "range": [
+               null,
+               "Table limits Z"
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Repetitions",
+            "desc": "Number of repetitions/passes",
+            "abrev": "Rp",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Proportion X",
+            "desc": "How much to scale the axis. 1.00 = Normal Size; 2.00 = Twice Normal",
+            "abrev": "pX",
+            "typeext": 0,
+            "default": "1.00",
+            "range": [
+               null,
+               null
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Proportion Y",
+            "desc": "How much to scale the axis. 1.00 = Normal Size; 2.00 = Twice Normal",
+            "abrev": "pY",
+            "typeext": 0,
+            "default": "1.00",
+            "range": [
+               null,
+               null
+            ],
+            "type": "opt",
+            "opts": [
+               [
+                  "0",
+                  "No feature"
+               ]
+            ]
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Tabbing On"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Tabbing On"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "Pocketing"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "Pocketing"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "Spiral Plunge"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "Spiral Plunge"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "Spiral w/Bottom"
+            ],
+            "opts": [
+               [
+                  "4",
+                  "Spiral w/Bottom"
+               ]
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "No Pull-Up",
+            "desc": "Don't pull the Z up after finishing cut",
+            "abrev": "0Up",
+            "typeext": 0,
+            "default": "0 - Off",
+            "range": [
+               null,
+               null
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "Plunge from 0",
+            "desc": "Start plunges from 0 (not current Z location)",
+            "abrev": "z0",
+            "typeext": 0,
+            "default": "0 - Off",
+            "range": [
+               null,
+               null
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "CR": {
+      "cmd": "CR",
+      "name": "cut Rectangle",
+      "params": [
+         {
+            "name": "Length in X",
+            "desc": "Length of the X side of the rectangle",
+            "abrev": "lenX",
+            "typeext": 1,
+            "default": "0",
+            "range": [
+               null,
+               "Table limits X"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "Length in Y",
+            "desc": "Length of the Y side of the rectangle",
+            "abrev": "lenY",
+            "typeext": 1,
+            "default": "0",
+            "range": [
+               null,
+               "Table limits Y"
+            ],
+            "type": "ops",
+            "opts": [
+               [
+                  "T",
+                  "true path"
+               ]
+            ]
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "I",
+               "Inside (holes)"
+            ],
+            "opts": [
+               [
+                  "I",
+                  "Inside (holes)"
+               ]
+            ],
+            "type": "ops"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "O",
+               "Outside (wheels)"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "clockwise"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "-1",
+               "counterclockwise"
+            ],
+            "opts": [
+               [
+                  "-1",
+                  "counterclockwise"
+               ]
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Start Position",
+            "desc": "Starting Point of rectangle; 1 to 4 starting from top left; 4=bottom left default",
+            "abrev": "sCorn",
+            "typeext": 0,
+            "default": "4",
+            "range": [
+               "1",
+               "4"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "Plunge (per repetition)",
+            "desc": "Distance to plunge on each repetition",
+            "abrev": "Plg",
+            "typeext": 3,
+            "default": "-0.00",
+            "range": [
+               null,
+               "Table limits Z"
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Repetitions",
+            "desc": "Number of repetitions/passes",
+            "abrev": "Rp",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "opt",
+            "opts": [
+               [
+                  "0",
+                  "No feature"
+               ]
+            ]
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Tabbing On"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Tabbing On"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "Pocketing (outside in)"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "Pocketing (outside in)"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "Pocketing (inside out)"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "Pocketing (inside out)"
+               ]
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "Plunge from 0",
+            "desc": "Start plunges from 0 (not current Z location)",
+            "abrev": "z0",
+            "typeext": 0,
+            "default": "0 - Off",
+            "range": [
+               null,
+               null
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Rotation Angle",
+            "desc": "Orientation around Z in degrees; 0 horizontal",
+            "abrev": "Rang",
+            "typeext": 0,
+            "default": "0.00",
+            "range": [
+               "0",
+               "360"
+            ],
+            "type": "opt",
+            "opts": [
+               [
+                  "3",
+                  "Z axis"
+               ]
+            ]
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "A axis"
+            ],
+            "opts": [
+               [
+                  "4",
+                  "A axis"
+               ]
+            ],
+            "type": "int"
+         }
+      ]
+   },
+   "CS": {
+      "cmd": "CS",
+      "name": "Setup custom cuts"
+   },
+   "CN": {
+      "cmd": "CN",
+      "name": "Custom Number",
+      "params": [
+         {
+            "name": "Custom Cut Number",
+            "desc": "Number of this Custom Cut; In PartFile use [CN, number] or [C#, number], if lower than 10 can be just [C2]",
+            "abrev": "num",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               "1",
+               "99"
+            ],
+            "type": "int"
+         }
+      ]
+   },
+   "C#": {
+      "cmd": "C#",
+      "name": "Custom Number #",
+      "params": [
+         {
+            "name": "Custom Cut Number",
+            "desc": "Number of this Custom Cut; In PartFile use [CN, number] or [C#, number], if lower than 10 can be just [C2]",
+            "abrev": "num",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               "1",
+               "99"
+            ],
+            "type": "opt",
+            "opts": [
+               [
+                  "0",
+                  "No Stack"
+               ]
+            ]
+         }
+      ]
+   },
+   "ZX": {
+      "cmd": "ZX",
+      "name": "zero X axis"
+   },
+   "ZY": {
+      "cmd": "ZY",
+      "name": "zero Y axis"
+   },
+   "ZZ": {
+      "cmd": "ZZ",
+      "name": "zero Z axis"
+   },
+   "Z2": {
+      "cmd": "Z2",
+      "name": "zero 2 axes (X and Y)"
+   },
+   "Z3": {
+      "cmd": "Z3",
+      "name": "zero 3 axes (X, Y and Z)"
+   },
+   "ZA": {
+      "cmd": "ZA",
+      "name": "zero A axis"
+   },
+   "ZB": {
+      "cmd": "ZB",
+      "name": "zero B axis"
+   },
+   "Z4": {
+      "cmd": "Z4",
+      "name": "zero 4 axes"
+   },
+   "Z5": {
+      "cmd": "Z5",
+      "name": "zero 5 axes"
+   },
+   "ZT": {
+      "cmd": "ZT",
+      "name": "zero Table base coordinates"
+   },
+   "SA": {
+      "cmd": "SA",
+      "name": "set to Absolute mode"
+   },
+   "SC": {
+      "cmd": "SC",
+      "name": "set Continuous",
+      "params": [
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Cont/Stack"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Cont/Stack"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "Break Here"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "Break Here"
+               ]
+            ],
+            "type": "ck"
+         }
+      ]
+   },
+   "SF": {
+      "cmd": "SF",
+      "name": "set File limit checking",
+      "params": [
+         {
+            "name": "File Limit Checking",
+            "desc": "Sets up software limit checking during file reading",
+            "abrev": "lim",
+            "typeext": 0,
+            "default": "0 - Off",
+            "range": [
+               "0",
+               "1"
+            ],
+            "type": "str"
+         }
+      ]
+   },
+   "SI": {
+      "cmd": "SI",
+      "name": "send Command LInes { I }",
+      "params": [
+         {
+            "name": "1- (Command & Params)",
+            "desc": "Command (up to 10 lines; ShopBot or G-code; Click OK to Run; I is shortcut)",
+            "abrev": "c1",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "2-",
+            "desc": "Command (up to 10 lines; ShopBot or G-code; Click OK to Run)",
+            "abrev": "c2",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "3-",
+            "desc": "Command (up to 10 lines; ShopBot or G-code; Click OK to Run)",
+            "abrev": "c3",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "4-",
+            "desc": "Command (up to 10 lines; ShopBot or G-code; Click OK to Run)",
+            "abrev": "c4",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "5-",
+            "desc": "Command (up to 10 lines; ShopBot or G-code; Click OK to Run)",
+            "abrev": "c5",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "6-",
+            "desc": "Command (up to 10 lines; ShopBot or G-code; Click OK to Run)",
+            "abrev": "c6",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "7-",
+            "desc": "Command (up to 10 lines; ShopBot or G-code; Click OK to Run)",
+            "abrev": "c7",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "8-",
+            "desc": "Command (up to 10 lines; ShopBot or G-code; Click OK to Run)",
+            "abrev": "c8",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "9-",
+            "desc": "Command (up to 10 lines; ShopBot or G-code; Click OK to Run)",
+            "abrev": "c9",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "10-",
+            "desc": "Command (up to 10 lines; ShopBot or G-code; Click OK to Run)",
+            "abrev": "c10",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "int"
+         }
+      ]
+   },
+   "SK": {
+      "cmd": "SK",
+      "name": "set to KeyPad control w/ arrow keys { K }"
+   },
+   "SL": {
+      "cmd": "SL",
+      "name": "cLear User Variables"
+   },
+   "SM": {
+      "cmd": "SM",
+      "name": "set to Move/Cut mode"
+   },
+   "SO": {
+      "cmd": "SO",
+      "name": "set Output",
+      "params": [
+         {
+            "name": "Output Number",
+            "desc": "Select the Output to Turn ON or OFF (1 - 12)",
+            "abrev": "sw",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               "0",
+               "12"
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "Setting ",
+            "desc": "Set Output ON or OFF (#4 a special case, may also be -1 to -4 to set Mode, See Help Command Ref)",
+            "abrev": "cond",
+            "typeext": 0,
+            "default": "0 - Off",
+            "range": [
+               "-4",
+               "1"
+            ],
+            "type": "sng"
+         }
+      ]
+   },
+   "SP": {
+      "cmd": "SP",
+      "name": "set to Preview mode"
+   },
+   "SR": {
+      "cmd": "SR",
+      "name": "set to Relative mode"
+   },
+   "SS": {
+      "cmd": "SS",
+      "name": "set Window Size and location to defaults"
+   },
+   "ST": {
+      "cmd": "ST",
+      "name": "set to Table base coordinates"
+   },
+   "SV": {
+      "cmd": "SV",
+      "name": "set Values"
+   },
+   "SW": {
+      "cmd": "SW",
+      "name": "set Warning duration",
+      "params": [
+         {
+            "name": "Duration of Warning",
+            "desc": "Sets the duration of warning before movement begins (seconds)",
+            "abrev": "dur",
+            "typeext": 0,
+            "default": "2",
+            "range": [
+               "0",
+               "30"
+            ],
+            "type": "str"
+         },
+         {
+            "name": "(temp Packet Size)",
+            "desc": "Sets temporary Packet Size for improving Probing efficiancy, special use only (20-340)",
+            "abrev": "ps",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "(temp Packet Buffer Number)",
+            "desc": "Sets temporary Packet Buffer Number for improving Probing efficiancy, special use only (3-12)",
+            "abrev": "pn",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         }
+      ]
+   },
+   "VC": {
+      "cmd": "VC",
+      "name": "Cutter values",
+      "params": [
+         {
+            "name": "Cutter Diameter",
+            "desc": "Set the diameter for the cutter in your tool; determines the offset for inside and outside cuts",
+            "abrev": "dia",
+            "typeext": 0,
+            "default": "0.25",
+            "range": [
+               null,
+               null
+            ],
+            "type": "obs"
+         },
+         {
+            "name": "Kick Correction X",
+            "desc": "",
+            "abrev": "kX",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "obs"
+         },
+         {
+            "name": "Kick CorrectionY",
+            "desc": "",
+            "abrev": "kY",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Safe-Z Pull-Up",
+            "desc": "Height Z is raised to before Move Home or Jog Home; 1.00 typical value; leave blank to disable pull-up",
+            "abrev": "sfZ",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "opt",
+            "opts": [
+               [
+                  "0",
+                  "plunge negative"
+               ]
+            ]
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "plunge positive"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "plunge positive"
+               ]
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Pocket Overlap",
+            "desc": "Percentage that each pass during pocketing overlaps the previous",
+            "abrev": "pktLp",
+            "typeext": 0,
+            "default": "10",
+            "range": [
+               "0",
+               "100"
+            ],
+            "type": "distma"
+         },
+         {
+            "name": "Safe-A Pull-Up",
+            "desc": "Height A is raised to before Move Home or Jog Home; 1.00 typical value; leave blank to disable pull-up",
+            "abrev": "sfA",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "Triggered OutPut Switch",
+            "desc": "Enable Contignet Output Switch that is triggered by vertical move; e.g. for automatic Air Drill activation",
+            "abrev": "ctACT",
+            "typeext": 0,
+            "default": "0 - Off",
+            "range": [
+               "0",
+               "1"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Trigger ON Threshold",
+            "desc": "Sets the ON Threshold; Height below which the designated Output Switch turns ON in plunge of designated axis",
+            "abrev": "ctLO",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Trigger OFF Threshold",
+            "desc": "Sets the OFF Threshold; Height above which the designated Output Switch turns OFF in pull up of designated axis",
+            "abrev": "ctHI",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "Vertical Axis Monitored",
+            "desc": "Trigger on Z axis or A axis motion",
+            "abrev": "ctAX",
+            "typeext": 0,
+            "default": "Z",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "Triggered OutPut #",
+            "desc": "Number of the OutPut Switch that is used; #1,2 & 4 Reserved",
+            "abrev": "sw",
+            "typeext": 0,
+            "default": "8",
+            "range": [
+               "1",
+               "12"
+            ],
+            "type": "distm"
+         }
+      ]
+   },
+   "VP": {
+      "cmd": "VP",
+      "name": "Preview screen values",
+      "params": [
+         {
+            "name": "Grid Size",
+            "desc": "Spacing of Grid Line displayed on Table (in current units)",
+            "abrev": "grid",
+            "typeext": 0,
+            "default": "6",
+            "range": [
+               "1",
+               "100"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Table Size X Axis",
+            "desc": "Size of the Table in the X dimension",
+            "abrev": "tblX",
+            "typeext": 0,
+            "default": "96",
+            "range": [
+               "4",
+               "360"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Table Size Y Axis",
+            "desc": "Size of the Table in the Y dimension",
+            "abrev": "tblY",
+            "typeext": 0,
+            "default": "48",
+            "range": [
+               "4",
+               "120"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Table Size Z Axis",
+            "desc": "Size of the Table in the Z dimension",
+            "abrev": "tblZ",
+            "typeext": 0,
+            "default": "6",
+            "range": [
+               "2",
+               "36"
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "Cutting Simulations",
+            "desc": "Set startup state for whether part simulation shows process of cutting",
+            "abrev": "sim",
+            "typeext": 0,
+            "default": "0 - Off",
+            "range": [
+               null,
+               null
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "Draw Tool",
+            "desc": "Set startup conditions of whether wire frame of tool shape is drawn in simulations and step-throughs",
+            "abrev": "rot",
+            "typeext": 0,
+            "default": "0 - Off",
+            "range": [
+               null,
+               null
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "Start at Real Position",
+            "desc": "Set whether Preview starts from position of real tool",
+            "abrev": "strt",
+            "typeext": 0,
+            "default": "1 - On",
+            "range": [
+               null,
+               null
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "Draw Jogs",
+            "desc": "Set whether tool path lines for jogs are drawn (in red)",
+            "abrev": "jog",
+            "typeext": 0,
+            "default": "1 - On",
+            "range": [
+               null,
+               null
+            ],
+            "type": "opt",
+            "opts": [
+               [
+                  "-1",
+                  "Leave as is"
+               ]
+            ]
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Force open"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Force open"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "0",
+               "Force closed"
+            ],
+            "opts": [
+               [
+                  "-1",
+                  "Leave as is"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Force open"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Force open"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "0",
+               "Force closed"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "Force closed"
+               ]
+            ],
+            "type": "str"
+         }
+      ]
+   },
+   "VV": {
+      "cmd": "VV",
+      "name": "define Variable values",
+      "params": [
+         {
+            "name": "Variable Name",
+            "desc": "Variable name starting with '&' (e.g. &MyVariableName)",
+            "abrev": "name",
+            "typeext": 0,
+            "default": "&variable_1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "Value",
+            "desc": "Value for this variable, number or text",
+            "abrev": "val",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         }
+      ]
+   },
+   "VS": {
+      "cmd": "VS",
+      "name": "Speed values",
+      "params": [
+         {
+            "name": "XY Move Speed",
+            "desc": "Move (Cutting) Speed in Current Units for XY Table Movements ",
+            "abrev": "msXY",
+            "typeext": 0,
+            "default": "3",
+            "range": [
+               ".05",
+               "12"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Z Move Speed",
+            "desc": "Move (Cutting) Speed in Current Units for Z Axis Movements ",
+            "abrev": "msZ",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               ".05",
+               "10"
+            ],
+            "type": "distma"
+         },
+         {
+            "name": "A Move Speed",
+            "desc": "Move (Cutting) Speed in Current Units for A Axis Movements ",
+            "abrev": "msA",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               "0.01",
+               "5000"
+            ],
+            "type": "distmb"
+         },
+         {
+            "name": "B Move Speed",
+            "desc": "Move (Cutting) Speed in Current Units for B Axis [default for Indexer]",
+            "abrev": "msB",
+            "typeext": 0,
+            "default": "50",
+            "range": [
+               "0.01",
+               "5000"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "XY Jog Speed",
+            "desc": "Jog (Rapid) Speed in Current Units for X & Y Axis Movements; Do Not Set Above Default Without Safety Precautions!",
+            "abrev": "jsXY",
+            "typeext": 0,
+            "default": "12",
+            "range": [
+               ".05",
+               "30"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Z Jog Speed",
+            "desc": "Jog (Rapid) Speed in Current Units for Z Axis Movements ",
+            "abrev": "jsZ",
+            "typeext": 0,
+            "default": "3",
+            "range": [
+               ".05",
+               "20"
+            ],
+            "type": "distma"
+         },
+         {
+            "name": "A Jog Speed",
+            "desc": "Jog (Rapid) Speed in Current Units for A Axis Movements ",
+            "abrev": "jsA",
+            "typeext": 0,
+            "default": "3",
+            "range": [
+               "0.01",
+               "5000"
+            ],
+            "type": "distmb"
+         },
+         {
+            "name": "B Jog Speed",
+            "desc": "Jog (Rapid) Speed in Current Units for B Axis Movements [default for Indexer] ",
+            "abrev": "jsB",
+            "typeext": 0,
+            "default": "100",
+            "range": [
+               "0.01",
+               "5000"
+            ],
+            "type": "distm"
+         }
+      ]
+   },
+   "VR": {
+      "cmd": "VR",
+      "name": "Ramp values",
+      "params": [
+         {
+            "name": "XY Move Ramp Speed",
+            "desc": "Ramp Starting Speed in Current Units for XY Moves ",
+            "abrev": "mrXY",
+            "typeext": 0,
+            "default": ".4",
+            "range": [
+               ".05",
+               "2"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Z Move Ramp Speed",
+            "desc": "Ramp Starting Speed in Current Units for Z Moves ",
+            "abrev": "mrZ",
+            "typeext": 0,
+            "default": ".4",
+            "range": [
+               ".05",
+               "2"
+            ],
+            "type": "distma"
+         },
+         {
+            "name": "A Move Ramp Speed",
+            "desc": "Ramp Starting Speed in Current Units for A Moves ",
+            "abrev": "mrA",
+            "typeext": 0,
+            "default": ".4",
+            "range": [
+               ".05",
+               "100"
+            ],
+            "type": "distmb"
+         },
+         {
+            "name": "B Move Ramp Speed",
+            "desc": "Ramp Starting Speed in Current Units for B Moves ",
+            "abrev": "mrB",
+            "typeext": 0,
+            "default": ".4",
+            "range": [
+               ".05",
+               "100"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "XY Jog Ramp Speed",
+            "desc": "Ramp Starting Speed in Current Units for XY Jogs ",
+            "abrev": "jrXY",
+            "typeext": 0,
+            "default": ".4",
+            "range": [
+               ".05",
+               "2"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Z Jog Ramp Speed",
+            "desc": "Ramp Starting Speed in Current Units for Z Jogs ",
+            "abrev": "jrZ",
+            "typeext": 0,
+            "default": ".4",
+            "range": [
+               ".05",
+               "2"
+            ],
+            "type": "distma"
+         },
+         {
+            "name": "A Jog Ramp Speed",
+            "desc": "Ramp Starting Speed in Current Units for A Jogs ",
+            "abrev": "jrA",
+            "typeext": 0,
+            "default": ".4",
+            "range": [
+               ".05",
+               "100"
+            ],
+            "type": "distmb"
+         },
+         {
+            "name": "B Jog Ramp Speed",
+            "desc": "Ramp Starting Speed in Current Units for B Jogs ",
+            "abrev": "jrB",
+            "typeext": 0,
+            "default": ".4",
+            "range": [
+               ".05",
+               "100"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Move Ramp Rate",
+            "desc": "(Acceleration/Deceleration) Distance over which Speed Increases/Decreases by 2 Units, for Move Ramps",
+            "abrev": "rateM",
+            "typeext": 0,
+            "default": ".2",
+            "range": [
+               ".025",
+               "10"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Jog Ramp Rate",
+            "desc": "(Acceleration/Deceleration) Distance over which Speed Increases/Decreases by 2 Units, for Jog Ramps",
+            "abrev": "rateJ",
+            "typeext": 0,
+            "default": ".2",
+            "range": [
+               ".025",
+               "10"
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "3D Ramp Threshold",
+            "desc": "Sensitize (by decreasing) or desensitize 3D (vertical) ramping",
+            "abrev": "3dT",
+            "typeext": 0,
+            "default": "100",
+            "range": [
+               "1",
+               "1000"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Minimum Dist to Check",
+            "desc": "Segment size required to test for ramp (should not need changing)",
+            "abrev": "minD",
+            "typeext": 0,
+            "default": ".10",
+            "range": [
+               ".001",
+               "1"
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Slow Corner Speed",
+            "desc": "Percentage to slow from full speed on gentle corners",
+            "abrev": "crnr",
+            "typeext": 0,
+            "default": "65",
+            "range": [
+               "20",
+               "99"
+            ],
+            "type": "obs"
+         },
+         {
+            "name": "Fast Stop Threshold",
+            "desc": "",
+            "abrev": "fStop",
+            "typeext": 0,
+            "default": "0",
+            "range": [
+               null,
+               null
+            ],
+            "type": "obs"
+         },
+         {
+            "name": "KeyPad Stop Threshold",
+            "desc": "",
+            "abrev": "thStop",
+            "typeext": 0,
+            "default": "0",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "KeyPad Ramp Rate",
+            "desc": "(Acceleration/Deceleration) Distance over which Speed Increases/Decreases by 2 Units, for Move Ramps",
+            "abrev": "rateK",
+            "typeext": 0,
+            "default": ".2",
+            "range": [
+               ".1",
+               "2"
+            ],
+            "type": "distm"
+         }
+      ]
+   },
+   "VB": {
+      "cmd": "VB",
+      "name": "taBbing values",
+      "params": [
+         {
+            "name": "Distance to Pull Up",
+            "desc": "How high up the Z axis comes during a tab",
+            "abrev": "up",
+            "typeext": 0,
+            "default": ".1",
+            "range": [
+               "-1",
+               "1"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Distance to Next Tab",
+            "desc": "How far appart the tabs are",
+            "abrev": "nxt",
+            "typeext": 0,
+            "default": "4.0",
+            "range": [
+               ".001",
+               "50"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Size of the Tab",
+            "desc": "How long the tab up length is",
+            "abrev": "sz",
+            "typeext": 0,
+            "default": "1.0",
+            "range": [
+               ".001",
+               "100"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Distance of leads",
+            "desc": "How long the move up and move down are",
+            "abrev": "lds",
+            "typeext": 0,
+            "default": ".5",
+            "range": [
+               ".001",
+               "20"
+            ],
+            "type": "str"
+         },
+         {
+            "name": "ON - OFF",
+            "desc": "Turn ON or OFF tabbing in a file",
+            "abrev": "tog",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Number of Tabs",
+            "desc": "Number of tabs after tabbing turned on in a Part File",
+            "abrev": "num",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Distance to First Tab",
+            "desc": "Distance to first tab after tabbing turned on in a Part File",
+            "abrev": "dist",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         }
+      ]
+   },
+   "VT": {
+      "cmd": "VT",
+      "name": "Tolerance values"
+   },
+   "VA": {
+      "cmd": "VA",
+      "name": "Axis location values",
+      "params": [
+         {
+            "name": "New X location",
+            "desc": "Reset the Value of the Current X Location",
+            "abrev": "locX",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               "Table limits X"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "New Y location",
+            "desc": "Reset the Value of the Current Y Location",
+            "abrev": "locY",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Y"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "New Z location",
+            "desc": "Reset the Value of the Current Z Location",
+            "abrev": "locZ",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Z"
+            ],
+            "type": "distma"
+         },
+         {
+            "name": "New A location",
+            "desc": "Reset the Value of the Current A Location",
+            "abrev": "locA",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               "Table limits A"
+            ],
+            "type": "distmb"
+         },
+         {
+            "name": "New B location",
+            "desc": "Reset the Value of the Current B Location",
+            "abrev": "locB",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               "Table limits B"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "New X Table Base",
+            "desc": "Reset the Table Base Coordinate for X",
+            "abrev": "baseX",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               "Table limits X"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "New Y Table Base",
+            "desc": "Reset the Table Base Coordinate for Y",
+            "abrev": "baseY",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Y"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "New Z Table Base",
+            "desc": "Reset the Table Base Coordinate for Z",
+            "abrev": "baseZ",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               "Table limits Z"
+            ],
+            "type": "distma"
+         },
+         {
+            "name": "New A Table Base",
+            "desc": "Reset the Table Base Coordinate for A",
+            "abrev": "baseA",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               "Table limits A"
+            ],
+            "type": "distmb"
+         },
+         {
+            "name": "New B Table Base",
+            "desc": "Reset the Table Base Coordinate for B",
+            "abrev": "baseB",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               "Table limits B"
+            ],
+            "type": "distmb"
+         },
+         {
+            "name": "New C location",
+            "desc": "Reset the Value of the Current C Location",
+            "abrev": "locC",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               "Table limits C"
+            ],
+            "type": "distmb"
+         },
+         {
+            "name": "New C Table Base",
+            "desc": "Reset the Table Base Coordinate for C",
+            "abrev": "baseC",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               "Table limits C"
+            ],
+            "type": "distr"
+         }
+      ]
+   },
+   "VU": {
+      "cmd": "VU",
+      "name": "Unit values",
+      "params": [
+         {
+            "name": "X Unit Value",
+            "desc": "Sets number of steps per measurement Unit (inches or mm)",
+            "abrev": "unX",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distr"
+         },
+         {
+            "name": "Y Unit Value",
+            "desc": "Sets number of steps per measurement Unit (inches or mm)",
+            "abrev": "unY",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distr"
+         },
+         {
+            "name": "Z Unit Value",
+            "desc": "Sets number of steps per measurement Unit (inches or mm)",
+            "abrev": "unZ",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distra"
+         },
+         {
+            "name": "A Unit Value",
+            "desc": "Sets number of steps per measurement Unit (inches or mm or deg)",
+            "abrev": "unA",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Circle Resolution",
+            "desc": "Sets the size for each segment in a Circle/arc",
+            "abrev": "CirRes",
+            "typeext": 0,
+            "default": ".05",
+            "range": [
+               ".005",
+               "1.00"
+            ],
+            "type": "obs"
+         },
+         {
+            "name": "sCyX",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "obs"
+         },
+         {
+            "name": "sCyY",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Small Circle Def (OBS)",
+            "desc": "Obsolete",
+            "abrev": "SmCir",
+            "typeext": 1,
+            "default": ".25",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distrb"
+         },
+         {
+            "name": "B Unit Value",
+            "desc": "Sets number of steps per measurement Unit (inches or mm or deg)",
+            "abrev": "unB",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "int"
+         },
+         {
+            "name": "X Resolution Multiple",
+            "desc": "Should not be modified from default except for special applications;PRSalpha=5",
+            "abrev": "rmX",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               "1",
+               "15"
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Y Resolution Multiple",
+            "desc": "Should not be modified from default except for special applications;PRSalpha=5",
+            "abrev": "rmY",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               "1",
+               "15"
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Z Resolution Multiple",
+            "desc": "Should not be modified from default except for special applications;PRSalpha=5",
+            "abrev": "rmZ",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               "1",
+               "15"
+            ],
+            "type": "int"
+         },
+         {
+            "name": "A Resolution Multiple",
+            "desc": "Should not be modified from default except for special applications",
+            "abrev": "rmA",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               "1",
+               "15"
+            ],
+            "type": "int"
+         },
+         {
+            "name": "B Resolution Multiple",
+            "desc": "Should not be modified from default except for special applications",
+            "abrev": "rmB",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               "1",
+               "15"
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Step Interval Divider",
+            "desc": "Use to generate extremely low speeds; # Inserted Intervals (integer) [ie. 3 will be about 3 times slower than displayed speed]",
+            "abrev": "sDiv",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               "1",
+               "100"
+            ],
+            "type": "obs"
+         }
+      ]
+   },
+   "VD": {
+      "cmd": "VD",
+      "name": "Display values",
+      "params": [
+         {
+            "name": "Auto-Entry",
+            "desc": "Automatically enter the Command from Fill-In; Or, only paste to Command Line (as in DOS version)",
+            "abrev": "autoE",
+            "typeext": 0,
+            "default": "1 - ON",
+            "range": [
+               null,
+               null
+            ],
+            "type": "obs"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": "0 - Off",
+            "range": [
+               null,
+               null
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Number of Axes",
+            "desc": "Number of Axes in Use and Displayed",
+            "abrev": "nAxes",
+            "typeext": 0,
+            "default": "3",
+            "range": [
+               "0",
+               "6"
+            ],
+            "type": "opt",
+            "opts": [
+               [
+                  "0",
+                  "inches"
+               ]
+            ]
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "millimeters"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "Linear"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Linear"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Linear"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "Rotary (deg)"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "Rotary (deg)"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "0",
+               "Linear"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "Linear"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Linear"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Linear"
+               ]
+            ],
+            "type": "obs"
+         },
+         {
+            "name": "Show Control Console",
+            "desc": "Set whether Control Console window is Hidden or Displayed",
+            "abrev": "cnsl",
+            "typeext": 0,
+            "default": "1 - Show",
+            "range": [
+               null,
+               null
+            ],
+            "type": "obs"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": "0 - Hide",
+            "range": [
+               null,
+               null
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "Display File Comments",
+            "desc": "Display Comment lines in Message Screen in addition to Input and Print lines when file is running",
+            "abrev": "com",
+            "typeext": 0,
+            "default": "0 - Off",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "KeyPad Fixed Distance",
+            "desc": "The distance to go with a 'Fixed Distance' move in KeyPad (distance * 1/10 by holding SHIFT)",
+            "abrev": "fDist",
+            "typeext": 0,
+            "default": ".01",
+            "range": [
+               ".001",
+               "10"
+            ],
+            "type": "opt",
+            "opts": [
+               [
+                  "0",
+                  "Mouse"
+               ]
+            ]
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "ShopBot/Inputs"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "ShopBot/Inputs"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "other"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "other"
+               ]
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "KeyPad Switch AutoOff",
+            "desc": "Automatically Turn Off Output Switches on KeyPad Close",
+            "abrev": "sOff",
+            "typeext": 0,
+            "default": "0 - Off",
+            "range": [
+               null,
+               null
+            ],
+            "type": "opt",
+            "opts": [
+               [
+                  "1",
+                  "Write"
+               ]
+            ]
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "0",
+               "Don't Write"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Write"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "0",
+               "Don't Write"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "Don't Write"
+               ]
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Message Screen Loc X",
+            "desc": "Sets message screen horizontal location when displayed (twips from top left console)",
+            "abrev": "mlocX",
+            "typeext": 0,
+            "default": "-2500",
+            "range": [
+               null,
+               null
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Message Screen Loc Y",
+            "desc": "Sets message screen vertical location when displayed (twips from top left console)",
+            "abrev": "mlocY",
+            "typeext": 0,
+            "default": "-7500",
+            "range": [
+               null,
+               null
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Message Screen Size X",
+            "desc": "Sets message screen horizontal size when displayed (in twips)",
+            "abrev": "mszX",
+            "typeext": 0,
+            "default": "8800",
+            "range": [
+               null,
+               null
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Message Screen Size Y",
+            "desc": "Sets message screen vertical size when displayed (in twips)",
+            "abrev": "mszY",
+            "typeext": 0,
+            "default": "4600",
+            "range": [
+               null,
+               null
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "Show File Progress",
+            "desc": "Set whether image of File Progress Indicator Panel is displayed during cutting (Console must be adjusted large enough)",
+            "abrev": "showP",
+            "typeext": 0,
+            "default": "0 - Off",
+            "range": [
+               null,
+               null
+            ],
+            "type": "opt",
+            "opts": [
+               [
+                  "1",
+                  "ShopBotEASY"
+               ]
+            ]
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "0",
+               "Standard/FULL"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "Standard/FULL"
+               ]
+            ],
+            "type": "distm"
+         }
+      ]
+   },
+   "VL": {
+      "cmd": "VL",
+      "name": "Limits for table",
+      "params": [
+         {
+            "name": "Low X Limit",
+            "desc": "Set Table Limits for software limit checking; depends on Table Base Coordinates",
+            "abrev": "loX",
+            "typeext": 0,
+            "default": "-.5",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "High X Limit",
+            "desc": "Set Table Limits for software limit checking; depends on Table Base Coordinates",
+            "abrev": "hiX",
+            "typeext": 0,
+            "default": "96.5",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Low Y Limit",
+            "desc": "Set Table Limits for software limit checking; depends on Table Base Coordinates",
+            "abrev": "loY",
+            "typeext": 0,
+            "default": "-.5",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "High Y Limit",
+            "desc": "Set Table Limits for software limit checking; depends on Table Base Coordinates",
+            "abrev": "hiY",
+            "typeext": 0,
+            "default": "48.5",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Low Z Limit",
+            "desc": "Set Table Limits for software limit checking; depends on Table Base Coordinates",
+            "abrev": "loZ",
+            "typeext": 0,
+            "default": "-3.0",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "High Z Limit",
+            "desc": "Set Table Limits for software limit checking; depends on Table Base Coordinates",
+            "abrev": "hiZ",
+            "typeext": 0,
+            "default": "8.0",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distma"
+         },
+         {
+            "name": "Low A Limit",
+            "desc": "Set Table Limits for software limit checking; depends on Table Base Coordinates",
+            "abrev": "loA",
+            "typeext": 0,
+            "default": "-3.0",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distma"
+         },
+         {
+            "name": "High A Limit",
+            "desc": "Set Table Limits for software limit checking; depends on Table Base Coordinates",
+            "abrev": "hiA",
+            "typeext": 0,
+            "default": "8.0",
+            "range": [
+               null,
+               null
+            ],
+            "type": "opt",
+            "opts": [
+               [
+                  "1",
+                  "ON"
+               ]
+            ]
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "0",
+               "0ff"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "0ff"
+               ]
+            ],
+            "type": "distmb"
+         },
+         {
+            "name": "Low B Limit",
+            "desc": "Set Table Limits for software limit checking; depends on Table Base Coordinates",
+            "abrev": "loB",
+            "typeext": 0,
+            "default": "-500",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distmb"
+         },
+         {
+            "name": "High B Limit",
+            "desc": "Set Table Limits for software limit checking; depends on Table Base Coordinates",
+            "abrev": "hiB",
+            "typeext": 0,
+            "default": "500",
+            "range": [
+               null,
+               null
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Number of Axes to Check",
+            "desc": "Define how many axes to check",
+            "abrev": "lmNm",
+            "typeext": 0,
+            "default": "5",
+            "range": [
+               null,
+               null
+            ],
+            "type": "int"
+         }
+      ]
+   },
+   "VE": {
+      "cmd": "VE",
+      "name": "End angle for circle"
+   },
+   "VK": {
+      "cmd": "VK",
+      "name": "bacKlash values"
+   },
+   "VI": {
+      "cmd": "VI",
+      "name": "Inputs/driver definitions",
+      "params": [
+         {
+            "name": "Comm Port Number",
+            "desc": "The Communications Port used to connect to the ShopBot Control Box (1-16)",
+            "abrev": "comN",
+            "typeext": 0,
+            "default": "4",
+            "range": [
+               "1",
+               "16"
+            ],
+            "type": "obs"
+         },
+         {
+            "name": "iniSeg",
+            "desc": "for cable tools",
+            "abrev": "iniSeg",
+            "typeext": 0,
+            "default": "0",
+            "range": [
+               null,
+               null
+            ],
+            "type": "obs"
+         },
+         {
+            "name": "regSeg",
+            "desc": "for cable tools",
+            "abrev": "regSeg",
+            "typeext": 0,
+            "default": "0",
+            "range": [
+               null,
+               null
+            ],
+            "type": "obs"
+         },
+         {
+            "name": "corRate",
+            "desc": "for cable tools",
+            "abrev": "corRt",
+            "typeext": 0,
+            "default": "0",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "Driver Channel 1",
+            "desc": "Axis Definition for this Driver Channel (X,Y,Z,A, or B)",
+            "abrev": "drv1",
+            "typeext": 0,
+            "default": "X",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "Driver Channel 2",
+            "desc": "Axis Definition for this Driver Channel (X,Y,Z,A, or B)",
+            "abrev": "drv2",
+            "typeext": 0,
+            "default": "Y",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "Driver Channel 3",
+            "desc": "Axis Definition for this Driver Channel (X,Y,Z,A, or B)",
+            "abrev": "drv3",
+            "typeext": 0,
+            "default": "Z",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "Driver Channel 4",
+            "desc": "Axis Definition for this Driver Channel (X,Y,Z,A, or B)",
+            "abrev": "drv4",
+            "typeext": 0,
+            "default": "A",
+            "range": [
+               null,
+               null
+            ],
+            "type": "opt",
+            "opts": [
+               [
+                  "5",
+                  "921.6"
+               ]
+            ]
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "115.2"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "115.2"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "230.4"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "230.4"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "460.8"
+            ],
+            "opts": [
+               [
+                  "4",
+                  "460.8"
+               ]
+            ],
+            "type": "str"
+         },
+         {
+            "name": "Driver Channel 5",
+            "desc": "Axis Definition for this Driver Channel (X,Y,Z,A, or B)",
+            "abrev": "drv5",
+            "typeext": 0,
+            "default": "B",
+            "range": [
+               null,
+               null
+            ],
+            "type": "opt",
+            "opts": [
+               [
+                  "1",
+                  "On"
+               ]
+            ]
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "0",
+               "Off"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Limits ON"
+               ]
+            ],
+            "type": "opt"
+         }
+      ]
+   },
+   "VN": {
+      "cmd": "VN",
+      "name": "iNput/output switch modes",
+      "params": [
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "0",
+               "Limits OFF"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "Nrm Closed Stop"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Nrm Open Stop"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Nrm Open Stop"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "not used"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "Off"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Torch"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Torch"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "Laser"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "Laser"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "An1 Control"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "An1 Control"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "An2 Control"
+            ],
+            "opts": [
+               [
+                  "4",
+                  "An2 Control"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "5",
+               "An1 & An2 Cont"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "Standard Switch"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Nrm Open Limit"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Nrm Open Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "Nrm Closed Limit"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "Nrm Closed Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "Nrm Open Stop"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "Nrm Open Stop"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "Nrm Closed Stop"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "Standard Switch"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Nrm Open Limit"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Nrm Open Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "Nrm Closed Limit"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "Nrm Closed Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "Nrm Open Stop"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "Nrm Open Stop"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "Nrm Closed Stop"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "Standard Switch"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Nrm Open Limit"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Nrm Open Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "Nrm Closed Limit"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "Nrm Closed Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "Nrm Open Stop"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "Nrm Open Stop"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "Nrm Closed Stop"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "Standard Switch"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Nrm Open Limit"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Nrm Open Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "Nrm Closed Limit"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "Nrm Closed Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "Nrm Open Stop"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "Nrm Open Stop"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "Nrm Closed Stop"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "Standard Switch"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Nrm Open Limit"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Nrm Open Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "Nrm Closed Limit"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "Nrm Closed Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "Nrm Open Stop"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "Nrm Open Stop"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "Nrm Closed Stop"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "Standard Switch"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Nrm Open Limit"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Nrm Open Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "Nrm Closed Limit"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "Nrm Closed Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "Nrm Open Stop"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "Nrm Open Stop"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "Nrm Closed Stop"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "Standard Switch"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Nrm Open Limit"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Nrm Open Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "Nrm Closed Limit"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "Nrm Closed Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "Nrm Open Stop"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "Nrm Open Stop"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "Nrm Closed Stop"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "Standard Switch"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Nrm Open Limit"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Nrm Open Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "Nrm Closed Limit"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "Nrm Closed Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "Nrm Open Stop"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "Nrm Open Stop"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "Nrm Closed Stop"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "Standard Switch"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Nrm Open Limit"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Nrm Open Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "Nrm Closed Limit"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "Nrm Closed Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "Nrm Open Stop"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "Nrm Open Stop"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "Nrm Closed Stop"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "Standard Switch"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Nrm Open Limit"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Nrm Open Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "Nrm Closed Limit"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "Nrm Closed Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "Nrm Open Stop"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "Nrm Open Stop"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "Nrm Closed Stop"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "Standard Switch"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "Nrm Open Limit"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "Nrm Open Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "Nrm Closed Limit"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "Nrm Closed Limit"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "Nrm Open Stop"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "Nrm Open Stop"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "Nrm Closed Stop"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "StdON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "StdON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "StdON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "StdON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "StdON/FlStpOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "AutoON/FileOFF"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "AutoON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "AutoON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "4",
+                  "AutoON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "5",
+               "AutoON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "StdON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "StdON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "StdON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "StdON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "StdON/FlStpOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "AutoON/FileOFF"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "AutoON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "AutoON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "4",
+                  "AutoON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "5",
+               "AutoON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "StdON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "StdON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "StdON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "StdON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "StdON/FlStpOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "AutoON/FileOFF"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "AutoON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "AutoON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "4",
+                  "AutoON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "5",
+               "AutoON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "StdON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "StdON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "StdON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "StdON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "StdON/FlStpOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "AutoON/FileOFF"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "AutoON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "AutoON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "4",
+                  "AutoON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "5",
+               "AutoON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "StdON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "StdON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "StdON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "StdON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "StdON/FlStpOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "AutoON/FileOFF"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "AutoON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "AutoON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "4",
+                  "AutoON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "5",
+               "AutoON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "StdON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "StdON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "StdON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "StdON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "StdON/FlStpOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "AutoON/FileOFF"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "AutoON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "AutoON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "4",
+                  "AutoON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "5",
+               "AutoON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "StdON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "StdON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "StdON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "StdON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "StdON/FlStpOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "AutoON/FileOFF"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "AutoON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "AutoON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "4",
+                  "AutoON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "5",
+               "AutoON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "StdON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "StdON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "StdON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "StdON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "StdON/FlStpOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "AutoON/FileOFF"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "AutoON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "AutoON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "4",
+                  "AutoON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "5",
+               "AutoON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "StdON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "StdON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "StdON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "StdON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "StdON/FlStpOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "AutoON/FileOFF"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "AutoON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "AutoON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "4",
+                  "AutoON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "5",
+               "AutoON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "StdON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "StdON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "StdON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "StdON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "StdON/FlStpOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "AutoON/FileOFF"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "AutoON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "AutoON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "4",
+                  "AutoON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "5",
+               "AutoON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "StdON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "StdON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "StdON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "2",
+               "StdON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "2",
+                  "StdON/FlStpOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "3",
+               "AutoON/FileOFF"
+            ],
+            "opts": [
+               [
+                  "3",
+                  "AutoON/FileOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "4",
+               "AutoON/NoOFF"
+            ],
+            "opts": [
+               [
+                  "4",
+                  "AutoON/NoOFF"
+               ]
+            ],
+            "type": "opt"
+         },
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "5",
+               "AutoON/FlStpOFF"
+            ],
+            "opts": [
+               [
+                  "0",
+                  "Off"
+               ]
+            ],
+            "type": "opt"
+         }
+      ]
+   },
+   "VH": {
+      "cmd": "VH",
+      "name": "torch Height or laser",
+      "params": [
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "On"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "On"
+               ]
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "Plasma Height Rate",
+            "desc": "Sets fractional responsiveness of Z in relation to steps in X & Y ",
+            "abrev": "spd",
+            "typeext": 0,
+            "default": ".25",
+            "range": [
+               ".01",
+               "1.00"
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "PWM % Low",
+            "desc": "Sets lower or starting PWM rate",
+            "abrev": "loPWM",
+            "typeext": 0,
+            "default": "0",
+            "range": [
+               "0",
+               "100"
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "PWM % High",
+            "desc": "Sets higher or ending PWM rate",
+            "abrev": "hiPWM",
+            "typeext": 0,
+            "default": "0",
+            "range": [
+               "0",
+               "100"
+            ],
+            "type": "sng"
+         },
+         {
+            "name": "PWM Pulse Freq (KHz)",
+            "desc": "Enter New Value to change base PWM freq (5.4 to 40; default = 5.4)",
+            "abrev": "hz",
+            "typeext": 0,
+            "default": "5.4",
+            "range": [
+               "5.4",
+               "40"
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Low Cycle Time",
+            "desc": "Proportion time at low PWM (1 to 10 integer)",
+            "abrev": "tmlo",
+            "typeext": 0,
+            "default": "3",
+            "range": [
+               "1",
+               "10"
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Set Temperature",
+            "desc": "Threshold temperature (deg C; integer)",
+            "abrev": "tmpt",
+            "typeext": 0,
+            "default": "0",
+            "range": [
+               "0",
+               "400"
+            ],
+            "type": "opt",
+            "opts": [
+               [
+                  "0",
+                  "Off"
+               ]
+            ]
+         }
+      ]
+   },
+   "VO": {
+      "cmd": "VO",
+      "name": "temporary tool Offset",
+      "params": [
+         {
+            "name": "",
+            "desc": "",
+            "abrev": "",
+            "typeext": 0,
+            "default": [
+               "1",
+               "On"
+            ],
+            "opts": [
+               [
+                  "1",
+                  "On"
+               ]
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Offset Distance X",
+            "desc": "In current units.",
+            "abrev": "offsetX",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Offset Distance Y",
+            "desc": "In current units.",
+            "abrev": "offsetY",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Offset Distance Z",
+            "desc": "In current units.",
+            "abrev": "offsetZ",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "dista"
+         },
+         {
+            "name": "Offset Distance A",
+            "desc": "In current units.",
+            "abrev": "offsetA",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distb"
+         },
+         {
+            "name": "Offset Distance B",
+            "desc": "In current units.",
+            "abrev": "offsetB",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distb"
+         },
+         {
+            "name": "Offset Distance C",
+            "desc": "In current units.",
+            "abrev": "offsetC",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "int"
+         }
+      ]
+   },
+   "T1": {
+      "cmd": "T1",
+      "name": "virtual tool #1"
+   },
+   "RR": {
+      "cmd": "RR",
+      "name": "replay Recent commands",
+      "params": [
+         {
+            "name": "Number Commands back",
+            "desc": "Set how many of the most recent Commands to run",
+            "abrev": "nmBk",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "int"
+         },
+         {
+            "name": "Repetitions",
+            "desc": "Number of times to repeat the selected Commands",
+            "abrev": "reps",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "partfile"
+         }
+      ]
+   },
+   "RP": {
+      "cmd": "RP",
+      "name": "rePlay all commands"
+   },
+   "RS": {
+      "cmd": "RS",
+      "name": "Save recorded commands",
+      "params": [
+         {
+            "name": "Part File Name",
+            "desc": "Name of Part File to Save Recorded Commands to",
+            "abrev": "fNm",
+            "typeext": 0,
+            "default": "Record.sbp",
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "Number Commands back",
+            "desc": "Set how many of the most recent Commands to save",
+            "abrev": "nmBk",
+            "typeext": 0,
+            "default": "All",
+            "range": [
+               null,
+               null
+            ],
+            "type": "partfile"
+         }
+      ]
+   },
+   "RA": {
+      "cmd": "RA",
+      "name": "Activate command recording"
+   },
+   "RI": {
+      "cmd": "RI",
+      "name": "Inactivate command recording"
+   },
+   "RZ": {
+      "cmd": "RZ",
+      "name": "Zero (clear) command record"
+   },
+   "UU": {
+      "cmd": "UU",
+      "name": "calcUlator"
+   },
+   "UL": {
+      "cmd": "UL",
+      "name": "List current variables"
+   },
+   "UV": {
+      "cmd": "UV",
+      "name": "view Values and settings"
+   },
+   "UR": {
+      "cmd": "UR",
+      "name": "Reset default Settings, load a Custom Setting File, or clear System Log"
+   },
+   "US": {
+      "cmd": "US",
+      "name": "Save current Settings to a Custom Settings File ",
+      "params": [
+         {
+            "name": "New settings file",
+            "desc": "Create a custom file with all current settings; can be run like Part File to re-establish current settings",
+            "abrev": "fNm",
+            "typeext": 0,
+            "default": "CustomSettings.sbd",
+            "range": [
+               null,
+               null
+            ],
+            "type": "partfile"
+         }
+      ]
+   },
+   "UN": {
+      "cmd": "UN",
+      "name": "Name of editor"
+   },
+   "UZ": {
+      "cmd": "UZ",
+      "name": "Zero ALL Current Locations and Table Base Coordinates"
+   },
+   "UD": {
+      "cmd": "UD",
+      "name": "Diagnostic information"
+   },
+   "UT": {
+      "cmd": "UT",
+      "name": "notes on diagnosTic information"
+   },
+   "UI": {
+      "cmd": "UI",
+      "name": "Install Control Box Firmware"
+   },
+   "HQ": {
+      "cmd": "HQ",
+      "name": "Quick Start for beginning ShopBotters"
+   },
+   "HC": {
+      "cmd": "HC",
+      "name": "Command Reference"
+   },
+   "HR": {
+      "cmd": "HR",
+      "name": "Quick Ref to Command Summary"
+   },
+   "HE": {
+      "cmd": "HE",
+      "name": "Quick Ref for Editing Part Files"
+   },
+   "HK": {
+      "cmd": "HK",
+      "name": "Keyboard Shortcuts"
+   },
+   "HS": {
+      "cmd": "HS",
+      "name": "Squaring the X Car"
+   },
+   "HZ": {
+      "cmd": "HZ",
+      "name": "Zeroing and Table Base Coordinates"
+   },
+   "HF": {
+      "cmd": "HF",
+      "name": "ShopBot User Forum"
+   },
+   "HW": {
+      "cmd": "HW",
+      "name": "ShopBot Website"
+   },
+   "HP": {
+      "cmd": "HP",
+      "name": "Programming and Developer Resources"
+   },
+   "HD": {
+      "cmd": "HD",
+      "name": "ShopBot User Data Files (view)"
+   },
+   "HI": {
+      "cmd": "HI",
+      "name": "Info on Control Card Diagnostic LEDs"
+   },
+   "HM": {
+      "cmd": "HM",
+      "name": "Remote PC Help from ShopBot Support"
+   },
+   "HA": {
+      "cmd": "HA",
+      "name": "help About"
+   }
+}

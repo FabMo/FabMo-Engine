@@ -3,7 +3,7 @@ var fs = require('fs');
 var log = require('./log');
 var g2 = require('./g2');
 var sbp_settings = require('./sbp_settings');
-var sb3_commands = require('./sb3_commands');
+var sb3_commands = require('./data/sb3_commands');
 
 var SYSVAR_RE = /\%\(([0-9]+)\)/i
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i
@@ -235,12 +235,7 @@ SBPRuntime.prototype._execute = function(command) {
 	return;
 }
 
-// Evaluate an expression.  Return the result.
-// TODO: Make this robust to undefined user variables
-SBPRuntime.prototype._eval = function(expr) {
-	log.debug("evaluating " + JSON.stringify(expr))
-	if(expr.op === undefined) {
-		expr = String(expr);
+SBPRuntime.prototype._eval_value = function(expr) {
 		sys_var = this.evaluateSystemVariable(expr);
 		if(sys_var === undefined) {
 			user_var = this.evaluateUserVariable(expr);
@@ -258,7 +253,15 @@ SBPRuntime.prototype._eval = function(expr) {
 		} else {
 			log.debug("Evaluated " + expr + " as " + sys_var)
 			return parseFloat(sys_var);
-		}
+		}	
+}
+
+// Evaluate an expression.  Return the result.
+// TODO: Make this robust to undefined user variables
+SBPRuntime.prototype._eval = function(expr) {
+	log.debug("evaluating " + JSON.stringify(expr))
+	if(expr.op === undefined) {
+		return this._eval_value(String(expr));
 	} else {
 		switch(expr.op) {
 			case '+':
@@ -336,9 +339,15 @@ SBPRuntime.prototype._scrubArguments = function(command, args) {
 	scrubbed_args = []
 	if(command in sb3_commands) {
 		params = sb3_commands[command].params
+		console.log(params)
 		for(i=0; i<params.length; i++) {
-			param = params[i];
-			scrubbed_args.push(param.default)
+			prm_param = params[i];
+			user_param = args[i];
+			if((args[i] != undefined) && (args[i] != "")) {
+				scrubbed_args.push(args[i])
+			} else {
+				scrubbed_args.push(prm_param.default);
+			}
 		}
 		console.log(scrubbed_args);
 	} else {
