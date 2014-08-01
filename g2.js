@@ -4,7 +4,7 @@ var events = require('events');
 var util = require('util');
 var Queue = require('./util').Queue;
 var config = require('./config_loader');
-var log = require('./log')
+var log = require('./log').logger('g2');
 
 // Values of the **stat** field that is returned from G2 status reports
 var STAT_INIT = 0;
@@ -282,7 +282,7 @@ G2.prototype.handleFooter = function(response) {
 	if(response.f) {
 		if(response.f[1] != 0) {
 			var err_code = response.f[1];
-			var err_msg = G2_ERRORS[err_code];
+			var err_msg = G2_ERRORS[err_code] || ['ERR_UNKNOWN', 'Unknown Error'];
 			this.emit('error', [err_code, err_msg[0], err_msg[1]]);
 		}
 	}

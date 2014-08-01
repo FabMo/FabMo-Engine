@@ -1,6 +1,6 @@
 var parser = require('./sbp_parser');
 var fs = require('fs');
-var log = require('./log');
+var log = require('./log').logger('sbp');
 var g2 = require('./g2');
 var sbp_settings = require('./sbp_settings');
 var sb3_commands = require('./data/sb3_commands');
