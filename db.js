@@ -41,7 +41,7 @@ File.prototype.save = function(callback){
 
 	}
 	else{
-		log.info('Creating a new document ' + document._id);
+		log.info('Creating a new document.');
 		files.insert(that, function(err,records){
 			if(!err)
 				callback(records[0]);

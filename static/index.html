@@ -479,7 +479,7 @@
 	$('.homez-button').click(function(e) {gcode('G28.2 Z0'); });
 	$('.homexy-button').click(function(e) {gcode('G28.2 X0 Y0'); });
 
-	$('.probez-button').click(function(e) {gcode('G38.2 Z-4 F10'); });   
+	$('.probez-button').click(function(e) {gcode('G38.2 Z-4 F10\nG10 L2 P1 Z-0.125'); });   
 
 	$('.zerox-button').click(function(e) {gcode('G28.3 X0'); });  
 	$('.zeroy-button').click(function(e) {gcode('G28.3 Y0'); });  

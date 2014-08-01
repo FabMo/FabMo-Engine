@@ -1,4 +1,23 @@
 {
+   "EP": {
+      "cmd": "EP",
+      "name": "G2 Probe",
+      "params": [
+         {
+            "name": "Max Distance",
+            "desc": "Maximum Distance to Search",
+            "abrev": "mDst",
+            "typeext": 0,
+            "default": "-4.0",
+            "sysvar": 0,
+            "range": [
+               null,
+               null
+            ],
+            "type": "dist"
+         }
+      ]
+   },
    "FP": {
       "cmd": "FP",
       "name": "PART FILE LOAD"

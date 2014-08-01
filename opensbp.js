@@ -126,20 +126,24 @@ SBPRuntime.prototype._dispatch = function() {
 	var runtime = this;
 	this.break_chunk = false;
 	if(this.current_chunk.length > 0) {
+		var run_function = function(driver) {
+			log.info("Expected a running state change and got one.");
+			driver.expectStateChange({
+				"stop" : function(driver) { 
+					runtime._continue();
+				},
+				null : function(driver) {
+					log.info("Expected a stop but didn't get one.");
+				}
+			});
+		};
+
 		this.driver.expectStateChange({
-			"running" : function(driver) {
-				log.info("Expected a running state change and got one.");
-				driver.expectStateChange({
-					"stop" : function(driver) { 
-						runtime._continue();
-					},
-					null : function(driver) {
-						log.info("Expected a stop but didn't get one.");
-					}
-				});
-			},
+			"running" : run_function,
+			"homing" : run_function,
+			"probe" : run_function,
 			null : function(t) {
-				log.info("Expected a start but didn't get one."); 
+				log.info("Expected a start but didn't get one. (" + t + ")"); 
 			}
 		});
 		this.driver.runSegment(this.current_chunk.join('\n'));
@@ -350,7 +354,7 @@ SBPRuntime.prototype._scrubArguments = function(command, args) {
 			}
 		}
 	} else {
-		throw "Unknown command: " + command
+		return []
 	}
 }
 
@@ -815,6 +819,11 @@ SBPRuntime.prototype.VR = function(args) {
 
 SBPRuntime.prototype.VS = function(args) {
 //	this.emit_gcode("G28.1");
+}
+
+SBPRuntime.prototype.EP = function(args) {
+	log.info("Got a EP command");
+	this.emit_gcode("G38.2 Z" + args[0]);
 }
 
 /* TOOLS */
