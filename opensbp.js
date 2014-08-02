@@ -8,6 +8,8 @@ var sb3_commands = require('./data/sb3_commands');
 var SYSVAR_RE = /\%\(([0-9]+)\)/i
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i
 
+var chunk_breakers = {'VA':true}
+
 function SBPRuntime() {
 	this.program = []
 	this.pc = 0
@@ -193,7 +195,7 @@ SBPRuntime.prototype._execute = function(command) {
 					this[command.cmd](args);
 				}
 				else {
-					if(this.sysvar_evaluated) {
+					if(this.sysvar_evaluated || (command.cmd in this.chunk_breakers)) {
 						log.debug("Breaking a chunk at line " + this.pc + " to evaluate system variables.");
 						this.chunk_broken_for_eval = true;
 						this.break_chunk = true;
@@ -303,6 +305,7 @@ SBPRuntime.prototype._execute = function(command) {
 }
 
 SBPRuntime.prototype._eval_value = function(expr) {
+		log.debug("Evaluating value: " + expr)
 		sys_var = this.evaluateSystemVariable(expr);
 		if(sys_var === undefined) {
 			user_var = this.evaluateUserVariable(expr);
@@ -327,7 +330,9 @@ SBPRuntime.prototype._eval_value = function(expr) {
 // Evaluate an expression.  Return the result.
 // TODO: Make this robust to undefined user variables
 SBPRuntime.prototype._eval = function(expr) {
-	log.debug("Evaluating " + JSON.stringify(expr))
+	log.debug("Evaluating expression: " + JSON.stringify(expr))
+	if(expr === undefined) {return undefined;}
+
 	if(expr.op === undefined) {
 		return this._eval_value(String(expr));
 	} else {
@@ -429,6 +434,7 @@ SBPRuntime.prototype._analyzeGOTOs = function() {
 }
 
 SBPRuntime.prototype.evaluateSystemVariable = function(v) {
+	if(v === undefined) { return undefined;}
 	result = v.match(SYSVAR_RE);
 	if(result === null) {return undefined};
 	n = parseInt(result[1]);
@@ -484,6 +490,7 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 }
 
 SBPRuntime.prototype.evaluateUserVariable = function(v) {
+	if(v === undefined) { return undefined;}
 	result = v.match(USERVAR_RE);
 	if(result == null) {return undefined};
 	if(v in this.user_vars) {
@@ -852,6 +859,13 @@ SBPRuntime.prototype.ST = function(args) {
 }
 
 /* VALUES */
+
+SBPRuntime.prototype.VA = function(args) {
+	log.debug("VA Command: " + args);
+	if(args[2] !== undefined) {
+		this.emit_gcode("G10 L2 P2 Z" + -this.machine.status.posz);
+	}
+}
 
 SBPRuntime.prototype.VC = function(args) {
 //	this.emit_gcode("G28.1");

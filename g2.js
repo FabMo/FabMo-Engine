@@ -52,6 +52,7 @@ function G2() {
 	this.jog_command = null;
 	this.jog_heartbeat = null;
 	this.quit_pending = false;
+	this.readers = {};
 	this.path = "";
 	// Array of assoc-arrays that detail callbacks for state changes
 	this.expectations = [];
@@ -377,6 +378,12 @@ G2.prototype.onMessage = function(response) {
 	// Emitted everytime a message is received, regardless of content
 	this.emit('message', response);
 
+	for(key in response) {
+		if(key in this.readers) {
+			callback = this.readers[key].shift();
+			typeof callback === 'function' && callback(null, response[key]);
+		}
+	}
 	// Special message type for initial system ready message
 	if(r.msg && (r.msg === "SYSTEM READY")) {
 		this.emit('ready', this);
@@ -409,6 +416,14 @@ G2.prototype.quit = function() {
 	}
 }
 
+G2.prototype.get = function(key, callback) {
+	this.command({key : null});
+	if (key in this.readers) {
+		this.readers.push(callback);
+	} else {
+		this.readers[key] = [callback]
+	}
+}
 
 // Send a command to G2 (can be string or JSON)
 G2.prototype.command = function(obj) {
