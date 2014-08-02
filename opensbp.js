@@ -66,10 +66,30 @@ SBPRuntime.prototype._update = function() {
 }
 
 // Evaluate a list of arguments provided (for commands)
-SBPRuntime.prototype._evaluateArguments = function(args) {
+SBPRuntime.prototype._evaluateArguments = function(command, args) {
+	log.debug("Evaluating arguments: " + command + "," + JSON.stringify(args));
+	scrubbed_args = [];
+	if(command in sb3_commands) {
+		params = sb3_commands[command].params
+		for(i=0; i<params.length; i++) {
+			prm_param = params[i];
+			user_param = args[i];
+			log.debug("!!!: " + args[i]);
+			if((args[i] !== undefined) && (args[i] !== "")) {
+				log.debug("Taking the users argument: " + args[i]);
+				scrubbed_args.push(args[i])
+			} else {
+				log.debug("Taking the default argument: " + args[i]);
+				scrubbed_args.push(prm_param.default || undefined);
+			}
+		}
+	} else {
+		scrubbed_args = []
+	}
+	log.debug("Scrubbed arguments: " + JSON.stringify(scrubbed_args));
 	retval = [];
-	for(i=0; i<args.length; i++) {
-		retval.push(this._eval(args[i]));
+	for(i=0; i<scrubbed_args.length; i++) {
+		retval.push(this._eval(scrubbed_args[i]));
 	}
 	return retval;
 }
@@ -87,11 +107,11 @@ SBPRuntime.prototype._continue = function() {
 
 	this._update();
 
-	log.info('Running until break...')
+	log.debug('Running until break...')
 
 	// Continue is only for resuming an already running program.  It's not a substitute for _run()
 	if(!this.started) {
-		cosnole.log('Ooops already started...');
+		log.warn('Ooops already started...');
 		return;
 	}
 
@@ -110,7 +130,7 @@ SBPRuntime.prototype._continue = function() {
 
 		
 		line = this.program[this.pc];
-		log.info("executing line: " + JSON.stringify(line));
+
 		this._execute(line);
 
 		if(this.break_chunk) {
@@ -157,7 +177,7 @@ SBPRuntime.prototype._dispatch = function() {
 // Accepts a parsed statement, and returns nothing
 SBPRuntime.prototype._execute = function(command) {
 	this.break_chunk = false;
-
+	log.info("Executing line: " + JSON.stringify(command));
 	if(!command) {
 		this.pc += 1;
 		return
@@ -165,8 +185,25 @@ SBPRuntime.prototype._execute = function(command) {
 	switch(command.type) {
 		case "cmd":
 			if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
-				this._scrubArguments(command.cmd, command.args)
-				this[command.cmd](this._evaluateArguments(command.args));
+				this.sysvar_evaluated = false;
+				args = this._evaluateArguments(command.cmd, command.args);
+				if(this.chunk_broken_for_eval) {
+					log.debug("Resuming after a chunk was broken for sysvar evaluation.");
+					this.chunk_broken_for_eval = false;
+					this[command.cmd](args);
+				}
+				else {
+					if(this.sysvar_evaluated) {					
+						log.debug("Breaking a chunk at line " + this.pc + " to evaluate system variables.");
+						this.chunk_broken_for_eval = true;
+						this.break_chunk = true;
+						break;
+					}
+					else {
+						log.debug("Running command normally: " + command.cmd + ' ' + args);
+						this[command.cmd](args);
+					}
+				}
 			} else {
 				this._unhandledCommand(command)
 			}
@@ -191,6 +228,8 @@ SBPRuntime.prototype._execute = function(command) {
 			this.break_chunk = true;
 			if(command.label in this.label_index) {
 				this.pc = this.label_index[command.label];
+				log.debug("Hit a GOTO: Going to line " + this.pc + "(Label: " + command.label + ")")
+
 			} else {
 				throw "Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc;
 			}
@@ -208,6 +247,7 @@ SBPRuntime.prototype._execute = function(command) {
 
 		case "assign":
 			this.user_vars[command.var] = this._eval(command.expr);
+			log.debug('Assigning the user value ' + command.var + ' the value ' + this.user_vars[command.var]);
 			this.pc += 1;
 			break;
 
@@ -257,6 +297,7 @@ SBPRuntime.prototype._eval_value = function(expr) {
 			// ERROR UNKNOWN SYSTEM VARIABLE
 		} else {
 			log.debug("Evaluated " + expr + " as " + sys_var)
+			this.sysvar_evaluated = true;
 			return parseFloat(sys_var);
 		}	
 }
@@ -264,7 +305,7 @@ SBPRuntime.prototype._eval_value = function(expr) {
 // Evaluate an expression.  Return the result.
 // TODO: Make this robust to undefined user variables
 SBPRuntime.prototype._eval = function(expr) {
-	log.debug("evaluating " + JSON.stringify(expr))
+	log.debug("Evaluating " + JSON.stringify(expr))
 	if(expr.op === undefined) {
 		return this._eval_value(String(expr));
 	} else {
@@ -313,6 +354,8 @@ SBPRuntime.prototype.init = function() {
 	this.break_chunk = false;
 	this.current_chunk = [];
 	this.started = false;
+	this.sysvar_evaluated = false;
+	this.chunk_broken_for_eval
 	this.machine.setState(this, "idle");
 
 }
@@ -337,26 +380,7 @@ SBPRuntime.prototype._analyzeLabels = function() {
 	}
 }
 
-// Using the command mnemonic, check the list of command argument, and return a 
-// "scrubbed" argument list that is of the correct length, and has coerced values
-// filled in for all arguments that were out of range or otherwise needed adjusting
-SBPRuntime.prototype._scrubArguments = function(command, args) {
-	scrubbed_args = []
-	if(command in sb3_commands) {
-		params = sb3_commands[command].params
-		for(i=0; i<params.length; i++) {
-			prm_param = params[i];
-			user_param = args[i];
-			if((args[i] != undefined) && (args[i] != "")) {
-				scrubbed_args.push(args[i])
-			} else {
-				scrubbed_args.push(prm_param.default || undefined);
-			}
-		}
-	} else {
-		return []
-	}
-}
+
 
 // Check all the GOTOS/GOSUBS in the program and make sure their labels exist
 // Throw an error for undefined labels.
@@ -486,6 +510,8 @@ SBPRuntime.prototype.FS = function(args) {
 /* MOVE */
 
 SBPRuntime.prototype.MX = function(args) {
+	log.debug("MX COMMAND");
+	log.debug('MX args: ' + args);
 	this.emit_gcode("G1 X" + args[0] + " F" + sbp_settings.movexy_speed);
 	this.posx += args[0];
 }

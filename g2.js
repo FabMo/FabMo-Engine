@@ -310,6 +310,9 @@ G2.prototype.handleStatusReport = function(response) {
 
 		stat = this.status.stat;
 
+		// Emit status no matter what
+		this.emit('status', this.status);
+
 		if(this.prev_stat != stat) {
 			
 			l = this.expectations.length
@@ -334,9 +337,6 @@ G2.prototype.handleStatusReport = function(response) {
 			this.emit('state', [this.prev_stat, this.status.stat]);
 			this.prev_stat = this.status.stat;
 		}
-
-		// Emit status no matter what
-		this.emit('status', this.status);
 
 		// Hack allows for a flush when quitting (must wait for the hold state to reach 4)
 		if(this.quit_pending) {

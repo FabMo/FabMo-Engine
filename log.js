@@ -1,7 +1,7 @@
 var winston = require("winston");
 
 LOG_LEVELS = {
-	'g2' : 'debug',
+	'g2' : 'info',
 	'gcode' : 'info',
 	'sbp' : 'info',
 	'machine' : 'info',
