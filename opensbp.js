@@ -193,7 +193,7 @@ SBPRuntime.prototype._execute = function(command) {
 					this[command.cmd](args);
 				}
 				else {
-					if(this.sysvar_evaluated) {					
+					if(this.sysvar_evaluated) {
 						log.debug("Breaking a chunk at line " + this.pc + " to evaluate system variables.");
 						this.chunk_broken_for_eval = true;
 						this.break_chunk = true;
@@ -246,8 +246,30 @@ SBPRuntime.prototype._execute = function(command) {
 			break;
 
 		case "assign":
-			this.user_vars[command.var] = this._eval(command.expr);
-			log.debug('Assigning the user value ' + command.var + ' the value ' + this.user_vars[command.var]);
+			this.sysvar_evaluated = false
+			value = this._eval(command.expr);
+
+			if(this.chunk_broken_for_eval) {
+				log.debug('Resuming after breaking a chunk to evaluate system variables.');
+				log.debug('Assigning the user value ' + command.var + ' the value ' + value);
+				this.chunk_broken_for_eval = false;
+				this.user_vars[command.var] = value;
+			}
+			else {
+				if(this.sysvar_evaluated) {
+					log.debug("Breaking a chunk at line " + this.pc + " to evaluate system variables for an assignment.");
+					this.chunk_broken_for_eval = true;
+					this.break_chunk = true;
+					break;
+				}
+				else {
+					log.debug('Assigning the user value ' + command.var + ' the value ' + value);
+					this.user_vars[command.var] = value;
+				}
+			}
+
+
+			
 			this.pc += 1;
 			break;
 

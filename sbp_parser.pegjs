@@ -76,7 +76,7 @@ user_variable
   = v:("&" identifier) {return v.join("")}
 
 system_variable
-  = v:("%" identifier) {return v.join("")}
+  = v:("%" "(" __ integer __ ")") {return v.join("")}
 
 assignment
   = v:variable __ "=" __ e:expression {return {"type": "assign", "var":v, "expr":e}}
