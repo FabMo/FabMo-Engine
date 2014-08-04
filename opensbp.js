@@ -784,6 +784,7 @@ SBPRuntime.prototype.JS = function(args) {
 SBPRuntime.prototype.CG = function(args) {
     // - Should we handle I-O-T option??
     // - How to implement spiral plunge in G-code????
+    paramError = FALSE;
 
     startX = this.cmd_posx;
     startY = this.cmd_posy;
@@ -795,34 +796,83 @@ SBPRuntime.prototype.CG = function(args) {
     	plgZ = startZ;
     }
     currentZ = plgZ;
-    endX = args[1];
-    endY = args[2];
-    centerX = args[3];
-    centerY = args[4];
-    //OIT = args[5];
+    endX = args[1] != undefined : args[1] : ParamError;
+    if endX = ParamError {}
+    var endY = args[2] != undefined : args[2] : ParamError;
+    if endY = ParamError {}
+    var centerX = args[3] != undefined : args[3] : ParamError;
+    if centerX = ParamError {}
+    var centerY = args[4] != undefined ; args[4] : ParamError;
+    if centerY = ParamError {}
+    var OIT = args[5] != undefined ? args[5] : "T";
     var Dr = args[6] != undefined ? args[6] : 0; 
     var Plg = args[7] != undefined ? args[7] : 0;
     var reps = args[8] != undefined ? args[8] : 1;
+    var propX = args[9] != undefined ? args[9] : 1;
+    var propY = args[10] != undefined ? [10] : 1;
     var optCG = args[11] != undefined ? args[11] : 0;
     var nuPullUp = args[12] != undefined ? args[12] : 0;
 
     for (i=0; i<reps;i++){
-    	if (Plg != 0 && optG == 0 ){		// If plunge depth is specified move to that depth * number of reps
+    	if (Plg != 0 && optCG < 3 ) {										// If plunge depth is specified move to that depth * number of reps
     		currentZ += Plg;
     		this.emit_gcode("G1Z" + currentZ + " F" + sbp_settings.movez_speed);
     	}
-    	if (Dr == 1 || Dr == 0 ){ var outStr = "G2X" + endX + "Y" + endY; }  // Clockwise circle/arc
-    	else (Dr == -1)  { var outStr = "G3X" + endX + "Y" + endY; }         // CounterClockwise circle/arc
-		if (Plg != 0 && optCG == 3) { outStr = outStr + "Z" + ; }            // Add Z for spiral plunge
-		outStr = outStr + "I" + centerX + "K" + centerY;					 // Add Center offset
+    	if (optCG == 2) { 													// Pocket circle from the outside inward to center
+    		if (startX != endX || startY != endY) {							// Error if start and end aren't the same
+
+    		}
+    		PocketAngle = Math.atan2(centerY, centerX);		// Find the angle of the step over between passes
+    		stepOver = cutterDia * ((100 - cutterOverlap) / 100);			// Calculate the overlap
+    		Pocket_StepX = stepOver * Math.sin(PocketAngle);				// Calculate the stepover in X based on the radius of the cutter * overlap
+    		Pocket_StepY = stepOver * Math.cos(PocketAngle);				// Calculate the stepover in Y based on the radius of the cutter * overlap
+    		for (j=0; (Pocket_StepX * j) < radius && (Pocket_StepY * j) < radius; j++){
+    		    if ( j > 0) {
+    		    	this.emit_gcode("G1X" + (j * Pocket_StepX + startX) + "Y" + (j * Pocket_StepY + startY))
+    		    }
+    		    else {								// Loop passes until overlapping the center
+    				if (Dr == 1 ) { var outStr = "G2X" + (j * Pocket_StepX + endX) + "Y" + (j * Pocket_StepY + endY); }				// Clockwise circle/arc
+    				else { var outStr = "G3X" + (j * Pocket_StepX + endX) + "Y" + (j * Pocket_StepY + endY); }						// CounterClockwise circle/arc
+				}
+    		}
+
+    		this.emit_gcode("G0Z" + safe_Z );										// Pull up Z
+    	   	this.emit_gcode("G0X" + startX + "Y" + startY);							// Jog to the start point
+    	   	this.emit_gcode("G1Z" + currentZ + " F" + sbp_settings.movez_speed);	// Plunge to current Z
+    		
+    		if(noPullUp == 1){    	//If No pull-up is set to YES, pull up to the starting Z location
+    			this.emit_gcode("G1Z" + startZ);
+				this.cmd_posz = startZ;
+			}
+    	}
+    	else {
+    		if (Dr == 1 ) { var outStr = "G2X" + endX + "Y" + endY; }				// Clockwise circle/arc
+    		else { var outStr = "G3X" + endX + "Y" + endY; }						// CounterClockwise circle/arc
+			if (Plg != 0 && optCG > 2 ) { 
+		    	outStr = outStr + "Z" + (currentZ + Plg); 
+		    	currentZ += Plg;
+			} // Add Z for spiral plunge
+		}
+		outStr = outStr + "I" + centerX + "K" + centerY;							// Add Center offset
 		this.emit_gcode(outStr); 
 
-    	if(endX != startX || endY != startY){	//If an arc, pullup and jog back to the start position
-    		this.emit_gcode("G0Z" + safe_Z )
-    	   	this.emit_gcode("G0X" + startX + "Y" + startY);		
+    	if( i+1 < reps && ( endX != startX || endY != startY ) ){					//If an arc, pullup and jog back to the start position
+    		this.emit_gcode("G0Z" + safe_Z );
+    	   	this.emit_gcode("G0X" + startX + "Y" + startY);
+    	   	this.emit_gcode("G1Z" + currentZ + " F" + sbp_settings.movez_speed);		
     	}
     }
-
+    if (optCG == 4) { // Add bottom circle if spiral with bottom clr is specified
+        if( endX != startX || endY != startY ) {	//If an arc, pullup and jog back to the start position
+    		this.emit_gcode("G0Z" + safe_Z );
+    	   	this.emit_gcode("G0X" + startX + "Y" + startY);
+    	   	this.emit_gcode("G1Z" + currentZ + " F" + sbp_settings.movez_speed);		
+    	}
+    	if (Dr == 1 ){ var outStr = "G2X" + endX + "Y" + endY; }                  // Clockwise circle/arc
+    	else { var outStr = "G3X" + endX + "Y" + endY; }                          // CounterClockwise circle/arc
+		outStr = outStr + "I" + centerX + "K" + centerY;					      // Add Center offset
+		this.emit_gcode(outStr); 
+    }	
     if(noPullUp == 0){    	//If No pull-up is set to YES, pull up to the starting Z location
     	this.emit_gcode("G1Z" + startZ);
     	this.cmd_posz = startZ;
