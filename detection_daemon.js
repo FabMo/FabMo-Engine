@@ -2,6 +2,7 @@ var os=require('os');
 var util=require('util');
 var EventEmitter = require('events').EventEmitter;
 var dgram = require('dgram');
+var log = require('./log').logger('detection');
 
 var OK = "YES I M !\0";
 var ERR = "I DNT UNDRSTND !\0";
@@ -18,7 +19,7 @@ var start = function(port) {
 		socket.on("message", function ( data, rinfo ) {
 			if(data.toString() == REQ)
 			{
-				console.log('scan in progress by '+ rinfo.address);
+				log.info('scan in progress by '+ rinfo.address);
 				socket.send(new Buffer(OK), 0, OK.length, rinfo.port, rinfo.address, function (err) {
 							if (err) {
 								console.log(err);
@@ -44,14 +45,14 @@ var start = function(port) {
 					});
 				},os.networkInterfaces());
 				socket.send(new Buffer(JSON.stringify(result)), 0, JSON.stringify(result).length, rinfo.port, rinfo.address, function (err) {
-					if (err) console.log(err);
+					if (err) log.error(err);
 							//console.log("ask info");
 					});
 				that.emit('client_scan',rinfo.address);
 			}
 			else
 			{
-				console.log("[detection_tool.js] received from "+rinfo.address+" : unknow message : '"+ data.toString() +"'");
+				log.info("[detection_tool.js] received from "+rinfo.address+" : unknown message : '"+ data.toString() +"'");
 			}
 		});
 

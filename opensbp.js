@@ -1,12 +1,14 @@
 var parser = require('./sbp_parser');
 var fs = require('fs');
-var log = require('./log');
+var log = require('./log').logger('sbp');
 var g2 = require('./g2');
 var sbp_settings = require('./sbp_settings');
-var sb3_commands = require('./sb3_commands');
+var sb3_commands = require('./data/sb3_commands');
 
 var SYSVAR_RE = /\%\(([0-9]+)\)/i
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i
+
+var chunk_breakers = {'VA':true}
 
 function SBPRuntime() {
 	this.program = []
@@ -30,10 +32,11 @@ SBPRuntime.prototype.connect = function(machine) {
 	this._update();
 	this.status_handler = this._onG2Status.bind(this);
 	this.driver.on('status', this.status_handler);
-	log.info('Connected shopbot runtime');
+	log.info('Connected ShopBot runtime.');
 }
 
 SBPRuntime.prototype.disconnect = function() {
+	log.info('Disconnected ShopBot runtime.');
 	this.driver.removeListener(this.status_handler);
 }
 
@@ -61,14 +64,44 @@ SBPRuntime.prototype.runString = function(s) {
 
 // Update the internal state of the runtime with data from the tool
 SBPRuntime.prototype._update = function() {
+<<<<<<< HEAD
   //
+=======
+	status = this.machine.status || {}
+	this.posx = 0.0
+	this.posy = 0.0
+	this.posz = 0.0
+	this.posa = 0.0
+	this.posb = status.posb || 0.0
+	this.posc = status.posc || 0.0
+>>>>>>> origin/master
 }
 
 // Evaluate a list of arguments provided (for commands)
-SBPRuntime.prototype._evaluate_args = function(args) {
+SBPRuntime.prototype._evaluateArguments = function(command, args) {
+	log.debug("Evaluating arguments: " + command + "," + JSON.stringify(args));
+	scrubbed_args = [];
+	if(command in sb3_commands) {
+		params = sb3_commands[command].params
+		for(i=0; i<params.length; i++) {
+			prm_param = params[i];
+			user_param = args[i];
+			log.debug("!!!: " + args[i]);
+			if((args[i] !== undefined) && (args[i] !== "")) {
+				log.debug("Taking the users argument: " + args[i]);
+				scrubbed_args.push(args[i])
+			} else {
+				log.debug("Taking the default argument: " + args[i]);
+				scrubbed_args.push(prm_param.default || undefined);
+			}
+		}
+	} else {
+		scrubbed_args = []
+	}
+	log.debug("Scrubbed arguments: " + JSON.stringify(scrubbed_args));
 	retval = [];
-	for(i=0; i<args.length; i++) {
-		retval.push(this._eval(args[i]));
+	for(i=0; i<scrubbed_args.length; i++) {
+		retval.push(this._eval(scrubbed_args[i]));
 	}
 	return retval;
 }
@@ -86,11 +119,11 @@ SBPRuntime.prototype._continue = function() {
 
 	this._update();
 
-	log.info('Running until break...')
+	log.debug('Running until break...')
 
 	// Continue is only for resuming an already running program.  It's not a substitute for _run()
 	if(!this.started) {
-		cosnole.log('Ooops already started...');
+		log.warn('Ooops already started...');
 		return;
 	}
 
@@ -109,7 +142,7 @@ SBPRuntime.prototype._continue = function() {
 
 		
 		line = this.program[this.pc];
-		log.info("executing line: " + JSON.stringify(line));
+
 		this._execute(line);
 
 		if(this.break_chunk) {
@@ -125,20 +158,24 @@ SBPRuntime.prototype._dispatch = function() {
 	var runtime = this;
 	this.break_chunk = false;
 	if(this.current_chunk.length > 0) {
+		var run_function = function(driver) {
+			log.info("Expected a running state change and got one.");
+			driver.expectStateChange({
+				"stop" : function(driver) { 
+					runtime._continue();
+				},
+				null : function(driver) {
+					log.info("Expected a stop but didn't get one.");
+				}
+			});
+		};
+
 		this.driver.expectStateChange({
-			"running" : function(driver) {
-				log.info("Expected a running state change and got one.");
-				driver.expectStateChange({
-					"stop" : function(driver) { 
-						runtime._continue();
-					},
-					null : function(driver) {
-						log.info("Expected a stop but didn't get one.");
-					}
-				});
-			},
+			"running" : run_function,
+			"homing" : run_function,
+			"probe" : run_function,
 			null : function(t) {
-				log.info("Expected a start but didn't get one."); 
+				log.info("Expected a start but didn't get one. (" + t + ")"); 
 			}
 		});
 		this.driver.runSegment(this.current_chunk.join('\n'));
@@ -152,7 +189,7 @@ SBPRuntime.prototype._dispatch = function() {
 // Accepts a parsed statement, and returns nothing
 SBPRuntime.prototype._execute = function(command) {
 	this.break_chunk = false;
-
+	log.info("Executing line: " + JSON.stringify(command));
 	if(!command) {
 		this.pc += 1;
 		return
@@ -160,7 +197,25 @@ SBPRuntime.prototype._execute = function(command) {
 	switch(command.type) {
 		case "cmd":
 			if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
-				this[command.cmd](this._evaluate_args(command.args));
+				this.sysvar_evaluated = false;
+				args = this._evaluateArguments(command.cmd, command.args);
+				if(this.chunk_broken_for_eval) {
+					log.debug("Resuming after a chunk was broken for sysvar evaluation.");
+					this.chunk_broken_for_eval = false;
+					this[command.cmd](args);
+				}
+				else {
+					if(this.sysvar_evaluated || (command.cmd in this.chunk_breakers)) {
+						log.debug("Breaking a chunk at line " + this.pc + " to evaluate system variables.");
+						this.chunk_broken_for_eval = true;
+						this.break_chunk = true;
+						break;
+					}
+					else {
+						log.debug("Running command normally: " + command.cmd + ' ' + args);
+						this[command.cmd](args);
+					}
+				}
 			} else {
 				this._unhandledCommand(command)
 			}
@@ -185,6 +240,8 @@ SBPRuntime.prototype._execute = function(command) {
 			this.break_chunk = true;
 			if(command.label in this.label_index) {
 				this.pc = this.label_index[command.label];
+				log.debug("Hit a GOTO: Going to line " + this.pc + "(Label: " + command.label + ")")
+
 			} else {
 				throw "Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc;
 			}
@@ -201,7 +258,30 @@ SBPRuntime.prototype._execute = function(command) {
 			break;
 
 		case "assign":
-			this.user_vars[command.var] = this._eval(command.expr);
+			this.sysvar_evaluated = false
+			value = this._eval(command.expr);
+
+			if(this.chunk_broken_for_eval) {
+				log.debug('Resuming after breaking a chunk to evaluate system variables.');
+				log.debug('Assigning the user value ' + command.var + ' the value ' + value);
+				this.chunk_broken_for_eval = false;
+				this.user_vars[command.var] = value;
+			}
+			else {
+				if(this.sysvar_evaluated) {
+					log.debug("Breaking a chunk at line " + this.pc + " to evaluate system variables for an assignment.");
+					this.chunk_broken_for_eval = true;
+					this.break_chunk = true;
+					break;
+				}
+				else {
+					log.debug('Assigning the user value ' + command.var + ' the value ' + value);
+					this.user_vars[command.var] = value;
+				}
+			}
+
+
+			
 			this.pc += 1;
 			break;
 
@@ -234,12 +314,8 @@ SBPRuntime.prototype._execute = function(command) {
 	return;
 }
 
-// Evaluate an expression.  Return the result.
-// TODO: Make this robust to undefined user variables
-SBPRuntime.prototype._eval = function(expr) {
-	log.debug("evaluating " + JSON.stringify(expr))
-	if(expr.op === undefined) {
-		expr = String(expr);
+SBPRuntime.prototype._eval_value = function(expr) {
+		log.debug("Evaluating value: " + expr)
 		sys_var = this.evaluateSystemVariable(expr);
 		if(sys_var === undefined) {
 			user_var = this.evaluateUserVariable(expr);
@@ -256,8 +332,19 @@ SBPRuntime.prototype._eval = function(expr) {
 			// ERROR UNKNOWN SYSTEM VARIABLE
 		} else {
 			log.debug("Evaluated " + expr + " as " + sys_var)
+			this.sysvar_evaluated = true;
 			return parseFloat(sys_var);
-		}
+		}	
+}
+
+// Evaluate an expression.  Return the result.
+// TODO: Make this robust to undefined user variables
+SBPRuntime.prototype._eval = function(expr) {
+	log.debug("Evaluating expression: " + JSON.stringify(expr))
+	if(expr === undefined) {return undefined;}
+
+	if(expr.op === undefined) {
+		return this._eval_value(String(expr));
 	} else {
 		switch(expr.op) {
 			case '+':
@@ -304,6 +391,8 @@ SBPRuntime.prototype.init = function() {
 	this.break_chunk = false;
 	this.current_chunk = [];
 	this.started = false;
+	this.sysvar_evaluated = false;
+	this.chunk_broken_for_eval
 	this.machine.setState(this, "idle");
 
 }
@@ -327,6 +416,8 @@ SBPRuntime.prototype._analyzeLabels = function() {
 		}
 	}
 }
+
+
 
 // Check all the GOTOS/GOSUBS in the program and make sure their labels exist
 // Throw an error for undefined labels.
@@ -353,6 +444,7 @@ SBPRuntime.prototype._analyzeGOTOs = function() {
 }
 
 SBPRuntime.prototype.evaluateSystemVariable = function(v) {
+	if(v === undefined) { return undefined;}
 	result = v.match(SYSVAR_RE);
 	if(result === null) {return undefined};
 	n = parseInt(result[1]);
@@ -412,7 +504,7 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 }
 
 SBPRuntime.prototype.evaluateUserVariable = function(v) {
-	log.info(v)
+	if(v === undefined) { return undefined;}
 	result = v.match(USERVAR_RE);
 	if(result == null) {return undefined};
 	if(v in this.user_vars) {
@@ -461,8 +553,10 @@ SBPRuntime.prototype.FS = function(args) {
 /* MOVE */
 
 SBPRuntime.prototype.MX = function(args) {
-	this.emit_gcode("G1X" + args[0] + " F" + sbp_settings.movexy_speed);
-	this.cmd_posx += args[0];
+	log.debug("MX COMMAND");
+	log.debug('MX args: ' + args);
+	this.emit_gcode("G1 X" + args[0] + " F" + sbp_settings.movexy_speed);
+	this.posx += args[0];
 }
 
 SBPRuntime.prototype.MY = function(args) {
@@ -830,6 +924,13 @@ SBPRuntime.prototype.ST = function(args) {
 
 /* VALUES */
 
+SBPRuntime.prototype.VA = function(args) {
+	log.debug("VA Command: " + args);
+	if(args[2] !== undefined) {
+		this.emit_gcode("G10 L2 P2 Z" + -this.machine.status.posz);
+	}
+}
+
 SBPRuntime.prototype.VC = function(args) {
 //	this.emit_gcode("G28.1");
 }
@@ -844,6 +945,11 @@ SBPRuntime.prototype.VR = function(args) {
 
 SBPRuntime.prototype.VS = function(args) {
 //	this.emit_gcode("G28.1");
+}
+
+SBPRuntime.prototype.EP = function(args) {
+	log.info("Got a EP command");
+	this.emit_gcode("G38.2 Z" + args[0]);
 }
 
 /* TOOLS */

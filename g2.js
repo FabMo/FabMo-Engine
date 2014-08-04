@@ -4,7 +4,7 @@ var events = require('events');
 var util = require('util');
 var Queue = require('./util').Queue;
 var config = require('./config_loader');
-var log = require('./log')
+var log = require('./log').logger('g2');
 
 // Values of the **stat** field that is returned from G2 status reports
 var STAT_INIT = 0;
@@ -52,6 +52,7 @@ function G2() {
 	this.jog_command = null;
 	this.jog_heartbeat = null;
 	this.quit_pending = false;
+	this.readers = {};
 	this.path = "";
 	// Array of assoc-arrays that detail callbacks for state changes
 	this.expectations = [];
@@ -282,7 +283,7 @@ G2.prototype.handleFooter = function(response) {
 	if(response.f) {
 		if(response.f[1] != 0) {
 			var err_code = response.f[1];
-			var err_msg = G2_ERRORS[err_code];
+			var err_msg = G2_ERRORS[err_code] || ['ERR_UNKNOWN', 'Unknown Error'];
 			this.emit('error', [err_code, err_msg[0], err_msg[1]]);
 		}
 	}
@@ -310,6 +311,9 @@ G2.prototype.handleStatusReport = function(response) {
 
 		stat = this.status.stat;
 
+		// Emit status no matter what
+		this.emit('status', this.status);
+
 		if(this.prev_stat != stat) {
 			
 			l = this.expectations.length
@@ -334,9 +338,6 @@ G2.prototype.handleStatusReport = function(response) {
 			this.emit('state', [this.prev_stat, this.status.stat]);
 			this.prev_stat = this.status.stat;
 		}
-
-		// Emit status no matter what
-		this.emit('status', this.status);
 
 		// Hack allows for a flush when quitting (must wait for the hold state to reach 4)
 		if(this.quit_pending) {
@@ -377,6 +378,12 @@ G2.prototype.onMessage = function(response) {
 	// Emitted everytime a message is received, regardless of content
 	this.emit('message', response);
 
+	for(key in response) {
+		if(key in this.readers) {
+			callback = this.readers[key].shift();
+			typeof callback === 'function' && callback(null, response[key]);
+		}
+	}
 	// Special message type for initial system ready message
 	if(r.msg && (r.msg === "SYSTEM READY")) {
 		this.emit('ready', this);
@@ -409,6 +416,14 @@ G2.prototype.quit = function() {
 	}
 }
 
+G2.prototype.get = function(key, callback) {
+	this.command({key : null});
+	if (key in this.readers) {
+		this.readers.push(callback);
+	} else {
+		this.readers[key] = [callback]
+	}
+}
 
 // Send a command to G2 (can be string or JSON)
 G2.prototype.command = function(obj) {

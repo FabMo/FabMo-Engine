@@ -50,7 +50,8 @@ mnemonic
     "TC" / "TD" / "TF" / "TH" / "TS" / "TT" / "TU" / 
     "UD" / "UL" / "UN" / "UR" / "UU" / "UV" / "UZ" / 
     "VA" / "VB" / "VC" / "VD" / "VI" / "VL" / "VN" / "VO" / "VP" / "VR" / "VS" / "VU" / 
-    "Z2" / "Z3" / "Z4" / "Z5" / "ZA" / "ZB" / "ZT" / "ZX" / "ZY" / "ZZ"
+    "Z2" / "Z3" / "Z4" / "Z5" / "ZA" / "ZB" / "ZT" / "ZX" / "ZY" / "ZZ" /
+    "EP"
 ) {return code;}
 
 identifier
@@ -75,7 +76,7 @@ user_variable
   = v:("&" identifier) {return v.join("")}
 
 system_variable
-  = v:("%" identifier) {return v.join("")}
+  = v:("%" "(" __ integer __ ")") {return v.join("")}
 
 assignment
   = v:variable __ "=" __ e:expression {return {"type": "assign", "var":v, "expr":e}}

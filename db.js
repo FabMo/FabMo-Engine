@@ -5,7 +5,7 @@ var db = new Engine.Db('/opt/shopbot/db', {}); // be sure that the directory exi
 var crypto = require('crypto'); // for the checksum
 var util = require('util');
 var files = db.collection("files");
-
+var log = require('./log').logger('files');
 
 /************* FILE CLASS ****************/
 function File(filename,path){
@@ -34,12 +34,14 @@ File.prototype.save = function(callback){
        	}
 	else if(document){
 		// update the current entry in the database instead of creating a new one.
+		log.info('Updating document id ' + document._id);
 		files.update({_id : document._id},that,function(){
 					callback(that);
 		});
 
 	}
 	else{
+		log.info('Creating a new document.');
 		files.insert(that, function(err,records){
 			if(!err)
 				callback(records[0]);
