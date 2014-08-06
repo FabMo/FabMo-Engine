@@ -5,18 +5,19 @@ var g2 = require('./g2');
 var sbp_settings = require('./sbp_settings');
 var sb3_commands = require('./data/sb3_commands');
 
-var SYSVAR_RE = /\%\(([0-9]+)\)/i
-var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i
+var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
+var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
 
 var chunk_breakers = {'VA':true}
 
 function SBPRuntime() {
-	this.program = []
-	this.pc = 0
-	this.user_vars = {}
-	this.label_index = {}
-	this.stack = []
-	this.current_chunk = []
+	this.program = [];
+	this.pc = 0;
+	this.start_of_the_chunk = 0;
+	this.user_vars = {};
+	this.label_index = {};
+	this.stack = [];
+	this.current_chunk = [];
 	this.running = false;
 	this.cmd_posx = 0;
 	this.cmd_posy = 0;
@@ -27,8 +28,10 @@ function SBPRuntime() {
 }
 
 SBPRuntime.prototype.connect = function(machine) {
-	this.machine = machine
-	this.driver = machine.driver
+	this.machine = machine;
+	this.driver = machine.driver;
+	this.machine.status.line=null;
+	this.machine.status.nb_line=null;
 	this._update();
 	this.status_handler = this._onG2Status.bind(this);
 	this.driver.on('status', this.status_handler);
@@ -44,7 +47,12 @@ SBPRuntime.prototype._onG2Status = function(status) {
 	// Update our copy of the system status
 	for (var key in this.machine.status) {
 		if(key in status) {
-			this.machine.status[key] = status[key];
+			if(key==='line'){
+				this.machine.status.line=this.start_of_the_chunk + status.line; 
+		}
+			else{
+				this.machine.status[key] = status[key];
+			}
 		}
 	}
 }
@@ -53,6 +61,8 @@ SBPRuntime.prototype._onG2Status = function(status) {
 SBPRuntime.prototype.runString = function(s) {
 	this.init();
 	try {
+		var lines =  s.split('\n');
+                this.machine.status.nb_lines = lines.length - 1;
 		this.program = parser.parse(s + '\n');
 		this._analyzeLabels();  // Build a table of labels
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table    
@@ -65,13 +75,13 @@ SBPRuntime.prototype.runString = function(s) {
 // Update the internal state of the runtime with data from the tool
 SBPRuntime.prototype._update = function() {
 
-	status = this.machine.status || {}
-	this.posx = 0.0
-	this.posy = 0.0
-	this.posz = 0.0
-	this.posa = 0.0
-	this.posb = status.posb || 0.0
-	this.posc = status.posc || 0.0
+	status = this.machine.status || {};
+	this.posx = status.posx || 0.0;
+	this.posy = status.posy || 0.0;
+	this.posz = status.posz || 0.0;
+	this.posa = status.posa || 0.0;
+	this.posb = status.posb || 0.0;
+	this.posc = status.posc || 0.0;
 
 }
 
@@ -114,7 +124,6 @@ SBPRuntime.prototype._run = function() {
 // Continue running the current program (until the end of the next chunk)
 // _continue() will dispatch the next chunk if appropriate, once the current chunk is finished
 SBPRuntime.prototype._continue = function() {
-
 	this._update();
 
 	log.debug('Running until break...')
@@ -127,13 +136,15 @@ SBPRuntime.prototype._continue = function() {
 
 	while(true) {
 		if(this.pc >= this.program.length) {
-			log.info("Program over. (pc = " + this.pc + ")")
+			log.info("Program over. (pc = " + this.pc + ")");
 			if(this.current_chunk.length > 0) {
-				log.info("dispatching a chunk: " + this.current_chunk)
+				log.info("dispatching a chunk: " + this.current_chunk);
 				this._dispatch();
 				return;
 			}
-			this.machine.status.filename = null;
+			this.machine.status.current_file = null;
+			this.machine.status.nb_lines=null;
+			this.machine.status.line=null;
 			this.init();
 			return;
 		}
@@ -146,6 +157,7 @@ SBPRuntime.prototype._continue = function() {
 		if(this.break_chunk) {
 			this._dispatch();
 			return;
+			this.start_of_the_chunk = this.pc;
 		} 
 	}	
 }
@@ -176,6 +188,13 @@ SBPRuntime.prototype._dispatch = function() {
 				log.info("Expected a start but didn't get one. (" + t + ")"); 
 			}
 		});
+
+		// add gcode line number to the chunk
+		for (i=0;i<this.current_chunk.length;i++){
+			if (this.current_chunk[i][0]!==undefined ){
+				this.current_chunk[i]= 'N'+ (i+1) + this.current_chunk[i];
+			}
+		}
 		this.driver.runSegment(this.current_chunk.join('\n'));
 		this.current_chunk = [];
 	} else {
@@ -190,7 +209,7 @@ SBPRuntime.prototype._execute = function(command) {
 	log.info("Executing line: " + JSON.stringify(command));
 	if(!command) {
 		this.pc += 1;
-		return
+		return;
 	}
 	switch(command.type) {
 		case "cmd":
@@ -215,13 +234,13 @@ SBPRuntime.prototype._execute = function(command) {
 					}
 				}
 			} else {
-				this._unhandledCommand(command)
+				this._unhandledCommand(command);
 			}
 			this.pc += 1;
 			break;
 
 		case "return":
-			this.break_chunk = true
+			this.break_chunk = true;
 			if(this.stack) {
 				this.pc = this.stack.pop();
 			} else {
@@ -249,7 +268,7 @@ SBPRuntime.prototype._execute = function(command) {
 			this.break_chunk = true;
 			if(command.label in this.label_index) {
 				this.pc = this.label_index[command.label];
-				this.stack.push([this.pc + 1])
+				this.stack.push([this.pc + 1]);
 			} else {
 				throw "Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc;
 			}
@@ -305,12 +324,13 @@ SBPRuntime.prototype._execute = function(command) {
 			break;
 
 		default:
-			log.error("Unknown command: " + JSON.stringify(command))
+			log.error("Unknown command: " + JSON.stringify(command));
 			this.pc += 1;
 			break;
 	}
 	return;
 }
+
 
 SBPRuntime.prototype._eval_value = function(expr) {
 		log.debug("Evaluating value: " + expr)
@@ -318,17 +338,18 @@ SBPRuntime.prototype._eval_value = function(expr) {
 		if(sys_var === undefined) {
 			user_var = this.evaluateUserVariable(expr);
 			if(user_var === undefined) {
-				log.debug("Evaluated " + expr + " as " + expr)
+				log.debug("Evaluated " + expr + " as " + expr);
 				return parseFloat(expr);
 			} else if(user_var === null) {
 				// ERROR UNDEFINED VARIABLE
 			} else {
-				log.debug("Evaluated " + expr + " as " + user_var)
+				log.debug("Evaluated " + expr + " as " + user_var);
 				return parseFloat(user_var);
 			}
 		} else if(sys_var === null) {
 			// ERROR UNKNOWN SYSTEM VARIABLE
 		} else {
+
 			log.debug("Evaluated " + expr + " as " + sys_var)
 			this.sysvar_evaluated = true;
 			return parseFloat(sys_var);
@@ -384,8 +405,9 @@ SBPRuntime.prototype._eval = function(expr) {
 
 SBPRuntime.prototype.init = function() {
 	this.pc = 0;
-	this.stack = []
-	this.label_index = {}
+	this.start_of_the_chunk = 0;
+	this.stack = [];
+	this.label_index = {};
 	this.break_chunk = false;
 	this.current_chunk = [];
 	this.started = false;
@@ -399,14 +421,14 @@ SBPRuntime.prototype.init = function() {
 // this.label_index will map labels to line numbers
 // An error is thrown on duplicate labels
 SBPRuntime.prototype._analyzeLabels = function() {
-	this.label_index = {}
+	this.label_index = {};
 	for(i=0; i<this.program.length; i++) {
 		line = this.program[i];
 		if(line) {
 			switch(line.type) {
 				case "label":
 					if (line.value in this.label_index) {
-						throw "Duplicate label."
+						throw "Duplicate label.";
 					}
 					this.label_index[line.value] = i;
 					break;
@@ -496,12 +518,13 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 		break;
 
 		default:
-			return null
+			return null;
 		break;
 	}
 }
 
 SBPRuntime.prototype.evaluateUserVariable = function(v) {
+
 	if(v === undefined) { return undefined;}
 	result = v.match(USERVAR_RE);
 	if(result == null) {return undefined};
@@ -910,7 +933,7 @@ SBPRuntime.prototype.Z6 = function(args) {
 }
 
 SBPRuntime.prototype.ZT = function(args) {
-    this.emit_gcode("G54")
+    this.emit_gcode("G54");
 }
 
 /* SETTINGS */
@@ -960,6 +983,6 @@ runtime = new SBPRuntime();
 runtime.runFileSync('example.sbp');
 console.log(runtime.user_vars);
 */
-exports.SBPRuntime = SBPRuntime
+exports.SBPRuntime = SBPRuntime;
 
 

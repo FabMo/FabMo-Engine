@@ -35,6 +35,8 @@ GCodeRuntime.prototype._onG2Status = function(status) {
 GCodeRuntime.prototype._idle = function() {
 	this.machine.setState(this, 'idle');
 	this.machine.status.current_file = null;
+	this.machine.status.line=null;
+	this.machine.status.nb_lines=null;
 };
 
 GCodeRuntime.prototype._onG2StateChange = function(states) {
@@ -252,9 +254,17 @@ GCodeRuntime.prototype._onG2StateChange = function(states) {
 GCodeRuntime.prototype.runString = function(string, callback) {
 	//log.debug('Running String ' + string)
 	if(this.machine.status.state === 'idle') {
+		var lines =  string.split('\n');
+		this.machine.status.nb_lines = lines.length;
+		for (i=0;i<lines.length;i++){
+			if (lines[i][0]!==undefined && lines[i][0].toUpperCase() !== 'N' ){
+				lines[i]= 'N'+ (i+1) + lines[i];
+			}
+		}
+		string = lines.join("\n");
 		this.driver.runString(string);
 	}
 
 }
 
-exports.GCodeRuntime = GCodeRuntime
+exports.GCodeRuntime = GCodeRuntime;
