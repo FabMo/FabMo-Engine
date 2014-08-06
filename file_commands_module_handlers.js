@@ -21,7 +21,6 @@ exports.resume = function(req, res, next) {
 };
 
 exports.run = function(req, res, next) {
-	console.log('Running file');
 	File.get_by_id(req.params.id,function(file){
 		if(!file){res.send(404);return;}
 		file.saverun();//update last run and run count information

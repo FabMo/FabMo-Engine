@@ -6,10 +6,12 @@ var Engine = require('tingodb')();
 var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
-var log = require('./log');
-var GCodeRuntime = require('./gcode').GCodeRuntime;
-var SBPRuntime = require('./opensbp').SBPRuntime;
-var ManualRuntime = require('./manual').ManualRuntime;
+
+var log = require('./log').logger('machine');
+var GCodeRuntime = require('./gcode').GCodeRuntime
+var SBPRuntime = require('./opensbp').SBPRuntime
+var ManualRuntime = require('./manual').ManualRuntime
+
 
 
 function connect(callback) {

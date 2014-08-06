@@ -1,3 +1,5 @@
+log = require('./log').logger('manual');
+
 function ManualRuntime() {
 	this.machine = null;
 	this.driver = null;
@@ -34,10 +36,12 @@ ManualRuntime.prototype._onG2Status = function(status) {
 }
 
 ManualRuntime.prototype.stopJog = function() {
+	log.info('Stopping jog.');
 	this.driver.stopJog();
 }
 
 ManualRuntime.prototype.jog = function(direction) {
+	log.info('Starting jog in ' + direction + ' direction.');
 	this.driver.jog(direction);
 }
 
