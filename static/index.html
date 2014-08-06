@@ -138,28 +138,17 @@
 						</div>
 						<div class="col-xs-6">
 							<div class="container-fluid">
-								<div class="row">
-									<div class="col-xs-3"></div>
-									<div class="col-xs-3"><button class="btn btn-default">+Y</button></div>
-									<div class="col-xs-3"></div>
-									<div class="col-xs-3"><button class="btn btn-default">+Z</button></div>
+								<div class="row" style="margin-top: 15px;">
+									<div class="col-xs-3"><button class="btn btn-default btn-lg button-plus-Z">↥</button></div>
+									<div class="col-xs-3"><button class="btn btn-default btn-lg button-plus-Y">↑</button></div>
+									<div class="col-xs-3"><button class="btn btn-default btn-lg button-minus-Z">↧</button></div>
 								</div>							
-								<div class="row">
-									<div class="col-xs-3"><button class="btn btn-default">-X</button></div>
-									<div class="col-xs-3"></div>
-									<div class="col-xs-3"><button class="btn btn-default">+X</button></div>
-									<div class="col-xs-3"></div>
-								</div>							
-
-								<div class="row">
-									<div class="col-xs-3"></div>
-									<div class="col-xs-3"><button class="btn btn-default">-Y</button></div>
-									<div class="col-xs-3"></div>
-									<div class="col-xs-3"><button class="btn btn-default">-Z</button></div>
+								<div class="row" style="margin-top: 15px;">
+									<div class="col-xs-3"><button class="btn btn-default btn-lg button-minus-X">←</button></div>
+									<div class="col-xs-3"><button class="btn btn-default btn-lg button-minus-Y">↓</button></div>
+									<div class="col-xs-3"><button class="btn btn-default btn-lg button-plus-X">→</button></div>
 								</div>							
 							</div>
-
-
 						</div>
 
 					</div>
@@ -308,9 +297,10 @@
 
 		if(status.current_file) {
 			$('.filename-display').removeClass('hide');
-			$('.filename').html(status.current_file)
+			$('.filename').html(status.current_file);
 		} else {
 			$('.filename-display').addClass('hide');
+			$('.filename').empty();
 		}
 
 		if(status.state === 'idle') {
@@ -484,6 +474,71 @@
 	$('.zerox-button').click(function(e) {gcode('G28.3 X0'); });  
 	$('.zeroy-button').click(function(e) {gcode('G28.3 Y0'); });  
 	$('.zeroz-button').click(function(e) {gcode('G28.3 Z0'); });  
+
+
+
+	$('.button-plus-X').mousedown(function(e) {
+		var e1 = jQuery.Event("keydown");
+		e1.which = 39; 
+		$('#manual-modal').trigger(e1);
+	});  
+	$('.button-minus-X').mousedown(function(e) {
+		var e1 = jQuery.Event("keydown");
+		e1.which = 37; 
+		$('#manual-modal').trigger(e1);
+	});
+	$('.button-plus-Y').mousedown(function(e) {
+		var e1 = jQuery.Event("keydown");
+		e1.which = 38; 
+		$('#manual-modal').trigger(e1);
+	});  
+	$('.button-minus-Y').mousedown(function(e) {
+		var e1 = jQuery.Event("keydown");
+		e1.which = 40; 
+		$('#manual-modal').trigger(e1);
+	});
+	$('.button-plus-Z').mousedown(function(e) {
+		var e1 = jQuery.Event("keydown");
+		e1.which = 33; 
+		$('#manual-modal').trigger(e1);
+	});  
+	$('.button-minus-Z').mousedown(function(e) {
+		var e1 = jQuery.Event("keydown");
+		e1.which = 34; 
+		$('#manual-modal').trigger(e1);
+	});
+
+	$('.button-plus-X').mouseup(function(e) {
+		var e1 = jQuery.Event("keyup");
+		e1.which = 39; 
+		$('#manual-modal').trigger(e1);
+	});  
+	$('.button-minus-X').mouseup(function(e) {
+		var e1 = jQuery.Event("keyup");
+		e1.which = 37; 
+		$('#manual-modal').trigger(e1);
+	});
+	$('.button-plus-Y').mouseup(function(e) {
+		var e1 = jQuery.Event("keyup");
+		e1.which = 38; 
+		$('#manual-modal').trigger(e1);
+	});  
+	$('.button-minus-Y').mouseup(function(e) {
+		var e1 = jQuery.Event("keyup");
+		e1.which = 40; 
+		$('#manual-modal').trigger(e1);
+	});
+	$('.button-plus-Z').mouseup(function(e) {
+		var e1 = jQuery.Event("keyup");
+		e1.which = 33; 
+		$('#manual-modal').trigger(e1);
+	});  
+	$('.button-minus-Z').mouseup(function(e) {
+		var e1 = jQuery.Event("keyup");
+		e1.which = 34; 
+		$('#manual-modal').trigger(e1);
+	});
+
 
 	/*
 	$('#keypad').click(function(e) {
