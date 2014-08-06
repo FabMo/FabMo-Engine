@@ -31,7 +31,7 @@ SBPRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;
 	this.machine.status.line=null;
-	this.machine.status.nb_line=null;
+	this.machine.status.nb_lines=null;
 	this._update();
 	this.status_handler = this._onG2Status.bind(this);
 	this.driver.on('status', this.status_handler);
