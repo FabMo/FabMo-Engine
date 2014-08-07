@@ -1,4 +1,5 @@
-var winston = require("winston");
+var winston = require('winston');
+
 
 LOG_LEVELS = {
 	'g2' : 'debug',
@@ -9,17 +10,19 @@ LOG_LEVELS = {
 	'api' : 'debug'
 };
 
-winston.handleExceptions( new winston.transports.Console());
-
 var create_logger = function(name) {
 	log_level = LOG_LEVELS[name] || 'info';
 	container = winston.loggers;
-	return container.add(name, {
+	l = container.add(name, {
 	    console: {
 	      level: log_level,
-	      colorize: true
+	      colorize: true,
+          handleExceptions: false
 	    },
   	});
+    l.exitOnError = false;
+    //return expandErrors(l);
+    return l
 }
 
 var logger = function(name) {
@@ -30,4 +33,5 @@ var logger = function(name) {
 	}
 }
 
+//throw "woah"
 exports.logger = logger;
