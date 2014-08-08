@@ -33,5 +33,4 @@ var logger = function(name) {
 	}
 }
 
-//throw "woah"
 exports.logger = logger;

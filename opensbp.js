@@ -60,9 +60,9 @@ SBPRuntime.prototype._onG2Status = function(status) {
 // Run the provided string as a program
 SBPRuntime.prototype.runString = function(s) {
 	try {
-		var lines =  s.split('\n');
-                this.machine.status.nb_lines = lines.length - 1;
 		this.program = parser.parse(s + '\n');
+		var lines = this.program.length
+		this.machine.status.nb_lines = lines.length - 1;
 		this._analyzeLabels();  // Build a table of labels
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table    
 		this._run();
@@ -70,7 +70,71 @@ SBPRuntime.prototype.runString = function(s) {
 		log.error(err);
 	}
 }
+/*
+SBPRuntime.prototype._convertToType = function(type, value) {
+	switch(type) {
+		case 'ck':
+			v = String(value)[0];
+			if(v === '0') {
+				return false;
+			} else if (v === '1') {
+				return true;
+			} else {
+				throw "Invalid value for checkbox type: " + value;
+			}
 
+		break;
+
+		case 'sng':
+		break;
+
+		case 'distmb':
+		break;
+
+		case 'dist':
+		break;
+
+		case 'ops':
+		break;
+
+		case 'int':
+		break;
+
+		case 'partfile'
+		break;
+
+		case 'distb':
+		break;
+
+		case 'distrb':
+		break;
+
+		case 'distm':
+		break;
+
+		case 'distra':
+		break;
+
+		case 'distr':
+		break;
+
+		case 'str':
+		break;
+
+		case 'dista':
+		break;
+
+		case 'distma':
+		break;
+
+		case 'obs':
+		break;
+
+		case 'axis':
+		break;
+	}
+}
+*/
 // Update the internal state of the runtime with data from the tool
 SBPRuntime.prototype._update = function() {
 
