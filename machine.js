@@ -24,6 +24,10 @@ function connect(callback) {
 			serial_path = '/dev/cu.usbmodem001';
 			break;
 
+		case 'win32':
+			serial_path = 'COM1';
+			break;
+				
 		default:
 			serial_path = null;
 			break;

@@ -23,7 +23,7 @@ machine.machine = machine.connect(function(error, data) {
 		);
 
 		// Configure local directory for uploading files
-		server.use(restify.bodyParser({'uploadDir':'/opt/shopbot/tmp'}));
+		server.use(restify.bodyParser({'uploadDir':'c:/opt/shopbot/tmp'}));
 
 		// The routes module maps URLs to functions of the API
 		var routes = require('./routes')(server);

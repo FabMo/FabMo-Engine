@@ -64,9 +64,6 @@ SBPRuntime.prototype.runString = function(s) {
 
 // Update the internal state of the runtime with data from the tool
 SBPRuntime.prototype._update = function() {
-<<<<<<< HEAD
-  //
-=======
 	status = this.machine.status || {}
 	this.posx = 0.0
 	this.posy = 0.0
@@ -74,7 +71,6 @@ SBPRuntime.prototype._update = function() {
 	this.posa = 0.0
 	this.posb = status.posb || 0.0
 	this.posc = status.posc || 0.0
->>>>>>> origin/master
 }
 
 // Evaluate a list of arguments provided (for commands)
@@ -784,35 +780,37 @@ SBPRuntime.prototype.JS = function(args) {
 SBPRuntime.prototype.CG = function(args) {
     // - Should we handle I-O-T option??
     // - How to implement spiral plunge in G-code????
-    paramError = FALSE;
 
     startX = this.cmd_posx;
     startY = this.cmd_posy;
     startZ = this.cmd_posz;
     if (args[13] != undefined && args[13] == 1){
-    	plgZ = 0;
+    	var plgZ = 0;
     }
     else{
-    	plgZ = startZ;
+    	var plgZ = startZ;
     }
     currentZ = plgZ;
-    endX = args[1] != undefined : args[1] : ParamError;
-    if endX = ParamError {}
-    var endY = args[2] != undefined : args[2] : ParamError;
-    if endY = ParamError {}
-    var centerX = args[3] != undefined : args[3] : ParamError;
-    if centerX = ParamError {}
-    var centerY = args[4] != undefined ; args[4] : ParamError;
-    if centerY = ParamError {}
+    endX = args[1] != undefined ? args[1] : undefined;
+ //	if endX == undefined {}
+    endY = args[2] != undefined ? args[2] : undefined;
+ //	if endY == undefined {}
+    centerX = args[3] != undefined ? args[3] : undefined;
+ //	if centerX == undefined {}
+    centerY = args[4] != undefined ? args[4] : undefined;
+ //	if centerY == undefined {}
     var OIT = args[5] != undefined ? args[5] : "T";
-    var Dr = args[6] != undefined ? args[6] : 0; 
+    var Dir = args[6] != undefined ? args[6] : 1; 
     var Plg = args[7] != undefined ? args[7] : 0;
     var reps = args[8] != undefined ? args[8] : 1;
     var propX = args[9] != undefined ? args[9] : 1;
     var propY = args[10] != undefined ? [10] : 1;
     var optCG = args[11] != undefined ? args[11] : 0;
-    var nuPullUp = args[12] != undefined ? args[12] : 0;
+    var noPullUp = args[12] != undefined ? args[12] : 0;
 
+//    this.emit_gcode( "instr: " + args );
+//    console.log(sbp.current_chunk); 
+  
     for (i=0; i<reps;i++){
     	if (Plg != 0 && optCG < 3 ) {										// If plunge depth is specified move to that depth * number of reps
     		currentZ += Plg;
@@ -831,7 +829,7 @@ SBPRuntime.prototype.CG = function(args) {
     		    	this.emit_gcode("G1X" + (j * Pocket_StepX + startX) + "Y" + (j * Pocket_StepY + startY))
     		    }
     		    else {								// Loop passes until overlapping the center
-    				if (Dr == 1 ) { var outStr = "G2X" + (j * Pocket_StepX + endX) + "Y" + (j * Pocket_StepY + endY); }				// Clockwise circle/arc
+    				if (Dir == 1 ) { var outStr = "G2X" + (j * Pocket_StepX + endX) + "Y" + (j * Pocket_StepY + endY); }				// Clockwise circle/arc
     				else { var outStr = "G3X" + (j * Pocket_StepX + endX) + "Y" + (j * Pocket_StepY + endY); }						// CounterClockwise circle/arc
 				}
     		}
@@ -846,7 +844,7 @@ SBPRuntime.prototype.CG = function(args) {
 			}
     	}
     	else {
-    		if (Dr == 1 ) { var outStr = "G2X" + endX + "Y" + endY; }				// Clockwise circle/arc
+    		if (Dir == 1 ) { var outStr = "G2X" + endX + "Y" + endY; }				// Clockwise circle/arc
     		else { var outStr = "G3X" + endX + "Y" + endY; }						// CounterClockwise circle/arc
 			if (Plg != 0 && optCG > 2 ) { 
 		    	outStr = outStr + "Z" + (currentZ + Plg); 
@@ -868,12 +866,12 @@ SBPRuntime.prototype.CG = function(args) {
     	   	this.emit_gcode("G0X" + startX + "Y" + startY);
     	   	this.emit_gcode("G1Z" + currentZ + " F" + sbp_settings.movez_speed);		
     	}
-    	if (Dr == 1 ){ var outStr = "G2X" + endX + "Y" + endY; }                  // Clockwise circle/arc
+    	if (Dir == 1 ){ var outStr = "G2X" + endX + "Y" + endY; }                  // Clockwise circle/arc
     	else { var outStr = "G3X" + endX + "Y" + endY; }                          // CounterClockwise circle/arc
 		outStr = outStr + "I" + centerX + "K" + centerY;					      // Add Center offset
 		this.emit_gcode(outStr); 
     }	
-    if(noPullUp == 0){    	//If No pull-up is set to YES, pull up to the starting Z location
+    if(noPullUp == 0 && currentZ != startZ){    	//If No pull-up is set to YES, pull up to the starting Z location
     	this.emit_gcode("G1Z" + startZ);
     	this.cmd_posz = startZ;
     }
@@ -887,6 +885,51 @@ SBPRuntime.prototype.CG = function(args) {
 
 SBPRuntime.prototype.CR = function(args) {
 	//calc and output commands to cut a rectangle
+}
+
+/* VALUES */
+
+SBPRuntime.prototype.VA = function(args) {
+	//this.emit_gcode("G10 L2 P2 X" + this.posx);
+}
+
+SBPRuntime.prototype.VC = function(args) {
+	//this.emit_gcode("G10 L2 P2 X" + this.posx);
+}	
+
+SBPRuntime.prototype.VD = function(args) {
+	//this.emit_gcode("G10 L2 P2 X" + this.posx);
+}	
+
+SBPRuntime.prototype.VP = function(args) {
+	//this.emit_gcode("G10 L2 P2 X" + this.posx);
+}	
+
+SBPRuntime.prototype.VR = function(args) {
+	//this.emit_gcode("G10 L2 P2 X" + this.posx);
+}	
+
+SBPRuntime.prototype.VS = function(args) {
+	//this.emit_gcode("G10 L2 P2 X" + this.posx);
+}
+
+SBPRuntime.prototype.VU = function(args) {
+	unitsX = args[1] != undefined ? args[1] : undefined;
+	unitsX = args[2] != undefined ? args[2] : undefined;
+	unitsX = args[3] != undefined ? args[3] : undefined;
+	unitsX = args[4] != undefined ? args[4] : undefined;
+	unitsX = args[5] != undefined ? args[5] : undefined;
+	unitsX = args[6] != undefined ? args[6] : undefined;
+	unitsX = args[7] != undefined ? args[7] : undefined;
+	unitsX = args[8] != undefined ? args[8] : undefined;
+	unitsX = args[9] != undefined ? args[9] : undefined;
+	unitsX = args[10] != undefined ? args[10] : undefined;
+	unitsX = args[11] != undefined ? args[11] : undefined;
+	unitsX = args[12] != undefined ? args[12] : undefined;
+	unitsX = args[13] != undefined ? args[13] : undefined;
+	unitsX = args[14] != undefined ? args[14] : undefined;
+	unitsX = args[15] != undefined ? args[15] : undefined;
+	//this.emit_gcode("G10 L2 P2 X" + this.posx);
 }
 
 /* ZERO */
