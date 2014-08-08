@@ -59,11 +59,12 @@ SBPRuntime.prototype._onG2Status = function(status) {
 
 // Run the provided string as a program
 SBPRuntime.prototype.runString = function(s) {
-	this.init();
 	try {
 		var lines =  s.split('\n');
                 this.machine.status.nb_lines = lines.length - 1;
 		this.program = parser.parse(s + '\n');
+		var lines = this.program.length
+		this.machine.status.nb_lines = lines.length - 1;
 		this._analyzeLabels();  // Build a table of labels
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table    
 		this._run();
@@ -71,7 +72,71 @@ SBPRuntime.prototype.runString = function(s) {
 		log.error(err);
 	}
 }
+/*
+SBPRuntime.prototype._convertToType = function(type, value) {
+	switch(type) {
+		case 'ck':
+			v = String(value)[0];
+			if(v === '0') {
+				return false;
+			} else if (v === '1') {
+				return true;
+			} else {
+				throw "Invalid value for checkbox type: " + value;
+			}
 
+		break;
+
+		case 'sng':
+		break;
+
+		case 'distmb':
+		break;
+
+		case 'dist':
+		break;
+
+		case 'ops':
+		break;
+
+		case 'int':
+		break;
+
+		case 'partfile'
+		break;
+
+		case 'distb':
+		break;
+
+		case 'distrb':
+		break;
+
+		case 'distm':
+		break;
+
+		case 'distra':
+		break;
+
+		case 'distr':
+		break;
+
+		case 'str':
+		break;
+
+		case 'dista':
+		break;
+
+		case 'distma':
+		break;
+
+		case 'obs':
+		break;
+
+		case 'axis':
+		break;
+	}
+}
+*/
 // Update the internal state of the runtime with data from the tool
 SBPRuntime.prototype._update = function() {
 
@@ -88,6 +153,8 @@ SBPRuntime.prototype._update = function() {
 // Evaluate a list of arguments provided (for commands)
 SBPRuntime.prototype._evaluateArguments = function(command, args) {
 	log.debug("Evaluating arguments: " + command + "," + JSON.stringify(args));
+
+	// Scrub the argument list:  extend to the correct length, sub in defaults where necessary.
 	scrubbed_args = [];
 	if(command in sb3_commands) {
 		params = sb3_commands[command].params
@@ -107,6 +174,8 @@ SBPRuntime.prototype._evaluateArguments = function(command, args) {
 		scrubbed_args = []
 	}
 	log.debug("Scrubbed arguments: " + JSON.stringify(scrubbed_args));
+	
+	// Create the list of evaluated arguments to be returned
 	retval = [];
 	for(i=0; i<scrubbed_args.length; i++) {
 		retval.push(this._eval(scrubbed_args[i]));
@@ -134,32 +203,34 @@ SBPRuntime.prototype._continue = function() {
 		return;
 	}
 
-	while(true) {
-		if(this.pc >= this.program.length) {
-			log.info("Program over. (pc = " + this.pc + ")");
-			if(this.current_chunk.length > 0) {
-				log.info("dispatching a chunk: " + this.current_chunk);
-				this._dispatch();
-				return;
-			}
-			this.machine.status.current_file = null;
-			this.machine.status.nb_lines=null;
-			this.machine.status.line=null;
-			this.init();
-			return;
+	// If we've run off the end of the program, we're done!
+	if(this.pc >= this.program.length) {
+		log.info("Program over. (pc = " + this.pc + ")")
+		// We may yet have g-codes that are pending.  Run those.
+		if(this.current_chunk.length > 0) {
+			log.info("dispatching a chunk: " + this.current_chunk)
+			this._dispatch();
 		}
 
-		
-		line = this.program[this.pc];
+		// TODO: Fix so the filename isn't cleared till the tool is actually done moving
+		this.machine.status.filename = null;
+		this.machine.status.current_file = null;
+		this.machine.status.nb_lines=null;
+		this.machine.status.line=null;
+		this.init();
+		return;
+	}
 
-		this._execute(line);
+	// Pull the current line of the program from the list
+	line = this.program[this.pc];
 
-		if(this.break_chunk) {
-			this._dispatch();
-			return;
-			this.start_of_the_chunk = this.pc;
-		} 
-	}	
+	// Execute it.  The _execute function will either call continue or dispatch to advance the program
+	this._execute(line, this._continue.bind(this), this._dispatch.bind(this));
+
+	if(this.break_chunk) {
+		this._dispatch();
+		this.start_of_the_chunk = this.pc;
+	} 
 }
 
 // Pack up the current chunk and send it to G2
@@ -169,13 +240,13 @@ SBPRuntime.prototype._dispatch = function() {
 	this.break_chunk = false;
 	if(this.current_chunk.length > 0) {
 		var run_function = function(driver) {
-			log.info("Expected a running state change and got one.");
+			log.debug("Expected a running state change and got one.");
 			driver.expectStateChange({
 				"stop" : function(driver) { 
 					runtime._continue();
 				},
 				null : function(driver) {
-					log.info("Expected a stop but didn't get one.");
+					log.warn("Expected a stop but didn't get one.");
 				}
 			});
 		};
@@ -185,7 +256,7 @@ SBPRuntime.prototype._dispatch = function() {
 			"homing" : run_function,
 			"probe" : run_function,
 			null : function(t) {
-				log.info("Expected a start but didn't get one. (" + t + ")"); 
+				log.warn("Expected a start but didn't get one. (" + t + ")"); 
 			}
 		});
 
@@ -202,9 +273,26 @@ SBPRuntime.prototype._dispatch = function() {
 	}
 }
 
+SBPRuntime.prototype._executeCommand = function(cmd, args, callback) {
+	f = this[cmd].bind(this);
+	log.debug("Command: " + cmd + " Function: " + f);
+	if(f.length > 1) {
+		f(args, function() {this.pc+=1; callback()}.bind(this));
+	} else {
+		log.debug("Calling handler for " + cmd + " With arguments: [" + args + "]");
+		f(args);
+		log.debug("Called.")
+		this.pc +=1;
+		callback();
+	}
+}
+
 // Execute a single statement
-// Accepts a parsed statement, and returns nothing
-SBPRuntime.prototype._execute = function(command) {
+// Accepts a parsed statement
+// Callbacks take no arguments.
+// continue_callback is called if execution can continue with the next line in the program
+// deferred_callback is called if execution must be deferred (code sent to g2 or other asynchronous process)
+SBPRuntime.prototype._execute = function(command, continue_callback, deferred_callback) {
 	this.break_chunk = false;
 	log.info("Executing line: " + JSON.stringify(command));
 	if(!command) {
@@ -212,6 +300,8 @@ SBPRuntime.prototype._execute = function(command) {
 		return;
 	}
 	switch(command.type) {
+
+		// A ShopBot Comand (M2, ZZ, C3, etc...)
 		case "cmd":
 			if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
 				this.sysvar_evaluated = false;
@@ -219,24 +309,23 @@ SBPRuntime.prototype._execute = function(command) {
 				if(this.chunk_broken_for_eval) {
 					log.debug("Resuming after a chunk was broken for sysvar evaluation.");
 					this.chunk_broken_for_eval = false;
-					this[command.cmd](args);
+					return this._executeCommand(command.cmd, args, continue_callback);
 				}
 				else {
-					if(this.sysvar_evaluated || (command.cmd in this.chunk_breakers)) {
+					if(this.sysvar_evaluated || (command.cmd in chunk_breakers)) {
 						log.debug("Breaking a chunk at line " + this.pc + " to evaluate system variables.");
 						this.chunk_broken_for_eval = true;
-						this.break_chunk = true;
-						break;
+						return deferred_callback(); // Don't advance pc when execution is deferred
 					}
 					else {
 						log.debug("Running command normally: " + command.cmd + ' ' + args);
-						this[command.cmd](args);
+						return this._executeCommand(command.cmd, args, continue_callback);
 					}
 				}
 			} else {
-				this._unhandledCommand(command);
+				this.pc += 1;
+				this._unhandledCommand(command)
 			}
-			this.pc += 1;
 			break;
 
 		case "return":
@@ -246,29 +335,29 @@ SBPRuntime.prototype._execute = function(command) {
 			} else {
 				throw "Runtime Error: Return with no GOSUB at " + this.pc;
 			}
+			return deferred_callback();
 			break;
 
 		case "end":
-			this.break_chunk = true;
 			this.pc = this.program.length;
+			return deferred_callback();
 			break;
 
 		case "goto":
-			this.break_chunk = true;
 			if(command.label in this.label_index) {
 				this.pc = this.label_index[command.label];
 				log.debug("Hit a GOTO: Going to line " + this.pc + "(Label: " + command.label + ")")
-
+				return deferred_callback();
 			} else {
 				throw "Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc;
 			}
 			break;
 
 		case "gosub":
-			this.break_chunk = true;
 			if(command.label in this.label_index) {
 				this.pc = this.label_index[command.label];
-				this.stack.push([this.pc + 1]);
+				this.stack.push([this.pc + 1])
+				return deferred_callback();
 			} else {
 				throw "Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc;
 			}
@@ -288,28 +377,24 @@ SBPRuntime.prototype._execute = function(command) {
 				if(this.sysvar_evaluated) {
 					log.debug("Breaking a chunk at line " + this.pc + " to evaluate system variables for an assignment.");
 					this.chunk_broken_for_eval = true;
-					this.break_chunk = true;
-					break;
+					return deferred_callback();
 				}
 				else {
 					log.debug('Assigning the user value ' + command.var + ' the value ' + value);
 					this.user_vars[command.var] = value;
 				}
 			}
-
-
-			
 			this.pc += 1;
 			break;
 
 		case "cond":
-			// Here we would wait for conditional
-			this.break_chunk = true;
+			// TODO - look at continue versus deferred, this may not work for edge cases.
 			if(this._eval(command.cmp)) {
-				this._execute(command.stmt);
+				return this._execute(command.stmt, continue_callback, deferred_callback);
 			} else {
 				this.pc += 1;
 			}
+			return deferred_callback();
 			break;
 
 		case "label":
@@ -320,7 +405,7 @@ SBPRuntime.prototype._execute = function(command) {
 
 		case "pause":
 			this.pc += 1;
-			this.break_chunk = true;
+			return deferred_callback();
 			break;
 
 		default:
@@ -328,7 +413,7 @@ SBPRuntime.prototype._execute = function(command) {
 			this.pc += 1;
 			break;
 	}
-	return;
+	return continue_callback();
 }
 
 
@@ -412,9 +497,8 @@ SBPRuntime.prototype.init = function() {
 	this.current_chunk = [];
 	this.started = false;
 	this.sysvar_evaluated = false;
-	this.chunk_broken_for_eval
+	this.chunk_broken_for_eval = false;
 	this.machine.setState(this, "idle");
-
 }
 
 // Compile an index of all the labels in the program
@@ -574,8 +658,6 @@ SBPRuntime.prototype.FS = function(args) {
 /* MOVE */
 
 SBPRuntime.prototype.MX = function(args) {
-	log.debug("MX COMMAND");
-	log.debug('MX args: ' + args);
 	this.emit_gcode("G1 X" + args[0] + " F" + sbp_settings.movexy_speed);
 	this.posx += args[0];
 }
@@ -863,18 +945,24 @@ SBPRuntime.prototype.CR = function(args) {
 /* ZERO */
 
 SBPRuntime.prototype.ZX = function(args) {
-	this.emit_gcode("G10 L2 P2 X" + this.posx);
-	this.posx = 0;
+	this.machine.driver.get('mpox', function(err, value) {
+		this.emit_gcode("G10 L2 P2 Z" + value);
+		callback();
+	}.bind(this));
 }
 
 SBPRuntime.prototype.ZY = function(args) {
-	this.emit_gcode("G10 L2 P2 Y" + this.posy);
- 	this.posy = 0;
+	this.machine.driver.get('mpoy', function(err, value) {
+		this.emit_gcode("G10 L2 P2 Y" + value);
+		callback();
+	}.bind(this));
 }
 
 SBPRuntime.prototype.ZZ = function(args) {
-	this.emit_gcode("G10 L2 P2 Z" + this.posz);
- 	this.posz = 0;
+	this.machine.driver.get('mpoz', function(err, value) {
+		this.emit_gcode("G10 L2 P2 Z" + value);
+		callback();
+	}.bind(this));
 }
 
 SBPRuntime.prototype.ZA = function(args) {
@@ -945,10 +1033,19 @@ SBPRuntime.prototype.ST = function(args) {
 
 /* VALUES */
 
-SBPRuntime.prototype.VA = function(args) {
+SBPRuntime.prototype.VA = function(args, callback) {
 	log.debug("VA Command: " + args);
-	if(args[2] !== undefined) {
-		this.emit_gcode("G10 L2 P2 Z" + -this.machine.status.posz);
+	var zoffset = -args[2];
+	if(zoffset !== undefined) {
+		this.machine.driver.get('g55z', function(err, value) {
+			log.warn("Got mpoz: " + value)
+			log.warn("Current zpos: " + this.machine.status.posz);
+			// TODO fix hardcoded feedrate
+			this.emit_gcode("G1 F20");
+			this.emit_gcode("G10 L2 P2 Z" + (value + this.machine.status.posz + zoffset));
+			callback();
+		}.bind(this));
+
 	}
 }
 
