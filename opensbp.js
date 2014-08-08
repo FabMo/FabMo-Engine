@@ -882,8 +882,8 @@ SBPRuntime.prototype.CG = function(args) {
     	   	this.emit_gcode("G0X" + startX + "Y" + startY);
     	   	this.emit_gcode("G1Z" + currentZ + " F" + sbp_settings.movez_speed);		
 		} 
-    	if (Dr == 1 || Dr == 0 ){ var outStr = "G2X" + endX + "Y" + endY; }  // Clockwise circle/arc
-    	  else if(Dr == -1)  { var outStr = "G3X" + endX + "Y" + endY; }         // CounterClockwise circle/arc
+    	if (Dir == 1 || Dir == 0 ){ var outStr = "G2X" + endX + "Y" + endY; }  // Clockwise circle/arc
+    	  else if(Dir == -1)  { var outStr = "G3X" + endX + "Y" + endY; }         // CounterClockwise circle/arc
 		if (Plg != 0 && optCG == 3) { outStr = outStr + "Z" ; }            // Add Z for spiral plunge
 		outStr = outStr + "I" + centerX + "K" + centerY;					 // Add Center offset
 		this.emit_gcode(outStr); 
