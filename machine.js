@@ -1,15 +1,17 @@
 var g2 = require('./g2');
 var util = require('util');
 var events = require('events');
-var PLATFORM = require('process').platform
-var Engine = require('tingodb')(),
-    assert = require('assert');
+var PLATFORM = require('process').platform;
+var Engine = require('tingodb')();
+var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
+
 var log = require('./log').logger('machine');
 var GCodeRuntime = require('./gcode').GCodeRuntime
 var SBPRuntime = require('./opensbp').SBPRuntime
 var ManualRuntime = require('./manual').ManualRuntime
+
 
 
 function connect(callback) {
@@ -28,6 +30,10 @@ function connect(callback) {
 			serial_path = 'COM1';
 			break;
 				
+		case 'win64':
+			serial_path='COM1';
+			break;
+
 		default:
 			serial_path = null;
 			break;
@@ -51,7 +57,7 @@ function Machine(serial_path, callback) {
 		posx : 0.0,
 		posy : 0.0,
 		posz : 0.0
-	}
+	};
 
 	this.driver = new g2.G2();
 	this.driver.on("error", function(data) {log.error(data)});
@@ -82,31 +88,29 @@ Machine.prototype.gcode = function(string) {
 }
 Machine.prototype.runFile = function(filename) {
 	fs.readFile(filename, 'utf8', function (err,data) {
-		  if (err) {
-		  	log.error('Error reading file ' + filename);
-		    log.error(err);
-		    return
-		  } else {
-            parts = filename.split(path.sep)
-        	ext = path.extname(filename).toLowerCase();
-            log.debug(filename);
-            log.debug(parts);
-		  	this.status.current_file = parts[parts.length-1]
+		if (err) {
+			log.error('Error reading file ' + filename);
+		    	log.error(err);
+		    	return;
+		} else {
+            		parts = filename.split(path.sep);
+        		ext = path.extname(filename).toLowerCase();
+            		log.debug(filename);
+            		log.debug(parts);
+		  	this.status.current_file = parts[parts.length-1];
 
 		  	if(ext == '.sbp') {
 		  		this.setRuntime(this.sbp_runtime);
 		  	} else {
-		  		this.setRuntime(this.gcode_runtime);
+				this.setRuntime(this.gcode_runtime);
 		  	}
-
-		  	this.current_runtime.runString(data);
-
-		  }
-		}.bind(this));
+			this.current_runtime.runString(data);
+		}
+	}.bind(this));
 };
 
 Machine.prototype.jog = function(direction, callback) {
-	log.info('machine jog')
+	log.info('machine jog');
 	if((this.status.state === "idle") || (this.status.state === "manual")) {
 		this.setState("manual");
 		this.setRuntime(this.manual_runtime);
@@ -156,4 +160,3 @@ Machine.prototype.resume = function() {
 }
 
 exports.connect = connect;
-
