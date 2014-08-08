@@ -378,10 +378,10 @@ G2.prototype.onMessage = function(response) {
 	// Emitted everytime a message is received, regardless of content
 	this.emit('message', response);
 
-	for(key in response) {
+	for(key in r) {
 		if(key in this.readers) {
 			callback = this.readers[key].shift();
-			typeof callback === 'function' && callback(null, response[key]);
+			typeof callback === 'function' && callback(null, r[key]);
 		}
 	}
 	// Special message type for initial system ready message
@@ -417,12 +417,15 @@ G2.prototype.quit = function() {
 }
 
 G2.prototype.get = function(key, callback) {
-	this.command({key : null});
+	cmd = {}
+	cmd[key] = null
+	log.warn(this.readers)
 	if (key in this.readers) {
-		this.readers.push(callback);
+		this.readers[key].push(callback);
 	} else {
 		this.readers[key] = [callback]
 	}
+	this.command(cmd);
 }
 
 // Send a command to G2 (can be string or JSON)
