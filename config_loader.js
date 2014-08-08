@@ -27,7 +27,11 @@ function config_single(driver, cmd, success_callback) {
 		if (resp && (resp instanceof Object) && ('r' in resp)) { // filter for response
 			r = resp.r
 			cmd_key = Object.keys(cmd)[0].toLowerCase();
-			r_key = Object.keys(r)[0].toLowerCase();
+			try {
+				r_key = Object.keys(r)[0].toLowerCase();
+			} catch(e) {
+				return;
+			}
 			if ( cmd_key === r_key ) { //check if response correspond to the request
 				if(resp.f) { //check if there is a feedback
 					if (resp.f[1] === 0) {

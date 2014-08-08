@@ -82,7 +82,10 @@ G2.prototype.connect = function(path, callback) {
 	this.port.on("error", this.onSerialError.bind(this));
 	this.port.on('data', this.onData.bind(this));
 	this.on("ready", function(driver) {
+		driver.command({"gun":0});
+		driver.command('M30');
 		config.load(this, function(driver) {
+			driver.command({"gun":0});
 			driver.command('M30');
 			driver.requestStatusReport();
 			driver.connected = true;
