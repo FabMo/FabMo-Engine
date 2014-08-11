@@ -8,7 +8,7 @@ var sb3_commands = require('./data/sb3_commands');
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
 
-var chunk_breakers = {'VA':true}
+var chunk_breakers = {'VA':true, 'VS':true, 'JS':true}
 
 function SBPRuntime() {
 	this.program = [];
@@ -656,110 +656,157 @@ SBPRuntime.prototype.FS = function(args) {
 
 SBPRuntime.prototype.MX = function(args) {
 	this.emit_gcode("G1 X" + args[0] + " F" + sbp_settings.movexy_speed);
-	this.posx += args[0];
+	this.posx = args[0];
 }
 
 SBPRuntime.prototype.MY = function(args) {
 	this.emit_gcode("G1Y" + args[0] + " F" + sbp_settings.movexy_speed);
-	this.cmd_posy += args[0];
+	this.cmd_posy = args[0];
 }
 
 SBPRuntime.prototype.MZ = function(args) {
 	this.emit_gcode("G1Z" + args[0] + " F" + sbp_settings.movez_speed);
-	this.cmd_posz += args[0];
+	this.cmd_posz = args[0];
 }
 
 SBPRuntime.prototype.MA = function(args) {
 	this.emit_gcode("G1A" + args[0] + " F" + sbp_settings.movea_speed);
-	this.cmd_posa += args[0];
+	this.cmd_posa = args[0];
 }
 
 SBPRuntime.prototype.MB = function(args) {
 	this.emit_gcode("G1B" + args[0] + " F" + sbp_settings.moveb_speed);
-	this.cmd_posb += args[0];
+	this.cmd_posb = args[0];
 }
 
 SBPRuntime.prototype.MC = function(args) {
 	this.emit_gcode("G1C" + args[0] + " F" + sbp_settings.movec_speed);
-	this.cmd_posc += args[0];
+	this.cmd_posc = args[0];
 }
 
 SBPRuntime.prototype.M2 = function(args) {
 	var outStr = "G1"
-	if (args[0] != undefined) outStr = outStr + "X" + args[0];
-	if (args[1] != undefined) outStr = outStr + "Y" + args[1];
+	if (args[0] != undefined) {
+		outStr = outStr + "X" + args[0];
+		this.cmd_posx = args[0];
+	}
+	if (args[1] != undefined) {
+		outStr = outStr + "Y" + args[1];
+		this.cmd_posy = args[1];
+	}
+	outStr = outStr + "F" + sbp_settings.movexy_speed; 
 	this.emit_gcode(outStr);
-	this.cmd_posx = args[0];
-	this.cmd_posy = args[1];
 }
 
 SBPRuntime.prototype.M3 = function(args) {
 	var outStr = "G1"
-	if (args[0] != undefined) outStr = outStr + "X" + args[0];
-	if (args[1] != undefined) outStr = outStr + "Y" + args[1];
-	if (args[2] != undefined) outStr = outStr + "Z" + args[2];
+	if (args[0] != undefined) {
+		outStr = outStr + "X" + args[0];
+		this.cmd_posx = args[0];
+	}
+	if (args[1] != undefined) {
+		outStr = outStr + "Y" + args[1];
+		this.cmd_posy = args[1];
+	}
+	if (args[2] != undefined) {
+		outStr = outStr + "Z" + args[2];
+		this.cmd_posz = args[2];
+	}
+	outStr = outStr + "F" + sbp_settings.movexy_speed; 
 	this.emit_gcode(outStr);
-	this.cmd_posx = args[0];
-	this.cmd_posy = args[1];
-	this.cmd_posz = args[2];
 }
 
 SBPRuntime.prototype.M4 = function(args) {
 	var outStr = "G1"
-	if (args[0] != undefined) outStr = outStr + "X" + args[0];
-	if (args[1] != undefined) outStr = outStr + "Y" + args[1];
-	if (args[2] != undefined) outStr = outStr + "Z" + args[2];
-	if (args[3] != undefined) outStr = outStr + "A" + args[3];
+	if (args[0] != undefined) {
+		outStr = outStr + "X" + args[0];
+		this.cmd_posx = args[0];
+	}
+	if (args[1] != undefined) {
+		outStr = outStr + "Y" + args[1];
+		this.cmd_posy = args[1];
+	}
+	if (args[2] != undefined) {
+		outStr = outStr + "Z" + args[2];
+		this.cmd_posz = args[2];
+	}
+	if (args[3] != undefined) {
+		outStr = outStr + "A" + args[3];
+		this.cmd_posa = args[3];
+	}
+	outStr = outStr + "F" + sbp_settings.movexy_speed; 
 	this.emit_gcode(outStr);
-	this.cmd_posx = args[0];
-	this.cmd_posy = args[1];
-	this.cmd_posz = args[2];
-	this.cmd_posa = args[3];
 }
 
 SBPRuntime.prototype.M5 = function(args) {
 	var outStr = "G1"
-	if (args[0] != undefined) outStr = outStr + "X" + args[0];
-	if (args[1] != undefined) outStr = outStr + "Y" + args[1];
-	if (args[2] != undefined) outStr = outStr + "Z" + args[2];
-	if (args[3] != undefined) outStr = outStr + "A" + args[3];
-	if (args[4] != undefined) outStr = outStr + "B" + args[4];
+	if (args[0] != undefined) {
+		outStr = outStr + "X" + args[0];
+		this.cmd_posx = args[0];
+	}
+	if (args[1] != undefined) {
+		outStr = outStr + "Y" + args[1];
+		this.cmd_posy = args[1];
+	}
+	if (args[2] != undefined) {
+		outStr = outStr + "Z" + args[2];
+		this.cmd_posz = args[2];
+	}
+	if (args[3] != undefined) {
+		outStr = outStr + "A" + args[3];
+		this.cmd_posa = args[3];
+	}
+	if (args[4] != undefined) {
+		outStr = outStr + "B" + args[4];
+		this.cmd_posb = args[4];
+	}
+	outStr = outStr + "F" + sbp_settings.movexy_speed; 
 	this.emit_gcode(outStr);
-	this.cmd_posx = args[0];
-	this.cmd_posy = args[1];
-	this.cmd_posz = args[2];
-	this.cmd_posa = args[3];
-	this.cmd_posb = args[4];
 }
 
 SBPRuntime.prototype.M6 = function(args) {
 	var outStr = "G1"
-	if (args[0] != undefined) outStr = outStr + "X" + args[0];
-	if (args[1] != undefined) outStr = outStr + "Y" + args[1];
-	if (args[2] != undefined) outStr = outStr + "Z" + args[2];
-	if (args[3] != undefined) outStr = outStr + "A" + args[3];
-	if (args[4] != undefined) outStr = outStr + "B" + args[4];
-	if (args[5] != undefined) outStr = outStr + "C" + args[5];
+	if (args[0] != undefined) {
+		outStr = outStr + "X" + args[0];
+		this.cmd_posx = args[0];
+	}	
+	if (args[1] != undefined) {
+		outStr = outStr + "Y" + args[1];
+		this.cmd_posy = args[1];
+	}
+	if (args[2] != undefined) {
+		outStr = outStr + "Z" + args[2];
+		this.cmd_posz = args[2];
+	}
+	if (args[3] != undefined) {
+		outStr = outStr + "A" + args[3];
+		this.cmd_posa = args[3];
+	}
+	if (args[4] != undefined) {
+		outStr = outStr + "B" + args[4];
+		this.cmd_posb = args[4];
+	}
+	if (args[5] != undefined) {
+		outStr = outStr + "C" + args[5];
+		this.cmd_posc = args[5];
+	}
+	outStr = outStr + "F" + sbp_settings.movexy_speed; 
 	this.emit_gcode(outStr);
-	this.cmd_posx = args[0];
-	this.cmd_posy = args[1];
-	this.cmd_posz = args[2];
-	this.cmd_posa = args[3];
-	this.cmd_posb = args[4];
-	this.cmd_posc = args[5];
 }
 
 SBPRuntime.prototype.MH = function(args) {
 	//this.emit_gcode("G1 Z" + safe_Z);
-	this.emit_gcode("G1X0Y0");
+	this.emit_gcode("G1X0Y0" + " F" + sbp_settings.movexy_speed);
 	this.cmd_posx = 0;
 	this.cmd_posy = 0;
 }
 
 SBPRuntime.prototype.MS = function(args) {
-	this.emit_gcode("F" + args[0]);
-	sbp_settings.movex_speed = sbp_settings.movey_speed = args[0];
-	sbp_settings.movez_speed = args[1];
+	if (args[0] != undefined) sbp_settings.movexy_speed = args[0];
+	if (args[1] != undefined) sbp_settings.movez_speed = args[1];
+	if (args[2] != undefined) sbp_settings.movea_speed = args[2];
+	if (args[3] != undefined) sbp_settings.moveb_speed = args[3];
+	if (args[4] != undefined) sbp_settings.movec_speed = args[4];
 }
 
 SBPRuntime.prototype.MI = function(args) {
@@ -805,78 +852,137 @@ SBPRuntime.prototype.JC = function(args) {
 
 SBPRuntime.prototype.J2 = function(args) {
 	var outStr = "G0"
-	if (args[0] != undefined) outStr = outStr + "X" + args[0];
-	if (args[1] != undefined) outStr = outStr + "Y" + args[1];
+	if (args[0] != undefined) {
+		outStr = outStr + "X" + args[0];
+		this.cmd_posx = args[0];
+	}
+	if (args[1] != undefined) {
+		outStr = outStr + "Y" + args[1];
+		this.cmd_posy = args[1];
+	}
 	this.emit_gcode(outStr);
-	this.cmd_posx = args[0];
-	this.cmd_posy = args[1];
 }
 
 SBPRuntime.prototype.J3 = function(args) {
 	var outStr = "G0"
-	if (args[0] != undefined) outStr = outStr + "X" + args[0];
-	if (args[1] != undefined) outStr = outStr + "Y" + args[1];
-	if (args[2] != undefined) outStr = outStr + "Z" + args[2];
+	if (args[0] != undefined) {
+		outStr = outStr + "X" + args[0];
+		this.cmd_posx = args[0];
+	}
+	if (args[1] != undefined) {
+		outStr = outStr + "Y" + args[1];
+		this.cmd_posy = args[1];
+	}
+	if (args[2] != undefined) {
+		outStr = outStr + "Z" + args[2];
+		this.cmd_posz = args[2];
+	}
 	this.emit_gcode(outStr);
-	this.cmd_posx = args[0];
-	this.cmd_posy = args[1];
-	this.cmd_posz = args[2];
 }
 
 SBPRuntime.prototype.J4 = function(args) {
 	var outStr = "G0"
-	if (args[0] != undefined) outStr = outStr + "X" + args[0];
-	if (args[1] != undefined) outStr = outStr + "Y" + args[1];
-	if (args[2] != undefined) outStr = outStr + "Z" + args[2];
-	if (args[3] != undefined) outStr = outStr + "A" + args[3];
+	if (args[0] != undefined) {
+		outStr = outStr + "X" + args[0];
+		this.cmd_posx = args[0];
+	}
+	if (args[1] != undefined) {
+		outStr = outStr + "Y" + args[1];
+		this.cmd_posy = args[1];
+	}
+	if (args[2] != undefined) {
+		outStr = outStr + "Z" + args[2];
+		this.cmd_posz = args[2];
+	}
+	if (args[3] != undefined) {
+		outStr = outStr + "A" + args[3];
+		this.cmd_posa = args[3];
+	}
 	this.emit_gcode(outStr);
-	this.cmd_posx = args[0];
-	this.cmd_posy = args[1];
-	this.cmd_posz = args[2];
-	this.cmd_posa = args[3];
 }
 
 SBPRuntime.prototype.J5 = function(args) {
 	var outStr = "G0"
-	if (args[0] != undefined) outStr = outStr + "X" + args[0];
-	if (args[1] != undefined) outStr = outStr + "Y" + args[1];
-	if (args[2] != undefined) outStr = outStr + "Z" + args[2];
-	if (args[3] != undefined) outStr = outStr + "A" + args[3];
-	if (args[4] != undefined) outStr = outStr + "B" + args[4];
+	if (args[0] != undefined) {
+		outStr = outStr + "X" + args[0];
+		this.cmd_posx = args[0];
+	}
+	if (args[1] != undefined) {
+		outStr = outStr + "Y" + args[1];
+		this.cmd_posy = args[1];
+	}
+	if (args[2] != undefined) {
+		outStr = outStr + "Z" + args[2];
+		this.cmd_posz = args[2];
+	}
+	if (args[3] != undefined) {
+		outStr = outStr + "A" + args[3];
+		this.cmd_posa = args[3];
+	}
+	if (args[4] != undefined) {
+		outStr = outStr + "B" + args[4];
+		this.cmd_posb = args[4];
+	}
 	this.emit_gcode(outStr);
-	this.cmd_posx = args[0];
-	this.cmd_posy = args[1];
-	this.cmd_posz = args[2];
-	this.cmd_posa = args[3];
-	this.cmd_posb = args[4];
 }
 
 SBPRuntime.prototype.J6 = function(args) {
 	var outStr = "G0"
-	if (args[0] != undefined) outStr = outStr + "X" + args[0];
-	if (args[1] != undefined) outStr = outStr + "Y" + args[1];
-	if (args[2] != undefined) outStr = outStr + "Z" + args[2];
-	if (args[3] != undefined) outStr = outStr + "A" + args[3];
-	if (args[4] != undefined) outStr = outStr + "B" + args[4];
-	if (args[5] != undefined) outStr = outStr + "C" + args[5];
+	if (args[0] != undefined) {
+		outStr = outStr + "X" + args[0];
+		this.cmd_posx = args[0];
+	}
+	if (args[1] != undefined) {
+		outStr = outStr + "Y" + args[1];
+		this.cmd_posy = args[1];
+	}
+	if (args[2] != undefined) {
+		outStr = outStr + "Z" + args[2];
+		this.cmd_posz = args[2];
+	}
+	if (args[3] != undefined) {
+		outStr = outStr + "A" + args[3];
+		this.cmd_posa = args[3];
+	}
+	if (args[4] != undefined) {
+		outStr = outStr + "B" + args[4];
+		this.cmd_posb = args[4];
+	}
+	if (args[5] != undefined) {
+		outStr = outStr + "C" + args[5];
+		this.cmd_posc = args[5];
+	}
 	this.emit_gcode(outStr);
-	this.cmd_posx = args[0];
-	this.cmd_posy = args[1];
-	this.cmd_posz = args[2];
-	this.cmd_posa = args[3];
-	this.cmd_posb = args[4];
-	this.cmd_posc = args[5];
 }
 
 SBPRuntime.prototype.JH = function(args) {
-	//this.emit_gcode("G0 Z" + safe_Z);
-	this.emit_gcode("G0X0Y0");
 	this.cmd_posx = 0;
 	this.cmd_posy = 0;
+	this.emit_gcode("G0X0Y0");
 }
 
 SBPRuntime.prototype.JS = function(args) {
-	this.emit_gcode("F" + args[0]);
+	if (args[0] != undefined) {
+		sbp_settings.jogxy_speed = args[0];
+		this.command({'xvm':sbp_settings.jogxy_speed});
+		this.command({'yvm':sbp_settings.jogxy_speed});
+	}
+	if (args[1] != undefined) {
+		sbp_settings.jogz_speed = args[1];
+		this.command({'zvm':sbp_settings.jogz_speed});
+	}
+	if (args[2] != undefined) {
+		sbp_settings.joga_speed = args[2];
+		this.command({'avm':sbp_settings.joga_speed});
+	}
+	if (args[3] != undefined) {
+		sbp_settings.jogb_speed = args[3];
+		this.command({'bvm':sbp_settings.jogb_speed});
+	}
+	if (args[4] != undefined) {
+		sbp_settings.jogc_speed = args[4];
+		this.command({'cvm':sbp_settings.jogc_speed});
+	}
 }
 
 /* CUTS */
@@ -888,13 +994,6 @@ SBPRuntime.prototype.CG = function(args) {
     startX = this.cmd_posx;
     startY = this.cmd_posy;
     startZ = this.cmd_posz;
-    if (args[13] != undefined && args[13] == 1){
-    	var plgZ = 0;
-    }
-    else{
-    	var plgZ = startZ;
-    }
-    currentZ = plgZ;
     endX = args[1] != undefined ? args[1] : undefined;
  //	if endX == undefined {}
     endY = args[2] != undefined ? args[2] : undefined;
@@ -911,83 +1010,118 @@ SBPRuntime.prototype.CG = function(args) {
     var propY = args[10] != undefined ? [10] : 1;
     var optCG = args[11] != undefined ? args[11] : 0;
     var noPullUp = args[12] != undefined ? args[12] : 0;
+    var plgFromZero = args[13] != undefined ? args[13] : 0;
 
-//    this.emit_gcode( "instr: " + args );
-//    console.log(sbp.current_chunk); 
-  
+    cutterDia = .5;
+    cutterOverlap  = 10;
+    safe_Z = .25;
+
+    if (Plg != 0 && plgFromZero == 1){
+    	var currentZ = 0;
+    }
+    else{
+    	var currentZ = startZ;
+    }
+
     for (i=0; i<reps;i++){
-    	if (Plg != 0 && optCG < 3 ) {										// If plunge depth is specified move to that depth * number of reps
+
+    	if (Plg != 0 && optCG < 2 ) {										// If plunge depth is specified move to that depth * number of reps
     		currentZ += Plg;
-    		this.emit_gcode("G1Z" + currentZ + " F" + sbp_settings.movez_speed);
+    		this.emit_gcode( "G1Z" + currentZ + "F" + sbp_settings.movez_speed );
     	}
-
+  
     	if (optCG == 2) { 													// Pocket circle from the outside inward to center
-    		if (startX != endX || startY != endY) {							// Error if start and end aren't the same
-
-    		}
+//    		if (startX != endX || startY != endY) {							// Error if start and end aren't the same
+//
+//   		}
+    		circRadius = Math.sqrt((centerX * centerX) + (centerY * centerY));
     		PocketAngle = Math.atan2(centerY, centerX);		// Find the angle of the step over between passes
     		stepOver = cutterDia * ((100 - cutterOverlap) / 100);			// Calculate the overlap
-    		Pocket_StepX = stepOver * Math.sin(PocketAngle);				// Calculate the stepover in X based on the radius of the cutter * overlap
-    		Pocket_StepY = stepOver * Math.cos(PocketAngle);				// Calculate the stepover in Y based on the radius of the cutter * overlap
-    		for (j=0; (Pocket_StepX * j) < radius && (Pocket_StepY * j) < radius; j++){
-    		    if ( j > 0) {
-    		    	this.emit_gcode("G1X" + (j * Pocket_StepX + startX) + "Y" + (j * Pocket_StepY + startY))
-    		    }
-    		      else {								// Loop passes until overlapping the center
-    				if (Dir == 1 ) { var outStr = "G2X" + (j * Pocket_StepX + endX) + "Y" + (j * Pocket_StepY + endY); }				// Clockwise circle/arc
-    				  else { var outStr = "G3X" + (j * Pocket_StepX + endX) + "Y" + (j * Pocket_StepY + endY); }						// CounterClockwise circle/arc
-				}
-    		}
-
-    		this.emit_gcode("G0Z" + safe_Z );										// Pull up Z
-    	   	this.emit_gcode("G0X" + startX + "Y" + startY);							// Jog to the start point
-    	   	this.emit_gcode("G1Z" + currentZ + " F" + sbp_settings.movez_speed);	// Plunge to current Z
+    		Pocket_StepX = stepOver * Math.cos(PocketAngle);				// Calculate the stepover in X based on the radius of the cutter * overlap
+    		Pocket_StepY = stepOver * Math.sin(PocketAngle);				// Calculate the stepover in Y based on the radius of the cutter * overlap
     		
+    		if (Plg != 0){
+    			currentZ += Plg;
+		   		this.emit_gcode( "G1Z" + currentZ + "F" + sbp_settings.movez_speed );
+		   	}
+    			
+    		// Loop for number of passes
+    		for (i=0; i<reps; i++){
+    			// Loop passes until overlapping the center
+    			for (j=0; (Math.abs(Pocket_StepX * j) <= circRadius) && (Math.abs(Pocket_StepY * j) <= circRadius) ; j++){
+    		    	if ( j > 0) {
+    		    		this.emit_gcode( "G1X" + ((j * Pocket_StepX) + startX) + "Y" + ((j * Pocket_StepY) + startY) + "F" + sbp_settings.movexy_speed)
+    		    	}
+
+    		    	if (Dir == 1 ) {	// Clockwise circle/arc 
+    					this.emit_gcode( "G2X" + ((j * Pocket_StepX) + startX) + "Y" + ((j * Pocket_StepY) + startY) + "F" + sbp_settings.movexy_speed);
+    				}				
+    				else {				// CounterClockwise circle/arc
+    					this.emit_gcode( "G3X" + ((j * Pocket_StepX) + startX) + "Y" + ((j * Pocket_StepY) + startY) + "F" + sbp_settings.movexy_speed); 
+    				}										
+    			}
+    			if ((i+1) < reps){
+    				this.emit_gcode("G0Z" + safe_Z );										// Pull up Z
+    	   			this.emit_gcode("G0X" + startX + "Y" + startY);							// Jog to the start point
+    	   			if (Plg != 0) {
+    	   				currentZ += Plg;
+    	   			}
+    	   			this.emit_gcode("G1Z" + currentZ + " F" + sbp_settings.movez_speed);	// Plunge to current Z
+    	   		}
+
+    		}
+		
     		if(noPullUp == 1){    	//If No pull-up is set to YES, pull up to the starting Z location
     			this.emit_gcode("G1Z" + startZ);
 				this.cmd_posz = startZ;
 			}
-    	}
-    	  else {
-    		if (Dir == 1 ) { var outStr = "G2X" + endX + "Y" + endY; }				// Clockwise circle/arc
-    		  else { var outStr = "G3X" + endX + "Y" + endY; }						// CounterClockwise circle/arc
+    	} 
+    	else {
+    		if (Dir == 1 ) { 
+    			var outStr = "G2X" + endX + "Y" + endY; }		// Clockwise circle/arc
+    		else { 
+    			var outStr = "G3X" + endX + "Y" + endY; }		// CounterClockwise circle/arc
+			
 			if (Plg != 0 && optCG > 2 ) { 
 		    	outStr = outStr + "Z" + (currentZ + Plg); 
 		    	currentZ += Plg;
 			} // Add Z for spiral plunge
+			outStr = outStr + "I" + centerX + "K" + centerY + "F" + sbp_settings.movexy_speed;	// Add Center offset
+			this.emit_gcode(outStr); 
 		}
-		outStr = outStr + "I" + centerX + "K" + centerY;							// Add Center offset
-		this.emit_gcode(outStr); 
 
     	if( i+1 < reps && ( endX != startX || endY != startY ) ){					//If an arc, pullup and jog back to the start position
-    		this.emit_gcode("G0Z" + safe_Z );
-    	   	this.emit_gcode("G0X" + startX + "Y" + startY);
-    	   	this.emit_gcode("G1Z" + currentZ + " F" + sbp_settings.movez_speed);		
-		} 
-    	if (Dir == 1 || Dir == 0 ){ var outStr = "G2X" + endX + "Y" + endY; }  // Clockwise circle/arc
-    	  else if(Dir == -1)  { var outStr = "G3X" + endX + "Y" + endY; }         // CounterClockwise circle/arc
-		if (Plg != 0 && optCG == 3) { outStr = outStr + "Z" ; }            // Add Z for spiral plunge
-		outStr = outStr + "I" + centerX + "K" + centerY;					 // Add Center offset
-		this.emit_gcode(outStr); 
+    		this.emit_gcode( "G0Z" + safe_Z );
+    	   	this.emit_gcode( "G0X" + startX + "Y" + startY );
+    	   	this.emit_gcode( "G1Z" + currentZ + " F" + sbp_settings.movez_speed );		
 
-    	if(endX != startX || endY != startY){	//If an arc, pullup and jog back to the start position
-    		this.emit_gcode("G0Z" + safe_Z );
-    	   	this.emit_gcode("G0X" + startX + "Y" + startY);		
-    	}
+    		if (Dir == 1 ) {		// Clockwise circle/arc
+    			var outStr = "G2X" + endX + "Y" + endY; 
+    		}				
+    	  	else if(Dir == -1) {	// CounterClockwise circle/arc
+    	  	  	var outStr = "G3X" + endX + "Y" + endY; 
+    	  	}
+
+			if (Plg != 0 && optCG == 3) { 
+				outStr = outStr + "Z" ; 
+			}            // Add Z for spiral plunge
+			outStr = outStr + "I" + centerX + "K" + centerY + "F" + sbp_settings.movexy_speed;	// Add Center offset
+			this.emit_gcode(outStr); 
+		}
     }
-    if (optCG == 4) { // Add bottom circle if spiral with bottom clr is specified
+    if (optCG == 4 && i >= reps) { // Add bottom circle if spiral with bottom clr is specified
         if( endX != startX || endY != startY ) {	//If an arc, pullup and jog back to the start position
-    		this.emit_gcode("G0Z" + safe_Z );
-    	   	this.emit_gcode("G0X" + startX + "Y" + startY);
-    	   	this.emit_gcode("G1Z" + currentZ + " F" + sbp_settings.movez_speed);		
+    		this.emit_gcode( "G0Z" + safe_Z );
+    	   	this.emit_gcode( "G0X" + startX + "Y" + startY);
+    	   	this.emit_gcode( "G1Z" + currentZ + " F" + sbp_settings.movez_speed);		
     	}
-    	if (Dir == 1 ){ var outStr = "G2X" + endX + "Y" + endY; }                  // Clockwise circle/arc
-    	else { var outStr = "G3X" + endX + "Y" + endY; }                          // CounterClockwise circle/arc
-		outStr = outStr + "I" + centerX + "K" + centerY;					      // Add Center offset
+    	if (Dir == 1 ){ var outStr = "G2X" + endX + "Y" + endY; }					// Clockwise circle/arc
+    	else { var outStr = "G3X" + endX + "Y" + endY; }							// CounterClockwise circle/arc
+		outStr = outStr + "I" + centerX + "K" + centerY + "F" + sbp_settings.movexy_speed;	// Add Center offset
 		this.emit_gcode(outStr); 
     }	
     if(noPullUp == 0 && currentZ != startZ){    	//If No pull-up is set to YES, pull up to the starting Z location
-    	this.emit_gcode("G1Z" + startZ);
+    	this.emit_gcode( "G0Z" + startZ);
     	this.cmd_posz = startZ;
     }
     else{				    //If not, stay at the ending Z height
@@ -1002,51 +1136,6 @@ SBPRuntime.prototype.CR = function(args) {
 	//calc and output commands to cut a rectangle
 }
 
-/* VALUES */
-
-SBPRuntime.prototype.VA = function(args) {
-	//this.emit_gcode("G10 L2 P2 X" + this.posx);
-}
-
-SBPRuntime.prototype.VC = function(args) {
-	//this.emit_gcode("G10 L2 P2 X" + this.posx);
-}	
-
-SBPRuntime.prototype.VD = function(args) {
-	//this.emit_gcode("G10 L2 P2 X" + this.posx);
-}	
-
-SBPRuntime.prototype.VP = function(args) {
-	//this.emit_gcode("G10 L2 P2 X" + this.posx);
-}	
-
-SBPRuntime.prototype.VR = function(args) {
-	//this.emit_gcode("G10 L2 P2 X" + this.posx);
-}	
-
-SBPRuntime.prototype.VS = function(args) {
-	//this.emit_gcode("G10 L2 P2 X" + this.posx);
-}
-
-SBPRuntime.prototype.VU = function(args) {
-	unitsX = args[1] != undefined ? args[1] : undefined;
-	unitsX = args[2] != undefined ? args[2] : undefined;
-	unitsX = args[3] != undefined ? args[3] : undefined;
-	unitsX = args[4] != undefined ? args[4] : undefined;
-	unitsX = args[5] != undefined ? args[5] : undefined;
-	unitsX = args[6] != undefined ? args[6] : undefined;
-	unitsX = args[7] != undefined ? args[7] : undefined;
-	unitsX = args[8] != undefined ? args[8] : undefined;
-	unitsX = args[9] != undefined ? args[9] : undefined;
-	unitsX = args[10] != undefined ? args[10] : undefined;
-	unitsX = args[11] != undefined ? args[11] : undefined;
-	unitsX = args[12] != undefined ? args[12] : undefined;
-	unitsX = args[13] != undefined ? args[13] : undefined;
-	unitsX = args[14] != undefined ? args[14] : undefined;
-	unitsX = args[15] != undefined ? args[15] : undefined;
-	//this.emit_gcode("G10 L2 P2 X" + this.posx);
-}
-
 /* ZERO */
 
 SBPRuntime.prototype.ZX = function(args) {
@@ -1054,6 +1143,7 @@ SBPRuntime.prototype.ZX = function(args) {
 		this.emit_gcode("G10 L2 P2 Z" + value);
 		callback();
 	}.bind(this));
+	this.posx = 0;
 }
 
 SBPRuntime.prototype.ZY = function(args) {
@@ -1061,6 +1151,7 @@ SBPRuntime.prototype.ZY = function(args) {
 		this.emit_gcode("G10 L2 P2 Y" + value);
 		callback();
 	}.bind(this));
+	this.posy = 0;
 }
 
 SBPRuntime.prototype.ZZ = function(args) {
@@ -1068,26 +1159,41 @@ SBPRuntime.prototype.ZZ = function(args) {
 		this.emit_gcode("G10 L2 P2 Z" + value);
 		callback();
 	}.bind(this));
+	this.posz = 0;
 }
 
 SBPRuntime.prototype.ZA = function(args) {
-	this.emit_gcode("G10 L2 P2 A" + this.posa);
- 	this.posa = 0;
+	this.machine.driver.get('mpoa', function(err, value) {
+		this.emit_gcode("G10 L2 P2 A" + value);
+		callback();
+	}.bind(this));	
+	this.posa = 0;
 }
 
 SBPRuntime.prototype.ZB = function(args) {
-	this.emit_gcode("G10 L2 P2 B" + this.posb);
+	this.machine.driver.get('mpob', function(err, value) {
+		this.emit_gcode("G10 L2 P2 B" + value);
+		callback();
+	}.bind(this));	
  	this.posb = 0;
 }
 
 SBPRuntime.prototype.ZC = function(args) {
-	this.emit_gcode("G10 L2 P2 Z" + this.posc);
+	this.machine.driver.get('mpoc', function(err, value) {
+		this.emit_gcode("G10 L2 P2 C" + value);
+		callback();
+	}.bind(this));	
  	this.posc = 0;
 }
 
 SBPRuntime.prototype.Z2 = function(args) {
-	this.emit_gcode("G10 L2 P2 X" + this.posc + " Y" + this.posy);
- 	this.posx = 0;
+	this.machine.driver.get('mpox', function(err, valueX) {
+		this.machine.driver.get('mpoy', function(err, valueY) {
+			this.emit_gcode("G10 L2 P2 X" + valueX + "y" + valueY);
+			callback();
+		}.bind(this));
+	}.bind(this));
+	this.posx = 0;
  	this.posy = 0;
 }
 
@@ -1131,10 +1237,31 @@ SBPRuntime.prototype.ZT = function(args) {
 
 /* SETTINGS */
 
+// Set to Absolute coordinates
+SBPRuntime.prototype.SA = function(args) {
+	this.emit_gcode("G90");
+}
+
+//  Set to Relative coordinates
+SBPRuntime.prototype.SR = function(args) {
+	this.emit_gcode("G91");
+}
+
+// Set to MOVE mode
+SBPRuntime.prototype.SM = function(args) {
+	
+}
+
+// Set to PREVIEW mode
+SBPRuntime.prototype.SP = function(args) {
+	
+}
+
 // Set to table base coordinates
 SBPRuntime.prototype.ST = function(args) {
 	this.emit_gcode("G54");
 }
+
 
 /* VALUES */
 
@@ -1155,19 +1282,66 @@ SBPRuntime.prototype.VA = function(args, callback) {
 }
 
 SBPRuntime.prototype.VC = function(args) {
-//	this.emit_gcode("G28.1");
-}
+	//this.emit_gcode("G10 L2 P2 X" + this.posx);
+}	
+
+SBPRuntime.prototype.VD = function(args) {
+	//this.emit_gcode("G10 L2 P2 X" + this.posx);
+}	
 
 SBPRuntime.prototype.VP = function(args) {
-//	this.emit_gcode("G28.1");
-}
+	//this.emit_gcode("G10 L2 P2 X" + this.posx);
+}	
 
 SBPRuntime.prototype.VR = function(args) {
-//	this.emit_gcode("G28.1");
-}
+	//this.emit_gcode("G10 L2 P2 X" + this.posx);
+}	
 
 SBPRuntime.prototype.VS = function(args) {
-//	this.emit_gcode("G28.1");
+	if (args[0] != undefined) sbp_settings.movexy_speed = args[0];
+	if (args[1] != undefined) sbp_settings.movez_speed = args[1];
+	if (args[2] != undefined) sbp_settings.movea_speed = args[2];
+	if (args[3] != undefined) sbp_settings.moveb_speed = args[3];
+	if (args[4] != undefined) sbp_settings.movec_speed = args[4];
+	if (args[5] != undefined) {
+		sbp_settings.jogxy_speed = args[5];
+		this.command({'xvm':sbp_settings.jogxy_speed});
+		this.command({'yvm':sbp_settings.jogxy_speed});
+	}
+	if (args[6] != undefined) {
+		sbp_settings.jogz_speed = args[6];
+		this.command({'zvm':sbp_settings.jogz_speed});
+	}
+	if (args[7] != undefined) {
+		sbp_settings.joga_speed = args[7];
+		this.command({'avm':sbp_settings.joga_speed});
+	}
+	if (args[8] != undefined) {
+		sbp_settings.jogb_speed = args[8];
+		this.command({'bvm':sbp_settings.jogb_speed});
+	}
+	if (args[9] != undefined) {
+		sbp_settings.jogc_speed = args[9];
+		this.command({'cvm':sbp_settings.jogc_speed});
+	}
+}
+
+SBPRuntime.prototype.VU = function(args) {
+	unitsX = args[1] != undefined ? args[1] : undefined;
+	unitsY = args[2] != undefined ? args[2] : undefined;
+	unitsZ = args[3] != undefined ? args[3] : undefined;
+	unitsA = args[4] != undefined ? args[4] : undefined;
+	unitsB = args[9] != undefined ? args[9] : undefined;
+	unitsC = args[6] != undefined ? args[6] : undefined;
+	circRes = args[5] != undefined ? args[5] : undefined;
+	circSml = args[8] != undefined ? args[8] : undefined;
+	resMX = args[10] != undefined ? args[10] : undefined;
+	resMY = args[11] != undefined ? args[11] : undefined;
+	resMZ = args[12] != undefined ? args[12] : undefined;
+	resMA = args[13] != undefined ? args[13] : undefined;
+	resMB = args[14] != undefined ? args[14] : undefined;
+	resMC = args[15] != undefined ? args[15] : undefined;
+	StepIntDiv = args[16] != undefined ? args[16] : undefined;
 }
 
 SBPRuntime.prototype.EP = function(args) {
