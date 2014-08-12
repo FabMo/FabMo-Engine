@@ -1423,21 +1423,21 @@ SBPRuntime.prototype.VS = function(args) {
 }
 
 SBPRuntime.prototype.VU = function(args) {
-	unitsX = args[1] != undefined ? args[1] : undefined;
-	unitsY = args[2] != undefined ? args[2] : undefined;
-	unitsZ = args[3] != undefined ? args[3] : undefined;
-	unitsA = args[4] != undefined ? args[4] : undefined;
-	unitsB = args[9] != undefined ? args[9] : undefined;
-	unitsC = args[6] != undefined ? args[6] : undefined;
-	circRes = args[5] != undefined ? args[5] : undefined;
-	circSml = args[8] != undefined ? args[8] : undefined;
-	resMX = args[10] != undefined ? args[10] : undefined;
-	resMY = args[11] != undefined ? args[11] : undefined;
-	resMZ = args[12] != undefined ? args[12] : undefined;
-	resMA = args[13] != undefined ? args[13] : undefined;
-	resMB = args[14] != undefined ? args[14] : undefined;
-	resMC = args[15] != undefined ? args[15] : undefined;
-	StepIntDiv = args[16] != undefined ? args[16] : undefined;
+	if ( args[1] != undefined ) { unitsX = args[1]; }
+	if ( args[2] != undefined ) { unitsY = args[2]; }
+	if ( args[3] != undefined ) { unitsZ = args[3]; }
+	if ( args[4] != undefined ) { unitsA = args[4]; }
+	if ( args[9] != undefined ) { unitsB = args[9]; }
+	if ( args[6] != undefined ) { unitsC = args[6]; }
+	if ( args[5] != undefined ) { circRes = args[5]; }
+	if ( args[8] != undefined ) { circSml = args[8]; }
+	if ( args[10] != undefined ) { resMX = args[10]; }
+	if ( args[11] != undefined ) { resMY = args[11]; }
+	if ( args[12] != undefined ) { resMZ = args[12]; }
+	if ( args[13] != undefined ) { resMA = args[13]; }
+	if ( args[14] != undefined ) { resMB = args[14]; }
+	if ( args[15] != undefined ) { resMC = args[15]; }
+	if ( args[16] != undefined ) { StepIntDiv = args[16]; }
 }
 
 SBPRuntime.prototype.EP = function(args) {
