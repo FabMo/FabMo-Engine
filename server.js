@@ -2,6 +2,21 @@ var restify = require('restify');
 var process = require('process');
 var detection_daemon = require('./detection_daemon');
 var machine = require('./machine');
+var PLATFORM = require('process').platform;
+
+
+function getUploadDirectory() {
+	switch(PLATFORM) {
+		case 'win32':
+		case 'win64':
+			return 'c:/opt/shopbot/tmp'
+		case 'linux':
+		case 'darwin':
+		default:
+			return '/opt/shopbot/tmp'
+	}
+}
+
 
 // Connect to G2
 machine.machine = machine.connect(function(error, data) {
@@ -23,7 +38,7 @@ machine.machine = machine.connect(function(error, data) {
 		);
 
 		// Configure local directory for uploading files
-		server.use(restify.bodyParser({'uploadDir':'c:/opt/shopbot/tmp'}));
+		server.use(restify.bodyParser({'uploadDir':getUploadDirectory()}));
 
 		// The routes module maps URLs to functions of the API
 		var routes = require('./routes')(server);
