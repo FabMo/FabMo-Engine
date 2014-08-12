@@ -656,7 +656,7 @@ SBPRuntime.prototype.FS = function(args) {
 
 SBPRuntime.prototype.MX = function(args) {
 	this.emit_gcode("G1 X" + args[0] + " F" + sbp_settings.movexy_speed);
-	this.posx = args[0];
+	this.cmd_posx = args[0];
 }
 
 SBPRuntime.prototype.MY = function(args) {
@@ -1012,16 +1012,12 @@ SBPRuntime.prototype.CG = function(args) {
     var noPullUp = args[12] != undefined ? args[12] : 0;
     var plgFromZero = args[13] != undefined ? args[13] : 0;
 
-    cutterDia = .5;
-    cutterOverlap  = 10;
-    safe_Z = .25;
+    sbp_settings.cutterDia = .125;
+    sbp_settings.pocketOverlap  = 10;
+    sbp_settings.safeZpullUp = .25;
 
-    if (Plg != 0 && plgFromZero == 1){
-    	var currentZ = 0;
-    }
-    else{
-    	var currentZ = startZ;
-    }
+    if (Plg != 0 && plgFromZero == 1){ var currentZ = 0; }
+    else{ var currentZ = startZ; }
 
     for (i=0; i<reps;i++){
 
@@ -1030,19 +1026,19 @@ SBPRuntime.prototype.CG = function(args) {
     		this.emit_gcode( "G1Z" + currentZ + "F" + sbp_settings.movez_speed );
     	}
   
-    	if (optCG == 2) { 													// Pocket circle from the outside inward to center
-//    		if (startX != endX || startY != endY) {							// Error if start and end aren't the same
+    	if (optCG == 2) { 															// Pocket circle from the outside inward to center
+//    		if (startX != endX || startY != endY) {									// Error if start and end aren't the same
 //
 //   		}
     		circRadius = Math.sqrt((centerX * centerX) + (centerY * centerY));
-    		PocketAngle = Math.atan2(centerY, centerX);		// Find the angle of the step over between passes
-    		stepOver = cutterDia * ((100 - cutterOverlap) / 100);			// Calculate the overlap
-    		Pocket_StepX = stepOver * Math.cos(PocketAngle);				// Calculate the stepover in X based on the radius of the cutter * overlap
-    		Pocket_StepY = stepOver * Math.sin(PocketAngle);				// Calculate the stepover in Y based on the radius of the cutter * overlap
+    		PocketAngle = Math.atan2(centerY, centerX);								// Find the angle of the step over between passes
+    		stepOver = sbp_settings.cutterDia * ((100 - sbp_settings.pocketOverlap) / 100);	// Calculate the overlap
+    		Pocket_StepX = stepOver * Math.cos(PocketAngle);						// Calculate the stepover in X based on the radius of the cutter * overlap
+    		Pocket_StepY = stepOver * Math.sin(PocketAngle);						// Calculate the stepover in Y based on the radius of the cutter * overlap
     		
     		if (Plg != 0){
     			currentZ += Plg;
-		   		this.emit_gcode( "G1Z" + currentZ + "F" + sbp_settings.movez_speed );
+		   		this.emit_gcode( "G1Z" + currentZ.toFixed(4) + "F" + sbp_settings.movez_speed );
 		   	}
     			
     		// Loop for number of passes
@@ -1050,37 +1046,35 @@ SBPRuntime.prototype.CG = function(args) {
     			// Loop passes until overlapping the center
     			for (j=0; (Math.abs(Pocket_StepX * j) <= circRadius) && (Math.abs(Pocket_StepY * j) <= circRadius) ; j++){
     		    	if ( j > 0) {
-    		    		this.emit_gcode( "G1X" + ((j * Pocket_StepX) + startX) + "Y" + ((j * Pocket_StepY) + startY) + "F" + sbp_settings.movexy_speed)
+    		    		this.emit_gcode( "G1X" + ((j * Pocket_StepX) + startX).toFixed(4) + 
+    		    			               "Y" + ((j * Pocket_StepY) + startY).toFixed(4) + 
+    		    			               "F" + sbp_settings.movexy_speed)
     		    	}
-
-    		    	if (Dir == 1 ) {	// Clockwise circle/arc 
-    					this.emit_gcode( "G2X" + ((j * Pocket_StepX) + startX) + "Y" + ((j * Pocket_StepY) + startY) + "F" + sbp_settings.movexy_speed);
-    				}				
-    				else {				// CounterClockwise circle/arc
-    					this.emit_gcode( "G3X" + ((j * Pocket_StepX) + startX) + "Y" + ((j * Pocket_StepY) + startY) + "F" + sbp_settings.movexy_speed); 
-    				}										
+    		    	if (Dir == 1 ) { var outStr = "G2"; }	// Clockwise circle/arc
+    				else { var outStr = "G3"; }	// CounterClockwise circle/arc
+    				outStr = outStr + "X" + (startX + (j * Pocket_StepX)).toFixed(4) + 
+    						 		  "Y" + (startY + (j * Pocket_StepY)).toFixed(4) +
+    								  "I" + (centerX - (j*Pocket_StepX)).toFixed(4) +
+    								  "J" + (centerY - (j*Pocket_StepY)).toFixed(4) +
+    								  "F" + sbp_settings.movexy_speed;
+    				this.emit_gcode( outStr );										
     			}
     			if ((i+1) < reps){
-    				this.emit_gcode("G0Z" + safe_Z );										// Pull up Z
+    				this.emit_gcode("G0Z" + sbp_settings.safeZpullUp );										// Pull up Z
     	   			this.emit_gcode("G0X" + startX + "Y" + startY);							// Jog to the start point
-    	   			if (Plg != 0) {
-    	   				currentZ += Plg;
-    	   			}
+    	   			if (Plg != 0) {	currentZ += Plg; }
     	   			this.emit_gcode("G1Z" + currentZ + " F" + sbp_settings.movez_speed);	// Plunge to current Z
     	   		}
 
     		}
-		
     		if(noPullUp == 1){    	//If No pull-up is set to YES, pull up to the starting Z location
     			this.emit_gcode("G1Z" + startZ);
 				this.cmd_posz = startZ;
 			}
     	} 
     	else {
-    		if (Dir == 1 ) { 
-    			var outStr = "G2X" + endX + "Y" + endY; }		// Clockwise circle/arc
-    		else { 
-    			var outStr = "G3X" + endX + "Y" + endY; }		// CounterClockwise circle/arc
+    		if (Dir == 1 ) { var outStr = "G2X" + endX + "Y" + endY; }	// Clockwise circle/arc
+    		else { var outStr = "G3X" + endX + "Y" + endY; }			// CounterClockwise circle/arc
 			
 			if (Plg != 0 && optCG > 2 ) { 
 		    	outStr = outStr + "Z" + (currentZ + Plg); 
@@ -1095,16 +1089,10 @@ SBPRuntime.prototype.CG = function(args) {
     	   	this.emit_gcode( "G0X" + startX + "Y" + startY );
     	   	this.emit_gcode( "G1Z" + currentZ + " F" + sbp_settings.movez_speed );		
 
-    		if (Dir == 1 ) {		// Clockwise circle/arc
-    			var outStr = "G2X" + endX + "Y" + endY; 
-    		}				
-    	  	else if(Dir == -1) {	// CounterClockwise circle/arc
-    	  	  	var outStr = "G3X" + endX + "Y" + endY; 
-    	  	}
-
-			if (Plg != 0 && optCG == 3) { 
-				outStr = outStr + "Z" ; 
-			}            // Add Z for spiral plunge
+    		if (Dir == 1 ) { var outStr = "G2"; }	// Clockwise circle/arc
+    	  	else if (Dir == -1) { var outStr = "G3"; }	// CounterClockwise circle/arc
+			outStr = outStr + "X" + endX + "Y" + endY;	// Add End coordinates
+			if (Plg != 0 && optCG == 3) { outStr = outStr + "Z" + (currentZ + Plg); }	// Add Z for spiral plunge 
 			outStr = outStr + "I" + centerX + "K" + centerY + "F" + sbp_settings.movexy_speed;	// Add Center offset
 			this.emit_gcode(outStr); 
 		}
@@ -1115,19 +1103,18 @@ SBPRuntime.prototype.CG = function(args) {
     	   	this.emit_gcode( "G0X" + startX + "Y" + startY);
     	   	this.emit_gcode( "G1Z" + currentZ + " F" + sbp_settings.movez_speed);		
     	}
-    	if (Dir == 1 ){ var outStr = "G2X" + endX + "Y" + endY; }					// Clockwise circle/arc
-    	else { var outStr = "G3X" + endX + "Y" + endY; }							// CounterClockwise circle/arc
-		outStr = outStr + "I" + centerX + "K" + centerY + "F" + sbp_settings.movexy_speed;	// Add Center offset
+    	if (Dir == 1 ){ var outStr = "G2"; } 		// Clockwise circle/arc
+    	else { var outStr = "G3"; }					// CounterClockwise circle/arc
+		outStr = outStr + "X" + endX + "Y" + endY + "I" + centerX + "K" + centerY + "F" + sbp_settings.movexy_speed;	// Add Center offset
 		this.emit_gcode(outStr); 
     }	
     if(noPullUp == 0 && currentZ != startZ){    	//If No pull-up is set to YES, pull up to the starting Z location
     	this.emit_gcode( "G0Z" + startZ);
     	this.cmd_posz = startZ;
     }
-    else{				    //If not, stay at the ending Z height
+    else{				    						//If not, stay at the ending Z height
   		this.cmd_posz = currentZ;
     }
-
     this.cmd_posx = endX;
 	this.cmd_posy = endY;
 }
@@ -1187,12 +1174,16 @@ SBPRuntime.prototype.ZC = function(args) {
 }
 
 SBPRuntime.prototype.Z2 = function(args) {
-	this.machine.driver.get('mpox', function(err, valueX) {
-		this.machine.driver.get('mpoy', function(err, valueY) {
-			this.emit_gcode("G10 L2 P2 X" + valueX + "y" + valueY);
-			callback();
-		}.bind(this));
+	this.machine.driver.get('mpox', function(err, value) {
+		this.emit_gcode("G10 L2 P2 X" + value);
+		callback();
 	}.bind(this));
+
+	this.machine.driver.get('mpoy', function(err, value) {
+		this.emit_gcode("G10 L2 P2 Y" + value);
+		callback();
+	}.bind(this));
+	
 	this.posx = 0;
  	this.posy = 0;
 }
@@ -1282,19 +1273,124 @@ SBPRuntime.prototype.VA = function(args, callback) {
 }
 
 SBPRuntime.prototype.VC = function(args) {
-	//this.emit_gcode("G10 L2 P2 X" + this.posx);
+	if (args[0] != undefined) sbp_settings.cutterDia = args[0];		// Cutter Diameter
+	// args[1] = Obsolete
+	// args[2] = Obsolete
+	if (args[3] != undefined) sbp_settings.safeZpullUp = args[3];	// safe-Z-pull-up
+	if (args[4] != undefined) sbp_settings.plungeDir = args[4];		// plunge direction
+	if (args[5] != undefined) sbp_settings.pocketOverlap = args[5];	// % pocket overlap
+	if (args[6] != undefined) sbp_settings.safeApullUp = args[6];	// safe-A-pull-up
+//	if (args[7] != undefined) sbp_settings.triggeredOutput = args[7];	// triggered output switch
+//	if (args[8] != undefined) sbp_settings.triggerONthreshold = args[8];	// trigger ON threshold
+//	if (args[9] != undefined) sbp_settings.triggerOFFthreshold = args[9];	// trigger OFF threshold
+//	if (args[10] != undefined) sbp_settings.vertAxisMonitor = args[10];	// vertical axis monitored
+//	if (args[11] != undefined) sbp_settings.triggerOutputNum = args[11];	// triggered output switch #
+
 }	
 
 SBPRuntime.prototype.VD = function(args) {
-	//this.emit_gcode("G10 L2 P2 X" + this.posx);
+	// Number of Axes
+	// XYZ Unit type
+	// A Unit type
+	// B Unit type
+	// Show control console
+	// Display File Comments
+	// Keypad fixed distance
+	// Keypad remote
+	// Keypad Switch AutoOff
+	// Write Part File Log
+	// Write System File Log
+	// Message Screen Location X
+	// Message Screen Location Y
+	// Message Screen Size X
+	// Message Screen Size Y
+	// Keypad switches Auto-Off
+	// Show file Progress
+	// Main Display Type
+
+}	
+
+SBPRuntime.prototype.VL = function(args) {
+	// X - Low Limit
+	// X - High Limit
+	// Y - Low Limit
+	// Y - High Limit
+	// Z - Low Limit
+	// Z - High Limit
+	// A - Low Limit
+	// A - High Limit
+	// B - Low Limit
+	// B - High Limit
+	// C - Low Limit
+	// C - High Limit
+	// 3D Threshold
+	// Minimum Distance to Check
+	// Slow Corner Speed
+	// Keypad Ramp Rate
+}	
+
+SBPRuntime.prototype.VN = function(args) {
+		// Limits 0-OFF, 1-ON
+		// Input #4 Switch mode 0-Nrm Closed Stop, 1-Nrm Open Stop, 2-Not Used 
+		// Enable Torch Height Controller, Laser or Analog Control
+		//		0-Off, 1-Torch, 2-Laser, 3-An1 Control, 4-An2 Control, 5-An1 & An2 Control
+	
+	// Input Switch Modes = 0-Standard Switch, 1-Nrm Open Limit, 2-Nrm Closed Limit, 3-Nrm Open Stop, 4-Nrm Closed Stop
+		// Input #1 Switch mode
+		// Input #2 Switch mode
+		// Input #3 Switch mode
+		// Input #5 Switch mode
+		// Input #6 Switch mode
+		// Input #7 Switch mode	
+		// Input #8 Switch mode
+		// Input #9 Switch mode
+		// Input #10 Switch mode
+		// Input #11 Switch mode
+		// Input #12 Switch mode
+	// Output Switch Modes = 0-StdON/FileOFF, 1-StdON/NoOFF, 2-StdON/LIStpOFF, 3-AutoON/FileOFF, 4-AutoON/NoOFF, 5-AutoON/FIStpOFF
+		// Output #1 Mode 
+		// Output #2 Mode
+		// Output #3 Mode
+		// Output #5 Mode
+		// Output #6 Mode
+		// Output #7 Mode
+		// Output #8 Mode
+		// Output #9 Mode
+		// Output #10 Mode
+		// Output #11 Mode
+		// Output #12 Mode
+
 }	
 
 SBPRuntime.prototype.VP = function(args) {
-	//this.emit_gcode("G10 L2 P2 X" + this.posx);
+	// Grid
+	// Table Size X
+	// Table Size Y
+	// Table Size Z
+	// Simulate Cutting
+	// Draw Tool
+	// Start Actual Location
+	// Show Jugs
+
 }	
 
 SBPRuntime.prototype.VR = function(args) {
-	//this.emit_gcode("G10 L2 P2 X" + this.posx);
+	// XY Move Ramp Speed
+	// Z Move Ramp Speed
+	// A Move Ramp Speed
+	// B Move Ramp Speed
+	// C Move Ramp Speed
+	// XY Jog Ramp Speed
+	// Z Jog Ramp Speed
+	// A Jog Ramp Speed
+	// B Jog Ramp Speed
+	// C Jog Ramp Speed
+	// Move Ramp Rate
+	// Jog Ramp Rate
+	// 3D Threshold
+	// Minimum Distance to Check
+	// Slow Corner Speed
+	// Keypad Ramp Rate
 }	
 
 SBPRuntime.prototype.VS = function(args) {
