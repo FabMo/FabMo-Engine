@@ -70,49 +70,84 @@ util.inherits(G2, events.EventEmitter);
 
 // Informative summary string
 G2.prototype.toString = function() {
-    return "[G2 Driver on '" + this.path + "']";
+	return "[G2 Driver on '" + this.path + "']";
 }
 
 // Actually open the serial port and configure G2 based on stored settings
-G2.prototype.connect = function(path, callback) {
-	this.path = path;
-	this.connect_callback = callback;
- 	this.port = new serialport.SerialPort(path, {rtscts:true});
-	//this.port.on("open", this.onOpen.bind(this));
-	this.port.on("error", this.onSerialError.bind(this));
-	this.port.on('data', this.onData.bind(this));
-	this.on("ready", function(driver) {
-		driver.command({"gun":0});
-		driver.command('M30');
-		config.load(this, function(driver) {
-			driver.command({"gun":0});
-			driver.command('M30');
-			driver.requestStatusReport();
-			driver.connected = true;
-			callback(false, driver);  // TODO, maybe this should come after the first status report
-		});
+G2.prototype.connect = function(control_path, gcode_path, callback) {
+	
+	// Store paths for safe keeping
+	this.control_path = control_path;
+	this.gcode_path = gcode_path;
 
-	});
+	// Called once BOTH ports have been opened
+	this.connect_callback = callback;
+	
+	// Open both ports
+	log.debug('Opening control port ' + control_path)
+	this.control_port = new serialport.SerialPort(control_path, {rtscts:true}, false);
+	this.gcode_port = new serialport.SerialPort(gcode_path, {rtscts:true}, false)
+
+	// Handle errors
+	this.control_port.on('error', this.onSerialError.bind(this));
+	this.gcode_port.on('error', this.onSerialError.bind(this));
+
+	// The control port is the only one to truly handle incoming data
+	this.control_port.on('data', this.onData.bind(this));
+	this.gcode_port.on('data', this.onWAT.bind(this));
+
+	this.control_port.open( function(error) {
+		if(error) {
+			log.error("ERROR OPENING CONTROL PORT " + error )
+		}
+		this.gcode_port.open(function(error) {
+			this.command({"gun":0});
+			this.command('M30');
+			config.load(this, function(driver) {
+					driver.command({"gun":0});
+					driver.command('M30');
+					driver.requestStatusReport();
+					driver.connected = true;
+					callback(false, driver);  // TODO, maybe this should co
+				}.bind(this));
+		}.bind(this));
+	}.bind(this));
 }
 
 // Log serial errors.  Most of these are exit-able offenses, though.
 G2.prototype.onSerialError = function(data) {
 	log.error(data);
+	log.error(this);
 }
 
-// Write data to the serial port.  Log to the system logger.
-G2.prototype.write = function(s) {
+// Write data to the control port.  Log to the system logger.
+G2.prototype.controlWrite = function(s) {
 	t = new Date().getTime();
-	log.debug('----' + t + '----> ' + s.trim());
-	this.port.write(s);
+	log.debug('-C--' + t + '----> ' + s.trim());
+	this.control_port.write(s);
+}
+
+// Write data to the gcode port.  Log to the system logger.
+G2.prototype.gcodeWrite = function(s) {
+	t = new Date().getTime();
+	log.debug('-G--' + t + '----> ' + s.trim());
+	this.gcode_port.write(s);
 }
 
 // Write data to the serial port.  Log to the system logger.  Execute **callback** when transfer is complete.
-G2.prototype.writeAndDrain = function(s, callback) {
+G2.prototype.controlWriteAndDrain = function(s, callback) {
 	t = new Date().getTime();
-	log.debug('----' + t + '----> ' + s);
-	this.port.write(s, function () {
-		this.port.drain(callback);
+	log.debug('-C--' + t + '----> ' + s);
+	this.control_port.write(s, function () {
+		this.control_port.drain(callback);
+	}.bind(this));
+}
+
+G2.prototype.gcodeWriteAndDrain = function(s, callback) {
+	t = new Date().getTime();
+	log.debug('-G--' + t + '----> ' + s);
+	this.gcode_port.write(s, function () {
+		this.gcode_port.drain(callback);
 	}.bind(this));
 }
 
@@ -156,7 +191,7 @@ G2.prototype.jog = function(direction) {
 
 		// Build serial string and send
 		try {
-			this.write(codes.join('\n'));
+			this.gcodeWrite(codes.join('\n'));
 		} finally {
 			// Timeout jogging if we don't get a keepalive from the client
 			this.jog_heartbeat = setTimeout(this.stopJog.bind(this), JOG_TIMEOUT);
@@ -176,7 +211,7 @@ G2.prototype.jog_keepalive = function() {
 
 G2.prototype.stopJog = function() {
 	if(this.jog_direction) {
-        log.debug('JOG stop.');
+		log.debug('JOG stop.');
 		clearTimeout(this.jog_heartbeat);
 		this.jog_direction = null;
 		this.jog_command = null;
@@ -192,6 +227,9 @@ G2.prototype.requestStatusReport = function(callback) {
 
 G2.prototype.requestQueueReport = function() { this.command({'qr':null}); }
 
+G2.prototype.onWAT = function(data) {
+	log.warn(data)
+}
 // Called for every chunk of data returned from G2
 G2.prototype.onData = function(data) {
 	var s = data.toString('ascii');
@@ -201,22 +239,22 @@ G2.prototype.onData = function(data) {
 		if(c === '\n') {
 			var json_string = this.current_data.join('');
 			t = new Date().getTime();
-		    log.debug('<----' + t + '---- ' + json_string);
-		    obj = null;
-		    try {
-		    	obj = JSON.parse(json_string);
-		    }catch(e){
-		    	// A JSON parse error usually means the asynchronous LOADER SEGMENT NOT READY MESSAGE
-		    	if(json_string.trim() === '######## LOADER - SEGMENT NOT READY') {
-		    		this.emit('error', [-1, 'LOADER_SEGMENT_NOT_READY', 'Asynchronous error: Segment not ready.'])
-		    	} else {
-		    		this.emit('error', [-1, 'JSON_PARSE_ERROR', "Could not parse response: '" + json_string + "' (" + e.toString() + ")"])
-		    	}
-		    } finally {
-		    	if(obj) {
-		    		this.onMessage(obj);
-		    	}
-		    }
+			log.debug('<----' + t + '---- ' + json_string);
+			obj = null;
+			try {
+				obj = JSON.parse(json_string);
+			}catch(e){
+				// A JSON parse error usually means the asynchronous LOADER SEGMENT NOT READY MESSAGE
+				if(json_string.trim() === '######## LOADER - SEGMENT NOT READY') {
+					this.emit('error', [-1, 'LOADER_SEGMENT_NOT_READY', 'Asynchronous error: Segment not ready.'])
+				} else {
+					this.emit('error', [-1, 'JSON_PARSE_ERROR', "Could not parse response: '" + json_string + "' (" + e.toString() + ")"])
+				}
+			} finally {
+				if(obj) {
+					this.onMessage(obj);
+				}
+			}
 			this.current_data = new Array();
 		} else {
 			this.current_data.push(c);
@@ -245,7 +283,7 @@ G2.prototype.handleQueueReport = function(r) {
 		log.debug('GCode Queue Size: ' + this.gcode_queue.getLength())
 		// Deal with jog mode
 		if(this.jog_command && (qo > 0)) {
-			this.write(this.jog_command + '\n');
+			this.gcodeWrite(this.jog_command + '\n');
 			return;
 		}
 
@@ -265,13 +303,16 @@ G2.prototype.handleQueueReport = function(r) {
 					this.send_rate = 0;
 					break;
 				}
-				cmds.push(this.gcode_queue.dequeue());
+				//cmds.push(this.gcode_queue.dequeue());
+				gcode = this.gcode_queue.dequeue();
+				cmds.push('{"gc":"' + gcode + '"}');
 				lines_to_send -= 1;
 			}
 			if(cmds.length > 0) {
 				cmds.push('\n');
 				var outstring = cmds.join('\n');
-				this.write(outstring);
+				this.controlWrite(outstring);
+
 			} 
 		}
 		else {
@@ -346,7 +387,7 @@ G2.prototype.handleStatusReport = function(response) {
 		if(this.quit_pending) {
 			if((this.status.hold === 4) || (this.status.stat === 3)) {
 				setTimeout(function() {			
-					this.command('\%');		
+					this.queueClear();
 					this.command('M30');
 					this.quit_pending = false;
 					this.pause_flag = false;
@@ -397,11 +438,15 @@ G2.prototype.feedHold = function(callback) {
 	this.pause_flag = true;
 	this.flooded = false;
 	typeof callback === 'function' && this.once('state', callback);
-	this.command('!');
+	this.controlWrite('!\n');
+}
+
+G2.prototype.queueClear = function(callback) {
+	this.controlWrite('\%\n');	
 }
 
 G2.prototype.resume = function() {
-	this.write('~\n'); //cycle start command character
+	this.controlWrite('~\n'); //cycle start command character
 	this.requestQueueReport();
 	this.pause_flag = false;
 }
@@ -412,7 +457,7 @@ G2.prototype.quit = function() {
 		this.quit_pending = true;
 		this.feedHold();
 	} else {
-		this.command('\%');		
+		this.queueClear();
 		this.command('M30');
 		this.command({'qv':2});
 		this.requestQueueReport();
@@ -435,10 +480,12 @@ G2.prototype.get = function(key, callback) {
 G2.prototype.command = function(obj) {
 	if((typeof obj) == 'string') {
 		var cmd = obj.trim();
+		this.controlWrite('{"gc":"'+cmd+'"}\n');
+		//this.gcodeWrite(cmd + '\n');
 	} else {
 		var cmd = JSON.stringify(obj);
+		this.controlWrite(cmd + '\n')
 	}
-	this.write(cmd + '\n');
 };
 
 // Send a (possibly multi-line) string
