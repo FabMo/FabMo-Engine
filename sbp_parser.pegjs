@@ -7,8 +7,12 @@
       }
    }
 }
+
 start
-   = lines:((__ s:statement '\n'){return s})*
+   = lines:((__ s:statement eol){return s})*
+
+eol
+   = '\r\n' / '\n'
 
 statement
    = comment / label / command / single / jump / assignment / conditional / __
