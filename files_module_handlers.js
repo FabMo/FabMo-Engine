@@ -3,9 +3,21 @@ var fs = require('fs');
 var machine = require('./machine').machine;
 var db = require('./db');
 var File=db.File; // link to the files database collection
+var PLATFORM = require('process').platform;
 
-upload_folder = '/opt/shopbot/parts';
 ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
+
+function getUploadDirectory() {
+	switch(PLATFORM) {
+		case 'win32':
+		case 'win64':
+			return 'c:/opt/shopbot/parts'
+		case 'linux':
+		case 'darwin':
+		default:
+			return '/opt/shopbot/tmp'
+	}
+}
 
 
 function allowed_file(filename){
@@ -30,7 +42,8 @@ exports.upload_file = function(req, res, next) {
     {
     	var filename=file.name;
     	console.log("Saving: " + filename);
-       	var full_path = path.join(upload_folder, filename);
+       	var full_path = path.join(getUploadDirectory(), filename);
+       	console.log(full_path);
        	fs.rename(file.path, full_path, function(err) {
        		if (err){
        			throw err;

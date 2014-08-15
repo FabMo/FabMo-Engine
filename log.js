@@ -73,4 +73,8 @@ var logger = function(name) {
 	}
 }
 
+process.on('uncaughtException', function(err) {
+	console.log(err);
+});
 exports.logger = logger;
+ 

@@ -1,6 +1,5 @@
 var fs = require('fs');
 var machine = require('./machine').machine;
-upload_folder = '/opt/shopbot/parts';
 var db = require('./db');
 var File=db.File;
 ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];

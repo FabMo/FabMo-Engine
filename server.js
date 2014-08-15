@@ -9,6 +9,7 @@ function getUploadDirectory() {
 	switch(PLATFORM) {
 		case 'win32':
 		case 'win64':
+			console.log("ON WINDOWS");
 			return 'c:/opt/shopbot/tmp'
 		case 'linux':
 		case 'darwin':

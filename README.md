@@ -7,6 +7,7 @@ This is the server software that runs the G2-Based shopbot platform and provide 
 * restify
 * process
 * lazy
+* winston
 * serialport
 * TingoDB
 
