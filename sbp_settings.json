@@ -3,5 +3,22 @@
 	"movez_speed" : 40.0,
 	"movea_speed" : 60.0,
 	"moveb_speed" : 60.0,
-	"movec_speed" : 60.0
+	"movec_speed" : 60.0,
+	"jogxy_speed" : 120.0,
+	"jogz_speed" : 120.0,
+	"joga_speed" : 120.0,
+	"jogb_speed" : 120.0,
+	"jogc_speed" : 120.0,
+	"unitsX" : 4000,
+	"unitsY" : 4000,
+	"unitsZ" : 4000,
+	"unitsA" : 4000,
+	"unitsB" : 4000,
+	"unitsC" : 4000,
+	"resMX" : 1,
+	"resMY" : 1,
+	"resMZ" : 1,
+	"resMA" : 1,
+	"resMB" : 1,
+	"resMC" : 1	
 }

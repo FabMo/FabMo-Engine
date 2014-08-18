@@ -1121,10 +1121,13 @@ SBPRuntime.prototype.CR = function(args) {
     var optCG = args[7] != undefined ? args[7] : 0;				// Options - 1-Tab, 2-Pocket Outside-In, 3-Pocket Inside-Out
     if (optCR > 1) {
     	stepOver = sbp_settings.cutterDia * ((100 - sbp_settings.pocketOverlap) / 100);	// Calculate the overlap
-    	Pocket_StepY = Pocket_StepX = stepOver * Math.cos(0.785398163);		// Calculate the stepover in X based on the radius of the cutter at 45 degrees
+    	Pocket_Step = stepOver * Math.cos(0.785398163);			// Calculate the stepover in X based on the radius of the cutter at 45 degrees
     }
-    var plgFromZero = args[8] != undefined ? args[8] : 0;
-    var RotationAngle = args[9] != undefined ? args[9] : 0;
+    var plgFromZero = args[8] != undefined ? args[8] : 0;		// Start Plunge from Zero <0-NO, 1-YES>
+    var RotationAngle = args[9] != undefined ? args[9] : 0;		// Angle to rotate rectangle around starting point
+    var PlgAxis = args[10] != undefined ? args[10] : 'Z';
+	var spiralPlg = args[11] != undefined ? args[11] : 0;
+    
     if (RotationAngle != 0 ) { 
     	RotationAngle *= Math.PI / 180;							// Convert rotation angle in degrees to radians
     	cosRA = Math.cos(RotationAngle);						// Calculate the Cosine of the rotation angle
@@ -1132,8 +1135,6 @@ SBPRuntime.prototype.CR = function(args) {
     	rotPtX = startX;										// Rotation point X
     	rotPtY = startY;										// Rotation point Y
     }
-    var PlgAxis = args[10] != undefined ? args[10] : 'Z';
-	var spiralPlg = args[11] != undefined ? args[11] : 0;
     
     if (Plg != 0 && plgFromZero == 1){ var currentZ = 0; }
     else{ var currentZ = startZ; }
@@ -1143,6 +1144,9 @@ SBPRuntime.prototype.CR = function(args) {
     	yDir = -1;
     	if ( Dir == -1 ) { 
     		order = 2; 
+    	}
+    	if ( lenX < lenY ) {
+
     	}
     }
     else if ( stCorn == 2 ) {
@@ -1194,40 +1198,45 @@ SBPRuntime.prototype.CR = function(args) {
 			}
     	} 
     	else {
+    		cnt = 0;
     		if (order == 1 ) {		// Clockwise rectangle
-    			cnt = 0;
+
     			do { 
     				if (RotationAngle == 0) { var outStr = "G1X" + (startX + lenX); }
     				else {
-    					var outStr = "G1X" + ((startX + lenX) * cosRA) - (startY * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA) +
-    								   "Y" + ((startX + lenX) * sinRA) + (startY * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA); 
+    					var outStr = "G1X" + (((startX + lenX) * cosRA) - (startY * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)) +
+    								   "Y" + (((startX + lenX) * sinRA) + (startY * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)); 
     				}
-    				if ( spiralPlg == 1 ) {
+    				if ( spiralPlg == 1 && cnt != 1 ) {
     					var PlgSp = currentZ + (Plg * 0.25); 
     					outStr += "Z" + PlgSp; }	
     				this.emit_gcode (outStr);
+
     		    	if ( RotationAngle == 0 ) { outStr = "G1Y" + (startY + lenY); }
     				else {
-    					var outStr = "G1X" + ((startX + lenX) * cosRA) - ((startY + lenY) * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA) +
-    								   "Y" + ((startX + lenX) * sinRA) + ((startY + lenY) * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA); 
+    					outStr = "G1X" + (((startX + lenX) * cosRA) - ((startY + lenY) * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)) +
+    								   "Y" + (((startX + lenX) * sinRA) + ((startY + lenY) * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)); 
     				}
-    				if ( spiralPlg == 1 ) { 
+    				if ( spiralPlg == 1 && cnt != 1 ) { 
     					PlgSp = currentZ + (Plg * 0.5);	
     					outStr += "Z" + PlgSp; }
     				this.emit_gcode (outStr);
+    				
     				if ( RotationAngle == 0 ) { outStr = "G1X" + startX; }
     				else {
-    					var outStr = "G1X" + (startX * cosRA) - ((startY + lenY) * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA) +
-    								   "Y" + (startX * sinRA) + ((startY + lenY) * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA); 
+    					outStr = "G1X" + ((startX * cosRA) - ((startY + lenY) * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)) +
+    								   "Y" + ((startX * sinRA) + ((startY + lenY) * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)); 
     				}
-    				if ( spiralPlg == 1 ) { 
+    				if ( spiralPlg == 1 && cnt != 1 ) { 
     					PlgSp = currentZ + (Plg * 0.75);	
-    					outStr += "Z" + PlgSp; }    			}	
+    					outStr += "Z" + PlgSp; 
+    				}	
     				this.emit_gcode (outStr);
+    				
     				if ( RotationAngle == 0 ) { outStr = "G1Y" + startY; }
     				else {
-    					var outStr = "G1X" + (startX * cosRA) - (startY * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA) +
-    								   "Y" + (startX * sinRA) + (startY * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA); 
+    					outStr = "G1X" + ((startX * cosRA) - (startY * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)) +
+    								   "Y" + ((startX * sinRA) + (startY * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)); 
     				}
     				if ( spiralPlg == 1 && pass == 0 ) {
     					currentZ += Plg; 
@@ -1236,14 +1245,15 @@ SBPRuntime.prototype.CR = function(args) {
     				}
     				else { cnt = 1; }
     				this.emit_gcode (outStr);
+
     			} while ( cnt < 1 );
     		}	
     		else {
     			do {
     			    if ( RotationAngle == 0 ) { outStr = "G1X" + startX; }
     				else {
-    					var outStr = "G1X" + (startX * cosRA) - ((startY + lenY) * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA) +
-    								   "Y" + (startX * sinRA) + ((startY + lenY) * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA); 
+    					var outStr = "G1X" + ((startX * cosRA) - ((startY + lenY) * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)) +
+    								   "Y" + ((startX * sinRA) + ((startY + lenY) * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)); 
     				}
     				if ( spiralPlg == 1 ) {
     						var PlgSp = currentZ + (Plg * 0.25); 
@@ -1251,8 +1261,8 @@ SBPRuntime.prototype.CR = function(args) {
     					this.emit_gcode (outStr);
     				if ( RotationAngle == 0 ) { outStr = "G1Y" + (startY + lenY); }
     				else {
-    					var outStr = "G1X" + ((startX + lenX) * cosRA) - ((startY + lenY) * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA) +
-    								   "Y" + ((startX + lenX) * sinRA) + ((startY + lenY) * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA); 
+    					var outStr = "G1X" + (((startX + lenX) * cosRA) - ((startY + lenY) * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)) +
+    								   "Y" + (((startX + lenX) * sinRA) + ((startY + lenY) * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)); 
     				}
     				if ( spiralPlg == 1 ) { 
     						PlgSp = currentZ + (Plg * 0.5);	
@@ -1260,17 +1270,18 @@ SBPRuntime.prototype.CR = function(args) {
     					this.emit_gcode (outStr);
     				if ( RotationAngle == 0 ) { var outStr = "G1X" + (startX + lenX); }
     				else {
-    					var outStr = "G1X" + ((startX + lenX) * cosRA) - (startY * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA) +
-    								   "Y" + ((startX + lenX) * sinRA) + (startY * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA); 
+    					var outStr = "G1X" + (((startX + lenX) * cosRA) - (startY * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)) +
+    								   "Y" + (((startX + lenX) * sinRA) + (startY * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)); 
     				}
     				if ( spiralPlg == 1 ) { 
     						PlgSp = currentZ + (Plg * 0.75);	
-    						outStr += "Z" + PlgSp; }    			}	
-    					this.emit_gcode (outStr);
+    						outStr += "Z" + PlgSp; 
+    				}	
+    				this.emit_gcode (outStr);
     				if ( RotationAngle == 0 ) { outStr = "G1Y" + startY; }
     				else {
-    					var outStr = "G1X" + (startX * cosRA) - (startY * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA) +
-    								   "Y" + (startX * sinRA) + (startY * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA); 
+    					var outStr = "G1X" + ((startX * cosRA) - (startY * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)) +
+    								   "Y" + ((startX * sinRA) + (startY * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)); 
     				}
     				if ( spiralPlg == 1 && pass == 0 ) {
     					currentZ += Plg; 
@@ -1314,57 +1325,57 @@ SBPRuntime.prototype.CR = function(args) {
 SBPRuntime.prototype.ZX = function(args) {
 	this.machine.driver.get('mpox', function(err, value) {
 		this.emit_gcode("G10 L2 P2 Z" + value);
+	 	this.cmd_posx = this.posx = 0;
 		callback();
 	}.bind(this));
-	this.posx = 0;
 }
 
 SBPRuntime.prototype.ZY = function(args) {
 	this.machine.driver.get('mpoy', function(err, value) {
 		this.emit_gcode("G10 L2 P2 Y" + value);
+	 	this.cmd_posy = this.posy = 0;
 		callback();
 	}.bind(this));
-	this.posy = 0;
 }
 
 SBPRuntime.prototype.ZZ = function(args) {
 	this.machine.driver.get('mpoz', function(err, value) {
 		this.emit_gcode("G10 L2 P2 Z" + value);
+	 	this.cmd_posz = this.posz = 0;
 		callback();
 	}.bind(this));
-	this.posz = 0;
 }
 
 SBPRuntime.prototype.ZA = function(args) {
 	this.machine.driver.get('mpoa', function(err, value) {
 		this.emit_gcode("G10 L2 P2 A" + value);
+	 	this.cmd_posa = this.posa = 0;
 		callback();
 	}.bind(this));	
-	this.posa = 0;
 }
 
 SBPRuntime.prototype.ZB = function(args) {
 	this.machine.driver.get('mpob', function(err, value) {
 		this.emit_gcode("G10 L2 P2 B" + value);
+	 	this.cmd_posb = this.posb = 0;
 		callback();
 	}.bind(this));	
- 	this.posb = 0;
 }
 
 SBPRuntime.prototype.ZC = function(args) {
 	this.machine.driver.get('mpoc', function(err, value) {
 		this.emit_gcode("G10 L2 P2 C" + value);
+	 	this.cmd_posc = this.posc = 0;
 		callback();
 	}.bind(this));	
- 	this.posc = 0;
 }
 
 SBPRuntime.prototype.Z2 = function(args, callback)  {
 	this.machine.driver.get('mpox', function(err, value1) {
 		this.machine.driver.get('mpoy', function(err, value2) {
 		    this.emit_gcode("G10 L2 P2 X" + value1 + "Y" + value2);
-		    this.cmd_posx = 0;
- 			this.cmd_posy = 0;
+			this.cmd_posx = this.posx = 0;
+			this.cmd_posy = this.posy = 0;
 			callback();
 		}.bind(this));
 	}.bind(this));
@@ -1372,36 +1383,36 @@ SBPRuntime.prototype.Z2 = function(args, callback)  {
 
 SBPRuntime.prototype.Z3 = function(args) {
 	this.emit_gcode("G10 L2 P2 X" + this.posx + " Y" + this.posy + " Z" + this.posz);
- 	this.posx = 0;
- 	this.posy = 0;
- 	this.posz = 0;
+	this.cmd_posx = this.posx = 0;
+	this.cmd_posy = this.posy = 0;
+	this.cmd_posz = this.posz = 0;
 }
 
 SBPRuntime.prototype.Z4 = function(args) {
 	this.emit_gcode("G10 L2 P2 X" + this.posx + " Y" + this.posy + " Z" + this.posz + " A" + this.posa);
- 	this.posx = 0;
- 	this.posy = 0;
- 	this.posz = 0;
- 	this.posa = 0;
+	this.cmd_posx = this.posx = 0;
+	this.cmd_posy = this.posy = 0;
+	this.cmd_posz = this.posz = 0;
+ 	this.cmd_posa = this.posa = 0;
 }
 
 SBPRuntime.prototype.Z5 = function(args) {
 	this.emit_gcode("G10 L2 P2 X" + this.posx + " Y" + this.posy + " Z" + this.posz + " A" + this.posa + " B" + this.posb);
- 	this.posx = 0;
- 	this.posy = 0;
- 	this.posz = 0;
- 	this.posa = 0;
- 	this.posb = 0;
+	this.cmd_posx = this.posx = 0;
+	this.cmd_posy = this.posy = 0;
+	this.cmd_posz = this.posz = 0;
+ 	this.cmd_posa = this.posa = 0;
+ 	this.cmd_posb = this.posb = 0;
 }
 
 SBPRuntime.prototype.Z6 = function(args) {
 	this.emit_gcode("G10 L2 P2 X" + this.posx + " Y" + this.posy + " Z" + this.posz + " A" + this.posa + " B" + this.posb + " C" + this.posc);
- 	this.posx = 0;
- 	this.posy = 0;
- 	this.posz = 0;
- 	this.posa = 0;
- 	this.posb = 0;
- 	this.posc = 0;
+ 	this.cmd_posx = this.posx = 0;
+	this.cmd_posy = this.posy = 0;
+	this.cmd_posz = this.posz = 0;
+ 	this.cmd_posa = this.posa = 0;
+ 	this.cmd_posb = this.posb = 0;
+ 	this.cmd_posc = this.posc = 0;
 }
 
 SBPRuntime.prototype.ZT = function(args) {
@@ -1439,6 +1450,7 @@ SBPRuntime.prototype.ST = function(args) {
 /* VALUES */
 
 SBPRuntime.prototype.VA = function(args, callback) {
+// ?????????? Needs work to make function like VA in ShopBot	
 	log.debug("VA Command: " + args);
 	var zoffset = -args[2];
 	if(zoffset !== undefined) {
@@ -1605,21 +1617,21 @@ SBPRuntime.prototype.VS = function(args) {
 }
 
 SBPRuntime.prototype.VU = function(args) {
-	if ( args[1] != undefined ) { unitsX = args[1]; }
-	if ( args[2] != undefined ) { unitsY = args[2]; }
-	if ( args[3] != undefined ) { unitsZ = args[3]; }
-	if ( args[4] != undefined ) { unitsA = args[4]; }
-	if ( args[9] != undefined ) { unitsB = args[9]; }
-	if ( args[6] != undefined ) { unitsC = args[6]; }
-	if ( args[5] != undefined ) { circRes = args[5]; }
-	if ( args[8] != undefined ) { circSml = args[8]; }
-	if ( args[10] != undefined ) { resMX = args[10]; }
-	if ( args[11] != undefined ) { resMY = args[11]; }
-	if ( args[12] != undefined ) { resMZ = args[12]; }
-	if ( args[13] != undefined ) { resMA = args[13]; }
-	if ( args[14] != undefined ) { resMB = args[14]; }
-	if ( args[15] != undefined ) { resMC = args[15]; }
-	if ( args[16] != undefined ) { StepIntDiv = args[16]; }
+	if ( args[1] != undefined ) { sbp_settings.unitsX = args[1]; }
+	if ( args[2] != undefined ) { sbp_settings.unitsY = args[2]; }
+	if ( args[3] != undefined ) { sbp_settings.unitsZ = args[3]; }
+	if ( args[4] != undefined ) { sbp_settings.unitsA = args[4]; }
+	if ( args[9] != undefined ) { sbp_settings.unitsB = args[9]; }
+	if ( args[6] != undefined ) { sbp_settings.unitsC = args[6]; }
+//	if ( args[5] != undefined ) { circRes = args[5]; }
+//	if ( args[8] != undefined ) { circSml = args[8]; }
+	if ( args[10] != undefined ) { sbp_settings.resMX = args[10]; }
+	if ( args[11] != undefined ) { sbp_settings.resMY = args[11]; }
+	if ( args[12] != undefined ) { sbp_settings.resMZ = args[12]; }
+	if ( args[13] != undefined ) { sbp_settings.resMA = args[13]; }
+	if ( args[14] != undefined ) { sbp_settings.resMB = args[14]; }
+	if ( args[15] != undefined ) { sbp_settings.resMC = args[15]; }
+//	if ( args[16] != undefined ) { StepIntDiv = args[16]; }
 }
 
 SBPRuntime.prototype.EP = function(args) {
