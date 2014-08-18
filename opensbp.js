@@ -8,7 +8,7 @@ var sb3_commands = require('./data/sb3_commands');
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
 
-var chunk_breakers = {'VA':true, 'VS':true, 'JS':true}
+var chunk_breakers = {'VA':true, 'VS':true, 'JS':true, 'VS':true}
 
 function SBPRuntime() {
 	this.program = [];
@@ -1017,54 +1017,49 @@ SBPRuntime.prototype.CG = function(args) {
     else{ var currentZ = startZ; }
     var safeZCG = currentZ + sbp_settings.safeZpullUp;
 
+    if ( optCG == 2 ) {    	
+   		circRadius = Math.sqrt((centerX * centerX) + (centerY * centerY));
+   		PocketAngle = Math.atan2(centerY, centerX);								// Find the angle of the step over between passes
+   		stepOver = sbp_settings.cutterDia * ((100 - sbp_settings.pocketOverlap) / 100);	// Calculate the overlap
+   		Pocket_StepX = stepOver * Math.cos(PocketAngle);						// Calculate the stepover in X based on the radius of the cutter * overlap
+   		Pocket_StepY = stepOver * Math.sin(PocketAngle);						// Calculate the stepover in Y based on the radius of the cutter * overlap
+    }
+
     if ( plgFromZero == 1 ) {										// If plunge depth is specified move to that depth * number of reps
     	this.emit_gcode( "G1Z" + currentZ + "F" + sbp_settings.movez_speed );
     }
 
     for (i=0; i<reps;i++){
-
-    	if (Plg != 0 && optCG < 2 ) {										// If plunge depth is specified move to that depth * number of reps
+    	if (Plg != 0 && optCG < 3 ) {										// If plunge depth is specified move to that depth * number of reps
     		currentZ += Plg;
     		this.emit_gcode( "G1Z" + currentZ + "F" + sbp_settings.movez_speed );
     	}
   
     	if (optCG == 2) { 															// Pocket circle from the outside inward to center
-    		circRadius = Math.sqrt((centerX * centerX) + (centerY * centerY));
-    		PocketAngle = Math.atan2(centerY, centerX);								// Find the angle of the step over between passes
-    		stepOver = sbp_settings.cutterDia * ((100 - sbp_settings.pocketOverlap) / 100);	// Calculate the overlap
-    		Pocket_StepX = stepOver * Math.cos(PocketAngle);						// Calculate the stepover in X based on the radius of the cutter * overlap
-    		Pocket_StepY = stepOver * Math.sin(PocketAngle);						// Calculate the stepover in Y based on the radius of the cutter * overlap
-    		// Loop for number of passes
-    		for (i=0; i<reps; i++){
-    			if ( Plg != 0 ){
-    				currentZ += Plg;
-		   			this.emit_gcode( "G1Z" + currentZ.toFixed(4) + "F" + sbp_settings.movez_speed );
-		   		}
-    			// Loop passes until overlapping the center
-    			for (j=0; (Math.abs(Pocket_StepX * j) <= circRadius) && (Math.abs(Pocket_StepY * j) <= circRadius) ; j++){
-    		    	if ( j > 0) {
-    		    		this.emit_gcode( "G1X" + ((j * Pocket_StepX) + startX).toFixed(4) + 
-    		    			               "Y" + ((j * Pocket_StepY) + startY).toFixed(4) + 
-    		    			               "F" + sbp_settings.movexy_speed)
-    		    	}
-    		    	if (Dir == 1 ) { var outStr = "G2"; }	// Clockwise circle/arc
-    				else { var outStr = "G3"; }	// CounterClockwise circle/arc
-    				outStr = outStr + "X" + (startX + (j * Pocket_StepX)).toFixed(4) + 
-    						 		  "Y" + (startY + (j * Pocket_StepY)).toFixed(4) +
-    								  "I" + (centerX - (j*Pocket_StepX)).toFixed(4) +
-    								  "J" + (centerY - (j*Pocket_StepY)).toFixed(4) +
-    								  "F" + sbp_settings.movexy_speed;
-    				this.emit_gcode( outStr );										
-    			}
-    			this.emit_gcode("G0Z" + safeZCG );										// Pull up Z
-    	   		this.emit_gcode("G0X" + startX + "Y" + startY);							// Jog to the start point
+    		// Loop passes until overlapping the center
+    		for (j=0; (Math.abs(Pocket_StepX * j) <= circRadius) && (Math.abs(Pocket_StepY * j) <= circRadius) ; j++){
+    		   	if ( j > 0) {
+    		   		this.emit_gcode( "G1X" + ((j * Pocket_StepX) + startX).toFixed(4) + 
+    		   			               "Y" + ((j * Pocket_StepY) + startY).toFixed(4) + 
+    		   			               "F" + sbp_settings.movexy_speed)
+    		   	}
+    		   	if (Dir == 1 ) { var outStr = "G2"; }	// Clockwise circle/arc
+    			else { var outStr = "G3"; }	// CounterClockwise circle/arc
+    			outStr = outStr + "X" + (startX + (j * Pocket_StepX)).toFixed(4) + 
+    					 		  "Y" + (startY + (j * Pocket_StepY)).toFixed(4) +
+    							  "I" + (centerX - (j*Pocket_StepX)).toFixed(4) +
+    							  "J" + (centerY - (j*Pocket_StepY)).toFixed(4) +
+    							  "F" + sbp_settings.movexy_speed;
+    			this.emit_gcode( outStr );										
     		}
+    		this.emit_gcode("G0Z" + safeZCG );										// Pull up Z
+    	   	this.emit_gcode("G0X" + startX + "Y" + startY);							// Jog to the start point
     	} 
     	else {
     		if (Dir == 1 ) { var outStr = "G2X" + endX + "Y" + endY; }	// Clockwise circle/arc
     		else { var outStr = "G3X" + endX + "Y" + endY; }			// CounterClockwise circle/arc
 			
-			if (Plg != 0 && optCG > 2 ) { 
+			if (Plg != 0 && optCG == 3 ) { 
 		    	outStr = outStr + "Z" + (currentZ + Plg); 
 		    	currentZ += Plg;
 			} // Add Z for spiral plunge
@@ -1112,90 +1107,180 @@ SBPRuntime.prototype.CR = function(args) {
 	var startX = this.cmd_posx;
     var startY = this.cmd_posy;
     var startZ = this.cmd_posz;
+    var xDir = 1;
+    var yDir = 1;
+    var order = 1;
 
     var lenX = args[0] != undefined ? args[0] : undefined; 
     var lenY = args[1] != undefined ? args[1] : undefined;
     var OIT = args[2] != undefined ? args[2] : "T";
     var Dir = args[3] != undefined ? args[3] : 1; 
-    var startCorner = args[3] != undefined ? args[3] : 4;  // Start Corner - default is 4, the bottom left corner
-    var Plg = args[7] != undefined ? args[7] : 0;
-    var reps = args[8] != undefined ? args[8] : 1;
-    var optCG = args[11] != undefined ? args[11] : 0;	// Options - 1-Tab, 2-Pocket Outside-In, 3-Pocket Inside-Out
-    var plgFromZero = args[13] != undefined ? args[13] : 0;
-    var RotationAngle = args[13] != undefined ? args[13] : 0;
-    var PlgAxis = args[12] != undefined ? args[12] : 'Z';
-
+    var stCorn = args[4] != undefined ? args[4] : 4;			// Start Corner - default is 4, the bottom left corner
+    var Plg = args[5] != undefined ? args[5] : 0;
+    var reps = args[6] != undefined ? args[6] : 1;
+    var optCG = args[7] != undefined ? args[7] : 0;				// Options - 1-Tab, 2-Pocket Outside-In, 3-Pocket Inside-Out
+    if (optCR > 1) {
+    	stepOver = sbp_settings.cutterDia * ((100 - sbp_settings.pocketOverlap) / 100);	// Calculate the overlap
+    	Pocket_StepY = Pocket_StepX = stepOver * Math.cos(0.785398163);		// Calculate the stepover in X based on the radius of the cutter at 45 degrees
+    }
+    var plgFromZero = args[8] != undefined ? args[8] : 0;
+    var RotationAngle = args[9] != undefined ? args[9] : 0;
+    if (RotationAngle != 0 ) { 
+    	RotationAngle *= Math.PI / 180;							// Convert rotation angle in degrees to radians
+    	cosRA = Math.cos(RotationAngle);						// Calculate the Cosine of the rotation angle
+    	sinRA = Math.sin(RotationAngle);						// Calculate the Sine of the rotation angle
+    	rotPtX = startX;										// Rotation point X
+    	rotPtY = startY;										// Rotation point Y
+    }
+    var PlgAxis = args[10] != undefined ? args[10] : 'Z';
+	var spiralPlg = args[11] != undefined ? args[11] : 0;
+    
     if (Plg != 0 && plgFromZero == 1){ var currentZ = 0; }
     else{ var currentZ = startZ; }
+    var safeZCG = currentZ + sbp_settings.safeZpullUp;
+
+    if ( stCorn == 1 ) { 
+    	yDir = -1;
+    	if ( Dir == -1 ) { 
+    		order = 2; 
+    	}
+    }
+    else if ( stCorn == 2 ) {
+    	xDir = -1;
+    	yDir = -1;
+    	if ( Dir == 1 ) { 
+    		order = 2; 
+    	}
+    }
+    else if ( stCorn == 3 ) { 
+    	xDir = -1; 
+    	if ( Dir == -1 ) {
+    		order = 2;
+    	}
+    }
+    else { 
+    	if ( Dir == 1 ) {
+    		order = 2;
+    	}
+    }
 
     if ( OIT == "O" ) { 
-    	lenX += sbp_settings.cutterDia;
-    	lenY += sbp_settings.cutterDia;
+    	lenX = (lenX + sbp_settings.cutterDia) * xDir;
+    	lenY = (lenY + sbp_settings.cutterDia) * yDir;
     }
     else if ( OIT == "I" ) {
-    	lenX -= sbp_settings.cutterDia;
-    	lenY -= sbp_settings.cutterDia;
+    	lenX = (lenX - sbp_settings.cutterDia) * xDir;
+    	lenY = (lenY - sbp_settings.cutterDia) * yDir;
     }
 
     for (i=0; i<reps;i++){
-    	if (Plg != 0 && optCG < 2 ) {										// If plunge depth is specified move to that depth * number of reps
+    	if ( Plg != 0 && spiralPlg != 1 ) {								// If plunge depth is specified move to that depth * number of reps
     		currentZ += Plg;
     		this.emit_gcode( "G1Z" + currentZ + "F" + sbp_settings.movez_speed );
     	}
-  
-    	if (optCG == 2) { 															// Pocket circle from the outside inward to center
-    		circRadius = Math.sqrt((centerX * centerX) + (centerY * centerY));
-    		PocketAngle = Math.atan2(centerY, centerX);								// Find the angle of the step over between passes
-    		stepOver = sbp_settings.cutterDia * ((100 - sbp_settings.pocketOverlap) / 100);	// Calculate the overlap
-    		Pocket_StepX = stepOver * Math.cos(PocketAngle);						// Calculate the stepover in X based on the radius of the cutter * overlap
-    		Pocket_StepY = stepOver * Math.sin(PocketAngle);						// Calculate the stepover in Y based on the radius of the cutter * overlap
-    		
-    		if (Plg != 0){
-    			currentZ += Plg;
-		   		this.emit_gcode( "G1Z" + currentZ.toFixed(4) + "F" + sbp_settings.movez_speed );
-		   	}
-    			
+    	if ( optCG == 2 ) { 															// Pocket Rectangle from the outside inward to center	
     		// Loop for number of passes
-    		for (i=0; i<reps; i++){
     			// Loop passes until overlapping the center
     			for (j=0; (Math.abs(Pocket_StepX * j) <= circRadius) && (Math.abs(Pocket_StepY * j) <= circRadius) ; j++){
-    		    	if ( j > 0) {
-    		    		this.emit_gcode( "G1X" + ((j * Pocket_StepX) + startX).toFixed(4) + 
-    		    			               "Y" + ((j * Pocket_StepY) + startY).toFixed(4) + 
-    		    			               "F" + sbp_settings.movexy_speed)
-    		    	}
-    		    	if (Dir == 1 ) { var outStr = "G2"; }	// Clockwise circle/arc
-    				else { var outStr = "G3"; }	// CounterClockwise circle/arc
-    				outStr = outStr + "X" + (startX + (j * Pocket_StepX)).toFixed(4) + 
-    						 		  "Y" + (startY + (j * Pocket_StepY)).toFixed(4) +
-    								  "I" + (centerX - (j*Pocket_StepX)).toFixed(4) +
-    								  "J" + (centerY - (j*Pocket_StepY)).toFixed(4) +
-    								  "F" + sbp_settings.movexy_speed;
-    				this.emit_gcode( outStr );										
-    			}
-    			if ((i+1) < reps){
-    				this.emit_gcode("G0Z" + sbp_settings.safeZpullUp );										// Pull up Z
-    	   			this.emit_gcode("G0X" + startX + "Y" + startY);							// Jog to the start point
-    	   			if (Plg != 0) {	currentZ += Plg; }
-    	   			this.emit_gcode("G1Z" + currentZ + " F" + sbp_settings.movez_speed);	// Plunge to current Z
-    	   		}
+    		    	
+
+
+    		    	
 
     		}
-    		if(noPullUp == 1){    	//If No pull-up is set to YES, pull up to the starting Z location
+    		if ( noPullUp == 1 ){    	//If No pull-up is set to YES, pull up to the starting Z location
     			this.emit_gcode("G1Z" + startZ);
 				this.cmd_posz = startZ;
 			}
     	} 
     	else {
-    		if (Dir == 1 ) { var outStr = "G2X" + endX + "Y" + endY; }	// Clockwise circle/arc
-    		else { var outStr = "G3X" + endX + "Y" + endY; }			// CounterClockwise circle/arc
-			
-			if (Plg != 0 && optCG > 2 ) { 
-		    	outStr = outStr + "Z" + (currentZ + Plg); 
-		    	currentZ += Plg;
-			} // Add Z for spiral plunge
-			outStr = outStr + "I" + centerX + "K" + centerY + "F" + sbp_settings.movexy_speed;	// Add Center offset
-			this.emit_gcode(outStr); 
+    		if (order == 1 ) {		// Clockwise rectangle
+    			cnt = 0;
+    			do { 
+    				if (RotationAngle == 0) { var outStr = "G1X" + (startX + lenX); }
+    				else {
+    					var outStr = "G1X" + ((startX + lenX) * cosRA) - (startY * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA) +
+    								   "Y" + ((startX + lenX) * sinRA) + (startY * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA); 
+    				}
+    				if ( spiralPlg == 1 ) {
+    					var PlgSp = currentZ + (Plg * 0.25); 
+    					outStr += "Z" + PlgSp; }	
+    				this.emit_gcode (outStr);
+    		    	if ( RotationAngle == 0 ) { outStr = "G1Y" + (startY + lenY); }
+    				else {
+    					var outStr = "G1X" + ((startX + lenX) * cosRA) - ((startY + lenY) * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA) +
+    								   "Y" + ((startX + lenX) * sinRA) + ((startY + lenY) * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA); 
+    				}
+    				if ( spiralPlg == 1 ) { 
+    					PlgSp = currentZ + (Plg * 0.5);	
+    					outStr += "Z" + PlgSp; }
+    				this.emit_gcode (outStr);
+    				if ( RotationAngle == 0 ) { outStr = "G1X" + startX; }
+    				else {
+    					var outStr = "G1X" + (startX * cosRA) - ((startY + lenY) * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA) +
+    								   "Y" + (startX * sinRA) + ((startY + lenY) * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA); 
+    				}
+    				if ( spiralPlg == 1 ) { 
+    					PlgSp = currentZ + (Plg * 0.75);	
+    					outStr += "Z" + PlgSp; }    			}	
+    				this.emit_gcode (outStr);
+    				if ( RotationAngle == 0 ) { outStr = "G1Y" + startY; }
+    				else {
+    					var outStr = "G1X" + (startX * cosRA) - (startY * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA) +
+    								   "Y" + (startX * sinRA) + (startY * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA); 
+    				}
+    				if ( spiralPlg == 1 && pass == 0 ) {
+    					currentZ += Plg; 
+    					outStr += "Z" + currentZ;
+    					pass = 1; 
+    				}
+    				else { cnt = 1; }
+    				this.emit_gcode (outStr);
+    			} while ( cnt < 1 );
+    		}	
+    		else {
+    			do {
+    			    if ( RotationAngle == 0 ) { outStr = "G1X" + startX; }
+    				else {
+    					var outStr = "G1X" + (startX * cosRA) - ((startY + lenY) * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA) +
+    								   "Y" + (startX * sinRA) + ((startY + lenY) * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA); 
+    				}
+    				if ( spiralPlg == 1 ) {
+    						var PlgSp = currentZ + (Plg * 0.25); 
+    						outStr += "Z" + PlgSp; }	
+    					this.emit_gcode (outStr);
+    				if ( RotationAngle == 0 ) { outStr = "G1Y" + (startY + lenY); }
+    				else {
+    					var outStr = "G1X" + ((startX + lenX) * cosRA) - ((startY + lenY) * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA) +
+    								   "Y" + ((startX + lenX) * sinRA) + ((startY + lenY) * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA); 
+    				}
+    				if ( spiralPlg == 1 ) { 
+    						PlgSp = currentZ + (Plg * 0.5);	
+    						outStr += "Z" + PlgSp; }
+    					this.emit_gcode (outStr);
+    				if ( RotationAngle == 0 ) { var outStr = "G1X" + (startX + lenX); }
+    				else {
+    					var outStr = "G1X" + ((startX + lenX) * cosRA) - (startY * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA) +
+    								   "Y" + ((startX + lenX) * sinRA) + (startY * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA); 
+    				}
+    				if ( spiralPlg == 1 ) { 
+    						PlgSp = currentZ + (Plg * 0.75);	
+    						outStr += "Z" + PlgSp; }    			}	
+    					this.emit_gcode (outStr);
+    				if ( RotationAngle == 0 ) { outStr = "G1Y" + startY; }
+    				else {
+    					var outStr = "G1X" + (startX * cosRA) - (startY * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA) +
+    								   "Y" + (startX * sinRA) + (startY * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA); 
+    				}
+    				if ( spiralPlg == 1 && pass == 0 ) {
+    					currentZ += Plg; 
+    					outStr += "Z" + currentZ;
+    					pass == 1; 
+    				}
+    				else { cnt = 1; }
+    				this.emit_gcode (outStr);
+    			} while ( cnt < 1 );
+    		}
 		}
 
     	if( i+1 < reps && ( endX != startX || endY != startY ) ){					//If an arc, pullup and jog back to the start position
@@ -1211,17 +1296,7 @@ SBPRuntime.prototype.CR = function(args) {
 			this.emit_gcode(outStr); 
 		}
     }
-    if (optCG == 4 && i >= reps) { // Add bottom circle if spiral with bottom clr is specified
-        if( endX != startX || endY != startY ) {	//If an arc, pullup and jog back to the start position
-    		this.emit_gcode( "G0Z" + safe_Z );
-    	   	this.emit_gcode( "G0X" + startX + "Y" + startY);
-    	   	this.emit_gcode( "G1Z" + currentZ + " F" + sbp_settings.movez_speed);		
-    	}
-    	if (Dir == 1 ){ var outStr = "G2"; } 		// Clockwise circle/arc
-    	else { var outStr = "G3"; }					// CounterClockwise circle/arc
-		outStr = outStr + "X" + endX + "Y" + endY + "I" + centerX + "K" + centerY + "F" + sbp_settings.movexy_speed;	// Add Center offset
-		this.emit_gcode(outStr); 
-    }	
+
     if(noPullUp == 0 && currentZ != startZ){    	//If No pull-up is set to YES, pull up to the starting Z location
     	this.emit_gcode( "G0Z" + startZ);
     	this.cmd_posz = startZ;
@@ -1229,6 +1304,7 @@ SBPRuntime.prototype.CR = function(args) {
     else{				    						//If not, stay at the ending Z height
   		this.cmd_posz = currentZ;
     }
+
     this.cmd_posx = endX;
 	this.cmd_posy = endY;
 }
@@ -1283,16 +1359,15 @@ SBPRuntime.prototype.ZC = function(args) {
  	this.posc = 0;
 }
 
-SBPRuntime.prototype.Z2 = function(args) {
+SBPRuntime.prototype.Z2 = function(args, callback)  {
 	this.machine.driver.get('mpox', function(err, value1) {
 		this.machine.driver.get('mpoy', function(err, value2) {
+		    this.emit_gcode("G10 L2 P2 X" + value1 + "Y" + value2);
+		    this.cmd_posx = 0;
+ 			this.cmd_posy = 0;
 			callback();
 		}.bind(this));
-		this.emit_gcode("G10 L2 P2 X" + value1 + "Y" + value2);
-		callback();
 	}.bind(this));
-	this.posx = 0;
- 	this.posy = 0;
 }
 
 SBPRuntime.prototype.Z3 = function(args) {
