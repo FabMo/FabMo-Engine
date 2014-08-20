@@ -1,9 +1,11 @@
+var settings = require('./settings');
 var restify = require('restify');
 var process = require('process');
 var detection_daemon = require('./detection_daemon');
 var machine = require('./machine');
-var PLATFORM = require('process').platform;
-var settings = require('./settings');
+var PLATFORM = process.platform;
+
+var log = require('./log').logger('server');
 
 // Connect to G2
 machine.machine = machine.connect(function(error, data) {
@@ -32,7 +34,7 @@ machine.machine = machine.connect(function(error, data) {
 
 		// Kick off the server listening for connections
 		server.listen(settings.server_port, function() {
-		  console.log('%s listening at %s', server.name, server.url);
+		  log.info(server.name+ ' listening at '+ server.url);
 		});
 	}
 });

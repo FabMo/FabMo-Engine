@@ -4,14 +4,15 @@ try{settings= require('./app_settings');}catch(ex){settings= undefined;};
 var fs = require('fs');
 var util = require('util');
 var path=require('path');
-var log = require('./log').logger('settings');
 
+var log_conf = require('./log')
+var log = log_conf.logger('settings');
 var settings_filename = "app_settings.json";
 
 var default_conf = {
 	"server_port" : 8080,
 	"driver" : "g2",
-	"debug_lvl" : 1, // info level
+	"debug_lvl" : "info", // info level
 	"install_dir": "/opt/shopbot/",
 	"parts_dir" : "./parts/",
 	"db_dir" : "./db/",
@@ -28,7 +29,11 @@ if (!settings)
   		log.info('settings file created');
   		settings = require('./app_settings');
   		correct_app_tree(function(correct){
-  			if(correct) set_export();
+  			if(correct)
+	  		{
+	  			set_export();
+	  			log_conf.setGlobalLevel(exports.debug_lvl);
+	  		}
   		});
   		
 
@@ -37,7 +42,12 @@ if (!settings)
 else
 {
 	correct_app_tree(function(correct){
-  		if(correct) set_export();
+		log.info('correctly read the settings file');
+  		if(correct)
+  		{
+  			set_export();
+  			log_conf.setGlobalLevel(exports.debug_lvl);
+  		}
   	});
 }
 
@@ -45,10 +55,11 @@ else
 function set_export(){
 	exports.server_port = settings.server_port || default_conf.server_port;
 	exports.driver = settings.driver || default_conf.driver;
-	exports.debug_lvl = settings.debug_lvl || default_conf.debug_lvl;
+	exports.debug_lvl = (settings.debug_lvl === undefined)? default_conf.debug_lvl : settings.debug_lvl;
 	exports.app_root_dir = getAppRoot();
 	exports.upload_dir = path.normalize( getAppRoot() + (settings.parts_dir || default_conf.parts_dir));
 	exports.db_dir = path.normalize( getAppRoot()+ (settings.db_dir || default_conf.db_dir) );
+
 }
 
 function getRoot() {
