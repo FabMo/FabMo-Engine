@@ -3,21 +3,7 @@ var process = require('process');
 var detection_daemon = require('./detection_daemon');
 var machine = require('./machine');
 var PLATFORM = require('process').platform;
-
-
-function getUploadDirectory() {
-	switch(PLATFORM) {
-		case 'win32':
-		case 'win64':
-			console.log("ON WINDOWS");
-			return 'c:/opt/shopbot/tmp'
-		case 'linux':
-		case 'darwin':
-		default:
-			return '/opt/shopbot/tmp'
-	}
-}
-
+var settings = require('./settings');
 
 // Connect to G2
 machine.machine = machine.connect(function(error, data) {
@@ -39,13 +25,13 @@ machine.machine = machine.connect(function(error, data) {
 		);
 
 		// Configure local directory for uploading files
-		server.use(restify.bodyParser({'uploadDir':getUploadDirectory()}));
+		server.use(restify.bodyParser({'uploadDir':settings.upload_dir}));
 
 		// The routes module maps URLs to functions of the API
 		var routes = require('./routes')(server);
 
 		// Kick off the server listening for connections
-		server.listen(8080, function() {
+		server.listen(settings.server_port, function() {
 		  console.log('%s listening at %s', server.name, server.url);
 		});
 	}
