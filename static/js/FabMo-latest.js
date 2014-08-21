@@ -19,6 +19,7 @@ function FabMo(ip,port) //ip and port of the tool
 	this.url.move=this.url.direct+'/move';
 	this.url.jog=this.url.direct+'/jog';
 	this.url.goto=this.url.direct+'/goto';
+	this.url.sbp=this.url.direct+'/sbp';
 
 	// default error message definitions
 	// that method allow to give more details on error
@@ -321,6 +322,27 @@ FabMo.prototype.gcode = function(gcode_line,callback)
 	});
 }
 
+FabMo.prototype.sbp = function(sbp_line,callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.sbp,
+		type: "POST",
+		dataType : 'json', 
+		data : {'cmd':sbp_line},
+		success: function( data ) {
+			callback(undefined,data);
+		},
+		error: function(data,err) {
+			var error = that.default_error.no_device;
+			error.sys_err = err;
+			callback(error);
+		}
+	});
+}
+
 
 FabMo.prototype.start_move =  function(dir,callback)
 {
@@ -488,18 +510,23 @@ function ChooseBestWayToConnect(tool,callback){ //return an ip_adress
 			callback(val.ip_address);
 			return;
 		}
+	});
+	tool.network.forEach(function(val,key){
+		
 		if(val.interface === "eth0")
 		{
 			callback(val.ip_address);
 			return;
 		}
-
+	});
+	tool.network.forEach(function(val,key){
 		if(val.interface === "wlan0")
 		{
 			callback(val.ip_address);
 			return;
 		}
-
+	});
+	tool.network.forEach(function(val,key){
 		if(val.interface === "wlan1")
 		{
 			callback(val.ip_address);
@@ -538,24 +565,46 @@ function SelectATool(list_tools,callback){
 	}
 	else
 	{	
-		var $dialog = $('<div/>').addClass('dialog');
-		list_tools.forEach(function(val,key){
-			$dialog.append('<input type="radio" name="devices" id="'+key+'" value=\''+JSON.stringify(val)+'\' /><label for="'+key+'"> '+ val.hostname+'</label><br>');
-		});
-		$('body').append($dialog);
-		$dialog.dialog({
-			autoOpen: true,
-			title: "Select a device",
-			height: 300,
-			width: 350,
-			modal: true,
-			buttons: {
-				Select: function() {
-					callback(undefined,JSON.parse($("input[name='devices']:checked").val()));
-					$( this ).dialog( "close" );
+
+		if($('#device_picker').length){
+			list_tools.forEach(function(val,key){
+				if(key=0){
+					$('#device_picker').append('<input type="radio" name="devices" id="'+key+'" value=\''+JSON.stringify(val)+'\' checked="checked" /><label for="'+key+'"> '+ val.hostname+'</label><br>');
 				}
-			}
-      		});
+				else{
+					$('#device_picker').append('<input type="radio" name="devices" id="'+key+'" value=\''+JSON.stringify(val)+'\' /><label for="'+key+'"> '+ val.hostname+'</label><br>');
+				}
+			});
+			$('#device_picker').append($('<button id="device_picker_button">Select</button>'));
+			$('#device_picker_button').click(function(){
+				if($("input[name='devices']:checked").length)
+					callback(undefined,JSON.parse($("input[name='devices']:checked").val()));
+});
+			
+
+
+		}
+		else{
+			var $dialog = $('<div/>').addClass('dialog');
+			list_tools.forEach(function(val,key){
+				$dialog.append('<input type="radio" name="devices" id="'+key+'" value=\''+JSON.stringify(val)+'\' /><label for="'+key+'"> '+ val.hostname+'</label><br>');
+			});
+			$('body').append($dialog);
+			$dialog.dialog({
+				autoOpen: true,
+				title: "Select a device",
+				height: 300,
+				width: 350,
+				modal: true,
+				buttons: {
+					Select: function() {
+						callback(undefined,JSON.parse($("input[name='devices']:checked").val()));
+						$( this ).dialog( "close" );
+					}
+				}
+	      		});
+
+		}
 	}
  
 }
