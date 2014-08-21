@@ -13,7 +13,7 @@ Dependencies
 The engine runs best on linux, but can run with limited functionality on windows.  To run the engine, you need the following software packages:
 
 * NodeJS (http://nodejs.org/)
-* restify
+* restify 
 * serialport
 * process
 * colors (optional, for colorized log output)
@@ -21,8 +21,8 @@ The engine runs best on linux, but can run with limited functionality on windows
 
 Installing the Engine
 ---------------------
-The engine is run from source, and only needs to be checked out and stored in a local directory.  To run the engine, simply run `node server.js`
+The engine is run from source, and only needs to be checked out and stored in a local directory.   There are a few directories that you need to have created for the engine to work properly.  Under linux, these are `/opt/shopbot/parts` and `/opt/shopbot/tmp`.  On windows, use `c:\opt\shopbot\parts` and `c:\opt\shopbot\tmp` The process that is running the engine server needs read/write access to both of these directories.
 
 Running the Engine
 ------------------
-For debugging the engine, you can run 
+For debugging the engine, you can run it directly from the command prompt with `node server.js`

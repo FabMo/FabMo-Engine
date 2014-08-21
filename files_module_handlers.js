@@ -107,3 +107,20 @@ exports.download_file = function(req, res, next) {
 	
 };
 
+
+exports.view_file = function(req, res, next) {
+	File.get_by_id(req.params.id,function(file){
+		if(!file){res.send(404);return;}
+		console.log('Downloading file');
+		fs.readFile((file.path),function (err, data){
+			if (err) throw err;
+			res.header('Content-Type','text/plain');
+			res.header('Content-Length', file.size);
+			res.header('Location', req.headers['referer']);	
+			res.send(data.toString());
+		});
+	});
+	
+};
+
+

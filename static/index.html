@@ -65,6 +65,15 @@
 			</form>
 		</div>
 	</div>
+
+		<div class="panel panel-default">
+		<div class="panel-heading app-heading">Single OpenSBP Command</div>
+		<div class="panel-body">
+			<form id="sbp-sender" action="/run" method="post" enctype="multipart/form-data" role="form" class="">
+				<input id="sbp-input" class="form-control input-lg" type="text" onclick="this.select();">
+			</form>
+		</div>
+	</div>
   </div>
 
 <!-- KEYBOARD DIALOG -->
@@ -167,7 +176,7 @@
   <script src="./js/libs/jquery-1.10.2.js"></script>
   <script src="./js/bootstrap.min.js"></script>
   <script src="./js/libs/bootstrap.file-input.js"></script>
-  <script src="./js/FabMo-1.0.6.js"></script>
+  <script src="./js/fabmo-latest.js"></script>
   
   <script type="text/javascript">
 	var tool = new FabMo(location.hostname||'localhost', '8080');
@@ -382,6 +391,7 @@
 		$.each( files, function( key, val ) {
 		  $("#files").append( "<tr class='files_list'>"+
 		"<td class='run-button' value='" + val._id + "'><a style='cursor: pointer;'>" + val.filename + "</a></td>" +
+		"<td class='view-button' value='" + val._id + "' style='text-align: right;width: 3%;'><span style='cursor: pointer;' class='glyphicon glyphicon-eye-open'></span></td>"+
 		"<td class='download-button' value='" + val._id + "' style='text-align: right;width: 3%;'><span style='cursor: pointer;' class='glyphicon glyphicon-download-alt'></span></td>" +
 		"<td class='delete-button' value='" + val._id + "' style='text-align: right;width: 3%;'><span style='cursor: pointer;' class='glyphicon glyphicon-remove'></span></td>"+
 		"</tr>");
@@ -437,17 +447,17 @@
 
 });
 
-	function flash_gcode(value, duration) {
+	function flash_input(cls, value, duration) {
 		if(value === 'error') {
-			$('#gcode-sender').addClass('has-success');
-			$('#gcode-sender').removeClass('has-error');
+			$(cls).addClass('has-success');
+			$(cls).removeClass('has-error');
 		} else if(value === 'success') {
-			$('#gcode-sender').addClass('has-success');
-			$('#gcode-sender').removeClass('has-error');
+			$(cls).addClass('has-success');
+			$(cls).removeClass('has-error');
 		}
 		setTimeout(function() {
-			$('#gcode-sender').removeClass('has-error');
-			$('#gcode-sender').removeClass('has-success');
+			$(cls).removeClass('has-error');
+			$(cls).removeClass('has-success');
 		}, duration);
 	}
 
@@ -456,10 +466,23 @@
 	tool.gcode($('#gcode-input').val(),function(err,data){
 		if(!err) {
 			console.log('success');
-			flash_gcode('success', 500);
+			flash_input('#gcode-sender', 'success', 500);
 		} else {
 			console.log('failure');
-			flash_gcode('error', 500);
+			flash_input('#gcode-sender', 'error', 500);
+		}
+	});
+	});
+
+	$('#sbp-sender').submit(function(e) {
+	e.preventDefault();
+	tool.sbp($('#sbp-input').val(),function(err,data){
+		if(!err) {
+			console.log('success');
+			flash_input('#sbp-sender', 'success', 500);
+		} else {
+			console.log('failure');
+			flash_input('#sbp-sender', 'success', 500);
 		}
 	});
 	});

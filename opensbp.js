@@ -1,4 +1,4 @@
-var parser = require('./sbp_parser');
+var parser = require('./parser');
 var fs = require('fs');
 var log = require('./log').logger('sbp');
 var g2 = require('./g2');
@@ -62,7 +62,7 @@ SBPRuntime.prototype.runString = function(s) {
 	try {
 		var lines =  s.split('\n');
 		this.machine.status.nb_lines = lines.length - 1;
-		this.program = parser.parse(s + '\n');
+		this.program = parser.parse(s);
 		var lines = this.program.length
 		this.machine.status.nb_lines = lines.length - 1;
 		this._analyzeLabels();  // Build a table of labels
@@ -129,8 +129,6 @@ SBPRuntime.prototype._run = function() {
 // _continue() will dispatch the next chunk if appropriate, once the current chunk is finished
 SBPRuntime.prototype._continue = function() {
 	this._update();
-
-	log.debug('Running until break...')
 
 	// Continue is only for resuming an already running program.  It's not a substitute for _run()
 	if(!this.started) {
@@ -340,7 +338,11 @@ SBPRuntime.prototype._execute = function(command, continue_callback, deferred_ca
 
 		case "pause":
 			this.pc += 1;
-			return deferred_callback();
+			if(command.expr) {
+				this.emit_gcode('G4 P' + this._eval(command.expr));
+			}
+			// Todo handle indefinite pause or pause with message
+			return continue_callback();
 			break;
 
 		default:
@@ -411,6 +413,7 @@ SBPRuntime.prototype._eval = function(expr) {
 				return this._eval(expr.left) <= this._eval(expr.right);
 				break;
 			case '==':
+			case '=':
 				return this._eval(expr.left) == this._eval(expr.right);
 				break;
 			case '!=':
@@ -1261,7 +1264,8 @@ SBPRuntime.prototype.CR = function(args) {
 
 SBPRuntime.prototype.ZX = function(args, callback) {
 	this.machine.driver.get('mpox', function(err, value) {
-		this.emit_gcode("G10 L2 P2 X" + value);
+		//this.emit_gcode("G10 L2 P2 X" + value);
+	 	this.
 	 	this.cmd_posx = this.posx = 0;
 		callback();
 	}.bind(this));
@@ -1383,6 +1387,18 @@ SBPRuntime.prototype.ST = function(args) {
 	this.emit_gcode("G54");
 }
 
+// Set to table base coordinates
+SBPRuntime.prototype.C6 = function(args) {
+	this.emit_gcode("M4");
+	this.emit_gcode("M8");
+}
+
+// Set to table base coordinates
+SBPRuntime.prototype.C7 = function(args) {
+	this.emit_gcode("M5");
+	this.emit_gcode("M9");
+}
+
 
 /* VALUES */
 
@@ -1392,12 +1408,9 @@ SBPRuntime.prototype.VA = function(args, callback) {
 	var zoffset = -args[2];
 	if(zoffset !== undefined) {
 		this.machine.driver.get('g55z', function(err, value) {
-			log.warn("Got mpoz: " + value)
-			log.warn("Current zpos: " + this.machine.status.posz);
-			// TODO fix hardcoded feedrate
-			this.emit_gcode("G1 F20");
-			this.emit_gcode("G10 L2 P2 Z" + (value + this.machine.status.posz + zoffset));
-			callback();
+			this.machine.driver.set('g55z',(value + this.machine.status.posz + zoffset), function(err, value) {
+				callback();
+			});
 		}.bind(this));
 
 	}
@@ -1572,7 +1585,6 @@ SBPRuntime.prototype.VU = function(args) {
 }
 
 SBPRuntime.prototype.EP = function(args) {
-	log.info("Got a EP command");
 	this.emit_gcode("G38.2 Z" + args[0]);
 }
 
