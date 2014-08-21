@@ -8,7 +8,7 @@ var sb3_commands = require('./data/sb3_commands');
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
 
-var chunk_breakers = {'VA':true, 'VS':true, 'JS':true, 'VS':true}
+var chunk_breakers = {'VA':true, 'VS':true, 'JS':true, 'VS':true, 'ZX':true, 'ZY':true, 'ZZ':true}
 
 function SBPRuntime() {
 	this.program = [];
@@ -49,7 +49,7 @@ SBPRuntime.prototype._onG2Status = function(status) {
 		if(key in status) {
 			if(key==='line'){
 				this.machine.status.line=this.start_of_the_chunk + status.line; 
-		}
+			}
 			else{
 				this.machine.status[key] = status[key];
 			}
@@ -61,7 +61,7 @@ SBPRuntime.prototype._onG2Status = function(status) {
 SBPRuntime.prototype.runString = function(s) {
 	try {
 		var lines =  s.split('\n');
-                this.machine.status.nb_lines = lines.length - 1;
+		this.machine.status.nb_lines = lines.length - 1;
 		this.program = parser.parse(s + '\n');
 		var lines = this.program.length
 		this.machine.status.nb_lines = lines.length - 1;
@@ -72,71 +72,7 @@ SBPRuntime.prototype.runString = function(s) {
 		log.error(err);
 	}
 }
-/*
-SBPRuntime.prototype._convertToType = function(type, value) {
-	switch(type) {
-		case 'ck':
-			v = String(value)[0];
-			if(v === '0') {
-				return false;
-			} else if (v === '1') {
-				return true;
-			} else {
-				throw "Invalid value for checkbox type: " + value;
-			}
 
-		break;
-
-		case 'sng':
-		break;
-
-		case 'distmb':
-		break;
-
-		case 'dist':
-		break;
-
-		case 'ops':
-		break;
-
-		case 'int':
-		break;
-
-		case 'partfile'
-		break;
-
-		case 'distb':
-		break;
-
-		case 'distrb':
-		break;
-
-		case 'distm':
-		break;
-
-		case 'distra':
-		break;
-
-		case 'distr':
-		break;
-
-		case 'str':
-		break;
-
-		case 'dista':
-		break;
-
-		case 'distma':
-		break;
-
-		case 'obs':
-		break;
-
-		case 'axis':
-		break;
-	}
-}
-*/
 // Update the internal state of the runtime with data from the tool
 SBPRuntime.prototype._update = function() {
 	status = this.machine.status || {};
@@ -155,7 +91,7 @@ SBPRuntime.prototype._evaluateArguments = function(command, args) {
 	// Scrub the argument list:  extend to the correct length, sub in defaults where necessary.
 	scrubbed_args = [];
 	if(command in sb3_commands) {
-		params = sb3_commands[command].params
+		params = sb3_commands[command].params || []
 		for(i=0; i<params.length; i++) {
 			prm_param = params[i];
 			user_param = args[i];
@@ -183,6 +119,7 @@ SBPRuntime.prototype._evaluateArguments = function(command, args) {
 
 // Start the stored program running
 SBPRuntime.prototype._run = function() {
+	log.info("Setting the running state");
 	this.started = true;
 	this.machine.setState(this, "running");
 	this._continue();
@@ -197,7 +134,7 @@ SBPRuntime.prototype._continue = function() {
 
 	// Continue is only for resuming an already running program.  It's not a substitute for _run()
 	if(!this.started) {
-		log.warn('Ooops already started...');
+		log.warn('Got a _continue() but not started');
 		return;
 	}
 
@@ -206,16 +143,15 @@ SBPRuntime.prototype._continue = function() {
 		log.info("Program over. (pc = " + this.pc + ")")
 		// We may yet have g-codes that are pending.  Run those.
 		if(this.current_chunk.length > 0) {
-			log.info("dispatching a chunk: " + this.current_chunk)
 			this._dispatch();
+		} else {
+			this.machine.status.filename = null;
+			this.machine.status.current_file = null;
+			this.machine.status.nb_lines=null;
+			this.machine.status.line=null;
+			this.init();
+			return;
 		}
-		// TODO: Fix so the filename isn't cleared till the tool is actually done moving
-		this.machine.status.filename = null;
-		this.machine.status.current_file = null;
-		this.machine.status.nb_lines=null;
-		this.machine.status.line=null;
-		this.init();
-		return;
 	}
 
 	// Pull the current line of the program from the list
@@ -236,6 +172,8 @@ SBPRuntime.prototype._dispatch = function() {
 	var runtime = this;
 	this.break_chunk = false;
 	if(this.current_chunk.length > 0) {
+		log.info("dispatching a chunk: " + this.current_chunk)
+
 		var run_function = function(driver) {
 			log.debug("Expected a running state change and got one.");
 			driver.expectStateChange({
@@ -495,7 +433,7 @@ SBPRuntime.prototype.init = function() {
 	this.started = false;
 	this.sysvar_evaluated = false;
 	this.chunk_broken_for_eval = false;
-	this.machine.setState(this, "idle");
+	this.machine.setState(this, 'idle');
 }
 
 // Compile an index of all the labels in the program
@@ -795,7 +733,6 @@ SBPRuntime.prototype.M6 = function(args) {
 }
 
 SBPRuntime.prototype.MH = function(args) {
-	//this.emit_gcode("G1 Z" + safe_Z);
 	this.emit_gcode("G1X0Y0" + " F" + sbp_settings.movexy_speed);
 	this.cmd_posx = 0;
 	this.cmd_posy = 0;
@@ -1322,15 +1259,15 @@ SBPRuntime.prototype.CR = function(args) {
 
 /* ZERO */
 
-SBPRuntime.prototype.ZX = function(args) {
+SBPRuntime.prototype.ZX = function(args, callback) {
 	this.machine.driver.get('mpox', function(err, value) {
-		this.emit_gcode("G10 L2 P2 Z" + value);
+		this.emit_gcode("G10 L2 P2 X" + value);
 	 	this.cmd_posx = this.posx = 0;
 		callback();
 	}.bind(this));
 }
 
-SBPRuntime.prototype.ZY = function(args) {
+SBPRuntime.prototype.ZY = function(args, callback) {
 	this.machine.driver.get('mpoy', function(err, value) {
 		this.emit_gcode("G10 L2 P2 Y" + value);
 	 	this.cmd_posy = this.posy = 0;
@@ -1338,7 +1275,7 @@ SBPRuntime.prototype.ZY = function(args) {
 	}.bind(this));
 }
 
-SBPRuntime.prototype.ZZ = function(args) {
+SBPRuntime.prototype.ZZ = function(args, callback) {
 	this.machine.driver.get('mpoz', function(err, value) {
 		this.emit_gcode("G10 L2 P2 Z" + value);
 	 	this.cmd_posz = this.posz = 0;
@@ -1346,7 +1283,7 @@ SBPRuntime.prototype.ZZ = function(args) {
 	}.bind(this));
 }
 
-SBPRuntime.prototype.ZA = function(args) {
+SBPRuntime.prototype.ZA = function(args, callback) {
 	this.machine.driver.get('mpoa', function(err, value) {
 		this.emit_gcode("G10 L2 P2 A" + value);
 	 	this.cmd_posa = this.posa = 0;
@@ -1354,7 +1291,7 @@ SBPRuntime.prototype.ZA = function(args) {
 	}.bind(this));	
 }
 
-SBPRuntime.prototype.ZB = function(args) {
+SBPRuntime.prototype.ZB = function(args, callback) {
 	this.machine.driver.get('mpob', function(err, value) {
 		this.emit_gcode("G10 L2 P2 B" + value);
 	 	this.cmd_posb = this.posb = 0;
@@ -1362,7 +1299,7 @@ SBPRuntime.prototype.ZB = function(args) {
 	}.bind(this));	
 }
 
-SBPRuntime.prototype.ZC = function(args) {
+SBPRuntime.prototype.ZC = function(args, callback) {
 	this.machine.driver.get('mpoc', function(err, value) {
 		this.emit_gcode("G10 L2 P2 C" + value);
 	 	this.cmd_posc = this.posc = 0;
