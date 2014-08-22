@@ -16,8 +16,8 @@ var default_conf = {
 	"install_dir": "/opt/shopbot/",
 	"parts_dir" : "./parts/",
 	"db_dir" : "./db/",
-	"log_dir":"./log",
-	"tmp_dir":"./tmp"
+	"log_dir":"./logs/",
+	"tmp_dir":"./tmp/"
 };
 
 
@@ -26,7 +26,7 @@ if (!settings)
 {
 	fs.writeFile(settings_filename, JSON.stringify(default_conf, null, 4), function(err){
 		if (err) throw err;
-  		log.info('settings file created');
+  		log.debug('settings file created');
   		settings = require('./app_settings');
   		correct_app_tree(function(correct){
   			if(correct)
@@ -42,7 +42,7 @@ if (!settings)
 else
 {
 	correct_app_tree(function(correct){
-		log.info('correctly read the settings file');
+		log.debug('correctly read the settings file');
   		if(correct)
   		{
   			set_export();

@@ -104,7 +104,7 @@ var logger = function(name) {
 		return l;
 	}
 }
-
+/*
 process.on('uncaughtException', function(err) {
 	if(colors) {
 		console.log(err.red);
@@ -113,7 +113,7 @@ process.on('uncaughtException', function(err) {
 		console.log(err);
 	}
 
-});
+});*/
 
 exports.logger = logger;
 exports.setGlobalLevel = setGlobalLevel;
