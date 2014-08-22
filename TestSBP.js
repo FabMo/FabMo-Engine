@@ -17,7 +17,7 @@ p7 = -.125;		// Plunge
 p8 = 3;		// Passes
 p9 = undefined;		// PropX
 p10 = undefined;	// PropY	
-p11 = 2;	// Options 1-tab, 2-pocket, 3-spiral plunge & 4-spiral plunge with bottom pass
+p11 = 0;	// Options 1-tab, 2-pocket, 3-spiral plunge & 4-spiral plunge with bottom pass
 p12 = 0;			// No Pull Up after cut
 p13 = 1;			// Start plunge from Zero
 
