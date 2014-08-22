@@ -8,8 +8,6 @@ var sb3_commands = require('./data/sb3_commands');
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
 
-var chunk_breakers = {'VA':true, 'VS':true, 'JS':true, 'VS':true, 'ZX':true, 'ZY':true, 'ZZ':true}
-
 function SBPRuntime() {
 	this.program = [];
 	this.pc = 0;
@@ -117,6 +115,47 @@ SBPRuntime.prototype._evaluateArguments = function(command, args) {
 	return retval;
 }
 
+// Returns true if the provided command breaks the stack
+SBPRuntime.prototype._breaksStack = function(cmd) {
+	console.log(cmd)
+	switch(cmd.type) {
+		// Commands (MX, VA, C3, etc) break the stack only if they must ask the tool for data
+		// TODO: Commands that have sysvar evaluation in them also break stack
+		case "cmd":
+			if((cmd.cmd in this) && (typeof this[cmd.cmd] == 'function')) {
+				f = this[cmd]
+				if(f && f.length > 1) {
+					return true;
+				}
+			}
+			return false;
+			break;
+
+		// For now, pause translates to "dwell" which is just a G-Code
+		case "pause":
+			return false;
+			break;
+
+		case "cond":
+			return this._exprBreaksStack(cmd.cmp);
+			break;
+
+		case "assign":
+			return this._exprBreaksStack(cmd.var) || this._exprBreaksStack(cmd.expr)
+		default:
+			return false;
+			break;
+	}
+}
+
+SBPRuntime.prototype._exprBreaksStack = function(expr) {
+	if(expr.op === undefined) {
+		return expr[0] == '%'; // For now, all system variable evaluations are stack-breaking
+	} else {
+		return this._exprBreaksStack(expr.left) || this._exprBreaksStack(expr.right);
+	}
+}
+
 // Start the stored program running
 SBPRuntime.prototype._run = function() {
 	log.info("Setting the running state");
@@ -129,46 +168,58 @@ SBPRuntime.prototype._run = function() {
 // _continue() will dispatch the next chunk if appropriate, once the current chunk is finished
 SBPRuntime.prototype._continue = function() {
 	this._update();
-
+	log.warn("_Continuing...");
+	
 	// Continue is only for resuming an already running program.  It's not a substitute for _run()
 	if(!this.started) {
 		log.warn('Got a _continue() but not started');
 		return;
 	}
+	while(true) {
+		// If we've run off the end of the program, we're done!
+		if(this.pc >= this.program.length) {
+			log.info("Program over. (pc = " + this.pc + ")")
+			// We may yet have g-codes that are pending.  Run those.
+			if(this.current_chunk.length > 0) {
+				return this._dispatch(this._continue);
+			} else {
+				return this._end();
+			}
+		}
 
-	// If we've run off the end of the program, we're done!
-	if(this.pc >= this.program.length) {
-		log.info("Program over. (pc = " + this.pc + ")")
-		// We may yet have g-codes that are pending.  Run those.
-		if(this.current_chunk.length > 0) {
-			this._dispatch();
+		// Pull the current line of the program from the list
+		line = this.program[this.pc];
+		log.warn(line)
+		if(this._breaksStack(line)) {
+			log.debug("STACK BREAK: " + JSON.stringify(line));
+			dispatched = this._dispatch(this._continue);
+			if(!dispatched) {
+				log.debug('Nothing to execute in the queue: continuing.')
+				this._execute(line);
+				continue;
+			} else {
+				log.debug('Current chunk is nonempty: breaking to run stuff on G2.')
+				break;
+			}
 		} else {
-			this.machine.status.filename = null;
-			this.machine.status.current_file = null;
-			this.machine.status.nb_lines=null;
-			this.machine.status.line=null;
-			this.init();
-			return;
+			this._execute(line);
 		}
 	}
-
-	// Pull the current line of the program from the list
-	line = this.program[this.pc];
-
-	// Execute it.  The _execute function will either call continue or dispatch to advance the program
-	this._execute(line, this._continue.bind(this), this._dispatch.bind(this));
-
-	if(this.break_chunk) {
-		this._dispatch();
-		this.start_of_the_chunk = this.pc;
-	} 
 }
 
+SBPRuntime.prototype._end = function() {
+	this.machine.status.filename = null;
+	this.machine.status.current_file = null;
+	this.machine.status.nb_lines=null;
+	this.machine.status.line=null;
+	this.init();
+}
 // Pack up the current chunk and send it to G2
-// Setup callbacks so that when the chunk is done, the program can be resumed
-SBPRuntime.prototype._dispatch = function() {
+// Returns true if there was data to send to G2
+// Returns false if nothing was sent
+SBPRuntime.prototype._dispatch = function(callback) {
 	var runtime = this;
-	this.break_chunk = false;
+
 	if(this.current_chunk.length > 0) {
 		log.info("dispatching a chunk: " + this.current_chunk)
 
@@ -176,7 +227,7 @@ SBPRuntime.prototype._dispatch = function() {
 			log.debug("Expected a running state change and got one.");
 			driver.expectStateChange({
 				"stop" : function(driver) { 
-					runtime._continue();
+					callback();
 				},
 				null : function(driver) {
 					log.warn("Expected a stop but didn't get one.");
@@ -193,94 +244,78 @@ SBPRuntime.prototype._dispatch = function() {
 			}
 		});
 
-		// add gcode line number to the chunk
-		for (i=0;i<this.current_chunk.length;i++){
-			if (this.current_chunk[i][0]!==undefined ){
-				this.current_chunk[i]= 'N'+ (i+1) + this.current_chunk[i];
-			}
-		}
 		this.driver.runSegment(this.current_chunk.join('\n'));
 		this.current_chunk = [];
+		return true;
 	} else {
-		runtime._continue();
+		return false;
 	}
 }
 
-SBPRuntime.prototype._executeCommand = function(cmd, args, callback) {
-	f = this[cmd].bind(this);
-	log.debug("Command: " + cmd + " Function: " + f);
-	if(f.length > 1) {
-		f(args, function() {this.pc+=1; callback()}.bind(this));
+SBPRuntime.prototype._executeCommand = function(command, callback) {
+	
+	if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
+		
+		args = this._evaluateArguments(command.cmd, command.args);
+		f = this[command.cmd].bind(this);
+		
+		log.debug("Calling handler for " + command.cmd + " With arguments: [" + args + "]");
+
+		if(f.length > 1) {
+			// This is a stack breaker, run with a callback
+			f(args, function() {this.pc+=1; callback()}.bind(this));
+			return true;
+		} else {
+			// This is NOT a stack breaker, run immediately, increment PC, proceed.
+			f(args);
+			this.pc +=1;
+			return false;
+		}
 	} else {
-		log.debug("Calling handler for " + cmd + " With arguments: [" + args + "]");
-		f(args);
-		log.debug("Called.")
-		this.pc +=1;
-		callback();
+		// We don't know what this is.  Whatever it is, it doesn't break the stack.
+		this._unhandledCommand(command);
+		this.pc += 1;
+		return false;
 	}
 }
 
-// Execute a single statement
-// Accepts a parsed statement
-// Callbacks take no arguments.
-// continue_callback is called if execution can continue with the next line in the program
-// deferred_callback is called if execution must be deferred (code sent to g2 or other asynchronous process)
-SBPRuntime.prototype._execute = function(command, continue_callback, deferred_callback) {
-	this.break_chunk = false;
+SBPRuntime.prototype._execute = function(command, callback) {
+
 	log.info("Executing line: " + JSON.stringify(command));
+
+	// Just skip over blank lines, undefined, etc.
 	if(!command) {
 		this.pc += 1;
 		return;
 	}
+
+	// All correctly parsed commands have a type
 	switch(command.type) {
 
 		// A ShopBot Comand (M2, ZZ, C3, etc...)
 		case "cmd":
-			if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
-				this.sysvar_evaluated = false;
-				args = this._evaluateArguments(command.cmd, command.args);
-				if(this.chunk_broken_for_eval) {
-					log.debug("Resuming after a chunk was broken for sysvar evaluation.");
-					this.chunk_broken_for_eval = false;
-					return this._executeCommand(command.cmd, args, continue_callback);
-				}
-				else {
-					if(this.sysvar_evaluated || (command.cmd in chunk_breakers)) {
-						log.debug("Breaking a chunk at line " + this.pc + " to evaluate system variables.");
-						this.chunk_broken_for_eval = true;
-						return deferred_callback(); // Don't advance pc when execution is deferred
-					}
-					else {
-						log.debug("Running command normally: " + command.cmd + ' ' + args);
-						return this._executeCommand(command.cmd, args, continue_callback);
-					}
-				}
-			} else {
-				this.pc += 1;
-				this._unhandledCommand(command)
-			}
+			return this._executeCommand(command, callback);
 			break;
 
 		case "return":
-			this.break_chunk = true;
 			if(this.stack) {
 				this.pc = this.stack.pop();
 			} else {
 				throw "Runtime Error: Return with no GOSUB at " + this.pc;
 			}
-			return deferred_callback();
+			return false
 			break;
 
 		case "end":
 			this.pc = this.program.length;
-			return deferred_callback();
+			return false
 			break;
 
 		case "goto":
 			if(command.label in this.label_index) {
 				this.pc = this.label_index[command.label];
 				log.debug("Hit a GOTO: Going to line " + this.pc + "(Label: " + command.label + ")")
-				return deferred_callback();
+				return false;
 			} else {
 				throw "Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc;
 			}
@@ -290,50 +325,34 @@ SBPRuntime.prototype._execute = function(command, continue_callback, deferred_ca
 			if(command.label in this.label_index) {
 				this.pc = this.label_index[command.label];
 				this.stack.push([this.pc + 1])
-				return deferred_callback();
+				return false;
 			} else {
 				throw "Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc;
 			}
 			break;
 
 		case "assign":
-			this.sysvar_evaluated = false
+			//TODO FIX THIS THIS DOESN'T DO SYSTEM VARS PROPERLY
 			value = this._eval(command.expr);
-
-			if(this.chunk_broken_for_eval) {
-				log.debug('Resuming after breaking a chunk to evaluate system variables.');
-				log.debug('Assigning the user value ' + command.var + ' the value ' + value);
-				this.chunk_broken_for_eval = false;
-				this.user_vars[command.var] = value;
-			}
-			else {
-				if(this.sysvar_evaluated) {
-					log.debug("Breaking a chunk at line " + this.pc + " to evaluate system variables for an assignment.");
-					this.chunk_broken_for_eval = true;
-					return deferred_callback();
-				}
-				else {
-					log.debug('Assigning the user value ' + command.var + ' the value ' + value);
-					this.user_vars[command.var] = value;
-				}
-			}
+			this.user_vars[command.var] = value;
 			this.pc += 1;
+			return false;
 			break;
 
 		case "cond":
-			// TODO - look at continue versus deferred, this may not work for edge cases.
 			if(this._eval(command.cmp)) {
-				return this._execute(command.stmt, continue_callback, deferred_callback);
+				return this._execute(command.stmt, callback);  // Warning RECURSION!
 			} else {
 				this.pc += 1;
+				return false;
 			}
-			return deferred_callback();
 			break;
 
 		case "label":
 		case "comment":
 		case undefined:
 			this.pc += 1;
+			return false;
 			break;
 
 		case "pause":
@@ -342,15 +361,16 @@ SBPRuntime.prototype._execute = function(command, continue_callback, deferred_ca
 				this.emit_gcode('G4 P' + this._eval(command.expr));
 			}
 			// Todo handle indefinite pause or pause with message
-			return continue_callback();
+			return false;
 			break;
 
 		default:
 			log.error("Unknown command: " + JSON.stringify(command));
 			this.pc += 1;
+			return false;
 			break;
 	}
-	return continue_callback();
+	throw "Shouldn't ever get here."
 }
 
 
@@ -559,7 +579,7 @@ SBPRuntime.prototype.evaluateUserVariable = function(v) {
 
 // Called for any valid shopbot mnemonic that doesn't have a handler registered
 SBPRuntime.prototype._unhandledCommand = function(command) {
-	log.error('Unhandled Command: ' + JSON.stringify(command));
+	log.warn('Unhandled Command: ' + JSON.stringify(command));
 }
 
 // Add GCode to the current chunk, which is dispatched on a break or end of program
@@ -596,32 +616,32 @@ SBPRuntime.prototype.FS = function(args) {
 /* MOVE */
 
 SBPRuntime.prototype.MX = function(args) {
-	this.emit_gcode("G1 X" + args[0] + " F" + sbp_settings.movexy_speed);
+	this.emit_gcode("G1 X" + args[0] + " F" + 60.0*sbp_settings.movexy_speed);
 	this.cmd_posx = args[0];
 }
 
 SBPRuntime.prototype.MY = function(args) {
-	this.emit_gcode("G1Y" + args[0] + " F" + sbp_settings.movexy_speed);
+	this.emit_gcode("G1Y" + args[0] + " F" + 60.0*sbp_settings.movexy_speed);
 	this.cmd_posy = args[0];
 }
 
 SBPRuntime.prototype.MZ = function(args) {
-	this.emit_gcode("G1Z" + args[0] + " F" + sbp_settings.movez_speed);
+	this.emit_gcode("G1Z" + args[0] + " F" + 60.0*sbp_settings.movez_speed);
 	this.cmd_posz = args[0];
 }
 
 SBPRuntime.prototype.MA = function(args) {
-	this.emit_gcode("G1A" + args[0] + " F" + sbp_settings.movea_speed);
+	this.emit_gcode("G1A" + args[0] + " F" + 60.0*sbp_settings.movea_speed);
 	this.cmd_posa = args[0];
 }
 
 SBPRuntime.prototype.MB = function(args) {
-	this.emit_gcode("G1B" + args[0] + " F" + sbp_settings.moveb_speed);
+	this.emit_gcode("G1B" + args[0] + " F" + 60.0*sbp_settings.moveb_speed);
 	this.cmd_posb = args[0];
 }
 
 SBPRuntime.prototype.MC = function(args) {
-	this.emit_gcode("G1C" + args[0] + " F" + sbp_settings.movec_speed);
+	this.emit_gcode("G1C" + args[0] + " F" + 60.0*sbp_settings.movec_speed);
 	this.cmd_posc = args[0];
 }
 
@@ -635,7 +655,7 @@ SBPRuntime.prototype.M2 = function(args) {
 		outStr = outStr + "Y" + args[1];
 		this.cmd_posy = args[1];
 	}
-	outStr = outStr + "F" + sbp_settings.movexy_speed; 
+	outStr = outStr + "F" + 60.0*sbp_settings.movexy_speed; 
 	this.emit_gcode(outStr);
 }
 
@@ -653,7 +673,7 @@ SBPRuntime.prototype.M3 = function(args) {
 		outStr = outStr + "Z" + args[2];
 		this.cmd_posz = args[2];
 	}
-	outStr = outStr + "F" + sbp_settings.movexy_speed; 
+	outStr = outStr + "F" + 60.0*sbp_settings.movexy_speed; 
 	this.emit_gcode(outStr);
 }
 
@@ -675,7 +695,7 @@ SBPRuntime.prototype.M4 = function(args) {
 		outStr = outStr + "A" + args[3];
 		this.cmd_posa = args[3];
 	}
-	outStr = outStr + "F" + sbp_settings.movexy_speed; 
+	outStr = outStr + "F" + 60.0*sbp_settings.movexy_speed; 
 	this.emit_gcode(outStr);
 }
 
@@ -701,7 +721,7 @@ SBPRuntime.prototype.M5 = function(args) {
 		outStr = outStr + "B" + args[4];
 		this.cmd_posb = args[4];
 	}
-	outStr = outStr + "F" + sbp_settings.movexy_speed; 
+	outStr = outStr + "F" + 60.0*sbp_settings.movexy_speed; 
 	this.emit_gcode(outStr);
 }
 
@@ -1264,10 +1284,10 @@ SBPRuntime.prototype.CR = function(args) {
 
 SBPRuntime.prototype.ZX = function(args, callback) {
 	this.machine.driver.get('mpox', function(err, value) {
-		//this.emit_gcode("G10 L2 P2 X" + value);
-	 	this.
-	 	this.cmd_posx = this.posx = 0;
-		callback();
+		this.machine.driver.set('g55x',(value + this.machine.status.posz + zoffset), function(err, value) {
+			callback();
+			this.cmd_posx = this.posx = 0;
+		}.bind(this));
 	}.bind(this));
 }
 
