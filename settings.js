@@ -4,6 +4,7 @@ try{settings= require('./app_settings');}catch(ex){settings= undefined;};
 var fs = require('fs');
 var util = require('util');
 var path=require('path');
+var exec = require('child_process').exec;
 
 var log_conf = require('./log')
 var log = log_conf.logger('settings');
@@ -59,6 +60,25 @@ function set_export(){
 	exports.app_root_dir = getAppRoot();
 	exports.upload_dir = path.normalize( getAppRoot() + (settings.parts_dir || default_conf.parts_dir));
 	exports.db_dir = path.normalize( getAppRoot()+ (settings.db_dir || default_conf.db_dir) );
+	try{
+		wifiscanner = require('node-simplerwifiscanner');
+		// check if it's a linux distrib
+		if(PLATFORM!=='linux')
+			throw 'not linux';
+
+		// check if netctl-auto is installed
+		exec('netctl-auto --version',function (error, stdout, stderr) {
+	    	if (error)
+	    		throw error;
+	    	exports.wifi_manager=true;
+			log.info("wifi manager enable");
+		});
+
+	}catch(e){
+		wifiscanner = undefined;
+		exports.wifi_manager=false;
+		log.info("wifi manager disable");
+	}
 
 }
 

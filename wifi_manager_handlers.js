@@ -59,7 +59,7 @@ exports.add_profile = function(req, res, next) {
 	        	return;
 			  } 
 			  log.info('Wifi profile added for '+ wifi_info.ssid);
-			  res.send(200);
+			  res.json(200,{'Success':'Profile added'});
 			});
     	}else{
     		res.json({'error':'Bad network informations provided'});
@@ -70,12 +70,20 @@ exports.add_profile = function(req, res, next) {
 };
 
 exports.delete_profile = function(req, res, next) {
-    //TODO
-    res.send(200);
+    if(req.params.ssid)
+    {
+    	fs.unlink(profiles_folder+itr+'-'+req.params.ssid, function (err) {
+			if (err) throw err;
+			res.json(200,{'Success':'Profile removed'});
+		});
+    }
+	else{
+    	res.json({'error':'no ssid provided'});
+    }
 };
 
 // parse a profile string and convert it into a json Object
-function parse_profile(profile_txt,callback){
+function parse_profile(profile_txt){
 	var profile = {};
 	var lines = profile_txt.toString().split('\n');
 	for(index in lines){

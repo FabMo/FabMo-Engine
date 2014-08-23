@@ -3,13 +3,14 @@
  */
 var restify = require('restify');
 
+var settings = require('./settings');
+
 // Load the route handlers
 var files_module = require('./files_module_handlers');
 var config_module = require('./config_module_handlers');
 var file_commands_module = require('./file_commands_module_handlers');
 var direct_commands_module = require('./direct_commands_module_handlers');
 var wifi_manager_module = require('./wifi_manager_handlers');
-
 module.exports = function(server) {
 
 	/************** Status & config module **************/
@@ -80,7 +81,7 @@ module.exports = function(server) {
 
 	/************** Wifi manager module *****************/
 
-
+	if(settings.wifi_manager){
 	/* get the list of detectable wifi networks */	
 	server.get('/wifi_manager/detection',wifi_manager_module.detection); //TODO
 
@@ -91,9 +92,9 @@ module.exports = function(server) {
 	server.post('/wifi_manager/profile',wifi_manager_module.add_profile); //TODO
 
 	/* delete an existing profile */
-	server.del('/wifi_manager/profile/:id',wifi_manager_module.delete_profile); //TODO
+	server.del('/wifi_manager/profile/:ssid',wifi_manager_module.delete_profile); //TODO
 	/****************************************************/
-
+	}
 
 	server.get(/.*/, restify.serveStatic({
    		directory: './static',
