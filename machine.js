@@ -19,34 +19,39 @@ function connect(callback) {
 	switch(PLATFORM) {
 
 		case 'linux':
-			serial_path = '/dev/ttyACM0';
+			control_path = '/dev/ttyACM0';
+			gcode_path = '/dev/ttyACM1';
 			break;
 
 		case 'darwin':
-			serial_path = '/dev/cu.usbmodem001';
+			control_path = '/dev/cu.usbmodem001';
+			gcode_path = '/dev/cu.usbmodem003';
 			break;
 
 		case 'win32':
-			serial_path = 'COM1';
+			control_path = 'COM1';
+			gcode_path = 'COM2';
 			break;
 				
 		case 'win64':
-			serial_path='COM1';
+			control_path = 'COM1';
+			gcode_path = 'COM2';
 			break;
 
 		default:
-			serial_path = null;
+			control_path = null;
+			gcode_path = null;
 			break;
 	}
-	if(serial_path) {
-		return new Machine(serial_path, callback);
+	if(control_path && gcode_path) {
+		return new Machine(control_path, gcode_path, callback);
 	} else {
 		typeof callback === "function" && callback(true, "No supported serial path for platform " + PLATFORM);		
 		return null;
 	}
 }
 
-function Machine(serial_path, callback) {
+function Machine(control_path, gcode_path, callback) {
 
 	// Handle Inheritance
 	events.EventEmitter.call(this);
@@ -62,7 +67,7 @@ function Machine(serial_path, callback) {
 	this.driver = new g2.G2();
 	this.driver.on("error", function(data) {log.error(data)});
 
-	this.driver.connect(serial_path, function(err, data) {
+	this.driver.connect(control_path, gcode_path, function(err, data) {
 		this.status.state = "idle";
 
 		this.gcode_runtime = new GCodeRuntime();
@@ -79,7 +84,7 @@ function Machine(serial_path, callback) {
 util.inherits(Machine, events.EventEmitter);
 
 Machine.prototype.toString = function() {
-    return "[Machine Model on '" + driver.path + "']";
+    return "[Machine Model on '" + driver.control_path + "," + driver.gcode_path + "']";
 }
 
 Machine.prototype.gcode = function(string) {
