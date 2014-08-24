@@ -117,13 +117,18 @@ SBPRuntime.prototype._evaluateArguments = function(command, args) {
 
 // Returns true if the provided command breaks the stack
 SBPRuntime.prototype._breaksStack = function(cmd) {
-	console.log(cmd)
+
 	switch(cmd.type) {
 		// Commands (MX, VA, C3, etc) break the stack only if they must ask the tool for data
 		// TODO: Commands that have sysvar evaluation in them also break stack
 		case "cmd":
-			if((cmd.cmd in this) && (typeof this[cmd.cmd] == 'function')) {
-				f = this[cmd]
+			var name = cmd.cmd;
+			if((name in this) && (typeof this[name] == 'function')) {
+				f = this[name]
+				//log.warn(name)
+				//log.warn(f)
+				//log.warn(JSON.stringify(this))
+				//log.warn(f.length)
 				if(f && f.length > 1) {
 					return true;
 				}
@@ -137,11 +142,13 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 			break;
 
 		case "cond":
-			return this._exprBreaksStack(cmd.cmp);
+			return false
+			//return this._exprBreaksStack(cmd.cmp);
 			break;
 
 		case "assign":
-			return this._exprBreaksStack(cmd.var) || this._exprBreaksStack(cmd.expr)
+			return false;
+			//return this._exprBreaksStack(cmd.var) || this._exprBreaksStack(cmd.expr)
 		default:
 			return false;
 			break;
@@ -181,7 +188,7 @@ SBPRuntime.prototype._continue = function() {
 			log.info("Program over. (pc = " + this.pc + ")")
 			// We may yet have g-codes that are pending.  Run those.
 			if(this.current_chunk.length > 0) {
-				return this._dispatch(this._continue);
+				return this._dispatch(this._continue.bind(this));
 			} else {
 				return this._end();
 			}
@@ -192,11 +199,11 @@ SBPRuntime.prototype._continue = function() {
 		log.warn(line)
 		if(this._breaksStack(line)) {
 			log.debug("STACK BREAK: " + JSON.stringify(line));
-			dispatched = this._dispatch(this._continue);
+			dispatched = this._dispatch(this._continue.bind(this));
 			if(!dispatched) {
 				log.debug('Nothing to execute in the queue: continuing.')
-				this._execute(line);
-				continue;
+				this._execute(line, this._continue.bind(this));
+				break;
 			} else {
 				log.debug('Current chunk is nonempty: breaking to run stuff on G2.')
 				break;
@@ -1432,7 +1439,8 @@ SBPRuntime.prototype.VA = function(args, callback) {
 				callback();
 			});
 		}.bind(this));
-
+	} else {
+		log.error("NO Z OFFSET")
 	}
 }
 

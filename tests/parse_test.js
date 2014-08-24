@@ -15,10 +15,8 @@ fs.readFile(filename, 'utf8', function (err,data) {
 	} else {
 		program = parser.parse(data);
 		for(i=0; i<program.length; i++) {
-			if(program[i].type == "assign") {
 				console.log(program[i])
 				console.log("Stack breaker: " + runtime._breaksStack(program[i]))
-			}
 		}
 	}
 });
