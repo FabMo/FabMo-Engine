@@ -2,7 +2,6 @@ var g2 = require('./g2');
 var util = require('util');
 var events = require('events');
 var PLATFORM = require('process').platform;
-var Engine = require('tingodb')();
 var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
