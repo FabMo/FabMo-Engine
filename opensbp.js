@@ -1,4 +1,4 @@
-var parser = require('./parser');
+var parser = require('./sbp_parser');
 var fs = require('fs');
 var log = require('./log').logger('sbp');
 var g2 = require('./g2');
@@ -8,7 +8,7 @@ var sb3_commands = require('./data/sb3_commands');
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
 
-var chunk_breakers = {'VA':true, 'VS':true, 'JS':true, 'VS':true, 'ZX':true, 'ZY':true, 'ZZ':true}
+var chunk_breakers = {'VA':true, 'VS':true, 'JS':true, 'VS':true}
 
 function SBPRuntime() {
 	this.program = [];
@@ -49,7 +49,7 @@ SBPRuntime.prototype._onG2Status = function(status) {
 		if(key in status) {
 			if(key==='line'){
 				this.machine.status.line=this.start_of_the_chunk + status.line; 
-			}
+		}
 			else{
 				this.machine.status[key] = status[key];
 			}
@@ -61,8 +61,8 @@ SBPRuntime.prototype._onG2Status = function(status) {
 SBPRuntime.prototype.runString = function(s) {
 	try {
 		var lines =  s.split('\n');
-		this.machine.status.nb_lines = lines.length - 1;
-		this.program = parser.parse(s);
+                this.machine.status.nb_lines = lines.length - 1;
+		this.program = parser.parse(s + '\n');
 		var lines = this.program.length
 		this.machine.status.nb_lines = lines.length - 1;
 		this._analyzeLabels();  // Build a table of labels
@@ -72,7 +72,71 @@ SBPRuntime.prototype.runString = function(s) {
 		log.error(err);
 	}
 }
+/*
+SBPRuntime.prototype._convertToType = function(type, value) {
+	switch(type) {
+		case 'ck':
+			v = String(value)[0];
+			if(v === '0') {
+				return false;
+			} else if (v === '1') {
+				return true;
+			} else {
+				throw "Invalid value for checkbox type: " + value;
+			}
 
+		break;
+
+		case 'sng':
+		break;
+
+		case 'distmb':
+		break;
+
+		case 'dist':
+		break;
+
+		case 'ops':
+		break;
+
+		case 'int':
+		break;
+
+		case 'partfile'
+		break;
+
+		case 'distb':
+		break;
+
+		case 'distrb':
+		break;
+
+		case 'distm':
+		break;
+
+		case 'distra':
+		break;
+
+		case 'distr':
+		break;
+
+		case 'str':
+		break;
+
+		case 'dista':
+		break;
+
+		case 'distma':
+		break;
+
+		case 'obs':
+		break;
+
+		case 'axis':
+		break;
+	}
+}
+*/
 // Update the internal state of the runtime with data from the tool
 SBPRuntime.prototype._update = function() {
 	status = this.machine.status || {};
@@ -91,7 +155,7 @@ SBPRuntime.prototype._evaluateArguments = function(command, args) {
 	// Scrub the argument list:  extend to the correct length, sub in defaults where necessary.
 	scrubbed_args = [];
 	if(command in sb3_commands) {
-		params = sb3_commands[command].params || []
+		params = sb3_commands[command].params
 		for(i=0; i<params.length; i++) {
 			prm_param = params[i];
 			user_param = args[i];
@@ -119,7 +183,6 @@ SBPRuntime.prototype._evaluateArguments = function(command, args) {
 
 // Start the stored program running
 SBPRuntime.prototype._run = function() {
-	log.info("Setting the running state");
 	this.started = true;
 	this.machine.setState(this, "running");
 	this._continue();
@@ -130,9 +193,11 @@ SBPRuntime.prototype._run = function() {
 SBPRuntime.prototype._continue = function() {
 	this._update();
 
+	log.debug('Running until break...')
+
 	// Continue is only for resuming an already running program.  It's not a substitute for _run()
 	if(!this.started) {
-		log.warn('Got a _continue() but not started');
+		log.warn('Ooops already started...');
 		return;
 	}
 
@@ -141,15 +206,16 @@ SBPRuntime.prototype._continue = function() {
 		log.info("Program over. (pc = " + this.pc + ")")
 		// We may yet have g-codes that are pending.  Run those.
 		if(this.current_chunk.length > 0) {
+			log.info("dispatching a chunk: " + this.current_chunk)
 			this._dispatch();
-		} else {
-			this.machine.status.filename = null;
-			this.machine.status.current_file = null;
-			this.machine.status.nb_lines=null;
-			this.machine.status.line=null;
-			this.init();
-			return;
 		}
+		// TODO: Fix so the filename isn't cleared till the tool is actually done moving
+		this.machine.status.filename = null;
+		this.machine.status.current_file = null;
+		this.machine.status.nb_lines=null;
+		this.machine.status.line=null;
+		this.init();
+		return;
 	}
 
 	// Pull the current line of the program from the list
@@ -170,8 +236,6 @@ SBPRuntime.prototype._dispatch = function() {
 	var runtime = this;
 	this.break_chunk = false;
 	if(this.current_chunk.length > 0) {
-		log.info("dispatching a chunk: " + this.current_chunk)
-
 		var run_function = function(driver) {
 			log.debug("Expected a running state change and got one.");
 			driver.expectStateChange({
@@ -338,11 +402,7 @@ SBPRuntime.prototype._execute = function(command, continue_callback, deferred_ca
 
 		case "pause":
 			this.pc += 1;
-			if(command.expr) {
-				this.emit_gcode('G4 P' + this._eval(command.expr));
-			}
-			// Todo handle indefinite pause or pause with message
-			return continue_callback();
+			return deferred_callback();
 			break;
 
 		default:
@@ -413,7 +473,6 @@ SBPRuntime.prototype._eval = function(expr) {
 				return this._eval(expr.left) <= this._eval(expr.right);
 				break;
 			case '==':
-			case '=':
 				return this._eval(expr.left) == this._eval(expr.right);
 				break;
 			case '!=':
@@ -436,7 +495,7 @@ SBPRuntime.prototype.init = function() {
 	this.started = false;
 	this.sysvar_evaluated = false;
 	this.chunk_broken_for_eval = false;
-	this.machine.setState(this, 'idle');
+	this.machine.setState(this, "idle");
 }
 
 // Compile an index of all the labels in the program
@@ -736,6 +795,7 @@ SBPRuntime.prototype.M6 = function(args) {
 }
 
 SBPRuntime.prototype.MH = function(args) {
+	//this.emit_gcode("G1 Z" + safe_Z);
 	this.emit_gcode("G1X0Y0" + " F" + sbp_settings.movexy_speed);
 	this.cmd_posx = 0;
 	this.cmd_posy = 0;
@@ -1004,7 +1064,7 @@ SBPRuntime.prototype.CG = function(args) {
 		    	currentZ += Plg;
 			} // Add Z for spiral plunge
 
-			outStr += "I" + centerX + "K" + centerY + "F" + sbp_settings.movexy_speed;	// Add Center offset
+			outStr += "I" + centerX + "J" + centerY + "F" + sbp_settings.movexy_speed;	// Add Center offset
 			this.emit_gcode(outStr); 
 	    	
 	    	if( i+1 < reps && ( endX != startX || endY != startY ) ){					//If an arc, pullup and jog back to the start position
@@ -1023,7 +1083,7 @@ SBPRuntime.prototype.CG = function(args) {
     	}
     	if (Dir == 1 ){ var outStr = "G2"; } 		// Clockwise circle/arc
     	else { var outStr = "G3"; }					// CounterClockwise circle/arc
-		outStr += "X" + endX + "Y" + endY + "I" + centerX + "K" + centerY + "F" + sbp_settings.movexy_speed;	// Add Center offset
+		outStr += "X" + endX + "Y" + endY + "I" + centerX + "J" + centerY + "F" + sbp_settings.movexy_speed;	// Add Center offset
 		this.emit_gcode(outStr); 
     }
 
@@ -1127,8 +1187,8 @@ SBPRuntime.prototype.CR = function(args) {
     	Pocket_StepY *= -1;
     	startX += (steps * Pocket_StepX);
     	startY += (steps * Pocket_StepY);
-//    	this.emit_gcode( "G0Z" + );
-//    	this.emit_gcode( "G0X" + startX + "Y" + )
+    	this.emit_gcode( "G0Z" + currentZ);
+    	this.emit_gcode( "G0X" + startX + "Y" + startY )
     }
 
     for (i = 0; i < reps; i++){
@@ -1272,16 +1332,15 @@ SBPRuntime.prototype.CR = function(args) {
 
 /* ZERO */
 
-SBPRuntime.prototype.ZX = function(args, callback) {
+SBPRuntime.prototype.ZX = function(args) {
 	this.machine.driver.get('mpox', function(err, value) {
-		//this.emit_gcode("G10 L2 P2 X" + value);
-	 	this.
+		this.emit_gcode("G10 L2 P2 Z" + value);
 	 	this.cmd_posx = this.posx = 0;
 		callback();
 	}.bind(this));
 }
 
-SBPRuntime.prototype.ZY = function(args, callback) {
+SBPRuntime.prototype.ZY = function(args) {
 	this.machine.driver.get('mpoy', function(err, value) {
 		this.emit_gcode("G10 L2 P2 Y" + value);
 	 	this.cmd_posy = this.posy = 0;
@@ -1289,7 +1348,7 @@ SBPRuntime.prototype.ZY = function(args, callback) {
 	}.bind(this));
 }
 
-SBPRuntime.prototype.ZZ = function(args, callback) {
+SBPRuntime.prototype.ZZ = function(args) {
 	this.machine.driver.get('mpoz', function(err, value) {
 		this.emit_gcode("G10 L2 P2 Z" + value);
 	 	this.cmd_posz = this.posz = 0;
@@ -1297,7 +1356,7 @@ SBPRuntime.prototype.ZZ = function(args, callback) {
 	}.bind(this));
 }
 
-SBPRuntime.prototype.ZA = function(args, callback) {
+SBPRuntime.prototype.ZA = function(args) {
 	this.machine.driver.get('mpoa', function(err, value) {
 		this.emit_gcode("G10 L2 P2 A" + value);
 	 	this.cmd_posa = this.posa = 0;
@@ -1305,7 +1364,7 @@ SBPRuntime.prototype.ZA = function(args, callback) {
 	}.bind(this));	
 }
 
-SBPRuntime.prototype.ZB = function(args, callback) {
+SBPRuntime.prototype.ZB = function(args) {
 	this.machine.driver.get('mpob', function(err, value) {
 		this.emit_gcode("G10 L2 P2 B" + value);
 	 	this.cmd_posb = this.posb = 0;
@@ -1313,7 +1372,7 @@ SBPRuntime.prototype.ZB = function(args, callback) {
 	}.bind(this));	
 }
 
-SBPRuntime.prototype.ZC = function(args, callback) {
+SBPRuntime.prototype.ZC = function(args) {
 	this.machine.driver.get('mpoc', function(err, value) {
 		this.emit_gcode("G10 L2 P2 C" + value);
 	 	this.cmd_posc = this.posc = 0;
@@ -1397,18 +1456,6 @@ SBPRuntime.prototype.ST = function(args) {
 	this.emit_gcode("G54");
 }
 
-// Set to table base coordinates
-SBPRuntime.prototype.C6 = function(args) {
-	this.emit_gcode("M4");
-	this.emit_gcode("M8");
-}
-
-// Set to table base coordinates
-SBPRuntime.prototype.C7 = function(args) {
-	this.emit_gcode("M5");
-	this.emit_gcode("M9");
-}
-
 
 /* VALUES */
 
@@ -1418,9 +1465,12 @@ SBPRuntime.prototype.VA = function(args, callback) {
 	var zoffset = -args[2];
 	if(zoffset !== undefined) {
 		this.machine.driver.get('g55z', function(err, value) {
-			this.machine.driver.set('g55z',(value + this.machine.status.posz + zoffset), function(err, value) {
-				callback();
-			});
+			log.warn("Got mpoz: " + value)
+			log.warn("Current zpos: " + this.machine.status.posz);
+			// TODO fix hardcoded feedrate
+			this.emit_gcode("G1 F20");
+			this.emit_gcode("G10 L2 P2 Z" + (value + this.machine.status.posz + zoffset));
+			callback();
 		}.bind(this));
 
 	}
@@ -1595,6 +1645,7 @@ SBPRuntime.prototype.VU = function(args) {
 }
 
 SBPRuntime.prototype.EP = function(args) {
+	log.info("Got a EP command");
 	this.emit_gcode("G38.2 Z" + args[0]);
 }
 
