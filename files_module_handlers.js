@@ -4,7 +4,6 @@ var machine = require('./machine').machine;
 var settings = require('./settings');
 var db = require('./db');
 var File=db.File; // link to the files database collection
-var PLATFORM = require('process').platform;
 
 ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
 
