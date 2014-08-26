@@ -78,7 +78,7 @@ function Machine(serial_path, callback) {
 util.inherits(Machine, events.EventEmitter);
 
 Machine.prototype.toString = function() {
-    return "[Machine Model on '" + driver.path + "']";
+    return "[Machine Model on '" + this.driver.path + "']";
 }
 
 Machine.prototype.gcode = function(string) {
