@@ -1,4 +1,4 @@
-var wifiscanner = require('node-simplerwifiscanner');
+try{var wifiscanner = require('node-simplerwifiscanner');}catch(e){};
 var log = require('./log').logger('wifi');
 var fs= require('fs');
 

@@ -34,12 +34,16 @@ function setGlobalLevel(lvl){
 	  			LOG_LEVELS[key] = Object.keys(LEVELS).filter(function(key) {return (LEVELS[key] === lvl);})[0];
 	  		});
 		}
-		else if (Object.keys(LEVELS).indexOf(lvl) >= 0)
+		else if (Object.keys(LEVELS).indexOf(lvl) >= 0) // if a string
 		{
 			//  assign the log level to the string that is given 
 			Object.keys(LOG_LEVELS).forEach(function(key) {
 	  			LOG_LEVELS[key] = lvl;
 	  		});
+		}
+		else if (lvl === "none")
+		{
+			return;
 		}
 		else
 		{

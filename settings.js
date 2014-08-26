@@ -60,6 +60,7 @@ function set_export(){
 	exports.app_root_dir = getAppRoot();
 	exports.upload_dir = path.normalize( getAppRoot() + (settings.parts_dir || default_conf.parts_dir));
 	exports.db_dir = path.normalize( getAppRoot()+ (settings.db_dir || default_conf.db_dir) );
+	exports.tmp_dir = path.normalize( getAppRoot()+ (settings.tmp_dir || default_conf.tmp_dir) );
 	try{
 		wifiscanner = require('node-simplerwifiscanner');
 		// check if it's a linux distrib
