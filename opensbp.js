@@ -196,7 +196,6 @@ SBPRuntime.prototype._continue = function() {
 
 		// Pull the current line of the program from the list
 		line = this.program[this.pc];
-		log.warn(line)
 		if(this._breaksStack(line)) {
 			log.debug("STACK BREAK: " + JSON.stringify(line));
 			dispatched = this._dispatch(this._continue.bind(this));
