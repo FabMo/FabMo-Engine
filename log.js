@@ -1,5 +1,8 @@
+var settings = require('./settings');
 var process = require('process');
 try { var colors = require('colors'); } catch(e) {var colors = false}
+
+
 
 LEVELS = {
 	'debug' : 0,
@@ -14,8 +17,37 @@ LOG_LEVELS = {
 	'sbp' : 'debug',
 	'machine' : 'debug',
 	'manual' : 'debug',
-	'api' : 'debug'
+	'api' : 'debug',
+	'detection' :'debug',
+	'config_loader' : 'debug',
+	'settings' : 'debug',
+	'log':'debug'
 };
+
+function setGlobalLevel(lvl){
+	if (lvl)
+	{
+		if (lvl >= 0 && lvl <= 3)
+		{
+			// assign the log level to the string equivalent of the integer 
+			Object.keys(LOG_LEVELS).forEach(function(key) {
+	  			LOG_LEVELS[key] = Object.keys(LEVELS).filter(function(key) {return (LEVELS[key] === lvl);})[0];
+	  		});
+		}
+		else if (Object.keys(LEVELS).indexOf(lvl) >= 0)
+		{
+			//  assign the log level to the string that is given 
+			Object.keys(LOG_LEVELS).forEach(function(key) {
+	  			LOG_LEVELS[key] = lvl;
+	  		});
+		}
+		else
+		{
+			logger('log').warn('wrong debug level for logging !');
+		}
+	}
+}
+
 
 var logs = {};
 
@@ -74,7 +106,15 @@ var logger = function(name) {
 }
 
 process.on('uncaughtException', function(err) {
-	console.log(err);
+	if(colors) {
+		console.log(err.red);
+	}
+	else {
+		console.log(err);
+	}
+
 });
+
 exports.logger = logger;
+exports.setGlobalLevel = setGlobalLevel;
  

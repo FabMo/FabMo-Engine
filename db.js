@@ -1,7 +1,8 @@
 var Engine = require('tingodb')(),
     assert = require('assert');
 var fs = require('fs');
-var db = new Engine.Db('/opt/shopbot/db', {}); // be sure that the directory exist !
+var settings = require('./settings');
+var db = new Engine.Db(settings.db_dir, {}); // be sure that the directory exist !
 var crypto = require('crypto'); // for the checksum
 var util = require('util');
 var files = db.collection("files");
