@@ -170,6 +170,7 @@ Machine.prototype.enable_passthrough = function(callback) {
 	if(this.status.state === "idle"){
 		this.setState("passthrough");
 		this.setRuntime(this.passthrough_runtime);
+		typeof callback === "function" && callback(false);
 	}
 	else{
 		typeof callback === "function" && callback(true, "Cannot jog when in '" + this.status.state + "' state.");

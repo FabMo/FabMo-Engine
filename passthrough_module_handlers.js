@@ -7,7 +7,7 @@ var nb_clients=0;
 
 exports.connect = function(socket) {
 
-	log.info("new_client for passthrough");
+	log.debug("new_client for passthrough");
 	nb_clients++;
 	if (nb_clients<=clients_limit){ // avoid too many connection on the g2 passthrough functionnality.
 		machine.enable_passthrough(function(err,err_msg){
@@ -29,7 +29,7 @@ exports.connect = function(socket) {
 	}
 
 	socket.on('disconnect', function() {
-		log.info("client disconnected");
+		log.debug("client disconnected");
 		nb_clients--;
 		machine.disable_passthrough();
 	});
