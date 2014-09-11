@@ -60,7 +60,11 @@ exports.send_sbp = function(req, res, next) {
 
 
 exports.move = function(req, res, next) {
-	if (req.params.move !== undefined )
+	if(req.params.move ==="stop"){
+		stop();
+		res.json({'success':'stop'});
+	}
+	else if (req.params.move !== undefined )
 	{
 		move_direction(req.params.move);			
 		res.json({'success': 'moving in '+req.params.move+' direction'});
@@ -72,7 +76,11 @@ exports.move = function(req, res, next) {
 };
 
 exports.jog = function(req, res, next) {
-	if (req.params.move !== undefined ) {
+	if(req.params.move ==="stop"){
+		stop();
+		res.json({'success':'stop'});
+	}
+	else if (req.params.move !== undefined ) {
 		jog_direction(req.params.move);
 		res.json({'success': 'Moving in '+req.params.move+' direction'});
 	}
@@ -95,11 +103,11 @@ exports.goto = function(req, res, next) {
 		 	if (req.params.z !== undefined )
 				gcode_string += ' Z'+ req.params.z;
 			if (req.params.a !== undefined )
-				gcode_string += ' A'+ req.params.x;
+				gcode_string += ' A'+ req.params.a;
 			if (req.params.b !== undefined )
-				gcode_string += ' B'+ req.params.y;
+				gcode_string += ' B'+ req.params.b;
 		 	if (req.params.c !== undefined )
-				gcode_string += ' C'+ req.params.z;			
+				gcode_string += ' C'+ req.params.c;			
 			if (req.params.f !== undefined )
 				gcode_string += ' F'+ req.params.f;
 			else 
