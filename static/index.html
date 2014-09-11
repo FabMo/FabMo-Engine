@@ -337,6 +337,14 @@
 			$('.stop-button').addClass('hide');
 			$('.pause-button').addClass('hide');
 			$('.resume-button').addClass('hide');
+		} 
+		else if(status.state == 'passthrough') {
+			$('.status-label').removeClass('label-success label-info label-default label-danger');
+			$('.status-label').addClass('label-warning');
+			$('.tool-state').html('passthrough');
+			$('.pause-button').addClass('hide');
+			$('.resume-button').addClass('hide');
+			$('.stop-button').addClass('hide');
 		}
 		else if(status.state == 'paused') {
 			$('.status-label').removeClass('label-success label-info label-default label-danger');

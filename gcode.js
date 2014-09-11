@@ -4,7 +4,7 @@ var log = require('./log').logger('gcode');
 function GCodeRuntime() {
 	this.machine = null;
 	this.driver = null;
-};
+}
 
 GCodeRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
@@ -15,12 +15,12 @@ GCodeRuntime.prototype.connect = function(machine) {
 
 	this.driver.on('state', this.state_change_handler);
 	this.driver.on('status',this.status_handler);
-}
+};
 
 GCodeRuntime.prototype.disconnect = function() {
 	this.driver.removeListener('state', this.state_change_handler);
 	this.driver.removeListener('status', this.status_handler);
-}
+};
 
 GCodeRuntime.prototype._onDriverStatus = function(status) {
 	// Update our copy of the system status
@@ -29,7 +29,7 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 			this.machine.status[key] = status[key];
 		}
 	}
-}
+};
 
 GCodeRuntime.prototype._idle = function() {
 	this.machine.setState(this, 'idle');
@@ -263,6 +263,6 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 		this.driver.runString(string);
 	}
 
-}
+};
 
 exports.GCodeRuntime = GCodeRuntime;

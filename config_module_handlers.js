@@ -3,7 +3,7 @@ var information = require('./information');
 var configuration = require('./configuration');
 
 exports.get_status = function(req, res, next) {
-	var s = machine.status
+	var s = machine.status;
     res.json({'status':s});
 };
 

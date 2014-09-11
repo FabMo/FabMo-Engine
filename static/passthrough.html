@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>G2 Passthrough</title>
+	<link rel="stylesheet" href="./css/bootstrap.min.css">
+	<link rel="stylesheet" href="./css/normalize.css">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<script src="./js/libs/jquery-1.10.2.js"></script>
+	<script src="./js/bootstrap.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+	$(document).ready(function(){
+
+		var socket = io('/passthrough');
+		socket.on('msg', function(msg){
+    		$('#G2_output').append('-----> '+msg+'\n');
+    		scrollDown();
+ 		 });
+
+
+		$("#G2_input").keypress(function(event) {
+		    if (event.which == 13 && $("#G2_input").val()!== "" ){
+		        event.preventDefault();
+		        var msg = $("#G2_input").val();
+		        $("#G2_input").val("");
+		        socket.emit('msg',msg);
+		        $('#G2_output').append('<----- '+msg+'\n');
+		    }
+		});
+
+	});
+
+
+
+	function scrollDown(){
+	    var psconsole = $('#G2_output');
+	    psconsole.scrollTop(
+	        psconsole[0].scrollHeight - psconsole.height()
+	    );
+	}
+
+ 	</script>
+</head>
+<body>
+	<header>
+		<h1>G2 Passthrough</h1>
+	</header>
+	<div class="container">
+		<form role="form" class="form-horizontal">
+		 	<div class="form-group">
+				<label class="control-label" for="G2_output">Output</label>
+				<textarea id="G2_output" class="form-control" rows="10" disabled="disabled" style="overflow:auto;resize:none;"></textarea>
+			</div>
+			<div class="form-group">
+				<label for="G2_input" class="col-xs-1"><button class="btn btn-default" disabled="disabled">G2></button></label>
+				<div class="col-xs-11"><input id="G2_input" type="text"  class="form-control" placeholder="Type G2 command here ..."></div>
+			</div>
+		</form>
+	</div>
+</body>
+
+</html>
