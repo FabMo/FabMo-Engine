@@ -34,12 +34,16 @@ function setGlobalLevel(lvl){
 	  			LOG_LEVELS[key] = Object.keys(LEVELS).filter(function(key) {return (LEVELS[key] === lvl);})[0];
 	  		});
 		}
-		else if (Object.keys(LEVELS).indexOf(lvl) >= 0)
+		else if (Object.keys(LEVELS).indexOf(lvl) >= 0) // if a string
 		{
 			//  assign the log level to the string that is given 
 			Object.keys(LOG_LEVELS).forEach(function(key) {
 	  			LOG_LEVELS[key] = lvl;
 	  		});
+		}
+		else if (lvl === "none")
+		{
+			return;
 		}
 		else
 		{
@@ -61,20 +65,20 @@ Logger.prototype.write = function(level, msg) {
 		if(colors) {
 			switch(level) {
 				case 'debug':
-					console.log((level + ': ').blue + msg)
+					console.log((level + ': ').blue + msg+' ['+this.name+']')
 					break;
 				case 'info':
-					console.log((level + ': ').green + msg)
+					console.log((level + ': ').green + msg+' ['+this.name+']')
 					break;
 				case 'warn':
-					console.log((level + ': ').yellow + msg)
+					console.log((level + ': ').yellow + msg+' ['+this.name+']')
 					break;
 				case 'error':
-					console.log((level + ': ').red + msg)
+					console.log((level + ': ').red + msg+' ['+this.name+']')
 					break;
 			}
 		} else {
-			console.log(level + ': ' + msg)
+			console.log(level + ': ' + msg+' ['+this.name+']')
 		}
 	}
 }
@@ -104,7 +108,7 @@ var logger = function(name) {
 		return l;
 	}
 }
-
+/*
 process.on('uncaughtException', function(err) {
 	if(colors) {
 		console.log(err.red);
@@ -113,7 +117,7 @@ process.on('uncaughtException', function(err) {
 		console.log(err);
 	}
 
-});
+});*/
 
 exports.logger = logger;
 exports.setGlobalLevel = setGlobalLevel;

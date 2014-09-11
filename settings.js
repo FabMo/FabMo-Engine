@@ -4,6 +4,7 @@ try{settings= require('./app_settings');}catch(ex){settings= undefined;};
 var fs = require('fs');
 var util = require('util');
 var path=require('path');
+var exec = require('child_process').exec;
 
 var log_conf = require('./log')
 var log = log_conf.logger('settings');
@@ -16,8 +17,8 @@ var default_conf = {
 	"install_dir": "/opt/shopbot/",
 	"parts_dir" : "./parts/",
 	"db_dir" : "./db/",
-	"log_dir":"./log",
-	"tmp_dir":"./tmp"
+	"log_dir":"./logs/",
+	"tmp_dir":"./tmp/"
 };
 
 
@@ -26,7 +27,7 @@ if (!settings)
 {
 	fs.writeFile(settings_filename, JSON.stringify(default_conf, null, 4), function(err){
 		if (err) throw err;
-  		log.info('settings file created');
+  		log.debug('settings file created');
   		settings = require('./app_settings');
   		correct_app_tree(function(correct){
   			if(correct)
@@ -42,7 +43,7 @@ if (!settings)
 else
 {
 	correct_app_tree(function(correct){
-		log.info('correctly read the settings file');
+		log.debug('correctly read the settings file');
   		if(correct)
   		{
   			set_export();
@@ -59,6 +60,26 @@ function set_export(){
 	exports.app_root_dir = getAppRoot();
 	exports.upload_dir = path.normalize( getAppRoot() + (settings.parts_dir || default_conf.parts_dir));
 	exports.db_dir = path.normalize( getAppRoot()+ (settings.db_dir || default_conf.db_dir) );
+	exports.tmp_dir = path.normalize( getAppRoot()+ (settings.tmp_dir || default_conf.tmp_dir) );
+	try{
+		wifiscanner = require('node-simplerwifiscanner');
+		// check if it's a linux distrib
+		if(PLATFORM!=='linux')
+			throw 'not linux';
+
+		// check if netctl-auto is installed
+		exec('netctl-auto --version',function (error, stdout, stderr) {
+	    	if (error)
+	    		throw error;
+	    	exports.wifi_manager=true;
+			log.info("wifi manager enable");
+		});
+
+	}catch(e){
+		wifiscanner = undefined;
+		exports.wifi_manager=false;
+		log.info("wifi manager disable");
+	}
 
 }
 
