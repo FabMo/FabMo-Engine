@@ -423,16 +423,28 @@ G2.prototype.quit = function() {
 };
 
 G2.prototype.get = function(key, callback) {
-	cmd = {};
-	cmd[key] = null;
-	log.warn(this.readers);
+	cmd = {}
+	cmd[key] = null
+	log.warn(this.readers)
 	if (key in this.readers) {
 		this.readers[key].push(callback);
 	} else {
-		this.readers[key] = [callback];
+		this.readers[key] = [callback]
 	}
 	this.command(cmd);
-};
+}
+
+G2.prototype.set = function(key, value, callback) {
+	cmd = {}
+	cmd[key] = value
+	log.warn(this.readers)
+	if (key in this.readers) {
+		this.readers[key].push(callback);
+	} else {
+		this.readers[key] = [callback]
+	}
+	this.command(cmd);
+}
 
 // Send a command to G2 (can be string or JSON)
 G2.prototype.command = function(obj) {
