@@ -1,4 +1,4 @@
-var parser = require('./sbp_parser');
+var parser = require('./parser');
 var fs = require('fs');
 var log = require('./log').logger('sbp');
 var g2 = require('./g2');
@@ -7,8 +7,6 @@ var sb3_commands = require('./data/sb3_commands');
 
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
-
-var chunk_breakers = {'VA':true, 'VS':true, 'JS':true, 'VS':true}
 
 function SBPRuntime() {
 	this.program = [];
@@ -49,7 +47,7 @@ SBPRuntime.prototype._onG2Status = function(status) {
 		if(key in status) {
 			if(key==='line'){
 				this.machine.status.line=this.start_of_the_chunk + status.line; 
-		}
+			}
 			else{
 				this.machine.status[key] = status[key];
 			}
@@ -61,8 +59,8 @@ SBPRuntime.prototype._onG2Status = function(status) {
 SBPRuntime.prototype.runString = function(s) {
 	try {
 		var lines =  s.split('\n');
-                this.machine.status.nb_lines = lines.length - 1;
-		this.program = parser.parse(s + '\n');
+		this.machine.status.nb_lines = lines.length - 1;
+		this.program = parser.parse(s);
 		var lines = this.program.length
 		this.machine.status.nb_lines = lines.length - 1;
 		this._analyzeLabels();  // Build a table of labels
@@ -72,71 +70,7 @@ SBPRuntime.prototype.runString = function(s) {
 		log.error(err);
 	}
 }
-/*
-SBPRuntime.prototype._convertToType = function(type, value) {
-	switch(type) {
-		case 'ck':
-			v = String(value)[0];
-			if(v === '0') {
-				return false;
-			} else if (v === '1') {
-				return true;
-			} else {
-				throw "Invalid value for checkbox type: " + value;
-			}
 
-		break;
-
-		case 'sng':
-		break;
-
-		case 'distmb':
-		break;
-
-		case 'dist':
-		break;
-
-		case 'ops':
-		break;
-
-		case 'int':
-		break;
-
-		case 'partfile'
-		break;
-
-		case 'distb':
-		break;
-
-		case 'distrb':
-		break;
-
-		case 'distm':
-		break;
-
-		case 'distra':
-		break;
-
-		case 'distr':
-		break;
-
-		case 'str':
-		break;
-
-		case 'dista':
-		break;
-
-		case 'distma':
-		break;
-
-		case 'obs':
-		break;
-
-		case 'axis':
-		break;
-	}
-}
-*/
 // Update the internal state of the runtime with data from the tool
 SBPRuntime.prototype._update = function() {
 	status = this.machine.status || {};
@@ -155,7 +89,7 @@ SBPRuntime.prototype._evaluateArguments = function(command, args) {
 	// Scrub the argument list:  extend to the correct length, sub in defaults where necessary.
 	scrubbed_args = [];
 	if(command in sb3_commands) {
-		params = sb3_commands[command].params
+		params = sb3_commands[command].params || []
 		for(i=0; i<params.length; i++) {
 			prm_param = params[i];
 			user_param = args[i];
@@ -181,8 +115,57 @@ SBPRuntime.prototype._evaluateArguments = function(command, args) {
 	return retval;
 }
 
+// Returns true if the provided command breaks the stack
+SBPRuntime.prototype._breaksStack = function(cmd) {
+
+	switch(cmd.type) {
+		// Commands (MX, VA, C3, etc) break the stack only if they must ask the tool for data
+		// TODO: Commands that have sysvar evaluation in them also break stack
+		case "cmd":
+			var name = cmd.cmd;
+			if((name in this) && (typeof this[name] == 'function')) {
+				f = this[name]
+				//log.warn(name)
+				//log.warn(f)
+				//log.warn(JSON.stringify(this))
+				//log.warn(f.length)
+				if(f && f.length > 1) {
+					return true;
+				}
+			}
+			return false;
+			break;
+
+		// For now, pause translates to "dwell" which is just a G-Code
+		case "pause":
+			return false;
+			break;
+
+		case "cond":
+			return false
+			//return this._exprBreaksStack(cmd.cmp);
+			break;
+
+		case "assign":
+			return false;
+			//return this._exprBreaksStack(cmd.var) || this._exprBreaksStack(cmd.expr)
+		default:
+			return false;
+			break;
+	}
+}
+
+SBPRuntime.prototype._exprBreaksStack = function(expr) {
+	if(expr.op === undefined) {
+		return expr[0] == '%'; // For now, all system variable evaluations are stack-breaking
+	} else {
+		return this._exprBreaksStack(expr.left) || this._exprBreaksStack(expr.right);
+	}
+}
+
 // Start the stored program running
 SBPRuntime.prototype._run = function() {
+	log.info("Setting the running state");
 	this.started = true;
 	this.machine.setState(this, "running");
 	this._continue();
@@ -192,55 +175,65 @@ SBPRuntime.prototype._run = function() {
 // _continue() will dispatch the next chunk if appropriate, once the current chunk is finished
 SBPRuntime.prototype._continue = function() {
 	this._update();
-
-	log.debug('Running until break...')
-
+	log.warn("_Continuing...");
+	
 	// Continue is only for resuming an already running program.  It's not a substitute for _run()
 	if(!this.started) {
-		log.warn('Ooops already started...');
+		log.warn('Got a _continue() but not started');
 		return;
 	}
-
-	// If we've run off the end of the program, we're done!
-	if(this.pc >= this.program.length) {
-		log.info("Program over. (pc = " + this.pc + ")")
-		// We may yet have g-codes that are pending.  Run those.
-		if(this.current_chunk.length > 0) {
-			log.info("dispatching a chunk: " + this.current_chunk)
-			this._dispatch();
+	while(true) {
+		// If we've run off the end of the program, we're done!
+		if(this.pc >= this.program.length) {
+			log.info("Program over. (pc = " + this.pc + ")")
+			// We may yet have g-codes that are pending.  Run those.
+			if(this.current_chunk.length > 0) {
+				return this._dispatch(this._continue.bind(this));
+			} else {
+				return this._end();
+			}
 		}
-		// TODO: Fix so the filename isn't cleared till the tool is actually done moving
-		this.machine.status.filename = null;
-		this.machine.status.current_file = null;
-		this.machine.status.nb_lines=null;
-		this.machine.status.line=null;
-		this.init();
-		return;
+
+		// Pull the current line of the program from the list
+		line = this.program[this.pc];
+		if(this._breaksStack(line)) {
+			log.debug("STACK BREAK: " + JSON.stringify(line));
+			dispatched = this._dispatch(this._continue.bind(this));
+			if(!dispatched) {
+				log.debug('Nothing to execute in the queue: continuing.')
+				this._execute(line, this._continue.bind(this));
+				break;
+			} else {
+				log.debug('Current chunk is nonempty: breaking to run stuff on G2.')
+				break;
+			}
+		} else {
+			this._execute(line);
+		}
 	}
-
-	// Pull the current line of the program from the list
-	line = this.program[this.pc];
-
-	// Execute it.  The _execute function will either call continue or dispatch to advance the program
-	this._execute(line, this._continue.bind(this), this._dispatch.bind(this));
-
-	if(this.break_chunk) {
-		this._dispatch();
-		this.start_of_the_chunk = this.pc;
-	} 
 }
 
+SBPRuntime.prototype._end = function() {
+	this.machine.status.filename = null;
+	this.machine.status.current_file = null;
+	this.machine.status.nb_lines=null;
+	this.machine.status.line=null;
+	this.init();
+}
 // Pack up the current chunk and send it to G2
-// Setup callbacks so that when the chunk is done, the program can be resumed
-SBPRuntime.prototype._dispatch = function() {
+// Returns true if there was data to send to G2
+// Returns false if nothing was sent
+SBPRuntime.prototype._dispatch = function(callback) {
 	var runtime = this;
-	this.break_chunk = false;
+
 	if(this.current_chunk.length > 0) {
+		log.info("dispatching a chunk: " + this.current_chunk)
+
 		var run_function = function(driver) {
 			log.debug("Expected a running state change and got one.");
 			driver.expectStateChange({
 				"stop" : function(driver) { 
-					runtime._continue();
+					callback();
 				},
 				null : function(driver) {
 					log.warn("Expected a stop but didn't get one.");
@@ -257,94 +250,78 @@ SBPRuntime.prototype._dispatch = function() {
 			}
 		});
 
-		// add gcode line number to the chunk
-		for (i=0;i<this.current_chunk.length;i++){
-			if (this.current_chunk[i][0]!==undefined ){
-				this.current_chunk[i]= 'N'+ (i+1) + this.current_chunk[i];
-			}
-		}
 		this.driver.runSegment(this.current_chunk.join('\n'));
 		this.current_chunk = [];
+		return true;
 	} else {
-		runtime._continue();
+		return false;
 	}
 }
 
-SBPRuntime.prototype._executeCommand = function(cmd, args, callback) {
-	f = this[cmd].bind(this);
-	log.debug("Command: " + cmd + " Function: " + f);
-	if(f.length > 1) {
-		f(args, function() {this.pc+=1; callback()}.bind(this));
+SBPRuntime.prototype._executeCommand = function(command, callback) {
+	
+	if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
+		
+		args = this._evaluateArguments(command.cmd, command.args);
+		f = this[command.cmd].bind(this);
+		
+		log.debug("Calling handler for " + command.cmd + " With arguments: [" + args + "]");
+
+		if(f.length > 1) {
+			// This is a stack breaker, run with a callback
+			f(args, function() {this.pc+=1; callback()}.bind(this));
+			return true;
+		} else {
+			// This is NOT a stack breaker, run immediately, increment PC, proceed.
+			f(args);
+			this.pc +=1;
+			return false;
+		}
 	} else {
-		log.debug("Calling handler for " + cmd + " With arguments: [" + args + "]");
-		f(args);
-		log.debug("Called.")
-		this.pc +=1;
-		callback();
+		// We don't know what this is.  Whatever it is, it doesn't break the stack.
+		this._unhandledCommand(command);
+		this.pc += 1;
+		return false;
 	}
 }
 
-// Execute a single statement
-// Accepts a parsed statement
-// Callbacks take no arguments.
-// continue_callback is called if execution can continue with the next line in the program
-// deferred_callback is called if execution must be deferred (code sent to g2 or other asynchronous process)
-SBPRuntime.prototype._execute = function(command, continue_callback, deferred_callback) {
-	this.break_chunk = false;
+SBPRuntime.prototype._execute = function(command, callback) {
+
 	log.info("Executing line: " + JSON.stringify(command));
+
+	// Just skip over blank lines, undefined, etc.
 	if(!command) {
 		this.pc += 1;
 		return;
 	}
+
+	// All correctly parsed commands have a type
 	switch(command.type) {
 
 		// A ShopBot Comand (M2, ZZ, C3, etc...)
 		case "cmd":
-			if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
-				this.sysvar_evaluated = false;
-				args = this._evaluateArguments(command.cmd, command.args);
-				if(this.chunk_broken_for_eval) {
-					log.debug("Resuming after a chunk was broken for sysvar evaluation.");
-					this.chunk_broken_for_eval = false;
-					return this._executeCommand(command.cmd, args, continue_callback);
-				}
-				else {
-					if(this.sysvar_evaluated || (command.cmd in chunk_breakers)) {
-						log.debug("Breaking a chunk at line " + this.pc + " to evaluate system variables.");
-						this.chunk_broken_for_eval = true;
-						return deferred_callback(); // Don't advance pc when execution is deferred
-					}
-					else {
-						log.debug("Running command normally: " + command.cmd + ' ' + args);
-						return this._executeCommand(command.cmd, args, continue_callback);
-					}
-				}
-			} else {
-				this.pc += 1;
-				this._unhandledCommand(command)
-			}
+			return this._executeCommand(command, callback);
 			break;
 
 		case "return":
-			this.break_chunk = true;
 			if(this.stack) {
 				this.pc = this.stack.pop();
 			} else {
 				throw "Runtime Error: Return with no GOSUB at " + this.pc;
 			}
-			return deferred_callback();
+			return false
 			break;
 
 		case "end":
 			this.pc = this.program.length;
-			return deferred_callback();
+			return false
 			break;
 
 		case "goto":
 			if(command.label in this.label_index) {
 				this.pc = this.label_index[command.label];
 				log.debug("Hit a GOTO: Going to line " + this.pc + "(Label: " + command.label + ")")
-				return deferred_callback();
+				return false;
 			} else {
 				throw "Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc;
 			}
@@ -354,63 +331,52 @@ SBPRuntime.prototype._execute = function(command, continue_callback, deferred_ca
 			if(command.label in this.label_index) {
 				this.pc = this.label_index[command.label];
 				this.stack.push([this.pc + 1])
-				return deferred_callback();
+				return false;
 			} else {
 				throw "Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc;
 			}
 			break;
 
 		case "assign":
-			this.sysvar_evaluated = false
+			//TODO FIX THIS THIS DOESN'T DO SYSTEM VARS PROPERLY
 			value = this._eval(command.expr);
-
-			if(this.chunk_broken_for_eval) {
-				log.debug('Resuming after breaking a chunk to evaluate system variables.');
-				log.debug('Assigning the user value ' + command.var + ' the value ' + value);
-				this.chunk_broken_for_eval = false;
-				this.user_vars[command.var] = value;
-			}
-			else {
-				if(this.sysvar_evaluated) {
-					log.debug("Breaking a chunk at line " + this.pc + " to evaluate system variables for an assignment.");
-					this.chunk_broken_for_eval = true;
-					return deferred_callback();
-				}
-				else {
-					log.debug('Assigning the user value ' + command.var + ' the value ' + value);
-					this.user_vars[command.var] = value;
-				}
-			}
+			this.user_vars[command.var] = value;
 			this.pc += 1;
+			return false;
 			break;
 
 		case "cond":
-			// TODO - look at continue versus deferred, this may not work for edge cases.
 			if(this._eval(command.cmp)) {
-				return this._execute(command.stmt, continue_callback, deferred_callback);
+				return this._execute(command.stmt, callback);  // Warning RECURSION!
 			} else {
 				this.pc += 1;
+				return false;
 			}
-			return deferred_callback();
 			break;
 
 		case "label":
 		case "comment":
 		case undefined:
 			this.pc += 1;
+			return false;
 			break;
 
 		case "pause":
 			this.pc += 1;
-			return deferred_callback();
+			if(command.expr) {
+				this.emit_gcode('G4 P' + this._eval(command.expr));
+			}
+			// Todo handle indefinite pause or pause with message
+			return false;
 			break;
 
 		default:
 			log.error("Unknown command: " + JSON.stringify(command));
 			this.pc += 1;
+			return false;
 			break;
 	}
-	return continue_callback();
+	throw "Shouldn't ever get here."
 }
 
 
@@ -473,6 +439,7 @@ SBPRuntime.prototype._eval = function(expr) {
 				return this._eval(expr.left) <= this._eval(expr.right);
 				break;
 			case '==':
+			case '=':
 				return this._eval(expr.left) == this._eval(expr.right);
 				break;
 			case '!=':
@@ -495,7 +462,7 @@ SBPRuntime.prototype.init = function() {
 	this.started = false;
 	this.sysvar_evaluated = false;
 	this.chunk_broken_for_eval = false;
-	this.machine.setState(this, "idle");
+	this.machine.setState(this, 'idle');
 }
 
 // Compile an index of all the labels in the program
@@ -618,7 +585,7 @@ SBPRuntime.prototype.evaluateUserVariable = function(v) {
 
 // Called for any valid shopbot mnemonic that doesn't have a handler registered
 SBPRuntime.prototype._unhandledCommand = function(command) {
-	log.error('Unhandled Command: ' + JSON.stringify(command));
+	log.warn('Unhandled Command: ' + JSON.stringify(command));
 }
 
 // Add GCode to the current chunk, which is dispatched on a break or end of program
@@ -655,32 +622,32 @@ SBPRuntime.prototype.FS = function(args) {
 /* MOVE */
 
 SBPRuntime.prototype.MX = function(args) {
-	this.emit_gcode("G1 X" + args[0] + " F" + sbp_settings.movexy_speed);
+	this.emit_gcode("G1 X" + args[0] + " F" + 60.0*sbp_settings.movexy_speed);
 	this.cmd_posx = args[0];
 }
 
 SBPRuntime.prototype.MY = function(args) {
-	this.emit_gcode("G1Y" + args[0] + " F" + sbp_settings.movexy_speed);
+	this.emit_gcode("G1Y" + args[0] + " F" + 60.0*sbp_settings.movexy_speed);
 	this.cmd_posy = args[0];
 }
 
 SBPRuntime.prototype.MZ = function(args) {
-	this.emit_gcode("G1Z" + args[0] + " F" + sbp_settings.movez_speed);
+	this.emit_gcode("G1Z" + args[0] + " F" + 60.0*sbp_settings.movez_speed);
 	this.cmd_posz = args[0];
 }
 
 SBPRuntime.prototype.MA = function(args) {
-	this.emit_gcode("G1A" + args[0] + " F" + sbp_settings.movea_speed);
+	this.emit_gcode("G1A" + args[0] + " F" + 60.0*sbp_settings.movea_speed);
 	this.cmd_posa = args[0];
 }
 
 SBPRuntime.prototype.MB = function(args) {
-	this.emit_gcode("G1B" + args[0] + " F" + sbp_settings.moveb_speed);
+	this.emit_gcode("G1B" + args[0] + " F" + 60.0*sbp_settings.moveb_speed);
 	this.cmd_posb = args[0];
 }
 
 SBPRuntime.prototype.MC = function(args) {
-	this.emit_gcode("G1C" + args[0] + " F" + sbp_settings.movec_speed);
+	this.emit_gcode("G1C" + args[0] + " F" + 60.0*sbp_settings.movec_speed);
 	this.cmd_posc = args[0];
 }
 
@@ -694,7 +661,7 @@ SBPRuntime.prototype.M2 = function(args) {
 		outStr = outStr + "Y" + args[1];
 		this.cmd_posy = args[1];
 	}
-	outStr = outStr + "F" + sbp_settings.movexy_speed; 
+	outStr = outStr + "F" + 60.0*sbp_settings.movexy_speed; 
 	this.emit_gcode(outStr);
 }
 
@@ -712,7 +679,7 @@ SBPRuntime.prototype.M3 = function(args) {
 		outStr = outStr + "Z" + args[2];
 		this.cmd_posz = args[2];
 	}
-	outStr = outStr + "F" + sbp_settings.movexy_speed; 
+	outStr = outStr + "F" + 60.0*sbp_settings.movexy_speed; 
 	this.emit_gcode(outStr);
 }
 
@@ -734,7 +701,7 @@ SBPRuntime.prototype.M4 = function(args) {
 		outStr = outStr + "A" + args[3];
 		this.cmd_posa = args[3];
 	}
-	outStr = outStr + "F" + sbp_settings.movexy_speed; 
+	outStr = outStr + "F" + 60.0*sbp_settings.movexy_speed; 
 	this.emit_gcode(outStr);
 }
 
@@ -760,7 +727,7 @@ SBPRuntime.prototype.M5 = function(args) {
 		outStr = outStr + "B" + args[4];
 		this.cmd_posb = args[4];
 	}
-	outStr = outStr + "F" + sbp_settings.movexy_speed; 
+	outStr = outStr + "F" + 60.0*sbp_settings.movexy_speed; 
 	this.emit_gcode(outStr);
 }
 
@@ -795,7 +762,6 @@ SBPRuntime.prototype.M6 = function(args) {
 }
 
 SBPRuntime.prototype.MH = function(args) {
-	//this.emit_gcode("G1 Z" + safe_Z);
 	this.emit_gcode("G1X0Y0" + " F" + sbp_settings.movexy_speed);
 	this.cmd_posx = 0;
 	this.cmd_posy = 0;
@@ -1064,7 +1030,7 @@ SBPRuntime.prototype.CG = function(args) {
 		    	currentZ += Plg;
 			} // Add Z for spiral plunge
 
-			outStr += "I" + centerX + "J" + centerY + "F" + sbp_settings.movexy_speed;	// Add Center offset
+			outStr += "I" + centerX + "K" + centerY + "F" + sbp_settings.movexy_speed;	// Add Center offset
 			this.emit_gcode(outStr); 
 	    	
 	    	if( i+1 < reps && ( endX != startX || endY != startY ) ){					//If an arc, pullup and jog back to the start position
@@ -1083,7 +1049,7 @@ SBPRuntime.prototype.CG = function(args) {
     	}
     	if (Dir == 1 ){ var outStr = "G2"; } 		// Clockwise circle/arc
     	else { var outStr = "G3"; }					// CounterClockwise circle/arc
-		outStr += "X" + endX + "Y" + endY + "I" + centerX + "J" + centerY + "F" + sbp_settings.movexy_speed;	// Add Center offset
+		outStr += "X" + endX + "Y" + endY + "I" + centerX + "K" + centerY + "F" + sbp_settings.movexy_speed;	// Add Center offset
 		this.emit_gcode(outStr); 
     }
 
@@ -1110,8 +1076,6 @@ SBPRuntime.prototype.CR = function(args) {
     var xDir = 1;
     var yDir = 1;
     var order = 1;
-    var Pocket_StepX = 0;
-    var Pocket_StepY = 0;
 
     var lenX = args[0] != undefined ? args[0] : undefined; 
     var lenY = args[1] != undefined ? args[1] : undefined;
@@ -1121,25 +1085,14 @@ SBPRuntime.prototype.CR = function(args) {
     var Plg = args[5] != undefined ? args[5] : 0;
     var reps = args[6] != undefined ? args[6] : 1;
     var optCG = args[7] != undefined ? args[7] : 0;				// Options - 1-Tab, 2-Pocket Outside-In, 3-Pocket Inside-Out
+    if (optCR > 1) {
+    	stepOver = sbp_settings.cutterDia * ((100 - sbp_settings.pocketOverlap) / 100);	// Calculate the overlap
+    	Pocket_Step = stepOver * Math.cos(0.785398163);			// Calculate the stepover in X based on the radius of the cutter at 45 degrees
+    }
     var plgFromZero = args[8] != undefined ? args[8] : 0;		// Start Plunge from Zero <0-NO, 1-YES>
     var RotationAngle = args[9] != undefined ? args[9] : 0;		// Angle to rotate rectangle around starting point
     var PlgAxis = args[10] != undefined ? args[10] : 'Z';
 	var spiralPlg = args[11] != undefined ? args[11] : 0;
-
-    if ( OIT == "O" ) { 
-    	lenX = (lenX + sbp_settings.cutterDia) * xDir;
-    	lenY = (lenY + sbp_settings.cutterDia) * yDir;
-    }
-    else if ( OIT == "I" ) {
-    	lenX = (lenX - sbp_settings.cutterDia) * xDir;
-    	lenY = (lenY - sbp_settings.cutterDia) * yDir;
-    }
-
-    if (optCR > 1) {
-    	stepOver = sbp_settings.cutterDia * ((100 - sbp_settings.pocketOverlap) / 100);	// Calculate the overlap
-    	Pocket_StepX = Pocket_StepY = stepOver * Math.cos(0.785398163);			// Calculate the stepover in X based on the radius of the cutter at 45 degrees
-	   	var steps = lenX < lenY ? (steps = (lenX/2)/Pocket_Step) : (steps = (lenY/2)/Pocket_Step); 
-    }
     
     if (RotationAngle != 0 ) { 
     	RotationAngle *= Math.PI / 180;							// Convert rotation angle in degrees to radians
@@ -1158,23 +1111,22 @@ SBPRuntime.prototype.CR = function(args) {
     	if ( Dir == -1 ) { 
     		order = 2; 
     	}
-    	Pocket_StepY *= -1;
-    }	
+    	if ( lenX < lenY ) {
+
+    	}
+    }
     else if ( stCorn == 2 ) {
     	xDir = -1;
     	yDir = -1;
     	if ( Dir == 1 ) { 
     		order = 2; 
     	}
-    	Pocket_StepX *= -1;
-    	Pocket_StepY *= -1;
     }
     else if ( stCorn == 3 ) { 
     	xDir = -1; 
     	if ( Dir == -1 ) {
     		order = 2;
     	}
-    	Pocket_StepX *= -1;
     }
     else { 
     	if ( Dir == 1 ) {
@@ -1182,81 +1134,85 @@ SBPRuntime.prototype.CR = function(args) {
     	}
     }
 
-    if ( optCR == 3 ) {
-    	Pocket_StepX *= -1;
-    	Pocket_StepY *= -1;
-    	startX += (steps * Pocket_StepX);
-    	startY += (steps * Pocket_StepY);
-    	this.emit_gcode( "G0Z" + currentZ);
-    	this.emit_gcode( "G0X" + startX + "Y" + startY )
+    if ( OIT == "O" ) { 
+    	lenX = (lenX + sbp_settings.cutterDia) * xDir;
+    	lenY = (lenY + sbp_settings.cutterDia) * yDir;
+    }
+    else if ( OIT == "I" ) {
+    	lenX = (lenX - sbp_settings.cutterDia) * xDir;
+    	lenY = (lenY - sbp_settings.cutterDia) * yDir;
     }
 
-    for (i = 0; i < reps; i++){
+    for (i=0; i<reps;i++){
     	if ( Plg != 0 && spiralPlg != 1 ) {								// If plunge depth is specified move to that depth * number of reps
     		currentZ += Plg;
     		this.emit_gcode( "G1Z" + currentZ + "F" + sbp_settings.movez_speed );
     	}
+    	if ( optCG == 2 ) { 															// Pocket Rectangle from the outside inward to center	
+    		// Loop for number of passes
+    			// Loop passes until overlapping the center
+    			for (j=0; (Math.abs(Pocket_StepX * j) <= circRadius) && (Math.abs(Pocket_StepY * j) <= circRadius) ; j++){
+    		    	
+
+
+    		    	
+
+    		}
+    		if ( noPullUp == 1 ){    	//If No pull-up is set to YES, pull up to the starting Z location
+    			this.emit_gcode("G1Z" + startZ);
+				this.cmd_posz = startZ;
+			}
+    	} 
     	else {
-    		pass = cnt = 0;
+    		cnt = 0;
     		if (order == 1 ) {		// Clockwise rectangle
-    			for ( j = 0; j < steps; j++ ){
-    				do { 
-    					if (RotationAngle == 0) { var outStr = "G1X" + (startX + lenX); }
-    					else {
-    						var nextX = startX + lenX - (Pocket_StepX * j);
-    						var nextY = startY + (Pocket_StepY * j);
-    						var outStr = "G1X" + ((nextX * cosRA) - (startY * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)) +
-    									   "Y" + ((nextX * sinRA) + (startY * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)); 
-    					}
-    					if ( spiralPlg == 1 && cnt != 1 ) {
-    						var PlgSp = currentZ + (Plg * 0.25); 
-    						outStr += "Z" + PlgSp;
-    					}	
-    					this.emit_gcode (outStr);
 
-    		    		if ( RotationAngle == 0 ) { outStr = "G1Y" + (startY + lenY); }
-    					else {
-    						var nextX = startX + lenX - (Pocket_StepX * j);
-    						var nextY = startY + lenY - (Pocket_StepY * j);
-    						outStr = "G1X" + ((nextX * cosRA) - (startY * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)) +
-    								   "Y" + ((nextX * sinRA) + (startY * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)); 
-    					}
-    					if ( spiralPlg == 1 && cnt != 1 ) { 
-    						PlgSp = currentZ + (Plg * 0.5);	
-    						outStr += "Z" + PlgSp;
-    					}
-    					this.emit_gcode (outStr);
-    				
-    					if ( RotationAngle == 0 ) { outStr = "G1X" + startX; }
-    					else {
-    						var nextX = startX + (Pocket_StepX * j);
-    						var nextY = startY + lenY - (Pocket_StepY * j);
-    						outStr = "G1X" + ((nextX * cosRA) - (startY * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)) +
-    								   "Y" + ((nextX * sinRA) + (startY * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)); 
-    					}
-    					if ( spiralPlg == 1 && cnt != 1 ) { 
-    						PlgSp = currentZ + (Plg * 0.75);	
-    						outStr += "Z" + PlgSp; 
-    					}	
-    					this.emit_gcode (outStr);
-    				
-    					if ( RotationAngle == 0 ) { outStr = "G1Y" + startY; }
-    					else {
-    						var nextX = startX + (Pocket_StepX * j);
-    						var nextY = startY + (Pocket_StepY * j);
-    						outStr = "G1X" + ((nextX * cosRA) - (startY * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)) +
-    								   "Y" + ((nextX * sinRA) + (startY * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)); 
-    					}
-    					if ( spiralPlg == 1 && pass == 0 ) {
-    						currentZ += Plg; 
-    						outStr += "Z" + currentZ;
-    							pass = 1; 
-    					}
-    					else { cnt = 1; }
-    					this.emit_gcode (outStr);
+    			do { 
+    				if (RotationAngle == 0) { var outStr = "G1X" + (startX + lenX); }
+    				else {
+    					var outStr = "G1X" + (((startX + lenX) * cosRA) - (startY * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)) +
+    								   "Y" + (((startX + lenX) * sinRA) + (startY * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)); 
+    				}
+    				if ( spiralPlg == 1 && cnt != 1 ) {
+    					var PlgSp = currentZ + (Plg * 0.25); 
+    					outStr += "Z" + PlgSp; }	
+    				this.emit_gcode (outStr);
 
-    				} while ( cnt < 1 );
-    			}
+    		    	if ( RotationAngle == 0 ) { outStr = "G1Y" + (startY + lenY); }
+    				else {
+    					outStr = "G1X" + (((startX + lenX) * cosRA) - ((startY + lenY) * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)) +
+    								   "Y" + (((startX + lenX) * sinRA) + ((startY + lenY) * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)); 
+    				}
+    				if ( spiralPlg == 1 && cnt != 1 ) { 
+    					PlgSp = currentZ + (Plg * 0.5);	
+    					outStr += "Z" + PlgSp; }
+    				this.emit_gcode (outStr);
+    				
+    				if ( RotationAngle == 0 ) { outStr = "G1X" + startX; }
+    				else {
+    					outStr = "G1X" + ((startX * cosRA) - ((startY + lenY) * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)) +
+    								   "Y" + ((startX * sinRA) + ((startY + lenY) * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)); 
+    				}
+    				if ( spiralPlg == 1 && cnt != 1 ) { 
+    					PlgSp = currentZ + (Plg * 0.75);	
+    					outStr += "Z" + PlgSp; 
+    				}	
+    				this.emit_gcode (outStr);
+    				
+    				if ( RotationAngle == 0 ) { outStr = "G1Y" + startY; }
+    				else {
+    					outStr = "G1X" + ((startX * cosRA) - (startY * sinRa) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)) +
+    								   "Y" + ((startX * sinRA) + (startY * cosRa) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)); 
+    				}
+    				if ( spiralPlg == 1 && pass == 0 ) {
+    					currentZ += Plg; 
+    					outStr += "Z" + currentZ;
+    					pass = 1; 
+    				}
+    				else { cnt = 1; }
+    				this.emit_gcode (outStr);
+
+    			} while ( cnt < 1 );
     		}	
     		else {
     			do {
@@ -1332,15 +1288,16 @@ SBPRuntime.prototype.CR = function(args) {
 
 /* ZERO */
 
-SBPRuntime.prototype.ZX = function(args) {
+SBPRuntime.prototype.ZX = function(args, callback) {
 	this.machine.driver.get('mpox', function(err, value) {
-		this.emit_gcode("G10 L2 P2 Z" + value);
-	 	this.cmd_posx = this.posx = 0;
-		callback();
+		this.machine.driver.set('g55x',(value + this.machine.status.posz + zoffset), function(err, value) {
+			callback();
+			this.cmd_posx = this.posx = 0;
+		}.bind(this));
 	}.bind(this));
 }
 
-SBPRuntime.prototype.ZY = function(args) {
+SBPRuntime.prototype.ZY = function(args, callback) {
 	this.machine.driver.get('mpoy', function(err, value) {
 		this.emit_gcode("G10 L2 P2 Y" + value);
 	 	this.cmd_posy = this.posy = 0;
@@ -1348,7 +1305,7 @@ SBPRuntime.prototype.ZY = function(args) {
 	}.bind(this));
 }
 
-SBPRuntime.prototype.ZZ = function(args) {
+SBPRuntime.prototype.ZZ = function(args, callback) {
 	this.machine.driver.get('mpoz', function(err, value) {
 		this.emit_gcode("G10 L2 P2 Z" + value);
 	 	this.cmd_posz = this.posz = 0;
@@ -1356,7 +1313,7 @@ SBPRuntime.prototype.ZZ = function(args) {
 	}.bind(this));
 }
 
-SBPRuntime.prototype.ZA = function(args) {
+SBPRuntime.prototype.ZA = function(args, callback) {
 	this.machine.driver.get('mpoa', function(err, value) {
 		this.emit_gcode("G10 L2 P2 A" + value);
 	 	this.cmd_posa = this.posa = 0;
@@ -1364,7 +1321,7 @@ SBPRuntime.prototype.ZA = function(args) {
 	}.bind(this));	
 }
 
-SBPRuntime.prototype.ZB = function(args) {
+SBPRuntime.prototype.ZB = function(args, callback) {
 	this.machine.driver.get('mpob', function(err, value) {
 		this.emit_gcode("G10 L2 P2 B" + value);
 	 	this.cmd_posb = this.posb = 0;
@@ -1372,7 +1329,7 @@ SBPRuntime.prototype.ZB = function(args) {
 	}.bind(this));	
 }
 
-SBPRuntime.prototype.ZC = function(args) {
+SBPRuntime.prototype.ZC = function(args, callback) {
 	this.machine.driver.get('mpoc', function(err, value) {
 		this.emit_gcode("G10 L2 P2 C" + value);
 	 	this.cmd_posc = this.posc = 0;
@@ -1456,6 +1413,18 @@ SBPRuntime.prototype.ST = function(args) {
 	this.emit_gcode("G54");
 }
 
+// Set to table base coordinates
+SBPRuntime.prototype.C6 = function(args) {
+	this.emit_gcode("M4");
+	this.emit_gcode("M8");
+}
+
+// Set to table base coordinates
+SBPRuntime.prototype.C7 = function(args) {
+	this.emit_gcode("M5");
+	this.emit_gcode("M9");
+}
+
 
 /* VALUES */
 
@@ -1465,14 +1434,12 @@ SBPRuntime.prototype.VA = function(args, callback) {
 	var zoffset = -args[2];
 	if(zoffset !== undefined) {
 		this.machine.driver.get('g55z', function(err, value) {
-			log.warn("Got mpoz: " + value)
-			log.warn("Current zpos: " + this.machine.status.posz);
-			// TODO fix hardcoded feedrate
-			this.emit_gcode("G1 F20");
-			this.emit_gcode("G10 L2 P2 Z" + (value + this.machine.status.posz + zoffset));
-			callback();
+			this.machine.driver.set('g55z',(value + this.machine.status.posz + zoffset), function(err, value) {
+				callback();
+			});
 		}.bind(this));
-
+	} else {
+		log.error("NO Z OFFSET")
 	}
 }
 
@@ -1645,7 +1612,6 @@ SBPRuntime.prototype.VU = function(args) {
 }
 
 SBPRuntime.prototype.EP = function(args) {
-	log.info("Got a EP command");
 	this.emit_gcode("G38.2 Z" + args[0]);
 }
 

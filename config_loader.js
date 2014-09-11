@@ -1,6 +1,7 @@
 var configuration = require('./configuration');
+var process=require('process');
 var machine=require('./machine').machine;
-var log=require('./log');
+var log=require('./log').logger('config_loader');;
 
 var ALLOWED_COMMANDS = ["1ma","1sa","1tr","1mi","1po","1pm","2ma","2sa",
 "2tr","2mi","2po","2pm","3ma","3sa","3tr","3mi","3po","3pm","4ma",
@@ -25,7 +26,7 @@ var recv = 0;
 function config_single(driver, cmd, success_callback) {
 	driver.on('message', function handler(resp) {
 		if (resp && (resp instanceof Object) && ('r' in resp)) { // filter for response
-			r = resp.r
+			r = resp.r;
 			cmd_key = Object.keys(cmd)[0].toLowerCase();
 			try {
 				r_key = Object.keys(r)[0].toLowerCase();
@@ -35,14 +36,14 @@ function config_single(driver, cmd, success_callback) {
 			if ( cmd_key === r_key ) { //check if response correspond to the request
 				if(resp.f) { //check if there is a feedback
 					if (resp.f[1] === 0) {
-						driver.removeListener('message', handler)
+						driver.removeListener('message', handler);
 						recv += 1;
 						typeof success_callback === 'function' && success_callback(driver);
 					}
 					else {
-						driver.removeListener('message', handler)
-						log.error(cmd + 'not executed correctly! LOAD FAILED. EXIT.');
-						exit(-1);
+						driver.removeListener('message', handler);
+						log.error(JSON.stringify(cmd) + 'not executed correctly! LOAD FAILED. EXIT.');
+						process.exit(-1);
 					}
 				}
 			}
@@ -54,7 +55,7 @@ function config_single(driver, cmd, success_callback) {
 
 exports.load = function(driver, callback) {
 	// HARD CODED QUEUE REPORT VERBOSITY
-	configuration.unshift({"sr":{"posx":true, "posy":true, "posz":true, "posa":true, "posb":true, "vel":true, "stat":true, "hold":true, "line":true, "coor":true}})
+	configuration.unshift({"sr":{"posx":true, "posy":true, "posz":true, "posa":true, "posb":true, "vel":true, "stat":true, "hold":true, "line":true, "coor":true}});
 	configuration.unshift({'qv':2});
 	config_single(driver, configuration.shift(), function next() {
 		next_cmd = configuration.shift()

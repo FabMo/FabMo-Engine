@@ -92,8 +92,6 @@ FabMo.prototype.list_files = function(callback)
 }
 FabMo.prototype.get_status = function(callback)
 {
-	if (!callback)
-		throw "this function need a callback to work !";
 	var that=this;
 	$.ajax({
 		url: this.url.status,
@@ -104,7 +102,13 @@ FabMo.prototype.get_status = function(callback)
 				if(!data){callback(that.default_error.status.no_content);}
 				else if(!data.status){callback(that.default_error.status.wrong_format);}
 
-				else{callback(undefined,data.status);}
+				else{
+					if(typeof FABMOUI != 'undefined') {
+						FABMOUI.update_status(data.status); 
+					}
+
+					typeof callback === 'function' && callback(undefined, data.status);				
+				}
 			},
 		error: function(data,err) {
 				var error = that.default_error.no_device;
@@ -324,8 +328,7 @@ FabMo.prototype.gcode = function(gcode_line,callback)
 
 FabMo.prototype.sbp = function(sbp_line,callback)
 {
-	if (!callback)
-		throw "this function need a callback to work !";
+
 	var that=this;
 	$.ajax({
 		url: this.url.sbp,
@@ -333,7 +336,7 @@ FabMo.prototype.sbp = function(sbp_line,callback)
 		dataType : 'json', 
 		data : {'cmd':sbp_line},
 		success: function( data ) {
-			callback(undefined,data);
+			typeof callback === 'function' && callback(undefined, data);			
 		},
 		error: function(data,err) {
 			var error = that.default_error.no_device;

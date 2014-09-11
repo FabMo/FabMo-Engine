@@ -3,6 +3,7 @@ var util=require('util');
 var EventEmitter = require('events').EventEmitter;
 var dgram = require('dgram');
 var log = require('./log').logger('detection');
+var settings = require('./settings');
 
 var OK = "YES I M !\0";
 var ERR = "I DNT UNDRSTND !\0";
@@ -35,6 +36,7 @@ var start = function(port) {
 				var result = {};
 				result.hostname= os.hostname();
 				result.networks=[];
+				result.port = settings.server_port;
 				Object.keys(os.networkInterfaces()).forEach(function(key,index,arr){ //val = ip adresses , key = name of interface
 					var networks_list = this;
 					networks_list[key].forEach(function(val2,key2,arr2){

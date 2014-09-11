@@ -88,6 +88,7 @@ factor
   / float
   / integer
   / variable
+  / barestring
 
 whitespace
    = [ \t]
