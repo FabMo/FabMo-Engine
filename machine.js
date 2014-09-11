@@ -7,9 +7,10 @@ var fs = require('fs');
 var path = require('path');
 
 var log = require('./log').logger('machine');
-var GCodeRuntime = require('./gcode').GCodeRuntime
-var SBPRuntime = require('./opensbp').SBPRuntime
-var ManualRuntime = require('./manual').ManualRuntime
+var GCodeRuntime = require('./gcode').GCodeRuntime;
+var SBPRuntime = require('./opensbp').SBPRuntime;
+var ManualRuntime = require('./manual').ManualRuntime;
+var PassthroughRuntime = require('./passthrough').PassthroughRuntime;
 
 
 
@@ -40,7 +41,7 @@ function connect(callback) {
 	if(serial_path) {
 		return new Machine(serial_path, callback);
 	} else {
-		typeof callback === "function" && callback(true, "No supported serial path for platform " + PLATFORM);		
+		typeof callback === "function" && callback(true, "No supported serial path for platform " + PLATFORM);
 		return null;
 	}
 }
@@ -59,7 +60,7 @@ function Machine(serial_path, callback) {
 	};
 
 	this.driver = new g2.G2();
-	this.driver.on("error", function(data) {log.error(data)});
+	this.driver.on("error", function(data) {log.error(data);});
 
 	this.driver.connect(serial_path, function(err, data) {
 		this.status.state = "idle";
@@ -67,6 +68,7 @@ function Machine(serial_path, callback) {
 		this.gcode_runtime = new GCodeRuntime();
 		this.sbp_runtime = new SBPRuntime();
 		this.manual_runtime = new ManualRuntime();
+		this.passthrough_runtime = new PassthroughRuntime();
 
 		this.setRuntime(this.gcode_runtime);
 
@@ -74,22 +76,22 @@ function Machine(serial_path, callback) {
 			typeof callback === "function" && callback(false, this);
 		}.bind(this));
 	}.bind(this));
-};
+}
 util.inherits(Machine, events.EventEmitter);
 
 Machine.prototype.toString = function() {
     return "[Machine Model on '" + this.driver.path + "']";
-}
+};
 
 Machine.prototype.gcode = function(string) {
 	this.setRuntime(this.gcode_runtime);
 	this.current_runtime.runString(string);
-}
+};
 
 Machine.prototype.sbp = function(string) {
 	this.setRuntime(this.sbp_runtime);
 	this.current_runtime.runString(string);
-}
+};
 
 Machine.prototype.runFile = function(filename) {
 	fs.readFile(filename, 'utf8', function (err,data) {
@@ -115,9 +117,8 @@ Machine.prototype.runFile = function(filename) {
 };
 
 Machine.prototype.jog = function(direction, callback) {
-	log.info('machine jog');
+	log.debug('machine jog');
 	if((this.status.state === "idle") || (this.status.state === "manual")) {
-		this.setState("manual");
 		this.setRuntime(this.manual_runtime);
 		this.current_runtime.jog(direction);
 
@@ -125,7 +126,7 @@ Machine.prototype.jog = function(direction, callback) {
 		typeof callback === "function" && callback(true, "Cannot jog when in '" + this.status.state + "' state.");
 	}
 
-}
+};
 
 Machine.prototype.setRuntime = function(runtime) {
 	if(this.current_runtime != runtime) {
@@ -138,33 +139,48 @@ Machine.prototype.setRuntime = function(runtime) {
 			runtime.connect(this);
 		}
 	}
-}
+};
 Machine.prototype.setState = function(source, newstate) {
 	if ((source === this) || (source === this.current_runtime)) {
 		this.status.state = newstate;
-		log.info("Got a machine state change: " + newstate)
-	} else {
-		log.warn("Got a state change from a runtime that's not the current one.")
 	}
-}
+};
 
 
 Machine.prototype.stopJog = function() {
 	this.current_runtime.stopJog();
-} 
+};
 
 Machine.prototype.pause = function() {
 	if(this.status.state === "running") {
 		this.driver.feedHold();
 	}
-}
+};
 
 Machine.prototype.quit = function() {
 	this.driver.quit();
-}
+};
 
 Machine.prototype.resume = function() {
 	this.driver.resume();
-}
+};
+
+Machine.prototype.enable_passthrough = function(callback) {
+	log.info("enable passthrough");
+	if(this.status.state === "idle"){
+		this.setState("passthrough");
+		this.setRuntime(this.passthrough_runtime);
+	}
+	else{
+		typeof callback === "function" && callback(true, "Cannot jog when in '" + this.status.state + "' state.");
+	}
+
+};
+
+Machine.prototype.disable_passthrough = function(string) {
+	log.info("disable passthrough");
+	this.setRuntime(this.gcode_runtime);
+};
+
 
 exports.connect = connect;
