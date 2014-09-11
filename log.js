@@ -13,7 +13,7 @@ LEVELS = {
 
 LOG_LEVELS = {
 	'g2' : 'debug',
-	'gcode' : 'debug',
+	'gcode' : 'info',
 	'sbp' : 'debug',
 	'machine' : 'debug',
 	'manual' : 'debug',

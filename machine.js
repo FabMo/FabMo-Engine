@@ -85,6 +85,12 @@ Machine.prototype.gcode = function(string) {
 	this.setRuntime(this.gcode_runtime);
 	this.current_runtime.runString(string);
 }
+
+Machine.prototype.sbp = function(string) {
+	this.setRuntime(this.sbp_runtime);
+	this.current_runtime.runString(string);
+}
+
 Machine.prototype.runFile = function(filename) {
 	fs.readFile(filename, 'utf8', function (err,data) {
 		if (err) {
@@ -136,6 +142,9 @@ Machine.prototype.setRuntime = function(runtime) {
 Machine.prototype.setState = function(source, newstate) {
 	if ((source === this) || (source === this.current_runtime)) {
 		this.status.state = newstate;
+		log.info("Got a machine state change: " + newstate)
+	} else {
+		log.warn("Got a state change from a runtime that's not the current one.")
 	}
 }
 

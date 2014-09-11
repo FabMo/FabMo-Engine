@@ -39,6 +39,8 @@ module.exports = function(server) {
 	server.del('/file/:id',files_module.delete_file); //OK
 
 	server.get('/file/:id',files_module.download_file); //OK
+	
+	server.get('/file/:id/view',files_module.view_file); //OK
 
 	/****************************************************/
 
@@ -63,7 +65,9 @@ module.exports = function(server) {
 
 
 	/************* Direct commands module ***************/
-	
+	/* send a gcode command to the tool */
+	server.post('/direct/sbp',direct_commands_module.send_sbp); //OK
+
 	/* send a gcode command to the tool */
 	server.post('/direct/gcode',direct_commands_module.send_gcode); //OK
 

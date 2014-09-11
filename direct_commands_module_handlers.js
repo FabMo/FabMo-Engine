@@ -1,18 +1,15 @@
 var machine = require('./machine').machine;
 var default_feed_rate = 300;
 
-function move_direction(direction)
-{
+function move_direction(direction) {
 	machine.jog(direction);
 }
 
-function jog_direction(direction)
-{
+function jog_direction(direction) {
 	machine.jog(direction);
 }
 
-function stop()
-{
+function stop() {
 	machine.stopJog();
 }
 
@@ -27,6 +24,28 @@ exports.send_gcode = function(req, res, next) {
 		}
 		else if (req.body) {
 			machine.gcode(req.body);
+			res.json({'success': req.params.cmd})
+
+		}
+		else {
+			res.json({'error':'No cmd argument'});	
+		}
+	}
+	else {
+		res.json({'error':'A file is running'});	
+	}
+};
+
+exports.send_sbp = function(req, res, next) {
+	if (machine.status.state === 'idle')
+	{
+		if (req.params.cmd !== undefined )
+		{
+			machine.sbp(req.params.cmd);
+    		res.json({'success': req.params.cmd})
+		}
+		else if (req.body) {
+			machine.sbp(req.body);
 			res.json({'success': req.params.cmd})
 
 		}
