@@ -318,13 +318,13 @@
 
 	$('.fabmo-status').on('statechange',function(e,state){
 		if (state === 'running' || state === 'manual' || state === 'homing' || state==='probing')
-			$('.state').removeClass('label-success label-info label-default label-danger').addClass('label-success');
+			$('.state').removeClass('label-success label-info label-default label-warning label-danger').addClass('label-success');
 		else if (state === 'paused' || state === 'passthrough' || state === 'limit')
-			$('.state').removeClass('label-success label-info label-default label-danger').addClass('label-warning');
+			$('.state').removeClass('label-success label-info label-default label-warning label-danger').addClass('label-warning');
 		else if (state === 'Error' || state === 'Disconnected')
-			$('.state').removeClass('label-success label-info label-default label-danger').addClass('label-error');
+			$('.state').removeClass('label-success label-info label-default label-warning label-danger').addClass('label-error');
 		else
-			$('.state').removeClass('label-success label-info label-default label-danger').addClass('label-default');
+			$('.state').removeClass('label-success label-info label-default label-warning label-danger').addClass('label-default');
 	});
 
   </script>
