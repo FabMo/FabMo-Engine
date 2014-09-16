@@ -59,6 +59,14 @@ SBPRuntime.prototype._onG2Status = function(status) {
 // Run the provided string as a program
 SBPRuntime.prototype.runString = function(s) {
 	try {
+		var lines =  s.split('\n');
+		this.machine.status.nb_lines = lines.length - 1;
+		this.program = parser.parse(s);
+		var lines = this.program.length
+		this.machine.status.nb_lines = lines.length - 1;
+		this._analyzeLabels();  // Build a table of labels
+		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table    
+		this._run();
 	} catch(err) {
 		log.error(err);
 	}
