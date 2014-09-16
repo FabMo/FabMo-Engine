@@ -19,18 +19,18 @@
 		</button>
 		<a class="brand" href="/"><img src="./images/shopbot_logo.png"></a>
 	  </div>
-	  <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-		<ul class="nav navbar-nav" style="margin-right: 20%;">
-		  <li><a><span class="label status-label label-default tool-state">&nbsp;</span></a></li>
+	  <div class="collapse navbar-collapse fabmo-file-control" id="bs-example-navbar-collapse-1">
+		<ul class="nav navbar-nav fabmo-status" style="margin-right: 20%;">
+		  <li><a><span class="label status-label label-default state">&nbsp;</span></a></li>
 		  <li><a><strong>X: </strong><span class="posx"></span></a></li>
 		  <li><a><strong>Y: </strong><span class="posy"></span></a></li>
 		  <li><a><strong>Z: </strong><span class="posz"></span></a></li>
-		  <li class="hide filename-display"><a><strong>File: </strong><span class="filename"></span></a></li>
+		  <li class="hide file-info"><a><strong>File: </strong><span class="filename"></span>    <span class="progress"></span></a></li>
 		</ul>
 		  <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-default navbar-btn navbar-right" id="keypad" data-target="#manual-modal" data-toggle="modal"><span class="glyphicon glyphicon-screenshot"></span>
-		  <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-warning navbar-btn navbar-right pause-button hide"><span class="glyphicon glyphicon-pause"></span></button>
-		  <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-success navbar-btn navbar-right resume-button hide"><span class="glyphicon glyphicon-play"></span></button>
-		<button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-danger navbar-btn navbar-right stop-button hide"><span class="glyphicon glyphicon-stop"></span></button>
+		  <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-warning navbar-btn navbar-right fabmo-pause-button hide"><span class="glyphicon glyphicon-pause"></span></button>
+		  <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-success navbar-btn navbar-right fabmo-resume-button hide"><span class="glyphicon glyphicon-play"></span></button>
+		<button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-danger navbar-btn navbar-right fabmo-stop-button hide"><span class="glyphicon glyphicon-stop"></span></button>
 	  </div><!-- /.navbar-collapse -->
 	</div><!-- /.container-fluid -->
   </nav>
@@ -40,7 +40,7 @@
 	  <div class="panel-heading app-heading">FabMo G-Code Streamer</div>
 	  <div class="panel-body">
 		<table class="table table-hover table-bordered" id="files">
-		  <tr><th colspan="4">Files on the tool (click to run)</th></tr>
+		  <tr><th colspan="3">Files on the tool (click to run)</th></tr>
 		</table>
 		<strong>Upload a file...</strong>
 		<p>
@@ -91,7 +91,7 @@
 				<div class="container-fluid">
 					<div class="row">
 						<div class="col-xs-6">
-							<form class="form-horizontal" role="form">
+							<form class="form-horizontal fabmo-status" role="form">
 								<div class="form-group">
 									<label for="modal-posx" class="col-sm-2 control-label">X:</label>
 									<div class="col-sm-10">
@@ -146,7 +146,7 @@
 							</div>
 						</div>
 						<div class="col-xs-6">
-							<div class="container-fluid">
+							<div class="container-fluid fabmo-keypad">
 								<div class="row" style="margin-top: 15px;">
 									<div class="col-xs-3"><button class="btn btn-default btn-lg button-plus-Z">↥</button></div>
 									<div class="col-xs-3"><button class="btn btn-default btn-lg button-plus-Y">↑</button></div>
@@ -177,12 +177,30 @@
   <script src="./js/bootstrap.min.js"></script>
   <script src="./js/libs/bootstrap.file-input.js"></script>
   <script src="./js/FabMo-latest.js"></script>
+  <script src="./js/FabMoUI-latest.js"></script>
+
   
   <script type="text/javascript">
 	var tool = new FabMo(location.hostname||'localhost', '8080');
-	/*************************************** keypad move section ****************************************/
-	var keypad_allow=false;
-	var lock_right = false,lock_left = false ,lock_up = false ,lock_down = false,lock_page_up = false,lock_page_down = false;
+	var ui = new FabMoUI(tool);
+
+	$('#manual-modal').on('show.bs.modal', function (e) {
+		ui.allowKeypad();
+	});
+
+
+	$('#manual-modal').on('hide.bs.modal', function (e) {
+		ui.forbidKeypad();
+	});
+
+	$(document).ready(function(){
+	  // Style the file input so it looks nice
+	  $('input[type=file]').bootstrapFileInput();
+
+	  // Load the list of files available on the tool
+	  refresh_files_list();
+	});
+
 
 	function gcode(string) {
 		tool.gcode(string,function(err,data){
@@ -194,195 +212,6 @@
 		});
 	}
 
-	$('#manual-modal').on('show.bs.modal', function (e) {
-		keypad_allow = true;
-	})
-
-
-	$('#manual-modal').on('hide.bs.modal', function (e) {
-		keypad_allow = false;
-	})
-
-	$('#manual-modal').keydown(function(e) {
-	if (keypad_allow){
-		if (e.which === 37 && !lock_left && !lock_right) //left
-		{
-			lock_left=true;
-			tool.start_move("-x",function(){});
-		}
-		if (e.which === 38 && !lock_up && !lock_down) //up
-		{
-			 lock_up=true;
-			 tool.start_move("y",function(){});
-		}
-		if (e.which === 39 && !lock_right && !lock_left) //right
-		{
-			 lock_right=true;
-			 tool.start_move("x",function(){});
-		}
-		if (e.which === 40  && !lock_up && !lock_down) //down
-		{
-			 lock_down=true;
-			tool.start_move("-y",function(){});
-		}
-		if (e.which === 33  && !lock_page_up && !lock_page_down) //page_up
-		{
-			 lock_page_up=true;
-			tool.start_move("z",function(){});
-		}
-		if (e.which === 34 && !lock_page_up && !lock_page_down) //page_down
-		{
-			 lock_page_down=true;
-			 tool.start_move("-z",function(){});
-		}
-	}
-	});
-		$(document).keyup(function(e) {
-	if (keypad_allow){
-		if (e.which === 37 ) //left
-		{
-			lock_left=false;
-			tool.stop_move(function(){});
-		}
-		if (e.which === 38 ) //up
-		{
-			lock_up=false;
-			tool.stop_move(function(){});
-		}
-		if (e.which === 39 ) //right
-		{
-			lock_right=false;
-			tool.stop_move(function(){});
-		}
-		if (e.which === 40 ) //down
-		{
-			lock_down=false;
-			tool.stop_move(function(){});
-		}
-		if (e.which === 33 ) //page_up
-		{
-			lock_page_up=false;
-			tool.stop_move(function(){});
-		}
-		if (e.which === 34 ) //page_down
-		{
-			lock_page_down=false;
-			tool.stop_move(function(){});
-		}
-	}
-	});
-	/************************************* end keypad move section **************************************/
-
-	$(document).ready(function(){
-	  // Style the file input so it looks nice
-	  $('input[type=file]').bootstrapFileInput();
-
-	  // Load the list of files available on the tool
-	  refresh_files_list();
-
-	  setInterval(timer, 100);
-	});
-
-	function update_text(control, txt) {
-		t = control.text();
-		v = control.val();
-		if(t != txt) {
-			control.text(txt);
-		}
-		if(v != txt) {
-			control.val(txt);
-		}
-	}
-	function timer() {
-	tool.get_status(function(err,status){
-	if(!err){
-		x = status.posx.toFixed(3);
-		y = status.posy.toFixed(3);
-		z = status.posz.toFixed(3);
-
-		update_text($('.posx'), x);
-		update_text($('.posy'), y);
-		update_text($('.posz'), z);
-
-		if(status.current_file) {
-			$('.filename-display').removeClass('hide');
-			$('.filename').html(status.current_file);
-		} else {
-			$('.filename-display').addClass('hide');
-			$('.filename').empty();
-		}
-
-		if(status.state === 'idle') {
-			$('.status-label').removeClass('label-success label-danger label-info label-warning');
-			$('.status-label').addClass('label-default');
-			$('.tool-state').html('Idle');
-			$('.stop-button').addClass('hide');
-			$('.resume-button').addClass('hide');
-			$('.pause-button').addClass('hide');
-		}
-		else if(status.state === 'running' || status.state === 'homing' || status.state === 'probing') {
-			$('.status-label').removeClass('label-default label-danger label-info label-warning');
-			$('.status-label').addClass('label-success');
-			$('.tool-state').html('' + status.state);
-			$('.stop-button').removeClass('hide');
-			$('.pause-button').removeClass('hide');
-			$('.resume-button').addClass('hide');
-		}
-		else if(status.state === 'manual') {
-			$('.status-label').removeClass('label-default label-danger label-info label-warning');
-			$('.status-label').addClass('label-success');
-			$('.tool-state').html('' + status.state);
-			$('.stop-button').addClass('hide');
-			$('.pause-button').addClass('hide');
-			$('.resume-button').addClass('hide');
-		}
-		else if(status.state == 'paused') {
-			$('.status-label').removeClass('label-success label-info label-default label-danger');
-			$('.status-label').addClass('label-warning');
-			$('.tool-state').html('Paused');
-			$('.stop-button').removeClass('hide');
-			$('.pause-button').addClass('hide');
-			$('.resume-button').removeClass('hide');
-		} 
-		else if(status.state == 'limit') {
-			$('.status-label').removeClass('label-success label-info label-default label-danger');
-			$('.status-label').addClass('label-warning');
-			$('.tool-state').html('Limit');
-			$('.stop-button').removeClass('hide');
-			$('.pause-button').addClass('hide');
-			$('.resume-button').removeClass('hide');
-			$('.stop-button').addClass('hide');
-		}
-		else {
-			console.log('unknown status');
-		}
-	}
-	else if(err == tool.default_error.no_device){
-		$('.posx').html('???');
-		$('.posy').html('???');
-		$('.posz').html('???');
-		$('.status-label').removeClass('label-success label-default label-warning label-info');
-		$('.status-label').addClass('label-danger');
-		$('.tool-state').html('Disconnected');
-		$('.stop-button').addClass('hide');
-		$('.pause-button').addClass('hide');
-		$('.resume-button').addClass('hide');
-
-	}
-	else{
-		$('.posx').html('???');
-		$('.posy').html('???');
-		$('.posz').html('???');
-		$('.status-label').removeClass('label-success label-default label-info label-warning');
-		$('.status-label').addClass('label-danger');
-		$('.tool-state').html('Error');
-		$('.stop-button').addClass('hide');
-		$('.pause-button').addClass('hide');
-		$('.resume-button').addClass('hide');
-	}
-
-		});
-	}
 
 	function refresh_files_list(){
 	  // Load the list of files available on the tool
@@ -398,19 +227,6 @@
 		});
 	  });
 	}
-
-
-	$('.pause-button').click(function(e) {
-		tool.pause(function(){});
-	});
-	$('.resume-button').click(function(e) {
-		tool.resume(function(){});
-	});
-	$('.stop-button').click(function(e) {
-		tool.quit(function(){});
-	});
-
-
 
 	$('#add_file').submit(function(e){
 	e.preventDefault();
@@ -499,85 +315,16 @@
 	$('.zeroz-button').click(function(e) {gcode('G28.3 Z0'); });  
 
 
-
-	$('.button-plus-X').mousedown(function(e) {
-		var e1 = jQuery.Event("keydown");
-		e1.which = 39; 
-		$('#manual-modal').trigger(e1);
-	});  
-	$('.button-minus-X').mousedown(function(e) {
-		var e1 = jQuery.Event("keydown");
-		e1.which = 37; 
-		$('#manual-modal').trigger(e1);
+	$('.fabmo-status').on('statechange',function(e,state){
+		if (state === 'running' || state === 'manual' || state === 'homing' || state==='probing')
+			$('.state').removeClass('label-success label-info label-default label-warning label-danger').addClass('label-success');
+		else if (state === 'paused' || state === 'passthrough' || state === 'limit')
+			$('.state').removeClass('label-success label-info label-default label-warning label-danger').addClass('label-warning');
+		else if (state === 'Error' || state === 'Disconnected')
+			$('.state').removeClass('label-success label-info label-default label-warning label-danger').addClass('label-error');
+		else
+			$('.state').removeClass('label-success label-info label-default label-warning label-danger').addClass('label-default');
 	});
-	$('.button-plus-Y').mousedown(function(e) {
-		var e1 = jQuery.Event("keydown");
-		e1.which = 38; 
-		$('#manual-modal').trigger(e1);
-	});  
-	$('.button-minus-Y').mousedown(function(e) {
-		var e1 = jQuery.Event("keydown");
-		e1.which = 40; 
-		$('#manual-modal').trigger(e1);
-	});
-	$('.button-plus-Z').mousedown(function(e) {
-		var e1 = jQuery.Event("keydown");
-		e1.which = 33; 
-		$('#manual-modal').trigger(e1);
-	});  
-	$('.button-minus-Z').mousedown(function(e) {
-		var e1 = jQuery.Event("keydown");
-		e1.which = 34; 
-		$('#manual-modal').trigger(e1);
-	});
-
-	$('.button-plus-X').mouseup(function(e) {
-		var e1 = jQuery.Event("keyup");
-		e1.which = 39; 
-		$('#manual-modal').trigger(e1);
-	});  
-	$('.button-minus-X').mouseup(function(e) {
-		var e1 = jQuery.Event("keyup");
-		e1.which = 37; 
-		$('#manual-modal').trigger(e1);
-	});
-	$('.button-plus-Y').mouseup(function(e) {
-		var e1 = jQuery.Event("keyup");
-		e1.which = 38; 
-		$('#manual-modal').trigger(e1);
-	});  
-	$('.button-minus-Y').mouseup(function(e) {
-		var e1 = jQuery.Event("keyup");
-		e1.which = 40; 
-		$('#manual-modal').trigger(e1);
-	});
-	$('.button-plus-Z').mouseup(function(e) {
-		var e1 = jQuery.Event("keyup");
-		e1.which = 33; 
-		$('#manual-modal').trigger(e1);
-	});  
-	$('.button-minus-Z').mouseup(function(e) {
-		var e1 = jQuery.Event("keyup");
-		e1.which = 34; 
-		$('#manual-modal').trigger(e1);
-	});
-
-
-	/*
-	$('#keypad').click(function(e) {
-	if (keypad_allow)
-		{
-		$(this).css('opacity',0.2);
-		keypad_allow = false;
-	}
-	else
-		{
-		$(this).css('opacity',1);
-		keypad_allow = true;
-	} 
-	
-	});
-*/
 
   </script>
 

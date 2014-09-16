@@ -1417,6 +1417,9 @@ module.exports = (function() {
           s0 = peg$parseinteger();
           if (s0 === peg$FAILED) {
             s0 = peg$parsevariable();
+            if (s0 === peg$FAILED) {
+              s0 = peg$parsebarestring();
+            }
           }
         }
       }

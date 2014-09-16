@@ -2,12 +2,17 @@
  * @author jimmy
  */
 var restify = require('restify');
+var socketio = require('socket.io');
+
+var settings = require('./settings');
 
 // Load the route handlers
 var files_module = require('./files_module_handlers');
 var config_module = require('./config_module_handlers');
 var file_commands_module = require('./file_commands_module_handlers');
 var direct_commands_module = require('./direct_commands_module_handlers');
+var wifi_manager_module = require('./wifi_manager_handlers');
+var passthrough_module = require('./passthrough_module_handlers');
 
 module.exports = function(server) {
 
@@ -50,13 +55,13 @@ module.exports = function(server) {
 	server.get('/run/:id', file_commands_module.run); //OK
 
 	/* abort the execution of the current running file */
-	server.get('/quit',file_commands_module.quit); //TODO
+	server.get('/quit',file_commands_module.quit); //OK
 
 	/* pause the execution of the current running file */
-	server.get('/pause',file_commands_module.pause); //TODO 
+	server.get('/pause',file_commands_module.pause); //OK 
 	
 	/* resume the execution of the current running file */
-	server.get('/resume',file_commands_module.resume); //TODO 
+	server.get('/resume',file_commands_module.resume); //OK 
 
 	/****************************************************/
 
@@ -65,7 +70,7 @@ module.exports = function(server) {
 	/************* Direct commands module ***************/
 	/* send a gcode command to the tool */
 	server.post('/direct/sbp',direct_commands_module.send_sbp); //OK
-
+	
 	/* send a gcode command to the tool */
 	server.post('/direct/gcode',direct_commands_module.send_gcode); //OK
 
@@ -80,6 +85,35 @@ module.exports = function(server) {
 
 	/****************************************************/
 
+
+
+
+	/************** Wifi manager module *****************/
+
+	if(settings.wifi_manager){
+	/* get the list of detectable wifi networks */	
+	server.get('/wifi_manager/detection',wifi_manager_module.detection); //OK
+
+	/* get the list of existing profiles */
+	server.get('/wifi_manager/profiles',wifi_manager_module.list_profiles); //OK
+
+	/* create a new profile */
+	server.post('/wifi_manager/profile',wifi_manager_module.add_profile); //OK
+
+	/* delete an existing profile */
+	server.del('/wifi_manager/profile/:ssid',wifi_manager_module.delete_profile); //OK
+	}
+	/****************************************************/
+
+	var io = socketio.listen(server.server);
+
+
+	server.get("/passthrough",passthrough_module.passthrough_app);
+
+	io.of('/passthrough').on('connection', passthrough_module.connect);
+    // here are connections from /passthrough
+
+	/****************************************************/
 
 	server.get(/.*/, restify.serveStatic({
    		directory: './static',
