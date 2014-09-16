@@ -62,7 +62,7 @@ SBPRuntime.prototype.runString = function(s) {
 		var lines =  s.split('\n');
 		this.machine.status.nb_lines = lines.length - 1;
 		this.program = parser.parse(s);
-		var lines = this.program.length
+		lines = this.program.length;
 		this.machine.status.nb_lines = lines.length - 1;
 		this._analyzeLabels();  // Build a table of labels
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table    
