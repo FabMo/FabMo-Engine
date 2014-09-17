@@ -1,4 +1,5 @@
-var log = require('../../log'); //needed to run
+var settings = require('../../settings');
+var log_g2 = require('../../log').logger('g2'); //needed to run
 var g2 = require('../../g2');
 var chai = require('chai');
 var sinon = require('sinon');
@@ -13,8 +14,10 @@ describe('G2', function(){
 	var driver = new g2.G2();
 
 	beforeEach(function(){
-		sandbox.stub(console, "log");
-		sandbox.stub(console, "error");
+		sandbox.stub(log_g2, "debug");
+		sandbox.stub(log_g2, "info");
+		sandbox.stub(log_g2, "warning");
+		sandbox.stub(log_g2, "error");
 	});
 
 	afterEach(function(){
@@ -35,7 +38,7 @@ describe('G2', function(){
 	describe('#toString()',function(){
 		it('should return a string',function(done){
 			var driver_string = driver.toString();
-			expect(driver_string).to.equal("[G2 Driver on '" + serial_path + "']")
+			expect(driver_string).to.equal("[G2 Driver on '" + serial_path + "']");
 			done();
 		});
 	});
@@ -43,8 +46,8 @@ describe('G2', function(){
 	describe('#onSerialError()',function(){
 		it('should print the arg to the console',function(){
 			driver.onSerialError("error message");
-			sinon.assert.calledOnce(console.error);
-      		sinon.assert.calledWithMatch(console.error, /\*error message\*/ )
+			sinon.assert.calledOnce(log_g2.error);
+      		sinon.assert.calledWithMatch(log_g2.error, /error message/ );
 		});
 	}); 
 /*
