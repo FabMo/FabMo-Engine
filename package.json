@@ -1,0 +1,17 @@
+{
+  "name": "FabMo-engine",
+  "description": "The Engine for running the FabMo platform",
+  "author": "ShopBotTools",
+  "dependencies": {
+    "restify": "2.8.x",
+	"process": "0.8.x",
+	"serialport": "1.4.x",
+	"tingodb": "0.2.x",
+	"socket.io": "1.1.x",
+	"colors": "0.6.x",
+    "chai": "1.9.x",
+	"sinon": "1.10.x",
+	"mocha": "1.21.x"
+  },
+  "engine": "node 0.10.x"
+}
