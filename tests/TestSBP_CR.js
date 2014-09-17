@@ -1,10 +1,10 @@
-var opensbp = require('./opensbp');
+var opensbp = require('../opensbp');
 
 sbp = new opensbp.SBPRuntime();
 
 sbp.cmd_posx = 0;
 sbp.cmd_posy = 0;
-sbp.cmd_posz = .25;
+sbp.cmd_posz = 0.25;
 
 p0 = 4;				// lenX (X)
 p1 = 2;				// lenY (Y)
