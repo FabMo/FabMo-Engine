@@ -1,9 +1,12 @@
+/** 
+ * log.js is a "Poor man's" logging module.  It provides basic colorized logging using named 
+ * loggers with selectable log levelts.
+ */
 var settings = require('./settings');
 var process = require('process');
 try { var colors = require('colors'); } catch(e) {var colors = false;}
 
-
-
+// String versions of the allowable log levels
 LEVELS = {
 	'debug' : 0,
 	'info' : 1,
@@ -11,6 +14,7 @@ LEVELS = {
 	'error' : 3,
 };
 
+// Default log levels for loggers with specific names.
 LOG_LEVELS = {
 	'g2' : 'debug',
 	'gcode' : 'debug',
@@ -47,18 +51,20 @@ function setGlobalLevel(lvl){
 		}
 		else
 		{
-			logger('log').warn('wrong debug level for logging !');
+			logger('log').warn('Invalid log level: ' + lvl);
 		}
 	}
 }
 
-
-var logs = {};
-
+// The Logger object is what is created and used by modules to log to the console.
 var Logger = function(name) {
 	this.name = name;
 };
 
+// Index of all the Logger objects that have been created.
+var logs = {};
+
+// Output the provided message with colorized output (if available) and the logger name
 Logger.prototype.write = function(level, msg) {
 	my_level = LOG_LEVELS[this.name] || 'debug';
 	if((LEVELS[level] || 0) >= (LEVELS[my_level] || 0)) {
@@ -83,22 +89,13 @@ Logger.prototype.write = function(level, msg) {
 	}
 };
 
-Logger.prototype.debug = function(msg) {
-	this.write('debug', msg);
-};
+// These functions provide a shorthand alternative to specifying the log level every time
+Logger.prototype.debug = function(msg) { this.write('debug', msg); };
+Logger.prototype.info = function(msg) { this.write('info', msg); };
+Logger.prototype.warn = function(msg) { this.write('warn', msg); };
+Logger.prototype.error = function(msg) { this.write('error', msg);};
 
-Logger.prototype.info = function(msg) {
-	this.write('info', msg);
-};
-
-Logger.prototype.warn = function(msg) {
-	this.write('warn', msg);
-};
-
-Logger.prototype.error = function(msg) {
-	this.write('error', msg);
-};
-
+// Factory function for producing a new, named logger object
 var logger = function(name) {
 	if(name in logs) {
 		return logs[name];
@@ -108,6 +105,7 @@ var logger = function(name) {
 		return l;
 	}
 };
+
 /*
 process.on('uncaughtException', function(err) {
 	if(colors) {
