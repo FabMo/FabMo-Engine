@@ -8,6 +8,8 @@ The FabMo engine is host software that connects to a G2 motion control platform 
 * Interpretation of the OpenSBP (ShopBot) language
 * Exposure of an API that allows clients to connect to the motion system through the web
 
+The source code documentation is available here: http://shopbottools.github.io/FabMo-Engine/ 
+
 Dependencies
 ------------
 The engine runs best on linux, but can run with limited functionality on windows.  To run the engine, you need the following software packages:
