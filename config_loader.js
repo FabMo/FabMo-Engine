@@ -29,6 +29,7 @@ var ALLOWED_COMMANDS = ["1ma","1sa","1tr","1mi","1po","1pm","2ma","2sa",
 
 var sent = 0;
 var recv = 0;
+
 // Write a single (JSON) command to the specified driver, and call the provided callback if successful.
 // *TODO:* This function should conform to the node callback convention: callback(err, data)
 function config_single(driver, cmd, success_callback) {

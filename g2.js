@@ -19,8 +19,11 @@ var STAT_CYCLING = 8;
 var STAT_HOMING = 9;
 
 // When jogging, "keepalive" jog commands must arrive faster than this interval (ms)
+// This can be slowed down if necessary for spotty connections, but a slow timeout means
+// the machine has more time to run away before stopping.
 var JOG_TIMEOUT = 500;
 
+// Map used by the jog command to turn incoming direction specifiers to g-code
 var JOG_AXES = {'x':'X', 
 				'-x':'X-', 
 				'y':'Y',
@@ -35,6 +38,7 @@ var JOG_AXES = {'x':'X',
 				'-c':'C-'};
 
 // Error codes defined by G2
+// See https://github.com/synthetos/g2/blob/edge/TinyG2/tinyg2.h for the latest error codes and messages
 try {
 	var G2_ERRORS = JSON.parse(fs.readFileSync('./data/g2_errors.json','utf8'));
 } catch(e) {
@@ -89,7 +93,7 @@ G2.prototype.connect = function(path, callback) {
 			driver.command('M30');
 			driver.requestStatusReport();
 			driver.connected = true;
-			callback(false, driver);  // TODO, maybe this should come after the first status report
+			callback(false, driver);  // *TODO* maybe this should come after the first status report
 		});
 
 	});
