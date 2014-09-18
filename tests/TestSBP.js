@@ -1,4 +1,4 @@
-var opensbp = require('./opensbp');
+var opensbp = require('../opensbp');
 
 sbp = new opensbp.SBPRuntime();
 
@@ -7,12 +7,12 @@ sbp.cmd_posy = 3;
 sbp.cmd_posz = 3;
 
 p0 = undefined;		// dia
-p1 = 1;				// endX (X)
-p2 = 0;				// endY (Y)
-p3 = 0;				// centerX (I)
-p4 = -3;				// centerY (J)
+p1 = 7;				// endX
+p2 = 0;				// endY
+p3 = 0;				// centerX
+p4 = -3;			// centerY
 p5 = undefined;		// O-I-T
-p6 = -1;			// Dir
+p6 = 1;			// Dir
 p7 = -.125;		// Plunge
 p8 = 1;		// Passes
 p9 = undefined;		// PropX
