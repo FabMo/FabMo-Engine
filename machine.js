@@ -63,6 +63,7 @@ function Machine(serial_path, callback) {
 	this.driver.on("error", function(data) {log.error(data);});
 
 	this.driver.connect(serial_path, function(err, data) {
+		if(err){log.error(err);return;}
 		this.status.state = "idle";
 
 		this.gcode_runtime = new GCodeRuntime();

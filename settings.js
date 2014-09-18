@@ -1,12 +1,12 @@
 var PLATFORM = require('process').platform;
 var settings;
-try{settings= require('./app_settings');}catch(ex){settings= undefined;};
+try{settings= require('./app_settings');}catch(ex){settings= undefined;}
 var fs = require('fs');
 var util = require('util');
 var path=require('path');
 var exec = require('child_process').exec;
 
-var log_conf = require('./log')
+var log_conf = require('./log');
 var log = log_conf.logger('settings');
 var settings_filename = "app_settings.json";
 

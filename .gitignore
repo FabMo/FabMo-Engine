@@ -2,6 +2,6 @@
 *.bak
 *.tmp
 node_modules
-doc
 npm-debug.log
 app_settings.json
+docs-dist
