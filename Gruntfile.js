@@ -12,11 +12,19 @@ module.exports = function(grunt) {
 				base: 'docs-dist'
 			},
 			src: ['**']
-		}
+		},
+        'open' : {
+            'file' : {
+                path : 'docs-dist/index.html'
+            }
+        }
 	});
 	grunt.loadNpmTasks('grunt-groc');
 	grunt.loadNpmTasks('grunt-gh-pages');
-	grunt.registerTask('doc', ['groc']);
+	grunt.loadNpmTasks('grunt-open');
+	
+    grunt.registerTask('doc', ['groc']);
 	grunt.registerTask('doc-dist', ['groc', 'gh-pages']);
+	grunt.registerTask('doc-view', ['groc', 'open']);
 
 };
