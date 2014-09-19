@@ -1076,6 +1076,7 @@ SBPRuntime.prototype.CG = function(args) {
 
 SBPRuntime.prototype.CR = function(args) {
 	//calc and output commands to cut a rectangle
+    var n = 0.0;
 	var startX = this.cmd_posx;
     var startY = this.cmd_posy;
     var startZ = this.cmd_posz;
@@ -1087,7 +1088,6 @@ SBPRuntime.prototype.CR = function(args) {
     var pckt_stepX = 0.0;
     var pckt_stepY = 0.0;
     var steps = 1.0;
-    var n = 0.0;
     var currentZ;
 
     var lenX = args[0] !== undefined ? args[0] : undefined; 
@@ -1098,12 +1098,6 @@ SBPRuntime.prototype.CR = function(args) {
     var Plg = args[5] !== undefined ? args[5] : 0.0;
     var reps = args[6] !== undefined ? args[6] : 1;
     var optCR = args[7] !== undefined ? args[7] : 0;				// Options - 1-Tab, 2-Pocket Outside-In, 3-Pocket Inside-Out
-
-    if (optCR > 1) {
-    	stepOver = sbp_settings.cutterDia * ((100 - sbp_settings.pocketOverlap) / 100);	// Calculate the overlap
-    	Pocket_Step = stepOver * Math.cos(0.785398163);			// Calculate the stepover in X based on the radius of the cutter at 45 degrees
-    }
-
     var plgFromZero = args[8] !== undefined ? args[8] : 0;		// Start Plunge from Zero <0-NO, 1-YES>
     var RotationAngle = args[9] !== undefined ? args[9] : 0.0;		// Angle to rotate rectangle around starting point
     var PlgAxis = args[10] !== undefined ? args[10] : 'Z';
@@ -1112,32 +1106,9 @@ SBPRuntime.prototype.CR = function(args) {
 	var noPullUp = 0;
 	var cosRA = 0.0;
 	var sinRA = 0.0;
-
-	// If a pocket, calculate the step over and number of steps to pocket out the complete rectangle.
-    if (optCR > 1) {
-    	var stepOver = sbp_settings.cutterDia * ((100 - sbp_settings.pocketOverlap) / 100);	// Calculate the overlap
-    	pckt_stepX = pckt_stepY = stepOver;
-    	// Base the numvber of steps on the short side of the rectangle.
-	   	if ( Math.abs(lenX) < Math.abs(lenY) ) {
-	   		steps = Math.floor((Math.abs(lenX)/2)/Math.abs(stepOver)); 
-	   	}
-	   	else {	// If a square or the X is shorter, use the X length.
-	   		steps = Math.floor((Math.abs(lenY)/2)/Math.abs(stepOver)); 
-	   	}
-   		
-		// If an inside-out pocket, reverse the step over direction and find the pocket start point near the center
-		if ( optCR == 3 ) {
-    		pckt_stepX *= -1;
-    		pckt_stepY *= -1;
-    		pckt_startX += (steps * pckt_stepX);
-    		pckt_startY += (steps * pckt_stepY);
-    		this.emit_gcode( "G0Z" + currentZ);
-    		this.emit_gcode( "G0X" + pckt_startX + "Y" + pckt_startY );
-    	}
-    }
-
-//	this.emit_gcode( "cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy );
-//	this.emit_gcode( "pckt_startX = " + pckt_startX + "  pckt_startY = " + pckt_startY );
+    var rotPtX = 0.0;
+    var rotPtY = 0.0;
+    var stepOver = 0.0;    
 
     if (RotationAngle !== 0 ) { 
     	RotationAngle *= Math.PI / 180;							// Convert rotation angle in degrees to radians
@@ -1145,8 +1116,7 @@ SBPRuntime.prototype.CR = function(args) {
     	sinRA = Math.sin(RotationAngle);						// Calculate the Sine of the rotation angle
     	rotPtX = startX;										// Rotation point X
     	rotPtY = startY;										// Rotation point Y
-    	this.emit_gcode( "'cosRA = " + cosRA + "  sinRA = " + sinRA );
-//    	this.emit_gcode( "pckt_stepX = " + pckt_stepX + "  pckt_stepY = " + pckt_stepY );
+//    	this.emit_gcode( "'cosRA = " + cosRA + "  sinRA = " + sinRA );
     }
     
     if (Plg !== 0 && plgFromZero == 1){ currentZ = 0; }
@@ -1154,15 +1124,12 @@ SBPRuntime.prototype.CR = function(args) {
     var safeZCG = currentZ + sbp_settings.safeZpullUp;
 
     if ( stCorn == 1 ) { 
-
     	yDir = -1;
     	if ( Dir == -1 ) { 
     		order = [3,2,1,4]; 
     	}
-
     	pckt_stepY *= -1;
     }	
-
     else if ( stCorn == 2 ) {
     	xDir = -1;
     	yDir = -1;
@@ -1183,6 +1150,10 @@ SBPRuntime.prototype.CR = function(args) {
     	if ( Dir == 1 ) {
     		order = [3,2,1,4]; 
     	}
+    	if ( stCorn == 5 ) {
+    		rotPtX = startX - (lenX/2);
+    		rotPtY = startY - (lenY/2);    		
+    	}
     }
 
     if ( OIT == "O" ) { 
@@ -1193,6 +1164,34 @@ SBPRuntime.prototype.CR = function(args) {
     	lenX = (lenX - sbp_settings.cutterDia) * xDir;
     	lenY = (lenY - sbp_settings.cutterDia) * yDir;
     }
+
+	// If a pocket, calculate the step over and number of steps to pocket out the complete rectangle.
+    if (optCR > 1) {
+    	stepOver = sbp_settings.cutterDia * ((100 - sbp_settings.pocketOverlap) / 100);	// Calculate the overlap
+    	pckt_stepX = pckt_stepY = stepOver;
+    	// Base the numvber of steps on the short side of the rectangle.
+	   	if ( Math.abs(lenX) < Math.abs(lenY) ) {
+	   		steps = Math.floor((Math.abs(lenX)/2)/Math.abs(stepOver)); 
+	   	}
+	   	else {	// If a square or the X is shorter, use the X length.
+	   		steps = Math.floor((Math.abs(lenY)/2)/Math.abs(stepOver)); 
+	   	}
+   		
+		// If an inside-out pocket, reverse the step over direction and find the pocket start point near the center
+		if ( optCR == 3 ) {
+//    		pckt_stepX *= -1;
+//    		pckt_stepY *= -1;
+    		pckt_startX += (steps * pckt_stepX);
+    		pckt_startY += (steps * pckt_stepY);
+    		this.emit_gcode( "G0Z" + currentZ);
+    		this.emit_gcode( "G0X" + pckt_startX + "Y" + pckt_startY );
+    	}
+    }
+
+	this.emit_gcode( "'steps = " + steps + "  stepOver = " + stepOver );
+	this.emit_gcode( "'cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy );
+	this.emit_gcode( "'pckt_startX = " + pckt_startX + "  pckt_startY = " + pckt_startY );
+   	this.emit_gcode( "'pckt_stepX = " + pckt_stepX + "  pckt_stepY = " + pckt_stepY );
 
     // If an inside-out pocket, move to the start point of the pocket
     if ( optCR == 3) {
@@ -1222,8 +1221,8 @@ SBPRuntime.prototype.CR = function(args) {
 	   				switch (n){
 	   					case 1:
 	   						// xL,yS 
-    						if (RotationAngle === 0) { outStr = "G1X" + ((startX + lenX) - (pckt_stepX * j)) + 
-    															 "Y" + (startY + (pckt_stepY * j));
+    						if ( RotationAngle === 0.0 ) { outStr = "G1X" + ((pckt_startX + lenX) - (pckt_stepX * j)) + 
+    															 "Y" + (pckt_startY + (pckt_stepY * j));
     						}
     						else {
     							nextX = pckt_startX + lenX - (pckt_stepX * j);
@@ -1241,8 +1240,8 @@ SBPRuntime.prototype.CR = function(args) {
 
     					case 2:
     						// xL,yL
-   		    				if ( RotationAngle === 0 ) { outStr = "G1X" + ((startX + lenX) - (pckt_stepX * j)) +
-   		    														"Y" + ((startY + lenY) - (pckt_stepY * j));
+   		    				if ( RotationAngle === 0.0 ) { outStr = "G1X" + ((pckt_startX + lenX) - (pckt_stepX * j)) +
+   		    														"Y" + ((pckt_startY + lenY) - (pckt_stepY * j));
    		    				}
    							else {
    								nextX = pckt_startX + lenX - (pckt_stepX * j);
@@ -1260,8 +1259,8 @@ SBPRuntime.prototype.CR = function(args) {
 
    						case 3:
     						// xS,yL
-   							if ( RotationAngle === 0 ) { outStr = "G1X" + (startX + (pckt_stepX * j)) + 
-   																   "Y" + ((startY + lenY) - (pckt_stepY * j)); 
+   							if ( RotationAngle === 0.0 ) { outStr = "G1X" + (pckt_startX + (pckt_stepX * j)) + 
+   																   "Y" + ((pckt_startY + lenY) - (pckt_stepY * j)); 
    							}
    							else {
    								nextX = pckt_startX + (pckt_stepX * j);
@@ -1279,8 +1278,8 @@ SBPRuntime.prototype.CR = function(args) {
 
     					case 4:
     						// xS,yS
-   							if ( RotationAngle === 0 ) { outStr = "G1X" + (startX + (pckt_stepX * j)) + 
-   																	"Y" + (startY + (pckt_stepY * j));
+   							if ( RotationAngle === 0.0 ) { outStr = "G1X" + (pckt_startX + (pckt_stepX * j)) + 
+   																	"Y" + (pckt_startY + (pckt_stepY * j));
    							}
    							else {
    								nextX = pckt_startX + (pckt_stepX * j);
@@ -1291,23 +1290,29 @@ SBPRuntime.prototype.CR = function(args) {
    							if ( spiralPlg === 1 && pass === 0 ) {
    								currentZ += Plg; 
    								outStr += "Z" + (currentZ).toFixed(4);
-								pass = 1; 
+								pass = 1;
+								if ( i+1 < reps ){
+									cnt = 1;
+								} 
    							}
-   							else { cnt = 1; }
+   							else { 
+   								cnt = 1;
+   							}
    							outStr += "F" + sbp_settings.movexy_speed;
    							this.emit_gcode (outStr);
    						break;
 
    						default:
    							throw "Unhandled operation: " + expr.op;
+
    					} // switch
    				} // for k
 			} while ( cnt < 1 );
   
 			if ( (j + 1) < steps && optCR > 1 ) {
 				if ( RotationAngle === 0 ) { 
-			  		outStr = "G1X" + (startX + (pckt_stepX * (j+1))) + 
-   							   "Y" + (startY + (pckt_stepY * (j+1)));
+			  		outStr = "G1X" + (pckt_startX + (pckt_stepX * (j+1))) + 
+   							   "Y" + (pckt_startY + (pckt_stepY * (j+1)));
    				}
    				else {
    					nextX = pckt_startX + (pckt_stepX * (j+1));
