@@ -1092,7 +1092,7 @@ SBPRuntime.prototype.CR = function(args) {
     var lenY = args[1] !== undefined ? args[1] : undefined;		// Y length
     var OIT = args[2] !== undefined ? args[2] : "T";			// Cutter compentsation (I=inside, T=no comp, O=outside)
     var Dir = args[3] !== undefined ? args[3] : 1; 				// Direction of cut (-1=CCW, 1=CW)
-    var stCorner = args[4] !== undefined ? args[4] : 4;			// Start Corner - default is 4, the bottom left corner
+    var stCorner = args[4] !== undefined ? args[4] : 4;			// Start Corner - default is 4, the bottom left corner. 0=Center
     var Plg = args[5] !== undefined ? args[5] : 0.0;			// Plunge depth per repetion
     var reps = args[6] !== undefined ? args[6] : 1;				// Repetions
     var optCR = args[7] !== undefined ? args[7] : 0;			// Options - 1-Tab, 2-Pocket Outside-In, 3-Pocket Inside-Out
@@ -1149,10 +1149,6 @@ SBPRuntime.prototype.CR = function(args) {
     	if ( Dir == 1 ) {
     		order = [3,2,1,4]; 
     	}
-    	if ( stCorner == 5 ) {
-    		rotPtX = startX - (lenX/2);
-    		rotPtY = startY - (lenY/2);    		
-    	}
     }
 
     if ( OIT == "O" ) { 
@@ -1167,6 +1163,11 @@ SBPRuntime.prototype.CR = function(args) {
     	lenX *= xDir;
     	lenY *= yDir;
     }
+
+   	if ( stCorner === 0 ) {
+   		pckt_startX = startX - (lenX/2);
+   		pckt_startY = startY - (lenY/2);    		
+   	}
 
 	// If a pocket, calculate the step over and number of steps to pocket out the complete rectangle.
     if (optCR > 1) {
@@ -1203,7 +1204,7 @@ SBPRuntime.prototype.CR = function(args) {
     }
 
     // If an inside-out pocket, move to the start point of the pocket
-    if ( optCR == 3) {
+    if ( optCR == 3 || stCorner === 0 ) {
     		this.emit_gcode( "G0Z" + safeZCG );
 
     		nextX = pckt_startX + pckt_offsetX;
@@ -1359,18 +1360,9 @@ SBPRuntime.prototype.CR = function(args) {
    		} //for j
 
    		// If a pocket, move to the start point of the pocket
-	    if ( optCR > 1 ) {
+	    if ( optCR > 1 || stCorner === 0 ) {
     		this.emit_gcode( "G0Z" + safeZCG );
-    		if ( RotationAngle === 0 ) {
-	    		outStr = "G1X" + pckt_startX + "Y" + pckt_startY;
-    		}
-    		else {	
-				nextX = pckt_startX;
-				nextY = pckt_startY;
-
-				outStr = "G1X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
-						   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4);
-			} 
+    		outStr = "G1X" + startX + "Y" + startY;
 			outStr += "F" + sbp_settings.movexy_speed;
      		this.emit_gcode( outStr );
      		if ( ( i + 1 ) != reps ) { 
