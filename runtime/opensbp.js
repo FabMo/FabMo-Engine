@@ -1,10 +1,10 @@
-var settings = require('./settings');
+var settings = require('../settings');
 var parser = require('./parser');
 var fs = require('fs');
-var log = require('./log').logger('sbp');
-var g2 = require('./g2');
+var log = require('../log').logger('sbp');
+var g2 = require('../g2');
 var sbp_settings = require('./sbp_settings');
-var sb3_commands = require('./data/sb3_commands');
+var sb3_commands = require('./sb3_commands');
 
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;

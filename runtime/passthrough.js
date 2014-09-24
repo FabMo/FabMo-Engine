@@ -1,4 +1,4 @@
-var log = require('./log').logger('passthrough');
+var log = require('../log').logger('passthrough');
 
 function PassthroughRuntime() {
 	this.machine = null;

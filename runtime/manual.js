@@ -1,4 +1,4 @@
-var log = require('./log').logger('manual');
+var log = require('../log').logger('manual');
 
 function ManualRuntime() {
 	this.machine = null;

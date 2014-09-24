@@ -7,12 +7,10 @@ var fs = require('fs');
 var path = require('path');
 
 var log = require('./log').logger('machine');
-var GCodeRuntime = require('./gcode').GCodeRuntime;
-var SBPRuntime = require('./opensbp').SBPRuntime;
-var ManualRuntime = require('./manual').ManualRuntime;
-var PassthroughRuntime = require('./passthrough').PassthroughRuntime;
-
-
+var GCodeRuntime = require('./runtime/gcode').GCodeRuntime;
+var SBPRuntime = require('./runtime/opensbp').SBPRuntime;
+var ManualRuntime = require('./runtime/manual').ManualRuntime;
+var PassthroughRuntime = require('./runtime/passthrough').PassthroughRuntime;
 
 function connect(callback) {
 
@@ -58,14 +56,11 @@ function Machine(serial_path, callback) {
 		posy : 0.0,
 		posz : 0.0
 	};
-
 	this.driver = new g2.G2();
 	this.driver.on("error", function(data) {log.error(data);});
-
 	this.driver.connect(serial_path, function(err, data) {
 		if(err){log.error(err);return;}
 		this.status.state = "idle";
-
 		this.gcode_runtime = new GCodeRuntime();
 		this.sbp_runtime = new SBPRuntime();
 		this.manual_runtime = new ManualRuntime();

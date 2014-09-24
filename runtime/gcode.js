@@ -1,5 +1,5 @@
 var fs = require('fs');
-var log = require('./log').logger('gcode');
+var log = require('../log').logger('gcode');
 
 function GCodeRuntime() {
 	this.machine = null;
