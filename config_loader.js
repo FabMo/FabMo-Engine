@@ -1,3 +1,9 @@
+/*
+ * This module contains functions for loading G2 with a configuration from disk.
+ * The g2 configuration is (convieniently) in JSON format, and is more or less 
+ * read directly from disk and streamed to the G2 device on startup.
+ */
+
 var configuration = require('./configuration');
 var process=require('process');
 var machine=require('./machine').machine;
@@ -23,6 +29,9 @@ var ALLOWED_COMMANDS = ["1ma","1sa","1tr","1mi","1po","1pm","2ma","2sa",
 
 var sent = 0;
 var recv = 0;
+
+// Write a single (JSON) command to the specified driver, and call the provided callback if successful.
+// *TODO:* This function should conform to the node callback convention: callback(err, data)
 function config_single(driver, cmd, success_callback) {
 	driver.on('message', function handler(resp) {
 		if (resp && (resp instanceof Object) && ('r' in resp)) { // filter for response
@@ -53,6 +62,9 @@ function config_single(driver, cmd, success_callback) {
 	driver.command(cmd);
 };
 
+// Load the entire G2 configuration from disk and stream to G2
+// The configuration file is stored in configuration.json
+// Queue report verbosity and the contents of the status report are specified explicitly here and override any settings that may be in the file
 exports.load = function(driver, callback) {
 	// HARD CODED QUEUE REPORT VERBOSITY
 	configuration.unshift({"sr":{"posx":true, "posy":true, "posz":true, "posa":true, "posb":true, "vel":true, "stat":true, "hold":true, "line":true, "coor":true}});
@@ -67,6 +79,7 @@ exports.load = function(driver, callback) {
 	});
 }
 
+// TODO: Where is this used?
 function allowed_commands(command){
 	if (ALLOWED_COMMANDS.indexOf(command.toLowerCase())!== -1)
 	{
@@ -77,3 +90,5 @@ function allowed_commands(command){
 		return false;
 	}
 };
+
+// TODO: Exports?

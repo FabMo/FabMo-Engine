@@ -3,8 +3,9 @@ var fs = require('fs');
 var machine = require('./machine').machine;
 var settings = require('./settings');
 var db = require('./db');
-var File=db.File; // link to the files database collection
+var File=db.File;
 
+// *TODO:* This is defined in two places, we should fix that.
 ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
 
 function allowed_file(filename){
@@ -25,32 +26,32 @@ exports.get_files = function(req, res, next) {
 
 exports.upload_file = function(req, res, next) {
 	var file = req.files.file;
-    if(file && allowed_file(file.name))
-    {
-    	var filename=file.name;
-    	console.log("Saving: " + filename);
-       	var full_path = path.join(settings.upload_dir, filename);
-       	console.log(full_path);
-       	fs.rename(file.path, full_path, function(err) {
-       		if (err){
-       			throw err;
-       		}
-        	// delete the temporary file, so that the explicitly set temporary upload dir does not get filled with unwanted files
-        	fs.unlink(file.path, function() {
-        		if (err) {throw err;}
-        		new File(filename, full_path).save(function(file){
+	if(file && allowed_file(file.name))
+	{
+		var filename=file.name;
+		console.log("Saving: " + filename);
+		var full_path = path.join(settings.upload_dir, filename);
+		console.log(full_path);
+		fs.rename(file.path, full_path, function(err) {
+			if (err){
+				throw err;
+			}
+			// delete the temporary file, so that the explicitly set temporary upload dir does not get filled with unwanted files
+			fs.unlink(file.path, function() {
+				if (err) {throw err;}
+				new File(filename, full_path).save(function(file){
 				res.send(302,file); // file saved
 			}); //save in db
-        		
-        	});
-        });
-    }
-    else if (file){
+				
+			});
+		});
+	}
+	else if (file){
 	res.send(415); // wrong format
-    }
-    else{
+	}
+	else{
 	res.send(400);// problem reciving the file (bad request)	
-    }
+	}
 };
 
 exports.delete_file = function(req, res, next) {

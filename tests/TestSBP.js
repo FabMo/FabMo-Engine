@@ -1,4 +1,4 @@
-var opensbp = require('./opensbp');
+var opensbp = require('../opensbp');
 
 sbp = new opensbp.SBPRuntime();
 

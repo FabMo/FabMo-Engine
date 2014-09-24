@@ -1,0 +1,14 @@
+[Unit]
+Description=FabMo Engine
+
+[Service]
+ExecStart=/bin/node /opt/shopbot/app/server.js &
+Type=simple
+User=root
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+WorkingDirectory = /opt/shopbot/app/
+
+[Install]
+WantedBy=multi-user.target

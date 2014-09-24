@@ -1,84 +1,102 @@
 var machine = require('./machine').machine;
 var default_feed_rate = 300;
 
+// Handler for move in a specified direction (keypad mode)
 function move_direction(direction) {
 	machine.jog(direction);
 }
 
+// Handler for jog in a specified direction (keypad mode)
 function jog_direction(direction) {
 	machine.jog(direction);
 }
 
+// Handler for immediate stop of a keypad move or jog
 function stop() {
 	machine.stopJog();
 }
 
-
+// Handler for executing g-code
 exports.send_gcode = function(req, res, next) {
 	if (machine.status.state === 'idle')
 	{
+		// If cmd is specified in the request parameters, execute it as g-code
 		if (req.params.cmd !== undefined )
 		{
 			machine.gcode(req.params.cmd);
-    		res.json({'success': req.params.cmd})
+			res.json({'success': req.params.cmd})
 		}
+		// If not, check the request body.  If it is non-empty, execute it as g-code.
 		else if (req.body) {
 			machine.gcode(req.body);
 			res.json({'success': req.params.cmd})
 
 		}
+		// Finally, if no cmd argument and an empty request body, return an error.
 		else {
-			res.json({'error':'No cmd argument'});	
+			res.json({'error':'No cmd argument'});
 		}
 	}
 	else {
-		res.json({'error':'A file is running'});	
+		res.json({'error':'A file is running'});
 	}
 };
 
+// Handler for executing OpenSBP code 
 exports.send_sbp = function(req, res, next) {
 	if (machine.status.state === 'idle')
 	{
+		// If cmd is specified in the request parameters, execute it as OpenSBP.
 		if (req.params.cmd !== undefined )
 		{
 			machine.sbp(req.params.cmd);
-    		res.json({'success': req.params.cmd})
+			res.json({'success': req.params.cmd})
 		}
+		// If not, check the request body.  If it is non-empty, execute it as OpenSBP.
 		else if (req.body) {
 			machine.sbp(req.body);
 			res.json({'success': req.params.cmd})
 
 		}
+		// Finally, if no cmd argument and an empty request body, return an error.
 		else {
-			res.json({'error':'No cmd argument'});	
+			res.json({'error':'No cmd argument'});
 		}
 	}
 	else {
-		res.json({'error':'A file is running'});	
+		res.json({'error':'A file is running'});
 	}
 };
 
 
 exports.move = function(req, res, next) {
-	if (req.params.move !== undefined )
+	if(req.params.move ==="stop"){
+		stop();
+		res.json({'success':'stop'});
+	}
+	else if (req.params.move !== undefined )
 	{
-		move_direction(req.params.move);			
+		move_direction(req.params.move);
 		res.json({'success': 'moving in '+req.params.move+' direction'});
 	}
 	else {
 		stop();
-		res.json({'error':'Need at least one argument'});	
+		res.json({'error':'Need at least one argument'});
 	}
 };
 
 exports.jog = function(req, res, next) {
-	if (req.params.move !== undefined ) {
+	if(req.params.move ==="stop"){
+		stop();
+		res.json({'success':'stop'});
+	}
+	else if (req.params.move !== undefined ) {
 		jog_direction(req.params.move);
 		res.json({'success': 'Moving in '+req.params.move+' direction'});
 	}
 	else {
 		stop();
-		res.json({'error':'Need at least one argument'});	
+		res.json({'error':'Need at least one argument'});
 	}
 };
 
@@ -95,11 +113,11 @@ exports.goto = function(req, res, next) {
 		 	if (req.params.z !== undefined )
 				gcode_string += ' Z'+ req.params.z;
 			if (req.params.a !== undefined )
-				gcode_string += ' A'+ req.params.x;
+				gcode_string += ' A'+ req.params.a;
 			if (req.params.b !== undefined )
-				gcode_string += ' B'+ req.params.y;
+				gcode_string += ' B'+ req.params.b;
 		 	if (req.params.c !== undefined )
-				gcode_string += ' C'+ req.params.z;			
+				gcode_string += ' C'+ req.params.c;
 			if (req.params.f !== undefined )
 				gcode_string += ' F'+ req.params.f;
 			else 
@@ -110,12 +128,12 @@ exports.goto = function(req, res, next) {
 		}
 		else
 		{
-			res.json({'error':'Need at least one argument'});	
+			res.json({'error':'Need at least one argument'});
 		}
 	}
 	else
 	{
-		res.json({'error':'A file is running'});	
+		res.json({'error':'A file is running'});
 	}
 };
 
