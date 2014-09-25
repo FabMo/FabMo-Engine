@@ -1,8 +1,8 @@
 var path = require('path');
 var fs = require('fs');
-var machine = require('./machine').machine;
-var settings = require('./settings');
-var db = require('./db');
+var machine = require('../machine').machine;
+var settings = require('../settings');
+var db = require('../db');
 var File=db.File;
 
 // *TODO:* This is defined in two places, we should fix that.
@@ -18,13 +18,13 @@ function allowed_file(filename){
 	}
 };
 
-exports.get_files = function(req, res, next) {
+get_files = function(req, res, next) {
 	File.list_all(function(result){
 		res.json({'files':result});
-});
+	});
 };
 
-exports.upload_file = function(req, res, next) {
+upload_file = function(req, res, next) {
 	var file = req.files.file;
 	if(file && allowed_file(file.name))
 	{
@@ -54,7 +54,7 @@ exports.upload_file = function(req, res, next) {
 	}
 };
 
-exports.delete_file = function(req, res, next) {
+delete_file = function(req, res, next) {
 	console.log('Deleting file');
 	File.get_by_id(req.params.id,function(file){
 		if(file)
@@ -74,7 +74,7 @@ exports.delete_file = function(req, res, next) {
 };
 
 
-exports.download_file = function(req, res, next) {
+download_file = function(req, res, next) {
 	File.get_by_id(req.params.id,function(file){
 		if(!file){res.send(404);return;}
 		console.log('Downloading file');
@@ -96,7 +96,7 @@ exports.download_file = function(req, res, next) {
 };
 
 
-exports.view_file = function(req, res, next) {
+view_file = function(req, res, next) {
 	File.get_by_id(req.params.id,function(file){
 		if(!file){res.send(404);return;}
 		console.log('Downloading file');
@@ -112,3 +112,10 @@ exports.view_file = function(req, res, next) {
 };
 
 
+module.exports = function(server) {
+	server.get('/file', get_files); //OK
+	server.post('/file',upload_file); //OK
+	server.del('/file/:id',delete_file); //OK
+	server.get('/file/:id',download_file); //OK
+	server.get('/file/:id/view',view_file); //OK
+}

@@ -1,4 +1,4 @@
-var machine = require('./machine').machine;
+var machine = require('../machine').machine;
 var default_feed_rate = 300;
 
 // Handler for move in a specified direction (keypad mode)
@@ -17,7 +17,7 @@ function stop() {
 }
 
 // Handler for executing g-code
-exports.send_gcode = function(req, res, next) {
+send_gcode = function(req, res, next) {
 	if (machine.status.state === 'idle')
 	{
 		// If cmd is specified in the request parameters, execute it as g-code
@@ -43,7 +43,7 @@ exports.send_gcode = function(req, res, next) {
 };
 
 // Handler for executing OpenSBP code 
-exports.send_sbp = function(req, res, next) {
+send_sbp = function(req, res, next) {
 	if (machine.status.state === 'idle')
 	{
 		// If cmd is specified in the request parameters, execute it as OpenSBP.
@@ -69,7 +69,7 @@ exports.send_sbp = function(req, res, next) {
 };
 
 
-exports.move = function(req, res, next) {
+move = function(req, res, next) {
 	if(req.params.move ==="stop"){
 		stop();
 		res.json({'success':'stop'});
@@ -85,7 +85,7 @@ exports.move = function(req, res, next) {
 	}
 };
 
-exports.jog = function(req, res, next) {
+jog = function(req, res, next) {
 	if(req.params.move ==="stop"){
 		stop();
 		res.json({'success':'stop'});
@@ -100,7 +100,7 @@ exports.jog = function(req, res, next) {
 	}
 };
 
-exports.goto = function(req, res, next) {
+goto = function(req, res, next) {
    	if (machine.status.state === 'idle')
 	{
 		if (req.params.x !== undefined || req.params.y !== undefined || req.params.z !== undefined || req.params.a !== undefined || req.params.b !== undefined || req.params.c !== undefined)
@@ -137,3 +137,11 @@ exports.goto = function(req, res, next) {
 	}
 };
 
+
+module.exports = function(server) {
+	server.post('/direct/sbp',send_sbp); //OK
+	server.post('/direct/gcode',send_gcode); //OK
+	server.post('/direct/move',move); //TODO :improve it
+	server.post('/direct/jog',jog); //TODO  :improve it
+	server.post('/direct/goto',goto); //OK
+}

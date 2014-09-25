@@ -1,13 +1,13 @@
 try{var wifiscanner = require('node-simplerwifiscanner');}catch(e){};
-var log = require('./log').logger('wifi');
+var log = require('../log').logger('wifi');
+var settings =  require('../settings')
 var fs= require('fs');
 
 var profiles_folder = "/etc/netctl/";
 var itr = "wlan0";
 
 
-exports.detection = function(req, res, next) {
-
+detection = function(req, res, next) {
     // data is a wifi_info Object
     wifiscanner.scan(function(err,data){
     	if (err) {
@@ -21,7 +21,7 @@ exports.detection = function(req, res, next) {
 };
 
 
-exports.list_profiles = function(req, res, next) {
+list_profiles = function(req, res, next) {
 	profiles = [];
 	fs.readdir(profiles_folder,function(err,files){
 		if(err){
@@ -47,7 +47,7 @@ exports.list_profiles = function(req, res, next) {
 	});
 };
 
-exports.add_profile = function(req, res, next) {
+add_profile = function(req, res, next) {
     if(req.params.wifi_info !== undefined){
     	var wifi_info = req.params.wifi_info;
     	var file_string = create_profile(wifi_info);
@@ -69,7 +69,7 @@ exports.add_profile = function(req, res, next) {
     	res.json({'error':'No network informations provided'});
 };
 
-exports.delete_profile = function(req, res, next) {
+delete_profile = function(req, res, next) {
     if(req.params.ssid)
     {
     	fs.unlink(profiles_folder+itr+'-'+req.params.ssid, function (err) {
@@ -121,3 +121,13 @@ function create_profile(wifi_info){
 	return profile_string;
 
 };
+
+
+module.exports = function(server) {
+	if(settings.wifi_manager){
+		server.get('/wifi_manager/detection',detection); //OK
+		server.get('/wifi_manager/profiles',list_profiles); //OK
+		server.post('/wifi_manager/profile',add_profile); //OK
+		server.del('/wifi_manager/profile/:ssid',delete_profile); //OK
+	}
+}
