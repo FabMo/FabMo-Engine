@@ -23,5 +23,6 @@
 	"resMC" : 1,
 	"cutterDia" : 0.25,
 	"pocketOverlap" : 50.0,
-	"safeZpullUp" : 0.25	
+	"safeZpullUp" : 0.25,
+	"gearBoxRatio" : 3.6	
 }

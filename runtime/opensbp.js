@@ -623,38 +623,46 @@ SBPRuntime.prototype.FS = function(args) {
 	//?????????????????????????????????????????????
 };
 
-/* MOVE */
+/* MOVE Commands */
 
+// Move X axis
 SBPRuntime.prototype.MX = function(args) {
 	this.emit_gcode("G1 X" + args[0] + " F" + 60.0*sbp_settings.movexy_speed);
 	this.cmd_posx = args[0];
 };
 
+// Move Y axis
 SBPRuntime.prototype.MY = function(args) {
 	this.emit_gcode("G1Y" + args[0] + " F" + 60.0*sbp_settings.movexy_speed);
 	this.cmd_posy = args[0];
 };
 
+// Move Z axis
 SBPRuntime.prototype.MZ = function(args) {
 	this.emit_gcode("G1Z" + args[0] + " F" + 60.0*sbp_settings.movez_speed);
 	this.cmd_posz = args[0];
 };
 
+// Move A axis
 SBPRuntime.prototype.MA = function(args) {
 	this.emit_gcode("G1A" + args[0] + " F" + 60.0*sbp_settings.movea_speed);
 	this.cmd_posa = args[0];
 };
 
+// Move B axis
 SBPRuntime.prototype.MB = function(args) {
 	this.emit_gcode("G1B" + args[0] + " F" + 60.0*sbp_settings.moveb_speed);
 	this.cmd_posb = args[0];
 };
 
+// Move C axis
 SBPRuntime.prototype.MC = function(args) {
 	this.emit_gcode("G1C" + args[0] + " F" + 60.0*sbp_settings.movec_speed);
 	this.cmd_posc = args[0];
 };
 
+// Move 2 axes (XY). This is a modal command, any axis location that is left out
+//   of the command will default to it's current position and not move
 SBPRuntime.prototype.M2 = function(args) {
 	var outStr = "G1";
 	if (args[0] !== undefined) {
@@ -669,6 +677,8 @@ SBPRuntime.prototype.M2 = function(args) {
 	this.emit_gcode(outStr);
 };
 
+// Move 3 axes (XYZ). This is a modal command, any axis location that is left out
+//   of the command will default to it's current position and not move
 SBPRuntime.prototype.M3 = function(args) {
 	var outStr = "G1";
 	if (args[0] !== undefined) {
@@ -687,6 +697,8 @@ SBPRuntime.prototype.M3 = function(args) {
 	this.emit_gcode(outStr);
 };
 
+// Move 4 axes (XYZA). This is a modal command, any axis location that is left out
+//   of the command will default to it's current position and not move
 SBPRuntime.prototype.M4 = function(args) {
 	var outStr = "G1";
 	if (args[0] !== undefined) {
@@ -709,6 +721,8 @@ SBPRuntime.prototype.M4 = function(args) {
 	this.emit_gcode(outStr);
 };
 
+// Move 5 axes (XYZAB). This is a modal command, any axis location that is left out
+//   of the command will default to it's current position and not move
 SBPRuntime.prototype.M5 = function(args) {
 	var outStr = "G1";
 	if (args[0] !== undefined) {
@@ -735,6 +749,8 @@ SBPRuntime.prototype.M5 = function(args) {
 	this.emit_gcode(outStr);
 };
 
+// Move all 6 axes (XYZABC). This is a modal command, any axis location that is left out
+//   of the command will default to it's current position and not move
 SBPRuntime.prototype.M6 = function(args) {
 	var outStr = "G1";
 	if (args[0] !== undefined) {
@@ -765,12 +781,14 @@ SBPRuntime.prototype.M6 = function(args) {
 	this.emit_gcode(outStr);
 };
 
+// Move to the XY home position (0,0)
 SBPRuntime.prototype.MH = function(args) {
 	this.emit_gcode("G1X0Y0" + " F" + sbp_settings.movexy_speed);
 	this.cmd_posx = 0;
 	this.cmd_posy = 0;
 };
 
+// Set the move speeds for Axes XYZABC
 SBPRuntime.prototype.MS = function(args) {
 	if (args[0] !== undefined) sbp_settings.movexy_speed = args[0];
 	if (args[1] !== undefined) sbp_settings.movez_speed = args[1];
@@ -788,38 +806,46 @@ SBPRuntime.prototype.MO = function(args) {
 };
 
 
-/* JOG */
+/* JOG Commands */
 
+// Jog (rapid) the X axis
 SBPRuntime.prototype.JX = function(args) {
 	this.emit_gcode("G0X" + args[0]);
 	this.cmd_posx = args[0];
 };
 
+// Jog (rapid) the Y axis
 SBPRuntime.prototype.JY = function(args) {
 	this.emit_gcode("G0Y" + args[0]);
 	this.cmd_posy = args[0];
 };
 
+// Jog (rapid) the Z axis
 SBPRuntime.prototype.JZ = function(args) {
 	this.emit_gcode("G0Z" + args[0]);
 	this.cmd_posz = args[0];
 };
 
+// Jog (rapid) the A axis
 SBPRuntime.prototype.JA = function(args) {
 	this.emit_gcode("G0A" + args[0]);
 	this.cmd_posa = args[0];
 };
 
+// Jog (rapid) the B axis
 SBPRuntime.prototype.JB = function(args) {
 	this.emit_gcode("G0B" + args[0]);
 	this.cmd_posb = args[0];
 };
 
+// Jog (rapid) the C axis
 SBPRuntime.prototype.JC = function(args) {
 	this.emit_gcode("G0C" + args[0]);
 	this.cmd_posc = args[0];
 };
 
+// Jog (rapid) 2 axes (XY). This is a modal command, any axis location that is left out
+//   of the command will default to it's current position and not move
 SBPRuntime.prototype.J2 = function(args) {
 	var outStr = "G0";
 	if (args[0] !== undefined) {
@@ -833,6 +859,8 @@ SBPRuntime.prototype.J2 = function(args) {
 	this.emit_gcode(outStr);
 };
 
+// Jog (rapid) 3 axes (XYZ). This is a modal command, any axis location that is left out
+//   of the command will default to it's current position and not move
 SBPRuntime.prototype.J3 = function(args) {
 	var outStr = "G0";
 	if (args[0] !== undefined) {
@@ -850,6 +878,8 @@ SBPRuntime.prototype.J3 = function(args) {
 	this.emit_gcode(outStr);
 };
 
+// Jog (rapid) 4 axes (XYZA). This is a modal command, any axis location that is left out
+//   of the command will default to it's current position and not move
 SBPRuntime.prototype.J4 = function(args) {
 	var outStr = "G0";
 	if (args[0] !== undefined) {
@@ -871,6 +901,8 @@ SBPRuntime.prototype.J4 = function(args) {
 	this.emit_gcode(outStr);
 };
 
+// Jog (rapid) 5 axes (XYZAB). This is a modal command, any axis location that is left out
+//   of the command will default to it's current position and not move
 SBPRuntime.prototype.J5 = function(args) {
 	var outStr = "G0";
 	if (args[0] !== undefined) {
@@ -896,6 +928,8 @@ SBPRuntime.prototype.J5 = function(args) {
 	this.emit_gcode(outStr);
 };
 
+// Jog (rapid) 6 axes (XYZABC). This is a modal command, any axis location that is left out
+//   of the command will default to it's current position and not move
 SBPRuntime.prototype.J6 = function(args) {
 	var outStr = "G0";
 	if (args[0] !== undefined) {
@@ -925,12 +959,14 @@ SBPRuntime.prototype.J6 = function(args) {
 	this.emit_gcode(outStr);
 };
 
+// Jog (rapid) XY to the Home position (0,0) 
 SBPRuntime.prototype.JH = function(args) {
 	this.cmd_posx = 0;
 	this.cmd_posy = 0;
 	this.emit_gcode("G0X0Y0");
 };
 
+// Set the Jog (Rapid) speed for any of the 6 axes
 SBPRuntime.prototype.JS = function(args) {
 	if (args[0] !== undefined) {
 		sbp_settings.jogxy_speed = args[0];
@@ -957,6 +993,17 @@ SBPRuntime.prototype.JS = function(args) {
 
 /* CUTS */
 
+//	The CG command will cut a circle. This command closely resembles a G-code circle (G02 or G03)
+//		Though, this command has several added features that its G-code counterparts don't:
+//			- Spiral plunge with multiple passes
+//			- Pocketing
+//			- Pocketing with multiple passes
+//		Can also be used for Arcs and Arcs with multiple passes
+//		
+//	Usage: CG,<no used>,<X End>,<Y End>,<X Center>,<Y Center>,<I-O-T>,<Direction>,<Plunge Depth>,
+//			  <Repetitions>,<>,<>,<Options-2=Pocket,3=Spiral Plunge,4=Spiral Plunge with Bottom pass>,
+//			  <No Pull Up after cut>,<Plunge from Z zero>
+//	
 SBPRuntime.prototype.CG = function(args) {
 	sbp_settings.cutterDia = 0.25;
 	sbp_settings.pocketOverlap  = 10;
@@ -966,13 +1013,9 @@ SBPRuntime.prototype.CG = function(args) {
     startY = this.cmd_posy;
     startZ = this.cmd_posz;
     endX = args[1] !== undefined ? args[1] : undefined;
- //	if endX == undefined {}
     endY = args[2] !== undefined ? args[2] : undefined;
- //	if endY == undefined {}
     centerX = args[3] !== undefined ? args[3] : undefined;
- //	if centerX == undefined {}
     centerY = args[4] !== undefined ? args[4] : undefined;
- //	if centerY == undefined {}
     var OIT = args[5] !== undefined ? args[5] : "T";
     var Dir = args[6] !== undefined ? args[6] : 1; 
     var Plg = args[7] !== undefined ? args[7] : 0;
@@ -1074,130 +1117,162 @@ SBPRuntime.prototype.CG = function(args) {
 	this.cmd_posy = endY;
 };
 
+//	The CG command will cut a rectangle. It will generate the necessary G-code to profile and
+//		pocket a rectangle. The features include:
+//			- Spiral plunge with multiple passes
+//			- Pocketing
+//			- Pocketing with multiple passes
+//			- Rotation around the starting point
+//		
+//	Usage: CR,<X Length>,<Y Length>,<I-O-T>,<Direction>,<Plunge Depth>,<Repetitions>,
+//			  <Options-2=Pocket OUT-IN,3=Pocket IN-OUT>,<Plunge from Z zero>,<Angle of Rotation>,
+//			  <Sprial Plunge>
+//	
 SBPRuntime.prototype.CR = function(args) {
 	//calc and output commands to cut a rectangle
     var n = 0.0;
 	var startX = this.cmd_posx;
     var startY = this.cmd_posy;
     var startZ = this.cmd_posz;
-    var xDir = 1;
-    var yDir = 1;
-    var order = [1,2,3,4];
     var pckt_startX = startX;
     var pckt_startY = startY;
-    var pckt_stepX = 0.0;
-    var pckt_stepY = 0.0;
-    var steps = 1.0;
-    var currentZ;
+    var currentZ = startZ;
+    var rotPtX = 0.0;
+    var rotPtY = 0.0;
+    var xDir = 1;
+    var yDir = 1;
 
-    var lenX = args[0] !== undefined ? args[0] : undefined; 
-    var lenY = args[1] !== undefined ? args[1] : undefined;
-    var OIT = args[2] !== undefined ? args[2] : "T";
-    var Dir = args[3] !== undefined ? args[3] : 1; 
-    var stCorn = args[4] !== undefined ? args[4] : 4;			// Start Corner - default is 4, the bottom left corner
-    var Plg = args[5] !== undefined ? args[5] : 0.0;
-    var reps = args[6] !== undefined ? args[6] : 1;
-    var optCR = args[7] !== undefined ? args[7] : 0;				// Options - 1-Tab, 2-Pocket Outside-In, 3-Pocket Inside-Out
+    var lenX = args[0] !== undefined ? args[0] : undefined; 	// X length
+    var lenY = args[1] !== undefined ? args[1] : undefined;		// Y length
+    var OIT = args[2] !== undefined ? args[2] : "T";			// Cutter compentsation (I=inside, T=no comp, O=outside)
+    var Dir = args[3] !== undefined ? args[3] : 1; 				// Direction of cut (-1=CCW, 1=CW)
+    var stCorner = args[4] !== undefined ? args[4] : 4;			// Start Corner - default is 4, the bottom left corner. 0=Center
+    var Plg = args[5] !== undefined ? args[5] : 0.0;			// Plunge depth per repetion
+    var reps = args[6] !== undefined ? args[6] : 1;				// Repetions
+    var optCR = args[7] !== undefined ? args[7] : 0;			// Options - 1-Tab, 2-Pocket Outside-In, 3-Pocket Inside-Out
     var plgFromZero = args[8] !== undefined ? args[8] : 0;		// Start Plunge from Zero <0-NO, 1-YES>
-    var RotationAngle = args[9] !== undefined ? args[9] : 0.0;		// Angle to rotate rectangle around starting point
-    var PlgAxis = args[10] !== undefined ? args[10] : 'Z';
-	var spiralPlg = args[11] !== undefined ? args[11] : 0;
+    var RotationAngle = args[9] !== undefined ? args[9] : 0.0;	// Angle to rotate rectangle around starting point
+    var PlgAxis = args[10] !== undefined ? args[10] : 'Z';		// Axis to plunge <Z or A>
+	var spiralPlg = args[11] !== undefined ? args[11] : 0;		// Turn spiral plunge ON for first pass (0=OFF, 1=ON)
+
 	var PlgSp = 0.0;
 	var noPullUp = 0;
 	var cosRA = 0.0;
 	var sinRA = 0.0;
-    var rotPtX = 0.0;
-    var rotPtY = 0.0;
-    var stepOver = 0.0;    
+    var stepOver = 0.0;
+    var pckt_offsetX = 0.0;
+    var pckt_offsetY = 0.0;    
+    var order = [1,2,3,4];
+    var pckt_stepX = 0.0;
+    var pckt_stepY = 0.0;
+    var steps = 1.0;
 
     if (RotationAngle !== 0 ) { 
     	RotationAngle *= Math.PI / 180;							// Convert rotation angle in degrees to radians
     	cosRA = Math.cos(RotationAngle);						// Calculate the Cosine of the rotation angle
     	sinRA = Math.sin(RotationAngle);						// Calculate the Sine of the rotation angle
-    	rotPtX = startX;										// Rotation point X
-    	rotPtY = startY;										// Rotation point Y
-//    	this.emit_gcode( "'cosRA = " + cosRA + "  sinRA = " + sinRA );
+    	rotPtX = pckt_startX; 									// Rotation point X
+    	rotPtY = pckt_startY;									// Rotation point Y
     }
     
-    if (Plg !== 0 && plgFromZero == 1){ currentZ = 0; }
+    if (Plg !== 0 && plgFromZero === 1){ currentZ = 0; }
     else{ currentZ = startZ; }
     var safeZCG = currentZ + sbp_settings.safeZpullUp;
 
-    if ( stCorn == 1 ) { 
+    // Set Order and directions based on starting corner
+    if ( stCorner == 1 ) { 
     	yDir = -1;
     	if ( Dir == -1 ) { 
     		order = [3,2,1,4]; 
     	}
-    	pckt_stepY *= -1;
     }	
-    else if ( stCorn == 2 ) {
+    else if ( stCorner == 2 ) {
     	xDir = -1;
     	yDir = -1;
     	if ( Dir == 1 ) { 
     		order = [3,2,1,4]; 
     	}
-    	pckt_stepX *= -1;
-    	pckt_stepY *= -1;
     }
-    else if ( stCorn == 3 ) { 
+    else if ( stCorner == 3 ) { 
     	xDir = -1; 
     	if ( Dir == -1 ) {
     		order = [3,2,1,4]; 
     	}
-    	pckt_stepX *= -1;
     }
     else { 
     	if ( Dir == 1 ) {
     		order = [3,2,1,4]; 
     	}
-    	if ( stCorn == 5 ) {
-    		rotPtX = startX - (lenX/2);
-    		rotPtY = startY - (lenY/2);    		
-    	}
     }
 
     if ( OIT == "O" ) { 
-    	lenX = (lenX + sbp_settings.cutterDia) * xDir;
-    	lenY = (lenY + sbp_settings.cutterDia) * yDir;
+    	lenX += sbp_settings.cutterDia * xDir;
+    	lenY += sbp_settings.cutterDia * yDir;
     }
     else if ( OIT == "I" ) {
-    	lenX = (lenX - sbp_settings.cutterDia) * xDir;
-    	lenY = (lenY - sbp_settings.cutterDia) * yDir;
+    	lenX -= sbp_settings.cutterDia * xDir;
+    	lenY -= sbp_settings.cutterDia * yDir;
     }
+    else {
+    	lenX *= xDir;
+    	lenY *= yDir;
+    }
+
+   	if ( stCorner === 0 ) {
+   		pckt_startX = startX - (lenX/2);
+   		pckt_startY = startY - (lenY/2);    		
+   	}
 
 	// If a pocket, calculate the step over and number of steps to pocket out the complete rectangle.
     if (optCR > 1) {
     	stepOver = sbp_settings.cutterDia * ((100 - sbp_settings.pocketOverlap) / 100);	// Calculate the overlap
     	pckt_stepX = pckt_stepY = stepOver;
+   		pckt_stepX *= xDir;
+   		pckt_stepY *= yDir;
     	// Base the numvber of steps on the short side of the rectangle.
 	   	if ( Math.abs(lenX) < Math.abs(lenY) ) {
-	   		steps = Math.floor((Math.abs(lenX)/2)/Math.abs(stepOver)); 
+	   		steps = Math.floor((Math.abs(lenX)/2)/Math.abs(stepOver)) + 1; 
 	   	}
 	   	else {	// If a square or the X is shorter, use the X length.
-	   		steps = Math.floor((Math.abs(lenY)/2)/Math.abs(stepOver)); 
-	   	}
-   		
+	   		steps = Math.floor((Math.abs(lenY)/2)/Math.abs(stepOver)) + 1; 
+	   	}   		
 		// If an inside-out pocket, reverse the step over direction and find the pocket start point near the center
-		if ( optCR == 3 ) {
-//    		pckt_stepX *= -1;
-//    		pckt_stepY *= -1;
-    		pckt_startX += (steps * pckt_stepX);
-    		pckt_startY += (steps * pckt_stepY);
-    		this.emit_gcode( "G0Z" + currentZ);
-    		this.emit_gcode( "G0X" + pckt_startX + "Y" + pckt_startY );
-    	}
+		if ( optCR === 3 ) {
+    		pckt_stepX *= (-1);
+    		pckt_stepY *= (-1);
+    		pckt_offsetX = stepOver * (steps - 1) * xDir;
+    		pckt_offsetY = stepOver * (steps - 1) * yDir;
+
+    		nextX = pckt_startX + pckt_offsetX;
+    		nextY = pckt_startY + pckt_offsetY;
+
+			if ( RotationAngle === 0.0 ) { 
+				outStr = "G0X" + nextX + "Y" + nextY;
+			}
+			else {
+				outStr = "G0X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
+						   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4); 
+			}
+    		this.emit_gcode( outStr);
+        }
     }
 
-	this.emit_gcode( "'steps = " + steps + "  stepOver = " + stepOver );
-	this.emit_gcode( "'cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy );
-	this.emit_gcode( "'pckt_startX = " + pckt_startX + "  pckt_startY = " + pckt_startY );
-   	this.emit_gcode( "'pckt_stepX = " + pckt_stepX + "  pckt_stepY = " + pckt_stepY );
-
     // If an inside-out pocket, move to the start point of the pocket
-    if ( optCR == 3) {
+    if ( optCR == 3 || stCorner === 0 ) {
     		this.emit_gcode( "G0Z" + safeZCG );
-    		this.emit_gcode( "G1X" + pckt_startX + "Y" + pckt_startY + "F" + sbp_settings.movexy_speed);
+
+    		nextX = pckt_startX + pckt_offsetX;
+    		nextY = pckt_startY + pckt_offsetY;
+
+			if ( RotationAngle === 0.0 ) { 
+				outStr = "G1X" + nextX + "Y" + nextY;
+			}
+			else {
+				outStr = "G1X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
+						   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4); 
+			}
     		this.emit_gcode( "G1Z" + startZ + "F" + sbp_settings.movez_speed);
+    		this.emit_gcode( outStr );
    	}
 
     for (i = 0; i < reps; i++) {
@@ -1220,73 +1295,80 @@ SBPRuntime.prototype.CR = function(args) {
 	   				n = order[k];
 	   				switch (n){
 	   					case 1:
-	   						// xL,yS 
-    						if ( RotationAngle === 0.0 ) { outStr = "G1X" + ((pckt_startX + lenX) - (pckt_stepX * j)) + 
-    															 "Y" + (pckt_startY + (pckt_stepY * j));
+    						nextX = (pckt_startX + lenX - pckt_offsetX) - (pckt_stepX * j);
+    						nextY = (pckt_startY + pckt_offsetY) + (pckt_stepY * j);
+    						
+    						if ( RotationAngle === 0.0 ) { 
+    							outStr = "G1X" + nextX + "Y" + nextY;
     						}
     						else {
-    							nextX = pckt_startX + lenX - (pckt_stepX * j);
-    							nextY = pckt_startY + (pckt_stepY * j);
     							outStr = "G1X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
     									   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4); 
     						}
+    						
     						if ( spiralPlg == 1 && pass === 0 ) {
     							PlgSp = currentZ + (Plg * 0.25); 
     							outStr += "Z" + (PlgSp).toFixed(4);
     						}
+    						
     						outStr += "F" + sbp_settings.movexy_speed;
     						this.emit_gcode (outStr);
     					break;
 
     					case 2:
-    						// xL,yL
-   		    				if ( RotationAngle === 0.0 ) { outStr = "G1X" + ((pckt_startX + lenX) - (pckt_stepX * j)) +
-   		    														"Y" + ((pckt_startY + lenY) - (pckt_stepY * j));
-   		    				}
+   							nextX = (pckt_startX + lenX - pckt_offsetX) - (pckt_stepX * j);
+   							nextY = (pckt_startY + lenY - pckt_offsetY) - (pckt_stepY * j);
+
+    						if ( RotationAngle === 0.0 ) { 
+    							outStr = "G1X" + nextX + "Y" + nextY;
+    						}	
    							else {
-   								nextX = pckt_startX + lenX - (pckt_stepX * j);
-   								nextY = pckt_startY + lenY - (pckt_stepY * j);
    								outStr = "G1X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
    										   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4); 
    							}
+
    							if ( spiralPlg === 1 && pass === 0 ) { 
    								PlgSp = currentZ + (Plg * 0.5);	
    								outStr += "Z" + (PlgSp).toFixed(4);
    							}
+
    							outStr += "F" + sbp_settings.movexy_speed;
     						this.emit_gcode (outStr);
    						break;
 
    						case 3:
-    						// xS,yL
-   							if ( RotationAngle === 0.0 ) { outStr = "G1X" + (pckt_startX + (pckt_stepX * j)) + 
-   																   "Y" + ((pckt_startY + lenY) - (pckt_stepY * j)); 
-   							}
+   							nextX = (pckt_startX + pckt_offsetX) + (pckt_stepX * j);
+   							nextY = (pckt_startY + lenY - pckt_offsetY) - (pckt_stepY * j);
+
+    						if ( RotationAngle === 0.0 ) { 
+    							outStr = "G1X" + nextX + "Y" + nextY;
+    						}
    							else {
-   								nextX = pckt_startX + (pckt_stepX * j);
-   								nextY = pckt_startY + lenY - (pckt_stepY * j);
    								outStr = "G1X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
    										   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4); 
    							}
+
    							if ( spiralPlg == 1 && pass === 0 ) { 
    								PlgSp = currentZ + (Plg * 0.75);	
    								outStr += "Z" + (PlgSp).toFixed(4); 
    							}	
+
    							outStr += "F" + sbp_settings.movexy_speed;
     						this.emit_gcode (outStr);
     					break;
 
     					case 4:
-    						// xS,yS
-   							if ( RotationAngle === 0.0 ) { outStr = "G1X" + (pckt_startX + (pckt_stepX * j)) + 
-   																	"Y" + (pckt_startY + (pckt_stepY * j));
-   							}
+   							nextX = (pckt_startX + pckt_offsetX) + (pckt_stepX * j);
+   							nextY = (pckt_startY + pckt_offsetY) + (pckt_stepY * j);
+
+    						if ( RotationAngle === 0.0 ) { 
+    							outStr = "G1X" + nextX + "Y" + nextY;
+    						}
    							else {
-   								nextX = pckt_startX + (pckt_stepX * j);
-   								nextY = pckt_startY + (pckt_stepY * j);
    								outStr = "G1X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
    										   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4); 
    							}
+
    							if ( spiralPlg === 1 && pass === 0 ) {
    								currentZ += Plg; 
    								outStr += "Z" + (currentZ).toFixed(4);
@@ -1298,6 +1380,7 @@ SBPRuntime.prototype.CR = function(args) {
    							else { 
    								cnt = 1;
    							}
+
    							outStr += "F" + sbp_settings.movexy_speed;
    							this.emit_gcode (outStr);
    						break;
@@ -1305,18 +1388,18 @@ SBPRuntime.prototype.CR = function(args) {
    						default:
    							throw "Unhandled operation: " + expr.op;
 
-   					} // switch
-   				} // for k
+   					}
+   				}
 			} while ( cnt < 1 );
   
 			if ( (j + 1) < steps && optCR > 1 ) {
+				nextX = (pckt_startX + pckt_offsetX) + (pckt_stepX * (j+1));
+   				nextY = (pckt_startY + pckt_offsetY) + (pckt_stepY * (j+1));
 				if ( RotationAngle === 0 ) { 
-			  		outStr = "G1X" + (pckt_startX + (pckt_stepX * (j+1))) + 
-   							   "Y" + (pckt_startY + (pckt_stepY * (j+1)));
+			  		outStr = "G1X" + nextX + 
+   							   "Y" + nextY;
    				}
    				else {
-   					nextX = pckt_startX + (pckt_stepX * (j+1));
-   					nextY = pckt_startY + (pckt_stepY * (j+1));
    					outStr = "G1X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
    							   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4); 
    				}
@@ -1324,30 +1407,21 @@ SBPRuntime.prototype.CR = function(args) {
     			this.emit_gcode (outStr);
    			}
 
-   		} //for j
+   		}
 
    		// If a pocket, move to the start point of the pocket
-	    if ( optCR > 1 ) {
+	    if ( optCR > 1 || stCorner === 0 ) {
     		this.emit_gcode( "G0Z" + safeZCG );
-    		if ( RotationAngle === 0 ) {
-	    		outStr = "G1X" + pckt_startX + "Y" + pckt_startY;
-    		}
-    		else {	
-				nextX = pckt_startX;
-				nextY = pckt_startY;
-				outStr = "G1X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
-						   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4);
-			} 
+    		outStr = "G1X" + startX + "Y" + startY;
 			outStr += "F" + sbp_settings.movexy_speed;
      		this.emit_gcode( outStr );
      		if ( ( i + 1 ) != reps ) { 
      			this.emit_gcode( "G1Z" + currentZ ); 
      		}
    		}
+    }
 
-    } // for i
-
-    if( noPullUp === 0 && currentZ !== startZ ){    	//If No pull-up is set to YES, pull up to the starting Z location
+    if( noPullUp === 0 && currentZ !== startZ ){    //If No pull-up is set to YES, pull up to the starting Z location
     	this.emit_gcode( "G0Z" + startZ);
     	this.cmd_posz = startZ;
     }
