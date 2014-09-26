@@ -24,5 +24,10 @@
 	"cutterDia" : 0.25,
 	"pocketOverlap" : 50.0,
 	"safeZpullUp" : 0.25,
-	"gearBoxRatio" : 3.6	
+	"gearBoxRatio1" : 1,	
+	"gearBoxRatio2" : 3.6,	
+	"gearBoxRatio3" : 3.6,	
+	"gearBoxRatio4" : 1,	
+	"gearBoxRatio5" : 1,	
+	"gearBoxRatio6" : 1	
 }

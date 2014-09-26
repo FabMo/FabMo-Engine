@@ -1443,7 +1443,7 @@ SBPRuntime.prototype.CR = function(args) {
 
 SBPRuntime.prototype.ZX = function(args, callback) {
 	this.machine.driver.get('mpox', function(err, value) {
-		this.machine.driver.set('g55x',(value + this.machine.status.posz + zoffset), function(err, value) {
+		this.machine.driver.set('g55x',(value + this.machine.status.posz /*+ zoffset*/), function(err, value) {
 			callback();
 			this.cmd_posx = this.posx = 0;
 		}.bind(this));
@@ -1747,21 +1747,94 @@ SBPRuntime.prototype.VS = function(args) {
 };
 
 SBPRuntime.prototype.VU = function(args) {
-	if ( args[1] !== undefined ) { sbp_settings.unitsX = args[1]; }
-	if ( args[2] !== undefined ) { sbp_settings.unitsY = args[2]; }
-	if ( args[3] !== undefined ) { sbp_settings.unitsZ = args[3]; }
-	if ( args[4] !== undefined ) { sbp_settings.unitsA = args[4]; }
-	if ( args[9] !== undefined ) { sbp_settings.unitsB = args[9]; }
-	if ( args[6] !== undefined ) { sbp_settings.unitsC = args[6]; }
+	var SBunitVal = 0.0;
+	var unitsSa = 0.0;
+	var unitsMi = 0.0;
+	var unitsTr = 0.0;
+	var newUnitsTr = 0.0;
+	var axes = ['X','Y','Z','A','B','C'];
+	var axesNum = [0,1,2,3,4,5];
+	var values = [];
+	var value;
+	var axStr = "0";
+	var i;
+
+	this.machine.driver.get (['1ma','2ma','3ma','4ma','5ma','6ma'], function(err,axesNum) {
+			console.log(err);
+			console.log("AxesNums = " + axesNum);
+	});
+
+	// motor 1 unit value
+	if ( args[0] !== undefined ) {
+		SBunitVal = args[0];
+		console.log("SBunitVal = " + SBunitVal );
+		this.machine.driver.get (['1sa','1mi','1tr'], function(err,values) {
+			console.log(err);
+			console.log("Values = " + values );
+
+			unitsSa = 360/values[0];
+				console.log("unitsSa = " + unitsSa );
+			unitsMi = values[1];
+				console.log("unitsMi = " + unitsMi );
+			unitsTr = values[2];
+				console.log("unitsTr = " + unitsTr );
+				console.log("gearbox ratio = " + sbp_settings.gearBoxRatio1 );
+			newUnitsTr = unitsSa * unitsMi * sbp_settings.gearBoxRatio1 / SBunitVal;
+			// save unit value (SBunitVal) to ?????
+			console.log("1tr = " + newUnitsTr /*+ "  value = " + value*/ );
+			this.machine.driver.set('1tr',newUnitsTr, function(err, value) {
+				console.log("set:value-1tr = " + value );
+				callback();
+			});
+		}.bind(this));
+	}
+	// motor 2 unit value
+	if ( args[2] !== undefined ) {
+//		sbp_settings.unitsY = args[2];
+	}
+	// motor 3 unit value
+	if ( args[3] !== undefined ) {
+//		sbp_settings.unitsZ = args[3];
+	}
+	// motor 4 unit value
+	if ( args[4] !== undefined ) {
+//		sbp_settings.unitsA = args[4];
+	}
+	// motor 5 unit value
+	if ( args[9] !== undefined ) {
+//		sbp_settings.unitsB = args[9];
+	}
+	// motor 6 unit value
+	if ( args[6] !== undefined ) {
+//		sbp_settings.unitsC = args[6];
+	}
 //	if ( args[5] !== undefined ) { circRes = args[5]; }
 //	if ( args[8] !== undefined ) { circSml = args[8]; }
-	if ( args[10] !== undefined ) { sbp_settings.resMX = args[10]; }
-	if ( args[11] !== undefined ) { sbp_settings.resMY = args[11]; }
-	if ( args[12] !== undefined ) { sbp_settings.resMZ = args[12]; }
-	if ( args[13] !== undefined ) { sbp_settings.resMA = args[13]; }
-	if ( args[14] !== undefined ) { sbp_settings.resMB = args[14]; }
-	if ( args[15] !== undefined ) { sbp_settings.resMC = args[15]; }
-//	if ( args[16] !== undefined ) { StepIntDiv = args[16]; }
+	// X resolution multiplier - currently not supported
+	if ( args[10] !== undefined ) {
+//		sbp_settings.resMX = args[10];
+	}
+	// Y resolution multiplier - currently not supported
+	if ( args[11] !== undefined ) {
+//		sbp_settings.resMY = args[11];
+	}
+	// Z resolution multiplier - currently not supported
+	if ( args[12] !== undefined ) {
+//		sbp_settings.resMZ = args[12];
+	}
+	// A resolution multiplier - currently not supported
+	if ( args[13] !== undefined ) {
+//		sbp_settings.resMA = args[13];
+	}
+	// B resolution multiplier - currently not supported
+	if ( args[14] !== undefined ) {
+//		sbp_settings.resMB = args[14];
+	}
+	// C resolution multiplier - currently not supported
+	if ( args[15] !== undefined ) {
+//		sbp_settings.resMC = args[15];
+	}
+
 };
 
 SBPRuntime.prototype.EP = function(args) {
