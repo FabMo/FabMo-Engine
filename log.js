@@ -2,7 +2,6 @@
  * log.js is a "Poor man's" logging module.  It provides basic colorized logging using named 
  * loggers with selectable log levelts.
  */
-var settings = require('./settings');
 var process = require('process');
 try { var colors = require('colors'); } catch(e) {var colors = false;}
 
