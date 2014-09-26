@@ -1,3 +1,11 @@
+function listify(x) {
+    if(x instanceof Array) {
+        return x;
+    } else {
+        return [x];
+    }
+}
+
 // Simple queue, faster than using array.shift
 function Queue(){
 

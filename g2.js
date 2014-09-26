@@ -1,6 +1,7 @@
 var serialport = require("serialport");
 var fs = require("fs");
 var events = require('events');
+var async = require('async');
 var util = require('util');
 var Queue = require('./util').Queue;
 var config = require('./config_loader');
@@ -427,15 +428,42 @@ G2.prototype.quit = function() {
 };
 
 G2.prototype.get = function(key, callback) {
-	cmd = {}
-	cmd[key] = null
-	log.warn(this.readers)
-	if (key in this.readers) {
-		this.readers[key].push(callback);
-	} else {
-		this.readers[key] = [callback]
-	}
-	this.command(cmd);
+    var keys;
+    if(key instanceof Array) {
+        keys = key;
+        is_array = true;
+    } else {
+        is_array = false;
+        keys = [key];
+    }
+    async.map(keys, 
+        
+        // Function called for each item in the keys array
+        function(k, cb) {
+            cmd = {}
+            cmd[k] = null
+            if(k in this.readers) {
+                this.readers[k].push(cb);
+            } else {
+                this.readers[k] = [cb]
+            }
+            this.command(cmd);
+        }.bind(this),
+    
+        // Function to call with the list of results
+        function(err, result) {
+            if(err) {
+                return callback(err, result);
+            } else {
+                // If given an array, return one.  Else, return a single item.
+                if(is_array) {
+                    return callback(err, result);
+                } else {
+                    return callback(err, result[0]);
+                }
+            }
+        }
+    );
 }
 
 G2.prototype.set = function(key, value, callback) {
