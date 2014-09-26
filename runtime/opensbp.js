@@ -1746,7 +1746,7 @@ SBPRuntime.prototype.VS = function(args) {
 	}
 };
 
-SBPRuntime.prototype.VU = function(args) {
+SBPRuntime.prototype.VU = function(args, callback) {
 	var SBunitVal = 0.0;
 	var unitsSa = 0.0;
 	var unitsMi = 0.0;
@@ -1767,7 +1767,7 @@ SBPRuntime.prototype.VU = function(args) {
 	// motor 1 unit value
 	if ( args[0] !== undefined ) {
 		SBunitVal = args[0];
-		console.log("SBunitVal = " + SBunitVal );
+				console.log("SBunitVal = " + SBunitVal );
 		this.machine.driver.get (['1sa','1mi','1tr'], function(err,values) {
 			console.log(err);
 				console.log("Values = " + values );
@@ -1778,8 +1778,7 @@ SBPRuntime.prototype.VU = function(args) {
 			unitsTr = values[2];
 				console.log("unitsTr = " + unitsTr );
 				console.log("gearbox ratio = " + sbp_settings.gearBoxRatio1 );
-			newUnitsTr = unitsSa * unitsMi * sbp_settings.gearBoxRatio1 / SBunitVal;
-			// save unit value (SBunitVal) to ?????
+			newUnitsTr = ((unitsSa * unitsMi * sbp_settings.gearBoxRatio1) / SBunitVal);
 				console.log("1tr = " + newUnitsTr /*+ "  value = " + value*/ );
 			this.machine.driver.set('1tr',newUnitsTr, function(err, value) {
 				console.log("set:value-1tr = " + value );
@@ -1790,7 +1789,7 @@ SBPRuntime.prototype.VU = function(args) {
 	// motor 2 unit value
 	if ( args[1] !== undefined ) {
 		SBunitVal = args[1];
-		console.log("SBunitVal = " + SBunitVal );
+				console.log("SBunitVal = " + SBunitVal );
 		this.machine.driver.get (['2sa','2mi','2tr'], function(err,values) {
 			console.log(err);
 				console.log("Values = " + values );
@@ -1801,17 +1800,16 @@ SBPRuntime.prototype.VU = function(args) {
 			unitsTr = values[2];
 				console.log("unitsTr = " + unitsTr );
 				console.log("gearbox ratio = " + sbp_settings.gearBoxRatio1 );
-			newUnitsTr = unitsSa * unitsMi * sbp_settings.gearBoxRatio1 / SBunitVal;
-			// save unit value (SBunitVal) to ?????
+			newUnitsTr = ((unitsSa * unitsMi * sbp_settings.gearBoxRatio1) / SBunitVal);
 				console.log("2tr = " + newUnitsTr /*+ "  value = " + value*/ );
 			this.machine.driver.set('2tr',newUnitsTr, function(err, value) {
 				console.log("set:value-2tr = " + value );
 				callback();
 			});
 		}.bind(this));
-	}
+	}	
 	// motor 3 unit value
-	if ( args[2] !== undefined ) {
+/*	if ( args[2] !== undefined ) {
 		SBunitVal = args[2];
 		console.log("SBunitVal = " + SBunitVal );
 		this.machine.driver.get (['3sa','3mi','3tr'], function(err,values) {
@@ -1826,7 +1824,7 @@ SBPRuntime.prototype.VU = function(args) {
 				console.log("gearbox ratio = " + sbp_settings.gearBoxRatio1 );
 			newUnitsTr = unitsSa * unitsMi * sbp_settings.gearBoxRatio1 / SBunitVal;
 			// save unit value (SBunitVal) to ?????
-				console.log("3tr = " + newUnitsTr /*+ "  value = " + value*/ );
+				console.log("3tr = " + newUnitsTr + "  value = " + value );
 			this.machine.driver.set('3tr',newUnitsTr, function(err, value) {
 				console.log("set:value-3tr = " + value );
 				callback();
@@ -1849,7 +1847,7 @@ SBPRuntime.prototype.VU = function(args) {
 				console.log("gearbox ratio = " + sbp_settings.gearBoxRatio1 );
 			newUnitsTr = unitsSa * unitsMi * sbp_settings.gearBoxRatio1 / SBunitVal;
 			// save unit value (SBunitVal) to ?????
-				console.log("4tr = " + newUnitsTr /*+ "  value = " + value*/ );
+				console.log("4tr = " + newUnitsTr + "  value = " + value );
 			this.machine.driver.set('4tr',newUnitsTr, function(err, value) {
 				console.log("set:value-4tr = " + value );
 				callback();
@@ -1872,7 +1870,7 @@ SBPRuntime.prototype.VU = function(args) {
 				console.log("gearbox ratio = " + sbp_settings.gearBoxRatio1 );
 			newUnitsTr = unitsSa * unitsMi * sbp_settings.gearBoxRatio1 / SBunitVal;
 			// save unit value (SBunitVal) to ?????
-				console.log("5tr = " + newUnitsTr /*+ "  value = " + value*/ );
+				console.log("5tr = " + newUnitsTr + "  value = " + value );
 			this.machine.driver.set('5tr',newUnitsTr, function(err, value) {
 				console.log("set:value-5tr = " + value );
 				callback();
@@ -1895,13 +1893,14 @@ SBPRuntime.prototype.VU = function(args) {
 				console.log("gearbox ratio = " + sbp_settings.gearBoxRatio1 );
 			newUnitsTr = unitsSa * unitsMi * sbp_settings.gearBoxRatio1 / SBunitVal;
 			// save unit value (SBunitVal) to ?????
-				console.log("6tr = " + newUnitsTr /*+ "  value = " + value*/ );
+				console.log("6tr = " + newUnitsTr + "  value = " + value );
 			this.machine.driver.set('6tr',newUnitsTr, function(err, value) {
 				console.log("set:value-6tr = " + value );
 				callback();
 			});
 		}.bind(this));
 	}
+*/
 //	if ( args[5] !== undefined ) { circRes = args[5]; }
 //	if ( args[8] !== undefined ) { circSml = args[8]; }
 	// X resolution multiplier - currently not supported
