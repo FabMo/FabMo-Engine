@@ -15,6 +15,10 @@ Config.prototype.set = function(k,v, callback) {
 	return this.update({k:v}, callback);
 }
 
+Config.prototype.getData = function() {
+	return this._cache;
+}
+
 // The load function retreives a configuration from disk and loads it into the configuration object
 Config.prototype.load = function(filename, callback) {
 	fs.readFile(filename, 'utf8', function (err, data) {
