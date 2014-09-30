@@ -37,7 +37,7 @@ function connect(callback) {
 			break;
 	}
 	if(serial_path) {
-		return new Machine(serial_path, callback);
+		exports.machine = new Machine(serial_path, callback);
 	} else {
 		typeof callback === "function" && callback(true, "No supported serial path for platform " + PLATFORM);
 		return null;
@@ -56,11 +56,14 @@ function Machine(serial_path, callback) {
 		posy : 0.0,
 		posz : 0.0
 	};
+
 	this.driver = new g2.G2();
 	this.driver.on("error", function(data) {log.error(data);});
 	this.driver.connect(serial_path, function(err, data) {
 		if(err){log.error(err);return;}
 		this.status.state = "idle";
+
+		// Create runtimes for different functions/command languages
 		this.gcode_runtime = new GCodeRuntime();
 		this.sbp_runtime = new SBPRuntime();
 		this.manual_runtime = new ManualRuntime();
@@ -93,20 +96,20 @@ Machine.prototype.runFile = function(filename) {
 	fs.readFile(filename, 'utf8', function (err,data) {
 		if (err) {
 			log.error('Error reading file ' + filename);
-		    	log.error(err);
-		    	return;
+				log.error(err);
+				return;
 		} else {
-            		parts = filename.split(path.sep);
-        		ext = path.extname(filename).toLowerCase();
-            		log.debug(filename);
-            		log.debug(parts);
-		  	this.status.current_file = parts[parts.length-1];
+			parts = filename.split(path.sep);
+			ext = path.extname(filename).toLowerCase();
+			log.debug(filename);
+			log.debug(parts);
+			this.status.current_file = parts[parts.length-1];
 
-		  	if(ext == '.sbp') {
-		  		this.setRuntime(this.sbp_runtime);
-		  	} else {
+			if(ext == '.sbp') {
+				this.setRuntime(this.sbp_runtime);
+			} else {
 				this.setRuntime(this.gcode_runtime);
-		  	}
+			}
 			this.current_runtime.runString(data);
 		}
 	}.bind(this));

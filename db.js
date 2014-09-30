@@ -1,12 +1,12 @@
 var assert = require('assert');
 var fs = require('fs');
-var settings = require('./settings');
 var crypto = require('crypto'); // for the checksum
 var log = require('./log').logger('files');
+var config = require('./config');
 
 // Connect to TingoDB database that stores the files
 var Engine = require('tingodb')()
-var db = new Engine.Db(settings.db_dir, {}); // be sure that the directory exist !
+var db = new Engine.Db(config.engine.getDBDir(), {}); // be sure that the directory exist !
 var files = db.collection("files");
 
 // The File class represents a fabrication file on disk

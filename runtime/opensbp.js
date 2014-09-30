@@ -1,4 +1,3 @@
-var settings = require('../settings');
 var parser = require('./parser');
 var fs = require('fs');
 var log = require('../log').logger('sbp');
@@ -1783,7 +1782,7 @@ SBPRuntime.prototype.VU = function(args, callback) {
 			this.machine.driver.set('1tr',newUnitsTr, function(err, value) {
 				console.log("set:value-1tr = " + value );
 				callback();
-			});
+			}.bind(this));
 		}.bind(this));
 	}
 	// motor 2 unit value

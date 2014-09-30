@@ -2,7 +2,7 @@ module.exports = function(grunt) {
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
 		'groc': {
-			javascript: ["*.js", "README.md"],
+			javascript: ["*.js", "*.md", "*/*.js", "*/*.md"],
 			options: {
 				"out": "docs-dist/"
 			},

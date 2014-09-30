@@ -3,7 +3,6 @@ var util=require('util');
 var EventEmitter = require('events').EventEmitter;
 var dgram = require('dgram');
 var log = require('./log').logger('detection');
-var settings = require('./settings');
 
 // Direct socket messages
 var OK = "YES I M !\0";
@@ -39,7 +38,7 @@ var start = function(port) {
 			var result = {};
 			result.hostname= os.hostname();
 			result.networks=[];
-			result.port = settings.server_port;
+			result.server_port = config.engine.get('server_port');
 			Object.keys(os.networkInterfaces()).forEach(function(key,index,arr){ //val = ip adresses , key = name of interface
 				var networks_list = this;
 				networks_list[key].forEach(function(val2,key2,arr2){
@@ -49,6 +48,7 @@ var start = function(port) {
 					}
 				});
 			},os.networkInterfaces());
+			console.log(JSON.stringify(result))
 			socket.send(new Buffer(JSON.stringify(result)), 0, JSON.stringify(result).length, rinfo.port, rinfo.address, function (err) {
 				if (err) log.error(err);
 						//console.log("ask info");

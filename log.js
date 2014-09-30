@@ -4,6 +4,7 @@
  */
 var process = require('process');
 try { var colors = require('colors'); } catch(e) {var colors = false;}
+var _suppress = false;
 
 // String versions of the allowable log levels
 LEVELS = {
@@ -65,6 +66,9 @@ var logs = {};
 
 // Output the provided message with colorized output (if available) and the logger name
 Logger.prototype.write = function(level, msg) {
+	if(_suppress) {
+		return;
+	}
 	my_level = LOG_LEVELS[this.name] || 'debug';
 	if((LEVELS[level] || 0) >= (LEVELS[my_level] || 0)) {
 		if(colors) {
@@ -116,6 +120,10 @@ process.on('uncaughtException', function(err) {
 
 });*/
 
+var suppress = function(v) {_suppress = true;}
+var unsuppress = function(v) {_suppress = false;}
+
+exports.suppress = suppress;
 exports.logger = logger;
 exports.setGlobalLevel = setGlobalLevel;
  

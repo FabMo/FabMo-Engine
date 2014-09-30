@@ -203,7 +203,7 @@ G2.prototype.requestQueueReport = function() { this.command({'qr':null}); };
 // Called for every chunk of data returned from G2
 G2.prototype.onData = function(data) {
 	t = new Date().getTime();
-	log.debug('<----' + t + '---- ' + data);
+	//log.debug('<----' + t + '---- ' + data);
 	this.emit('raw_data',data);
 	var s = data.toString('ascii');
 	var len = s.length;
@@ -506,7 +506,6 @@ G2.prototype.setMany = function(obj, callback) {
 G2.prototype.set = function(key, value, callback) {
 	cmd = {}
 	cmd[key] = value
-	log.warn(this.readers)
 	if (key in this.readers) {
 		this.readers[key].push(callback);
 	} else {

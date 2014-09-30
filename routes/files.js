@@ -1,7 +1,7 @@
 var path = require('path');
 var fs = require('fs');
 var machine = require('../machine').machine;
-var settings = require('../settings');
+var config = require('../config');
 var db = require('../db');
 var File=db.File;
 
@@ -29,9 +29,7 @@ upload_file = function(req, res, next) {
 	if(file && allowed_file(file.name))
 	{
 		var filename=file.name;
-		console.log("Saving: " + filename);
-		var full_path = path.join(settings.upload_dir, filename);
-		console.log(full_path);
+		var full_path = path.join(config.engine.getPartsDir(), filename);
 		fs.rename(file.path, full_path, function(err) {
 			if (err){
 				throw err;

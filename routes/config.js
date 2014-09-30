@@ -1,6 +1,5 @@
 var machine = require('../machine').machine;
-var information = require('../information');
-var configuration = require('../configuration');
+var config = require('../config');
 
 var get_status = function(req, res, next) {
 	var s = machine.status;

@@ -1,6 +1,6 @@
 try{var wifiscanner = require('node-simplerwifiscanner');}catch(e){};
 var log = require('../log').logger('wifi');
-var settings =  require('../settings')
+var config =  require('../config')
 var fs= require('fs');
 
 var profiles_folder = "/etc/netctl/";
@@ -124,7 +124,7 @@ function create_profile(wifi_info){
 
 
 module.exports = function(server) {
-	if(settings.wifi_manager){
+	if(config.engine.get('wifi_manager')){
 		server.get('/wifi_manager/detection',detection); //OK
 		server.get('/wifi_manager/profiles',list_profiles); //OK
 		server.post('/wifi_manager/profile',add_profile); //OK
