@@ -4,7 +4,6 @@ var events = require('events');
 var async = require('async');
 var util = require('util');
 var Queue = require('./util').Queue;
-var config = require('./config_loader');
 var log = require('./log').logger('g2');
 
 // Values of the **stat** field that is returned from G2 status reports
@@ -75,28 +74,32 @@ util.inherits(G2, events.EventEmitter);
 
 // Informative summary string
 G2.prototype.toString = function() {
-    return "[G2 Driver on '" + this.path + "']";
+	return "[G2 Driver on '" + this.path + "']";
 };
 
 // Actually open the serial port and configure G2 based on stored settings
 G2.prototype.connect = function(path, callback) {
+
+	// Store serial path
 	this.path = path;
+
+	// Store callback to issue once connection has been made
 	this.connect_callback = callback;
- 	this.port = new serialport.SerialPort(path, {rtscts:true});
-	//this.port.on("open", this.onOpen.bind(this));
+
+	// Create serial port object
+	this.port = new serialport.SerialPort(path, {rtscts:true});
+
+	// Create port bindings
 	this.port.on("error", this.onSerialError.bind(this));
 	this.port.on('data', this.onData.bind(this));
+
+	// Create driver object bindings
 	this.on("ready", function(driver) {
 		driver.command({"gun":0});
 		driver.command('M30');
-		config.load(this, function(driver) {
-			driver.command({"gun":0});
-			driver.command('M30');
-			driver.requestStatusReport();
-			driver.connected = true;
-			callback(false, driver);  // *TODO* maybe this should come after the first status report
-		});
-
+		driver.requestStatusReport();
+		driver.connected = true;
+		callback(false, this);  // *TODO* maybe this should come after the first status report
 	});
 };
 
@@ -181,7 +184,7 @@ G2.prototype.jog_keepalive = function() {
 
 G2.prototype.stopJog = function() {
 	if(this.jog_direction) {
-        log.debug('JOG stop.');
+		log.debug('JOG stop.');
 		clearTimeout(this.jog_heartbeat);
 		this.jog_direction = null;
 		this.jog_command = null;
@@ -209,22 +212,22 @@ G2.prototype.onData = function(data) {
 		if(c === '\n') {
 			var json_string = this.current_data.join('');
 			t = new Date().getTime();
-		    log.debug('<----' + t + '---- ' + json_string);
-		    obj = null;
-		    try {
-		    	obj = JSON.parse(json_string);
-		    }catch(e){
-		    	// A JSON parse error usually means the asynchronous LOADER SEGMENT NOT READY MESSAGE
-		    	if(json_string.trim() === '######## LOADER - SEGMENT NOT READY') {
-		    		this.emit('error', [-1, 'LOADER_SEGMENT_NOT_READY', 'Asynchronous error: Segment not ready.']);
-		    	} else {
-		    		this.emit('error', [-1, 'JSON_PARSE_ERROR', "Could not parse response: '" + json_string + "' (" + e.toString() + ")"]);
-		    	}
-		    } finally {
-		    	if(obj) {
-		    		this.onMessage(obj);
-		    	}
-		    }
+			log.debug('<----' + t + '---- ' + json_string);
+			obj = null;
+			try {
+				obj = JSON.parse(json_string);
+			}catch(e){
+				// A JSON parse error usually means the asynchronous LOADER SEGMENT NOT READY MESSAGE
+				if(json_string.trim() === '######## LOADER - SEGMENT NOT READY') {
+					this.emit('error', [-1, 'LOADER_SEGMENT_NOT_READY', 'Asynchronous error: Segment not ready.']);
+				} else {
+					this.emit('error', [-1, 'JSON_PARSE_ERROR', "Could not parse response: '" + json_string + "' (" + e.toString() + ")"]);
+				}
+			} finally {
+				if(obj) {
+					this.onMessage(obj);
+				}
+			}
 			this.current_data = [];
 		} else {
 			this.current_data.push(c);
@@ -428,42 +431,76 @@ G2.prototype.quit = function() {
 };
 
 G2.prototype.get = function(key, callback) {
-    var keys;
-    if(key instanceof Array) {
-        keys = key;
-        is_array = true;
-    } else {
-        is_array = false;
-        keys = [key];
-    }
-    async.map(keys, 
-        
-        // Function called for each item in the keys array
-        function(k, cb) {
-            cmd = {}
-            cmd[k] = null
-            if(k in this.readers) {
-                this.readers[k].push(cb);
-            } else {
-                this.readers[k] = [cb]
-            }
-            this.command(cmd);
-        }.bind(this),
-    
-        // Function to call with the list of results
-        function(err, result) {
-            if(err) {
-                return callback(err, result);
-            } else {
-                // If given an array, return one.  Else, return a single item.
-                if(is_array) {
-                    return callback(err, result);
-                } else {
-                    return callback(err, result[0]);
-                }
-            }
-        }
-    );
+	var keys;
+	if(key instanceof Array) {
+		keys = key;
+		is_array = true;
+	} else {
+		is_array = false;
+		keys = [key];
+	}
+	async.map(keys, 
+
+		// Function called for each item in the keys array
+		function(k, cb) {
+			cmd = {}
+			cmd[k] = null
+			if(k in this.readers) {
+				this.readers[k].push(cb.bind(this));
+			} else {
+				this.readers[k] = [cb.bind(this)]
+			}
+			this.command(cmd);
+		}.bind(this),
+	
+		// Function to call with the list of results
+		function(err, result) {
+			if(err) {
+				return callback(err, result);
+			} else {
+				// If given an array, return one.  Else, return a single item.
+				if(is_array) {
+					return callback(err, result);
+				} else {
+					return callback(err, result[0]);
+				}
+			}
+		}
+	);
+}
+
+G2.prototype.setMany = function(obj, callback) {
+	var keys = Object.keys(obj);
+	async.map(keys, 
+		// Function called for each item in the keys array
+		function(k, cb) {
+			cmd = {}
+			cmd[k] = obj[k]
+			if(k in this.readers) {
+				this.readers[k].push(cb.bind(this));
+			} else {
+				this.readers[k] = [cb.bind(this)]
+			}
+			this.command(cmd);
+		}.bind(this),
+
+		// Function to call with the list of results
+		function(err, result) {
+			if(err) {
+				return callback(err, result);
+			} else {
+				var retval = {};
+				try {
+					for(i=0; i<keys.length; i++) {
+						retval[keys[i]] = result[i];
+					}
+				} catch(e) {
+					callback(e, null);
+				}
+				return callback(null, retval);
+			}
+		}
+	);
 }
 
 G2.prototype.set = function(key, value, callback) {
@@ -514,7 +551,7 @@ G2.prototype.runSegment = function(data, callback) {
 		this.pause_flag = false;
 		this.requestQueueReport();
 	} else {
-		typeof callback === "function" && callback(true, "No G-codes were present in the provided string");				
+		typeof callback === "function" && callback(true, "No G-codes were present in the provided string");
 	}
 };
 
