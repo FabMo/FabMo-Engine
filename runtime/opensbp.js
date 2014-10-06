@@ -1822,16 +1822,6 @@ SBPRuntime.prototype.VS = function(args) {
 };
 
 SBPRuntime.prototype.VU = function(args, callback) {
-	var SBunitVal = 0.0;
-	var unitsSa = 0.0;
-	var unitsMi = 0.0;
-	var unitsTr = 0.0;
-	var nTr1 = 0.0;
-	var nTr2 = 0.0;
-	var nTr3 = 0.0;
-	var nTr4 = 0.0;
-	var nTr5 = 0.0;
-	var nTr6 = 0.0;
 	var axes = ['X','Y','Z','A','B','C'];
 	var axesNum = [0,1,2,3,4,5];
 	var getValues = [];
@@ -1843,81 +1833,81 @@ SBPRuntime.prototype.VU = function(args, callback) {
 							  '2sa','2mi','2tr',
 							  '3sa','3mi','3tr',
 							  '4sa','4mi','4tr',
-							  '5sa','5mi','5tr',
-							  '6sa','6mi','6tr'], function(err,getValues) {
-																					console.log("Values = " + values );
-		nTr1 = getValues[2];  														console.log("nTr1 = " + nTr1);
-		nTr2 = getValues[5];  														console.log("nTr2 = " + nTr2);
-		nTr3 = getValues[8];  														console.log("nTr3 = " + nTr3);
-		nTr4 = getValues[11]; 														console.log("nTr4 = " + nTr4);
-		nTr5 = getValues[14]; 														console.log("nTr5 = " + nTr5);
-		nTr6 = getValues[17]; 														console.log("nTr6 = " + nTr6);
-				  	
+							  '5sa','5mi','5tr'], function(err,getValues) {
+																					console.log("Values = " + getValues );				  	
+		var nTr1 = getValues[2];
+		var nTr2 = getValues[5];
+		var nTr3 = getValues[8];
+		var nTr4 = getValues[11];
+		var nTr5 = getValues[14];
+//		var nTr6 = getValues[17];
+
 		if (args[0] !== undefined){
-			SBunitVal = args[0];													console.log("SBunitVal = " + SBunitVal );
-				console.log(err);
-			unitsSa = 360/getValues[0];												console.log("unitsSa = " + unitsSa );
-			unitsMi = getValues[1]; 												console.log("unitsMi = " + unitsMi );
-			unitsTr = nTr1; 														console.log("unitsTr = " + unitsTr ); 
+			var SBunitVal1 = args[0];												console.log("SBunitVal1 = " + SBunitVal1 );
+//				console.log(err);
+			var unitsSa1 = 360/getValues[0];										console.log("unitsSa1 = " + unitsSa1 );
+			var unitsMi1 = getValues[1]; 											console.log("unitsMi1 = " + unitsMi1 );
+			var unitsTr1 = getValues[2]; 											console.log("unitsTr1 = " + unitsTr1 ); 
 																					console.log("gearbox ratio = " + sbp_settings.gearBoxRatio1 );
-			nTr1 = ((unitsSa * unitsMi * sbp_settings.gearBoxRatio1) / SBunitVal);	console.log("1tr = " + nTr1 );
-			sbp_settings.units1 = SBunitVal;
+			nTr1 = ((unitsSa1 * unitsMi1 * sbp_settings.gearBoxRatio1) / SBunitVal1);	console.log("1tr = " + nTr1 );
+			sbp_settings.units1 = SBunitVal1;
 		}
 		if (args[1] !== undefined){
-			SBunitVal = args[1];													console.log("SBunitVal = " + SBunitVal );
-				console.log(err);
-			unitsSa = 360/getValues[3]; 											console.log("unitsSa = " + unitsSa );
-			unitsMi = getValues[4]; 												console.log("unitsMi = " + unitsMi );
-			unitsTr = nTr2; 														console.log("unitsTr = " + unitsTr );
-																					console.log("gearbox ratio = " + sbp_settings.gearBoxRatio1 );
-			nTr1 = ((unitsSa * unitsMi * sbp_settings.gearBoxRatio1) / SBunitVal); 	console.log("2tr = " + nTr1 );
-			sbp_settings.units2 = SBunitVal;
+			var SBunitVal2 = args[1];												console.log("SBunitVal2 = " + SBunitVal2 );
+//				console.log(err);
+			var unitsSa2 = 360/getValues[3]; 										console.log("unitsSa2 = " + unitsSa2 );
+			var unitsMi2 = getValues[4]; 											console.log("unitsMi2 = " + unitsMi2 );
+			var unitsTr2 = getValues[5]; 											console.log("unitsTr2 = " + unitsTr2 );
+																					console.log("gearbox ratio = " + sbp_settings.gearBoxRatio2 );
+			nTr2 = ((unitsSa2 * unitsMi2 * sbp_settings.gearBoxRatio2) / SBunitVal2); 	console.log("2tr = " + nTr2 );
+			sbp_settings.units2 = SBunitVal2;
 		}
 		if (args[2] !== undefined){
-			SBunitVal = args[2];													console.log("SBunitVal = " + SBunitVal );
-				console.log(err);
-			unitsSa = 360/getValues[6]; 											console.log("unitsSa = " + unitsSa );
-			unitsMi = getValues[7]; 												console.log("unitsMi = " + unitsMi );
-			unitsTr = nTr3; 														console.log("unitsTr = " + unitsTr );
-																					console.log("gearbox ratio = " + sbp_settings.gearBoxRatio1 );
-			nTr3 = ((unitsSa * unitsMi * sbp_settings.gearBoxRatio1) / SBunitVal); 	console.log("3tr = " + nTr1 );
-			sbp_settings.units3 = SBunitVal;
+			var SBunitVal3 = args[2];												console.log("SBunitVal3 = " + SBunitVal3 );
+//				console.log(err);
+			var unitsSa3 = 360/getValues[6]; 										console.log("unitsSa3 = " + unitsSa3 );
+			var unitsMi3 = getValues[7]; 											console.log("unitsMi3 = " + unitsMi3 );
+			var unitsTr3 = getValues[8]; 											console.log("unitsTr3 = " + unitsTr3 );
+																					console.log("gearbox ratio = " + sbp_settings.gearBoxRatio3 );
+			nTr3 = ((unitsSa3 * unitsMi3 * sbp_settings.gearBoxRatio3) / SBunitVal3); 	console.log("3tr = " + nTr3 );
+			sbp_settings.units3 = SBunitVal3;
 		}
 		if (args[3] !== undefined){
-			SBunitVal = args[3];													console.log("SBunitVal = " + SBunitVal );
-				console.log(err);
-			unitsSa = 360/getValues[9]; 											console.log("unitsSa = " + unitsSa );
-			unitsMi = getValues[10]; 												console.log("unitsMi = " + unitsMi );
-			unitsTr = nTr4; 														console.log("unitsTr = " + unitsTr );
-																					console.log("gearbox ratio = " + sbp_settings.gearBoxRatio1 );
-			nTr4 = ((unitsSa * unitsMi * sbp_settings.gearBoxRatio1) / SBunitVal); 	console.log("4tr = " + nTr1 );
-			sbp_settings.units4 = SBunitVal;
+			var SBunitVal4 = args[3];												console.log("SBunitVal4 = " + SBunitVal4 );
+//				console.log(err);
+			var unitsSa4 = 360/getValues[9]; 										console.log("unitsSa4 = " + unitsSa4 );
+			var unitsMi4 = getValues[10]; 											console.log("unitsMi4 = " + unitsMi4 );
+			var unitsTr4 = getValues[11]; 											console.log("unitsTr4 = " + unitsTr4 );
+																					console.log("gearbox ratio = " + sbp_settings.gearBoxRatio4 );
+			nTr4 = ((unitsSa4 * unitsMi4 * sbp_settings.gearBoxRatio4) / SBunitVal4); 	console.log("4tr = " + nTr4 );
+			sbp_settings.units4 = SBunitVal4;
 		}
-		if (args[4] !== undefined){
-			SBunitVal = args[4];													console.log("SBunitVal = " + SBunitVal );
+		if (args[8] !== undefined){
+			SBunitVal5 = args[8];													console.log("SBunitVal5 = " + SBunitVal5 );
 				console.log(err);
-			unitsSa = 360/getValues[12]; 											console.log("unitsSa = " + unitsSa );
-			unitsMi = getValues[13]; 												console.log("unitsMi = " + unitsMi );
-			unitsTr = nTr5; 														console.log("unitsTr = " + unitsTr );
-																					console.log("gearbox ratio = " + sbp_settings.gearBoxRatio1 );
-			nTr5 = ((unitsSa * unitsMi * sbp_settings.gearBoxRatio1) / SBunitVal); 	console.log("5tr = " + nTr1 );
-			sbp_settings.units5 = SBunitVal;
+			var unitsSa5 = 360/getValues[12]; 										console.log("unitsSa5 = " + unitsSa5 );
+			var unitsMi5 = getValues[13]; 											console.log("unitsMi5 = " + unitsMi5 );
+			var unitsTr5 = getValues[14]; 											console.log("unitsTr5 = " + unitsTr5 );
+																					console.log("gearbox ratio 5 = " + sbp_settings.gearBoxRatio5 );
+			nTr5 = ((unitsSa5 * unitsMi5 * sbp_settings.gearBoxRatio5) / SBunitVal5); 	console.log("5tr = " + nTr5 );
+			sbp_settings.units5 = SBunitVal5;
 		}
-		if (args[5] !== undefined){
-			SBunitVal = args[5];													console.log("SBunitVal = " + SBunitVal );
-				console.log(err);
-			unitsSa = 360/getValues[15];											console.log("unitsSa = " + unitsSa );
-			unitsMi = getValues[16]; 												console.log("unitsMi = " + unitsMi );
-			unitsTr = nTr2; 														console.log("unitsTr = " + unitsTr );
-																					console.log("gearbox ratio = " + sbp_settings.gearBoxRatio1 );
-			nTr6 = ((unitsSa * unitsMi * sbp_settings.gearBoxRatio1) / SBunitVal); 	console.log("6tr = " + nTr1 );
-			sbp_settings.units6 = SBunitVal;
-		}
-		var VUstr = { '1tr':nTr1, '2tr':nTr2, '3tr':nTr3, '4tr':nTr4, '5tr':nTr5, '6tr':nTr6 };
-		
+//		if (args[6] !== undefined){
+//			SBunitVal6 = args[6];													console.log("SBunitVal6 = " + SBunitVal );
+//				console.log(err);
+//			unitsSa6 = 360/getValues[15];											console.log("unitsSa6 = " + unitsSa6 );
+//			unitsMi6 = getValues[16]; 												console.log("unitsMi6 = " + unitsMi6 );
+//			var unitsTr6 = getValues[17]; 											console.log("unitsTr6 = " + unitsTr6 );
+//																					console.log("gearbox ratio 6 = " + sbp_settings.gearBoxRatio6 );
+//			nTr6 = ((unitsSa6 * unitsMi6 * sbp_settings.gearBoxRatio6) / SBunitVal6); 	console.log("6tr = " + nTr6 );
+//			sbp_settings.units6 = SBunitVal6;
+//		}
+
+//		var VUstr = { '1tr':nTr1, '2tr':nTr2, '3tr':nTr3, '4tr':nTr4, '5tr':nTr5, '6tr':nTr6 };
+		var VUstr = { '1tr':nTr1, '2tr':nTr2, '3tr':nTr3, '4tr':nTr4, '5tr':nTr5 };
+			console.log("VUstr = " + VUstr );
 		this.machine.driver.set( VUstr, function(err, values) {
 							console.log("set:values = " + values );
-							console.log("set:SBunitVal = " + SBunitVal );
 			fs.writeFile("./runtime/sbp_settings.json", JSON.stringify(sbp_settings, null, 4), function(err){
 				callback();
 			});
