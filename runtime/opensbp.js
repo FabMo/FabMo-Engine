@@ -1634,22 +1634,98 @@ SBPRuntime.prototype.VD = function(args) {
 };	
 
 SBPRuntime.prototype.VL = function(args) {
-	// X - Low Limit
-	// X - High Limit
-	// Y - Low Limit
-	// Y - High Limit
-	// Z - Low Limit
-	// Z - High Limit
-	// A - Low Limit
-	// A - High Limit
-	// B - Low Limit
-	// B - High Limit
-	// C - Low Limit
-	// C - High Limit
-	// 3D Threshold
-	// Minimum Distance to Check
-	// Slow Corner Speed
-	// Keypad Ramp Rate
+
+	var getValues = [];
+	var setValues = [];
+
+	// Get existing limts from Engine, to be used in case new parameters aren't sent
+	this.machine.driver.get (['xtn','xtm',
+							  'ytn','ytm',
+							  'ztn','ztm',
+							  'atn','atm',
+							  'btn','btm',
+							  'ctn','ctm' ], function(err,getValues) {
+	 	// X - Low Limit
+		var nLimX = getValues[0];
+		if (args[0] !== undefined){
+			nLimX = args[0];
+ 		}
+ 		// X - High Limit
+		var mLimX = getValues[1];
+		if (args[1] !== undefined){
+			mLimX = args[1];
+		}
+		// Y - Low Limit
+		var nLimY = getValues[2];
+		if (args[2] !== undefined){
+			nLimY = args[2];
+		}
+		// Y - High Limit
+		var mLimY = getValues[3];
+		if (args[3] !== undefined){
+			mLimY = args[3];
+		}
+		// Z - Low Limit
+		var nLimZ = getValues[4];
+		if (args[4] !== undefined){
+			nLimZ = args[4];
+		}
+		// Z - High Limit
+		var mLimZ = getValues[5];
+		if (args[5] !== undefined){
+			mLimZ = args[5];
+		}
+		// A - Low Limit
+		var nLimA = getValues[6];
+		if (args[6] !== undefined){
+			nLimA = args[6];
+ 		}
+ 		// A - High Limit
+		var mLimA = getValues[7];
+		if (args[7] !== undefined){
+			mLimA = args[7];
+		}
+		// Soft limit checking ON-OFF
+
+		// B - Low Limit
+		var nLimB = getValues[8];
+		if (args[9] !== undefined){
+			nLimB = args[9];
+		}
+		// B - High Limit
+		var mLimB = getValues[9];
+		if (args[10] !== undefined){
+			mLimB = args[10];
+		}
+		// Number of axes limits to check
+		
+		// C - Low Limit
+		var nLimC = getValues[10];
+		if (args[12] !== undefined){
+			nLimC = args[12];
+		}
+		// C - High Limit
+		var mLimC = getValues[11];
+		if (args[13] !== undefined){
+			mLimC = args[13];
+		}
+
+		var VLstr = { 'xtn':nLimX, 'xtm':mLimX,
+					  'ytn':nLimY, 'ytm':mLimY,
+					  'ztn':nLimZ, 'ztm':mLimZ,
+					  'atn':nLimA, 'atm':mLimA,
+					  'btn':nLimB, 'btm':mLimB,
+					  'ctn':nLimC, 'ctm':mLimC };
+		
+		this.machine.driver.set( VLstr, function(err, setValues) {
+							console.log("set:values = " + setValues );
+//			fs.writeFile("./runtime/sbp_settings.json", JSON.stringify(sbp_settings, null, 4), function(err){
+//				callback();
+//			});
+		});	
+// Write limits to configuration.json
+	}.bind(this));
+	
 };	
 
 SBPRuntime.prototype.VN = function(args) {
@@ -1761,12 +1837,6 @@ SBPRuntime.prototype.VU = function(args, callback) {
 	var getValues = [];
 	var setValues = [];
 	var value;
-	var axStr = "0";
-	var i;
-
-	this.machine.driver.get (['1ma','2ma','3ma','4ma','5ma','6ma'], function(err,axesNum) {
-			console.log(err);
-	});
 
 	// motor 1 unit value
 	this.machine.driver.get (['1sa','1mi','1tr',
@@ -1858,29 +1928,29 @@ SBPRuntime.prototype.VU = function(args, callback) {
 //	if ( args[5] !== undefined ) { circRes = args[5]; }
 //	if ( args[8] !== undefined ) { circSml = args[8]; }
 	// X resolution multiplier - currently not supported
-	if ( args[10] !== undefined ) {
+//	if ( args[10] !== undefined ) {
 //		sbp_settings.resMX = args[10];
-	}
+//	}
 	// Y resolution multiplier - currently not supported
-	if ( args[11] !== undefined ) {
+//	if ( args[11] !== undefined ) {
 //		sbp_settings.resMY = args[11];
-	}
+//	}
 	// Z resolution multiplier - currently not supported
-	if ( args[12] !== undefined ) {
+//	if ( args[12] !== undefined ) {
 //		sbp_settings.resMZ = args[12];
-	}
+//	}
 	// A resolution multiplier - currently not supported
-	if ( args[13] !== undefined ) {
+//	if ( args[13] !== undefined ) {
 //		sbp_settings.resMA = args[13];
-	}
+//	}
 	// B resolution multiplier - currently not supported
-	if ( args[14] !== undefined ) {
+//	if ( args[14] !== undefined ) {
 //		sbp_settings.resMB = args[14];
-	}
+//	}
 	// C resolution multiplier - currently not supported
-	if ( args[15] !== undefined ) {
+//	if ( args[15] !== undefined ) {
 //		sbp_settings.resMC = args[15];
-	}
+//	}
 
 };
 
