@@ -103,6 +103,10 @@ G2.prototype.connect = function(path, callback) {
 	});
 };
 
+G2.prototype.disconnect = function(callback) {
+	this.port.close(callback);
+}
+
 // Log serial errors.  Most of these are exit-able offenses, though.
 G2.prototype.onSerialError = function(data) {
 	log.error(data);

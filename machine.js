@@ -78,6 +78,10 @@ function Machine(serial_path, callback) {
 }
 util.inherits(Machine, events.EventEmitter);
 
+Machine.prototype.disconnect = function(callback) {
+	this.driver.disconnect(callback);
+}
+
 Machine.prototype.toString = function() {
     return "[Machine Model on '" + this.driver.path + "']";
 };
@@ -135,7 +139,9 @@ Machine.prototype.setRuntime = function(runtime) {
 
 		} finally {
 			this.current_runtime = runtime;
-			runtime.connect(this);
+			if(runtime) {
+				runtime.connect(this);
+			}
 		}
 	}
 };

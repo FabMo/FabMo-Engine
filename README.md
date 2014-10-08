@@ -12,14 +12,11 @@ The source code documentation is available here: http://shopbottools.github.io/F
 
 Dependencies
 ------------
-The engine runs best on linux, but can run with limited functionality on windows.  To run the engine, you need the following software packages:
+The engine runs best on linux, but can run with limited functionality on windows.  To run the engine, you need to install the dependencies, which can be done automatically with npm:
 
-* NodeJS (http://nodejs.org/)
-* restify 
-* serialport
-* process
-* colors (optional, for colorized log output)
-* tingodb
+```
+npm install
+```
 
 Installing the Engine
 ---------------------
@@ -27,4 +24,8 @@ The engine is run from source, and only needs to be checked out and stored in a 
 
 Running the Engine
 ------------------
-For debugging the engine, you can run it directly from the command prompt with `node server.js`
+For debugging the engine, you can run it directly from the command prompt with `npm start` or `node server.js`
+
+Development
+-----------
+A number of grunt tasks have been set up to facilitate engine development.  To see them, run `grunt` with no arguments in the source directory, and a list will be produced with explanations.  Currently, tasks exist for testing and generating/publishing documentation.
