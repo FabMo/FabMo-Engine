@@ -12,14 +12,7 @@ The source code documentation is available here: http://shopbottools.github.io/F
 
 Dependencies
 ------------
-The engine runs best on linux, but can run with limited functionality on windows.  To run the engine, you need the following software packages:
-
-* NodeJS (http://nodejs.org/)
-* restify 
-* serialport
-* process
-* colors (optional, for colorized log output)
-* tingodb
+The engine runs best on Linux/OSX, but has limited support for Microsoft Windows as well.  To obtain the dependencies, just run `npm start` in the source code directory.  For a list of dependencies and their versions, consult `package.json`
 
 Installing the Engine
 ---------------------
@@ -27,4 +20,4 @@ The engine is run from source, and only needs to be checked out and stored in a 
 
 Running the Engine
 ------------------
-For debugging the engine, you can run it directly from the command prompt with `node server.js`
+For debugging the engine, you can run it directly from the command prompt with `node server.js`or `npm start`
