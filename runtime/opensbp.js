@@ -1634,22 +1634,98 @@ SBPRuntime.prototype.VD = function(args) {
 };	
 
 SBPRuntime.prototype.VL = function(args) {
-	// X - Low Limit
-	// X - High Limit
-	// Y - Low Limit
-	// Y - High Limit
-	// Z - Low Limit
-	// Z - High Limit
-	// A - Low Limit
-	// A - High Limit
-	// B - Low Limit
-	// B - High Limit
-	// C - Low Limit
-	// C - High Limit
-	// 3D Threshold
-	// Minimum Distance to Check
-	// Slow Corner Speed
-	// Keypad Ramp Rate
+
+	var getValues = [];
+	var setValues = [];
+
+	// Get existing limts from Engine, to be used in case new parameters aren't sent
+	this.machine.driver.get (['xtn','xtm',
+							  'ytn','ytm',
+							  'ztn','ztm',
+							  'atn','atm',
+							  'btn','btm',
+							  'ctn','ctm' ], function(err,getValues) {
+	 	// X - Low Limit
+		var nLimX = getValues[0];
+		if (args[0] !== undefined){
+			nLimX = args[0];
+ 		}
+ 		// X - High Limit
+		var mLimX = getValues[1];
+		if (args[1] !== undefined){
+			mLimX = args[1];
+		}
+		// Y - Low Limit
+		var nLimY = getValues[2];
+		if (args[2] !== undefined){
+			nLimY = args[2];
+		}
+		// Y - High Limit
+		var mLimY = getValues[3];
+		if (args[3] !== undefined){
+			mLimY = args[3];
+		}
+		// Z - Low Limit
+		var nLimZ = getValues[4];
+		if (args[4] !== undefined){
+			nLimZ = args[4];
+		}
+		// Z - High Limit
+		var mLimZ = getValues[5];
+		if (args[5] !== undefined){
+			mLimZ = args[5];
+		}
+		// A - Low Limit
+		var nLimA = getValues[6];
+		if (args[6] !== undefined){
+			nLimA = args[6];
+ 		}
+ 		// A - High Limit
+		var mLimA = getValues[7];
+		if (args[7] !== undefined){
+			mLimA = args[7];
+		}
+		// Soft limit checking ON-OFF
+
+		// B - Low Limit
+		var nLimB = getValues[8];
+		if (args[9] !== undefined){
+			nLimB = args[9];
+		}
+		// B - High Limit
+		var mLimB = getValues[9];
+		if (args[10] !== undefined){
+			mLimB = args[10];
+		}
+		// Number of axes limits to check
+		
+		// C - Low Limit
+		var nLimC = getValues[10];
+		if (args[12] !== undefined){
+			nLimC = args[12];
+		}
+		// C - High Limit
+		var mLimC = getValues[11];
+		if (args[13] !== undefined){
+			mLimC = args[13];
+		}
+
+		var VLstr = { 'xtn':nLimX, 'xtm':mLimX,
+					  'ytn':nLimY, 'ytm':mLimY,
+					  'ztn':nLimZ, 'ztm':mLimZ,
+					  'atn':nLimA, 'atm':mLimA,
+					  'btn':nLimB, 'btm':mLimB,
+					  'ctn':nLimC, 'ctm':mLimC };
+		
+		this.machine.driver.set( VLstr, function(err, setValues) {
+							console.log("set:values = " + setValues );
+//			fs.writeFile("./runtime/sbp_settings.json", JSON.stringify(sbp_settings, null, 4), function(err){
+//				callback();
+//			});
+		});	
+// Write limits to configuration.json
+	}.bind(this));
+	
 };	
 
 SBPRuntime.prototype.VN = function(args) {
@@ -1746,67 +1822,86 @@ SBPRuntime.prototype.VS = function(args) {
 };
 
 SBPRuntime.prototype.VU = function(args, callback) {
-	var SBunitVal = 0.0;
-	var unitsSa = 0.0;
-	var unitsMi = 0.0;
-	var unitsTr = 0.0;
-	var nTr1 = 0.0;
-	var nTr2 = 0.0;
-	var nTr3 = 0.0;
-	var nTr4 = 0.0;
-	var nTr5 = 0.0;
-	var nTr6 = 0.0;
 	var axes = ['X','Y','Z','A','B','C'];
 	var axesNum = [0,1,2,3,4,5];
-	var values = [];
+	var getValues = [];
+	var setValues = [];
 	var value;
-	var axStr = "0";
-	var i;
 
-	this.machine.driver.get (['1ma','2ma','3ma','4ma','5ma','6ma'], function(err,axesNum) {
-			console.log(err);
-			console.log("AxesNums = " + axesNum);
-	});
-
-	console.log("args = " + args );
 	// motor 1 unit value
 	this.machine.driver.get (['1sa','1mi','1tr',
 							  '2sa','2mi','2tr',
 							  '3sa','3mi','3tr',
 							  '4sa','4mi','4tr',
 							  '5sa','5mi','5tr',
-							  '6sa','6mi','6tr'], function(err,values) {
-																					console.log("Values = " + values );
-		nTr1 = values[2];  															console.log("nTr1 = " + nTr1);
-		nTr2 = values[5];  															console.log("nTr2 = " + nTr2);
-		nTr3 = values[8];  															console.log("nTr3 = " + nTr3);
-		nTr4 = values[11]; 															console.log("nTr4 = " + nTr4);
-		nTr5 = values[14]; 															console.log("nTr5 = " + nTr5);
-		nTr6 = values[17]; 															console.log("nTr6 = " + nTr6);
-				  	
+							  '6sa','6mi','6tr'], function(err,getValues) {
+
+		var nTr1 = getValues[2];
+		var nTr2 = getValues[5];
+		var nTr3 = getValues[8];
+		var nTr4 = getValues[11];
+		var nTr5 = getValues[14];
+		var nTr6 = getValues[17];
+
 		if (args[0] !== undefined){
-			SBunitVal = args[0];													console.log("SBunitVal = " + SBunitVal );
+			var SBunitVal1 = args[0];
 				console.log(err);
-			unitsSa = 360/values[0];												console.log("unitsSa = " + unitsSa );
-			unitsMi = values[1]; 													console.log("unitsMi = " + unitsMi );
-			unitsTr = nTr1; 														console.log("unitsTr = " + unitsTr ); 
-																					console.log("gearbox ratio = " + sbp_settings.gearBoxRatio1 );
-			nTr1 = ((unitsSa * unitsMi * sbp_settings.gearBoxRatio1) / SBunitVal);	console.log("1tr = " + nTr1 );
-			sbp_settings.units1 = SBunitVal;
+			var unitsSa1 = 360/getValues[0];
+			var unitsMi1 = getValues[1];
+			var unitsTr1 = getValues[2];
+			nTr1 = ((unitsSa1 * unitsMi1 * sbp_settings.gearBoxRatio1) / SBunitVal1);
+			sbp_settings.units1 = SBunitVal1;
 		}
 		if (args[1] !== undefined){
-			SBunitVal = args[1];													console.log("SBunitVal = " + SBunitVal );
+			var SBunitVal2 = args[1];
 				console.log(err);
-			unitsSa = 360/values[3]; 												console.log("unitsSa = " + unitsSa );
-			unitsMi = values[4]; 													console.log("unitsMi = " + unitsMi );
-			unitsTr = nTr2; 														console.log("unitsTr = " + unitsTr );
-																					console.log("gearbox ratio = " + sbp_settings.gearBoxRatio1 );
-			nTr1 = ((unitsSa * unitsMi * sbp_settings.gearBoxRatio1) / SBunitVal); 	console.log("1tr = " + nTr1 );
-			sbp_settings.units1 = SBunitVal;
+			var unitsSa2 = 360/getValues[3];
+			var unitsMi2 = getValues[4];
+			var unitsTr2 = getValues[5];
+			nTr2 = ((unitsSa2 * unitsMi2 * sbp_settings.gearBoxRatio2) / SBunitVal2);
+			sbp_settings.units2 = SBunitVal2;
 		}
-		this.machine.driver.set('1tr','2tr','3tr','4tr','5tr','6tr',nTr1, function(err, value) {
-							console.log("set:value-1tr = " + value );
-							console.log("set:SBunitVal = " + SBunitVal );
+		if (args[2] !== undefined){
+			var SBunitVal3 = args[2];
+				console.log(err);
+			var unitsSa3 = 360/getValues[6];
+			var unitsMi3 = getValues[7];
+			var unitsTr3 = getValues[8];
+			nTr3 = ((unitsSa3 * unitsMi3 * sbp_settings.gearBoxRatio3) / SBunitVal3);
+			sbp_settings.units3 = SBunitVal3;
+		}
+		if (args[3] !== undefined){
+			var SBunitVal4 = args[3];				
+				console.log(err);
+			var unitsSa4 = 360/getValues[9];
+			var unitsMi4 = getValues[10];
+			var unitsTr4 = getValues[11];
+			nTr4 = ((unitsSa4 * unitsMi4 * sbp_settings.gearBoxRatio4) / SBunitVal4);
+			sbp_settings.units4 = SBunitVal4;
+		}
+		if (args[8] !== undefined){
+			var SBunitVal5 = args[8];
+				console.log(err);
+			var unitsSa5 = 360/getValues[12];
+			var unitsMi5 = getValues[13];
+			var unitsTr5 = getValues[14];
+			nTr5 = ((unitsSa5 * unitsMi5 * sbp_settings.gearBoxRatio5) / SBunitVal5);
+			sbp_settings.units5 = SBunitVal5;
+		}
+		if (args[6] !== undefined){
+			var SBunitVal6 = args[6];
+				console.log(err);
+			var unitsSa6 = 360/getValues[15];
+			var unitsMi6 = getValues[16];
+			var unitsTr6 = getValues[17];
+			nTr6 = ((unitsSa6 * unitsMi6 * sbp_settings.gearBoxRatio6) / SBunitVal6); 	console.log("6tr = " + nTr6 );
+			sbp_settings.units6 = SBunitVal6;
+		}
+
+		var VUstr = { '1tr':nTr1, '2tr':nTr2, '3tr':nTr3, '4tr':nTr4, '5tr':nTr5, '6tr':nTr6 };
+
+		this.machine.driver.setMany( VUstr, function(err, values) {
+							console.log("set:values = " + values );
 			fs.writeFile("./runtime/sbp_settings.json", JSON.stringify(sbp_settings, null, 4), function(err){
 				callback();
 			});
@@ -1814,156 +1909,32 @@ SBPRuntime.prototype.VU = function(args, callback) {
 // Write SA, MA & TR to configuration.json
 	}.bind(this));
 	
-	// motor 2 unit value
-	if ( args[1] !== undefined ) {
-		this.machine.driver.get (['2sa','2mi','2tr'], function(err,values) {
-			SBunitVal = args[1];
-			console.log(err);
-//				console.log("SBunitVal = " + SBunitVal );
-//				console.log("Values = " + values );
-			unitsSa = 360/values[0];
-//				console.log("unitsSa = " + unitsSa );
-			unitsMi = values[1];
-//				console.log("unitsMi = " + unitsMi );
-			unitsTr = values[2];
-//				console.log("unitsTr = " + unitsTr );
-//				console.log("gearbox ratio = " + sbp_settings.gearBoxRatio2 );
-			newUnitsTr = ((unitsSa * unitsMi * sbp_settings.gearBoxRatio2) / SBunitVal);
-//				console.log("2tr = " + newUnitsTr /*+ "  value = " + value*/ );
-			this.machine.driver.set('2tr',newUnitsTr, function(err, value) {
-//				console.log("set:value-2tr = " + value );
-				callback();
-			});
-			sbp_settings.units2 = SBunitVal;
-// Write SA, MA & TR to configuration.json
-		}.bind(this));
-	}	
-	// motor 3 unit value
-	if ( args[2] !== undefined ) {
-		this.machine.driver.get (['3sa','3mi','3tr'], function(err,values) {
-			SBunitVal = args[2];
-			console.log(err);
-				console.log("SBunitVal = " + SBunitVal );
-//				console.log("Values = " + values );
-			unitsSa = 360/values[0];
-//				console.log("unitsSa = " + unitsSa );
-			unitsMi = values[1];
-//				console.log("unitsMi = " + unitsMi );
-			unitsTr = values[2];
-//				console.log("unitsTr = " + unitsTr );
-//				console.log("gearbox ratio = " + sbp_settings.gearBoxRatio3 );
-			newUnitsTr = unitsSa * unitsMi * sbp_settings.gearBoxRatio3 / SBunitVal;
-			// save unit value (SBunitVal) to ?????
-//				console.log("3tr = " + newUnitsTr + "  value = " + value );
-			this.machine.driver.set('3tr',newUnitsTr, function(err, value) {
-//				console.log("set:value-3tr = " + value );
-				callback();
-			});
-			sbp_settings.units3 = SBunitVal;
-// Write SA, MA & TR to configuration.json
-		}.bind(this));
-	}
-	// motor 4 unit value
-	if ( args[3] !== undefined ) {
-		this.machine.driver.get (['4sa','4mi','4tr'], function(err,values) {
-			SBunitVal = args[3];
-			console.log(err);
-				console.log("SBunitVal = " + SBunitVal );
-//				console.log("Values = " + values );
-			unitsSa = 360/values[0];
-//				console.log("unitsSa = " + unitsSa );
-			unitsMi = values[1];
-//				console.log("unitsMi = " + unitsMi );
-			unitsTr = values[2];
-//				console.log("unitsTr = " + unitsTr );
-//				console.log("gearbox ratio = " + sbp_settings.gearBoxRatio4 );
-			newUnitsTr = unitsSa * unitsMi * sbp_settings.gearBoxRatio4 / SBunitVal;
-			// save unit value (SBunitVal) to ?????
-//				console.log("4tr = " + newUnitsTr + "  value = " + value );
-			this.machine.driver.set('4tr',newUnitsTr, function(err, value) {
-//				console.log("set:value-4tr = " + value );
-				callback();
-			});
-			sbp_settings.units4 = SBunitVal;
-// Write SA, MA & TR to configuration.json
-		}.bind(this));
-	}
-	// motor 5 unit value
-	if ( args[5] !== undefined ) {
-		this.machine.driver.get (['5sa','5mi','5tr'], function(err,values) {
-			SBunitVal = args[5];
-			console.log(err);
-//				console.log("SBunitVal = " + SBunitVal );
-//				console.log("Values = " + values );
-			unitsSa = 360/values[0];
-//				console.log("unitsSa = " + unitsSa );
-			unitsMi = values[1];
-//				console.log("unitsMi = " + unitsMi );
-			unitsTr = values[2];
-//				console.log("unitsTr = " + unitsTr );
-//				console.log("gearbox ratio = " + sbp_settings.gearBoxRatio5 );
-			newUnitsTr = unitsSa * unitsMi * sbp_settings.gearBoxRatio5 / SBunitVal;
-			// save unit value (SBunitVal) to ?????
-//				console.log("5tr = " + newUnitsTr + "  value = " + value );
-			this.machine.driver.set('5tr',newUnitsTr, function(err, value) {
-//				console.log("set:value-5tr = " + value );
-				callback();
-			});
-			sbp_settings.units5 = SBunitVal;
-// Write SA, MA & TR to configuration.json
-		}.bind(this));
-	}
-	// motor 6 unit value
-	if ( args[6] !== undefined ) {
-		this.machine.driver.get (['6sa','6mi','6tr'], function(err,values) {
-			SBunitVal = args[6];
-			console.log(err);
-				console.log("SBunitVal = " + SBunitVal );
-				console.log("Values = " + values );
-			unitsSa = 360/values[0];
-				console.log("unitsSa = " + unitsSa );
-			unitsMi = values[1];
-				console.log("unitsMi = " + unitsMi );
-			unitsTr = values[2];
-				console.log("unitsTr = " + unitsTr );
-				console.log("gearbox ratio = " + sbp_settings.gearBoxRatio6 );
-			newUnitsTr = unitsSa * unitsMi * sbp_settings.gearBoxRatio6 / SBunitVal;
-			// save unit value (SBunitVal) to ?????
-				console.log("6tr = " + newUnitsTr + "  value = " + value );
-			this.machine.driver.set('6tr',newUnitsTr, function(err, value) {
-				console.log("set:value-6tr = " + value );
-				callback();
-			});
-			sbp_settings.units6 = SBunitVal;
-// Write SA, MA & TR to configuration.json
-		}.bind(this));
-	}
 //	if ( args[5] !== undefined ) { circRes = args[5]; }
 //	if ( args[8] !== undefined ) { circSml = args[8]; }
 	// X resolution multiplier - currently not supported
-	if ( args[10] !== undefined ) {
+//	if ( args[10] !== undefined ) {
 //		sbp_settings.resMX = args[10];
-	}
+//	}
 	// Y resolution multiplier - currently not supported
-	if ( args[11] !== undefined ) {
+//	if ( args[11] !== undefined ) {
 //		sbp_settings.resMY = args[11];
-	}
+//	}
 	// Z resolution multiplier - currently not supported
-	if ( args[12] !== undefined ) {
+//	if ( args[12] !== undefined ) {
 //		sbp_settings.resMZ = args[12];
-	}
+//	}
 	// A resolution multiplier - currently not supported
-	if ( args[13] !== undefined ) {
+//	if ( args[13] !== undefined ) {
 //		sbp_settings.resMA = args[13];
-	}
+//	}
 	// B resolution multiplier - currently not supported
-	if ( args[14] !== undefined ) {
+//	if ( args[14] !== undefined ) {
 //		sbp_settings.resMB = args[14];
-	}
+//	}
 	// C resolution multiplier - currently not supported
-	if ( args[15] !== undefined ) {
+//	if ( args[15] !== undefined ) {
 //		sbp_settings.resMC = args[15];
-	}
+//	}
 
 };
 
