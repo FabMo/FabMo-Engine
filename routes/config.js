@@ -18,16 +18,28 @@ var get_config = function(req, res, next) {
 };
 
 var post_config = function(req, res, next) {
-	// TODO 
-	// Parse JSON out of request
-	// Extract the engine/driver members
-	// Call config.engine.update(obj) for the engine stuff
-	// Call config.driver.update(obj) for the driver stuff
-	// Maybe call config.engine.apply()
+	var new_config = {};
+	try {
+		new_config = req.body;
+	} catch(e) {
+		return res.send(400, e)
+	}
+
+	if(new_config.engine) {
+		config.engine.update(new_config.engine, function(err, result) {
+			if(err) {
+				return res.send(400, e);
+			}
+			res.send(302, result);
+		});
+	}
+
+	// TODO: Apply the engine/driver configurations here
 }
 
 module.exports = function(server) {
-	server.get('/status', get_status); //OK
-	server.get('/config',get_config); //TODO 
-	server.get('/info',get_info); //TODO 
+	server.get('/status', get_status);     //OK
+	server.get('/config',get_config);      //OK
+	server.post('/config', post_config);   //TODO
+	server.get('/info',get_info);          //TODO 
 }

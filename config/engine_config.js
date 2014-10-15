@@ -23,7 +23,13 @@ EngineConfig.prototype.update = function(data, callback) {
 	} catch (e) {
 		return callback(e);
 	}
-	callback(null, data);
+	this.save(function(err, result) {
+		if(err) {
+			callback(err);
+		} else {
+			callback(null, data);
+		}
+	});
 }
 
 EngineConfig.prototype.apply = function(callback) {

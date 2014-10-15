@@ -5,6 +5,7 @@ fs = require('fs');
 // Common functionality is implemented here.
 Config = function() {
 	this._cache = {}
+	this._filename = null;
 }
 
 Config.prototype.get = function(k) {
@@ -21,6 +22,7 @@ Config.prototype.getData = function() {
 
 // The load function retreives a configuration from disk and loads it into the configuration object
 Config.prototype.load = function(filename, callback) {
+	this._filename = filename;
 	fs.readFile(filename, 'utf8', function (err, data) {
 		if (err) { return callback(err); }
 		try {
@@ -30,6 +32,12 @@ Config.prototype.load = function(filename, callback) {
 		}
 		this.update(data, callback);
 	}.bind(this));
+}
+
+Config.prototype.save = function(callback) {
+	if(this._filename) {
+		fs.writeFile(this._filename, JSON.stringify(this._cache, null, 4), callback);
+	}
 }
 
 // The init function performs an initial load() from the configuration's settings files.
