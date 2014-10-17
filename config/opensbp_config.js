@@ -30,6 +30,8 @@ OpenSBPConfig.prototype.update = function(data, callback) {
 	});
 }
 
+OpenSBPConfig.prototype.setMany = OpenSBPConfig.prototype.update;
+
 OpenSBPConfig.prototype.apply = function(callback) {
 	setImmediate(callback, null);
 }

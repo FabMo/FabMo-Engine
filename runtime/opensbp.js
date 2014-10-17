@@ -4,6 +4,7 @@ var log = require('../log').logger('sbp');
 var g2 = require('../g2');
 var sbp_settings = require('./sbp_settings');
 var sb3_commands = require('./sb3_commands');
+var config = require('../config');
 
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
@@ -541,31 +542,31 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 		break;
 
 		case 71: // XY Move Speed
-			return sbp_settings.movexy_speed;
+			return config.opensbp.get('movexy_speed');
 		break;
 
 		case 72: // XY Move Speed
-			return sbp_settings.movexy_speed;
+			return config.opensbp.get('movexy_speed');
 		break;
 
 		case 73:
-			return sbp_settings.movez_speed;
+			return config.opensbp.get('movez_speed');
 		break;
 
 		case 74:
-			return sbp_settings.movea_speed;
+			return config.opensbp.get('movea_speed');
 		break;
 
 		case 75:
-			return sbp_settings.moveb_speed;
+			return config.opensbp.get('moveb_speed');
 		break;
 
 		case 76:
-			return sbp_settings.movec_speed;
+			return config.opensbp.get('movec_speed');
 		break;
 
 		case 144:
-		    return this.machine.status.posc;
+			return this.machine.status.posc;
 		break;
 
 		default:
@@ -626,37 +627,37 @@ SBPRuntime.prototype.FS = function(args) {
 
 // Move X axis
 SBPRuntime.prototype.MX = function(args) {
-	this.emit_gcode("G1 X" + args[0] + " F" + 60.0*sbp_settings.movexy_speed);
+	this.emit_gcode("G1 X" + args[0] + " F" + 60.0*config.opensbp.get('movexy_speed'));
 	this.cmd_posx = args[0];
 };
 
 // Move Y axis
 SBPRuntime.prototype.MY = function(args) {
-	this.emit_gcode("G1Y" + args[0] + " F" + 60.0*sbp_settings.movexy_speed);
+	this.emit_gcode("G1Y" + args[0] + " F" + 60.0*config.opensbp.get('movexy_speed'));
 	this.cmd_posy = args[0];
 };
 
 // Move Z axis
 SBPRuntime.prototype.MZ = function(args) {
-	this.emit_gcode("G1Z" + args[0] + " F" + 60.0*sbp_settings.movez_speed);
+	this.emit_gcode("G1Z" + args[0] + " F" + 60.0*config.opensbp.get('movez_speed'));
 	this.cmd_posz = args[0];
 };
 
 // Move A axis
 SBPRuntime.prototype.MA = function(args) {
-	this.emit_gcode("G1A" + args[0] + " F" + 60.0*sbp_settings.movea_speed);
+	this.emit_gcode("G1A" + args[0] + " F" + 60.0*config.opensbp.get('movea_speed'));
 	this.cmd_posa = args[0];
 };
 
 // Move B axis
 SBPRuntime.prototype.MB = function(args) {
-	this.emit_gcode("G1B" + args[0] + " F" + 60.0*sbp_settings.moveb_speed);
+	this.emit_gcode("G1B" + args[0] + " F" + 60.0*config.opensbp.get('moveb_speed'));
 	this.cmd_posb = args[0];
 };
 
 // Move C axis
 SBPRuntime.prototype.MC = function(args) {
-	this.emit_gcode("G1C" + args[0] + " F" + 60.0*sbp_settings.movec_speed);
+	this.emit_gcode("G1C" + args[0] + " F" + 60.0*config.opensbp.get('movec_speed'));
 	this.cmd_posc = args[0];
 };
 
@@ -789,11 +790,13 @@ SBPRuntime.prototype.MH = function(args) {
 
 // Set the move speeds for Axes XYZABC
 SBPRuntime.prototype.MS = function(args) {
-	if (args[0] !== undefined) sbp_settings.movexy_speed = args[0];
-	if (args[1] !== undefined) sbp_settings.movez_speed = args[1];
-	if (args[2] !== undefined) sbp_settings.movea_speed = args[2];
-	if (args[3] !== undefined) sbp_settings.moveb_speed = args[3];
-	if (args[4] !== undefined) sbp_settings.movec_speed = args[4];
+	var settings = {}
+	if (args[0] !== undefined) settings.movexy_speed = args[0];
+	if (args[1] !== undefined) settings.movez_speed = args[1];
+	if (args[2] !== undefined) settings.movea_speed = args[2];
+	if (args[3] !== undefined) settings.moveb_speed = args[3];
+	if (args[4] !== undefined) settings.movec_speed = args[4];
+	config.opensbp.setMany(settings); // config.opensbp.update(settings) would do the same thing here
 };
 
 SBPRuntime.prototype.MI = function(args) {
@@ -1900,12 +1903,11 @@ SBPRuntime.prototype.VU = function(args, callback) {
 
 		var VUstr = { '1tr':nTr1, '2tr':nTr2, '3tr':nTr3, '4tr':nTr4, '5tr':nTr5, '6tr':nTr6 };
 
-		this.machine.driver.setMany( VUstr, function(err, values) {
-							console.log("set:values = " + values );
-			fs.writeFile("./runtime/sbp_settings.json", JSON.stringify(sbp_settings, null, 4), function(err){
-				callback();
-			});
-		});	
+		// We set the g2 config (Which updates the g2 hardware but also our persisted copy of its settings)
+		config.driver.setMany(VUstr, function(err, values) {
+			console.log("set:values = " + values );
+			callback();
+		});
 // Write SA, MA & TR to configuration.json
 	}.bind(this));
 	
