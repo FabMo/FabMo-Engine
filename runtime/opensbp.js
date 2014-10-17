@@ -263,7 +263,7 @@ SBPRuntime.prototype._dispatch = function(callback) {
 };
 
 SBPRuntime.prototype._executeCommand = function(command, callback) {
-	
+	command.cmd = command.cmd.toUpperCase();
 	if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
 		
 		args = this._evaluateArguments(command.cmd, command.args);
