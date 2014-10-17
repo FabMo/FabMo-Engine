@@ -14,6 +14,7 @@ var get_config = function(req, res, next) {
 	var retval = {};
 	retval['engine'] = config.engine.getData();
 	retval['driver'] = config.driver.getData();
+	retval['opebsbp'] = config.driver.getData();
 	res.json(retval);
 };
 
