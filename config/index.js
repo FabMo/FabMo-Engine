@@ -1,5 +1,6 @@
 var EngineConfig = require('./engine_config').EngineConfig;
 var G2Config = require('./g2_config').G2Config;
+var OpenSBPConfig = require('./opensbp_config').OpenSBPConfig;
 
 // Provide the exported functions for managing application configuration
 
@@ -30,5 +31,13 @@ function configure_driver(driver, callback) {
 		});
 }
 
+// Configure OpenSBP by loading the configuration from disk so it is available for the runtime
+//
+function configure_opensbp(callback) {
+	exports.opensbp = new OpenSBPConfig();
+	exports.opensbp.init(callback);
+}
+
 exports.configure_engine = configure_engine
 exports.configure_driver = configure_driver
+exports.configure_opensbp = configure_opensbp

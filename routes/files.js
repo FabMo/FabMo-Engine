@@ -4,19 +4,7 @@ var machine = require('../machine').machine;
 var config = require('../config');
 var db = require('../db');
 var File=db.File;
-
-// *TODO:* This is defined in two places, we should fix that.
-ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
-
-function allowed_file(filename){
-	if (ALLOWED_EXTENSIONS.indexOf(path.extname(filename).toLowerCase()) !== -1)
-	{
-		return true;
-	}
-	else {
-		return false;
-	}
-};
+var allowed_file = require('../util').allowed_file
 
 get_files = function(req, res, next) {
 	File.list_all(function(result){
@@ -25,16 +13,24 @@ get_files = function(req, res, next) {
 };
 
 upload_file = function(req, res, next) {
+
+	// Get the one and only one file you're currently allowed to upload at a time
 	var file = req.files.file;
+
+	// Only write "allowed files"
 	if(file && allowed_file(file.name))
 	{
+		// Keep the name of the file uploaded (but put it in the parts directory)
 		var filename=file.name;
 		var full_path = path.join(config.engine.getPartsDir(), filename);
+		
+		// Uploaded files are stored in a temporary directory (per restify)
+		// Move the file from that path to the parts directory
 		fs.rename(file.path, full_path, function(err) {
 			if (err){
 				throw err;
 			}
-			// delete the temporary file, so that the explicitly set temporary upload dir does not get filled with unwanted files
+			// delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
 			fs.unlink(file.path, function() {
 				if (err) {throw err;}
 				new File(filename, full_path).save(function(file){

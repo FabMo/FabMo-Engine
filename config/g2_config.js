@@ -37,6 +37,9 @@ G2Config.prototype.update = function(data, callback) {
 	);
 }
 
+// setMany aliases to update, to provide similar interface as G2 driver
+G2Config.prototype.setMany = G2Config.prototype.update;
+
 // Status reports are special, and their format must be whats expected for the machine/runtime environments
 // to work properly.  
 // TODO: Move this data out into a configuration file, perhaps.

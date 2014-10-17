@@ -1,3 +1,5 @@
+var path = require('path');
+
 function listify(x) {
     if(x instanceof Array) {
         return x;
@@ -42,4 +44,18 @@ function Queue(){
 	}
 }
 
+// *TODO:* This is defined in two places, we should fix that.
+ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
+
+function allowed_file(filename){
+  if (ALLOWED_EXTENSIONS.indexOf(path.extname(filename).toLowerCase()) !== -1) {
+    return true;
+  }
+  else {
+    return false;
+  }
+};
+
+
 exports.Queue = Queue
+exports.allowed_file = allowed_file

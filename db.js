@@ -3,11 +3,53 @@ var fs = require('fs');
 var crypto = require('crypto'); // for the checksum
 var log = require('./log').logger('files');
 var config = require('./config');
+var util = require('./util');
 
 // Connect to TingoDB database that stores the files
 var Engine = require('tingodb')()
 var db = new Engine.Db(config.engine.getDBDir(), {}); // be sure that the directory exist !
 var files = db.collection("files");
+var jobs = db.collection("jobs");
+
+job_queue = new util.Queue()
+
+Job = function(options) {
+    this.file_id = options.file_id;
+    this.name = options.name || "Untitled Job"
+    this.state = "pending"
+}
+
+Job.prototype.save = function(callback) {
+	jobs.findOne({id_: this._id},function(err,document){
+		if (err){
+			throw err;
+		}
+		else if(document){
+			// update the current entry in the database instead of creating a new one.
+			log.info('Updating job id ' + document._id);
+			files.update({this : document._id},that,function(){
+				callback(that);
+			});
+
+		}
+		else{
+			log.info('Creating a new job.');
+			jobs.insert(this, function(err,records){
+				if(!err)
+					callback(records[0]);
+				else
+					throw err;	
+			});
+
+		}
+	}.bind(this));
+}
+
+// Delete this file from the database
+Job.prototype.delete = function(callback){
+	jobs.remove({_id : this._id},function(err){if(!err)callback();else callback(err);});
+
+}
 
 // The File class represents a fabrication file on disk
 // In addition to the filename and path, file statistics such as 
@@ -26,8 +68,8 @@ function File(filename,path){
 	  	that.size = stat.size;
 	});
 	fs.readFile(this.path, function (err, data) {
-	    that.checksum =  crypto.createHash('md5').update(data, 'utf8').digest('hex');	
-	});
+		this.checksum =  crypto.createHash('md5').update(data, 'utf8').digest('hex');	
+	}.bind(this));
 }
 
 // Save information about this file to back to the database
@@ -93,5 +135,7 @@ File.get_by_id = function(id,callback)
 }
 
 exports.File = File;
+exports.Job = Job;
+exports.job_queue = job_queue;
 /*****************************************/
 

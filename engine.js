@@ -44,6 +44,10 @@ Engine.prototype.start = function(callback) {
             config.configure_driver(machine.machine.driver, callback);
         }.bind(this),
 
+        function load_opensbp_config(callback) {
+            log.info("Configuring OpenSBP runtime...");
+            config.configure_opensbp(callback);
+        },
         // Kick off the server if all of the above went OK.
         function start_server(callback) {
             log.info("Setting up the webserver...")

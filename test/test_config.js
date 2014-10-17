@@ -5,8 +5,8 @@ var base = require("./test_base");
 
 describe('Config Module', function(){
 
-	it('Update with a valid value', function(done){
-		var expected = {'st':1};
+	it('Update G2 config with a valid value', function(done){
+		var expected = {'xsn':1};
 		config.driver.update(expected, function(err, result) {
 			if(err) { done(err); }
 			assert.equal(result.st, expected.st)
@@ -14,7 +14,7 @@ describe('Config Module', function(){
 		});
 	});
 
-	it('Update with an invalid value', function(done){
+	it('Update G2 config with an invalid value', function(done){
 		var expected = {'st':'carrot'};
 		config.driver.update(expected, function(err, result) {
 			if(err) { done(err); }
@@ -24,7 +24,7 @@ describe('Config Module', function(){
 		});
 	});
 
-	it('Update with multiple values', function(done){
+	it('Update G2 config with multiple values', function(done){
 		var expected = {'xsn':1, 'ysn':1};
 		config.driver.update(expected, function(err, result) {
 			if(err) { done(err); }
@@ -42,6 +42,22 @@ describe('Config Module', function(){
 			assert.equal(result.carrot, null)
 			return done();
 		});
+	});
+
+	it('Update OpenSBP config', function(done){
+		var expected = {'safeZPullup':0.5};
+		config.opensbp.update(expected, function(err, result) {
+			if(err) { done(err); }
+			assert.equal(result.safeZPullup, expected.safeZPullup)
+			return done();
+		});
+	});
+
+	it('Read OpenSBP config', function(done){
+		var expected = 0.5;
+		var actual = config.opensbp.get('safeZPullup')
+		assert.equal(actual, expected)
+		return done();
 	});
 
 });
