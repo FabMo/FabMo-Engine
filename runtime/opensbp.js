@@ -627,37 +627,37 @@ SBPRuntime.prototype.FS = function(args) {
 
 // Move X axis
 SBPRuntime.prototype.MX = function(args) {
-	this.emit_gcode("G1 X" + args[0] + " F" + 60.0*config.opensbp.get('movexy_speed'));
+	this.emit_gcode("G1X" + args[0] + " F" + 60.0 * config.opensbp.get('movexy_speed'));
 	this.cmd_posx = args[0];
 };
 
 // Move Y axis
 SBPRuntime.prototype.MY = function(args) {
-	this.emit_gcode("G1Y" + args[0] + " F" + 60.0*config.opensbp.get('movexy_speed'));
+	this.emit_gcode("G1Y" + args[0] + " F" + 60.0 * config.opensbp.get('movexy_speed'));
 	this.cmd_posy = args[0];
 };
 
 // Move Z axis
 SBPRuntime.prototype.MZ = function(args) {
-	this.emit_gcode("G1Z" + args[0] + " F" + 60.0*config.opensbp.get('movez_speed'));
+	this.emit_gcode("G1Z" + args[0] + " F" + 60.0 * config.opensbp.get('movez_speed'));
 	this.cmd_posz = args[0];
 };
 
 // Move A axis
 SBPRuntime.prototype.MA = function(args) {
-	this.emit_gcode("G1A" + args[0] + " F" + 60.0*config.opensbp.get('movea_speed'));
+	this.emit_gcode("G1A" + args[0] + " F" + 60.0 * config.opensbp.get('movea_speed'));
 	this.cmd_posa = args[0];
 };
 
 // Move B axis
 SBPRuntime.prototype.MB = function(args) {
-	this.emit_gcode("G1B" + args[0] + " F" + 60.0*config.opensbp.get('moveb_speed'));
+	this.emit_gcode("G1B" + args[0] + " F" + 60.0 * config.opensbp.get('moveb_speed'));
 	this.cmd_posb = args[0];
 };
 
 // Move C axis
 SBPRuntime.prototype.MC = function(args) {
-	this.emit_gcode("G1C" + args[0] + " F" + 60.0*config.opensbp.get('movec_speed'));
+	this.emit_gcode("G1C" + args[0] + " F" + 60.0 * config.opensbp.get('movec_speed'));
 	this.cmd_posc = args[0];
 };
 
@@ -673,7 +673,7 @@ SBPRuntime.prototype.M2 = function(args) {
 		outStr = outStr + "Y" + args[1];
 		this.cmd_posy = args[1];
 	}
-	outStr = outStr + "F" + 60.0*sbp_settings.movexy_speed; 
+	outStr = outStr + "F" + 60.0 * config.opensbp.get('movexy_speed'); 
 	this.emit_gcode(outStr);
 };
 
@@ -693,7 +693,7 @@ SBPRuntime.prototype.M3 = function(args) {
 		outStr = outStr + "Z" + args[2];
 		this.cmd_posz = args[2];
 	}
-	outStr = outStr + "F" + 60.0*sbp_settings.movexy_speed; 
+	outStr = outStr + "F" + 60.0 * config.opensbp.get('movexy_speed'); 
 	this.emit_gcode(outStr);
 };
 
@@ -717,7 +717,7 @@ SBPRuntime.prototype.M4 = function(args) {
 		outStr = outStr + "A" + args[3];
 		this.cmd_posa = args[3];
 	}
-	outStr = outStr + "F" + 60.0*sbp_settings.movexy_speed; 
+	outStr = outStr + "F" + 60.0 * config.opensbp.get('movexy_speed'); 
 	this.emit_gcode(outStr);
 };
 
@@ -745,7 +745,7 @@ SBPRuntime.prototype.M5 = function(args) {
 		outStr = outStr + "B" + args[4];
 		this.cmd_posb = args[4];
 	}
-	outStr = outStr + "F" + 60.0*sbp_settings.movexy_speed; 
+	outStr = outStr + "F" + 60.0 * config.opensbp.get('movexy_speed'); 
 	this.emit_gcode(outStr);
 };
 
@@ -777,20 +777,20 @@ SBPRuntime.prototype.M6 = function(args) {
 		outStr = outStr + "C" + args[5];
 		this.cmd_posc = args[5];
 	}
-	outStr = outStr + "F" + sbp_settings.movexy_speed; 
+	outStr = outStr + "F" + (60 * config.opensbp.get('movexy_speed')); 
 	this.emit_gcode(outStr);
 };
 
 // Move to the XY home position (0,0)
 SBPRuntime.prototype.MH = function(args) {
-	this.emit_gcode("G1X0Y0" + " F" + sbp_settings.movexy_speed);
+	this.emit_gcode("G1X0Y0F" + (60 * config.opensbp.get('movexy_speed')));
 	this.cmd_posx = 0;
 	this.cmd_posy = 0;
 };
 
 // Set the move speeds for Axes XYZABC
 SBPRuntime.prototype.MS = function(args) {
-	var settings = {}
+	var settings = {};
 	if (args[0] !== undefined) settings.movexy_speed = args[0];
 	if (args[1] !== undefined) settings.movez_speed = args[1];
 	if (args[2] !== undefined) settings.movea_speed = args[2];
@@ -970,26 +970,34 @@ SBPRuntime.prototype.JH = function(args) {
 
 // Set the Jog (Rapid) speed for any of the 6 axes
 SBPRuntime.prototype.JS = function(args) {
+	
+	var speed_change = 0.0;
+
 	if (args[0] !== undefined) {
-		sbp_settings.jogxy_speed = args[0];
-		this.command({'xvm':sbp_settings.jogxy_speed});
-		this.command({'yvm':sbp_settings.jogxy_speed});
+		speed_change = args[0];
+		this.command({'xvm':speed_change});
+		this.command({'yvm':speed_change});
+		sbp_settings.jogxy_speed = speed_change;
 	}
 	if (args[1] !== undefined) {
-		sbp_settings.jogz_speed = args[1];
-		this.command({'zvm':sbp_settings.jogz_speed});
+		speed_change = args[1];
+		this.command({'zvm':speed_change});
+		sbp_settings.jogz_speed = speed_change;
 	}
 	if (args[2] !== undefined) {
-		sbp_settings.joga_speed = args[2];
-		this.command({'avm':sbp_settings.joga_speed});
+		speed_change = args[2];
+		this.command({'avm':speed_change});
+		sbp_settings.joga_speed = speed_change; 
 	}
 	if (args[3] !== undefined) {
-		sbp_settings.jogb_speed = args[3];
-		this.command({'bvm':sbp_settings.jogb_speed});
+		speed_change = args[3];
+		this.command({'bvm':speed_change});
+		sbp_settings.jogb_speed = speed_change;
 	}
 	if (args[4] !== undefined) {
-		sbp_settings.jogc_speed = args[4];
-		this.command({'cvm':sbp_settings.jogc_speed});
+		speed_change = args[4];
+		this.command({'cvm':speed_change});
+		sbp_settings.jogc_speed = speed_change;
 	}
 };
 
@@ -1032,24 +1040,24 @@ SBPRuntime.prototype.CG = function(args) {
 
     if (Plg !== 0 && plgFromZero == 1){ currentZ = 0; }
     else { currentZ = startZ; }
-    var safeZCG = currentZ + sbp_settings.safeZpullUp;
+    var safeZCG = currentZ + config.opensbp.get('safeZpullUp');
 
     if ( optCG == 2 ) {    	
    		circRadius = Math.sqrt((centerX * centerX) + (centerY * centerY));
    		PocketAngle = Math.atan2(centerY, centerX);								// Find the angle of the step over between passes
-   		stepOver = sbp_settings.cutterDia * ((100 - sbp_settings.pocketOverlap) / 100);	// Calculate the overlap
+   		stepOver = config.opensbp.get('cutterDia') * ((100 - config.opensbp.get('pocketOverlap')) / 100);	// Calculate the overlap
    		Pocket_StepX = stepOver * Math.cos(PocketAngle);						// Calculate the stepover in X based on the radius of the cutter * overlap
    		Pocket_StepY = stepOver * Math.sin(PocketAngle);						// Calculate the stepover in Y based on the radius of the cutter * overlap
     }
 
     if ( plgFromZero == 1 ) {										// If plunge depth is specified move to that depth * number of reps
-    	this.emit_gcode( "G1Z" + currentZ + "F" + sbp_settings.movez_speed );
+    	this.emit_gcode( "G1Z" + currentZ + "F" + config.opensbp.get('movez_speed') );
     }
 
     for (i=0; i<reps;i++){
     	if (Plg !== 0 && optCG < 3 ) {										// If plunge depth is specified move to that depth * number of reps
     		currentZ += Plg;
-    		this.emit_gcode( "G1Z" + currentZ + "F" + sbp_settings.movez_speed );
+    		this.emit_gcode( "G1Z" + currentZ + "F" + config.opensbp.get('movez_speed') );
     	}
   
     	if (optCG == 2) { 															// Pocket circle from the outside inward to center
@@ -1058,7 +1066,7 @@ SBPRuntime.prototype.CG = function(args) {
     		   	if ( j > 0) {
     		   		this.emit_gcode( "G1X" + ((j * Pocket_StepX) + startX).toFixed(4) + 
     		   			               "Y" + ((j * Pocket_StepY) + startY).toFixed(4) + 
-    		   			               "F" + sbp_settings.movexy_speed);
+    		   			               "F" + config.opensbp.get('movexy_speed'));
     		   	}
     		   	if (Dir == 1 ) { outStr = "G2"; }	// Clockwise circle/arc
     			else {outStr = "G3"; }	// CounterClockwise circle/arc
@@ -1066,7 +1074,7 @@ SBPRuntime.prototype.CG = function(args) {
     					 		  "Y" + (startY + (j * Pocket_StepY)).toFixed(4) +
     							  "I" + (centerX - (j*Pocket_StepX)).toFixed(4) +
     							  "J" + (centerY - (j*Pocket_StepY)).toFixed(4) +
-    							  "F" + sbp_settings.movexy_speed;
+    							  "F" + config.opensbp.get('movexy_speed');
     			this.emit_gcode( outStr );										
     		}
     		this.emit_gcode("G0Z" + safeZCG );										// Pull up Z
@@ -1081,7 +1089,7 @@ SBPRuntime.prototype.CG = function(args) {
 		    	currentZ += Plg;
 			} // Add Z for spiral plunge
 
-			outStr += "I" + centerX + "K" + centerY + "F" + sbp_settings.movexy_speed;	// Add Center offset
+			outStr += "I" + centerX + "K" + centerY + "F" + config.opensbp.get('movexy_speed');	// Add Center offset
 			this.emit_gcode(outStr); 
 	    	
 	    	if( i+1 < reps && ( endX != startX || endY != startY ) ){					//If an arc, pullup and jog back to the start position
@@ -1096,11 +1104,11 @@ SBPRuntime.prototype.CG = function(args) {
         if( endX != startX || endY != startY ) {	//If an arc, pullup and jog back to the start position
     		this.emit_gcode( "G0Z" + safeZCG );
     	   	this.emit_gcode( "G0X" + startX + "Y" + startY);
-    	   	this.emit_gcode( "G1Z" + currentZ + " F" + sbp_settings.movez_speed);		
+    	   	this.emit_gcode( "G1Z" + currentZ + " F" + config.opensbp.get('movez_speed'));		
     	}
     	if (Dir === 1 ){ outStr = "G2"; } 		// Clockwise circle/arc
     	else { outStr = "G3"; }					// CounterClockwise circle/arc
-		outStr += "X" + endX + "Y" + endY + "I" + centerX + "K" + centerY + "F" + sbp_settings.movexy_speed;	// Add Center offset
+		outStr += "X" + endX + "Y" + endY + "I" + centerX + "K" + centerY + "F" + config.opensbp.get('movexy_speed');	// Add Center offset
 		this.emit_gcode(outStr); 
     }
 
@@ -1179,7 +1187,7 @@ SBPRuntime.prototype.CR = function(args) {
     
     if (Plg !== 0 && plgFromZero === 1){ currentZ = 0; }
     else{ currentZ = startZ; }
-    var safeZCG = currentZ + sbp_settings.safeZpullUp;
+    var safeZCG = currentZ + config.opensbp.get('safeZpullUp');
 
     // Set Order and directions based on starting corner
     if ( stCorner == 1 ) { 
@@ -1208,12 +1216,12 @@ SBPRuntime.prototype.CR = function(args) {
     }
 
     if ( OIT == "O" ) { 
-    	lenX += sbp_settings.cutterDia * xDir;
-    	lenY += sbp_settings.cutterDia * yDir;
+    	lenX += config.opensbp.get('cutterDia') * xDir;
+    	lenY += config.opensbp.get('cutterDia') * yDir;
     }
     else if ( OIT == "I" ) {
-    	lenX -= sbp_settings.cutterDia * xDir;
-    	lenY -= sbp_settings.cutterDia * yDir;
+    	lenX -= config.opensbp.get('sbp_settings.cutterDia') * xDir;
+    	lenY -= config.opensbp.get('sbp_settings.cutterDia') * yDir;
     }
     else {
     	lenX *= xDir;
@@ -1227,7 +1235,7 @@ SBPRuntime.prototype.CR = function(args) {
 
 	// If a pocket, calculate the step over and number of steps to pocket out the complete rectangle.
     if (optCR > 1) {
-    	stepOver = sbp_settings.cutterDia * ((100 - sbp_settings.pocketOverlap) / 100);	// Calculate the overlap
+    	stepOver = config.opensbp.get('cutterDia') * ((100 - config.opensbp.get('pocketOverlap')) / 100);	// Calculate the overlap
     	pckt_stepX = pckt_stepY = stepOver;
    		pckt_stepX *= xDir;
    		pckt_stepY *= yDir;
@@ -1273,7 +1281,7 @@ SBPRuntime.prototype.CR = function(args) {
 				outStr = "G1X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
 						   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4); 
 			}
-    		this.emit_gcode( "G1Z" + startZ + "F" + sbp_settings.movez_speed);
+    		this.emit_gcode( "G1Z" + startZ + "F" + config.opensbp.get('movez_speed'));
     		this.emit_gcode( outStr );
    	}
 
@@ -1281,10 +1289,10 @@ SBPRuntime.prototype.CR = function(args) {
     
     	if ( spiralPlg != 1 ) {								// If plunge depth is specified move to that depth * number of reps
     		currentZ += Plg;
-    		this.emit_gcode( "G1Z" + currentZ + "F" + sbp_settings.movez_speed );    		
+    		this.emit_gcode( "G1Z" + currentZ + "F" + config.opensbp.get('movez_speed') );    		
     	}
     	else {
-    		this.emit_gcode( "G1Z" + currentZ + "F" + sbp_settings.movez_speed );    		
+    		this.emit_gcode( "G1Z" + currentZ + "F" + config.opensbp.get('movez_speed') );    		
     	}
     	
     	pass = cnt = 0;
@@ -1313,7 +1321,7 @@ SBPRuntime.prototype.CR = function(args) {
     							outStr += "Z" + (PlgSp).toFixed(4);
     						}
     						
-    						outStr += "F" + sbp_settings.movexy_speed;
+    						outStr += "F" + config.opensbp.get('movexy_speed');
     						this.emit_gcode (outStr);
     					break;
 
@@ -1355,7 +1363,7 @@ SBPRuntime.prototype.CR = function(args) {
    								outStr += "Z" + (PlgSp).toFixed(4); 
    							}	
 
-   							outStr += "F" + sbp_settings.movexy_speed;
+   							outStr += "F" + config.opensbp.get('movexy_speed');
     						this.emit_gcode (outStr);
     					break;
 
@@ -1383,7 +1391,7 @@ SBPRuntime.prototype.CR = function(args) {
    								cnt = 1;
    							}
 
-   							outStr += "F" + sbp_settings.movexy_speed;
+   							outStr += "F" + config.opensbp.get('movexy_speed');
    							this.emit_gcode (outStr);
    						break;
 
@@ -1405,7 +1413,7 @@ SBPRuntime.prototype.CR = function(args) {
    					outStr = "G1X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
    							   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4); 
    				}
-   				outStr += "F" + sbp_settings.movexy_speed;
+   				outStr += "F" + config.opensbp.get('movexy_speed');
     			this.emit_gcode (outStr);
    			}
 
@@ -1415,7 +1423,7 @@ SBPRuntime.prototype.CR = function(args) {
 	    if ( optCR > 1 || stCorner === 0 ) {
     		this.emit_gcode( "G0Z" + safeZCG );
     		outStr = "G1X" + startX + "Y" + startY;
-			outStr += "F" + sbp_settings.movexy_speed;
+			outStr += "F" + config.opensbp.get('movexy_speed');
      		this.emit_gcode( outStr );
      		if ( ( i + 1 ) != reps ) { 
      			this.emit_gcode( "G1Z" + currentZ ); 
@@ -1796,31 +1804,39 @@ SBPRuntime.prototype.VR = function(args) {
 };	
 
 SBPRuntime.prototype.VS = function(args) {
+	
+	var speed_change = 0.0;
+
 	if (args[0] !== undefined) sbp_settings.movexy_speed = args[0];
 	if (args[1] !== undefined) sbp_settings.movez_speed = args[1];
 	if (args[2] !== undefined) sbp_settings.movea_speed = args[2];
 	if (args[3] !== undefined) sbp_settings.moveb_speed = args[3];
 	if (args[4] !== undefined) sbp_settings.movec_speed = args[4];
 	if (args[5] !== undefined) {
-		sbp_settings.jogxy_speed = args[5];
+		speed_change = args[5];
 		this.command({'xvm':sbp_settings.jogxy_speed});
 		this.command({'yvm':sbp_settings.jogxy_speed});
+		sbp_settings.jogxy_speed = speed_change;
 	}
 	if (args[6] !== undefined) {
-		sbp_settings.jogz_speed = args[6];
+		speed_change = args[6];
 		this.command({'zvm':sbp_settings.jogz_speed});
+		sbp_settings.jogz_speed = speed_change;
 	}
 	if (args[7] !== undefined) {
-		sbp_settings.joga_speed = args[7];
+		speed_change = args[7];
 		this.command({'avm':sbp_settings.joga_speed});
+		sbp_settings.joga_speed = speed_change;
 	}
 	if (args[8] !== undefined) {
-		sbp_settings.jogb_speed = args[8];
+		speed_change = args[8];
 		this.command({'bvm':sbp_settings.jogb_speed});
+		sbp_settings.jogb_speed = speed_change;
 	}
 	if (args[9] !== undefined) {
-		sbp_settings.jogc_speed = args[9];
+		speed_change = args[9];
 		this.command({'cvm':sbp_settings.jogc_speed});
+		sbp_settings.jogc_speed = speed_change;
 	}
 };
 
@@ -1852,7 +1868,7 @@ SBPRuntime.prototype.VU = function(args, callback) {
 			var unitsSa1 = 360/getValues[0];
 			var unitsMi1 = getValues[1];
 			var unitsTr1 = getValues[2];
-			nTr1 = ((unitsSa1 * unitsMi1 * sbp_settings.gearBoxRatio1) / SBunitVal1);
+			nTr1 = ((unitsSa1 * unitsMi1 * config.opensbp.get('gearBoxRatio1')) / SBunitVal1);
 			sbp_settings.units1 = SBunitVal1;
 		}
 		if (args[1] !== undefined){
@@ -1861,7 +1877,7 @@ SBPRuntime.prototype.VU = function(args, callback) {
 			var unitsSa2 = 360/getValues[3];
 			var unitsMi2 = getValues[4];
 			var unitsTr2 = getValues[5];
-			nTr2 = ((unitsSa2 * unitsMi2 * sbp_settings.gearBoxRatio2) / SBunitVal2);
+			nTr2 = ((unitsSa2 * unitsMi2 * config.opensbp.get('gearBoxRatio2')) / SBunitVal2);
 			sbp_settings.units2 = SBunitVal2;
 		}
 		if (args[2] !== undefined){
@@ -1870,7 +1886,7 @@ SBPRuntime.prototype.VU = function(args, callback) {
 			var unitsSa3 = 360/getValues[6];
 			var unitsMi3 = getValues[7];
 			var unitsTr3 = getValues[8];
-			nTr3 = ((unitsSa3 * unitsMi3 * sbp_settings.gearBoxRatio3) / SBunitVal3);
+			nTr3 = ((unitsSa3 * unitsMi3 * config.opensbp.get('gearBoxRatio3')) / SBunitVal3);
 			sbp_settings.units3 = SBunitVal3;
 		}
 		if (args[3] !== undefined){
@@ -1879,7 +1895,7 @@ SBPRuntime.prototype.VU = function(args, callback) {
 			var unitsSa4 = 360/getValues[9];
 			var unitsMi4 = getValues[10];
 			var unitsTr4 = getValues[11];
-			nTr4 = ((unitsSa4 * unitsMi4 * sbp_settings.gearBoxRatio4) / SBunitVal4);
+			nTr4 = ((unitsSa4 * unitsMi4 * config.opensbp.get('gearBoxRatio4')) / SBunitVal4);
 			sbp_settings.units4 = SBunitVal4;
 		}
 		if (args[8] !== undefined){
@@ -1888,7 +1904,7 @@ SBPRuntime.prototype.VU = function(args, callback) {
 			var unitsSa5 = 360/getValues[12];
 			var unitsMi5 = getValues[13];
 			var unitsTr5 = getValues[14];
-			nTr5 = ((unitsSa5 * unitsMi5 * sbp_settings.gearBoxRatio5) / SBunitVal5);
+			nTr5 = ((unitsSa5 * unitsMi5 * config.opensbp.get('gearBoxRatio5')) / SBunitVal5);
 			sbp_settings.units5 = SBunitVal5;
 		}
 		if (args[6] !== undefined){
@@ -1897,7 +1913,7 @@ SBPRuntime.prototype.VU = function(args, callback) {
 			var unitsSa6 = 360/getValues[15];
 			var unitsMi6 = getValues[16];
 			var unitsTr6 = getValues[17];
-			nTr6 = ((unitsSa6 * unitsMi6 * sbp_settings.gearBoxRatio6) / SBunitVal6); 	console.log("6tr = " + nTr6 );
+			nTr6 = ((unitsSa6 * unitsMi6 * config.opensbp.get('gearBoxRatio6')) / SBunitVal6); 	console.log("6tr = " + nTr6 );
 			sbp_settings.units6 = SBunitVal6;
 		}
 
