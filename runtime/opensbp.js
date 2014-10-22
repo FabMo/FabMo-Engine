@@ -627,37 +627,37 @@ SBPRuntime.prototype.FS = function(args) {
 
 // Move X axis
 SBPRuntime.prototype.MX = function(args) {
-	this.emit_gcode("G1X" + args[0] + " F" + 60.0 * config.opensbp.get('movexy_speed'));
+	this.emit_gcode("G1X" + args[0] + " F" + ( 60.0 * config.opensbp.get('movexy_speed')));
 	this.cmd_posx = args[0];
 };
 
 // Move Y axis
 SBPRuntime.prototype.MY = function(args) {
-	this.emit_gcode("G1Y" + args[0] + " F" + 60.0 * config.opensbp.get('movexy_speed'));
+	this.emit_gcode("G1Y" + args[0] + " F" + ( 60.0 * config.opensbp.get('movexy_speed')));
 	this.cmd_posy = args[0];
 };
 
 // Move Z axis
 SBPRuntime.prototype.MZ = function(args) {
-	this.emit_gcode("G1Z" + args[0] + " F" + 60.0 * config.opensbp.get('movez_speed'));
+	this.emit_gcode("G1Z" + args[0] + " F" + ( 60.0 * config.opensbp.get('movez_speed')));
 	this.cmd_posz = args[0];
 };
 
 // Move A axis
 SBPRuntime.prototype.MA = function(args) {
-	this.emit_gcode("G1A" + args[0] + " F" + 60.0 * config.opensbp.get('movea_speed'));
+	this.emit_gcode("G1A" + args[0] + " F" + ( 60.0 * config.opensbp.get('movea_speed')));
 	this.cmd_posa = args[0];
 };
 
 // Move B axis
 SBPRuntime.prototype.MB = function(args) {
-	this.emit_gcode("G1B" + args[0] + " F" + 60.0 * config.opensbp.get('moveb_speed'));
+	this.emit_gcode("G1B" + args[0] + " F" + ( 60.0 * config.opensbp.get('moveb_speed')));
 	this.cmd_posb = args[0];
 };
 
 // Move C axis
 SBPRuntime.prototype.MC = function(args) {
-	this.emit_gcode("G1C" + args[0] + " F" + 60.0 * config.opensbp.get('movec_speed'));
+	this.emit_gcode("G1C" + args[0] + " F" + ( 60.0 * config.opensbp.get('movec_speed')));
 	this.cmd_posc = args[0];
 };
 
@@ -673,7 +673,7 @@ SBPRuntime.prototype.M2 = function(args) {
 		outStr = outStr + "Y" + args[1];
 		this.cmd_posy = args[1];
 	}
-	outStr = outStr + "F" + 60.0 * config.opensbp.get('movexy_speed'); 
+	outStr = outStr + "F" + ( 60.0 * config.opensbp.get('movexy_speed')); 
 	this.emit_gcode(outStr);
 };
 
@@ -693,7 +693,7 @@ SBPRuntime.prototype.M3 = function(args) {
 		outStr = outStr + "Z" + args[2];
 		this.cmd_posz = args[2];
 	}
-	outStr = outStr + "F" + 60.0 * config.opensbp.get('movexy_speed'); 
+	outStr = outStr + "F" + ( 60.0 * config.opensbp.get('movexy_speed')); 
 	this.emit_gcode(outStr);
 };
 
@@ -717,7 +717,7 @@ SBPRuntime.prototype.M4 = function(args) {
 		outStr = outStr + "A" + args[3];
 		this.cmd_posa = args[3];
 	}
-	outStr = outStr + "F" + 60.0 * config.opensbp.get('movexy_speed'); 
+	outStr = outStr + "F" + ( 60.0 * config.opensbp.get('movexy_speed')); 
 	this.emit_gcode(outStr);
 };
 
@@ -745,7 +745,7 @@ SBPRuntime.prototype.M5 = function(args) {
 		outStr = outStr + "B" + args[4];
 		this.cmd_posb = args[4];
 	}
-	outStr = outStr + "F" + 60.0 * config.opensbp.get('movexy_speed'); 
+	outStr = outStr + "F" + ( 60.0 * config.opensbp.get('movexy_speed')); 
 	this.emit_gcode(outStr);
 };
 
@@ -777,13 +777,13 @@ SBPRuntime.prototype.M6 = function(args) {
 		outStr = outStr + "C" + args[5];
 		this.cmd_posc = args[5];
 	}
-	outStr = outStr + "F" + (60 * config.opensbp.get('movexy_speed')); 
+	outStr = outStr + "F" + ( 60 * config.opensbp.get('movexy_speed')); 
 	this.emit_gcode(outStr);
 };
 
 // Move to the XY home position (0,0)
 SBPRuntime.prototype.MH = function(args) {
-	this.emit_gcode("G1X0Y0F" + (60 * config.opensbp.get('movexy_speed')));
+	this.emit_gcode("G1X0Y0F" + ( 60 * config.opensbp.get('movexy_speed')));
 	this.cmd_posx = 0;
 	this.cmd_posy = 0;
 };
@@ -1051,13 +1051,13 @@ SBPRuntime.prototype.CG = function(args) {
     }
 
     if ( plgFromZero == 1 ) {										// If plunge depth is specified move to that depth * number of reps
-    	this.emit_gcode( "G1Z" + currentZ + "F" + config.opensbp.get('movez_speed') );
+    	this.emit_gcode( "G1Z" + currentZ + "F" + ( 60 * config.opensbp.get('movez_speed')) );
     }
 
     for (i=0; i<reps;i++){
     	if (Plg !== 0 && optCG < 3 ) {										// If plunge depth is specified move to that depth * number of reps
     		currentZ += Plg;
-    		this.emit_gcode( "G1Z" + currentZ + "F" + config.opensbp.get('movez_speed') );
+    		this.emit_gcode( "G1Z" + currentZ + "F" + ( 60 *  config.opensbp.get('movez_speed')) );
     	}
   
     	if (optCG == 2) { 															// Pocket circle from the outside inward to center
@@ -1066,7 +1066,7 @@ SBPRuntime.prototype.CG = function(args) {
     		   	if ( j > 0) {
     		   		this.emit_gcode( "G1X" + ((j * Pocket_StepX) + startX).toFixed(4) + 
     		   			               "Y" + ((j * Pocket_StepY) + startY).toFixed(4) + 
-    		   			               "F" + config.opensbp.get('movexy_speed'));
+    		   			               "F" + ( 60 * config.opensbp.get('movexy_speed')));
     		   	}
     		   	if (Dir == 1 ) { outStr = "G2"; }	// Clockwise circle/arc
     			else {outStr = "G3"; }	// CounterClockwise circle/arc
@@ -1074,7 +1074,7 @@ SBPRuntime.prototype.CG = function(args) {
     					 		  "Y" + (startY + (j * Pocket_StepY)).toFixed(4) +
     							  "I" + (centerX - (j*Pocket_StepX)).toFixed(4) +
     							  "J" + (centerY - (j*Pocket_StepY)).toFixed(4) +
-    							  "F" + config.opensbp.get('movexy_speed');
+    							  "F" + ( 60 * config.opensbp.get('movexy_speed'));
     			this.emit_gcode( outStr );										
     		}
     		this.emit_gcode("G0Z" + safeZCG );										// Pull up Z
@@ -1089,7 +1089,7 @@ SBPRuntime.prototype.CG = function(args) {
 		    	currentZ += Plg;
 			} // Add Z for spiral plunge
 
-			outStr += "I" + centerX + "K" + centerY + "F" + config.opensbp.get('movexy_speed');	// Add Center offset
+			outStr += "I" + centerX + "K" + centerY + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
 			this.emit_gcode(outStr); 
 	    	
 	    	if( i+1 < reps && ( endX != startX || endY != startY ) ){					//If an arc, pullup and jog back to the start position
@@ -1104,11 +1104,11 @@ SBPRuntime.prototype.CG = function(args) {
         if( endX != startX || endY != startY ) {	//If an arc, pullup and jog back to the start position
     		this.emit_gcode( "G0Z" + safeZCG );
     	   	this.emit_gcode( "G0X" + startX + "Y" + startY);
-    	   	this.emit_gcode( "G1Z" + currentZ + " F" + config.opensbp.get('movez_speed'));		
+    	   	this.emit_gcode( "G1Z" + currentZ + " F" + ( 60 * config.opensbp.get('movez_speed')));		
     	}
     	if (Dir === 1 ){ outStr = "G2"; } 		// Clockwise circle/arc
     	else { outStr = "G3"; }					// CounterClockwise circle/arc
-		outStr += "X" + endX + "Y" + endY + "I" + centerX + "K" + centerY + "F" + config.opensbp.get('movexy_speed');	// Add Center offset
+		outStr += "X" + endX + "Y" + endY + "I" + centerX + "K" + centerY + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
 		this.emit_gcode(outStr); 
     }
 
@@ -1281,7 +1281,7 @@ SBPRuntime.prototype.CR = function(args) {
 				outStr = "G1X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
 						   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4); 
 			}
-    		this.emit_gcode( "G1Z" + startZ + "F" + config.opensbp.get('movez_speed'));
+    		this.emit_gcode( "G1Z" + startZ + "F" + ( 60 * config.opensbp.get('movez_speed')));
     		this.emit_gcode( outStr );
    	}
 
@@ -1289,10 +1289,10 @@ SBPRuntime.prototype.CR = function(args) {
     
     	if ( spiralPlg != 1 ) {								// If plunge depth is specified move to that depth * number of reps
     		currentZ += Plg;
-    		this.emit_gcode( "G1Z" + currentZ + "F" + config.opensbp.get('movez_speed') );    		
+    		this.emit_gcode( "G1Z" + currentZ + "F" + ( 60 * config.opensbp.get('movez_speed')) );    		
     	}
     	else {
-    		this.emit_gcode( "G1Z" + currentZ + "F" + config.opensbp.get('movez_speed') );    		
+    		this.emit_gcode( "G1Z" + currentZ + "F" + ( 60 * config.opensbp.get('movez_speed')) );    		
     	}
     	
     	pass = cnt = 0;
@@ -1321,7 +1321,7 @@ SBPRuntime.prototype.CR = function(args) {
     							outStr += "Z" + (PlgSp).toFixed(4);
     						}
     						
-    						outStr += "F" + config.opensbp.get('movexy_speed');
+    						outStr += "F" + ( 60 * config.opensbp.get('movexy_speed'));
     						this.emit_gcode (outStr);
     					break;
 
@@ -1342,7 +1342,7 @@ SBPRuntime.prototype.CR = function(args) {
    								outStr += "Z" + (PlgSp).toFixed(4);
    							}
 
-   							outStr += "F" + sbp_settings.movexy_speed;
+   							outStr += "F" + ( 60 * config.opensbp.get('movexy_speed'));
     						this.emit_gcode (outStr);
    						break;
 
@@ -1363,7 +1363,7 @@ SBPRuntime.prototype.CR = function(args) {
    								outStr += "Z" + (PlgSp).toFixed(4); 
    							}	
 
-   							outStr += "F" + config.opensbp.get('movexy_speed');
+   							outStr += "F" + ( 60 * config.opensbp.get('movexy_speed'));
     						this.emit_gcode (outStr);
     					break;
 
@@ -1391,7 +1391,7 @@ SBPRuntime.prototype.CR = function(args) {
    								cnt = 1;
    							}
 
-   							outStr += "F" + config.opensbp.get('movexy_speed');
+   							outStr += "F" + ( 60 * config.opensbp.get('movexy_speed'));
    							this.emit_gcode (outStr);
    						break;
 
@@ -1413,7 +1413,7 @@ SBPRuntime.prototype.CR = function(args) {
    					outStr = "G1X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
    							   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4); 
    				}
-   				outStr += "F" + config.opensbp.get('movexy_speed');
+   				outStr += "F" + ( 60 * config.opensbp.get('movexy_speed'));
     			this.emit_gcode (outStr);
    			}
 
@@ -1423,7 +1423,7 @@ SBPRuntime.prototype.CR = function(args) {
 	    if ( optCR > 1 || stCorner === 0 ) {
     		this.emit_gcode( "G0Z" + safeZCG );
     		outStr = "G1X" + startX + "Y" + startY;
-			outStr += "F" + config.opensbp.get('movexy_speed');
+			outStr += "F" + ( 60 * config.opensbp.get('movexy_speed'));
      		this.emit_gcode( outStr );
      		if ( ( i + 1 ) != reps ) { 
      			this.emit_gcode( "G1Z" + currentZ ); 
