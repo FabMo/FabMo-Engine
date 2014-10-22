@@ -790,13 +790,34 @@ SBPRuntime.prototype.MH = function(args) {
 
 // Set the move speeds for Axes XYZABC
 SBPRuntime.prototype.MS = function(args) {
-	var settings = {};
-	if (args[0] !== undefined) settings.movexy_speed = args[0];
-	if (args[1] !== undefined) settings.movez_speed = args[1];
-	if (args[2] !== undefined) settings.movea_speed = args[2];
-	if (args[3] !== undefined) settings.moveb_speed = args[3];
-	if (args[4] !== undefined) settings.movec_speed = args[4];
-	config.opensbp.setMany(settings); // config.opensbp.update(settings) would do the same thing here
+	var speed_change = 0.0;
+
+	if (args[0] !== undefined) {
+		speed_change = args[0];
+		this.command({'xfr':(60*speed_change)});
+		this.command({'yfr':(60*speed_change)});
+		config.opensbp.set('movexy_speed', speed_change);
+	}
+	if (args[1] !== undefined) {
+		speed_change = args[1];
+		this.command({'zfr':(60*speed_change)});
+		config.opensbp.set('movez_speed', speed_change);
+	}
+	if (args[2] !== undefined) {
+		speed_change = args[2];
+		this.command({'afr':(60*speed_change)});
+		config.opensbp.set('movea_speed', speed_change);
+	}
+	if (args[3] !== undefined) {
+		speed_change = args[3];
+		this.command({'bfr':(60*speed_change)});
+		config.opensbp.set('moveb_speed', speed_change);
+	}
+	if (args[4] !== undefined) {
+		speed_change = args[4];
+		this.command({'cfr':(60*speed_change)});
+		config.opensbp.set('movec_speed', speed_change);
+	}
 };
 
 SBPRuntime.prototype.MI = function(args) {
@@ -977,27 +998,27 @@ SBPRuntime.prototype.JS = function(args) {
 		speed_change = args[0];
 		this.command({'xvm':speed_change});
 		this.command({'yvm':speed_change});
-		sbp_settings.jogxy_speed = speed_change;
+		config.opensbp.set('jogxy_speed', speed_change);
 	}
 	if (args[1] !== undefined) {
 		speed_change = args[1];
 		this.command({'zvm':speed_change});
-		sbp_settings.jogz_speed = speed_change;
+		config.opensbp.set('jogz_speed', speed_change);
 	}
 	if (args[2] !== undefined) {
 		speed_change = args[2];
 		this.command({'avm':speed_change});
-		sbp_settings.joga_speed = speed_change; 
+		config.opensbp.set('joga_speed', speed_change); 
 	}
 	if (args[3] !== undefined) {
 		speed_change = args[3];
 		this.command({'bvm':speed_change});
-		sbp_settings.jogb_speed = speed_change;
+		config.opensbp.set('jogb_speed', speed_change);
 	}
 	if (args[4] !== undefined) {
 		speed_change = args[4];
 		this.command({'cvm':speed_change});
-		sbp_settings.jogc_speed = speed_change;
+		config.opensbp.set('jogc_speed', speed_change);
 	}
 };
 
@@ -1807,36 +1828,57 @@ SBPRuntime.prototype.VS = function(args) {
 	
 	var speed_change = 0.0;
 
-	if (args[0] !== undefined) sbp_settings.movexy_speed = args[0];
-	if (args[1] !== undefined) sbp_settings.movez_speed = args[1];
-	if (args[2] !== undefined) sbp_settings.movea_speed = args[2];
-	if (args[3] !== undefined) sbp_settings.moveb_speed = args[3];
-	if (args[4] !== undefined) sbp_settings.movec_speed = args[4];
+	if (args[0] !== undefined) {
+		speed_change = args[0];
+		this.command({'xfr':(60*speed_change)});
+		this.command({'yfr':(60*speed_change)});
+		config.opensbp.set('movexy_speed', speed_change);
+	}
+	if (args[1] !== undefined) {
+		speed_change = args[1];
+		this.command({'zfr':(60*speed_change)});
+		config.opensbp.set('movez_speed', speed_change);
+	}
+	if (args[2] !== undefined) {
+		speed_change = args[2];
+		this.command({'afr':(60*speed_change)});
+		config.opensbp.set('movea_speed', speed_change);
+	}
+	if (args[3] !== undefined) {
+		speed_change = args[3];
+		this.command({'bfr':(60*speed_change)});
+		config.opensbp.set('moveb_speed', speed_change);
+	}
+	if (args[4] !== undefined) {
+		speed_change = args[4];
+		this.command({'cfr':(60*speed_change)});
+		config.opensbp.set('movec_speed', speed_change);
+	}
 	if (args[5] !== undefined) {
 		speed_change = args[5];
-		this.command({'xvm':sbp_settings.jogxy_speed});
-		this.command({'yvm':sbp_settings.jogxy_speed});
-		sbp_settings.jogxy_speed = speed_change;
+		this.command({'xvm':(60*speed_change)});
+		this.command({'yvm':(60*speed_change)});
+		config.opensbp.set('jogxy_speed', speed_change);
 	}
 	if (args[6] !== undefined) {
 		speed_change = args[6];
-		this.command({'zvm':sbp_settings.jogz_speed});
-		sbp_settings.jogz_speed = speed_change;
+		this.command({'zvm':(60*speed_change)});
+		config.opensbp.set('jogz_speed', speed_change);
 	}
 	if (args[7] !== undefined) {
 		speed_change = args[7];
-		this.command({'avm':sbp_settings.joga_speed});
-		sbp_settings.joga_speed = speed_change;
+		this.command({'avm':(60*speed_change)});
+		config.opensbp.set('joga_speed', speed_change);
 	}
 	if (args[8] !== undefined) {
 		speed_change = args[8];
-		this.command({'bvm':sbp_settings.jogb_speed});
-		sbp_settings.jogb_speed = speed_change;
+		this.command({'bvm':(60*speed_change)});
+		config.opensbp.set('jogb_speed', speed_change);
 	}
 	if (args[9] !== undefined) {
 		speed_change = args[9];
-		this.command({'cvm':sbp_settings.jogc_speed});
-		sbp_settings.jogc_speed = speed_change;
+		this.command({'cvm':(60*speed_change)});
+		config.opensbp.set('jogc_speed', speed_change);
 	}
 };
 
