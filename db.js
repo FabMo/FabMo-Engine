@@ -7,11 +7,13 @@ var util = require('./util');
 
 // Connect to TingoDB database that stores the files
 var Engine = require('tingodb')()
-var db = new Engine.Db(config.engine.getDBDir(), {}); // be sure that the directory exist !
-var files = db.collection("files");
-var jobs = db.collection("jobs");
+
 
 job_queue = new util.Queue()
+
+var db;
+var files;
+var jobs;
 
 Job = function(options) {
     this.file_id = options.file_id;
@@ -21,24 +23,26 @@ Job = function(options) {
 
 Job.prototype.save = function(callback) {
 	jobs.findOne({id_: this._id},function(err,document){
-		if (err){
-			throw err;
+		if(err) {
+			callback(err, null);
 		}
 		else if(document){
 			// update the current entry in the database instead of creating a new one.
 			log.info('Updating job id ' + document._id);
-			files.update({this : document._id},that,function(){
-				callback(that);
+			jobs.update({'_id' : document._id},this,function(){
+				callback(null, this);
 			});
 
 		}
 		else{
 			log.info('Creating a new job.');
 			jobs.insert(this, function(err,records){
-				if(!err)
-					callback(records[0]);
-				else
-					throw err;	
+				if(err) {
+					callback(err, null);
+				}
+				else {
+					callback(null, records[0]);
+				}
 			});
 
 		}
@@ -48,7 +52,28 @@ Job.prototype.save = function(callback) {
 // Delete this file from the database
 Job.prototype.delete = function(callback){
 	jobs.remove({_id : this._id},function(err){if(!err)callback();else callback(err);});
+}
 
+Job.get_pending_jobs = function(callback) {
+	jobs.find({state:'pending'}).toArray(callback);
+}
+
+Job.getAll = function(callback) {
+	jobs.find().toArray(callback);
+}
+
+Job.getNextJob = function(callback) {
+	jobs.find({state:'pending'}).toArray(function(err, result) {
+		if(err) {
+			callback(err, null);
+		} else {
+			callback(null, result[0]);
+		}
+	});
+}
+
+Job.delete_pending_jobs = function(callback) {
+	jobs.remove({state:'pending'},callback);
 }
 
 // The File class represents a fabrication file on disk
@@ -83,7 +108,7 @@ File.prototype.save = function(callback){
 		// update the current entry in the database instead of creating a new one.
 		log.info('Updating document id ' + document._id);
 		files.update({_id : document._id},that,function(){
-					callback(that);
+			callback(that);
 		});
 
 	}
@@ -93,7 +118,7 @@ File.prototype.save = function(callback){
 			if(!err)
 				callback(records[0]);
 			else
-				throw err;	
+				throw err;
 		});
 
 	}
@@ -103,7 +128,6 @@ File.prototype.save = function(callback){
 // Delete this file from the database
 File.prototype.delete = function(callback){
 	files.remove({_id : this._id},function(err){if(!err)callback();else callback(err);});
-
 }
 
 // Update the "last run" time (use the current time)
@@ -115,9 +139,10 @@ File.prototype.saverun = function(){
 File.list_all = function(callback){
 	files.find().toArray(function(err,result){
 		if (err){
-       			throw err;
-       		}
-		callback(result);});
+			throw err;
+		}
+		callback(result);
+	});
 }
 
 // Return a file object for the provided id
@@ -134,8 +159,16 @@ File.get_by_id = function(id,callback)
 	});
 }
 
+exports.configureDB = function(callback) {
+	db = new Engine.Db(config.engine.getDBDir(), {}); // be sure that the directory exist !
+	files = db.collection("files");
+	jobs = db.collection("jobs");
+
+	setImmediate(callback, null);
+}
+
 exports.File = File;
 exports.Job = Job;
-exports.job_queue = job_queue;
+
 /*****************************************/
 

@@ -9,15 +9,6 @@ var fs = require('fs');
 //require('../log').suppress();
 
 describe('Job Queue API', function(){
-/*
-	it('Get job listing from server', function(done){
-		request.get('http://127.0.0.1:9876/job', function(err, res, body) {
-			var json = JSON.parse(body);
-			expect(json).to.have.property('jobs');
-			done();
-		});
-	});
-*/
 
 	it('Submit a job', function(done){
 		// Log level
@@ -30,5 +21,15 @@ describe('Job Queue API', function(){
 			done();
 		});
 	});
+/*
+	it('Clear the job queue', function(done) {
+		// Do a post request to change the log level
+		request.post({url: 'http://127.0.0.1:9876/job/queue/clear'}, function(err, res, body) {
+			json = JSON.parse(body);
+			done();
+		});
+	});
+*/
+
 
 })

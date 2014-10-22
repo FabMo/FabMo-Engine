@@ -96,6 +96,25 @@ Machine.prototype.sbp = function(string) {
 	this.current_runtime.runString(string);
 };
 
+Machine.prototype.runJob = function(job) {
+	this.currentJob = job;
+	db.File.get_by_id(job.file_id,function(file){
+		// TODO deal with no file found
+		machine.runFile(file.path);
+	});	
+}
+
+Machine.prototype.runNextJob = function(callback) {
+	db.getNextJob(function(err, result) {
+		if(err) {
+			callback(err, null);
+		} else {
+			this.runJob(result);
+			callback(null, result);
+		}
+	});
+}
+
 Machine.prototype.runFile = function(filename) {
 	fs.readFile(filename, 'utf8', function (err,data) {
 		if (err) {

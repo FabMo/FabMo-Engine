@@ -1,8 +1,9 @@
 var db = require('../db');
 var path = require('path');
+var config = require('../config');
 var allowed_file = require('../util').allowed_file;
 
-submit_job = function(req, res, next) {
+submitJob = function(req, res, next) {
 
 	// Get the one and only one file you're currently allowed to upload at a time
 	var file = req.files.file;
@@ -23,12 +24,17 @@ submit_job = function(req, res, next) {
 			// delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
 			fs.unlink(file.path, function() {
 				if (err) {throw err;}
-				var file = new File(filename, full_path)
+				var file = new db.File(filename, full_path)
 				
+				// save the file, and if successful, create a job to go with it
 				file.save(function(file){
 					var job = new db.Job({file_id : file._id});
 					job.save(function(err, job) {
-						res.send(302, file);
+						if(err) {
+							res.send(500, err);
+						} else {
+							res.send(302, job);
+						}
 					}); // job.save
 				}); // job.save
 			}); // unlink 
@@ -42,6 +48,62 @@ submit_job = function(req, res, next) {
 	}
 };
 
+clearQueue = function(req, res, next) {
+	db.Job.delete_pending_jobs(function(err) {
+		if(err) {
+			res.send(500, err);
+		} else {
+			res.send(302, {});
+		}
+	});
+}
+
+runNextJob = function(req, res, next) {
+	machine.runNextJob(function(err, job) {
+		if(err) {
+			res.send(500, err);
+		} else {
+			res.send(302, job);
+		}
+	});
+}
+
+getQueue = function(req, res, next) {
+	db.Job.get_pending_jobs(function(err, result) {
+		if(err) {
+			res.send(500, err);
+		} else {
+			res.send(302, result);
+		}
+	})
+}
+
+getAllJobs = function(req, res, next) {
+	db.Job.getAll(function(err, result) {
+		if(err) {
+			res.send(500, err);
+		} else {
+			res.send(302, result);
+		}
+	})
+}
+
+getQueue = function(req, res, next) {
+	db.Job.getAll(function(err, result) {
+		if(err) {
+			res.send(500, err);
+		} else {
+			res.send(302, result);
+		}
+	})
+}
+
+
 module.exports = function(server) {
-	server.post('/job', submit_job); //OK
+	server.post('/job', submitJob);
+	server.get('/jobs', getAllJobs);
+	server.get('/job/queue', getQueue);
+	server.post('/job/queue/clear', clearQueue);
+	server.post('/job/queue/run', runNextJob);
+
 }

@@ -6,6 +6,7 @@ var detection_daemon = require('./detection_daemon');
 var config = require('./config');
 var PLATFORM = process.platform;
 var log = require('./log').logger('server');
+var db = require('./db');
 
 var Engine = function() {
 }
@@ -29,6 +30,11 @@ Engine.prototype.start = function(callback) {
         function apply_engine_config(callback) {
             log.info("Applying engine configuration...")
             config.engine.apply(callback);
+        },
+
+        // Configure the DB
+        function setup_database(callback) {
+            db.configureDB(callback);
         },
 
         // Connect to G2 and initialize machine runtimes
