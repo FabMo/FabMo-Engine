@@ -1,6 +1,6 @@
 {
-    "movexy_speed": 60,
-    "movez_speed": 40,
+    "movexy_speed": 400,
+    "movez_speed": 400,
     "movea_speed": 60,
     "moveb_speed": 60,
     "movec_speed": 60,
