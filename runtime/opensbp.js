@@ -1828,58 +1828,61 @@ SBPRuntime.prototype.VS = function(args) {
 	
 	var speed_change = 0.0;
 
+	var settings = {}
+
 	if (args[0] !== undefined) {
 		speed_change = args[0];
-		this.command({'xfr':(60*speed_change)});
-		this.command({'yfr':(60*speed_change)});
+		//this.command({'xfr':(60*speed_change)});
+		settings['yfr'] = (60*speed_change);
 		config.opensbp.set('movexy_speed', speed_change);
 	}
 	if (args[1] !== undefined) {
 		speed_change = args[1];
-		this.command({'zfr':(60*speed_change)});
+		settings['zfr'] = (60*speed_change);
 		config.opensbp.set('movez_speed', speed_change);
 	}
 	if (args[2] !== undefined) {
 		speed_change = args[2];
-		this.command({'afr':(60*speed_change)});
+		settings['afr'] = (60*speed_change);
 		config.opensbp.set('movea_speed', speed_change);
 	}
 	if (args[3] !== undefined) {
 		speed_change = args[3];
-		this.command({'bfr':(60*speed_change)});
+		settings['bfr'] = (60*speed_change);
 		config.opensbp.set('moveb_speed', speed_change);
 	}
 	if (args[4] !== undefined) {
 		speed_change = args[4];
-		this.command({'cfr':(60*speed_change)});
+		settings['cfr'] = (60*speed_change);
 		config.opensbp.set('movec_speed', speed_change);
 	}
 	if (args[5] !== undefined) {
 		speed_change = args[5];
-		this.command({'xvm':(60*speed_change)});
-		this.command({'yvm':(60*speed_change)});
+		settings['xvm'] = (60*speed_change);
+		settings['yvm'] = (60*speed_change);
 		config.opensbp.set('jogxy_speed', speed_change);
 	}
 	if (args[6] !== undefined) {
 		speed_change = args[6];
-		this.command({'zvm':(60*speed_change)});
+		settings['zvm'] = (60*speed_change);
 		config.opensbp.set('jogz_speed', speed_change);
 	}
 	if (args[7] !== undefined) {
 		speed_change = args[7];
-		this.command({'avm':(60*speed_change)});
+		settings['avm'] = (60*speed_change);
 		config.opensbp.set('joga_speed', speed_change);
 	}
 	if (args[8] !== undefined) {
 		speed_change = args[8];
-		this.command({'bvm':(60*speed_change)});
+		settings['bvm'] = (60*speed_change);
 		config.opensbp.set('jogb_speed', speed_change);
 	}
 	if (args[9] !== undefined) {
 		speed_change = args[9];
-		this.command({'cvm':(60*speed_change)});
+		settings['cvm'] = (60*speed_change);
 		config.opensbp.set('jogc_speed', speed_change);
 	}
+	config.driver.setMany(settings);
 };
 
 SBPRuntime.prototype.VU = function(args, callback) {
