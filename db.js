@@ -8,7 +8,6 @@ var util = require('./util');
 // Connect to TingoDB database that stores the files
 var Engine = require('tingodb')()
 
-
 job_queue = new util.Queue()
 
 var db;
@@ -18,61 +17,113 @@ var jobs;
 Job = function(options) {
     this.file_id = options.file_id;
     this.name = options.name || "Untitled Job"
+    this.description = option.description || "No description"
+    this.created_at = Date.now();
+    this.started_at = null;
+    this.finished_at = null;
     this.state = "pending"
 }
 
+Job.prototype.start = function(callback) {
+	log.info("Starting job id " + this._id)
+	this.state = 'running';
+	this.started_at = Date.now();
+	this.save(callback);
+}
+
+Job.prototype.finish = function(callback) {
+	log.info("Finishing job id " + this._id)
+	this.state = 'finished';
+	this.finished_at = Date.now();
+	this.save(callback);
+}
+
 Job.prototype.save = function(callback) {
-	jobs.findOne({id_: this._id},function(err,document){
+	jobs.findOne({_id: this._id}, function(err,document){
 		if(err) {
-			callback(err, null);
+			callback(err);
 		}
 		else if(document){
 			// update the current entry in the database instead of creating a new one.
 			log.info('Updating job id ' + document._id);
-			jobs.update({'_id' : document._id},this,function(){
-				callback(null, this);
-			});
-
+			jobs.update({'_id' : document._id},this,function(err){
+				if(err) {
+					callback(err);
+				} else {
+					callback(null, this);
+				}
+			}.bind(this));
 		}
 		else{
+			// Create a new entry in the database
 			log.info('Creating a new job.');
 			jobs.insert(this, function(err,records){
 				if(err) {
 					callback(err, null);
 				}
 				else {
-					callback(null, records[0]);
+					// Return the newly created job
+					callback(null, this);
 				}
-			});
-
+			}.bind(this));
 		}
 	}.bind(this));
 }
 
-// Delete this file from the database
 Job.prototype.delete = function(callback){
 	jobs.remove({_id : this._id},function(err){if(!err)callback();else callback(err);});
 }
 
-Job.get_pending_jobs = function(callback) {
+Job.getPending = function(callback) {
 	jobs.find({state:'pending'}).toArray(callback);
 }
 
 Job.getAll = function(callback) {
-	jobs.find().toArray(callback);
+	jobs.find().toArray(function(array) {
+		callback(array);
+	});
 }
 
-Job.getNextJob = function(callback) {
+// Return a file object for the provided id
+Job.getById = function(id,callback)
+{
+	jobs.findOne({_id: id},function(err,document){
+		if (!document){
+			callback(undefined);
+			return;
+		}
+		var job = document;
+		job.__proto__ = Job.prototype;
+		callback(job);
+	});
+}
+
+Job.getNext = function(callback) {
 	jobs.find({state:'pending'}).toArray(function(err, result) {
 		if(err) {
 			callback(err, null);
 		} else {
-			callback(null, result[0]);
+			if(result.length === 0) {
+				return callback(Error('No jobs in queue.'))
+			}
+			var job = result[0];
+			job.__proto__ = Job.prototype
+			callback(null, job);
 		}
 	});
 }
 
-Job.delete_pending_jobs = function(callback) {
+Job.dequeue = function(callback) {
+	Job.getNext(function(err, job) {
+		if(err) {
+			callback(err);
+		} else {
+			job.start(callback);
+		}
+	});
+}
+
+Job.deletePending = function(callback) {
 	jobs.remove({state:'pending'},callback);
 }
 
@@ -93,8 +144,12 @@ function File(filename,path){
 	  	that.size = stat.size;
 	});
 	fs.readFile(this.path, function (err, data) {
-		this.checksum =  crypto.createHash('md5').update(data, 'utf8').digest('hex');	
+		this.checksum = File.checksum(data);
 	}.bind(this));
+}
+
+File.checksum = function(data) {
+	return crypto.createHash('md5').update(data, 'utf8').digest('hex');
 }
 
 // Save information about this file to back to the database
@@ -102,15 +157,14 @@ File.prototype.save = function(callback){
 	var that = this;
 	files.findOne({path: that.path},function(err,document){
 	if (err){
-       		throw err;
-       	}
+		callback(err);
+	}
 	else if(document){
 		// update the current entry in the database instead of creating a new one.
 		log.info('Updating document id ' + document._id);
 		files.update({_id : document._id},that,function(){
 			callback(that);
 		});
-
 	}
 	else{
 		log.info('Creating a new document.');
@@ -120,7 +174,6 @@ File.prototype.save = function(callback){
 			else
 				throw err;
 		});
-
 	}
 	});
 }

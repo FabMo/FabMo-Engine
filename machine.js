@@ -5,6 +5,7 @@ var PLATFORM = require('process').platform;
 var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
+var db = require('./db');
 
 var log = require('./log').logger('machine');
 var GCodeRuntime = require('./runtime/gcode').GCodeRuntime;
@@ -54,7 +55,8 @@ function Machine(serial_path, callback) {
 		state : "not_ready",
 		posx : 0.0,
 		posy : 0.0,
-		posz : 0.0
+		posz : 0.0, 
+		job : null
 	};
 
 	this.driver = new g2.G2();
@@ -97,22 +99,27 @@ Machine.prototype.sbp = function(string) {
 };
 
 Machine.prototype.runJob = function(job) {
-	this.currentJob = job;
+	this.status.job = job;
 	db.File.get_by_id(job.file_id,function(file){
 		// TODO deal with no file found
-		machine.runFile(file.path);
-	});	
+		log.info("Running file " + file.path);
+		this.runFile(file.path);
+	}.bind(this));	
 }
 
 Machine.prototype.runNextJob = function(callback) {
-	db.getNextJob(function(err, result) {
+	log.info("Running next job");
+	db.Job.dequeue(function(err, result) {
+		log.info(result)
 		if(err) {
+			log.error(err);
 			callback(err, null);
 		} else {
+			log.info('Running job ' + result)
 			this.runJob(result);
 			callback(null, result);
 		}
-	});
+	}.bind(this));
 }
 
 Machine.prototype.runFile = function(filename) {

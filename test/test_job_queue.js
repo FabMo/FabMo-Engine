@@ -21,15 +21,28 @@ describe('Job Queue API', function(){
 			done();
 		});
 	});
-/*
+
 	it('Clear the job queue', function(done) {
+		// Log level
+		var formData = {
+			file : fs.createReadStream(__dirname + '/data/square.nc')
+		}
 		// Do a post request to change the log level
-		request.post({url: 'http://127.0.0.1:9876/job/queue/clear'}, function(err, res, body) {
+		request.post({url: 'http://127.0.0.1:9876/job', 'formData' : formData}, function(err, res, body) {
 			json = JSON.parse(body);
 			done();
+
+			// Do a post request to change the log level
+			request.post({url: 'http://127.0.0.1:9876/job/queue/clear'}, function(err, res, body) {
+				json = JSON.parse(body);
+				done();
+			});
+		
+
 		});
+
+
 	});
-*/
 
 
 })

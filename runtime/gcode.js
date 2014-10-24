@@ -32,10 +32,13 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 };
 
 GCodeRuntime.prototype._idle = function() {
-	this.machine.setState(this, 'idle');
 	this.machine.status.current_file = null;
 	this.machine.status.line=null;
 	this.machine.status.nb_lines=null;
+	this.machine.status.job.finish(function(err, job) {
+		this.machine.status.job=null;
+		this.machine.setState(this, 'idle');
+	}.bind(this));
 };
 
 GCodeRuntime.prototype._onDriverStateChange = function(states) {

@@ -25,7 +25,6 @@
 		  <li><a><strong>X: </strong><span class="posx"></span></a></li>
 		  <li><a><strong>Y: </strong><span class="posy"></span></a></li>
 		  <li><a><strong>Z: </strong><span class="posz"></span></a></li>
-		  <li class="hide file-info"><a><strong>File: </strong><span class="filename"></span>    <span class="progress"></span></a></li>
 		</ul>
 		  <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-default navbar-btn navbar-right" id="keypad" data-target="#manual-modal" data-toggle="modal"><span class="glyphicon glyphicon-screenshot"></span>
 		  <button type="button" style="margin-left: 5px; margin-right: 5px;" class="btn btn-warning navbar-btn navbar-right fabmo-pause-button hide"><span class="glyphicon glyphicon-pause"></span></button>
@@ -35,10 +34,51 @@
 	</div><!-- /.container-fluid -->
   </nav>
 
-  <div class="container">
+	<div class="container">
+
+	<div class="panel panel-default current-job-item panel-success" style="display:none;">
+		<div class="panel-heading">Current Job</div>
+		<div class="panel-body">There is a job</div>
+	</div>
+
 	<div class="panel panel-default">
-	  <div class="panel-heading app-heading">FabMo G-Code Streamer</div>
-	  <div class="panel-body">
+		<div class="panel-heading app-heading">
+			Job Manager
+			<div class="btn-group pull-right">
+				<a class="btn btn-default btn-xs run-next">Run Next Job</a>
+				<a class="btn btn-default btn-xs clear-jobs">Clear Job Queue</a>
+			</div>
+		</div>
+		<div class="panel-body">
+			
+
+			<div class="list-group no-jobs" style="display: none;">
+			<a class="list-group-item list-group-item-info no-jobs-item" style="cursor: pointer;">
+			    <h4 class="list-group-item-heading">No Jobs Pending</h4>
+			    <p class="list-group-item-text">There are no jobs in the queue.  Click here to submit a job.</p>
+			</a>
+			</div>
+
+			<div class="list-group jobs-listing">
+			<!-- JOB LISTING -->
+			</div>
+
+			<form id="submit_job" action="/job" method="post" enctype="multipart/form-data">
+				<div class="pull-left">
+					<input id='job_selector' type="file" name="file" data-filename-placement="inside" title="Browse...">
+				</div>
+				<div class="pull-right">
+					<button type="submit" class="btn btn-default btn-primary">
+						<span class="glyphicon glyphicon-upload"></span>Upload
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<div class="panel panel-default">
+		<div class="panel-heading app-heading">FabMo G-Code Streamer</div>
+		<div class="panel-body">
 		<table class="table table-hover table-bordered" id="files">
 		  <tr><th colspan="3">Files on the tool (click to run)</th></tr>
 		</table>
@@ -199,6 +239,7 @@
 
 	  // Load the list of files available on the tool
 	  refresh_files_list();
+	  refresh_jobs_list();
 	});
 
 
@@ -228,6 +269,37 @@
 	  });
 	}
 
+	function refresh_jobs_list(){
+		// Load the list of files available on the tool
+		tool.list_jobs_in_queue(function(err,jobs){
+			if(err) { return console.log(err) }
+			$(".job-item").remove();
+			if(jobs.length === 0) {
+				$(".no-jobs").show()
+				$(".run-next").addClass("disabled");
+				$(".clear-jobs").addClass("disabled");
+			} else {
+				$(".no-jobs").hide()
+				$(".run-next").removeClass("disabled");
+				$(".clear-jobs").removeClass("disabled");
+			}
+			$.each( jobs, function( key, val ) {
+				console.log(val);
+				html = [
+				'<a class="list-group-item job-item">',
+					'<h4 class="list-group-item-heading">',
+						val.name,
+					'</h4>',
+					'<p class="list-group-item-text">',
+					val.description || 'No description.' + ' ' + new Date(val.created_at).toLocaleString(),
+					'</p>',
+				'</a>'
+				].join('');
+				$(".jobs-listing").append(html);
+			});
+		});
+	}
+
 	$('#add_file').submit(function(e){
 	e.preventDefault();
 		tool.upload_file($(this),function(err,file){
@@ -238,6 +310,16 @@
 	});
 	});
 
+	$('#submit_job').submit(function(e){
+	e.preventDefault();
+		tool.add_job($(this),function(err,file){
+		if(err){console.log(err);return;}
+		$('#job_selector').replaceWith($('#job_selector').clone(true)); //reset file field
+		$('#job_selector').prev().html('Browse for a file to upload...');
+			refresh_files_list();
+			refresh_jobs_list();
+	});
+	});
 
 
 	$(' tbody').on( "click", 'tr .delete-button', function(e) {	
@@ -247,7 +329,7 @@
 	else
 		alert(err);
 	});
-   });
+	});
 
 	$(' tbody').on( "click", 'tr .download-button', function(e) {	
 	tool.download_by_id($(this).attr('value'));
@@ -262,6 +344,9 @@
 	});
 
 });
+	$('.no-jobs-item').click(function(e) {
+		$('#job_selector').click();
+	});
 
 	function flash_input(cls, value, duration) {
 		if(value === 'error') {
@@ -308,13 +393,21 @@
 	$('.homey-button').click(function(e) {gcode('G28.2 Y0'); });
 	$('.homez-button').click(function(e) {gcode('G28.2 Z0'); });
 	$('.homexy-button').click(function(e) {gcode('G28.2 X0 Y0'); });
-
 	$('.probez-button').click(function(e) {gcode('G38.2 Z-4 F10\nG10 L2 P1 Z-0.125'); });   
-
 	$('.zerox-button').click(function(e) {gcode('G28.3 X0'); });  
 	$('.zeroy-button').click(function(e) {gcode('G28.3 Y0'); });  
 	$('.zeroz-button').click(function(e) {gcode('G28.3 Z0'); });  
 
+	$('.run-next').click(function(e) { 
+		tool.job_run(function(err, result) {
+			refresh_jobs_list();
+		});
+	});
+
+	$('.clear-jobs').click(function(e) { tool.clear_job_queue(function(err, result) {
+			refresh_jobs_list();
+		});
+	});
 
 	$('.fabmo-status').on('statechange',function(e,state){
 		if (state === 'running' || state === 'manual' || state === 'homing' || state==='probing')
@@ -327,7 +420,15 @@
 			$('.state').removeClass('label-success label-info label-default label-warning label-danger').addClass('label-default');
 	});
 
-  </script>
+	ui.on('status', function(status) {
+		if(status.job) {
+			$(".current-job-item").show(500);
+		} else {
+			$(".current-job-item").hide(500);
+		}
+	});
+
+</script>
 
 </body>
 </html>

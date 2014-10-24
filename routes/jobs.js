@@ -2,6 +2,8 @@ var db = require('../db');
 var path = require('path');
 var config = require('../config');
 var allowed_file = require('../util').allowed_file;
+var log = require('../log').logger('routes');
+var machine = require('../machine').machine
 
 submitJob = function(req, res, next) {
 
@@ -18,14 +20,14 @@ submitJob = function(req, res, next) {
 		// Uploaded files are stored in a temporary directory (per restify)
 		// Move the file from that path to the parts directory
 		fs.rename(file.path, full_path, function(err) {
-			if (err){
+			if (err) {
 				throw err;
 			}
 			// delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
 			fs.unlink(file.path, function() {
 				if (err) {throw err;}
 				var file = new db.File(filename, full_path)
-				
+
 				// save the file, and if successful, create a job to go with it
 				file.save(function(file){
 					var job = new db.Job({file_id : file._id});
@@ -33,7 +35,7 @@ submitJob = function(req, res, next) {
 						if(err) {
 							res.send(500, err);
 						} else {
-							res.send(302, job);
+							res.send(200, job);
 						}
 					}); // job.save
 				}); // job.save
@@ -49,31 +51,35 @@ submitJob = function(req, res, next) {
 };
 
 clearQueue = function(req, res, next) {
-	db.Job.delete_pending_jobs(function(err) {
+	log.info("Clearing the job queue");
+	db.Job.deletePending(function(err) {
 		if(err) {
 			res.send(500, err);
 		} else {
-			res.send(302, {});
+			res.send(200, {});
 		}
 	});
 }
 
 runNextJob = function(req, res, next) {
+	log.info("runNextJob")
 	machine.runNextJob(function(err, job) {
 		if(err) {
+			log.error(err);
 			res.send(500, err);
 		} else {
-			res.send(302, job);
+			res.send(200, job);
 		}
 	});
 }
 
 getQueue = function(req, res, next) {
-	db.Job.get_pending_jobs(function(err, result) {
+	db.Job.getPending(function(err, result) {
 		if(err) {
+			log.error(err);
 			res.send(500, err);
 		} else {
-			res.send(302, result);
+			res.send(200, result);
 		}
 	})
 }
@@ -81,19 +87,21 @@ getQueue = function(req, res, next) {
 getAllJobs = function(req, res, next) {
 	db.Job.getAll(function(err, result) {
 		if(err) {
+			log.error(err);
 			res.send(500, err);
 		} else {
-			res.send(302, result);
+			res.send(200, result);
 		}
 	})
 }
 
-getQueue = function(req, res, next) {
-	db.Job.getAll(function(err, result) {
+getJobById = function(req, res, next) {
+	db.Job.getById(req.params.id, function(err, result) {
 		if(err) {
-			res.send(500, err);
+			log.error(err);
+			res.send(404, err);
 		} else {
-			res.send(302, result);
+			res.send(200, result);
 		}
 	})
 }
@@ -102,8 +110,9 @@ getQueue = function(req, res, next) {
 module.exports = function(server) {
 	server.post('/job', submitJob);
 	server.get('/jobs', getAllJobs);
-	server.get('/job/queue', getQueue);
-	server.post('/job/queue/clear', clearQueue);
-	server.post('/job/queue/run', runNextJob);
+	server.get('/job/:id', getJobById);
+	server.get('/jobs/queue', getQueue);
+	server.del('/jobs/queue', clearQueue);
+	server.post('/jobs/queue/run', runNextJob);
 
 }

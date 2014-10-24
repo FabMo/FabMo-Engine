@@ -1,5 +1,6 @@
 var machine = require('../machine').machine;
 var config = require('../config');
+var log = require('../log').logger('routes');
 
 var get_status = function(req, res, next) {
 	var s = machine.status;

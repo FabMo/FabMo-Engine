@@ -109,16 +109,16 @@ var logger = function(name) {
 	}
 };
 
-/*
+
 process.on('uncaughtException', function(err) {
 	if(colors) {
-		console.log(err.red);
+		console.log(err.bgRed);
 	}
 	else {
 		console.log(err);
 	}
 
-});*/
+});
 
 var suppress = function(v) {_suppress = true;}
 var unsuppress = function(v) {_suppress = false;}
