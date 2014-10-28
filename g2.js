@@ -94,13 +94,13 @@ G2.prototype.connect = function(path, callback) {
 	this.port.on('data', this.onData.bind(this));
 
 	// Create driver object bindings
-	this.on("ready", function(driver) {
-		driver.command({"gun":0});
-		driver.command('M30');
-		driver.requestStatusReport();
-		driver.connected = true;
+	this.port.on("open", function(driver) {
+		this.command({"gun":0});
+		this.command('M30');
+		this.requestStatusReport();
+		this.connected = true;
 		callback(false, this);  // *TODO* maybe this should come after the first status report
-	});
+	}.bind(this));
 };
 
 G2.prototype.disconnect = function(callback) {

@@ -32,17 +32,18 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 };
 
 GCodeRuntime.prototype._idle = function() {
+	//console.log(this.machine.driver.gcode_queue.cgetContents())
 	this.machine.status.current_file = null;
 	this.machine.status.line=null;
 	this.machine.status.nb_lines=null;
-    if(this.machine.status.job) {
-    	this.machine.status.job.finish(function(err, job) {
-	    	this.machine.status.job=null;
-	    	this.machine.setState(this, 'idle');
-	    }.bind(this));
-    } else {
-        this.machine.setState(this, 'idle');
-    }
+	if(this.machine.status.job) {
+		this.machine.status.job.finish(function(err, job) {
+			this.machine.status.job=null;
+			this.machine.setState(this, 'idle');
+		}.bind(this));
+	} else {
+		this.machine.setState(this, 'idle');
+	}
 };
 
 GCodeRuntime.prototype._onDriverStateChange = function(states) {
@@ -192,7 +193,7 @@ GCodeRuntime.prototype._onDriverStateChange = function(states) {
 						case this.driver.STAT_END:
 							this._idle();
 							break;
-                        case this.driver.STAT_STOP:
+						case this.driver.STAT_STOP:
 						case this.driver.STAT_HOLDING:
 							//this._idle();
 							this.machine.setState(this, "paused");

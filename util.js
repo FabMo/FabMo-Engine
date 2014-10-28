@@ -15,6 +15,7 @@ function Queue(){
   var offset = 0;
 
   this.getLength = function(){ return (queue.length - offset); }
+  this.getContents = function() { return queue; }
   this.isEmpty = function(){ return (queue.length == 0); }
   this.enqueue = function(item){ queue.push(item); }
   this.dequeue = function(){
