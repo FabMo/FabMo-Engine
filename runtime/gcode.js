@@ -32,7 +32,7 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 };
 
 GCodeRuntime.prototype._idle = function() {
-	//console.log(this.machine.driver.gcode_queue.cgetContents())
+	//console.log(this.machine.driver.gcode_queue.getContents())
 	this.machine.status.current_file = null;
 	this.machine.status.line=null;
 	this.machine.status.nb_lines=null;
