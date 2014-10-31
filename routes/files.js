@@ -4,7 +4,8 @@ var machine = require('../machine').machine;
 var config = require('../config');
 var db = require('../db');
 var File=db.File;
-var allowed_file = require('../util').allowed_file
+var util = require('../util');
+var allowed_file = util.allowed_file;
 
 get_files = function(req, res, next) {
 	File.list_all(function(result){
@@ -26,7 +27,8 @@ upload_file = function(req, res, next) {
 		
 		// Uploaded files are stored in a temporary directory (per restify)
 		// Move the file from that path to the parts directory
-		fs.rename(file.path, full_path, function(err) {
+		
+		util.move(file.path, full_path, function(err) {
 			if (err){
 				throw err;
 			}
