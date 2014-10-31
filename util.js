@@ -1,4 +1,7 @@
 var path = require('path');
+var log = require('./log').logger('util');
+var fs = require('fs');
+var q = require('q');
 
 function listify(x) {
     if(x instanceof Array) {
@@ -57,6 +60,58 @@ function allowed_file(filename){
   }
 };
 
+/**
+ * Move a file from src to dest, avoiding cross-device rename failures.
+ * This method will first try fs.rename and call the supplied callback if it succeeds. Otherwise
+ * it will pump the conent of src into dest and unlink src upon completion.
+ *
+ * This might take a little more time than a single fs.rename, but it avoids error when
+ * trying to rename files from one device to the other.
+ *
+ * @param src {String} absolute path to source file
+ * @param dest {String} absolute path to destination file
+ * @param cb {Function} callback to execute upon success or failure
+ */
+var move = function (src, dest, cb) {
+	var renameDeferred = q.defer();
+ 
+	fs.rename(src, dest, function (err) {
+		if (err) {
+			renameDeferred.reject(err);
+		}
+		else {
+			renameDeferred.resolve();
+		}
+	});
+ 
+	renameDeferred.promise.then(function () {
+		// rename worked
+		return cb(null);
+	}, function (err) {
+ 
+		console.warn('io.move: standard rename failed, trying stream pipe... (' + err + ')');
+ 
+		// rename didn't work, try pumping
+		var is = fs.createReadStream(src),
+			os = fs.createWriteStream(dest);
+ 
+		is.pipe(os);
+ 
+		is.on('end', function () {
+			fs.unlinkSync(src);
+			cb(null);
+		});
+ 
+		is.on('error', function (err) {
+			return cb(err);
+		});
+ 
+		os.on('error', function (err) {
+			return cb(err);
+		})
+	});
+};
 
 exports.Queue = Queue
 exports.allowed_file = allowed_file
+exports.move = move
