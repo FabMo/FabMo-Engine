@@ -11,7 +11,8 @@
     "restify": "2.8.x",
     "serialport": "1.4.x",
     "socket.io": "1.1.x",
-    "tingodb": "0.2.x"
+    "tingodb": "0.2.x",
+    "node-simplerwifiscanner":"0.1.x"
   },
   "devDependencies": {
     "grunt": "0.4.x",

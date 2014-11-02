@@ -6,7 +6,6 @@ var fs= require('fs');
 var profiles_folder = "/etc/netctl/";
 var itr = "wlan0";
 
-
 detection = function(req, res, next) {
     // data is a wifi_info Object
     wifiscanner.scan(function(err,data){
@@ -129,5 +128,9 @@ module.exports = function(server) {
 		server.get('/wifi_manager/profiles',list_profiles); //OK
 		server.post('/wifi_manager/profile',add_profile); //OK
 		server.del('/wifi_manager/profile/:ssid',delete_profile); //OK
+		log.info('wifi manager enable !');
+	}
+	else{
+		log.info('wifi manager disable !');
 	}
 }

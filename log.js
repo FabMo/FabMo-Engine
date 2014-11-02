@@ -109,7 +109,6 @@ var logger = function(name) {
 	}
 };
 
-
 process.on('uncaughtException', function(err) {
 	if(colors) {
 		console.log(err.bgRed);

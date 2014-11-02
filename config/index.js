@@ -10,6 +10,7 @@ var OpenSBPConfig = require('./opensbp_config').OpenSBPConfig;
 // Also, create `exports.engine` which is an EngineConfig object
 function configure_engine(callback) {
 	exports.engine = new EngineConfig();
+	exports.engine.checkWifi();
 	exports.engine.init(callback);
 }
 

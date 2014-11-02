@@ -1,6 +1,7 @@
 var path = require('path');
 var util = require('util');
 var PLATFORM = require('process').platform;
+var exec = require('child_process').exec;
 
 Config = require('./config').Config
 log = require('../log');
@@ -105,5 +106,34 @@ function isDirectory(path, callback){
 		else callback(stats.isDirectory());
 	});
 }
+
+EngineConfig.prototype.checkWifi = function(){
+	var that = this;
+	try{
+		// check if the dependency is installed
+		wifiscanner = require('node-simplerwifiscanner');
+		// check if it's a linux distrib
+		if(PLATFORM!=='linux')
+			throw 'not linux';
+		// check if netctl-auto is installed
+		exec('netctl-auto --version',function (error, stdout, stderr) {
+	    	if (error)
+	    		throw error;
+
+	    	that.update({wifi_manager:true},function(e){
+			console.log(e);
+		});
+	});
+
+	}catch(e){
+		wifiscanner = undefined;
+		console.log('gey merdey :O ');
+		that.update({wifi_manager:false},function(e){
+			console.log(e);
+		});
+	}
+
+}
+
 
 exports.EngineConfig = EngineConfig;
