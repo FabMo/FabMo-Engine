@@ -115,14 +115,14 @@ G2.prototype.onSerialError = function(data) {
 // Write data to the serial port.  Log to the system logger.
 G2.prototype.write = function(s) {
 	t = new Date().getTime();
-	log.debug('----' + t + '----> ' + s.trim());
+	log.g2('----' + t + '----> ' + s.trim());
 	this.port.write(s);
 };
 
 // Write data to the serial port.  Log to the system logger.  Execute **callback** when transfer is complete.
 G2.prototype.writeAndDrain = function(s, callback) {
 	t = new Date().getTime();
-	log.debug('----' + t + '----> ' + s);
+	log.g2('----' + t + '----> ' + s);
 	this.port.write(s, function () {
 		this.port.drain(callback);
 	}.bind(this));
@@ -216,7 +216,7 @@ G2.prototype.onData = function(data) {
 		if(c === '\n') {
 			var json_string = this.current_data.join('');
 			t = new Date().getTime();
-			log.debug('<----' + t + '---- ' + json_string);
+			log.g2('<----' + t + '---- ' + json_string);
 			obj = null;
 			try {
 				obj = JSON.parse(json_string);

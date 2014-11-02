@@ -265,10 +265,10 @@ SBPRuntime.prototype._dispatch = function(callback) {
 SBPRuntime.prototype._executeCommand = function(command, callback) {
 	command.cmd = command.cmd.toUpperCase();
 	if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
-		
+
 		args = this._evaluateArguments(command.cmd, command.args);
 		f = this[command.cmd].bind(this);
-		
+
 		log.debug("Calling handler for " + command.cmd + " With arguments: [" + args + "]");
 
 		if(f.length > 1) {
