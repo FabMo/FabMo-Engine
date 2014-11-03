@@ -10,6 +10,4 @@ p4 = 3;				// C Jog Speed
 
 sbp.JS([p0,p1,p2,p3,p4]);
 
-//sbp.Z2
-
 console.log(sbp.current_chunk);

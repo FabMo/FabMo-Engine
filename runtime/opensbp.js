@@ -1006,7 +1006,6 @@ SBPRuntime.prototype.JH = function(args) {
 SBPRuntime.prototype.JS = function(args) {
 	
 	var speed_change = 0.0;
-//	var xSpd, ySpd, zSpd, aSpd, bSpd, cSpd;
 	var JSstr = "";
 	var JSsbp = "";
 
@@ -1018,8 +1017,6 @@ SBPRuntime.prototype.JS = function(args) {
 		JSstr +=  "," + "'yvm':" + (60 * speed_change);
 		JSsbp = "'jogxy_speed'," + speed_change; 
 //		config.opensbp.set('jogxy_speed', speed_change);
-//		console.log( "JSstr = " + JSstr );
-//		console.log( "JSsbp = " + JSsbp );			
 	}
 	if (args[1] !== undefined) {
 		speed_change = args[1];
@@ -1030,8 +1027,6 @@ SBPRuntime.prototype.JS = function(args) {
 		JSstr += "'zvm':" + (60 * speed_change);
 		JSsbp += "'jogz_speed'," + speed_change; 
 //		console.log( "JSstr = " + JSstr );
-//		JSstr.zvm = 60 * speed_change;
-//		config.opensbp.set('jogz_speed', speed_change);
 	}
 	if (args[2] !== undefined) {
 		speed_change = args[2];
@@ -1042,8 +1037,6 @@ SBPRuntime.prototype.JS = function(args) {
 		JSstr += "'avm':" + (60 * speed_change);
 		JSsbp += "'joga_speed'," + speed_change; 
 //		console.log( "JSstr = " + JSstr );
-//		JSstr.avm = 60 * speed_change;
-//		config.opensbp.set('joga_speed', speed_change);
 	}
 	if (args[3] !== undefined) {
 		speed_change = args[3];
@@ -1054,8 +1047,6 @@ SBPRuntime.prototype.JS = function(args) {
 		JSstr += "'bvm':" + (60 * speed_change);
 		JSsbp += "'jogb_speed'," + speed_change; 
 //		console.log( "JSstr = " + JSstr );
-//		JSstr.bvm = 60 * speed_change;
-//		config.opensbp.set('jogb_speed', speed_change);
 	}
 	if (args[4] !== undefined) {
 		speed_change = args[4];
@@ -1066,19 +1057,10 @@ SBPRuntime.prototype.JS = function(args) {
 		JSstr += "'cvm':" + (60 * speed_change);
 		JSsbp += "'jogc_speed'," + speed_change; 
 //		console.log( "JSstr = " + JSstr );
-//		JSstr.cvm = 60 * speed_change;
-//		config.opensbp.set('jogc_speed', speed_change);
 	}
 
 	console.log( "JSstr = " + JSstr );
 	console.log( "JSsbp = " + JSsbp );
-
-//	var JSstr = { 'xvm':xSpd,
-//				  'yvm':ySpd,
-//				  'zvm':zSpd,
-//				  'avm':aSpd,
-//				  'bvm':bSpd,
-//				  'cvm':cSpd  };
 
 	config.driver.setMany(JSstr, function(err, values) {
 		console.log("set:values = " + values );
