@@ -627,8 +627,10 @@ SBPRuntime.prototype.FS = function(args) {
 
 // Move X axis
 SBPRuntime.prototype.MX = function(args) {
-	this.emit_gcode("G1X" + args[0] + " F" + ( 60.0 * config.opensbp.get('movexy_speed')));
-	this.cmd_posx = args[0];
+	x = args[0]
+	if(isNaN(x)) { throw "Invalid MX argument: " + x}
+	this.emit_gcode("G1X" + x + " F" + ( 60.0 * config.opensbp.get('movexy_speed')));
+	this.cmd_posx = x;
 };
 
 // Move Y axis
@@ -1456,7 +1458,7 @@ SBPRuntime.prototype.CR = function(args) {
     	this.emit_gcode( "G0Z" + startZ);
     	this.cmd_posz = startZ;
     }
-    else{				    						//If not, stay at the ending Z height
+    else{										//If not, stay at the ending Z height
   		this.cmd_posz = currentZ;
     }
 

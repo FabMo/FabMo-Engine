@@ -75,7 +75,7 @@ Logger.prototype.write = function(level, msg) {
 		if(colors) {
 			switch(level) {
 				case 'g2':
-					console.log((level + ': ').magenta + msg + ' ['+this.name+'[');
+					console.log((level + ': ').magenta + msg + ' ['+this.name+']');
 					break;
 				case 'debug':
 					console.log((level + ': ').blue + msg+' ['+this.name+']');
