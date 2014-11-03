@@ -791,33 +791,46 @@ SBPRuntime.prototype.MH = function(args) {
 // Set the move speeds for Axes XYZABC
 SBPRuntime.prototype.MS = function(args) {
 	var speed_change = 0.0;
+	var xSpd, ySpd, zSpd, aSpd, bSpd, cSpd;
 
 	if (args[0] !== undefined) {
 		speed_change = args[0];
-		this.command({'xfr':(60*speed_change)});
-		this.command({'yfr':(60*speed_change)});
+		xSpd = 60 * speed_change;
+		ySpd = 60 * speed_change;
 		config.opensbp.set('movexy_speed', speed_change);
 	}
 	if (args[1] !== undefined) {
 		speed_change = args[1];
-		this.command({'zfr':(60*speed_change)});
+		zSpd = 60 * speed_change;
 		config.opensbp.set('movez_speed', speed_change);
 	}
 	if (args[2] !== undefined) {
 		speed_change = args[2];
-		this.command({'afr':(60*speed_change)});
+		aSpd = 60 * speed_change;
 		config.opensbp.set('movea_speed', speed_change);
 	}
 	if (args[3] !== undefined) {
 		speed_change = args[3];
-		this.command({'bfr':(60*speed_change)});
+		bSpd = 60 * speed_change;
 		config.opensbp.set('moveb_speed', speed_change);
 	}
 	if (args[4] !== undefined) {
 		speed_change = args[4];
-		this.command({'cfr':(60*speed_change)});
+		cSpd = 60 * speed_change;
 		config.opensbp.set('movec_speed', speed_change);
 	}
+
+	var MSstr = { 'xfr':xSpd,
+				  'yfr':ySpd,
+				  'zfr':zSpd,
+				  'afr':aSpd,
+				  'bfr':bSpd,
+				  'cfr':cSpd  };
+
+	config.driver.setMany(MSstr, function(err, values) {
+		console.log("set:values = " + values );
+		callback();
+	});
 };
 
 SBPRuntime.prototype.MI = function(args) {
@@ -993,33 +1006,85 @@ SBPRuntime.prototype.JH = function(args) {
 SBPRuntime.prototype.JS = function(args) {
 	
 	var speed_change = 0.0;
+//	var xSpd, ySpd, zSpd, aSpd, bSpd, cSpd;
+	var JSstr = "";
+	var JSsbp = "";
+
+	console.log( "args = " + args );
 
 	if (args[0] !== undefined) {
 		speed_change = args[0];
-		this.command({'xvm':speed_change});
-		this.command({'yvm':speed_change});
-		config.opensbp.set('jogxy_speed', speed_change);
+		JSstr = "'xvm':" + (60 * speed_change);
+		JSstr +=  "," + "'yvm':" + (60 * speed_change);
+		JSsbp = "'jogxy_speed'," + speed_change; 
+//		config.opensbp.set('jogxy_speed', speed_change);
+//		console.log( "JSstr = " + JSstr );
+//		console.log( "JSsbp = " + JSsbp );			
 	}
 	if (args[1] !== undefined) {
 		speed_change = args[1];
-		this.command({'zvm':speed_change});
-		config.opensbp.set('jogz_speed', speed_change);
+		if ( args[0] !== undefined ){
+			JSstr += ",";
+			JSsbp += ",";
+		}
+		JSstr += "'zvm':" + (60 * speed_change);
+		JSsbp += "'jogz_speed'," + speed_change; 
+//		console.log( "JSstr = " + JSstr );
+//		JSstr.zvm = 60 * speed_change;
+//		config.opensbp.set('jogz_speed', speed_change);
 	}
 	if (args[2] !== undefined) {
 		speed_change = args[2];
-		this.command({'avm':speed_change});
-		config.opensbp.set('joga_speed', speed_change); 
+		if ( args[0] !== undefined ){
+			JSstr += ",";
+			JSsbp += ",";
+		}
+		JSstr += "'avm':" + (60 * speed_change);
+		JSsbp += "'joga_speed'," + speed_change; 
+//		console.log( "JSstr = " + JSstr );
+//		JSstr.avm = 60 * speed_change;
+//		config.opensbp.set('joga_speed', speed_change);
 	}
 	if (args[3] !== undefined) {
 		speed_change = args[3];
-		this.command({'bvm':speed_change});
-		config.opensbp.set('jogb_speed', speed_change);
+		if ( args[0] !== undefined ){
+			JSstr += ",";
+			JSsbp += ",";
+		}
+		JSstr += "'bvm':" + (60 * speed_change);
+		JSsbp += "'jogb_speed'," + speed_change; 
+//		console.log( "JSstr = " + JSstr );
+//		JSstr.bvm = 60 * speed_change;
+//		config.opensbp.set('jogb_speed', speed_change);
 	}
 	if (args[4] !== undefined) {
 		speed_change = args[4];
-		this.command({'cvm':speed_change});
-		config.opensbp.set('jogc_speed', speed_change);
+		if ( args[0] !== undefined ){
+			JSstr += ",";
+			JSsbp += ",";
+		}
+		JSstr += "'cvm':" + (60 * speed_change);
+		JSsbp += "'jogc_speed'," + speed_change; 
+//		console.log( "JSstr = " + JSstr );
+//		JSstr.cvm = 60 * speed_change;
+//		config.opensbp.set('jogc_speed', speed_change);
 	}
+
+	console.log( "JSstr = " + JSstr );
+	console.log( "JSsbp = " + JSsbp );
+
+//	var JSstr = { 'xvm':xSpd,
+//				  'yvm':ySpd,
+//				  'zvm':zSpd,
+//				  'avm':aSpd,
+//				  'bvm':bSpd,
+//				  'cvm':cSpd  };
+
+	config.driver.setMany(JSstr, function(err, values) {
+		console.log("set:values = " + values );
+		callback();
+	});
+
 };
 
 /* CUTS */
@@ -1668,8 +1733,7 @@ SBPRuntime.prototype.VD = function(args) {
 SBPRuntime.prototype.VL = function(args) {
 
 	var getValues = [];
-	var setValues = [];
-
+	
 	// Get existing limts from Engine, to be used in case new parameters aren't sent
 	this.machine.driver.get (['xtn','xtm',
 							  'ytn','ytm',
@@ -1749,13 +1813,10 @@ SBPRuntime.prototype.VL = function(args) {
 					  'btn':nLimB, 'btm':mLimB,
 					  'ctn':nLimC, 'ctm':mLimC };
 		
-		this.machine.driver.set( VLstr, function(err, setValues) {
-							console.log("set:values = " + setValues );
-//			fs.writeFile("./runtime/sbp_settings.json", JSON.stringify(sbp_settings, null, 4), function(err){
-//				callback();
-//			});
+		this.machine.driver.set( VLstr, function(err, values) {
+			console.log("set:values = " + values );
 		});	
-// Write limits to configuration.json
+
 	}.bind(this));
 	
 };	
@@ -1828,61 +1889,62 @@ SBPRuntime.prototype.VS = function(args) {
 	
 	var speed_change = 0.0;
 
-	var settings = {}
+	var VSstr = {};
 
 	if (args[0] !== undefined) {
 		speed_change = args[0];
-		//this.command({'xfr':(60*speed_change)});
-		settings['yfr'] = (60*speed_change);
+		VSstr.xfr = (60*speed_change);
+		VSstr.yfr = (60*speed_change);
 		config.opensbp.set('movexy_speed', speed_change);
 	}
 	if (args[1] !== undefined) {
 		speed_change = args[1];
-		settings['zfr'] = (60*speed_change);
+		VSstr.zfr = (60*speed_change);
 		config.opensbp.set('movez_speed', speed_change);
 	}
 	if (args[2] !== undefined) {
 		speed_change = args[2];
-		settings['afr'] = (60*speed_change);
+		VSstr.afr = (60*speed_change);
 		config.opensbp.set('movea_speed', speed_change);
 	}
 	if (args[3] !== undefined) {
 		speed_change = args[3];
-		settings['bfr'] = (60*speed_change);
+		VSstr.bfr = (60*speed_change);
 		config.opensbp.set('moveb_speed', speed_change);
 	}
 	if (args[4] !== undefined) {
 		speed_change = args[4];
-		settings['cfr'] = (60*speed_change);
+		VSstr.cfr = (60*speed_change);
 		config.opensbp.set('movec_speed', speed_change);
 	}
 	if (args[5] !== undefined) {
 		speed_change = args[5];
-		settings['xvm'] = (60*speed_change);
-		settings['yvm'] = (60*speed_change);
+		VSstr.xvm = (60*speed_change);
+		VSstr.yvm = (60*speed_change);
 		config.opensbp.set('jogxy_speed', speed_change);
 	}
 	if (args[6] !== undefined) {
 		speed_change = args[6];
-		settings['zvm'] = (60*speed_change);
+		VSstr.zvm = (60*speed_change);
 		config.opensbp.set('jogz_speed', speed_change);
 	}
 	if (args[7] !== undefined) {
 		speed_change = args[7];
-		settings['avm'] = (60*speed_change);
+		VSstr.avm = (60*speed_change);
 		config.opensbp.set('joga_speed', speed_change);
 	}
 	if (args[8] !== undefined) {
 		speed_change = args[8];
-		settings['bvm'] = (60*speed_change);
+		VSstr.bvm = (60*speed_change);
 		config.opensbp.set('jogb_speed', speed_change);
 	}
 	if (args[9] !== undefined) {
 		speed_change = args[9];
-		settings['cvm'] = (60*speed_change);
+		VSstr.cvm = (60*speed_change);
 		config.opensbp.set('jogc_speed', speed_change);
 	}
-	config.driver.setMany(settings);
+	config.driver.setMany(VSstr);
+
 };
 
 SBPRuntime.prototype.VU = function(args, callback) {
