@@ -26,7 +26,7 @@ describe('OpenSBP', function(){
 		p4 = -3;				// centerY (J)
 		p5 = undefined;		// O-I-T
 		p6 = -1;			// Dir
-		p7 = -.125;		// Plunge
+		p7 = -0.125;		// Plunge
 		p8 = 1;		// Passes
 		p9 = undefined;		// PropX
 		p10 = undefined;	// PropY	
