@@ -166,65 +166,50 @@ exports.JH = function(args) {
 exports.JS = function(args) {
 	
 	var speed_change = 0.0;
-	var JSstr = "";
-	var JSsbp = "";
 
-	console.log( "args = " + args );
+	var g2_values = {}
+	var sbp_values = {}
 
 	if (args[0] !== undefined) {
 		speed_change = args[0];
-		JSstr = "'xvm':" + (60 * speed_change);
-		JSstr +=  "," + "'yvm':" + (60 * speed_change);
-		JSsbp = "'jogxy_speed'," + speed_change; 
-//		config.opensbp.set('jogxy_speed', speed_change);
+		g2_values.xvm = g2_values.yvm = (60 * speed_change);
+		sbp_values.jogxy_speed = speed_change;
 	}
 	if (args[1] !== undefined) {
 		speed_change = args[1];
-		if ( args[0] !== undefined ){
-			JSstr += ",";
-			JSsbp += ",";
+		if ( speed_change !== undefined ){
+			g2_values.zvm = (60 * speed_change);
+			sbp_values.jogz_speed = speed_change;
 		}
-		JSstr += "'zvm':" + (60 * speed_change);
-		JSsbp += "'jogz_speed'," + speed_change; 
-//		console.log( "JSstr = " + JSstr );
 	}
 	if (args[2] !== undefined) {
-		speed_change = args[2];
-		if ( args[0] !== undefined ){
-			JSstr += ",";
-			JSsbp += ",";
+		speed_change = args[1];
+		if ( speed_change !== undefined ){
+			g2_values.avm = (60 * speed_change);
+			sbp_values.joga_speed = speed_change;
 		}
-		JSstr += "'avm':" + (60 * speed_change);
-		JSsbp += "'joga_speed'," + speed_change; 
-//		console.log( "JSstr = " + JSstr );
 	}
 	if (args[3] !== undefined) {
-		speed_change = args[3];
-		if ( args[0] !== undefined ){
-			JSstr += ",";
-			JSsbp += ",";
+		speed_change = args[1];
+		if ( speed_change !== undefined ){
+			g2_values.bvm = (60 * speed_change);
+			sbp_values.jogb_speed = speed_change;
 		}
-		JSstr += "'bvm':" + (60 * speed_change);
-		JSsbp += "'jogb_speed'," + speed_change; 
-//		console.log( "JSstr = " + JSstr );
 	}
 	if (args[4] !== undefined) {
-		speed_change = args[4];
-		if ( args[0] !== undefined ){
-			JSstr += ",";
-			JSsbp += ",";
+		speed_change = args[1];
+		if ( speed_change !== undefined ){
+			g2_values.cvm = (60 * speed_change);
+			sbp_values.jogc_speed = speed_change;
 		}
-		JSstr += "'cvm':" + (60 * speed_change);
-		JSsbp += "'jogc_speed'," + speed_change; 
-//		console.log( "JSstr = " + JSstr );
 	}
 
-	console.log( "JSstr = " + JSstr );
-	console.log( "JSsbp = " + JSsbp );
-
-	config.driver.setMany(JSstr, function(err, values) {
-		console.log("set:values = " + values );
-		callback();
+	// We have created the objects containing both the values to set on the G2 driver as well as for shopbot
+	// Now send them to their appropriate places (shopbot first, followed by G2)
+	config.opensbp.setMany(sbp_values, function(err, values) {
+		config.driver.setMany(g2_values, function(err, values) {
+			callback();
+		});
 	});
 
 };

@@ -13,6 +13,12 @@ describe('OpenSBP', function(){
 		done();
 	}); 
 
+	it('JS', function(done){
+		sbp.JS([1.0]);
+		done();
+	});
+
+
 	it('CG', function(done){
 
 		sbp.cmd_posx = 4;
