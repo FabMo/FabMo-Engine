@@ -164,11 +164,13 @@ exports.JH = function(args) {
 
 // Set the Jog (Rapid) speed for any of the 6 axes
 exports.JS = function(args) {
-	
-	var speed_change = 0.0;
 
-	var g2_values = {}
-	var sbp_values = {}
+console.log( "JS" );
+console.log( "JS - args = " + args );
+
+	var speed_change = 0.0;
+	var g2_values = {};
+	var sbp_values = {};
 
 	if (args[0] !== undefined) {
 		speed_change = args[0];
