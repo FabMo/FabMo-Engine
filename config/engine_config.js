@@ -127,7 +127,6 @@ EngineConfig.prototype.checkWifi = function(){
 
 	}catch(e){
 		wifiscanner = undefined;
-		console.log('gey merdey :O ');
 		that.update({wifi_manager:false},function(e){
 			console.log(e);
 		});

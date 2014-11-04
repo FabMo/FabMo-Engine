@@ -8,7 +8,6 @@ var PLATFORM = process.platform;
 var log = require('./log').logger('server');
 var db = require('./db');
 
-console.log("aaaaah")
 var Engine = function() {
 }
 
