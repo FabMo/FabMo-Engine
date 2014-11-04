@@ -15,7 +15,7 @@ util.inherits(G2Config, Config);
 // Update the configuration with the data provided (data is just an object with configuration keys/values)
 G2Config.prototype.update = function(data, callback) {
 	keys = Object.keys(data);
-    // TODO: We can probably replace this with a `setMany()`
+	// TODO: We can probably replace this with a `setMany()`
 	async.map(
 		keys, 
 		// Call driver.set() for each item in the collection of data that was passed in.

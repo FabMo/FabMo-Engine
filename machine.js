@@ -6,8 +6,8 @@ var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
 var db = require('./db');
-
 var log = require('./log').logger('machine');
+
 var GCodeRuntime = require('./runtime/gcode').GCodeRuntime;
 var SBPRuntime = require('./runtime/opensbp').SBPRuntime;
 var ManualRuntime = require('./runtime/manual').ManualRuntime;

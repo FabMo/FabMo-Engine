@@ -1,10 +1,9 @@
 var parser = require('./parser');
 var fs = require('fs');
-var log = require('../log').logger('sbp');
-var g2 = require('../g2');
-var sbp_settings = require('./sbp_settings');
+var log = require('../../log').logger('sbp');
+var g2 = require('../../g2');
 var sb3_commands = require('./sb3_commands');
-var config = require('../config');
+var config = require('../../config');
 
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
@@ -1085,10 +1084,11 @@ SBPRuntime.prototype.JS = function(args) {
 //			  <No Pull Up after cut>,<Plunge from Z zero>
 //	
 SBPRuntime.prototype.CG = function(args) {
+	/*
 	sbp_settings.cutterDia = 0.25;
 	sbp_settings.pocketOverlap  = 10;
 	sbp_settings.safeZpullUp = 0.25;
-
+	*/
     startX = this.cmd_posx;
     startY = this.cmd_posy;
     startZ = this.cmd_posz;
@@ -1290,8 +1290,8 @@ SBPRuntime.prototype.CR = function(args) {
     	lenY += config.opensbp.get('cutterDia') * yDir;
     }
     else if ( OIT == "I" ) {
-    	lenX -= config.opensbp.get('sbp_settings.cutterDia') * xDir;
-    	lenY -= config.opensbp.get('sbp_settings.cutterDia') * yDir;
+    	lenX -= config.opensbp.get('cutterDia') * xDir;
+    	lenY -= config.opensbp.get('cutterDia') * yDir;
     }
     else {
     	lenX *= xDir;
@@ -1677,6 +1677,8 @@ SBPRuntime.prototype.VA = function(args, callback) {
 };
 
 SBPRuntime.prototype.VC = function(args) {
+	// TODO CONVERT THESE TO NEW SETTINGS
+	/*
 	if (args[0] !== undefined) sbp_settings.cutterDia = args[0];		// Cutter Diameter
 	// args[1] = Obsolete
 	// args[2] = Obsolete
@@ -1689,7 +1691,7 @@ SBPRuntime.prototype.VC = function(args) {
 //	if (args[9] !== undefined) sbp_settings.triggerOFFthreshold = args[9];	// trigger OFF threshold
 //	if (args[10] !== undefined) sbp_settings.vertAxisMonitor = args[10];	// vertical axis monitored
 //	if (args[11] !== undefined) sbp_settings.triggerOutputNum = args[11];	// triggered output switch #
-
+	*/
 };
 
 SBPRuntime.prototype.VD = function(args) {
@@ -1960,7 +1962,8 @@ SBPRuntime.prototype.VU = function(args, callback) {
 			var unitsMi1 = getValues[1];
 			var unitsTr1 = getValues[2];
 			nTr1 = ((unitsSa1 * unitsMi1 * config.opensbp.get('gearBoxRatio1')) / SBunitVal1);
-			sbp_settings.units1 = SBunitVal1;
+			//TODO UPDATE TO NEW SETTINGS
+			//sbp_settings.units1 = SBunitVal1;
 		}
 		if (args[1] !== undefined){
 			var SBunitVal2 = args[1];
@@ -1969,7 +1972,8 @@ SBPRuntime.prototype.VU = function(args, callback) {
 			var unitsMi2 = getValues[4];
 			var unitsTr2 = getValues[5];
 			nTr2 = ((unitsSa2 * unitsMi2 * config.opensbp.get('gearBoxRatio2')) / SBunitVal2);
-			sbp_settings.units2 = SBunitVal2;
+			//TODO UPDATE TO NEW SETTINGS
+			//sbp_settings.units2 = SBunitVal2;
 		}
 		if (args[2] !== undefined){
 			var SBunitVal3 = args[2];
@@ -1978,7 +1982,8 @@ SBPRuntime.prototype.VU = function(args, callback) {
 			var unitsMi3 = getValues[7];
 			var unitsTr3 = getValues[8];
 			nTr3 = ((unitsSa3 * unitsMi3 * config.opensbp.get('gearBoxRatio3')) / SBunitVal3);
-			sbp_settings.units3 = SBunitVal3;
+			//TODO UPDATE TO NEW SETTINGS
+			//sbp_settings.units3 = SBunitVal3;
 		}
 		if (args[3] !== undefined){
 			var SBunitVal4 = args[3];				
@@ -1987,7 +1992,8 @@ SBPRuntime.prototype.VU = function(args, callback) {
 			var unitsMi4 = getValues[10];
 			var unitsTr4 = getValues[11];
 			nTr4 = ((unitsSa4 * unitsMi4 * config.opensbp.get('gearBoxRatio4')) / SBunitVal4);
-			sbp_settings.units4 = SBunitVal4;
+			//TODO UPDATE TO NEW SETTINGS
+			//sbp_settings.units4 = SBunitVal4;
 		}
 		if (args[8] !== undefined){
 			var SBunitVal5 = args[8];
@@ -1996,7 +2002,8 @@ SBPRuntime.prototype.VU = function(args, callback) {
 			var unitsMi5 = getValues[13];
 			var unitsTr5 = getValues[14];
 			nTr5 = ((unitsSa5 * unitsMi5 * config.opensbp.get('gearBoxRatio5')) / SBunitVal5);
-			sbp_settings.units5 = SBunitVal5;
+			//TODO UPDATE TO NEW SETTINGS
+			//sbp_settings.units5 = SBunitVal5;
 		}
 		if (args[6] !== undefined){
 			var SBunitVal6 = args[6];
@@ -2005,7 +2012,8 @@ SBPRuntime.prototype.VU = function(args, callback) {
 			var unitsMi6 = getValues[16];
 			var unitsTr6 = getValues[17];
 			nTr6 = ((unitsSa6 * unitsMi6 * config.opensbp.get('gearBoxRatio6')) / SBunitVal6); 	console.log("6tr = " + nTr6 );
-			sbp_settings.units6 = SBunitVal6;
+			//TODO UPDATE TO NEW SETTINGS
+			//sbp_settings.units6 = SBunitVal6;
 		}
 
 		var VUstr = { '1tr':nTr1, '2tr':nTr2, '3tr':nTr3, '4tr':nTr4, '5tr':nTr5, '6tr':nTr6 };
