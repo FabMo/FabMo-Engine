@@ -49,7 +49,7 @@ Config.prototype.init = function(callback) {
 			function(callback) { this.load(this.config_file, callback); }.bind(this),
 		],
 		function(err, results) {
-			if(err) { callback(err); }
+			if(err) {if(err.path === this.config_file && err.code === "ENOENT"){callback(null,this);}callback(err); }
 			else { callback(null, this); }
 		}.bind(this)
 	);
