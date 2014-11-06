@@ -6,13 +6,13 @@
   "dependencies": {
     "async": "0.9.x",
     "colors": "0.6.x",
+    "node-simplerwifiscanner": "git+https://github.com/jlucidar/node-simplerwifiscanner.git",
     "process": "0.8.x",
     "q": "^1.0.1",
     "restify": "2.8.x",
     "serialport": "1.4.x",
     "socket.io": "1.1.x",
-    "tingodb": "0.2.x",
-    "node-simplerwifiscanner":"0.1.x"
+    "tingodb": "0.2.x"
   },
   "devDependencies": {
     "grunt": "0.4.x",

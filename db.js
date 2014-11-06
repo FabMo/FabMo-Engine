@@ -17,7 +17,7 @@ var jobs;
 Job = function(options) {
     this.file_id = options.file_id;
     this.name = options.name || "Untitled Job"
-    this.description = option.description || "No description"
+    this.description = options.description || "No description"
     this.created_at = Date.now();
     this.started_at = null;
     this.finished_at = null;

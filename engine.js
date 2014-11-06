@@ -73,11 +73,12 @@ Engine.prototype.start = function(callback) {
             // Configure local directory for uploading files
             log.info("Cofiguring upload directory...")
             server.use(restify.bodyParser({'uploadDir':config.engine.get('upload_dir')}));
+            server.pre(restify.pre.sanitizePath());
 
             // Import the routes module and apply the routes to the server
             log.info("Loading routes...")
             var routes = require('./routes')(server);
-
+	    
             // Kick off the server listening for connections
             server.listen(config.engine.get('server_port'), function() {
                 log.info(server.name+ ' listening at '+ server.url);

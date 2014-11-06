@@ -43,8 +43,4 @@ module.exports = function(server) {
 	var io = socketio.listen(server.server);
 	server.get("/passthrough",passthrough_app);
 	io.of('/passthrough').on('connection', connect);
-	server.get(/.*/, restify.serveStatic({
-		directory: './static',
-		default: 'index.html'
-	}));
 };

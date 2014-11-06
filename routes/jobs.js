@@ -25,14 +25,25 @@ submitJob = function(req, res, next) {
 			}
 			// delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
 			fs.unlink(file.path, function() {
-				if (err) {throw err;}
+				if (err) {
+					log.error(err);
+					return res.send(500, err)
+				}
+
 				var file = new db.File(filename, full_path)
 
 				// save the file, and if successful, create a job to go with it
 				file.save(function(file){
+					log.info('Saved a file');
+					try {
 					var job = new db.Job({file_id : file._id});
+					} catch(e) {
+						console.log(e);
+					}
+					log.info('Created a job');
 					job.save(function(err, job) {
 						if(err) {
+							log.error(err);
 							res.send(500, err);
 						} else {
 							res.send(200, job);
