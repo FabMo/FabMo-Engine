@@ -5,7 +5,7 @@ var machine = require('./machine');
 var detection_daemon = require('./detection_daemon');
 var config = require('./config');
 var PLATFORM = process.platform;
-var log = require('./log').logger('server');
+var log = require('./log').logger('engine');
 var db = require('./db');
 
 var Engine = function() {
