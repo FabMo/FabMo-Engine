@@ -1,4 +1,4 @@
-console.log("test JS");
+console.log("test MS");
 
 var opensbp = require('../runtime/opensbp');
 
@@ -14,6 +14,6 @@ var p2 = 20;			// A Jog Speed
 var p3 = 20;			// B Jog Speed
 var p4 = 3;				// C Jog Speed
 
-sbp.JS([p0,p1,p2,p3,p4]);
+sbp.MS([p0,p1,p2,p3,p4]);
 
 //console.log(sbp.current_chunk);

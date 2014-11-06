@@ -175,8 +175,7 @@ exports.MS = function(args) {
 
 	if (args[0] !== undefined) {
 		speed_change = args[0];
-		xSpd = 60 * speed_change;
-		ySpd = 60 * speed_change;
+		xSpd = ySpd = 60 * speed_change;
 		config.opensbp.set('movexy_speed', speed_change);
 	}
 	if (args[1] !== undefined) {
@@ -200,17 +199,18 @@ exports.MS = function(args) {
 		config.opensbp.set('movec_speed', speed_change);
 	}
 
-	var MSstr = { 'xfr':xSpd,
-				  'yfr':ySpd,
-				  'zfr':zSpd,
-				  'afr':aSpd,
-				  'bfr':bSpd,
-				  'cfr':cSpd  };
+	var G2_values = { 'xfr':xSpd,
+				  	  'yfr':ySpd,
+				  	  'zfr':zSpd,
+				  	  'afr':aSpd,
+				  	  'bfr':bSpd,
+				  	  'cfr':cSpd  };
 
-	config.driver.setMany(MSstr, function(err, values) {
-		console.log("set:values = " + values );
-		callback();
-	});
+//	config.opensbp.setMany(sbp_values, function(err, values) {
+		config.driver.setMany(G2_values, function(err, values) {
+			callback();
+		});
+//	});
 };
 
 exports.MI = function(args) {
