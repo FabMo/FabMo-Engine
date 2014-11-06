@@ -116,12 +116,12 @@ var logger = function(name) {
 
 process.on('uncaughtException', function(err) {
 	if(colors) {
-		console.log(err.bgRed);
+	console.log("UNCAUGHT EXCEPTION".red.underline);
+	console.log(('' + err.stack).red)
+	} else {
+		console.log("UNCAUGHT EXCEPTION");
+		console.log(err.stack);
 	}
-	else {
-		console.log(err);
-	}
-
 });
 
 var suppress = function(v) {_suppress = true;}
