@@ -1,5 +1,6 @@
 async = require('async');
 fs = require('fs');
+var log = require('../log').logger('config')
 
 // Config is the superclass from which all configuration objects descend
 // Common functionality is implemented here.
@@ -46,10 +47,21 @@ Config.prototype.init = function(callback) {
 		async.series(
 		[
 			function(callback) { this.load(this.default_config_file, callback); }.bind(this),
-			function(callback) { this.load(this.config_file, callback); }.bind(this),
+			function(callback) { this.load(this.config_file, function(err, data) {
+				if(err) {
+					if(err.code === "ENOENT") {
+						log.warn('Configuration file ' + this.config_file + ' not found.');
+						this.save(callback);
+					} else {
+						callback(err);
+					}
+				} else {
+					callback(null, this);
+				}
+			}.bind(this)); }.bind(this)
 		],
 		function(err, results) {
-			if(err) {if(err.path === this.config_file && err.code === "ENOENT"){callback(null,this);}callback(err); }
+			if(err) { callback(err); }
 			else { callback(null, this); }
 		}.bind(this)
 	);
