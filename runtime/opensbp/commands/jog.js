@@ -163,10 +163,10 @@ exports.JH = function(args) {
 };
 
 // Set the Jog (Rapid) speed for any of the 6 axes
-exports.JS = function(args) {
+exports.JS = function(args, callback) {
 
-console.log( "JS" );
-console.log( "JS - args = " + args );
+	console.log( "JS - args = " + args );
+	console.log(callback);
 
 	var speed_change = 0.0;
 	var g2_values = {};
