@@ -1,9 +1,11 @@
+*.swp
 *~
 *.bak
 *.tmp
+*.log
 node_modules
 npm-debug.log
 app_settings.json
 docs-dist
 .grunt
-
+config/data/*.json

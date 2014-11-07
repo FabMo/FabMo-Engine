@@ -4,21 +4,27 @@
   "author": "ShopBotTools",
   "repository": "https://github.com/ShopBotTools/FabMo-Engine.git",
   "dependencies": {
-    "restify": "2.8.x",
+    "async": "0.9.x",
+    "colors": "0.6.x",
+    "node-simplerwifiscanner": "git+https://github.com/jlucidar/node-simplerwifiscanner.git",
     "process": "0.8.x",
+    "q": "^1.0.1",
+    "restify": "2.8.x",
     "serialport": "1.4.x",
-    "tingodb": "0.2.x",
     "socket.io": "1.1.x",
-    "colors": "0.6.x"
+    "tingodb": "0.2.x"
   },
   "devDependencies": {
-    "grunt" : "0.4.x",
-    "grunt-groc" : "^0.4.5",
-    "grunt-gh-pages" : "^0.9.1",
-    "grunt-open" : "^0.2.3",
+    "grunt": "0.4.x",
+    "grunt-groc": "^0.4.5",
+    "grunt-gh-pages": "^0.9.1",
+    "grunt-open": "^0.2.3",
+    "grunt-available-tasks": "^0.5.0",
+    "grunt-mocha-test": "^0.12.1",
     "chai": "1.9.x",
     "sinon": "1.10.x",
-    "mocha": "1.21.x"
+    "mocha": "1.21.x",
+    "node-curl": "0.3.3"
   },
   "engine": "node 0.10.x"
 }

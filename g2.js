@@ -1,9 +1,9 @@
 var serialport = require("serialport");
 var fs = require("fs");
 var events = require('events');
+var async = require('async');
 var util = require('util');
 var Queue = require('./util').Queue;
-var config = require('./config_loader');
 var log = require('./log').logger('g2');
 
 // Values of the **stat** field that is returned from G2 status reports
@@ -103,19 +103,24 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
 	this.control_port.open( function(error) {
 		if(error) {
 			log.error("ERROR OPENING CONTROL PORT " + error )
+			return callback(error);
 		}
 		this.gcode_port.open(function(error) {
+			if(error) {
+				log.error("ERROR OPENING GCODE PORT " + error )
+				return callback(error);
+			}
 			this.command({"gun":0});
 			this.command('M30');
-			config.load(this, function(driver) {
-					driver.command({"gun":0});
-					driver.command('M30');
-					driver.requestStatusReport();
-					driver.connected = true;
-					callback(false, driver);  // TODO, maybe this should co
-				}.bind(this));
+			this.requestStatusReport();
+			this.connected = true;
+			callback(null, this);
 		}.bind(this));
 	}.bind(this));
+}
+
+G2.prototype.disconnect = function(callback) {
+	this.port.close(callback);
 }
 
 // Log serial errors.  Most of these are exit-able offenses, though.
@@ -126,21 +131,21 @@ G2.prototype.onSerialError = function(data) {
 // Write data to the control port.  Log to the system logger.
 G2.prototype.controlWrite = function(s) {
 	t = new Date().getTime();
-	log.debug('-C--' + t + '----> ' + s.trim());
+	log.g2('--C-' + t + '----> ' + s.trim());
 	this.control_port.write(s);
 }
 
 // Write data to the gcode port.  Log to the system logger.
 G2.prototype.gcodeWrite = function(s) {
 	t = new Date().getTime();
-	log.debug('-G--' + t + '----> ' + s.trim());
+	log.g2('--G-' + t + '----> ' + s.trim());
 	this.gcode_port.write(s);
 }
 
 // Write data to the serial port.  Log to the system logger.  Execute **callback** when transfer is complete.
 G2.prototype.controlWriteAndDrain = function(s, callback) {
 	t = new Date().getTime();
-	log.debug('-C--' + t + '----> ' + s);
+	log.g2('--C-' + t + '----> ' + s);
 	this.control_port.write(s, function () {
 		this.control_port.drain(callback);
 	}.bind(this));
@@ -148,7 +153,7 @@ G2.prototype.controlWriteAndDrain = function(s, callback) {
 
 G2.prototype.gcodeWriteAndDrain = function(s, callback) {
 	t = new Date().getTime();
-	log.debug('-G--' + t + '----> ' + s);
+	log.g2('--G-' + t + '----> ' + s);
 	this.gcode_port.write(s, function () {
 		this.gcode_port.drain(callback);
 	}.bind(this));
@@ -245,22 +250,22 @@ G2.prototype.onData = function(data) {
 		if(c === '\n') {
 			var json_string = this.current_data.join('');
 			t = new Date().getTime();
-		    log.debug('<----' + t + '---- ' + json_string);
-		    obj = null;
-		    try {
-		    	obj = JSON.parse(json_string);
-		    }catch(e){
-		    	// A JSON parse error usually means the asynchronous LOADER SEGMENT NOT READY MESSAGE
-		    	if(json_string.trim() === '######## LOADER - SEGMENT NOT READY') {
-		    		this.emit('error', [-1, 'LOADER_SEGMENT_NOT_READY', 'Asynchronous error: Segment not ready.']);
-		    	} else {
-		    		this.emit('error', [-1, 'JSON_PARSE_ERROR', "Could not parse response: '" + json_string + "' (" + e.toString() + ")"]);
-		    	}
-		    } finally {
-		    	if(obj) {
-		    		this.onMessage(obj);
-		    	}
-		    }
+			log.g2('<--C-' + t + '---- ' + json_string);
+			obj = null;
+			try {
+				obj = JSON.parse(json_string);
+			}catch(e){
+				// A JSON parse error usually means the asynchronous LOADER SEGMENT NOT READY MESSAGE
+				if(json_string.trim() === '######## LOADER - SEGMENT NOT READY') {
+					this.emit('error', [-1, 'LOADER_SEGMENT_NOT_READY', 'Asynchronous error: Segment not ready.']);
+				} else {
+					this.emit('error', [-1, 'JSON_PARSE_ERROR', "Could not parse response: '" + json_string + "' (" + e.toString() + ")"]);
+				}
+			} finally {
+				if(obj) {
+					this.onMessage(obj);
+				}
+			}
 			this.current_data = [];
 		} else {
 			this.current_data.push(c);
@@ -471,21 +476,81 @@ G2.prototype.quit = function() {
 };
 
 G2.prototype.get = function(key, callback) {
-	cmd = {}
-	cmd[key] = null
-	log.warn(this.readers)
-	if (key in this.readers) {
-		this.readers[key].push(callback);
+	var keys;
+	if(key instanceof Array) {
+		keys = key;
+		is_array = true;
 	} else {
-		this.readers[key] = [callback]
+		is_array = false;
+		keys = [key];
 	}
-	this.command(cmd);
+	async.map(keys, 
+
+		// Function called for each item in the keys array
+		function(k, cb) {
+			cmd = {}
+			cmd[k] = null
+			if(k in this.readers) {
+				this.readers[k].push(cb.bind(this));
+			} else {
+				this.readers[k] = [cb.bind(this)]
+			}
+			this.command(cmd);
+		}.bind(this),
+	
+		// Function to call with the list of results
+		function(err, result) {
+			if(err) {
+				return callback(err, result);
+			} else {
+				// If given an array, return one.  Else, return a single item.
+				if(is_array) {
+					return callback(err, result);
+				} else {
+					return callback(err, result[0]);
+				}
+			}
+		}
+	);
+}
+
+G2.prototype.setMany = function(obj, callback) {
+	var keys = Object.keys(obj);
+	async.map(keys, 
+		// Function called for each item in the keys array
+		function(k, cb) {
+			cmd = {}
+			cmd[k] = obj[k]
+			if(k in this.readers) {
+				this.readers[k].push(cb.bind(this));
+			} else {
+				this.readers[k] = [cb.bind(this)]
+			}
+			this.command(cmd);
+		}.bind(this),
+
+		// Function to call with the list of results
+		function(err, result) {
+			if(err) {
+				return callback(err, result);
+			} else {
+				var retval = {};
+				try {
+					for(i=0; i<keys.length; i++) {
+						retval[keys[i]] = result[i];
+					}
+				} catch(e) {
+					callback(e, null);
+				}
+				return callback(null, retval);
+			}
+		}
+	);
 }
 
 G2.prototype.set = function(key, value, callback) {
 	cmd = {}
 	cmd[key] = value
-	log.warn(this.readers)
 	if (key in this.readers) {
 		this.readers[key].push(callback);
 	} else {

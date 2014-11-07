@@ -2,16 +2,17 @@
  * log.js is a "Poor man's" logging module.  It provides basic colorized logging using named 
  * loggers with selectable log levelts.
  */
-var settings = require('./settings');
 var process = require('process');
 try { var colors = require('colors'); } catch(e) {var colors = false;}
+var _suppress = false;
 
 // String versions of the allowable log levels
 LEVELS = {
-	'debug' : 0,
-	'info' : 1,
-	'warn' : 2,
-	'error' : 3,
+	'g2' : 0,
+	'debug' : 1,
+	'info' : 2,
+	'warn' : 3,
+	'error' : 4,
 };
 
 // Default log levels for loggers with specific names.
@@ -66,10 +67,16 @@ var logs = {};
 
 // Output the provided message with colorized output (if available) and the logger name
 Logger.prototype.write = function(level, msg) {
+	if(_suppress) {
+		return;
+	}
 	my_level = LOG_LEVELS[this.name] || 'debug';
 	if((LEVELS[level] || 0) >= (LEVELS[my_level] || 0)) {
 		if(colors) {
 			switch(level) {
+				case 'g2':
+					console.log((level + ': ').magenta + msg + ' ['+this.name+']');
+					break;
 				case 'debug':
 					console.log((level + ': ').blue + msg+' ['+this.name+']');
 					break;
@@ -90,10 +97,11 @@ Logger.prototype.write = function(level, msg) {
 };
 
 // These functions provide a shorthand alternative to specifying the log level every time
-Logger.prototype.debug = function(msg) { this.write('debug', msg); };
-Logger.prototype.info = function(msg) { this.write('info', msg); };
-Logger.prototype.warn = function(msg) { this.write('warn', msg); };
+Logger.prototype.debug = function(msg) { this.write('debug', msg);};
+Logger.prototype.info = function(msg) { this.write('info', msg);};
+Logger.prototype.warn = function(msg) { this.write('warn', msg);};
 Logger.prototype.error = function(msg) { this.write('error', msg);};
+Logger.prototype.g2 = function(msg) {this.write('g2', msg);};
 
 // Factory function for producing a new, named logger object
 var logger = function(name) {
@@ -106,17 +114,20 @@ var logger = function(name) {
 	}
 };
 
-/*
 process.on('uncaughtException', function(err) {
 	if(colors) {
-		console.log(err.red);
+		console.log("UNCAUGHT EXCEPTION".red.underline);
+		console.log(('' + err.stack).red)
+	} else {
+		console.log("UNCAUGHT EXCEPTION");
+		console.log(err.stack);
 	}
-	else {
-	console.log(err);
-	}
+});
 
-});*/
+var suppress = function(v) {_suppress = true;}
+var unsuppress = function(v) {_suppress = false;}
 
+exports.suppress = suppress;
 exports.logger = logger;
 exports.setGlobalLevel = setGlobalLevel;
  

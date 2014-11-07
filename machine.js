@@ -5,14 +5,13 @@ var PLATFORM = require('process').platform;
 var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
-
+var db = require('./db');
 var log = require('./log').logger('machine');
-var GCodeRuntime = require('./gcode').GCodeRuntime;
-var SBPRuntime = require('./opensbp').SBPRuntime;
-var ManualRuntime = require('./manual').ManualRuntime;
-var PassthroughRuntime = require('./passthrough').PassthroughRuntime;
 
-
+var GCodeRuntime = require('./runtime/gcode').GCodeRuntime;
+var SBPRuntime = require('./runtime/opensbp').SBPRuntime;
+var ManualRuntime = require('./runtime/manual').ManualRuntime;
+var PassthroughRuntime = require('./runtime/passthrough').PassthroughRuntime;
 
 function connect(callback) {
 
@@ -44,7 +43,8 @@ function connect(callback) {
 			break;
 	}
 	if(control_path && gcode_path) {
-		return new Machine(control_path, gcode_path, callback);
+		exports.machine = new Machine(control_path, gcode_path, callback);
+		callback(null, exports.machine);
 	} else {
 		typeof callback === "function" && callback(true, "No supported serial path for platform " + PLATFORM);
 		return null;
@@ -61,16 +61,18 @@ function Machine(control_path, gcode_path, callback) {
 		state : "not_ready",
 		posx : 0.0,
 		posy : 0.0,
-		posz : 0.0
+		posz : 0.0, 
+		job : null
 	};
 
 	this.driver = new g2.G2();
 	this.driver.on("error", function(data) {log.error(data);});
-
 	this.driver.connect(control_path, gcode_path, function(err, data) {
+
 		if(err){log.error(err);return;}
 		this.status.state = "idle";
 
+		// Create runtimes for different functions/command languages
 		this.gcode_runtime = new GCodeRuntime();
 		this.sbp_runtime = new SBPRuntime();
 		this.manual_runtime = new ManualRuntime();
@@ -84,6 +86,10 @@ function Machine(control_path, gcode_path, callback) {
 	}.bind(this));
 }
 util.inherits(Machine, events.EventEmitter);
+
+Machine.prototype.disconnect = function(callback) {
+	this.driver.disconnect(callback);
+}
 
 Machine.prototype.toString = function() {
     return "[Machine Model on '" + this.driver.path + "']";
@@ -99,24 +105,48 @@ Machine.prototype.sbp = function(string) {
 	this.current_runtime.runString(string);
 };
 
+Machine.prototype.runJob = function(job) {
+	this.status.job = job;
+	db.File.get_by_id(job.file_id,function(file){
+		// TODO deal with no file found
+		log.info("Running file " + file.path);
+		this.runFile(file.path);
+	}.bind(this));	
+}
+
+Machine.prototype.runNextJob = function(callback) {
+	log.info("Running next job");
+	db.Job.dequeue(function(err, result) {
+		log.info(result)
+		if(err) {
+			log.error(err);
+			callback(err, null);
+		} else {
+			log.info('Running job ' + result)
+			this.runJob(result);
+			callback(null, result);
+		}
+	}.bind(this));
+}
+
 Machine.prototype.runFile = function(filename) {
 	fs.readFile(filename, 'utf8', function (err,data) {
 		if (err) {
 			log.error('Error reading file ' + filename);
-		    	log.error(err);
-		    	return;
+				log.error(err);
+				return;
 		} else {
-            		parts = filename.split(path.sep);
-        		ext = path.extname(filename).toLowerCase();
-            		log.debug(filename);
-            		log.debug(parts);
-		  	this.status.current_file = parts[parts.length-1];
+			parts = filename.split(path.sep);
+			ext = path.extname(filename).toLowerCase();
+			log.debug(filename);
+			log.debug(parts);
+			this.status.current_file = parts[parts.length-1];
 
-		  	if(ext == '.sbp') {
-		  		this.setRuntime(this.sbp_runtime);
-		  	} else {
+			if(ext == '.sbp') {
+				this.setRuntime(this.sbp_runtime);
+			} else {
 				this.setRuntime(this.gcode_runtime);
-		  	}
+			}
 			this.current_runtime.runString(data);
 		}
 	}.bind(this));
@@ -142,7 +172,9 @@ Machine.prototype.setRuntime = function(runtime) {
 
 		} finally {
 			this.current_runtime = runtime;
-			runtime.connect(this);
+			if(runtime) {
+				runtime.connect(this);
+			}
 		}
 	}
 };

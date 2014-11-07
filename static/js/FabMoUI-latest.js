@@ -3,10 +3,9 @@ $('.fabmo-state').addClass('fabmo-status-idle');
 $('.fabmo-state').html(status.state);
 $('.fabmo-posx').html(status.posx);
 
-
-
-
 function FabMoUI(tool, options){
+	this.event_handlers = {'status' : []};
+
 	this.tool = tool;
 	// the tool we need to check for
 
@@ -85,7 +84,12 @@ FabMoUI.prototype.updateStatus = function(){
 	var that=this;
 	that.tool.get_status(function(err, status){
 		if(!err){
-			
+
+			handlers = that.event_handlers['status'];
+			for(var i=0; i<handlers.length; i++) {
+				typeof handlers[i] === 'function' && handlers[i](status);
+			}
+
 			var x = status.posx.toFixed(3);
 			var y = status.posy.toFixed(3);
 			var z = status.posz.toFixed(3);
@@ -206,8 +210,6 @@ FabMoUI.prototype.updateStatus = function(){
 
 }
 
-
-
 FabMoUI.prototype.Keypad = function(){
 	var that = this;
 	this.keypad_allow=false;
@@ -287,7 +289,6 @@ FabMoUI.prototype.Keypad = function(){
 			}
 		}
 	});
-
 
 	$(that.plusX_button_selector).mousedown(function(e) {
 		var e1 = jQuery.Event("keydown");
@@ -408,4 +409,11 @@ FabMoUI.prototype.FileControl = function(){
 	$(that.stop_button_selector).click(function(e) {
 		that.tool.quit(function(){});
 	});
+}
+
+FabMoUI.prototype.on = function(event, callback) {
+	if(event == 'status') {
+		this.event_handlers['status'].push(callback);
+		console.log(this.event_handlers)
+	}
 }
