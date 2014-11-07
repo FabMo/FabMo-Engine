@@ -90,17 +90,19 @@ SBPRuntime.prototype._evaluateArguments = function(command, args) {
 	if(command in sb3_commands) {
 		params = sb3_commands[command].params || [];
 		if(args.length > params.length) {
-			log.warn('MORE parameters passed into ' + command + ' than are supported by the command.')
+			log.warn('MORE parameters passed into ' + command + ' than are supported by the command.');
 		}
 		for(i=0; i<params.length; i++) {
 			prm_param = params[i];
 			user_param = args[i];
 			if((args[i] !== undefined) && (args[i] !== "")) {
-				log.debug("Taking the users argument: " + args[i]);
+				log.debug('Taking the users argument: ' + args[i]);
 				scrubbed_args.push(args[i]);
 			} else {
-				log.debug("Taking the default argument: " + args[i] + " (PRN file)");
-				scrubbed_args.push(prm_param.default || undefined);
+				//log.debug("Taking the default argument: " + args[i] + " (PRN file)");
+				//scrubbed_args.push(prm_param.default || undefined);
+				log.debug('No user specified argument.  Using undefined.');
+				scrubbed_args.push(undefined);
 			}
 		}
 	} else {
