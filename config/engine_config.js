@@ -9,8 +9,8 @@ log = require('../log');
 // The EngineConfig object keeps track of engine-specific settings
 EngineConfig = function() {
 	Config.call(this);
-	this.default_config_file = './config/default/engine.json'
-	this.config_file = './config/data/engine.json'
+	this.default_config_file = __dirname + '/default/engine.json'
+	this.config_file = __dirname + '/data/engine.json'
 }
 util.inherits(EngineConfig, Config);
 

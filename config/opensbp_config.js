@@ -8,8 +8,8 @@ log = require('../log');
 // The EngineConfig object keeps track of engine-specific settings
 OpenSBPConfig = function() {
 	Config.call(this);
-	this.default_config_file = './config/default/opensbp.json'
-	this.config_file = './config/data/opensbp.json'
+	this.default_config_file = __dirname + '/default/opensbp.json'
+	this.config_file = __dirname + '/data/opensbp.json'
 }
 util.inherits(OpenSBPConfig, Config);
 

@@ -7,8 +7,8 @@ Config = require('./config').Config
 G2Config = function(driver) {
 	Config.call(this);
 	this.driver = driver;
-    this.default_config_file = './config/default/g2.json';
-	this.config_file = './config/data/g2.json';
+    this.default_config_file = __dirname + '/default/g2.json';
+	this.config_file = __dirname + '/data/g2.json';
 }
 util.inherits(G2Config, Config);
 
