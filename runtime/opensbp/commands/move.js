@@ -168,49 +168,60 @@ exports.MH = function(args) {
 	this.cmd_posy = 0;
 };
 
-// Set the move speeds for Axes XYZABC
-exports.MS = function(args) {
+// Set the Move (cut) speed for any of the 6 axes
+exports.MS = function(args, callback) {
+
+	log.debug( "MS - args = " + args );
+
 	var speed_change = 0.0;
-	var xSpd, ySpd, zSpd, aSpd, bSpd, cSpd;
+	var g2_values = {};
+	var sbp_values = {};
 
 	if (args[0] !== undefined) {
 		speed_change = args[0];
-		xSpd = ySpd = 60 * speed_change;
-		config.opensbp.set('movexy_speed', speed_change);
+		g2_values.xfr = g2_values.yfr = (60 * speed_change);
+		sbp_values.movexy_speed = speed_change;
 	}
 	if (args[1] !== undefined) {
 		speed_change = args[1];
-		zSpd = 60 * speed_change;
-		config.opensbp.set('movez_speed', speed_change);
+		if ( speed_change !== undefined ){
+			g2_values.zfr = (60 * speed_change);
+			sbp_values.movez_speed = speed_change;
+		}
 	}
 	if (args[2] !== undefined) {
 		speed_change = args[2];
-		aSpd = 60 * speed_change;
-		config.opensbp.set('movea_speed', speed_change);
+		if ( speed_change !== undefined ){
+			g2_values.afr = (60 * speed_change);
+			sbp_values.movea_speed = speed_change;
+		}
 	}
 	if (args[3] !== undefined) {
 		speed_change = args[3];
-		bSpd = 60 * speed_change;
-		config.opensbp.set('moveb_speed', speed_change);
+		if ( speed_change !== undefined ){
+			g2_values.bfr = (60 * speed_change);
+			sbp_values.moveb_speed = speed_change;
+		}
 	}
 	if (args[4] !== undefined) {
 		speed_change = args[4];
-		cSpd = 60 * speed_change;
-		config.opensbp.set('movec_speed', speed_change);
+		if ( speed_change !== undefined ){
+			g2_values.cfr = (60 * speed_change);
+			sbp_values.movec_speed = speed_change;
+		}
 	}
 
-	var G2_values = { 'xfr':xSpd,
-				  	  'yfr':ySpd,
-				  	  'zfr':zSpd,
-				  	  'afr':aSpd,
-				  	  'bfr':bSpd,
-				  	  'cfr':cSpd  };
+	log.debug( "MS-g2_values = " + JSON.stringify(g2_values) );
+	log.debug( "MS-sbp_values = " + JSON.stringify(sbp_values) );
 
-//	config.opensbp.setMany(sbp_values, function(err, values) {
-		config.driver.setMany(G2_values, function(err, values) {
+	// We have created the objects containing both the values to set on the G2 driver as well as for shopbot
+	// Now send them to their appropriate places (shopbot first, followed by G2)
+	config.opensbp.setMany(sbp_values, function(err, values) {
+		config.driver.setMany(g2_values, function(err, values) {
 			callback();
 		});
-//	});
+	});
+
 };
 
 exports.MI = function(args) {

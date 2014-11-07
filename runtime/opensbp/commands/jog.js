@@ -165,8 +165,7 @@ exports.JH = function(args) {
 // Set the Jog (Rapid) speed for any of the 6 axes
 exports.JS = function(args, callback) {
 
-	console.log( "JS - args = " + args );
-//	console.log(callback);
+	log.debug( "JS - args = " + args );
 
 	var speed_change = 0.0;
 	var g2_values = {};
@@ -206,15 +205,15 @@ exports.JS = function(args, callback) {
 		}
 	}
 
-	console.log( "JS-g2_values = " + JSON.stringify(g2_values) );
-	console.log( "JS-sbp_values = " + JSON.stringify(sbp_values) );
+	log.debug( "JS-g2_values = " + JSON.stringify(g2_values) );
+	log.debug( "JS-sbp_values = " + JSON.stringify(sbp_values) );
 
 	// We have created the objects containing both the values to set on the G2 driver as well as for shopbot
 	// Now send them to their appropriate places (shopbot first, followed by G2)
-//	config.opensbp.setMany(sbp_values, function(err, values) {
-//		config.driver.setMany(g2_values, function(err, values) {
-//			callback();
-//		});
-//	});
+	config.opensbp.setMany(sbp_values, function(err, values) {
+		config.driver.setMany(g2_values, function(err, values) {
+			callback();
+		});
+	});
 
 };

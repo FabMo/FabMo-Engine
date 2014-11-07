@@ -1,19 +1,16 @@
-console.log("test MS");
+Engine = require('../engine').Engine;
 
-var opensbp = require('../runtime/opensbp');
+var engine = new Engine();
 
-console.log("made opensbp");
+var p0 = 4.00;			// XY Jog Speed
+var p1 = 2.00;			// Z Jog Speed
+var p2 = 10;			// A Jog Speed
+var p3 = 10;			// B Jog Speed
+var p4 = 360;			// C Jog Speed
 
-sbp = new opensbp.SBPRuntime();
+var outStr = ("MS," + p0 + "," + p1 + "," + p2 + "," + p3 + "," + p4);
 
-console.log("made sbp");
-
-var p0 = 30.00;			// XY Jog Speed
-var p1 = 8.00;			// Z Jog Speed
-var p2 = 20;			// A Jog Speed
-var p3 = 20;			// B Jog Speed
-var p4 = 3;				// C Jog Speed
-
-sbp.MS([p0,p1,p2,p3,p4]);
-
-//console.log(sbp.current_chunk);
+engine.start(function(error, result){ 
+	engine.machine.sbp(outStr);
+	setTimeout(process.exit,1000);
+});

@@ -318,6 +318,63 @@
          }
       ]
    },
+   "MA": {
+      "cmd": "MA",
+      "name": "move A axis",
+      "params": [
+         {
+            "name": "New A location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvA",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits A"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "MB": {
+      "cmd": "MB",
+      "name": "move B axis",
+      "params": [
+         {
+            "name": "New B location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvB",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits B"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "MC": {
+      "cmd": "MC",
+      "name": "move C axis",
+      "params": [
+         {
+            "name": "New C location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvC",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits C"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
    "M2": {
       "cmd": "M2",
       "name": "move in 2 axes (X and Y)",
@@ -390,93 +447,6 @@
             "range": [
                null,
                "Table limits Z"
-            ],
-            "type": "dist"
-         }
-      ]
-   },
-   "MD": {
-      "cmd": "MD",
-      "name": "move Distance at Angle",
-      "params": [
-         {
-            "name": "Distance to Move",
-            "desc": "Distance to go at the specified angle",
-            "abrev": "mvDst",
-            "typeext": 0,
-            "default": "",
-            "sysvar": 0,
-            "range": [
-               null,
-               null
-            ],
-            "type": "str"
-         },
-         {
-            "name": "Angle",
-            "desc": "Direction to go in degrees, relative degrees (use R or L), clock (4:30), or compass (WSW)",
-            "abrev": "mvDir",
-            "typeext": 0,
-            "default": "",
-            "sysvar": 0,
-            "range": [
-               null,
-               null
-            ],
-            "type": "dist"
-         },
-         {
-            "name": "Z Move",
-            "desc": "New Z location at end or move, or Relative Z change during move (use U or D)",
-            "abrev": "mvZr",
-            "typeext": 0,
-            "default": "",
-            "sysvar": 0,
-            "range": [
-               null,
-               null
-            ],
-            "type": "dist"
-         }
-      ]
-   },
-   "MH": {
-      "cmd": "MH",
-      "name": "move Home (X and Y; Z Safe Height)"
-   },
-   "MA": {
-      "cmd": "MA",
-      "name": "move A axis",
-      "params": [
-         {
-            "name": "New A location",
-            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
-            "abrev": "mvA",
-            "typeext": 2,
-            "default": "",
-            "sysvar": 0,
-            "range": [
-               null,
-               "Table limits A"
-            ],
-            "type": "dist"
-         }
-      ]
-   },
-   "MB": {
-      "cmd": "MB",
-      "name": "move B axis",
-      "params": [
-         {
-            "name": "New B location",
-            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
-            "abrev": "mvB",
-            "typeext": 2,
-            "default": "",
-            "sysvar": 0,
-            "range": [
-               null,
-               "Table limits B"
             ],
             "type": "dist"
          }
@@ -610,6 +580,139 @@
             "type": "ops"
          }
       ]
+   },
+   "M6": {
+      "cmd": "M6",
+      "name": "move in 6 axes",
+      "params": [
+         {
+            "name": "New X location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvX",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits X"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New Y location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvY",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits Y"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New Z location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvZ",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits Z"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New A location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvA",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits A"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New B location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvB",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits B"
+            ],
+            "type": "ops"
+         },
+               {
+            "name": "New C location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "mvC",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits C"
+            ],
+            "type": "ops"
+         }
+      ]
+   },
+   "MD": {
+      "cmd": "MD",
+      "name": "move Distance at Angle",
+      "params": [
+         {
+            "name": "Distance to Move",
+            "desc": "Distance to go at the specified angle",
+            "abrev": "mvDst",
+            "typeext": 0,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         },
+         {
+            "name": "Angle",
+            "desc": "Direction to go in degrees, relative degrees (use R or L), clock (4:30), or compass (WSW)",
+            "abrev": "mvDir",
+            "typeext": 0,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               null
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "Z Move",
+            "desc": "New Z location at end or move, or Relative Z change during move (use U or D)",
+            "abrev": "mvZr",
+            "typeext": 0,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               null
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "MH": {
+      "cmd": "MH",
+      "name": "move Home (X and Y; Z Safe Height)"
    },
    "MN": {
       "cmd": "MN",
@@ -767,6 +870,19 @@
                null
             ],
             "type": "dist"
+         },
+         {
+            "name": "C Move Speed",
+            "desc": "Move (Cutting) Speed in Current Units for C Axis",
+            "abrev": "msC",
+            "typeext": 0,
+            "default": "",
+            "sysvar": 146,
+            "range": [
+               null,
+               null
+            ],
+            "type": "dist"
          }
       ]
    },
@@ -822,6 +938,63 @@
             "range": [
                null,
                "Table limits Z"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "JA": {
+      "cmd": "JA",
+      "name": "jog A axis",
+      "params": [
+         {
+            "name": "New A location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jA",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits A"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "JB": {
+      "cmd": "JB",
+      "name": "jog B axis",
+      "params": [
+         {
+            "name": "New B location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jB",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits B"
+            ],
+            "type": "dist"
+         }
+      ]
+   },
+   "JC": {
+      "cmd": "JC",
+      "name": "jog C axis",
+      "params": [
+         {
+            "name": "New C location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jC",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits C"
             ],
             "type": "dist"
          }
@@ -907,44 +1080,6 @@
    "JH": {
       "cmd": "JH",
       "name": "jog Home (X and Y; Z Safe Height)"
-   },
-   "JA": {
-      "cmd": "JA",
-      "name": "jog A axis",
-      "params": [
-         {
-            "name": "New A location",
-            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
-            "abrev": "jA",
-            "typeext": 2,
-            "default": "",
-            "sysvar": 0,
-            "range": [
-               null,
-               "Table limits A"
-            ],
-            "type": "dist"
-         }
-      ]
-   },
-   "JB": {
-      "cmd": "JB",
-      "name": "jog B axis",
-      "params": [
-         {
-            "name": "New B location",
-            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
-            "abrev": "jB",
-            "typeext": 2,
-            "default": "",
-            "sysvar": 0,
-            "range": [
-               null,
-               "Table limits B"
-            ],
-            "type": "dist"
-         }
-      ]
    },
    "J4": {
       "cmd": "J4",
@@ -1075,6 +1210,90 @@
          }
       ]
    },
+   "J6": {
+      "cmd": "J6",
+      "name": "jog in 6 axes",
+      "params": [
+         {
+            "name": "New X location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jX",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits X"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New Y location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jY",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits Y"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New Z location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jZ",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits Z"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New A location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jA",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits A"
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "New B location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jB",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits B"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "New C location",
+            "desc": "If in Absolute Mode, this is the move-to location; in Relative Mode, this is the distance-to-go",
+            "abrev": "jC",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits C"
+            ],
+            "type": "distm"
+         }
+      ]
+   },
    "JS": {
       "cmd": "JS",
       "name": "jog Speeds",
@@ -1103,7 +1322,7 @@
                ".05",
                "20"
             ],
-            "type": "distma"
+            "type": "distm"
          },
          {
             "name": "A Jog Speed",
@@ -1116,7 +1335,7 @@
                null,
                null
             ],
-            "type": "distmb"
+            "type": "distm"
          },
          {
             "name": "B Jog Speed",
@@ -1125,6 +1344,19 @@
             "typeext": 0,
             "default": "",
             "sysvar": 80,
+            "range": [
+               null,
+               null
+            ],
+            "type": "dist"
+         },
+         {
+            "name": "C Jog Speed",
+            "desc": "Jog (Rapid) Speed in Current Units for C Axis Movements ",
+            "abrev": "jsC",
+            "typeext": 0,
+            "default": "",
+            "sysvar": 147,
             "range": [
                null,
                null
@@ -2842,6 +3074,19 @@
             "type": "distm"
          },
          {
+            "name": "C Move Speed",
+            "desc": "Move (Cutting) Speed in Current Units for C Axis",
+            "abrev": "msC",
+            "typeext": 0,
+            "default": "50",
+            "sysvar": 146,
+            "range": [
+               "0.01",
+               "5000"
+            ],
+            "type": "distm"
+         },
+         {
             "name": "XY Jog Speed",
             "desc": "Jog (Rapid) Speed in Current Units for X & Y Axis Movements; Do Not Set Above Default Without Safety Precautions!",
             "abrev": "jsXY",
@@ -2887,6 +3132,19 @@
             "typeext": 0,
             "default": "100",
             "sysvar": 80,
+            "range": [
+               "0.01",
+               "5000"
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "C Jog Speed",
+            "desc": "Jog (Rapid) Speed in Current Units for C Axis Movements ",
+            "abrev": "jsC",
+            "typeext": 0,
+            "default": "100",
+            "sysvar": 147,
             "range": [
                "0.01",
                "5000"
