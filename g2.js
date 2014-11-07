@@ -48,6 +48,7 @@ try {
 // G2 Constructor
 function G2() {
 	this.current_data = [];
+	this.current_gcode_data = [];
 	this.status = {'stat':null, 'posx':0, 'posy':0, 'posz':0};
 	this.gcode_queue = new Queue();
 	this.pause_flag = false;
@@ -111,7 +112,7 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
 				return callback(error);
 			}
 			this.command({"gun":0});
-			this.command('M30');
+			this.command({"gc":'M30'});
 			this.requestStatusReport();
 			this.connected = true;
 			callback(null, this);
@@ -236,7 +237,20 @@ G2.prototype.requestStatusReport = function(callback) {
 G2.prototype.requestQueueReport = function() { this.command({'qr':null}); };
 
 G2.prototype.onWAT = function(data) {
-	log.warn(data)
+	var s = data.toString('ascii');
+	var len = s.length;
+	for(var i=0; i<len; i++) {
+		c = s[i];
+		if(c === '\n') {
+			string = this.current_gcode_data.join('');
+			t = new Date().getTime();
+			log.g2('<-G--' + t + '---- ' + string);
+			this.current_gcode_data = [];
+		} else {
+			this.current_gcode_data.push(c);
+		}
+	}
+
 }
 // Called for every chunk of data returned from G2
 G2.prototype.onData = function(data) {
@@ -250,7 +264,7 @@ G2.prototype.onData = function(data) {
 		if(c === '\n') {
 			var json_string = this.current_data.join('');
 			t = new Date().getTime();
-			log.g2('<--C-' + t + '---- ' + json_string);
+			log.g2('<-C--' + t + '---- ' + json_string);
 			obj = null;
 			try {
 				obj = JSON.parse(json_string);
@@ -278,14 +292,16 @@ G2.prototype.handleQueueReport = function(r) {
 	var MIN_QR_LEVEL = 5;
 	var MIN_FLOOD_LEVEL = 20;
 
-	if(this.pause_flag || this.quit_pending) {
+
+	var qr = r.qr;
+	var qo = r.qo || 0;
+	var qi = r.qi || 0;
+
+	if((qr !== undefined) && (this.pause_flag || this.quit_pending)) {
 		log.debug('Not handling this queue report because pause or quit pending');
 		// If we're here, a pause is requested, and we don't send anymore g-codes.
 		return;
 	}
-	var qr = r.qr;
-	var qo = r.qo || 0;
-	var qi = r.qi || 0;
 
 	this.qtotal += (qi-qo);
 
@@ -399,7 +415,7 @@ G2.prototype.handleStatusReport = function(response) {
 			if((this.status.hold === 4) || (this.status.stat === 3)) {
 				setTimeout(function() {			
 					this.queueClear();
-					this.command('M30');
+					//this.command('M30');
 					this.quit_pending = false;
 					this.pause_flag = false;
 					this.requestQueueReport();
@@ -469,7 +485,7 @@ G2.prototype.quit = function() {
 		this.feedHold();
 	} else {
 		this.queueClear();
-		this.command('M30');
+		this.command({'gc':'M30'});
 		this.command({'qv':2});
 		this.requestQueueReport();
 	}
