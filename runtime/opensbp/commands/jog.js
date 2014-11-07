@@ -163,10 +163,10 @@ exports.JH = function(args) {
 };
 
 // Set the Jog (Rapid) speed for any of the 6 axes
-exports.JS = function(args) {
+exports.JS = function(args, callback) {
 
-console.log( "JS" );
-console.log( "JS - args = " + args );
+	console.log( "JS" );
+	console.log( "JS - args = " + args );
 
 	var speed_change = 0.0;
 	var g2_values = {};
@@ -185,21 +185,21 @@ console.log( "JS - args = " + args );
 		}
 	}
 	if (args[2] !== undefined) {
-		speed_change = args[1];
+		speed_change = args[2];
 		if ( speed_change !== undefined ){
 			g2_values.avm = (60 * speed_change);
 			sbp_values.joga_speed = speed_change;
 		}
 	}
 	if (args[3] !== undefined) {
-		speed_change = args[1];
+		speed_change = args[3];
 		if ( speed_change !== undefined ){
 			g2_values.bvm = (60 * speed_change);
 			sbp_values.jogb_speed = speed_change;
 		}
 	}
 	if (args[4] !== undefined) {
-		speed_change = args[1];
+		speed_change = args[4];
 		if ( speed_change !== undefined ){
 			g2_values.cvm = (60 * speed_change);
 			sbp_values.jogc_speed = speed_change;

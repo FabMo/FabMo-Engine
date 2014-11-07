@@ -85,20 +85,21 @@ SBPRuntime.prototype._update = function() {
 // Evaluate a list of arguments provided (for commands)
 SBPRuntime.prototype._evaluateArguments = function(command, args) {
 	log.debug("Evaluating arguments: " + command + "," + JSON.stringify(args));
-
 	// Scrub the argument list:  extend to the correct length, sub in defaults where necessary.
 	scrubbed_args = [];
 	if(command in sb3_commands) {
 		params = sb3_commands[command].params || [];
+		if(args.length > params.length) {
+			log.warn('MORE parameters passed into ' + command + ' than are supported by the command.')
+		}
 		for(i=0; i<params.length; i++) {
 			prm_param = params[i];
 			user_param = args[i];
-			log.debug("!!!: " + args[i]);
 			if((args[i] !== undefined) && (args[i] !== "")) {
 				log.debug("Taking the users argument: " + args[i]);
 				scrubbed_args.push(args[i]);
 			} else {
-				log.debug("Taking the default argument: " + args[i]);
+				log.debug("Taking the default argument: " + args[i] + " (PRN file)");
 				scrubbed_args.push(prm_param.default || undefined);
 			}
 		}
@@ -384,24 +385,26 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 
 SBPRuntime.prototype._eval_value = function(expr) {
-		log.debug("Evaluating value: " + expr);
+		log.debug("  Evaluating value: " + expr);
 		sys_var = this.evaluateSystemVariable(expr);
 		if(sys_var === undefined) {
 			user_var = this.evaluateUserVariable(expr);
 			if(user_var === undefined) {
-				log.debug("Evaluated " + expr + " as " + expr);
+				log.debug("  Evaluated " + expr + " as " + expr);
 				return parseFloat(expr);
 			} else if(user_var === null) {
+				log.error("  Undefined variable " + expr)
 				// ERROR UNDEFINED VARIABLE
 			} else {
-				log.debug("Evaluated " + expr + " as " + user_var);
+				log.debug("  Evaluated " + expr + " as " + user_var);
 				return parseFloat(user_var);
 			}
 		} else if(sys_var === null) {
+			log.error("  Undefined system variable " + expr)
 			// ERROR UNKNOWN SYSTEM VARIABLE
 		} else {
 
-			log.debug("Evaluated " + expr + " as " + sys_var);
+			log.debug("  Evaluated " + expr + " as " + sys_var);
 			this.sysvar_evaluated = true;
 			return parseFloat(sys_var);
 		}	
@@ -575,7 +578,6 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 };
 
 SBPRuntime.prototype.evaluateUserVariable = function(v) {
-
 	if(v === undefined) { return undefined;}
 	result = v.match(USERVAR_RE);
 	if(result === null) {return undefined;}
@@ -596,9 +598,14 @@ SBPRuntime.prototype.emit_gcode = function(s) {
 	this.current_chunk.push(s);
 };
 
-commands=require('./commands').load();
-for(var attr in commands) {
-	SBPRuntime.prototype[attr] = commands[attr];
+// This must be called at least once before instantiating an SBPRuntime object
+SBPRuntime.prototype.loadCommands = function(callback) {
+	commands=require('./commands').load();
+	proto = Object.getPrototypeOf(this);
+	for(var attr in commands) {
+		proto[attr] = commands[attr];
+	}
+	callback(null, this)
 }
 
 exports.SBPRuntime = SBPRuntime;
