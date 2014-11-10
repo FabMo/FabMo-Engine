@@ -5,8 +5,8 @@ var config = require('../../../config');
 
 // Move X axis
 exports.MX = function(args) {
-	x = args[0]
-	if(isNaN(x)) { throw "Invalid MX argument: " + x}
+	x = args[0];
+	if(isNaN(x)) { throw "Invalid MX argument: " + x; }
 	this.emit_gcode("G1X" + x + " F" + ( 60.0 * config.opensbp.get('movexy_speed')));
 	this.cmd_posx = x;
 };

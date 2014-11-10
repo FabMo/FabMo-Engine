@@ -2362,14 +2362,6 @@
       "cmd": "ZZ",
       "name": "zero Z axis"
    },
-   "Z2": {
-      "cmd": "Z2",
-      "name": "zero 2 axes (X and Y)"
-   },
-   "Z3": {
-      "cmd": "Z3",
-      "name": "zero 3 axes (X, Y and Z)"
-   },
    "ZA": {
       "cmd": "ZA",
       "name": "zero A axis"
@@ -2378,6 +2370,18 @@
       "cmd": "ZB",
       "name": "zero B axis"
    },
+   "ZC": {
+      "cmd": "ZC",
+      "name": "zero C axis"
+   },
+   "Z2": {
+      "cmd": "Z2",
+      "name": "zero 2 axes (X and Y)"
+   },
+   "Z3": {
+      "cmd": "Z3",
+      "name": "zero 3 axes (X, Y and Z)"
+   },
    "Z4": {
       "cmd": "Z4",
       "name": "zero 4 axes"
@@ -2385,6 +2389,10 @@
    "Z5": {
       "cmd": "Z5",
       "name": "zero 5 axes"
+   },
+   "Z6": {
+      "cmd": "Z6",
+      "name": "zero 6 axes"
    },
    "ZT": {
       "cmd": "ZT",

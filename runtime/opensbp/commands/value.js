@@ -21,21 +21,39 @@ exports.VA = function(args, callback) {
 };
 
 exports.VC = function(args) {
-	// TODO CONVERT THESE TO NEW SETTINGS
-	/*
-	if (args[0] !== undefined) sbp_settings.cutterDia = args[0];		// Cutter Diameter
+
+	log.debug( "VC - args = " + args );
+
+	var sbp_values = {};
+
+	if (args[0] !== undefined) { 	//args[0] = sbp_settings.cutterDia	// Cutter Diameter
+
+		sbp_values.cutterDia = args[0];
+	}
 	// args[1] = Obsolete
 	// args[2] = Obsolete
-	if (args[3] !== undefined) sbp_settings.safeZpullUp = args[3];	// safe-Z-pull-up
-	if (args[4] !== undefined) sbp_settings.plungeDir = args[4];		// plunge direction
-	if (args[5] !== undefined) sbp_settings.pocketOverlap = args[5];	// % pocket overlap
-	if (args[6] !== undefined) sbp_settings.safeApullUp = args[6];	// safe-A-pull-up
-//	if (args[7] !== undefined) sbp_settings.triggeredOutput = args[7];	// triggered output switch
-//	if (args[8] !== undefined) sbp_settings.triggerONthreshold = args[8];	// trigger ON threshold
-//	if (args[9] !== undefined) sbp_settings.triggerOFFthreshold = args[9];	// trigger OFF threshold
-//	if (args[10] !== undefined) sbp_settings.vertAxisMonitor = args[10];	// vertical axis monitored
-//	if (args[11] !== undefined) sbp_settings.triggerOutputNum = args[11];	// triggered output switch #
-	*/
+	if (args[3] !== undefined) { 	//Safe Z Pull Up
+		sbp_values.safeZpullUp = args[3];		
+	}
+	if (args[4] !== undefined) { 	// Plunge Direction
+	//	sbp_values.plungeDir = args[4];   // ????? Is this still relevant
+	}
+	if (args[5] !== undefined) { 	// % Pocket Overlap for CR and CG commands
+		sbp_values.pocketOverlap = args[5];
+	}
+	if (args[6] !== undefined) { 	// Safe A Pull Up
+		sbp_values.safeApullUp = args[6];
+	}
+	// args[7] = triggeredOutput		// triggered output switch
+	// args[8] = triggerONthreshold		// trigger ON threshold
+	// args[9] = triggerOFFthreshold	// trigger OFF threshold
+	// args[10] = vertAxisMonitor		// vertical axis monitored
+	// args[11] = triggerOutputNum		// triggered output switch #
+
+	config.opensbp.setMany(sbp_values, function(err, values) {
+		log.debug( "VC-sbp_values = " + JSON.stringify(sbp_values) );
+		callback();
+	});
 };
 
 exports.VD = function(args) {
@@ -62,93 +80,66 @@ exports.VD = function(args) {
 
 exports.VL = function(args) {
 
-	var getValues = [];
+	var setValues = {};
 	
-	// Get existing limts from Engine, to be used in case new parameters aren't sent
-	this.machine.driver.get (['xtn','xtm',
-							  'ytn','ytm',
-							  'ztn','ztm',
-							  'atn','atm',
-							  'btn','btm',
-							  'ctn','ctm' ], function(err,getValues) {
-	 	// X - Low Limit
-		var nLimX = getValues[0];
-		if (args[0] !== undefined){
-			nLimX = args[0];
- 		}
- 		// X - High Limit
-		var mLimX = getValues[1];
-		if (args[1] !== undefined){
-			mLimX = args[1];
-		}
-		// Y - Low Limit
-		var nLimY = getValues[2];
-		if (args[2] !== undefined){
-			nLimY = args[2];
-		}
-		// Y - High Limit
-		var mLimY = getValues[3];
-		if (args[3] !== undefined){
-			mLimY = args[3];
-		}
-		// Z - Low Limit
-		var nLimZ = getValues[4];
-		if (args[4] !== undefined){
-			nLimZ = args[4];
-		}
-		// Z - High Limit
-		var mLimZ = getValues[5];
-		if (args[5] !== undefined){
-			mLimZ = args[5];
-		}
-		// A - Low Limit
-		var nLimA = getValues[6];
-		if (args[6] !== undefined){
-			nLimA = args[6];
- 		}
- 		// A - High Limit
-		var mLimA = getValues[7];
-		if (args[7] !== undefined){
-			mLimA = args[7];
-		}
-		// Soft limit checking ON-OFF
+	// X - Low Limit
+	if (args[0] !== undefined){
+		setValues.xtn = args[0];
+	}
+	// X - High Limit
+	if (args[1] !== undefined){
+		setValues.xtm = args[1];
+	}
+	// Y - Low Limit
+	if (args[2] !== undefined){
+		setValues.ytn = args[2];
+	}
+	// Y - High Limit
+	if (args[3] !== undefined){
+		setValues.ytm = args[3];
+	}
+	// Z - Low Limit
+	if (args[4] !== undefined){
+		setValues.ztn = args[4];
+	}
+	// Z - High Limit
+	if (args[5] !== undefined){
+		setValues.ztm = args[5];
+	}
+	// A - Low Limit
+	if (args[6] !== undefined){
+		setValues.atn = args[6];
+	}
+	// A - High Limit
+	if (args[7] !== undefined){
+		setValues.atm = args[7];
+	}
+	// Soft limit checking ON-OFF
 
-		// B - Low Limit
-		var nLimB = getValues[8];
-		if (args[9] !== undefined){
-			nLimB = args[9];
-		}
-		// B - High Limit
-		var mLimB = getValues[9];
-		if (args[10] !== undefined){
-			mLimB = args[10];
-		}
-		// Number of axes limits to check
-		
-		// C - Low Limit
-		var nLimC = getValues[10];
-		if (args[12] !== undefined){
-			nLimC = args[12];
-		}
-		// C - High Limit
-		var mLimC = getValues[11];
-		if (args[13] !== undefined){
-			mLimC = args[13];
-		}
-
-		var VLstr = { 'xtn':nLimX, 'xtm':mLimX,
-					  'ytn':nLimY, 'ytm':mLimY,
-					  'ztn':nLimZ, 'ztm':mLimZ,
-					  'atn':nLimA, 'atm':mLimA,
-					  'btn':nLimB, 'btm':mLimB,
-					  'ctn':nLimC, 'ctm':mLimC };
-		
-		this.machine.driver.set( VLstr, function(err, values) {
-			console.log("set:values = " + values );
-		});	
-
-	}.bind(this));
+	// B - Low Limit
+	if (args[9] !== undefined){
+		setValues.btn = args[9];
+	}
+	// B - High Limit
+	if (args[10] !== undefined){
+		setValues.btm = args[10];
+	}
+	// Number of axes limits to check
 	
+	// C - Low Limit
+	if (args[12] !== undefined){
+		setValues.ctn = args[12];
+	}
+	// C - High Limit
+	if (args[13] !== undefined){
+		setValues.ctm = args[13];
+	}
+
+	config.opensbp.setMany(sbp_values, function(err, values) {
+		log.debug( "VL-sbp_values = " + JSON.stringify(sbp_values) );
+		callback();
+	});
+
 };	
 
 exports.VN = function(args) {
@@ -219,182 +210,168 @@ exports.VS = function(args) {
 	
 	var speed_change = 0.0;
 
-	var VSstr = {};
+	var g2_values = {};
+	var sbp_values = {};
 
 	if (args[0] !== undefined) {
 		speed_change = args[0];
-		VSstr.xfr = (60*speed_change);
-		VSstr.yfr = (60*speed_change);
-		config.opensbp.set('movexy_speed', speed_change);
+		g2_values.xfr = (60*speed_change);
+		g2_values.yfr = (60*speed_change);
+		sbp_values.movexy_speed = speed_change;
 	}
 	if (args[1] !== undefined) {
 		speed_change = args[1];
-		VSstr.zfr = (60*speed_change);
-		config.opensbp.set('movez_speed', speed_change);
+		g2_values.zfr = (60*speed_change);
+		sbp_values.movez_speed = speed_change;
 	}
 	if (args[2] !== undefined) {
 		speed_change = args[2];
-		VSstr.afr = (60*speed_change);
-		config.opensbp.set('movea_speed', speed_change);
+		g2_values.afr = (60*speed_change);
+		sbp_values.movea_speed = speed_change;
 	}
 	if (args[3] !== undefined) {
 		speed_change = args[3];
-		VSstr.bfr = (60*speed_change);
-		config.opensbp.set('moveb_speed', speed_change);
+		g2_values.bfr = (60*speed_change);
+		sbp_values.moveb_speed = speed_change;
 	}
 	if (args[4] !== undefined) {
 		speed_change = args[4];
-		VSstr.cfr = (60*speed_change);
-		config.opensbp.set('movec_speed', speed_change);
+		g2_values.cfr = (60*speed_change);
+		sbp_values.movec_speed = speed_change;
 	}
 	if (args[5] !== undefined) {
 		speed_change = args[5];
-		VSstr.xvm = (60*speed_change);
-		VSstr.yvm = (60*speed_change);
-		config.opensbp.set('jogxy_speed', speed_change);
+		g2_values.xvm = (60*speed_change);
+		g2_values.yvm = (60*speed_change);
+		sbp_values.jogxy_speed = speed_change;
 	}
 	if (args[6] !== undefined) {
 		speed_change = args[6];
-		VSstr.zvm = (60*speed_change);
-		config.opensbp.set('jogz_speed', speed_change);
+		g2_values.zvm = (60*speed_change);
+		sbp_values.jogz_speed = speed_change;
 	}
 	if (args[7] !== undefined) {
 		speed_change = args[7];
-		VSstr.avm = (60*speed_change);
-		config.opensbp.set('joga_speed', speed_change);
+		g2_values.avm = (60*speed_change);
+		sbp_values.joga_speed = speed_change;
 	}
 	if (args[8] !== undefined) {
 		speed_change = args[8];
-		VSstr.bvm = (60*speed_change);
-		config.opensbp.set('jogb_speed', speed_change);
+		g2_values.bvm = (60*speed_change);
+		sbp_values.jogb_speed = speed_change;
 	}
 	if (args[9] !== undefined) {
 		speed_change = args[9];
-		VSstr.cvm = (60*speed_change);
-		config.opensbp.set('jogc_speed', speed_change);
+		g2_values.cvm = (60*speed_change);
+		sbp_values.jogc_speed = speed_change;
 	}
-	config.driver.setMany(VSstr);
+		
+	config.opensbp.setMany(sbp_values, function(err, values) {
+		config.driver.setMany(g2_values, function(err, values) {
+			callback();
+		});
+	});
 
 };
 
 exports.VU = function(args, callback) {
-	var axes = ['X','Y','Z','A','B','C'];
-	var axesNum = [0,1,2,3,4,5];
-	var getValues = [];
-	var setValues = [];
-	var value;
 
-	// motor 1 unit value
-	this.machine.driver.get (['1sa','1mi','1tr',
-							  '2sa','2mi','2tr',
-							  '3sa','3mi','3tr',
-							  '4sa','4mi','4tr',
-							  '5sa','5mi','5tr',
-							  '6sa','6mi','6tr'], function(err,getValues) {
+	var G2_2get = ['1sa','1mi','1tr',
+				   '2sa','2mi','2tr',
+				   '3sa','3mi','3tr',
+				   '4sa','4mi','4tr',
+				   '5sa','5mi','5tr',
+				   '6sa','6mi','6tr' ];
 
-		var nTr1 = getValues[2];
-		var nTr2 = getValues[5];
-		var nTr3 = getValues[8];
-		var nTr4 = getValues[11];
-		var nTr5 = getValues[14];
-		var nTr6 = getValues[17];
+	var SBP_2get = ['gearBoxRatio1',
+				    'gearBoxRatio2',
+				    'gearBoxRatio3',
+				    'gearBoxRatio4',
+				    'gearBoxRatio5',
+				    'gearBoxRatio6' ];
 
-		if (args[0] !== undefined){
-			var SBunitVal1 = args[0];
-				console.log(err);
-			var unitsSa1 = 360/getValues[0];
-			var unitsMi1 = getValues[1];
-			var unitsTr1 = getValues[2];
-			nTr1 = ((unitsSa1 * unitsMi1 * config.opensbp.get('gearBoxRatio1')) / SBunitVal1);
-			//TODO UPDATE TO NEW SETTINGS
-			//sbp_settings.units1 = SBunitVal1;
-		}
-		if (args[1] !== undefined){
-			var SBunitVal2 = args[1];
-				console.log(err);
-			var unitsSa2 = 360/getValues[3];
-			var unitsMi2 = getValues[4];
-			var unitsTr2 = getValues[5];
-			nTr2 = ((unitsSa2 * unitsMi2 * config.opensbp.get('gearBoxRatio2')) / SBunitVal2);
-			//TODO UPDATE TO NEW SETTINGS
-			//sbp_settings.units2 = SBunitVal2;
-		}
-		if (args[2] !== undefined){
-			var SBunitVal3 = args[2];
-				console.log(err);
-			var unitsSa3 = 360/getValues[6];
-			var unitsMi3 = getValues[7];
-			var unitsTr3 = getValues[8];
-			nTr3 = ((unitsSa3 * unitsMi3 * config.opensbp.get('gearBoxRatio3')) / SBunitVal3);
-			//TODO UPDATE TO NEW SETTINGS
-			//sbp_settings.units3 = SBunitVal3;
-		}
-		if (args[3] !== undefined){
-			var SBunitVal4 = args[3];				
-				console.log(err);
-			var unitsSa4 = 360/getValues[9];
-			var unitsMi4 = getValues[10];
-			var unitsTr4 = getValues[11];
-			nTr4 = ((unitsSa4 * unitsMi4 * config.opensbp.get('gearBoxRatio4')) / SBunitVal4);
-			//TODO UPDATE TO NEW SETTINGS
-			//sbp_settings.units4 = SBunitVal4;
-		}
-		if (args[8] !== undefined){
-			var SBunitVal5 = args[8];
-				console.log(err);
-			var unitsSa5 = 360/getValues[12];
-			var unitsMi5 = getValues[13];
-			var unitsTr5 = getValues[14];
-			nTr5 = ((unitsSa5 * unitsMi5 * config.opensbp.get('gearBoxRatio5')) / SBunitVal5);
-			//TODO UPDATE TO NEW SETTINGS
-			//sbp_settings.units5 = SBunitVal5;
-		}
-		if (args[6] !== undefined){
-			var SBunitVal6 = args[6];
-				console.log(err);
-			var unitsSa6 = 360/getValues[15];
-			var unitsMi6 = getValues[16];
-			var unitsTr6 = getValues[17];
-			nTr6 = ((unitsSa6 * unitsMi6 * config.opensbp.get('gearBoxRatio6')) / SBunitVal6); 	console.log("6tr = " + nTr6 );
-			//TODO UPDATE TO NEW SETTINGS
-			//sbp_settings.units6 = SBunitVal6;
-		}
+	var getG2_Values = [];
+	var getSBP_values = [];
 
-		var VUstr = { '1tr':nTr1, '2tr':nTr2, '3tr':nTr3, '4tr':nTr4, '5tr':nTr5, '6tr':nTr6 };
+	var g2_VU = {};
+	var sbp_VU = {};
+
+	var SBunitVal = 0.0;
+	var unitsSa = 0.0;
+	var unitsMi = 0.0;
+	var unitsTr = 0.0;
+	var unitsGb = 0.0;
+				
+	config.driver.getMany(G2_2get, function(err,getG2_Values) {
+		config.opensbp.getMany(SBP_2get, function(err,getSBP_values) {
+			// motor 1 unit value
+			if (args[0] !== undefined){
+				SBunitVal = args[0];
+				unitsSa = 360/getG2_Values[0];
+				unitsMi = getG2_Values[1];
+				unitsTr = getG2_Values[2];
+				unitsGb = getSBP_values[0];
+				g2_VU.1tr = unitsSa * unitsMi * unitsGb / SBunitVal;
+				sbp_VU.units1 = SBunitVal;
+			}
+			// motor 2 unit value
+			if (args[1] !== undefined){
+				SBunitVal = args[1];
+				unitsSa = 360/getG2_Values[3];
+				unitsMi = getG2_Values[4];
+				unitsTr = getG2_Values[5];
+				unitsGb = getSBP_values[0];
+				g2_VU.2tr = unitsSa * unitsMi * unitsGb / SBunitVal;
+				sbp_VU.units2 = SBunitVal;
+			}
+			// motor 3 unit value
+			if (args[2] !== undefined){
+				SBunitVal = args[2];
+				unitsSa = 360/getG2_Values[6];
+				unitsMi = getG2_Values[7];
+				unitsTr = getG2_Values[8];
+				unitsGb = getSBP_values[0];
+				g2_VU.3tr = unitsSa * unitsMi * unitsGb / SBunitVal;
+				sbp_VU.units3 = SBunitVal;
+			}
+			// motor 4 unit value
+			if (args[3] !== undefined){
+				SBunitVal = args[3];				
+				unitsSa = 360/getG2_Values[9];
+				unitsMi = getG2_Values[10];
+				unitsTr = getG2_Values[11];
+				unitsGb = getSBP_values[0];
+				g2_VU.4tr = unitsSa * unitsMi * unitsGb) / SBunitVal;
+				sbp_VU.units4 = SBunitVal;
+			}
+			// motor 5 unit value
+			if (args[8] !== undefined){
+				SBunitVal = args[8];
+				unitsSa = 360/getG2_Values[12];
+				unitsMi = getG2_Values[13];
+				unitsTr = getG2_Values[14];
+				unitsGb = getSBP_values[0];
+				g2_VU.5tr = unitsSa * unitsMi * unitsGb / SBunitVal;
+				sbp_VU.units5 = SBunitVal;
+			}
+			// motor 6 unit value
+			if (args[6] !== undefined){
+				SBunitVal = args[6];
+				unitsSa = 360/getG2_Values[15];
+				unitsMi = getG2_Values[16];
+				unitsTr = getG2_Values[17];
+				unitsGb = getSBP_values[0];
+				g2_VU.6tr = unitsSa * unitsMi * unitsGb / SBunitVal;
+				sbp_VU.units6 = SBunitVal;
+			}
 
 		// We set the g2 config (Which updates the g2 hardware but also our persisted copy of its settings)
-		config.driver.setMany(VUstr, function(err, values) {
-			console.log("set:values = " + values );
-			callback();
+			config.opensbp.setMany(sbp_VU, function(err, values) {
+				config.driver.setMany(g2_VU, function(err, values) {
+					console.debug("Sent VU to g2 and sbp_settings");
+					callback();
+				});
+			});
 		});
-// Write SA, MA & TR to configuration.json
-	}.bind(this));
-	
-//	if ( args[5] !== undefined ) { circRes = args[5]; }
-//	if ( args[8] !== undefined ) { circSml = args[8]; }
-	// X resolution multiplier - currently not supported
-//	if ( args[10] !== undefined ) {
-//		sbp_settings.resMX = args[10];
-//	}
-	// Y resolution multiplier - currently not supported
-//	if ( args[11] !== undefined ) {
-//		sbp_settings.resMY = args[11];
-//	}
-	// Z resolution multiplier - currently not supported
-//	if ( args[12] !== undefined ) {
-//		sbp_settings.resMZ = args[12];
-//	}
-	// A resolution multiplier - currently not supported
-//	if ( args[13] !== undefined ) {
-//		sbp_settings.resMA = args[13];
-//	}
-	// B resolution multiplier - currently not supported
-//	if ( args[14] !== undefined ) {
-//		sbp_settings.resMB = args[14];
-//	}
-	// C resolution multiplier - currently not supported
-//	if ( args[15] !== undefined ) {
-//		sbp_settings.resMC = args[15];
-//	}
-
+	});
 };
