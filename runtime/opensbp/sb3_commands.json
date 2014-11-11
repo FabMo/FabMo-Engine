@@ -3836,6 +3836,19 @@
                "100"
             ],
             "type": "obs"
+         },
+         {
+            "name": "C Unit Value",
+            "desc": "Sets number of steps per measurement Unit (inches or mm or deg)",
+            "abrev": "unC",
+            "typeext": 0,
+            "default": "",
+            "sysvar": 148,
+            "range": [
+               null,
+               null
+            ],
+            "type": "int"
          }
       ]
    },

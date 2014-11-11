@@ -290,9 +290,6 @@ exports.VU = function(args, callback) {
 				    'gearBoxRatio5',
 				    'gearBoxRatio6' ];
 
-	var getG2_Values = [];
-	var getSBP_values = [];
-
 	var g2_VU = {};
 	var sbp_VU = {};
 
@@ -302,76 +299,78 @@ exports.VU = function(args, callback) {
 	var unitsTr = 0.0;
 	var unitsGb = 0.0;
 				
-	config.driver.getMany(G2_2get, function(err,getG2_Values) {
-		config.opensbp.getMany(SBP_2get, function(err,getSBP_values) {
-			// motor 1 unit value
-			if (args[0] !== undefined){
-				SBunitVal = args[0];
-				unitsSa = 360/getG2_Values[0];
-				unitsMi = getG2_Values[1];
-				unitsTr = getG2_Values[2];
-				unitsGb = getSBP_values[0];
-				g2_VU.1tr = unitsSa * unitsMi * unitsGb / SBunitVal;
-				sbp_VU.units1 = SBunitVal;
-			}
-			// motor 2 unit value
-			if (args[1] !== undefined){
-				SBunitVal = args[1];
-				unitsSa = 360/getG2_Values[3];
-				unitsMi = getG2_Values[4];
-				unitsTr = getG2_Values[5];
-				unitsGb = getSBP_values[0];
-				g2_VU.2tr = unitsSa * unitsMi * unitsGb / SBunitVal;
-				sbp_VU.units2 = SBunitVal;
-			}
-			// motor 3 unit value
-			if (args[2] !== undefined){
-				SBunitVal = args[2];
-				unitsSa = 360/getG2_Values[6];
-				unitsMi = getG2_Values[7];
-				unitsTr = getG2_Values[8];
-				unitsGb = getSBP_values[0];
-				g2_VU.3tr = unitsSa * unitsMi * unitsGb / SBunitVal;
-				sbp_VU.units3 = SBunitVal;
-			}
-			// motor 4 unit value
-			if (args[3] !== undefined){
-				SBunitVal = args[3];				
-				unitsSa = 360/getG2_Values[9];
-				unitsMi = getG2_Values[10];
-				unitsTr = getG2_Values[11];
-				unitsGb = getSBP_values[0];
-				g2_VU.4tr = unitsSa * unitsMi * unitsGb) / SBunitVal;
-				sbp_VU.units4 = SBunitVal;
-			}
-			// motor 5 unit value
-			if (args[8] !== undefined){
-				SBunitVal = args[8];
-				unitsSa = 360/getG2_Values[12];
-				unitsMi = getG2_Values[13];
-				unitsTr = getG2_Values[14];
-				unitsGb = getSBP_values[0];
-				g2_VU.5tr = unitsSa * unitsMi * unitsGb / SBunitVal;
-				sbp_VU.units5 = SBunitVal;
-			}
-			// motor 6 unit value
-			if (args[6] !== undefined){
-				SBunitVal = args[6];
-				unitsSa = 360/getG2_Values[15];
-				unitsMi = getG2_Values[16];
-				unitsTr = getG2_Values[17];
-				unitsGb = getSBP_values[0];
-				g2_VU.6tr = unitsSa * unitsMi * unitsGb / SBunitVal;
-				sbp_VU.units6 = SBunitVal;
-			}
+//	var getG2_values = config.driver.getMany(G2_2get);
+	var getSBP_values = config.opensbp.getMany(SBP_2get);
 
-		// We set the g2 config (Which updates the g2 hardware but also our persisted copy of its settings)
-			config.opensbp.setMany(sbp_VU, function(err, values) {
-				config.driver.setMany(g2_VU, function(err, values) {
-					console.debug("Sent VU to g2 and sbp_settings");
-					callback();
-				});
-			});
+//	console.debug("getG2_values: " + getG2_values);
+	console.debug("getSBP_values: " + getSBP_values);
+			
+/*	// motor 1 unit value
+	if (args[0] !== undefined){
+		SBunitVal = args[0];
+		unitsSa = 360/getG2_Values[0];
+		unitsMi = getG2_Values[1];
+		unitsTr = getG2_Values[2];
+		unitsGb = getSBP_values[0];
+		g2_VU.1tr = unitsSa * unitsMi * unitsGb / SBunitVal;
+		sbp_VU.units1 = SBunitVal;
+	}
+	// motor 2 unit value
+	if (args[1] !== undefined){
+		SBunitVal = args[1];
+		unitsSa = 360/getG2_Values[3];
+		unitsMi = getG2_Values[4];
+		unitsTr = getG2_Values[5];
+		unitsGb = getSBP_values[0];
+		g2_VU.2tr = unitsSa * unitsMi * unitsGb / SBunitVal;
+		sbp_VU.units2 = SBunitVal;
+	}
+	// motor 3 unit value
+	if (args[2] !== undefined){
+		SBunitVal = args[2];
+		unitsSa = 360/getG2_Values[6];
+		unitsMi = getG2_Values[7];
+		unitsTr = getG2_Values[8];
+		unitsGb = getSBP_values[0];
+		g2_VU.3tr = unitsSa * unitsMi * unitsGb / SBunitVal;
+		sbp_VU.units3 = SBunitVal;
+	}
+	// motor 4 unit value
+	if (args[3] !== undefined){
+		SBunitVal = args[3];				
+		unitsSa = 360/getG2_Values[9];
+		unitsMi = getG2_Values[10];
+		unitsTr = getG2_Values[11];
+		unitsGb = getSBP_values[0];
+		g2_VU.4tr = unitsSa * unitsMi * unitsGb) / SBunitVal;
+		sbp_VU.units4 = SBunitVal;
+	}
+	// motor 5 unit value
+	if (args[8] !== undefined){
+		SBunitVal = args[8];
+		unitsSa = 360/getG2_Values[12];
+		unitsMi = getG2_Values[13];
+		unitsTr = getG2_Values[14];
+		unitsGb = getSBP_values[0];
+		g2_VU.5tr = unitsSa * unitsMi * unitsGb / SBunitVal;
+		sbp_VU.units5 = SBunitVal;
+	}
+	// motor 6 unit value
+	if (args[15] !== undefined){
+		SBunitVal = args[6];
+		unitsSa = 360/getG2_Values[15];
+		unitsMi = getG2_Values[16];
+		unitsTr = getG2_Values[17];
+		unitsGb = getSBP_values[0];
+		g2_VU.6tr = unitsSa * unitsMi * unitsGb / SBunitVal;
+		sbp_VU.units6 = SBunitVal;
+	}
+
+	// We set the g2 config (Which updates the g2 hardware but also our persisted copy of its settings)
+	config.opensbp.setMany(sbp_VU, function(err, values) {
+		config.driver.setMany(g2_VU, function(err, values) {
+			console.debug("Sent VU to g2 and sbp_settings");
+			callback();
 		});
-	});
+	}); */
 };
