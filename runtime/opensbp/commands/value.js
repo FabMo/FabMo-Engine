@@ -274,7 +274,7 @@ exports.VS = function(args) {
 
 };
 
-exports.VU = function(args, callback) {
+exports.VU = function(args,callback) {
 
 	var G2_2get = ['1sa','1mi','1tr',
 				   '2sa','2mi','2tr',
@@ -299,11 +299,11 @@ exports.VU = function(args, callback) {
 	var unitsTr = 0.0;
 	var unitsGb = 0.0;
 				
-//	var getG2_values = config.driver.getMany(G2_2get);
-	var getSBP_values = config.opensbp.getMany(SBP_2get);
+	var getG2_values = config.driver.getMany(G2_2get);
+	var getSBP_values = config.sb3_commands.getMany(SBP_2get);
 
-//	console.debug("getG2_values: " + getG2_values);
-	console.debug("getSBP_values: " + getSBP_values);
+	console.log("getG2_values: " + getG2_values);
+	console.log("getSBP_values: " + getSBP_values);
 			
 /*	// motor 1 unit value
 	if (args[0] !== undefined){
