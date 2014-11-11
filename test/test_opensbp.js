@@ -7,6 +7,7 @@ var opensbp = require('../runtime/opensbp');
 
 var sbp;
 
+/*
 describe('OpenSBP', function(){
 	before(function(done) {
 		sbp = new opensbp.SBPRuntime();
@@ -113,3 +114,4 @@ describe('OpenSBP', function(){
 	});
 
 })
+*/

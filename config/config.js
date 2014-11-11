@@ -13,6 +13,15 @@ Config.prototype.get = function(k) {
 	return this._cache[k];
 }
 
+Config.prototype.getMany = function(arr) {
+	retval = {};
+	for(var i in arr) {
+		key = arr[i];
+		retval[key] = this._cache[key];
+	}
+	return retval;
+}
+
 Config.prototype.set = function(k,v, callback) {
 	return this.update({k:v}, callback);
 }

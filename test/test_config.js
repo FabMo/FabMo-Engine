@@ -60,4 +60,8 @@ describe('Config Module', function(){
 		return done();
 	});
 
+	it('Read OpenSBP config (multiple)', function(done){
+		var actual = config.opensbp.getMany(['safeZPullup','safeApullUp']);
+		return done();
+	});
 });

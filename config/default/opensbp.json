@@ -28,7 +28,7 @@
     "resM5": 1,
     "resM6": 1,
     "cutterDia": 0.25,
-    "pocketOverlap": 50.0,
+    "pocketOverlap": 50,
     "safeZpullUp": 0.25,
     "safeApullUp": 0.25
 }

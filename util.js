@@ -89,7 +89,7 @@ var move = function (src, dest, cb) {
 		return cb(null);
 	}, function (err) {
  
-		console.warn('io.move: standard rename failed, trying stream pipe... (' + err + ')');
+		log.warn('io.move: standard rename failed, trying stream pipe... (' + err + ')');
  
 		// rename didn't work, try pumping
 		var is = fs.createReadStream(src),

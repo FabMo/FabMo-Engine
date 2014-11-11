@@ -9,6 +9,7 @@
     "node-simplerwifiscanner": "git+https://github.com/jlucidar/node-simplerwifiscanner.git",
     "process": "0.8.x",
     "q": "^1.0.1",
+    "request": "^2.47.0",
     "restify": "2.8.x",
     "serialport": "1.4.x",
     "socket.io": "1.1.x",
