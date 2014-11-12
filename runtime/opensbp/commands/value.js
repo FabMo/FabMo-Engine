@@ -7,16 +7,65 @@ var config = require('../../../config');
 exports.VA = function(args, callback) {
 	// ?????????? Needs work to make function like VA in ShopBot	
 	log.debug("VA Command: " + args);
-	var zoffset = -args[2];
-	if(zoffset !== undefined) {
-		this.machine.driver.get('g55z', function(err, value) {
-			this.machine.driver.set('g55z',(value + this.machine.status.posz + zoffset), function(err, value) {
-				callback();
-			});
-		}.bind(this));
-	} else {
-		log.error("NO Z OFFSET");
+
+	var getG2_VA = ['g55x','g55y','g55z','g55a','g55b','g55c'];
+
+	var getVA_G2 = config.driver.getMany(getG2_VA);
+	log.debug("getG2_VA: " + JSON.stringify(getVA_G2));
+
+	var setVA_G2 = {};	
+	var setVA_SBP = {};	
+	var newLocation = 0.0;
+
+	if (args[0] !== undefined) { 	//X location
+		newLocation = [0];
+		log.debug("new X = " + newLocation);
+		setVA_G2.g55x = newLocation;
 	}
+	if (args[1] !== undefined) { 	//Y location
+		newLocation = [1];
+		log.debug("new Y = " + newLocation);
+		setVA_G2.g55y = newLocation;		
+	}
+	if (args[2] !== undefined) { 	//Z location
+		newLocation = [2];
+		setVA_G2.g55z = newLocation;
+	}
+	if (args[3] !== undefined) { 	//A location
+		newLocation = [3];
+		setVA_G2.g55a = newLocation;
+	}
+	if (args[4] !== undefined) { 	//B location
+		newLocation = [4];
+		setVA_G2.g55b = newLocation;
+	}
+	if (args[5] !== undefined) { 	//C location
+		newLocation = [5];
+		setVA_G2.g55c = newLocation;
+	}
+	if (args[6] !== undefined) { 	//X Offset from base
+
+	}
+	if (args[7] !== undefined) { 	//Y Offset from base
+
+	}
+	if (args[8] !== undefined) { 	//Z Offset from base
+
+	}
+	if (args[9] !== undefined) { 	//A Offset from base
+
+	}
+	if (args[10] !== undefined) { 	//B Offset from base
+
+	}
+	if (args[11] !== undefined) { 	//C Offset from base
+
+	}
+
+	config.driver.setMany(setVA_G2, function(err, values) {
+		log.debug("VA - values: " + JSON.stringify(values));
+		callback();
+	}.bind(this));
 };
 
 exports.VC = function(args) {
