@@ -254,7 +254,7 @@ exports.VR = function(args) {
 	// Keypad Ramp Rate
 };	
 
-exports.VS = function(args) {
+exports.VS = function(args,callback) {
 	
 	var speed_change = 0.0;
 
@@ -318,7 +318,7 @@ exports.VS = function(args) {
 		config.driver.setMany(g2_values, function(err, values) {
 			callback();
 		});
-	});
+	}.bind(this));
 
 };
 
