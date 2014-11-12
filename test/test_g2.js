@@ -1,11 +1,8 @@
 var assert = require("assert");
 var async = require("async")
 var machine = require('../machine')
-var log = require('../log');
 var config = require("../config");
 var base = require("./test_base");
-
-log.suppress();
 
 describe('G2', function(){
 
@@ -20,8 +17,20 @@ describe('G2', function(){
 	it('Set a value', function(done){
 		base.engine.machine.driver.set('st', 1, function(err, result) {
 			if(err) { done(err); }
-			assert.equal(result, 1)
+			assert.equal(result, 1);
 			return done();
+		});
+	});
+
+	it('Set a bogus value', function(done){
+		base.engine.machine.driver.set('carrot', 0.5, function(err, result) {
+			if(err) { 
+				assert.equal(err.message, "Timeout");
+				return done();
+			}
+			else {
+				throw new Error("Did not get the expected timeout error from setting an illegal value")
+			}
 		});
 	});
 

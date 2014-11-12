@@ -18,6 +18,9 @@ var STAT_PROBE = 7;
 var STAT_CYCLING = 8;
 var STAT_HOMING = 9;
 
+// Should take no longer than CMD_TIMEOUT to do a get or a set operation
+var CMD_TIMEOUT = 500;
+
 // When jogging, "keepalive" jog commands must arrive faster than this interval (ms)
 // This can be slowed down if necessary for spotty connections, but a slow timeout means
 // the machine has more time to run away before stopping.
@@ -515,6 +518,23 @@ G2.prototype.set = function(key, value, callback) {
 	} else {
 		this.readers[key] = [callback]
 	}
+
+	var key = key;
+	var callback = callback;
+	// Ensure that an errback is called if the data isn't read out
+	setTimeout(function() {
+		if(key in this.readers) {
+			callbacks = this.readers[key];
+			stored_cb = callbacks[callbacks.length-1];
+			if(callback === stored_cb) {
+				if(typeof callback == 'function') {
+					this.readers[key].shift();
+					callback(new Error("Timeout"), null);
+				}
+			}
+		}
+	}.bind(this), CMD_TIMEOUT)
+
 	this.command(cmd);
 }
 
