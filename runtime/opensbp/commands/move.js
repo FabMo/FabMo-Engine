@@ -220,8 +220,7 @@ exports.MS = function(args, callback) {
 		config.driver.setMany(g2_values, function(err, values) {
 			callback();
 		});
-	});
-
+	}.bind(this));
 };
 
 exports.MI = function(args) {
