@@ -2,7 +2,6 @@ var log = require('../../../log').logger('sbp');
 var g2 = require('../../../g2');
 var sb3_commands = require('../sb3_commands');
 var config = require('../../../config');
-
 /* VALUES */
 
 exports.VA = function(args, callback) {
@@ -300,10 +299,10 @@ exports.VU = function(args,callback) {
 	var unitsGb = 0.0;
 				
 	var getG2_values = config.driver.getMany(G2_2get);
-	var getSBP_values = config.sb3_commands.getMany(SBP_2get);
+	var getSBP_values = config.opensbp.getMany(SBP_2get);
 
-	console.log("getG2_values: " + getG2_values);
-	console.log("getSBP_values: " + getSBP_values);
+	console.log("getG2_values: " + JSON.stringify(getG2_values));
+	console.log("getSBP_values: " + JSON.stringify(getSBP_values));
 			
 /*	// motor 1 unit value
 	if (args[0] !== undefined){
