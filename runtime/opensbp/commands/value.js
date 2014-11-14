@@ -5,7 +5,7 @@ var config = require('../../../config');
 /* VALUES */
 
 exports.VA = function(args, callback) {
-	// ?????????? Needs work to make function like VA in ShopBot	
+
 	log.debug("VA Command: " + args);
 
 	var getG2_VA = ['g55x','g55y','g55z','g55a','g55b','g55c'];
@@ -18,29 +18,29 @@ exports.VA = function(args, callback) {
 	var newLocation = 0.0;
 
 	if (args[0] !== undefined) { 	//X location
-		newLocation = [0];
+		newLocation = args[0];
 		log.debug("new X = " + newLocation);
 		setVA_G2.g55x = newLocation;
 	}
 	if (args[1] !== undefined) { 	//Y location
-		newLocation = [1];
+		newLocation = args[1];
 		log.debug("new Y = " + newLocation);
 		setVA_G2.g55y = newLocation;		
 	}
 	if (args[2] !== undefined) { 	//Z location
-		newLocation = [2];
+		newLocation = args[2];
 		setVA_G2.g55z = newLocation;
 	}
 	if (args[3] !== undefined) { 	//A location
-		newLocation = [3];
+		newLocation = args[3];
 		setVA_G2.g55a = newLocation;
 	}
 	if (args[4] !== undefined) { 	//B location
-		newLocation = [4];
+		newLocation = args[4];
 		setVA_G2.g55b = newLocation;
 	}
 	if (args[5] !== undefined) { 	//C location
-		newLocation = [5];
+		newLocation = args[5];
 		setVA_G2.g55c = newLocation;
 	}
 	if (args[6] !== undefined) { 	//X Offset from base
@@ -75,7 +75,6 @@ exports.VC = function(args) {
 	var sbp_values = {};
 
 	if (args[0] !== undefined) { 	//args[0] = sbp_settings.cutterDia	// Cutter Diameter
-
 		sbp_values.cutterDia = args[0];
 	}
 	// args[1] = Obsolete
@@ -83,9 +82,8 @@ exports.VC = function(args) {
 	if (args[3] !== undefined) { 	//Safe Z Pull Up
 		sbp_values.safeZpullUp = args[3];		
 	}
-	if (args[4] !== undefined) { 	// Plunge Direction
-	//	sbp_values.plungeDir = args[4];   // ????? Is this still relevant
-	}
+//	if (args[4] !== undefined) { 	// Plunge Direction
+//	}
 	if (args[5] !== undefined) { 	// % Pocket Overlap for CR and CG commands
 		sbp_values.pocketOverlap = args[5];
 	}
@@ -126,67 +124,66 @@ exports.VD = function(args) {
 
 };	
 
-exports.VL = function(args) {
+exports.VL = function(args,callback) {
 
-	var setValues = {};
+	var g2_VL = {};
 	
 	// X - Low Limit
 	if (args[0] !== undefined){
-		setValues.xtn = args[0];
+		g2_VL.xtn = args[0];
 	}
 	// X - High Limit
 	if (args[1] !== undefined){
-		setValues.xtm = args[1];
+		g2_VL.xtm = args[1];
 	}
 	// Y - Low Limit
 	if (args[2] !== undefined){
-		setValues.ytn = args[2];
+		g2_VL.ytn = args[2];
 	}
 	// Y - High Limit
 	if (args[3] !== undefined){
-		setValues.ytm = args[3];
+		g2_VL.ytm = args[3];
 	}
 	// Z - Low Limit
 	if (args[4] !== undefined){
-		setValues.ztn = args[4];
+		g2_VL.ztn = args[4];
 	}
 	// Z - High Limit
 	if (args[5] !== undefined){
-		setValues.ztm = args[5];
+		g2_VL.ztm = args[5];
 	}
 	// A - Low Limit
 	if (args[6] !== undefined){
-		setValues.atn = args[6];
+		g2_VL.atn = args[6];
 	}
 	// A - High Limit
 	if (args[7] !== undefined){
-		setValues.atm = args[7];
+		g2_VL.atm = args[7];
 	}
 	// Soft limit checking ON-OFF
 
 	// B - Low Limit
 	if (args[9] !== undefined){
-		setValues.btn = args[9];
+		g2_VL.btn = args[9];
 	}
 	// B - High Limit
 	if (args[10] !== undefined){
-		setValues.btm = args[10];
+		g2_VL.btm = args[10];
 	}
 	// Number of axes limits to check
 	
 	// C - Low Limit
 	if (args[12] !== undefined){
-		setValues.ctn = args[12];
+		g2_VL.ctn = args[12];
 	}
 	// C - High Limit
 	if (args[13] !== undefined){
-		setValues.ctm = args[13];
+		g2_VL.ctm = args[13];
 	}
-
-	config.opensbp.setMany(sbp_values, function(err, values) {
-		log.debug( "VL-sbp_values = " + JSON.stringify(sbp_values) );
+	
+	config.driver.setMany(g2_VL, function(err, values) {
 		callback();
-	});
+	}.bind(this));
 
 };	
 
@@ -324,12 +321,12 @@ exports.VS = function(args,callback) {
 
 exports.VU = function(args,callback) {
 
-	var G2_2get = ['1sa','1mi','1tr',
-				   '2sa','2mi','2tr',
-				   '3sa','3mi','3tr',
-				   '4sa','4mi','4tr',
-				   '5sa','5mi','5tr',
-				   '6sa','6mi','6tr' ];
+	var G2_2get = [	'1sa','1mi',
+					'2sa','2mi',
+					'3sa','3mi',
+					'4sa','4mi',
+					'5sa','5mi',
+					'6sa','6mi' ];
 
 	var SBP_2get = ['gearBoxRatio1',
 				    'gearBoxRatio2',
@@ -338,87 +335,50 @@ exports.VU = function(args,callback) {
 				    'gearBoxRatio5',
 				    'gearBoxRatio6' ];
 
+	var SBunitVal = 0.0;
 	var g2_VU = {};
 	var sbp_VU = {};
+	var getG2_VU = config.driver.getMany(G2_2get);
+	var getSBP_VU = config.opensbp.getMany(SBP_2get);
 
-	var SBunitVal = 0.0;
-	var unitsSa = 0.0;
-	var unitsMi = 0.0;
-	var unitsTr = 0.0;
-	var unitsGb = 0.0;
-				
-	var getG2_values = config.driver.getMany(G2_2get);
-	var getSBP_values = config.opensbp.getMany(SBP_2get);
-
-	console.log("getG2_values: " + JSON.stringify(getG2_values));
-	console.log("getSBP_values: " + JSON.stringify(getSBP_values));
+	log.debug("getG2_VU: " + JSON.stringify(getG2_VU));
+	log.debug("getSBP_VU: " + JSON.stringify(getSBP_VU));
 			
-/*	// motor 1 unit value
+	// motor 1 unit value
 	if (args[0] !== undefined){
-		SBunitVal = args[0];
-		unitsSa = 360/getG2_Values[0];
-		unitsMi = getG2_Values[1];
-		unitsTr = getG2_Values[2];
-		unitsGb = getSBP_values[0];
-		g2_VU.1tr = unitsSa * unitsMi * unitsGb / SBunitVal;
-		sbp_VU.units1 = SBunitVal;
+		sbp_VU.units1 = args[0];
+		g2_VU['1tr'] = (360/getG2_VU['1sa']) * getG2_VU['1mi'] * getSBP_VU.gearBoxRatio1 / sbp_VU.units1;
 	}
 	// motor 2 unit value
 	if (args[1] !== undefined){
-		SBunitVal = args[1];
-		unitsSa = 360/getG2_Values[3];
-		unitsMi = getG2_Values[4];
-		unitsTr = getG2_Values[5];
-		unitsGb = getSBP_values[0];
-		g2_VU.2tr = unitsSa * unitsMi * unitsGb / SBunitVal;
-		sbp_VU.units2 = SBunitVal;
+		sbp_VU.units2 = args[1];
+		g2_VU['2tr'] = (360/getG2_VU['2sa']) * getG2_VU['2mi'] * getSBP_VU.gearBoxRatio2 / sbp_VU.units2;
 	}
 	// motor 3 unit value
 	if (args[2] !== undefined){
-		SBunitVal = args[2];
-		unitsSa = 360/getG2_Values[6];
-		unitsMi = getG2_Values[7];
-		unitsTr = getG2_Values[8];
-		unitsGb = getSBP_values[0];
-		g2_VU.3tr = unitsSa * unitsMi * unitsGb / SBunitVal;
-		sbp_VU.units3 = SBunitVal;
+		sbp_VU.units3 = args[2];
+		g2_VU['3tr'] = (360/getG2_VU['3sa']) * getG2_VU['3mi'] * getSBP_VU.gearBoxRatio3 / sbp_VU.units3;
 	}
 	// motor 4 unit value
 	if (args[3] !== undefined){
-		SBunitVal = args[3];				
-		unitsSa = 360/getG2_Values[9];
-		unitsMi = getG2_Values[10];
-		unitsTr = getG2_Values[11];
-		unitsGb = getSBP_values[0];
-		g2_VU.4tr = unitsSa * unitsMi * unitsGb) / SBunitVal;
-		sbp_VU.units4 = SBunitVal;
+		sbp_VU.units4 = args[3];				
+		g2_VU['4tr'] = (360/getG2_VU['4sa']) * getG2_VU['4mi'] * getSBP_VU.gearBoxRatio4 / sbp_VU.units4;
 	}
 	// motor 5 unit value
 	if (args[8] !== undefined){
-		SBunitVal = args[8];
-		unitsSa = 360/getG2_Values[12];
-		unitsMi = getG2_Values[13];
-		unitsTr = getG2_Values[14];
-		unitsGb = getSBP_values[0];
-		g2_VU.5tr = unitsSa * unitsMi * unitsGb / SBunitVal;
-		sbp_VU.units5 = SBunitVal;
+		sbp_VU.units5 = args[8];
+		g2_VU['5tr'] = (360/getG2_VU['5sa']) * getG2_VU['5mi'] * getSBP_VU.gearBoxRatio5 / sbp_VU.units5;
 	}
 	// motor 6 unit value
 	if (args[15] !== undefined){
-		SBunitVal = args[6];
-		unitsSa = 360/getG2_Values[15];
-		unitsMi = getG2_Values[16];
-		unitsTr = getG2_Values[17];
-		unitsGb = getSBP_values[0];
-		g2_VU.6tr = unitsSa * unitsMi * unitsGb / SBunitVal;
-		sbp_VU.units6 = SBunitVal;
+		sbp_VU.units6 = args[6];
+		g2_VU['6tr'] = (360/getG2_VU['6sa']) * getG2_VU['6mi'] * getSBP_VU.gearBoxRatio6 / sbp_VU.units6;
 	}
-
 	// We set the g2 config (Which updates the g2 hardware but also our persisted copy of its settings)
 	config.opensbp.setMany(sbp_VU, function(err, values) {
 		config.driver.setMany(g2_VU, function(err, values) {
-			console.debug("Sent VU to g2 and sbp_settings");
+			log.debug("Sent VU to g2 and sbp_settings");
 			callback();
 		});
-	}); */
+	});
 };

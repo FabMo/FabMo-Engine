@@ -217,7 +217,9 @@ exports.MS = function(args, callback) {
 	// We have created the objects containing both the values to set on the G2 driver as well as for shopbot
 	// Now send them to their appropriate places (shopbot first, followed by G2)
 	config.opensbp.setMany(sbp_values, function(err, values) {
+		log.debug("SBP_setMany values:" + JSON.stringify(values));
 		config.driver.setMany(g2_values, function(err, values) {
+			log.debug("G2_setMany values:" + JSON.stringify(values));
 			callback();
 		});
 	});
