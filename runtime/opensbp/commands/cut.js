@@ -36,6 +36,16 @@ exports.CG = function(args) {
 	var currentZ ;
 	var outStr;
 
+  log.debug("start X:" + startX );
+  log.debug("start Y:" + startY );
+  log.debug("start Z:" + startZ );
+  log.debug("end X:" + endX );
+  log.debug("end Y:" + endY );
+  log.debug("center X:" + centerX );
+  log.debug("center Y:" + centerY );
+  log.debug("I-O-T:" + OIT );
+  log.debug("Dir:" + Dir );
+
   if (Plg !== 0 && plgFromZero == 1){ currentZ = 0; }
   else { currentZ = startZ; }
   var safeZCG = currentZ + config.opensbp.get('safeZpullUp');
@@ -87,7 +97,7 @@ exports.CG = function(args) {
 		    	currentZ += Plg;
 			} // Add Z for spiral plunge
 
-			outStr += "I" + centerX + "K" + centerY + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
+			outStr += "I" + centerX + "J" + centerY + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
 			this.emit_gcode(outStr); 
 	    	
 	   	if( i+1 < reps && ( endX != startX || endY != startY ) ){					//If an arc, pullup and jog back to the start position
@@ -105,7 +115,7 @@ exports.CG = function(args) {
     }
     if (Dir === 1 ){ outStr = "G2"; } 		// Clockwise circle/arc
     else { outStr = "G3"; }					// CounterClockwise circle/arc
-		outStr += "X" + endX + "Y" + endY + "I" + centerX + "K" + centerY + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
+		outStr += "X" + endX + "Y" + endY + "I" + centerX + "J" + centerY + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
 		this.emit_gcode(outStr); 
   }
 
