@@ -245,7 +245,7 @@ G2.prototype.onData = function(data) {
 G2.prototype.handleQueueReport = function(r) {
 	var FLOOD_LEVEL = 20;
 	var MIN_QR_LEVEL = 5;
-	var MIN_FLOOD_LEVEL = 20;
+	var MIN_FLOOD_LEVEL = 5;
 
 	if(this.pause_flag || this.quit_pending) {
 		log.debug('Not handling this queue report because pause or quit pending');
@@ -260,7 +260,7 @@ G2.prototype.handleQueueReport = function(r) {
 
 	if((qr !== undefined)) {
 
-		log.debug('GCode Queue Size: ' + this.gcode_queue.getLength());
+		//log.debug('GCode Queue Size: ' + this.gcode_queue.getLength());
 		// Deal with jog mode
 		if(this.jog_command && (qo > 0)) {
 			this.write(this.jog_command + '\n');
@@ -268,10 +268,8 @@ G2.prototype.handleQueueReport = function(r) {
 		}
 
 		var lines_to_send = 0 ;
-		if(qr > MIN_FLOOD_LEVEL) {
-			lines_to_send = qr;
-		} else if((qo > 0)/* && (qr > MIN_QR_LEVEL)*/) {
-			lines_to_send = qo;
+		if(qo > 0 || qr > MIN_FLOOD_LEVEL) {
+			lines_to_send = 10*qr;
 		}  
 
 
@@ -295,7 +293,7 @@ G2.prototype.handleQueueReport = function(r) {
 		else {
 			//console.log('no lines to send');
 		}
-		log.debug('qi: ' + qi + '  qr: ' + qr + '  qo: ' + qo + '   lines: ' + lines_to_send);
+		//log.debug('qi: ' + qi + '  qr: ' + qr + '  qo: ' + qo + '   lines: ' + lines_to_send);
 
 	}
 };
