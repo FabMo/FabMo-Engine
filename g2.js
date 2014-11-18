@@ -5,6 +5,7 @@ var async = require('async');
 var util = require('util');
 var Queue = require('./util').Queue;
 var log = require('./log').logger('g2');
+var process = require('process');
 
 // Values of the **stat** field that is returned from G2 status reports
 var STAT_INIT = 0;
@@ -113,6 +114,7 @@ G2.prototype.disconnect = function(callback) {
 // Log serial errors.  Most of these are exit-able offenses, though.
 G2.prototype.onSerialError = function(data) {
 	log.error(data);
+    process.exit(1);
 };
 
 // Write data to the serial port.  Log to the system logger.
