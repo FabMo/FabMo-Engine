@@ -50,6 +50,13 @@ Engine.prototype.start = function(callback) {
             config.configure_driver(machine.machine.driver, callback);
         }.bind(this),
 
+	function get_g2_version(callback) {
+	    this.machine.driver.get('fb', function(err, value) {
+                log.info('G2 Firmware Build: ' + value);
+                callback(null);
+            });
+	}.bind(this),
+
         function load_opensbp_commands(callback) {
             log.info("Loading OpenSBP Commands...");
             this.machine.sbp_runtime.loadCommands(callback);

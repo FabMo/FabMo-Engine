@@ -120,8 +120,10 @@ EngineConfig.prototype.checkWifi = function(){
 	    	if (error)
 	    		throw error;
 
-	    	that.update({wifi_manager:true},function(e){
-			logger.error(e);
+	    	that.update({wifi_manager:true},function(err){
+			if(err) {
+				logger.warn(e);
+			}
 		});
 	});
 
