@@ -5,10 +5,8 @@ Config = require('./config').Config
 // G2 configuration data is *already* JSON formatted, so G2Config objects are easy to create from config files using `load()`
 // A G2Config object is bound to a driver, which gets updated when configuration values are loaded/changed.
 G2Config = function(driver) {
-	Config.call(this);
+	Config.call(this, 'g2');
 	this.driver = driver;
-    this.default_config_file = __dirname + '/default/g2.json';
-	this.config_file = __dirname + '/data/g2.json';
 }
 util.inherits(G2Config, Config);
 

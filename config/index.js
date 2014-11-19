@@ -1,3 +1,4 @@
+var Config = require('./config').Config
 var EngineConfig = require('./engine_config').EngineConfig;
 var G2Config = require('./g2_config').G2Config;
 var OpenSBPConfig = require('./opensbp_config').OpenSBPConfig;
@@ -39,6 +40,8 @@ function configure_opensbp(callback) {
 	exports.opensbp.init(callback);
 }
 
-exports.configure_engine = configure_engine
-exports.configure_driver = configure_driver
-exports.configure_opensbp = configure_opensbp
+exports.configureEngine = configure_engine
+exports.configureDriver = configure_driver
+exports.configureOpensbp = configure_opensbp
+exports.createDataDirectories = Config.createDataDirectories
+exports.getDataDir = Config.getDataDir

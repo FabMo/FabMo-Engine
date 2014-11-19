@@ -14,7 +14,6 @@ get_files = function(req, res, next) {
 };
 
 upload_file = function(req, res, next) {
-
 	// Get the one and only one file you're currently allowed to upload at a time
 	var file = req.files.file;
 
@@ -23,7 +22,7 @@ upload_file = function(req, res, next) {
 	{
 		// Keep the name of the file uploaded (but put it in the parts directory)
 		var filename=file.name;
-		var full_path = path.join(config.engine.getPartsDir(), filename);
+		var full_path = path.join(config.getDataDir('files'), filename);
 		
 		// Uploaded files are stored in a temporary directory (per restify)
 		// Move the file from that path to the parts directory
