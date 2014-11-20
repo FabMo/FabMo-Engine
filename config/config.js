@@ -89,6 +89,7 @@ Config.getDataDir = function(name) {
 		case 'win32':
 		case 'win64':
 			base = 'c:/fabmo';
+			break;
 		default:
 			base = '/opt/fabmo';
 	}
