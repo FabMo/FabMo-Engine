@@ -13,6 +13,9 @@ parseLine = function(line) {
     } else {
     	if(comment != '') {obj.comment = comment}
     }
+    if(obj.type == 'cmd') {
+        obj.cmd = obj.cmd.toUpperCase();
+    }
     return obj
 }
 
