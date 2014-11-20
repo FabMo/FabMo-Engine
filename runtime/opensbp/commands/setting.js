@@ -29,15 +29,3 @@ exports.SP = function(args) {
 exports.ST = function(args) {
 	this.emit_gcode("G54");
 };
-
-// Set to table base coordinates
-exports.C6 = function(args) {
-	this.emit_gcode("M4");
-	this.emit_gcode("M8");
-};
-
-// Set to table base coordinates
-exports.C7 = function(args) {
-	this.emit_gcode("M5");
-	this.emit_gcode("M9");
-};
