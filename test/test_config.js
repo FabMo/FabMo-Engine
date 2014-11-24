@@ -35,15 +35,6 @@ describe('Config Module', function(){
 		});
 	});
 
-	it('Update an invalid key', function(done){
-		var expected = {'carrot':3.14};
-		config.driver.update(expected, function(err, result) {
-			if(err) { done(err); }
-			assert.equal(result.carrot, null)
-			return done();
-		});
-	});
-
 	it('Update OpenSBP config', function(done){
 		var expected = {'safeZPullup':0.5};
 		config.opensbp.update(expected, function(err, result) {

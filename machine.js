@@ -22,7 +22,7 @@ function connect(callback) {
 			break;
 
 		case 'darwin':
-			serial_path = '/dev/cu.usbmodem001';
+			serial_path = '/dev/cu.usbmodem1421';
 			break;
 
 		case 'win32':
