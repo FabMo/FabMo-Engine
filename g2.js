@@ -194,10 +194,9 @@ G2.prototype.jog_keepalive = function() {
 };
 
 G2.prototype.stopJog = function() {
-	log.warn("CALLING STOPJOG")
 	if(this.jog_direction && !this.jog_stop_pending) {
+		log.debug('stopJog()');
 		this.jog_stop_pending = true;
-		log.debug('JOG stop.');
 		clearTimeout(this.jog_heartbeat);
 		if(this.status.stat === STAT_RUNNING) {
 			this.quit();
@@ -353,7 +352,6 @@ G2.prototype.handleStatusReport = function(response) {
 		if(this.prev_stat != stat) {
 
 			if(stat === STAT_RUNNING && this.jog_stop_pending) {
-				log.warn("HANDLING A PENDING THING")
 				this.quit();
 			}
 
