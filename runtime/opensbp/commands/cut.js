@@ -33,46 +33,123 @@ exports.CC = function(args) {
   var startY = this.cmd_posy;
   var startZ = this.cmd_posz;
 
-  var Dia = args[1] !== undefined ? args[1] : undefined;
-  var OIT = args[2] !== undefined ? args[2] : undefined;
-  var Dir = args[3] !== undefined ? args[3] : undefined;
-  var Bangle = args[4] !== undefined ? args[4] : undefined;
-  var Eangle = args[5] !== undefined ? args[5] : "T";
-  var Plg = args[6] !== undefined ? args[6] : 1; 
-  var reps = args[7] !== undefined ? args[7] : 0;
-  var propX = args[8] !== undefined ? args[8] : 1;
-  var propY = args[9] !== undefined ? args[9] : 1;
-  var optCC = args[10] !== undefined ? [10] : 1;
-  var noPullUp = args[11] !== undefined ? args[11] : 0;
-  var plgFromZero = args[12] !== undefined ? args[12] : 0;
-  var currentZ ;
-  var outStr;
-  
+  var P0 = " ";
+  var Dia = args[0] !== undefined ? args[0] : undefined;
+  var OIT = args[1] !== undefined ? args[1] : "T";
+  var Dir = args[2] !== undefined ? args[2] : 1;
+  var Bang = args[3] !== undefined ? args[3] : 0;
+  var Eang = args[4] !== undefined ? args[4] : 0;
+  var Plg = args[5] !== undefined ? args[5] : undefined; 
+  var reps = args[6] !== undefined ? args[6] : undefined;
+  var propX = args[7] !== undefined ? args[7] : undefined;
+  var propY = args[8] !== undefined ? args[8] : undefined;
+  var optCC = args[9] !== undefined ? args[9] : undefined;
+  var noPullUp = args[10] !== undefined ? args[10] : undefined;
+  var plgFromZero = args[11] !== undefined ? args[11] : undefined;
+
+  if ( Dia === undefined ){
+    // Error: Zero diameter circle
+  }
+
+  var WBang = 450 - Bang;
+  if ( WBang > 360 || WBang === 360 ) { 
+    WBang -= 360;
+  } 
+  else if ( WBang < -360 || WBang === -360 ) {
+    WBang += 360;
+  }
+  var Bradians = WBang/180*Math.PI;
+
+  var WEang = 450 - Eang;
+  if ( WEang > 360 || WEang === 360 ) { 
+    WEang -= 360;
+  }
+  else if ( WEang < -360 || WEang === -360 ) {
+    WEang += 360;
+  }
+  var Eradians = WEang/180*Math.PI;
+
+  // Find Center offset
+  var radius = Dia/2;
+  var centerX = startX + (radius * Math.cos(Bradians + Math.PI));
+  var centerY = startY + (radius * Math.sin(Bradians + Math.PI));
+  var xOffset = centerX - startX;
+  var yOffset = centerY - startY;
+
+  // Find End point
+  var endX = centerX + radius * Math.cos(Eradians);
+  var endY = centerY + radius * Math.sin(Eradians);
+
+  this.CG([P0,endX,endY,xOffset,yOffset,OIT,Dir,Plg,reps,propX,propY,optCC,noPullUp,plgFromZero]);
 
 };
 
 exports.CP = function(args) {
-  var startX = this.cmd_posx;
-  var startY = this.cmd_posy;
+
   var startZ = this.cmd_posz;
 
   var Dia = args[0] !== undefined ? args[0] : undefined;
-  var centerX = args[1] !== undefined ? args[1] : undefined;
-  var centerY = args[2] !== undefined ? args[2] : undefined;
-  var OIT = args[3] !== undefined ? args[3] : undefined;
-  var Dir = args[4] !== undefined ? args[4] : "T";
-  var Bangle = args[5] !== undefined ? args[5] : 1; 
+  var centerX = args[1] !== undefined ? args[1] : this.cmd_posx;
+  var centerY = args[2] !== undefined ? args[2] : this.cmd_posy;
+  var OIT = args[3] !== undefined ? args[3] : "T";
+  var Dir = args[4] !== undefined ? args[4] : 1;
+  var Bangle = args[5] !== undefined ? args[5] : 0; 
   var Eangle = args[6] !== undefined ? args[6] : 0;
-  var Plg = args[7] !== undefined ? args[7] : 1;
-  var reps = args[8] !== undefined ? args[8] : 1;
-  var propX = args[9] !== undefined ? [9] : 1;
-  var propY = args[10] !== undefined ? args[10] : 0;
-  var optCP = args[11] !== undefined ? args[11] : 0;
-  var noPullUp = args[12] !== undefined ? args[12] : 0;
-  var plgFromZero = args[13] !== undefined ? args[13] : 0;
-  var currentZ ;
+  var Plg = args[7] !== undefined ? args[7] : undefined;
+  var reps = args[8] !== undefined ? args[8] : undefined;
+  var propX = args[9] !== undefined ? [9] : undefined;
+  var propY = args[10] !== undefined ? args[10] : undefined;
+  var optCP = args[11] !== undefined ? args[11] : undefined;
+  var noPullUp = args[12] !== undefined ? args[12] : undefined;
+  var plgFromZero = args[13] !== undefined ? args[13] : undefined;
+  var currentZ = startZ;
   var outStr;
   
+  if ( Dia === undefined ){
+    // Error: Zero diameter circle
+  }
+
+  var WBang = 450 - Bang;
+  if ( WBang > 360 || WBang === 360 ) { 
+    WBang -= 360;
+  } 
+  else if ( WBang < -360 || WBang === -360 ) {
+    WBang += 360;
+  }
+  var Bradians = WBang/180*Math.PI;
+
+  var WEang = 450 - Eang;
+  if ( WEang > 360 || WEang === 360 ) { 
+    WEang -= 360;
+  }
+  else if ( WEang < -360 || WEang === -360 ) {
+    WEang += 360;
+  }
+  var Eradians = WEang/180*Math.PI;
+
+  // Find Center offset
+  var radius = Dia/2;
+  var startX = centerX + (radius * Math.cos(Bradians));
+  var startY = centerY + (radius * Math.sin(Bradians));
+  var xOffset = centerX - startX;
+  var yOffset = centerY - startY;
+
+  // Find End point
+  var endX = centerX + radius * Math.cos(Eradians);
+  var endY = centerY + radius * Math.sin(Eradians);
+
+  if( this.cmd_posx !== startX && this.cmd_posy !== startY ){
+      var safeZ = config.opensbp.get('safeZpullUp');
+      if( currentZ !== safeZ ){
+        this.emit_gcode( "G1Z" + safeZ + "F" + ( 60 * config.opensbp.get('movez_speed')) );
+        this.cmd_posz = safeZ;
+      }
+      this.emit_gcode("G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res));             // Jog to the start point
+      this.cmd_posx = startX;
+      this.cmd_posy = startY;
+  }
+
+  this.CG([P0,endX,endY,xOffset,yOffset,OIT,Dir,Plg,reps,propX,propY,optCC,noPullUp,plgFromZero]);
 
 };
 
@@ -89,6 +166,9 @@ exports.CP = function(args) {
 //			  <No Pull Up after cut>,<Plunge from Z zero>
 //	
 exports.CG = function(args) {
+
+  log.debug("CG-args = " + args);
+
   var startX = this.cmd_posx;
   var startY = this.cmd_posy;
   var startZ = this.cmd_posz;
@@ -105,8 +185,9 @@ exports.CG = function(args) {
   var optCG = args[11] !== undefined ? args[11] : 0;
   var noPullUp = args[12] !== undefined ? args[12] : 0;
   var plgFromZero = args[13] !== undefined ? args[13] : 0;
-	var currentZ ;
+	var currentZ;
 	var outStr;
+  var res = 5;
 
   log.debug("start X:" + startX );
   log.debug("start Y:" + startY );
@@ -144,37 +225,37 @@ exports.CG = function(args) {
    		// Loop passes until overlapping the center
    		for (j=0; (Math.abs(Pocket_StepX * j) <= circRadius) && (Math.abs(Pocket_StepY * j) <= circRadius) ; j++){
   	   	if ( j > 0) {
-  	   		this.emit_gcode( "G1X" + ((j * Pocket_StepX) + startX).toFixed(4) + 
-   		   			               "Y" + ((j * Pocket_StepY) + startY).toFixed(4) + 
+  	   		this.emit_gcode( "G1X" + ((j * Pocket_StepX) + startX).toFixed(res) + 
+   		   			               "Y" + ((j * Pocket_StepY) + startY).toFixed(res) + 
    		   			               "F" + ( 60 * config.opensbp.get('movexy_speed')));
   	   	}
   	   	if (Dir == 1 ) { outStr = "G2"; }	// Clockwise circle/arc
    			else {outStr = "G3"; }	// CounterClockwise circle/arc
-   			outStr = outStr + "X" + (startX + (j * Pocket_StepX)).toFixed(4) + 
-    		   		 		        "Y" + (startY + (j * Pocket_StepY)).toFixed(4) +
-                           "I" + (centerX - (j*Pocket_StepX)).toFixed(4) +
-                           "J" + (centerY - (j*Pocket_StepY)).toFixed(4) +
+   			outStr = outStr + "X" + (startX + (j * Pocket_StepX)).toFixed(res) + 
+    		   		 		        "Y" + (startY + (j * Pocket_StepY)).toFixed(res) +
+                           "I" + (centerX - (j*Pocket_StepX)).toFixed(res) +
+                           "J" + (centerY - (j*Pocket_StepY)).toFixed(res) +
                            "F" + ( 60 * config.opensbp.get('movexy_speed'));
     		this.emit_gcode( outStr );										
     	}
     	this.emit_gcode("G0Z" + safeZCG );										// Pull up Z
-    	this.emit_gcode("G0X" + startX + "Y" + startY);							// Jog to the start point
+    	this.emit_gcode("G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res));							// Jog to the start point
     } 
     else {
-    	if (Dir == 1 ) { outStr = "G2X" + endX + "Y" + endY; }	// Clockwise circle/arc
-    	else { outStr = "G3X" + endX + "Y" + endY; }			// CounterClockwise circle/arc
+    	if (Dir == 1 ) { outStr = "G2X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res); }	// Clockwise circle/arc
+    	else { outStr = "G3X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res); }			// CounterClockwise circle/arc
 			
 			if (Plg !== 0 && optCG === 3 ) { 
 		    	outStr = outStr + "Z" + (currentZ + Plg); 
 		    	currentZ += Plg;
 			} // Add Z for spiral plunge
 
-			outStr += "I" + centerX + "J" + centerY + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
+			outStr += "I" + (centerX).toFixed(res) + "J" + (centerY).toFixed(res) + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
 			this.emit_gcode(outStr); 
 	    	
 	   	if( i+1 < reps && ( endX != startX || endY != startY ) ){					//If an arc, pullup and jog back to the start position
     		this.emit_gcode( "G0Z" + safeZCG );
-       	this.emit_gcode( "G0X" + startX + "Y" + startY );
+       	this.emit_gcode( "G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res) );
 			}
 		}
   }
@@ -182,12 +263,12 @@ exports.CG = function(args) {
   if (optCG == 4 ) { // Add bottom circle if spiral with bottom clr is specified
     if( endX != startX || endY != startY ) {	//If an arc, pullup and jog back to the start position
     	this.emit_gcode( "G0Z" + safeZCG );
-    	this.emit_gcode( "G0X" + startX + "Y" + startY);
+    	this.emit_gcode( "G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res));
     	this.emit_gcode( "G1Z" + currentZ + " F" + ( 60 * config.opensbp.get('movez_speed')));		
     }
     if (Dir === 1 ){ outStr = "G2"; } 		// Clockwise circle/arc
     else { outStr = "G3"; }					// CounterClockwise circle/arc
-		outStr += "X" + endX + "Y" + endY + "I" + centerX + "J" + centerY + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
+		outStr += "X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res) + "I" + (centerX).toFixed(res) + "J" + (centerY).toFixed(res) + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
 		this.emit_gcode(outStr); 
   }
 
