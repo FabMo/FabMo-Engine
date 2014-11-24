@@ -181,8 +181,7 @@ SBPRuntime.prototype._run = function() {
 // _continue() will dispatch the next chunk if appropriate, once the current chunk is finished
 SBPRuntime.prototype._continue = function() {
 	this._update();
-	log.warn("_Continuing...");
-	
+
 	// Continue is only for resuming an already running program.  It's not a substitute for _run()
 	if(!this.started) {
 		log.warn('Got a _continue() but not started');
@@ -265,7 +264,6 @@ SBPRuntime.prototype._dispatch = function(callback) {
 };
 
 SBPRuntime.prototype._executeCommand = function(command, callback) {
-	command.cmd = command.cmd.toUpperCase();
 	if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
 
 		args = this._evaluateArguments(command.cmd, command.args);

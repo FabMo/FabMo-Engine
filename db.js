@@ -213,10 +213,9 @@ File.get_by_id = function(id,callback)
 }
 
 exports.configureDB = function(callback) {
-	db = new Engine.Db(config.engine.getDBDir(), {}); // be sure that the directory exist !
+	db = new Engine.Db(config.getDataDir('db'), {});
 	files = db.collection("files");
 	jobs = db.collection("jobs");
-
 	setImmediate(callback, null);
 }
 

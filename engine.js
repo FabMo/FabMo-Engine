@@ -19,10 +19,16 @@ Engine.prototype.start = function(callback) {
 
     async.series([
 
+        // Configure the engine data directories
+        function setup_application(callback) {
+            log.info('Checking engine data directory tree...');
+            config.createDataDirectories(callback);
+        },
+
         // Load the engine configuration from disk
         function load_engine_config(callback) {
             log.info("Loading engine configuration...")
-            config.configure_engine(callback);
+            config.configureEngine(callback);
         },
 
         // "Apply" the engine configuration, that is, take the configuration values loaded and actually
@@ -47,15 +53,15 @@ Engine.prototype.start = function(callback) {
         function load_driver_config(callback) {
             this.machine = machine.machine
             log.info("Configuring G2...")
-            config.configure_driver(machine.machine.driver, callback);
+            config.configureDriver(machine.machine.driver, callback);
         }.bind(this),
 
-	function get_g2_version(callback) {
-	    this.machine.driver.get('fb', function(err, value) {
-                log.info('G2 Firmware Build: ' + value);
-                callback(null);
+        function get_g2_version(callback) {
+            this.machine.driver.get('fb', function(err, value) {
+                    log.info('G2 Firmware Build: ' + value);
+                    callback(null);
             });
-	}.bind(this),
+    	}.bind(this),
 
         function load_opensbp_commands(callback) {
             log.info("Loading OpenSBP Commands...");
@@ -64,7 +70,7 @@ Engine.prototype.start = function(callback) {
 
         function load_opensbp_config(callback) {
             log.info("Configuring OpenSBP runtime...");
-            config.configure_opensbp(callback);
+            config.configureOpensbp(callback);
         },
 
         // Kick off the server if all of the above went OK.
