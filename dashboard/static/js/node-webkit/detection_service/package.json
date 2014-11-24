@@ -1,0 +1,11 @@
+{
+  "name": "Link-API",
+  "description": "Link API for network for simplify the connection to your tool",
+  "main": "./server.js",
+  "dependencies": {
+    "restify": "1.4.4",
+    "uniq": "1.0.1"
+  },
+  "readmeFilename": "README.md",
+  "_nodeVersion": ">= v0.10.0"
+}
