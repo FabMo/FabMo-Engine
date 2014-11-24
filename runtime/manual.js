@@ -25,7 +25,11 @@ ManualRuntime.prototype.disconnect = function() {
 
 
 ManualRuntime.prototype._onG2StateChange = function(states) {
-
+	var from = states[0];
+	var to = states[1];
+	if(to === 4) {
+		this.machine.setState(this, "idle");
+	}
 };
 
 ManualRuntime.prototype._onG2Status = function(status) {
@@ -40,7 +44,6 @@ ManualRuntime.prototype._onG2Status = function(status) {
 ManualRuntime.prototype.stopJog = function() {
 	log.info('Stopping jog.');
 	this.driver.stopJog();
-	this.machine.setState(this, "idle");
 };
 
 ManualRuntime.prototype.jog = function(direction) {

@@ -55,7 +55,7 @@ function G2() {
 	this.status = {'stat':null, 'posx':0, 'posy':0, 'posz':0};
 	this.gcode_queue = new Queue();
 	this.pause_flag = false;
-	this.jog_stop_pending = true;
+	this.jog_stop_pending = false;
 	this.connected = false;
 	this.jog_direction = null;
 	this.jog_command = null;
@@ -194,6 +194,7 @@ G2.prototype.jog_keepalive = function() {
 };
 
 G2.prototype.stopJog = function() {
+	log.warn("CALLING STOPJOG")
 	if(this.jog_direction && !this.jog_stop_pending) {
 		this.jog_stop_pending = true;
 		log.debug('JOG stop.');
@@ -351,7 +352,8 @@ G2.prototype.handleStatusReport = function(response) {
 
 		if(this.prev_stat != stat) {
 
-			if(stat == STAT_RUNNING && this.jog_stop_pending) {
+			if(stat === STAT_RUNNING && this.jog_stop_pending) {
+				log.warn("HANDLING A PENDING THING")
 				this.quit();
 			}
 

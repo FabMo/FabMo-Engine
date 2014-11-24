@@ -49,7 +49,7 @@ integer "integer"
   = digits:[0-9]+ { return parseInt(digits.join(""), 10); }
 
 float "float"
-  = f:('-'? integer '\.' integer) { return parseFloat(f.join(""));}
+  = f:('-'? [0-9]+ '\.' [0-9]+) { return parseFloat(f.join(""));}
 
 barestring
   = s:[^,\n]+ {return s.join("");}
