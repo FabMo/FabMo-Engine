@@ -45,11 +45,13 @@ identifier
 label
    = id:identifier ":" {return {type:"label", value:id};}
 
+decimal
+  = digits:[0-9]+ { return digits.join(""); }
 integer "integer"
-  = digits:[0-9]+ { return parseInt(digits.join(""), 10); }
+  = dec:decimal { return parseInt(dec, 10); }
 
 float "float"
-  = f:('-'? [0-9]+ '\.' [0-9]+) { return parseFloat(f.join(""));}
+  = f:('-'? decimal '\.' decimal) { return parseFloat(f.join(""));}
 
 barestring
   = s:[^,\n]+ {return s.join("");}
