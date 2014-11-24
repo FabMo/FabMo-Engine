@@ -55,6 +55,7 @@ function G2() {
 	this.status = {'stat':null, 'posx':0, 'posy':0, 'posz':0};
 	this.gcode_queue = new Queue();
 	this.pause_flag = false;
+	this.jog_stop_pending = false;
 	this.connected = false;
 	this.jog_direction = null;
 	this.jog_command = null;
@@ -139,26 +140,24 @@ G2.prototype.jog = function(direction) {
 	var MOVES = 10;
 	var FEED_RATE = 60.0;			// in/min
 	var MOVE_DISTANCE = 0.05;		// in
-	var START_MOVE = 0.001; 		// sec
+	var START_DISTANCE = 0.001; 	// sec
+	var START_RATE = 10.0
 
 	// Normalize the direction provided by the user
 	direction = String(direction).trim().toLowerCase().replace(/\+/g,"");
 
-	if (!(direction in JOG_AXES)) {
+	if ( !(direction in JOG_AXES) && !jog_stop_pending ) {
 		this.stopJog();
-		return;
 	}
-
-	if(this.jog_direction === null) {
+	else if(this.jog_direction === null) {
+		this.jog_stop_pending = false;
 
 		// Build a block of short moves to start jogging
-		//
 		// Starter move (plans down to zero no matter what so we make it short)
 		var d = JOG_AXES[direction];
-		var starting_cmd = 'G91 G1 ' + d + START_MOVE + ' F' + 20.0;
 
 		// Continued burst of short moves
-		//var starting_cmd = 'G4 P0.01'
+		var starting_cmd = 'G91 G1 ' + d + START_DISTANCE + ' F' + START_RATE
 		var move = 'G91 G1 ' + d + MOVE_DISTANCE + ' F' + FEED_RATE;
 
 		// Compile moves into a list
@@ -176,10 +175,12 @@ G2.prototype.jog = function(direction) {
 			this.write(codes.join('\n'));
 		} finally {
 			// Timeout jogging if we don't get a keepalive from the client
-			this.jog_heartbeat = setTimeout(this.stopJog.bind(this), JOG_TIMEOUT);
+			this.jog_heartbeat = setTimeout(function() {
+				log.warn("Jog abandoned!  Stopping due to timeout.");
+				this.stopJog();
+			}.bind(this), JOG_TIMEOUT);
 		}
 	} else {
-
 		if(direction == this.jog_direction) {
 			this.jog_keepalive();
 		}
@@ -187,17 +188,20 @@ G2.prototype.jog = function(direction) {
 };
 
 G2.prototype.jog_keepalive = function() {
-	clearTimeout(this.jog_heartbeat);
+	log.info('Keeping jog alive.');
+    clearTimeout(this.jog_heartbeat);
 	this.jog_heartbeat = setTimeout(this.stopJog.bind(this), JOG_TIMEOUT);
 };
 
 G2.prototype.stopJog = function() {
-	if(this.jog_direction) {
+	log.warn("CALLING STOPJOG")
+	if(this.jog_direction && !this.jog_stop_pending) {
+		this.jog_stop_pending = true;
 		log.debug('JOG stop.');
 		clearTimeout(this.jog_heartbeat);
-		this.jog_direction = null;
-		this.jog_command = null;
-		this.quit();
+		if(this.status.stat === STAT_RUNNING) {
+			this.quit();
+		}
 	}
 };
 
@@ -249,8 +253,8 @@ G2.prototype.handleQueueReport = function(r) {
 	var MIN_QR_LEVEL = 5;
 	var MIN_FLOOD_LEVEL = 5;
 
-	if(this.pause_flag || this.quit_pending) {
-		log.debug('Not handling this queue report because pause or quit pending');
+	if(('qr' in r) && (this.pause_flag || this.quit_pending)) {
+		log.debug('Not handling this queue report (i:' + (r.qi || 0) + ' o:' + (r.qo || 0) + ' r:' + (r.qr) + ') because pause or quit pending');
 		// If we're here, a pause is requested, and we don't send anymore g-codes.
 		return;
 	}
@@ -327,7 +331,18 @@ G2.prototype.handleStatusReport = function(response) {
 
 		// Update our copy of the system status
 		for (var key in response.sr) {
-			this.status[key] = r.sr[key];
+			var stat = response.sr.stat
+			var hold = response.sr.hold
+			if( (key === 'stat') ) {
+				if( (hold != undefined) && (response.sr.hold != 0) ) {
+					log.debug("IGNORE uninformative status/hold combination (" + stat + "/" + hold + ")");
+				} else {
+					log.debug('HONOR this status report because it doesn\'t contain hold data or hold=0');
+					this.status[key] = r.sr[key];
+				}
+			} else {
+				this.status[key] = r.sr[key];
+			}
 		}
 
 		stat = this.status.stat;
@@ -336,7 +351,12 @@ G2.prototype.handleStatusReport = function(response) {
 		this.emit('status', this.status);
 
 		if(this.prev_stat != stat) {
-			
+
+			if(stat === STAT_RUNNING && this.jog_stop_pending) {
+				log.warn("HANDLING A PENDING THING")
+				this.quit();
+			}
+
 			l = this.expectations.length;
 			// Handle subscribers expecting a specific state change
 			while(l-- > 0) {
@@ -362,14 +382,17 @@ G2.prototype.handleStatusReport = function(response) {
 
 		// Hack allows for a flush when quitting (must wait for the hold state to reach 4)
 		if(this.quit_pending) {
-			if((this.status.hold === 4) || (this.status.stat === 3)) {
-				setTimeout(function() {			
+			if((this.status.hold === 4) || (this.status.hold === 5) || (this.status.stat === 3)) {
+				setTimeout(function() {
 					this.command('%');
 					this.command('M30');
 					this.quit_pending = false;
 					this.pause_flag = false;
+					this.jog_direction = null;
+					this.jog_command = null;
+					this.jog_stop_pending = false;
 					this.requestQueueReport();
-				}.bind(this), 20);
+				}.bind(this), 50);
 			}
 		}
 
@@ -401,8 +424,12 @@ G2.prototype.onMessage = function(response) {
 
 	for(var key in r) {
 		if(key in this.readers) {
-			callback = this.readers[key].shift();
-			typeof callback === 'function' && callback(null, r[key]);
+            if(typeof this.readers[key][this.readers[key].length-1] === 'function') {
+                if(r[key] != null) {
+                    callback = this.readers[key].shift();
+                    callback(null, r[key]);
+                }
+            }
 		}
 	}
 	// Special message type for initial system ready message
@@ -523,15 +550,15 @@ G2.prototype.set = function(key, value, callback) {
 	var callback = callback;
 	// Ensure that an errback is called if the data isn't read out
 	setTimeout(function() {
-		if(key in this.readers) {
+        if(key in this.readers) {
 			callbacks = this.readers[key];
-			stored_cb = callbacks[callbacks.length-1];
-			if(callback === stored_cb) {
+            stored_cb = callbacks[callbacks.length-1];
+			if(callback == stored_cb) {
 				if(typeof callback == 'function') {
 					this.readers[key].shift();
 					callback(new Error("Timeout"), null);
 				}
-			}
+            }
 		}
 	}.bind(this), CMD_TIMEOUT)
 

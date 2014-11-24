@@ -790,7 +790,7 @@ module.exports = (function() {
     }
 
     function peg$parsefloat() {
-      var s0, s1, s2, s3, s4, s5;
+      var s0, s1, s2, s3, s4, s5, s6;
 
       peg$silentFails++;
       s0 = peg$currPos;
@@ -806,7 +806,28 @@ module.exports = (function() {
         s2 = peg$c14;
       }
       if (s2 !== peg$FAILED) {
-        s3 = peg$parseinteger();
+        s3 = [];
+        if (peg$c41.test(input.charAt(peg$currPos))) {
+          s4 = input.charAt(peg$currPos);
+          peg$currPos++;
+        } else {
+          s4 = peg$FAILED;
+          if (peg$silentFails === 0) { peg$fail(peg$c42); }
+        }
+        if (s4 !== peg$FAILED) {
+          while (s4 !== peg$FAILED) {
+            s3.push(s4);
+            if (peg$c41.test(input.charAt(peg$currPos))) {
+              s4 = input.charAt(peg$currPos);
+              peg$currPos++;
+            } else {
+              s4 = peg$FAILED;
+              if (peg$silentFails === 0) { peg$fail(peg$c42); }
+            }
+          }
+        } else {
+          s3 = peg$c0;
+        }
         if (s3 !== peg$FAILED) {
           if (input.charCodeAt(peg$currPos) === 46) {
             s4 = peg$c47;
@@ -816,7 +837,28 @@ module.exports = (function() {
             if (peg$silentFails === 0) { peg$fail(peg$c48); }
           }
           if (s4 !== peg$FAILED) {
-            s5 = peg$parseinteger();
+            s5 = [];
+            if (peg$c41.test(input.charAt(peg$currPos))) {
+              s6 = input.charAt(peg$currPos);
+              peg$currPos++;
+            } else {
+              s6 = peg$FAILED;
+              if (peg$silentFails === 0) { peg$fail(peg$c42); }
+            }
+            if (s6 !== peg$FAILED) {
+              while (s6 !== peg$FAILED) {
+                s5.push(s6);
+                if (peg$c41.test(input.charAt(peg$currPos))) {
+                  s6 = input.charAt(peg$currPos);
+                  peg$currPos++;
+                } else {
+                  s6 = peg$FAILED;
+                  if (peg$silentFails === 0) { peg$fail(peg$c42); }
+                }
+              }
+            } else {
+              s5 = peg$c0;
+            }
             if (s5 !== peg$FAILED) {
               s2 = [s2, s3, s4, s5];
               s1 = s2;

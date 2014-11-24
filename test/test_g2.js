@@ -29,6 +29,7 @@ describe('G2', function(){
 				return done();
 			}
 			else {
+                console.log(err.message)
 				throw new Error("Did not get the expected timeout error from setting an illegal value")
 			}
 		});

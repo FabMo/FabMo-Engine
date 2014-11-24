@@ -6,7 +6,7 @@ filename = process.argv[2]
 
 data = fs.readFileSync(filename) + '\n';
 console.log(data);
-port = new serialport.SerialPort('/dev/ttyACM0', false);	
+port = new serialport.SerialPort('/dev/cu.usbmodem1411', false);	
 
 port.open( function(error) {
 	if(error) {

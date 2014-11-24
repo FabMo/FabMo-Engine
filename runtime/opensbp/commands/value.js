@@ -374,6 +374,10 @@ exports.VU = function(args,callback) {
 		sbp_VU.units6 = args[6];
 		g2_VU['6tr'] = (360/getG2_VU['6sa']) * getG2_VU['6mi'] * getSBP_VU.gearBoxRatio6 / sbp_VU.units6;
 	}
+
+	console.log('!!!!')
+	console.log(JSON.stringify(sbp_VU))
+
 	// We set the g2 config (Which updates the g2 hardware but also our persisted copy of its settings)
 	config.opensbp.setMany(sbp_VU, function(err, values) {
 		config.driver.setMany(g2_VU, function(err, values) {
