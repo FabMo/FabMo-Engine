@@ -5,6 +5,78 @@ var config = require('../../../config');
 
 /* CUTS */
 
+exports.CA = function(args) {
+  var startX = this.cmd_posx;
+  var startY = this.cmd_posy;
+  var startZ = this.cmd_posz;
+
+  var len = args[0] !== undefined ? args[0] : undefined;
+  var ht = args[1] !== undefined ? args[1] : undefined;
+  var OIT = args[2] !== undefined ? args[2] : "T";
+  var Dir = args[3] !== undefined ? args[3] : 1;
+  var angle = args[4] !== undefined ? args[4] : undefined;
+  var Plg = args[5] !== undefined ? args[5] : undefined;
+  var reps = args[6] !== undefined ? args[6] : 1; 
+  var propX = args[7] !== undefined ? args[7] : 1;
+  var propY = args[8] !== undefined ? args[8] : 1;
+  var tabs = args[9] !== undefined ? args[9] : undefined;
+  var noPullUp = args[10] !== undefined ? [10] : 0;
+  var plgFromZero = args[11] !== undefined ? args[11] : 0;
+  var currentZ ;
+  var outStr;
+  
+
+};
+
+exports.CC = function(args) {
+  var startX = this.cmd_posx;
+  var startY = this.cmd_posy;
+  var startZ = this.cmd_posz;
+
+  var Dia = args[1] !== undefined ? args[1] : undefined;
+  var OIT = args[2] !== undefined ? args[2] : undefined;
+  var Dir = args[3] !== undefined ? args[3] : undefined;
+  var Bangle = args[4] !== undefined ? args[4] : undefined;
+  var Eangle = args[5] !== undefined ? args[5] : "T";
+  var Plg = args[6] !== undefined ? args[6] : 1; 
+  var reps = args[7] !== undefined ? args[7] : 0;
+  var propX = args[8] !== undefined ? args[8] : 1;
+  var propY = args[9] !== undefined ? args[9] : 1;
+  var optCC = args[10] !== undefined ? [10] : 1;
+  var noPullUp = args[11] !== undefined ? args[11] : 0;
+  var plgFromZero = args[12] !== undefined ? args[12] : 0;
+  var currentZ ;
+  var outStr;
+  
+
+};
+
+exports.CP = function(args) {
+  var startX = this.cmd_posx;
+  var startY = this.cmd_posy;
+  var startZ = this.cmd_posz;
+
+  var Dia = args[0] !== undefined ? args[0] : undefined;
+  var centerX = args[1] !== undefined ? args[1] : undefined;
+  var centerY = args[2] !== undefined ? args[2] : undefined;
+  var OIT = args[3] !== undefined ? args[3] : undefined;
+  var Dir = args[4] !== undefined ? args[4] : "T";
+  var Bangle = args[5] !== undefined ? args[5] : 1; 
+  var Eangle = args[6] !== undefined ? args[6] : 0;
+  var Plg = args[7] !== undefined ? args[7] : 1;
+  var reps = args[8] !== undefined ? args[8] : 1;
+  var propX = args[9] !== undefined ? [9] : 1;
+  var propY = args[10] !== undefined ? args[10] : 0;
+  var optCP = args[11] !== undefined ? args[11] : 0;
+  var noPullUp = args[12] !== undefined ? args[12] : 0;
+  var plgFromZero = args[13] !== undefined ? args[13] : 0;
+  var currentZ ;
+  var outStr;
+  
+
+};
+
+
 //	The CG command will cut a circle. This command closely resembles a G-code circle (G02 or G03)
 //		Though, this command has several added features that its G-code counterparts don't:
 //			- Spiral plunge with multiple passes
