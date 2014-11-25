@@ -33,7 +33,6 @@ exports.CC = function(args) {
   var startY = this.cmd_posy;
   var startZ = this.cmd_posz;
 
-  var P0 = " ";
   var Dia = args[0] !== undefined ? args[0] : undefined;
   var OIT = args[1] !== undefined ? args[1] : "T";
   var Dir = args[2] !== undefined ? args[2] : 1;
@@ -80,7 +79,7 @@ exports.CC = function(args) {
   var endX = centerX + radius * Math.cos(Eradians);
   var endY = centerY + radius * Math.sin(Eradians);
 
-  this.CG([P0,endX,endY,xOffset,yOffset,OIT,Dir,Plg,reps,propX,propY,optCC,noPullUp,plgFromZero]);
+  this.CG([undefined,endX,endY,xOffset,yOffset,OIT,Dir,Plg,reps,propX,propY,optCC,noPullUp,plgFromZero]);
 
 };
 
@@ -91,10 +90,11 @@ exports.CP = function(args) {
   var Dia = args[0] !== undefined ? args[0] : undefined;
   var centerX = args[1] !== undefined ? args[1] : this.cmd_posx;
   var centerY = args[2] !== undefined ? args[2] : this.cmd_posy;
-  var OIT = args[3] !== undefined ? args[3] : "T";
+  var inStr = args[3].toUpperCase();
+  var OIT = (inStr !== "O" || inStr !== "I" || inStr !== "T") ? inStr : "T";
   var Dir = args[4] !== undefined ? args[4] : 1;
-  var Bangle = args[5] !== undefined ? args[5] : 0; 
-  var Eangle = args[6] !== undefined ? args[6] : 0;
+  var Bang = args[5] !== undefined ? args[5] : 0; 
+  var Eang = args[6] !== undefined ? args[6] : 0;
   var Plg = args[7] !== undefined ? args[7] : undefined;
   var reps = args[8] !== undefined ? args[8] : undefined;
   var propX = args[9] !== undefined ? [9] : undefined;
@@ -103,7 +103,7 @@ exports.CP = function(args) {
   var noPullUp = args[12] !== undefined ? args[12] : undefined;
   var plgFromZero = args[13] !== undefined ? args[13] : undefined;
   var currentZ = startZ;
-  var outStr;
+  var res = 5;
   
   if ( Dia === undefined ){
     // Error: Zero diameter circle
@@ -149,7 +149,7 @@ exports.CP = function(args) {
       this.cmd_posy = startY;
   }
 
-  this.CG([P0,endX,endY,xOffset,yOffset,OIT,Dir,Plg,reps,propX,propY,optCC,noPullUp,plgFromZero]);
+  this.CG([undefined,endX,endY,xOffset,yOffset,OIT,Dir,Plg,reps,propX,propY,optCP,noPullUp,plgFromZero]);
 
 };
 
