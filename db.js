@@ -202,13 +202,13 @@ File.list_all = function(callback){
 File.get_by_id = function(id,callback)
 {
 	files.findOne({_id: id},function(err,document){
-		if (!document){
-       			callback(undefined);
+		if (!document) {
+			callback(undefined);
 			return;
-       		}
+		}
 		var file = document;
 		file.__proto__ = File.prototype;
-    		callback(file);
+		callback(file);
 	});
 }
 

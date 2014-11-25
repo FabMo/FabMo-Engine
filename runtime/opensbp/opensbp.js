@@ -392,7 +392,7 @@ SBPRuntime.prototype._eval_value = function(expr) {
 			if(user_var === undefined) {
 				log.debug("  Evaluated " + expr + " as " + expr);
 				f =  parseFloat(expr);
-				if isNaN(f) {
+				if(isNaN(f)) {
 					return expr;
 				} else {
 					return f;

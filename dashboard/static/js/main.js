@@ -15,6 +15,10 @@ define(function(require) {
 	// Allow to click more than 1 time on a link, to reload a page for example
 	allowSameRoute();
 
+	context.apps = new context.models.Apps();
+	context.apps.fetch();
+	context.appMenuView = new context.views.AppMenuView({collection : context.apps, el : '#app_menu_container'});
+
 	// Load the apps from disk, and update the apps collection model
 	//
 	// TODO - apps will have to be *served* now rather than being loaded - this is server code here!

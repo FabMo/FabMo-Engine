@@ -13,12 +13,19 @@ define(function(require) {
 			app_url : null,
 			id : null
 		},
-		sync : function(method, model, option) {} // Override sync because this is a local model
+		sync: function(method, model, options) {
+			if (method === 'read') {
+				Backbone.sync(method, model, options);
+			} else {
+				console.error('You can not ' + method + ' the App model');
+			}
+		}
 	});
 
 	// A collection of (all) apps
 	models.Apps = Backbone.Collection.extend({
-		model : models.App
+		model : models.App,
+		url : '/apps'
 	});
 
 	//Model for the page content (settings / jobLists...)

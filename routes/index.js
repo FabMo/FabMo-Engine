@@ -2,6 +2,7 @@ var fs = require('fs')
 var path = require('path');
 var log = require('../log').logger('routes')
 var restify = require('restify')
+var util = require('../util')
 
 // Load all the files in the 'routes' directory and process them as route-producing modules
 module.exports = function(server) {
@@ -11,14 +12,15 @@ module.exports = function(server) {
 		filePath = path.resolve('./', routeDir, file)
 		if((path.extname(filePath) == '.js') && (path.basename(filePath) != 'index.js')) {
 		try{
-				routes = require(filePath);
-				routes(server);
-				log.debug('  Loaded routes from "' + filePath + '"');
+			routes = require(filePath);
+			routes(server);
+			log.debug('  Loaded routes from "' + filePath + '"');
 		} catch(e) {
 			log.warn('Could not load routes from "' + filePath + '": ' + e);
 		}
 	}
 	});
+
 
 	// Define a route for serving static files
 	// This has to be defined after all the other routes, or it plays havoc with things
@@ -27,5 +29,7 @@ module.exports = function(server) {
 		directory: './dashboard/static',
 		default: 'index.html'
 	}));
+
+
 
 }

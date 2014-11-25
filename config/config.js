@@ -119,7 +119,7 @@ Config.createDataDirectories = function(callback) {
 			}
 		});
 	}.bind(this);
-	dirs = [null, 'db', 'temp', 'log', 'files', 'config']
+	dirs = [null, 'db', 'temp', 'log', 'files', 'config', 'apps', 'temp/approot']
 	async.eachSeries(dirs, create_directory, callback);
 }
 

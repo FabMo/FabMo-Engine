@@ -7,6 +7,7 @@ var config = require('./config');
 var PLATFORM = process.platform;
 var log = require('./log').logger('engine');
 var db = require('./db');
+var dashboard = require('./dashboard');
 
 var Engine = function() {
 }
@@ -73,6 +74,18 @@ Engine.prototype.start = function(callback) {
             config.configureOpensbp(callback);
         },
 
+        function configure_dashboard(callback) {
+            log.info("Configuring dashboard...");
+            dashboard.configure(callback);
+        },
+
+        function load_apps(callback) {
+            log.info("Loading dashboard apps...");
+            dashboard.loadApps(function(err, result) {
+                callback(null, result);
+            });
+        },
+
         // Kick off the server if all of the above went OK.
         function start_server(callback) {
             log.info("Setting up the webserver...")
@@ -97,12 +110,11 @@ Engine.prototype.start = function(callback) {
             // Import the routes module and apply the routes to the server
             log.info("Loading routes...")
             var routes = require('./routes')(server);
-	    
+
             // Kick off the server listening for connections
             server.listen(config.engine.get('server_port'), function() {
                 log.info(server.name+ ' listening at '+ server.url);
                 callback(null, server);
-
             });
         }.bind(this),
         
