@@ -10,21 +10,33 @@ exports.CA = function(args) {
   var startY = this.cmd_posy;
   var startZ = this.cmd_posz;
 
-  var len = args[0] !== undefined ? args[0] : undefined;
-  var ht = args[1] !== undefined ? args[1] : undefined;
+  var len = args[0] !== undefined ? Math.abs(args[0]) : undefined;
+  var ht  = args[1] !== undefined ? Math.abs(args[1]) : undefined;
   var OIT = args[2] !== undefined ? args[2] : "T";
   var Dir = args[3] !== undefined ? args[3] : 1;
   var angle = args[4] !== undefined ? args[4] : undefined;
-  var Plg = args[5] !== undefined ? args[5] : undefined;
+  var Plg  = args[5] !== undefined ? args[5] : undefined;
   var reps = args[6] !== undefined ? args[6] : 1; 
   var propX = args[7] !== undefined ? args[7] : 1;
   var propY = args[8] !== undefined ? args[8] : 1;
   var tabs = args[9] !== undefined ? args[9] : undefined;
   var noPullUp = args[10] !== undefined ? [10] : 0;
   var plgFromZero = args[11] !== undefined ? args[11] : 0;
-  var currentZ ;
-  var outStr;
   
+  var radius = (ht/2) + ((len*len) / (8*ht));
+
+  var xOffset = startX + (len/2);
+  var yOffset = startY + (ht - radius);
+
+  var endX = startX + len;
+  var endY = startY;
+
+  if (Dir === -1) {
+    xOffset *= (-1);
+    endX = startX - len;
+  }
+
+  this.CG([undefined,endX,endY,xOffset,yOffset,OIT,Dir,Plg,reps,propX,propY,undefined,noPullUp,plgFromZero]);
 
 };
 
@@ -90,8 +102,7 @@ exports.CP = function(args) {
   var Dia = args[0] !== undefined ? args[0] : undefined;
   var centerX = args[1] !== undefined ? args[1] : this.cmd_posx;
   var centerY = args[2] !== undefined ? args[2] : this.cmd_posy;
-  var inStr = args[3].toUpperCase();
-  var OIT = (inStr !== "O" || inStr !== "I" || inStr !== "T") ? inStr : "T";
+  var OIT = args[3] !== undefined ? args[3] : "T";
   var Dir = args[4] !== undefined ? args[4] : 1;
   var Bang = args[5] !== undefined ? args[5] : 0; 
   var Eang = args[6] !== undefined ? args[6] : 0;
@@ -176,7 +187,8 @@ exports.CG = function(args) {
   var endY = args[2] !== undefined ? args[2] : undefined;
   var centerX = args[3] !== undefined ? args[3] : undefined;
   var centerY = args[4] !== undefined ? args[4] : undefined;
-  var OIT = args[5] !== undefined ? args[5] : "T";
+  var inStr = args[5] !== undefined ? args[5].toUpperCase() : "T";
+  var OIT = (inStr === "O" || inStr === "I" || inStr === "T") ? inStr : "T";
   var Dir = args[6] !== undefined ? args[6] : 1; 
   var Plg = args[7] !== undefined ? args[7] : 0;
   var reps = args[8] !== undefined ? args[8] : 1;
@@ -314,7 +326,8 @@ exports.CR = function(args) {
 
   var lenX = args[0] !== undefined ? args[0] : undefined; 	// X length
   var lenY = args[1] !== undefined ? args[1] : undefined;		// Y length
-  var OIT = args[2] !== undefined ? args[2] : "T";			// Cutter compentsation (I=inside, T=no comp, O=outside)
+  var inStr = args[2] !== undefined ? args[2].toUpperCase() : "T";
+  var OIT = (inStr === "O" || inStr === "I" || inStr === "T") ? inStr : "T"; // Cutter compentsation (I=inside, T=no comp, O=outside)
   var Dir = args[3] !== undefined ? args[3] : 1; 				// Direction of cut (-1=CCW, 1=CW)
   var stCorner = args[4] !== undefined ? args[4] : 4;			// Start Corner - default is 4, the bottom left corner. 0=Center
   var Plg = args[5] !== undefined ? args[5] : 0.0;			// Plunge depth per repetion
@@ -556,7 +569,6 @@ exports.CR = function(args) {
 
    					default:
    						throw "Unhandled operation: " + expr.op;
-
    				}
    			}
 			} while ( cnt < 1 );
@@ -575,7 +587,6 @@ exports.CR = function(args) {
    			outStr += "F" + ( 60 * config.opensbp.get('movexy_speed'));
     		this.emit_gcode (outStr);
    		}
-
    	}
 
    	// If a pocket, move to the start point of the pocket
