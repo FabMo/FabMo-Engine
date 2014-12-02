@@ -12,7 +12,8 @@ exports.CA = function(args) {
 
   var len = args[0] !== undefined ? Math.abs(args[0]) : undefined;
   var ht  = args[1] !== undefined ? Math.abs(args[1]) : undefined;
-  var OIT = args[2] !== undefined ? args[2] : "T";
+  var inStr = args[2] !== undefined ? args[2].toUpperCase() : "T";
+  var OIT = (inStr === "O" || inStr === "I" || inStr === "T") ? inStr : "T";
   var Dir = args[3] !== undefined ? args[3] : 1;
   var angle = args[4] !== undefined ? args[4] : undefined;
   var Plg  = args[5] !== undefined ? args[5] : undefined;
@@ -22,8 +23,16 @@ exports.CA = function(args) {
   var tabs = args[9] !== undefined ? args[9] : undefined;
   var noPullUp = args[10] !== undefined ? [10] : 0;
   var plgFromZero = args[11] !== undefined ? args[11] : 0;
-  
-  var radius = (ht/2) + ((len*len) / (8*ht));
+  var comp = 0;
+
+  if (OIT === "O") {
+    comp = 1;
+  } 
+  else if (OIT === "I") {
+    comp = -1;
+  }
+
+  var radius = (ht/2) + ((len*len) / (8*ht)) + (config.opensbp.get('cutterDia')/2 * comp);
 
   var xOffset = startX + (len/2);
   var yOffset = startY + (ht - radius);
@@ -46,7 +55,8 @@ exports.CC = function(args) {
   var startZ = this.cmd_posz;
 
   var Dia = args[0] !== undefined ? args[0] : undefined;
-  var OIT = args[1] !== undefined ? args[1] : "T";
+  var inStr = args[1] !== undefined ? args[1].toUpperCase() : "T";
+  var OIT = (inStr === "O" || inStr === "I" || inStr === "T") ? inStr : "T";
   var Dir = args[2] !== undefined ? args[2] : 1;
   var Bang = args[3] !== undefined ? args[3] : 0;
   var Eang = args[4] !== undefined ? args[4] : 0;
@@ -57,7 +67,14 @@ exports.CC = function(args) {
   var optCC = args[9] !== undefined ? args[9] : undefined;
   var noPullUp = args[10] !== undefined ? args[10] : undefined;
   var plgFromZero = args[11] !== undefined ? args[11] : undefined;
+  var comp = 0;
 
+  if (OIT === "O") {
+    comp = 1;
+  } 
+  else if (OIT === "I") {
+    comp = -1;
+  }
   if ( Dia === undefined ){
     // Error: Zero diameter circle
   }
@@ -81,7 +98,7 @@ exports.CC = function(args) {
   var Eradians = WEang/180*Math.PI;
 
   // Find Center offset
-  var radius = Dia/2;
+  var radius = Dia/2 + (config.opensbp.get('cutterDia')/2 * comp);
   var centerX = startX + (radius * Math.cos(Bradians + Math.PI));
   var centerY = startY + (radius * Math.sin(Bradians + Math.PI));
   var xOffset = centerX - startX;
@@ -102,7 +119,8 @@ exports.CP = function(args) {
   var Dia = args[0] !== undefined ? args[0] : undefined;
   var centerX = args[1] !== undefined ? args[1] : this.cmd_posx;
   var centerY = args[2] !== undefined ? args[2] : this.cmd_posy;
-  var OIT = args[3] !== undefined ? args[3] : "T";
+  var inStr = args[3] !== undefined ? args[3].toUpperCase() : "T";
+  var OIT = (inStr === "O" || inStr === "I" || inStr === "T") ? inStr : "T";
   var Dir = args[4] !== undefined ? args[4] : 1;
   var Bang = args[5] !== undefined ? args[5] : 0; 
   var Eang = args[6] !== undefined ? args[6] : 0;
@@ -115,7 +133,15 @@ exports.CP = function(args) {
   var plgFromZero = args[13] !== undefined ? args[13] : undefined;
   var currentZ = startZ;
   var res = 5;
-  
+  var comp = 0;
+
+  if (OIT === "O") {
+    comp = 1;
+  } 
+  else if (OIT === "I") {
+    comp = -1;
+  }
+
   if ( Dia === undefined ){
     // Error: Zero diameter circle
   }
@@ -139,7 +165,7 @@ exports.CP = function(args) {
   var Eradians = WEang/180*Math.PI;
 
   // Find Center offset
-  var radius = Dia/2;
+  var radius = Dia/2 + (config.opensbp.get('cutterDia')/2 * comp);
   var startX = centerX + (radius * Math.cos(Bradians));
   var startY = centerY + (radius * Math.sin(Bradians));
   var xOffset = centerX - startX;
@@ -211,6 +237,27 @@ exports.CG = function(args) {
   log.debug("I-O-T:" + OIT );
   log.debug("Dir:" + Dir );
 
+  if ((propX < 0 && propY > 0) || (propX > 0 && propY < 0 )) { 
+    Dir *= (-1);
+  }
+  if (propX !== 1 || propY !== 1) {
+    endX = startX + (centerX * Math.abs(propX)) + ((endX - (startX + centerX)) * Math.abs(propX));
+    endY = startY + (centerY * Math.abs(propY)) + ((endY - (startX + centerY)) * Math.abs(propY));
+    centerX *= Math.abs(propX);
+    centerY *= Math.abs(propY);
+    if (propX < 0) { 
+      endX = startX + (startX-endX);
+      centerX *= (-1); 
+    }
+    if (propY < 0) { 
+      endY = startY + (startY-endY);
+      centerY *= (-1); 
+    }
+    if ( Math.abs(propX) !== Math.abs(propY) ) {
+      // calculate out to an interpolated ellipse
+    }
+  }
+  
   if (Plg !== 0 && plgFromZero == 1){ currentZ = 0; }
   else { currentZ = startZ; }
   var safeZCG = currentZ + config.opensbp.get('safeZpullUp');
@@ -299,7 +346,7 @@ exports.CG = function(args) {
 	this.cmd_posy = endY;
 };
 
-//	The CG command will cut a rectangle. It will generate the necessary G-code to profile and
+//	The CR command will cut a rectangle. It will generate the necessary G-code to profile and
 //		pocket a rectangle. The features include:
 //			- Spiral plunge with multiple passes
 //			- Pocketing
