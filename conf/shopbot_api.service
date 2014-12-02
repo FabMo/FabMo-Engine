@@ -2,13 +2,13 @@
 Description=shopbot-api
 
 [Service]
-ExecStart=/bin/node /opt/shopbot/app/server.js &
+ExecStart=/bin/node /opt/fabmo/app/server.js &
 Type=simple
 User=root
 Restart=always
 StandardOutput=syslog
 StandardError=syslog
-WorkingDirectory = /opt/shopbot/app/
+WorkingDirectory = /opt/fabmo/app/
 
 [Install]
 WantedBy=multi-user.target

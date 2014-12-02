@@ -14,7 +14,7 @@ var default_conf = {
 	"server_port" : 8080,
 	"driver" : "g2",
 	"debug_lvl" : "info", // info level
-	"install_dir": "/opt/shopbot/",
+	"install_dir": "/opt/fabmo/",
 	"parts_dir" : "./parts/",
 	"db_dir" : "./db/",
 	"log_dir":"./logs/",

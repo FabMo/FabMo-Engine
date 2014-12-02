@@ -20,7 +20,7 @@ npm install
 
 Installing the Engine
 ---------------------
-The engine is run from source, and only needs to be checked out and stored in a local directory.   There are a few directories that you need to have created for the engine to work properly.  Under linux, these are `/opt/shopbot/parts` and `/opt/shopbot/tmp`.  On windows, use `c:\opt\shopbot\parts` and `c:\opt\shopbot\tmp` The process that is running the engine server needs read/write access to both of these directories.
+The engine is run from source, and only needs to be checked out and stored in a local directory.   There are a few directories that you need to have created for the engine to work properly.  Under linux, these are `/opt/fabmo/parts` and `/opt/fabmo/tmp`.  On windows, use `c:\opt\fabmo\parts` and `c:\opt\fabmo\tmp` The process that is running the engine server needs read/write access to both of these directories.
 
 Running the Engine
 ------------------
