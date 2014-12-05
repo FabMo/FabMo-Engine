@@ -188,6 +188,7 @@ Machine.prototype.stopJog = function() {
 Machine.prototype.pause = function() {
 	if(this.status.state === "running") {
 		this.driver.feedHold();
+		this.setState("paused");
 	}
 };
 
