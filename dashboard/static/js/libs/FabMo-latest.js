@@ -525,10 +525,17 @@ FabMo.prototype.add_job =  function(formdata,callback)
 		formData = new FormData();
 		formData.append('file', file, file.name);
 	}
-	else // else it's a formData
-	{
+	else if (formdata instanceof FormData) {
 		formData = formdata;
-	}		
+	} 
+	else {
+		console.log(formdata);
+		content = formdata.data || '';
+		filename = formdata.config.filename || 'job.nc';
+		formData = new FormData();
+		file = new Blob([content], {type : "text/plain"})
+		formData.append('file', file, filename)
+	}
 	if (formData) {
 		$.ajax({
 			url: this.url.job,

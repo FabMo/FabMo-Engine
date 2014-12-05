@@ -1,6 +1,3 @@
 {
-    "wifi_manager": false,
-    "server_port": 9876,
-    "driver": "g2",
-    "log_level": "debug"
+    "wifi_manager": true
 }

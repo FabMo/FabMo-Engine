@@ -62,13 +62,9 @@ AppManager.prototype.copyApp = function(src, dest, callback) {
 		var name = path.basename(src);
 		var tmp_app_path = dest+ "/" + name +"/";
 		var pkg_info_path = tmp_app_path + 'package.json';
-		log.debug('Copying app "' + tmp_app_path + '"')
-		ncp(src, tmp_app_path, function (err) {
-			if (err) {
-				log.warn('There was a problem copying the app "' + name + '" (' + e + ')');
-				return callback(err);
-			} else {
-				try {
+
+		var readPackageInfo = function() {
+			try {
 					s = fs.readFileSync(pkg_info_path);
 					console.log(s.toString('utf8'))
 					var package_info = JSON.parse(s);
@@ -84,7 +80,24 @@ AppManager.prototype.copyApp = function(src, dest, callback) {
 				} catch(e) {
 					log.warn('There was a problem copying the app "' + name + '" (' + e + ')');
 					return callback(e);
-				}
+				}			
+		}
+
+		var exists = fs.existsSync(tmp_app_path);
+		log.debug(tmp_app_path);
+
+		if(exists) {
+			log.debug('Not copying app "' + tmp_app_path + '" because it already exists.');
+			return readPackageInfo();
+		}
+
+		log.debug('Copying app "' + tmp_app_path + '"')
+		ncp(src, tmp_app_path, function (err) {
+			if (err) {
+				log.warn('There was a problem copying the app "' + name + '" (' + e + ')');
+				return callback(err);
+			} else {
+				return readPackageInfo();
 			}
 		});
 	} catch(e) {

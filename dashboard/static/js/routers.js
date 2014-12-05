@@ -14,6 +14,7 @@ define(function(require) {
 			"page/:name"		: "show_page"
 		},
 		launch_app: function(id) {
+			console.log("Calling launch app");
 			app = this.context.apps.get(id);
 			console.log(JSON.stringify(app))
 			this.context.appClientView.setModel(app);

@@ -78,20 +78,21 @@ define(function(require) {
 		render : function() {
 			element = jQuery(this.el);
 			var iframe = element.find('.app-iframe')[0];
+			
 			if(this.model) {
 				url = this.model.get('app_url');
-				var d = require('dashboard');
+				//var d = require('dashboard');
 			} else {
 				url = "about:blank";
-				var d = null;
+				//var d = null;
 			}
 			// TODO: Look at order of execution here? (is it ok to change src before binding the dashboard?)
-			console.log("BINDING DASHBOARD")
+			/*console.log("BINDING DASHBOARD")
 			iframe.onload = function() {
 				console.log(iframe);
 				console.log(d);
 				iframe.contentWindow.dashboard = d;
-			}
+			}*/
 			iframe.src = url;
 			//iframe.parent.dashboard = d;
 			//console.log(iframe.parent)

@@ -111,6 +111,7 @@ define(function(require) {
 	dashboard.ui = new FabMoUI(dashboard.machine);
 	context.bindKeypad(dashboard.ui);
 
+ 	console.log("Event listener added to iframe");
 	// Start the application
 	router = new context.Router();
 	router.setContext(context);

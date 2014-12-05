@@ -17,7 +17,38 @@ define(function(require) {
 		//Refresh of the tool status on the dashboard
 		this.refresh = 500; // define the tool connection refresh time (ms)
 		setInterval(this.updateStatus.bind(this),this.refresh);
+
+		this.target = window;
+		this.registerHandlers();
 	};
+
+	Dashboard.prototype.registerHandlers = function() {
+	 	this.target.addEventListener('message', function (e) {
+	       var iframe = e.source;
+	       try {
+
+	       	 if(e.data.showDRO === true) {
+	       	 	this.openRightMenu();
+	       	 }
+
+	       	 else if(e.data.showDRO === false) {
+	       	 	this.closeRightMenu();
+	       	 }
+
+	       	 else if(e.data.job !== undefined) {
+	       	 	this.machine.add_job(e.data.job, function(err, result) {
+	       			if(err) {
+	       	 			console.log(err);
+	       	 		} else {
+	       	 			this.jobManager();
+	       	 		}
+	       	 	}.bind(this));
+	       	 }
+	       } catch (e) {
+	         throw e;
+	       }
+	     }.bind(this));
+	}
 
 	/*** Prototypes ***/
 	Dashboard.prototype.updateStatus = function(){
@@ -132,9 +163,18 @@ define(function(require) {
 
 
 	/*** Functions ***/
-	jobManager = function() {
-		require('context').launchApp('job-manager');
+	var jobManager = function() {
+		r = require('routers');
+		console.log(r);
+		r.launchApp('job-manager');
 	};
+
+	Dashboard.prototype.jobManager = function() {
+		r = require('routers');
+		console.log('beeeeh');
+		console.log(r);
+		r.launchApp('job-manager');
+	}
 
 	// The dashboard is a singleton which we create here and make available as this module's export.
 	var dashboard = new Dashboard();

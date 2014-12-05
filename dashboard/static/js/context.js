@@ -13,15 +13,11 @@
 
  define(function (require) {
 
- 	var models = require('models');
- 	var views = require('views');
- 	var Router = require('routers');
-
 	ApplicationContext = function() {
 		// Model/View/Router Prototypes
-		this.models = models;
-		this.views = views;
-		this.Router = Router;
+		this.models = require('models');
+		this.views = require('views');
+		this.Router = require('routers');
 
 		// Model Instances
 		this.remoteMachines = new this.models.RemoteMachines();
@@ -126,8 +122,10 @@
 		ui.statusKeypad();
 	};
 
-	ApplicationContext.launchApp = function(id) {
-		Router.launch_app(id);
+	ApplicationContext.prototype.launchApp = function(id) {
+		console.log("Calling the contexts launchApp function");
+		console.log(this.Router);
+		this.Router.launch_app(id);
 	};
 	
 	return new ApplicationContext();
