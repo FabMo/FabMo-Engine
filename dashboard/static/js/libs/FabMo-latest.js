@@ -529,8 +529,6 @@ FabMo.prototype.add_job =  function(formdata,callback)
 		formData = formdata;
 	} 
 	else {
-		console.log("FORMIDABLE")
-		console.log(formdata);
 		content = formdata.data || '';
 		filename = formdata.config.filename || 'job.nc';
 		formData = new FormData();

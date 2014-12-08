@@ -7,7 +7,6 @@
 
 define(function(require) {
 
-	/*** Init *///
 	Dashboard = function() {
 		this.machine = null;
 		this.ui = null;
@@ -23,37 +22,37 @@ define(function(require) {
 	};
 
 	Dashboard.prototype.registerHandlers = function() {
-	 	this.target.addEventListener('message', function (e) {
-	       var iframe = e.source;
-	       try {
+		this.target.addEventListener('message', function (e) {
+			var iframe = e.source;
+			try {
 
-	       	 if(e.data.showDRO === true) {
-	       	 	this.openRightMenu();
-	       	 }
+				if(e.data.showDRO === true) {
+					this.openRightMenu();
+				 }
 
-	       	 else if(e.data.showDRO === false) {
-	       	 	this.closeRightMenu();
-	       	 }
+				 else if(e.data.showDRO === false) {
+					this.closeRightMenu();
+				 }
 
-	       	 else if(e.data.job !== undefined) {
-	       	 	this.machine.add_job(e.data.job, function(err, result) {
-	       			if(err) {
-	       	 			console.log(err);
-	       	 		} else {
-	       	 			this.jobManager();
-	       	 		}
-	       	 	}.bind(this));
-	       	 }
+				 else if(e.data.job !== undefined) {
+					this.machine.add_job(e.data.job, function(err, result) {
+						if(err) {
+							console.log(err);
+						} else {
+							this.jobManager();
+						}
+					}.bind(this));
+				 }
 
-	       	 else if(e.data.getMachine === true) {
-	       	 	console.log("Dashboard responding with machine " + this.machine)
-	       	 	msg = {'ip':this.machine.ip, 'port':this.machine.port};
-	       	 	e.source.postMessage(msg,'*');
-	       	 }
-	       } catch (e) {
-	         throw e;
-	       }
-	     }.bind(this));
+				else if(e.data.getMachine === true) {
+					msg = {'ip':this.machine.ip, 'port':this.machine.port};
+					e.source.postMessage(msg,'*');
+					}
+
+			} catch (e) {
+				throw e;
+			}
+		}.bind(this));
 	}
 
 	/*** Prototypes ***/
@@ -159,14 +158,6 @@ define(function(require) {
 		else if (type=="error") 	toastr.error(message);
 		else console.log("Unknown type of notification");
 	}
-
-
-	/*** Functions ***/
-	var jobManager = function() {
-		r = require('routers');
-		console.log(r);
-		r.launchApp('job-manager');
-	};
 
 	Dashboard.prototype.jobManager = function() {
 		context = require('context');
