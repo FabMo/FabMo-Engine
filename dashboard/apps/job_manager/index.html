@@ -1,0 +1,179 @@
+<!DOCTYPE html> 
+<html> 
+<head>
+	<meta charset="utf-8">
+	<title>Job Manager</title>
+
+	<!-- CSS standardisation & inclusion -->
+	<link rel="stylesheet" href="./css/foundation.min.css">
+	<link rel="stylesheet" href="./css/normalize.css">
+	<link rel="stylesheet" href="./css/style.css">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+	<header class="grey"> <!-- Class can be "blue", "red", "grey", "orange" -->
+		<section>
+			<div class="app-title-container">
+				<h2>Job Manager</h2>
+			</div>
+		</section>
+	</header>
+
+	<section class="container">
+		<div class="row title">
+			<div class="small-12 columns">
+				<h3>Current Job</h3>
+			</div>
+		</div>
+		<div class="row">
+			<div class="small-12 columns current-job-item">
+			</div>
+		</div>
+	</section>
+
+	<section class="container">
+		<div class="row title">
+			<div class="small-5 large-8 columns">
+				<h3>Pending Jobs</h3>
+			</div>
+			<div class="small-7 large-4 columns">
+				<div class="button-bar right">
+					<ul class="button-group">
+					    <li><a class="[tiny small large] button run-next">Run Next</a></li>
+					    <li><a class="[tiny small large] button clear-jobs">Clear Queue</a></li>
+					</ul>
+				</div>
+			</div>
+		</div>
+
+		<div class="row no-jobs" style="display:none;">
+			<div class="small-12 columns no-jobs-item">
+				<div data-alert class="alert-box secondary">
+				  No jobs in the queue, click here to submit a job
+				  <!--<a href="#" class="close">&times;</a>-->
+				</div>
+			</div>
+		</div>
+
+		<div class="row">
+			<!-- JOB LISTING -->
+			<table class="small-12">
+				<thead><tr><th class="small-3">Job Name</th><th class="small-6">Description</th><th class="small-3">Actions</th></tr></thead>
+	            <tbody id="row jobs-listing"></tbody>
+			</table>
+		</div>
+
+		<div class="row submit-job">
+			<div class="small-12 columns">
+				<form id="submit_job" action="/job" method="post" enctype="multipart/form-data">
+					<div class="row collapse postfix-round">
+						<div class="small-9 columns">
+						  	<input id='job_selector' type="file" name="file" data-filename-placement="inside" placeholder="Browse...">
+						</div>
+						<div class="small-3 columns">
+						  	<button type"submit" class="button postfix">Upload</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+
+	</section>
+
+
+
+  <!-- Javascript inclusions -->
+  <script src="./js/libs/jquery-1.10.2.js"></script>
+  <script src="./js/libs/foundation.min.js"></script>
+  <script src="./js/FabMo-latest.js"></script>
+  <script src="./js/FabMoUI-latest.js"></script>
+  <script src="./js/dashboard.js"></script>
+  <!--<script src="./js/app.js"></script>-->
+
+  <script type="text/javascript">
+  	var tool;
+  	var ui;
+
+  	fabmoDashboard.getMachine(function(err, machine) {
+  		console.log("Getting the machine")
+  		tool = new FabMo(machine.ip, machine.port);
+  		ui = new FabMoUI(tool);
+
+	  	// Load the list of files available on the tool
+	  	refresh_jobs_list();
+
+	  	ui.on('status', function(status) {
+			if(status.job) {
+				$(".current-job-container").show(500);
+			} else {
+				$(".current-job-container").hide(500);
+			}
+		});
+  	})
+
+	$(document).ready(function(){
+		//Foundation Init
+		$(document).foundation();
+	});
+
+	function refresh_jobs_list(){
+		// Load the list of files available on the tool
+		tool.list_jobs_in_queue(function(err,jobs){
+			if(err) { return console.log(err) }
+			$(".job-item").remove();
+			if(jobs.length === 0) {
+				$(".no-jobs").show()
+				$(".run-next").addClass("disabled");
+				$(".clear-jobs").addClass("disabled");
+			} else {
+				$(".no-jobs").hide()
+				$(".run-next").removeClass("disabled");
+				$(".clear-jobs").removeClass("disabled");
+			}
+			$.each( jobs, function( key, val ) {
+				console.log(val);
+				html = [
+				'<tr><td>',
+					val.name,
+				'</td><td>',
+					val.description || 'No description.' + ' ' + new Date(val.created_at).toLocaleString(),
+				'</td><td>',
+					'Delete',
+				'</td></tr>'
+				].join('');
+				$(".jobs-listing").append(html);
+			});
+		});
+	}
+
+	$('#submit_job').submit(function(e){
+		e.preventDefault();
+		tool.add_job($(this),function(err,file){
+			if(err){console.log(err);return;}
+			$('#job_selector').replaceWith($('#job_selector').clone(true)); //reset file field
+			$('#job_selector').prev().html('Browse for a file to upload...');
+				refresh_files_list();
+				refresh_jobs_list();
+		});
+	});
+
+	$('.no-jobs-item').click(function(e) {
+		$('#job_selector').click();
+	});
+
+	$('.run-next').click(function(e) { 
+		tool.job_run(function(err, result) {
+			refresh_jobs_list();
+		});
+	});
+
+	$('.clear-jobs').click(function(e) { tool.clear_job_queue(function(err, result) {
+			refresh_jobs_list();
+		});
+	});
+
+
+</script>
+
+</body>
+</html>

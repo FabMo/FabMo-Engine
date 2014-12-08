@@ -13,6 +13,7 @@ ncp.limit = 16;
 var AppManager = function(options) {
 	this.app_directory = options.app_directory;
 	this.temp_directory = options.temp_directory;
+	this.system_app_directory = path.join(__dirname, 'apps');
 	this.apps_index = {};
 	this.apps_list = {};
 }
@@ -86,12 +87,13 @@ AppManager.prototype.copyApp = function(src, dest, callback) {
 		var exists = fs.existsSync(tmp_app_path);
 		log.debug(tmp_app_path);
 
+		
 		if(exists) {
-			log.debug('Not copying app "' + tmp_app_path + '" because it already exists.');
+			log.debug('Not copying app "' + src + '" because it already exists.');
 			return readPackageInfo();
 		}
 
-		log.debug('Copying app "' + tmp_app_path + '"')
+		log.debug('Copying app "' + src + '"')
 		ncp(src, tmp_app_path, function (err) {
 			if (err) {
 				log.warn('There was a problem copying the app "' + name + '" (' + e + ')');
@@ -138,12 +140,22 @@ AppManager.prototype.decompressApp = function(src, dest,callback) {
 	}
 }
 
+AppManager.prototype.getAppPaths = function(callback) {
+	fs.readdir(this.app_directory, function(err, files) {
+		user_files = files.map(function(file) { return this.app_directory + '/' + file;}.bind(this));
+		console.log(this.system_app_directory)
+		fs.readdir(this.system_app_directory, function(err, files) {
+			system_files = files.map(function(file) { return this.system_app_directory + '/' + file;}.bind(this));
+			callback(null, system_files.concat(user_files));
+		}.bind(this));
+	}.bind(this));
+}
 /**
  * Load all of the apps in the provided apps directory
  */
 AppManager.prototype.loadApps =  function(callback) {
-	fs.readdir(this.app_directory, function(err,files){
-		files = files.map(function(file) { return this.app_directory + '/' + file;}.bind(this));
+	this.getAppPaths(function(err,files){
+		console.log(files);
 		async.mapSeries(files, 
 			function(file, callback) {
 				this.loadApp(file, function(err, result) {

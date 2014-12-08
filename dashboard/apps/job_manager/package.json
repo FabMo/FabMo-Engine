@@ -1,0 +1,12 @@
+{
+	"name":"Job Manager",
+	"main":"./index.html",
+	"icon":"icon.png",
+	"icon_color":"pink",
+	"icon_display":"none",
+	"version":"0.0.1",
+	"author":"Ryan Sturmer",
+	"target":[],
+	"website":"http://shopbottools.com",
+	"id":"job-manager"
+}
