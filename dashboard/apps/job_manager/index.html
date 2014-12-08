@@ -55,11 +55,11 @@
 			</div>
 		</div>
 
-		<div class="row">
+		<div class="row jobs-row">
 			<!-- JOB LISTING -->
 			<table class="small-12">
 				<thead><tr><th class="small-3">Job Name</th><th class="small-6">Description</th><th class="small-3">Actions</th></tr></thead>
-	            <tbody id="row jobs-listing"></tbody>
+	            <tbody class="row jobs-listing"></tbody>
 			</table>
 		</div>
 
@@ -77,7 +77,6 @@
 				</form>
 			</div>
 		</div>
-
 	</section>
 
 
@@ -94,23 +93,6 @@
   	var tool;
   	var ui;
 
-  	fabmoDashboard.getMachine(function(err, machine) {
-  		console.log("Getting the machine")
-  		tool = new FabMo(machine.ip, machine.port);
-  		ui = new FabMoUI(tool);
-
-	  	// Load the list of files available on the tool
-	  	refresh_jobs_list();
-
-	  	ui.on('status', function(status) {
-			if(status.job) {
-				$(".current-job-container").show(500);
-			} else {
-				$(".current-job-container").hide(500);
-			}
-		});
-  	})
-
 	$(document).ready(function(){
 		//Foundation Init
 		$(document).foundation();
@@ -119,14 +101,16 @@
 	function refresh_jobs_list(){
 		// Load the list of files available on the tool
 		tool.list_jobs_in_queue(function(err,jobs){
-			if(err) { return console.log(err) }
+			if(err) { return console.log(err); }
 			$(".job-item").remove();
 			if(jobs.length === 0) {
-				$(".no-jobs").show()
+				$(".no-jobs").show();
+				$(".jobs-row").hide();
 				$(".run-next").addClass("disabled");
 				$(".clear-jobs").addClass("disabled");
 			} else {
-				$(".no-jobs").hide()
+				$(".no-jobs").hide();
+				$(".jobs-row").show();
 				$(".run-next").removeClass("disabled");
 				$(".clear-jobs").removeClass("disabled");
 			}
@@ -140,7 +124,7 @@
 				'</td><td>',
 					'Delete',
 				'</td></tr>'
-				].join('');
+                ].join('');
 				$(".jobs-listing").append(html);
 			});
 		});
@@ -152,7 +136,6 @@
 			if(err){console.log(err);return;}
 			$('#job_selector').replaceWith($('#job_selector').clone(true)); //reset file field
 			$('#job_selector').prev().html('Browse for a file to upload...');
-				refresh_files_list();
 				refresh_jobs_list();
 		});
 	});
@@ -171,6 +154,22 @@
 			refresh_jobs_list();
 		});
 	});
+
+  	fabmoDashboard.getMachine(function(err, machine) {
+  		tool = new FabMo(machine.ip, machine.port);
+  		ui = new FabMoUI(tool);
+
+	  	// Load the list of files available on the tool
+	  	refresh_jobs_list();
+
+	  	ui.on('status', function(status) {
+			if(status.job) {
+				$(".current-job-container").show(500);
+			} else {
+				$(".current-job-container").hide(500);
+			}
+		});
+  	})
 
 
 </script>
