@@ -1,0 +1,10 @@
+{
+	"name":"table_surfacer",
+	"main":"./index.html",
+	"icon":"icon.png",
+	"icon_color":"black",
+	"version":"0.0.1",
+	"author":"ryan&jimmy",
+	"target":["3d_printer","router","laser_cutter"],
+	"website":"http://www.example.com"
+}
