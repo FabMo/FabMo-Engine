@@ -58,7 +58,13 @@
 		<div class="row jobs-row">
 			<!-- JOB LISTING -->
 			<table class="small-12">
-				<thead><tr><th class="small-3">Job Name</th><th class="small-6">Description</th><th class="small-3">Actions</th></tr></thead>
+				<thead>
+					<tr>
+						<th class="small-3">Job Name</th>
+						<th class="small-6">Description</th>
+						<th class="small-3">Submitted</th>
+					</tr>
+				</thead>
 	            <tbody class="row jobs-listing"></tbody>
 			</table>
 		</div>
@@ -87,6 +93,7 @@
   <script src="./js/FabMo-latest.js"></script>
   <script src="./js/FabMoUI-latest.js"></script>
   <script src="./js/dashboard.js"></script>
+  <script src="./js/moment.js"></script>
   <!--<script src="./js/app.js"></script>-->
 
   <script type="text/javascript">
@@ -103,6 +110,7 @@
 		tool.list_jobs_in_queue(function(err,jobs){
 			if(err) { return console.log(err); }
 			$(".job-item").remove();
+			$(".jobs-listing").empty();
 			if(jobs.length === 0) {
 				$(".no-jobs").show();
 				$(".jobs-row").hide();
@@ -120,9 +128,9 @@
 				'<tr><td>',
 					val.name,
 				'</td><td>',
-					val.description || 'No description.' + ' ' + new Date(val.created_at).toLocaleString(),
+					val.description || 'No description.',
 				'</td><td>',
-					'Delete',
+					moment(val.created_at).fromNow(),
 				'</td></tr>'
                 ].join('');
 				$(".jobs-listing").append(html);

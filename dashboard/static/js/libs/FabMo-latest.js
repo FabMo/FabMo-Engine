@@ -5,7 +5,7 @@ function FabMo(ip,port) //ip and port of the tool
 	this.port = port || '8080';
 	this.url = {};
 	this.tool_moving = undefined;//for the moving thing
-	that.old_lock_status = null;
+	this.old_lock_status = null;
 	this.interval_moving = 250;//Default was 250
 	this.url.base = 'http://'+this.ip+':'+this.port;
 	this.url.file=this.url.base+"/file";
@@ -529,12 +529,16 @@ FabMo.prototype.add_job =  function(formdata,callback)
 		formData = formdata;
 	} 
 	else {
+		console.log("FORMIDABLE")
 		console.log(formdata);
 		content = formdata.data || '';
 		filename = formdata.config.filename || 'job.nc';
 		formData = new FormData();
-		file = new Blob([content], {type : "text/plain"})
-		formData.append('file', file, filename)
+		file = new Blob([content], {type : "text/plain"});
+		formData.append('file', file, filename);
+		formData.append('name', formdata.config.name || filename);
+		formData.append('description', formdata.config.description || 'No Description');
+		formData.append('dummy', 'hello, world!')
 	}
 	if (formData) {
 		$.ajax({

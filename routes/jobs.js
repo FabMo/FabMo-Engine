@@ -10,7 +10,7 @@ submitJob = function(req, res, next) {
 
 	// Get the one and only one file you're currently allowed to upload at a time
 	var file = req.files.file;
-
+	console.log(req.body);
 	// Only write "allowed files"
 	if(file && util.allowed_file(file.name))
 	{
@@ -28,7 +28,11 @@ submitJob = function(req, res, next) {
 					
 					log.info('Saved a file');
 					try {
-						var job = new db.Job({file_id : file._id});
+						var job = new db.Job({
+							file_id : file._id,
+							name : req.body.name || filename,
+							description : req.body.description
+						});
 					} catch(e) {
 						console.log(e);
 					}
