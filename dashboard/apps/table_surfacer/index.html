@@ -61,6 +61,7 @@
 		JZ,&ZCLEAR
 	</script>
  
+ 
 	<script src="./js/jquery-1.10.2.js"></script>
 	<script src="./js/string-format.js"></script>
 	<script src="./js/FabMo-latest.js"></script>
@@ -72,9 +73,6 @@
 
 		// Debug for now lets us know that we have a viable dashboard object
 		fabmoDashboard.getMachine(function(err, machine) {
-			console.log("Creating FABMO objects")
-			console.log(machine.ip)
-			console.log(machine.port)
 			machine = new FabMo(machine.ip, machine.port);
 			ui = new FabMoUI(machine);
 		});
@@ -92,7 +90,11 @@
 				speed : $('#input-speed').val(),
 				plunge : $('#input-plunge').val()
 			});
-			fabmoDashboard.submitJob(program)
+			fabmoDashboard.submitJob(program, {
+				'name' : 'Table Resurface',
+				'description' : 'Resurface of worktable (' + $('#input-xsize').val() + '"x' + $('#input-ysize').val() + '")',
+                'filename' : 'surface.sbp'        
+            })
 		});
 
 		$('#tool-button').click(function(evt){
