@@ -86,7 +86,7 @@ exports.CC = function(args) {
   else if ( WBang < -360 || WBang === -360 ) {
     WBang += 360;
   }
-  var Bradians = WBang/180*Math.PI;
+  var Bradians = WBang*0.01745329252;
 
   var WEang = 450 - Eang;
   if ( WEang > 360 || WEang === 360 ) { 
@@ -95,7 +95,7 @@ exports.CC = function(args) {
   else if ( WEang < -360 || WEang === -360 ) {
     WEang += 360;
   }
-  var Eradians = WEang/180*Math.PI;
+  var Eradians = WEang*0.01745329252;
 
   // Find Center offset
   var radius = Dia/2 + (config.opensbp.get('cutterDia')/2 * comp);
@@ -153,16 +153,16 @@ exports.CP = function(args) {
   else if ( WBang < -360 || WBang === -360 ) {
     WBang += 360;
   }
-  var Bradians = WBang/180*Math.PI;
+  var Bradians = WBang*0.01745329252;
 
   var WEang = 450 - Eang;
-  if ( WEang > 360 || WEang === 360 ) { 
+  if ( WEang > 360 || WEang === 360 ) {
     WEang -= 360;
   }
   else if ( WEang < -360 || WEang === -360 ) {
     WEang += 360;
   }
-  var Eradians = WEang/180*Math.PI;
+  var Eradians = WEang*0.01745329252;
 
   // Find Center offset
   var radius = Dia/2 + (config.opensbp.get('cutterDia')/2 * comp);
@@ -240,27 +240,27 @@ exports.CG = function(args) {
   if ((propX < 0 && propY > 0) || (propX > 0 && propY < 0 )) { 
     Dir *= (-1);
   }
-  if (propX !== 1 || propY !== 1) {
-    endX = startX + (centerX * Math.abs(propX)) + ((endX - (startX + centerX)) * Math.abs(propX));
-    endY = startY + (centerY * Math.abs(propY)) + ((endY - (startX + centerY)) * Math.abs(propY));
-    centerX *= Math.abs(propX);
-    centerY *= Math.abs(propY);
-    if (propX < 0) { 
-      endX = startX + (startX-endX);
-      centerX *= (-1); 
-    }
-    if (propY < 0) { 
-      endY = startY + (startY-endY);
-      centerY *= (-1); 
-    }
-    if ( Math.abs(propX) !== Math.abs(propY) ) {
-      // calculate out to an interpolated ellipse
+  if (propX === propY){
+    if (propX !== 1 || propY !== 1) {
+      endX = startX + (centerX * Math.abs(propX)) + ((endX - (startX + centerX)) * Math.abs(propX));
+      endY = startY + (centerY * Math.abs(propY)) + ((endY - (startX + centerY)) * Math.abs(propY));
+      centerX *= Math.abs(propX);
+      centerY *= Math.abs(propY);
+      if (propX < 0) { 
+        endX = startX + (startX-endX);
+        centerX *= (-1); 
+      }
+      if (propY < 0) { 
+        endY = startY + (startY-endY);
+        centerY *= (-1); 
+      }
     }
   }
   
   if (Plg !== 0 && plgFromZero == 1){ currentZ = 0; }
   else { currentZ = startZ; }
   var safeZCG = currentZ + config.opensbp.get('safeZpullUp');
+  var spiralPlunge = (optCG === 2 || optCG === 4) ? 1 : 0;
 
   if ( optCG == 2 ) {    	
   	circRadius = Math.sqrt((centerX * centerX) + (centerY * centerY));
@@ -283,40 +283,58 @@ exports.CG = function(args) {
    	if (optCG == 2) { 															// Pocket circle from the outside inward to center
    		// Loop passes until overlapping the center
    		for (j=0; (Math.abs(Pocket_StepX * j) <= circRadius) && (Math.abs(Pocket_StepY * j) <= circRadius) ; j++){
-  	   	if ( j > 0) {
+  	   	if ( j > 0 ) {
   	   		this.emit_gcode( "G1X" + ((j * Pocket_StepX) + startX).toFixed(res) + 
    		   			               "Y" + ((j * Pocket_StepY) + startY).toFixed(res) + 
    		   			               "F" + ( 60 * config.opensbp.get('movexy_speed')));
   	   	}
-  	   	if (Dir == 1 ) { outStr = "G2"; }	// Clockwise circle/arc
-   			else {outStr = "G3"; }	// CounterClockwise circle/arc
-   			outStr = outStr + "X" + (startX + (j * Pocket_StepX)).toFixed(res) + 
-    		   		 		        "Y" + (startY + (j * Pocket_StepY)).toFixed(res) +
-                           "I" + (centerX - (j*Pocket_StepX)).toFixed(res) +
-                           "J" + (centerY - (j*Pocket_StepY)).toFixed(res) +
-                           "F" + ( 60 * config.opensbp.get('movexy_speed'));
-    		this.emit_gcode( outStr );										
+        if ( Math.abs(propX) !== Math.abs(propY) ) {      // calculate out to an interpolated ellipse
+//          this.interpolate_circle(((startX + (j * Pocket_StepX)).toFixed(res)),
+//                                  ((startY + (j * Pocket_StepY)).toFixed(res)),
+//                                  ((startX + (j * Pocket_StepX)).toFixed(res)),
+//                                  ((startY + (j * Pocket_StepY)).toFixed(res)),
+//                                  ((centerX - (j*Pocket_StepX)).toFixed(res)),
+//                                  ((centerY - (j*Pocket_StepY)).toFixed(res)),
+//                                  propX,
+//                                  propY
+//                                  );
+        } 
+  	   	else {
+          if ( Dir == 1 ) { outStr = "G2"; }	  // Clockwise circle/arc
+   			  else { outStr = "G3"; }	              // CounterClockwise circle/arc
+   			  outStr = outStr + "X" + (startX + (j * Pocket_StepX)).toFixed(res) + 
+    		   		 		          "Y" + (startY + (j * Pocket_StepY)).toFixed(res) +
+                            "I" + (centerX - (j*Pocket_StepX)).toFixed(res) +
+                            "J" + (centerY - (j*Pocket_StepY)).toFixed(res) +
+                            "F" + ( 60 * config.opensbp.get('movexy_speed'));
+    		  this.emit_gcode( outStr );
+        }										
     	}
-    	this.emit_gcode("G0Z" + safeZCG );										// Pull up Z
+    	this.emit_gcode("G0Z" + safeZCG);                    // Pull up Z
     	this.emit_gcode("G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res));							// Jog to the start point
     } 
     else {
-    	if (Dir == 1 ) { outStr = "G2X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res); }	// Clockwise circle/arc
-    	else { outStr = "G3X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res); }			// CounterClockwise circle/arc
+      if ( Math.abs(propX) !== Math.abs(propY) ) {      // calculate out to an interpolated ellipse
+//        this.interpolate_circle(startX,startY,currentZ,endX,endY,Plg,centerX,centerY,propX,propY);
+      }
+    	else {
+        if (Dir == 1 ) { outStr = "G2X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res); }	// Clockwise circle/arc
+        else { outStr = "G3X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res); }			// CounterClockwise circle/arc
 			
-			if (Plg !== 0 && optCG === 3 ) { 
-		    	outStr = outStr + "Z" + (currentZ + Plg); 
+		    if (Plg !== 0 && optCG === 3 ) { 
+		      outStr = outStr + "Z" + (currentZ + Plg); 
 		    	currentZ += Plg;
-			} // Add Z for spiral plunge
+		    } // Add Z for spiral plunge
 
-			outStr += "I" + (centerX).toFixed(res) + "J" + (centerY).toFixed(res) + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
-			this.emit_gcode(outStr); 
+		    outStr += "I" + (centerX).toFixed(res) + "J" + (centerY).toFixed(res) + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
+        this.emit_gcode(outStr); 
 	    	
-	   	if( i+1 < reps && ( endX != startX || endY != startY ) ){					//If an arc, pullup and jog back to the start position
-    		this.emit_gcode( "G0Z" + safeZCG );
-       	this.emit_gcode( "G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res) );
-			}
-		}
+        if( i+1 < reps && ( endX != startX || endY != startY ) ){					//If an arc, pullup and jog back to the start position
+    		  this.emit_gcode( "G0Z" + safeZCG );
+       	  this.emit_gcode( "G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res) );
+        }
+		  }
+    }
   }
 
   if (optCG == 4 ) { // Add bottom circle if spiral with bottom clr is specified
@@ -325,10 +343,15 @@ exports.CG = function(args) {
     	this.emit_gcode( "G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res));
     	this.emit_gcode( "G1Z" + currentZ + " F" + ( 60 * config.opensbp.get('movez_speed')));		
     }
-    if (Dir === 1 ){ outStr = "G2"; } 		// Clockwise circle/arc
-    else { outStr = "G3"; }					// CounterClockwise circle/arc
-		outStr += "X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res) + "I" + (centerX).toFixed(res) + "J" + (centerY).toFixed(res) + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
-		this.emit_gcode(outStr); 
+    if ( Math.abs(propX) !== Math.abs(propY) ) {      // calculate out to an interpolated ellipse
+
+    }
+    else {
+      if (Dir === 1 ){ outStr = "G2"; } 		// Clockwise circle/arc
+      else { outStr = "G3"; }					// CounterClockwise circle/arc
+		  outStr += "X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res) + "I" + (centerX).toFixed(res) + "J" + (centerY).toFixed(res) + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
+		  this.emit_gcode(outStr);
+    } 
   }
 
   if(noPullUp === 0 && currentZ != startZ){    	//If No pull-up is set to YES, pull up to the starting Z location
@@ -344,6 +367,82 @@ exports.CG = function(args) {
 
   this.cmd_posx = endX;
 	this.cmd_posy = endY;
+};
+
+//  Interpolate_Circle - is used to interpolate a circle that has uneven proportions as an ellipse.
+//    
+//
+//  Usage: interpolate_circle(<startX>,<startY>,<startZ>,<endX>,<endY>,<plunge>,
+//                            <centerX>,<centerY>,<propX>,<propY>);
+exports.interpolate_circle = function(startX,startY,startZ,endX,endY,plunge,centerX,centerY,propX,propY) {
+
+  var Distr = 0.0;
+  var nextX = 0.0;
+  var nextY = 0.0;
+  var nextZ = 0.0;
+
+  var SpiralPlunge = 0;
+
+  if ( plunge !== 0 ) { SpiralPlunge = 1; }
+
+  var Rundist = 0.0;
+
+  var radius = Math.sqrt(Math.pow((centerX-startX),2)+Math.pow((centerY-startY),2));
+
+  // Find the beginning and ending angles in radians. We'll use only radians from here on.
+  var Bang = Math.atan2(startX-centerX, startY-centerY);
+  var Eang = Math.atan2(endX-centerX, endY-centerY);
+
+  if (Dir === 1) {
+    if (Bang < Eang) { Distr = Eang - Bang; }
+    if (Bang > Eang) { Distr = 6.28318530717959 - Bang + Eang; }
+  }
+  else {
+    if (Bang < Eang) { Distr = 6.28318530717959 - Bang + Eang; }
+    if (Bang > Eang) { Distr = Eang - Bang; }
+  }
+
+  if ( Distr < 0.00001 ) { 
+    // end here  
+  }
+
+  var increment = 0.05;
+
+  if (increment > Distr) { increment = 0.25 * Distr; }
+  if ((Distr * radius) < config.opensbp.get('cRes')) { cRes = Distr * radius * 0.5; }
+
+  var t = Bang;
+
+  var FirstCircleX = radius * Math.sin(t) * propX;
+  var FirstCricleY = radius * Math.cos(t) * propY;
+
+  var Xfactor1 = radius * propX;
+  var Yfactor1 = radius * propY;
+  var Xfactor2 = radius * propX;
+  var Yfactor2 = radius * propX;
+
+  nextX = Xfactor1 * (Math.sin(t + (increment * Dir))) + Xfactor2;
+  nextY = Yfactor1 * (Math.cos(t + (increment * Dir))) + Yfactor2;
+
+  var DistA = nextX - startX;
+  var DistB = nextY - startY;
+  
+  FirstDist = Math.sqrt(Math.pow(DistA,2) + Math.pow(DistB,2));
+
+  if ( FirstDist === 0 ) {
+    if ( increment === 0 ) { increment = 0.01;}
+    increment *= config.opensbp.get('cRes') / FirstDist;
+    nextX = Xfactor1 * (Math.sin(t + (increment * Dir))) + Xfactor2;
+    nextY = Yfactor1 * (Math.cos(t + (increment * Dir))) + Yfactor2;
+  }
+
+
+  // Calculate the next Z position
+  
+  // Add a move here?????
+
+  
+
 };
 
 //	The CR command will cut a rectangle. It will generate the necessary G-code to profile and
@@ -398,7 +497,7 @@ exports.CR = function(args) {
   var steps = 1.0;
 
   if (RotationAngle !== 0 ) { 
-   	RotationAngle *= Math.PI / 180;							// Convert rotation angle in degrees to radians
+   	RotationAngle *= 0.01745329252;							// Convert rotation angle in degrees to radians
    	cosRA = Math.cos(RotationAngle);						// Calculate the Cosine of the rotation angle
    	sinRA = Math.sin(RotationAngle);						// Calculate the Sine of the rotation angle
    	rotPtX = pckt_startX; 									// Rotation point X
