@@ -334,7 +334,11 @@ G2.prototype.handleStatusReport = function(response) {
 			var hold = response.sr.hold
 			if( (key === 'stat') ) {
 				if( (hold != undefined) && (response.sr.hold != 0) ) {
-					log.debug("IGNORE uninformative status/hold combination (" + stat + "/" + hold + ")");
+					if((stat === 6) && (hold === 3)) {
+						this.status[key] = r.sr[key];
+					} else {
+						log.debug("IGNORE uninformative status/hold combination (" + stat + "/" + hold + ")");
+					}
 				} else {
 					log.debug('HONOR this status report because it doesn\'t contain hold data or hold=0');
 					this.status[key] = r.sr[key];
