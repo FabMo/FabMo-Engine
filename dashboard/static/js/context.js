@@ -123,9 +123,13 @@
 	};
 
 	ApplicationContext.prototype.launchApp = function(id) {
-		console.log("Calling the contexts launchApp function");
-		console.log(this.Router);
-		this.Router.launch_app(id);
+		console.log("Calling launch app");
+		app = this.apps.get(id);
+		console.log(JSON.stringify(app))
+		this.appClientView.setModel(app);
+		this.appMenuView.hide();
+		this.appClientView.show();
+		this.hideModalContainer();
 	};
 	
 	return new ApplicationContext();

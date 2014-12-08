@@ -14,13 +14,7 @@ define(function(require) {
 			"page/:name"		: "show_page"
 		},
 		launch_app: function(id) {
-			console.log("Calling launch app");
-			app = this.context.apps.get(id);
-			console.log(JSON.stringify(app))
-			this.context.appClientView.setModel(app);
-			this.context.appMenuView.hide();
-			this.context.appClientView.show();
-			this.context.hideModalContainer();
+			this.context.launchApp(id);
 		},
 		show_menu: function() {
 			this.context.appClientView.hide();

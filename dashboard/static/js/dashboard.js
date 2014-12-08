@@ -44,6 +44,12 @@ define(function(require) {
 	       	 		}
 	       	 	}.bind(this));
 	       	 }
+
+	       	 else if(e.data.getMachine === true) {
+	       	 	console.log("Dashboard responding with machine " + this.machine)
+	       	 	msg = {'ip':this.machine.ip, 'port':this.machine.port};
+	       	 	e.source.postMessage(msg,'*');
+	       	 }
 	       } catch (e) {
 	         throw e;
 	       }
@@ -78,13 +84,6 @@ define(function(require) {
 			});
 		}
 		return;
-	};
-
-	// Bring up the job manager
-	Dashboard.prototype.jobManager = function(){
-		var list_job = this.machine.list_job();
-		var list_job_view = new context.views.listJobView({el : '#job_list_container', collection : list_job});
-		$('#job-manager-modal').foundation('reveal', 'open');
 	};
 
 	//Open the right menu
@@ -170,10 +169,8 @@ define(function(require) {
 	};
 
 	Dashboard.prototype.jobManager = function() {
-		r = require('routers');
-		console.log('beeeeh');
-		console.log(r);
-		r.launchApp('job-manager');
+		context = require('context');
+		context.launchApp('job-manager');
 	}
 
 	// The dashboard is a singleton which we create here and make available as this module's export.
