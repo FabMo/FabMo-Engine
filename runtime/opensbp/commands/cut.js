@@ -5,6 +5,192 @@ var config = require('../../../config');
 
 /* CUTS */
 
+exports.CA = function(args) {
+  var startX = this.cmd_posx;
+  var startY = this.cmd_posy;
+  var startZ = this.cmd_posz;
+
+  var len = args[0] !== undefined ? Math.abs(args[0]) : undefined;
+  var ht  = args[1] !== undefined ? Math.abs(args[1]) : undefined;
+  var inStr = args[2] !== undefined ? args[2].toUpperCase() : "T";
+  var OIT = (inStr === "O" || inStr === "I" || inStr === "T") ? inStr : "T";
+  var Dir = args[3] !== undefined ? args[3] : 1;
+  var angle = args[4] !== undefined ? args[4] : undefined;
+  var Plg  = args[5] !== undefined ? args[5] : undefined;
+  var reps = args[6] !== undefined ? args[6] : 1; 
+  var propX = args[7] !== undefined ? args[7] : 1;
+  var propY = args[8] !== undefined ? args[8] : 1;
+  var tabs = args[9] !== undefined ? args[9] : undefined;
+  var noPullUp = args[10] !== undefined ? [10] : 0;
+  var plgFromZero = args[11] !== undefined ? args[11] : 0;
+  var comp = 0;
+
+  if (OIT === "O") {
+    comp = 1;
+  } 
+  else if (OIT === "I") {
+    comp = -1;
+  }
+
+  var radius = (ht/2) + ((len*len) / (8*ht)) + (config.opensbp.get('cutterDia')/2 * comp);
+
+  var xOffset = startX + (len/2);
+  var yOffset = startY + (ht - radius);
+
+  var endX = startX + len;
+  var endY = startY;
+
+  if (Dir === -1) {
+    xOffset *= (-1);
+    endX = startX - len;
+  }
+
+  this.CG([undefined,endX,endY,xOffset,yOffset,OIT,Dir,Plg,reps,propX,propY,undefined,noPullUp,plgFromZero]);
+
+};
+
+exports.CC = function(args) {
+  var startX = this.cmd_posx;
+  var startY = this.cmd_posy;
+  var startZ = this.cmd_posz;
+
+  var Dia = args[0] !== undefined ? args[0] : undefined;
+  var inStr = args[1] !== undefined ? args[1].toUpperCase() : "T";
+  var OIT = (inStr === "O" || inStr === "I" || inStr === "T") ? inStr : "T";
+  var Dir = args[2] !== undefined ? args[2] : 1;
+  var Bang = args[3] !== undefined ? args[3] : 0;
+  var Eang = args[4] !== undefined ? args[4] : 0;
+  var Plg = args[5] !== undefined ? args[5] : undefined; 
+  var reps = args[6] !== undefined ? args[6] : undefined;
+  var propX = args[7] !== undefined ? args[7] : undefined;
+  var propY = args[8] !== undefined ? args[8] : undefined;
+  var optCC = args[9] !== undefined ? args[9] : undefined;
+  var noPullUp = args[10] !== undefined ? args[10] : undefined;
+  var plgFromZero = args[11] !== undefined ? args[11] : undefined;
+  var comp = 0;
+
+  if (OIT === "O") {
+    comp = 1;
+  } 
+  else if (OIT === "I") {
+    comp = -1;
+  }
+  if ( Dia === undefined ){
+    // Error: Zero diameter circle
+  }
+
+  var WBang = 450 - Bang;
+  if ( WBang > 360 || WBang === 360 ) { 
+    WBang -= 360;
+  } 
+  else if ( WBang < -360 || WBang === -360 ) {
+    WBang += 360;
+  }
+  var Bradians = WBang/180*Math.PI;
+
+  var WEang = 450 - Eang;
+  if ( WEang > 360 || WEang === 360 ) { 
+    WEang -= 360;
+  }
+  else if ( WEang < -360 || WEang === -360 ) {
+    WEang += 360;
+  }
+  var Eradians = WEang/180*Math.PI;
+
+  // Find Center offset
+  var radius = Dia/2 + (config.opensbp.get('cutterDia')/2 * comp);
+  var centerX = startX + (radius * Math.cos(Bradians + Math.PI));
+  var centerY = startY + (radius * Math.sin(Bradians + Math.PI));
+  var xOffset = centerX - startX;
+  var yOffset = centerY - startY;
+
+  // Find End point
+  var endX = centerX + radius * Math.cos(Eradians);
+  var endY = centerY + radius * Math.sin(Eradians);
+
+  this.CG([undefined,endX,endY,xOffset,yOffset,OIT,Dir,Plg,reps,propX,propY,optCC,noPullUp,plgFromZero]);
+
+};
+
+exports.CP = function(args) {
+
+  var startZ = this.cmd_posz;
+
+  var Dia = args[0] !== undefined ? args[0] : undefined;
+  var centerX = args[1] !== undefined ? args[1] : this.cmd_posx;
+  var centerY = args[2] !== undefined ? args[2] : this.cmd_posy;
+  var inStr = args[3] !== undefined ? args[3].toUpperCase() : "T";
+  var OIT = (inStr === "O" || inStr === "I" || inStr === "T") ? inStr : "T";
+  var Dir = args[4] !== undefined ? args[4] : 1;
+  var Bang = args[5] !== undefined ? args[5] : 0; 
+  var Eang = args[6] !== undefined ? args[6] : 0;
+  var Plg = args[7] !== undefined ? args[7] : undefined;
+  var reps = args[8] !== undefined ? args[8] : undefined;
+  var propX = args[9] !== undefined ? [9] : undefined;
+  var propY = args[10] !== undefined ? args[10] : undefined;
+  var optCP = args[11] !== undefined ? args[11] : undefined;
+  var noPullUp = args[12] !== undefined ? args[12] : undefined;
+  var plgFromZero = args[13] !== undefined ? args[13] : undefined;
+  var currentZ = startZ;
+  var res = 5;
+  var comp = 0;
+
+  if (OIT === "O") {
+    comp = 1;
+  } 
+  else if (OIT === "I") {
+    comp = -1;
+  }
+
+  if ( Dia === undefined ){
+    // Error: Zero diameter circle
+  }
+
+  var WBang = 450 - Bang;
+  if ( WBang > 360 || WBang === 360 ) { 
+    WBang -= 360;
+  } 
+  else if ( WBang < -360 || WBang === -360 ) {
+    WBang += 360;
+  }
+  var Bradians = WBang/180*Math.PI;
+
+  var WEang = 450 - Eang;
+  if ( WEang > 360 || WEang === 360 ) { 
+    WEang -= 360;
+  }
+  else if ( WEang < -360 || WEang === -360 ) {
+    WEang += 360;
+  }
+  var Eradians = WEang/180*Math.PI;
+
+  // Find Center offset
+  var radius = Dia/2 + (config.opensbp.get('cutterDia')/2 * comp);
+  var startX = centerX + (radius * Math.cos(Bradians));
+  var startY = centerY + (radius * Math.sin(Bradians));
+  var xOffset = centerX - startX;
+  var yOffset = centerY - startY;
+
+  // Find End point
+  var endX = centerX + radius * Math.cos(Eradians);
+  var endY = centerY + radius * Math.sin(Eradians);
+
+  if( this.cmd_posx !== startX && this.cmd_posy !== startY ){
+      var safeZ = config.opensbp.get('safeZpullUp');
+      if( currentZ !== safeZ ){
+        this.emit_gcode( "G1Z" + safeZ + "F" + ( 60 * config.opensbp.get('movez_speed')) );
+        this.cmd_posz = safeZ;
+      }
+      this.emit_gcode("G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res));             // Jog to the start point
+      this.cmd_posx = startX;
+      this.cmd_posy = startY;
+  }
+
+  this.CG([undefined,endX,endY,xOffset,yOffset,OIT,Dir,Plg,reps,propX,propY,optCP,noPullUp,plgFromZero]);
+
+};
+
+
 //	The CG command will cut a circle. This command closely resembles a G-code circle (G02 or G03)
 //		Though, this command has several added features that its G-code counterparts don't:
 //			- Spiral plunge with multiple passes
@@ -17,6 +203,9 @@ var config = require('../../../config');
 //			  <No Pull Up after cut>,<Plunge from Z zero>
 //	
 exports.CG = function(args) {
+
+  log.debug("CG-args = " + args);
+
   var startX = this.cmd_posx;
   var startY = this.cmd_posy;
   var startZ = this.cmd_posz;
@@ -24,7 +213,8 @@ exports.CG = function(args) {
   var endY = args[2] !== undefined ? args[2] : undefined;
   var centerX = args[3] !== undefined ? args[3] : undefined;
   var centerY = args[4] !== undefined ? args[4] : undefined;
-  var OIT = args[5] !== undefined ? args[5] : "T";
+  var inStr = args[5] !== undefined ? args[5].toUpperCase() : "T";
+  var OIT = (inStr === "O" || inStr === "I" || inStr === "T") ? inStr : "T";
   var Dir = args[6] !== undefined ? args[6] : 1; 
   var Plg = args[7] !== undefined ? args[7] : 0;
   var reps = args[8] !== undefined ? args[8] : 1;
@@ -33,8 +223,9 @@ exports.CG = function(args) {
   var optCG = args[11] !== undefined ? args[11] : 0;
   var noPullUp = args[12] !== undefined ? args[12] : 0;
   var plgFromZero = args[13] !== undefined ? args[13] : 0;
-	var currentZ ;
+	var currentZ;
 	var outStr;
+  var res = 5;
 
   log.debug("start X:" + startX );
   log.debug("start Y:" + startY );
@@ -46,6 +237,27 @@ exports.CG = function(args) {
   log.debug("I-O-T:" + OIT );
   log.debug("Dir:" + Dir );
 
+  if ((propX < 0 && propY > 0) || (propX > 0 && propY < 0 )) { 
+    Dir *= (-1);
+  }
+  if (propX !== 1 || propY !== 1) {
+    endX = startX + (centerX * Math.abs(propX)) + ((endX - (startX + centerX)) * Math.abs(propX));
+    endY = startY + (centerY * Math.abs(propY)) + ((endY - (startX + centerY)) * Math.abs(propY));
+    centerX *= Math.abs(propX);
+    centerY *= Math.abs(propY);
+    if (propX < 0) { 
+      endX = startX + (startX-endX);
+      centerX *= (-1); 
+    }
+    if (propY < 0) { 
+      endY = startY + (startY-endY);
+      centerY *= (-1); 
+    }
+    if ( Math.abs(propX) !== Math.abs(propY) ) {
+      // calculate out to an interpolated ellipse
+    }
+  }
+  
   if (Plg !== 0 && plgFromZero == 1){ currentZ = 0; }
   else { currentZ = startZ; }
   var safeZCG = currentZ + config.opensbp.get('safeZpullUp');
@@ -72,37 +284,37 @@ exports.CG = function(args) {
    		// Loop passes until overlapping the center
    		for (j=0; (Math.abs(Pocket_StepX * j) <= circRadius) && (Math.abs(Pocket_StepY * j) <= circRadius) ; j++){
   	   	if ( j > 0) {
-  	   		this.emit_gcode( "G1X" + ((j * Pocket_StepX) + startX).toFixed(4) + 
-   		   			               "Y" + ((j * Pocket_StepY) + startY).toFixed(4) + 
+  	   		this.emit_gcode( "G1X" + ((j * Pocket_StepX) + startX).toFixed(res) + 
+   		   			               "Y" + ((j * Pocket_StepY) + startY).toFixed(res) + 
    		   			               "F" + ( 60 * config.opensbp.get('movexy_speed')));
   	   	}
   	   	if (Dir == 1 ) { outStr = "G2"; }	// Clockwise circle/arc
    			else {outStr = "G3"; }	// CounterClockwise circle/arc
-   			outStr = outStr + "X" + (startX + (j * Pocket_StepX)).toFixed(4) + 
-    		   		 		        "Y" + (startY + (j * Pocket_StepY)).toFixed(4) +
-                           "I" + (centerX - (j*Pocket_StepX)).toFixed(4) +
-                           "J" + (centerY - (j*Pocket_StepY)).toFixed(4) +
+   			outStr = outStr + "X" + (startX + (j * Pocket_StepX)).toFixed(res) + 
+    		   		 		        "Y" + (startY + (j * Pocket_StepY)).toFixed(res) +
+                           "I" + (centerX - (j*Pocket_StepX)).toFixed(res) +
+                           "J" + (centerY - (j*Pocket_StepY)).toFixed(res) +
                            "F" + ( 60 * config.opensbp.get('movexy_speed'));
     		this.emit_gcode( outStr );										
     	}
     	this.emit_gcode("G0Z" + safeZCG );										// Pull up Z
-    	this.emit_gcode("G0X" + startX + "Y" + startY);							// Jog to the start point
+    	this.emit_gcode("G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res));							// Jog to the start point
     } 
     else {
-    	if (Dir == 1 ) { outStr = "G2X" + endX + "Y" + endY; }	// Clockwise circle/arc
-    	else { outStr = "G3X" + endX + "Y" + endY; }			// CounterClockwise circle/arc
+    	if (Dir == 1 ) { outStr = "G2X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res); }	// Clockwise circle/arc
+    	else { outStr = "G3X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res); }			// CounterClockwise circle/arc
 			
 			if (Plg !== 0 && optCG === 3 ) { 
 		    	outStr = outStr + "Z" + (currentZ + Plg); 
 		    	currentZ += Plg;
 			} // Add Z for spiral plunge
 
-			outStr += "I" + centerX + "J" + centerY + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
+			outStr += "I" + (centerX).toFixed(res) + "J" + (centerY).toFixed(res) + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
 			this.emit_gcode(outStr); 
 	    	
 	   	if( i+1 < reps && ( endX != startX || endY != startY ) ){					//If an arc, pullup and jog back to the start position
     		this.emit_gcode( "G0Z" + safeZCG );
-       	this.emit_gcode( "G0X" + startX + "Y" + startY );
+       	this.emit_gcode( "G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res) );
 			}
 		}
   }
@@ -110,12 +322,12 @@ exports.CG = function(args) {
   if (optCG == 4 ) { // Add bottom circle if spiral with bottom clr is specified
     if( endX != startX || endY != startY ) {	//If an arc, pullup and jog back to the start position
     	this.emit_gcode( "G0Z" + safeZCG );
-    	this.emit_gcode( "G0X" + startX + "Y" + startY);
+    	this.emit_gcode( "G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res));
     	this.emit_gcode( "G1Z" + currentZ + " F" + ( 60 * config.opensbp.get('movez_speed')));		
     }
     if (Dir === 1 ){ outStr = "G2"; } 		// Clockwise circle/arc
     else { outStr = "G3"; }					// CounterClockwise circle/arc
-		outStr += "X" + endX + "Y" + endY + "I" + centerX + "J" + centerY + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
+		outStr += "X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res) + "I" + (centerX).toFixed(res) + "J" + (centerY).toFixed(res) + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
 		this.emit_gcode(outStr); 
   }
 
@@ -134,7 +346,7 @@ exports.CG = function(args) {
 	this.cmd_posy = endY;
 };
 
-//	The CG command will cut a rectangle. It will generate the necessary G-code to profile and
+//	The CR command will cut a rectangle. It will generate the necessary G-code to profile and
 //		pocket a rectangle. The features include:
 //			- Spiral plunge with multiple passes
 //			- Pocketing
@@ -161,7 +373,8 @@ exports.CR = function(args) {
 
   var lenX = args[0] !== undefined ? args[0] : undefined; 	// X length
   var lenY = args[1] !== undefined ? args[1] : undefined;		// Y length
-  var OIT = args[2] !== undefined ? args[2] : "T";			// Cutter compentsation (I=inside, T=no comp, O=outside)
+  var inStr = args[2] !== undefined ? args[2].toUpperCase() : "T";
+  var OIT = (inStr === "O" || inStr === "I" || inStr === "T") ? inStr : "T"; // Cutter compentsation (I=inside, T=no comp, O=outside)
   var Dir = args[3] !== undefined ? args[3] : 1; 				// Direction of cut (-1=CCW, 1=CW)
   var stCorner = args[4] !== undefined ? args[4] : 4;			// Start Corner - default is 4, the bottom left corner. 0=Center
   var Plg = args[5] !== undefined ? args[5] : 0.0;			// Plunge depth per repetion
@@ -403,7 +616,6 @@ exports.CR = function(args) {
 
    					default:
    						throw "Unhandled operation: " + expr.op;
-
    				}
    			}
 			} while ( cnt < 1 );
@@ -422,7 +634,6 @@ exports.CR = function(args) {
    			outStr += "F" + ( 60 * config.opensbp.get('movexy_speed'));
     		this.emit_gcode (outStr);
    		}
-
    	}
 
    	// If a pocket, move to the start point of the pocket
