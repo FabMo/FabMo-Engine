@@ -391,15 +391,6 @@ SBPRuntime.prototype._eval_value = function(expr) {
 			user_var = this.evaluateUserVariable(expr);
 			if(user_var === undefined) {
 				log.debug("  Evaluated " + expr + " as " + expr);
-<<<<<<< HEAD
-				f =  parseFloat(expr);
-				if(isNaN(f)) {
-					return expr;
-				} else {
-					return f;
-				}
-			} else if(user_var === null) {
-=======
 				f = parseFloat(expr);
 			    if(isNaN(f)) {
                     return expr;
@@ -407,8 +398,6 @@ SBPRuntime.prototype._eval_value = function(expr) {
                     return f;
                 }
             } else if(user_var === null) {
->>>>>>> master
-				log.error("  Undefined variable " + expr)
 			} else {
 				log.debug("  Evaluated " + expr + " as " + user_var);
 				return parseFloat(user_var);
