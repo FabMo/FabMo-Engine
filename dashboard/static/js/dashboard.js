@@ -107,13 +107,23 @@ define(function(require) {
 	}
 
 	// Open and close the right menu
-	Dashboard.prototype.bindRightMenu = function() {
+	Dashboard.prototype.bindRightMenu = function(mouv) {
 		that=this;
 		if($("#main").hasClass("offcanvas-overlap-left")){
-			that.closeRightMenu();
+			if(mouv) {
+				that.closeRightMenu();
+			}
+			else {
+				that.ui.setMenuClosed();
+			}
 		}
 		else {
-			that.openRightMenu();
+			if(mouv){
+				that.openRightMenu();
+			}
+			else {
+				that.ui.setMenuOpen();
+			}
 		}
 	}
 
@@ -122,7 +132,7 @@ define(function(require) {
 		that=this;
 		$(document).keydown(function(e){
 			if (e.which == 75) {
-				that.keypad(true);
+				that.keypad(true,true);
 			}
 
 			//Development only : Run the DRO function with a callback, with "d" shortcode
@@ -135,17 +145,17 @@ define(function(require) {
 			}
 		});
 
-		$(".right-small .right-off-canvas-toggle").click( function() {
+		$(".right-small").click( function() {
 			resizedocclick();
-			//that.keypad(false);
+			that.keypad(true);
 		});
 	};
 
-	Dashboard.prototype.keypad = function(test) {
+	Dashboard.prototype.keypad = function(test,mouv) {
 		that=this;
 		if (that.machine) {
 			if(that.ui.statusKeypad() && test) {
-				that.bindRightMenu();
+				that.bindRightMenu(mouv);
 			}
 			else that.notification("error","KeyPad Unvailable");
 		}
