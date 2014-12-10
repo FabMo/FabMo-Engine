@@ -94,6 +94,7 @@ body,html{
 
 #tools-container .tools-current > li a.err 	{background-image: url('../img/icon_status_red.png');}
 #tools-container .tools-current > li a.disc 	{background-image: url('../img/icon_status_grey.png');}
+#tools-container .tools-current > li a.paus 	{background-image: url('../img/icon_status_yellow.png');}
 
 #tools-container .tools-other > li { border-bottom: 1px solid #eee; }
 
@@ -110,7 +111,7 @@ body,html{
 
 #right-position-container {
 	height: 100%;
-	width: 10.5rem;
+	width: 11rem;
 	position: absolute;
 	color:#eee;
 	right: 3rem;
@@ -760,6 +761,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #app_menu_container {
 	list-style: none;
 	height :auto;
+	margin-left: auto;
+	margin-right: auto;
 }
 
 /* ********** Page (#modal_container) container ********** */

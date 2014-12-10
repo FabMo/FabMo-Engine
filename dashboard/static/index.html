@@ -43,7 +43,7 @@
 
             <!-- ***** Machines on network Widget ***** -->
             <section class="middle">
-              <h1 class="title"><a href="#/menu">FabMo Dashboard</a></h1>
+               <h1 class="title"><a id="dashboardName" href="#/menu">FabMo Dashboard</a></h1>
             </section>
 
             <!-- ***** Tool Position Section ***** -->
@@ -84,14 +84,12 @@
                 <li><label>Utilities</label></li>
                 <li><a href="#/menu" id="icon_home"><span>Home</span></a></li>
                 <li><a href="#/app/job-manager" id="icon_jobs"><span>Job Queue</span></a></li>
-                <!--
-                <li><a href="#" id="icon_folder"><span>Upload a file</span></a></li>
+                <li><a href="#/app/file-executer" id="icon_folder"><span>Files & Code</span></a></li>
                 <li><a href="#" id="icon_search"><span>Search</span></a></li>
                 <li><a href="#" id="icon_global"><span>MyHQ</span></a></li>
                 <li><a href="#/menu" id="icon_apps"><span>Apps</span></a></li>
                 <li><a href="#" id="icon_social"><span>Community</span></a></li>
                 <li><a href="#/app/settings" id="icon_settings"><span>Settings</span></a></li>
-                -->
                 <li><a href="#" id="icon_colapse"><span>Collapse</span></a></li>
               </ul>
             </div>
@@ -199,10 +197,10 @@
                       <span class="fabmo-pause-button hide"><a class="small button warning ">P</a></span>
                     </div>
                     <div class="small-6 columns control">
-                      <span class="fabmo-stop-button hide"><a class="small button alert ">S</a></span>
-                    </div>
-                    <div class="small-12 columns control">
                       <span class="fabmo-resume-button hide"><a class="small button success ">R</a></span>
+                    </div>
+                    <div class="small-6 columns control">
+                      <span class="fabmo-stop-button hide"><a class="small button alert ">S</a></span>
                     </div>
                   </div>
                 </li>
@@ -233,25 +231,6 @@
           <a id="close_menu" class="exit-off-canvas"></a>
         </div>
       </div>    
-
-    <div id="home-zero-modal" class="reveal-modal" data-reveal>
-      <h4>Homing and Zeroing</h4>
-      <div class="small-12 columns">
-          <div class="row" >
-               <div class="small-4 columns"><button class="button button-homexy">Home X&Y</button></div>
-              <div class="small-4 columns"><button class="button button-homez">Home Z</button></div>
-              <div class="small-4 columns"><button class="button button-probez">Probe Z</button></div>
-          </div>
-          <div class="row" >
-               <div class="small-4 columns"><button class="button button-zerox">Zero X</button></div>
-              <div class="small-4 columns"><button class="button button-zeroy">Zero Y</button></div>
-              <div class="small-4 columns"><button class="button button-zeroz">Zero Z</button></div>
-          </div> 
-
-      </div>
-
-      <a class="close-reveal-modal">&#215;</a>
-    </div>
 
     <script src="js/libs/jquery.js"></script>
     <script src="js/libs/foundation.min.js"></script>
