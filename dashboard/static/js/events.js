@@ -29,14 +29,14 @@ resizedoc = function(){
 	if(l>1) l=l-1;
 	
 	//Set size attribute on div "Main Section"
-	$(".main-section").css("width",$("body").width()-r+"px");
-	$(".main-section").css("margin-left",l+"px");
+	$(".main-section, .app-section").css("width",$("body").width()-r+"px");
+	$(".main-section, .app-section").css("margin-left",l+"px");
 	$(".main-section").css("height",$("#left-menu").height()+"px");
 
 	//Resize app-icon container, so the icon are centered
 	$("#app_menu_container").css(
 		"width",
-		$(".main-section").width() - ($(".main-section").width() % 132 )
+		$(".main-section, .app-section").width() - ($(".main-section, .app-section").width() % 132 )
 	);
 };
 
@@ -71,7 +71,7 @@ widgetToolsNetwork = function() {
 };
 
 resizedocclick = function(){
-	//Same function that resizedoc(), but inverse the class on ".main-section", because it has not changed yet after the click on "#left-menu" or #right-menu
+	//Same function that resizedoc(), but inverse the class on "this.header", because it has not changed yet after the click on "#left-menu" or #right-menu
 	var l=0; var r=0;
 
 	if($("body").width()/parseFloat($("body").css("font-size"))>40.063) {
@@ -84,7 +84,7 @@ resizedocclick = function(){
 	} else {r=0;}
 
 	r=r+l;
-	$(".main-section").css("width",$("body").width()-r+"px");
+	$(".main-section, .app-section").css("width",$("body").width()-r+"px");
 };
 
 

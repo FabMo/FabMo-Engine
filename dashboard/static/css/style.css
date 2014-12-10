@@ -10,13 +10,12 @@ body,html{
     font-family: 'source_sans_proregular';
 }
 
-.main-section{ 
-	width:auto;
+.main-section, .app-section{ 
 	height:auto;
-	float:left;
+	margin-top: 2.8125rem;
 }
 
-.off-canvas-wrap,.inner-wrap{ height:100%;}
+.off-canvas-wrap, .inner-wrap {height: auto; margin-bottom:0px;}
 
 .page{ height:100%; }
 
@@ -26,6 +25,10 @@ body,html{
 
 .tab-bar { 
 	background: #313366;
+	z-index: 1000;
+	position:fixed;
+	width:100%;
+	top:0;
 }
 
 @media only screen and (min-width: 40.063em) {
@@ -133,16 +136,12 @@ body,html{
 	top: 2.8125rem;
 	bottom: 0px;
 	height: auto;
+	position: fixed;
 }
 
 .left-off-canvas-menu {
 	background-color: #444444;
 	width : 11.375rem;
-}
-
-.left-off-canvas-menu::-webkit-scrollbar,
-.right-off-canvas-menu::-webkit-scrollbar { 
-    display: none; 
 }
 
 .right-off-canvas-menu {
@@ -686,12 +685,12 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .app-icon {
-	float: left;
 	width: 100px;
 	height: 128px;
 	text-align: center;
 	margin: 16px;
 	margin-bottom: 0;
+	display:inline-block;
 }
 
 .app-icon[display=none] {display:none;}
@@ -773,31 +772,5 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 /* ********** Scrollbars ********** */
 
 ::-webkit-scrollbar {
-	width: 16px;
-	height: 16px;
-}
-
-/* Scrollbars Background */
-::-webkit-scrollbar-track-piece {
-	background: transparent none;
-	border: solid 6px transparent;
-	border-right-width: 8px;
-	margin: 4px;
-	-webkit-box-shadow: inset 1px 1px 0 0 rgb(137,131,117), inset -1px -1px 0 0 rgb(224,220,210);
-}
-
-/* Style : Vertical Bar; */
-::-webkit-scrollbar-thumb {
-	border: solid 0 transparent;
-	border-right-width: 4px;
-	border-left-width: 2px;
-	-webkit-border-radius: 5px;
-	-webkit-border-top-right-radius: 9px 5px;
-	-webkit-border-bottom-right-radius: 9px 5px;
-	-webkit-border-top-left-radius: 7px 5px;
-	-webkit-border-bottom-left-radius: 7px 5px;
-	-webkit-box-shadow: inset 0 0 0 1px rgb(79,79,79), inset 0 0 0 6px rgb(102,102,102);
-}
-::-webkit-scrollbar-thumb:hover {
-	-webkit-box-shadow: inset 0 0 0 1px rgb(90,90,90), inset 0 0 0 6px rgb(110,110,110);
+	display: none;
 }

@@ -298,6 +298,10 @@ FabMoUI.prototype.Keypad = function(){
 		e1.which = 34; 
 		$(that.keypad_div_selector).trigger(e1);
 	});
+
+	window.addEventListener('touchend',function(event) {
+  		alert('START (' + gnStartX + ', ' + gnStartY + ')   END (' + gnEndX + ', ' + gnEndY + ')');
+	},false);
 };
 
 FabMoUI.prototype.setMenuOpen = function(){
