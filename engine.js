@@ -47,21 +47,35 @@ Engine.prototype.start = function(callback) {
         // Connect to G2 and initialize machine runtimes
         function connect(callback) {
             log.info("Connecting to G2...")
-            machine.connect(callback);
+            machine.connect(function(err, machine) {
+                if(err) {
+                    log.error("Could not connect to G2.");
+                }
+                setImmediate(callback, null);
+            });
         }.bind(this),
 
         // Configure G2 by loading all its json settings and static configuration parameters
         function load_driver_config(callback) {
             this.machine = machine.machine
-            log.info("Configuring G2...")
-            config.configureDriver(machine.machine.driver, callback);
+            if(this.machine.isConnected()) {
+                log.info("Configuring G2...")
+                config.configureDriver(machine.machine.driver, callback);
+            } else {
+                log.warn("Skipping G2 configuration due to no connection.");
+                setImmediate(callback, null);
+            }
         }.bind(this),
 
         function get_g2_version(callback) {
-            this.machine.driver.get('fb', function(err, value) {
-                    log.info('G2 Firmware Build: ' + value);
-                    callback(null);
-            });
+            if(this.machine.isConnected()) {
+                this.machine.driver.get('fb', function(err, value) {
+                        log.info('G2 Firmware Build: ' + value);
+                        callback(null);
+                });
+            } else {
+                setImmediate(callback, null);
+            }
     	}.bind(this),
 
         function load_opensbp_commands(callback) {

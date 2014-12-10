@@ -93,7 +93,7 @@ G2.prototype.connect = function(path, callback) {
 
 	// Create serial port object
 	this.port = new serialport.SerialPort(path, {rtscts:true});
-
+	
 	// Create port bindings
 	this.port.on("error", this.onSerialError.bind(this));
 	this.port.on('data', this.onData.bind(this));
@@ -104,7 +104,8 @@ G2.prototype.connect = function(path, callback) {
 		this.command('M30');
 		this.requestStatusReport();
 		this.connected = true;
-		callback(false, this);  // *TODO* maybe this should come after the first status report
+		this.connect_callback = null;
+		callback(null, this);  // *TODO* maybe this should come after the first status report
 	}.bind(this));
 };
 
@@ -114,8 +115,13 @@ G2.prototype.disconnect = function(callback) {
 
 // Log serial errors.  Most of these are exit-able offenses, though.
 G2.prototype.onSerialError = function(data) {
-	log.error(data);
-    process.exit(1);
+	if(this.connect_callback) {
+		this.connect_callback(data);
+	}
+	else {
+		log.error(data);
+		process.exit(1);
+	}
 };
 
 // Write data to the serial port.  Log to the system logger.

@@ -1,3 +1,9 @@
 {
-    "wifi_manager": true
+    "wifi_manager": false,
+    "server_port": 9876,
+    "driver": "g2",
+    "log_level": "debug",
+    "driver_port_osx": "/dev/cu.usbmodem14221",
+    "driver_port_linux": "/dev/ttyACM0",
+    "driver_port_windows": "COM1"
 }

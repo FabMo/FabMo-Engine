@@ -7,6 +7,7 @@ var fs = require('fs');
 var path = require('path');
 var db = require('./db');
 var log = require('./log').logger('machine');
+var config = require('./config');
 
 var GCodeRuntime = require('./runtime/gcode').GCodeRuntime;
 var SBPRuntime = require('./runtime/opensbp').SBPRuntime;
@@ -18,19 +19,16 @@ function connect(callback) {
 	switch(PLATFORM) {
 
 		case 'linux':
-			serial_path = '/dev/ttyACM0';
+			serial_path = config.engine.get('driver_port_linux');
 			break;
 
 		case 'darwin':
-			serial_path = '/dev/cu.usbmodem14221';
+			serial_path = config.engine.get('driver_port_osx');
 			break;
 
 		case 'win32':
-			serial_path = 'COM1';
-			break;
-				
 		case 'win64':
-			serial_path='COM1';
+			serial_path = config.engine.get('driver_port_windows');
 			break;
 
 		default:
@@ -40,7 +38,7 @@ function connect(callback) {
 	if(serial_path) {
 		exports.machine = new Machine(serial_path, callback);
 	} else {
-		typeof callback === "function" && callback(true, "No supported serial path for platform " + PLATFORM);
+		typeof callback === "function" && callback('No supported serial path for platform "' + PLATFORM + '"');
 		return null;
 	}
 }
@@ -60,10 +58,20 @@ function Machine(serial_path, callback) {
 	};
 
 	this.driver = new g2.G2();
-	this.driver.on("error", function(data) {log.error(data);});
+	
+	// Configure logging for errors with serial driver
+	this.driver.on("error", function(data) {
+		log.error(data);
+	});
+
 	this.driver.connect(serial_path, function(err, data) {
-		if(err){log.error(err);return;}
-		this.status.state = "idle";
+
+		// Set the initial state based on whether or not we got a valid connection to G2
+		if(err){
+			this.status.state = "disconnected";
+		} else {
+			this.status.state = "idle";
+		}
 
 		// Create runtimes for different functions/command languages
 		this.gcode_runtime = new GCodeRuntime();
@@ -71,21 +79,31 @@ function Machine(serial_path, callback) {
 		this.manual_runtime = new ManualRuntime();
 		this.passthrough_runtime = new PassthroughRuntime();
 
+		// GCode is the default runtime
 		this.setRuntime(this.gcode_runtime);
 
-		this.driver.requestStatusReport(function(err, result) {
-			typeof callback === "function" && callback(false, this);
-		}.bind(this));
+		if(err) {
+			typeof callback === "function" && callback(err);
+		} else {
+			this.driver.requestStatusReport(function(err, result) {
+				typeof callback === "function" && callback(null, this);
+			}.bind(this));
+		}
+
 	}.bind(this));
 }
 util.inherits(Machine, events.EventEmitter);
+
+Machine.prototype.isConnected = function() {
+	return this.status.state !== 'disconnected';
+}
 
 Machine.prototype.disconnect = function(callback) {
 	this.driver.disconnect(callback);
 }
 
 Machine.prototype.toString = function() {
-    return "[Machine Model on '" + this.driver.path + "']";
+	return "[Machine Model on '" + this.driver.path + "']";
 };
 
 Machine.prototype.gcode = function(string) {
@@ -108,18 +126,24 @@ Machine.prototype.runJob = function(job) {
 }
 
 Machine.prototype.runNextJob = function(callback) {
+	if(this.isConnected()) {
+
 	log.info("Running next job");
-	db.Job.dequeue(function(err, result) {
-		log.info(result)
-		if(err) {
-			log.error(err);
-			callback(err, null);
-		} else {
-			log.info('Running job ' + result)
-			this.runJob(result);
-			callback(null, result);
-		}
-	}.bind(this));
+		db.Job.dequeue(function(err, result) {
+			log.info(result)
+			if(err) {
+				log.error(err);
+				callback(err, null);
+			} else {
+				log.info('Running job ' + result)
+				this.runJob(result);
+				callback(null, result);
+			}
+		}.bind(this));
+	}
+	else {
+		callback("Cannot run next job: Driver is disconnected.")
+	}
 }
 
 Machine.prototype.runFile = function(filename) {
