@@ -137,7 +137,7 @@ define(function(require) {
 
 		$(".right-small .right-off-canvas-toggle").click( function() {
 			resizedocclick();
-			that.keypad(false);
+			//that.keypad(false);
 		});
 	};
 
