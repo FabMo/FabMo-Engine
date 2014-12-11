@@ -36,7 +36,7 @@ resizedoc = function(){
 	//Resize app-icon container, so the icon are centered
 	$("#app_menu_container").css(
 		"width",
-		$(".main-section, .app-section").width() - ($(".main-section, .app-section").width() % 132 )
+		$(".main-section").width() - ($(".main-section").width() % 132 )
 	);
 };
 
@@ -71,8 +71,9 @@ widgetToolsNetwork = function() {
 };
 
 resizedocclick = function(){
-	//Same function that resizedoc(), but inverse the class on "this.header", because it has not changed yet after the click on "#left-menu" or #right-menu
-	var l=0; var r=0;
+	console.log("click");
+	//Same function that resizedoc(), but inverse the class on ".main-section", because it has not changed yet after the click on "#left-menu" or #right-menu
+	var l=0; var r=0
 
 	if($("body").width()/parseFloat($("body").css("font-size"))>40.063) {
 		l=parseInt($("#left-menu").css("width"))+1;
@@ -85,6 +86,12 @@ resizedocclick = function(){
 
 	r=r+l;
 	$(".main-section, .app-section").css("width",$("body").width()-r+"px");
+
+	//Resize app-icon container, so the icon are centered
+	$("#app_menu_container").css(
+		"width",
+		$(".main-section").width() - ($(".main-section").width() % 132 )
+	);
 };
 
 
@@ -106,8 +113,8 @@ $(document).ready( function() {
 		animation: 150,
 		store: {
 		  // Get the order of elements. Called once during initialization. //
-		  get: function (sortable) {
-		      var order = localStorage.getItem(sortable.options.group);
+		  get: function (sortable) 
+{		      var order = localStorage.getItem(sortable.options.group);
 		      return order ? order.split('|') : [];
 		  },
 		  // Save the order of elements. Called every time at the drag end //

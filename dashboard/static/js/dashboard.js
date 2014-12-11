@@ -146,8 +146,8 @@ define(function(require) {
 		});
 
 		$(".right-small").click( function() {
+			that.keypad(true,false);
 			resizedocclick();
-			that.keypad(true);
 		});
 	};
 
