@@ -79,23 +79,15 @@ exports.CC = function(args) {
     // Error: Zero diameter circle
   }
 
-  var WBang = 450 - Bang;
-  if ( WBang > 360 || WBang === 360 ) { 
-    WBang -= 360;
-  } 
-  else if ( WBang < -360 || WBang === -360 ) {
-    WBang += 360;
-  }
-  var Bradians = WBang*0.01745329252;
+//log.debug("CC-Bang = " + Bang);
+//log.debug("CC-Eang = " + Eang);
 
-  var WEang = 450 - Eang;
-  if ( WEang > 360 || WEang === 360 ) { 
-    WEang -= 360;
-  }
-  else if ( WEang < -360 || WEang === -360 ) {
-    WEang += 360;
-  }
-  var Eradians = WEang*0.01745329252;
+  var Bradians = this.DegreesToRadians(Bang);
+
+  var Eradians = this.DegreesToRadians(Eang);
+
+//log.debug("CC-Bradians = " + Bradians);
+//log.debug("CC-Eradians = " + Eradians);
 
   // Find Center offset
   var radius = Dia/2 + (config.opensbp.get('cutterDia')/2 * comp);
@@ -104,9 +96,18 @@ exports.CC = function(args) {
   var xOffset = centerX - startX;
   var yOffset = centerY - startY;
 
+//log.debug("CC-radius = " + radius);
+//log.debug("CC-centerX = " + centerX);
+//log.debug("CC-centerY = " + centerY);
+//log.debug("CC-xOffset = " + xOffset);
+//log.debug("CC-yOffset = " + yOffset);
+
   // Find End point
-  var endX = centerX + radius * Math.cos(Eradians);
-  var endY = centerY + radius * Math.sin(Eradians);
+  var endX = centerX + (radius * Math.cos(Eradians));
+  var endY = centerY + (radius * Math.sin(Eradians));
+
+//log.debug("CC-endX = " + endX);
+//log.debug("CC-endY = " + endY);
 
   this.CG([undefined,endX,endY,xOffset,yOffset,OIT,Dir,Plg,reps,propX,propY,optCC,noPullUp,plgFromZero]);
 
@@ -146,24 +147,9 @@ exports.CP = function(args) {
     // Error: Zero diameter circle
   }
 
-  var WBang = 450 - Bang;
-  if ( WBang > 360 || WBang === 360 ) { 
-    WBang -= 360;
-  } 
-  else if ( WBang < -360 || WBang === -360 ) {
-    WBang += 360;
-  }
+  var Bradians = this.DegreesToRadians(Bang);
 
-  var Bradians = WBang*0.01745329252;
-
-  var WEang = 450 - Eang;
-  if ( WEang > 360 || WEang === 360 ) {
-    WEang -= 360;
-  }
-  else if ( WEang < -360 || WEang === -360 ) {
-    WEang += 360;
-  }
-  var Eradians = WEang*0.01745329252;
+  var Eradians = this.DegreesToRadians(Eang);
 
   // Find Center offset
   var radius = Dia/2 + (config.opensbp.get('cutterDia')/2 * comp);
@@ -191,6 +177,16 @@ exports.CP = function(args) {
 
 };
 
+exports.DegreesToRadians = function(AngleDeg){
+  var normAng = 450 - AngleDeg;
+  if ( normAng > 360 ) {
+    while (normAng > 360) { normAng -= 360; }
+  } 
+  else if ( normAng < 0 ) {
+    while (normAng < 0) { normAng += 360; }
+  }
+  return (normAng/180*Math.PI);
+};
 
 //	The CG command will cut a circle. This command closely resembles a G-code circle (G02 or G03)
 //		Though, this command has several added features that its G-code counterparts don't:
@@ -204,8 +200,6 @@ exports.CP = function(args) {
 //			  <No Pull Up after cut>,<Plunge from Z zero>
 //	
 exports.CG = function(args) {
-
-  log.debug("CG-args = " + args);
 
   var startX = this.cmd_posx;
   var startY = this.cmd_posy;
@@ -382,18 +376,39 @@ exports.interpolate_circle = function(startX,startY,startZ,endX,endY,Dir,plunge,
 
   if ( plunge !== 0 ) { SpiralPlunge = 1; }
 
+log.debug("centerX = " + centerX);
+log.debug("centerY = " + centerY);
+
   // Find the beginning and ending angles in radians. We'll use only radians from here on.
-  var Bang = Math.atan2(startX-centerX, startY-centerY);
-  var Eang = Math.atan2(endX-centerX, endY-centerY);
-  var inclAng = Bang - Eang;
+  var Bang = Math.atan2((centerY*(-1)), (centerX*(-1)));
+//  if (Bang < 0) { Bang += 2 * Math.PI };
+  var Eang = Math.atan2(endY+(startY+centerY),endX+(startX+centerX));
+//  if (Bang < 0) { Bang += 2 * Math.PI };
+  var inclAng;
+
+
+  if (Dir === 1) {
+    if (Bang < Eang) { inclAng  = 6.28318530717959 - (Eang - Bang); }
+    if (Bang > Eang) { inclAng = Bang - Eang; }
+    log.debug("Bang = " + Bang );
+    log.debug("Eang = " + Eang );    
+    log.debug("CW inclAng = " + inclAng);
+  }
+  else {
+    if (Bang < Eang) { inclAng = Eang + Bang; }
+    if (Bang > Eang) { inclAng = 6.28318530717959 - (Bang - Eang); }
+    log.debug("Bang = " + Bang );
+    log.debug("Eang = " + Eang );
+    log.debug("AW inclAng = " + inclAng);
+  }
 
 log.debug("startX = " + startX );
 log.debug("startY = " + startY );
 log.debug("endX = " + endX );
 log.debug("endY = " + endY );
 
-  if ( Math.abs(inclAng) < 0.00001 ) { 
-    inclAng =  6.28318530718; 
+  if (( Math.abs(inclAng) - 6.28318530717959 ) < 0.005 ) { 
+    inclAng =  6.28318530718 * Dir; 
   }
 
 log.debug("inclAng = " + inclAng );
@@ -404,11 +419,15 @@ log.debug("inclAng = " + inclAng );
   // Sagitta is the height of an arc from the chord
   var sagitta = radius - Math.sqrt(Math.pow(radius,2) - Math.pow((chordLen/2),2));
 
+log.debug("radius = " + radius );
+log.debug("chordLen = " + chordLen );
 log.debug("sagitta = " + sagitta );
 
   if (sagitta !== circleTol) {
     sagitta *= (sagitta/circleTol);
     chordLen = Math.sqrt(2*sagitta*radius-Math.pow(sagitta,2));
+    log.debug("chordLen = " + chordLen );
+    if (chordLen < 0.00025) { chordLen = 0.00025; }
   }
   var theta = Math.asin((0.5*chordLen)/radius) * 2;
 
@@ -421,27 +440,18 @@ log.debug("sagitta = " + sagitta );
     log.debug("theta = " + theta );
   }
 
-log.debug("chordLen = " + chordLen );
-log.debug("steps = " + steps );
+  log.debug("steps = " + steps );
 
   var zStep = plunge/steps;
 
-log.debug("zStep = " + zStep );
+  log.debug("zStep = " + zStep );
 
-  var nextAng = 0.0;
-  var nextX = 0.0;
-  var nextY = 0.0;
-  var nextZ = 0.0;
-  var outStr = "";
-
-  if (Dir === -1) {
-    theta *= -1;
-  }
+  var nextAng = 0.0; var nextX = 0.0; var nextY = 0.0; var nextZ = 0.0; var outStr = "";
 
   for ( i=1; i<=steps; i++) {
     nextAng = Bang + (i*theta);
-    nextX = radius * Math.sin(nextAng);
-    nextY = radius * Math.cos(nextAng);
+    nextX = radius * Math.sin(nextAng) * propX;
+    nextY = radius * Math.cos(nextAng) * propY;
     if (SpiralPlunge === 1) {
       nextZ = zStep * i;
     }
@@ -450,7 +460,7 @@ log.debug("zStep = " + zStep );
       outStr += ("Z" + nextZ);
     }
     outStr += ("F" + ( 60 * config.opensbp.get('movez_speed')));
-    log.debug("outStr = " + outStr);
+    log.debug(nextAng + " " + nextX + " " + nextY);
     this.emit_gcode( outStr);
   }
 };
