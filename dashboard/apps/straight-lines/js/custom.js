@@ -195,8 +195,8 @@ line.prototype.viewLine = function() {
 	str += "<tr class='" + (this.current ? 'current' : '') + "' id='" + this.id + "'>";
 	str += "<td>" + this.name + "</td>";
 	str += "<td>(" + this.x0.toString() + "," + this.y0.toString() + ") - (" + this.x1.toString() + "," + this.y1.toString() + ")</td>";
-	str += "<td class='edit'>E</td>";
-	str += "<td class='delete'>D</td>";
+	str += "<td class='edit'><span>E</span></td>";
+	str += "<td class='delete'><span>D</span></td>";
 	str += "</tr>";
 	return str;
 };

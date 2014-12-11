@@ -344,6 +344,7 @@ FabMoUI.prototype.updateStatus = function(){
 	that.tool.get_status(function(err, status){
 		if(!err){
 			that.tool.state=status.state;
+			console.log(satus);
 
 			var x = status.posx.toFixed(3);
 			var y = status.posy.toFixed(3);

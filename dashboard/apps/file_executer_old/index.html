@@ -1,119 +1,100 @@
-<html>
-<head>
+<!DOCTYPE html> <html> <head>
   <meta charset="utf-8">
-  <title>File Manager</title>
+  <title>File Manager App</title>
   <!-- From bootstrap -->
-  <link rel="stylesheet" href="./css/foundation.min.css">
+  <link rel="stylesheet" href="./css/bootstrap.min.css">
   <link rel="stylesheet" href="./css/normalize.css">
   <link rel="stylesheet" href="./css/style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-	<header class="grey"> <!-- Class can be "blue", "red", "grey", "orange" -->
-		<section>
-			<div class="app-title-container">
-				<h2>File Manager</h2>
-			</div>
-		</section>
-	</header>
-
-	<section class="container">
-		<div class="row title">
-			<div class="small-12 large-12 columns">
-				<h3>Files Manager</h3>
-			</div>
-		</div>
-
-		<div class="row tool-files-container">
-			<!-- Files LISTING -->
-			<table class="small-12" id="files">
-				<thead><tr><th class="small-7">Files on the tool</th><th class="small-5">Actions</th></tr></thead>
-		        <tbody class="files-listing"></tbody>
-			</table>
-		</div>
-
-		<div class="row submit-file">
-			<div class="small-12 columns">
-				<form id="add_file" action="/file" method="post" enctype="multipart/form-data">
-					<div class="row collapse postfix-round">
-						<div class="small-9 columns">
-						  	<input id='file_selector' type="file" name="file" data-filename-placement="inside" placeholder="Browse...">
-						</div>
-						<div class="small-3 columns">
-						  	<button type"submit" class="button postfix">Upload</button>
-						</div>
-					</div>
-				</form>
-			</div>
-		</div>
-	</section>
-
-	<section class="container">
-		<div class="row title">
-			<div class="small-12 columns">
-				<h3>Single G-Code</h3>
-			</div>
-		</div>
-		<div class="row">
+  <div class="container">
+      &nbsp;
+      <div class="panel panel-default">
+	  <div class="panel-heading app-heading">File manager</div>
+	  <div class="panel-body">
+		<table class="table table-hover table-bordered" id="files">
+		  <tr><th colspan="3">Files on the tool (click to run)</th></tr>
+		</table>
+		<strong>Upload a file...</strong>
+		<p>
+		<form id="add_file" action="/file" method="post" enctype="multipart/form-data">
+		  <div class="pull-left">
+			<input id='file_selector' type="file" name="file" data-filename-placement="inside" title="Browse...">
+		  </div>
+		  <div class="pull-right">
+			<button type="submit" class="btn btn-default btn-primary">
+				<span class="glyphicon glyphicon-upload"></span>Upload
+			</button>
+		  </div>
+		</form>
+		</p>
+	</div>
+	</div>
+	<div class="panel panel-default">
+		<div class="panel-heading app-heading">Single G-Code</div>
+		<div class="panel-body">
 			<form id="gcode-sender" action="/run" method="post" enctype="multipart/form-data" role="form" class="">
 				<input id="gcode-input" class="form-control input-lg" type="text" onclick="this.select();">
 			</form>
 		</div>
-	</section>
+	</div>
 
-	<section class="container">
-		<div class="row title">
-			<div class="small-12 columns">
-				<h3>Single OpenSBP Command</h3>
-			</div>
-		</div>
-		<div class="row">
+		<div class="panel panel-default">
+		<div class="panel-heading app-heading">Single OpenSBP Command</div>
+		<div class="panel-body">
 			<form id="sbp-sender" action="/run" method="post" enctype="multipart/form-data" role="form" class="">
 				<input id="sbp-input" class="form-control input-lg" type="text" onclick="this.select();">
 			</form>
 		</div>
-	</section>
-
-  </div>
+	</div>
 </div>
 
 
   <script src="./js/libs/jquery-1.10.2.js"></script>
-  <script src="./js/libs/foundation.min.js"></script>
+  <script src="./js/bootstrap.min.js"></script>
+  <script src="./js/libs/bootstrap.file-input.js"></script>
+  <script src="./js/FabMoUI-latest.js"></script>
   <script src="./js/FabMo-latest.js"></script>
   <script src="./js/dashboard.js"></script>
 
   
   <script type="text/javascript">
-	var machine, ui;
+  	var tool;
+  	var ui;
 
-      // Debug for now lets us know that we have a viable dashboard object
-      fabmoDashboard.getMachine(function(err, machine) {
-        machine = new FabMo(machine.ip, machine.port);
-      });
+  	fabmoDashboard.getMachine(function(err, machine) {
+  		tool = new FabMo(machine.ip, machine.port);
+  		ui = new FabMoUI(tool);
+	  	// Load the list of files available on the tool
+	  	refresh_files_list();
+  	})
 
 	$(document).ready(function(){
-	  //Foundation Init
-	  $(document).foundation();
-
-	  // Load the list of files available on the tool
-	  refresh_files_list();
+	  // Style the file input so it looks nice
+	  $('input[type=file]').bootstrapFileInput();
 	});
 
 
+	function gcode(string) {
+		tool.gcode(string,function(err,data){
+			if(!err) {
+				console.log('Success: ' + string);
+			} else {
+				console.log('Failure: ' + string);
+			}
+		});
+	}
+
 	function refresh_files_list(){
 	  // Load the list of files available on the tool
-	  var tool = machine;
-
 	  tool.list_files(function(err,files){
 	  	if(err){console.log(err);return;}
-
-		$(".files_list").remove();
-
+	$(".files_list").remove();
 		if(files.length !== 0)
 		{
 			$.each( files, function( key, val ) {
-			  $(".files-listing").append( "<tr class='files_list'>"+
+			  $("#files").append( "<tr class='files_list'>"+
 			"<td class='run-button' value='" + val._id + "'><a style='cursor: pointer;'>" + val.filename + "</a></td>" +
 			"<td class='view-button' value='" + val._id + "' style='text-align: right;width: 3%;'><span style='cursor: pointer;' class='glyphicon glyphicon-eye-open'></span></td>"+
 			"<td class='download-button' value='" + val._id + "' style='text-align: right;width: 3%;'><span style='cursor: pointer;' class='glyphicon glyphicon-download-alt'></span></td>" +
@@ -122,47 +103,45 @@
 			});
 		}
 		else{
-			$(".files-listing").append( "<tr class='files_list'>"+"<td class='no_file'> no files found on the machine </td></tr>");
+			$("#files").append( "<tr class='files_list'>"+"<td class='no_file'> no files found on the machine </td></tr>");
 		}
 	  });
 	}
 
 	$('#add_file').submit(function(e){
-		e.preventDefault();
-		tool = machine;
-			tool.upload_file($(this),function(err,file){
-			if(err){console.log(err);return;}
-			$('#file_selector').replaceWith($('#file_selector').clone(true)); //reset file field
-			$('#file_selector').prev().html('Browse for a file to upload...');
-				refresh_files_list();
-		});
+	e.preventDefault();
+		tool.upload_file($(this),function(err,file){
+		if(err){console.log(err);return;}
+		$('#file_selector').replaceWith($('#file_selector').clone(true)); //reset file field
+		$('#file_selector').prev().html('Browse for a file to upload...');
+			refresh_files_list();
 	});
+	});
+
 
 
 	$(' tbody').on( "click", 'tr .delete-button', function(e) {	
-		tool = machine;
-		tool.delete_by_id($(this).attr('value'),function(err) {
-			if(!err)	
-				refresh_files_list();
-			else
-				alert(err);
-		});
+	tool.delete_by_id($(this).attr('value'),function(err) {
+	if(!err)	
+		refresh_files_list();
+	else
+		alert(err);
+	});
    });
 
 	$(' tbody').on( "click", 'tr .download-button', function(e) {	
-		tool = machine;
-		tool.download_by_id($(this).attr('value'));
-	});
+	tool.download_by_id($(this).attr('value'));
+});
 
 	$(' tbody').on( "click", 'tr .run-button', function(e) {	
-		tool = machine;
-		tool.run_by_id($(this).attr('value'),function(err){
-			if(!err)	
-				console.log('file is running !');
-			else
-				alert(err);
-		});
+	tool.run_by_id($(this).attr('value'),function(err){
+	if(!err)	
+		console.log('file is running !');
+	else
+		alert(err);
 	});
+
+});
 
 	function flash_input(cls, value, duration) {
 		if(value === 'error') {
@@ -179,7 +158,6 @@
 	}
 
 	$('#gcode-sender').submit(function(e) {
-	tool = machine;
 	e.preventDefault();
 	tool.gcode($('#gcode-input').val(),function(err,data){
 		if(!err) {
@@ -193,9 +171,10 @@
 	});
 
 	$('#sbp-sender').submit(function(e) {
-	tool = machine;
 	e.preventDefault();
-	tool.sbp($('#sbp-input').val(),function(err,data){
+    cmd = $('#sbp-input').val();
+    alert(cmd);
+    tool.sbp(cmd,function(err,data){
 		if(!err) {
 			console.log('success');
 			flash_input('#sbp-sender', 'success', 500);
@@ -205,6 +184,7 @@
 		}
 	});
 	});
+
   </script>
 
 </body>

@@ -142,22 +142,6 @@ $(document).ready( function() {
 	//If we click on the "tool on network" button on the top-bar, they are shown / hidden
 	$("#widget-tools-network div").click( function() {widgetToolsNetwork(); });
 
-	//Change classes on status Button -> Maybe not used, or should be implemented in FabMoUI ???????
-	$('.fabmo-status').on('statechange',function(e,state){
-        var percent = $('.progress').text();
-        if( percent!==''){
-          $('.progress').html('<span class="meter" style="width:'+percent.toString()+';">');
-        }
-        if (state === 'running' || state === 'manual' || state === 'homing' || state==='probing')
-          $('.state').removeClass('success info default warning danger').addClass('success');
-        else if (state === 'paused' || state === 'passthrough' || state === 'limit')
-          $('.state').removeClass('success info default warning danger').addClass('warning');
-        else if (state === 'Error' || state === 'Disconnected')
-          $('.state').removeClass('success info default warning danger').addClass('error');
-        else
-          $('.state').removeClass('success info default warning danger').addClass('default');
-      });
-
 	//Define the positions of the dashboard notifications
 	toastr.options["positionClass"] = "toast-bottom-center";
 });
