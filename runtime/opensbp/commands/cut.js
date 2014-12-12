@@ -450,8 +450,8 @@ log.debug("sagitta = " + sagitta );
 
   for ( i=1; i<=steps; i++) {
     nextAng = Bang + (i*theta);
-    nextX = radius * Math.sin(nextAng) * propX;
-    nextY = radius * Math.cos(nextAng) * propY;
+    nextX = (radius * Math.cos(nextAng)) * propX;
+    nextY = (radius * Math.sin(nextAng)) * propY;
     if (SpiralPlunge === 1) {
       nextZ = zStep * i;
     }
