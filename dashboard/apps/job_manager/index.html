@@ -37,7 +37,9 @@
 			<div class="small-9 medium-7 large-7 columns current-job-item">
 				<p class="running-job-description"></p>
 			</div>
-			<div class="small-3 medium-2 large-1 columns current-job-submitted"><p>12'20"</p></div>
+			<div class="small-3 medium-2 large-1 columns current-job-submitted">
+				<p class="running-job-time"></p>
+			</div>
 			<div class="small-12 medium-3 large-4 columns progress secondary round">
 				<span class="meter progress" style="width: 70%"></span>
 			</div>
@@ -111,6 +113,7 @@
   <script type="text/javascript">
   	var tool;
   	var ui;
+  	var x; //SetInterval
 
 	function refresh_jobs_list(){
 		// Load the list of files available on the tool
@@ -181,13 +184,21 @@
 			refresh_jobs_list();
 
 			ui.on('status', function(status) {
-				console.log(status.job)
+				console.log(status.job);
 				if(status.job) {
 					$(".current-job-container").show(500);
 					$(".running-job-name").html(status.job.name);
 					$(".running-job-description").html(status.job.description);
+					x = setTimeout(function(){
+						var tps = (Date.now()-status.job.started_at).toString();
+						tps = parseInt(tps.substr(0,tps.length-3));
+						tps = ((tps-tps%60)/60).toString() + "'" + tps%60 + '"';
+						$(".running-job-time").html(tps);
+					},1000);
 				} else {
+					refresh_jobs_list(); //to try later
 					$(".current-job-container").hide(500);
+					clearInterval(x);
 				}
 			});
 		});
