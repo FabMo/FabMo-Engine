@@ -20,17 +20,14 @@
 
 	<section class="container current-job-container fabmo-file-control" style="display:none">
 		<div class="row title">
-			<div class="small-8 large-8 columns">
+			<div class="small-7 medium-9 large-10 columns">
 				<h3 class="running-job-name filename"></h3>
 			</div>
-			<div class="small-2 large-2 columns fabmo-pause-button btn">
-				<a class="small button warning">P</a>
-			</div>
-			<div class="small-2 large-2 columns fabmo-resume-button hide btn">
-				<a class="small button success">R</a>
-			</div>
-			<div class="small-2 large-2 columns fabmo-stop-button btn">
-				<a class="small button alert">S</a>
+			<div class="small-5 medium-3 large-2 columns btn">
+				<a class="small small-6 columns button fabmo-pause-button warning">P</a>
+				<a class="small small-6 columns button fabmo-resume-button hide Success">R</a>
+				<a class="small small-6 columns button fabmo-stop-button btn alert">S</a>
+				</div>
 			</div>
 		</div>
 		<div class="row">
@@ -41,22 +38,19 @@
 				<p class="running-job-time"></p>
 			</div>
 			<div class="small-12 medium-3 large-4 columns progress secondary round">
-				<span class="meter progress" style="width: 70%"></span>
+				<span class="meter progress" style="width: 0%"></span>
 			</div>
 		</div>
 	</section>
 
 	<section class="container">
 		<div class="row title">
-			<div class="small-5 medium-5 large-8 columns">
+			<div class="small-7 medium-9 large-10 columns">
 				<h3>Pending Jobs</h3>
 			</div>
-			<div class="small-7 medium-7 large-4 columns">
-				<div class="button-bar right">
-					<ul class="button-group">
-					    <li><a class="small button run-next">Run Next</a></li>
-					    <li><a class="small button clear-jobs">Clear Queue</a></li>
-					</ul>
+			<div class="small-5 medium-3 large-2 columns btn">
+				<a class="small small-6 columns button success run-next">►</a>
+				<a class="small small-6 columns button secondary clear-jobs">X</a>
 				</div>
 			</div>
 		</div>
@@ -145,7 +139,7 @@
 				$(".jobs-listing").append(html);
 			});
 		});
-	}
+	};
 
 	$('#submit_job').submit(function(e){
 		e.preventDefault();
@@ -194,6 +188,7 @@
 						tps = parseInt(tps.substr(0,tps.length-3));
 						tps = ((tps-tps%60)/60).toString() + "'" + tps%60 + '"';
 						$(".running-job-time").html(tps);
+						$(".meter.progress").css("width", ((status.line/status.nb_lines)*100).toString() + "%" );
 					},1000);
 				} else {
 					refresh_jobs_list(); //to try later

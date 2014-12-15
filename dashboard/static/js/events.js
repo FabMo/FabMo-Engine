@@ -71,7 +71,6 @@ widgetToolsNetwork = function() {
 };
 
 resizedocclick = function(){
-	console.log("click");
 	//Same function that resizedoc(), but inverse the class on ".main-section", because it has not changed yet after the click on "#left-menu" or #right-menu
 	var l=0; var r=0
 
@@ -103,6 +102,8 @@ $(document).ready( function() {
         open_method: 'overlap_single', 
       }
     });
+
+    console.log("Body Font size, for rem checking : " + $("body").css("font-size"));
 
 	//Sortable app icon (not used now, just for play !) //Disabled
 	/*

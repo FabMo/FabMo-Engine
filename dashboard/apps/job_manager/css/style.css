@@ -1,4 +1,4 @@
-/* Foundation Overload */
+/* Foundation OverWrite */
 
 body {
   background: #eee;
@@ -10,26 +10,25 @@ h1, h2, h3, h4, h5, h6 {
 
 .alert-box .close {
   color: #eee;
+  filter: alpha(opacity=95); /* For IE8 and earlier */
   opacity: 0.95;
 }
 
 .reveal-modal {
-  padding: 0.825rem;
+  padding: 13px;
+  padding: 0.8125rem;
   min-height: none;
 }
 
 .reveal-modal .row.title {
   border-bottom: 1px solid #ccc;
+  margin-bottom: 10px;
   margin-bottom: 0.625em;
 }
 
-.button-group>li {
-  margin:0;
-}
+.button-group>li { margin: 0; }
 
-.button-bar .button-group {
-  margin-right:0;
-}
+.button-bar .button-group { margin-right: 0; }
 
 .button-bar .button-group li:first-child a {
   border-top-left-radius: 5px;
@@ -42,22 +41,31 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 button.small, .button.small {
+  padding-top: 13px;
   padding-top: 0.8125rem;
+  padding-bottom: 13px;
   padding-bottom: 0.8125rem;
 }
 
 @media only screen and (max-width: 40.063em) {
   button.small, .button.small {
+    padding-top: 9px;
     padding-top: 0.5625rem;
+    padding-bottom: 9px;
     padding-bottom: 0.5625rem;
+    padding-right: 18px;
     padding-right:  1.125rem;
+    padding-left: 18px;
     padding-left: 1.125rem;
   }
 }
 
-table { margin-bottom: 0.5em; }
+table {
+  margin-bottom: 8px; 
+  margin-bottom: 0.5em;
+}
 
-td.btn { padding: 0;}
+.btn { padding: 0;}
 
 td input, td select {margin:0 !important;}
 
@@ -67,16 +75,18 @@ td.switch {
 
 td .button {
   margin-bottom: 0;
+  padding: 13px 24px;
   padding: 0.8125rem 1.5rem;
 }
 
 .tabs dd.active a, .tabs .tab-title.active a {
   background: #666;
-  color: white;
+  color: #fff;
 }
 
 .tabs dd > a, .tabs .tab-title > a {
   color: #666;
+  padding: 8px 22px;
   padding: 0.5rem 1.375rem;
 }
 
@@ -84,8 +94,10 @@ header { padding: 0 3rem;}
 
 input[type="file"] {
   color: #444;
+  height: 21px;
   height: 2.3125rem;
   padding: 8px;
+  padding: 0.5rem;
 }
 
 input[type="file"]::-webkit-file-upload-button {
@@ -101,9 +113,14 @@ input[type="file"]::-webkit-file-upload-button {
   background: #313366;
   border: 1px solid #272952;
   padding: 8px;
+  padding: 0.5rem;
   outline: none;
-  white-space: nowrap;
+  #fff-space: nowrap;
+  -moz-user-select: none;
   -webkit-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
   cursor: pointer;
   width:33%;
   text-align: center;
@@ -125,8 +142,17 @@ input[type="file"]:active {
 }
 
 input[type="file"]:active::before {
-  background: -webkit-linear-gradient(top, #e3e3e3, #f9f9f9); 
+  background: #e3e3e3; /* Old browsers */
+  background: -moz-linear-gradient(top,  #e3e3e3 0%, #f9f9f9 100%); /* FF3.6+ */
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#e3e3e3), color-stop(100%,#f9f9f9)); /* Chrome,Safari4+ */
+  background : -webkit-linear-gradient(top, #e3e3e3 0%, #f9f9f9 100%); /* Chrome10+,Safari5.1+ */
+  background: -o-linear-gradient(top,  #e3e3e3 0%,#f9f9f9 100%); /* Opera 11.10+ */
+  background: -ms-linear-gradient(top,  #e3e3e3 0%,#f9f9f9 100%); /* IE10+ */
+  background: linear-gradient(to bottom,  #e3e3e3 0%,#f9f9f9 100%); /* W3C */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e3e3e3', endColorstr='#f9f9f9',GradientType=0 ); /* IE6-9 */
 }
+
+
 
 
 /* Custom Style */
@@ -134,71 +160,91 @@ input[type="file"]:active::before {
 /*
 *** General ***
 */
+.hidden, .hide { display:none; }
 
-.hidden { display:none; }
+
+
 
 /*
 *** Header ***
 */
 
-.blue {background-color:#313366 !important;}
-.orange {background-color: #dd8728 !important;}
-.red {background-color: #9c210c !important;}
-.grey {background-color: #666 !important;}
+.blue   { background-color:#313366 !important;  }
+.orange { background-color: #dd8728 !important; }
+.red    { background-color: #9c210c !important; }
+.grey   { background-color: #666 !important;    }
 
-header h2 {color:#fff; margin-top:0.375rem; margin-bottom: 0.375rem;}
+header h2 {
+  color:#fff;
+  margin-top: 6px;
+  margin-top: 0.375rem;
+  margin-bottom : 6px;
+  margin-bottom: 0.375rem;
+}
 
 @media only screen and (max-width: 40.063em) {
-  header h2 { margin:0; padding-top: 0.125em; padding-bottom: 0.125em;}
-  header section {margin:0;}
+  header h2 {
+    margin:0;
+    padding-top: 2px;
+    padding-top: 0.125em;
+    padding-bottom: 2px;
+    padding-bottom: 0.125em;
+  }
+
+  header section  {margin: 0; }
 }
+
+
+
 
 /*
 *** Section ***
 */
 
 section {
+  margin: 20px 40px;
   margin: 1.25rem 2.5rem;
   max-width: 960px;
+  max-width: 60em;
   margin-left:auto;
   margin-right:auto;
 }
 
 section .title {
-  border-bottom : 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 10px;
   margin-bottom: 0.625em;
 }
 
-section .title .button { margin-bottom: 0;}
+section .title .button { margin-bottom: 0; }
 
 section .center { text-align: center; }
 
 section.container {
   background-color: #fff;
+  -moz-box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.15);
   -webkit-box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.15);
-  border:1px solid #ccc;
+  box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.15);
+  border: 1px solid #ccc;
+  padding: 10px 8px;
   padding: 0.625rem 0.5rem;
+  padding-bottom: 2px;
   padding-bottom: 0.125rem;
 }
 
 section.current-job-container p {
+  font-size: 17px;
   font-size: 1.0625rem;
   margin-bottom: 0;
   color: #666;
 }
 
 section.current-job-container .btn {
-  padding-left:0;
-  padding-right:0;
+  padding-left: 0;
+  padding-right: 0;
 }
 
-section.current-job-container .button {
-  width: 100%;
-}
-
-section .no-jobs-item {
-  cursor: pointer;
-}
+section .no-jobs-item { cursor: pointer; }
 
 @media only screen and (max-width: 64.063em) and (min-width: 40.063em){
   section.container {
@@ -211,16 +257,22 @@ section .no-jobs-item {
   section { border-radius: 5px; }
 
   section.container {
+    padding: 13px;
     padding:0.8125rem;
+    padding-bottom: 5px;
     padding-bottom:0.3125rem;
   }
 }
 
 section > .row:not(.title) , .separator{
+  padding-top: 6px;
   padding-top : 0.375rem;
+  padding-bottom: 6px;
   padding-bottom: 0.375rem;
+  margin-bottom: 10px;
   margin-bottom: 0.625em;
   border-bottom: 1px solid #ccc;
+  line-height: 40rem;
   line-height: 2.5rem;
   vertical-align: middle;
 }
@@ -229,6 +281,9 @@ section > .row:last-child, section > .content:last-child  > .row {
   padding-bottom: 0;
   border-bottom: none;
 }
+
+
+
 
 /*
 *** Jobs ***
@@ -239,26 +294,40 @@ section > .row:last-child, section > .content:last-child  > .row {
 .jobs-listing .option {
   padding-right: 0px;
   padding-left: 0px;
+  margin-right: 15px;
   margin-right: 0.9375em;
+  margin-left: -15px;
   margin-left: -0.9375em;
   background: #dd8728;
   text-align: center;
   color: #eee;
 }
 
+
+
+
+
 /*
 *** Colors ***
 */
 td[type="color"] div {
+  width: 32px;
   width: 2rem;
+  height: 32px;
   height: 2rem;
   display: inline-block;
+  margin-right: 12px;
   margin-right: 0.75rem;
+  border-radius: 16px;
   border-radius: 1rem;
+  -moz-box-shadow: 0 0 3px rgba(0,0,0,0.4);
+  -webkit-box-shadow: 0 0 3px rgba(0,0,0,0.4);
   box-shadow: 0 0 3px rgba(0,0,0,0.4);
 }
 
 td[type="color"] div.selected {
+  -moz-box-shadow: inset 0 0 1rem 1rem rgba(255,255,255,0.5);
+  -webkit-box-shadow: inset 0 0 1rem 1rem rgba(255,255,255,0.5);
   box-shadow: inset 0 0 1rem 1rem rgba(255,255,255,0.5);
 }
 
@@ -269,6 +338,7 @@ td[type="color"] div:hover {
 td[type="color"] div.add {
   background : url('../img/icon_plus_cross.png') #fff no-repeat center;
   background-size: 16px;
+  background-size: 1rem;
 }
 
 
@@ -277,31 +347,36 @@ td[type="color"] div.add {
 */
 
 tr.current {
+  background-color: rgb(221,135,40);
   background-color: rgba(221,135,40,0.8);
 }
 
-tr.current td { color:white; }
+tr.current td { color:#fff; }
 
 td.delete:hover, td.edit:hover {
   cursor:pointer;
 }
 
 td.delete, td.edit {
-  padding: 0 0.2rem;
+  padding: 0 3px;
+  padding: 0 0.1875rem;
 }
 
 td.delete span {
   background-color: #9c210c;
   color: #fff;
+  border-radius: 16px;
   border-radius: 1rem;
-  padding: 0.3rem 0.5rem;
+  padding: 5px 8px;
+  padding: 0.3125rem 0.5rem;
 }
 
 td.edit span{
   background-color: #666;
   color:#fff;
   border-radius: 1rem;
-  padding: 0.3rem 0.5rem;
+  padding: 5px 8px;
+  padding: 0.3125rem 0.5rem;
 }
 
 
