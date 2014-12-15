@@ -221,6 +221,7 @@ exports.CG = function(args) {
 	var currentZ;
 	var outStr;
   var res = 5;
+  var proportion = 0;
 
   log.debug("start X:" + startX );
   log.debug("start Y:" + startY );
@@ -231,11 +232,13 @@ exports.CG = function(args) {
   log.debug("center Y:" + centerY );
   log.debug("I-O-T:" + OIT );
   log.debug("Dir:" + Dir );
+  log.debug("optCG:" + optCG );
 
   if ((propX < 0 && propY > 0) || (propX > 0 && propY < 0 )) { 
     Dir *= (-1);
   }
   if (propX === propY){
+    proportion = 1;
     if (propX !== 1 || propY !== 1) {
       endX = startX + (centerX * Math.abs(propX)) + ((endX - (startX + centerX)) * Math.abs(propX));
       endY = startY + (centerY * Math.abs(propY)) + ((endY - (startX + centerY)) * Math.abs(propY));
@@ -259,10 +262,10 @@ exports.CG = function(args) {
 
   if ( optCG == 2 ) {    	
   	circRadius = Math.sqrt((centerX * centerX) + (centerY * centerY));
-  	PocketAngle = Math.atan2(centerY, centerX);								// Find the angle of the step over between passes
+  	PocketAngle = Math.atan2(centerY, centerX);							// Find the angle of the step over between passes
   	stepOver = config.opensbp.get('cutterDia') * ((100 - config.opensbp.get('pocketOverlap')) / 100);	// Calculate the overlap
-  	Pocket_StepX = stepOver * Math.cos(PocketAngle);						// Calculate the stepover in X based on the radius of the cutter * overlap
-  	Pocket_StepY = stepOver * Math.sin(PocketAngle);						// Calculate the stepover in Y based on the radius of the cutter * overlap
+  	Pocket_StepX = stepOver * Math.cos(PocketAngle);				// Calculate the stepover in X based on the radius of the cutter * overlap
+  	Pocket_StepY = stepOver * Math.sin(PocketAngle);				// Calculate the stepover in Y based on the radius of the cutter * overlap
   }
 
   if ( plgFromZero == 1 ) {										// If plunge depth is specified move to that depth * number of reps
@@ -270,12 +273,12 @@ exports.CG = function(args) {
   }
 
   for (i=0; i<reps;i++){
-  	if (Plg !== 0 && optCG < 3 ) {										// If plunge depth is specified move to that depth * number of reps
+  	if (Plg !== 0 && optCG < 3 ) {					  // If plunge depth is specified move to that depth * number of reps
   		currentZ += Plg;
   		this.emit_gcode( "G1Z" + currentZ + "F" + ( 60 *  config.opensbp.get('movez_speed')) );
    	}
   
-   	if (optCG == 2) { 															// Pocket circle from the outside inward to center
+   	if (optCG === 2) { 												// Pocket circle from the outside inward to center
    		// Loop passes until overlapping the center
    		for (j=0; (Math.abs(Pocket_StepX * j) <= circRadius) && (Math.abs(Pocket_StepY * j) <= circRadius) ; j++){
   	   	if ( j > 0 ) {
@@ -298,7 +301,7 @@ exports.CG = function(args) {
                                  );
         } 
   	   	else {
-          if ( Dir == 1 ) { outStr = "G2"; }	  // Clockwise circle/arc
+          if ( Dir === 1 ) { outStr = "G2"; }	  // Clockwise circle/arc
    			  else { outStr = "G3"; }	              // CounterClockwise circle/arc
    			  outStr = outStr + "X" + (startX + (j * Pocket_StepX)).toFixed(res) + 
     		   		 		          "Y" + (startY + (j * Pocket_StepY)).toFixed(res) +
@@ -316,7 +319,7 @@ exports.CG = function(args) {
         this.interpolate_circle(startX,startY,startZ,endX,endY,Dir,Plg,centerX,centerY,propX,propY);
       }
     	else {
-        if (Dir == 1 ) { outStr = "G2X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res); }	// Clockwise circle/arc
+        if (Dir === 1 ) { outStr = "G2X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res); }	// Clockwise circle/arc
         else { outStr = "G3X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res); }			// CounterClockwise circle/arc
 			
 		    if (Plg !== 0 && optCG === 3 ) { 
@@ -324,7 +327,7 @@ exports.CG = function(args) {
 		    	currentZ += Plg;
 		    } // Add Z for spiral plunge
 		    outStr += "I" + (centerX).toFixed(res) + "J" + (centerY).toFixed(res) + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
-        this.emit_gcode(outStr); 
+        this.emit_gcode(outStr);
 	    	
         if( i+1 < reps && ( endX != startX || endY != startY ) ){					//If an arc, pullup and jog back to the start position
     		  this.emit_gcode( "G0Z" + safeZCG );
@@ -334,13 +337,13 @@ exports.CG = function(args) {
     }
   }
 
-  if (optCG == 4 ) { // Add bottom circle if spiral with bottom clr is specified
+  if (optCG === 4 ) { // Add bottom circle if spiral with bottom clr is specified    
     if( endX != startX || endY != startY ) {	//If an arc, pullup and jog back to the start position
     	this.emit_gcode( "G0Z" + safeZCG );
     	this.emit_gcode( "G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res));
     	this.emit_gcode( "G1Z" + currentZ + " F" + ( 60 * config.opensbp.get('movez_speed')));		
     }
-    if ( Math.abs(propX) !== Math.abs(propY) ) {      // calculate out to an interpolated ellipse
+    if ( proportion === 1 ) {      // calculate out to an interpolated ellipse
       this.interpolate_circle(startX,startY,startZ,endX,endY,Dir,Plg,centerX,centerY,propX,propY);
     }
     else {
@@ -364,6 +367,9 @@ exports.CG = function(args) {
 
   this.cmd_posx = endX;
 	this.cmd_posy = endY;
+
+log.debug("GG - END");
+
 };
 
 //  Interpolate_Circle - is used to interpolate a circle that has uneven proportions as an ellipse.
@@ -384,12 +390,16 @@ log.debug("centerY = " + centerY);
 //  if (Bang < 0) { Bang += 2 * Math.PI };
   var Eang = Math.atan2(endY+(startY+centerY),endX+(startX+centerX));
 //  if (Bang < 0) { Bang += 2 * Math.PI };
+  log.debug("startX + CenterX = " + (startX + centerX) );
+  log.debug("startY + CenterY = " + (startY + centerY) );    
+  log.debug("Bang degrees = " + (Bang/Math.PI)*180 );
+  log.debug("Eang degrees = " + (Eang/Math.PI)*180 );    
   var inclAng;
 
 
   if (Dir === 1) {
     if (Bang < Eang) { inclAng  = 6.28318530717959 - (Eang - Bang); }
-    if (Bang > Eang) { inclAng = Bang - Eang; }
+    if (Bang > Eang) { inclAng = Eang - Bang; }
     log.debug("Bang = " + Bang );
     log.debug("Eang = " + Eang );    
     log.debug("CW inclAng = " + inclAng);
@@ -407,11 +417,10 @@ log.debug("startY = " + startY );
 log.debug("endX = " + endX );
 log.debug("endY = " + endY );
 
-  if (( Math.abs(inclAng) - 6.28318530717959 ) < 0.005 ) { 
-    inclAng =  6.28318530718 * Dir; 
+  if ( Math.abs(inclAng) < 0.005 ) { 
+    log.debug("inclAng = " + inclAng + " Less than 0.005 radians: Returning" );
+    return;
   }
-
-log.debug("inclAng = " + inclAng );
 
   var circleTol = 0.001;
   var radius = Math.sqrt(Math.pow((centerX-startX),2)+Math.pow((centerY-startY),2));
@@ -427,19 +436,17 @@ log.debug("sagitta = " + sagitta );
     sagitta *= (sagitta/circleTol);
     chordLen = Math.sqrt(2*sagitta*radius-Math.pow(sagitta,2));
     log.debug("chordLen = " + chordLen );
-    if (chordLen < 0.00025) { chordLen = 0.00025; }
+    if (chordLen < 0.001) { chordLen = 0.001; }
   }
   var theta = Math.asin((0.5*chordLen)/radius) * 2;
-
-  log.debug("theta = " + theta );
 
   var remain = Math.abs(inclAng) % Math.abs(theta);
   var steps = Math.floor(Math.abs(inclAng)/Math.abs(theta));
   if ((remain) !== 0){
     theta = inclAng/steps;
-    log.debug("theta = " + theta );
   }
 
+  log.debug("theta = " + theta );
   log.debug("steps = " + steps );
 
   var zStep = plunge/steps;
@@ -450,8 +457,8 @@ log.debug("sagitta = " + sagitta );
 
   for ( i=1; i<=steps; i++) {
     nextAng = Bang + (i*theta);
-    nextX = (radius * Math.cos(nextAng)) * propX;
-    nextY = (radius * Math.sin(nextAng)) * propY;
+    nextX = (radius * Math.cos(nextAng));// * propX;
+    nextY = (radius * Math.sin(nextAng));// * propY;
     if (SpiralPlunge === 1) {
       nextZ = zStep * i;
     }
@@ -460,9 +467,10 @@ log.debug("sagitta = " + sagitta );
       outStr += ("Z" + nextZ);
     }
     outStr += ("F" + ( 60 * config.opensbp.get('movez_speed')));
-    log.debug(nextAng + " " + nextX + " " + nextY);
+//    log.debug("nextAng = " + nextAng + " nextX = " + nextX + " nextY = " + nextY);
     this.emit_gcode( outStr);
   }
+log.debug("Interpolate - END")
 };
 
 //	The CR command will cut a rectangle. It will generate the necessary G-code to profile and
