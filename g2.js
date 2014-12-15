@@ -595,6 +595,9 @@ G2.prototype.runSegment = function(data, callback) {
 	for(var i=0; i<lines.length; i++) {
 		line_count += 1;
 		line = lines[i].trim().toUpperCase();
+		if(callback) {
+			callback.line = line_count;
+		}
 		this.gcode_queue.enqueue(line);
 	}
 
