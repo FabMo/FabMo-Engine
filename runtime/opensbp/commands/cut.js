@@ -214,7 +214,7 @@ exports.CG = function(args) {
   var Plg = args[7] !== undefined ? args[7] : 0;
   var reps = args[8] !== undefined ? args[8] : 1;
   var propX = args[9] !== undefined ? args[9] : 1;
-  var propY = args[10] !== undefined ? [10] : 1;
+  var propY = args[10] !== undefined ? args[10] : 1;
   var optCG = args[11] !== undefined ? args[11] : 0;
   var noPullUp = args[12] !== undefined ? args[12] : 0;
   var plgFromZero = args[13] !== undefined ? args[13] : 0;
@@ -368,7 +368,7 @@ exports.CG = function(args) {
   this.cmd_posx = endX;
 	this.cmd_posy = endY;
 
-log.debug("GG - END");
+//log.debug("GG - END");
 
 };
 
@@ -382,55 +382,50 @@ exports.interpolate_circle = function(startX,startY,startZ,endX,endY,Dir,plunge,
 
   if ( plunge !== 0 ) { SpiralPlunge = 1; }
 
-log.debug("centerX = " + centerX);
-log.debug("centerY = " + centerY);
-
   // Find the beginning and ending angles in radians. We'll use only radians from here on.
   var Bang = Math.atan2((centerY*(-1)), (centerX*(-1)));
-//  if (Bang < 0) { Bang += 2 * Math.PI };
   var Eang = Math.atan2(endY+(startY+centerY),endX+(startX+centerX));
-//  if (Bang < 0) { Bang += 2 * Math.PI };
-  log.debug("startX + CenterX = " + (startX + centerX) );
-  log.debug("startY + CenterY = " + (startY + centerY) );    
-  log.debug("Bang degrees = " + (Bang/Math.PI)*180 );
-  log.debug("Eang degrees = " + (Eang/Math.PI)*180 );    
+//  log.debug("startX + CenterX = " + (startX + centerX) );
+//  log.debug("startY + CenterY = " + (startY + centerY) );    
+//  log.debug("Bang degrees = " + (Bang/Math.PI)*180 );
+//  log.debug("Eang degrees = " + (Eang/Math.PI)*180 );    
   var inclAng;
 
 
   if (Dir === 1) {
     if (Bang < Eang) { inclAng  = 6.28318530717959 - (Eang - Bang); }
     if (Bang > Eang) { inclAng = Eang - Bang; }
-    log.debug("Bang = " + Bang );
-    log.debug("Eang = " + Eang );    
-    log.debug("CW inclAng = " + inclAng);
+//    log.debug("Bang = " + Bang );
+//    log.debug("Eang = " + Eang );    
+//    log.debug("CW inclAng = " + inclAng);
   }
   else {
     if (Bang < Eang) { inclAng = Eang + Bang; }
     if (Bang > Eang) { inclAng = 6.28318530717959 - (Bang - Eang); }
-    log.debug("Bang = " + Bang );
-    log.debug("Eang = " + Eang );
-    log.debug("AW inclAng = " + inclAng);
+//    log.debug("Bang = " + Bang );
+//    log.debug("Eang = " + Eang );
+//    log.debug("AW inclAng = " + inclAng);
   }
 
-log.debug("startX = " + startX );
-log.debug("startY = " + startY );
-log.debug("endX = " + endX );
-log.debug("endY = " + endY );
+//log.debug("startX = " + startX );
+//log.debug("startY = " + startY );
+//log.debug("endX = " + endX );
+//log.debug("endY = " + endY );
 
   if ( Math.abs(inclAng) < 0.005 ) { 
-    log.debug("inclAng = " + inclAng + " Less than 0.005 radians: Returning" );
+//    log.debug("inclAng = " + inclAng + " Less than 0.005 radians: Returning" );
     return;
   }
 
   var circleTol = 0.001;
-  var radius = Math.sqrt(Math.pow((centerX-startX),2)+Math.pow((centerY-startY),2));
+  var radius = Math.sqrt(Math.pow(centerX,2)+Math.pow(centerY,2));
   var chordLen = config.opensbp.get('cRes');
   // Sagitta is the height of an arc from the chord
   var sagitta = radius - Math.sqrt(Math.pow(radius,2) - Math.pow((chordLen/2),2));
 
-log.debug("radius = " + radius );
-log.debug("chordLen = " + chordLen );
-log.debug("sagitta = " + sagitta );
+//log.debug("radius = " + radius );
+//log.debug("chordLen = " + chordLen );
+//log.debug("sagitta = " + sagitta );
 
   if (sagitta !== circleTol) {
     sagitta *= (sagitta/circleTol);
@@ -446,19 +441,19 @@ log.debug("sagitta = " + sagitta );
     theta = inclAng/steps;
   }
 
-  log.debug("theta = " + theta );
-  log.debug("steps = " + steps );
+//  log.debug("theta = " + theta );
+//  log.debug("steps = " + steps );
 
   var zStep = plunge/steps;
 
-  log.debug("zStep = " + zStep );
+//  log.debug("zStep = " + zStep );
 
-  var nextAng = 0.0; var nextX = 0.0; var nextY = 0.0; var nextZ = 0.0; var outStr = "";
+  var nextAng = theta; var nextX = startX; var nextY = startY; var nextZ = startZ; var outStr = "";
 
   for ( i=1; i<=steps; i++) {
     nextAng = Bang + (i*theta);
-    nextX = (radius * Math.cos(nextAng));// * propX;
-    nextY = (radius * Math.sin(nextAng));// * propY;
+    nextX = (radius * Math.cos(nextAng)) * propX;
+    nextY = (radius * Math.sin(nextAng)) * propY;
     if (SpiralPlunge === 1) {
       nextZ = zStep * i;
     }
@@ -467,10 +462,18 @@ log.debug("sagitta = " + sagitta );
       outStr += ("Z" + nextZ);
     }
     outStr += ("F" + ( 60 * config.opensbp.get('movez_speed')));
-//    log.debug("nextAng = " + nextAng + " nextX = " + nextX + " nextY = " + nextY);
-    this.emit_gcode( outStr);
+    log.debug("outStr = " + outStr);
+//    log.debug("i = " + i +"nextAng = " + nextAng + " nextX = " + nextX + "propX = " + propX + " nextY = " + nextY + "propY = " + propY);
+//    this.emit_gcode( outStr);
   }
-log.debug("Interpolate - END")
+
+  this.cmd_posx = nextX;
+  this.cmd_posy = nextY;
+
+//log.debug("endX = " + nextX.toFixed(4));
+//log.debug("endY = " + nextY.toFixed(4));
+//log.debug("Interpolate - END");
+
 };
 
 //	The CR command will cut a rectangle. It will generate the necessary G-code to profile and
