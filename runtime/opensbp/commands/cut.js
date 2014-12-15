@@ -464,7 +464,7 @@ exports.interpolate_circle = function(startX,startY,startZ,endX,endY,Dir,plunge,
     outStr += ("F" + ( 60 * config.opensbp.get('movez_speed')));
     log.debug("outStr = " + outStr);
 //    log.debug("i = " + i +"nextAng = " + nextAng + " nextX = " + nextX + "propX = " + propX + " nextY = " + nextY + "propY = " + propY);
-//    this.emit_gcode( outStr);
+    this.emit_gcode( outStr);
   }
 
   this.cmd_posx = nextX;
