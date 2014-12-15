@@ -190,9 +190,7 @@
 
             <!-- ************ File Control Widget ************ -->
             <div id="job-info" class="widget">
-              <ul class="off-canvas-list fabmo-file-control">
-                <li class="hide file-info"><label><span class="filename"></span></label></li>
-                <li class="hide file-info"><span class="progress"></span></li>    
+              <ul class="off-canvas-list fabmo-file-control fabmo-status">
                 <li>
                   <div class="row">
                     <div class="small-6 columns control">
@@ -206,6 +204,8 @@
                     </div>
                   </div>
                 </li>
+                <li class="hide file-info"><label><span class="filename"></span></label></li>
+                <li class="hide file-info progress secondary"><span class="meter progress" style="width:0%"></span></li>  
               </ul>
             </div>
 
@@ -233,17 +233,19 @@
         </div>
       </div>
 
-    <script src="js/libs/jquery.js"></script>
-    <script src="js/libs/foundation.min.js"></script>
-    <script src="js/libs/toastr.min.js"></script>
-    <script src="js/libs/underscore.js"></script>
-    <script src="js/events.js"></script>
-    <script src="js/libs/backbone.js"></script>
-    <script src="js/libs/FabMo-latest.js"></script>
-    <script src="js/libs/FabMoUI-latest.js"></script>    
-    <script src="js/libs/sortable.js"></script>
+    <script type="text/javascript" src="js/libs/jquery.js">         </script>
+    <script type="text/javascript" src="js/libs/jquery.touchy.js">  </script>
+    <script type="text/javascript" src="js/libs/touche.js">         </script>
+    <script type="text/javascript" src="js/libs/foundation.min.js"> </script>
+    <script type="text/javascript" src="js/libs/toastr.min.js">     </script>
+    <script type="text/javascript" src="js/libs/underscore.js">     </script>
+    <script type="text/javascript" src="js/events.js">              </script>
+    <script type="text/javascript" src="js/libs/backbone.js">       </script>
+    <script type="text/javascript" src="js/libs/FabMo-latest.js">   </script>
+    <script type="text/javascript" src="js/libs/FabMoUI-latest.js"> </script>    
+    <script type="text/javascript" src="js/libs/sortable.js">       </script>
     
-    <script data-main="js/app.js" src="js/libs/require.js"></script>
+    <script data-main="js/app.js" src="js/libs/require.js">         </script>
 
   </body>
 </html>

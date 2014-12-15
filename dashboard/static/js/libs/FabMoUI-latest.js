@@ -351,16 +351,21 @@ FabMoUI.prototype.updateStatus = function(){
 			that.updateText($(that.posX_selector), x);
 			that.updateText($(that.posY_selector), y);
 			that.updateText($(that.posZ_selector), z);
+
+			//Current File or job
 			if(status.current_file) {
+				console.log("File");
 				$(that.file_info_div_selector).removeClass('hide');
-				$(that.filename_selector).html(status.current_file);
+				$(that.filename_selector).html(status.job.name!="" ? status.job.name : status.current_file);
 				var prog = ((status.line/status.nb_lines)*100).toFixed(2);
-				that.updateText($(that.progress_selector),prog + '%');
-			} else {
+				$(that.progress_selector).css("width",prog.toString() + "%");
+			}
+			else {
 				$(that.file_info_div_selector).addClass('hide');
 				$(that.filename_selector).empty();
 				$(that.progress_selector).empty();
 			}
+
 			$(that.status_div_selector).trigger('statechange',status.state);
 			if(status.state === 'idle') {
 				that.allowKeypad();

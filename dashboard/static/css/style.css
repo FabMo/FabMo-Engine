@@ -810,6 +810,23 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	font-size: 16px;
 	font-size: 1rem;
 }
+#job-info .file-info > label {
+	background-color: #eee;
+	color: #666;
+	border-top: 0px;
+	text-align: center;
+}
+#job-info .file-info > label > span {
+	font-size: 1.375em;
+	font-weight: normal;
+}
+#job-info .file-info {
+	-moz-box-shadow: 0 1px 6px rgba(0,0,0,0.25);
+	-webkit-box-shadow: 0 1px 6px rgba(0,0,0,0.25);
+	box-shadow: 0 1px 6px rgba(0,0,0,0.25);
+	padding-left: 0 !important;
+	padding-right: 0 !important;
+}
 
 
 /* ********** Icon apps grid ********** */
