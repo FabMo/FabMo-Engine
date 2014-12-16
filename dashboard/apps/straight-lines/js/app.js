@@ -13,6 +13,8 @@
 var pi = 3.14159265358979323846264338327950288419716939937510582;
 var s = null;
 var Tasks = [] ;
+var toolPath = null;
+var backPath = null;
 
 
 //On Load Init
@@ -21,8 +23,6 @@ $(document).ready(function(){
 	s = new settings();
 	s.synchForm(); //Also synch view
 });
-
-
 
 
 /*

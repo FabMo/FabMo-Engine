@@ -9,6 +9,18 @@ define(function(require) {
 	var context = require('context');
 	var dashboard = require('dashboard');
 
+	Hammer = require("libs/hammer");
+
+	/*
+	jQuery = require("libs/jquery");
+
+	var hammertime = new Hammer($("body"));
+	hammertime.on('swipe', function(ev) {
+	    console.log(ev);
+	    alert('swipe');
+	});
+	*/
+
 	// The webkit module deals with node-specific functionality (detection service, etc)
 	//var webkit = require('node-webkit/webkit');
 
