@@ -368,8 +368,6 @@ exports.CG = function(args) {
   this.cmd_posx = endX;
 	this.cmd_posy = endY;
 
-//log.debug("GG - END");
-
 };
 
 //  Interpolate_Circle - is used to interpolate a circle that has uneven proportions as an ellipse.
@@ -379,41 +377,24 @@ exports.CG = function(args) {
 exports.interpolate_circle = function(startX,startY,startZ,endX,endY,Dir,plunge,centerX,centerY,propX,propY) {
 
   var SpiralPlunge = 0;
-
   if ( plunge !== 0 ) { SpiralPlunge = 1; }
 
   // Find the beginning and ending angles in radians. We'll use only radians from here on.
   var Bang = Math.atan2((centerY*(-1)), (centerX*(-1)));
   var Eang = Math.atan2(endY+(startY+centerY),endX+(startX+centerX));
-//  log.debug("startX + CenterX = " + (startX + centerX) );
-//  log.debug("startY + CenterY = " + (startY + centerY) );    
-//  log.debug("Bang degrees = " + (Bang/Math.PI)*180 );
-//  log.debug("Eang degrees = " + (Eang/Math.PI)*180 );    
   var inclAng;
-
 
   if (Dir === 1) {
     if (Bang < Eang) { inclAng  = 6.28318530717959 - (Eang - Bang); }
     if (Bang > Eang) { inclAng = Eang - Bang; }
-//    log.debug("Bang = " + Bang );
-//    log.debug("Eang = " + Eang );    
-//    log.debug("CW inclAng = " + inclAng);
   }
   else {
     if (Bang < Eang) { inclAng = Eang + Bang; }
     if (Bang > Eang) { inclAng = 6.28318530717959 - (Bang - Eang); }
-//    log.debug("Bang = " + Bang );
-//    log.debug("Eang = " + Eang );
-//    log.debug("AW inclAng = " + inclAng);
   }
 
-//log.debug("startX = " + startX );
-//log.debug("startY = " + startY );
-//log.debug("endX = " + endX );
-//log.debug("endY = " + endY );
-
   if ( Math.abs(inclAng) < 0.005 ) { 
-//    log.debug("inclAng = " + inclAng + " Less than 0.005 radians: Returning" );
+    log.debug("Returning form interpolation - arc too small to cut!");
     return;
   }
 
@@ -423,10 +404,6 @@ exports.interpolate_circle = function(startX,startY,startZ,endX,endY,Dir,plunge,
   // Sagitta is the height of an arc from the chord
   var sagitta = radius - Math.sqrt(Math.pow(radius,2) - Math.pow((chordLen/2),2));
 
-//log.debug("radius = " + radius );
-//log.debug("chordLen = " + chordLen );
-//log.debug("sagitta = " + sagitta );
-
   if (sagitta !== circleTol) {
     sagitta *= (sagitta/circleTol);
     chordLen = Math.sqrt(2*sagitta*radius-Math.pow(sagitta,2));
@@ -434,46 +411,31 @@ exports.interpolate_circle = function(startX,startY,startZ,endX,endY,Dir,plunge,
     if (chordLen < 0.001) { chordLen = 0.001; }
   }
   var theta = Math.asin((0.5*chordLen)/radius) * 2;
-
   var remain = Math.abs(inclAng) % Math.abs(theta);
   var steps = Math.floor(Math.abs(inclAng)/Math.abs(theta));
+
   if ((remain) !== 0){
     theta = inclAng/steps;
   }
 
-//  log.debug("theta = " + theta );
-//  log.debug("steps = " + steps );
-
   var zStep = plunge/steps;
-
-//  log.debug("zStep = " + zStep );
-
   var nextAng = theta; var nextX = startX; var nextY = startY; var nextZ = startZ; var outStr = "";
 
   for ( i=1; i<=steps; i++) {
     nextAng = Bang + (i*theta);
     nextX = (radius * Math.cos(nextAng)) * propX;
     nextY = (radius * Math.sin(nextAng)) * propY;
-    if (SpiralPlunge === 1) {
-      nextZ = zStep * i;
-    }
     outStr = "G1X" + nextX + "Y" + nextY;
     if ( SpiralPlunge === 1 ) { 
-      outStr += ("Z" + nextZ);
+      nextZ = zStep * i;
+      outStr += ("Z" + nextZ); 
     }
     outStr += ("F" + ( 60 * config.opensbp.get('movez_speed')));
-    log.debug("outStr = " + outStr);
-//    log.debug("i = " + i +"nextAng = " + nextAng + " nextX = " + nextX + "propX = " + propX + " nextY = " + nextY + "propY = " + propY);
+//    log.debug("outStr = " + outStr);
     this.emit_gcode( outStr);
   }
-
   this.cmd_posx = nextX;
   this.cmd_posy = nextY;
-
-//log.debug("endX = " + nextX.toFixed(4));
-//log.debug("endY = " + nextY.toFixed(4));
-//log.debug("Interpolate - END");
-
 };
 
 //	The CR command will cut a rectangle. It will generate the necessary G-code to profile and
