@@ -103,8 +103,6 @@ $(document).ready( function() {
       }
     });
 
-    console.log("Body Font size, for rem checking : " + $("body").css("font-size"));
-
 	//Sortable app icon (not used now, just for play !) //Disabled
 	/*
 	var bar = document.getElementById('app_menu_container');
