@@ -67,7 +67,6 @@ AppManager.prototype.copyApp = function(src, dest, callback) {
 		var readPackageInfo = function() {
 			try {
 					s = fs.readFileSync(pkg_info_path);
-					console.log(s.toString('utf8'))
 					var package_info = JSON.parse(s);
 					var app_info = {'name':package_info.name,
 									'icon_path':tmp_app_path+package_info.icon,
@@ -85,8 +84,6 @@ AppManager.prototype.copyApp = function(src, dest, callback) {
 		}
 
 		var exists = fs.existsSync(tmp_app_path);
-		log.debug(tmp_app_path);
-
 		
 		if(exists) {
 			log.debug('Not copying app "' + src + '" because it already exists.');
@@ -143,7 +140,6 @@ AppManager.prototype.decompressApp = function(src, dest,callback) {
 AppManager.prototype.getAppPaths = function(callback) {
 	fs.readdir(this.app_directory, function(err, files) {
 		user_files = files.map(function(file) { return this.app_directory + '/' + file;}.bind(this));
-		console.log(this.system_app_directory)
 		fs.readdir(this.system_app_directory, function(err, files) {
 			system_files = files.map(function(file) { return this.system_app_directory + '/' + file;}.bind(this));
 			callback(null, system_files.concat(user_files));
@@ -155,7 +151,6 @@ AppManager.prototype.getAppPaths = function(callback) {
  */
 AppManager.prototype.loadApps =  function(callback) {
 	this.getAppPaths(function(err,files){
-		console.log(files);
 		async.mapSeries(files, 
 			function(file, callback) {
 				this.loadApp(file, function(err, result) {
