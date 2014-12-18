@@ -1,0 +1,11 @@
+{
+	"name":"Straight Lines",
+	"main":"./index.html",
+	"icon":"icon.png",
+	"icon_color":"orange",
+	"version":"0.0.1",
+	"author":"Antoine Delhaye",
+	"target":[],
+	"website":"http://shopbottools.com",
+	"id":"straight-lines"
+}

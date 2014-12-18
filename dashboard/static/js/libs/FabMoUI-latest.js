@@ -5,7 +5,7 @@ function FabMoUI(tool, options){
 	this.prefix = '';
 	// useful if several tools in the same app.
 
-	this.refresh = 100;
+	this.refresh = 50;
 	// define the status refresh time.
 
 	this.keypad = true;
@@ -298,6 +298,10 @@ FabMoUI.prototype.Keypad = function(){
 		e1.which = 34; 
 		$(that.keypad_div_selector).trigger(e1);
 	});
+
+	window.addEventListener('touchend',function(event) {
+  		alert('START (' + gnStartX + ', ' + gnStartY + ')   END (' + gnEndX + ', ' + gnEndY + ')');
+	},false);
 };
 
 FabMoUI.prototype.setMenuOpen = function(){
@@ -347,21 +351,27 @@ FabMoUI.prototype.updateStatus = function(){
 			that.updateText($(that.posX_selector), x);
 			that.updateText($(that.posY_selector), y);
 			that.updateText($(that.posZ_selector), z);
+
+			//Current File or job
 			if(status.current_file) {
+				console.log("File");
 				$(that.file_info_div_selector).removeClass('hide');
-				$(that.filename_selector).html(status.current_file);
+				$(that.filename_selector).html(status.job.name!="" ? status.job.name : status.current_file);
 				var prog = ((status.line/status.nb_lines)*100).toFixed(2);
-				that.updateText($(that.progress_selector),prog + '%');
-			} else {
+				$(that.progress_selector).css("width",prog.toString() + "%");
+			}
+			else {
 				$(that.file_info_div_selector).addClass('hide');
 				$(that.filename_selector).empty();
 				$(that.progress_selector).empty();
 			}
+
 			$(that.status_div_selector).trigger('statechange',status.state);
 			if(status.state === 'idle') {
 				that.allowKeypad();
 				$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
 				$(that.status_div_selector).removeClass('fabmo-status-idle');
+				$(".tools-current > li a").removeClass('paus err disc');
 				$(that.state_selector).html('Idle');
 				if(that.file_control)
 				{
@@ -374,6 +384,7 @@ FabMoUI.prototype.updateStatus = function(){
 				that.forbidKeypad();
 				$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
 				$(that.status_div_selector).removeClass('fabmo-status-running');
+				$(".tools-current > li a").removeClass('paus disc').addClass('err');
 				$(that.state_selector).html('' + status.state);
 				if(that.file_control)
 				{
@@ -386,6 +397,7 @@ FabMoUI.prototype.updateStatus = function(){
 				that.allowKeypad();
 				$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
 				$(that.status_div_selector).removeClass('fabmo-status-running');
+				$(".tools-current > li a").removeClass('disc err').addClass('paus');
 				$(that.state_selector).html('' + status.state);
 				if(that.file_control)
 				{
@@ -394,10 +406,10 @@ FabMoUI.prototype.updateStatus = function(){
 					$(that.pause_button_selector).addClass('hide');
 				}
 			}
-			else if(status.state == 'paused') {
-				that.forbidkeypad();
+			else if(status.state === 'paused') {
 				$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
 				$(that.status_div_selector).removeClass('fabmo-status-paused');
+				$(".tools-current > li a").removeClass('paus disc err').addClass('paus');
 				$(that.state_selector).html('' + status.state);
 				if(that.file_control)
 				{
@@ -406,19 +418,21 @@ FabMoUI.prototype.updateStatus = function(){
 					$(that.resume_button_selector).removeClass('hide');
 				}
 			} 
-			else if(status.state == 'passthrough') {
+			else if(status.state === 'passthrough') {
 				that.forbidkeypad();
+				$(".tools-current > li a").removeClass('paus disc err').addClass('paus');
 				$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
 				$(that.status_div_selector).addClass('fabmo-status-passthrough');
 				$(that.state_selector).html('passthrough');
+				$(that.stop_button_selector).addClass('hide');
 				$(that.pause_button_selector).addClass('hide');
-				$(that.pause_button_selector).addClass('hide');
-				$(that.pause_button_selector).addClass('hide');
+				$(that.resume_button_selector).addClass('hide');
 			}
 			else if(status.state == 'limit') {
 				that.forbidkeypad();
 				$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
 				$(that.status_div_selector).removeClass('fabmo-status-error');
+				$(".tools-current > li a").removeClass('paus err').addClass('disc');
 				$(that.state_selector).html(status.state);
 				if(that.file_control)
 				{
@@ -428,12 +442,14 @@ FabMoUI.prototype.updateStatus = function(){
 				}
 			}
 			else {
+				$(".tools-current > li a").removeClass('paus err').addClass('disc');
 				that.forbidkeypad();
 				console.log('Unknown status');
 			}
 		}
 		else if(err == that.tool.default_error.no_device){
 			that.forbidKeypad();
+			$(".tools-current > li a").removeClass('paus err').addClass('disc');
 			delete this;
 			$(that.posX_selector).html('X.XXX');
 			$(that.posY_selector).html('X.XXX');
@@ -452,6 +468,7 @@ FabMoUI.prototype.updateStatus = function(){
 		}
 		else{
 			that.forbidKeypad();
+			$(".tools-current > li a").removeClass('paus err').addClass('disc');
 			delete this;
 			$(that.posX_selector).html('X.XXX');
 			$(that.posY_selector).html('X.XXX');

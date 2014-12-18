@@ -1,0 +1,352 @@
+<!DOCTYPE html> 
+<html> 
+<head>
+	<meta charset="utf-8">
+	<title>Straight Lines</title>
+
+	<!-- CSS standardisation & inclusion -->
+	<link rel="stylesheet" href="./css/foundation.min.css">
+	<link rel="stylesheet" href="./css/normalize.css">
+	<link rel="stylesheet" href="./css/style.css">
+	<link rel="stylesheet" href="./css/custom.css">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+	<!-- Header -->
+	<header class="orange"> <!-- Class can be "blue", "red", "grey", "orange" -->
+		<section>
+			<div class="app-title-container">
+				<h2>Straight Lines</h2>
+			</div>
+		</section>
+	</header>
+
+	<!-- Main Section (app content) -->
+	<section class="container current-job-container">
+
+		<!-- First Row = Settings / Tasks selection -->
+		<div class="row">
+			<div class="small-12 columns">
+				<dl class="tabs" data-tab>
+				  <dd class="active"><a href="#project_conf">Settings</a></dd>
+				  <dd><a href="#project_content">Jobs</a></dd>
+				</dl>
+			</div>
+		</div>
+
+		<div class="tabs-content">
+
+		<!-- Second Row = Settings -->
+		<div class="content active" id="project_conf">
+			<div class="row ">
+				<div class="small-12 medium-6 large-4 columns">
+					<div class="row">
+						<div class="small-12 columns">
+							<h4>Project</h4>
+						</div>
+						<div class="small-6 columns">
+							<label>X Size :
+							<input type="text" value="6" id="s_x">
+							</label>
+						</div>
+						<div class="small-6 columns">
+							<label>Y Size :
+							<input type="text" value="8" id="s_y">
+							</label>
+						</div>
+						<div class="small-12 columns">
+							<label>Thickness :
+							<input type="text" value="0.3" id="s_z">
+							</label>
+						</div>
+					</div>
+				</div>
+				<div class="small-12 medium-6 large-4 columns">
+					<div class="row">
+						<div class="small-12 columns">
+							<h4>Cut</h4>
+						</div>
+						<div class="small-6 columns">
+							<label>Cut Depth :
+							<input type="text" value="0.1" id="s_dz">
+							</label>
+						</div>
+						<div class="small-6 columns">
+							<label>Bit Diameter :
+							<input type="text" value="0.125" id="s_bit_d">
+							</label>
+						</div>
+						<div class="small-12 columns">
+							<label>Cut Speed (in/min) :
+							<input type="text" value="40" id="s_cut_speed">
+							</label>
+						</div>
+					</div>
+				</div>
+				<div class="small-12 large-4 columns">
+					<div class="row">
+						<div class="small-12 columns">
+							<h4>Offset</h4>
+						</div>
+						<div class="small-6 columns">
+							<label>X offset :
+							<input type="text" value="0" id="s_x0">
+							</label>
+						</div>
+						<div class="small-6 columns">
+							<label>Y offset :
+							<input type="text" value="0" id="s_y0">
+							</label>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="small-12 columns">
+					<div class="small button" id="default-settings">Default</div>
+					<div class="small button" id="save-settings">Save Settings</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Third Row =  -->
+		<div class="content" id="project_content">
+			<div class="row ">
+				<div class="small-12 medium-6 large-4 columns separator">
+					<div class="row">
+						<div class="small-7 columns">
+							<h3>Add a line</h3>
+
+						</div>
+						<div class="small-5 columns">
+							<div class="small button right secondary" id="add-line">Add</div>
+						</div>
+					</div>
+					<form>
+						<div class="row ">
+							<div class="small-12 columns">
+								<label>Line Name :
+								<input type="text" placeholder="Name" id="line_name">
+								</label>
+							</div>
+							<div class="small-6 columns">
+								<label>X0 :
+								<input type="text" value="0.000" id="line_x0">
+								</label>
+							</div>
+							<div class="small-6 columns">
+								<label>Y0 :
+								<input type="text" value="0.000" id="line_y0">
+								</label>
+							</div>
+							<div class="small-6 columns">
+								<label>X1 :
+								<input type="text" value="2.000" id="line_x1">
+								</label>
+							</div>
+							<div class="small-6 columns">
+								<label>Y1 :
+								<input type="text" value="1.000" id="line_y1">
+								</label>
+							</div>
+							<div class="small-12 columns center">
+								<Label>Bit Position</Label>
+							</div>
+							<div class="small-4 columns center">
+								<Label>Left
+								<div class="switch small">
+									<input id="line_left" type="radio" checked name="line_side" value="1">
+									<label for="line_left"></label>
+								</div>
+								</Label>
+							</div>
+							<div class="small-4 columns center">
+								<Label>Center
+								<div class="switch small">
+									<input id="line_center" type="radio" name="line_side" value="3">
+									<label for="line_center"></label>
+								</div>
+								</Label>
+							</div>
+							<div class="small-4 columns center">
+								<Label>Right
+								<div class="switch small">
+									<input id="line_right" type="radio" name="line_side" value="2">
+									<label for="line_right"></label>
+								</div>
+								</Label>
+							</div>
+						</div>
+					</form>
+				</div>
+				<div class="small-12 medium-6 large-4 columns separator">
+					<div class="row">
+						<div class="small-7 columns">
+							<h3>Jobs List</h3>
+						</div>
+						<div class="small-5 columns">
+							<div class="small button right alert" id="reset">Reset</div>
+						</div>
+					</div>
+					<div class= "row">
+						<table class="small-12 columns">
+							<thead>
+								<tr>
+									<th class="small-5">Name</th>
+									<th class="small-5">X0,Y0 - X1,Z1</th>
+									<th class="small-1">E</th>
+									<th class="small-1">X</th>
+								</tr>
+							</thead>
+							<tbody class="list-lines-container"></tbody>
+						</table>
+					</div>
+				</div>
+
+				<div class="small-12 medium-12 large-4 columns separator">
+					<div class="row">
+						<div class="small-12 columns">
+							<h3>Grid</h3>
+						</div>
+					</div>
+					<div class="row">
+						<div class="small-12 columns">
+							<canvas id="myCanvas" ></canvas>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="small-12 columns">
+					<button class="right success" id="run">Run List</button>
+				</div>
+			</div>
+		</div>
+	</section>
+
+  <!-- Javascript inclusions -->
+  <script type="text/javascript" src="./js/libs/jquery-1.10.2.js"></script>
+  <script type="text/javascript" src="./js/libs/foundation.min.js"></script>
+  <script type="text/javascript" src="./js/libs/paper-full.js"></script>
+
+  <script type="text/javascript" src="./js/app.js"></script>
+  <script type="text/javascript" src="./js/custom.js"></script>
+
+  <!-- Include dashboard.js, will be removed later -->
+  <script type="text/javascript" src="./js/FabMo-latest.js"></script>
+  <script type="text/javascript" src="./js/dashboard.js"></script>
+
+  <!-- Main App's Javascript -->
+  <script type="text/javascript">
+
+	var machine, ui;
+	// Debug for now lets us know that we have a viable dashboard object
+	fabmoDashboard.getMachine(function(err, machine) {
+		machine = new FabMo(machine.ip, machine.port);
+		//ui = new FabMoUI(machine);
+	});
+
+	setGCode = function(s,tasks) {
+		var code = new gcode();
+
+		//Do each line in more than 1 pass
+		$.each(tasks, function(index,l){
+			code.line(l.t_x0,l.t_y0,s.z0,l.t_x1,l.t_y1,-s.z);
+		});
+		
+		return code.getGc();
+	};
+
+	/********** User Interface Actions **********/
+
+	//Add a task
+	$("#add-line").click(function(){
+		if($("#line_name").data("cid")) {
+			Tasks.save($("#line_name").data("cid"));
+		}
+		else {
+			Tasks.addLine();
+		}
+		//Test
+		drawCanvas();
+	});
+
+	//Delete all the tasks
+	$("#reset").click(function() {
+		Tasks.reset();
+	});
+
+	function listenClickTasks(){
+		//Remove a task
+		$(".list-lines-container .delete").click(function() {
+			Tasks.remove($(this).parent().attr("id"));
+		});
+
+		//Edit a task
+		$(".list-lines-container .edit").click(function(){
+			Tasks.edit($(this).parent().attr("id"));
+		});
+	}
+		
+	//Run all the tasks
+	$("#run").click(function(){
+		var c = setGCode(s,Tasks);
+		//dashboard.addJob(c,s);
+		fabmoDashboard.submitJob(c, {
+				'name' : 'Straight Lines',
+				'description' : 'Cut ' + Tasks.length.toString() + ' lines',
+                'filename' : 'straight_lines.nc'        
+        })
+	});
+
+	//OnLoad Init
+	$(document).ready(function(){
+		//Foundation Init
+		$(document).foundation();
+
+		//Get Tasks from storage (if stored)
+		//L = dashboard.getAppSetting("straight-lines","Tasks") ? dashboard.getAppSetting("straight-lines","Tasks") : [];
+		console.log(Tasks);
+
+		//Init Canbas
+		paper.install(window);
+		paper.setup('myCanvas');
+
+		var canvasWidth = 281;
+		toolPath = new Path();
+
+		// Give the stroke a color
+		toolPath.strokeColor = '#ddd';
+		toolPath.strokeWidth = parseInt((canvasWidth/s.x)*s.bit_d);
+		toolPath.add(new Point(0, 0), new Point(200, 50));
+		
+		initCanvas();
+	});
+
+	/*
+
+	function initCanvas(){
+		var i = 0;
+
+		var canvasWidth = $("#myCanvas").width();
+		var canvasHeight = $("myCanvas").width();
+
+		backPath = new Path();
+		backPath.strokeColor = '#eee';
+		backPath.strokeWidth = 1;
+	}
+
+	function drawCanvas(){
+		var canvasWidth = $("#myCanvas").width();
+		var canvasHeight = $("myCanvas").width();
+
+		console.log(canvasWidth);
+
+		// Create a Paper.js Path to draw a line into it:
+		toolPath.add(new Point(0, 0), new Point(200, 50));
+	}
+	*/
+</script>
+
+</body>
+</html>

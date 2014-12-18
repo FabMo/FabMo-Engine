@@ -9,6 +9,18 @@ define(function(require) {
 	var context = require('context');
 	var dashboard = require('dashboard');
 
+	Hammer = require("libs/hammer");
+
+	/*
+	jQuery = require("libs/jquery");
+
+	var hammertime = new Hammer($("body"));
+	hammertime.on('swipe', function(ev) {
+	    console.log(ev);
+	    alert('swipe');
+	});
+	*/
+
 	// The webkit module deals with node-specific functionality (detection service, etc)
 	//var webkit = require('node-webkit/webkit');
 
@@ -44,12 +56,13 @@ define(function(require) {
 				{
 					ChooseBestWayToConnect(context.remoteMachines.models[0].attributes,function(ip,port){
 						// Once connected, update the dashboard with the all of the connection information
-						delete dashboard.machine;
-						dashboard.machine = null;
-						delete dashboard.ui;
-						dashboard.ui = null;
 						dashboard.machine = new FabMo(ip, port);
-						dashboard.ui= new FabMoUI(dashboard.machine);
+						if (!dashboard.machine) {
+							dashboard.ui= new FabMoUI(dashboard.machine);
+						}
+						else {
+							dashboard.ui.tool = dashboard.machine;
+						}
 						context.bindKeypad(dashboard.ui);
 						context.remoteMachines.forEach(function(item) {
 							item.set("current","");
@@ -77,12 +90,13 @@ define(function(require) {
 								port : fabmo.port
 							})
 						]);
-						delete dashboard.machine;
-						dashboard.machine = null;
-						delete dashboard.ui;
-						dashboard.ui = null;
-						dashboard.machine = fabmo;
-						dashboard.ui = new FabMoUI(fabmo);
+						dashboard.machine = new FabMo(ip, port);
+						if (!dashboard.machine) {
+							dashboard.ui= new FabMoUI(dashboard.machine);
+						}
+						else {
+							dashboard.ui.tool = dashboard.machine;
+						}
 						context.bindKeypad(dashboard.ui);
 					});
 				}
@@ -103,12 +117,13 @@ define(function(require) {
 		})
 	]);
 
-	delete dashboard.machine;
-	dashboard.machine = null;
-	delete dashboard.ui;
-	dashboard.ui = null;
 	dashboard.machine = new FabMo(window.location.hostname, window.location.port);
-	dashboard.ui = new FabMoUI(dashboard.machine);
+	if (!dashboard.ui) {
+		dashboard.ui= new FabMoUI(dashboard.machine);
+	}
+	else {
+		dashboard.ui.tool = dashboard.machine;
+	}
 	context.bindKeypad(dashboard.ui);
 
  	console.log("Event listener added to iframe");

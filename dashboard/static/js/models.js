@@ -60,7 +60,7 @@ define(function(require) {
 			network: [],
 			server_port: 8080,
 			current:'',
-			state: '' //state = status : ''=green=OK : 'err'=red=Trying to connect, or error to connec : 'disc'=grey=Not connected
+			state: '' //state = status : ''=green=OK : 'err'=red=Trying to connect, or error to connec : 'disc'=grey=Not connected, 'pause' = task paused or manual control
 		},
 		sync : function(method, model, option) {} // Override sync because this is a local model	
 	});

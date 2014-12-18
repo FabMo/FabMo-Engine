@@ -20,7 +20,7 @@ var STAT_CYCLING = 8;
 var STAT_HOMING = 9;
 
 // Should take no longer than CMD_TIMEOUT to do a get or a set operation
-var CMD_TIMEOUT = 500;
+var CMD_TIMEOUT = 1000;
 
 // When jogging, "keepalive" jog commands must arrive faster than this interval (ms)
 // This can be slowed down if necessary for spotty connections, but a slow timeout means
@@ -601,6 +601,9 @@ G2.prototype.runSegment = function(data, callback) {
 	for(var i=0; i<lines.length; i++) {
 		line_count += 1;
 		line = lines[i].trim().toUpperCase();
+		if(callback) {
+			callback.line = line_count;
+		}
 		this.gcode_queue.enqueue(line);
 	}
 

@@ -103,9 +103,11 @@ define(function(require) {
 
 		},
 		show : function() {
+			$(".main-section").show();
 			$(this.el).show();
 		},
 		hide : function(arg) {
+			$(".main-section").hide();
 			$(this.el).hide();
 		},
 		setModel : function(model) {

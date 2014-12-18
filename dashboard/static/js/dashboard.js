@@ -12,6 +12,7 @@ define(function(require) {
 		this.ui = null;
 
 		this.keyCommands();
+		this.checkDashboardSettings();
 
 		//Refresh of the tool status on the dashboard
 		this.refresh = 500; // define the tool connection refresh time (ms)
@@ -106,13 +107,23 @@ define(function(require) {
 	}
 
 	// Open and close the right menu
-	Dashboard.prototype.bindRightMenu = function() {
+	Dashboard.prototype.bindRightMenu = function(mouv) {
 		that=this;
 		if($("#main").hasClass("offcanvas-overlap-left")){
-			that.closeRightMenu();
+			if(mouv) {
+				that.closeRightMenu();
+			}
+			else {
+				that.ui.setMenuClosed();
+			}
 		}
 		else {
-			that.openRightMenu();
+			if(mouv){
+				that.openRightMenu();
+			}
+			else {
+				that.ui.setMenuOpen();
+			}
 		}
 	}
 
@@ -121,7 +132,7 @@ define(function(require) {
 		that=this;
 		$(document).keydown(function(e){
 			if (e.which == 75) {
-				that.keypad(true);
+				that.keypad(true,true);
 			}
 
 			//Development only : Run the DRO function with a callback, with "d" shortcode
@@ -134,17 +145,17 @@ define(function(require) {
 			}
 		});
 
-		$(".right-small .right-off-canvas-toggle").click( function() {
+		$(".right-small").click( function() {
+			that.keypad(true,false);
 			resizedocclick();
-			that.keypad(false);
 		});
 	};
 
-	Dashboard.prototype.keypad = function(test) {
+	Dashboard.prototype.keypad = function(test,mouv) {
 		that=this;
 		if (that.machine) {
 			if(that.ui.statusKeypad() && test) {
-				that.bindRightMenu();
+				that.bindRightMenu(mouv);
 			}
 			else that.notification("error","KeyPad Unvailable");
 		}
@@ -162,6 +173,81 @@ define(function(require) {
 	Dashboard.prototype.jobManager = function() {
 		context = require('context');
 		context.launchApp('job-manager');
+	}
+
+	Dashboard.prototype.checkDashboardSettings = function() {
+		var that=this;
+		 var s=JSON.parse(localStorage.getItem('dashboardSettings'));
+
+        if (s == null) {
+          console.log("No Settings Defined, Load defaults settings");
+          //Load Default Settings into S variable
+          s={
+			"appName": {
+				"name":"DashBoard Name",
+				"value":"FabMo DashBoard",
+				"type":"text"
+			},
+			"mainColor": {
+				"name":"Main Color (top-bar...)",
+				"value":"#313366",
+				"type":"color",
+				"colors": ["#54ba4c","#313366","#dd8728","#9c210c","#444"]
+			},
+			"secondColor": {
+				"name":"Secondary color (menu...)",
+				"value":"#444",
+				"type":"color",
+				"colors": ["#54ba4c","#313366","#dd8728","#9c210c","#444"]
+			},
+			"positionBackground": {
+				"name":"Main Dashboard Color",
+				"value":"#9c210c",
+				"type":"color",
+				"colors": ["#54ba4c","#313366","#dd8728","#9c210c","#111"]
+			},
+			"positionFront": {
+				"name":"Main Dashboard Color",
+				"value":"#9c210c",
+				"type":"color",
+				"colors": ["#54ba4c","#313366","#dd8728","#9c210c","#111"]
+			},
+			"keypadBackground": {
+				"name":"Main Dashboard Color",
+				"value":"#dd8728",
+				"type":"color",
+				"colors": ["#54ba4c","#313366","#dd8728","#9c210c","#111"]
+			},
+			"keypadFront": {
+				"name":"Main Dashboard Color",
+				"value":"#9c210c",
+				"type":"color",
+				"colors": ["#54ba4c","#313366","#dd8728","#9c210c","#111"]
+			},
+			"leftMenuDefaultColapsed": {
+				"name":"Colapsed Left Menu",
+				"value":true,
+				"type":"checkbox"
+			}
+		};
+        localStorage.setItem('dashboardSettings',JSON.stringify(s));
+      }
+
+      this.updateDashboardSettings();
+	}
+
+	Dashboard.prototype.updateDashboardSettings = function() {
+		var s=JSON.parse(localStorage.getItem('dashboardSettings'));
+
+        if (s != null) {
+        	$("#dashboardName").html(s.appName.value);
+        	$("title").html(s.appName.value);
+        }
+	};
+
+	Dashboard.prototype.resetDashboardSettings = function() {
+		localStorage.setItem('dashboardSettings',null);
+		this.checkDashboardSettings();
 	}
 
 	// The dashboard is a singleton which we create here and make available as this module's export.

@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
     <title>FabMo Dashboard</title>
     <link rel="stylesheet" href="css/foundation.css" />
     <link rel="stylesheet" href="css/style.css" />
@@ -15,7 +15,7 @@
   <!-- Body of the page -->
 
   <body>
-      <div id="main" style="height:100%" class="off-canvas-wrap" data-offcanvas>
+      <div id="main" class="off-canvas-wrap" data-offcanvas>
         <div class="inner-wrap">
 
           <!-- New nav work -->
@@ -43,7 +43,7 @@
 
             <!-- ***** Machines on network Widget ***** -->
             <section class="middle">
-              <h1 class="title"><a href="#/menu">FabMo Dashboard</a></h1>
+               <h1 class="title"><a id="dashboardName" href="#/menu">FabMo Dashboard</a></h1>
             </section>
 
             <!-- ***** Tool Position Section ***** -->
@@ -84,14 +84,12 @@
                 <li><label>Utilities</label></li>
                 <li><a href="#/menu" id="icon_home"><span>Home</span></a></li>
                 <li><a href="#/app/job-manager" id="icon_jobs"><span>Job Queue</span></a></li>
-                <!--
-                <li><a href="#" id="icon_folder"><span>Upload a file</span></a></li>
+                <li><a href="#/app/file-executer" id="icon_folder"><span>Files & Code</span></a></li>
                 <li><a href="#" id="icon_search"><span>Search</span></a></li>
                 <li><a href="#" id="icon_global"><span>MyHQ</span></a></li>
                 <li><a href="#/menu" id="icon_apps"><span>Apps</span></a></li>
                 <li><a href="#" id="icon_social"><span>Community</span></a></li>
                 <li><a href="#/app/settings" id="icon_settings"><span>Settings</span></a></li>
-                -->
                 <li><a href="#" id="icon_colapse"><span>Collapse</span></a></li>
               </ul>
             </div>
@@ -179,6 +177,7 @@
             </div>
 
             <!-- ********** Keypad Widget ********** -->
+            <!--
             <div id="keypad" class="widget trackpad">
               <ul class="off-canvas-list">
                 <li><label>Trckpd</label></li>
@@ -187,26 +186,26 @@
                 </li>
               </ul>
             </div>
+            -->
 
             <!-- ************ File Control Widget ************ -->
             <div id="job-info" class="widget">
-              <ul class="off-canvas-list fabmo-file-control">
-                <li class="hide file-info"><label><span class="filename"></span></label></li>
-                <li class="hide file-info"><span class="progress"></span></li>    
+              <ul class="off-canvas-list fabmo-file-control fabmo-status">
                 <li>
                   <div class="row">
                     <div class="small-6 columns control">
                       <span class="fabmo-pause-button hide"><a class="small button warning ">P</a></span>
                     </div>
                     <div class="small-6 columns control">
-                      <span class="fabmo-stop-button hide"><a class="small button alert ">S</a></span>
-                    </div>
-                    <div class="small-12 columns control">
                       <span class="fabmo-resume-button hide"><a class="small button success ">R</a></span>
+                    </div>
+                    <div class="small-6 columns control">
+                      <span class="fabmo-stop-button hide"><a class="small button alert ">S</a></span>
                     </div>
                   </div>
                 </li>
-                <li class="alert-box default state"></li>
+                <li class="hide file-info"><label><span class="filename"></span></label></li>
+                <li class="hide file-info progress secondary"><span class="meter progress" style="width:0%"></span></li>  
               </ul>
             </div>
 
@@ -214,13 +213,13 @@
 
     
           <!-- Main Content -->
-
-          <section class="main-section">
-            <div id="navbar_container"></div>
-
+          <section class="app-section">
             <div>
               <ul id="app_menu_container"></ul>
             </div>
+          </section>
+          <section class="main-section" style="display:none;">
+            <div id="navbar_container"></div>
 
             <div id="modal_container" style="display:none;"></div>
 
@@ -232,38 +231,21 @@
           </section>
           <a id="close_menu" class="exit-off-canvas"></a>
         </div>
-      </div>    
-
-    <div id="home-zero-modal" class="reveal-modal" data-reveal>
-      <h4>Homing and Zeroing</h4>
-      <div class="small-12 columns">
-          <div class="row" >
-               <div class="small-4 columns"><button class="button button-homexy">Home X&Y</button></div>
-              <div class="small-4 columns"><button class="button button-homez">Home Z</button></div>
-              <div class="small-4 columns"><button class="button button-probez">Probe Z</button></div>
-          </div>
-          <div class="row" >
-               <div class="small-4 columns"><button class="button button-zerox">Zero X</button></div>
-              <div class="small-4 columns"><button class="button button-zeroy">Zero Y</button></div>
-              <div class="small-4 columns"><button class="button button-zeroz">Zero Z</button></div>
-          </div> 
-
       </div>
 
-      <a class="close-reveal-modal">&#215;</a>
-    </div>
-
-    <script src="js/libs/jquery.js"></script>
-    <script src="js/libs/foundation.min.js"></script>
-    <script src="js/libs/toastr.min.js"></script>
-    <script src="js/libs/underscore.js"></script>
-    <script src="js/events.js"></script>
-    <script src="js/libs/backbone.js"></script>
-    <script src="js/libs/FabMo-latest.js"></script>
-    <script src="js/libs/FabMoUI-latest.js"></script>    
-    <script src="js/libs/sortable.js"></script>
+    <script type="text/javascript" src="js/libs/jquery.js">         </script>
+    <script type="text/javascript" src="js/libs/jquery.touchy.js">  </script>
+    <script type="text/javascript" src="js/libs/touche.js">         </script>
+    <script type="text/javascript" src="js/libs/foundation.min.js"> </script>
+    <script type="text/javascript" src="js/libs/toastr.min.js">     </script>
+    <script type="text/javascript" src="js/libs/underscore.js">     </script>
+    <script type="text/javascript" src="js/events.js">              </script>
+    <script type="text/javascript" src="js/libs/backbone.js">       </script>
+    <script type="text/javascript" src="js/libs/FabMo-latest.js">   </script>
+    <script type="text/javascript" src="js/libs/FabMoUI-latest.js"> </script>    
+    <script type="text/javascript" src="js/libs/sortable.js">       </script>
     
-    <script data-main="js/app.js" src="js/libs/require.js"></script>
+    <script data-main="js/app.js" src="js/libs/require.js">         </script>
 
   </body>
 </html>
