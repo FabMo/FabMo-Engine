@@ -43,6 +43,7 @@ Config.prototype.load = function(filename, callback) {
 		try {
 			data = JSON.parse(data);
 		} catch (e) {
+            log.error(data)
 			return callback(e);
 		}
 		this.update(data, callback);

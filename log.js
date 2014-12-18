@@ -116,8 +116,8 @@ var logger = function(name) {
 
 process.on('uncaughtException', function(err) {
 	if(colors) {
-	console.log("UNCAUGHT EXCEPTION".red.underline);
-	console.log(('' + err.stack).red)
+		console.log("UNCAUGHT EXCEPTION".red.underline);
+		console.log(('' + err.stack).red)
 	} else {
 		console.log("UNCAUGHT EXCEPTION");
 		console.log(err.stack);

@@ -19,31 +19,36 @@ function connect(callback) {
 	switch(PLATFORM) {
 
 		case 'linux':
-			serial_path = config.engine.get('driver_port_linux');
+			control_path = config.engine.get('control_port_linux');
+			gcode_path = config.engine.get('data_port_linux');
 			break;
 
 		case 'darwin':
-			serial_path = config.engine.get('driver_port_osx');
+			control_path = config.engine.get('control_port_osx');
+			gcode_path = config.engine.get('data_port_osx');
 			break;
 
 		case 'win32':
 		case 'win64':
-			serial_path = config.engine.get('driver_port_windows');
+			control_path = config.engine.get('control_port_windows');
+			gcode_path = config.engine.get('data_port_windows');
 			break;
 
 		default:
-			serial_path = null;
+			control_path = null;
+			gcode_path = null;
 			break;
 	}
-	if(serial_path) {
-		exports.machine = new Machine(serial_path, callback);
+	if(control_path && gcode_path) {
+		exports.machine = new Machine(control_path, gcode_path, callback);
+		callback(null, exports.machine);
 	} else {
 		typeof callback === "function" && callback('No supported serial path for platform "' + PLATFORM + '"');
 		return null;
 	}
 }
 
-function Machine(serial_path, callback) {
+function Machine(control_path, gcode_path, callback) {
 
 	// Handle Inheritance
 	events.EventEmitter.call(this);
@@ -58,39 +63,40 @@ function Machine(serial_path, callback) {
 	};
 
 	this.driver = new g2.G2();
+	this.driver.on("error", function(data) {log.error(data);});
+	this.driver.connect(control_path, gcode_path, function(err, data) {
 	
-	// Configure logging for errors with serial driver
-	this.driver.on("error", function(data) {
-		log.error(data);
-	});
+	    // Configure logging for errors with serial driver
+	    this.driver.on("error", function(data) {
+		    log.error(data);
+	    });
+        
 
-	this.driver.connect(serial_path, function(err, data) {
+		    // Set the initial state based on whether or not we got a valid connection to G2
+		    if(err){
+			    this.status.state = "disconnected";
+		    } else {
+			    this.status.state = "idle";
+		    }
 
-		// Set the initial state based on whether or not we got a valid connection to G2
-		if(err){
-			this.status.state = "disconnected";
-		} else {
-			this.status.state = "idle";
-		}
+		    // Create runtimes for different functions/command languages
+		    this.gcode_runtime = new GCodeRuntime();
+		    this.sbp_runtime = new SBPRuntime();
+		    this.manual_runtime = new ManualRuntime();
+		    this.passthrough_runtime = new PassthroughRuntime();
 
-		// Create runtimes for different functions/command languages
-		this.gcode_runtime = new GCodeRuntime();
-		this.sbp_runtime = new SBPRuntime();
-		this.manual_runtime = new ManualRuntime();
-		this.passthrough_runtime = new PassthroughRuntime();
+		    // GCode is the default runtime
+		    this.setRuntime(this.gcode_runtime);
 
-		// GCode is the default runtime
-		this.setRuntime(this.gcode_runtime);
+		    if(err) {
+			    typeof callback === "function" && callback(err);
+		    } else {
+			    this.driver.requestStatusReport(function(err, result) {
+				    typeof callback === "function" && callback(null, this);
+			    }.bind(this));
+		    }
 
-		if(err) {
-			typeof callback === "function" && callback(err);
-		} else {
-			this.driver.requestStatusReport(function(err, result) {
-				typeof callback === "function" && callback(null, this);
-			}.bind(this));
-		}
-
-	}.bind(this));
+    }.bind(this));
 }
 util.inherits(Machine, events.EventEmitter);
 

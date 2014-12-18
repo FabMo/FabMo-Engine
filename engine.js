@@ -85,7 +85,7 @@ Engine.prototype.start = function(callback) {
 
         function load_opensbp_config(callback) {
             log.info("Configuring OpenSBP runtime...");
-            config.configureOpensbp(callback);
+            config.configureOpenSBP(callback);
         },
 
         function configure_dashboard(callback) {
@@ -148,6 +148,7 @@ Engine.prototype.start = function(callback) {
 
         function(err, results) {
             if(err) {
+                throw err
                 log.error(err);
                 typeof callback === 'function' && callback(err);
             } else {
