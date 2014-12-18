@@ -563,13 +563,30 @@ G2.prototype.get = function(key, callback) {
 
 		// Function called for each item in the keys array
 		function(k, cb) {
+			cb = cb.bind(this);
 			cmd = {}
 			cmd[k] = null
+
 			if(k in this.readers) {
-				this.readers[k].push(cb.bind(this));
+				this.readers[k].push(cb);
 			} else {
-				this.readers[k] = [cb.bind(this)]
+				this.readers[k] = [cb]
 			}
+
+			// Ensure that an errback is called if the data isn't read out
+			setTimeout(function() {
+				if(k in this.readers) {
+						callbacks = this.readers[k];
+						stored_cb = callbacks[callbacks.length-1];
+						if(cb == stored_cb) {
+							if(typeof cb == 'function') {
+								this.readers[k].shift();
+								cb(new Error("Timeout"), null);
+							}
+						}
+					}
+			}.bind(this), CMD_TIMEOUT)
+
 			this.command(cmd);
 		}.bind(this),
 	
@@ -594,6 +611,7 @@ G2.prototype.setMany = function(obj, callback) {
 	async.map(keys, 
 		// Function called for each item in the keys array
 		function(k, cb) {
+
 			cmd = {}
 			cmd[k] = obj[k]
 			if(k in this.readers) {

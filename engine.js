@@ -60,7 +60,12 @@ Engine.prototype.start = function(callback) {
             this.machine = machine.machine
             if(this.machine.isConnected()) {
                 log.info("Configuring G2...")
-                config.configureDriver(machine.machine.driver, callback);
+                config.configureDriver(machine.machine.driver, function(err, data) {
+                    if(err) {
+                        log.error("There were problems loading the G2 configuration.");
+                    }
+                    callback(null);
+                });
             } else {
                 log.warn("Skipping G2 configuration due to no connection.");
                 setImmediate(callback, null);
@@ -68,10 +73,15 @@ Engine.prototype.start = function(callback) {
         }.bind(this),
 
         function get_g2_version(callback) {
+            log.info("Getting G2 firmware version...")
             if(this.machine.isConnected()) {
                 this.machine.driver.get('fb', function(err, value) {
+                    if(err) {
+                        log.error('Could not get the G2 firmware build. (' + err + ')');
+                    } else {
                         log.info('G2 Firmware Build: ' + value);
-                        callback(null);
+                    }
+                    callback(null);
                 });
             } else {
                 setImmediate(callback, null);
