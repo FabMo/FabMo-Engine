@@ -15,6 +15,8 @@ var s = null;
 var Tasks = [] ;
 var toolPath = null;
 var backPath = null;
+var gridPath = [];
+var ratio = 1000;
 
 
 //On Load Init
@@ -73,8 +75,8 @@ delAppSetting = function(app,setting) {
 settings = function(){
 	var dashSettings = getAppSetting("straight-lines","s") ? getAppSetting("straight-lines","s") : false;
 
-	this.x= dashSettings ? dashSettings.x : 3; //x Size of project
-	this.y= dashSettings ? dashSettings.y : 2; //y Size of project
+	this.x= dashSettings ? dashSettings.x : 6; //x Size of project
+	this.y= dashSettings ? dashSettings.y : 8; //y Size of project
 	this.z= dashSettings ? dashSettings.z : 0.3; //Max thickness of project
 	this.dz= dashSettings ? dashSettings.dz : 0.1; //Depth of each z pass
 	this.x0= dashSettings ? dashSettings.x0 : 0; //x Translation from X0
@@ -129,19 +131,26 @@ settings.prototype.get = function(setting){
 
 //Changes tool & project settings
 $("#save-settings").click(function(){
-	s.update();
-	setAppSetting("straight-lines","s",s);
-	//dashboard.notification("success","Settings Saved");
-	Tasks.toolpath();
+	s.update(); //Update s object
+	setAppSetting("straight-lines","s",s); //Save s object in localStorage
+
+	//Reload Canvas Settings
+	if(c) { c.loadSettings(); }
+
+	//Re-calcul ToolPath
+	if (Tasks) { Tasks.toolpath()} ;
 });
 
 //Changes tool & project settings
 $("#default-settings").click(function(){
 	delAppSetting("straight-lines","s");
+	
+	//Reinit s object
 	s = new settings();
 	s.synchForm();
-	//dashboard.notification("success","Settings Reseted");
-	Tasks.toolpath();
+
+	//Re-calcul ToolPath
+	if (Tasks) { Tasks.toolpath()} ;
 });
 
 

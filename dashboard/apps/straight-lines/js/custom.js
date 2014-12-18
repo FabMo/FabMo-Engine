@@ -1,5 +1,136 @@
+var c = null;
+
+//On Load Init
+$(document).ready(function(){
+	//Get settings or set default settings
+	c = new Canvas();
+});
+
+
+
+
+/********** Function for "Canvas" object = all the "Grid" section **********/
+Canvas = function(){
+	this.grid = [];
+	//this.tasks = [];
+
+	//Assignation of paper to the window, size of the project
+	this.init();
+
+	//Load Settings of project into paper
+	this.loadSettings();
+
+	//
+};
+
+Canvas.prototype.init = function(){
+	//Init Canvas
+	paper.install(window);
+	paper.setup('myCanvas');
+	paper.view.viewSize = new Size(ratio,(ratio/s.x)*s.y);
+};
+
+Canvas.prototype.loadSettings = function(){
+	if (!s){
+		//In this case, there is not s object
+		console.log("No Settings object, Canvas use may cause App bugs")
+	}
+	else {
+		//Define new canvas size
+		paper.view.viewSize = new Size(ratio,(ratio/s.x)*s.y);
+
+		//Clear
+		paper.project.clear(); //Not effective ?
+
+		//Check canvas
+		var sStep = 1;	var mStep = 5;	var lStep = 10;
+		var stepx = s.x < 100 ? (s.x < 10 ? sStep : mStep) : lStep;
+		var stepy = s.y < 100 ? (s.y < 10 ? sStep : mStep) : lStep;
+
+		//Enter Dimensions to grid container
+		$("#xScale").html('X : ' + s.x + '" ' + '(' + stepx + '"/grad)');
+		$("#yScale").html('y : ' + s.y + '" ' + '(' + stepy + '"/grad)');
+
+	    //X graduation from left
+	    for (var i = stepx ; i < s.x ; i+=stepx) {
+	        var topPoint = new paper.Point( this.xPos(i) , this.yPos(s.y) );
+	        var bottomPoint = new paper.Point(this.xPos(i), this.yPos(0));
+	        var aLine = new paper.Path.Line(topPoint, bottomPoint);
+	        aLine.strokeColor = '#ccc';
+	        aLine.strokeWidth = 3;
+	    	this.grid.push(aLine);
+	    }
+	    //Y graduation from bottom
+	    for (var i = stepy ; i < s.y ; i+=stepy) {
+	        var leftPoint = new paper.Point( this.xPos(0) , this.yPos(i) );
+	        var rightPoint = new paper.Point( this.xPos(s.x) , this.yPos(i) );
+	        var aLine = new paper.Path.Line(leftPoint, rightPoint);
+	        aLine.strokeColor = '#ccc';
+	        aLine.strokeWidth = 3;
+	        this.grid.push(aLine);
+	    }
+
+	    paper.view.draw(); //Setup //Activate
+	}
+};
+
+//Return xPos converted to to canvas size -> Will work in responsive & fixed position if the canvas is resized
+Canvas.prototype.xPos = function(x){
+	return ( paper.view.bounds.left + x * (paper.view.bounds.width / s.x) );
+};
+
+//Return yPos converted to to canvas size -> Will work in responsive & fixed position if the canvas is resized
+Canvas.prototype.yPos = function(y){
+	return ( paper.view.bounds.bottom - y * (paper.view.bounds.height / s.y) );
+};
+
+//This king of function should be avoid : add a Task = add object (line object, square object), that will call addLine, addPoint...
+/*
+Canvas.prototype.addTask = function(type,task){
+	if(type == 'line') { this.addLine(task); }
+};
+*/
+
+// --- Line : Add / Edit / Remove --- //
+Canvas.prototype.addLine = function(l){
+	var aLine = new paper.Path.Line(
+		new paper.Point( this.xPos(l.x0) , this.yPos(l.y0) ),
+		new paper.Point( this.xPos(l.x1) , this.yPos(l.y1) )
+	);
+
+    aLine.strokeColor = '#666';
+    aLine.strokeWidth = 10;
+
+	l.canvas=aLine;
+	paper.view.draw(); //Setup //Activate
+};
+
+Canvas.prototype.editLine = function(l){
+	l.canvas = new paper.Path.Line(
+		new paper.Point( this.xPos(l.x0) , this.yPos(l.y0) ),
+		new paper.Point( this.xPos(l.x1) , this.yPos(l.y1) )
+	);
+	paper.view.draw(); //Setup //Activate
+}
+
+Canvas.prototype.removeLine = function(l){
+	l.canvas.remove();
+	paper.view.draw(); //Setup //Activate
+};
+
+
+// --- Point : Add / Edit / Remove --- //
+Canvas.prototype.addPoint = function(x,y,size){
+	return true;
+};
+
+
 /********** Function for "Tasks" object = all the tasks **********/
 Tasks.reset = function(){
+	$.each(this, function(index,t){
+		t.remove();
+	});
+
 	//Set the number of Tasks to 0
 	this.length = 0;
 
@@ -7,7 +138,7 @@ Tasks.reset = function(){
 	setAppSetting("straight-lines","Tasks",this);
 
 	//View Tasks
-	this.view();
+	this.addTaskList();
 };
 
 Tasks.addLine = function(){
@@ -22,10 +153,16 @@ Tasks.addLine = function(){
 	setAppSetting("straight-lines","Tasks",this);
 
 	//View Tasks
-	this.view();
+	this.addTaskList();
+
+	//Synch View
+
 };
 
 Tasks.remove = function(id){
+	//remove the task from Canvas (if canvas)
+	Tasks[Tasks.pos(id)].remove();
+
 	//Search the position of the line to remove. Then remove
 	this.splice(Tasks.pos(id), 1);
 
@@ -33,7 +170,7 @@ Tasks.remove = function(id){
 	setAppSetting("straight-lines","Tasks",this);
 
 	//View Tasks
-	this.view();
+	this.addTaskList();
 };
 
 Tasks.edit = function(id){
@@ -47,7 +184,7 @@ Tasks.edit = function(id){
 	t.setForm();
 
 	//View Tasks
-	this.view();
+	this.addTask();
 };
 
 Tasks.save = function(id){
@@ -62,13 +199,13 @@ Tasks.save = function(id){
 	setAppSetting("straight-lines","Tasks",this);
 
 	//View Tasks
-	this.view();
+	this.addTaskList();
 }
 
 Tasks.view = function(){
 	var str=""; //Str will be the HTML content
-	$.each(this, function(index,line){
-		str += line.viewLine(); //For each Line, we add the HTML content
+	$.each(this, function(index,t){
+		str += t.addTaskList(); //For each Line, we add the HTML content
 	});
 	$(".list-lines-container").html(str); //Set this into the HTML table
 
@@ -102,6 +239,7 @@ Tasks.sort = function(){
 line = function(l,x0,y0,x1,y1,name,side) {
 	this.id="line-" + l;
 	this.pos = l;
+	this.canvas = null;
 	name ? this.name = name : this.name = this.id;
 	this.current=0;
 	this.x0 = x0 ? x0 : 0; //X start position of a line
@@ -188,9 +326,12 @@ line.prototype.toolpath = function() {
 		this.t_y0 += (s.bit_d/2) * Math.sin(alpha);
 		this.t_y1 += (s.bit_d/2) * Math.sin(alpha);
 	}
+
+	//Synch with canvas (if canvas)
+	if(c) { c.addLine(this); }
 };
 
-line.prototype.viewLine = function() {
+line.prototype.addTaskList = function() {
 	var str = "";
 	str += "<tr class='" + (this.current ? 'current' : '') + "' id='" + this.id + "'>";
 	str += "<td>" + this.name + "</td>";
@@ -205,4 +346,10 @@ line.prototype.viewToolPath = function() {
 	//Read the x0... y1 of the line and trace a red / Blue line
 	//Read the toolPath of the line and trace a grey shadow
 	return true;
+};
+
+line.prototype.remove = function(){
+	if(c && this.canvas){
+		c.removeLine(this);
+	}
 };
