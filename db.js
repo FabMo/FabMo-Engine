@@ -78,6 +78,10 @@ Job.getPending = function(callback) {
 	jobs.find({state:'pending'}).toArray(callback);
 }
 
+Job.getHistory = function(callback) {
+	jobs.find({state: {$in : ['finished', 'cancelled']}}).toArray(callback);
+}
+
 Job.getAll = function(callback) {
 	jobs.find().toArray(function(array) {
 		callback(array);

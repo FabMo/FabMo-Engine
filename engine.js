@@ -49,7 +49,10 @@ Engine.prototype.start = function(callback) {
             log.info("Connecting to G2...")
             machine.connect(function(err, machine) {
                 if(err) {
+                    log.error("!!!!!!!!!!!!!!!!!!!!!!!!");
                     log.error("Could not connect to G2.");
+                    log.error("(" + err + ")");
+                    log.error("!!!!!!!!!!!!!!!!!!!!!!!!");
                 }
                 setImmediate(callback, null);
             });

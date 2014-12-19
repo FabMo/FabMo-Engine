@@ -1,5 +1,6 @@
 app_manager = require('./app_manager');
 config = require('../config');
+util = require('../util');
 
 exports.configure = function(callback) {
 	manager = new app_manager.AppManager({
@@ -20,4 +21,8 @@ exports.getAppIndex = function() {
 
 exports.getAppList = function() {
 	return exports.appManager.getAppList() || [];
+}
+
+exports.getAppFiles = function(id) {
+	return util.walkDir(exports.appManager.getAppRoot(id));
 }
