@@ -25,9 +25,22 @@ Canvas = function(){
 
 Canvas.prototype.init = function(){
 	//Init Canvas
+	$("#project_content").addClass("active"); //Resolve screen dimensions problem
 	paper.install(window);
 	paper.setup('myCanvas');
+	this.resize();
+	$("#project_content").removeClass("active"); //Resolve screen dimensions problem
+};
+
+Canvas.prototype.resize = function(){
+	$("#project_content").addClass("active"); //Resolve screen dimensions problem
 	paper.view.viewSize = new Size(ratio,(ratio/s.x)*s.y);
+	$("#canvas-container canvas").width($("#canvas-container").width());
+	$("#canvas-container canvas").height(($("#canvas-container").width()/s.x)*s.y);
+	$("#canvas-container").height(($("#canvas-container").width()/s.x)*s.y);
+	console.log($("#canvas-container").css( "width" ));
+	console.log($("#canvas-container").css( "height" ));
+	$("#project_content").removeClass("active"); //Resolve screen dimensions problem
 };
 
 Canvas.prototype.loadSettings = function(){
@@ -37,7 +50,8 @@ Canvas.prototype.loadSettings = function(){
 	}
 	else {
 		//Define new canvas size
-		paper.view.viewSize = new Size(ratio,(ratio/s.x)*s.y);
+		$("#project_content").addClass("active");
+		this.resize();
 
 		//Clear
 		paper.project.clear(); //Not effective ?
@@ -56,8 +70,8 @@ Canvas.prototype.loadSettings = function(){
 	        var topPoint = new paper.Point( this.xPos(i) , this.yPos(s.y) );
 	        var bottomPoint = new paper.Point(this.xPos(i), this.yPos(0));
 	        var aLine = new paper.Path.Line(topPoint, bottomPoint);
-	        aLine.strokeColor = '#ccc';
-	        aLine.strokeWidth = 3;
+	        aLine.strokeColor = '#ddd';
+	        aLine.strokeWidth = 3; //((i%10)==0) ? 6 : (((i%10)==0) ? 4 : 2);
 	    	this.grid.push(aLine);
 	    }
 	    //Y graduation from bottom
@@ -65,24 +79,30 @@ Canvas.prototype.loadSettings = function(){
 	        var leftPoint = new paper.Point( this.xPos(0) , this.yPos(i) );
 	        var rightPoint = new paper.Point( this.xPos(s.x) , this.yPos(i) );
 	        var aLine = new paper.Path.Line(leftPoint, rightPoint);
-	        aLine.strokeColor = '#ccc';
-	        aLine.strokeWidth = 3;
+	        aLine.strokeColor = '#ddd';
+	        aLine.strokeWidth = 3; //((i%10)==0) ? 5 : (((i%10)==0) ? 4 : 3);
 	        this.grid.push(aLine);
 	    }
 
 	    paper.view.draw(); //Setup //Activate
+	    $("#project_content").removeClass("active");
 	}
 };
 
-//Return xPos converted to to canvas size -> Will work in responsive & fixed position if the canvas is resized
+//Return xPos converted to to canvas size 	-> Will work in responsive & fixed position if the canvas is resized
 Canvas.prototype.xPos = function(x){
 	return ( paper.view.bounds.left + x * (paper.view.bounds.width / s.x) );
 };
 
-//Return yPos converted to to canvas size -> Will work in responsive & fixed position if the canvas is resized
+//Return yPos converted to to canvas size 	-> Will work in responsive & fixed position if the canvas is resized
 Canvas.prototype.yPos = function(y){
 	return ( paper.view.bounds.bottom - y * (paper.view.bounds.height / s.y) );
 };
+
+//Retur, thickness (strokeWidth) 			-> Will work in responsive & fixed position if the canvas is resized
+Canvas.prototype.w = function(w){
+	return ( w * (paper.view.bounds.height / s.y) );
+}
 
 //This king of function should be avoid : add a Task = add object (line object, square object), that will call addLine, addPoint...
 /*
@@ -93,29 +113,32 @@ Canvas.prototype.addTask = function(type,task){
 
 // --- Line : Add / Edit / Remove --- //
 Canvas.prototype.addLine = function(l){
-	var aLine = new paper.Path.Line(
-		new paper.Point( this.xPos(l.x0) , this.yPos(l.y0) ),
-		new paper.Point( this.xPos(l.x1) , this.yPos(l.y1) )
-	);
-
-    aLine.strokeColor = '#666';
-    aLine.strokeWidth = 10;
-
-	l.canvas=aLine;
-	paper.view.draw(); //Setup //Activate
-};
-
-Canvas.prototype.editLine = function(l){
+	//Add line view
 	l.canvas = new paper.Path.Line(
 		new paper.Point( this.xPos(l.x0) , this.yPos(l.y0) ),
 		new paper.Point( this.xPos(l.x1) , this.yPos(l.y1) )
 	);
+    l.canvas.strokeColor = 'rgba(77, 135, 29, 0.8)';
+    l.canvas.strokeWidth = 3;
+
+    //Add toolPath View
+    l.tCanvas = new paper.Path.Line(
+		new paper.Point( this.xPos(l.t_x0) , this.yPos(l.t_y0) ),
+		new paper.Point( this.xPos(l.t_x1) , this.yPos(l.t_y1) )
+	);
+    l.tCanvas.strokeColor = 'rgba(156, 33, 12, 0.25)'//'rgba(215, 44, 44, 0.6)';
+    l.tCanvas.strokeWidth = this.w(s.bit_d);
+    l.tCanvas.strokeCap = 'round';
+	l.tCanvas.dashArray = [l.tCanvas.strokeWidth*2, l.tCanvas.strokeWidth*3];
+
 	paper.view.draw(); //Setup //Activate
-}
+};
 
 Canvas.prototype.removeLine = function(l){
 	l.canvas.remove();
+	l.tCanvas.remove();
 	paper.view.draw(); //Setup //Activate
+	console.log("remove");
 };
 
 
@@ -128,7 +151,7 @@ Canvas.prototype.addPoint = function(x,y,size){
 /********** Function for "Tasks" object = all the tasks **********/
 Tasks.reset = function(){
 	$.each(this, function(index,t){
-		t.remove();
+		t.removeCanvas();
 	});
 
 	//Set the number of Tasks to 0
@@ -138,13 +161,12 @@ Tasks.reset = function(){
 	setAppSetting("straight-lines","Tasks",this);
 
 	//View Tasks
-	this.addTaskList();
+	this.view();
 };
 
 Tasks.addLine = function(){
 	//Create a new line (task)
 	var t = new line(this.length.toString()); //Assume that it's a line
-	t.getForm();
 
 	//Add this to the list of Tasks
 	this.push(t);
@@ -153,7 +175,7 @@ Tasks.addLine = function(){
 	setAppSetting("straight-lines","Tasks",this);
 
 	//View Tasks
-	this.addTaskList();
+	this.view();
 
 	//Synch View
 
@@ -161,7 +183,7 @@ Tasks.addLine = function(){
 
 Tasks.remove = function(id){
 	//remove the task from Canvas (if canvas)
-	Tasks[Tasks.pos(id)].remove();
+	Tasks[Tasks.pos(id)].removeCanvas();
 
 	//Search the position of the line to remove. Then remove
 	this.splice(Tasks.pos(id), 1);
@@ -170,7 +192,7 @@ Tasks.remove = function(id){
 	setAppSetting("straight-lines","Tasks",this);
 
 	//View Tasks
-	this.addTaskList();
+	this.view();
 };
 
 Tasks.edit = function(id){
@@ -184,22 +206,29 @@ Tasks.edit = function(id){
 	t.setForm();
 
 	//View Tasks
-	this.addTask();
+	this.view();
 };
 
 Tasks.save = function(id){
-	//Search for the line
-	var t = this[this.pos(id)];
-	t.getForm();
+	//Search for the line and add it
+	if(this.pos(id)){
+		var t = this[this.pos(id)];
+		t.getForm();
 
-	//Remove current
-	t.resetCurrent();
+		//Remove current
+		t.resetCurrent();
 
-	//Save Tasks Model
-	setAppSetting("straight-lines","Tasks",this);
+		//Save Tasks Model
+		setAppSetting("straight-lines","Tasks",this);
 
-	//View Tasks
-	this.addTaskList();
+		//View Tasks
+		this.view();
+	}
+
+	//If line not founded, create a new one
+	else {
+		this.addLine();
+	}
 }
 
 Tasks.view = function(){
@@ -220,7 +249,7 @@ Tasks.toolpath = function(){
 }
 
 Tasks.pos = function(id) {
-	var pos = false;
+	var pos = null;
 	$.each(this, function(i,t) {
 		if(t.id == id) {
 			pos = i;
@@ -229,29 +258,42 @@ Tasks.pos = function(id) {
 	return pos;
 };
 
-//Sort Line by position
+//Sort Line by position : not used yet
 Tasks.sort = function(){
 	this.sort(function(a,b) {return (a.id > b.id) ? 1 : ((b.id > a.id) ? -1 : 0);} );
 };
 
 
-	/********** Model and function of a single line **********/
+
+
+/********** Model and function of a single line **********/
 line = function(l,x0,y0,x1,y1,name,side) {
 	this.id="line-" + l;
 	this.pos = l;
 	this.canvas = null;
-	name ? this.name = name : this.name = this.id;
+	this.tCanvas = null;
+	name ? this.name = name : (this.name = $("#line_name").val() 	? 	$("#line_name").val() : this.id);
 	this.current=0;
-	this.x0 = x0 ? x0 : 0; //X start position of a line
-	this.y0 = y0 ? y0 : 0; //Y start position of a line
-	this.x1 = x1 ? x1 : 0; //X end position of a line
-	this.y1 = y1 ? y1 : 0; //Y end position of a line
-	this.side = side ? side : 1; //3 = center, 1 = Left, 2 = Right
+	this.x0 = x0 ? x0 : ($("#line_x0").length 	? 	parseFloat($("#line_x0").val())	: 0); //X start position of a line
+	this.y0 = y0 ? y0 : ($("#line_y0").length 	?	parseFloat($("#line_y0").val()) : 0); //Y start position of a line
+	this.x1 = x1 ? x1 : ($("#line_x1").length	?	parseFloat($("#line_x1").val()) : 0); //X end position of a line
+	this.y1 = y1 ? y1 : ($("#line_y1").length	?	parseFloat($("#line_y1").val()) : 0); //Y end position of a line
+	this.side = side ? side : ($("input:radio[name='line_side']:checked").length	?	parseInt($("input:radio[name='line_side']:checked").val()) : 1); //3 = center, 1 = Left, 2 = Right
 
 	this.toolpath();
+
+	//Synch Canvas
+	this.addCanvas();
+
+	//Reset the value of "name" input & unique id "cid" -> By Security
+	$("#line_name").val("");
+	$("#line_name").data("cid","");
 };
 
 line.prototype.update = function(x0,y0,x1,y1,name,side) {
+	//First delete view
+	this.removeCanvas();
+
 	this.x0=x0; //X start position of a line
 	this.y0=y0; //Y start position of a line
 	this.x1=x1; //X end position of a line
@@ -262,6 +304,9 @@ line.prototype.update = function(x0,y0,x1,y1,name,side) {
 	//else name = "Line" + pos;
 
 	this.toolpath();
+
+	//Synch Canvas
+	this.addCanvas();
 };
 
 line.prototype.setCurrent = function() { this.current=1 };
@@ -278,11 +323,9 @@ line.prototype.getForm = function(){
 		$("input:radio[name='line_side']:checked").length	?	parseInt($("input:radio[name='line_side']:checked").val()) : null
 	);
 
-	console.log(parseInt($("input:radio[name='line_side']:checked").val()));
-
 	//Reset the value of "name" input & unique id "cid"
-	$("line_#name").val("");
-	$("line_#name").data("cid","");
+	$("#line_name").val("");
+	$("#line_name").data("cid","");
 };
 
 line.prototype.setForm = function(){
@@ -293,8 +336,6 @@ line.prototype.setForm = function(){
 	if ($("#line_x1").length) 	{ $("#line_x1").val(this.x1.toString()); }
 	if ($("#line_y1").length) 	{ $("#line_y1").val(this.y1.toString()); }
 	if ($("input:radio[name='line_side']:checked").length)	{ $("input:radio[name='line_side'][value='"+ this.side +"']").attr("checked",true); }
-
-	console.log(this.side);
 };
 
 line.prototype.toolpath = function() {
@@ -326,9 +367,6 @@ line.prototype.toolpath = function() {
 		this.t_y0 += (s.bit_d/2) * Math.sin(alpha);
 		this.t_y1 += (s.bit_d/2) * Math.sin(alpha);
 	}
-
-	//Synch with canvas (if canvas)
-	if(c) { c.addLine(this); }
 };
 
 line.prototype.addTaskList = function() {
@@ -348,8 +386,27 @@ line.prototype.viewToolPath = function() {
 	return true;
 };
 
-line.prototype.remove = function(){
+line.prototype.removeCanvas = function(){
 	if(c && this.canvas){
 		c.removeLine(this);
 	}
+};
+
+line.prototype.addCanvas = function(){
+	if(c){
+		c.addLine(this);
+	}
+};
+
+
+
+
+/********** Real Custom Functions **********/
+invertForm = function(){
+	var x0 = $("#line_x0").val();
+	var y0 = $("#line_y0").val();
+	$("#line_x0").val($("#line_x1").val());
+	$("#line_y0").val($("#line_y1").val());
+	$("#line_x1").val(x0);
+	$("#line_y1").val(y0);
 };

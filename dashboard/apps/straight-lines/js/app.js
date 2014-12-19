@@ -9,6 +9,11 @@
 *** - Function to parse simple gcode to create a toolpath (add general offset, bit offset to cut outside / inside a line)
 */
 
+//Config
+var allow_canvas = true;
+var ratio = 900; //Max Width of the canvas
+
+
 //Global var
 var pi = 3.14159265358979323846264338327950288419716939937510582;
 var s = null;
@@ -16,8 +21,6 @@ var Tasks = [] ;
 var toolPath = null;
 var backPath = null;
 var gridPath = [];
-var ratio = 1000;
-
 
 //On Load Init
 $(document).ready(function(){

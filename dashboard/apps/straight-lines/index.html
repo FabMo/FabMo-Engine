@@ -9,7 +9,6 @@
 	<link rel="stylesheet" href="./css/normalize.css">
 	<link rel="stylesheet" href="./css/style.css">
 	<link rel="stylesheet" href="./css/custom.css">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
 	<!-- Header -->
@@ -129,25 +128,34 @@
 								<input type="text" placeholder="Name" id="line_name">
 								</label>
 							</div>
-							<div class="small-6 columns">
-								<label>X0 :
-								<input type="text" value="0.000" id="line_x0">
-								</label>
+							<div class="small-11 columns">
+								<div class="row">
+									<div class="small-6 columns">
+										<label>X0 :
+										<input type="text" value="0.000" id="line_x0">
+										</label>
+									</div>
+									<div class="small-6 columns">
+										<label>Y0 :
+										<input type="text" value="0.000" id="line_y0">
+										</label>
+									</div>
+								</div>
 							</div>
-							<div class="small-6 columns">
-								<label>Y0 :
-								<input type="text" value="0.000" id="line_y0">
-								</label>
-							</div>
-							<div class="small-6 columns">
-								<label>X1 :
-								<input type="text" value="2.000" id="line_x1">
-								</label>
-							</div>
-							<div class="small-6 columns">
-								<label>Y1 :
-								<input type="text" value="1.000" id="line_y1">
-								</label>
+							<div class="small-1 columns invert-pos"><b>↕</b></div>
+							<div class="small-11 columns">
+								<div class="row">
+									<div class="small-6 columns">
+										<label>X1 :
+										<input type="text" value="2.000" id="line_x1">
+										</label>
+									</div>
+									<div class="small-6 columns">
+										<label>Y1 :
+										<input type="text" value="1.000" id="line_y1">
+										</label>
+									</div>
+								</div>
 							</div>
 							<div class="small-12 columns center">
 								<Label>Bit Position</Label>
@@ -210,7 +218,7 @@
 						</div>
 					</div>
 					<div class="row">
-						<div class="small-12 columns">
+						<div class="small-12 columns" id="canvas-container">
 							<canvas id="myCanvas" keepalive="true"></canvas>
 						</div>
 					</div>
@@ -283,6 +291,10 @@
 		Tasks.reset();
 	});
 
+	$(".invert-pos").click(function(){
+		invertForm();
+	});
+
 	function listenClickTasks(){
 		//Remove a task
 		$(".list-lines-container .delete").click(function() {
@@ -310,10 +322,16 @@
 	$(document).ready(function(){
 		//Foundation Init
 		$(document).foundation();
-
+		c.resize();
 		//Get Tasks from storage (if stored)
 		//L = dashboard.getAppSetting("straight-lines","Tasks") ? dashboard.getAppSetting("straight-lines","Tasks") : [];
-		console.log(Tasks);
+		//console.log(Tasks);
+
+		$(window).resize( function() {
+			$("#canvas-container canvas").width($("#canvas-container").width());
+			$("#canvas-container canvas").height(($("#canvas-container").width()/s.x)*s.y);
+			$("#canvas-container").height(($("#canvas-container").width()/s.x)*s.y);
+		});
 	});
 
 </script>
