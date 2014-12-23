@@ -262,10 +262,6 @@
 
 	var machine, ui;
 	// Debug for now lets us know that we have a viable dashboard object
-	fabmoDashboard.getMachine(function(err, machine) {
-		machine = new FabMo(machine.ip, machine.port);
-		//ui = new FabMoUI(machine);
-	});
 
 	setGCode = function(s,tasks) {
 		var code = new gcode();
@@ -319,14 +315,15 @@
 				'name' : 'Straight Lines',
 				'description' : 'Cut ' + Tasks.length.toString() + ' lines',
                 'filename' : 'straight_lines.nc'        
-        })
+        });
 	});
 
-	//OnLoad Init
+
 	$(document).ready(function(){
+		setInterval(function(){machine = dashboard.machines;},1000);
 		//Foundation Init
 		$(document).foundation();
-		c.resize();
+		c.resize();	
 		//Get Tasks from storage (if stored)
 		//L = dashboard.getAppSetting("straight-lines","Tasks") ? dashboard.getAppSetting("straight-lines","Tasks") : [];
 		//console.log(Tasks);
