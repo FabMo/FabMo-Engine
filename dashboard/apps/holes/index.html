@@ -2,7 +2,7 @@
 <html> 
 <head>
 	<meta charset="utf-8">
-	<title>Straight Lines</title>
+	<title>Holes cutter</title>
 
 	<!-- CSS standardisation & inclusion -->
 	<link rel="stylesheet" href="./css/foundation.min.css">
@@ -12,10 +12,10 @@
 </head>
 <body>
 	<!-- Header -->
-	<header class="orange"> <!-- Class can be "blue", "red", "grey", "orange" -->
+	<header class="green"> <!-- Class can be "blue", "red", "grey", "orange" -->
 		<section>
 			<div class="app-title-container">
-				<h2>Straight Lines</h2>
+				<h2>Holes Cutter</h2>
 			</div>
 		</section>
 	</header>
@@ -114,73 +114,62 @@
 				<div class="small-12 medium-6 large-4 columns">
 					<div class="row">
 						<div class="small-7 columns">
-							<h3>Add a line</h3>
-
+							<h3>Add a Hole</h3>
 						</div>
 						<div class="small-5 columns">
-							<div class="small button right secondary" id="add-line">Add</div>
+							<div class="small button right secondary" id="add-circle">Add</div>
 						</div>
 					</div>
 					<form>
 						<div class="row ">
 							<div class="small-12 columns">
-								<label>Line Name :
-								<input type="text" placeholder="Name" id="line_name">
+								<label>Hole Name :
+								<input type="text" placeholder="Name" id="circle_name">
 								</label>
 							</div>
-							<div class="small-11 columns">
+							<div class="small-12 columns">
 								<div class="row">
 									<div class="small-6 columns">
-										<label>X0 :
-										<input type="text" value="0.000" id="line_x0">
+										<label>Center X :
+										<input type="text" value="0.000" id="circle_x">
 										</label>
 									</div>
 									<div class="small-6 columns">
-										<label>Y0 :
-										<input type="text" value="0.000" id="line_y0">
+										<label>Center Y :
+										<input type="text" value="0.000" id="circle_y">
 										</label>
 									</div>
 								</div>
 							</div>
-							<div class="small-1 columns invert-pos"><b>↕</b></div>
-							<div class="small-11 columns">
-								<div class="row">
-									<div class="small-6 columns">
-										<label>X1 :
-										<input type="text" value="2.000" id="line_x1">
-										</label>
-									</div>
-									<div class="small-6 columns">
-										<label>Y1 :
-										<input type="text" value="1.000" id="line_y1">
-										</label>
-									</div>
-								</div>
+							<div class="small-12 columns">
+								<label>Radius :
+								<input type="text" value="0.5" id="circle_radius">
+								</label>
 							</div>
 							<div class="small-12 columns center">
-								<Label>Bit Position</Label>
+								<Label>Toolpath</Label>
 							</div>
 							<div class="small-4 columns center">
-								<Label>Left
+								<Label>Outside
 								<div class="switch small">
-									<input id="line_left" type="radio" checked name="line_side" value="1">
-									<label for="line_left"></label>
+									<input id="circle_outside" type="radio" checked name="circle_side" value="1">
+									<label for="circle_outside"></label>
 								</div>
 								</Label>
 							</div>
 							<div class="small-4 columns center">
-								<Label>Center
+								<Label>On
 								<div class="switch small">
-									<input id="line_center" type="radio" name="line_side" value="3">
-									<label for="line_center"></label>
+									<input id="circle_onside" type="radio" name="circle_side" value="3">
+									<label for="circle_onside"></label>
 								</div>
 								</Label>
 							</div>
 							<div class="small-4 columns center">
-								<Label>Right
+								<Label>Inside
 								<div class="switch small">
-									<input id="line_right" type="radio" name="line_side" value="2">
-									<label for="line_right"></label>
+									<input id="circle_inside" type="radio" name="circle_side" value="2">
+									<label for="circle_inside"></label>
 								</div>
 								</Label>
 							</div>
@@ -202,12 +191,12 @@
 							<thead>
 								<tr>
 									<th class="small-5">Name</th>
-									<th class="small-5">X0,Y0 - X1,Z1</th>
+									<th class="small-5">X0,Y0 - Radius</th>
 									<th class="small-1">E</th>
 									<th class="small-1">X</th>
 								</tr>
 							</thead>
-							<tbody class="list-lines-container"></tbody>
+							<tbody class="list-tasks-container"></tbody>
 						</table>
 					</div>
 					<div class="show-for-small-only separator small-12 columns"></div>
@@ -249,91 +238,13 @@
   <script type="text/javascript" src="./js/libs/foundation.min.js"></script>
   <script type="text/javascript" src="./js/libs/paper-full.js"></script>
 
-  <!--**** App & Custom App Library : order matters !!! ****-->
-  <script type="text/javascript" src="./js/app.js"></script>
-  <script type="text/javascript" src="./js/custom.js"></script>
-
   <!-- Include dashboard.js, will be removed later -->
   <script type="text/javascript" src="./js/FabMo-latest.js"></script>
   <script type="text/javascript" src="./js/dashboard.js"></script>
 
-  <!-- Main App's Javascript -->
-  <script type="text/javascript">
-
-	var machine, ui;
-	// Debug for now lets us know that we have a viable dashboard object
-
-	setGCode = function(s,tasks) {
-		var code = new gcode();
-
-		//Do each line in more than 1 pass
-		$.each(tasks, function(index,l){
-			code.line(l.t_x0,l.t_y0,s.z0,l.t_x1,l.t_y1,-s.z);
-		});
-		
-		return code.getGc();
-	};
-
-	/********** User Interface Actions **********/
-
-	//Add a task
-	$("#add-line").click(function(){
-		if($("#line_name").data("cid")) {
-			Tasks.save($("#line_name").data("cid"));
-		}
-		else {
-			Tasks.addLine();
-		}
-	});
-
-	//Delete all the tasks
-	$("#reset").click(function() {
-		Tasks.reset();
-	});
-
-	$(".invert-pos").click(function(){
-		invertForm();
-	});
-
-	function listenClickTasks(){
-		//Remove a task
-		$(".list-lines-container .delete").click(function() {
-			Tasks.remove($(this).parent().attr("id"));
-		});
-
-		//Edit a task
-		$(".list-lines-container .edit").click(function(){
-			Tasks.edit($(this).parent().attr("id"));
-		});
-	}
-		
-	//Run all the tasks
-	$("#run").click(function(){
-		var c = setGCode(s,Tasks);
-		//dashboard.addJob(c,s);
-		fabmoDashboard.submitJob(c, {
-				'name' : 'Straight Lines',
-				'description' : 'Cut ' + Tasks.length.toString() + ' lines',
-                'filename' : 'straight_lines.nc'        
-        });
-	});
-
-
-	$(document).ready(function(){
-		setInterval(function(){machine = dashboard.machines;},1000);
-		//Foundation Init
-		$(document).foundation();
-		c.resize();	
-		//Get Tasks from storage (if stored)
-		//L = dashboard.getAppSetting("straight-lines","Tasks") ? dashboard.getAppSetting("straight-lines","Tasks") : [];
-		//console.log(Tasks);
-
-		$(window).resize( function() {
-			$("#canvas-container canvas").width($("#canvas-container").width());
-			$("#canvas-container canvas").height(($("#canvas-container").width()/s.x)*s.y);
-			$("#canvas-container").height(($("#canvas-container").width()/s.x)*s.y);
-		});
-	});
+  <!--**** App & Custom App Library : order matters !!! ****-->
+  <script type="text/javascript" src="./js/app.js"></script>
+  <script type="text/javascript" src="./js/custom.js"></script>
 
 </script>
 

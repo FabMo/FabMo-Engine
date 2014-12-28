@@ -997,3 +997,11 @@
    */
 
 })(jQuery);
+
+//Touch swipe
+var handleTouchySwipe = function (e, $target, data) {
+    alert("swipe");
+    console.log("swipe");
+};
+
+$(".app-section").bind('touchy-swipe', handleTouchySwipe);

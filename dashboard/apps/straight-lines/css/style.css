@@ -347,8 +347,8 @@ td[type="color"] div.add {
 */
 
 tr.current {
-  background-color: rgb(221,135,40);
-  background-color: rgba(221,135,40,0.8);
+  background-color: rgb(221,135,40) !important;
+  background-color: rgba(221,135,40,0.8) !important;
 }
 
 tr.current td { color:#fff; }

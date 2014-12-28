@@ -1,0 +1,11 @@
+{
+	"name":"Holes",
+	"main":"./index.html",
+	"icon":"icon.png",
+	"icon_color":"blue",
+	"version":"0.0.1",
+	"author":"Antoine Delhaye",
+	"target":[],
+	"website":"http://shopbottools.com",
+	"id":"holes"
+}

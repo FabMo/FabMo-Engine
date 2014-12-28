@@ -61,7 +61,7 @@
 			</div>
 		</div>
 
-		<div class="row jobs-row">
+		<div class="row jobs-row" style="display:none;">
 			<!-- JOB LISTING -->
 			<table class="small-12 columns">
 				<thead>
@@ -91,6 +91,31 @@
 		</div>
 	</section>
 
+	<section class="container">
+		<div class="row title">
+			<div class="small-7 medium-9 large-10 columns">
+				<h3>Job History</h3>
+			</div>
+			<div class="small-5 medium-3 large-2 columns btn">
+			</div>
+		</div>
+
+		<div class="row jobs-history-row">
+			<!-- JOB HISTORY LISTING -->
+			<table class="small-12 columns">
+				<thead>
+					<tr>
+						<th class="small-3">Job Name</th>
+						<th class="small-6">Description</th>
+						<th class="small-2">Run</th>
+						<th class="small-1">Duration</th>
+					</tr>
+				</thead>
+				<tbody class="row jobs-history-listing"></tbody>
+			</table>
+		</div>
+	</section>
+
 
 
   <!-- Javascript inclusions -->
@@ -108,10 +133,11 @@
   	var x; //SetInterval
 
 	function refresh_jobs_list(){
+				console.log("Refreshing job list")
+
 		// Load the list of files available on the tool
 		tool.list_jobs_in_queue(function(err,jobs){
 			if(err) { return console.log(err); }
-			$(".job-item").remove();
 			$(".jobs-listing").empty();
 			if(jobs.length === 0) {
 				$(".no-jobs").show();
@@ -139,6 +165,41 @@
 		});
 	};
 
+	function refresh_jobs_history(){
+		console.log("Refreshing job history")
+		// Load the list of files available on the tool
+		tool.get_job_history(function(err,jobs){
+			if(err) { return console.log(err); }
+			$(".jobs-history-listing").empty();
+			$.each( jobs, function( key, val ) {
+				var jobid = 'job' + val._id;
+				var id = val._id;
+				html = [
+				'<tr><td>',
+				'<a href="#" id="' + jobid + '">',
+					val.name,
+				'</a>',
+				'</td><td>',
+					val.description || 'No description.',
+				'</td><td>',
+					moment(val.started_at).fromNow(),
+				'</td><td>',
+					moment.utc(val.finished_at-val.started_at).format('HH:mm:ss'),
+				'</td></tr>'
+				].join('');
+				$(".jobs-history-listing").append(html);
+				
+				$('#'+jobid).click(function() {
+					tool.resubmit_job(id, function(err, result) {
+						refresh_jobs_list();
+						refresh_jobs_history();
+					});
+				});
+			});
+		});
+
+
+	};
 	$('#submit_job').submit(function(e){
 		e.preventDefault();
 		tool.add_job($(this),function(err,file){
@@ -146,6 +207,7 @@
 			$('#job_selector').replaceWith($('#job_selector').clone(true)); //reset file field
 			$('#job_selector').prev().html('Browse for a file to upload...');
 				refresh_jobs_list();
+				refresh_jobs_history();
 		});
 	});
 
@@ -156,11 +218,13 @@
 	$('.run-next').click(function(e) { 
 		tool.job_run(function(err, result) {
 			refresh_jobs_list();
+			refresh_jobs_history();
 		});
 	});
 
 	$('.clear-jobs').click(function(e) { tool.clear_job_queue(function(err, result) {
 			refresh_jobs_list();
+			refresh_jobs_history();
 		});
 	});
 
@@ -174,6 +238,7 @@
 
 			// Load the list of files available on the tool
 			refresh_jobs_list();
+			refresh_jobs_history();
 
 			ui.on('status', function(status) {
 				console.log(status.job);
@@ -190,6 +255,8 @@
 					},1000);
 				} else {
 					refresh_jobs_list(); //to try later
+					refresh_jobs_list(); //to try later
+
 					$(".current-job-container").hide(500);
 					clearInterval(x);
 				}

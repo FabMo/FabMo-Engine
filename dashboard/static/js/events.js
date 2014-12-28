@@ -93,6 +93,14 @@ resizedocclick = function(){
 	);
 };
 
+posForm = function(){
+	console.log("Click on a position");
+	$("#position ul .axis span.pos").hide();
+	$("#position ul .axis input.pos").show();
+};
+
+
+
 
 /********** Document Ready Init **********/
 $(document).ready( function() {
@@ -102,8 +110,6 @@ $(document).ready( function() {
         open_method: 'overlap_single', 
       }
     });
-
-    console.log("Body Font size, for rem checking : " + $("body").css("font-size"));
 
 	//Sortable app icon (not used now, just for play !) //Disabled
 	/*
@@ -145,4 +151,7 @@ $(document).ready( function() {
 
 	//Define the positions of the dashboard notifications
 	toastr.options["positionClass"] = "toast-bottom-center";
+
+	//Event to transform position display to input
+	$("#position ul .axis span.pos").click( function() { posForm(); })
 });

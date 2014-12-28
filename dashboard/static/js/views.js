@@ -1,6 +1,6 @@
 define(function(require) {
 	models = require('models');
-	views = {}
+	views = {};
 
 	// VIEWS
 	views.NavbarView = Backbone.View.extend({
@@ -81,7 +81,7 @@ define(function(require) {
 			
 			if(this.model) {
 				url = this.model.get('app_url');
-				//var d = require('dashboard');
+				var d = require('dashboard');
 			} else {
 				url = "about:blank";
 				//var d = null;
@@ -94,8 +94,10 @@ define(function(require) {
 				iframe.contentWindow.dashboard = d;
 			}*/
 			iframe.src = url;
-			//iframe.parent.dashboard = d;
-			//console.log(iframe.parent)
+			
+			$('.app-iframe').load(function() {
+			 	iframe.contentWindow.dashboard = d;
+    			});
 			//console.log(iframe.contentDocument)
 			//console.log(iframe.contentWindow)
 			//iwin = iframe.contentDocument.parentWindow;
@@ -176,12 +178,13 @@ define(function(require) {
 			jQuery('.tools-current').html('<li><a href="#">Refresh</a></li>');
 			var cpt=0;
 			this.collection.forEach(function(item) {
+				var singleRemoteMachine;
 				if(item.get("current")=="current") {
 					cpt++; console.log(cpt);
 					jQuery('.tools-current').empty();
-					var singleRemoteMachine = new views.SingleMachineView({ model: item,el:'.tools-current'});
+					singleRemoteMachine = new views.SingleMachineView({ model: item,el:'.tools-current'});
 				}
-				var singleRemoteMachine = new views.SingleMachineView({ model: item,el:'.tools-other'});
+				singleRemoteMachine = new views.SingleMachineView({ model: item,el:'.tools-other'});
 			}.bind(this));
 
 			return this;
