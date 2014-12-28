@@ -26,7 +26,7 @@ Job = function(options) {
 
 Job.prototype.clone = function(callback) {
 	var job = new Job({
-		file_id : this._id,
+		file_id : this.file_id,
 		name : this.name,
 		description : this.description
 	});

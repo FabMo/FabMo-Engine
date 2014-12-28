@@ -20,7 +20,7 @@ var STAT_CYCLING = 8;
 var STAT_HOMING = 9;
 
 // Should take no longer than CMD_TIMEOUT to do a get or a set operation
-var CMD_TIMEOUT = 1000;
+var CMD_TIMEOUT = 10000;
 
 // When jogging, "keepalive" jog commands must arrive faster than this interval (ms)
 // This can be slowed down if necessary for spotty connections, but a slow timeout means
@@ -413,14 +413,14 @@ G2.prototype.handleStatusReport = function(response) {
 			var stat = response.sr.stat
 			var hold = response.sr.hold
 			if( (key === 'stat') ) {
-				if( (hold != undefined) && (response.sr.hold != 0) ) {
-					if((stat === 6) && (hold === 3)) {
+				if( (hold != undefined) && (hold != 0) ) {
+					if((stat === 6) && ((hold === 3) || (hold === 4)))  {
 						this.status[key] = r.sr[key];
 					} else {
 						log.debug("IGNORE uninformative status/hold combination (" + stat + "/" + hold + ")");
 					}
 				} else {
-					log.debug('HONOR this status report because it doesn\'t contain hold data or hold=0');
+					log.debug('HONOR this status report because it doesn\'t contain hold data or because hold=0');
 					this.status[key] = r.sr[key];
 				}
 			} else {
@@ -467,6 +467,7 @@ G2.prototype.handleStatusReport = function(response) {
 			if((this.status.hold === 4) || (this.status.hold === 5) || (this.status.stat === 3)) {
 				setTimeout(function() {
 					this.queueClear();
+					this.command({"gc":'M30'});
 					//this.command('M30');
 					this.quit_pending = false;
 					this.pause_flag = false;
