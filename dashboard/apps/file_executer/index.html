@@ -27,7 +27,12 @@
 		<div class="row tool-files-container">
 			<!-- Files LISTING -->
 			<table class="small-12" id="files">
-				<thead><tr><th class="small-7">Files on the tool</th><th class="small-5">Actions</th></tr></thead>
+				<thead><tr>
+					<th class="small-6 large-9">Files on the tool</th>
+					<th class="small-2 large-1 center">View</th>
+					<th class="small-2 large-1 center">Download</th>
+					<th class="small-2 large-1 center">Delete</th>
+				</tr></thead>
 		        <tbody class="files-listing"></tbody>
 			</table>
 		</div>
@@ -80,44 +85,57 @@
 
   <script src="./js/libs/jquery-1.10.2.js"></script>
   <script src="./js/libs/foundation.min.js"></script>
+  <script src="./js/FabMoUI-latest.js"></script>
   <script src="./js/FabMo-latest.js"></script>
   <script src="./js/dashboard.js"></script>
 
   
   <script type="text/javascript">
-	var machine, ui;
+  	var tool;
+  	var ui;
 
-      // Debug for now lets us know that we have a viable dashboard object
-      fabmoDashboard.getMachine(function(err, machine) {
-        machine = new FabMo(machine.ip, machine.port);
-      });
+	function gcode(string) {
+		tool.gcode(string,function(err,data){
+			if(!err) {
+				console.log('Success: ' + string);
+			} else {
+				console.log('Failure: ' + string);
+			}
+		});
+	};
 
 	$(document).ready(function(){
 	  //Foundation Init
 	  $(document).foundation();
 
-	  // Load the list of files available on the tool
-	  refresh_files_list();
+
+	  	fabmoDashboard.getMachine(function(err, machine) {
+	  		tool = new FabMo(machine.ip, machine.port);
+	  		ui = new FabMoUI(tool);
+
+	  		// Load the list of files available on the tool
+	  		refresh_files_list();
+	  	});
 	});
 
 
 	function refresh_files_list(){
 	  // Load the list of files available on the tool
-	  var tool = machine;
+	  //var tool = machine;
 
 	  tool.list_files(function(err,files){
 	  	if(err){console.log(err);return;}
 
 		$(".files_list").remove();
-
+		console.log("Files Lenght : " + files.length);
 		if(files.length !== 0)
 		{
 			$.each( files, function( key, val ) {
 			  $(".files-listing").append( "<tr class='files_list'>"+
-			"<td class='run-button' value='" + val._id + "'><a style='cursor: pointer;'>" + val.filename + "</a></td>" +
-			"<td class='view-button' value='" + val._id + "' style='text-align: right;width: 3%;'><span style='cursor: pointer;' class='glyphicon glyphicon-eye-open'></span></td>"+
-			"<td class='download-button' value='" + val._id + "' style='text-align: right;width: 3%;'><span style='cursor: pointer;' class='glyphicon glyphicon-download-alt'></span></td>" +
-			"<td class='delete-button' value='" + val._id + "' style='text-align: right;width: 3%;'><span style='cursor: pointer;' class='glyphicon glyphicon-remove'></span></td>"+
+			"<td class='run-button' value='" + val._id + "'><a>" + val.filename + "</a></td>" +
+			"<td class='view-button btn' value='" + val._id + "'><div class='button small-12 secondary'>V</div></td>"+
+			"<td class='download-button btn' value='" + val._id + "'><div class='button small-12 secondary'>↓</div></td>" +
+			"<td class='delete-button btn' value='" + val._id + "'><div class='button small-12 alert'>X</div></td>"+
 			"</tr>");
 			});
 		}
@@ -129,7 +147,7 @@
 
 	$('#add_file').submit(function(e){
 		e.preventDefault();
-		tool = machine;
+		//tool = machine;
 			tool.upload_file($(this),function(err,file){
 			if(err){console.log(err);return;}
 			$('#file_selector').replaceWith($('#file_selector').clone(true)); //reset file field
@@ -140,7 +158,7 @@
 
 
 	$(' tbody').on( "click", 'tr .delete-button', function(e) {	
-		tool = machine;
+		//tool = machine;
 		tool.delete_by_id($(this).attr('value'),function(err) {
 			if(!err)	
 				refresh_files_list();
@@ -150,12 +168,12 @@
    });
 
 	$(' tbody').on( "click", 'tr .download-button', function(e) {	
-		tool = machine;
+		//tool = machine;
 		tool.download_by_id($(this).attr('value'));
 	});
 
 	$(' tbody').on( "click", 'tr .run-button', function(e) {	
-		tool = machine;
+		//tool = machine;
 		tool.run_by_id($(this).attr('value'),function(err){
 			if(!err)	
 				console.log('file is running !');
@@ -179,7 +197,7 @@
 	}
 
 	$('#gcode-sender').submit(function(e) {
-	tool = machine;
+	//tool = machine;
 	e.preventDefault();
 	tool.gcode($('#gcode-input').val(),function(err,data){
 		if(!err) {
@@ -193,7 +211,7 @@
 	});
 
 	$('#sbp-sender').submit(function(e) {
-	tool = machine;
+	//tool = machine;
 	e.preventDefault();
 	tool.sbp($('#sbp-input').val(),function(err,data){
 		if(!err) {
