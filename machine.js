@@ -141,7 +141,7 @@ Machine.prototype.runNextJob = function(callback) {
 				log.error(err);
 				callback(err, null);
 			} else {
-				log.info('Running job ' + result)
+				log.info('Running job ' + JSON.stringify(result));
 				this.runJob(result);
 				callback(null, result);
 			}
