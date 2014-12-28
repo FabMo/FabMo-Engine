@@ -49,7 +49,10 @@ Engine.prototype.start = function(callback) {
             log.info("Connecting to G2...")
             machine.connect(function(err, machine) {
                 if(err) {
+                    log.error("!!!!!!!!!!!!!!!!!!!!!!!!");
                     log.error("Could not connect to G2.");
+                    log.error("(" + err + ")");
+                    log.error("!!!!!!!!!!!!!!!!!!!!!!!!");
                 }
                 setImmediate(callback, null);
             });
@@ -141,7 +144,7 @@ Engine.prototype.start = function(callback) {
                 callback(null, server);
             });
         }.bind(this),
-        
+
         // Initialize a detection daemon.
         // This is a beacon server that allows the tool to be auto-discovered on the network.
         function start_detection_server(callback) {
@@ -154,6 +157,7 @@ Engine.prototype.start = function(callback) {
                 callback(e);
             }
         }.bind(this)
+
         ],
 
         function(err, results) {
@@ -163,7 +167,7 @@ Engine.prototype.start = function(callback) {
             } else {
                 typeof callback === 'function' && callback(null, this);
             }
-        }.bind(this)        
+        }.bind(this)
     );
 }
 

@@ -10,7 +10,7 @@ submitJob = function(req, res, next) {
 
 	// Get the one and only one file you're currently allowed to upload at a time
 	var file = req.files.file;
-	console.log(req.body);
+
 	// Only write "allowed files"
 	if(file && util.allowed_file(file.name))
 	{
@@ -61,7 +61,6 @@ submitJob = function(req, res, next) {
 };
 
 clearQueue = function(req, res, next) {
-	log.info("Clearing the job queue");
 	db.Job.deletePending(function(err) {
 		if(err) {
 			res.send(500, err);
@@ -72,7 +71,6 @@ clearQueue = function(req, res, next) {
 }
 
 runNextJob = function(req, res, next) {
-	log.info("runNextJob")
 	machine.runNextJob(function(err, job) {
 		if(err) {
 			log.error(err);
@@ -80,6 +78,25 @@ runNextJob = function(req, res, next) {
 		} else {
 			res.send(200, job);
 		}
+	});
+}
+
+resubmitJob = function(req, res, next) {
+	log.debug("Resubmitting job " + req.params.id)
+	db.Job.getById(req.params.id, function(err, result) {
+		log.debug(result);
+		if(err) {
+			log.error(JSON.stringify(err));
+		}
+		result.clone(function(err, result) {
+			log.debug("Cloned!");
+			if(err) {
+				log.error(err);
+				res.send(404, err);
+			} else {
+				res.send(200, result);
+			}
+		});
 	});
 }
 
@@ -105,6 +122,17 @@ getAllJobs = function(req, res, next) {
 	})
 }
 
+getJobHistory = function(req, res, next) {
+	db.Job.getHistory(function(err, result) {
+		if(err) {
+			log.error(err);
+			res.send(500, err);
+		} else {
+			res.send(200, result);
+		}
+	})
+}
+
 getJobById = function(req, res, next) {
 	db.Job.getById(req.params.id, function(err, result) {
 		if(err) {
@@ -116,13 +144,34 @@ getJobById = function(req, res, next) {
 	})
 }
 
+cancelJob = function(req, res, next) {
+	db.Job.getById(req.params.id, function(err, result) {
+		if(err) {
+			log.error(err);
+			res.send(404, err);
+		} else {
+			result.cancel(function(err, result) {
+				if(err) {
+					log.error(err);
+					res.send(500, err);
+				} else {
+					res.send(200, result);
+				}
+			});
+		}
+	})
+}
+
 
 module.exports = function(server) {
 	server.post('/job', submitJob);
 	server.get('/jobs', getAllJobs);
+	
 	server.get('/job/:id', getJobById);
+	server.post('/job/:id', resubmitJob);
 	server.get('/jobs/queue', getQueue);
 	server.del('/jobs/queue', clearQueue);
 	server.post('/jobs/queue/run', runNextJob);
+	server.get('/jobs/history', getJobHistory);
 
 }

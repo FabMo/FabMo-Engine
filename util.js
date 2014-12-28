@@ -251,7 +251,59 @@ function serveStatic(opts) {
     return (serve);
 }
 
+var walk = function(dir, obj, done) {
+  var results = {};
+  fs.readdir(dir, function(err, list) {
+
+    if (err) return done(err);
+
+    var pending = list.length;
+    if (!pending) return done(null, obj);
+
+    list.forEach(function(file) {
+      path = dir + '/' + file;
+      fs.stat(path, function(err, stat) {
+        if (stat && stat.isDirectory()) {
+          dirobject =  {    name: file, 
+                            path: path,
+                            type: 'dir',
+                            created : stat.ctime, 
+                            modified : stat.mtime, 
+                            children:[]
+                        };
+          obj.children.push(dirobject);
+          walk(file, dirobject, function(err, res) {
+            if (!--pending) done(null, obj);
+          });
+        } else {
+          fileobject =  {   name: file,
+                            path: path,
+                            type: 'file',
+                            created : stat.ctime, 
+                            modified : stat.mtime, 
+                            children:null
+                        };
+          obj.children.push(fileobject);
+          //results.push(file);
+          if (!--pending) done(null, obj);
+        }
+      });
+    });
+  });
+};
+
+var walkDir = function(dir, callback) {
+    obj = {
+        children : [],
+        name : '/',
+        path : '/',
+        type : 'dir'
+    }
+    return walk(dir, obj, callback);
+}
+
 exports.serveStatic = serveStatic;
-exports.Queue = Queue
-exports.allowed_file = allowed_file
-exports.move = move
+exports.Queue = Queue;
+exports.allowed_file = allowed_file;
+exports.move = move;
+exports.walkDir = walkDir;

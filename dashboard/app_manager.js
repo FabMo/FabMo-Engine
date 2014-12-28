@@ -18,6 +18,10 @@ var AppManager = function(options) {
 	this.apps_list = {};
 }
 
+AppManager.prototype.getAppRoot = function(id) {
+	return this.apps_index[id].app_path;
+}
+
 AppManager.prototype.getAppIndex = function() {
 	return this.apps_index;
 }
