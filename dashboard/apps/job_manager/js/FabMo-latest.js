@@ -473,6 +473,27 @@ FabMo.prototype.list_jobs_in_queue = function(callback)
 	});
 };
 
+FabMo.prototype.get_job_history = function(callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.jobs+'/history',
+		type: "GET",
+		dataType : 'json', 
+		success: function( data ) {
+			callback(undefined,data);
+			},
+		error: function(data,err) {
+				var error =that.default_error.no_device;
+				error.sys_err = err;
+			 	callback(error);
+			}
+	});
+};
+
+
 FabMo.prototype.get_job_by_id = function(id,callback)
 {
 	if (!callback)
@@ -512,6 +533,41 @@ FabMo.prototype.get_job_in_queue = function(id,callback)
 		error: function(data,err) {
 			if (data.status === 404){callback(that.default_error.file.no_file);}
 			else if (data.status === 302){callback(undefined);}//success
+			else{
+				var error = that.default_error.no_device;
+				error.sys_err = err;
+			 	callback(error);
+			}
+		}
+	});
+};
+
+// take a form data, look for a file field, and upload the file load in it
+FabMo.prototype.resubmit_job =  function(id, callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.job + '/' + id,
+		type: "POST",
+		processData: false,
+		contentType: false,
+		DataType:'json',
+		success: function( data ) {
+			return callback(null, data);
+		},
+		error : function(data, err) {
+			if (data.status === 400){callback(that.default_error.file.upload.bad_request);}
+			else if (data.status === 415){callback(that.default_error.file.upload.not_allowed);}
+			else if (data.status === 302){
+				if (data.responseJSON && data.responseJSON[0])
+					callback(undefined,data.responseJSON[0]);
+				else if(data.responseJSON)
+					callback(undefined, data.responseJSON);
+				else
+					callback(undefined, JSON.parse(data.responseText));
+			}
 			else{
 				var error = that.default_error.no_device;
 				error.sys_err = err;
