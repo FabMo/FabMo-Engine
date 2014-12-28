@@ -24,8 +24,6 @@ body,html{
 .page{ height: 100%; }
 
 
-
-
 /* ********** Top Bar Settings ********** */
 
 .tab-bar { 
@@ -457,6 +455,11 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	font-family: 'source_sans_proextralight';
 	margin-right: 4px;
 	margin-right: 0.25rem;
+}
+
+#position ul .axis input.pos {
+	margin-left: 2rem;
+	max-width: 50%;
 }
 
 #position ul .axis .in {

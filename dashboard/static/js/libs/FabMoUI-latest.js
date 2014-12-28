@@ -11,6 +11,9 @@ function FabMoUI(tool, options){
 	this.keypad = true;
 	// able or disable the keypad.
 
+	this.fixe_move = false;
+	this.fixe_move_step = 0.01
+
 	this.move_step = '0.5';
 	//1 step of keypad, in inches
 
@@ -48,8 +51,8 @@ function FabMoUI(tool, options){
 	this.minusY_button_selector = this.keypad_div_selector + ' .button-minus-Y';
 	this.plusZ_button_selector = this.keypad_div_selector + ' .button-plus-Z';
 	this.minusZ_button_selector = this.keypad_div_selector + ' .button-minus-Z';
-
-
+	this.fixe_move_selector =  this.keypad_div_selector + ' .fixe-move';
+	this.fixe_move_step_selector =  this.keypad_div_selector + ' .fixe-move-step';
 	setInterval(this.updateStatus.bind(this),this.refresh);
 
 
@@ -79,7 +82,7 @@ FabMoUI.prototype.Keypad = function(){
 	that.locks=new that.lock();
 	this.keypad_allow=false;
 	this.menu_open=false;
-
+	this.lock_fixe_move = false;
 	$("#trackpad-zone").click(function(e){
 		var posX = e.pageX  - ($("body").width() - $("#right-menu").width());
         var posY = e.pageY - $("#trackpad-zone").position().top - 44.5;
@@ -135,68 +138,129 @@ FabMoUI.prototype.Keypad = function(){
 		if (that.keypad_allow && that.menu_open){
 			if (e.which === 37 && !that.locks.left && !that.locks.right) //left
 			{
-				that.locks.left=true;
-				that.tool.start_move("-x",that.locks,function(){});
+				if(!that.fixe_move){
+					that.locks.left=true;
+					that.tool.start_move("-x",that.locks,function(){});
+				}
+				else if(!that.lock_fixe_move){
+					that.lock_fixe_move = true;
+					that.tool.gcode2("G91G01X-"+that.fixe_move_step);
+				}
 			}
 			if (e.which === 38 && !that.locks.up && !that.locks.down) //up
 			{
-				that.locks.up=true;
-				that.tool.start_move("y",that.locks,function(){});
+				if(!that.fixe_move){
+					that.locks.up=true;
+					that.tool.start_move("y",that.locks,function(){});
+				}
+				else if(!that.lock_fixe_move){
+					that.lock_fixe_move = true;
+					that.tool.gcode2("G91G01Y"+that.fixe_move_step);
+				}
 			}
 			if (e.which === 39 && !that.locks.right && !that.locks.left) //right
 			{
-				that.locks.right=true;
-				that.tool.start_move("x",that.locks,function(){});			}
+				if(!that.fixe_move){
+					that.locks.right=true;
+					that.tool.start_move("x",that.locks,function(){});
+				}
+				else if(!that.lock_fixe_move){
+					that.lock_fixe_move = true;
+					that.tool.gcode2("G91G01X"+that.fixe_move_step);
+				}
+			}			
 			if (e.which === 40 && !that.locks.up && !that.locks.down) //down
 			{
-				that.locks.down=true;
-				that.tool.start_move("-y",that.locks,function(){});
+				if(!that.fixe_move){
+					that.locks.down=true;
+					that.tool.start_move("-y",that.locks,function(){});
+				}
+				else if(!that.lock_fixe_move){
+					that.lock_fixe_move = true;
+					that.tool.gcode2("G91G01Y-"+that.fixe_move_step);
+				}
 			}
 			if (e.which === 33 && !that.locks.page_up && !that.locks.page_down) //page_up
 			{
-				that.locks.page_up=true;
-				that.tool.start_move("z",that.locks,function(){});
+				if(!that.fixe_move){
+					that.locks.page_up=true;
+					that.tool.start_move("z",that.locks,function(){});
+				}
+				else if(!that.lock_fixe_move){
+					that.lock_fixe_move = true;
+					that.tool.gcode2("G91G01Z"+that.fixe_move_step);
+				}
 			}
 			if (e.which === 34 && !that.locks.page_up && !that.locks.page_down) //page_down
 			{
-				that.locks.page_down=true;
-				that.tool.start_move("-z",that.locks,function(){});
+				if(!that.fixe_move){
+					that.locks.page_down=true;
+					that.tool.start_move("-z",that.locks,function(){});
+				}
+				else if(!that.lock_fixe_move){
+					that.lock_fixe_move = true;
+					that.tool.gcode2("G91G01Z-"+that.fixe_move_step);
+				}
 			}
 		}
 	});
 
 	$(document).keyup(function(e) {
 		that.updateStatus.bind(that);
-		if (that.keypad_allow){
+		if (that.keypad_allow ){
 			if (e.which === 37 ) //left
 			{
-				that.locks.left=false;
-				that.tool.stop_move(function(){});
+				if(!that.fixe_move){
+					that.locks.left=false;
+					that.tool.stop_move(function(){});
+				}else{
+					that.lock_fixe_move = false;
+				}
 			}
 			if (e.which === 38 ) //up
 			{
-				that.locks.up=false;
-				that.tool.stop_move(function(){});
+				if(!that.fixe_move){
+					that.locks.up=false;
+					that.tool.stop_move(function(){});
+				}else{
+					that.lock_fixe_move = false;
+				}
 			}
 			if (e.which === 39 ) //right
 			{
-				that.locks.right=false;
-				that.tool.stop_move(function(){});
+				if(!that.fixe_move){
+					that.locks.right=false;
+					that.tool.stop_move(function(){});
+				}else{
+					that.lock_fixe_move = false;
+				}
 			}
 			if (e.which === 40 ) //down
 			{
-				that.locks.down=false;
-				that.tool.stop_move(function(){});
+				if(!that.fixe_move){
+					that.locks.down=false;
+					that.tool.stop_move(function(){});
+				}else{
+					that.lock_fixe_move = false;
+				}
 			}
 			if (e.which === 33 ) //page_up
 			{
-				that.locks.page_up=false;
-				that.tool.stop_move(function(){});
+				if(!that.fixe_move){
+					that.locks.page_up=false;
+					that.tool.stop_move(function(){});
+				}else{
+					that.lock_fixe_move = false;
+				}
 			}
 			if (e.which === 34 ) //page_down
 			{
-				that.locks.page_down=false;
-				that.tool.stop_move(function(){});
+				if(!that.fixe_move){
+					that.locks.page_down=false;
+					that.tool.stop_move(function(){});
+				}else{
+					that.lock_fixe_move = false;
+				}
 			}
 		}
 	});
@@ -298,6 +362,31 @@ FabMoUI.prototype.Keypad = function(){
 		e1.which = 34; 
 		$(that.keypad_div_selector).trigger(e1);
 	});
+
+
+	$(that.fixe_move_selector).change(function(){
+  		if($(that.fixe_move_selector).is(':checked')){
+    		$(that.fixe_move_step_selector).parent().removeClass('hide');
+    		$(that.fixe_move_step_selector).val(that.fixe_move_step);
+    		that.fixe_move = true;
+		  } else {
+		    $(that.fixe_move_step_selector).parent().addClass('hide');
+		    that.fixe_move = false;
+		  }
+	});
+
+	$(that.fixe_move_step_selector).change(function(){
+		var val =+$(that.fixe_move_step_selector).val();
+		console.log($(that.fixe_move_step_selector).val());
+		console.log(val);
+		if(isNaN(val)){
+			$(that.fixe_move_step_selector).val(that.fixe_move_step);
+		}else{
+			that.fixe_move_step = val;
+		}
+	});
+
+
 
 	window.addEventListener('touchend',function(event) {
   		alert('START (' + gnStartX + ', ' + gnStartY + ')   END (' + gnEndX + ', ' + gnEndY + ')');
