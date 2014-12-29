@@ -9,7 +9,15 @@
 *** - Function to parse simple gcode to create a toolpath (add general offset, bit offset to cut outside / inside a line)
 */
 
-//Config
+/*_____________________________________________________________________________
+|																			   |
+|******************************************************************************|
+|***************************** USER CONFIG SECTION ****************************|
+|******************************************************************************|
+|******************************************************************************|
+|______________________________________________________________________________|
+*/
+
 var allow_canvas = true;
 var ratio = 900; //Max Width of the canvas
 
@@ -36,13 +44,21 @@ $(document).ready(function(){
 
 
 
-/*
-*** Save / Restore Data ***
+
+/*_____________________________________________________________________________
+|																			   |
+|******************************************************************************|
+|**************************** localStorage Section ****************************|
+|******************************************************************************|
+|******************************************************************************|
+|______________________________________________________________________________|
 */
 
 
 /* App Settings */
 setAppSetting = function(app,setting,val) {
+	//Save the parameter "val" under the variable "setting" in LocalStorage
+	//App Should be the name of the current app
 	if (localStorage.getItem('app-' + app)) {
 		var s = JSON.parse(localStorage.getItem('app-' + app));
 	}
@@ -54,6 +70,8 @@ setAppSetting = function(app,setting,val) {
 };
 
 getAppSetting = function(app,setting) {
+	//Get the parameter "setting" from the LocalStorage and return its value
+	//App Should be the name of the current app
 	if(localStorage.getItem('app-' + app)) {
 		if(JSON.parse(localStorage.getItem('app-' + app))[setting])
 			return JSON.parse(localStorage.getItem('app-' + app))[setting];
@@ -65,6 +83,8 @@ getAppSetting = function(app,setting) {
 };
 
 delAppSetting = function(app,setting) {
+	//Dell the parameter "setting" from the LocalStorage
+	//App Should be the name of the current app
 	if (localStorage.getItem('app-' + app)) {
 		var s = JSON.parse(localStorage.getItem('app-' + app));
 		delete s[setting];
@@ -75,12 +95,20 @@ delAppSetting = function(app,setting) {
 
 
 
-/*
-*** Project Settings ***
+
+/*_____________________________________________________________________________
+|																			   |
+|******************************************************************************|
+|************************** Project Settings Section **************************|
+|******************************************************************************|
+|******************************************************************************|
+|______________________________________________________________________________|
 */
 
 
 /********** Model and function related to tool & project settings **********/
+
+//The global object "s" is loaded by default, and contains the saved settings (localStorage) or the default ones.
 settings = function(){
 	var dashSettings = getAppSetting("straight-lines","s") ? getAppSetting("straight-lines","s") : false;
 
@@ -97,6 +125,7 @@ settings = function(){
 };
 
 //Update each setting by the content of the corresponding input (by id)
+//If developpers want to change a setting from the app, it is possible to do :
 settings.prototype.update = function(){
 	//Input should have the following ID attribute : s_propertie
 	for(var setting in this){
@@ -116,6 +145,7 @@ settings.prototype.synchForm = function(){
 };
 
 //Set a specific setting attribute, can be called by the app
+//Only works with existing settings.
 settings.prototype.set = function(setting,value){
 	if(this[setting]){
 		this[setting]=value;
@@ -136,6 +166,7 @@ settings.prototype.get = function(setting){
 	}
 };
 
+
 /********** User Interface Actions **********/
 
 //Changes tool & project settings
@@ -148,6 +179,9 @@ $("#save-settings").click(function(){
 
 	//Re-calcul ToolPath
 	if (Tasks) { Tasks.toolpath()} ;
+
+	//Re-calcul GCode
+	if (Tasks) { Tasks.gCode()} ;
 });
 
 //Changes tool & project settings
@@ -160,13 +194,23 @@ $("#default-settings").click(function(){
 
 	//Re-calcul ToolPath
 	if (Tasks) { Tasks.toolpath()} ;
+
+	//Re-calcul GCode
+	if (Tasks) { Tasks.gCode()} ;
 });
 
 
 
 
-/*
-*** Canvas Section ***
+
+
+/*_____________________________________________________________________________
+|																			   |
+|******************************************************************************|
+|*************************** Canvas Object Section ****************************|
+|******************************************************************************|
+|******************************************************************************|
+|______________________________________________________________________________|
 */
 
 
@@ -180,17 +224,15 @@ Canvas = function(){
 
 	//Load Settings of project into paper
 	this.loadSettings();
-
-	//
 };
 
 Canvas.prototype.init = function(){
 	//Init Canvas
-	$("#project_content").addClass("active"); //Resolve screen dimensions problem
-	paper.install(window);
-	paper.setup('myCanvas');
-	this.resize();
-	$("#project_content").removeClass("active"); //Resolve screen dimensions problem
+	$("#project_content").addClass("active"); 	//Resolve screen dimensions problem by displaying temporary the section
+	paper.install(window); 						//Assign paper functions to window object
+	paper.setup('myCanvas');					//Setup the #myCanvas element (html/css/js)
+	this.resize();								//Call Resize canvas function
+	$("#project_content").removeClass("active");//Resolve screen dimensions problem
 };
 
 
@@ -205,27 +247,35 @@ Canvas.prototype.setRatio = function(){
 
 Canvas.prototype.resize = function(){
 	$("#project_content").addClass("active"); //Resolve screen dimensions problem
+
+	//Set the size of the paper object proportionnaly to the size of the project (from setting object)
 	paper.view.viewSize = new Size(ratio,(ratio/s.x)*s.y);
+
+	//Same thing with the canvas element and the canvas container (important for smartphone / tablet view)
 	$("#canvas-container canvas").width($("#canvas-container").width());
 	$("#canvas-container canvas").height(($("#canvas-container").width()/s.x)*s.y);
 	$("#canvas-container").height(($("#canvas-container").width()/s.x)*s.y);
+
+
 	$("#project_content").removeClass("active"); //Resolve screen dimensions problem
 };
 
+//Load Settings from the settings element "s" (size of the project) and synch it to the canvas
+//Draws the canvas grid (variable graduations)
 Canvas.prototype.loadSettings = function(){
 	if (!s){
 		//In this case, there is not s object
 		console.log("No Settings object, Canvas use may cause App bugs")
 	}
 	else {
-		//Define new canvas size
+		//Resolve screen dimensions problem by displaying temporary the section
 		$("#project_content").addClass("active");
 		this.resize();
 
 		//Clear
 		paper.project.clear(); //Not effective ?
 
-		//Check canvas
+		//Choose X & Y graduation depending to project size
 		var sStep = 1;	var mStep = 5;	var lStep = 10;
 		var stepx = s.x < 100 ? (s.x < 10 ? sStep : mStep) : lStep;
 		var stepy = s.y < 100 ? (s.y < 10 ? sStep : mStep) : lStep;
@@ -243,6 +293,7 @@ Canvas.prototype.loadSettings = function(){
 	        aLine.strokeWidth = 3; //((i%10)==0) ? 6 : (((i%10)==0) ? 4 : 2);
 	    	this.grid.push(aLine);
 	    }
+
 	    //Y graduation from bottom
 	    for (var i = stepy ; i < s.y ; i+=stepy) {
 	        var leftPoint = new paper.Point( this.xPos(0) , this.yPos(i) );
@@ -254,6 +305,8 @@ Canvas.prototype.loadSettings = function(){
 	    }
 
 	    paper.view.draw(); //Setup //Activate
+
+	    //Resolve screen dimensions problem
 	    $("#project_content").removeClass("active");
 	}
 };
@@ -273,12 +326,7 @@ Canvas.prototype.w = function(w){
 	return ( w * (paper.view.bounds.height / s.y) );
 }
 
-//This king of function should be avoid : add a Task = add object (line object, square object), that will call addLine, addPoint...
-/*
-Canvas.prototype.addTask = function(type,task){
-	if(type == 'line') { this.addLine(task); }
-};
-*/
+
 
 
 // --- Line : Add / Edit / Remove --- //
@@ -336,20 +384,24 @@ Canvas.prototype.addCircle = function(c){ //Totaly change that, and adapt to cir
 
     //Add toolPath View
     c.tCanvas = [];
-    /*
-    $.each( c.t, function(i,toolpath){
-    	var p = new paper.Path.Circle(
-			new paper.Point( this.xPos(toolpath.x) , this.yPos(toolpath.y) ),
-			this.xPos(toolpath.x1 - toolpath.x)
-		);
-	    p.strokeColor = 'rgba(156, 33, 12, 0.25)'//'rgba(215, 44, 44, 0.6)';
-	    p.strokeWidth = this.w(s.bit_d);
-	    p.strokeCap = 'round';
-		p.dashArray = [p.strokeWidth*2, p.strokeWidth*3];
+    
+    var i = 0;
+    console.log("lenght");
+    console.log(c.t.length);
 
-		c.tCanvas.push(p);
-    });
-	*/
+    for(i=0 ; i< c.t.length ; i++){
+    	var p2 = new paper.Path.Circle( new paper.Point( this.xPos(c.t[i].x) , this.yPos(c.t[i].y) ) ,
+    		( this.yPos(c.t[i].y - c.t[i].y0) - paper.view.bounds.height ) );
+    	/*
+	    p2.strokeColor = 'rgba(156, 33, 12, 0.25)'//'rgba(215, 44, 44, 0.6)';
+	    p2.strokeWidth = this.w(s.bit_d);
+		p2.dashArray = [p2.strokeWidth*2, p2.strokeWidth*3];
+		*/
+		//Test the circle object, and the c.t[i] object before.
+
+		c.tCanvas.push(p2);
+    }
+
 	paper.view.draw(); //Setup //Activate
 };
 
@@ -365,8 +417,16 @@ Canvas.prototype.removeCircle = function(c){ //Make it generic with line removeF
 };
 
 
-/*
-*** Play with gCode ***
+
+
+
+/*_____________________________________________________________________________
+|																			   |
+|******************************************************************************|
+|**************************** GCode Object Section ****************************|
+|******************************************************************************|
+|******************************************************************************|
+|______________________________________________________________________________|
 */
 
 gcode = function(){
@@ -469,8 +529,14 @@ gcode.prototype.circle = function(x , y , x0 , y0 , z0 , x1 , y1 , z1){
 
 
 
-/*
-*** Global Tasks object = list of tasks
+
+/*_____________________________________________________________________________
+|																			   |
+|******************************************************************************|
+|**************************** Tasks Object Section ****************************|
+|******************************************************************************|
+|******************************************************************************|
+|______________________________________________________________________________|
 */
 
 
@@ -588,6 +654,12 @@ Tasks.toolpath = function(){
 	});
 };
 
+Tasks.gCode = function(){
+	$.each(this, function(i,t){
+		t.gCode();
+	});
+}
+
 Tasks.pos = function(id) {
 	var pos = null;
 	$.each(this, function(i,t) {
@@ -612,8 +684,7 @@ Tasks.sort = function(){
 
 
 
-/*
- ______________________________________________________________________________
+/*_____________________________________________________________________________
 |																			   |
 |******************************************************************************|
 |************************* FORM OBJECTS AND functions *************************|
@@ -621,7 +692,11 @@ Tasks.sort = function(){
 |******************************************************************************|
 |______________________________________________________________________________|
 */
-//General One
+
+/*
+*** Shared Functions ***
+*/
+
 calculAlpha = function(x,y,x0,y0){
 	var alpha = 0;
 
@@ -644,8 +719,10 @@ calculAlpha = function(x,y,x0,y0){
 
 
 
+/*
+*** Model and function of a single Line ***
+*/
 
-/********** Model and function of a single line **********/
 line = function(l,x0,y0,x1,y1,name,side) {
 	this.id="line-" + l;
 	this.pos = l;
@@ -659,7 +736,11 @@ line = function(l,x0,y0,x1,y1,name,side) {
 	this.y1 = y1 ? y1 : ($("#line_y1").length	?	parseFloat($("#line_y1").val()) : 0); //Y end position of a line
 	this.side = side ? side : ($("input:radio[name='line_side']:checked").length	?	parseInt($("input:radio[name='line_side']:checked").val()) : 1); //3 = center, 1 = Left, 2 = Right
 
+	//Synch ToolPath
 	this.toolpath();
+
+	//Synch gCode
+	this.gCode();
 
 	//Synch Canvas
 	this.addCanvas();
@@ -682,7 +763,11 @@ line.prototype.update = function(x0,y0,x1,y1,name,side) {
 	if(name) this.name=name;
 	//else name = "Line" + pos;
 
+	//Synch ToolPath
 	this.toolpath();
+
+	//Synch gCode
+	this.gCode();
 
 	//Synch Canvas
 	this.addCanvas();
@@ -768,13 +853,38 @@ line.prototype.addCanvas = function(){
 };
 
 line.prototype.gCode = function(c){
-	c.line( this.t_x0 , this.t_y0 , s.z0 , this.t_x1 , this.t_y1 , -s.z);
+	//c.line( this.t_x0 , this.t_y0 , s.z0 , this.t_x1 , this.t_y1 , -s.z);
+	this.gCode = "";
+
+	var curHeight = 0;
+	while(curHeight > -s.z) {
+		curHeight -= s.dz; //Lower the new z
+		if (curHeight < -s.z) {curHeight = -s.z;} //Set -z limit
+
+		//Go to beginning of the line
+		this.gCode +='G1X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'F' + s.air_speed + '\n';
+
+		//Go to the new depth
+		this.gCode +='G1Z' + curHeight + 'F' + s.cut_speed + '\n';
+
+		//Go to the end of the line
+		this.gCode +='G1X' + (this.x1 + s.x0) + 'Y' + (this.y1 + s.y0) + 'F' + s.cut_speed + '\n';
+
+		//Go to z over the project
+		this.gCode +='G1Z' + s.z0 + 'F' + s.air_speed + '\n'; //Maybe will be removed (see when security is needed)
+	}
+
+	return this.gCode;
 }
 
 
 
 
-/********** Model and function of a single circle**********/
+/*
+*** Model and function of a single circle ***
+*/
+
+
 //Can also do a part of a circle (if x0,y0 != of x1,y1)
 circle = function(l,x,y,x0,y0,x1,y1,name,side,diam) {
 	this.id="circle-" + l;
@@ -793,7 +903,11 @@ circle = function(l,x,y,x0,y0,x1,y1,name,side,diam) {
 
 	if ( ($("#circle_diam").length) || diam ||  ($("#circle_radius").length) || radius ) { this.circleByDiameter(); } //If Programmer Use a form with a circle diameter instead of x0,y0,x1,y1 (more used for a circle arc)
 
+	//Synch ToolPath
 	this.toolpath();
+
+	//Synch gCode
+	this.gCode();
 
 	//Synch Canvas
 	this.addCanvas();
@@ -834,7 +948,11 @@ circle.prototype.update = function(x,y,x0,y0,x1,y1,name,side) {
 	if(name) this.name=name;
 	//else name = "circle" + pos;
 
+	//Synch ToolPath
 	this.toolpath();
+
+	//Synch gCode
+	this.gCode();
 
 	//Synch Canvas
 	this.addCanvas();
@@ -975,7 +1093,28 @@ circle.prototype.addCanvas = function(){
 };
 
 circle.prototype.gCode = function(c){
+	this.gCode="";
 	$.each(this.t , function(i, t){
-		c.circle( t.x , t.y , t.x0 , t.y0 , s.z0 , t.x1 , t.y1 , -s.z );
+		//c.circle( t.x , t.y , t.x0 , t.y0 , s.z0 , t.x1 , t.y1 , -s.z );
+
+		var curHeight = 0;
+		while(curHeight > z1) {
+			curHeight -= s.dz; //Lower the new z
+			if (curHeight < z1) {curHeight = z1;} //Set -z limit
+
+			//Go to beginning of the circle
+			this.gCode +='G1X' + (x0 + s.x0) + 'Y' + (y0 + s.y0) + 'F' + s.air_speed + '\n';
+
+			//Go to the new depth
+			this.gCode +='G1Z' + curHeight + 'F' + s.cut_speed + '\n';
+
+			//Go to the end of the circle (or part of the circle)
+			this.gCode +='G2X' + (x1 + s.x0) + 'Y' + (y1 + s.y0) + 'I' + (x1 - x + s.x0) + 'J' + (y1 - y + s.y0) + 'F' + s.cut_speed + '\n';
+
+			//Go to z over the project
+			this.gCode +='G1Z' + s.z0 + 'F' + s.air_speed + '\n';
+		}
 	});
+
+	return this.gCode;
 }

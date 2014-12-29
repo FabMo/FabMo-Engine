@@ -7,40 +7,17 @@ fabmoDashboard.getMachine(function(err, machine) {
 	//ui = new FabMoUI(machine);
 });
 
-setGCode = function(s,tasks) {
+function setGCode(s,tasks) {
 	var code = new gcode();
 
 	//Do each line in more than 1 pass
 	$.each(Tasks, function(index,t){
-		t.gCode(code);
+		//Complete the gcode with the code of each task
+		gcode.body += t.gCode(code);
 	});
 	
 	return code.getGc();
 };
-
-/********** User Interface Actions **********/
-
-//Add a task
-$("#add-circle").click(function(){
-	if($("#circle_name").data("cid")) {
-		Tasks.save($("#circle_name").data("cid"));
-	}
-	else {
-		Tasks.addCircle();
-	}
-});
-
-//Delete all the tasks
-$("#reset").click(function() {
-	Tasks.reset();
-});
-
-//Not use in this app
-/*
-$(".invert-pos").click(function(){
-	invertForm();
-});
-*/
 
 //Listen for a click on Tasks List, should be called after each task modification
 function listenClickTasks(){
@@ -54,20 +31,6 @@ function listenClickTasks(){
 		Tasks.edit($(this).parent().attr("id"));
 	});
 }
-	
-//Run all the tasks
-$("#run").click(function(){
-	var c = setGCode(s,Tasks);
-
-	console.log(c);
-	
-	//dashboard.addJob(c,s);
-	fabmoDashboard.submitJob(c, {
-			'name' : 'Holes Cutter',
-			'description' : 'Cut ' + Tasks.length.toString() + ' circle(s)',
-            'filename' : 'holes_cutter.nc'
-    })
-});
 
 //OnLoad Init
 $(document).ready(function(){
@@ -78,13 +41,34 @@ $(document).ready(function(){
 	//Get Tasks from storage (if stored)
 	//L = dashboard.getAppSetting("holes_cutter","Tasks") ? dashboard.getAppSetting("holes_cutter","Tasks") : [];
 	//console.log(Tasks);
-});
 
-invertForm = function(){
-	var x0 = $("#line_x0").val();
-	var y0 = $("#line_y0").val();
-	$("#line_x0").val($("#line_x1").val());
-	$("#line_y0").val($("#line_y1").val());
-	$("#line_x1").val(x0);
-	$("#line_y1").val(y0);
-};
+
+	/********** User Interface Actions **********/
+
+	//Add a task
+	$("#add-circle").click(function(){
+		if($("#circle_name").data("cid")) {
+			Tasks.save($("#circle_name").data("cid"));
+		}
+		else {
+			Tasks.addCircle();
+		}
+	});
+
+	//Delete all the tasks
+	$("#reset").click(function() {
+		Tasks.reset();
+	});
+
+	//Run all the tasks
+	$("#run").click(function(){
+		var c = setGCode(s,Tasks);
+		
+		//dashboard.addJob(c,s);
+		fabmoDashboard.submitJob(c, {
+				'name' : 'Holes Cutter',
+				'description' : 'Cut ' + Tasks.length.toString() + ' circle(s)',
+	            'filename' : 'holes_cutter.nc'
+	    })
+	});
+});
