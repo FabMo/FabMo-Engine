@@ -78,10 +78,6 @@ function allowed_file(filename){
  *
  * This might take a little more time than a single fs.rename, but it avoids error when
  * trying to rename files from one device to the other.
- *
- * @param src {String} absolute path to source file
- * @param dest {String} absolute path to destination file
- * @param cb {Function} callback to execute upon success or failure
  */
 var move = function (src, dest, cb) {
 	var renameDeferred = q.defer();
@@ -122,13 +118,6 @@ var move = function (src, dest, cb) {
 		})
 	});
 };
-
-
-// Copyright 2012 Mark Cavage, Inc.  All rights reserved.
-
-
-
-///--- Functions
 
 function serveStatic(opts) {
     opts = opts || {};
