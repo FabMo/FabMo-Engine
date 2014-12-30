@@ -5,7 +5,7 @@
 *** Have the following functionalities :
 ***	- Store, Retrieve, Delete custom DATAS (settings, project, configuration...)
 *** - Have access to a generic "Project Settings model", to facilite project settings (size, bit) & GCODE generation
-*** - Function to generate simple GCODE commands (Line, circle, ellipse)
+*** - Function to generate simple GCODE commands (Line, circle, arc, ellipse)
 *** - Function to parse simple gcode to create a toolpath (add general offset, bit offset to cut outside / inside a line)
 */
 
@@ -181,7 +181,17 @@ $("#save-settings").click(function(){
 	if (Tasks) { Tasks.toolpath()} ;
 
 	//Re-calcul GCode
-	if (Tasks) { Tasks.gCode()} ;
+	if (Tasks) { Tasks.refreshGCode()} ;
+
+	//Re-calcul Canvas
+	if (Tasks) { Tasks.refreshCanvas()} 
+
+	/*
+	*** Nota ***
+	*/
+	//There is no synch between toolPatch and Gcode / Canvas
+	//Create / Refresh GCode can be called from Each Shape's Toolpath function
+	//Create / Refresh Canvas can be called from Each Shape's GCode function
 });
 
 //Changes tool & project settings
@@ -196,7 +206,17 @@ $("#default-settings").click(function(){
 	if (Tasks) { Tasks.toolpath()} ;
 
 	//Re-calcul GCode
-	if (Tasks) { Tasks.gCode()} ;
+	if (Tasks) { Tasks.refreshGCode()} ;
+
+	//Re-calcul Canvas
+	if (Tasks) { Tasks.refreshCanvas()} ;
+
+	/*
+	*** Nota ***
+	*/
+	//There is no synch between toolPatch and Gcode / Canvas
+	//Create / Refresh GCode can be called from Each Shape's Toolpath function
+	//Create / Refresh Canvas can be called from Each Shape's GCode function
 });
 
 
@@ -366,12 +386,9 @@ Canvas.prototype.addPoint = function(x,y,size){
 
 
 // --- Circle : Add / Edit / Remove --- //
-Canvas.prototype.addCircle = function(c){ //Totaly change that, and adapt to circle
+Canvas.prototype.addCircle = function(c){
 	//Add line view
 	c.canvas = [];
-	console.log(this.xPos(c.x));
-    console.log(this.yPos(c.y));
-    console.log(this.yPos(c.y - c.y0));
 
 	var p = new paper.Path.Circle(
 		new paper.Point( this.xPos(c.x) , this.yPos(c.y) ),
@@ -389,15 +406,17 @@ Canvas.prototype.addCircle = function(c){ //Totaly change that, and adapt to cir
     console.log("lenght");
     console.log(c.t.length);
 
-    for(i=0 ; i< c.t.length ; i++){
-    	var p2 = new paper.Path.Circle( new paper.Point( this.xPos(c.t[i].x) , this.yPos(c.t[i].y) ) ,
-    		( this.yPos(c.t[i].y - c.t[i].y0) - paper.view.bounds.height ) );
-    	/*
+    for(i=0 ; i < c.t.length ; i++){
+    	console.log("Toolpath");
+    	console.log(c.t[i]);
+    	var p2 = new paper.Path.Circle( 
+    		new paper.Point( this.xPos(c.t[i].x) , this.yPos(c.t[i].y) ) ,
+    		( this.yPos(c.t[i].y - c.t[i].y0) - paper.view.bounds.height ) 
+    	);
 	    p2.strokeColor = 'rgba(156, 33, 12, 0.25)'//'rgba(215, 44, 44, 0.6)';
-	    p2.strokeWidth = this.w(s.bit_d);
-		p2.dashArray = [p2.strokeWidth*2, p2.strokeWidth*3];
-		*/
-		//Test the circle object, and the c.t[i] object before.
+	    p2.strokeWidth = this.w(s.bit_d)*0.5;
+	    p2.strokeCap = 'round';
+		p2.dashArray = [p2.strokeWidth*2, p2.strokeWidth*1];
 
 		c.tCanvas.push(p2);
     }
@@ -416,6 +435,52 @@ Canvas.prototype.removeCircle = function(c){ //Make it generic with line removeF
 	paper.view.draw(); //Setup //Activate
 };
 
+
+// --- Arc : Add / Edit / Remove --- //
+Canvas.prototype.addArc = function(a){
+	//Add line view
+	a.canvas = [];
+
+	var p = new paper.Path.Arc(
+		new paper.Point( this.xPos(a.x) , this.yPos(a.y) ),
+		( this.yPos(a.y - a.y0) - paper.view.bounds.height )
+	);
+    p.strokeColor = 'rgba(77, 135, 29, 0.8)';
+    p.strokeWidth = 3;
+
+    a.canvas.push(p);
+
+    //Add toolPath View
+    a.tCanvas = [];
+    
+    var i = 0;
+    console.log("lenght");
+    console.log(a.t.length);
+
+    for(i=0 ; i< a.t.length ; i++){
+    	var p2 = new paper.Path.Arc( new paper.Point( this.xPos(a.t[i].x) , this.yPos(a.t[i].y) ) ,
+    		( this.yPos(a.t[i].y - a.t[i].y0) - paper.view.bounds.height ) );
+    	p2.strokeColor = 'rgba(156, 33, 12, 0.25)'//'rgba(215, 44, 44, 0.6)';
+	    p2.strokeWidth = this.w(s.bit_d)*0.5;
+	    p2.strokeCap = 'round';
+		p2.dashArray = [p2.strokeWidth*2, p2.strokeWidth*1];
+
+		c.tCanvas.push(p2);
+    }
+
+	paper.view.draw(); //Setup //Activate
+};
+
+Canvas.prototype.removeArc = function(a){ //Make it generic with line removeFromCanvas / removeView
+	$.each( a.canvas , function(i,shape){
+		shape.remove();
+	});
+	$.each( a.tCanvas , function(i,shape){
+		shape.remove();
+	});
+
+	paper.view.draw(); //Setup //Activate
+};
 
 
 
@@ -587,6 +652,34 @@ Tasks.addCircle = function(){
 	this.view();
 };
 
+Tasks.addEllipse = function(){
+	//Create a new line (task)
+	var t = new ellipse(this.length.toString()); //Assume that it's a line
+
+	//Add this to the list of Tasks
+	this.push(t);
+
+	//Save Tasks Model
+	setAppSetting("straight-lines","Tasks",this);
+
+	//View Tasks
+	this.view();
+};
+
+Tasks.addRectangle = function(){
+	//Create a new line (task)
+	var t = new rectangle(this.length.toString()); //Assume that it's a line
+
+	//Add this to the list of Tasks
+	this.push(t);
+
+	//Save Tasks Model
+	setAppSetting("straight-lines","Tasks",this);
+
+	//View Tasks
+	this.view();
+};
+
 Tasks.remove = function(id){
 	//remove the task from Canvas (if canvas)
 	Tasks[Tasks.pos(id)].removeCanvas();
@@ -633,7 +726,7 @@ Tasks.save = function(id){
 
 	//If line not founded, create a new one
 	else {
-		this.addCircle();
+		this.addCircle(); //Nota : should be replaced by a callback passed in parameter, or a generic call
 	}
 };
 
@@ -654,11 +747,26 @@ Tasks.toolpath = function(){
 	});
 };
 
-Tasks.gCode = function(){
+Tasks.refreshGCode = function(){
 	$.each(this, function(i,t){
 		t.gCode();
 	});
 }
+
+Tasks.refreshCanvas = function(){
+	$.each(this, function(i,t){
+		t.removeCanvas();
+		t.addCanvas();
+	});
+};
+
+Tasks.gCode = function(code){
+	var i = 0;
+	for(i=0;i<Tasks.length;i++){
+		code.body = code.body + Tasks[i].c;
+		console.log(code.body);
+	}
+};
 
 Tasks.pos = function(id) {
 	var pos = null;
@@ -854,27 +962,27 @@ line.prototype.addCanvas = function(){
 
 line.prototype.gCode = function(c){
 	//c.line( this.t_x0 , this.t_y0 , s.z0 , this.t_x1 , this.t_y1 , -s.z);
-	this.gCode = "";
-
+	this.c = "";
+	code= "";
 	var curHeight = 0;
 	while(curHeight > -s.z) {
 		curHeight -= s.dz; //Lower the new z
 		if (curHeight < -s.z) {curHeight = -s.z;} //Set -z limit
 
 		//Go to beginning of the line
-		this.gCode +='G1X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'F' + s.air_speed + '\n';
+		code+='G1X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'F' + s.air_speed + '\n';
 
 		//Go to the new depth
-		this.gCode +='G1Z' + curHeight + 'F' + s.cut_speed + '\n';
+		code+='G1Z' + curHeight + 'F' + s.cut_speed + '\n';
 
 		//Go to the end of the line
-		this.gCode +='G1X' + (this.x1 + s.x0) + 'Y' + (this.y1 + s.y0) + 'F' + s.cut_speed + '\n';
+		code+='G1X' + (this.x1 + s.x0) + 'Y' + (this.y1 + s.y0) + 'F' + s.cut_speed + '\n';
 
 		//Go to z over the project
-		this.gCode +='G1Z' + s.z0 + 'F' + s.air_speed + '\n'; //Maybe will be removed (see when security is needed)
+		code+='G1Z' + s.z0 + 'F' + s.air_speed + '\n'; //Maybe will be removed (see when security is needed)
 	}
-
-	return this.gCode;
+	this.c = code;
+	return this.c;
 }
 
 
@@ -886,22 +994,39 @@ line.prototype.gCode = function(c){
 
 
 //Can also do a part of a circle (if x0,y0 != of x1,y1)
-circle = function(l,x,y,x0,y0,x1,y1,name,side,diam) {
-	this.id="circle-" + l;
-	this.pos = l;
+circle = function(l,x,y,diam,side,name) {
+	//These variables will be checked later
+	var d = null; var r = null;
+	if (l) { this.pos = l; }
+	if (l) { this.id="circle-" + l; }
+
+	//Arrays for canvas view, and Toolpath view
 	this.canvas = []; //Become an array, even if there is just 1 shape for the canvas, can be more than one for other objects...
 	this.tCanvas = [];
-	name ? this.name = name : (this.name = $("#circle_name").val() 	? 	$("#circle_name").val() : this.id);
+
 	this.current=0;
+
+	//If a name is applicable, we set the custom name
+	name ? this.name = name : (this.name = $("#circle_name").val() 	? 	$("#circle_name").val() : this.id);
+
+	//Check if there is a diameter as parameter, if not, check forms
+	if (diam) {d = diam;}
+	else if ( $("#circle_diam").length ) { d = parseFloat($("#circle_diam").val()); }
+	else if ( $("#circle_radius").length ) { r = parseFloat($("#circle_radius").val()); }
+
+	//Change the diamater to radius if applicable
+	if (d) { r=d/2};
+
+	//Set the center
 	this.x = x ? x : ($("#circle_x").length 	? 	parseFloat($("#circle_x").val())	: 0); //X center of the circle
 	this.y = y ? y : ($("#circle_y").length 	?	parseFloat($("#circle_y").val()) : 0); //Y center of the circle
-	this.x0 = x0 ? x0 : ($("#circle_x0").length 	? 	parseFloat($("#circle_x0").val())	: 0); //X start position of a circle
-	this.y0 = y0 ? y0 : ($("#circle_y0").length 	?	parseFloat($("#circle_y0").val()) : 0); //Y start position of a circle
-	this.x1 = x1 ? x1 : ($("#circle_x1").length	?	parseFloat($("#circle_x1").val()) : 0); //X end position of a circle
-	this.y1 = y1 ? y1 : ($("#circle_y1").length	?	parseFloat($("#circle_y1").val()) : 0); //Y end position of a circle
-	this.side = side ? side : ($("input:radio[name='circle_side']:checked").length	?	parseInt($("input:radio[name='circle_side']:checked").val()) : 1); //3 = center, 1 = Left, 2 = Right
 
-	if ( ($("#circle_diam").length) || diam ||  ($("#circle_radius").length) || radius ) { this.circleByDiameter(); } //If Programmer Use a form with a circle diameter instead of x0,y0,x1,y1 (more used for a circle arc)
+	//Change coordinates to paper.js / gcode compatible coordinates
+	this.x0 = this.x;
+	this.y0 = this.y + r;;
+
+	//Check for the toolpath side or assign the default one
+	this.side = side ? side : ($("input:radio[name='circle_side']:checked").length	?	parseInt($("input:radio[name='circle_side']:checked").val()) : 1); //3 = on circle, 1 = exterior, 2 = Hole inside
 
 	//Synch ToolPath
 	this.toolpath();
@@ -917,30 +1042,26 @@ circle = function(l,x,y,x0,y0,x1,y1,name,side,diam) {
 	$("#circle_name").data("cid","");
 };
 
-circle.prototype.circleByDiameter = function(){
-	var d = null; var r = null;
-	if ( $("#circle_diam").length ) { d = parseFloat($("#circle_diam").val()); }
-	else if ( $("#circle_radius").length ) { r = parseFloat($("#circle_radius").val()); }
-
-	if (d) { r=d/2};
-
-	this.x0 = this.x;
-	this.x1 = this.x;
-	this.y0 = this.y + r;
-	this.y1 = this.y + r;
-
-	console.log(this);
-};
-
-circle.prototype.update = function(x,y,x0,y0,x1,y1,name,side) {
+circle.prototype.update = function(x,y,diam,side,name) {
 	//First delete view
 	this.removeCanvas();
-	this.x=x; //X center of the circle
-	this.y=y; //Y center of the circle
-	this.x0=x0; //X start position of a circle
-	this.y0=y0; //Y start position of a circle
-	this.x1=x1; //X end position of a circle
-	this.y1=y1; //Y end position of a circle
+	
+	//Check if there is a diameter as parameter, if not, check forms
+	if (diam) {d = diam;}
+	else if ( $("#circle_diam").length ) { d = parseFloat($("#circle_diam").val()); }
+	else if ( $("#circle_radius").length ) { r = parseFloat($("#circle_radius").val()); }
+
+	//Change the diamater to radius if applicable
+	if (d) { r=d/2};
+
+	//Set the center
+	this.x = x ;
+	this.y = y ;
+
+	//Change coordinates to paper.js / gcode compatible coordinates
+	this.x0 = this.x;
+	this.y0 = this.y + r;
+
 	this.side = side ? side : 1; //3 = center, 1 = Left, 2 = Right
 	
 	if ( ($("#circle_diam").length) || diam ||  ($("#circle_radius").length) || radius ) { this.circleByDiameter(); } //If Programmer Use a form with a circle diameter instead of x0,y0,x1,y1 (more used for a circle arc)
@@ -969,10 +1090,8 @@ circle.prototype.getForm = function(){
 		$("#circle_y").length 	?	parseFloat($("#circle_y").val()) : null,
 		$("#circle_x0").length 	? 	parseFloat($("#circle_x0").val())	: null,
 		$("#circle_y0").length 	?	parseFloat($("#circle_y0").val()) : null,
-		$("#circle_x1").length	?	parseFloat($("#circle_x1").val()) : null,
-		$("#circle_y1").length	?	parseFloat($("#circle_y1").val()) : null,
-		this.name = $("#circle_name").val() 	? 	$("#circle_name").val() : this.id,
-		$("input:radio[name='circle_side']:checked").length	?	parseInt($("input:radio[name='circle_side']:checked").val()) : null
+		$("input:radio[name='circle_side']:checked").length	?	parseInt($("input:radio[name='circle_side']:checked").val()) : null,
+		this.name = $("#circle_name").val() 	? 	$("#circle_name").val() : this.id
 	);
 
 	//Reset the value of "name" input & unique id "cid"
@@ -983,12 +1102,10 @@ circle.prototype.getForm = function(){
 circle.prototype.setForm = function(){
 	if ($("#circle_name").length)	{ $("#circle_name").val(this.name); }
 	if ($("#circle_name").length)	{ $("#circle_name").data("cid",this.id); }
-	if ($("#circle_x").length) 		{ $("#circle_x").val(this.x0.toString()); }
-	if ($("#circle_y").length) 		{ $("#circle_y").val(this.y0.toString()); }
+	if ($("#circle_x").length) 		{ $("#circle_x").val(this.x.toString()); }
+	if ($("#circle_y").length) 		{ $("#circle_y").val(this.y.toString()); }
 	if ($("#circle_x0").length) 	{ $("#circle_x0").val(this.x0.toString()); }
 	if ($("#circle_y0").length) 	{ $("#circle_y0").val(this.y0.toString()); }
-	if ($("#circle_x1").length) 	{ $("#circle_x1").val(this.x1.toString()); }
-	if ($("#circle_y1").length) 	{ $("#circle_y1").val(this.y1.toString()); }
 	if ($("input:radio[name='circle_side']:checked").length)	{ $("input:radio[name='circle_side'][value='"+ this.side +"']").attr("checked",true); }
 };
 
@@ -1001,64 +1118,55 @@ circle.prototype.toolpath = function() {
 		e.x=this.x; //Center X : never changes
 		e.y=this.y; //Center Y : never changes
 		e.x0=this.x0;	//Start Point X
-		e.x1=this.x1;	//End Point X
 		e.y0=this.y0;	//Start Point Y
-		e.y1=this.y1;	//End Point Y
 
 		this.t.push(e);	//Add circle to the list of toolpaths
 	}
 	else if (this.side == 1){ //Case toolpath outside the circle
 		var alpha0 = calculAlpha(this.x,this.y,this.x0,this.y0);
-		var alpha1 = calculAlpha(this.x,this.y,this.x1,this.y1);
 		var e={};
 
 		e.x=this.x; //Center X : never changes
 		e.y=this.y; //Center Y : never changes
 		e.x0=this.x0 + (s.bit_d/2) * Math.cos(alpha0);
-		e.x1=this.x1 + (s.bit_d/2) * Math.cos(alpha1);
 		e.y0=this.y0 + (s.bit_d/2) * Math.sin(alpha0);
-		e.y1=this.y1 + (s.bit_d/2) * Math.sin(alpha1);
 
 		this.t.push(e);	//Add circle to thel ist of toolpaths
 	}
-	else if (this.side == 2){ //Case toolpath inside the circle : do all the inside
+	else if (this.side == 2){ //Case toolpath inside the circle : do all the insidekkkk
 		var alpha0 = calculAlpha(this.x,this.y,this.x0,this.y0);
-		var alpha1 = calculAlpha(this.x,this.y,this.x1,this.y1);
 		var oldX0 = this.x;
 		var oldY0 = this.y;
-		var oldX1 = this.x;
-		var oldY1 = this.y;
 
-		while( (oldY0 < this.y0)
-			){ //ABS value
+		var end = 0;
+
+		while( end==0 ){ //ABS value
+			console.log("Doing 1 While again !");
 			var e={};
 			e.x=this.x; //Center X : never changes
 			e.y=this.y; //Center Y : never changes
 
-			//Check if current circle is not too big
-			if ( oldX0 > (this.x0 - (s.bit_d/2) * Math.cos(alpha0)) )  { oldX0 = (this.x0 - (s.bit_d/2) * Math.cos(alpha0)); end=1;}
-			if ( oldY0 > (this.y0 - (s.bit_d/2) * Math.cos(alpha0)) )  { oldY0 = (this.y0 - (s.bit_d/2) * Math.cos(alpha0)); end=1;}
-			if ( oldX1 > (this.x1 - (s.bit_d/2) * Math.cos(alpha1)) )  { oldX1 = (this.x1 - (s.bit_d/2) * Math.cos(alpha1)); end=1;}
-			if ( oldY1 > (this.y1 - (s.bit_d/2) * Math.cos(alpha1)) )  { oldY1 = (this.y1 - (s.bit_d/2) * Math.cos(alpha1)); end=1;}
+			//Check if current arc is not too big
+			console.log("OldX " +  Math.abs(oldX0) + " - OldY " + Math.abs(oldY0) + " - MATH x0 " + Math.abs( (this.x0 - (s.bit_d/2) * Math.cos(alpha0)) ) + " - MATH y0 " + Math.abs( (this.y0 - (s.bit_d/2) * Math.sin(alpha0)) ) );
+			if ( Math.abs(oldX0) > Math.abs( (this.x0 - (s.bit_d/2) * Math.cos(alpha0)) ) )  { oldX0 = (this.x0 - (s.bit_d/2) * Math.cos(alpha0)); end=1;}
+			if ( Math.abs(oldY0) > Math.abs( (this.y0 - (s.bit_d/2) * Math.sin(alpha0)) ) )  { oldY0 = (this.y0 - (s.bit_d/2) * Math.sin(alpha0)); end=1;}
 
-			//Put the value of the new Circle
+			if (	( Math.abs(oldX0) == Math.abs( (this.x0 - (s.bit_d/2) * Math.cos(alpha0)) ) )
+				&& ( Math.abs(oldY0) == Math.abs( (this.y0 - (s.bit_d/2) * Math.sin(alpha0)) ) )
+			)  { end=1; }
+
+			//Put the value of the new arc
 			e.x0 = oldX0;
-			e.x1 = oldX1;
 			e.y0 = oldY0;
-			e.y1 = oldY1;
 
-			//Increment position for next circle
+			//Increment position for next arc
 			oldX0 += (s.bit_d) * Math.cos(alpha0);
 			oldY0 += (s.bit_d) * Math.sin(alpha0);
-			oldX1 += (s.bit_d) * Math.cos(alpha1);
-			oldY1 += (s.bit_d) * Math.sin(alpha1);
 
-			this.t.push(e);	//Add circle to the list of toolpaths
+			this.t.push(e);	//Add arc to the list of toolpaths
+
 		}
 	}
-	
-
-	console.log(this);
 };
 
 circle.prototype.addTaskList = function() {
@@ -1070,14 +1178,6 @@ circle.prototype.addTaskList = function() {
 	str += "<td class='delete'><span>D</span></td>";
 	str += "</tr>";
 	return str;
-};
-
-
-//No use of this function ???
-circle.prototype.viewToolPath = function() {
-	//Read the x0... y1 of the circle and trace a red / Blue circle
-	//Read the toolPath of the circle and trace a grey shadow
-	return true;
 };
 
 circle.prototype.removeCanvas = function(){
@@ -1093,28 +1193,283 @@ circle.prototype.addCanvas = function(){
 };
 
 circle.prototype.gCode = function(c){
-	this.gCode="";
-	$.each(this.t , function(i, t){
+	this.c= "";
+	var code = "";
+
+	var curHeight = 0;
+	
+	while(curHeight > -s.z) {
+		curHeight -= s.dz; //Lower the new z
+		if (curHeight < -s.z) {curHeight = -s.z;} //Set -z limit
+
+		$.each(this.t , function(i, t){
 		//c.circle( t.x , t.y , t.x0 , t.y0 , s.z0 , t.x1 , t.y1 , -s.z );
 
-		var curHeight = 0;
-		while(curHeight > z1) {
-			curHeight -= s.dz; //Lower the new z
-			if (curHeight < z1) {curHeight = z1;} //Set -z limit
-
 			//Go to beginning of the circle
-			this.gCode +='G1X' + (x0 + s.x0) + 'Y' + (y0 + s.y0) + 'F' + s.air_speed + '\n';
+			code+='G1X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'F' + s.air_speed + '\n';
 
 			//Go to the new depth
-			this.gCode +='G1Z' + curHeight + 'F' + s.cut_speed + '\n';
+			code+='G1Z' + curHeight + 'F' + s.cut_speed + '\n';
 
 			//Go to the end of the circle (or part of the circle)
-			this.gCode +='G2X' + (x1 + s.x0) + 'Y' + (y1 + s.y0) + 'I' + (x1 - x + s.x0) + 'J' + (y1 - y + s.y0) + 'F' + s.cut_speed + '\n';
+			code+='G2X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'I' + (this.x0 - this.x + s.x0) + 'J' + (this.y0 - this.y + s.y0) + 'F' + s.cut_speed + '\n';
 
 			//Go to z over the project
-			this.gCode +='G1Z' + s.z0 + 'F' + s.air_speed + '\n';
-		}
-	});
+			code+='G1Z' + s.z0 + 'F' + s.air_speed + '\n';
+		});
+	}
 
-	return this.gCode;
-}
+	this.c = code;
+	return this.c;
+};
+
+
+
+
+
+/*
+*** Model and function of a single arc ***
+*/
+
+
+//Can also do a part of a arc (if x0,y0 != of x1,y1)
+arc = function(l,x,y,x0,y0,x1,y1,side,name) {
+
+	//Give an id if possible
+	if (l) {
+		this.id="arc-" + l;
+		this.pos = l;
+	}
+	
+	//Initialisations
+	this.canvas = []; //Become an array, even if there is just 1 shape for the canvas, can be more than one for other objects...
+	this.tCanvas = [];
+	this.current=0;
+
+	//Give a name to the arc, if applicable
+	name ? this.name = name : (this.name = $("#arc_name").val() 	? 	$("#arc_name").val() : this.id);
+	
+	this.x = x ? x : ($("#arc_x").length 	? 	parseFloat($("#arc_x").val())	: 0); //X center of the arc
+	this.y = y ? y : ($("#arc_y").length 	?	parseFloat($("#arc_y").val()) : 0); //Y center of the arc
+	this.x0 = x0 ? x0 : ($("#arc_x0").length 	? 	parseFloat($("#arc_x0").val())	: 0); //X start position of a arc
+	this.y0 = y0 ? y0 : ($("#arc_y0").length 	?	parseFloat($("#arc_y0").val()) : 0); //Y start position of a arc
+	this.x1 = x1 ? x1 : ($("#arc_x1").length	?	parseFloat($("#arc_x1").val()) : 0); //X end position of a arc
+	this.y1 = y1 ? y1 : ($("#arc_y1").length	?	parseFloat($("#arc_y1").val()) : 0); //Y end position of a arc
+	this.side = side ? side : ($("input:radio[name='arc_side']:checked").length	?	parseInt($("input:radio[name='arc_side']:checked").val()) : 1); //3 = On line, 1 = Exterior, 2 = Interior, 4 = inside (from center)
+
+	//Synch ToolPath
+	this.toolpath();
+
+	//Synch gCode
+	this.gCode();
+
+	//Synch Canvas
+	this.addCanvas();
+
+	//Reset the value of "name" input & unique id "cid" -> By Security
+	$("#arc_name").val("");
+	$("#arc_name").data("cid","");
+};
+
+arc.prototype.update = function(x,y,x0,y0,x1,y1,side,name) {
+	//First delete view
+	this.removeCanvas();
+	this.x=x; //X center of the arc
+	this.y=y; //Y center of the arc
+	this.x0=x0; //X start position of a arc
+	this.y0=y0; //Y start position of a arc
+	this.x1=x1; //X end position of a arc
+	this.y1=y1; //Y end position of a arc
+	this.side = side ? side : 1; //3 = center, 1 = Left, 2 = Right
+	
+	//Rename the shape if applicable
+	if(name) this.name=name;
+	//else name = "arc" + pos;
+
+	//Synch ToolPath
+	this.toolpath();
+
+	//Synch gCode
+	this.gCode();
+
+	//Synch Canvas
+	this.addCanvas();
+};
+
+//Should move to Tasks (set a task as current, and not a form)
+arc.prototype.setCurrent = function() { this.current=1 };
+arc.prototype.resetCurrent = function() { this.current=0 };
+
+arc.prototype.getForm = function(){
+	//Add attributes
+	this.update(
+		$("#arc_x").length 	? 	parseFloat($("#arc_x").val())	: null,
+		$("#arc_y").length 	?	parseFloat($("#arc_y").val()) : null,
+		$("#arc_x0").length 	? 	parseFloat($("#arc_x0").val())	: null,
+		$("#arc_y0").length 	?	parseFloat($("#arc_y0").val()) : null,
+		$("#arc_x1").length	?	parseFloat($("#arc_x1").val()) : null,
+		$("#arc_y1").length	?	parseFloat($("#arc_y1").val()) : null,
+		$("input:radio[name='arc_side']:checked").length	?	parseInt($("input:radio[name='arc_side']:checked").val()) : null,
+		this.name = $("#arc_name").val() 	? 	$("#arc_name").val() : this.id
+	);
+
+	//Reset the value of "name" input & unique id "cid"
+	$("#arc_name").val("");
+	$("#arc_name").data("cid","");
+};
+
+arc.prototype.setForm = function(){
+	if ($("#arc_name").length)	{ $("#arc_name").val(this.name); 		}
+	if ($("#arc_name").length)	{ $("#arc_name").data("cid",this.id); 	}
+	if ($("#arc_x").length) 	{ $("#arc_x").val(this.x0.toString()); 	}
+	if ($("#arc_y").length) 	{ $("#arc_y").val(this.y0.toString()); 	}
+	if ($("#arc_x0").length) 	{ $("#arc_x0").val(this.x0.toString()); }
+	if ($("#arc_y0").length) 	{ $("#arc_y0").val(this.y0.toString()); }
+	if ($("#arc_x1").length) 	{ $("#arc_x1").val(this.x1.toString()); }
+	if ($("#arc_y1").length) 	{ $("#arc_y1").val(this.y1.toString()); }
+	if ($("input:radio[name='arc_side']:checked").length)	{ $("input:radio[name='arc_side'][value='"+ this.side +"']").attr("checked",true); }
+};
+
+//To change, won't work with this formula
+arc.prototype.toolpath = function() {
+	this.t=[];
+
+	if (this.side == 3){ //Case toolpath on the arc
+		var e={};
+		e.x=this.x; //Center X : never changes
+		e.y=this.y; //Center Y : never changes
+		e.x0=this.x0;	//Start Point X
+		e.x1=this.x1;	//End Point X
+		e.y0=this.y0;	//Start Point Y
+		e.y1=this.y1;	//End Point Y
+
+		this.t.push(e);	//Add arc to the list of toolpaths
+	}
+	else if (this.side == 1){ //Case toolpath outside the arc
+		var alpha0 = calculAlpha(this.x,this.y,this.x0,this.y0);
+		var alpha1 = calculAlpha(this.x,this.y,this.x1,this.y1);
+		var e={};
+
+		e.x=this.x; //Center X : never changes
+		e.y=this.y; //Center Y : never changes
+		e.x0=this.x0 + (s.bit_d/2) * Math.cos(alpha0);
+		e.x1=this.x1 + (s.bit_d/2) * Math.cos(alpha1);
+		e.y0=this.y0 + (s.bit_d/2) * Math.sin(alpha0);
+		e.y1=this.y1 + (s.bit_d/2) * Math.sin(alpha1);
+
+		this.t.push(e);	//Add arc to thel ist of toolpaths
+	}
+	else if (this.side == 1){ //Case toolpath inside the arc, but we not fill the form
+		var alpha0 = calculAlpha(this.x,this.y,this.x0,this.y0);
+		var alpha1 = calculAlpha(this.x,this.y,this.x1,this.y1);
+		var e={};
+
+		e.x=this.x; //Center X : never changes
+		e.y=this.y; //Center Y : never changes
+		e.x0=this.x0 - (s.bit_d/2) * Math.cos(alpha0);
+		e.x1=this.x1 - (s.bit_d/2) * Math.cos(alpha1);
+		e.y0=this.y0 - (s.bit_d/2) * Math.sin(alpha0);
+		e.y1=this.y1 - (s.bit_d/2) * Math.sin(alpha1);
+
+		this.t.push(e);	//Add arc to thel ist of toolpaths
+	}
+	else if (this.side == 4){ //Case toolpath inside the arc, & we fill the form from the center
+		var alpha0 = calculAlpha(this.x,this.y,this.x0,this.y0);
+		var alpha1 = calculAlpha(this.x,this.y,this.x1,this.y1);
+		var oldX0 = this.x;
+		var oldY0 = this.y;
+		var oldX1 = this.x;
+		var oldY1 = this.y;
+
+		var end = 0;
+
+		while( end==0 ){ //ABS value
+			var e={};
+			e.x=this.x; //Center X : never changes
+			e.y=this.y; //Center Y : never changes
+
+			//Check if current arc is not too big
+			if ( Math.abs(oldX0) > Math.abs( (this.x0 - (s.bit_d/2) * Math.cos(alpha0)) ) )  { oldX0 = (this.x0 - (s.bit_d/2) * Math.cos(alpha0)); end=1;}
+			if ( Math.abs(oldY0) > Math.abs( (this.y0 - (s.bit_d/2) * Math.sin(alpha0)) ) )  { oldY0 = (this.y0 - (s.bit_d/2) * Math.sin(alpha0)); end=1;}
+			if ( Math.abs(oldX1) > Math.abs( (this.x1 - (s.bit_d/2) * Math.cos(alpha1)) ) )  { oldX1 = (this.x1 - (s.bit_d/2) * Math.cos(alpha1)); end=1;}
+			if ( Math.abs(oldY1) > Math.abs( (this.y1 - (s.bit_d/2) * Math.sin(alpha1)) ) )  { oldY1 = (this.y1 - (s.bit_d/2) * Math.sin(alpha1)); end=1;}
+			if ( Math.abs(oldX0) == Math.abs( (this.x0 - (s.bit_d/2) * Math.cos(alpha0)) ) )  { end=1; }
+			if ( Math.abs(oldY0) == Math.abs( (this.y0 - (s.bit_d/2) * Math.sin(alpha0)) ) )  { end=1; }
+			if ( Math.abs(oldX1) == Math.abs( (this.x1 - (s.bit_d/2) * Math.cos(alpha1)) ) )  { end=1; }
+			if ( Math.abs(oldY1) == Math.abs( (this.y1 - (s.bit_d/2) * Math.sin(alpha1)) ) )  { end=1; }
+
+			//Put the value of the new arc
+			e.x0 = oldX0;
+			e.x1 = oldX1;
+			e.y0 = oldY0;
+			e.y1 = oldY1;
+
+			//Increment position for next arc
+			oldX0 += (s.bit_d) * Math.cos(alpha0);
+			oldY0 += (s.bit_d) * Math.sin(alpha0);
+			oldX1 += (s.bit_d) * Math.cos(alpha1);
+			oldY1 += (s.bit_d) * Math.sin(alpha1);
+
+			this.t.push(e);	//Add arc to the list of toolpaths
+		}
+	}
+};
+
+arc.prototype.addTaskList = function() {
+	var str = "";
+	str += "<tr class='" + (this.current ? 'current' : '') + "' id='" + this.id + "'>";
+	str += "<td>" + this.name + "</td>";
+	str += "<td>(" + this.x.toString() + "," + this.y.toString() + ") R=" + (this.y0 - this.y).toString() + "</td>";
+	str += "<td class='edit'><span>E</span></td>";
+	str += "<td class='delete'><span>D</span></td>";
+	str += "</tr>";
+	return str;
+};
+
+
+//No use of this function ???
+arc.prototype.viewToolPath = function() {
+	//Read the x0... y1 of the arc and trace a red / Blue arc
+	//Read the toolPath of the arc and trace a grey shadow
+	return true;
+};
+
+arc.prototype.removeCanvas = function(){
+	if(c && this.canvas){
+		c.removearc(this);
+	}
+};
+
+arc.prototype.addCanvas = function(){
+	if(c){
+		c.addarc(this);
+	}
+};
+
+arc.prototype.gCode = function(c){
+	this.c="";
+	code = "";
+	var curHeight = 0;
+	while(curHeight > -s.z) {
+		curHeight -= s.dz; //Lower the new z
+		if (curHeight < -s.z) {curHeight = -s.z;} //Set -z limit
+		
+		$.each(this.t , function(i, t){
+		//c.arc( t.x , t.y , t.x0 , t.y0 , s.z0 , t.x1 , t.y1 , -s.z );
+			//Go to beginning of the arc
+			code+='G1X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'F' + s.air_speed + '\n';
+
+			//Go to the new depth
+			code+='G1Z' + curHeight + 'F' + s.cut_speed + '\n';
+
+			//Go to the end of the arc (or part of the arc)
+			code+='G2X' + (this.x1 + s.x0) + 'Y' + (this.y1 + s.y0) + 'I' + (this.x1 - this.x + s.x0) + 'J' + (this.y1 - this.y + s.y0) + 'F' + s.cut_speed + '\n';
+		});
+	}
+
+	//Go to z over the project
+	code+='G1Z' + s.z0 + 'F' + s.air_speed + '\n';
+
+	this.c = code;
+	return this.c;
+};

@@ -7,15 +7,12 @@ fabmoDashboard.getMachine(function(err, machine) {
 	//ui = new FabMoUI(machine);
 });
 
-function setGCode(s,tasks) {
+function setGCode(s) {
 	var code = new gcode();
-
 	//Do each line in more than 1 pass
-	$.each(Tasks, function(index,t){
-		//Complete the gcode with the code of each task
-		gcode.body += t.gCode(code);
-	});
-	
+	Tasks.gCode(code);
+	console.log("Final Setup");
+	console.log(code.getGc());
 	return code.getGc();
 };
 
@@ -62,7 +59,7 @@ $(document).ready(function(){
 
 	//Run all the tasks
 	$("#run").click(function(){
-		var c = setGCode(s,Tasks);
+		var c = setGCode();
 		
 		//dashboard.addJob(c,s);
 		fabmoDashboard.submitJob(c, {

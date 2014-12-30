@@ -173,6 +173,7 @@ input[type="file"]:active::before {
 .orange { background-color: #dd8728 !important; }
 .red    { background-color: #9c210c !important; }
 .grey   { background-color: #666 !important;    }
+.green  { background-color: #1eda53 !important; }
 
 header h2 {
   color:#fff;
