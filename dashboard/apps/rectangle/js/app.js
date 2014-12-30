@@ -403,12 +403,8 @@ Canvas.prototype.addCircle = function(c){
     c.tCanvas = [];
     
     var i = 0;
-    console.log("lenght");
-    console.log(c.t.length);
 
     for(i=0 ; i < c.t.length ; i++){
-    	console.log("Toolpath");
-    	console.log(c.t[i]);
     	var p2 = new paper.Path.Circle( 
     		new paper.Point( this.xPos(c.t[i].x) , this.yPos(c.t[i].y) ) ,
     		( this.yPos(c.t[i].y - c.t[i].y0) - paper.view.bounds.height ) 
@@ -454,8 +450,6 @@ Canvas.prototype.addArc = function(a){
     a.tCanvas = [];
     
     var i = 0;
-    console.log("lenght");
-    console.log(a.t.length);
 
     for(i=0 ; i< a.t.length ; i++){
     	var p2 = new paper.Path.Arc( new paper.Point( this.xPos(a.t[i].x) , this.yPos(a.t[i].y) ) ,
@@ -536,61 +530,6 @@ gcode.prototype.G1 = function(x,y,z,s){
 	return ('G1' + (x ? 'X' + (x + s.x0) : '') + (y ? 'Y' + (y + s.y0) : '') + (z ? 'Z' + z : '') + 'F' + s + '\n');
 };
 
-/********** GCode Shapes **********/
-gcode.prototype.line = function(x0,y0,z0,x1,y1,z1){
-	//x0 & y0 : start point
-	//x1 & y1 : end point
-	//z0 : start depth
-	//z1 : end depth
-
-	this.body += ""
-
-	var curHeight = 0;
-	while(curHeight > z1) {
-		curHeight -= s.dz; //Lower the new z
-		if (curHeight < z1) {curHeight = z1;} //Set -z limit
-
-		//Go to beginning of the line
-		this.body +='G1X' + (x0 + s.x0) + 'Y' + (y0 + s.y0) + 'F' + s.air_speed + '\n';
-
-		//Go to the new depth
-		this.body +='G1Z' + curHeight + 'F' + s.cut_speed + '\n';
-
-		//Go to the end of the line
-		this.body +='G1X' + (x1 + s.x0) + 'Y' + (y1 + s.y0) + 'F' + s.cut_speed + '\n';
-
-		//Go to z over the project
-		this.body +='G1Z' + s.z0 + 'F' + s.air_speed + '\n'; //Maybe will be removed (see when security is needed)
-	}
-};
-
-gcode.prototype.circle = function(x , y , x0 , y0 , z0 , x1 , y1 , z1){
-	//x0 & y0 : start point
-	//x1 & y1 : end point
-	//z0 : start depth
-	//z1 : end depth
-
-	this.body += ""
-
-	var curHeight = 0;
-	while(curHeight > z1) {
-		curHeight -= s.dz; //Lower the new z
-		if (curHeight < z1) {curHeight = z1;} //Set -z limit
-
-		//Go to beginning of the circle
-		this.body +='G1X' + (x0 + s.x0) + 'Y' + (y0 + s.y0) + 'F' + s.air_speed + '\n';
-
-		//Go to the new depth
-		this.body +='G1Z' + curHeight + 'F' + s.cut_speed + '\n';
-
-		//Go to the end of the circle (or part of the circle)
-		this.body +='G2X' + (x1 + s.x0) + 'Y' + (y1 + s.y0) + 'I' + (x1 - x + s.x0) + 'J' + (y1 - y + s.y0) + 'F' + s.cut_speed + '\n';
-
-		//Go to z over the project
-		this.body +='G1Z' + s.z0 + 'F' + s.air_speed + '\n';
-	}
-};
-
 
 
 
@@ -623,7 +562,7 @@ Tasks.reset = function(){
 
 Tasks.addLine = function(){
 	//Create a new line (task)
-	var t = new line(this.length.toString()); //Assume that it's a line
+	var t = new line(this.length.toString());
 
 	//Add this to the list of Tasks
 	this.push(t);
@@ -640,7 +579,7 @@ Tasks.addLine = function(){
 
 Tasks.addCircle = function(){
 	//Create a new line (task)
-	var t = new circle(this.length.toString()); //Assume that it's a line
+	var t = new circle(this.length.toString());
 
 	//Add this to the list of Tasks
 	this.push(t);
@@ -654,7 +593,7 @@ Tasks.addCircle = function(){
 
 Tasks.addEllipse = function(){
 	//Create a new line (task)
-	var t = new ellipse(this.length.toString()); //Assume that it's a line
+	var t = new ellipse(this.length.toString());
 
 	//Add this to the list of Tasks
 	this.push(t);
@@ -668,7 +607,7 @@ Tasks.addEllipse = function(){
 
 Tasks.addRectangle = function(){
 	//Create a new line (task)
-	var t = new rectangle(this.length.toString()); //Assume that it's a line
+	var t = new rectangle(this.length.toString());
 
 	//Add this to the list of Tasks
 	this.push(t);
@@ -710,7 +649,9 @@ Tasks.edit = function(id){
 
 Tasks.save = function(id){
 	//Search for the line and add it
-	if(this.pos(id)){
+	if(this.pos(id) != null){
+		console.log("Founded");
+
 		var t = this[this.pos(id)];
 		t.getForm();
 
@@ -997,8 +938,10 @@ line.prototype.gCode = function(c){
 circle = function(l,x,y,diam,side,name) {
 	//These variables will be checked later
 	var d = null; var r = null;
-	if (l) { this.pos = l; }
-	if (l) { this.id="circle-" + l; }
+	if (l) {
+		this.pos = l;
+		this.id="circle-" + l;
+	}
 
 	//Arrays for canvas view, and Toolpath view
 	this.canvas = []; //Become an array, even if there is just 1 shape for the canvas, can be more than one for other objects...
@@ -1007,14 +950,14 @@ circle = function(l,x,y,diam,side,name) {
 	this.current=0;
 
 	//If a name is applicable, we set the custom name
-	name ? this.name = name : (this.name = $("#circle_name").val() 	? 	$("#circle_name").val() : this.id);
+	name ? this.name = name : (this.name = ($("#circle_name").val() 	? 	$("#circle_name").val() : this.id));
 
 	//Check if there is a diameter as parameter, if not, check forms
 	if (diam) {d = diam;}
 	else if ( $("#circle_diam").length ) { d = parseFloat($("#circle_diam").val()); }
 	else if ( $("#circle_radius").length ) { r = parseFloat($("#circle_radius").val()); }
 
-	//Change the diamater to radius if applicable
+	//Change the diameter to radius if applicable
 	if (d) { r=d/2};
 
 	//Set the center
@@ -1064,8 +1007,6 @@ circle.prototype.update = function(x,y,diam,side,name) {
 
 	this.side = side ? side : 1; //3 = center, 1 = Left, 2 = Right
 	
-	if ( ($("#circle_diam").length) || diam ||  ($("#circle_radius").length) || radius ) { this.circleByDiameter(); } //If Programmer Use a form with a circle diameter instead of x0,y0,x1,y1 (more used for a circle arc)
-
 	if(name) this.name=name;
 	//else name = "circle" + pos;
 
@@ -1088,8 +1029,7 @@ circle.prototype.getForm = function(){
 	this.update(
 		$("#circle_x").length 	? 	parseFloat($("#circle_x").val())	: null,
 		$("#circle_y").length 	?	parseFloat($("#circle_y").val()) : null,
-		$("#circle_x0").length 	? 	parseFloat($("#circle_x0").val())	: null,
-		$("#circle_y0").length 	?	parseFloat($("#circle_y0").val()) : null,
+		$("#circle_radius").length 	? 	parseFloat($("#circle_radius").val()*2)	: ($("#circle_diam").length ? parseFloat($("#circle_radius").val()) : null),
 		$("input:radio[name='circle_side']:checked").length	?	parseInt($("input:radio[name='circle_side']:checked").val()) : null,
 		this.name = $("#circle_name").val() 	? 	$("#circle_name").val() : this.id
 	);
@@ -1100,12 +1040,17 @@ circle.prototype.getForm = function(){
 };
 
 circle.prototype.setForm = function(){
-	if ($("#circle_name").length)	{ $("#circle_name").val(this.name); }
-	if ($("#circle_name").length)	{ $("#circle_name").data("cid",this.id); }
+	console.log("Function SetForm");
+	console.log("Id : " + this.id);
+
+	if ($("#circle_name").length)	{
+		$("#circle_name").val(this.name);
+		$("#circle_name").data("cid",this.id);
+	}
 	if ($("#circle_x").length) 		{ $("#circle_x").val(this.x.toString()); }
 	if ($("#circle_y").length) 		{ $("#circle_y").val(this.y.toString()); }
-	if ($("#circle_x0").length) 	{ $("#circle_x0").val(this.x0.toString()); }
-	if ($("#circle_y0").length) 	{ $("#circle_y0").val(this.y0.toString()); }
+	if ($("#circle_radius").length) { $("#circle_radius").val( (this.y0-this.y).toString()); }
+	if ($("#circle_diam").length) 	{ $("#circle_diam").val( ((this.y0-this.y)*2).toString()); }
 	if ($("input:radio[name='circle_side']:checked").length)	{ $("input:radio[name='circle_side'][value='"+ this.side +"']").attr("checked",true); }
 };
 
@@ -1141,13 +1086,11 @@ circle.prototype.toolpath = function() {
 		var end = 0;
 
 		while( end==0 ){ //ABS value
-			console.log("Doing 1 While again !");
 			var e={};
 			e.x=this.x; //Center X : never changes
 			e.y=this.y; //Center Y : never changes
 
 			//Check if current arc is not too big
-			console.log("OldX " +  Math.abs(oldX0) + " - OldY " + Math.abs(oldY0) + " - MATH x0 " + Math.abs( (this.x0 - (s.bit_d/2) * Math.cos(alpha0)) ) + " - MATH y0 " + Math.abs( (this.y0 - (s.bit_d/2) * Math.sin(alpha0)) ) );
 			if ( Math.abs(oldX0) > Math.abs( (this.x0 - (s.bit_d/2) * Math.cos(alpha0)) ) )  { oldX0 = (this.x0 - (s.bit_d/2) * Math.cos(alpha0)); end=1;}
 			if ( Math.abs(oldY0) > Math.abs( (this.y0 - (s.bit_d/2) * Math.sin(alpha0)) ) )  { oldY0 = (this.y0 - (s.bit_d/2) * Math.sin(alpha0)); end=1;}
 
@@ -1393,8 +1336,8 @@ arc.prototype.toolpath = function() {
 			if ( Math.abs(oldY0) > Math.abs( (this.y0 - (s.bit_d/2) * Math.sin(alpha0)) ) )  { oldY0 = (this.y0 - (s.bit_d/2) * Math.sin(alpha0)); end=1;}
 			if ( Math.abs(oldX1) > Math.abs( (this.x1 - (s.bit_d/2) * Math.cos(alpha1)) ) )  { oldX1 = (this.x1 - (s.bit_d/2) * Math.cos(alpha1)); end=1;}
 			if ( Math.abs(oldY1) > Math.abs( (this.y1 - (s.bit_d/2) * Math.sin(alpha1)) ) )  { oldY1 = (this.y1 - (s.bit_d/2) * Math.sin(alpha1)); end=1;}
-			if ( Math.abs(oldX0) == Math.abs( (this.x0 - (s.bit_d/2) * Math.cos(alpha0)) ) )  { end=1; }
-			if ( Math.abs(oldY0) == Math.abs( (this.y0 - (s.bit_d/2) * Math.sin(alpha0)) ) )  { end=1; }
+			if ( Math.abs(oldX0) == Math.abs( (this.x0 - (s.bit_d/2) * Math.cos(alpha0)) ) )  { end=1; 
+}			if ( Math.abs(oldY0) == Math.abs( (this.y0 - (s.bit_d/2) * Math.sin(alpha0)) ) )  { end=1; }
 			if ( Math.abs(oldX1) == Math.abs( (this.x1 - (s.bit_d/2) * Math.cos(alpha1)) ) )  { end=1; }
 			if ( Math.abs(oldY1) == Math.abs( (this.y1 - (s.bit_d/2) * Math.sin(alpha1)) ) )  { end=1; }
 

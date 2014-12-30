@@ -27,7 +27,22 @@ function listenClickTasks(){
 	$(".list-tasks-container .edit").click(function(){
 		Tasks.edit($(this).parent().attr("id"));
 	});
-}
+};
+
+function toogleRadiusDiameter() {
+	if(  $('input[name=radius_diameter]').is(':checked') ){
+		$(".circle_radius_container").show();
+		$(".circle_diam_container").hide();
+		$(".circle_radius_container input").attr("id","circle_radius");
+		$(".circle_diam_container input").attr("id","");
+	}
+	else {
+		$(".circle_radius_container").hide();
+		$(".circle_diam_container").show();
+		$(".circle_radius_container input").attr("id","");
+		$(".circle_diam_container input").attr("id","circle_diam");
+	}
+};
 
 //OnLoad Init
 $(document).ready(function(){
@@ -67,5 +82,10 @@ $(document).ready(function(){
 				'description' : 'Cut ' + Tasks.length.toString() + ' circle(s)',
 	            'filename' : 'holes_cutter.nc'
 	    })
+	});
+
+	//Change radius input to diameter input
+	$("#radius_diameter + label").click(function(){
+		toogleRadiusDiameter();
 	});
 });

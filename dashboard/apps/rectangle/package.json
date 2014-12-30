@@ -1,11 +1,11 @@
 {
-	"name":"Straight Lines",
+	"name":"Rectangles",
 	"main":"./index.html",
 	"icon":"icon.png",
-	"icon_color":"orange",
-	"version":"0.0.1",
+	"icon_color":"grey",
+	"version":"1.0",
 	"author":"Antoine Delhaye",
 	"target":[],
 	"website":"http://shopbottools.com",
-	"id":"straight-lines"
+	"id":"rectangles"
 }
