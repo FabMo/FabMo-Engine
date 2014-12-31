@@ -169,7 +169,8 @@ input[type="file"]:active::before {
 *** Header ***
 */
 
-.blue   { background-color:#313366 !important;  }
+.blue   { background-color: #313366 !important; }
+.black  { background-color: #444444 !important; }
 .orange { background-color: #dd8728 !important; }
 .red    { background-color: #9c210c !important; }
 .grey   { background-color: #666 !important;    }

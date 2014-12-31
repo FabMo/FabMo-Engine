@@ -30,17 +30,19 @@ function listenClickTasks(){
 };
 
 function toogleRadiusDiameter() {
-	if(  $('input[name=radius_diameter]').is(':checked') ){
-		$(".circle_radius_container").show();
-		$(".circle_diam_container").hide();
-		$(".circle_radius_container input").attr("id","circle_radius");
-		$(".circle_diam_container input").attr("id","");
+	if(  $('input[name=dimensions_method]').is(':checked') ){
+		$(".rectangle_dimensions_container").show();
+		$(".rectangle_end_container").hide();
+		$(".rectangle_dimensions_container input.first").attr("id","rectangle_w");
+		$(".rectangle_dimensions_container input.last").attr("id","rectangle_h");
+		$(".rectangle_end_container input").attr("id","");
 	}
 	else {
-		$(".circle_radius_container").hide();
-		$(".circle_diam_container").show();
-		$(".circle_radius_container input").attr("id","");
-		$(".circle_diam_container input").attr("id","circle_diam");
+		$(".rectangle_dimensions_container").hide();
+		$(".rectangle_end_container").show();
+		$(".rectangle_dimensions_container input").attr("id","");
+		$(".rectangle_end_container input.first").attr("id","rectangle_x1");
+		$(".rectangle_end_container input.last").attr("id","rectangle_y1");
 	}
 };
 
@@ -58,12 +60,12 @@ $(document).ready(function(){
 	/********** User Interface Actions **********/
 
 	//Add a task
-	$("#add-circle").click(function(){
-		if($("#circle_name").data("cid")) {
-			Tasks.save($("#circle_name").data("cid"));
+	$("#add-rectangle").click(function(){
+		if($("#rectangle_name").data("cid")) {
+			Tasks.save($("#rectangle_name").data("cid"));
 		}
 		else {
-			Tasks.addCircle();
+			Tasks.addrectangle();
 		}
 	});
 
@@ -79,13 +81,13 @@ $(document).ready(function(){
 		//dashboard.addJob(c,s);
 		fabmoDashboard.submitJob(c, {
 				'name' : 'Holes Cutter',
-				'description' : 'Cut ' + Tasks.length.toString() + ' circle(s)',
+				'description' : 'Cut ' + Tasks.length.toString() + ' rectangle(s)',
 	            'filename' : 'holes_cutter.nc'
 	    })
 	});
 
 	//Change radius input to diameter input
-	$("#radius_diameter + label").click(function(){
+	$("#dimensions_method + label").click(function(){
 		toogleRadiusDiameter();
 	});
 });

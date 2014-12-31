@@ -5,7 +5,7 @@
 *** Have the following functionalities :
 ***	- Store, Retrieve, Delete custom DATAS (settings, project, configuration...)
 *** - Have access to a generic "Project Settings model", to facilite project settings (size, bit) & GCODE generation
-*** - Function to generate simple GCODE commands (Line, circle, arc, ellipse)
+*** - Function to generate simple GCODE commands (Line, rectangle, circle, arc, ellipse)
 *** - Function to parse simple gcode to create a toolpath (add general offset, bit offset to cut outside / inside a line)
 */
 
@@ -385,6 +385,53 @@ Canvas.prototype.addPoint = function(x,y,size){
 };
 
 
+// --- Rectangle : Add / Edit / Remove --- //
+Canvas.prototype.addRectangle = function(r){
+	//Add line view
+	r.canvas = [];
+
+	var p = new paper.Path.Rectangle(
+		new paper.Point( this.xPos(r.x0) , this.yPos(r.y0) ),
+		new paper.Point( this.xPos(r.x1) , this.yPos(r.y1) )
+	);
+    p.strokeColor = 'rgba(77, 135, 29, 0.8)';
+    p.strokeWidth = 3;
+
+    r.canvas.push(p);
+
+    //Add toolPath View
+    r.tCanvas = [];
+    
+    var i = 0;
+
+    for(i=0 ; i < r.t.length ; i++){
+    	var p2 = new paper.Path.rectangle( 
+    		new paper.Point( this.xPos(r.t[i].x0) , this.yPos(r.t[i].y0) ) ,
+    		new paper.Point( this.xPos(r.t[i].x1) , this.yPos(r.t[i].y1) )
+    	);
+	    p2.strokeColor = 'rgba(156, 33, 12, 0.25)'//'rgba(215, 44, 44, 0.6)';
+	    p2.strokeWidth = this.w(s.bit_d)*0.5;
+	    p2.strokeCap = 'round';
+		p2.dashArray = [p2.strokeWidth*2, p2.strokeWidth*1];
+
+		r.tCanvas.push(p2);
+    }
+
+	paper.view.draw(); //Setup //Activate
+};
+
+Canvas.prototype.removeRectangle = function(r){ //Make it generic with line removeFromCanvas / removeView
+	$.each( r.canvas , function(i,shape){
+		shape.remove();
+	});
+	$.each( r.tCanvas , function(i,shape){
+		shape.remove();
+	});
+
+	paper.view.draw(); //Setup //Activate
+};
+
+
 // --- Circle : Add / Edit / Remove --- //
 Canvas.prototype.addCircle = function(c){
 	//Add line view
@@ -575,6 +622,20 @@ Tasks.addLine = function(){
 
 	//Synch View
 
+};
+
+Tasks.addRectangle = function(){
+	//Create a new line (task)
+	var t = new rectangle(this.length.toString());
+
+	//Add this to the list of Tasks
+	this.push(t);
+
+	//Save Tasks Model
+	setAppSetting("straight-lines","Tasks",this);
+
+	//View Tasks
+	this.view();
 };
 
 Tasks.addCircle = function(){
@@ -929,6 +990,272 @@ line.prototype.gCode = function(c){
 
 
 
+
+/*
+*** Model and function of a single rectangle ***
+*/
+
+
+//Can also do a part of a rectangle (if x0,y0 != of x1,y1)
+rectangle = function(l,x0,y0,x1,y1,side,name) {
+	//These variables will be checked later
+	var x0 = x0;
+	var x1 = x1;
+	var y0 = y0;
+	var y1 = y1;
+
+	if (l) {
+		this.pos = l;
+		this.id="rectangle-" + l;
+	}
+
+	//Arrays for canvas view, and Toolpath view
+	this.canvas = []; //Become an array, even if there is just 1 shape for the canvas, can be more than one for other objects...
+	this.tCanvas = [];
+
+	this.current=0;
+
+	//If a name is applicable, we set the custom name
+	name ? this.name = name : (this.name = ($("#rectangle_name").val() 	? 	$("#rectangle_name").val() : this.id));
+
+	//Set the start point
+	this.x0 = x0 ? x0 : ($("#rectangle_x0").length 	? 	parseFloat($("#rectangle_x0").val())	: 0); //X start of the rectangle
+	this.y0 = y0 ? y0 : ($("#rectangle_y0").length 	?	parseFloat($("#rectangle_y0").val()) : 0); //Y start of the rectangle
+
+	//Set the end point
+	if(!x1){
+		if( ($("#rectangle_x1").length) && $("#rectangle_x1").hasClass("active") ){
+			x1 = parseFloat($("#rectangle_x1").val());
+		}
+		else if( ($("#rectangle_w").length) && $("#rectangle_w").hasClass("active") ){
+			x1 = this.x0 + parseFloat($("#rectangle_w").val());
+		}
+	}
+	if(!y1){
+		if( ($("#rectangle_y1").length) && $("#rectangle_y1").hasClass("active") ){
+			y1 = parseFloat($("#rectangle_y1").val());
+		}
+		else if( ($("#rectangle_h").length) && $("#rectangle_h").hasClass("active") ){
+			y1 = this.y0 + parseFloat($("#rectangle_h").val());
+		}
+	}
+	this.x1 = x1; //X end of the rectangle
+	this.y1 = y1; //Y end of the rectangle
+
+	//Check for the toolpath side or assign the default one
+	this.side = side ? side : ($("input:radio[name='rectangle_side']:checked").length	?	parseInt($("input:radio[name='rectangle_side']:checked").val()) : 1); //3 = on rectangle, 1 = exterior, 2 = Hole inside
+
+	//Synch ToolPath
+	this.toolpath();
+
+	//Synch gCode
+	this.gCode();
+
+	//Synch Canvas
+	this.addCanvas();
+
+	//Reset the value of "name" input & unique id "cid" -> By Security
+	$("#rectangle_name").val("");
+	$("#rectangle_name").data("cid","");
+};
+
+rectangle.prototype.update = function(x0,y0,x1,y1,side,name) {
+	//First delete view
+	this.removeCanvas();
+
+	//Set the center
+	this.x0 = x0 ;
+	this.y0 = y0 ;
+	this.x1 = x1 ;
+	this.y1 = y1 ;
+
+	this.side = side ? side : 1; //3 = center, 1 = Left, 2 = Right
+	
+	if(name) this.name=name;
+	//else name = "rectangle" + pos;
+
+	//Synch ToolPath
+	this.toolpath();
+
+	//Synch gCode
+	this.gCode();
+
+	//Synch Canvas
+	this.addCanvas();
+};
+
+//Should move to Tasks (set a task as current, and not a form)
+rectangle.prototype.setCurrent = function() { this.current=1 };
+rectangle.prototype.resetCurrent = function() { this.current=0 };
+
+rectangle.prototype.getForm = function(){
+	//Add attributes
+	this.update(
+		$("#rectangle_x0").length 	? 	parseFloat($("#rectangle_x0").val())	: null,
+		$("#rectangle_y0").length 	?	parseFloat($("#rectangle_y0").val()) : null,
+		$("#rectangle_x1").length 	? 	parseFloat($("#rectangle_x1").val())	: ($("#rectangle_w").length ? parseFloat($("#rectangle_x0").val() + $("#rectangle_w").val()) : null),
+		$("#rectangle_y1").length 	? 	parseFloat($("#rectangle_y1").val())	: ($("#rectangle_h").length ? parseFloat($("#rectangle_y0").val() + $("#rectangle_h").val()) : null),
+		$("input:radio[name='rectangle_side']:checked").length	?	parseInt($("input:radio[name='rectangle_side']:checked").val()) : null,
+		this.name = $("#rectangle_name").val() 	? 	$("#rectangle_name").val() : this.id
+	);
+
+	//Reset the value of "name" input & unique id "cid"
+	$("#rectangle_name").val("");
+	$("#rectangle_name").data("cid","");
+};
+
+rectangle.prototype.setForm = function(){
+	if ($("#rectangle_name").length)	{
+		$("#rectangle_name").val(this.name);
+		$("#rectangle_name").data("cid",this.id);
+	}
+	if ($("#rectangle_x0").length) 		{ $("#rectangle_x0").val(this.x0.toString()); }
+	if ($("#rectangle_y0").length) 		{ $("#rectangle_y0").val(this.y0.toString()); }
+	if ($("#rectangle_x1").length) 		{ $("#rectangle_x1").val(this.x1.toString()); }
+	if ($("#rectangle_y1").length) 		{ $("#rectangle_y1").val(this.y1.toString()); }
+	if ($("#rectangle_w").length) 		{ $("#rectangle_w").val((this.x1-this.x0).toString()); }
+	if ($("#rectangle_h").length) 		{ $("#rectangle_h").val((this.y1-this.y0).toString()); }
+
+	if ($("input:radio[name='rectangle_side']:checked").length)	{ $("input:radio[name='rectangle_side'][value='"+ this.side +"']").attr("checked",true); }
+};
+
+//To change, won't work with this formula
+rectangle.prototype.toolpath = function() {
+	this.t=[];
+
+	if (this.side == 3){ //Case toolpath on the rectangle
+		var e={};
+		e.x0=this.x0; //Center X : never changes
+		e.y0=this.y0; //Center Y : never changes
+		e.x1=this.x1;	//Start Point X
+		e.y1=this.y1;	//Start Point Y
+
+		this.t.push(e);	//Add rectangle to the list of toolpaths
+	}
+	else if (this.side == 1){ //Case toolpath outside the rectangle
+		var e={};
+
+		e.x0=this.x0 - (s.bit_d/2); //Center X : never changes
+		e.y0=this.y0 - (s.bit_d/2); //Center Y : never changes
+		e.x1=this.x1 + (s.bit_d/2);
+		e.y1=this.y1 + (s.bit_d/2);
+
+		this.t.push(e);	//Add rectangle to thel ist of toolpaths
+	}
+	else if (this.side == 2){ //Case toolpath inside the rectangle : do all the inside
+
+		/*** Init ***/
+
+		//1st : calcul nb bit in height & in width
+		//Take the smallest one and do rectangles with the same ratio
+		//Start Point : Center -1/2bit, only for the smallest dimension (or randomly)
+		//End point : Center +1/2bit, only for smallest dimension (or randomly)
+		//Other dimension : Center +/- 1/2 bit * 1/2(ratio) (if randomly)
+
+		/*** While ***/
+		
+		//Add a bit each time
+		//Check max (same way)
+
+		var oldX0 = this.x;
+		var oldY0 = this.y;
+
+		var end = 0;
+
+		while( end==0 ){ //ABS value
+			var e={};
+			e.x=this.x; //Center X : never changes
+			e.y=this.y; //Center Y : never changes
+
+			//Check if current arc is not too big
+			if ( Math.abs(oldX0) > Math.abs( (this.x0 - (s.bit_d/2) * Math.cos(alpha0)) ) )  { oldX0 = (this.x0 - (s.bit_d/2) * Math.cos(alpha0)); end=1;}
+			if ( Math.abs(oldY0) > Math.abs( (this.y0 - (s.bit_d/2) * Math.sin(alpha0)) ) )  { oldY0 = (this.y0 - (s.bit_d/2) * Math.sin(alpha0)); end=1;}
+
+			if (	( Math.abs(oldX0) == Math.abs( (this.x0 - (s.bit_d/2) * Math.cos(alpha0)) ) )
+				&& ( Math.abs(oldY0) == Math.abs( (this.y0 - (s.bit_d/2) * Math.sin(alpha0)) ) )
+			)  { end=1; }
+
+			//Put the value of the new arc
+			e.x0 = oldX0;
+			e.y0 = oldY0;
+
+			//Increment position for next arc
+			oldX0 += (s.bit_d) * Math.cos(alpha0);
+			oldY0 += (s.bit_d) * Math.sin(alpha0);
+
+			this.t.push(e);	//Add arc to the list of toolpaths
+
+		}
+	}
+};
+
+rectangle.prototype.addTaskList = function() {
+	var str = "";
+	str += "<tr class='" + (this.current ? 'current' : '') + "' id='" + this.id + "'>";
+	str += "<td>" + this.name + "</td>";
+	str += "<td>(" + this.x0.toString() + "," + this.y0.toString() + ") - (" + this.x1.toString() + "," + this.y1.toString() + ")</td>";
+	str += "<td class='edit'><span>E</span></td>";
+	str += "<td class='delete'><span>D</span></td>";
+	str += "</tr>";
+	return str;
+};
+
+rectangle.prototype.removeCanvas = function(){
+	if(c && this.canvas){
+		c.removeRectangle(this);
+	}
+};
+
+rectangle.prototype.addCanvas = function(){
+	if(c){
+		c.addRectangle(this);
+	}
+};
+
+rectangle.prototype.gCode = function(c){
+	this.c= "";
+	var code = "";
+
+	var curHeight = 0;
+	
+	while(curHeight > -s.z) {
+		curHeight -= s.dz; //Lower the new z
+		if (curHeight < -s.z) {curHeight = -s.z;} //Set -z limit
+
+		$.each(this.t , function(i, t){
+		//c.rectangle( t.x , t.y , t.x0 , t.y0 , s.z0 , t.x1 , t.y1 , -s.z );
+
+			//Go to beginning of the rectangle
+			code+='G1X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'F' + s.air_speed + '\n';
+
+			//Go to the new depth
+			code+='G1Z' + curHeight + 'F' + s.cut_speed + '\n';
+
+			//Go to the 2nd corner
+			code+='G1X' + (this.x0 + s.x0) + 'Y' + (this.y1 + s.y0) + 'F' + s.cut_speed + '\n';
+
+			//Go to the 3rd corner
+			code+='G1X' + (this.x1 + s.x0) + 'Y' + (this.y1 + s.y0) + 'F' + s.cut_speed + '\n';
+
+			//Go to the 4th corner
+			code+='G1X' + (this.x1 + s.x0) + 'Y' + (this.y0 + s.y0) + 'F' + s.cut_speed + '\n';
+
+			//Go back to the 1st corner
+			code+='G1X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'F' + s.cut_speed + '\n';
+
+			//Go to z over the project
+			code+='G1Z' + s.z0 + 'F' + s.air_speed + '\n';
+		});
+	}
+
+	this.c = code;
+	return this.c;
+};
+
+
+
+
+
 /*
 *** Model and function of a single circle ***
 */
@@ -1155,11 +1482,11 @@ circle.prototype.gCode = function(c){
 			code+='G1Z' + curHeight + 'F' + s.cut_speed + '\n';
 
 			//Go to the end of the circle (or part of the circle)
-			code+='G2X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'I' + (this.x0 - this.x + s.x0) + 'J' + (this.y0 - this.y + s.y0) + 'F' + s.cut_speed + '\n';
-
-			//Go to z over the project
-			code+='G1Z' + s.z0 + 'F' + s.air_speed + '\n';
+			code+='G1X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'I' + (this.x0 - this.x + s.x0) + 'J' + (this.y0 - this.y + s.y0) + 'F' + s.cut_speed + '\n';
 		});
+
+		//Go to z over the project
+		code+='G1Z' + s.z0 + 'F' + s.air_speed + '\n';
 	}
 
 	this.c = code;

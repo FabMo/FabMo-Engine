@@ -2,7 +2,7 @@
 <html> 
 <head>
 	<meta charset="utf-8">
-	<title>Holes cutter</title>
+	<title>Rectangle</title>
 
 	<!-- CSS standardisation & inclusion -->
 	<link rel="stylesheet" href="./css/foundation.min.css">
@@ -15,7 +15,7 @@
 	<header class="green"> <!-- Class can be "blue", "red", "grey", "orange" -->
 		<section>
 			<div class="app-title-container">
-				<h2>Holes Cutter</h2>
+				<h2>Cut a Rectangle</h2>
 			</div>
 		</section>
 	</header>
@@ -114,48 +114,66 @@
 				<div class="small-12 medium-6 large-4 columns">
 					<div class="row">
 						<div class="small-7 columns">
-							<h3>Add a Hole</h3>
+							<h3>Add a Rectangle/h3>
 						</div>
 						<div class="small-5 columns">
-							<div class="small button right secondary" id="add-circle">Add</div>
+							<div class="small button right secondary" id="add-rectangle">Add</div>
 						</div>
 					</div>
 					<form>
 						<div class="row ">
 							<div class="small-12 columns">
 								<label>Hole Name :
-								<input type="text" placeholder="Name" id="circle_name">
+								<input type="text" placeholder="Name" id="rectangle_name">
 								</label>
 							</div>
 							<div class="small-12 columns">
 								<div class="row">
 									<div class="small-6 columns">
-										<label>Center X :
-										<input type="text" value="1" id="circle_x">
+										<label>Start X :
+										<input type="text" value="0" id="rectangle_x0">
 										</label>
 									</div>
 									<div class="small-6 columns">
-										<label>Center Y :
-										<input type="text" value="1" id="circle_y">
+										<label>Start Y :
+										<input type="text" value="0" id="rectangle_y0">
 										</label>
 									</div>
 								</div>
 							</div>
-							<div class="small-8 columns circle_radius_container">
-								<label>Radius :
-								<input type="text" value="0.5" id="circle_radius">
-								</label>
+							<div class="small-8 columns rectangle_end_container" style="display:none;">
+								<div class="row">
+									<div class="small-6 columns">
+										<label>End X :
+										<input type="text" value="4" id="rectangle_x1" class="first">
+										</label>
+									</div>
+									<div class="small-6 columns">
+										<label>Start Y :
+										<input type="text" value="2" id="rectangle_y1" class="last">
+										</label>
+									</div>
+								</div>
 							</div>
-							<div class="small-8 columns circle_diam_container" style="display:none;">
-								<label>Diameter :
-								<input type="text" value="1.0" id="">
-								</label>
+							<div class="small-8 columns rectangle_dimensions_container">
+								<div class="row">
+									<div class="small-6 columns">
+										<label>Width :
+										<input type="text" value="4" id="rectangle_w" class="first">
+										</label>
+									</div>
+									<div class="small-6 columns">
+										<label>Height Y :
+										<input type="text" value="2" id="rectangle_h" class="last">
+										</label>
+									</div>
+								</div>
 							</div>
 							<div class="small-4 columns center">
-								<Label>R ↔ D
+								<Label>Coor ↔ Size
 								<div class="switch small">
-									<input id="radius_diameter" type="checkbox" name="radius_diameter">
-									<label for="radius_diameter"></label>
+									<input id="dimensions_method" type="checkbox" name="dimensions_method">
+									<label for="dimensions_method"></label>
 								</div>
 								</Label>
 							</div>
@@ -165,24 +183,24 @@
 							<div class="small-4 columns center">
 								<Label>Outside
 								<div class="switch small">
-									<input id="circle_outside" type="radio" checked name="circle_side" value="1">
-									<label for="circle_outside"></label>
+									<input id="rectangle_outside" type="radio" checked name="rectangle_side" value="1">
+									<label for="rectangle_outside"></label>
 								</div>
 								</Label>
 							</div>
 							<div class="small-4 columns center">
 								<Label>On
 								<div class="switch small">
-									<input id="circle_onside" type="radio" name="circle_side" value="3">
-									<label for="circle_onside"></label>
+									<input id="rectangle_onside" type="radio" name="rectangle_side" value="3">
+									<label for="rectangle_onside"></label>
 								</div>
 								</Label>
 							</div>
 							<div class="small-4 columns center">
 								<Label>Inside
 								<div class="switch small">
-									<input id="circle_inside" type="radio" name="circle_side" value="2">
-									<label for="circle_inside"></label>
+									<input id="rectangle_inside" type="radio" name="rectangle_side" value="2">
+									<label for="rectangle_inside"></label>
 								</div>
 								</Label>
 							</div>
