@@ -405,7 +405,7 @@ Canvas.prototype.addRectangle = function(r){
     var i = 0;
 
     for(i=0 ; i < r.t.length ; i++){
-    	var p2 = new paper.Path.rectangle( 
+    	var p2 = new paper.Path.Rectangle( 
     		new paper.Point( this.xPos(r.t[i].x0) , this.yPos(r.t[i].y0) ) ,
     		new paper.Point( this.xPos(r.t[i].x1) , this.yPos(r.t[i].y1) )
     	);
@@ -542,23 +542,31 @@ gcode = function(){
 
 /********** Initial functions **********/
 gcode.prototype.init = function(){
+	//Header : Presentation
+	this.header = ";Hi,I am a gCode object created with FabMo Shapes Library \n";
+
 	//Header : initial commands
-	this.header = "";
+	this.header += ";Absolutes Positions \n";
+	this.header += "G90 \n";
 
 	//Go to Z security position
+	this.header += ";Z Security Position \n";
 	this.header += 'G1Z' + s.z0.toString() + 'F' + s.air_speed + '\n';
 
 	//Go to X0 Y0, compensated with offset
+	this.header += ";Go To X0/Y0 compensated with offset (if any) \n";
 	this.header += 'G1X' + s.x0.toString() + 'Y' + s.y0.toString() + 'F' + s.air_speed + '\n';
 
 
-	//Footer : end of job cillabd
-	this.footer = "";
+	//Footer : end of job
+	this.footer += ";Arriving to the Footer of GCode File \n";
 
 	//Go to Z security position
+	this.footer += ";Z Security Position \n";
 	this.footer += 'G1Z' + s.z0 + 'F' + s.air_speed + '\n';
 
 	//Go to end position
+	this.footer += ";Go to the end position of a Handibot \n";
 	this.footer += 'G1X6Y8F' + s.air_speed + '\n';
 };
 
@@ -972,6 +980,7 @@ line.prototype.gCode = function(c){
 		if (curHeight < -s.z) {curHeight = -s.z;} //Set -z limit
 
 		//Go to beginning of the line
+		code += ";***** STARTING A NEW LINE *****\n";
 		code+='G1X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'F' + s.air_speed + '\n';
 
 		//Go to the new depth
@@ -1121,6 +1130,8 @@ rectangle.prototype.setForm = function(){
 
 //To change, won't work with this formula
 rectangle.prototype.toolpath = function() {
+	//Rotate method to point rotated from a point (use trigo and external general functions) ??????
+
 	this.t=[];
 
 	if (this.side == 3){ //Case toolpath on the rectangle
@@ -1152,39 +1163,59 @@ rectangle.prototype.toolpath = function() {
 		//End point : Center +1/2bit, only for smallest dimension (or randomly)
 		//Other dimension : Center +/- 1/2 bit * 1/2(ratio) (if randomly)
 
-		/*** While ***/
+		var W = this.x1 - this.x0;
+		var H = this.y1 - this.y0;
+		var cX = (this.x0 + this.x1) / 2;
+		var cY = (this.y0 + this.y1) / 2;
+		var R = W/H;
+		var oldX0 = null;
+		var oldX1 = null;
+		var oldY0 = null;
+		var oldY1 = null;
 		
-		//Add a bit each time
-		//Check max (same way)
-
-		var oldX0 = this.x;
-		var oldY0 = this.y;
+		if (W>H){
+			oldY0 = cY - (s.bit_d / 2);
+			oldY1 = cY + (s.bit_d / 2);
+			oldX0 = cX - ((s.bit_d / 2) * (R > 0 ? R : (1/R) ));
+			oldX1 = cX + ((s.bit_d / 2) * (R > 0 ? R : (1/R) ));
+		}
+		else {
+			oldX0 = cX - (s.bit_d / 2);
+			oldX1 = cX + (s.bit_d / 2);
+			oldY0 = cX - ((s.bit_d / 2) * (R > 0 ? R : (1/R) ));
+			oldY1 = cX + ((s.bit_d / 2) * (R > 0 ? R : (1/R) ));
+		}
 
 		var end = 0;
 
 		while( end==0 ){ //ABS value
 			var e={};
-			e.x=this.x; //Center X : never changes
-			e.y=this.y; //Center Y : never changes
 
 			//Check if current arc is not too big
-			if ( Math.abs(oldX0) > Math.abs( (this.x0 - (s.bit_d/2) * Math.cos(alpha0)) ) )  { oldX0 = (this.x0 - (s.bit_d/2) * Math.cos(alpha0)); end=1;}
-			if ( Math.abs(oldY0) > Math.abs( (this.y0 - (s.bit_d/2) * Math.sin(alpha0)) ) )  { oldY0 = (this.y0 - (s.bit_d/2) * Math.sin(alpha0)); end=1;}
+			if ( Math.abs(oldX0) < Math.abs(this.x0 + s.bit_d/2) )  { oldX0 = this.x0 + s.bit_d/2; end=1;}
+			if ( Math.abs(oldY0) < Math.abs(this.y0 + s.bit_d/2) )  { oldY0 = this.y0 + s.bit_d/2; end=1;}
+			if ( Math.abs(oldX1) > Math.abs(this.x1 - s.bit_d/2) )  { oldX1 = this.x1 - s.bit_d/2; end=1;}
+			if ( Math.abs(oldY1) > Math.abs(this.y1 - s.bit_d/2) )  { oldY1 = this.y1 - s.bit_d/2; end=1;}
 
-			if (	( Math.abs(oldX0) == Math.abs( (this.x0 - (s.bit_d/2) * Math.cos(alpha0)) ) )
-				&& ( Math.abs(oldY0) == Math.abs( (this.y0 - (s.bit_d/2) * Math.sin(alpha0)) ) )
+			if (	( Math.abs(oldX0) == Math.abs(this.x0 + s.bit_d/2) )
+				&& ( Math.abs(oldY0) == Math.abs(this.y0 + s.bit_d/2) )
+				&& ( Math.abs(oldX1) == Math.abs(this.x1 - s.bit_d/2) )
+				&& ( Math.abs(oldY1) == Math.abs(this.y1 - s.bit_d/2) )
 			)  { end=1; }
 
 			//Put the value of the new arc
 			e.x0 = oldX0;
 			e.y0 = oldY0;
+			e.x1 = oldX1;
+			e.y1 = oldY1;
 
 			//Increment position for next arc
-			oldX0 += (s.bit_d) * Math.cos(alpha0);
-			oldY0 += (s.bit_d) * Math.sin(alpha0);
+			oldX0 -= (s.bit_d);
+			oldY0 -= (s.bit_d);
+			oldX1 += (s.bit_d);
+			oldY1 += (s.bit_d);
 
 			this.t.push(e);	//Add arc to the list of toolpaths
-
 		}
 	}
 };
@@ -1193,7 +1224,7 @@ rectangle.prototype.addTaskList = function() {
 	var str = "";
 	str += "<tr class='" + (this.current ? 'current' : '') + "' id='" + this.id + "'>";
 	str += "<td>" + this.name + "</td>";
-	str += "<td>(" + this.x0.toString() + "," + this.y0.toString() + ") - (" + this.x1.toString() + "," + this.y1.toString() + ")</td>";
+	str += "<td>(" + this.x0 + "," + this.y0 + ") - (" + this.x1 + "," + this.y1 + ")</td>";
 	str += "<td class='edit'><span>E</span></td>";
 	str += "<td class='delete'><span>D</span></td>";
 	str += "</tr>";
@@ -1226,6 +1257,7 @@ rectangle.prototype.gCode = function(c){
 		//c.rectangle( t.x , t.y , t.x0 , t.y0 , s.z0 , t.x1 , t.y1 , -s.z );
 
 			//Go to beginning of the rectangle
+			code += ";***** STARTING A NEW RECTANGLE *****\n";
 			code+='G1X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'F' + s.air_speed + '\n';
 
 			//Go to the new depth
@@ -1242,11 +1274,11 @@ rectangle.prototype.gCode = function(c){
 
 			//Go back to the 1st corner
 			code+='G1X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'F' + s.cut_speed + '\n';
-
-			//Go to z over the project
-			code+='G1Z' + s.z0 + 'F' + s.air_speed + '\n';
 		});
 	}
+
+	//Go to z over the project
+	code+='G1Z' + s.z0 + 'F' + s.air_speed + '\n';
 
 	this.c = code;
 	return this.c;
@@ -1476,6 +1508,7 @@ circle.prototype.gCode = function(c){
 		//c.circle( t.x , t.y , t.x0 , t.y0 , s.z0 , t.x1 , t.y1 , -s.z );
 
 			//Go to beginning of the circle
+			code += ";***** STARTING A NEW CIRCLE *****\n";
 			code+='G1X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'F' + s.air_speed + '\n';
 
 			//Go to the new depth
@@ -1484,10 +1517,10 @@ circle.prototype.gCode = function(c){
 			//Go to the end of the circle (or part of the circle)
 			code+='G1X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'I' + (this.x0 - this.x + s.x0) + 'J' + (this.y0 - this.y + s.y0) + 'F' + s.cut_speed + '\n';
 		});
-
-		//Go to z over the project
-		code+='G1Z' + s.z0 + 'F' + s.air_speed + '\n';
 	}
+
+	//Go to z over the project
+	code+='G1Z' + s.z0 + 'F' + s.air_speed + '\n';
 
 	this.c = code;
 	return this.c;
@@ -1727,6 +1760,7 @@ arc.prototype.gCode = function(c){
 		$.each(this.t , function(i, t){
 		//c.arc( t.x , t.y , t.x0 , t.y0 , s.z0 , t.x1 , t.y1 , -s.z );
 			//Go to beginning of the arc
+			code += ";***** STARTING A NEW ARC *****\n";
 			code+='G1X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'F' + s.air_speed + '\n';
 
 			//Go to the new depth

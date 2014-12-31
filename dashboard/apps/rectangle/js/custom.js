@@ -29,20 +29,18 @@ function listenClickTasks(){
 	});
 };
 
-function toogleRadiusDiameter() {
+function toogleDimPos() {
 	if(  $('input[name=dimensions_method]').is(':checked') ){
 		$(".rectangle_dimensions_container").show();
 		$(".rectangle_end_container").hide();
-		$(".rectangle_dimensions_container input.first").attr("id","rectangle_w");
-		$(".rectangle_dimensions_container input.last").attr("id","rectangle_h");
-		$(".rectangle_end_container input").attr("id","");
+		$(".rectangle_dimensions_container input").addClass("active");
+		$(".rectangle_end_container input").removeClass("active");
 	}
 	else {
 		$(".rectangle_dimensions_container").hide();
 		$(".rectangle_end_container").show();
-		$(".rectangle_dimensions_container input").attr("id","");
-		$(".rectangle_end_container input.first").attr("id","rectangle_x1");
-		$(".rectangle_end_container input.last").attr("id","rectangle_y1");
+		$(".rectangle_dimensions_container input").removeClass("active");
+		$(".rectangle_end_container input").addClass("active");
 	}
 };
 
@@ -65,7 +63,7 @@ $(document).ready(function(){
 			Tasks.save($("#rectangle_name").data("cid"));
 		}
 		else {
-			Tasks.addrectangle();
+			Tasks.addRectangle();
 		}
 	});
 
@@ -80,14 +78,14 @@ $(document).ready(function(){
 		
 		//dashboard.addJob(c,s);
 		fabmoDashboard.submitJob(c, {
-				'name' : 'Holes Cutter',
+				'name' : 'Rectangles',
 				'description' : 'Cut ' + Tasks.length.toString() + ' rectangle(s)',
-	            'filename' : 'holes_cutter.nc'
+	            'filename' : 'rectangles.nc'
 	    })
 	});
 
 	//Change radius input to diameter input
 	$("#dimensions_method + label").click(function(){
-		toogleRadiusDiameter();
+		toogleDimPos();
 	});
 });
