@@ -469,12 +469,12 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	vertical-align: baseline;
 }
 
-#position ul .axis .home, #position ul .axis .set {
+#position ul .axis .home, #keypad ul .axis .set {
 	padding: 0;
 	text-align: center;
 }
 
-#position ul .axis .home span, #position ul .axis .set span {
+#position ul .axis .home span, #keypad ul .axis .set span {
 	width: 26px;
 	width: 1.625rem;
 	height: 26px;
@@ -483,7 +483,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	margin-top: 0.0625em;
 }
 
-#position ul .axis .home:hover, #position ul .axis .set:hover {
+#position ul .axis .home:hover, #keypad ul .axis .set:hover {
 	cursor: pointer;
 }
 
@@ -509,20 +509,20 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	vertical-align: text-bottom;
 }
 
-#position ul .axis .set span {
+#keypad ul .axis .set span {
 	background-color: #eee;
 }
 
-#position ul .button-homexy, #position ul .button-homez, #position ul .button-probez {
+#keypad ul .button-homexy, #keypad ul .button-homez, #keypad ul .button-probez {
 	background-size: 22px;
 	background-size: 1.375rem;
 	background-position: center;
 	background-repeat: no-repeat;
 }
 
-#position ul .button-homexy 	{ background-image: url('../img/icon_go-home.png'); }
-#position ul .button-homez		{ background-image: url('../img/icon_mv-xy.png'); }
-#position ul .button-probez		{ background-image: url('../img/icon_zero-z.png'); }
+#keypad ul .button-homexy 	{ background-image: url('../img/icon_go-home.png'); }
+#keypad ul .button-homez		{ background-image: url('../img/icon_mv-xy.png'); }
+#keypad ul .button-probez		{ background-image: url('../img/icon_zero-z.png'); }
 
 
 #position ul .columns{

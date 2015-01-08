@@ -1,0 +1,418 @@
+<!DOCTYPE html> 
+<html> 
+<head>
+	<meta charset="utf-8">
+	<title>2D Drawing</title>
+
+	<!-- CSS standardisation & inclusion -->
+	<link rel="stylesheet" href="./css/foundation.min.css">
+	<link rel="stylesheet" href="./css/normalize.css">
+	<link rel="stylesheet" href="./css/style.css">
+	<link rel="stylesheet" href="./css/custom.css">
+</head>
+<body>
+	<!-- Header -->
+	<header class="black"> <!-- Class can be "blue", "red", "grey", "orange" -->
+		<section>
+			<div class="app-title-container">
+				<h2>2D Drawing</h2>
+			</div>
+		</section>
+	</header>
+
+	<!-- Main Section (app content) -->
+	<section class="container current-job-container">
+
+		<!-- Third Row =  -->
+		<div class="content" id="project_content">
+			<div class="row ">
+				<div class="small-12 medium-5 large-3 columns">
+
+
+					<dl class="tabs settings shapes" data-tab>
+						<dd><a href="#form-settings-panel">Settings</a></dd>
+						<dd><a href="#form-line-panel">Line</a></dd>
+						<dd><a href="#form-rectangle-panel">Rectangle</a></dd>
+						<dd><a href="#form-circle-panel">Circle</a></dd>
+						<dd><a href="#form-arc-panel">Arc</a></dd>
+						<dd><a href="#form-rotate-panel" id="rotate">Rotate</a></dd>
+						<dd><a href="#form-translate-panel" id="translate">Translate</a></dd>
+						<dd><a href="#form-mirror-panel" id="translate">Mirror</a></dd>
+					</dl>
+
+					<div class="tabs-content">
+						<div class="content settings" id="form-settings-panel">
+							<!-- Settings Form -->
+							<div class="row" id="project_conf">
+								<div class="small-12 columns">
+									<div class="row">
+										<div class="small-12 columns"> <h4>Project</h4> </div>
+										<div class="small-6 columns"> <label>X Size : <input value="6" id="s_x" type="number" step="0.001"></label> </div>
+										<div class="small-6 columns"> <label>Y Size : <input value="8" id="s_y" type="number" step="0.001"></label> </div>
+										<div class="small-12 columns"> <label>Thickness : <input value="0.3" id="s_z" type="number" step="0.001"></label> </div>
+									</div>
+								</div>
+								<div class="small-12 columns">
+									<div class="row">
+										<div class="small-12 columns"> <h4>Cut</h4> </div>
+										<div class="small-6 columns"> <label>Cut Depth : <input value="0.1" id="s_dz" type="number" step="0.001"></label> </div>
+										<div class="small-6 columns"> <label>Bit Diameter : <input value="0.125" id="s_bit_d" type="number" step="0.001"></label></div>
+										<div class="small-12 columns"> <label>Cut Speed (in/min) : <input value="40" id="s_cut_speed" type="number" step="0.001"></label></div>
+									</div>
+								</div>
+								<div class="small-12 columns">
+									<div class="row">
+										<div class="small-12 columns"> <h4>Offset</h4> </div>
+										<div class="small-6 columns"> <label>X offset : <input value="0" id="s_x0" type="number" step="0.001"></label> </div>
+										<div class="small-6 columns"> <label>Y offset : <input value="0" id="s_y0" type="number" step="0.001"></label> </div>
+									</div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="small-12 columns">
+									<div class="small button" id="default-settings">Default</div>
+									<div class="small button" id="save-settings">Save Settings</div>
+								</div>
+							</div>
+						</div>
+					
+
+						<div class="content shapes" id="form-line-panel">
+							<!-- Form to add a line -->
+							<div class="row">
+								<div class="small-7 columns"><h3>Line</h3></div>
+								<div class="small-5 columns"><div class="small button right secondary" id="add-line">Add</div></div>
+							</div>
+							<form>
+								<div class="row ">
+									<!-- The name of the shape should not be removed : use to edit the line. It is possible to hide it but not to remove it -->
+									<div class="small-12 columns hidden"><div class="row"><div class="small-12 columns"> <label>Line Name :<input type="text" id="line_name"></label> </div></div></div>
+									<div class="small-11 columns">
+										<div class="row">
+											<div class="small-6 columns"><label>X0 : <input value="0.000" id="line_x0" type="number" step="0.001"></label></div>
+											<div class="small-6 columns"><label>Y0 : <input value="0.000" id="line_y0" type="number" step="0.001"></label></div>
+										</div>
+									</div>
+									<div class="small-1 columns invert-pos"><b>↕</b></div>
+									<div class="small-11 columns">
+										<div class="row">
+											<div class="small-6 columns"><label>X1 : <input value="2.000" id="line_x1" type="number" step="0.001"></label></div>
+											<div class="small-6 columns"><label>Y1 : <input value="1.000" id="line_y1" type="number" step="0.001"></label></div>
+										</div>
+									</div>
+									<div class="small-12 columns center"><Label>Bit Position</Label></div>
+									<div class="small-4 columns center">
+										<Label>Left<div class="switch small"><input id="line_left" type="radio" checked name="line_side" value="1"><label for="line_left"></label></div></Label>
+									</div>
+									<div class="small-4 columns center">
+										<Label>Center<div class="switch small"><input id="line_center" type="radio" name="line_side" value="3"><label for="line_center"></label></div></Label>
+									</div>
+									<div class="small-4 columns center">
+										<Label>Right<div class="switch small"><input id="line_right" type="radio" name="line_side" value="2"><label for="line_right"></label></div></Label>
+									</div>
+								</div>
+							</form>
+						</div>
+
+						
+						<div class="content shapes" id="form-rectangle-panel">
+							<!-- Form to add a rectangle -->
+							<div class="row">
+								<div class="small-7 columns"><h3>Rectangle</h3></div>
+								<div class="small-5 columns"><div class="small button right secondary" id="add-rectangle">Add</div></div>
+							</div>
+							<form>
+								<div class="row ">
+									<!-- The name of the shape should not be removed : use to edit the line. It is possible to hide it but not to remove it -->
+									<div class="small-12 columns hidden"><div class="row"><div class="small-12 columns"> <label>Rectangle Name :<input type="text" id="rectangle_name"></label> </div></div></div>
+									<div class="small-12 columns">
+										<div class="row">
+											<div class="small-6 columns"><label>Start X : <input value="0" id="rectangle_x0" type="number" step="0.001"></label></div>
+											<div class="small-6 columns"><label>Start Y : <input value="0" id="rectangle_y0" type="number" step="0.001"></label></div>
+										</div>
+									</div>
+									<div class="small-8 columns rectangle_end_container" style="display:none;">
+										<div class="row">
+											<div class="small-6 columns"><label>End X : <input value="4" id="rectangle_x1" type="number" step="0.001"></label></div>
+											<div class="small-6 columns"><label>Start Y : <input value="2" id="rectangle_y1" type="number" step="0.001"></label></div>
+										</div>
+									</div>
+									<div class="small-8 columns rectangle_dimensions_container">
+										<div class="row">
+											<div class="small-6 columns"><label>Width : <input value="4" id="rectangle_w" class="active" type="number" step="0.001"></label></div>
+											<div class="small-6 columns"><label>Height Y : <input value="2" id="rectangle_h" class="active" type="number" step="0.001"></label></div>
+										</div>
+									</div>
+									<div class="small-4 columns center">
+										<Label>Dim ↔ Pts
+										<div class="switch small"><input id="dimensions_method" type="checkbox" name="dimensions_method"><label for="dimensions_method"></label></div>
+										</Label>
+									</div>
+									<div class="small-12 columns center"><Label>Toolpath</Label></div>
+									<div class="small-4 columns center">
+										<Label>Outside <div class="switch small"><input id="rectangle_outside" type="radio" checked name="rectangle_side" value="1"><label for="rectangle_outside"></label></div></Label>
+									</div>
+									<div class="small-4 columns center">
+										<Label>On <div class="switch small"><input id="rectangle_onside" type="radio" name="rectangle_side" value="3"><label for="rectangle_onside"></label></div>
+										</Label>
+									</div>
+									<div class="small-4 columns center">
+										<Label>Inside <div class="switch small"><input id="rectangle_inside" type="radio" name="rectangle_side" value="2"><label for="rectangle_inside"></label></div>
+										</Label>
+									</div>
+								</div>
+							</form>
+						</div>
+
+						
+						<div class="content shapes" id="form-circle-panel">
+							<!-- Form to add a Circle -->
+							<div class="row">
+								<div class="small-7 columns"><h3>Circle</h3></div>
+								<div class="small-5 columns"><div class="small button right secondary" id="add-circle">Add</div></div>
+							</div>
+							<form>
+								<div class="row ">
+									<!-- The name of the shape should not be removed : use to edit the line. It is possible to hide it but not to remove it -->
+									<div class="small-12 columns hidden"><div class="row"><div class="small-12 columns"> <label>Circle Name :<input type="text" id="circle_name"></label> </div></div></div>
+									<div class="small-12 columns">
+										<div class="row">
+											<div class="small-6 columns"><label>Center X : <input value="1" id="circle_x" type="number" step="0.001"></label></div>
+											<div class="small-6 columns"><label>Center Y : <input value="1" id="circle_y" type="number" step="0.001"></label></div>
+										</div>
+									</div>
+									<div class="small-8 columns circle_radius_container"><label>Radius : <input value="0.5" id="circle_radius" class="active" type="number" step="0.001"></label></div>
+									<div class="small-8 columns circle_diameter_container" style="display:none;"><label>Diameter : <input value="1.0" id="circle_diam" type="number" step="0.001"></label></div>
+									<div class="small-4 columns center">
+										<Label>R ↔ D
+										<div class="switch small radius_diameter"><input id="radius_diameter" type="checkbox"><label for="radius_diameter"></label></div>
+										</Label>
+									</div>
+									<div class="small-12 columns center"><Label>Toolpath</Label></div>
+									<div class="small-4 columns center">
+										<Label>Outside <div class="switch small"><input id="circle_outside" type="radio" checked name="circle_side" value="1"><label for="circle_outside"></label></div></Label>
+									</div>
+									<div class="small-4 columns center">
+										<Label>On <div class="switch small"><input id="circle_onside" type="radio" name="circle_side" value="3"><label for="circle_onside"></label></div></Label>
+									</div>
+									<div class="small-4 columns center">
+										<Label>Inside <div class="switch small"><input id="circle_inside" type="radio" name="circle_side" value="2"><label for="circle_inside"></label></div></Label>
+									</div>
+								</div>
+							</form>
+						</div>
+
+						
+						<div class="content shapes" id="form-arc-panel">
+							<!-- Form to add an arc -->
+							<div class="row">
+								<div class="small-7 columns"><h3>Arc</h3></div>
+								<div class="small-5 columns"><div class="small button right secondary" id="add-arc">Add</div></div>
+							</div>
+							<form>
+								<div class="row ">
+									<!-- The name of the shape should not be removed : use to edit the line. It is possible to hide it but not to remove it -->
+									<div class="small-12 columns hidden"><div class="row"><div class="small-12 columns"> <label>Arc Name :<input type="text" id="arc_name"></label> </div></div></div>
+									<div class="small-12 columns">
+										<div class="row">
+											<div class="small-6 columns"> <label>Center X : <input value="1" id="arc_x" type="number" step="0.001"></label> </div>
+											<div class="small-6 columns"> <label>Center Y : <input value="1" id="arc_y" type="number" step="0.001"></label> </div>
+										</div>
+									</div>
+									<div class="small-12 columns">
+										<div class="row">
+											<div class="small-6 columns"> <label>Start X : <input value="1" id="arc_x0" type="number" step="0.001"></label> </div>
+											<div class="small-6 columns"> <label>Start Y : <input value="2" id="arc_y0" type="number" step="0.001"></label> </div>
+										</div>
+									</div>
+									<div class="small-12 columns arc_angle_container">
+										<div class="row"><div class="small-12 columns"> <label>Angle : <input value="30" id="arc_angle" class="active" type="number" step="0.001"></label> </div></div>
+									</div>
+									<!--
+									<div class="small-8 columns arc_end_container"> //Style display = "none" //X1 and Y1 or angle check (see rectangle form) 
+										<div class="row">
+											<div class="small-6 columns"> <label>Start X : <input type="text" value="4" id="arc_x1"></label> </div>
+											<div class="small-6 columns"> <label>Start Y : <input type="text" value="2" id="arc_y1"></label> </div>
+										</div>
+									</div>
+
+									<div class="small-8 columns arc_dimensions_container">
+										<div class="row">
+											<div class="small-6 columns"> <label>Width : <input type="text" value="4" id="arc_w" class="active"></label> </div>
+											<div class="small-6 columns"> <label>Height Y : <input type="text" value="2" id="arc_h" class="active"></label> </div>
+										</div>
+									</div>
+									<div class="small-4 columns center">
+										<Label>Dim ↔ Pts
+										<div class="switch small">
+											<input id="dimensions_method" type="checkbox" name="dimensions_method">
+											<label for="dimensions_method"></label>
+										</div>
+										</Label>
+									</div>
+									-->
+									<div class="small-12 columns center"><Label>Toolpath</Label></div>
+									<div class="small-4 columns center">
+										<Label>Outside <div class="switch small"> <input id="arc_outside" type="radio" checked name="arc_side" value="1"> <label for="arc_outside"></label> </div> </Label>
+									</div>
+									<div class="small-4 columns center">
+										<Label>On <div class="switch small"> <input id="arc_onside" type="radio" name="arc_side" value="3"> <label for="arc_onside"></label> </div> </Label>
+									</div>
+									<div class="small-4 columns center">
+										<Label>Inside <div class="switch small"> <input id="arc_inside" type="radio" name="arc_side" value="2"> <label for="arc_inside"></label> </div> </Label>
+									</div>
+								</div>
+							</form>
+						</div>
+
+
+						<div class="content transform" id="form-rotate-panel">
+							<!-- Form to rotate a Task -->
+							<form>
+								<div class="row">
+									<!-- The name of the shape should not be removed : use to edit the line. It is possible to hide it but not to remove it -->
+									<div class="small-4 small-offset-4 end columns center">
+										<Label>Top<div class="switch small"><input id="rotate_top" type="radio" checked name="rotate_base" value="T"><label for="rotate_top"></label></div></Label>
+									</div>
+								</div>
+								<div class="row">
+									<div class="small-4 columns center">
+										<Label>Left<div class="switch small"><input id="rotate_left" type="radio" name="rotate_base" value="L"><label for="rotate_left"></label></div></Label>
+									</div>
+									<div class="small-4 columns center">
+										<Label>Center<div class="switch small"><input id="rotate_center" type="radio" name="rotate_base" value="C"><label for="rotate_center"></label></div></Label>
+									</div>
+									<div class="small-4 columns center">
+										<Label>Right<div class="switch small"><input id="rotate_right" type="radio" name="rotate_base" value="R"><label for="rotate_right"></label></div></Label>
+									</div>
+								</div>
+								<div class="row">
+									<div class="small-4 small-offset-4 end columns center">
+										<Label>Bottom<div class="switch small"><input id="rotate_bottom" type="radio" checked name="rotate_base" value="B"><label for="rotate_bottom"></label></div></Label>
+									</div>
+								</div>
+								<div class="row">
+									<div class="small-8 columns"><input style="margin:0.25rem 0 0;" placeholder="Angle" id="rotate-angle" type="number" step="0.001"></div>
+									<div class="small-4 columns"><div class="small button right secondary" id="rotate-panel">Rotate</div></div>
+								</div>
+							</form>
+						</div>
+
+						<div class="content transform" id="form-translate-panel">
+							<!-- Form to translate a Task -->
+							<form>
+								<div class="row">
+									<div class="small-12 columns">
+										<input style="margin:0.25rem 0 0;" placeholder="X Translation" type="number" id="translate-x" step="0.001">
+										<input style="margin:0.25rem 0 0;" placeholder="Y Translation" type="number" id="translate-y" step="0.001">
+										<div class="small button right secondary" id="rotate-panel">Translate</div>
+									</div>
+								</div>
+							</form>
+						</div>
+
+						<div class="content transform" id="form-mirror-panel">
+							<!-- Form to translate a Task -->
+							<form>
+								<div class="row">
+									<div class="small-4 columns center">
+										<Label>X<div class="switch small"><input id="mirror_x" type="radio" name="mirror_axis" value="x"><label for="mirror_x"></label></div></Label>
+									</div>
+									<div class="small-4 columns center">
+										<Label>Y<div class="switch small"><input id="mirror_y" type="radio" name="mirror_axis" value="y"><label for="mirror_y"></label></div></Label>
+									</div>
+									<div class="small-4 columns"><div class="small button right secondary" id="mirror-panel">Mirror</div></div>
+								</div>
+							</form>
+						</div>
+
+					</div>
+
+					<div class="show-for-small-only separator small-12 columns"></div>
+				</div>
+
+
+
+
+
+				<!--Second main column of the app (GRID)-->
+				<div class="small-12 medium-7 large-6 columns">
+					<div class="row">
+						<div class="small-12 columns">
+							<h3>Grid</h3>
+						</div>
+					</div>
+					<div class="row">
+						<div class="small-12 columns" id="canvas-container">
+							<canvas id="myCanvas" keepalive="true"></canvas>
+						</div>
+					</div>
+					<div class="row">
+						<div class="small-6 columns center">
+							<span class="label secondary" id="xScale"></span>
+						</div>
+						<div class="small-6 columns center">
+							<span class="label secondary" id="yScale"></span>
+						</div>
+					</div>
+					<div class="show-for-small-only separator small-12 columns"></div>
+				</div>
+
+
+
+
+				<!--Third main column of the app (GRID)-->
+				<div class="small-12 medium-4 large-3 columns">
+					<div class="row">
+						<div class="small-7 columns">
+							<h3>Jobs List</h3>
+						</div>
+						<div class="small-5 columns">
+							<div class="small button right alert" id="reset">Reset</div>
+						</div>
+					</div>
+					<div class= "row">
+						<table class="small-12 columns">
+							<thead>
+								<tr>
+									<th class="small-5">Name</th>
+									<th class="small-5">X0,Y0 - Radius</th>
+									<th class="small-1">E</th>
+									<th class="small-1">X</th>
+								</tr>
+							</thead>
+							<tbody class="list-tasks-container"></tbody>
+						</table>
+					</div>
+					<div class="show-for-small-only separator small-12 columns"></div>
+				</div>
+
+				<div class="show-for-medium-up separator small-12 columns"></div>
+			</div>
+
+			<div class="row">
+				<div class="small-12 columns">
+					<button class="right success" id="run">Run List</button>
+				</div>
+			</div>
+
+		</div>
+	</section>
+
+  <!-- Javascript inclusions -->
+  <script type="text/javascript" src="./js/libs/jquery-1.10.2.js"></script>
+  <script type="text/javascript" src="./js/libs/foundation.min.js"></script>
+  <script type="text/javascript" src="./js/libs/paper-full.js"></script>
+
+  <!-- Include dashboard.js, will be removed later -->
+  <script type="text/javascript" src="./js/FabMo-latest.js"></script>
+  <script type="text/javascript" src="./js/dashboard.js"></script>
+
+  <!--**** App & Custom App Library : order matters !!! ****-->
+  <script type="text/javascript" src="./js/app.js"></script>
+  <script type="text/javascript" src="./js/custom.js"></script>
+
+</script>
+
+</body>
+</html>

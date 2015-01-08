@@ -14,6 +14,10 @@ h1, h2, h3, h4, h5, h6 {
   opacity: 0.95;
 }
 
+.accordion .accordion-navigation>.content, .accordion dd>.content {
+  padding: 0;
+}
+
 .reveal-modal {
   padding: 13px;
   padding: 0.8125rem;
@@ -59,6 +63,8 @@ button.small, .button.small {
     padding-left: 1.125rem;
   }
 }
+
+ul { margin-left: 0; }
 
 table {
   margin-bottom: 8px; 
@@ -170,7 +176,7 @@ input[type="file"]:active::before {
 */
 
 .blue   { background-color: #313366 !important; }
-.black  { background-color: #444444 !important; }
+.black  { background-color: #555555 !important; }
 .orange { background-color: #dd8728 !important; }
 .red    { background-color: #9c210c !important; }
 .grey   { background-color: #666 !important;    }

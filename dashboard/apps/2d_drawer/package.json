@@ -1,11 +1,11 @@
 {
-	"name":"Rectangles",
+	"name":"2D Drawing",
 	"main":"./index.html",
 	"icon":"icon.png",
-	"icon_color":"grey",
+	"icon_color":"yellow",
 	"version":"1.0",
 	"author":"Antoine Delhaye",
 	"target":[],
 	"website":"http://shopbottools.com",
-	"id":"rectangles"
+	"id":"2d_drawing"
 }

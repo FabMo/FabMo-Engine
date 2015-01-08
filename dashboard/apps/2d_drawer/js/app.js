@@ -30,6 +30,8 @@ var toolPath = null;
 var backPath = null;
 var gridPath = [];
 var c = null;
+var canvasColor = 'rgba(77, 135, 29, 0.8)';
+var toolpathColor = 'rgba(156, 33, 12, 0.25)';
 var appName = "Rectangles";
 
 //On Load Init
@@ -113,12 +115,12 @@ delAppSetting = function(app,setting) {
 settings = function(){
 	var dashSettings = getAppSetting(appName,"s") ? getAppSetting(appName,"s") : false;
 
-	this.x= dashSettings ? dashSettings.x : 6; //x Size of project
-	this.y= dashSettings ? dashSettings.y : 8; //y Size of project
-	this.z= dashSettings ? dashSettings.z : 0.3; //Max thickness of project
-	this.dz= dashSettings ? dashSettings.dz : 0.1; //Depth of each z pass
-	this.x0= dashSettings ? dashSettings.x0 : 0; //x Translation from X0
-	this.y0= dashSettings ? dashSettings.y0 :0; //t Translation from Y0
+	this.x = dashSettings ? dashSettings.x : 6; //x Size of project
+	this.y = dashSettings ? dashSettings.y : 8; //y Size of project
+	this.z = dashSettings ? dashSettings.z : 0.3; //Max thickness of project
+	this.dz = dashSettings ? dashSettings.dz : 0.1; //Depth of each z pass
+	this.x0 = dashSettings ? dashSettings.x0 : 0; //x Translation from X0
+	this.y0 = dashSettings ? dashSettings.y0 :0; //t Translation from Y0
 	this.z0= dashSettings ? dashSettings.z0 : 0.5; //Delta z for air movements
 	this.cut_speed= dashSettings ? dashSettings.cut_speed : 20; //1 to 600
 	this.air_speed= dashSettings ? dashSettings.air_speed : 600; //1 to 600
@@ -251,7 +253,7 @@ Canvas.prototype.init = function(){
 	//Init Canvas
 	$("#project_content").addClass("active"); 	//Resolve screen dimensions problem by displaying temporary the section
 	paper.install(window); 						//Assign paper functions to window object
-	paper.setup('myCanvas');					//Setup the #myCanvas element (html/css/js)
+	paper.setup('myCanvas');
 	this.resize();								//Call Resize canvas function
 	$("#project_content").removeClass("active");//Resolve screen dimensions problem
 };
@@ -270,7 +272,7 @@ Canvas.prototype.resize = function(){
 	$("#project_content").addClass("active"); //Resolve screen dimensions problem
 
 	//Set the size of the paper object proportionnaly to the size of the project (from setting object)
-	paper.view.viewSize = new Size(ratio,(ratio/s.x)*s.y);
+	view.viewSize = new Size(ratio,(ratio/s.x)*s.y);
 
 	//Same thing with the canvas element and the canvas container (important for smartphone / tablet view)
 	$("#canvas-container canvas").width($("#canvas-container").width());
@@ -294,7 +296,7 @@ Canvas.prototype.loadSettings = function(){
 		this.resize();
 
 		//Clear
-		paper.project.clear(); //Not effective ?
+		project.clear(); //Not effective ?
 
 		//Choose X & Y graduation depending to project size
 		var sStep = 1;	var mStep = 5;	var lStep = 10;
@@ -307,9 +309,9 @@ Canvas.prototype.loadSettings = function(){
 
 	    //X graduation from left
 	    for (var i = stepx ; i < s.x ; i+=stepx) {
-	        var topPoint = new paper.Point( this.xPos(i) , this.yPos(s.y) );
-	        var bottomPoint = new paper.Point(this.xPos(i), this.yPos(0));
-	        var aLine = new paper.Path.Line(topPoint, bottomPoint);
+	        var topPoint = new Point( this.xPos(i) , this.yPos(s.y) );
+	        var bottomPoint = new Point(this.xPos(i), this.yPos(0));
+	        var aLine = new Path.Line(topPoint, bottomPoint);
 	        aLine.strokeColor = '#ddd';
 	        aLine.strokeWidth = 3; //((i%10)==0) ? 6 : (((i%10)==0) ? 4 : 2);
 	    	this.grid.push(aLine);
@@ -317,15 +319,15 @@ Canvas.prototype.loadSettings = function(){
 
 	    //Y graduation from bottom
 	    for (var i = stepy ; i < s.y ; i+=stepy) {
-	        var leftPoint = new paper.Point( this.xPos(0) , this.yPos(i) );
-	        var rightPoint = new paper.Point( this.xPos(s.x) , this.yPos(i) );
-	        var aLine = new paper.Path.Line(leftPoint, rightPoint);
+	        var leftPoint = new Point( this.xPos(0) , this.yPos(i) );
+	        var rightPoint = new Point( this.xPos(s.x) , this.yPos(i) );
+	        var aLine = new Path.Line(leftPoint, rightPoint);
 	        aLine.strokeColor = '#ddd';
 	        aLine.strokeWidth = 3; //((i%10)==0) ? 5 : (((i%10)==0) ? 4 : 3);
 	        this.grid.push(aLine);
 	    }
 
-	    paper.view.draw(); //Setup //Activate
+	    view.draw(); //Setup //Activate
 
 	    //Resolve screen dimensions problem
 	    $("#project_content").removeClass("active");
@@ -334,55 +336,59 @@ Canvas.prototype.loadSettings = function(){
 
 //Return xPos converted to to canvas size 	-> Will work in responsive & fixed position if the canvas is resized
 Canvas.prototype.xPos = function(x){
-	return ( paper.view.bounds.left + x * (paper.view.bounds.width / s.x) );
+	return ( view.bounds.left + x * (view.bounds.width / s.x) );
 };
 
 //Return yPos converted to to canvas size 	-> Will work in responsive & fixed position if the canvas is resized
 Canvas.prototype.yPos = function(y){
-	return ( paper.view.bounds.bottom - y * (paper.view.bounds.height / s.y) );
+	return ( view.bounds.bottom - y * (view.bounds.height / s.y) );
 };
 
 //Retur, thickness (strokeWidth) 			-> Will work in responsive & fixed position if the canvas is resized
 Canvas.prototype.w = function(w){
-	return ( w * (paper.view.bounds.height / s.y) );
+	return ( w * (view.bounds.height / s.y) );
 }
 
 
+
+// --- Canvas UI actions --- //
+Canvas.prototype.selectAction = function(t,e){
+	console.log("Nouvelle Selection de Ligne : " + t)
+}
 
 
 // --- Line : Add / Edit / Remove --- //
 Canvas.prototype.addLine = function(l){
 	//Add line view
-	l.canvas = new paper.Path.Line(
-		new paper.Point( this.xPos(l.x0) , this.yPos(l.y0) ),
-		new paper.Point( this.xPos(l.x1) , this.yPos(l.y1) )
-	);
-    l.canvas.strokeColor = 'rgba(77, 135, 29, 0.8)';
+	l.canvas = new Path.Line( this.addPoint(l.p0.x,l.p0.y) , this.addPoint(l.p1.x,l.p1.y) );
+    l.canvas.strokeColor = canvasColor;
     l.canvas.strokeWidth = 3;
+    l.canvas.taskId = l.id;
 
     //Add toolPath View
-    l.tCanvas = new paper.Path.Line(
-		new paper.Point( this.xPos(l.t_x0) , this.yPos(l.t_y0) ),
-		new paper.Point( this.xPos(l.t_x1) , this.yPos(l.t_y1) )
+    l.tCanvas = new Path.Line(
+		new Point( this.xPos(l.t0.x) , this.yPos(l.t0.y) ),
+		new Point( this.xPos(l.t1.x) , this.yPos(l.t1.y) )
 	);
-    l.tCanvas.strokeColor = 'rgba(156, 33, 12, 0.25)'//'rgba(215, 44, 44, 0.6)';
+    l.tCanvas.strokeColor = toolpathColor//'rgba(215, 44, 44, 0.6)';
     l.tCanvas.strokeWidth = this.w(s.bit_d);
     l.tCanvas.strokeCap = 'round';
 	l.tCanvas.dashArray = [l.tCanvas.strokeWidth*2, l.tCanvas.strokeWidth*3];
+	l.tCanvas.taskId = l.id;
 
-	paper.view.draw(); //Setup //Activate
+	view.draw(); //Setup //Activate
 };
 
 Canvas.prototype.removeLine = function(l){
 	l.canvas.remove();
 	l.tCanvas.remove();
-	paper.view.draw(); //Setup //Activate
+	view.draw(); //Setup //Activate
 };
 
 
 // --- Point : Add / Edit / Remove --- //
 Canvas.prototype.addPoint = function(x,y,size){
-	return true;
+	return new Point( this.xPos(x) , this.yPos(y) ) ;
 };
 
 
@@ -391,11 +397,11 @@ Canvas.prototype.addRectangle = function(r){
 	//Add line view
 	r.canvas = [];
 
-	var p = new paper.Path.Rectangle(
-		new paper.Point( this.xPos(r.x0) , this.yPos(r.y0) ),
-		new paper.Point( this.xPos(r.x1) , this.yPos(r.y1) )
+	var p = new Path.Rectangle(
+		new Point( this.xPos(r.p0.x) , this.yPos(r.p0.y) ),
+		new Point( this.xPos(r.p1.x) , this.yPos(r.p1.y) )
 	);
-    p.strokeColor = 'rgba(77, 135, 29, 0.8)';
+    p.strokeColor = canvasColor;
     p.strokeWidth = 3;
 
     r.canvas.push(p);
@@ -406,11 +412,11 @@ Canvas.prototype.addRectangle = function(r){
     var i = 0;
 
     for(i=0 ; i < r.t.length ; i++){
-    	var p2 = new paper.Path.Rectangle( 
-    		new paper.Point( this.xPos(r.t[i].x0) , this.yPos(r.t[i].y0) ) ,
-    		new paper.Point( this.xPos(r.t[i].x1) , this.yPos(r.t[i].y1) )
+    	var p2 = new Path.Rectangle( 
+    		new Point( this.xPos(r.t[i].p0.x) , this.yPos(r.t[i].p0.y) ) ,
+    		new Point( this.xPos(r.t[i].p1.x) , this.yPos(r.t[i].p1.y) )
     	);
-	    p2.strokeColor = 'rgba(156, 33, 12, 0.25)'//'rgba(215, 44, 44, 0.6)';
+	    p2.strokeColor = toolpathColor//'rgba(215, 44, 44, 0.6)';
 	    p2.strokeWidth = this.w(s.bit_d)*0.5;
 	    p2.strokeCap = 'round';
 		p2.dashArray = [p2.strokeWidth*2, p2.strokeWidth*1];
@@ -418,7 +424,7 @@ Canvas.prototype.addRectangle = function(r){
 		r.tCanvas.push(p2);
     }
 
-	paper.view.draw(); //Setup //Activate
+	view.draw(); //Setup //Activate
 };
 
 Canvas.prototype.removeRectangle = function(r){ //Make it generic with line removeFromCanvas / removeView
@@ -429,7 +435,7 @@ Canvas.prototype.removeRectangle = function(r){ //Make it generic with line remo
 		shape.remove();
 	});
 
-	paper.view.draw(); //Setup //Activate
+	view.draw(); //Setup //Activate
 };
 
 
@@ -438,14 +444,17 @@ Canvas.prototype.addCircle = function(c){
 	//Add line view
 	c.canvas = [];
 
-	var p = new paper.Path.Circle(
-		new paper.Point( this.xPos(c.x) , this.yPos(c.y) ),
-		( this.yPos(c.y - c.y0) - paper.view.bounds.height )
+	var p = new Path.Circle(
+		new Point( this.xPos(c.p.x) , this.yPos(c.p.y) ),
+		( this.yPos(c.p.y - c.p0.y) - view.bounds.height )
 	);
-    p.strokeColor = 'rgba(77, 135, 29, 0.8)';
+    p.strokeColor = canvasColor;
     p.strokeWidth = 3;
 
     c.canvas.push(p);
+    c.canvas.onclick = function(event){
+    	console.log("truc");
+    }
 
     //Add toolPath View
     c.tCanvas = [];
@@ -453,11 +462,11 @@ Canvas.prototype.addCircle = function(c){
     var i = 0;
 
     for(i=0 ; i < c.t.length ; i++){
-    	var p2 = new paper.Path.Circle( 
-    		new paper.Point( this.xPos(c.t[i].x) , this.yPos(c.t[i].y) ) ,
-    		( this.yPos(c.t[i].y - c.t[i].y0) - paper.view.bounds.height ) 
+    	var p2 = new Path.Circle( 
+    		new Point( this.xPos(c.t[i].p.x) , this.yPos(c.t[i].p.y) ) ,
+    		( this.yPos(c.t[i].p.y - c.t[i].p0.y) - view.bounds.height ) 
     	);
-	    p2.strokeColor = 'rgba(156, 33, 12, 0.25)'//'rgba(215, 44, 44, 0.6)';
+	    p2.strokeColor = toolpathColor//'rgba(215, 44, 44, 0.6)';
 	    p2.strokeWidth = this.w(s.bit_d)*0.5;
 	    p2.strokeCap = 'round';
 		p2.dashArray = [p2.strokeWidth*2, p2.strokeWidth*1];
@@ -465,7 +474,7 @@ Canvas.prototype.addCircle = function(c){
 		c.tCanvas.push(p2);
     }
 
-	paper.view.draw(); //Setup //Activate
+	view.draw(); //Setup //Activate
 };
 
 Canvas.prototype.removeCircle = function(c){ //Make it generic with line removeFromCanvas / removeView
@@ -476,7 +485,7 @@ Canvas.prototype.removeCircle = function(c){ //Make it generic with line removeF
 		shape.remove();
 	});
 
-	paper.view.draw(); //Setup //Activate
+	view.draw(); //Setup //Activate
 };
 
 
@@ -484,12 +493,12 @@ Canvas.prototype.removeCircle = function(c){ //Make it generic with line removeF
 Canvas.prototype.addArc = function(a){
 	//Add line view
 	a.canvas = [];
-
-	var p = new paper.Path.Arc(
-		new paper.Point( this.xPos(a.x) , this.yPos(a.y) ),
-		( this.yPos(a.y - a.y0) - paper.view.bounds.height )
+	var p = new Path.Arc(
+		new Point( this.xPos(a.p0.x) , this.yPos(a.p0.y) ) ,
+    	new Point( this.xPos(a.p1.x) , this.yPos(a.p1.y) ) ,
+    	new Point( this.xPos(a.p2.x) , this.yPos(a.p2.y) )
 	);
-    p.strokeColor = 'rgba(77, 135, 29, 0.8)';
+    p.strokeColor = canvasColor;
     p.strokeWidth = 3;
 
     a.canvas.push(p);
@@ -500,17 +509,20 @@ Canvas.prototype.addArc = function(a){
     var i = 0;
 
     for(i=0 ; i< a.t.length ; i++){
-    	var p2 = new paper.Path.Arc( new paper.Point( this.xPos(a.t[i].x) , this.yPos(a.t[i].y) ) ,
-    		( this.yPos(a.t[i].y - a.t[i].y0) - paper.view.bounds.height ) );
-    	p2.strokeColor = 'rgba(156, 33, 12, 0.25)'//'rgba(215, 44, 44, 0.6)';
+    	var p2 = new Path.Arc(
+    		new Point( this.xPos(a.t[i].p0.x) , this.yPos(a.t[i].p0.y) ) ,
+    		new Point( this.xPos(a.t[i].p1.x) , this.yPos(a.t[i].p1.y) ) ,
+    		new Point( this.xPos(a.t[i].p2.x) , this.yPos(a.t[i].p2.y) )
+    	);
+    	p2.strokeColor = toolpathColor//'rgba(215, 44, 44, 0.6)';
 	    p2.strokeWidth = this.w(s.bit_d)*0.5;
 	    p2.strokeCap = 'round';
 		p2.dashArray = [p2.strokeWidth*2, p2.strokeWidth*1];
 
-		c.tCanvas.push(p2);
+		a.tCanvas.push(p2);
     }
 
-	paper.view.draw(); //Setup //Activate
+	view.draw(); //Setup //Activate
 };
 
 Canvas.prototype.removeArc = function(a){ //Make it generic with line removeFromCanvas / removeView
@@ -521,7 +533,7 @@ Canvas.prototype.removeArc = function(a){ //Make it generic with line removeFrom
 		shape.remove();
 	});
 
-	paper.view.draw(); //Setup //Activate
+	view.draw(); //Setup //Activate
 };
 
 
@@ -599,6 +611,11 @@ gcode.prototype.G1 = function(x,y,z,s){
 |______________________________________________________________________________|
 */
 
+//Tasks = array
+//1 Element of this array = 1 task
+//1 task can be a library shape (circle,line,arc,rectangle), or a custom shape (not implemented yet in the library)
+//So each task from the "Tasks" array won't necessary be the 
+
 
 /********** Function for "Tasks" object = all the tasks **********/
 Tasks.reset = function(){
@@ -661,23 +678,9 @@ Tasks.addCircle = function(){
 	this.view();
 };
 
-Tasks.addEllipse = function(){
+Tasks.addArc = function(){
 	//Create a new line (task)
-	var t = new ellipse(this.length.toString());
-
-	//Add this to the list of Tasks
-	this.push(t);
-
-	//Save Tasks Model
-	setAppSetting(appName,"Tasks",this);
-
-	//View Tasks
-	this.view();
-};
-
-Tasks.addRectangle = function(){
-	//Create a new line (task)
-	var t = new rectangle(this.length.toString());
+	var t = new arc(this.length.toString());
 
 	//Add this to the list of Tasks
 	this.push(t);
@@ -705,6 +708,8 @@ Tasks.remove = function(id){
 
 Tasks.edit = function(id){
 	//Search the position of the line to edit & get this line
+	console.log("id a modifier : " + id);
+
 	var t = this[this.pos(id)];
 
 	//Update it status to current
@@ -816,20 +821,20 @@ Tasks.sort = function(){
 *** Shared Functions ***
 */
 
-calculAlpha = function(x,y,x0,y0){
+calculAlpha = function(p,p0){
 	var alpha = 0;
 
-	if ( (y0!=y) && (x0!=x) ) {
-		alpha = Math.atan((y0-y)/(x0-x));
+	if ( (p0.y!=p.y) && (p0.x!=p.x) ) {
+		alpha = Math.atan((p0.y-p.y)/(p0.x-p.x));
 	}
 	else {
-		if(y0 == y) {
-			if((x0-x)>0) 	{ alpha=0; }
-			else 			{ alpha=pi; }
+		if(p0.y == p.y) {
+			if((p0.x-p.x)>0) 	{ alpha=0; }
+			else 				{ alpha=pi; }
 		}
-		else if(x0 == x) {
-			if((y0-y)>0) 	{ alpha=pi/2; }
-			else 			{ alpha=3*pi/2; }
+		else if(p0.x == p.x) {
+			if((p0.y-p.y)>0) 	{ alpha=pi/2; }
+			else 				{ alpha=3*pi/2; }
 		}
 	}
 
@@ -841,20 +846,87 @@ calculAlpha = function(x,y,x0,y0){
 //x & y = center of the rotation
 //x1 & y1 = point to transform
 //angle = angle of transformation (clockwise) in degres
-xRot = function(x,y,x1,y1,angle){
-	var r = Math.round(Math.sqrt((x1-x)*(x1-x) + (y1-y)*(y1-y))*10000)/10000;
+rot = function(p,p1,angle){
+	var r = Math.round(Math.sqrt((p1.x-p.x)*(p1.x-p.x) + (p1.y-p.y)*(p1.y-p.y))*10000)/10000;
 	var alpha = (-angle/180)*pi;
 
-	return (x1 * Math.cos(alpha)) - (y1 * Math.sin(alpha));
+	return new p(
+		(p1.x * Math.cos(alpha)) - (p1.y * Math.sin(alpha)),
+		(p1.x * Math.sin(alpha)) + (p1.y * Math.cos(alpha))
+	);
 };
 
-yRot = function(x,y,x1,y1,angle){
-	var r = Math.round(Math.sqrt((x1-x)*(x1-x) + (y1-y)*(y1-y))*10000)/10000;
-	var alpha = (-angle/180)*pi;
-
-	return = (x1 * Math.sin(alpha)) + (y1 * Math.cos(alpha));
+pos = function(C,L,T,R,B){
+	this.center = C ? C : new p(null,null);
+	this.left 	= L ? L : new p(null,null);
+	this.top 	= T ? T : new p(null,null);
+	this.right 	= R ? R : new p(null,null);
+	this.bottom = B ? B : new p(null,null);
 };
 
+
+/*
+*** Method & classes for use in elements
+*/
+p = function(x,y){
+	this.x=x;
+	this.y=y;
+};
+
+//Return distance of p from point "from", under as a svector (x & y distance)
+p.prototype.distanceFrom = function(from){
+	return new p(
+		(this.x-from.x),
+		(this.y-from.y)
+	);
+};
+
+//Return distance of p from point "from", as a value
+p.prototype.absoluteDistance = function(from){
+	return Math.round(
+		Math.sqrt(
+			(this.distanceFrom(from).x*this.distanceFrom(from).x) + (this.distanceFrom(from).y*this.distanceFrom(from).y)
+		)*10000
+	)/10000;
+}
+
+p.prototype.sameAxisThan = function(p){
+	if ((this.x == p.x) || (this.y == p.y))
+		{ return true; }
+	else 
+		{ return false; }
+}
+
+p.prototype.middle = function(p1){
+	return new p(
+		(this.x + p1.x /2),
+		(this.y + p1.y /2)
+	);
+}
+
+p.prototype.translate = function(vector){ //vector is of p type
+	this.x += vector.x;
+	this.y += vector.y;
+};
+
+p.prototype.rotate = function(center,angle){
+	var alpha = (-angle/(180))*pi;
+	var xNew = ((this.x-center.x) * Math.cos(alpha)) - ((this.y-center.y) * Math.sin(alpha)) + center.x;
+	var yNew = (((this.x-center.x) * Math.sin(alpha))) + ((this.y-center.y) * Math.cos(alpha)) + center.y;
+
+	this.x = xNew;
+	this.y = yNew;
+};
+
+p.prototype.mirror = function(center,axis){
+	//Center is center point to mirror
+	if(axis == 'x'){
+		this.rotate(new p(this.x,center.y),180);
+	}
+	else if (axis == 'y'){
+		this.rotate(new p(center.x,this.y),180);
+	}
+};
 
 
 /*
@@ -862,26 +934,31 @@ yRot = function(x,y,x1,y1,angle){
 */
 
 line = function(l,x0,y0,x1,y1,name,side) {
+	//Basic informations
 	this.id="line-" + l;
 	this.pos = l;
 	this.canvas = null;
 	this.tCanvas = null;
 	name ? this.name = name : (this.name = $("#line_name").val() 	? 	$("#line_name").val() : this.id);
 	this.current=0;
-	this.x0 = x0 ? x0 : ($("#line_x0").length 	? 	parseFloat($("#line_x0").val())	: 0); //X start position of a line
-	this.y0 = y0 ? y0 : ($("#line_y0").length 	?	parseFloat($("#line_y0").val()) : 0); //Y start position of a line
-	this.x1 = x1 ? x1 : ($("#line_x1").length	?	parseFloat($("#line_x1").val()) : 0); //X end position of a line
-	this.y1 = y1 ? y1 : ($("#line_y1").length	?	parseFloat($("#line_y1").val()) : 0); //Y end position of a line
+
+	//Start Point
+	this.p0 = new p(
+		x0 ? x0 : ($("#line_x0").length 	? 	parseFloat($("#line_x0").val())	: 0),
+		y0 ? y0 : ($("#line_y0").length 	?	parseFloat($("#line_y0").val()) : 0)
+	);
+	
+	//End Point
+	this.p1 = new p(
+		x1 ? x1 : ($("#line_x1").length	?	parseFloat($("#line_x1").val()) : 0),
+		y1 ? y1 : ($("#line_y1").length	?	parseFloat($("#line_y1").val()) : 0)
+	);
+
+	//Side of bit (for toolpath...)
 	this.side = side ? side : ($("input:radio[name='line_side']:checked").length	?	parseInt($("input:radio[name='line_side']:checked").val()) : 1); //3 = center, 1 = Left, 2 = Right
 
-	//Synch ToolPath
-	this.toolpath();
-
-	//Synch gCode
-	this.gCode();
-
-	//Synch Canvas
-	this.addCanvas();
+	//Synch ToolPath (also with settings), Gcode, Canvas
+	this.synch();
 
 	//Reset the value of "name" input & unique id "cid" -> By Security
 	$("#line_name").val("");
@@ -889,26 +966,48 @@ line = function(l,x0,y0,x1,y1,name,side) {
 };
 
 line.prototype.update = function(x0,y0,x1,y1,name,side) {
-	//First delete view
-	this.removeCanvas();
+	this.p0 = new p(x0,y0); //Update Start Point
+	this.p1 = new p(x1,y1);	//Update End Point
 
-	this.x0=x0; //X start position of a line
-	this.y0=y0; //Y start position of a line
-	this.x1=x1; //X end position of a line
-	this.y1=y1; //Y end position of a line
 	this.side = side ? side : 1; //3 = center, 1 = Left, 2 = Right
 	
 	if(name) this.name=name;
 	//else name = "Line" + pos;
 
-	//Synch ToolPath
-	this.toolpath();
+};
 
-	//Synch gCode
-	this.gCode();
+line.prototype.rotate = function(center,angle){ //Rotate a line around a center, and an angle
+	this.p0.rotate(center,angle);
+	this.p1.rotate(center,angle);
 
-	//Synch Canvas
-	this.addCanvas();
+	//Synch ToolPath (also with settings), Gcode, Canvas
+	this.synch();
+};
+
+line.prototype.mirror = function(center,axis){ //Mirror a line relatively  to a point and an axis (for example center point and axis 'x')
+	this.p0.mirror(center,axis);
+	this.p1.mirror(center,axis);
+
+	//Synch ToolPath (also with settings), Gcode, Canvas
+	this.synch();
+};
+
+line.prototype.translate = function(vector){ //Translate a line of a vector (p structure (x/y))
+	this.p0 = translate(vector);
+	this.p1 = translate(vector);
+
+	//Synch ToolPath (also with settings), Gcode, Canvas
+	this.synch();
+};
+
+line.prototype.setPos = function(){ //Set the center of the shape, its Left / Top / Right / Bottom limits
+	this.position = new pos(
+		this.p0.middle(this.p1), //Center
+		Math.min( this.p0.x , this.p1.x ), //Left
+		Math.min( this.p0.y , this.p1.y ), //Top
+		Math.min( this.p0.x , this.p1.x ), //Right
+		Math.min( this.p0.x , this.p1.x ) //Bottom
+	);
 };
 
 //Should move to Tasks (set a task as current, and not a form)
@@ -934,29 +1033,29 @@ line.prototype.getForm = function(){
 line.prototype.setForm = function(){
 	if ($("#line_name").length)	{ $("#line_name").val(this.name); }
 	if ($("#line_name").length)	{ $("#line_name").data("cid",this.id); }
-	if ($("#line_x0").length) 	{ $("#line_x0").val(this.x0.toString()); }
-	if ($("#line_y0").length) 	{ $("#line_y0").val(this.y0.toString()); }
-	if ($("#line_x1").length) 	{ $("#line_x1").val(this.x1.toString()); }
-	if ($("#line_y1").length) 	{ $("#line_y1").val(this.y1.toString()); }
+	if ($("#line_x0").length) 	{ $("#line_x0").val(this.p0.x.toString()); }
+	if ($("#line_y0").length) 	{ $("#line_y0").val(this.p0.y.toString()); }
+	if ($("#line_x1").length) 	{ $("#line_x1").val(this.p1.x.toString()); }
+	if ($("#line_y1").length) 	{ $("#line_y1").val(this.p1.y.toString()); }
 	if ($("input:radio[name='line_side']:checked").length)	{ $("input:radio[name='line_side'][value='"+ this.side +"']").attr("checked",true); }
 };
 
 line.prototype.toolpath = function() {
 	var alpha=0;
 
-	var x0 = this.x0; 		var x1 = this.x1; 		var y0 = this.y0; 		var y1 = this.y1;
-	this.t_x0 = this.x0;	this.t_x1 = this.x1;	this.t_y0 = this.y0;	this.t_y1 = this.y1;
+	this.t0 = new p(this.p0.x, this.p0.y);
+	this.t1 = new p(this.p1.x, this.p1.y);
 
 	if(this.side != 3) {
-		alpha = calculAlpha(x0,y0,x1,y1);
+		alpha = calculAlpha(this.p0,this.p1);
 
 		if(this.side == 1) { alpha = pi/2 + alpha; } //Left
 		else { alpha = 3*pi/2 + alpha; } //Right
 
-		this.t_x0 += (s.bit_d/2) * Math.cos(alpha);
-		this.t_x1 += (s.bit_d/2) * Math.cos(alpha);
-		this.t_y0 += (s.bit_d/2) * Math.sin(alpha);
-		this.t_y1 += (s.bit_d/2) * Math.sin(alpha);
+		this.t0.x += (s.bit_d/2) * Math.cos(alpha);
+		this.t1.x += (s.bit_d/2) * Math.cos(alpha);
+		this.t0.y += (s.bit_d/2) * Math.sin(alpha);
+		this.t1.y += (s.bit_d/2) * Math.sin(alpha);
 	}
 };
 
@@ -964,7 +1063,7 @@ line.prototype.addTaskList = function() {
 	var str = "";
 	str += "<tr class='" + (this.current ? 'current' : '') + "' id='" + this.id + "'>";
 	str += "<td>" + this.name + "</td>";
-	str += "<td>(" + this.x0.toString() + "," + this.y0.toString() + ") - (" + this.x1.toString() + "," + this.y1.toString() + ")</td>";
+	str += "<td>(" + this.p0.x.toString() + "," + this.p0.y.toString() + ") - (" + this.p1.x.toString() + "," + this.p1.y.toString() + ")</td>";
 	str += "<td class='edit'><span>E</span></td>";
 	str += "<td class='delete'><span>D</span></td>";
 	str += "</tr>";
@@ -1001,22 +1100,37 @@ line.prototype.gCode = function(c){
 
 		//Go to beginning of the line
 		code += ";***** STARTING A NEW LINE *****\n";
-		code+='G1X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'F' + s.air_speed + '\n';
+		code+='G1X' + (this.p0.x + s.x0) + 'Y' + (this.p0.y + s.y0) + 'F' + s.air_speed + '\n';
 
 		//Go to the new depth
 		code+='G1Z' + curHeight + 'F' + s.cut_speed + '\n';
 
 		//Go to the end of the line
-		code+='G1X' + (this.x1 + s.x0) + 'Y' + (this.y1 + s.y0) + 'F' + s.cut_speed + '\n';
+		code+='G1X' + (this.p1.x + s.x0) + 'Y' + (this.p1.y + s.y0) + 'F' + s.cut_speed + '\n';
 
 		//Go to z over the project
 		code+='G1Z' + s.z0 + 'F' + s.air_speed + '\n'; //Maybe will be removed (see when security is needed)
 	}
 	this.c = code;
 	return this.c;
-}
+};
 
+line.prototype.synch = function(){
+	//First delete view
+	this.removeCanvas();
 
+	//Get Center, Top / Right / Bottom / Left pos
+	this.setPos();
+
+	//Synch ToolPath
+	this.toolpath();
+
+	//Synch gCode
+	this.gCode();
+
+	//Synch Canvas
+	this.addCanvas();
+};
 
 
 
@@ -1028,10 +1142,10 @@ line.prototype.gCode = function(c){
 //Can also do a part of a rectangle (if x0,y0 != of x1,y1)
 rectangle = function(l,x0,y0,x1,y1,side,name) {
 	//These variables will be checked later
-	var x0 = x0;
-	var x1 = x1;
-	var y0 = y0;
-	var y1 = y1;
+	this.p0 = new p(x0,y0);
+	this.p1 = new p(x1,y1);
+	this.p2 = new p(x0,y1);
+	this.p3 = new p(x1,y0);
 
 	if (l) {
 		this.pos = l;
@@ -1048,40 +1162,39 @@ rectangle = function(l,x0,y0,x1,y1,side,name) {
 	name ? this.name = name : (this.name = ($("#rectangle_name").val() 	? 	$("#rectangle_name").val() : this.id));
 
 	//Set the start point
-	this.x0 = x0 ? x0 : ($("#rectangle_x0").length 	? 	parseFloat($("#rectangle_x0").val())	: 0); //X start of the rectangle
-	this.y0 = y0 ? y0 : ($("#rectangle_y0").length 	?	parseFloat($("#rectangle_y0").val()) : 0); //Y start of the rectangle
+	this.p0 = new p(
+		x0 ? x0 : ($("#rectangle_x0").length 	? 	parseFloat($("#rectangle_x0").val())	: 0),
+		y0 ? y0 : ($("#rectangle_y0").length 	?	parseFloat($("#rectangle_y0").val()) 	: 0)
+	);
 
 	//Set the end point
-	if(!x1){
+	if(!x1 || !y1){
 		if( ($("#rectangle_x1").length) && $("#rectangle_x1").hasClass("active") ){
 			x1 = parseFloat($("#rectangle_x1").val());
 		}
 		else if( ($("#rectangle_w").length) && $("#rectangle_w").hasClass("active") ){
-			x1 = this.x0 + parseFloat($("#rectangle_w").val());
+			x1 = this.p0.x + parseFloat($("#rectangle_w").val());
 		}
-	}
-	if(!y1){
+
+		
 		if( ($("#rectangle_y1").length) && $("#rectangle_y1").hasClass("active") ){
 			y1 = parseFloat($("#rectangle_y1").val());
 		}
 		else if( ($("#rectangle_h").length) && $("#rectangle_h").hasClass("active") ){
-			y1 = this.y0 + parseFloat($("#rectangle_h").val());
+			y1 = this.p0.y + parseFloat($("#rectangle_h").val());
 		}
 	}
-	this.x1 = x1; //X end of the rectangle
-	this.y1 = y1; //Y end of the rectangle
+
+	this.p1 = new p(x1,y1);
+
+	this.p2 = new p(this.p0.x,this.p1.y);
+	this.p3 = new p(this.p1.x,this.p0.y);
 
 	//Check for the toolpath side or assign the default one
 	this.side = side ? side : ($("input:radio[name='rectangle_side']:checked").length	?	parseInt($("input:radio[name='rectangle_side']:checked").val()) : 1); //3 = on rectangle, 1 = exterior, 2 = Hole inside
 
-	//Synch ToolPath
-	this.toolpath();
-
-	//Synch gCode
-	this.gCode();
-
-	//Synch Canvas
-	this.addCanvas();
+	//Synch ToolPath (also with settings), Gcode, Canvas
+	this.synch();
 
 	//Reset the value of "name" input & unique id "cid" -> By Security
 	$("#rectangle_name").val("");
@@ -1089,28 +1202,59 @@ rectangle = function(l,x0,y0,x1,y1,side,name) {
 };
 
 rectangle.prototype.update = function(x0,y0,x1,y1,side,name) {
-	//First delete view
-	this.removeCanvas();
-
 	//Set the center
-	this.x0 = x0 ;
-	this.y0 = y0 ;
-	this.x1 = x1 ;
-	this.y1 = y1 ;
+	this.p0 = new p(x0,y0);
+	this.p1 = new p(x1,y1);
+	this.p2 = new p(x0,y1);
+	this.p3 = new p(x1,y0);
 
 	this.side = side ? side : 1; //3 = center, 1 = Left, 2 = Right
 	
 	if(name) this.name=name;
 	//else name = "rectangle" + pos;
 
-	//Synch ToolPath
-	this.toolpath();
+	//Synch ToolPath (also with settings), Gcode, Canvas
+	this.synch();
+};
 
-	//Synch gCode
-	this.gCode();
+rectangle.prototype.rotate = function(center,angle){ //Rotate a rectangle around a center point, and an angle
+	this.p0.rotate(center,angle);
+	this.p1.rotate(center,angle);
+	this.p2.rotate(center,angle);
+	this.p3.rotate(center,angle);
 
-	//Synch Canvas
-	this.addCanvas();
+	//Synch ToolPath (also with settings), Gcode, Canvas
+	this.synch();
+};
+
+rectangle.prototype.mirror = function(center,axis){ //Mirror a rectangle relatively  to a point and an axis (for example center point and axis 'x')
+	this.p0.mirror(center,axis);
+	this.p1.mirror(center,axis);
+	this.p2.mirror(center,axis);
+	this.p3.mirror(center,axis);
+
+	//Synch ToolPath (also with settings), Gcode, Canvas
+	this.synch();
+};
+
+rectangle.prototype.translate = function(vector){ //Translate a rectangle of a vector (p structure (x/y))
+	this.p0 = translate(vector);
+	this.p1 = translate(vector);
+	this.p2 = translate(vector);
+	this.p3 = translate(vector);
+
+	//Synch ToolPath (also with settings), Gcode, Canvas
+	this.synch();
+};
+
+rectangle.prototype.setPos = function(){ //Set the center of the shape, its Left / Top / Right / Bottom limits
+	this.position = new pos(
+		this.p0.middle(this.p1), //Center
+		Math.min(this.p0.x,this.p1.x,this.p2.x,this.p3.x), //Left
+		Math.max(this.p0.y,this.p1.y,this.p2.y,this.p3.y), //Top
+		Math.max(this.p0.x,this.p1.x,this.p2.x,this.p3.x), //Right
+		Math.min(this.p0.y,this.p1.y,this.p2.y,this.p3.y) //Bottom
+	);
 };
 
 //Should move to Tasks (set a task as current, and not a form)
@@ -1138,12 +1282,12 @@ rectangle.prototype.setForm = function(){
 		$("#rectangle_name").val(this.name);
 		$("#rectangle_name").data("cid",this.id);
 	}
-	if ($("#rectangle_x0").length) 		{ $("#rectangle_x0").val(this.x0.toString()); }
-	if ($("#rectangle_y0").length) 		{ $("#rectangle_y0").val(this.y0.toString()); }
-	if ($("#rectangle_x1").length) 		{ $("#rectangle_x1").val(this.x1.toString()); }
-	if ($("#rectangle_y1").length) 		{ $("#rectangle_y1").val(this.y1.toString()); }
-	if ($("#rectangle_w").length) 		{ $("#rectangle_w").val((this.x1-this.x0).toString()); }
-	if ($("#rectangle_h").length) 		{ $("#rectangle_h").val((this.y1-this.y0).toString()); }
+	if ($("#rectangle_x0").length) 		{ $("#rectangle_x0").val(this.p0.x.toString()); }
+	if ($("#rectangle_y0").length) 		{ $("#rectangle_y0").val(this.p0.y.toString()); }
+	if ($("#rectangle_x1").length) 		{ $("#rectangle_x1").val(this.p1.x.toString()); }
+	if ($("#rectangle_y1").length) 		{ $("#rectangle_y1").val(this.p1.y.toString()); }
+	if ($("#rectangle_w").length) 		{ $("#rectangle_w").val((this.p1.x-this.p0.x).toString()); }
+	if ($("#rectangle_h").length) 		{ $("#rectangle_h").val((this.p1.y-this.p0.y).toString()); }
 
 	if ($("input:radio[name='rectangle_side']:checked").length)	{ $("input:radio[name='rectangle_side'][value='"+ this.side +"']").attr("checked",true); }
 };
@@ -1156,54 +1300,63 @@ rectangle.prototype.toolpath = function() {
 
 	if (this.side == 3){ //Case toolpath on the rectangle
 		var e={};
-		e.x0=this.x0; //Center X : never changes
-		e.y0=this.y0; //Center Y : never changes
-		e.x1=this.x1;	//Start Point X
-		e.y1=this.y1;	//Start Point Y
+		e.p0=this.p0;
+		e.p1=this.p1;
+		e.p2=this.p2;
+		e.p3=this.p3;
 
 		this.t.push(e);	//Add rectangle to the list of toolpaths
 	}
 	else if (this.side == 1){ //Case toolpath outside the rectangle
 		var e={};
+		var alpha0 = calculAlpha(this.p0,this.p2) + pi/2;
+		var alpha1 = calculAlpha(this.p2,this.p1) + pi/2;
+		var alpha2 = calculAlpha(this.p1,this.p3) + pi/2;
+		var alpha3 = calculAlpha(this.p3,this.p0) + pi/2;
 
-		e.x0=this.x0 - (s.bit_d/2); //Center X : never changes
-		e.y0=this.y0 - (s.bit_d/2); //Center Y : never changes
-		e.x1=this.x1 + (s.bit_d/2);
-		e.y1=this.y1 + (s.bit_d/2);
+		e.p0 = new p(this.p0.x + (s.bit_d/2) * Math.cos(alpha0) , this.p0.y + (s.bit_d/2) * Math.sin(alpha0));
+		e.p1 = new p(this.p1.x + (s.bit_d/2) * Math.cos(alpha1) , this.p1.y + (s.bit_d/2) * Math.sin(alpha1));
+		e.p2 = new p(this.p2.x + (s.bit_d/2) * Math.cos(alpha2) , this.p2.y + (s.bit_d/2) * Math.sin(alpha2));
+		e.p3 = new p(this.p3.x + (s.bit_d/2) * Math.cos(alpha3) , this.p3.y + (s.bit_d/2) * Math.sin(alpha3));
 
 		this.t.push(e);	//Add rectangle to thel ist of toolpaths
 	}
 	else if (this.side == 2){ //Case toolpath inside the rectangle : do all the inside
-
 		/*** Init ***/
-
-		//1st : calcul nb bit in height & in width
-		//Take the smallest one and do rectangles with the same ratio
-		//Start Point : Center -1/2bit, only for the smallest dimension (or randomly)
-		//End point : Center +1/2bit, only for smallest dimension (or randomly)
-		//Other dimension : Center +/- 1/2 bit * 1/2(ratio) (if randomly)
-
-		var W = this.x1 - this.x0;
-		var H = this.y1 - this.y0;
-		var cX = (this.x0 + this.x1) / 2;
-		var cY = (this.y0 + this.y1) / 2;
+		//Fonction to correct
+		var W = this.p1.x - this.p0.x;
+		var H = this.p1.y - this.p0.y;
+		var cX = (this.p0.x + this.p1.x) / 2;
+		var cY = (this.p0.y + this.p1.y) / 2;
 		var R = W/H;
-		var oldX0 = null;
-		var oldX1 = null;
-		var oldY0 = null;
-		var oldY1 = null;
+		var oldP0 = null;
+		var oldP1 = null;
+		var oldP2 = null;
+		var oldP3 = null;
+		var alpha0 = calculAlpha(this.p0,this.p2) + pi/2;
+		var alpha1 = calculAlpha(this.p2,this.p1) + pi/2;
+		var alpha2 = calculAlpha(this.p1,this.p3) + pi/2;
+		var alpha3 = calculAlpha(this.p3,this.p0) + pi/2;
 		
 		if (W>H){
-			oldY0 = cY - (s.bit_d / 2);
-			oldY1 = cY + (s.bit_d / 2);
-			oldX0 = cX - ((s.bit_d / 2) * (R > 0 ? R : (1/R) ));
-			oldX1 = cX + ((s.bit_d / 2) * (R > 0 ? R : (1/R) ));
+			oldP0 = new p(
+				cX - ((s.bit_d / 2) * (R > 0 ? R : (1/R) )),
+				cY - (s.bit_d / 2)
+			);
+			oldP1 = new p(
+				cX + ((s.bit_d / 2) * (R > 0 ? R : (1/R) )),
+				cY + (s.bit_d / 2)
+			);
 		}
 		else {
-			oldX0 = cX - (s.bit_d / 2);
-			oldX1 = cX + (s.bit_d / 2);
-			oldY0 = cX - ((s.bit_d / 2) * (R > 0 ? R : (1/R) ));
-			oldY1 = cX + ((s.bit_d / 2) * (R > 0 ? R : (1/R) ));
+			oldP0 = new p(
+				cX - (s.bit_d / 2),
+				cX - ((s.bit_d / 2) * (R > 0 ? R : (1/R) ))
+			);
+			oldP1 = newp(
+				cX + (s.bit_d / 2),
+				cX + ((s.bit_d / 2) * (R > 0 ? R : (1/R) ))
+			);
 		}
 
 		var end = 0;
@@ -1211,29 +1364,25 @@ rectangle.prototype.toolpath = function() {
 		while( end==0 ){ //ABS value
 			var e={};
 
-			//Check if current arc is not too big
-			if ( Math.abs(oldX0) < Math.abs(this.x0 + s.bit_d/2) )  { oldX0 = this.x0 + s.bit_d/2; end=1;}
-			if ( Math.abs(oldY0) < Math.abs(this.y0 + s.bit_d/2) )  { oldY0 = this.y0 + s.bit_d/2; end=1;}
-			if ( Math.abs(oldX1) > Math.abs(this.x1 - s.bit_d/2) )  { oldX1 = this.x1 - s.bit_d/2; end=1;}
-			if ( Math.abs(oldY1) > Math.abs(this.y1 - s.bit_d/2) )  { oldY1 = this.y1 - s.bit_d/2; end=1;}
+			//Check if current Rec is not too big
+			if ( Math.abs(oldP0.x) < Math.abs(this.p0.x + s.bit_d/2) )  { oldP0.x = this.p0.x + s.bit_d/2; end=1;}
+			if ( Math.abs(oldP0.y) < Math.abs(this.p0.y + s.bit_d/2) )  { oldP0.y = this.p0.y + s.bit_d/2; end=1;}
+			if ( Math.abs(oldP1.x) > Math.abs(this.p1.x - s.bit_d/2) )  { oldP1.x = this.p1.x - s.bit_d/2; end=1;}
+			if ( Math.abs(oldP1.y) > Math.abs(this.p1.y - s.bit_d/2) )  { oldP1.y = this.p1.y - s.bit_d/2; end=1;}
 
-			if (	( Math.abs(oldX0) == Math.abs(this.x0 + s.bit_d/2) )
-				&& ( Math.abs(oldY0) == Math.abs(this.y0 + s.bit_d/2) )
-				&& ( Math.abs(oldX1) == Math.abs(this.x1 - s.bit_d/2) )
-				&& ( Math.abs(oldY1) == Math.abs(this.y1 - s.bit_d/2) )
+			if (	( Math.abs(oldP0.x) == Math.abs(this.p0.x + s.bit_d/2) )
+				&& ( Math.abs(oldP0.y) == Math.abs(this.p0.y + s.bit_d/2) )
+				&& ( Math.abs(oldP1.x) == Math.abs(this.p1.x - s.bit_d/2) )
+				&& ( Math.abs(oldP1.y) == Math.abs(this.p1.y - s.bit_d/2) )
 			)  { end=1; }
 
 			//Put the value of the new arc
-			e.x0 = oldX0;
-			e.y0 = oldY0;
-			e.x1 = oldX1;
-			e.y1 = oldY1;
+			e.p0 = oldP0;
+			e.p1 = oldP1;
 
 			//Increment position for next arc
-			oldX0 -= (s.bit_d);
-			oldY0 -= (s.bit_d);
-			oldX1 += (s.bit_d);
-			oldY1 += (s.bit_d);
+			oldP0 = new p( oldP0.x - (s.bit_d) , oldP0.y - (s.bit_d) );
+			oldP1 = new p( oldP1.x + (s.bit_d) , oldP1.y + (s.bit_d) );
 
 			this.t.push(e);	//Add arc to the list of toolpaths
 		}
@@ -1244,7 +1393,7 @@ rectangle.prototype.addTaskList = function() {
 	var str = "";
 	str += "<tr class='" + (this.current ? 'current' : '') + "' id='" + this.id + "'>";
 	str += "<td>" + this.name + "</td>";
-	str += "<td>(" + this.x0 + "," + this.y0 + ") - (" + this.x1 + "," + this.y1 + ")</td>";
+	str += "<td>(" + this.p0.x + "," + this.p0.y + ") - (" + this.p1.x + "," + this.p1.y + ")</td>";
 	str += "<td class='edit'><span>E</span></td>";
 	str += "<td class='delete'><span>D</span></td>";
 	str += "</tr>";
@@ -1278,22 +1427,22 @@ rectangle.prototype.gCode = function(c){
 
 			//Go to beginning of the rectangle
 			code += ";***** STARTING A NEW RECTANGLE *****\n";
-			code+='G1X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'F' + s.air_speed + '\n';
+			code+='G1X' + (this.p0.x + s.x0) + 'Y' + (this.p0.y + s.y0) + 'F' + s.air_speed + '\n';
 
 			//Go to the new depth
 			code+='G1Z' + curHeight + 'F' + s.cut_speed + '\n';
 
 			//Go to the 2nd corner
-			code+='G1X' + (this.x0 + s.x0) + 'Y' + (this.y1 + s.y0) + 'F' + s.cut_speed + '\n';
+			code+='G1X' + (this.p2.x + s.x0) + 'Y' + (this.p2.y + s.y0) + 'F' + s.cut_speed + '\n';
 
 			//Go to the 3rd corner
-			code+='G1X' + (this.x1 + s.x0) + 'Y' + (this.y1 + s.y0) + 'F' + s.cut_speed + '\n';
+			code+='G1X' + (this.p1.x + s.x0) + 'Y' + (this.p1.y + s.y0) + 'F' + s.cut_speed + '\n';
 
 			//Go to the 4th corner
-			code+='G1X' + (this.x1 + s.x0) + 'Y' + (this.y0 + s.y0) + 'F' + s.cut_speed + '\n';
+			code+='G1X' + (this.p3.x + s.x0) + 'Y' + (this.p3.y + s.y0) + 'F' + s.cut_speed + '\n';
 
 			//Go back to the 1st corner
-			code+='G1X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'F' + s.cut_speed + '\n';
+			code+='G1X' + (this.p0.x + s.x0) + 'Y' + (this.p0.y + s.y0) + 'F' + s.cut_speed + '\n';
 		});
 	}
 
@@ -1302,6 +1451,23 @@ rectangle.prototype.gCode = function(c){
 
 	this.c = code;
 	return this.c;
+};
+
+rectangle.prototype.synch = function(){
+	//First delete view
+	this.removeCanvas();
+
+	//Get Center, Top / Right / Bottom / Left pos
+	this.setPos();
+
+	//Synch ToolPath
+	this.toolpath();
+
+	//Synch gCode
+	this.gCode();
+
+	//Synch Canvas
+	this.addCanvas();
 };
 
 
@@ -1331,33 +1497,28 @@ circle = function(l,x,y,diam,side,name) {
 	//If a name is applicable, we set the custom name
 	name ? this.name = name : (this.name = ($("#circle_name").val() 	? 	$("#circle_name").val() : this.id));
 
-	//Check if there is a diameter as parameter, if not, check forms
 	if (diam) {d = diam;}
-	else if ( $("#circle_diam").length ) { d = parseFloat($("#circle_diam").val()); }
-	else if ( $("#circle_radius").length ) { r = parseFloat($("#circle_radius").val()); }
+	else if ( $("#circle_diam").length && $("#circle_diam").hasClass("active")) { d = parseFloat($("#circle_diam").val()); }
+	else if ( $("#circle_radius").length && $("#circle_radius").hasClass("active")) { r = parseFloat($("#circle_radius").val()); }
 
-	//Change the diameter to radius if applicable
+	//Change the diameter to radius if applicable, and save it
 	if (d) { r=d/2};
+	this.r = r;
 
 	//Set the center
-	this.x = x ? x : ($("#circle_x").length 	? 	parseFloat($("#circle_x").val())	: 0); //X center of the circle
-	this.y = y ? y : ($("#circle_y").length 	?	parseFloat($("#circle_y").val()) : 0); //Y center of the circle
+	this.p = new p(
+		 x ? x : ($("#circle_x").length 	? 	parseFloat($("#circle_x").val())	: 0),
+		 y ? y : ($("#circle_y").length 	?	parseFloat($("#circle_y").val()) : 0)
+	);
 
 	//Change coordinates to paper.js / gcode compatible coordinates
-	this.x0 = this.x;
-	this.y0 = this.y + r;;
+	this.p0 = new p( this.p.x , this.p.y + r );
 
 	//Check for the toolpath side or assign the default one
 	this.side = side ? side : ($("input:radio[name='circle_side']:checked").length	?	parseInt($("input:radio[name='circle_side']:checked").val()) : 1); //3 = on circle, 1 = exterior, 2 = Hole inside
 
-	//Synch ToolPath
-	this.toolpath();
-
-	//Synch gCode
-	this.gCode();
-
-	//Synch Canvas
-	this.addCanvas();
+	//Synch ToolPath (also with settings), Gcode, Canvas
+	this.synch();
 
 	//Reset the value of "name" input & unique id "cid" -> By Security
 	$("#circle_name").val("");
@@ -1365,38 +1526,55 @@ circle = function(l,x,y,diam,side,name) {
 };
 
 circle.prototype.update = function(x,y,diam,side,name) {
-	//First delete view
-	this.removeCanvas();
-	
-	//Check if there is a diameter as parameter, if not, check forms
-	if (diam) {d = diam;}
-	else if ( $("#circle_diam").length ) { d = parseFloat($("#circle_diam").val()); }
-	else if ( $("#circle_radius").length ) { r = parseFloat($("#circle_radius").val()); }
-
-	//Change the diamater to radius if applicable
-	if (d) { r=d/2};
+	this.r = diam/2;
 
 	//Set the center
-	this.x = x ;
-	this.y = y ;
 
 	//Change coordinates to paper.js / gcode compatible coordinates
-	this.x0 = this.x;
-	this.y0 = this.y + r;
+	this.p = new p(x,y);
+	this.p0 = new p( this.p.x , this.p.y + r );
 
 	this.side = side ? side : 1; //3 = center, 1 = Left, 2 = Right
 	
 	if(name) this.name=name;
 	//else name = "circle" + pos;
 
-	//Synch ToolPath
-	this.toolpath();
+	//Synch ToolPath (also with settings), Gcode, Canvas
+	this.synch();
+};
 
-	//Synch gCode
-	this.gCode();
+circle.prototype.rotate = function(center,angle){ //Rotate a circle around a center point, and an angle
+	this.p.rotate(center,angle);
+	this.p0.rotate(center,angle);
 
-	//Synch Canvas
-	this.addCanvas();
+	//Synch ToolPath (also with settings), Gcode, Canvas
+	this.synch();
+};
+
+circle.prototype.mirror = function(center,axis){ //Mirror a circle relatively to a point and an axis (for example center point and axis 'x')
+	this.p.mirror(center,axis);
+	this.p0.mirror(center,axis);
+
+	//Synch ToolPath (also with settings), Gcode, Canvas
+	this.synch();
+};
+
+circle.prototype.translate = function(vector){ //Translate a circle of a vector (p structure (x/y))
+	this.p = translate(vector);
+	this.p0 = translate(vector);
+
+	//Synch ToolPath (also with settings), Gcode, Canvas
+	this.synch();
+};
+
+circle.prototype.setPos = function(){ //Set the center of the shape, its Left / Top / Right / Bottom limits
+	this.position = new pos(
+		this.p, //Center
+		this.p.x - this.r, //Left
+		this.p.y + this.r, //Top
+		this.p.x + this.r, //Right
+		this.p.y - this.r //Bottom
+	);
 };
 
 //Should move to Tasks (set a task as current, and not a form)
@@ -1408,7 +1586,11 @@ circle.prototype.getForm = function(){
 	this.update(
 		$("#circle_x").length 	? 	parseFloat($("#circle_x").val())	: null,
 		$("#circle_y").length 	?	parseFloat($("#circle_y").val()) : null,
-		$("#circle_radius").length 	? 	parseFloat($("#circle_radius").val()*2)	: ($("#circle_diam").length ? parseFloat($("#circle_radius").val()) : null),
+		($("#circle_radius").length && $("#circle_radius").hasClass("active"))	?
+			parseFloat($("#circle_radius").val()*2)	:
+			(($("#circle_diam").length && $("#circle_diam").hasClass("active") ) ?
+				parseFloat($("#circle_radius").val()) : null
+			),
 		$("input:radio[name='circle_side']:checked").length	?	parseInt($("input:radio[name='circle_side']:checked").val()) : null,
 		this.name = $("#circle_name").val() 	? 	$("#circle_name").val() : this.id
 	);
@@ -1419,17 +1601,14 @@ circle.prototype.getForm = function(){
 };
 
 circle.prototype.setForm = function(){
-	console.log("Function SetForm");
-	console.log("Id : " + this.id);
-
 	if ($("#circle_name").length)	{
 		$("#circle_name").val(this.name);
 		$("#circle_name").data("cid",this.id);
 	}
-	if ($("#circle_x").length) 		{ $("#circle_x").val(this.x.toString()); }
-	if ($("#circle_y").length) 		{ $("#circle_y").val(this.y.toString()); }
-	if ($("#circle_radius").length) { $("#circle_radius").val( (this.y0-this.y).toString()); }
-	if ($("#circle_diam").length) 	{ $("#circle_diam").val( ((this.y0-this.y)*2).toString()); }
+	if ($("#circle_x").length) 		{ $("#circle_x").val(this.p.x.toString()); }
+	if ($("#circle_y").length) 		{ $("#circle_y").val(this.p.y.toString()); }
+	if ($("#circle_radius").length) { $("#circle_radius").val( this.r.toString()); }
+	if ($("#circle_diam").length) 	{ $("#circle_diam").val( (this.r*2).toString()); }
 	if ($("input:radio[name='circle_side']:checked").length)	{ $("input:radio[name='circle_side'][value='"+ this.side +"']").attr("checked",true); }
 };
 
@@ -1439,51 +1618,40 @@ circle.prototype.toolpath = function() {
 
 	if (this.side == 3){ //Case toolpath on the circle
 		var e={};
-		e.x=this.x; //Center X : never changes
-		e.y=this.y; //Center Y : never changes
-		e.x0=this.x0;	//Start Point X
-		e.y0=this.y0;	//Start Point Y
-
+		e.p = new p(this.p.x,this.p.y);
+		e.p0 = new p(this.p0.x,this.p0.y);
 		this.t.push(e);	//Add circle to the list of toolpaths
 	}
 	else if (this.side == 1){ //Case toolpath outside the circle
-		var alpha0 = calculAlpha(this.x,this.y,this.x0,this.y0);
+		var alpha0 = calculAlpha(this.p,this.p0);
 		var e={};
-
-		e.x=this.x; //Center X : never changes
-		e.y=this.y; //Center Y : never changes
-		e.x0=this.x0 + (s.bit_d/2) * Math.cos(alpha0);
-		e.y0=this.y0 + (s.bit_d/2) * Math.sin(alpha0);
-
-		this.t.push(e);	//Add circle to thel ist of toolpaths
+		e.p = new p(this.p.x,this.p.y);
+		e.p0 = new p(this.p0.x + (s.bit_d/2) * Math.cos(alpha0) , this.p0.y + (s.bit_d/2) * Math.sin(alpha0));
+		this.t.push(e);	//Add circle to the list of toolpaths
 	}
 	else if (this.side == 2){ //Case toolpath inside the circle : do all the insidekkkk
-		var alpha0 = calculAlpha(this.x,this.y,this.x0,this.y0);
-		var oldX0 = this.x;
-		var oldY0 = this.y;
-
+		var alpha0 = calculAlpha(this.p,this.p0);
+		var oldP0 = new p(this.p.x,this.p.y);
 		var end = 0;
 
 		while( end==0 ){ //ABS value
 			var e={};
-			e.x=this.x; //Center X : never changes
-			e.y=this.y; //Center Y : never changes
+			e.p = new p(this.p.x,this.p.y);
 
 			//Check if current arc is not too big
-			if ( Math.abs(oldX0) > Math.abs( (this.x0 - (s.bit_d/2) * Math.cos(alpha0)) ) )  { oldX0 = (this.x0 - (s.bit_d/2) * Math.cos(alpha0)); end=1;}
-			if ( Math.abs(oldY0) > Math.abs( (this.y0 - (s.bit_d/2) * Math.sin(alpha0)) ) )  { oldY0 = (this.y0 - (s.bit_d/2) * Math.sin(alpha0)); end=1;}
+			if ( Math.abs(oldP0.x) > Math.abs( (this.p0.x - (s.bit_d/2) * Math.cos(alpha0)) ) )  { oldP0.x = (this.p0.x - (s.bit_d/2) * Math.cos(alpha0)); end=1;}
+			if ( Math.abs(oldP0.y) > Math.abs( (this.p0.y - (s.bit_d/2) * Math.sin(alpha0)) ) )  { oldP0.y = (this.p0.y - (s.bit_d/2) * Math.sin(alpha0)); end=1;}
 
-			if (	( Math.abs(oldX0) == Math.abs( (this.x0 - (s.bit_d/2) * Math.cos(alpha0)) ) )
-				&& ( Math.abs(oldY0) == Math.abs( (this.y0 - (s.bit_d/2) * Math.sin(alpha0)) ) )
+			if (	( Math.abs(oldP0.x) == Math.abs( (this.p0.x - (s.bit_d/2) * Math.cos(alpha0)) ) )
+				&& ( Math.abs(oldP0.y) == Math.abs( (this.p0.y - (s.bit_d/2) * Math.sin(alpha0)) ) )
 			)  { end=1; }
 
 			//Put the value of the new arc
-			e.x0 = oldX0;
-			e.y0 = oldY0;
+			e.p0 = new p(oldP0.x , oldP0.y);
 
 			//Increment position for next arc
-			oldX0 += (s.bit_d) * Math.cos(alpha0);
-			oldY0 += (s.bit_d) * Math.sin(alpha0);
+			oldP0.x += (s.bit_d) * Math.cos(alpha0);
+			oldP0.y += (s.bit_d) * Math.sin(alpha0);
 
 			this.t.push(e);	//Add arc to the list of toolpaths
 
@@ -1495,7 +1663,7 @@ circle.prototype.addTaskList = function() {
 	var str = "";
 	str += "<tr class='" + (this.current ? 'current' : '') + "' id='" + this.id + "'>";
 	str += "<td>" + this.name + "</td>";
-	str += "<td>(" + this.x.toString() + "," + this.y.toString() + ") R=" + (this.y0 - this.y).toString() + "</td>";
+	str += "<td>(" + this.p.x.toString() + "," + this.p.y.toString() + ") R=" + (this.p0.y - this.p.y).toString() + "</td>";
 	str += "<td class='edit'><span>E</span></td>";
 	str += "<td class='delete'><span>D</span></td>";
 	str += "</tr>";
@@ -1529,13 +1697,13 @@ circle.prototype.gCode = function(c){
 
 			//Go to beginning of the circle
 			code += ";***** STARTING A NEW CIRCLE *****\n";
-			code+='G1X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'F' + s.air_speed + '\n';
+			code+='G1X' + (this.p0.x + s.x0) + 'Y' + (this.p0.y + s.y0) + 'F' + s.air_speed + '\n';
 
 			//Go to the new depth
 			code+='G1Z' + curHeight + 'F' + s.cut_speed + '\n';
 
 			//Go to the end of the circle (or part of the circle)
-			code+='G1X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'I' + (this.x0 - this.x + s.x0) + 'J' + (this.y0 - this.y + s.y0) + 'F' + s.cut_speed + '\n';
+			code+='G2X' + (this.p0.x + s.x0) + 'Y' + (this.p0.y + s.y0) + 'I' + (this.p0.x - this.p.x + s.x0) + 'J' + (this.p0.y - this.p.y + s.y0) + 'F' + s.cut_speed + '\n';
 		});
 	}
 
@@ -1546,7 +1714,22 @@ circle.prototype.gCode = function(c){
 	return this.c;
 };
 
+circle.prototype.synch = function(){
+	//First delete view
+	this.removeCanvas();
 
+	//Get Center, Top / Right / Bottom / Left pos
+	this.setPos();
+
+	//Synch ToolPath
+	this.toolpath();
+
+	//Synch gCode
+	this.gCode();
+
+	//Synch Canvas
+	this.addCanvas();
+};
 
 
 
@@ -1572,21 +1755,28 @@ arc = function(l,x,y,x0,y0,angle,side,name) {
 	//Give a name to the arc, if applicable
 	name ? this.name = name : (this.name = $("#arc_name").val() 	? 	$("#arc_name").val() : this.id);
 	
-	this.x = x ? x : ($("#arc_x").length 	? 	parseFloat($("#arc_x").val())	: 0); //X center of the arc
-	this.y = y ? y : ($("#arc_y").length 	?	parseFloat($("#arc_y").val()) : 0); //Y center of the arc
-	this.x0 = x0 ? x0 : ($("#arc_x0").length 	? 	parseFloat($("#arc_x0").val())	: 0); //X start position of a arc
-	this.y0 = y0 ? y0 : ($("#arc_y0").length 	?	parseFloat($("#arc_y0").val()) : 0); //Y start position of a arc
+	this.p = new p(
+		 x ? x : ($("#arc_x").length 	? 	parseFloat($("#arc_x").val())	: 0),
+		 y ? y : ($("#arc_y").length 	?	parseFloat($("#arc_y").val()) : 0)
+	);
+	this.p0 = new p(
+		x0 ? x0 : ($("#arc_x0").length 	? 	parseFloat($("#arc_x0").val())	: 0),
+		y0 ? y0 : ($("#arc_y0").length 	?	parseFloat($("#arc_y0").val()) : 0)
+	);
+
 	this.angle = angle ? angle : ( $("#arc_angle").length	?	parseFloat($("#arc_angle").val())	: 	0);
+
+	this.p1 = new p(this.p0.x,this.p0.y);
+	this.p2 = new p(this.p0.x,this.p0.y);
+	this.p1.rotate(this.p,this.angle/2);
+	this.p2.rotate(this.p,this.angle);
+
 	this.side = side ? side : ($("input:radio[name='arc_side']:checked").length	?	parseInt($("input:radio[name='arc_side']:checked").val()) : 1); //3 = On line, 1 = Exterior, 2 = Interior, 4 = inside (from center)
 
-	//Synch ToolPath
-	this.toolpath();
+	console.log(this);
 
-	//Synch gCode
-	this.gCode();
-
-	//Synch Canvas
-	this.addCanvas();
+	//Synch ToolPath (also with settings), Gcode, Canvas
+	this.synch();
 
 	//Reset the value of "name" input & unique id "cid" -> By Security
 	$("#arc_name").val("");
@@ -1594,26 +1784,60 @@ arc = function(l,x,y,x0,y0,angle,side,name) {
 };
 
 arc.prototype.update = function(x,y,x0,y0,angle,side,name) {
-	//First delete view
-	this.removeCanvas();
-	this.x=x; //X center of the arc
-	this.y=y; //Y center of the arc
-	this.x0=x0; //X start position of a arc
-	this.y0=y0; //Y start position of a arc
+	this.p = new p(x,y);
+	this.p0 = new p(x0,y0);
+
 	this.angle=angle; //Angle from the start point of the arc
+
+	this.p1 = new p(this.p0.x,this.p0.y);
+	this.p2 = new p(this.p0.x,this.p0.y);
+	this.p1.rotate(this.p,this.angle/2);
+	this.p2.rotate(this.p,this.angle);
+
 	this.side = side ? side : 1; //3 = center, 1 = Left, 2 = Right, 4 = Inside from center
 	
 	//Rename the shape if applicable
 	if(name) this.name=name;
 
-	//Synch ToolPath
-	this.toolpath();
+	//Synch ToolPath (also with settings), Gcode, Canvas
+	this.synch();
+};
 
-	//Synch gCode
-	this.gCode();
+arc.prototype.rotate = function(center,angle){ //Rotate a circle around a center point, and an angle
+	this.p.rotate(center,angle);
+	this.p0.rotate(center,angle);
+	this.p1.rotate(center,angle);
 
-	//Synch Canvas
-	this.addCanvas();
+	//Synch ToolPath (also with settings), Gcode, Canvas
+	this.synch();
+};
+
+arc.prototype.mirror = function(center,axis){ //Mirror a circle relatively to a point and an axis (for example center point and axis 'x')
+	this.p.mirror(center,axis);
+	this.p0.mirror(center,axis);
+	this.p1.mirror(center,axis);
+
+	//Synch ToolPath (also with settings), Gcode, Canvas
+	this.synch();
+};
+
+arc.prototype.translate = function(vector){ //Translate a circle of a vector (p structure (x/y))
+	this.p = translate(vector);
+	this.p0 = translate(vector);
+	this.p1 = translate(vector);
+
+	//Synch ToolPath (also with settings), Gcode, Canvas
+	this.synch();
+};
+
+arc.prototype.setPos = function(){ //Set the center of the shape, its Left / Top / Right / Bottom limits
+	this.position = new pos(
+		this.p, //Center
+		Math.min(this.p.x,this.p0.x,this.p1.x),	//Left
+		Math.max(this.p.y,this.p0.y,this.p1.y),	//Top
+		Math.max(this.p.x,this.p0.x,this.p1.x),	//Right
+		Math.min(this.p.y,this.p0.y,this.p1.y)	//Bottom
+	);
 };
 
 //Should move to Tasks (set a task as current, and not a form)
@@ -1640,11 +1864,11 @@ arc.prototype.getForm = function(){
 arc.prototype.setForm = function(){
 	if ($("#arc_name").length)	{ $("#arc_name").val(this.name); 		}
 	if ($("#arc_name").length)	{ $("#arc_name").data("cid",this.id); 	}
-	if ($("#arc_x").length) 	{ $("#arc_x").val(this.x0.toString()); 	}
-	if ($("#arc_y").length) 	{ $("#arc_y").val(this.y0.toString()); 	}
-	if ($("#arc_x0").length) 	{ $("#arc_x0").val(this.x0.toString()); }
-	if ($("#arc_y0").length) 	{ $("#arc_y0").val(this.y0.toString()); }
-	if ($("#arc_angle").length) { $("#arc_angle").val(this.x1.toString()); }
+	if ($("#arc_x").length) 	{ $("#arc_x").val(this.p.x.toString()); 	}
+	if ($("#arc_y").length) 	{ $("#arc_y").val(this.p.y.toString()); 	}
+	if ($("#arc_x0").length) 	{ $("#arc_x0").val(this.p0.x.toString()); }
+	if ($("#arc_y0").length) 	{ $("#arc_y0").val(this.p0.y.toString()); }
+	if ($("#arc_angle").length) { $("#arc_angle").val(this.angle.toString()); }
 	if ($("input:radio[name='arc_side']:checked").length)	{ $("input:radio[name='arc_side'][value='"+ this.side +"']").attr("checked",true); }
 };
 
@@ -1654,79 +1878,74 @@ arc.prototype.toolpath = function() {
 
 	if (this.side == 3){ //Case toolpath on the circle
 		var e={};
-		e.x0=this.x0;	//Start Point X
-		e.y0=this.y0;	//Start Point Y
-		e.x1=xRot(this.x,this.y,this.x0,this.x1,this.angle/2);
-		e.y1=yRot(this.x,this.y,this.x0,this.x1,this.angle/2);
-		e.x2=xRot(this.x,this.y,this.x0,this.x1,this.angle);
-		e.y2=yRot(this.x,this.y,this.x0,this.x1,this.angle);
+		e.p = new p(this.p.x,this.p.y);
+		e.p0 = new p(this.p0.x,this.p0.y);
+		e.p1 = new p(this.p0.x,this.p0.y);
+		e.p2 = new p(this.p0.x,this.p0.y);
+		e.p1.rotate(this.p,this.angle/2);
+		e.p2.rotate(this.p,this.angle);
 		this.t.push(e);	//Add circle to the list of toolpaths
 	}
 	else if (this.side == 1){ //Case toolpath outside the circle
 		var e={};
+		e.p = new p(this.p.x,this.p.y);
+		e.p0 = new p(this.p0.x,this.p0.y);
+		e.p1 = new p(this.p0.x,this.p0.y);
+		e.p2 = new p(this.p0.x,this.p0.y);
+		e.p1.rotate(this.p,this.angle/2);
+		e.p2.rotate(this.p,this.angle);
 
-		e.x0=this.x0;	//Start Point X
-		e.y0=this.y0;	//Start Point Y
-		e.x1=xRot(this.x,this.y,this.x0,this.x1,this.angle/2);
-		e.y1=yRot(this.x,this.y,this.x0,this.x1,this.angle/2);
-		e.x2=xRot(this.x,this.y,this.x0,this.x1,this.angle);
-		e.y2=yRot(this.x,this.y,this.x0,this.x1,this.angle);
-
-		e.x0=e.x0 + (s.bit_d/2) * Math.cos(calculAlpha(this.x,this.y,this.x0,this.y0));
-		e.y0=e.y0 + (s.bit_d/2) * Math.sin(calculAlpha(this.x,this.y,this.x0,this.y0));
-		e.x1=e.x1 + (s.bit_d/2) * Math.cos(calculAlpha(this.x,this.y,e.x1,e.y1));
-		e.y1=e.y1 + (s.bit_d/2) * Math.sin(calculAlpha(this.x,this.y,e.x1,e.y1));
-		e.x2=e.x2 + (s.bit_d/2) * Math.cos(calculAlpha(this.x,this.y,e.x2,e.y2));
-		e.y2=e.y2 + (s.bit_d/2) * Math.sin(calculAlpha(this.x,this.y,e.x2,e.y2));
+		e.p0.x += (s.bit_d/2) * Math.cos(calculAlpha(this.p,e.p0));
+		e.p0.y += (s.bit_d/2) * Math.sin(calculAlpha(this.p,e.p0));
+		e.p1.x += (s.bit_d/2) * Math.cos(calculAlpha(this.p,e.p1));
+		e.p1.y += (s.bit_d/2) * Math.sin(calculAlpha(this.p,e.p1));
+		e.p2.x += (s.bit_d/2) * Math.cos(calculAlpha(this.p,e.p2));
+		e.p2.y += (s.bit_d/2) * Math.sin(calculAlpha(this.p,e.p2));
 
 		this.t.push(e);	//Add circle to thel ist of toolpaths
 	}
 	else if (this.side == 2){ //Case toolpath outside the circle
 		var e={};
+		e.p = new p(this.p.x,this.p.y);
+		e.p0 = new p(this.p0.x,this.p0.y);
+		e.p1 = new p(this.p0.x,this.p0.y);
+		e.p2 = new p(this.p0.x,this.p0.y);
+		e.p1.rotate(this.p,this.angle/2);
+		e.p2.rotate(this.p,this.angle);
 
-		e.x0=this.x0;	//Start Point X
-		e.y0=this.y0;	//Start Point Y
-		e.x1=xRot(this.x,this.y,this.x0,this.x1,this.angle/2);
-		e.y1=yRot(this.x,this.y,this.x0,this.x1,this.angle/2);
-		e.x2=xRot(this.x,this.y,this.x0,this.x1,this.angle);
-		e.y2=yRot(this.x,this.y,this.x0,this.x1,this.angle);
-
-		e.x0=e.x0 - (s.bit_d/2) * Math.cos(calculAlpha(this.x,this.y,this.x0,this.y0));
-		e.y0=e.y0 - (s.bit_d/2) * Math.sin(calculAlpha(this.x,this.y,this.x0,this.y0));
-		e.x1=e.x1 - (s.bit_d/2) * Math.cos(calculAlpha(this.x,this.y,e.x1,e.y1));
-		e.y1=e.y1 - (s.bit_d/2) * Math.sin(calculAlpha(this.x,this.y,e.x1,e.y1));
-		e.x2=e.x2 - (s.bit_d/2) * Math.cos(calculAlpha(this.x,this.y,e.x2,e.y2));
-		e.y2=e.y2 - (s.bit_d/2) * Math.sin(calculAlpha(this.x,this.y,e.x2,e.y2));
+		e.p0.x -= (s.bit_d/2) * Math.cos(calculAlpha(this.p,this.p0));
+		e.p0.y -= (s.bit_d/2) * Math.sin(calculAlpha(this.p,this.p0));
+		e.p1.x -= (s.bit_d/2) * Math.cos(calculAlpha(this.p,e.p1));
+		e.p1.y -= (s.bit_d/2) * Math.sin(calculAlpha(this.p,e.p1));
+		e.p2.x -= (s.bit_d/2) * Math.cos(calculAlpha(this.p,e.p2));
+		e.p2.y -= (s.bit_d/2) * Math.sin(calculAlpha(this.p,e.p2));
 
 		this.t.push(e);	//Add circle to thel ist of toolpaths
 	}
-	else if (this.side == 4){ //Case toolpath inside the circle : do all the insidekkkk
-		var alpha0 = calculAlpha(this.x,this.y,this.x0,this.y0);
-		var oldX0 = this.x;
-		var oldY0 = this.y;
+	else if (this.side == 4){ //Case toolpath inside the circle : do all the inside --> Not implemented properly yet (convert to arc cirlce)
+		var alpha0 = calculAlpha(this.p,this.p0);
+		var oldP0 = this.p;
 
 		var end = 0;
 
 		while( end==0 ){ //ABS value
 			var e={};
-			e.x=this.x; //Center X : never changes
-			e.y=this.y; //Center Y : never changes
+			e.p0 = this.p;
 
 			//Check if current arc is not too big
-			if ( Math.abs(oldX0) > Math.abs( (this.x0 - (s.bit_d/2) * Math.cos(alpha0)) ) )  { oldX0 = (this.x0 - (s.bit_d/2) * Math.cos(alpha0)); end=1;}
-			if ( Math.abs(oldY0) > Math.abs( (this.y0 - (s.bit_d/2) * Math.sin(alpha0)) ) )  { oldY0 = (this.y0 - (s.bit_d/2) * Math.sin(alpha0)); end=1;}
+			if ( Math.abs(oldP0.x) > Math.abs( (this.p0.x - (s.bit_d/2) * Math.cos(alpha0)) ) )  { oldP0.x = (this.p0.x - (s.bit_d/2) * Math.cos(alpha0)); end=1;}
+			if ( Math.abs(oldP0.y) > Math.abs( (this.p0.y - (s.bit_d/2) * Math.sin(alpha0)) ) )  { oldP0.y = (this.p0.y - (s.bit_d/2) * Math.sin(alpha0)); end=1;}
 
-			if (	( Math.abs(oldX0) == Math.abs( (this.x0 - (s.bit_d/2) * Math.cos(alpha0)) ) )
-				&& ( Math.abs(oldY0) == Math.abs( (this.y0 - (s.bit_d/2) * Math.sin(alpha0)) ) )
+			if (	( Math.abs(oldP0.x) == Math.abs( (this.p0.x - (s.bit_d/2) * Math.cos(alpha0)) ) )
+				&& ( Math.abs(oldP0.y) == Math.abs( (this.p0.y - (s.bit_d/2) * Math.sin(alpha0)) ) )
 			)  { end=1; }
 
 			//Put the value of the new arc
-			e.x0 = oldX0;
-			e.y0 = oldY0;
+			e.P0 = oldP0;
 
 			//Increment position for next arc
-			oldX0 += (s.bit_d) * Math.cos(alpha0);
-			oldY0 += (s.bit_d) * Math.sin(alpha0);
+			oldP0.x += (s.bit_d) * Math.cos(alpha0);
+			oldP0.y += (s.bit_d) * Math.sin(alpha0);
 
 			this.t.push(e);	//Add arc to the list of toolpaths
 
@@ -1738,7 +1957,7 @@ arc.prototype.addTaskList = function() {
 	var str = "";
 	str += "<tr class='" + (this.current ? 'current' : '') + "' id='" + this.id + "'>";
 	str += "<td>" + this.name + "</td>";
-	str += "<td>(" + this.x.toString() + "," + this.y.toString() + ") - (" + this.x1.toString() + "," + this.y1.toString() + ") α=" + (this.y0 - this.y).toString() + "</td>";
+	str += "<td>(" + this.p.x.toString() + "," + this.p.y.toString() + ") - (" + this.p1.x.toString() + "," + this.p1.y.toString() + ") α=" + (this.p0.y - this.p.y).toString() + "</td>";
 	str += "<td class='edit'><span>E</span></td>";
 	str += "<td class='delete'><span>D</span></td>";
 	str += "</tr>";
@@ -1747,13 +1966,13 @@ arc.prototype.addTaskList = function() {
 
 arc.prototype.removeCanvas = function(){
 	if(c && this.canvas){
-		c.removearc(this);
+		c.removeArc(this);
 	}
 };
 
 arc.prototype.addCanvas = function(){
 	if(c){
-		c.addarc(this);
+		c.addArc(this);
 	}
 };
 
@@ -1761,29 +1980,47 @@ arc.prototype.gCode = function(c){
 	this.c="";
 	code = "";
 	var curHeight = 0;
+	var curAngle = this.angle;
+	var reverse = 1;
+	var p0 = null;
+	var p2 = null;
+
 	while(curHeight > -s.z) {
 		curHeight -= s.dz; //Lower the new z
 		if (curHeight < -s.z) {curHeight = -s.z;} //Set -z limit
-		
+
 		$.each(this.t , function(i, t){
-		//c.arc( t.x , t.y , t.x0 , t.y0 , s.z0 , t.x1 , t.y1 , -s.z );
-			//Go to beginning of the arc
+			//Reverse direction to save time
+			reverse ? reverse = 0 : reverse = 1;
+
 			code += ";***** STARTING A NEW ARC *****\n";
-			code+='G1X' + (this.x0 + s.x0) + 'Y' + (this.y0 + s.y0) + 'F' + s.air_speed + '\n';
-
-			//Go to the new depth
-			code+='G1Z' + curHeight + 'F' + s.cut_speed + '\n';
-
-			//Go to the end of the arc (or part of the arc)
-
-			// !!! G2 if this.angle > 0 !!! - !!! G3 if this.angle < 0 !!! //
-			//I & J can be replace to x0/y0 instead of x2/y2 (to test)
-			if(this.angle>0){
-				code+='G2X' + (this.x2 + s.x0) + 'Y' + (this.y2 + s.y0) + 'I' + (this.x2 - this.x + s.x0) + 'J' + (this.y2 - this.y + s.y0) + 'F' + s.cut_speed + '\n';
+			if (!reverse) {
+				//Go to start pos
+				code+='G1X' + (this.p0.x + s.x0) + 'Y' + (this.p0.y + s.y0) + 'F' + s.air_speed + '\n';
+				//Go to the new depth
+				code+='G1Z' + curHeight + 'F' + s.cut_speed + '\n';
+				
+				//Do circle
+				if (curAngle>0){
+					code+='G2X' + (this.p2.x + s.x0) + 'Y' + (this.p2.y + s.y0) + 'I' + (this.p.x - this.p0.x + s.x0) + 'J' + (this.p.y - this.p0.y + s.y0) + 'F' + s.cut_speed + '\n';
+				}
+				else {
+					code+='G3X' + (this.p2.x + s.x0) + 'Y' + (this.p2.y + s.y0) + 'I' + (this.p.x - this.p0.x + s.x0) + 'J' + (this.p.y - this.p0.y + s.y0) + 'F' + s.cut_speed + '\n';
+				}
 			}
-			else(
-				code+='G2X' + (this.x2 + s.x0) + 'Y' + (this.y2 + s.y0) + 'I' + (this.x2 - this.x + s.x0) + 'J' + (this.y2 - this.y + s.y0) + 'F' + s.cut_speed + '\n';
-			)
+			else {
+				//Go to start pos
+				code+='G1X' + (this.p2.x + s.x0) + 'Y' + (this.p2.y + s.y0) + 'F' + s.air_speed + '\n';
+				//Go to the new depth
+				code+='G1Z' + curHeight + 'F' + s.cut_speed + '\n';
+				//Do circle
+				if(curAngle>0){
+					code+='G3X' + (this.p0.x + s.x0) + 'Y' + (this.p0.y + s.y0) + 'I' + (this.p.x - this.p2.x + s.x0) + 'J' + (this.p.y - this.p2.y + s.y0) + 'F' + s.cut_speed + '\n';
+				}
+				else {
+					code+='G2X' + (this.p0.x + s.x0) + 'Y' + (this.p0.y + s.y0) + 'I' + (this.p.x - this.p2.x + s.x0) + 'J' + (this.p.y - this.p2.y + s.y0) + 'F' + s.cut_speed + '\n';
+				}	
+			}
 		});
 	}
 
@@ -1793,3 +2030,59 @@ arc.prototype.gCode = function(c){
 	this.c = code;
 	return this.c;
 };
+
+arc.prototype.synch = function(){
+	//First delete view
+	this.removeCanvas();
+
+	//Get Center, Top / Right / Bottom / Left pos
+	this.setPos();
+
+	//Synch ToolPath
+	this.toolpath();
+
+	//Synch gCode
+	this.gCode();
+
+	//Synch Canvas
+	this.addCanvas();
+};
+
+
+
+
+
+
+
+
+/*_____________________________________________________________________________
+|																			   |
+|******************************************************************************|
+|**************************** CUSTOM SHAPE OBJECT *****************************|
+|******************************************************************************|
+|******************************************************************************|
+|______________________________________________________________________________|
+*/
+
+customShape = function(){
+	this.shapes = []; //List of shapes that compose the current shape
+	this.oldShapes = []; //List of the original shapes that form this custom shape
+	this.canvas = []; //This one is a special One
+	this.tCanvas = [];
+	this.current = 0;
+	this.pos = null;
+	this.id = null;
+	this.name = null;
+}
+
+//Add each of the custom prototype = read tabs to render (similar to Tasks functions, but adapted to the typology of the structure)
+// !!! Be carreful not to render or calcul each small shape = no action on it (Toolpath / Canvas / Gcode)
+
+//Calcul the custom Shape
+customShape.prototype.calculShape = function(){
+	//THE special function that should buid the "this.shapes" array from the "this.oldShapes" array
+	return true
+}
+
+//Add "addOldShape"
+//Add "removeOldShape"

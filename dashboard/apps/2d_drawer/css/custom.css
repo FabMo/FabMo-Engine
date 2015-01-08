@@ -1,0 +1,49 @@
+/*
+*** Design Override ***
+*/
+
+header h2 {
+	margin: 0;
+	font-size : 1.375rem;
+	font-size : 22px;
+	text-align: right;
+}
+
+section {
+	max-width: 100%;
+	margin-top: 0;
+	margin-bottom: 0;
+	border-radius: 0;
+}
+
+section.container {
+	padding: 0;
+}
+
+.row {
+	max-width: 100%;
+}
+
+
+#canvas-container {
+
+}
+
+#myCanvas {
+	max-width: 100%;
+	display: block;
+	margin-left:auto;
+	margin-right:auto;
+}
+
+.invert-pos {
+	float: right;
+	margin-top: 3.4275rem;
+	padding: 0;
+	color: #666;
+}
+
+.invert-pos:hover{
+	cursor: pointer;
+}
+
