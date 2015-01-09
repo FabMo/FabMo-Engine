@@ -2,6 +2,7 @@ var path = require('path');
 var log = require('./log').logger('util');
 var fs = require('fs');
 var q = require('q');
+var fs = require('fs');
 
 var fs = require('fs');
 var escapeRE = require('escape-regexp-component');
@@ -240,55 +241,28 @@ function serveStatic(opts) {
     return (serve);
 }
 
-var walk = function(dir, obj, done) {
-  var results = {};
-  fs.readdir(dir, function(err, list) {
+// TODO better error handling here
+function walkDir(filename) {
+    var stats = fs.lstatSync(filename),
+        info = {
+            path: filename,
+            text: path.basename(filename),
+            name: path.basename(filename)
+        };
 
-    if (err) return done(err);
-
-    var pending = list.length;
-    if (!pending) return done(null, obj);
-
-    list.forEach(function(file) {
-      path = dir + '/' + file;
-      fs.stat(path, function(err, stat) {
-        if (stat && stat.isDirectory()) {
-          dirobject =  {    name: file, 
-                            path: path,
-                            type: 'dir',
-                            created : stat.ctime, 
-                            modified : stat.mtime, 
-                            children:[]
-                        };
-          obj.children.push(dirobject);
-          walk(file, dirobject, function(err, res) {
-            if (!--pending) done(null, obj);
-          });
-        } else {
-          fileobject =  {   name: file,
-                            path: path,
-                            type: 'file',
-                            created : stat.ctime, 
-                            modified : stat.mtime, 
-                            children:null
-                        };
-          obj.children.push(fileobject);
-          //results.push(file);
-          if (!--pending) done(null, obj);
-        }
-      });
-    });
-  });
-};
-
-var walkDir = function(dir, callback) {
-    obj = {
-        children : [],
-        name : '/',
-        path : '/',
-        type : 'dir'
+    if (stats.isDirectory()) {
+        info.type = "dir";
+        info.children = fs.readdirSync(filename).map(function(child) {
+            return walkDir(filename + '/' + child);
+        });
+    } else {
+        // Assuming it's a file. In real life it could be a symlink or
+        // something else!
+        info.type = "file";
+        info.children = null;
     }
-    return walk(dir, obj, callback);
+
+    return info;
 }
 
 exports.serveStatic = serveStatic;

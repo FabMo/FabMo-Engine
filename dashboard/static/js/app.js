@@ -4,7 +4,10 @@
  */
 requirejs.config({
     baseUrl: 'js',
-    urlArgs: "ts="+new Date().getTime()
+    urlArgs: "ts="+new Date().getTime(),
+    paths: {
+    	ace: "libs/ace"
+	}
 });
 
 // Run the main application!

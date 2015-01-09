@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/foundation.css" />
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="css/toastr.min.css" />
+    <link rel="stylesheet" href="js/libs/jstree-themes/default/style.min.css" />
     <script type="text/javascript">
     </script>
   </head>
@@ -90,6 +91,7 @@
                 <li><a href="#/menu" id="icon_apps"><span>Apps</span></a></li>
                 <li><a href="#" id="icon_social"><span>Community</span></a></li>
                 <li><a href="#/app/settings" id="icon_settings"><span>Settings</span></a></li>
+                <li><a href="#/editor" id="icon_edit"><span>Edit App...</span></a></li>
                 <li><a href="#" id="icon_colapse"><span>Collapse</span></a></li>
               </ul>
             </div>
@@ -210,6 +212,7 @@
               <ul id="app_menu_container"></ul>
             </div>
           </section>
+          
           <section class="main-section" style="display:none;">
             <div id="navbar_container"></div>
 
@@ -217,6 +220,17 @@
 
             <div id="app-client-container">
               <iframe class="app-iframe" sandbox="allow-scripts allow-same-origin"></iframe>
+            </div>
+
+            <div id="app-studio-container" class="row">
+                <div id="app-studio-files" class="columns small-4">
+                  <div id="app-studio-filetree"></div>
+                </div>
+                <div class="app-studio-editor" class="columns small-8">
+                  <div id="app-studio-editor-widget" style="height: 500px;">
+                    Hello, World!
+                  </div>
+                </div>
             </div>
 
             <div class="clear"></div>
@@ -233,9 +247,10 @@
     <script type="text/javascript" src="js/events.js">              </script>
     <script type="text/javascript" src="js/libs/backbone.js">       </script>
     <script type="text/javascript" src="js/libs/FabMo-latest.js">   </script>
-    <script type="text/javascript" src="js/libs/FabMoUI-latest.js"> </script>    
+    <script type="text/javascript" src="js/libs/FabMoUI-latest.js"> </script>
     <script type="text/javascript" src="js/libs/sortable.js">       </script>
-    
+    <script type="text/javascript" src="js/libs/jstree.min.js">     </script>
+
     <script data-main="js/app.js" src="js/libs/require.js">         </script>
 
   </body>

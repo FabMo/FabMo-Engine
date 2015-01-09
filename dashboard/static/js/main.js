@@ -12,95 +12,17 @@ define(function(require) {
 	Hammer = require("libs/hammer");
 	touchy = require("libs/jquery.touchy");
 
-
-	// The webkit module deals with node-specific functionality (detection service, etc)
-	//var webkit = require('node-webkit/webkit');
-
 	// Allow to click more than 1 time on a link, to reload a page for example
 	allowSameRoute();
 
+	// Load the apps from the server
 	context.apps = new context.models.Apps();
 	context.apps.fetch();
+
+	// Create the menu based on the apps thus retrieved 
 	context.appMenuView = new context.views.AppMenuView({collection : context.apps, el : '#app_menu_container'});
 
-	// Load the apps from disk, and update the apps collection model
-	//
-	// TODO - apps will have to be *served* now rather than being loaded - this is server code here!
-	//
-	/*
-	webkit.app_manager.load_apps(webkit.package.apps_dir || './apps', function(err, apps) {
-	context.apps = new context.models.Apps(apps);
-	context.appMenuView = new context.views.AppMenuView({collection : context.apps, el : '#app_menu_container'});
-
-	// Read the package.json and behave differently if we're in a debug environment
-	switch(webkit.package.debug) {
-		// NORMAL MODE
-		case false:
-		case undefined:
-		case null:
-			// TODO: Do we really need to access remoteMachines through the context here
-			context.refreshRemoteMachines(function(err,remoteMachines){
-				if(context.remoteMachines.models.length === 0)
-				{
-					console.log('no machine detected debug');
-				}
-				else if(context.remoteMachines.models.length >= 1)
-				{
-					ChooseBestWayToConnect(context.remoteMachines.models[0].attributes,function(ip,port){
-						// Once connected, update the dashboard with the all of the connection information
-						dashboard.machine = new FabMo(ip, port);
-						if (!dashboard.machine) {
-							dashboard.ui= new FabMoUI(dashboard.machine);
-						}
-						else {
-							dashboard.ui.tool = dashboard.machine;
-						}
-						context.bindKeypad(dashboard.ui);
-						context.remoteMachines.forEach(function(item) {
-							item.set("current","");
-						});
-						context.remoteMachines.models[0].set("current","current");
-					});
-				}
-			});
-			break;
-		// DEBUG MODE
-		default:
-			FabMoAutoConnect(function(err,fabmo){
-				if(err){
-					return console.log(err);
-				} else {
-					fabmo.get_info(function(err,info){
-						if(err) {
-							console.log(err);
-						}
-						fabmo.hostname = info?info.surname:undefined;
-						context.remoteMachines.reset([
-							new context.models.RemoteMachine({
-								hostname : fabmo.hostname,
-								ip : fabmo.ip,
-								port : fabmo.port
-							})
-						]);
-						dashboard.machine = new FabMo(ip, port);
-						if (!dashboard.machine) {
-							dashboard.ui= new FabMoUI(dashboard.machine);
-						}
-						else {
-							dashboard.ui.tool = dashboard.machine;
-						}
-						context.bindKeypad(dashboard.ui);
-					});
-				}
-			},webkit.package.detection_service_port||8080);
-
-			break;
-	}
-
-		
-	});
-	*/
-
+	// Create remote machine model based on the one remote machine that we know exists (the one we're connecting to)
 	context.remoteMachines.reset([
 		new context.models.RemoteMachine({
 				hostname : window.location.hostname,
@@ -109,20 +31,26 @@ define(function(require) {
 		})
 	]);
 
+	// Create a FabMo object for the dashboard
 	dashboard.machine = new FabMo(window.location.hostname, window.location.port);
+	
+	// Create a FabMoUI object for the same (but don't recreate it if it already exists)
 	if (!dashboard.ui) {
 		dashboard.ui= new FabMoUI(dashboard.machine);
 	}
 	else {
 		dashboard.ui.tool = dashboard.machine;
 	}
+
+	// Configure keyboard input
 	context.bindKeypad(dashboard.ui);
 
- 	console.log("Event listener added to iframe");
 	// Start the application
 	router = new context.Router();
 	router.setContext(context);
 	Backbone.history.start();
+
+	//$(function () { $('.app-studio-files').jstree(); });
 
 // Functions for dispatching g-code to the tool
 function gcode(string) {

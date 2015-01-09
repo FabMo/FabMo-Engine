@@ -1,23 +1,8 @@
 define(function(require) {
-	models = require('models');
-	views = {};
+	var ace = require('ace/ace');
 
-	// VIEWS
-	views.NavbarView = Backbone.View.extend({
-		initialize : function() {
-			this.render();
-		},
-		render : function() {
-			//var template = _.template($("#navbar-template").html(), {});
-			//this.$el.html(template);
-
-	        //Fetching the template contents
-	        $.get('template/navbar.html', function (data) {
-	            template = _.template(data, {});//Option to pass any dynamic values to template
-	            this.$el.html(template);//adding the template content to the main template.
-	        }, 'html');
-		}
-	});
+	var models = require('models');
+	var views = {};
 
 	views.AppIconView = Backbone.View.extend({
 		tagName : 'li',
@@ -86,22 +71,11 @@ define(function(require) {
 				url = "about:blank";
 				//var d = null;
 			}
-			// TODO: Look at order of execution here? (is it ok to change src before binding the dashboard?)
-			/*console.log("BINDING DASHBOARD")
-			iframe.onload = function() {
-				console.log(iframe);
-				console.log(d);
-				iframe.contentWindow.dashboard = d;
-			}*/
 			iframe.src = url;
 			
 			$('.app-iframe').load(function() {
-			 	iframe.contentWindow.dashboard = d;
-    			});
-			//console.log(iframe.contentDocument)
-			//console.log(iframe.contentWindow)
-			//iwin = iframe.contentDocument.parentWindow;
-			//iwin.parent 
+				iframe.contentWindow.dashboard = d;
+			});
 
 		},
 		show : function() {
@@ -119,19 +93,6 @@ define(function(require) {
 				this.model.set(null);
 			}
 			this.render();
-		}
-	});
-
-	views.PageView = Backbone.View.extend({
-		collection:null,
-		template:_.template(require('text!templates/page.html')),
-		initialize : function() {
-			_.bindAll(this, 'render');
-			this.model.bind('change', this.render);
-		},
-		render : function() {
-			this.$el.html(this.template(this.model.toJSON()));
-			return this;
 		}
 	});
 
@@ -211,103 +172,98 @@ define(function(require) {
 				}
 				else {
 					o.slice(1).slideUp("fast");
-					/*
-					if($(this).parent()[0]!=$( "#remote-machine-menu > li:last" )[0]) {
-		              $("#remote-machine-menu > li:first-child").removeClass('current');
-		              $(this).parent().addClass('current');
-		              $(this).parent().insertBefore($("#remote-machine-menu > li:first-child"));
-		              $( "#remote-machine-menu > li").slice(1).slideUp( "fast" );
-		            }
-	            	*/
 				}
-	    	}
+			}
 	});
 
-
-	views.JobView = Backbone.View.extend({
+	views.AppStudioFileView = Backbone.View.extend({
 		tagName : 'div',
-		className : 'job',
-		template : _.template(require('text!templates/job.html')),
+		className : 'app-studio-files',
+		model : new models.App(),
 		initialize : function() {
 			_.bindAll(this, 'render');
-			this.model.bind('change', this.render);
+			if(this.model) {
+				this.model.bind('change', this.render);
+			}
+			this.$el.on('changed.jstree', function (e, data) {
+				file = data.instance.get_node(data.selected[0])
+				if(file.original.type === 'file') {
+					context = require('context');
+					console.log("Selected: " + file)
+					console.log(file.original.url)
+					model = new models.AppFile({'location':file.original.url});
+					console.log(model)
+					context.appStudioEditorView.setModel(new models.AppFile({url:file.original.url}))
+				}
+			});
+		},
+		show : function() {
+			$(".main-section").show();
+			this.$el.show();
+		},
+		hide : function() {
+			$(".main-section").hide();
+			this.$el.hide();
 		},
 		render : function() {
-			this.$el.html(this.template(this.model.toJSON()));
+			console.log("Rendering file tree view")
+			if(this.model) {
+				$.getJSON('/apps/' + this.model.id + '/files', function(data) {
+					console.log(data);
+					this.$el.jstree({'core' : {'data' : data, 'check_callback':true}});
+				}.bind(this))
+			};
 			return this;
+		},
+		setModel : function(model) {
+			if(model) {
+				this.model.set(model.toJSON());
+			} else {
+				this.model.set(null);
+			}
 		}
 	});
 
-	views.JobListView = Backbone.View.extend({
+	views.AppStudioEditorView = Backbone.View.extend({
 		tagName : 'div',
-		className : 'jobs_list',
-		collection : null,
-		initialize : function(options) {
+		className : 'app-studio-editor',
+		model : new models.AppFile(),
+		initialize : function() {
 			_.bindAll(this, 'render');
-			this.collection = options.collection;
-			this.collection.bind('reset', this.render);
-			this.collection.bind('add', this.render);
-			this.collection.bind('remove', this.render);
-			this.render();
+			if(this.model) {
+				this.model.bind('change', this.render);
+			}
+		},
+		show : function() {
+			$(".main-section").show();
+			this.$el.show();
+		},
+		hide : function() {
+			$(".main-section").hide();
+			this.$el.hide();
 		},
 		render : function() {
-			var element = jQuery(this.el);
-			element.empty();
-			this.collection.forEach(function(item) {
-				var appIconView = new views.JobView({ model: item });
-				element.append(JobView.render().el);
+			console.log("Rendering editor view")
+			var editor = ace.edit("app-studio-editor-widget");
+			editor.setTheme("ace/theme/xcode");
+			editor.setOptions({
+				maxLines:1000,
+				vScrollBarAlwaysVisible:true,
+				autoScrollEditorIntoView: true
+			});
+			console.log(this.model.get('location'));
+			$.get( this.model.get('location'), function( data ) {
+				console.log(data);
+				editor.setValue(data, -1)
 			});
 			return this;
 		},
-		show : function() {
-			$(this.el).show();
-		},
-		hide : function() {
-			$(this.el).hide();
-		}
-	});
-
-
-	views.SettingsFormLineView = Backbone.View.extend({
-		tagName : 'div',
-		className : 'settings-form-line',
-		template : _.template(require('text!templates/settings-form-line.html')),
-		initialize : function() {
-			_.bindAll(this, 'render');
-			this.model.bind('change', this.render);
-		},
-		render : function() {
-			this.$el.html(this.template(this.model.toJSON()));
-			return this;
-		}
-	});
-
-	views.SettingsFormView = Backbone.View.extend({
-		tagName : 'div',
-		className : 'settings-form',
-		collection : null,
-		initialize : function(options) {
-			_.bindAll(this, 'render');
-			this.collection = options.collection;
-			this.collection.bind('reset', this.render);
-			this.collection.bind('add', this.render);
-			this.collection.bind('remove', this.render);
-			this.render();
-		},
-		render : function() {
-			var element = jQuery(this.el);
-			element.empty();
-			this.collection.forEach(function(item) {
-				var settingsFormLineView = new views.SettingsFormLineView({ model: item });
-				element.append(settingsFormLineView.render().el);
-			});
-			return this;
-		},
-		show : function() {
-			$(this.el).show();
-		},
-		hide : function() {
-			$(this.el).hide();
+		setModel : function(model) {
+			if(model) {
+				this.model.set(model.toJSON());
+			} else {
+				this.model.set(null);
+			}
 		}
 	});
 

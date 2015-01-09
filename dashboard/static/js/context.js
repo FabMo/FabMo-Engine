@@ -28,6 +28,11 @@
 		this.remoteMachineMenuView = new this.views.RemoteMachineMenuView({collection : this.remoteMachines});
 		this.appClientView = new this.views.AppClientView({el : "#app-client-container"});
 		this.pageView = new this.views.PageView({model: this.page, el : '#modal_container'});
+
+		// App Studio
+		this.appStudioFileView = new this.views.AppStudioFileView({el : '#app-studio-files'});
+		this.appStudioEditorView = new this.views.AppStudioEditorView({el : '#app-studio-editor'});
+
 	};
 
 	ApplicationContext.prototype.openSettingsPanel = function(){
@@ -81,26 +86,6 @@
 	}
 
 	ApplicationContext.prototype.refreshRemoteMachines = function(callback) {
-		/*
-		DetectToolsOnTheNetworks(function(err, machines) {
-			if(err) {
-				return console.log(err);
-			}
-			console.log("REMOTE MACHINES")
-			console.log(machines);
-			var machine_models = [];
-			for(var index in machines){
-				machine_model = new this.models.RemoteMachine({
-					hostname : machines[index].hostname,
-					network : machines[index].network,
-					server_port : machines[index].server_port
-				});
-				machine_models.push(machine_model);
-			}
-			this.remoteMachines.reset(machine_models);
-			if(typeof callback === 'function') callback(null, this.remoteMachines);
-		}.bind(this),8080);
-		*/
 		var machine_models = [];
 		machine_model = new this.models.RemoteMachine({
 			hostname : window.location.hostname,
@@ -131,6 +116,23 @@
 		this.appClientView.show();
 		this.hideModalContainer();
 	};
-	
+
+	ApplicationContext.prototype.getCurrentApp = function() {
+		return this.appClientView.model;
+	};
+
+	ApplicationContext.prototype.editApp = function() {
+		console.log("Calling edit app");
+		model = this.getCurrentApp();
+		if(model) {
+			this.appStudioFileView.setModel(model);
+			this.appMenuView.hide();
+			this.appClientView.hide();
+			this.hideModalContainer();
+			this.appStudioFileView.show();
+			this.appStudioEditorView.show();
+		}
+	};
+
 	return new ApplicationContext();
 });

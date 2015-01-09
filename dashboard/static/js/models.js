@@ -110,5 +110,12 @@ define(function(require) {
 		model : models.SettingFormLine
 	});
 
+	models.AppFile = Backbone.Model.extend({
+		defaults:{
+			location:null
+		},
+		sync : function(method, model, option) {} // Override sync because this is a local model	
+	});
+
 	return models;
 });

@@ -11,10 +11,14 @@ define(function(require) {
 			"menu"        		: "show_menu",
 			"refresh_machines" 	: "refresh_machines",
 			"set_machine/:id" 	: "set_machine",
-			"page/:name"		: "show_page"
+			"page/:name"		: "show_page",
+			"editor"			: "show_editor"
 		},
 		launch_app: function(id) {
 			this.context.launchApp(id);
+		},
+		show_editor: function() {
+			this.context.editApp();
 		},
 		show_menu: function() {
 			this.context.appClientView.hide();
