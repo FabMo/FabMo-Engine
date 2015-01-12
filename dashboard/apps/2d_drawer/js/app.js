@@ -1,5 +1,5 @@
 /*
-***
+****
 *** Library that should be shared between apps
 ***
 *** Have the following functionalities :
@@ -18,21 +18,26 @@
 |______________________________________________________________________________|
 */
 
-var allow_canvas = true;
-var ratio = 900; //Max Width of the canvas
+//Custom Values
+var appName = "2D Shapes";
+var allow_canvas = true;			
+var ratio = 900; 									//Max Width of the canvas
+var canvasColor = 'rgba(0,0,0,0.6)'; 				//rgba(77, 135, 29, 0.8)';
+var toolpathColor = 'rgba(156, 33, 12, 0.33)';
+var selectShapes = true; 							//Allow selection on the canvas (must be set to true to apply rotations / circles / arcs)
+var gridThickness = 1;								//Pixels
+var shapesThickness = 1; 							//Pixels
+var toolpathThickness = 3; 						//Pixels
 
 
-//Global var
+//Global Values (do not change)
 var pi = 3.14159265358979323846264338327950288419716939937510582;
-var s = null;
+var s = null; //Setting Value
 var Tasks = [] ;
 var toolPath = null;
 var backPath = null;
 var gridPath = [];
 var c = null;
-var canvasColor = 'rgba(77, 135, 29, 0.8)';
-var toolpathColor = 'rgba(156, 33, 12, 0.25)';
-var appName = "Rectangles";
 
 //On Load Init
 $(document).ready(function(){
@@ -226,6 +231,21 @@ $("#default-settings").click(function(){
 
 
 
+/*_____________________________________________________________________________
+|																			   |
+|******************************************************************************|
+|************************* Selection Object Section ***************************|
+|******************************************************************************|
+|******************************************************************************|
+|______________________________________________________________________________|
+*/
+var Selection = function(){
+	this.selected = [];
+};
+
+
+
+
 
 /*_____________________________________________________________________________
 |																			   |
@@ -256,6 +276,36 @@ Canvas.prototype.init = function(){
 	paper.setup('myCanvas');
 	this.resize();								//Call Resize canvas function
 	$("#project_content").removeClass("active");//Resolve screen dimensions problem
+
+	this.selectionTool();
+};
+
+Canvas.prototype.selectionTool = function(){
+	//Init touch actions
+	var that = this;
+	this.select = true; //In the current condition, it is possible to select (can be false if the user is not supposed to select anymore like if resizing or drawing something)
+
+	this.selectTool = new Tool();
+	this.selectTool.onMouseDown = function(event){
+		that.startClick = event.point;
+	}
+
+	this.selectTool.onMouseUp = function(event){
+		that.endClick = event.point;
+
+		//Select from right to left
+		if(that.startClick.x > that.endClick.x){
+			Tasks.selectInclusive(); //Inclusive select
+		}
+		//Select from left to right
+		else if(that.startClick.x < that.endClick.x){
+			Tasks.selectExclusive(); //Exclusive select
+		}
+		//Simple click
+		else{
+			Tasks.resetCurrent(); //Deselect everything
+		}
+	}
 };
 
 
@@ -270,7 +320,7 @@ Canvas.prototype.setRatio = function(){
 
 Canvas.prototype.resize = function(){
 	$("#project_content").addClass("active"); //Resolve screen dimensions problem
-
+	ratio = $("#canvas-container canvas").width();
 	//Set the size of the paper object proportionnaly to the size of the project (from setting object)
 	view.viewSize = new Size(ratio,(ratio/s.x)*s.y);
 
@@ -313,7 +363,7 @@ Canvas.prototype.loadSettings = function(){
 	        var bottomPoint = new Point(this.xPos(i), this.yPos(0));
 	        var aLine = new Path.Line(topPoint, bottomPoint);
 	        aLine.strokeColor = '#ddd';
-	        aLine.strokeWidth = 3; //((i%10)==0) ? 6 : (((i%10)==0) ? 4 : 2);
+	        aLine.strokeWidth = gridThickness; //((i%10)==0) ? 6 : (((i%10)==0) ? 4 : 2);
 	    	this.grid.push(aLine);
 	    }
 
@@ -323,7 +373,7 @@ Canvas.prototype.loadSettings = function(){
 	        var rightPoint = new Point( this.xPos(s.x) , this.yPos(i) );
 	        var aLine = new Path.Line(leftPoint, rightPoint);
 	        aLine.strokeColor = '#ddd';
-	        aLine.strokeWidth = 3; //((i%10)==0) ? 5 : (((i%10)==0) ? 4 : 3);
+	        aLine.strokeWidth = gridThickness; //((i%10)==0) ? 5 : (((i%10)==0) ? 4 : 3);
 	        this.grid.push(aLine);
 	    }
 
@@ -344,6 +394,10 @@ Canvas.prototype.yPos = function(y){
 	return ( view.bounds.bottom - y * (view.bounds.height / s.y) );
 };
 
+Canvas.prototype.Pos = function(point){
+	return new Point(this.xPos(point.x), this.yPos(point.y));
+}
+
 //Retur, thickness (strokeWidth) 			-> Will work in responsive & fixed position if the canvas is resized
 Canvas.prototype.w = function(w){
 	return ( w * (view.bounds.height / s.y) );
@@ -353,35 +407,70 @@ Canvas.prototype.w = function(w){
 
 // --- Canvas UI actions --- //
 Canvas.prototype.selectAction = function(t,e){
-	console.log("Nouvelle Selection de Ligne : " + t)
-}
+	//Task that corresponds to the clicked canvas object
+	console.log(t);
+
+	//Internal vars (shared with each function)
+	var that = this;
+	var id = t.id;
+
+	$.each(t.canvas, function(i,canvas){
+		canvas.bounds.selected ? t.resetCurrent(id) : t.setCurrent(id);
+	});
+};
+
+Canvas.prototype.selectView = function(c){
+	c.bounds.selected = true;
+	view.draw();
+};
+
+Canvas.prototype.resetView = function(c){
+	c.bounds.selected = false;
+	view.draw();
+};
 
 
 // --- Line : Add / Edit / Remove --- //
 Canvas.prototype.addLine = function(l){
 	//Add line view
-	l.canvas = new Path.Line( this.addPoint(l.p0.x,l.p0.y) , this.addPoint(l.p1.x,l.p1.y) );
-    l.canvas.strokeColor = canvasColor;
-    l.canvas.strokeWidth = 3;
-    l.canvas.taskId = l.id;
+	var that = this;
+	l.canvas = [];
+
+	var p = new Path.Line( this.addPoint(l.p0.x,l.p0.y) , this.addPoint(l.p1.x,l.p1.y) );
+    p.strokeColor = canvasColor;
+    p.strokeWidth = shapesThickness;
+    p.onClick = function(event){
+		selectShapes ? that.selectAction(l,'clickShape') : null;
+	}
+    l.canvas.push(p);
 
     //Add toolPath View
-    l.tCanvas = new Path.Line(
+    l.tCanvas = [];
+    
+    var i = 0;
+
+	var p2 = new Path.Line(
 		new Point( this.xPos(l.t0.x) , this.yPos(l.t0.y) ),
 		new Point( this.xPos(l.t1.x) , this.yPos(l.t1.y) )
 	);
-    l.tCanvas.strokeColor = toolpathColor//'rgba(215, 44, 44, 0.6)';
-    l.tCanvas.strokeWidth = this.w(s.bit_d);
-    l.tCanvas.strokeCap = 'round';
-	l.tCanvas.dashArray = [l.tCanvas.strokeWidth*2, l.tCanvas.strokeWidth*3];
-	l.tCanvas.taskId = l.id;
+    p2.strokeColor = toolpathColor//'rgba(215, 44, 44, 0.6)';
+    p2.strokeWidth = toolpathThickness;
+    p2.strokeCap = 'round';
+	p2.dashArray = [p2.strokeWidth*2, p2.strokeWidth*3];
+
+	l.tCanvas.push(p2);
 
 	view.draw(); //Setup //Activate
 };
 
 Canvas.prototype.removeLine = function(l){
-	l.canvas.remove();
-	l.tCanvas.remove();
+	$.each( l.canvas , function(i,shape){
+		shape.remove();
+	});
+	$.each( l.tCanvas , function(i,shape){
+		shape.remove();
+	});
+
 	view.draw(); //Setup //Activate
 };
 
@@ -396,14 +485,17 @@ Canvas.prototype.addPoint = function(x,y,size){
 Canvas.prototype.addRectangle = function(r){
 	//Add line view
 	r.canvas = [];
+	var that = this;
 
 	var p = new Path.Rectangle(
 		new Point( this.xPos(r.p0.x) , this.yPos(r.p0.y) ),
 		new Point( this.xPos(r.p1.x) , this.yPos(r.p1.y) )
 	);
     p.strokeColor = canvasColor;
-    p.strokeWidth = 3;
-
+    p.strokeWidth = shapesThickness;
+    p.onClick = function(event){
+		selectShapes ? that.selectAction(r,'clickShape') : null;
+	}
     r.canvas.push(p);
 
     //Add toolPath View
@@ -417,7 +509,7 @@ Canvas.prototype.addRectangle = function(r){
     		new Point( this.xPos(r.t[i].p1.x) , this.yPos(r.t[i].p1.y) )
     	);
 	    p2.strokeColor = toolpathColor//'rgba(215, 44, 44, 0.6)';
-	    p2.strokeWidth = this.w(s.bit_d)*0.5;
+	    p2.strokeWidth = toolpathThickness;
 	    p2.strokeCap = 'round';
 		p2.dashArray = [p2.strokeWidth*2, p2.strokeWidth*1];
 
@@ -442,6 +534,7 @@ Canvas.prototype.removeRectangle = function(r){ //Make it generic with line remo
 // --- Circle : Add / Edit / Remove --- //
 Canvas.prototype.addCircle = function(c){
 	//Add line view
+	var that=this;
 	c.canvas = [];
 
 	var p = new Path.Circle(
@@ -449,12 +542,12 @@ Canvas.prototype.addCircle = function(c){
 		( this.yPos(c.p.y - c.p0.y) - view.bounds.height )
 	);
     p.strokeColor = canvasColor;
-    p.strokeWidth = 3;
-
+    p.strokeWidth = shapesThickness;
+	p.onClick = function(event){
+		selectShapes ? that.selectAction(c,'clickShape') : null;
+	}
+    
     c.canvas.push(p);
-    c.canvas.onclick = function(event){
-    	console.log("truc");
-    }
 
     //Add toolPath View
     c.tCanvas = [];
@@ -467,7 +560,7 @@ Canvas.prototype.addCircle = function(c){
     		( this.yPos(c.t[i].p.y - c.t[i].p0.y) - view.bounds.height ) 
     	);
 	    p2.strokeColor = toolpathColor//'rgba(215, 44, 44, 0.6)';
-	    p2.strokeWidth = this.w(s.bit_d)*0.5;
+	    p2.strokeWidth = toolpathThickness;
 	    p2.strokeCap = 'round';
 		p2.dashArray = [p2.strokeWidth*2, p2.strokeWidth*1];
 
@@ -493,15 +586,20 @@ Canvas.prototype.removeCircle = function(c){ //Make it generic with line removeF
 Canvas.prototype.addArc = function(a){
 	//Add line view
 	a.canvas = [];
+	var that = this;
+
 	var p = new Path.Arc(
 		new Point( this.xPos(a.p0.x) , this.yPos(a.p0.y) ) ,
     	new Point( this.xPos(a.p1.x) , this.yPos(a.p1.y) ) ,
     	new Point( this.xPos(a.p2.x) , this.yPos(a.p2.y) )
 	);
     p.strokeColor = canvasColor;
-    p.strokeWidth = 3;
-
+    p.strokeWidth = shapesThickness;
+    p.onClick = function(event){
+		selectShapes ? that.selectAction(a,'clickShape') : null;
+	}
     a.canvas.push(p);
+
 
     //Add toolPath View
     a.tCanvas = [];
@@ -515,7 +613,7 @@ Canvas.prototype.addArc = function(a){
     		new Point( this.xPos(a.t[i].p2.x) , this.yPos(a.t[i].p2.y) )
     	);
     	p2.strokeColor = toolpathColor//'rgba(215, 44, 44, 0.6)';
-	    p2.strokeWidth = this.w(s.bit_d)*0.5;
+	    p2.strokeWidth = toolpathThickness;
 	    p2.strokeCap = 'round';
 		p2.dashArray = [p2.strokeWidth*2, p2.strokeWidth*1];
 
@@ -746,6 +844,73 @@ Tasks.save = function(id){
 	}
 };
 
+Tasks.setCurrent = function(id){
+	//Set the task "id" as a current task
+	if (id) {
+		Tasks[Tasks.pos(id)].setCurrent();
+	}
+	else {
+		console.log("This function need an id to set a shape as a selected one");
+	}
+};
+
+Tasks.resetCurrent = function(id){
+	//Reset the "current" status of the task "id"
+	if (id) {
+		Tasks[Tasks.pos(id)].resetCurrent();
+	}
+	//Or reset the "current" status of each task (no "id parameter")
+	else {
+		$.each(this, function(i,t){
+			t.resetCurrent();
+		});
+	}
+};
+
+Tasks.translate = function(id,x,y){
+	//Reset the "current" status of the task "id"
+	if (id) {
+		Tasks[Tasks.pos(id)].translate(new p(x,y));
+	}
+	//Or reset the "current" status of each task (no "id parameter")
+	else {
+		var transformed = null;
+		$.each(this, function(i,t){
+			if (t.current){
+				t.translate(new p(x,y));
+				transformed = true;
+			}
+		});
+		!transformed ? console.log("No shape selected, no transformation") : null;
+	}
+};
+
+Tasks.rotate = function(id,angle,center){
+	//Reset the "current" status of the task "id"
+	if (id) {
+		Tasks[Tasks.pos(id)].rotate(angle,center);
+	}
+	//Or reset the "current" status of each task (no "id parameter")
+	else {
+		$.each(this, function(i,t){
+			t.rotate(angle,center);
+		});
+	}
+};
+
+Tasks.mirror = function(axis,center){
+	//Reset the "current" status of the task "id"
+	if (id) {
+		Tasks[Tasks.pos(id)].mirror(axis,center);
+	}
+	//Or reset the "current" status of each task (no "id parameter")
+	else {
+		$.each(this, function(i,t){
+			t.mirror(axis,center);
+		});
+	}
+};
+
 Tasks.view = function(){
 	var str=""; //Str will be the HTML content
 	$.each(this, function(index,t){
@@ -758,18 +923,21 @@ Tasks.view = function(){
 };
 
 Tasks.toolpath = function(){
+	//Redo the toolpath of all the tasks, calling their own toolpath function
 	$.each(this, function(i,t){
 		t.toolpath();
 	});
 };
 
 Tasks.refreshGCode = function(){
+	//Redo the GCode of all the tasks, calling their own GCode function
 	$.each(this, function(i,t){
 		t.gCode();
 	});
-}
+};
 
 Tasks.refreshCanvas = function(){
+	//Redo the 2D view of all the tasks, calling their own Canvas function
 	$.each(this, function(i,t){
 		t.removeCanvas();
 		t.addCanvas();
@@ -777,6 +945,7 @@ Tasks.refreshCanvas = function(){
 };
 
 Tasks.gCode = function(code){
+	//Obtain the final gCode of the list of tasks
 	var i = 0;
 	for(i=0;i<Tasks.length;i++){
 		code.body = code.body + Tasks[i].c;
@@ -785,18 +954,87 @@ Tasks.gCode = function(code){
 };
 
 Tasks.pos = function(id) {
-	var pos = null;
-	$.each(this, function(i,t) {
-		if(t.id == id) {
-			pos = i;
-		}
-	});
-	return pos;
+	//Return the position (in the task list) of the "id" Task
+	if(!id){
+		console.log("This Function need an ID passed in parameter, in order to work correctly")
+	}
+	else{
+		var pos = null;
+		$.each(this, function(i,t) {
+			if(t.id == id) {
+				pos = i;
+			}
+		});
+		return pos;
+	}	
 };
 
 //Sort Line by position : not used yet
 Tasks.sort = function(){
 	this.sort(function(a,b) {return (a.id > b.id) ? 1 : ((b.id > a.id) ? -1 : 0);} );
+};
+
+Tasks.selectExclusive = function(){
+	var canvas = canvas;
+	$.each(this, function(i,t){
+		var currentTask = t;
+		$.each(t.canvas, function(i,canvas){
+			if( //Conditions to have a Exclusive selection (from left to right)
+				(c.startClick.x <= canvas.bounds.topLeft.x) && (c.startClick.y <= canvas.bounds.topLeft.y) && (c.endClick.x >= canvas.bounds.bottomRight.x) && (c.endClick.y >= canvas.bounds.bottomRight.y)
+			){
+				c.selectAction(currentTask);
+			}
+		});
+	});
+};
+
+Tasks.selectInclusive = function(canvas){
+	var canvas = canvas;
+	$.each(this, function(i,t){
+		var currentTask = t;
+		$.each(t.canvas, function(i,canvas){
+			if( //Conditions to have a Inclusive selection (from right to left)
+				( ((canvas.bounds.topRight.x <= c.startClick.x) && (c.endClick.x <= canvas.bounds.topRight.x)) && (
+						((c.startClick.y >= canvas.bounds.topRight.y) && (c.startClick.y <= canvas.bounds.bottomLeft.y)) || 
+						((c.startClick.y <= canvas.bounds.topRight.y) && (c.endClick.y >= canvas.bounds.topRight.y)) ||
+						((c.startClick.y >= canvas.bounds.bottomLeft.y) && (c.endClick.y <= canvas.bounds.bottomLeft.y))
+					)
+				) ||
+				( (canvas.bounds.bottomLeft.x <= c.startClick.x) && (c.endClick.x <= canvas.bounds.bottomLeft.x) && (
+						((c.startClick.y >= canvas.bounds.topRight.y) && (c.startClick.y <= canvas.bounds.bottomLeft.y)) || 
+						((c.startClick.y <= canvas.bounds.topRight.y) && (c.endClick.y >= canvas.bounds.topRight.y)) ||
+						((c.startClick.y >= canvas.bounds.bottomLeft.y) && (c.endClick.y <= canvas.bounds.bottomLeft.y))
+					)
+				) ||
+				( (canvas.bounds.topRight.y >= c.startClick.y) && (c.endClick.y >= canvas.bounds.topRight.y) && (
+						((c.startClick.x <= canvas.bounds.topRight.x) && (c.startClick.x >= canvas.bounds.bottomLeft.x)) || 
+						((c.startClick.x >= canvas.bounds.topRight.x) && (c.endClick.x <= canvas.bounds.topRight.x)) ||
+						((c.startClick.x >= canvas.bounds.bottomLeft.x) && (c.endClick.x <= canvas.bounds.bottomLeft.x))
+					)
+				) ||
+				( (canvas.bounds.bottomLeft.y >= c.startClick.y) && (c.endClick.y >= canvas.bounds.bottomLeft.y) && (
+						((c.startClick.x <= canvas.bounds.topRight.x) && (c.startClick.x >= canvas.bounds.bottomLeft.x)) || 
+						((c.startClick.x >= canvas.bounds.topRight.x) && (c.endClick.x <= canvas.bounds.topRight.x)) ||
+						((c.startClick.x >= canvas.bounds.bottomLeft.x) && (c.endClick.x <= canvas.bounds.bottomLeft.x))
+					)
+				) ||
+				( (canvas.bounds.topRight.y <= c.startClick.y) && (c.endClick.y <= canvas.bounds.topRight.y) && (
+						((c.startClick.x <= canvas.bounds.topRight.x) && (c.startClick.x >= canvas.bounds.bottomLeft.x)) || 
+						((c.startClick.x >= canvas.bounds.topRight.x) && (c.endClick.x <= canvas.bounds.topRight.x)) ||
+						((c.startClick.x >= canvas.bounds.bottomLeft.x) && (c.endClick.x <= canvas.bounds.bottomLeft.x))
+					)
+				) ||
+				( (canvas.bounds.bottomLeft.y <= c.startClick.y) && (c.endClick.y <= canvas.bounds.bottomLeft.y) && (
+						((c.startClick.x <= canvas.bounds.topRight.x) && (c.startClick.x >= canvas.bounds.bottomLeft.x)) || 
+						((c.startClick.x >= canvas.bounds.topRight.x) && (c.endClick.x <= canvas.bounds.topRight.x)) ||
+						((c.startClick.x >= canvas.bounds.bottomLeft.x) && (c.endClick.x <= canvas.bounds.bottomLeft.x))
+					)
+				)
+			){
+				c.selectAction(currentTask);
+			}
+		});
+	});
 };
 
 
@@ -868,6 +1106,10 @@ pos = function(C,L,T,R,B){
 /*
 *** Method & classes for use in elements
 */
+round = function(float){
+	return Math.round(float*1000)/1000;
+}
+
 p = function(x,y){
 	this.x=x;
 	this.y=y;
@@ -905,11 +1147,11 @@ p.prototype.middle = function(p1){
 }
 
 p.prototype.translate = function(vector){ //vector is of p type
-	this.x += vector.x;
-	this.y += vector.y;
+	this.x += round(vector.x);
+	this.y += round(vector.y);
 };
 
-p.prototype.rotate = function(center,angle){
+p.prototype.rotate = function(angle,center){
 	var alpha = (-angle/(180))*pi;
 	var xNew = ((this.x-center.x) * Math.cos(alpha)) - ((this.y-center.y) * Math.sin(alpha)) + center.x;
 	var yNew = (((this.x-center.x) * Math.sin(alpha))) + ((this.y-center.y) * Math.cos(alpha)) + center.y;
@@ -918,13 +1160,13 @@ p.prototype.rotate = function(center,angle){
 	this.y = yNew;
 };
 
-p.prototype.mirror = function(center,axis){
+p.prototype.mirror = function(axis,center){
 	//Center is center point to mirror
 	if(axis == 'x'){
-		this.rotate(new p(this.x,center.y),180);
+		this.rotate(180,new p(this.x,center.y));
 	}
 	else if (axis == 'y'){
-		this.rotate(new p(center.x,this.y),180);
+		this.rotate(180,new p(center.x,this.y));
 	}
 };
 
@@ -937,8 +1179,8 @@ line = function(l,x0,y0,x1,y1,name,side) {
 	//Basic informations
 	this.id="line-" + l;
 	this.pos = l;
-	this.canvas = null;
-	this.tCanvas = null;
+	this.canvas = [];
+	this.tCanvas = [];
 	name ? this.name = name : (this.name = $("#line_name").val() 	? 	$("#line_name").val() : this.id);
 	this.current=0;
 
@@ -976,31 +1218,34 @@ line.prototype.update = function(x0,y0,x1,y1,name,side) {
 
 };
 
-line.prototype.rotate = function(center,angle){ //Rotate a line around a center, and an angle
-	this.p0.rotate(center,angle);
-	this.p1.rotate(center,angle);
+line.prototype.rotate = function(angle,center){ //Rotate a line around a center, and an angle
+	this.p0.rotate(angle,center);
+	this.p1.rotate(angle,center);
 
 	//Synch ToolPath (also with settings), Gcode, Canvas
 	this.synch();
+	this.setCurrent();
 };
 
-line.prototype.mirror = function(center,axis){ //Mirror a line relatively  to a point and an axis (for example center point and axis 'x')
-	this.p0.mirror(center,axis);
-	this.p1.mirror(center,axis);
+line.prototype.mirror = function(axis,center){ //Mirror a line relatively  to a point and an axis (for example center point and axis 'x')
+	this.p0.mirror(axis,center);
+	this.p1.mirror(axis,center);
 
 	//Synch ToolPath (also with settings), Gcode, Canvas
 	this.synch();
+	this.setCurrent();
 };
 
 line.prototype.translate = function(vector){ //Translate a line of a vector (p structure (x/y))
-	this.p0 = translate(vector);
-	this.p1 = translate(vector);
+	this.p0.translate(vector);
+	this.p1.translate(vector);
 
 	//Synch ToolPath (also with settings), Gcode, Canvas
 	this.synch();
+	this.setCurrent();
 };
 
-line.prototype.setPos = function(){ //Set the center of the shape, its Left / Top / Right / Bottom limits
+line.prototype.getPos = function(){ //Set the center of the shape, its Left / Top / Right / Bottom limits
 	this.position = new pos(
 		this.p0.middle(this.p1), //Center
 		Math.min( this.p0.x , this.p1.x ), //Left
@@ -1011,8 +1256,19 @@ line.prototype.setPos = function(){ //Set the center of the shape, its Left / To
 };
 
 //Should move to Tasks (set a task as current, and not a form)
-line.prototype.setCurrent = function() { this.current=1 };
-line.prototype.resetCurrent = function() { this.current=0 };
+line.prototype.setCurrent = function() {
+	this.current=1
+	$.each(this.canvas , function(i, canvas){
+		c.selectView(canvas);
+	});
+};
+
+line.prototype.resetCurrent = function() {
+	this.current=0
+	$.each(this.canvas , function(i, canvas){
+		c.resetView(canvas);
+	});
+};
 
 line.prototype.getForm = function(){
 	//Add attributes
@@ -1120,7 +1376,7 @@ line.prototype.synch = function(){
 	this.removeCanvas();
 
 	//Get Center, Top / Right / Bottom / Left pos
-	this.setPos();
+	this.getPos();
 
 	//Synch ToolPath
 	this.toolpath();
@@ -1217,37 +1473,40 @@ rectangle.prototype.update = function(x0,y0,x1,y1,side,name) {
 	this.synch();
 };
 
-rectangle.prototype.rotate = function(center,angle){ //Rotate a rectangle around a center point, and an angle
-	this.p0.rotate(center,angle);
-	this.p1.rotate(center,angle);
-	this.p2.rotate(center,angle);
-	this.p3.rotate(center,angle);
+rectangle.prototype.rotate = function(angle,center){ //Rotate a rectangle around a center point, and an angle
+	this.p0.rotate(angle,center);
+	this.p1.rotate(angle,center);
+	this.p2.rotate(angle,center);
+	this.p3.rotate(angle,center);
 
 	//Synch ToolPath (also with settings), Gcode, Canvas
 	this.synch();
+	this.setCurrent();
 };
 
-rectangle.prototype.mirror = function(center,axis){ //Mirror a rectangle relatively  to a point and an axis (for example center point and axis 'x')
-	this.p0.mirror(center,axis);
-	this.p1.mirror(center,axis);
-	this.p2.mirror(center,axis);
-	this.p3.mirror(center,axis);
+rectangle.prototype.mirror = function(axis,center){ //Mirror a rectangle relatively  to a point and an axis (for example center point and axis 'x')
+	this.p0.mirror(axis,center);
+	this.p1.mirror(axis,center);
+	this.p2.mirror(axis,center);
+	this.p3.mirror(axis,center);
 
 	//Synch ToolPath (also with settings), Gcode, Canvas
 	this.synch();
+	this.setCurrent();
 };
 
 rectangle.prototype.translate = function(vector){ //Translate a rectangle of a vector (p structure (x/y))
-	this.p0 = translate(vector);
-	this.p1 = translate(vector);
-	this.p2 = translate(vector);
-	this.p3 = translate(vector);
+	this.p0.translate(vector);
+	this.p1.translate(vector);
+	this.p2.translate(vector);
+	this.p3.translate(vector);
 
 	//Synch ToolPath (also with settings), Gcode, Canvas
 	this.synch();
+	this.setCurrent();
 };
 
-rectangle.prototype.setPos = function(){ //Set the center of the shape, its Left / Top / Right / Bottom limits
+rectangle.prototype.getPos = function(){ //Set the center of the shape, its Left / Top / Right / Bottom limits
 	this.position = new pos(
 		this.p0.middle(this.p1), //Center
 		Math.min(this.p0.x,this.p1.x,this.p2.x,this.p3.x), //Left
@@ -1258,8 +1517,19 @@ rectangle.prototype.setPos = function(){ //Set the center of the shape, its Left
 };
 
 //Should move to Tasks (set a task as current, and not a form)
-rectangle.prototype.setCurrent = function() { this.current=1 };
-rectangle.prototype.resetCurrent = function() { this.current=0 };
+rectangle.prototype.setCurrent = function() {
+	this.current=1
+	$.each(this.canvas , function(i, canvas){
+		c.selectView(canvas);
+	});
+};
+
+rectangle.prototype.resetCurrent = function() {
+	this.current=0
+	$.each(this.canvas , function(i, canvas){
+		c.resetView(canvas);
+	});
+};
 
 rectangle.prototype.getForm = function(){
 	//Add attributes
@@ -1458,7 +1728,7 @@ rectangle.prototype.synch = function(){
 	this.removeCanvas();
 
 	//Get Center, Top / Right / Bottom / Left pos
-	this.setPos();
+	this.getPos();
 
 	//Synch ToolPath
 	this.toolpath();
@@ -1543,31 +1813,34 @@ circle.prototype.update = function(x,y,diam,side,name) {
 	this.synch();
 };
 
-circle.prototype.rotate = function(center,angle){ //Rotate a circle around a center point, and an angle
-	this.p.rotate(center,angle);
-	this.p0.rotate(center,angle);
+circle.prototype.rotate = function(angle,center){ //Rotate a circle around a center point, and an angle
+	this.p.rotate(angle,center);
+	this.p0.rotate(angle,center);
 
 	//Synch ToolPath (also with settings), Gcode, Canvas
 	this.synch();
+	this.setCurrent();
 };
 
-circle.prototype.mirror = function(center,axis){ //Mirror a circle relatively to a point and an axis (for example center point and axis 'x')
-	this.p.mirror(center,axis);
-	this.p0.mirror(center,axis);
+circle.prototype.mirror = function(axis,center){ //Mirror a circle relatively to a point and an axis (for example center point and axis 'x')
+	this.p.mirror(axis,center);
+	this.p0.mirror(axis,center);
 
 	//Synch ToolPath (also with settings), Gcode, Canvas
 	this.synch();
+	this.setCurrent();
 };
 
 circle.prototype.translate = function(vector){ //Translate a circle of a vector (p structure (x/y))
-	this.p = translate(vector);
-	this.p0 = translate(vector);
+	this.p.translate(vector);
+	this.p0.translate(vector);
 
 	//Synch ToolPath (also with settings), Gcode, Canvas
 	this.synch();
+	this.setCurrent();
 };
 
-circle.prototype.setPos = function(){ //Set the center of the shape, its Left / Top / Right / Bottom limits
+circle.prototype.getPos = function(){ //Set the center of the shape, its Left / Top / Right / Bottom limits
 	this.position = new pos(
 		this.p, //Center
 		this.p.x - this.r, //Left
@@ -1578,8 +1851,19 @@ circle.prototype.setPos = function(){ //Set the center of the shape, its Left / 
 };
 
 //Should move to Tasks (set a task as current, and not a form)
-circle.prototype.setCurrent = function() { this.current=1 };
-circle.prototype.resetCurrent = function() { this.current=0 };
+circle.prototype.setCurrent = function() {
+	this.current=1
+	$.each(this.canvas , function(i, canvas){
+		c.selectView(canvas);
+	});
+};
+
+circle.prototype.resetCurrent = function() {
+	this.current=0
+	$.each(this.canvas , function(i, canvas){
+		c.resetView(canvas);
+	});
+};
 
 circle.prototype.getForm = function(){
 	//Add attributes
@@ -1719,7 +2003,7 @@ circle.prototype.synch = function(){
 	this.removeCanvas();
 
 	//Get Center, Top / Right / Bottom / Left pos
-	this.setPos();
+	this.getPos();
 
 	//Synch ToolPath
 	this.toolpath();
@@ -1768,8 +2052,8 @@ arc = function(l,x,y,x0,y0,angle,side,name) {
 
 	this.p1 = new p(this.p0.x,this.p0.y);
 	this.p2 = new p(this.p0.x,this.p0.y);
-	this.p1.rotate(this.p,this.angle/2);
-	this.p2.rotate(this.p,this.angle);
+	this.p1.rotate(this.angle/2,this.p);
+	this.p2.rotate(this.angle,this.p);
 
 	this.side = side ? side : ($("input:radio[name='arc_side']:checked").length	?	parseInt($("input:radio[name='arc_side']:checked").val()) : 1); //3 = On line, 1 = Exterior, 2 = Interior, 4 = inside (from center)
 
@@ -1791,8 +2075,8 @@ arc.prototype.update = function(x,y,x0,y0,angle,side,name) {
 
 	this.p1 = new p(this.p0.x,this.p0.y);
 	this.p2 = new p(this.p0.x,this.p0.y);
-	this.p1.rotate(this.p,this.angle/2);
-	this.p2.rotate(this.p,this.angle);
+	this.p1.rotate(this.angle/2,this.p);
+	this.p2.rotate(this.angle,this.p);
 
 	this.side = side ? side : 1; //3 = center, 1 = Left, 2 = Right, 4 = Inside from center
 	
@@ -1803,46 +2087,63 @@ arc.prototype.update = function(x,y,x0,y0,angle,side,name) {
 	this.synch();
 };
 
-arc.prototype.rotate = function(center,angle){ //Rotate a circle around a center point, and an angle
-	this.p.rotate(center,angle);
-	this.p0.rotate(center,angle);
-	this.p1.rotate(center,angle);
+arc.prototype.rotate = function(angle,center){ //Rotate a circle around a center point, and an angle
+	this.p.rotate(angle,center);
+	this.p0.rotate(angle,center);
+	this.p1.rotate(angle,center);
+	this.p2.rotate(angle,center);
 
 	//Synch ToolPath (also with settings), Gcode, Canvas
 	this.synch();
+	this.setCurrent();
 };
 
-arc.prototype.mirror = function(center,axis){ //Mirror a circle relatively to a point and an axis (for example center point and axis 'x')
-	this.p.mirror(center,axis);
-	this.p0.mirror(center,axis);
-	this.p1.mirror(center,axis);
+arc.prototype.mirror = function(axis,center){ //Mirror a circle relatively to a point and an axis (for example center point and axis 'x')
+	this.p.mirror(axis,center);
+	this.p0.mirror(axis,center);
+	this.p1.mirror(axis,center);
+	this.p2.mirror(axis,center);
 
 	//Synch ToolPath (also with settings), Gcode, Canvas
 	this.synch();
+	this.setCurrent();
 };
 
 arc.prototype.translate = function(vector){ //Translate a circle of a vector (p structure (x/y))
-	this.p = translate(vector);
-	this.p0 = translate(vector);
-	this.p1 = translate(vector);
+	this.p.translate(vector);
+	this.p0.translate(vector);
+	this.p1.translate(vector);
+	this.p2.translate(vector);
 
 	//Synch ToolPath (also with settings), Gcode, Canvas
 	this.synch();
+	this.setCurrent();
 };
 
-arc.prototype.setPos = function(){ //Set the center of the shape, its Left / Top / Right / Bottom limits
+arc.prototype.getPos = function(){ //Set the center of the shape, its Left / Top / Right / Bottom limits
 	this.position = new pos(
 		this.p, //Center
-		Math.min(this.p.x,this.p0.x,this.p1.x),	//Left
-		Math.max(this.p.y,this.p0.y,this.p1.y),	//Top
-		Math.max(this.p.x,this.p0.x,this.p1.x),	//Right
-		Math.min(this.p.y,this.p0.y,this.p1.y)	//Bottom
+		Math.min(this.p.x,this.p0.x,this.p1.x,this.p2.x),	//Left
+		Math.max(this.p.y,this.p0.y,this.p1.y,this.p2.y),	//Top
+		Math.max(this.p.x,this.p0.x,this.p1.x,this.p2.x),	//Right
+		Math.min(this.p.y,this.p0.y,this.p1.y,this.p2.y)	//Bottom
 	);
 };
 
 //Should move to Tasks (set a task as current, and not a form)
-arc.prototype.setCurrent = function() { this.current=1 };
-arc.prototype.resetCurrent = function() { this.current=0 };
+arc.prototype.setCurrent = function() {
+	this.current=1
+	$.each(this.canvas , function(i, canvas){
+		c.selectView(canvas);
+	});
+};
+
+arc.prototype.resetCurrent = function() {
+	this.current=0
+	$.each(this.canvas , function(i, canvas){
+		c.resetView(canvas);
+	});
+};
 
 arc.prototype.getForm = function(){
 	//Add attributes
@@ -1882,8 +2183,8 @@ arc.prototype.toolpath = function() {
 		e.p0 = new p(this.p0.x,this.p0.y);
 		e.p1 = new p(this.p0.x,this.p0.y);
 		e.p2 = new p(this.p0.x,this.p0.y);
-		e.p1.rotate(this.p,this.angle/2);
-		e.p2.rotate(this.p,this.angle);
+		e.p1.rotate(this.angle/2,this.p);
+		e.p2.rotate(this.angle,this.p);
 		this.t.push(e);	//Add circle to the list of toolpaths
 	}
 	else if (this.side == 1){ //Case toolpath outside the circle
@@ -1892,8 +2193,8 @@ arc.prototype.toolpath = function() {
 		e.p0 = new p(this.p0.x,this.p0.y);
 		e.p1 = new p(this.p0.x,this.p0.y);
 		e.p2 = new p(this.p0.x,this.p0.y);
-		e.p1.rotate(this.p,this.angle/2);
-		e.p2.rotate(this.p,this.angle);
+		e.p1.rotate(this.angle/2,this.p);
+		e.p2.rotate(this.angle,this.p);
 
 		e.p0.x += (s.bit_d/2) * Math.cos(calculAlpha(this.p,e.p0));
 		e.p0.y += (s.bit_d/2) * Math.sin(calculAlpha(this.p,e.p0));
@@ -1910,8 +2211,8 @@ arc.prototype.toolpath = function() {
 		e.p0 = new p(this.p0.x,this.p0.y);
 		e.p1 = new p(this.p0.x,this.p0.y);
 		e.p2 = new p(this.p0.x,this.p0.y);
-		e.p1.rotate(this.p,this.angle/2);
-		e.p2.rotate(this.p,this.angle);
+		e.p1.rotate(this.angle/2,this.p);
+		e.p2.rotate(this.angle,this.p);
 
 		e.p0.x -= (s.bit_d/2) * Math.cos(calculAlpha(this.p,this.p0));
 		e.p0.y -= (s.bit_d/2) * Math.sin(calculAlpha(this.p,this.p0));
@@ -2036,7 +2337,7 @@ arc.prototype.synch = function(){
 	this.removeCanvas();
 
 	//Get Center, Top / Right / Bottom / Left pos
-	this.setPos();
+	this.getPos();
 
 	//Synch ToolPath
 	this.toolpath();
@@ -2073,7 +2374,7 @@ customShape = function(){
 	this.pos = null;
 	this.id = null;
 	this.name = null;
-}
+};
 
 //Add each of the custom prototype = read tabs to render (similar to Tasks functions, but adapted to the typology of the structure)
 // !!! Be carreful not to render or calcul each small shape = no action on it (Toolpath / Canvas / Gcode)
@@ -2082,7 +2383,7 @@ customShape = function(){
 customShape.prototype.calculShape = function(){
 	//THE special function that should buid the "this.shapes" array from the "this.oldShapes" array
 	return true
-}
+};
 
 //Add "addOldShape"
 //Add "removeOldShape"

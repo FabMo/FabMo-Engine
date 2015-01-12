@@ -293,7 +293,7 @@
 								</div>
 								<div class="row">
 									<div class="small-8 columns"><input style="margin:0.25rem 0 0;" placeholder="Angle" id="rotate-angle" type="number" step="0.001"></div>
-									<div class="small-4 columns"><div class="small button right secondary" id="rotate-panel">Rotate</div></div>
+									<div class="small-4 columns"><div class="small button right secondary" id="rotate-submit">Rotate</div></div>
 								</div>
 							</form>
 						</div>
@@ -302,11 +302,9 @@
 							<!-- Form to translate a Task -->
 							<form>
 								<div class="row">
-									<div class="small-12 columns">
-										<input style="margin:0.25rem 0 0;" placeholder="X Translation" type="number" id="translate-x" step="0.001">
-										<input style="margin:0.25rem 0 0;" placeholder="Y Translation" type="number" id="translate-y" step="0.001">
-										<div class="small button right secondary" id="rotate-panel">Translate</div>
-									</div>
+									<div class="small-6 columns"><input placeholder="X Translation" type="number" id="translate-x" step="0.001"></div>
+									<div class="small-6 columns"><input placeholder="Y Translation" type="number" id="translate-y" step="0.001"></div>
+									<div class="small-12 columns"><div class="small-12 small button right secondary" id="translate-submit"->Translate</div></div>
 								</div>
 							</form>
 						</div>
@@ -321,7 +319,7 @@
 									<div class="small-4 columns center">
 										<Label>Y<div class="switch small"><input id="mirror_y" type="radio" name="mirror_axis" value="y"><label for="mirror_y"></label></div></Label>
 									</div>
-									<div class="small-4 columns"><div class="small button right secondary" id="mirror-panel">Mirror</div></div>
+									<div class="small-4 columns"><div class="small button right secondary" id="mirror-submit">Mirror</div></div>
 								</div>
 							</form>
 						</div>

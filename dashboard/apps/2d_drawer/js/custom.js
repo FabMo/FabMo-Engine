@@ -70,7 +70,7 @@ function toogleDimPosCircle() {
 
 function hideTab(group){
 	$(".tabs." + group + " dd").removeClass("active");
-	$(".tabs-content." + group + "> .content").removeClass("active");
+	$(".tabs-content ." + group + ".content").removeClass("active");
 }
 
 //OnLoad Init
@@ -124,9 +124,19 @@ $(document).ready(function(){
 		Tasks.reset();
 	});
 
-	//Rotate a shape
-	$("#add-rectangle").click(function(){
-		Tasks.rotate(parseFloat($("#rectangle_x0").val()));
+	//Translate selected shape(s)
+	$("#translate-submit").click(function(){
+		Tasks.translate( null , $("#translate-x").val() , $("#translate-y").val() );
+	});
+
+	//Rotate selected shape(s)
+	$("#rotate-submit").click(function(){
+		Tasks.rotate( null , $("#rotate-angle").val() , $("input:radio[name='rotate_base']:checked").val() );
+	});
+
+	//Mirror selected shape(s)
+	$("#mirror-submit").click(function(){
+		Tasks.mirror( null , $("input:radio[name='rotate_base']:checked").val(),$("#rotate-angle").val());
 	});
 
 	//Run all the tasks
