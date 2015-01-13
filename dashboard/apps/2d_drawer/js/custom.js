@@ -136,7 +136,7 @@ $(document).ready(function(){
 
 	//Mirror selected shape(s)
 	$("#mirror-submit").click(function(){
-		Tasks.mirror( null , $("input:radio[name='rotate_base']:checked").val(),$("#rotate-angle").val());
+		Tasks.mirror( null , $("input radio[name='rotate_base']:checked").val(),$("#rotate-angle").val());
 	});
 
 	//Run all the tasks

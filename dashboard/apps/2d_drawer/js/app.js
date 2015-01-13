@@ -886,15 +886,23 @@ Tasks.translate = function(id,x,y){
 };
 
 Tasks.rotate = function(id,angle,center){
+	console.log(center);
+	console.log(angle);
+
 	//Reset the "current" status of the task "id"
 	if (id) {
-		Tasks[Tasks.pos(id)].rotate(angle,center);
+		Tasks[Tasks.pos(id)].rotate(angle,Tasks[Tasks.pos(id)].position[center]);
 	}
 	//Or reset the "current" status of each task (no "id parameter")
 	else {
+		var transformed = null;
 		$.each(this, function(i,t){
-			t.rotate(angle,center);
+			if (t.current){
+				t.rotate(angle,t.position[center]);
+				transformed = true;
+			}
 		});
+		!transformed ? console.log("No shape selected, no transformation") : null;
 	}
 };
 
@@ -905,9 +913,14 @@ Tasks.mirror = function(axis,center){
 	}
 	//Or reset the "current" status of each task (no "id parameter")
 	else {
+		var transformed = null;
 		$.each(this, function(i,t){
-			t.mirror(axis,center);
+			if (t.current){
+				t.mirror(axis,center);
+				transformed = true;
+			}
 		});
+		!transformed ? console.log("No shape selected, no transformation") : null;
 	}
 };
 
@@ -1094,12 +1107,12 @@ rot = function(p,p1,angle){
 	);
 };
 
-pos = function(C,L,T,R,B){
+pos = function(C,TL,TR,BL,BR){
 	this.center = C ? C : new p(null,null);
-	this.left 	= L ? L : new p(null,null);
-	this.top 	= T ? T : new p(null,null);
-	this.right 	= R ? R : new p(null,null);
-	this.bottom = B ? B : new p(null,null);
+	this.topLeft 	= TL ? TL : new p(null,null);
+	this.topRight 	= TR ? TR : new p(null,null);
+	this.bottomLeft 	= BL ? BL : new p(null,null);
+	this.bottomRight = BR ? BR : new p(null,null);
 };
 
 
@@ -1141,8 +1154,8 @@ p.prototype.sameAxisThan = function(p){
 
 p.prototype.middle = function(p1){
 	return new p(
-		(this.x + p1.x /2),
-		(this.y + p1.y /2)
+		(this.x + p1.x) /2,
+		(this.y + p1.y) /2
 	);
 }
 
@@ -1152,6 +1165,7 @@ p.prototype.translate = function(vector){ //vector is of p type
 };
 
 p.prototype.rotate = function(angle,center){
+	console.log(center);
 	var alpha = (-angle/(180))*pi;
 	var xNew = ((this.x-center.x) * Math.cos(alpha)) - ((this.y-center.y) * Math.sin(alpha)) + center.x;
 	var yNew = (((this.x-center.x) * Math.sin(alpha))) + ((this.y-center.y) * Math.cos(alpha)) + center.y;
@@ -1215,7 +1229,6 @@ line.prototype.update = function(x0,y0,x1,y1,name,side) {
 	
 	if(name) this.name=name;
 	//else name = "Line" + pos;
-
 };
 
 line.prototype.rotate = function(angle,center){ //Rotate a line around a center, and an angle
@@ -1248,10 +1261,10 @@ line.prototype.translate = function(vector){ //Translate a line of a vector (p s
 line.prototype.getPos = function(){ //Set the center of the shape, its Left / Top / Right / Bottom limits
 	this.position = new pos(
 		this.p0.middle(this.p1), //Center
-		Math.min( this.p0.x , this.p1.x ), //Left
-		Math.min( this.p0.y , this.p1.y ), //Top
-		Math.min( this.p0.x , this.p1.x ), //Right
-		Math.min( this.p0.x , this.p1.x ) //Bottom
+		new p( Math.min( this.p0.x , this.p1.x ) , Math.max( this.p0.y , this.p1.y ) ), //Top-Left
+		new p( Math.max( this.p0.x , this.p1.x ) , Math.max( this.p0.y , this.p1.y ) ), //Top-Right
+		new p( Math.min( this.p0.x , this.p1.x ) , Math.min( this.p0.y , this.p1.y ) ), //Bottom-Left
+		new p( Math.max( this.p0.x , this.p1.x ) , Math.min( this.p0.y , this.p1.y ) ) //Bottom-Right
 	);
 };
 
@@ -1509,10 +1522,10 @@ rectangle.prototype.translate = function(vector){ //Translate a rectangle of a v
 rectangle.prototype.getPos = function(){ //Set the center of the shape, its Left / Top / Right / Bottom limits
 	this.position = new pos(
 		this.p0.middle(this.p1), //Center
-		Math.min(this.p0.x,this.p1.x,this.p2.x,this.p3.x), //Left
-		Math.max(this.p0.y,this.p1.y,this.p2.y,this.p3.y), //Top
-		Math.max(this.p0.x,this.p1.x,this.p2.x,this.p3.x), //Right
-		Math.min(this.p0.y,this.p1.y,this.p2.y,this.p3.y) //Bottom
+		new p( Math.min(this.p0.x,this.p1.x,this.p2.x,this.p3.x), Math.max(this.p0.y,this.p1.y,this.p2.y,this.p3.y)), //Top-Left
+		new p( Math.max(this.p0.x,this.p1.x,this.p2.x,this.p3.x), Math.max(this.p0.y,this.p1.y,this.p2.y,this.p3.y)), //Top-Right
+		new p( Math.min(this.p0.x,this.p1.x,this.p2.x,this.p3.x), Math.min(this.p0.y,this.p1.y,this.p2.y,this.p3.y)), //Bottom-Left
+		new p( Math.max(this.p0.x,this.p1.x,this.p2.x,this.p3.x), Math.min(this.p0.y,this.p1.y,this.p2.y,this.p3.y)) //Bottom-Right
 	);
 };
 
@@ -1815,7 +1828,7 @@ circle.prototype.update = function(x,y,diam,side,name) {
 
 circle.prototype.rotate = function(angle,center){ //Rotate a circle around a center point, and an angle
 	this.p.rotate(angle,center);
-	this.p0.rotate(angle,center);
+	this.p0 = new p( this.p.x , this.p.y + this.r );
 
 	//Synch ToolPath (also with settings), Gcode, Canvas
 	this.synch();
@@ -1824,7 +1837,7 @@ circle.prototype.rotate = function(angle,center){ //Rotate a circle around a cen
 
 circle.prototype.mirror = function(axis,center){ //Mirror a circle relatively to a point and an axis (for example center point and axis 'x')
 	this.p.mirror(axis,center);
-	this.p0.mirror(axis,center);
+	this.p0 = new p( this.p.x , this.p.y + this.r );
 
 	//Synch ToolPath (also with settings), Gcode, Canvas
 	this.synch();
@@ -1843,10 +1856,10 @@ circle.prototype.translate = function(vector){ //Translate a circle of a vector 
 circle.prototype.getPos = function(){ //Set the center of the shape, its Left / Top / Right / Bottom limits
 	this.position = new pos(
 		this.p, //Center
-		this.p.x - this.r, //Left
-		this.p.y + this.r, //Top
-		this.p.x + this.r, //Right
-		this.p.y - this.r //Bottom
+		new p( this.p.x - this.r, this.p.y + this.r), //Top-Left
+		new p( this.p.x + this.r, this.p.y + this.r), //Top-Right
+		new p( this.p.x - this.r, this.p.y - this.r), //Bottom-Left
+		new p( this.p.x + this.r, this.p.y - this.r) //Bottom-Right
 	);
 };
 
@@ -2122,11 +2135,11 @@ arc.prototype.translate = function(vector){ //Translate a circle of a vector (p 
 
 arc.prototype.getPos = function(){ //Set the center of the shape, its Left / Top / Right / Bottom limits
 	this.position = new pos(
-		this.p, //Center
-		Math.min(this.p.x,this.p0.x,this.p1.x,this.p2.x),	//Left
-		Math.max(this.p.y,this.p0.y,this.p1.y,this.p2.y),	//Top
-		Math.max(this.p.x,this.p0.x,this.p1.x,this.p2.x),	//Right
-		Math.min(this.p.y,this.p0.y,this.p1.y,this.p2.y)	//Bottom
+		this.p0.middle(this.p1), //Center
+		new p( Math.min(this.p.x,this.p0.x,this.p1.x,this.p2.x), Math.max(this.p.y,this.p0.y,this.p1.y,this.p2.y)), //Top-Left
+		new p( Math.max(this.p.x,this.p0.x,this.p1.x,this.p2.x), Math.max(this.p.y,this.p0.y,this.p1.y,this.p2.y)), //Top-Right
+		new p( Math.min(this.p.x,this.p0.x,this.p1.x,this.p2.x), Math.min(this.p.y,this.p0.y,this.p1.y,this.p2.y)), //Bottom-Left
+		new p( Math.max(this.p.x,this.p0.x,this.p1.x,this.p2.x), Math.min(this.p.y,this.p0.y,this.p1.y,this.p2.y)) //Bottom-Right
 	);
 };
 
