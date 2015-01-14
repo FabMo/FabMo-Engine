@@ -228,29 +228,6 @@
 									<div class="small-12 columns arc_angle_container">
 										<div class="row"><div class="small-12 columns"> <label>Angle : <input value="30" id="arc_angle" class="active" type="number" step="0.001"></label> </div></div>
 									</div>
-									<!--
-									<div class="small-8 columns arc_end_container"> //Style display = "none" //X1 and Y1 or angle check (see rectangle form) 
-										<div class="row">
-											<div class="small-6 columns"> <label>Start X : <input type="text" value="4" id="arc_x1"></label> </div>
-											<div class="small-6 columns"> <label>Start Y : <input type="text" value="2" id="arc_y1"></label> </div>
-										</div>
-									</div>
-
-									<div class="small-8 columns arc_dimensions_container">
-										<div class="row">
-											<div class="small-6 columns"> <label>Width : <input type="text" value="4" id="arc_w" class="active"></label> </div>
-											<div class="small-6 columns"> <label>Height Y : <input type="text" value="2" id="arc_h" class="active"></label> </div>
-										</div>
-									</div>
-									<div class="small-4 columns center">
-										<Label>Dim ↔ Pts
-										<div class="switch small">
-											<input id="dimensions_method" type="checkbox" name="dimensions_method">
-											<label for="dimensions_method"></label>
-										</div>
-										</Label>
-									</div>
-									-->
 									<div class="small-12 columns center"><Label>Toolpath</Label></div>
 									<div class="small-4 columns center">
 										<Label>Outside <div class="switch small"> <input id="arc_outside" type="radio" checked name="arc_side" value="1"> <label for="arc_outside"></label> </div> </Label>
@@ -271,29 +248,29 @@
 							<form>
 								<div class="row">
 									<!-- The name of the shape should not be removed : use to edit the line. It is possible to hide it but not to remove it -->
+									<div class="small-4 columns center">
+										<div class="switch small"><input id="rotate_top" type="radio" checked name="rotate_base" value="topLeft"><label for="rotate_top"></Label></div>
+									</div>
 									<div class="small-4 small-offset-4 end columns center">
-										<Label>Top<div class="switch small"><input id="rotate_top" type="radio" checked name="rotate_base" value="topLeft"><label for="rotate_top"></label></div></Label>
-									</div>
-								</div>
-								<div class="row">
-									<div class="small-4 columns center">
-										<Label>Left<div class="switch small"><input id="rotate_left" type="radio" name="rotate_base" value="topRight"><label for="rotate_left"></label></div></Label>
-									</div>
-									<div class="small-4 columns center">
-										<Label>Center<div class="switch small"><input id="rotate_center" type="radio" name="rotate_base" value="center"><label for="rotate_center"></label></div></Label>
-									</div>
-									<div class="small-4 columns center">
-										<Label>Right<div class="switch small"><input id="rotate_right" type="radio" name="rotate_base" value="bottomLeft"><label for="rotate_right"></label></div></Label>
+										<div class="switch small"><input id="rotate_left" type="radio" name="rotate_base" value="topRight"><label for="rotate_left"></label></div>
 									</div>
 								</div>
 								<div class="row">
 									<div class="small-4 small-offset-4 end columns center">
-										<Label>Bottom<div class="switch small"><input id="rotate_bottom" type="radio" checked name="rotate_base" value="bottomRight"><label for="rotate_bottom"></label></div></Label>
+										<div class="switch small"><input id="rotate_center" type="radio" name="rotate_base" value="center"><label for="rotate_center"></label></div>
+									</div>
+								</div>
+								<div class="row">
+									<div class="small-4 columns center">
+										<div class="switch small"><input id="rotate_right" type="radio" name="rotate_base" value="bottomLeft"><label for="rotate_right"></label></div>
+									</div>
+									<div class="small-4 small-offset-4 end columns center">
+										<div class="switch small"><input id="rotate_bottom" type="radio" checked name="rotate_base" value="bottomRight"><label for="rotate_bottom"></label></div>
 									</div>
 								</div>
 								<div class="row">
 									<div class="small-8 columns"><input style="margin:0.25rem 0 0;" placeholder="Angle" id="rotate-angle" type="number" step="0.001"></div>
-									<div class="small-4 columns"><div class="small button right secondary" id="rotate-submit">Rotate</div></div>
+									<div class="small-4 columns"><button type="submit" class="small button right secondary" id="rotate-submit">Rotate</button></div>
 								</div>
 							</form>
 						</div>
@@ -302,9 +279,9 @@
 							<!-- Form to translate a Task -->
 							<form>
 								<div class="row">
-									<div class="small-6 columns"><input placeholder="X Translation" type="number" id="translate-x" step="0.001"></div>
-									<div class="small-6 columns"><input placeholder="Y Translation" type="number" id="translate-y" step="0.001"></div>
-									<div class="small-12 columns"><div class="small-12 small button right secondary" id="translate-submit"->Translate</div></div>
+									<div class="small-6 columns"><input placeholder="X" type="number" id="translate-x" step="0.001"></div>
+									<div class="small-6 columns"><input placeholder="Y" type="number" id="translate-y" step="0.001"></div>
+									<div class="small-12 columns"><button type="submit" class="small-12 small button right secondary" id="translate-submit"->Translate</button></div>
 								</div>
 							</form>
 						</div>
@@ -314,7 +291,7 @@
 							<form>
 								<div class="row">
 									<div class="small-4 columns center">
-										<Label>X<div class="switch small"><input id="mirror_x" type="radio" name="mirror_axis" value="x"><label for="mirror_x"></label></div></Label>
+										<Label>X<div class="switch small"><input id="mirror_x" checked type="radio" name="mirror_axis" value="x"><label for="mirror_x"></label></div></Label>
 									</div>
 									<div class="small-4 columns center">
 										<Label>Y<div class="switch small"><input id="mirror_y" type="radio" name="mirror_axis" value="y"><label for="mirror_y"></label></div></Label>

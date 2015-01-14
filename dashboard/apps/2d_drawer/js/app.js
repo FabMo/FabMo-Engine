@@ -47,9 +47,29 @@ $(document).ready(function(){
 
 	//Create Canvas
 	if (allow_canvas) { c = new Canvas(); }
+
+	listener();
 });
 
 
+
+
+
+
+
+/*_____________________________________________________________________________
+|																			   |
+|******************************************************************************|
+|******************************* General Events *******************************|
+|******************************************************************************|
+|******************************************************************************|
+|______________________________________________________________________________|
+*/
+listener = function(){
+	$("button[type='submit']").click(function(){
+		return false; //Override the action of the button, so the user is not redirected to another page (no data lost)
+	});
+};
 
 
 
@@ -886,9 +906,6 @@ Tasks.translate = function(id,x,y){
 };
 
 Tasks.rotate = function(id,angle,center){
-	console.log(center);
-	console.log(angle);
-
 	//Reset the "current" status of the task "id"
 	if (id) {
 		Tasks[Tasks.pos(id)].rotate(angle,Tasks[Tasks.pos(id)].position[center]);
@@ -906,14 +923,26 @@ Tasks.rotate = function(id,angle,center){
 	}
 };
 
-Tasks.mirror = function(axis,center){
+Tasks.mirror = function(id,axis){
 	//Reset the "current" status of the task "id"
 	if (id) {
+		var center = Tasks.pos(id).position.center;
 		Tasks[Tasks.pos(id)].mirror(axis,center);
 	}
 	//Or reset the "current" status of each task (no "id parameter")
 	else {
 		var transformed = null;
+		var min=new p(1000000,1000000); //Min x, min y, to calculate mirroring point
+		var max=new p(-1000000,-1000000); //Max x, max y, to calculate mirroring point
+		$.each(this, function(i,t){
+			if (t.current){
+				t.position.bottomLeft.x < min.x ? min.x = t.position.bottomLeft.x 	: null;
+				t.position.bottomLeft.y < min.y ? min.y = t.position.bottomLeft.y 	: null;
+				t.position.topRight.x 	> max.x ? max.x = t.position.topRight.x 	: null;
+				t.position.topRight.y 	> max.y ? max.y = t.position.topRight.y 	: null;
+			}
+		});
+		var center = min.middle(max);
 		$.each(this, function(i,t){
 			if (t.current){
 				t.mirror(axis,center);
@@ -1124,15 +1153,15 @@ round = function(float){
 }
 
 p = function(x,y){
-	this.x=x;
-	this.y=y;
+	this.x=round(x);
+	this.y=round(y);
 };
 
 //Return distance of p from point "from", under as a svector (x & y distance)
 p.prototype.distanceFrom = function(from){
 	return new p(
-		(this.x-from.x),
-		(this.y-from.y)
+		round(this.x-from.x),
+		round(this.y-from.y)
 	);
 };
 
@@ -1154,8 +1183,8 @@ p.prototype.sameAxisThan = function(p){
 
 p.prototype.middle = function(p1){
 	return new p(
-		(this.x + p1.x) /2,
-		(this.y + p1.y) /2
+		round((this.x + p1.x) /2),
+		round((this.y + p1.y) /2)
 	);
 }
 
@@ -1165,21 +1194,23 @@ p.prototype.translate = function(vector){ //vector is of p type
 };
 
 p.prototype.rotate = function(angle,center){
-	console.log(center);
 	var alpha = (-angle/(180))*pi;
 	var xNew = ((this.x-center.x) * Math.cos(alpha)) - ((this.y-center.y) * Math.sin(alpha)) + center.x;
 	var yNew = (((this.x-center.x) * Math.sin(alpha))) + ((this.y-center.y) * Math.cos(alpha)) + center.y;
 
-	this.x = xNew;
-	this.y = yNew;
+	this.x = round(xNew);
+	this.y = round(yNew);
 };
 
 p.prototype.mirror = function(axis,center){
 	//Center is center point to mirror
 	if(axis == 'x'){
+		console.log("xMirror");
+		console.log(center);
 		this.rotate(180,new p(this.x,center.y));
 	}
 	else if (axis == 'y'){
+		console.log("yMirror");
 		this.rotate(180,new p(center.x,this.y));
 	}
 };
@@ -2070,8 +2101,6 @@ arc = function(l,x,y,x0,y0,angle,side,name) {
 
 	this.side = side ? side : ($("input:radio[name='arc_side']:checked").length	?	parseInt($("input:radio[name='arc_side']:checked").val()) : 1); //3 = On line, 1 = Exterior, 2 = Interior, 4 = inside (from center)
 
-	console.log(this);
-
 	//Synch ToolPath (also with settings), Gcode, Canvas
 	this.synch();
 
@@ -2112,6 +2141,7 @@ arc.prototype.rotate = function(angle,center){ //Rotate a circle around a center
 };
 
 arc.prototype.mirror = function(axis,center){ //Mirror a circle relatively to a point and an axis (for example center point and axis 'x')
+	this.angle = -this.angle;
 	this.p.mirror(axis,center);
 	this.p0.mirror(axis,center);
 	this.p1.mirror(axis,center);

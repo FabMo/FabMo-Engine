@@ -127,16 +127,19 @@ $(document).ready(function(){
 	//Translate selected shape(s)
 	$("#translate-submit").click(function(){
 		Tasks.translate( null , $("#translate-x").val() , $("#translate-y").val() );
+		$("#translate-x").val("");
+		$("#translate-y").val("");
 	});
 
 	//Rotate selected shape(s)
 	$("#rotate-submit").click(function(){
 		Tasks.rotate( null , $("#rotate-angle").val() , $("input:radio[name='rotate_base']:checked").val() );
+		$("#rotate-angle").val("");
 	});
 
 	//Mirror selected shape(s)
 	$("#mirror-submit").click(function(){
-		Tasks.mirror( null , $("input radio[name='rotate_base']:checked").val(),$("#rotate-angle").val());
+		Tasks.mirror( null , $("input:radio[name='mirror_axis']:checked").val() );
 	});
 
 	//Run all the tasks
