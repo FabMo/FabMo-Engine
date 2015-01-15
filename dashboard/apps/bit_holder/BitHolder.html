@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Bit Holder</title>
+	<link rel="stylesheet" href="libs/css/foundation.min.css" />
+
+</head>
+<body>
+	<header><h1>This is a simple app to generate a bit holder<h1></header>
+	<div class="row">
+		<div id="User_inputs" class="large-6 columns">
+		<form>
+			<label>Number of 1/2inch bits : </label>
+			<input class="input" id="half_in_number"type="number" value="2">
+			<label>Number of 1/4inch bits : </label>
+			<input class="input" id="quarter_in_number"type="number" value="12">
+			<label>Number of 1/8inch bits : </label>
+			<input class="input" id="eighth_in_number"type="number" value="2">
+			<label>Space between bits (in inches) : </label>
+			<input class="input" id="space_in_number"type="number" value="1">
+			<label>Number of row : </label>
+			<input class="input" id="row_number"type="number" value="4">
+			<label> Tolerance (in inches) : </label>
+			<input class="input" id="tolerance_in_number"type="number" value=".01">
+
+		</form>
+		</div>
+		<div id="canvas_rendering" class="large-6 columns">
+			<canvas id="geometry_canvas" width="2000px" height="1000px" style="width: 100%;">
+				Your web browser is so old that I cannot do anything for you.
+			</canvas>
+		</div>
+	</div>
+	<footer>Created by Jimmy Lucidarme.</footer>
+</body>
+	<script type="text/javascript" src="./BitHolder.js"></script>
+	<script type="text/javascript" src="./libs/js/jquery-1.10.2.js"></script>
+	<script type="text/javascript" src="./libs/js/jcanvas.min.js"></script>
+	<script type="text/javascript" src="./libs/js/foundation.min.js"></script>
+	<script>
+	var tolerance;
+	var geometry;
+
+	$(document).ready(function(){
+		//generate_geometry( bit_size, number_of_bits_half, number_of_bits_quater , number_of_bits_eight, square_unit_width_by_bit, nb_rows)
+		
+		geometry = generate_geometry(0.125,2,12,2,1,4);
+		tolerance = .01;
+		canvas_draw_geometry(geometry);
+
+
+		$('.input').change(function(e){
+				//generate_geometry( bit_size, number_of_bits_half, number_of_bits_quater , number_of_bits_eight, square_unit_width_by_bit, nb_rows)
+			$('#geometry_canvas').clearCanvas();
+			geometry = generate_geometry(0.125,	parseInt($('#half_in_number').val()),parseInt($('#quarter_in_number').val()),parseInt($('#eighth_in_number').val()),parseFloat($('#space_in_number').val()),parseInt($('#row_number').val()));
+
+			tolerance = parseFloat($('#tolerance_in_number').val());
+			console.log(geometry);
+			canvas_draw_geometry(geometry);
+		});
+
+	});
+
+
+
+
+	function canvas_draw_geometry(geometry){
+		canvas_draw_rectangle(0,0,geometry.outcut.width,geometry.outcut.height);
+		for(index in geometry.holes){
+			canvas_draw_circle(geometry.holes[index].x,geometry.holes[index].y,geometry.holes[index].radius + tolerance);
+		}
+	}
+
+	function canvas_draw_circle(x,y,rad)
+	{
+		console.log(x+","+y+","+rad+"");
+		$('#geometry_canvas').drawArc({
+		  "strokeStyle": '#000',
+		  "strokeWidth": 5,
+		  "x": x*100,
+		  "y": y*100,
+		  "radius": rad*100,
+		  // start and end angles in degrees
+		});
+	}
+
+	function canvas_draw_rectangle(x,y,w,h)
+	{	
+		$('#geometry_canvas').drawRect({
+		  'fromCenter': false,
+		  'strokeStyle': '#000',
+  		  'strokeWidth': 5,
+		  'x': x*100,
+		  'y': y*100,
+		  'width':w*100,
+		  'height':h*100
+		});
+	}
+
+	</script>
+
+</html>
