@@ -13,8 +13,6 @@ function generate_geometry( bit_size, number_of_bits_half, number_of_bits_quater
 	var nb_of_bits = number_of_bits_half+number_of_bits_quater+number_of_bits_eight;
 	var ret = {};
 	ret.outcut = calc_outcut_size(square_unit_width_by_bit,nb_of_bits,nb_rows);
-	console.log(nb_of_bits);
-	console.log(calc_center_of_bits(square_unit_width_by_bit,nb_of_bits,nb_rows));
 	ret.holes = distribute_radius(calc_center_of_bits(square_unit_width_by_bit,nb_of_bits,nb_rows),number_of_bits_half,number_of_bits_quater,number_of_bits_eight);
 	return ret;
 }
