@@ -1,102 +1,254 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<title>Bit Holder</title>
-	<link rel="stylesheet" href="libs/css/foundation.min.css" />
+	<head>
+		<title>Bit Holder</title>
+		<link rel="stylesheet" href="libs/css/foundation.min.css" />
 
-</head>
-<body>
-	<header><h1>This is a simple app to generate a bit holder<h1></header>
-	<div class="row">
-		<div id="User_inputs" class="large-6 columns">
-		<form>
-			<label>Number of 1/2inch bits : </label>
-			<input class="input" id="half_in_number"type="number" value="2">
-			<label>Number of 1/4inch bits : </label>
-			<input class="input" id="quarter_in_number"type="number" value="12">
-			<label>Number of 1/8inch bits : </label>
-			<input class="input" id="eighth_in_number"type="number" value="2">
-			<label>Space between bits (in inches) : </label>
-			<input class="input" id="space_in_number"type="number" value="1">
-			<label>Number of row : </label>
-			<input class="input" id="row_number"type="number" value="4">
-			<label> Tolerance (in inches) : </label>
-			<input class="input" id="tolerance_in_number"type="number" value=".01">
-
-		</form>
+	</head>
+	<body>
+		<header style="background-color:#313366 !important;" >
+			<section class="row" style="max-width: inherit;">
+				<div class="app-title-container columns small-6">
+					<h2>Bit holder</h2>
+				</div>
+				<div class="columns small-6">
+					<button class="button alert right" id="help_button">I need help !</button>
+				</div>
+			</section>		
+		</header>
+		<div class="row" style="max-width: 65.5em;">
+			<div id="User_inputs" class="large-6 columns">
+				<dl class="tabs" data-tab>
+					<dd class="active"><a href="#design_tab">Design</a></dd>
+					<dd><a href="#material_tab">Material</a></dd>
+					<dd><a href="#gen_tab">Generation</a></dd>
+				</dl>
+				<div class="tabs-content">
+					<div class="content active" id="design_tab">
+						<form>
+							<div class="row collapse prefix-radius">
+								<div class="small-9 columns">
+									<span class="prefix">Number of 1/2inch bits :</span>
+								</div>
+								<div class="small-3 columns">
+									<input class="design_input" id="half_in_number"type="number" value="2" min="0">									
+								</div>
+							</div>
+							<div class="row collapse prefix-radius">
+								<div class="small-9 columns">
+									<span class="prefix">Number of 1/4inch bits :</span>
+								</div>
+								<div class="small-3 columns">
+									<input class="design_input" id="quarter_in_number"type="number" value="12" min="0">									
+								</div>
+							</div>
+							<div class="row collapse prefix-radius">
+								<div class="small-9 columns">
+									<span class="prefix">Number of 1/8inch bits :</span>
+								</div>
+								<div class="small-3 columns">
+									<input class="design_input" id="eighth_in_number"type="number" value="2" min="0">									
+								</div>
+							</div>
+							<div class="row collapse prefix-radius">
+								<div class="small-9 columns">
+									<span class="prefix">Space between bits (in inches) :</span>
+								</div>
+								<div class="small-3 columns">
+									<input class="design_input" id="space_in_number"type="number" value="1" step=".01" min="0">									
+								</div>
+							</div>
+							<div class="row collapse prefix-radius">
+								<div class="small-9 columns">
+									<span class="prefix">Number of row :</span>
+								</div>
+								<div class="small-3 columns">
+									<input class="design_input" id="row_number"type="number" value="4"  min="0">									
+								</div>
+							</div>
+						</form>
+					</div>
+					<div class="content" id="material_tab">
+						<form>
+							<div class="row collapse prefix-radius">
+								<div class="small-9 columns">
+									<span class="prefix">Material type :</span>
+								</div>
+								<div class="small-3 columns">
+									<select id="material_type">
+									  <option value="softwood">Softwood</option>
+										<option value="hardwood">Hardwood</option>
+										<option value="soft_plastic">Soft plastic</option>
+										<option value="hard_plastic">Hard plastic</option>
+										<option value="soft_metal">Soft metal</option>
+									</select>
+								</div>
+							</div>
+								<div class="row collapse prefix-radius">
+									<div class="small-9 columns">
+										<span class="prefix">Type of bit :</span>
+									</div>
+									<div class="small-3 columns">
+										<select id="bit_type">
+											<option value="upcut_end_mill">Upcut end mill</option>
+											<option value="oflute">OFlute</option>
+											<option value="downcut_end_mill">Downcut end mill</option>
+										<select>
+									</div>
+								</div>
+							<div>
+								<div class="row collapse prefix-radius">
+									<div class="small-9 columns">
+										<span class="prefix">Size of bit :</span>
+									</div>
+									<div class="small-3 columns">
+										<select id="bit_size">
+											<option value="eighth">1/8 in</option>
+											<option value="quarter">1/4 in</option>
+											<option value="half">1/2 in</option>
+										</select>
+									</div>
+								</div>
+							</div>
+							<div class="row collapse prefix-radius">
+								<div class="small-9 columns">
+									<span class="prefix">Tolerance (in inches) :</span>
+								</div>
+								<div class="small-3 columns">
+									<input class="design_input" id="tolerance_in_number"type="number" value=".01" step=".01"  min="0">									
+								</div>
+							</div>
+						</form>
+					</div>
+					<div class="content" id="gen_tab">
+						<form  action="">
+							<div class="row collapse prefix-radius">
+								<div class="small-5 columns">
+									<span class="prefix">Filename :</span>
+								</div>
+								<div class="small-7 columns">
+									<input class="input" id="filename" type="text" value="my_bit_holder">									
+								</div>
+							</div>
+							<div class="row ">
+								<div class="small-6 columns">
+									<label for="add_tab_checkbox" class="right">Add tabs to file ?</span>
+								</div>
+								<div class="small-6 columns inline">
+									<input type="checkbox" id="add_tab_checkbox" checked="checked">									
+								</div>
+							</div>
+							<div>
+								<div class="button-group round even-3">
+									<button style="width:33%;" id="download_button" class="button small secondary disabled">Download</button>
+									<button style="width:33%;" id="generate_button" class="button small success">Generate</button>
+									<button style="width:33%;" id="cut_button" class="button small warning  disabled">Cut</button>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+			<div id="canvas_rendering" class="large-6 columns">
+				<div class="row">
+					<div class="columns small-3">
+						<label class=" right inline">Zoom</label>
+					</div>
+					<div class="columns small-9">
+						<div id="zoom_slider" class="range-slider" data-slider="200" data-options="start: 10; end: 300;">
+							<span class="range-slider-handle" role="slider"></span>
+							<span class="range-slider-active-segment"></span>
+							<input id="zoom_value" type="hidden">
+						</div>
+					</div>
+				</div>
+				<canvas id="geometry_canvas" width="2000px" height="1300px" style="width: 100%;background-color: #F0F0F0;">
+					Your web browser is so old that I cannot do anything for you.
+				</canvas>			
+			</div>
 		</div>
-		<div id="canvas_rendering" class="large-6 columns">
-			<canvas id="geometry_canvas" width="2000px" height="1000px" style="width: 100%;">
-				Your web browser is so old that I cannot do anything for you.
-			</canvas>
-		</div>
-	</div>
-	<footer>Created by Jimmy Lucidarme.</footer>
-</body>
+		<footer>Created by Jimmy Lucidarme.</footer>
+	</body>
 	<script type="text/javascript" src="./BitHolder.js"></script>
 	<script type="text/javascript" src="./libs/js/jquery-1.10.2.js"></script>
 	<script type="text/javascript" src="./libs/js/jcanvas.min.js"></script>
 	<script type="text/javascript" src="./libs/js/foundation.min.js"></script>
 	<script>
-	var tolerance;
-	var geometry;
+		$(document).foundation();
 
-	$(document).ready(function(){
+
+		var tolerance=.01;
 		//generate_geometry( bit_size, number_of_bits_half, number_of_bits_quater , number_of_bits_eight, square_unit_width_by_bit, nb_rows)
-		
-		geometry = generate_geometry(0.125,2,12,2,1,4);
-		tolerance = .01;
-		canvas_draw_geometry(geometry);
+		var geometry=generate_geometry(0.125,2,12,2,1,4);
+		var scale = 200;
 
 
-		$('.input').change(function(e){
-				//generate_geometry( bit_size, number_of_bits_half, number_of_bits_quater , number_of_bits_eight, square_unit_width_by_bit, nb_rows)
+		$(document).ready(function(){
+			refresh_canvas();
+			
+			//refresh on input change
+			$('.design_input').change(function(e){
+					//generate_geometry( bit_size, number_of_bits_half, number_of_bits_quater , number_of_bits_eight, square_unit_width_by_bit, nb_rows)
+				geometry = generate_geometry(0.125,	parseInt($('#half_in_number').val()),parseInt($('#quarter_in_number').val()),parseInt($('#eighth_in_number').val()),parseFloat($('#space_in_number').val()),parseInt($('#row_number').val()));
+
+				tolerance = parseFloat($('#tolerance_in_number').val());
+				refresh_canvas();
+			});
+
+			//refresh on zoom, dezoom
+			$('#zoom_slider').on('change.fndtn.slider', function(){
+				scale = parseInt($('#zoom_value').val());
+				refresh_canvas();
+			});
+		});
+
+
+		function refresh_canvas(){
 			$('#geometry_canvas').clearCanvas();
-			geometry = generate_geometry(0.125,	parseInt($('#half_in_number').val()),parseInt($('#quarter_in_number').val()),parseInt($('#eighth_in_number').val()),parseFloat($('#space_in_number').val()),parseInt($('#row_number').val()));
-
-			tolerance = parseFloat($('#tolerance_in_number').val());
-			console.log(geometry);
 			canvas_draw_geometry(geometry);
-		});
-
-	});
-
-
-
-
-	function canvas_draw_geometry(geometry){
-		canvas_draw_rectangle(0,0,geometry.outcut.width,geometry.outcut.height);
-		for(index in geometry.holes){
-			canvas_draw_circle(geometry.holes[index].x,geometry.holes[index].y,geometry.holes[index].radius + tolerance);
+			canvas_center_geometry();
 		}
-	}
 
-	function canvas_draw_circle(x,y,rad)
-	{
-		console.log(x+","+y+","+rad+"");
-		$('#geometry_canvas').drawArc({
-		  "strokeStyle": '#000',
-		  "strokeWidth": 5,
-		  "x": x*100,
-		  "y": y*100,
-		  "radius": rad*100,
-		  // start and end angles in degrees
-		});
-	}
+		function canvas_center_geometry(){
+			$('#geometry_canvas').restoreCanvas().translateCanvas({
+				translateX: (document.getElementById('geometry_canvas').width/2 - (geometry.outcut.width*scale)/2),
+				translateY: (document.getElementById('geometry_canvas').height/2 - (geometry.outcut.height*scale)/2)
+			});
+		}
 
-	function canvas_draw_rectangle(x,y,w,h)
-	{	
-		$('#geometry_canvas').drawRect({
-		  'fromCenter': false,
-		  'strokeStyle': '#000',
-  		  'strokeWidth': 5,
-		  'x': x*100,
-		  'y': y*100,
-		  'width':w*100,
-		  'height':h*100
-		});
-	}
 
+
+		function canvas_draw_geometry(geometry){
+			canvas_draw_rectangle(0,0,geometry.outcut.width,geometry.outcut.height);
+			for(index in geometry.holes){
+				canvas_draw_circle(geometry.holes[index].x,geometry.holes[index].y,geometry.holes[index].radius + tolerance);
+			}
+		}
+
+		function canvas_draw_circle(x,y,rad)
+		{
+			$('#geometry_canvas').drawArc({
+			  "strokeStyle": '#000',
+			  "strokeWidth": 5,
+			  "x": x*scale,
+			  "y": y*scale,
+			  "radius": rad*scale,
+			  // start and end angles in degrees
+			});
+		}
+
+		function canvas_draw_rectangle(x,y,w,h)
+		{	
+			$('#geometry_canvas').drawRect({
+			  'fromCenter': false,
+			  'strokeStyle': '#000',
+	  		  'strokeWidth': 5,
+			  'x': x*scale,
+			  'y': y*scale,
+			  'width':w*scale,
+			  'height':h*scale
+			});
+		}
 	</script>
 
 </html>
