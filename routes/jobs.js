@@ -60,6 +60,10 @@ submitJob = function(req, res, next) {
 	}
 };
 
+/**
+ * @api {delete} /jobs/queue Clear job queue
+ * @apiGroup Jobs
+ */
 clearQueue = function(req, res, next) {
 	db.Job.deletePending(function(err) {
 		if(err) {
@@ -70,6 +74,11 @@ clearQueue = function(req, res, next) {
 	});
 }
 
+/**
+ * @apiGroup Jobs
+ * @api {post} /jobs/queue/run Run next job in queue
+ * @apiDescription Runs the next job in the queue if able.
+ */
 runNextJob = function(req, res, next) {
 	machine.runNextJob(function(err, job) {
 		if(err) {
@@ -81,6 +90,12 @@ runNextJob = function(req, res, next) {
 	});
 }
 
+/**
+ * @apiGroup Jobs
+ * @api {post} /jobs/:id Resubmit job
+ * @apiDescription Submit a new job identical to the one specified.  Used to re-run completed jobs without modification.
+ * @apiParam {String} id ID of job to resubmit
+ */
 resubmitJob = function(req, res, next) {
 	log.debug("Resubmitting job " + req.params.id)
 	db.Job.getById(req.params.id, function(err, result) {
@@ -100,6 +115,11 @@ resubmitJob = function(req, res, next) {
 	});
 }
 
+/**
+ * @apiGroup Jobs
+ * @api {get} /jobs/queue Job queue
+ * @apiDescription Get all the pending jobs currently in the queue
+ */
 getQueue = function(req, res, next) {
 	db.Job.getPending(function(err, result) {
 		if(err) {
@@ -111,6 +131,19 @@ getQueue = function(req, res, next) {
 	})
 }
 
+/**
+ * @apiGroup Jobs
+ * @api {get} /jobs List all jobs
+ * @apiDescription Get a list of all jobs, including those that are pending, currently running, and finished.
+ * @apiSuccess {Object[]} jobs List of all jobs
+ * @apiSuccess {Number} jobs._id Unique job ID
+ * @apiSuccess {String} jobs.state `pending` | `running` | `finished` | `cancelled`
+ * @apiSuccess {String} jobs.name Human readable job name
+ * @apiSuccess {String} jobs.description Job description
+ * @apiSuccess {Number} jobs.created_at Time job was added to the queue (UNIX timestamp)
+ * @apiSuccess {Number} jobs.started_at Time job was started (UNIX timestamp)
+ * @apiSuccess {Number} jobs.finished_at Time job was finished (UNIX timestamp)
+ */
 getAllJobs = function(req, res, next) {
 	db.Job.getAll(function(err, result) {
 		if(err) {
@@ -133,6 +166,19 @@ getJobHistory = function(req, res, next) {
 	})
 }
 
+/**
+ * @apiGroup Jobs
+ * @api {get} /jobs/:id Job info
+ * @apiDescription Get information about a specific job
+ * @apiParam {String} id ID of requested job
+ * @apiSuccess {Number} _id Unique job ID
+ * @apiSuccess {String} state `pending` | `running` | `finished` | `cancelled`
+ * @apiSuccess {String} name Human readable job name
+ * @apiSuccess {String} description Job description
+ * @apiSuccess {Number} created_at Time job was added to the queue (UNIX timestamp)
+ * @apiSuccess {Number} started_at Time job was started (UNIX timestamp)
+ * @apiSuccess {Number} finished_at Time job was finished (UNIX timestamp)
+ */
 getJobById = function(req, res, next) {
 	db.Job.getById(req.params.id, function(err, result) {
 		if(err) {
@@ -144,6 +190,12 @@ getJobById = function(req, res, next) {
 	})
 }
 
+/**
+ * @apiGroup Jobs
+ * @api {delete} /jobs/:id Cancel job
+ * @apiDescription Cancel a pending job
+ * @apiParam {String} id ID of job to cancel
+ */
 cancelJob = function(req, res, next) {
 	db.Job.getById(req.params.id, function(err, result) {
 		if(err) {

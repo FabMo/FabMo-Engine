@@ -31,6 +31,13 @@ module.exports = function(grunt) {
             test:{
                 src: ["test/*.js"]
             }
+        },
+        'apidoc' : {
+            myapp: {
+                src: "routes/",
+                dest: "docs-dist/api",
+                debug: true
+            }
         }
 	});
 	grunt.loadNpmTasks('grunt-groc');
@@ -38,10 +45,11 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-open');
     grunt.loadNpmTasks('grunt-mocha-test');
     grunt.loadNpmTasks('grunt-available-tasks');
+    grunt.loadNpmTasks('grunt-apidoc');
 
-    grunt.registerTask('doc', 'Generate engine documentation in HTML format.', ['groc']);
-	grunt.registerTask('doc-dist', 'Generate documentation and publish to github-pages.', ['groc', 'gh-pages']);
-	grunt.registerTask('doc-view', 'Generate documentation and view locally in web browser.', ['groc', 'open']);
+    grunt.registerTask('doc', 'Generate engine documentation in HTML format.', ['groc', 'apidoc']);
+	grunt.registerTask('doc-dist', 'Generate documentation and publish to github-pages.', ['groc', 'apidoc', 'gh-pages']);
+	grunt.registerTask('doc-view', 'Generate documentation and view locally in web browser.', ['groc', 'apidoc', 'open']);
     grunt.registerTask('test', 'Run tests.', 'mochaTest');
     grunt.registerTask('default', 'availabletasks');
 };
