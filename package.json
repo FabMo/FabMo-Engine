@@ -21,16 +21,23 @@
     "tingodb": "0.2.x"
   },
   "devDependencies": {
-    "grunt": "0.4.x",
-    "grunt-groc": "^0.5.0",
-    "grunt-gh-pages": "^0.9.1",
-    "grunt-open": "^0.2.3",
-    "grunt-available-tasks": "^0.5.0",
-    "grunt-mocha-test": "^0.12.1",
     "chai": "1.9.x",
-    "sinon": "1.10.x",
+    "grunt": "0.4.x",
+    "grunt-apidoc": "^0.10.0",
+    "grunt-available-tasks": "^0.5.0",
+    "grunt-gh-pages": "^0.9.1",
+    "grunt-groc": "^0.5.0",
+    "grunt-mocha-test": "^0.12.1",
+    "grunt-open": "^0.2.3",
     "mocha": "1.21.x",
-    "node-curl": "0.3.3"
+    "node-curl": "0.3.3",
+    "sinon": "1.10.x"
   },
-  "engine": "node 0.10.x"
+  "engine": "node 0.10.x",
+  "apidoc": {
+    "name": "FabMo Engine",
+    "version": "0.0.0",
+    "description": "FabMo-Engine",
+    "title": "FabMo-Engine API Documentation"
+  }
 }

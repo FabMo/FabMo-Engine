@@ -6,21 +6,26 @@ The FabMo engine is host software that connects to a G2 motion control platform 
 * Monitoring of G2 motion state and cycle progress
 * Storage and management of files (that currently cannot be stored on G2)
 * Interpretation of the OpenSBP (ShopBot) language
-* Exposure of an API that allows clients to connect to the motion system through the web
+* Hosting of the "FabMo Dashboard" a web frontend to the FabMo Engine that provides an app hosting environment
 
-The source code documentation is available here: http://shopbottools.github.io/FabMo-Engine/ 
+Documentation
+-------------
+[Source Code Documentation](http://shopbottools.github.io/FabMo-Engine/) 
 
-Dependencies
-------------
-The engine runs best on linux, but can run with limited functionality on windows.  To run the engine, you need to install the dependencies, which can be done automatically with npm:
+[API Documentation](http://shopbottools.github.io/FabMo-Engine/api)
 
-```
-npm install
-```
+Quick Start
+-----------
+1. Check out the source code https://github.com/ShopBotTools/FabMo-Engine.git
+2. From inside the source directory, install all of the engine dependencies with `npm install`
+3. Create the engine data directory at `/opt/fabmo` or `C:\opt\fabmo` if you're on windows.  Make sure the user running the engine has write access to this directory.
+4. Start the engine with `npm start`
+
+When the engine starts, it will connect to G2 and setup an http server to accept connections on port 9876.  Once the engine is running you can visit http://localhost:9876/ or http://0.0.0.0:9876/ to use the engine dashboard.
 
 Installing the Engine
 ---------------------
-The engine is run from source, and only needs to be checked out and stored in a local directory.   There are a few directories that you need to have created for the engine to work properly.  Under linux, these are `/opt/fabmo/parts` and `/opt/fabmo/tmp`.  On windows, use `c:\opt\fabmo\parts` and `c:\opt\fabmo\tmp` The process that is running the engine server needs read/write access to both of these directories.
+The engine is run from source, and only needs to be checked out and stored in a local directory.   The engine needs access to the directory `/opt/fabmo` to store its internal settings, apps, etc.
 
 Running the Engine
 ------------------
