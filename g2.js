@@ -466,16 +466,21 @@ G2.prototype.handleStatusReport = function(response) {
 		if(this.quit_pending) {
 			if((this.status.hold === 4) || (this.status.hold === 5) || (this.status.stat === 3)) {
 				setTimeout(function() {
-					this.queueClear();
-					this.command({"gc":'M30'});
-					//this.command('M30');
-					this.quit_pending = false;
-					this.pause_flag = false;
-					this.jog_direction = null;
-					this.jog_command = null;
-					this.jog_stop_pending = false;
-					this.requestQueueReport();
-				}.bind(this), 50);
+					this.queueClear(function() {
+    				    log.debug("Queue cleared.");
+                        //this.command({"gc":'M30'});
+                        //this.command('M30');
+					    this.control_port.write("~");
+					    this.quit_pending = false;
+					    this.pause_flag = false;
+					    this.jog_direction = null;
+					    this.jog_command = null;
+					    this.jog_stop_pending = false;
+                        this.requestStatusReport();
+					    this.requestQueueReport();
+                    }.bind(this));
+				
+                }.bind(this), 50);
 			}
 		}
 
@@ -525,11 +530,22 @@ G2.prototype.feedHold = function(callback) {
 	this.pause_flag = true;
 	this.flooded = false;
 	typeof callback === 'function' && this.once('state', callback);
-	this.controlWrite('!\n');
+	this.controlWrite('!');
 }
 
 G2.prototype.queueClear = function(callback) {
-	this.controlWrite('\%');	
+	//this.controlWrite('\%');
+    log.debug("Clearing the queue by hack (closing and reopening the port)");
+    log.debug("closing");
+    this.gcode_port.close(function() {
+        //this.control_port.write("%");
+        //log.debug("flushing");
+        //this.gcode_port.flush(function() {
+            log.debug("opening again");
+            this.gcode_port.on('error', this.onSerialError.bind(this));
+            this.gcode_port.open(callback);
+        //}.bind(this));
+    }.bind(this));
 }
 
 G2.prototype.resume = function() {
@@ -544,10 +560,12 @@ G2.prototype.quit = function() {
 		this.quit_pending = true;
 		this.feedHold();
 	} else {
-		this.queueClear();
-		this.command({'gc':'M30'});
-		this.command({'qv':2});
-		this.requestQueueReport();
+		this.queueClear(function() {
+		    this.command({'gc':'M30'});
+		    this.command({'qv':2});
+		    this.requestQueueReport();
+            this.requestStatusReport();
+        }.bind(this));
 	}
 };
 

@@ -70,11 +70,10 @@ function Machine(control_path, gcode_path, callback) {
 	    this.driver.on("error", function(data) {
 		    log.error(data);
 	    });
-        
-
 		    // Set the initial state based on whether or not we got a valid connection to G2
 		    if(err){
-			    this.status.state = "disconnected";
+		    	log.debug("Setting the disconnected state")
+			    //this.status.state = "disconnected";
 		    } else {
 			    this.status.state = "idle";
 		    }
@@ -201,12 +200,13 @@ Machine.prototype.setRuntime = function(runtime) {
 		}
 	}
 };
+
 Machine.prototype.setState = function(source, newstate) {
 	if ((source === this) || (source === this.current_runtime)) {
 		this.status.state = newstate;
 		log.info("Got a machine state change: " + newstate)		
 	} else {		
-		log.warn("Got a state change from a runtime that's not the current one.")
+		log.warn("Got a state change from a runtime that's not the current one. (" + source + ")")
 	}
 };
 
@@ -218,7 +218,7 @@ Machine.prototype.stopJog = function() {
 Machine.prototype.pause = function() {
 	if(this.status.state === "running") {
 		this.driver.feedHold();
-		this.setState("paused");
+		this.setState(this.current_runtime, "paused");
 	}
 };
 

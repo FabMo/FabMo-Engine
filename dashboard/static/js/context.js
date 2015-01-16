@@ -27,7 +27,7 @@
 		// View Instances
 		this.remoteMachineMenuView = new this.views.RemoteMachineMenuView({collection : this.remoteMachines});
 		this.appClientView = new this.views.AppClientView({el : "#app-client-container"});
-		this.pageView = new this.views.PageView({model: this.page, el : '#modal_container'});
+		//this.pageView = new this.views.PageView({model: this.page, el : '#modal_container'});
 
 		// App Studio
 		this.appStudioFileView = new this.views.AppStudioFileView({el : '#app-studio-files'});

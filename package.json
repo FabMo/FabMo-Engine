@@ -16,7 +16,7 @@
     "q": "^1.0.1",
     "request": "^2.47.0",
     "restify": "2.8.x",
-    "serialport": "1.4.x",
+    "serialport": "git+https://github.com/giseburt/node-serialport.git#master",
     "socket.io": "1.1.x",
     "tingodb": "0.2.x"
   },
