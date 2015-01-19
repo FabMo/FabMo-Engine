@@ -12,10 +12,10 @@ resizedoc = function(){
 	}
 	else {
 		//No left & right menus
-		$("#main").removeClass("offcanvas-overlap-right");
-		$("#main").removeClass("offcanvas-overlap-left");
 		$("#widget-links-general").removeClass("colapsed");
 		$("#left-menu").removeClass("colapsed");
+		$("#main").removeClass("offcanvas-overlap-right");
+		$("#main").removeClass("offcanvas-overlap-left");
 		l=0;
 	}
 
@@ -99,6 +99,38 @@ posForm = function(){
 	$("#position ul .axis input.pos").show();
 };
 
+slideMenu = function(){
+	var startClick = null;
+	var endClick = null;
+
+	$("body").on("touchstart" , function(event){
+		startClick = event.originalEvent.touches[0].pageX;
+	});
+
+	$("body").on("touchend" , function(event){
+		endClick = event.originalEvent.touches[0].pageX;
+
+		alert(startClick);
+		alert(endClick);
+		alert(endClick-startClick);
+		alert($("body").width()/parseFloat($("body").css("font-size")));
+
+		//Select from right to left
+		if( ($("body").width()/parseFloat($("body").css("font-size"))<=40.063) && (startClick<100) && ((endClick-startClick)>100) ){
+			//Bind Right Menu
+			alert("LeftMenu Out");
+		}
+		//Select from left to right
+		else if( (($("body").width()-startClick)<100) && ((startClick-endClick)>100) ){
+			//Bind Left Menu
+			alert("Right menu out");
+		}
+
+		startClick = null;
+		endClick = null;
+	});
+};
+
 
 
 
@@ -154,4 +186,7 @@ $(document).ready( function() {
 
 	//Event to transform position display to input
 	$("#position ul .axis span.pos").click( function() { posForm(); })
+
+	//Click & Swipe listener
+	slideMenu();
 });
