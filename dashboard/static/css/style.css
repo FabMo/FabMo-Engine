@@ -470,12 +470,12 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	vertical-align: baseline;
 }
 
-#position ul .axis .home, #keypad ul .axis .set {
+#position ul .axis .home, #keypad ul .set {
 	padding: 0;
 	text-align: center;
 }
 
-#position ul .axis .home span, #keypad ul .axis .set span {
+#position ul .axis .home span, #keypad ul .set span {
 	width: 26px;
 	width: 1.625rem;
 	height: 26px;
@@ -484,7 +484,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	margin-top: 0.0625em;
 }
 
-#position ul .axis .home:hover, #keypad ul .axis .set:hover {
+#position ul .axis .home:hover, #keypad ul .set:hover {
 	cursor: pointer;
 }
 
@@ -510,7 +510,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	vertical-align: text-bottom;
 }
 
-#keypad ul .axis .set span {
+#keypad ul .set span {
 	background-color: #eee;
 }
 
