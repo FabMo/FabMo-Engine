@@ -10,11 +10,11 @@ var db = require('./db');
 var dashboard = require('./dashboard');
 
 var Engine = function() {
-}
+};
 
 Engine.prototype.stop = function(callback) {
     this.machine.disconnect();
-}
+};
 
 Engine.prototype.start = function(callback) {
 
@@ -28,14 +28,14 @@ Engine.prototype.start = function(callback) {
 
         // Load the engine configuration from disk
         function load_engine_config(callback) {
-            log.info("Loading engine configuration...")
+            log.info("Loading engine configuration...");
             config.configureEngine(callback);
         },
 
         // "Apply" the engine configuration, that is, take the configuration values loaded and actually
         // set up the application based on them.
         function apply_engine_config(callback) {
-            log.info("Applying engine configuration...")
+            log.info("Applying engine configuration...");
             config.engine.apply(callback);
         },
 
@@ -46,7 +46,7 @@ Engine.prototype.start = function(callback) {
 
         // Connect to G2 and initialize machine runtimes
         function connect(callback) {
-            log.info("Connecting to G2...")
+            log.info("Connecting to G2...");
             machine.connect(function(err, machine) {
                 if(err) {
                     log.error("!!!!!!!!!!!!!!!!!!!!!!!!");
@@ -60,9 +60,9 @@ Engine.prototype.start = function(callback) {
 
         // Configure G2 by loading all its json settings and static configuration parameters
         function load_driver_config(callback) {
-            this.machine = machine.machine
+            this.machine = machine.machine;
             if(this.machine.isConnected()) {
-                log.info("Configuring G2...")
+                log.info("Configuring G2...");
                 config.configureDriver(machine.machine.driver, function(err, data) {
                     if(err) {
                         log.error("There were problems loading the G2 configuration.");
@@ -76,7 +76,7 @@ Engine.prototype.start = function(callback) {
         }.bind(this),
 
         function get_g2_version(callback) {
-            log.info("Getting G2 firmware version...")
+            log.info("Getting G2 firmware version...");
             if(this.machine.isConnected()) {
                 this.machine.driver.get('fb', function(err, value) {
                     if(err) {
@@ -115,12 +115,12 @@ Engine.prototype.start = function(callback) {
 
         // Kick off the server if all of the above went OK.
         function start_server(callback) {
-            log.info("Setting up the webserver...")
+            log.info("Setting up the webserver...");
             var server = restify.createServer({name:"FabMo Engine"});
             this.server = server;
 
             // Allow JSON over Cross-origin resource sharing 
-            log.info("Configuring cross-origin requests...")
+            log.info("Configuring cross-origin requests...");
             server.use(
                 function crossOrigin(req,res,next){
                     res.header("Access-Control-Allow-Origin", "*");
@@ -130,12 +130,12 @@ Engine.prototype.start = function(callback) {
             );
 
             // Configure local directory for uploading files
-            log.info("Cofiguring upload directory...")
+            log.info("Cofiguring upload directory...");
             server.use(restify.bodyParser({'uploadDir':config.engine.get('upload_dir')}));
             server.pre(restify.pre.sanitizePath());
 
             // Import the routes module and apply the routes to the server
-            log.info("Loading routes...")
+            log.info("Loading routes...");
             var routes = require('./routes')(server);
 
             // Kick off the server listening for connections
@@ -169,6 +169,6 @@ Engine.prototype.start = function(callback) {
             }
         }.bind(this)
     );
-}
+};
 
 exports.Engine = Engine;

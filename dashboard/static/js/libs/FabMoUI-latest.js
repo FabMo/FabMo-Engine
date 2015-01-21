@@ -12,7 +12,7 @@ function FabMoUI(tool, options){
 	// able or disable the keypad.
 
 	this.fixe_move = false;
-	this.fixe_move_step = 0.01
+	this.fixe_move_step = 0.01;
 
 	this.move_step = '0.5';
 	//1 step of keypad, in inches
@@ -144,7 +144,7 @@ FabMoUI.prototype.Keypad = function(){
 				}
 				else if(!that.lock_fixe_move){
 					that.lock_fixe_move = true;
-					that.tool.gcode2("G91G01X-"+that.fixe_move_step);
+					that.tool.fixed_move("-x",that.fixe_move_step,function(){});
 				}
 			}
 			if (e.which === 38 && !that.locks.up && !that.locks.down) //up
@@ -155,7 +155,7 @@ FabMoUI.prototype.Keypad = function(){
 				}
 				else if(!that.lock_fixe_move){
 					that.lock_fixe_move = true;
-					that.tool.gcode2("G91G01Y"+that.fixe_move_step);
+					that.tool.fixed_move("y",that.fixe_move_step,function(){});
 				}
 			}
 			if (e.which === 39 && !that.locks.right && !that.locks.left) //right
@@ -166,7 +166,7 @@ FabMoUI.prototype.Keypad = function(){
 				}
 				else if(!that.lock_fixe_move){
 					that.lock_fixe_move = true;
-					that.tool.gcode2("G91G01X"+that.fixe_move_step);
+					that.tool.fixed_move("x",that.fixe_move_step,function(){});
 				}
 			}			
 			if (e.which === 40 && !that.locks.up && !that.locks.down) //down
@@ -177,7 +177,7 @@ FabMoUI.prototype.Keypad = function(){
 				}
 				else if(!that.lock_fixe_move){
 					that.lock_fixe_move = true;
-					that.tool.gcode2("G91G01Y-"+that.fixe_move_step);
+					that.tool.fixed_move("-y",that.fixe_move_step,function(){});
 				}
 			}
 			if (e.which === 33 && !that.locks.page_up && !that.locks.page_down) //page_up
@@ -188,7 +188,7 @@ FabMoUI.prototype.Keypad = function(){
 				}
 				else if(!that.lock_fixe_move){
 					that.lock_fixe_move = true;
-					that.tool.gcode2("G91G01Z"+that.fixe_move_step);
+					that.tool.fixed_move("z",that.fixe_move_step,function(){});
 				}
 			}
 			if (e.which === 34 && !that.locks.page_up && !that.locks.page_down) //page_down
@@ -199,7 +199,7 @@ FabMoUI.prototype.Keypad = function(){
 				}
 				else if(!that.lock_fixe_move){
 					that.lock_fixe_move = true;
-					that.tool.gcode2("G91G01Z-"+that.fixe_move_step);
+					that.tool.fixed_move("-z",that.fixe_move_step,function(){});
 				}
 			}
 		}
@@ -415,7 +415,7 @@ FabMoUI.prototype.forbidKeypad = function(){
 
 FabMoUI.prototype.statusKeypad = function(){
 	return this.keypad_allow;
-}
+};
 
 FabMoUI.prototype.updateText = function(control, txt) {
 	t = control.text();
