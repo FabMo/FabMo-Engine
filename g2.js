@@ -115,9 +115,10 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
     }
 
     var onOpen = function(callback) {
+        this.command({"clear":null});
         this.command({"gun":0});
 		this.command({"gc":'M30'});
-		this.requestStatusReport();
+        this.requestStatusReport();
 		this.connected = true;
 		callback(null, this);
     }.bind(this)
@@ -468,14 +469,12 @@ G2.prototype.handleStatusReport = function(response) {
 				setTimeout(function() {
 					this.queueClear(function() {
     				    log.debug("Queue cleared.");
-                        //this.command({"gc":'M30'});
-                        //this.command('M30');
-					    this.control_port.write("~");
 					    this.quit_pending = false;
 					    this.pause_flag = false;
 					    this.jog_direction = null;
 					    this.jog_command = null;
 					    this.jog_stop_pending = false;
+					    this.command("M2");
                         this.requestStatusReport();
 					    this.requestQueueReport();
                     }.bind(this));
@@ -534,17 +533,13 @@ G2.prototype.feedHold = function(callback) {
 }
 
 G2.prototype.queueClear = function(callback) {
-	//this.controlWrite('\%');
-    log.debug("Clearing the queue by hack (closing and reopening the port)");
-    log.debug("closing");
-    this.gcode_port.close(function() {
-        //this.control_port.write("%");
-        //log.debug("flushing");
-        //this.gcode_port.flush(function() {
-            log.debug("opening again");
-            this.gcode_port.on('error', this.onSerialError.bind(this));
-            this.gcode_port.open(callback);
-        //}.bind(this));
+    log.debug('Clearing the queue.');
+    this.controlWriteAndDrain('\%', function() {
+        log.debug('Writing the clear.');
+        this.gcodeWriteAndDrain('{clear:n}\n', function() {
+            callback();
+        });
+        callback();
     }.bind(this));
 }
 
@@ -561,8 +556,7 @@ G2.prototype.quit = function() {
 		this.feedHold();
 	} else {
 		this.queueClear(function() {
-		    this.command({'gc':'M30'});
-		    this.command({'qv':2});
+		    this.command("M2");
 		    this.requestQueueReport();
             this.requestStatusReport();
         }.bind(this));

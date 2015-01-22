@@ -172,6 +172,7 @@ GCodeRuntime.prototype._onDriverStateChange = function(states) {
 			switch(old_state) {
 				case this.driver.STAT_STOP:
 				case this.driver.STAT_HOLDING:
+				case this.driver.STAT_ALARM:
 					switch(new_state) { 
 						case this.driver.STAT_RUNNING:
 							this.machine.setState(this, "running");

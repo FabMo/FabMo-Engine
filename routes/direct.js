@@ -16,8 +16,13 @@ function stop() {
 	machine.stopJog();
 }
 
-// Handler for executing g-code
-send_gcode = function(req, res, next) {
+/**
+ * @api {post} /direct/gcode Execute G-code directly
+ * @apiGroup Direct
+ * @apiParam {String} cmd A single G-code block to execute
+ * @apiSuccess {Object} success Echo of the command sent
+ */
+sendGCode = function(req, res, next) {
 	if (machine.status.state === 'idle')
 	{
 		// If cmd is specified in the request parameters, execute it as g-code
@@ -42,8 +47,13 @@ send_gcode = function(req, res, next) {
 	}
 };
 
-// Handler for executing OpenSBP code 
-send_sbp = function(req, res, next) {
+/**
+ * @api {post} /direct/sbp Execute OpenSBP code directly
+ * @apiGroup Direct
+ * @apiParam {String} cmd A single line of OpenSBP code to execute
+ * @apiSuccess {Object} success Echo of the command sent
+ */
+ sendSBP = function(req, res, next) {
 	if (machine.status.state === 'idle')
 	{
 		// If cmd is specified in the request parameters, execute it as OpenSBP.
@@ -139,9 +149,9 @@ goto = function(req, res, next) {
 
 
 module.exports = function(server) {
-	server.post('/direct/sbp',send_sbp); //OK
-	server.post('/direct/gcode',send_gcode); //OK
-	server.post('/direct/move',move); //TODO :improve it
-	server.post('/direct/jog',jog); //TODO  :improve it
+	server.post('/direct/sbp',sendSBP); //OK
+	server.post('/direct/gcode',sendGCode); //OK
+	server.post('/direct/move',move); //OK
+	server.post('/direct/jog',jog); //OK
 	server.post('/direct/goto',goto); //OK
 }
