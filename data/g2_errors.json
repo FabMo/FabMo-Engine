@@ -1,210 +1,1014 @@
 {
-  "0": [
-    "TG_OK", 
-    "universal OK code (function completed successfully)"
-  ], 
-  "1": [
-    "TG_ERROR", 
-    "generic error return (EPERM)"
-  ], 
-  "2": [
-    "TG_EAGAIN", 
-    "function would block here (call again)"
-  ], 
-  "3": [
-    "TG_NOOP", 
-    "function had no-operation"
-  ], 
-  "4": [
-    "TG_COMPLETE", 
-    "operation is complete"
-  ], 
-  "5": [
-    "TG_TERMINATE", 
-    "operation terminated (gracefully)"
-  ], 
-  "6": [
-    "TG_RESET", 
-    "operation was hard reset (sig kill)"
-  ], 
-  "7": [
-    "TG_EOL", 
-    "function returned end-of-line or end-of-message"
-  ], 
-  "8": [
-    "TG_EOF", 
-    "function returned end-of-file"
-  ], 
-  "9": [
-    "TG_FILE_NOT_OPEN", 
-    ""
-  ], 
-  "10": [
-    "TG_FILE_SIZE_EXCEEDED", 
-    ""
-  ], 
-  "11": [
-    "TG_NO_SUCH_DEVICE", 
-    ""
-  ], 
-  "12": [
-    "TG_BUFFER_EMPTY", 
-    ""
-  ], 
-  "13": [
-    "TG_BUFFER_FULL", 
-    ""
-  ], 
-  "14": [
-    "TG_BUFFER_FULL_FATAL", 
-    ""
-  ], 
-  "15": [
-    "TG_INITIALIZING", 
-    "initializing - not ready for use"
-  ], 
-  "16": [
-    "TG_ENTERING_BOOT_LOADER", 
-    "entering boot loader from application"
-  ], 
-  "17": [
-    "TG_ERROR_17", 
-    "reserved"
-  ], 
-  "18": [
-    "TG_ERROR_18", 
-    ""
-  ], 
-  "19": [
-    "TG_ERROR_19", 
-    ""
-  ], 
-  "20": [
-    "TG_INTERNAL_ERROR", 
-    "unrecoverable internal error"
-  ], 
-  "21": [
-    "TG_INTERNAL_RANGE_ERROR", 
-    "number range error other than by user input"
-  ], 
-  "22": [
-    "TG_FLOATING_POINT_ERROR", 
-    "number conversion error"
-  ], 
-  "23": [
-    "TG_DIVIDE_BY_ZERO", 
-    ""
-  ], 
-  "24": [
-    "TG_INVALID_ADDRESS", 
-    ""
-  ], 
-  "25": [
-    "TG_READ_ONLY_ADDRESS", 
-    ""
-  ], 
-  "26": [
-    "TG_INIT_FAIL", 
-    "Initialization failure"
-  ], 
-  "27": [
-    "TG_SHUTDOWN", 
-    "System alarmed and went into shutdown"
-  ], 
-  "28": [
-    "TG_MEMORY_FAULT", 
-    "Memory fault or corruption detected"
-  ], 
-  "40": [
-    "TG_UNRECOGNIZED_COMMAND", 
-    "parser didn't recognize the command"
-  ], 
-  "41": [
-    "TG_EXPECTED_COMMAND_LETTER", 
-    "malformed line to parser"
-  ], 
-  "42": [
-    "TG_BAD_NUMBER_FORMAT", 
-    "number format error"
-  ], 
-  "43": [
-    "TG_INPUT_EXCEEDS_MAX_LENGTH", 
-    "input string is too long"
-  ], 
-  "44": [
-    "TG_INPUT_VALUE_TOO_SMALL", 
-    "value is under minimum for this parameter"
-  ], 
-  "45": [
-    "TG_INPUT_VALUE_TOO_LARGE", 
-    "value is over maximum for this parameter"
-  ], 
-  "46": [
-    "TG_INPUT_VALUE_RANGE_ERROR", 
-    "input error: value is out-of-range for this parameter"
-  ], 
-  "47": [
-    "TG_INPUT_VALUE_UNSUPPORTED", 
-    "input error: value is not supported for this parameter"
-  ], 
-  "48": [
-    "TG_JSON_SYNTAX_ERROR", 
-    "JSON string is not well formed"
-  ], 
-  "49": [
-    "TG_JSON_TOO_MANY_PAIRS", 
-    "JSON string or has too many name:value pairs"
-  ], 
-  "50": [
-    "TG_JSON_TOO_LONG", 
-    "JSON output string too long for output buffer"
-  ], 
-  "51": [
-    "TG_NO_BUFFER_SPACE", 
-    "Buffer pool is full and cannot perform this operation"
-  ], 
-  "60": [
-    "TG_MINIMUM_LENGTH_MOVE_ERROR", 
-    "move is below minimum length or zero"
-  ], 
-  "61": [
-    "TG_STAT_MINIMUM_TIME_MOVE_ERROR",
-    "Move is below minimum time or zero"
-  ],
-  "62": [
-    "TG_GCODE_BLOCK_SKIPPED", 
-    "block was skipped - usually because it was is too short"
-  ], 
-  "63": [
-    "TG_GCODE_INPUT_ERROR", 
-    "general error for gcode input"
-  ], 
-  "64": [
-    "TG_GCODE_FEEDRATE_ERROR", 
-    "no feedrate specified"
-  ], 
-  "65": [
-    "TG_GCODE_AXIS_WORD_MISSING", 
-    "command requires at least one axis present"
-  ], 
-  "66": [
-    "TG_MODAL_GROUP_VIOLATION", 
-    "gcode modal group error"
-  ], 
-  "67": [
-    "TG_HOMING_CYCLE_FAILED", 
-    "homing cycle did not complete"
-  ], 
-  "68": [
-    "TG_MAX_TRAVEL_EXCEEDED", 
-    ""
-  ], 
-  "69": [
-    "TG_MAX_SPINDLE_SPEED_EXCEEDED", 
-    ""
-  ], 
-  "70": [
-    "TG_ARC_SPECIFICATION_ERROR", 
-    ""
-  ]
+   "216": [
+      "STAT_ERROR_216", 
+      ""
+   ], 
+   "217": [
+      "STAT_ERROR_217", 
+      ""
+   ], 
+   "214": [
+      "STAT_ERROR_214", 
+      ""
+   ], 
+   "215": [
+      "STAT_ERROR_215", 
+      ""
+   ], 
+   "212": [
+      "STAT_ERROR_212", 
+      ""
+   ], 
+   "213": [
+      "STAT_ERROR_213", 
+      ""
+   ], 
+   "210": [
+      "STAT_ERROR_210", 
+      ""
+   ], 
+   "211": [
+      "STAT_ERROR_211", 
+      ""
+   ], 
+   "165": [
+      "STAT_P_WORD_IS_NOT_VALID_TOOL_NUMBER", 
+      ""
+   ], 
+   "218": [
+      "STAT_ERROR_218", 
+      ""
+   ], 
+   "219": [
+      "STAT_ERROR_219", 
+      ""
+   ], 
+   "133": [
+      "STAT_GCODE_MODAL_GROUP_VIOLATION", 
+      "gcode modal group error"
+   ], 
+   "132": [
+      "STAT_MCODE_COMMAND_UNSUPPORTED", 
+      "M command is not supported"
+   ], 
+   "131": [
+      "STAT_GCODE_COMMAND_UNSUPPORTED", 
+      "G command is not supported"
+   ], 
+   "130": [
+      "STAT_GCODE_GENERIC_INPUT_ERROR", 
+      "generic error for gcode input"
+   ], 
+   "137": [
+      "STAT_GCODE_AXIS_IS_NOT_CONFIGURED", 
+      "WARNING"
+   ], 
+   "136": [
+      "STAT_GCODE_AXIS_IS_INVALID", 
+      "an axis is specified that is illegal for the command"
+   ], 
+   "135": [
+      "STAT_GCODE_AXIS_CANNOT_BE_PRESENT", 
+      "error if G80 has axis words"
+   ], 
+   "134": [
+      "STAT_GCODE_AXIS_IS_MISSING", 
+      "command requires at least one axis present"
+   ], 
+   "139": [
+      "STAT_GCODE_AXIS_NUMBER_IS_INVALID", 
+      "axis word value is illegal"
+   ], 
+   "138": [
+      "STAT_GCODE_AXIS_NUMBER_IS_MISSING", 
+      "axis word is missing its value"
+   ], 
+   "166": [
+      "STAT_D_WORD_IS_MISSING", 
+      ""
+   ], 
+   "24": [
+      "STAT_INVALID_ADDRESS", 
+      ""
+   ], 
+   "25": [
+      "STAT_READ_ONLY_ADDRESS", 
+      ""
+   ], 
+   "26": [
+      "STAT_INIT_FAIL", 
+      ""
+   ], 
+   "27": [
+      "STAT_ALARMED", 
+      ""
+   ], 
+   "20": [
+      "STAT_INTERNAL_ERROR", 
+      "unrecoverable internal error"
+   ], 
+   "21": [
+      "STAT_INTERNAL_RANGE_ERROR", 
+      "number range other than by user input"
+   ], 
+   "22": [
+      "STAT_FLOATING_POINT_ERROR", 
+      "number conversion error"
+   ], 
+   "23": [
+      "STAT_DIVIDE_BY_ZERO", 
+      ""
+   ], 
+   "160": [
+      "STAT_P_WORD_IS_MISSING", 
+      "P must be present for dwells and other functions"
+   ], 
+   "28": [
+      "STAT_FAILED_TO_GET_PLANNER_BUFFER", 
+      ""
+   ], 
+   "29": [
+      "STAT_GENERIC_EXCEPTION_REPORT", 
+      "used for test"
+   ], 
+   "161": [
+      "STAT_P_WORD_IS_INVALID", 
+      "generic P value error"
+   ], 
+   "0": [
+      "STAT_OK", 
+      "function completed OK"
+   ], 
+   "4": [
+      "STAT_COMPLETE", 
+      "operation is complete"
+   ], 
+   "8": [
+      "STAT_EOF", 
+      "function returned end"
+   ], 
+   "163": [
+      "STAT_P_WORD_IS_NEGATIVE", 
+      "dwells require positive P values"
+   ], 
+   "119": [
+      "STAT_ERROR_119", 
+      ""
+   ], 
+   "120": [
+      "STAT_ERROR_120", 
+      ""
+   ], 
+   "121": [
+      "STAT_ERROR_121", 
+      ""
+   ], 
+   "122": [
+      "STAT_ERROR_122", 
+      ""
+   ], 
+   "123": [
+      "STAT_ERROR_123", 
+      ""
+   ], 
+   "124": [
+      "STAT_ERROR_124", 
+      ""
+   ], 
+   "125": [
+      "STAT_ERROR_125", 
+      ""
+   ], 
+   "126": [
+      "STAT_ERROR_126", 
+      ""
+   ], 
+   "127": [
+      "STAT_ERROR_127", 
+      ""
+   ], 
+   "128": [
+      "STAT_ERROR_128", 
+      ""
+   ], 
+   "129": [
+      "STAT_ERROR_129", 
+      ""
+   ], 
+   "167": [
+      "STAT_D_WORD_IS_INVALID", 
+      ""
+   ], 
+   "118": [
+      "STAT_ERROR_118", 
+      ""
+   ], 
+   "59": [
+      "STAT_ERROR_59", 
+      ""
+   ], 
+   "58": [
+      "STAT_ERROR_58", 
+      ""
+   ], 
+   "55": [
+      "STAT_ERROR_55", 
+      ""
+   ], 
+   "54": [
+      "STAT_ERROR_54", 
+      ""
+   ], 
+   "57": [
+      "STAT_ERROR_57", 
+      ""
+   ], 
+   "56": [
+      "STAT_ERROR_56", 
+      ""
+   ], 
+   "51": [
+      "STAT_ERROR_51", 
+      ""
+   ], 
+   "50": [
+      "STAT_ERROR_50", 
+      ""
+   ], 
+   "53": [
+      "STAT_ERROR_53", 
+      ""
+   ], 
+   "52": [
+      "STAT_ERROR_52", 
+      ""
+   ], 
+   "164": [
+      "STAT_P_WORD_IS_NOT_AN_INTEGER", 
+      "G10s and other commands require integer P numbers"
+   ], 
+   "201": [
+      "STAT_MINIMUM_LENGTH_MOVE", 
+      "move is less than minimum length"
+   ], 
+   "199": [
+      "STAT_ERROR_199", 
+      ""
+   ], 
+   "179": [
+      "STAT_T_WORD_IS_INVALID", 
+      ""
+   ], 
+   "200": [
+      "STAT_GENERIC_ERROR", 
+      ""
+   ], 
+   "195": [
+      "STAT_ERROR_195", 
+      ""
+   ], 
+   "194": [
+      "STAT_ERROR_194", 
+      ""
+   ], 
+   "197": [
+      "STAT_ERROR_197", 
+      ""
+   ], 
+   "178": [
+      "STAT_T_WORD_IS_MISSING", 
+      ""
+   ], 
+   "191": [
+      "STAT_ERROR_191", 
+      ""
+   ], 
+   "190": [
+      "STAT_ERROR_190", 
+      ""
+   ], 
+   "193": [
+      "STAT_ERROR_193", 
+      ""
+   ], 
+   "192": [
+      "STAT_ERROR_192", 
+      ""
+   ], 
+   "115": [
+      "STAT_ERROR_115", 
+      ""
+   ], 
+   "114": [
+      "STAT_ERROR_114", 
+      ""
+   ], 
+   "88": [
+      "STAT_ERROR_88", 
+      ""
+   ], 
+   "89": [
+      "STAT_ERROR_89", 
+      ""
+   ], 
+   "111": [
+      "STAT_CONFIG_NOT_TAKEN", 
+      "configuration value not taken while in machining cycle"
+   ], 
+   "110": [
+      "STAT_JSON_TOO_LONG", 
+      "JSON output exceeds buffer size"
+   ], 
+   "113": [
+      "STAT_ERROR_113", 
+      ""
+   ], 
+   "112": [
+      "STAT_COMMAND_NOT_ACCEPTED", 
+      "command cannot be accepted at this time"
+   ], 
+   "82": [
+      "STAT_ERROR_82", 
+      ""
+   ], 
+   "83": [
+      "STAT_ERROR_83", 
+      ""
+   ], 
+   "80": [
+      "STAT_ERROR_80", 
+      ""
+   ], 
+   "81": [
+      "STAT_ERROR_81", 
+      ""
+   ], 
+   "86": [
+      "STAT_ERROR_86", 
+      ""
+   ], 
+   "87": [
+      "STAT_ERROR_87", 
+      ""
+   ], 
+   "84": [
+      "STAT_ERROR_84", 
+      ""
+   ], 
+   "85": [
+      "STAT_ERROR_85", 
+      ""
+   ], 
+   "251": [
+      "STAT_PROBE_ENDPOINT_IS_STARTING_POINT", 
+      ""
+   ], 
+   "198": [
+      "STAT_ERROR_198", 
+      ""
+   ], 
+   "206": [
+      "STAT_ERROR_206", 
+      ""
+   ], 
+   "226": [
+      "STAT_SOFT_LIMIT_EXCEEDED_ZMAX", 
+      "soft limit error"
+   ], 
+   "3": [
+      "STAT_NOOP", 
+      "function had no"
+   ], 
+   "177": [
+      "STAT_R_WORD_IS_INVALID", 
+      ""
+   ], 
+   "7": [
+      "STAT_EOL", 
+      "function returned end"
+   ], 
+   "247": [
+      "STAT_ERROR_247", 
+      ""
+   ], 
+   "225": [
+      "STAT_SOFT_LIMIT_EXCEEDED_ZMIN", 
+      "soft limit error"
+   ], 
+   "245": [
+      "STAT_HOMING_ERROR_NEGATIVE_LATCH_BACKOFF", 
+      ""
+   ], 
+   "244": [
+      "STAT_HOMING_ERROR_TRAVEL_MIN_MAX_IDENTICAL", 
+      ""
+   ], 
+   "108": [
+      "STAT_JSON_SYNTAX_ERROR", 
+      "JSON input string is not well formed"
+   ], 
+   "109": [
+      "STAT_JSON_TOO_MANY_PAIRS", 
+      "JSON input string has too many JSON pairs"
+   ], 
+   "241": [
+      "STAT_HOMING_ERROR_BAD_OR_NO_AXIS", 
+      ""
+   ], 
+   "240": [
+      "STAT_HOMING_CYCLE_FAILED", 
+      "homing cycle did not complete"
+   ], 
+   "243": [
+      "STAT_HOMING_ERROR_ZERO_LATCH_VELOCITY", 
+      ""
+   ], 
+   "242": [
+      "STAT_HOMING_ERROR_ZERO_SEARCH_VELOCITY", 
+      ""
+   ], 
+   "102": [
+      "STAT_BAD_NUMBER_FORMAT", 
+      "number format error"
+   ], 
+   "103": [
+      "STAT_INPUT_EXCEEDS_MAX_LENGTH", 
+      "input string is too long"
+   ], 
+   "100": [
+      "STAT_UNRECOGNIZED_NAME", 
+      "parser didn"
+   ], 
+   "101": [
+      "STAT_MALFORMED_COMMAND_INPUT", 
+      "malformed line to parser"
+   ], 
+   "106": [
+      "STAT_INPUT_VALUE_RANGE_ERROR", 
+      "input error"
+   ], 
+   "107": [
+      "STAT_INPUT_VALUE_UNSUPPORTED", 
+      "input error"
+   ], 
+   "104": [
+      "STAT_INPUT_VALUE_TOO_SMALL", 
+      "input error"
+   ], 
+   "105": [
+      "STAT_INPUT_VALUE_TOO_LARGE", 
+      "input error"
+   ], 
+   "39": [
+      "STAT_ERROR_39", 
+      ""
+   ], 
+   "38": [
+      "STAT_ERROR_38", 
+      ""
+   ], 
+   "33": [
+      "STAT_FLOAT_IS_NAN", 
+      ""
+   ], 
+   "32": [
+      "STAT_FLOAT_IS_INFINITE", 
+      ""
+   ], 
+   "31": [
+      "STAT_PREP_LINE_MOVE_TIME_IS_NAN", 
+      ""
+   ], 
+   "30": [
+      "STAT_PREP_LINE_MOVE_TIME_IS_INFINITE", 
+      ""
+   ], 
+   "37": [
+      "STAT_ERROR_37", 
+      ""
+   ], 
+   "36": [
+      "STAT_ERROR_36", 
+      ""
+   ], 
+   "35": [
+      "STAT_BAD_STATUS_REPORT_SETTING", 
+      ""
+   ], 
+   "34": [
+      "STAT_PERSISTENCE_ERROR", 
+      ""
+   ], 
+   "246": [
+      "STAT_HOMING_ERROR_SWITCH_MISCONFIGURATION", 
+      ""
+   ], 
+   "252": [
+      "STAT_JOGGING_CYCLE_FAILED", 
+      "jogging cycle did not complete"
+   ], 
+   "205": [
+      "STAT_PLANNER_FAILED_TO_CONVERGE", 
+      "trapezoid generator can through this exception"
+   ], 
+   "223": [
+      "STAT_SOFT_LIMIT_EXCEEDED_YMIN", 
+      "soft limit error"
+   ], 
+   "176": [
+      "STAT_R_WORD_IS_MISSING", 
+      ""
+   ], 
+   "153": [
+      "STAT_SPINDLE_MUST_BE_OFF", 
+      ""
+   ], 
+   "60": [
+      "STAT_ERROR_60", 
+      ""
+   ], 
+   "61": [
+      "STAT_ERROR_61", 
+      ""
+   ], 
+   "62": [
+      "STAT_ERROR_62", 
+      ""
+   ], 
+   "63": [
+      "STAT_ERROR_63", 
+      ""
+   ], 
+   "64": [
+      "STAT_ERROR_64", 
+      ""
+   ], 
+   "65": [
+      "STAT_ERROR_65", 
+      ""
+   ], 
+   "66": [
+      "STAT_ERROR_66", 
+      ""
+   ], 
+   "67": [
+      "STAT_ERROR_67", 
+      ""
+   ], 
+   "68": [
+      "STAT_ERROR_68", 
+      ""
+   ], 
+   "69": [
+      "STAT_ERROR_69", 
+      ""
+   ], 
+   "175": [
+      "STAT_Q_WORD_IS_INVALID", 
+      ""
+   ], 
+   "174": [
+      "STAT_Q_WORD_IS_MISSING", 
+      ""
+   ], 
+   "173": [
+      "STAT_L_WORD_IS_INVALID", 
+      ""
+   ], 
+   "172": [
+      "STAT_L_WORD_IS_MISSING", 
+      ""
+   ], 
+   "171": [
+      "STAT_H_WORD_IS_INVALID", 
+      ""
+   ], 
+   "170": [
+      "STAT_H_WORD_IS_MISSING", 
+      ""
+   ], 
+   "203": [
+      "STAT_MACHINE_ALARMED", 
+      "machine is alarmed"
+   ], 
+   "222": [
+      "STAT_SOFT_LIMIT_EXCEEDED_XMAX", 
+      "soft limit error"
+   ], 
+   "181": [
+      "STAT_ERROR_181", 
+      ""
+   ], 
+   "248": [
+      "STAT_ERROR_248", 
+      ""
+   ], 
+   "182": [
+      "STAT_ERROR_182", 
+      ""
+   ], 
+   "183": [
+      "STAT_ERROR_183", 
+      ""
+   ], 
+   "180": [
+      "STAT_ERROR_180", 
+      "reserved for Gcode errors"
+   ], 
+   "2": [
+      "STAT_EAGAIN", 
+      "function would block here"
+   ], 
+   "162": [
+      "STAT_P_WORD_IS_ZERO", 
+      ""
+   ], 
+   "187": [
+      "STAT_ERROR_187", 
+      ""
+   ], 
+   "184": [
+      "STAT_ERROR_184", 
+      ""
+   ], 
+   "6": [
+      "STAT_RESET", 
+      "operation was hard reset"
+   ], 
+   "220": [
+      "STAT_SOFT_LIMIT_EXCEEDED_BMAX", 
+      "soft limit error"
+   ], 
+   "186": [
+      "STAT_ERROR_186", 
+      ""
+   ], 
+   "188": [
+      "STAT_ERROR_188", 
+      ""
+   ], 
+   "189": [
+      "STAT_ERROR_189", 
+      ""
+   ], 
+   "202": [
+      "STAT_MINIMUM_TIME_MOVE", 
+      "move is less than minimum time"
+   ], 
+   "196": [
+      "STAT_ERROR_196", 
+      ""
+   ], 
+   "221": [
+      "STAT_SOFT_LIMIT_EXCEEDED_XMIN", 
+      "soft limit error"
+   ], 
+   "185": [
+      "STAT_ERROR_185", 
+      ""
+   ], 
+   "99": [
+      "STAT_GENERIC_ASSERTION_FAILURE", 
+      "generic assertion failure"
+   ], 
+   "98": [
+      "STAT_MEMORY_FAULT", 
+      "generic memory corruption detected by magic numbers"
+   ], 
+   "168": [
+      "STAT_E_WORD_IS_MISSING", 
+      ""
+   ], 
+   "169": [
+      "STAT_E_WORD_IS_INVALID", 
+      ""
+   ], 
+   "229": [
+      "STAT_SOFT_LIMIT_EXCEEDED_BMIN", 
+      "soft limit error"
+   ], 
+   "228": [
+      "STAT_SOFT_LIMIT_EXCEEDED_AMAX", 
+      "soft limit error"
+   ], 
+   "91": [
+      "STAT_XIO_ASSERTION_FAILURE", 
+      ""
+   ], 
+   "90": [
+      "STAT_CONFIG_ASSERTION_FAILURE", 
+      ""
+   ], 
+   "93": [
+      "STAT_STEPPER_ASSERTION_FAILURE", 
+      ""
+   ], 
+   "92": [
+      "STAT_ENCODER_ASSERTION_FAILURE", 
+      ""
+   ], 
+   "95": [
+      "STAT_CANONICAL_MACHINE_ASSERTION_FAILURE", 
+      ""
+   ], 
+   "94": [
+      "STAT_PLANNER_ASSERTION_FAILURE", 
+      ""
+   ], 
+   "97": [
+      "STAT_STACK_OVERFLOW", 
+      ""
+   ], 
+   "96": [
+      "STAT_CONTROLLER_ASSERTION_FAILURE", 
+      ""
+   ], 
+   "11": [
+      "STAT_NO_SUCH_DEVICE", 
+      ""
+   ], 
+   "10": [
+      "STAT_FILE_SIZE_EXCEEDED", 
+      ""
+   ], 
+   "13": [
+      "STAT_BUFFER_FULL", 
+      ""
+   ], 
+   "12": [
+      "STAT_BUFFER_EMPTY", 
+      ""
+   ], 
+   "15": [
+      "STAT_INITIALIZING", 
+      "initializing"
+   ], 
+   "14": [
+      "STAT_BUFFER_FULL_FATAL", 
+      ""
+   ], 
+   "17": [
+      "STAT_FUNCTION_IS_STUBBED", 
+      ""
+   ], 
+   "16": [
+      "STAT_ENTERING_BOOT_LOADER", 
+      "this code actually emitted from boot loader"
+   ], 
+   "19": [
+      "STAT_ERROR_19", 
+      "NOTE"
+   ], 
+   "18": [
+      "STAT_ERROR_18", 
+      ""
+   ], 
+   "117": [
+      "STAT_ERROR_117", 
+      ""
+   ], 
+   "250": [
+      "STAT_PROBE_CYCLE_FAILED", 
+      "probing cycle did not complete"
+   ], 
+   "116": [
+      "STAT_ERROR_116", 
+      ""
+   ], 
+   "204": [
+      "STAT_LIMIT_SWITCH_HIT", 
+      "a limit switch was hit causing shutdown"
+   ], 
+   "151": [
+      "STAT_S_WORD_IS_MISSING", 
+      ""
+   ], 
+   "150": [
+      "STAT_SPINDLE_SPEED_MAX_EXCEEDED", 
+      ""
+   ], 
+   "074": [
+      "TINYG_FIRMWARE_BUILD", 
+      ""
+   ], 
+   "152": [
+      "STAT_S_WORD_IS_INVALID", 
+      ""
+   ], 
+   "155": [
+      "STAT_ARC_SPECIFICATION_ERROR", 
+      "generic arc specification error"
+   ], 
+   "154": [
+      "STAT_SPINDLE_MUST_BE_TURNING", 
+      "some canned cycles require spindle to be turning when called"
+   ], 
+   "157": [
+      "STAT_ARC_OFFSETS_MISSING_FOR_SELECTED_PLANE", 
+      "one or both offsets are not specified"
+   ], 
+   "156": [
+      "STAT_ARC_AXIS_MISSING_FOR_SELECTED_PLANE", 
+      "arc is missing axis"
+   ], 
+   "159": [
+      "STAT_ARC_ENDPOINT_IS_STARTING_POINT", 
+      ""
+   ], 
+   "158": [
+      "STAT_ARC_RADIUS_OUT_OF_TOLERANCE", 
+      "WARNING"
+   ], 
+   "234": [
+      "STAT_ERROR_234", 
+      ""
+   ], 
+   "238": [
+      "STAT_ERROR_238", 
+      ""
+   ], 
+   "239": [
+      "STAT_ERROR_239", 
+      ""
+   ], 
+   "207": [
+      "STAT_ERROR_207", 
+      ""
+   ], 
+   "235": [
+      "STAT_ERROR_235", 
+      ""
+   ], 
+   "236": [
+      "STAT_ERROR_236", 
+      ""
+   ], 
+   "237": [
+      "STAT_ERROR_237", 
+      ""
+   ], 
+   "231": [
+      "STAT_SOFT_LIMIT_EXCEEDED_CMIN", 
+      "soft limit error"
+   ], 
+   "232": [
+      "STAT_SOFT_LIMIT_EXCEEDED_CMAX", 
+      "soft limit error"
+   ], 
+   "233": [
+      "STAT_SOFT_LIMIT_EXCEEDED_ARC", 
+      "soft limit err on arc"
+   ], 
+   "224": [
+      "STAT_SOFT_LIMIT_EXCEEDED_YMAX", 
+      "soft limit error"
+   ], 
+   "48": [
+      "STAT_ERROR_48", 
+      ""
+   ], 
+   "49": [
+      "STAT_ERROR_49", 
+      ""
+   ], 
+   "46": [
+      "STAT_ERROR_46", 
+      ""
+   ], 
+   "47": [
+      "STAT_ERROR_47", 
+      ""
+   ], 
+   "44": [
+      "STAT_ERROR_44", 
+      ""
+   ], 
+   "45": [
+      "STAT_ERROR_45", 
+      ""
+   ], 
+   "42": [
+      "STAT_ERROR_42", 
+      ""
+   ], 
+   "43": [
+      "STAT_ERROR_43", 
+      ""
+   ], 
+   "40": [
+      "STAT_ERROR_40", 
+      ""
+   ], 
+   "41": [
+      "STAT_ERROR_41", 
+      ""
+   ], 
+   "1": [
+      "STAT_ERROR", 
+      "generic error return"
+   ], 
+   "5": [
+      "STAT_TERMINATE", 
+      "operation terminated"
+   ], 
+   "9": [
+      "STAT_FILE_NOT_OPEN", 
+      ""
+   ], 
+   "146": [
+      "STAT_REQUESTED_VELOCITY_EXCEEDS_LIMITS", 
+      ""
+   ], 
+   "147": [
+      "STAT_CUTTER_COMPENSATION_CANNOT_BE_ENABLED", 
+      ""
+   ], 
+   "144": [
+      "STAT_GCODE_ROTARY_AXIS_CANNOT_BE_USED", 
+      "G38"
+   ], 
+   "145": [
+      "STAT_GCODE_G53_WITHOUT_G0_OR_G1", 
+      "G0 or G1 must be active for G53"
+   ], 
+   "142": [
+      "STAT_GCODE_FEEDRATE_NOT_SPECIFIED", 
+      "move has no feedrate"
+   ], 
+   "143": [
+      "STAT_GCODE_INVERSE_TIME_MODE_CANNOT_BE_USED", 
+      "G38"
+   ], 
+   "140": [
+      "STAT_GCODE_ACTIVE_PLANE_IS_MISSING", 
+      "active plane is not programmed"
+   ], 
+   "141": [
+      "STAT_GCODE_ACTIVE_PLANE_IS_INVALID", 
+      "active plane selected is not valid for this command"
+   ], 
+   "209": [
+      "STAT_ERROR_209", 
+      ""
+   ], 
+   "208": [
+      "STAT_ERROR_208", 
+      ""
+   ], 
+   "148": [
+      "STAT_PROGRAMMED_POINT_SAME_AS_CURRENT_POINT", 
+      ""
+   ], 
+   "149": [
+      "STAT_SPINDLE_SPEED_BELOW_MINIMUM", 
+      ""
+   ], 
+   "77": [
+      "STAT_ERROR_77", 
+      ""
+   ], 
+   "76": [
+      "STAT_ERROR_76", 
+      ""
+   ], 
+   "75": [
+      "STAT_ERROR_75", 
+      ""
+   ], 
+   "74": [
+      "STAT_ERROR_74", 
+      ""
+   ], 
+   "73": [
+      "STAT_ERROR_73", 
+      ""
+   ], 
+   "72": [
+      "STAT_ERROR_72", 
+      ""
+   ], 
+   "71": [
+      "STAT_ERROR_71", 
+      ""
+   ], 
+   "70": [
+      "STAT_ERROR_70", 
+      ""
+   ], 
+   "79": [
+      "STAT_ERROR_79", 
+      ""
+   ], 
+   "78": [
+      "STAT_ERROR_78", 
+      ""
+   ], 
+   "249": [
+      "STAT_ERROR_249", 
+      ""
+   ], 
+   "227": [
+      "STAT_SOFT_LIMIT_EXCEEDED_AMIN", 
+      "soft limit error"
+   ]
 }

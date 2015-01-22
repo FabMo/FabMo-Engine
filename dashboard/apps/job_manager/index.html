@@ -1,0 +1,270 @@
+<html> 
+<head>
+	<meta charset="utf-8">
+	<title>Job Manager</title>
+
+	<!-- CSS standardisation & inclusion -->
+	<link rel="stylesheet" href="./css/foundation.min.css">
+	<link rel="stylesheet" href="./css/normalize.css">
+	<link rel="stylesheet" href="./css/style.css">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+	<header class="grey"> <!-- Class can be "blue", "red", "grey", "orange" -->
+		<section>
+			<div class="app-title-container">
+				<h2>Job Manager</h2>
+			</div>
+		</section>
+	</header>
+
+	<section class="container current-job-container fabmo-file-control" style="display:none">
+		<div class="row title">
+			<div class="small-7 medium-9 large-10 columns">
+				<h3 class="running-job-name filename"></h3>
+			</div>
+			<div class="small-5 medium-3 large-2 columns btn">
+				<a class="small small-6 columns button fabmo-pause-button warning">P</a>
+				<a class="small small-6 columns button fabmo-resume-button hide Success">R</a>
+				<a class="small small-6 columns button fabmo-stop-button btn alert">S</a>
+			</div>
+		</div>
+		<div class="row">
+			<div class="small-9 medium-7 large-7 columns current-job-item">
+				<p class="running-job-description"></p>
+			</div>
+			<div class="small-3 medium-2 large-1 columns current-job-submitted">
+				<p class="running-job-time"></p>
+			</div>
+			<div class="small-12 medium-3 large-4 columns progress secondary round">
+				<span class="meter progress" style="width: 0%"></span>
+			</div>
+		</div>
+	</section>
+
+	<section class="container">
+		<div class="row title">
+			<div class="small-7 medium-9 large-10 columns">
+				<h3>Pending Jobs</h3>
+			</div>
+			<div class="small-5 medium-3 large-2 columns btn">
+				<a class="small small-6 columns button success run-next">►</a>
+				<a class="small small-6 columns button secondary clear-jobs">X</a>
+			</div>
+		</div>
+
+		<div class="row no-jobs" style="display:none;">
+			<div class="small-12 columns no-jobs-item">
+				<div data-alert class="alert-box secondary">
+				  No jobs, click here to add a job
+				</div>
+			</div>
+		</div>
+
+		<div class="row jobs-row" style="display:none;">
+			<!-- JOB LISTING -->
+			<table class="small-12 columns">
+				<thead>
+					<tr>
+						<th class="small-3">Job Name</th>
+						<th class="small-6">Description</th>
+						<th class="small-3">Submitted</th>
+					</tr>
+				</thead>
+	            <tbody class="row jobs-listing"></tbody>
+			</table>
+		</div>
+
+		<div class="row submit-job">
+			<div class="small-12 columns">
+				<form id="submit_job" action="/job" method="post" enctype="multipart/form-data">
+					<div class="row collapse postfix-round">
+						<div class="small-9 columns">
+						  	<input id='job_selector' type="file" name="file" data-filename-placement="inside" placeholder="Browse...">
+						</div>
+						<div class="small-3 columns">
+						  	<button type"submit" class="button postfix">Upload</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</section>
+
+	<section class="container">
+		<div class="row title">
+			<div class="small-7 medium-9 large-10 columns">
+				<h3>Job History</h3>
+			</div>
+			<div class="small-5 medium-3 large-2 columns btn">
+			</div>
+		</div>
+
+		<div class="row jobs-history-row">
+			<!-- JOB HISTORY LISTING -->
+			<table class="small-12 columns">
+				<thead>
+					<tr>
+						<th class="small-3">Job Name</th>
+						<th class="small-6">Description</th>
+						<th class="small-2">Run</th>
+						<th class="small-1">Duration</th>
+					</tr>
+				</thead>
+				<tbody class="row jobs-history-listing"></tbody>
+			</table>
+		</div>
+	</section>
+
+
+
+  <!-- Javascript inclusions -->
+  <script src="./js/libs/jquery-1.10.2.js"></script>
+  <script src="./js/libs/foundation.min.js"></script>
+  <script src="./js/FabMo-latest.js"></script>
+  <script src="./js/FabMoUI-latest.js"></script>
+  <script src="./js/dashboard.js"></script>
+  <script src="./js/moment.js"></script>
+  <!--<script src="./js/app.js"></script>-->
+
+  <script type="text/javascript">
+  	var tool;
+  	var ui;
+  	var x; //SetInterval
+
+	function refresh_jobs_list(){
+				console.log("Refreshing job list")
+
+		// Load the list of files available on the tool
+		tool.list_jobs_in_queue(function(err,jobs){
+			if(err) { return console.log(err); }
+			$(".jobs-listing").empty();
+			if(jobs.length === 0) {
+				$(".no-jobs").show();
+				$(".jobs-row").hide();
+				$(".run-next").addClass("disabled");
+				$(".clear-jobs").addClass("disabled");
+			} else {
+				$(".no-jobs").hide();
+				$(".jobs-row").show();
+				$(".run-next").removeClass("disabled");
+				$(".clear-jobs").removeClass("disabled");
+			}
+			$.each( jobs, function( key, val ) {
+				html = [
+				'<tr><td>',
+					val.name,
+				'</td><td>',
+					val.description || 'No description.',
+				'</td><td>',
+					moment(val.created_at).fromNow(),
+				'</td></tr>'
+				].join('');
+				$(".jobs-listing").append(html);
+			});
+		});
+	};
+
+	function refresh_jobs_history(){
+		console.log("Refreshing job history")
+		// Load the list of files available on the tool
+		tool.get_job_history(function(err,jobs){
+			if(err) { return console.log(err); }
+			$(".jobs-history-listing").empty();
+			$.each( jobs, function( key, val ) {
+				var jobid = 'job' + val._id;
+				var id = val._id;
+				html = [
+				'<tr><td>',
+				'<a href="#" id="' + jobid + '">',
+					val.name,
+				'</a>',
+				'</td><td>',
+					val.description || 'No description.',
+				'</td><td>',
+					moment(val.started_at).fromNow(),
+				'</td><td>',
+					moment.utc(val.finished_at-val.started_at).format('HH:mm:ss'),
+				'</td></tr>'
+				].join('');
+				$(".jobs-history-listing").append(html);
+				
+				$('#'+jobid).click(function() {
+					tool.resubmit_job(id, function(err, result) {
+						refresh_jobs_list();
+						refresh_jobs_history();
+					});
+				});
+			});
+		});
+
+
+	};
+	$('#submit_job').submit(function(e){
+		e.preventDefault();
+		tool.add_job($(this),function(err,file){
+			if(err){console.log(err);return;}
+			$('#job_selector').replaceWith($('#job_selector').clone(true)); //reset file field
+			$('#job_selector').prev().html('Browse for a file to upload...');
+				refresh_jobs_list();
+				refresh_jobs_history();
+		});
+	});
+
+	$('.no-jobs-item').click(function(e) {
+		$('#job_selector').click();
+	});
+
+	$('.run-next').click(function(e) { 
+		tool.job_run(function(err, result) {
+			refresh_jobs_list();
+			refresh_jobs_history();
+		});
+	});
+
+	$('.clear-jobs').click(function(e) { tool.clear_job_queue(function(err, result) {
+			refresh_jobs_list();
+			refresh_jobs_history();
+		});
+	});
+
+	$(document).ready(function(){
+		//Foundation Init
+		$(document).foundation();
+
+		fabmoDashboard.getMachine(function(err, machine) {
+			tool = new FabMo(machine.ip, machine.port);
+			ui = new FabMoUI(tool);
+
+			// Load the list of files available on the tool
+			refresh_jobs_list();
+			refresh_jobs_history();
+
+			ui.on('status', function(status) {
+				console.log(status.job);
+				if(status.job) {
+					$(".current-job-container").show(500);
+					$(".running-job-name").html(status.job.name);
+					$(".running-job-description").html(status.job.description);
+					x = setTimeout(function(){
+						var tps = (Date.now()-status.job.started_at).toString();
+						tps = parseInt(tps.substr(0,tps.length-3));
+						tps = ((tps-tps%60)/60).toString() + "'" + tps%60 + '"';
+						$(".running-job-time").html(tps);
+						$(".meter.progress").css("width", ((status.line/status.nb_lines)*100).toString() + "%" );
+					},1000);
+				} else {
+					refresh_jobs_list(); //to try later
+					refresh_jobs_list(); //to try later
+
+					$(".current-job-container").hide(500);
+					clearInterval(x);
+				}
+			});
+		});
+	});
+
+</script>
+
+</body>
+</html>

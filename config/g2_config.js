@@ -14,7 +14,7 @@ util.inherits(G2Config, Config);
 G2Config.prototype.update = function(data, callback) {
 	keys = Object.keys(data);
 	// TODO: We can probably replace this with a `setMany()`
-	async.map(
+	async.mapSeries(
 		keys, 
 		// Call driver.set() for each item in the collection of data that was passed in.
 		function iterator(key, callback) {

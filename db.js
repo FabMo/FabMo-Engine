@@ -17,25 +17,44 @@ var jobs;
 Job = function(options) {
     this.file_id = options.file_id;
     this.name = options.name || "Untitled Job"
-    this.description = options.description || "No description"
+    this.description = options.description || ""
     this.created_at = Date.now();
     this.started_at = null;
     this.finished_at = null;
     this.state = "pending"
 }
 
+Job.prototype.clone = function(callback) {
+	var job = new Job({
+		file_id : this.file_id,
+		name : this.name,
+		description : this.description
+	});
+	job.save(callback);
+}
 Job.prototype.start = function(callback) {
-	log.info("Starting job id " + this._id)
+	log.debug("Starting job id " + this._id);
 	this.state = 'running';
 	this.started_at = Date.now();
 	this.save(callback);
 }
 
 Job.prototype.finish = function(callback) {
-	log.info("Finishing job id " + this._id)
+	log.debug("Finishing job id " + this._id);
 	this.state = 'finished';
 	this.finished_at = Date.now();
 	this.save(callback);
+}
+
+Job.prototype.cancel = function(callback) {
+	if(this.state === 'pending') {
+		log.debug("Cancelling pending job id " + this._id);
+		this.state = 'cancelled'
+		this.finished_at = Date.now();
+		this.save(callback);
+	} else {
+		setImmediate(callback, new Error('Cannot cancel a job that is ' + this.state));
+	}
 }
 
 Job.prototype.save = function(callback) {
@@ -78,6 +97,10 @@ Job.getPending = function(callback) {
 	jobs.find({state:'pending'}).toArray(callback);
 }
 
+Job.getHistory = function(callback) {
+	jobs.find({state: {$in : ['finished', 'cancelled']}}).sort({'created_at' : -1 }).toArray(callback);
+}
+
 Job.getAll = function(callback) {
 	jobs.find().toArray(function(array) {
 		callback(array);
@@ -89,12 +112,12 @@ Job.getById = function(id,callback)
 {
 	jobs.findOne({_id: id},function(err,document){
 		if (!document){
-			callback(undefined);
+			callback(null, undefined);
 			return;
 		}
 		var job = document;
 		job.__proto__ = Job.prototype;
-		callback(job);
+		callback(null, job);
 	});
 }
 
@@ -202,13 +225,13 @@ File.list_all = function(callback){
 File.get_by_id = function(id,callback)
 {
 	files.findOne({_id: id},function(err,document){
-		if (!document){
-       			callback(undefined);
+		if (!document) {
+			callback(undefined);
 			return;
-       		}
+		}
 		var file = document;
 		file.__proto__ = File.prototype;
-    		callback(file);
+		callback(file);
 	});
 }
 

@@ -1,0 +1,261 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
+    <title>FabMo Dashboard</title>
+    <link rel="stylesheet" href="css/foundation.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/toastr.min.css" />
+    <link rel="stylesheet" href="js/libs/jstree-themes/default/style.min.css" />
+    <script type="text/javascript">
+    </script>
+  </head>
+
+
+  <!-- Body of the page -->
+
+  <body>
+      <div id="main" class="off-canvas-wrap" data-offcanvas>
+        <div class="inner-wrap">
+
+          <!-- New nav work -->
+          <!-- Nav-Bar & Buttons for sliding menus -->
+          <nav class="tab-bar">
+ 
+            <!-- ***** Left-Menu Button Section ***** -->
+            <section class="left-small left show-for-small-only">
+              <a class="left-off-canvas-toggle menu-icon" href="#"><span></span></a>
+            </section>
+
+            <!-- ***** Machines on network Section ***** -->
+            <section class="left show-for-medium-up" id="tools-container">
+              <button data-dropdown="drop1" aria-controls="drop1" aria-expanded="false" class="dropdown tools-current"> 
+                <li><a href="#/refresh_machines">Refresh</a></li>
+              </button>
+              <ul id="drop1" data-dropdown-content class="f-dropdown" aria-hidden="true" tabindex="-1">
+                <div class="tools-other">
+                  <li><a href="#">Refresh</a></li>
+                </div>
+                <div class="tools-refresh">
+                  <li><a href="#/refresh_machines"></a></li>
+                </div>
+            </section>
+
+            <!-- ***** Machines on network Widget ***** -->
+            <section class="middle">
+               <h1 class="title"><a id="dashboardName" href="#/menu">FabMo Dashboard</a></h1>
+            </section>
+
+            <!-- ***** Tool Position Section ***** -->
+            <section class="right show-for-medium-up fabmo-status" id="right-position-container">
+              <div class="small-6 columns">
+                <label>X :<span class="posx right"></span></label>
+                <label>Y :<span class="posy right"></span></label>
+              </div>
+              <div class="small-6 columns">
+                <label>Z :<span class="posz right"></span></label>
+              </div>
+            </section>
+
+            <!-- ***** Right-Menu Button Section ***** -->
+            <section class="right-small right">
+              <a class="right-off-canvas-toggle menu-icon" href="#"><span></span></a>
+            </section>
+          </nav>
+
+          <!-- 
+              Sliding Wiget Menu (fix for large screen)
+          -->
+          <aside class="left-off-canvas-menu colapsed" id="left-menu">
+
+            <!-- ***** Machines on network Widget ***** -->
+            <div id="widget-tools-network" class="widget show-for-small-only">
+              <ul class="off-canvas-list"><li><label>Network</label></li></ul>
+              <ul class="off-canvas-list">
+                <div class="tools-current"></div>
+                <div class="tools-other hidden"></div>
+                <li class="item refresh"><a href="#/refresh_machines"></a></li>
+              </ul>
+            </div>
+
+            <!-- ********** Links Widget ********** -->
+            <div id="widget-links-general" class="widget colapsed">
+              <ul class="off-canvas-list" id="util-menu-small">
+                <li><label>Utilities</label></li>
+                <li><a href="#/menu" id="icon_home"><span>Home</span></a></li>
+                <li><a href="#/app/job-manager" id="icon_jobs"><span>Job Queue</span></a></li>
+                <li><a href="#/app/file-executer" id="icon_folder"><span>Files & Code</span></a></li>
+                <li><a href="#" id="icon_search"><span>Search</span></a></li>
+                <li><a href="#" id="icon_global"><span>MyHQ</span></a></li>
+                <li><a href="#/menu" id="icon_apps"><span>Apps</span></a></li>
+                <li><a href="#" id="icon_social"><span>Community</span></a></li>
+                <li><a href="#/app/settings" id="icon_settings"><span>Settings</span></a></li>
+                <li><a href="#/editor" id="icon_edit"><span>Edit App...</span></a></li>
+                <li><a href="#" id="icon_colapse"><span>Collapse</span></a></li>
+              </ul>
+            </div>
+          </aside>
+
+          <aside class="right-off-canvas-menu" id="right-menu">
+
+            <!-- ********** Tool Position Widget ********** -->
+            <div id="position" class="widget">
+              <ul class="off-canvas-list fabmo-status">
+                <li><label>Position</label></li>
+                <li>
+                  <div class="row axis">
+                    <div class="small-10 columns">
+                      <label>X<span class="in">in</span><span class="posx pos"></span><input type"text" class="posx pos" style="display:none;" value=""></label>
+                    </div>
+                    <div class="small-2 columns home"><span class="button-zerox">X<label>0</label></span></div>
+                  </div>
+                  <div class="row axis">
+                    <div class="small-10 columns">
+                      <label>Y<span class="in">in</span><span class="posy pos"></span><input type"text" class="posy pos" style="display:none;" value=""></label>
+                    </div>
+                    <div class="small-2 columns home"><span class="button-zeroy">Y<label>0</label></span></div>
+                  </div>
+                  <div class="row axis">
+                    <div class="small-10 columns">
+                      <label>Z<span class="in">in</span><span class="posz pos"></span><input type"text" class="posx pos" style="display:none;" value=""></label>
+                    </div>
+                    <div class="small-2 columns home"><span class="button-zeroz">Z<label>0</label></span></div>
+                    
+                  </div>
+                </li>
+                <li>
+                  <div class="row inOut">
+                    <div class="small-6 columns">Inputs</div>
+                    <div class="small-6 columns">Outputs</div>
+                  </div>
+                  <div class="row inOutSwitch">
+                    <div class="small-6 columns">
+                      <div class="row switch">
+                        <div style="display:none;" class="small-3 columns prox-sw-1">| 1 |</div><div style="display:none;" class="small-3 columns prox-sw-2">| 2 |</div>
+                        <div style="display:none;" class="small-3 columns prox-sw-3">| 3 |</div><div style="display:none;" class="small-3 columns prox-sw-4">| 4 |</div>
+                        <div style="display:none;" class="small-3 columns prox-sw-5">| 5 |</div><div style="display:none;" class="small-3 columns prox-sw-6">| 6 |</div>
+                        <div style="display:none;" class="small-3 columns prox-sw-7">| 7 |</div><div style="display:none;" class="small-3 columns prox-sw-8">| 8 |</div>
+                        <div style="display:none;" class="small-3 columns prox-sw-9">| 9 |</div><div style="display:none;" class="small-3 columns prox-sw-10">| 10 |</div>
+                        <div style="display:none;" class="small-3 columns prox-sw-11">| 11 |</div><div style="display:none;" class="small-3 columns prox-sw-12">| 12 |</div>
+                      </div>
+                    </div>
+                     <div class="small-6 columns">
+                      <div class="row switch">
+                        <div style="display:none;" class="small-3 columns prox-sw-1">| 1 |</div><div style="display:none;" class="small-3 columns prox-sw-2">| 2 |</div>
+                        <div style="display:none;" class="small-3 columns prox-sw-3">| 3 |</div><div style="display:none;" class="small-3 columns prox-sw-4">| 4 |</div>
+                        <div style="display:none;" class="small-3 columns prox-sw-5">| 5 |</div><div style="display:none;" class="small-3 columns prox-sw-6">| 6 |</div>
+                        <div style="display:none;" class="small-3 columns prox-sw-7">| 7 |</div><div style="display:none;" class="small-3 columns prox-sw-8">| 8 |</div>
+                        <div style="display:none;" class="small-3 columns prox-sw-9">| 9 |</div><div style="display:none;" class="small-3 columns prox-sw-10">| 10 |</div>
+                        <div style="display:none;" class="small-3 columns prox-sw-11">| 11 |</div><div style="display:none;" class="small-3 columns prox-sw-12">| 12 |</div>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            <!-- ********** Keypad Widget ********** -->
+            <div id="keypad" class="widget">
+              <ul class="off-canvas-list">
+                <li><label>Keypad</label></li>
+                <li class="fabmo-keypad" style="display:none;">
+                <div class="inline">
+                  <div class="small-7 columns">Fixed move <input class="fixe-move" type="checkbox"></div>
+                  <div class=" hide small-5 columns"><input class="fixe-move-step" type="text"></div>
+                </div>
+                  <div class="row" >
+                    <div class="small-8 columns axis">
+                        <button class="button button-minus-X"></button>
+                        <button class="button button-minus-Y"></button>
+                        <button class="button button-plus-X"></button>
+                        <button class="button button-plus-Y"></button>
+                    </div>
+                    <div class="small-4 columns axis">
+                        <button class="button button-plus-Z"></button>
+                        <button class="button button-minus-Z"></button>
+                    </div> 
+                  </div> 
+                  <div class="row fabmo-status">
+                    <div class="small-3 columns"><span style="display:inline-block;"></span></div>
+                    <div class="small-2 columns set"><span class="button-homexy"></span></div>
+                    <div class="small-2 columns set"><span class="button-homez"></span></div>
+                    <div class="small-2 columns set"><span class="button-probez"></span></div>
+                    <div class="small-3 columns"><span style="display:inline-block;"></span></div>
+                  </div>            
+                  </li>
+              </ul>
+            </div>
+
+            <!-- ************ File Control Widget ************ -->
+            <div id="job-info" class="widget">
+              <ul class="off-canvas-list fabmo-file-control fabmo-status">
+                <li>
+                  <div class="row">
+                    <div class="small-4 columns control">
+                      <span class="fabmo-pause-button hide"><a class="small button warning ">P</a></span>
+                    </div>
+                    <div class="small-4 columns control">
+                      <span class="fabmo-resume-button hide"><a class="small button success ">R</a></span>
+                    </div>
+                    <div class="small-4 columns control">
+                      <span class="fabmo-stop-button hide"><a class="small button alert ">S</a></span>
+                    </div>
+                  </div>
+                </li>
+                <li class="hide file-info"><label><span class="filename"></span></label></li>
+                <li class="hide file-info progress secondary"><span class="meter progress" style="width:0%"></span></li>  
+              </ul>
+            </div>
+
+          </aside>
+
+    
+          <!-- Main Content -->
+          <section class="app-section">
+            <div>
+              <ul id="app_menu_container"></ul>
+            </div>
+          </section>
+          
+          <section class="main-section" style="display:none;">
+            <div id="navbar_container"></div>
+
+            <div id="modal_container" style="display:none;"></div>
+
+            <div id="app-client-container">
+              <iframe class="app-iframe" sandbox="allow-scripts allow-same-origin"></iframe>
+            </div>
+
+            <div id="app-studio-container" class="row">
+                <div id="app-studio-files" class="columns small-4">
+                  <div id="app-studio-filetree"></div>
+                </div>
+                <div class="app-studio-editor" class="columns small-8">
+                  <div id="app-studio-editor-widget" style="height: 500px;">
+                  </div>
+                </div>
+            </div>
+
+            <div class="clear"></div>
+          </section>
+          <a id="close_menu" class="exit-off-canvas"></a>
+        </div>
+      </div>
+
+    <script type="text/javascript" src="js/libs/jquery.js">         </script>
+    <script type="text/javascript" src="js/libs/touche.js">         </script>
+    <script type="text/javascript" src="js/libs/foundation.min.js"> </script>
+    <script type="text/javascript" src="js/libs/toastr.min.js">     </script>
+    <script type="text/javascript" src="js/libs/underscore.js">     </script>
+    <script type="text/javascript" src="js/events.js">              </script>
+    <script type="text/javascript" src="js/libs/backbone.js">       </script>
+    <script type="text/javascript" src="js/libs/FabMo-latest.js">   </script>
+    <script type="text/javascript" src="js/libs/FabMoUI-latest.js"> </script>
+    <script type="text/javascript" src="js/libs/sortable.js">       </script>
+    <script type="text/javascript" src="js/libs/jstree.min.js">     </script>
+
+    <script data-main="js/app.js" src="js/libs/require.js">         </script>
+
+  </body>
+</html>

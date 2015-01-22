@@ -398,7 +398,6 @@ SBPRuntime.prototype._eval_value = function(expr) {
                     return f;
                 }
             } else if(user_var === null) {
-				log.error("  Undefined variable " + expr)
 			} else {
 				log.debug("  Evaluated " + expr + " as " + user_var);
 				return parseFloat(user_var);

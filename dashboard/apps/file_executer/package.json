@@ -1,0 +1,12 @@
+{
+	"name":"File executer",
+	"main":"./index.html",
+	"icon":"icon.png",
+	"icon_display":"none",
+	"icon_color":"grey",
+	"version":"1.2.3",
+	"author":"ryan&jimmy",
+	"target":["3d_printer","router","laser_cutter"],
+	"website":"http://www.example.com",
+	"id":"file-executer"
+}

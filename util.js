@@ -2,6 +2,18 @@ var path = require('path');
 var log = require('./log').logger('util');
 var fs = require('fs');
 var q = require('q');
+var fs = require('fs');
+
+var fs = require('fs');
+var escapeRE = require('escape-regexp-component');
+
+var mime = require('mime');
+var restify = require('restify');
+var errors = restify.errors;
+
+var MethodNotAllowedError = errors.MethodNotAllowedError;
+var NotAuthorizedError = errors.NotAuthorizedError;
+var ResourceNotFoundError = errors.ResourceNotFoundError;
 
 function listify(x) {
     if(x instanceof Array) {
@@ -67,10 +79,6 @@ function allowed_file(filename){
  *
  * This might take a little more time than a single fs.rename, but it avoids error when
  * trying to rename files from one device to the other.
- *
- * @param src {String} absolute path to source file
- * @param dest {String} absolute path to destination file
- * @param cb {Function} callback to execute upon success or failure
  */
 var move = function (src, dest, cb) {
 	var renameDeferred = q.defer();
@@ -112,6 +120,153 @@ var move = function (src, dest, cb) {
 	});
 };
 
-exports.Queue = Queue
-exports.allowed_file = allowed_file
-exports.move = move
+function serveStatic(opts) {
+    opts = opts || {};
+    /*
+    assert.object(opts, 'options');
+    assert.string(opts.directory, 'options.directory');
+    assert.optionalNumber(opts.maxAge, 'options.maxAge');
+    assert.optionalObject(opts.match, 'options.match');
+    assert.optionalString(opts.charSet, 'options.charSet');
+    */
+
+    var p = path.normalize(opts.directory).replace(/\\/g, '/');
+    var re = new RegExp('^' + escapeRE(p) + '/?.*');
+
+    function serveFileFromStats(file, err, stats, isGzip, req, res, next) {
+        if (err) {
+            next(new ResourceNotFoundError(err,
+                req.path()));
+            return;
+        } else if (!stats.isFile()) {
+            next(new ResourceNotFoundError('%s does not exist', req.path()));
+            return;
+        }
+
+        if (res.handledGzip && isGzip) {
+            res.handledGzip();
+        }
+
+        var fstream = fs.createReadStream(file + (isGzip ? '.gz' : ''));
+        var maxAge = opts.maxAge === undefined ? 3600 : opts.maxAge;
+        fstream.once('open', function (fd) {
+            res.cache({maxAge: maxAge});
+            res.set('Content-Length', stats.size);
+            res.set('Content-Type', mime.lookup(file));
+            res.set('Last-Modified', stats.mtime);
+            if (opts.charSet) {
+                var type = res.getHeader('Content-Type') +
+                    '; charset=' + opts.charSet;
+                res.setHeader('Content-Type', type);
+            }
+            if (opts.etag) {
+                res.set('ETag', opts.etag(stats, opts));
+            }
+            res.writeHead(200);
+            fstream.pipe(res);
+            fstream.once('end', function () {
+                next(false);
+            });
+        });
+    }
+
+    function serveNormal(file, req, res, next) {
+        fs.stat(file, function (err, stats) {
+            if (!err && stats.isDirectory() && opts.default) {
+                // Serve an index.html page or similar
+                file = path.join(file, opts.default);
+                fs.stat(file, function (dirErr, dirStats) {
+                    serveFileFromStats(file,
+                        dirErr,
+                        dirStats,
+                        false,
+                        req,
+                        res,
+                        next);
+                });
+            } else {
+                serveFileFromStats(file,
+                    err,
+                    stats,
+                    false,
+                    req,
+                    res,
+                    next);
+            }
+        });
+    }
+
+    function serve(req, res, next) {
+        var uricomp = decodeURIComponent(req.path());
+        console.log("URI COMPONENT: " + uricomp)
+        console.log("DIR: " + opts.directory)
+        var file = path.join(opts.directory, uricomp);
+
+        if (req.method !== 'GET' && req.method !== 'HEAD') {
+            next(new MethodNotAllowedError(req.method));
+            return;
+        }
+
+        if (!re.test(file.replace(/\\/g, '/'))) {
+            next(new NotAuthorizedError(req.path()));
+            return;
+        }
+
+        if (opts.match && !opts.match.test(file)) {
+            next(new NotAuthorizedError(req.path()));
+            return;
+        }
+
+        if (opts.gzip && req.acceptsEncoding('gzip')) {
+            fs.stat(file + '.gz', function (err, stats) {
+                if (!err) {
+                    res.setHeader('Content-Encoding', 'gzip');
+                    serveFileFromStats(file,
+                        err,
+                        stats,
+                        true,
+                        req,
+                        res,
+                        next);
+                } else {
+                    serveNormal(file, req, res, next);
+                }
+            });
+        } else {
+            serveNormal(file, req, res, next);
+        }
+
+    }
+
+    return (serve);
+}
+
+// TODO better error handling here
+function walkDir(filename) {
+    var stats = fs.lstatSync(filename),
+        info = {
+            path: filename,
+            text: path.basename(filename),
+            name: path.basename(filename)
+        };
+
+    if (stats.isDirectory()) {
+        info.type = "dir";
+        info.children = fs.readdirSync(filename).map(function(child) {
+            return walkDir(filename + '/' + child);
+        });
+    } else {
+        // Assuming it's a file. In real life it could be a symlink or
+        // something else!
+        info.type = "file";
+        info.children = null;
+    }
+
+    return info;
+}
+
+exports.serveStatic = serveStatic;
+exports.Queue = Queue;
+exports.allowed_file = allowed_file;
+exports.move = move;
+exports.walkDir = walkDir;

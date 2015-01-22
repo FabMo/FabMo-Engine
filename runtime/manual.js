@@ -27,7 +27,8 @@ ManualRuntime.prototype.disconnect = function() {
 ManualRuntime.prototype._onG2StateChange = function(states) {
 	var from = states[0];
 	var to = states[1];
-	if(to === 4) {
+	log.debug("Manual runtime got a state change from " + from + " to " + to);
+	if(to === 4 || to === 3) {
 		this.machine.setState(this, "idle");
 	}
 };
@@ -51,5 +52,12 @@ ManualRuntime.prototype.jog = function(direction) {
 	this.machine.setState(this, "manual");
 	this.driver.jog(direction);
 };
+
+ManualRuntime.prototype.fixed_move = function(direction, step) {
+	log.info('Starting fixed move in ' + direction + ' direction.');
+	this.machine.setState(this, "manual");
+	this.driver.fixed_move(direction,step);
+};
+
 
 exports.ManualRuntime = ManualRuntime;

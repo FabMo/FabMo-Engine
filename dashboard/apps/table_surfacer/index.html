@@ -1,0 +1,104 @@
+<html>
+	<head>
+	</head>
+	<body>
+		<div class="header">Table Surfacer</div>
+		<div class="description">This application surfaces your CNC work table.</div>
+		<div class="dro">
+			<div class="dro-position">
+			Tool Position: <span class="fabmo-posx"></span>,<span class="fabmo-posy"></span>,<span class="fabmo-posz"></span>
+			</div>
+			<div class="dro-status">
+			Tool Status: <span class="fabmo-state"></span>
+			</div>
+		</div>
+		
+		<form>
+			<p>Origin: X<input type="text" id="input-xorigin" value="0">  Y<input type="text" id="input-yorigin" value="0"></p>
+			<p>Size: X<input type="text" id="input-xsize" value="24">  Y<input type="text" id="input-ysize" value="18"></p>
+			<p>Cutter Diameter: <input type="text" id="input-cutter" value="0.25">(inches)</p>
+			<p>Plunge: <input type="text" id="input-plunge" value="-0.125">(inches)</p>
+			<p>Safe-Z: <input type="text" id="input-safez" value="1.0">(inches)</p>
+			<p>Speed: <input type="text" id="input-speed" value="1.5">(inches)</p>
+		</form>
+
+		<button id="run-button">RESURFACE TABLE</button>
+		<button id="tool-button">SHOW TOOL DIALOG</button>
+	</body>
+
+
+	<script type="text/sbp-template" id="sbp-template">
+		&XSTART = {xorigin}
+		&YSTART = {yorigin}
+		&XEND = &XSTART + {xsize}
+		&YEND = &YSTART + {ysize}
+		&ZDEPTH = {plunge}
+		&ZCLEAR = {safez}
+		&STEPOVER = {stepover}
+		&SPEED = {speed}
+
+		C6
+		PAUSE 3
+
+		&YP = &YSTART
+		JZ,&ZCLEAR
+		J2,&XSTART,&YSTART
+		MS,&SPEED,&SPEED
+		MZ,&ZDEPTH
+
+		surface:
+		MY,&YP
+		MX,&XEND
+		&YP=&YP+&STEPOVER
+		MY,&YP
+		IF &YP >= &YEND THEN GOTO done
+		MX,&XSTART
+		&YP=&YP+&STEPOVER
+		IF &YP >= &YEND THEN GOTO done
+		GOTO surface
+
+		done:
+		JZ,&ZCLEAR
+	</script>
+ 
+ 
+	<script src="./js/jquery-1.10.2.js"></script>
+	<script src="./js/string-format.js"></script>
+	<script src="./js/FabMo-latest.js"></script>
+	<script src="./js/FabMo-UI.js"></script>
+	<script src="./js/dashboard.js"></script>
+
+	<script type="text/javascript">
+		var machine, ui;
+
+		// Debug for now lets us know that we have a viable dashboard object
+		fabmoDashboard.getMachine(function(err, machine) {
+			machine = new FabMo(machine.ip, machine.port);
+			//ui = new FabMoUI(machine);
+		});
+
+		var STEPOVER = 0.9;
+		$('#run-button').click(function(evt) {
+			template = $('#sbp-template').html()
+			program = template.format({
+				xsize : $('#input-xsize').val(),
+				ysize : $('#input-ysize').val(),
+				xorigin : $('#input-xorigin').val(),
+				yorigin : $('#input-yorigin').val(),
+				safez : $('#input-safez').val(),
+				stepover : parseFloat($('#input-cutter').val())*STEPOVER,
+				speed : $('#input-speed').val(),
+				plunge : $('#input-plunge').val()
+			});
+			fabmoDashboard.submitJob(program, {
+				'name' : 'Table Resurface',
+				'description' : 'Resurface of worktable (' + $('#input-xsize').val() + '"x' + $('#input-ysize').val() + '")',
+                'filename' : 'surface.sbp'        
+            })
+		});
+
+		$('#tool-button').click(function(evt){
+			fabmoDashboard.showDRO();
+		});
+	</script>
+</html>

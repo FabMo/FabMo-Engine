@@ -4,28 +4,40 @@
   "author": "ShopBotTools",
   "repository": "https://github.com/ShopBotTools/FabMo-Engine.git",
   "dependencies": {
+    "adm-zip": "^0.4.4",
     "async": "0.9.x",
     "colors": "0.6.x",
+    "escape-regexp-component": "^1.0.2",
+    "mime": "^1.2.11",
+    "ncp": "^1.0.1",
     "node-simplerwifiscanner": "git+https://github.com/jlucidar/node-simplerwifiscanner.git",
+    "node-uuid": "^1.4.1",
     "process": "0.8.x",
     "q": "^1.0.1",
     "request": "^2.47.0",
     "restify": "2.8.x",
-    "serialport": "1.4.x",
+    "serialport": "git+https://github.com/giseburt/node-serialport.git#master",
     "socket.io": "1.1.x",
     "tingodb": "0.2.x"
   },
   "devDependencies": {
-    "grunt": "0.4.x",
-    "grunt-groc": "^0.4.5",
-    "grunt-gh-pages": "^0.9.1",
-    "grunt-open": "^0.2.3",
-    "grunt-available-tasks": "^0.5.0",
-    "grunt-mocha-test": "^0.12.1",
     "chai": "1.9.x",
-    "sinon": "1.10.x",
+    "grunt": "0.4.x",
+    "grunt-apidoc": "^0.10.0",
+    "grunt-available-tasks": "^0.5.0",
+    "grunt-gh-pages": "^0.9.1",
+    "grunt-groc": "^0.5.0",
+    "grunt-mocha-test": "^0.12.1",
+    "grunt-open": "^0.2.3",
     "mocha": "1.21.x",
-    "node-curl": "0.3.3"
+    "node-curl": "0.3.3",
+    "sinon": "1.10.x"
   },
-  "engine": "node 0.10.x"
+  "engine": "node 0.10.x",
+  "apidoc": {
+    "name": "FabMo Engine",
+    "version": "0.0.0",
+    "description": "FabMo-Engine",
+    "title": "FabMo-Engine API Documentation"
+  }
 }
