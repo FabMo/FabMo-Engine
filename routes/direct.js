@@ -11,6 +11,11 @@ function jog_direction(direction) {
 	machine.jog(direction);
 }
 
+// Handler for move in a specified direction by fixed step(keypad mode)
+function fixed_move_direction(direction,step) {
+	machine.fixed_move(direction,step);
+}
+
 // Handler for immediate stop of a keypad move or jog
 function stop() {
 	machine.stopJog();
@@ -29,12 +34,12 @@ sendGCode = function(req, res, next) {
 		if (req.params.cmd !== undefined )
 		{
 			machine.gcode(req.params.cmd);
-			res.json({'success': req.params.cmd})
+			res.json({'success': req.params.cmd});
 		}
 		// If not, check the request body.  If it is non-empty, execute it as g-code.
 		else if (req.body) {
 			machine.gcode(req.body);
-			res.json({'success': req.params.cmd})
+			res.json({'success': req.params.cmd});
 
 		}
 		// Finally, if no cmd argument and an empty request body, return an error.
@@ -60,12 +65,12 @@ sendGCode = function(req, res, next) {
 		if (req.params.cmd !== undefined )
 		{
 			machine.sbp(req.params.cmd);
-			res.json({'success': req.params.cmd})
+			res.json({'success': req.params.cmd});
 		}
 		// If not, check the request body.  If it is non-empty, execute it as OpenSBP.
 		else if (req.body) {
 			machine.sbp(req.body);
-			res.json({'success': req.params.cmd})
+			res.json({'success': req.params.cmd});
 
 		}
 		// Finally, if no cmd argument and an empty request body, return an error.
@@ -110,6 +115,22 @@ jog = function(req, res, next) {
 	}
 };
 
+fixed_move = function(req, res, next) {
+	if(req.params.move ==="stop"){
+		stop();
+		res.json({'success':'stop'});
+	}
+	else if (req.params.move !== undefined && req.params.step !== undefined) {
+		fixed_move_direction(req.params.move, req.params.step);
+		res.json({'success': 'Moving in '+req.params.move+' direction'});
+	}
+	else {
+		stop();
+		res.json({'error':'Need at least one argument'});
+	}
+};
+
+
 goto = function(req, res, next) {
    	if (machine.status.state === 'idle')
 	{
@@ -134,7 +155,7 @@ goto = function(req, res, next) {
 				gcode_string +=' F'+default_feed_rate;
 
 			machine.driver.gcode(gcode_string);
-    			res.json({'success': gcode_string})
+    			res.json({'success': gcode_string});
 		}
 		else
 		{
@@ -153,5 +174,6 @@ module.exports = function(server) {
 	server.post('/direct/gcode',sendGCode); //OK
 	server.post('/direct/move',move); //OK
 	server.post('/direct/jog',jog); //OK
+	server.post('/direct/fixed_move',fixed_move);
 	server.post('/direct/goto',goto); //OK
-}
+};

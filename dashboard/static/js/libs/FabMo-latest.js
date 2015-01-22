@@ -19,6 +19,7 @@ function FabMo(ip,port) //ip and port of the tool
 	this.url.direct=this.url.base + '/direct';
 	this.url.gcode=this.url.direct+'/gcode';
 	this.url.move=this.url.direct+'/move';
+	this.url.fixed_move = this.url.direct+'/fixed_move';
 	this.url.jog=this.url.direct+'/jog';
 	this.url.goto=this.url.direct+'/goto';
 	this.url.sbp=this.url.direct+'/sbp';
@@ -414,6 +415,28 @@ FabMo.prototype.stop_move =  function(callback)
 			callback(undefined);
 		},
 		error: function(data, err) {
+	    		var error = that.default_error.no_device;
+			error.sys_err = err;
+		 	callback(error);
+		}
+	});
+};
+
+FabMo.prototype.fixed_move =  function(dir,step,callback)
+{
+//	if (!callback)
+//		throw "this function need a callback to work !";
+
+	var that=this;
+	$.ajax({
+		url: this.url.fixed_move,
+		type: "POST",
+		dataType : 'json', 
+		data :{"move" : dir, "step" : step},
+		success: function( data ) {
+				callback(undefined);
+		},
+		error: function(data,err) {
 	    		var error = that.default_error.no_device;
 			error.sys_err = err;
 		 	callback(error);

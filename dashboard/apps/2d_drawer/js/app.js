@@ -867,7 +867,16 @@ Tasks.save = function(id){
 Tasks.setCurrent = function(id){
 	//Set the task "id" as a current task
 	if (id) {
+		$.each(this, function(i,t){
+			//Remove "LastSelected" to all tasks
+			t.lastSelected = false;
+		});
+
+		//SetCurrent to this task
 		Tasks[Tasks.pos(id)].setCurrent();
+
+		//This task is the last one selected
+		Tasks[Tasks.pos(id)].lastSelected = true;
 	}
 	else {
 		console.log("This function need an id to set a shape as a selected one");
@@ -1174,6 +1183,7 @@ p.prototype.absoluteDistance = function(from){
 	)/10000;
 }
 
+//Return true if the point is one the same x or y axis of another point
 p.prototype.sameAxisThan = function(p){
 	if ((this.x == p.x) || (this.y == p.y))
 		{ return true; }
@@ -1181,12 +1191,17 @@ p.prototype.sameAxisThan = function(p){
 		{ return false; }
 }
 
+//Return the middle point of a segment
 p.prototype.middle = function(p1){
 	return new p(
 		round((this.x + p1.x) /2),
 		round((this.y + p1.y) /2)
 	);
-}
+};
+
+p.prototype.pos = function(center,distance){
+	return true;
+};
 
 p.prototype.translate = function(vector){ //vector is of p type
 	this.x += round(vector.x);
@@ -1195,6 +1210,14 @@ p.prototype.translate = function(vector){ //vector is of p type
 
 p.prototype.rotate = function(angle,center){
 	var alpha = (-angle/(180))*pi;
+	var xNew = ((this.x-center.x) * Math.cos(alpha)) - ((this.y-center.y) * Math.sin(alpha)) + center.x;
+	var yNew = (((this.x-center.x) * Math.sin(alpha))) + ((this.y-center.y) * Math.cos(alpha)) + center.y;
+
+	this.x = round(xNew);
+	this.y = round(yNew);
+};
+
+p.prototype.rotateAlpha = function(alpha,center){
 	var xNew = ((this.x-center.x) * Math.cos(alpha)) - ((this.y-center.y) * Math.sin(alpha)) + center.x;
 	var yNew = (((this.x-center.x) * Math.sin(alpha))) + ((this.y-center.y) * Math.cos(alpha)) + center.y;
 
@@ -1214,6 +1237,54 @@ p.prototype.mirror = function(axis,center){
 		this.rotate(180,new p(center.x,this.y));
 	}
 };
+
+scale = function(center,p0){
+	this.p = new p(p0.x,p0.y); //New cordinate of the scaled point
+	this.p0 = new p(p0.x,p0.y); //Old position saved for comparaison
+	this.center = new p(center.x,center.y);
+	this.ratio = null; //
+	this.steps = 0;
+};
+
+scale.prototype.step = function(stepSize){
+	this.stepSize = stepSize;
+	var alpha = calculAlpha(this.center,this.p);
+
+	this.p.rotateAlpha(-alpha,this.center); //Rotation of p so it is aligned with the center on x axis (work on 1 dimension)
+
+	while( (this.p.x - this.center.x) > (stepSize/2) ){
+		this.steps 	+= 	1;
+		this.p.x 	-=	stepSize;
+	}
+	(this.p.x - this.center.x) < (stepSize/2) ? this.p.x = this.center.x + stepSize/2 : null;
+
+	this.p.rotateAlpha(alpha,this.center);
+};
+
+scale.prototype.addStep = function(){
+	if(this.steps > 0){
+		var alpha = calculAlpha(this.center,this.p);
+
+		this.p.rotateAlpha(-alpha,this.center); //Rotation of p so it is aligned with the center on x axis (work on 1 dimension)
+
+		this.p.x += this.steps;
+		(this.p.x) > (this.p0.x) ? this.p.x = this.p0.x : null;
+
+		this.p.rotateAlpha(alpha,this.center);
+
+		this.steps -=1;
+	}
+	else {
+		console.log("No more stap point" + this.p + this.p0);
+	}
+};
+
+
+//Test Code
+tCenter = new p(1,1);
+tPoint = new p(1,2);
+tScale = new scale(tCenter,tPoint).step(0.25);
+
 
 
 /*
