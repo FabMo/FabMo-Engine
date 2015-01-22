@@ -53,4 +53,11 @@ ManualRuntime.prototype.jog = function(direction) {
 	this.driver.jog(direction);
 };
 
+ManualRuntime.prototype.fixed_move = function(direction, step) {
+	log.info('Starting fixed move in ' + direction + ' direction.');
+	this.machine.setState(this, "manual");
+	this.driver.fixed_move(direction,step);
+};
+
+
 exports.ManualRuntime = ManualRuntime;

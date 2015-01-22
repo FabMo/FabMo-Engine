@@ -72,7 +72,7 @@ function Machine(control_path, gcode_path, callback) {
 	    });
 		    // Set the initial state based on whether or not we got a valid connection to G2
 		    if(err){
-		    	log.debug("Setting the disconnected state")
+		    	log.debug("Setting the disconnected state");
 			    //this.status.state = "disconnected";
 		    } else {
 			    this.status.state = "idle";
@@ -101,11 +101,11 @@ util.inherits(Machine, events.EventEmitter);
 
 Machine.prototype.isConnected = function() {
 	return this.status.state !== 'disconnected';
-}
+};
 
 Machine.prototype.disconnect = function(callback) {
 	this.driver.disconnect(callback);
-}
+};
 
 Machine.prototype.toString = function() {
 	return "[Machine Model on '" + this.driver.path + "']";
@@ -128,14 +128,14 @@ Machine.prototype.runJob = function(job) {
 		log.info("Running file " + file.path);
 		this.runFile(file.path);
 	}.bind(this));	
-}
+};
 
 Machine.prototype.runNextJob = function(callback) {
 	if(this.isConnected()) {
 
 	log.info("Running next job");
 		db.Job.dequeue(function(err, result) {
-			log.info(result)
+			log.info(result);
 			if(err) {
 				log.error(err);
 				callback(err, null);
@@ -147,9 +147,9 @@ Machine.prototype.runNextJob = function(callback) {
 		}.bind(this));
 	}
 	else {
-		callback("Cannot run next job: Driver is disconnected.")
+		callback("Cannot run next job: Driver is disconnected.");
 	}
-}
+};
 
 Machine.prototype.runFile = function(filename) {
 	fs.readFile(filename, 'utf8', function (err,data) {
@@ -185,6 +185,20 @@ Machine.prototype.jog = function(direction, callback) {
 	}
 
 };
+
+Machine.prototype.fixed_move = function(direction,step, callback) {
+	log.debug('machine moves by step');
+	if((this.status.state === "idle") || (this.status.state === "manual")) {
+		this.setRuntime(this.manual_runtime);
+		this.current_runtime.fixed_move(direction,step);
+
+	} else {
+		typeof callback === "function" && callback(true, "Cannot move by step when in '" + this.status.state + "' state.");
+	}
+
+};
+
+
 
 Machine.prototype.setRuntime = function(runtime) {
 	if(this.current_runtime != runtime) {
