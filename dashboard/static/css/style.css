@@ -414,8 +414,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 #position ul .axis {
-	height: 32px;
-	height: 2rem;
 	padding: 0;
 	font-family: 'source_sans_proextralight';
 }
@@ -423,7 +421,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #position ul li:first-child label {
 	color: #dd8728;
 	font-size: 36px;
-	font-size: 2.25rem;
+	font-size: 1.5rem;
 	font-family: 'source_sans_proextralight';
 	font-weight: 300;
 	text-transform: capitalize;
@@ -440,11 +438,10 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	color: #eee;
 	border-bottom: 1px solid #eee;
 	background: none;
-	font-size: 18px;
-	font-size: 1.125rem;
-	padding: 0 2px;
-	padding: 0 0.125rem;
-	font-family: 'source_sans_proregular';
+	font-size: 38px;
+	font-size: 2.125rem;
+	padding: 0;
+	font-family: 'source_sans_proextralight';
 	font-weight: 100;
 }
 
@@ -453,19 +450,27 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 #position ul .axis .pos {
-	font-family: 'source_sans_proextralight';
+	font-family: 'source_sans_proregular';
 	margin-right: 4px;
 	margin-right: 0.25rem;
+	font-weight: 100;
+	letter-spacing: 1px;
 }
 
 #position ul .axis input.pos {
-	margin-left: 2rem;
-	max-width: 50%;
+	max-width: 57%;
+	float: right;
+	font-size: 28px;
+	font-size: 1.75rem;
+	padding : 2px 4px;
+	padding: 0.125rem 0.25rem;
+	margin-top: 3px;
+	margin-top: 0.1925rem;
 }
 
 #position ul .axis .in {
-	font-size: 10px;
-	font-size: 0.625rem;
+	font-size: 12px;
+	font-size: 0.75rem;
 	text-transform: lowercase;
 	vertical-align: baseline;
 }
@@ -476,12 +481,13 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 #position ul .axis .home span, #keypad ul .set span {
-	width: 26px;
-	width: 1.625rem;
-	height: 26px;
-	height: 1.625rem;
+	width: 34px;
+	width: 2.125rem;
+	height: 34px;
+	height: 2.125rem;
 	float: left;
-	margin-top: 0.0625em;
+	margin-top: 8px;
+	margin-top: 0.5rem;
 }
 
 #position ul .axis .home:hover, #keypad ul .set:hover {
@@ -490,15 +496,15 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 #position ul .axis .home span {
 	background: #dd8728;
-	font-family: 'source_sans_proregular';
-	font-size: 17px;
-	font-size: 1.0625rem;
+	font-family: 'source_sans_proextralight';
+	font-size: 21px;
+	font-size: 1.3175rem;
 	font-weight: bold;
 }
 
 #position ul .axis .home span label {
-	font-size: 8px;
-	font-size: 0.5rem;
+	font-size: 12px;
+	font-size: 0.75rem;
 	background: none;
 	display: inline;
 	border: none;
@@ -514,11 +520,22 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	background-color: #eee;
 }
 
+#keypad ul .set span:hover {
+	background-color: #fff;
+	-webkit-transition: background-color .3s;
+	transition: background-color .3s;
+}
+
 #keypad ul .button-homexy, #keypad ul .button-homez, #keypad ul .button-probez {
-	background-size: 22px;
-	background-size: 1.375rem;
+	background-size: 30px;
+	background-size: 1.825rem;
 	background-position: center;
 	background-repeat: no-repeat;
+	width: 49px !important;
+	width: 3.0625rem !important;
+	height: 49px !important;
+	height: 3.0625rem !important;
+	margin-top: 0 !important;
 }
 
 #keypad ul .button-homexy 	{ background-image: url('../img/icon_go-home.png'); }
@@ -940,6 +957,17 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	background: -ms-linear-gradient(top,  #0F0F0F 0%,#222326 100%); /* IE10+ */
 	background: linear-gradient(to bottom,  #0F0F0F 0%,#222326 100%); /* W3C */
 	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#0F0F0F', endColorstr='#222326',GradientType=0 ); /* IE6-9 */
+}
+
+.app-icon img.brown {
+	background: #8c481c; /* Old browsers */
+	background: -moz-linear-gradient(top,  #8c481c 0%, #8e4515 100%); /* FF3.6+ */
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#8c481c), color-stop(100%,#8e4515)); /* Chrome,Safari4+ */
+	background: -webkit-linear-gradient(top,  #8c481c 0%,#8e4515 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-linear-gradient(top,  #8c481c 0%,#8e4515 100%); /* Opera 11.10+ */
+	background: -ms-linear-gradient(top,  #8c481c 0%,#8e4515 100%); /* IE10+ */
+	background: linear-gradient(to bottom,  #8c481c 0%,#8e4515 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#8c481c', endColorstr='#8e4515',GradientType=0 ); /* IE6-9 */
 }
 
 .app-icon img.light-blue {

@@ -109,11 +109,7 @@ slideMenu = function(){
 
 	$("body").on("touchend" , function(event){
 		endClick = event.originalEvent.touches[0].pageX;
-
-		alert(startClick);
-		alert(endClick);
-		alert(endClick-startClick);
-		alert($("body").width()/parseFloat($("body").css("font-size")));
+		alert("startClick");
 
 		//Select from right to left
 		if( ($("body").width()/parseFloat($("body").css("font-size"))<=40.063) && (startClick<100) && ((endClick-startClick)>100) ){
