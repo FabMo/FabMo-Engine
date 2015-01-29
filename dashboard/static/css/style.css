@@ -429,10 +429,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	border-bottom: none;
 }
 
-#position ul .axis:first-child > .columns > label {
-	border-top: 1px solid #eee;
-}
-
 #position ul .axis > .columns > label {
 	border: none;
 	color: #eee;
@@ -452,13 +448,14 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #position ul .axis .pos {
 	font-family: 'source_sans_proregular';
 	margin-right: 4px;
-	margin-right: 0.25rem;
+	mfargin-right: 0.25rem;
 	font-weight: 100;
 	letter-spacing: 1px;
 }
 
 #position ul .axis input.pos {
-	max-width: 57%;
+	width: 5rem;
+	text-align: center;
 	float: right;
 	font-size: 28px;
 	font-size: 1.75rem;
@@ -1076,7 +1073,12 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #modal_container .page_container { background-color: #fff;}
 
 /* ********** Scrollbars ********** */
+@media only screen and (max-width: 64.063em) {
+	::-webkit-scrollbar {
+		display: none;
+	}
+}
 
-::-webkit-scrollbar {
-	display: none;
+#left-menu ::-webkit-scrollbar {
+	display: none !important;
 }

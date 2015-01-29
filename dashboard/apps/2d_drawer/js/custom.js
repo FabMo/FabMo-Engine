@@ -154,6 +154,11 @@ $(document).ready(function(){
 	    })
 	});
 
+	//Align actions
+	$("#move-left-left").click(function(){
+		Tasks.alignLeft();
+	});
+
 
 	//Line Form : Coordinates invert
 	$(".invert-pos").click(function(){

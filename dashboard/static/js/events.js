@@ -93,10 +93,10 @@ resizedocclick = function(){
 	);
 };
 
-posForm = function(){
+posForm = function(elt){
 	console.log("Click on a position");
-	$("#position ul .axis span.pos").hide();
-	$("#position ul .axis input.pos").show();
+	elt.hide();
+	elt.parent().children('input').show();
 };
 
 slideMenu = function(){
@@ -181,8 +181,13 @@ $(document).ready( function() {
 	toastr.options["positionClass"] = "toast-bottom-center";
 
 	//Event to transform position display to input
-	$("#position ul .axis span.pos").click( function() { posForm(); })
+	$("#position ul .axis span.pos").click( function() { posForm($(this)); })
 
 	//Click & Swipe listener
 	slideMenu();
+
+	//Remove redirection on forms submit
+	$("button[type='submit']").click(function(){
+		return false; //Override the action of the button, so the user is not redirected to another page (no data lost)
+	});
 });

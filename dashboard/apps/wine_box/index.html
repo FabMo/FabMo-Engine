@@ -27,17 +27,17 @@
 			
 			<div class="row">
 				<!-- First Row : Description -->
-				<div class="small-12 medium-6 large-4 columns">
+				<div class="small-12 medium-7 large-5 columns">
 					<h3>About this app</h3>
 					<p>- Cut your own wine box !</p>
-					<p>- Project request a full 18" x 24" x 0.47" wood sheet</p>
-					<p>- Can be cut with a Desktop tool or +</p>
-					<p>- 1/4 Up-Cut or 1/8" Straight Bit</p>
+					<p>- Project requests a Desktop sized board (18"x24"x0.47")</p>
+					<p>- Can be cut with a Desktop tool or bigger</p>
+					<p>- 1/8" Straight Bit</p>
 					<p>- Optionnal 60° & 90° V-Bit engravure</p>
 					<div class="show-for-small-only separator small-12 columns"></div>
 				</div>
 
-				<div class="small-12 medium-6 large-3 columns">
+				<div class="small-12 medium-5 large-3 columns">
 					<img src="images/wine_box.JPG">
 					<div class="show-for-small-only separator small-12 columns"></div>
 				</div>
@@ -45,29 +45,30 @@
 				<div class="show-for-medium-only separator medium-12 columns"></div>
 
 				<!-- Second Row : Jobs list -->
-				<div class="small-12 medium-12 large-5 columns">
+				<div class="small-12 medium-12 large-4 columns">
 					<h3>Pick a Box</h3>
 					<div class= "row">
-						<div class="switch radius">
-						  <input id="var1" type="radio" name="gCodeChoice">
-						  <label for="var1">1/8" - With V-Bit</label>
+						<div class="small-4 columns center">
+							<h4>V-Bit 60 + 1/8"</h4>
+							<div class="switch radius">
+							  	<input id="var1" type="radio" name="gCodeChoice" select>
+							  	<label for="var1"></label>
+							</div>
 						</div>
-						<div class="switch radius">
-						  <input id="var2" type="radio" name="gCodeChoice">
-						  <label for="var2">1/4" - With V-Bit</label>
-						</div> 
-						<div class="switch radius">
-						  <input id="var3" type="radio" name="gCodeChoice">
-						  <label for="var3">1/8" - No V-Bit</label>
+						<div class="small-4 columns center">
+							<h4>V-Bit 90 + 1/8"</h4>
+							<div class="switch radius">
+							  	<input id="var2" type="radio" name="gCodeChoice">
+							  	<label for="var2"></label>
+							</div>
 						</div>
-						<div class="switch radius">
-						  <input id="var4" type="radio" name="gCodeChoice">
-						  <label for="var4">1/4" - No V-Bit</label>
-						</div> 
-						<select>
-							<option selected="selected">Standard Red Wine Box (1/8")</option>
-							<option selected="selected">Standard Red Wine Box (1/4")</option>
-						</select>
+						<div class="small-4 columns center">
+							<h4>1/8" only</h4>
+							<div class="switch radius">
+							  	<input id="var3" type="radio" name="gCodeChoice">
+							  	<label for="var3"></label>
+							</div>
+						</div>
 					</div>
 					<div class="show-for-small-only separator small-12 columns"></div>
 				</div>

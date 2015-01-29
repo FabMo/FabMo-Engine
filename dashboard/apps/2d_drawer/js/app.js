@@ -435,7 +435,7 @@ Canvas.prototype.selectAction = function(t,e){
 	var id = t.id;
 
 	$.each(t.canvas, function(i,canvas){
-		canvas.bounds.selected ? t.resetCurrent(id) : t.setCurrent(id);
+		canvas.bounds.selected ? Tasks.resetCurrent(id) : Tasks.setCurrent(id);
 	});
 };
 
@@ -880,6 +880,7 @@ Tasks.setCurrent = function(id){
 
 		//This task is the last one selected
 		Tasks[Tasks.pos(id)].lastSelected = true;
+		console.log(Tasks[Tasks.pos(id)].lastSelected);
 	}
 	else {
 		console.log("This function need an id to set a shape as a selected one");
@@ -890,11 +891,13 @@ Tasks.resetCurrent = function(id){
 	//Reset the "current" status of the task "id"
 	if (id) {
 		Tasks[Tasks.pos(id)].resetCurrent();
+		Tasks[Tasks.pos(id)].lastSelected = false;
 	}
 	//Or reset the "current" status of each task (no "id parameter")
 	else {
 		$.each(this, function(i,t){
 			t.resetCurrent();
+			t.lastSelected = false;
 		});
 	}
 };
@@ -965,6 +968,39 @@ Tasks.mirror = function(id,axis){
 	}
 };
 
+//Align the left of the task "Id" to the left of the Task "reference"
+//Also align each selected task to the last selected one
+Tasks.alignLeft = function(id,reference){
+	//Move tasks if passed in parameter
+	if (id) {
+		Tasks[Tasks.pos(id)].translate(new p(reference.position.topLeft.x - Tasks[Tasks.pos(id)].position.topLeft.x,0));
+	}
+	//Or reset the "current" status of each task (no "id parameter")
+	else {
+		var lastSelection = null;
+		var transformed = false;
+
+		$.each(this, function(i,t){
+			if (t.lastSelected==true){
+				lastSelection = t;
+				console.log(lastSelection);
+			}
+		});
+
+		$.each(this, function(i,t){
+			if (t.current){
+				t.translate(new p(lastSelection.position.topLeft.x - t.position.topLeft.x,0));
+				transformed = true;
+			}
+		});
+		!transformed ? console.log("No shape selected, no transformation") : null;
+	}
+};
+
+//Do same thing for other alignments
+
+
+
 Tasks.view = function(){
 	var str=""; //Str will be the HTML content
 	$.each(this, function(index,t){
@@ -1005,6 +1041,14 @@ Tasks.gCode = function(code){
 		code.body = code.body + Tasks[i].c;
 		console.log(code.body);
 	}
+};
+
+Tasks.lastSelected = function(){
+	$.each(this, function(i,t) {
+		if(t.lastSelected) {
+			return t;
+		}
+	});
 };
 
 Tasks.pos = function(id) {

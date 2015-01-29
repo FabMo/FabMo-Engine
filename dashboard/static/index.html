@@ -104,25 +104,33 @@
               <ul class="off-canvas-list fabmo-status">
                 <li><label>Position</label></li>
                 <li>
-                  <div class="row axis">
-                    <div class="small-9 columns">
-                      <label>X<span class="in">in</span><span class="posx pos"></span><input type"text" class="posx pos" style="display:none;" value=""></label>
+                  <form>
+                    <div class="row axis">
+                        <div class="small-9 columns">
+                          <label style="border-top: 1px solid #eee;">X<span class="in">in</span><span class="posx pos"></span><input type"number" step="0.001" class="posx pos" style="display:none;" value=""></label>
+                          <button type="submit" class="newPos-submit" id="newPos-x" style="display:none;">zMove</button>
+                        </div>
+                        <div class="small-3 columns home"><span class="button-zerox">X<label>0</label></span></div>
                     </div>
-                    <div class="small-3 columns home"><span class="button-zerox">X<label>0</label></span></div>
-                  </div>
-                  <div class="row axis">
-                    <div class="small-9 columns">
-                      <label>Y<span class="in">in</span><span class="posy pos"></span><input type"text" class="posy pos" style="display:none;" value=""></label>
+                  </form>
+                  <form>
+                    <div class="row axis">
+                      <div class="small-9 columns">
+                        <label>Y<span class="in">in</span><span class="posy pos"></span><input type"number" step="0.001" class="posy pos" style="display:none;" value=""></label>
+                        <button type="submit" class="newPos-submit" id="newPos-y" style="display:none;">zMove</button>
+                      </div>
+                      <div class="small-3 columns home"><span class="button-zeroy">Y<label>0</label></span></div>
                     </div>
-                    <div class="small-3 columns home"><span class="button-zeroy">Y<label>0</label></span></div>
-                  </div>
-                  <div class="row axis">
-                    <div class="small-9 columns">
-                      <label>Z<span class="in">in</span><span class="posz pos"></span><input type"text" class="posx pos" style="display:none;" value=""></label>
+                  </form>
+                  <form>
+                    <div class="row axis">
+                      <div class="small-9 columns">
+                        <label>Z<span class="in">in</span><span class="posz pos"></span><input type"number" step="0.001" class="posx pos" style="display:none;" value=""></label>
+                        <button type="submit" class="newPos-submit" id="newPos-z" style="display:none;">zMove</button>
+                      </div>
+                      <div class="small-3 columns home"><span class="button-zeroz">Z<label>0</label></span></div>
                     </div>
-                    <div class="small-3 columns home"><span class="button-zeroz">Z<label>0</label></span></div>
-                    
-                  </div>
+                  </form>
                 </li>
                 <li>
                   <div class="row inOut">
