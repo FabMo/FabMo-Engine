@@ -997,9 +997,91 @@ Tasks.alignLeft = function(id,reference){
 	}
 };
 
-//Do same thing for other alignments
+//Align the right of the task "Id" to the right of the Task "reference"
+//Also align each selected task to the last selected one
+Tasks.alignRight = function(id,reference){
+	//Move tasks if passed in parameter
+	if (id) {
+		Tasks[Tasks.pos(id)].translate(new p(reference.position.topRight.x - Tasks[Tasks.pos(id)].position.topRight.x,0));
+	}
+	//Or reset the "current" status of each task (no "id parameter")
+	else {
+		var lastSelection = null;
+		var transformed = false;
 
+		$.each(this, function(i,t){
+			if (t.lastSelected==true){
+				lastSelection = t;
+				console.log(lastSelection);
+			}
+		});
 
+		$.each(this, function(i,t){
+			if (t.current){
+				t.translate(new p(lastSelection.position.topRight.x - t.position.topRight.x,0));
+				transformed = true;
+			}
+		});
+		!transformed ? console.log("No shape selected, no transformation") : null;
+	}
+};
+
+//Align the top of the task "Id" to the top of the Task "reference"
+//Also align each selected task to the last selected one
+Tasks.alignTop = function(id,reference){
+	//Move tasks if passed in parameter
+	if (id) {
+		Tasks[Tasks.pos(id)].translate(new p(0,reference.position.topLeft.y - Tasks[Tasks.pos(id)].position.topLeft.y));
+	}
+	//Or reset the "current" status of each task (no "id parameter")
+	else {
+		var lastSelection = null;
+		var transformed = false;
+
+		$.each(this, function(i,t){
+			if (t.lastSelected==true){
+				lastSelection = t;
+			}
+		});
+
+		$.each(this, function(i,t){
+			if (t.current){
+				t.translate(new p(0,lastSelection.position.topLeft.y - t.position.topLeft.y));
+				transformed = true;
+			}
+		});
+		!transformed ? console.log("No shape selected, no transformation") : null;
+	}
+};
+
+//Align the Bottom of the task "Id" to the Bottom of the Task "reference"
+//Also align each selected task to the last selected one
+Tasks.alignBottom = function(id,reference){
+	//Move tasks if passed in parameter
+	if (id) {
+		Tasks[Tasks.pos(id)].translate(new p(0,reference.position.bottomRight.y - Tasks[Tasks.pos(id)].position.bottomRight.y));
+	}
+	//Or reset the "current" status of each task (no "id parameter")
+	else {
+		var lastSelection = null;
+		var transformed = false;
+
+		$.each(this, function(i,t){
+			if (t.lastSelected==true){
+				lastSelection = t;
+			}
+		});
+
+		$.each(this, function(i,t){
+			if (t.current && !t.lastSelected){
+				console.log(lastSelection.position.bottomRight.y - t.position.bottomRight.y);
+				t.translate(new p(0,lastSelection.position.bottomRight.y - t.position.bottomRight.y));
+				transformed = true;
+			}
+		});
+		!transformed ? console.log("No shape selected, no transformation") : null;
+	}
+};
 
 Tasks.view = function(){
 	var str=""; //Str will be the HTML content

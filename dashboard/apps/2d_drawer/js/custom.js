@@ -158,7 +158,15 @@ $(document).ready(function(){
 	$("#move-left-left").click(function(){
 		Tasks.alignLeft();
 	});
-
+	$("#move-right-right").click(function(){
+		Tasks.alignRight();
+	});
+	$("#move-top-top").click(function(){
+		Tasks.alignTop();
+	});
+	$("#move-bottom-bottom").click(function(){
+		Tasks.alignBottom();
+	});
 
 	//Line Form : Coordinates invert
 	$(".invert-pos").click(function(){
