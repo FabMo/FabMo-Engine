@@ -428,14 +428,14 @@ Canvas.prototype.w = function(w){
 // --- Canvas UI actions --- //
 Canvas.prototype.selectAction = function(t,e){
 	//Task that corresponds to the clicked canvas object
-	console.log(t);
+	//console.log(t);
 
 	//Internal vars (shared with each function)
 	var that = this;
 	var id = t.id;
 
 	$.each(t.canvas, function(i,canvas){
-		canvas.bounds.selected ? t.resetCurrent(id) : t.setCurrent(id);
+		canvas.bounds.selected ? Tasks.resetCurrent(id) : Tasks.setCurrent(id);
 	});
 };
 
@@ -507,10 +507,13 @@ Canvas.prototype.addRectangle = function(r){
 	r.canvas = [];
 	var that = this;
 
-	var p = new Path.Rectangle(
-		new Point( this.xPos(r.p0.x) , this.yPos(r.p0.y) ),
-		new Point( this.xPos(r.p1.x) , this.yPos(r.p1.y) )
-	);
+	var p = new Path();
+	p.add( new Point( this.xPos(r.p0.x) , this.yPos(r.p0.y) ) );
+	p.add( new Point( this.xPos(r.p2.x) , this.yPos(r.p2.y) ) );
+	p.add( new Point( this.xPos(r.p1.x) , this.yPos(r.p1.y) ) );
+	p.add( new Point( this.xPos(r.p3.x) , this.yPos(r.p3.y) ) );
+	p.add( new Point( this.xPos(r.p0.x) , this.yPos(r.p0.y) ) );
+
     p.strokeColor = canvasColor;
     p.strokeWidth = shapesThickness;
     p.onClick = function(event){
@@ -524,10 +527,12 @@ Canvas.prototype.addRectangle = function(r){
     var i = 0;
 
     for(i=0 ; i < r.t.length ; i++){
-    	var p2 = new Path.Rectangle( 
-    		new Point( this.xPos(r.t[i].p0.x) , this.yPos(r.t[i].p0.y) ) ,
-    		new Point( this.xPos(r.t[i].p1.x) , this.yPos(r.t[i].p1.y) )
-    	);
+    	var p2 = new Path();
+		p2.add( new Point( this.xPos(r.t[i].p0.x) , this.yPos(r.t[i].p0.y) ) );
+		p2.add( new Point( this.xPos(r.t[i].p2.x) , this.yPos(r.t[i].p2.y) ) );
+		p2.add( new Point( this.xPos(r.t[i].p1.x) , this.yPos(r.t[i].p1.y) ) );
+		p2.add( new Point( this.xPos(r.t[i].p3.x) , this.yPos(r.t[i].p3.y) ) );
+		p2.add( new Point( this.xPos(r.t[i].p0.x) , this.yPos(r.t[i].p0.y) ) );
 	    p2.strokeColor = toolpathColor//'rgba(215, 44, 44, 0.6)';
 	    p2.strokeWidth = toolpathThickness;
 	    p2.strokeCap = 'round';
@@ -843,8 +848,6 @@ Tasks.edit = function(id){
 Tasks.save = function(id){
 	//Search for the line and add it
 	if(this.pos(id) != null){
-		console.log("Founded");
-
 		var t = this[this.pos(id)];
 		t.getForm();
 
@@ -877,6 +880,7 @@ Tasks.setCurrent = function(id){
 
 		//This task is the last one selected
 		Tasks[Tasks.pos(id)].lastSelected = true;
+		console.log(Tasks[Tasks.pos(id)].lastSelected);
 	}
 	else {
 		console.log("This function need an id to set a shape as a selected one");
@@ -887,11 +891,13 @@ Tasks.resetCurrent = function(id){
 	//Reset the "current" status of the task "id"
 	if (id) {
 		Tasks[Tasks.pos(id)].resetCurrent();
+		Tasks[Tasks.pos(id)].lastSelected = false;
 	}
 	//Or reset the "current" status of each task (no "id parameter")
 	else {
 		$.each(this, function(i,t){
 			t.resetCurrent();
+			t.lastSelected = false;
 		});
 	}
 };
@@ -962,6 +968,121 @@ Tasks.mirror = function(id,axis){
 	}
 };
 
+//Align the left of the task "Id" to the left of the Task "reference"
+//Also align each selected task to the last selected one
+Tasks.alignLeft = function(id,reference){
+	//Move tasks if passed in parameter
+	if (id) {
+		Tasks[Tasks.pos(id)].translate(new p(reference.position.topLeft.x - Tasks[Tasks.pos(id)].position.topLeft.x,0));
+	}
+	//Or reset the "current" status of each task (no "id parameter")
+	else {
+		var lastSelection = null;
+		var transformed = false;
+
+		$.each(this, function(i,t){
+			if (t.lastSelected==true){
+				lastSelection = t;
+				console.log(lastSelection);
+			}
+		});
+
+		$.each(this, function(i,t){
+			if (t.current){
+				t.translate(new p(lastSelection.position.topLeft.x - t.position.topLeft.x,0));
+				transformed = true;
+			}
+		});
+		!transformed ? console.log("No shape selected, no transformation") : null;
+	}
+};
+
+//Align the right of the task "Id" to the right of the Task "reference"
+//Also align each selected task to the last selected one
+Tasks.alignRight = function(id,reference){
+	//Move tasks if passed in parameter
+	if (id) {
+		Tasks[Tasks.pos(id)].translate(new p(reference.position.topRight.x - Tasks[Tasks.pos(id)].position.topRight.x,0));
+	}
+	//Or reset the "current" status of each task (no "id parameter")
+	else {
+		var lastSelection = null;
+		var transformed = false;
+
+		$.each(this, function(i,t){
+			if (t.lastSelected==true){
+				lastSelection = t;
+				console.log(lastSelection);
+			}
+		});
+
+		$.each(this, function(i,t){
+			if (t.current){
+				t.translate(new p(lastSelection.position.topRight.x - t.position.topRight.x,0));
+				transformed = true;
+			}
+		});
+		!transformed ? console.log("No shape selected, no transformation") : null;
+	}
+};
+
+//Align the top of the task "Id" to the top of the Task "reference"
+//Also align each selected task to the last selected one
+Tasks.alignTop = function(id,reference){
+	//Move tasks if passed in parameter
+	if (id) {
+		Tasks[Tasks.pos(id)].translate(new p(0,reference.position.topLeft.y - Tasks[Tasks.pos(id)].position.topLeft.y));
+	}
+	//Or reset the "current" status of each task (no "id parameter")
+	else {
+		var lastSelection = null;
+		var transformed = false;
+
+		$.each(this, function(i,t){
+			if (t.lastSelected==true){
+				lastSelection = t;
+			}
+		});
+
+		$.each(this, function(i,t){
+			if (t.current){
+				t.translate(new p(0,lastSelection.position.topLeft.y - t.position.topLeft.y));
+				transformed = true;
+			}
+		});
+		!transformed ? console.log("No shape selected, no transformation") : null;
+	}
+};
+
+//Align the Bottom of the task "Id" to the Bottom of the Task "reference"
+//Also align each selected task to the last selected one
+Tasks.alignBottom = function(id,reference){
+	//Move tasks if passed in parameter
+	if (id) {
+		Tasks[Tasks.pos(id)].translate(new p(0,reference.position.bottomRight.y - Tasks[Tasks.pos(id)].position.bottomRight.y));
+	}
+	//Or reset the "current" status of each task (no "id parameter")
+	else {
+		var lastSelection = null;
+		var transformed = false;
+
+		$.each(this, function(i,t){
+			if (t.lastSelected==true){
+				lastSelection = t;
+			}
+		});
+
+		$.each(this, function(i,t){
+			if (t.current && !t.lastSelected){
+				console.log(lastSelection.position.bottomRight.y - t.position.bottomRight.y);
+				t.translate(new p(0,lastSelection.position.bottomRight.y - t.position.bottomRight.y));
+				transformed = true;
+			}
+		});
+		!transformed ? console.log("No shape selected, no transformation") : null;
+	}
+};
+
 Tasks.view = function(){
 	var str=""; //Str will be the HTML content
 	$.each(this, function(index,t){
@@ -1002,6 +1123,14 @@ Tasks.gCode = function(code){
 		code.body = code.body + Tasks[i].c;
 		console.log(code.body);
 	}
+};
+
+Tasks.lastSelected = function(){
+	$.each(this, function(i,t) {
+		if(t.lastSelected) {
+			return t;
+		}
+	});
 };
 
 Tasks.pos = function(id) {
@@ -1114,7 +1243,17 @@ calculAlpha = function(p,p0){
 	var alpha = 0;
 
 	if ( (p0.y!=p.y) && (p0.x!=p.x) ) {
-		alpha = Math.atan((p0.y-p.y)/(p0.x-p.x));
+		alpha = Math.atan(Math.abs(p0.y-p.y)/Math.abs(p0.x-p.x));
+
+		if( (p0.x < p.x) && (p0.y > p.y) ){
+			alpha = pi - alpha;
+		}
+		if( (p0.x < p.x) && (p0.y < p.y) ){
+			alpha = pi + alpha;
+		}
+		if( (p0.x > p.x) && (p0.y < p.y) ){
+			alpha = -alpha;
+		}
 	}
 	else {
 		if(p0.y == p.y) {
@@ -1228,12 +1367,9 @@ p.prototype.rotateAlpha = function(alpha,center){
 p.prototype.mirror = function(axis,center){
 	//Center is center point to mirror
 	if(axis == 'x'){
-		console.log("xMirror");
-		console.log(center);
 		this.rotate(180,new p(this.x,center.y));
 	}
 	else if (axis == 'y'){
-		console.log("yMirror");
 		this.rotate(180,new p(center.x,this.y));
 	}
 };
@@ -1251,12 +1387,12 @@ scale.prototype.step = function(stepSize){
 	var alpha = calculAlpha(this.center,this.p);
 
 	this.p.rotateAlpha(-alpha,this.center); //Rotation of p so it is aligned with the center on x axis (work on 1 dimension)
+	this.p0.rotateAlpha(-alpha,this.center);
 
 	while( (this.p.x - this.center.x) > (stepSize/2) ){
 		this.steps 	+= 	1;
-		this.p.x 	-=	stepSize;
+		this.p.x = this.p.x - this.stepSize;
 	}
-	(this.p.x - this.center.x) < (stepSize/2) ? this.p.x = this.center.x + stepSize/2 : null;
 
 	this.p.rotateAlpha(alpha,this.center);
 };
@@ -1264,26 +1400,20 @@ scale.prototype.step = function(stepSize){
 scale.prototype.addStep = function(){
 	if(this.steps > 0){
 		var alpha = calculAlpha(this.center,this.p);
-
 		this.p.rotateAlpha(-alpha,this.center); //Rotation of p so it is aligned with the center on x axis (work on 1 dimension)
 
-		this.p.x += this.steps;
+		this.p.x = this.p.x + this.stepSize;
+
 		(this.p.x) > (this.p0.x) ? this.p.x = this.p0.x : null;
 
 		this.p.rotateAlpha(alpha,this.center);
-
 		this.steps -=1;
 	}
 	else {
-		console.log("No more stap point" + this.p + this.p0);
+		this.steps = -1;
 	}
 };
 
-
-//Test Code
-tCenter = new p(1,1);
-tPoint = new p(1,2);
-tScale = new scale(tCenter,tPoint).step(0.25);
 
 
 
@@ -1694,82 +1824,63 @@ rectangle.prototype.toolpath = function() {
 	}
 	else if (this.side == 1){ //Case toolpath outside the rectangle
 		var e={};
-		var alpha0 = calculAlpha(this.p0,this.p2) + pi/2;
-		var alpha1 = calculAlpha(this.p2,this.p1) + pi/2;
-		var alpha2 = calculAlpha(this.p1,this.p3) + pi/2;
-		var alpha3 = calculAlpha(this.p3,this.p0) + pi/2;
+		var alpha0 = calculAlpha(this.p0,this.p2);
+		var alpha1 = calculAlpha(this.p2,this.p1);
+		var alpha2 = calculAlpha(this.p1,this.p3);
+		var alpha3 = calculAlpha(this.p3,this.p0);
 
-		e.p0 = new p(this.p0.x + (s.bit_d/2) * Math.cos(alpha0) , this.p0.y + (s.bit_d/2) * Math.sin(alpha0));
-		e.p1 = new p(this.p1.x + (s.bit_d/2) * Math.cos(alpha1) , this.p1.y + (s.bit_d/2) * Math.sin(alpha1));
-		e.p2 = new p(this.p2.x + (s.bit_d/2) * Math.cos(alpha2) , this.p2.y + (s.bit_d/2) * Math.sin(alpha2));
-		e.p3 = new p(this.p3.x + (s.bit_d/2) * Math.cos(alpha3) , this.p3.y + (s.bit_d/2) * Math.sin(alpha3));
+		e.p0 = new p(this.p0.x - (s.bit_d/2) * Math.sin(alpha0) , this.p0.y - (s.bit_d/2) * Math.sin(alpha0));
+		e.p1 = new p(this.p1.x - (s.bit_d/2) * Math.cos(alpha1) , this.p1.y + (s.bit_d/2) * Math.cos(alpha1));
+		e.p2 = new p(this.p2.x - (s.bit_d/2) * Math.sin(alpha2) , this.p2.y - (s.bit_d/2) * Math.sin(alpha2));
+		e.p3 = new p(this.p3.x - (s.bit_d/2) * Math.cos(alpha3) , this.p3.y + (s.bit_d/2) * Math.cos(alpha3));
 
 		this.t.push(e);	//Add rectangle to thel ist of toolpaths
 	}
 	else if (this.side == 2){ //Case toolpath inside the rectangle : do all the inside
 		/*** Init ***/
-		//Fonction to correct
-		var W = this.p1.x - this.p0.x;
-		var H = this.p1.y - this.p0.y;
-		var cX = (this.p0.x + this.p1.x) / 2;
-		var cY = (this.p0.y + this.p1.y) / 2;
-		var R = W/H;
-		var oldP0 = null;
-		var oldP1 = null;
-		var oldP2 = null;
-		var oldP3 = null;
-		var alpha0 = calculAlpha(this.p0,this.p2) + pi/2;
-		var alpha1 = calculAlpha(this.p2,this.p1) + pi/2;
-		var alpha2 = calculAlpha(this.p1,this.p3) + pi/2;
-		var alpha3 = calculAlpha(this.p3,this.p0) + pi/2;
-		
-		if (W>H){
-			oldP0 = new p(
-				cX - ((s.bit_d / 2) * (R > 0 ? R : (1/R) )),
-				cY - (s.bit_d / 2)
-			);
-			oldP1 = new p(
-				cX + ((s.bit_d / 2) * (R > 0 ? R : (1/R) )),
-				cY + (s.bit_d / 2)
-			);
+
+		scaleCenter1 = new p(this.p2.x,this.p2.y);
+		scaleCenter2 = new p(this.p1.x,this.p1.y);
+		scaleCenter3 = new p(this.p3.x,this.p3.y);
+		scaleCenter4 = new p(this.p0.x,this.p0.y);
+
+		scaleCenter1.rotateAlpha(-pi/2,this.p0.middle(this.p2));
+		scaleCenter2.rotateAlpha(-pi/2,this.p2.middle(this.p1));
+		scaleCenter3.rotateAlpha(-pi/2,this.p1.middle(this.p3));
+		scaleCenter4.rotateAlpha(-pi/2,this.p3.middle(this.p0));
+
+		if(this.p2.absoluteDistance(this.p0)>this.p2.absoluteDistance(this.p1)){ //More Height than High
+				scale0 = new scale(scaleCenter4,this.p0); //Steps object > 0
+				scale1 = new scale(scaleCenter2,this.p1); //Steps object > 0
+				scale2 = new scale(scaleCenter2,this.p2); //Steps object > 0
+				scale3 = new scale(scaleCenter4,this.p3); //Steps object > 0
 		}
 		else {
-			oldP0 = new p(
-				cX - (s.bit_d / 2),
-				cX - ((s.bit_d / 2) * (R > 0 ? R : (1/R) ))
-			);
-			oldP1 = newp(
-				cX + (s.bit_d / 2),
-				cX + ((s.bit_d / 2) * (R > 0 ? R : (1/R) ))
-			);
+				scale0 = new scale(scaleCenter1,this.p0); //Steps object > 0
+				scale1 = new scale(scaleCenter3,this.p1); //Steps object > 0
+				scale2 = new scale(scaleCenter1,this.p2); //Steps object > 0
+				scale3 = new scale(scaleCenter3,this.p3); //Steps object > 0
 		}
 
-		var end = 0;
+		scale0.step(s.bit_d);
+		scale1.step(s.bit_d);
+		scale2.step(s.bit_d);
+		scale3.step(s.bit_d);
 
-		while( end==0 ){ //ABS value
+		while( (scale0.steps > 0) || (scale1.steps > 0) || (scale2.steps > 0) || (scale3.steps > 0) ){
 			var e={};
+			e.p0=new p(scale0.p.x,scale0.p.y);
+			e.p1=new p(scale1.p.x,scale1.p.y);
+			e.p2=new p(scale2.p.x,scale2.p.y);
+			e.p3=new p(scale3.p.x,scale3.p.y);
 
-			//Check if current Rec is not too big
-			if ( Math.abs(oldP0.x) < Math.abs(this.p0.x + s.bit_d/2) )  { oldP0.x = this.p0.x + s.bit_d/2; end=1;}
-			if ( Math.abs(oldP0.y) < Math.abs(this.p0.y + s.bit_d/2) )  { oldP0.y = this.p0.y + s.bit_d/2; end=1;}
-			if ( Math.abs(oldP1.x) > Math.abs(this.p1.x - s.bit_d/2) )  { oldP1.x = this.p1.x - s.bit_d/2; end=1;}
-			if ( Math.abs(oldP1.y) > Math.abs(this.p1.y - s.bit_d/2) )  { oldP1.y = this.p1.y - s.bit_d/2; end=1;}
+			var maxSteps = Math.max(scale0.steps,scale1.steps,scale2.steps,scale3.steps);
+			scale0.steps == maxSteps ? scale0.addStep() : null;
+			scale1.steps == maxSteps ? scale1.addStep() : null;
+			scale2.steps == maxSteps ? scale2.addStep() : null;
+			scale3.steps == maxSteps ? scale3.addStep() : null;
 
-			if (	( Math.abs(oldP0.x) == Math.abs(this.p0.x + s.bit_d/2) )
-				&& ( Math.abs(oldP0.y) == Math.abs(this.p0.y + s.bit_d/2) )
-				&& ( Math.abs(oldP1.x) == Math.abs(this.p1.x - s.bit_d/2) )
-				&& ( Math.abs(oldP1.y) == Math.abs(this.p1.y - s.bit_d/2) )
-			)  { end=1; }
-
-			//Put the value of the new arc
-			e.p0 = oldP0;
-			e.p1 = oldP1;
-
-			//Increment position for next arc
-			oldP0 = new p( oldP0.x - (s.bit_d) , oldP0.y - (s.bit_d) );
-			oldP1 = new p( oldP1.x + (s.bit_d) , oldP1.y + (s.bit_d) );
-
-			this.t.push(e);	//Add arc to the list of toolpaths
+			this.t.push(e);	//Add rectangle to the list of toolpaths
 		}
 	}
 };

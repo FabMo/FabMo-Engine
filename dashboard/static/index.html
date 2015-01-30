@@ -104,25 +104,33 @@
               <ul class="off-canvas-list fabmo-status">
                 <li><label>Position</label></li>
                 <li>
-                  <div class="row axis">
-                    <div class="small-10 columns">
-                      <label>X<span class="in">in</span><span class="posx pos"></span><input type"text" class="posx pos" style="display:none;" value=""></label>
+                  <form>
+                    <div class="row axis">
+                        <div class="small-9 columns">
+                          <label style="border-top: 1px solid #eee;">X<span class="in">in</span><span class="posx pos"></span><input type"number" step="0.001" class="posx pos" style="display:none;" value=""></label>
+                          <button type="submit" class="newPos-submit" id="newPos-x" style="display:none;">zMove</button>
+                        </div>
+                        <div class="small-3 columns home"><span class="button-zerox">X<label>0</label></span></div>
                     </div>
-                    <div class="small-2 columns home"><span class="button-zerox">X<label>0</label></span></div>
-                  </div>
-                  <div class="row axis">
-                    <div class="small-10 columns">
-                      <label>Y<span class="in">in</span><span class="posy pos"></span><input type"text" class="posy pos" style="display:none;" value=""></label>
+                  </form>
+                  <form>
+                    <div class="row axis">
+                      <div class="small-9 columns">
+                        <label>Y<span class="in">in</span><span class="posy pos"></span><input type"number" step="0.001" class="posy pos" style="display:none;" value=""></label>
+                        <button type="submit" class="newPos-submit" id="newPos-y" style="display:none;">zMove</button>
+                      </div>
+                      <div class="small-3 columns home"><span class="button-zeroy">Y<label>0</label></span></div>
                     </div>
-                    <div class="small-2 columns home"><span class="button-zeroy">Y<label>0</label></span></div>
-                  </div>
-                  <div class="row axis">
-                    <div class="small-10 columns">
-                      <label>Z<span class="in">in</span><span class="posz pos"></span><input type"text" class="posx pos" style="display:none;" value=""></label>
+                  </form>
+                  <form>
+                    <div class="row axis">
+                      <div class="small-9 columns">
+                        <label>Z<span class="in">in</span><span class="posz pos"></span><input type"number" step="0.001" class="posx pos" style="display:none;" value=""></label>
+                        <button type="submit" class="newPos-submit" id="newPos-z" style="display:none;">zMove</button>
+                      </div>
+                      <div class="small-3 columns home"><span class="button-zeroz">Z<label>0</label></span></div>
                     </div>
-                    <div class="small-2 columns home"><span class="button-zeroz">Z<label>0</label></span></div>
-                    
-                  </div>
+                  </form>
                 </li>
                 <li>
                   <div class="row inOut">
@@ -176,12 +184,16 @@
                         <button class="button button-minus-Z"></button>
                     </div> 
                   </div> 
-                  <div class="row fabmo-status">
-                    <div class="small-3 columns"><span style="display:inline-block;"></span></div>
-                    <div class="small-2 columns set"><span class="button-homexy"></span></div>
-                    <div class="small-2 columns set"><span class="button-homez"></span></div>
-                    <div class="small-2 columns set"><span class="button-probez"></span></div>
-                    <div class="small-3 columns"><span style="display:inline-block;"></span></div>
+                  <div class="row fabmo-status" style="background-color:#eee;">
+                    <div class="small-2 columns"><span style="display:inline-block;"></span></div>
+                    <div class="small-8 columns">
+                      <div class="row">
+                        <div class="small-4 columns set"><span class="button-homexy"></span></div>
+                        <div class="small-4 columns set"><span class="button-homez"></span></div>
+                        <div class="small-4 columns set"><span class="button-probez"></span></div>
+                      </div>
+                    </div>
+                    <div class="small-2 columns"><span style="display:inline-block;"></span></div>
                   </div>            
                   </li>
               </ul>

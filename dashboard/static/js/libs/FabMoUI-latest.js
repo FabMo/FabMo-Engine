@@ -83,6 +83,15 @@ FabMoUI.prototype.Keypad = function(){
 	this.keypad_allow=false;
 	this.menu_open=false;
 	this.lock_fixe_move = false;
+
+	$(".newPos-submit").click(function(){
+		if(that.keypad_allow && that.menu_open){
+			console.log($(this).attr('id'));
+			that.tool.gcode2('G90 G01 X-'+ $(this).parent().children('label').children('input').val()); 
+		}
+	});
+
+
 	$("#trackpad-zone").click(function(e){
 		var posX = e.pageX  - ($("body").width() - $("#right-menu").width());
         var posY = e.pageY - $("#trackpad-zone").position().top - 44.5;

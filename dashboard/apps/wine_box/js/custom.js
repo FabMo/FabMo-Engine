@@ -77,8 +77,6 @@ function hideTab(group){
 $(document).ready(function(){
 	//Foundation Init
 	$(document).foundation();
-	c.resize();
-	c.setRatio();
 	//Get Tasks from storage (if stored)
 	//L = dashboard.getAppSetting("holes_cutter","Tasks") ? dashboard.getAppSetting("holes_cutter","Tasks") : [];
 	//console.log(Tasks);
@@ -144,29 +142,17 @@ $(document).ready(function(){
 
 	//Run all the tasks
 	$("#run").click(function(){
+		//Change by a if / else if / else & upload the file.
 		var c = setGCode();
 		
 		//dashboard.addJob(c,s);
 		fabmoDashboard.submitJob(c, {
-				'name' : 'Rectangles',
+				'name' : 'Wine Box',
 				'description' : 'Cut ' + Tasks.length.toString() + ' rectangle(s)',
-	            'filename' : 'rectangles.nc'
+	            'filename' : 'wine_box.nc'
 	    })
 	});
 
-	//Align actions
-	$("#move-left-left").click(function(){
-		Tasks.alignLeft();
-	});
-	$("#move-right-right").click(function(){
-		Tasks.alignRight();
-	});
-	$("#move-top-top").click(function(){
-		Tasks.alignTop();
-	});
-	$("#move-bottom-bottom").click(function(){
-		Tasks.alignBottom();
-	});
 
 	//Line Form : Coordinates invert
 	$(".invert-pos").click(function(){
