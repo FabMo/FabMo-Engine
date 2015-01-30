@@ -44,6 +44,12 @@ Engine.prototype.start = function(callback) {
             db.configureDB(callback);
         },
 
+        // Cleanup the DB
+        function setup_database(callback) {
+            log.info("Cleaning up database...")
+            db.cleanupDB(callback);
+        },
+
         // Connect to G2 and initialize machine runtimes
         function connect(callback) {
             log.info("Connecting to G2...");

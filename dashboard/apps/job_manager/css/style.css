@@ -8,6 +8,14 @@ h1, h2, h3, h4, h5, h6 {
   color: #666;
 }
 
+.job-failed {
+  color: #ff0000;
+}
+
+.job-finished {
+  color: #19760A;
+}
+
 .alert-box .close {
   color: #eee;
   filter: alpha(opacity=95); /* For IE8 and earlier */

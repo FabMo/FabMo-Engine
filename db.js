@@ -46,6 +46,13 @@ Job.prototype.finish = function(callback) {
 	this.save(callback);
 }
 
+Job.prototype.fail = function(callback) {
+	log.warn("Failing job id " + this._id);
+	this.state = 'failed';
+	this.finished_at = Date.now();
+	this.save(callback);
+}
+
 Job.prototype.cancel = function(callback) {
 	if(this.state === 'pending') {
 		log.debug("Cancelling pending job id " + this._id);
@@ -98,7 +105,7 @@ Job.getPending = function(callback) {
 }
 
 Job.getHistory = function(callback) {
-	jobs.find({state: {$in : ['finished', 'cancelled']}}).sort({'created_at' : -1 }).toArray(callback);
+	jobs.find({state: {$in : ['finished', 'cancelled', 'failed']}}).sort({'created_at' : -1 }).toArray(callback);
 }
 
 Job.getAll = function(callback) {
@@ -239,6 +246,15 @@ exports.configureDB = function(callback) {
 	db = new Engine.Db(config.getDataDir('db'), {});
 	files = db.collection("files");
 	jobs = db.collection("jobs");
+	setImmediate(callback, null);
+}
+
+exports.cleanupDB = function(callback) {
+	jobs.find({state: {$in : ['running']}}).toArray(function(array) {
+		console.log(array);
+	});
+
+	//jobs.update({state:'running'},{$set : {finished_at : Date.now(), state : 'failed'}});
 	setImmediate(callback, null);
 }
 
