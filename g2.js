@@ -261,9 +261,9 @@ G2.prototype.fixed_move = function(direction,step) {
 	}
 	else {
 		var d = JOG_AXES[direction];
-		if(mstep > 0.001) {
-			mstep -= 0.001;
-			var move = 'G91 G1 ' + d + mstep + ' F' + FEED_RATE + '\n' +'G1' + d + mstep + 'F' + FEED_RATE + '\n';
+		if(mstep > 0.005) {
+			mstep -= 0.005;
+			var move = 'G91 G1 ' + d + 0.005 + ' F' + FEED_RATE + '\n' +'G1' + d + mstep + 'F' + FEED_RATE + '\n';
 		} else {
 			var move = 'G91 G1 ' + d + mstep + ' F' + FEED_RATE;
 		}
