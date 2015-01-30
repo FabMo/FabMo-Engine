@@ -13,6 +13,8 @@ var GCodeRuntime = require('./runtime/gcode').GCodeRuntime;
 var SBPRuntime = require('./runtime/opensbp').SBPRuntime;
 var ManualRuntime = require('./runtime/manual').ManualRuntime;
 var PassthroughRuntime = require('./runtime/passthrough').PassthroughRuntime;
+var HandwheelRuntime = require('./runtime/handwheel').HandwheelRuntime;
+
 
 function connect(callback) {
 
@@ -83,6 +85,7 @@ function Machine(control_path, gcode_path, callback) {
 		    this.sbp_runtime = new SBPRuntime();
 		    this.manual_runtime = new ManualRuntime();
 		    this.passthrough_runtime = new PassthroughRuntime();
+		    this.handwheel_runtime = new HandwheelRuntime();
 
 		    // GCode is the default runtime
 		    this.setRuntime(this.gcode_runtime);
@@ -224,7 +227,6 @@ Machine.prototype.setState = function(source, newstate) {
 	}
 };
 
-
 Machine.prototype.stopJog = function() {
 	this.current_runtime.stopJog();
 };
@@ -254,7 +256,6 @@ Machine.prototype.enable_passthrough = function(callback) {
 	else{
 		typeof callback === "function" && callback(true, "Cannot jog when in '" + this.status.state + "' state.");
 	}
-
 };
 
 Machine.prototype.disable_passthrough = function(string) {
@@ -262,5 +263,19 @@ Machine.prototype.disable_passthrough = function(string) {
 	this.setRuntime(this.gcode_runtime);
 };
 
+Machine.prototype.handwheel = function(v, callback) {
+	if(v) {
+		if(this.status.state === "idle"){
+			this.setState("manual");
+			this.setRuntime(this.handwheel_runtime);
+			typeof callback === "function" && callback(false);
+		}
+		else{
+			typeof callback === "function" && callback(true, "Cannot use handwheel when in '" + this.status.state + "' state.");
+		}
+	} else {
+		this.setRuntime(this.gcode_runtime);
+	}
+}
 
 exports.connect = connect;

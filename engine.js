@@ -144,20 +144,7 @@ Engine.prototype.start = function(callback) {
                 callback(null, server);
             });
         }.bind(this),
-
-        // Initialize a detection daemon.
-        // This is a beacon server that allows the tool to be auto-discovered on the network.
-        function start_detection_server(callback) {
-            log.info("Starting detection daemon...");
-            try {
-                var daemon = new detection_daemon(24862);
-                this.detection_daemon = daemon;
-                callback(null, daemon);
-            } catch (e) {
-                callback(e);
-            }
-        }.bind(this)
-
+        
         ],
 
         function(err, results) {

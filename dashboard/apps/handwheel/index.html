@@ -1,0 +1,60 @@
+<html>
+	<head>
+		<link rel="stylesheet" href="./css/style.css">
+		<link rel="stylesheet" href="./css/foundation.min.css">
+		<link rel="stylesheet" href="./css/normalize.css">
+	</head>
+	<body>
+		<canvas width="400" height="400" id="wheel"></canvas>
+		<br/>
+		<a class="button" id="xbutton">X</a>
+		<a class="button disabled" id="ybutton">Y</a>
+		<a class="button disabled" id="zbutton">Z</a>
+
+	</body>
+ 
+	<script src="./js/jquery-1.10.2.js"></script>
+	<script src="./js/foundation.min.js"></script>
+	<script src="./js/string-format.js"></script>
+	<script src="./js/FabMo-latest.js"></script>
+	<script src="./js/FabMo-UI.js"></script>
+	<script src="./js/dashboard.js"></script>
+	<script src="./js/handwheel.js"></script>
+
+	<script type="text/javascript">
+		var machine, ui;
+		var mode = 'x';
+		wheel = new HandWheel("wheel", {ppr:32});
+
+		fabmoDashboard.getMachine(function(err, machine) {
+			var machine = new FabMo(machine.ip, machine.port);
+
+			wheel.on("tick", function(evt) {
+				sign = evt.count > 0 ? '+' : '-';
+				machine.fixed_move(sign+mode, 0.050, function(err) {});
+			});
+		});
+
+		$('#xbutton').click(function(evt) {
+			$('#xbutton').removeClass('disabled');
+			$('#ybutton').addClass('disabled');
+			$('#zbutton').addClass('disabled');
+			mode = 'x';
+		});
+
+		$('#ybutton').click(function(evt) {
+			$('#ybutton').removeClass('disabled');
+			$('#xbutton').addClass('disabled');
+			$('#zbutton').addClass('disabled');
+			mode = 'y';
+		});
+
+		$('#zbutton').click(function(evt) {
+			$('#zbutton').removeClass('disabled');
+			$('#xbutton').addClass('disabled');
+			$('#ybutton').addClass('disabled');
+			mode = 'z';
+		});
+
+	</script>
+</html>

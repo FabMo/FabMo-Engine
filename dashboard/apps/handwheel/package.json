@@ -1,0 +1,10 @@
+{
+	"name":"Handwheel",
+	"main":"./index.html",
+	"icon":"icon.png",
+	"icon_color":"black",
+	"version":"0.0.1",
+	"author":"Ryan Sturmer",
+	"target":[],
+	"website":"http://www.shopbottools.com/"
+}
