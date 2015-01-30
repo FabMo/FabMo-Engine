@@ -396,6 +396,9 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #icon_status 		{ background-image: url('../img/icon_status.png');	}
 #icon_colapse 		{ background-image: url('../img/icon_colapse_r.png');	}
 #icon_edit 		{ background-image: url('../img/icon_folder.png');	}
+#icon_handwheel 		{ background-image: url('../img/icon_refresh.png');	}
+
+
 .colapsed #icon_colapse { background-image: url('../img/icon_colapse.png');	}
 
 
