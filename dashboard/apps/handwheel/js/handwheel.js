@@ -4,71 +4,94 @@ var HandWheel = function(element, options) {
     this.wheelColor = options.wheelColor || "#ffffff";
     this.thumbColor = options.thumbColor || "#ffffff";
     this.bgColor = options.bgColor || null;
-    this.active = false;
     this.canvas = document.getElementById(element);
-    console.log(element)
-    console.log(this.canvas)
     this.ctx = this.canvas.getContext("2d");
     this.w = this.canvas.width;
     this.h = this.canvas.height;
     this.cx = this.w/2.0;
     this.cy = this.h/2.0;
     this.cr = (this.w + this.h)/4.0;
-    this.pos = 0;
+    this.thumbPosition = 0.0;
+
+    this.pos = null;
     this.radius = 0.9*this.cr;
-    this.mouse_pressed = false;
+    this.active = false;
+    this.angle = null;
+
     this.handlers = {};
     this._setupListeners();
     this._draw();
 }
 
+function dist(x1,y1,x2,y2) {
+    return Math.sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1))
+}
+
+function deg(x) {
+    return x*180.0/Math.PI
+}
 HandWheel.prototype._handleMove = function(evt) {
         var pos = this._getMousePos(evt);
-        var mouseAngle = Math.atan2(this.cx-pos.x, -(this.cy-pos.y))+Math.PI;
-        var quadrant = Math.floor(mouseAngle/(2*Math.PI/this.ppr))
-    
-        if(this.mousePressed && (quadrant != this.q)) {
-            if(quadrant == ((this.q+1)%this.ppr)) {
-                this.pos = (this.pos + 1)%this.ppr;
-                this.emit('tick', {count:+1})
+        
+        if(this.pos) {
+            var a = dist(this.cx,this.cy, this.pos.x, this.pos.y);
+            var b = dist(this.cx,this.cy, pos.x, pos.y);
+            var c = dist(this.pos.x,this.pos.y, pos.x, pos.y);
+
+            theta = Math.acos((a*a + b*b - c*c)/(2*a*b));
+
+            var ta = Math.atan2(this.pos.x-this.cx, this.pos.y-this.cy);
+            var tb = Math.atan2(pos.x-this.cx, pos.y-this.cy);
+            var dt = tb-ta;
+
+            if(dt > Math.PI) {
+                dt -= 2*Math.PI;
             }
-    
-            if(quadrant == ((this.q-1)%this.ppr)) {
-                this.pos -= 1;
-                if(this.pos < 0) { this.pos = this.ppr-1;}
-                this.emit('tick', {count:-1})
+            if(dt < -Math.PI) {
+                dt += 2*Math.PI;
             }
-            
-            this._draw();
+            dt = -dt;
+            if(this.active) {
+                this.thumbPosition += dt;
+                this.emit('sweep', {'angle':dt})
+                this._draw();
+            }
         }
-        this.q = quadrant;
+        this.pos = pos;
+}
+
+HandWheel.prototype._activate = function(evt) {
+        this.active = true;
+        this.angle = null;
+        this.pos = null;
+}
+
+HandWheel.prototype._deactivate = function(evt) {
+       this.active = false;
+       this.angle = null;
+       this.pos = null;
+       this.emit("release", {});
 }
 
 HandWheel.prototype._setupListeners = function() {
     this.canvas.addEventListener('mousedown', function(evt) {
-        this.mousePressed = true;
-        this.q = null;
+        this._activate(evt);
     }.bind(this));
 
     this.canvas.addEventListener('mouseup', function(evt) {
-       this.mousePressed = false;
-       this.q = null;
+        this._deactivate(evt);
     }.bind(this));   
     
-    this.canvas.addEventListener('mousemove', this._handleMove.bind(this), false);
-
     this.canvas.addEventListener('touchstart', function(evt) {
-        this.mousePressed = true;
-        this.q = null;
+        this._activate(evt);
     }.bind(this), false);
     
     this.canvas.addEventListener('touchend', function(evt) {
-       this.mousePressed = false;
-       this.q = null;    
+        this._deactivate(evt);
     }.bind(this), false);
     
     this.canvas.addEventListener('touchmove', this._handleMove.bind(this), false);
-
+    this.canvas.addEventListener('mousemove', this._handleMove.bind(this), false);
 }
 
 HandWheel.prototype.on = function(event, handler) {
@@ -110,9 +133,8 @@ HandWheel.prototype._clear = function() {
 HandWheel.prototype._drawThumb = function() {
     var ctx = this.ctx;
     var r = this.radius*0.25;
-    var theta = 2*Math.PI/this.ppr;
-    var cx = this.cx + Math.cos(this.pos*theta)*this.radius*0.65;
-    var cy = this.cy + Math.sin(this.pos*theta)*this.radius*0.65;    
+    var cx = this.cx + Math.cos(this.thumbPosition)*this.radius*0.65;
+    var cy = this.cy + Math.sin(this.thumbPosition)*this.radius*0.65;    
     ctx.beginPath();
     ctx.arc(cx,cy,r,0,2*Math.PI);
     ctx.strokeStyle = "#000000";

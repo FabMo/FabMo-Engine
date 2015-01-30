@@ -26,14 +26,36 @@
 	<script type="text/javascript">
 		var machine, ui;
 		var mode = 'x';
+		var angle = 0.0;
+		var SCALE = 0.010;
+
+		var DETENT_ANGLE = 2.0;
 		wheel = new HandWheel("wheel", {ppr:32, thumbColor: "#313366", wheelColor:"#DDDDDD"});
 
 		fabmoDashboard.getMachine(function(err, machine) {
 			var machine = new FabMo(machine.ip, machine.port);
 
-			wheel.on("tick", function(evt) {
-				sign = evt.count > 0 ? '+' : '-';
-				machine.fixed_move(sign+mode, 0.050, function(err) {});
+			wheel.on("sweep", function(evt) {
+				var degrees = evt.angle*180.0/Math.PI;
+				angle += degrees;
+				var distance = Math.abs(angle*SCALE);
+				if(angle > 5.0) {
+					//console.log(angle);
+					angle = 0;
+					//console.log(distance);
+					machine.fixed_move('+' + mode, distance, function(err) {});
+				}
+				if(angle < -5.0) {
+					//console.log(angle);
+					angle = 0;
+					//console.log(distance);
+					machine.fixed_move('-' + mode, distance, function(err) {});
+				}
+			});
+
+			wheel.on("release", function(evt) {
+				console.log("release");
+				machine.quit(function() {})
 			});
 		});
 
