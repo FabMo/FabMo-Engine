@@ -5,12 +5,15 @@
 		<link rel="stylesheet" href="./css/normalize.css">
 	</head>
 	<body>
-		<canvas width="400" height="400" id="wheel"></canvas>
-		<br/>
-		<a class="button" id="xbutton">X</a>
-		<a class="button disabled" id="ybutton">Y</a>
-		<a class="button disabled" id="zbutton">Z</a>
-
+		<div style="text-align: center">
+			<h2 style="color: black">Handwheel</h2>
+			<p style="color: black">Click&amp;drag or touch the handwheel to drive the tool</p>
+			<canvas width="400" height="400" id="wheel"></canvas>
+			<br/>
+			<a class="button" id="xbutton">X</a>
+			<a class="button disabled" id="ybutton">Y</a>
+			<a class="button disabled" id="zbutton">Z</a>
+		</div>
 	</body>
  
 	<script src="./js/jquery-1.10.2.js"></script>
@@ -24,7 +27,7 @@
 	<script type="text/javascript">
 		var machine, ui;
 		var mode = 'x';
-		wheel = new HandWheel("wheel", {ppr:32});
+		wheel = new HandWheel("wheel", {ppr:32, thumbColor: "#313366", wheelColor:"#DDDDDD"});
 
 		fabmoDashboard.getMachine(function(err, machine) {
 			var machine = new FabMo(machine.ip, machine.port);
