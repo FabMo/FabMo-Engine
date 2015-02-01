@@ -83,7 +83,7 @@ download_file = function(req, res, next) {
 			res.header('Cache-Control','must-revalidate, post-check=0, pre-check=0');
 			res.header('Pragma','public');
 			res.header('Content-Length', file.size);
-			res.header('Location', req.headers['referer']);	
+			res.header('Location', req.headers.referer);	
 			res.send(data.toString());
 		});
 	});
@@ -99,7 +99,7 @@ view_file = function(req, res, next) {
 			if (err) throw err;
 			res.header('Content-Type','text/plain');
 			res.header('Content-Length', file.size);
-			res.header('Location', req.headers['referer']);	
+			res.header('Location', req.headers.referer);	
 			res.send(data.toString());
 		});
 	});
@@ -113,4 +113,4 @@ module.exports = function(server) {
 	server.del('/file/:id',delete_file); //OK
 	server.get('/file/:id',download_file); //OK
 	server.get('/file/:id/view',view_file); //OK
-}
+};

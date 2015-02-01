@@ -1,15 +1,15 @@
-var fs = require('fs')
+var fs = require('fs');
 var path = require('path');
-var log = require('../log').logger('routes')
-var restify = require('restify')
-var util = require('../util')
+var log = require('../log').logger('routes');
+var restify = require('restify');
+var util = require('../util');
 
 // Load all the files in the 'routes' directory and process them as route-producing modules
 module.exports = function(server) {
 	var routeDir = __dirname;
 	var files = fs.readdirSync(routeDir);
 	files.forEach(function (file) {
-		filePath = path.resolve('./', routeDir, file)
+		filePath = path.resolve('./', routeDir, file);
 		if((path.extname(filePath) == '.js') && (path.basename(filePath) != 'index.js')) {
 		try{
 			routes = require(filePath);
@@ -32,4 +32,4 @@ module.exports = function(server) {
 
 
 
-}
+};

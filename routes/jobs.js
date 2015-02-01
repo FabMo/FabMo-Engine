@@ -23,7 +23,7 @@ submitJob = function(req, res, next) {
 			// delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
 			fs.unlink(file.path, function(err) {
 				//if (err) {throw err;}
-				var file = new db.File(filename, full_path)
+				var file = new db.File(filename, full_path);
 				file.save(function(file){
 					
 					log.info('Saved a file');
@@ -72,7 +72,7 @@ clearQueue = function(req, res, next) {
 			res.send(200, {});
 		}
 	});
-}
+};
 
 /**
  * @apiGroup Jobs
@@ -88,7 +88,7 @@ runNextJob = function(req, res, next) {
 			res.send(200, job);
 		}
 	});
-}
+};
 
 /**
  * @apiGroup Jobs
@@ -97,7 +97,7 @@ runNextJob = function(req, res, next) {
  * @apiParam {String} id ID of job to resubmit
  */
 resubmitJob = function(req, res, next) {
-	log.debug("Resubmitting job " + req.params.id)
+	log.debug("Resubmitting job " + req.params.id);
 	db.Job.getById(req.params.id, function(err, result) {
 		log.debug(result);
 		if(err) {
@@ -113,7 +113,7 @@ resubmitJob = function(req, res, next) {
 			}
 		});
 	});
-}
+};
 
 /**
  * @apiGroup Jobs
@@ -128,8 +128,8 @@ getQueue = function(req, res, next) {
 		} else {
 			res.send(200, result);
 		}
-	})
-}
+	});
+};
 
 /**
  * @apiGroup Jobs
@@ -152,8 +152,8 @@ getAllJobs = function(req, res, next) {
 		} else {
 			res.send(200, result);
 		}
-	})
-}
+	});
+};
 
 getJobHistory = function(req, res, next) {
 	db.Job.getHistory(function(err, result) {
@@ -163,8 +163,8 @@ getJobHistory = function(req, res, next) {
 		} else {
 			res.send(200, result);
 		}
-	})
-}
+	});
+};
 
 /**
  * @apiGroup Jobs
@@ -187,8 +187,8 @@ getJobById = function(req, res, next) {
 		} else {
 			res.send(200, result);
 		}
-	})
-}
+	});
+};
 
 /**
  * @apiGroup Jobs
@@ -211,8 +211,8 @@ cancelJob = function(req, res, next) {
 				}
 			});
 		}
-	})
-}
+	});
+};
 
 
 module.exports = function(server) {
@@ -226,4 +226,4 @@ module.exports = function(server) {
 	server.post('/jobs/queue/run', runNextJob);
 	server.get('/jobs/history', getJobHistory);
 
-}
+};

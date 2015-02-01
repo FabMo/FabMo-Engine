@@ -15,7 +15,7 @@ var dashboard = require('../dashboard');
  */
 var getApps = function(req, res, next) {
 	res.json(dashboard.getAppList());
-}
+};
 
 /**
  * @api {get} /apps/:id App info
@@ -30,10 +30,10 @@ var getApps = function(req, res, next) {
  * @apiSuccess {String} apps.id Unique ID of this app (used in app URLs)
  */
 var getApp = function(req, res, next) {
-	log.info("Getting app")
-	console.log(dashboard.getAppIndex())
-	res.json(dashboard.getAppIndex()[req.params.id])
-}
+	log.info("Getting app");
+	console.log(dashboard.getAppIndex());
+	res.json(dashboard.getAppIndex()[req.params.id]);
+};
 
 /**
  * @api {get} /apps/:id/files Get app file listing
@@ -42,7 +42,7 @@ var getApp = function(req, res, next) {
  * @apiSuccess {Object} root Root of directory tree
  */
 var listAppFiles = function(req, res, next) {
-	log.info("Listing files")
+	log.info("Listing files");
 	id = req.params.id;
 
 	files = dashboard.getAppFiles(id);
@@ -61,14 +61,14 @@ var listAppFiles = function(req, res, next) {
 	add_urls(files);
 
 	res.json(files);
-}
+};
 
 
 module.exports = function(server) {
 	server.get('/apps', getApps);
 	server.get('/apps/:id', getApp);
-	server.get('/apps/:id/files', listAppFiles)
+	server.get('/apps/:id/files', listAppFiles);
 	server.get(/\/approot\/?.*/, restify.serveStatic({
 		directory: config.getDataDir('temp'),
 	}));
-}
+};
