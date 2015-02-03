@@ -251,9 +251,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	background-position: center left 0.75rem;
 }
 
-
-
-
 /* 
 *** Widgets Styles
 */
@@ -400,9 +397,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 
 .colapsed #icon_colapse { background-image: url('../img/icon_colapse.png');	}
-
-
-
 
 /***
 *** Right Menu ***
@@ -1085,3 +1079,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #left-menu ::-webkit-scrollbar {
 	display: none !important;
 }
+
+.fabmo-status-idle { color: blue; }
+.fabmo-status-disconnected { color: gray; }
