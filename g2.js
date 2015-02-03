@@ -510,6 +510,12 @@ G2.prototype.handleStatusReport = function(response) {
 	}
 };
 
+G2.prototype.handleError = function(response) {
+    if(response.er) {
+        this.emit('error', [response.er.st, response.er.msg]);
+    }
+}
+
 // Called once a proper JSON response is decoded from the chunks of data that come back from G2
 G2.prototype.onMessage = function(response) {
 	
@@ -520,6 +526,8 @@ G2.prototype.onMessage = function(response) {
 	} else {
 		r = response;
 	}
+
+    this.handleError(r);
 
 	// Deal with streaming (if response contains a queue report)
 	this.handleQueueReport(r);
