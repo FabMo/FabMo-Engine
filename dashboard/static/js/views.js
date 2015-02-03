@@ -122,59 +122,6 @@ define(function(require) {
 		}
 	});
 
-	views.RemoteMachineMenuView = Backbone.View.extend({
-		tagName : 'ul',
-		className : 'off-canvas-list',
-		collection : null,
-		initialize : function(options) {
-			this.collection = options.collection;
-			this.collection.bind('reset', this.render, this);
-			this.collection.bind('add', this.render, this);
-			this.collection.bind('remove', this.render, this);
-			this.collection.bind('change', this.render, this);
-			_.bindAll(this, 'render');
-		},
-		render : function() {
-			jQuery('.tools-other').empty();
-			jQuery('.tools-current').html('<li><a href="#">Refresh</a></li>');
-			var cpt=0;
-			this.collection.forEach(function(item) {
-				var singleRemoteMachine;
-				if(item.get("current")=="current") {
-					cpt++; console.log(cpt);
-					jQuery('.tools-current').empty();
-					singleRemoteMachine = new views.SingleMachineView({ model: item,el:'.tools-current'});
-				}
-				singleRemoteMachine = new views.SingleMachineView({ model: item,el:'.tools-other'});
-			}.bind(this));
-
-			return this;
-		},
-		
-		// hack for the "non-reload on same url" problem with backbone.js
-		// more explanation on http://movableapp.com/2012/06/how-to-refresh-router-action-backbonejs-tutorial/
-	    events: {
-	        'click .tool > a' 	: 'onClick',
-	        'click li.tool'		: 'showHideTools'
-	    },
-	    
-	    onClick: function( e ) {
-	        router.navigate('/');
-	    },
-
-	    //Move this on view, wich will concert 1 tool, and not all the tools
-	    showHideTools: function ( e ) {
-	    	var o = this.$el.children();
-	    	var c = o.length;
-			if (c > 1)
-				if( o.last().is(":hidden") ) {
-					o.slice(1).slideDown("fast");
-				}
-				else {
-					o.slice(1).slideUp("fast");
-				}
-			}
-	});
 
 	views.AppStudioFileView = Backbone.View.extend({
 		tagName : 'div',

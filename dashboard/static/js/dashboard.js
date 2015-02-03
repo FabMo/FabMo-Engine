@@ -185,7 +185,7 @@ define(function(require) {
           s={
 			"appName": {
 				"name":"DashBoard Name",
-				"value":"FabMo DashBoard",
+				"value":"FabMo Dashboard",
 				"type":"text"
 			},
 			"mainColor": {
