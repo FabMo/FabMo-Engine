@@ -69,7 +69,7 @@ exports.M2 = function(args) {
 		this.cmd_posx = args[0];
 	}
 	if (args[1] !== undefined) {
-		var y = args[0];
+		var y = args[1];
 		if(isNaN(y)) { throw "Invalid MX argument: " + y; }
 		outStr = outStr + "Y" + y;
 		this.cmd_posy = args[1];
