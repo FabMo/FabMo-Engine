@@ -54,6 +54,7 @@ exports.MC = function(args) {
 // Move 2 axes (XY). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.M2 = function(args) {
+	log.debug(JSON.stringify(args));
 	var outStr = "G1";
 	if (args[0] !== undefined) {
 		var x = args[0];
