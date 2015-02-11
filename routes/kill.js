@@ -3,7 +3,11 @@ log = require('../log').logger('routes');
 
 kill = function(req, res, next) {
     log.warn('Killing the engine by user request...');
-    res.json({'success':true});
+    var answer = {
+			status:"success",
+			data : null
+		};
+		res.json(answer);
     process.exit(1);
 };
 
