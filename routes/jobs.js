@@ -6,10 +6,16 @@ var log = require('../log').logger('routes');
 var machine = require('../machine').machine;
 var fs = require('fs');
 
+/**
+ * @apiGroup Jobs
+ * @api {post} /job Submit a job
+ * @apiDescription Add a job to the queue
+ */
 submitJob = function(req, res, next) {
 
 	// Get the one and only one file you're currently allowed to upload at a time
 	var file = req.files.file;
+	var answer;
 
 	// Only write "allowed files"
 	if(file && util.allowed_file(file.name))
@@ -19,16 +25,29 @@ submitJob = function(req, res, next) {
 		var full_path = path.join(config.getDataDir('files'), filename);
 		
 		util.move(file.path, full_path, function(err) {
-			if (err) { throw err; }
+			if (err) {
+				answer = {
+					status:"error",
+					message:"failed to move the job from temporary folder to files folder"
+				}; 
+				throw err; 
+			}
 			// delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
 			fs.unlink(file.path, function(err) {
-				//if (err) {throw err;}
+				if (err) {
+					answer = {
+						status:"error",
+						message:"failed to remove the job from temporary folder"
+					}; 
+					throw err; 
+				}
 				var file = new db.File(filename, full_path);
 				file.save(function(file){
 					
 					log.info('Saved a file');
+					var job;
 					try {
-						var job = new db.Job({
+						job = new db.Job({
 							file_id : file._id,
 							name : req.body.name || filename,
 							description : req.body.description
@@ -40,9 +59,17 @@ submitJob = function(req, res, next) {
 					job.save(function(err, job) {
 						if(err) {
 							log.error(err);
-							res.send(500, err);
+					    answer = {
+								status:"error",
+								message:"failed to save the job in DB"
+							};
+							res.json(answer);
 						} else {
-							res.send(200, job);
+					    answer = {
+								status:"success",
+								data : {job:job}
+							};
+							res.json(answer);
 						}
 					}); // job.save
 
@@ -53,10 +80,18 @@ submitJob = function(req, res, next) {
 		});
 	}
 	else if (file){
-		res.send(415); // wrong format
+		answer = {
+			status:"fail",
+			data : {job:"wrong format"}
+		};
+		res.json(answer);
 	}
 	else{
-		res.send(400);// problem reciving the file (bad request)	
+		answer = {
+			status:"fail",
+			data : {job:"problem receiving the job : bad request"}
+		};
+		res.json(answer);
 	}
 };
 
@@ -65,11 +100,20 @@ submitJob = function(req, res, next) {
  * @apiGroup Jobs
  */
 clearQueue = function(req, res, next) {
+	var answer;
 	db.Job.deletePending(function(err) {
 		if(err) {
-			res.send(500, err);
+			answer = {
+				status:"error",
+				message:"failed to remove the job in DB"
+			};
+			res.json(answer);
 		} else {
-			res.send(200, {});
+			answer = {
+				status:"success",
+				data : null
+			};
+			res.json(answer);
 		}
 	});
 };
@@ -80,12 +124,21 @@ clearQueue = function(req, res, next) {
  * @apiDescription Runs the next job in the queue if able.
  */
 runNextJob = function(req, res, next) {
+	var answer;
 	machine.runNextJob(function(err, job) {
 		if(err) {
 			log.error(err);
-			res.send(500, err);
+			answer = {
+				status:"failed",
+				data:{job:"failed to run next job"}
+			};
+			res.json(answer);
 		} else {
-			res.send(200, job);
+			answer = {
+				status:"success",
+				data : {job:job}
+			};
+			res.json(answer);
 		}
 	});
 };
@@ -97,6 +150,7 @@ runNextJob = function(req, res, next) {
  * @apiParam {String} id ID of job to resubmit
  */
 resubmitJob = function(req, res, next) {
+	var answer;
 	log.debug("Resubmitting job " + req.params.id);
 	db.Job.getById(req.params.id, function(err, result) {
 		log.debug(result);
@@ -107,9 +161,17 @@ resubmitJob = function(req, res, next) {
 			log.debug("Cloned!");
 			if(err) {
 				log.error(err);
-				res.send(404, err);
+				answer = {
+					status:"failed",
+					data:{job:"job id not correct"}
+				};
+				res.json(answer);
 			} else {
-				res.send(200, result);
+				answer = {
+					status:"success",
+					data : {job:result}
+				};
+				res.json(answer);
 			}
 		});
 	});
@@ -121,12 +183,21 @@ resubmitJob = function(req, res, next) {
  * @apiDescription Get all the pending jobs currently in the queue
  */
 getQueue = function(req, res, next) {
+	var answer;
 	db.Job.getPending(function(err, result) {
 		if(err) {
 			log.error(err);
-			res.send(500, err);
+			answer = {
+				status:"error",
+				message:"failed to get jobs from DB"
+			};
+			res.json(answer);
 		} else {
-			res.send(200, result);
+			answer = {
+				status:"success",
+				data : {jobs:result}
+			};
+			res.json(answer);
 		}
 	});
 };
@@ -145,23 +216,41 @@ getQueue = function(req, res, next) {
  * @apiSuccess {Number} jobs.finished_at Time job was finished (UNIX timestamp)
  */
 getAllJobs = function(req, res, next) {
+	var answer;
 	db.Job.getAll(function(err, result) {
 		if(err) {
 			log.error(err);
-			res.send(500, err);
+			answer = {
+				status:"error",
+				message:"failed to get jobs from DB"
+			};
+			res.json(answer);
 		} else {
-			res.send(200, result);
+			answer = {
+				status:"success",
+				data : {jobs:result}
+			};
+			res.json(answer);
 		}
 	});
 };
 
 getJobHistory = function(req, res, next) {
+	var answer;
 	db.Job.getHistory(function(err, result) {
 		if(err) {
 			log.error(err);
-			res.send(500, err);
+			answer = {
+				status:"error",
+				message:"failed to get jobs from DB"
+			};
+			res.json(answer);
 		} else {
-			res.send(200, result);
+			answer = {
+				status:"success",
+				data : {jobs:result}
+			};
+			res.json(answer);
 		}
 	});
 };
@@ -180,12 +269,21 @@ getJobHistory = function(req, res, next) {
  * @apiSuccess {Number} finished_at Time job was finished (UNIX timestamp)
  */
 getJobById = function(req, res, next) {
+	var answer;
 	db.Job.getById(req.params.id, function(err, result) {
 		if(err) {
 			log.error(err);
-			res.send(404, err);
+			answer = {
+					status:"failed",
+					data:{job:"job id not correct"}
+			};
+			res.json(answer);
 		} else {
-			res.send(200, result);
+			answer = {
+				status:"success",
+				data : {job:result}
+			};
+			res.json(answer);
 		}
 	});
 };
@@ -197,17 +295,30 @@ getJobById = function(req, res, next) {
  * @apiParam {String} id ID of job to cancel
  */
 cancelJob = function(req, res, next) {
+	var answer;
 	db.Job.getById(req.params.id, function(err, result) {
 		if(err) {
 			log.error(err);
-			res.send(404, err);
+			answer = {
+					status:"failed",
+					data:{job:"job id not correct"}
+			};
+			res.json(answer);
 		} else {
 			result.cancel(function(err, result) {
 				if(err) {
 					log.error(err);
-					res.send(500, err);
+					answer = {
+							status:"failed",
+							data:{job:"failed to cancel the job"}
+					};
+					res.json(answer);
 				} else {
-					res.send(200, result);
+					answer = {
+						status:"success",
+						data : {job:result}
+					};
+					res.json(answer);
 				}
 			});
 		}

@@ -39,12 +39,22 @@ upload_file = function(req, res, next) {
 		// Move the file from that path to the parts directory
 		
 		util.move(file.path, full_path, function(err) {
-			if (err){
-				throw err;
+			if (err) {
+				answer = {
+					status:"error",
+					message:"failed to move the file from temporary folder to files folder"
+				}; 
+				throw err; 
 			}
 			// delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
 			fs.unlink(file.path, function() {
-				if (err) {throw err;}
+				if (err) {
+					answer = {
+						status:"error",
+						message:"failed to remove the file from temporary folder"
+					}; 
+					throw err; 
+				}
 				new File(filename, full_path).save(function(file){
 				answer = {
 					status:"success",
