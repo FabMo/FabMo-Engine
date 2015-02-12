@@ -116,7 +116,7 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
 
     var onOpen = function(callback) {
         this.command({"clear":null});
-        this.command({"gun":0});
+        this.command({"gc":"G20"});
 		this.command({"gc":'M30'});
         this.requestStatusReport();
 		this.connected = true;
@@ -348,7 +348,14 @@ G2.prototype.onData = function(data) {
 };
 
 G2.prototype.handleQueueReport = function(r) {
-	var FLOOD_LEVEL = 20;
+		// Deal with jog mode
+	if(this.jog_command && (qo > 0)) {
+		this.gcodeWrite(this.jog_command + '\n');
+		return;
+	}
+
+	/*
+	var FLOOD_LEVEL = 100;
 	var MIN_QR_LEVEL = 5;
 	var MIN_FLOOD_LEVEL = 5;
 
@@ -367,19 +374,7 @@ G2.prototype.handleQueueReport = function(r) {
 
 	if((qr !== undefined)) {
 
-		//log.debug('GCode Queue Size: ' + this.gcode_queue.getLength());
-		// Deal with jog mode
-		if(this.jog_command && (qo > 0)) {
-			this.gcodeWrite(this.jog_command + '\n');
-			return;
-		}
-
-		var lines_to_send = 0 ;
-		if(qo > 0 || qr > MIN_FLOOD_LEVEL) {
-			lines_to_send = 10*qr;
-		}  
-
-
+        var lines_to_send = 100000;
 		if(lines_to_send > 0) {
 			var cmds = [];
 			while(lines_to_send > 0) {
@@ -406,6 +401,7 @@ G2.prototype.handleQueueReport = function(r) {
 		//log.debug('qi: ' + qi + '  qr: ' + qr + '  qo: ' + qo + '   lines: ' + lines_to_send);
 
 	}
+	*/
 };
 
 G2.prototype.handleFooter = function(response) {
@@ -568,9 +564,10 @@ G2.prototype.queueClear = function(callback) {
     log.debug('Clearing the queue.');
     this.controlWriteAndDrain('\%', function() {
         log.debug('Writing the clear.');
+        /*
         this.gcodeWriteAndDrain('{clear:n}\n', function() {
             callback();
-        });
+        });*/
         callback();
     }.bind(this));
 };
@@ -748,12 +745,13 @@ G2.prototype.runSegment = function(data, callback) {
 			callback.line = line_count;
 		}
 		this.gcode_queue.enqueue(line);
+		this.gcodeWrite(this.gcode_queue.getContents().join('\n'));
 	}
 
 	// Kick off the run if any lines were queued
 	if(line_count > 0) {
 		this.pause_flag = false;
-		this.requestQueueReport();
+
 	} else {
 		typeof callback === "function" && callback(true, "No G-codes were present in the provided string");
 	}

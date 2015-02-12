@@ -269,7 +269,8 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 			}
 		}
 		string = lines.join("\n");
-		this.driver.runString(string,this.machine.status);
+		this.driver.gcodeWrite(string);
+		//this.driver.runString(string,this.machine.status);
 	}
 
 };
