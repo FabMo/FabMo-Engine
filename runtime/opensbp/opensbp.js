@@ -250,7 +250,7 @@ SBPRuntime.prototype._end = function() {
 		this.machine.status.current_file = null;
 		this.machine.status.nb_lines=null;
 		this.machine.status.line=null;
-		this.init();
+		this.init(); 
 		this.emit('end', this);
 	} else {
 		this.emit('end', this.output);
@@ -404,8 +404,14 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			}
 			break;
 
-		case "label":
 		case "comment":
+			var comment = command.comment.join('').trim();
+			this.emit_gcode('( ' + comment + ' )')
+			this.pc += 1;
+			return false;
+			break;
+
+		case "label":
 		case undefined:
 			this.pc += 1;
 			return false;
