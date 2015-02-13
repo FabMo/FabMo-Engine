@@ -2,6 +2,7 @@ var log = require('../../../log').logger('sbp');
 var g2 = require('../../../g2');
 var sb3_commands = require('../sb3_commands');
 var config = require('../../../config');
+var rotate = require('./transformation').rotate;
 
 // Move X axis
 exports.MX = function(args) {
@@ -83,21 +84,21 @@ exports.M3 = function(args) {
 	var outStr = "G1";
 	if (args[0] !== undefined) {
 //		var x = args[0];
-		var x = PtRot.x;
+		var x = PtRot.X;
 		if(isNaN(x)) { throw "Invalid M3-X argument: " + x; }		
 		outStr = outStr + "X" + x;
 		this.cmd_posx = x;
 	}
 	if (args[1] !== undefined) {
 //		var y = args[1];
-		var y = PtRot.y;
+		var y = PtRot.Y;
 		if(isNaN(y)) { throw "Invalid M3-Y argument: " + y; }
 		outStr = outStr + "Y" + y;
 		this.cmd_posy = y;
 	}
 	if (args[2] !== undefined) {
 //		var z = args[2];
-		var z = PtRot.z;
+		var z = PtRot.Z;
 		if(isNaN(z)) { throw "Invalid M3-Z argument: " + z; }
 		outStr = outStr + "Z" + z;
 		this.cmd_posz = z;
