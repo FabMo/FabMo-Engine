@@ -79,6 +79,7 @@ exports.M3 = function(args) {
 	var Angle = 0.286;
 	var RPtX = 0;
 	var RPtY = 0;
+	var M3res = 5;
 	var PtRot = rotate(args[0], args[1], args[2], Angle, RPtX, RPtY);
 
 	var outStr = "G1";
@@ -86,21 +87,21 @@ exports.M3 = function(args) {
 //		var x = args[0];
 		var x = PtRot.X;
 		if(isNaN(x)) { throw "Invalid M3-X argument: " + x; }		
-		outStr = outStr + "X" + x;
+		outStr = outStr + "X" + (x).toFixed(M3res);
 		this.cmd_posx = x;
 	}
 	if (args[1] !== undefined) {
 //		var y = args[1];
 		var y = PtRot.Y;
 		if(isNaN(y)) { throw "Invalid M3-Y argument: " + y; }
-		outStr = outStr + "Y" + y;
+		outStr = outStr + "Y" + (y).toFixed(M3res);
 		this.cmd_posy = y;
 	}
 	if (args[2] !== undefined) {
 //		var z = args[2];
 		var z = PtRot.Z;
 		if(isNaN(z)) { throw "Invalid M3-Z argument: " + z; }
-		outStr = outStr + "Z" + z;
+		outStr = outStr + "Z" + (z).toFixed(M3res);
 		this.cmd_posz = z;
 	}
 	outStr = outStr + "F" + ( 60.0 * config.opensbp.get('movexy_speed')); 
