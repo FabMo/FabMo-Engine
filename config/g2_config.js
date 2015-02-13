@@ -54,6 +54,8 @@ G2Config.prototype.configureStatusReports = function(callback) {
 						"line":true, 
 						"coor":true}});
 	this.driver.command({"qv":0});
+	this.driver.command({"jv":6});
+
 	return callback(null, this);
 }
 exports.G2Config = G2Config;

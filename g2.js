@@ -557,24 +557,23 @@ G2.prototype.feedHold = function(callback) {
 	this.pause_flag = true;
 	this.flooded = false;
 	typeof callback === 'function' && this.once('state', callback);
-	this.controlWrite('!');
+	this.controlWrite('!\n');
 };
 
 G2.prototype.queueClear = function(callback) {
     log.debug('Clearing the queue.');
-    this.controlWriteAndDrain('\%', function() {
+    this.controlWriteAndDrain('\%\n', function() {
         log.debug('Writing the clear.');
-        /*
         this.gcodeWriteAndDrain('{clear:n}\n', function() {
             callback();
-        });*/
+        });
         callback();
     }.bind(this));
 };
 
 G2.prototype.resume = function() {
-	this.controlWrite('~'); //cycle start command character
-	this.requestQueueReport();
+	this.controlWrite('~\n'); //cycle start command character
+	//this.requestQueueReport();
 	this.pause_flag = false;
 };
 
@@ -585,8 +584,8 @@ G2.prototype.quit = function() {
 		this.feedHold();
 	} else {
 		this.queueClear(function() {
-		    this.command("M2");
-		    this.requestQueueReport();
+			this.command("M2");
+			//this.requestQueueReport();
             this.requestStatusReport();
         }.bind(this));
 	}
