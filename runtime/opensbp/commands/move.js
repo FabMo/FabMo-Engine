@@ -75,21 +75,29 @@ exports.M2 = function(args) {
 // Move 3 axes (XYZ). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.M3 = function(args) {
+	var Angle = 0.286;
+	var RPtX = 0;
+	var RPtY = 0;
+	var PtRot = rotate(args[0], args[1], args[2], Angle, RPtX, RPtY);
+
 	var outStr = "G1";
 	if (args[0] !== undefined) {
-		var x = args[0];
+//		var x = args[0];
+		var x = PtRot.x;
 		if(isNaN(x)) { throw "Invalid M3-X argument: " + x; }		
 		outStr = outStr + "X" + x;
 		this.cmd_posx = x;
 	}
 	if (args[1] !== undefined) {
-		var y = args[1];
+//		var y = args[1];
+		var y = PtRot.y;
 		if(isNaN(y)) { throw "Invalid M3-Y argument: " + y; }
 		outStr = outStr + "Y" + y;
 		this.cmd_posy = y;
 	}
 	if (args[2] !== undefined) {
-		var z = args[2];
+//		var z = args[2];
+		var z = PtRot.z;
 		if(isNaN(z)) { throw "Invalid M3-Z argument: " + z; }
 		outStr = outStr + "Z" + z;
 		this.cmd_posz = z;
