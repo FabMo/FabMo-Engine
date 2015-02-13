@@ -406,7 +406,9 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 		case "comment":
 			var comment = command.comment.join('').trim();
-			this.emit_gcode('( ' + comment + ' )')
+			if(comment != '') {
+				this.emit_gcode('( ' + comment + ' )')
+			}
 			this.pc += 1;
 			return false;
 			break;
