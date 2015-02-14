@@ -4,11 +4,15 @@ var log = require('../../log').logger('sbp');
 var g2 = require('../../g2');
 var sb3_commands = require('./sb3_commands');
 var config = require('../../config');
+var events = require('events');
 
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
 
 function SBPRuntime() {
+	// Handle Inheritance
+	events.EventEmitter.call(this);
+
 	this.program = [];
 	this.pc = 0;
 	this.start_of_the_chunk = 0;
@@ -16,6 +20,7 @@ function SBPRuntime() {
 	this.label_index = {};
 	this.stack = [];
 	this.current_chunk = [];
+	this.output = [];
 	this.running = false;
 	this.cmd_posx = 0;
 	this.cmd_posy = 0;
@@ -24,6 +29,7 @@ function SBPRuntime() {
 	this.cmd_posb = 0;
 	this.cmd_posc = 0; 
 }
+util.inherits(SBPRuntime, events.EventEmitter);
 
 SBPRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
@@ -59,10 +65,14 @@ SBPRuntime.prototype._onG2Status = function(status) {
 SBPRuntime.prototype.runString = function(s) {
 	try {
 		var lines =  s.split('\n');
-		this.machine.status.nb_lines = lines.length - 1;
+		if(this.machine) {
+			this.machine.status.nb_lines = lines.length - 1;
+		}
 		this.program = parser.parse(s);
 		lines = this.program.length;
-		this.machine.status.nb_lines = lines.length - 1;
+		if(this.machine) {
+			this.machine.status.nb_lines = lines.length - 1;
+		}
 		this._analyzeLabels();  // Build a table of labels
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table    
 		this._run();
@@ -73,7 +83,11 @@ SBPRuntime.prototype.runString = function(s) {
 
 // Update the internal state of the runtime with data from the tool
 SBPRuntime.prototype._update = function() {
-	status = this.machine.status || {};
+	if(this.machine) {
+		status = this.machine.status || {};		
+	} else {
+		status = {}
+	}
 	this.posx = status.posx || 0.0;
 	this.posy = status.posy || 0.0;
 	this.posz = status.posz || 0.0;
@@ -173,7 +187,9 @@ SBPRuntime.prototype._exprBreaksStack = function(expr) {
 SBPRuntime.prototype._run = function() {
 	log.info("Setting the running state");
 	this.started = true;
-	this.machine.setState(this, "running");
+	if(this.machine) {
+		this.machine.setState(this, "running");
+	}
 	this._continue();
 };
 
@@ -206,7 +222,17 @@ SBPRuntime.prototype._continue = function() {
 			dispatched = this._dispatch(this._continue.bind(this));
 			if(!dispatched) {
 				log.debug('Nothing to execute in the queue: continuing.');
-				this._execute(line, this._continue.bind(this));
+				if(!this.machine) {
+					log.warn('Attempting to execute a stack-breaking command without G2, which may cause issues.')
+					try {
+						this._execute(line, this._continue.bind(this));
+					} catch(e) {
+						log.error('There was a problem: ' + e);
+						setImmediate(this._continue().bind(this));
+					}
+				} else {
+					this._execute(line, this._continue.bind(this));
+				}
 				break;
 			} else {
 				log.debug('Current chunk is nonempty: breaking to run stuff on G2.');
@@ -219,11 +245,17 @@ SBPRuntime.prototype._continue = function() {
 };
 
 SBPRuntime.prototype._end = function() {
-	this.machine.status.filename = null;
-	this.machine.status.current_file = null;
-	this.machine.status.nb_lines=null;
-	this.machine.status.line=null;
-	this.init();
+	if(this.machine) {
+		this.machine.status.filename = null;
+		this.machine.status.current_file = null;
+		this.machine.status.nb_lines=null;
+		this.machine.status.line=null;
+		this.init(); 
+		this.emit('end', this);
+	} else {
+		this.emit('end', this.output);
+		this.init();
+	}
 };
 // Pack up the current chunk and send it to G2
 // Returns true if there was data to send to G2
@@ -232,32 +264,40 @@ SBPRuntime.prototype._dispatch = function(callback) {
 	var runtime = this;
 
 	if(this.current_chunk.length > 0) {
-		log.info("dispatching a chunk: " + this.current_chunk);
 
-		var run_function = function(driver) {
-			log.debug("Expected a running state change and got one.");
-			driver.expectStateChange({
-				"stop" : function(driver) { 
-					callback();
-				},
-				null : function(driver) {
-					log.warn("Expected a stop but didn't get one.");
+		if(this.machine) {
+			log.info("dispatching a chunk: " + this.current_chunk);
+			var run_function = function(driver) {
+				log.debug("Expected a running state change and got one.");
+				driver.expectStateChange({
+					"stop" : function(driver) { 
+						callback();
+					},
+					null : function(driver) {
+						log.warn("Expected a stop but didn't get one.");
+					}
+				});
+			};
+
+			this.driver.expectStateChange({
+				"running" : run_function,
+				"homing" : run_function,
+				"probe" : run_function,
+				null : function(t) {
+					log.warn("Expected a start but didn't get one. (" + t + ")"); 
 				}
 			});
-		};
 
-		this.driver.expectStateChange({
-			"running" : run_function,
-			"homing" : run_function,
-			"probe" : run_function,
-			null : function(t) {
-				log.warn("Expected a start but didn't get one. (" + t + ")"); 
-			}
-		});
-
-		this.driver.runSegment(this.current_chunk.join('\n'));
-		this.current_chunk = [];
-		return true;
+			this.driver.runSegment(this.current_chunk.join('\n'));
+			this.current_chunk = [];
+			return true;
+		} else {
+			log.info("Dispatching a chunk (no driver)");
+			Array.prototype.push.apply(this.output, this.current_chunk);
+			this.current_chunk = []
+			setTimeout(callback, 100)
+			return true;
+		}
 	} else {
 		return false;
 	}
@@ -273,7 +313,13 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 
 		if(f.length > 1) {
 			// This is a stack breaker, run with a callback
+			try {
 			f(args, function() {this.pc+=1; callback();}.bind(this));
+			} catch(e) {
+				log.error("There was a problem executing a stack-breaking command: " + e)
+				this.pc+=1;
+				callback();
+			}
 			return true;
 		} else {
 			// This is NOT a stack breaker, run immediately, increment PC, proceed.
@@ -358,8 +404,16 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			}
 			break;
 
-		case "label":
 		case "comment":
+			var comment = command.comment.join('').trim();
+			if(comment != '') {
+				this.emit_gcode('( ' + comment + ' )')
+			}
+			this.pc += 1;
+			return false;
+			break;
+
+		case "label":
 		case undefined:
 			this.pc += 1;
 			return false;
@@ -469,7 +523,10 @@ SBPRuntime.prototype.init = function() {
 	this.started = false;
 	this.sysvar_evaluated = false;
 	this.chunk_broken_for_eval = false;
-	this.machine.setState(this, 'idle');
+	this.output = [];
+	if(this.machine) {
+		this.machine.setState(this, 'idle');
+	}
 };
 
 // Compile an index of all the labels in the program
