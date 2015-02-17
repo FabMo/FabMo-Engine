@@ -45,7 +45,6 @@ function connect(callback) {
 		callback(null, exports.machine);
 	} else {
 		typeof callback === "function" && callback('No supported serial path for platform "' + PLATFORM + '"');
-		return null;
 	}
 }
 
@@ -124,7 +123,7 @@ Machine.prototype.sbp = function(string) {
 
 Machine.prototype.runJob = function(job) {
 	this.status.job = job;
-	db.File.get_by_id(job.file_id,function(file){
+	db.File.getByID(job.file_id,function(file){
 		// TODO deal with no file found
 		log.info("Running file " + file.path);
 		this.runFile(file.path);

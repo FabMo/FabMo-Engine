@@ -51,7 +51,7 @@ upload_file = function(req, res, next) {
 
 delete_file = function(req, res, next) {
 	console.log('Deleting file');
-	File.get_by_id(req.params.id,function(file){
+	File.getByID(req.params.id,function(file){
 		if(file)
 		{
 			fs.unlink(file.path, function(){ //delete file on hdd
@@ -70,7 +70,7 @@ delete_file = function(req, res, next) {
 
 
 download_file = function(req, res, next) {
-	File.get_by_id(req.params.id,function(file){
+	File.getByID(req.params.id,function(file){
 		if(!file){res.send(404);return;}
 		console.log('Downloading file');
 		fs.readFile((file.path),function (err, data){
@@ -92,7 +92,7 @@ download_file = function(req, res, next) {
 
 
 view_file = function(req, res, next) {
-	File.get_by_id(req.params.id,function(file){
+	File.getByID(req.params.id,function(file){
 		if(!file){res.send(404);return;}
 		console.log('Downloading file');
 		fs.readFile((file.path),function (err, data){

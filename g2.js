@@ -53,19 +53,27 @@ try {
 function G2() {
 	this.current_data = [];
 	this.current_gcode_data = [];
-	this.status = {'stat':null, 'posx':0, 'posy':0, 'posz':0};
+	this.g2_status = {'stat':null, 'posx':0, 'posy':0, 'posz':0};
+	this.status = {'stat':'idle', 'posx':0, 'posy':0, 'posz':0};
+
 	this.gcode_queue = new Queue();
 	this.pause_flag = false;
-	this.jog_stop_pending = false;
 	this.connected = false;
+
+	// Jogging state
+	this.jog_stop_pending = false;
 	this.jog_direction = null;
 	this.jog_command = null;
 	this.jog_heartbeat = null;
+
+	// Feedhold/flush
 	this.quit_pending = false;
-	this.readers = {};
-	this.path = "";
-	// Array of assoc-arrays that detail callbacks for state changes
+	this.stat = null
+	this.hold = null
+
+	// Readers and callbacks
 	this.expectations = [];
+	this.readers = {};
 
 	// Members related to streaming
 	this.qtotal = 0;
@@ -78,11 +86,6 @@ function G2() {
 }
 util.inherits(G2, events.EventEmitter);
 
-// Informative summary string
-G2.prototype.toString = function() {
-	return "[G2 Driver on '" + this.path + "']";
-};
-
 // Actually open the serial port and configure G2 based on stored settings
 G2.prototype.connect = function(control_path, gcode_path, callback) {
 
@@ -94,13 +97,13 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
 	this.connect_callback = callback;
 
 	// Open both ports
-	log.debug('Opening control port ' + control_path)
+	log.info('Opening control port ' + control_path)
 	this.control_port = new serialport.SerialPort(control_path, {rtscts:true}, false);
 	if(control_path !== gcode_path) {
-        log.debug("Dual USB since control port and gcode port are different. (" + this.control_path + "," + this.gcode_path + ")");
+        log.info("Dual USB since control port and gcode port are different. (" + this.control_path + "," + this.gcode_path + ")");
         this.gcode_port = new serialport.SerialPort(gcode_path, {rtscts:true}, false)
     } else {
-        log.debug("Single USB since control port and gcode port are the same. (" + this.control_path + ")");
+        log.info("Single USB since control port and gcode port are the same. (" + this.control_path + ")");
         this.gcode_port = this.control_port;
     }
 
@@ -116,8 +119,9 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
 
     var onOpen = function(callback) {
         this.command({"clear":null});
-        this.command({"gc":"G20"});
-		this.command({"gc":'M30'});
+        this.command("M30");
+		this.command("G20");
+        this.command("M30");
         this.requestStatusReport();
 		this.connected = true;
 		callback(null, this);
@@ -194,6 +198,9 @@ G2.prototype.gcodeWriteAndDrain = function(s, callback) {
 	}.bind(this));
 };
 
+G2.prototype.clearAlarm = function() {
+	this.command({"clear":null});
+}
 // Start or continue jogging in the direction provided, which is one of x,-x,y,-y,z-z,a,-a,b,-b,c,-c
 G2.prototype.jog = function(direction) {
 
@@ -431,63 +438,19 @@ G2.prototype.handleStatusReport = function(response) {
 
 		// Update our copy of the system status
 		for (var key in response.sr) {
-			var stat = response.sr.stat;
-			var hold = response.sr.hold;
-			if( (key === 'stat') ) {
-				if( (hold != undefined) && (hold != 0) ) {
-					if((stat === 6) && ((hold === 3) || (hold === 4)))  {
-						this.status[key] = r.sr[key];
-					} else {
-						log.debug("IGNORE uninformative status/hold combination (" + stat + "/" + hold + ")");
-					}
-				} else {
-					log.debug('HONOR this status report because it doesn\'t contain hold data or because hold=0');
-					this.status[key] = r.sr[key];
-				}
-			} else {
-				this.status[key] = r.sr[key];
-			}
+			value = response.sr[key];
+			this.status[key] = value
 		}
-
-		stat = this.status.stat;
 
 		// Emit status no matter what
 		this.emit('status', this.status);
 
-		if(this.prev_stat != stat) {
+		this.stat = this.status.stat !== undefined ? this.status.stat : this.stat
+		this.hold = this.status.hold !== undefined ? this.status.hold : this.hold
 
-			if(stat === STAT_RUNNING && this.jog_stop_pending) {
-				this.quit();
-			}
-
-			l = this.expectations.length;
-			// Handle subscribers expecting a specific state change
-			while(l-- > 0) {
-				stat_name = states[stat];
-				log.debug("Stat change: " + stat_name);
-				handlers = this.expectations.shift();
-				if(stat_name in handlers) {
-					callback = handlers[stat_name];
-				} else if (null in handlers) {
-					callback = handlers[null];
-				} else {
-					callback = null;
-				}
-				if(callback) {
-					callback(this);
-				}
-			}
-
-			// Alert subscribers of machine state changes
-			this.emit('state', [this.prev_stat, this.status.stat]);
-			this.prev_stat = this.status.stat;
-		}
-
-		// Hack allows for a flush when quitting (must wait for the hold state to reach 4)
 		if(this.quit_pending) {
-			if((this.status.hold === 4) || (this.status.hold === 5) || (this.status.stat === 3)) {
-				setTimeout(function() {
-					this.queueClear(function() {
+			if(this.stat === 6 && this.hold === 5) {
+				this.queueClear(function() {
     				    log.debug("Queue cleared.");
 					    this.quit_pending = false;
 					    this.pause_flag = false;
@@ -498,11 +461,20 @@ G2.prototype.handleStatusReport = function(response) {
                         this.requestStatusReport();
 					    this.requestQueueReport();
                     }.bind(this));
+			}
+		}
+
+		// Hack allows for a flush when quitting (must wait for the hold state to reach 4)
+/*
+		if(this.quit_pending) {
+			if((this.status.hold === 4) || (this.status.hold === 5) || (this.status.stat === 3)) {
+				setTimeout(function() {
+					
 				
                 }.bind(this), 50);
 			}
 		}
-
+*/
 	}
 };
 
@@ -585,7 +557,6 @@ G2.prototype.quit = function() {
 	} else {
 		this.queueClear(function() {
 			this.command("M2");
-			//this.requestQueueReport();
             this.requestStatusReport();
         }.bind(this));
 	}
