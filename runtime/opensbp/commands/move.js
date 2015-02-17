@@ -76,7 +76,7 @@ exports.M2 = function(args) {
 // Move 3 axes (XYZ). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.M3 = function(args) {
-	var Angle = 0.286;
+	var Angle = 0;
 	var RPtX = 0;
 	var RPtY = 0;
 	var M3res = 5;
