@@ -19,7 +19,7 @@ G2Config.prototype.update = function(data, callback) {
 		// Call driver.set() for each item in the collection of data that was passed in.
 		function iterator(key, callback) {
 			if(this.driver) {
-				this.driver.set(key, data[key], callback);
+			this.driver.set(key, data[key], callback);
 			} else {
 				callback(null);
 			}
@@ -47,19 +47,20 @@ G2Config.prototype.setMany = G2Config.prototype.update;
 // TODO: Move this data out into a configuration file, perhaps.
 G2Config.prototype.configureStatusReports = function(callback) {
 	if(this.driver) {
-		this.driver.command({"sr":{
-							"posx":true, 
-							"posy":true, 
-							"posz":true, 
-							"posa":true, 
-							"posb":true, 
-							"vel":true, 
-							"stat":true, 
-							"hold":true, 
-							"line":true, 
-							"coor":true}});
-		this.driver.command({"qv":2});
-	}
+	this.driver.command({"sr":{
+						"posx":true, 
+						"posy":true, 
+						"posz":true, 
+						"posa":true, 
+						"posb":true, 
+						"vel":true, 
+						"stat":true, 
+						"hold":true, 
+						"line":true, 
+						"coor":true}});
+	this.driver.command({"qv":0});
+	this.driver.command({"jv":6});
+}
 	return callback(null, this);
 }
 exports.G2Config = G2Config;

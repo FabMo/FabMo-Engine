@@ -25,7 +25,7 @@
 		this.page = new this.models.Page();
 
 		// View Instances
-		this.remoteMachineMenuView = new this.views.RemoteMachineMenuView({collection : this.remoteMachines});
+		//this.remoteMachineMenuView = new this.views.RemoteMachineMenuView({collection : this.remoteMachines});
 		this.appClientView = new this.views.AppClientView({el : "#app-client-container"});
 		//this.pageView = new this.views.PageView({model: this.page, el : '#modal_container'});
 

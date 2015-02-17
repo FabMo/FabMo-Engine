@@ -168,10 +168,10 @@ function File(filename,path){
 	this.last_run = null;
 	this.run_count = 0;
 	fs.stat(path, function(err, stat) {
-	  	if(err) {
+		if(err) {
 			throw err;
 		}
-	  	that.size = stat.size;
+		that.size = stat.size;
 	});
 	fs.readFile(this.path, function (err, data) {
 		this.checksum = File.checksum(data);
@@ -229,7 +229,7 @@ File.list_all = function(callback){
 }
 
 // Return a file object for the provided id
-File.get_by_id = function(id,callback)
+File.getByID = function(id,callback)
 {
 	files.findOne({_id: id},function(err,document){
 		if (!document) {

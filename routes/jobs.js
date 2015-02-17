@@ -5,6 +5,12 @@ var util = require('../util');
 var log = require('../log').logger('routes');
 var machine = require('../machine').machine;
 var fs = require('fs');
+var uuid = require('node-uuid');
+
+createUniqueFilename = function(filename) {
+	var extension = (/[.]/.exec(filename)) ? /[^.]+$/.exec(filename) : undefined;
+	return uuid.v1() + (extension ? '.' + extension : '');
+}
 
 submitJob = function(req, res, next) {
 
@@ -14,29 +20,33 @@ submitJob = function(req, res, next) {
 	// Only write "allowed files"
 	if(file && util.allowed_file(file.name))
 	{
-		// Keep the name of the file uploaded (but put it in the parts directory)
-		var filename=file.name;
+		// Keep the name of the file uploaded for a "friendly name"
+		var friendly_filename=file.name;
+
+		// But create a unique name for actual storage
+		var filename = createUniqueFilename(friendly_filename);
 		var full_path = path.join(config.getDataDir('files'), filename);
-		
+
+		// Move the file
 		util.move(file.path, full_path, function(err) {
 			if (err) { throw err; }
 			// delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
 			fs.unlink(file.path, function(err) {
 				//if (err) {throw err;}
-				var file = new db.File(filename, full_path)
+				var file = new db.File(friendly_filename, full_path)
 				file.save(function(file){
 					
-					log.info('Saved a file');
+					log.info('Saved a file: ' + file.filename + ' (' + file.full_path + ')');
 					try {
 						var job = new db.Job({
 							file_id : file._id,
-							name : req.body.name || filename,
+							name : req.body.name || friendly_filename,
 							description : req.body.description
 						});
 					} catch(e) {
 						console.log(e);
 					}
-					log.info('Created a job');
+					log.info('Created a job.');
 					job.save(function(err, job) {
 						if(err) {
 							log.error(err);
