@@ -57,21 +57,21 @@ function FabMo(ip,port) //ip and port of the tool
 	this.default_error.config = {};
 	this.default_error.run = {};
 	this.default_error.file = {
-				'no_file' :{
-				    'message' : "The file you requested doesn't exist",
-				    'sys_err' : ''
-				},
-				'upload' :{
-				    'bad_request' : {
-					'message' : "The request you sent was wrong",
-					'sys_err' : ''
-				    },
-				    'not_allowed' : {
-					'message' : "The file extension is not allowed",
-					'sys_err' : ''
-				    }
-				}
-};
+		'no_file' :{
+			'message' : "The file you requested doesn't exist",
+			'sys_err' : ''
+		},
+		'upload' :{
+			'bad_request' : {
+				'message' : "The request you sent was wrong",
+				'sys_err' : ''
+			},
+			'not_allowed' : {
+				'message' : "The file extension is not allowed",
+				'sys_err' : ''
+			}
+		}
+	};
 }
 
 
@@ -86,8 +86,14 @@ FabMo.prototype.list_files = function(callback)
 		type: "GET",
 		dataType : 'json', 
 		success: function( data ){
-			 	callback(undefined,data.files);
-			 },
+			if(data.status === "success") {
+				callback(undefined,data.data.files);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
 		error: function( data, err ){
 				var error = that.default_error.no_device;
 				error.sys_err = err;
@@ -107,9 +113,13 @@ FabMo.prototype.get_status = function(callback)
 		success: function( data ) {
 				// test errors with the tool (not network error)
 				if(!data){callback(that.default_error.status.no_content);}
-				else if(!data.status){callback(that.default_error.status.wrong_format);}
-
-				else{callback(undefined,data.status);}
+				if(data.status === "success") {
+					callback(undefined,data.data.status);
+				} else if(data.status==="fail") {
+					callback(data.data);
+				}	else {
+					callback(data.message);
+				}
 			},
 		error: function(data,err) {
 				var error = that.default_error.no_device;
@@ -129,8 +139,14 @@ FabMo.prototype.get_config = function(callback)
 		type: "GET",
 		dataType : 'json', 
 		success: function( data ) {
-			callback(undefined,data);
-			},
+			if(data.status === "success") {
+				callback(undefined,data.data.configuration);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
 		error: function(data,err) {
 				var error =that.default_error.no_device;
 				error.sys_err = err;
@@ -149,7 +165,13 @@ FabMo.prototype.get_info = function(callback)
 		type: "GET",
 		dataType : 'json', 
 		success: function( data ) {
-			callback(undefined,data);
+			if(data.status === "success") {
+				callback(undefined,data.data.information);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
 			},
 		error: function(data,err) {
 				var error =that.default_error.no_device;
@@ -208,7 +230,13 @@ FabMo.prototype.run_by_id = function(id,callback)
 		type: "GET",
 		dataType : 'json', 
 		success: function( data ) {
-			callback(undefined);
+				if(data.status === "success") {
+					callback(undefined,data.data);
+				} else if(data.status==="fail") {
+					callback(data.data);
+				}	else {
+					callback(data.message);
+				}
 			},
 		error: function(data,err) {
 			if (data.status === 404){callback(that.default_error.file.no_file);}
@@ -237,8 +265,14 @@ FabMo.prototype.quit = function(callback){
 		type: "GET",
 		dataType : 'json', 
 		success: function( data ) {
-			callback(undefined);
-			},
+			if(data.status === "success") {
+				callback(undefined,data.data);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
 		error: function(data,err) {
     			var error = that.default_error.no_device;
 			error.sys_err = err;
@@ -256,8 +290,14 @@ FabMo.prototype.pause = function(callback){
 		type: "GET",
 		dataType : 'json', 
 		success: function( data ) {
-			callback(undefined);
-			},
+			if(data.status === "success") {
+				callback(undefined,data.data);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
 		error: function(data, err) {
     			var error = that.default_error.no_device;
 			error.sys_err = err;
@@ -275,8 +315,14 @@ FabMo.prototype.resume = function(callback){
 		type: "GET",
 		dataType : 'json', 
 		success: function( data ) {
-			callback(undefined);
-			},
+			if(data.status === "success") {
+				callback(undefined,data.data);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
 		error: function(data, err) {
     			var error = that.default_error.no_device;
 			error.sys_err = err;
@@ -296,7 +342,13 @@ FabMo.prototype.goto =  function(x,y,z,callback)
 		dataType : 'json', 
 		data : {'x' : x, 'y' :y, 'z':z},
 		success: function( data ) {
-			callback(undefined);
+			if(data.status === "success") {
+				callback(undefined,data.data);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
 		},
 		error: function(data, err) {
     			var error = that.default_error.no_device;
@@ -316,7 +368,7 @@ FabMo.prototype.gcode2 = function (string) {
 			console.log('Failure: ' + string);
 		}
 	});
-}
+};
 
 FabMo.prototype.gcode = function(gcode_line,callback)
 {
@@ -329,7 +381,13 @@ FabMo.prototype.gcode = function(gcode_line,callback)
 		dataType : 'json', 
 		data : {'cmd':gcode_line},
 		success: function( data ) {
-			callback(undefined,data);
+			if(data.status === "success") {
+				callback(undefined,data.data);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
 		},
 		error: function(data,err) {
 			var error = that.default_error.no_device;
@@ -350,7 +408,13 @@ FabMo.prototype.sbp = function(sbp_line,callback)
 		dataType : 'json', 
 		data : {'cmd':sbp_line},
 		success: function( data ) {
-			callback(undefined,data);
+			if(data.status === "success") {
+				callback(undefined,data.data);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
 		},
 		error: function(data,err) {
 			var error = that.default_error.no_device;
@@ -368,7 +432,7 @@ FabMo.prototype.start_move =  function(dir,lock,callback)
 
 	var that=this;
 	
-	if (that.old_lock_status==null) {
+	if (that.old_lock_status===null) {
 		that.old_lock_status = lock;
 	}
 
@@ -386,7 +450,13 @@ FabMo.prototype.start_move =  function(dir,lock,callback)
 			success: function( data ) {
 				if(!that.tool_moving){
 					that.tool_moving=setInterval(that.start_move.bind(that,dir,lock,function(){}),that.interval_moving);
-					callback(undefined);
+					if(data.status === "success") {
+						callback(undefined,data.data);
+					} else if(data.status==="fail") {
+						callback(data.data);
+					}	else {
+						callback(data.message);
+					}
 				}
 			},
 			error: function(data,err) {
@@ -412,7 +482,13 @@ FabMo.prototype.stop_move =  function(callback)
 		dataType : 'json', 
 		data : {"move" : "stop"},
 		success: function( data ) {
-			callback(undefined);
+			if(data.status === "success") {
+				callback(undefined,data.data);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
 		},
 		error: function(data, err) {
 	    		var error = that.default_error.no_device;
@@ -434,7 +510,13 @@ FabMo.prototype.fixed_move =  function(dir,step,callback)
 		dataType : 'json', 
 		data :{"move" : dir, "step" : step},
 		success: function( data ) {
-				callback(undefined);
+			if(data.status === "success") {
+				callback(undefined,data.data);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
 		},
 		error: function(data,err) {
 	    		var error = that.default_error.no_device;
@@ -455,8 +537,14 @@ FabMo.prototype.list_jobs_by_id = function(callback)
 		type: "GET",
 		dataType : 'json', 
 		success: function( data ) {
-			callback(undefined,data);
-			},
+			if(data.status === "success") {
+				callback(undefined,data.data.jobs);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
 		error: function(data,err) {
 				var error =that.default_error.no_device;
 				error.sys_err = err;
@@ -476,8 +564,14 @@ FabMo.prototype.list_jobs_in_queue = function(callback)
 		type: "GET",
 		dataType : 'json', 
 		success: function( data ) {
-			callback(undefined,data);
-			},
+			if(data.status === "success") {
+				callback(undefined,data.data.jobs);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
 		error: function(data,err) {
 				var error =that.default_error.no_device;
 				error.sys_err = err;
@@ -496,8 +590,14 @@ FabMo.prototype.get_job_by_id = function(id,callback)
 		type: "GET",
 		dataType : 'json', 
 		success: function( data ) {
-			callback(undefined);
-			},
+			if(data.status === "success") {
+				callback(undefined,data.data.job);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
 		error: function(data,err) {
 			if (data.status === 404){callback(that.default_error.file.no_file);}
 			else if (data.status === 302){callback(undefined);}//success
@@ -520,8 +620,14 @@ FabMo.prototype.get_job_in_queue = function(id,callback)
 		type: "GET",
 		dataType : 'json', 
 		success: function( data ) {
-			callback(undefined);
-			},
+			if(data.status === "success") {
+				callback(undefined,data.data.job);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
 		error: function(data,err) {
 			if (data.status === 404){callback(that.default_error.file.no_file);}
 			else if (data.status === 302){callback(undefined);}//success
@@ -542,8 +648,9 @@ FabMo.prototype.add_job =  function(formdata,callback)
 		throw "this function need a callback to work !";
 	var that=this;
 	var formData;
+	var file;
 	if (formdata instanceof jQuery){ //if it's a form
-		var file = (formdata.find('input:file'))[0].files[0];
+		file = (formdata.find('input:file'))[0].files[0];
 		// Create a new FormData object.
 		formData = new FormData();
 		formData.append('file', file, file.name);
@@ -559,7 +666,6 @@ FabMo.prototype.add_job =  function(formdata,callback)
 		formData.append('file', file, filename);
 		formData.append('name', formdata.config.name || filename);
 		formData.append('description', formdata.config.description || 'No Description');
-		formData.append('dummy', 'hello, world!')
 	}
 	if (formData) {
 		$.ajax({
@@ -570,7 +676,14 @@ FabMo.prototype.add_job =  function(formdata,callback)
 			contentType: false,
 			DataType:'json',
 			success: function( data ) {
-				return callback(null, data);
+				if(data.status === "success") {
+					callback(undefined,data.data.job);
+				} else if(data.status==="fail") {
+					callback(data.data);
+				}	else {
+					callback(data.message);
+				}
+				return;/*
 				console.log(data);
 				if (data.responseJSON && data.responseJSON[0]) {
 					callback(null,data.responseJSON[0]);
@@ -580,7 +693,7 @@ FabMo.prototype.add_job =  function(formdata,callback)
 				}
 				else {
 					callback(null,JSON.parse(data.responseText));
-				}
+				}*/
 			},
 			error : function(data, err) {
 				if (data.status === 400){callback(that.default_error.file.upload.bad_request);}
@@ -645,12 +758,18 @@ FabMo.prototype.upload_file =  function(formdata,callback)
 				}
 			},*/
 			success: function( data ) {
-				if (data.responseJSON && data.responseJSON[0])
-						callback(undefined,data.responseJSON[0]);
-					else if(data.responseJSON)
-						callback(undefined, data.responseJSON);
+				if(data.status === "success") {
+					if (data.data.file.responseJSON && data.data.file.responseJSON[0])
+						callback(undefined,data.data.file.responseJSON[0]);
+					else if(data.data.file.responseJSON)
+						callback(undefined, data.data.file.responseJSON);
 					else
-						callback(undefined, JSON.parse(data.responseText));
+						callback(undefined, JSON.parse(data.data.file.responseText));
+				} else if(data.status==="fail") {
+					callback(data.data);
+				}	else {
+					callback(data.message);
+				}
 			},
 			error : function(data, err) {
 	    			if (data.status === 400){callback(that.default_error.file.upload.bad_request);}

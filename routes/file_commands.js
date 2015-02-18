@@ -7,31 +7,65 @@ var File=db.File;
 // File extension filtering is not case sensitive
 ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
 
-// Handler for 'quit' which stops the machine's motion and aborts the file
+
+/**
+ * @api {get} /file_commands/quit  stops the machine's motion and aborts the file
+ * @apiGroup Files Commands
+ * @apiSuccess {Object} {status:"success",data : null}
+ */
 quit = function(req, res, next) {
-    machine.quit();
-    res.json(200,{'success':true});
+  machine.quit();
+  var answer = {
+		status:"success",
+		data : null
+	};
+	res.json(answer);
 };
 
-// Handler for 'pause' which stops the machine's motion, but can generally be resumed
+/**
+ * @api {get} /file_commands/pause   stops the machine's motion, but can generally be resumed
+ * @apiGroup Files Commands
+ * @apiSuccess {Object} {status:"success",data : null}
+ */
 pause = function(req, res, next) {
-    machine.pause();
-    res.json(200,{'success':true});
+  machine.pause();
+  var answer = {
+		status:"success",
+		data : null
+	};
+	res.json(answer);
 };
 
-// Resume from pause
+/**
+ * @api {get} /file_commands/resume   Resume from pause
+ * @apiGroup Files Commands
+ * @apiSuccess {Object} {status:"success",data : null}
+ */
 resume = function(req, res, next) {
-    machine.resume();
-    res.json(200,{'success':true});
+  machine.resume();
+  var answer = {
+		status:"success",
+		data : null
+	};
+	res.json(answer);
 };
 
-// Handler for running a file (given by file id)
+
+/**
+ * @api {get} /file_commands/run/:id  run a file (by its file id)
+ * @apiGroup Files Commands
+ * @apiSuccess {Object} {status:"success",data : null}
+ */
 run = function(req, res, next) {
 	File.get_by_id(req.params.id,function(file){
 		if(!file){res.send(404);return;}
 		file.saverun();//update last run and run count information
 		machine.runFile(file.path);
-		res.send(302);
+    var answer = {
+			status:"success",
+			data : null
+		};
+		res.json(answer);
 	});
 };
 
@@ -40,4 +74,4 @@ module.exports = function(server) {
 	server.get('/quit',quit); //OK
 	server.get('/pause',pause); //OK 
 	server.get('/resume',resume); //OK 
-}
+};

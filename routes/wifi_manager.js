@@ -1,6 +1,6 @@
-try{var wifiscanner = require('node-simplerwifiscanner');}catch(e){};
+try{var wifiscanner = require('node-simplerwifiscanner');}catch(e){}
 var log = require('../log').logger('wifi');
-var config =  require('../config')
+var config =  require('../config');
 var fs= require('fs');
 
 var profiles_folder = "/etc/netctl/";
@@ -41,7 +41,7 @@ list_profiles = function(req, res, next) {
 						res.json(200,profiles);
 				});
     		}
-    	})
+    	});
 
 	});
 };
@@ -85,14 +85,14 @@ delete_profile = function(req, res, next) {
 function parse_profile(profile_txt){
 	var profile = {};
 	var lines = profile_txt.toString().split('\n');
-	for(index in lines){
+	for(var index in lines){
 		var arg = lines[index].trim().split('=');
 		log.debug(arg);
 		if(arg[0])
 			profile[arg[0]]=arg[1];
 	}
 	return profile;
-};
+}
 
 // create a profile string from a wifi_info object
 function create_profile(wifi_info){
@@ -119,7 +119,7 @@ function create_profile(wifi_info){
 
 	return profile_string;
 
-};
+}
 
 
 module.exports = function(server) {
@@ -132,4 +132,4 @@ module.exports = function(server) {
 	else{
 		log.warn('WiFi manager disabled');
 	}
-}
+};

@@ -1,54 +1,50 @@
 var machine = require('../machine').machine;
 var default_feed_rate = 300;
 
-// Handler for move in a specified direction (keypad mode)
-function move_direction(direction) {
-	machine.jog(direction);
-}
-
-// Handler for jog in a specified direction (keypad mode)
-function jog_direction(direction) {
-	machine.jog(direction);
-}
-
-// Handler for move in a specified direction by fixed step(keypad mode)
-function fixed_move_direction(direction,step) {
-	machine.fixed_move(direction,step);
-}
-
-// Handler for immediate stop of a keypad move or jog
-function stop() {
-	machine.stopJog();
-}
-
 /**
  * @api {post} /direct/gcode Execute G-code directly
  * @apiGroup Direct
  * @apiParam {String} cmd A single G-code block to execute
- * @apiSuccess {Object} success Echo of the command sent
+ * @apiSuccess {Object} {status:"success",data : null}
  */
 sendGCode = function(req, res, next) {
+	var answer;
 	if (machine.status.state === 'idle')
 	{
 		// If cmd is specified in the request parameters, execute it as g-code
 		if (req.params.cmd !== undefined )
 		{
 			machine.gcode(req.params.cmd);
-			res.json({'success': req.params.cmd});
+			answer = {
+				status:"success",
+				data : null
+			};
+			res.json(answer);
 		}
 		// If not, check the request body.  If it is non-empty, execute it as g-code.
 		else if (req.body) {
 			machine.gcode(req.body);
-			res.json({'success': req.params.cmd});
-
+			answer = {
+				status:"success",
+				data : null
+			};
+			res.json(answer);
 		}
 		// Finally, if no cmd argument and an empty request body, return an error.
 		else {
-			res.json({'error':'No cmd argument'});
+			answer = {
+				status:"fail",
+				data : {body : "no Gcode sent"}
+			};
+			res.json(answer);
 		}
 	}
 	else {
-		res.json({'error':'A file is running'});
+		answer = {
+			status:"fail",
+			data : {status : "the machine is not in idle state"}
+		};
+		res.json(answer);
 	}
 };
 
@@ -56,7 +52,7 @@ sendGCode = function(req, res, next) {
  * @api {post} /direct/sbp Execute OpenSBP code directly
  * @apiGroup Direct
  * @apiParam {String} cmd A single line of OpenSBP code to execute
- * @apiSuccess {Object} success Echo of the command sent
+ * @apiSuccess {Object} {status:"success",data : null}
  */
  sendSBP = function(req, res, next) {
 	if (machine.status.state === 'idle')
@@ -65,72 +61,145 @@ sendGCode = function(req, res, next) {
 		if (req.params.cmd !== undefined )
 		{
 			machine.sbp(req.params.cmd);
-			res.json({'success': req.params.cmd});
+			answer = {
+				status:"success",
+				data : null
+			};
+			res.json(answer);
 		}
 		// If not, check the request body.  If it is non-empty, execute it as OpenSBP.
 		else if (req.body) {
 			machine.sbp(req.body);
-			res.json({'success': req.params.cmd});
+			answer = {
+				status:"success",
+				data : null
+			};
+			res.json(answer);
 
 		}
 		// Finally, if no cmd argument and an empty request body, return an error.
 		else {
-			res.json({'error':'No cmd argument'});
+			answer = {
+				status:"fail",
+				data : {body : "no SBP sent"}
+			};
+			res.json(answer);
 		}
 	}
 	else {
-		res.json({'error':'A file is running'});
+		answer = {
+			status:"fail",
+			data : {status : "the machine is not in idle state"}
+		};
+		res.json(answer);
 	}
 };
 
-
+/**
+ * @api {post} /direct/move move the machine in a given direction 
+ * @apiGroup Direct
+ * @apiParam {Object} {move:dir} with dir equals to the direction ("x", "-x" , "y" , "-y" , "z" , "-z" , etc.) or "stop" to stop moving. 
+ * @apiSuccess {Object} {status:"success",data : null}
+ */
 move = function(req, res, next) {
 	if(req.params.move ==="stop"){
-		stop();
-		res.json({'success':'stop'});
+		machine.stopJog();
+		answer = {
+			status:"success",
+			data : null
+		};
+		res.json(answer);
 	}
 	else if (req.params.move !== undefined )
 	{
-		move_direction(req.params.move);
-		res.json({'success': 'moving in '+req.params.move+' direction'});
+		machine.jog(req.params.move);
+		answer = {
+			status:"success",
+			data : null
+		};
+		res.json(answer);
 	}
 	else {
-		stop();
-		res.json({'error':'Need at least one argument'});
+		machine.stopJog();
+		answer = {
+			status:"fail",
+			data : {move : "require an argument"}
+		};
+		res.json(answer);
 	}
 };
-
+/**
+ * @api {post} /direct/jog jog the machine in a given direction /!\ same as move for now /!\
+ * @apiGroup Direct
+ * @apiParam {Object} {move:dir} with dir equals to the direction ("x", "-x" , "y" , "-y" , "z" , "-z" , etc.) or "stop" to stop moving. 
+ * @apiSuccess {Object} {status:"success",data : null}
+ */
 jog = function(req, res, next) {
 	if(req.params.move ==="stop"){
-		stop();
-		res.json({'success':'stop'});
+		machine.stopJog();
+		answer = {
+			status:"success",
+			data : null
+		};
+		res.json(answer);
 	}
 	else if (req.params.move !== undefined ) {
-		jog_direction(req.params.move);
-		res.json({'success': 'Moving in '+req.params.move+' direction'});
+		machine.jog(req.params.move);
+		answer = {
+			status:"success",
+			data : null
+		};
+		res.json(answer);
 	}
 	else {
-		stop();
-		res.json({'error':'Need at least one argument'});
+		machine.stopJog();
+		answer = {
+			status:"fail",
+			data : {move : "require an argument"}
+		};
+		res.json(answer);
 	}
 };
 
+/**
+ * @api {post} /direct/fixed_move move the machine in a given direction by a defined length (step)
+ * @apiGroup Direct
+ * @apiParam {Object} {move:dir,step:step} with dir equals to the direction ("x", "-x" , "y" , "-y" , "z" , "-z" , etc.) or "stop" to stop moving. 
+ * @apiSuccess {Object} {status:"success",data : null}
+ */
 fixed_move = function(req, res, next) {
 	if(req.params.move ==="stop"){
-		stop();
-		res.json({'success':'stop'});
+		machine.stopJog();
+		answer = {
+			status:"success",
+			data : null
+		};
+		res.json(answer);
 	}
 	else if (req.params.move !== undefined && req.params.step !== undefined) {
-		fixed_move_direction(req.params.move, req.params.step);
-		res.json({'success': 'Moving in '+req.params.move+' direction'});
+		machine.fixed_move(req.params.move, req.params.step);
+		answer = {
+			status:"success",
+			data : null
+		};
+		res.json(answer);
 	}
 	else {
-		stop();
-		res.json({'error':'Need at least one argument'});
+		machine.stopJog();
+		answer = {
+			status:"fail",
+			data : {move : "require an argument"}
+		};
+		res.json(answer);
 	}
 };
 
-
+/**
+ * @api {post} /direct/goto move the machine to a given position
+ * @apiGroup Direct
+ * @apiParam {Object} {x:posx,y:posy,z:posz, a:posa, b:posb, c:posc , f:speed}   posx,posy,posz,etc are the coordinate of the desired position. every field is optionnal.
+ * @apiSuccess {Object} {status:"success",data : null}
+ */
 goto = function(req, res, next) {
    	if (machine.status.state === 'idle')
 	{
@@ -155,16 +224,28 @@ goto = function(req, res, next) {
 				gcode_string +=' F'+default_feed_rate;
 
 			machine.driver.gcode(gcode_string);
-    			res.json({'success': gcode_string});
+    	answer = {
+				status:"success",
+				data : null
+			};
+			res.json(answer);
 		}
 		else
 		{
-			res.json({'error':'Need at least one argument'});
-		}
+			answer = {
+				status:"fail",
+				data : {posx : "require an argument"}
+			};
+			res.json(answer);
+			}
 	}
 	else
 	{
-		res.json({'error':'A file is running'});
+		answer = {
+			status:"fail",
+			data : {status : "the machine is not in idle state"}
+		};
+		res.json(answer);
 	}
 };
 

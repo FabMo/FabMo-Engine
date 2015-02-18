@@ -10,11 +10,19 @@ var log = require('../log').logger('routes');
  */
 var get_status = function(req, res, next) {
 	var s = machine.status;
-    res.json({'status':s});
+	var answer = {
+								status : "success",
+								data : {'status':s}
+							};
+    res.json(answer);
 };
 
 var get_info = function(req, res, next) {
-    res.json(information);
+		var answer = {
+								status : "success",
+								data : {'information':information}
+							};
+    res.json(answer);
 };
 
 /**
@@ -26,10 +34,16 @@ var get_info = function(req, res, next) {
  */
 var get_config = function(req, res, next) {
 	var retval = {};
-	retval['engine'] = config.engine.getData();
-	retval['driver'] = config.driver.getData();
-	retval['opebsbp'] = config.driver.getData();
-	res.json(retval);
+	retval.engine = config.engine.getData();
+	retval.driver = config.driver.getData();
+	retval.opebsbp = config.driver.getData();
+
+	var answer = 
+	 {
+			status : "success",
+			data : {'configuration':answer}
+	};
+  res.json(answer);
 };
 
 /**
@@ -38,27 +52,52 @@ var get_config = function(req, res, next) {
  */
 var post_config = function(req, res, next) {
 	var new_config = {};
+	var answer;
 	try {
 		new_config = req.body;
 	} catch(e) {
-		return res.send(400, e)
+		answer = 
+		{
+			status : "fail",
+			data : {'body':"The body cannot be empty"}
+		};
+  	res.json(answer);
+		return;
 	}
 
 	if(new_config.engine) {
 		config.engine.update(new_config.engine, function(err, result) {
 			if(err) {
-				return res.send(400, e);
+				answer = 
+				{
+					status : "fail",
+					data : {'body':"the configuration file you submitted is not valid"}
+				};
+  			res.json(answer);
+			} else {
+				answer =
+				{
+						status : "success",
+						data : result
+				 };
+				res.json(answer);
 			}
-			res.send(302, result);
 		});
 	}
-
-	// TODO: Apply the driver/opensbp configurations here
-}
+	else{
+		// TODO: Apply the driver/opensbp configurations here
+	answer = 
+				{
+					status : "error",
+					message : "not yet implemented"
+				};
+  			res.json(answer);
+	}
+};
 
 module.exports = function(server) {
 	server.get('/status', get_status);     //OK
 	server.get('/config',get_config);      //OK
 	server.post('/config', post_config);   //TODO
 	server.get('/info',get_info);          //TODO 
-}
+};

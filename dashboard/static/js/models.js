@@ -25,7 +25,11 @@ define(function(require) {
 	// A collection of (all) apps
 	models.Apps = Backbone.Collection.extend({
 		model : models.App,
-		url : '/apps'
+		url : '/apps',
+		parse : function(response) {
+			apps = response.data.apps;
+			return apps
+		}
 	});
 
 	//Model for the page content (settings / jobLists...)
