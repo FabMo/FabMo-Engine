@@ -53,7 +53,7 @@ function FabMoUI(tool, options){
 	this.minusZ_button_selector = this.keypad_div_selector + ' .button-minus-Z';
 	this.fixe_move_selector =  this.keypad_div_selector + ' .fixe-move';
 	this.fixe_move_step_selector =  this.keypad_div_selector + ' .fixe-move-step';
-	setInterval(this.updateStatus.bind(this),this.refresh);
+	//setInterval(this.updateStatus.bind(this),this.refresh);
 
 
 	if(this.keypad){

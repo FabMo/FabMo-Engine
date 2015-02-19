@@ -26,4 +26,7 @@ FabMoDashboard.prototype.getMachine = function(callback) {
 	this.postMessage({"getMachine":true})
 }
 
+// FabMoDashboard.on(status) {
+	
+}
 fabmoDashboard = new FabMoDashboard();

@@ -4,10 +4,9 @@
  * This is different than the context provided by context.js, which is the context for the entire dashboard, not just
  * the parts that we want the app to see.
  */
-
 define(function(require) {
 
-	Dashboard = function() {
+	var Dashboard = function(target) {
 		this.machine = null;
 		this.ui = null;
 
@@ -18,42 +17,99 @@ define(function(require) {
 		this.refresh = 500; // define the tool connection refresh time (ms)
 		setInterval(this.updateStatus.bind(this),this.refresh);
 
-		this.target = window;
-		this.registerHandlers();
+		this.target = target || window;
+		this.handlers = {};
+		this.events = {
+			'status' : []
+		};
+		this._registerHandlers();
+		this._setupMessageListener();
 	};
 
-	Dashboard.prototype.registerHandlers = function() {
-		this.target.addEventListener('message', function (e) {
-			var iframe = e.source;
-			try {
+	// Register a handler function for the provided message type
+	Dashboard.prototype._registerHandler = function(name, handler) {
+		if('message' in this.handlers) {
+			throw ('Already registered a handler for the "' + name + '" message.')
+		}
+		this.handlers[name] = handler;
+	}
 
-				if(e.data.showDRO === true) {
-					this.openRightMenu();
-				 }
+	// Register a handler assuming that the message type is concurrent with a method name in the dashboard object (as is common)
+	Dashboard.prototype._registerHandlerByName = function(name) {
+		var proto = Object.getPrototypeOf(this);
+		if(name in proto) {
+			this.handlers[name] = proto[name];
+		}
+	}
 
-				 else if(e.data.showDRO === false) {
-					this.closeRightMenu();
-				 }
+	// The events member is a mapping of event type to sources and ids which map back to functions in the client dashboard
+	Dashboard.prototype._registerEventListener = function(name, source) {
+		if(name in this.events) {
+			listeners = this.events[name];
+			for(var i in listeners) {
+				if(listeners[i] == source) { return; }
+			}
+			this.events[name].push(source);
+		}
+	}
 
-				 else if(e.data.job !== undefined) {
-					this.machine.add_job(e.data.job, function(err, result) {
-						if(err) {
-							console.log(err);
-						} else {
-							this.jobManager();
-						}
-					}.bind(this));
-				 }
+	Dashboard.prototype._fireEvent = function(name, data) {
+		if(name in this.events) {
+			listeners = this.events[name];
+			for(var i in listeners) {
+				var source = listeners[i];
+				var msg = {"status" : "success", "type" : "evt", "_id" : name, "data" : JSON.stringify(data)};
+				console.log("Dashboard host: Firing event to " + source + " with the following data: " + JSON.stringify(msg))
+				source.postMessage(msg, "*");
+			}
+		}
+	}
 
-				else if(e.data.getMachine === true) {
-					msg = {'ip':this.machine.ip, 'port':this.machine.port};
-					e.source.postMessage(msg,'*');
+	Dashboard.prototype._setupMessageListener = function() {
+		this.target.addEventListener('message', function(evt) {
+			console.log("Dashboard host: GOT A MESSAGE " + JSON.stringify(evt.data))
+			var source = evt.source;
+			if('call' in evt.data) {
+				console.log("Dashboard host: MESSAGE IS A CALL (" + JSON.stringify(evt.data) + ")")
+				var func = evt.data.call;
+				if(func in this.handlers) {
+					var handler = this.handlers[func];
+					var args = evt.data.args || [];
+					var id = evt.data._id >= 0 ? evt.data._id : -1;
+					try {
+						result = handler.apply(this, args) || null;
+						var msg = {	"status" : "success", 
+									"type" : "cb", 
+									"data" : result, 
+									"_id" : id }
+						console.log("Dashboard host: Posting a success callback to " + evt.source + " " + JSON.stringify(msg));
+						source.postMessage(JSON.stringify(msg), evt.origin);
+					} catch(e) {
+						console.log("Dashboard host: Posting an error callback.")
+						source.postMessage({"status" : "error", "type" : "cb", "message" : JSON.stringify(e) , "_id" : id}, '*');
 					}
-
-			} catch (e) {
-				throw e;
+				}
+			} else if('on' in evt.data) {
+				console.log("Dashboard host: MESSAGE IS AN EVENT REGISTRATION (" + evt + ")")
+				var name = evt.data.on;
+				var source = evt.source;
+				this._registerEventListener(name, source);
 			}
 		}.bind(this));
+	}
+
+	Dashboard.prototype._registerHandlers = function() {
+		this._registerHandler('showDRO', function() { this.openRightMenu() }.bind(this));
+		this._registerHandler('hideDRO', function() { this.closeRightMenu() }.bind(this));
+		this._registerHandler('submitJob', function(data, config) { 
+			this.machine.add_job(data.job, function(err, result) {
+				if(err) {
+					throw err;
+				} else {
+					this.jobManager();
+				}
+			}.bind(this));
+		});
 	}
 
 	/*** Prototypes ***/
@@ -61,7 +117,8 @@ define(function(require) {
 		//if (this.ui.tool.status == )
 		if(this.ui) {
 			if(this.ui.tool.state) {
-				console.log(this.ui.tool.state);
+//				console.log(this.ui.tool.state);
+				this._fireEvent("status", {"this":"is event data"});
 			}
 		}
 	};

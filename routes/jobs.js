@@ -7,9 +7,10 @@ var machine = require('../machine').machine;
 var fs = require('fs');
 var uuid = require('node-uuid');
 
-createUniqueFilename = function(filename) {
-	var extension = (/[.]/.exec(filename)) ? /[^.]+$/.exec(filename) : undefined;
-	return uuid.v1() + (extension ? '.' + extension : '');
+
+var createUniqueFilename = function (filename) {
+    var extension = (/[.]/.exec(filename)) ? /[^.]+$/.exec(filename) : undefined;
+    return uuid.v1() + (extension ? ('.' + extension) : '');
 }
 
 /**
@@ -17,115 +18,111 @@ createUniqueFilename = function(filename) {
  * @api {post} /job Submit a job
  * @apiDescription Add a job to the queue
  */
-submitJob = function(req, res, next) {
+var submitJob = function(req, res, next) {
 
-	// Get the one and only one file you're currently allowed to upload at a time
-	var file = req.files.file;
-	var answer;
+    // Get the one and only one file you're currently allowed to upload at a time
+    var file = req.files.file;
+    var answer;
 
-	// Only write "allowed files"
-	if(file && util.allowed_file(file.name))
-	{
-		// Keep the name of the file uploaded for a "friendly name"
-		var friendly_filename=file.name;
+    // Only write "allowed files"
+    if(file && util.allowed_file(file.name))
+    {
+        // Keep the name of the file uploaded for a "friendly name"
+        var friendly_filename = file.name;
 
-		// But create a unique name for actual storage
-		var filename = createUniqueFilename(friendly_filename);
-		var full_path = path.join(config.getDataDir('files'), filename);
+        // But create a unique name for actual storage
+        var filename = createUniqueFilename(friendly_filename);
+        var full_path = path.join(config.getDataDir('files'), filename);
 
-		// Move the file
-		util.move(file.path, full_path, function(err) {
-			if (err) {
-				answer = {
-					status:"error",
-					message:"failed to move the job from temporary folder to files folder"
-				}; 
-				throw err; 
-			}
-			// delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
-			fs.unlink(file.path, function(err) {
-				if (err) {
-					answer = {
-						status:"error",
-						message:"failed to remove the job from temporary folder"
-					}; 
-					throw err; 
-				}
-				var file = new db.File(friendly_filename, full_path)
-				file.save(function(file){
-					
-					log.info('Saved a file: ' + file.filename + ' (' + file.full_path + ')');
-					var job;
-					try {
-						job = new db.Job({
-							file_id : file._id,
-							name : req.body.name || friendly_filename,
-							description : req.body.description
-						});
-					} catch(e) {
-						console.log(e);
-					}
-					log.info('Created a job.');
-					job.save(function(err, job) {
-						if(err) {
-							log.error(err);
-					    answer = {
-								status:"error",
-								message:"failed to save the job in DB"
-							};
-							res.json(answer);
-						} else {
-					    answer = {
-								status:"success",
-								data : {job:job}
-							};
-							res.json(answer);
-						}
-					}); // job.save
+        // Move the file
+        util.move(file.path, full_path, function(err) {
+            if (err) {
+                answer = {
+                    status:"error",
+                    message:"failed to move the job from temporary folder to files folder"
+                }; 
+                return res.json(answer);
+                //throw err; 
+            }
+            // delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
+            fs.unlink(file.path, function(err) {
+                
+                if (err) {
+                    log.warn("failed to remove the job from temporary folder: " + err)
+                }
 
-				//res.send(302,file); // file saved
-			}); //save in db
-				
-			});
-		});
-	}
-	else if (file){
-		answer = {
-			status:"fail",
-			data : {job:"wrong format"}
-		};
-		res.json(answer);
-	}
-	else{
-		answer = {
-			status:"fail",
-			data : {job:"problem receiving the job : bad request"}
-		};
-		res.json(answer);
-	}
-};
+                var file = new db.File(friendly_filename, full_path)
+                file.save(function(file){
+                    
+                    log.info('Saved a file: ' + file.filename + ' (' + file.full_path + ')');
+                    var job;
+                    try {
+                        job = new db.Job({
+                            file_id : file._id,
+                            name : req.body.name || friendly_filename,
+                            description : req.body.description
+                        });
+                    } catch(e) {
+                        console.log(e);
+                    }
+                    log.info('Created a job.');
+                    job.save(function(err, job) {
+                        if(err) {
+                            log.error(err);
+                        answer = {
+                                status:"error",
+                                message:"failed to save the job in DB"
+                            };
+                            res.json(answer);
+                        } else {
+                        answer = {
+                                status:"success",
+                                data : {job:job}
+                            };
+                            res.json(answer);
+                        }
+                    }); // job.save
+                }); // file.save
+            }); // unlink
+        }); // move
+    } // if file and allowed
+    else if (file){
+        answer = {
+            status:"fail",
+            data : {"job" : "wrong format"}
+        };
+        res.json(answer);
+    }
+    else{
+        answer = {
+            status:"fail",
+            data : {"job" : "problem receiving the job : bad request"}
+        };
+        res.json(answer);
+    }
+}; // submitJob
 
 /**
  * @api {delete} /jobs/queue Clear job queue
  * @apiGroup Jobs
  */
-clearQueue = function(req, res, next) {
-	var answer;
-	db.Job.deletePending(function(err) {
-		if(err) {
-			answer = {
-				status:"error",
-				message:"failed to remove the job in DB"
-			};
-			res.json(answer);
-		} else {
-			answer = {
-				status:"success",
-				data : null
-			};
-			res.json(answer);
-		}
-	});
+var clearQueue = function(req, res, next) {
+    var answer;
+    db.Job.deletePending(function(err) {
+        if(err) {
+            answer = {
+                status:"error",
+                message:"failed to remove the job in DB"
+            };
+            res.json(answer);
+        } else {
+            answer = {
+                status:"success",
+                data : null
+            };
+            res.json(answer);
+        }
+    });
 };
 
 /**
@@ -134,23 +131,24 @@ clearQueue = function(req, res, next) {
  * @apiDescription Runs the next job in the queue if able.
  */
 runNextJob = function(req, res, next) {
-	var answer;
-	machine.runNextJob(function(err, job) {
-		if(err) {
-			log.error(err);
-			answer = {
-				status:"failed",
-				data:{job:"failed to run next job"}
-			};
-			res.json(answer);
-		} else {
-			answer = {
-				status:"success",
-				data : {job:job}
-			};
-			res.json(answer);
-		}
-	});
+    var answer;
+    log.info('Running the next job in the queue');
+    machine.runNextJob(function(err, job) {
+        if(err) {
+            log.error(err);
+            answer = {
+                status:"failed",
+                data:{job:"failed to run next job"}
+            };
+            res.json(answer);
+        } else {
+            answer = {
+                status:"success",
+                data : {job:job}
+            };
+            res.json(answer);
+        }
+    });
 };
 
 /**
@@ -159,32 +157,32 @@ runNextJob = function(req, res, next) {
  * @apiDescription Submit a new job identical to the one specified.  Used to re-run completed jobs without modification.
  * @apiParam {String} id ID of job to resubmit
  */
-resubmitJob = function(req, res, next) {
-	var answer;
-	log.debug("Resubmitting job " + req.params.id);
-	db.Job.getById(req.params.id, function(err, result) {
-		log.debug(result);
-		if(err) {
-			log.error(JSON.stringify(err));
-		}
-		result.clone(function(err, result) {
-			log.debug("Cloned!");
-			if(err) {
-				log.error(err);
-				answer = {
-					status:"failed",
-					data:{job:"job id not correct"}
-				};
-				res.json(answer);
-			} else {
-				answer = {
-					status:"success",
-					data : {job:result}
-				};
-				res.json(answer);
-			}
-		});
-	});
+var resubmitJob = function(req, res, next) {
+    var answer;
+    log.debug("Resubmitting job " + req.params.id);
+    db.Job.getById(req.params.id, function(err, result) {
+        log.debug(result);
+        if(err) {
+            log.error(JSON.stringify(err));
+        }
+        result.clone(function(err, result) {
+            log.debug("Cloned!");
+            if(err) {
+                log.error(err);
+                answer = {
+                    status:"failed",
+                    data:{job:"job id not correct"}
+                };
+                res.json(answer);
+            } else {
+                answer = {
+                    status:"success",
+                    data : {job:result}
+                };
+                res.json(answer);
+            }
+        });
+    });
 };
 
 /**
@@ -192,25 +190,25 @@ resubmitJob = function(req, res, next) {
  * @api {get} /jobs/queue Job queue
  * @apiDescription Get all the pending jobs currently in the queue
  */
-getQueue = function(req, res, next) {
-	var answer;
-	db.Job.getPending(function(err, result) {
-		if(err) {
-			log.error(err);
-			answer = {
-				status:"error",
-				message:"failed to get jobs from DB"
-			};
-			res.json(answer);
-		} else {
-			answer = {
-				status:"success",
-				data : {jobs:result}
-			};
-			res.json(answer);
-	});
-		}
-};
+var getQueue = function(req, res, next) {
+    var answer;
+    db.Job.getPending(function(err, result) {
+        if(err) {
+            log.error(err);
+            answer = {
+                status:"error",
+                message:"failed to get jobs from DB"
+            };
+            res.json(answer);
+        } else {
+            answer = {
+                status:"success",
+                data : {jobs:result}
+            };
+            res.json(answer);
+        }
+    });
+}
 
 /**
  * @apiGroup Jobs
@@ -225,44 +223,44 @@ getQueue = function(req, res, next) {
  * @apiSuccess {Number} jobs.started_at Time job was started (UNIX timestamp)
  * @apiSuccess {Number} jobs.finished_at Time job was finished (UNIX timestamp)
  */
-getAllJobs = function(req, res, next) {
-	var answer;
-	db.Job.getAll(function(err, result) {
-		if(err) {
-			log.error(err);
-			answer = {
-				status:"error",
-				message:"failed to get jobs from DB"
-			};
-			res.json(answer);
-		} else {
-			answer = {
-				status:"success",
-				data : {jobs:result}
-			};
-			res.json(answer);
-		}
-	});
+var getAllJobs = function(req, res, next) {
+    var answer;
+    db.Job.getAll(function(err, result) {
+        if(err) {
+            log.error(err);
+            answer = {
+                status:"error",
+                message:"failed to get jobs from DB"
+            };
+            res.json(answer);
+        } else {
+            answer = {
+                status:"success",
+                data : {jobs:result}
+            };
+            res.json(answer);
+        }
+    });
 };
 
-getJobHistory = function(req, res, next) {
-	var answer;
-	db.Job.getHistory(function(err, result) {
-		if(err) {
-			log.error(err);
-			answer = {
-				status:"error",
-				message:"failed to get jobs from DB"
-			};
-			res.json(answer);
-		} else {
-			answer = {
-				status:"success",
-				data : {jobs:result}
-			};
-			res.json(answer);
-		}
-	});
+var getJobHistory = function(req, res, next) {
+    var answer;
+    db.Job.getHistory(function(err, result) {
+        if(err) {
+            log.error(err);
+            answer = {
+                status:"error",
+                message:"failed to get jobs from DB"
+            };
+            res.json(answer);
+        } else {
+            answer = {
+                status:"success",
+                data : {jobs:result}
+            };
+            res.json(answer);
+        }
+    });
 };
 
 /**
@@ -278,24 +276,24 @@ getJobHistory = function(req, res, next) {
  * @apiSuccess {Number} started_at Time job was started (UNIX timestamp)
  * @apiSuccess {Number} finished_at Time job was finished (UNIX timestamp)
  */
-getJobById = function(req, res, next) {
-	var answer;
-	db.Job.getById(req.params.id, function(err, result) {
-		if(err) {
-			log.error(err);
-			answer = {
-					status:"failed",
-					data:{job:"job id not correct"}
-			};
-			res.json(answer);
-		} else {
-			answer = {
-				status:"success",
-				data : {job:result}
-			};
-			res.json(answer);
-		}
-	});
+var getJobById = function(req, res, next) {
+    var answer;
+    db.Job.getById(req.params.id, function(err, result) {
+        if(err) {
+            log.error(err);
+            answer = {
+                    status:"failed",
+                    data:{job:"job id not correct"}
+            };
+            res.json(answer);
+        } else {
+            answer = {
+                status:"success",
+                data : {job:result}
+            };
+            res.json(answer);
+        }
+    });
 };
 
 /**
@@ -304,47 +302,47 @@ getJobById = function(req, res, next) {
  * @apiDescription Cancel a pending job
  * @apiParam {String} id ID of job to cancel
  */
-cancelJob = function(req, res, next) {
-	var answer;
-	db.Job.getById(req.params.id, function(err, result) {
-		if(err) {
-			log.error(err);
-			answer = {
-					status:"failed",
-					data:{job:"job id not correct"}
-			};
-			res.json(answer);
-		} else {
-			result.cancel(function(err, result) {
-				if(err) {
-					log.error(err);
-					answer = {
-							status:"failed",
-							data:{job:"failed to cancel the job"}
-					};
-					res.json(answer);
-				} else {
-					answer = {
-						status:"success",
-						data : {job:result}
-					};
-					res.json(answer);
-				}
-			});
-		}
-	});
+var cancelJob = function(req, res, next) {
+    var answer;
+    db.Job.getById(req.params.id, function(err, result) {
+        if(err) {
+            log.error(err);
+            answer = {
+                    status:"failed",
+                    data:{job:"job id not correct"}
+            };
+            res.json(answer);
+        } else {
+            result.cancel(function(err, result) {
+                if(err) {
+                    log.error(err);
+                    answer = {
+                            status:"failed",
+                            data:{job:"failed to cancel the job"}
+                    };
+                    res.json(answer);
+                } else {
+                    answer = {
+                        status:"success",
+                        data : {job:result}
+                    };
+                    res.json(answer);
+                }
+            });
+        }
+    });
 };
 
 
 module.exports = function(server) {
-	server.post('/job', submitJob);
-	server.get('/jobs', getAllJobs);
-	
-	server.get('/job/:id', getJobById);
-	server.post('/job/:id', resubmitJob);
-	server.get('/jobs/queue', getQueue);
-	server.del('/jobs/queue', clearQueue);
-	server.post('/jobs/queue/run', runNextJob);
-	server.get('/jobs/history', getJobHistory);
+    server.post('/job', submitJob);
+    server.get('/jobs', getAllJobs);
+    
+    server.get('/job/:id', getJobById);
+    server.post('/job/:id', resubmitJob);
+    server.get('/jobs/queue', getQueue);
+    server.del('/jobs/queue', clearQueue);
+    server.post('/jobs/queue/run', runNextJob);
+    server.get('/jobs/history', getJobHistory);
 
 };

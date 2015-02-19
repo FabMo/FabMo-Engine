@@ -171,6 +171,7 @@
 		// Load the list of files available on the tool
 		tool.get_job_history(function(err,jobs){
 			if(err) { return console.log(err); }
+			console.log("Jobs: " + jobs);
 			$(".jobs-history-listing").empty();
 			$.each( jobs, function( key, val ) {
 				var jobid = 'job' + val._id;
