@@ -49,6 +49,13 @@ ManualRuntime.prototype._onG2Status = function(status) {
 			}
 			break;
 
+		case "paused":
+			if(status.stat === this.driver.STAT_STOP || status.stat === this.driver.STAT_END) {
+				this._changeState("idle");
+				break;
+			}
+			break;
+
 		case "idle":
 			if(status.stat === this.driver.STAT_RUNNING) {
 				this._changeState("manual");

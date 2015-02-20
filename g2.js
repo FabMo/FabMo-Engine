@@ -27,6 +27,9 @@ var CMD_TIMEOUT = 10000;
 // the machine has more time to run away before stopping.
 var JOG_TIMEOUT = 500;
 
+var GCODE_BLOCK_SEND_SIZE = 1000;
+var GCODE_MIN_LINE_THRESH = 100;
+
 // Map used by the jog command to turn incoming direction specifiers to g-code
 var JOG_AXES = {'x':'X', 
 				'-x':'X-', 
@@ -79,6 +82,7 @@ function G2() {
 	this.qtotal = 0;
 	this.flooded = false;
 	this.send_rate = 1;
+	this.lines_sent = 0;
 
 	// Event emitter inheritance and behavior setup
 	events.EventEmitter.call(this);	
@@ -442,6 +446,18 @@ G2.prototype.handleStatusReport = function(response) {
 			this.status[key] = value
 		}
 
+		// Send more g-codes if warranted
+		if('line' in response.sr) {
+			line = response.sr.line;
+			lines_left = this.lines_sent - line;
+
+			if(lines_left < GCODE_MIN_LINE_THRESH) {
+				this.last_line_seen = line;
+				log.warn("Lines left has fallen to " + lines_left + " sending more...");
+				this.sendMoreGCodes();
+			}
+		}
+
 		// Emit status no matter what
 		this.emit('status', this.status);
 
@@ -529,7 +545,10 @@ G2.prototype.feedHold = function(callback) {
 	this.pause_flag = true;
 	this.flooded = false;
 	typeof callback === 'function' && this.once('state', callback);
-	this.controlWrite('!\n');
+	log.debug("Sending a feedhold");
+    this.controlWriteAndDrain('!\n', function() {
+        log.debug("Drained.");   
+    });
 };
 
 G2.prototype.queueClear = function(callback) {
@@ -715,17 +734,26 @@ G2.prototype.runSegment = function(data, callback) {
 			callback.line = line_count;
 		}
 		this.gcode_queue.enqueue(line);
-		this.gcodeWrite(this.gcode_queue.getContents().join('\n'));
 	}
+
+	this.lines_sent = 0;
+	this.sendMoreGCodes();
 
 	// Kick off the run if any lines were queued
 	if(line_count > 0) {
 		this.pause_flag = false;
-
 	} else {
 		typeof callback === "function" && callback(true, "No G-codes were present in the provided string");
 	}
 };
+
+G2.prototype.sendMoreGCodes = function() {
+	codes = this.gcode_queue.multiDequeue(GCODE_BLOCK_SEND_SIZE);
+	if(codes.length > 0) {
+		this.lines_sent += codes.length;
+		this.gcodeWrite(codes.join('\n'));		
+	}
+}
 
 // Function works like "once()" for a state change
 // callbacks is an associative array mapping states to callbacks

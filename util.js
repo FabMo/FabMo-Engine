@@ -51,6 +51,26 @@ function Queue(){
     return item;
 
   }
+  this.multiDequeue = function(count) {
+
+    // If asking for more items than are in the queue, return everything
+    count = count > queue.length ? queue.length : count;
+
+    // store the item at the front of the queue
+    var items = queue.slice(offset, offset+count);
+
+    // add to the offset and remove the free space if necessary
+    offset += count;
+    if (offset * 2 >= queue.length){
+      queue  = queue.slice(offset);
+      offset = 0;
+    }
+
+    // return the dequeued item
+    return items;
+
+  }
+
   this.peek = function(){
     return (queue.length > 0 ? queue[offset] : undefined);
   }
