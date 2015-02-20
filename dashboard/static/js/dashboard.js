@@ -58,8 +58,8 @@ define(function(require) {
 			listeners = this.events[name];
 			for(var i in listeners) {
 				var source = listeners[i];
-				var msg = {"status" : "success", "type" : "evt", "_id" : name, "data" : JSON.stringify(data)};
-				console.log("Dashboard host: Firing event to " + source + " with the following data: " + JSON.stringify(msg))
+				var msg = {"status" : "success", "type" : "evt", "id" : name, "data" : data};
+				//console.log("Dashboard host: Firing event to " + source + " with the following data: " + JSON.stringify(msg))
 				source.postMessage(msg, "*");
 			}
 		}
@@ -67,26 +67,30 @@ define(function(require) {
 
 	Dashboard.prototype._setupMessageListener = function() {
 		this.target.addEventListener('message', function(evt) {
-			console.log("Dashboard host: GOT A MESSAGE " + JSON.stringify(evt.data))
 			var source = evt.source;
 			if('call' in evt.data) {
-				console.log("Dashboard host: MESSAGE IS A CALL (" + JSON.stringify(evt.data) + ")")
 				var func = evt.data.call;
 				if(func in this.handlers) {
 					var handler = this.handlers[func];
-					var args = evt.data.args || [];
-					var id = evt.data._id >= 0 ? evt.data._id : -1;
+					var data = evt.data.data;
+					var id = evt.data.id >= 0 ? evt.data.id : -1;
+					var msg;
 					try {
-						result = handler.apply(this, args) || null;
-						var msg = {	"status" : "success", 
-									"type" : "cb", 
-									"data" : result, 
-									"_id" : id }
-						console.log("Dashboard host: Posting a success callback to " + evt.source + " " + JSON.stringify(msg));
-						source.postMessage(JSON.stringify(msg), evt.origin);
+						handler(data, function(err, data) {
+							var msg;
+							if(err) {
+								msg = {"status" : "error", "type" : "cb", "message" : JSON.stringify(err) , "id" : id}
+							} else {
+								msg = {	"status" : "success", 
+										"type" : "cb", 
+										"data" : data, 
+										"id" : id }
+							}
+							source.postMessage(msg, evt.origin);
+						});
 					} catch(e) {
-						console.log("Dashboard host: Posting an error callback.")
-						source.postMessage({"status" : "error", "type" : "cb", "message" : JSON.stringify(e) , "_id" : id}, '*');
+						var msg = {"status" : "error", "type" : "cb", "message" : JSON.stringify(e) , "id" : id}
+						source.postMessage(JSON.stringify(msg), evt.origin);
 					}
 				}
 			} else if('on' in evt.data) {
@@ -99,17 +103,102 @@ define(function(require) {
 	}
 
 	Dashboard.prototype._registerHandlers = function() {
-		this._registerHandler('showDRO', function() { this.openRightMenu() }.bind(this));
-		this._registerHandler('hideDRO', function() { this.closeRightMenu() }.bind(this));
-		this._registerHandler('submitJob', function(data, config) { 
-			this.machine.add_job(data.job, function(err, result) {
+		
+		// Show the DRO
+		this._registerHandler('showDRO', function(data, callback) { 
+			this.openRightMenu();
+			callback(null);
+		}.bind(this));
+
+		// Hide the DRO
+		this._registerHandler('hideDRO', function() { 
+			this.closeRightMenu() 
+			callback(null)
+		}.bind(this));
+
+		// Submit a job
+		this._registerHandler('submitJob', function(data, callback) { 
+			console.log("submit job")
+			console.log(data);
+			if('file' in data) {
+				console.log("Adding a job")
+				
+				formdata = new FormData();
+				formdata.append('file', data.file, data.file.name);
+				
+				this.machine.add_job(formdata, function(err, result) {
+					if(err) {
+						callback(err);
+					} else {
+						this.jobManager();
+						callback(null);
+					}
+				}.bind(this));
+			} else {
+				console.log("NOPE");
+			}
+		}.bind(this));
+
+		this._registerHandler('resubmitJob', function(id, callback) { 
+			this.machine.resubmit_job(id, function(err, result) {
 				if(err) {
-					throw err;
+					callback(err);
 				} else {
 					this.jobManager();
+					callback(null);
 				}
 			}.bind(this));
-		});
+		}.bind(this));
+
+		// Get the list of jobs in the queue
+		this._registerHandler('getJobsInQueue', function(data, callback) {
+			this.machine.list_jobs_in_queue(function(err, jobs) {
+				if(err) {
+					callback(err);
+				} else {
+					callback(null, jobs);
+				}
+			})
+		}.bind(this));
+
+		this._registerHandler('getJobHistory', function(data, callback) {
+			this.machine.get_job_history(function(err, jobs) {
+				if(err) {
+					callback(err);
+				} else {
+					callback(null, jobs);
+				}
+			})
+		}.bind(this));
+
+		this._registerHandler('runNext', function(data, callback) {
+			this.machine.job_run(function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null); }
+			});
+		}.bind(this));
+
+		this._registerHandler('pause', function(data, callback) {
+			this.machine.pause(function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null); }
+			});
+		}.bind(this));
+
+		this._registerHandler('stop', function(data, callback) {
+			this.machine.quit(function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null); }
+			});
+		}.bind(this));
+
+		this._registerHandler('resume', function(data, callback) {
+			this.machine.resume(function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null); }
+			});
+		}.bind(this));
+
 	}
 
 	/*** Prototypes ***/
@@ -117,8 +206,7 @@ define(function(require) {
 		//if (this.ui.tool.status == )
 		if(this.ui) {
 			if(this.ui.tool.state) {
-//				console.log(this.ui.tool.state);
-				this._fireEvent("status", {"this":"is event data"});
+				this._fireEvent("status", this.ui.tool.status_report);
 			}
 		}
 	};
@@ -184,7 +272,7 @@ define(function(require) {
 		}
 	}
 
-	// React to keydown on "k" shortcute, show / hide right menu and show keypad if allowed
+	// React to keydown on "k" shortcut, show / hide right menu and show keypad if allowed
 	Dashboard.prototype.keyCommands = function(){
 		that=this;
 		$(document).keydown(function(e){

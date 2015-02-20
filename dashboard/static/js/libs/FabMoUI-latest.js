@@ -5,7 +5,7 @@ function FabMoUI(tool, options){
 	this.prefix = '';
 	// useful if several tools in the same app.
 
-	this.refresh = 50;
+	this.refresh = 125;
 	// define the status refresh time.
 
 	this.keypad = true;
@@ -53,7 +53,7 @@ function FabMoUI(tool, options){
 	this.minusZ_button_selector = this.keypad_div_selector + ' .button-minus-Z';
 	this.fixe_move_selector =  this.keypad_div_selector + ' .fixe-move';
 	this.fixe_move_step_selector =  this.keypad_div_selector + ' .fixe-move-step';
-	//setInterval(this.updateStatus.bind(this),this.refresh);
+	setInterval(this.updateStatus.bind(this),this.refresh);
 
 
 	if(this.keypad){
@@ -386,8 +386,6 @@ FabMoUI.prototype.Keypad = function(){
 
 	$(that.fixe_move_step_selector).change(function(){
 		var val =+$(that.fixe_move_step_selector).val();
-		console.log($(that.fixe_move_step_selector).val());
-		console.log(val);
 		if(isNaN(val)){
 			$(that.fixe_move_step_selector).val(that.fixe_move_step);
 		}else{
@@ -395,10 +393,8 @@ FabMoUI.prototype.Keypad = function(){
 		}
 	});
 
-
-
 	window.addEventListener('touchend',function(event) {
-  		alert('START (' + gnStartX + ', ' + gnStartY + ')   END (' + gnEndX + ', ' + gnEndY + ')');
+		alert('START (' + gnStartX + ', ' + gnStartY + ')   END (' + gnEndX + ', ' + gnEndY + ')');
 	},false);
 };
 
@@ -452,7 +448,6 @@ FabMoUI.prototype.updateStatus = function(){
 
 			//Current File or job
 			if(status.current_file) {
-				console.log("File");
 				$(that.file_info_div_selector).removeClass('hide');
 				$(that.filename_selector).html(status.job.name!="" ? status.job.name : status.current_file);
 				var prog = ((status.line/status.nb_lines)*100).toFixed(2);

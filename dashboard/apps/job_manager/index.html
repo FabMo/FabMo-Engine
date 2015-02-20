@@ -24,9 +24,9 @@
 				<h3 class="running-job-name filename"></h3>
 			</div>
 			<div class="small-5 medium-3 large-2 columns btn">
-				<a class="small small-6 columns button fabmo-pause-button warning">P</a>
-				<a class="small small-6 columns button fabmo-resume-button hide Success">R</a>
-				<a class="small small-6 columns button fabmo-stop-button btn alert">S</a>
+				<a id="pause-button" class="small small-6 columns button fabmo-pause-button warning">P</a>
+				<a id="resume-button" class="small small-6 columns button fabmo-resume-button hide Success">R</a>
+				<a id="stop-button" class="small small-6 columns button fabmo-stop-button btn alert">S</a>
 			</div>
 		</div>
 		<div class="row">
@@ -137,7 +137,8 @@
 		console.log("Refreshing job list")
 
 		// Load the list of files available on the tool
-		tool.list_jobs_in_queue(function(err,jobs){
+		fabmoDashboard.getJobsInQueue(function(err,jobs){
+			console.log(jobs);
 			if(err) { return console.log(err); }
 			$(".jobs-listing").empty();
 			if(jobs.length === 0) {
@@ -169,9 +170,8 @@
 	function refresh_jobs_history(){
 		console.log("Refreshing job history")
 		// Load the list of files available on the tool
-		tool.get_job_history(function(err,jobs){
+		fabmoDashboard.getJobHistory(function(err,jobs){
 			if(err) { return console.log(err); }
-			console.log("Jobs: " + jobs);
 			$(".jobs-history-listing").empty();
 			$.each( jobs, function( key, val ) {
 				var jobid = 'job' + val._id;
@@ -194,9 +194,8 @@
 				$(".jobs-history-listing").append(html);
 				
 				$('#'+jobid).click(function() {
-					tool.resubmit_job(id, function(err, result) {
+					fabmoDashboard.resubmitJob(id, function(err, result) {
 						refresh_jobs_list();
-						refresh_jobs_history();
 					});
 				});
 			});
@@ -206,12 +205,13 @@
 	};
 	$('#submit_job').submit(function(e){
 		e.preventDefault();
-		tool.add_job($(this),function(err,file){
+		
+		file = ($(this).find('input:file'))[0].files[0];
+		fabmoDashboard.submitJob({"file":file}, function(err, data) {
 			if(err){console.log(err);return;}
-			$('#job_selector').replaceWith($('#job_selector').clone(true)); //reset file field
+			$('#job_selector').replaceWith($('#job_selector').clone(true));
 			$('#job_selector').prev().html('Browse for a file to upload...');
-				refresh_jobs_list();
-				refresh_jobs_history();
+			refresh_jobs_list();
 		});
 	});
 
@@ -220,15 +220,30 @@
 	});
 
 	$('.run-next').click(function(e) { 
-		tool.job_run(function(err, result) {
+		fabmoDashboard.runNext(function(err, data) {
 			refresh_jobs_list();
-			refresh_jobs_history();
 		});
 	});
 
-	$('.clear-jobs').click(function(e) { tool.clear_job_queue(function(err, result) {
+	$('.clear-jobs').click(function(e) { 
+		fabmoDashboard.clearJobQueue(function(err, data) {
 			refresh_jobs_list();
-			refresh_jobs_history();
+		});
+	});
+
+	$('.fabmo-pause-button').click(function(e) { 
+		fabmoDashboard.pause(function(err, data) {
+		});
+	});
+
+	$('.fabmo-stop-button').click(function(e) { 
+		fabmoDashboard.stop(function(err, data) {
+		});
+	});
+
+	$('.fabmo-resume-button').click(function(e) { 
+		console.log("resuming")
+		fabmoDashboard.resume(function(err, data) {
 		});
 	});
 
@@ -236,46 +251,49 @@
 		//Foundation Init
 		$(document).foundation();
 
-		fabmoDashboard.getMachine(function(err, machine) {
-			tool = new FabMo(machine.ip, machine.port);
-			ui = new FabMoUI(tool);
-
-			// Load the list of files available on the tool
-			refresh_jobs_list();
-			refresh_jobs_history();
-
-			ui.on('status', function(status) {
-				if(status.job) {
-					if(!current_job) {
-						current_job = status.job;
-						if(jobs_needs_refresh) {
-							refresh_jobs_list();
-							refresh_jobs_history();
-							jobs_needs_refresh = false;
-						}
-					}
-					$(".current-job-container").show(500);
-					$(".running-job-name").html(status.job.name);
-					$(".running-job-description").html(status.job.description);
-					x = setTimeout(function(){
-						var tps = (Date.now()-status.job.started_at).toString();
-						tps = parseInt(tps.substr(0,tps.length-3));
-						tps = ((tps-tps%60)/60).toString() + "'" + tps%60 + '"';
-						$(".running-job-time").html(tps);
-						$(".meter.progress").css("width", ((status.line/status.nb_lines)*100).toString() + "%" );
-					},1000);
-				} else {
-					if(current_job) {
-						current_job = null;
+		fabmoDashboard.on('status', function(status) {
+			if(status.job) {
+				if(!current_job) {
+					current_job = status.job;
+					if(jobs_needs_refresh) {
 						refresh_jobs_list();
 						refresh_jobs_history();
 						jobs_needs_refresh = false;
 					}
-					$(".current-job-container").hide(500);
-					clearInterval(x);
 				}
-			});
+				$(".current-job-container").show(100);
+				$(".running-job-name").html(status.job.name);
+				$(".running-job-description").html(status.job.description);
+				x = setTimeout(function(){
+					var tps = (Date.now()-status.job.started_at).toString();
+					tps = parseInt(tps.substr(0,tps.length-3));
+					tps = ((tps-tps%60)/60).toString() + ":" + tps%60;
+					$(".running-job-time").html(tps);
+					$(".meter.progress").css("width", ((status.line/status.nb_lines)*100).toString() + "%" );
+				},1000);
+			} else {
+				if(current_job) {
+					current_job = null;
+					refresh_jobs_list();
+					refresh_jobs_history();
+					jobs_needs_refresh = false;
+				}
+				$(".current-job-container").hide(500);
+				clearInterval(x);
+			}
+
+			console.log(status.state)
+			if(status.state === "running") {
+				$(".fabmo-pause-button").show();
+				$(".fabmo-resume-button").hide();
+			} else {
+				$(".fabmo-pause-button").hide();
+				$(".fabmo-resume-button").show();
+			}
 		});
+
+		refresh_jobs_list();
+		refresh_jobs_history();
 	});
 
 </script>

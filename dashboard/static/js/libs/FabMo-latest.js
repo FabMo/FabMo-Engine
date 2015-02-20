@@ -7,6 +7,7 @@ function FabMo(ip,port) //ip and port of the tool
 	this.tool_moving = undefined;//for the moving thing
 	this.old_lock_status = null;
 	this.interval_moving = 250;//Default was 250
+	this.status_report = {};
 	this.url.base = 'http://'+this.ip+':'+this.port;
 	this.url.file=this.url.base+"/file";
 	this.url.status=this.url.base+'/status';
@@ -114,6 +115,9 @@ FabMo.prototype.get_status = function(callback)
 				// test errors with the tool (not network error)
 				if(!data){callback(that.default_error.status.no_content);}
 				if(data.status === "success") {
+					for(key in data.data.status) {
+						that.status_report[key] = data.data.status[key];
+					}
 					callback(undefined,data.data.status);
 				} else if(data.status==="fail") {
 					callback(data.data);
@@ -214,6 +218,30 @@ FabMo.prototype.delete_by_id = function(id,callback)
 		}
 	});
 };
+
+FabMo.prototype.resubmit_job = function(id,callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that = this;
+	$.ajax({
+		url: this.url.job + '/' + id,
+		type: "POST",
+		dataType : 'json', 
+		success: function( data ) {
+			callback(undefined);
+			},
+		error: function(data,err) {
+			if (data.status === 404){callback(that.default_error.file.no_file);}
+			else{
+				var error = that.default_error.no_device;
+				error.sys_err = err;
+			 	callback(error);
+			}			
+		}
+	});
+};
+
 FabMo.prototype.delete = function(file,callback)
 {
 	this.delete_by_id(file._id,callback);
@@ -580,6 +608,33 @@ FabMo.prototype.list_jobs_in_queue = function(callback)
 	});
 };
 
+FabMo.prototype.get_job_history = function(callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.jobs+'/history',
+		type: "GET",
+		dataType : 'json', 
+		success: function( data ) {
+			if(data.status === "success") {
+				callback(undefined,data.data.jobs);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
+		error: function(data,err) {
+				var error =that.default_error.no_device;
+				error.sys_err = err;
+			 	callback(error);
+			}
+	});
+};
+
+
 FabMo.prototype.get_job_by_id = function(id,callback)
 {
 	if (!callback)
@@ -899,77 +954,40 @@ function ChooseBestWayToConnect(tool,callback){
 	}		
 }
 
-
-function DetectToolsOnTheNetworks(callback, linker_port){
-	if (!callback)
-		throw "this function need a callback to work !";
-	var port = linker_port || 8080; //port of the link API
+FabMo.prototype.job_run =  function(callback)
+{
+	var that=this;
 	$.ajax({
-		url: 'http://127.0.0.1:' + port + '/where_is_my_tool',
-		type: "GET",
-		dataType : 'json'
-	}).done(function(data){
-		callback(undefined,data);
-	}).fail(function(){
-		err="Link API not responding !";
-		callback(err);
+		url: this.url.jobs + '/queue/run',
+		type: "POST",
+		dataType : 'json', 
+		data : {},
+		success: function( data ) {
+			typeof callback == 'function' && callback(undefined);
+		},
+		error: function(data, err) {
+			var error = that.default_error.no_device;
+			error.sys_err = err;
+			typeof callback == 'function' && callback(error);
+		}
 	});
-}
+};
 
-function SelectATool(list_tools,callback){
-	if (!callback)
-		throw "this function need a callback to work !";
-	if (list_tools.length === 0)
-	{
-		var err = "No tools detected";
-		callback(err);
-	}
-	else if (list_tools.length === 1) // perfect case !, a single tool on the network !
-	{
-		callback(undefined,list_tools[0]);
-	}
-	else
-	{	
-
-		if($('#device_picker').length){
-			list_tools.forEach(function(val,key){
-				if(key===0){
-					$('#device_picker').append('<input type="radio" name="devices" id="'+key+'" value=\''+JSON.stringify(val)+'\' checked="checked" /><label for="'+key+'"> '+ val.hostname+'</label><br>');
-				}
-				else{
-					$('#device_picker').append('<input type="radio" name="devices" id="'+key+'" value=\''+JSON.stringify(val)+'\' /><label for="'+key+'"> '+ val.hostname+'</label><br>');
-				}
-			});
-			$('#device_picker').append($('<button id="device_picker_button">Select</button>'));
-			$('#device_picker_button').click(function(){
-				if($("input[name='devices']:checked").length)
-					callback(undefined,JSON.parse($("input[name='devices']:checked").val()));
-			});
-			$('#device_picker').trigger('activated',[this]);		
+FabMo.prototype.clear_job_queue =  function(callback)
+{
+	var that=this;
+	$.ajax({
+		url: this.url.jobs + '/queue',
+		type: "DELETE",
+		success: function( data ) {
+			typeof callback == 'function' && callback(undefined);
+		},
+		error: function(data, err) {
+			var error = that.default_error.no_device;
+			error.sys_err = err;
+			typeof callback == 'function' && callback(error);
 		}
-		else{
-			var $dialog = $('<div/>').addClass('dialog');
-			list_tools.forEach(function(val,key){
-				$dialog.append('<input type="radio" name="devices" id="'+key+'" value=\''+JSON.stringify(val)+'\' /><label for="'+key+'"> '+ val.hostname+'</label><br>');
-			});
-			$('body').append($dialog);
-			$dialog.dialog({
-				autoOpen: true,
-				title: "Select a device",
-				height: 300,
-				width: 350,
-				modal: true,
-				buttons: {
-					Select: function() {
-						callback(undefined,JSON.parse($("input[name='devices']:checked").val()));
-						$( this ).dialog( "close" );
-					}
-				}
-	      		});
-
-		}
-	}
- 
-}
+	});
+};
 
 

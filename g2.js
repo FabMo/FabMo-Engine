@@ -28,7 +28,7 @@ var CMD_TIMEOUT = 10000;
 var JOG_TIMEOUT = 500;
 
 var GCODE_BLOCK_SEND_SIZE = 1000;
-var GCODE_MIN_LINE_THRESH = 100;
+var GCODE_MIN_LINE_THRESH = 250;
 
 // Map used by the jog command to turn incoming direction specifiers to g-code
 var JOG_AXES = {'x':'X', 
@@ -453,8 +453,10 @@ G2.prototype.handleStatusReport = function(response) {
 
 			if(lines_left < GCODE_MIN_LINE_THRESH) {
 				this.last_line_seen = line;
-				log.warn("Lines left has fallen to " + lines_left + " sending more...");
-				this.sendMoreGCodes();
+				if(this.gcode_queue.getLength() > 0) {
+					log.warn("Lines left has fallen to " + lines_left + " sending more...");
+					this.sendMoreGCodes();
+				}
 			}
 		}
 
