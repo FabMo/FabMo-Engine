@@ -102,8 +102,8 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 		}
 		lines.push('M30\n');
 		string = lines.join("\n");
-		this.driver.gcodeWrite(string);
-		//this.driver.runString(string,this.machine.status);
+		//this.driver.gcodeWrite(string);
+		this.driver.runString(string,this.machine.status);
 	}
 
 };
