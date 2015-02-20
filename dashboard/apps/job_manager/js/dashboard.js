@@ -70,8 +70,29 @@ FabMoDashboard.prototype.hideDRO = function(callback) {
 	this._call("hideDRO", null, callback);
 }
 
-FabMoDashboard.prototype.submitJob = function(data, callback) {
-	this._call("submitJob", data, callback)
+FabMoDashboard.prototype.submitJob = function(data, config,  callback) {
+	var message = {};
+
+	// Pass a form to get a file that was browsed for
+	if (data instanceof jQuery) {
+		console.log("jquery")
+		message.file = (data.find('input:file'))[0].files[0];
+	}
+	// Pass the FormData object if you're a real go-getter
+	else if (data instanceof FormData) {
+		console.log("formdata")
+		message.file = data.file;
+	} 
+	// Just pass a plain old object that contains the data
+	else {
+		console.log("regulartimes")
+		message.data = data;
+		message.config = {};
+		message.config.filename = config.filename || 'job.nc';
+		message.config.name = config.name || message.config.filename;
+		message.config.description = config.description || 'No description'
+	}
+	this._call("submitJob", message, callback)
 }
 
 FabMoDashboard.prototype.resubmitJob = function(id, callback) {

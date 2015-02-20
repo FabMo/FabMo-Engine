@@ -206,8 +206,7 @@
 	$('#submit_job').submit(function(e){
 		e.preventDefault();
 		
-		file = ($(this).find('input:file'))[0].files[0];
-		fabmoDashboard.submitJob({"file":file}, function(err, data) {
+		fabmoDashboard.submitJob($(this), function(err, data) {
 			if(err){console.log(err);return;}
 			$('#job_selector').replaceWith($('#job_selector').clone(true));
 			$('#job_selector').prev().html('Browse for a file to upload...');

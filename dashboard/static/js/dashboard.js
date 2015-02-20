@@ -121,7 +121,7 @@ define(function(require) {
 			console.log("submit job")
 			console.log(data);
 			if('file' in data) {
-				console.log("Adding a job")
+				console.log("Adding a job from a file")
 				
 				formdata = new FormData();
 				formdata.append('file', data.file, data.file.name);
@@ -134,7 +134,15 @@ define(function(require) {
 						callback(null);
 					}
 				}.bind(this));
-			} else {
+			} else if ('data' in data) {
+				this.machine.add_job(data, function(err, result) {
+					if(err) {
+						callback(err);
+					} else {
+						this.jobManager();
+						callback(null);
+					}
+				}.bind(this));				
 				console.log("NOPE");
 			}
 		}.bind(this));
