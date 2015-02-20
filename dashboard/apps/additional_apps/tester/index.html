@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Shopbot Terrain Generator App</title>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+  </head>
+  <body>
+
+    <div class="container-fluid">
+      <!-- Title/description -->
+      <div style="text-align:center;">
+        <h1>Terrain App</h1>
+      </div>
+      
+      <!-- Viewport for 3D view -->
+      <div class="row">
+      <div class="col-sm-8 col-sm-push-4" style="margin-left: auto; margin-right: auto; ">
+          <div id="viewport">
+          </div>
+      </div>
+
+      <!-- Form for input -->
+        <div class="col-sm-4 col-sm-pull-8">
+          <form class="form-horizontal" id="form-params">
+            <div class="form-group">
+              <label for="input-width" class="col-sm-6 control-label">Width</label>
+              <div class="col-sm-6">
+                <input type="number" class="form-control" id="input-width" value="5">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="input-height" class="col-sm-6 control-label">Height</label>
+              <div class="col-sm-6">
+                <input type="number" class="form-control" id="input-height" value="5">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="input-base-thickness" class="col-sm-6 control-label">Base Thickness</label>
+              <div class="col-sm-6">
+                <input type="number" class="form-control" id="input-base_thickness" value="0.25">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="input-material_thickness" class="col-sm-6 control-label">Material Thickness</label>
+              <div class="col-sm-6">
+                <input type="number" class="form-control" id="input-material_thickness" value="0.25">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="input-scale" class="col-sm-6 control-label">Terrain Scale</label>
+              <div class="col-sm-6">
+                <input type="number" class="form-control" id="input-scale" value="1.0">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="input-resolution" class="col-sm-6 control-label">Resolution</label>
+              <div class="col-sm-6">
+                <input type="number" class="form-control" id="input-resolution" value="0.0625">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="col-sm-12" style="text-align: right;">
+                <a class="btn btn-info" id="btn-regenerate">Regenerate Terrain</a>
+              </div>
+
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dependencies -->
+    <script src="js/three.min.js"></script> 
+    <script src="js/perlin.js"></script> 
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/terrain.js"></script>
+
+    <script> 
+        var container = $('#viewport');
+        var element = null;
+        var zrot = 0.0;
+        var terrain = new Terrain();
+
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera( 75, container.width() / container.height(), 0.1, 1000 );
+        var renderer = new THREE.WebGLRenderer({antialias: true});
+
+        renderer.setClearColor( 0xffffff, 1 );
+        renderer.setSize( container.width(), container.height() );
+        container.append( renderer.domElement );
+        camera.position.z = 4;
+
+        update();
+
+        $('#form-params').change(function(evt) {
+          update();
+        });
+
+        $('#btn-regenerate').click(function(evt) {
+          update();
+        });
+        
+        function update() {
+
+            // Extract options from the form
+            var options = {}
+            $('#form-params').find('input').each(function(){
+              var id = this.id.replace(/input-/gi, '');
+              options[id] = this.value;
+            });
+
+            // Update the terrain options
+            terrain.options(options);
+
+            // Create new scene elements
+            var material = new THREE.MeshBasicMaterial( { color: 0x0000ff, wireframe:true } );
+            var new_element = new THREE.Mesh( terrain.generate(), material );
+            
+            // Update scene
+            if(element) { scene.remove(element); }
+            element = new_element;
+
+            element.rotation.x = 2;
+            //element.rotation.y = 0.25;
+
+            scene.add( new_element );
+        }
+
+        function render() {
+            zrot += 0.002;
+            element.rotation.z = zrot;
+            requestAnimationFrame( render );
+            renderer.render( scene, camera );
+        }
+        render();
+
+        window.addEventListener('resize', function(evt) {
+           renderer.setSize( container.width(), container.height() );
+        });
+    </script>
+
+  </body>
+</html>
