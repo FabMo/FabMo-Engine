@@ -207,6 +207,13 @@ define(function(require) {
 			});
 		}.bind(this));
 
+		this._registerHandler('nudge', function(data, callback) {
+			this.machine.fixed_move(data.dir, data.dist, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null); }
+			});
+		}.bind(this));
+
 	}
 
 	/*** Prototypes ***/

@@ -547,7 +547,7 @@ FabMo.prototype.fixed_move =  function(dir,step,callback)
 			}
 		},
 		error: function(data,err) {
-	    		var error = that.default_error.no_device;
+			var error = that.default_error.no_device;
 			error.sys_err = err;
 		 	callback(error);
 		}

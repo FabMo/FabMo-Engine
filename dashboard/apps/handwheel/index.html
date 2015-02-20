@@ -17,9 +17,6 @@
  
 	<script src="./js/jquery-1.10.2.js"></script>
 	<script src="./js/foundation.min.js"></script>
-	<script src="./js/string-format.js"></script>
-	<script src="./js/FabMo-latest.js"></script>
-	<script src="./js/FabMo-UI.js"></script>
 	<script src="./js/dashboard.js"></script>
 	<script src="./js/handwheel.js"></script>
 
@@ -32,8 +29,7 @@
 		var DETENT_ANGLE = 2.0;
 		wheel = new HandWheel("wheel", {ppr:32, thumbColor: "#313366", wheelColor:"#DDDDDD"});
 
-		fabmoDashboard.getMachine(function(err, machine) {
-			var machine = new FabMo(machine.ip, machine.port);
+		$(document).ready(function() {
 
 			wheel.on("sweep", function(evt) {
 				var degrees = evt.angle*180.0/Math.PI;
@@ -43,41 +39,40 @@
 					//console.log(angle);
 					angle = 0;
 					//console.log(distance);
-					machine.fixed_move('+' + mode, distance, function(err) {});
+					fabmoDashboard.nudge('+' + mode, distance, function(err) {});
 				}
 				if(angle < -5.0) {
 					//console.log(angle);
 					angle = 0;
 					//console.log(distance);
-					machine.fixed_move('-' + mode, distance, function(err) {});
+					fabmoDashboard.nudge('-' + mode, distance, function(err) {});
 				}
 			});
 
 			wheel.on("release", function(evt) {
-				console.log("release");
-				machine.quit(function() {})
+				fabmoDashboard.stop(function() {})
 			});
-		});
 
-		$('#xbutton').click(function(evt) {
-			$('#xbutton').removeClass('disabled');
-			$('#ybutton').addClass('disabled');
-			$('#zbutton').addClass('disabled');
-			mode = 'x';
-		});
+			$('#xbutton').click(function(evt) {
+				$('#xbutton').removeClass('disabled');
+				$('#ybutton').addClass('disabled');
+				$('#zbutton').addClass('disabled');
+				mode = 'x';
+			});
 
-		$('#ybutton').click(function(evt) {
-			$('#ybutton').removeClass('disabled');
-			$('#xbutton').addClass('disabled');
-			$('#zbutton').addClass('disabled');
-			mode = 'y';
-		});
+			$('#ybutton').click(function(evt) {
+				$('#ybutton').removeClass('disabled');
+				$('#xbutton').addClass('disabled');
+				$('#zbutton').addClass('disabled');
+				mode = 'y';
+			});
 
-		$('#zbutton').click(function(evt) {
-			$('#zbutton').removeClass('disabled');
-			$('#xbutton').addClass('disabled');
-			$('#ybutton').addClass('disabled');
-			mode = 'z';
+			$('#zbutton').click(function(evt) {
+				$('#zbutton').removeClass('disabled');
+				$('#xbutton').addClass('disabled');
+				$('#ybutton').addClass('disabled');
+				mode = 'z';
+			});
 		});
 
 	</script>
