@@ -9,9 +9,8 @@ function GCodeRuntime() {
 GCodeRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;
-
 	this.status_handler =  this._onDriverStatus.bind(this);
-
+	this.status_report = {}
 	this.driver.on('status',this.status_handler);
 };
 
@@ -32,6 +31,11 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 		}
 	}
 
+	// Update the machine copy of g2 status variables
+	for (var key in status) {
+		this.status_report[key] = status[key];
+	}
+
 	switch(this.machine.status.state) {
 		case "not_ready":
 			// This shouldn't happen.
@@ -39,13 +43,13 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 			break;
 
 		case "running":
-			if(status.stat === this.driver.STAT_HOLDING && status.stat === 0) {
+			if(this.status_report.stat === this.driver.STAT_HOLDING && this.status_report.stat === 0) {
 				this._changeState("paused");
 				this.machine.emit('job_pause', this);
 				break;
 			}
 
-			if(status.stat === this.driver.STAT_STOP || status.stat === this.driver.STAT_END) {
+			if(this.status_report.stat === this.driver.STAT_STOP || this.status_report.stat === this.driver.STAT_END) {
 				this._idle();
 				this.machine.emit('job_complete', this);
 				break;
@@ -53,18 +57,18 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 			break;
 
 		case "paused":
-			if(status.stat === this.driver.STAT_RUNNING) {
+			if(this.status_report.stat === this.driver.STAT_RUNNING) {
 				this._changeState("running");
 				this.machine.emit('job_resume', this);
 				break;
 			}
-			if(status.stat === this.driver.STAT_STOP || status.stat === this.driver.STAT_END) {
+			if(this.status_report.stat === this.driver.STAT_STOP || this.status_report.stat === this.driver.STAT_END) {
 				this._idle();
 			}
 			break;
 
 		case "idle":
-			if(status.stat === this.driver.STAT_RUNNING) {
+			if(this.status_report.stat === this.driver.STAT_RUNNING) {
 				this._changeState("running");
 				this.machine.emit('job_resume', this);
 				break;

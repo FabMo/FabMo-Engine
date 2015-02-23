@@ -1,0 +1,140 @@
+<html> 
+<head>
+	<meta charset="utf-8">
+	<title>Job Manager</title>
+
+	<!-- CSS standardisation & inclusion -->
+	<link rel="stylesheet" href="./css/foundation.min.css">
+	<link rel="stylesheet" href="./css/normalize.css">
+	<link rel="stylesheet" href="./css/style.css">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+	<div id="myModal" class="reveal-modal" data-reveal>
+	  <h2 style="color: darkred;">Warning!</h2>
+	  <p class="lead" style="color: black;">You are about to delete an app!</p>
+	  <p style="color: black;">This will permanently remove the app from your tool.  Are you sure you want to proceed?</p>
+	  <!--<a class="close-reveal-modal">&#215;</a>-->
+	</div>
+
+	<header class="grey"> <!-- Class can be "blue", "red", "grey", "orange" -->
+		<section>
+			<div class="app-title-container">
+				<h2>App Manager</h2>
+			</div>
+		</section>
+	</header>
+	<section class="container">
+		<div class="row title">
+			<div class="small-7 medium-9 large-10 columns">
+				<h3>Installed Apps</h3>
+			</div>
+			<div class="small-5 medium-3 large-2 columns btn">
+			</div>
+		</div>
+
+		<div class="row app-row">
+			<!-- JOB HISTORY LISTING -->
+			<table class="small-12 columns">
+				<thead>
+					<tr>
+						<th class="small-1"><!--ICON--></th>
+						<th class="small-2">Name</th>
+						<th class="small-5">Description</th>
+						<th class="small-2"></th>
+						<th class="small-2"></th>
+					</tr>
+				</thead>
+				<tbody class="row app-listing"></tbody>
+			</table>
+		</div>
+	</section>
+	<section class="container">
+		<div class="row title">
+			<div class="small-7 medium-9 large-10 columns">
+				<h3>Install New Apps</h3>
+			</div>
+			<div class="small-5 medium-3 large-2 columns btn">
+			</div>
+		</div>
+		<div class="row submit-app">
+			<div class="small-12 columns">
+				<form id="submit_app" action="/app" method="post" enctype="multipart/form-data">
+					<div class="row collapse postfix-round">
+						<div class="small-9 columns">
+						  	<input id='job_selector' type="file" name="file" data-filename-placement="inside" placeholder="Browse...">
+						</div>
+						<div class="small-3 columns">
+						  	<button type"submit" class="button radius postfix success">Upload</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+
+	</section>
+
+  <!-- Javascript inclusions -->
+  <script src="./js/libs/jquery-1.10.2.js"></script>
+  <script src="./js/libs/foundation.min.js"></script>
+  <script src="/js/libs/dashboard.js"></script>
+  <script src="./js/moment.js"></script>
+
+  <script type="text/javascript">
+
+	function refreshApps(){
+		// Load the list of files available on the tool
+		fabmoDashboard.getApps(function(err,apps){
+			if(err) { return console.log(err); }
+			$(".app-listing").empty();
+			$.each( apps, function( key, val ) {
+				var appid = 'app_' + val.id;
+				var id = val.id;
+				html = [
+				'<tr><td>',
+				'<img src="' + location.origin + '/' + val.icon_url + '" class="app-icon" />',
+				'</td><td>',
+				'<a id="' + appid + '">',
+					val.name,
+				'</a>',
+				'</td><td>',
+					val.description || 'No description.',
+				'</td><td></td><td><a class="button radius alert" id="delete_' + appid + '">Delete</a></td></tr>'
+				].join('');
+				$(".app-listing").append(html);
+				console.log(appid);
+
+				$('#delete_'+appid).click(function() {
+					//$('#myModal').foundation('reveal', 'open');
+					fabmoDashboard.deleteApp(id, function(err, result) {
+						if(err) {
+							console.log(err);
+						} else {
+							refreshApps();
+						}
+					});
+				});
+				
+			});
+		});
+	};
+
+	$('#submit_app').submit(function(e){
+		e.preventDefault();
+		fabmoDashboard.submitApp($(this), {}, function(err, data) {
+			refreshApps();
+		});
+	});
+
+
+	$(document).ready(function(){
+		//Foundation Init
+		$(document).foundation();
+		refreshApps();
+	});
+
+</script>
+
+</body>
+</html>

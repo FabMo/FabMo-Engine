@@ -138,8 +138,6 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
 		}
 
 		if(this.control_port !== this.gcode_port) {
-            log.debug(this.control_port);
-            log.debug(this.gcode_port);
             this.gcode_port.open(function(error) {
 			    if(error) {
 				    log.error("ERROR OPENING GCODE PORT " + error )
@@ -364,55 +362,6 @@ G2.prototype.handleQueueReport = function(r) {
 		this.gcodeWrite(this.jog_command + '\n');
 		return;
 	}
-
-	/*
-	var FLOOD_LEVEL = 100;
-	var MIN_QR_LEVEL = 5;
-	var MIN_FLOOD_LEVEL = 5;
-
-
-	var qr = r.qr;
-	var qo = r.qo || 0;
-	var qi = r.qi || 0;
-
-	if(('qr' in r) && (this.pause_flag || this.quit_pending)) {
-		log.debug('Not handling this queue report (i:' + (r.qi || 0) + ' o:' + (r.qo || 0) + ' r:' + (r.qr) + ') because pause or quit pending');
-		// If we're here, a pause is requested, and we don't send anymore g-codes.
-		return;
-	}
-
-	this.qtotal += (qi-qo);
-
-	if((qr !== undefined)) {
-
-        var lines_to_send = 100000;
-		if(lines_to_send > 0) {
-			var cmds = [];
-			while(lines_to_send > 0) {
-				if(this.gcode_queue.isEmpty()) {
-					this.flooded = false;
-					this.send_rate = 0;
-					break;
-				}
-				cmds.push(this.gcode_queue.dequeue());
-				//gcode = this.gcode_queue.dequeue();
-				//cmds.push('{"gc":"' + gcode + '"}');
-				lines_to_send -= 1;
-			}
-			if(cmds.length > 0) {
-				cmds.push('\n');
-				var outstring = cmds.join('\n');
-				//this.controlWrite(outstring);
-				this.gcodeWrite(outstring);
-			} 
-		}
-		else {
-			//console.log('no lines to send');
-		}
-		//log.debug('qi: ' + qi + '  qr: ' + qr + '  qo: ' + qo + '   lines: ' + lines_to_send);
-
-	}
-	*/
 };
 
 G2.prototype.handleFooter = function(response) {

@@ -26,6 +26,7 @@ function FabMo(ip,port) //ip and port of the tool
 	this.url.sbp=this.url.direct+'/sbp';
 	this.url.job=this.url.base+'/job';
 	this.url.jobs=this.url.base+'/jobs';
+	this.url.apps=this.url.base+'/apps';
 
 	// default error message definitions
 	// that method allow to give more details on error
@@ -608,6 +609,59 @@ FabMo.prototype.list_jobs_in_queue = function(callback)
 	});
 };
 
+FabMo.prototype.list_apps = function(callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.apps,
+		type: "GET",
+		dataType : 'json', 
+		success: function( data ) {
+			if(data.status === "success") {
+				callback(null,data.data.apps);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
+		error: function(data,err) {
+				var error =that.default_error.no_device;
+				error.sys_err = err;
+			 	callback(error);
+			}
+	});
+};
+
+FabMo.prototype.delete_app = function(id, callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.apps + '/' + id,
+		type: "DELETE",
+		dataType : 'json', 
+		success: function( data ) {
+			if(data.status === "success") {
+				callback(null,data.data.app);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
+		error: function(data,err) {
+			console.log(err);
+				var error =that.default_error.no_device;
+				error.sys_err = err;
+			 	callback(error);
+			}
+	});
+};
+
 FabMo.prototype.get_job_history = function(callback)
 {
 	if (!callback)
@@ -738,17 +792,72 @@ FabMo.prototype.add_job =  function(formdata,callback)
 				}	else {
 					callback(data.message);
 				}
-				return;/*
-				console.log(data);
-				if (data.responseJSON && data.responseJSON[0]) {
-					callback(null,data.responseJSON[0]);
+				return;
+			},
+			error : function(data, err) {
+				if (data.status === 400){callback(that.default_error.file.upload.bad_request);}
+				else if (data.status === 415){callback(that.default_error.file.upload.not_allowed);}
+				else if (data.status === 302){
+					if (data.responseJSON && data.responseJSON[0])
+						callback(undefined,data.responseJSON[0]);
+					else if(data.responseJSON)
+						callback(undefined, data.responseJSON);
+					else
+						callback(undefined, JSON.parse(data.responseText));
 				}
-				else if(data.responseJSON) {
-					callback(null, data.responseJSON);
+				else{
+					var error = that.default_error.no_device;
+					error.sys_err = err;
+				 	callback(error);
 				}
-				else {
-					callback(null,JSON.parse(data.responseText));
-				}*/
+			}
+		});
+	}
+};
+
+// take a form data, look for a file field, and upload the file load in it
+FabMo.prototype.submit_app =  function(formdata,callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	var formData;
+	var file;
+	if (formdata instanceof jQuery){ //if it's a form
+		file = (formdata.find('input:file'))[0].files[0];
+		// Create a new FormData object.
+		formData = new FormData();
+		formData.append('file', file, file.name);
+	}
+	else if (formdata instanceof FormData) {
+		formData = formdata;
+	} 
+	else {
+		content = formdata.data || '';
+		filename = formdata.config.filename || 'app.zip';
+		formData = new FormData();
+		file = new Blob([content], {type : "application/zip"});
+		formData.append('file', file, filename);
+	}
+	if (formData) {
+		$.ajax({
+			url: this.url.apps,
+			type: "POST",
+			data: formData,
+			processData: false,
+			contentType: false,
+			DataType:'json',
+			success: function( data ) {
+				if(data.status === "success") {
+					console.log("Making the callback with the app data")
+					console.log(data.data.app)
+					callback(undefined,data.data.app);
+				} else if(data.status==="fail") {
+					callback(data.data);
+				}	else {
+					callback(data.message);
+				}
+				return;
 			},
 			error : function(data, err) {
 				if (data.status === 400){callback(that.default_error.file.upload.bad_request);}

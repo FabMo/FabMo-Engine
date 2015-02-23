@@ -1,5 +1,6 @@
-async = require('async');
-fs = require('fs');
+var async = require('async');
+var fs = require('fs');
+var path = require('path');
 var PLATFORM = require('process').platform;
 
 var log = require('../log').logger('config')
@@ -89,13 +90,13 @@ Config.getDataDir = function(name) {
 	switch(PLATFORM) {
 		case 'win32':
 		case 'win64':
-			base = 'c:/fabmo';
+			base = 'c:\\fabmo';
 			break;
 		default:
 			base = '/opt/fabmo';
 	}
 	if(name) {
-		dir = base + '/' + name;
+		dir = base + path.sep + name;
 	} else {
 		dir = base;
 	}
@@ -120,7 +121,7 @@ Config.createDataDirectories = function(callback) {
 			}
 		});
 	}.bind(this);
-	dirs = [null, 'db', 'temp', 'log', 'files', 'config', 'apps', 'temp/approot']
+	dirs = [null, 'db', 'log', 'files', 'config', 'apps', 'approot', path.join('approot','approot')]
 	async.eachSeries(dirs, create_directory, callback);
 }
 

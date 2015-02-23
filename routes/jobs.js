@@ -7,12 +7,6 @@ var machine = require('../machine').machine;
 var fs = require('fs');
 var uuid = require('node-uuid');
 
-
-var createUniqueFilename = function (filename) {
-    var extension = (/[.]/.exec(filename)) ? /[^.]+$/.exec(filename) : undefined;
-    return uuid.v1() + (extension ? ('.' + extension) : '');
-}
-
 /**
  * @apiGroup Jobs
  * @api {post} /job Submit a job
@@ -31,7 +25,7 @@ var submitJob = function(req, res, next) {
         var friendly_filename = file.name;
 
         // But create a unique name for actual storage
-        var filename = createUniqueFilename(friendly_filename);
+        var filename = util.createUniqueFilename(friendly_filename);
         var full_path = path.join(config.getDataDir('files'), filename);
 
         // Move the file

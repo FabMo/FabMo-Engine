@@ -3,13 +3,16 @@ var log = require('./log').logger('util');
 var fs = require('fs');
 var q = require('q');
 var fs = require('fs');
-
+var uuid = require('node-uuid');
 var fs = require('fs');
 var escapeRE = require('escape-regexp-component');
 
 var mime = require('mime');
 var restify = require('restify');
 var errors = restify.errors;
+
+ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
+ALLOWED_APP_EXTENSIONS = ['.zip', '.fma'];
 
 var MethodNotAllowedError = errors.MethodNotAllowedError;
 var NotAuthorizedError = errors.NotAuthorizedError;
@@ -21,6 +24,16 @@ function listify(x) {
     } else {
         return [x];
     }
+}
+
+exports.filename = function(pathname) {
+    parts = pathname.split(path.sep);
+    return parts[parts.legnth-1]
+}
+
+var createUniqueFilename = function (filename) {
+    var extension = (/[.]/.exec(filename)) ? /[^.]+$/.exec(filename) : undefined;
+    return uuid.v1() + (extension ? ('.' + extension) : '');
 }
 
 // Simple queue, faster than using array.shift
@@ -80,9 +93,6 @@ function Queue(){
 	}
 }
 
-// *TODO:* This is defined in two places, we should fix that.
-ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
-
 function allowed_file(filename){
   if (ALLOWED_EXTENSIONS.indexOf(path.extname(filename).toLowerCase()) !== -1) {
     return true;
@@ -92,6 +102,15 @@ function allowed_file(filename){
   }
 };
 
+
+function allowedAppFile(filename) {
+  if (ALLOWED_APP_EXTENSIONS.indexOf(path.extname(filename).toLowerCase()) !== -1) {
+    return true;
+  }
+  else {
+    return false;
+  }
+}
 /**
  * Move a file from src to dest, avoiding cross-device rename failures.
  * This method will first try fs.rename and call the supplied callback if it succeeds. Otherwise
@@ -288,5 +307,8 @@ function walkDir(filename) {
 exports.serveStatic = serveStatic;
 exports.Queue = Queue;
 exports.allowed_file = allowed_file;
+exports.allowedAppFile = allowedAppFile;
 exports.move = move;
 exports.walkDir = walkDir;
+exports.createUniqueFilename = createUniqueFilename;
+

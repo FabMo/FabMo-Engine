@@ -8,6 +8,7 @@
     "async": "0.9.x",
     "colors": "0.6.x",
     "escape-regexp-component": "^1.0.2",
+    "fs-extra": "^0.16.3",
     "mime": "^1.2.11",
     "ncp": "^1.0.1",
     "node-simplerwifiscanner": "git+https://github.com/jlucidar/node-simplerwifiscanner.git",

@@ -1,3 +1,4 @@
+async = require('async');
 util = require('util');
 Config = require('./config').Config
 

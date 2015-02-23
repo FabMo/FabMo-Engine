@@ -1,4 +1,5 @@
 var Config = require('./config').Config
+var async = require('async');
 var EngineConfig = require('./engine_config').EngineConfig;
 var G2Config = require('./g2_config').G2Config;
 var OpenSBPConfig = require('./opensbp_config').OpenSBPConfig;

@@ -118,10 +118,7 @@ define(function(require) {
 
 		// Submit a job
 		this._registerHandler('submitJob', function(data, callback) { 
-			console.log("submit job")
-			console.log(data);
 			if('file' in data) {
-				console.log("Adding a job from a file")
 				
 				formdata = new FormData();
 				formdata.append('file', data.file, data.file.name);
@@ -143,7 +140,6 @@ define(function(require) {
 						callback(null);
 					}
 				}.bind(this));				
-				console.log("NOPE");
 			}
 		}.bind(this));
 
@@ -211,6 +207,45 @@ define(function(require) {
 			this.machine.fixed_move(data.dir, data.dist, function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null); }
+			});
+		}.bind(this));
+
+		this._registerHandler('getApps', function(data, callback) {
+			this.machine.list_apps(function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			});
+		}.bind(this));
+
+		// Submit an app
+		this._registerHandler('submitApp', function(data, callback) { 
+			if('file' in data) {
+				formdata = new FormData();
+				formdata.append('file', data.file, data.file.name);
+
+				this.machine.submit_app(formdata, function(err, result) {
+					this.refreshApps();
+					if(err) {
+						callback(err);
+					} else {
+						callback(null, result);
+					}
+				}.bind(this));
+			} else if ('data' in data) {
+				this.machine.add_job(data, function(err, result) {
+					if(err) {
+						callback(err);
+					} else {
+						callback(null);
+					}
+				}.bind(this));
+			}
+		}.bind(this));
+
+		this._registerHandler('deleteApp', function(id, callback) {
+			this.machine.delete_app(id, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
 			});
 		}.bind(this));
 
@@ -333,6 +368,11 @@ define(function(require) {
 	Dashboard.prototype.jobManager = function() {
 		context = require('context');
 		context.launchApp('job-manager');
+	}
+
+	Dashboard.prototype.refreshApps = function() {
+		context = require('context');
+		context.apps.fetch();
 	}
 
 	Dashboard.prototype.checkDashboardSettings = function() {

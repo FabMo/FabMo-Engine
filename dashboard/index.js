@@ -1,11 +1,12 @@
 app_manager = require('./app_manager');
 config = require('../config');
 util = require('../util');
+path = require('path');
 
 exports.configure = function(callback) {
 	manager = new app_manager.AppManager({
 		app_directory : config.getDataDir('apps'),
-		temp_directory : config.getDataDir('temp/approot')
+		approot_directory : config.getDataDir(path.join('approot', 'approot'))
 	});
 	exports.appManager = manager;
 	setImmediate(callback, null);
@@ -27,4 +28,12 @@ exports.getAppFiles = function(id) {
 	app_root = exports.appManager.getAppRoot(id);
 	console.log('Dashboard is getting the directory tree under ' + app_root);
 	return util.walkDir(app_root);
+}
+
+exports.loadApp = function(pathname, callback) {
+	return exports.appManager.loadApp(pathname, callback);
+}
+
+exports.deleteApp = function(id, callback) {
+	return exports.appManager.deleteApp(id, callback);
 }
