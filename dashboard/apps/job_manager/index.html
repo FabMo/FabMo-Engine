@@ -134,11 +134,8 @@
   	var current_job = null;
 
 	function refresh_jobs_list(){
-		console.log("Refreshing job list")
-
 		// Load the list of files available on the tool
 		fabmoDashboard.getJobsInQueue(function(err,jobs){
-			console.log(jobs);
 			if(err) { return console.log(err); }
 			$(".jobs-listing").empty();
 			if(jobs.length === 0) {
@@ -168,7 +165,6 @@
 	};
 
 	function refresh_jobs_history(){
-		console.log("Refreshing job history")
 		// Load the list of files available on the tool
 		fabmoDashboard.getJobHistory(function(err,jobs){
 			if(err) { return console.log(err); }
@@ -241,7 +237,6 @@
 	});
 
 	$('.fabmo-resume-button').click(function(e) { 
-		console.log("resuming")
 		fabmoDashboard.resume(function(err, data) {
 		});
 	});
@@ -280,8 +275,6 @@
 				$(".current-job-container").hide(500);
 				clearInterval(x);
 			}
-
-			console.log(status.state)
 			if(status.state === "running") {
 				$(".fabmo-pause-button").show();
 				$(".fabmo-resume-button").hide();

@@ -26,7 +26,6 @@ exports.getAppList = function() {
 
 exports.getAppFiles = function(id) {
 	app_root = exports.appManager.getAppRoot(id);
-	console.log('Dashboard is getting the directory tree under ' + app_root);
 	return util.walkDir(app_root);
 }
 

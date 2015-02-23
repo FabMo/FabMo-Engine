@@ -94,7 +94,6 @@ define(function(require) {
 					}
 				}
 			} else if('on' in evt.data) {
-				console.log("Dashboard host: MESSAGE IS AN EVENT REGISTRATION (" + evt + ")")
 				var name = evt.data.on;
 				var source = evt.source;
 				this._registerEventListener(name, source);
@@ -373,10 +372,7 @@ define(function(require) {
 
 	Dashboard.prototype.refreshApps = function() {
 		context = require('context');
-		console.log("REFRESHING APPS");
-		//context.apps.reset();
 		context.apps.fetch();
-		console.log(context.apps);
 	}
 
 	Dashboard.prototype.checkDashboardSettings = function() {

@@ -251,7 +251,10 @@ exports.configureDB = function(callback) {
 
 exports.cleanupDB = function(callback) {
 	jobs.find({state: {$in : ['running']}}).toArray(function(array) {
-		console.log(array);
+		if(array) {
+			console.log("!!!! CLEANUP REQUIRED !!!!");
+			log.debug('Running jobs at startup: ' + array);
+		}
 	});
 
 	//jobs.update({state:'running'},{$set : {finished_at : Date.now(), state : 'failed'}});

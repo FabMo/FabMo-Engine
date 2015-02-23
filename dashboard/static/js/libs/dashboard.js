@@ -130,7 +130,7 @@ FabMoDashboard.prototype.getApps = function(callback) {
 
 FabMoDashboard.prototype.submitApp = function(data, config,  callback) {
 	var message = {};
-	console.log("Submitting app");
+
 	// Pass a form to get a file that was browsed for
 	if (data instanceof jQuery) {
 		message.file = (data.find('input:file'))[0].files[0];
