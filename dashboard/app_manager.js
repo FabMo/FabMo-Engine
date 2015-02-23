@@ -20,8 +20,6 @@ var AppManager = function(options) {
 }
 
 AppManager.prototype.readAppPackageInfo = function(app_info, callback) {
-	log.debug("Reading app package info");
-	log.debug(JSON.stringify(app_info));
 	var pkg_info_path = path.join(app_info.app_path, 'package.json');
 	var pathname = path.basename(app_info.app_archive_path);
 	fs.readFile(pkg_info_path, function(err, data) {
@@ -34,6 +32,7 @@ AppManager.prototype.readAppPackageInfo = function(app_info, callback) {
 			app_info.app_url = path.join('approot', pathname, package_info.main);
 			app_info.icon_url = path.join('approot', pathname, package_info.icon);
 			app_info.id = package_info.id || uuid.v1();
+			app_info.description = package_info.description || "No description";
 			callback(null, app_info)
 		} catch(e) {
 			callback(e);
@@ -81,19 +80,15 @@ AppManager.prototype.loadApp = function(pathname, callback){
 		}
 		if(stat.isDirectory()) {
 			// Copy if it's a directory
-			log.debug('App is a directory, so were copying')
 			return this.copyApp(pathname, this.approot_directory, {}, callback);
 		} else {
-			log.debug('App is a file so were decompressing')
-			log.debug(pathname)
 			var ext = path.extname(pathname).toLowerCase()
 			if(ext === '.fma' || ext === '.zip') {
 				// Decompress if it's a compressed app file
-				log.debug('yep');
 				return this.decompressApp(pathname, this.approot_directory, {}, callback);
 			} else {
 				// Error if it's a file, but the wrong kind
-				return callback('Not an app.')
+				return callback(pathname + ' is not an app.')
 			}
 		}
 	}.bind(this));
@@ -107,12 +102,10 @@ AppManager.prototype.deleteApp = function(id, callback) {
 		var archive_path = app.app_archive_path;
 		fs.remove(app_path, function(err) {
 			if(err) {
-				log.error('Problem removing the installed app: ' + err);
 				callback(err);
 			} else {
 				fs.remove(archive_path, function(err) {
 					if(err) {
-						log.error('Problem removing the app archive: ' + err);
 						callback(err);
 					} else {
 						app_info = this.apps_index[app_id];
@@ -163,7 +156,6 @@ AppManager.prototype.copyApp = function(src, dest, options, callback) {
 				log.warn('There was a problem copying the app "' + name + '" (' + err + ')');
 				return callback(err);
 			} else {
-				log.debug('Reading app info');
 				this.readAppPackageInfo(app_info, function(err, info) {
 					if(err) {
 						callback(err);
@@ -190,7 +182,6 @@ AppManager.prototype.decompressApp = function(src, dest, options, callback) {
 			app_archive_path : src
 		};
 		var exists = fs.existsSync(app_info.app_path);
-		console.log(app_info)
 		if(exists && !options.force) {
 			log.debug('Not decompressing app "' + src + '" because it already exists.');
 			this.readAppPackageInfo(app_info, function(err, info) {
@@ -250,6 +241,7 @@ AppManager.prototype.loadApps =  function(callback) {
 					if(err) {
 						// Rather than allowing errors to halt the async.map operation that is loading the apps
 						// we swallow them and simply stick a 'null' in the output array (that we cull out at the end)
+						log.warn(err);
 						return callback(null, null);
 					} else {
 						return callback(null, result);
@@ -257,8 +249,6 @@ AppManager.prototype.loadApps =  function(callback) {
 				}.bind(this));
 			}.bind(this), 
 			function(err, results) {
-				//results = results.filter(function(result) { return result !== null;});
-				//this._setApps(results);
 				callback(err, results);
 			}.bind(this));
 	}.bind(this));

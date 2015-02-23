@@ -39,11 +39,11 @@
 			<table class="small-12 columns">
 				<thead>
 					<tr>
-						<th class="small-1"><!--ICON--></th>
-						<th class="small-2">Name</th>
+						<th class="small-2"><!--ICON--></th>
+						<th class="small-3">Name</th>
 						<th class="small-5">Description</th>
-						<th class="small-2"></th>
-						<th class="small-2"></th>
+						<th class="small-1"></th>
+						<th class="small-1"></th>
 					</tr>
 				</thead>
 				<tbody class="row app-listing"></tbody>
@@ -91,16 +91,20 @@
 			$.each( apps, function( key, val ) {
 				var appid = 'app_' + val.id;
 				var id = val.id;
+				var delete_button = '';
+				if(val.icon_display !== 'none') {
+					delete_button = '<a class="button radius alert" id="delete_' + appid + '">Delete</a>';
+				}
 				html = [
 				'<tr><td>',
-				'<img src="' + location.origin + '/' + val.icon_url + '" class="app-icon" />',
+				'<img src="' + location.origin + '/' + val.icon_url + '" class="app-icon" style="background-color: ' + val.icon_background_color + '" />',
 				'</td><td>',
 				'<a id="' + appid + '">',
 					val.name,
 				'</a>',
 				'</td><td>',
 					val.description || 'No description.',
-				'</td><td></td><td><a class="button radius alert" id="delete_' + appid + '">Delete</a></td></tr>'
+				'</td><td></td><td>' + delete_button + '</td></tr>'
 				].join('');
 				$(".app-listing").append(html);
 				console.log(appid);

@@ -244,9 +244,10 @@ define(function(require) {
 
 		this._registerHandler('deleteApp', function(id, callback) {
 			this.machine.delete_app(id, function(err, result) {
+				this.refreshApps();
 				if(err) { callback(err); }
 				else { callback(null, result); }
-			});
+			}.bind(this));
 		}.bind(this));
 
 	}
@@ -372,7 +373,10 @@ define(function(require) {
 
 	Dashboard.prototype.refreshApps = function() {
 		context = require('context');
+		console.log("REFRESHING APPS");
+		//context.apps.reset();
 		context.apps.fetch();
+		console.log(context.apps);
 	}
 
 	Dashboard.prototype.checkDashboardSettings = function() {

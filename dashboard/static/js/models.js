@@ -29,7 +29,7 @@ define(function(require) {
 		parse : function(response) {
 			apps = response.data.apps;
 			return apps
-		}
+		},
 	});
 
 	//Model for the page content (settings / jobLists...)

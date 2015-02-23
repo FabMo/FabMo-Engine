@@ -2,11 +2,11 @@
 	"name":"Handwheel",
 	"main":"./index.html",
 	"icon":"icon.png",
-	"icon_color":"black",
+	"icon_color":"navy",
 	"icon_display":"none",
 	"version":"0.0.1",
 	"author":"Ryan Sturmer",
 	"id":"handwheel",
-	"target":[],
-	"website":"http://www.shopbottools.com/"
+	"website":"http://www.shopbottools.com/",
+    "description":"System app for driving the tool manually using a machinists handwheel interface"
 }
