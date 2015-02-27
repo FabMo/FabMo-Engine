@@ -151,5 +151,8 @@ FabMoDashboard.prototype.deleteApp = function(id, callback) {
 	this._call("deleteApp",id,callback);
 }
 
+FabMoDashboard.prototype.runGCode = function(text) {
+	this._call("runGCode", text);
+}
 
 fabmoDashboard = new FabMoDashboard();

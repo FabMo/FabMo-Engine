@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+<head>
+  <title>G-Code Editor</title>
+  <meta charset="utf-8"/>
+  
+  <link rel="stylesheet" href="css/foundation.min.css">
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="bower_components/codemirror/lib/codemirror.css">
+  <link rel="stylesheet" href="bower_components/codemirror/theme/neat.css">
+
+  <script src="bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="js/foundation.min.js"></script>
+  <script src="bower_components/codemirror/lib/codemirror.js"></script>
+  <script src="js/codemirror_gcode_mode.js"></script>
+
+  <!--<script src="../addon/display/fullscreen.js"></script>-->
+  <!--<link rel="stylesheet" href="../addon/display/fullscreen.css">-->
+</head>
+<body style="background-color: #ffffff;">
+  <header class="grey"> <!-- Class can be "blue", "red", "grey", "orange" -->
+    <section>
+      <div class="app-title-container">
+        <h2>G-Code Editor</h2>
+      </div>
+    </section>
+  </header>
+
+  <form>
+    <textarea id="code" name="code" rows="5">(Your G-Code Goes Here)</textarea>
+  </form>
+  <div class="row">
+    <div class="small-12" style="margin:10px; text-align:center;">
+      <a class="button radius success" id="submit-button">Execute G-Code</a>
+    </div>
+  </div>
+  <script src="/js/libs/dashboard.js"></script>
+  <script>
+    var editor;
+
+    function execute() {
+      $("#submit-button").addClass('disabled');
+      var text = editor.getValue();
+      console.log(text);
+      fabmoDashboard.runGCode(text);
+    }
+
+    $(document).ready(function() {
+      $(document).foundation();
+      editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+        lineNumbers: true,
+        theme: "neat",
+        mode: "gcode"
+      });
+
+      editor.setOption("extraKeys", {
+        'Ctrl-Enter': function(cm) {
+          execute();
+        },
+        'Cmd-Enter': function(cm) {
+          execute();
+        }        
+      });
+    });
+
+    $("#submit-button").click(function(evt) {
+      execute();
+    });
+
+    $('.disabled').click(function(evt) {
+      return false;
+    });
+
+    fabmoDashboard.on('status', function(status) {
+      if(status.state === 'idle') {
+        $("#submit-button").removeClass('disabled');
+      } else {
+        $("#submit-button").addClass('disabled');
+      }
+    });
+  </script>
+
+</body>
+</html>

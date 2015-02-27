@@ -249,6 +249,12 @@ define(function(require) {
 			}.bind(this));
 		}.bind(this));
 
+		this._registerHandler('runGCode', function(text, callback) {
+			this.machine.gcode(text, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
 	}
 
 	/*** Prototypes ***/

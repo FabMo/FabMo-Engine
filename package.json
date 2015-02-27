@@ -13,6 +13,7 @@
     "ncp": "^1.0.1",
     "node-simplerwifiscanner": "git+https://github.com/jlucidar/node-simplerwifiscanner.git",
     "node-uuid": "^1.4.1",
+    "nodegit": "^0.2.7",
     "process": "0.8.x",
     "q": "^1.0.1",
     "request": "^2.47.0",

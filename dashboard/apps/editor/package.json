@@ -1,0 +1,11 @@
+{
+	"name":"G-Code Editor",
+	"main":"./index.html",
+	"icon":"icon.png",
+	"icon_color":"blue",
+	"version":"0.0.1",
+	"author":"Ryan Sturmer",
+	"website":"http://shopbottools.com",
+	"id":"gcode-editor",
+    "description":"System app for editing and running g-code blocks"
+}
