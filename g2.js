@@ -357,7 +357,8 @@ G2.prototype.onData = function(data) {
 };
 
 G2.prototype.handleQueueReport = function(r) {
-		// Deal with jog mode
+	// Deal with jog mode
+	var qo = r.qo || 0;
 	if(this.jog_command && (qo > 0)) {
 		this.gcodeWrite(this.jog_command + '\n');
 		return;
