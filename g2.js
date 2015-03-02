@@ -129,18 +129,18 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
         this.requestStatusReport();
 		this.connected = true;
 		callback(null, this);
-    }.bind(this)
+    }.bind(this);
 
 	this.control_port.open(function(error) {
 		if(error) {
-			log.error("ERROR OPENING CONTROL PORT " + error )
+			log.error("ERROR OPENING CONTROL PORT " + error );
 			return callback(error);
 		}
 
 		if(this.control_port !== this.gcode_port) {
             this.gcode_port.open(function(error) {
 			    if(error) {
-				    log.error("ERROR OPENING GCODE PORT " + error )
+				    log.error("ERROR OPENING GCODE PORT " + error );
 				    return callback(error);
 		    	}
                 onOpen(callback);
@@ -149,7 +149,7 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
             onOpen(callback);
         }
 	}.bind(this));
-}
+};
 
 G2.prototype.disconnect = function(callback) {
     if(this.control_port !== this.gcode_port) {
@@ -160,7 +160,7 @@ G2.prototype.disconnect = function(callback) {
         this.control_port.close(callback);
     }
 
-}
+};
 
 // Log serial errors.  Most of these are exit-able offenses, though.
 G2.prototype.onSerialError = function(data) {

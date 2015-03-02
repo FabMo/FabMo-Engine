@@ -433,11 +433,8 @@ FabMoUI.prototype.updateText = function(control, txt) {
 	}
 };
 
-FabMoUI.prototype.updateStatus = function(){
-	var that=this;
-	that.tool.get_status(function(err, status){
-		if(!err){
-			that.tool.state=status.state;
+FabMoUI.prototype.updateStatusContent = function(status){
+that.tool.state=status.state;
 
 			var x = status.posx.toFixed(3);
 			var y = status.posy.toFixed(3);
@@ -539,6 +536,14 @@ FabMoUI.prototype.updateStatus = function(){
 				that.forbidkeypad();
 				console.log('Unknown status');
 			}
+}
+
+
+FabMoUI.prototype.updateStatus = function(){
+	var that=this;
+	that.tool.get_status(function(err, status){
+		if(!err){
+			updateStatusContent(status);
 		}
 		else if(err == that.tool.default_error.no_device){
 			that.forbidKeypad();

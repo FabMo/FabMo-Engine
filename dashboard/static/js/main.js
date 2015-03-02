@@ -34,6 +34,9 @@ define(function(require) {
 	// Create a FabMo object for the dashboard
 	dashboard.machine = new FabMo(window.location.hostname, window.location.port);
 	
+	dashboard.socket = require('websocket');
+
+
 	// Create a FabMoUI object for the same (but don't recreate it if it already exists)
 	if (!dashboard.ui) {
 		dashboard.ui= new FabMoUI(dashboard.machine);

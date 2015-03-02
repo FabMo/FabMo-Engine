@@ -8,6 +8,7 @@ define(function(require) {
 
 	var Dashboard = function(target) {
 		this.machine = null;
+		this.socket = null;
 		this.ui = null;
 
 		this.keyCommands();
@@ -453,6 +454,6 @@ define(function(require) {
 	// The dashboard is a singleton which we create here and make available as this module's export.
 	var dashboard = new Dashboard();
 	
-	return dashboard
+	return dashboard;
 
 });
