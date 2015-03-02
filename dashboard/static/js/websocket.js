@@ -3,7 +3,7 @@
  */
 
 define(function(require) { 
-	function SocketIO(){
+	/*function SocketIO(){
 		var socket_io = require('libs/socket.io');
 		var dashboard = require('dashboard');
 		console.log(dashboard);
@@ -14,5 +14,5 @@ define(function(require) {
 		});	
 	}
 	var socket = new SocketIO();
-	return socket;
+	return socket;*/
 });

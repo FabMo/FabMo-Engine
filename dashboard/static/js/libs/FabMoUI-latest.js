@@ -434,6 +434,7 @@ FabMoUI.prototype.updateText = function(control, txt) {
 };
 
 FabMoUI.prototype.updateStatusContent = function(status){
+var that = this;
 that.tool.state=status.state;
 
 			var x = status.posx.toFixed(3);
@@ -543,7 +544,7 @@ FabMoUI.prototype.updateStatus = function(){
 	var that=this;
 	that.tool.get_status(function(err, status){
 		if(!err){
-			updateStatusContent(status);
+			that.updateStatusContent(status);
 		}
 		else if(err == that.tool.default_error.no_device){
 			that.forbidKeypad();
