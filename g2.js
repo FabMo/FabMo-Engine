@@ -104,12 +104,12 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
 	log.info('Opening control port ' + control_path)
 	this.control_port = new serialport.SerialPort(control_path, {rtscts:true}, false);
 	if(control_path !== gcode_path) {
-        log.info("Dual USB since control port and gcode port are different. (" + this.control_path + "," + this.gcode_path + ")");
-        this.gcode_port = new serialport.SerialPort(gcode_path, {rtscts:true}, false)
-    } else {
-        log.info("Single USB since control port and gcode port are the same. (" + this.control_path + ")");
-        this.gcode_port = this.control_port;
-    }
+		log.info("Dual USB since control port and gcode port are different. (" + this.control_path + "," + this.gcode_path + ")");
+		this.gcode_port = new serialport.SerialPort(gcode_path, {rtscts:true}, false)
+	} else {
+		log.info("Single USB since control port and gcode port are the same. (" + this.control_path + ")");
+		this.gcode_port = this.control_port;
+	}
 
 	// Handle errors
 	this.control_port.on('error', this.onSerialError.bind(this));
@@ -117,19 +117,19 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
 	// The control port is the only one to truly handle incoming data
 	this.control_port.on('data', this.onData.bind(this));
 	if(this.gcode_port !== this.control_port) {
-        this.gcode_port.on('error', this.onSerialError.bind(this));
-	    this.gcode_port.on('data', this.onWAT.bind(this));
-    }
+		this.gcode_port.on('error', this.onSerialError.bind(this));
+		this.gcode_port.on('data', this.onWAT.bind(this));
+	}
 
-    var onOpen = function(callback) {
-        this.command({"clear":null});
-        this.command("M30");
+	var onOpen = function(callback) {
+		this.command({"clear":null});
+		this.command("M30");
 		this.command("G20");
-        this.command("M30");
-        this.requestStatusReport();
+		this.command("M30");
+		this.requestStatusReport();
 		this.connected = true;
 		callback(null, this);
-    }.bind(this)
+	}.bind(this)
 
 	this.control_port.open(function(error) {
 		if(error) {
@@ -138,27 +138,27 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
 		}
 
 		if(this.control_port !== this.gcode_port) {
-            this.gcode_port.open(function(error) {
-			    if(error) {
-				    log.error("ERROR OPENING GCODE PORT " + error )
-				    return callback(error);
-		    	}
-                onOpen(callback);
-		    }.bind(this));
-        } else {
-            onOpen(callback);
-        }
+			this.gcode_port.open(function(error) {
+				if(error) {
+					log.error("ERROR OPENING GCODE PORT " + error )
+					return callback(error);
+				}
+				onOpen(callback);
+			}.bind(this));
+		} else {
+			onOpen(callback);
+		}
 	}.bind(this));
 }
 
 G2.prototype.disconnect = function(callback) {
-    if(this.control_port !== this.gcode_port) {
-	    this.control_port.close(function(callback) {
-            this.gcode_port.close(callback);   
-        }.bind(this));
-    } else {
-        this.control_port.close(callback);
-    }
+	if(this.control_port !== this.gcode_port) {
+		this.control_port.close(function(callback) {
+			this.gcode_port.close(callback);   
+		}.bind(this));
+	} else {
+		this.control_port.close(callback);
+	}
 
 }
 
@@ -282,7 +282,7 @@ G2.prototype.fixed_move = function(direction,step) {
 
 G2.prototype.jog_keepalive = function() {
 	log.info('Keeping jog alive.');
-    clearTimeout(this.jog_heartbeat);
+	clearTimeout(this.jog_heartbeat);
 	this.jog_heartbeat = setTimeout(this.stopJog.bind(this), JOG_TIMEOUT);
 };
 
@@ -410,6 +410,17 @@ G2.prototype.handleStatusReport = function(response) {
 			}
 		}
 
+		if('stat' in response.sr) {
+			if(this.expectations.length > 0) {
+				var expectation = this.expectations.pop();
+				var stat = states[this.status.stat];
+				if(stat in expectation) {
+					expectation[stat](this);
+				} else if(null in expectation) {
+					expectation[null](this);
+				}
+			}
+		}
 		// Emit status no matter what
 		this.emit('status', this.status);
 
@@ -419,37 +430,25 @@ G2.prototype.handleStatusReport = function(response) {
 		if(this.quit_pending) {
 			if(this.stat === 6 && this.hold === 5) {
 				this.queueClear(function() {
-    				    log.debug("Queue cleared.");
-					    this.quit_pending = false;
-					    this.pause_flag = false;
-					    this.jog_direction = null;
-					    this.jog_command = null;
-					    this.jog_stop_pending = false;
-					    this.command("M2");
-                        this.requestStatusReport();
-					    this.requestQueueReport();
-                    }.bind(this));
+						log.debug("Queue cleared.");
+						this.quit_pending = false;
+						this.pause_flag = false;
+						this.jog_direction = null;
+						this.jog_command = null;
+						this.jog_stop_pending = false;
+						this.command("M2");
+						this.requestStatusReport();
+						this.requestQueueReport();
+					}.bind(this));
 			}
 		}
-
-		// Hack allows for a flush when quitting (must wait for the hold state to reach 4)
-/*
-		if(this.quit_pending) {
-			if((this.status.hold === 4) || (this.status.hold === 5) || (this.status.stat === 3)) {
-				setTimeout(function() {
-					
-				
-                }.bind(this), 50);
-			}
-		}
-*/
 	}
 };
 
 G2.prototype.handleError = function(response) {
-    if(response.er) {
-        this.emit('error', [response.er.st, response.er.msg]);
-    }
+	if(response.er) {
+		this.emit('error', [response.er.st, response.er.msg]);
+	}
 }
 
 // Called once a proper JSON response is decoded from the chunks of data that come back from G2
@@ -463,7 +462,7 @@ G2.prototype.onMessage = function(response) {
 		r = response;
 	}
 
-    this.handleError(r);
+	this.handleError(r);
 
 	// Deal with streaming (if response contains a queue report)
 	this.handleQueueReport(r);
@@ -479,12 +478,12 @@ G2.prototype.onMessage = function(response) {
 
 	for(var key in r) {
 		if(key in this.readers) {
-            if(typeof this.readers[key][this.readers[key].length-1] === 'function') {
-                if(r[key] != null) {
-                    callback = this.readers[key].shift();
-                    callback(null, r[key]);
-                }
-            }
+			if(typeof this.readers[key][this.readers[key].length-1] === 'function') {
+				if(r[key] != null) {
+					callback = this.readers[key].shift();
+					callback(null, r[key]);
+				}
+			}
 		}
 	}
 	// Special message type for initial system ready message
@@ -498,20 +497,20 @@ G2.prototype.feedHold = function(callback) {
 	this.flooded = false;
 	typeof callback === 'function' && this.once('state', callback);
 	log.debug("Sending a feedhold");
-    this.controlWriteAndDrain('!\n', function() {
-        log.debug("Drained.");   
-    });
+	this.controlWriteAndDrain('!\n', function() {
+		log.debug("Drained.");   
+	});
 };
 
 G2.prototype.queueClear = function(callback) {
-    log.debug('Clearing the queue.');
-    this.controlWriteAndDrain('\%\n', function() {
-        log.debug('Writing the clear.');
-        this.gcodeWriteAndDrain('{clear:n}\n', function() {
-            callback();
-        });
-        callback();
-    }.bind(this));
+	log.debug('Clearing the queue.');
+	this.controlWriteAndDrain('\%\n', function() {
+		log.debug('Writing the clear.');
+		this.gcodeWriteAndDrain('{clear:n}\n', function() {
+			callback();
+		});
+		callback();
+	}.bind(this));
 };
 
 G2.prototype.resume = function() {
@@ -528,8 +527,8 @@ G2.prototype.quit = function() {
 	} else {
 		this.queueClear(function() {
 			this.command("M2");
-            this.requestStatusReport();
-        }.bind(this));
+			this.requestStatusReport();
+		}.bind(this));
 	}
 };
 
@@ -637,15 +636,15 @@ G2.prototype.set = function(key, value, callback) {
 	var callback = callback;
 	// Ensure that an errback is called if the data isn't read out
 	setTimeout(function() {
-        if(key in this.readers) {
+		if(key in this.readers) {
 			callbacks = this.readers[key];
-            stored_cb = callbacks[callbacks.length-1];
+			stored_cb = callbacks[callbacks.length-1];
 			if(callback == stored_cb) {
 				if(typeof callback == 'function') {
 					this.readers[key].shift();
 					callback(new Error("Timeout"), null);
 				}
-            }
+			}
 		}
 	}.bind(this), CMD_TIMEOUT);
 

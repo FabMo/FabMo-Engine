@@ -255,6 +255,14 @@ define(function(require) {
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
+
+		this._registerHandler('runSBP', function(text, callback) {
+			this.machine.sbp(text, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+
 	}
 
 	/*** Prototypes ***/

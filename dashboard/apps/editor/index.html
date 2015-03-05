@@ -21,31 +21,67 @@
   <!--<link rel="stylesheet" href="../addon/display/fullscreen.css">-->
 </head>
 <body style="background-color: #ffffff;">
-  <header class="grey"> <!-- Class can be "blue", "red", "grey", "orange" -->
+  <header class="grey">
     <section>
       <div class="app-title-container">
-        <h2>G-Code Editor</h2>
+        <h2 id="app-header">G-Code Editor</h2>
       </div>
     </section>
   </header>
 
-  <form>
-    <textarea id="code" name="code" rows="5">(Your G-Code Goes Here)</textarea>
-  </form>
   <div class="row">
-    <div class="small-12" style="margin:10px; text-align:center;">
-      <a class="button radius success" id="submit-button">Execute G-Code</a>
+    <form>
+      <textarea id="code" name="code" rows="5">(Your Code Goes Here)</textarea>
+    </form>
+  </div>
+  
+  <div class="row" style="margin-top: 10px;">
+    <div class="small-6 columns" style="text-align:left;">
+      <a href="#" id="lang-select" class="button radius" data-dropdown="drop-lang">Language...</a>
+      <ul id="drop-lang" class="tiny f-dropdown" data-dropdown-content>
+        <li><a href="#" id="lang-gcode">G-Code</a></li>
+        <li><a href="#" id="lang-opensbp">OpenSBP</a></li>
+      </ul>
+    </div>
+
+    <div class="small-6 columns" style="text-align:right;">
+      <a class="button radius success" data-dropdown="drop-submit" id="submit-button">Run Code</a>
+      <ul id="drop-submit" class="tiny f-dropdown" data-dropdown-content>
+        <li style="text-align:left;"><a href="#" id="submit-immediate">Run immediately</a></li>
+        <li style="text-align:left;"><a href="#" id="submit-job">Submit as Job...</a></li>
+      </ul>
     </div>
   </div>
+
   <script src="/js/libs/dashboard.js"></script>
   <script>
     var editor;
+    var lang="gcode";
 
     function execute() {
       $("#submit-button").addClass('disabled');
       var text = editor.getValue();
-      console.log(text);
-      fabmoDashboard.runGCode(text);
+      switch(lang) {
+        case "gcode":
+          fabmoDashboard.runGCode(text);
+        break;
+        case "opensbp":
+          fabmoDashboard.runSBP(text);
+        break;
+      } 
+    }
+
+    function submit_job() {
+      $("#submit-button").addClass('disabled');
+      var text = editor.getValue();
+      switch(lang) {
+        case "gcode":
+          fabmoDashboard.submitJob(text, {filename: 'editor.nc', description: 'G-Code file from the editor'});
+        break;
+        case "opensbp":
+          fabmoDashboard.submitJob(text, {filename: 'editor.sbp', description: 'OpenSBP file from the editor.'});
+        break;
+      } 
     }
 
     $(document).ready(function() {
@@ -62,13 +98,35 @@
         },
         'Cmd-Enter': function(cm) {
           execute();
+        }, 
+        'Ctrl-Shift-Enter' : function(cm) {
+          submit_job();
         }        
       });
     });
 
-    $("#submit-button").click(function(evt) {
+    $("#submit-immediate").click(function(evt) {
+      evt.preventDefault();
       execute();
     });
+
+    $("#submit-job").click(function(evt) {
+      evt.preventDefault();
+      submit_job();
+    });
+
+    $("#lang-opensbp").click(function(evt) {
+      lang = "opensbp"
+      $("#app-header").text("OpenSBP Editor");
+      evt.preventDefault();
+    });
+
+    $("#lang-gcode").click(function(evt) {
+      lang = "gcode";
+      $("#app-header").text("G-Code Editor");
+      evt.preventDefault();
+    });
+
 
     $('.disabled').click(function(evt) {
       return false;
@@ -81,6 +139,7 @@
         $("#submit-button").addClass('disabled');
       }
     });
+
   </script>
 
 </body>

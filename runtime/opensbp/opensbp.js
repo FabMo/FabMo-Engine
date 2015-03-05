@@ -250,13 +250,27 @@ SBPRuntime.prototype._end = function() {
 		this.machine.status.current_file = null;
 		this.machine.status.nb_lines=null;
 		this.machine.status.line=null;
-		this.init(); 
-		this.emit('end', this);
+		this.init();
+		var end_function = function() {
+			if(this.machine.status.job) {
+				this.machine.status.job.finish(function(err, job) {
+					this.machine.status.job=null;
+					this.machine.setState(this, 'idle');
+				}.bind(this));
+			} else {
+				this.machine.setState(this, 'idle');
+				this.emit('end', this);
+			}
+			this.emit('end', this);
+		}.bind(this);
+		this.driver.expectStateChange( {'end':end_function});
+		this.driver.runSegment('M30\n');
 	} else {
 		this.emit('end', this.output);
 		this.init();
 	}
 };
+
 // Pack up the current chunk and send it to G2
 // Returns true if there was data to send to G2
 // Returns false if nothing was sent
@@ -288,7 +302,9 @@ SBPRuntime.prototype._dispatch = function(callback) {
 				}
 			});
 
-			this.driver.runSegment(this.current_chunk.join('\n'));
+			// TODO was runSegment
+			//this.driver.runString(this.current_chunk.join('\n'));
+			this.driver.runSegment(this.current_chunk.join('\n') + '\n');
 			this.current_chunk = [];
 			return true;
 		} else {
@@ -524,9 +540,6 @@ SBPRuntime.prototype.init = function() {
 	this.sysvar_evaluated = false;
 	this.chunk_broken_for_eval = false;
 	this.output = [];
-	if(this.machine) {
-		this.machine.setState(this, 'idle');
-	}
 };
 
 // Compile an index of all the labels in the program
