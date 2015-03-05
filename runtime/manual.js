@@ -63,6 +63,7 @@ ManualRuntime.prototype._onG2Status = function(status) {
 			}
 			break;
 	}
+	this.machine.emit('status',this.machine.status);
 };
 
 ManualRuntime.prototype.stopJog = function() {
