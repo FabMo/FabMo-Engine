@@ -26,7 +26,6 @@ define(function(require) {
 			});
 
 			socket.on('status',function(status){
-				console.log(status);
 				//disable the GET loop to refresh the status
 				clearInterval(dashboard.ui.auto_refresh);
 				dashboard.ui.updateStatusContent(status);
