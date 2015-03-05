@@ -277,17 +277,24 @@ SBPRuntime.prototype._end = function() {
 SBPRuntime.prototype._dispatch = function(callback) {
 	var runtime = this;
 
+	// If there's g-codes to be dispatched to the tool
 	if(this.current_chunk.length > 0) {
 
+		// And we have are connected to a real tool
 		if(this.machine) {
+
+			// Dispatch the g-codes and look for the tool to start running them
 			log.info("dispatching a chunk: " + this.current_chunk);
+
 			var run_function = function(driver) {
 				log.debug("Expected a running state change and got one.");
+				// Once running, anticipate the stop so we can execute the next leg of the file
 				driver.expectStateChange({
 					"stop" : function(driver) { 
 						callback();
 					},
 					null : function(driver) {
+						// TODO: This is probably a failure
 						log.warn("Expected a stop but didn't get one.");
 					}
 				});
@@ -302,8 +309,6 @@ SBPRuntime.prototype._dispatch = function(callback) {
 				}
 			});
 
-			// TODO was runSegment
-			//this.driver.runString(this.current_chunk.join('\n'));
 			this.driver.runSegment(this.current_chunk.join('\n') + '\n');
 			this.current_chunk = [];
 			return true;

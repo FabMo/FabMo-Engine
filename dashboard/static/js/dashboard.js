@@ -174,6 +174,16 @@ define(function(require) {
 			})
 		}.bind(this));
 
+		this._registerHandler('clearJobQueue', function(data, callback) {
+			this.machine.clear_job_queue(function(err) {
+				if(err) {
+					callback(err);
+				} else {
+					callback(null);
+				}
+			})
+		}.bind(this));
+
 		this._registerHandler('runNext', function(data, callback) {
 			this.machine.job_run(function(err, result) {
 				if(err) { callback(err); }
