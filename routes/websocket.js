@@ -8,7 +8,7 @@ var nb_clients=0;
 
 
 function bind_status_report(socket){
-	machine.driver.on('status',function(status){
+	machine.on('status',function(status){
 		socket.broadcast.emit('status',status);
 	});
 }
@@ -18,7 +18,6 @@ function bind_status_report(socket){
 
 
 connect = function(socket) {
-
 	log.debug("new client by websocket");
 	nb_clients++;
 	if (nb_clients<=clients_limit){ // avoid too many connection on the app.

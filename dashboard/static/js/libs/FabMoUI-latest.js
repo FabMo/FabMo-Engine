@@ -53,9 +53,9 @@ function FabMoUI(tool, options){
 	this.minusZ_button_selector = this.keypad_div_selector + ' .button-minus-Z';
 	this.fixe_move_selector =  this.keypad_div_selector + ' .fixe-move';
 	this.fixe_move_step_selector =  this.keypad_div_selector + ' .fixe-move-step';
-	setInterval(this.updateStatus.bind(this),this.refresh);
-
-
+	
+	this.auto_refresh = setInterval(this.updateStatus.bind(this),this.refresh);
+	
 	if(this.keypad){
 		this.my_keypad = this.Keypad;
 		this.Keypad();
@@ -434,110 +434,120 @@ FabMoUI.prototype.updateText = function(control, txt) {
 };
 
 FabMoUI.prototype.updateStatusContent = function(status){
-var that = this;
-that.tool.state=status.state;
+	var that = this;
+	that.tool.state=status.state;
+	var x = status.posx.toFixed(3);
+	var y = status.posy.toFixed(3);
+	var z = status.posz.toFixed(3);
+	that.updateText($(that.posX_selector), x);
+	that.updateText($(that.posY_selector), y);
+	that.updateText($(that.posZ_selector), z);
 
-			var x = status.posx.toFixed(3);
-			var y = status.posy.toFixed(3);
-			var z = status.posz.toFixed(3);
-			that.updateText($(that.posX_selector), x);
-			that.updateText($(that.posY_selector), y);
-			that.updateText($(that.posZ_selector), z);
-
-			//Current File or job
-			if(status.current_file) {
-				$(that.file_info_div_selector).removeClass('hide');
-				$(that.filename_selector).html(status.job.name!="" ? status.job.name : status.current_file);
-				var prog = ((status.line/status.nb_lines)*100).toFixed(2);
-				$(that.progress_selector).css("width",prog.toString() + "%");
-			}
-			else {
-				$(that.file_info_div_selector).addClass('hide');
-				$(that.filename_selector).empty();
-				$(that.progress_selector).empty();
-			}
-
-			$(that.status_div_selector).trigger('statechange',status.state);
-			if(status.state === 'idle') {
-				that.allowKeypad();
-				$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
-				$(that.status_div_selector).removeClass('fabmo-status-idle');
-				$(".tools-current > li a").removeClass('paus err disc');
-				$(that.state_selector).html('Idle');
-				if(that.file_control)
-				{
-					$(that.stop_button_selector).addClass('hide');
-					$(that.resume_button_selector).addClass('hide');
-					$(that.pause_button_selector).addClass('hide');
-				}
-			}
-			else if(status.state === 'running' || status.state === 'homing' || status.state === 'probing') {
-				that.forbidKeypad();
-				$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
-				$(that.status_div_selector).removeClass('fabmo-status-running');
-				$(".tools-current > li a").removeClass('paus disc').addClass('err');
-				$(that.state_selector).html('' + status.state);
-				if(that.file_control)
-				{
-					$(that.stop_button_selector).removeClass('hide');
-					$(that.pause_button_selector).removeClass('hide');
-					$(that.resume_button_selector).addClass('hide');
-				}
-			}
-			else if(status.state === 'manual') {
-				that.allowKeypad();
-				$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
-				$(that.status_div_selector).removeClass('fabmo-status-running');
-				$(".tools-current > li a").removeClass('disc err').addClass('paus');
-				$(that.state_selector).html('' + status.state);
-				if(that.file_control)
-				{
-					$(that.stop_button_selector).addClass('hide');
-					$(that.resume_button_selector).addClass('hide');
-					$(that.pause_button_selector).addClass('hide');
-				}
-			}
-			else if(status.state === 'paused') {
-				$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
-				$(that.status_div_selector).removeClass('fabmo-status-paused');
-				$(".tools-current > li a").removeClass('paus disc err').addClass('paus');
-				$(that.state_selector).html('' + status.state);
-				if(that.file_control)
-				{
-					$(that.stop_button_selector).removeClass('hide');
-					$(that.pause_button_selector).addClass('hide');
-					$(that.resume_button_selector).removeClass('hide');
-				}
-			} 
-			else if(status.state === 'passthrough') {
-				that.forbidkeypad();
-				$(".tools-current > li a").removeClass('paus disc err').addClass('paus');
-				$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
-				$(that.status_div_selector).addClass('fabmo-status-passthrough');
-				$(that.state_selector).html('passthrough');
-				$(that.stop_button_selector).addClass('hide');
-				$(that.pause_button_selector).addClass('hide');
-				$(that.resume_button_selector).addClass('hide');
-			}
-			else if(status.state == 'limit') {
-				that.forbidkeypad();
-				$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
-				$(that.status_div_selector).removeClass('fabmo-status-error');
-				$(".tools-current > li a").removeClass('paus err').addClass('disc');
-				$(that.state_selector).html(status.state);
-				if(that.file_control)
-				{
-					$(that.pause_button_selector).addClass('hide');
-					$(that.resume_button_selector).removeClass('hide');
-					$(that.stop_button_selector).addClass('hide');
-				}
-			}
-			else {
-				$(".tools-current > li a").removeClass('paus err').addClass('disc');
-				that.forbidkeypad();
-				console.log('Unknown status');
-			}
-}
+	//Current File or job
+	if(status.current_file) {
+		$(that.file_info_div_selector).removeClass('hide');
+		$(that.filename_selector).html(status.job.name!="" ? status.job.name : status.current_file);
+		var prog = ((status.line/status.nb_lines)*100).toFixed(2);
+		$(that.progress_selector).css("width",prog.toString() + "%");
+	}
+	else {
+		$(that.file_info_div_selector).addClass('hide');
+		$(that.filename_selector).empty();
+		$(that.progress_selector).empty();
+	}
+	$(that.status_div_selector).trigger('statechange',status.state);
+	if(status.state === 'idle') {
+		that.allowKeypad();
+		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
+		$(that.status_div_selector).removeClass('fabmo-status-idle');
+		$(".tools-current > li a").removeClass('paus err disc');
+		$(that.state_selector).html('Idle');
+		if(that.file_control)
+		{
+			$(that.stop_button_selector).addClass('hide');
+			$(that.resume_button_selector).addClass('hide');
+			$(that.pause_button_selector).addClass('hide');
+		}
+	}
+	else if(status.state === 'running' || status.state === 'homing' || status.state === 'probing') {
+		that.forbidKeypad();
+		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
+		$(that.status_div_selector).removeClass('fabmo-status-running');
+		$(".tools-current > li a").removeClass('paus disc').addClass('err');
+		$(that.state_selector).html('' + status.state);
+		if(that.file_control)
+		{
+			$(that.stop_button_selector).removeClass('hide');
+			$(that.pause_button_selector).removeClass('hide');
+			$(that.resume_button_selector).addClass('hide');
+		}
+	}
+	else if(status.state === 'manual') {
+		that.allowKeypad();
+		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
+		$(that.status_div_selector).removeClass('fabmo-status-running');
+		$(".tools-current > li a").removeClass('disc err').addClass('paus');
+		$(that.state_selector).html('' + status.state);
+		if(that.file_control)
+		{
+			$(that.stop_button_selector).addClass('hide');
+			$(that.resume_button_selector).addClass('hide');
+			$(that.pause_button_selector).addClass('hide');
+		}
+	}
+	else if(status.state === 'paused') {
+		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
+		$(that.status_div_selector).removeClass('fabmo-status-paused');
+		$(".tools-current > li a").removeClass('paus disc err').addClass('paus');
+		$(that.state_selector).html('' + status.state);
+		if(that.file_control)
+		{
+			$(that.stop_button_selector).removeClass('hide');
+			$(that.pause_button_selector).addClass('hide');
+			$(that.resume_button_selector).removeClass('hide');
+		}
+	} 
+	else if(status.state === 'passthrough') {
+		that.forbidKeypad();
+		$(".tools-current > li a").removeClass('paus disc err').addClass('paus');
+		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
+		$(that.status_div_selector).addClass('fabmo-status-passthrough');
+		$(that.state_selector).html('passthrough');
+		$(that.stop_button_selector).addClass('hide');
+		$(that.pause_button_selector).addClass('hide');
+		$(that.resume_button_selector).addClass('hide');
+	}
+	else if(status.state == 'limit') {
+		that.forbidKeypad();
+		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
+		$(that.status_div_selector).removeClass('fabmo-status-error');
+		$(".tools-current > li a").removeClass('paus err').addClass('disc');
+		$(that.state_selector).html(status.state);
+		if(that.file_control)
+		{
+			$(that.pause_button_selector).addClass('hide');
+			$(that.resume_button_selector).removeClass('hide');
+			$(that.stop_button_selector).addClass('hide');
+		}
+	}
+	else if(status.state == 'not_ready') {
+		that.forbidKeypad();
+		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
+		$(that.status_div_selector).addClass('fabmo-status-error');
+		$(that.state_selector).html(status.state);
+		if(that.file_control)
+		{
+			$(that.pause_button_selector).addClass('hide');
+			$(that.resume_button_selector).addClass('hide');
+			$(that.stop_button_selector).addClass('hide');
+		}
+	}
+	else {
+		$(".tools-current > li a").removeClass('paus err').addClass('disc');
+		that.forbidKeypad();
+		console.log('Unknown status' + JSON.stringify(status));
+	}
+};
 
 
 FabMoUI.prototype.updateStatus = function(){
@@ -599,4 +609,4 @@ FabMoUI.prototype.FileControl = function(){
 		that.tool.quit(function(){});
 	});
 
- };
+};
