@@ -104,7 +104,7 @@ exports.M3 = function(args) {
 	else if ( ShearY !== 0 ) { PtXfrm = transform.shearY(PtXfrm, Angle); }
 	if ( Scale !== 0 ) { PtXfrm = transform.scale(PtXfrm, Xscale, Yscale, RotPtX, RotPtY); }	
 	if ( Move !== 0 ) { PtXfrm = transform.translate(PtXfrm, DistX, MDistY, MDistZ); }
-	if ( Level !== 0 ) { PtXfrm = leveler.level_HB(PtXfrm, PtFilename, callback ); }
+//	if ( Level !== 0 ) { PtXfrm = leveler.level_HB(PtXfrm, PtFilename, function(err,data) ); }
 
 	var outStr = "G1";
 	if (args[0] !== undefined) {
