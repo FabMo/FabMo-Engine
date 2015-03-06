@@ -77,22 +77,42 @@ exports.M2 = function(args) {
 //   of the command will default to it's current position and not move
 exports.M3 = function(args) {
 	var Angle = 0;
+	var Scale = 0;
+	var Move = 0;
+	var ShearX = 0;
+	var ShearY = 0;
+	var Level = 0;
 	var RPtX = 0;
 	var RPtY = 0;
 	var M3res = 5;
-	var PtRot = rotate(args[0], args[1], args[2], Angle, RPtX, RPtY);
+	var x = 0.0;
+	var y = 0.0;
+	var z = 0.0;
+
+	if (args[0] !== undefined) { x = args[0]; }
+	else { x = this.cmd_posx; } 
+	if (args[1] !== undefined) { y = args[1]; }
+	else { y = this.cmd_posy; } 
+	if (args[2] !== undefined) { z = args[2]; }
+	else { z = this.cmd_posz; } 
+
+	var PtXfrm = {"x":x, "y":y, "z":z };
+
+	if ( Angle !== 0 ) { PtXfrm = rotate(PtXfrm, Angle, RPtX, RPtY); }
+	if ( ShearX !== 0 ) { PtXfrm = shearX(PtXfrm, Angle); }
+	else if ( ShearY !== 0 ) { PtXfrm = shearY(PtXfrm, Angle); }
+	if ( Scale !== 0 ) { PtXfrm = scale(PtXfrm, Xscale, Yscale, RotPtX, RotPtY); }	
+	if ( Move !== 0 ) { PtXfrm = translate(PtXfrm, DistX, MDistY, MDistZ); }
 
 	var outStr = "G1";
 	if (args[0] !== undefined) {
-//		var x = args[0];
-		var x = PtRot.X;
+		var x = PtXfrm.X;
 		if(isNaN(x)) { throw "Invalid M3-X argument: " + x; }		
 		outStr = outStr + "X" + (x).toFixed(M3res);
 		this.cmd_posx = x;
 	}
 	if (args[1] !== undefined) {
-//		var y = args[1];
-		var y = PtRot.Y;
+		var y = PtXfrm.Y;
 		if(isNaN(y)) { throw "Invalid M3-Y argument: " + y; }
 		outStr = outStr + "Y" + (y).toFixed(M3res);
 		this.cmd_posy = y;
