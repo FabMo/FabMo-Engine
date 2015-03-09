@@ -295,6 +295,10 @@ FabMoDashboard.prototype.submitApp = function(data, config,  callback) {
 	this._call("submitApp", message, callback)
 }
 
+FabMoDashboard.prototype.getConfig = function(callback) {
+	this._call("getConfig", null, callback);
+}
+
 FabMoDashboard.prototype.deleteApp = function(id, callback) {
 	this._call("deleteApp",id,callback);
 }

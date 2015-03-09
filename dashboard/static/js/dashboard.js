@@ -273,6 +273,13 @@ define(function(require) {
 			}.bind(this));
 		}.bind(this));
 
+		this._registerHandler('getConfig', function(data, callback) {
+			this.machine.get_config(function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+	
 	}
 
 	/*** Prototypes ***/

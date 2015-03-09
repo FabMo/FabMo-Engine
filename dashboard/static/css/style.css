@@ -928,9 +928,9 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .app-icon.sortable-ghost > *, .sortable-ghost > * {visibility: hidden;}
 
-	/*
-	App Icon Colors
-	*/
+/*
+ * App Icon Colors
+ */
 .app-icon img 		{ 
 	background: #A5A5A5; /* Old browsers */
 	background: -moz-linear-gradient(top,  #A5A5A5 0%, #AAAAAA 100%); /* FF3.6+ */

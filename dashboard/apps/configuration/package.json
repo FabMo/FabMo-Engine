@@ -1,0 +1,12 @@
+{
+	"name":"Configuration Editor",
+	"main":"./index.html",
+	"icon":"icon.png",
+	"icon_color":"blue",
+	"icon-display":"none",
+	"version":"0.0.1",
+	"author":"Ryan Sturmer",
+	"website":"http://shopbottools.com",
+	"id":"config",
+    "description":"System app for editing tool configuration"
+}
