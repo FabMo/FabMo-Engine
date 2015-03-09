@@ -3,7 +3,7 @@
 	"main":"./index.html",
 	"icon":"icon.png",
 	"icon_color":"blue",
-	"icon-display":"none",
+	"icon_display":"none",
 	"version":"0.0.1",
 	"author":"Ryan Sturmer",
 	"website":"http://shopbottools.com",
