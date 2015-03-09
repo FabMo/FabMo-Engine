@@ -431,7 +431,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	color: #eee;
 	border-bottom: 1px solid #eee;
 	background: none;
-	font-size: 38px;
+	font-size: 34px;
 	font-size: 2.125rem;
 	padding: 0;
 	font-family: 'source_sans_proextralight';
@@ -445,7 +445,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #position ul .axis .pos {
 	font-family: 'source_sans_proregular';
 	margin-right: 4px;
-	mfargin-right: 0.25rem;
+	margin-right: 0.25rem;
 	font-weight: 100;
 	letter-spacing: 1px;
 }
