@@ -17,7 +17,7 @@ var AppManager = function(options) {
 	this.system_app_directory = path.join(__dirname, 'apps');
 	this.apps_index = {};
 	this.apps_list = [];
-}
+};
 
 AppManager.prototype.readAppPackageInfo = function(app_info, callback) {
 	var pkg_info_path = path.join(app_info.app_path, 'package.json');
@@ -33,38 +33,38 @@ AppManager.prototype.readAppPackageInfo = function(app_info, callback) {
 			app_info.icon_url = path.join('approot', pathname, package_info.icon);
 			app_info.id = package_info.id || uuid.v1();
 			app_info.description = package_info.description || "No description";
-			callback(null, app_info)
+			callback(null, app_info);
 		} catch(e) {
 			callback(e);
 		}
 	}.bind(this));
-} 
+};
 
 AppManager.prototype.getAppRoot = function(id) {
 	return this.apps_index[id].app_path;
-}
+};
 
 AppManager.prototype.getAppIndex = function() {
 	return this.apps_index;
-}
+};
 
 AppManager.prototype.getAppList = function() {
 	return this.apps_list;
-}
+};
 
 AppManager.prototype._setApps = function(list_of_apps) {
-	var apps_index = {}
+	var apps_index = {};
 	for(var i in list_of_apps) {
 		apps_index[list_of_apps[i].id] = list_of_apps[i];
 	}
 	this.apps_index = apps_index;
 	this.apps_list = list_of_apps;
-}
+};
 
 AppManager.prototype._addApp = function(app) {
 	this.apps_list.push(app);
 	this.apps_index[app.id] = app;
-}
+};
 
 /**
  * Load an app and issue a callback when loaded.
@@ -82,17 +82,17 @@ AppManager.prototype.loadApp = function(pathname, callback){
 			// Copy if it's a directory
 			return this.copyApp(pathname, this.approot_directory, {}, callback);
 		} else {
-			var ext = path.extname(pathname).toLowerCase()
+			var ext = path.extname(pathname).toLowerCase();
 			if(ext === '.fma' || ext === '.zip') {
 				// Decompress if it's a compressed app file
 				return this.decompressApp(pathname, this.approot_directory, {}, callback);
 			} else {
 				// Error if it's a file, but the wrong kind
-				return callback(pathname + ' is not an app.')
+				return callback(pathname + ' is not an app.');
 			}
 		}
 	}.bind(this));
-}
+};
 
 AppManager.prototype.deleteApp = function(id, callback) {
 	app = this.apps_index[id];
@@ -122,7 +122,7 @@ AppManager.prototype.deleteApp = function(id, callback) {
 			}
 		}.bind(this)); // remove installed app folder
 	}
-}
+};
 
 /**  
  * Copies an app from the src directory to the dest approot directory.
@@ -134,7 +134,7 @@ AppManager.prototype.copyApp = function(src, dest, options, callback) {
 		var app_info = {
 			app_path : dest + "/" + name + "/",
 			app_archive_path : src
-		}
+		};
 		var exists = fs.existsSync(app_info.app_path);
 		
 		if(exists && !options.force) {
@@ -150,7 +150,7 @@ AppManager.prototype.copyApp = function(src, dest, options, callback) {
 			return;
 		}
 
-		log.debug('Copying app "' + src + '"')
+		log.debug('Copying app "' + src + '"');
 		ncp(app_info.app_archive_path, app_info.app_path, function (err) {
 			if (err) {
 				log.warn('There was a problem copying the app "' + name + '" (' + err + ')');
@@ -169,7 +169,7 @@ AppManager.prototype.copyApp = function(src, dest, options, callback) {
 	} catch(e) {
 		return callback(e);
 	}
-}
+};
 
 /**
  * Decompress the app and return app info (via callback)
@@ -195,7 +195,7 @@ AppManager.prototype.decompressApp = function(src, dest, options, callback) {
 			return;
 		}
 
-		log.debug('Decompressing app "' + app_info.app_path + '"')
+		log.debug('Decompressing app "' + app_info.app_path + '"');
 
 		try {
 			var app = new zip(src);
@@ -218,7 +218,7 @@ AppManager.prototype.decompressApp = function(src, dest, options, callback) {
 		log.error(e);
 		callback(e);
 	}
-}
+};
 
 AppManager.prototype.getAppPaths = function(callback) {
 	fs.readdir(this.app_directory, function(err, files) {
@@ -228,7 +228,7 @@ AppManager.prototype.getAppPaths = function(callback) {
 			callback(null, system_files.concat(user_files));
 		}.bind(this));
 	}.bind(this));
-}
+};
 
 /**
  * Load all of the apps in the provided apps directory
@@ -252,6 +252,6 @@ AppManager.prototype.loadApps =  function(callback) {
 				callback(err, results);
 			}.bind(this));
 	}.bind(this));
-}
+};
 
 module.exports.AppManager = AppManager;

@@ -42,10 +42,10 @@ var submitJob = function(req, res, next) {
             fs.unlink(file.path, function(err) {
                 
                 if (err) {
-                    log.warn("failed to remove the job from temporary folder: " + err)
+                    log.warn("failed to remove the job from temporary folder: " + err);
                 }
 
-                var file = new db.File(friendly_filename, full_path)
+                var file = new db.File(friendly_filename, full_path);
                 file.save(function(file){
                     
                     log.info('Saved a file: ' + file.filename + ' (' + file.full_path + ')');
@@ -202,7 +202,7 @@ var getQueue = function(req, res, next) {
             res.json(answer);
         }
     });
-}
+};
 
 /**
  * @apiGroup Jobs

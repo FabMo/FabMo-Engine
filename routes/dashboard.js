@@ -116,7 +116,7 @@ var submitApp = function(req, res, next) {
     if(file && util.allowedAppFile(file.name))
     {
         log.debug(file);
-        log.debug("This is an allowed file!")
+        log.debug("This is an allowed file!");
 
         // Keep the name of the file uploaded for a "friendly name"
         var friendly_filename = file.name;
@@ -130,7 +130,7 @@ var submitApp = function(req, res, next) {
 
         // Move the file
         util.move(file.path, full_path, function(err) {
-            log.debug("Done with a move")
+            log.debug("Done with a move");
             if (err) {
                 answer = {
                     status:"error",
@@ -143,7 +143,7 @@ var submitApp = function(req, res, next) {
             // delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
             fs.unlink(file.path, function(err) {
                 if (err) {
-                    log.warn("failed to remove the app from temporary folder: " + err)
+                    log.warn("failed to remove the app from temporary folder: " + err);
                 }
             }); // unlink
             log.debug("Finta load this app");

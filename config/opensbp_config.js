@@ -2,18 +2,18 @@ var path = require('path');
 var util = require('util');
 var PLATFORM = require('process').platform;
 
-Config = require('./config').Config
+Config = require('./config').Config;
 log = require('../log');
 
 // The EngineConfig object keeps track of engine-specific settings
 OpenSBPConfig = function() {
 	Config.call(this, 'opensbp');
-}
+};
 util.inherits(OpenSBPConfig, Config);
 
 OpenSBPConfig.prototype.update = function(data, callback) {
 	try {
-		for(key in data) {
+		for(var key in data) {
 			this._cache[key] = data[key];
 		}
 	} catch (e) {
@@ -26,13 +26,13 @@ OpenSBPConfig.prototype.update = function(data, callback) {
 			callback(null, data);
 		}
 	});
-}
+};
 
 OpenSBPConfig.prototype.setMany = OpenSBPConfig.prototype.update;
 
 OpenSBPConfig.prototype.apply = function(callback) {
 	setImmediate(callback, null);
-}
+};
 
 
 exports.OpenSBPConfig = OpenSBPConfig;

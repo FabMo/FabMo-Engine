@@ -46,7 +46,7 @@ Engine.prototype.start = function(callback) {
 
         // Cleanup the DB
         function setup_database(callback) {
-            log.info("Cleaning up database...")
+            log.info("Cleaning up database...");
             db.cleanupDB(callback);
         },
 

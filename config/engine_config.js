@@ -2,21 +2,21 @@ var path = require('path');
 var util = require('util');
 var PLATFORM = require('process').platform;
 var exec = require('child_process').exec;
-Config = require('./config').Config
+Config = require('./config').Config;
 log = require('../log');
 logger = log.logger('config');
 
 // The EngineConfig object keeps track of engine-specific settings
 EngineConfig = function() {
 	Config.call(this, 'engine');
-}
+};
 util.inherits(EngineConfig, Config);
 
 // The engine update function is pretty basic for now, 
 // but if new values provoke a reconfiguration of the application, this is where it will be done.
 EngineConfig.prototype.update = function(data, callback) {
 	try {
-		for(key in data) {
+		for(var key in data) {
 			this._cache[key] = data[key];
 		}
 	} catch (e) {
@@ -29,7 +29,7 @@ EngineConfig.prototype.update = function(data, callback) {
 			callback(null, data);
 		}
 	});
-}
+};
 
 EngineConfig.prototype.apply = function(callback) {
 	try {
@@ -39,7 +39,7 @@ EngineConfig.prototype.apply = function(callback) {
 	catch (e) {
 		callback(e);
 	}
-}
+};
 
 EngineConfig.prototype.checkWifi = function(){
 	var that = this;
@@ -68,7 +68,7 @@ EngineConfig.prototype.checkWifi = function(){
 		});
 	}
 
-}
+};
 
 
 exports.EngineConfig = EngineConfig;

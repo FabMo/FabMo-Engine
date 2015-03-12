@@ -10,7 +10,7 @@ GCodeRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;
 	this.status_handler =  this._onDriverStatus.bind(this);
-	this.status_report = {}
+	this.status_report = {};
 	this.driver.on('status',this.status_handler);
 };
 
@@ -20,7 +20,7 @@ GCodeRuntime.prototype.disconnect = function() {
 
 GCodeRuntime.prototype._changeState = function(newstate) {
 	this.machine.setState(this, newstate);
-}
+};
 
 GCodeRuntime.prototype._onDriverStatus = function(status) {
 
@@ -32,7 +32,7 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 	}
 
 	// Update the machine copy of g2 status variables
-	for (var key in status) {
+	for (key in status) {
 		this.status_report[key] = status[key];
 	}
 
@@ -75,7 +75,7 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 			}
 			break;
 	}
-}
+};
 
 GCodeRuntime.prototype._idle = function() {
 	//console.log(this.machine.driver.gcode_queue.getContents())

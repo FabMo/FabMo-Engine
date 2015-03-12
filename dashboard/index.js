@@ -10,29 +10,29 @@ exports.configure = function(callback) {
 	});
 	exports.appManager = manager;
 	setImmediate(callback, null);
-}
+};
 
 exports.loadApps = function(callback) {
 	exports.appManager.loadApps(callback);
-}
+};
 
 exports.getAppIndex = function() {
 	return exports.appManager.getAppIndex() || [];
-}
+};
 
 exports.getAppList = function() {
 	return exports.appManager.getAppList() || [];
-}
+};
 
 exports.getAppFiles = function(id) {
 	app_root = exports.appManager.getAppRoot(id);
 	return util.walkDir(app_root);
-}
+};
 
 exports.loadApp = function(pathname, callback) {
 	return exports.appManager.loadApp(pathname, callback);
-}
+};
 
 exports.deleteApp = function(id, callback) {
 	return exports.appManager.deleteApp(id, callback);
-}
+};
