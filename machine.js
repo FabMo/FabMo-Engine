@@ -59,6 +59,14 @@ function Machine(control_path, gcode_path, callback) {
 		posx : 0.0,
 		posy : 0.0,
 		posz : 0.0, 
+		in1 : 1,
+		in2 : 1,
+		in3 : 1,
+		in4 : 1,
+		in5 : 1,
+		in6 : 1,
+		in7 : 1,
+		in8 : 1,
 		job : null
 	};
 

@@ -272,7 +272,7 @@ G2.prototype.fixed_move = function(direction,step) {
 		var d = JOG_AXES[direction];
 		if(mstep > 0.005) {
 			mstep -= 0.005;
-			var move = 'G91 G1 ' + d + 0.005 + ' F' + FEED_RATE + '\n' +'G1' + d + mstep + 'F' + FEED_RATE + '\n';
+			var move = 'G91 G1 ' + d + 0.005 + ' F' + FEED_RATE + '\n' +'G1' + d + mstep.toFixed(5) + 'F' + FEED_RATE + '\n';
 		} else {
 			var move = 'G91 G1 ' + d + mstep + ' F' + FEED_RATE;
 		}
@@ -593,7 +593,6 @@ G2.prototype.setMany = function(obj, callback) {
 	async.map(keys, 
 		// Function called for each item in the keys array
 		function(k, cb) {
-
 			cmd = {};
 			cmd[k] = obj[k];
 			if(k in this.readers) {

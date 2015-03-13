@@ -232,7 +232,7 @@ exports.VP = function(args) {
 
 };	
 
-exports.VR = function(args) {
+exports.VR = function(args, callback) {
 	var VRset = {};
 	// XY Move Ramp Speed
 	if (args[0] !== undefined) {
@@ -334,8 +334,11 @@ exports.VS = function(args,callback) {
 		g2_values.cvm = (60*speed_change);
 		sbp_values.jogc_speed = speed_change;
 	}
-		
+
 	config.opensbp.setMany(sbp_values, function(err, values) {
+		if(err) {
+			log.error(err);
+		}
 		config.driver.setMany(g2_values, function(err, values) {
 			callback();
 		});
@@ -406,6 +409,7 @@ exports.VU = function(args,callback) {
 	config.opensbp.setMany(sbp_VU, function(err, values) {
 		config.driver.setMany(g2_VU, function(err, values) {
 			log.debug("Sent VU to g2 and sbp_settings");
+			log.debug(value);
 			callback();
 		});
 	});

@@ -57,7 +57,7 @@ var submitJob = function(req, res, next) {
                             description : req.body.description
                         });
                     } catch(e) {
-                        console.log(e);
+                        log.error(e);
                     }
                     log.info('Created a job.');
                     job.save(function(err, job) {

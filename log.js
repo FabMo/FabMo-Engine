@@ -110,6 +110,15 @@ Logger.prototype.info = function(msg) { this.write('info', msg);};
 Logger.prototype.warn = function(msg) { this.write('warn', msg);};
 Logger.prototype.error = function(msg) { this.write('error', msg);};
 Logger.prototype.g2 = function(msg) {this.write('g2', msg);};
+Logger.prototype.uncaught = function(err) {
+	if(colors) {
+		console.log("UNCAUGHT EXCEPTION".red.underline);
+		console.log(('' + err.stack).red)
+	} else {
+		console.log("UNCAUGHT EXCEPTION");
+		console.log(err.stack);
+	}	
+}
 
 // Factory function for producing a new, named logger object
 var logger = function(name) {
@@ -122,15 +131,7 @@ var logger = function(name) {
 	}
 };
 
-process.on('uncaughtException', function(err) {
-	if(colors) {
-		console.log("UNCAUGHT EXCEPTION".red.underline);
-		console.log(('' + err.stack).red)
-	} else {
-		console.log("UNCAUGHT EXCEPTION");
-		console.log(err.stack);
-	}
-});
+process.on('uncaughtException', function(err) { Logger.prototype.uncaught(err); });
 
 var suppress = function(v) {_suppress = true;}
 var unsuppress = function(v) {_suppress = false;}

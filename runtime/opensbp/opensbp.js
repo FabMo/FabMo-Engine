@@ -134,7 +134,6 @@ SBPRuntime.prototype._evaluateArguments = function(command, args) {
 
 // Returns true if the provided command breaks the stack
 SBPRuntime.prototype._breaksStack = function(cmd) {
-
 	var result;
 	switch(cmd.type) {
 		// Commands (MX, VA, C3, etc) break the stack only if they must ask the tool for data
@@ -238,6 +237,7 @@ SBPRuntime.prototype._continue = function() {
 				log.debug('Current chunk is nonempty: breaking to run stuff on G2.');
 				break;
 			}
+			return;
 		} else {
 			this._execute(line);
 		}
@@ -246,6 +246,7 @@ SBPRuntime.prototype._continue = function() {
 
 SBPRuntime.prototype._end = function() {
 	if(this.machine) {
+
 		this.machine.status.filename = null;
 		this.machine.status.current_file = null;
 		this.machine.status.nb_lines=null;
@@ -259,15 +260,19 @@ SBPRuntime.prototype._end = function() {
 				}.bind(this));
 			} else {
 				this.machine.setState(this, 'idle');
-				this.emit('end', this);
 			}
 			this.emit('end', this);
 		}.bind(this);
-		this.driver.expectStateChange( {'end':end_function});
-		this.driver.runSegment('M30\n');
+
+		if(this.driver.status.stat !== this.driver.STAT_END) {
+			this.driver.expectStateChange( {'end':end_function});
+			this.driver.runSegment('M30\n');
+		} else {
+			end_function();
+		}
 	} else {
-		this.emit('end', this.output);
 		this.init();
+		this.emit('end', this.output);
 	}
 };
 
