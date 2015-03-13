@@ -53,19 +53,9 @@ var get_config = function(req, res, next) {
 var post_config = function(req, res, next) {
   var new_config = {};
   var answer;
-  try {
-    new_config = req.body;
-  } catch(e) {
-    answer = {
-      status : "fail",
-      data : {'body':"The body cannot be empty"}
-    };
-    res.json(answer);
-    return;
-  }
 
-  if(new_config.engine) {
-    config.engine.update(new_config.engine, function(err, result) {
+  if('engine' in req.params) {
+    config.engine.update(util.fixJSON(req.params.engine), function(err, result) {
       if(err) {
         answer = {
           status : "fail",
@@ -81,6 +71,25 @@ var post_config = function(req, res, next) {
       }
     });
   }
+
+  if('driver' in req.params) {
+    config.driver.update(util.fixJSON(req.params.driver), function(err, result) {
+      if(err) {
+        answer = {
+          status : "fail",
+          data : {'body':"the configuration file you submitted is not valid"}
+        };
+        res.json(answer);
+      } else {
+        answer = {
+            status : "success",
+            data : result
+         };
+        res.json(answer);
+      }
+    });
+  }
+/*
   else{
     // TODO: Apply the driver/opensbp configurations here
     answer = {
@@ -88,7 +97,7 @@ var post_config = function(req, res, next) {
           message : "not yet implemented"
         };
         res.json(answer);
-  }
+  }*/
 };
 
 module.exports = function(server) {

@@ -160,6 +160,33 @@ FabMo.prototype.get_config = function(callback)
 	});
 };
 
+FabMo.prototype.set_config =  function(config, callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.config,
+		type: "POST",
+		dataType : 'json', 
+		data : config,
+		success: function( data ) {
+			if(data.status === "success") {
+				callback(undefined,data.data);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
+		error: function(data, err) {
+			var error = that.default_error.no_device;
+			error.sys_err = err;
+		 	callback(error);
+		}
+	});
+};
+
 FabMo.prototype.get_info = function(callback)
 {
 	if (!callback)

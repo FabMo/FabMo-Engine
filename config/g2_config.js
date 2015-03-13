@@ -59,15 +59,15 @@ G2Config.prototype.configureStatusReports = function(callback) {
 						"hold":true, 
 						"line":true, 
 						"coor":true,
-                        "in1":true,
-                    	"in2":true,
-                    	"in3":true,
-                    	"in4":true,
-                    	"in5":true,
-                    	"in6":true,
-                    	"in7":true,
-                    	"in8":true
-                    }});
+						"in1":true,
+						"in2":true,
+						"in3":true,
+						"in4":true,
+						"in5":true,
+						"in6":true,
+						"in7":true,
+						"in8":true
+					}});
 	this.driver.command({"qv":0});
 	this.driver.command({"jv":4});
 }

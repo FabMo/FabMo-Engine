@@ -8,10 +8,6 @@
   <link rel="stylesheet" href="css/normalize.css">
   <link rel="stylesheet" href="css/style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <link rel="stylesheet" href="bower_components/codemirror/lib/codemirror.css">
-  <link rel="stylesheet" href="bower_components/codemirror/theme/neat.css">
-
   <script src="bower_components/jquery/dist/jquery.min.js"></script>
   <script src="js/foundation.min.js"></script>
 
@@ -25,29 +21,238 @@
     </section>
   </header>
 
-  <div class="row">
-  <div id="config">
-  </div>
-  </div>
+  <form>
+    <div class="row">
+      <fieldset>
+        <legend>General Settings</legend>
+        <div class="large-4 columns">
+          <div class="row collapse">
+            <label>Chordal Tolerance</label>
+            <div class="small-9 columns">
+              <input type="text" id="driver_ct" class="driver_input"/>
+            </div>
+            <div class="small-3 columns">
+              <span class="postfix">mm</span>
+            </div>
+          </div>
+        </div>
+        <div class="large-4 columns">
+          <div class="row collapse">
+            <label>Junction Acceleration</label>
+            <div class="small-9 columns">
+              <input type="text" id="driver_ja" class="driver_input"/>
+            </div>
+            <div class="small-3 columns">
+              <span class="postfix">mm/min<sup>2</sup></span>
+            </div>
+          </div>
+        </div>
+        <div class="large-4 columns">
+          <div class="row collapse">
+            <label>Status Report Interval</label>
+            <div class="small-9 columns">
+              <input type="text" id="driver_si" class="driver_input"/>
+            </div>
+            <div class="small-3 columns">
+              <span class="postfix">ms</span>
+            </div>
+          </div>
+        </div>
+
+      </fieldset>
+    </div>
+    <br />
+    <!--
+      <div class="row">
+        <fieldset>
+          <legend>Channel 1</legend>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Step Angle</label>
+              <div class="small-9 columns">
+                <input type="text" id="driver_1sa" class="driver_input"/>
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">deg</span>
+              </div>
+            </div>
+          </div>
+          <div class="large-4 columns">
+            <label>Microstep
+              <input type="text" id="driver_1mi" class="driver_input"/>
+            </label>
+          </div>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Travel per Rotation</label>
+              <div class="small-9 columns">
+                <input type="text" id="driver_1tr" class="driver_input" />
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">in</span>
+              </div>
+            </div>
+        </div>
+      </fieldset>
+    </div>
+    -->
+
+      <div class="row">
+        <fieldset>
+          <legend>X-Axis</legend>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Feedrate Maximum</label>
+              <div class="small-9 columns">
+                <input type="text" id="driver_xfr" class="driver_input"/>
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">in/min</span>
+              </div>
+            </div>
+          </div>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Velocity Maximum</label>
+              <div class="small-9 columns">
+                <input type="text" id="driver_xvm" class="driver_input" />
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">in/min</span>
+              </div>
+            </div>
+        </div>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Maximum Jerk</label>
+              <div class="small-9 columns">
+                <input type="text" id="driver_xjm" class="driver_input" />
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">jerk</span>
+              </div>
+            </div>
+        </div>
+        </fieldset>
+        </div>
+
+      <div class="row">
+        <fieldset>
+          <legend>Y-Axis</legend>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Feedrate Maximum</label>
+              <div class="small-9 columns">
+                <input type="text" id="driver_yfr" class="driver_input"/>
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">in/min</span>
+              </div>
+            </div>
+          </div>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Velocity Maximum</label>
+              <div class="small-9 columns">
+                <input type="text" id="driver_yvm" class="driver_input" />
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">in/min</span>
+              </div>
+            </div>
+        </div>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Maximum Jerk</label>
+              <div class="small-9 columns">
+                <input type="text" id="driver_yjm" class="driver_input" />
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">jerk</span>
+              </div>
+            </div>
+        </div>
+      </fieldset>
+    </div>
+
+      <div class="row">
+        <fieldset>
+          <legend>Z-Axis</legend>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Feedrate Maximum</label>
+              <div class="small-9 columns">
+                <input type="text" id="driver_zfr" class="driver_input"/>
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">in/min</span>
+              </div>
+            </div>
+          </div>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Velocity Maximum</label>
+              <div class="small-9 columns">
+                <input type="text" id="driver_zvm" class="driver_input" />
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">in/min</span>
+              </div>
+            </div>
+        </div>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Maximum Jerk</label>
+              <div class="small-9 columns">
+                <input type="text" id="driver_zjm" class="driver_input" />
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">jerk</span>
+              </div>
+            </div>
+        </div>
+        </fieldset>
+        </div>
+
+  </form>
 
   <script src="/js/libs/dashboard.js"></script>
   <script>
-    var editor;
-    var lang="gcode";
+    function update() {
+        fabmoDashboard.getConfig(function(err, data) {
+          if(err) {
+            console.error(err);
+          } else {
+            for(key in data.driver) {
+              value = data.driver[key];
+              input = $('#driver_' + key);
+              if(input.length) {
+                input.val(value);
+              }
+            }
+           $("#config").text(JSON.stringify(data));
+          }
+        });
+    }
 
 
     $(document).ready(function() {
       $(document).foundation();
-      fabmoDashboard.getConfig(function(err, data) {
-        if(err) {
-          console.log(err);
-        } else {
-          $("#config").text(JSON.stringify(data));
-        }
+      update();
+
+      $('.driver_input').change( function() {
+        var parts = this.id.split("_");
+        var type = parts[0];
+        var key = parts[1];
+        var o = {}
+        o[key] = this.value
+        cfg = {}
+        cfg[type] = o
+        fabmoDashboard.setConfig(cfg, function(err, data) {
+          update();
+        });
       });
     });
-
- 
   </script>
 
 </body>

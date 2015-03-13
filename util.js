@@ -304,6 +304,18 @@ function walkDir(filename) {
     return info;
 }
 
+function fixJSON(json) {
+    var retval = {}
+    for(key in json) {
+        var value = Number(json[key]);
+        if(typeof value === 'undefined' || isNaN(value)) {
+            value = json[key];
+          }
+        retval[key] = value;
+    }
+    return retval;
+}
+
 exports.serveStatic = serveStatic;
 exports.Queue = Queue;
 exports.allowed_file = allowed_file;
@@ -311,4 +323,5 @@ exports.allowedAppFile = allowedAppFile;
 exports.move = move;
 exports.walkDir = walkDir;
 exports.createUniqueFilename = createUniqueFilename;
+exports.fixJSON = fixJSON;
 
