@@ -114,53 +114,53 @@ exports.VD = function(args,callback) {
 		var unitType = args[1];
 		if ( unitType === 0 || unitType === 1 ){
 			if ( unitType === 0 ){
-				this.emit_gcode("G20");
+				this.emit_gcode("G20"); // inches
 			}
 			else {
-				this.emit_gcode("G21");
+				this.emit_gcode("G21"); // mm
 			}
 		}
 	}
 	// For all axes - the values are:
 	//    0=Disable; 1=Standard Mode; 2=Inhibited; 3=Radius Mode
 	// X Unit type
-	if ( args[1] !== undefined ){
-		var x = args[1];
+	if ( args[2] !== undefined ){
+		var x = args[2];
 		if ( x >= 0 || x < 4 ){
 			g2_VD.xam = x;
 		}
 	}
 	// Y Unit type
-	if ( args[2] !== undefined ){
-		var y = args[2];
+	if ( args[3] !== undefined ){
+		var y = args[3];
 		if ( y >= 0 || y < 4 ){
 			g2_VD.yam = y;
 		}
 	}
 	// Z Unit type
-	if ( args[3] !== undefined ){
-		var z = args[3];
+	if ( args[4] !== undefined ){
+		var z = args[4];
 		if ( z >= 0 || z < 4 ){
 			g2_VD.zam = z;
 		}
 	}	
 	// A Unit type
-	if ( args[4] !== undefined ){
-		var a = args[4];
+	if ( args[5] !== undefined ){
+		var a = args[5];
 		if ( a >= 0 || a < 4 ){
 			g2_VD.aam = a;
 		}
 	}
 	// B Unit type
-	if ( args[5] !== undefined ){
-		var b = args[5];
+	if ( args[6] !== undefined ){
+		var b = args[6];
 		if ( b >= 0 || b < 4 ){
 			g2_VD.yam = b;
 		}
 	}
 	// C Unit type
-	if ( args[6] !== undefined ){
-		var c = args[6];
+	if ( args[7] !== undefined ){
+		var c = args[7];
 		if ( c >= 0 || c < 4 ){
 			g2_VD.cam = c;
 		}
