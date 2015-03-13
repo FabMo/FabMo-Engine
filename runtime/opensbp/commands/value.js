@@ -65,7 +65,7 @@ exports.VA = function(args, callback) {
 	config.driver.setMany(setVA_G2, function(err, values) {
 		log.debug("VA - values: " + JSON.stringify(values));
 		callback();
-	}.bind(this));
+	});
 };
 
 exports.VC = function(args) {
@@ -102,11 +102,50 @@ exports.VC = function(args) {
 	});
 };
 
-exports.VD = function(args) {
-	// Number of Axes
-	// XYZ Unit type
+exports.VD = function(args,callback) {
+	var g2_VD = {};
+	// X Unit type
+	if ( args[0] !== undefined ){
+		var x = args[0];
+		if ( x >= 0 || x < 4 ){
+			g2_VD.xam = x;
+		}
+	}
+	// Y Unit type
+	if ( args[1] !== undefined ){
+		var y = args[1];
+		if ( y >= 0 || y < 4 ){
+			g2_VD.yam = y;
+		}
+	}
+	// Z Unit type
+	if ( args[2] !== undefined ){
+		var z = args[2];
+		if ( z >= 0 || z < 4 ){
+			g2_VD.zam = z;
+		}
+	}	
 	// A Unit type
+	if ( args[3] !== undefined ){
+		var a = args[3];
+		if ( a >= 0 || a < 4 ){
+			g2_VD.aam = a;
+		}
+	}
 	// B Unit type
+	if ( args[4] !== undefined ){
+		var b = args[4];
+		if ( b >= 0 || b < 4 ){
+			g2_VD.yam = b;
+		}
+	}
+	// C Unit type
+	if ( args[5] !== undefined ){
+		var c = args[5];
+		if ( c >= 0 || c < 4 ){
+			g2_VD.cam = c;
+		}
+	}	
 	// Show control console
 	// Display File Comments
 	// Keypad fixed distance
@@ -121,16 +160,15 @@ exports.VD = function(args) {
 	// Keypad switches Auto-Off
 	// Show file Progress
 	// Main Display Type
+	config.driver.setMany(g2_VD, function(err, values) {
+		callback();
+	});
 
 };	
 
-exports.VI = function(args) {
+exports.VI = function(args,callback) {
 	var g2_VI = {};
 
-	// Port Number - Obsolete
-	// iniSeg - Obsolete
-	// regSeg - Obsolete
-	// corRate - Obsolete
 	// Driver 1 Channel
 	if ( args[0] !== undefined ){
 		if ( args[0] > 0 || args[0] < 6 ){
@@ -173,8 +211,9 @@ exports.VI = function(args) {
 		}
 		else {}
 	}
-	// Comm Speed - Obsolete
-	// Enabled Steps & Outputs - Obsolete
+	config.driver.setMany(g2_VI, function(err, values) {
+		callback();
+	});
 
 };
 
@@ -237,7 +276,7 @@ exports.VL = function(args,callback) {
 	
 	config.driver.setMany(g2_VL, function(err, values) {
 		callback();
-	}.bind(this));
+	});
 
 };	
 
@@ -286,28 +325,28 @@ exports.VP = function(args) {
 
 };	
 
-exports.VR = function(args) {
+exports.VR = function(args,callback) {
 	var VRset = {};
 	// XY Move Ramp Speed
 	if (args[0] !== undefined) {
-		VRset.xjh = args[0];
-		VRset.yjh = args[0]; 
+		VRset.xjm = args[0];
+		VRset.yjm = args[0]; 
 	}
 	// Z Move Ramp Speed
 	if (args[1] !== undefined) { 
-		VRset.zjh = args[1];
+		VRset.zjm = args[1];
 	}
 	// A Move Ramp Speed
 	if (args[2] !== undefined) { 
-		VRset.ajh = args[2];
+		VRset.ajm = args[2];
 	}
 	// B Move Ramp Speed
 	if (args[3] !== undefined) { 
-		VRset.bjh = args[3];
+		VRset.bjm = args[3];
 	}
 	// C Move Ramp Speed
 	if (args[4] !== undefined) {
-		VRset.cjh = args[4];
+		VRset.cjm = args[4];
 	}
 
 //	config.opensbp.setMany(sbp_VU, function(err, values) {
@@ -383,7 +422,7 @@ exports.VS = function(args,callback) {
 		config.driver.setMany(g2_values, function(err, values) {
 			callback();
 		});
-	}.bind(this));
+	});
 
 };
 
