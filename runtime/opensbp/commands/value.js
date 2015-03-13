@@ -124,6 +124,60 @@ exports.VD = function(args) {
 
 };	
 
+exports.VI = function(args) {
+	var g2_VI = {};
+
+	// Port Number - Obsolete
+	// iniSeg - Obsolete
+	// regSeg - Obsolete
+	// corRate - Obsolete
+	// Driver 1 Channel
+	if ( args[0] !== undefined ){
+		if ( args[0] > 0 || args[0] < 6 ){
+			g2_VI['1ma'] = args[0];
+		}
+		else {}
+	}
+	// Driver 2 Channel
+	if ( args[1] !== undefined ){
+		if ( args[1] > 0 || args[1] < 6 ){
+			g2_VI['2ma'] = args[1];
+		}
+		else {}
+	}
+	// Driver 3 Channel
+	if ( args[2] !== undefined ){
+		if ( args[2] > 0 || args[2] < 6 ){
+			g2_VI['3ma'] = args[2];
+		}
+		else {}
+	}
+	// Driver 4 Channel
+	if ( args[3] !== undefined ){
+		if ( args[3] > 0 || args[3] < 6 ){
+			g2_VI['4ma'] = args[3];
+		}
+		else {}
+	}
+	// Driver 5 Channel
+	if ( args[4] !== undefined ){
+		if ( args[4] > 0 || args[4] < 6 ){
+			g2_VI['5ma'] = args[4];
+		}
+		else {}
+	}
+	// Driver 6 Channel
+	if ( args[5] !== undefined ){
+		if ( args[5] > 0 || args[0] < 6 ){
+			g2_VI['1ma'] = args[0];
+		}
+		else {}
+	}
+	// Comm Speed - Obsolete
+	// Enabled Steps & Outputs - Obsolete
+
+};
+
 exports.VL = function(args,callback) {
 
 	var g2_VL = {};
@@ -358,36 +412,48 @@ exports.VU = function(args,callback) {
 	log.debug("getG2_VU: " + JSON.stringify(getG2_VU));
 	log.debug("getSBP_VU: " + JSON.stringify(getSBP_VU));
 			
-	// motor 1 unit value
+	// Channel 1 unit value
 	if (args[0] !== undefined){
 		sbp_VU.units1 = args[0];
 		g2_VU['1tr'] = (360/getG2_VU['1sa']) * getG2_VU['1mi'] * getSBP_VU.gearBoxRatio1 / sbp_VU.units1;
 	}
-	// motor 2 unit value
+	// Channel 2 unit value
 	if (args[1] !== undefined){
 		sbp_VU.units2 = args[1];
 		g2_VU['2tr'] = (360/getG2_VU['2sa']) * getG2_VU['2mi'] * getSBP_VU.gearBoxRatio2 / sbp_VU.units2;
 	}
-	// motor 3 unit value
+	// Channel 3 unit value
 	if (args[2] !== undefined){
 		sbp_VU.units3 = args[2];
 		g2_VU['3tr'] = (360/getG2_VU['3sa']) * getG2_VU['3mi'] * getSBP_VU.gearBoxRatio3 / sbp_VU.units3;
 	}
-	// motor 4 unit value
+	// Channel 4 unit value
 	if (args[3] !== undefined){
 		sbp_VU.units4 = args[3];				
 		g2_VU['4tr'] = (360/getG2_VU['4sa']) * getG2_VU['4mi'] * getSBP_VU.gearBoxRatio4 / sbp_VU.units4;
 	}
-	// motor 5 unit value
-	if (args[8] !== undefined){
-		sbp_VU.units5 = args[8];
+	// Channel 5 unit value
+	if (args[4] !== undefined){
+		sbp_VU.units5 = args[4];
 		g2_VU['5tr'] = (360/getG2_VU['5sa']) * getG2_VU['5mi'] * getSBP_VU.gearBoxRatio5 / sbp_VU.units5;
 	}
-	// motor 6 unit value
-	if (args[15] !== undefined){
-		sbp_VU.units6 = args[6];
+	// Channel 6 unit value
+	if (args[5] !== undefined){
+		sbp_VU.units6 = args[5];
 		g2_VU['6tr'] = (360/getG2_VU['6sa']) * getG2_VU['6mi'] * getSBP_VU.gearBoxRatio6 / sbp_VU.units6;
 	}
+	// Channel 1 multiplier
+	if (args[6] !== undefined){}
+	// Channel 2 multiplier
+	if (args[7] !== undefined){}
+	// Channel 3 multiplier
+	if (args[8] !== undefined){}
+	// Channel 4 multiplier
+	if (args[9] !== undefined){}
+	// Channel 5 multiplier
+	if (args[10] !== undefined){}
+	// Channel 6 multiplier
+	if (args[11] !== undefined){}
 
 	console.log('!!!!');
 	console.log(JSON.stringify(sbp_VU));
