@@ -236,34 +236,24 @@ exports.VR = function(args) {
 	var VRset = {};
 	// XY Move Ramp Speed
 	if (args[0] !== undefined) {
-		if (args[0] > 1000000){ 
-			VRset.xjh = args[0];
-			VRset.yjh = args[0]; 
-		}
+		VRset.xjh = args[0];
+		VRset.yjh = args[0]; 
 	}
 	// Z Move Ramp Speed
 	if (args[1] !== undefined) { 
-		if (args[1] > 1000000){ 
-			VRset.zjh = args[1];
-		} 
+		VRset.zjh = args[1];
 	}
 	// A Move Ramp Speed
 	if (args[2] !== undefined) { 
-		if (args[0] > 1000000){ 
-			VRset.ajh = args[2];
-		} 
+		VRset.ajh = args[2];
 	}
 	// B Move Ramp Speed
 	if (args[3] !== undefined) { 
-		if (args[0] > 1000000){ 
-			VRset.bjh = args[3];
-		} 
+		VRset.bjh = args[3];
 	}
 	// C Move Ramp Speed
 	if (args[4] !== undefined) {
-		if (args[0] > 1000000){ 
-			VRset.cjh = args[4];
-		} 
+		VRset.cjh = args[4];
 	}
 
 //	config.opensbp.setMany(sbp_VU, function(err, values) {
@@ -399,8 +389,9 @@ exports.VU = function(args,callback) {
 		g2_VU['6tr'] = (360/getG2_VU['6sa']) * getG2_VU['6mi'] * getSBP_VU.gearBoxRatio6 / sbp_VU.units6;
 	}
 
-	console.log('!!!!')
-	console.log(JSON.stringify(sbp_VU))
+	console.log('!!!!');
+	console.log(JSON.stringify(sbp_VU));
+	console.log(JSON.stringify(g2_VU));	
 
 	// We set the g2 config (Which updates the g2 hardware but also our persisted copy of its settings)
 	config.opensbp.setMany(sbp_VU, function(err, values) {
