@@ -455,9 +455,9 @@ exports.VU = function(args,callback) {
 	// Channel 6 multiplier
 	if (args[11] !== undefined){}
 
-	console.log('!!!!');
-	console.log(JSON.stringify(sbp_VU));
-	console.log(JSON.stringify(g2_VU));	
+	log.debug('!!!!');
+	log.debug(JSON.stringify(sbp_VU));
+	log.debug(JSON.stringify(g2_VU));	
 
 	// We set the g2 config (Which updates the g2 hardware but also our persisted copy of its settings)
 	config.opensbp.setMany(sbp_VU, function(err, values) {
