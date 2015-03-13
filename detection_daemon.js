@@ -49,7 +49,7 @@ var start = function(port) {
 					}
 				});
 			},os.networkInterfaces());
-			console.log(JSON.stringify(result))
+			console.log(JSON.stringify(result));
 			socket.send(new Buffer(JSON.stringify(result)), 0, JSON.stringify(result).length, rinfo.port, rinfo.address, function (err) {
 				if (err) log.error(err);
 						//console.log("ask info");

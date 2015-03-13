@@ -75,7 +75,7 @@ Logger.prototype.write = function(level, msg) {
 
 	my_level = LOG_LEVELS[this.name] || 'debug';
 	if((LEVELS[level] || 0) >= (LEVELS[my_level] || 0)) {
-		buffer_msg = level + ': ' + msg + ' ['+this.name+']'
+		buffer_msg = level + ': ' + msg + ' ['+this.name+']';
 		if(colors) {
 			switch(level) {
 				case 'g2':
@@ -133,12 +133,12 @@ var logger = function(name) {
 
 process.on('uncaughtException', function(err) { Logger.prototype.uncaught(err); });
 
-var suppress = function(v) {_suppress = true;}
-var unsuppress = function(v) {_suppress = false;}
+var suppress = function(v) {_suppress = true;};
+var unsuppress = function(v) {_suppress = false;};
 
 var getLogBuffer = function() {
 	return log_buffer.join('\n');
-}
+};
 
 exports.suppress = suppress;
 exports.logger = logger;

@@ -71,8 +71,8 @@ function G2() {
 
 	// Feedhold/flush
 	this.quit_pending = false;
-	this.stat = null
-	this.hold = null
+	this.stat = null;
+	this.hold = null;
 
 	// Readers and callbacks
 	this.expectations = [];
@@ -101,11 +101,11 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
 	this.connect_callback = callback;
 
 	// Open both ports
-	log.info('Opening control port ' + control_path)
+	log.info('Opening control port ' + control_path);
 	this.control_port = new serialport.SerialPort(control_path, {rtscts:true}, false);
 	if(control_path !== gcode_path) {
 		log.info("Dual USB since control port and gcode port are different. (" + this.control_path + "," + this.gcode_path + ")");
-		this.gcode_port = new serialport.SerialPort(gcode_path, {rtscts:true}, false)
+		this.gcode_port = new serialport.SerialPort(gcode_path, {rtscts:true}, false);
 	} else {
 		log.info("Single USB since control port and gcode port are the same. (" + this.control_path + ")");
 		this.gcode_port = this.control_port;
@@ -129,18 +129,18 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
 		this.requestStatusReport();
 		this.connected = true;
 		callback(null, this);
-	}.bind(this)
+	}.bind(this);
 
 	this.control_port.open(function(error) {
 		if(error) {
-			log.error("ERROR OPENING CONTROL PORT " + error )
+			log.error("ERROR OPENING CONTROL PORT " + error );
 			return callback(error);
 		}
 
 		if(this.control_port !== this.gcode_port) {
 			this.gcode_port.open(function(error) {
 				if(error) {
-					log.error("ERROR OPENING GCODE PORT " + error )
+					log.error("ERROR OPENING GCODE PORT " + error );
 					return callback(error);
 				}
 				onOpen(callback);
@@ -149,7 +149,7 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
 			onOpen(callback);
 		}
 	}.bind(this));
-}
+};
 
 G2.prototype.disconnect = function(callback) {
 	if(this.control_port !== this.gcode_port) {
@@ -160,28 +160,28 @@ G2.prototype.disconnect = function(callback) {
 		this.control_port.close(callback);
 	}
 
-}
+};
 
 // Log serial errors.  Most of these are exit-able offenses, though.
 G2.prototype.onSerialError = function(data) {
 	if(this.connect_callback) {
 		this.connect_callback(data);
 	}
-}
+};
 
 // Write data to the control port.  Log to the system logger.
 G2.prototype.controlWrite = function(s) {
 	t = new Date().getTime();
 	log.g2('--C-' + t + '----> ' + s.trim());
 	this.control_port.write(s);
-}
+};
 
 // Write data to the gcode port.  Log to the system logger.
 G2.prototype.gcodeWrite = function(s) {
 	t = new Date().getTime();
 	log.g2('--G-' + t + '----> ' + s.trim());
 	this.gcode_port.write(s);
-}
+};
 
 // Write data to the serial port.  Log to the system logger.  Execute **callback** when transfer is complete.
 G2.prototype.controlWriteAndDrain = function(s, callback) {
@@ -190,7 +190,7 @@ G2.prototype.controlWriteAndDrain = function(s, callback) {
 	this.control_port.write(s, function () {
 		this.control_port.drain(callback);
 	}.bind(this));
-}
+};
 
 G2.prototype.gcodeWriteAndDrain = function(s, callback) {
 	t = new Date().getTime();
@@ -202,7 +202,7 @@ G2.prototype.gcodeWriteAndDrain = function(s, callback) {
 
 G2.prototype.clearAlarm = function() {
 	this.command({"clear":null});
-}
+};
 // Start or continue jogging in the direction provided, which is one of x,-x,y,-y,z-z,a,-a,b,-b,c,-c
 G2.prototype.jog = function(direction) {
 
@@ -210,7 +210,7 @@ G2.prototype.jog = function(direction) {
 	var FEED_RATE = 60.0;			// in/min
 	var MOVE_DISTANCE = 0.05;		// in
 	var START_DISTANCE = 0.001; 	// sec
-	var START_RATE = 10.0
+	var START_RATE = 10.0;
 
 	// Normalize the direction provided by the user
 	direction = String(direction).trim().toLowerCase().replace(/\+/g,"");
@@ -226,7 +226,7 @@ G2.prototype.jog = function(direction) {
 		var d = JOG_AXES[direction];
 
 		// Continued burst of short moves
-		var starting_cmd = 'G91 G1 ' + d + START_DISTANCE + ' F' + START_RATE
+		var starting_cmd = 'G91 G1 ' + d + START_DISTANCE + ' F' + START_RATE;
 		var move = 'G91 G1 ' + d + MOVE_DISTANCE + ' F' + FEED_RATE;
 
 		// Compile moves into a list
@@ -270,11 +270,12 @@ G2.prototype.fixed_move = function(direction,step) {
 	}
 	else {
 		var d = JOG_AXES[direction];
+		var move;
 		if(mstep > 0.005) {
 			mstep -= 0.005;
 			var move = 'G91 G1 ' + d + 0.005 + ' F' + FEED_RATE + '\n' +'G1' + d + mstep.toFixed(5) + 'F' + FEED_RATE + '\n';
 		} else {
-			var move = 'G91 G1 ' + d + mstep + ' F' + FEED_RATE;
+			move = 'G91 G1 ' + d + mstep + ' F' + FEED_RATE;
 		}
 		this.gcodeWrite(move);
 	} 
@@ -393,7 +394,7 @@ G2.prototype.handleStatusReport = function(response) {
 		// Update our copy of the system status
 		for (var key in response.sr) {
 			value = response.sr[key];
-			this.status[key] = value
+			this.status[key] = value;
 		}
 
 		// Send more g-codes if warranted
@@ -424,8 +425,8 @@ G2.prototype.handleStatusReport = function(response) {
 		// Emit status no matter what
 		this.emit('status', this.status);
 
-		this.stat = this.status.stat !== undefined ? this.status.stat : this.stat
-		this.hold = this.status.hold !== undefined ? this.status.hold : this.hold
+		this.stat = this.status.stat !== undefined ? this.status.stat : this.stat;
+		this.hold = this.status.hold !== undefined ? this.status.hold : this.hold;
 
 		if(this.quit_pending) {
 			if(this.stat === 6 && this.hold === 5) {
@@ -479,7 +480,7 @@ G2.prototype.onMessage = function(response) {
 	for(var key in r) {
 		if(key in this.readers) {
 			if(typeof this.readers[key][this.readers[key].length-1] === 'function') {
-				if(r[key] != null) {
+				if(r[key] !== null) {
 					callback = this.readers[key].shift();
 					callback(null, r[key]);
 				}
@@ -631,8 +632,6 @@ G2.prototype.set = function(key, value, callback) {
 		this.readers[key] = [callback];
 	}
 
-	var key = key;
-	var callback = callback;
 	// Ensure that an errback is called if the data isn't read out
 	setTimeout(function() {
 		if(key in this.readers) {
@@ -654,11 +653,11 @@ G2.prototype.set = function(key, value, callback) {
 G2.prototype.command = function(obj) {
 	var cmd;
 	if((typeof obj) == 'string') {
-		var cmd = obj.trim();
+		cmd = obj.trim();
 		//this.controlWrite('{"gc":"'+cmd+'"}\n');
 		this.gcodeWrite(cmd + '\n');
 	} else {
-		var cmd = JSON.stringify(obj);
+		cmd = JSON.stringify(obj);
 		this.controlWrite(cmd + '\n');
 	}
 };
@@ -703,7 +702,7 @@ G2.prototype.sendMoreGCodes = function() {
 		this.lines_sent += codes.length;
 		this.gcodeWrite(codes.join('\n'));		
 	}
-}
+};
 
 // Function works like "once()" for a state change
 // callbacks is an associative array mapping states to callbacks
