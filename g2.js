@@ -700,7 +700,7 @@ G2.prototype.sendMoreGCodes = function() {
 	codes = this.gcode_queue.multiDequeue(GCODE_BLOCK_SEND_SIZE);
 	if(codes.length > 0) {
 		this.lines_sent += codes.length;
-		this.gcodeWrite(codes.join('\n'));		
+		this.gcodeWrite(codes.join('\n') + '\n');
 	}
 };
 
