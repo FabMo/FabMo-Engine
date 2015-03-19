@@ -99,7 +99,7 @@ Logger.prototype.write = function(level, msg) {
 		}
 		log_buffer.push(buffer_msg);
 		while(log_buffer.length > LOG_BUFFER_SIZE) {
-			log_buffer.unshift();
+			log_buffer.shift();
 		}
 	}
 };

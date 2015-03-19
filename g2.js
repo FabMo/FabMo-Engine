@@ -203,6 +203,7 @@ G2.prototype.gcodeWriteAndDrain = function(s, callback) {
 G2.prototype.clearAlarm = function() {
 	this.command({"clear":null});
 };
+
 // Start or continue jogging in the direction provided, which is one of x,-x,y,-y,z-z,a,-a,b,-b,c,-c
 G2.prototype.jog = function(direction) {
 
@@ -505,13 +506,8 @@ G2.prototype.feedHold = function(callback) {
 
 G2.prototype.queueClear = function(callback) {
 	log.debug('Clearing the queue.');
-	this.controlWriteAndDrain('\%\n', function() {
-		log.debug('Writing the clear.');
-		this.gcodeWriteAndDrain('{clear:n}\n', function() {
-			callback();
-		});
-		callback();
-	}.bind(this));
+	this.gcodeWrite('{clear:n}\n');
+	this.controlWrite('\%\n');
 };
 
 G2.prototype.resume = function() {
@@ -520,6 +516,7 @@ G2.prototype.resume = function() {
 	this.pause_flag = false;
 };
 
+/*
 G2.prototype.quit = function() {
 	this.gcode_queue.clear();
 	if(this.status.stat === STAT_RUNNING) {
@@ -532,6 +529,13 @@ G2.prototype.quit = function() {
 		}.bind(this));
 	}
 };
+*/
+
+G2.prototype.quit = function() {
+	this.gcode_queue.clear();
+	this.gcodeWriteAndDrain('{clear:n}\nM30', function(err, data) {}.bind(this));
+	this.controlWrite('\x04');
+}
 
 G2.prototype.get = function(key, callback) {
 	var keys;
