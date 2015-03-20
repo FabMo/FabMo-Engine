@@ -63,7 +63,6 @@
                 <li><a href="#/app/app-manager" id="icon_apps"><span>App Manager</span></a></li>
                 <li><a href="log" id="icon_log"><span>Log (Debug)</span></a></li>
                 <li><a href="#/app/config" id="icon_settings"><span>Configuration</span></a></li>
-
                 <!--
                 <li><a href="#/app/file-executer" id="icon_folder"><span>Files & Code</span></a></li>
                 <li><a href="#" id="icon_search"><span>Search</span></a></li>
@@ -113,10 +112,10 @@
                   </form>
                 </li>
                 <li>
-                  <div class="row inOut">
+                  <!--<div class="row inOut">
                     <div class="small-6 columns">Inputs</div>
                     <div class="small-6 columns">Outputs</div>
-                  </div>
+                  </div>-->
                   <div class="row inOutSwitch">
                     <div class="small-6 columns">
                       <div class="row switch">
@@ -141,6 +140,9 @@
                   </div>
                 </li>
               </ul>
+            </div>
+            <div id="handwheel" class="widget" style="text-align: center;">
+              <canvas width="220" height="220" id="wheel"></canvas>
             </div>
 
             <!-- ********** Keypad Widget ********** -->
@@ -246,8 +248,7 @@
     <script type="text/javascript" src="js/libs/FabMo-latest.js">   </script>
     <script type="text/javascript" src="js/libs/FabMoUI-latest.js"> </script>
     <script type="text/javascript" src="js/libs/sortable.js">       </script>
-    <script type="text/javascript" src="js/libs/jstree.min.js">     </script>
-
+    <script type="text/javascript" src="js/libs/handwheel.js">     </script>
     <script data-main="js/app.js" src="js/libs/require.js">         </script>
 
   </body>

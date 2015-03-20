@@ -439,9 +439,15 @@ FabMoUI.prototype.updateStatus = function(){
 		if(!err){
 			that.tool.state=status.state;
 
+			try {
 			var x = status.posx.toFixed(3);
 			var y = status.posy.toFixed(3);
 			var z = status.posz.toFixed(3);
+			} catch(e) {
+				var x = 'X.XXX'
+				var y = 'X.XXX'
+				var z = 'X.XXX'
+			}
 			that.updateText($(that.posX_selector), x);
 			that.updateText($(that.posY_selector), y);
 			that.updateText($(that.posZ_selector), z);

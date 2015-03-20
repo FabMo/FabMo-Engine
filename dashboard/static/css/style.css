@@ -174,7 +174,7 @@ body,html{
 }
 
 .right-off-canvas-menu {
-	background-color: #ddd;
+	background-color: #9C210C;
 	width: 222px;
 	width: 13.875rem;
 }
@@ -509,6 +509,14 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	padding-left: 0.125em;
 	font-weight: 100;
 	vertical-align: text-bottom;
+}
+
+#handwheel {
+	background-color: #9c210c;
+	color: #eee;
+	margin-bottom: 0;
+	padding-bottom: 8px;
+	padding-bottom: 0.5rem;
 }
 
 #keypad ul .set span {

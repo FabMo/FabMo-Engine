@@ -259,6 +259,9 @@ G2.prototype.jog = function(direction) {
 
 // Start or continue jogging in the direction provided, which is one of x,-x,y,-y,z-z,a,-a,b,-b,c,-c
 G2.prototype.fixed_move = function(direction,step) {
+	if(this.quit_pending){ 
+		log.warn("WARNING QUIT PENDING WHILE DOING A FIXED MOVE")
+	}
 	var mstep;
 	if(step)mstep=step;else mstep=0.01;
 	var FEED_RATE = 60.0;
@@ -373,6 +376,10 @@ G2.prototype.handleFooter = function(response) {
 			var err_code = response.f[1];
 			var err_msg = G2_ERRORS[err_code] || ['ERR_UNKNOWN', 'Unknown Error'];
 			this.emit('error', [err_code, err_msg[0], err_msg[1]]);
+			if(err_code === 203 && this.quit_pending) {
+				this.gcodeWrite("{clear:n}\nM30\n");
+				this.quit_pending = false;
+			}
 		}
 	}
 };
@@ -428,7 +435,7 @@ G2.prototype.handleStatusReport = function(response) {
 
 		this.stat = this.status.stat !== undefined ? this.status.stat : this.stat;
 		this.hold = this.status.hold !== undefined ? this.status.hold : this.hold;
-
+		/*
 		if(this.quit_pending) {
 			if(this.stat === 6 && this.hold === 5) {
 				this.queueClear(function() {
@@ -444,6 +451,7 @@ G2.prototype.handleStatusReport = function(response) {
 					}.bind(this));
 			}
 		}
+		*/
 	}
 };
 
@@ -516,24 +524,11 @@ G2.prototype.resume = function() {
 	this.pause_flag = false;
 };
 
-/*
-G2.prototype.quit = function() {
-	this.gcode_queue.clear();
-	if(this.status.stat === STAT_RUNNING) {
-		this.quit_pending = true;
-		this.feedHold();
-	} else {
-		this.queueClear(function() {
-			this.command("M2");
-			this.requestStatusReport();
-		}.bind(this));
-	}
-};
-*/
 
 G2.prototype.quit = function() {
+	this.quit_pending = true;
 	this.gcode_queue.clear();
-	this.gcodeWriteAndDrain('{clear:n}\nM30', function(err, data) {}.bind(this));
+	this.quit_pending = true;
 	this.controlWrite('\x04');
 }
 

@@ -43,15 +43,50 @@ define(function(require) {
 	}
 
 	// Configure keyboard input
-	context.bindKeypad(dashboard.ui);
+	//context.bindKeypad(dashboard.ui);
+	setupHandwheel();
 
 	// Start the application
 	router = new context.Router();
 	router.setContext(context);
+
+
 	Backbone.history.start();
+
 
 	//$(function () { $('.app-studio-files').jstree(); });
 
+function setupHandwheel() {
+	wheel = new HandWheel("wheel", {
+		ppr:32, 
+		thumbColor: "#9C210C", 
+		wheelColor:"#DD8728", 
+		lineColor:"#000000",
+		textFont: "source_sans_proextralight"
+	});
+
+	var angle = 0.0;
+	var SCALE = 0.010;
+
+	wheel.on("sweep", function(evt) {
+		var degrees = evt.angle*180.0/Math.PI;
+		angle += degrees;
+		var distance = Math.abs(angle*SCALE);
+		if(angle > 5.0) {
+			angle = 0;
+			dashboard.machine.fixed_move('+' + wheel.getMode(), distance, function(err) {});
+		}
+		if(angle < -5.0) {
+			angle = 0;
+			dashboard.machine.fixed_move('-' + wheel.getMode(), distance, function(err) {});
+		}
+	});
+
+	wheel.on("release", function(evt) {
+		dashboard.machine.quit(function() {})
+	});
+
+}
 // Functions for dispatching g-code to the tool
 function gcode(string) {
 	dashboard.machine.gcode(string,function(err,data){
