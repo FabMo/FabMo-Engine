@@ -243,6 +243,9 @@ Machine.prototype.pause = function() {
 };
 
 Machine.prototype.quit = function() {
+	if(this.status.job) {
+		this.status.job.pending_cancel = true;
+	}
 	this.driver.quit();
 };
 

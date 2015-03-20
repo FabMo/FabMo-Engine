@@ -16,6 +16,10 @@ h1, h2, h3, h4, h5, h6 {
   color: #19760A;
 }
 
+.job-cancelled {
+  color: #DD8728;
+}
+
 .alert-box .close {
   color: #eee;
   filter: alpha(opacity=95); /* For IE8 and earlier */
