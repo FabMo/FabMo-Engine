@@ -174,7 +174,7 @@ body,html{
 }
 
 .right-off-canvas-menu {
-	background-color: #ddd;
+	background-color: #9C210C;
 	width: 222px;
 	width: 13.875rem;
 }
@@ -394,6 +394,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #icon_colapse 		{ background-image: url('../img/icon_colapse_r.png');	}
 #icon_edit 		{ background-image: url('../img/icon_folder.png');	}
 #icon_handwheel 		{ background-image: url('../img/icon_refresh.png');	}
+#icon_log 		{ background-image: url('../img/icon_log.png');	}
 
 
 .colapsed #icon_colapse { background-image: url('../img/icon_colapse.png');	}
@@ -431,7 +432,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	color: #eee;
 	border-bottom: 1px solid #eee;
 	background: none;
-	font-size: 38px;
+	font-size: 34px;
 	font-size: 2.125rem;
 	padding: 0;
 	font-family: 'source_sans_proextralight';
@@ -445,7 +446,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #position ul .axis .pos {
 	font-family: 'source_sans_proregular';
 	margin-right: 4px;
-	mfargin-right: 0.25rem;
+	margin-right: 0.25rem;
 	font-weight: 100;
 	letter-spacing: 1px;
 }
@@ -508,6 +509,14 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	padding-left: 0.125em;
 	font-weight: 100;
 	vertical-align: text-bottom;
+}
+
+#handwheel {
+	background-color: #9c210c;
+	color: #eee;
+	margin-bottom: 0;
+	padding-bottom: 8px;
+	padding-bottom: 0.5rem;
 }
 
 #keypad ul .set span {
@@ -928,9 +937,9 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .app-icon.sortable-ghost > *, .sortable-ghost > * {visibility: hidden;}
 
-	/*
-	App Icon Colors
-	*/
+/*
+ * App Icon Colors
+ */
 .app-icon img 		{ 
 	background: #A5A5A5; /* Old browsers */
 	background: -moz-linear-gradient(top,  #A5A5A5 0%, #AAAAAA 100%); /* FF3.6+ */

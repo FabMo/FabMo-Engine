@@ -2,7 +2,7 @@ var log = require('../../../log').logger('sbp');
 var g2 = require('../../../g2');
 var sb3_commands = require('../sb3_commands');
 var config = require('../../../config');
-var rotate = require('./transformation').rotate;
+var transform = require('./transformation');
 
 // Move X axis
 exports.MX = function(args) {
@@ -77,29 +77,50 @@ exports.M2 = function(args) {
 //   of the command will default to it's current position and not move
 exports.M3 = function(args) {
 	var Angle = 0;
-	var RPtX = 0;
-	var RPtY = 0;
+	var Scale = 0;
+	var Move = 0;
+	var ShearX = 0;
+	var ShearY = 0;
+	var Level = 0;
+	var RPt = { "X":0,"Y":0 };
 	var M3res = 5;
-	var PtRot = rotate(args[0], args[1], args[2], Angle, RPtX, RPtY);
+	var x = 0.0;
+	var y = 0.0;
+	var z = 0.0;
+
+	if (args[0] !== undefined) { x = args[0]; }
+	else { x = this.cmd_posx; } 
+	if (args[1] !== undefined) { y = args[1]; }
+	else { y = this.cmd_posy; } 
+	if (args[2] !== undefined) { z = args[2]; }
+	else { z = this.cmd_posz; } 
+
+	var PtXfrm = { "X":x, 
+				   "Y":y, 
+				   "Z":z };
+
+	if ( Angle !== 0 ) { PtXfrm = transform.rotate(PtXfrm, Angle, RPtX, RPtY); }
+	if ( ShearX !== 0 ) { PtXfrm = transform.shearX(PtXfrm, Angle); }
+	else if ( ShearY !== 0 ) { PtXfrm = transform.shearY(PtXfrm, Angle); }
+	if ( Scale !== 0 ) { PtXfrm = transform.scale(PtXfrm, Xscale, Yscale, RotPtX, RotPtY); }	
+	if ( Move !== 0 ) { PtXfrm = transform.translate(PtXfrm, DistX, MDistY, MDistZ); }
+//	if ( Level !== 0 ) { PtXfrm = leveler.level_HB(PtXfrm, PtFilename, function(err,data) ); }
 
 	var outStr = "G1";
 	if (args[0] !== undefined) {
-//		var x = args[0];
-		var x = PtRot.X;
+		x = PtXfrm.X;
 		if(isNaN(x)) { throw "Invalid M3-X argument: " + x; }		
 		outStr = outStr + "X" + (x).toFixed(M3res);
 		this.cmd_posx = x;
 	}
 	if (args[1] !== undefined) {
-//		var y = args[1];
-		var y = PtRot.Y;
+		y = PtXfrm.Y;
 		if(isNaN(y)) { throw "Invalid M3-Y argument: " + y; }
 		outStr = outStr + "Y" + (y).toFixed(M3res);
 		this.cmd_posy = y;
 	}
 	if (args[2] !== undefined) {
-//		var z = args[2];
-		var z = PtRot.Z;
+		z = PtXfrm.Z;
 		if(isNaN(z)) { throw "Invalid M3-Z argument: " + z; }
 		outStr = outStr + "Z" + (z).toFixed(M3res);
 		this.cmd_posz = z;

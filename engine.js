@@ -41,12 +41,13 @@ Engine.prototype.start = function(callback) {
 
         // Configure the DB
         function setup_database(callback) {
+            log.info("Configuring database...");
             db.configureDB(callback);
         },
 
         // Cleanup the DB
         function setup_database(callback) {
-            log.info("Cleaning up database...")
+            log.info("Cleaning up database...");
             db.cleanupDB(callback);
         },
 
@@ -134,6 +135,15 @@ Engine.prototype.start = function(callback) {
                     return next();
                 }
             );
+
+            server.on('uncaughtException', function(req, res, route, err) {
+                log.uncaught(err);
+                answer = {
+                    status:"error",
+                    message:err
+                };
+                res.json(answer)
+            });
 
             // Configure local directory for uploading files
             log.info("Cofiguring upload directory...");

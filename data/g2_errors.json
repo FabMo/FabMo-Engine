@@ -304,11 +304,11 @@
       ""
    ], 
    "88": [
-      "STAT_ERROR_88", 
+      "STAT_BUFFER_FREE_ASSERTION_FAILURE", 
       ""
    ], 
    "89": [
-      "STAT_ERROR_89", 
+      "STAT_STATE_MANAGEMENT_ASSERTION_FAILURE", 
       ""
    ], 
    "111": [
@@ -437,7 +437,7 @@
    ], 
    "100": [
       "STAT_UNRECOGNIZED_NAME", 
-      "parser didn"
+      "parser didn't recognize the name"
    ], 
    "101": [
       "STAT_MALFORMED_COMMAND_INPUT", 
@@ -517,10 +517,6 @@
    ], 
    "176": [
       "STAT_R_WORD_IS_MISSING", 
-      ""
-   ], 
-   "153": [
-      "STAT_SPINDLE_MUST_BE_OFF", 
       ""
    ], 
    "60": [
@@ -787,8 +783,8 @@
       "STAT_SPINDLE_SPEED_MAX_EXCEEDED", 
       ""
    ], 
-   "074": [
-      "TINYG_FIRMWARE_BUILD", 
+   "153": [
+      "STAT_SPINDLE_MUST_BE_OFF", 
       ""
    ], 
    "152": [
@@ -818,6 +814,10 @@
    "158": [
       "STAT_ARC_RADIUS_OUT_OF_TOLERANCE", 
       "WARNING"
+   ], 
+   "079": [
+      "TINYG_FIRMWARE_BUILD", 
+      ""
    ], 
    "234": [
       "STAT_ERROR_234", 

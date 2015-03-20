@@ -5,6 +5,8 @@
 var process = require('process');
 try { var colors = require('colors'); } catch(e) {var colors = false;}
 var _suppress = false;
+var log_buffer = [];
+var LOG_BUFFER_SIZE = 500;
 
 // String versions of the allowable log levels
 LEVELS = {
@@ -70,8 +72,10 @@ Logger.prototype.write = function(level, msg) {
 	if(_suppress) {
 		return;
 	}
+
 	my_level = LOG_LEVELS[this.name] || 'debug';
 	if((LEVELS[level] || 0) >= (LEVELS[my_level] || 0)) {
+		buffer_msg = level + ': ' + msg + ' ['+this.name+']';
 		if(colors) {
 			switch(level) {
 				case 'g2':
@@ -93,6 +97,10 @@ Logger.prototype.write = function(level, msg) {
 		} else {
 			console.log(level + ': ' + msg+' ['+this.name+']');
 		}
+		log_buffer.push(buffer_msg);
+		while(log_buffer.length > LOG_BUFFER_SIZE) {
+			log_buffer.shift();
+		}
 	}
 };
 
@@ -102,6 +110,15 @@ Logger.prototype.info = function(msg) { this.write('info', msg);};
 Logger.prototype.warn = function(msg) { this.write('warn', msg);};
 Logger.prototype.error = function(msg) { this.write('error', msg);};
 Logger.prototype.g2 = function(msg) {this.write('g2', msg);};
+Logger.prototype.uncaught = function(err) {
+	if(colors) {
+		console.log("UNCAUGHT EXCEPTION".red.underline);
+		console.log(('' + err.stack).red)
+	} else {
+		console.log("UNCAUGHT EXCEPTION");
+		console.log(err.stack);
+	}	
+}
 
 // Factory function for producing a new, named logger object
 var logger = function(name) {
@@ -114,20 +131,16 @@ var logger = function(name) {
 	}
 };
 
-process.on('uncaughtException', function(err) {
-	if(colors) {
-		console.log("UNCAUGHT EXCEPTION".red.underline);
-		console.log(('' + err.stack).red)
-	} else {
-		console.log("UNCAUGHT EXCEPTION");
-		console.log(err.stack);
-	}
-});
+process.on('uncaughtException', function(err) { Logger.prototype.uncaught(err); });
 
-var suppress = function(v) {_suppress = true;}
-var unsuppress = function(v) {_suppress = false;}
+var suppress = function(v) {_suppress = true;};
+var unsuppress = function(v) {_suppress = false;};
+
+var getLogBuffer = function() {
+	return log_buffer.join('\n');
+};
 
 exports.suppress = suppress;
 exports.logger = logger;
 exports.setGlobalLevel = setGlobalLevel;
- 
+exports.getLogBuffer = getLogBuffer; 

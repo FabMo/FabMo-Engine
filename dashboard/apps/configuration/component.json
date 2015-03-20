@@ -1,0 +1,8 @@
+{
+    "name":"FabMo Editor App",
+    "version":"0.0.1",
+    "dependencies" : {
+        "codemirror" : "latest",
+        "jquery" : "latest"
+    }
+}

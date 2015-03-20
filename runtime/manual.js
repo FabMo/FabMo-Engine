@@ -21,7 +21,7 @@ ManualRuntime.prototype.disconnect = function() {
 
 ManualRuntime.prototype._changeState = function(newstate) {
 	this.machine.setState(this, newstate);
-}
+};
 
 ManualRuntime.prototype._onG2Status = function(status) {
 	// Update our copy of the system status

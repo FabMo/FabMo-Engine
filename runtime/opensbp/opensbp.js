@@ -134,7 +134,6 @@ SBPRuntime.prototype._evaluateArguments = function(command, args) {
 
 // Returns true if the provided command breaks the stack
 SBPRuntime.prototype._breaksStack = function(cmd) {
-
 	var result;
 	switch(cmd.type) {
 		// Commands (MX, VA, C3, etc) break the stack only if they must ask the tool for data
@@ -238,6 +237,7 @@ SBPRuntime.prototype._continue = function() {
 				log.debug('Current chunk is nonempty: breaking to run stuff on G2.');
 				break;
 			}
+			return;
 		} else {
 			this._execute(line);
 		}
@@ -246,34 +246,60 @@ SBPRuntime.prototype._continue = function() {
 
 SBPRuntime.prototype._end = function() {
 	if(this.machine) {
+
 		this.machine.status.filename = null;
 		this.machine.status.current_file = null;
 		this.machine.status.nb_lines=null;
 		this.machine.status.line=null;
-		this.init(); 
-		this.emit('end', this);
-	} else {
-		this.emit('end', this.output);
 		this.init();
+		var end_function = function() {
+			if(this.machine.status.job) {
+				this.machine.status.job.finish(function(err, job) {
+					this.machine.status.job=null;
+					this.machine.setState(this, 'idle');
+				}.bind(this));
+			} else {
+				this.machine.setState(this, 'idle');
+			}
+			this.emit('end', this);
+		}.bind(this);
+
+		if(this.driver.status.stat !== this.driver.STAT_END) {
+			this.driver.expectStateChange( {'end':end_function});
+			this.driver.runSegment('M30\n');
+		} else {
+			end_function();
+		}
+	} else {
+		this.init();
+		this.emit('end', this.output);
 	}
 };
+
 // Pack up the current chunk and send it to G2
 // Returns true if there was data to send to G2
 // Returns false if nothing was sent
 SBPRuntime.prototype._dispatch = function(callback) {
 	var runtime = this;
 
+	// If there's g-codes to be dispatched to the tool
 	if(this.current_chunk.length > 0) {
 
+		// And we have are connected to a real tool
 		if(this.machine) {
+
+			// Dispatch the g-codes and look for the tool to start running them
 			log.info("dispatching a chunk: " + this.current_chunk);
+
 			var run_function = function(driver) {
 				log.debug("Expected a running state change and got one.");
+				// Once running, anticipate the stop so we can execute the next leg of the file
 				driver.expectStateChange({
 					"stop" : function(driver) { 
 						callback();
 					},
 					null : function(driver) {
+						// TODO: This is probably a failure
 						log.warn("Expected a stop but didn't get one.");
 					}
 				});
@@ -288,7 +314,7 @@ SBPRuntime.prototype._dispatch = function(callback) {
 				}
 			});
 
-			this.driver.runSegment(this.current_chunk.join('\n'));
+			this.driver.runSegment(this.current_chunk.join('\n') + '\n');
 			this.current_chunk = [];
 			return true;
 		} else {
@@ -524,9 +550,6 @@ SBPRuntime.prototype.init = function() {
 	this.sysvar_evaluated = false;
 	this.chunk_broken_for_eval = false;
 	this.output = [];
-	if(this.machine) {
-		this.machine.setState(this, 'idle');
-	}
 };
 
 // Compile an index of all the labels in the program

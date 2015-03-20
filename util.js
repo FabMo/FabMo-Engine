@@ -28,13 +28,13 @@ function listify(x) {
 
 exports.filename = function(pathname) {
     parts = pathname.split(path.sep);
-    return parts[parts.legnth-1]
-}
+    return parts[parts.legnth-1];
+};
 
 var createUniqueFilename = function (filename) {
     var extension = (/[.]/.exec(filename)) ? /[^.]+$/.exec(filename) : undefined;
     return uuid.v1() + (extension ? ('.' + extension) : '');
-}
+};
 
 // Simple queue, faster than using array.shift
 function Queue(){
@@ -42,14 +42,14 @@ function Queue(){
   var queue  = [];
   var offset = 0;
 
-  this.getLength = function(){ return (queue.length - offset); }
-  this.getContents = function() { return queue; }
-  this.isEmpty = function(){ return (queue.length == 0); }
-  this.enqueue = function(item){ queue.push(item); }
+  this.getLength = function(){ return (queue.length - offset); };
+  this.getContents = function() { return queue; };
+  this.isEmpty = function(){ return (queue.length === 0); };
+  this.enqueue = function(item){ queue.push(item); };
   this.dequeue = function(){
 
     // if the queue is empty, return immediately
-    if (queue.length == 0) return undefined;
+    if (queue.length === 0) return undefined;
 
     // store the item at the front of the queue
     var item = queue[offset];
@@ -63,7 +63,7 @@ function Queue(){
     // return the dequeued item
     return item;
 
-  }
+  };
   this.multiDequeue = function(count) {
 
     // If asking for more items than are in the queue, return everything
@@ -82,15 +82,15 @@ function Queue(){
     // return the dequeued item
     return items;
 
-  }
+  };
 
   this.peek = function(){
     return (queue.length > 0 ? queue[offset] : undefined);
-  }
+  };
   this.clear = function() {
 	queue = [];
 	offset = 0;
-	}
+	};
 }
 
 function allowed_file(filename){
@@ -100,7 +100,7 @@ function allowed_file(filename){
   else {
     return false;
   }
-};
+}
 
 
 function allowedAppFile(filename) {
@@ -155,7 +155,7 @@ var move = function (src, dest, cb) {
  
 		os.on('error', function (err) {
 			return cb(err);
-		})
+		});
 	});
 };
 
@@ -237,8 +237,8 @@ function serveStatic(opts) {
 
     function serve(req, res, next) {
         var uricomp = decodeURIComponent(req.path());
-        console.log("URI COMPONENT: " + uricomp)
-        console.log("DIR: " + opts.directory)
+        console.log("URI COMPONENT: " + uricomp);
+        console.log("DIR: " + opts.directory);
         var file = path.join(opts.directory, uricomp);
 
         if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -304,6 +304,18 @@ function walkDir(filename) {
     return info;
 }
 
+function fixJSON(json) {
+    var retval = {}
+    for(key in json) {
+        var value = Number(json[key]);
+        if(typeof value === 'undefined' || isNaN(value)) {
+            value = json[key];
+          }
+        retval[key] = value;
+    }
+    return retval;
+}
+
 exports.serveStatic = serveStatic;
 exports.Queue = Queue;
 exports.allowed_file = allowed_file;
@@ -311,4 +323,5 @@ exports.allowedAppFile = allowedAppFile;
 exports.move = move;
 exports.walkDir = walkDir;
 exports.createUniqueFilename = createUniqueFilename;
+exports.fixJSON = fixJSON;
 

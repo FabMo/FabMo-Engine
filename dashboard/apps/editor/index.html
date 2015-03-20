@@ -1,0 +1,146 @@
+<!doctype html>
+<html>
+<head>
+  <title>G-Code Editor</title>
+  <meta charset="utf-8"/>
+  
+  <link rel="stylesheet" href="css/foundation.min.css">
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="bower_components/codemirror/lib/codemirror.css">
+  <link rel="stylesheet" href="bower_components/codemirror/theme/neat.css">
+
+  <script src="bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="js/foundation.min.js"></script>
+  <script src="bower_components/codemirror/lib/codemirror.js"></script>
+  <script src="js/codemirror_gcode_mode.js"></script>
+
+  <!--<script src="../addon/display/fullscreen.js"></script>-->
+  <!--<link rel="stylesheet" href="../addon/display/fullscreen.css">-->
+</head>
+<body style="background-color: #ffffff;">
+  <header class="grey">
+    <section>
+      <div class="app-title-container">
+        <h2 id="app-header">G-Code Editor</h2>
+      </div>
+    </section>
+  </header>
+
+  <div class="row">
+    <form>
+      <textarea id="code" name="code" rows="5">(Your Code Goes Here)</textarea>
+    </form>
+  </div>
+  
+  <div class="row" style="margin-top: 10px;">
+    <div class="small-6 columns" style="text-align:left;">
+      <a href="#" id="lang-select" class="button radius" data-dropdown="drop-lang">Language...</a>
+      <ul id="drop-lang" class="tiny f-dropdown" data-dropdown-content>
+        <li><a href="#" id="lang-gcode">G-Code</a></li>
+        <li><a href="#" id="lang-opensbp">OpenSBP</a></li>
+      </ul>
+    </div>
+
+    <div class="small-6 columns" style="text-align:right;">
+      <a class="button radius success" data-dropdown="drop-submit" id="submit-button">Run Code</a>
+      <ul id="drop-submit" class="tiny f-dropdown" data-dropdown-content>
+        <li style="text-align:left;"><a href="#" id="submit-immediate">Run immediately</a></li>
+        <li style="text-align:left;"><a href="#" id="submit-job">Submit as Job...</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <script src="/js/libs/dashboard.js"></script>
+  <script>
+    var editor;
+    var lang="gcode";
+
+    function execute() {
+      $("#submit-button").addClass('disabled');
+      var text = editor.getValue();
+      switch(lang) {
+        case "gcode":
+          fabmoDashboard.runGCode(text);
+        break;
+        case "opensbp":
+          fabmoDashboard.runSBP(text);
+        break;
+      } 
+    }
+
+    function submit_job() {
+      $("#submit-button").addClass('disabled');
+      var text = editor.getValue();
+      switch(lang) {
+        case "gcode":
+          fabmoDashboard.submitJob(text, {filename: 'editor.nc', description: 'G-Code file from the editor'});
+        break;
+        case "opensbp":
+          fabmoDashboard.submitJob(text, {filename: 'editor.sbp', description: 'OpenSBP file from the editor.'});
+        break;
+      } 
+    }
+
+    $(document).ready(function() {
+      $(document).foundation();
+      editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+        lineNumbers: true,
+        theme: "neat",
+        mode: "gcode"
+      });
+
+      editor.setOption("extraKeys", {
+        'Ctrl-Enter': function(cm) {
+          execute();
+        },
+        'Cmd-Enter': function(cm) {
+          execute();
+        }, 
+        'Ctrl-Shift-Enter' : function(cm) {
+          submit_job();
+        }        
+      });
+    });
+
+    $("#submit-immediate").click(function(evt) {
+      evt.preventDefault();
+      execute();
+    });
+
+    $("#submit-job").click(function(evt) {
+      evt.preventDefault();
+      submit_job();
+    });
+
+    $("#lang-opensbp").click(function(evt) {
+      lang = "opensbp"
+      $("#app-header").text("OpenSBP Editor");
+      evt.preventDefault();
+    });
+
+    $("#lang-gcode").click(function(evt) {
+      lang = "gcode";
+      $("#app-header").text("G-Code Editor");
+      evt.preventDefault();
+    });
+
+
+    $('.disabled').click(function(evt) {
+      return false;
+    });
+
+    fabmoDashboard.on('status', function(status) {
+      if(status.state === 'idle') {
+        $("#submit-button").removeClass('disabled');
+      } else {
+        $("#submit-button").addClass('disabled');
+      }
+    });
+
+  </script>
+
+</body>
+</html>

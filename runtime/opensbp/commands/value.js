@@ -65,7 +65,7 @@ exports.VA = function(args, callback) {
 	config.driver.setMany(setVA_G2, function(err, values) {
 		log.debug("VA - values: " + JSON.stringify(values));
 		callback();
-	}.bind(this));
+	});
 };
 
 exports.VC = function(args) {
@@ -102,11 +102,69 @@ exports.VC = function(args) {
 	});
 };
 
-exports.VD = function(args) {
-	// Number of Axes
-	// XYZ Unit type
+exports.VD = function(args,callback) {
+	var g2_VD = {};
+	if ( args[0] !== undefined ){
+		var numAxes = args[0];
+		if ( numAxes > 0 || x < 7 ){
+
+		}
+	}
+	if ( args[1] !== undefined ) {
+		var unitType = args[1];
+		if ( unitType === 0 || unitType === 1 ){
+			if ( unitType === 0 ){
+				this.emit_gcode("G20"); // inches
+			}
+			else {
+				this.emit_gcode("G21"); // mm
+			}
+		}
+	}
+	// For all axes - the values are:
+	//    0=Disable; 1=Standard Mode; 2=Inhibited; 3=Radius Mode
+	// X Unit type
+	if ( args[2] !== undefined ){
+		var x = args[2];
+		if ( x >= 0 || x < 4 ){
+			g2_VD.xam = x;
+		}
+	}
+	// Y Unit type
+	if ( args[3] !== undefined ){
+		var y = args[3];
+		if ( y >= 0 || y < 4 ){
+			g2_VD.yam = y;
+		}
+	}
+	// Z Unit type
+	if ( args[4] !== undefined ){
+		var z = args[4];
+		if ( z >= 0 || z < 4 ){
+			g2_VD.zam = z;
+		}
+	}	
 	// A Unit type
+	if ( args[5] !== undefined ){
+		var a = args[5];
+		if ( a >= 0 || a < 4 ){
+			g2_VD.aam = a;
+		}
+	}
 	// B Unit type
+	if ( args[6] !== undefined ){
+		var b = args[6];
+		if ( b >= 0 || b < 4 ){
+			g2_VD.yam = b;
+		}
+	}
+	// C Unit type
+	if ( args[7] !== undefined ){
+		var c = args[7];
+		if ( c >= 0 || c < 4 ){
+			g2_VD.cam = c;
+		}
+	}	
 	// Show control console
 	// Display File Comments
 	// Keypad fixed distance
@@ -121,6 +179,60 @@ exports.VD = function(args) {
 	// Keypad switches Auto-Off
 	// Show file Progress
 	// Main Display Type
+	config.driver.setMany(g2_VD, function(err, values) {
+		callback();
+	});
+
+};	
+
+exports.VI = function(args,callback) {
+	var g2_VI = {};
+
+	// Driver 1 Channel
+	if ( args[0] !== undefined ){
+		if ( args[0] > 0 || args[0] < 6 ){
+			g2_VI['1ma'] = args[0];
+		}
+		else {}
+	}
+	// Driver 2 Channel
+	if ( args[1] !== undefined ){
+		if ( args[1] > 0 || args[1] < 6 ){
+			g2_VI['2ma'] = args[1];
+		}
+		else {}
+	}
+	// Driver 3 Channel
+	if ( args[2] !== undefined ){
+		if ( args[2] > 0 || args[2] < 6 ){
+			g2_VI['3ma'] = args[2];
+		}
+		else {}
+	}
+	// Driver 4 Channel
+	if ( args[3] !== undefined ){
+		if ( args[3] > 0 || args[3] < 6 ){
+			g2_VI['4ma'] = args[3];
+		}
+		else {}
+	}
+	// Driver 5 Channel
+	if ( args[4] !== undefined ){
+		if ( args[4] > 0 || args[4] < 6 ){
+			g2_VI['5ma'] = args[4];
+		}
+		else {}
+	}
+	// Driver 6 Channel
+	if ( args[5] !== undefined ){
+		if ( args[5] > 0 || args[0] < 6 ){
+			g2_VI['1ma'] = args[0];
+		}
+		else {}
+	}
+	config.driver.setMany(g2_VI, function(err, values) {
+		callback();
+	});
 
 };	
 
@@ -183,7 +295,7 @@ exports.VL = function(args,callback) {
 	
 	config.driver.setMany(g2_VL, function(err, values) {
 		callback();
-	}.bind(this));
+	});
 
 };	
 
@@ -232,23 +344,37 @@ exports.VP = function(args) {
 
 };	
 
-exports.VR = function(args) {
+exports.VR = function(args, callback) {
+	var VRset = {};
 	// XY Move Ramp Speed
+	if (args[0] !== undefined) {
+		VRset.xjm = args[0];
+		VRset.yjm = args[0]; 
+	}
 	// Z Move Ramp Speed
+	if (args[1] !== undefined) { 
+		VRset.zjm = args[1];
+		} 
 	// A Move Ramp Speed
+	if (args[2] !== undefined) { 
+		VRset.ajm = args[2];
+		} 
 	// B Move Ramp Speed
+	if (args[3] !== undefined) { 
+		VRset.bjm = args[3];
+	}
 	// C Move Ramp Speed
-	// XY Jog Ramp Speed
-	// Z Jog Ramp Speed
-	// A Jog Ramp Speed
-	// B Jog Ramp Speed
-	// C Jog Ramp Speed
-	// Move Ramp Rate
-	// Jog Ramp Rate
-	// 3D Threshold
-	// Minimum Distance to Check
-	// Slow Corner Speed
-	// Keypad Ramp Rate
+	if (args[4] !== undefined) {
+		VRset.cjm = args[4];
+		} 
+
+//	config.opensbp.setMany(sbp_VU, function(err, values) {
+	config.driver.setMany(VRset, function(err, values) {
+		log.debug("Sent VR to g2 and sbp_settings");
+		callback();
+	});
+//	});
+
 };	
 
 exports.VS = function(args,callback) {
@@ -310,12 +436,15 @@ exports.VS = function(args,callback) {
 		g2_values.cvm = (60*speed_change);
 		sbp_values.jogc_speed = speed_change;
 	}
-		
+
 	config.opensbp.setMany(sbp_values, function(err, values) {
+		if(err) {
+			log.error(err);
+		}
 		config.driver.setMany(g2_values, function(err, values) {
 			callback();
 		});
-	}.bind(this));
+		});
 
 };
 
@@ -344,44 +473,58 @@ exports.VU = function(args,callback) {
 	log.debug("getG2_VU: " + JSON.stringify(getG2_VU));
 	log.debug("getSBP_VU: " + JSON.stringify(getSBP_VU));
 			
-	// motor 1 unit value
+	// Channel 1 unit value
 	if (args[0] !== undefined){
 		sbp_VU.units1 = args[0];
 		g2_VU['1tr'] = (360/getG2_VU['1sa']) * getG2_VU['1mi'] * getSBP_VU.gearBoxRatio1 / sbp_VU.units1;
 	}
-	// motor 2 unit value
+	// Channel 2 unit value
 	if (args[1] !== undefined){
 		sbp_VU.units2 = args[1];
 		g2_VU['2tr'] = (360/getG2_VU['2sa']) * getG2_VU['2mi'] * getSBP_VU.gearBoxRatio2 / sbp_VU.units2;
 	}
-	// motor 3 unit value
+	// Channel 3 unit value
 	if (args[2] !== undefined){
 		sbp_VU.units3 = args[2];
 		g2_VU['3tr'] = (360/getG2_VU['3sa']) * getG2_VU['3mi'] * getSBP_VU.gearBoxRatio3 / sbp_VU.units3;
 	}
-	// motor 4 unit value
+	// Channel 4 unit value
 	if (args[3] !== undefined){
 		sbp_VU.units4 = args[3];				
 		g2_VU['4tr'] = (360/getG2_VU['4sa']) * getG2_VU['4mi'] * getSBP_VU.gearBoxRatio4 / sbp_VU.units4;
 	}
-	// motor 5 unit value
-	if (args[8] !== undefined){
-		sbp_VU.units5 = args[8];
+	// Channel 5 unit value
+	if (args[4] !== undefined){
+		sbp_VU.units5 = args[4];
 		g2_VU['5tr'] = (360/getG2_VU['5sa']) * getG2_VU['5mi'] * getSBP_VU.gearBoxRatio5 / sbp_VU.units5;
 	}
-	// motor 6 unit value
-	if (args[15] !== undefined){
-		sbp_VU.units6 = args[6];
+	// Channel 6 unit value
+	if (args[5] !== undefined){
+		sbp_VU.units6 = args[5];
 		g2_VU['6tr'] = (360/getG2_VU['6sa']) * getG2_VU['6mi'] * getSBP_VU.gearBoxRatio6 / sbp_VU.units6;
 	}
+	// Channel 1 multiplier
+	if (args[6] !== undefined){}
+	// Channel 2 multiplier
+	if (args[7] !== undefined){}
+	// Channel 3 multiplier
+	if (args[8] !== undefined){}
+	// Channel 4 multiplier
+	if (args[9] !== undefined){}
+	// Channel 5 multiplier
+	if (args[10] !== undefined){}
+	// Channel 6 multiplier
+	if (args[11] !== undefined){}
 
-	console.log('!!!!')
-	console.log(JSON.stringify(sbp_VU))
+	log.debug('!!!!');
+	log.debug(JSON.stringify(sbp_VU));
+	log.debug(JSON.stringify(g2_VU));	
 
 	// We set the g2 config (Which updates the g2 hardware but also our persisted copy of its settings)
 	config.opensbp.setMany(sbp_VU, function(err, values) {
 		config.driver.setMany(g2_VU, function(err, values) {
 			log.debug("Sent VU to g2 and sbp_settings");
+			log.debug(value);
 			callback();
 		});
 	});

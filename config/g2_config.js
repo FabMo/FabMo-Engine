@@ -1,6 +1,6 @@
 async = require('async');
 util = require('util');
-Config = require('./config').Config
+Config = require('./config').Config;
 
 // A G2Config is the configuration object that stores the configuration values for G2.
 // G2 configuration data is *already* JSON formatted, so G2Config objects are easy to create from config files using `load()`
@@ -8,7 +8,7 @@ Config = require('./config').Config
 G2Config = function(driver) {
 	Config.call(this, 'g2');
 	this.driver = driver;
-}
+};
 util.inherits(G2Config, Config);
 
 // Update the configuration with the data provided (data is just an object with configuration keys/values)
@@ -18,16 +18,16 @@ G2Config.prototype.update = function(data, callback) {
 	async.mapSeries(
 		keys, 
 		// Call driver.set() for each item in the collection of data that was passed in.
-		function iterator(key, callback) {
+		function iterator(key, cb) {
 			if(this.driver) {
-			this.driver.set(key, data[key], callback);
+				this.driver.set(key, data[key], cb);
 			} else {
-				callback(null);
+				cb(null);
 			}
 		}.bind(this),
 		// Update the cache with all the values returned from the hardware
 		function done(err, results) {
-			if(err) { callback(err); }
+			if(err) { return callback(err); }
 			var retval = {};
 			for(var i=0; i<keys.length; i++) {
 				key = keys[i];
@@ -38,7 +38,7 @@ G2Config.prototype.update = function(data, callback) {
 			callback(null, retval);
 		}.bind(this)
 	);
-}
+};
 
 // setMany aliases to update, to provide similar interface as G2 driver
 G2Config.prototype.setMany = G2Config.prototype.update;
@@ -58,10 +58,19 @@ G2Config.prototype.configureStatusReports = function(callback) {
 						"stat":true, 
 						"hold":true, 
 						"line":true, 
-						"coor":true}});
+						"coor":true,
+						"in1":true,
+						"in2":true,
+						"in3":true,
+						"in4":true,
+						"in5":true,
+						"in6":true,
+						"in7":true,
+						"in8":true
+					}});
 	this.driver.command({"qv":0});
-	this.driver.command({"jv":6});
+	this.driver.command({"jv":4});
 }
 	return callback(null, this);
-}
+};
 exports.G2Config = G2Config;

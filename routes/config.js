@@ -9,19 +9,19 @@ var log = require('../log').logger('routes');
  *                    { "status":{"posx":0.0, "posy":0.0, "posz":0.0, "state":"idle"}}
  */
 var get_status = function(req, res, next) {
-	var s = machine.status;
-	var answer = {
-								status : "success",
-								data : {'status':s}
-							};
+  var s = machine.status;
+  var answer = {
+      status : "success",
+      data : {'status':s}
+    };
     res.json(answer);
 };
 
 var get_info = function(req, res, next) {
-		var answer = {
-								status : "success",
-								data : {'information':information}
-							};
+    var answer = {
+      status : "success",
+      data : {'information':information}
+    };
     res.json(answer);
 };
 
@@ -33,16 +33,16 @@ var get_info = function(req, res, next) {
  * @apiSuccess {Object} opensbp Key-value map of all OpenSBP runtime settings 
  */
 var get_config = function(req, res, next) {
-	var retval = {};
-	retval.engine = config.engine.getData();
-	retval.driver = config.driver.getData();
-	retval.opebsbp = config.driver.getData();
+  var retval = {};
+  retval.engine = config.engine.getData();
+  retval.driver = config.driver.getData();
+  retval.opensbp = config.driver.getData();
 
-	var answer = 
-	 {
-			status : "success",
-			data : {'configuration':answer}
-	};
+  var answer = 
+  {
+    status : "success",
+    data : {'configuration':retval}
+  };
   res.json(answer);
 };
 
@@ -51,53 +51,58 @@ var get_config = function(req, res, next) {
  * @apiGroup Config
  */
 var post_config = function(req, res, next) {
-	var new_config = {};
-	var answer;
-	try {
-		new_config = req.body;
-	} catch(e) {
-		answer = 
-		{
-			status : "fail",
-			data : {'body':"The body cannot be empty"}
-		};
-  	res.json(answer);
-		return;
-	}
+  var new_config = {};
+  var answer;
 
-	if(new_config.engine) {
-		config.engine.update(new_config.engine, function(err, result) {
-			if(err) {
-				answer = 
-				{
-					status : "fail",
-					data : {'body':"the configuration file you submitted is not valid"}
-				};
-  			res.json(answer);
-			} else {
-				answer =
-				{
-						status : "success",
-						data : result
-				 };
-				res.json(answer);
-			}
-		});
-	}
-	else{
-		// TODO: Apply the driver/opensbp configurations here
-	answer = 
-				{
-					status : "error",
-					message : "not yet implemented"
-				};
-  			res.json(answer);
-	}
+  if('engine' in req.params) {
+    config.engine.update(util.fixJSON(req.params.engine), function(err, result) {
+      if(err) {
+        answer = {
+          status : "fail",
+          data : {'body':"the configuration file you submitted is not valid"}
+        };
+        res.json(answer);
+      } else {
+        answer = {
+            status : "success",
+            data : result
+         };
+        res.json(answer);
+      }
+    });
+  }
+
+  if('driver' in req.params) {
+    config.driver.update(util.fixJSON(req.params.driver), function(err, result) {
+      if(err) {
+        answer = {
+          status : "fail",
+          data : {'body':"the configuration file you submitted is not valid"}
+        };
+        res.json(answer);
+      } else {
+        answer = {
+            status : "success",
+            data : result
+         };
+        res.json(answer);
+      }
+    });
+  }
+/*
+  else{
+    // TODO: Apply the driver/opensbp configurations here
+    answer = {
+          status : "error",
+          message : "not yet implemented"
+        };
+        res.json(answer);
+  }*/
 };
 
 module.exports = function(server) {
-	server.get('/status', get_status);     //OK
-	server.get('/config',get_config);      //OK
-	server.post('/config', post_config);   //TODO
-	server.get('/info',get_info);          //TODO 
+  server.get('/status', get_status);     //OK
+  server.get('/config',get_config);      //OK
+  server.post('/config', post_config);   //TODO
+  server.get('/info',get_info);          //TODO 
 };

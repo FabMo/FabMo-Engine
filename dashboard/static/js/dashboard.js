@@ -175,6 +175,16 @@ define(function(require) {
 			})
 		}.bind(this));
 
+		this._registerHandler('clearJobQueue', function(data, callback) {
+			this.machine.clear_job_queue(function(err) {
+				if(err) {
+					callback(err);
+				} else {
+					callback(null);
+				}
+			})
+		}.bind(this));
+
 		this._registerHandler('runNext', function(data, callback) {
 			this.machine.job_run(function(err, result) {
 				if(err) { callback(err); }
@@ -250,6 +260,34 @@ define(function(require) {
 			}.bind(this));
 		}.bind(this));
 
+		this._registerHandler('runGCode', function(text, callback) {
+			this.machine.gcode(text, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+
+		this._registerHandler('runSBP', function(text, callback) {
+			this.machine.sbp(text, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+
+		this._registerHandler('getConfig', function(data, callback) {
+			this.machine.get_config(function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+
+		this._registerHandler('setConfig', function(data, callback) {
+			this.machine.set_config(data, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+	
 	}
 
 	/*** Prototypes ***/
