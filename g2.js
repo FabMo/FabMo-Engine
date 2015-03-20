@@ -375,10 +375,13 @@ G2.prototype.handleFooter = function(response) {
 		if(response.f[1] !== 0) {
 			var err_code = response.f[1];
 			var err_msg = G2_ERRORS[err_code] || ['ERR_UNKNOWN', 'Unknown Error'];
-			this.emit('error', [err_code, err_msg[0], err_msg[1]]);
+			// TODO we'll have to go back and clean up alarms later
+			// For now, let's not emit a bunch of errors into the log that don't mean anything to us
 			if(err_code === 203 && this.quit_pending) {
 				this.gcodeWrite("{clear:n}\nM30\n");
 				this.quit_pending = false;
+			} else {
+				this.emit('error', [err_code, err_msg[0], err_msg[1]]);
 			}
 		}
 	}
