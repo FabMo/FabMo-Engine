@@ -14,7 +14,7 @@ function readPtData(filename, callback) {
   }.bind(this));
 }
 
-exports.leveler_HB = function(PtX, PtY, PtZ, PtFilename, callback){
+exports.leveler_HB = function(PtNew, PtFilename, callback){
   var data = readPtData(PtFilename,function(err,data){
     log.debug("leveler_HB data = " + JSON.stringify(data));
     if(err){
@@ -23,8 +23,8 @@ exports.leveler_HB = function(PtX, PtY, PtZ, PtFilename, callback){
     else{
 //      log.debug("PtData = " + JSON.stringify(data));
 //      log.debug("PtFilename = " + PtFilename);
-      var zA = data.Z1 + ((data.Z2-data.Z1)*((PtX-data.X1)/(data.X2-data.X1)));
-      var zB = data.Z4 + ((data.Z3-data.Z4)*((PtX-data.X4)/(data.X3-data.X4)));
+      var zA = data.Z1 + ((data.Z2-data.Z1)*((PtNew.X-data.X1)/(data.X2-data.X1)));
+      var zB = data.Z4 + ((data.Z3-data.Z4)*((PtNew.X-data.X4)/(data.X3-data.X4)));
       var zP = zA - ((zB-zA)*((PtY-data.Y1)/(data.Y4-data.Y1)));
       log.debug("zP = " + zP);
       zP += PtZ;

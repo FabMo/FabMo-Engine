@@ -99,11 +99,11 @@ exports.M3 = function(args) {
 				   "Y":y, 
 				   "Z":z };
 
-	if ( Angle !== 0 ) { PtXfrm = transform.rotate(PtXfrm, Angle, RPtX, RPtY); }
-	if ( ShearX !== 0 ) { PtXfrm = transform.shearX(PtXfrm, Angle); }
-	else if ( ShearY !== 0 ) { PtXfrm = transform.shearY(PtXfrm, Angle); }
-	if ( Scale !== 0 ) { PtXfrm = transform.scale(PtXfrm, Xscale, Yscale, RotPtX, RotPtY); }	
-	if ( Move !== 0 ) { PtXfrm = transform.translate(PtXfrm, DistX, MDistY, MDistZ); }
+//	if ( Angle !== 0 ) { PtXfrm = transform.rotate(PtXfrm, Angle, RPtX, RPtY); }
+//	if ( ShearX !== 0 ) { PtXfrm = transform.shearX(PtXfrm, Angle); }
+//	else if ( ShearY !== 0 ) { PtXfrm = transform.shearY(PtXfrm, Angle); }
+//	if ( Scale !== 0 ) { PtXfrm = transform.scale(PtXfrm, Xscale, Yscale, RotPtX, RotPtY); }	
+//	if ( Move !== 0 ) { PtXfrm = transform.translate(PtXfrm, MDistX, MDistY, MDistZ); }
 //	if ( Level !== 0 ) { PtXfrm = leveler.level_HB(PtXfrm, PtFilename, function(err,data) ); }
 
 	var outStr = "G1";
