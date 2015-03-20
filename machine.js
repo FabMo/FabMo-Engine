@@ -195,7 +195,6 @@ Machine.prototype.jog = function(direction, callback) {
 };
 
 Machine.prototype.fixed_move = function(direction,step, callback) {
-	log.debug('machine moves by step');
 	if((this.status.state === "idle") || (this.status.state === "manual")) {
 		this.setRuntime(this.manual_runtime);
 		this.current_runtime.fixed_move(direction,step);

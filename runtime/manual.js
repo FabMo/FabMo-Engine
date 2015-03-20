@@ -67,17 +67,17 @@ ManualRuntime.prototype._onG2Status = function(status) {
 };
 
 ManualRuntime.prototype.stopJog = function() {
-	log.info('Stopping jog.');
+	log.debug('Stopping jog.');
 	this.driver.stopJog();
 };
 
 ManualRuntime.prototype.jog = function(direction) {
-	log.info('Starting jog in ' + direction + ' direction.');
+	log.debug('Starting jog in ' + direction + ' direction.');
 	this.driver.jog(direction);
 };
 
 ManualRuntime.prototype.fixed_move = function(direction, step) {
-	log.info('Starting fixed move in ' + direction + ' direction.');
+	log.debug('Starting fixed move in ' + direction + ' direction.');
 	this.driver.fixed_move(direction,step);
 };
 
