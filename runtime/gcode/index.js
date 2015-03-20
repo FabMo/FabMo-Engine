@@ -82,11 +82,19 @@ GCodeRuntime.prototype._idle = function() {
 	this.machine.status.current_file = null;
 	this.machine.status.line=null;
 	this.machine.status.nb_lines=null;
-	if(this.machine.status.job) {
-		this.machine.status.job.finish(function(err, job) {
-			this.machine.status.job=null;
-			this.machine.setState(this, 'idle');
-		}.bind(this));
+	var job = this.machine.status.job;
+	if(job) {
+		if(job.pending_cancel) {
+			this.machine.status.job.cancel(function(err, job) {
+				this.machine.status.job=null;
+				this.machine.setState(this, 'idle');
+			}.bind(this));
+		} else {
+			this.machine.status.job.finish(function(err, job) {
+				this.machine.status.job=null;
+				this.machine.setState(this, 'idle');
+			}.bind(this));
+		}
 	} else {
 		this.machine.setState(this, 'idle');
 	}

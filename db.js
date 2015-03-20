@@ -54,7 +54,7 @@ Job.prototype.fail = function(callback) {
 };
 
 Job.prototype.cancel = function(callback) {
-	if(this.state === 'pending') {
+	if(this.state === 'pending' || this.state === 'running') {
 		log.debug("Cancelling pending job id " + this._id);
 		this.state = 'cancelled';
 		this.finished_at = Date.now();
@@ -70,6 +70,7 @@ Job.prototype.save = function(callback) {
 			callback(err);
 		}
 		else if(document){
+			delete this.pending_cancel
 			// update the current entry in the database instead of creating a new one.
 			log.info('Updating job id ' + document._id);
 			jobs.update({'_id' : document._id},this,function(err){
@@ -81,6 +82,7 @@ Job.prototype.save = function(callback) {
 			}.bind(this));
 		}
 		else{
+			delete this.pending_cancel
 			// Create a new entry in the database
 			log.info('Creating a new job.');
 			jobs.insert(this, function(err,records){
@@ -249,15 +251,18 @@ exports.configureDB = function(callback) {
 	setImmediate(callback, null);
 };
 
-exports.cleanupDB = function(callback) {
-	jobs.find({state: {$in : ['running']}}).toArray(function(array) {
-		if(array) {
-			console.log("!!!! CLEANUP REQUIRED !!!!");
-			log.debug('Running jobs at startup: ' + array);
+exports.cleanup = function(callback) {
+	jobs.update({state: 'running'}, {$set : {state:'failed', finished_at : Date.now()}}, {multi:true}, function(err, result) {
+		if(err) {
+			log.error('There was a problem cleaning the db: ' + err)
+		} else {
+			if(result > 1) {
+				log.warn("Found more than one (" + result + ") running job in the db.  This is a database inconsistency!");
+			} else if(result == 1) {
+				log.info("Cleaned up a single failed job.");
+			}
 		}
 	});
-
-	//jobs.update({state:'running'},{$set : {finished_at : Date.now(), state : 'failed'}});
 	setImmediate(callback, null);
 };
 
