@@ -36,8 +36,7 @@ function socket_main(socket){
 
 
 module.exports = function(server) {
-	var io = socketio.listen(server.server);
-	io.of('/').on('connection', connect);
+	server.io.on('connection', connect);
 };
 
 
