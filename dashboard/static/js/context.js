@@ -108,13 +108,15 @@
 	};
 
 	ApplicationContext.prototype.launchApp = function(id) {
-		console.log("Calling launch app");
 		app = this.apps.get(id);
-		console.log(JSON.stringify(app))
+		if(app) {
 		this.appClientView.setModel(app);
 		this.appMenuView.hide();
 		this.appClientView.show();
 		this.hideModalContainer();
+		} else {
+			console.error("Couldn't launch app: " + id + ": No such app?");
+		}
 	};
 
 	ApplicationContext.prototype.getCurrentApp = function() {
