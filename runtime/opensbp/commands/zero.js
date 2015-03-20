@@ -5,18 +5,37 @@ var config = require('../../../config');
 
 /* ZERO */
 
+// {"mpo":""}  return absolute machine positions fox XYZABC axes. 
+// !!!!!!!!!!!! Always in mm, regardless of G20/G21
+
+// {"pos":""}  return work coordinate positions fox XYZABC axes. 
+//              In mm or inches depending on G20/G21
+
+// {"g55":""}  returns the current offset to the UCS origin
+//              In mm or inches depending on G20/G21
+
+
 exports.ZX = function(args, callback) {
 	this.machine.driver.get('mpox', function(err, value) {
-		this.machine.driver.set('g55x',(value + this.machine.status.posz /*+ zoffset*/), function(err, value) {
+		var zStr = {};
+		if ( this.machine.driver.status.unit === 0 ) {  // inches
+			zStr.g55x = Number((value / 25.4).toFixed(5));
+		}
+		else {    // mm
+			zStr.g55x = Number((value).toFixed(5));
+		}
+//		log.debug( "     " + JSON.stringify(zStr) );
+		config.driver.setMany(zStr, function(err, value) {
 			callback();
 			this.cmd_posx = this.posx = 0;
+//			log.debug( "this.cmd_posx = " + this.cmd_posx );
 		}.bind(this));
 	}.bind(this));
 };
 
 exports.ZY = function(args, callback) {
-	this.machine.driver.get('mpoy', function(err, value) {
-		this.emit_gcode("G10 L2 P2 Y" + value);
+	this.machine.driver.get('g54y', function(err, value) {
+		this.emit_gcode("g55y" + value);
 	 	this.cmd_posy = this.posy = 0;
 		callback();
 	}.bind(this));

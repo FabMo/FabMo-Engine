@@ -59,6 +59,7 @@ G2Config.prototype.configureStatusReports = function(callback) {
 						"hold":true, 
 						"line":true, 
 						"coor":true,
+						"unit":true,
 						"in1":true,
 						"in2":true,
 						"in3":true,

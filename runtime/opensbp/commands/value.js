@@ -7,65 +7,91 @@ var config = require('../../../config');
 exports.VA = function(args, callback) {
 
 	log.debug("VA Command: " + args);
+	
+	this.machine.driver.get('mpo', function(err, MPO) {
 
-	var getG2_VA = ['g55x','g55y','g55z','g55a','g55b','g55c'];
+		log.debug("Current Machine Base Coordinates (mm): " + JSON.stringify(MPO));
 
-	var getVA_G2 = config.driver.getMany(getG2_VA);
-	log.debug("getG2_VA: " + JSON.stringify(getVA_G2));
+		var setVA_G2 = {};	
+		var setVA_SBP = {};	
+		var newLocation = 0.0;
+		var unitConv = 1.0;
 
-	var setVA_G2 = {};	
-	var setVA_SBP = {};	
-	var newLocation = 0.0;
+		if ( this.machine.driver.status.unit === 0 ) {  // inches
+			unitConv = 0.039370079;
+		}
 
-	if (args[0] !== undefined) { 	//X location
-		newLocation = args[0];
-		log.debug("new X = " + newLocation);
-		setVA_G2.g55x = newLocation;
-	}
-	if (args[1] !== undefined) { 	//Y location
-		newLocation = args[1];
-		log.debug("new Y = " + newLocation);
-		setVA_G2.g55y = newLocation;		
-	}
-	if (args[2] !== undefined) { 	//Z location
-		newLocation = args[2];
-		setVA_G2.g55z = newLocation;
-	}
-	if (args[3] !== undefined) { 	//A location
-		newLocation = args[3];
-		setVA_G2.g55a = newLocation;
-	}
-	if (args[4] !== undefined) { 	//B location
-		newLocation = args[4];
-		setVA_G2.g55b = newLocation;
-	}
-	if (args[5] !== undefined) { 	//C location
-		newLocation = args[5];
-		setVA_G2.g55c = newLocation;
-	}
-	if (args[6] !== undefined) { 	//X Offset from base
+		if (args[0] !== undefined) { 	//X location
+			newLocation = Number(((MPO.x * unitConv) - args[0]).toFixed(5));
+			setVA_G2.g55x = newLocation;
+			this.cmd_posx = this.posx = args[0];
+			log.debug("new X = " + newLocation);
+		}
+		if (args[1] !== undefined) { 	//Y location
+			newLocation = Number(((MPO.y * unitConv) - args[1]).toFixed(5));
+			setVA_G2.g55y = newLocation;
+			this.cmd_posy = this.posy = args[1];
+			log.debug("new Y = " + newLocation);	
+		}
+		if (args[2] !== undefined) { 	//Z location
+			newLocation = Number(((MPO.z * unitConv) - args[2]).toFixed(5));
+			setVA_G2.g55z = newLocation;
+			this.cmd_posz = this.posz = args[2];
+			log.debug("new Z = " + newLocation);	
+		}
+		if (args[3] !== undefined) { 	//A location
+			newLocation = Number(((MPO.a * unitConv) - args[3]).toFixed(5));
+			setVA_G2.g55a = newLocation;
+			this.cmd_posa = this.posa = args[3];
+			log.debug("new A = " + newLocation);	
+		}
+		if (args[4] !== undefined) { 	//B location
+			newLocation = Number(((MPO.b * unitConv) - args[4]).toFixed(5));
+			setVA_G2.g55b = newLocation;
+			this.cmd_posb = this.posb = args[4];
+			log.debug("new B = " + newLocation);	
+		}
+		if (args[5] !== undefined) { 	//C location
+			newLocation = Number(((MPO.c * unitConv) - args[5]).toFixed(5));
+			setVA_G2.g55c = newLocation;
+			this.cmd_posc = this.posc = args[5];
+			log.debug("new C = " + newLocation);	
+		}
+//		if (args[6] !== undefined) { 	//X Base Coordinate
+//			newLocation = args[6];
+//			log.debug("new X Base Coordinate = " + newLocation);
+//			setVA_G2.g54x = newLocation;
+//		}
+//		if (args[7] !== undefined) { 	//Y Base Coordinate
+//			newLocation = args[7];
+//			log.debug("new Y Base Coordinate = " + newLocation);
+//			setVA_G2.g54y = newLocation;
+//		}
+//		if (args[8] !== undefined) { 	//Z Base Coordinate
+//			newLocation = args[8];
+//			log.debug("new Z Base Coordinate = " + newLocation);
+//			setVA_G2.g54z = newLocation;
+//		}
+//		if (args[9] !== undefined) { 	//A Base Coordinate
+//			newLocation = args[9];
+//			log.debug("new A Base Coordinate = " + newLocation);
+//			setVA_G2.g54a = newLocation;
+//		}
+//		if (args[10] !== undefined) { 	//B Base Coordinate
+//			newLocation = args[10];
+//			log.debug("new B Base Coordinate = " + newLocation);
+//			setVA_G2.g54b = newLocation;
+//		}
+//		if (args[11] !== undefined) { 	//C Base Coordinate
+//			newLocation = args[11];
+//			log.debug("new C Base Coordinate = " + newLocation);
+//			setVA_G2.g54c = newLocation;
+//		}
 
-	}
-	if (args[7] !== undefined) { 	//Y Offset from base
-
-	}
-	if (args[8] !== undefined) { 	//Z Offset from base
-
-	}
-	if (args[9] !== undefined) { 	//A Offset from base
-
-	}
-	if (args[10] !== undefined) { 	//B Offset from base
-
-	}
-	if (args[11] !== undefined) { 	//C Offset from base
-
-	}
-
-	config.driver.setMany(setVA_G2, function(err, values) {
-		log.debug("VA - values: " + JSON.stringify(values));
-		callback();
-	});
+		config.driver.setMany(setVA_G2, function(err, value) {
+			callback();
+		}.bind(this));
+	}.bind(this));
 };
 
 exports.VC = function(args) {
