@@ -252,21 +252,17 @@ exports.configureDB = function(callback) {
 };
 
 exports.cleanup = function(callback) {
-	jobs.find({state: {$in : ['running']}}).toArray(function(err, array) {
-		if(array) {
-			console.log("!!!! CLEANUP REQUIRED !!!!");
-			log.debug('Running jobs at startup: ' + array);
-		}
-	});
-	jobs.update({state: 'running'}, {state:'failed'}, function(err) {
+	jobs.update({state: 'running'}, {$set : {state:'failed', finished_at : Date.now()}}, {multi:true}, function(err, result) {
 		if(err) {
 			log.error('There was a problem cleaning the db: ' + err)
 		} else {
-			log.warn("No problem")
+			if(result > 1) {
+				log.warn("Found more than one (" + result + ") running job in the db.  This is a database inconsistency!");
+			} else if(result == 1) {
+				log.info("Cleaned up a single failed job.");
+			}
 		}
 	});
-
-	//jobs.update({state:'running'},{$set : {finished_at : Date.now(), state : 'failed'}});
 	setImmediate(callback, null);
 };
 
