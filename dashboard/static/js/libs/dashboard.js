@@ -8,7 +8,6 @@ var FabMoDashboard = function() {
 		'status' : []
 	};
 	this._setupMessageListener();
-	console.log(this.isPresent());
 }
 
 FabMoDashboard.prototype.isPresent = function() {
@@ -127,7 +126,6 @@ FabMoDashboard.prototype._download = function(data, strFileName, strMimeType) {
 } // _download
 
 FabMoDashboard.prototype._call = function(name, data, callback) {
-	console.log("Making a call");
 	if(this.isPresent()) {
 		message = {"call":name, "data":data}
 		if(callback) {
