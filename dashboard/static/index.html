@@ -81,7 +81,7 @@
             <!-- ********** Tool Position Widget ********** -->
             <div id="position" class="widget">
               <ul class="off-canvas-list fabmo-status">
-                <li><label>Position</label></li>
+                <li><label>Position <div id="units"></div></label></li>
                 <li>
                   <form>
                     <div class="row axis">
@@ -112,29 +112,24 @@
                   </form>
                 </li>
                 <li>
-                  <!--<div class="row inOut">
-                    <div class="small-6 columns">Inputs</div>
-                    <div class="small-6 columns">Outputs</div>
-                  </div>-->
+                  <div class="row inOut">
+                    <div class="small-12 columns">Inputs</div>
+                  </div>
                   <div class="row inOutSwitch">
-                    <div class="small-6 columns">
+                    <div class="small-12 columns">
                       <div class="row switch">
-                        <div style="display:none;" class="small-3 columns prox-sw-1">| 1 |</div><div style="display:none;" class="small-3 columns prox-sw-2">| 2 |</div>
-                        <div style="display:none;" class="small-3 columns prox-sw-3">| 3 |</div><div style="display:none;" class="small-3 columns prox-sw-4">| 4 |</div>
-                        <div style="display:none;" class="small-3 columns prox-sw-5">| 5 |</div><div style="display:none;" class="small-3 columns prox-sw-6">| 6 |</div>
-                        <div style="display:none;" class="small-3 columns prox-sw-7">| 7 |</div><div style="display:none;" class="small-3 columns prox-sw-8">| 8 |</div>
-                        <div style="display:none;" class="small-3 columns prox-sw-9">| 9 |</div><div style="display:none;" class="small-3 columns prox-sw-10">| 10 |</div>
-                        <div style="display:none;" class="small-3 columns prox-sw-11">| 11 |</div><div style="display:none;" class="small-3 columns prox-sw-12">| 12 |</div>
-                      </div>
-                    </div>
-                     <div class="small-6 columns">
-                      <div class="row switch">
-                        <div style="display:none;" class="small-3 columns prox-sw-1">| 1 |</div><div style="display:none;" class="small-3 columns prox-sw-2">| 2 |</div>
-                        <div style="display:none;" class="small-3 columns prox-sw-3">| 3 |</div><div style="display:none;" class="small-3 columns prox-sw-4">| 4 |</div>
-                        <div style="display:none;" class="small-3 columns prox-sw-5">| 5 |</div><div style="display:none;" class="small-3 columns prox-sw-6">| 6 |</div>
-                        <div style="display:none;" class="small-3 columns prox-sw-7">| 7 |</div><div style="display:none;" class="small-3 columns prox-sw-8">| 8 |</div>
-                        <div style="display:none;" class="small-3 columns prox-sw-9">| 9 |</div><div style="display:none;" class="small-3 columns prox-sw-10">| 10 |</div>
-                        <div style="display:none;" class="small-3 columns prox-sw-11">| 11 |</div><div style="display:none;" class="small-3 columns prox-sw-12">| 12 |</div>
+                        <div style="" class="small-1 columns in1 input"> 1 </div>
+                        <div style="" class="small-1 columns in2 input"> 2 </div>
+                        <div style="" class="small-1 columns in3 input"> 3 </div>
+                        <div style="" class="small-1 columns in4 input"> 4 </div>
+                        <div style="" class="small-1 columns in5 input"> 5 </div>
+                        <div style="" class="small-1 columns in6 input"> 6 </div>
+                        <div style="" class="small-1 columns in7 input"> 7 </div>
+                        <div style="" class="small-1 columns in8 input"> 8 </div>
+                        <div style="" class="small-1 columns"></div>
+                        <div style="" class="small-1 columns"></div>
+                        <div style="" class="small-1 columns"></div>
+                        <div style="" class="small-1 columns"></div>
                       </div>
                     </div>
                   </div>
@@ -144,43 +139,6 @@
             <div id="handwheel" class="widget" style="text-align: center;">
               <canvas width="220" height="220" id="wheel"></canvas>
             </div>
-
-            <!-- ********** Keypad Widget ********** -->
-            
-            <!--<div id="keypad" class="widget">
-              <ul class="off-canvas-list">
-                <li><label>Keypad</label></li>
-                <li class="fabmo-keypad" style="display:none;">
-                <div class="inline">
-                  <div class="small-7 columns">Fixed move <input class="fixe-move" type="checkbox"></div>
-                  <div class=" hide small-5 columns"><input class="fixe-move-step" type="text"></div>
-                </div>
-                  <div class="row" >
-                    <div class="small-8 columns axis">
-                        <button class="button button-minus-X"></button>
-                        <button class="button button-minus-Y"></button>
-                        <button class="button button-plus-X"></button>
-                        <button class="button button-plus-Y"></button>
-                    </div>
-                    <div class="small-4 columns axis">
-                        <button class="button button-plus-Z"></button>
-                        <button class="button button-minus-Z"></button>
-                    </div> 
-                  </div> 
-                  <div class="row fabmo-status" style="background-color:#eee;">
-                    <div class="small-2 columns"><span style="display:inline-block;"></span></div>
-                    <div class="small-8 columns">
-                      <div class="row">
-                        <div class="small-4 columns set"><span class="button-homexy"></span></div>
-                        <div class="small-4 columns set"><span class="button-homez"></span></div>
-                        <div class="small-4 columns set"><span class="button-probez"></span></div>
-                      </div>
-                    </div>
-                    <div class="small-2 columns"><span style="display:inline-block;"></span></div>
-                  </div>            
-                  </li>
-              </ul>
-            </div>-->
 
             <!-- ************ File Control Widget ************ -->
             <div id="job-info" class="widget">

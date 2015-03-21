@@ -1,3 +1,5 @@
+var MAX_INPUTS = 16;
+
 function FabMoUI(tool, options){
 	this.tool = tool;
 	// the tool we need to check for
@@ -462,6 +464,21 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.filename_selector).empty();
 		$(that.progress_selector).empty();
 	}
+
+	for(var i=1; i<MAX_INPUTS+1; i++) {
+		var iname = 'in' + i;
+		if(iname in status) {
+			var selector = that.status_div_selector + ' .in' + i;
+			if(status[iname]) {
+				$(selector).removeClass('off').addClass('on');
+			} else {
+				$(selector).removeClass('on').addClass('off');
+			}
+		} else {
+			break;
+		}
+	}
+
 	$(that.status_div_selector).trigger('statechange',status.state);
 	if(status.state === 'idle') {
 		that.allowKeypad();
