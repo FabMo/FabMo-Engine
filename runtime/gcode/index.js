@@ -43,7 +43,7 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 			break;
 
 		case "running":
-			if(this.status_report.stat === this.driver.STAT_HOLDING && this.status_report.stat === 0) {
+			if(this.status_report.stat === this.driver.STAT_HOLDING /*&& this.status_report.stat === 0*/) {
 				this._changeState("paused");
 				this.machine.emit('job_pause', this);
 				break;

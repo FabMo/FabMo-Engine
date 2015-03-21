@@ -617,7 +617,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 #keypad ul li:first-child label::after,
 #position ul .inOut .columns::after {
-	content: ' ';
+	/*content: ' ';*/
 	height: 0;
 	position: absolute;
 	width: 0;
@@ -735,7 +735,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	left: 10px;
 	left: 0.625rem
 }
-
 
 #keypad .axis .button-plus-Y {
 	top: 16px;
