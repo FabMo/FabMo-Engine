@@ -2,42 +2,42 @@ var fs = require('fs');
 var machine = require('../machine').machine;
 var log=require('../log').logger("websocket");
 var socketio = require('socket.io');
-var clients_limit = 1;
+var clients_limit = 3;
 var nb_clients=0;
 
 
-
-function bind_status_report(socket){
+function broadcast_status_report(clients_sockets){
 	machine.on('status',function(status){
-		socket.broadcast.emit('status',status);
+		clients_sockets.emit('status',status);
 	});
 }
 
 
-
-
-
 connect = function(socket) {
-	log.debug("new client by websocket");
 	nb_clients++;
 	if (nb_clients<=clients_limit){ // avoid too many connection on the app.
 		socket_main(socket);
 	}
 	socket.on('disconnect', function() {
-		log.debug("client disconnected");
+		socket_close(socket);
 		nb_clients--;
+
 	});
 };
 
 
 function socket_main(socket){
-	bind_status_report(socket);
+	log.debug("client connected");
+}
+
+function socket_close(socket){
+	log.debug("client disconnected");
 }
 
 
 module.exports = function(server) {
-	var io = socketio.listen(server.server);
-	io.of('/').on('connection', connect);
+	server.io.on('connection', connect);
+	broadcast_status_report(server.io.sockets);
 };
 
 

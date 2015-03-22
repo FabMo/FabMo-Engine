@@ -1,7 +1,6 @@
 var fs = require('fs');
 var machine = require('../machine').machine;
 var log=require('../log').logger("passthrough");
-var socketio = require('socket.io');
 var restify = require('restify');
 var path_to_passthrough_app =  "./static/passthrough.html";
 var clients_limit = 1;
@@ -40,7 +39,7 @@ passthrough_app = function(req,res,next) {
 
 
 module.exports = function(server) {
-	var io = socketio.listen(server.server);
+
 	server.get("/passthrough",passthrough_app);
-	io.of('/passthrough').on('connection', connect);
+	server.io.of('/passthrough').on('connection', connect);
 };
