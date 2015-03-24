@@ -220,6 +220,36 @@ File.prototype.saverun = function(){
 	files.update({_id : this._id}, {$set : {last_run : Date.now()}, $inc : {run_count:1}});
 };
 
+File.add = function(friendly_filename, pathname, callback) {
+
+	// Create a unique name for actual storage
+	var filename = util.createUniqueFilename(friendly_filename);
+	var full_path = path.join(config.getDataDir('files'), filename);
+
+	// Move the file
+	util.move(pathname, full_path, function(err) {
+		if(err) {
+			callback(err);
+		}
+		// delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
+		fs.unlink(file.path, function(err) {
+			if (err) {
+				// Failure to delete the temporary file is bad, but non-fatal
+				log.warn("failed to remove the job from temporary folder: " + err);
+			}
+
+			var file = new File(friendly_filename, full_path);
+			file.save(function(err, file){
+				if(err) {
+					return callback(err);
+				}
+				log.info('Saved a file: ' + file.filename + ' (' + file.full_path + ')');
+				callback(null, file)
+			}); // save
+		}); // unlink
+	}); // move
+} // add
+
 // Return a list of all the files in the database
 File.list_all = function(callback){
 	files.find().toArray(function(err,result){

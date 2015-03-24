@@ -30,8 +30,8 @@ conditional
    = "IF" ___ cmp:comparison ___ "THEN" ___ stmt:(jump) { return {"type":"cond", "cmp":cmp, "stmt":stmt};}
 
 event
-   = "ON" ___ "INPUT" __ "(" ___ switch:integer ___ "," ___ state:integer ___ ")" ___ stmt:(assignment / jump / pause / command)
-      {return {"type":"event", "switch":switch, "state":state, "stmt":stmt};} 
+   = "ON" ___ "INPUT" __ "(" ___ sw:integer ___ "," ___ state:integer ___ ")" ___ stmt:(assignment / jump / pause / command)
+      {return {"type":"event", "sw":sw, "state":state, "stmt":stmt};} 
 
 jump
    = cmd:("GOTO" / "GOSUB") ___ 
