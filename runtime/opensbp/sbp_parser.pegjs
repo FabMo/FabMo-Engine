@@ -14,6 +14,10 @@ start
 statement
    = (label / single / jump / pause / conditional / assignment / event / open / command / __)
 
+event
+   = "ON" ___ "INPUT" __ "(" __ sw:integer __ "," __ state:integer __ ")" ___ stmt:(assignment / jump / pause / command)
+      {return {"type":"event", "sw":sw, "state":state, "stmt":stmt};} 
+
 command 
    = m:mnemonic 
      args:(("," arg:argument){return arg})* 
@@ -29,12 +33,9 @@ pause
 conditional
    = "IF" ___ cmp:comparison ___ "THEN" ___ stmt:(jump) { return {"type":"cond", "cmp":cmp, "stmt":stmt};}
 
-event
-   = "ON" ___ "INPUT" __ "(" ___ sw:integer ___ "," ___ state:integer ___ ")" ___ stmt:(assignment / jump / pause / command)
-      {return {"type":"event", "sw":sw, "state":state, "stmt":stmt};} 
 open
-   = "OPEN" ___ path:quotedstring ___ "FOR" ___ mode:("INPUT" / "OUTPUT" / "APPEND") ___ "AS" ___ "#"num:[1-9] 
-       { return {"type":"open", path":path, "mode":mode, "num":num} }
+   = "OPEN" ___ pth:quotedstring ___ "FOR" ___ mode:("INPUT" / "OUTPUT" / "APPEND") ___ "AS" ___ "#"num:[1-9] 
+       { return {"type":"open", "path":pth, "mode":mode, "num":num} }
 
 jump
    = cmd:("GOTO" / "GOSUB") ___ 

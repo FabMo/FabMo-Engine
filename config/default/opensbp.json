@@ -30,5 +30,34 @@
     "cutterDia": 0.25,
     "pocketOverlap": 50,
     "safeZpullUp": 0.25,
-    "safeApullUp": 0.25
+    "safeApullUp": 0.25,
+    "transforms": {
+        "rotate": {
+            "apply": false,
+            "angle": 0,
+            "x": 0,
+            "y": 0
+        },
+        "shearx": {
+            "apply": false,
+            "angle": 0
+        },
+        "sheary": {
+            "apply": false,
+            "angle": 0
+        },
+        "scale": {
+            "apply": false,
+            "scalex": 1,
+            "scaley": 1,
+            "x": 0,
+            "y": 0
+        },
+        "move": {
+            "apply": false,
+            "x": 0,
+            "y": 0,
+            "z": 0
+        }
+    }
 }

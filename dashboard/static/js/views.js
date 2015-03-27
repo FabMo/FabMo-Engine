@@ -94,7 +94,7 @@ define(function(require) {
 		},
 		setModel : function(model) {
 			if(model) {
-			this.model.set(model.toJSON());
+				this.model.set(model.toJSON());
 			} else {
 				this.model.set(null);
 			}

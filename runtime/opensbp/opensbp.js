@@ -21,6 +21,7 @@ function SBPRuntime() {
 	this.stack = [];
 	this.current_chunk = [];
 	this.output = [];
+	this.event_handlers = {};
 	this.running = false;
 	this.cmd_posx = 0;
 	this.cmd_posy = 0;
@@ -73,6 +74,7 @@ SBPRuntime.prototype.runString = function(s) {
 		if(this.machine) {
 			this.machine.status.nb_lines = lines.length - 1;
 		}
+		this._setupTransforms();
 		this._analyzeLabels();  // Build a table of labels
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table    
 		this._run();
@@ -95,6 +97,10 @@ SBPRuntime.prototype._update = function() {
 	this.posb = status.posb || 0.0;
 	this.posc = status.posc || 0.0;
 };
+
+SBPRuntime.prototype._setupTransforms = function() {
+	this.transforms = JSON.parse(JSON.stringify(config.opensbp.get('transforms')));
+}
 
 // Evaluate a list of arguments provided (for commands)
 SBPRuntime.prototype._evaluateArguments = function(command, args) {
@@ -307,6 +313,9 @@ SBPRuntime.prototype._dispatch = function(callback) {
 					"stop" : function(driver) { 
 						callback();
 					},
+					"holding" : function(driver) {
+						log.error("GOT A PAUSE WHEN EXPECTING A STOP");
+					},
 					null : function(driver) {
 						// TODO: This is probably a failure
 						log.warn("Expected a stop but didn't get one.");
@@ -318,6 +327,7 @@ SBPRuntime.prototype._dispatch = function(callback) {
 				"running" : run_function,
 				"homing" : run_function,
 				"probe" : run_function,
+				"stop" : function(driver) { callback() },
 				null : function(t) {
 					log.warn("Expected a start but didn't get one. (" + t + ")"); 
 				}
@@ -372,17 +382,12 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 
 SBPRuntime.prototype._execute = function(command, callback) {
 
-	console.log(command)
-	log.info("Executing line: " + JSON.stringify(command));
-
-
 	// Just skip over blank lines, undefined, etc.
 	if(!command) {
 		this.pc += 1;
 		return;
 	}
 
-	console.log(command)
 	// All correctly parsed commands have a type
 	switch(command.type) {
 
@@ -464,6 +469,18 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			}
 			// Todo handle indefinite pause or pause with message
 			return false;
+			break;
+
+		case "event":
+			this.pc += 1;
+			if(command.sw in this.event_handlers) {
+				this.event_handlers[command.sw][command.state] = command.stmt;
+			} else {
+				var key = command.state
+				this.event_handlers[command.sw] = {key : command.stmt};
+			}
+			setImmediate(callback);
+			return true;
 			break;
 
 		default:
@@ -566,6 +583,7 @@ SBPRuntime.prototype.init = function() {
 	this.sysvar_evaluated = false;
 	this.chunk_broken_for_eval = false;
 	this.output = [];
+	this.event_handlers = {};
 };
 
 // Compile an index of all the labels in the program
