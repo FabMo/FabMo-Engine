@@ -33,6 +33,7 @@
 		this.appStudioFileView = new this.views.AppStudioFileView({el : '#app-studio-files'});
 		this.appStudioEditorView = new this.views.AppStudioEditorView({el : '#app-studio-editor'});
 
+		this.current_app_id = null;
 	};
 
 	ApplicationContext.prototype.openSettingsPanel = function(){
@@ -95,45 +96,35 @@
 		machine_models.push(machine_model);
 		this.remoteMachines.reset(machine_models)
 		if(typeof callback === 'function') callback(null, this.remoteMachines);
-		//[{"hostname":"FabMo_dev_008","network":[{"interface":"eth0","ip_address":"192.168.33.133"}],"server_port":9876},{"hostname":"samus.local","network":[{"interface":"en0","ip_address":"192.168.33.180"}],"server_port":9876}]
 	};
 
 	ApplicationContext.prototype.bindKeypad = function(ui){
-			ui.forbidKeypad();
+		ui.forbidKeypad();
 	};
 
 	ApplicationContext.prototype.statusKeypad = function(ui){
-		console.log("KeyPad Status : "+ui.statusKeypad());
 		ui.statusKeypad();
 	};
 
 	ApplicationContext.prototype.launchApp = function(id) {
-		app = this.apps.get(id);
-		if(app) {
-		this.appClientView.setModel(app);
-		this.appMenuView.hide();
-		this.appClientView.show();
-		this.hideModalContainer();
-		} else {
-			console.error("Couldn't launch app: " + id + ": No such app?");
+		current_app = this.getCurrentApp()
+		if(current_app.id != id) {
+			app = this.apps.get(id);
+			if(app) {
+				this.current_app_id = id;
+				this.appClientView.setModel(app);
+			} else {
+				console.error("Couldn't launch app: " + id + ": No such app?");
+				return
+			}
+			this.appMenuView.hide();
+			this.appClientView.show();
+			this.hideModalContainer();
 		}
 	};
 
 	ApplicationContext.prototype.getCurrentApp = function() {
 		return this.appClientView.model;
-	};
-
-	ApplicationContext.prototype.editApp = function() {
-		console.log("Calling edit app");
-		model = this.getCurrentApp();
-		if(model) {
-			this.appStudioFileView.setModel(model);
-			this.appMenuView.hide();
-			this.appClientView.hide();
-			this.hideModalContainer();
-			this.appStudioFileView.show();
-			this.appStudioEditorView.show();
-		}
 	};
 
 	return new ApplicationContext();

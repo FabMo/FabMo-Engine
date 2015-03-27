@@ -202,9 +202,9 @@ File.prototype.save = function(callback){
 		log.info('Creating a new document.');
 		files.insert(that, function(err,records){
 			if(!err)
-				callback(records[0]);
+				callback(null, records[0]);
 			else
-				throw err;
+				callback(err);
 		});
 	}
 	});
@@ -225,14 +225,13 @@ File.add = function(friendly_filename, pathname, callback) {
 	// Create a unique name for actual storage
 	var filename = util.createUniqueFilename(friendly_filename);
 	var full_path = path.join(config.getDataDir('files'), filename);
-
 	// Move the file
 	util.move(pathname, full_path, function(err) {
 		if(err) {
 			callback(err);
 		}
 		// delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
-		fs.unlink(file.path, function(err) {
+		fs.unlink(pathname, function(err) {
 			if (err) {
 				// Failure to delete the temporary file is bad, but non-fatal
 				log.warn("failed to remove the job from temporary folder: " + err);
@@ -245,8 +244,8 @@ File.add = function(friendly_filename, pathname, callback) {
 				}
 				log.info('Saved a file: ' + file.filename + ' (' + file.full_path + ')');
 				callback(null, file)
-			}); // save
-		}); // unlink
+			}.bind(this)); // save
+		}.bind(this)); // unlink
 	}); // move
 } // add
 

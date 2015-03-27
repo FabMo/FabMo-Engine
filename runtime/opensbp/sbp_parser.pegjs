@@ -12,7 +12,7 @@ start
    = __ stmt:statement __ {return stmt}
 
 statement
-   = (label / single / jump / pause / conditional / assignment / command / __)
+   = (label / single / jump / pause / conditional / assignment / event / open / command / __)
 
 command 
    = m:mnemonic 
@@ -32,6 +32,9 @@ conditional
 event
    = "ON" ___ "INPUT" __ "(" ___ sw:integer ___ "," ___ state:integer ___ ")" ___ stmt:(assignment / jump / pause / command)
       {return {"type":"event", "sw":sw, "state":state, "stmt":stmt};} 
+open
+   = "OPEN" ___ path:quotedstring ___ "FOR" ___ mode:("INPUT" / "OUTPUT" / "APPEND") ___ "AS" ___ "#"num:[1-9] 
+       { return {"type":"open", path":path, "mode":mode, "num":num} }
 
 jump
    = cmd:("GOTO" / "GOSUB") ___ 
@@ -59,6 +62,9 @@ float "float"
 
 barestring
   = s:[^,\n]+ {return s.join("");}
+
+quotedstring
+  = '"' s:[^\"\n]+ '"' {return s.join("")}
 
 variable
   = (user_variable / system_variable)

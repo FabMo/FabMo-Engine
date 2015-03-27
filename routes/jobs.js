@@ -21,7 +21,7 @@ var submitJob = function(req, res, next) {
     // Only write "allowed files"
     if(file && util.allowed_file(file.name))
     {
-        db.File.add(file.name, file.path, function(err, file) {
+        db.File.add(file.name, file.path, function(err, dbfile) {
             if (err) {
                 answer = {
                     status:"error",
@@ -29,12 +29,11 @@ var submitJob = function(req, res, next) {
                 };
                 return res.json(answer);
             }
-
             var job;
             try {
                 job = new db.Job({
-                    file_id : file._id,
-                    name : req.body.name || friendly_filename,
+                    file_id : dbfile._id,
+                    name : req.body.name || file.name,
                     description : req.body.description
                 });
             } catch(e) {

@@ -7,6 +7,9 @@
 	<link rel="stylesheet" href="./css/foundation.min.css">
 	<link rel="stylesheet" href="./css/normalize.css">
 	<link rel="stylesheet" href="./css/style.css">
+	<!--<link rel="stylesheet" href="./css/jquery.dataTables.css">-->
+	<link rel="stylesheet" href="./css/dataTables.foundation.css">
+
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
@@ -20,23 +23,17 @@
 
 	<section class="container current-job-container fabmo-file-control" style="display:none">
 		<div class="row title">
-			<div class="small-7 medium-9 large-10 columns">
+			<div class="small-7 medium-8 columns">
 				<h3 class="running-job-name filename"></h3>
 			</div>
-			<div class="small-5 medium-3 large-2 columns btn">
-				<a id="pause-button" class="small small-6 columns button fabmo-pause-button warning">P</a>
-				<a id="resume-button" class="small small-6 columns button fabmo-resume-button hide Success">R</a>
-				<a id="stop-button" class="small small-6 columns button fabmo-stop-button btn alert">S</a>
+			<div class="small-5 medium-4 columns" style="text-align:right;">
+				<a id="pause-button" class="small button warning radius">Pause</a>
+				<a id="resume-button" class="small button success radius hide">Resume</a>
+				<a id="stop-button" class="small button alert radius">Stop</a>
 			</div>
 		</div>
 		<div class="row">
-			<div class="small-9 medium-7 large-7 columns current-job-item">
-				<p class="running-job-description"></p>
-			</div>
-			<div class="small-3 medium-2 large-1 columns current-job-submitted">
-				<p class="running-job-time"></p>
-			</div>
-			<div class="small-12 medium-3 large-4 columns progress secondary round">
+			<div class="small-12 columns progress primary round">
 				<span class="meter progress" style="width: 0%"></span>
 			</div>
 		</div>
@@ -44,35 +41,35 @@
 
 	<section class="container">
 		<div class="row title">
-			<div class="small-7 medium-9 large-10 columns">
+			<div class="small-6 columns">
 				<h3>Pending Jobs</h3>
 			</div>
-			<div class="small-5 medium-3 large-2 columns btn">
-				<a class="small small-6 columns button success run-next">►</a>
-				<a class="small small-6 columns button secondary clear-jobs">X</a>
+			<div class="small-6 columns" style="text-align:right;">
+				<a id="run-next" class="small button success radius">Run Next</a>
+				<a id="clear-jobs" class="small button secondary radius">Clear Queue</a>
 			</div>
 		</div>
 
 		<div class="row no-jobs" style="display:none;">
 			<div class="small-12 columns no-jobs-item">
 				<div data-alert class="alert-box secondary">
-				  No jobs, click here to add a job
+				  No jobs, click here to add a job...
 				</div>
 			</div>
 		</div>
 
-		<div class="row jobs-row" style="display:none;">
+		<div class="row jobs-row" style="">
 			<!-- JOB LISTING -->
-			<table class="small-12 columns">
-				<thead>
-					<tr>
-						<th class="small-3">Job Name</th>
-						<th class="small-6">Description</th>
-						<th class="small-3">Submitted</th>
-					</tr>
-				</thead>
-	            <tbody class="row jobs-listing"></tbody>
-			</table>
+			<table class="small-12 columns" style="width:100%" id="queue_table">
+			<thead>
+            <tr>
+                <th>&nbsp;</th>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Submitted</th>
+            </tr>
+        	</thead>
+        	</table>
 		</div>
 
 		<div class="row submit-job">
@@ -102,192 +99,265 @@
 
 		<div class="row jobs-history-row">
 			<!-- JOB HISTORY LISTING -->
-			<table class="small-12 columns">
-				<thead>
-					<tr>
-						<th class="small-3">Job Name</th>
-						<th class="small-4">Description</th>
-						<th class="small-2">State</th>
-						<th class="small-2">Run</th>
-						<th class="small-1">Duration</th>
-					</tr>
-				</thead>
-				<tbody class="row jobs-history-listing"></tbody>
-			</table>
+			<table class="small-12 columns" style="width:100%" id="history_table">
+			<thead>
+            <tr>
+                <th>&nbsp;</th>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Last Run</th>
+            </tr>
+        	</thead>
+        	</table>
 		</div>
 	</section>
 
   <!-- Javascript inclusions -->
-  <script src="./js/libs/jquery-1.10.2.js"></script>
-  <script src="./js/libs/foundation.min.js"></script>
-  <script src="./js/FabMo-latest.js"></script>
-  <script src="./js/FabMoUI-latest.js"></script>
-  <script src="/js/libs/dashboard.js"></script>
+  <script src="./js/jquery.js"></script>
+  <script src="./js/jquery.dataTables.js"></script>
+  <script src="./js/foundation.min.js"></script>
+  <script src="./js/dataTables.foundation.js"></script>
   <script src="./js/moment.js"></script>
-  <!--<script src="./js/app.js"></script>-->
+  <script src="/js/libs/dashboard.js"></script>
 
   <script type="text/javascript">
-  	var tool;
-  	var ui;
-  	var x; //SetInterval
-  	var jobs_needs_refresh = true;
-  	var current_job = null;
+  $(document).ready(function() {
 
-	function refresh_jobs_list(){
-		// Load the list of files available on the tool
-		fabmoDashboard.getJobsInQueue(function(err,jobs){
-			if(err) { return console.log(err); }
-			$(".jobs-listing").empty();
-			if(jobs.length === 0) {
-				$(".no-jobs").show();
-				$(".jobs-row").hide();
-				$(".run-next").addClass("disabled");
-				$(".clear-jobs").addClass("disabled");
-			} else {
-				$(".no-jobs").hide();
-				$(".jobs-row").show();
-				$(".run-next").removeClass("disabled");
-				$(".clear-jobs").removeClass("disabled");
-			}
-			$.each( jobs, function( key, val ) {
-				html = [
-				'<tr><td>',
-					val.name,
-				'</td><td>',
-					val.description || 'No description.',
-				'</td><td>',
-					moment(val.created_at).fromNow(),
-				'</td></tr>'
-				].join('');
-				$(".jobs-listing").append(html);
-			});
-		});
-	};
+  	//Foundation Init
+	$(document).foundation();
+	
+	var current_job = null;
+	var progress_timer = null;
 
-	function refresh_jobs_history(){
-		// Load the list of files available on the tool
-		fabmoDashboard.getJobHistory(function(err,jobs){
-			if(err) { return console.log(err); }
-			$(".jobs-history-listing").empty();
-			$.each( jobs, function( key, val ) {
-				var jobid = 'job' + val._id;
-				var id = val._id;
-				html = [
-				'<tr><td>',
-				'<a id="' + jobid + '">',
-					val.name,
-				'</a>',
-				'</td><td>',
-					val.description || 'No description.',
-				'</td><td><div class="job-' + val.state + '">',
-					val.state || '???',
-				'</div></td><td>',
-					moment(val.started_at).fromNow(),
-				'</td><td>',
-					moment.utc(val.finished_at-val.started_at).format('HH:mm:ss'),
-				'</td></tr>'
-				].join('');
-				$(".jobs-history-listing").append(html);
-				
-				$('#'+jobid).click(function() {
-					fabmoDashboard.resubmitJob(id, function(err, result) {
-						refresh_jobs_list();
-					});
+    var history_table = $('#history_table').DataTable( {
+    	"filter": false,
+    	"paging": true,
+        "processing": true,
+        "bInfo": false,
+        "bLengthChange":false,
+        "ajax": {
+        	"url" : "/jobs/history",
+        	"dataSrc" : function(json) { 
+        		return json.data.jobs; }
+        	},
+        "columns": [
+            {
+                "className":      'details-control',
+                "orderable":      false,
+                "data":           null,
+                "defaultContent": ''
+            },
+            { 	
+            	data : "name", 
+            	defaultContent : ''
+            },
+            { 
+            	data : "state",
+            	defaultContent : '',
+            	render : function(state) { return '<div class="job-' + state + '">' + state + '</div>'}
+            },
+            { 
+            	data : "finished_at", 
+            	defaultContent : '', 
+            	render : function(val) { return moment(val).fromNow()}
+            }
+        ],
+        "order" : [[3,"desc"]]
+    }); // DataTable
+
+    var queue_table = $('#queue_table').DataTable( {
+    	"filter": false,
+    	"paging": false,
+        "processing": true,
+        "bInfo": false,
+        "bSort":false,
+        "language": {
+        	"emptyTable" : "There are no pending jobs."
+        },
+        "ajax": {
+        	"url" : "/jobs/queue",
+        	"dataSrc" : function(json) { 
+        		return json.data.jobs; }
+        	},
+        "columns": [
+            {
+                "className":      'details-control',
+                "orderable":      false,
+                "data":           null,
+                "defaultContent": '',
+                "visible": ''
+            },
+            { 	
+            	data : "name", 
+            	defaultContent : ''
+            },
+            { 
+            	data : "state",
+            	defaultContent : '',
+            	render : function(state) { return '<div class="job-' + state + '">' + state + '</div>'}
+            },
+            { 
+            	data : "created_at",
+            	visible : false, 
+            	defaultContent : '', 
+            }
+        ],
+        "order" : [[3,"desc"]]
+    }); // DataTable
+
+
+    function history_child_row(job) {
+    	retval = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">'
+    	if(job.description) {
+	        retval += '<tr>'+
+	            '<td class="child-row-label">Description:</td>'+
+	            '<td>'+ (job.description || '<em>No description</em>') + '</td>'+
+	        '</tr>'
+    	}
+    	retval += '<tr>'+
+	            '<td class="child-row-label">Submitted:</td>'+
+	            '<td>'+moment(job.started_at).fromNow()+'</td>'+
+	        '</tr>'+
+	        '<tr>'+
+	            '<td class="child-row-label">Duration:</td>'+
+	            '<td>'+moment.utc(job.finished_at-job.started_at).format('HH:mm:ss')+'</td>'+
+	        '</tr>'+
+	        '<tr>'+
+	        	'<td colspan="2">'+'<a id="resubmit-'+job._id +'">Resubmit Job &gt;&gt;</a></td>' +
+	        '</tr>'+
+	    '</table>';
+	    return retval;
+    }
+
+    function queue_child_row(job) {
+    	return ''
+    }
+
+	// Add event listener for opening and closing details
+    $('#history_table tbody').on('click', 'td.details-control', function () {
+        var tr = $(this).closest('tr');
+        var row = history_table.row( tr );
+ 		if(row.child()) {
+	        if ( row.child.isShown() ) {
+	            // This row is already open - close it
+	            row.child.hide();
+	            tr.removeClass('shown');
+	        }
+	        else {
+	            // Open this row
+	            row.child.show();
+	            tr.addClass('shown');
+		    }
+ 		} else {
+ 			job = row.data()
+ 			row.child( history_child_row(job) ).show();
+ 			$('#resubmit-'+job._id).click(function(e) {
+				fabmoDashboard.resubmitJob(job._id, function(err, result) {
+					refresh_jobs_list();
 				});
 			});
-		});
+	        tr.addClass('shown');
+ 		}
+    } );
 
+	// Add event listener for opening and closing details
+    $('#queue_table tbody').on('click', 'td.details-control', function () {
+        var tr = $(this).closest('tr');
+        var row = queue_table.row( tr );
+ 
+ 		if(row.child()) {
+	        if ( row.child.isShown() ) {
+	            // This row is already open - close it
+	            row.child.hide();
+	            tr.removeClass('shown');
+	        }
+	        else {
+	            // Open this row
+	            row.child.show();
+	            tr.addClass('shown');
+		    }
+ 		} else {
+ 			job = row.data()
+ 			row.child( queue_child_row(job) ).show();
+	        tr.addClass('shown');
+ 		}
+    } );
 
-	};
 	$('#submit_job').submit(function(e){
 		e.preventDefault();
-		
 		fabmoDashboard.submitJob($(this), function(err, data) {
-			if(err){console.log(err);return;}
+			if(err){console.error(err);return;}
 			$('#job_selector').replaceWith($('#job_selector').clone(true));
 			$('#job_selector').prev().html('Browse for a file to upload...');
 			refresh_jobs_list();
 		});
 	});
 
+	function refresh_jobs_list(){
+		queue_table.ajax.reload();
+		history_table.ajax.reload();
+	}
+
 	$('.no-jobs-item').click(function(e) {
 		$('#job_selector').click();
 	});
 
-	$('.run-next').click(function(e) { 
+	$('#run-next').click(function(e) { 
 		fabmoDashboard.runNext(function(err, data) {
 			refresh_jobs_list();
 		});
 	});
 
-	$('.clear-jobs').click(function(e) { 
+	$('#clear-jobs').click(function(e) { 
 		fabmoDashboard.clearJobQueue(function(err, data) {
 			refresh_jobs_list();
 		});
 	});
 
-	$('.fabmo-pause-button').click(function(e) { 
+	$('#pause-button').click(function(e) { 
 		fabmoDashboard.pause(function(err, data) {
 		});
 	});
 
-	$('.fabmo-stop-button').click(function(e) { 
+	$('#stop-button').click(function(e) { 
 		fabmoDashboard.stop(function(err, data) {
 		});
 	});
 
-	$('.fabmo-resume-button').click(function(e) { 
+	$('#resume-button').click(function(e) { 
 		fabmoDashboard.resume(function(err, data) {
 		});
 	});
 
-	$(document).ready(function(){
-		//Foundation Init
-		$(document).foundation();
-
-		fabmoDashboard.on('status', function(status) {
-			if(status.job) {
-				if(!current_job) {
-					current_job = status.job;
-					if(jobs_needs_refresh) {
-						refresh_jobs_list();
-						refresh_jobs_history();
-						jobs_needs_refresh = false;
-					}
-				}
-				$(".current-job-container").show(100);
-				$(".running-job-name").html(status.job.name);
-				$(".running-job-description").html(status.job.description);
-				x = setTimeout(function(){
-					var tps = (Date.now()-status.job.started_at).toString();
-					tps = parseInt(tps.substr(0,tps.length-3));
-					tps = ((tps-tps%60)/60).toString() + ":" + tps%60;
-					$(".running-job-time").html(tps);
-					$(".meter.progress").css("width", ((status.line/status.nb_lines)*100).toString() + "%" );
-				},1000);
-			} else {
-				if(current_job) {
-					current_job = null;
-					refresh_jobs_list();
-					refresh_jobs_history();
-					jobs_needs_refresh = false;
-				}
-				$(".current-job-container").hide(500);
-				clearInterval(x);
+	fabmoDashboard.on('status', function(status) {
+		if(status.job) {
+			if(!current_job) {
+				current_job = status.job;
 			}
-			if(status.state === "running") {
-				$(".fabmo-pause-button").show();
-				$(".fabmo-resume-button").hide();
-			} else {
-				$(".fabmo-pause-button").hide();
-				$(".fabmo-resume-button").show();
-			}
-		});
+			$(".current-job-container").show(30);
+			$(".running-job-name").html(status.job.name);
+			$(".running-job-description").html(status.job.description);
 
-		refresh_jobs_list();
-		refresh_jobs_history();
+			progress = Math.round((status.line/status.nb_lines)*100);
+			$(".running-job-time").html(progress + '%');
+			$(".meter.progress").css("width", ((status.line/status.nb_lines)*100).toString() + "%" );
+		} else {
+			if(current_job) {
+				current_job = null;
+				refresh_jobs_list();
+			}
+			$(".current-job-container").hide(500);
+			clearInterval(progress_timer);
+		}
+		if(status.state === "running") {
+			$("#pause-button").show();
+			$("#resume-button").hide();
+		} else {
+			$("#pause-button").hide();
+			$("#resume-button").show();
+		}
 	});
-
+});
 </script>
 
 </body>

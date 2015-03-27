@@ -33,6 +33,7 @@ define(function(require) {
 			this.collection.bind('reset', this.render);
 			this.collection.bind('add', this.render);
 			this.collection.bind('remove', this.render);
+			this.is_visible = true;
 			this.render();
 		},
 		render : function() {
@@ -46,9 +47,11 @@ define(function(require) {
 			return this;
 		},
 		show : function() {
+			this.is_visible = true
 			$(this.el).show();
 		},
 		hide : function() {
+			this.is_visible = false
 			$(this.el).hide();
 		}
 	});
@@ -58,6 +61,7 @@ define(function(require) {
 		className : 'app',
 		model : new models.App(),
 		initialize : function(options) {
+			this.is_visible = false;
 			_.bindAll(this, 'render');
 		},
 		render : function() {
@@ -81,10 +85,12 @@ define(function(require) {
 		show : function() {
 			$(".main-section").show();
 			$(this.el).show();
+			this.is_visible = true;
 		},
 		hide : function(arg) {
 			$(".main-section").hide();
 			$(this.el).hide();
+			this.is_visible = false;
 		},
 		setModel : function(model) {
 			if(model) {

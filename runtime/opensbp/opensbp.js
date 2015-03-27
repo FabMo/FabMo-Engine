@@ -167,6 +167,15 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 			result = false;
 			break;
 			//return this._exprBreaksStack(cmd.var) || this._exprBreaksStack(cmd.expr)
+		
+		case "open":
+			result = true;
+			break;
+
+		case "event":
+			result = true;
+			break;
+
 		default:
 			result = false;
 			break;
@@ -363,7 +372,9 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 
 SBPRuntime.prototype._execute = function(command, callback) {
 
+	console.log(command)
 	log.info("Executing line: " + JSON.stringify(command));
+
 
 	// Just skip over blank lines, undefined, etc.
 	if(!command) {
@@ -371,6 +382,7 @@ SBPRuntime.prototype._execute = function(command, callback) {
 		return;
 	}
 
+	console.log(command)
 	// All correctly parsed commands have a type
 	switch(command.type) {
 
@@ -455,7 +467,11 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			break;
 
 		default:
+			try {
 			log.error("Unknown command: " + JSON.stringify(command));
+			} catch(e) {
+			log.error("Unknown command: " + command);
+			}
 			this.pc += 1;
 			return false;
 			break;

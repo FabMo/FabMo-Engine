@@ -8,6 +8,20 @@ h1, h2, h3, h4, h5, h6 {
   color: #666;
 }
 
+td.details-control {
+    background: url('images/details_open.png') no-repeat center center;
+    width: 40px;
+    cursor: pointer;
+}
+tr.shown td.details-control {
+    background: url('images/details_close.png') no-repeat center center;
+    width: 40px;
+}
+
+.child-row-label: {
+  font-weight: bold;
+  color: red;
+}
 .job-failed {
   color: #ff0000;
 }
@@ -18,6 +32,10 @@ h1, h2, h3, h4, h5, h6 {
 
 .job-cancelled {
   color: #DD8728;
+}
+
+.job-pending {
+  color: blue;
 }
 
 .alert-box .close {
