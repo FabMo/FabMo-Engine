@@ -129,6 +129,15 @@
 	var current_job = null;
 	var progress_timer = null;
 
+jQuery.fn.dataTableExt.oSort["duration-desc"] = function (x, y) {
+	console.log(x + ' ' + y);
+	return 1;
+};
+
+jQuery.fn.dataTableExt.oSort["duration-asc"] = function (x, y) {
+    console.log(x+ ' ' + y)
+}
+
     var history_table = $('#history_table').DataTable( {
     	"filter": false,
     	"paging": true,
@@ -159,7 +168,12 @@
             { 
             	data : "finished_at", 
             	defaultContent : '', 
-            	render : function(val) { return moment(val).fromNow()}
+            	render: function (data, type, full, meta) { 
+ 				   if (type == "display") { 
+        			return moment(data).fromNow() 
+    				} 
+    				return data;
+    			}
             }
         ],
         "order" : [[3,"desc"]]
