@@ -24,7 +24,7 @@
 	<section class="container current-job-container fabmo-file-control" style="display:none">
 		<div class="row title">
 			<div class="small-7 medium-8 columns">
-				<h3 class="running-job-name filename"></h3>
+				<h4 class="running-job-name filename"></h4>
 			</div>
 			<div class="small-5 medium-4 columns" style="text-align:right;">
 				<a id="pause-button" class="small button warning radius">Pause</a>
@@ -41,10 +41,10 @@
 
 	<section class="container">
 		<div class="row title">
-			<div class="small-6 columns">
-				<h3>Pending Jobs</h3>
+			<div class="small-4 columns">
+				<h4>Pending</h4>
 			</div>
-			<div class="small-6 columns" style="text-align:right;">
+			<div class="small-8 columns" style="text-align:right;">
 				<a id="run-next" class="small button success radius">Run Next</a>
 				<a id="clear-jobs" class="small button secondary radius">Clear Queue</a>
 			</div>
@@ -80,7 +80,7 @@
 						  	<input id='job_selector' type="file" name="file" data-filename-placement="inside" placeholder="Browse...">
 						</div>
 						<div class="small-3 columns">
-						  	<button type"submit" class="button postfix">Upload</button>
+						  	<button type"submit" class="button radius postfix">Upload</button>
 						</div>
 					</div>
 				</form>
@@ -91,7 +91,7 @@
 	<section class="container">
 		<div class="row title">
 			<div class="small-7 medium-9 large-10 columns">
-				<h3>Job History</h3>
+				<h4>History</h4>
 			</div>
 			<div class="small-5 medium-3 large-2 columns btn">
 			</div>
@@ -283,20 +283,22 @@
  		}
     } );
 
+	function refresh_jobs_list(){
+		queue_table.ajax.reload();
+		history_table.ajax.reload();
+	}
+
 	$('#submit_job').submit(function(e){
 		e.preventDefault();
-		fabmoDashboard.submitJob($(this), function(err, data) {
+		console.log("submitting job");
+		fabmoDashboard.submitJob($(this), {}, function(err, data) {
+			console.log("job submitted");
 			if(err){console.error(err);return;}
 			$('#job_selector').replaceWith($('#job_selector').clone(true));
 			$('#job_selector').prev().html('Browse for a file to upload...');
 			refresh_jobs_list();
 		});
 	});
-
-	function refresh_jobs_list(){
-		queue_table.ajax.reload();
-		history_table.ajax.reload();
-	}
 
 	$('.no-jobs-item').click(function(e) {
 		$('#job_selector').click();
