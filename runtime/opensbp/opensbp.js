@@ -12,7 +12,6 @@ var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
 function SBPRuntime() {
 	// Handle Inheritance
 	events.EventEmitter.call(this);
-
 	this.program = [];
 	this.pc = 0;
 	this.start_of_the_chunk = 0;
@@ -314,14 +313,22 @@ SBPRuntime.prototype._dispatch = function(callback) {
 						callback();
 					},
 					"holding" : function(driver) {
-						log.error("GOT A PAUSE WHEN EXPECTING A STOP");
-					},
+						for(var sw in this.event_handlers) {
+							for(var state in this.event_handlers[sw]) {
+								name = 'in' + sw
+								mstate = this.machine.status[name]
+								if(mstate === state) {
+									this._execute(this.event_handlers[sw][state], callback);
+								}
+							}
+						}
+					}.bind(this),
 					null : function(driver) {
 						// TODO: This is probably a failure
-						log.warn("Expected a stop but didn't get one.");
+						log.warn("Expected a stop or hold but didn't get one.");
 					}
 				});
-			};
+			}.bind(this);
 
 			this.driver.expectStateChange({
 				"running" : run_function,
@@ -477,7 +484,9 @@ SBPRuntime.prototype._execute = function(command, callback) {
 				this.event_handlers[command.sw][command.state] = command.stmt;
 			} else {
 				var key = command.state
-				this.event_handlers[command.sw] = {key : command.stmt};
+				handler = {}
+				handler[key] = command.stmt
+				this.event_handlers[command.sw] = handler;
 			}
 			setImmediate(callback);
 			return true;
