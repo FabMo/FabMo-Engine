@@ -17,43 +17,46 @@ define(function(require) {
 
 	// Load the apps from the server
 	context.apps = new context.models.Apps();
-	context.apps.fetch();
+	context.apps.fetch({
+		success: function() {
+			// Create the menu based on the apps thus retrieved 
+			context.appMenuView = new context.views.AppMenuView({collection : context.apps, el : '#app_menu_container'});
 
-	// Create the menu based on the apps thus retrieved 
-	context.appMenuView = new context.views.AppMenuView({collection : context.apps, el : '#app_menu_container'});
+			// Create remote machine model based on the one remote machine that we know exists (the one we're connecting to)
+			context.remoteMachines.reset([
+				new context.models.RemoteMachine({
+						hostname : window.location.hostname,
+						ip : window.location.hostname,
+						port : window.location.port
+				})
+			]);
 
-	// Create remote machine model based on the one remote machine that we know exists (the one we're connecting to)
-	context.remoteMachines.reset([
-		new context.models.RemoteMachine({
-				hostname : window.location.hostname,
-				ip : window.location.hostname,
-				port : window.location.port
-		})
-	]);
+			// Create a FabMo object for the dashboard
+			dashboard.machine = new FabMo(window.location.hostname, window.location.port);
+			
+			dashboard.socket = require('websocket').SocketIO();
 
-	// Create a FabMo object for the dashboard
-	dashboard.machine = new FabMo(window.location.hostname, window.location.port);
-	
-	dashboard.socket = require('websocket').SocketIO();
+			// Create a FabMoUI object for the same (but don't recreate it if it already exists)
+			if (!dashboard.ui) {
+				dashboard.ui= new FabMoUI(dashboard.machine);
+			}
+			else {
+				dashboard.ui.tool = dashboard.machine;
+			}
 
-	// Create a FabMoUI object for the same (but don't recreate it if it already exists)
-	if (!dashboard.ui) {
-		dashboard.ui= new FabMoUI(dashboard.machine);
-	}
-	else {
-		dashboard.ui.tool = dashboard.machine;
-	}
+			// Configure keyboard input
+			//context.bindKeypad(dashboard.ui);
+			setupHandwheel();
 
-	// Configure keyboard input
-	//context.bindKeypad(dashboard.ui);
-	setupHandwheel();
+			// Start the application
+			router = new context.Router();
+			router.setContext(context);
 
-	// Start the application
-	router = new context.Router();
-	router.setContext(context);
+			Backbone.history.start();
+		}
+	});
 
 
-	Backbone.history.start();
 
 
 	//$(function () { $('.app-studio-files').jstree(); });
