@@ -114,13 +114,17 @@
 				this.current_app_id = id;
 				this.appClientView.setModel(app);
 			} else {
-				console.error("Couldn't launch app: " + id + ": No such app?");
+				if(this.apps) {
+					console.error("Couldn't launch app: " + id + ": Apps list not available yet.")
+				} else {
+					console.error("Couldn't launch app: " + id + ": No such app?");
+				}
 				return
 			}
-			this.appMenuView.hide();
-			this.appClientView.show();
-			this.hideModalContainer();
 		}
+		this.appMenuView.hide();
+		this.appClientView.show();
+		this.hideModalContainer();
 	};
 
 	ApplicationContext.prototype.getCurrentApp = function() {

@@ -31,7 +31,7 @@
 
   <div class="row">
     <form>
-      <textarea id="code" name="code" rows="5">(Your Code Goes Here)</textarea>
+      <textarea id="code" name="code" rows="5"></textarea>
     </form>
   </div>
   
@@ -71,6 +71,14 @@
       } 
     }
 
+    function supports_html5_storage() {
+      try {
+        return 'localStorage' in window && window['localStorage'] !== null;
+      } catch (e) {
+        return false;
+      }
+    }
+
     function submit_job() {
       $("#submit-button").addClass('disabled');
       var text = editor.getValue();
@@ -84,12 +92,50 @@
       } 
     }
 
+    function set_language(language) {
+      switch(language) {
+        case 'opensbp':
+          $("#app-header").text("OpenSBP Editor");
+          lang='opensbp';
+          break;
+
+        case 'gcode':
+          $("#app-header").text("G-Code Editor");
+          lang = 'gcode';
+          break;
+      }
+      if(supports_html5_storage()) {
+        localStorage['language'] = lang;
+      }
+    }
+
+    function setup() {
+      if(supports_html5_storage()) {
+        var language = localStorage['language'] || 'gcode';
+        set_language(language);
+
+        var content = localStorage['content'] || '';
+        console.log(editor)
+        editor.setValue(content);
+      }
+    }
+
+    function save() {
+      if(supports_html5_storage()) {
+        localStorage['content'] = editor.getValue()
+      }
+    }
+
     $(document).ready(function() {
       $(document).foundation();
+      
       editor = CodeMirror.fromTextArea(document.getElementById("code"), {
         lineNumbers: true,
         theme: "neat",
-        mode: "gcode"
+      });
+
+      editor.on('blur', function(evt) {
+        save();
       });
 
       editor.setOption("extraKeys", {
@@ -103,6 +149,10 @@
           submit_job();
         }        
       });
+
+      
+    setup();
+
     });
 
     $("#submit-immediate").click(function(evt) {
@@ -116,17 +166,14 @@
     });
 
     $("#lang-opensbp").click(function(evt) {
-      lang = "opensbp"
-      $("#app-header").text("OpenSBP Editor");
+      set_language('opensbp');
       evt.preventDefault();
     });
 
     $("#lang-gcode").click(function(evt) {
-      lang = "gcode";
-      $("#app-header").text("G-Code Editor");
+      set_language('gcode');
       evt.preventDefault();
     });
-
 
     $('.disabled').click(function(evt) {
       return false;
