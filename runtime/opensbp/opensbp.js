@@ -78,7 +78,12 @@ SBPRuntime.prototype.runString = function(s) {
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table    
 		this._run();
 	} catch(err) {
-		log.error(err);
+		if(err.name == 'SyntaxError') {
+			log.error("Syntax Error on line " + err.line)
+			log.error("Expected " + err.expected + " but found " + err.found)
+		} else {
+			log.error(err);
+		}
 	}
 };
 
@@ -312,25 +317,28 @@ SBPRuntime.prototype._dispatch = function(callback) {
 					"stop" : function(driver) { 
 						callback();
 					},
+					"alarm" : function(driver) { 
+						this._end();
+					}.bind(this),
 					"holding" : function(driver) {
 						for(var sw in this.event_handlers) {
 							for(var state in this.event_handlers[sw]) {
 								name = 'in' + sw
 								mstate = this.machine.status[name]
 								if(mstate == state) {
-									console.log("Friggin yeah")
+									this.pc = parseInt(this.driver.status.line)
 									var cmd = this.event_handlers[sw][state]
 									this.driver.queueFlush(function(err) {
 										if(this._breaksStack(cmd)) {
 											this._execute(this.event_handlers[sw][state], function() {
-											callback();
+												callback();
 											}.bind(this));
 										} else {
 											this._execute(this.event_handlers[sw][state]);
 											setImmediate(function() {
 												callback();
 											}.bind(this));
-										}										
+										}
 									}.bind(this));
 								}
 							}
@@ -354,7 +362,6 @@ SBPRuntime.prototype._dispatch = function(callback) {
 			});
 
 			this.driver.runSegment(this.current_chunk.join('\n') + '\n');
-			this.driver.resume();
 			this.current_chunk = [];
 			return true;
 		} else {
@@ -420,10 +427,11 @@ SBPRuntime.prototype._execute = function(command, callback) {
 		case "return":
 			if(this.stack) {
 				this.pc = this.stack.pop();
+				setImmediate(callback);
 			} else {
 				throw "Runtime Error: Return with no GOSUB at " + this.pc;
 			}
-			return false;
+			return true;
 			break;
 
 		case "end":
@@ -435,7 +443,8 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			if(command.label in this.label_index) {
 				this.pc = this.label_index[command.label];
 				log.debug("Hit a GOTO: Going to line " + this.pc + "(Label: " + command.label + ")");
-				return false;
+				setImmediate(callback);
+				return true;
 			} else {
 				throw "Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc;
 			}
@@ -443,10 +452,11 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 		case "gosub":
 			if(command.label in this.label_index) {
-				this.stack.push([this.pc + 1]);
+				this.stack.push(this.pc + 1);
 				log.debug("Pushing the current PC onto the stack (" +(this.pc + 1) + ")")
 				this.pc = this.label_index[command.label];
-				return false;
+				setImmediate(callback);
+				return true;
 			} else {
 				throw "Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc;
 			}
@@ -734,7 +744,7 @@ SBPRuntime.prototype._unhandledCommand = function(command) {
 
 // Add GCode to the current chunk, which is dispatched on a break or end of program
 SBPRuntime.prototype.emit_gcode = function(s) {
-	this.current_chunk.push(s);
+	this.current_chunk.push('N' + this.pc + ' ' + s);
 };
 
 // This must be called at least once before instantiating an SBPRuntime object

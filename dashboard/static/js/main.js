@@ -100,6 +100,17 @@ function gcode(string) {
 	});
 }
 
+// Functions for dispatching g-code to the tool
+function sbp(string) {
+	dashboard.machine.sbp(string,function(err,data){
+		if(!err) {
+			console.log('Success: ' + string);
+		} else {
+			console.log('Failure: ' + string);
+		}
+	});
+}
+
 function addJob(job,callback){
 	dashboard.machine.send_job(job,function(err){
 		if(err){console.log(err);callback(err);return;}
@@ -114,12 +125,9 @@ function allowSameRoute(){
 }
 
 // Handlers for the home/probe buttons
-$('.button-homexy').click(function(e) {gcode('G28.2 X0 Y0'); });
-$('.button-homez').click(function(e) {gcode('G28.2 Z0'); });
-$('.button-probez').click(function(e) {gcode('G38.2 Z-4 F10\nG10 L2 P1 Z-0.125'); });
-$('.button-zerox').click(function(e) {gcode('G28.3 X0'); });  
-$('.button-zeroy').click(function(e) {gcode('G28.3 Y0'); });  
-$('.button-zeroz').click(function(e) {gcode('G28.3 Z0'); });
+$('.button-zerox').click(function(e) {sbp('ZX'); });  
+$('.button-zeroy').click(function(e) {sbp('ZY'); });  
+$('.button-zeroz').click(function(e) {sbp('ZZ'); });
 
 });
 
