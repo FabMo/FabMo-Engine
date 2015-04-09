@@ -424,6 +424,14 @@ G2.prototype.handleStatusReport = function(response) {
 		}
 
 		if('stat' in response.sr) {
+
+			if(response.sr.stat === STAT_STOP) {
+				if(this.flushcallback) {
+					this.flushcallback(null);
+					this.flushcallback = null;
+				}
+			}
+
 			if(this.expectations.length > 0) {
 				var expectation = this.expectations.pop();
 				var stat = states[this.status.stat];
@@ -516,15 +524,15 @@ G2.prototype.feedHold = function(callback) {
 	});
 };
 
-G2.prototype.queueClear = function(callback) {
+G2.prototype.queueFlush = function(callback) {
 	log.debug('Clearing the queue.');
+	this.flushcallback = callback;
 	this.gcodeWrite('{clear:n}\n');
 	this.controlWrite('\%\n');
 };
 
 G2.prototype.resume = function() {
 	this.controlWrite('~\n'); //cycle start command character
-	//this.requestQueueReport();
 	this.pause_flag = false;
 };
 

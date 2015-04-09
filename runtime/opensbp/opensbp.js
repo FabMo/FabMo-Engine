@@ -317,8 +317,22 @@ SBPRuntime.prototype._dispatch = function(callback) {
 							for(var state in this.event_handlers[sw]) {
 								name = 'in' + sw
 								mstate = this.machine.status[name]
-								if(mstate === state) {
-									this._execute(this.event_handlers[sw][state], callback);
+								if(mstate == state) {
+									console.log("Friggin yeah")
+									var cmd = this.event_handlers[sw][state]
+									this.driver.queueFlush(function(err) {
+										if(this._breaksStack(cmd)) {
+											this._execute(this.event_handlers[sw][state], function() {
+											callback();
+											}.bind(this));
+										} else {
+											this._execute(this.event_handlers[sw][state]);
+											setImmediate(function() {
+												callback();
+											}.bind(this));
+
+										}										
+									}.bind(this));
 								}
 							}
 						}
@@ -341,6 +355,7 @@ SBPRuntime.prototype._dispatch = function(callback) {
 			});
 
 			this.driver.runSegment(this.current_chunk.join('\n') + '\n');
+			this.driver.resume();
 			this.current_chunk = [];
 			return true;
 		} else {
@@ -483,11 +498,11 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			if(command.sw in this.event_handlers) {
 				this.event_handlers[command.sw][command.state] = command.stmt;
 			} else {
-				var key = command.state
 				handler = {}
-				handler[key] = command.stmt
+				handler[command.state] = command.stmt
 				this.event_handlers[command.sw] = handler;
 			}
+			console.log(this.event_handlers)
 			setImmediate(callback);
 			return true;
 			break;
