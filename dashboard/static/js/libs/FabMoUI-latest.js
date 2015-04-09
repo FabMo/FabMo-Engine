@@ -469,10 +469,12 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		var iname = 'in' + i;
 		if(iname in status) {
 			var selector = that.status_div_selector + ' .in' + i;
-			if(status[iname]) {
+			if(status[iname] == 1) {
 				$(selector).removeClass('off').addClass('on');
-			} else {
+			} else if(status[iname] == 0) {
 				$(selector).removeClass('on').addClass('off');
+			} else {
+				$(selector).removeClass('on off').addClass('disabled');				
 			}
 		} else {
 			break;

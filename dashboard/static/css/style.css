@@ -15,7 +15,11 @@ body,html{
 }
 
 .off {
-	color: #ba6455;
+	color: #000000;
+}
+
+.disabled {
+	color: #9c210c;
 }
 
 .main-section, .app-section{ 
@@ -593,7 +597,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	padding: 0;
 	font-size: 12px;
 	font-size: 0.75rem;
-	font-family: 'source_sans_proextralight';
+	font-family: 'source_sans_probold';
 }
 
 #keypad {

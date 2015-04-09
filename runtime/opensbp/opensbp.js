@@ -13,7 +13,6 @@ var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
 function SBPRuntime() {
 	// Handle Inheritance
 	events.EventEmitter.call(this);
-
 	this.program = [];
 	this.pc = 0;
 	this.start_of_the_chunk = 0;
@@ -315,14 +314,36 @@ SBPRuntime.prototype._dispatch = function(callback) {
 						callback();
 					},
 					"holding" : function(driver) {
-						log.error("GOT A PAUSE WHEN EXPECTING A STOP");
-					},
+						for(var sw in this.event_handlers) {
+							for(var state in this.event_handlers[sw]) {
+								name = 'in' + sw
+								mstate = this.machine.status[name]
+								if(mstate == state) {
+									console.log("Friggin yeah")
+									var cmd = this.event_handlers[sw][state]
+									this.driver.queueFlush(function(err) {
+										if(this._breaksStack(cmd)) {
+											this._execute(this.event_handlers[sw][state], function() {
+											callback();
+											}.bind(this));
+										} else {
+											this._execute(this.event_handlers[sw][state]);
+											setImmediate(function() {
+												callback();
+											}.bind(this));
+
+										}										
+									}.bind(this));
+								}
+							}
+						}
+					}.bind(this),
 					null : function(driver) {
 						// TODO: This is probably a failure
-						log.warn("Expected a stop but didn't get one.");
+						log.warn("Expected a stop or hold but didn't get one.");
 					}
 				});
-			};
+			}.bind(this);
 
 			this.driver.expectStateChange({
 				"running" : run_function,
@@ -335,6 +356,7 @@ SBPRuntime.prototype._dispatch = function(callback) {
 			});
 
 			this.driver.runSegment(this.current_chunk.join('\n') + '\n');
+			this.driver.resume();
 			this.current_chunk = [];
 			return true;
 		} else {
@@ -477,9 +499,11 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			if(command.sw in this.event_handlers) {
 				this.event_handlers[command.sw][command.state] = command.stmt;
 			} else {
-				var key = command.state
-				this.event_handlers[command.sw] = {key : command.stmt};
+				handler = {}
+				handler[command.state] = command.stmt
+				this.event_handlers[command.sw] = handler;
 			}
+			console.log(this.event_handlers)
 			setImmediate(callback);
 			return true;
 			break;

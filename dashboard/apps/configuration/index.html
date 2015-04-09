@@ -21,7 +21,17 @@
     </section>
   </header>
 
+<div class="row">
   <form>
+
+  <ul class="tabs" data-tab role="tablist">
+    <li class="tab-title active" role="presentational" ><a href="#tabpanel1" role="tab" tabindex="0" aria-selected="true" controls="tabpanel1">General</a></li>
+    <li class="tab-title" role="presentational" ><a href="#tabpanel2" role="tab" tabindex="0"aria-selected="false" controls="tabpanel2">Axis</a></li>
+    <li class="tab-title" role="presentational" ><a href="#tabpanel3" role="tab" tabindex="0"aria-selected="false" controls="tabpanel3">Inputs</a></li>
+
+  </ul>
+<div class="tabs-content">
+  <section role="tabpanel" aria-hidden="false" class="content active" id="tabpanel1">
     <div class="row">
       <fieldset>
         <legend>General Settings</legend>
@@ -61,42 +71,8 @@
 
       </fieldset>
     </div>
-    <br />
-    <!--
-      <div class="row">
-        <fieldset>
-          <legend>Channel 1</legend>
-          <div class="large-4 columns">
-            <div class="row collapse">
-              <label>Step Angle</label>
-              <div class="small-9 columns">
-                <input type="text" id="driver_1sa" class="driver_input"/>
-              </div>
-              <div class="small-3 columns">
-                <span class="postfix">deg</span>
-              </div>
-            </div>
-          </div>
-          <div class="large-4 columns">
-            <label>Microstep
-              <input type="text" id="driver_1mi" class="driver_input"/>
-            </label>
-          </div>
-          <div class="large-4 columns">
-            <div class="row collapse">
-              <label>Travel per Rotation</label>
-              <div class="small-9 columns">
-                <input type="text" id="driver_1tr" class="driver_input" />
-              </div>
-              <div class="small-3 columns">
-                <span class="postfix">in</span>
-              </div>
-            </div>
-        </div>
-      </fieldset>
-    </div>
-    -->
-
+  </section>
+  <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel2">
       <div class="row">
         <fieldset>
           <legend>X-Axis</legend>
@@ -213,9 +189,188 @@
         </div>
         </fieldset>
         </div>
+  </section>
+
+<section role="tabpanel" aria-hidden="true" class="content" id="tabpanel3">
+      <div class="row">
+        <fieldset>
+          <legend>Input 1</legend>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Mode
+                <select id="driver_di1mo" class="driver_input">
+                  <option value="-1">Disabled</option>
+                  <option value="0">Active Low</option>
+                  <option value="1">Active High</option>
+                </select>
+              </label>
+            </div>
+          </div>  
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Action
+                <select id="driver_di1ac" class="driver_input">
+                  <option value="0">None</option>
+                  <option value="1">Stop</option>
+                  <option value="2">Fast Stop</option>
+                  <option value="3">Halt</option>
+                  <option value="4">Reset</option>
+                </select>
+              </label>
+            </div>
+          </div>   
+
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Function
+                <select id="driver_di1fn" class="driver_input">
+                  <option value="0">None</option>
+                  <option value="1">Limit</option>
+                  <option value="2">Interlock</option>
+                  <option value="3">Shutdown</option>
+                </select>
+              </label>
+            </div>
+          </div>             
+        </fieldset>
+        </div>
+
+      <div class="row">
+        <fieldset>
+          <legend>Input 2</legend>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Mode
+                <select id="driver_di2mo" class="driver_input">
+                  <option value="-1">Disabled</option>
+                  <option value="0">Active Low</option>
+                  <option value="1">Active High</option>
+                </select>
+              </label>
+            </div>
+          </div>  
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Action
+                <select id="driver_di2ac" class="driver_input">
+                  <option value="0">None</option>
+                  <option value="1">Stop</option>
+                  <option value="2">Fast Stop</option>
+                  <option value="3">Halt</option>
+                  <option value="4">Reset</option>
+                </select>
+              </label>
+            </div>
+          </div>   
+
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Function
+                <select id="driver_di2fn" class="driver_input">
+                  <option value="0">None</option>
+                  <option value="1">Limit</option>
+                  <option value="2">Interlock</option>
+                  <option value="3">Shutdown</option>
+                </select>
+              </label>
+            </div>
+          </div>             
+        </fieldset>
+        </div>
+  
+      <div class="row">
+        <fieldset>
+          <legend>Input 3</legend>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Mode
+                <select id="driver_di3mo" class="driver_input">
+                  <option value="-1">Disabled</option>
+                  <option value="0">Active Low</option>
+                  <option value="1">Active High</option>
+                </select>
+              </label>
+            </div>
+          </div>  
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Action
+                <select id="driver_di3ac" class="driver_input">
+                  <option value="0">None</option>
+                  <option value="1">Stop</option>
+                  <option value="2">Fast Stop</option>
+                  <option value="3">Halt</option>
+                  <option value="4">Reset</option>
+                </select>
+              </label>
+            </div>
+          </div>   
+
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Function
+                <select id="driver_di3fn" class="driver_input">
+                  <option value="0">None</option>
+                  <option value="1">Limit</option>
+                  <option value="2">Interlock</option>
+                  <option value="3">Shutdown</option>
+                </select>
+              </label>
+            </div>
+          </div>             
+        </fieldset>
+        </div>
+
+      <div class="row">
+        <fieldset>
+          <legend>Input 4</legend>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Mode
+                <select id="driver_di4mo" class="driver_input">
+                  <option value="-1">Disabled</option>
+                  <option value="0">Active Low</option>
+                  <option value="1">Active High</option>
+                </select>
+              </label>
+            </div>
+          </div>  
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Action
+                <select id="driver_di4ac" class="driver_input">
+                  <option value="0">None</option>
+                  <option value="1">Stop</option>
+                  <option value="2">Fast Stop</option>
+                  <option value="3">Halt</option>
+                  <option value="4">Reset</option>
+                </select>
+              </label>
+            </div>
+          </div>   
+
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Function
+                <select id="driver_di4fn" class="driver_input">
+                  <option value="0">None</option>
+                  <option value="1">Limit</option>
+                  <option value="2">Interlock</option>
+                  <option value="3">Shutdown</option>
+                </select>
+              </label>
+            </div>
+          </div>             
+        </fieldset>
+        </div>
+  </section>
+</div>
+
+
+
 
   </form>
-
+</div>
   <script src="/js/libs/dashboard.js"></script>
   <script>
     function update() {

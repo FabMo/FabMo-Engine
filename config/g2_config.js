@@ -35,7 +35,14 @@ G2Config.prototype.update = function(data, callback) {
 				this._cache[key] = value;
 				retval[key] = value;
 			}
-			callback(null, retval);
+
+			this.save(function(err, result) {
+				if(err) {
+					callback(err);
+				} else {
+					callback(null, retval);
+				}
+			}.bind(this));
 		}.bind(this)
 	);
 };
