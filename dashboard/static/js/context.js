@@ -121,10 +121,10 @@
 				}
 				return
 			}
-			this.appMenuView.hide();
-			this.appClientView.show();
-			this.hideModalContainer();
 		}
+		this.appMenuView.hide();
+		this.appClientView.show();
+		this.hideModalContainer();
 	};
 
 	ApplicationContext.prototype.getCurrentApp = function() {
