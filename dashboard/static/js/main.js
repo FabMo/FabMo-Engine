@@ -17,43 +17,46 @@ define(function(require) {
 
 	// Load the apps from the server
 	context.apps = new context.models.Apps();
-	context.apps.fetch();
+	context.apps.fetch({
+		success: function() {
+			// Create the menu based on the apps thus retrieved 
+			context.appMenuView = new context.views.AppMenuView({collection : context.apps, el : '#app_menu_container'});
 
-	// Create the menu based on the apps thus retrieved 
-	context.appMenuView = new context.views.AppMenuView({collection : context.apps, el : '#app_menu_container'});
+			// Create remote machine model based on the one remote machine that we know exists (the one we're connecting to)
+			context.remoteMachines.reset([
+				new context.models.RemoteMachine({
+						hostname : window.location.hostname,
+						ip : window.location.hostname,
+						port : window.location.port
+				})
+			]);
 
-	// Create remote machine model based on the one remote machine that we know exists (the one we're connecting to)
-	context.remoteMachines.reset([
-		new context.models.RemoteMachine({
-				hostname : window.location.hostname,
-				ip : window.location.hostname,
-				port : window.location.port
-		})
-	]);
+			// Create a FabMo object for the dashboard
+			dashboard.machine = new FabMo(window.location.hostname, window.location.port);
+			
+			dashboard.socket = require('websocket').SocketIO();
 
-	// Create a FabMo object for the dashboard
-	dashboard.machine = new FabMo(window.location.hostname, window.location.port);
-	
-	dashboard.socket = require('websocket').SocketIO();
+			// Create a FabMoUI object for the same (but don't recreate it if it already exists)
+			if (!dashboard.ui) {
+				dashboard.ui= new FabMoUI(dashboard.machine);
+			}
+			else {
+				dashboard.ui.tool = dashboard.machine;
+			}
 
-	// Create a FabMoUI object for the same (but don't recreate it if it already exists)
-	if (!dashboard.ui) {
-		dashboard.ui= new FabMoUI(dashboard.machine);
-	}
-	else {
-		dashboard.ui.tool = dashboard.machine;
-	}
+			// Configure keyboard input
+			//context.bindKeypad(dashboard.ui);
+			setupHandwheel();
 
-	// Configure keyboard input
-	//context.bindKeypad(dashboard.ui);
-	setupHandwheel();
+			// Start the application
+			router = new context.Router();
+			router.setContext(context);
 
-	// Start the application
-	router = new context.Router();
-	router.setContext(context);
+			Backbone.history.start();
+		}
+	});
 
 
-	Backbone.history.start();
 
 
 	//$(function () { $('.app-studio-files').jstree(); });
@@ -100,6 +103,17 @@ function gcode(string) {
 	});
 }
 
+// Functions for dispatching g-code to the tool
+function sbp(string) {
+	dashboard.machine.sbp(string,function(err,data){
+		if(!err) {
+			console.log('Success: ' + string);
+		} else {
+			console.log('Failure: ' + string);
+		}
+	});
+}
+
 function addJob(job,callback){
 	dashboard.machine.send_job(job,function(err){
 		if(err){console.log(err);callback(err);return;}
@@ -114,12 +128,9 @@ function allowSameRoute(){
 }
 
 // Handlers for the home/probe buttons
-$('.button-homexy').click(function(e) {gcode('G28.2 X0 Y0'); });
-$('.button-homez').click(function(e) {gcode('G28.2 Z0'); });
-$('.button-probez').click(function(e) {gcode('G38.2 Z-4 F10\nG10 L2 P1 Z-0.125'); });
-$('.button-zerox').click(function(e) {gcode('G28.3 X0'); });  
-$('.button-zeroy').click(function(e) {gcode('G28.3 Y0'); });  
-$('.button-zeroz').click(function(e) {gcode('G28.3 Z0'); });
+$('.button-zerox').click(function(e) {sbp('ZX'); });  
+$('.button-zeroy').click(function(e) {sbp('ZY'); });  
+$('.button-zeroz').click(function(e) {sbp('ZZ'); });
 
 });
 
