@@ -330,7 +330,6 @@ SBPRuntime.prototype._dispatch = function(callback) {
 											setImmediate(function() {
 												callback();
 											}.bind(this));
-
 										}										
 									}.bind(this));
 								}
@@ -444,8 +443,9 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 		case "gosub":
 			if(command.label in this.label_index) {
-				this.pc = this.label_index[command.label];
 				this.stack.push([this.pc + 1]);
+				log.debug("Pushing the current PC onto the stack (" +(this.pc + 1) + ")")
+				this.pc = this.label_index[command.label];
 				return false;
 			} else {
 				throw "Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc;
