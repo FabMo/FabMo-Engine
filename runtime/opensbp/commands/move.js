@@ -110,10 +110,13 @@ exports.M3 = function(args) {
 	var x = args[0];
 	var y = args[1];
 	var z = args[2];
-	var M3res = 5;
+	//var M3res = 5;
 
 	log.debug( " M3 args: " + JSON.stringify(args));
+	feedrate = (60.0 * config.opensbp.get('movexy_speed'))
+	this.emit_move('G1',{"X":x,"Y":y,"Z":z, 'F':feedrate})
 
+/*
 	if (x === undefined) { x = this.cmd_posx; }
 	  else {
 	  	if(isNaN(x)) { throw( "Invalid M3-X argument: " + x ); } 
@@ -153,6 +156,8 @@ exports.M3 = function(args) {
 	outStr = outStr + "F" + ( 60.0 * config.opensbp.get('movexy_speed')); 
 	log.debug( "M3 outstr: " + outStr);
 	this.emit_gcode(outStr);
+	*/
+
 };
 
 // Move 4 axes (XYZA). This is a modal command, any axis location that is left out
@@ -336,6 +341,7 @@ exports.M6 = function(args) {
 	}
 	outStr = outStr + "F" + ( 60 * config.opensbp.get('movexy_speed')); 
 	this.emit_gcode(outStr);
+	
 };
 
 // Move to the XY home position (0,0)

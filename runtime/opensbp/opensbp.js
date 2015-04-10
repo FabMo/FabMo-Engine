@@ -749,6 +749,19 @@ SBPRuntime.prototype.emit_gcode = function(s) {
 	this.current_chunk.push('N' + this.pc + ' ' + s);
 };
 
+SBPRuntime.prototype.emit_move = function(code, pt) {
+	pt = this.transformation(pt);
+	gcode = code
+	for(key in pt) {
+		var v = pt[key]
+		if(isNaN(v)) { throw( "Invalid " + key + " argument: " + v ); } 
+		if(v !== undefined) {
+			gcode += (key + v.toFixed(5))
+		}
+	}
+	this.current_chunk.push('N' + this.pc + gcode);
+};
+
 // This must be called at least once before instantiating an SBPRuntime object
 SBPRuntime.prototype.loadCommands = function(callback) {
 	commands=require('./commands').load();
