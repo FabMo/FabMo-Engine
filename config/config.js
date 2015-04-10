@@ -121,7 +121,7 @@ Config.createDataDirectories = function(callback) {
 			}
 		});
 	}.bind(this);
-	dirs = [null, 'db', 'log', 'files', 'config', 'apps', 'approot', path.join('approot','approot')];
+	dirs = [null, 'debug', 'db', 'log', 'files', 'config', 'apps', 'approot', path.join('approot','approot')];
 	async.eachSeries(dirs, create_directory, callback);
 };
 
