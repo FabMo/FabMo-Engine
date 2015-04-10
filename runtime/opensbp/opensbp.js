@@ -28,7 +28,13 @@ function SBPRuntime() {
 	this.cmd_posz = 0;
 	this.cmd_posa = 0;
 	this.cmd_posb = 0;
-	this.cmd_posc = 0; 
+	this.cmd_posc = 0;
+	this.raw_posx = 0; 
+	this.raw_posy = 0; 
+	this.raw_posz = 0; 
+	this.raw_posa = 0; 
+	this.raw_posb = 0; 
+	this.raw_posc = 0; 
 }
 util.inherits(SBPRuntime, events.EventEmitter);
 
