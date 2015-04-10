@@ -15,7 +15,7 @@ statement
    = (label / single / jump / pause / conditional / assignment / event / open / command / __)
 
 event
-   = "ON" ___ "INPUT" __ "(" __ sw:integer __ "," __ state:integer __ ")" ___ stmt:(assignment / jump / pause / command)
+   = "ON" ___ "INPUT" __ "(" __ sw:integer __ "," __ state:integer __ ")" ___ stmt:(assignment / jump / pause / single / command)
       {return {"type":"event", "sw":sw, "state":state, "stmt":stmt};} 
 
 command 

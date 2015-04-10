@@ -5,6 +5,7 @@ var g2 = require('../../g2');
 var sb3_commands = require('./sb3_commands');
 var config = require('../../config');
 var events = require('events');
+var tform = require('./transformation');
 
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
@@ -27,7 +28,13 @@ function SBPRuntime() {
 	this.cmd_posz = 0;
 	this.cmd_posa = 0;
 	this.cmd_posb = 0;
-	this.cmd_posc = 0; 
+	this.cmd_posc = 0;
+	this.raw_posx = 0; 
+	this.raw_posy = 0; 
+	this.raw_posz = 0; 
+	this.raw_posa = 0; 
+	this.raw_posb = 0; 
+	this.raw_posc = 0; 
 }
 util.inherits(SBPRuntime, events.EventEmitter);
 
@@ -78,12 +85,7 @@ SBPRuntime.prototype.runString = function(s) {
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table    
 		this._run();
 	} catch(err) {
-		if(err.name == 'SyntaxError') {
-			log.error("Syntax Error on line " + err.line)
-			log.error("Expected " + err.expected + " but found " + err.found)
-		} else {
-			log.error(err);
-		}
+
 	}
 };
 
@@ -747,6 +749,19 @@ SBPRuntime.prototype.emit_gcode = function(s) {
 	this.current_chunk.push('N' + this.pc + ' ' + s);
 };
 
+SBPRuntime.prototype.emit_move = function(code, pt) {
+	pt = this.transformation(pt);
+	gcode = code
+	for(key in pt) {
+		var v = pt[key]
+		if(isNaN(v)) { throw( "Invalid " + key + " argument: " + v ); } 
+		if(v !== undefined) {
+			gcode += (key + v.toFixed(5))
+		}
+	}
+	this.current_chunk.push('N' + this.pc + gcode);
+};
+
 // This must be called at least once before instantiating an SBPRuntime object
 SBPRuntime.prototype.loadCommands = function(callback) {
 	commands=require('./commands').load();
@@ -756,6 +771,30 @@ SBPRuntime.prototype.loadCommands = function(callback) {
 	}
 	callback(null, this)
 }
+
+SBPRuntime.prototype.transformation = function(TranPt){
+	var gres = 5;
+
+	if (this.transforms.rotate.apply !== false){
+		log.debug("Rotate: " + JSON.stringify(this.transforms.rotate));
+//		TranPt = tform.rotate(TranPt, 45, 0, 0);
+	}
+	if (this.transforms.shearx.apply !== false){
+		log.debug("ShearX: " + JSON.stringify(this.transforms.shearx));
+	}
+	if (this.transforms.sheary.apply !== false){
+		log.debug("ShearY: " + JSON.stringify(this.transforms.sheary));
+	}
+	if (this.transforms.scale.apply !== false){
+		log.debug("Scale: " + JSON.stringify(this.transforms.scale));
+	}
+	if (this.transforms.move.apply !== false){
+		log.debug("Move: " + JSON.stringify(this.transforms.move));
+	}
+
+	return TranPt;
+
+};
 
 exports.SBPRuntime = SBPRuntime;
 
