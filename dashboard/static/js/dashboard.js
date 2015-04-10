@@ -287,6 +287,13 @@ define(function(require) {
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
+
+		this._registerHandler('connectToWifi', function(data, callback) {
+			this.machine.connect_to_wifi(data.ssid, data.key, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
 	
 	}
 

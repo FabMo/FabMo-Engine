@@ -1,13 +1,11 @@
 <html> 
 <head>
 	<meta charset="utf-8">
-	<title>Job Manager</title>
+	<title>Network Manager</title>
 
-	<!-- CSS standardisation & inclusion -->
 	<link rel="stylesheet" href="./css/foundation.min.css">
 	<link rel="stylesheet" href="./css/normalize.css">
 	<link rel="stylesheet" href="./css/style.css">
-	<!--<link rel="stylesheet" href="./css/jquery.dataTables.css">-->
 	<link rel="stylesheet" href="./css/dataTables.foundation.css">
 
 	<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -30,14 +28,15 @@
 			</div>
 		</div>
 
-		<div class="row jobs-history-row">
-			<!-- JOB HISTORY LISTING -->
+		<div class="row wifi-scan-row">
+			<!-- WIRELESS SCANNING LISTING -->
 			<table class="small-12 columns" style="width:100%" id="wifi_table">
 			<thead>
             	<tr>
                 	<th>&nbsp;</th>
                 	<th>SSID</th>
                 	<th>Security</th>
+                    <th>&nbsp;</th>
             	</tr>
         	</thead>
         	</table>
@@ -65,27 +64,20 @@
         "bInfo": false,
         "bLengthChange":false,
         "ajax": {
-        	"url" : "/network_manager/scan",
+        	"url" : "/network/wifi/scan",
         	"dataSrc" : function(json) { 
         		return json.data.wifi; }
         	},
         "columns": [
             {
-            	data :"signal_level",
-            	render : function(data) {
-            		data = parseInt(data)
-            		var classname = 'wifi0'
-            		if(data <= 20) { classname = 'wifi0';}
-            		else if(data <= 40) { classname = 'wifi1';}
-            		else if(data <= 60) { classname = 'wifi2';}
-            		else if(data <= 80) { classname = 'wifi3';}
-            		else if(data <= 100) { classname = 'wifi4';}
-            		return '<div class="' + classname + '"></div>'
-            	}
+                "className":      'details-control',
+                "orderable":      false,
+                "data":           null,
+                "defaultContent": '',
             },
             {
             	data : "ssid", 
-            	defaultContent : ''
+            	defaultContent : '', 
             },
             { 
             	data : "security", 
@@ -100,86 +92,67 @@
             				break;
             		}
             	}
+            },
+            {
+                data :"signal_level",
+                width : '40px',
+                orderable : false,
+                render : function(data) {
+                    data = parseInt(data)
+                    var classname = 'wifi0'
+                    if(data <= 20) { classname = 'wifi0';}
+                    else if(data <= 40) { classname = 'wifi1';}
+                    else if(data <= 60) { classname = 'wifi2';}
+                    else if(data <= 80) { classname = 'wifi3';}
+                    else if(data <= 100) { classname = 'wifi4';}
+                    return '<div class="' + classname + '"></div>'
+                }
             }
         ],
+        "order" : [[1,"desc"]]
     }); // DataTable
 
-    function history_child_row(job) {
-    	retval = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">'
-    	if(job.description) {
-	        retval += '<tr>'+
-	            '<td class="child-row-label">Description:</td>'+
-	            '<td>'+ (job.description || '<em>No description</em>') + '</td>'+
-	        '</tr>'
-    	}
-    	retval += '<tr>'+
-	            '<td class="child-row-label">Submitted:</td>'+
-	            '<td>'+moment(job.started_at).fromNow()+'</td>'+
-	        '</tr>'+
-	        '<tr>'+
-	            '<td class="child-row-label">Duration:</td>'+
-	            '<td>'+moment.utc(job.finished_at-job.started_at).format('HH:mm:ss')+'</td>'+
-	        '</tr>'+
-	        '<tr>'+
-	        	'<td colspan="2">'+'<a id="resubmit-'+job._id +'">Resubmit Job &gt;&gt;</a></td>' +
-	        '</tr>'+
-	    '</table>';
-	    return retval;
+
+    function wifi_child_row(network) {
+        retval = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">'
+        retval += '<tr>'+
+                    '<td class="child-row-label">Description:</td>'+
+                    '<td>'+ (network.ssid || '<em>No SSID?</em>') + '</td>'+
+                  '</tr>'+
+             '</table>';
+
+        return retval;
     }
 
-    function queue_child_row(job) {
-    	return ''
-    }
-
-	// Add event listener for opening and closing details
-    $('#history_table tbody').on('click', 'td.details-control', function () {
-        var tr = $(this).closest('tr');
-        var row = history_table.row( tr );
- 		if(row.child()) {
-	        if ( row.child.isShown() ) {
-	            // This row is already open - close it
-	            row.child.hide();
-	            tr.removeClass('shown');
-	        }
-	        else {
-	            // Open this row
-	            row.child.show();
-	            tr.addClass('shown');
-		    }
- 		} else {
- 			job = row.data()
- 			row.child( history_child_row(job) ).show();
- 			$('#resubmit-'+job._id).click(function(e) {
-				fabmoDashboard.resubmitJob(job._id, function(err, result) {
-					refresh_jobs_list();
-				});
-			});
-	        tr.addClass('shown');
- 		}
+    $('#wifi_table tbody').on('dblclick', 'tr', function () {
+        var name = $('td', this).eq(1).text();
+        fabmoDashboard.connectToWifi(name, 'helloworld')
     } );
 
-	// Add event listener for opening and closing details
-    $('#queue_table tbody').on('click', 'td.details-control', function () {
+
+        // Add event listener for opening and closing details
+    $('#wifi_table tbody').on('click', 'td.details-control', function () {
         var tr = $(this).closest('tr');
-        var row = queue_table.row( tr );
- 
- 		if(row.child()) {
-	        if ( row.child.isShown() ) {
-	            // This row is already open - close it
-	            row.child.hide();
-	            tr.removeClass('shown');
-	        }
-	        else {
-	            // Open this row
-	            row.child.show();
-	            tr.addClass('shown');
-		    }
- 		} else {
- 			job = row.data()
- 			row.child( queue_child_row(job) ).show();
-	        tr.addClass('shown');
- 		}
+        var row = wifi_table.row( tr );
+        if(row.child()) {
+            if ( row.child.isShown() ) {
+                // This row is already open - close it
+                row.child.hide();
+                tr.removeClass('shown');
+            }
+            else {
+                // Open this row
+                row.child.show();
+                tr.addClass('shown');
+            }
+        } else {
+            network = row.data()
+            row.child( wifi_child_row(network) ).show();
+            // DO STUFF
+            tr.addClass('shown');
+        }
     } );
+
 });
 </script>
 

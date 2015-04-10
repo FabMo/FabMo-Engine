@@ -298,4 +298,9 @@ FabMoDashboard.prototype.runSBP = function(text) {
 	this._call("runSBP", text);
 }
 
+FabMoDashboard.prototype.connectToWifi = function(ssid, key, callback) {
+	this._call("connectToWifi", {'ssid':ssid, 'key':key}, callback);
+}
+
+
 fabmoDashboard = new FabMoDashboard();
