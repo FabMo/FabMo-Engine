@@ -78,12 +78,7 @@ SBPRuntime.prototype.runString = function(s) {
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table    
 		this._run();
 	} catch(err) {
-		if(err.name == 'SyntaxError') {
-			log.error("Syntax Error on line " + err.line)
-			log.error("Expected " + err.expected + " but found " + err.found)
-		} else {
-			log.error(err);
-		}
+
 	}
 };
 

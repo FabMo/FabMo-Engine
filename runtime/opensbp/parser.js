@@ -1,4 +1,5 @@
 sbp_parser = require('./sbp_parser')
+var log = require('../../log').logger('sbp');
 
 parseLine = function(line) {
     line = line.replace(/\r/g,'');
@@ -21,7 +22,18 @@ parse = function(str) {
 	output = []
 	lines = str.split('\n');
     for(i=0; i<lines.length; i++) {
-        output.push(parseLine(lines[i]))
+        try {            
+            output.push(parseLine(lines[i]))
+        } catch(err) {
+            if(err.name == 'SyntaxError') {
+                log.error("Syntax Error on line " + i)
+                log.error("Expected " + err.expected.join(',') + " but found " + err.found)
+                log.error(err.line)
+            } else {
+                log.error(err);
+            }
+            throw err
+        }
     }
     return output
 }

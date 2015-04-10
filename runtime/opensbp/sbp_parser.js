@@ -447,7 +447,10 @@ module.exports = (function() {
                                     if (s15 === peg$FAILED) {
                                       s15 = peg$parsepause();
                                       if (s15 === peg$FAILED) {
-                                        s15 = peg$parsecommand();
+                                        s15 = peg$parsesingle();
+                                        if (s15 === peg$FAILED) {
+                                          s15 = peg$parsecommand();
+                                        }
                                       }
                                     }
                                   }
