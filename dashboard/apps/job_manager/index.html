@@ -141,7 +141,7 @@ jQuery.fn.dataTableExt.oSort["duration-asc"] = function (x, y) {
     var history_table = $('#history_table').DataTable( {
     	"filter": false,
     	"paging": true,
-        "processing": true,
+        "processing": false,
         "bInfo": false,
         "bLengthChange":false,
         "ajax": {
@@ -182,7 +182,7 @@ jQuery.fn.dataTableExt.oSort["duration-asc"] = function (x, y) {
     var queue_table = $('#queue_table').DataTable( {
     	"filter": false,
     	"paging": false,
-        "processing": true,
+        "processing": false,
         "bInfo": false,
         "bSort":false,
         "language": {
