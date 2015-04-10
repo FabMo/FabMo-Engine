@@ -6,17 +6,15 @@ var fs= require('fs');
 var profiles_folder = "/etc/netctl/";
 var itr = "wlan0";
 
-detection = function(req, res, next) {
-    // data is a wifi_info Object
+scan = function(req, res, next) {
     wifiscanner.scan(function(err,data){
     	if (err) {
         	log.error(err);
-        	res.json(500,err);
-        	return;
-    	}
-    	    res.json(200,data);
+        	res.json({'status':'error', 'message':err});
+    	} else {
+    	    res.json({'status':'success','data':{'wifi':data}});
+	}
     });
-
 };
 
 
@@ -25,7 +23,7 @@ list_profiles = function(req, res, next) {
 	fs.readdir(profiles_folder,function(err,files){
 		if(err){
 			log.error('bad wifi profiles folder : '+ profiles_folder + ' ['+err+']');
-        	res.json(500,err); 
+        	res.json({'status':'error', 'message':err}); 
         	return;
         }
     	files.forEach(function(file,index,array){
@@ -38,7 +36,7 @@ list_profiles = function(req, res, next) {
 					}
 					profiles.push(parse_profile(data));
 					if (index===array.length-1)
-						res.json(200,profiles);
+						res.json({'status':'success', 'data' : profiles});
 				});
     		}
     	});
@@ -105,7 +103,7 @@ function create_profile(wifi_info){
 
 	var profile_string="";
 
-	profile_string+=	"Description='Generated profile through the FabMo Platform'\n";
+	profile_string+=	"Description='FabMo Wireless Manager Profile " + wifi_info.ssid + "'\n";
 	profile_string+=	"Interface="+itr+'\n';
 	profile_string+=	"Connection=wireless\n";
 	profile_string+=	"Security="+wifi_info.security+'\n';
@@ -116,15 +114,13 @@ function create_profile(wifi_info){
 	else
 		profile_string+="Key="+wifi_info.key+'\n';
 
-
 	return profile_string;
-
 }
 
 
 module.exports = function(server) {
 	if(config.engine.get('wifi_manager')){
-		server.get('/wifi_manager/detection',detection); //OK
+		server.get('/network_manager/scan',scan); //OK
 		server.get('/wifi_manager/profiles',list_profiles); //OK
 		server.post('/wifi_manager/profile',add_profile); //OK
 		server.del('/wifi_manager/profile/:ssid',delete_profile); //OK

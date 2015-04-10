@@ -143,7 +143,7 @@ exports.CP = function(args) {
   }
 
   if ( Dia === undefined ){
-    // Error: Zero diameter circle
+    throw( "Zero diameter circle: " + Dia );
   }
 
   var WBang = 450 - Bang;
@@ -236,6 +236,20 @@ exports.CG = function(args) {
   log.debug("center Y:" + centerY );
   log.debug("I-O-T:" + OIT );
   log.debug("Dir:" + Dir );
+
+  var x = endX;
+  var y = endY;
+  var PtXfrm = { "X":x, "Y":y };
+  PtXfrm = this.transformation(PtXfrm);
+  endX = PtXfrm.X;
+  endY = PtXfrm.Y;
+
+  x = this.raw_posx + centerX;
+  y = this.raw_posy + centerY;
+  PtXfrm = { "X":x, "Y":y };
+  PtXfrm = this.transformation(PtXfrm);
+  centerX = PtXfrm.X - startX;
+  centerY = PtXfrm.Y - startY;
 
   if ((propX < 0 && propY > 0) || (propX > 0 && propY < 0 )) { 
     Dir *= (-1);
@@ -366,7 +380,10 @@ exports.CG = function(args) {
   }
 
   this.cmd_posx = endX;
+  this.raw_posx = args[1];
 	this.cmd_posy = endY;
+  this.raw_posy = args[2];
+
 };
 
 //  Interpolate_Circle - is used to interpolate a circle that has uneven proportions as an ellipse.

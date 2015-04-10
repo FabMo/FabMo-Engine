@@ -470,7 +470,7 @@ exports.VS = function(args,callback) {
 		config.driver.setMany(g2_values, function(err, values) {
 			callback();
 		});
-		});
+	});
 
 };
 

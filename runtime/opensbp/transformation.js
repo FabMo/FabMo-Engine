@@ -1,7 +1,4 @@
-var log = require('../../../log').logger('sbp');
-var g2 = require('../../../g2');
-var sb3_commands = require('../sb3_commands');
-var config = require('../../../config');
+var log = require('../../log').logger('sbp');
 
 // Point X, Point Y, Point Z, Angle(in radians), Rotation Point X, Rotation Point Y
 exports.rotate = function(PtNew, Angle, RotPt){
