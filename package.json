@@ -31,7 +31,6 @@
     "grunt-mocha-test": "^0.12.1",
     "grunt-open": "^0.2.3",
     "mocha": "1.21.x",
-    "node-curl": "0.3.3",
     "sinon": "1.10.x"
   },
   "engine": "node 0.10.x",

@@ -1,0 +1,187 @@
+<html> 
+<head>
+	<meta charset="utf-8">
+	<title>Job Manager</title>
+
+	<!-- CSS standardisation & inclusion -->
+	<link rel="stylesheet" href="./css/foundation.min.css">
+	<link rel="stylesheet" href="./css/normalize.css">
+	<link rel="stylesheet" href="./css/style.css">
+	<!--<link rel="stylesheet" href="./css/jquery.dataTables.css">-->
+	<link rel="stylesheet" href="./css/dataTables.foundation.css">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+	<header class="grey"> <!-- Class can be "blue", "red", "grey", "orange" -->
+		<section>
+			<div class="app-title-container">
+				<h2>Network Manager</h2>
+			</div>
+		</section>
+	</header>
+
+	<section class="container">
+		<div class="row title">
+			<div class="small-7 medium-9 large-10 columns">
+				<h4>Available Networks</h4>
+			</div>
+			<div class="small-5 medium-3 large-2 columns btn">
+			</div>
+		</div>
+
+		<div class="row jobs-history-row">
+			<!-- JOB HISTORY LISTING -->
+			<table class="small-12 columns" style="width:100%" id="wifi_table">
+			<thead>
+            	<tr>
+                	<th>&nbsp;</th>
+                	<th>SSID</th>
+                	<th>Security</th>
+            	</tr>
+        	</thead>
+        	</table>
+		</div>
+	</section>
+
+  <!-- Javascript inclusions -->
+  <script src="./js/jquery.js"></script>
+  <script src="./js/jquery.dataTables.js"></script>
+  <script src="./js/foundation.min.js"></script>
+  <script src="./js/dataTables.foundation.js"></script>
+  <script src="./js/moment.js"></script>
+  <script src="/js/libs/dashboard.js"></script>
+
+  <script type="text/javascript">
+  $(document).ready(function() {
+
+  	//Foundation Init
+	$(document).foundation();
+	
+    var wifi_table = $('#wifi_table').DataTable( {
+    	"filter": false,
+    	"paging": false,
+        "processing": false,
+        "bInfo": false,
+        "bLengthChange":false,
+        "ajax": {
+        	"url" : "/network_manager/scan",
+        	"dataSrc" : function(json) { 
+        		return json.data.wifi; }
+        	},
+        "columns": [
+            {
+            	data :"signal_level",
+            	render : function(data) {
+            		data = parseInt(data)
+            		var classname = 'wifi0'
+            		if(data <= 20) { classname = 'wifi0';}
+            		else if(data <= 40) { classname = 'wifi1';}
+            		else if(data <= 60) { classname = 'wifi2';}
+            		else if(data <= 80) { classname = 'wifi3';}
+            		else if(data <= 100) { classname = 'wifi4';}
+            		return '<div class="' + classname + '"></div>'
+            	}
+            },
+            {
+            	data : "ssid", 
+            	defaultContent : ''
+            },
+            { 
+            	data : "security", 
+            	defaultContent : '',
+            	render : function(data) {
+            		switch(data) {
+            			case 'none':
+            				return 'None'
+            				break;
+            			default:
+            				return data.toUpperCase()
+            				break;
+            		}
+            	}
+            }
+        ],
+    }); // DataTable
+
+    function history_child_row(job) {
+    	retval = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">'
+    	if(job.description) {
+	        retval += '<tr>'+
+	            '<td class="child-row-label">Description:</td>'+
+	            '<td>'+ (job.description || '<em>No description</em>') + '</td>'+
+	        '</tr>'
+    	}
+    	retval += '<tr>'+
+	            '<td class="child-row-label">Submitted:</td>'+
+	            '<td>'+moment(job.started_at).fromNow()+'</td>'+
+	        '</tr>'+
+	        '<tr>'+
+	            '<td class="child-row-label">Duration:</td>'+
+	            '<td>'+moment.utc(job.finished_at-job.started_at).format('HH:mm:ss')+'</td>'+
+	        '</tr>'+
+	        '<tr>'+
+	        	'<td colspan="2">'+'<a id="resubmit-'+job._id +'">Resubmit Job &gt;&gt;</a></td>' +
+	        '</tr>'+
+	    '</table>';
+	    return retval;
+    }
+
+    function queue_child_row(job) {
+    	return ''
+    }
+
+	// Add event listener for opening and closing details
+    $('#history_table tbody').on('click', 'td.details-control', function () {
+        var tr = $(this).closest('tr');
+        var row = history_table.row( tr );
+ 		if(row.child()) {
+	        if ( row.child.isShown() ) {
+	            // This row is already open - close it
+	            row.child.hide();
+	            tr.removeClass('shown');
+	        }
+	        else {
+	            // Open this row
+	            row.child.show();
+	            tr.addClass('shown');
+		    }
+ 		} else {
+ 			job = row.data()
+ 			row.child( history_child_row(job) ).show();
+ 			$('#resubmit-'+job._id).click(function(e) {
+				fabmoDashboard.resubmitJob(job._id, function(err, result) {
+					refresh_jobs_list();
+				});
+			});
+	        tr.addClass('shown');
+ 		}
+    } );
+
+	// Add event listener for opening and closing details
+    $('#queue_table tbody').on('click', 'td.details-control', function () {
+        var tr = $(this).closest('tr');
+        var row = queue_table.row( tr );
+ 
+ 		if(row.child()) {
+	        if ( row.child.isShown() ) {
+	            // This row is already open - close it
+	            row.child.hide();
+	            tr.removeClass('shown');
+	        }
+	        else {
+	            // Open this row
+	            row.child.show();
+	            tr.addClass('shown');
+		    }
+ 		} else {
+ 			job = row.data()
+ 			row.child( queue_child_row(job) ).show();
+	        tr.addClass('shown');
+ 		}
+    } );
+});
+</script>
+
+</body>
+</html>
