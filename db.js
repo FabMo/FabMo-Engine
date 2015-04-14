@@ -34,6 +34,7 @@ Job.prototype.clone = function(callback) {
 	});
 	job.save(callback);
 };
+
 Job.prototype.start = function(callback) {
 	log.debug("Starting job id " + this._id);
 	this.state = 'running';
@@ -275,14 +276,23 @@ File.getByID = function(id,callback)
 	});
 };
 
-check_db = function(database, callback) {
-	database.find().toArray(function(err, data) {
+checkCollection = function(collection, callback) {
+	collection.find().toArray(function(err, data) {
 		if(err) {
-			log.error("Error reading the " + database.collectionName + " database: " + err);
+			log.error("Error reading " + collection.collectionName + " from the database: " + err);
 			callback(err);
 		} else {
 			callback(null);
 		}
+	});
+}
+
+backupDB = function(callback) {
+	src = config.getDataDir('db');
+	dest = config.getDataDir('backup') + '/db'
+	ncp(src, dest, function(err) {
+		log.info('Backed up database to '+dest)
+		callback(err);
 	});
 }
 
@@ -293,11 +303,11 @@ exports.configureDB = function(callback) {
 
 	async.parallel([
 			function(cb) {
-				check_db(files, cb)
+				checkCollection(files, cb);
 			},
 			function(cb) {
-				check_db(jobs, cb)
-			},
+				checkCollection(jobs, cb);
+			}
 		], 
 		function(err, results) {
 			if(err) {

@@ -8,6 +8,7 @@ var config = require('./config');
 var PLATFORM = process.platform;
 var log = require('./log').logger('engine');
 var db = require('./db');
+var macros = require('./macros');
 var dashboard = require('./dashboard');
 
 var Engine = function() {
@@ -119,6 +120,11 @@ Engine.prototype.start = function(callback) {
             dashboard.loadApps(function(err, result) {
                 callback(null, result);
             });
+        },
+
+        function load_macros(callback) {
+            log.info("Loading macros...")
+            macros.load(callback);
         },
 
         // Kick off the server if all of the above went OK.

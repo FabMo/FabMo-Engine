@@ -14,6 +14,9 @@ var errors = restify.errors;
 ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
 ALLOWED_APP_EXTENSIONS = ['.zip', '.fma'];
 
+GCODE_EXTENSIONS = ['.nc','.g','.gc','.gcode'];
+OPENSBP_EXTENSIONS = ['.sbp', '.sbc'];
+
 var MethodNotAllowedError = errors.MethodNotAllowedError;
 var NotAuthorizedError = errors.NotAuthorizedError;
 var ResourceNotFoundError = errors.ResourceNotFoundError;
@@ -94,14 +97,8 @@ function Queue(){
 }
 
 function allowed_file(filename){
-  if (ALLOWED_EXTENSIONS.indexOf(path.extname(filename).toLowerCase()) !== -1) {
-    return true;
-  }
-  else {
-    return false;
-  }
+    return isGCodeFile(filename) || isOpenSBPFile(filename);
 }
-
 
 function allowedAppFile(filename) {
   if (ALLOWED_APP_EXTENSIONS.indexOf(path.extname(filename).toLowerCase()) !== -1) {
@@ -111,6 +108,15 @@ function allowedAppFile(filename) {
     return false;
   }
 }
+
+function isGCodeFile(pathname) {
+    return (GCODE_EXTENSIONS.indexOf(path.extname(pathname).toLowerCase()) !== -1)
+}
+
+function isOpenSBPFile(pathname) {
+    return (OPENSBP_EXTENSIONS.indexOf(path.extname(pathname).toLowerCase()) !== -1)
+}
+
 /**
  * Move a file from src to dest, avoiding cross-device rename failures.
  * This method will first try fs.rename and call the supplied callback if it succeeds. Otherwise
