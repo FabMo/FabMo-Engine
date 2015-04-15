@@ -12,7 +12,11 @@ start
    = __ stmt:statement __ {return stmt}
 
 statement
-   = (label / single / jump / pause / conditional / assignment / event / open / command / __)
+   = (label / single / jump / pause / conditional / assignment / event / open / custom_cut / command / __)
+
+custom_cut
+   = "C" index:integer
+   { return {"type":"custom", "index":index};}
 
 event
    = "ON" ___ "INPUT" __ "(" __ sw:integer __ "," __ state:integer __ ")" ___ stmt:(assignment / jump / pause / single / command)

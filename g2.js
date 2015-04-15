@@ -424,19 +424,21 @@ G2.prototype.handleStatusReport = function(response) {
 		}
 
 		if('stat' in response.sr) {
-
 			if(response.sr.stat === STAT_STOP) {
 				if(this.flushcallback) {
 					this.flushcallback(null);
 					this.flushcallback = null;
 				}
 			}
-
 			if(this.expectations.length > 0) {
 				var expectation = this.expectations.pop();
 				var stat = states[this.status.stat];
 				if(stat in expectation) {
-					expectation[stat](this);
+					if(expectation[stat] === null) {
+						this.expectations.push(expectation);
+					} else {
+						expectation[stat](this);
+					}
 				} else if(null in expectation) {
 					expectation[null](this);
 				}

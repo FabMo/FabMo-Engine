@@ -135,6 +135,7 @@ var list = function() {
 }
 
 var get = function(idx) {
+	console.log(macros)
 	info = macros[idx];
 	if(info) {
 		return info.filename;

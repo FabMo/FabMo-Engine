@@ -6,6 +6,7 @@ var sb3_commands = require('./sb3_commands');
 var config = require('../../config');
 var events = require('events');
 var tform = require('./transformation');
+var macros = require('../../macros');
 
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
@@ -19,6 +20,7 @@ function SBPRuntime() {
 	this.user_vars = {};
 	this.label_index = {};
 	this.stack = [];
+	this.file_stack = [];
 	this.current_chunk = [];
 	this.output = [];
 	this.event_handlers = {};
@@ -69,7 +71,7 @@ SBPRuntime.prototype._onG2Status = function(status) {
 };
 
 // Run the provided string as a program
-SBPRuntime.prototype.runString = function(s) {
+SBPRuntime.prototype.runString = function(s, callback) {
 	try {
 		var lines =  s.split('\n');
 		if(this.machine) {
@@ -80,19 +82,32 @@ SBPRuntime.prototype.runString = function(s) {
 		if(this.machine) {
 			this.machine.status.nb_lines = lines.length - 1;
 		}
+		this.init();
+		this.end_callback = callback;
 		this._setupTransforms();
 		this._analyzeLabels();  // Build a table of labels
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table    
 		this._run();
 	} catch(err) {
-
+		log.error("ERR: " + err);
+		throw err
 	}
+};
+
+SBPRuntime.prototype.runFile = function(filename, callback) {
+	fs.readFile(filename, 'utf8', function(err, data) {
+		if(err) {
+			callback(err);
+		} else {
+			this.runString(data, callback);
+		}
+	}.bind(this));
 };
 
 // Update the internal state of the runtime with data from the tool
 SBPRuntime.prototype._update = function() {
 	if(this.machine) {
-		status = this.machine.status || {};		
+		status = this.machine.status || {};
 	} else {
 		status = {}
 	}
@@ -180,6 +195,16 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 			break;
 			//return this._exprBreaksStack(cmd.var) || this._exprBreaksStack(cmd.expr)
 		
+		case "custom":
+			result = true;
+			break;
+
+		case "return":
+		case "goto":
+		case "gosub":
+			result = true;
+			break;
+
 		case "open":
 			result = true;
 			break;
@@ -223,6 +248,8 @@ SBPRuntime.prototype._continue = function() {
 		log.warn('Got a _continue() but not started');
 		return;
 	}
+
+	// Do forever:  Will break out in the event that the program ends
 	while(true) {
 		// If we've run off the end of the program, we're done!
 		if(this.pc >= this.program.length) {
@@ -267,23 +294,36 @@ SBPRuntime.prototype._continue = function() {
 
 SBPRuntime.prototype._end = function() {
 	if(this.machine) {
-
-		this.machine.status.filename = null;
-		this.machine.status.current_file = null;
-		this.machine.status.nb_lines=null;
-		this.machine.status.line=null;
-		this.init();
-		var end_function = function() {
-			if(this.machine.status.job) {
-				this.machine.status.job.finish(function(err, job) {
-					this.machine.status.job=null;
+		var end_function_no_nesting = function() {
+				// We are truly done
+				callback = this.end_callback;
+				this.machine.status.filename = null;
+				this.machine.status.current_file = null;
+				this.machine.status.nb_lines=null;
+				this.machine.status.line=null;
+				this.init();
+				if(this.machine.status.job) {
+					this.machine.status.job.finish(function(err, job) {
+						this.machine.status.job=null;
+						this.machine.setState(this, 'idle');
+					}.bind(this));
+				} else {
 					this.machine.setState(this, 'idle');
-				}.bind(this));
-			} else {
-				this.machine.setState(this, 'idle');
-			}
-			this.emit('end', this);
+				}
+				this.emit('end', this);
+				if(callback) {
+					callback();
+				}
 		}.bind(this);
+
+		var end_function_nested = function() {
+			callback = this.end_callback;
+			if(callback) {
+				callback();
+			}
+		}.bind(this);
+
+		var end_function = (this.file_stack.length > 0) ? end_function_nested : end_function_no_nesting;
 
 		if(this.driver.status.stat !== this.driver.STAT_END) {
 			this.driver.expectStateChange( {'end':end_function});
@@ -314,38 +354,23 @@ SBPRuntime.prototype._dispatch = function(callback) {
 
 			var run_function = function(driver) {
 				log.debug("Expected a running state change and got one.");
+				
 				// Once running, anticipate the stop so we can execute the next leg of the file
 				driver.expectStateChange({
-					"stop" : function(driver) { 
+					"stop" : function(driver) {
+						// On stop, keep going
 						callback();
 					},
 					"alarm" : function(driver) { 
+						// On alarm terminate the program (for now)
 						this._end();
 					}.bind(this),
 					"holding" : function(driver) {
-						for(var sw in this.event_handlers) {
-							for(var state in this.event_handlers[sw]) {
-								name = 'in' + sw
-								mstate = this.machine.status[name]
-								if(mstate == state) {
-									this.pc = parseInt(this.driver.status.line)
-									var cmd = this.event_handlers[sw][state]
-									this.driver.queueFlush(function(err) {
-										if(this._breaksStack(cmd)) {
-											this._execute(this.event_handlers[sw][state], function() {
-												callback();
-											}.bind(this));
-										} else {
-											this._execute(this.event_handlers[sw][state]);
-											setImmediate(function() {
-												callback();
-											}.bind(this));
-										}
-									}.bind(this));
-								}
-							}
-						}
+						// On hold, handle event that caused the hold
+						this._processEvents(callback);
 					}.bind(this),
+					"running" : null,
+
 					null : function(driver) {
 						// TODO: This is probably a failure
 						log.warn("Expected a stop or hold but didn't get one.");
@@ -377,6 +402,34 @@ SBPRuntime.prototype._dispatch = function(callback) {
 		return false;
 	}
 };
+
+// To be called when a hold is encountered spontaneously (to handle ON INPUT events)
+SBPRuntime.prototype._processEvents = function(callback) {
+	for(var sw in this.event_handlers) {
+		for(var state in this.event_handlers[sw]) {
+			name = 'in' + sw
+			mstate = this.machine.status[name]
+			if(mstate == state) {
+				this.pc = parseInt(this.driver.status.line)
+				var cmd = this.event_handlers[sw][state]
+				if(cmd) {
+					this.driver.queueFlush(function(err) {
+							if(this._breaksStack(cmd)) {
+								this._execute(this.event_handlers[sw][state], function() {
+									callback();
+								}.bind(this));
+							} else {
+								this._execute(this.event_handlers[sw][state]);
+								callback();
+							}
+					}.bind(this));
+				}
+			} else {
+				callback();
+			}
+		}
+	}
+}
 
 SBPRuntime.prototype._executeCommand = function(command, callback) {
 	if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
@@ -417,13 +470,28 @@ SBPRuntime.prototype._execute = function(command, callback) {
 		this.pc += 1;
 		return;
 	}
-
 	// All correctly parsed commands have a type
 	switch(command.type) {
 
 		// A ShopBot Comand (M2, ZZ, C3, etc...)
 		case "cmd":
 			return this._executeCommand(command, callback);
+			break;
+
+		case "custom":
+			macro = macros.get(command.index)
+			if(macro) {
+				log.debug("Running macro: " + JSON.stringify(macro))
+				this._pushFileStack();
+				this.runFile(macro, function() {
+					this._popFileStack();
+					callback();
+				}.bind(this));
+				return true;
+			} else {
+				log.debug("Can't run macro: " + command.index);
+				return false;
+			}
 			break;
 
 		case "return":
@@ -484,7 +552,7 @@ SBPRuntime.prototype._execute = function(command, callback) {
 		case "comment":
 			var comment = command.comment.join('').trim();
 			if(comment != '') {
-				this.emit_gcode('( ' + comment + ' )')
+				//this.emit_gcode('( ' + comment + ' )')
 			}
 			this.pc += 1;
 			return false;
@@ -507,14 +575,7 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 		case "event":
 			this.pc += 1;
-			if(command.sw in this.event_handlers) {
-				this.event_handlers[command.sw][command.state] = command.stmt;
-			} else {
-				handler = {}
-				handler[command.state] = command.stmt
-				this.event_handlers[command.sw] = handler;
-			}
-			console.log(this.event_handlers)
+			this._setupEvent(command);
 			setImmediate(callback);
 			return true;
 			break;
@@ -532,6 +593,27 @@ SBPRuntime.prototype._execute = function(command, callback) {
 	throw "Shouldn't ever get here.";
 };
 
+SBPRuntime.prototype._setupEvent = function(command, callback) {
+	var sw = command.sw;
+	var mo = 'di'+ sw + 'mo';
+	var ac = 'di' + sw + 'ac';
+	var fn = 'di' + sw + 'fn';
+	args = [mo,ac,fn]
+	this.driver.get(args, function(err, vals) {
+		var setup = {}
+		setup[ac]  = 2 
+		setup[fn] =  0
+		this.driver.setMany(setup, function(err, data) {
+			if(command.sw in this.event_handlers) {
+				this.event_handlers[command.sw][command.state] = command.stmt;
+			} else {
+				handler = {}
+				handler[command.state] = command.stmt
+				this.event_handlers[command.sw] = handler;
+			}
+		}.bind(this));
+	}.bind(this));
+}
 
 SBPRuntime.prototype._eval_value = function(expr) {
 		log.debug("  Evaluating value: " + expr);
@@ -613,13 +695,13 @@ SBPRuntime.prototype.init = function() {
 	this.start_of_the_chunk = 0;
 	this.stack = [];
 	this.label_index = {};
-	this.break_chunk = false;
 	this.current_chunk = [];
 	this.started = false;
 	this.sysvar_evaluated = false;
-	this.chunk_broken_for_eval = false;
-	this.output = [];
-	this.event_handlers = {};
+	this.end_callback = null;
+	this.output = [];				// Used in simulation mode only
+	this.event_handlers = {};		// For ON INPUT etc..
+	this.end_callback = null;
 };
 
 // Compile an index of all the labels in the program
@@ -743,6 +825,25 @@ SBPRuntime.prototype.evaluateUserVariable = function(v) {
 SBPRuntime.prototype._unhandledCommand = function(command) {
 	log.warn('Unhandled Command: ' + JSON.stringify(command));
 };
+
+SBPRuntime.prototype._pushFileStack = function() {
+	frame =  {}
+	frame.pc = this.pc+1
+	frame.program = this.program
+	frame.user_vars = this.user_vars
+	frame.current_chunk = this.current_chunk
+	frame.end_callback = this.end_callback
+	this.file_stack.push(frame)
+}
+
+SBPRuntime.prototype._popFileStack = function() {
+	frame = this.file_stack.pop()
+	this.pc = frame.pc
+	this.program = frame.program
+	this.user_vars = frame.user_vars
+	this.current_chunk = frame.current_chunk
+	this.end_callback = frame.end_callback
+}
 
 // Add GCode to the current chunk, which is dispatched on a break or end of program
 SBPRuntime.prototype.emit_gcode = function(s) {
