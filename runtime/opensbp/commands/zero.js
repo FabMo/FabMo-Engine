@@ -25,7 +25,9 @@ exports.ZX = function(args, callback) {
 		zxObj.g55x = Number((MPO * unitConv).toFixed(5));
 		config.driver.setMany(zxObj, function(err, value) {
 			this.cmd_posx = this.posx = 0;
-			callback();
+			this.driver.requestStatusReport(function(report) {
+				callback();
+			});
 		}.bind(this));
 	}.bind(this));
 };
@@ -39,7 +41,9 @@ exports.ZY = function(args, callback) {
 		zyObj.g55y = Number((MPO * unitConv).toFixed(5));
 		config.driver.setMany(zyObj, function(err, value) {
 			this.cmd_posy = this.posy = 0;
-			callback();
+			this.driver.requestStatusReport(function(report) {
+				callback();
+			});
 		}.bind(this));
 	}.bind(this));
 };

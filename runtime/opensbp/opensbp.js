@@ -824,6 +824,17 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 			return this.machine.status.posb;
 		break;
 
+		case 51:
+		case 52:
+		case 53:
+		case 54:
+		case 55:
+		case 56:
+		case 57:
+		case 58:
+			return this.machine.status['in' + (n-50)];
+			break;
+
 		case 71: // XY Move Speed
 			return config.opensbp.get('movexy_speed');
 		break;
