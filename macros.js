@@ -135,7 +135,6 @@ var list = function() {
 }
 
 var get = function(idx) {
-	console.log(macros)
 	info = macros[idx];
 	if(info) {
 		return info.filename;
@@ -144,7 +143,19 @@ var get = function(idx) {
 	}
 }
 
+var run = function(idx) {
+	var machine = require('./machine').machine;
+
+	info = macros[idx];
+	if(info) {
+		machine.runFile(info.filename);
+	} else {
+		throw "No such macro."
+	}
+}
+
 exports.load = load;
 exports.list = list;
 exports.get = get;
 exports.create = create;
+exports.run = run;

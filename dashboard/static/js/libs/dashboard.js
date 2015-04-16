@@ -302,5 +302,12 @@ FabMoDashboard.prototype.connectToWifi = function(ssid, key, callback) {
 	this._call("connectToWifi", {'ssid':ssid, 'key':key}, callback);
 }
 
+FabMoDashboard.prototype.getMacros = function(callback) {
+	this._call("getMacros", null, callback);
+}
+
+FabMoDashboard.prototype.runMacro = function(id, callback) {
+	this._call("runMacro", id, callback);
+}
 
 fabmoDashboard = new FabMoDashboard();

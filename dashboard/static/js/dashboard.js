@@ -294,6 +294,20 @@ define(function(require) {
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
+
+		this._registerHandler('getMacros', function(data, callback) {
+			this.machine.get_macros(function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+
+		this._registerHandler('runMacro', function(data, callback) {
+			this.machine.run_macro(data, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
 	
 	}
 

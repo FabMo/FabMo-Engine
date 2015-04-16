@@ -30,6 +30,25 @@ var getMacros = function(req, res, next) {
     res.json(response);
 }
 
+var runMacro = function(req, res, next) {
+    var id = req.params.id;
+    macro = macros.get(id);
+    if(macro) {
+        macros.run(id);
+        res.json({
+            'status' : 'success',
+            'data' : macros.list()
+        });
+    } else {
+        res.json({
+            'status' : 'error',
+            'message' : 'No such macro: ' + id
+        });
+    }
+}
+
 module.exports = function(server) {
     server.get('/macros', getMacros);
+    server.post('/macros/:id/run', runMacro);
 };
+

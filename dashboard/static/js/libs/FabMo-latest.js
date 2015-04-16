@@ -28,6 +28,7 @@ function FabMo(ip,port) //ip and port of the tool
 	this.url.jobs=this.url.base+'/jobs';
 	this.url.apps=this.url.base+'/apps';
 	this.url.wifi = this.url.base + '/network/wifi';
+	this.url.macros = this.url.base + '/macros';
 
 	// default error message definitions
 	// that method allow to give more details on error
@@ -1137,6 +1138,57 @@ FabMo.prototype.connect_to_wifi =  function(ssid, key, callback)
 		type: "POST",
 		dataType : 'json', 
 		data : {"ssid" : ssid, "key" : key},
+		success: function( data ) {
+			if(data.status === "success") {
+				callback(undefined,data.data);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
+		error: function(data, err) {
+			var error = that.default_error.no_device;
+			error.sys_err = err;
+			callback(error);
+		}
+	});
+};
+
+FabMo.prototype.get_macros = function(callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.macros,
+		type: "GET",
+		dataType : 'json', 
+		success: function( data ) {
+			if(data.status === "success") {
+				callback(null,data.data);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
+		error: function(data,err) {
+				var error =that.default_error.no_device;
+				error.sys_err = err;
+			 	callback(error);
+			}
+	});
+};
+
+FabMo.prototype.run_macro =  function(id, callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.macros + '/' + id + '/run',
+		type: "POST",
 		success: function( data ) {
 			if(data.status === "success") {
 				callback(undefined,data.data);
