@@ -378,16 +378,20 @@ G2.prototype.handleFooter = function(response) {
 			var err_msg = G2_ERRORS[err_code] || ['ERR_UNKNOWN', 'Unknown Error'];
 			// TODO we'll have to go back and clean up alarms later
 			// For now, let's not emit a bunch of errors into the log that don't mean anything to us
-			if(err_code === 204 && this.quit_pending) {
-				this.gcodeWrite("{clear:n}\nM30\n");
-				this.quit_pending = false;
-			} else {
-				this.emit('error', [err_code, err_msg[0], err_msg[1]]);
-			}
+			this.emit('error', [err_code, err_msg[0], err_msg[1]]);
 		}
 	}
 };
 
+G2.prototype.handleExceptionReport = function(response) {
+	if(response.er) {
+		var stat = response.er.st
+		if(((stat === 204) || (stat === 207)) && this.quit_pending) {
+			this.gcodeWrite("{clear:n}\nM30\n");
+			this.quit_pending = false;
+		}
+	}
+}
 /*
 0	machine is initializing
 1	machine is ready for use
@@ -408,6 +412,9 @@ G2.prototype.handleStatusReport = function(response) {
 			value = response.sr[key];
 			this.status[key] = value;
 		}
+
+		// Emit status no matter what
+		this.emit('status', this.status);
 
 		// Send more g-codes if warranted
 		if('line' in response.sr) {
@@ -444,36 +451,12 @@ G2.prototype.handleStatusReport = function(response) {
 				}
 			}
 		}
-		// Emit status no matter what
-		this.emit('status', this.status);
 
 		this.stat = this.status.stat !== undefined ? this.status.stat : this.stat;
 		this.hold = this.status.hold !== undefined ? this.status.hold : this.hold;
-		/*
-		if(this.quit_pending) {
-			if(this.stat === 6 && this.hold === 5) {
-				this.queueClear(function() {
-						log.debug("Queue cleared.");
-						this.quit_pending = false;
-						this.pause_flag = false;
-						this.jog_direction = null;
-						this.jog_command = null;
-						this.jog_stop_pending = false;
-						this.command("M2");
-						this.requestStatusReport();
-						this.requestQueueReport();
-					}.bind(this));
-			}
-		}
-		*/
+
 	}
 };
-
-G2.prototype.handleError = function(response) {
-	if(response.er) {
-		this.emit('error', [response.er.st, response.er.msg]);
-	}
-}
 
 // Called once a proper JSON response is decoded from the chunks of data that come back from G2
 G2.prototype.onMessage = function(response) {
@@ -486,16 +469,17 @@ G2.prototype.onMessage = function(response) {
 		r = response;
 	}
 
-	this.handleError(r);
+	// Deal with G2 status (top priority)
+	this.handleStatusReport(r);
+
+	// Deal with exceptions
+	this.handleExceptionReport(r);
 
 	// Deal with streaming (if response contains a queue report)
 	this.handleQueueReport(r);
 
 	// Deal with footer
 	this.handleFooter(response); 
-
-	// Deal with G2 status
-	this.handleStatusReport(r);
 
 	// Emitted everytime a message is received, regardless of content
 	this.emit('message', response);
@@ -542,7 +526,6 @@ G2.prototype.resume = function() {
 G2.prototype.quit = function() {
 	this.quit_pending = true;
 	this.gcode_queue.clear();
-	this.quit_pending = true;
 	this.controlWrite('\x04');
 }
 

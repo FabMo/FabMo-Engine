@@ -18,6 +18,14 @@ GCodeRuntime.prototype.disconnect = function() {
 	this.driver.removeListener('status', this.status_handler);
 };
 
+GCodeRuntime.prototype.pause = function() {
+	this.driver.feedHold();
+}
+
+GCodeRuntime.prototype.quit = function() {
+	this.driver.quit();
+}
+
 GCodeRuntime.prototype._changeState = function(newstate) {
 	this.machine.setState(this, newstate);
 };
@@ -48,7 +56,6 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 				this.machine.emit('job_pause', this);
 				break;
 			}
-
 			if(this.status_report.stat === this.driver.STAT_STOP || this.status_report.stat === this.driver.STAT_END) {
 				this._idle();
 				this.machine.emit('job_complete', this);

@@ -237,8 +237,7 @@ Machine.prototype.stopJog = function() {
 
 Machine.prototype.pause = function() {
 	if(this.status.state === "running") {
-		this.driver.feedHold();
-		this.setState(this.current_runtime, "paused");
+		this.current_runtime.pause();
 	}
 };
 
@@ -246,7 +245,7 @@ Machine.prototype.quit = function() {
 	if(this.status.job) {
 		this.status.job.pending_cancel = true;
 	}
-	this.driver.quit();
+	this.current_runtime.quit();
 };
 
 Machine.prototype.resume = function() {

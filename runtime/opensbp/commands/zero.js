@@ -24,8 +24,8 @@ exports.ZX = function(args, callback) {
 		}
 		zxObj.g55x = Number((MPO * unitConv).toFixed(5));
 		config.driver.setMany(zxObj, function(err, value) {
-			callback();
 			this.cmd_posx = this.posx = 0;
+			callback();
 		}.bind(this));
 	}.bind(this));
 };
@@ -38,8 +38,8 @@ exports.ZY = function(args, callback) {
 		}
 		zyObj.g55y = Number((MPO * unitConv).toFixed(5));
 		config.driver.setMany(zyObj, function(err, value) {
-			callback();
 			this.cmd_posy = this.posy = 0;
+			callback();
 		}.bind(this));
 	}.bind(this));
 };
@@ -52,8 +52,8 @@ exports.ZZ = function(args, callback) {
 		}
 		zzObj.g55z = Number((MPO * unitConv).toFixed(5));
 		config.driver.setMany(zzObj, function(err, value) {
-			callback();
 			this.cmd_posz = this.posz = 0;
+			callback();
 		}.bind(this));
 	}.bind(this));
 };
@@ -66,8 +66,8 @@ exports.ZA = function(args, callback) {
 		}
 		zaObj.g55a = Number((MPO * unitConv).toFixed(5));
 		config.driver.setMany(zaObj, function(err, value) {
-			callback();
 			this.cmd_posa = this.posa = 0;
+			callback();
 		}.bind(this));
 	}.bind(this));
 };
@@ -80,8 +80,8 @@ exports.ZB = function(args, callback) {
 		}
 		zaObj.g55a = Number((MPO * unitConv).toFixed(5));
 		config.driver.setMany(zbObj, function(err, value) {
-			callback();
 			this.cmd_posb = this.posb = 0;
+			callback();
 		}.bind(this));
 	}.bind(this));
 };
@@ -94,8 +94,8 @@ exports.ZC = function(args, callback) {
 		}
 		zcObj.g55c = Number((MPO * unitConv).toFixed(5));
 		config.driver.setMany(zcObj, function(err, value) {
-			callback();
 			this.cmd_posc = this.posc = 0;
+			callback();
 		}.bind(this));
 	}.bind(this));
 };
@@ -109,9 +109,9 @@ exports.Z2 = function(args, callback)  {
 		z2Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
 		z2Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
 		config.driver.setMany(z2Obj, function(err, value) {
-			callback();
 			this.cmd_posx = this.posx = 0;
 			this.cmd_posy = this.posy = 0;
+			callback();
 		}.bind(this));
 	}.bind(this));
 };
@@ -131,10 +131,10 @@ exports.Z3 = function(args,callback) {
 		z3Obj.g55z = Number((MPO.z * unitConv).toFixed(5));
 		log.debug(JSON.stringify(z3Obj));
 		config.driver.setMany(z3Obj, function(err, value) {
-			callback();
 			this.cmd_posx = this.posx = 0.0;
 			this.cmd_posy = this.posy = 0.0;
 			this.cmd_posz = this.posz = 0.0;
+			callback();
 		}.bind(this));
 	}.bind(this));
 };
@@ -150,11 +150,11 @@ exports.Z4 = function(args,callback) {
 		z4Obj.g55z = Number((MPO.z * unitConv).toFixed(5));
 		z4Obj.g55a = Number((MPO.a * unitConv).toFixed(5));
 		config.driver.setMany(z4Obj, function(err, value) {
-			callback();
 			this.cmd_posx = this.posx = 0.0;
 			this.cmd_posy = this.posy = 0.0;
 			this.cmd_posz = this.posz = 0.0;
 		 	this.cmd_posa = this.posa = 0.0;
+			callback();
 		}.bind(this));
 	}.bind(this));
 };
@@ -171,12 +171,12 @@ exports.Z5 = function(args,callback) {
 		z5Obj.g55a = Number((MPO.a * unitConv).toFixed(5));
 		z5Obj.g55b = Number((MPO.b * unitConv).toFixed(5));
 		config.driver.setMany(z5Obj, function(err, value) {
-			callback();
 			this.cmd_posx = this.posx = 0.0;
 			this.cmd_posy = this.posy = 0.0;
 			this.cmd_posz = this.posz = 0.0;
 		 	this.cmd_posa = this.posa = 0.0;
 		 	this.cmd_posb = this.posb = 0.0;
+			callback();
 		}.bind(this));
 	}.bind(this));
 };
@@ -194,13 +194,13 @@ exports.Z6 = function(args,callback) {
 		z6Obj.g55b = Number((MPO.b * unitConv).toFixed(5));
 		z6Obj.g55c = Number((MPO.c * unitConv).toFixed(5));
 		config.driver.setMany(z6Obj, function(err, value) {
-			callback();
 			this.cmd_posx = this.posx = 0.0;
 			this.cmd_posy = this.posy = 0.0;
 			this.cmd_posz = this.posz = 0.0;
-		 	this.cmd_posa = this.posa = 0.0;
-		 	this.cmd_posb = this.posb = 0.0;
-		 	this.cmd_posc = this.posc = 0.0;
+			this.cmd_posa = this.posa = 0.0;
+			this.cmd_posb = this.posb = 0.0;
+			this.cmd_posc = this.posc = 0.0;
+			callback();
 		}.bind(this));
 	}.bind(this));
 };

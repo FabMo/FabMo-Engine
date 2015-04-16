@@ -78,5 +78,12 @@ ManualRuntime.prototype.fixed_move = function(direction, step) {
 	this.driver.fixed_move(direction,step);
 };
 
+ManualRuntime.prototype.pause = function() {
+	this.driver.feedHold();
+}
+
+ManualRuntime.prototype.quit = function() {
+	this.driver.quit();
+}
 
 exports.ManualRuntime = ManualRuntime;
