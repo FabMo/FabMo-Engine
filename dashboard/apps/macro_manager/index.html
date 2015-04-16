@@ -1,38 +1,37 @@
 <html> 
 <head>
-	<meta charset="utf-8">
-	<title>Macro Manager</title>
+    <meta charset="utf-8">
+    <title>Macro Manager</title>
 
-	<link rel="stylesheet" href="./css/foundation.min.css">
-	<link rel="stylesheet" href="./css/normalize.css">
-	<link rel="stylesheet" href="./css/style.css">
-	<link rel="stylesheet" href="./css/dataTables.foundation.css">
+    <link rel="stylesheet" href="./css/foundation.min.css">
+    <link rel="stylesheet" href="./css/normalize.css">
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/dataTables.foundation.css">
 
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-	<header class="grey"> <!-- Class can be "blue", "red", "grey", "orange" -->
-		<section>
-			<div class="app-title-container">
-				<h2>Macros</h2>
-			</div>
-		</section>
-	</header>
+    <header class="grey"> <!-- Class can be "blue", "red", "grey", "orange" -->
+        <section>
+            <div class="app-title-container">
+                <h2>Macros</h2>
+            </div>
+        </section>
+    </header>
 
-	<section class="container">
-		<div class="row">
-			<!-- WIRELESS SCANNING LISTING -->
-			<table class="small-12 columns" style="width:100%" id="macro_table">
-			<thead>
-            	<tr>
+    <section class="container">
+        <div class="row">
+            <table class="small-12 columns" style="width:100%" id="macro_table">
+            <thead>
+                <tr>
                     <th>&nbsp;</th>
-                	<th>Name</th>
-                	<th>Description</th>
-            	</tr>
-        	</thead>
-        	</table>
-		</div>
-	</section>
+                    <th>Name</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            </table>
+        </div>
+    </section>
 
   <!-- Javascript inclusions -->
   <script src="./js/jquery.js"></script>
@@ -45,20 +44,20 @@
   <script type="text/javascript">
   $(document).ready(function() {
 
-  	//Foundation Init
-	$(document).foundation();
-	
+    //Foundation Init
+    $(document).foundation();
+    
     var macro_table = $('#macro_table').DataTable( {
-    	"filter": false,
-    	"paging": false,
+        "filter": false,
+        "paging": false,
         "processing": false,
         "bInfo": false,
         "bLengthChange":false,
         "ajax": {
-        	"url" : "/macros",
-        	"dataSrc" : function(json) { 
-        		return json.data; }
-        	},
+            "url" : "/macros",
+            "dataSrc" : function(json) { 
+                return json.data; }
+            },
         "columns": [
             {
                 "className":      'run-control',
@@ -67,13 +66,13 @@
                 "defaultContent": '',
             },
             {
-            	data : "name", 
-            	defaultContent : '', 
+                data : "name", 
+                defaultContent : '', 
                 className : 'noselect'
             },
             {
-            	data : "description", 
-            	defaultContent : '',
+                data : "description", 
+                defaultContent : '',
                 className : 'noselect'
             }
         ],
