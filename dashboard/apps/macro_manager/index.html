@@ -25,6 +25,7 @@
 			<table class="small-12 columns" style="width:100%" id="macro_table">
 			<thead>
             	<tr>
+                    <th>&nbsp;</th>
                 	<th>Name</th>
                 	<th>Description</th>
             	</tr>
@@ -60,6 +61,12 @@
         	},
         "columns": [
             {
+                "className":      'run-control',
+                "orderable":      false,
+                "data":           null,
+                "defaultContent": '',
+            },
+            {
             	data : "name", 
             	defaultContent : '', 
                 className : 'noselect'
@@ -78,6 +85,16 @@
         var row = macro_table.row( tr );
         var macro = row.data();
         fabmoDashboard.runMacro(macro.index)
+    } );
+
+    $('#macro_table tbody').on( 'click', 'td', function () {
+        var tr = $(this).closest('tr');
+        var row = macro_table.row( tr );
+        var cell = macro_table.cell( this );
+        var macro = row.data();
+        if(cell.index().column === 0) {
+            fabmoDashboard.runMacro(macro.index)
+        }
     } );
 
 });

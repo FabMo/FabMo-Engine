@@ -18,8 +18,8 @@ h1, h2, h3, h4, h5, h6 {
     cursor: pointer;
 }
 
-td.details-control {
-    background: url('images/details_open.png') no-repeat center center;
+td.run-control {
+    background: url('images/forward_enabled.png') no-repeat center center;
     width: 40px;
     cursor: pointer;
 }
