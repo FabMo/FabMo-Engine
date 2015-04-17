@@ -317,6 +317,9 @@ function fixJSON(json) {
         if(typeof value === 'undefined' || isNaN(value)) {
             value = json[key];
           }
+        if(key[0] === '_') {
+            key = key.slice(1);
+        }
         retval[key] = value;
     }
     return retval;

@@ -277,10 +277,9 @@ G2.prototype.fixed_move = function(direction,step,speed) {
 		var move;
 		if(mstep > 0.005) {
 			mstep -= 0.005;
+			mstep = mstep.toFixed(5)
 			var move = 'G91 G1 ' + d + 0.005 + ' F' + speed + '\n' +'G1' + d + mstep + 'F' + speed + '\n';
 		} else {
-			mstep = mstep.toFixed(5);
-			speed = speed.toFixed(5);
 			move = 'G91 G1 ' + d + mstep + ' F' + speed;
 		}
 		this.gcodeWrite(move);
