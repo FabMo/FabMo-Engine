@@ -8,8 +8,18 @@ h1, h2, h3, h4, h5, h6 {
   color: #666;
 }
 
-td.details-control {
-    background: url('images/details_open.png') no-repeat center center;
+.noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: pointer;
+}
+
+td.run-control {
+    background: url('images/forward_enabled.png') no-repeat center center;
     width: 40px;
     cursor: pointer;
 }

@@ -25,7 +25,7 @@
 			<table class="small-12 columns" style="width:100%" id="macro_table">
 			<thead>
             	<tr>
-                	<th>&nbsp;</th>
+                    <th>&nbsp;</th>
                 	<th>Name</th>
                 	<th>Description</th>
             	</tr>
@@ -61,7 +61,7 @@
         	},
         "columns": [
             {
-                "className":      'details-control',
+                "className":      'run-control',
                 "orderable":      false,
                 "data":           null,
                 "defaultContent": '',
@@ -69,58 +69,31 @@
             {
             	data : "name", 
             	defaultContent : '', 
+                className : 'noselect'
             },
-            { 
+            {
             	data : "description", 
             	defaultContent : '',
+                className : 'noselect'
             }
         ],
         "order" : [[1,"asc"]]
     }); // DataTable
 
-
-    function macro_child_row(network) {
-        retval = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">'
-        retval += '<tr>'+
-                    '<td class="child-row-label">Description:</td>'+
-                    '<td>'+ (network.ssid || '<em>No SSID?</em>') + '</td>'+
-                  '</tr>'+
-             '</table>';
-
-        return retval;
-    }
-
     $('#macro_table tbody').on('dblclick', 'tr', function () {
-
-        //var name = $('td', this).eq(1).text();
-        //alert(name);
         var tr = $(this).closest('tr');
         var row = macro_table.row( tr );
         var macro = row.data();
         fabmoDashboard.runMacro(macro.index)
     } );
 
-
-    // Add event listener for opening and closing details
-    $('#macro_table tbody').on('click', 'td.details-control', function () {
+    $('#macro_table tbody').on( 'click', 'td', function () {
         var tr = $(this).closest('tr');
         var row = macro_table.row( tr );
-        if(row.child()) {
-            if ( row.child.isShown() ) {
-                // This row is already open - close it
-                row.child.hide();
-                tr.removeClass('shown');
-            }
-            else {
-                // Open this row
-                row.child.show();
-                tr.addClass('shown');
-            }
-        } else {
-            network = row.data()
-            row.child( macro_child_row(network) ).show();
-            // DO STUFF
-            tr.addClass('shown');
+        var cell = macro_table.cell( this );
+        var macro = row.data();
+        if(cell.index().column === 0) {
+            fabmoDashboard.runMacro(macro.index)
         }
     } );
 
