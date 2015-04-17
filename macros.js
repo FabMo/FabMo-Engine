@@ -40,7 +40,7 @@ var _parseMacroFile = function(filename, callback) {
 	var ok = false;
 	fs.readFile(filename, function(err, data) {
 		if(err) {
-			console.log(err)
+			log.error(err)
 		} else {
 			lines = data.toString().split('\n');
 			i = 0;
@@ -120,7 +120,6 @@ var load = function(callback) {
 						macros[idx] = info;
 					}
 				});
-				console.log(macros)
 			});
 		}
 	})
