@@ -194,10 +194,10 @@ Machine.prototype.jog = function(direction, callback) {
 
 };
 
-Machine.prototype.fixed_move = function(direction,step, callback) {
+Machine.prototype.fixed_move = function(direction,step,speed,callback) {
 	if((this.status.state === "idle") || (this.status.state === "manual")) {
 		this.setRuntime(this.manual_runtime);
-		this.current_runtime.fixed_move(direction,step);
+		this.current_runtime.fixed_move(direction,step,speed);
 
 	} else {
 		typeof callback === "function" && callback(true, "Cannot move by step when in '" + this.status.state + "' state.");

@@ -74,8 +74,8 @@ ManualRuntime.prototype.jog = function(direction) {
 	this.driver.jog(direction);
 };
 
-ManualRuntime.prototype.fixed_move = function(direction, step) {
-	this.driver.fixed_move(direction,step);
+ManualRuntime.prototype.fixed_move = function(direction, step, speed) {
+	this.driver.fixed_move(direction,step,speed);
 };
 
 ManualRuntime.prototype.pause = function() {

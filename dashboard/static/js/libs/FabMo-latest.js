@@ -556,7 +556,7 @@ FabMo.prototype.stop_move =  function(callback)
 	});
 };
 
-FabMo.prototype.fixed_move =  function(dir,step,callback)
+FabMo.prototype.fixed_move =  function(dir,step,speed,callback)
 {
 //	if (!callback)
 //		throw "this function need a callback to work !";
@@ -566,7 +566,7 @@ FabMo.prototype.fixed_move =  function(dir,step,callback)
 		url: this.url.fixed_move,
 		type: "POST",
 		dataType : 'json', 
-		data :{"move" : dir, "step" : step},
+		data :{"move" : dir, "step" : step, "speed" : speed},
 		success: function( data ) {
 			if(data.status === "success") {
 				callback(undefined,data.data);

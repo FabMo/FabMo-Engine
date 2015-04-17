@@ -67,28 +67,40 @@ function setupHandwheel() {
 		thumbColor: "#9C210C", 
 		wheelColor:"#DD8728", 
 		lineColor:"#000000",
-		textFont: "source_sans_proextralight"
+		textFont: "source_sans_proextralight",
+		textSize: 10,
+		thumbs: ['X','Y','Z'],
+		modes: ['S','M','F']
 	});
 
-	var angle = 0.0;
 	var SCALE = 0.010;
+	var SPEEDS = {'S': 30, 'M':60, 'F':120}
+	var angle = 0.0;
+	var speed = 30.0;
 
 	wheel.on("sweep", function(evt) {
 		var degrees = evt.angle*180.0/Math.PI;
 		angle += degrees;
 		var distance = Math.abs(angle*SCALE);
+		var axis = evt.thumb;
 		if(angle > 5.0) {
 			angle = 0;
-			dashboard.machine.fixed_move('+' + wheel.getMode(), distance, function(err) {});
+			dashboard.machine.fixed_move('+' + axis, distance, speed, function(err) {});
 		}
 		if(angle < -5.0) {
 			angle = 0;
-			dashboard.machine.fixed_move('-' + wheel.getMode(), distance, function(err) {});
+			dashboard.machine.fixed_move('-' + axis, distance, speed, function(err) {});
 		}
 	});
 
 	wheel.on("release", function(evt) {
 		dashboard.machine.quit(function() {})
+	});
+
+	wheel.on("mode", function(evt) {
+		console.log(evt);
+		speed = SPEEDS[evt.mode];
+		console.log(speed)
 	});
 
 }

@@ -259,13 +259,12 @@ G2.prototype.jog = function(direction) {
 };
 
 // Start or continue jogging in the direction provided, which is one of x,-x,y,-y,z-z,a,-a,b,-b,c,-c
-G2.prototype.fixed_move = function(direction,step) {
+G2.prototype.fixed_move = function(direction,step,speed) {
 	if(this.quit_pending){ 
 		log.warn("WARNING QUIT PENDING WHILE DOING A FIXED MOVE")
 	}
-	var mstep;
-	if(step)mstep=step;else mstep=0.01;
-	var FEED_RATE = 60.0;
+	var mstep = parseFloat(step ? step : 0.01).toFixed(5);
+	var speed = parseFloat(speed || 60.0).toFixed(2);
 
 	// Normalize the direction provided by the user
 	direction = String(direction).trim().toLowerCase().replace(/\+/g,"");
@@ -278,9 +277,11 @@ G2.prototype.fixed_move = function(direction,step) {
 		var move;
 		if(mstep > 0.005) {
 			mstep -= 0.005;
-			var move = 'G91 G1 ' + d + 0.005 + ' F' + FEED_RATE + '\n' +'G1' + d + mstep.toFixed(5) + 'F' + FEED_RATE + '\n';
+			var move = 'G91 G1 ' + d + 0.005 + ' F' + speed + '\n' +'G1' + d + mstep + 'F' + speed + '\n';
 		} else {
-			move = 'G91 G1 ' + d + mstep + ' F' + FEED_RATE;
+			mstep = mstep.toFixed(5);
+			speed = speed.toFixed(5);
+			move = 'G91 G1 ' + d + mstep + ' F' + speed;
 		}
 		this.gcodeWrite(move);
 	} 

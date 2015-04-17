@@ -177,7 +177,7 @@ fixed_move = function(req, res, next) {
 		res.json(answer);
 	}
 	else if (req.params.move !== undefined && req.params.step !== undefined) {
-		machine.fixed_move(req.params.move, req.params.step);
+		machine.fixed_move(req.params.move, req.params.step, req.params.speed);
 		answer = {
 			status:"success",
 			data : null

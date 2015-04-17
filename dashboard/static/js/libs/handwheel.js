@@ -9,7 +9,8 @@ var HandWheel = function(element, options) {
     this.textColor = options.textColor || "#000000";
     this.bgColor = options.bgColor || null;
     this.textFont = options.textFont || "Arial, Helvetica, sans-serif"
-    this.modes = options.modes || ['X','Y','Z'];
+    this.modes = options.modes || [''];
+    thumbLabels = options.thumbs || [''];
 
     this.canvas = document.getElementById(element);
     this.ctx = this.canvas.getContext("2d");
@@ -17,18 +18,33 @@ var HandWheel = function(element, options) {
     this.h = this.canvas.height;
     this.center = {x:this.w/2.0, y:this.h/2.0}
     this.cr = (this.w + this.h)/4.0;
-    this.thumbPosition = -1.57079632679;
     this.pos = null;
     this.radius = 0.9*this.cr;
-    this.textSize = 0.9*this.radius/2.0;
+    this.textSize = 0.5*this.radius/2.0;
     this.textString = this.textSize + 'pt ' + this.textFont;
     this.active = false;
     this.angle = null;
-    this.thumbRadius = this.radius*0.25;
-    this.thumbCenter = {}
-    this.thumbCenter.x = this.center.x + Math.cos(this.thumbPosition)*this.radius*0.65;
-    this.thumbCenter.y = this.center.y + Math.sin(this.thumbPosition)*this.radius*0.65;
-    this.middleRadius = 0.9*(dist(this.center, this.thumbCenter) - this.thumbRadius);
+    this.thumbs = [];
+    this.thumb = null;
+
+    var i=0;
+    var pos=0;
+    while(i < thumbLabels.length) {
+        var center = {
+            'x' : this.center.x + Math.cos(pos)*this.radius*0.65,
+            'y' : this.center.y + Math.sin(pos)*this.radius*0.65
+        }
+        this.thumbs.push({
+            'label' : thumbLabels[i],
+            'pos' : pos,
+            'center' : center,
+            'radius' : this.radius*0.25
+        });
+        pos += 2*Math.PI/thumbLabels.length;
+        i+=1;
+    }
+
+    this.middleRadius = 0.9*(dist(this.center, this.thumbs[0].center) - this.thumbs[0].radius);
     this.mode_idx = 0;
     this.handlers = {};
     this._setupListeners();
@@ -63,11 +79,14 @@ HandWheel.prototype._handleMove = function(evt) {
                 dt += 2*Math.PI;
             }
             dt = -dt;
-            if(this.active) {
-                this.thumbPosition += dt;
-                this.thumbCenter.x = this.center.x + Math.cos(this.thumbPosition)*this.radius*0.65;
-                this.thumbCenter.y = this.center.y + Math.sin(this.thumbPosition)*this.radius*0.65;    
-                this.emit('sweep', {'angle':dt})
+            if(this.active && this.thumb) {
+                for(i in this.thumbs) {
+                    thumb = this.thumbs[i];
+                    thumb.pos += dt;
+                    thumb.center.x = this.center.x + Math.cos(thumb.pos)*this.radius*0.65;
+                    thumb.center.y = this.center.y + Math.sin(thumb.pos)*this.radius*0.65;    
+                }
+                this.emit('sweep', {'angle':dt, 'thumb':this.thumb})
                 this._draw();
             }
         }
@@ -76,7 +95,7 @@ HandWheel.prototype._handleMove = function(evt) {
 
 HandWheel.prototype.nextMode = function() {
     this.mode_idx = (this.mode_idx + 1) % this.modes.length;
-    this.emit("mode", {mode:this.getMode()})
+    this.emit("mode", {"mode":this.getMode()})
     this._draw();
 }
 
@@ -84,8 +103,8 @@ HandWheel.prototype.getMode = function() {
     return this.modes[this.mode_idx];
 }
 
-HandWheel.prototype._hitsThumb = function(pos) {
-    return dist(pos, this.thumbCenter) < this.thumbRadius;
+HandWheel.prototype._hitsThumb = function(pos, thumb) {
+    return dist(pos, thumb.center) < thumb.radius;
 }
 
 HandWheel.prototype._hitsMiddle = function(pos) {
@@ -101,26 +120,33 @@ HandWheel.prototype._drawText = function() {
     ctx.fillText(this.modes[this.mode_idx], this.center.x, this.center.y);
 }
 
-HandWheel.prototype._activate = function(evt) {
+HandWheel.prototype._activate = function(pos) {
         this.active = true;
         this.angle = null;
-        this.pos = this._getMousePos(evt);
+        this.pos = pos;
 }
 
 HandWheel.prototype._deactivate = function(evt) {
        this.active = false;
        this.angle = null;
        this.pos = null;
+       this.thumb = null;
        this.emit("release", {});
 }
 
 HandWheel.prototype._setupListeners = function() {
     this.canvas.addEventListener('mousedown', function(evt) {
-        pos = this._getMousePos(evt);
-        if(this._hitsThumb(pos)) {
-            this._activate(evt);
-        } else if(this._hitsMiddle(pos)) {
+        var pos = this._getMousePos(evt);
+        if(this._hitsMiddle(pos)) {
             this.nextMode();
+        } else {
+            for(i in this.thumbs) {
+                thumb = this.thumbs[i];
+                if(this._hitsThumb(pos, thumb)) {
+                    this.thumb = thumb.label;
+                    this._activate(pos);
+                }
+            }
         }
         evt.stopPropagation();
         evt.preventDefault();
@@ -128,18 +154,26 @@ HandWheel.prototype._setupListeners = function() {
 
     this.canvas.addEventListener('mouseup', function(evt) {
         this._deactivate(evt);
+        this._draw();
     }.bind(this));   
     
     this.canvas.addEventListener('blur', function(evt) {
         this._deactivate(evt);
+        this._draw();
     }.bind(this));
 
     this.canvas.addEventListener('touchstart', function(evt) {
-        pos = this._getMousePos(evt);
-        if(this._hitsThumb(pos)) {
-            this._activate(evt);
-        } else if(this._hitsMiddle(pos)) {
+        var pos = this._getMousePos(evt);
+        if(this._hitsMiddle(pos)) {
             this.nextMode();
+        } else {
+            for(i in this.thumbs) {
+                thumb = this.thumbs[i];
+                if(this._hitsThumb(pos, thumb)) {
+                    this.thumb = thumb.label
+                    this._activate(pos);
+                }
+            }
         }
         evt.stopPropagation();
         evt.preventDefault();
@@ -147,6 +181,7 @@ HandWheel.prototype._setupListeners = function() {
     
     this.canvas.addEventListener('touchend', function(evt) {
         this._deactivate(evt);
+        this._draw();
     }.bind(this), false);
     
     this.canvas.addEventListener('touchmove', function(evt) {
@@ -171,7 +206,7 @@ HandWheel.prototype.emit = function(event, data) {
 HandWheel.prototype._draw = function() {
     this._clear();
     this._drawCircle();
-    this._drawThumb();  
+    this._drawThumbs();  
     this._drawText();  
 }
 
@@ -195,14 +230,28 @@ HandWheel.prototype._clear = function() {
     }
 }
 
-HandWheel.prototype._drawThumb = function() {
+HandWheel.prototype._drawThumbs = function() {
     var ctx = this.ctx;
-    ctx.beginPath();
-    ctx.arc(this.thumbCenter.x,this.thumbCenter.y,this.thumbRadius,0,2*Math.PI);
-    ctx.strokeStyle = this.lineColor;
-    ctx.fillStyle = this.thumbColor;
-    ctx.fill();
-    ctx.stroke();
+    for(i in this.thumbs) {
+        thumb = this.thumbs[i];
+        ctx.beginPath();
+        ctx.arc(thumb.center.x,thumb.center.y,thumb.radius,0,2*Math.PI);
+        ctx.strokeStyle = this.lineColor;
+        ctx.fillStyle = this.thumbColor;
+        if(this.active) {
+            ctx.globalAlpha = (this.thumb === thumb.label) ? 1.0 : 0.5;
+        } else {
+            ctx.globalAlpha = 1.0;
+        }
+        ctx.fill();
+        ctx.stroke();
+        ctx.font = this.textString;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = this.textColor;
+        ctx.fillText(thumb.label, thumb.center.x, thumb.center.y);
+        ctx.globalAlpha = 1.0;
+    }
 }
 
 HandWheel.prototype._getMousePos = function(evt) {
