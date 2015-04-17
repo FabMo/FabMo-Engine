@@ -60,7 +60,7 @@ EngineConfig.prototype.checkWifi = function(){
 				logger.warn(err);
 			}
 		}.bind(this));
-	});
+	}.bind(this));
 
 	}catch(e){
 		wifiscanner = undefined;
