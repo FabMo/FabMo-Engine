@@ -20,13 +20,15 @@ EngineConfig.prototype.update = function(data, callback) {
 			this._cache[key] = data[key];
 		}
 	} catch (e) {
-		return callback(e);
+		if(callback) {
+			return setImmediate(callback, e);
+		}
 	}
 	this.save(function(err, result) {
 		if(err) {
-			callback(err);
+			typeof callback === 'function' && callback(e);
 		} else {
-			callback(null, data);
+			typeof callback === 'function' && callback(null, data);
 		}
 	});
 };
@@ -42,7 +44,6 @@ EngineConfig.prototype.apply = function(callback) {
 };
 
 EngineConfig.prototype.checkWifi = function(){
-	var that = this;
 	try{
 		// check if the dependency is installed
 		wifiscanner = require('node-simplerwifiscanner');
@@ -54,18 +55,16 @@ EngineConfig.prototype.checkWifi = function(){
 	    	if (error)
 	    		throw error;
 
-	    	that.update({wifi_manager:true},function(err){
+	    	this.set('wifi_manager', true, function(err){
 			if(err) {
-				logger.warn(e);
+				logger.warn(err);
 			}
-		});
+		}.bind(this));
 	});
 
 	}catch(e){
 		wifiscanner = undefined;
-		that.update({wifi_manager:false},function(e){
-			logger.error(e);
-		});
+		this.set('wifi_manager', false);
 	}
 
 };

@@ -11,9 +11,9 @@ Config = function(config_name) {
 	this._cache = {};
 	this.config_name = config_name;
 	this.default_config_file = __dirname + '/default/' + config_name + '.json';
-	this.config_file = Config.getDataDir('config') + '/' + config_name + '.json';	
-	this._filename = null;
-};
+	this.config_file = Config.getDataDir('config') + '/' + config_name + '.json';
+	this._loaded = false
+}
 
 Config.prototype.get = function(k) {
 	return this._cache[k];
@@ -44,7 +44,7 @@ Config.prototype.load = function(filename, callback) {
 		try {
 			data = JSON.parse(data);
 		} catch (e) {
-            log.error(data);
+			log.error(e);
 			return callback(e);
 		}
 		this.update(data, callback);
@@ -52,8 +52,11 @@ Config.prototype.load = function(filename, callback) {
 };
 
 Config.prototype.save = function(callback) {
-	if(this._filename) {
-		fs.writeFile(this._filename, JSON.stringify(this._cache, null, 4), callback);
+	if(this._loaded && this.config_file) {
+		log.debug("Saving config to " + this.config_file);
+		fs.writeFile(this.config_file, JSON.stringify(this._cache, null, 4), callback);
+	} else {
+		setImmediate(callback);
 	}
 };
 
@@ -73,6 +76,7 @@ Config.prototype.init = function(callback) {
 						callback(null, this);
 					}
 				} else {
+					this._loaded = true;
 					callback(null, this);
 				}
 			}.bind(this)); }.bind(this)
