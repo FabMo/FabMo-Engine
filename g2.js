@@ -414,6 +414,7 @@ G2.prototype.handleStatusReport = function(response) {
 		}
 
 		// Emit status no matter what
+		console.log('emitting status update');
 		this.emit('status', this.status);
 
 		// Send more g-codes if warranted

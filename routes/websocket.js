@@ -21,7 +21,6 @@ connect = function(socket) {
 	socket.on('disconnect', function() {
 		socket_close(socket);
 		nb_clients--;
-
 	});
 };
 

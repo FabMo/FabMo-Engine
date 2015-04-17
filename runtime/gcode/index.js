@@ -82,6 +82,8 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 			}
 			break;
 	}
+	this.machine.emit('status',this.machine.status);
+
 };
 
 GCodeRuntime.prototype._idle = function() {

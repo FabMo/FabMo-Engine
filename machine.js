@@ -229,6 +229,7 @@ Machine.prototype.setState = function(source, newstate) {
 	} else {		
 		log.warn("Got a state change from a runtime that's not the current one. (" + source + ")")
 	}
+	this.emit('status',this.status);
 };
 
 Machine.prototype.stopJog = function() {

@@ -106,6 +106,7 @@ SBPRuntime.prototype._onG2Status = function(status) {
 			this.machine.status[key] = status[key];
 		}
 	}
+	this.machine.emit('status',this.machine.status);
 };
 
 // Update the internal state of the runtime with data from the tool
