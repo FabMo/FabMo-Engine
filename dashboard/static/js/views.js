@@ -65,22 +65,16 @@ define(function(require) {
 			_.bindAll(this, 'render');
 		},
 		render : function() {
-			element = jQuery(this.el);
-			var iframe = element.find('.app-iframe')[0];
-			
 			if(this.model) {
 				url = this.model.get('app_url');
-				var d = require('dashboard');
 			} else {
 				url = "about:blank";
-				//var d = null;
 			}
-			iframe.src = url;
-			
-			$('.app-iframe').load(function() {
-				iframe.contentWindow.dashboard = d;
-			});
 
+			var client_container = jQuery(this.el);
+			var src = '<iframe class="app-iframe" id="app-iframe" sandbox="allow-scripts allow-same-origin" src="' + url + '"></iframe>'
+			client_container.html(src);
+			iframe = client_container.children();
 		},
 		show : function() {
 			$(".main-section").show();
