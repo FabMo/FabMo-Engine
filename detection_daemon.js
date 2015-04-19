@@ -17,7 +17,7 @@ var default_port = 24862; // = 7777 without conversion
 var start = function(port) {
 	var socket = dgram.createSocket('udp4');
 	var that = this;
-	var port = port || default_port;
+	port = port || default_port;
 
 	// Listen on the specified port
 	socket.bind(port);
@@ -49,23 +49,23 @@ var start = function(port) {
 					}
 				});
 			},os.networkInterfaces());
-			console.log(JSON.stringify(result));
+			log.info(JSON.stringify(result));
 			socket.send(new Buffer(JSON.stringify(result)), 0, JSON.stringify(result).length, rinfo.port, rinfo.address, function (err) {
 				if (err) log.error(err);
 						//console.log("ask info");
 				});
-			that.emit('client_scan',rinfo.address);
+			//that.emit('client_scan',rinfo.address);
 		}
 		else
 		{
-			log.info("[detection_tool.js] received from "+rinfo.address+" : unknown message : '"+ data.toString() +"'");
+			log.info("received from "+rinfo.address+" : unknown message : '"+ data.toString() +"'");
 		}
 	});
 
-	this.on('newListener', function(listener) {});
+	//this.on('newListener', function(listener) {});
 };
 
-util.inherits(start , EventEmitter);
+//util.inherits(start , EventEmitter);
 
 // detection_daemon.start kicks off the listening process
 module.exports = start;
