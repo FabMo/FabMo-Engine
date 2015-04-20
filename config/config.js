@@ -70,6 +70,7 @@ Config.prototype.init = function(callback) {
 				if(err) {
 					if(err.code === "ENOENT") {
 						log.warn('Configuration file ' + this.config_file + ' not found.');
+						this._loaded = true;
 						this.save(callback);
 					} else {
 						log.warn('Problem loading the user configuration file "' + this.config_file + '": ' + err.message);
