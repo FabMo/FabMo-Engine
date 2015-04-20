@@ -58,6 +58,16 @@
             "x": 0,
             "y": 0,
             "z": 0
+        },
+        "interpolate": {
+            "apply": false
+        },
+        "level": {
+            "apply": false,
+            "ptDataFile": "C:/SbParts/PtData.json"
         }
-    }
+    },
+    "cRes": 0.01,
+    "GblPropX": 1,
+    "GblPropY": 1
 }

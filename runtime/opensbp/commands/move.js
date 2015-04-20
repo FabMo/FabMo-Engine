@@ -6,76 +6,116 @@ var config = require('../../../config');
 // Move X axis
 exports.MX = function(args) {
 	var x = args[0];
-	if(isNaN(x)) { throw( "Invalid MX argument: " + x ); }
+
+	log.debug( " MX args: " + JSON.stringify(args));
+	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	this.emit_move('G1',{"X":x,'F':feedrate});
+
+/*	if(isNaN(x)) { throw( "Invalid MX argument: " + x ); }
 	var PtXfrm = { "X":x };
 	PtXfrm = this.transformation(PtXfrm);
     x = PtXfrm.X;
 	this.emit_gcode("G1X" + x + " F" + ( 60.0 * config.opensbp.get('movexy_speed')));
 	this.cmd_posx = x;
+*/
 };
 
 // Move Y axis
 exports.MY = function(args) {
 	var y = args[0];
-	if(isNaN(y)) { throw( "Invalid MY argument: " + y ); }
+
+	log.debug( " MY args: " + JSON.stringify(args));
+	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	this.emit_move('G1',{"Y":y,'F':feedrate});
+
+/*	if(isNaN(y)) { throw( "Invalid MY argument: " + y ); }
+	log.debug("MY  " + y );
 	var PtXfrm = { "Y":y };
 	this.raw_posy = args[0];
 	PtXfrm = this.transformation(PtXfrm);
     y = PtXfrm.Y;
 	this.emit_gcode("G1Y" + y + " F" + ( 60.0 * config.opensbp.get('movexy_speed')));
 	this.cmd_posy = y;
+*/
 };
 
 // Move Z axis
 exports.MZ = function(args) {
 	var z = args[0];
-	if(isNaN(z)) { throw( "Invalid MZ argument: " + z ); }
+
+	log.debug( " MZ args: " + JSON.stringify(args));
+	feedrate = (60.0 * config.opensbp.get('movez_speed'));
+	this.emit_move('G1',{"Z":z,'F':feedrate});
+
+/*	if(isNaN(z)) { throw( "Invalid MZ argument: " + z ); }
 	var PtXfrm = { "Z":z };
 	this.raw_posz = args[0];
 	PtXfrm = this.transformation(PtXfrm);
     z = PtXfrm.Z;
 	this.emit_gcode("G1Z" + z + " F" + ( 60.0 * config.opensbp.get('movez_speed')));
 	this.cmd_posz = z;
+*/
 };
 
 // Move A axis
 exports.MA = function(args) {
 	var a = args[0];
-	if(isNaN(a)) { throw( "Invalid MA argument: " + a ); }
+
+	log.debug( " MA args: " + JSON.stringify(args));
+	feedrate = (60.0 * config.opensbp.get('movea_speed'));
+	this.emit_move('G1',{"A":a,'F':feedrate});
+
+/*	if(isNaN(a)) { throw( "Invalid MA argument: " + a ); }
 	var PtXfrm = { "A":a };
 	this.raw_posa = args[0];
 	PtXfrm = this.transformation(PtXfrm);
     a = PtXfrm.A;
 	this.emit_gcode("G1A" + a + " F" + ( 60.0 * config.opensbp.get('movea_speed')));
 	this.cmd_posa = a;
+*/
 };
 
 // Move B axis
 exports.MB = function(args) {
 	var b = args[0];
-	if(isNaN(b)) { throw( "Invalid MB argument: " + b ); }
+
+	log.debug( " MB args: " + JSON.stringify(args));
+	feedrate = (60.0 * config.opensbp.get('moveb_speed'));
+	this.emit_move('G1',{"B":b,'F':feedrate});
+
+/*	if(isNaN(b)) { throw( "Invalid MB argument: " + b ); }
 	this.raw_posb = args[0];
 	this.emit_gcode("G1B" + b + " F" + ( 60.0 * config.opensbp.get('moveb_speed')));
 	this.cmd_posb = b;
+*/
 };
 
 // Move C axis
 exports.MC = function(args) {
 	var c = args[0];
-	if(isNaN(c)) { throw( "Invalid MC argument: " + c ); }
+
+	log.debug( " MC args: " + JSON.stringify(args));
+	feedrate = (60.0 * config.opensbp.get('movec_speed'));
+	this.emit_move('G1',{"C":c,'F':feedrate});
+
+/*	if(isNaN(c)) { throw( "Invalid MC argument: " + c ); }
 	this.raw_posc = args[0];
 	this.emit_gcode("G1C" + c + " F" + ( 60.0 * config.opensbp.get('movec_speed')));
 	this.cmd_posc = c;
+*/
 };
 
 // Move 2 axes (XY). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.M2 = function(args) {
-	log.debug(JSON.stringify(args));
-    var x = args[0]; 
-    var y = args[1];
+	var x = args[0];
+	var y = args[1];
 
-	if (x === undefined) { x = this.cmd_posx; }
+	log.debug( " M2 args: " + JSON.stringify(args));
+	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	this.emit_move('G1',{"X":x,"Y":y,'F':feedrate});
+
+/*	if (x === undefined) { x = this.cmd_posx; }
 	  else { 
 	  	if(isNaN(x)) { throw( "Invalid M2-X argument: " + x ); }
 	  	this.raw_posx = args[0]; 
@@ -102,6 +142,7 @@ exports.M2 = function(args) {
 	}
 	outStr = outStr + "F" + ( 60.0 * config.opensbp.get('movexy_speed')); 
 	this.emit_gcode(outStr);
+*/	
 };
 
 // Move 3 axes (XYZ). This is a modal command, any axis location that is left out
@@ -113,8 +154,8 @@ exports.M3 = function(args) {
 	//var M3res = 5;
 
 	log.debug( " M3 args: " + JSON.stringify(args));
-	feedrate = (60.0 * config.opensbp.get('movexy_speed'))
-	this.emit_move('G1',{"X":x,"Y":y,"Z":z, 'F':feedrate})
+	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	this.emit_move('G1',{"X":x,"Y":y,"Z":z, 'F':feedrate});
 
 /*
 	if (x === undefined) { x = this.cmd_posx; }
@@ -166,7 +207,13 @@ exports.M4 = function(args) {
 	var x = args[0];
 	var y = args[1];
 	var z = args[2];
-	var M3res = 5;
+	var a = args[3];
+
+	log.debug( " M3 args: " + JSON.stringify(args));
+	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	this.emit_move('G1',{"X":x,"Y":y,"Z":z,"A":a, 'F':feedrate});
+
+/*	var M3res = 5;
 
 	if (x === undefined) { x = this.cmd_posx; }
 	  else { 
@@ -212,6 +259,7 @@ exports.M4 = function(args) {
 	}
 	outStr = outStr + "F" + ( 60.0 * config.opensbp.get('movexy_speed')); 
 	this.emit_gcode(outStr);
+*/	
 };
 
 // Move 5 axes (XYZAB). This is a modal command, any axis location that is left out
@@ -220,7 +268,14 @@ exports.M5 = function(args) {
 	var x = args[0];
 	var y = args[1];
 	var z = args[2];
-	var M3res = 5;
+	var a = args[3];
+	var b = args[4];
+
+	log.debug( " M5 args: " + JSON.stringify(args));
+	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	this.emit_move('G1',{"X":x,"Y":y,"Z":z,"A":a,"B":b,'F':feedrate});
+
+/*	var M3res = 5;
 
 	if (x === undefined) { x = this.cmd_posx; }
 	  else { 
@@ -273,12 +328,24 @@ exports.M5 = function(args) {
 	}
 	outStr = outStr + "F" + ( 60.0 * config.opensbp.get('movexy_speed')); 
 	this.emit_gcode(outStr);
+*/
 };
 
 // Move all 6 axes (XYZABC). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.M6 = function(args) {
 	var x = args[0];
+	var y = args[1];
+	var z = args[2];
+	var a = args[3];
+	var b = args[4];
+	var c = args[5];
+
+	log.debug( " M6 args: " + JSON.stringify(args));
+	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	this.emit_move('G1',{"X":x,"Y":y,"Z":z,"A":a,"B":b,"C":c,'F':feedrate});
+
+/*	var x = args[0];
 	var y = args[1];
 	var z = args[2];
 	var M3res = 5;
@@ -341,14 +408,22 @@ exports.M6 = function(args) {
 	}
 	outStr = outStr + "F" + ( 60 * config.opensbp.get('movexy_speed')); 
 	this.emit_gcode(outStr);
-	
+*/	
 };
 
 // Move to the XY home position (0,0)
 exports.MH = function(args) {
-	this.emit_gcode("G1X0Y0F" + ( 60 * config.opensbp.get('movexy_speed')));
+	var x = 0;
+	var y = 0;
+
+	log.debug( "MH" );
+	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	this.emit_move('G1',{"X":x,"Y":y,'F':feedrate});
+
+/*	this.emit_gcode("G1X0Y0F" + ( 60 * config.opensbp.get('movexy_speed')));
 	this.cmd_posx = 0;
 	this.cmd_posy = 0;
+*/
 };
 
 // Set the Move (cut) speed for any of the 6 axes

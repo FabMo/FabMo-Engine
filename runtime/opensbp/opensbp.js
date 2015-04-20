@@ -114,7 +114,7 @@ SBPRuntime.prototype._update = function() {
 	if(this.machine) {
 		status = this.machine.status || {};
 	} else {
-		status = {}
+		status = {};
 	}
 	this.posx = status.posx || 0.0;
 	this.posy = status.posy || 0.0;
@@ -125,8 +125,11 @@ SBPRuntime.prototype._update = function() {
 };
 
 SBPRuntime.prototype._setupTransforms = function() {
+	log.debug("_setupTransforms");
 	this.transforms = JSON.parse(JSON.stringify(config.opensbp.get('transforms')));
-}
+    this.levelerData = JSON.parse(fs.readFileSync(this.transforms.level.ptDataFile));
+    log.debug("_setupTransforms: " + JSON.stringify(this.levelerData) );
+};
 
 // Evaluate a list of arguments provided (for commands)
 SBPRuntime.prototype._evaluateArguments = function(command, args) {
@@ -915,15 +918,28 @@ SBPRuntime.prototype.emit_gcode = function(s) {
 
 SBPRuntime.prototype.emit_move = function(code, pt) {
 	pt = this.transformation(pt);
-	gcode = code
-	for(key in pt) {
-		var v = pt[key]
-		if(isNaN(v)) { throw( "Invalid " + key + " argument: " + v ); } 
+	var gcode = code;
+	var numPts = 1; 
+	var i;
+
+//	if( this.transforms.interpolate.apply !== false ){
+	//if interpolate - num points
+		//numPts = ;
+//	}
+    for ( i=0; i<numPts; i++  ){
+      if( this.transforms.level.apply === true ){
+        log.debug("emit_move:level");
+	    //pt = this.leveler(pt[i]);
+	  }
+	  for(key in pt) {
+	  	var v = pt[key]
 		if(v !== undefined) {
-			gcode += (key + v.toFixed(5))
-		}
+		  if(isNaN(v)) { throw( "Invalid " + key + " argument: " + v ); } 
+		    gcode += (key + v.toFixed(5))
+		 }
+	  }
+	  this.current_chunk.push('N' + this.pc + gcode);
 	}
-	this.current_chunk.push('N' + this.pc + gcode);
 };
 
 // This must be called at least once before instantiating an SBPRuntime object
@@ -958,6 +974,18 @@ SBPRuntime.prototype.transformation = function(TranPt){
 
 	return TranPt;
 
+};
+
+SBPRuntime.prototype.leveler = function(PtNew){
+    log.debug("leveler_HB data = " + JSON.stringify(this.levelerData));
+
+    var zA = data.Z1 + ((data.Z2-data.Z1)*((PtNew.X-data.X1)/(data.X2-data.X1)));
+    var zB = data.Z4 + ((data.Z3-data.Z4)*((PtNew.X-data.X4)/(data.X3-data.X4)));
+    var zP = zA - ((zB-zA)*((PtY-data.Y1)/(data.Y4-data.Y1)));
+    log.debug("zP = " + zP);
+    PtNew.Z += PtZ;
+    log.debug("zP = " + zP + "   PtZ = " + PtZ);
+    return PtNew;
 };
 
 exports.SBPRuntime = SBPRuntime;

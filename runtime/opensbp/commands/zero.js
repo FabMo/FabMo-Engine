@@ -6,13 +6,13 @@ var config = require('../../../config');
 /* ZERO */
 
 // {"mpo":""}  return absolute machine positions fox XYZABC axes. 
-// !!!!!!!!!!!! Always in mm, regardless of G20/G21
+// !!!!!!!!!!!! Always in mm, regardless of G20/G21 setting
 
 // {"pos":""}  return work coordinate positions fox XYZABC axes. 
-//              In mm or inches depending on G20/G21
+//              In mm or inches depending on G20 or G21
 
 // {"g55":""}  returns the current offset to the UCS origin
-//              In mm or inches depending on G20/G21
+//              In mm or inches depending on G20 or G21
 
 
 exports.ZX = function(args, callback) {
