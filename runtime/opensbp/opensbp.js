@@ -408,7 +408,10 @@ SBPRuntime.prototype._dispatch = function(callback) {
 				"stop" : function(driver) { callback() },
 				null : function(t) {
 					log.warn("Expected a start but didn't get one. (" + t + ")"); 
-				}
+				},
+				"timeout" : function(driver) {
+					this._end();
+				}.bind(this)
 			});
 
 			this.driver.runSegment(this.current_chunk.join('\n') + '\n');
