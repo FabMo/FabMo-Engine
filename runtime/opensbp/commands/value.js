@@ -412,28 +412,28 @@ exports.VS = function(args,callback) {
 
 	if (args[0] !== undefined) {
 		speed_change = args[0];
-		g2_values.xfr = (60*speed_change);
-		g2_values.yfr = (60*speed_change);
+//		g2_values.xfr = (60*speed_change);
+//		g2_values.yfr = (60*speed_change);
 		sbp_values.movexy_speed = speed_change;
 	}
 	if (args[1] !== undefined) {
 		speed_change = args[1];
-		g2_values.zfr = (60*speed_change);
+//		g2_values.zfr = (60*speed_change);
 		sbp_values.movez_speed = speed_change;
 	}
 	if (args[2] !== undefined) {
 		speed_change = args[2];
-		g2_values.afr = (60*speed_change);
+//		g2_values.afr = (60*speed_change);
 		sbp_values.movea_speed = speed_change;
 	}
 	if (args[3] !== undefined) {
 		speed_change = args[3];
-		g2_values.bfr = (60*speed_change);
+//		g2_values.bfr = (60*speed_change);
 		sbp_values.moveb_speed = speed_change;
 	}
 	if (args[4] !== undefined) {
 		speed_change = args[4];
-		g2_values.cfr = (60*speed_change);
+//		g2_values.cfr = (60*speed_change);
 		sbp_values.movec_speed = speed_change;
 	}
 	if (args[5] !== undefined) {
