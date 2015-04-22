@@ -76,7 +76,10 @@ SBPRuntime.prototype.runString = function(s, callback) {
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table
 		this._run();
 	} catch(err) {
-		setImmediate(callback, err);
+		throw err
+		if(callback) {
+			setImmediate(callback, err);
+		}
 	}
 };
 
