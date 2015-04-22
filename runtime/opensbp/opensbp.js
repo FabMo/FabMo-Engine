@@ -130,7 +130,12 @@ SBPRuntime.prototype._update = function() {
 SBPRuntime.prototype._setupTransforms = function() {
 	log.debug("_setupTransforms");
 	this.transforms = JSON.parse(JSON.stringify(config.opensbp.get('transforms')));
-    this.levelerData = JSON.parse(fs.readFileSync(this.transforms.level.ptDataFile));
+	try {
+	    this.levelerData = JSON.parse(fs.readFileSync(this.transforms.level.ptDataFile));
+	} catch(e) {
+		log.warn('Could not read leveler data: ' + e);
+		this.levelerData = null;
+	}
     log.debug("_setupTransforms: " + JSON.stringify(this.levelerData) );
 };
 
