@@ -32,12 +32,12 @@ function SBPRuntime() {
 	this.cmd_posa = 0;
 	this.cmd_posb = 0;
 	this.cmd_posc = 0;
-	this.raw_posx = 0; 
-	this.raw_posy = 0; 
-	this.raw_posz = 0; 
-	this.raw_posa = 0; 
-	this.raw_posb = 0; 
-	this.raw_posc = 0; 
+	this.nonXfrm_posx = 0; 
+	this.nonXfrm_posy = 0; 
+	this.nonXfrm_posz = 0; 
+	this.nonXfrm_posa = 0; 
+	this.nonXfrm_posb = 0; 
+	this.nonXfrm_posc = 0; 
 }
 util.inherits(SBPRuntime, events.EventEmitter);
 
@@ -917,6 +917,7 @@ SBPRuntime.prototype.emit_gcode = function(s) {
 };
 
 SBPRuntime.prototype.emit_move = function(code, pt) {
+
 	pt = this.transformation(pt);
 	var gcode = code;
 	var numPts = 1; 
@@ -926,20 +927,23 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 	//if interpolate - num points
 		//numPts = ;
 //	}
-    for ( i=0; i<numPts; i++  ){
-      if( this.transforms.level.apply === true ){
-        log.debug("emit_move:level");
-	    //pt = this.leveler(pt[i]);
-	  }
+//    for ( i=0; i<numPts; i++  ){
+//      if( this.transforms.level.apply === true ){
+//        log.debug("emit_move:level");
+//	    //pt = this.leveler(pt[i]);
+//	  }
 	  for(key in pt) {
-	  	var v = pt[key]
+	  	var v = pt[key];
+	  	log.debug(" emit_move v = " + v);
 		if(v !== undefined) {
 		  if(isNaN(v)) { throw( "Invalid " + key + " argument: " + v ); } 
-		    gcode += (key + v.toFixed(5))
-		 }
+		  gcode += (key + v.toFixed(5));
+//		  gcode += (key + v);
+	      log.debug(" emit_move gcode = " + JSON.stringify(gcode));
+		}
 	  }
 	  this.current_chunk.push('N' + this.pc + gcode);
-	}
+//	}
 };
 
 // This must be called at least once before instantiating an SBPRuntime object

@@ -6,9 +6,9 @@ var config = require('../../../config');
 /* CUTS */
 
 exports.CA = function(args) {
-  var startX = this.nonXfrm_posx;
-  var startY = this.nonXfrm_posy;
-  var startZ = this.nonXfrm_posz;
+  var startX = this.cmd_posx;
+  var startY = this.cmd_posy;
+  var startZ = this.cmd_posz;
 
   var len = args[0] !== undefined ? Math.abs(args[0]) : undefined;
   var ht  = args[1] !== undefined ? Math.abs(args[1]) : undefined;
@@ -50,9 +50,13 @@ exports.CA = function(args) {
 };
 
 exports.CC = function(args) {
-  var startX = this.nonXfrm_posx;
-  var startY = this.nonXfrm_posy;
-  var startZ = this.nonXfrm_posz;
+  var startX = this.cmd_posx;
+  var startY = this.cmd_posy;
+  var startZ = this.cmd_posz;
+
+//  log.debug("startX = " + startX);
+//  log.debug(" startY = " + startY);
+//  log.debug("  startZ = " + startZ);
 
   var Dia = args[0] !== undefined ? args[0] : undefined;
   var inStr = args[1] !== undefined ? args[1].toUpperCase() : 'T';
@@ -114,11 +118,11 @@ exports.CC = function(args) {
 
 exports.CP = function(args) {
 
-  var startZ = this.nonXfrm_posz;
+  var startZ = this.cmd_posz;
 
   var Dia = args[0] !== undefined ? args[0] : undefined;
-  var centerX = args[1] !== undefined ? args[1] : this.nonXfrm_posx;
-  var centerY = args[2] !== undefined ? args[2] : this.nonXfrm_posy;
+  var centerX = args[1] !== undefined ? args[1] : this.cmd_posx;
+  var centerY = args[2] !== undefined ? args[2] : this.cmd_posy;
   var inStr = args[3] !== undefined ? args[3].toUpperCase() : 'T';
   var OIT = (inStr === 'O' || inStr === 'I' || inStr === 'T') ? inStr : 'T';
   var Dir = args[4] !== undefined ? args[4] : 1;
@@ -145,7 +149,6 @@ exports.CP = function(args) {
   if ( Dia === undefined ){
     throw( "Zero diameter circle: " + Dia );
   }
-
   var WBang = 450 - Bang;
   if ( WBang > 360 || WBang === 360 ) { 
     WBang -= 360;
@@ -181,12 +184,12 @@ exports.CP = function(args) {
       if( currentZ !== safeZ ){
 //        this.emit_gcode( "G1Z" + safeZ + "F" + ( 60 * config.opensbp.get('movez_speed')) );
         this.emit_move('G1',{'X':startX,'Y':startY,'Z':startZ,'F':feedrate});
-        this.cmd_nonXfrmz = safeZ;
+        this.cmd_posz = safeZ;
       }
 //      this.emit_gcode("G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res));
       this.emit_move('G0',{'X':startX,'Y':startY});
-      this.cmd_nonXfrmx = startX;
-      this.cmd_nonXfrmy = startY;
+      this.cmd_posx = startX;
+      this.cmd_posy = startY;
   }
 
   this.CG([undefined,endX,endY,xOffset,yOffset,OIT,Dir,Plg,reps,propX,propY,optCP,noPullUp,plgFromZero]);
@@ -209,9 +212,9 @@ exports.CG = function(args) {
 
   log.debug("CG-args = " + args);
 
-  var startX = this.nonXfrm_posx;
-  var startY = this.nonXfrm_posy;
-  var startZ = this.nonXfrm_posz;
+  var startX = this.cmd_posx;
+  var startY = this.cmd_posy;
+  var startZ = this.cmd_posz;
   var endX = args[1] !== undefined ? args[1] : undefined;
   var endY = args[2] !== undefined ? args[2] : undefined;
   var centerX = args[3] !== undefined ? args[3] : undefined;
@@ -301,8 +304,8 @@ exports.CG = function(args) {
 //   		   			               'Y' + ((j * Pocket_StepY) + startY).toFixed(res) + 
 //   		   			               'F' + ( 60 * config.opensbp.get('movexy_speed')));
     	   	this.emit_move('G1',{
-                               'X':(((j * Pocket_StepX) + startX).toFixed(res)),
-                               'Y':(((j * Pocket_StepY) + startY).toFixed(res)),
+                               'X':(((j*Pocket_StepX) + startX).toFixed(res)),
+                               'Y':(((j*Pocket_StepY) + startY).toFixed(res)),
                                'F':(60 * config.opensbp.get('movexy_speed'))
                               }
                         );
@@ -330,8 +333,8 @@ exports.CG = function(args) {
 //                            "F" + ( 60 * config.opensbp.get('movexy_speed'));
 //    		  this.emit_gcode( outStr );
           this.emit_move(outStr,{
-                                 'X':((startX + (j * Pocket_StepX)).toFixed(res)),
-                                 'Y':((startY + (j * Pocket_StepY)).toFixed(res)),
+                                 'X':((startX + (j*Pocket_StepX)).toFixed(res)),
+                                 'Y':((startY + (j*Pocket_StepY)).toFixed(res)),
                                  'I':((centerX - (j*Pocket_StepX)).toFixed(res)),
                                  'J':((centerY - (j*Pocket_StepY)).toFixed(res)),
                                  'F':(60 * config.opensbp.get('movexy_speed'))
@@ -380,7 +383,7 @@ exports.CG = function(args) {
           currentZ += Plg;
         } // Add Z for spiral plunge
         emitObj.F = ( 60 * config.opensbp.get('movexy_speed'));
-        this.emit_move(outStr,JSON.stringify(emitObj)); 
+        this.emit_move(outStr,emitObj); 
 	    	
         if( i+1 < reps && ( endX != startX || endY != startY ) ){					//If an arc, pullup and jog back to the start position
 //   		  this.emit_gcode( "G0Z" + safeZCG );
@@ -422,8 +425,8 @@ exports.CG = function(args) {
 //		  outStr += "X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res) + "I" + (centerX).toFixed(res) + "J" + (centerY).toFixed(res) + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
 //		  this.emit_gcode(outStr);
         this.emit_move(outStr,{
-                               'X':((startX + (j * Pocket_StepX)).toFixed(res)),
-                               'Y':((startY + (j * Pocket_StepY)).toFixed(res)),
+                               'X':((startX + (j*Pocket_StepX)).toFixed(res)),
+                               'Y':((startY + (j*Pocket_StepY)).toFixed(res)),
                                'I':((centerX - (j*Pocket_StepX)).toFixed(res)),
                                'J':((centerY - (j*Pocket_StepY)).toFixed(res)),
                                'F':(60 * config.opensbp.get('movexy_speed'))
@@ -431,6 +434,7 @@ exports.CG = function(args) {
                       );
     } 
   }
+log.debug(" MADE IT HERE: CG445");
 
   if(noPullUp === 0 && currentZ != startZ){    	//If No pull-up is set to YES, pull up to the starting Z location
 //   	this.emit_gcode( "G0Z" + startZ);
@@ -446,13 +450,11 @@ exports.CG = function(args) {
                           }
                     );
     }
-  	this.nonXfrm_posz = currentZ;
+  	this.cmd_posz = currentZ;
   }
 
   this.cmd_posx = endX;
-  this.nonXfrm_posx = args[1];
 	this.cmd_posy = endY;
-  this.nonXfrm_posy = args[2];
 
 };
 

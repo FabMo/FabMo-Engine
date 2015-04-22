@@ -9,6 +9,7 @@ exports.MX = function(args) {
 
 	log.debug( " MX args: " + JSON.stringify(args));
 	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	this.cmd_posx = x;
 	this.emit_move('G1',{"X":x,'F':feedrate});
 
 /*	if(isNaN(x)) { throw( "Invalid MX argument: " + x ); }
@@ -16,7 +17,6 @@ exports.MX = function(args) {
 	PtXfrm = this.transformation(PtXfrm);
     x = PtXfrm.X;
 	this.emit_gcode("G1X" + x + " F" + ( 60.0 * config.opensbp.get('movexy_speed')));
-	this.cmd_posx = x;
 */
 };
 
@@ -26,6 +26,7 @@ exports.MY = function(args) {
 
 	log.debug( " MY args: " + JSON.stringify(args));
 	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	this.cmd_posy = y;
 	this.emit_move('G1',{"Y":y,'F':feedrate});
 
 /*	if(isNaN(y)) { throw( "Invalid MY argument: " + y ); }
@@ -35,7 +36,6 @@ exports.MY = function(args) {
 	PtXfrm = this.transformation(PtXfrm);
     y = PtXfrm.Y;
 	this.emit_gcode("G1Y" + y + " F" + ( 60.0 * config.opensbp.get('movexy_speed')));
-	this.cmd_posy = y;
 */
 };
 
@@ -45,6 +45,7 @@ exports.MZ = function(args) {
 
 	log.debug( " MZ args: " + JSON.stringify(args));
 	feedrate = (60.0 * config.opensbp.get('movez_speed'));
+	this.cmd_posz = z;
 	this.emit_move('G1',{"Z":z,'F':feedrate});
 
 /*	if(isNaN(z)) { throw( "Invalid MZ argument: " + z ); }
@@ -53,7 +54,6 @@ exports.MZ = function(args) {
 	PtXfrm = this.transformation(PtXfrm);
     z = PtXfrm.Z;
 	this.emit_gcode("G1Z" + z + " F" + ( 60.0 * config.opensbp.get('movez_speed')));
-	this.cmd_posz = z;
 */
 };
 
@@ -63,6 +63,7 @@ exports.MA = function(args) {
 
 	log.debug( " MA args: " + JSON.stringify(args));
 	feedrate = (60.0 * config.opensbp.get('movea_speed'));
+	this.cmd_posa = a;
 	this.emit_move('G1',{"A":a,'F':feedrate});
 
 /*	if(isNaN(a)) { throw( "Invalid MA argument: " + a ); }
@@ -71,7 +72,6 @@ exports.MA = function(args) {
 	PtXfrm = this.transformation(PtXfrm);
     a = PtXfrm.A;
 	this.emit_gcode("G1A" + a + " F" + ( 60.0 * config.opensbp.get('movea_speed')));
-	this.cmd_posa = a;
 */
 };
 
@@ -81,12 +81,12 @@ exports.MB = function(args) {
 
 	log.debug( " MB args: " + JSON.stringify(args));
 	feedrate = (60.0 * config.opensbp.get('moveb_speed'));
+	this.cmd_posb = b;
 	this.emit_move('G1',{"B":b,'F':feedrate});
 
 /*	if(isNaN(b)) { throw( "Invalid MB argument: " + b ); }
 	this.raw_posb = args[0];
 	this.emit_gcode("G1B" + b + " F" + ( 60.0 * config.opensbp.get('moveb_speed')));
-	this.cmd_posb = b;
 */
 };
 
@@ -96,12 +96,12 @@ exports.MC = function(args) {
 
 	log.debug( " MC args: " + JSON.stringify(args));
 	feedrate = (60.0 * config.opensbp.get('movec_speed'));
+	this.cmd_posc = c;
 	this.emit_move('G1',{"C":c,'F':feedrate});
 
 /*	if(isNaN(c)) { throw( "Invalid MC argument: " + c ); }
 	this.raw_posc = args[0];
 	this.emit_gcode("G1C" + c + " F" + ( 60.0 * config.opensbp.get('movec_speed')));
-	this.cmd_posc = c;
 */
 };
 
@@ -113,6 +113,8 @@ exports.M2 = function(args) {
 
 	log.debug( " M2 args: " + JSON.stringify(args));
 	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	this.cmd_posx = x;
+	this.cmd_posy = y;
 	this.emit_move('G1',{"X":x,"Y":y,'F':feedrate});
 
 /*	if (x === undefined) { x = this.cmd_posx; }
@@ -133,12 +135,10 @@ exports.M2 = function(args) {
 	if (args[0] !== undefined) {
 		x = PtXfrm.X;
 		outStr = outStr + "X" + x;
-		this.cmd_posx = x;
 	}
 	if (args[1] !== undefined) {
 		y = PtXfrm.Y;
 		outStr = outStr + "Y" + y;
-		this.cmd_posy = y;
 	}
 	outStr = outStr + "F" + ( 60.0 * config.opensbp.get('movexy_speed')); 
 	this.emit_gcode(outStr);
@@ -155,6 +155,9 @@ exports.M3 = function(args) {
 
 	log.debug( " M3 args: " + JSON.stringify(args));
 	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	this.cmd_posx = x;
+	this.cmd_posy = y;
+	this.cmd_posz = z;
 	this.emit_move('G1',{"X":x,"Y":y,"Z":z, 'F':feedrate});
 
 /*
@@ -211,6 +214,10 @@ exports.M4 = function(args) {
 
 	log.debug( " M3 args: " + JSON.stringify(args));
 	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	this.cmd_posx = x;
+	this.cmd_posy = y;
+	this.cmd_posz = z;
+	this.cmd_posa = a;
 	this.emit_move('G1',{"X":x,"Y":y,"Z":z,"A":a, 'F':feedrate});
 
 /*	var M3res = 5;
@@ -273,6 +280,11 @@ exports.M5 = function(args) {
 
 	log.debug( " M5 args: " + JSON.stringify(args));
 	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	this.cmd_posx = x;
+	this.cmd_posy = y;
+	this.cmd_posz = z;
+	this.cmd_posa = a;
+	this.cmd_posb = b;
 	this.emit_move('G1',{"X":x,"Y":y,"Z":z,"A":a,"B":b,'F':feedrate});
 
 /*	var M3res = 5;
@@ -343,6 +355,12 @@ exports.M6 = function(args) {
 
 	log.debug( " M6 args: " + JSON.stringify(args));
 	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	this.cmd_posx = x;
+	this.cmd_posy = y;
+	this.cmd_posz = z;
+	this.cmd_posa = a;
+	this.cmd_posb = b;
+	this.cmd_posc = c;
 	this.emit_move('G1',{"X":x,"Y":y,"Z":z,"A":a,"B":b,"C":c,'F':feedrate});
 
 /*	var x = args[0];
@@ -416,8 +434,11 @@ exports.MH = function(args) {
 	var x = 0;
 	var y = 0;
 
+  // Need to add pull-up to safez height
 	log.debug( "MH" );
 	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	this.cmd_posx = 0;
+	this.cmd_posy = 0;
 	this.emit_move('G1',{"X":x,"Y":y,'F':feedrate});
 
 /*	this.emit_gcode("G1X0Y0F" + ( 60 * config.opensbp.get('movexy_speed')));
@@ -438,31 +459,31 @@ exports.MS = function(args, callback) {
 	if (args[0] !== undefined) {
 		speed_change = args[0];
 		if(isNaN(speed_change)) { throw( "Invalid MS-XY argument: " + speed_change ); }
-		g2_values.xfr = g2_values.yfr = (60 * speed_change);
+//		g2_values.xfr = g2_values.yfr = (60 * speed_change);
 		sbp_values.movexy_speed = speed_change;
 	}
 	if (args[1] !== undefined) {
 		speed_change = args[1];
 		if(isNaN(speed_change)) { throw( "Invalid MS-Z argument: " + speed_change ); }
-		g2_values.zfr = (60 * speed_change);
+//		g2_values.zfr = (60 * speed_change);
 		sbp_values.movez_speed = speed_change;
 	}
 	if (args[2] !== undefined) {
 		speed_change = args[2];
 		if(isNaN(speed_change)) { throw( "Invalid MS-A argument: " + speed_change ); }
-		g2_values.afr = (60 * speed_change);
+//		g2_values.afr = (60 * speed_change);
 		sbp_values.movea_speed = speed_change;
 	}
 	if (args[3] !== undefined) {
 		speed_change = args[3];
 		if(isNaN(speed_change)) { throw( "Invalid MS-B argument: " + speed_change ); }
-		g2_values.bfr = (60 * speed_change);
+//		g2_values.bfr = (60 * speed_change);
 		sbp_values.moveb_speed = speed_change;
 	}
 	if (args[4] !== undefined) {
 		speed_change = args[4];
 		if(isNaN(speed_change)) { throw( "Invalid MS-C argument: " + speed_change ); }
-		g2_values.cfr = (60 * speed_change);
+//		g2_values.cfr = (60 * speed_change);
 		sbp_values.movec_speed = speed_change;
 	}
 

@@ -1,15 +1,15 @@
 var log = require('../../log').logger('sbp');
 
 // Point X, Point Y, Point Z, Angle(in radians), Rotation Point X, Rotation Point Y
-exports.rotate = function(PtNew, Angle, RotPt){
+exports.rotate = function(PtNew, Angle, RotPtX, RotPtY){
 
 	if ( Angle !== 0 ) {
-		if (RotPt.X === undefined) {RotPt.X = 0;}
-		if (RotPt.Y === undefined) {RotPt.Y = 0;}
+		if (RotPtX === undefined) {RotPtX = 0;}
+		if (RotPtY === undefined) {RotPtY = 0;}
 		var cosB = Math.cos(Angle);
 		var sinB = Math.sin(Angle);
-		PtNew.X = (PtNew.X*cosB)-(PtNew.Y*sinB)+(RotPt.X*(1-cosB))+(RotPt.Y*sinB);
-		PtNew.Y = (PtNew.X*sinB)+(PtNew.Y*cosB)+(RotPt.Y*(1-cosB))-(RotPt.X*sinB);
+		PtNew.X = (PtNew.X*cosB)-(PtNew.Y*sinB)+(RotPtX*(1-cosB))+(RotPtY*sinB);
+		PtNew.Y = (PtNew.X*sinB)+(PtNew.Y*cosB)+(RotPtY*(1-cosB))-(RotPtX*sinB);
 	}
 
 	return PtNew;
@@ -32,20 +32,20 @@ exports.shearY = function(PtNew, Angle){
 };
 
 // Point X, Point Y, Point Z, Scale X, Scale Y, Scale Origin X, Scale Origin Y
-exports.scale = function(PtNew, ScaleFact, ScalePt){
+exports.scale = function(PtNew, ScaleX, ScaleY, ScalePtX, ScalePtY){
 
-	PtNew.X = (ScaleFact.X*PtNew.X)+(ScalePt.X*(1-ScaleFact.X));
-	PtNew.Y = (ScaleFact.Y*PtNew.Y)+(ScalePt.Y*(1-ScaleFact.Y));
+	PtNew.X = (ScaleX*PtNew.X)+(ScalePtX*(1-ScaleX));
+	PtNew.Y = (ScaleY*PtNew.Y)+(ScalePtY*(1-ScaleY));
 
     return PtNew;
 };
 
 // Point X, Point Y, Point Z, X Move Distance, Y Move Distance, Z Move Distance
-exports.translate = function(PtNew, MDist){
+exports.translate = function(PtNew, MDistX, MDistY, MDistZ){
 
-	if ( MDist.X !== 0 || MDist.X !== undefined ) { PtNew.X = PtNew.X + MDist.X; }
-	if ( MDist.Y !== 0 || MDist.Y !== undefined ) { PtNew.Y = PtNew.Y + MDist.Y; }
-	if ( MDist.Z !== 0 || MDist.Z !== undefined ) { PtNew.Z = PtNew.Z + MDist.Z; }
+	if ( MDistX !== 0 || MDistX !== undefined ) { PtNew.X = PtNew.X + MDistX; }
+	if ( MDistY !== 0 || MDistY !== undefined ) { PtNew.Y = PtNew.Y + MDistY; }
+	if ( MDistZ !== 0 || MDistZ !== undefined ) { PtNew.Z = PtNew.Z + MDistZ; }
 
     return PtNew;
 };

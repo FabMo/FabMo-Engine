@@ -4,23 +4,13 @@ var sb3_commands = require('../sb3_commands');
 var config = require('../../../config');
 var fs = require('fs');
 
-function readPtData(filename, callback) {
-  var data = "";
-  fs.readFile(filename, 'utf8', function (err, data) {
-    if (err) {return callback(err,undefined);}
-    data = JSON.parse(data);
-//    log.debug("Parsed data: " + JSON.stringify(data));
-    callback(err,data);
-  }.bind(this));
+function readPtData(PtData, callback) {
+  var data = fs.readFileSync(this.transforms.level.ptDataFile);
+  return JSON.parse(data);
 }
 
-exports.leveler_HB = function(PtNew, PtFilename, callback){
-  var data = readPtData(PtFilename,function(err,data){
+exports.leveler = function(PtNew){
     log.debug("leveler_HB data = " + JSON.stringify(data));
-    if(err){
-      return callback(err);
-    }
-    else{
 //      log.debug("PtData = " + JSON.stringify(data));
 //      log.debug("PtFilename = " + PtFilename);
       var zA = data.Z1 + ((data.Z2-data.Z1)*((PtNew.X-data.X1)/(data.X2-data.X1)));
@@ -30,9 +20,7 @@ exports.leveler_HB = function(PtNew, PtFilename, callback){
       zP += PtZ;
 //      log.debug("zA = " + zA + "   zB = " + zB);
       log.debug("zP = " + zP + "   PtZ = " + PtZ);
-      callback(zP,null);
-    }
-  }.bind(this));
+      return zP;
 };
 
 //exports.leveler = function(PtX, PtY, PtZ, PtData){
