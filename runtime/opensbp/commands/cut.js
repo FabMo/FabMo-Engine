@@ -231,7 +231,6 @@ exports.CG = function(args) {
   var plgFromZero = args[13] !== undefined ? args[13] : 0;
 	var currentZ;
 	var outStr;
-  var res = 5;
 
   log.debug("start X:" + startX );
   log.debug("start Y:" + startY );
@@ -304,8 +303,8 @@ exports.CG = function(args) {
 //   		   			               'Y' + ((j * Pocket_StepY) + startY).toFixed(res) + 
 //   		   			               'F' + ( 60 * config.opensbp.get('movexy_speed')));
     	   	this.emit_move('G1',{
-                               'X':(((j*Pocket_StepX) + startX).toFixed(res)),
-                               'Y':(((j*Pocket_StepY) + startY).toFixed(res)),
+                               'X':((j*Pocket_StepX) + startX),
+                               'Y':((j*Pocket_StepY) + startY),
                                'F':(60 * config.opensbp.get('movexy_speed'))
                               }
                         );
@@ -333,10 +332,10 @@ exports.CG = function(args) {
 //                            "F" + ( 60 * config.opensbp.get('movexy_speed'));
 //    		  this.emit_gcode( outStr );
           this.emit_move(outStr,{
-                                 'X':((startX + (j*Pocket_StepX)).toFixed(res)),
-                                 'Y':((startY + (j*Pocket_StepY)).toFixed(res)),
-                                 'I':((centerX - (j*Pocket_StepX)).toFixed(res)),
-                                 'J':((centerY - (j*Pocket_StepY)).toFixed(res)),
+                                 'X':(startX + (j*Pocket_StepX)),
+                                 'Y':(startY + (j*Pocket_StepY)),
+                                 'I':(centerX - (j*Pocket_StepX)),
+                                 'J':(centerY - (j*Pocket_StepY)),
                                  'F':(60 * config.opensbp.get('movexy_speed'))
                                 }
                         );
@@ -346,8 +345,8 @@ exports.CG = function(args) {
     	this.emit_move('G0',{'Z':safeZCG});
 //      this.emit_gcode("G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res));							// Jog to the start point
       this.emit_move('G0',{
-                           'X':((startX).toFixed(res)),
-                           'Y':((startY).toFixed(res))
+                           'X':startX,
+                           'Y':startY
                           }
                     );
     } 
@@ -374,10 +373,10 @@ exports.CG = function(args) {
           outStr = 'G3';
         }			// CounterClockwise circle/arc
 			
-        emitObj.X = ((endX).toFixed(res));
-        emitObj.Y = ((endY).toFixed(res));
-		    emitObj.I = (centerX).toFixed(res);
-        emitObj.J = (centerY).toFixed(res);
+        emitObj.X = endX;
+        emitObj.Y = endY;
+		    emitObj.I = centerX;
+        emitObj.J = centerY;
         if (Plg !== 0 && optCG === 3 ) { 
           emitObj.Z = (currentZ + Plg); 
           currentZ += Plg;
@@ -390,8 +389,8 @@ exports.CG = function(args) {
           this.emit_move('G0',{'Z':safeZCG});
 //     	  this.emit_gcode( "G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res) ); 
           this.emit_move('G0',{
-                               'X':(startX).toFixed(res),
-                               'Y':(startY).toFixed(res)
+                               'X':startX,
+                               'Y':startY
                               }
                         );
         }
@@ -405,8 +404,8 @@ exports.CG = function(args) {
       this.emit_move('G0',{'Z':safeZCG});
 //    	this.emit_gcode( "G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res));
       this.emit_move('G0',{
-                           'X':(startX).toFixed(res),
-                           'Y':(startY).toFixed(res)
+                           'X':startX,
+                           'Y':startY
                           }
                     );
 //    	this.emit_gcode( "G1Z" + currentZ + " F" + ( 60 * config.opensbp.get('movez_speed')));		
@@ -425,10 +424,10 @@ exports.CG = function(args) {
 //		  outStr += "X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res) + "I" + (centerX).toFixed(res) + "J" + (centerY).toFixed(res) + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
 //		  this.emit_gcode(outStr);
         this.emit_move(outStr,{
-                               'X':((startX + (j*Pocket_StepX)).toFixed(res)),
-                               'Y':((startY + (j*Pocket_StepY)).toFixed(res)),
-                               'I':((centerX - (j*Pocket_StepX)).toFixed(res)),
-                               'J':((centerY - (j*Pocket_StepY)).toFixed(res)),
+                               'X':(startX + (j*Pocket_StepX)),
+                               'Y':(startY + (j*Pocket_StepY)),
+                               'I':(centerX - (j*Pocket_StepX)),
+                               'J':(centerY - (j*Pocket_StepY)),
                                'F':(60 * config.opensbp.get('movexy_speed'))
                               }
                       );
