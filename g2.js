@@ -21,7 +21,7 @@ var STAT_HOMING = 9;
 
 // Should take no longer than CMD_TIMEOUT to do a get or a set operation
 var CMD_TIMEOUT = 10000;
-var EXPECT_TIMEOUT = 1000;
+var EXPECT_TIMEOUT = 5000;
 
 // When jogging, "keepalive" jog commands must arrive faster than this interval (ms)
 // This can be slowed down if necessary for spotty connections, but a slow timeout means
@@ -719,10 +719,10 @@ G2.prototype.expectStateChange = function(callbacks) {
 	if("timeout" in callbacks) {
 		var fn = callbacks.timeout;
 		setTimeout(function() {
-			console.log("Calling timeout function");
 			if(this.expectations.length > 0) {
 				callbacks = this.expectations[this.expectations.length-1];
 				if(callbacks.timeout === fn) {
+					log.debug("Calling timeout function");
 					this.expectations.pop();
 					fn(this);
 				}

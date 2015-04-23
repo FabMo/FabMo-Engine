@@ -465,11 +465,11 @@ SBPRuntime.prototype._processEvents = function(callback) {
 				if(cmd) {
 					this.driver.queueFlush(function(err) {
 							if(this._breaksStack(cmd)) {
-								this._execute(this.event_handlers[sw][state], function() {
+								this._execute(cmd, function() {
 									callback();
 								}.bind(this));
 							} else {
-								this._execute(this.event_handlers[sw][state]);
+								this._execute(cmd);
 								callback();
 							}
 					}.bind(this));
