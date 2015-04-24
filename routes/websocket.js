@@ -17,6 +17,7 @@ connect = function(socket) {
 	nb_clients++;
 	if (nb_clients<=clients_limit){ // avoid too many connection on the app.
 		socket_main(socket);
+		socket.emit('status', machine.status)
 	}
 	socket.on('disconnect', function() {
 		socket_close(socket);

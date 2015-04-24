@@ -33,7 +33,6 @@ define(function(require) {
 
 			// Create a FabMo object for the dashboard
 			dashboard.machine = new FabMo(window.location.hostname, window.location.port);
-			
 			dashboard.socket = require('websocket').SocketIO();
 
 			// Create a FabMoUI object for the same (but don't recreate it if it already exists)
@@ -98,37 +97,27 @@ function setupHandwheel() {
 	});
 
 	wheel.on("mode", function(evt) {
-		console.log(evt);
 		speed = SPEEDS[evt.mode];
-		console.log(speed)
 	});
 
 }
 // Functions for dispatching g-code to the tool
 function gcode(string) {
 	dashboard.machine.gcode(string,function(err,data){
-		if(!err) {
-			console.log('Success: ' + string);
-		} else {
-			console.log('Failure: ' + string);
-		}
+		// Maybe report an error here.
 	});
 }
 
 // Functions for dispatching g-code to the tool
 function sbp(string) {
 	dashboard.machine.sbp(string,function(err,data){
-		if(!err) {
-			console.log('Success: ' + string);
-		} else {
-			console.log('Failure: ' + string);
-		}
+		// Maybe report an error here
 	});
 }
 
 function addJob(job,callback){
 	dashboard.machine.send_job(job,function(err){
-		if(err){console.log(err);callback(err);return;}
+		if(err){console.error(err);callback(err);return;}
 		if(callback && typeof(callback) === "function")callback(undefined);
 	});
 }

@@ -124,7 +124,6 @@ FabMoDashboard.prototype._call = function(name, data, callback) {
 }
 
 FabMoDashboard.prototype._simulateCall = function(name, data, callback) {
-	console.log("Simulating a call.");
 	switch(name) {
 		case "submitJob":
 			alert("Job Submitted: " + data.config.filename);
@@ -171,7 +170,6 @@ FabMoDashboard.prototype._setupMessageListener = function() {
 		 		break;
 
 			case 'evt':
-				//console.log("Dashboard client got an event: " + JSON.stringify(message));
 				if('id' in message) {
 					if(message.id in this._event_listeners) {
 						listeners = this._event_listeners[message.id]

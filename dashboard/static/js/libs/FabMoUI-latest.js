@@ -56,8 +56,8 @@ function FabMoUI(tool, options){
 	this.fixe_move_selector =  this.keypad_div_selector + ' .fixe-move';
 	this.fixe_move_step_selector =  this.keypad_div_selector + ' .fixe-move-step';
 	
-	this.auto_refresh = setInterval(this.updateStatus.bind(this),this.refresh);
-	
+	this.auto_refresh = null;
+
 	if(this.keypad){
 		this.my_keypad = this.Keypad;
 		this.Keypad();
@@ -88,7 +88,6 @@ FabMoUI.prototype.Keypad = function(){
 
 	$(".newPos-submit").click(function(){
 		if(that.keypad_allow && that.menu_open){
-			console.log($(this).attr('id'));
 			that.tool.gcode2('G90 G01 X-'+ $(this).parent().children('label').children('input').val()); 
 		}
 	});
@@ -103,42 +102,33 @@ FabMoUI.prototype.Keypad = function(){
 
         if(posX <= 0.333) {
         	if(posY <=0.333)		{ 
-        		console.log("Left Top");
         		that.tool.gcode2('G91 G01 X-'+that.move_step+' Y'+that.move_step); 
         	}
         	else if (posY <= 0.666)	{ 
-        		console.log("Left Middle");
         		that.tool.gcode2('G91 G01 X-'+that.move_step); 
         	}
         	else 					{ 
-        		console.log("Left Bottom");
         		that.tool.gcode2('G91 G01 X-'+that.move_step+' Y-'+that.move_step); 
         	}
         }
         else if (posX <= 0.666){
         	if(posY <=0.333)		{ 
-        		console.log("Middle Top");
         		that.tool.gcode2('G91 G01 Y'+that.move_step); 
         	}
         	else if (posY <= 0.666)	{ 
-        		console.log("Center : do nothing");
         	}
         	else 					{ 
-        		console.log("Middle Bottom");
         		that.tool.gcode2('G91 G01 Y-'+that.move_step); 
         	}
         }
     	else {
         	if(posY <=0.333)		{ 
-        		console.log("Right Top");
         		that.tool.gcode2('G91 G01 X'+that.move_step+' Y'+that.move_step); 
         	}
         	else if (posY <= 0.666)	{ 
-        		console.log("Right Middle");
         		that.tool.gcode2('G91 G01 X'+that.move_step); 
         	}
         	else 					{ 
-        		console.log("Right Bottom");
         		that.tool.gcode2('G91 G01 X'+that.move_step+' Y-'+that.move_step); 
         	}
         }
@@ -482,12 +472,15 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	}
 
 	$(that.status_div_selector).trigger('statechange',status.state);
+
+	var statename = status.state.charAt(0).toUpperCase() + status.state.slice(1);
+
 	if(status.state === 'idle') {
 		that.allowKeypad();
 		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
 		$(that.status_div_selector).removeClass('fabmo-status-idle');
 		$(".tools-current > li a").removeClass('paus err disc');
-		$(that.state_selector).html('Idle');
+		$(that.state_selector).html(statename);
 		if(that.file_control)
 		{
 			$(that.stop_button_selector).addClass('hide');
@@ -500,7 +493,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
 		$(that.status_div_selector).removeClass('fabmo-status-running');
 		$(".tools-current > li a").removeClass('paus disc').addClass('err');
-		$(that.state_selector).html('' + status.state);
+		$(that.state_selector).html(statename);
 		if(that.file_control)
 		{
 			$(that.stop_button_selector).removeClass('hide');
@@ -513,7 +506,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
 		$(that.status_div_selector).removeClass('fabmo-status-running');
 		$(".tools-current > li a").removeClass('disc err').addClass('paus');
-		$(that.state_selector).html('' + status.state);
+		$(that.state_selector).html(statename);
 		if(that.file_control)
 		{
 			$(that.stop_button_selector).addClass('hide');
@@ -525,7 +518,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
 		$(that.status_div_selector).removeClass('fabmo-status-paused');
 		$(".tools-current > li a").removeClass('paus disc err').addClass('paus');
-		$(that.state_selector).html('' + status.state);
+		$(that.state_selector).html(statename);
 		if(that.file_control)
 		{
 			$(that.stop_button_selector).removeClass('hide');
@@ -557,6 +550,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		}
 	}
 	else if(status.state == 'not_ready') {
+		statename = 'Unavailable';
 		that.forbidKeypad();
 		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
 		$(that.status_div_selector).addClass('fabmo-status-error');
@@ -571,7 +565,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	else {
 		$(".tools-current > li a").removeClass('paus err').addClass('disc');
 		that.forbidKeypad();
-		console.log('Unknown status' + JSON.stringify(status));
+		console.warn('Unknown status' + JSON.stringify(status));
 	}
 };
 

@@ -42,7 +42,7 @@ exports.SO = function(args) {
 			case 0:
 				this.emit_gcode("M5");
 				this.emit_gcode("M9");
-			}
+				break;
 		}
 	}
 }
