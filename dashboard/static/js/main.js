@@ -69,35 +69,60 @@ function setupHandwheel() {
 		textFont: "source_sans_proextralight",
 		textSize: 10,
 		thumbs: ['X','Y','Z'],
-		modes: ['S','M','F']
+		modes: ['S','M','F','D']
 	});
 
-	var SCALE = 0.010;
-	var SPEEDS = {'S': 30, 'M':60, 'F':120}
+	var SCALE = 0.005;
+	var SPEEDS = {'S': 20, 'M':40, 'F':80}
 	var angle = 0.0;
 	var speed = 30.0;
+	var mode = 'S';
+	var TICKS_MOVE = 10;
+	var TICKS_DISCRETE = 90;
+	var discrete_distance = 0.050;
 
 	wheel.on("sweep", function(evt) {
+
 		var degrees = evt.angle*180.0/Math.PI;
 		angle += degrees;
 		var distance = Math.abs(angle*SCALE);
 		var axis = evt.thumb;
-		if(angle > 5.0) {
-			angle = 0;
-			dashboard.machine.fixed_move('+' + axis, distance, speed, function(err) {});
-		}
-		if(angle < -5.0) {
-			angle = 0;
-			dashboard.machine.fixed_move('-' + axis, distance, speed, function(err) {});
+
+		if(mode === 'D') {
+			if(angle > 90) {
+				console.log('+tick');
+				angle = 0;
+				dashboard.machine.fixed_move('+' + axis, discrete_distance, SPEEDS['S'], function(err) {});
+			}
+			if(angle < -90) {
+				console.log('-tick');
+				angle = 0;
+				dashboard.machine.fixed_move('-' + axis, discrete_distance, SPEEDS['S'], function(err) {});
+			}
+		} else {
+			if(angle > TICKS_MOVE) {
+				angle = 0;
+				dashboard.machine.fixed_move('+' + axis, distance, speed, function(err) {});
+			}
+			if(angle < -TICKS_MOVE) {
+				angle = 0;
+				dashboard.machine.fixed_move('-' + axis, distance, speed, function(err) {});
+			}
 		}
 	});
 
 	wheel.on("release", function(evt) {
-		dashboard.machine.quit(function() {})
+		//dashboard.machine.quit(function() {})
 	});
 
 	wheel.on("mode", function(evt) {
-		speed = SPEEDS[evt.mode];
+		mode = evt.mode;
+		if(evt.mode === 'D') {
+			wheel.setPPR(4);
+		} else {
+			wheel.setPPR(32);
+			speed = SPEEDS[evt.mode];
+		}
 	});
 
 }
