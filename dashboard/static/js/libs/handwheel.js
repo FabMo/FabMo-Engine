@@ -99,6 +99,10 @@ HandWheel.prototype.nextMode = function() {
     this._draw();
 }
 
+HandWheel.prototype.setPPR = function(ppr) {
+    this.ppr = ppr;
+}
+
 HandWheel.prototype.getMode = function() {
     return this.modes[this.mode_idx];
 }

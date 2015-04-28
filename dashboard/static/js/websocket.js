@@ -1,7 +1,3 @@
-/*
- * websocket.js is the entry point for the application.
- */
-
 define(function(require) { 
 	
 	function SocketIO(){
@@ -17,18 +13,17 @@ define(function(require) {
 			console.log('connection to the engine via websocket failed : '+ ex.message);
 		}
 		if(socket!==null){
-			socket.on('connect', function() {
+			socket.on('connect', function() {});
 
-			});
-
-			socket.on('message',function(message){
-				console.log(message);
-			});
+			socket.on('message',function(message){});
 
 			socket.on('status',function(status){
 				//disable the GET loop to refresh the status
-				clearInterval(dashboard.ui.auto_refresh);
-				dashboard.ui.updateStatusContent(status);
+				try {
+					clearInterval(dashboard.ui.auto_refresh);
+				} catch(e) {}
+				
+				dashboard.updateStatus(status);
 			});	
 
 			socket.on('disconnect', function() {

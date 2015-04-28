@@ -16,7 +16,6 @@ define(function(require) {
 
 		//Refresh of the tool status on the dashboard
 		this.refresh = 500; // define the tool connection refresh time (ms)
-		setInterval(this.updateStatus.bind(this),this.refresh);
 
 		this.target = target || window;
 		this.handlers = {};
@@ -312,12 +311,10 @@ define(function(require) {
 	}
 
 	/*** Prototypes ***/
-	Dashboard.prototype.updateStatus = function(){
-		//if (this.ui.tool.status == )
+	Dashboard.prototype.updateStatus = function(status){
+		this._fireEvent("status", status);
 		if(this.ui) {
-			if(this.ui.tool.state) {
-				this._fireEvent("status", this.ui.tool.status_report);
-			}
+			this.ui.updateStatusContent(status);
 		}
 	};
 
