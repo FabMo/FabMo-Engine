@@ -66,7 +66,7 @@ float "float"
   = f:('-'? decimal '\.' decimal) { return parseFloat(f.join(""));}
 
 barestring
-  = s:[^,\n]+ {return s.join("");}
+  = s:[^,\n]+ { return s.join("").trim() || undefined; }
 
 quotedstring
   = '"' s:[^\"\n]+ '"' {return s.join("")}
