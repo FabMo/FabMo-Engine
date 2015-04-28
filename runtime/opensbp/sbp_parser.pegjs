@@ -24,7 +24,7 @@ event
 
 command 
    = m:mnemonic 
-     args:(("," arg:argument){return arg})* 
+     args:(("," __ (arg:argument) __ ){return arg})* 
      {return {type:"cmd","cmd":m,"args":args};}
 
 single

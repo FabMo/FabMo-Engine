@@ -558,7 +558,7 @@ module.exports = (function() {
     }
 
     function peg$parsecommand() {
-      var s0, s1, s2, s3, s4, s5;
+      var s0, s1, s2, s3, s4, s5, s6, s7;
 
       s0 = peg$currPos;
       s1 = peg$parsemnemonic();
@@ -573,11 +573,23 @@ module.exports = (function() {
           if (peg$silentFails === 0) { peg$fail(peg$c12); }
         }
         if (s4 !== peg$FAILED) {
-          s5 = peg$parseargument();
+          s5 = peg$parse__();
           if (s5 !== peg$FAILED) {
-            peg$reportedPos = s3;
-            s4 = peg$c17(s5);
-            s3 = s4;
+            s6 = peg$parseargument();
+            if (s6 !== peg$FAILED) {
+              s7 = peg$parse__();
+              if (s7 !== peg$FAILED) {
+                peg$reportedPos = s3;
+                s4 = peg$c17(s6);
+                s3 = s4;
+              } else {
+                peg$currPos = s3;
+                s3 = peg$c0;
+              }
+            } else {
+              peg$currPos = s3;
+              s3 = peg$c0;
+            }
           } else {
             peg$currPos = s3;
             s3 = peg$c0;
@@ -597,11 +609,23 @@ module.exports = (function() {
             if (peg$silentFails === 0) { peg$fail(peg$c12); }
           }
           if (s4 !== peg$FAILED) {
-            s5 = peg$parseargument();
+            s5 = peg$parse__();
             if (s5 !== peg$FAILED) {
-              peg$reportedPos = s3;
-              s4 = peg$c17(s5);
-              s3 = s4;
+              s6 = peg$parseargument();
+              if (s6 !== peg$FAILED) {
+                s7 = peg$parse__();
+                if (s7 !== peg$FAILED) {
+                  peg$reportedPos = s3;
+                  s4 = peg$c17(s6);
+                  s3 = s4;
+                } else {
+                  peg$currPos = s3;
+                  s3 = peg$c0;
+                }
+              } else {
+                peg$currPos = s3;
+                s3 = peg$c0;
+              }
             } else {
               peg$currPos = s3;
               s3 = peg$c0;
