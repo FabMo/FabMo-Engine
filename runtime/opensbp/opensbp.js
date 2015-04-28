@@ -926,11 +926,12 @@ SBPRuntime.prototype.emit_gcode = function(s) {
 
 SBPRuntime.prototype.emit_move = function(code, pt) {
 
-	pt = this.transformation(pt);
+//	pt = this.transformation(pt);
 	var gcode = code;
 	var numPts = 1; 
 	var i;
 
+    log.debug( "emit_move: code = " + code + "  pt = " + JSON.stringify(pt));
 //	if( this.transforms.interpolate.apply !== false ){
 	//if interpolate - num points
 		//numPts = ;
@@ -946,13 +947,32 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		if(v !== undefined) {
 		  if(isNaN(v)) { throw( "Invalid " + key + " argument: " + v ); } 
 		  gcode += (key + v.toFixed(5));
-//		  gcode += (key + v);
 	      log.debug(" emit_move gcode = " + JSON.stringify(gcode));
 		}
 	  }
 	  this.current_chunk.push('N' + this.pc + gcode);
 //	}
 };
+
+SBPRuntime.prototype.process_move = function(args) {
+    log.debug(" process_move: " + JSON.stringify(args));
+	var params = {};
+	
+	log.debug( " process_move args: " + JSON.stringify(args));
+	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	if(args[0] && typeof args[0] === "number"){ 
+	  log.debug("   x = " + args[0]); this.cmd_posx = params.X = args[0];
+	}
+	if(args[1] && typeof args[1] === "number"){ 
+	  log.debug("   y = " + args[1]); this.cmd_posy = params.Y = args[1];
+	}  
+	if(args[2] && typeof args[2] === "number"){ 
+	  log.debug("   z = " + args[2]); this.cmd_posz = params.Z = args[2];
+	}  
+	params.F = (60.0 * config.opensbp.get('movexy_speed'));
+	emit_move('G1',params);
+};
+
 
 // This must be called at least once before instantiating an SBPRuntime object
 SBPRuntime.prototype.loadCommands = function(callback) {
