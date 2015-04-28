@@ -113,8 +113,10 @@ exports.M2 = function(args) {
 
 	log.debug( " M2 args: " + JSON.stringify(args));
 	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
-	this.cmd_posx = x;
-	this.cmd_posy = y;
+	if ( x === undefined || x === " " ) { x = this.cmd_posx; }
+	  else { this.cmd_posx = x; }
+	if ( y === undefined || y === " " ) { y = this.cmd_posy; }
+	  else { this.cmd_posy = y; }
 	this.emit_move('G1',{"X":x,"Y":y,'F':feedrate});
 
 /*	if (x === undefined) { x = this.cmd_posx; }

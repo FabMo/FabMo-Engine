@@ -277,6 +277,7 @@ exports.CG = function(args) {
 
   if ( plgFromZero == 1 ) {										// If plunge depth is specified move to that depth * number of reps
 //   	this.emit_gcode( 'G1Z' + currentZ + 'F' + ( 60 * config.opensbp.get('movez_speed')) );
+log.debug("Made it to CG-line 280");
     this.emit_move('G1',{
                          'Z':currentZ,
                          'F':(60 * config.opensbp.get('movez_speed'))
@@ -288,6 +289,7 @@ exports.CG = function(args) {
   	if (Plg !== 0 && optCG < 3 ) {										// If plunge depth is specified move to that depth * number of reps
   		currentZ += Plg;
 //  		this.emit_gcode( 'G1Z' + currentZ + 'F' + ( 60 *  config.opensbp.get('movez_speed')) );
+log.debug("Made it to CG-line 292");
       this.emit_move('G1',{
                            'Z':currentZ,
                            'F':(60 * config.opensbp.get('movez_speed'))
@@ -302,6 +304,7 @@ exports.CG = function(args) {
 //  	   		this.emit_gcode( 'G1X' + ((j * Pocket_StepX) + startX).toFixed(res) + 
 //   		   			               'Y' + ((j * Pocket_StepY) + startY).toFixed(res) + 
 //   		   			               'F' + ( 60 * config.opensbp.get('movexy_speed')));
+log.debug("Made it to CG-line 307");
     	   	this.emit_move('G1',{
                                'X':((j*Pocket_StepX) + startX),
                                'Y':((j*Pocket_StepY) + startY),
@@ -309,18 +312,13 @@ exports.CG = function(args) {
                               }
                         );
         }
-        if ( Math.abs(propX) !== Math.abs(propY) ) {      // calculate out to an interpolated ellipse
-//          this.interpolate_circle(((startX + (j * Pocket_StepX)).toFixed(res)),
-//                                  ((startY + (j * Pocket_StepY)).toFixed(res)),
-//                                  currentZ,
-//                                  ((startX + (j * Pocket_StepX)).toFixed(res)),
-//                                  ((startY + (j * Pocket_StepY)).toFixed(res)),
-//                                  currentZ,
-//                                  ((centerX - (j*Pocket_StepX)).toFixed(res)),
-//                                  ((centerY - (j*Pocket_StepY)).toFixed(res)),
-//                                  propX,
-//                                  propY
-//                                  );
+        if ( Math.abs(propX) !== Math.abs(propY) ) {      // calculate an interpolated ellipse
+          this.interpolate_circle(startX,startY,startZ,
+                                  endX,endY,Plg,
+                                  centerX,centerY,
+                                  propX,propY,
+                                  optCG
+                                 );
         } 
   	   	else {
           if ( Dir == 1 ) { outStr = 'G2'; }	  // Clockwise circle/arc
@@ -331,6 +329,7 @@ exports.CG = function(args) {
 //                            "J" + (centerY - (j*Pocket_StepY)).toFixed(res) +
 //                            "F" + ( 60 * config.opensbp.get('movexy_speed'));
 //    		  this.emit_gcode( outStr );
+log.debug("Made it to CG-line 337");
           this.emit_move(outStr,{
                                  'X':(startX + (j*Pocket_StepX)),
                                  'Y':(startY + (j*Pocket_StepY)),
@@ -342,8 +341,10 @@ exports.CG = function(args) {
         }										
     	}
 //    	this.emit_gcode("G0Z" + safeZCG);                    // Pull up Z
+log.debug("Made it to CG-line 349");
     	this.emit_move('G0',{'Z':safeZCG});
 //      this.emit_gcode("G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res));							// Jog to the start point
+log.debug("Made it to CG-line 352");
       this.emit_move('G0',{
                            'X':startX,
                            'Y':startY
@@ -382,12 +383,15 @@ exports.CG = function(args) {
           currentZ += Plg;
         } // Add Z for spiral plunge
         emitObj.F = ( 60 * config.opensbp.get('movexy_speed'));
+log.debug("Made it to CG-line 391");
         this.emit_move(outStr,emitObj); 
 	    	
         if( i+1 < reps && ( endX != startX || endY != startY ) ){					//If an arc, pullup and jog back to the start position
 //   		  this.emit_gcode( "G0Z" + safeZCG );
+log.debug("Made it to CG-line 396");
           this.emit_move('G0',{'Z':safeZCG});
 //     	  this.emit_gcode( "G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res) ); 
+log.debug("Made it to CG-line 399");
           this.emit_move('G0',{
                                'X':startX,
                                'Y':startY
@@ -401,14 +405,17 @@ exports.CG = function(args) {
   if (optCG == 4 ) { // Add bottom circle if spiral with bottom clr is specified
     if( endX != startX || endY != startY ) {	//If an arc, pullup and jog back to the start position
 //    	this.emit_gcode( "G0Z" + safeZCG );
+log.debug("Made it to CG-line 413");
       this.emit_move('G0',{'Z':safeZCG});
 //    	this.emit_gcode( "G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res));
+log.debug("Made it to CG-line 416");
       this.emit_move('G0',{
                            'X':startX,
                            'Y':startY
                           }
                     );
 //    	this.emit_gcode( "G1Z" + currentZ + " F" + ( 60 * config.opensbp.get('movez_speed')));		
+log.debug("Made it to CG-line 423");
       this.emit_move('G1',{
                            'Z':currentZ,
                            'F':(60 * config.opensbp.get('movez_speed'))
@@ -423,6 +430,7 @@ exports.CG = function(args) {
       else { outStr = "G3"; }					// CounterClockwise circle/arc
 //		  outStr += "X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res) + "I" + (centerX).toFixed(res) + "J" + (centerY).toFixed(res) + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
 //		  this.emit_gcode(outStr);
+log.debug("Made it to CG-line 438");
         this.emit_move(outStr,{
                                'X':(startX + (j*Pocket_StepX)),
                                'Y':(startY + (j*Pocket_StepY)),
@@ -433,16 +441,17 @@ exports.CG = function(args) {
                       );
     } 
   }
-log.debug(" MADE IT HERE: CG445");
 
   if(noPullUp === 0 && currentZ != startZ){    	//If No pull-up is set to YES, pull up to the starting Z location
 //   	this.emit_gcode( "G0Z" + startZ);
+log.debug("Made it to CG-line 452");
     this.emit_move('G0',{'Z':startZ});
    	this.cmd_posz = startZ;
   }
   else{				    						//If not, stay at the ending Z height
   	if ( optCG > 1 && optCG < 3) {
 //    	this.emit_gcode( "G1Z" + currentZ ); 
+log.debug("Made it to CG-line 459");
       this.emit_move('G1',{
                            'Z':currentZ,
                            'F':(60 * config.opensbp.get('movez_speed'))
@@ -462,55 +471,59 @@ log.debug(" MADE IT HERE: CG445");
 //
 //  Usage: interpolate_circle(<startX>,<startY>,<startZ>,<endX>,<endY>,<plunge>,
 //                            <centerX>,<centerY>,<propX>,<propY>);
-exports.interpolate_circle = function(startX,startY,startZ,endX,endY,endZ,plunge,centerX,centerY,propX,propY) {
+exports.interpolate_circle = function(startX,startY,startZ,endX,endY,plunge,centerX,centerY,propX,propY,opt) {
 
-  var Distr = 0.0;
-  var nextX = 0.0;
-  var nextY = 0.0;
-  var nextZ = 0.0;
-
+  var nextX = startX;
+  var nextY = startY;
+  var nextZ = startZ;
+ 
   var SpiralPlunge = 0;
-
   if ( plunge !== 0 ) { SpiralPlunge = 1; }
 
-  var Rundist = 0.0;
+  centerX *= propX;
+  centerY *= propY;
 
-  var radius = Math.sqrt(Math.pow((centerX-startX),2)+Math.pow((centerY-startY),2));
+  var radius = Math.sqrt(Math.pow((centerX),2)+Math.pow((centerY),2));
 
   // Find the beginning and ending angles in radians. We'll use only radians from here on.
-  var Bang = Math.atan2(startX-centerX, startY-centerY);
-  var Eang = Math.atan2(endX-centerX, endY-centerY);
+  var Bang = Math.atan2(centerX, centerY);
+  var Eang = Math.atan2((endX*propX)-(startX-centerX), (endY*propY)-(startY-centerY));
+  var inclAng = 0.0;
 
   if (Dir === 1) {
-    if (Bang < Eang) { Distr = Eang - Bang; }
-    if (Bang > Eang) { Distr = 6.28318530717959 - Bang + Eang; }
+    if (Bang < Eang) { inclAng = Eang - Bang; }
+    if (Bang > Eang) { inclAng = 6.28318530717959 - Bang + Eang; }
   }
   else {
-    if (Bang < Eang) { Distr = 6.28318530717959 - Bang + Eang; }
-    if (Bang > Eang) { Distr = Eang - Bang; }
+    if (Bang < Eang) { inclAng = 6.28318530717959 - Bang + Eang; }
+    if (Bang > Eang) { inclAng = Eang - Bang; }
   }
 
-  if ( Distr < 0.00001 ) { 
+  if ( inclAng < 0.00001 ) { 
     // end here  
   }
 
-  var increment = 0.05;
+  var incrAng = 0.05;
+  var Xfactor1 = radius * propX;
+  var Yfactor1 = radius * propY;
 
-  if (increment > Distr) { increment = 0.25 * Distr; }
-  if ((Distr * radius) < config.opensbp.get('cRes')) { cRes = Distr * radius * 0.5; }
+  if (incrAng > inclAng) { incrAng = inclAng; }
 
-  var t = Bang;
+  nextX = Xfactor1 * (Math.sin(Bang + (incrAng * Dir))) + Xfactor1;
+  nextY = Yfactor1 * (Math.cos(Bang + (incrAng * Dir))) + Yfactor1;
+
+  var incrDist = Math.sqrt(Math.pow((nextX-startX),2)+Math.pow((nextY-startY),2));
+  var circRes = config.opensbp.get('cRes');
+  
+  if (incrDist > circRes) { 
+    incrDist = circRes; 
+  }
 
   var FirstCircleX = radius * Math.sin(t) * propX;
   var FirstCricleY = radius * Math.cos(t) * propY;
 
-  var Xfactor1 = radius * propX;
-  var Yfactor1 = radius * propY;
-  var Xfactor2 = radius * propX;
-  var Yfactor2 = radius * propX;
-
-  nextX = Xfactor1 * (Math.sin(t + (increment * Dir))) + Xfactor2;
-  nextY = Yfactor1 * (Math.cos(t + (increment * Dir))) + Yfactor2;
+  nextX = Xfactor1 * (Math.sin(Bang + (increment * Dir))) + Xfactor2;
+  nextY = Yfactor1 * (Math.cos(Bang + (increment * Dir))) + Yfactor2;
 
   var DistA = nextX - startX;
   var DistB = nextY - startY;
@@ -518,24 +531,19 @@ exports.interpolate_circle = function(startX,startY,startZ,endX,endY,endZ,plunge
   FirstDist = Math.sqrt(Math.pow(DistA,2) + Math.pow(DistB,2));
 
   if ( FirstDist === 0 ) {
-    if ( increment === 0 ) { increment = 0.01;}
-    increment *= config.opensbp.get('cRes') / FirstDist;
-    nextX = Xfactor1 * (Math.sin(t + (increment * Dir))) + Xfactor2;
-    nextY = Yfactor1 * (Math.cos(t + (increment * Dir))) + Yfactor2;
+    if ( incrDist === 0 ) { increment = 0.01;}
+    incrDist *= config.opensbp.get('cRes') / FirstDist;
+
+    incrZ = Plg/steps;
   }
 
-
   // Calculate the next Z position
-  
-  var x = args[0];
-  var y = args[1];
-  var z = args[2];
+    nextX = Xfactor1 * (Math.sin(t + (increment * Dir))) + Xfactor1;
+    nextY = Yfactor1 * (Math.cos(t + (increment * Dir))) + Yfactor1;
 
-  log.debug( " M3 args: " + JSON.stringify(args));
+  log.debug( " Interpolate - Next Point: " + JSON.stringify(args));
   feedrate = (60.0 * config.opensbp.get('movexy_speed'));
   this.emit_move('G1',{"X":x,"Y":y,"Z":z, 'F':feedrate});
-
-  
 
 };
 
