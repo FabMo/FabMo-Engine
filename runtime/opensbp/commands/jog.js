@@ -9,17 +9,10 @@ exports.JX = function(args) {
 	var x = args[0];
 
 	log.debug( " JX args: " + JSON.stringify(args));
+	if(isNaN(x)) { throw( "Invalid JX argument: " + x ); }
 	this.cmd_posx = x;
 	this.emit_move('G0',{"X":x});
 
-/*	if(isNaN(x)) { throw( "Invalid JX argument: " + x ); }
-	var PtXfrm = { "X":x };
-	PtXfrm = this.transformation(PtXfrm);
-    x = PtXfrm.X;
-	this.emit_gcode("G0X" + x);
-	this.raw_posx = args[0];
-	this.cmd_posx = x;
-*/
 };
 
 // Jog (rapid) the Y axis
@@ -27,17 +20,10 @@ exports.JY = function(args) {
 	var y = args[0];
 
 	log.debug( " JY args: " + JSON.stringify(args));
+	if(isNaN(y)) { throw( "Invalid JY argument: " + y ); }
 	this.cmd_posy = y;
 	this.emit_move('G0',{"Y":y});
 
-/*	if(isNaN(y)) { throw( "Invalid JY argument: " + y ); }
-	var PtXfrm = { "Y":y };
-	PtXfrm = this.transformation(PtXfrm);
-    y = PtXfrm.Y;
-	this.emit_gcode("G0Y" + y);
-	this.raw_posb = args[0];
-	this.cmd_posy = y;
-*/
 };
 
 // Jog (rapid) the Z axis
@@ -45,17 +31,10 @@ exports.JZ = function(args) {
 	var z = args[0];
 
 	log.debug( " JZ args: " + JSON.stringify(args));
+	if(isNaN(z)) { throw( "Invalid JZ argument: " + z ); }
 	this.cmd_posz = z;
 	this.emit_move('G0',{"Z":z});
 
-/*	if(isNaN(z)) { throw( "Invalid JZ argument: " + z ); }
-	var PtXfrm = { "Z":z };
-	PtXfrm = this.transformation(PtXfrm);
-    z = PtXfrm.Z;
-	this.emit_gcode("G0Z" + z);
-	this.raw_posz = args[0];
-	this.cmd_posz = z;
-*/
 };
 
 // Jog (rapid) the A axis
@@ -63,17 +42,10 @@ exports.JA = function(args) {
 	var a = args[0];
 
 	log.debug( " JA args: " + JSON.stringify(args));
+	if(isNaN(a)) { throw( "Invalid JA argument: " + a ); }
 	this.cmd_posa = a;
 	this.emit_move('G0',{"A":a});
 
-/*	if(isNaN(a)) { throw( "Invalid JA argument: " + a ); }
-	var PtXfrm = { "A":a };
-	PtXfrm = this.transformation(PtXfrm);
-    a = PtXfrm.A;
-	this.emit_gcode("G0A" + a);
-	this.raw_posa = args[0];
-	this.cmd_posa = a;
-*/
 };
 
 // Jog (rapid) the B axis
@@ -81,14 +53,10 @@ exports.JB = function(args) {
 	var b = args[0];
 
 	log.debug( " JB args: " + JSON.stringify(args));
+	if(isNaN(b)) { throw( "Invalid JB argument: " + b ); }
 	this.cmd_posb = b;
 	this.emit_move('G0',{"B":b});
 
-/*	if(isNaN(b)) { throw( "Invalid JB argument: " + b ); }
-	this.emit_gcode("G0B" + b);
-	this.raw_posb = args[0];
-	this.cmd_posb = b;
-*/
 };
 
 // Jog (rapid) the C axis
@@ -96,313 +64,71 @@ exports.JC = function(args) {
 	var c = args[0];
 
 	log.debug( " JC args: " + JSON.stringify(args));
+	if(isNaN(c)) { throw( "Invalid JC argument: " + c ); }
 	this.cmd_posc = c;
 	this.emit_move('G0',{"C":c});
 
-/*	if(isNaN(c)) { throw( "Invalid JC argument: " + c ); }
-	this.emit_gcode("G0C" + c);
-	this.raw_posc = args[0];
-	this.cmd_posc = c;
-*/
 };
 
 // Jog (rapid) 2 axes (XY).This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J2 = function(args) {
-	var x = args[0];
-	var y = args[1];
-
-	log.debug( " J2 args: " + JSON.stringify(args));
-	this.cmd_posx = x;
-	this.cmd_posy = y;
-	this.emit_move('G0',{"X":x,"Y":y});
-
-/*	if (x === undefined) { x = this.cmd_posx; }
-	  else { 
-	  	if(isNaN(x)) { throw( "Invalid J2-X argument: " + x ); } 
-	  }
-	if (y === undefined) { y = this.cmd_posy; }
-	  else { 
-	  	if(isNaN(y)) { throw( "Invalid J2-Y argument: " + y ); } 
-	  }
-
-	var PtXfrm = { "X":x, "Y":y };
-	PtXfrm = this.transformation(PtXfrm);
-
-	var outStr = "G0";
-	if (args[0] !== undefined) {
-		x = PtXfrm.X;
-		outStr = outStr + "X" + x;
-		this.raw_posx = args[0];
-		this.cmd_posx = x;
-	}
-	if (args[1] !== undefined) {
-		y = PtXfrm.Y;
-		outStr = outStr + "Y" + y;
-		this.raw_posy = args[1];
-		this.cmd_posy = y;
-	}
-	this.emit_gcode(outStr);
-*/
+    var params = process_move(args);
+	this.emit_move('G0',params);
 };
 
 // Jog (rapid) 3 axes (XYZ). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J3 = function(args) {
-	var x = args[0];
-	var y = args[1];
-	var z = args[2];
-
-	log.debug( " J3 args: " + JSON.stringify(args));
-	this.cmd_posx = x;
-	this.cmd_posy = y;
-	this.cmd_posz = z;
-	this.emit_move('G0',{"X":x,"Y":y,"Z":z});
-
-/*	var M3res = 5;
-
-	log.debug( " J3 args: " + JSON.stringify(args));
-
-	if (x === undefined) { x = this.cmd_posx; }
-	  else {
-	  	if(isNaN(x)) { throw( "Invalid J3-X argument: " + x ); } 
-	  } 
-	if (y === undefined) { y = this.cmd_posy; }
-	  else {
-	  	if(isNaN(y)) { throw( "Invalid J3-Y argument: " + y ); } 
-	  }
-	if (z === undefined) { z = this.cmd_posz; }
-	  else {
-	  	if(isNaN(z)) { throw( "Invalid J3-Z argument: " + z ); } 
-	  }
-
-	var PtXfrm = { "X":x, "Y":y, "Z":z };
-	log.debug("  J3: " + JSON.stringify(PtXfrm));
-	PtXfrm = this.transformation(PtXfrm);
-
-	var outStr = "G0";
-	if (args[0] !== undefined) {
-		x = PtXfrm.X;
-		outStr = outStr + "X" + x;
-		this.raw_posx = args[0];
-		this.cmd_posx = x;
-	}
-	if (args[1] !== undefined) {
-		y = PtXfrm.Y;
-		outStr = outStr + "Y" + y;
-		this.raw_posy = args[1];
-		this.cmd_posy = y;
-	}
-	if (args[2] !== undefined) {
-		z = PtXfrm.Z;
-		outStr = outStr + "Z" + z;
-		this.raw_posz = args[2];
-		this.cmd_posz = z;
-	}
-	this.emit_gcode(outStr);
-*/
+    var params = process_move(args);
+	this.emit_move('G0',params);
 };
 
 // Jog (rapid) 4 axes (XYZA). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J4 = function(args) {
-	var x = args[0];
-	var y = args[1];
-	var z = args[2];
-	var a = args[3];
-
-	log.debug( " J4 args: " + JSON.stringify(args));
-	this.cmd_posx = x;
-	this.cmd_posy = y;
-	this.cmd_posz = z;
-	this.cmd_posa = a;
-	this.emit_move('G0',{"X":x,"Y":y,"Z":z,"A":a});
-
-/*	var M3res = 5;
-
-	if (x === undefined) { x = this.cmd_posx; }
-	  else { 
-	  	if(isNaN(x)) { throw( "Invalid J4-X argument: " + x ); } 
-	  } 
-	if (y === undefined) { y = this.cmd_posy; }
-	  else { 
-	  	if(isNaN(y)) { throw( "Invalid J4-Y argument: " + y ); } 
-	  }
-	if (z === undefined) { z = this.cmd_posz; }
-	  else { 
-	  	if(isNaN(z)) { throw( "Invalid J4-Z argument: " + z ); } 
-	  }
-
-	var PtXfrm = { "X":x, "Y":y, "Z":z };
-	PtXfrm = this.transformation(PtXfrm);
-
-	var outStr = "G0";
-	if (args[0] !== undefined) {
-		x = PtXfrm.X;
-		outStr = outStr + "X" + x;
-		this.raw_posx = args[0];
-		this.cmd_posx = x;
-	}
-	if (args[1] !== undefined) {
-		y = PtXfrm.Y;
-		outStr = outStr + "Y" + y;
-		this.raw_posy = args[1];
-		this.cmd_posy = y;
-	}
-	if (args[2] !== undefined) {
-		z = PtXfrm.Z;
-		outStr = outStr + "Z" + z;
-		this.raw_posz = args[2];
-		this.cmd_posz = z;
-	}
-	if (args[3] !== undefined) {
-		var a = args[3];
-		if(isNaN(a)) { throw( "Invalid J4-A argument: " + a ); }
-		outStr = outStr + "A" + a;
-		this.raw_posa = args[3];
-		this.cmd_posa = a;
-	}
-	this.emit_gcode(outStr);
-*/
+    var params = process_move(args);
+	this.emit_move('G0',params);
 };
 
 // Jog (rapid) 5 axes (XYZAB). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J5 = function(args) {
-	var x = args[0];
-	var y = args[1];
-	var z = args[2];
-	var a = args[3];
-	var b = args[4];
-
-	log.debug( " J5 args: " + JSON.stringify(args));
-	this.cmd_posx = x;
-	this.cmd_posy = y;
-	this.cmd_posz = z;
-	this.cmd_posa = a;
-	this.cmd_posb = b;
-	this.emit_move('G0',{"X":x,"Y":y,"Z":z,"A":a,"B":b});
-
-/*	var M3res = 5;
-
-	if (x === undefined) { x = this.cmd_posx; }
-	  else { 
-	  	if(isNaN(x)) { throw( "Invalid J5-X argument: " + x ); } 
-	  } 
-	if (y === undefined) { y = this.cmd_posy; }
-	  else { 
-	  	if(isNaN(y)) { throw( "Invalid J5-Y argument: " + y ); } 
-	  }
-	if (z === undefined) { z = this.cmd_posz; }
-	  else { 
-	  	if(isNaN(z)) { throw( "Invalid J5-Z argument: " + z ); } 
-	  }
-
-	var outStr = "G0";
-	if (args[0] !== undefined) {
-		x = PtXfrm.X;
-		outStr = outStr + "X" + x;
-		this.cmd_posx = x;
-	}
-	if (args[1] !== undefined) {
-		y = PtXfrm.Y;
-		outStr = outStr + "Y" + y;
-		this.cmd_posy = y;
-	}
-	if (args[2] !== undefined) {
-		z = PtXfrm.Z;
-		outStr = outStr + "Z" + z;
-		this.cmd_posz = z;
-	}
-	if (args[3] !== undefined) {
-		var a = args[3];
-		if(isNaN(a)) { throw( "Invalid J5-A argument: " + a ); }
-		outStr = outStr + "A" + a;
-		this.cmd_posa = a;
-	}
-	if (args[4] !== undefined) {
-		var b = args[4];
-		if(isNaN(b)) { throw( "Invalid J5-B argument: " + b ); }
-		outStr = outStr + "B" + b;
-		this.cmd_posb = b;
-	}
-	this.emit_gcode(outStr);
-*/
+    var params = process_move(args);
+	this.emit_move('G0',params);
 };
 
 // Jog (rapid) 6 axes (XYZABC). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J6 = function(args) {
-	var x = args[0];
-	var y = args[1];
-	var z = args[2];
-	var a = args[3];
-	var b = args[4];
-	var c = args[5];
+    var params = process_move(args);
+	this.emit_move('G0',params);
+};
 
-	log.debug( " J6 args: " + JSON.stringify(args));
-	this.cmd_posx = x;
-	this.cmd_posy = y;
-	this.cmd_posz = z;
-	this.cmd_posa = a;
-	this.cmd_posb = b;
-	this.cmd_posc = c;
-	this.emit_move('G0',{"X":x,"Y":y,"Z":z,"A":a,"B":b,"C":c});
+process_jog = function(args) {
+    log.debug(" process_move: " + JSON.stringify(args));
+	var params = {};
 
-/*	var M3res = 5;
-
-	if (x === undefined) { x = this.cmd_posx; }
-	  else { 
-	  	if(isNaN(x)) { throw( "Invalid J6-X argument: " + x ); } 
-	  } 
-	if (y === undefined) { y = this.cmd_posy; }
-	  else { 
-	  	if(isNaN(y)) { throw( "Invalid J6-Y argument: " + y ); } 
-	  }
-	if (z === undefined) { z = this.cmd_posz; }
-	  else { 
-	  	if(isNaN(z)) { throw( "Invalid J6-Z argument: " + z ); } 
-	  }
-
-	var PtXfrm = { "X":x, "Y":y, "Z":z };
-	PtXfrm = this.transformation(PtXfrm);
-
-	var outStr = "G0";
-	if (args[0] !== undefined) {
-		x = PtXfrm.X;
-		outStr = outStr + "X" + x;
-		this.cmd_posx = x;
+	if(args[0] && typeof args[0] === "number"){ 
+	  log.debug("   x = " + args[0]); this.cmd_posx = params.X = args[0];
 	}
-	if (args[1] !== undefined) {
-		y = PtXfrm.Y;
-		outStr = outStr + "Y" + y;
-		this.cmd_posy = y;
+	if(args[1] && typeof args[1] === "number"){ 
+	  log.debug("   y = " + args[1]); this.cmd_posy = params.Y = args[1];
+	}  
+	if(args[2] && typeof args[2] === "number"){ 
+	  log.debug("   z = " + args[2]); this.cmd_posz = params.Z = args[2];
+	}  
+	if(args[3] && typeof args[3] === "number"){ 
+	  log.debug("   a = " + args[3]); this.cmd_posa = params.A = args[3];
 	}
-	if (args[2] !== undefined) {
-		z = PtXfrm.Z;
-		outStr = outStr + "Z" + z;
-		this.cmd_posz = z;
-	}
-	if (args[3] !== undefined) {
-		var a = args[3];
-		if(isNaN(a)) { throw( "Invalid J6-A argument: " + a ); }
-		outStr = outStr + "A" + a;
-		this.cmd_posa = a;
-	}
-	if (args[4] !== undefined) {
-		var b = args[4];
-		if(isNaN(b)) { throw( "Invalid J6-B argument: " + b ); }
-		outStr = outStr + "B" + b;
-		this.cmd_posb = b;
-	}
-	if (args[5] !== undefined) {
-		var c = args[5];
-		if(isNaN(c)) { throw( "Invalid J6-C argument: " + c ); }
-		outStr = outStr + "C" + c;
-		this.cmd_posc = c;
-	}
-	this.emit_gcode(outStr);
-*/
+	if(args[4] && typeof args[4] === "number"){ 
+	  log.debug("   b = " + args[4]); this.cmd_posb = params.B = args[4];
+	}  
+	if(args[5] && typeof args[5] === "number"){ 
+	  log.debug("   c = " + args[5]); this.cmd_posc = params.C = args[5];
+	}  
+	params.F = (60.0 * config.opensbp.get('movexy_speed'));
+	return params;
 };
 
 // Jog (rapid) XY to the Home position (0,0) 

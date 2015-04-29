@@ -926,12 +926,13 @@ SBPRuntime.prototype.emit_gcode = function(s) {
 
 SBPRuntime.prototype.emit_move = function(code, pt) {
 
-//	pt = this.transformation(pt);
 	var gcode = code;
-	var numPts = 1; 
 	var i;
-
     log.debug( "emit_move: code = " + code + "  pt = " + JSON.stringify(pt));
+
+	pt = this.transformation(pt);
+
+    log.debug( "emit_move: transform = " + code + "  pt = " + JSON.stringify(pt));
 //	if( this.transforms.interpolate.apply !== false ){
 	//if interpolate - num points
 		//numPts = ;
@@ -954,26 +955,6 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 //	}
 };
 
-SBPRuntime.prototype.process_move = function(args) {
-    log.debug(" process_move: " + JSON.stringify(args));
-	var params = {};
-	
-	log.debug( " process_move args: " + JSON.stringify(args));
-	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
-	if(args[0] && typeof args[0] === "number"){ 
-	  log.debug("   x = " + args[0]); this.cmd_posx = params.X = args[0];
-	}
-	if(args[1] && typeof args[1] === "number"){ 
-	  log.debug("   y = " + args[1]); this.cmd_posy = params.Y = args[1];
-	}  
-	if(args[2] && typeof args[2] === "number"){ 
-	  log.debug("   z = " + args[2]); this.cmd_posz = params.Z = args[2];
-	}  
-	params.F = (60.0 * config.opensbp.get('movexy_speed'));
-	emit_move('G1',params);
-};
-
-
 // This must be called at least once before instantiating an SBPRuntime object
 SBPRuntime.prototype.loadCommands = function(callback) {
 	commands=require('./commands').load();
@@ -985,23 +966,37 @@ SBPRuntime.prototype.loadCommands = function(callback) {
 }
 
 SBPRuntime.prototype.transformation = function(TranPt){
-	var gres = 5;
+log.debug("TranPt: " + JSON.stringify(TranPt));
 
 	if (this.transforms.rotate.apply !== false){
+		var angle = this.transforms.rotate.angle;
+		var PtRotX = this.transforms.rotate.x;
+		var PtRotY = this.transforms.rotate.y;
 		log.debug("Rotate: " + JSON.stringify(this.transforms.rotate));
-//		TranPt = tform.rotate(TranPt, 45, 0, 0);
+		TranPt = tform.rotate(TranPt,angle,PtRotX,PtRotY);
 	}
 	if (this.transforms.shearx.apply !== false){
 		log.debug("ShearX: " + JSON.stringify(this.transforms.shearx));
+		TranPt = tform.shearX(TranPt);
 	}
 	if (this.transforms.sheary.apply !== false){
 		log.debug("ShearY: " + JSON.stringify(this.transforms.sheary));
+		TranPt = tform.shearY(TranPt);
 	}
 	if (this.transforms.scale.apply !== false){
-		log.debug("Scale: " + JSON.stringify(this.transforms.scale));
+		var ScaleX = this.transforms.scale.scalex;
+		var ScaleY = this.transforms.scale.scaley;
+		var PtX = this.transforms.scale.x;
+		var PtY = this.transforms.scale.y;
+
+		TranPt = tform.scale(TranPt,ScaleX,ScaleY,PtX,PtY);
 	}
 	if (this.transforms.move.apply !== false){
-		log.debug("Move: " + JSON.stringify(this.transforms.move));
+		var XDist = this.transforms.move.x;
+		var YDist = this.transforms.move.y;
+		var ZDist = this.transforms.move.z;
+
+		TranPt = tform.translate(TranPt, XDist, YDist, ZDist);
 	}
 
 	return TranPt;
