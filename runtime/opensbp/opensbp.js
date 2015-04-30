@@ -930,6 +930,8 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 	var i;
     log.debug( "emit_move: code = " + code + "  pt = " + JSON.stringify(pt));
 
+  log.debug(" emit_move cmd_posx = " + this.cmd_posx );
+
 	pt = this.transformation(pt);
 
     log.debug( "emit_move: transform = " + code + "  pt = " + JSON.stringify(pt));
@@ -966,13 +968,25 @@ SBPRuntime.prototype.loadCommands = function(callback) {
 }
 
 SBPRuntime.prototype.transformation = function(TranPt){
-log.debug("TranPt: " + JSON.stringify(TranPt));
+  log.debug("Rotate: " + JSON.stringify(this.transforms.rotate));
+
+  log.debug("cmd_posx = " + this.cmd_posx );
 
 	if (this.transforms.rotate.apply !== false){
+        if ( !("X" in TranPt) ) {
+  			TranPt.X = this.cmd_posx;
+  			log.debug("Rotate: X = " + TranPt.X );
+        }
+        if ( !("Y" in TranPt) ) {
+  			TranPt.Y = this.cmd_posy;
+  			log.debug("Rotate: Y = " + TranPt.Y );
+        }
+  log.debug("TranPt: " + JSON.stringify(TranPt));
 		var angle = this.transforms.rotate.angle;
+		var x = TranPt.X;
+		var y = TranPt.Y;
 		var PtRotX = this.transforms.rotate.x;
 		var PtRotY = this.transforms.rotate.y;
-		log.debug("Rotate: " + JSON.stringify(this.transforms.rotate));
 		TranPt = tform.rotate(TranPt,angle,PtRotX,PtRotY);
 	}
 	if (this.transforms.shearx.apply !== false){

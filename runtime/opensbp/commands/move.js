@@ -78,181 +78,67 @@ exports.MC = function(args) {
 // Move 2 axes (XY). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.M2 = function(args) {
-	log.debug( " M2 args: " + JSON.stringify(args));
-
-    var params = process_move(args);
-
+    var params = process_move.bind(this)(args);
 	this.emit_move('G1',params);
-
-/*	log.debug( " M2 args: " + JSON.stringify(args));
-	if(args[0] && args[0] !== " "){ 
-	  if( isNaN(args[0]) === false ) { this.cmd_posx = params.X = args[0]; }
-	  else { throw( "Invalid M2-X argument: " + args[0] ); }  
-	}
-	if(args[1] && args[1] !== " ") {
-	  if( isNaN(args[1]) === false ) { this.cmd_posy = params.Y = args[1]; }
-	  else { throw( "Invalid M2-Y argument: " + args[1] ); }
-	}  
-	params.F = (60.0 * config.opensbp.get('movexy_speed'));
-	this.emit_move('G1',params);
-*/	
 };
 
 // Move 3 axes (XYZ). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.M3 = function(args) {
-	log.debug( " M3 args: " + JSON.stringify(args));
-
-    var params = process_move(args);
-
+    var params = process_move.bind(this)(args);
 	this.emit_move('G1',params);
-	
-/*	log.debug( " M3 args: " + JSON.stringify(args));
-	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
-	if(args[0] && typeof args[0] === "number"){ 
-	  log.debug("   x = " + args[0]); this.cmd_posx = params.X = args[0];
-	}
-	if(args[1] && typeof args[1] === "number"){ 
-	  log.debug("   y = " + args[1]); this.cmd_posy = params.Y = args[1];
-	}  
-	if(args[2] && typeof args[2] === "number"){ 
-	  log.debug("   z = " + args[2]); this.cmd_posz = params.Z = args[2];
-	}  
-	params.F = (60.0 * config.opensbp.get('movexy_speed'));
-	this.emit_move('G1',params);
-*/
 };
 
 // Move 4 axes (XYZA). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.M4 = function(args) {
-	log.debug( " M4 args: " + JSON.stringify(args));
-
-    var params = process_move(args);
-
+    var params = process_move.bind(this)(args);
 	this.emit_move('G1',params);
-	
-/*	log.debug( " M4 args: " + JSON.stringify(args));
-	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
-	if(args[0] && args[0] !== " "){ 
-	  if( isNaN(args[0]) === false ) { this.cmd_posx = params.X = args[0]; }
-	  else { throw( "Invalid M4-X argument: " + args[0] ); }  
-	}
-	if(args[1] && args[1] !== " ") {
-	  if( isNaN(args[1]) === false ) { this.cmd_posy = params.Y = args[1]; }
-	  else { throw( "Invalid M4-Y argument: " + args[1] ); }
-	}  
-	if(args[2] && args[2] !== " ") {
-	  if( isNaN(args[2]) === false ) { this.cmd_posz = params.Z = args[2]; }
-	  else { throw( "Invalid M4-Z argument: " + args[2] ); }
-	}  
-	if(args[3] && args[3] !== " ") {
-	  if( isNaN(args[3]) === false ) { this.cmd_posa = params.A = args[3]; }
-	  else { throw( "Invalid M4-A argument: " + args[3] ); }
-	}  
-	this.emit_move('G1',{"X":x,"Y":y,"Z":z,"A":a, 'F':feedrate});
-*/	
 };
 
 // Move 5 axes (XYZAB). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.M5 = function(args) {
-	log.debug( " M5 args: " + JSON.stringify(args));
-
-    var params = process_move(args);
-
+    var params = process_move.bind(this)(args);
 	this.emit_move('G1',params);
-	
-/*	log.debug( " M5 args: " + JSON.stringify(args));
-	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
-	if(args[0] && args[0] !== " "){ 
-	  if( isNaN(args[0]) === false ) { this.cmd_posx = params.X = args[0]; }
-	  else { throw( "Invalid M5-X argument: " + args[0] ); }  
-	}
-	if(args[1] && args[1] !== " ") {
-	  if( isNaN(args[1]) === false ) { this.cmd_posy = params.Y = args[1]; }
-	  else { throw( "Invalid M5-Y argument: " + args[1] ); }
-	}  
-	if(args[2] && args[2] !== " ") {
-	  if( isNaN(args[2]) === false ) { this.cmd_posz = params.Z = args[2]; }
-	  else { throw( "Invalid M5-Z argument: " + args[2] ); }
-	}  
-	if(args[3] && args[3] !== " ") {
-	  if( isNaN(args[3]) === false ) { this.cmd_posa = params.A = args[3]; }
-	  else { throw( "Invalid M5-A argument: " + args[3] ); }
-	}  
-	if(args[4] && args[4] !== " ") {
-	  if( isNaN(args[4]) === false ) { this.cmd_posb = params.B = args[4]; }
-	  else { throw( "Invalid M5-B argument: " + args[4] ); }
-	}  
-	this.emit_move('G1',{"X":x,"Y":y,"Z":z,"A":a,"B":b,'F':feedrate});
-*/
 };
 
 // Move all 6 axes (XYZABC). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.M6 = function(args) {
-	log.debug( " M6 args: " + JSON.stringify(args));
-
-    var params = process_move(args);
-
+    var params = process_move.bind(this)(args);
 	this.emit_move('G1',params);
-	
-/*	log.debug( " M6 args: " + JSON.stringify(args));
-	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
-	if(args[0] && args[0] !== " "){ 
-	  if( isNaN(args[0]) === false ) { this.cmd_posx = params.X = args[0]; }
-	  else { throw( "Invalid M6-X argument: " + args[0] ); }  
-	}
-	if(args[1] && args[1] !== " ") {
-	  if( isNaN(args[1]) === false ) { this.cmd_posy = params.Y = args[1]; }
-	  else { throw( "Invalid M6-Y argument: " + args[1] ); }
-	}  
-	if(args[2] && args[2] !== " ") {
-	  if( isNaN(args[2]) === false ) { this.cmd_posz = params.Z = args[2]; }
-	  else { throw( "Invalid M6-Z argument: " + args[2] ); }
-	}  
-	if(args[3] && args[3] !== " ") {
-	  if( isNaN(args[3]) === false ) { this.cmd_posa = params.A = args[3]; }
-	  else { throw( "Invalid M6-A argument: " + args[3] ); }
-	}  
-	if(args[4] && args[4] !== " ") {
-	  if( isNaN(args[4]) === false ) { this.cmd_posb = params.B = args[4]; }
-	  else { throw( "Invalid M6-B argument: " + args[4] ); }
-	}  
-	if(args[5] && args[4] !== " ") {
-	  if( isNaN(args[5]) === false ) { this.cmd_posc = params.C = args[5]; }
-	  else { throw( "Invalid M6-C argument: " + args[5] ); }
-	}  
-	this.emit_move('G1',{"X":x,"Y":y,"Z":z,"A":a,"B":b,"C":c,'F':feedrate});
-*/
 };
 
 process_move = function(args) {
     log.debug(" process_move: " + JSON.stringify(args));
 	var params = {};
 
-	log.debug( " process_move args: " + JSON.stringify(args));
 	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
-	if(args[0] && typeof args[0] === "number"){ 
+	if(args[0] === 0 || args[0] && typeof args[0] === "number"){ 
 	  log.debug("   x = " + args[0]); this.cmd_posx = params.X = args[0];
 	}
-	if(args[1] && typeof args[1] === "number"){ 
+	if(args[1] === 0 || args[1] && typeof args[1] === "number"){ 
 	  log.debug("   y = " + args[1]); this.cmd_posy = params.Y = args[1];
 	}  
-	if(args[2] && typeof args[2] === "number"){ 
+	if(args[1] === 0 || args[2] && typeof args[2] === "number"){ 
 	  log.debug("   z = " + args[2]); this.cmd_posz = params.Z = args[2];
 	}  
-	if(args[3] && typeof args[3] === "number"){ 
+	if(args[1] === 0 || args[3] && typeof args[3] === "number"){ 
 	  log.debug("   a = " + args[3]); this.cmd_posa = params.A = args[3];
 	}
-	if(args[4] && typeof args[4] === "number"){ 
+	if(args[1] === 0 || args[4] && typeof args[4] === "number"){ 
 	  log.debug("   b = " + args[4]); this.cmd_posb = params.B = args[4];
 	}  
-	if(args[5] && typeof args[5] === "number"){ 
+	if(args[1] === 0 || args[5] && typeof args[5] === "number"){ 
 	  log.debug("   c = " + args[5]); this.cmd_posc = params.C = args[5];
 	}  
 	params.F = (60.0 * config.opensbp.get('movexy_speed'));
+
+    log.debug("   this.cmd_posx = " + this.cmd_posx );
+    log.debug("   this.cmd_posy = " + this.cmd_posy );
+    log.debug("   this.cmd_posz = " + this.cmd_posz );
+
 	return params;
 };
 

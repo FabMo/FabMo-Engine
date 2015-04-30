@@ -2,14 +2,21 @@ var log = require('../../log').logger('sbp');
 
 // Point X, Point Y, Point Z, Angle(in radians), Rotation Point X, Rotation Point Y
 exports.rotate = function(PtNew,angle,RotPtX,RotPtY){
-
+  log.debug("rotating");
 	if ( angle !== 0 ) {
-		if (RotPtX === undefined) {RotPtX = 0;}
-		if (RotPtY === undefined) {RotPtY = 0;}
+		log.debug("rotate args: " + JSON.stringify(PtNew));
+		var x = PtNew.X;
+		var y = PtNew.Y;	
 		var cosB = Math.cos(angle);
 		var sinB = Math.sin(angle);
-		PtNew.X = (PtNew.X*cosB)-(PtNew.Y*sinB)+(RotPtX*(1-cosB))+(RotPtY*sinB);
-		PtNew.Y = (PtNew.X*sinB)+(PtNew.Y*cosB)+(RotPtY*(1-cosB))-(RotPtX*sinB);
+		if (RotPtX === undefined) { RotPtX = 0; }
+		if (RotPtY === undefined) { RotPtY = 0; }
+		PtNew.X = cosB * (x-RotPtX) - sinB * (y-RotPtY) +RotPtX;
+		PtNew.Y = sinB * (x-RotPtX) + cosB * (y-RotPtY) +RotPtY;
+
+//	p'x = cos(theta) * (px-ox) - sin(theta) * (py-oy) + ox
+//	p'y = sin(theta) * (px-ox) + cos(theta) * (py-oy) + oy
+
 	}
 
 	return PtNew;
@@ -33,7 +40,7 @@ exports.shearY = function(PtNew, angle){
 
 // Point X, Point Y, Point Z, Scale X, Scale Y, Scale Origin X, Scale Origin Y
 exports.scale = function(PtNew,scaleX,scaleY,scalePtX,scalePtY){
-
+  log.debug("scaling");
 	if ( scaleX !== 1 && PtNew.X ) { 
 	    PtNew.X = (scaleX*PtNew.X)+(scalePtX*(1-scaleX)); 
 	}
