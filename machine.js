@@ -205,8 +205,6 @@ Machine.prototype.fixed_move = function(direction,step,speed,callback) {
 
 };
 
-
-
 Machine.prototype.setRuntime = function(runtime) {
 	if(this.current_runtime != runtime) {
 		try {
