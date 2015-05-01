@@ -118,7 +118,6 @@ define(function(require) {
 		// Submit a job
 		this._registerHandler('submitJob', function(data, callback) { 
 			if('file' in data) {
-				
 				formdata = new FormData();
 				formdata.append('file', data.file, data.file.name);
 				

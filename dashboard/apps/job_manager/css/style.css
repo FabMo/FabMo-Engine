@@ -18,6 +18,34 @@ tr.shown td.details-control {
     width: 40px;
 }
 
+.noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+#holder { 
+  border: 5px dashed #ccc; 
+  border-radius: 5px; 
+  width: 100%; 
+  height: 100px; 
+  text-align:center; 
+  vertical-align: middle;
+  color: #ccc;
+  font-size: 20px;
+  padding-top: 20px;
+  cursor: pointer;
+}
+
+#holder.hover { 
+  border: 5px dashed black; 
+  color: black;
+  cursor: copy;
+}
+
 .child-row-label: {
   font-weight: bold;
   color: red;

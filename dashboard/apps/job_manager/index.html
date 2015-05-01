@@ -3,17 +3,15 @@
 	<meta charset="utf-8">
 	<title>Job Manager</title>
 
-	<!-- CSS standardisation & inclusion -->
 	<link rel="stylesheet" href="./css/foundation.min.css">
 	<link rel="stylesheet" href="./css/normalize.css">
 	<link rel="stylesheet" href="./css/style.css">
-	<!--<link rel="stylesheet" href="./css/jquery.dataTables.css">-->
 	<link rel="stylesheet" href="./css/dataTables.foundation.css">
 
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-	<header class="grey"> <!-- Class can be "blue", "red", "grey", "orange" -->
+	<header class="grey">
 		<section>
 			<div class="app-title-container">
 				<h2>Job Manager</h2>
@@ -38,6 +36,17 @@
 			</div>
 		</div>
 	</section>
+
+<section class="container upload-control-container">
+	<div class="row" style="margin-top:0px;">
+		<div id="holder" class="noselect">
+			<em>Click here or drop files to fabricate...</em>
+		</div> 
+		<form id="hidden_form" enctype="multipart/form-data" style="display:none;">
+			<input id='job_selector' type="file" name="file" accept=".nc .gc .gcode .sbp .sbc">
+		</form>
+	</div>
+</section>
 
 	<section class="container">
 		<div class="row title">
@@ -70,21 +79,6 @@
             </tr>
         	</thead>
         	</table>
-		</div>
-
-		<div class="row submit-job">
-			<div class="small-12 columns">
-				<form id="submit_job" action="/job" method="post" enctype="multipart/form-data">
-					<div class="row collapse postfix-round">
-						<div class="small-9 columns">
-						  	<input id='job_selector' type="file" name="file" data-filename-placement="inside" placeholder="Browse...">
-						</div>
-						<div class="small-3 columns">
-						  	<button type"submit" class="button radius postfix">Upload</button>
-						</div>
-					</div>
-				</form>
-			</div>
 		</div>
 	</section>
 
@@ -129,14 +123,50 @@
 	var current_job = null;
 	var progress_timer = null;
 
-jQuery.fn.dataTableExt.oSort["duration-desc"] = function (x, y) {
-	console.log(x + ' ' + y);
-	return 1;
-};
+	var holder = document.getElementById('holder'),
+	    state = document.getElementById('status');
 
-jQuery.fn.dataTableExt.oSort["duration-asc"] = function (x, y) {
-    console.log(x+ ' ' + y)
-}
+	if (typeof window.FileReader === 'undefined') {
+	  //state.className = 'fail';
+	} else {
+	  //state.className = 'success';
+	  //state.innerHTML = 'File API & FileReader available';
+	}
+	 
+	holder.ondragover = function () { this.className = 'hover'; return false; };
+	holder.ondrop = function (e) {
+		this.className = '';
+		e.preventDefault();
+		file = e.dataTransfer.files[0]
+		fabmoDashboard.submitJob(e.dataTransfer.files[0], {filename:file.name}, function(err, data) {
+			if(err){alert("The file format you have attempted to upload is not allowed.  Files must have a valid g-code or openSBP extension.");return;}
+			refresh_jobs_list();
+		});
+		return false;
+	};
+
+	holder.onclick = function(e) {
+		e.preventDefault();
+		file = $('input[type=file]')
+		file.click();
+		return false;
+	}
+
+	var end = function(e) {
+		this.className = ''; return false;
+	}
+
+	holder.ondragleave = end;
+	holder.ondragend = end;
+
+	$('input[type=file]').change(function(){
+		fabmoDashboard.submitJob($('#hidden_form'), {}, function(err, data) {
+			refresh_jobs_list();
+		});
+	});
+
+	jQuery.fn.dataTableExt.oSort["duration-desc"] = function (x, y) {return 1};
+	jQuery.fn.dataTableExt.oSort["duration-asc"] = function (x, y) {}
 
     var history_table = $('#history_table').DataTable( {
     	"filter": false,
@@ -301,18 +331,6 @@ jQuery.fn.dataTableExt.oSort["duration-asc"] = function (x, y) {
 		queue_table.ajax.reload();
 		history_table.ajax.reload();
 	}
-
-	$('#submit_job').submit(function(e){
-		e.preventDefault();
-		console.log("submitting job");
-		fabmoDashboard.submitJob($(this), {}, function(err, data) {
-			console.log("job submitted");
-			if(err){console.error(err);return;}
-			$('#job_selector').replaceWith($('#job_selector').clone(true));
-			$('#job_selector').prev().html('Browse for a file to upload...');
-			refresh_jobs_list();
-		});
-	});
 
 	$('.no-jobs-item').click(function(e) {
 		$('#job_selector').click();
