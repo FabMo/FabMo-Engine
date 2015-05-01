@@ -1,5 +1,4 @@
 define(function(require) {
-	var ace = require('ace/ace');
 
 	var models = require('models');
 	var views = {};
@@ -119,98 +118,6 @@ define(function(require) {
 			this.model.set("id",this.model.cid);
 			this.$el.append(this.template(this.model.toJSON()));
 			return this;
-		}
-	});
-
-
-	views.AppStudioFileView = Backbone.View.extend({
-		tagName : 'div',
-		className : 'app-studio-files',
-		model : new models.App(),
-		initialize : function() {
-			_.bindAll(this, 'render');
-			if(this.model) {
-				this.model.bind('change', this.render);
-			}
-			this.$el.on('changed.jstree', function (e, data) {
-				file = data.instance.get_node(data.selected[0])
-				if(file.original.type === 'file') {
-					context = require('context');
-					console.log("Selected: " + file)
-					console.log(file.original.url)
-					model = new models.AppFile({'location':file.original.url});
-					console.log(model)
-					context.appStudioEditorView.setModel(new models.AppFile({url:file.original.url}))
-				}
-			});
-		},
-		show : function() {
-			$(".main-section").show();
-			this.$el.show();
-		},
-		hide : function() {
-			$(".main-section").hide();
-			this.$el.hide();
-		},
-		render : function() {
-			console.log("Rendering file tree view")
-			if(this.model) {
-				$.getJSON('/apps/' + this.model.id + '/files', function(data) {
-					console.log(data);
-					this.$el.jstree({'core' : {'data' : data, 'check_callback':true}});
-				}.bind(this))
-			};
-			return this;
-		},
-		setModel : function(model) {
-			if(model) {
-				this.model.set(model.toJSON());
-			} else {
-				this.model.set(null);
-			}
-		}
-	});
-
-	views.AppStudioEditorView = Backbone.View.extend({
-		tagName : 'div',
-		className : 'app-studio-editor',
-		model : new models.AppFile(),
-		initialize : function() {
-			_.bindAll(this, 'render');
-			if(this.model) {
-				this.model.bind('change', this.render);
-			}
-		},
-		show : function() {
-			$(".main-section").show();
-			this.$el.show();
-		},
-		hide : function() {
-			$(".main-section").hide();
-			this.$el.hide();
-		},
-		render : function() {
-			console.log("Rendering editor view")
-			var editor = ace.edit("app-studio-editor-widget");
-			editor.setTheme("ace/theme/xcode");
-			editor.setOptions({
-				maxLines:1000,
-				vScrollBarAlwaysVisible:true,
-				autoScrollEditorIntoView: true
-			});
-			console.log(this.model.get('location'));
-			$.get( this.model.get('location'), function( data ) {
-				console.log(data);
-				editor.setValue(data, -1)
-			});
-			return this;
-		},
-		setModel : function(model) {
-			if(model) {
-				this.model.set(model.toJSON());
-			} else {
-				this.model.set(null);
-			}
 		}
 	});
 

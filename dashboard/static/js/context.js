@@ -25,13 +25,7 @@
 		this.page = new this.models.Page();
 
 		// View Instances
-		//this.remoteMachineMenuView = new this.views.RemoteMachineMenuView({collection : this.remoteMachines});
 		this.appClientView = new this.views.AppClientView({el : "#app-client-container"});
-		//this.pageView = new this.views.PageView({model: this.page, el : '#modal_container'});
-
-		// App Studio
-		this.appStudioFileView = new this.views.AppStudioFileView({el : '#app-studio-files'});
-		this.appStudioEditorView = new this.views.AppStudioEditorView({el : '#app-studio-editor'});
 
 		this.current_app_id = null;
 	};
@@ -64,47 +58,6 @@
 	ApplicationContext.prototype.hideModalContainer = function(){
 		$('#modal_container').hide();
 	}
-
-	ApplicationContext.prototype.loadDriverSettings = function(machine){
-		if(machine==null) {
-			console.log("No machine selected");
-		}
-		else {
-			machine.get_config(function(err,config){
-				if(err){console.log(err);return;}
-				var settings_fields = [];
-				for(var propt in config.engine){
-				    var setting_field = {};
-					setting_field.setting_label = propt;
-					setting_field.setting_value = config.engine[propt];
-					setting_field.code = propt;
-					setting_field.type="text";
-					settings_fields.push(setting_field);
-				}
-				new this.views.SettingsFormView({collection : new this.models.SettingsForm(settings_fields), el : '#core_settings_form'});
-			});
-		}
-	}
-
-	ApplicationContext.prototype.refreshRemoteMachines = function(callback) {
-		var machine_models = [];
-		machine_model = new this.models.RemoteMachine({
-			hostname : window.location.hostname,
-			network : {'interface' : 'eth0', 'ip_address' : window.location.host },
-			server_port : window.location.port
-		});
-		machine_models.push(machine_model);
-		this.remoteMachines.reset(machine_models)
-		if(typeof callback === 'function') callback(null, this.remoteMachines);
-	};
-
-	ApplicationContext.prototype.bindKeypad = function(ui){
-		ui.forbidKeypad();
-	};
-
-	ApplicationContext.prototype.statusKeypad = function(ui){
-		ui.statusKeypad();
-	};
 
 	ApplicationContext.prototype.launchApp = function(id) {
 		current_app = this.getCurrentApp()

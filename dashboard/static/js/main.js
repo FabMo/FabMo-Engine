@@ -43,6 +43,8 @@ define(function(require) {
 				dashboard.ui.tool = dashboard.machine;
 			}
 
+			dashboard.ui.updateStatus();
+
 			// Configure keyboard input
 			//context.bindKeypad(dashboard.ui);
 			setupHandwheel();

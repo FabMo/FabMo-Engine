@@ -5,9 +5,7 @@
 requirejs.config({
     baseUrl: 'js',
     urlArgs: "ts="+new Date().getTime(),
-    paths: {
-    	ace: "libs/ace"
-	}
+    paths: {}
 });
 
 // Run the main application!
