@@ -2,21 +2,30 @@ var log = require('../../log').logger('sbp');
 
 // Point X, Point Y, Point Z, Angle(in radians), Rotation Point X, Rotation Point Y
 exports.rotate = function(PtNew,angle,RotPtX,RotPtY){
-  log.debug("rotating");
+
 	if ( angle !== 0 ) {
-		log.debug("rotate args: " + JSON.stringify(PtNew));
+		log.debug("rotate args: " + JSON.stringify(PtNew) +
+			                    ", " + angle +
+			                    ", " + RotPtX +
+			                    ", " + RotPtY  );
 		var x = PtNew.X;
-		var y = PtNew.Y;	
+		var y = PtNew.Y;
+		log.debug("angle SB = " + angle);		
+		while (angle >= 360 || angle <= -360){
+			if (angle >= 360) { angle -= 360; }
+			else if (angle <= -360) { angle += 360; }
+		}
+		log.debug("angle real = " + angle);
+		angle = (angle * (-1))/180*Math.PI;
+		log.debug("angle radians = " + angle);
 		var cosB = Math.cos(angle);
 		var sinB = Math.sin(angle);
 		if (RotPtX === undefined) { RotPtX = 0; }
 		if (RotPtY === undefined) { RotPtY = 0; }
-		PtNew.X = cosB * (x-RotPtX) - sinB * (y-RotPtY) +RotPtX;
-		PtNew.Y = sinB * (x-RotPtX) + cosB * (y-RotPtY) +RotPtY;
-
-//	p'x = cos(theta) * (px-ox) - sin(theta) * (py-oy) + ox
-//	p'y = sin(theta) * (px-ox) + cos(theta) * (py-oy) + oy
-
+		PtNew.X = ((cosB * (x-RotPtX)) - (sinB * (y-RotPtY))) + RotPtX;
+		PtNew.Y = ((sinB * (x-RotPtX)) + (cosB * (y-RotPtY))) + RotPtY;
+//		log.debug("PtNewX = " + PtNew.X );
+//		log.debug("PtNewY = " + PtNew.Y );
 	}
 
 	return PtNew;
@@ -25,6 +34,7 @@ exports.rotate = function(PtNew,angle,RotPtX,RotPtY){
 // Point X, Point Y, Point Z, Angle
 exports.shearX = function(PtNew,angle){
 
+    angle = (angle * (-1))/180*Math.PI;
 	PtNew.X = PtNew.X + (angle * PtNew.Y);
 
 	return PtNew;
@@ -33,6 +43,7 @@ exports.shearX = function(PtNew,angle){
 // Point X, Point Y, Point Z, Angle
 exports.shearY = function(PtNew, angle){
 
+    angle = (angle * (-1))/180*Math.PI;
 	PtNew.Y = PtNew.Y + (angle * PtNew.X);
 
 	return PtNew;

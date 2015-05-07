@@ -73,35 +73,35 @@ exports.JC = function(args) {
 // Jog (rapid) 2 axes (XY).This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J2 = function(args) {
-    var params = process_move(args);
+    var params = process_move.bind(this)(args);
 	this.emit_move('G0',params);
 };
 
 // Jog (rapid) 3 axes (XYZ). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J3 = function(args) {
-    var params = process_move(args);
+    var params = process_move.bind(this)(args);
 	this.emit_move('G0',params);
 };
 
 // Jog (rapid) 4 axes (XYZA). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J4 = function(args) {
-    var params = process_move(args);
+    var params = process_move.bind(this)(args);
 	this.emit_move('G0',params);
 };
 
 // Jog (rapid) 5 axes (XYZAB). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J5 = function(args) {
-    var params = process_move(args);
+    var params = process_move.bind(this)(args);
 	this.emit_move('G0',params);
 };
 
 // Jog (rapid) 6 axes (XYZABC). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J6 = function(args) {
-    var params = process_move(args);
+    var params = process_move.bind(this)(args);
 	this.emit_move('G0',params);
 };
 
