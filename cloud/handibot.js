@@ -23,11 +23,7 @@ HandibotProvider.prototype._login = function(callback) {
 		'password' : this.password,
 		'who' : 'FabMo'
 	}
-	request.post(
-		'http://handibot.net/ajax_proc/login.php', 
-		{	'content-type' : 'application/json', 
-			'body' : JSON.stringify(data)
-		}, 
+	request.post('http://handibot.net/ajax_proc/login.php', {'form':data},
 		function(err, res, body) {
 			console.log(body);
 			console.log(res.toJSON())
