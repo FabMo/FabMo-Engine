@@ -81,7 +81,7 @@ function setupHandwheel() {
 	var mode = 'S';
 	var TICKS_MOVE = 10;
 	var TICKS_DISCRETE = 90;
-	var discrete_distance = 0.050;
+	var discrete_distance = 0.005;
 
 	wheel.on("sweep", function(evt) {
 
@@ -114,7 +114,7 @@ function setupHandwheel() {
 	});
 
 	wheel.on("release", function(evt) {
-		//dashboard.machine.quit(function() {})
+		dashboard.machine.quit(function() {})
 	});
 
 	wheel.on("mode", function(evt) {
