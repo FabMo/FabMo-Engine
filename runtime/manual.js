@@ -75,6 +75,9 @@ ManualRuntime.prototype.jog = function(direction) {
 };
 
 ManualRuntime.prototype.fixed_move = function(direction, step, speed) {
+	if(this.machine.status.state != "manual") {
+		this.driver.command("G20");
+	}
 	this.driver.fixed_move(direction,step,speed);
 };
 
