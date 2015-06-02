@@ -98,8 +98,19 @@ SBPRuntime.prototype.pause = function() {
 }
 
 SBPRuntime.prototype.quit = function() {
-	this.quit_pending = true;
-	this.machine.driver.quit();
+	if(this.machine.status.state == 'stopped') {
+		if(this.machine.status.job) {
+			this.machine.status.job.fail(function(err, job) {
+				this.machine.status.job=null;
+				this.machine.setState(this, 'idle');
+			}.bind(this));
+		} else {
+			this.machine.setState(this, 'idle');
+		}
+	} else {
+		this.quit_pending = true;
+		this.machine.driver.quit();		
+	}
 }
 
 SBPRuntime.prototype._onG2Status = function(status) {
@@ -294,7 +305,11 @@ SBPRuntime.prototype._continue = function() {
 						setImmediate(this._continue().bind(this));
 					}
 				} else {
-					this._execute(line, this._continue.bind(this));
+					try {
+						this._execute(line, this._continue.bind(this));
+					} catch(e) {
+						break;
+					}
 				}
 				break;
 			} else {
@@ -303,32 +318,43 @@ SBPRuntime.prototype._continue = function() {
 			}
 			return;
 		} else {
-			this._execute(line);
+			try {
+				this._execute(line);
+			} catch(e) {
+				break;
+			}
 		}
 	}
 };
 
-SBPRuntime.prototype._end = function() {
+SBPRuntime.prototype._end = function(error) {
 	if(this.machine) {
 		var end_function_no_nesting = function() {
 				// We are truly done
 				callback = this.end_callback;
-				this.machine.status.filename = null;
-				this.machine.status.current_file = null;
-				this.machine.status.nb_lines=null;
-				this.machine.status.line=null;
 				this.init();
-				if(this.machine.status.job) {
-					this.machine.status.job.finish(function(err, job) {
-						this.machine.status.job=null;
-						this.machine.setState(this, 'idle');
-					}.bind(this));
+				if(error) {
+					this.machine.setState(this, 'stopped', {'message' : error });
+					this.emit('end', this);
+					if(callback) {
+						callback();
+					}
+
 				} else {
-					this.machine.setState(this, 'idle');
-				}
-				this.emit('end', this);
-				if(callback) {
-					callback();
+
+					if(this.machine.status.job) {
+						this.machine.status.job.finish(function(err, job) {
+							this.machine.status.job=null;
+							this.machine.setState(this, 'idle');
+						}.bind(this));
+					} else {
+						this.machine.setState(this, 'idle');
+					}
+					this.emit('end', this);
+					if(callback) {
+						callback();
+					}
+			
 				}
 		}.bind(this);
 
@@ -339,7 +365,12 @@ SBPRuntime.prototype._end = function() {
 			}
 		}.bind(this);
 
-		var end_function = ((this.file_stack.length > 0) && !this.quit_pending) ? end_function_nested : end_function_no_nesting;
+		if((this.file_stack.length > 0) && !this.quit_pending && !error) {
+			end_function = end_function_nested;
+		}
+		else {
+			end_function = end_function_no_nesting;
+		}
 
 		if(end_function === end_function_nested) {
 			log.debug("Doing the nested end.")
@@ -510,7 +541,10 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 			try {
 				f(args);
 			} catch(e) {
-				this._stopWithError(e);
+				log.error("ERROR IN NON STACK BREAKING COMMAND");
+				log.error(e);
+				this._end(e);
+				throw e;
 			}
 			this.pc +=1;
 			return false;

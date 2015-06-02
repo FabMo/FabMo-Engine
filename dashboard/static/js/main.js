@@ -46,7 +46,6 @@ define(function(require) {
 			dashboard.ui.updateStatus();
 
 			// Configure keyboard input
-			//context.bindKeypad(dashboard.ui);
 			setupHandwheel();
 
 			// Start the application

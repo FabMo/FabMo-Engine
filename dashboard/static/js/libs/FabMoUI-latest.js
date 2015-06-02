@@ -60,7 +60,7 @@ function FabMoUI(tool, options){
 
 	if(this.keypad){
 		this.my_keypad = this.Keypad;
-		this.Keypad();
+//		this.Keypad();
 	}
 
 	if(this.file_control){
@@ -77,317 +77,6 @@ FabMoUI.prototype.lock = function(){
 	this.down = false;
 	this.page_up = false;
 	this.page_down = false;
-};
-
-FabMoUI.prototype.Keypad = function(){
-	var that = this;
-	that.locks=new that.lock();
-	this.keypad_allow=false;
-	this.menu_open=false;
-	this.lock_fixe_move = false;
-
-	$(".newPos-submit").click(function(){
-		if(that.keypad_allow && that.menu_open){
-			that.tool.gcode2('G90 G01 X-'+ $(this).parent().children('label').children('input').val()); 
-		}
-	});
-
-
-	$("#trackpad-zone").click(function(e){
-		var posX = e.pageX  - ($("body").width() - $("#right-menu").width());
-        var posY = e.pageY - $("#trackpad-zone").position().top - 44.5;
-
-        posX = posX/$("#trackpad-zone").width();
-        posY = posY/$("#trackpad-zone").height();
-
-        if(posX <= 0.333) {
-        	if(posY <=0.333)		{ 
-        		that.tool.gcode2('G91 G01 X-'+that.move_step+' Y'+that.move_step); 
-        	}
-        	else if (posY <= 0.666)	{ 
-        		that.tool.gcode2('G91 G01 X-'+that.move_step); 
-        	}
-        	else 					{ 
-        		that.tool.gcode2('G91 G01 X-'+that.move_step+' Y-'+that.move_step); 
-        	}
-        }
-        else if (posX <= 0.666){
-        	if(posY <=0.333)		{ 
-        		that.tool.gcode2('G91 G01 Y'+that.move_step); 
-        	}
-        	else if (posY <= 0.666)	{ 
-        	}
-        	else 					{ 
-        		that.tool.gcode2('G91 G01 Y-'+that.move_step); 
-        	}
-        }
-    	else {
-        	if(posY <=0.333)		{ 
-        		that.tool.gcode2('G91 G01 X'+that.move_step+' Y'+that.move_step); 
-        	}
-        	else if (posY <= 0.666)	{ 
-        		that.tool.gcode2('G91 G01 X'+that.move_step); 
-        	}
-        	else 					{ 
-        		that.tool.gcode2('G91 G01 X'+that.move_step+' Y-'+that.move_step); 
-        	}
-        }
-	});
-
-	$(document).keydown(function(e) {
-		that.updateStatus.bind(that);
-		if (that.keypad_allow && that.menu_open){
-			if (e.which === 37 && !that.locks.left && !that.locks.right) //left
-			{
-				if(!that.fixe_move){
-					that.locks.left=true;
-					that.tool.start_move("-x",that.locks,function(){});
-				}
-				else if(!that.lock_fixe_move){
-					that.lock_fixe_move = true;
-					that.tool.fixed_move("-x",that.fixe_move_step,function(){});
-				}
-			}
-			if (e.which === 38 && !that.locks.up && !that.locks.down) //up
-			{
-				if(!that.fixe_move){
-					that.locks.up=true;
-					that.tool.start_move("y",that.locks,function(){});
-				}
-				else if(!that.lock_fixe_move){
-					that.lock_fixe_move = true;
-					that.tool.fixed_move("y",that.fixe_move_step,function(){});
-				}
-			}
-			if (e.which === 39 && !that.locks.right && !that.locks.left) //right
-			{
-				if(!that.fixe_move){
-					that.locks.right=true;
-					that.tool.start_move("x",that.locks,function(){});
-				}
-				else if(!that.lock_fixe_move){
-					that.lock_fixe_move = true;
-					that.tool.fixed_move("x",that.fixe_move_step,function(){});
-				}
-			}			
-			if (e.which === 40 && !that.locks.up && !that.locks.down) //down
-			{
-				if(!that.fixe_move){
-					that.locks.down=true;
-					that.tool.start_move("-y",that.locks,function(){});
-				}
-				else if(!that.lock_fixe_move){
-					that.lock_fixe_move = true;
-					that.tool.fixed_move("-y",that.fixe_move_step,function(){});
-				}
-			}
-			if (e.which === 33 && !that.locks.page_up && !that.locks.page_down) //page_up
-			{
-				if(!that.fixe_move){
-					that.locks.page_up=true;
-					that.tool.start_move("z",that.locks,function(){});
-				}
-				else if(!that.lock_fixe_move){
-					that.lock_fixe_move = true;
-					that.tool.fixed_move("z",that.fixe_move_step,function(){});
-				}
-			}
-			if (e.which === 34 && !that.locks.page_up && !that.locks.page_down) //page_down
-			{
-				if(!that.fixe_move){
-					that.locks.page_down=true;
-					that.tool.start_move("-z",that.locks,function(){});
-				}
-				else if(!that.lock_fixe_move){
-					that.lock_fixe_move = true;
-					that.tool.fixed_move("-z",that.fixe_move_step,function(){});
-				}
-			}
-		}
-	});
-
-	$(document).keyup(function(e) {
-		that.updateStatus.bind(that);
-		if (that.keypad_allow ){
-			if (e.which === 37 ) //left
-			{
-				if(!that.fixe_move){
-					that.locks.left=false;
-					that.tool.stop_move(function(){});
-				}else{
-					that.lock_fixe_move = false;
-				}
-			}
-			if (e.which === 38 ) //up
-			{
-				if(!that.fixe_move){
-					that.locks.up=false;
-					that.tool.stop_move(function(){});
-				}else{
-					that.lock_fixe_move = false;
-				}
-			}
-			if (e.which === 39 ) //right
-			{
-				if(!that.fixe_move){
-					that.locks.right=false;
-					that.tool.stop_move(function(){});
-				}else{
-					that.lock_fixe_move = false;
-				}
-			}
-			if (e.which === 40 ) //down
-			{
-				if(!that.fixe_move){
-					that.locks.down=false;
-					that.tool.stop_move(function(){});
-				}else{
-					that.lock_fixe_move = false;
-				}
-			}
-			if (e.which === 33 ) //page_up
-			{
-				if(!that.fixe_move){
-					that.locks.page_up=false;
-					that.tool.stop_move(function(){});
-				}else{
-					that.lock_fixe_move = false;
-				}
-			}
-			if (e.which === 34 ) //page_down
-			{
-				if(!that.fixe_move){
-					that.locks.page_down=false;
-					that.tool.stop_move(function(){});
-				}else{
-					that.lock_fixe_move = false;
-				}
-			}
-		}
-	});
-
-	$(that.plusX_button_selector).mousedown(function(e) {
-		var e1 = jQuery.Event("keydown");
-		e1.which = 39; 
-		$(that.keypad_div_selector).trigger(e1);
-		$(this).mouseleave(function(e){
-			var e1 = jQuery.Event("keyup");
-			e1.which = 39;
-			$(that.keypad_div_selector).trigger(e1);
-			$(this).unbind('mouseleave');
-		});
-	}); 
-	$(that.minusX_button_selector).mousedown(function(e) {
-		var e1 = jQuery.Event("keydown");
-		e1.which = 37; 
-		$(that.keypad_div_selector).trigger(e1);
-		$(this).mouseleave(function(e){
-			var e1 = jQuery.Event("keyup");
-			e1.which = 37;
-			$(that.keypad_div_selector).trigger(e1);
-			$(this).unbind('mouseleave');
-		});
-	});
-	$(that.plusY_button_selector).mousedown(function(e) {
-		var e1 = jQuery.Event("keydown");
-		e1.which = 38; 
-		$(that.keypad_div_selector).trigger(e1);
-		$(this).mouseleave(function(e){
-			var e1 = jQuery.Event("keyup");
-			e1.which = 38;
-			$(that.keypad_div_selector).trigger(e1);
-			$(this).unbind('mouseleave');
-		});
-	}); 
-	$(that.minusY_button_selector).mousedown(function(e) {
-		var e1 = jQuery.Event("keydown");
-		e1.which = 40; 
-		$(that.keypad_div_selector).trigger(e1);
-		$(this).mouseleave(function(e){
-			var e1 = jQuery.Event("keyup");
-			e1.which = 40;
-			$(that.keypad_div_selector).trigger(e1);
-			$(this).unbind('mouseleave');
-		});
-	});
-	$(that.plusZ_button_selector).mousedown(function(e) {
-		var e1 = jQuery.Event("keydown");
-		e1.which = 33; 
-		$(that.keypad_div_selector).trigger(e1);
-		$(this).mouseleave(function(e){
-			var e1 = jQuery.Event("keyup");
-			e1.which = 33;
-			$(that.keypad_div_selector).trigger(e1);
-			$(this).unbind('mouseleave');
-		});
-	}); 
-	$(that.minusZ_button_selector).mousedown(function(e) {
-		var e1 = jQuery.Event("keydown");
-		e1.which = 34; 
-		$(that.keypad_div_selector).trigger(e1);
-		$(this).mouseleave(function(e){
-			var e1 = jQuery.Event("keyup");
-			e1.which = 34;
-			$(that.keypad_div_selector).trigger(e1);
-			$(this).unbind('mouseleave');
-		});
-	});
-
-	$(that.plusX_button_selector).mouseup(function(e) {
-		var e1 = jQuery.Event("keyup");
-		e1.which = 39; 
-		$(that.keypad_div_selector).trigger(e1);
-	}); 
-	$(that.minusX_button_selector).mouseup(function(e) {
-		var e1 = jQuery.Event("keyup");
-		e1.which = 37; 
-		$(that.keypad_div_selector).trigger(e1);
-	});
-	$(that.plusY_button_selector).mouseup(function(e) {
-		var e1 = jQuery.Event("keyup");
-		e1.which = 38; 
-		$(that.keypad_div_selector).trigger(e1);
-	}); 
-	$(that.minusY_button_selector).mouseup(function(e) {
-		var e1 = jQuery.Event("keyup");
-		e1.which = 40; 
-		$(that.keypad_div_selector).trigger(e1);
-	});
-	$(that.plusZ_button_selector).mouseup(function(e) {
-		var e1 = jQuery.Event("keyup");
-		e1.which = 33; 
-		$(that.keypad_div_selector).trigger(e1);
-	}); 
-	$(that.minusZ_button_selector).mouseup(function(e) {
-		var e1 = jQuery.Event("keyup");
-		e1.which = 34; 
-		$(that.keypad_div_selector).trigger(e1);
-	});
-
-
-	$(that.fixe_move_selector).change(function(){
-  		if($(that.fixe_move_selector).is(':checked')){
-    		$(that.fixe_move_step_selector).parent().removeClass('hide');
-    		$(that.fixe_move_step_selector).val(that.fixe_move_step);
-    		that.fixe_move = true;
-		  } else {
-		    $(that.fixe_move_step_selector).parent().addClass('hide');
-		    that.fixe_move = false;
-		  }
-	});
-
-	$(that.fixe_move_step_selector).change(function(){
-		var val =+$(that.fixe_move_step_selector).val();
-		if(isNaN(val)){
-			$(that.fixe_move_step_selector).val(that.fixe_move_step);
-		}else{
-			that.fixe_move_step = val;
-		}
-	});
-
-	window.addEventListener('touchend',function(event) {
-		alert('START (' + gnStartX + ', ' + gnStartY + ')   END (' + gnEndX + ', ' + gnEndY + ')');
-	},false);
 };
 
 FabMoUI.prototype.setMenuOpen = function(){
@@ -429,15 +118,15 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	var that = this;
 	that.tool.state=status.state;
 
-			try {
-	var x = status.posx.toFixed(3);
-	var y = status.posy.toFixed(3);
-	var z = status.posz.toFixed(3);
-			} catch(e) {
-				var x = 'X.XXX'
-				var y = 'X.XXX'
-				var z = 'X.XXX'
-			}
+	try {
+		var x = status.posx.toFixed(3);
+		var y = status.posy.toFixed(3);
+		var z = status.posz.toFixed(3);
+	} catch(e) {
+		var x = 'X.XXX'
+		var y = 'X.XXX'
+		var z = 'X.XXX'
+	}
 	that.updateText($(that.posX_selector), x);
 	that.updateText($(that.posY_selector), y);
 	that.updateText($(that.posZ_selector), z);
@@ -554,13 +243,25 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		that.forbidKeypad();
 		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
 		$(that.status_div_selector).addClass('fabmo-status-error');
-		$(that.state_selector).html(status.state);
+		$(that.state_selector).html(statename);
 		if(that.file_control)
 		{
 			$(that.pause_button_selector).addClass('hide');
 			$(that.resume_button_selector).addClass('hide');
 			$(that.stop_button_selector).addClass('hide');
 		}
+	}
+	else if(status.state == 'stopped') {
+		that.forbidKeypad();
+		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
+		$(that.status_div_selector).addClass('fabmo-status-paused');
+		$(that.state_selector).html(statename);
+		if(that.file_control)
+		{
+			$(that.pause_button_selector).addClass('hide');
+			$(that.resume_button_selector).addClass('hide');
+			$(that.stop_button_selector).addClass('show');
+		}		
 	}
 	else {
 		$(".tools-current > li a").removeClass('paus err').addClass('disc');

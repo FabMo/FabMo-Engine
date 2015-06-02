@@ -17,7 +17,7 @@ var files;
 var jobs;
 
 Job = function(options) {
-    this.file_id = options.file_id;
+    this.file_id = options.file_id || null;
     this.name = options.name || "Untitled Job";
     this.description = options.description || "";
     this.created_at = Date.now();
@@ -36,21 +36,21 @@ Job.prototype.clone = function(callback) {
 };
 
 Job.prototype.start = function(callback) {
-	log.debug("Starting job id " + this._id);
+	log.debug("Starting job id " + this._id ? this._id : '<volatile job>');
 	this.state = 'running';
 	this.started_at = Date.now();
 	this.save(callback);
 };
 
 Job.prototype.finish = function(callback) {
-	log.debug("Finishing job id " + this._id);
+	log.debug("Finishing job id " + this._id ? this._id : '<volatile job>');
 	this.state = 'finished';
 	this.finished_at = Date.now();
 	this.save(callback);
 };
 
 Job.prototype.fail = function(callback) {
-	log.warn("Failing job id " + this._id);
+	log.warn("Failing job id " + this._id ? this._id : '<volatile job>');
 	this.state = 'failed';
 	this.finished_at = Date.now();
 	this.save(callback);
@@ -68,6 +68,12 @@ Job.prototype.cancel = function(callback) {
 };
 
 Job.prototype.save = function(callback) {
+	if(!this.file_id) {
+		log.warn('Not saving this job because no file_id')
+		setImmediate(callback, null, this);
+		return;
+	}
+
 	jobs.findOne({_id: this._id}, function(err,document){
 		if(err) {
 			callback(err);
@@ -245,7 +251,7 @@ File.add = function(friendly_filename, pathname, callback) {
 				if(err) {
 					return callback(err);
 				}
-				log.info('Saved a file: ' + file.filename + ' (' + file.full_path + ')');
+				log.info('Saved a file: ' + file.filename + ' (' + file.path + ')');
 				callback(null, file)
 			}.bind(this)); // save
 		}.bind(this)); // unlink

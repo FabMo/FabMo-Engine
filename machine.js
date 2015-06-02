@@ -67,7 +67,8 @@ function Machine(control_path, gcode_path, callback) {
 		in6 : 1,
 		in7 : 1,
 		in8 : 1,
-		job : null
+		job : null,
+		info : null
 	};
 
 	this.driver = new g2.G2();
@@ -126,7 +127,13 @@ Machine.prototype.gcode = function(string) {
 
 Machine.prototype.sbp = function(string) {
 	this.setRuntime(this.sbp_runtime);
-	this.current_runtime.runString(string);
+	this.status.job = new Job({
+		name : 'OpenSBP String',
+		description : 'Direct OpenSBP string command'
+	});
+	this.status.job.start(function(err, result) {
+		this.current_runtime.runString(string);
+	}.bind(this));
 };
 
 Machine.prototype.runJob = function(job) {
@@ -170,7 +177,7 @@ Machine.prototype.runFile = function(filename) {
 			ext = path.extname(filename).toLowerCase();
 			log.debug(filename);
 			log.debug(parts);
-			this.status.current_file = parts[parts.length-1];
+			//this.status.current_file = parts[parts.length-1];
 
 			if(ext == '.sbp') {
 				this.setRuntime(this.sbp_runtime);
@@ -224,11 +231,11 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 	if ((source === this) || (source === this.current_runtime)) {
 		this.status.state = newstate;
 		if(stateinfo) {
-			this.status.stateinfo = stateinfo
+			this.status.info = stateinfo
 		} else {
-			delete this.status.stateinfo
+			delete this.status.info
 		}
-		log.info("Got a machine state change: " + newstate)		
+		log.info("Got a machine state change: " + this.status.state)		
 	} else {		
 		log.warn("Got a state change from a runtime that's not the current one. (" + source + ")")
 	}
