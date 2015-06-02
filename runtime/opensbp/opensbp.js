@@ -507,7 +507,11 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 			return true;
 		} else {
 			// This is NOT a stack breaker, run immediately, increment PC, proceed.
-			f(args);
+			try {
+				f(args);
+			} catch(e) {
+				this._stopWithError(e);
+			}
 			this.pc +=1;
 			return false;
 		}

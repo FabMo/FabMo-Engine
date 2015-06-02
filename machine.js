@@ -220,9 +220,14 @@ Machine.prototype.setRuntime = function(runtime) {
 	}
 };
 
-Machine.prototype.setState = function(source, newstate) {
+Machine.prototype.setState = function(source, newstate, stateinfo) {
 	if ((source === this) || (source === this.current_runtime)) {
 		this.status.state = newstate;
+		if(stateinfo) {
+			this.status.stateinfo = stateinfo
+		} else {
+			delete this.status.stateinfo
+		}
 		log.info("Got a machine state change: " + newstate)		
 	} else {		
 		log.warn("Got a state change from a runtime that's not the current one. (" + source + ")")
