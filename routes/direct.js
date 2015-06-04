@@ -52,7 +52,7 @@ sendGCode = function(req, res, next) {
 };
 
 /**
- * @api {post} /direct/sbp Execute OpenSBP code string
+ * @api {post} /direct/sbp Execute OpenSBP string
  * @apiGroup Direct
  * @apiParam {String} cmd A single line of OpenSBP code to execute
  * @apiSuccess {String} status success
