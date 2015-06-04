@@ -5,7 +5,7 @@ var util = require('../util');
 var fs = require('fs');
 
 /**
- * @api {get} /apps List of apps
+ * @api {get} /apps List Apps
  * @apiGroup Dashboard
  * @apiDescription Get detailed information about all installed apps
  * @apiSuccess {String} status `success`
@@ -51,7 +51,7 @@ var getAppInfo = function(req, res, next) {
 };
 
 /**
- * @api {delete} /apps/:id App
+ * @api {delete} /apps/:id Delete App
  * @apiDescription Delete the specified app
  * @apiGroup Dashboard
  */
@@ -75,7 +75,7 @@ var deleteApp = function(req, res, next) {
 };
 
 /**
- * @api {get} /apps/:id/files Get app file listing
+ * @api {get} /apps/:id/files List App Files
  * @apiGroup Dashboard
  * @apiParam {String} id ID of requested app
  * @apiSuccess {Object} root Root of directory tree
@@ -108,7 +108,7 @@ var listAppFiles = function(req, res, next) {
 
 /**
  * @apiGroup Dashboard
- * @api {post} /app Submit an app to be installed
+ * @api {post} /app Install App
  * @apiDescription Install an app to the user's app installation directory.  App will be decompressed and installed immediately.
  */
 var submitApp = function(req, res, next) {
