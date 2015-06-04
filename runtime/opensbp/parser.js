@@ -22,6 +22,7 @@ parse = function(str) {
 	output = []
 	lines = str.split('\n');
     for(i=0; i<lines.length; i++) {
+        console.log(i);
         try {            
             output.push(parseLine(lines[i]))
         } catch(err) {
@@ -29,6 +30,7 @@ parse = function(str) {
                 log.error("Syntax Error on line " + i)
                 log.error("Expected " + err.expected.join(',') + " but found " + err.found)
                 log.error(err.line)
+                err.line = i+1;
             } else {
                 log.error(err);
             }

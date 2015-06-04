@@ -173,18 +173,17 @@
       </div>
 
       <!-- The Dialog -->
-      <div id="modalDialog" class="reveal-modal" data-reveal aria-labelledby="modalDialogTitle" aria-hidden="true" role="dialog">
+      <div id="modalDialog" class="reveal-modal" data-reveal aria-labelledby="modalDialogTitle" aria-hidden="true" role="dialog" data-options="close_on_background_click:false;close_on_esc:false;">
         <h2 id="modaDialoglTitle"></h2>
         <p id="modalDialogLead" class="lead"></p>
         <p id="modalDialogMessage"></p>
         <div id="modalDialogDetail"></div>        
-        <a class="close-reveal-modal" aria-label="Close">&#215;</a>
+        <a class="close-reveal-modal">&#215;</a>
       </div>
-
     <script type="text/javascript" src="js/libs/jquery.js">         </script>
+    <script type="text/javascript" src="js/libs/foundation.min.js"> </script>
     <script type="text/javascript" src="socket.io/socket.io.js">      </script>
     <script type="text/javascript" src="js/libs/touche.js">         </script>
-    <script type="text/javascript" src="js/libs/foundation.min.js"> </script>
     <script type="text/javascript" src="js/libs/toastr.min.js">     </script>
     <script type="text/javascript" src="js/libs/underscore.js">     </script>
     <script type="text/javascript" src="js/events.js">              </script>

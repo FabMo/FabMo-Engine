@@ -9,9 +9,6 @@ define(function(require) {
 	var context = require('context');
 	var dashboard = require('dashboard');
 
-	Hammer = require("libs/hammer");
-	touchy = require("libs/jquery.touchy");
-
 	// Allow to click more than 1 time on a link, to reload a page for example
 	allowSameRoute();
 
@@ -47,7 +44,6 @@ define(function(require) {
 				$('#modalDialogTitle').text('Error!');
 				$('#modalDialogLead').html('<div style="color:red">There was an error!</div>');
 				$('#modalDialogMessage').text(err);
-				console.log(dashboard.machine.status_report);
 				$('#modalDialogDetail').html(
 					'<p>' + 
 					  '<b>Job Name:  </b>' + dashboard.machine.status_report.job.name + '<br />' + 
@@ -106,12 +102,10 @@ function setupHandwheel() {
 
 		if(mode === 'D') {
 			if(angle > 90) {
-				console.log('+tick');
 				angle = 0;
 				dashboard.machine.fixed_move('+' + axis, discrete_distance, SPEEDS['S'], function(err) {});
 			}
 			if(angle < -90) {
-				console.log('-tick');
 				angle = 0;
 				dashboard.machine.fixed_move('-' + axis, discrete_distance, SPEEDS['S'], function(err) {});
 			}
@@ -168,6 +162,11 @@ function allowSameRoute(){
 	//Intercept the event "click" of a backbone link, then temporary set the route to "/"
 	$('a[href^="#"]').click(function(e) { router.navigate('/'); });
 }
+
+$(document).on('close.fndtn.reveal', '[data-reveal]', function (evt) {
+  var modal = $(this);
+  dashboard.machine.quit(function() {});
+});
 
 // Handlers for the home/probe buttons
 $('.button-zerox').click(function(e) {sbp('ZX'); });  

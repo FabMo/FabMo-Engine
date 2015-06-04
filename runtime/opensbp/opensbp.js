@@ -64,13 +64,17 @@ SBPRuntime.prototype.runString = function(s, callback) {
 		if(this.machine) {
 			this.machine.status.nb_lines = lines.length - 1;
 		}
-		this.program = parser.parse(s);
-		lines = this.program.length;
+		this.end_callback = callback;
+		try {
+			this.program = parser.parse(s);
+		} catch(e) {
+			return this._end(e.message + " (Line " + e.line + ")");
+		}
+ 		lines = this.program.length;
 		if(this.machine) {
 			this.machine.status.nb_lines = lines.length - 1;
 		}
 		this.init();
-		this.end_callback = callback;
 		this._setupTransforms();
 		this._analyzeLabels();  // Build a table of labels
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table

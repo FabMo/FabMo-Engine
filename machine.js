@@ -129,7 +129,7 @@ Machine.prototype.sbp = function(string) {
 	this.setRuntime(this.sbp_runtime);
 	this.status.job = new Job({
 		name : 'OpenSBP String',
-		description : 'Direct OpenSBP string command'
+		description : 'Direct OpenSBP String Command'
 	});
 	this.status.job.start(function(err, result) {
 		this.current_runtime.runString(string);
@@ -235,7 +235,8 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 		} else {
 			delete this.status.info
 		}
-		log.info("Got a machine state change: " + this.status.state)		
+		log.info("Got a machine state change: " + this.status.state)	
+		console.log(JSON.stringify(this.status))	
 	} else {		
 		log.warn("Got a state change from a runtime that's not the current one. (" + source + ")")
 	}

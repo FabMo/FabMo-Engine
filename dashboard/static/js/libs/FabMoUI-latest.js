@@ -141,14 +141,15 @@ FabMoUI.prototype.updateText = function(control, txt) {
 
 FabMoUI.prototype.updateStatusContent = function(status){
 	var that = this;
+	var prev_state = that.tool.state;
 
-	if(that.tool.state !== status.state) {
+	that.tool.state=status.state;
+
+	if(prev_state !== status.state) {
 		if(status.state === 'stopped' && status.info.error) {
 			this.emit('error', status.info.error);
 		}
 	}
-
-	that.tool.state=status.state;
 
 	try {
 		var x = status.posx.toFixed(3);

@@ -10,7 +10,7 @@ define(function(require) {
 		try{
 			socket = io();
 		} catch(ex){
-			console.log('connection to the engine via websocket failed : '+ ex.message);
+			console.error('connection to the engine via websocket failed : '+ ex.message);
 		}
 		if(socket!==null){
 			socket.on('connect', function() {});
@@ -22,7 +22,7 @@ define(function(require) {
 				try {
 					clearInterval(dashboard.ui.auto_refresh);
 				} catch(e) {}
-				
+				dashboard.machine.status_report = status;
 				dashboard.updateStatus(status);
 			});	
 
