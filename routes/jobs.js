@@ -10,7 +10,14 @@ var uuid = require('node-uuid');
 /**
  * @apiGroup Jobs
  * @api {post} /job Submit a job
- * @apiDescription Add a job to the queue
+ * @apiDescription Add a job to the job queue.
+ * @apiParam {String} name Job name
+ * @apiParam {String} description Job description
+ * @apiParam {Object} file G-Code or OpenSBP file submission
+ * @apiSuccess {String} status `success`
+ * @apiSuccess {Object} data null
+ * @apiError {String} status `error`
+ * @apiError {Object} message Error message
  */
 var submitJob = function(req, res, next) {
 
@@ -78,6 +85,11 @@ var submitJob = function(req, res, next) {
 /**
  * @api {delete} /jobs/queue Clear job queue
  * @apiGroup Jobs
+ * @apiDescription Empty the job queue of all pending jobs.
+ * @apiSuccess {String} status `success`
+ * @apiSuccess {Object} data null
+ * @apiError {String} status `error`
+ * @apiError {Object} message Error message
  */
 var clearQueue = function(req, res, next) {
     var answer;
@@ -102,6 +114,10 @@ var clearQueue = function(req, res, next) {
  * @apiGroup Jobs
  * @api {post} /jobs/queue/run Run next job in queue
  * @apiDescription Runs the next job in the queue if able.
+ * @apiSuccess {String} status `success`
+ * @apiSuccess {Object} data null
+ * @apiError {String} status `error`
+ * @apiError {Object} message Error message
  */
 runNextJob = function(req, res, next) {
     var answer;
@@ -129,6 +145,10 @@ runNextJob = function(req, res, next) {
  * @api {post} /jobs/:id Resubmit job
  * @apiDescription Submit a new job identical to the one specified.  Used to re-run completed jobs without modification.
  * @apiParam {String} id ID of job to resubmit
+ * @apiSuccess {String} status `success`
+ * @apiSuccess {Object} data null
+ * @apiError {String} status `error`
+ * @apiError {Object} message Error message
  */
 var resubmitJob = function(req, res, next) {
     var answer;
@@ -161,7 +181,19 @@ var resubmitJob = function(req, res, next) {
 /**
  * @apiGroup Jobs
  * @api {get} /jobs/queue Job queue
- * @apiDescription Get all the pending jobs currently in the queue
+ * @apiDescription Get a list of all the pending jobs currently in the queue.
+ * @apiSuccess {String} status `success`
+ * @apiSuccess {Object} data Response data
+ * @apiSuccess {Object[]} data.jobs List of all jobs
+ * @apiSuccess {Number} data.jobs._id Unique job ID
+ * @apiSuccess {String} data.jobs.state `pending` | `running` | `finished` | `cancelled`
+ * @apiSuccess {String} data.jobs.name Human readable job name
+ * @apiSuccess {String} data.jobs.description Job description
+ * @apiSuccess {Number} data.jobs.created_at Time job was added to the queue (UNIX timestamp)
+ * @apiSuccess {Number} data.jobs.started_at Time job was started (UNIX timestamp)
+ * @apiSuccess {Number} data.jobs.finished_at Time job was finished (UNIX timestamp)
+ * @apiError {String} status `error`
+ * @apiError {Object} message Error message
  */
 var getQueue = function(req, res, next) {
     var answer;
@@ -187,14 +219,18 @@ var getQueue = function(req, res, next) {
  * @apiGroup Jobs
  * @api {get} /jobs List all jobs
  * @apiDescription Get a list of all jobs, including those that are pending, currently running, and finished.
- * @apiSuccess {Object[]} jobs List of all jobs
- * @apiSuccess {Number} jobs._id Unique job ID
- * @apiSuccess {String} jobs.state `pending` | `running` | `finished` | `cancelled`
- * @apiSuccess {String} jobs.name Human readable job name
- * @apiSuccess {String} jobs.description Job description
- * @apiSuccess {Number} jobs.created_at Time job was added to the queue (UNIX timestamp)
- * @apiSuccess {Number} jobs.started_at Time job was started (UNIX timestamp)
- * @apiSuccess {Number} jobs.finished_at Time job was finished (UNIX timestamp)
+ * @apiSuccess {String} status `success`
+ * @apiSuccess {Object} data Response data
+ * @apiSuccess {Object[]} data.jobs List of all jobs
+ * @apiSuccess {Number} data.jobs._id Unique job ID
+ * @apiSuccess {String} data.jobs.state `pending` | `running` | `finished` | `cancelled`
+ * @apiSuccess {String} data.jobs.name Human readable job name
+ * @apiSuccess {String} data.jobs.description Job description
+ * @apiSuccess {Number} data.jobs.created_at Time job was added to the queue (UNIX timestamp)
+ * @apiSuccess {Number} data.jobs.started_at Time job was started (UNIX timestamp)
+ * @apiSuccess {Number} data.jobs.finished_at Time job was finished (UNIX timestamp)
+ * @apiError {String} status `error`
+ * @apiError {Object} message Error message
  */
 var getAllJobs = function(req, res, next) {
     var answer;
@@ -239,15 +275,19 @@ var getJobHistory = function(req, res, next) {
 /**
  * @apiGroup Jobs
  * @api {get} /jobs/:id Job info
- * @apiDescription Get information about a specific job
+ * @apiDescription Get detailed information about a specific job.
  * @apiParam {String} id ID of requested job
- * @apiSuccess {Number} _id Unique job ID
- * @apiSuccess {String} state `pending` | `running` | `finished` | `cancelled`
- * @apiSuccess {String} name Human readable job name
- * @apiSuccess {String} description Job description
- * @apiSuccess {Number} created_at Time job was added to the queue (UNIX timestamp)
- * @apiSuccess {Number} started_at Time job was started (UNIX timestamp)
- * @apiSuccess {Number} finished_at Time job was finished (UNIX timestamp)
+ * @apiSuccess {Object} data Response data
+ * @apiSuccess {Object} data.job Requested job 
+ * @apiSuccess {Number} data.job._id Unique job ID
+ * @apiSuccess {String} data.job.state `pending` | `running` | `finished` | `cancelled`
+ * @apiSuccess {String} data.job.name Human readable job name
+ * @apiSuccess {String} data.job.description Job description
+ * @apiSuccess {Number} data.job.created_at Time job was added to the queue (UNIX timestamp)
+ * @apiSuccess {Number} data.job.started_at Time job was started (UNIX timestamp)
+ * @apiSuccess {Number} data.job.finished_at Time job was finished (UNIX timestamp)
+ * @apiError {String} status `error`
+ * @apiError {Object} message Error message
  */
 var getJobById = function(req, res, next) {
     var answer;
@@ -272,8 +312,12 @@ var getJobById = function(req, res, next) {
 /**
  * @apiGroup Jobs
  * @api {delete} /jobs/:id Cancel job
- * @apiDescription Cancel a pending job
+ * @apiDescription Cancel a pending job.
  * @apiParam {String} id ID of job to cancel
+ * @apiSuccess {String} status `success`
+ * @apiSuccess {Object} data null
+ * @apiError {String} status `error`
+ * @apiError {Object} message Error message
  */
 var cancelJob = function(req, res, next) {
     var answer;

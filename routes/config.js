@@ -5,8 +5,24 @@ var log = require('../log').logger('routes');
 /**
  * @api {get} /status Engine status
  * @apiGroup Status
- * @apiSuccessExample {json} Success-Response: 
- *                    { "status":{"posx":0.0, "posy":0.0, "posz":0.0, "state":"idle"}}
+ * @apiDescription Get a system status report, which includes tool position, IO states, current job, progress, etc.
+ * @apiSuccess {String} status `success`
+ * @apiSuccess {Object} data Response data
+ * @apiSuccess {Object} data.status Status info
+ * @apiSuccess {String} data.status.state `idle` | `running` | `paused` | `stopped`
+ * @apiSuccess {Number} data.status.posx X Position
+ * @apiSuccess {Number} data.status.posy Y Position
+ * @apiSuccess {Number} data.status.posz Z Position
+ * @apiSuccess {Number} data.status.posa A Position
+ * @apiSuccess {Number} data.status.posb B Position
+ * @apiSuccess {Number} data.status.posc C Position
+ * @apiSuccess {Object} data.status.job Current Job | `null`
+ * @apiSuccess {String} data.status.job.state `pending` | `running` | `finished` | `cancelled`
+ * @apiSuccess {String} data.status.job.name Human readable job name
+ * @apiSuccess {String} data.status.job.description Job description
+ * @apiSuccess {Number} data.status.job.created_at Time job was added to the queue (UNIX timestamp)
+ * @apiSuccess {Number} data.status.job.started_at Time job was started (UNIX timestamp)
+ * @apiSuccess {Number} data.status.job.finished_at Time job was finished (UNIX timestamp)
  */
 var get_status = function(req, res, next) {
   var s = machine.status;
@@ -17,20 +33,15 @@ var get_status = function(req, res, next) {
     res.json(answer);
 };
 
-var get_info = function(req, res, next) {
-    var answer = {
-      status : "success",
-      data : {'information':information}
-    };
-    res.json(answer);
-};
-
 /**
  * @api {get} /config Get Engine configuration
  * @apiGroup Config
- * @apiSuccess {Object} engine Key-value map of all engine settings
- * @apiSuccess {Object} driver Key-value map of all G2 driver settings
- * @apiSuccess {Object} opensbp Key-value map of all OpenSBP runtime settings 
+ * @apiDescription Dictionary
+ * @apiSuccess {String} status `success`
+ * @apiSuccess {Object} data Response data
+ * @apiSuccess {Object} data.engine Key-value map of all engine settings
+ * @apiSuccess {Object} data.driver Key-value map of all G2 driver settings
+ * @apiSuccess {Object} data.opensbp Key-value map of all OpenSBP runtime settings 
  */
 var get_config = function(req, res, next) {
   var retval = {};
@@ -49,6 +60,10 @@ var get_config = function(req, res, next) {
 /**
  * @api {post} /config Update engine configuration
  * @apiGroup Config
+ * @apiDescription Incorporate the POSTed object into the engine configuration.  Configuration updates take effect immediately.
+ * @apiParam {Object} engine Key-value map of updates to engine settings
+ * @apiParam {Object} driver Key-value map of updates to G2 driver settings
+ * @apiParam {Object} opensbp Key-value map of updates to OpenSBP settings
  */
 var post_config = function(req, res, next) {
   var new_config = {};
@@ -104,5 +119,4 @@ module.exports = function(server) {
   server.get('/status', get_status);     //OK
   server.get('/config',get_config);      //OK
   server.post('/config', post_config);   //TODO
-  server.get('/info',get_info);          //TODO 
 };

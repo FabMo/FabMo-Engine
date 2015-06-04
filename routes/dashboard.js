@@ -7,13 +7,16 @@ var fs = require('fs');
 /**
  * @api {get} /apps List of apps
  * @apiGroup Dashboard
- * @apiSuccess {Object[]} apps List of app objects
- * @apiSuccess {String} apps.name Human-readable app name
- * @apiSuccess {String} apps.app_url Root URL for the app
- * @apiSuccess {String} apps.app_path App path (Used internally by the engine)
- * @apiSuccess {String} apps.icon_path URL of app icon
- * @apiSuccess {String} apps.icon_background_color CSS color value of the app icon
- * @apiSuccess {String} apps.id Unique ID of this app (used in app URLs)
+ * @apiDescription Get detailed information about all installed apps
+ * @apiSuccess {String} status `success`
+ * @apiSuccess {Object} data Response data
+ * @apiSuccess {Object[]} data.apps List of app objects
+ * @apiSuccess {String} data.apps.name Human-readable app name
+ * @apiSuccess {String} data.apps.app_url Root URL for the app
+ * @apiSuccess {String} data.apps.app_path App path (Used internally by the engine)
+ * @apiSuccess {String} data.apps.icon_path URL of app icon
+ * @apiSuccess {String} data.apps.icon_background_color CSS color value of the app icon
+ * @apiSuccess {String} data.apps.id Unique ID of this app (used in app URLs)
  */
 var getApps = function(req, res, next) {
 	var answer = {
@@ -26,16 +29,19 @@ var getApps = function(req, res, next) {
 /**
  * @api {get} /apps/:id App info
  * @apiGroup Dashboard
+ * @apiDescription Get detailed information about the specified app
  * @apiParam {String} id ID of requested app
- * @apiSuccess {Object} app List of app objects
- * @apiSuccess {String} app.name Human-readable app name
- * @apiSuccess {String} app.app_url Root URL for the app
- * @apiSuccess {String} app.app_path App path (Used internally by the engine)
- * @apiSuccess {String} app.icon_path URL of app icon
- * @apiSuccess {String} app.icon_background_color CSS color value of the app icon
- * @apiSuccess {String} app.id Unique ID of this app (used in app URLs)
+ * @apiSuccess {String} status `success`
+ * @apiSuccess {Object} data Response data
+ * @apiSuccess {Object} data.app App object
+ * @apiSuccess {String} data.app.name Human-readable app name
+ * @apiSuccess {String} data.app.app_url Root URL for the app
+ * @apiSuccess {String} data.app.app_path App path (Used internally by the engine)
+ * @apiSuccess {String} data.app.icon_path URL of app icon
+ * @apiSuccess {String} data.app.icon_background_color CSS color value of the app icon
+ * @apiSuccess {String} data.app.id Unique ID of this app (used in app URLs)
  */
-var getApp = function(req, res, next) {
+var getAppInfo = function(req, res, next) {
 	log.info("Getting app " + req.params.id);
 	var answer = {
 		status:"success",
@@ -46,6 +52,7 @@ var getApp = function(req, res, next) {
 
 /**
  * @api {delete} /apps/:id App
+ * @apiDescription Delete the specified app
  * @apiGroup Dashboard
  */
 var deleteApp = function(req, res, next) {
@@ -102,7 +109,7 @@ var listAppFiles = function(req, res, next) {
 /**
  * @apiGroup Dashboard
  * @api {post} /app Submit an app to be installed
- * @apiDescription Install an app to the user's app installation directory.  App will be decompressed immediately.
+ * @apiDescription Install an app to the user's app installation directory.  App will be decompressed and installed immediately.
  */
 var submitApp = function(req, res, next) {
 
@@ -186,7 +193,7 @@ var submitApp = function(req, res, next) {
 module.exports = function(server) {
     server.post('/apps', submitApp);
     server.get('/apps', getApps);
-    server.get('/apps/:id', getApp);
+    server.get('/apps/:id', getAppInfo);
     server.del('/apps/:id', deleteApp);
     server.get('/apps/:id/files', listAppFiles);
     server.get(/\/approot\/?.*/, restify.serveStatic({

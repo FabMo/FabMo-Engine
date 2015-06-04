@@ -2,10 +2,13 @@ var machine = require('../machine').machine;
 var default_feed_rate = 300;
 
 /**
- * @api {post} /direct/gcode Execute G-code directly
+ * @api {post} /direct/gcode Execute G-code string
  * @apiGroup Direct
  * @apiParam {String} cmd A single G-code block to execute
- * @apiSuccess {Object} {status:"success",data : null}
+ * @apiSuccess {String} status success
+ * @apiSuccess {Object} data null
+ * @apiError {String} status error
+ * @apiError {Object} message Error message
  */
 sendGCode = function(req, res, next) {
 	var answer;
@@ -49,10 +52,13 @@ sendGCode = function(req, res, next) {
 };
 
 /**
- * @api {post} /direct/sbp Execute OpenSBP code directly
+ * @api {post} /direct/sbp Execute OpenSBP code string
  * @apiGroup Direct
  * @apiParam {String} cmd A single line of OpenSBP code to execute
- * @apiSuccess {Object} {status:"success",data : null}
+ * @apiSuccess {String} status success
+ * @apiSuccess {Object} data null
+ * @apiError {String} status error
+ * @apiError {Object} message Error message
  */
  sendSBP = function(req, res, next) {
 	if (machine.status.state === 'idle')
@@ -96,76 +102,14 @@ sendGCode = function(req, res, next) {
 };
 
 /**
- * @api {post} /direct/move move the machine in a given direction 
+ * @api {post} /direct/fixed_move Move a fixed distance
  * @apiGroup Direct
- * @apiParam {Object} {move:dir} with dir equals to the direction ("x", "-x" , "y" , "-y" , "z" , "-z" , etc.) or "stop" to stop moving. 
- * @apiSuccess {Object} {status:"success",data : null}
- */
-move = function(req, res, next) {
-	if(req.params.move ==="stop"){
-		machine.stopJog();
-		answer = {
-			status:"success",
-			data : null
-		};
-		res.json(answer);
-	}
-	else if (req.params.move !== undefined )
-	{
-		machine.jog(req.params.move);
-		answer = {
-			status:"success",
-			data : null
-		};
-		res.json(answer);
-	}
-	else {
-		machine.stopJog();
-		answer = {
-			status:"fail",
-			data : {move : "require an argument"}
-		};
-		res.json(answer);
-	}
-};
-/**
- * @api {post} /direct/jog jog the machine in a given direction /!\ same as move for now /!\
- * @apiGroup Direct
- * @apiParam {Object} {move:dir} with dir equals to the direction ("x", "-x" , "y" , "-y" , "z" , "-z" , etc.) or "stop" to stop moving. 
- * @apiSuccess {Object} {status:"success",data : null}
- */
-jog = function(req, res, next) {
-	if(req.params.move ==="stop"){
-		machine.stopJog();
-		answer = {
-			status:"success",
-			data : null
-		};
-		res.json(answer);
-	}
-	else if (req.params.move !== undefined ) {
-		machine.jog(req.params.move);
-		answer = {
-			status:"success",
-			data : null
-		};
-		res.json(answer);
-	}
-	else {
-		machine.stopJog();
-		answer = {
-			status:"fail",
-			data : {move : "require an argument"}
-		};
-		res.json(answer);
-	}
-};
-
-/**
- * @api {post} /direct/fixed_move move the machine in a given direction by a defined length (step)
- * @apiGroup Direct
- * @apiParam {Object} {move:dir,step:step} with dir equals to the direction ("x", "-x" , "y" , "-y" , "z" , "-z" , etc.) or "stop" to stop moving. 
- * @apiSuccess {Object} {status:"success",data : null}
+ * @apiParam {String} move One of the following direction strings ("x", "-x" , "y" , "-y" , "z" , "-z" , etc.) or "stop" to stop moving. 
+ * @apiParam {Number} step Increment to move in the specified direction
+ * @apiSuccess {String} status success
+ * @apiSuccess {Object} data null
+ * @apiError {String} status error
+ * @apiError {Object} message Error message
  */
 fixed_move = function(req, res, next) {
 	if(req.params.move ==="stop"){
@@ -195,10 +139,19 @@ fixed_move = function(req, res, next) {
 };
 
 /**
- * @api {post} /direct/goto move the machine to a given position
+ * @api {post} /direct/goto Move to a fixed position
  * @apiGroup Direct
- * @apiParam {Object} {x:posx,y:posy,z:posz, a:posa, b:posb, c:posc , f:speed}   posx,posy,posz,etc are the coordinate of the desired position. every field is optionnal.
- * @apiSuccess {Object} {status:"success",data : null}
+ * @apiParam {number} x X position
+ * @apiParam {number} y Y position
+ * @apiParam {number} z Z position
+ * @apiParam {number} a A position
+ * @apiParam {number} b B position
+ * @apiParam {number} c C position
+ * @apiParam {number} f Feedrate (in current system units)
+ * @apiSuccess {String} status success
+ * @apiSuccess {Object} data null
+ * @apiError {String} status error
+ * @apiError {Object} message Error message
  */
 goto = function(req, res, next) {
    	if (machine.status.state === 'idle')
