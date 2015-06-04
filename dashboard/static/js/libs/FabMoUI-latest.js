@@ -1,6 +1,9 @@
 var MAX_INPUTS = 16;
 
 function FabMoUI(tool, options){
+	this.event_handlers = {
+		'error' : []
+	}
 	this.tool = tool;
 	// the tool we need to check for
 
@@ -70,6 +73,28 @@ function FabMoUI(tool, options){
 
 }
 
+FabMoUI.prototype.on = function(evt, handler) {
+	if(evt in this.event_handlers) {
+		this.event_handlers[evt].push(handler);
+	}
+	if(evt === 'error') {
+		if(this.tool.status_report.state === 'stopped') {
+			if(this.tool.status_report.info.error) {
+				handler(this.tool.status.info.error);
+			}
+		}
+	}
+}
+
+FabMoUI.prototype.emit = function(type, evt) {
+	if(type in this.event_handlers) {
+		for(i in this.event_handlers[type]) {
+			handler = this.event_handlers[type][i];
+			handler(evt);
+		}
+	}
+}
+
 FabMoUI.prototype.lock = function(){
 	this.right = false;
 	this.left = false;
@@ -116,6 +141,13 @@ FabMoUI.prototype.updateText = function(control, txt) {
 
 FabMoUI.prototype.updateStatusContent = function(status){
 	var that = this;
+
+	if(that.tool.state !== status.state) {
+		if(status.state === 'stopped' && status.info.error) {
+			this.emit('error', status.info.error);
+		}
+	}
+
 	that.tool.state=status.state;
 
 	try {
@@ -127,6 +159,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		var y = 'X.XXX'
 		var z = 'X.XXX'
 	}
+
 	that.updateText($(that.posX_selector), x);
 	that.updateText($(that.posY_selector), y);
 	that.updateText($(that.posZ_selector), z);

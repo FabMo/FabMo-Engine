@@ -43,6 +43,21 @@ define(function(require) {
 				dashboard.ui.tool = dashboard.machine;
 			}
 
+			dashboard.ui.on('error', function(err) {
+				$('#modalDialogTitle').text('Error!');
+				$('#modalDialogLead').html('<div style="color:red">There was an error!</div>');
+				$('#modalDialogMessage').text(err);
+				console.log(dashboard.machine.status_report);
+				$('#modalDialogDetail').html(
+					'<p>' + 
+					  '<b>Job Name:  </b>' + dashboard.machine.status_report.job.name + '<br />' + 
+					  '<b>Job Description:  </b>' + dashboard.machine.status_report.job.description + 
+					'</p>'
+					);
+
+				$('#modalDialog').foundation('reveal', 'open');
+			});
+
 			dashboard.ui.updateStatus();
 
 			// Configure keyboard input
