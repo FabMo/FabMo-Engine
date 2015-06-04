@@ -591,7 +591,8 @@ SBPRuntime.prototype._execute = function(command, callback) {
 					callback();
 				}.bind(this));
 			} else {
-				log.warn("Can't run macro #" + command.index + ": Macro not found.");
+				this._end("Can't run custom cut (macro) C" + command.index + ": Macro not found.");
+				//_end()
 				callback();
 			}
 			return true;

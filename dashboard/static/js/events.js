@@ -137,29 +137,7 @@ $(document).ready( function() {
       offcanvas : {
         open_method: 'overlap_single', 
       }
-    });
-
-	//Sortable app icon (not used now, just for play !) //Disabled
-	/*
-	var bar = document.getElementById('app_menu_container');
-		new Sortable(bar, {
-		group: "apps",
-		ghostClass: "sortable-ghost",
-		animation: 150,
-		store: {
-		  // Get the order of elements. Called once during initialization. //
-		  get: function (sortable) 
-{		      var order = localStorage.getItem(sortable.options.group);
-		      return order ? order.split('|') : [];
-		  },
-		  // Save the order of elements. Called every time at the drag end //
-		  set: function (sortable) {
-		      var order = sortable.toArray();
-		      localStorage.setItem(sortable.options.group, order.join('|'));
-		  }
-		}
-	});
-	*/
+    });	
 
 	//Init of the size of the main & app-icon containers
 	resizedoc();

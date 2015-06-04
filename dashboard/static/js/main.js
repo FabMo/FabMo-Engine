@@ -19,6 +19,27 @@ define(function(require) {
 			// Create the menu based on the apps thus retrieved 
 			context.appMenuView = new context.views.AppMenuView({collection : context.apps, el : '#app_menu_container'});
 
+			//Sortable app icon (not used now, just for play !) //Disabled
+			
+			var menu_container = document.getElementById('app_menu_container');
+			new Sortable(menu_container, {
+				group: "apps",
+				ghostClass: "sortable-ghost",
+				animation: 150,
+				store: {
+				  // Get the order of elements. Called once during initialization. //
+				  get: function (sortable) {		      
+				  	  var order = localStorage.getItem(sortable.options.group);
+				      return order ? order.split('|') : [];
+				  },
+				  // Save the order of elements. Called every time at the drag end //
+				  set: function (sortable) {
+				      var order = sortable.toArray();
+				      localStorage.setItem(sortable.options.group, order.join('|'));
+				  }
+				}
+			});
+
 			// Create remote machine model based on the one remote machine that we know exists (the one we're connecting to)
 			context.remoteMachines.reset([
 				new context.models.RemoteMachine({
