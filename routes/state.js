@@ -63,7 +63,7 @@ resume = function(req, res, next) {
 };
 
 module.exports = function(server) {
-	server.get('/run/:id',run); //OK
+	//server.get('/run/:id',run); //OK
 	server.get('/quit',quit); //OK
 	server.get('/pause',pause); //OK 
 	server.get('/resume',resume); //OK 

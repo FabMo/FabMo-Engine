@@ -112,7 +112,7 @@ sendGCode = function(req, res, next) {
  * @apiError {Object} message Error message
  */
 fixed_move = function(req, res, next) {
-	if(req.params.move ==="stop"){
+	if(req.params.move === "stop"){
 		machine.stopJog();
 		answer = {
 			status:"success",
@@ -206,8 +206,8 @@ goto = function(req, res, next) {
 module.exports = function(server) {
 	server.post('/direct/sbp',sendSBP); //OK
 	server.post('/direct/gcode',sendGCode); //OK
-	server.post('/direct/move',move); //OK
-	server.post('/direct/jog',jog); //OK
+	//server.post('/direct/move',move); //OK
+	//server.post('/direct/jog',jog); //OK
 	server.post('/direct/fixed_move',fixed_move);
 	server.post('/direct/goto',goto); //OK
 };
