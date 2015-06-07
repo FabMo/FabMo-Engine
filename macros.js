@@ -35,7 +35,7 @@ var _deleteMacroFile = function(index, callback) {
 }
 
 var _parseMacroFile = function(filename, callback) {
-	var re = /[\(']!FABMO!(\w+):(.*)/
+	var re = /[\(']!FABMO!(\w+):(.*)\)/
 	var obj = {}
 	var ok = false;
 	fs.readFile(filename, function(err, data) {

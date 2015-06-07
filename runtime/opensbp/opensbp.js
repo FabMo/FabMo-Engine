@@ -75,6 +75,7 @@ SBPRuntime.prototype.runString = function(s, callback) {
 			this.machine.status.nb_lines = lines.length - 1;
 		}
 		this.init();
+		this.end_callback = callback;
 		this._setupTransforms();
 		this._analyzeLabels();  // Build a table of labels
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table
