@@ -9,3 +9,4 @@ app_settings.json
 docs-dist
 .grunt
 config/data/*.json
+.DS_Store

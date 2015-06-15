@@ -25,7 +25,9 @@ define(function(require) {
 			new Sortable(menu_container, {
 				group: "apps",
 				ghostClass: "sortable-ghost",
+				disabled: true,
 				animation: 150,
+				delay: 500,
 				store: {
 				  // Get the order of elements. Called once during initialization. //
 				  get: function (sortable) {		      
