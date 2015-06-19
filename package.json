@@ -3,6 +3,7 @@
   "description": "The Engine for running the FabMo platform",
   "author": "ShopBotTools",
   "repository": "https://github.com/ShopBotTools/FabMo-Engine.git",
+  "license": "MIT",
   "dependencies": {
     "adm-zip": "^0.4.4",
     "async": "0.9.x",

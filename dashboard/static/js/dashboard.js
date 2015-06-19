@@ -433,10 +433,13 @@ define(function(require) {
 
 	Dashboard.prototype.checkDashboardSettings = function() {
 		var that=this;
-		 var s=JSON.parse(localStorage.getItem('dashboardSettings'));
+		var s = null;
+		try {
+			var s=JSON.parse(localStorage.getItem('dashboardSettings'));
+		} catch(e) {}
 
         if (s == null) {
-          console.log("No Settings Defined, Load defaults settings");
+          console.info("No Settings Defined, Loading default settings");
           //Load Default Settings into S variable
           s={
 			"appName": {
