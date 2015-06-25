@@ -11,6 +11,7 @@
     "escape-regexp-component": "^1.0.2",
     "fs-extra": "^0.16.3",
     "mime": "^1.2.11",
+    "minimist": "^1.1.1",
     "ncp": "^1.0.1",
     "node-simplerwifiscanner": "git+https://github.com/jlucidar/node-simplerwifiscanner.git",
     "node-uuid": "^1.4.1",
@@ -42,5 +43,8 @@
     "version": "0.0.0",
     "description": "FabMo-Engine",
     "title": "FabMo-Engine API Documentation"
+  }, 
+  "scripts": {
+    "debug" : "node server.js --debug"
   }
 }
