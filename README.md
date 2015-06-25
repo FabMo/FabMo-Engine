@@ -19,7 +19,7 @@ Quick Start
 1. Check out the source code https://github.com/ShopBotTools/FabMo-Engine.git
 2. From inside the source directory, install all of the engine dependencies with `npm install`
 3. Create the engine data directory at `/opt/fabmo` or `C:\opt\fabmo` if you're on windows.  Make sure the user running the engine has write access to this directory.
-4. Start the engine with `npm start`
+4. Start the engine with `npm run debug` for development mode or `npm start` for production mode.
 
 When the engine starts, it will connect to G2 and setup an http server to accept connections on port 9876.  Once the engine is running you can visit http://localhost:9876/ or http://0.0.0.0:9876/ to use the engine dashboard.
 

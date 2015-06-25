@@ -21,10 +21,8 @@
   <!--<link rel="stylesheet" href="../addon/display/fullscreen.css">-->
 </head>
 <body>
-<div>Hello</div>
-<div id="editor"></div>
-<!--
-  <div class="row" style="margin-top: 10px;">
+
+  <div class="row" id="buttonrow" style="margin-top: 10px;">
     <div class="small-6 columns" style="text-align:left;">
       <a href="#" id="lang-select" class="button radius" data-dropdown="drop-lang">Language...</a>
       <ul id="drop-lang" class="tiny f-dropdown" data-dropdown-content>
@@ -41,7 +39,8 @@
       </ul>
     </div>
   </div>
--->
+  <div id="editor"></div>
+
 <script src="bower_components/ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
   <script src="/js/libs/dashboard.js"></script>
   <script>
@@ -147,9 +146,18 @@
       editor.on('blur', function(evt) {
         save();
       });
-
       
-      setup();
+    function resize() {
+        var h = window.innerHeight;
+        var h2 = $('#buttonrow').height();
+        $("#editor").css('height',h-h2);      
+    }
+
+    $(window).resize(function(){
+      resize();
+    });
+    resize();
+    setup();
 
     });
 
@@ -184,6 +192,8 @@
         $("#submit-button").addClass('disabled');
       }
     });
+
+
 
   </script>
 
