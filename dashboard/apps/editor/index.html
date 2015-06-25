@@ -84,7 +84,9 @@
       var text = editor.getValue();
       switch(lang) {
         case "gcode":
-          fabmoDashboard.submitJob(text, {filename: 'editor.nc', description: 'G-Code file from the editor'});
+          fabmoDashboard.submitJob(text, {filename: 'editor.nc', description: 'G-Code file from the editor'}, function(err, result) {
+            fabmoDashboard.launchApp('job-manager', {'hello':'world'});
+          });
         break;
         case "opensbp":
           fabmoDashboard.submitJob(text, {filename: 'editor.sbp', description: 'OpenSBP file from the editor.'});

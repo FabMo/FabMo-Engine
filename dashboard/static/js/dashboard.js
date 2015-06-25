@@ -59,7 +59,6 @@ define(function(require) {
 			for(var i in listeners) {
 				var source = listeners[i];
 				var msg = {"status" : "success", "type" : "evt", "id" : name, "data" : data};
-				//console.log("Dashboard host: Firing event to " + source + " with the following data: " + JSON.stringify(msg))
 				source.postMessage(msg, "*");
 			}
 		}
@@ -125,7 +124,7 @@ define(function(require) {
 					if(err) {
 						callback(err);
 					} else {
-						this.jobManager();
+//						this.launchApp('job-manager');
 						callback(null);
 					}
 				}.bind(this));
@@ -134,7 +133,7 @@ define(function(require) {
 					if(err) {
 						callback(err);
 					} else {
-						this.jobManager();
+//						this.launchApp('job-manager');
 						callback(null);
 					}
 				}.bind(this));				
@@ -146,7 +145,7 @@ define(function(require) {
 				if(err) {
 					callback(err);
 				} else {
-					this.jobManager();
+//					this.launchApp('job-manager');
 					callback(null);
 				}
 			}.bind(this));
@@ -306,6 +305,17 @@ define(function(require) {
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
+
+		this._registerHandler('launchApp', function(data, callback) {
+			id = data.id;
+			args = data.args || {};
+			this.launchApp(id, args, callback);
+		}.bind(this));
+
+		this._registerHandler('getAppArgs', function(data, callback) {
+			context = require('context');
+			callback(null, context.current_app_args || {});
+		}.bind(this));
 	
 	}
 
@@ -319,13 +329,9 @@ define(function(require) {
 
 	// Brings up the DRO (if separate from the keypad) in the dashboard
 	Dashboard.prototype.DRO = function(callback){
-		if(!callback) {
-			return console.log("This function 'DRO' needs a callback to run");
-		}
 		else {
-			that=this;
-			that.notification('info','Move the tool if necessary, then hit "Enter');
-			that.openRightMenu(); //Open the menu to let the user control the tool
+			this.notification('info','Move the tool if necessary, then hit "Enter');
+			this.openRightMenu(); //Open the menu to let the user control the tool
 
 			//Waiting keydown on "enter" key, before calling callback.
 			var key=$(document).keydown(function(e){
@@ -339,78 +345,73 @@ define(function(require) {
 
 	//Open the right menu
 	Dashboard.prototype.openRightMenu = function() {
-		that=this;
 		$("#main").addClass("offcanvas-overlap-left");
-		if(that.machine) {
-			that.ui.setMenuOpen();
+		if(this.machine) {
+			this.ui.setMenuOpen();
 		}
 		resizedoc();
 	}
 
 	//Close the right menu
 	Dashboard.prototype.closeRightMenu = function() {
-		that=this;
 		$("#main").removeClass("offcanvas-overlap-left");
-		if(that.machine) {
-			that.ui.setMenuClosed();
+		if(this.machine) {
+			this.ui.setMenuClosed();
 		}
 		resizedoc();
 	}
 
 	// Open and close the right menu
 	Dashboard.prototype.bindRightMenu = function(mouv) {
-		that=this;
 		if($("#main").hasClass("offcanvas-overlap-left")){
 			if(mouv) {
-				that.closeRightMenu();
+				this.closeRightMenu();
 			}
 			else {
-				that.ui.setMenuClosed();
+				this.ui.setMenuClosed();
 			}
 		}
 		else {
 			if(mouv){
-				that.openRightMenu();
+				this.openRightMenu();
 			}
 			else {
-				that.ui.setMenuOpen();
+				this.ui.setMenuOpen();
 			}
 		}
 	}
 
 	// React to keydown on "k" shortcut, show / hide right menu and show keypad if allowed
 	Dashboard.prototype.keyCommands = function(){
-		that=this;
 		$(document).keydown(function(e){
 			if (e.which == 75) {
-				that.keypad(true,true);
+				this.keypad(true,true);
 			}
 
 			//Development only : Run the DRO function with a callback, with "d" shortcode
 			if (e.which == 68) {
-				that.DRO(function(ev){
-					that.closeRightMenu();
-					that.notification("success","DRO Worked");
+				this.DRO(function(ev){
+					this.closeRightMenu();
+					this.notification("success","DRO Worked");
 					ev=null;
 				});
 			}
-		});
+		}.bind(this));
 
 		$(".right-small").click( function() {
-			that.keypad(true,false);
+			this.keypad(true,false);
 			resizedocclick();
 		});
 	};
 
 	Dashboard.prototype.keypad = function(test,mouv) {
-		that=this;
-		if (that.machine) {
-			if(that.ui.statusKeypad() && test) {
-				that.bindRightMenu(mouv);
+		if (this.machine) {
+			if(this.ui.statusKeypad() && test) {
+				this.bindRightMenu(mouv);
 			}
-			else that.notification("error","KeyPad Unvailable");
+			else this.notification("error","KeyPad Unvailable");
 		}
-		else that.notification("warning","Please Connect to a tool");
+		else this.notification("warning","Please Connect to a tool");
 	};
 
 	Dashboard.prototype.notification = function(type,message) {
@@ -421,9 +422,10 @@ define(function(require) {
 		else console.log("Unknown type of notification");
 	}
 
-	Dashboard.prototype.jobManager = function() {
+	Dashboard.prototype.launchApp = function(id, args, callback) {
 		context = require('context');
-		context.launchApp('job-manager');
+		console.info("Preparing to launch an app")
+		context.launchApp(id, args, callback);
 	}
 
 	Dashboard.prototype.refreshApps = function() {
@@ -432,7 +434,6 @@ define(function(require) {
 	}
 
 	Dashboard.prototype.checkDashboardSettings = function() {
-		var that=this;
 		var s = null;
 		try {
 			var s=JSON.parse(localStorage.getItem('dashboardSettings'));

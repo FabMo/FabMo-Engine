@@ -75,34 +75,30 @@ function Machine(control_path, gcode_path, callback) {
 	this.driver.on("error", function(data) {log.error(data);});
 	this.driver.connect(control_path, gcode_path, function(err, data) {
 	
-	    // Configure logging for errors with serial driver
-	    this.driver.on("error", function(data) {
-		    log.error(data);
-	    });
-		    // Set the initial state based on whether or not we got a valid connection to G2
-		    if(err){
-		    	log.debug("Setting the disconnected state");
-			    //this.status.state = "disconnected";
-		    } else {
-			    this.status.state = "idle";
-		    }
+	    // Set the initial state based on whether or not we got a valid connection to G2
+	    if(err){
+	    	log.debug("Setting the disconnected state");
+		    //this.status.state = "disconnected";
+	    } else {
+		    this.status.state = "idle";
+	    }
 
-		    // Create runtimes for different functions/command languages
-		    this.gcode_runtime = new GCodeRuntime();
-		    this.sbp_runtime = new SBPRuntime();
-		    this.manual_runtime = new ManualRuntime();
-		    this.passthrough_runtime = new PassthroughRuntime();
+	    // Create runtimes for different functions/command languages
+	    this.gcode_runtime = new GCodeRuntime();
+	    this.sbp_runtime = new SBPRuntime();
+	    this.manual_runtime = new ManualRuntime();
+	    this.passthrough_runtime = new PassthroughRuntime();
 
-		    // GCode is the default runtime
-		    this.setRuntime(this.gcode_runtime);
+	    // GCode is the default runtime
+	    this.setRuntime(this.gcode_runtime);
 
-		    if(err) {
-			    typeof callback === "function" && callback(err);
-		    } else {
-			    this.driver.requestStatusReport(function(err, result) {
-				    typeof callback === "function" && callback(null, this);
-			    }.bind(this));
-		    }
+	    if(err) {
+		    typeof callback === "function" && callback(err);
+	    } else {
+		    this.driver.requestStatusReport(function(err, result) {
+			    typeof callback === "function" && callback(null, this);
+		    }.bind(this));
+	    }
 
     }.bind(this));
 }

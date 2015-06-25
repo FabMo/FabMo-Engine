@@ -183,6 +183,14 @@ FabMoDashboard.prototype._setupMessageListener = function() {
 	}.bind(this));
 }
 
+FabMoDashboard.prototype.getAppArgs = function(callback) {
+	this._call("getAppArgs", null, callback);
+}
+
+FabMoDashboard.prototype.launchApp = function(id, args, callback) {
+	this._call("launchApp", {'id': id, 'args':args}, callback);
+}
+
 FabMoDashboard.prototype.on = function(name, callback) {
 	this._on(name, callback);
 }
@@ -195,7 +203,7 @@ FabMoDashboard.prototype.hideDRO = function(callback) {
 	this._call("hideDRO", null, callback);
 }
 
-FabMoDashboard.prototype.submitJob = function(data, config,  callback) {
+FabMoDashboard.prototype.submitJob = function(data, config, callback) {
 	var message = {};
 
 	// Pass a form to get a file that was browsed for

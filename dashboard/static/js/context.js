@@ -59,25 +59,27 @@
 		$('#modal_container').hide();
 	}
 
-	ApplicationContext.prototype.launchApp = function(id) {
-		current_app = this.getCurrentApp()
+	ApplicationContext.prototype.launchApp = function(id, args, callback) {
+		current_app = this.getCurrentApp();
 		if(current_app.id != id) {
 			app = this.apps.get(id);
 			if(app) {
+				this.current_app_args = args || {};
 				this.current_app_id = id;
 				this.appClientView.setModel(app);
 			} else {
 				if(this.apps) {
-					console.error("Couldn't launch app: " + id + ": Apps list not available yet.")
+					callback("Couldn't launch app: " + id + ": Apps list not available yet.");
 				} else {
-					console.error("Couldn't launch app: " + id + ": No such app?");
+					callback("Couldn't launch app: " + id + ": No such app?");
 				}
-				return
+				return;
 			}
 		}
 		this.appMenuView.hide();
 		this.appClientView.show();
 		this.hideModalContainer();
+		callback(null);
 	};
 
 	ApplicationContext.prototype.getCurrentApp = function() {

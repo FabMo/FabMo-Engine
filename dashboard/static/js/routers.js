@@ -15,10 +15,7 @@ define(function(require) {
 			"editor"			: "show_editor"
 		},
 		launch_app: function(id) {
-			this.context.launchApp(id);
-		},
-		show_editor: function() {
-			this.context.editApp();
+			this.context.launchApp(id, {}, function(err, data) {});
 		},
 		show_menu: function() {
 			this.context.appClientView.hide();
