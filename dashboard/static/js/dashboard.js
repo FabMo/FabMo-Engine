@@ -329,17 +329,15 @@ define(function(require) {
 
 	// Brings up the DRO (if separate from the keypad) in the dashboard
 	Dashboard.prototype.DRO = function(callback){
-		else {
-			this.notification('info','Move the tool if necessary, then hit "Enter');
-			this.openRightMenu(); //Open the menu to let the user control the tool
+		this.notification('info','Move the tool if necessary, then hit "Enter');
+		this.openRightMenu(); //Open the menu to let the user control the tool
 
-			//Waiting keydown on "enter" key, before calling callback.
-			var key=$(document).keydown(function(e){
-				if ((e.which == 13)) {
-					if(typeof callback === 'function') callback(key);
-				}
-			});
-		}
+		//Waiting keydown on "enter" key, before calling callback.
+		var key=$(document).keydown(function(e){
+			if ((e.which == 13)) {
+				if(typeof callback === 'function') callback(key);
+			}
+		});
 		return;
 	};
 
@@ -401,7 +399,7 @@ define(function(require) {
 		$(".right-small").click( function() {
 			this.keypad(true,false);
 			resizedocclick();
-		});
+		}.bind(this));
 	};
 
 	Dashboard.prototype.keypad = function(test,mouv) {

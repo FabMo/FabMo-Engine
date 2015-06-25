@@ -11,8 +11,7 @@ var db = require('./db');
 var macros = require('./macros');
 var dashboard = require('./dashboard');
 
-var Engine = function() {
-};
+var Engine = function() {};
 
 Engine.prototype.stop = function(callback) {
     this.machine.disconnect();

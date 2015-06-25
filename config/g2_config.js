@@ -78,6 +78,7 @@ G2Config.prototype.configureStatusReports = function(callback) {
 					}});
 	this.driver.command({"qv":0});
 	this.driver.command({"jv":4});
+	this.driver.requestStatusReport();
 }
 	return callback(null, this);
 };

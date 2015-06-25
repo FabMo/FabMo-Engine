@@ -488,10 +488,10 @@ G2.prototype.onMessage = function(response) {
 	for(var key in r) {
 		if(key in this.readers) {
 			if(typeof this.readers[key][this.readers[key].length-1] === 'function') {
-				if(r[key] !== null) {
+				//if(r[key] !== null) {
 					callback = this.readers[key].shift();
 					callback(null, r[key]);
-				}
+				//}
 			}
 		}
 	}

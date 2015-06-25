@@ -36,3 +36,7 @@ exports.loadApp = function(pathname, callback) {
 exports.deleteApp = function(id, callback) {
 	return exports.appManager.deleteApp(id, callback);
 };
+
+exports.reloadApp = function(id, callback) {
+	return exports.appManager.reloadApp(id, callback);
+}

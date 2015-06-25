@@ -66,12 +66,21 @@ AppManager.prototype._addApp = function(app) {
 	this.apps_index[app.id] = app;
 };
 
+AppManager.prototype.reloadApp = function(id, callback) {
+	app_info = this.apps_index[id];
+	if(app_info) {
+		this.loadApp(app_info.app_archive_path, {force:true}, callback);
+	} else {
+		callback(new Error("Not a valid app id: " + id));
+	}
+}
+
 /**
  * Load an app and issue a callback when loaded.
  * In the case of a compressed app, this decompresses the app into the approot directory.
  * In the case of a raw app, this copies the app to the approot directory.
  */
-AppManager.prototype.loadApp = function(pathname, callback){
+AppManager.prototype.loadApp = function(pathname, options, callback){
 	// Check to see if the path exists
 	fs.stat(pathname,function(err,stat){
 		if(err) {
@@ -80,15 +89,15 @@ AppManager.prototype.loadApp = function(pathname, callback){
 		}
 		if(stat.isDirectory()) {
 			// Copy if it's a directory
-			return this.copyApp(pathname, this.approot_directory, {}, callback);
+			return this.copyApp(pathname, this.approot_directory, options, callback);
 		} else {
 			var ext = path.extname(pathname).toLowerCase();
 			if(ext === '.fma' || ext === '.zip') {
 				// Decompress if it's a compressed app file
-				return this.decompressApp(pathname, this.approot_directory, {}, callback);
+				return this.decompressApp(pathname, this.approot_directory, options, callback);
 			} else {
 				// Error if it's a file, but the wrong kind
-				return callback(pathname + ' is not an app.');
+				return callback(new Error(pathname + ' is not an app.'));
 			}
 		}
 	}.bind(this));
@@ -171,6 +180,7 @@ AppManager.prototype.copyApp = function(src, dest, options, callback) {
 	}
 };
 
+
 /**
  * Decompress the app and return app info (via callback)
  */
@@ -237,7 +247,7 @@ AppManager.prototype.loadApps =  function(callback) {
 	this.getAppPaths(function(err,files){
 		async.mapSeries(files, 
 			function(file, callback) {
-				this.loadApp(file, function(err, result) {
+				this.loadApp(file, {}, function(err, result) {
 					if(err) {
 						// Rather than allowing errors to halt the async.map operation that is loading the apps
 						// we swallow them and simply stick a 'null' in the output array (that we cull out at the end)

@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "chai": "1.9.x",
+    "chokidar": "^1.0.3",
     "grunt": "0.4.x",
     "grunt-apidoc": "^0.10.0",
     "grunt-available-tasks": "^0.5.0",
