@@ -1,11 +1,12 @@
 {
-	"name":"G-Code Editor",
+	"name":"NC Editor",
 	"main":"./index.html",
 	"icon":"icon.png",
 	"icon_color":"blue",
-	"version":"0.0.1",
+	"icon_display":"none",
+	"version":"0.0.2",
 	"author":"Ryan Sturmer",
 	"website":"http://shopbottools.com",
-	"id":"gcode-editor",
-    "description":"System app for editing and running g-code blocks"
+	"id":"editor",
+    "description":"System app for editing and running machining files"
 }

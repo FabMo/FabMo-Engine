@@ -20,21 +20,10 @@
   <!--<script src="../addon/display/fullscreen.js"></script>-->
   <!--<link rel="stylesheet" href="../addon/display/fullscreen.css">-->
 </head>
-<body style="background-color: #ffffff;">
-  <header class="grey">
-    <section>
-      <div class="app-title-container">
-        <h2 id="app-header">G-Code Editor</h2>
-      </div>
-    </section>
-  </header>
-
-  <div class="row">
-    <form>
-      <textarea id="code" name="code" rows="5"></textarea>
-    </form>
-  </div>
-  
+<body>
+<div>Hello</div>
+<div id="editor"></div>
+<!--
   <div class="row" style="margin-top: 10px;">
     <div class="small-6 columns" style="text-align:left;">
       <a href="#" id="lang-select" class="button radius" data-dropdown="drop-lang">Language...</a>
@@ -52,7 +41,8 @@
       </ul>
     </div>
   </div>
-
+-->
+<script src="bower_components/ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
   <script src="/js/libs/dashboard.js"></script>
   <script>
     var editor;
@@ -118,41 +108,48 @@
 
         var content = localStorage['content'] || '';
         editor.setValue(content);
+
+        var pos;
+        try {
+          pos = JSON.parse(localStorage['position']);
+        } catch(e) {
+          pos = {row:0,col:0};
+        }
+        editor.clearSelection();
+        editor.moveCursorToPosition(pos);
       }
     }
-
+ 
     function save() {
       if(supports_html5_storage()) {
-        localStorage['content'] = editor.getValue()
+        localStorage['content'] = editor.getSession().getValue();
+        pos = editor.getCursorPosition();
+        localStorage['position'] = JSON.stringify(pos);
       }
     }
 
     $(document).ready(function() {
       $(document).foundation();
+
+      editor = ace.edit("editor");
+      editor.setTheme("ace/theme/eclipse");
+      editor.setShowPrintMargin(false);
+      editor.getSession().setMode("ace/mode/gcode"); 
       
-      editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-        lineNumbers: true,
-        theme: "neat",
+      editor.commands.addCommand({
+        name: "run_immediate",
+        bindKey: {win: "Ctrl-Enter", mac: "Command-Enter"},
+        exec: function(editor) {
+          execute();    
+        }
       });
 
       editor.on('blur', function(evt) {
         save();
       });
 
-      editor.setOption("extraKeys", {
-        'Ctrl-Enter': function(cm) {
-          execute();
-        },
-        'Cmd-Enter': function(cm) {
-          execute();
-        }, 
-        'Ctrl-Shift-Enter' : function(cm) {
-          submit_job();
-        }        
-      });
-
       
-    setup();
+      setup();
 
     });
 
