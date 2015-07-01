@@ -10,7 +10,7 @@ exports.MX = function(args) {
 	log.debug( " MX args: " + JSON.stringify(args));
 	if(isNaN(x)) { throw( "Invalid MX argument: " + x ); }
 	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
-	this.cmd_posx = x;
+//	this.cmd_posx = x;
 	this.emit_move('G1',{"X":x,'F':feedrate});
 
 };
@@ -22,7 +22,7 @@ exports.MY = function(args) {
 	log.debug( " MY args: " + JSON.stringify(args));
 	if(isNaN(y)) { throw( "Invalid MY argument: " + y ); }
 	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
-	this.cmd_posy = y;
+//	this.cmd_posy = y;
 	this.emit_move('G1',{"Y":y,'F':feedrate});
 
 };
@@ -34,7 +34,7 @@ exports.MZ = function(args) {
 	log.debug( " MZ args: " + JSON.stringify(args));
 	if(isNaN(z)) { throw( "Invalid MZ argument: " + z ); }
 	feedrate = (60.0 * config.opensbp.get('movez_speed'));
-	this.cmd_posz = z;
+//	this.cmd_posz = z;
 	this.emit_move('G1',{"Z":z,'F':feedrate});
 
 };
@@ -46,7 +46,7 @@ exports.MA = function(args) {
 	log.debug( " MA args: " + JSON.stringify(args));
 	if(isNaN(a)) { throw( "Invalid MA argument: " + a ); }
 	feedrate = (60.0 * config.opensbp.get('movea_speed'));
-	this.cmd_posa = a;
+//	this.cmd_posa = a;
 	this.emit_move('G1',{"A":a,'F':feedrate});
 
 };
@@ -58,7 +58,7 @@ exports.MB = function(args) {
 	log.debug( " MB args: " + JSON.stringify(args));
 	if(isNaN(b)) { throw( "Invalid MB argument: " + b ); }
 	feedrate = (60.0 * config.opensbp.get('moveb_speed'));
-	this.cmd_posb = b;
+//	this.cmd_posb = b;
 	this.emit_move('G1',{"B":b,'F':feedrate});
 
 };
@@ -70,7 +70,7 @@ exports.MC = function(args) {
 	log.debug( " MC args: " + JSON.stringify(args));
 	if(isNaN(c)) { throw( "Invalid MC argument: " + c ); }
 	feedrate = (60.0 * config.opensbp.get('movec_speed'));
-	this.cmd_posc = c;
+//	this.cmd_posc = c;
 	this.emit_move('G1',{"C":c,'F':feedrate});
 
 };
@@ -115,29 +115,25 @@ process_move = function(args) {
 	var params = {};
 
 	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
-	if(args[0] === 0 || args[0] && typeof args[0] === "number"){ 
-	  log.debug("   x = " + args[0]); this.cmd_posx = params.X = args[0];
+	if(args[0] === 0 || args[0] && typeof args[0] === "number"){
+		params.X = args[0];
 	}
 	if(args[1] === 0 || args[1] && typeof args[1] === "number"){ 
-	  log.debug("   y = " + args[1]); this.cmd_posy = params.Y = args[1];
+		params.Y = args[1];
 	}  
 	if(args[1] === 0 || args[2] && typeof args[2] === "number"){ 
-	  log.debug("   z = " + args[2]); this.cmd_posz = params.Z = args[2];
+		params.Z = args[2];
 	}  
 	if(args[1] === 0 || args[3] && typeof args[3] === "number"){ 
-	  log.debug("   a = " + args[3]); this.cmd_posa = params.A = args[3];
+		params.A = args[3];
 	}
 	if(args[1] === 0 || args[4] && typeof args[4] === "number"){ 
-	  log.debug("   b = " + args[4]); this.cmd_posb = params.B = args[4];
+		params.B = args[4];
 	}  
 	if(args[1] === 0 || args[5] && typeof args[5] === "number"){ 
-	  log.debug("   c = " + args[5]); this.cmd_posc = params.C = args[5];
+		params.C = args[5];
 	}  
 	params.F = (60.0 * config.opensbp.get('movexy_speed'));
-
-    log.debug("   this.cmd_posx = " + this.cmd_posx );
-    log.debug("   this.cmd_posy = " + this.cmd_posy );
-    log.debug("   this.cmd_posz = " + this.cmd_posz );
 
 	return params;
 };
@@ -154,10 +150,6 @@ exports.MH = function(args) {
 	this.cmd_posy = 0;
 	this.emit_move('G1',{"X":x,"Y":y,'F':feedrate});
 
-/*	this.emit_gcode("G1X0Y0F" + ( 60 * config.opensbp.get('movexy_speed')));
-	this.cmd_posx = 0;
-	this.cmd_posy = 0;
-*/
 };
 
 // Set the Move (cut) speed for any of the 6 axes

@@ -54,10 +54,6 @@ exports.CC = function(args) {
   var startY = this.cmd_posy;
   var startZ = this.cmd_posz;
 
-//  log.debug("startX = " + startX);
-//  log.debug(" startY = " + startY);
-//  log.debug("  startZ = " + startZ);
-
   var Dia = args[0] !== undefined ? args[0] : undefined;
   var inStr = args[1] !== undefined ? args[1].toUpperCase() : 'T';
   var OIT = (inStr === 'O' || inStr === 'I' || inStr === 'T') ? inStr : 'T';
@@ -81,6 +77,7 @@ exports.CC = function(args) {
   }
   if ( Dia === undefined ){
     // Error: Zero diameter circle
+    throw( "Zero Diameter Circle: CC" ); 
   }
 
   var WBang = 450 - Bang;
@@ -147,7 +144,7 @@ exports.CP = function(args) {
   }
 
   if ( Dia === undefined ){
-    throw( "Zero diameter circle: " + Dia );
+    throw( "Zero diameter circle: CP" );
   }
   var WBang = 450 - Bang;
   if ( WBang > 360 || WBang === 360 ) { 
@@ -276,101 +273,66 @@ exports.CG = function(args) {
   }
 
   if ( plgFromZero == 1 ) {										// If plunge depth is specified move to that depth * number of reps
-//   	this.emit_gcode( 'G1Z' + currentZ + 'F' + ( 60 * config.opensbp.get('movez_speed')) );
-log.debug("Made it to CG-line 280");
-    this.emit_move('G1',{
-                         'Z':currentZ,
-                         'F':(60 * config.opensbp.get('movez_speed'))
-                        }
-                  );
+    this.emit_move('G1',{ 'Z':currentZ,
+                          'F':(60 * config.opensbp.get('movez_speed')) });
   }
 
   for (i=0; i<reps;i++){
   	if (Plg !== 0 && optCG < 3 ) {										// If plunge depth is specified move to that depth * number of reps
   		currentZ += Plg;
-//  		this.emit_gcode( 'G1Z' + currentZ + 'F' + ( 60 *  config.opensbp.get('movez_speed')) );
 log.debug("Made it to CG-line 292");
-      this.emit_move('G1',{
-                           'Z':currentZ,
-                           'F':(60 * config.opensbp.get('movez_speed'))
-                          }
-                    );
+      this.emit_move('G1',{ 'Z':currentZ,
+                            'F':(60 * config.opensbp.get('movez_speed')) });
    	}
   
    	if (optCG == 2) { 															// Pocket circle from the outside inward to center
    		// Loop passes until overlapping the center
    		for (j=0; (Math.abs(Pocket_StepX * j) <= circRadius) && (Math.abs(Pocket_StepY * j) <= circRadius) ; j++){
   	   	if ( j > 0 ) {
-//  	   		this.emit_gcode( 'G1X' + ((j * Pocket_StepX) + startX).toFixed(res) + 
-//   		   			               'Y' + ((j * Pocket_StepY) + startY).toFixed(res) + 
-//   		   			               'F' + ( 60 * config.opensbp.get('movexy_speed')));
 log.debug("Made it to CG-line 307");
-    	   	this.emit_move('G1',{
-                               'X':((j*Pocket_StepX) + startX),
-                               'Y':((j*Pocket_StepY) + startY),
-                               'F':(60 * config.opensbp.get('movexy_speed'))
-                              }
-                        );
+    	   	this.emit_move('G1',{ 'X':((j*Pocket_StepX) + startX),
+                                'Y':((j*Pocket_StepY) + startY),
+                                'F':(60 * config.opensbp.get('movexy_speed')) });
         }
         if ( Math.abs(propX) !== Math.abs(propY) ) {      // calculate an interpolated ellipse
           this.interpolate_circle(startX,startY,startZ,
                                   endX,endY,Plg,
                                   centerX,centerY,
                                   propX,propY,
-                                  optCG
-                                 );
+                                  optCG );
         } 
   	   	else {
           if ( Dir == 1 ) { outStr = 'G2'; }	  // Clockwise circle/arc
    			  else { outStr = 'G3'; }	              // CounterClockwise circle/arc
-//   			  outStr = outStr + "X" + (startX + (j * Pocket_StepX)).toFixed(res) + 
-//    		   		 		          "Y" + (startY + (j * Pocket_StepY)).toFixed(res) +
-//                            "I" + (centerX - (j*Pocket_StepX)).toFixed(res) +
-//                            "J" + (centerY - (j*Pocket_StepY)).toFixed(res) +
-//                            "F" + ( 60 * config.opensbp.get('movexy_speed'));
-//    		  this.emit_gcode( outStr );
 log.debug("Made it to CG-line 337");
-          this.emit_move(outStr,{
-                                 'X':(startX + (j*Pocket_StepX)),
-                                 'Y':(startY + (j*Pocket_StepY)),
-                                 'I':(centerX - (j*Pocket_StepX)),
-                                 'J':(centerY - (j*Pocket_StepY)),
-                                 'F':(60 * config.opensbp.get('movexy_speed'))
-                                }
-                        );
+          this.emit_move(outStr,{ 'X':(startX + (j*Pocket_StepX)),
+                                  'Y':(startY + (j*Pocket_StepY)),
+                                  'I':(centerX - (j*Pocket_StepX)),
+                                  'J':(centerY - (j*Pocket_StepY)),
+                                  'F':(60 * config.opensbp.get('movexy_speed')) });
         }										
     	}
-//    	this.emit_gcode("G0Z" + safeZCG);                    // Pull up Z
 log.debug("Made it to CG-line 349");
     	this.emit_move('G0',{'Z':safeZCG});
-//      this.emit_gcode("G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res));							// Jog to the start point
 log.debug("Made it to CG-line 352");
-      this.emit_move('G0',{
-                           'X':startX,
-                           'Y':startY
-                          }
-                    );
+      this.emit_move('G0',{ 'X':startX,
+                            'Y':startY });
     } 
     else {
       if ( Math.abs(propX) !== Math.abs(propY) ) {      // calculate out to an interpolated ellipse
 //        this.interpolate_circle(startX,startY,currentZ,endX,endY,Plg,centerX,centerY,propX,propY);
       }
     	else {
-        var emitObj = {
-                       'X':undefined,
-                       'Y':undefined,
-                       'Z':undefined,
-                       'I':undefined,
-                       'J':undefined,
-                       'F':undefined
-                      };
-
+        var emitObj = { 'X':undefined,
+                        'Y':undefined,
+                        'Z':undefined,
+                        'I':undefined,
+                        'J':undefined,
+                        'F':undefined };
         if (Dir == 1 ) { 
-//          outStr = "G2X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res);
           outStr = 'G2';
         }	// Clockwise circle/arc
         else { 
-//            outStr = "G3X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res); 
           outStr = 'G3';
         }			// CounterClockwise circle/arc
 			
@@ -387,16 +349,11 @@ log.debug("Made it to CG-line 391");
         this.emit_move(outStr,emitObj); 
 	    	
         if( i+1 < reps && ( endX != startX || endY != startY ) ){					//If an arc, pullup and jog back to the start position
-//   		  this.emit_gcode( "G0Z" + safeZCG );
 log.debug("Made it to CG-line 396");
           this.emit_move('G0',{'Z':safeZCG});
-//     	  this.emit_gcode( "G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res) ); 
 log.debug("Made it to CG-line 399");
-          this.emit_move('G0',{
-                               'X':startX,
-                               'Y':startY
-                              }
-                        );
+          this.emit_move('G0',{ 'X':startX,
+                                'Y':startY });
         }
 		  }
     }
@@ -404,23 +361,14 @@ log.debug("Made it to CG-line 399");
 
   if (optCG == 4 ) { // Add bottom circle if spiral with bottom clr is specified
     if( endX != startX || endY != startY ) {	//If an arc, pullup and jog back to the start position
-//    	this.emit_gcode( "G0Z" + safeZCG );
 log.debug("Made it to CG-line 413");
       this.emit_move('G0',{'Z':safeZCG});
-//    	this.emit_gcode( "G0X" + (startX).toFixed(res) + "Y" + (startY).toFixed(res));
 log.debug("Made it to CG-line 416");
-      this.emit_move('G0',{
-                           'X':startX,
-                           'Y':startY
-                          }
-                    );
-//    	this.emit_gcode( "G1Z" + currentZ + " F" + ( 60 * config.opensbp.get('movez_speed')));		
+      this.emit_move('G0',{ 'X':startX,
+                            'Y':startY });
 log.debug("Made it to CG-line 423");
-      this.emit_move('G1',{
-                           'Z':currentZ,
-                           'F':(60 * config.opensbp.get('movez_speed'))
-                          }
-                    );
+      this.emit_move('G1',{ 'Z':currentZ,
+                            'F':(60 * config.opensbp.get('movez_speed')) });
     }
     if ( Math.abs(propX) !== Math.abs(propY) ) {      // calculate out to an interpolated ellipse
 
@@ -428,35 +376,25 @@ log.debug("Made it to CG-line 423");
     else {
       if (Dir === 1 ){ outStr = "G2"; } 		// Clockwise circle/arc
       else { outStr = "G3"; }					// CounterClockwise circle/arc
-//		  outStr += "X" + (endX).toFixed(res) + "Y" + (endY).toFixed(res) + "I" + (centerX).toFixed(res) + "J" + (centerY).toFixed(res) + "F" + ( 60 * config.opensbp.get('movexy_speed'));	// Add Center offset
-//		  this.emit_gcode(outStr);
 log.debug("Made it to CG-line 438");
-        this.emit_move(outStr,{
-                               'X':(startX + (j*Pocket_StepX)),
-                               'Y':(startY + (j*Pocket_StepY)),
-                               'I':(centerX - (j*Pocket_StepX)),
-                               'J':(centerY - (j*Pocket_StepY)),
-                               'F':(60 * config.opensbp.get('movexy_speed'))
-                              }
-                      );
-    } 
+        this.emit_move(outStr,{ 'X':(startX + (j*Pocket_StepX)),
+                                'Y':(startY + (j*Pocket_StepY)),
+                                'I':(centerX - (j*Pocket_StepX)),
+                                'J':(centerY - (j*Pocket_StepY)),
+                                'F':(60 * config.opensbp.get('movexy_speed')) });
+    }
   }
 
   if(noPullUp === 0 && currentZ != startZ){    	//If No pull-up is set to YES, pull up to the starting Z location
-//   	this.emit_gcode( "G0Z" + startZ);
 log.debug("Made it to CG-line 452");
     this.emit_move('G0',{'Z':startZ});
    	this.cmd_posz = startZ;
   }
   else{				    						//If not, stay at the ending Z height
   	if ( optCG > 1 && optCG < 3) {
-//    	this.emit_gcode( "G1Z" + currentZ ); 
 log.debug("Made it to CG-line 459");
-      this.emit_move('G1',{
-                           'Z':currentZ,
-                           'F':(60 * config.opensbp.get('movez_speed'))
-                          }
-                    );
+      this.emit_move('G1',{ 'Z':currentZ,
+                            'F':(60 * config.opensbp.get('movez_speed')) });
     }
   	this.cmd_posz = currentZ;
   }
