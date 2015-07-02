@@ -8,69 +8,75 @@ var opensbp = require('./opensbp');
 //    
 //  Usage: lineInterpolate(<EndPt>)
 //
-exports.lineInterpolate = function(EndPt) {
+exports.lineInterpolate = function(runtime, EndPt) {
 log.debug("lineInterpolate: EndPt = " + JSON.stringify(EndPt));
-  var startX = this.cmd_posx;
-  var startY = this.cmd_posy; 
-  var startZ = this.cmd_posz;
-  var nextX = this.cmd_posx;
-  var nextY = this.cmd_posy;
-  var nextZ = this.cmd_posz;
-  var endX = EndPt.X;
-  var endY = EndPt.Y;
-  var endZ = EndPt.Z;
+  var startX = runtime.cmd_posx;
+  var startY = runtime.cmd_posy; 
+  var startZ = runtime.cmd_posz;
+  var nextX = startX;
+  var nextY = startY;
+  var nextZ = startZ;
+  var endX = startX;
+  if ("X" in EndPt && EndPt.X !== undefined) { endX = EndPt.X;}
+  var endY = startY;
+  if ("Y" in EndPt && EndPt.Y !== undefined) { endY = EndPt.Y;}
+  var endZ = startZ;
+  if ("Z" in EndPt && EndPt.Z !== undefined) {
+    endZ = EndPt.Z;
+    log.debug("Z = " + endZ);
+  }    
   var speed = EndPt.F;
-
   var segLen = config.opensbp.get('cRes');
+log.debug("segLen = " + segLen);
   //distance = sqrt[width^2 + length^2 + height^2]
+log.debug("startX = " + startX + " startY = " + startY + " startZ = " + startZ );  
+log.debug("endX = " + endX + " endY = " + endY + " endZ = " + endZ );  
   var lineLen = Math.sqrt(Math.pow((endX-startX),2)+Math.pow((endY-startY),2)+Math.pow((endZ-startZ),2));
+log.debug("lineLen = " + lineLen);
   if ( lineLen === 0 ) { throw( "lineInterpolate: line length zero" ); }
   var steps = Math.floor(lineLen/segLen);
-  
   var stepX = (endX-startX)/steps;
   var stepY = (endY-startY)/steps;
   var stepZ = (endZ-startZ)/steps;
-log.debug("stepX" + stepX);
-log.debug("stepY" + stepY);
-log.debug("stepZ" + stepZ);
-  var nextPt = {};
+  var gcode = "";
 
   for ( i=1; i<steps; i++){
       nextPt = {};
+      gcode = "G1";
       if ((stepX !== 0)){
         nextX = startX + (stepX * i);
-        nextPt.X = nextX;
-        this.cmd_posx = nextX;
+        gcode += "X" + nextX;
+        runtime.cmd_posx = nextX;
       }
       if (stepY !== 0){
         nextY = startY + (stepY * i);
-        nextPt.Y = nextY;
-        this.cmd_posy = nextY;
+        gcode += "Y" + nextY;
+        runtime.cmd_posy = nextY;
       }
       if (stepZ !== 0){
         nextZ = startZ + (stepZ * i);
-        nextPt.Z = nextZ;
-        this.cmd_posz = nextZ;
+        gcode += "Z" + nextZ;
+        runtime.cmd_posz = nextZ;
       }
-      nextPt.F = speed;
-    log.debug("lineInterpolate: nextPt = " + JSON.stringify(nextPt));
-      opensbp.emit_move('G1',nextPt);
+      gcode += "F" + speed;
+      runtime.emit_gcode(gcode);
   }
 
-//  if ((stepX !== 0)){
-//      this.cmd_posx = nextX = endX;
-//      gcode += "X" + nextX;
-//  }
-//  if (stepY !== 0){
-//      this.cmd_posy = nextY = startY + (stepY * i);
-//      gcode += "Y" + nextY;
-//  }
-//    if (stepZ !== 0){
-//      this.cmd_posz = params.Z = endZ;  
-//  }
-//    gcode += "F" + speed;
-//
-//    this.emit_move('G1',{"X":x,'F':feedrate});
+  if ((stepX !== 0)){
+    gcode += "X" + endX;
+    runtime.cmd_posx = nextX;
+  }
+  if (stepY !== 0){
+    gcode += "Y" + endY;
+    runtime.cmd_posy = nextY;
+  }
+  if (stepZ !== 0){
+    gcode += "Z" + endZ;  
+    runtime.cmd_posz = nextZ;
+  }
+  gcode += "F" + speed;
+
+  runtime.emit_gcode(gcode);
 
     return;
 };
@@ -79,17 +85,24 @@ log.debug("stepZ" + stepZ);
 //    
 //  Usage: circleInterpolate(pt);
 //
-/*
-circleInterpolate = function(code,EndPt) {
 
-  var startX = this.cmd_posx;
-  var startY = this.cmd_posy;
-  var startZ = this.cmd_posz;
-  var endX = EndPt.X;
-  var endY = EndPt.Y;
-  var plunge = EndPt.Z;
-  var centerX = EndPt.I;
-  var centerY = EndPt.J;
+exports.circleInterpolate = function(runtime, code, CGParams) {
+log.debug("circleInterpolate: CGParams = " + JSON.stringify(CGParams));
+  var startX = runtime.cmd_posx;
+  var startY = runtime.cmd_posy;
+  var startZ = runtime.cmd_posz;
+  var endX = startX;
+  if ("X" in CGParams && CGParams.X !== undefined) { endX = CGParams.X; }
+  var endY = startY;
+  if ("Y" in CGParams && CGParams.Y !== undefined) { endY = CGParams.Y; }
+  var plunge = startZ;
+  if ("Z" in CGParams && CGParams.Z !== undefined) { plunge = CGParams.Z; }
+  var centerX = CGParams.I;
+  var centerY = CGParams.J;
+  var speed = CGParams.F;
+  var nextX = 0.0;
+  var nextY = 0.0;
+  var nextZ = 0.0;
 
   var SpiralPlunge = 0;
   if ( plunge !== 0 ) { SpiralPlunge = 1; }
@@ -99,7 +112,7 @@ circleInterpolate = function(code,EndPt) {
   var Eang = Math.atan2(endY+(startY+centerY),endX+(startX+centerX));
   var inclAng;
 
-  if (Dir === 1) {
+  if (code === "G2") {
       if (Bang < Eang) { inclAng  = 6.28318530717959 - (Eang - Bang); }
       if (Bang > Eang) { inclAng = Eang - Bang; }
   }
@@ -108,8 +121,10 @@ circleInterpolate = function(code,EndPt) {
       if (Bang > Eang) { inclAng = 6.28318530717959 - (Bang - Eang); }
   }
 
+log.debug("Bang = " + Bang + "  Eang = " + Eang);
+
   if ( Math.abs(inclAng) < 0.005 ) { 
-      log.debug("Returning from interpolation - arc too small to cut!");
+//      log.debug("Returning from interpolation - arc too small to cut!");
       return;
   }
 
@@ -124,7 +139,8 @@ circleInterpolate = function(code,EndPt) {
       chordLen = Math.sqrt(2*sagitta*radius-Math.pow(sagitta,2));
       log.debug("chordLen = " + chordLen );
       if (chordLen < 0.001) { chordLen = 0.001; }
-  }
+  }    
+
   var theta = Math.asin((0.5*chordLen)/radius) * 2;
   var remain = Math.abs(inclAng) % Math.abs(theta);
   var steps = Math.floor(Math.abs(inclAng)/Math.abs(theta));
@@ -135,30 +151,37 @@ circleInterpolate = function(code,EndPt) {
 
   var zStep = plunge/steps;
   var nextAng = Bang;
-
-  var params = {};
-  params.F = EndPt.F;
+  var gcode = "";
 
   for ( i=1; i<steps; i++) {
-      nextAng = Bang + (i*theta);
-      this.cmd_posx = params.X = (radius * Math.cos(nextAng)) * propX;
-      this.cmd_posy = params.Y = (radius * Math.sin(nextAng)) * propY;
-      if ( SpiralPlunge === 1 ) { 
-        this.cmd_posz = params.Z = zStep * i; 
-      }
-      log.debug("G1X"+params.X+"Y"+params.Y+"F"+params.F);
-      this.emit_move('G1',params);
+//    log.debug("step = " + i + " of " + steps + " steps ");
+    gcode = "G1";
+    nextAng = Bang + (i*theta);
+log.debug("nextAng = " + nextAng);    
+    runtime.cmd_posx = nextX = (radius * Math.cos(nextAng)); //* propX;
+    runtime.cmd_posy = nextY = (radius * Math.sin(nextAng)); //* propY;
+    gcode += "X" + nextX.toFixed(5) + "Y" + nextY.toFixed(5);
+    if ( SpiralPlunge === 1 ) { 
+      runtime.cmd_posz = params.Z = zStep * i;
+      gcode += "Z" + nextZ.toFixed(5); 
+    }
+    gcode += "F" + speed;
+    log.debug("circleInterpolation: gcode = " + gcode);
+    runtime.emit_gcode(gcode);
   }
   
-  this.cmd_posx = params.X = endX;
-  this.cmd_posy = params.Y = endY;
-    if ( SpiralPlunge === 1 ) { 
-    this.cmd_posz = params.Z = plunge;
+  gcode = "G1";
+  runtime.cmd_posx = nextX = endX;
+  runtime.cmd_posy = nextY = endY;
+  gcode += "X" + nextX.toFixed(5) + "Y" + nextY.toFixed(5);
+  if ( SpiralPlunge === 1 ) { 
+    runtime.cmd_posz = nextZ = plunge;
+    gcode += "Z" + nextZ.toFixed(5); 
   }
-    log.debug("G1X"+params.X+"Y"+params.Y+"F"+params.F);
-  this.emit_move('G1',params);
+  log.debug("circleInterpolation: end gcode = " + gcode);
+  gcode += "F" + speed;
+  runtime.emit_gcode(gcode);
 
   return;
 
 };
-*/
