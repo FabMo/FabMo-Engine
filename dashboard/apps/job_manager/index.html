@@ -267,6 +267,9 @@
 	            '<td>'+moment.utc(job.finished_at-job.started_at).format('HH:mm:ss')+'</td>'+
 	        '</tr>'+
 	        '<tr>'+
+	        	'<td colspan="2">'+'<a id="download-'+job._id +'">Download File</a></td>' +
+	        '</tr>'+
+	        '<tr>'+
 	        	'<td colspan="2">'+'<a id="resubmit-'+job._id +'">Resubmit Job &gt;&gt;</a></td>' +
 	        '</tr>'+
 	    '</table>';
@@ -300,6 +303,12 @@
 					refresh_jobs_list();
 				});
 			});
+ 			$('#download-'+job._id).click(function(e) {
+				fabmoDashboard.downloadJobFile(job._id, function(err, result) {
+					refresh_jobs_list();
+				});
+			});
+
 	        tr.addClass('shown');
  		}
     } );
