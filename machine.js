@@ -134,10 +134,13 @@ Machine.prototype.sbp = function(string) {
 
 Machine.prototype.runJob = function(job) {
 	this.status.job = job;
-	db.File.getByID(job.file_id,function(file){
-		// TODO deal with no file found
-		log.info("Running file " + file.path);
-		this.runFile(file.path);
+	db.File.getByID(job.file_id,function(err, file){
+		if(err) {
+			// TODO deal with no file found
+		} else {
+			log.info("Running file " + file.path);
+			this.runFile(file.path);			
+		}
 	}.bind(this));	
 };
 
