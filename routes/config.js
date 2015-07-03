@@ -104,6 +104,24 @@ var post_config = function(req, res, next) {
       }
     });
   }
+
+  if('opensbp' in req.params) {
+    config.opensbp.update(util.fixJSON(req.params.opensbp), function(err, result) {
+      if(err) {
+        answer = {
+          status : "fail",
+          data : {'body':"the configuration file you submitted is not valid"}
+        };
+        res.json(answer);
+      } else {
+        answer = {
+            status : "success",
+            data : result
+         };
+        res.json(answer);
+      }
+    });
+  }
 /*
   else{
     // TODO: Apply the driver/opensbp configurations here

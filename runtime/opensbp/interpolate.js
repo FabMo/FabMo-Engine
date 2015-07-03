@@ -91,6 +91,7 @@ log.debug("circleInterpolate: CGParams = " + JSON.stringify(CGParams));
   var startX = runtime.cmd_posx;
   var startY = runtime.cmd_posy;
   var startZ = runtime.cmd_posz;
+  log.debug("startX = " + startX + " startY = " + startY);
   var endX = startX;
   if ("X" in CGParams && CGParams.X !== undefined) { endX = CGParams.X; }
   var endY = startY;
@@ -99,6 +100,8 @@ log.debug("circleInterpolate: CGParams = " + JSON.stringify(CGParams));
   if ("Z" in CGParams && CGParams.Z !== undefined) { plunge = CGParams.Z; }
   var centerX = CGParams.I;
   var centerY = CGParams.J;
+  var centerPtX = startX+centerX;
+  var centerPtY = startY+centerY;
   var speed = CGParams.F;
   var nextX = 0.0;
   var nextY = 0.0;
@@ -108,12 +111,15 @@ log.debug("circleInterpolate: CGParams = " + JSON.stringify(CGParams));
   if ( plunge !== 0 ) { SpiralPlunge = 1; }
 
   // Find the beginning and ending angles in radians. We'll use only radians from here on.
-  var Bang = Math.atan2((centerY*(-1)), (centerX*(-1)));
-  var Eang = Math.atan2(endY+(startY+centerY),endX+(startX+centerX));
+  var Bang = Math.abs(Math.atan2(centerY, centerX));
+  var Eang = Math.abs(Math.atan2((endY-centerPtY),(endX-centerPtX)));
+
+//log.debug("1Bang = " + Bang + "  Eang = " + Eang);
+
   var inclAng;
 
   if (code === "G2") {
-      if (Bang < Eang) { inclAng  = 6.28318530717959 - (Eang - Bang); }
+      if (Eang > Bang) { inclAng  = 6.28318530717959 - (Bang - Eang); }
       if (Bang > Eang) { inclAng = Eang - Bang; }
   }
   else {
@@ -121,7 +127,8 @@ log.debug("circleInterpolate: CGParams = " + JSON.stringify(CGParams));
       if (Bang > Eang) { inclAng = 6.28318530717959 - (Bang - Eang); }
   }
 
-log.debug("Bang = " + Bang + "  Eang = " + Eang);
+//log.debug("inclAng = " + inclAng);
+//log.debug("2Bang = " + Bang + "  Eang = " + Eang);
 
   if ( Math.abs(inclAng) < 0.005 ) { 
 //      log.debug("Returning from interpolation - arc too small to cut!");
@@ -154,19 +161,19 @@ log.debug("Bang = " + Bang + "  Eang = " + Eang);
   var gcode = "";
 
   for ( i=1; i<steps; i++) {
-//    log.debug("step = " + i + " of " + steps + " steps ");
     gcode = "G1";
     nextAng = Bang + (i*theta);
-log.debug("nextAng = " + nextAng);    
-    runtime.cmd_posx = nextX = (radius * Math.cos(nextAng)); //* propX;
-    runtime.cmd_posy = nextY = (radius * Math.sin(nextAng)); //* propY;
+//    log.debug("nextAng = " + nextAng);    
+//    log.debug("radius = " + radius);
+    runtime.cmd_posx = nextX = centerPtX + (radius * Math.cos(nextAng)); //* propX;
+    runtime.cmd_posy = nextY = centerPtY + (radius * Math.sin(nextAng)); //* propY;
     gcode += "X" + nextX.toFixed(5) + "Y" + nextY.toFixed(5);
     if ( SpiralPlunge === 1 ) { 
       runtime.cmd_posz = params.Z = zStep * i;
       gcode += "Z" + nextZ.toFixed(5); 
     }
     gcode += "F" + speed;
-    log.debug("circleInterpolation: gcode = " + gcode);
+//    log.debug("circleInterpolation: gcode = " + gcode);
     runtime.emit_gcode(gcode);
   }
   
