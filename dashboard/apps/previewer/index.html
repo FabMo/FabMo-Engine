@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <title>G-Code Editor</title>
+  <meta charset="utf-8"/>
+  
+  <link rel="stylesheet" href="css/foundation.min.css">
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <script src="bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="js/foundation.min.js"></script>
+</head>
+<body>
+
+  <nav class="top-bar" data-topbar role="navigation" id="topbar">
+  <ul class="title-area">
+    <li class="name">
+      <h1><a id="app-header">Preview</a></h1>
+    </li>
+     <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
+    <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
+  </ul>
+ 
+  <section class="top-bar-section">
+  </section>
+</nav>
+
+<canvas id="preview" width="100" height="100"></canvas>
+
+<script src="js/three.min.js"></script>   
+<script src="js/OrbitControls.js"></script>
+<script src="js/ThreeCSG.js"></script>
+<script src="js/gcodeviewer.js"></script>
+<script src="/js/libs/dashboard.js"></script>
+  <script>
+    $(document).ready(function() {
+      
+      $(document).foundation();
+      GCodeViewer.initialize({}, document.getElementById("preview"));
+      GCodeViewer.initialize({});
+      fabmoDashboard.getAppArgs(function(err, args) {
+        if('job' in args) {
+          var url = '/job/' + args.job + '/file';
+          $.get(url,function(data, status) {
+              GCodeViewer.setGCode(data);
+              GCodeViewer.viewPaths();
+          });
+        }
+      });
+
+      function resize() {
+        var w = window.innerWidth;
+        var h = window.innerHeight - $("#topbar").height() - 10; // Fudge factor for foundation weirdness
+        $('#preview').size(w,h);
+        GCodeViewer.camera.aspect = w/h;
+        GCodeViewer.camera.updateProjectionMatrix();
+        GCodeViewer.renderer.setSize(w,h);
+      }
+
+      $(window).resize(function(){
+        resize();
+      });
+
+      resize();
+    });
+  </script>
+
+</body>
+</html>
