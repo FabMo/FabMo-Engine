@@ -125,6 +125,29 @@ Job.getAll = function(callback) {
 	});
 };
 
+Job.getFileForJobId = function(id, callback) {
+	Job.getById(id, function(err, document) {
+		if(err) {
+			callback(err);
+		} else {
+			if(document && document.file_id) {
+				File.getByID(document.file_id, function(err, file) {
+					if(err) {
+						callback(err);
+					} else {
+						if(file) {
+							callback(null, file);
+						} else {
+							callback(new Error("Could not find file in database."));
+						}
+					}
+				});
+			} else {
+				callback(new Error("Could not find job in database."))
+			}
+		}
+	});
+}
 // Return a file object for the provided id
 Job.getById = function(id,callback)
 {
@@ -273,12 +296,12 @@ File.getByID = function(id,callback)
 {
 	files.findOne({_id: id},function(err,document){
 		if (!document) {
-			callback(undefined);
+			callback(true, undefined);
 			return;
 		}
 		var file = document;
 		file.__proto__ = File.prototype;
-		callback(file);
+		callback(null, file);
 	});
 };
 

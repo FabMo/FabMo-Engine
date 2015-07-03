@@ -350,6 +350,24 @@ var cancelJob = function(req, res, next) {
     });
 };
 
+var getJobFile = function(req, res, next) {
+    db.Job.getFileForJobId(req.params.id, function(err, file) {
+        if(err) {
+            log.error(err);
+            var answer = {
+                    status:"failed",
+                    data:{file:err}
+            };
+            res.json(answer);                        
+        } else {
+            console
+            res.setHeader('content-type', 'text/plain');
+            res.setHeader('content-disposition', 'filename="' + file.filename + '"');
+            var readStream = fs.createReadStream(file.path);
+            readStream.pipe(res);
+        }
+    });
+};
 
 module.exports = function(server) {
     server.post('/job', submitJob);
@@ -357,6 +375,7 @@ module.exports = function(server) {
     
     server.get('/job/:id', getJobById);
     server.post('/job/:id', resubmitJob);
+    server.get('/job/:id/file', getJobFile);
     server.get('/jobs/queue', getQueue);
     server.del('/jobs/queue', clearQueue);
     server.post('/jobs/queue/run', runNextJob);
