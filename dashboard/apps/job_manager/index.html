@@ -76,6 +76,7 @@
                 <th>Name</th>
                 <th>Status</th>
                 <th>Submitted</th>
+                <th>&nbsp;</th>
             </tr>
         	</thead>
         	</table>
@@ -100,6 +101,7 @@
                 <th>Name</th>
                 <th>Status</th>
                 <th>Last Run</th>
+                <th>&nbsp;</th>
             </tr>
         	</thead>
         	</table>
@@ -204,7 +206,13 @@
     				} 
     				return data;
     			}
-            }
+            },
+            {
+                "className":      'preview-control',
+                "orderable":      false,
+                "data":           null,
+                "defaultContent": ''
+            },
         ],
         "order" : [[3,"desc"]]
     }); // DataTable
@@ -244,7 +252,13 @@
             	data : "created_at",
             	visible : false, 
             	defaultContent : '', 
-            }
+            },    
+            {
+                "className":      'preview-control',
+                "orderable":      false,
+                "data":           null,
+                "defaultContent": ''
+            },
         ],
         "order" : [[3,"desc"]]
     }); // DataTable
@@ -273,9 +287,6 @@
 	        	'<td colspan="2">'+'<a id="edit-'+job._id +'">Edit Job &gt;&gt;</a></td>' +
 	        '</tr>'+
 	        '<tr>'+
-	        	'<td colspan="2">'+'<a id="preview-'+job._id +'">Preview Job &gt;&gt;</a></td>' +
-	        '</tr>'+
-	        '<tr>'+
 	        	'<td colspan="2">'+'<a id="resubmit-'+job._id +'">Resubmit Job &gt;&gt;</a></td>' +
 	        '</tr>'+
 	    '</table>';
@@ -285,6 +296,22 @@
     function queue_child_row(job) {
     	return ''
     }
+
+	// Add event listener for opening and closing details 
+    $('#queue_table tbody').on('click', 'td.preview-control', function () {
+        var tr = $(this).closest('tr');
+        var row = queue_table.row( tr );
+        job = row.data();
+ 		fabmoDashboard.launchApp('previewer', {'job' : job._id});
+    } );
+
+    	// Add event listener for opening and closing details 
+    $('#history_table tbody').on('click', 'td.preview-control', function () {
+        var tr = $(this).closest('tr');
+        var row = history_table.row( tr );
+        job = row.data();
+ 		fabmoDashboard.launchApp('previewer', {'job' : job._id});
+    } );
 
 	// Add event listener for opening and closing details
     $('#history_table tbody').on('click', 'td.details-control', function () {

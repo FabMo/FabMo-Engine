@@ -6,13 +6,21 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   color: #666;
-}
-
+} 
+ 
 td.details-control {
     background: url('images/details_open.png') no-repeat center center;
     width: 40px;
     cursor: pointer;
 }
+
+td.preview-control {
+    background: url('images/preview.png') no-repeat center center;
+    width: 80px;
+    cursor: pointer;
+    content: attr('Preview Job');
+}
+
 tr.shown td.details-control {
     background: url('images/details_close.png') no-repeat center center;
     width: 40px;
