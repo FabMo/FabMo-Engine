@@ -99,7 +99,7 @@
 				'<tr><td>',
 				'<img src="' + location.origin + '/' + val.icon_url + '" class="app-icon" style="background-color: ' + val.icon_background_color + '" />',
 				'</td><td>',
-				'<a id="' + appid + '">',
+				'<a id="' +  appid + '" class="app-link">',
 					val.name,
 				'</a>',
 				'</td><td>',
@@ -112,13 +112,16 @@
 					//$('#myModal').foundation('reveal', 'open');
 					fabmoDashboard.deleteApp(id, function(err, result) {
 						if(err) {
-							console.log(err);
+							console.error(err);
 						} else {
 							refreshApps();
 						}
 					});
 				});
-				
+				$('#' + appid).click(function() {
+					console.log(id);
+					fabmoDashboard.launchApp(id);
+				});
 			});
 		});
 	};
@@ -129,6 +132,7 @@
 			refreshApps();
 		});
 	});
+
 
 
 	$(document).ready(function(){

@@ -16,41 +16,15 @@
   <script src="js/foundation.min.js"></script>
   <script src="bower_components/codemirror/lib/codemirror.js"></script>
   <script src="js/codemirror_gcode_mode.js"></script>
-
-  <!--<script src="../addon/display/fullscreen.js"></script>-->
-  <!--<link rel="stylesheet" href="../addon/display/fullscreen.css">-->
 </head>
 <body>
-<!--
-  <div class="row" id="buttonrow" style="margin-top: 10px;">
-    <div class="small-6 columns" style="text-align:left;">
-      <a href="#" id="lang-select" class="button radius" data-dropdown="drop-lang">Language...</a>
-      <ul id="drop-lang" class="tiny f-dropdown" data-dropdown-content>
-        <li><a href="#" id="lang-gcode">G-Code</a></li>
-        <li><a href="#" id="lang-opensbp">OpenSBP</a></li>
-      </ul>
-    </div>
-    
-
-
-
-    <div class="small-6 columns" style="text-align:right;">
-      <a class="button radius success" data-dropdown="drop-submit" id="submit-button">Run Code</a>
-      <ul id="drop-submit" class="tiny f-dropdown" data-dropdown-content>
-        <li style="text-align:left;"><a href="#" id="submit-immediate">Run immediately</a></li>
-        <li style="text-align:left;"><a href="#" id="submit-job">Submit as Job...</a></li>
-      </ul>
-    </div>
-  </div>
-  -->
   
   <nav class="top-bar" data-topbar role="navigation">
   <ul class="title-area">
     <li class="name">
-      <h1><a id="app-header" href="#">Editor</a></h1>
+      <h1><a id="app-header" href="">Editor</a></h1>
     </li>
-     <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
-    <li class="toggle-topbar menu-icon"><a href="#"><span>Menu</span></a></li>
+    <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
   </ul>
 
   <section class="top-bar-section">
@@ -87,6 +61,7 @@
   <script>
     var editor;
     var lang="gcode";
+    var source=null;
 
     function execute() {
       $("#submit-button").addClass('disabled');
@@ -115,11 +90,13 @@
       switch(lang) {
         case "gcode":
           fabmoDashboard.submitJob(text, {filename: 'editor.nc', description: 'G-Code file from the editor'}, function(err, result) {
-            fabmoDashboard.launchApp('job-manager', {'hello':'world'});
+            fabmoDashboard.launchApp('job-manager');
           });
         break;
         case "opensbp":
-          fabmoDashboard.submitJob(text, {filename: 'editor.sbp', description: 'OpenSBP file from the editor.'});
+          fabmoDashboard.submitJob(text, {filename: 'editor.sbp', description: 'OpenSBP file from the editor.'}, function(err, result) {
+            fabmoDashboard.launchApp('job-manager');
+          });
         break;
       } 
     }
@@ -145,7 +122,7 @@
       }
     }
 
-    function setup() {
+    function loadFromBrowser() {
       if(supports_html5_storage()) {
         var language = localStorage['language'] || 'gcode';
         set_language(language);
@@ -163,9 +140,25 @@
         editor.moveCursorToPosition(pos);
       }
     }
+
+    function setup() {
+      fabmoDashboard.getAppArgs(function(err, args) {
+        if('job' in args) {
+          var url = '/job/' + args.job + '/file';
+          $.get(url,function(data, status) {
+              editor.setValue(data, -1);
+              editor.clearSelection();
+              source = "job";
+          });
+        } else {
+          loadFromBrowser();
+        }
+      });
+    }
  
     function save() {
-      if(supports_html5_storage()) {
+      if(supports_html5_storage() && (source === null)) {
+        console.log("saving");
         localStorage['content'] = editor.getSession().getValue();
         pos = editor.getCursorPosition();
         localStorage['position'] = JSON.stringify(pos);

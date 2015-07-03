@@ -153,9 +153,8 @@ var submitApp = function(req, res, next) {
                     log.warn("failed to remove the app from temporary folder: " + err);
                 }
             }); // unlink
-            log.debug("Finta load this app");
-            dashboard.loadApp(full_path, function(err, data) {
-                log.debug("App loaded");
+            
+            dashboard.loadApp(full_path, {}, function(err, data) {
                 var answer;
                 if(err) {
                     answer = {

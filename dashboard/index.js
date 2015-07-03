@@ -29,8 +29,8 @@ exports.getAppFiles = function(id) {
 	return util.walkDir(app_root);
 };
 
-exports.loadApp = function(pathname, callback) {
-	return exports.appManager.loadApp(pathname, callback);
+exports.loadApp = function(pathname, options, callback) {
+	return exports.appManager.loadApp(pathname, options, callback);
 };
 
 exports.deleteApp = function(id, callback) {
