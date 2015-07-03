@@ -412,7 +412,7 @@ SBPRuntime.prototype._dispatch = function(callback) {
 		if(this.machine) {
 
 			// Dispatch the g-codes and look for the tool to start running them
-			log.info("dispatching a chunk: " + this.current_chunk);
+			//log.info("dispatching a chunk: " + this.current_chunk);
 
 			var run_function = function(driver) {
 				log.debug("Expected a running state change and got one.");
@@ -977,16 +977,20 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 	if( code === "G0" || code === "G1" ){
 		pt = this.transformation(pt);
 	}
+	else if( code === "G2" || code === "G3" ){
+
+	}
 
 
 	if( this.transforms.interpolate.apply === true && code !== "G0"){
 		if( code === "G1"){
-		    log.debug( "emit_move: interpolate = " + code + "  pt = " + JSON.stringify(pt));
-			interp.lineInterpolate(pt);
+		    log.debug( "emit_move: lineInterpolate = " + code + "  pt = " + JSON.stringify(pt));
+			interp.lineInterpolate(this, pt);
 		}
-//		else if(code === "G2" || code === "G3"){
-//			interpolate.circleInterpolate(code,pt);
-//		}
+		else if(code === "G2" || code === "G3"){
+		    log.debug( "emit_move: circleInterpolate = " + code + "  pt = " + JSON.stringify(pt));
+			interp.circleInterpolate(this, code, pt);
+		}
 	}
 	else{
 		if( this.transforms.level.apply === true  && code !== "G0"){
@@ -1014,156 +1018,6 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 
 };
 
-//  Interpolate_Line - is used to interpolate a line into smaller segments.
-//    
-//  Usage: lineInterpolate(<EndPt>)
-//
-/* lineInterpolate = function(EndPt) {
-	
-	var nextX = startX = this.cmd_posx;
-	var nextY = startY = this.cmd_posy;
-	var nextZ = startZ = this.cmd_posz;
-	var endX = EndPt.X;
-	var endY = EndPt.Y;
-	var endZ = EndPt.Z;
-	var speed = EndPt.F;
-
-	var segLen = config.opensbp.get('cRes');
-	//distance = sqrt[width^2 + length^2 + height^2]
-	var lineLen = Math.sqrt(Math.pow((endX-startX),2)+Math.pow((endY-startY),2)+Math.pow((endZ-startZ),2));
-	var steps = Math.floor(lineLen/segLen);
-  
-	var stepX = (endX-startX)/steps;
-	var stepY = (endY-startY)/steps;
-	var stepZ = (endZ-startZ)/steps;
-
-	var gcode = "";
-
-	for ( i=1; i<steps; i++){
-    	gcode = "G1";
-    	if ((stepX !== 0)){
-    		this.cmd_posx = nextX = startX + (stepX * i);
-    		gcode += "X" + nextX;
-    	}
-    	if (stepY !== 0){
-    		this.cmd_posy = nextY = startY + (stepY * i);
-    		gcode += "Y" + nextY;
-    	}
-    	if (stepZ !== 0){
-    		this.cmd_posz = nextZ = startZ + (stepZ * i);
-    		gcode += "Z" + nextZ;
-    	}
-    	gcode += "F" + speed;
-
-    	emit_gcode(gcode);
-  	}
-
-	if ((stepX !== 0)){
-    	this.cmd_posx = nextX = endX;
-    	gcode += "X" + nextX;
-	}
-	if (stepY !== 0){
-    	this.cmd_posy = nextY = startY + (stepY * i);
-    	gcode += "Y" + nextY;
-	}
-  	if (stepZ !== 0){
-    	this.cmd_posz = params.Z = endZ;  
-	}
-   	gcode += "F" + speed;
-
-    emit_gcode(gcode);
-
-    return;
-};
-*/
-
-//  Interpolate_Circle - is used to interpolate a circle that has uneven proportions as an ellipse.
-//    
-//  Usage: circleInterpolate(pt);
-//
-/*
-circleInterpolate = function(code,EndPt) {
-
-	var startX = this.cmd_posx;
-	var startY = this.cmd_posy;
-	var startZ = this.cmd_posz;
-	var endX = EndPt.X;
-	var endY = EndPt.Y;
-	var plunge = EndPt.Z;
-	var centerX = EndPt.I;
-	var centerY = EndPt.J;
-
-	var SpiralPlunge = 0;
-	if ( plunge !== 0 ) { SpiralPlunge = 1; }
-
-	// Find the beginning and ending angles in radians. We'll use only radians from here on.
-	var Bang = Math.atan2((centerY*(-1)), (centerX*(-1)));
-	var Eang = Math.atan2(endY+(startY+centerY),endX+(startX+centerX));
-	var inclAng;
-
-	if (Dir === 1) {
-    	if (Bang < Eang) { inclAng  = 6.28318530717959 - (Eang - Bang); }
-    	if (Bang > Eang) { inclAng = Eang - Bang; }
-	}
-	else {
-    	if (Bang < Eang) { inclAng = Eang + Bang; }
-    	if (Bang > Eang) { inclAng = 6.28318530717959 - (Bang - Eang); }
-	}
-
-	if ( Math.abs(inclAng) < 0.005 ) { 
-    	log.debug("Returning from interpolation - arc too small to cut!");
-    	return;
-	}
-
-	var circleTol = 0.001;
-	var radius = Math.sqrt(Math.pow(centerX,2)+Math.pow(centerY,2));
-	var chordLen = config.opensbp.get('cRes');
-	// Sagitta is the height of an arc from the chord
-	var sagitta = radius - Math.sqrt(Math.pow(radius,2) - Math.pow((chordLen/2),2));
-
-	if (sagitta !== circleTol) {
-    	sagitta *= (sagitta/circleTol);
-    	chordLen = Math.sqrt(2*sagitta*radius-Math.pow(sagitta,2));
-    	log.debug("chordLen = " + chordLen );
-    	if (chordLen < 0.001) { chordLen = 0.001; }
-	}
-	var theta = Math.asin((0.5*chordLen)/radius) * 2;
-	var remain = Math.abs(inclAng) % Math.abs(theta);
-	var steps = Math.floor(Math.abs(inclAng)/Math.abs(theta));
-
-	if ((remain) !== 0){
-    	theta = inclAng/steps;
-	}
-
-	var zStep = plunge/steps;
-	var nextAng = Bang;
-
-	var params = {};
-	params.F = EndPt.F;
-
-	for ( i=1; i<steps; i++) {
-    	nextAng = Bang + (i*theta);
-    	this.cmd_posx = params.X = (radius * Math.cos(nextAng)) * propX;
-    	this.cmd_posy = params.Y = (radius * Math.sin(nextAng)) * propY;
-    	if ( SpiralPlunge === 1 ) { 
-    		this.cmd_posz = params.Z = zStep * i; 
-    	}
-    	log.debug("G1X"+params.X+"Y"+params.Y+"F"+params.F);
-    	this.emit_move('G1',params);
-	}
-  
-	this.cmd_posx = params.X = endX;
-	this.cmd_posy = params.Y = endY;
-   	if ( SpiralPlunge === 1 ) { 
-		this.cmd_posz = params.Z = plunge;
-	}
-   	log.debug("G1X"+params.X+"Y"+params.Y+"F"+params.F);
-	this.emit_move('G1',params);
-
-	return;
-
-};
-*/
 
 // This must be called at least once before instantiating an SBPRuntime object
 SBPRuntime.prototype.loadCommands = function(callback) {
