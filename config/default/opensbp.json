@@ -69,6 +69,5 @@
     },
     "cRes": 0.01,
     "GblPropX": 1,
-    "GblPropY": 1,
-    "interpolate": 0
+    "GblPropY": 1
 }
