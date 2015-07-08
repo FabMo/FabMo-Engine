@@ -1,22 +1,23 @@
 var dashboard = require('./dashboard');
 var log = require('./log').logger('debug');
 var config = require('./config');
+var path = require('path');
 
 var watch_semaphore = 0;
 var NCP_TIMEOUT = 4000;
 
-var appReloader = function(event, path, details) {
+var appReloader = function(event, pth, details) {
   // Don't watch for changes if there is an update in progress
   if(watch_semaphore) { return; }
  
-  var path = details.watchedPath || details.path;
+  var pth = details.watchedPath || details.path;
   // Determine which app changed, and re-copy that app
   app_index = dashboard.getAppIndex();
   for(var app_id in app_index) {
     app_info = app_index[app_id];
-    console.log(path)
-    console.log(app_info.app_archive_path)
-    if(path.indexOf(app_info.app_archive_path) >= 0) {
+    a = path.relative(app_info.app_archive_path, pth);
+    b = path.relative(pth, app_info.app_archive_path);
+    if(true) {
       log.info(app_id + ' was changed. Reloading...');
       watch_semaphore+=1;
       var timeout = setTimeout(function() {
@@ -29,7 +30,7 @@ var appReloader = function(event, path, details) {
         watch_semaphore-=1;  
       });        
     }
-  }
+  } 
 }; 
 
 function startDebug() {
