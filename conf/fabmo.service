@@ -2,13 +2,13 @@
 Description=FabMo Engine
 
 [Service]
-ExecStart=/bin/node /opt/fabmo/app/server.js &
+ExecStart=/usr/bin/node /fabmo/server.js &
 Type=simple
 User=root
 Restart=always
 StandardOutput=syslog
 StandardError=syslog
-WorkingDirectory = /opt/fabmo/app/
+WorkingDirectory = /fabmo/
 
 [Install]
 WantedBy=multi-user.target
