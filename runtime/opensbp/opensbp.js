@@ -975,14 +975,15 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 	var i;
 
 	if( code === "G0" || code === "G1" ){
+		log.debug("emit_move-call xform = " + JSON.stringify(pt));
 		pt = this.transformation(pt);
+		log.debug("emit_move-pt = " + JSON.stringify(pt));
 	}
 	else if( code === "G2" || code === "G3" ){
 
 	}
 
-
-	if( this.transforms.interpolate.apply === true && code !== "G0"){
+	if(( this.transforms.level.apply === true || this.transforms.interpolate.apply === true ) && code !== "G0" ){
 		if( code === "G1"){
 		    log.debug( "emit_move: lineInterpolate = " + code + "  pt = " + JSON.stringify(pt));
 			interp.lineInterpolate(this, pt);
@@ -993,14 +994,14 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		}
 	}
 	else{
-		if( this.transforms.level.apply === true  && code !== "G0"){
-   	    	log.debug("emit_move:level");
-		    //pt = this.leveler(pt[i]);
-		}  
+//		if( this.transforms.level.apply === true  && code !== "G0"){
+//   	    	log.debug("emit_move:level");
+//		    pt = interp.leveler(this, pt);
+//		}  
 	
 		for(key in pt) {
 			var v = pt[key];
-		  	log.debug(" emit_move v = " + v);
+		  	log.debug(" emit_move v = " + key + v);
 			if(v !== undefined) {
 				if(isNaN(v)) { throw( "Invalid " + key + " argument: " + v ); } 
 				gcode += (key + v.toFixed(5));
@@ -1010,12 +1011,10 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 				else if(key === "A") { this.cmd_posa = v; }
 				else if(key === "B") { this.cmd_posb = v; }
 				else if(key === "C") { this.cmd_posc = v; }
-		    	log.debug(" emit_move gcode = " + JSON.stringify(gcode));
 			}
 		}
 		this.current_chunk.push('N' + this.pc + gcode);
 	}
-
 };
 
 
@@ -1030,8 +1029,10 @@ SBPRuntime.prototype.loadCommands = function(callback) {
 }
 
 SBPRuntime.prototype.transformation = function(TranPt){
-
+  log.debug("transformation = " + JSON.stringify(TranPt));
 	if (this.transforms.rotate.apply !== false){
+  		log.debug("rotation apply = " + this.transforms.rotate.apply);
+		log.debug("Rotate: " + JSON.stringify(this.transforms.rotate));
         if ( !("X" in TranPt) ) { TranPt.X = this.cmd_posx; }
         if ( !("Y" in TranPt) ) { TranPt.Y = this.cmd_posy; }
 		var angle = this.transforms.rotate.angle;
@@ -1050,6 +1051,7 @@ SBPRuntime.prototype.transformation = function(TranPt){
 		TranPt = tform.shearY(TranPt);
 	}
 	if (this.transforms.scale.apply !== false){
+		log.debug("Scale: " + JSON.stringify(this.transforms.scale));
 		var ScaleX = this.transforms.scale.scalex;
 		var ScaleY = this.transforms.scale.scaley;
 		var PtX = this.transforms.scale.x;
@@ -1058,7 +1060,7 @@ SBPRuntime.prototype.transformation = function(TranPt){
 		TranPt = tform.scale(TranPt,ScaleX,ScaleY,PtX,PtY);
 	}
 	if (this.transforms.move.apply !== false){
-log.debug("Call Move transform");
+		log.debug("Move: " + JSON.stringify(this.transforms.move));
 		TranPt = tform.translate(TranPt, 
 								 this.transforms.move.x, 
 								 this.transforms.move.y, 
