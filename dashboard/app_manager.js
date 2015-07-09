@@ -62,6 +62,7 @@ AppManager.prototype._setApps = function(list_of_apps) {
 };
 
 AppManager.prototype._addApp = function(app) {
+	if(app.id in this.apps_index) { return; }
 	this.apps_list.push(app);
 	this.apps_index[app.id] = app;
 };
