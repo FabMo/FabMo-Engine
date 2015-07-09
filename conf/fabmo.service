@@ -2,7 +2,7 @@
 Description=FabMo Engine
 
 [Service]
-ExecStart=/bin/node /fabmo/server.js &
+ExecStart=/usr/bin/node /fabmo/server.js &
 Type=simple
 User=root
 Restart=always
