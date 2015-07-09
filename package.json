@@ -15,6 +15,7 @@
     "ncp": "^1.0.1",
     "node-simplerwifiscanner": "git+https://github.com/jlucidar/node-simplerwifiscanner.git",
     "node-uuid": "^1.4.1",
+    "path-is-inside": "^1.0.1",
     "process": "0.8.x",
     "q": "^1.0.1",
     "request": "^2.55.0",
@@ -43,8 +44,8 @@
     "version": "0.0.0",
     "description": "FabMo-Engine",
     "title": "FabMo-Engine API Documentation"
-  }, 
+  },
   "scripts": {
-    "debug" : "node server.js --debug"
+    "debug": "node server.js --debug"
   }
 }

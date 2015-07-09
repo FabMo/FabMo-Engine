@@ -2,6 +2,7 @@ var dashboard = require('./dashboard');
 var log = require('./log').logger('debug');
 var config = require('./config');
 var path = require('path');
+var pathIsInside = require('path-is-inside');
 
 var watch_semaphore = 0;
 var NCP_TIMEOUT = 4000;
@@ -11,13 +12,12 @@ var appReloader = function(event, pth, details) {
   if(watch_semaphore) { return; }
  
   var pth = details.watchedPath || details.path;
+
   // Determine which app changed, and re-copy that app
   app_index = dashboard.getAppIndex();
   for(var app_id in app_index) {
-    app_info = app_index[app_id];
-    a = path.relative(app_info.app_archive_path, pth);
-    b = path.relative(pth, app_info.app_archive_path);
-    if(true) {
+    app_path = app_index[app_id].app_archive_path;
+    if(pathIsInside(app_path, pth) || pathIsInside(pth, app_path)) {
       log.info(app_id + ' was changed. Reloading...');
       watch_semaphore+=1;
       var timeout = setTimeout(function() {
