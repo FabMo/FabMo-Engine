@@ -47,7 +47,7 @@ var get_config = function(req, res, next) {
   var retval = {};
   retval.engine = config.engine.getData();
   retval.driver = config.driver.getData();
-  retval.opensbp = config.driver.getData();
+  retval.opensbp = config.opensbp.getData();
 
   var answer = 
   {
