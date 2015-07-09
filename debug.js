@@ -36,12 +36,12 @@ var appReloader = function(event, pth, details) {
 function startDebug() {
   log.info("Starting debug watcher...");
   var chokidar = require('chokidar');
-  var watcher = chokidar.watch('./dashboard/apps', {
+  var pth = path.resolve('./dashboard/apps');
+  var watcher = chokidar.watch(pth, {
     ignored: /[\/\\]\./,
     persistent: true
   });
   watcher.on('raw', appReloader);
-
   var watcher = chokidar.watch(config.getDataDir('apps'), {
     ignored: /[\/\\]\./,
     persistent: true
