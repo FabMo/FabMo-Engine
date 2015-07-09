@@ -2,23 +2,14 @@ var log = require('../../log').logger('sbp');
 
 // Point X, Point Y, Point Z, Angle(in radians), Rotation Point X, Rotation Point Y
 exports.rotate = function(PtNew,angle,RotPtX,RotPtY){
-
 	if ( angle !== 0 ) {
-		log.debug("rotate args: " + JSON.stringify(PtNew) +
-			                    ", " + angle +
-			                    ", " + RotPtX +
-			                    ", " + RotPtY  );
+//		log.debug("rotate args: " + JSON.stringify(PtNew) +
+//			                    ", " + angle +
+//			                    ", " + RotPtX +
+//			                    ", " + RotPtY  );
 		var x = PtNew.X;
-		var y = PtNew.Y;
-		log.debug("angle SB = " + angle);
-		angle = 360 - angle;		
-		while (angle >= 360 || angle <= -360){
-			if (angle >= 360) { angle -= 360; }
-			else if (angle <= -360) { angle += 360; }
-		}
-//		log.debug("angle real = " + angle);
-		angle = (angle/180)*Math.PI;
-//		log.debug("angle radians = " + angle);
+		var y = PtNew.Y;		
+		angle = (-angle/180)*Math.PI;
 		var cosB = Math.cos(angle);
 		var sinB = Math.sin(angle);
 		if (RotPtX === undefined) { RotPtX = 0; }

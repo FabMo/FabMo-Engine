@@ -1,3 +1,4 @@
+var fs = require('fs');
 var log = require('../../log').logger('sbp');
 var g2 = require('../../g2');
 var sb3_commands = require('./sb3_commands');
@@ -39,47 +40,79 @@ log.debug("lineLen = " + lineLen);
   var stepY = (endY-startY)/steps;
   var stepZ = (endZ-startZ)/steps;
   var gcode = "";
-
-  for ( i=1; i<steps; i++){
+  var level = runtime.transforms.level.apply;
+  var PtFilename = runtime.transforms.level.ptDataFile;
+  var PtData = "";
+  if(level === true){
+//    log.debug("lineInterpolation: readPtData");
+    PtData = fs.readFileSync(PtFilename);
+    PtData = JSON.parse(PtData);
+//    log.debug("lineInterpolate: PtData = " + JSON.stringify(PtData));
+  }
+  for ( i=1; i<steps+1; i++){
       nextPt = {};
       gcode = "G1";
-      if ((stepX !== 0)){
-        nextX = startX + (stepX * i);
-        gcode += "X" + nextX;
-        runtime.cmd_posx = nextX;
+
+      if ((stepX !== 0)){ nextPt.X = startX + (stepX * i); }
+      else{ nextPt.X = runtime.cmd_posx; }
+
+      if (stepY !== 0){ nextPt.Y = startY + (stepY * i); }
+      else{ nextPt.Y = runtime.cmd_posy; }
+
+      if (stepZ !== 0){ nextPt.Z = startZ + (stepZ * i); }
+      else{ 
+        if (level === true) { nextPt.Z = runtime.cmd_posz; }
       }
-      if (stepY !== 0){
-        nextY = startY + (stepY * i);
-        gcode += "Y" + nextY;
-        runtime.cmd_posy = nextY;
+
+      if (level === true){ nextPt.Z = leveler(nextPt,PtData); }
+
+      for(var key in nextPt) {
+        var v = nextPt[key];
+        log.debug(" lineInterpolate v = " + v);
+        if(v !== undefined) {
+          if(isNaN(v)) { throw( "Invalid " + key + " argument: " + v ); } 
+          gcode += (key + v.toFixed(5));
+          if(key === "X") { runtime.cmd_posx = v; }
+          else if(key === "Y") { runtime.cmd_posy = v; }
+          else if(key === "Z") { runtime.cmd_posz = v; }
+          else if(key === "A") { runtime.cmd_posa = v; }
+          else if(key === "B") { runtime.cmd_posb = v; }
+          else if(key === "C") { runtime.cmd_posc = v; }
+        }
       }
-      if (stepZ !== 0){
-        nextZ = startZ + (stepZ * i);
-        gcode += "Z" + nextZ;
-        runtime.cmd_posz = nextZ;
-      }
+
       gcode += "F" + speed;
       runtime.emit_gcode(gcode);
   }
 
-  if ((stepX !== 0)){
-    gcode += "X" + endX;
-    runtime.cmd_posx = nextX;
-  }
-  if (stepY !== 0){
-    gcode += "Y" + endY;
-    runtime.cmd_posy = nextY;
-  }
-  if (stepZ !== 0){
-    gcode += "Z" + endZ;  
-    runtime.cmd_posz = nextZ;
-  }
-  gcode += "F" + speed;
+  return;
 
-  runtime.emit_gcode(gcode);
-
-    return;
 };
+
+function leveler(PtNew, data){
+    log.debug("leveler data = " + JSON.stringify(data));
+    var zA = 0;
+    var zB = 0;
+    var zP = 0;
+    var count = Object.keys(data).length;
+    if (count === 4){
+      log.debug("leveler_4-point: num keys = " + count);
+      zA = data.P1.z + ((data.P2.z-data.P1.z)*((PtNew.X-data.P1.x)/(data.P2.x-data.P1.x)));
+      log.debug("leveler: zA = " + zA);
+      zB = data.P4.z + ((data.P3.z-data.P4.z)*((PtNew.X-data.P4.x)/(data.P3.x-data.P4.x)));
+      log.debug("leveler: zB = " + zB);
+      zP = zA - ((zB-zA)*((PtNew.Y-data.P1.y)/(data.P4.y-data.P1.y)));
+      log.debug("leveler: zP = " + zP);
+      zP += PtNew.Z;
+      log.debug("zP = " + zP + "   PtZ = " + PtNew.Z);
+      return zP;
+    }
+    else{
+      log.debug("leveler_multi-point: num keys = " + count);
+
+      return zP;
+    }
+}
 
 //  Interpolate_Circle - is used to interpolate a circle that has uneven proportions as an ellipse.
 //    
@@ -191,4 +224,42 @@ log.debug("circleInterpolate: CGParams = " + JSON.stringify(CGParams));
 
   return;
 
+};
+
+// Triangle Vertex0, 
+// Triangle Vertex1, 
+// Triangle Vertex2, 
+// Point on intersect line, 
+// Intersect Line Vector
+exports.chkTriangleIntersect = function( V0, V1, V2, O, D )
+{
+  var EPSILON = 0.000001; 
+  //Find vectors for two edges sharing V1
+  var edge1 = Math.sub(V1, V0);
+  var edge2 = Math.sub(V2, V0);
+  //Begin calculating determinant - also used to calculate u parameter
+  var Pvec = Math.cross(D, edge2);
+  //if determinant is near zero, ray lies in plane of triangle
+  var det = Math.dot(edge1, Pvec);
+  //NOT CULLING
+  if(det > -EPSILON && det < EPSILON) return 0;
+  var inv_det = 1 / det;
+  //calculate distance from V1 to ray origin
+  var Tvec = Math.sub(O, V1);
+  //Calculate u parameter and test bound
+  var u = Math.dot(Tvec, Pvec) * inv_det;
+  //The intersection lies outside of the triangle
+  if(u < 0 || u > 1) return 0;
+  //Prepare to test v parameter
+  var Qvec = Math.cross(Tvec, edge1);
+  //Calculate V parameter and test bound
+  var v = Math.dot(D, Qvec) * inv_det;
+  //The intersection lies outside of the triangle
+  if(v < 0 || u + v  > 1) return 0;
+  var t = Math.dot(edge2, Qvec) * inv_det;
+  if(t > EPSILON) { //ray intersection
+    return 1;
+  }
+  // No hit, no win
+  return 0;
 };

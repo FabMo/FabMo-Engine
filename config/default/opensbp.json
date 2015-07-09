@@ -33,7 +33,7 @@
     "safeApullUp": 0.25,
     "transforms": {
         "rotate": {
-            "apply": false,
+            "apply": true,
             "angle": 0,
             "x": 0,
             "y": 0
@@ -63,7 +63,7 @@
             "apply": false
         },
         "level": {
-            "apply": false,
+            "apply": true,
             "ptDataFile": "C:/SbParts/PtData.json"
         }
     },
