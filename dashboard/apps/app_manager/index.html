@@ -10,33 +10,29 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-   
-<nav class="top-bar" data-topbar role="navigation">
-  <ul class="title-area">
-    <li class="name">
-      <h1><a href="#">Apps</a></h1>
-    </li>
-    <li class="toggle-topbar menu-icon"><a href="#"><span></span></a></li>
-  </ul>
+    
+	<nav class="top-bar" data-topbar role="navigation">
+	  <ul class="title-area">
+	    <li class="name">
+	      <h1><a href="#">Apps</a></h1>
+	    </li>
+	    <li class="toggle-topbar menu-icon"><a href="#"><span></span></a></li>
+	  </ul>
+	  <section class="top-bar-section">
+	    <ul class="right">
+	      <li><a class="app-install-button">Install App...</a></li>
+	    </ul>
+	  </section>
+	</nav>
 
-  <section class="top-bar-section">
-    <ul class="right">
-      <li><a>Install App...</a></li>
-    </ul>
-
-  </section>
-</nav>
-<!--
-	<div id="myModal" class="reveal-modal" data-reveal>
-	  <h2 style="color: darkred;">Warning!</h2>
-	  <p class="lead" style="color: black;">You are about to delete an app!</p>
-	  <p style="color: black;">This will permanently remove the app from your tool.  Are you sure you want to proceed?</p>
-	</div>
--->
+	<form style="display:none;" id="fileform">
+	<input type="file" id="file">
+	</form>
 	<div id="table-outer" style="margin: 30px;">
-		<div id="holder" class="container">
-			<div id="appmanager-guts">
-				<table>
+		<div id="dropzone" class="container">
+			<div class="hovershow message">Drag app here to install...</div>
+			<div class="hoverdim">
+				<table id="appmanager-table">
 					<thead>
 						<tr>
 							<th class="small-2"><!--ICON--></th>
@@ -55,13 +51,13 @@
   <!-- Javascript inclusions -->
   <script src="./js/libs/jquery-1.10.2.js"></script>
   <script src="./js/libs/foundation.min.js"></script>
+  <script src="./js/libs/jquery.dragster.js"></script>
   <script src="/js/libs/dashboard.js"></script>
-  <script src="./js/moment.js"></script>
-
+ 
   <script type="text/javascript">
 
 	function refreshApps(){
-		// Load the list of files available on the tool
+		// Load the list of apps available on the tool
 		fabmoDashboard.getApps(function(err,apps){
 			if(err) { return console.log(err); }
 			$(".app-listing").empty();
@@ -70,7 +66,7 @@
 				var id = val.id;
 				var delete_button = '';
 				if(val.icon_display !== 'none') {
-					delete_button = '<a class="button radius alert" id="delete_' + appid + '">Delete</a>';
+					delete_button = '<div class="delete-button" id="delete_' + appid + '"></div>';
 				}
 				html = [
 				'<tr><td>',
@@ -96,57 +92,51 @@
 					});
 				});
 				$('#' + appid).click(function() {
-					console.log(id);
 					fabmoDashboard.launchApp(id);
 				});
 			});
 		});
 	};
 
-	$('#submit_app').submit(function(e){
-		e.preventDefault();
-		fabmoDashboard.submitApp($(this), {}, function(err, data) {
-			refreshApps();
-		});
-	});
-
-	$(document).ready(function(){
-		//Foundation Init
-		console.log('ready')
+	$(function() {
 		$(document).foundation();
-		refreshApps();
+		refreshApps(); 
+  
+  		$('.app-install-button').click(function(evt) {
+  			jQuery('#file').trigger('click');
+  		});
 
-		var holder = document.getElementById('holder');
-	    var state = document.getElementById('status');
-
-		if (typeof window.FileReader === 'undefined') {
-		  //state.className = 'fail';
-		} else {
-		  //state.className = 'success';
-		  //state.innerHTML = 'File API & FileReader available';
-		}
-
-		holder.ondragleave = function () {
-			$(this).removeClass('hover');
-			$('#appmanager-guts').fadeTo(200, 1.0);
-		 };		
-
-		holder.ondragenter = function () { 
-			$(this).addClass('hover');
-			$('#appmanager-guts').fadeTo(200, 0.2);
-			return false; 
-		};
-		holder.ondrop = function (e) {
-			this.className = '';
-			e.preventDefault();
-			file = e.dataTransfer.files[0]
-			fabmoDashboard.submitJob(e.dataTransfer.files[0], {filename:file.name}, function(err, data) {
-				if(err){alert("The file format you have attempted to upload is not allowed.  Files must have a valid g-code or openSBP extension.");return;}
-				refresh_jobs_list();
+  		$('#file').change(function(evt) {
+			fabmoDashboard.submitApp($('#fileform'), {}, function(err, data) {
+				refreshApps();
 			});
-			return false;
-		};
+		});
 
+		$('#dropzone').dragster({
+			enter : function(devt, evt) {
+				$('#dropzone').addClass('hover');
+				return false; 
+			}, 
+ 
+			leave : function (devt, evt) {
+				$('#dropzone').removeClass('hover');
+				return false;
+			},
+			drop : function (devt, evt) {
+				evt.preventDefault();
+				try {
+					file = evt.originalEvent.dataTransfer.files[0];
+					fabmoDashboard.submitApp(file, {}, function(err, data) {
+						if(err){alert(err);return;}
+						refreshApps();
+					});
+				}
+				finally {
+					$('#dropzone').removeClass('hover');
+					return false;
+				}
+			}
+		});
 	});
 
 </script>

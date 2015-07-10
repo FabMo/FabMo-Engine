@@ -239,7 +239,7 @@ define(function(require) {
 					}
 				}.bind(this));
 			} else if ('data' in data) {
-				this.machine.add_job(data, function(err, result) {
+				this.machine.submit_app(data, function(err, result) {
 					if(err) {
 						callback(err);
 					} else {
@@ -422,7 +422,6 @@ define(function(require) {
 
 	Dashboard.prototype.launchApp = function(id, args, callback) {
 		context = require('context');
-		console.info("Preparing to launch an app")
 		context.launchApp(id, args, callback);
 	}
 
