@@ -30,7 +30,7 @@ To install the engine in the "standard" location on the Intel Edison, perform th
 2. Install dependencies using npm: `cd /fabmo; npm install`
 3. Install the systemd service file `cp /fabmo/conf/fabmo.service /etc/systemd/system`
 4. Set the appropriate permissions on the service file `chmod 0775 /etc/systemd/system/fabmo.service`
-5. Inform systemd of the unit file change `systemd daemon-reload`
+5. Inform systemd of the unit file change `systemctl daemon-reload`
 6. Enable the new service `systemctl enable fabmo`
 7. Start the new service immediately `systemctl start fabmo`
 8. After the engine has had time to start, check its status: `systemctl status fabmo`
