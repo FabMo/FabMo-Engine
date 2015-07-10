@@ -313,6 +313,17 @@ define(function(require) {
 			context = require('context');
 			callback(null, context.current_app_args || {});
 		}.bind(this));
+
+		this._registerHandler('requestStatus', function(data, callback) {
+			this.machine.get_status(function(err,  status) {
+				if(err) {
+					callback(err);
+				} else {
+					this.updateStatus(status);
+					callback(null, status);
+				}
+			}.bind(this));
+		}.bind(this));
 	
 	}
 

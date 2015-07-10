@@ -22,6 +22,7 @@
     <ul class="left" role="tablist" data-tab>
       <li class="active"><a id="nav-pending" href="#tabpending">Pending</a></li>
       <li class=""><a id="nav-history" href="#tabhistory">History</a></li>
+      <li class=""><a id="nav-active" href="#tabactive" style="display: none;">Active Job</a></li>
     </ul>
     <ul class="right">
       <li><a id="nav-submit" href="#">Submit Job...</a></li>
@@ -99,6 +100,13 @@
 			</div>
 		</section>
   </div>
+
+  <div class="content" id="tabactive">
+	  <section class="container">
+	  <div id="currentfile" class="code-area">This is where the currently running job goes</div>
+	  </section>
+  </div>
+
 </div>
 
   <!-- Javascript inclusions -->
@@ -112,8 +120,17 @@
 
 
   <script type="text/javascript">
+  var current_job_id = 0;
+  var prev_line = 0;
+  function loadFile(data) {
+  	txt = data.split("\n");
+	for(var x=0;x<txt.length-1;x++) {
+	    txt[x] = "<div class='line' id='file_line" + (x+1) + "'>"+txt[x]+"</div>";
+	}
+	$('#currentfile').html(txt.join('\n'));
+  }
+
   $(document).ready(function() {
-  	console.log("Ready");
   	//Foundation Init
 	$(document).foundation();
 		$('#dropzone').dragster({
@@ -380,8 +397,64 @@
 		});
 	});
 
-	fabmoDashboard.on('status', function(status) {});
-});
+	fabmoDashboard.on('status', function(status) {
+		var jobid;
+		try {
+			jobid = status.job._id || null;
+		} catch(e) {
+			jobid = null;
+		}
+		// New Job
+		if(jobid) {
+			if(jobid != current_job_id) {
+				current_job_id = jobid;
+				url = '/job/' + jobid + '/file';
+				$.get(url, function(data) {
+					$('#nav-active').show();
+					loadFile(data);
+				});
+			}
+		} else {
+			if(jobid != current_job_id) {
+				current_job_id = jobid;
+				loadFile('');
+				$('#nav-active').hide();				
+			}
+		}
+
+
+		// Hilight Current Line
+		try {
+			line = status.line || null;
+		} catch(e) {
+			line = null;
+		}
+
+		if(line) {
+			try {
+				$($('#currentfile').children()[prev_line-1]).removeClass('active-line');				
+			} catch(e) {}
+
+			linediv = $($('#currentfile').children()[line-1])
+			linediv.addClass('active-line');
+			prev_line = line
+			/*
+			$('html, body').animate({
+        	scrollTop: linediv.offset().top - window.innerHeight/2.0
+    		}, 100);
+			*/
+		} else {
+			if(prev_line) {
+				$($('#currentfile').children()[prev_line-1]).removeClass('active-line');
+				prev_line = 0;
+			}
+		}
+	});
+	fabmoDashboard.requestStatus(function(err, data) {
+		console.log(data);
+	});
+
+  });
 </script>
 
 </body>

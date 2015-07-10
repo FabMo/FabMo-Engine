@@ -316,4 +316,8 @@ FabMoDashboard.prototype.runMacro = function(id, callback) {
 	this._call("runMacro", id, callback);
 }
 
+FabMoDashboard.prototype.requestStatus = function(callback) {
+	this._call("requestStatus", null, callback);
+}
+
 fabmoDashboard = new FabMoDashboard();

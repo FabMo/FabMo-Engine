@@ -1,13 +1,19 @@
-/* Foundation OverWrite */
-
 body {
   background: #eee;
 }
 
+.code-area {
+  font-family: "Lucida Console", Monaco, monospace;
+  color: black;
+  font-weight: normal;
+  font-size: 8pt;
+}
+
+.active-line {
+  background-color: #ccffcc;
+}
 
 #dropzone { 
-  border: 5px solid transparent;
-  border-radius: 5px;   
 }
 
 #dropzone .hovershow {
@@ -25,7 +31,7 @@ body {
   -moz-transition: all .2s ease;
   -o-transition: all .2s ease;
 }
- 
+  
 #dropzone.hover .hovershow {
   opacity: 1.0;
   -webkit-transition: all .2s ease;
