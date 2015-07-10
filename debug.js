@@ -8,10 +8,14 @@ var watch_semaphore = 0;
 var NCP_TIMEOUT = 4000;
 
 var appReloader = function(event, pth, details) {
-  // Don't watch for changes if there is an update in progress
-  if(watch_semaphore) { return; }
  
   var pth = details.watchedPath || details.path;
+
+  // Don't watch for changes if there is an update in progress
+  if(watch_semaphore) { 
+    log.warn("Not reloading " + pth + " because a reload is already in progress.");
+    return; 
+  }
 
   // Determine which app changed, and re-copy that app
   app_index = dashboard.getAppIndex();
@@ -23,11 +27,13 @@ var appReloader = function(event, pth, details) {
       var timeout = setTimeout(function() {
         log.warn('Timeout waiting for reload of ' + app_id);
         watch_semaphore-=1;
+        watch_semaphore = watch_semaphore < 0 ? 0 : watch_semaphore;
       }, NCP_TIMEOUT);
       return dashboard.reloadApp(app_id, function(err, result) {
         clearTimeout(timeout);
         log.info(app_id + ' updated.');
         watch_semaphore-=1;  
+        watch_semaphore = watch_semaphore < 0 ? 0 : watch_semaphore;
       });        
     }
   } 
