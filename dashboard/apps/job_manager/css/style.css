@@ -56,8 +56,9 @@ tr.shown td.details-control {
 
 .child-row-label: {
   font-weight: bold;
-  color: red;
+  font-color: red;
 }
+
 .job-failed {
   color: #ff0000;
 }
@@ -266,15 +267,15 @@ header h2 {
 /*
 *** Section ***
 */
-
-section {
+/*
+section{
   margin: 20px 40px;
   margin: 1.25rem 2.5rem;
   max-width: 960px;
   max-width: 60em;
   margin-left:auto;
   margin-right:auto;
-}
+}*/
 
 section .title {
   border-bottom: 1px solid #ccc;
@@ -287,6 +288,12 @@ section .title .button { margin-bottom: 0; }
 section .center { text-align: center; }
 
 section.container {
+  margin: 20px 40px;
+  margin: 1.25rem 2.5rem;
+  max-width: 960px;
+  max-width: 60em;
+  margin-left:auto;
+  margin-right:auto;
   background-color: #fff;
   -moz-box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.15);
   -webkit-box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.15);

@@ -11,43 +11,23 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-	<header class="grey">
-		<section>
-			<div class="app-title-container">
-				<h2>Job Manager</h2>
-			</div>
-		</section>
-	</header>
+  <nav class="top-bar" data-topbar role="navigation">
+  <ul class="title-area">
+    <li class="name">
+      <h1><a id="app-header" href="#">Job Manager</a></h1>
+    </li>
+    <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
+  </ul>
+  <section class="top-bar-section">    
+    <ul class="left tabs" role="tablist" data-tab>
+      <li class="active"><a id="nav-pending" href="#tabpending">Pending</a></li>
+      <li class=""><a id="nav-history" href="#tabhistory">History</a></li>
+    </ul>
+  </section>
+</nav>
 
-	<section class="container current-job-container fabmo-file-control" style="display:none">
-		<div class="row title">
-			<div class="small-7 medium-8 columns">
-				<h4 class="running-job-name filename"></h4>
-			</div>
-			<div class="small-5 medium-4 columns" style="text-align:right;">
-				<a id="pause-button" class="small button warning radius">Pause</a>
-				<a id="resume-button" class="small button success radius hide">Resume</a>
-				<a id="stop-button" class="small button alert radius">Stop</a>
-			</div>
-		</div>
-		<div class="row">
-			<div class="small-12 columns progress primary round">
-				<span class="meter progress" style="width: 0%"></span>
-			</div>
-		</div>
-	</section>
-
-<section class="container upload-control-container">
-	<div class="row" style="margin-top:0px;">
-		<div id="holder" class="noselect">
-			<em>Click here or drop files to fabricate...</em>
-		</div> 
-		<form id="hidden_form" enctype="multipart/form-data" style="display:none;">
-			<input id='job_selector' type="file" name="file" accept=".nc .gc .gcode .sbp .sbc">
-		</form>
-	</div>
-</section>
-
+<div class="tabs-content">
+  <div class="content active" id="tabpending">
 	<section class="container">
 		<div class="row title">
 			<div class="small-4 columns">
@@ -82,31 +62,35 @@
         	</table>
 		</div>
 	</section>
+  </div>
 
-	<section class="container">
-		<div class="row title">
-			<div class="small-7 medium-9 large-10 columns">
-				<h4>History</h4>
+  <div class="content" id="tabhistory">
+	  <section class="container">
+			<div class="row title">
+				<div class="small-7 medium-9 large-10 columns">
+					<h4>History</h4>
+				</div>
+				<div class="small-5 medium-3 large-2 columns btn">
+				</div>
 			</div>
-			<div class="small-5 medium-3 large-2 columns btn">
-			</div>
-		</div>
 
-		<div class="row jobs-history-row">
-			<!-- JOB HISTORY LISTING -->
-			<table class="small-12 columns" style="width:100%" id="history_table">
-			<thead>
-            <tr>
-                <th>&nbsp;</th>
-                <th>Name</th>
-                <th>Status</th>
-                <th>Last Run</th>
-                <th>&nbsp;</th>
-            </tr>
-        	</thead>
-        	</table>
-		</div>
-	</section>
+			<div class="row jobs-history-row">
+				<!-- JOB HISTORY LISTING -->
+				<table class="small-12 columns" style="width:100%" id="history_table">
+				<thead>
+	            <tr>
+	                <th>&nbsp;</th>
+	                <th>Name</th>
+	                <th>Status</th>
+	                <th>Run At</th>
+	                <th>&nbsp;</th>
+	            </tr>
+	        	</thead>
+	        	</table>
+			</div>
+		</section>
+  </div>
+</div>
 
   <!-- Javascript inclusions -->
   <script src="./js/jquery.js"></script>
@@ -122,9 +106,8 @@
   	//Foundation Init
 	$(document).foundation();
 	
-	var current_job = null;
-	var progress_timer = null;
 
+/*
 	var holder = document.getElementById('holder'),
 	    state = document.getElementById('status');
 
@@ -160,6 +143,7 @@
 
 	holder.ondragleave = end;
 	holder.ondragend = end;
+*/
 
 	$('input[type=file]').change(function(){
 		fabmoDashboard.submitJob($('#hidden_form'), {}, function(err, data) {
@@ -265,7 +249,7 @@
 
 
     function history_child_row(job) {
-    	retval = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">'
+    	retval = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px; width: 100%;">'
     	if(job.description) {
 	        retval += '<tr>'+
 	            '<td class="child-row-label">Description:</td>'+
@@ -384,6 +368,7 @@
 	$('#run-next').click(function(e) { 
 		fabmoDashboard.runNext(function(err, data) {
 			refresh_jobs_list();
+			fabmoDashboard.showDRO();
 		});
 	});
 
@@ -408,34 +393,7 @@
 		});
 	});
 
-	fabmoDashboard.on('status', function(status) {
-		if(status.job) {
-			if(!current_job) {
-				current_job = status.job;
-			}
-			$(".current-job-container").show(30);
-			$(".running-job-name").html(status.job.name);
-			$(".running-job-description").html(status.job.description);
-
-			progress = Math.round((status.line/status.nb_lines)*100);
-			$(".running-job-time").html(progress + '%');
-			$(".meter.progress").css("width", ((status.line/status.nb_lines)*100).toString() + "%" );
-		} else {
-			if(current_job) {
-				current_job = null;
-				refresh_jobs_list();
-			}
-			$(".current-job-container").hide(500);
-			clearInterval(progress_timer);
-		}
-		if(status.state === "running") {
-			$("#pause-button").show();
-			$("#resume-button").hide();
-		} else {
-			$("#pause-button").hide();
-			$("#resume-button").show();
-		}
-	});
+	fabmoDashboard.on('status', function(status) {});
 });
 </script>
 
