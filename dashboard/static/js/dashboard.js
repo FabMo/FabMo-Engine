@@ -124,8 +124,7 @@ define(function(require) {
 					if(err) {
 						callback(err);
 					} else {
-						this.launchApp('job-manager');
-						callback(null);
+						this.launchApp('job-manager', {}, callback);
 					}
 				}.bind(this));
 			} else if ('data' in data) {
@@ -133,8 +132,7 @@ define(function(require) {
 					if(err) {
 						callback(err);
 					} else {
-						this.launchApp('job-manager');
-						callback(null);
+						this.launchApp('job-manager', {}, callback);
 					}
 				}.bind(this));				
 			}
@@ -145,8 +143,7 @@ define(function(require) {
 				if(err) {
 					callback(err);
 				} else {
-//					this.launchApp('job-manager');
-					callback(null);
+					this.launchApp('job-manager', {}, callback);
 				}
 			}.bind(this));
 		}.bind(this));

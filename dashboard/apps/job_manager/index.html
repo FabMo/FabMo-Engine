@@ -19,47 +19,56 @@
     <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
   </ul>
   <section class="top-bar-section">    
-    <ul class="left tabs" role="tablist" data-tab>
+    <ul class="left" role="tablist" data-tab>
       <li class="active"><a id="nav-pending" href="#tabpending">Pending</a></li>
       <li class=""><a id="nav-history" href="#tabhistory">History</a></li>
     </ul>
+    <ul class="right">
+      <li><a id="nav-submit" href="#">Submit Job...</a></li>
+    </ul>
   </section>
 </nav>
+<form style="display:none;" id="fileform">
+	<input type="file" id="file">
+</form>
 
 <div class="tabs-content">
   <div class="content active" id="tabpending">
-	<section class="container">
-		<div class="row title">
-			<div class="small-4 columns">
-				<h4>Pending</h4>
-			</div>
-			<div class="small-8 columns" style="text-align:right;">
-				<a id="run-next" class="small button success radius">Run Next</a>
-				<a id="clear-jobs" class="small button secondary radius">Clear Queue</a>
-			</div>
-		</div>
+	<section class="container" id="dropzone">
+		<div class="hovershow message">Drop files here to fabricate...</div>
+		<div class="hoverdim">
+			<div class="row title">
+				<div class="small-4 columns">
+					<h4>Pending</h4>
+				</div>
+				<div class="small-8 columns" style="text-align:right;">
+					<a id="run-next" class="small button success radius">Run Next</a>
+					<a id="clear-jobs" class="small button secondary radius">Clear Queue</a>
+				</div>
+			</div> 
 
-		<div class="row no-jobs" style="display:none;">
-			<div class="small-12 columns no-jobs-item">
-				<div data-alert class="alert-box secondary">
-				  No jobs, click here to add a job...
+			<div class="row no-jobs" style="display:none;">
+				<div class="small-12 columns no-jobs-item">
+					<div data-alert class="alert-box secondary">
+					  No jobs, click here to add a job...
+					</div>
 				</div>
 			</div>
-		</div>
 
-		<div class="row jobs-row" style="">
-			<!-- JOB LISTING -->
-			<table class="small-12 columns" style="width:100%" id="queue_table">
-			<thead>
-            <tr>
-                <th>&nbsp;</th>
-                <th>Name</th>
-                <th>Status</th>
-                <th>Submitted</th>
-                <th>&nbsp;</th>
-            </tr>
-        	</thead>
-        	</table>
+			<div class="row jobs-row" style="">
+				<!-- JOB LISTING -->
+				<table class="small-12 columns" style="width:100%" id="queue_table">
+				<thead>
+	            <tr>
+	                <th>&nbsp;</th>
+	                <th>Name</th>
+	                <th>Status</th>
+	                <th>Submitted</th>
+	                <th>&nbsp;</th>
+	            </tr>
+	        	</thead>
+	        	</table>
+			</div>
 		</div>
 	</section>
   </div>
@@ -95,61 +104,43 @@
   <!-- Javascript inclusions -->
   <script src="./js/jquery.js"></script>
   <script src="./js/jquery.dataTables.js"></script>
+  <script src="./js/jquery.dragster.js"></script>
   <script src="./js/foundation.min.js"></script>
   <script src="./js/dataTables.foundation.js"></script>
   <script src="./js/moment.js"></script>
   <script src="/js/libs/dashboard.js"></script>
 
+
   <script type="text/javascript">
   $(document).ready(function() {
-
+  	console.log("Ready");
   	//Foundation Init
 	$(document).foundation();
-	
-
-/*
-	var holder = document.getElementById('holder'),
-	    state = document.getElementById('status');
-
-	if (typeof window.FileReader === 'undefined') {
-	  //state.className = 'fail';
-	} else {
-	  //state.className = 'success';
-	  //state.innerHTML = 'File API & FileReader available';
-	}
-	 
-	holder.ondragover = function () { this.className = 'hover'; return false; };
-	holder.ondrop = function (e) {
-		this.className = '';
-		e.preventDefault();
-		file = e.dataTransfer.files[0]
-		fabmoDashboard.submitJob(e.dataTransfer.files[0], {filename:file.name}, function(err, data) {
-			if(err){alert("The file format you have attempted to upload is not allowed.  Files must have a valid g-code or openSBP extension.");return;}
-			refresh_jobs_list();
+		$('#dropzone').dragster({
+			enter : function(devt, evt) {
+				$('#dropzone').addClass('hover');
+				return false; 
+			}, 
+ 
+			leave : function (devt, evt) {
+				$('#dropzone').removeClass('hover');
+				return false;
+			},
+			drop : function (devt, evt) {
+				evt.preventDefault();
+				try {
+					file = evt.originalEvent.dataTransfer.files[0];
+					fabmoDashboard.submitJob(file, {filename : file.name}, function(err, data) {
+						if(err){alert(err);return;}
+						refresh_jobs_list();
+					});
+				}
+				finally {
+					$('#dropzone').removeClass('hover');
+					return false;
+				}
+			}
 		});
-		return false;
-	};
-
-	holder.onclick = function(e) {
-		e.preventDefault();
-		file = $('input[type=file]')
-		file.click();
-		return false;
-	}
-
-	var end = function(e) {
-		this.className = ''; return false;
-	}
-
-	holder.ondragleave = end;
-	holder.ondragend = end;
-*/
-
-	$('input[type=file]').change(function(){
-		fabmoDashboard.submitJob($('#hidden_form'), {}, function(err, data) {
-			refresh_jobs_list();
-		});
-	});
 
 	jQuery.fn.dataTableExt.oSort["duration-desc"] = function (x, y) {return 1};
 	jQuery.fn.dataTableExt.oSort["duration-asc"] = function (x, y) {}
@@ -318,6 +309,7 @@
  			$('#resubmit-'+job._id).click(function(e) {
 				fabmoDashboard.resubmitJob(job._id, function(err, result) {
 					refresh_jobs_list();
+					$('#nav-pending').click();
 				});
 			});
 			$('#preview-'+job._id).click(function(e) {
@@ -378,18 +370,13 @@
 		});
 	});
 
-	$('#pause-button').click(function(e) { 
-		fabmoDashboard.pause(function(err, data) {
-		});
+	$('#nav-submit').click(function(evt) {
+		jQuery('#file').trigger('click');
 	});
 
-	$('#stop-button').click(function(e) { 
-		fabmoDashboard.stop(function(err, data) {
-		});
-	});
-
-	$('#resume-button').click(function(e) { 
-		fabmoDashboard.resume(function(err, data) {
+	$('#file').change(function(evt) {
+		fabmoDashboard.submitJob($('#fileform'), {}, function(err, data) {
+			refresh_jobs_list();
 		});
 	});
 

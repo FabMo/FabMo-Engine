@@ -4,6 +4,59 @@ body {
   background: #eee;
 }
 
+
+#dropzone { 
+  border: 5px solid transparent;
+  border-radius: 5px;   
+}
+
+#dropzone .hovershow {
+  opacity: 0.0;
+} 
+
+#dropzone .hoverdim {
+  opacity: 1.0;
+}
+
+#dropzone.hover { 
+  border: 5px dashed #ccc; 
+  border-radius: 5px;
+  -webkit-transition: all .2s ease;
+  -moz-transition: all .2s ease;
+  -o-transition: all .2s ease;
+}
+ 
+#dropzone.hover .hovershow {
+  opacity: 1.0;
+  -webkit-transition: all .2s ease;
+  -moz-transition: all .2s ease;
+  -o-transition: all .2s ease;
+
+}
+
+#dropzone.hover .hoverdim {
+  opacity: 0.2;
+  -webkit-transition: all .2s ease;
+  -moz-transition: all .2s ease;
+  -o-transition: all .2s ease;
+
+}
+
+#dropzone .message {
+  z-index: 3;
+  display: block; 
+  position: absolute;
+  top: 8em;
+  left: 50%;
+  text-align: center;
+  color: black;
+  font-weight: bold;
+  font-style: italic;
+  width:100%;
+  margin: 0 0 0 -50%;
+  opacity: 0%;
+}
+
 h1, h2, h3, h4, h5, h6 {
   color: #666;
 } 
