@@ -1,7 +1,7 @@
 <html> 
 <head>
 	<meta charset="utf-8">
-	<title>Job Manager</title>
+	<title>Apps</title>
 
 	<!-- CSS standardisation & inclusion -->
 	<link rel="stylesheet" href="./css/foundation.min.css">
@@ -10,81 +10,54 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
+    
+	<nav class="top-bar" data-topbar role="navigation">
+	  <ul class="title-area">
+	    <li class="name">
+	      <h1><a href="#">Apps</a></h1>
+	    </li>
+	    <li class="toggle-topbar menu-icon"><a href="#"><span></span></a></li>
+	  </ul>
+	  <section class="top-bar-section">
+	    <ul class="right">
+	      <li><a class="app-install-button">Install App...</a></li>
+	    </ul>
+	  </section>
+	</nav>
 
-	<div id="myModal" class="reveal-modal" data-reveal>
-	  <h2 style="color: darkred;">Warning!</h2>
-	  <p class="lead" style="color: black;">You are about to delete an app!</p>
-	  <p style="color: black;">This will permanently remove the app from your tool.  Are you sure you want to proceed?</p>
-	  <!--<a class="close-reveal-modal">&#215;</a>-->
+	<form style="display:none;" id="fileform">
+	<input type="file" id="file">
+	</form>
+	<div id="table-outer" style="margin: 30px;">
+		<div id="dropzone" class="container">
+			<div class="hovershow message">Drag app here to install...</div>
+			<div class="hoverdim">
+				<table id="appmanager-table">
+					<thead>
+						<tr>
+							<th class="small-2"><!--ICON--></th>
+							<th class="small-3">Name</th>
+							<th class="small-5">Description</th>
+							<th class="small-1"></th>
+							<th class="small-1"></th>
+						</tr>
+					</thead>
+					<tbody class="row app-listing"></tbody>
+				</table>
+			</div>
+		</div>
 	</div>
-
-	<header class="grey"> <!-- Class can be "blue", "red", "grey", "orange" -->
-		<section>
-			<div class="app-title-container">
-				<h2>App Manager</h2>
-			</div>
-		</section>
-	</header>
-	<section class="container">
-		<div class="row title">
-			<div class="small-7 medium-9 large-10 columns">
-				<h3>Installed Apps</h3>
-			</div>
-			<div class="small-5 medium-3 large-2 columns btn">
-			</div>
-		</div>
-
-		<div class="row app-row">
-			<!-- JOB HISTORY LISTING -->
-			<table class="small-12 columns">
-				<thead>
-					<tr>
-						<th class="small-2"><!--ICON--></th>
-						<th class="small-3">Name</th>
-						<th class="small-5">Description</th>
-						<th class="small-1"></th>
-						<th class="small-1"></th>
-					</tr>
-				</thead>
-				<tbody class="row app-listing"></tbody>
-			</table>
-		</div>
-	</section>
-	<section class="container">
-		<div class="row title">
-			<div class="small-7 medium-9 large-10 columns">
-				<h3>Install New Apps</h3>
-			</div>
-			<div class="small-5 medium-3 large-2 columns btn">
-			</div>
-		</div>
-		<div class="row submit-app">
-			<div class="small-12 columns">
-				<form id="submit_app" action="/app" method="post" enctype="multipart/form-data">
-					<div class="row collapse postfix-round">
-						<div class="small-9 columns">
-						  	<input id='job_selector' type="file" name="file" data-filename-placement="inside" placeholder="Browse...">
-						</div>
-						<div class="small-3 columns">
-						  	<button type"submit" class="button radius postfix success">Upload</button>
-						</div>
-					</div>
-				</form>
-			</div>
-		</div>
-
-	</section>
 
   <!-- Javascript inclusions -->
   <script src="./js/libs/jquery-1.10.2.js"></script>
   <script src="./js/libs/foundation.min.js"></script>
+  <script src="./js/libs/jquery.dragster.js"></script>
   <script src="/js/libs/dashboard.js"></script>
-  <script src="./js/moment.js"></script>
-
+ 
   <script type="text/javascript">
 
 	function refreshApps(){
-		// Load the list of files available on the tool
+		// Load the list of apps available on the tool
 		fabmoDashboard.getApps(function(err,apps){
 			if(err) { return console.log(err); }
 			$(".app-listing").empty();
@@ -93,7 +66,7 @@
 				var id = val.id;
 				var delete_button = '';
 				if(val.icon_display !== 'none') {
-					delete_button = '<a class="button radius alert" id="delete_' + appid + '">Delete</a>';
+					delete_button = '<div class="delete-button" id="delete_' + appid + '"></div>';
 				}
 				html = [
 				'<tr><td>',
@@ -119,29 +92,54 @@
 					});
 				});
 				$('#' + appid).click(function() {
-					console.log(id);
 					fabmoDashboard.launchApp(id);
 				});
 			});
 		});
 	};
 
-	$('#submit_app').submit(function(e){
-		e.preventDefault();
-		fabmoDashboard.submitApp($(this), {}, function(err, data) {
-			refreshApps();
+	$(function() {
+		$(document).foundation();
+		refreshApps(); 
+  
+  		$('.app-install-button').click(function(evt) {
+  			jQuery('#file').trigger('click');
+  		});
+
+  		$('#file').change(function(evt) {
+			fabmoDashboard.submitApp($('#fileform'), {}, function(err, data) {
+				refreshApps();
+			});
+		});
+
+		$('#dropzone').dragster({
+			enter : function(devt, evt) {
+				$('#dropzone').addClass('hover');
+				return false; 
+			}, 
+ 
+			leave : function (devt, evt) {
+				$('#dropzone').removeClass('hover');
+				return false;
+			},
+			drop : function (devt, evt) {
+				evt.preventDefault();
+				try {
+					file = evt.originalEvent.dataTransfer.files[0];
+					fabmoDashboard.submitApp(file, {}, function(err, data) {
+						if(err){alert(err);return;}
+						refreshApps();
+					});
+				}
+				finally {
+					$('#dropzone').removeClass('hover');
+					return false;
+				}
+			}
 		});
 	});
 
-
-
-	$(document).ready(function(){
-		//Foundation Init
-		$(document).foundation();
-		refreshApps();
-	});
-
 </script>
-
+ 
 </body>
 </html>
