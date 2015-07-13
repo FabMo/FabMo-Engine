@@ -3,10 +3,6 @@ var log = require('../../log').logger('sbp');
 // Point X, Point Y, Point Z, Angle(in radians), Rotation Point X, Rotation Point Y
 exports.rotate = function(PtNew,angle,RotPtX,RotPtY){
 	if ( angle !== 0 ) {
-//		log.debug("rotate args: " + JSON.stringify(PtNew) +
-//			                    ", " + angle +
-//			                    ", " + RotPtX +
-//			                    ", " + RotPtY  );
 		var x = PtNew.X;
 		var y = PtNew.Y;		
 		angle = (-angle/180)*Math.PI;

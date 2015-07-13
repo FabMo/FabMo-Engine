@@ -25,7 +25,7 @@
   <form> 
 
   <ul class="tabs" data-tab role="tablist">
-    <li class="tab-title active" role="presentational" ><a href="#tabpanel1" role="tab" tabindex="0" aria-selected="true" controls="tabpanel1">General!</a></li>
+    <li class="tab-title active" role="presentational" ><a href="#tabpanel1" role="tab" tabindex="0" aria-selected="true" controls="tabpanel1">General</a></li>
     <li class="tab-title" role="presentational" ><a href="#tabpanel2" role="tab" tabindex="0"aria-selected="false" controls="tabpanel2">Axis</a></li>
     <li class="tab-title" role="presentational" ><a href="#tabpanel3" role="tab" tabindex="0"aria-selected="false" controls="tabpanel3">Inputs</a></li>
 
@@ -315,17 +315,6 @@
             <label>Shear Angle X</label>
             <div class="small-9 columns">
               <input type="number" id="opensbp_transforms_shearx_angle" class="opensbp_input"/>
-            </div>
-            <div class="small-3 columns">
-              <span class="postfix">degrees</span>
-            </div>
-          </div> 
-        </div>
-        <div class="large-4 columns">
-          <div class="row collapse">
-            <label>Shear Angle Y</label>
-            <div class="small-9 columns">
-              <input type="number" id="opensbp_transforms_sheary_angle" class="opensbp_input"/>
             </div>
             <div class="small-3 columns">
               <span class="postfix">degrees</span>
@@ -1081,6 +1070,26 @@
 </div>
   <script src="/js/libs/dashboard.js"></script>
   <script>
+    var flattenObject = function(ob) {
+    var toReturn = {};
+  
+      for (var i in ob) {
+        if (!ob.hasOwnProperty(i)) continue;
+    
+        if ((typeof ob[i]) == 'object') {
+          var flatObject = flattenObject(ob[i]);
+          for (var x in flatObject) {
+            if (!flatObject.hasOwnProperty(x)) continue;
+        
+            toReturn[i + '_' + x] = flatObject[x];
+          }
+        } else {
+          toReturn[i] = ob[i];
+        }
+      }
+      return toReturn;
+    };
+
     function update() {
         fabmoDashboard.getConfig(function(err, data) {
           if(err) {
@@ -1100,10 +1109,13 @@
                 input.val(value);
               } 
             }
-            console.log("index: ",data.opensbp);
-            for(key in data.opensbp) {
-              value = data.opensbp[key];
-              input = $('#opensbp_' + key) ;
+            var flat = flattenObject(data.opensbp);
+            for(key in flat) {
+              console.log(key);
+              value = flat[key];
+  console.log("value = " + value);              
+              input = $('#opensbp_' + key);
+  console.log("input = ",input);
               if(input.length) {
                 input.val(value);
               }

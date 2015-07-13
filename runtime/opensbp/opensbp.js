@@ -970,14 +970,13 @@ SBPRuntime.prototype.emit_gcode = function(s) {
 };
 
 SBPRuntime.prototype.emit_move = function(code, pt) {
-
 	var gcode = code;
 	var i;
 
 	if( code === "G0" || code === "G1" ){
-		log.debug("emit_move-call xform = " + JSON.stringify(pt));
+//		log.debug("emit_move-call xform = " + JSON.stringify(pt));
 		pt = this.transformation(pt);
-		log.debug("emit_move-pt = " + JSON.stringify(pt));
+//		log.debug("emit_move-pt = " + JSON.stringify(pt));
 	}
 	else if( code === "G2" || code === "G3" ){
 
@@ -1071,17 +1070,6 @@ SBPRuntime.prototype.transformation = function(TranPt){
 
 };
 
-SBPRuntime.prototype.leveler = function(PtNew){
-    log.debug("leveler_HB data = " + JSON.stringify(this.levelerData));
-
-    var zA = data.Z1 + ((data.Z2-data.Z1)*((PtNew.X-data.X1)/(data.X2-data.X1)));
-    var zB = data.Z4 + ((data.Z3-data.Z4)*((PtNew.X-data.X4)/(data.X3-data.X4)));
-    var zP = zA - ((zB-zA)*((PtY-data.Y1)/(data.Y4-data.Y1)));
-    log.debug("zP = " + zP);
-    PtNew.Z += PtZ;
-    log.debug("zP = " + zP + "   PtZ = " + PtZ);
-    return PtNew;
-};
 
 exports.SBPRuntime = SBPRuntime;
 
