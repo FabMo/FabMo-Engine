@@ -47,7 +47,7 @@ Config.prototype.load = function(filename, callback) {
 			log.error(e);
 			return callback(e);
 		}
-		this.update(data, callback);
+		this.update(data, callback, true);
 	}.bind(this));
 };
 

@@ -1,5 +1,6 @@
 var path = require('path');
 var util = require('util');
+var extend = require('../util').extend;
 var PLATFORM = require('process').platform;
 
 Config = require('./config').Config;
@@ -11,11 +12,14 @@ OpenSBPConfig = function() {
 };
 util.inherits(OpenSBPConfig, Config);
 
-OpenSBPConfig.prototype.update = function(data, callback) {
+OpenSBPConfig.prototype.update = function(data, callback, force) {
 	try {
+		/*
 		for(var key in data) {
 			this._cache[key] = data[key];
-		}
+		}*/
+		console.log('Updating config', data)
+		extend(this._cache, data, force);
 	} catch (e) {
 		return callback(e);
 	}

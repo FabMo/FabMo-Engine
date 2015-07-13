@@ -29,6 +29,26 @@ function listify(x) {
     }
 }
 
+function extend(a,b, force) {
+    for(k in b) {
+        if(a.hasOwnProperty(k) || force) {
+            if(typeof b[k] === 'object' && b[k] !== null) {
+                if(typeof a[k] === 'object' && a[k] !== null) {
+                    extend(a[k], b[k]);
+                } else {
+                    if(force) {
+                        a[k] = b[k]
+                    } else {
+                        log.warn('Object format error in extend.')
+                    }
+                }
+            } else {
+                a[k] = b[k]
+            }
+        }
+    }
+}
+
 exports.filename = function(pathname) {
     parts = pathname.split(path.sep);
     return parts[parts.legnth-1];
@@ -333,4 +353,6 @@ exports.move = move;
 exports.walkDir = walkDir;
 exports.createUniqueFilename = createUniqueFilename;
 exports.fixJSON = fixJSON;
+exports.extend = extend;
+
 
