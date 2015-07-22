@@ -17,11 +17,12 @@ The FabMo engine is host software that connects to a G2 motion control platform 
 2. From inside the source directory, install all of the engine dependencies with `npm install`
 3. Create the engine data directory at `/opt/fabmo` or `C:\opt\fabmo` if you're on windows.  Make sure the user running the engine has write access to this directory.
 4. Start the engine with `npm run debug` for development mode or `npm start` for production mode.
+5. On Windows or OSX it is unlikely that the default COM port settings are satisfactory.  After running the engine once, edit `C:\fabmo\config\engine.json` or `/opt/fabmo/config/engine.json` and set the two COM ports for your platform with the appropriate values for your system.
 
-When the engine starts, it will connect to G2 and setup an http server to accept connections on port 9876.  Once the engine is running you can visit http://localhost:9876/ or http://0.0.0.0:9876/ to use the engine dashboard.
+When the engine starts, it will connect to G2 and setup an http server to accept connections on port 9876.  Once the engine is running you can visit [http://localhost:9876/](http://localhost:9876/) to use the engine dashboard.
 
 ## Installing the Engine
-The engine is run from source, and only needs to be checked out and stored in a local directory.   The engine needs access to the directory `/opt/fabmo` to store its internal settings, apps, etc.
+The engine is run from source, and only needs to be checked out and stored in a local directory.  Run `npm install` from the source directory to install the needed dependencies.
 
 ### On the Intel Edison
 To install the engine in the "standard" location on the Intel Edison, perform the following steps.
