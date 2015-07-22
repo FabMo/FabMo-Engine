@@ -982,17 +982,19 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 
 	}
 
-	if(( this.transforms.level.apply === true || this.transforms.interpolate.apply === true ) && code !== "G0" ){
-		if( code === "G1"){
-		    log.debug( "emit_move: lineInterpolate = " + code + "  pt = " + JSON.stringify(pt));
-			interp.lineInterpolate(this, pt);
-		}
-		else if(code === "G2" || code === "G3"){
-		    log.debug( "emit_move: circleInterpolate = " + code + "  pt = " + JSON.stringify(pt));
-			interp.circleInterpolate(this, code, pt);
-		}
-	}
-	else{
+	log.debug("level = " + this.transforms.level.apply );
+	log.debug("interpolate = " + this.transforms.interpolate.apply );
+//	if(( this.transforms.level.apply === true || this.transforms.interpolate.apply === true ) && code !== "G0" ){
+//		if( code === "G1"){
+//		    log.debug( "emit_move: lineInterpolate = " + code + "  pt = " + JSON.stringify(pt));
+//			interp.lineInterpolate(this, pt);
+//		}
+//		else if(code === "G2" || code === "G3"){
+//		    log.debug( "emit_move: circleInterpolate = " + code + "  pt = " + JSON.stringify(pt));
+//			interp.circleInterpolate(this, code, pt);
+//		}
+//	}
+//	else{
 //		if( this.transforms.level.apply === true  && code !== "G0"){
 //   	    	log.debug("emit_move:level");
 //		    pt = interp.leveler(this, pt);
@@ -1000,7 +1002,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 	
 		for(key in pt) {
 			var v = pt[key];
-		  	log.debug(" emit_move v = " + key + v);
+		  	log.debug(" emit_move v = " + key + ":" + v);
 			if(v !== undefined) {
 				if(isNaN(v)) { throw( "Invalid " + key + " argument: " + v ); } 
 				gcode += (key + v.toFixed(5));
@@ -1013,7 +1015,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 			}
 		}
 		this.current_chunk.push('N' + this.pc + gcode);
-	}
+//	}
 };
 
 

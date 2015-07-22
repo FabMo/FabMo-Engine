@@ -110,7 +110,8 @@ function leveler(PtNew, data){
     else{
       log.debug("leveler_multi-point: num keys = " + count);
 
-      return zP;
+      return PtNew.Z;
+      //return zP;
     }
 }
 
