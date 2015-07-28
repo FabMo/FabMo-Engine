@@ -1,14 +1,14 @@
 var HandWheel = function(element, options) {
     
     // Deal with user supplied options
-    var options = options || {}
+    var options = options || {};
     this.ppr = options.ppr || 16;
     this.wheelColor = options.wheelColor || "#ffffff";
     this.thumbColor = options.thumbColor || "#ffffff";
     this.lineColor = options.lineColor || "#000000";
     this.textColor = options.textColor || "#000000";
     this.bgColor = options.bgColor || null;
-    this.textFont = options.textFont || "Arial, Helvetica, sans-serif"
+    this.textFont = options.textFont || "Arial, Helvetica, sans-serif";
     this.modes = options.modes || [''];
     thumbLabels = options.thumbs || [''];
 
@@ -16,7 +16,7 @@ var HandWheel = function(element, options) {
     this.ctx = this.canvas.getContext("2d");
     this.w = this.canvas.width;
     this.h = this.canvas.height;
-    this.center = {x:this.w/2.0, y:this.h/2.0}
+    this.center = {x:this.w/2.0, y:this.h/2.0};
     this.cr = (this.w + this.h)/4.0;
     this.pos = null;
     this.radius = 0.9*this.cr;
@@ -33,7 +33,7 @@ var HandWheel = function(element, options) {
         var center = {
             'x' : this.center.x + Math.cos(pos)*this.radius*0.65,
             'y' : this.center.y + Math.sin(pos)*this.radius*0.65
-        }
+        };
         this.thumbs.push({
             'label' : thumbLabels[i],
             'pos' : pos,
@@ -49,14 +49,14 @@ var HandWheel = function(element, options) {
     this.handlers = {};
     this._setupListeners();
     this._draw();
-}
+};
 
 function dist(a,b) {
-    return Math.sqrt((b.x-a.x)*(b.x-a.x) + (b.y-a.y)*(b.y-a.y))
+    return Math.sqrt((b.x-a.x)*(b.x-a.x) + (b.y-a.y)*(b.y-a.y));
 }
 
 function deg(x) {
-    return x*180.0/Math.PI
+    return x*180.0/Math.PI;
 }
 
 HandWheel.prototype._handleMove = function(evt) {
@@ -86,34 +86,34 @@ HandWheel.prototype._handleMove = function(evt) {
                     thumb.center.x = this.center.x + Math.cos(thumb.pos)*this.radius*0.65;
                     thumb.center.y = this.center.y + Math.sin(thumb.pos)*this.radius*0.65;    
                 }
-                this.emit('sweep', {'angle':dt, 'thumb':this.thumb})
+                this.emit('sweep', {'angle':dt, 'thumb':this.thumb});
                 this._draw();
             }
         }
         this.pos = pos;
-}
+};
 
 HandWheel.prototype.nextMode = function() {
     this.mode_idx = (this.mode_idx + 1) % this.modes.length;
-    this.emit("mode", {"mode":this.getMode()})
+    this.emit("mode", {"mode":this.getMode()});
     this._draw();
-}
+};
 
 HandWheel.prototype.setPPR = function(ppr) {
     this.ppr = ppr;
-}
+};
 
 HandWheel.prototype.getMode = function() {
     return this.modes[this.mode_idx];
-}
+};
 
 HandWheel.prototype._hitsThumb = function(pos, thumb) {
     return dist(pos, thumb.center) < thumb.radius;
-}
+};
 
 HandWheel.prototype._hitsMiddle = function(pos) {
     return dist(pos, this.center) < this.middleRadius;
-}
+};
 
 HandWheel.prototype._drawText = function() {
     var ctx = this.ctx;
@@ -122,13 +122,13 @@ HandWheel.prototype._drawText = function() {
     ctx.textBaseline = 'middle';
     ctx.fillStyle = this.textColor;
     ctx.fillText(this.modes[this.mode_idx], this.center.x, this.center.y);
-}
+};
 
 HandWheel.prototype._activate = function(pos) {
         this.active = true;
         this.angle = null;
         this.pos = pos;
-}
+};
 
 HandWheel.prototype._deactivate = function(evt) {
        this.active = false;
@@ -136,7 +136,7 @@ HandWheel.prototype._deactivate = function(evt) {
        this.pos = null;
        this.thumb = null;
        this.emit("release", {});
-}
+};
 
 HandWheel.prototype._setupListeners = function() {
     this.canvas.addEventListener('mousedown', function(evt) {
@@ -144,7 +144,7 @@ HandWheel.prototype._setupListeners = function() {
         if(this._hitsMiddle(pos)) {
             this.nextMode();
         } else {
-            for(i in this.thumbs) {
+            for(var i in this.thumbs) {
                 thumb = this.thumbs[i];
                 if(this._hitsThumb(pos, thumb)) {
                     this.thumb = thumb.label;
@@ -174,7 +174,7 @@ HandWheel.prototype._setupListeners = function() {
             for(i in this.thumbs) {
                 thumb = this.thumbs[i];
                 if(this._hitsThumb(pos, thumb)) {
-                    this.thumb = thumb.label
+                    this.thumb = thumb.label;
                     this._activate(pos);
                 }
             }
@@ -189,30 +189,30 @@ HandWheel.prototype._setupListeners = function() {
     }.bind(this), false);
     
     this.canvas.addEventListener('touchmove', function(evt) {
-        if(this.active) { this._handleMove(evt) }
+        if(this.active) { this._handleMove(evt); }
     }.bind(this), false);
     
     this.canvas.addEventListener('mousemove', function(evt) {
-        if(this.active) { this._handleMove(evt) }
+        if(this.active) { this._handleMove(evt); }
     }.bind(this), false);
-}
+};
 
 HandWheel.prototype.on = function(event, handler) {
     this.handlers[event] = handler;
-}
+};
 
 HandWheel.prototype.emit = function(event, data) {
     if(event in this.handlers) {
         this.handlers[event](data);
     }
-}
+};
 
 HandWheel.prototype._draw = function() {
     this._clear();
     this._drawCircle();
     this._drawThumbs();  
     this._drawText();  
-}
+};
 
 HandWheel.prototype._drawCircle = function() {
     var ctx = this.ctx; 
@@ -222,7 +222,7 @@ HandWheel.prototype._drawCircle = function() {
     ctx.fillStyle = this.wheelColor;   
     ctx.fill();
     ctx.stroke();
-}
+};
 
 HandWheel.prototype._clear = function() {
     var ctx = this.ctx;
@@ -230,9 +230,9 @@ HandWheel.prototype._clear = function() {
         ctx.fillRect(0,0,this.w,this.h);
     } else {
         ctx.fillStyle = this.bgColor;
-        ctx.clearRect(0,0,this.w,this.h)
+        ctx.clearRect(0,0,this.w,this.h);
     }
-}
+};
 
 HandWheel.prototype._drawThumbs = function() {
     var ctx = this.ctx;
@@ -256,7 +256,7 @@ HandWheel.prototype._drawThumbs = function() {
         ctx.fillText(thumb.label, thumb.center.x, thumb.center.y);
         ctx.globalAlpha = 1.0;
     }
-}
+};
 
 HandWheel.prototype._getMousePos = function(evt) {
     var rect = this.canvas.getBoundingClientRect();
@@ -272,4 +272,4 @@ HandWheel.prototype._getMousePos = function(evt) {
             y: evt.clientY - rect.top
         };
     }
-}
+};

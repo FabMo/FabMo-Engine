@@ -65,7 +65,7 @@
             "apply": false
         },
         "level": {
-            "apply": true,
+            "apply": false,
             "ptDataFile": "C:/SbParts/PtData.json"
         }
     },

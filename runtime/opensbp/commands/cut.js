@@ -243,6 +243,7 @@ exports.CG = function(args) {
   var plgFromZero = args[13] !== undefined ? args[13] : 0;
 	var currentZ;
 	var outStr;
+  var tolerance = 0.000001;
 
   log.debug("start X:" + startX );
   log.debug("start Y:" + startY );
@@ -346,9 +347,19 @@ exports.CG = function(args) {
         else { 
           outStr = 'G3';
         }			// CounterClockwise circle/arc
-			
-        emitObj.X = endX;
-        emitObj.Y = endY;
+        
+        var Xs = parseInt(startX * 100000);
+        if (parseInt(startX * 100000) !== parseInt(endX * 100000)) {
+          emitObj.X = endX;
+          log.debug (" CG   emitObj.X = ", emitObj.X);
+        }
+        log.debug("startX = " + startX + "  endX = " + endX);
+        if (parseInt(startY * 100000) !== parseInt(endY * 100000)) {
+          emitObj.X = endX;
+          log.debug (" CG   emitObj.Y = ", emitObj.Y);
+        }
+        log.debug("startY = " + startY + "  endY = " + endY);
+
 		    emitObj.I = centerX;
         emitObj.J = centerY;
         if (Plg !== 0 && optCG === 3 ) { 
@@ -356,13 +367,14 @@ exports.CG = function(args) {
           currentZ += Plg;
         } // Add Z for spiral plunge
         emitObj.F = ( 60 * config.opensbp.get('movexy_speed'));
-//log.debug("Made it to CG-line 391");
+        log.debug("emitObj = " +  JSON.stringify(emitObj));
+log.debug("Made it to CG-line 391");
         this.emit_move(outStr,emitObj); 
 	    	
         if( i+1 < reps && ( endX != startX || endY != startY ) ){					//If an arc, pullup and jog back to the start position
-//log.debug("Made it to CG-line 396");
+log.debug("Made it to CG-line 396");
           this.emit_move('G0',{'Z':safeZCG});
-//log.debug("Made it to CG-line 399");
+log.debug("Made it to CG-line 399");
           this.emit_move('G0',{ 'X':startX,
                                 'Y':startY });
         }
