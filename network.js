@@ -6,7 +6,63 @@ var fs = require('fs');
 var PROFILES_FOLDER = "/etc/netctl/";
 var WIFI_INTERFACE = "wlan0";
 
+
+try{var connman = require('connman-simplified')();}catch(e){}
+var hotspot_passphrase="shopbot";
+var wifi;
+var properties;
+
+function CHECK(err){if(err){log.error(err);/*process.exit(-1);*/}}
+
+
+function openHotspot(){
+  self=this;
+  log.info("Opening a hotspot...");
+  log.info("SSID : "+ hotspot_ssid);
+  log.info("Passphrase : "+ hotspot_passphrase);
+  self.wifi.openHotspot(hotspot_ssid,hotspot_passphrase,function(err) {
+    CHECK(err);
+  });
+}
+
+function mainWifi(){
+  self=this;
+  self.wifi.getNetworks(function(err,list) { // get the list of available networks
+    CHECK(err);
+    log.info("networks: " + self.wifi.getServicesString(list));
+    self.wifi.joinFavorite(function(err){ // try to join a favorite
+      if(err){openHotspot();} // if it fails, open a hotspot point.
+      else{
+        self.wifi.service.getProperties(function(err,props){
+          log.info("you're connected to " + props.Name + " through " + props.Type);
+        });
+      }
+    });
+  });
+}
+
+connman.init(function(err) {
+  self=this;
+  CHECK(err);
+  connman.initWiFi(function(err,wifi,properties) {
+    CHECK(err);
+    self.wifi=wifi;
+    self.properties=properties;
+    wifi.closeHotspot(function(err) {CHECK(err);});// be sure to close a previous hotspot before scanning
+      wifi.enable(function(err){
+      mainWifi(wifi,properties);
+    });
+
+  });
+});
+
+
+
+
+
 exports.getAvailableWifiNetworks = function(callback) {
+
+    /*
     wifiscanner.scan(function(err,data){
         if (err) {
             callback(err)
@@ -14,9 +70,19 @@ exports.getAvailableWifiNetworks = function(callback) {
             callback(null, data)
         }
     });
+*/
+    self.wifi.getNetworks(function(err,data) {
+        if(err)callback(err);
+        else{
+            callback(null,data);
+        }
+
+    });
 }
 
 exports.getAvailableWifiNetwork = function(ssid, callback) {
+
+/* 
     exports.getAvailableWifiNetworks(function(err, networks) {
         if(err) {
             callback(err)
@@ -35,6 +101,20 @@ exports.getAvailableWifiNetwork = function(ssid, callback) {
             }
         }
     })
+*/
+    self.wifi.getServiceBySSID(function(err,service){
+            if(err) {
+                callback(err);
+            }else {
+                service.getProperties(function(err,props){
+                    if(err) {
+                        callback(err);
+                    }else {
+                        callback(null,service.getProperties());
+                    }
+                });
+            }
+    });
 }
 
 exports.createProfileForAvailableWirelessNetwork = function(ssid, key, callback) {
