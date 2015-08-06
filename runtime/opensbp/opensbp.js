@@ -1014,6 +1014,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 				else if(key === "C") { this.cmd_posc = v; }
 			}
 		}
+		log.debug("emit_move:  N " + this.pc + JSON.stringify(gcode));
 		this.current_chunk.push('N' + this.pc + gcode);
 //	}
 };

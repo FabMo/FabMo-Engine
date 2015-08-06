@@ -109,10 +109,36 @@ function leveler(PtNew, data){
     }
     else{
       log.debug("leveler_multi-point: num keys = " + count);
+// **************Move to higher level so that the objcet only has to be 
+// created once for the file run.
+      // Read point data
 
-      return PtNew.Z;
-      //return zP;
+      // Organize points
+
+      // Create triangles
+// *****************************************************
+      var triangles = {};
+      var pX = PtNew.X;
+      var pY = PtNew.Y;
+      //Search for the triangle that the point intersects
+      for (key in triangles) {
+        if ((triangles[key].Y1 > pY || triangles[key].Y2 > pY || triangles[key].Y3 > pY) && 
+            (triangles[key].Y1 < pY || triangles[key].Y2 < pY || triangles[key].Y3 < pY)){
+          if ((triangles[key].X1 > pX || triangles[key].X2 > pX || triangles[key].Y3 > pX) && 
+              (triangles[key].X1 < pX || triangles[key].X2 < pX || triangles[key].Y3 < pX)){
+          //Calculate the Z Height
+            // Find X line that intersects triangle
+
+            // Find Z at Y intersection of X line
+            zP += PtNew.Z;
+            log.debug("zP = " + zP + "   PtZ = " + PtNew.Z);
+            return zP;
+      
+          }
+        }
+      }
     }
+    return PtNew.Z;
 }
 
 //  Interpolate_Circle - is used to interpolate a circle that has uneven proportions as an ellipse.
