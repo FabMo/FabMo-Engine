@@ -348,15 +348,14 @@ exports.CG = function(args) {
           outStr = 'G3';
         }			// CounterClockwise circle/arc
         
-        var Xs = parseInt(startX * 100000);
         if (parseInt(startX * 100000) !== parseInt(endX * 100000)) {
           emitObj.X = endX;
-          log.debug (" CG   emitObj.X = ", emitObj.X);
+          log.debug (" CG   emitObj.X = " +  emitObj.X);
         }
         log.debug("startX = " + startX + "  endX = " + endX);
         if (parseInt(startY * 100000) !== parseInt(endY * 100000)) {
-          emitObj.X = endX;
-          log.debug (" CG   emitObj.Y = ", emitObj.Y);
+          emitObj.Y = endY;
+          log.debug (" CG   emitObj.Y = " + emitObj.Y);
         }
         log.debug("startY = " + startY + "  endY = " + endY);
 
@@ -367,8 +366,6 @@ exports.CG = function(args) {
           currentZ += Plg;
         } // Add Z for spiral plunge
         emitObj.F = ( 60 * config.opensbp.get('movexy_speed'));
-        log.debug("emitObj = " +  JSON.stringify(emitObj));
-log.debug("Made it to CG-line 391");
         this.emit_move(outStr,emitObj); 
 	    	
         if( i+1 < reps && ( endX != startX || endY != startY ) ){					//If an arc, pullup and jog back to the start position
