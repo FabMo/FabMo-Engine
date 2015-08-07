@@ -145,7 +145,6 @@ function leveler(PtNew, data){
 //    
 //  Usage: circleInterpolate(pt);
 //
-
 exports.circleInterpolate = function(runtime, code, CGParams) {
 log.debug("circleInterpolate: CGParams = " + JSON.stringify(CGParams));
   var startX = runtime.cmd_posx;

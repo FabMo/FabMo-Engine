@@ -234,6 +234,8 @@ exports.CG = function(args) {
   var optCG = args[11] !== undefined ? args[11] : 0;
   var noPullUp = args[12] !== undefined ? args[12] : 0;
   var plgFromZero = args[13] !== undefined ? args[13] : 0;
+  var feedrateZ = (60 * config.opensbp.get('movez_speed'));
+  var feedrateXY = (60 * config.opensbp.get('movexy_speed'));
 	var currentZ;
 	var outStr;
   var tolerance = 0.000001;
@@ -273,7 +275,7 @@ exports.CG = function(args) {
   var safeZCG = currentZ + config.opensbp.get('safeZpullUp');
   var spiralPlunge = (optCG === 2 || optCG === 4) ? 1 : 0;
 
-  if ( optCG == 2 ) {    	
+  if ( optCG == 2 ) {
   	circRadius = Math.sqrt((centerX * centerX) + (centerY * centerY));
   	PocketAngle = Math.atan2(centerY, centerX);								// Find the angle of the step over between passes
   	stepOver = config.opensbp.get('cutterDia') * ((100 - config.opensbp.get('pocketOverlap')) / 100);	// Calculate the overlap
@@ -282,24 +284,25 @@ exports.CG = function(args) {
   }
 
   if ( plgFromZero == 1 ) {										// If plunge depth is specified move to that depth * number of reps
-    this.emit_move('G1',{ 'Z':currentZ,
-                          'F':(60 * config.opensbp.get('movez_speed')) });
+    this.emit_move('G1',{ 'Z':currentZ, 'F':feedrateZ });
   }
+
+  var nextX = 0;
+  var nextY = 0;
 
   for (i=0; i<reps;i++){
   	if (Plg !== 0 && optCG < 3 ) {										// If plunge depth is specified move to that depth * number of reps
   		currentZ += Plg;
-      this.emit_move('G1',{ 'Z':currentZ,
-                            'F':(60 * config.opensbp.get('movez_speed')) });
-   	}
-  
+      this.emit_move('G1',{ 'Z':currentZ, 'F':feedrateZ });
+   	}  
    	if (optCG == 2) { 															// Pocket circle from the outside inward to center
    		// Loop passes until overlapping the center
    		for (j=0; (Math.abs(Pocket_StepX * j) <= circRadius) && (Math.abs(Pocket_StepY * j) <= circRadius) ; j++){
-  	   	if ( j > 0 ) {
-    	   	this.emit_move('G1',{ 'X':((j*Pocket_StepX) + startX),
-                                'Y':((j*Pocket_StepY) + startY),
-                                'F':(60 * config.opensbp.get('movexy_speed')) });
+  	   	nextX = (startX + (j*Pocket_StepX));
+        nextY = (startY + (j*Pocket_StepY));
+        if ( j > 0 ) {
+
+    	   	this.emit_move('G1',{ 'X':nextX, 'Y':nextY, 'F':feedrateXY });
         }
         if ( Math.abs(propX) !== Math.abs(propY) ) {      // calculate an interpolated ellipse
           this.interpolate_circle(startX,startY,startZ,
@@ -309,22 +312,21 @@ exports.CG = function(args) {
                                   optCG );
         } 
   	   	else {
+
           if ( Dir == 1 ) { outStr = 'G2'; }	  // Clockwise circle/arc
    			  else { outStr = 'G3'; }	              // CounterClockwise circle/arc
-          this.emit_move(outStr,{ 'X':(startX + (j*Pocket_StepX)),
-                                  'Y':(startY + (j*Pocket_StepY)),
-                                  'I':(centerX - (j*Pocket_StepX)),
-                                  'J':(centerY - (j*Pocket_StepY)),
-                                  'F':(60 * config.opensbp.get('movexy_speed')) });
+            this.emit_move(outStr,{ 'I':(centerX - (j*Pocket_StepX)),
+                                    'J':(centerY - (j*Pocket_StepY)),
+                                    'F':feedrateXY });
         }										
     	}
     	this.emit_move('G0',{'Z':safeZCG});
-      this.emit_move('G0',{ 'X':startX,
-                            'Y':startY });
+      this.emit_move('G0',{ 'X':startX, 'Y':startY });
     } 
     else {
       if ( Math.abs(propX) !== Math.abs(propY) ) {      // calculate out to an interpolated ellipse
 //        this.interpolate_circle(startX,startY,currentZ,endX,endY,Plg,centerX,centerY,propX,propY);
+//        circleInterpolate(runtime, code, CGParams);
       }
     	else {
         var emitObj = {};
@@ -338,14 +340,10 @@ exports.CG = function(args) {
         
         if (parseInt(startX * 100000) !== parseInt(endX * 100000)) {
           emitObj.X = endX;
-          log.debug (" CG   emitObj.X = " +  emitObj.X);
         }
-        log.debug("startX = " + startX + "  endX = " + endX);
         if (parseInt(startY * 100000) !== parseInt(endY * 100000)) {
           emitObj.Y = endY;
-          log.debug (" CG   emitObj.Y = " + emitObj.Y);
         }
-        log.debug("startY = " + startY + "  endY = " + endY);
 
 		    emitObj.I = centerX;
         emitObj.J = centerY;

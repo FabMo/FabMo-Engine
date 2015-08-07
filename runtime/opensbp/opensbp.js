@@ -982,8 +982,8 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 
 	}
 
-	log.debug("level = " + this.transforms.level.apply );
-	log.debug("interpolate = " + this.transforms.interpolate.apply );
+//	log.debug("level = " + this.transforms.level.apply );
+//	log.debug("interpolate = " + this.transforms.interpolate.apply );
 //	if(( this.transforms.level.apply === true || this.transforms.interpolate.apply === true ) && code !== "G0" ){
 //		if( code === "G1"){
 //		    log.debug( "emit_move: lineInterpolate = " + code + "  pt = " + JSON.stringify(pt));
@@ -1031,10 +1031,10 @@ SBPRuntime.prototype.loadCommands = function(callback) {
 }
 
 SBPRuntime.prototype.transformation = function(TranPt){
-  log.debug("transformation = " + JSON.stringify(TranPt));
+//  log.debug("transformation = " + JSON.stringify(TranPt));
 	if (this.transforms.rotate.apply !== false){
-  		log.debug("rotation apply = " + this.transforms.rotate.apply);
-		log.debug("Rotate: " + JSON.stringify(this.transforms.rotate));
+//  		log.debug("rotation apply = " + this.transforms.rotate.apply);
+//		log.debug("Rotate: " + JSON.stringify(this.transforms.rotate));
         if ( !("X" in TranPt) ) { TranPt.X = this.cmd_posx; }
         if ( !("Y" in TranPt) ) { TranPt.Y = this.cmd_posy; }
 		var angle = this.transforms.rotate.angle;
@@ -1045,15 +1045,15 @@ SBPRuntime.prototype.transformation = function(TranPt){
 		TranPt = tform.rotate(TranPt,angle,PtRotX,PtRotY);
 	}
 	if (this.transforms.shearx.apply !== false){
-		log.debug("ShearX: " + JSON.stringify(this.transforms.shearx));
+//		log.debug("ShearX: " + JSON.stringify(this.transforms.shearx));
 		TranPt = tform.shearX(TranPt);
 	}
 	if (this.transforms.sheary.apply !== false){
-		log.debug("ShearY: " + JSON.stringify(this.transforms.sheary));
+//		log.debug("ShearY: " + JSON.stringify(this.transforms.sheary));
 		TranPt = tform.shearY(TranPt);
 	}
 	if (this.transforms.scale.apply !== false){
-		log.debug("Scale: " + JSON.stringify(this.transforms.scale));
+//		log.debug("Scale: " + JSON.stringify(this.transforms.scale));
 		var ScaleX = this.transforms.scale.scalex;
 		var ScaleY = this.transforms.scale.scaley;
 		var PtX = this.transforms.scale.x;
@@ -1062,7 +1062,7 @@ SBPRuntime.prototype.transformation = function(TranPt){
 		TranPt = tform.scale(TranPt,ScaleX,ScaleY,PtX,PtY);
 	}
 	if (this.transforms.move.apply !== false){
-		log.debug("Move: " + JSON.stringify(this.transforms.move));
+//		log.debug("Move: " + JSON.stringify(this.transforms.move));
 		TranPt = tform.translate(TranPt, 
 								 this.transforms.move.x, 
 								 this.transforms.move.y, 
