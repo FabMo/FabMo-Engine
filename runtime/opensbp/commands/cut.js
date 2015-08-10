@@ -281,6 +281,8 @@ exports.CG = function(args) {
   	stepOver = config.opensbp.get('cutterDia') * ((100 - config.opensbp.get('pocketOverlap')) / 100);	// Calculate the overlap
   	Pocket_StepX = stepOver * Math.cos(PocketAngle);						// Calculate the stepover in X based on the radius of the cutter * overlap
   	Pocket_StepY = stepOver * Math.sin(PocketAngle);						// Calculate the stepover in Y based on the radius of the cutter * overlap
+log.debug("CG: StepX = " + Pocket_StepX);
+log.debug("CG: StepY = " + Pocket_StepY);
   }
 
   if ( plgFromZero == 1 ) {										// If plunge depth is specified move to that depth * number of reps
@@ -297,11 +299,10 @@ exports.CG = function(args) {
    	}  
    	if (optCG == 2) { 															// Pocket circle from the outside inward to center
    		// Loop passes until overlapping the center
-   		for (j=0; (Math.abs(Pocket_StepX * j) <= circRadius) && (Math.abs(Pocket_StepY * j) <= circRadius) ; j++){
-  	   	nextX = (startX + (j*Pocket_StepX));
+   		for (j=0; (Math.abs(Pocket_StepX * j) < circRadius) && (Math.abs(Pocket_StepY * j) < circRadius) ; j++){
+        nextX = (startX + (j*Pocket_StepX));
         nextY = (startY + (j*Pocket_StepY));
         if ( j > 0 ) {
-
     	   	this.emit_move('G1',{ 'X':nextX, 'Y':nextY, 'F':feedrateXY });
         }
         if ( Math.abs(propX) !== Math.abs(propY) ) {      // calculate an interpolated ellipse
@@ -315,7 +316,8 @@ exports.CG = function(args) {
 
           if ( Dir == 1 ) { outStr = 'G2'; }	  // Clockwise circle/arc
    			  else { outStr = 'G3'; }	              // CounterClockwise circle/arc
-            this.emit_move(outStr,{ 'I':(centerX - (j*Pocket_StepX)),
+            this.emit_move(outStr,{ 'X':nextX,
+                                    'I':(centerX - (j*Pocket_StepX)),
                                     'J':(centerY - (j*Pocket_StepY)),
                                     'F':feedrateXY });
         }										
