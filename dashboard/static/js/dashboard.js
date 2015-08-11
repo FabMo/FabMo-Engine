@@ -114,6 +114,12 @@ define(function(require) {
 			callback(null)
 		}.bind(this));
 
+		// Show a notification
+		this._registerHandler('notification', function(data,callback) { 
+			this.notification(data.type, data.message); 
+			callback(null);
+		}.bind(this))
+
 		// Submit a job
 		this._registerHandler('submitJob', function(data, callback) { 
 			if('file' in data) {
@@ -284,6 +290,20 @@ define(function(require) {
 
 		this._registerHandler('connectToWifi', function(data, callback) {
 			this.machine.connect_to_wifi(data.ssid, data.key, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+
+		this._registerHandler('disconnectFromWifi', function(data, callback) {
+			this.machine.disconnect_from_wifi(function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+
+		this._registerHandler('forgetWifi', function(data, callback) {
+			this.machine.forget_wifi(data.ssid, function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));

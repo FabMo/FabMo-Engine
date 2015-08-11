@@ -8,6 +8,7 @@ var WIFI_INTERFACE = "wlan0";
 
 
 try{var connman = require('connman-simplified')();}catch(e){}
+var hotspot_ssid="handibot";
 var hotspot_passphrase="shopbot";
 var wifi;
 var properties;
@@ -50,7 +51,7 @@ connman.init(function(err) {
     self.properties=properties;
     wifi.closeHotspot(function(err) {CHECK(err);});// be sure to close a previous hotspot before scanning
       wifi.enable(function(err){
-      mainWifi(wifi,properties);
+      mainWifi();
     });
 
   });
@@ -116,6 +117,49 @@ exports.getAvailableWifiNetwork = function(ssid, callback) {
             }
     });
 }
+
+exports.connectToAWifiNetwork= function(ssid,key,callback) {
+
+    /*
+    wifiscanner.scan(function(err,data){
+        if (err) {
+            callback(err)
+        } else {
+            callback(null, data)
+        }
+    });
+*/
+    self.wifi.join(ssid,key,function(err,data) {
+        if(err){
+        callback(err.message);
+        mainWifi();
+        }
+        else{
+            callback(null,data);
+        }
+
+    });
+}
+
+
+exports.disconnectFromAWifiNetwork= function(callback){
+	self.wifi.disconnect(function(err){
+		if(err)callback(err); 
+		else callback(null);
+	});
+     
+}
+
+exports.forgetAWifiNetwork=function(ssid,callback){
+	self.wifi.forgetNetwork(ssid,function(err){
+		if(err)callback(err); 
+		else callback(null);
+	})
+}
+
+/*******************************************************************************************/
+/*************************************  OLD MANAGER  ***************************************/
+/*******************************************************************************************/
 
 exports.createProfileForAvailableWirelessNetwork = function(ssid, key, callback) {
     exports.getAvailableWifiNetwork(ssid, function(err, network) {
@@ -212,3 +256,8 @@ exports.removeWifiProfile = function(ssid, callback) {
         callback(err);
     });
 }
+
+
+/*******************************************************************************************/
+/********************************* END OF OLD MANAGER  *************************************/
+/*******************************************************************************************/

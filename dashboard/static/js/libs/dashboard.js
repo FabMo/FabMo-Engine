@@ -211,6 +211,11 @@ FabMoDashboard.prototype.hideDRO = function(callback) {
 	this._call("hideDRO", null, callback);
 }
 
+
+FabMoDashboard.prototype.notification = function(type,message,callback) {
+	this._call("notification", {'type':type,'message':message}, callback);
+}
+
 FabMoDashboard.prototype.submitJob = function(data, config, callback) {
 	var message = {};
 
@@ -314,6 +319,14 @@ FabMoDashboard.prototype.runSBP = function(text) {
 
 FabMoDashboard.prototype.connectToWifi = function(ssid, key, callback) {
 	this._call("connectToWifi", {'ssid':ssid, 'key':key}, callback);
+}
+
+FabMoDashboard.prototype.disconnectFromWifi = function(callback) {
+	this._call("disconnectFromWifi", null, callback);
+}
+
+FabMoDashboard.prototype.forgetWifi = function(ssid, key, callback) {
+	this._call("forgetWifi", {'ssid':ssid}, callback);
 }
 
 FabMoDashboard.prototype.getMacros = function(callback) {

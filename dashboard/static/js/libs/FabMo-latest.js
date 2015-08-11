@@ -1155,6 +1155,59 @@ FabMo.prototype.connect_to_wifi =  function(ssid, key, callback)
 	});
 };
 
+FabMo.prototype.disconnect_from_wifi =  function(callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.wifi + '/disconnect',
+		type: "GET",
+		dataType : 'json', 
+		success: function( data ) {
+			if(data.status === "success") {
+				callback(undefined,data.data);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
+		error: function(data, err) {
+			var error = that.default_error.no_device;
+			error.sys_err = err;
+			callback(error);
+		}
+	});
+};
+
+FabMo.prototype.forget_wifi =  function(ssid, callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.wifi + '/forget',
+		type: "POST",
+		dataType : 'json', 
+		data : {"ssid" : ssid},
+		success: function( data ) {
+			if(data.status === "success") {
+				callback(undefined,data.data);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
+		error: function(data, err) {
+			var error = that.default_error.no_device;
+			error.sys_err = err;
+			callback(error);
+		}
+	});
+};
+
 FabMo.prototype.get_macros = function(callback)
 {
 	if (!callback)

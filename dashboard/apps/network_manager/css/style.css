@@ -49,14 +49,26 @@ tr.shown td.details-control {
     width: 32px;
     height: 32px;
 }
-.favorite {
-    background: url('../images/favorite.png') no-repeat center center;
+.connected {
+    background: url('../images/status_connected.png') no-repeat center center;
     background-size: contain;
     width: 32px;
     height: 32px;
 }
-.notfavorite {
-    background: url('../images/notfavorite.png') no-repeat center center;
+.idle {
+    background: url('../images/status_idle.png') no-repeat center center;
+    background-size: contain;
+    width: 32px;
+    height: 32px;
+}
+.warning {
+    background: url('../images/status_warning.png') no-repeat center center;
+    background-size: contain;
+    width: 32px;
+    height: 32px;
+}
+.error {
+    background: url('../images/status_error.png') no-repeat center center;
     background-size: contain;
     width: 32px;
     height: 32px;

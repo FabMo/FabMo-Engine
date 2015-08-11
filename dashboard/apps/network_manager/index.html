@@ -22,7 +22,7 @@
 	<section class="container">
 		<div class="row title">
 			<div class="small-7 medium-9 large-10 columns">
-				<h4>Available Networks</h4>
+				<h4>Wifi Networks</h4>
 			</div>
 			<div class="small-5 medium-3 large-2 columns btn">
 			</div>
@@ -37,12 +37,30 @@
                 	<th>SSID</th>
                 	<th>Security</th>
                     <th>Strength</th>
-                    <th>Favorite</th>
+                    <th>State</th>
             	</tr>
         	</thead>
         	</table>
 		</div>
 	</section>
+
+
+    <div id="passwd-modal" class="reveal-modal" data-reveal>
+    <h2>Enter the passphrase</h2>
+    <form id="passwd-form">
+        <div class="row">
+            <label for="password">Passphrase</label>
+            <input type="password" name="password" />
+        </div>
+        <div class="row">
+             <div class="right">
+                 <button type="reset" class="button radius alert">Reset</button>
+                 <button type="submit" class="button radius">Connect</button>
+             </div>
+         </div>
+     </form>
+     <a class="close-reveal-modal">&#215;</a>
+    </div>
 
   <!-- Javascript inclusions -->
   <script src="./js/jquery.js"></script>
@@ -71,16 +89,18 @@
         	},
         "columns": [
             {
-                "className":      'details-control',
-                "orderable":      false,
-                "data":           null,
-                "defaultContent": '',
+                className:      'details-control',
+                orderable:      false,
+                data:           null,
+                defaultContent: '',
             },
             {
+                className: 'ssid',
             	data : "ssid", 
             	defaultContent : '', 
             },
             { 
+                className: 'security',
             	data : "security", 
             	defaultContent : '',
             	render : function(data) {
@@ -95,6 +115,7 @@
             	}
             },
             {
+                className: 'strength',
                 data :"strength",
                 width : '40px',
                 orderable : false,
@@ -110,12 +131,17 @@
                 }
             },
             {
-                data :"favorite",
+                className: 'state',
+                data :"state",
                 width : '40px',
                 orderable : false,
                 render : function(data) {
                     var classname = 'notfavorite'
-                    if(data) { classname = 'favorite';}
+                    if(data=="online"||data=="ready") { classname = 'connected';}
+                    else if(data=="idle"||data=="disconnect") { classname = 'idle';}
+                    else if(data=="failure"){classname= 'error';}
+                    else if(data=="association"||data=="configuration"){classname='warning'}
+
                     return '<div class="' + classname + '"></div>'
                 }
             },
@@ -123,6 +149,36 @@
         "order" : [[1,"desc"]]
     }); // DataTable
 
+    var wifi_table_interval = setInterval( refresh_table, 5000 );
+    var save_opened=$('#wifi_table tbody').find('.shown');
+
+    function refresh_table(){
+            wifi_table.ajax.reload( function(data){
+            $.each(save_opened,function(index,val){
+                    var ssid =$(val).children('.ssid').first().text();
+                    var tr =$('#wifi_table tbody tr :contains('+ssid+')').first().parent();
+                    var row = wifi_table.row(tr);
+                    tr.addClass('shown');
+                    row.child(wifi_child_row(network)).show();
+
+                    $('.disconnect_button').click(function(e) {
+                        fabmoDashboard.disconnectFromWifi(function(err,data){
+                                if(err)fabmoDashboard.notification('error',err);
+                                else fabmoDashboard.notification('success',"succesfully disconnected !");
+                        });
+                     });
+
+                    $('.forget_button').click(function(e) {
+                        var tr=$(this).closest('tr').parent().closest('tr').prev();
+                        var ssid = wifi_table.row(tr).data().ssid;
+                        fabmoDashboard.forgetWifi(ssid,function(err,data){
+                                if(err)fabmoDashboard.notification('error',err);
+                                else fabmoDashboard.notification('success',"Network succesfully forgotten !");
+                         });
+                    });
+                ;})
+            }, false ); // user paging is not reset on reload
+    }
 
     function wifi_child_row(network) {
         retval = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">'
@@ -144,12 +200,20 @@
                   '</tr>'+
                   '<tr>'+
                     '<td class="child-row-label">Favorite:</td>'+
-                    '<td>'+ (network.favorite!==null?network.favorite.toString():null || '<em>No Favourite argument?</em>') + '</td>'+
+                    '<td>'+ (network.favorite!==null?network.favorite.toString():null || '<em>No Favorite argument?</em>') + '</td>'+
                   '</tr>';
-        if(network.state==="online"){
+        if(network.state==="online"|| network.state==="ready"){
         retval += '<tr>'+
                     '<td class="child-row-label">IP Address:</td>'+
                     '<td>'+ (network.ipaddress || network.ip4Address || network.ip6Address || '<em>No IP Address?</em>') + '</td>'+
+                  '</tr>'+
+                  '<tr>'+
+                    '<td><button class="button small disconnect_button">Disconnect</button></td>'+
+                  '</tr>';
+        }
+        else if(network.state==='idle' && network.favorite===true){
+        retval += '<tr>'+
+                    '<td><button class="button small forget_button">Forget</button></td>'+
                   '</tr>';
         }
         retval += '</table>';
@@ -157,10 +221,45 @@
         return retval;
     }
 
-    $('#wifi_table tbody').on('dblclick', 'tr', function () {
-        var name = $('td', this).eq(1).text();
-        fabmoDashboard.connectToWifi(name, 'helloworld')
-    } );
+    $('#wifi_table tbody').on('dblclick', 'td.ssid', function () {
+        var name = $(this).text(); // get the ssid
+        var tr = $(this).parent();
+        var row = wifi_table.row( tr );
+        var network = row.data();
+        if(network.favorite){
+            fabmoDashboard.connectToWifi(name, null,function(err,data){
+                if(err)fabmoDashboard.notification('error',err);
+                else fabmoDashboard.notification('success',"you're connected !");
+            });
+        }else{
+            requestPassword(function(passwd){
+                fabmoDashboard.connectToWifi(name, passwd,function(err,data){
+                    if(err)fabmoDashboard.notification('error',err);
+                    else fabmoDashboard.notification('success',"you're connected !");
+                });
+            });
+        }
+    });
+
+    function requestPassword(callback){
+        $('#passwd-modal').foundation('reveal', 'open');
+        $( "#passwd-form" ).submit(function( event ) {
+          event.preventDefault();
+          callback($('input:first').val());
+          $('#passwd-modal').foundation('reveal', 'close');
+          $("#passwd-form").trigger('reset'); 
+          $(this).off('submit');
+        });
+        $(".close-reveal-modal").click(function(e){
+
+            $('#passwd-modal').foundation('reveal', 'close');
+            $("#passwd-form").trigger('reset'); 
+            $("#passwd-form").off('submit');
+        })
+    }
+
+
+
 
 
         // Add event listener for opening and closing details
@@ -179,12 +278,32 @@
                 tr.addClass('shown');
             }
         } else {
-            network = row.data()
+            network = row.data();
             row.child( wifi_child_row(network) ).show();
             // DO STUFF
             tr.addClass('shown');
         }
-    } );
+        save_opened=$('#wifi_table tbody').find('.shown');
+
+        // bind the disconnect button
+        $('.disconnect_button').click(function(e) {
+            fabmoDashboard.disconnectFromWifi(function(err,data){
+                    if(err)fabmoDashboard.notification('error',err);
+                    else fabmoDashboard.notification('success',"succesfully disconnected !");
+            });
+        });
+
+        $('.forget_button').click(function(e) {
+            var tr=$(this).closest('tr').parent().closest('tr').prev();
+            var ssid = wifi_table.row(tr).data().ssid;
+            
+            fabmoDashboard.forgetWifi(ssid,function(err,data){
+                    if(err)fabmoDashboard.notification('error',err);
+                    else fabmoDashboard.notification('success',"Network succesfully forgotten !");
+            });
+        });
+
+    });
 
 });
 </script>

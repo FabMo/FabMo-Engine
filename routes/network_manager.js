@@ -14,21 +14,60 @@ scan = function(req, res, next) {
     });
 };
 
-connect = function(req, res, next) {
+connectWifi = function(req, res, next) {
     ssid = req.params.ssid
     key = req.params.key
     if(ssid) {
-        network.createProfileForAvailableWirelessNetwork(ssid, key, function(err, data) {
+        /*network.createProfileForAvailableWirelessNetwork(ssid, key, function(err, data) {
             if(err) {
                 res.json({'status':'error', 'message' : err});
             } else {
                 res.json({'status':'success'})
+            }
+        });*/
+        network.connectToAWifiNetwork(ssid,key,function(err, data){
+            if(err) {
+                res.json({'status':'error', 'message' : err});
+            } else {
+                res.json({'status':'success'})
+            }
+
+        });
+    } else {
+        res.json({'status':'error', 'message':'No SSID provided'});
+    }
+}
+
+disconnectWifi = function(req, res, next) {
+    network.disconnectFromAWifiNetwork(function(err, data){
+        /*if(err) {
+            res.json({'status':'error', 'message' : err}); //the error is not well reported;this is a bug in node.js v0.12.7;
+        } else {
+            res.json({'status':'success'})
+        }*/
+         res.json({'status':'success'});
+    });
+}
+
+forgetWifi  = function(req,res,next){
+    ssid = req.params.ssid
+    if(ssid) {
+        network.forgetAWifiNetwork(ssid,function(err,data){
+            if(err) {
+                res.json({'status':'error', 'message' : err});
+            } else {
+                res.json({'status':'success'});
             }
         });
     } else {
         res.json({'status':'error', 'message':'No SSID provided'});
     }
 }
+
+/*******************************************************************************************/
+/*************************************  OLD MANAGER  ***************************************/
+/*******************************************************************************************/
+
 
 listProfiles = function(req, res, next) {
     network.getWifiProfiles(function(err, profiles) {
@@ -73,10 +112,17 @@ getProfile = function(req, res, next) {
 }
 
 
+/*******************************************************************************************/
+/********************************* END OF OLD MANAGER  *************************************/
+/*******************************************************************************************/
+
+
 module.exports = function(server) {
     if(config.engine.get('wifi_manager')){
         server.get('/network/wifi/scan',scan); //OK
-        server.post('/network/wifi/connect', connect) // OK
+        server.post('/network/wifi/connect', connectWifi) // OK
+        server.get('/network/wifi/disconnect',disconnectWifi); //OK
+        server.post('/network/wifi/forget',forgetWifi); //OK
         server.get('/network/wifi/profiles',listProfiles); //OK
         //server.post('/network/wifi/profile',add_profile); //TODO: ADD THIS BACK IN
         server.del('/network/wifi/profile/:ssid',deleteProfile); //OK
