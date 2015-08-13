@@ -5,9 +5,8 @@
 
 	<link rel="stylesheet" href="./css/foundation.min.css">
 	<link rel="stylesheet" href="./css/normalize.css">
-	<link rel="stylesheet" href="./css/style.css">
 	<link rel="stylesheet" href="./css/dataTables.foundation.css">
-
+  <link rel="stylesheet" href="./css/style.css">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
@@ -21,10 +20,12 @@
 
 	<section class="container">
 		<div class="row title">
-			<div class="small-7 medium-9 large-10 columns">
+			<div class="small-9 medium-10 large-10 columns">
 				<h4>Wifi Networks</h4>
 			</div>
-			<div class="small-5 medium-3 large-2 columns btn">
+			<div class="small-3 medium-2 large-2 columns btn switch">
+			  <input id="Wifi_toggle" type="radio" name="wifi_toggle"/>
+			  <label for="Wifi_toggle"></label>
 			</div>
 		</div>
 
@@ -38,6 +39,7 @@
                 	<th>Security</th>
                     <th>Strength</th>
                     <th>State</th>
+                    <th>Known</th>
             	</tr>
         	</thead>
         	</table>
@@ -95,12 +97,14 @@
                 defaultContent: '',
             },
             {
-                className: 'ssid',
+              className: 'ssid',
+              orderable:      false,
             	data : "ssid", 
             	defaultContent : '', 
             },
             { 
-                className: 'security',
+              className: 'security',
+              orderable:      false,
             	data : "security", 
             	defaultContent : '',
             	render : function(data) {
@@ -121,13 +125,14 @@
                 orderable : false,
                 render : function(data) {
                     data = parseInt(data)
-                    var classname = 'wifi0'
+                    var classname = 'wifi0';
+                    var data_order=data;
                     if(data <= 20) { classname = 'wifi0';}
                     else if(data <= 40) { classname = 'wifi1';}
                     else if(data <= 60) { classname = 'wifi2';}
                     else if(data <= 80) { classname = 'wifi3';}
                     else if(data <= 100) { classname = 'wifi4';}
-                    return '<div class="' + classname + '"></div>'
+                    return '<div class="' + classname + '" data-order="'+data_order+'"></div>'
                 }
             },
             {
@@ -136,20 +141,35 @@
                 width : '40px',
                 orderable : false,
                 render : function(data) {
-                    var classname = 'notfavorite'
-                    if(data=="online"||data=="ready") { classname = 'connected';}
-                    else if(data=="idle"||data=="disconnect") { classname = 'idle';}
-                    else if(data=="failure"){classname= 'error';}
-                    else if(data=="association"||data=="configuration"){classname='warning'}
+                    var classname = 'idle';
+                    var data_order=0;
+                    if(data=="online"||data=="ready") { classname = 'connected';data_order=1;}
+                    else if(data=="idle"||data=="disconnect") { classname = 'idle';data_order=4;}
+                    else if(data=="failure"){classname= 'error';data_order=3;}
+                    else if(data=="association"||data=="configuration"){classname='warning';data_order=1;}
 
-                    return '<div class="' + classname + '"></div>'
+                    return '<div class="' + classname + '" data-order="'+data_order+'"></div>'
+                }
+            },
+            {
+                className: 'known',
+                data :"favorite",
+                width : '40px',
+                orderable : false,
+                render : function(data) {
+                    if(data===true) {
+                    	return '<div class="favorite">&#10004</div>';
+                    } else {
+                    	return '<div class="notfavorite"></div>';
+                    }
                 }
             },
         ],
-        "order" : [[1,"desc"]]
+        "order": [[ 5, 'desc' ], [ 4, 'asc' ],[3,'desc']],
+
     }); // DataTable
 
-    var wifi_table_interval = setInterval( refresh_table, 5000 );
+    var wifi_table_interval = setInterval( refresh_table, 3000 );
     var save_opened=$('#wifi_table tbody').find('.shown');
 
     function refresh_table(){

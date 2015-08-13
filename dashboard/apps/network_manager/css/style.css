@@ -8,6 +8,12 @@ h1, h2, h3, h4, h5, h6 {
   color: #666;
 }
 
+table.dataTable thead .sorting, 
+table.dataTable thead .sorting_asc, 
+table.dataTable thead .sorting_desc {
+    background : none;
+}
+
 td.details-control {
     background: url('images/details_open.png') no-repeat center center;
     width: 40px;
