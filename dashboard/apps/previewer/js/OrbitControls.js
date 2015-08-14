@@ -185,7 +185,9 @@ THREE.OrbitControls = function ( object, domElement ) {
 
         var element = scope.domElement === document ? scope.domElement.body : scope.domElement;
 
-        if ( scope.object instanceof THREE.PerspectiveCamera ) {
+        if ( scope.object instanceof THREE.PerspectiveCamera ||
+           (scope.object instanceof THREE.CombinedCamera &&
+           scope.object.inPerspectiveMode === true ) ) {
 
             // perspective
             var position = scope.object.position;
@@ -199,7 +201,9 @@ THREE.OrbitControls = function ( object, domElement ) {
             scope.panLeft( 2 * deltaX * targetDistance / element.clientHeight );
             scope.panUp( 2 * deltaY * targetDistance / element.clientHeight );
 
-        } else if ( scope.object instanceof THREE.OrthographicCamera ) {
+        } else if ( scope.object instanceof THREE.OrthographicCamera ||
+           (scope.object instanceof THREE.CombinedCamera &&
+           scope.object.inOrthographicMode === true ) ) {
 
             // orthographic
             scope.panLeft( deltaX * (scope.object.right - scope.object.left) / element.clientWidth );
@@ -222,11 +226,15 @@ THREE.OrbitControls = function ( object, domElement ) {
 
         }
 
-        if ( scope.object instanceof THREE.PerspectiveCamera ) {
+        if ( scope.object instanceof THREE.PerspectiveCamera ||
+           (scope.object instanceof THREE.CombinedCamera &&
+           scope.object.inPerspectiveMode === true ) ) {
 
             scale /= dollyScale;
 
-        } else if ( scope.object instanceof THREE.OrthographicCamera ) {
+        } else if ( scope.object instanceof THREE.OrthographicCamera ||
+           (scope.object instanceof THREE.CombinedCamera &&
+           scope.object.inOrthographicMode === true ) ) {
 
             scope.object.zoom = Math.max( this.minZoom, Math.min( this.maxZoom, this.object.zoom * dollyScale ) );
             scope.object.updateProjectionMatrix();
@@ -248,11 +256,15 @@ THREE.OrbitControls = function ( object, domElement ) {
 
         }
 
-        if ( scope.object instanceof THREE.PerspectiveCamera ) {
+        if ( scope.object instanceof THREE.PerspectiveCamera ||
+           (scope.object instanceof THREE.CombinedCamera &&
+           scope.object.inPerspectiveMode === true ) ) {
 
             scale *= dollyScale;
 
-        } else if ( scope.object instanceof THREE.OrthographicCamera ) {
+        } else if ( scope.object instanceof THREE.OrthographicCamera ||
+           (scope.object instanceof THREE.CombinedCamera &&
+           scope.object.inOrthographicMode === true ) ) {
 
             scope.object.zoom = Math.max( this.minZoom, Math.min( this.maxZoom, this.object.zoom / dollyScale ) );
             scope.object.updateProjectionMatrix();

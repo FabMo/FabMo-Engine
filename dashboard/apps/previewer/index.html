@@ -27,39 +27,50 @@
   </section>
 </nav>
 
-<canvas id="preview" width="100" height="100"></canvas>
+    <div id="preview" style="display: inline-block;">
+    </div>
 
-<script src="js/three.min.js"></script>   
-<script src="js/OrbitControls.js"></script>
-<script src="js/ThreeCSG.js"></script>
-<script src="js/gcodeviewer.js"></script>
-<script src="/js/libs/dashboard.js"></script>
+  <script src="/js/libs/dashboard.js"></script>
+  <script src="js/gcodetogeometry.min.js"></script>
+
+  <script src="js/three.min.js"></script>
+  <script src="js/CombinedCamera.js"></script>
+  <script src="js/helvetiker_regular.typeface.js"></script>
+  <script src="js/OrbitControls.js"></script>
+
+  <script src="js/path.js"></script>
+  <script src="js/helper.js"></script>
+  <script src="js/gui.js"></script>
+  <script src="js/animation.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/viewer.js"></script>
+
   <script>
     $(document).ready(function() {
       
       $(document).foundation();
-      GCodeViewer.initialize({}, document.getElementById("preview"));
-      GCodeViewer.initialize({});
+      var viewer = new GCodeViewer.Viewer(document.getElementById("preview"),
+                100, 100, function(msg) { alert(msg); }/* , config */);
+
       fabmoDashboard.getAppArgs(function(err, args) {
         if('job' in args) {
           var url = '/job/' + args.job + '/file';
           $.get(url,function(data, status) {
-              GCodeViewer.setGCode(data);
-              GCodeViewer.viewPaths();
+              viewer.setGCode(data);
+              viewer.viewPaths();
           });
         }
       });
-
-      function resize() {
+ 
+      function resize() { 
         var w = window.innerWidth;
-        var h = window.innerHeight - $("#topbar").height() - 10; // Fudge factor for foundation weirdness
+        var h = window.innerHeight - $("#topbar").height()// - 10; // Fudge factor for foundation weirdness
         $('#preview').size(w,h);
-        GCodeViewer.camera.aspect = w/h;
-        GCodeViewer.camera.updateProjectionMatrix();
-        GCodeViewer.renderer.setSize(w,h);
+        viewer.renderer.setSize(w,h);
       }
 
       $(window).resize(function(){
+        console.info('resizing')
         resize();
       });
 
