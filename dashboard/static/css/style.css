@@ -846,7 +846,28 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	margin: 0 auto;
 }
 
-#job-info .progress { border:none;}
+.progress-container {
+	border: 2px solid black; 
+	background: gray;
+	border-radius: 5px;
+	height: 20px;
+}
+
+.progress { 
+	border-radius: 1px;
+	border: none;
+	background: repeating-linear-gradient(
+	  45deg,
+	  #2E3865,
+	  #2E3865 5px,
+	  #1C223D 5px,
+	  #1C223D 10px
+	);
+	background-color:#2E3865;
+	height: 100%;
+}
+
+
 #job-info .button {margin:0;}
 #job-info .control {padding:0;}
 #job-info .button.warning { background-color:#dd8728;}
