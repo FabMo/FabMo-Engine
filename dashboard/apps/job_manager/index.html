@@ -124,8 +124,14 @@
   var prev_line = 0;
   function loadFile(data) {
   	txt = data.split("\n");
+  	digits = ('' + (txt.length+1)).length;
+
 	for(var x=0;x<txt.length-1;x++) {
-	    txt[x] = "<div class='line' id='file_line" + (x+1) + "'>"+txt[x]+"</div>";
+		lineno = '' + (x+1)
+		while(lineno.length < digits) {
+			lineno = '0' + lineno;
+		}
+	    txt[x] = "<div class='line' id='file_line" + (x+1) + "'> <span class='lineno'>"+lineno+'</span> '+txt[x]+"</div>";
 	}
 	$('#currentfile').html(txt.join('\n'));
   }
@@ -450,9 +456,7 @@
 			}
 		}
 	});
-	fabmoDashboard.requestStatus(function(err, data) {
-		console.log(data);
-	});
+	fabmoDashboard.requestStatus(function(err, data) {});
 
   });
 </script>
