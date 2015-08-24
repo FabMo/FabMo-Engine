@@ -53,9 +53,6 @@ exports.CC = function(args) {
   var startX = this.cmd_posx;
   var startY = this.cmd_posy;
   var startZ = this.cmd_posz;
-
-  log.debug("startX = " + startX + "  startY = " + startY + "  startZ = " + startZ );
-
   var Dia = args[0] !== undefined ? args[0] : undefined;
   var inStr = args[1] !== undefined ? args[1].toUpperCase() : 'T';
   var OIT = (inStr === 'O' || inStr === 'I' || inStr === 'T') ? inStr : 'T';
@@ -70,6 +67,8 @@ exports.CC = function(args) {
   var noPullUp = args[10] !== undefined ? args[10] : undefined;
   var plgFromZero = args[11] !== undefined ? args[11] : undefined;
   var comp = 0;
+
+  log.debug("startX = " + startX + "  startY = " + startY + "  startZ = " + startZ );
 
   if (OIT === 'O') {
     comp = 1;
@@ -297,7 +296,7 @@ log.debug("CG: StepY = " + Pocket_StepY);
   		currentZ += Plg;
       this.emit_move('G1',{ 'Z':currentZ, 'F':feedrateZ });
    	}  
-   	if (optCG == 2) { 															// Pocket circle from the outside inward to center
+   	if (optCG === 2) { 															// Pocket circle from the outside inward to center
    		// Loop passes until overlapping the center
    		for (j=0; (Math.abs(Pocket_StepX * j) < circRadius) && (Math.abs(Pocket_StepY * j) < circRadius) ; j++){
         nextX = (startX + (j*Pocket_StepX));
@@ -314,7 +313,7 @@ log.debug("CG: StepY = " + Pocket_StepY);
         } 
   	   	else {
 
-          if ( Dir == 1 ) { outStr = 'G2'; }	  // Clockwise circle/arc
+          if ( Dir === 1 ) { outStr = 'G2'; }	  // Clockwise circle/arc
    			  else { outStr = 'G3'; }	              // CounterClockwise circle/arc
             this.emit_move(outStr,{ 'X':nextX,
                                     'I':(centerX - (j*Pocket_StepX)),
@@ -333,7 +332,7 @@ log.debug("CG: StepY = " + Pocket_StepY);
     	else {
         var emitObj = {};
         
-        if (Dir == 1 ) { 
+        if (Dir === 1 ) { 
           outStr = 'G2';
         }	// Clockwise circle/arc
         else { 
@@ -353,7 +352,7 @@ log.debug("CG: StepY = " + Pocket_StepY);
           emitObj.Z = (currentZ + Plg); 
           currentZ += Plg;
         } // Add Z for spiral plunge
-        emitObj.F = ( 60 * config.opensbp.get('movexy_speed'));
+        emitObj.F = feedrateZ;
         this.emit_move(outStr,emitObj); 
 	    	
         if( i+1 < reps && ( endX != startX || endY != startY ) ){					//If an arc, pullup and jog back to the start position
@@ -364,11 +363,11 @@ log.debug("CG: StepY = " + Pocket_StepY);
     }
   }
 
-  if (optCG == 4 ) { // Add bottom circle if spiral with bottom clr is specified
+  if (optCG === 4 ) { // Add bottom circle if spiral with bottom clr is specified
     if( endX != startX || endY != startY ) {	//If an arc, pullup and jog back to the start position
       this.emit_move('G0',{'Z':safeZCG});
       this.emit_move('G0',{ 'X':startX, 'Y':startY });
-      this.emit_move('G1',{ 'Z':currentZ, 'F':(60 * config.opensbp.get('movez_speed')) });
+      this.emit_move('G1',{ 'Z':currentZ, 'F':feedrateZ });
     }
     if ( Math.abs(propX) !== Math.abs(propY) ) {      // calculate out to an interpolated ellipse
 
@@ -380,23 +379,17 @@ log.debug("CG: StepY = " + Pocket_StepY);
                                 'Y':(startY + (j*Pocket_StepY)),
                                 'I':(centerX - (j*Pocket_StepX)),
                                 'J':(centerY - (j*Pocket_StepY)),
-                                'F':(60 * config.opensbp.get('movexy_speed')) });
+                                'F':feedrateXY });
     }
   }
 
-  if(noPullUp === 0 && currentZ != startZ){    	//If No pull-up is set to YES, pull up to the starting Z location
+  if( noPullUp === 0 && currentZ != startZ){    	//If No pull-up is set to YES, pull up to the starting Z location
     this.emit_move('G0',{'Z':startZ});
-   	this.cmd_posz = startZ;
-  }
-  else{				    						//If not, stay at the ending Z height
-  	if ( optCG > 1 && optCG < 3) {
-      this.emit_move('G1',{ 'Z':currentZ, 'F':(60 * config.opensbp.get('movez_speed')) });
-    }
-  	this.cmd_posz = currentZ;
+//   	this.cmd_posz = startZ;
   }
 
-  this.cmd_posx = endX;
-	this.cmd_posy = endY;
+//  this.cmd_posx = endX;
+//	this.cmd_posy = endY;
 
 };
 
