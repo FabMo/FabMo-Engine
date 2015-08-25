@@ -76,6 +76,5 @@ define(function(require) {
 			this.context = context;
 		}
 	});
-
 	return Router;
 });

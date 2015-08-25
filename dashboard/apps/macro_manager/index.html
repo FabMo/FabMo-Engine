@@ -1,103 +1,217 @@
 <html> 
-<head>
-    <meta charset="utf-8">
-    <title>Macro Manager</title>
-
-    <link rel="stylesheet" href="./css/foundation.min.css">
-    <link rel="stylesheet" href="./css/normalize.css">
-    <link rel="stylesheet" href="./css/style.css">
-    <link rel="stylesheet" href="./css/dataTables.foundation.css">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-</head>
-<body>
-    <header class="grey"> <!-- Class can be "blue", "red", "grey", "orange" -->
-        <section>
-            <div class="app-title-container">
-                <h2>Macros</h2>
+    <head>
+        <meta charset="utf-8">
+        <title>Macro Manager</title>
+        <link rel="stylesheet" href="./css/foundation.min.css">
+        <link rel="stylesheet" href="./css/normalize.css">
+        <link rel="stylesheet" href="./css/style.css">
+        <link rel="stylesheet" href="./css/dataTables.foundation.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body>
+        <section class="top-bar-section">
+        <nav class="top-bar" data-topbar role="navigation">
+          <ul class="title-area">
+            <li class="name">
+              <h1><a id="app-header" href="">Macros</a></h1>
+            </li>
+            <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
+          </ul>
+          <section class="top-bar-section">
+            <ul class="right">
+              <li><a id="macro-new" href="#">Create new macro...</a></li>
+            </ul>
+          </section>
+        </nav>
+        </section>
+        <section class="container">
+            <div class="row">
+                <table class="small-12 columns" style="width:100%" id="macro_table">
+                <thead>
+                    <tr>
+                        <th>&nbsp;</th>
+                        <th>Number</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>&nbsp;</th>
+                        <th>&nbsp;</th>
+                    </tr>
+                </thead>
+                </table>
             </div>
         </section>
-    </header>
 
-    <section class="container">
-        <div class="row">
-            <table class="small-12 columns" style="width:100%" id="macro_table">
-            <thead>
-                <tr>
-                    <th>&nbsp;</th>
-                    <th>Name</th>
-                    <th>Description</th>
-                </tr>
-            </thead>
-            </table>
-        </div>
-    </section>
+          <!-- Javascript inclusions -->
+          <script src="./js/jquery.js"></script>
+          <script src="./js/jquery.dataTables.js"></script>
+          <script src="./js/foundation.min.js"></script>
+          <script src="./js/dataTables.foundation.js"></script>
+          <script src="./js/moment.js"></script>
+          <script src="/js/libs/dashboard.js"></script>
 
-  <!-- Javascript inclusions -->
-  <script src="./js/jquery.js"></script>
-  <script src="./js/jquery.dataTables.js"></script>
-  <script src="./js/foundation.min.js"></script>
-  <script src="./js/dataTables.foundation.js"></script>
-  <script src="./js/moment.js"></script>
-  <script src="/js/libs/dashboard.js"></script>
+          <script type="text/javascript">
+            $.fn.selectText = function () {
+                var range, selection;
+                var node = this.get(0);
+                if (window.getSelection) {
+                  selection = window.getSelection();
+                  range = document.createRange();
+                  range.selectNodeContents(node);
+                  selection.removeAllRanges();
+                  selection.addRange(range);
+                } else if (document.body.createTextRange) {
+                  range = document.body.createTextRange();
+                  range.moveToElementText(node);
+                  range.select();
+                }
+            };
 
-  <script type="text/javascript">
-  $(document).ready(function() {
+          $(document).ready(function() {
 
-    //Foundation Init
-    $(document).foundation();
-    
-    var macro_table = $('#macro_table').DataTable( {
-        "filter": false,
-        "paging": false,
-        "processing": false,
-        "bInfo": false,
-        "bLengthChange":false,
-        "ajax": {
-            "url" : "/macros",
-            "dataSrc" : function(json) { 
-                return json.data; }
-            },
-        "columns": [
-            {
-                "className":      'run-control',
-                "orderable":      false,
-                "data":           null,
-                "defaultContent": '',
-            },
-            {
-                data : "name", 
-                defaultContent : '', 
-                className : 'noselect'
-            },
-            {
-                data : "description", 
-                defaultContent : '',
-                className : 'noselect'
-            }
-        ],
-        "order" : [[1,"asc"]]
-    }); // DataTable
+            //Foundation Init
+            $(document).foundation();
+            
+            var col_idx = [null, 'index', 'name', 'description', null, null];
 
-    $('#macro_table tbody').on('dblclick', 'tr', function () {
-        var tr = $(this).closest('tr');
-        var row = macro_table.row( tr );
-        var macro = row.data();
-        fabmoDashboard.runMacro(macro.index)
-    } );
+            var macro_table = $('#macro_table').DataTable( {
+                "filter": false,
+                "paging": false,
+                "processing": false,
+                "bInfo": false,
+                "bLengthChange":false,
+                "ajax": {
+                    "url" : "/macros",
+                    "dataSrc" : function(json) { 
+                        return json.data; }
+                    },
+                "columns": [
+                    {
+                        "className":      'run-control',
+                        "orderable":      false,
+                        "data":           null,
+                        "defaultContent": '',
+                    },
+                    {
+                        data : "index",
+                        defaultContent : '',
+                        className : 'noselect editable'                        
+                    },
+                    {
+                        data : "name", 
+                        defaultContent : '', 
+                        className : 'noselect editable'
+                    },
+                    {
+                        data : "description", 
+                        defaultContent : '',
+                        className : 'noselect editable'
+                    },
+                    {
+                        "className":      'edit-control',
+                        "orderable":      false,
+                        "data":           null,
+                        "defaultContent": '',                
+                    },
+                    {
+                        "className":      'delete-control',
+                        "orderable":      false,
+                        "data":           null,
+                        "defaultContent": '',                
+                    }
+                ],
+                "order" : [[1,"asc"]]
+            }); // DataTable
 
-    $('#macro_table tbody').on( 'click', 'td', function () {
-        var tr = $(this).closest('tr');
-        var row = macro_table.row( tr );
-        var cell = macro_table.cell( this );
-        var macro = row.data();
-        if(cell.index().column === 0) {
-            fabmoDashboard.runMacro(macro.index)
-        }
-    } );
+            $('.editable').on('blur', function() {
+                $(this).attr('contenteditable', false);
+            });
 
-});
-</script>
+            $('#macro-new').on('click', function(evt) {
+                var indices = macro_table.columns(1).data().toArray()[0];
+                var new_idx = indices.length > 0 ? Math.max.apply(null, indices) + 1 : 1;
+                fabmoDashboard.updateMacro(new_idx, {}, function(err, result) {
+                    macro_table.ajax.reload();
+                    if(err) {
+                        console.error(err);
+                    }
+                });
+                evt.preventDefault();
+            });
 
-</body>
+            $('#macro_table tbody').on('dblclick', 'td', function () {
+                var td = $(this);
+                var tr = td.closest('tr');
+                var row = macro_table.row(tr);
+                var cell = macro_table.cell(td);
+                var macro = row.data();
+                var col = cell.index().column;
+                var key = col_idx[col];
+                if(td.hasClass('editable')) {
+                    var saved_text = td.text();
+                    td.attr('contenteditable', true);
+                    td.focus();
+                    td.selectText();
+                    td.on('keydown', function(evt) {
+                        switch(evt.which) {
+                            case 13: // Enter
+                                td.attr('contenteditable', true);
+                                td.blur();
+                                var update = {};
+                                var ok_to_update = true;
+                                if(key === 'index') {
+                                    try {
+                                        v = parseInt(td.text())
+                                        update[key] = v;
+                                    } catch(e) {
+                                        ok_to_update = false;
+                                    }
+                                } else {
+                                    update[key] = td.text();
+                                }
+                                if(ok_to_update) {
+                                    fabmoDashboard.updateMacro(macro.index, update, function(err, result) {
+                                        macro_table.ajax.reload();
+                                    });                                    
+                                } else {
+                                    td.text(saved_text);                                    
+                                }
+
+                                evt.preventDefault();
+                                td.off('keydown');
+                                break;
+
+                            case 27: // Esc
+                                td.text(saved_text)
+                                td.blur();
+                                break;
+                        }
+                    });
+                }
+            } );
+
+            $('#macro_table tbody').on( 'click', 'td', function () {
+                var tr = $(this).closest('tr');
+                var row = macro_table.row( tr );
+                var cell = macro_table.cell( this );
+                var macro = row.data();
+                switch(cell.index().column) {
+                    case 0:
+                        fabmoDashboard.runMacro(macro.index)
+                        break;
+                    case 4:
+                        fabmoDashboard.launchApp('editor', {'macro' : macro.index});
+                        break;
+                    case 5:
+                        fabmoDashboard.deleteMacro(macro.index, function(err) {
+                            macro_table.ajax.reload();
+                        });
+                        break;
+                    default:
+                        break;
+                }
+            } );
+
+        });
+        </script>
+    </body>
 </html>

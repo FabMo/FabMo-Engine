@@ -549,6 +549,7 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 			} catch(e) {
 				log.error("ERROR IN NON STACK BREAKING COMMAND");
 				log.error(e);
+				log.error(e.stack);
 				this._end(e);
 				throw e;
 			}
@@ -981,7 +982,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 	else if( code === "G2" || code === "G3" ){
 
 	}
-
+	console.log(pt);
 //	log.debug("level = " + this.transforms.level.apply );
 //	log.debug("interpolate = " + this.transforms.interpolate.apply );
 //	if(( this.transforms.level.apply === true || this.transforms.interpolate.apply === true ) && code !== "G0" ){
@@ -1002,7 +1003,8 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 	
 		for(key in pt) {
 			var v = pt[key];
-//		  	log.debug(" emit_move v = " + key + ":" + v);
+		  	log.debug(" emit_move v = " + key + ":" + v);
+		  	console.log(typeof v)
 			if(v !== undefined) {
 				if(isNaN(v)) { throw( "Invalid " + key + " argument: " + v ); } 
 				gcode += (key + v.toFixed(5));

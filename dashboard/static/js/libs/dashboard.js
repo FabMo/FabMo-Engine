@@ -324,8 +324,20 @@ FabMoDashboard.prototype.runMacro = function(id, callback) {
 	this._call("runMacro", id, callback);
 }
 
+FabMoDashboard.prototype.updateMacro = function(id, macro, callback) {
+	this._call("updateMacro", {'id':id, 'macro':macro}, callback);
+}
+
 FabMoDashboard.prototype.requestStatus = function(callback) {
 	this._call("requestStatus", null, callback);
+}
+
+FabMoDashboard.prototype.notify = function(type, message, callback) {
+	this._call("notify", {'type':type, 'message':message}, callback);
+}
+
+FabMoDashboard.prototype.deleteMacro = function(id, callback) {
+	this._call("deleteMacro", id, callback);
 }
 
 fabmoDashboard = new FabMoDashboard();

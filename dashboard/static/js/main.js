@@ -66,14 +66,17 @@ define(function(require) {
 			dashboard.ui.on('error', function(err) {
 				$('#modalDialogTitle').text('Error!');
 				$('#modalDialogLead').html('<div style="color:red">There was an error!</div>');
-				$('#modalDialogMessage').text(err);
-				$('#modalDialogDetail').html(
-					'<p>' + 
-					  '<b>Job Name:  </b>' + dashboard.machine.status_report.job.name + '<br />' + 
-					  '<b>Job Description:  </b>' + dashboard.machine.status_report.job.description + 
-					'</p>'
-					);
-
+				$('#modalDialogMessage').text(err || 'There is no message associated with this error.');
+				if(dashboard.machine.status_report.job) {
+					$('#modalDialogDetail').html(
+						'<p>' + 
+						  '<b>Job Name:  </b>' + dashboard.machine.status_report.job.name + '<br />' + 
+						  '<b>Job Description:  </b>' + dashboard.machine.status_report.job.description + 
+						'</p>'
+						);
+				} else {
+					$('#modalDialogDetail').html('<p>Additional information for this error is unavailable.</p>');										
+				}
 				$('#modalDialog').foundation('reveal', 'open');
 			});
 
