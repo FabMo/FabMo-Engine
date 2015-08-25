@@ -111,7 +111,7 @@ Logger.prototype.warn = function(msg) { this.write('warn', msg);};
 Logger.prototype.error = function(msg) { 
 	this.write('error', msg);
 	if(msg.stack) {
-		this.write('error', msg.stack;
+		this.write('error', msg.stack);
 	}
 };
 
