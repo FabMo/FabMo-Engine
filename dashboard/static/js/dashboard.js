@@ -344,7 +344,29 @@ define(function(require) {
 				}
 			}.bind(this));
 		}.bind(this));
-	
+
+		this._registerHandler('updateMacro', function(data, callback) {
+			this.machine.update_macro(data.id, data.macro, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+
+		this._registerHandler('deleteMacro', function(data, callback) {
+			this.machine.delete_macro(data, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+
+		this._registerHandler('notify', function(data, callback) {
+			if(data.message) {
+				this.notification(data.type || 'info', data.message);
+				callback(null);
+			} else {
+				callback('Must provide a message to notify.');
+			}
+		}.bind(this));
 	}
 
 	/*** Prototypes ***/
@@ -441,11 +463,15 @@ define(function(require) {
 	};
 
 	Dashboard.prototype.notification = function(type,message) {
-		if(type=='info') 			toastr.info(message);
-		else if (type=="success") 	toastr.success(message);
-		else if (type=="warning") 	toastr.warning(message);
-		else if (type=="error") 	toastr.error(message);
-		else console.log("Unknown type of notification");
+		switch(type) {
+			case 'info': toastr.info(message); break;
+			case 'success': toastr.success(message); break;
+			case 'warning': toastr.warning(message); break;
+			case 'error': toastr.error(message); break;
+			default:
+				console.error("Unknown type of notification: " + type);
+				break;
+		}
 	}
 
 	Dashboard.prototype.launchApp = function(id, args, callback) {

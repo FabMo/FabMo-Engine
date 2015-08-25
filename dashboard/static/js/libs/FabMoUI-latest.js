@@ -44,6 +44,7 @@ function FabMoUI(tool, options){
 	this.filename_selector = this.file_info_div_selector + ' .filename';
 	this.progress_selector = this.file_info_div_selector + ' .progress';
 
+	this.manual_controls_selector = '.fabmo-manual-control';
 
 	this.stop_button_selector = this.file_control_selector + ' .fabmo-stop-button';
 	this.resume_button_selector = this.file_control_selector + ' .fabmo-resume-button';
@@ -166,9 +167,11 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	that.updateText($(that.posZ_selector), z);
 
 	//Current File or job
-	if(status.current_file) {
+	if(status.job) {
+		console.log("there is a job")
 		$(that.file_info_div_selector).removeClass('hide');
-		$(that.filename_selector).html(status.job.name!="" ? status.job.name : status.current_file);
+		console.log(status.job);
+		$(that.filename_selector).html(status.job.name);
 		var prog = ((status.line/status.nb_lines)*100).toFixed(2);
 		$(that.progress_selector).css("width",prog.toString() + "%");
 	}
@@ -301,6 +304,12 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(".tools-current > li a").removeClass('paus err').addClass('disc');
 		that.forbidKeypad();
 		console.warn('Unknown status' + JSON.stringify(status));
+	}
+
+	if(status.state === 'idle' || status.state === 'manual') {
+		$(that.manual_controls_selector).removeClass('hide');
+	} else {
+		$(that.manual_controls_selector).addClass('hide');		
 	}
 };
 

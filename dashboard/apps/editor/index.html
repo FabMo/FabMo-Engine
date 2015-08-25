@@ -30,6 +30,12 @@
   <section class="top-bar-section">
     <!-- Right Nav Section -->
     <ul class="right">
+      <li class="has-dropdown hidden" id="macro-menu">
+        <a href="#">Macro</a>
+        <ul class="dropdown">
+          <li><a id="macro-save" href="#">Save</a></li>
+        </ul>        
+      </li>
       <li class="has-dropdown"> 
         <a href="#">Language</a>
         <ul class="dropdown">
@@ -62,15 +68,18 @@
     var editor;
     var lang="gcode";
     var source=null;
+    var source_data=null;
 
     function execute() {
       $("#submit-button").addClass('disabled');
       var text = editor.getValue();
       switch(lang) {
         case "gcode":
+          fabmoDashboard.notify('info', 'Executing G-Code program.');
           fabmoDashboard.runGCode(text);
         break;
         case "opensbp":
+          fabmoDashboard.notify('info', 'Executing OpenSBP program.');
           fabmoDashboard.runSBP(text);
         break;
       } 
@@ -128,7 +137,9 @@
         set_language(language);
 
         var content = localStorage['content'] || '';
-        editor.setValue(content);
+        if(!isNaN(content) && (content !== undefined)) {
+          editor.setValue(content);          
+        }
 
         var pos;
         try {
@@ -150,6 +161,17 @@
               editor.clearSelection();
               source = "job";
           });
+        } else if('macro' in args) {
+          var url = '/macros/' + args.macro;
+          $.get(url,function(response, status) {
+            var macro = response.data;
+            $('#app-header').text("Editor - " + macro.name + " (Macro)");
+            editor.setValue(macro.content, -1);
+            editor.clearSelection();
+            source = "macro";
+            source_data = macro;
+            $('#macro-menu').show();
+          });      
         } else {
           loadFromBrowser();
         }
@@ -216,6 +238,14 @@
 
     $("#lang-gcode").click(function(evt) {
       set_language('gcode');
+      evt.preventDefault();
+    });
+
+    $("#macro-save").click(function(evt) {
+      fabmoDashboard.updateMacro(source_data.index, {content: editor.getValue()}, function(err, result) {
+        console.log('Notifying')
+        fabmoDashboard.notify('info', "Macro '" + source_data.name + "' saved.");
+      });
       evt.preventDefault();
     });
 

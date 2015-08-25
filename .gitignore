@@ -10,3 +10,4 @@ docs-dist
 .grunt
 config/data/*.json
 .DS_Store
+*.sublime*

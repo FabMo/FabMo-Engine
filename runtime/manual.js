@@ -66,18 +66,11 @@ ManualRuntime.prototype._onG2Status = function(status) {
 	this.machine.emit('status',this.machine.status);
 };
 
-ManualRuntime.prototype.stopJog = function() {
-	this.driver.stopJog();
-};
-
-ManualRuntime.prototype.jog = function(direction) {
-	this.driver.jog(direction);
-};
-
 ManualRuntime.prototype.fixed_move = function(direction, step, speed) {
-	if(this.machine.status.state != "manual") {
+/*	if(this.machine.status.state != "manual") {
 		this.driver.command("G20");
 	}
+	*/
 	this.driver.fixed_move(direction,step,speed);
 };
 
@@ -86,6 +79,7 @@ ManualRuntime.prototype.pause = function() {
 }
 
 ManualRuntime.prototype.quit = function() {
+	this.driver.command("G90");
 	this.driver.quit();
 }
 

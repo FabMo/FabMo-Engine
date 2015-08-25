@@ -71,7 +71,9 @@ THREE.OrbitControls = function ( object, domElement ) {
     this.noKeys = false;
 
     // The four arrow keys
-    this.keys = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40 };
+    this.keys = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40, SHIFT: 16};
+
+    this.keyPanActivated = false;
 
     // Mouse buttons
     this.mouseButtons = { ORBIT: THREE.MOUSE.LEFT, ZOOM: THREE.MOUSE.MIDDLE, PAN: THREE.MOUSE.RIGHT };
@@ -185,7 +187,9 @@ THREE.OrbitControls = function ( object, domElement ) {
 
         var element = scope.domElement === document ? scope.domElement.body : scope.domElement;
 
-        if ( scope.object instanceof THREE.PerspectiveCamera ) {
+        if ( scope.object instanceof THREE.PerspectiveCamera ||
+           (scope.object instanceof THREE.CombinedCamera &&
+           scope.object.inPerspectiveMode === true ) ) {
 
             // perspective
             var position = scope.object.position;
@@ -196,14 +200,21 @@ THREE.OrbitControls = function ( object, domElement ) {
             targetDistance *= Math.tan( ( scope.object.fov / 2 ) * Math.PI / 180.0 );
 
             // we actually don't use screenWidth, since perspective camera is fixed to screen height
+            // scope.panLeft( 2 * deltaX / element.clientHeight );
+            // scope.panUp( 2 * deltaY / element.clientHeight );
             scope.panLeft( 2 * deltaX * targetDistance / element.clientHeight );
             scope.panUp( 2 * deltaY * targetDistance / element.clientHeight );
 
-        } else if ( scope.object instanceof THREE.OrthographicCamera ) {
+        } else if ( scope.object instanceof THREE.OrthographicCamera ||
+           (scope.object instanceof THREE.CombinedCamera &&
+           scope.object.inOrthographicMode === true ) ) {
 
             // orthographic
-            scope.panLeft( deltaX * (scope.object.right - scope.object.left) / element.clientWidth );
-            scope.panUp( deltaY * (scope.object.top - scope.object.bottom) / element.clientHeight );
+            // scope.panLeft( deltaX * (scope.object.right - scope.object.left) / element.clientWidth );
+            // scope.panUp( deltaY * (scope.object.top - scope.object.bottom) / element.clientHeight );
+            var coeff = scope.object.zoom / 2;
+            scope.panLeft( deltaX * (scope.object.right - scope.object.left) / (coeff * element.clientWidth ));
+            scope.panUp( deltaY * (scope.object.top - scope.object.bottom) / (coeff * element.clientHeight ));
 
         } else {
 
@@ -222,11 +233,15 @@ THREE.OrbitControls = function ( object, domElement ) {
 
         }
 
-        if ( scope.object instanceof THREE.PerspectiveCamera ) {
+        if ( scope.object instanceof THREE.PerspectiveCamera ||
+           (scope.object instanceof THREE.CombinedCamera &&
+           scope.object.inPerspectiveMode === true ) ) {
 
             scale /= dollyScale;
 
-        } else if ( scope.object instanceof THREE.OrthographicCamera ) {
+        } else if ( scope.object instanceof THREE.OrthographicCamera ||
+           (scope.object instanceof THREE.CombinedCamera &&
+           scope.object.inOrthographicMode === true ) ) {
 
             scope.object.zoom = Math.max( this.minZoom, Math.min( this.maxZoom, this.object.zoom * dollyScale ) );
             scope.object.updateProjectionMatrix();
@@ -248,11 +263,15 @@ THREE.OrbitControls = function ( object, domElement ) {
 
         }
 
-        if ( scope.object instanceof THREE.PerspectiveCamera ) {
+        if ( scope.object instanceof THREE.PerspectiveCamera ||
+           (scope.object instanceof THREE.CombinedCamera &&
+           scope.object.inPerspectiveMode === true ) ) {
 
             scale *= dollyScale;
 
-        } else if ( scope.object instanceof THREE.OrthographicCamera ) {
+        } else if ( scope.object instanceof THREE.OrthographicCamera ||
+           (scope.object instanceof THREE.CombinedCamera &&
+           scope.object.inOrthographicMode === true ) ) {
 
             scope.object.zoom = Math.max( this.minZoom, Math.min( this.maxZoom, this.object.zoom / dollyScale ) );
             scope.object.updateProjectionMatrix();
@@ -387,11 +406,20 @@ THREE.OrbitControls = function ( object, domElement ) {
         event.preventDefault();
 
         if ( event.button === scope.mouseButtons.ORBIT ) {
-            if ( scope.noRotate === true ) return;
+            //NOTE: modification here from the original
+            // we use this to activate the zoom if shift is pressed
+            if(scope.keyPanActivated === true) {
+                if(scope.pan === true) return;
 
-            state = STATE.ROTATE;
+                state = STATE.PAN;
+                panStart.set( event.clientX, event.clientY );
+            } else {
+                if ( scope.noRotate === true ) return;
 
-            rotateStart.set( event.clientX, event.clientY );
+                state = STATE.ROTATE;
+
+                rotateStart.set( event.clientX, event.clientY );
+            }
 
         } else if ( event.button === scope.mouseButtons.ZOOM ) {
             if ( scope.noZoom === true ) return;
@@ -406,7 +434,6 @@ THREE.OrbitControls = function ( object, domElement ) {
             state = STATE.PAN;
 
             panStart.set( event.clientX, event.clientY );
-
         }
 
         if ( state !== STATE.NONE ) {
@@ -522,11 +549,24 @@ THREE.OrbitControls = function ( object, domElement ) {
 
     }
 
+    function onKeyUp( event ) {
+
+        if ( scope.enabled === false || scope.noKeys === true || scope.noPan === true ) return;
+
+        if(event.keyCode === scope.keys.SHIFT) {
+            scope.keyPanActivated = false;
+        }
+    }
+
     function onKeyDown( event ) {
 
         if ( scope.enabled === false || scope.noKeys === true || scope.noPan === true ) return;
 
         switch ( event.keyCode ) {
+
+            case scope.keys.SHIFT:
+                scope.keyPanActivated = true;
+                break;
 
             case scope.keys.UP:
                 scope.pan( 0, scope.keyPanSpeed );
@@ -696,6 +736,7 @@ THREE.OrbitControls = function ( object, domElement ) {
     this.domElement.addEventListener( 'touchmove', touchmove, false );
 
     window.addEventListener( 'keydown', onKeyDown, false );
+    window.addEventListener( 'keyup', onKeyUp, false );
 
     // force an update at start
     this.update();
