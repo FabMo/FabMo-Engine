@@ -1,13 +1,16 @@
-try{var wifiscanner = require('node-simplerwifiscanner');}catch(e){}
 var log = require('./log').logger('network');
 var async = require('async');
 var fs = require('fs');
 
+try{var wifiscanner = require('node-simplerwifiscanner');}catch(e){
+        console.warn("Did not load connman-simplified: " + e);
+}
+try{var connman = require('connman-simplified')();}catch(e){
+    console.warn("Did not load connman-simplified: " + e);
+}
+
 var PROFILES_FOLDER = "/etc/netctl/";
 var WIFI_INTERFACE = "wlan0";
-
-
-try{var connman = require('connman-simplified')();}catch(e){}
 var hotspot_ssid="handibot";
 var hotspot_passphrase="shopbot";
 var wifi;
