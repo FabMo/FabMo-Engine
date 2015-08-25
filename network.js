@@ -160,6 +160,36 @@ exports.forgetAWifiNetwork=function(ssid,callback){
 	})
 }
 
+
+exports.turnWifiOn=function(callback){
+     self.wifi.enable(function(err){
+        if(err)callback(err); 
+        else callback(null);
+     });
+}
+
+exports.turnWifiOff=function(callback){
+     self.wifi.disable(function(err){
+        if(err)callback(err); 
+        else callback(null);
+     });
+}
+
+exports.turnWifiHotspotOn=function(callback){
+     self.wifi.openHotspot(hotspot_ssid,hotspot_passphrase,function(err) {
+        if(err)callback(err); 
+        else callback(null);
+     });
+}
+
+exports.turnWifiHotspotOff=function(callback){
+     self.wifi.closeHotspot(function(err){
+        if(err)callback(err); 
+        else callback(null);
+     });
+}
+
+
 /*******************************************************************************************/
 /*************************************  OLD MANAGER  ***************************************/
 /*******************************************************************************************/

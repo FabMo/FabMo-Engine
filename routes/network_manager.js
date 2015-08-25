@@ -64,6 +64,45 @@ forgetWifi  = function(req,res,next){
     }
 }
 
+turnWifiOn = function(req,res,next){   
+    network.turnWifiOn(function(err){
+        if(err) {
+            res.json({'status':'error', 'message' : err});
+        } else {
+            res.json({'status':'success'});
+        }
+    });
+}
+
+turnWifiOff = function(req,res,next){
+    network.turnWifiOff(function(err){
+        if(err) {
+            res.json({'status':'error', 'message' : err});
+        } else {
+            res.json({'status':'success'});
+        }
+    }); 
+}
+
+turnWifiHotspotOn = function(req,res,next){
+    network.turnWifiHotspotOn(function(err){
+        if(err) {
+            res.json({'status':'error', 'message' : err});
+        } else {
+            res.json({'status':'success'});
+        }
+    });
+}
+
+turnWifiHotspotOff = function(req,res,next){
+    network.turnWifiHotspotOff(function(err){
+        if(err) {
+            res.json({'status':'error', 'message' : err});
+        } else {
+            res.json({'status':'success'});
+        }
+    });   
+}
 /*******************************************************************************************/
 /*************************************  OLD MANAGER  ***************************************/
 /*******************************************************************************************/
@@ -119,6 +158,10 @@ getProfile = function(req, res, next) {
 
 module.exports = function(server) {
     if(config.engine.get('wifi_manager')){
+        server.get('/network/wifi/on',turnWifiOn);//OK
+        server.get('/network/wifi/off',turnWifiOff);//Ok
+        server.get('/network/hotspot/on',turnWifiHotspotOn);//OK
+        server.get('/network/hotspot/off',turnWifiHotspotOff);//Ok        
         server.get('/network/wifi/scan',scan); //OK
         server.post('/network/wifi/connect', connectWifi) // OK
         server.get('/network/wifi/disconnect',disconnectWifi); //OK
