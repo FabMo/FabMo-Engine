@@ -1,5 +1,5 @@
 /*jslint todo: true, browser: true, continue: true, white: true*/
-/*global THREE, GCodeViewer, GCodeToGeometry*/
+/*global THREE, THREEx, GCodeViewer, GCodeToGeometry*/
 
 /**
  * Written by Alex Canales for ShopBotTools, Inc.
@@ -10,7 +10,6 @@
  * user will instantiate. This is the main class.
  */
 
-// GCodeViewer.Viewer = function(configuration, domElement, callbackError) {
 GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         callbackError, configuration) {
     "use strict";
@@ -35,6 +34,17 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
             that.callbackError(message);
         }
     }
+
+    //To call when the canvas or container has resized
+    //width and height are numbers in pixel
+    that.resize = function(width, height) {
+        that.renderer.setSize(width, height);
+        that.camera.setSize(width, height);
+        that.camera.updateProjectionMatrix();
+        that.refreshDisplay();
+
+        that.gui.resized();
+    };
 
     that.setPerspectiveCamera = function() {
         that.camera.toPerspective();
@@ -159,6 +169,11 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         that.refreshDisplay();
     };
 
+    that.animatePath = function() {
+        that.animation.show();
+        that.animation.start();
+    };
+
     that.showBoard = function() {
         if(that.cncConfiguration.board === undefined) {
             return;
@@ -214,7 +229,11 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         that.totalSize.setMeshes(that.gcode.size, that.inMm,
                 that.cncConfiguration.initialPosition);
         that.totalSize.add();
+        that.animation.hide();
+        that.animation.reset();
         that.showZ();
+        that.helpers.resize(that.gcode.size);
+        that.refreshDisplay();
     };
 
     function changeDisplay(inMm) {
@@ -240,7 +259,7 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     that.camera = {};
     that.scene = {};
     that.controls = {};
-    that.cncConfiguration= {};
+    that.cncConfiguration = {};
     that.gcode = {};
 
     that.inMm = false;
@@ -271,6 +290,19 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     that.refreshDisplay();
 
     //Add the UI
+    var resumeButtonFun = function () {
+        if(that.animation.isStopped()) {
+            that.animatePath();
+        } else if(that.animation.isPaused()) {
+            that.animation.resume();
+        }
+    };
+
+    var goToLineFun = function(lineNumber) {
+        that.animation.show();
+        that.animation.goTo(lineNumber);
+    };
+
     var callbacks = {
         showX : that.showX,
         showY : that.showY,
@@ -278,7 +310,18 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         displayInMm : that.displayInMm ,
         displayInIn : that.displayInInch ,
         perspective : that.setPerspectiveCamera,
-        orthographic : that.setOrthographicCamera
+        orthographic : that.setOrthographicCamera,
+        resume : resumeButtonFun,
+        pause : function() { that.animation.pause(); },
+        reset : function() { that.animation.reset(); },
+        goToLine : goToLineFun
+
     };
     that.gui = new GCodeViewer.Gui(that.renderer.domElement, callbacks);
+
+    //normal: 3 in/s; fast: 6 in/s
+    //Add animation
+    that.animation = new GCodeViewer.Animation(that.scene, that.refreshDisplay,
+            that.gui, that.path, 180, 360,
+            that.cncConfiguration.initialPosition);
 };
