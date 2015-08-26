@@ -28,6 +28,7 @@ function FabMo(ip,port) //ip and port of the tool
 	this.url.jobs=this.url.base+'/jobs';
 	this.url.apps=this.url.base+'/apps';
 	this.url.wifi = this.url.base + '/network/wifi';
+	this.url.hotspot = this.url.base + '/network/hotspot';
 	this.url.macros = this.url.base + '/macros';
 
 	// default error message definitions
@@ -118,7 +119,7 @@ FabMo.prototype.get_status = function(callback)
 				// test errors with the tool (not network error)
 				if(!data){callback(that.default_error.status.no_content);}
 				if(data.status === "success") {
-					for(key in data.data.status) {
+					for(var key in data.data.status) {
 						that.status_report[key] = data.data.status[key];
 					}
 					callback(undefined,data.data.status);
@@ -878,8 +879,8 @@ FabMo.prototype.submit_app =  function(formdata,callback)
 			DataType:'json',
 			success: function( data ) {
 				if(data.status === "success") {
-					console.log("Making the callback with the app data")
-					console.log(data.data.app)
+					console.log("Making the callback with the app data");
+					console.log(data.data.app);
 					callback(undefined,data.data.app);
 				} else if(data.status==="fail") {
 					callback(data.data);
@@ -1162,8 +1163,9 @@ FabMo.prototype.disconnect_from_wifi =  function(callback)
 	var that=this;
 	$.ajax({
 		url: this.url.wifi + '/disconnect',
-		type: "GET",
-		dataType : 'json', 
+		type: "POST",
+		dataType : 'json',
+		data : {disconnect:true}, 
 		success: function( data ) {
 			if(data.status === "success") {
 				callback(undefined,data.data);
@@ -1191,6 +1193,114 @@ FabMo.prototype.forget_wifi =  function(ssid, callback)
 		type: "POST",
 		dataType : 'json', 
 		data : {"ssid" : ssid},
+		success: function( data ) {
+			if(data.status === "success") {
+				callback(undefined,data.data);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
+		error: function(data, err) {
+			var error = that.default_error.no_device;
+			error.sys_err = err;
+			callback(error);
+		}
+	});
+};
+
+FabMo.prototype.enable_wifi =  function(ssid, callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.wifi + '/state',
+		type: "POST",
+		dataType : 'json', 
+		data : {"enabled" : true},
+		success: function( data ) {
+			if(data.status === "success") {
+				callback(undefined,data.data);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
+		error: function(data, err) {
+			var error = that.default_error.no_device;
+			error.sys_err = err;
+			callback(error);
+		}
+	});
+};
+
+FabMo.prototype.disable_wifi =  function(ssid, callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.wifi + '/state',
+		type: "POST",
+		dataType : 'json', 
+		data : {"enabled" : false},
+		success: function( data ) {
+			if(data.status === "success") {
+				callback(undefined,data.data);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
+		error: function(data, err) {
+			var error = that.default_error.no_device;
+			error.sys_err = err;
+			callback(error);
+		}
+	});
+};
+
+FabMo.prototype.enable_hotspot =  function(ssid, callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.hotspot + '/state',
+		type: "POST",
+		dataType : 'json', 
+		data : {"enabled" : true},
+		success: function( data ) {
+			if(data.status === "success") {
+				callback(undefined,data.data);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
+		error: function(data, err) {
+			var error = that.default_error.no_device;
+			error.sys_err = err;
+			callback(error);
+		}
+	});
+};
+
+FabMo.prototype.disable_hotspot =  function(ssid, callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.hotspot + '/state',
+		type: "POST",
+		dataType : 'json', 
+		data : {"enabled" : false},
 		success: function( data ) {
 			if(data.status === "success") {
 				callback(undefined,data.data);

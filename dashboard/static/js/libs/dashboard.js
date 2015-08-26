@@ -329,6 +329,22 @@ FabMoDashboard.prototype.forgetWifi = function(ssid, key, callback) {
 	this._call("forgetWifi", {'ssid':ssid}, callback);
 }
 
+FabMoDashboard.prototype.enableWifi = function(callback) {
+	this._call("enableWifi", null, callback);
+}
+
+FabMoDashboard.prototype.disableWifi = function(callback) {
+	this._call("disableWifi", null, callback);
+}
+
+FabMoDashboard.prototype.enableWifiHotspot = function(callback) {
+	this._call("enableWifiHotspot", null, callback);
+}
+
+FabMoDashboard.prototype.disableWifiHotspot = function(callback) {
+	this._call("disableWifiHotspot", null, callback);
+}
+
 FabMoDashboard.prototype.getMacros = function(callback) {
 	this._call("getMacros", null, callback);
 }

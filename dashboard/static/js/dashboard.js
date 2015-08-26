@@ -309,6 +309,35 @@ define(function(require) {
 			}.bind(this));
 		}.bind(this));
 
+		this._registerHandler('enableWifi', function(data, callback) {
+			this.machine.enable_wifi(function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+
+		this._registerHandler('disableWifi', function(data, callback) {
+			this.machine.disable_wifi(function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+
+		this._registerHandler('enableWifiHotspot', function(data, callback) {
+			this.machine.enable_hotspot(function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+
+		this._registerHandler('disableWifiHotspot', function(data, callback) {
+			this.machine.disable_hotspot(function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+
+
 		this._registerHandler('getMacros', function(data, callback) {
 			this.machine.get_macros(function(err, result) {
 				if(err) { callback(err); }
