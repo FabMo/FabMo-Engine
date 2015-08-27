@@ -1205,3 +1205,59 @@ FabMo.prototype.run_macro =  function(id, callback)
 		}
 	});
 };
+
+FabMo.prototype.update_macro =  function(id, macro, callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.macros + '/' + id,
+		type: "POST",
+		dataType : 'json', 
+		data : macro,
+		success: function( data ) {
+			if(data.status === "success") {
+				callback(undefined,data.data);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
+		error: function(data, err) {
+			var error = that.default_error.no_device;
+			error.sys_err = err;
+			callback(error);
+		}
+	});
+};
+
+
+FabMo.prototype.delete_macro = function(id, callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.macros + '/' + id,
+		type: "DELETE",
+		dataType : 'json', 
+		success: function( data ) {
+			if(data.status === "success") {
+				callback(null);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			} else {
+				callback(data.message);
+			}
+		},
+		error: function(data,err) {
+			console.error(err);
+			var error =that.default_error.no_device;
+			error.sys_err = err;
+			callback(error);
+		}
+	});
+};
+

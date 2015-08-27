@@ -34,8 +34,41 @@ var _deleteMacroFile = function(index, callback) {
 	});
 }
 
+var _createMacroFilename = function(id, type) {
+	var macro_path = config.getDataDir('macros');
+	switch(type) {
+		case 'nc':
+			return path.join(macro_path, 'macro_' + id + '.nc');
+			break;
+
+		case 'sbp':
+			return path.join(macro_path, 'macro_' + id + '.sbp');
+			break;
+
+		default:
+			throw new Error('Invalid macro type: ' + type)
+			break;
+	}
+}
+
+var _createMacroDefaultContent = function(macro) {
+	switch(macro.type) {
+		case 'nc':
+			return 	'( ' + macro.name + ' )\n( ' + macro.description + ' )\n\n';
+			break;
+
+		case 'sbp':
+			return 	"' " + macro.name + "\n' " + macro.description + "\n\n";
+			break;
+
+		default:
+			throw new Error('Invalid macro type: ' + type)
+			break;
+	}
+}
+
 var _parseMacroFile = function(filename, callback) {
-	var re = /[\(']!FABMO!(\w+):(.*)\)/
+	var re = /[\(']!FABMO!(\w+):([^\)]*)\)?/
 	var obj = {}
 	var ok = false;
 	fs.readFile(filename, function(err, data) {
@@ -59,6 +92,7 @@ var _parseMacroFile = function(filename, callback) {
 			}
 			if(ok) {
 				obj.filename = filename;
+				obj.content = lines.slice(i,lines.length).join('\n');
 				callback(null, obj);
 			} else {
 				callback(null, undefined)
@@ -67,42 +101,74 @@ var _parseMacroFile = function(filename, callback) {
 	});
 }
 
-var create = function(path, options, callback) {
-	var macro_path = config.getDataDir('macros');
-	if(util.allowedFile(path)) {
-		fs.readFile(path, function(err, data) {
+var update = function(id, macro, callback) {
+	old_macro = get(id);
+	if(old_macro) {
+
+		function savemacro(id, callback) {
+			old_macro.name = macro.name || old_macro.name;
+			old_macro.description = macro.description || old_macro.description;
+			old_macro.content = macro.content || old_macro.content;
+			old_macro.index = macro.index || old_macro.index;
+			old_macro.type = macro.type || old_macro.type;
+			save(old_macro.index, callback);
+		}
+
+		if(macro.index && (macro.index != old_macro.index)) {
+			macros[macro.index] = macro;
+			delete macros[old_macro.index];
+			_deleteMacroFile(old_macro.index, function(err) {
+				savemacro(macro.index, callback);
+			});
+		} else {
+			savemacro(id, callback);
+		}
+	} else {
+		new_macro = {
+			name : macro.name || 'Untitled Macro',
+			description : macro.description || 'Macro Description',
+			type : macro.type || 'sbp',
+			enabled : macro.enabled || true, // TODO fix this
+			index : id
+		}
+		new_macro.filename = _createMacroFilename(id, new_macro.type);
+		new_macro.content = macro.content || _createMacroDefaultContent(new_macro);
+		macros[id] = new_macro;
+		save(id, callback);
+	}
+}
+
+var save = function(id, callback) {
+	macro = get(id);
+	if(macro) {
+		var macro_path = config.getDataDir('macros');
+		var file_path = path.join(macro_path, 'macro_' + macro.index + '.' + macro.type);
+		switch(macro.type) {
+			case 'nc':
+				var header = _createGCodeHeader(macro);
+				break;			
+			case 'sbp':
+				var header = _createOpenSBPHeader(macro);
+				break;
+			default:
+				setImmediate(callback, new Error('Invalid macro type: ' + macro.type));
+				break;
+		}
+		fs.writeFile(file_path, header + macro.content, function(err, data) {
 			if(err) {
 				callback(err);
 			} else {
-				_deleteMacroFile(options.index, function(err, data) {
-					if(util.isGCodeFile(path)) {
-						file = path.join(macro_path, 'macro_' + index + '.nc');
-						header = _createGCodeHeader(options)
-					} else if(util.isOpenSBPFile(path)) {
-						file = path.join(macro_path, 'macro_' + index + '.sbp');
-						header = _createOpenSBPHeader(options)
-					} else {
-						// Bad
-					}
-					fs.writeFile(header + data, function(err, data) {
-						if(err) {
-							callback(err);
-						} else {
-							macros[options.index] = options
-							callback(null);
-						}
-					});
-				});
+				callback(null, macro);
 			}
 		});
 	} else {
-		callback("File is not allowed.");
+		callback(new Error("No such macro " + id));
 	}
 }
 
 var load = function(callback) {
 	var macro_path = config.getDataDir('macros');
-	var re = /macro_([0-9]+)\.(?:nc|sbp)/
+	var re = /macro_([0-9]+)\.(nc|sbp)/
 	macros = {};
 	fs.readdir(macro_path, function(err, files) {
 		if(err) {
@@ -116,7 +182,9 @@ var load = function(callback) {
 					if(info) {
 						groups = info.filename.match(re);
 						idx = parseInt(groups[1]);
+						ext = groups[2];
 						info.index = idx;
+						info.type = ext;
 						macros[idx] = info;
 					}
 				});
@@ -128,18 +196,28 @@ var load = function(callback) {
 var list = function() {
 	retval = [];
 	for(key in macros) {
-		retval.push(macros[key]);
+		retval.push(getInfo(key));
 	}
 	return retval;
 }
 
-var get = function(idx) {
-	info = macros[idx];
-	if(info) {
-		return info.filename;
+var getInfo = function(idx) {
+	var macro = get(idx);
+	if(macro) {
+		return 	{
+			'name' : macro.name,
+			'description' : macro.description,
+			'enabled' : macro.enabled,
+			'type' : macro.type,
+			'index' : macro.index
+		}
 	} else {
-		return null;
+		return null; 
 	}
+}
+
+var get = function(idx) {
+	return macros[idx] || null;
 }
 
 var run = function(idx) {
@@ -153,8 +231,25 @@ var run = function(idx) {
 	}
 }
 
+var del = function(idx, callback) {
+	info = macros[idx];
+	if(info) {
+		_deleteMacroFile(idx, function(err) {
+			if(err) {
+				callback(err);
+			} else {
+				delete macros[idx];
+				callback(null);
+			}
+		});
+	}	
+}
+
 exports.load = load;
 exports.list = list;
 exports.get = get;
-exports.create = create;
+exports.del = del;
 exports.run = run;
+exports.getInfo = getInfo;
+exports.update = update;
+exports.save = save;
