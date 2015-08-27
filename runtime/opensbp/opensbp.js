@@ -997,12 +997,11 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 //	else{
 //		if( this.transforms.level.apply === true  && code !== "G0"){
 //   	    	log.debug("emit_move:level");
-//		    pt = interp.leveler(this, pt);
+//////		    pt = findHeight(pt);
 //		}  
 	
 		for(key in pt) {
 			var v = pt[key];
-//		  	log.debug(" emit_move v = " + key + ":" + v);
 			if(v !== undefined) {
 				if(isNaN(v)) { throw( "Invalid " + key + " argument: " + v ); } 
 				gcode += (key + v.toFixed(5));
