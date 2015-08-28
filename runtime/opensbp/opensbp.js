@@ -8,6 +8,7 @@ var events = require('events');
 var tform = require('./transformation');
 var macros = require('../../macros');
 var interp = require('./interpolate');
+var Leveler = require('./commands/leveler').Leveler;
 
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
@@ -996,26 +997,43 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 //		}
 //	}
 //	else{
-//		if( this.transforms.level.apply === true  && code !== "G0"){
-//   	    	log.debug("emit_move:level");
-//////		    pt = findHeight(pt);
-//		}  
-	
+
+	var emit_moveContext = this;
+	var opFunction = function(pt) {  //Find a better name
 		for(key in pt) {
 			var v = pt[key];
 			if(v !== undefined) {
 				if(isNaN(v)) { throw( "Invalid " + key + " argument: " + v ); } 
 				gcode += (key + v.toFixed(5));
-				if(key === "X") { this.cmd_posx = v; }
-				else if(key === "Y") { this.cmd_posy = v; }
-				else if(key === "Z") { this.cmd_posz = v; }
-				else if(key === "A") { this.cmd_posa = v; }
-				else if(key === "B") { this.cmd_posb = v; }
-				else if(key === "C") { this.cmd_posc = v; }
+				if(key === "X") { emit_moveContext.cmd_posx = v; }
+				else if(key === "Y") { emit_moveContext.cmd_posy = v; }
+				else if(key === "Z") { emit_moveContext.cmd_posz = v; }
+				else if(key === "A") { emit_moveContext.cmd_posa = v; }
+				else if(key === "B") { emit_moveContext.cmd_posb = v; }
+				else if(key === "C") { emit_moveContext.cmd_posc = v; }
 			}
 		}
-		log.debug("emit_move:  N " + this.pc + JSON.stringify(gcode));
-		this.current_chunk.push('N' + this.pc + gcode);
+		log.debug("emit_move:  N " + emit_moveContext.pc + JSON.stringify(gcode));
+		emit_moveContext.current_chunk.push('N' + emit_moveContext.pc + gcode);
+	};
+
+			if( this.transforms.level.apply === true  && code !== "G0") {
+				var callback = function() {
+					var x = (pt.X === undefined) ? emit_moveContext.cmd_posx : pt.X;
+					var y = (pt.Y === undefined) ? emit_moveContext.cmd_posy : pt.Y;
+					var z = (pt.Z === undefined) ? emit_moveContext.cmd_posz : pt.Z;
+					var arrPoint = leveler.findHeight([x, y, z]);
+					pt.x = arrPoint[0];
+					pt.y = arrPoint[1];
+					pt.z = arrPoint[2];
+					opFunction(pt);
+				};
+				log.debug("emit_move:level");
+				leveler = new Leveler(this.transforms.level.ptDataFile, callback);
+			}  
+			else {
+				opFunction(pt);
+		}
 //	}
 };
 
