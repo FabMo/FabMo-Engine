@@ -166,9 +166,9 @@ G2.prototype.disconnect = function(callback) {
 
 // Log serial errors.  Most of these are exit-able offenses, though.
 G2.prototype.onSerialError = function(data) {
-	if(this.connect_callback) {
-		this.connect_callback(data);
-	}
+	//if(this.connect_callback) {
+	//	this.connect_callback(data);
+	//}
 };
 
 // Write data to the control port.  Log to the system logger.

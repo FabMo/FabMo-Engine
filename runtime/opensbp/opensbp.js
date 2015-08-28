@@ -983,7 +983,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 	else if( code === "G2" || code === "G3" ){
 
 	}
-	console.log(pt);
+	//console.log(pt);
 //	log.debug("level = " + this.transforms.level.apply );
 //	log.debug("interpolate = " + this.transforms.interpolate.apply );
 //	if(( this.transforms.level.apply === true || this.transforms.interpolate.apply === true ) && code !== "G0" ){

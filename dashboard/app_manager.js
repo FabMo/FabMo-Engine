@@ -7,6 +7,7 @@ var async = require('async');
 var uuid = require('node-uuid');
 var log = require('../log').logger('app_manager');
 var util = require('../util');
+var glob = require('glob');
 
 // Maximum depth of a deep copy operation
 ncp.limit = 16;
@@ -163,7 +164,6 @@ AppManager.prototype.copyApp = function(src, dest, options, callback) {
 		log.debug('Copying app "' + src + '"');
 		ncp(app_info.app_archive_path, app_info.app_path, function (err) {
 			if (err) {
-				log.warn('There was a problem copying the app "' + name + '" (' + err + ')');
 				return callback(err);
 			} else {
 				this.readAppPackageInfo(app_info, function(err, info) {
@@ -189,7 +189,7 @@ AppManager.prototype.decompressApp = function(src, dest, options, callback) {
 	try { 
 		var name = path.basename(src);
 		var app_info = {
-			app_path : dest + "/" + name + "/",
+			app_path : dest + "/" + name,
 			app_archive_path : src
 		};
 		var exists = fs.existsSync(app_info.app_path);
@@ -212,7 +212,6 @@ AppManager.prototype.decompressApp = function(src, dest, options, callback) {
 			var app = new zip(src);
 			app.extractAllTo(app_info.app_path, true);
 		} catch(e) {
-			log.warn('There was a problem decompressing the app "' + name + '" (' + e + ')');
 			return callback(e);
 		}
 
@@ -232,10 +231,10 @@ AppManager.prototype.decompressApp = function(src, dest, options, callback) {
 };
 
 AppManager.prototype.getAppPaths = function(callback) {
-	fs.readdir(this.app_directory, function(err, files) {
-		user_files = files.map(function(file) { return path.join(this.app_directory,file);}.bind(this));
-		fs.readdir(this.system_app_directory, function(err, files) {
-			system_files = files.map(function(file) { return path.join(this.system_app_directory,file);}.bind(this));
+	var app_pattern = this.app_directory + '/@(*.zip|*.fma)'
+	var sys_pattern = this.system_app_directory + '/@(*.zip|*.fma)'
+	glob(app_pattern, function(err, user_files) {
+		glob(sys_pattern, function(err, system_files) {
 			callback(null, system_files.concat(user_files));
 		}.bind(this));
 	}.bind(this));
@@ -252,7 +251,7 @@ AppManager.prototype.loadApps =  function(callback) {
 					if(err) {
 						// Rather than allowing errors to halt the async.map operation that is loading the apps
 						// we swallow them and simply stick a 'null' in the output array (that we cull out at the end)
-						log.warn(err);
+						log.error(err);
 						return callback(null, null);
 					} else {
 						return callback(null, result);
