@@ -23,7 +23,8 @@
     "serialport": "^1.6.1",
     "socket.io": "1.3.6",
     "tingodb": "0.3.x",
-    "tough-cookie": "^2.0.0"
+    "tough-cookie": "^2.0.0",
+    "connman-simplified":"0.1.2"
   },
   "devDependencies": {
     "chai": "3.2.x",

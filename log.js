@@ -1,6 +1,6 @@
 /** 
  * log.js is a "Poor man's" logging module.  It provides basic colorized logging using named 
- * loggers with selectable log levelts.
+ * loggers with selectable log levels.
  */
 var process = require('process');
 try { var colors = require('colors'); } catch(e) {var colors = false;}
@@ -108,7 +108,13 @@ Logger.prototype.write = function(level, msg) {
 Logger.prototype.debug = function(msg) { this.write('debug', msg);};
 Logger.prototype.info = function(msg) { this.write('info', msg);};
 Logger.prototype.warn = function(msg) { this.write('warn', msg);};
-Logger.prototype.error = function(msg) { this.write('error', msg);};
+Logger.prototype.error = function(msg) { 
+	this.write('error', msg);
+	if(msg.stack) {
+		this.write('error', msg.stack);
+	}
+};
+
 Logger.prototype.g2 = function(msg) {this.write('g2', msg);};
 Logger.prototype.uncaught = function(err) {
 	if(colors) {
