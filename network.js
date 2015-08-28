@@ -45,7 +45,7 @@ function mainWifi(){
   });
 }
 
-if(connman) {
+exports.init = function() {
     connman.init(function(err) {
       self=this;
       CHECK(err);
@@ -61,7 +61,6 @@ if(connman) {
       });
     });    
 }
-
 
 
 
