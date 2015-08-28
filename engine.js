@@ -22,7 +22,7 @@ Engine.prototype.start = function(callback) {
     async.series([
 
         // Configure the engine data directories
-        function setup_application(callback) {
+       function setup_application(callback) {
             log.info('Checking engine data directory tree...');
             config.createDataDirectories(callback);
         },
@@ -62,7 +62,7 @@ Engine.prototype.start = function(callback) {
                     log.error("(" + err + ")");
                     log.error("!!!!!!!!!!!!!!!!!!!!!!!!");
                 }
-                setImmediate(callback, null);
+                callback(null);
             });
         }.bind(this),
 

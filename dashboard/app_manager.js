@@ -189,7 +189,7 @@ AppManager.prototype.decompressApp = function(src, dest, options, callback) {
 	try { 
 		var name = path.basename(src);
 		var app_info = {
-			app_path : dest + "/" + name + "/",
+			app_path : dest + "/" + name,
 			app_archive_path : src
 		};
 		var exists = fs.existsSync(app_info.app_path);

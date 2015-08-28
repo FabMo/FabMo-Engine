@@ -44,6 +44,7 @@ EngineConfig.prototype.apply = function(callback) {
 };
 
 EngineConfig.prototype.checkWifi = function(){
+	/*
 	try{
 		// check if the dependency is installed
 		wifiscanner = require('node-simplerwifiscanner');
@@ -66,7 +67,7 @@ EngineConfig.prototype.checkWifi = function(){
 		wifiscanner = undefined;
 		this.set('wifi_manager', false);
 	}
-
+	*/
 };
 
 

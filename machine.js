@@ -42,7 +42,6 @@ function connect(callback) {
 	}
 	if(control_path && gcode_path) {
 		exports.machine = new Machine(control_path, gcode_path, callback);
-		callback(null, exports.machine);
 	} else {
 		typeof callback === "function" && callback('No supported serial path for platform "' + PLATFORM + '"');
 	}
@@ -235,7 +234,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 			delete this.status.info
 		}
 		log.info("Got a machine state change: " + this.status.state)	
-		console.log(JSON.stringify(this.status))	
 	} else {		
 		log.warn("Got a state change from a runtime that's not the current one. (" + source + ")")
 	}

@@ -3,10 +3,10 @@ var async = require('async');
 var fs = require('fs');
 
 try{var wifiscanner = require('node-simplerwifiscanner');}catch(e){
-        console.warn("Did not load connman-simplified: " + e);
+        log.warn("Did not load connman-simplified: " + e);
 }
 try{var connman = require('connman-simplified')();}catch(e){
-    console.warn("Did not load connman-simplified: " + e);
+    log.warn("Did not load connman-simplified: " + e);
 }
 
 var PROFILES_FOLDER = "/etc/netctl/";
@@ -45,20 +45,22 @@ function mainWifi(){
   });
 }
 
-connman.init(function(err) {
-  self=this;
-  CHECK(err);
-  connman.initWiFi(function(err,wifi,properties) {
-    CHECK(err);
-    self.wifi=wifi;
-    self.properties=properties;
-    wifi.closeHotspot(function(err) {CHECK(err);});// be sure to close a previous hotspot before scanning
-      wifi.enable(function(err){
-      mainWifi();
-    });
+if(connman) {
+    connman.init(function(err) {
+      self=this;
+      CHECK(err);
+      connman.initWiFi(function(err,wifi,properties) {
+        CHECK(err);
+        self.wifi=wifi;
+        self.properties=properties;
+        wifi.closeHotspot(function(err) {CHECK(err);});// be sure to close a previous hotspot before scanning
+          wifi.enable(function(err){
+          mainWifi();
+        });
 
-  });
-});
+      });
+    });    
+}
 
 
 
