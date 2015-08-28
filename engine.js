@@ -79,13 +79,13 @@ Engine.prototype.start = function(callback) {
                 });
             } else {
                 log.warn("Skipping G2 configuration due to no connection.");
-                setImmediate(callback, null);
+                callback(null);
             }
         }.bind(this),
 
         function get_g2_version(callback) {
-            log.info("Getting G2 firmware version...");
             if(this.machine.isConnected()) {
+                log.info("Getting G2 firmware version...");
                 this.machine.driver.get('fb', function(err, value) {
                     if(err) {
                         log.error('Could not get the G2 firmware build. (' + err + ')');
@@ -95,7 +95,8 @@ Engine.prototype.start = function(callback) {
                     callback(null);
                 });
             } else {
-                setImmediate(callback, null);
+                log.warn("Skipping G2 firmware version check due to no connection.")
+                callback(null);
             }
     	}.bind(this),
 

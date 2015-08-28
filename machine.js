@@ -73,11 +73,10 @@ function Machine(control_path, gcode_path, callback) {
 	this.driver = new g2.G2();
 	this.driver.on("error", function(data) {log.error(data);});
 	this.driver.connect(control_path, gcode_path, function(err, data) {
-	
 	    // Set the initial state based on whether or not we got a valid connection to G2
 	    if(err){
 	    	log.debug("Setting the disconnected state");
-		    //this.status.state = "disconnected";
+		    this.status.state = 'not_ready';
 	    } else {
 		    this.status.state = "idle";
 	    }
@@ -104,7 +103,7 @@ function Machine(control_path, gcode_path, callback) {
 util.inherits(Machine, events.EventEmitter);
 
 Machine.prototype.isConnected = function() {
-	return this.status.state !== 'disconnected';
+	return this.status.state !== 'not_ready';
 };
 
 Machine.prototype.disconnect = function(callback) {
