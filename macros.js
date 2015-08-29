@@ -188,6 +188,7 @@ var load = function(callback) {
 						macros[idx] = info;
 					}
 				});
+				callback(null);
 			});
 		}
 	})

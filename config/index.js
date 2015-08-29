@@ -29,6 +29,7 @@ function configureDriver(driver, callback) {
 		function(callback) { exports.driver.configureStatusReports(callback); }
 		],
 		function finished(err, result) {
+			log.debug('finished');
 			if(err) { callback(err); }
 			else {
 				callback(null, exports.driver);
