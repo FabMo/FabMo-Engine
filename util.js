@@ -6,6 +6,7 @@ var fs = require('fs');
 var uuid = require('node-uuid');
 var fs = require('fs');
 var escapeRE = require('escape-regexp-component');
+var exec = require('child_process').exec;
 
 var mime = require('mime');
 var restify = require('restify');
@@ -28,6 +29,12 @@ function listify(x) {
         return [x];
     }
 }
+
+function doshell(command, callback){
+    exec(command, function(error, stdout, stderr) { 
+        callback(stdout); 
+    });
+};
 
 function extend(a,b, force) {
     for(k in b) {
@@ -354,5 +361,6 @@ exports.walkDir = walkDir;
 exports.createUniqueFilename = createUniqueFilename;
 exports.fixJSON = fixJSON;
 exports.extend = extend;
+exports.doshell = doshell;
 
 
