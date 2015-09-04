@@ -3,7 +3,9 @@ var async = require('async');
 var EngineConfig = require('./engine_config').EngineConfig;
 var G2Config = require('./g2_config').G2Config;
 var OpenSBPConfig = require('./opensbp_config').OpenSBPConfig;
-var log = require('../log').logger('g2_config');
+var MachineConfig = require('./machine_config').MachineConfig;
+
+var log = require('../log').logger('config');
 
 // Provide the exported functions for managing application configuration
 
@@ -13,7 +15,6 @@ var log = require('../log').logger('g2_config');
 // Also, create `exports.engine` which is an EngineConfig object
 function configureEngine(callback) {
 	exports.engine = new EngineConfig();
-	exports.engine.checkWifi();
 	exports.engine.init(callback);
 }
 
@@ -49,8 +50,14 @@ function configureOpenSBP(callback) {
 	exports.opensbp.init(callback);
 }
 
+function configureMachine(driver, callback) {
+	exports.machine = new MachineConfig(driver);
+	exports.machine.init(callback);
+}
+
 exports.configureEngine = configureEngine;
 exports.configureDriver = configureDriver;
 exports.configureOpenSBP = configureOpenSBP;
+exports.configureMachine = configureMachine;
 exports.createDataDirectories = Config.createDataDirectories;
 exports.getDataDir = Config.getDataDir;

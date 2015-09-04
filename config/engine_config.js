@@ -3,8 +3,8 @@ var util = require('util');
 var PLATFORM = require('process').platform;
 var exec = require('child_process').exec;
 Config = require('./config').Config;
-log = require('../log');
-logger = log.logger('config');
+var log = require('../log');
+var logger = log.logger('config');
 
 // The EngineConfig object keeps track of engine-specific settings
 EngineConfig = function() {
@@ -17,7 +17,6 @@ util.inherits(EngineConfig, Config);
 EngineConfig.prototype.update = function(data, callback) {
 	try {
 		for(var key in data) {
-			console.log("engine_config: update - key = " + key + " : " + data[key]);
 			this._cache[key] = data[key];
 		}
 	} catch (e) {
@@ -42,33 +41,6 @@ EngineConfig.prototype.apply = function(callback) {
 	catch (e) {
 		callback(e);
 	}
-};
-
-EngineConfig.prototype.checkWifi = function(){
-	/*
-	try{
-		// check if the dependency is installed
-		wifiscanner = require('node-simplerwifiscanner');
-		// check if it's a linux distrib
-		if(PLATFORM!=='linux')
-			throw 'not linux';
-		// check if netctl-auto is installed
-		exec('netctl-auto --version',function (error, stdout, stderr) {
-	    	if (error)
-	    		throw error;
-
-	    	this.set('wifi_manager', true, function(err){
-			if(err) {
-				logger.warn(err);
-			}
-		}.bind(this));
-	}.bind(this));
-
-	}catch(e){
-		wifiscanner = undefined;
-		this.set('wifi_manager', false);
-	}
-	*/
 };
 
 

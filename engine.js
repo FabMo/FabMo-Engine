@@ -120,6 +120,22 @@ Engine.prototype.start = function(callback) {
             }
     	}.bind(this),
 
+        function load_machine_config(callback) {
+            log.info('Loading the machine configuration...')
+            config.configureMachine(this.machine.driver, function(err, result) {
+                if(err) {
+                    log.warn(err);
+                }
+                callback(null);
+            });
+        }.bind(this),
+
+        function apply_machine_config(callback) {
+            log.info("Applying machine configuration...");
+            config.machine.apply(callback);
+        }.bind(this),
+
+
         function load_opensbp_commands(callback) {
             log.info("Loading OpenSBP Commands...");
             this.machine.sbp_runtime.loadCommands(callback);

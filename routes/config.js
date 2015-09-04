@@ -71,19 +71,21 @@ var post_config = function(req, res, next) {
 
   if('engine' in req.params) {
     config.engine.update(util.fixJSON(req.params.engine), function(err, result) {
-      if(err) {
-        answer = {
-          status : "fail",
-          data : {'body':"the configuration file you submitted is not valid"}
-        };
-        res.json(answer);
-      } else {
-        answer = {
-            status : "success",
-            data : result
-         };
-        res.json(answer);
-      }
+      config.engine.apply(function(err, result) {
+        if(err) {
+          answer = {
+            status : "fail",
+            data : {'body':"the configuration data you submitted is not valid"}
+          };
+          res.json(answer);
+        } else {
+          answer = {
+              status : "success",
+              data : result
+           };
+          res.json(answer);
+        }
+      });
     });
   }
 
@@ -92,7 +94,7 @@ var post_config = function(req, res, next) {
       if(err) {
         answer = {
           status : "fail",
-          data : {'body':"the configuration file you submitted is not valid"}
+          data : {'body':"the configuration data you submitted is not valid"}
         };
         res.json(answer);
       } else {
@@ -110,7 +112,7 @@ var post_config = function(req, res, next) {
       if(err) {
         answer = {
           status : "fail",
-          data : {'body':"the configuration file you submitted is not valid"}
+          data : {'body':"the configuration data you submitted is not valid"}
         };
         res.json(answer);
       } else {
@@ -120,6 +122,26 @@ var post_config = function(req, res, next) {
          };
         res.json(answer);
       }
+    });
+  }
+
+  if('machine' in req.params) {
+    config.machine.update(util.fixJSON(req.params.machine), function(err, result) {
+      config.machine.apply(function(err, result) {
+        if(err) {
+          answer = {
+            status : "fail",
+            data : {'body':"the configuration data you submitted is not valid"}
+          };
+          res.json(answer);
+        } else {
+          answer = {
+              status : "success",
+              data : result
+           };
+          res.json(answer);
+        }
+      });
     });
   }
 /*

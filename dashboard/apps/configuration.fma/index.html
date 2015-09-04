@@ -39,6 +39,15 @@
         <legend>General Settings</legend>
         <div class="large-4 columns">
           <div class="row collapse">
+            <label>Default Unit System</label>
+                <select id="machine_units" class="machine_input">
+                  <option value="mm">mm</option>
+                  <option value="in">in</option>
+                </select>
+          </div>
+        </div>
+        <div class="large-4 columns">
+          <div class="row collapse">
             <label>Chordal Tolerance</label>
             <div class="small-9 columns">
               <input type="text" id="driver_ct" class="driver_input"/>
@@ -1111,11 +1120,8 @@
             }
             var flat = flattenObject(data.opensbp);
             for(key in flat) {
-              console.log(key);
               value = flat[key];
-  console.log("value = " + value);              
               input = $('#opensbp_' + key);
-  console.log("input = ",input);
               if(input.length) {
                 input.val(value);
               }
@@ -1148,7 +1154,20 @@
       $('.engine_input').change( function() {
         var parts = this.id.split("_");
         var type = parts[0];
-        var key = parts[1];
+        var key = parts.slice(1, parts.length).join('_');
+        var o = {}
+        o[key] = this.value
+        cfg = {}
+        cfg[type] = o
+        fabmoDashboard.setConfig(cfg, function(err, data) {
+          update();
+        });
+      });
+
+      $('.machine_input').change( function() {
+        var parts = this.id.split("_");
+        var type = parts[0];
+        var key = parts.slice(1, parts.length).join('_');
         var o = {}
         o[key] = this.value
         cfg = {}
@@ -1172,7 +1191,6 @@
         } while(i++ < parts.length-1 );
 
         co[parts[parts.length-1]] = this.value;
-        console.log(o);
         fabmoDashboard.setConfig(o, function(err, data) {
           update();
         });

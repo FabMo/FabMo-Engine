@@ -126,8 +126,6 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
 		this.controlWrite("\x04")
 		this.gcodeWrite("{clr:n}\n");
 		this.command("M30");
-		this.command("G20");
-		this.command("M30");
 		this.requestStatusReport();
 		this.connected = true;
 		callback(null, this);
