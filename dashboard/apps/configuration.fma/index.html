@@ -1108,14 +1108,14 @@
               value = data.driver[key];
               input = $('#driver_' + key);
               if(input.length) {
-                input.val(value);
+                input.val(String(value));
               }
             }
             for(key in data.engine) {
               value = data.engine[key];
               input = $('#engine_' + key);
               if(input.length) {
-                input.val(value);
+                input.val(String(value));
               } 
             }
             var flat = flattenObject(data.opensbp);
@@ -1123,7 +1123,7 @@
               value = flat[key];
               input = $('#opensbp_' + key);
               if(input.length) {
-                input.val(value);
+                input.val(String(value));
               }
             }
           }

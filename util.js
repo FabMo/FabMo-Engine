@@ -339,11 +339,21 @@ function walkDir(filename) {
 
 function fixJSON(json) {
     var retval = {};
-    for(key in json) {
-        var value = Number(json[key]);
-        if(typeof value === 'undefined' || isNaN(value)) {
-            value = json[key];
-          }
+    for(var key in json) {
+        if (typeof json[key] === 'object') {
+            var value = fixJSON(json[key]);
+        } else {
+            var value = Number(json[key]);
+            if(typeof value === 'undefined' || isNaN(value)) {
+                if(json[key] === 'true') {
+                    value = true;
+                } else if(json[key] === 'false') {
+                    value = false;
+                } else {
+                    value = json[key];                    
+                }
+            }
+        }
         if(key[0] === '_') {
             key = key.slice(1);
         }
