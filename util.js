@@ -340,6 +340,7 @@ function walkDir(filename) {
 function fixJSON(json) {
     var retval = {};
     for(key in json) {
+        console.log(json);
         var value = Number(json[key]);
         if(typeof value === 'undefined' || isNaN(value)) {
             value = json[key];

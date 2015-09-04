@@ -141,14 +141,15 @@ exports.VD = function(args,callback) {
 		if ( unitType === 0 || unitType === 1 ){
 			if ( unitType === 0 ){
 				this.emit_gcode("G20"); // inches
-				g2_VD.gun = 0;
+				config.machine.set("units","in");
+				log.debug("Changing units to inch");
 			}
 			else {
 				this.emit_gcode("G21"); // mm
-				g2_VD.gun = 1;
+				config.machine.set("units","mm");
+				log.debug("Changing units to mm");
 			}
 		}
-		// update Engine with new units setting
 	}
 	// For all axes - the values are:
 	//    0=Disable; 1=Standard Mode; 2=Inhibited; 3=Radius Mode
