@@ -423,6 +423,7 @@
 		} else {
 			if(jobid != current_job_id) {
 				current_job_id = jobid;
+				refresh_jobs_list();
 				loadFile('');
 				$('#nav-active').hide();				
 			}

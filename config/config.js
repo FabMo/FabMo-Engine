@@ -114,10 +114,10 @@ Config.createDataDirectories = function(callback) {
 		dir = Config.getDataDir(dir);
 		isDirectory(dir, function(isdir) {
 			if(!isdir) {
-				logger.warn('Directory "' + dir + '" does not exist.  Creating a new one.');
+				log.warn('Directory "' + dir + '" does not exist.  Creating a new one.');
 				fs.mkdir(dir, function(err) {
 					if(!err) {
-						logger.info('Successfully created directory "' + dir + '"');
+						log.info('Successfully created directory "' + dir + '"');
 					}
 					callback(err);
 				});
