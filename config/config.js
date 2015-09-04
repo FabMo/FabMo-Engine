@@ -2,7 +2,6 @@ var async = require('async');
 var fs = require('fs');
 var path = require('path');
 var PLATFORM = require('process').platform;
-
 var log = require('../log').logger('config');
 
 // Config is the superclass from which all configuration objects descend
@@ -12,8 +11,8 @@ Config = function(config_name) {
 	this.config_name = config_name;
 	this.default_config_file = __dirname + '/default/' + config_name + '.json';
 	this.config_file = Config.getDataDir('config') + '/' + config_name + '.json';
-	this._loaded = false
-}
+	this._loaded = false;
+};
 
 Config.prototype.get = function(k) {
 	return this._cache[k];
@@ -29,6 +28,7 @@ Config.prototype.getMany = function(arr) {
 };
 
 Config.prototype.set = function(k,v, callback) {
+	console.log("Config_set: " + k + " : " + v );
 	return this.update({k:v}, callback);
 };
 

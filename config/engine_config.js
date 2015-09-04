@@ -17,6 +17,7 @@ util.inherits(EngineConfig, Config);
 EngineConfig.prototype.update = function(data, callback) {
 	try {
 		for(var key in data) {
+			console.log("engine_config: update - key = " + key + " : " + data[key]);
 			this._cache[key] = data[key];
 		}
 	} catch (e) {

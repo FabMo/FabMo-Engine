@@ -141,9 +141,11 @@ exports.VD = function(args,callback) {
 		if ( unitType === 0 || unitType === 1 ){
 			if ( unitType === 0 ){
 				this.emit_gcode("G20"); // inches
+				g2_VD.gun = 0;
 			}
 			else {
 				this.emit_gcode("G21"); // mm
+				g2_VD.gun = 1;
 			}
 		}
 	}
