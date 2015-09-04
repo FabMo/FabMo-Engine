@@ -1,6 +1,10 @@
 var FabMoAPI = function(base_url) {
 	url = base_url || '/';
-	this.base_url = url.replace(/\/$/,'') 
+	this.base_url = url.replace(/\/$/,'');
+}
+
+FabMoAPI.prototype._initializeWebsocket = function() {
+	this.socket = io(this.base_url);
 }
 
 // Configuration

@@ -67,7 +67,8 @@ function Machine(control_path, gcode_path, callback) {
 		in7 : 1,
 		in8 : 1,
 		job : null,
-		info : null
+		info : null,
+		unit : 'mm'
 	};
 
 	this.driver = new g2.G2();
