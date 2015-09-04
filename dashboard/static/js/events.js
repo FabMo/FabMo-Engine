@@ -58,18 +58,6 @@ colapseMenu = function() {
 	resizedoc();
 };
 
-widgetToolsNetwork = function() {
-	//Show and hide the tool on network div (on medium & large screen)
-	if ($("#widget-tools-network .tools-other").hasClass("hidden")) {
-		$("#widget-tools-network .tools-other").removeClass("hidden");
-		$("#widget-tools-network .refresh").removeClass("hidden");
-	}
-	else {
-		$("#widget-tools-network .tools-other").addClass("hidden");
-		$("#widget-tools-network .refresh").addClass("hidden");
-	}
-};
-
 resizedocclick = function(){
 	//Same function that resizedoc(), but inverse the class on ".main-section", because it has not changed yet after the click on "#left-menu" or #right-menu
 	var l=0; var r=0
@@ -93,12 +81,6 @@ resizedocclick = function(){
 	);
 };
 
-posForm = function(elt){
-	console.log("Click on a position");
-	elt.hide();
-	elt.parent().children('input').show();
-};
-
 slideMenu = function(){
 	var startClick = null;
 	var endClick = null;
@@ -106,26 +88,6 @@ slideMenu = function(){
 	$("body").on("touchstart" , function(event){
 		startClick = event.originalEvent.touches[0].pageX;
 	});
-/*
-	$("body").on("touchend" , function(event){
-		endClick = event.originalEvent.changedTouches[0].pageX;
-		//alert("startClick");
-
-		//Select from right to left
-		if( ($("body").width()/parseFloat($("body").css("font-size"))<=40.063) && (startClick<100) && ((endClick-startClick)>100) ){
-			//Bind Right Menu
-			alert("LeftMenu Out");
-		}
-		//Select from left to right
-		else if( (($("body").width()-startClick)<100) && ((startClick-endClick)>100) ){
-			//Bind Left Menu
-			alert("Right menu out");
-		}
-
-		startClick = null;
-		endClick = null;
-	});
-*/
 };
 
 
@@ -143,24 +105,14 @@ $(document).ready( function() {
 	//Init of the size of the main & app-icon containers
 	resizedoc();
 	
-	/*
-	*** Actions Listeners ***
-	*/
-
 	//If size of the screen change, we resize the main & app container
 	$(window).resize( function() {resizedoc();});
 
 	//Idem if we colapse or un-colapse the right menu
 	$("#icon_colapse").click(function() { colapseMenu(); });
 
-	//If we click on the "tool on network" button on the top-bar, they are shown / hidden
-	$("#widget-tools-network div").click( function() {widgetToolsNetwork(); });
-
 	//Define the positions of the dashboard notifications
 	toastr.options["positionClass"] = "toast-bottom-center";
-
-	//Event to transform position display to input
-	$("#position ul .axis span.pos").click( function() { posForm($(this)); })
 
 	//Click & Swipe listener
 	slideMenu();

@@ -19,6 +19,15 @@ body,html{
     user-select: none;
 }
 
+.doselect {
+ -moz-user-select: text;
+ -khtml-user-select: text;
+ -webkit-user-select: text;
+ -ms-user-select: text;
+ user-select: text;
+ cursor: text;
+}
+
 .on {
 	color: #ffffff;
 }
@@ -1106,9 +1115,10 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 #app_menu_container {
 	list-style: none;
-	height :auto;
-	margin-left: auto;
-	margin-right: auto;
+	height :100%;
+	/*margin-left: auto;
+	margin-right: auto;*/
+	/* auto margins center the apps, but make them jump when the DRO is displayed (ick) */
 }
 
 /* ********** Page (#modal_container) container ********** */

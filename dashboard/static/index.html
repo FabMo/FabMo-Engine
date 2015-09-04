@@ -77,34 +77,43 @@
 
             <!-- ********** Tool Position Widget ********** -->
             <div id="position" class="widget">
-              <ul class="off-canvas-list fabmo-status">
-                <li><label>Position <div id="units"></div></label></li>
+              <ul class="off-canvas-list fabmo-status noselect">
+                <li><label class="">Position<div id="units"></div></label></li>
                 <li>
                   <form>
                     <div class="row axis">
                         <div class="small-9 columns">
-                          <label style="border-top: 1px solid #eee;">X<span class="units">&nbsp;</span><span class="posx pos"></span><input type"number" step="0.001" class="posx pos" style="display:none;" value=""></label>
-                          <button type="submit" class="newPos-submit" id="newPos-x" style="display:none;">zMove</button>
+                          <label style="border-top: 1px solid #eee;" class="noselect">
+                            X
+                            <span class="units">&nbsp;</span>
+                            <span class="posx pos doselect"></span>
+                          </label>
                         </div>
-                        <div class="small-3 columns home"><span class="button-zerox noselect">X<label>0</label></span></div>
+                        <div class="small-3 columns home"><span class="button-zerox">X<label>0</label></span></div>
                     </div>
                   </form>
                   <form>
                     <div class="row axis">
                       <div class="small-9 columns">
-                        <label>Y<span class="units">&nbsp;</span><span class="posy pos"></span><input type"number" step="0.001" class="posy pos" style="display:none;" value=""></label>
-                        <button type="submit" class="newPos-submit" id="newPos-y" style="display:none;">zMove</button>
+                        <label class="noselect">
+                        Y
+                        <span class="units">&nbsp;</span>
+                        <span class="posy pos doselect"></span>
+                        </label>
                       </div>
-                      <div class="small-3 columns home"><span class="button-zeroy noselect">Y<label>0</label></span></div>
+                      <div class="small-3 columns home"><span class="button-zeroy">Y<label>0</label></span></div>
                     </div>
                   </form>
                   <form>
                     <div class="row axis">
                       <div class="small-9 columns">
-                        <label>Z<span class="units">&nbsp;</span><span class="posz pos"></span><input type"number" step="0.001" class="posx pos" style="display:none;" value=""></label>
-                        <button type="submit" class="newPos-submit" id="newPos-z" style="display:none;">zMove</button>
+                        <label class="noselect">
+                        Z
+                        <span class="units">&nbsp;</span>
+                        <span class="posz pos doselect"></span>
+                        </label>
                       </div>
-                      <div class="small-3 columns home"><span class="button-zeroz noselect">Z<label>0</label></span></div>
+                      <div class="small-3 columns home"><span class="button-zeroz">Z<label>0</label></span></div>
                     </div>
                   </form>
                 </li>
@@ -173,7 +182,7 @@
     
           <!-- App Menu -->
           <section class="app-section">
-            <div>
+            <div style="height:100%">
               <ul id="app_menu_container"></ul>
             </div>
           </section>
