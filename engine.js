@@ -44,7 +44,12 @@ Engine.prototype.start = function(callback) {
 	function setup_network(callback) {
 		if(config.engine.get('wifi_manager')) {
 			log.info("Setting up the network...");
-			network.init();
+            try {
+                network.init();
+            } catch(e) {
+                log.error('Problem starting network manager:')
+                log.error(e);
+            }
 			callback(null);
 		} else {
 			log.warn("Skipping network setup because wifi manager is disabled.");
