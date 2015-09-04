@@ -968,6 +968,7 @@ SBPRuntime.prototype._popFileStack = function() {
 
 // Add GCode to the current chunk, which is dispatched on a break or end of program
 SBPRuntime.prototype.emit_gcode = function(s) {
+	log.debug("emit_gcode = " + s);
 	this.current_chunk.push('N' + this.pc + ' ' + s);
 };
 
