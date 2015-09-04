@@ -454,7 +454,8 @@ SBPRuntime.prototype._dispatch = function(callback) {
 
 			this.driver.expectStateChange({
 				"running" : run_function,
-				"stop" : function(driver) { callback() },
+				"stop" : function(driver) { callback(); },
+				"end" : function(driver) { callback(); },
 				null : function(t) {
 					log.warn("Expected a start but didn't get one. (" + t + ")"); 
 				},
