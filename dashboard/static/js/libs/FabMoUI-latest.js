@@ -60,6 +60,8 @@ function FabMoUI(tool, options){
 	this.fixe_move_selector =  this.keypad_div_selector + ' .fixe-move';
 	this.fixe_move_step_selector =  this.keypad_div_selector + ' .fixe-move-step';
 	
+	this.units_selector = this.status_div_selector + ' .units';
+
 	this.auto_refresh = null;
 
 	if(this.keypad){
@@ -161,10 +163,15 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		var y = 'X.XXX'
 		var z = 'X.XXX'
 	}
+	var unit = '??';
+	if(status.unit != null) {
+		unit = status.unit ? 'mm' : 'in';
+	}
 
 	that.updateText($(that.posX_selector), x);
 	that.updateText($(that.posY_selector), y);
 	that.updateText($(that.posZ_selector), z);
+	that.updateText($(that.units_selector), unit)
 
 	//Current File or job
 	if(status.job) {
