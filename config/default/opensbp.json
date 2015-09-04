@@ -33,7 +33,7 @@
     "safeApullUp": 0.25,
     "transforms": {
         "rotate": {
-            "apply": true,
+            "apply": false,
             "angle": 0,
             "x": 0,
             "y": 0
