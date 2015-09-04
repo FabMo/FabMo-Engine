@@ -25,7 +25,8 @@
     "tingodb": "0.3.x",
     "tough-cookie": "^2.0.0",
     "connman-simplified":"0.1.2",
-    "glob": "^5.0.14"
+    "glob": "^5.0.14",
+    "delaunay-triangulate": "^1.1.6"
   },
   "devDependencies": {
     "chai": "3.2.x",

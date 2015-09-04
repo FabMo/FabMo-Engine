@@ -10,6 +10,7 @@ var log = require('./log').logger('engine');
 var db = require('./db');
 var macros = require('./macros');
 var dashboard = require('./dashboard');
+var network = require('./network');
 
 var Engine = function() {};
 
@@ -39,6 +40,17 @@ Engine.prototype.start = function(callback) {
             log.info("Applying engine configuration...");
             config.engine.apply(callback);
         },
+
+	function setup_network(callback) {
+		if(config.engine.get('wifi_manager')) {
+			log.info("Setting up the network...");
+			network.init();
+			callback(null);
+		} else {
+			log.warn("Skipping network setup because wifi manager is disabled.");
+			callback(null);
+		}
+	},
 
         // Configure the DB
         function setup_database(callback) {

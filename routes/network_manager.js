@@ -39,14 +39,20 @@ connectWifi = function(req, res, next) {
 }
 
 disconnectWifi = function(req, res, next) {
-    network.disconnectFromAWifiNetwork(function(err, data){
-        /*if(err) {
-            res.json({'status':'error', 'message' : err}); //the error is not well reported;this is a bug in node.js v0.12.7;
-        } else {
-            res.json({'status':'success'})
-        }*/
-         res.json({'status':'success'});
-    });
+    state=req.params.disconnect;
+    if(state===true){
+        network.disconnectFromAWifiNetwork(function(err, data){
+            /*if(err) {
+                res.json({'status':'error', 'message' : err}); //the error is not well reported;this is a bug in node.js v0.12.7;
+            } else {
+                res.json({'status':'success'})
+            }*/
+             res.json({'status':'success'});
+        });
+    }else{
+       res.json({'status':'error', 'message' : 'wrong POST command sent !'}); 
+    }
+   
 }
 
 forgetWifi  = function(req,res,next){
@@ -64,45 +70,53 @@ forgetWifi  = function(req,res,next){
     }
 }
 
-turnWifiOn = function(req,res,next){   
-    network.turnWifiOn(function(err){
-        if(err) {
-            res.json({'status':'error', 'message' : err});
-        } else {
-            res.json({'status':'success'});
-        }
-    });
-}
-
-turnWifiOff = function(req,res,next){
-    network.turnWifiOff(function(err){
+wifiState = function(req,res,next){
+    state = req.params.enabled;
+    if(state===true){
+        network.turnWifiOn(function(err){
+            if(err) {
+                res.json({'status':'error', 'message' : err});
+            } else {
+                res.json({'status':'success'});
+            }
+        });
+    }else if(state===false){
+        network.turnWifiOff(function(err){
         if(err) {
             res.json({'status':'error', 'message' : err});
         } else {
             res.json({'status':'success'});
         }
     }); 
+    }else{
+       res.json({'status':'error', 'message' : 'wrong POST command sent !'}); 
+    }
 }
 
-turnWifiHotspotOn = function(req,res,next){
-    network.turnWifiHotspotOn(function(err){
+
+hotspotState = function(req,res,next){
+    state = req.params.enabled;
+    if(state===true){
+        network.turnWifiHotspotOn(function(err){
+            if(err) {
+                res.json({'status':'error', 'message' : err});
+            } else {
+                res.json({'status':'success'});
+            }
+        });
+    }else if(state===false){
+        network.turnWifiHotspotOff(function(err){
         if(err) {
             res.json({'status':'error', 'message' : err});
         } else {
             res.json({'status':'success'});
         }
-    });
+    }); 
+    }else{
+       res.json({'status':'error', 'message' : 'wrong POST command sent !'}); 
+    }
 }
 
-turnWifiHotspotOff = function(req,res,next){
-    network.turnWifiHotspotOff(function(err){
-        if(err) {
-            res.json({'status':'error', 'message' : err});
-        } else {
-            res.json({'status':'success'});
-        }
-    });   
-}
 /*******************************************************************************************/
 /*************************************  OLD MANAGER  ***************************************/
 /*******************************************************************************************/
@@ -158,13 +172,13 @@ getProfile = function(req, res, next) {
 
 module.exports = function(server) {
     if(config.engine.get('wifi_manager')){
-        server.get('/network/wifi/on',turnWifiOn);//OK
-        server.get('/network/wifi/off',turnWifiOff);//Ok
-        server.get('/network/hotspot/on',turnWifiHotspotOn);//OK
-        server.get('/network/hotspot/off',turnWifiHotspotOff);//Ok        
+  
+        server.post('/network/wifi/state',wifiState); //OK
+        server.post('/network/hotspot/state',hotspotState); //OK
+
         server.get('/network/wifi/scan',scan); //OK
         server.post('/network/wifi/connect', connectWifi) // OK
-        server.get('/network/wifi/disconnect',disconnectWifi); //OK
+        server.post('/network/wifi/disconnect',disconnectWifi); //OK
         server.post('/network/wifi/forget',forgetWifi); //OK
         server.get('/network/wifi/profiles',listProfiles); //OK
         //server.post('/network/wifi/profile',add_profile); //TODO: ADD THIS BACK IN
