@@ -34,7 +34,7 @@ function doshell(command, callback){
     exec(command, function(error, stdout, stderr) { 
         callback(stdout); 
     });
-};
+}
 
 function extend(a,b, force) {
     for(k in b) {
@@ -44,13 +44,13 @@ function extend(a,b, force) {
                     extend(a[k], b[k]);
                 } else {
                     if(force) {
-                        a[k] = b[k]
+                        a[k] = b[k];
                     } else {
-                        log.warn('Object format error in extend.')
+                        log.warn('Object format error in extend.');
                     }
                 }
             } else {
-                a[k] = b[k]
+                a[k] = b[k];
             }
         }
     }
@@ -338,7 +338,7 @@ function walkDir(filename) {
 }
 
 function fixJSON(json) {
-    var retval = {}
+    var retval = {};
     for(key in json) {
         var value = Number(json[key]);
         if(typeof value === 'undefined' || isNaN(value)) {
