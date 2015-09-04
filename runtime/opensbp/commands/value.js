@@ -148,6 +148,7 @@ exports.VD = function(args,callback) {
 				g2_VD.gun = 1;
 			}
 		}
+		// update Engine with new units setting
 	}
 	// For all axes - the values are:
 	//    0=Disable; 1=Standard Mode; 2=Inhibited; 3=Radius Mode
