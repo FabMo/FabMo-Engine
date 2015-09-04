@@ -79,6 +79,9 @@ Engine.prototype.start = function(callback) {
                 });
             } else {
                 log.warn("Skipping G2 configuration due to no connection.");
+                config.configureDriver(null, function(err, data) {
+                    callback(null);
+                })
                 callback(null);
             }
         }.bind(this),

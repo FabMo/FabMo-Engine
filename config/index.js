@@ -22,9 +22,10 @@ function configureEngine(callback) {
 //
 // Also, create `exports.driver` which is a G2Config object
 function configureDriver(driver, callback) {
-    log.debug("Configuring driver...");
-	exports.driver = new G2Config(driver);
-	async.series([
+    if(driver) {
+    	log.debug("Configuring driver...");
+    	exports.driver = new G2Config(driver);
+		async.series([
 		function(callback) { exports.driver.init(callback); },
 		function(callback) { exports.driver.configureStatusReports(callback); }
 		],
@@ -35,6 +36,10 @@ function configureDriver(driver, callback) {
 				callback(null, exports.driver);
 			}
 		});
+    } else {
+    	log.debug("Creating dummy driver configuration...");
+    	exports.driver = new Config();
+    }
 }
 
 // Configure OpenSBP by loading the configuration from disk so it is available for the runtime

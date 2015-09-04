@@ -215,40 +215,6 @@ FabMo.prototype.get_info = function(callback)
 	});
 };
 
-
-FabMo.prototype.download_by_id = function(id)
-{
-	window.location = this.url.file+ "/" + id;
-};
-
-FabMo.prototype.download = function(file)
-{
-	this.download_by_id(file._id);
-};
-
-FabMo.prototype.delete_by_id = function(id,callback)
-{
-	if (!callback)
-		throw "this function need a callback to work !";
-	var that = this;
-	$.ajax({
-		url: this.url.file + '/' + id,
-		type: "DELETE",
-		dataType : 'json', 
-		success: function( data ) {
-			callback(undefined);
-			},
-		error: function(data,err) {
-			if (data.status === 404){callback(that.default_error.file.no_file);}
-			else{
-				var error = that.default_error.no_device;
-				error.sys_err = err;
-			 	callback(error);
-			}			
-		}
-	});
-};
-
 FabMo.prototype.resubmit_job = function(id,callback)
 {
 	if (!callback)
@@ -272,48 +238,7 @@ FabMo.prototype.resubmit_job = function(id,callback)
 	});
 };
 
-FabMo.prototype.delete = function(file,callback)
-{
-	this.delete_by_id(file._id,callback);
-};
-
-
-FabMo.prototype.run_by_id = function(id,callback)
-{
-	if (!callback)
-		throw "this function need a callback to work !";
-	var that=this;
-	$.ajax({
-		url: this.url.run + '/' + id,
-		type: "GET",
-		dataType : 'json', 
-		success: function( data ) {
-				if(data.status === "success") {
-					callback(undefined,data.data);
-				} else if(data.status==="fail") {
-					callback(data.data);
-				}	else {
-					callback(data.message);
-				}
-			},
-		error: function(data,err) {
-			if (data.status === 404){callback(that.default_error.file.no_file);}
-			else if (data.status === 302){callback(undefined);}//success
-			else{
-				var error = that.default_error.no_device;
-				error.sys_err = err;
-			 	callback(error);
-			}
-		}
-	});
-};
-FabMo.prototype.run = function(file,callback)
-{
-	if (!callback)
-		throw "this function need a callback to work !";
-	this.run(file._id,callback);
-};
-
+//TODO should be POST
 FabMo.prototype.quit = function(callback){
 	if (!callback)
 		throw "this function need a callback to work !";
@@ -339,6 +264,7 @@ FabMo.prototype.quit = function(callback){
 	});
 };
 
+//TODO should be POST
 FabMo.prototype.pause = function(callback){
 	if (!callback)
 		throw "this function need a callback to work !";
@@ -364,6 +290,7 @@ FabMo.prototype.pause = function(callback){
 	});
 };
  
+// TODO should be POST
 FabMo.prototype.resume = function(callback){
 	if (!callback)
 		throw "this function need a callback to work !";
@@ -385,45 +312,6 @@ FabMo.prototype.resume = function(callback){
     			var error = that.default_error.no_device;
 			error.sys_err = err;
 		 	callback(error);
-		}
-	});
-};
-
-FabMo.prototype.goto =  function(x,y,z,callback)
-{
-	if (!callback)
-		throw "this function need a callback to work !";
-	var that=this;
-	$.ajax({
-		url: this.url.status,
-		type: "POST",
-		dataType : 'json', 
-		data : {'x' : x, 'y' :y, 'z':z},
-		success: function( data ) {
-			if(data.status === "success") {
-				callback(undefined,data.data);
-			} else if(data.status==="fail") {
-				callback(data.data);
-			}	else {
-				callback(data.message);
-			}
-		},
-		error: function(data, err) {
-    			var error = that.default_error.no_device;
-			error.sys_err = err;
-		 	callback(error);
-		}
-	});
-};
-
-// Functions for dispatching g-code to the tool
-FabMo.prototype.gcode2 = function (string) {
-	var that=this;
-	that.gcode(string,function(err,data){
-		if(!err) {
-			console.log('Success: ' + string);
-		} else {
-			console.log('Failure: ' + string);
 		}
 	});
 };
@@ -482,79 +370,6 @@ FabMo.prototype.sbp = function(sbp_line,callback)
 	});
 };
 
-
-FabMo.prototype.start_move =  function(dir,lock,callback)
-{
-	if (!callback)
-		throw "this function need a callback to work !";
-
-	var that=this;
-	
-	if (that.old_lock_status===null) {
-		that.old_lock_status = lock;
-	}
-
-	if(that.old_lock_status != lock) {
-		console.log("Stop Move already");
-		that.stop_move(function(){});
-	}
-
-	else {
-		$.ajax({
-			url: this.url.move,
-			type: "POST",
-			dataType : 'json', 
-			data :{"move" : dir},
-			success: function( data ) {
-				if(!that.tool_moving){
-					that.tool_moving=setInterval(that.start_move.bind(that,dir,lock,function(){}),that.interval_moving);
-					if(data.status === "success") {
-						callback(undefined,data.data);
-					} else if(data.status==="fail") {
-						callback(data.data);
-					}	else {
-						callback(data.message);
-					}
-				}
-			},
-			error: function(data,err) {
-		    		var error = that.default_error.no_device;
-				error.sys_err = err;
-			 	callback(error);
-			}
-		});
-	}
-};
-
-FabMo.prototype.stop_move =  function(callback)
-{
-	if (!callback)
-		throw "this function need a callback to work !";
-	var that=this;
-	that.old_lock_status=null;
-	clearInterval(that.tool_moving);
-	that.tool_moving = undefined;
-	$.ajax({
-		url: this.url.move,
-		type: "POST",
-		dataType : 'json', 
-		data : {"move" : "stop"},
-		success: function( data ) {
-			if(data.status === "success") {
-				callback(undefined,data.data);
-			} else if(data.status==="fail") {
-				callback(data.data);
-			}	else {
-				callback(data.message);
-			}
-		},
-		error: function(data, err) {
-	    		var error = that.default_error.no_device;
-			error.sys_err = err;
-		 	callback(error);
-		}
-	});
-};
 
 FabMo.prototype.fixed_move =  function(dir,step,speed,callback)
 {
@@ -984,113 +799,6 @@ FabMo.prototype.upload_file =  function(formdata,callback)
 		});
 	}
 };
-
-// non persistent mode : upload, run & delete.
-FabMo.prototype.run_local_file =  function(file,ext,callback)
-{
-
-	if (!callback)
-		throw "this function need a callback to work !";
-	var blob = new Blob([file]);
-	var fD = new FormData();
-	fD.append('file', blob, 'temp.'+ ext);
-	var that = this;
-	that.upload_file(fD,function(err,file_obj){
-		that.run_by_id(file_obj._id,function(){
-			that.delete(file_obj,function(){
-				if (callback){
-					callback('file executed once');}
-			});
-		});
-	});
-};
-
-
-
-function FabMoAutoConnect(callback,linker_port){
-	if (!callback)
-		throw "this function need a callback to work !";
-	var that=this;
-	DetectToolsOnTheNetworks(function(err,list_tools){
-		if (err){ callback(err);return;} 
-		SelectATool(list_tools,function(err,tool){
-			if (err){ callback(err);return;}
-			ChooseBestWayToConnect(tool,function(ip_address,port){
-				console.log("Best way selected");
-				console.log(ip_address);
-				console.log(port);
-				callback(undefined,new FabMo(ip_address,port ? port.toString() : '8080'));	
-			});
-		});
-	},linker_port);
-}
-
-
-
-function ChooseBestWayToConnect(tool,callback){ 
-	// Returns an IP address and port
-	// Automatic selection of the best way to talk to the tool
-	// Based on this priority : USB > ethernet > wifi > wifi-direct
-	if (!callback)
-		throw "this function need a callback to work !";
-	console.log("Choosing best way to connect");
-	console.log(tool);
-	list_itr = [];
-	for(var idx in tool.network){
-		list_itr.push(tool.network[idx].interface);
-	}
-	console.log(list_itr);
-	if(list_itr.indexOf("usb0") > -1)
-	{
-		tool.network.forEach(function(val,key){
-			if(val.interface === "usb0")
-			{
-				callback(val.ip_address,tool.server_port);
-				return;
-			}
-		});
-	}
-	if(list_itr.indexOf("eth0") > -1)
-	{
-		tool.network.forEach(function(val,key){
-			if(val.interface === "eth0")
-			{
-				callback(val.ip_address,tool.server_port);
-				return;
-			}
-		});
-	}
-	if(list_itr.indexOf("en0") > -1)
-	{
-		tool.network.forEach(function(val,key){
-			if(val.interface === "en0")
-			{
-				callback(val.ip_address,tool.server_port);
-				return;
-			}
-		});
-	}	
-	if(list_itr.indexOf("wlan0") > -1)
-	{
-		tool.network.forEach(function(val,key){
-			if(val.interface === "wlan0")
-			{
-				callback(val.ip_address,tool.server_port);
-				return;
-			}
-		});
-	}
-	if(list_itr.indexOf("wlan1") > -1)
-	{
-		tool.network.forEach(function(val,key){
-			if(val.interface === "wlan1")
-			{
-				callback(val.ip_address,tool.server_port);
-				return;
-			}
-		});
-	}		
-}
 
 FabMo.prototype.job_run =  function(callback)
 {

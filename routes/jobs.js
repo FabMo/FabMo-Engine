@@ -53,7 +53,7 @@ var submitJob = function(req, res, next) {
                     log.error(err);
                 answer = {
                         status:"error",
-                        message:"failed to save the job in DB"
+                        message:err
                     };
                     res.json(answer);
                 } else {
@@ -69,14 +69,14 @@ var submitJob = function(req, res, next) {
     else if (file){
         answer = {
             status:"fail",
-            data : {"job" : "wrong format"}
+            data : {"job" : "Wrong file format"}
         };
         res.json(answer);
     }
     else{
         answer = {
             status:"fail",
-            data : {"job" : "problem receiving the job : bad request"}
+            data : {"job" : "Problem receiving the job : bad request"}
         };
         res.json(answer);
     }
@@ -97,7 +97,7 @@ var clearQueue = function(req, res, next) {
         if(err) {
             answer = {
                 status:"error",
-                message:"failed to remove the job in DB"
+                message:err
             };
             res.json(answer);
         } else {
@@ -127,7 +127,7 @@ runNextJob = function(req, res, next) {
             log.error(err);
             answer = {
                 status:"failed",
-                data:{job:"failed to run next job"}
+                data:{job:err}
             };
             res.json(answer);
         } else {
@@ -164,7 +164,7 @@ var resubmitJob = function(req, res, next) {
                 log.error(err);
                 answer = {
                     status:"failed",
-                    data:{job:"job id not correct"}
+                    data:{job:err}
                 };
                 res.json(answer);
             } else {
@@ -295,8 +295,8 @@ var getJobById = function(req, res, next) {
         if(err) {
             log.error(err);
             answer = {
-                    status:"failed",
-                    data:{job:"job id not correct"}
+                    status:"fail",
+                    data:{job:err}
             };
             res.json(answer);
         } else {
@@ -325,8 +325,8 @@ var cancelJob = function(req, res, next) {
         if(err) {
             log.error(err);
             answer = {
-                    status:"failed",
-                    data:{job:"job id not correct"}
+                    status:"fail",
+                    data:{job:err}
             };
             res.json(answer);
         } else {
@@ -334,8 +334,8 @@ var cancelJob = function(req, res, next) {
                 if(err) {
                     log.error(err);
                     answer = {
-                            status:"failed",
-                            data:{job:"failed to cancel the job"}
+                            status:"fail",
+                            data:{job:err}
                     };
                     res.json(answer);
                 } else {
@@ -355,7 +355,7 @@ var getJobFile = function(req, res, next) {
         if(err) {
             log.error(err);
             var answer = {
-                    status:"failed",
+                    status:"fail",
                     data:{file:err}
             };
             res.json(answer);                        

@@ -153,7 +153,7 @@ Job.getById = function(id,callback)
 {
 	jobs.findOne({_id: id},function(err,document){
 		if (!document){
-			callback(null, undefined);
+			callback("No such job ID: " + id, undefined);
 			return;
 		}
 		var job = document;

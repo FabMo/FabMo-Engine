@@ -28,7 +28,7 @@ var updateMacro = function(req, res, next) {
  */
 var getMacros = function(req, res, next) {
     response = {'status' : 'success',
-                'data' : macros.list()}
+                'data' : {'macros' : macros.list()}}
     res.json(response);
 }
 
@@ -38,7 +38,7 @@ var getMacro = function(req, res, next) {
     if(macro) {
         res.json({
             'status' : 'success',
-            'data' : macro
+            'data' : {'macro' : macro }
         });       
     } else {
         res.json({
