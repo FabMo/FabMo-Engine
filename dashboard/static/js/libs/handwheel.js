@@ -67,6 +67,17 @@ var WheelControl = function(element, options) {
     	position : this.wheelSpeed,
     	centerText : this.wheelSpeed.toFixed(this.speedDigits)
     });
+    
+     // Arrow for negative nudge
+    var minusnudge = new Nudger({
+    	radius : this.radius,
+    	center : this.center,
+    	endAngle : 3.0*Math.PI/2.0,
+    	startAngle : 5.0*Math.PI/4.0,
+    	arrow : 'start',
+    	labelStyle : '25px Arial',
+    	labelText : '-'
+    });
 
     // Arrow for positive nudge
     var plusnudge = new Nudger({
@@ -75,20 +86,11 @@ var WheelControl = function(element, options) {
     	startAngle : 3.0*Math.PI/2.0,
     	endAngle : 7.0*Math.PI/4.0,
     	arrow : 'end',
-    	labelStyle : '20px Arial',
+    	labelStyle : '25px Arial',
     	labelText : '+'
     });
 
-    // Arrow for negative nudge
-    var minusnudge = new Nudger({
-    	radius : this.radius,
-    	center : this.center,
-    	endAngle : 3.0*Math.PI/2.0,
-    	startAngle : 5.0*Math.PI/4.0,
-    	arrow : 'start',
-    	labelStyle : '20px Arial',
-    	labelText : '-'
-    });
+   
 
     // List of controls with access to the canvas context
     this.controls.push(speedwheel);
@@ -111,6 +113,15 @@ var WheelControl = function(element, options) {
     	plusnudge.hide();
     	minusnudge.hide();
     	speedwheel.show();
+    	this.draw();
+    }.bind(this));
+    
+   // Center click on the speedwheel switches us back to xyzwheel
+    speedwheel.on('center', function switchToxyzwheel() {
+    	xyzwheel.show();
+    	plusnudge.show();
+    	minusnudge.show();
+    	speedwheel.hide();
     	this.draw();
     }.bind(this));
 
