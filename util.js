@@ -339,6 +339,7 @@ function walkDir(filename) {
 
 function fixJSON(json) {
     var retval = {};
+
     for(var key in json) {
         if (typeof json[key] === 'object') {
             var value = fixJSON(json[key]);
