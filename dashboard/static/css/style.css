@@ -443,7 +443,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 #position ul li:first-child label {
-	color: #dd8728;
 	font-size: 36px;
 	font-size: 1.5rem;
 	font-family: 'source_sans_proextralight';
@@ -814,6 +813,18 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	left: 20px;
 	left: 0.625rem
 }
+
+#speedwheelLabel {
+	position: relative;
+	bottom: -10px;
+	font-size: 1.1em;
+	font-weight: 300;
+	font-family: 'source_sans_proextralight';
+	display: none;
+}
+
+
+
 
 /*Test Trackpad*/
 #keypad.trackpad #trackpad-zone {

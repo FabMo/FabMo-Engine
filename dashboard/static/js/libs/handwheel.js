@@ -34,7 +34,7 @@ var WheelControl = function(element, options) {
     	center : this.center,
     	centerText : this.wheelSpeed.toFixed(this.speedDigits),
     	centerTextColor : '#aaaaaa',
-    	centerTextStyle : 'Arial 20px',
+    	centerTextStyle : 'Arial 50px',
     	thumbRadius : this.thumbRadius,
     	thumbActiveRadius : this.thumbActiveRadius,
     	angleOffset : Math.PI/3.0,
@@ -113,6 +113,9 @@ var WheelControl = function(element, options) {
     	plusnudge.hide();
     	minusnudge.hide();
     	speedwheel.show();
+        $('#speedwheelLabel').show();
+        $('#wheel').css('position', 'relative');
+        $('#wheel').css('top', '-20px');
     	this.draw();
     }.bind(this));
     
@@ -122,6 +125,9 @@ var WheelControl = function(element, options) {
     	plusnudge.show();
     	minusnudge.show();
     	speedwheel.hide();
+        $('#speedwheelLabel').hide();
+        $('#wheel').css('position', 'static');
+        $('#wheel').css('top', '0px');
     	this.draw();
     }.bind(this));
 
@@ -145,6 +151,9 @@ var WheelControl = function(element, options) {
 	    	plusnudge.show();
 	    	minusnudge.show();
 	    	xyzwheel.show();
+            $('#speedwheelLabel').hide();
+            $('#wheel').css('position', 'static');
+            $('#wheel').css('top', '0px');
 	    	this.draw();
     	}.bind(this), 500);
     }.bind(this))
