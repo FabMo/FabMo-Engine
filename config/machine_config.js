@@ -1,8 +1,8 @@
-Config = require('./config').Config;
+var Config = require('./config').Config;
 var log = require('../log').logger('machine_config');
 
 // The EngineConfig object keeps track of engine-specific settings
-MachineConfig = function(driver) {
+var MachineConfig = function(driver) {
 	Config.call(this, 'machine');
 	this.driver = driver;
 };

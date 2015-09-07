@@ -22,19 +22,23 @@ var WheelControl = function(element, options) {
     this.speedDigits = options.speedDigits || 1;
     var wheelSpeed = options.wheelSpeed || this.minSpeed;
     this.wheelSpeed = Math.min(Math.max(wheelSpeed, this.minSpeed), this.maxSpeed);
+    this.units = options.units || 'in';
 
     // Private data
     this.mousepos = {x:null,y:null};
     this.controls = [];
     this.listeners = {};
 
+    var centerTextColor = '#aaaaaa';
+    var centerTextStyle = '18px Arial';
+
     // Wheel for moving the tool
     var xyzwheel = new Handwheel({
     	radius : this.radius*0.6,
     	center : this.center,
-    	centerText : this.wheelSpeed.toFixed(this.speedDigits),
-    	centerTextColor : '#aaaaaa',
-    	centerTextStyle : 'Arial 20px',
+    	centerText : this.wheelSpeed.toFixed(this.speedDigits) + '\nin/sec',
+    	centerTextColor : centerTextColor,
+    	centerTextStyle : centerTextStyle,
     	thumbRadius : this.thumbRadius,
     	thumbActiveRadius : this.thumbActiveRadius,
     	angleOffset : Math.PI/3.0,
@@ -59,13 +63,15 @@ var WheelControl = function(element, options) {
 
     // Wheel for adjusting speed
     var speedwheel = new Scalewheel({
-    	radius : this.radius*0.7,
+    	radius : this.radius*0.6,
     	center : this.center,
     	thumbRadius : this.thumbRadius,
     	thumbActiveRadius : this.thumbActiveRadius, 
     	label : 'S',
     	position : this.wheelSpeed,
-    	centerText : this.wheelSpeed.toFixed(this.speedDigits)
+    	centerText : this.wheelSpeed.toFixed(this.speedDigits) + '\nin/sec',
+        centerTextColor : centerTextColor,
+        centerTextStyle : centerTextStyle
     });
 
     // Arrow for positive nudge
@@ -90,29 +96,61 @@ var WheelControl = function(element, options) {
     	labelText : '-'
     });
 
+    var speedlabel = new Label({
+        text : 'Speed',
+        textColor : '#aaaaaa',
+        center : this.center,
+        position : 'top',
+        radius : this.radius
+    });
+
+    var handwheellabel = new  Label({
+        text : 'Handwheel',
+        textColor : '#aaaaaa',
+        center : this.center,
+        position : 'bottom',
+        radius : this.radius        
+    })
+
     // List of controls with access to the canvas context
     this.controls.push(speedwheel);
     this.controls.push(xyzwheel);
     this.controls.push(plusnudge);
     this.controls.push(minusnudge);
+    this.controls.push(speedlabel);
+    this.controls.push(handwheellabel);
 
     // Setup what is initially visible
     speedwheel.hide();
     xyzwheel.show();
     plusnudge.show();
     minusnudge.show();
+    handwheellabel.show();
 
     // Bind events
     this._setupListeners();
     
+    var switchToSpeedwheel = function() {
+        xyzwheel.hide();
+        plusnudge.hide();
+        minusnudge.hide();
+        speedwheel.show();
+        speedlabel.show();
+        this.draw();        
+    }.bind(this);
+
+    var switchToHandwheel = function() {
+        xyzwheel.show();
+        plusnudge.show();
+        minusnudge.show();
+        speedwheel.hide();
+        speedlabel.hide();
+        this.draw();        
+    }.bind(this);
+
+
     // Center click on the handwheel switches us to speed adjustment
-    xyzwheel.on('center', function switchToSpeedwheel() {
-    	xyzwheel.hide();
-    	plusnudge.hide();
-    	minusnudge.hide();
-    	speedwheel.show();
-    	this.draw();
-    }.bind(this));
+    xyzwheel.on('center', switchToSpeedwheel);
 
     xyzwheel.on('sweep', function move(data) {
     	this.emit('move', {'axis' : data.thumb.label, 'angle' : data.angle, 'rate' : data.rate})
@@ -129,13 +167,7 @@ var WheelControl = function(element, options) {
     	increments = speed / this.speedIncrement;
     	speed = Math.round(increments)*this.speedIncrement;
     	this.emit('speed', {'speed' : speed})
-    	setTimeout(function switchToSpeedwheel() {
-	    	speedwheel.hide();
-	    	plusnudge.show();
-	    	minusnudge.show();
-	    	xyzwheel.show();
-	    	this.draw();
-    	}.bind(this), 500);
+    	setTimeout(switchToHandwheel, 500);
     }.bind(this))
 
     // Speed selection is indicated live while dragging the speed wheel
@@ -143,10 +175,12 @@ var WheelControl = function(element, options) {
     	speed = this.minSpeed + data.pos*(this.maxSpeed-this.minSpeed);
     	increments = speed / this.speedIncrement;
     	speed = Math.round(increments)*this.speedIncrement;
-    	text = speed.toFixed(this.speedDigits);
+    	text = speed.toFixed(this.speedDigits) + '\nin/sec';
     	speedwheel.setCenterText(text);
     	xyzwheel.setCenterText(text);
     }.bind(this));
+
+    speedwheel.on('center', switchToHandwheel);
 
     plusnudge.on('nudge', function nudgePositive(data) {
         if(xyzwheel.activeThumb) {
@@ -416,12 +450,28 @@ Handwheel.prototype._drawThumbs = function(ctx) {
 
 
 Handwheel.prototype._drawCenter = function(ctx) {
-    // Draw the thumb text
-    ctx.font = this.centerTextStyle;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = this.centerTextColor;
-    ctx.fillText(this.centerText, this.center.x, this.center.y);
+    if(this.centerText.indexOf('\n') === -1) {
+        // Draw the thumb text
+        ctx.font = this.centerTextStyle;
+        ctx.fillStyle = this.centerTextColor;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.centerText, this.center.x, this.center.y);        
+    } else {
+        parts = this.centerText.split('\n');
+        var top = parts[0];
+        var bot = parts[1];
+
+        ctx.font = this.centerTextStyle;
+        ctx.fillStyle = this.centerTextColor;
+        ctx.textAlign = 'center';
+
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(top, this.center.x, this.center.y)
+
+        ctx.textBaseline = 'top';
+        ctx.fillText(bot, this.center.x, this.center.y)
+    }
 }
 
 
@@ -675,12 +725,28 @@ Scalewheel.prototype._drawRail = function(ctx) {
 }
 
 Scalewheel.prototype._drawCenter = function(ctx) {
-    // Draw the thumb text
-    ctx.font = this.centerTextStyle;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = this.centerTextColor;
-    ctx.fillText(this.centerText, this.center.x, this.center.y);
+    if(this.centerText.indexOf('\n') === -1) {
+        // Draw the thumb text
+        ctx.font = this.centerTextStyle;
+        ctx.fillStyle = this.centerTextColor;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.centerText, this.center.x, this.center.y);        
+    } else {
+        parts = this.centerText.split('\n');
+        var top = parts[0];
+        var bot = parts[1];
+
+        ctx.font = this.centerTextStyle;
+        ctx.fillStyle = this.centerTextColor;
+        ctx.textAlign = 'center';
+
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(top, this.center.x, this.center.y)
+
+        ctx.textBaseline = 'top';
+        ctx.fillText(bot, this.center.x, this.center.y)
+    }
 }
 
 Scalewheel.prototype.deactivate = function() {
@@ -772,6 +838,50 @@ Scalewheel.prototype.setCenterText = function(txt) {
 Scalewheel.prototype.setPosition = function(pos) {
 	this.position = pos*this.range;
 }
+
+var Label = function(options) {
+    this.radius = options.radius || 100;
+    this.text = options.text || '';
+    this.center = options.center || {x:radius, y:radius};
+    this.textStyle = options.textStyle || '20px Arial';
+    this.textColor = options.textColor || 'black';
+    this.position = options.position || 'top';
+    this.visible = false;
+}
+
+Label.prototype.draw = function(ctx) {
+
+    if(this.visible) {
+        if(this.position === 'top') {
+            angle = 3.0*Math.PI/2.0;
+            textBaseline = 'top';
+        } else if(this.position === 'bottom') {
+            angle = Math.PI/2.0;
+            textBaseline = 'bottom';
+        }
+
+        ctx.font = this.textStyle;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = textBaseline;
+        ctx.fillStyle = this.textColor;
+        ctx.fillText(this.text, this.center.x + this.radius*Math.cos(angle), 
+                                this.center.y + this.radius*Math.sin(angle));
+    }
+
+}
+
+Label.prototype.show = function() {
+    this.visible = true;
+}
+
+Label.prototype.hide = function() {
+    this.visible = false;
+}
+
+Label.prototype.onMouseDown = function(pos) {};
+Label.prototype.onMouseUp = function(pos) {};
+Label.prototype.onMouseMove = function(pos) {};
+Label.prototype.onClick = function(pos) {};
 
 var Nudger = function(options) {
 

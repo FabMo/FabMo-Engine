@@ -3,8 +3,7 @@ var util = require('util');
 var extend = require('../util').extend;
 var PLATFORM = require('process').platform;
 
-Config = require('./config').Config;
-log = require('../log');
+var Config = require('./config').Config;
 
 // The EngineConfig object keeps track of engine-specific settings
 OpenSBPConfig = function() {

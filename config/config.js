@@ -28,7 +28,6 @@ Config.prototype.getMany = function(arr) {
 };
 
 Config.prototype.set = function(k,v, callback) {
-	console.log("Config_set: " + k + " : " + v );
 	return this.update({k:v}, callback);
 };
 

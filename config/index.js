@@ -4,6 +4,7 @@ var EngineConfig = require('./engine_config').EngineConfig;
 var G2Config = require('./g2_config').G2Config;
 var OpenSBPConfig = require('./opensbp_config').OpenSBPConfig;
 var MachineConfig = require('./machine_config').MachineConfig;
+var DashboardCofnig = require('./dashboard_config').DashboardConfig;
 
 var log = require('../log').logger('config');
 
@@ -43,8 +44,6 @@ function configureDriver(driver, callback) {
     }
 }
 
-// Configure OpenSBP by loading the configuration from disk so it is available for the runtime
-//
 function configureOpenSBP(callback) {
 	exports.opensbp = new OpenSBPConfig();
 	exports.opensbp.init(callback);
@@ -55,9 +54,15 @@ function configureMachine(driver, callback) {
 	exports.machine.init(callback);
 }
 
+function configureDashboard(callback) {
+	exports.dashboard = new DashboardConfig(driver);
+	exports.dashboard.init(callback);
+}
+
 exports.configureEngine = configureEngine;
 exports.configureDriver = configureDriver;
 exports.configureOpenSBP = configureOpenSBP;
 exports.configureMachine = configureMachine;
+
 exports.createDataDirectories = Config.createDataDirectories;
 exports.getDataDir = Config.getDataDir;
