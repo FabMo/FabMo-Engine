@@ -7,7 +7,6 @@ var File=db.File;
 // File extension filtering is not case sensitive
 ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
 
-
 /**
  * @api {get} /quit Quit
  * @apiGroup State

@@ -11,11 +11,17 @@ var db = require('./db');
 var macros = require('./macros');
 var dashboard = require('./dashboard');
 var network = require('./network');
+var updater = require('./updater');
 
-var Engine = function() {};
+var Engine = function() {
+    this.version = null;
+};
 
 Engine.prototype.stop = function(callback) {
     this.machine.disconnect();
+    this.server.close();
+    this.server.io.server.close();
+    callback(null);
 };
 
 Engine.prototype.start = function(callback) {
@@ -33,6 +39,20 @@ Engine.prototype.start = function(callback) {
             log.info("Loading engine configuration...");
             config.configureEngine(callback);
         },
+
+        // Create the version string that will be used to identify the software version
+        function get_fabmo_version(callback) {
+            log.info("Getting engine version...");
+            updater.getFabmoVersionString(function(err, string) {
+                if(!err) {
+                    log.info("Engine version: " + string);
+                    this.version = string;
+                } else {
+                    log.error(err);
+                }
+                callback(null);
+            }.bind(this));
+        }.bind(this),
 
         // "Apply" the engine configuration, that is, take the configuration values loaded and actually
         // set up the application based on them.
@@ -219,4 +239,4 @@ Engine.prototype.start = function(callback) {
     );
 };
 
-exports.Engine = Engine;
+module.exports = new Engine();

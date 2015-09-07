@@ -66,3 +66,4 @@ exports.configureMachine = configureMachine;
 
 exports.createDataDirectories = Config.createDataDirectories;
 exports.getDataDir = Config.getDataDir;
+exports.platform = require('process').platform;
