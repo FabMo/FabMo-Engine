@@ -34,7 +34,7 @@ var WheelControl = function(element, options) {
     	center : this.center,
     	centerText : this.wheelSpeed.toFixed(this.speedDigits),
     	centerTextColor : '#aaaaaa',
-    	centerTextStyle : 'Arial 50px',
+    	centerTextStyle : 'Arial 25px',
     	thumbRadius : this.thumbRadius,
     	thumbActiveRadius : this.thumbActiveRadius,
     	angleOffset : Math.PI/3.0,
