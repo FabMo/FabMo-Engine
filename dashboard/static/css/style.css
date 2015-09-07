@@ -28,7 +28,7 @@ body,html{
 }
 
 .exit-off-canvas {
-	height: 100%;
+	position: fixed !important;
 }
 
 .disabled {
