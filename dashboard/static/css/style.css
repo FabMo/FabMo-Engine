@@ -157,8 +157,7 @@ body,html{
 
 #right-position-container {
 	height: 100%;
-	width: 176px;
-	width: 11rem;
+	width: 14rem;
 	position: absolute;
 	color: #eee;
 	right: 48px;
