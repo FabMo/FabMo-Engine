@@ -79,33 +79,6 @@ function FabMo(ip,port) //ip and port of the tool
 	};
 }
 
-
-
-FabMo.prototype.list_files = function(callback)
-{
-	if (!callback)
-		throw "this function need a callback to work !";
-	var that=this;
-	$.ajax({
-		url: this.url.file,
-		type: "GET",
-		dataType : 'json', 
-		success: function( data ){
-			if(data.status === "success") {
-				callback(undefined,data.data.files);
-			} else if(data.status==="fail") {
-				callback(data.data);
-			}	else {
-				callback(data.message);
-			}
-		},
-		error: function( data, err ){
-				var error = that.default_error.no_device;
-				error.sys_err = err;
-			 	callback(error);
-			 }
-	});
-};
 FabMo.prototype.get_status = function(callback)
 {
 	if (!callback)
@@ -187,32 +160,6 @@ FabMo.prototype.set_config =  function(config, callback)
 			error.sys_err = err;
 		 	callback(error);
 		}
-	});
-};
-
-FabMo.prototype.get_info = function(callback)
-{
-	if (!callback)
-		throw "this function need a callback to work !";
-	var that=this;
-	$.ajax({
-		url: this.url.info,
-		type: "GET",
-		dataType : 'json', 
-		success: function( data ) {
-			if(data.status === "success") {
-				callback(undefined,data.data.information);
-			} else if(data.status==="fail") {
-				callback(data.data);
-			}	else {
-				callback(data.message);
-			}
-			},
-		error: function(data,err) {
-				var error =that.default_error.no_device;
-				error.sys_err = err;
-			 	callback(error);
-			}
 	});
 };
 
@@ -719,82 +666,6 @@ FabMo.prototype.submit_app =  function(formdata,callback)
 					var error = that.default_error.no_device;
 					error.sys_err = err;
 				 	callback(error);
-				}
-			}
-		});
-	}
-};
-
-// take a form data, look for a file field, and upload the file load in it
-FabMo.prototype.upload_file =  function(formdata,callback)
-{
-	if (!callback)
-		throw "this function need a callback to work !";
-	var that=this;
-	var formData;
-	if (formdata instanceof jQuery){ //if it's a form
-		var file = (formdata.find('input:file'))[0].files[0];
-		// Create a new FormData object.
-		formData = new FormData();
-		formData.append('file', file, file.name);
-	}
-	else // else it's a formData
-	{
-		formData = formdata;
-	}		
-	if (formData) {
-		$.ajax({
-			url: this.url.file,
-			type: "POST",
-			data: formData,
-			processData: false,
-			contentType: false,
-			DataType:'json',
-			/*statusCode: {
-				302: function(res) {
-					if (res.responseJSON && res.responseJSON[0])
-						callback(undefined,res.responseJSON[0]);
-					else if(res.responseJSON)
-						callback(undefined, res.responseJSON);
-					else
-						callback(undefined, JSON.parse(res.responseText));
-				},
-				400: function(res,err) {
-				 	callback(that.default_error.file.upload.bad_request);
-				},
-				415: function(res,err) {
-				 	callback(that.default_error.file.upload.not_allowed);
-				}
-			},*/
-			success: function( data ) {
-				if(data.status === "success") {
-					if (data.data.file.responseJSON && data.data.file.responseJSON[0])
-						callback(undefined,data.data.file.responseJSON[0]);
-					else if(data.data.file.responseJSON)
-						callback(undefined, data.data.file.responseJSON);
-					else
-						callback(undefined, JSON.parse(data.data.file.responseText));
-				} else if(data.status==="fail") {
-					callback(data.data);
-				}	else {
-					callback(data.message);
-				}
-			},
-			error : function(data, err) {
-	    			if (data.status === 400){callback(that.default_error.file.upload.bad_request);}
-				else if (data.status === 415){callback(that.default_error.file.upload.not_allowed);}
-				else if (data.status === 302){
-					if (data.responseJSON && data.responseJSON[0])
-						callback(undefined,data.responseJSON[0]);
-					else if(data.responseJSON)
-						callback(undefined, data.responseJSON);
-					else
-						callback(undefined, JSON.parse(data.responseText));
-				}
-				else{
-					var error = that.default_error.no_device;
-					error.sys_err = err;
-				 	callback(error);				
 				}
 			}
 		});

@@ -83,11 +83,13 @@ define(function(require) {
 			dashboard.ui.updateStatus();
 
 			// Configure keyboard input
-			setupHandwheel();
+			var wheel = setupHandwheel();
 
 			// Start the application
 			router = new context.Router();
 			router.setContext(context);
+
+			//dashboard.ui.on('status', function(status) {});
 
 			Backbone.history.start();
 		}
@@ -100,7 +102,7 @@ define(function(require) {
 
 function setupHandwheel() {
 
-	wheel = new WheelControl('wheel', {
+	var wheel = new WheelControl('wheel', {
 		wheelSpeed : 1.0
 	});	
 
@@ -138,6 +140,7 @@ function setupHandwheel() {
 	wheel.on('nudge', function nudge(data) {
 		dashboard.machine.fixed_move(data.axis, NUDGE, speed*60, function(err) {});
 	});
+	return wheel;
 }
 // Functions for dispatching g-code to the tool
 function gcode(string) {

@@ -1,6 +1,7 @@
 var FabMoAPI = function(base_url) {
 	url = base_url || '/';
 	this.base_url = url.replace(/\/$/,'');
+	this._initializeWebsocket();
 }
 
 FabMoAPI.prototype._initializeWebsocket = function() {
@@ -17,6 +18,13 @@ FabMoAPI.prototype.getConfig = function(callback) {
 FabMoAPI.prototype.setConfig = function(cfg_data, callback) {
 	this._post('/config', cfg_data, callback, function(data) {
 		callback(null, data.configuration);
+	});
+}
+
+// Status
+FabMoAPI.prototype.getStatus = function(callback) {
+	this._get('/status', callback, function(data) {
+		callback(null, data.status);
 	});
 }
 
@@ -39,10 +47,53 @@ FabMoAPI.prototype.getJob = function(id, callback) {
 	});
 }
 
+FabMoAPI.prototype.resubmitJob = function(id, callback) {
+	this._post('/job/' + id, {}, callback, function(data) {
+		callback(null);
+	});
+}
+
+// Direct commands
+FabMo.prototype.quit = function(callback) {
+	this._post('/quit' + id, {}, callback, function(data) {
+		callback(null);
+	});
+}
+
+FabMo.prototype.pause = function(callback) {
+	this._post('/pause' + id, {}, callback, function(data) {
+		callback(null);
+	});
+}
+
+FabMo.prototype.resume = function(callback) {
+	this._post('/queue/run' + id, {}, callback, function(data) {
+		callback(null);
+	});
+}
+
+FabMo.prototype.runNextJob = function(callback) {
+	this._post('/resume' + id, {}, callback, function(data) {
+		callback(null);
+	});
+}
+
 // Apps
 FabMoAPI.prototype.getApps = function(callback) {
 	this._get('/apps', callback, function(data) {
 		callback(null, data.apps);
+	});
+}
+
+FabMoAPI.prototype.deleteApp = function(id, callback) {
+	this._del('/apps/' + id, {}, callback, function(data) {
+		callback(null);
+	});
+}
+
+FabMoAPI.prototype.submitApp = function(app_file, callback) {
+	this._del('/apps', makeFormData(app_file), callback, function(data) {
+		callback(null);
 	});
 }
 
@@ -53,7 +104,49 @@ FabMoAPI.prototype.getMacros = function(callback) {
 	});
 }
 
+FabMoAPI.prototype.runMacro = function(id, callback) {
+	this._post('/macros/' + id + '/run', {}, callback, function(data) {
+		callback(null, data.macro);
+	});
+}
 
+FabMoAPI.prototype.updateMacro = function(id, macro, callback) {
+	this._get('/macros/' + id, macro, callback, function(data) {
+		callback(null, data.macro);
+	});
+}
+
+FabMoAPI.prototype.deleteMacro = function(id, callback) {
+	this._del('/macros/' + id, {}, callback, function(data) {
+		callback(null);
+	});
+}
+
+function makeFormData(obj, default_name, default_type) {
+	if (obj instanceof jQuery){ //if it's a form
+		file = (obj.find('input:file'))[0].files[0];
+		// Create a new FormData object.
+		formData = new FormData();
+		formData.append('file', file, file.name);
+	}
+	else if (obj instanceof FormData) {
+		formData = obj;
+	} 
+	else {
+		content = obj.data || '';
+		filename = obj.config.filename || default_name;
+		formData = new FormData();
+		type = default_type || null;
+		if(!filename) {
+			throw new Error('No filename specified');
+		}
+		if(!type) {
+			throw new Error('No MIME type specified')
+		}
+		file = new Blob([content], {'type' : type});
+		formData.append('file', file, filename);
+	}
+}
 
 FabMoAPI.prototype._url = function(path) { return this.base_url + '/' + path.replace(/^\//,''); }
 
@@ -88,6 +181,29 @@ FabMoAPI.prototype._post = function(url, data, errback, callback) {
 	$.ajax({
 		url: url,
 		type: "POST",
+		dataType : 'json',
+		data : data, 
+		success: function(result){
+			if(data.status === "success") {
+				callback(undefined,result.data);
+			} else if(data.status==="fail") {
+				errback(result.data);
+			}	else {
+				errback(result.data.message);
+			}
+		},
+		error: function( data, err ){
+			 errback(err);
+		}
+	});
+}
+
+FabMoAPI.prototype._del = function(url, data, errback, callback) {
+	callback = callback || function() {};
+	errback = errback || function() {};
+	$.ajax({
+		url: url,
+		type: "DEL",
 		dataType : 'json',
 		data : data, 
 		success: function(result){
