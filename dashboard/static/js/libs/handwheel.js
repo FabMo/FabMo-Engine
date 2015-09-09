@@ -81,7 +81,7 @@ var WheelControl = function(element, options) {
     	startAngle : 3.0*Math.PI/2.0,
     	endAngle : 7.0*Math.PI/4.0,
     	arrow : 'end',
-    	labelStyle : '20px Arial',
+    	labelStyle : '25px Arial',
     	labelText : '+'
     });
 
@@ -92,7 +92,7 @@ var WheelControl = function(element, options) {
     	endAngle : 3.0*Math.PI/2.0,
     	startAngle : 5.0*Math.PI/4.0,
     	arrow : 'start',
-    	labelStyle : '20px Arial',
+    	labelStyle : '25px Arial',
     	labelText : '-'
     });
 
