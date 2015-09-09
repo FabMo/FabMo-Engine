@@ -166,11 +166,10 @@ body,html{
 
 #right-position-container {
 	height: 100%;
-	width: 14rem;
+	width: 15rem;
 	position: absolute;
 	color: #eee;
-	right: 48px;
-	right: 3rem;
+	right: 2rem;
 	top: 0;
 	vertical-align: middle;
 }
