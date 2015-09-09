@@ -899,18 +899,29 @@
                 <span class="postfix">microsteps</span>
               </div>
             </div>
-        </div>
+          </div>
           <div class="large-4 columns">
             <div class="row collapse">
               <label>Step Angle</label>
-              <div class="small-9 columns">
+                <div class="small-9 columns">
                 <input type="text" id="driver_1sa" class="driver_input" />
               </div>
               <div class="small-3 columns">
                 <span class="postfix">degrees</span>
               </div>
             </div>
-        </div>
+          </div>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Gearbox</label>
+              <div class="small-9 columns">
+                <input type="text" id="opensbp_gearBoxRatio1" class="opensbp_input" />
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">ratio</span>
+              </div>
+            </div>
+          </div>
 
           <div class="large-4 columns">
             <div class="row collapse">
@@ -1081,7 +1092,6 @@
   <script>
     var flattenObject = function(ob) {
     var toReturn = {};
-  console.log("ob = " + ob);
       for (var i in ob) {
         if (!ob.hasOwnProperty(i)) continue;
     
@@ -1142,10 +1152,10 @@
         if(key[0].match(/[0-9]/)) {
           key = '_' + key;
         }
-        var o = {}
-        o[key] = this.value
-        cfg = {}
-        cfg[type] = o
+        var o = {};
+        o[key] = this.value;
+        cfg = {};
+        cfg[type] = o;
         fabmoDashboard.setConfig(cfg, function(err, data) {
           update();
         });
@@ -1155,10 +1165,10 @@
         var parts = this.id.split("_");
         var type = parts[0];
         var key = parts.slice(1, parts.length).join('_');
-        var o = {}
-        o[key] = this.value
-        cfg = {}
-        cfg[type] = o
+        var o = {};
+        o[key] = this.value;
+        cfg = {};
+        cfg[type] = o;
         fabmoDashboard.setConfig(cfg, function(err, data) {
           update();
         });
@@ -1168,10 +1178,10 @@
         var parts = this.id.split("_");
         var type = parts[0];
         var key = parts.slice(1, parts.length).join('_');
-        var o = {}
-        o[key] = this.value
-        cfg = {}
-        cfg[type] = o
+        var o = {};
+        o[key] = this.value;
+        cfg = {};
+        cfg[type] = o;
         fabmoDashboard.setConfig(cfg, function(err, data) {
           update();
         });
@@ -1179,14 +1189,14 @@
 
       $('.opensbp_input').change( function() {
         var parts = this.id.split("_");
-        var o = {}
+        var o = {};
         var co = o;
         var i=0;
         
         do {
-          co[parts[i]] = {}
+          co[parts[i]] = {};
           if(i < parts.length-1) {
-            co = co[parts[i]]            
+            co = co[parts[i]];            
           }
         } while(i++ < parts.length-1 );
 
