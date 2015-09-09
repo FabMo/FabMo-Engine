@@ -4,8 +4,8 @@
   <title>G-Code Editor</title>
   <meta charset="utf-8"/>
   
-  <link rel="stylesheet" href="css/foundation.min.css">
   <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/foundation.min.css">
   <link rel="stylesheet" href="css/style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="js/jquery.min.js"></script>
@@ -1185,28 +1185,15 @@
           if(err) {
             console.error(err);
           } else {
-            for(key in data.driver) {
-              value = data.driver[key];
-              input = $('#driver_' + key);
-              if(input.length) {
-                input.val(String(value));
-              }
-            }
-            for(key in data.engine) {
-              value = data.engine[key];
-              input = $('#engine_' + key);
-              if(input.length) {
-                input.val(String(value));
-              } 
-            }
-            var flat = flattenObject(data.opensbp);
-            for(key in flat) {
-              value = flat[key];
-              input = $('#opensbp_' + key);
-              if(input.length) {
-                input.val(String(value));
-              }
-            }
+            ['driver', 'engine', 'opensbp', 'machine'].forEach(function(branch) {
+                for(key in data[branch]) {
+                  v = data[branch][key];
+                  input = $('#' + branch + '_' + key);
+                  if(input.length) {
+                    input.val(String(v));
+                  }
+                }
+            });
           }
         });
     }
