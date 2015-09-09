@@ -2,7 +2,8 @@ var MAX_INPUTS = 16;
 
 function FabMoUI(tool, options){
 	this.event_handlers = {
-		'error' : []
+		'error' : [],
+		'status' : []
 	}
 	this.tool = tool;
 	// the tool we need to check for
@@ -318,6 +319,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	} else {
 		$(that.manual_controls_selector).addClass('hide');		
 	}
+
+	this.emit('status', status);
 };
 
 
