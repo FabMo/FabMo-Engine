@@ -1,5 +1,6 @@
 var engine = require('../server').engine;
 var updater = require('../updater');
+
 /**
  * @api {get} /version
  * @apiGroup Updater
@@ -24,7 +25,7 @@ var doUpdate = function(req, res, next) {
 	}
 	res.json(answer);
 	updater.updateEngine(function() {
-		
+
 	});
 };
 

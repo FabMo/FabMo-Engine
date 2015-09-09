@@ -79,33 +79,6 @@ function FabMo(ip,port) //ip and port of the tool
 	};
 }
 
-
-
-FabMo.prototype.list_files = function(callback)
-{
-	if (!callback)
-		throw "this function need a callback to work !";
-	var that=this;
-	$.ajax({
-		url: this.url.file,
-		type: "GET",
-		dataType : 'json', 
-		success: function( data ){
-			if(data.status === "success") {
-				callback(undefined,data.data.files);
-			} else if(data.status==="fail") {
-				callback(data.data);
-			}	else {
-				callback(data.message);
-			}
-		},
-		error: function( data, err ){
-				var error = that.default_error.no_device;
-				error.sys_err = err;
-			 	callback(error);
-			 }
-	});
-};
 FabMo.prototype.get_status = function(callback)
 {
 	if (!callback)
@@ -187,32 +160,6 @@ FabMo.prototype.set_config =  function(config, callback)
 			error.sys_err = err;
 		 	callback(error);
 		}
-	});
-};
-
-FabMo.prototype.get_info = function(callback)
-{
-	if (!callback)
-		throw "this function need a callback to work !";
-	var that=this;
-	$.ajax({
-		url: this.url.info,
-		type: "GET",
-		dataType : 'json', 
-		success: function( data ) {
-			if(data.status === "success") {
-				callback(undefined,data.data.information);
-			} else if(data.status==="fail") {
-				callback(data.data);
-			}	else {
-				callback(data.message);
-			}
-			},
-		error: function(data,err) {
-				var error =that.default_error.no_device;
-				error.sys_err = err;
-			 	callback(error);
-			}
 	});
 };
 
