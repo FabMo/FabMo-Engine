@@ -1,5 +1,5 @@
 {
-   buildTree = function(first, rest) {
+   function buildTree(first, rest) {
       if(rest[0]) {
           return {left: first, right: rest[0][3], op: rest[0][1]};
       } else {
@@ -15,11 +15,11 @@ statement
    = (label / single / jump / pause / conditional / assignment / event / open / custom_cut / command / __)
 
 custom_cut
-   = "C" index:integer
+   = [Cc] index:integer
    { return {"type":"custom", "index":index};}
 
 event
-   = "ON" ___ "INPUT" __ "(" __ sw:integer __ "," __ state:integer __ ")" ___ stmt:(assignment / jump / pause / single / command)
+   = "ON"i ___ "INPUT"i __ "(" __ sw:integer __ "," __ state:integer __ ")" ___ stmt:(assignment / jump / pause / single / command)
       {return {"type":"event", "sw":sw, "state":state, "stmt":stmt};} 
 
 command 
@@ -28,21 +28,21 @@ command
      {return {type:"cmd","cmd":m,"args":args};}
 
 single
-   = name:("END" / "RETURN") 
+   = name:("END"i / "RETURN"i) 
      {return {type:name.toLowerCase()}}
 
 pause
-   = name:("PAUSE") __ expr:expression? {return {"type":"pause", "expr":expr}}
+   = name:("PAUSE"i) __ expr:expression? {return {"type":"pause", "expr":expr}}
 
 conditional
    = "IF" ___ cmp:comparison ___ "THEN" ___ stmt:(jump) { return {"type":"cond", "cmp":cmp, "stmt":stmt};}
 
 open
-   = "OPEN" ___ pth:quotedstring ___ "FOR" ___ mode:("INPUT" / "OUTPUT" / "APPEND") ___ "AS" ___ "#"num:[1-9] 
+   = "OPEN"i ___ pth:quotedstring ___ "FOR" ___ mode:("INPUT"i / "OUTPUT"i / "APPEND"i) ___ "AS" ___ "#"num:[1-9] 
        { return {"type":"open", "path":pth, "mode":mode, "num":num} }
 
 jump
-   = cmd:("GOTO" / "GOSUB") ___ 
+   = cmd:("GOTO"i / "GOSUB"i) ___ 
      lbl:identifier 
      {return {type:cmd.toLowerCase(), label:lbl};}
 
