@@ -4,8 +4,8 @@
   <title>G-Code Editor</title>
   <meta charset="utf-8"/>
   
-  <link rel="stylesheet" href="css/foundation.min.css">
   <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/foundation.min.css">
   <link rel="stylesheet" href="css/style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="js/jquery.min.js"></script>
@@ -28,9 +28,8 @@
     <li class="tab-title active" role="presentational" ><a href="#tabpanel1" role="tab" tabindex="0" aria-selected="true" controls="tabpanel1">General</a></li>
     <li class="tab-title" role="presentational" ><a href="#tabpanel2" role="tab" tabindex="0"aria-selected="false" controls="tabpanel2">Axis</a></li>
     <li class="tab-title" role="presentational" ><a href="#tabpanel3" role="tab" tabindex="0"aria-selected="false" controls="tabpanel3">Inputs</a></li>
-
-    <li class="tab-title" role="presentational" ><a href="#tabpanel4" role="tab" tabindex="0"aria-selected="false" controls="tabpanel3">Channels</a></li>
-
+    <li class="tab-title" role="presentational" ><a href="#tabpanel4" role="tab" tabindex="0"aria-selected="false" controls="tabpanel4">Channels</a></li>
+    <li class="tab-title" role="presentational" ><a href="#tabpanel5" role="tab" tabindex="0"aria-selected="false" controls="tabpanel5">Values</a></li>
   </ul>
 <div class="tabs-content">
   <section role="tabpanel" aria-hidden="false" class="content active" id="tabpanel1">
@@ -100,9 +99,6 @@
         </div>
       </fieldset>
     </div> 
-  
-
-
 
     <div class="row">
       <fieldset>
@@ -913,18 +909,6 @@
           </div>
           <div class="large-4 columns">
             <div class="row collapse">
-              <label>Gearbox</label>
-              <div class="small-9 columns">
-                <input type="text" id="opensbp_gearBoxRatio1" class="opensbp_input" />
-              </div>
-              <div class="small-3 columns">
-                <span class="postfix">ratio</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="large-4 columns">
-            <div class="row collapse">
               <label>Power Management Mode
                 <select id="driver_1pm" class="driver_input">
                   <option value="0">Disabled</option>
@@ -1049,7 +1033,6 @@
               </div>
             </div>
         </div>
-
           <div class="large-4 columns">
             <div class="row collapse">
               <label>Power Management Mode
@@ -1081,12 +1064,66 @@
 
   </section>
 
+</section>
+  <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel5">
+      <div class="row">
+        <fieldset>
+          <legend>X</legend>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Unit Value</label>
+              <div class="small-9 columns">
+                <input type="text" id="opensbp_units1" class="opensbp_values"/>
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">steps/distance units</span>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+        </div>
+
+      <div class="row">
+        <fieldset>
+          <legend>Y</legend>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Unit Value</label>
+              <div class="small-9 columns">
+                <input type="text" id="opensbp_units2" class="opensbp_values"/>
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">steps/distance units</span>
+              </div>
+            </div>
+          </div>
+      </fieldset>
+    </div>
+
+      <div class="row">
+        <fieldset>
+          <legend>Z</legend>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Unit Value</label>
+              <div class="small-9 columns">
+                <input type="text" id="opensbp_units3" class="opensbp_values"/>
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">steps/distance units</span>
+              </div>
+            </div>
+          </div>
+          
+          
+        </fieldset>
+        </div>
+  </section>
 </div>
 
 
+</form>
 
-
-  </form>
 </div>
   <script src="/js/libs/dashboard.js"></script>
   <script>
@@ -1193,6 +1230,28 @@
         });
       });
 
+      $('.opensbp_values').change( function() {
+        var parts = this.id.split("_");
+        var o = {};
+        var co = o;
+        var i=0;
+        
+        do {
+          co[parts[i]] = {};
+          if(i < parts.length-1) {
+            co = co[parts[i]];            
+          }
+        } while(i++ < parts.length-1 );
+
+        console.log("change: do - co = ", co);
+
+        console.log("change: this.value = ", this.value);
+        co[parts[parts.length-1]] = this.value;
+        console.log("change: co = ", co);
+//        fabmoDashboard.runSBP(o, function(err, data) {
+//          update();
+//        });
+      });
 
     });
   </script>
