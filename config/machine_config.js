@@ -1,4 +1,5 @@
-var Config = require('./config').Config;
+var config = require('../config');
+var Config = require('./config').Config; 
 var log = require('../log').logger('machine_config');
 
 // The EngineConfig object keeps track of engine-specific settings
@@ -29,17 +30,17 @@ MachineConfig.prototype.update = function(data, callback) {
 
 MachineConfig.prototype.apply = function(callback) {
 	try {
-		callback(null, this);
-		if(this.get('units') == 'in') {
-			gc = 'G20';			
-		} else if(this.get('units') == 'mm') {
-			gc = 'G21';
+		// 0 = g21 = 
+		var units = this.get('units');
+		if(units === 'in' || units === 0) {
+			log.info("Changing default units to INCH");
+			config.driver.changeUnits(0, callback);
+		} else if(units === 'mm' || units === 1) {
+			log.info("Changing default units to MM");
+			config.driver.changeUnits(1, callback);
 		} else {
-			gc = null;
 			log.warn('Invalid units "' + gc + '"found in machine configuration.');
-		}
-		if(gc) {
-			this.driver.runString(gc);
+			callback(null);
 		}
 	}
 	catch (e) {

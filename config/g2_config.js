@@ -11,6 +11,37 @@ G2Config = function(driver) {
 };
 util.inherits(G2Config, Config);
 
+G2Config.prototype.changeUnits = function(units, callback) {
+	this.driver.setUnits(units, function(err, data) {
+		if(err) { callback(err); }
+		this.getFromDriver(function(err, g2_values) {
+			if(err) { callback(err); } else  {
+				this.update(g2_values, callback);
+			}
+		}.bind(this));
+	}.bind(this));
+}
+
+G2Config.prototype.getFromDriver = function(callback) {
+	var keys = Object.keys(this._cache)
+	this.driver.get(Object.keys(this._cache), function(err, values) {
+		if(err) {
+			callback(err);
+		} else {
+			if(keys.length != values.length) {
+				callback(new Error("Something went wrong when getting values from G2"))
+			} else {
+				var obj = {}
+				for(var i=0; i<keys.length; i++) {
+					obj[keys[i]] = values[i];
+				}
+				callback(null, obj);
+			}
+		}
+
+	});
+}
+
 // Update the configuration with the data provided (data is just an object with configuration keys/values)
 G2Config.prototype.update = function(data, callback) {
 	keys = Object.keys(data);

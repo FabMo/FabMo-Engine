@@ -225,7 +225,6 @@ Engine.prototype.start = function(callback) {
             });
 
         }.bind(this),
-        
         ],
 
         function(err, results) {

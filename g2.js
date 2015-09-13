@@ -302,6 +302,21 @@ G2.prototype.stopJog = function() {
 	}
 };
 
+G2.prototype.setUnits = function(units, callback) {
+	if(units === 0 || units == 'in') {
+		gc = 'G20';
+	} else if(units === 1 || units === 'mm') {
+		gc = 'G21';
+	} else {
+		return callback(new Error('Invalid unit setting: ' + units))
+	}
+	this.runString(gc, function() {
+		this.requestStatusReport(function(status) {
+			callback(null);
+		});
+	}.bind(this));
+}
+
 G2.prototype.requestStatusReport = function(callback) {
 	// Register the callback to be called when the next status report comes in
 	typeof callback === 'function' && this.once('status', callback);
@@ -663,6 +678,17 @@ G2.prototype.runString = function(data, callback) {
 	this.runSegment(data + "\nM30\n", callback);
 };
 
+G2.prototype.runImmediate = function(data, callback) {
+	this.expectStateChange( {
+		'end':callback,
+		'stop':callback,
+		'timeout':function() {
+			callback(new Error("Timeout while running immediate gcode"));
+		}
+	});
+	this.runString(data);
+}
+
 // Send a (possibly multi-line) string
 G2.prototype.runSegment = function(data, callback) {
 	line_count = 0;
@@ -686,8 +712,9 @@ G2.prototype.runSegment = function(data, callback) {
 	// Kick off the run if any lines were queued
 	if(line_count > 0) {
 		this.pause_flag = false;
+		typeof callback === "function" && callback(null);
 	} else {
-		typeof callback === "function" && callback(true, "No G-codes were present in the provided string");
+		typeof callback === "function" && callback(new Error("No G-codes were present in the provided string"));
 	}
 };
 
