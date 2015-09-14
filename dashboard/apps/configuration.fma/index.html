@@ -13,23 +13,29 @@
 
 </head>
 <body style="background-color: #ffffff;">
-  <header class="grey">
-    <section>
-      <div class="app-title-container">
-        <h2 id="app-header">Configuration</h2>
-      </div>
-    </section>
-  </header>
-
-<div class="row">
-  <form> 
-
-  <ul class="tabs" data-tab role="tablist">
+  <nav class="top-bar" data-topbar role="navigation">
+  <ul class="title-area">
+    <li class="name">
+      <h1><a id="app-header" href="#">Configuration</a></h1>
+    </li>
+    <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
+  </ul>
+  <section class="top-bar-section">
+    <ul class="left" role="tablist" data-tab>
     <li class="tab-title active" role="presentational" ><a href="#tabpanel1" role="tab" tabindex="0" aria-selected="true" controls="tabpanel1">General</a></li>
     <li class="tab-title" role="presentational" ><a href="#tabpanel2" role="tab" tabindex="0"aria-selected="false" controls="tabpanel2">Axis</a></li>
     <li class="tab-title" role="presentational" ><a href="#tabpanel3" role="tab" tabindex="0"aria-selected="false" controls="tabpanel3">Inputs</a></li>
     <li class="tab-title" role="presentational" ><a href="#tabpanel4" role="tab" tabindex="0"aria-selected="false" controls="tabpanel4">Channels</a></li>
     <li class="tab-title" role="presentational" ><a href="#tabpanel5" role="tab" tabindex="0"aria-selected="false" controls="tabpanel5">Values</a></li>
+    </ul>
+  </section>
+</nav>
+
+<div class="row">
+  <form> 
+
+  <ul class="tabs" data-tab role="tablist">
+
   </ul>
 <div class="tabs-content">
   <section role="tabpanel" aria-hidden="false" class="content active" id="tabpanel1">
