@@ -77,8 +77,9 @@ td.details-control {
     cursor: pointer;
 }
 
-td.preview-control {
-    background: url('images/preview.png') no-repeat center center;
+td.actions-control {
+    font-size: 2em;
+    transform: translateY(-8px);
     width: 80px;
     cursor: pointer;
     content: attr('Preview Job');
