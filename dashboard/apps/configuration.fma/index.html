@@ -1074,7 +1074,7 @@
   <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel5">
       <div class="row">
         <fieldset>
-          <legend>X</legend>
+          <legend>Channel 1</legend>
           <div class="large-4 columns">
             <div class="row collapse">
               <label>Unit Value</label>
@@ -1082,7 +1082,7 @@
                 <input type="text" id="opensbp_units1" class="opensbp_values"/>
               </div>
               <div class="small-3 columns">
-                <span class="postfix">steps/distance units</span>
+                <span class="postfix">steps/units</span>
               </div>
             </div>
           </div>
@@ -1091,7 +1091,7 @@
 
       <div class="row">
         <fieldset>
-          <legend>Y</legend>
+          <legend>Channel 2</legend>
           <div class="large-4 columns">
             <div class="row collapse">
               <label>Unit Value</label>
@@ -1099,16 +1099,16 @@
                 <input type="text" id="opensbp_units2" class="opensbp_values"/>
               </div>
               <div class="small-3 columns">
-                <span class="postfix">steps/distance units</span>
+                <span class="postfix">steps/units</span>
               </div>
             </div>
           </div>
-      </fieldset>
-    </div>
+        </fieldset>
+      </div>
 
       <div class="row">
         <fieldset>
-          <legend>Z</legend>
+          <legend>Channel 3</legend>
           <div class="large-4 columns">
             <div class="row collapse">
               <label>Unit Value</label>
@@ -1116,14 +1116,64 @@
                 <input type="text" id="opensbp_units3" class="opensbp_values"/>
               </div>
               <div class="small-3 columns">
-                <span class="postfix">steps/distance units</span>
+                <span class="postfix">steps/units</span>
               </div>
             </div>
           </div>
-          
-          
         </fieldset>
-        </div>
+      </div>
+
+      <div class="row">
+        <fieldset>
+          <legend>Channel 4</legend>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Unit Value</label>
+              <div class="small-9 columns">
+                <input type="text" id="opensbp_units4" class="opensbp_values"/>
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">steps/units</span>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="row">
+        <fieldset>
+          <legend>Channel 5</legend>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Unit Value</label>
+              <div class="small-9 columns">
+                <input type="text" id="opensbp_units5" class="opensbp_values"/>
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">steps/units</span>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="row">
+        <fieldset>
+          <legend>Channel 6</legend>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Unit Value</label>
+              <div class="small-9 columns">
+                <input type="text" id="opensbp_units6" class="opensbp_values"/>
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">steps/units</span>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
   </section>
 </div>
 
@@ -1239,17 +1289,17 @@
       $('.opensbp_values').change( function() {
         console.log("opensbp_value: change");
         var parts = this.id.split("_");
-        
+        var gcode = "";
         var v = parts[1];
         if(v !== undefined) {
-          var gcode = "VU,";
-          if(v === "units1") { gcode += this.value; }
-          if(v === "units2") { gcode += ("," + this.value); }
-          if(v === "units3") { gcode += (",," + this.value); }
-          if(v === "units4") { gcode += (",,," + this.value); }
-          if(v === "units5") { gcode += (",,,," + this.value); }
-          if(v === "units6") { gcode += (",,,,," + this.value); }
-        console.log("change: gcode = ", gcode);
+          gcode = "VU,";
+          gcode += (v === "units1") ? this.value : ","; 
+          gcode += (v === "units2") ? this.value : ","; 
+          gcode += (v === "units3") ? this.value : ","; 
+          gcode += (v === "units4") ? this.value : ","; 
+          gcode += (v === "units5") ? this.value : ","; 
+          gcode += (v === "units6") ? this.value : ","; 
+     console.log("change: gcode = ", gcode);
         }
         fabmoDashboard.runSBP(gcode, function(err, data) {
           console.log("callback runsbp");

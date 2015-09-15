@@ -73,7 +73,6 @@ exports.JC = function(args) {
 // Jog (rapid) 2 axes (XY).This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J2 = function(args) {
-	console.log(args)
     var params = process_move.bind(this)(args);
 	this.emit_move('G0',params);
 };
