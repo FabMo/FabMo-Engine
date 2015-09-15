@@ -46,12 +46,13 @@ body,html{
 
 .main-section, .app-section{ 
 	height: auto;
-	padding-top: 1.4em;
+	
 }
 
 .off-canvas-wrap, .inner-wrap {
 	height: auto;
 	margin-bottom:0px;
+	padding-top: 1.4em;
 }
 
 .page{ height: 100%; }
