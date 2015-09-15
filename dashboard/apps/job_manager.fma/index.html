@@ -318,6 +318,9 @@
     $('#history_table tbody').on('click', 'td.actions-control', function () {
         var tr = $(this).closest('tr');
         var row = history_table.row( tr );
+		if (tr.hasClass('shown')){
+			tr.removeClass('shown');
+		};
  		if(row.child()) {
 	        if ( row.child.isShown() ) {
 	            // This row is already open - close it
