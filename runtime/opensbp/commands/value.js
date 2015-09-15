@@ -506,32 +506,32 @@ exports.VU = function(args,callback) {
 	// Channel 1 unit value
 	if (args[0] !== undefined){
 		sbp_VU.units1 = args[0];
-		g2_VU['1tr'] = (360/getG2_VU['1sa']) * getG2_VU['1mi'] / sbp_VU.units1;
+		g2_VU['1tr'] = ((360/getG2_VU['1sa']) * getG2_VU['1mi']) / sbp_VU.units1;
 	}
 	// Channel 2 unit value
 	if (args[1] !== undefined){
 		sbp_VU.units2 = args[1];
-		g2_VU['2tr'] = (360/getG2_VU['2sa']) * getG2_VU['2mi'] / sbp_VU.units2;
+		g2_VU['2tr'] = ((360/getG2_VU['2sa']) * getG2_VU['2mi']) / sbp_VU.units2;
 	}
 	// Channel 3 unit value
 	if (args[2] !== undefined){
 		sbp_VU.units3 = args[2];
-		g2_VU['3tr'] = (360/getG2_VU['3sa']) * getG2_VU['3mi'] / sbp_VU.units3;
+		g2_VU['3tr'] = ((360/getG2_VU['3sa']) * getG2_VU['3mi']) / sbp_VU.units3;
 	}
 	// Channel 4 unit value
 	if (args[3] !== undefined){
 		sbp_VU.units4 = args[3];				
-		g2_VU['4tr'] = (360/getG2_VU['4sa']) * getG2_VU['4mi'] / sbp_VU.units4;
+		g2_VU['4tr'] = ((360/getG2_VU['4sa']) * getG2_VU['4mi']) / sbp_VU.units4;
 	}
 	// Channel 5 unit value
 	if (args[4] !== undefined){
 		sbp_VU.units5 = args[4];
-		g2_VU['5tr'] = (360/getG2_VU['5sa']) * getG2_VU['5mi'] / sbp_VU.units5;
+		g2_VU['5tr'] = ((360/getG2_VU['5sa']) * getG2_VU['5mi']) / sbp_VU.units5;
 	}
 	// Channel 6 unit value
 	if (args[5] !== undefined){
 		sbp_VU.units6 = args[5];
-		g2_VU['6tr'] = (360/getG2_VU['6sa']) * getG2_VU['6mi'] / sbp_VU.units6;
+		g2_VU['6tr'] = ((360/getG2_VU['6sa']) * getG2_VU['6mi']) / sbp_VU.units6;
 	}
 	// Channel 1 multiplier
 	if (args[6] !== undefined){}

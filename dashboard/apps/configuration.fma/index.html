@@ -1237,28 +1237,25 @@
       });
 
       $('.opensbp_values').change( function() {
+        console.log("opensbp_value: change");
         var parts = this.id.split("_");
-        var o = {};
-        var co = o;
-        var i=0;
         
-        do {
-          co[parts[i]] = {};
-          if(i < parts.length-1) {
-            co = co[parts[i]];            
-          }
-        } while(i++ < parts.length-1 );
-
-        console.log("change: do - co = ", co);
-
-        console.log("change: this.value = ", this.value);
-        co[parts[parts.length-1]] = this.value;
-        console.log("change: co = ", co);
-//        fabmoDashboard.runSBP(o, function(err, data) {
-//          update();
-//        });
+        var v = parts[1];
+        if(v !== undefined) {
+          var gcode = "VU,";
+          if(v === "units1") { gcode += this.value; }
+          if(v === "units2") { gcode += ("," + this.value); }
+          if(v === "units3") { gcode += (",," + this.value); }
+          if(v === "units4") { gcode += (",,," + this.value); }
+          if(v === "units5") { gcode += (",,,," + this.value); }
+          if(v === "units6") { gcode += (",,,,," + this.value); }
+        console.log("change: gcode = ", gcode);
+        }
+        fabmoDashboard.runSBP(gcode, function(err, data) {
+          console.log("callback runsbp");
+          setTimeout(update, 500);
+        });
       });
-
     });
   </script>
 
