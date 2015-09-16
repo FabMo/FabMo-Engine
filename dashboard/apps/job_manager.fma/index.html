@@ -209,11 +209,14 @@
                 "className":      'actions-control',
                 "orderable":      false,
                 "data":           null,
-                "defaultContent": '...'
+                "defaultContent": "<div class='ellipses'><span>...</span></div>",
             },
         ],
         "order" : [[3,"desc"]]
-    }); // DataTable
+    }); 
+	
+	
+	// DataTable
 
     var queue_table = $('#queue_table').DataTable( {
     	"filter": false,
@@ -306,7 +309,7 @@
     	return ''
     }
 
-    	// Add event listener for opening and closing details 
+    	// Add event listener for opening preview
     $('#history_table tbody').on('click', 'td.preview-control', function () {
         var tr = $(this).closest('tr');
         var row = history_table.row( tr );

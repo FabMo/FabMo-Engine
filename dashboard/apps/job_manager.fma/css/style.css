@@ -73,16 +73,32 @@ h1, h2, h3, h4, h5, h6 {
  
 td.details-control {
     background: url('images/details_open.png') no-repeat center center;
-    width: 40px;
+    width: 50px;
     cursor: pointer;
 }
 
 td.actions-control {
-    font-size: 2em;
-    transform: translateY(-8px);
     width: 80px;
     cursor: pointer;
     content: attr('Preview Job');
+    text-align: center;
+    
+}
+
+.ellipses {
+  font-size: 1.5em;
+  width: 1.7em;
+  height: 1.7em;
+  vertical-align: text-top;
+  border: 1px solid #666;
+  border-radius: 100%;
+  line-height: 1em;
+}
+
+.ellipses:hover {
+ background-color: #666;
+ color: #eeeeee;
+ transition: all .1s;
 }
 
 tr.shown td.details-control {
