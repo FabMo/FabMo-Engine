@@ -90,15 +90,8 @@ td .button {
   padding: 0.8125rem 1.5rem;
 }
 
-.tabs dd.active a, .tabs .tab-title.active a {
-  background: #666;
-  color: #fff;
-}
-
-.tabs dd > a, .tabs .tab-title > a {
-  color: #666;
-  padding: 8px 22px;
-  padding: 0.5rem 1.375rem;
+a:focus {
+  outline: 0;
 }
 
 header { padding: 0 3rem;}

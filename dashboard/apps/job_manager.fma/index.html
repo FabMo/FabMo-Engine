@@ -2,9 +2,9 @@
 <head>
 	<meta charset="utf-8">
 	<title>Job Manager</title>
-
-	<link rel="stylesheet" href="./css/foundation.min.css">
+	
 	<link rel="stylesheet" href="./css/normalize.css">
+	<link rel="stylesheet" href="./css/foundation.min.css">
 	<link rel="stylesheet" href="./css/style.css">
 	<link rel="stylesheet" href="./css/dataTables.foundation.css">
 
@@ -206,14 +206,17 @@
     			}
             },
             {
-                "className":      'preview-control',
+                "className":      'actions-control',
                 "orderable":      false,
                 "data":           null,
-                "defaultContent": ''
+                "defaultContent": "<div class='ellipses'><span>...</span></div>",
             },
         ],
         "order" : [[3,"desc"]]
-    }); // DataTable
+    }); 
+	
+	
+	// DataTable
 
     var queue_table = $('#queue_table').DataTable( {
     	"filter": false,
@@ -259,9 +262,9 @@
             },
         ],
         "order" : [[3,"desc"]]
-    }); // DataTable
-
-
+    }); 
+	
+	// DataTable
     function history_child_row(job) {
     	retval = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px; width: 100%;">'
     	if(job.description) {
@@ -278,8 +281,16 @@
 	            '<td class="child-row-label">Duration:</td>'+
 	            '<td>'+moment.utc(job.finished_at-job.started_at).format('HH:mm:ss')+'</td>'+
 	        '</tr>'+
+	    '</table>';
+	    return retval;
+    }
+	
+	//ActionsTable 	
+   function actions_child_row(job) {
+    	retval = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px; width: 100%;">'
+    	retval += 
 	        '<tr>'+
-	        	'<td colspan="2">'+'<a id="download-'+job._id +'" download>Download File</a></td>' +
+	        	'<td colspan="2">'+'<a id="preview-'+job._id +'">Preview Job &gt;&gt;</a></td>' +
 	        '</tr>'+
 	        '<tr>'+
 	        	'<td colspan="2">'+'<a id="edit-'+job._id +'">Edit Job &gt;&gt;</a></td>' +
@@ -287,28 +298,59 @@
 	        '<tr>'+
 	        	'<td colspan="2">'+'<a id="resubmit-'+job._id +'">Resubmit Job &gt;&gt;</a></td>' +
 	        '</tr>'+
+			'<tr>'+
+	        '<td colspan="2">'+'<a id="download-'+job._id +'" download>Download File &gt;&gt</a></td>' +
+	        '</tr>'+
 	    '</table>';
 	    return retval;
-    }
+    }	
 
     function queue_child_row(job) {
     	return ''
     }
 
-	// Add event listener for opening and closing details 
-    $('#queue_table tbody').on('click', 'td.preview-control', function () {
-        var tr = $(this).closest('tr');
-        var row = queue_table.row( tr );
-        job = row.data();
- 		fabmoDashboard.launchApp('previewer', {'job' : job._id});
-    } );
-
-    	// Add event listener for opening and closing details 
+    	// Add event listener for opening preview
     $('#history_table tbody').on('click', 'td.preview-control', function () {
         var tr = $(this).closest('tr');
         var row = history_table.row( tr );
         job = row.data();
  		fabmoDashboard.launchApp('previewer', {'job' : job._id});
+    } );
+	
+		// Add event listener for opening and closing further actions
+    $('#history_table tbody').on('click', 'td.actions-control', function () {
+        var tr = $(this).closest('tr');
+        var row = history_table.row( tr );
+		if (tr.hasClass('shown')){
+			tr.removeClass('shown');
+		};
+ 		if(row.child()) {
+	        if ( row.child.isShown() ) {
+	            // This row is already open - close it
+				row.child.hide();
+				row.child.remove();
+	        }
+	        else {
+	            // Open this row
+	            row.child.show();
+		    }
+ 		} else {
+ 			job = row.data()
+ 			row.child(actions_child_row(job) ).show();
+ 			$('#resubmit-'+job._id).click(function(e) {
+				fabmoDashboard.resubmitJob(job._id, function(err, result) {
+					refresh_jobs_list();
+					$('#nav-pending').click();
+				});
+			});
+			$('#preview-'+job._id).click(function(e) {
+				fabmoDashboard.launchApp('previewer', {'job' : job._id});
+			});
+			$('#edit-'+job._id).click(function(e) {
+				fabmoDashboard.launchApp('editor', {'job' : job._id});
+			});
+ 			$('#download-'+job._id).attr({'href':'/job/' + job._id + '/file'});
+ 		}
     } );
 
 	// Add event listener for opening and closing details
@@ -318,8 +360,10 @@
  		if(row.child()) {
 	        if ( row.child.isShown() ) {
 	            // This row is already open - close it
-	            row.child.hide();
+				row.child.hide();
+				row.child.remove();
 	            tr.removeClass('shown');
+				
 	        }
 	        else {
 	            // Open this row
@@ -344,29 +388,6 @@
 
  			$('#download-'+job._id).attr({'href':'/job/' + job._id + '/file'});
 
-	        tr.addClass('shown');
- 		}
-    } );
-
-	// Add event listener for opening and closing details
-    $('#queue_table tbody').on('click', 'td.details-control', function () {
-        var tr = $(this).closest('tr');
-        var row = queue_table.row( tr );
- 
- 		if(row.child()) {
-	        if ( row.child.isShown() ) {
-	            // This row is already open - close it
-	            row.child.hide();
-	            tr.removeClass('shown');
-	        }
-	        else {
-	            // Open this row
-	            row.child.show();
-	            tr.addClass('shown');
-		    }
- 		} else {
- 			job = row.data()
- 			row.child( queue_child_row(job) ).show();
 	        tr.addClass('shown');
  		}
     } );
