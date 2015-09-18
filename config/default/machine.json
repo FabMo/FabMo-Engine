@@ -1,3 +1,9 @@
 {
-	"units" : "in"
+	"units" : "in",
+	"envelope" : {
+		"xmin" : 0.0,
+		"xmax" : 6.0,
+		"ymin" : 0.0,
+		"ymax" : 8.0
+	}
 }

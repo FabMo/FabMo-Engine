@@ -13,12 +13,17 @@ util.inherits(G2Config, Config);
 
 G2Config.prototype.changeUnits = function(units, callback) {
 	this.driver.setUnits(units, function(err, data) {
-		if(err) { callback(err); }
-		this.getFromDriver(function(err, g2_values) {
-			if(err) { callback(err); } else  {
-				this.update(g2_values, callback);
-			}
-		}.bind(this));
+		if(err) { 
+			callback(err); 
+		} else {
+			this.getFromDriver(function(err, g2_values) {
+				if(err) { 
+					callback(err); 
+				} else  {
+					this.update(g2_values, callback);
+				}
+			}.bind(this));			
+		}
 	}.bind(this));
 }
 
