@@ -1469,22 +1469,20 @@
       });
 
       $('.opensbp_values').change( function() {
-        console.log("opensbp_value: change");
         var parts = this.id.split("_");
-        var gcode = "";
+        var sbp = "";
         var v = parts[1];
         if(v !== undefined) {
-          gcode = "VU,";
-          gcode += (v === "units1") ? this.value : ","; 
-          gcode += (v === "units2") ? this.value : ","; 
-          gcode += (v === "units3") ? this.value : ","; 
-          gcode += (v === "units4") ? this.value : ","; 
-          gcode += (v === "units5") ? this.value : ","; 
-          gcode += (v === "units6") ? this.value : ","; 
-     console.log("change: gcode = ", gcode);
+          sbp = "VU,";
+          sbp += (v === "units1") ? this.value : ","; 
+          sbp += (v === "units2") ? this.value : ","; 
+          sbp += (v === "units3") ? this.value : ","; 
+          sbp += (v === "units4") ? this.value : ","; 
+          sbp += (v === "units5") ? this.value : ","; 
+          sbp += (v === "units6") ? this.value : ","; 
+          console.log("change: opensbp code = ", sbp);
         }
-        fabmoDashboard.runSBP(gcode, function(err, data) {
-          console.log("callback runsbp");
+        fabmoDashboard.runSBP(sbp, function(err, data) {
           setTimeout(update, 500);
         });
       });

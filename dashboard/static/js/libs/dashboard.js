@@ -309,12 +309,12 @@ FabMoDashboard.prototype.deleteApp = function(id, callback) {
 	this._call("deleteApp",id,callback);
 }
 
-FabMoDashboard.prototype.runGCode = function(text) {
-	this._call("runGCode", text);
+FabMoDashboard.prototype.runGCode = function(text, callback) {
+	this._call("runGCode", text, callback);
 }
 
-FabMoDashboard.prototype.runSBP = function(text) {
-	this._call("runSBP", text);
+FabMoDashboard.prototype.runSBP = function(text, callback) {
+	this._call("runSBP", text, callback);
 }
 
 FabMoDashboard.prototype.connectToWifi = function(ssid, key, callback) {

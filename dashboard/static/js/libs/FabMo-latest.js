@@ -446,7 +446,7 @@ FabMo.prototype.delete_app = function(id, callback)
 			}
 		},
 		error: function(data,err) {
-			console.log(err);
+				console.error(err);
 				var error =that.default_error.no_device;
 				error.sys_err = err;
 			 	callback(error);
@@ -641,8 +641,6 @@ FabMo.prototype.submit_app =  function(formdata,callback)
 			DataType:'json',
 			success: function( data ) {
 				if(data.status === "success") {
-					console.log("Making the callback with the app data");
-					console.log(data.data.app);
 					callback(undefined,data.data.app);
 				} else if(data.status==="fail") {
 					callback(data.data);
