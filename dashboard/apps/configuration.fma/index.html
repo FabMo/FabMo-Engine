@@ -27,6 +27,8 @@
     <li class="tab-title" role="presentational" ><a href="#tabpanel3" role="tab" tabindex="0"aria-selected="false" controls="tabpanel3">Inputs</a></li>
     <li class="tab-title" role="presentational" ><a href="#tabpanel4" role="tab" tabindex="0"aria-selected="false" controls="tabpanel4">Channels</a></li>
     <li class="tab-title" role="presentational" ><a href="#tabpanel5" role="tab" tabindex="0"aria-selected="false" controls="tabpanel5">Values</a></li>
+        <li class="tab-title" role="presentational" ><a href="#tabpanel6" role="tab" tabindex="0"aria-selected="false" controls="tabpanel6">Machine</a></li>
+
     </ul>
   </section>
 </nav>
@@ -1357,6 +1359,62 @@
       </div>
 
   </section>
+
+  <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel6">
+    <div class="row">
+      <fieldset>
+        <legend>Envelope</legend>
+        <div class="large-8 columns">
+          <div class="row collapse">
+            <label>X Min</label>
+            <div class="small-9 columns">
+              <input type="number" id="machine_envelope_xmin" class="machine_input"/>
+            </div>
+            <div class="small-3 columns">
+              <span class="postfix">in</span>
+            </div>
+          </div> 
+        </div>
+
+        <div class="large-8 columns">
+          <div class="row collapse">
+            <label>X Max</label>
+            <div class="small-9 columns">
+              <input type="number" id="machine_envelope_xmax" class="machine_input"/>
+            </div>
+            <div class="small-3 columns">
+              <span class="postfix">in</span>
+            </div>
+          </div> 
+        </div>
+
+        <div class="large-8 columns">
+          <div class="row collapse">
+            <label>Y Min</label>
+            <div class="small-9 columns">
+              <input type="number" id="machine_envelope_ymin" class="machine_input"/>
+            </div>
+            <div class="small-3 columns">
+              <span class="postfix">in</span>
+            </div>
+          </div> 
+        </div>
+
+        <div class="large-8 columns">
+          <div class="row collapse">
+            <label>Y Max</label>
+            <div class="small-9 columns">
+              <input type="number" id="machine_envelope_ymax" class="machine_input"/>
+            </div>
+            <div class="small-3 columns">
+              <span class="postfix">in</span>
+            </div>
+          </div> 
+        </div>
+      </fieldset>
+    </div>
+
+  </section>
 </div>
 
 
@@ -1389,10 +1447,15 @@
           if(err) {
             console.error(err);
           } else {
-            ['driver', 'engine', 'opensbp', 'machine'].forEach(function(branch) {
-                for(key in data[branch]) {
-                  v = data[branch][key];
-                  input = $('#' + branch + '_' + key);
+            ['driver', 'engine', 'opensbp', 'machine'].forEach(function(branchname) {
+                if(branchname === 'machine') {
+                  branch = flattenObject(data[branchname]);
+                } else {
+                  branch = data[branchname];
+                }
+                for(key in branch) {
+                  v = branch[key];
+                  input = $('#' + branchname + '_' + key);
                   if(input.length) {
                     input.val(String(v));
                   }
@@ -1438,13 +1501,19 @@
 
       $('.machine_input').change( function() {
         var parts = this.id.split("_");
-        var type = parts[0];
-        var key = parts.slice(1, parts.length).join('_');
         var o = {};
-        o[key] = this.value;
-        cfg = {};
-        cfg[type] = o;
-        fabmoDashboard.setConfig(cfg, function(err, data) {
+        var co = o;
+        var i=0;
+        
+        do {
+          co[parts[i]] = {};
+          if(i < parts.length-1) {
+            co = co[parts[i]];            
+          }
+        } while(i++ < parts.length-1 );
+
+        co[parts[parts.length-1]] = this.value;
+        fabmoDashboard.setConfig(o, function(err, data) {
           update();
         });
       });

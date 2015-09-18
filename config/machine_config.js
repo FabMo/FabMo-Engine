@@ -1,6 +1,7 @@
 var config = require('../config');
 var Config = require('./config').Config; 
 var log = require('../log').logger('machine_config');
+var extend = require('../util').extend;
 
 // The EngineConfig object keeps track of engine-specific settings
 var MachineConfig = function(driver) {
@@ -9,24 +10,21 @@ var MachineConfig = function(driver) {
 };
 util.inherits(MachineConfig, Config);
 
-MachineConfig.prototype.update = function(data, callback) {
+MachineConfig.prototype.update = function(data, callback, force) {
 	try {
-		for(var key in data) {
-			this._cache[key] = data[key];
-		}
+		extend(this._cache, data, force);
 	} catch (e) {
-		if(callback) {
-			return setImmediate(callback, e);
-		}
+		return callback(e);
 	}
 	this.save(function(err, result) {
 		if(err) {
-			typeof callback === 'function' && callback(e);
+			callback(err);
 		} else {
-			typeof callback === 'function' && callback(null, data);
+			callback(null, data);
 		}
 	});
 };
+
 
 MachineConfig.prototype.apply = function(callback) {
 	try {
