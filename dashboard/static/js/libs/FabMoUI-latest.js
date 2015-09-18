@@ -166,7 +166,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	}
 	var unit = '??';
 	if(status.unit != null) {
-		unit = status.unit ? 'mm' : 'in';
+		unit = status.unit;
 	}
 
 	that.updateText($(that.posX_selector), x);

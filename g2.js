@@ -424,6 +424,10 @@ G2.prototype.handleStatusReport = function(response) {
 		// Update our copy of the system status
 		for (var key in response.sr) {
 			value = response.sr[key];
+			if(key === 'unit') {
+				value = value === 0 ? 'in' : 'mm';
+			}
+
 			this.status[key] = value;
 		}
 

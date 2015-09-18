@@ -21,7 +21,7 @@ exports.ZX = function(args, callback) {
 		var zxObj = {};
 		log.debug( JSON.stringify(MPO) );
 		var unitConv = 1.0;
-		if ( this.machine.driver.status.unit === 0 ) {  // inches
+		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
 		}
 		zxObj.g55x = Number((MPO * unitConv).toFixed(5));
@@ -40,7 +40,7 @@ exports.ZY = function(args, callback) {
 		if(err) { return callback(err); }
 		var zyObj = {};
 		var unitConv = 1.0;
-		if ( this.machine.driver.status.unit === 0 ) {  // inches
+		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
 		}
 		zyObj.g55y = Number((MPO * unitConv).toFixed(5));
@@ -58,7 +58,7 @@ exports.ZZ = function(args, callback) {
 	this.machine.driver.get('mpoz', function(err, MPO) {
 		var zzObj = {};
 		var unitConv = 1.0;		
-		if ( this.machine.driver.status.unit === 0 ) {  // inches
+		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
 		}
 		zzObj.g55z = Number((MPO * unitConv).toFixed(5));
@@ -74,7 +74,7 @@ exports.ZA = function(args, callback) {
 		if(err) { return callback(err); }
 		var zaObj = {};
 		var unitConv = 1.0;
-		if ( this.machine.driver.status.unit === 0 ) {  // inches
+		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
 		}
 		zaObj.g55a = Number((MPO * unitConv).toFixed(5));
@@ -91,7 +91,7 @@ exports.ZB = function(args, callback) {
 		if(err) { return callback(err); }
 		var zbObj = {};
 		var unitConv = 1.0;		
-		if ( this.machine.driver.status.unit === 0 ) {  // inches
+		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
 		}
 		zaObj.g55a = Number((MPO * unitConv).toFixed(5));
@@ -108,7 +108,7 @@ exports.ZC = function(args, callback) {
 		if(err) { return callback(err); }
 		var zcObj = {};
 		var unitConv = 1.0;		
-		if ( this.machine.driver.status.unit === 0 ) {  // inches
+		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
 		}
 		zcObj.g55c = Number((MPO * unitConv).toFixed(5));
@@ -125,7 +125,7 @@ exports.Z2 = function(args, callback)  {
 		if(err) { return callback(err); }
 		var z2Obj = {};
 		var unitConv = 1.0;
-		if ( this.machine.driver.status.unit === 0 ) {  // inches
+		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
 		}
 		z2Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
@@ -145,7 +145,7 @@ exports.Z3 = function(args,callback) {
 		var z3Obj = {};
 		log.debug(JSON.stringify(MPO));
 		var unitConv = 1.0;
-		if ( this.machine.driver.status.unit === 0 ) {  // inches
+		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
 		}
 		z3Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
@@ -167,7 +167,7 @@ exports.Z4 = function(args,callback) {
 		if(err) { return callback(err); }
 		var z4Obj = {};
 		unitConv = 1.0;
-		if ( this.machine.driver.status.unit === 0 ) {  // inches
+		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
 		}
 		z4Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
@@ -190,7 +190,7 @@ exports.Z5 = function(args,callback) {
 		if(err) { return callback(err); }
 		var z5Obj = {};
 		unitConv = 1.0;
-		if ( this.machine.driver.status.unit === 0 ) {  // inches
+		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
 		}
 		z5Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
@@ -215,7 +215,7 @@ exports.Z6 = function(args,callback) {
 		if(err) { return callback(err); }
 		var z6Obj = {};
 		unitConv = 1.0;
-		if ( this.machine.driver.status.unit === 0 ) {  // inches
+		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
 		}
 		z6Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
