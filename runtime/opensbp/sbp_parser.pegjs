@@ -15,7 +15,7 @@ statement
    = (label / single / jump / pause / conditional / assignment / event / open / custom_cut / command / __)
 
 custom_cut
-   = [Cc] index:integer
+   = [Cc] index:integer __ ","
    { return {"type":"custom", "index":index};}
 
 event

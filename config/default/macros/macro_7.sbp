@@ -1,0 +1,4 @@
+'!FABMO!name:Stop Spindle
+'!FABMO!description:Stop the spindle
+' Stop the spindle
+SO,1,0
