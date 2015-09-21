@@ -296,6 +296,14 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         that.path.add();
         that.totalSize.setMeshes(that.gcode.size, that.inMm,
                 that.cncConfiguration.initialPosition);
+
+        var lx = ((that.gcode.size.max.x - that.gcode.size.min.x) / 2.0 ) || 0.0;
+        var ly = ((that.gcode.size.max.y - that.gcode.size.min.y) / 2.0 ) || 0.0;
+        var lz = ((that.gcode.size.max.z - that.gcode.size.min.z) / 2.0 ) || 0.0;
+
+        that.light1.position.set(lx,ly,lz-10);
+        that.light2.position.set(lx,ly,lz+10);
+
         that.totalSize.add();
         that.animation.hide();
         that.animation.reset();
@@ -334,18 +342,18 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     that.camera = {};
     that.scene = {};
     that.controls = {};
-    that.cncConfiguration = {};
+    that.cncConfiguration = configuration || {};
     that.gcode = {};
 
     that.inMm = false;
     that.inchToVector = 1; //Convert an inch to the value to put in vectors
     that.callbackError = callbackError;
-    that.cncConfiguration = (configuration === undefined) ? {} : configuration;
 
     if(container === undefined || container === null) {
         displayError("No container set.");
         return;
     }
+
     that.renderer = new THREE.WebGLRenderer({antialias: true});
     that.renderer.setSize(widthCanvas, heightCanvas);
     that.renderer.domElement.style.zIndex = 1;
@@ -357,6 +365,14 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     that.scene = new THREE.Scene();
     setCombinedCamera();
     that.showZ();
+   
+    that.light1 = new THREE.PointLight( 0xffffff, 1, 100 );
+    that.light1.position.set( 0, 0, -10 );
+    that.scene.add( that.light1 );
+
+    that.light2 = new THREE.PointLight( 0xffffff, 1, 100 );
+    that.light2.position.set( 0, 0, 10 );
+    that.scene.add( that.light2 );
 
     that.path = new GCodeViewer.Path(that.scene);
     that.totalSize = new GCodeViewer.TotalSize(that.scene);
@@ -392,7 +408,7 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         goToLine : goToLineFun
 
     };
-    that.gui = new GCodeViewer.Gui(that.renderer.domElement, callbacks);
+    that.gui = new GCodeViewer.Gui(that.renderer.domElement, that.cncConfiguration, callbacks);
 
     //Add animation
     that.animation = new GCodeViewer.Animation(that.scene, that.refreshDisplay,
