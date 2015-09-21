@@ -71,7 +71,7 @@
  
       function resize() { 
         var w = window.innerWidth;
-        var h = window.innerHeight - $("#topbar").height()// - 10; // Fudge factor for foundation weirdness
+        var h = window.innerHeight - $("#topbar").height()
         $('#preview').size(w,h);
         viewer.resize(w,h);
       }
