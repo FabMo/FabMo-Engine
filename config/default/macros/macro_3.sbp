@@ -26,8 +26,6 @@ GOSUB approach_x
 ZX
 GOSUB backoff_x
 
-END
-
 ' Home the Y-axis
 VS,&approach_speed_fast
 GOSUB approach_y
