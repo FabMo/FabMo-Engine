@@ -1,5 +1,6 @@
 var fs = require('fs');
 var log = require('../../log').logger('gcode');
+var config = require('../../config');
 
 function GCodeRuntime() {
 	this.machine = null;
@@ -92,27 +93,34 @@ GCodeRuntime.prototype._idle = function() {
 	this.machine.status.line=null;
 	this.machine.status.nb_lines=null;
 	var job = this.machine.status.job;
+	
+	// Set the machine state to idle and return the units to their default configuration
+	var finishUp = function() {
+		this.driver.setUnits(config.machine.get('units'), function() {
+			this.machine.setState(this, 'idle');
+		}.bind(this))
+	}.bind(this);
+
 	if(job) {
 		if(job.pending_cancel) {
 			this.machine.status.job.cancel(function(err, job) {
 				this.machine.status.job=null;
-				this.machine.setState(this, 'idle');
+				finishUp();
 			}.bind(this));
 		} else {
 			this.machine.status.job.finish(function(err, job) {
 				this.machine.status.job=null;
-				this.machine.setState(this, 'idle');
+				finishUp();
 			}.bind(this));
 		}
 	} else {
-		this.machine.setState(this, 'idle');
+		finishUp();
 	}
 };
 
 // Run the provided string
 // callback runs only when execution is complete.
 GCodeRuntime.prototype.runString = function(string, callback) {
-	//log.debug('Running String ' + string)
 	if(this.machine.status.state === 'idle') {
 		var lines =  string.split('\n');
 		this.machine.status.nb_lines = lines.length;
@@ -123,7 +131,6 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 		}
 		lines.push('M30\n');
 		string = lines.join("\n");
-		//this.driver.gcodeWrite(string);
 		this.driver.runString(string,this.machine.status);
 	}
 

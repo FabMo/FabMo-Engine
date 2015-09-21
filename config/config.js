@@ -12,6 +12,7 @@ Config = function(config_name) {
 	this.default_config_file = __dirname + '/default/' + config_name + '.json';
 	this.config_file = Config.getDataDir('config') + '/' + config_name + '.json';
 	this._loaded = false;
+	this.userConfigLoaded = false;
 };
 
 Config.prototype.get = function(k) {
@@ -77,6 +78,7 @@ Config.prototype.init = function(callback) {
 					}
 				} else {
 					this._loaded = true;
+					this.userConfigLoaded = true;
 					callback(null, this);
 				}
 			}.bind(this)); }.bind(this)

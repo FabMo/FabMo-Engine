@@ -305,15 +305,19 @@ G2.prototype.stopJog = function() {
 G2.prototype.setUnits = function(units, callback) {
 	if(units === 0 || units == 'in') {
 		gc = 'G20';
+		units = 0;
 	} else if(units === 1 || units === 'mm') {
 		gc = 'G21';
+		units = 1;
 	} else {
 		return callback(new Error('Invalid unit setting: ' + units))
 	}
-	this.runString(gc, function() {
-		this.requestStatusReport(function(status) {
-			callback(null);
-		});
+	this.set('gun', units, function() {
+		this.runString(gc, function() {
+			this.requestStatusReport(function(status) {
+				callback(null);
+			}.bind(this));
+		}.bind(this));		
 	}.bind(this));
 }
 

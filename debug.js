@@ -54,7 +54,6 @@ function startDebug() {
     persistent: true
   });
   watcher.on('raw', appReloader);
-  log.debug("startDebug");
 }
 
 exports.start = startDebug;

@@ -46,7 +46,12 @@ MachineConfig.prototype.apply = function(callback) {
 
 	}
 	catch (e) {
-		callback(e);
+		log.warn("Couldn't access driver configuration...");
+		try {
+			this.driver.setUnits(this.get('units'));
+		} catch(e) {
+			callback(e);
+		}
 	}
 };
 

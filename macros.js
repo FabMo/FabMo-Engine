@@ -103,6 +103,7 @@ var _parseMacroFile = function(filename, callback) {
 
 var update = function(id, macro, callback) {
 	old_macro = get(id);
+
 	if(old_macro) {
 
 		function savemacro(id, callback) {
@@ -111,11 +112,11 @@ var update = function(id, macro, callback) {
 			old_macro.content = macro.content || old_macro.content;
 			old_macro.index = macro.index || old_macro.index;
 			old_macro.type = macro.type || old_macro.type;
-			save(old_macro.index, callback);
+			old_macro.filename = _createMacroFilename(old_macro.index, old_macro.type);
+			save(id, callback);
 		}
-
 		if(macro.index && (macro.index != old_macro.index)) {
-			macros[macro.index] = macro;
+			macros[macro.index] = old_macro;
 			delete macros[old_macro.index];
 			_deleteMacroFile(old_macro.index, function(err) {
 				savemacro(macro.index, callback);
@@ -123,6 +124,7 @@ var update = function(id, macro, callback) {
 		} else {
 			savemacro(id, callback);
 		}
+
 	} else {
 		new_macro = {
 			name : macro.name || 'Untitled Macro',

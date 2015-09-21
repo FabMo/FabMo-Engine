@@ -12,9 +12,32 @@ var macros = require('./macros');
 var dashboard = require('./dashboard');
 var network = require('./network');
 var updater = require('./updater');
+var glob = require('glob');
 
 var Engine = function() {
     this.version = null;
+};
+
+function EngineConfigFirstTime(callback) {
+    switch(PLATFORM) {
+        case 'darwin':
+            glob.glob('/dev/cu.usbmodem*', function(err, files) {
+                if(files.length >= 2) {
+                    var ports = {
+                        'control_port_osx' : files[0],
+                        'data_port_osx' : files[1]
+                    }
+                    config.engine.update(ports, function() {
+                        callback();
+                    });
+                }
+            });
+        break;
+
+        default:
+            callback();
+        break;
+    }
 };
 
 Engine.prototype.stop = function(callback) {
@@ -40,6 +63,14 @@ Engine.prototype.start = function(callback) {
             config.configureEngine(callback);
         },
 
+        function check_engine_config(callback) {
+            if(!config.engine.userConfigLoaded) {
+                EngineConfigFirstTime(callback);
+            } else {
+                callback();
+            }
+        },
+
         // Create the version string that will be used to identify the software version
         function get_fabmo_version(callback) {
             log.info("Getting engine version...");
@@ -50,7 +81,7 @@ Engine.prototype.start = function(callback) {
                 } else {
                     log.error(err);
                 }
-                callback(null);
+                callback();
             }.bind(this));
         }.bind(this),
 
@@ -103,9 +134,19 @@ Engine.prototype.start = function(callback) {
             });
         }.bind(this),
 
+        function load_machine_config(callback) {
+            this.machine = machine.machine;
+            log.info('Loading the machine configuration...')
+            config.configureMachine(this.machine.driver, function(err, result) {
+                if(err) {
+                    log.warn(err);
+                }
+                callback(null);
+            });
+        }.bind(this),
+
         // Configure G2 by loading all its json settings and static configuration parameters
         function load_driver_config(callback) {
-            this.machine = machine.machine;
             if(this.machine.isConnected()) {
                 log.info("Configuring G2...");
                 config.configureDriver(machine.machine.driver, function(err, data) {
@@ -139,16 +180,6 @@ Engine.prototype.start = function(callback) {
                 callback(null);
             }
     	}.bind(this),
-
-        function load_machine_config(callback) {
-            log.info('Loading the machine configuration...')
-            config.configureMachine(this.machine.driver, function(err, result) {
-                if(err) {
-                    log.warn(err);
-                }
-                callback(null);
-            });
-        }.bind(this),
 
         function apply_machine_config(callback) {
             log.info("Applying machine configuration...");

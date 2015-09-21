@@ -164,7 +164,7 @@
         } else if('macro' in args) {
           var url = '/macros/' + args.macro;
           $.get(url,function(response, status) {
-            var macro = response.data;
+            var macro = response.data.macro;
             $('#app-header').text("Editor - " + macro.name + " (Macro)");
             editor.setValue(macro.content, -1);
             editor.clearSelection();
@@ -180,7 +180,6 @@
  
     function save() {
       if(supports_html5_storage() && (source === null)) {
-        console.log("saving");
         localStorage['content'] = editor.getSession().getValue();
         pos = editor.getCursorPosition();
         localStorage['position'] = JSON.stringify(pos);
@@ -243,7 +242,6 @@
 
     $("#macro-save").click(function(evt) {
       fabmoDashboard.updateMacro(source_data.index, {content: editor.getValue()}, function(err, result) {
-        console.log('Notifying')
         fabmoDashboard.notify('info', "Macro '" + source_data.name + "' saved.");
       });
       evt.preventDefault();

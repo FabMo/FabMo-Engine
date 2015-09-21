@@ -109,10 +109,14 @@ SBPRuntime.prototype.quit = function() {
 		if(this.machine.status.job) {
 			this.machine.status.job.fail(function(err, job) {
 				this.machine.status.job=null;
-				this.machine.setState(this, 'idle');
+				this.driver.setUnits(config.machine.get('units'), function() {
+					this.machine.setState(this, 'idle');
+				}.bind(this));
 			}.bind(this));
 		} else {
-			this.machine.setState(this, 'idle');
+			this.driver.setUnits(config.machine.get('units'), function() {
+				this.machine.setState(this, 'idle');
+			}.bind(this));
 		}
 	} else {
 		this.quit_pending = true;
@@ -352,10 +356,14 @@ SBPRuntime.prototype._end = function(error) {
 					if(this.machine.status.job) {
 						this.machine.status.job.finish(function(err, job) {
 							this.machine.status.job=null;
-							this.machine.setState(this, 'idle');
+							this.driver.setUnits(config.machine.get('units'), function() {
+								this.machine.setState(this, 'idle');
+							}.bind(this));
 						}.bind(this));
 					} else {
-						this.machine.setState(this, 'idle');
+						this.driver.setUnits(config.machine.get('units'), function() {
+							this.machine.setState(this, 'idle');
+						}.bind(this));
 					}
 					this.emit('end', this);
 					if(callback) {
@@ -591,7 +599,7 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			if(macro) {
 				log.debug("Running macro: " + JSON.stringify(macro))
 				this._pushFileStack();
-				this.runFile(macro, function() {
+				this.runFile(macro.filename, function() {
 					this._popFileStack();
 					callback();
 				}.bind(this));
