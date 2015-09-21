@@ -16,6 +16,9 @@ GCodeViewer.TotalSize = function(scene) {
     "use strict";
     var that = this;
 
+    /**
+     * Removes the meshes from the scene.
+     */
     that.remove = function() {
         that.scene.remove(that.textWidth);
         that.scene.remove(that.lineWidth);
@@ -25,6 +28,9 @@ GCodeViewer.TotalSize = function(scene) {
         that.scene.remove(that.lineHeight);
     };
 
+    /**
+     * Adds the meshes to the scene.
+     */
     that.add = function() {
         that.scene.add(that.textWidth);
         that.scene.add(that.lineWidth);
@@ -42,8 +48,6 @@ GCodeViewer.TotalSize = function(scene) {
         return new THREE.Mesh(geo, material);
     }
 
-    //Really dumb function that return the size, on the axe, of a mesh
-    //Should use bounding box!
     function sizeMesh(mesh, axe) {
         var bb = {};
         mesh.geometry.computeBoundingBox();
@@ -62,6 +66,15 @@ GCodeViewer.TotalSize = function(scene) {
         return size;
     }
 
+    /**
+     * Sets the meshes.
+     *
+     * @param {object} totalSize The total size of the whole path.
+     * @param {boolean} displayInMm If true, shows the size in millimeter. Else
+     * in inch.
+     * @param {object} initialPosition The position, in 3D, where thr whole
+     * path begins (optional).
+     */
     that.setMeshes = function(totalSize, displayInMm, initialPosition) {
         if(totalSize === undefined) {
             return;
@@ -166,6 +179,9 @@ GCodeViewer.Path = function(scene) {
         that.meshG2G3Done = {};
     }
 
+    /**
+     * Removes the meshes from the scene.
+     */
     that.remove = function() {
         that.scene.remove(that.meshG0Undone);
         that.scene.remove(that.meshG1Undone);
@@ -175,6 +191,9 @@ GCodeViewer.Path = function(scene) {
         that.scene.remove(that.meshG2G3Done);
     };
 
+    /**
+     * Adds the meshes to the scene.
+     */
     that.add = function() {
         that.scene.add(that.meshG0Undone);
         that.scene.add(that.meshG1Undone);
@@ -244,6 +263,13 @@ GCodeViewer.Path = function(scene) {
         }
     }
 
+    /**
+     * Sets the meshes.
+     *
+     * @param {array} lines The array of lines describing the whole path.
+     * @param {object} initialPosition The position, in 3D, where thr whole
+     * path begins (optional).
+     */
     that.setMeshes = function(lines, initialPosition) {
         resetPathsGeo();
         resetPathsMesh();
@@ -283,7 +309,9 @@ GCodeViewer.Path = function(scene) {
         }
     };
 
-    //Redo the meshes as it was
+    /**
+     * Redoes the meshes as it was
+     */
     that.redoMeshes = function() {
         that.remove();
         that.setMeshes(that.lines, that.initialPosition);
@@ -291,18 +319,22 @@ GCodeViewer.Path = function(scene) {
     };
 
     //Return the next index
-    function setPathFromVertices(path, vertices, index, end, type, lineNumber) {
+    function setPathFromVertices(path, vertices, index, end, type, lineNumber,
+            feedrate) {
         if(index >= vertices.length) {
             return -1;
         }
+        var numberAdded = 0;
 
         while(index < vertices.length &&
                 GCodeViewer.pointsEqual(vertices[index], end) === false)
         {
+            numberAdded++;
             path.push({
                 point : GCodeViewer.copyPoint(vertices[index]),
                 type : type,
-                lineNumber : lineNumber
+                lineNumber : lineNumber,
+                feedrate : feedrate
             });
             index++;
         }
@@ -310,34 +342,81 @@ GCodeViewer.Path = function(scene) {
         if(index < vertices.length &&
                 GCodeViewer.pointsEqual(vertices[index], end) === true)
         {
+            numberAdded++;
             path.push({
                 point : GCodeViewer.copyPoint(vertices[index]),
                 type : type,
-                lineNumber : lineNumber
+                lineNumber : lineNumber,
+                feedrate : feedrate
             });
             index++;
+        }
+
+        //A path have at least 2 points. It happens this isn't the case here...
+        if(numberAdded === 1) {
+            path.push({
+                point : GCodeViewer.copyPoint(vertices[index]),
+                type : type,
+                lineNumber : lineNumber,
+                feedrate : feedrate
+            });
+            index++;
+            numberAdded++;  //Not useful here
         }
 
         return index;
     }
 
+    //Return the new path without the doubloons
     function removeDoubloons(path) {
-        var i = 0;
+        var iPath = 0, iSP = 0, lineNumber = 0; //iSinglePath
+        var singlePath = [], newPath = [];
 
-        for(i = 0; i < path.length; i++) {
-            while(i < path.length - 1 &&
-                    path[i].lineNumber === path[i+1].lineNumber &&
-                    GCodeViewer.pointsEqual(path[i].point, path[i+1].point))
-            {
-                path.splice(i+1, 1);
+        while(iPath < path.length) {
+            lineNumber = path[iPath].lineNumber;
+            singlePath = [];
+
+            //Recuperate a single path
+            while(iPath < path.length && path[iPath].lineNumber === lineNumber) {
+                singlePath.push(path[iPath]);
+                iPath++;
             }
+
+            //Remove doubloons
+            if(singlePath.length > 2) {
+                iSP = 0;
+                //Never delete the last point
+                while(iSP < singlePath.length-2) {
+                    while(iSP < singlePath.length-2 &&
+                            GCodeViewer.pointsEqual(singlePath[iSP].point,
+                                singlePath[iSP+1].point) === true)
+                    {
+                        singlePath.splice(iSP+1, 1);
+                    }
+                    iSP++;
+                }
+            }
+
+            for(iSP=0; iSP < singlePath.length; iSP++) {
+                newPath.push(singlePath[iSP]);
+            }
+
+
         }
+
+        return newPath;
     }
 
+    /**
+     * Returns the path the animation has to follow.
+     *
+     * @return {array} The path the animation has to follow.
+     */
     that.getPath = function() {
         var path = [], vertices = [];
         var iLine = 0, iG0 = 0, iG1 = 0, iG2G3 = 0;
         var line = {}, end = {}, type = "", lineNumber = 0;
+        var feedrate = 0;
 
         if(that.lines === undefined) {
             return [];
@@ -348,11 +427,12 @@ GCodeViewer.Path = function(scene) {
             line = that.lines[iLine];
             type = line.type;
             lineNumber = line.lineNumber;
+            feedrate = line.feedrate;
             if(type === "G0") {
                 vertices = that.meshG0Undone.geometry.vertices;
                 end = line.end;
                 iG0 = setPathFromVertices(path, vertices, iG0, end, type,
-                        lineNumber);
+                        lineNumber, feedrate);
                 if(iG0 < 0) {
                     return [];
                 }
@@ -360,7 +440,7 @@ GCodeViewer.Path = function(scene) {
                 vertices = that.meshG1Undone.geometry.vertices;
                 end = line.end;
                 iG1 = setPathFromVertices(path, vertices, iG1, end, type,
-                        lineNumber);
+                        lineNumber, feedrate);
                 if(iG1 < 0) {
                     return [];
                 }
@@ -368,7 +448,7 @@ GCodeViewer.Path = function(scene) {
                 vertices = that.meshG2G3Undone.geometry.vertices;
                 end = line.beziers[line.beziers.length - 1].p3;
                 iG2G3 = setPathFromVertices(path, vertices, iG2G3, end, type,
-                        lineNumber);
+                        lineNumber, feedrate);
                 if(iG2G3 < 0) {
                     return [];
                 }
@@ -377,12 +457,10 @@ GCodeViewer.Path = function(scene) {
             }
         }
 
-        removeDoubloons(path);
-
-        return path;
+        return removeDoubloons(path);
     };
 
-    //This is ridculous not to manage to update the vertices
+    //This is ridiculous not to manage to update the vertices
     //Change the selectionned mesh
     function changeMesh(mesh, vertices, type, done) {
         var mat = {}, pos = {};
@@ -433,99 +511,101 @@ GCodeViewer.Path = function(scene) {
         }
     }
 
-    //The bit did not reach yet on of the vertice
-    that.isReachingPoint = function(pointPath, currentPosition) {
-        var verticesDone = [], verticesUndone = [];
-        var meshDone = {}, meshUndone = {};
-        var p = currentPosition;
+    //Return an object containing the "undone" and the "done" meshes
+    function getMeshes(type) {
+        var res = { undone : {}, done : {} };
 
-        if(pointPath.type === "G0") {
-            meshUndone = that.meshG0Undone;
-            meshDone = that.meshG0Done;
-            verticesUndone = that.meshG0Undone.geometry.vertices;
-            verticesDone = that.meshG0Done.geometry.vertices;
-        } else if(pointPath.type === "G1") {
-            meshUndone = that.meshG1Undone;
-            meshDone = that.meshG1Done;
-            verticesUndone = that.meshG1Undone.geometry.vertices;
-            verticesDone = that.meshG1Done.geometry.vertices;
+        if(type === "G0") {
+            res.undone = that.meshG0Undone;
+            res.done = that.meshG0Done;
+        } else if(type === "G1") {
+            res.undone = that.meshG1Undone;
+            res.done = that.meshG1Done;
         } else {  //I assume the types are correct
-            meshUndone = that.meshG2G3Undone;
-            meshDone = that.meshG2G3Done;
-            verticesUndone = that.meshG2G3Undone.geometry.vertices;
-            verticesDone = that.meshG2G3Done.geometry.vertices;
+            res.undone = that.meshG2G3Undone;
+            res.done = that.meshG2G3Done;
         }
+
+        return res;
+    }
+
+    /**
+     * To call when the bit starts a new path.
+     *
+     * @param {object} pointPath The point path the bit is reaching (this point
+     * is from the path returned by getPath).
+     */
+    that.startPath = function(pointPath) {
+        var meshes = getMeshes(pointPath.type);
+        var meshDone = meshes.done;
+        var verticesDone = meshDone.geometry.vertices;
+        var p = pointPath.point;
+
+        verticesDone.push(new THREE.Vector3(p.x, p.y, p.z));
+        verticesDone.push(new THREE.Vector3(p.x, p.y, p.z));
+        //No need to change vertices of the meshUndone
+
+        changeMesh(meshDone, verticesDone, pointPath.type, true);
+        // changeMesh(meshUndone, verticesUndone, pointPath.type, false);
+    };
+
+    /**
+     * To call when the bit ends a path.
+     *
+     * @param {object} pointPath The point path the bit is reaching (this point
+     * is from the path returned by getPath).
+     */
+    that.endPath = function(pointPath) {
+        var meshes = getMeshes(pointPath.type);
+        var meshDone = meshes.done, meshUndone = meshes.undone;
+        var verticesDone = meshDone.geometry.vertices;
+        var verticesUndone = meshUndone.geometry.vertices;
+        var p = pointPath.point;
+
+        if(verticesDone.length === 0) {
+            return false;
+        }
+        verticesDone[verticesDone.length -1] = new THREE.Vector3(p.x, p.y, p.z);
+
+        //Remove the vertex following the bit and the one at the end of the path
+        verticesUndone.splice(0, 2);
+
+        changeMesh(meshDone, verticesDone, pointPath.type, true);
+        changeMesh(meshUndone, verticesUndone, pointPath.type, false);
+    };
+
+    /**
+     * To call when the bit reaches an intermediate point of a path.
+     *
+     * @param {object} pointPath The point path the bit is reaching (this point
+     * is from the path returned by getPath).
+     */
+    that.reachedIntermediate = function(pointPath) {
+        that.endPath(pointPath);
+        that.startPath(pointPath);
+    };
+
+    /**
+     * To call when the bit from the animation is reaching one point from the
+     * path.
+     *
+     * @param {object} pointPath The point path the bit is reaching (this point
+     * is from the path returned by getPath).
+     * @param {object} currentPosition The current position of the bit in 3D.
+     * @return {boolean} False if there was a problem.
+     */
+    that.isReachingPoint = function(pointPath, currentPosition) {
+        var meshes = getMeshes(pointPath.type);
+        var meshDone = meshes.done, meshUndone = meshes.undone;
+        var verticesDone = meshDone.geometry.vertices;
+        var verticesUndone = meshUndone.geometry.vertices;
+        var p = currentPosition;
 
         if(verticesDone.length < 2) {
             return false;
         }
         verticesUndone[0].set(p.x, p.y, p.z);
         verticesDone[verticesDone.length -1].set(p.x, p.y, p.z);
-        changeMesh(meshDone, verticesDone, pointPath.type, true);
-        changeMesh(meshUndone, verticesUndone, pointPath.type, false);
-
-        return true;
-    };
-
-    //When the bit reached this point
-    //pointPath is a cell of the path of type:
-    //{ point : {x, y, z}, type, lineNumber }
-    that.reachedPoint = function(pointPath) {
-        var verticesDone = [], verticesUndone = [];
-        var meshDone = {}, meshUndone = {};
-
-        if(pointPath.type === "G0") {
-            meshUndone = that.meshG0Undone;
-            meshDone = that.meshG0Done;
-            verticesUndone = that.meshG0Undone.geometry.vertices;
-            verticesDone = that.meshG0Done.geometry.vertices;
-        } else if(pointPath.type === "G1") {
-            meshUndone = that.meshG1Undone;
-            meshDone = that.meshG1Done;
-            verticesUndone = that.meshG1Undone.geometry.vertices;
-            verticesDone = that.meshG1Done.geometry.vertices;
-        } else {  //I assume the types are correct
-            meshUndone = that.meshG2G3Undone;
-            meshDone = that.meshG2G3Done;
-            verticesUndone = that.meshG2G3Undone.geometry.vertices;
-            verticesDone = that.meshG2G3Done.geometry.vertices;
-        }
-
-        if(verticesUndone.length < 2) {
-            return false;
-        }
-
-        //For the done meshes, we have three situations:
-        // 1. Start of a path: need to add two vertices (one for the start,
-        //      one for the bit position)
-        // 2. End of an intermediate path: need to set the last vertice to
-        //      the end position add two vertices (same rule than before)
-        // 3. End of a path: need to set the last vertice to the end position
-        //For the undone meshes:
-        // 1. Start of a path: nothing to do, the first vertice will follow
-        //      the bit position
-        // 2. End of any sort of path: delete the two first vertices
-
-        //Start of a path
-        if(GCodeViewer.samePosition(verticesUndone[0], verticesUndone[1]) === false) {
-            verticesDone.push(verticesUndone[0].clone());
-            verticesDone.push(verticesUndone[0].clone());
-        } else {  //End of a path (intermediate or not)
-            if(verticesDone.length > 0) {
-                verticesDone[verticesDone.length -1].x = verticesUndone[0].x;
-                verticesDone[verticesDone.length -1].y = verticesUndone[0].y;
-                verticesDone[verticesDone.length -1].z = verticesUndone[0].z;
-            }
-            //End of an intermediate
-            if(verticesUndone.length > 2 &&
-                    GCodeViewer.samePosition(verticesUndone[0], verticesUndone[2]) === true) {
-                verticesDone.push(verticesUndone[0].clone());
-                verticesDone.push(verticesUndone[0].clone());
-            }
-
-            verticesUndone.splice(0, 2);
-        }
-
         changeMesh(meshDone, verticesDone, pointPath.type, true);
         changeMesh(meshUndone, verticesUndone, pointPath.type, false);
 

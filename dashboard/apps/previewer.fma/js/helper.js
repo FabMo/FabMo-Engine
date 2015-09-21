@@ -50,6 +50,7 @@ GCodeViewer.Helpers = function(scene) {
         that.scene.add(that.textY);
         that.scene.add(that.arrowZ);
         that.scene.add(that.textZ);
+        that.scene.add(that.textZ2);
     };
 
     that.removeArrows = function() {
@@ -59,6 +60,7 @@ GCodeViewer.Helpers = function(scene) {
         that.scene.remove(that.textY);
         that.scene.remove(that.arrowZ);
         that.scene.remove(that.textZ);
+        that.scene.remove(that.textZ2);
     };
 
     //size is a struct { length, head, font }
@@ -107,8 +109,7 @@ GCodeViewer.Helpers = function(scene) {
         that.arrowZ = new THREE.ArrowHelper(dir, origin, length, hex,
                 headSize, headSize);
 
-        material = new THREE.MeshBasicMaterial({ color: hex,
-            side: THREE.DoubleSide });
+        material = new THREE.MeshBasicMaterial({ color: hex });
         textShapes = THREE.FontUtils.generateShapes("Z", options);
         geo = new THREE.ShapeGeometry(textShapes);
         that.textZ = new THREE.Mesh(geo, material);
@@ -116,6 +117,11 @@ GCodeViewer.Helpers = function(scene) {
         that.textZ.position.y = origin.y;
         that.textZ.position.z = origin.z + length + margin;
         that.textZ.rotateX(Math.PI / 2);
+
+        //To not see the Z "upside down" change rotating
+        that.textZ2 = that.textZ.clone();
+        that.textZ2.rotateX(Math.PI);
+        that.textZ2.position.z += options.size;
     }
 
     //Redo the meshes to suit with the size

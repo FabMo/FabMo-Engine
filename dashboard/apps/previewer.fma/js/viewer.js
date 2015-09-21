@@ -1,12 +1,12 @@
 /*jslint todo: true, browser: true, continue: true, white: true*/
-/*global THREE, THREEx, GCodeViewer, GCodeToGeometry*/
+/*global THREE, GCodeViewer, GCodeToGeometry*/
 
 /**
  * Written by Alex Canales for ShopBotTools, Inc.
  */
 
 /**
- * This file contains the class managing the viewer. This the class that the
+ * This file contains the class managing the viewer. This is the class that the
  * user will instantiate. This is the main class.
  */
 
@@ -15,15 +15,21 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     "use strict";
     var that = this;
 
+    //Updates the control and the possible animation
     function animate() {
         window.requestAnimationFrame(animate);
         that.controls.update();
     }
 
+    //Renders the screen
     function render() {
         that.renderer.render(that.scene, that.camera);
     }
 
+    /**
+     * Refreshes the screen. To call each time something is change and should be
+     * displayed.
+     */
     that.refreshDisplay = function() {
         render();
         animate();
@@ -35,8 +41,12 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         }
     }
 
-    //To call when the canvas or container has resized
-    //width and height are numbers in pixel
+    /**
+     * To call when the canvas or container has resized
+     *
+     * @param {number} width The width of the dom element renderer in px.
+     * @param {number} The height of the dom element renderer in px.
+     */
     that.resize = function(width, height) {
         that.renderer.setSize(width, height);
         that.camera.setSize(width, height);
@@ -46,11 +56,17 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         that.gui.resized();
     };
 
+    /**
+     * Changes the type of camera to a perspective camera.
+     */
     that.setPerspectiveCamera = function() {
         that.camera.toPerspective();
         that.showZ();
     };
 
+    /**
+     * Changes the type of camera to an orthographic camera.
+     */
     that.setOrthographicCamera = function() {
         that.camera.toOrthographic();
         that.showZ();
@@ -74,7 +90,8 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         that.controls.addEventListener('change', render);
     }
 
-    //Return the center of the board
+    // Returns the center of the path (according to the setting of the initial
+    // position). If there is no path, return (0; 0; 0).
     function centerPath() {
         var center = { x : 0, y : 0, z : 0 };
         if(that.gcode.size === undefined) {
@@ -93,9 +110,10 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         return center;
     }
 
-    //point to see
-    //cameraPosition (the axe for zoom and unzoom should be equal to 1)
-    //dollIn value (or zoom value)
+    // Makes the camera look at a point.
+    // camPosition is the new position of the camera (the axe for (un)zoomming
+    //   sould be be equal to 1)
+    // dollyIn is the zoom value
     function lookAtPoint(point, camPosition, dollyIn) {
         var pos = that.controls.object.position;
         that.controls.reset();
@@ -105,8 +123,9 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         that.refreshDisplay();
     }
 
+    // Shows the plane, crossAxe (string) is the axe normal to this plan
+    //   (ex: "Z" for XY plan)
     function showPlane(crossAxe) {
-        // var zoom = dollInToFetch(axeReal, axeImaginary);
         var zoom = 1;
         var center = centerPath();
         var cameraPosition = { x : center.x, y : center.y, z : center.z };
@@ -126,54 +145,86 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         lookAtPoint(center, cameraPosition, zoom);
     }
 
+    /**
+     * Shows the plan YZ from the axe X perspective.
+     */
     that.showX = function() {
         showPlane("x");
     };
 
+    /**
+     * Shows the plan XZ from the axe Y perspective.
+     */
     that.showY = function() {
         showPlane("y");
     };
 
+    /**
+     * Shows the plan XY from the axe Z perspective.
+     */
     that.showZ = function() {
         showPlane("z");
     };
 
-    //Helpers management:
+    /**
+     * Shows the axis helpers (refreshes the display).
+     */
     that.showAxisHelper = function() {
         that.helpers.addAxisHelper();
         that.refreshDisplay();
     };
 
+    /**
+     * Hides the axis helpers (refreshes the display).
+     */
     that.hideAxisHelper = function() {
         that.helpers.removeAxisHelper();
         that.refreshDisplay();
     };
 
+    /**
+     * Shows the arrow helpers (refreshes the display).
+     */
     that.showArrows = function() {
         that.helper.addArrows();
         that.refreshDisplay();
     };
 
+    /**
+     * Hides the arrow helpers (refreshes the display).
+     */
     that.hideArrows = function() {
         that.helper.removeArrows();
         that.refreshDisplay();
     };
 
+    /**
+     * Shows the arrow and axis helpers (refreshes the display).
+     */
     that.showHelpers = function() {
         that.helper.addHelpers();
         that.refreshDisplay();
     };
 
+    /**
+     * Hides the arrow and axis helpers (refreshes the display).
+     */
     that.hideHelpers = function() {
         that.helper.removeHelpers();
         that.refreshDisplay();
     };
 
+    /**
+     * Starts the animation of the path.
+     */
     that.animatePath = function() {
         that.animation.show();
         that.animation.start();
     };
 
+    /**
+     * Shows the ghost of the board (if it was set in the configuration).
+     */
     that.showBoard = function() {
         if(that.cncConfiguration.board === undefined) {
             return;
@@ -198,11 +249,19 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         that.boardHelper = box;
     };
 
+    /**
+     * Hides the ghost of the board.
+     */
     that.hideBoard = function() {
         that.scene.remove(that.boardObject);
         that.scene.remove(that.boardBox);
     };
 
+    /**
+     * Sets the GCode and displays the result.
+     *
+     * @param {string} The GCode.
+     */
     that.setGCode = function(string) {
         that.gcode = GCodeToGeometry.parse(string);
         if(that.gcode.isComplete === false) {
@@ -217,13 +276,22 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         that.gui.setGCode(that.gcode.gcode);
     };
 
+    /**
+     * Hides the path.
+     */
     that.hidePaths = function() {
         that.path.remove();
         that.refreshDisplay();
     };
 
-    //Have to set the gcode before
+    /**
+     * Show the paths that the bit will take.
+     */
     that.viewPaths = function() {
+        if(that.gcode.size === false) {
+            return;
+        }
+
         that.path.remove();  //Don't know how to check if already in scene
         that.path.add();
         that.totalSize.setMeshes(that.gcode.size, that.inMm,
@@ -236,6 +304,7 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         that.refreshDisplay();
     };
 
+    // Show the size in inch (if false) or millimeter (if true)
     function changeDisplay(inMm) {
         if(that.gcode.size !== undefined) {
             that.totalSize.setMeshes(that.gcode.size, inMm,
@@ -245,10 +314,16 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         that.refreshDisplay();
     }
 
+    /**
+     * Show the size in millimiter.
+     */
     that.displayInMm = function() {
         changeDisplay(true);
     };
 
+    /**
+     * Show the size in inch.
+     */
     that.displayInInch = function() {
         changeDisplay(false);
     };
@@ -276,7 +351,7 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     that.renderer.domElement.style.zIndex = 1;
     container.appendChild(that.renderer.domElement);
 
-    // that.renderer.setClearColor( 0xf0f0f0 );
+    that.renderer.setClearColor( 0x303030 );
     that.renderer.setPixelRatio( window.devicePixelRatio );
 
     that.scene = new THREE.Scene();
@@ -319,9 +394,7 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     };
     that.gui = new GCodeViewer.Gui(that.renderer.domElement, callbacks);
 
-    //normal: 3 in/s; fast: 6 in/s
     //Add animation
     that.animation = new GCodeViewer.Animation(that.scene, that.refreshDisplay,
-            that.gui, that.path, 180, 360,
-            that.cncConfiguration.initialPosition);
+            that.gui, that.path, 24, that.cncConfiguration.initialPosition);
 };

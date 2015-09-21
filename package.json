@@ -13,7 +13,6 @@
     "mime": "^1.2.11",
     "minimist": "^1.1.1",
     "ncp": "^2.0.0",
-    "node-simplerwifiscanner": "git+https://github.com/jlucidar/node-simplerwifiscanner.git",
     "node-uuid": "^1.4.1",
     "path-is-inside": "^1.0.1",
     "process": "0.11.x",
@@ -24,7 +23,6 @@
     "socket.io": "1.3.6",
     "tingodb": "0.3.x",
     "tough-cookie": "^2.0.0",
-    "connman-simplified":"0.1.2",
     "glob": "^5.0.14",
     "delaunay-triangulate": "^1.1.6"
   },
