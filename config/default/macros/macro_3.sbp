@@ -6,7 +6,7 @@
 &approach_speed_fast = 1.0
 &approach_speed_slow = 0.25
 &search_distance_x = -8.0
-&search_distance_y = -6.0
+&search_distance_y = -10.0
 &backoff_x = 0.25
 &backoff_y = 0.25
 &backoff_z = 0.25
