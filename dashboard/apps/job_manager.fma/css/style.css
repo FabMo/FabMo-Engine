@@ -103,6 +103,39 @@ td.actions-control {
  transition: all .1s;
 }
 
+.dropDown {
+  position: absolute;
+  top: inherit;
+  width: 195px;
+  margin-top: 3.4em;
+  transform: translatex(-8em);
+  text-align: left;
+  background-color: #ffffff;
+  padding-top: 1.5em;
+  padding-left: 1em;
+  border: 1px solid #dddddd;
+  line-height: 2em;
+}
+.jobActions {
+  list-style: none;
+}
+
+.commentBox{
+  position: absolute;
+  top: inherit;
+  width: 1em;
+  height: 1em;
+  margin-top: 2.9em;
+  transform: translatex(2.1em);
+  background-color: #ffffff;
+  -ms-transform: translateX(2.1em) rotate(45deg); /* IE 9 */
+    -webkit-transform: translateX(2.1em) rotate(45deg); /* Chrome, Safari, Opera */
+    transform: translateX(2.1em) rotate(45deg);
+  border-top:    1px solid  #dddddd;
+  border-left:   1px solid  #dddddd;
+  z-index: 10;
+}
+
 tr.shown td.details-control {
     background: url('images/details_close.png') no-repeat center center;
     width: 40px;
