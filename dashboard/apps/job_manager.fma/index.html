@@ -209,7 +209,7 @@
                 "className":      'actions-control',
                 "orderable":      false,
                 "data":           null,
-                "defaultContent": "<div class='ellipses'><span>...</span></div>",
+                "defaultContent": "<a href='#' class='ellipses' data-dropdown='drop1' aria-controls='drop1' aria-expanded='false'>...</a>",
             },
         ],
         "order" : [[3,"desc"]]
@@ -255,10 +255,10 @@
             	defaultContent : '', 
             },    
             {
-                "className":      'preview-control',
+                "className":      'actions-control',
                 "orderable":      false,
                 "data":           null,
-                "defaultContent": ''
+                "defaultContent": "<a data-dropdown='drop1' aria-controls='drop1' aria-expanded='false'><div class='ellipses'><span>...</span></div></a>",
             },
         ],
         "order" : [[3,"desc"]]
@@ -287,21 +287,21 @@
 	
 	//ActionsTable 	
    function actions_child_row(job) {
-    	retval = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px; width: 100%;">'
+    	retval = '<ul id="drop1" class="f-dropdown" data-dropdown-content aria-hidden="true" tabindex="-1">'
     	retval += 
-	        '<tr>'+
-	        	'<td colspan="2">'+'<a id="preview-'+job._id +'">Preview Job &gt;&gt;</a></td>' +
-	        '</tr>'+
-	        '<tr>'+
-	        	'<td colspan="2">'+'<a id="edit-'+job._id +'">Edit Job &gt;&gt;</a></td>' +
-	        '</tr>'+
-	        '<tr>'+
-	        	'<td colspan="2">'+'<a id="resubmit-'+job._id +'">Resubmit Job &gt;&gt;</a></td>' +
-	        '</tr>'+
-			'<tr>'+
-	        '<td colspan="2">'+'<a id="download-'+job._id +'" download>Download File &gt;&gt</a></td>' +
-	        '</tr>'+
-	    '</table>';
+	        '<li>'+
+	        	'<a id="preview-'+job._id +'">Preview Job &gt;&gt;</a>' +
+	        '</li>'+
+	        '<li>'+
+	        	'<a id="edit-'+job._id +'">Edit Job &gt;&gt;</a>' +
+	        '</li>'+
+	        '<li>'+
+	        	'<a id="resubmit-'+job._id +'">Resubmit Job &gt;&gt;</a>' +
+	        '</li>'+
+			'<li>'+
+	        '<a id="download-'+job._id +'" download>Download File &gt;&gt</a>' +
+	        '</li>'+
+	    '</ul>';
 	    return retval;
     }	
 
@@ -321,22 +321,9 @@
     $('#history_table tbody').on('click', 'td.actions-control', function () {
         var tr = $(this).closest('tr');
         var row = history_table.row( tr );
-		if (tr.hasClass('shown')){
-			tr.removeClass('shown');
-		};
- 		if(row.child()) {
-	        if ( row.child.isShown() ) {
-	            // This row is already open - close it
-				row.child.hide();
-				row.child.remove();
-	        }
-	        else {
-	            // Open this row
-	            row.child.show();
-		    }
- 		} else {
  			job = row.data()
- 			row.child(actions_child_row(job) ).show();
+ 			//$(this).closest($('.actions-control')).append(actions_child_row(job));
+			 
  			$('#resubmit-'+job._id).click(function(e) {
 				fabmoDashboard.resubmitJob(job._id, function(err, result) {
 					refresh_jobs_list();
@@ -350,8 +337,7 @@
 				fabmoDashboard.launchApp('editor', {'job' : job._id});
 			});
  			$('#download-'+job._id).attr({'href':'/job/' + job._id + '/file'});
- 		}
-    } );
+ 		});
 
 	// Add event listener for opening and closing details
     $('#history_table tbody').on('click', 'td.details-control', function () {
@@ -482,6 +468,9 @@
 
   });
 </script>
-
+<a href="#" class="ellipses"   data-dropdown="drop1" aria-controls="drop1" aria-expanded="false">...</a>
+<ul id='drop1' class='f-dropdown' data-dropdown-content aria-hidden='true' tabindex='-1'><li><a id='preview-job._id'>Preview Job &gt;&gt;</a></li><li><a id='edit-job._id'>Edit Job &gt;&gt;</a></li></ul>
 </body>
 </html>
+
+

@@ -89,15 +89,17 @@ td.actions-control {
   font-size: 1.5em;
   width: 1.7em;
   height: 1.7em;
+  color: #dddddd;
   vertical-align: text-top;
-  border: 1px solid #666;
+  border: 1px solid #dddddd;
   border-radius: 100%;
   line-height: 1em;
+  float: right;
 }
 
 .ellipses:hover {
- background-color: #666;
- color: #eeeeee;
+ border-color: #666;
+ color: #666;
  transition: all .1s;
 }
 
