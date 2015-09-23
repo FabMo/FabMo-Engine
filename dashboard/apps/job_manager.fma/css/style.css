@@ -106,7 +106,7 @@ td.actions-control {
 .dropDown {
   position: absolute;
   top: inherit;
-  width: 195px;
+  width: 175px;
   margin-top: 3.4em;
   transform: translatex(-8em);
   text-align: left;
@@ -114,10 +114,13 @@ td.actions-control {
   padding-top: 1.5em;
   padding-left: 1em;
   border: 1px solid #dddddd;
-  line-height: 2em;
+  box-shadow: 0px 2px 5px -1px rgba(0,0,0,0.75);
+  display: none;
+  z-index: 9;
 }
 .jobActions {
   list-style: none;
+  line-height: 2em;
 }
 
 .commentBox{
@@ -134,6 +137,7 @@ td.actions-control {
   border-top:    1px solid  #dddddd;
   border-left:   1px solid  #dddddd;
   z-index: 10;
+  display: none;
 }
 
 tr.shown td.details-control {
