@@ -209,7 +209,7 @@
                 "className":      'actions-control',
                 "orderable":      false,
                 "data":           null,
-                "defaultContent": "<div class='ellipses'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a id='preview--J'>Preview Job</a></li><li><a id='edit--J'>Edit Job</a></li><li><a id='resubmit--J'>Resubmit Job</a></li><li><a id='download--J'>Download Job</a></li></ul></div",
+                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a id='preview--J'>Preview Job</a></li><li><a id='edit--J'>Edit Job</a></li><li><a id='resubmit--J'>Resubmit Job</a></li><li><a id='download' download>Download Job</a></li></ul></div",
             },
         ],
         "order" : [[3,"desc"]]
@@ -258,7 +258,7 @@
                 "className":      'actions-control',
                 "orderable":      false,
                 "data":           null,
-                "defaultContent": "<div class='ellipses'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a id='preview--J'>Preview Job</a></li><li><a id='edit--J'>Edit Job</a></li><li><a id='resubmit--J'>Resubmit Job</a></li><li><a id='download--J'>Download Job</a></li></ul></div",
+                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a id='preview--J'>Preview Job</a></li><li><a id='edit--J'>Edit Job</a></li><li><a id='resubmit--J'>Resubmit Job</a></li><li><a id='download' download>Download Job</a></li></ul></div",
             },
         ],
         "order" : [[3,"desc"]]
@@ -285,25 +285,6 @@
 	    return retval;
     }
 	
-	//ActionsTable 	
-   function actions_child_row(job) {
-    	retval = '<ul id="drop1" class="f-dropdown" data-dropdown-content aria-hidden="true" tabindex="-1">'
-    	retval += 
-	        '<li>'+
-	        	'<a id="preview-'+job._id +'">Preview Job &gt;&gt;</a>' +
-	        '</li>'+
-	        '<li>'+
-	        	'<a id="edit-'+job._id +'">Edit Job &gt;&gt;</a>' +
-	        '</li>'+
-	        '<li>'+
-	        	'<a id="resubmit-'+job._id +'">Resubmit Job &gt;&gt;</a>' +
-	        '</li>'+
-			'<li>'+
-	        '<a id="download-'+job._id +'" download>Download File &gt;&gt</a>' +
-	        '</li>'+
-	    '</ul>';
-	    return retval;
-    }	
 
     function queue_child_row(job) {
     	return ''
@@ -319,7 +300,7 @@
 	
 
 	
-		// Add event listener for opening and closing further actions
+		// Add event listener further actions in history table
     $('#history_table tbody').on('click', 'div.ellipses', function () {
 		console.log(this);
         var tr = $(this).closest('tr');
@@ -328,7 +309,7 @@
 		var dd = $(this).nextAll();
 			console.log(job._id);
 			dd.show();
-			var jobId = $('.dropDown').html().replace(/-J|[0-9]/g, job._id);
+			var jobId = $('.dropDown').html().replace(/-J|-([0-9])/g, job._id);
 			$('.dropDown').html(jobId);
 
 		$('.dropDown').mouseleave(function (){
@@ -351,8 +332,44 @@
 			$('.dropDown').on('click', 'a#edit-'+job._id.toString(), function(e) {
 				fabmoDashboard.launchApp('editor', {'job' : job._id});
 			});
- 			$('#download-'+job._id.toString()).attr({'href':'/job/' + job._id + '/file'});
+			$('#download').attr({'href':'/job/' + job._id + '/file'});
  		});
+		
+	// Add event listener further actions in queue table
+    $('#queue_table tbody').on('click', 'div.ellipses', function () {
+		console.log(this);
+        var tr = $(this).closest('tr');
+        var row = history_table.row( tr );
+		job = row.data();
+		var dd = $(this).nextAll();
+			console.log(job);
+			dd.show();
+			// var jobId = $('.dropDown').html().replace(/-J|-([0-9])/g, job._id);
+			// $('.dropDown').html(jobId);
+
+		$('.dropDown').mouseleave(function (){
+			$('.dropDown').hide();
+			$('.commentBox').hide();
+		});
+		$('td.actions-control').mouseleave(function (){
+			$('.dropDown').hide();
+			$('.commentBox').hide();
+		});
+ 			$('.dropDown').on('click', 'a#resubmit-'+job._id.toString(), function(e) {
+				fabmoDashboard.resubmitJob(job._id, function(err, result) {
+					$('#nav-pending').click();
+					refresh_jobs_list();
+				});
+			});
+			$('.dropDown').on('click', 'a#preview-'+job._id.toString(), function(e) {
+				fabmoDashboard.launchApp('previewer', {'job' : job._id});
+			});
+			$('.dropDown').on('click', 'a#edit-'+job._id.toString(), function(e) {
+				fabmoDashboard.launchApp('editor', {'job' : job._id});
+			});
+			$('#download').attr({'href':'/job/' + job._id + '/file'});
+ 	}); 
+
 
 	// Add event listener for opening and closing details
     $('#history_table tbody').on('click', 'td.details-control', function () {
@@ -374,21 +391,6 @@
  		} else {
  			job = row.data()
  			row.child( history_child_row(job) ).show();
- 			// $('#resubmit-'+job._id).click(function(e) {
-			// 	fabmoDashboard.resubmitJob(job._id, function(err, result) {
-			// 		refresh_jobs_list();
-			// 		$('#nav-pending').click();
-			// 	});
-			// });
-			// $('#preview-'+job._id).click(function(e) {
-			// 	fabmoDashboard.launchApp('previewer', {'job' : job._id});
-			// });
-			// $('#edit-'+job._id).click(function(e) {
-			// 	fabmoDashboard.launchApp('editor', {'job' : job._id});
-			// });
-
- 			// $('#download-'+job._id).attr({'href':'/job/' + job._id + '/file'});
-
 	        tr.addClass('shown');
  		}
     } );
