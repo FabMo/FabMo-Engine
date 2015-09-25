@@ -209,7 +209,7 @@
                 "className":      'actions-control',
                 "orderable":      false,
                 "data":           null,
-                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='resubmitJob' id='resubmit-1'>Resubmit Job</a></li><li><a id='download' download>Download Job</a></li></ul></div",
+                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='resubmitJob' id='resubmit-1'>Resubmit Job</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div",
             },
         ],
         "order" : [[3,"desc"]]
@@ -255,21 +255,47 @@
             defaultContent : '', 
             },    
             {
-                "className":      'preview-control',
+                "className":      'actions-control',
                 "orderable":      false,
                 "data":           null,
-                "defaultContent": ''
+                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div"
             },
         ],
         "order" : [[3,"desc"]]
     }); // DataTable
 	
 	// Add event listener for opening and closing details 
-    $('#queue_table tbody').on('click', 'td.preview-control', function () {
+    $('#queue_table tbody').on('click', 'div.ellipses', function () {
         var tr = $(this).closest('tr');
         var row = queue_table.row( tr );
         job = row.data();
- 		fabmoDashboard.launchApp('previewer', {'job' : job._id});
+		var jobId = job._id;
+		console.log(jobId);
+ 		var dd = $(this).nextAll();
+		dd.show();
+		var previewId = $('.previewJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, jobId)
+		$('.previewJob').attr('id', previewId);
+		var editId = $('.editJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, jobId)
+		$('.editJob').attr('id', editId);
+		var downloadId = $('.downloadJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, jobId)
+		$('.downloadJob').attr('id', downloadId);
+		$('.dropDown').mouseleave(function (){
+		$('.dropDown').hide();
+		$('.commentBox').hide();
+		});
+		$('td.actions-control').mouseleave(function (){
+			$('.dropDown').hide();
+			$('.commentBox').hide();
+		});
+		$('.dropDown').on('click', 'a#preview-'+jobId.toString(), function(e) {
+			fabmoDashboard.launchApp('previewer', {'job' : jobId});
+		});
+		$('.dropDown').on('click', 'a#edit-'+jobId.toString(), function(e) {
+			fabmoDashboard.launchApp('editor', {'job' : jobId});
+		});
+		$('.dropDown').on('click', 'a#download-'+jobId.toString(), function(e) {
+			$('.downloadJob').attr({'href':'/job/' + jobId + '/file'});
+		});	
     });
 
     function history_child_row(job) {
@@ -306,13 +332,14 @@
 		var dd = $(this).nextAll();
 			console.log(job._id);
 			dd.show();
-			var previewId = $('.previewJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9])$/g, job._id)
+			var previewId = $('.previewJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, job._id)
 			$('.previewJob').attr('id', previewId);
-			var editId = $('.editJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9])$/g, job._id)
+			var editId = $('.editJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, job._id)
 			$('.editJob').attr('id', editId);
-			var resubmitId = $('.resubmitJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9])$/g, job._id)
+			var resubmitId = $('.resubmitJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, job._id)
 			$('.resubmitJob').attr('id', resubmitId);
-
+			var downloadId = $('.downloadJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, job._id)
+			$('.downloadJob').attr('id', downloadId);
 		$('.dropDown').mouseleave(function (){
 			$('.dropDown').hide();
 			$('.commentBox').hide();
@@ -333,43 +360,10 @@
 			$('.dropDown').on('click', 'a#edit-'+job._id.toString(), function(e) {
 				fabmoDashboard.launchApp('editor', {'job' : job._id});
 			});
-			$('#download').attr({'href':'/job/' + job._id + '/file'});
+			$('.dropDown').on('click', 'a#download-'+job._id.toString(), function(e) {
+				$('.downloadJob').attr({'href':'/job/' + job._id + '/file'});
+			});	
  		});
-		
-	// Add event listener further actions in queue table
-    $('#queue_table tbody').on('click', 'div.ellipses', function () {
-		console.log(this);
-        var tr = $(this).closest('tr');
-        var row = history_table.row( tr );
-		job = row.data();
-		var dd = $(this).nextAll();
-			console.log(job);
-			dd.show();
-			// var jobId = $('.dropDown').html().replace(/-J|-([0-9])/g, job._id);
-			// $('.dropDown').html(jobId);
-
-		$('.dropDown').mouseleave(function (){
-			$('.dropDown').hide();
-			$('.commentBox').hide();
-		});
-		$('td.actions-control').mouseleave(function (){
-			$('.dropDown').hide();
-			$('.commentBox').hide();
-		});
- 			$('.dropDown').on('click', 'a#resubmit-'+job._id.toString(), function(e) {
-				fabmoDashboard.resubmitJob(job._id, function(err, result) {
-					$('#nav-pending').click();
-					refresh_jobs_list();
-				});
-			});
-			$('.dropDown').on('click', 'a#preview-'+job._id.toString(), function(e) {
-				fabmoDashboard.launchApp('previewer', {'job' : job._id});
-			});
-			$('.dropDown').on('click', 'a#edit-'+job._id.toString(), function(e) {
-				fabmoDashboard.launchApp('editor', {'job' : job._id});
-			});
-			$('#download').attr({'href':'/job/' + job._id + '/file'});
- 	}); 
 
 
 	// Add event listener for opening and closing details
