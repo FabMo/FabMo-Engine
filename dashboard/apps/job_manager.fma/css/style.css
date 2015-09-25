@@ -85,6 +85,13 @@ td.actions-control {
     
 }
 
+td.preview-control {
+    background: url('images/preview.png') no-repeat center center;
+    width: 80px;
+    cursor: pointer;
+    content: attr('Preview Job');
+}
+
 .ellipses {
   font-size: 1.5em;
   width: 1.7em;
@@ -106,18 +113,22 @@ td.actions-control {
 .dropDown {
   position: absolute;
   top: inherit;
+  right: 7px;
   width: 175px;
   margin-top: 3.4em;
-  transform: translatex(-8em);
   text-align: left;
   background-color: #ffffff;
   padding-top: 1.5em;
-  padding-left: 1em;
   border: 1px solid #dddddd;
   box-shadow: 0px 2px 5px -1px rgba(0,0,0,0.75);
   display: none;
   z-index: 9;
 }
+.dropDown a{
+  padding-left: 1em;
+}
+
+
 .jobActions {
   list-style: none;
   line-height: 2em;
@@ -126,18 +137,23 @@ td.actions-control {
 .commentBox{
   position: absolute;
   top: inherit;
+  right: 20px;
   width: 1em;
   height: 1em;
   margin-top: 2.9em;
   transform: translatex(2.1em);
   background-color: #ffffff;
-  -ms-transform: translateX(2.1em) rotate(45deg); /* IE 9 */
-    -webkit-transform: translateX(2.1em) rotate(45deg); /* Chrome, Safari, Opera */
-    transform: translateX(2.1em) rotate(45deg);
+  -ms-transform: rotate(45deg); /* IE 9 */
+    -webkit-transform: rotate(45deg); /* Chrome, Safari, Opera */
+    transform: rotate(45deg);
   border-top:    1px solid  #dddddd;
   border-left:   1px solid  #dddddd;
   z-index: 10;
   display: none;
+}
+
+.dropDown a:hover{
+  color: #32B433;
 }
 
 tr.shown td.details-control {

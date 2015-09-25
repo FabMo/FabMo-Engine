@@ -218,20 +218,20 @@
 	
 	// DataTable
 
-    var queue_table = $('#queue_table').DataTable( {
-    	"filter": false,
-    	"paging": false,
+  var queue_table = $('#queue_table').DataTable( {
+    "filter": false,
+    "paging": false,
         "processing": false,
         "bInfo": false,
         "bSort":false,
         "language": {
-        	"emptyTable" : "There are no pending jobs."
+        "emptyTable" : "There are no pending jobs."
         },
         "ajax": {
-        	"url" : "/jobs/queue",
-        	"dataSrc" : function(json) { 
-        		return json.data.jobs; }
-        	},
+        "url" : "/jobs/queue",
+        "dataSrc" : function(json) { 
+        return json.data.jobs; }
+        },
         "columns": [
             {
                 "className":      'details-control',
@@ -240,31 +240,38 @@
                 "defaultContent": '',
                 "visible": ''
             },
-            { 	
-            	data : "name", 
-            	defaultContent : ''
+            {
+            data : "name", 
+            defaultContent : ''
             },
             { 
-            	data : "state",
-            	defaultContent : '',
-            	render : function(state) { return '<div class="job-' + state + '">' + state + '</div>'}
+            data : "state",
+            defaultContent : '',
+            render : function(state) { return '<div class="job-' + state + '">' + state + '</div>'}
             },
             { 
-            	data : "created_at",
-            	visible : false, 
-            	defaultContent : '', 
+            data : "created_at",
+            visible : false, 
+            defaultContent : '', 
             },    
             {
-                "className":      'actions-control',
+                "className":      'preview-control',
                 "orderable":      false,
                 "data":           null,
-                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a id='preview--J'>Preview Job</a></li><li><a id='edit--J'>Edit Job</a></li><li><a id='resubmit--J'>Resubmit Job</a></li><li><a id='download' download>Download Job</a></li></ul></div",
+                "defaultContent": ''
             },
         ],
         "order" : [[3,"desc"]]
-    }); 
+    }); // DataTable
 	
-	// DataTable
+	// Add event listener for opening and closing details 
+    $('#queue_table tbody').on('click', 'td.preview-control', function () {
+        var tr = $(this).closest('tr');
+        var row = queue_table.row( tr );
+        job = row.data();
+ 		fabmoDashboard.launchApp('previewer', {'job' : job._id});
+    });
+
     function history_child_row(job) {
     	retval = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px; width: 100%;">'
     	if(job.description) {
@@ -290,17 +297,7 @@
     	return ''
     }
 
-    // 	// Add event listener for opening preview
-    // $('#history_table tbody').on('click', 'td.preview-control', function () {
-    //     var tr = $(this).closest('tr');
-    //     var row = history_table.row( tr );
-    //     job = row.data();
- 	// 	fabmoDashboard.launchApp('previewer', {'job' : job._id});
-    // } );
-	
-
-	
-		// Add event listener further actions in history table
+	// Add event listener further actions in history table
     $('#history_table tbody').on('click', 'div.ellipses', function () {
 		console.log(this);
         var tr = $(this).closest('tr');
