@@ -306,7 +306,7 @@
 		var dd = $(this).nextAll();
 			console.log(job._id);
 			dd.show();
-			var jobId = $('.dropDown').html().replace(/-J|-([0-9])/g, job._id);
+			var jobId = $('.dropDown').html().replace(/-J|^-([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, job._id);
 			$('.dropDown').html(jobId);
 
 		$('.dropDown').mouseleave(function (){
