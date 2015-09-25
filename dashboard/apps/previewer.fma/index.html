@@ -49,8 +49,15 @@
     $(document).ready(function() {
       
       $(document).foundation();
-      var viewer = new GCodeViewer.Viewer(document.getElementById("preview"),
-                100, 100, function(msg) { alert(msg); }/* , config */);
+      var viewer = new GCodeViewer.Viewer(
+        document.getElementById("preview"),
+        100, 
+        100, 
+        function(msg) { fabmoDashboard.notify('warning', msg); },
+        {
+          hideGCode : true
+        }
+      );
 
       fabmoDashboard.getAppArgs(function(err, args) {
         if('job' in args) {
