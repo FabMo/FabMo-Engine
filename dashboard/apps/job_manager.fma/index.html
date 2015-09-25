@@ -209,7 +209,7 @@
                 "className":      'actions-control',
                 "orderable":      false,
                 "data":           null,
-                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a id='preview--J'>Preview Job</a></li><li><a id='edit--J'>Edit Job</a></li><li><a id='resubmit--J'>Resubmit Job</a></li><li><a id='download' download>Download Job</a></li></ul></div",
+                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='resubmitJob' id='resubmit-1'>Resubmit Job</a></li><li><a id='download' download>Download Job</a></li></ul></div",
             },
         ],
         "order" : [[3,"desc"]]
@@ -306,8 +306,12 @@
 		var dd = $(this).nextAll();
 			console.log(job._id);
 			dd.show();
-			var jobId = $('.dropDown').html().replace(/-J|^-([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, job._id);
-			$('.dropDown').html(jobId);
+			var previewId = $('.previewJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9])$/g, job._id)
+			$('.previewJob').attr('id', previewId);
+			var editId = $('.editJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9])$/g, job._id)
+			$('.editJob').attr('id', editId);
+			var resubmitId = $('.resubmitJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9])$/g, job._id)
+			$('.resubmitJob').attr('id', resubmitId);
 
 		$('.dropDown').mouseleave(function (){
 			$('.dropDown').hide();
