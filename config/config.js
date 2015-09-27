@@ -54,7 +54,10 @@ Config.prototype.load = function(filename, callback) {
 Config.prototype.save = function(callback) {
 	if(this._loaded && this.config_file) {
 		log.debug("Saving config to " + this.config_file);
-		fs.writeFile(this.config_file, JSON.stringify(this._cache, null, 4), callback);
+		fs.writeFile(this.config_file, JSON.stringify(this._cache, null, 4), function(err, data) {
+			log.debug("Config file saved.");
+			callback(err, data);
+		});
 	} else {
 		setImmediate(callback);
 	}
