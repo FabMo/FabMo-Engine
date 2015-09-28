@@ -85,20 +85,75 @@ td.actions-control {
     
 }
 
+td.preview-control {
+    background: url('images/preview.png') no-repeat center center;
+    width: 80px;
+    cursor: pointer;
+    content: attr('Preview Job');
+}
+
 .ellipses {
   font-size: 1.5em;
   width: 1.7em;
   height: 1.7em;
+  color: #dddddd;
   vertical-align: text-top;
-  border: 1px solid #666;
+  border: 1px solid #dddddd;
   border-radius: 100%;
   line-height: 1em;
+  float: right;
 }
 
 .ellipses:hover {
- background-color: #666;
- color: #eeeeee;
+ border-color: #666;
+ color: #666;
  transition: all .1s;
+}
+
+.dropDown {
+  position: absolute;
+  top: inherit;
+  right: 7px;
+  width: 175px;
+  margin-top: 3.4em;
+  text-align: left;
+  background-color: #ffffff;
+  padding-top: 1.5em;
+  border: 1px solid #dddddd;
+  box-shadow: 0px 2px 5px -1px rgba(0,0,0,0.75);
+  display: none;
+  z-index: 9;
+}
+.dropDown a{
+  padding-left: 1em;
+}
+
+
+.jobActions {
+  list-style: none;
+  line-height: 2em;
+}
+
+.commentBox{
+  position: absolute;
+  top: inherit;
+  right: 20px;
+  width: 1em;
+  height: 1em;
+  margin-top: 2.9em;
+  transform: translatex(2.1em);
+  background-color: #ffffff;
+  -ms-transform: rotate(45deg); /* IE 9 */
+    -webkit-transform: rotate(45deg); /* Chrome, Safari, Opera */
+    transform: rotate(45deg);
+  border-top:    1px solid  #dddddd;
+  border-left:   1px solid  #dddddd;
+  z-index: 10;
+  display: none;
+}
+
+.dropDown a:hover{
+  color: #32B433;
 }
 
 tr.shown td.details-control {

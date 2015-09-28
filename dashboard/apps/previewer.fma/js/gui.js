@@ -10,11 +10,18 @@
  */
 
 //the domElement of the canvas, callbacks functions for the button
-GCodeViewer.Gui = function(domElement, callbacks) {
+GCodeViewer.Gui = function(domElement, configuration, callbacks) {
     "use strict";
     var that = this;
 
     var highlightedElt = null;
+    
+    var configuration = configuration || {};
+
+    that.hideXButton = configuration.hideXButton || false;
+    that.hideYButton = configuration.hideYButton || false;
+    that.hideZButton = configuration.hideZButton || false;
+    that.hideGCode = configuration.hideGCode || false;
 
     //Scroll the ul to the li having this line number.
     //elt is the li element in the ul
@@ -70,13 +77,16 @@ GCodeViewer.Gui = function(domElement, callbacks) {
     };
 
     //Add an image widget, set it with the id and the position.
-    function addWidget(id, x, y, src) {
+    function addWidget(id, x, y, src, hide) {
         var elt = document.createElement("img");
         elt.id = id;
         that.widgets[id] = elt;
         elt.src = src;
         elt.style.cursor = "pointer";
         elt.style.position = "absolute";
+        if(hide) {
+            elt.style.visibility = "hidden"
+        }
         elt.style.zIndex = 2;
         domElement.parentNode.appendChild(elt);
         placeWidget(id, x, y);
@@ -84,11 +94,11 @@ GCodeViewer.Gui = function(domElement, callbacks) {
 
     //Set the buttons for displaying the planes. X and Y for the first button
     function setAxesButtons(x, y, callbackX, callbackY, callbackZ) {
-        addWidget("showX", x, y, "data:image/png;base64," + GCodeViewer.xImage);
+        addWidget("showX", x, y, "data:image/png;base64," + GCodeViewer.xImage, that.hideXButton);
         y += GCodeViewer.iconSize + that.margin;
-        addWidget("showY", x, y, "data:image/png;base64," + GCodeViewer.yImage);
+        addWidget("showY", x, y, "data:image/png;base64," + GCodeViewer.yImage, that.hideYButton);
         y += GCodeViewer.iconSize + that.margin;
-        addWidget("showZ", x, y, "data:image/png;base64," + GCodeViewer.zImage);
+        addWidget("showZ", x, y, "data:image/png;base64," + GCodeViewer.zImage, that.hideZButton);
 
         that.widgets.showX.onclick = function(){
             callbackX();
@@ -183,6 +193,9 @@ GCodeViewer.Gui = function(domElement, callbacks) {
         div.style.zIndex = 2;
         div.style.background = "#ff6600";
         div.style.color = "#ffffff";
+        if(that.hideGCode) {
+            div.style.visibility = "hidden";
+        }
         domElement.parentNode.appendChild(div);
         that.widgets[id] = div;
         placeWidget("divGCode", ((domElement.width - width) / 2), y);
