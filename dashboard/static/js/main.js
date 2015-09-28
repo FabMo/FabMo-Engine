@@ -1,7 +1,6 @@
 /*
  * main.js is the entry point for the application.
  */
-
 define(function(require) {
 
 	// context is the application context
@@ -9,6 +8,16 @@ define(function(require) {
 	var context = require('context');
 	var dashboard = require('dashboard');
 
+	var $ = require('jquery');
+	var Backbone = require('backbone');
+	var underscore = require('underscore');
+
+	var FabMo = require('fabmo');
+	var FabMoUI = require('fabmo-ui');
+
+	var WheelControl = require('handwheel');
+	
+	var events = require()
 	// Allow to click more than 1 time on a link, to reload a page for example
 	allowSameRoute();
 
@@ -43,7 +52,7 @@ define(function(require) {
 				}
 			});
 			*/
-			
+
 			// Create remote machine model based on the one remote machine that we know exists (the one we're connecting to)
 			context.remoteMachines.reset([
 				new context.models.RemoteMachine({

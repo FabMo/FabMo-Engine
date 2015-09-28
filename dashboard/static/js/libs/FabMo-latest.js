@@ -1,3 +1,16 @@
+;(function (root, factory) {
+
+  /* CommonJS */
+  if (typeof module == 'object' && module.exports) module.exports = factory()
+
+  /* AMD module */
+  else if (typeof define == 'function' && define.amd) define(factory)
+
+  /* Browser global */
+  else root.FabMo = factory()
+}(this, function () {
+  "use strict"
+
 //require JQUERY
 function FabMo(ip,port) //ip and port of the tool
 {
@@ -1001,3 +1014,5 @@ FabMo.prototype.delete_macro = function(id, callback)
 	});
 };
 
+return FabMo;
+}));

@@ -1,4 +1,17 @@
-CLICK_DIST = 10;
+;(function (root, factory) {
+
+  /* CommonJS */
+  if (typeof module == 'object' && module.exports) module.exports = factory()
+
+  /* AMD module */
+  else if (typeof define == 'function' && define.amd) define(factory)
+
+  /* Browser global */
+  else root.WheelControl = factory()
+}(this, function () {
+  "use strict"
+
+var CLICK_DIST = 10;
 function dist(a,b) {
     return Math.sqrt((b.x-a.x)*(b.x-a.x) + (b.y-a.y)*(b.y-a.y));
 }
@@ -163,8 +176,8 @@ var WheelControl = function(element, options) {
 
     // Selecting a speed commits it and returns us to the handwheel/nudge control
     speedwheel.on('pos', function setSpeed(data) {
-    	speed = this.minSpeed + data.pos*(this.maxSpeed-this.minSpeed);
-    	increments = speed / this.speedIncrement;
+    	var speed = this.minSpeed + data.pos*(this.maxSpeed-this.minSpeed);
+    	var increments = speed / this.speedIncrement;
     	speed = Math.round(increments)*this.speedIncrement;
     	this.emit('speed', {'speed' : speed})
     	setTimeout(switchToHandwheel, 500);
@@ -172,10 +185,10 @@ var WheelControl = function(element, options) {
 
     // Speed selection is indicated live while dragging the speed wheel
     speedwheel.on('sweep', function updateSpeedDisplay(data) {
-    	speed = this.minSpeed + data.pos*(this.maxSpeed-this.minSpeed);
-    	increments = speed / this.speedIncrement;
+    	var speed = this.minSpeed + data.pos*(this.maxSpeed-this.minSpeed);
+    	var increments = speed / this.speedIncrement;
     	speed = Math.round(increments)*this.speedIncrement;
-    	text = speed.toFixed(this.speedDigits) + '\nin/sec';
+    	var text = speed.toFixed(this.speedDigits) + '\nin/sec';
     	speedwheel.setCenterText(text);
     	xyzwheel.setCenterText(text);
     }.bind(this));
@@ -185,7 +198,7 @@ var WheelControl = function(element, options) {
     plusnudge.on('nudge', function nudgePositive(data) {
         if(xyzwheel.activeThumb) {
             plusnudge.flash(this.ctx, xyzwheel.activeThumb.activeColor, 100);
-            axis = xyzwheel.activeThumb.label;
+            var axis = xyzwheel.activeThumb.label;
             this.emit('nudge', {'axis' : '+' + axis})
         }
     }.bind(this));
@@ -193,7 +206,7 @@ var WheelControl = function(element, options) {
     minusnudge.on('nudge', function nudgePositive(data) {
         if(xyzwheel.activeThumb) {
             minusnudge.flash(this.ctx, xyzwheel.activeThumb.activeColor, 100);
-            axis = xyzwheel.activeThumb.label;
+            var axis = xyzwheel.activeThumb.label;
             this.emit('nudge', {'axis' : '-' + axis})
         }
     }.bind(this));
@@ -234,7 +247,7 @@ WheelControl.prototype.draw = function() {
     }
 
     // Draw all the controls
-	for(i in this.controls) {
+	for(var i in this.controls) {
 		this.controls[i].draw(this.ctx);
 	}
 }
@@ -242,8 +255,8 @@ WheelControl.prototype._setupListeners = function() {
     var onMouseDown = function(evt) {
         var pos = this._getMousePos(evt);
         this.mousepos = pos;
-        for(i in this.controls) {
-            control = this.controls[i];
+        for(var i in this.controls) {
+            var control = this.controls[i];
             if(control.visible) {
                 if(control.onMouseDown(pos)) {
                     break;
@@ -261,8 +274,8 @@ WheelControl.prototype._setupListeners = function() {
 
     var onMouseUp = function(evt) {
         var pos = this._getMousePos(evt);
-        for(i in this.controls) {
-            control = this.controls[i];
+        for(var i in this.controls) {
+            var control = this.controls[i];
             if(control.visible) {
                 var claimed = false;
                 if(dist(pos, this.mousepos) < CLICK_DIST) {
@@ -286,7 +299,7 @@ WheelControl.prototype._setupListeners = function() {
     this.canvas.addEventListener('touchend', onMouseUp, false);
     
     this.canvas.addEventListener('blur', function(evt) {
-        for(i in this.controls) {
+        for(var i in this.controls) {
             this.controls[i].deactivate();
         }
         this.draw();
@@ -296,8 +309,8 @@ WheelControl.prototype._setupListeners = function() {
     
     var onMouseMove = function(evt) {
         var pos = this._getMousePos(evt);
-        for(i in this.controls) {
-            control = this.controls[i];
+        for(var i in this.controls) {
+            var control = this.controls[i];
             if(control.visible) {
                 control.onMouseMove(pos);               
             }
@@ -322,8 +335,8 @@ WheelControl.prototype.on = function(event, callback) {
 
 WheelControl.prototype.emit = function(event, data) {
 	if(event in this.listeners) {
-		for(i in this.listeners[event]) {
-			callback = this.listeners[event][i];
+		for(var i in this.listeners[event]) {
+			var callback = this.listeners[event][i];
 			callback(data);
 		}
 	}
@@ -371,8 +384,8 @@ Handwheel.prototype.on = function(event, callback) {
 
 Handwheel.prototype.emit = function(event, data) {
 	if(event in this.listeners) {
-		for(i in this.listeners[event]) {
-			callback = this.listeners[event][i];
+		for(var i in this.listeners[event]) {
+			var callback = this.listeners[event][i];
 			callback(data);
 		}
 	}
@@ -383,7 +396,7 @@ Handwheel.prototype.setCenterText = function(text) {
 }
 
 Handwheel.prototype.addThumb = function(options) {
-	thumb = {}
+	var thumb = {}
 	thumb.color = options.color || this.thumbColor;
 	thumb.label = options.label || '';
 	thumb.textColor = options.textColor || this.thumbTextColor;
@@ -409,9 +422,9 @@ Handwheel.prototype._getThumbCenters = function() {
 	var theta = this.angleOffset + this.position;
 	var dtheta = 2*Math.PI/this.thumbs.length;
 
-	retval = [];
-	for(i in this.thumbs) {
-        thumb = this.thumbs[i];
+	var retval = [];
+	for(var i in this.thumbs) {
+        var thumb = this.thumbs[i];
         retval.push({x:this.center.x + this.radius*Math.sin(theta), y:this.center.y + this.radius*Math.cos(theta)});
         theta += dtheta;
     }
@@ -419,9 +432,9 @@ Handwheel.prototype._getThumbCenters = function() {
 }
 
 Handwheel.prototype._drawThumbs = function(ctx) {
-	centers = this._getThumbCenters();
-	for(i in this.thumbs) {
-        thumb = this.thumbs[i];
+	var centers = this._getThumbCenters();
+	for(var i in this.thumbs) {
+        var thumb = this.thumbs[i];
         ctx.beginPath();
         var center = centers[i]
 
@@ -458,7 +471,7 @@ Handwheel.prototype._drawCenter = function(ctx) {
         ctx.textBaseline = 'middle';
         ctx.fillText(this.centerText, this.center.x, this.center.y);        
     } else {
-        parts = this.centerText.split('\n');
+        var parts = this.centerText.split('\n');
         var top = parts[0];
         var bot = parts[1];
 
@@ -477,9 +490,9 @@ Handwheel.prototype._drawCenter = function(ctx) {
 
 Handwheel.prototype._hitsThumb = function(pos) {
 	var centers = this._getThumbCenters();
-	for(i in this.thumbs) {
-        thumb = this.thumbs[i];
-        center = centers[i];
+	for(var i in this.thumbs) {
+        var thumb = this.thumbs[i];
+        var center = centers[i];
         if(dist(pos, center) < thumb.radius) {
         	return thumb;
         }
@@ -529,10 +542,10 @@ Handwheel.prototype.deactivate = function() {
 }
 
 Handwheel.prototype.onMouseDown = function(pos) {
-	hitThumb = this._hitsThumb(pos);
+	var hitThumb = this._hitsThumb(pos);
 
 	if(hitThumb) {
-        for(i in this.thumbs) {
+        for(var i in this.thumbs) {
             this.thumbs[i].active = false;
         }
 		this.pos = pos;
@@ -573,7 +586,7 @@ Handwheel.prototype._handleMove = function(pos) {
         var b = dist(this.center, pos);
         var c = dist(this.pos, pos);
 
-        theta = Math.acos((a*a + b*b - c*c)/(2*a*b));
+        var theta = Math.acos((a*a + b*b - c*c)/(2*a*b));
 
         var ta = Math.atan2(this.pos.x-this.center.x, this.pos.y-this.center.y);
         var tb = Math.atan2(pos.x-this.center.x, pos.y-this.center.y);
@@ -587,9 +600,9 @@ Handwheel.prototype._handleMove = function(pos) {
         }
         //dt = -dt;
         if(this.active) {
-            now = new Date().getTime();
+            var now = new Date().getTime();
             if(this.time) {
-                dtime = now - this.time;
+                var dtime = now - this.time;
                 this.position += dt;
                 var rate = Math.abs(dt/dtime);
                 this.emit('sweep', {'angle' : -dt, 'rate' : rate, 'thumb' : this.activeThumb});
@@ -659,8 +672,8 @@ Scalewheel.prototype.on = function(event, callback) {
 
 Scalewheel.prototype.emit = function(event, data) {
 	if(event in this.listeners) {
-		for(i in this.listeners[event]) {
-			callback = this.listeners[event][i];
+		for(var i in this.listeners[event]) {
+			var callback = this.listeners[event][i];
 			callback(data);
 		}
 	}
@@ -685,10 +698,10 @@ Scalewheel.prototype._drawThumb = function(ctx) {
 
     // Draw the thumb circle
     if(this.active) {
-        ctx.arc(center.x,center.y,thumb.activeRadius,0,2*Math.PI);
+        ctx.arc(center.x,center.y,this.thumbActiveRadius,0,2*Math.PI);
         ctx.fillStyle = this.thumbActiveColor;
     } else {
-        ctx.arc(center.x,center.y,thumb.radius,0,2*Math.PI);
+        ctx.arc(center.x,center.y,this.thumbRadius,0,2*Math.PI);
         ctx.fillStyle = this.thumbColor;
         ctx.fill();
     }
@@ -733,7 +746,7 @@ Scalewheel.prototype._drawCenter = function(ctx) {
         ctx.textBaseline = 'middle';
         ctx.fillText(this.centerText, this.center.x, this.center.y);        
     } else {
-        parts = this.centerText.split('\n');
+        var parts = this.centerText.split('\n');
         var top = parts[0];
         var bot = parts[1];
 
@@ -791,7 +804,7 @@ Scalewheel.prototype._handleMove = function(pos) {
         var b = dist(this.center, pos);
         var c = dist(this.pos, pos);
 
-        theta = Math.acos((a*a + b*b - c*c)/(2*a*b));
+        var theta = Math.acos((a*a + b*b - c*c)/(2*a*b));
 
         var ta = Math.atan2(this.pos.x-this.center.x, this.pos.y-this.center.y);
         var tb = Math.atan2(pos.x-this.center.x, pos.y-this.center.y);
@@ -853,11 +866,11 @@ Label.prototype.draw = function(ctx) {
 
     if(this.visible) {
         if(this.position === 'top') {
-            angle = 3.0*Math.PI/2.0;
-            textBaseline = 'top';
+            var angle = 3.0*Math.PI/2.0;
+            var textBaseline = 'top';
         } else if(this.position === 'bottom') {
-            angle = Math.PI/2.0;
-            textBaseline = 'bottom';
+            var angle = Math.PI/2.0;
+            var textBaseline = 'bottom';
         }
 
         ctx.font = this.textStyle;
@@ -936,8 +949,8 @@ Nudger.prototype.on = function(event, callback) {
 
 Nudger.prototype.emit = function(event, data) {
 	if(event in this.listeners) {
-		for(i in this.listeners[event]) {
-			callback = this.listeners[event][i];
+		for(var i in this.listeners[event]) {
+			var callback = this.listeners[event][i];
 			callback(data);
 		}
 	}
@@ -1055,3 +1068,6 @@ Nudger.prototype.draw = function(ctx) {
 	this._drawRail(ctx);
 	this._drawArrowhead(ctx);
 }
+
+return WheelControl;
+}));

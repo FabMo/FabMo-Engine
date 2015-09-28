@@ -1,3 +1,16 @@
+;(function (root, factory) {
+
+  /* CommonJS */
+  if (typeof module == 'object' && module.exports) module.exports = factory()
+
+  /* AMD module */
+  else if (typeof define == 'function' && define.amd) define(factory)
+
+  /* Browser global */
+  else root.FabMoUI = factory()
+}(this, function () {
+  "use strict"
+
 var MAX_INPUTS = 16;
 
 function FabMoUI(tool, options){
@@ -133,8 +146,8 @@ FabMoUI.prototype.statusKeypad = function(){
 };
 
 FabMoUI.prototype.updateText = function(control, txt) {
-	t = control.text();
-	v = control.val();
+	var t = control.text();
+	var v = control.val();
 	if(t != txt) {
 		control.text(txt);
 	}
@@ -384,3 +397,6 @@ FabMoUI.prototype.FileControl = function(){
 	});
 
 };
+
+return FabMoUI;
+}));

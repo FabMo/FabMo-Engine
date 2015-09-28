@@ -4,6 +4,7 @@
 define(function(require) {
 
 	var dashboard = require('dashboard');
+	var Backbone = require('backbone');
 
 	var Router = Backbone.Router.extend({
 		routes: {

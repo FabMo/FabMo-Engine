@@ -1,5 +1,5 @@
 define(function(require) {
-
+	var Backbone = require('backbone');
 	models = {}
 
 	// Model for a single app instance
@@ -35,7 +35,7 @@ define(function(require) {
 	//Model for the page content (settings / jobLists...)
 	models.Page = Backbone.Model.extend({
 		defaults:{
-			name : 'page' //Tiny Model, need a view just for displaying the name
+			name : 'page' // Tiny Model, need a view just for displaying the name
 		},
 		sync : function(method, model, option) {} // Override sync because this is a local model
 	});
