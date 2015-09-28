@@ -426,7 +426,8 @@ define(function(require) {
 		if(this.machine) {
 			this.ui.setMenuOpen();
 		}
-		resizedoc();
+		require('events').resizedoc();
+		//resizedoc();
 	}
 
 	//Close the right menu
@@ -435,7 +436,8 @@ define(function(require) {
 		if(this.machine) {
 			this.ui.setMenuClosed();
 		}
-		resizedoc();
+		require('events').resizedoc();
+		//resizedoc();
 	}
 
 	// Open and close the right menu
@@ -477,7 +479,7 @@ define(function(require) {
 
 		$(".right-small").click( function() {
 			this.keypad(true,false);
-			resizedocclick();
+			require('events').resizedocclick();
 		}.bind(this));
 	};
 

@@ -19,20 +19,11 @@
 		this.views = require('views');
 		this.Router = require('routers');
 
-		// Model Instances
-		this.remoteMachines = new this.models.RemoteMachines();
-		this.widgets = new this.models.Widgets();
-		this.page = new this.models.Page();
-
 		// View Instances
 		this.appClientView = new this.views.AppClientView({el : "#app-client-container"});
 
 		this.current_app_id = null;
 	};
-
-	ApplicationContext.prototype.openSettingsPanel = function(){
-		$('.off-canvas-wrap').foundation('offcanvas', 'show', 'offcanvas-overlap-right');
-	}
 
 	ApplicationContext.prototype.openDROPanel = function(){
 		$('.off-canvas-wrap').foundation('offcanvas', 'show', 'offcanvas-overlap-left');
@@ -44,10 +35,6 @@
 
 	ApplicationContext.prototype.closeDROPanel = function() {
 		$('.off-canvas-wrap').foundation('offcanvas', 'hide', 'offcanvas-overlap-left');
-	}
-
-	ApplicationContext.prototype.loadSettingsForms = function(machine){
-		loadDriverSettings(machine);
 	}
 
 	ApplicationContext.prototype.showModalContainer = function(name){

@@ -5,6 +5,8 @@ define(function(require) {
 		//var socket_io = require('libs/socket.io');
 		var dashboard = require('dashboard');
 
+		var io = require('socket.io');
+
 		var socket = null;
 
 		try{

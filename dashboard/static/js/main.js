@@ -1,7 +1,6 @@
 /*
  * main.js is the entry point for the application.
  */
-
 define(function(require) {
 
 	// context is the application context
@@ -9,6 +8,16 @@ define(function(require) {
 	var context = require('context');
 	var dashboard = require('dashboard');
 
+	var $ = require('jquery');
+	var Backbone = require('backbone');
+	var underscore = require('underscore');
+
+	var FabMo = require('fabmo');
+	var FabMoUI = require('fabmo-ui');
+
+	var WheelControl = require('handwheel');
+	
+	var events = require()
 	// Allow to click more than 1 time on a link, to reload a page for example
 	allowSameRoute();
 
@@ -22,6 +31,7 @@ define(function(require) {
 			//Sortable app icon (not used now, just for play !) //Disabled
 			
 			var menu_container = document.getElementById('app_menu_container');
+			/*
 			new Sortable(menu_container, {
 				group: "apps",
 				ghostClass: "sortable-ghost",
@@ -41,15 +51,7 @@ define(function(require) {
 				  }
 				}
 			});
-
-			// Create remote machine model based on the one remote machine that we know exists (the one we're connecting to)
-			context.remoteMachines.reset([
-				new context.models.RemoteMachine({
-						hostname : window.location.hostname,
-						ip : window.location.hostname,
-						port : window.location.port
-				})
-			]);
+			*/
 
 			// Create a FabMo object for the dashboard
 			dashboard.machine = new FabMo(window.location.hostname, window.location.port);
@@ -103,7 +105,8 @@ define(function(require) {
 function setupHandwheel() {
 
 	var wheel = new WheelControl('wheel', {
-		wheelSpeed : 1.0
+		wheelSpeed : 1.0,
+		labelColor : 'white'
 	});	
 
 	var SCALE = 0.030;

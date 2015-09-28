@@ -4,9 +4,9 @@
     <meta charset="utf-8" />
     <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
     <title>FabMo Dashboard</title>
-    
+
     <link rel="stylesheet" href="css/normalize.css" />
-    <link rel="stylesheet" href="css/foundation.css" />
+    <link rel="stylesheet" href="css/foundation.min.css" />
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="css/toastr.min.css" />
   </head>
@@ -137,7 +137,6 @@
               </ul>
             </div>
             <div id="handwheel" class="widget fabmo-manual-control" style="text-align: center;">
-              <span id="speedwheelLabel">Speed Adjustment</span>
               <canvas width="220" height="220" id="wheel"></canvas>
             </div>
             <ul class="off-canvas-list fabmo-status fabmo-file-control">
@@ -174,7 +173,6 @@
 
           </aside>
 
-    
           <!-- App Menu -->
           <section class="app-section">
             <div style="height:100%">
@@ -186,6 +184,7 @@
             <div id="navbar_container"></div>
             <div id="modal_container" style="display:none;"></div>
             <div id="app-client-container"></div>
+            <div id"spinner-container"></div>
             <div class="clear"></div>
           </section>
 
@@ -201,19 +200,8 @@
         <div id="modalDialogDetail"></div>        
         <a class="close-reveal-modal">&#215;</a>
       </div>
-    <script type="text/javascript" src="js/libs/jquery.js">         </script>
-    <script type="text/javascript" src="js/libs/foundation.min.js"> </script>
-    <script type="text/javascript" src="socket.io/socket.io.js">      </script>
-    <script type="text/javascript" src="js/libs/touche.js">         </script>
-    <script type="text/javascript" src="js/libs/toastr.min.js">     </script>
-    <script type="text/javascript" src="js/libs/underscore.js">     </script>
-    <script type="text/javascript" src="js/events.js">              </script>
-    <script type="text/javascript" src="js/libs/backbone.js">       </script>
-    <script type="text/javascript" src="js/libs/FabMo-latest.js">   </script>
-    <script type="text/javascript" src="js/libs/FabMoUI-latest.js"> </script>
-    <script type="text/javascript" src="js/libs/Sortable.min.js">       </script>
-    <script type="text/javascript" src="js/libs/handwheel.js">     </script>
-    <script data-main="js/app.js" src="js/libs/require.js">         </script>
 
+    <script type="text/javascript" src="js/libs/require.js"></script>
+    <script type="text/javascript" src="js/app.js"></script>
   </body>
 </html>
