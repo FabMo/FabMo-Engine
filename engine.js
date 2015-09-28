@@ -12,7 +12,6 @@ var macros = require('./macros');
 var dashboard = require('./dashboard');
 var network = require('./network');
 var updater = require('./updater');
-var mdns = require('./mdns');
 var glob = require('glob');
 
 var Engine = function() {
@@ -261,11 +260,6 @@ Engine.prototype.start = function(callback) {
             });
 
         }.bind(this),
-
-        function start_mdns(callback) {
-            mdns.start(callback);
-        }
-
         ],
 
         function(err, results) {
