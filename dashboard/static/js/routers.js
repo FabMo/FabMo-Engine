@@ -13,7 +13,6 @@ define(function(require) {
 			"refresh_machines" 	: "refresh_machines",
 			"set_machine/:id" 	: "set_machine",
 			"page/:name"		: "show_page",
-			"editor"			: "show_editor"
 		},
 		launch_app: function(id) {
 			this.context.launchApp(id, {}, function(err, data) {});
@@ -34,8 +33,6 @@ define(function(require) {
 		},
 		set_machine: function(id) {
 			machine = this.context.remoteMachines.get(id);
-			console.log("SETTING MACHINE");
-			console.log(machine.attributes);
 			ChooseBestWayToConnect(machine.attributes, function(ip, port) {
 				dashboard.machine = new FabMo(ip, port);
 				if (!dashboard.machine) {
