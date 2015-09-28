@@ -53,15 +53,6 @@ define(function(require) {
 			});
 			*/
 
-			// Create remote machine model based on the one remote machine that we know exists (the one we're connecting to)
-			context.remoteMachines.reset([
-				new context.models.RemoteMachine({
-						hostname : window.location.hostname,
-						ip : window.location.hostname,
-						port : window.location.port
-				})
-			]);
-
 			// Create a FabMo object for the dashboard
 			dashboard.machine = new FabMo(window.location.hostname, window.location.port);
 			dashboard.socket = require('websocket').SocketIO();
@@ -114,7 +105,8 @@ define(function(require) {
 function setupHandwheel() {
 
 	var wheel = new WheelControl('wheel', {
-		wheelSpeed : 1.0
+		wheelSpeed : 1.0,
+		labelColor : 'white'
 	});	
 
 	var SCALE = 0.030;

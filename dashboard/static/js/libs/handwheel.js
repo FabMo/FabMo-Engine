@@ -42,7 +42,7 @@ var WheelControl = function(element, options) {
     this.controls = [];
     this.listeners = {};
 
-    var centerTextColor = '#aaaaaa';
+    var centerTextColor = '#ffffff';
     var centerTextStyle = '18px Arial';
 
     // Wheel for moving the tool
@@ -56,7 +56,7 @@ var WheelControl = function(element, options) {
     	thumbActiveRadius : this.thumbActiveRadius,
     	angleOffset : Math.PI/3.0,
     	railStyle : 'solid',
-    	thumbActiveTextStyle : 'Arial 50px'
+    	thumbActiveTextStyle : '24px Arial'
     });
 
     xyzwheel.addThumb({
@@ -119,7 +119,7 @@ var WheelControl = function(element, options) {
 
     var handwheellabel = new  Label({
         text : 'Handwheel',
-        textColor : '#aaaaaa',
+        textColor : '#ffffff',
         center : this.center,
         position : 'bottom',
         radius : this.radius        
@@ -363,12 +363,13 @@ var Handwheel = function(options) {
 	// Thumb Styles
 	this.thumbColor = options.thumbColor || '#aaaaaa';
 	this.thumbTextColor = options.thumbTextColor || '#ffffff';
+    this.thumbTextStyle = options.thumbTextStyle || '18px Arial';
 	this.thumbActiveColor = options.thumbActiveColor || '#999999';
 	this.thumbActiveTextStyle = options.thumbActiveTextStyle || this.thumbTextStyle;
 	this.thumbActiveTextColor = options.thumbActiveTextColor || this.thumbTextColor;
 
 	this.centerTextColor = options.centerTextColor || '#000000';
-	this.centerTextStyle = options.centerTextStyle || 'Verdana 50px';
+	this.centerTextStyle = options.centerTextStyle || '50px Verdana';
 	this.centerText = options.centerText || '';
 
 	this.listeners = {};
@@ -442,16 +443,16 @@ Handwheel.prototype._drawThumbs = function(ctx) {
         if(thumb.active) {
 	        ctx.arc(center.x,center.y,thumb.activeRadius,0,2*Math.PI);
 	        ctx.fillStyle = thumb.activeColor;
-	        ctx.font = thumb.activeTextStyle;
+	        var style = thumb.activeTextStyle;
         } else {
 	        ctx.arc(center.x,center.y,thumb.radius,0,2*Math.PI);
 	        ctx.fillStyle = thumb.color;
-	        ctx.font = thumb.textStyle;
-	        ctx.fill();
+	        var style = thumb.textStyle;
         }
         ctx.fill();
 
         // Draw the thumb text
+        ctx.font = style;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = thumb.textColor;
@@ -645,6 +646,7 @@ var Scalewheel = function(options) {
 	// Thumb Styles
 	this.thumbColor = options.thumbColor || '#aaaaaa';
 	this.thumbTextColor = options.thumbTextColor || '#ffffff';
+    this.thumbTextStyle = options.thumbTextStyle || '18px Arial'
 	this.thumbActiveColor = options.thumbActiveColor || '#999999';
 	this.thumbActiveRadius = options.thumbActiveRadius || this.thumbRadius;
 
