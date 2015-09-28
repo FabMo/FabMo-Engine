@@ -360,7 +360,7 @@ var getJobFile = function(req, res, next) {
             };
             res.json(answer);                        
         } else {
-            res.setHeader('content-type', 'text/plain');
+            res.setHeader('content-type', 'applications/octet-stream');
             res.setHeader('content-disposition', 'filename="' + file.filename + '"');
             var readStream = fs.createReadStream(file.path);
             readStream.pipe(res);
