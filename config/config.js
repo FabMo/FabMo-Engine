@@ -54,7 +54,10 @@ Config.prototype.load = function(filename, callback) {
 Config.prototype.save = function(callback) {
 	if(this._loaded && this.config_file) {
 		log.debug("Saving config to " + this.config_file);
-		fs.writeFile(this.config_file, JSON.stringify(this._cache, null, 4), callback);
+		fs.writeFile(this.config_file, JSON.stringify(this._cache, null, 4), function(err, data) {
+			log.debug("Config file saved.");
+			callback(err, data);
+		});
 	} else {
 		setImmediate(callback);
 	}
@@ -66,22 +69,26 @@ Config.prototype.init = function(callback) {
 		async.series(
 		[
 			function loadDefault(callback) { this.load(this.default_config_file, callback); }.bind(this),
-			function loadUserConfig(callback) { this.load(this.config_file, function(err, data) {
-				if(err) {
-					if(err.code === "ENOENT") {
-						log.warn('Configuration file ' + this.config_file + ' not found.');
-						this._loaded = true;
-						this.save(callback);
+			function loadUserConfig(callback) { 
+				this.load(this.config_file, function(err, data) {
+					if(err) {
+						if(err.code === "ENOENT") {
+							log.warn('Configuration file ' + this.config_file + ' not found.');
+							this._loaded = true;
+							this.save(callback, true);
+						} else {
+							log.warn('Problem loading the user configuration file "' + this.config_file + '": ' + err.message);
+							this._loaded = true;
+							this.userConfigLoaded = true;
+							this.save(callback);
+						}
 					} else {
-						log.warn('Problem loading the user configuration file "' + this.config_file + '": ' + err.message);
+						this._loaded = true;
+						this.userConfigLoaded = true;
 						callback(null, this);
 					}
-				} else {
-					this._loaded = true;
-					this.userConfigLoaded = true;
-					callback(null, this);
-				}
-			}.bind(this)); }.bind(this)
+				}.bind(this)); 
+			}.bind(this)
 		],
 		function(err, results) {
 			if(err) { callback(err); }
