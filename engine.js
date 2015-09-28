@@ -12,6 +12,7 @@ var macros = require('./macros');
 var dashboard = require('./dashboard');
 var network = require('./network');
 var updater = require('./updater');
+var mdns = require('./mdns');
 var glob = require('glob');
 
 var Engine = function() {
@@ -42,8 +43,8 @@ function EngineConfigFirstTime(callback) {
 
 Engine.prototype.stop = function(callback) {
     this.machine.disconnect();
-    this.server.close();
-    this.server.io.server.close();
+    //this.server.close();
+    //this.server.io.server.close();
     callback(null);
 };
 
@@ -256,6 +257,11 @@ Engine.prototype.start = function(callback) {
             });
 
         }.bind(this),
+
+        function start_mdns(callback) {
+            mdns.start(callback);
+        }
+
         ],
 
         function(err, results) {

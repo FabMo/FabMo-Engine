@@ -1,5 +1,12 @@
 #!/bin/sh
+
+# Pull latest from repository
 git pull origin master
-rm -rf /opt/fabmo/approot
+
+# Update dependencies with npm
 npm install
-systemctl restart fabmo
+
+# Delete the app cache
+rm -rf /opt/fabmo/approot
+
+#systemctl restart fabmo

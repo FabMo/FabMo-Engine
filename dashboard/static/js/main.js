@@ -22,6 +22,7 @@ define(function(require) {
 			//Sortable app icon (not used now, just for play !) //Disabled
 			
 			var menu_container = document.getElementById('app_menu_container');
+			/*
 			new Sortable(menu_container, {
 				group: "apps",
 				ghostClass: "sortable-ghost",
@@ -41,7 +42,8 @@ define(function(require) {
 				  }
 				}
 			});
-
+			*/
+			
 			// Create remote machine model based on the one remote machine that we know exists (the one we're connecting to)
 			context.remoteMachines.reset([
 				new context.models.RemoteMachine({
