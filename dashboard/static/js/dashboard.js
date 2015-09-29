@@ -11,9 +11,6 @@ define(function(require) {
 		this.socket = null;
 		this.ui = null;
 
-		this.keyCommands();
-		this.checkDashboardSettings();
-
 		//Refresh of the tool status on the dashboard
 		this.refresh = 500; // define the tool connection refresh time (ms)
 
@@ -460,39 +457,6 @@ define(function(require) {
 		}
 	}
 
-	// React to keydown on "k" shortcut, show / hide right menu and show keypad if allowed
-	Dashboard.prototype.keyCommands = function(){
-		$(document).keydown(function(e){
-			if (e.which == 75) {
-				this.keypad(true,true);
-			}
-
-			//Development only : Run the DRO function with a callback, with "d" shortcode
-			if (e.which == 68) {
-				this.DRO(function(ev){
-					this.closeRightMenu();
-					this.notification("success","DRO Worked");
-					ev=null;
-				});
-			}
-		}.bind(this));
-
-		$(".right-small").click( function() {
-			this.keypad(true,false);
-			require('events').resizedocclick();
-		}.bind(this));
-	};
-
-	Dashboard.prototype.keypad = function(test,mouv) {
-		if (this.machine) {
-			if(this.ui.statusKeypad() && test) {
-				this.bindRightMenu(mouv);
-			}
-			else this.notification("error","KeyPad Unvailable");
-		}
-		else this.notification("warning","Please Connect to a tool");
-	};
-
 	Dashboard.prototype.notification = function(type,message) {
 		switch(type) {
 			case 'info': toastr.info(message); break;
@@ -513,83 +477,6 @@ define(function(require) {
 	Dashboard.prototype.refreshApps = function() {
 		context = require('context');
 		context.apps.fetch();
-	}
-
-	Dashboard.prototype.checkDashboardSettings = function() {
-		var s = null;
-		try {
-			var s=JSON.parse(localStorage.getItem('dashboardSettings'));
-		} catch(e) {}
-
-        if (s == null) {
-          console.info("No Settings Defined, Loading default settings");
-          //Load Default Settings into S variable
-          s={
-			"appName": {
-				"name":"DashBoard Name",
-				"value":"FabMo Dashboard",
-				"type":"text"
-			},
-			"mainColor": {
-				"name":"Main Color (top-bar...)",
-				"value":"#313366",
-				"type":"color",
-				"colors": ["#54ba4c","#313366","#dd8728","#9c210c","#444"]
-			},
-			"secondColor": {
-				"name":"Secondary color (menu...)",
-				"value":"#444",
-				"type":"color",
-				"colors": ["#54ba4c","#313366","#dd8728","#9c210c","#444"]
-			},
-			"positionBackground": {
-				"name":"Main Dashboard Color",
-				"value":"#9c210c",
-				"type":"color",
-				"colors": ["#54ba4c","#313366","#dd8728","#9c210c","#111"]
-			},
-			"positionFront": {
-				"name":"Main Dashboard Color",
-				"value":"#9c210c",
-				"type":"color",
-				"colors": ["#54ba4c","#313366","#dd8728","#9c210c","#111"]
-			},
-			"keypadBackground": {
-				"name":"Main Dashboard Color",
-				"value":"#dd8728",
-				"type":"color",
-				"colors": ["#54ba4c","#313366","#dd8728","#9c210c","#111"]
-			},
-			"keypadFront": {
-				"name":"Main Dashboard Color",
-				"value":"#9c210c",
-				"type":"color",
-				"colors": ["#54ba4c","#313366","#dd8728","#9c210c","#111"]
-			},
-			"leftMenuDefaultColapsed": {
-				"name":"Colapsed Left Menu",
-				"value":true,
-				"type":"checkbox"
-			}
-		};
-        localStorage.setItem('dashboardSettings',JSON.stringify(s));
-      }
-
-      this.updateDashboardSettings();
-	}
-
-	Dashboard.prototype.updateDashboardSettings = function() {
-		var s=JSON.parse(localStorage.getItem('dashboardSettings'));
-
-        if (s != null) {
-        	$("#dashboardName").html(s.appName.value);
-        	$("title").html(s.appName.value);
-        }
-	};
-
-	Dashboard.prototype.resetDashboardSettings = function() {
-		localStorage.setItem('dashboardSettings',null);
-		this.checkDashboardSettings();
 	}
 
 	// The dashboard is a singleton which we create here and make available as this module's export.

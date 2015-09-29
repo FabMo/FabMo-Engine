@@ -4,22 +4,19 @@
 define(function(require) {
 
 	// context is the application context
-	// dashboard is the application context, but only the parts we want the apps to see
+	// dashboard is the bridge between the application context and the apps
 	var context = require('context');
 	var dashboard = require('dashboard');
 
+	// Vendor libraries
 	var $ = require('jquery');
 	var Backbone = require('backbone');
 	var underscore = require('underscore');
 
+	// Our libraries
 	var FabMo = require('fabmo');
 	var FabMoUI = require('fabmo-ui');
-
 	var WheelControl = require('handwheel');
-	
-	var events = require()
-	// Allow to click more than 1 time on a link, to reload a page for example
-	allowSameRoute();
 
 	// Load the apps from the server
 	context.apps = new context.models.Apps();
@@ -27,31 +24,6 @@ define(function(require) {
 		success: function() {
 			// Create the menu based on the apps thus retrieved 
 			context.appMenuView = new context.views.AppMenuView({collection : context.apps, el : '#app_menu_container'});
-
-			//Sortable app icon (not used now, just for play !) //Disabled
-			
-			var menu_container = document.getElementById('app_menu_container');
-			/*
-			new Sortable(menu_container, {
-				group: "apps",
-				ghostClass: "sortable-ghost",
-				disabled: true,
-				animation: 150,
-				delay: 500,
-				store: {
-				  // Get the order of elements. Called once during initialization. //
-				  get: function (sortable) {		      
-				  	  var order = localStorage.getItem(sortable.options.group);
-				      return order ? order.split('|') : [];
-				  },
-				  // Save the order of elements. Called every time at the drag end //
-				  set: function (sortable) {
-				      var order = sortable.toArray();
-				      localStorage.setItem(sortable.options.group, order.join('|'));
-				  }
-				}
-			});
-			*/
 
 			// Create a FabMo object for the dashboard
 			dashboard.machine = new FabMo(window.location.hostname, window.location.port);
@@ -82,25 +54,26 @@ define(function(require) {
 				$('#modalDialog').foundation('reveal', 'open');
 			});
 
+			// Request a status update from the tool
 			dashboard.ui.updateStatus();
 
-			// Configure keyboard input
+			// Configure handwheel input
 			var wheel = setupHandwheel();
 
 			// Start the application
 			router = new context.Router();
 			router.setContext(context);
 
-			//dashboard.ui.on('status', function(status) {});
+			// Sort of a hack, but works OK.
+			$('#spinner').hide();
 
+			// Start backbone routing
 			Backbone.history.start();
 		}
 	});
 
 
 
-
-	//$(function () { $('.app-studio-files').jstree(); });
 
 function setupHandwheel() {
 
@@ -145,42 +118,17 @@ function setupHandwheel() {
 	});
 	return wheel;
 }
-// Functions for dispatching g-code to the tool
-function gcode(string) {
-	dashboard.machine.gcode(string,function(err,data){
-		// Maybe report an error here.
-	});
-}
 
-// Functions for dispatching g-code to the tool
-function sbp(string) {
-	dashboard.machine.sbp(string,function(err,data){
-		// Maybe report an error here
-	});
-}
-
-function addJob(job,callback){
-	dashboard.machine.send_job(job,function(err){
-		if(err){console.error(err);callback(err);return;}
-		if(callback && typeof(callback) === "function")callback(undefined);
-	});
-}
-
-function allowSameRoute(){
-	//Fix the bug that doesn't allow the user to click more than 1 time on a link
-	//Intercept the event "click" of a backbone link, then temporary set the route to "/"
-	$('a[href^="#"]').click(function(e) { router.navigate('/'); });
-}
-
+// Kill the currently running job when the modal error dialog is dismissed
 $(document).on('close.fndtn.reveal', '[data-reveal]', function (evt) {
   var modal = $(this);
   dashboard.machine.quit(function() {});
 });
 
 // Handlers for the home/probe buttons
-$('.button-zerox').click(function(e) {sbp('ZX'); });  
-$('.button-zeroy').click(function(e) {sbp('ZY'); });  
-$('.button-zeroz').click(function(e) {sbp('ZZ'); });
+$('.button-zerox').click(function(e) {dashboard.machine.sbp('ZX'); });  
+$('.button-zeroy').click(function(e) {dashboard.machine.sbp('ZY'); });  
+$('.button-zeroz').click(function(e) {dashboard.machine.sbp('ZZ'); });
 
 });
 

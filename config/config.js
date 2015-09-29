@@ -54,10 +54,33 @@ Config.prototype.load = function(filename, callback) {
 Config.prototype.save = function(callback) {
 	if(this._loaded && this.config_file) {
 		log.debug("Saving config to " + this.config_file);
+		fs.open(this.config_file, 'w', function(err, fd) {
+			var fd_for_sync = fd;
+			if(err) {
+				log.error(err);
+			} else {
+				fs.write(fd, JSON.stringify(this._cache, null, 4), function(err, written, string) {
+					if(err) {
+						log.error(err);
+						callback(err);
+					} else {
+						fs.fsync(fd, function(err) {
+							if(err) {
+								log.error(err);
+							}
+							log.debug('fsync()ed ' + this.config_file);
+							callback(err);
+						}.bind(this));
+					}
+				}.bind(this));
+			}
+		}.bind(this));
+		/*
 		fs.writeFile(this.config_file, JSON.stringify(this._cache, null, 4), function(err, data) {
 			log.debug("Config file saved.");
 			callback(err, data);
 		});
+		*/
 	} else {
 		setImmediate(callback);
 	}

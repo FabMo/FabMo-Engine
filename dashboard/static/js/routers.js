@@ -3,6 +3,8 @@
  */
 define(function(require) {
 
+	var $ = require('jquery');
+
 	var Backbone = require('backbone');
 
 	var Router = Backbone.Router.extend({
@@ -20,7 +22,11 @@ define(function(require) {
 		},
 		setContext: function(context) {
 			this.context = context;
+		},
+		initialize: function(options) {
+			$('a[href^="#"]').click(function(e) { this.navigate('/'); }.bind(this));
 		}
 	});
-	return Router;
+
+	return Router
 });
