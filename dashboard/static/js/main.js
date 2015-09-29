@@ -130,5 +130,23 @@ $('.button-zerox').click(function(e) {dashboard.machine.sbp('ZX'); });
 $('.button-zeroy').click(function(e) {dashboard.machine.sbp('ZY'); });  
 $('.button-zeroz').click(function(e) {dashboard.machine.sbp('ZZ'); });
 
+
+//Handle collapse of left screen
+	$('#icon_colapse').click(function() {
+		if ($(window).width() < 640 && !$('#left-menu').hasClass("colapsed")) {
+			$('.collapseLeft').show();
+		}
+		else {
+			$('.collapseLeft').hide();
+		}
+	});
+	
+	$('.collapseLeft').click(function(){
+		$('.collapseLeft').hide();
+		$('#left-menu').addClass("colapsed");
+		$('#widget-links-general').addClass("colapsed");
+	});
 });
+
+
 
