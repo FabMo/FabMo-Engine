@@ -55,11 +55,12 @@ Config.prototype.save = function(callback) {
 	if(this._loaded && this.config_file) {
 		log.debug("Saving config to " + this.config_file);
 		fs.open(this.config_file, 'w', function(err, fd) {
-			var fd_for_sync = fd;
 			if(err) {
 				log.error(err);
+				callback(err);
 			} else {
-				fs.write(fd, JSON.stringify(this._cache, null, 4), function(err, written, string) {
+				var cfg = new Buffer(JSON.stringify(this._cache, null, 4));
+				fs.write(fd, cfg, 0, cfg.length, 0, function(err, written, string) {
 					if(err) {
 						log.error(err);
 						callback(err);
@@ -68,6 +69,7 @@ Config.prototype.save = function(callback) {
 							if(err) {
 								log.error(err);
 							}
+							fs.closeSync(fd);
 							log.debug('fsync()ed ' + this.config_file);
 							callback(err);
 						}.bind(this));
