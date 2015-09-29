@@ -282,6 +282,18 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	background-position: center left 0.75rem;
 }
 
+.collapseLeft{
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: black;
+	opacity: 0.5;
+	z-index: 5;
+	display: none;
+}
+
 /* 
 *** Widgets Styles
 */
