@@ -126,9 +126,9 @@ $(document).on('close.fndtn.reveal', '[data-reveal]', function (evt) {
 });
 
 // Handlers for the home/probe buttons
-$('.button-zerox').click(function(e) {dashboard.machine.sbp('ZX'); });  
-$('.button-zeroy').click(function(e) {dashboard.machine.sbp('ZY'); });  
-$('.button-zeroz').click(function(e) {dashboard.machine.sbp('ZZ'); });
+$('.button-zerox').click(function(e) {dashboard.machine.sbp('ZX', function(){}); });  
+$('.button-zeroy').click(function(e) {dashboard.machine.sbp('ZY', function(){}); });  
+$('.button-zeroz').click(function(e) {dashboard.machine.sbp('ZZ', function(){}); });
 
 
 //Handle collapse of left screen
