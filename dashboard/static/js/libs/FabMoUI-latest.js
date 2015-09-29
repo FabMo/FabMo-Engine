@@ -168,18 +168,20 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		}
 	}
 
+	var unit = '??';
+	if(status.unit != null) {
+		unit = status.unit;
+	}
+
 	try {
-		var x = status.posx.toFixed(3);
-		var y = status.posy.toFixed(3);
-		var z = status.posz.toFixed(3);
+		var digits = unit === 'mm' ? 2 : 3; 
+		var x = status.posx.toFixed(digits);
+		var y = status.posy.toFixed(digits);
+		var z = status.posz.toFixed(digits);
 	} catch(e) {
 		var x = 'X.XXX'
 		var y = 'X.XXX'
 		var z = 'X.XXX'
-	}
-	var unit = '??';
-	if(status.unit != null) {
-		unit = status.unit;
 	}
 
 	that.updateText($(that.posX_selector), x);
