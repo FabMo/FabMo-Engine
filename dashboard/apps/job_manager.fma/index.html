@@ -270,7 +270,7 @@
         var row = queue_table.row( tr );
         job = row.data();
 		var jobId = job._id;
-		console.log(jobId);
+		$('.dropDownWrapper').show();//create transparent wrapper that you can click to close
  		var dd = $(this).nextAll();
 		dd.show();
 		var previewId = $('.previewJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, jobId)
@@ -279,11 +279,8 @@
 		$('.editJob').attr('id', editId);
 		var downloadId = $('.downloadJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, jobId)
 		$('.downloadJob').attr('id', downloadId);
-		$('.dropDown').mouseleave(function (){
-		$('.dropDown').hide();
-		$('.commentBox').hide();
-		});
-		$('td.actions-control').mouseleave(function (){
+		$('.dropDownWrapper').click(function (){ //clicking outside of the menu will cause it to hide
+			$('.dropDownWrapper').hide();
 			$('.dropDown').hide();
 			$('.commentBox').hide();
 		});
