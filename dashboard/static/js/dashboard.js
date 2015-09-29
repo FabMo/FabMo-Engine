@@ -395,7 +395,6 @@ define(function(require) {
 		}.bind(this));
 	}
 
-	/*** Prototypes ***/
 	Dashboard.prototype.updateStatus = function(status){
 		this._fireEvent("status", status);
 		if(this.ui) {
