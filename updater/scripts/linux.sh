@@ -5,6 +5,7 @@ git pull origin master
 
 # Update dependencies with npm
 npm install
+npm install
 
 # Delete the app cache
 rm -rf /opt/fabmo/approot

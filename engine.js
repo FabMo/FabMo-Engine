@@ -42,6 +42,8 @@ function EngineConfigFirstTime(callback) {
 
 Engine.prototype.stop = function(callback) {
     this.machine.disconnect();
+    this.machine.setState(this.machine, 'stopped');
+
     //this.server.close();
     //this.server.io.server.close();
     callback(null);

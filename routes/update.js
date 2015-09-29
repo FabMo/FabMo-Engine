@@ -24,12 +24,10 @@ var doUpdate = function(req, res, next) {
 		data : null
 	}
 	res.json(answer);
-	updater.updateEngine(function() {
-		
-	});
+	updater.updateEngine(function() {});
 };
 
 module.exports = function(server) {
 	server.get('/version',getVersion); //OK
-	server.get('/update', doUpdate);
+	server.post('/update', doUpdate);
 };
