@@ -46,7 +46,8 @@ Engine.prototype.setTime = function(obj) {
         this.time_synced = true;
         var d = new Date(obj.utc);
         log.debug("Setting the time to " + d.toUTCString());
-        cmd = 'timedatectl set-time ' + d.toUTCString() + '; timedatectl';
+        var t = d.getUTCFullYear() + '-' + d.getUTCMonth() + '-' + d.getUTCDay() + ' ' + d.getUTCHours() + ':' + d.getUTCMinutes() + ':' + d.getUTCSeconds()
+	cmd = 'timedatectl set-time ' + t + '; timedatectl';
         util.doshell(cmd, function(stdout) {
             console.log(stdout);
         });
