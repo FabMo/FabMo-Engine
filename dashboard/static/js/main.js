@@ -130,5 +130,9 @@ $('.button-zerox').click(function(e) {dashboard.machine.sbp('ZX', function(){});
 $('.button-zeroy').click(function(e) {dashboard.machine.sbp('ZY', function(){}); });  
 $('.button-zeroz').click(function(e) {dashboard.machine.sbp('ZZ', function(){}); });
 
+$.post('/time', {
+	'utc' : new Date().toUTCString()
+});
+
 });
 

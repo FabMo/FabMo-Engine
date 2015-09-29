@@ -16,6 +16,7 @@ var glob = require('glob');
 
 var Engine = function() {
     this.version = null;
+    this.time_synced = false;
 };
 
 function EngineConfigFirstTime(callback) {
@@ -39,6 +40,18 @@ function EngineConfigFirstTime(callback) {
         break;
     }
 };
+
+Engine.prototype.setTime = function(obj) {
+    if(!this.time_synced) {
+        this.time_synced = true;
+        var d = new Date(obj.utc);
+        log.debug("Setting the time to " + d.toUTCString());
+        cmd = 'timedatectl set-time ' + d.toUTCString() + '; timedatectl';
+        util.doshell(cmd, function(stdout) {
+            console.log(stdout);
+        });
+    }
+}
 
 Engine.prototype.stop = function(callback) {
     this.machine.disconnect();
