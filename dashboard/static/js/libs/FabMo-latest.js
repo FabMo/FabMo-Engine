@@ -573,8 +573,8 @@ FabMo.prototype.add_job =  function(formdata,callback)
 		formData = formdata;
 	} 
 	else {
-		content = formdata.data || '';
-		filename = formdata.config.filename || 'job.nc';
+		var content = formdata.data || '';
+		var filename = formdata.config.filename || 'job.nc';
 		formData = new FormData();
 		file = new Blob([content], {type : "text/plain"});
 		formData.append('file', file, filename);
