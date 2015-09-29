@@ -106,7 +106,7 @@
 	  <div id="currentfile" class="code-area">This is where the currently running job goes</div>
 	  </section>
   </div>
-
+  <div class="dropDownWrapper"></div>
 </div>
 
   <!-- Javascript inclusions -->
@@ -209,7 +209,7 @@
                 "className":      'actions-control',
                 "orderable":      false,
                 "data":           null,
-                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='resubmitJob' id='resubmit-1'>Resubmit Job</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div",
+                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='resubmitJob' id='resubmit'>Resubmit Job</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div",
             },
         ],
         "order" : [[3,"desc"]]
@@ -329,6 +329,7 @@
         var tr = $(this).closest('tr');
         var row = history_table.row( tr );
 		job = row.data();
+		$('.dropDownWrapper').show();//create transparent wrapper that you can click to close
 		var dd = $(this).nextAll();
 			console.log(job._id);
 			dd.show();
@@ -340,15 +341,13 @@
 			$('.resubmitJob').attr('id', resubmitId);
 			var downloadId = $('.downloadJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, job._id)
 			$('.downloadJob').attr('id', downloadId);
-		$('.dropDown').mouseleave(function (){
+		$('.dropDownWrapper').click(function (){ //clicking outside of the menu will cause it to hide
+			$('.dropDownWrapper').hide();
 			$('.dropDown').hide();
 			$('.commentBox').hide();
 		});
-		$('td.actions-control').mouseleave(function (){
-			$('.dropDown').hide();
-			$('.commentBox').hide();
-		});
- 			$('.dropDown').on('click', 'a#resubmit-'+job._id.toString(), function(e) {
+ 			$('.dropDown').on('click', 'a#resubmit', function(e) {
+				 
 				fabmoDashboard.resubmitJob(job._id, function(err, result) {
 					$('#nav-pending').click();
 					refresh_jobs_list();

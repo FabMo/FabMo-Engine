@@ -155,7 +155,15 @@ td.preview-control {
 .dropDown a:hover{
   color: #32B433;
 }
-
+.dropDownWrapper{
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 8;
+  display: none;
+}
 tr.shown td.details-control {
     background: url('images/details_close.png') no-repeat center center;
     width: 40px;
