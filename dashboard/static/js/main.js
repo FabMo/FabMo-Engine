@@ -135,7 +135,6 @@ $('.button-zeroz').click(function(e) {dashboard.machine.sbp('ZZ', function(){});
 	$('#icon_colapse').click(function() {
 		if ($(window).width() < 640 && $('#widget-links-general').hasClass("colapsed")) {
 			$('.collapseLeft').show();
-			console.log('you');
 		}
 		else {
 			$('.collapseLeft').hide();
