@@ -133,7 +133,7 @@ $('.button-zeroz').click(function(e) {dashboard.machine.sbp('ZZ', function(){});
 
 //Handle collapse of left screen
 	$('#icon_colapse').click(function() {
-		if ($(window).width() < 640 && $('#widget-links-general').hasClass("colapsed")) {
+		if ($(window).width() < 640 && $('#left-menu').width() < 210) {
 			$('.collapseLeft').show();
 		}
 		else {
