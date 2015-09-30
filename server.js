@@ -8,3 +8,4 @@ engine.start(function(err, data) {
 	}
 });
 
+exports.engine = engine;
