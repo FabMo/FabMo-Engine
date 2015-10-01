@@ -57,7 +57,20 @@ define(function(require) {
 			$(".main-section").width() - ($(".main-section").width() % 132 )
 		);
 	};
-
+	
+	/////control for footer/////
+	$('.footTab').click(function(){
+		if ($('.footBar').height() === 0) {
+			$('.footBar').css('height', '50px');
+		}
+		else {
+			$('.footBar').css('height', '.0px');
+		}
+	});
+	
+	window.setInterval(function(){
+   		$('.stopJob').toggleClass('blink');
+	}, 500);
 
 	var colapseMenu = function() {
 		//L & R = width of left & right menus
@@ -67,8 +80,8 @@ define(function(require) {
 			$("#widget-links-general").removeClass("colapsed");
 			$("#left-menu").removeClass("colapsed");
 			l=parseInt($("#left-menu").css("width"))+1; //Save left menu size
-			if ($("body").width()/parseFloat($("body").css("font-size"))) {
-				$('#close_menu').css('display', 'block'); // show tinted screen to close menu
+			if ($("body").width()<640) {
+				$('.collapseLeft').show(); // show tinted screen to close menu
 			}
 		}
 
@@ -79,10 +92,16 @@ define(function(require) {
 			$("#app_menu_container").css("width",
 				$(".main-section").width() - ($(".main-section").width() % 132 )
 			);
-			$('#close_menu').css('display', 'none');	
+			$('.collapseLeft').hide();
 			l=parseInt($("#left-menu").css("width"))+1; //Save left menu size		
 		}
-
+		//Handle collapse of left 
+		$('.collapseLeft').click(function(){
+			$('.collapseLeft').hide();
+			$('#left-menu').addClass("colapsed");
+			$('#widget-links-general').addClass("colapsed");
+		});
+			
 		//As the size of document change, we call this function to ajust main div & app container size
 		//resizedoc();
 			//If wide screen and Right menu
@@ -164,6 +183,8 @@ define(function(require) {
 			return false; //Override the action of the button, so the user is not redirected to another page (no data lost)
 		});
 	});
+	
+	
 
 	return {
 		'resizedocclick' : resizedocclick,

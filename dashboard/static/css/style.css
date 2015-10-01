@@ -916,6 +916,67 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	/* auto margins center the apps, but make them jump when the DRO is displayed (ick) */
 }
 
+
+.footBar {
+	position: fixed;
+	bottom: 0;
+	width: 100%;
+	height: 0px;
+	background-color: #333333;
+	z-index: 1006;
+	display: block;
+	transition: all 0.3s;
+	box-shadow: 0px -2px 15px -6px rgba(0,0,0,0.75);
+}
+
+.footTab {
+	position: relative;
+	top: -16.2px;
+	width: 100px;
+	margin-left: auto;
+	margin-right: auto;
+	height: auto;
+	background-color: #FDFDFD;
+	display: block;
+	padding-top: 0.1em;
+	padding-bottom: 0.1em;
+	border-radius: 2px;
+	border: 1px solid #CCCCCC;
+
+}
+
+.footTab hr {
+	width: 80%;
+	margin-top: 0.2em;
+	margin-bottom: 0.2em;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.stopJob {
+	position: relative;
+	top: -11px;
+	text-align: center;
+	width: 150px;
+	margin-left: auto;
+	margin-right: auto;
+	border-radius: 28px;
+	font-family: Arial;
+	color: #ffffff;
+	font-size: 17px;
+	background: #ff0000;
+	padding: 3.5px 50px 3.5px 50px;
+	border: solid #A60000 4px;
+	text-decoration: none;
+	transition: all 1s;
+}
+
+.stopJob.blink{
+	background-color: #A60000;
+	border: solid #ff0000 4px;
+	transition: all 1s;
+}
+
 /* ********** Page (#modal_container) container ********** */
 #modal_container {
 	padding: 10px 20px;
