@@ -955,12 +955,13 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .stopJob {
 	position: relative;
+	display: block;
 	top: -11px;
 	text-align: center;
 	width: 150px;
 	margin-left: auto;
 	margin-right: auto;
-	border-radius: 28px;
+	border-radius: 10px;
 	font-family: Arial;
 	color: #ffffff;
 	font-size: 17px;
@@ -975,6 +976,100 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	background-color: #A60000;
 	border: solid #ff0000 4px;
 	transition: all 1s;
+}
+
+ul#loadbar {
+    list-style: none;
+    width: 140px;
+    margin: 0 auto;
+    margin-top: -5.5px;
+    padding-bottom: 75px;
+	float: right;
+	display: none;
+}
+
+ul#loadbar li {
+    float: left;
+    position: relative;
+    width: 11px;
+    height: 28px;
+    margin-left: 1px;
+    border-left: 1px solid #111;
+    border-top: 1px solid #111;
+    border-right: 1px solid #333;
+    border-bottom: 1px solid #333;
+    background: #000;
+}
+
+ul#loadbar li:first-child {
+    margin-left: 0;
+}
+
+.bar {
+    background-color: #5DA423;
+    background-image: -moz-linear-gradient(45deg, #509319 25%, #7CEA23);
+    background-image: -webkit-linear-gradient(45deg, #509319 25%, #7CEA23);
+    width: 10px;
+    height: 26px;
+    opacity: 0;
+}
+
+#layerFill1 {
+
+}
+
+#layerFill2 {
+
+}
+
+#layerFill3 {
+
+}
+
+#layerFill4 {
+
+}
+
+#layerFill5 {
+
+}
+
+#layerFill6 {
+
+}
+
+#layerFill7 {
+
+}
+
+#layerFill8 {
+
+}
+
+#layerFill9 {
+
+}
+
+#layerFill10 {
+
+}
+
+@-moz-keyframes fill {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    };
+}
+
+@-webkit-keyframes fill {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    };
 }
 
 /* ********** Page (#modal_container) container ********** */
