@@ -420,6 +420,7 @@
 	});
 
 	fabmoDashboard.on('status', function(status) {
+		/*
 		var jobid;
 		try {
 			jobid = status.job._id || null;
@@ -461,17 +462,13 @@
 			linediv = $($('#currentfile').children()[line-1])
 			linediv.addClass('active-line');
 			prev_line = line
-			/*
-			$('html, body').animate({
-        	scrollTop: linediv.offset().top - window.innerHeight/2.0
-    		}, 100);
-			*/
 		} else {
 			if(prev_line) {
 				$($('#currentfile').children()[prev_line-1]).removeClass('active-line');
 				prev_line = 0;
 			}
 		}
+		*/
 	});
 	fabmoDashboard.requestStatus(function(err, data) {});
 
