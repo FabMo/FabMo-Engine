@@ -241,6 +241,9 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	else {
 		$(that.file_info_div_selector).addClass('hide');
 		$('#loadbar').hide();
+		$('.bar').css('-webkit-animation', '');
+		$('.bar').css('-moz-animation', '');
+		
 		$(that.filename_selector).empty();
 		$(that.progress_selector).empty();
 	}
