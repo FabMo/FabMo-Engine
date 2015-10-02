@@ -49,7 +49,6 @@ function FabMoUI(tool, options){
 	this.keypad_div_selector = '.fabmo-'+this.prefix+'keypad';
 	this.file_control_selector = '.fabmo-'+this.prefix+'file-control';
 
-
 	this.posX_selector = this.status_div_selector + ' .posx';
 	this.posY_selector = this.status_div_selector + ' .posy';
 	this.posZ_selector = this.status_div_selector + ' .posz';
@@ -63,7 +62,6 @@ function FabMoUI(tool, options){
 	this.stop_button_selector = this.file_control_selector + ' .fabmo-stop-button';
 	this.resume_button_selector = this.file_control_selector + ' .fabmo-resume-button';
 	this.pause_button_selector = this.file_control_selector + ' .fabmo-pause-button';
-
 
 	this.plusX_button_selector = this.keypad_div_selector + ' .button-plus-X';
 	this.minusX_button_selector = this.keypad_div_selector + ' .button-minus-X';
@@ -192,14 +190,57 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	//Current File or job
 	if(status.job) {
 		console.log("there is a job")
+		$('#loadbar').show();
 		$(that.file_info_div_selector).removeClass('hide');
 		console.log(status.job);
 		$(that.filename_selector).html(status.job.name);
 		var prog = ((status.line/status.nb_lines)*100).toFixed(2);
 		$(that.progress_selector).css("width",prog.toString() + "%");
+		console.log(prog);
+		if(prog >= 10) {
+			$('#layerFill1').css('-webkit-animation', 'fill .5s linear forwards')
+			$('#layerFill1').css('-moz-animation', 'fill .5s linear forwards')
+		}
+		if(prog >= 20) {
+			$('#layerFill2').css('-webkit-animation', 'fill .5s linear forwards')
+			$('#layerFill2').css('-moz-animation', 'fill .5s linear forwards')
+		}
+		if(prog >= 30) {
+			$('#layerFill3').css('-webkit-animation', 'fill .5s linear forwards')
+			$('#layerFill3').css('-moz-animation', 'fill .5s linear forwards')
+		}
+		if(prog >= 40) {
+			$('#layerFill4').css('-webkit-animation', 'fill .5s linear forwards')
+			$('#layerFill4').css('-moz-animation', 'fill .5s linear forwards')
+		}
+		if(prog >= 50) {
+			$('#layerFill5').css('-webkit-animation', 'fill .5s linear forwards')
+			$('#layerFill5').css('-moz-animation', 'fill .5s linear forwards')
+		}
+		if(prog >= 60) {
+			$('#layerFill6').css('-webkit-animation', 'fill .5s linear forwards')
+			$('#layerFill6').css('-moz-animation', 'fill .5s linear forwards')
+		}
+		if(prog >= 70) {
+			$('#layerFill7').css('-webkit-animation', 'fill .5s linear forwards')
+			$('#layerFill7').css('-moz-animation', 'fill .5s linear forwards')
+		}
+		if(prog >= 80) {
+			$('#layerFill8').css('-webkit-animation', 'fill .5s linear forwards')
+			$('#layerFill8').css('-moz-animation', 'fill .5s linear forwards')
+		}
+		if(prog >= 90) {
+			$('#layerFill9').css('-webkit-animation', 'fill .5s linear forwards')
+			$('#layerFill9').css('-moz-animation', 'fill .5s linear forwards')
+		}
+		if(prog >= 99) {
+			$('#layerFill10').css('-webkit-animation', 'fill .5s linear forwards')
+			$('#layerFill10').css('-moz-animation', 'fill .5s linear forwards')
+		}
 	}
 	else {
 		$(that.file_info_div_selector).addClass('hide');
+		$('#loadbar').hide();
 		$(that.filename_selector).empty();
 		$(that.progress_selector).empty();
 	}
@@ -390,14 +431,15 @@ FabMoUI.prototype.FileControl = function(){
 	var that = this;
 	$(that.pause_button_selector).click(function(e) {
 		that.tool.pause(function(){});
+		
 	});
 	$(that.resume_button_selector).click(function(e) {
 		that.tool.resume(function(){});
+		console.log(that.stop_button_selector);
 	});
 	$(that.stop_button_selector).click(function(e) {
 		that.tool.quit(function(){});
 	});
-
 };
 
 return FabMoUI;

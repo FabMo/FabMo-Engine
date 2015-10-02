@@ -70,8 +70,8 @@ define(function(require) {
 	
 	window.setInterval(function(){
    		$('.stopJob').toggleClass('blink');
-	}, 500);
-
+	}, 1000);
+	
 	var colapseMenu = function() {
 		//L & R = width of left & right menus
 		var l=0; var r=0;

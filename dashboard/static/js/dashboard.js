@@ -110,6 +110,18 @@ define(function(require) {
 			this.closeRightMenu() 
 			callback(null)
 		}.bind(this));
+		
+				// Show the DRO
+		this._registerHandler('showFooter', function(data, callback) { 
+			this.openFooter();
+			callback(null);
+		}.bind(this));
+
+		// Hide the DRO
+		this._registerHandler('hideFooter', function() { 
+			this.closeFooter() 
+			callback(null)
+		}.bind(this));
 
 		// Show a notification
 		this._registerHandler('notification', function(data,callback) { 
@@ -434,6 +446,15 @@ define(function(require) {
 		}
 		require('events').resizedoc();
 		//resizedoc();
+	}
+	//Open Footer
+	Dashboard.prototype.openFooter = function() {
+		$('.footBar').css('height', '50px');
+	}
+	
+	//Close Footer
+	Dashboard.prototype.closeFooter = function() {
+		$('.footBar').css('height', '0px');
 	}
 
 	// Open and close the right menu

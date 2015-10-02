@@ -212,6 +212,13 @@ FabMoDashboard.prototype.hideDRO = function(callback) {
 	this._call("hideDRO", null, callback);
 }
 
+FabMoDashboard.prototype.showFooter = function(callback) {
+	this._call("showFooter", null, callback);
+}
+
+FabMoDashboard.prototype.hideFooter = function(callback) {
+	this._call("hideFooter", null, callback);
+}
 
 FabMoDashboard.prototype.notification = function(type,message,callback) {
 	this._call("notification", {'type':type,'message':message}, callback);
