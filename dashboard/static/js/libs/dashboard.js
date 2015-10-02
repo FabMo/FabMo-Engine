@@ -4,6 +4,7 @@ var FabMoDashboard = function() {
 	this.window = window;
 	this._id = 0;
 	this._handlers = {};
+	this.status = {};
 	this._event_listeners = {
 		'status' : []
 	};
