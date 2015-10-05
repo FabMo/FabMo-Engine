@@ -1014,44 +1014,12 @@ ul#loadbar li:first-child {
     opacity: 0;
 }
 
-#layerFill1 {
-
-}
-
-#layerFill2 {
-
-}
-
-#layerFill3 {
-
-}
-
-#layerFill4 {
-
-}
-
-#layerFill5 {
-
-}
-
-#layerFill6 {
-
-}
-
-#layerFill7 {
-
-}
-
-#layerFill8 {
-
-}
-
-#layerFill9 {
-
-}
-
-#layerFill10 {
-
+.currentJobTitle {
+	color: #F0F0F0;
+	font-family: 'source_sans_proextralight';
+	padding-left: 1em;
+	margin-top: -5px;
+	float: left;
 }
 
 @-moz-keyframes fill {

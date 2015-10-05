@@ -193,10 +193,10 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$('#loadbar').show();
 		$(that.file_info_div_selector).removeClass('hide');
 		console.log(status.job);
+		$('.currentJobTitle').text(status.job.name);
 		$(that.filename_selector).html(status.job.name);
 		var prog = ((status.line/status.nb_lines)*100).toFixed(2);
 		$(that.progress_selector).css("width",prog.toString() + "%");
-		console.log(prog);
 		if(prog >= 10) {
 			$('#layerFill1').css('-webkit-animation', 'fill .5s linear forwards')
 			$('#layerFill1').css('-moz-animation', 'fill .5s linear forwards')
@@ -241,11 +241,13 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	else {
 		$(that.file_info_div_selector).addClass('hide');
 		$('#loadbar').hide();
+		
 		$('.bar').css('-webkit-animation', '');
 		$('.bar').css('-moz-animation', '');
 		
 		$(that.filename_selector).empty();
 		$(that.progress_selector).empty();
+		$('.currentJobTitle').text('');
 	}
 
 	for(var i=1; i<MAX_INPUTS+1; i++) {

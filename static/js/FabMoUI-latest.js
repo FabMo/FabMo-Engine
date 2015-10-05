@@ -31,6 +31,7 @@ function FabMoUI(tool, options){
 	this.keypad_div_selector = '.fabmo-'+this.prefix+'keypad';
 	this.file_control_selector = '.fabmo-'+this.prefix+'file-control';
 
+
 	this.posX_selector = this.status_div_selector + ' .posx';
 	this.posY_selector = this.status_div_selector + ' .posy';
 	this.posZ_selector = this.status_div_selector + ' .posz';
@@ -43,7 +44,7 @@ function FabMoUI(tool, options){
 	this.stop_button_selector = this.file_control_selector + ' .fabmo-stop-button'
 	this.resume_button_selector = this.file_control_selector + ' .fabmo-resume-button';
 	this.pause_button_selector = this.file_control_selector + ' .fabmo-pause-button';
-	this.new_stop_selector = this.file_control_selector + ' .stopJob';
+
 
 	this.plusX_button_selector = this.keypad_div_selector + ' .button-plus-X';
 	this.minusX_button_selector = this.keypad_div_selector + ' .button-minus-X';
@@ -401,7 +402,6 @@ FabMoUI.prototype.FileControl = function(){
 	var that = this;
 	$(that.pause_button_selector).click(function(e) {
 		that.tool.pause(function(){});
-		console.log(that.new_stop_selector)
 	});
 	$(that.resume_button_selector).click(function(e) {
 		that.tool.resume(function(){});
@@ -409,7 +409,6 @@ FabMoUI.prototype.FileControl = function(){
 	$(that.stop_button_selector).click(function(e) {
 		that.tool.quit(function(){});
 	});
-
 }
 
 FabMoUI.prototype.on = function(event, callback) {
