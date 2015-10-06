@@ -189,8 +189,9 @@ FabMoUI.prototype.updateStatusContent = function(status){
 
 	//Current File or job
 	if(status.job) {
-		console.log("there is a job")
+console.log("there is a job")
 		$('#loadbar').show();
+		$('.startNextContainer').hide();
 		$(that.file_info_div_selector).removeClass('hide');
 		console.log(status.job);
 		$('.currentJobTitle').text(status.job.name);
@@ -241,10 +242,9 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	else {
 		$(that.file_info_div_selector).addClass('hide');
 		$('#loadbar').hide();
-		
+		$('.startNextContainer').show();
 		$('.bar').css('-webkit-animation', '');
 		$('.bar').css('-moz-animation', '');
-		
 		$(that.filename_selector).empty();
 		$(that.progress_selector).empty();
 		$('.currentJobTitle').text('');

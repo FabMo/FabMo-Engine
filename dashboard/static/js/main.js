@@ -130,7 +130,10 @@ $('.button-zerox').click(function(e) {dashboard.machine.sbp('ZX', function(){});
 $('.button-zeroy').click(function(e) {dashboard.machine.sbp('ZY', function(){}); });  
 $('.button-zeroz').click(function(e) {dashboard.machine.sbp('ZZ', function(){}); });
 
-
+$('.playContainer').on('click', function(e){
+	console.log("this is running");
+	console.log(dashboard.machine.list_jobs_in_queue(function(){}));
+});
 
 $.post('/time', {
 	'utc' : new Date().toUTCString()
