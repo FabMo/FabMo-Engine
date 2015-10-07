@@ -1042,7 +1042,7 @@ ul#loadbar li:first-child {
 	float: left;
 }
 .startNextContainer {
-	width: 70%;
+	width: 100%;
 	margin-top: -5.5px;
 	margin-left: auto;
 	margin-right: auto;
@@ -1093,11 +1093,31 @@ ul#loadbar li:first-child {
 	border-bottom: 10px solid transparent;
 	border-left: 15px solid #F0F0F0;
 	overflow: visible;
-	transition: all .5s;
+
 }
-.play:hover{
+
+.playContainer:hover .play{
 	border-left: 15px solid #5DA423;
 }
+
+.gotoJobManager {
+	font-size: 1.5em;
+	color: #F0F0F0;
+	display: none;
+	position: relative;
+	top: 2px;
+	text-align: center;
+	text-decoration: none;
+}
+
+.playContainer:hover .gotoJobManager {
+	color: #5DA423;
+}
+
+.gotoJobManager:visited{
+	color: #F0F0F0;
+}
+
 /* ********** Page (#modal_container) container ********** */
 #modal_container {
 	padding: 10px 20px;
