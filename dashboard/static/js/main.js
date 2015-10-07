@@ -141,7 +141,6 @@ $('.play').on('click', function(e){
 		dashboard.machine.list_jobs_in_queue(function (err, data){
 			if (data.name == 'undefined' || data.length === 0) {
 				$('.nextJob').text('No Job Pending');
-				$("#main").removeClass("offcanvas-overlap-left");
 				$('.play').hide();
 				$('.gotoJobManager').show();
 				$('.nextJob').css('top', '2px');
@@ -159,7 +158,6 @@ $('.footTab').on('click', function(e){
 	dashboard.machine.list_jobs_in_queue(function (err, data){
 			if (data.name == 'undefined' || data.length === 0) {
 				$('.nextJob').text('No Job Pending');
-				$("#main").removeClass("offcanvas-overlap-left");
 				$('.play').hide();
 				$('.gotoJobManager').show();
 				$('.nextJob').css('top', '2px');
@@ -169,6 +167,8 @@ $('.footTab').on('click', function(e){
 				$('.nextJob').text(data[0].name);
 				$('.play').show();
 				$('.gotoJobManager').hide();
+				$('.nextJob').css('top', '-9.5px');
+				$('.startnextLabel').css('top', '-9.5px');
 			}
 	});
 });
