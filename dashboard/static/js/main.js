@@ -19,6 +19,7 @@ define(function(require) {
 	var WheelControl = require('handwheel');
 
 	// Load the apps from the server
+	dashboard.ui= new FabMoUI(dashboard.machine);
 	context.apps = new context.models.Apps();
 	context.apps.fetch({
 		success: function() {
@@ -152,28 +153,24 @@ $('.play').on('click', function(e){
 	});
 });
 
-
-$('.footTab').on('click', function(e){
-	
+dashboard.ui.on('status', function(status) {
+	console.log('cool yo');
 	dashboard.machine.list_jobs_in_queue(function (err, data){
-			if (data.name == 'undefined' || data.length === 0) {
-				$('.nextJob').text('No Job Pending');
-				$('.play').hide();
-				$('.gotoJobManager').show();
-				$('.nextJob').css('top', '2px');
-				$('.startnextLabel').css('top', '2px');
-			} else {
-				$('.nextJob').text(data[0].name);
-				$('.play').show();
-				$('.gotoJobManager').hide();
-				$('.nextJob').css('top', '-9.5px');
-				$('.startnextLabel').css('top', '-9.5px');
-			}
-	});
+		if (data.name == 'undefined' || data.length === 0) {
+			$('.nextJob').text('No Job Pending');
+			$('.play').hide();
+			$('.gotoJobManager').show();
+			$('.nextJob').css('top', '2px');
+			$('.startnextLabel').css('top', '2px');
+		} else {
+			$('.nextJob').text(data[0].name);
+			$('.play').show();
+			$('.gotoJobManager').hide();
+			$('.nextJob').css('top', '-9.5px');
+			$('.startnextLabel').css('top', '-9.5px');
+		}
 });
-dashboard.ui= new FabMoUI(dashboard.machine);
-dashboard.ui.on('status', function(data) {
-	console.log(status);
+
 });
 
 
