@@ -398,7 +398,8 @@
 	$('.zeroy-button').click(function(e) {gcode('G28.3 Y0'); });  
 	$('.zeroz-button').click(function(e) {gcode('G28.3 Z0'); });  
 
-	$('.run-next').click(function(e) { 
+	$('.run-next').click(function(e) {
+		console.log("this is running");
 		tool.job_run(function(err, result) {
 			refresh_jobs_list();
 		});
