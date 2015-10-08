@@ -163,7 +163,6 @@ $('.footTab').on('click', function(e){
 				$('.nextJob').css('top', '2px');
 				$('.startnextLabel').css('top', '2px');
 			} else {
-				console.log(data);
 				$('.nextJob').text(data[0].name);
 				$('.play').show();
 				$('.gotoJobManager').hide();
@@ -172,6 +171,12 @@ $('.footTab').on('click', function(e){
 			}
 	});
 });
+dashboard.ui= new FabMoUI(dashboard.machine);
+dashboard.ui.on('status', function(data) {
+	console.log(status);
+});
+
+
 
 $.post('/time', {
 	'utc' : new Date().toUTCString()
