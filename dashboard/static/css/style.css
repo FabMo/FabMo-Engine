@@ -946,7 +946,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .footTab hr {
-	width: 80%;
+	width: 90%;
 	margin-top: 0.2em;
 	margin-bottom: 0.2em;
 	margin-left: auto;
@@ -981,7 +981,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .percentComplete {
 	float: right;
 	margin-top: -5px;
-	margin-right: 10px;
+	margin-right: 25px;
 	display: none;
 }
 
