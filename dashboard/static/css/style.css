@@ -978,6 +978,13 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	transition: all 1s;
 }
 
+.percentComplete {
+	float: right;
+	margin-top: -5px;
+	margin-right: 10px;
+	display: none;
+}
+
 ul#loadbar {
     list-style: none;
     width: 140px;
@@ -1034,6 +1041,7 @@ ul#loadbar li:first-child {
     };
 }
 
+
 .currentJobTitle {
 	color: #F0F0F0;
 	font-family: 'source_sans_proextralight';
@@ -1079,7 +1087,7 @@ ul#loadbar li:first-child {
 	display: inline-block;
 }
 .playContainer:hover{
-	border-color: #5DA423;	
+	border-color: #5DA423;
 }
 .play {
 	position: relative;

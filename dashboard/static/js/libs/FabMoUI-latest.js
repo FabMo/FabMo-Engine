@@ -197,7 +197,12 @@ console.log("there is a job")
 		$('.currentJobTitle').text(status.job.name);
 		$(that.filename_selector).html(status.job.name);
 		var prog = ((status.line/status.nb_lines)*100).toFixed(2);
+		var percent = Math.round(prog);
+		var cc = 255 - Math.round(255*(percent/100));
+		$('.percentComplete').css('color', 'rgba('+cc+', 255, '+cc+', 1)')
+		$('.percentComplete').show();
 		$(that.progress_selector).css("width",prog.toString() + "%");
+		$('.percentComplete').text(percent + '%');
 		if(prog >= 10) {
 			$('#layerFill1').css('-webkit-animation', 'fill .5s linear forwards')
 			$('#layerFill1').css('-moz-animation', 'fill .5s linear forwards')
@@ -237,11 +242,13 @@ console.log("there is a job")
 		if(prog >= 99) {
 			$('#layerFill10').css('-webkit-animation', 'fill .5s linear forwards')
 			$('#layerFill10').css('-moz-animation', 'fill .5s linear forwards')
+			$('.percentComplete').text('100%');
 		}
 	}
 	else {
 		$(that.file_info_div_selector).addClass('hide');
 		$('#loadbar').hide();
+		$('.percentComplete').hide();
 		$('.startNextContainer').show();
 		$('.bar').css('-webkit-animation', '');
 		$('.bar').css('-moz-animation', '');
