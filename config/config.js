@@ -47,7 +47,9 @@ Config.prototype.load = function(filename, callback) {
 			log.error(e);
 			return callback(e);
 		}
-		this.update(data, callback, true);
+		this.update(data, function(err, d) {
+			callback(err, data);
+		}, true);
 	}.bind(this));
 };
 
@@ -91,15 +93,21 @@ Config.prototype.save = function(callback) {
 // The init function performs an initial load() from the configuration's settings files.
 // For this to work, the Config object has to have a default_config_file and config_file member
 Config.prototype.init = function(callback) {
-		async.series(
+		var default_count;
+        var user_count;
+        async.series(
 		[
 			function loadDefault(callback) { this.load(this.default_config_file, callback); }.bind(this),
+			function saveDefaultCount(callback) {
+				default_count = Object.keys(this._cache).length;
+				callback();
+			}.bind(this),
 			function loadUserConfig(callback) { 
 				this.load(this.config_file, function(err, data) {
 					if(err) {
 						if(err.code === "ENOENT") {
 							log.warn('Configuration file ' + this.config_file + ' not found.');
-							this._loaded = true;
+                            this._loaded = true;
 							this.save(callback, true);
 						} else {
 							log.warn('Problem loading the user configuration file "' + this.config_file + '": ' + err.message);
@@ -110,9 +118,17 @@ Config.prototype.init = function(callback) {
 					} else {
 						this._loaded = true;
 						this.userConfigLoaded = true;
+						user_count = Object.keys(data).length;
 						callback(null, this);
 					}
 				}.bind(this)); 
+			}.bind(this),
+			function saveIfNeeded(callback) {
+				if(default_count != user_count) {
+					this.save(callback);
+				} else {
+					callback();
+				}
 			}.bind(this)
 		],
 		function(err, results) {

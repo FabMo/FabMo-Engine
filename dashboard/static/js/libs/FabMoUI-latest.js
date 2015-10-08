@@ -103,8 +103,8 @@ FabMoUI.prototype.on = function(evt, handler) {
 
 FabMoUI.prototype.emit = function(type, evt) {
 	if(type in this.event_handlers) {
-		for(i in this.event_handlers[type]) {
-			handler = this.event_handlers[type][i];
+		for(var i in this.event_handlers[type]) {
+			var handler = this.event_handlers[type][i];
 			handler(evt);
 		}
 	}
