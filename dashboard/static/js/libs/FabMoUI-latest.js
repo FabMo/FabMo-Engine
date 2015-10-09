@@ -189,7 +189,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 
 	//Current File or job
 	if(status.job) {
-console.log("there is a job")
+		console.log("there is a job")
 		$('#loadbar').show();
 		$('.startNextContainer').hide();
 		$(that.file_info_div_selector).removeClass('hide');

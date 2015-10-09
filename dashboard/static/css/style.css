@@ -980,8 +980,9 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .percentComplete {
 	float: right;
-	margin-top: -5px;
+	margin-top: -4.5px;
 	margin-right: 25px;
+	font-family: 'source_sans_proextralight';
 	display: none;
 }
 
@@ -1048,7 +1049,9 @@ ul#loadbar li:first-child {
 	padding-left: 1em;
 	margin-top: -5px;
 	float: left;
+	
 }
+
 .startNextContainer {
 	width: 100%;
 	margin-top: -5.5px;
