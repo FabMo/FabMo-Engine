@@ -16,7 +16,9 @@ var MAX_INPUTS = 16;
 function FabMoUI(tool, options){
 	this.event_handlers = {
 		'error' : [],
-		'status' : []
+		'status' : [],
+		'disconnect' : [],
+		'reconnect' : []
 	}
 	this.tool = tool;
 	// the tool we need to check for
@@ -189,7 +191,10 @@ FabMoUI.prototype.updateStatusContent = function(status){
 
 	//Current File or job
 	if(status.job) {
+<<<<<<< HEAD
 		console.log("there is a job")
+=======
+>>>>>>> 9c8506f9e25f2d4767030a8e88c091bf6ccdaa5b
 		$('#loadbar').show();
 		$('.startNextContainer').hide();
 		$(that.file_info_div_selector).removeClass('hide');
@@ -378,7 +383,6 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	}
 	else {
 		$(".tools-current > li a").removeClass('paus err').addClass('disc');
-		that.forbidKeypad();
 		console.warn('Unknown status' + JSON.stringify(status));
 	}
 
@@ -397,9 +401,10 @@ FabMoUI.prototype.updateStatus = function(){
 	that.tool.get_status(function(err, status){
 		if(!err){
 			that.updateStatusContent(status);
+			that.emit('reconnect');
+
 		}
 		else if(err == that.tool.default_error.no_device){
-			that.forbidKeypad();
 			$(".tools-current > li a").removeClass('paus err').addClass('disc');
 			delete this;
 			$(that.posX_selector).html('X.XXX');
@@ -415,10 +420,9 @@ FabMoUI.prototype.updateStatus = function(){
 				$(that.pause_button_selector).addClass('hide');
 				$(that.resume_button_selector).addClass('hide');
 			}
-
+			that.emit('disconnect');
 		}
 		else{
-			that.forbidKeypad();
 			$(".tools-current > li a").removeClass('paus err').addClass('disc');
 			delete this;
 			$(that.posX_selector).html('X.XXX');
