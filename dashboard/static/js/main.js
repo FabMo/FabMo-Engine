@@ -178,7 +178,7 @@ dashboard.ui.on('disconnect', function() {
 });
 
 dashboard.ui.on('reconnect', function() {
-	if(!disconnected) {
+	if(disconnected) {
 		disconnected = false;
 		$('#disconnectDialog').foundation('reveal', 'close');
 	}
