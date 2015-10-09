@@ -133,10 +133,6 @@ $('.button-zeroz').click(function(e) {dashboard.machine.sbp('ZZ', function(){});
 
 
 $('.play').on('click', function(e){
-	dashboard.machine.get_status(function (data) {
-	console.log(data);
-	});
-	console.log("this is running");
 	$("#main").addClass("offcanvas-overlap-left");
 	dashboard.machine.job_run(function (){
 		dashboard.machine.list_jobs_in_queue(function (err, data){
@@ -154,7 +150,6 @@ $('.play').on('click', function(e){
 });
 
 dashboard.ui.on('status', function(status) {
-	console.log('cool yo');
 	dashboard.machine.list_jobs_in_queue(function (err, data){
 		if (data.name == 'undefined' || data.length === 0) {
 			$('.nextJob').text('No Job Pending');
@@ -173,13 +168,30 @@ dashboard.ui.on('status', function(status) {
 
 });
 
+var disconnected = false;
 
+dashboard.ui.on('disconnect', function() {
+	if(!disconnected) {
+		disconnected = true;
+		$('#disconnectDialog').foundation('reveal', 'open');
+	}
+});
+
+dashboard.ui.on('reconnect', function() {
+	if(!disconnected) {
+		disconnected = false;
+		$('#disconnectDialog').foundation('reveal', 'close');
+	}
+});
 
 $.post('/time', {
 	'utc' : new Date().toUTCString()
 });
 
 });
+
+
+
 
 
 

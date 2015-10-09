@@ -265,6 +265,13 @@
         <a class="close-reveal-modal">&#215;</a>
       </div>
 
+      <div id="disconnectDialog" class="reveal-modal" data-reveal aria-labelledby="disconnectDialogTitle" aria-hidden="true" role="dialog" data-options="close_on_background_click:false; close_on_esc:false;">
+          <div id="waiting_spinner" style="width: 75px; height: 75px; position: relative; float: left;"></div>
+          <div style="vertical-align: middle; height: 75px; display: table-cell; padding: 10px;"> 
+          <span style="font-weight: bold;">Waiting for your machine...</span>
+          </div>
+      </div>
+
       <script type="text/javascript" src="/js/libs/spin.min.js"></script>
       <script type="text/javascript">
         var opts = {
@@ -291,6 +298,10 @@
         }
         var target = document.getElementById('spinner')
         var spinner = new Spinner(opts).spin(target);
+
+        var waiting_spinner = new Spinner( {
+          color : '#2E3865',
+        }).spin(document.getElementById('waiting_spinner'))
       </script>
       <script type="text/javascript" src="js/libs/require.js"></script>
       <script src="/js/libs/dashboard.js"></script>
