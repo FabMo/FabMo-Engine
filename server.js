@@ -4,7 +4,7 @@ var opts = {
 
 lockfile.lock('fabmo_engine.lock',opts,function(err){
     if(err) {
-        console.error("You can't running a second instance of the Fabmo-Engine");
+        console.error("You can't run a second instance of the Fabmo-Engine program");
 	process.exit(13); // this is an arbitrary setted value; Node.js is using value 1 to 12 for its own error codes
     }
 
