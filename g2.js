@@ -115,10 +115,14 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
 	// Handle errors
 	this.control_port.on('error', this.onSerialError.bind(this));
 
+	// Handle closing
+	this.control_port.on('close', this.onSerialClose.bind(this));
+
 	// The control port is the only one to truly handle incoming data
 	this.control_port.on('data', this.onData.bind(this));
 	if(this.gcode_port !== this.control_port) {
 		this.gcode_port.on('error', this.onSerialError.bind(this));
+		this.control_port.on('close', this.onSerialClose.bind(this));
 		this.gcode_port.on('data', this.onWAT.bind(this));
 	}
 
@@ -167,6 +171,12 @@ G2.prototype.onSerialError = function(data) {
 	//if(this.connect_callback) {
 	//	this.connect_callback(data);
 	//}
+};
+
+G2.prototype.onSerialClose = function(data) {
+	this.connected= false;
+	throw new Error('G2 Core link was lost');
+	//process.exit(14); // this is a bit rude for now ...
 };
 
 // Write data to the control port.  Log to the system logger.
