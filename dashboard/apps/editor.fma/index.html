@@ -112,6 +112,7 @@
           $("#lang-gcode").parent().removeClass("active");
           $("#lang-opensbp").parent().addClass("active");
           lang='opensbp';
+          editor.getSession().setMode("ace/mode/text"); 
           break;
 
         case 'gcode':
@@ -119,6 +120,7 @@
           $("#lang-opensbp").parent().removeClass("active");
           $("#lang-gcode").parent().addClass("active");
           lang = 'gcode';
+          editor.getSession().setMode("ace/mode/gcode"); 
           break;
       }
       if(supports_html5_storage()) {
@@ -187,7 +189,6 @@
       editor = ace.edit("editor");
       editor.setTheme("ace/theme/eclipse");
       editor.setShowPrintMargin(false);
-      editor.getSession().setMode("ace/mode/gcode"); 
       
       editor.commands.addCommand({
         name: "run_immediate",
