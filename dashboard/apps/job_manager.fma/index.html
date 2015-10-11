@@ -127,7 +127,7 @@
   	digits = ('' + (txt.length+1)).length;
 
 	for(var x=0;x<txt.length-1;x++) {
-		lineno = '' + (x+1)
+		lineno = '' + (x+1);
 		while(lineno.length < digits) {
 			lineno = '0' + lineno;
 		}
@@ -169,7 +169,7 @@
 	jQuery.fn.dataTableExt.oSort["duration-asc"] = function (x, y) {}
 
     var history_table = $('#history_table').DataTable( {
-    	"filter": false,
+    	"filter": true,
     	"paging": true,
         "processing": false,
         "bInfo": false,
