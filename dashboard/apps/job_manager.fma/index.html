@@ -416,6 +416,7 @@
 
 	$('#file').change(function(evt) {
 		fabmoDashboard.submitJob($('#fileform'), {}, function(err, data) {
+			resetFormElement($('#file'));
 			refresh_jobs_list();
 		});
 	});
@@ -469,6 +470,12 @@
 			}
 		}
 	});
+ 
+	function resetFormElement(e) {
+	  e.wrap('<form>').closest('form').get(0).reset();
+	  e.unwrap();
+	}
+
 	fabmoDashboard.requestStatus(function(err, data) {});
 
   });
