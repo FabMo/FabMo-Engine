@@ -321,6 +321,23 @@ WheelControl.prototype._setupListeners = function() {
     this.canvas.addEventListener('mousemove', onMouseMove, false);
     this.canvas.addEventListener('touchmove', onMouseMove, false);
 
+    var onMouseOut = function(evt) {
+        var pos = this._getMousePos(evt);
+        for(var i in this.controls) {
+            var control = this.controls[i];
+            if(control.visible) {
+                var claimed = control.onMouseUp(pos);
+                if(claimed) {
+                    break;
+                }
+            }
+        }
+        evt.stopPropagation();
+        evt.preventDefault();
+        this.draw();
+    }.bind(this);
+
+    this.canvas.addEventListener('mouseout', onMouseOut, false)
 };
 
 
