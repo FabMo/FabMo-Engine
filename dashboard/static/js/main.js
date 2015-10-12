@@ -86,9 +86,16 @@ function setupHandwheel() {
 	var SCALE = 0.030;
 	var TICKS_MOVE = 20;
 	var NUDGE = 0.010;
+	var WATCHDOG_TIMEOUT = 500;
 
 	var angle = 0.0;
 	var speed = 1.0;
+
+	var watchdog = null;
+	function stopToolMotion() {
+		console.log("Timeout!")
+		dashboard.machine.quit(function() {});
+	}
 
 	wheel.on('speed', function changeSpeed(data) {
 		speed = data.speed;
@@ -108,6 +115,10 @@ function setupHandwheel() {
 			angle = 0;
 			dashboard.machine.fixed_move('-' + axis, distance, speed*60.0, function(err) {});
 		}
+
+		if(watchdog) { clearTimeout(watchdog); }
+		watchdog = setTimeout(stopToolMotion, WATCHDOG_TIMEOUT);
+
 	});
 
 	wheel.on('release', function quit(data) {
@@ -164,7 +175,7 @@ dashboard.ui.on('status', function(status) {
 			$('.nextJob').css('top', '-9.5px');
 			$('.startnextLabel').css('top', '-9.5px');
 		}
-});
+	});
 
 });
 

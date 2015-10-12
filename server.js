@@ -18,9 +18,9 @@ lockfile.lock(lockfile_path,{},function(err){
 		if('debug' in argv) {
 			require('./debug').start();
 		}
-});
+	});
 
-exports.engine = engine;
+	exports.engine = engine;
 });
 
 process.on('exit', function(code) {
