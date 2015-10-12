@@ -73,9 +73,6 @@ SBPRuntime.prototype.runString = function(s, callback) {
 			return this._end(e.message + " (Line " + e.line + ")");
 		}
  		lines = this.program.length;
-		if(this.machine) {
-			this.machine.status.nb_lines = lines.length - 1;
-		}
 		this.init();
 		this.end_callback = callback;
 		this._setupTransforms();
@@ -393,15 +390,28 @@ SBPRuntime.prototype._end = function(error) {
 			log.debug("Doing the outermost end.")
 		}
 
-		if(this.driver.status.stat !== this.driver.STAT_END) {
-			this.driver.expectStateChange( {
-				'end':end_function,
-				'stop':null
-			});
-			this.driver.runSegment('M30\n');
-		} else {
-			end_function();
+		switch(this.driver.status.stat) {
+			case this.driver.STAT_END:
+				end_function();
+			break;
+
+			case this.driver.STAT_STOP:
+				this.driver.expectStateChange( {
+					'end':end_function,
+					'stop':end_function
+				});
+				if(end_function === end_function_no_nesting) {
+					this.driver.runSegment('M30\n');
+				} else {
+					this.driver.requestStatusReport();
+				}
+			break;
+
+			default:
+				// Hold?
+			break;
 		}
+
 	} else {
 		this.init();
 		this.emit('end', this.output);
@@ -986,14 +996,11 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 	var i;
 
 	if( code === "G0" || code === "G1" ){
-//		log.debug("emit_move-call xform = " + JSON.stringify(pt));
 		pt = this.transformation(pt);
-//		log.debug("emit_move-pt = " + JSON.stringify(pt));
 	}
 	else if( code === "G2" || code === "G3" ){
 
 	}
-	//console.log(pt);
 //	log.debug("level = " + this.transforms.level.apply );
 //	log.debug("interpolate = " + this.transforms.interpolate.apply );
 //	if(( this.transforms.level.apply === true || this.transforms.interpolate.apply === true ) && code !== "G0" ){

@@ -68,7 +68,9 @@ function Machine(control_path, gcode_path, callback) {
 		in8 : 1,
 		job : null,
 		info : null,
-		unit : 'mm'
+		unit : 'mm',
+		line : null,
+		nb_lines : null
 	};
 
 	this.driver = new g2.G2();
@@ -232,6 +234,10 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 			this.status.info = stateinfo
 		} else {
 			delete this.status.info
+		}
+		if(this.status.state === 'idle') {
+			this.status.nb_lines = null;
+			this.status.line = null;
 		}
 		log.info("Got a machine state change: " + this.status.state)	
 	} else {		
