@@ -46,7 +46,7 @@ util.inherits(SBPRuntime, events.EventEmitter);
 SBPRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;
-	this.machine.status.line=null;
+	this.machine.status.line=null; 
 	this.machine.status.nb_lines=null;
 	this._update();
 	this.status_handler = this._onG2Status.bind(this);
@@ -64,7 +64,9 @@ SBPRuntime.prototype.runString = function(s, callback) {
 	try {
 		var lines =  s.split('\n');
 		if(this.machine) {
-			this.machine.status.nb_lines = lines.length - 1;
+			if(this.file_stack.length == 0) {
+				this.machine.status.nb_lines = lines.length - 1;
+			}
 		}
 		this.end_callback = callback;
 		try {
@@ -988,7 +990,12 @@ SBPRuntime.prototype._popFileStack = function() {
 // Add GCode to the current chunk, which is dispatched on a break or end of program
 SBPRuntime.prototype.emit_gcode = function(s) {
 	log.debug("emit_gcode = " + s);
-	this.current_chunk.push('N' + this.pc + ' ' + s);
+	if(this.file_stack.length > 0) {
+		var n = this.file_stack[0].pc;
+	} else {
+		var n = this.pc;
+	}
+	this.current_chunk.push('N' + n + ' ' + s);
 };
 
 SBPRuntime.prototype.emit_move = function(code, pt) {
@@ -1015,6 +1022,12 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 //	}
 //	else{
 
+	if(this.file_stack.length > 0) {
+		var n = this.file_stack[0].pc;
+	} else {
+		var n = this.pc;
+	}
+
 	var emit_moveContext = this;
 	var opFunction = function(pt) {  //Find a better name
 		for(key in pt) {
@@ -1030,8 +1043,8 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 				else if(key === "C") { emit_moveContext.cmd_posc = v; }
 			}
 		}
-		log.debug("emit_move:  N " + emit_moveContext.pc + JSON.stringify(gcode));
-		emit_moveContext.current_chunk.push('N' + emit_moveContext.pc + gcode);
+		log.debug("emit_move:  N" + n + JSON.stringify(gcode));
+		emit_moveContext.current_chunk.push('N' + n + gcode);
 	};
 
 			if( this.transforms.level.apply === true  && code !== "G0") {
