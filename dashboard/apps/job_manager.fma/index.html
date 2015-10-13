@@ -110,10 +110,10 @@
 </div>
 
   <!-- Javascript inclusions -->
-  <script src="./js/jquery.js"></script>
+  <script src="/js/libs/jquery.js"></script>
   <script src="./js/jquery.dataTables.js"></script>
   <script src="./js/jquery.dragster.js"></script>
-  <script src="./js/foundation.min.js"></script>
+  <script src="/js/libs/foundation.min.js"></script>
   <script src="./js/dataTables.foundation.js"></script>
   <script src="./js/moment.js"></script>
   <script src="/js/libs/dashboard.js"></script>
@@ -127,7 +127,7 @@
   	digits = ('' + (txt.length+1)).length;
 
 	for(var x=0;x<txt.length-1;x++) {
-		lineno = '' + (x+1)
+		lineno = '' + (x+1);
 		while(lineno.length < digits) {
 			lineno = '0' + lineno;
 		}
@@ -169,7 +169,7 @@
 	jQuery.fn.dataTableExt.oSort["duration-asc"] = function (x, y) {}
 
     var history_table = $('#history_table').DataTable( {
-    	"filter": false,
+    	"filter": true,
     	"paging": true,
         "processing": false,
         "bInfo": false,
@@ -209,7 +209,7 @@
                 "className":      'actions-control',
                 "orderable":      false,
                 "data":           null,
-                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='resubmitJob' id='resubmit'>Resubmit Job</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div",
+                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='resubmitJob' id='resubmit'>Run Again</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div",
             },
         ],
         "order" : [[3,"desc"]]
@@ -258,7 +258,7 @@
                 "className":      'actions-control',
                 "orderable":      false,
                 "data":           null,
-                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div"
+                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='cancelJob' id='cancel-1'>Cancel Job</a></li><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div"
             },
         ],
         "order" : [[3,"desc"]]
@@ -273,6 +273,8 @@
 		$('.dropDownWrapper').show();//create transparent wrapper that you can click to close
  		var dd = $(this).nextAll();
 		dd.show();
+		var cancelId = $('.cancelJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, jobId)
+		$('.cancelJob').attr('id', cancelId);
 		var previewId = $('.previewJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, jobId)
 		$('.previewJob').attr('id', previewId);
 		var editId = $('.editJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, jobId)
@@ -283,6 +285,12 @@
 			$('.dropDownWrapper').hide();
 			$('.dropDown').hide();
 			$('.commentBox').hide();
+		});
+
+		$('.dropDown').on('click', 'a#cancel-'+jobId.toString(), function(e) {
+			fabmoDashboard.cancelJob(jobId, function(err, data) {
+				refresh_jobs_list();
+			});
 		});
 		$('.dropDown').on('click', 'a#preview-'+jobId.toString(), function(e) {
 			fabmoDashboard.launchApp('previewer', {'job' : jobId});
@@ -322,13 +330,11 @@
 
 	// Add event listener further actions in history table
     $('#history_table tbody').on('click', 'div.ellipses', function () {
-		console.log(this);
         var tr = $(this).closest('tr');
         var row = history_table.row( tr );
 		job = row.data();
 		$('.dropDownWrapper').show();//create transparent wrapper that you can click to close
 		var dd = $(this).nextAll();
-			console.log(job._id);
 			dd.show();
 			var previewId = $('.previewJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, job._id)
 			$('.previewJob').attr('id', previewId);
@@ -344,7 +350,6 @@
 			$('.commentBox').hide();
 		});
  			$('.dropDown').on('click', 'a#resubmit', function(e) {
-				 
 				fabmoDashboard.resubmitJob(job._id, function(err, result) {
 					$('#nav-pending').click();
 					refresh_jobs_list();
@@ -417,6 +422,7 @@
 
 	$('#file').change(function(evt) {
 		fabmoDashboard.submitJob($('#fileform'), {}, function(err, data) {
+			resetFormElement($('#file'));
 			refresh_jobs_list();
 		});
 	});
@@ -470,6 +476,12 @@
 			}
 		}
 	});
+ 
+	function resetFormElement(e) {
+	  e.wrap('<form>').closest('form').get(0).reset();
+	  e.unwrap();
+	}
+
 	fabmoDashboard.requestStatus(function(err, data) {});
 
   });

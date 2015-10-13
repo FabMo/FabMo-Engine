@@ -15,7 +15,9 @@ define(function(require) {
 			console.error('connection to the engine via websocket failed : '+ ex.message);
 		}
 		if(socket!==null){
-			socket.on('connect', function() {});
+			socket.on('connect', function() {
+				dashboard.ui.updateStatus();
+			});
 
 			socket.on('message',function(message){});
 

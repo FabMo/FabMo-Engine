@@ -8,14 +8,6 @@
   <link rel="stylesheet" href="css/normalize.css">
   <link rel="stylesheet" href="css/style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <link rel="stylesheet" href="bower_components/codemirror/lib/codemirror.css">
-  <link rel="stylesheet" href="bower_components/codemirror/theme/neat.css">
-
-  <script src="bower_components/jquery/dist/jquery.min.js"></script>
-  <script src="js/foundation.min.js"></script>
-  <script src="bower_components/codemirror/lib/codemirror.js"></script>
-  <script src="js/codemirror_gcode_mode.js"></script>
 </head>
 <body>
   
@@ -61,15 +53,19 @@
 
   <div id="editor"></div>
 
-<script src="bower_components/ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
-  <script src="/js/libs/dashboard.js"></script>
+  <script src="/js/libs/jquery.js" type="text/javascript"></script>
+  <script src="/js/libs/dashboard.js" type="text/javascript"></script>
+  <script src="/js/libs/foundation.min.js" type="text/javascript"></script>
+  <script src="js/ace/ace.js" type="text/javascript"></script>
+  <script src="js/ace.js" type="text/javascript"></script>
+
   <script>
     var editor;
     var lang="gcode";
     var source=null;
     var source_data=null;
 
-    function execute() {
+    function execute() { 
       $("#submit-button").addClass('disabled');
       var text = editor.getValue();
       switch(lang) {
@@ -116,6 +112,7 @@
           $("#lang-gcode").parent().removeClass("active");
           $("#lang-opensbp").parent().addClass("active");
           lang='opensbp';
+          editor.getSession().setMode("ace/mode/text"); 
           break;
 
         case 'gcode':
@@ -123,6 +120,7 @@
           $("#lang-opensbp").parent().removeClass("active");
           $("#lang-gcode").parent().addClass("active");
           lang = 'gcode';
+          editor.getSession().setMode("ace/mode/gcode"); 
           break;
       }
       if(supports_html5_storage()) {
@@ -191,7 +189,6 @@
       editor = ace.edit("editor");
       editor.setTheme("ace/theme/eclipse");
       editor.setShowPrintMargin(false);
-      editor.getSession().setMode("ace/mode/gcode"); 
       
       editor.commands.addCommand({
         name: "run_immediate",
@@ -238,7 +235,6 @@
       set_language('gcode');
       evt.preventDefault();
     });
-
     $("#macro-save").click(function(evt) {
       fabmoDashboard.updateMacro(source_data.index, {content: editor.getValue()}, function(err, result) {
         fabmoDashboard.notify('info', "Macro '" + source_data.name + "' saved.");

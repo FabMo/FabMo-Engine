@@ -18,6 +18,8 @@ define(function(require) {
 	var FabMoUI = require('fabmo-ui');
 	var WheelControl = require('handwheel');
 
+	var wheel;
+
 	// Load the apps from the server
 	dashboard.ui= new FabMoUI(dashboard.machine);
 	context.apps = new context.models.Apps();
@@ -59,7 +61,7 @@ define(function(require) {
 			dashboard.ui.updateStatus();
 
 			// Configure handwheel input
-			var wheel = setupHandwheel();
+			wheel = setupHandwheel();
 
 			// Start the application
 			router = new context.Router();
@@ -79,35 +81,49 @@ define(function(require) {
 function setupHandwheel() {
 
 	var wheel = new WheelControl('wheel', {
-		wheelSpeed : 1.0,
 		labelColor : 'white'
 	});	
 
-	var SCALE = 0.030;
+	var SCALE = 0.75;
 	var TICKS_MOVE = 20;
-	var NUDGE = 0.010;
+	var NUDGE = {'mm' : 0.1, 'in' : 0.010};
+	var WATCHDOG_TIMEOUT = 200;
 
 	var angle = 0.0;
-	var speed = 1.0;
 
-	wheel.on('speed', function changeSpeed(data) {
-		speed = data.speed;
-	});
+	var watchdog = null;
+	var last_move = 0;
+
+	function stopToolMotion() {
+		dashboard.machine.quit(function() {});
+	}
 
 	wheel.on('move', function makeMove(data) {
 		var degrees = data.angle*180.0/Math.PI;
 		angle += degrees;
-		var distance = Math.abs(angle*SCALE*speed);
+		var distance = wheel.inUnits(Math.abs(angle*SCALE), wheel.units);
 		var axis = data.axis;
-
+		var speed = wheel.inUnits(wheel.speed, wheel.units);
 		if(angle > TICKS_MOVE) {
+			if(last_move) {
+				dashboard.machine.quit(function() {});
+			}
 			angle = 0;
-			dashboard.machine.fixed_move('+' + axis, distance, speed*60.0, function(err) {});
+			dashboard.machine.fixed_move('+' + axis, distance, speed, function(err) {});
+			last_move = 0;
 		}
 		if(angle < -TICKS_MOVE) {
+			if(!last_move) {
+				dashboard.machine.quit(function() {});
+			}
 			angle = 0;
-			dashboard.machine.fixed_move('-' + axis, distance, speed*60.0, function(err) {});
+			dashboard.machine.fixed_move('-' + axis, distance, speed, function(err) {});
+			last_move = 1;
 		}
+
+		if(watchdog) { clearTimeout(watchdog); }
+		watchdog = setTimeout(stopToolMotion, WATCHDOG_TIMEOUT);
+
 	});
 
 	wheel.on('release', function quit(data) {
@@ -115,7 +131,9 @@ function setupHandwheel() {
 	});
 
 	wheel.on('nudge', function nudge(data) {
-		dashboard.machine.fixed_move(data.axis, NUDGE, speed*60, function(err) {});
+		var nudge = NUDGE[wheel.units];
+		var speed = wheel.inUnits(wheel.speed, wheel.units);
+		dashboard.machine.fixed_move(data.axis, nudge, wheel.speed, function(err) {});
 	});
 	return wheel;
 }
@@ -150,6 +168,10 @@ $('.play').on('click', function(e){
 });
 
 dashboard.ui.on('status', function(status) {
+	if(status.unit) {
+		wheel.setUnits(status.unit);	
+	}
+
 	dashboard.machine.list_jobs_in_queue(function (err, data){
 		if (data.name == 'undefined' || data.length === 0) {
 			$('.nextJob').text('No Job Pending');
@@ -164,7 +186,7 @@ dashboard.ui.on('status', function(status) {
 			$('.nextJob').css('top', '-9.5px');
 			$('.startnextLabel').css('top', '-9.5px');
 		}
-});
+	});
 
 });
 

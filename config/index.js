@@ -5,6 +5,8 @@ var G2Config = require('./g2_config').G2Config;
 var OpenSBPConfig = require('./opensbp_config').OpenSBPConfig;
 var MachineConfig = require('./machine_config').MachineConfig;
 var DashboardCofnig = require('./dashboard_config').DashboardConfig;
+var fs = require('fs');
+var path = require('path');
 
 var log = require('../log').logger('config');
 
@@ -59,6 +61,36 @@ function configureDashboard(callback) {
 	exports.dashboard.init(callback);
 }
 
+function canWriteTo(dirname) {
+	try {
+		test_path = path.join(dirname,'/.fabmoenginetest')
+		fs.writeFileSync(test_path, '');
+		fs.unlink(test_path);
+		return true;
+	} catch(e) {
+		return false;
+	}
+}
+
+function getLockFile() {
+	var lockfile_name = 'fabmo-engine.lock';
+	switch(process.platform) {
+		case 'win32':
+		case 'win64':
+			return path.join(Config.getDataDir(), lockfile_name);
+			break;
+		default:
+			lockfile_dir =  '/var/run';
+			if(canWriteTo(lockfile_dir)) {
+				return path.join(lockfile_dir, lockfile_name);
+			} else {
+				log.warn('Lockfile not in /var/run on POSIX platform')
+				return path.join(Config.getDataDir(), lockfile_name);
+			}
+			break;
+	}
+}
+
 exports.configureEngine = configureEngine;
 exports.configureDriver = configureDriver;
 exports.configureOpenSBP = configureOpenSBP;
@@ -66,4 +98,6 @@ exports.configureMachine = configureMachine;
 
 exports.createDataDirectories = Config.createDataDirectories;
 exports.getDataDir = Config.getDataDir;
+exports.getLockFile = getLockFile;
+
 exports.platform = require('process').platform;

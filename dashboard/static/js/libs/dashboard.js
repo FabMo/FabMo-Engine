@@ -250,6 +250,10 @@ FabMoDashboard.prototype.resubmitJob = function(id, callback) {
 	this._call("resubmitJob", id, callback)
 }
 
+FabMoDashboard.prototype.cancelJob = function(id, callback) {
+	this._call("cancelJob", id, callback)
+}
+
 FabMoDashboard.prototype.getJobsInQueue = function(callback) {
 	this._call("getJobsInQueue",null, callback);
 }
