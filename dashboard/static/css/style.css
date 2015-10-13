@@ -1042,14 +1042,17 @@ ul#loadbar li:first-child {
     };
 }
 
-
+.currentContainer {
+	margin-left: 1em;
+	margin-top: -5px;
+	float: left;
+	overflow: hidden;
+}
 .currentJobTitle {
 	color: #F0F0F0;
 	font-family: 'source_sans_proextralight';
-	padding-left: 1em;
-	margin-top: -5px;
-	float: left;
-	
+    white-space: nowrap;
+	text-align: center;
 }
 
 .startNextContainer {

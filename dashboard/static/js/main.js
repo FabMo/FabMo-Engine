@@ -184,6 +184,44 @@ dashboard.ui.on('reconnect', function() {
 	}
 });
 
+(function () {
+if ($(window).width() < 620) {
+    function start_marquee() {
+        function go() {
+            i = i < width ? i + step : 1;
+            m.style.marginLeft = -i + 'px';
+        }
+        var i = 0,
+            step = 3,
+            space = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+        var m = document.getElementById('marquee');
+        var t = m.innerHTML; //text
+        m.innerHTML = t + space;
+        m.style.position = 'absolute'; // http://stackoverflow.com/questions/2057682/determine-pixel-length-of-string-in-javascript-jquery/2057789#2057789
+        var width = (m.clientWidth + 1);
+        m.style.position = '';
+        m.innerHTML = t + space + t + space + t + space + t + space + t + space + t + space + t + space;
+        if (m.addEventListener) {
+            m.addEventListener('mouseenter', function () {
+                step = 0;
+            }, false);
+            m.addEventListener('mouseleave', function () {
+                step = 3;
+            }, false);
+        }
+        var x = setInterval(go, 50);
+    }
+    if (window.addEventListener) {
+        window.addEventListener('load', start_marquee, false);
+    } else if (window.attachEvent) { //IE7-8
+        window.attachEvent('onload', start_marquee);
+    }
+	
+	$('.currentContainer').css('width', '100px');
+	$('.currentJobTitle').css('width', '40%');
+	$('.currentJobTitle').css('padding-left', '100px');
+}
+})();
 $.post('/time', {
 	'utc' : new Date().toUTCString()
 });
