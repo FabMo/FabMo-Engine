@@ -562,32 +562,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	padding-bottom: 0.5rem;
 }
 
-#keypad ul .set span {
-	background-color: #eee;
-}
-
-#keypad ul .set span:hover {
-	background-color: #fff;
-	-webkit-transition: background-color .3s;
-	transition: background-color .3s;
-}
-
-#keypad ul .button-homexy, #keypad ul .button-homez, #keypad ul .button-probez {
-	background-size: 30px;
-	background-size: 1.825rem;
-	background-position: center;
-	background-repeat: no-repeat;
-	width: 49px !important;
-	width: 3.0625rem !important;
-	height: 49px !important;
-	height: 3.0625rem !important;
-	margin-top: 0 !important;
-}
-
-#keypad ul .button-homexy 	{ background-image: url('../img/icon_go-home.png'); }
-#keypad ul .button-homez		{ background-image: url('../img/icon_mv-xy.png'); }
-#keypad ul .button-probez		{ background-image: url('../img/icon_zero-z.png'); }
-
 
 #position ul .columns{
 	position: relative;

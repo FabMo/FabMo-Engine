@@ -63,7 +63,9 @@ function configureDashboard(callback) {
 
 function canWriteTo(dirname) {
 	try {
-		fs.accessSync(dirname, fs.W_OK)
+		test_path = path.join(dirname,'/.fabmoenginetest')
+		fs.writeFileSync(test_path, '');
+		fs.unlink(test_path);
 		return true;
 	} catch(e) {
 		return false;

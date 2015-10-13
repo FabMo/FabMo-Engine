@@ -5,7 +5,6 @@ var PLATFORM = require('process').platform;
 var log = require('../log').logger('config');
 
 // Config is the superclass from which all configuration objects descend
-// Common functionality is implemented here.
 Config = function(config_name) {
 	this._cache = {};
 	this.config_name = config_name;

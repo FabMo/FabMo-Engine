@@ -16,6 +16,8 @@ function dist(a,b) {
     return Math.sqrt((b.x-a.x)*(b.x-a.x) + (b.y-a.y)*(b.y-a.y));
 }
 
+
+
 var WheelControl = function(element, options) {
 	options = options || {}
 	this.canvas = document.getElementById(element);
@@ -29,9 +31,9 @@ var WheelControl = function(element, options) {
     this.center = {x:this.canvas.width/2.0, y:this.canvas.height/2.0};
     this.controls = [];
     this.bgColor = options.bgColor || null;
-    this.minSpeed = options.minSpeed || 0.1;
-    this.maxSpeed = options.maxSpeed || 4.0;
-    this.speedIncrement = options.speedIncrement || 0.1;
+    this.minSpeed = options.minSpeed || 100;
+    this.maxSpeed = options.maxSpeed || 2000;
+    this.speedIncrement = options.speedIncrement || {'mm': 100, 'in':5};
     this.speedDigits = options.speedDigits || 1;
     var wheelSpeed = options.wheelSpeed || this.minSpeed;
     this.wheelSpeed = Math.min(Math.max(wheelSpeed, this.minSpeed), this.maxSpeed);
@@ -49,7 +51,6 @@ var WheelControl = function(element, options) {
     var xyzwheel = new Handwheel({
     	radius : this.radius*0.6,
     	center : this.center,
-    	centerText : this.wheelSpeed.toFixed(this.speedDigits) + '\nin/sec',
     	centerTextColor : centerTextColor,
     	centerTextStyle : centerTextStyle,
     	thumbRadius : this.thumbRadius,
@@ -81,8 +82,7 @@ var WheelControl = function(element, options) {
     	thumbRadius : this.thumbRadius,
     	thumbActiveRadius : this.thumbActiveRadius, 
     	label : 'S',
-    	position : this.wheelSpeed,
-    	centerText : this.wheelSpeed.toFixed(this.speedDigits) + '\nin/sec',
+    	//position : this.wheelSpeed,
         centerTextColor : centerTextColor,
         centerTextStyle : centerTextStyle
     });
@@ -161,6 +161,8 @@ var WheelControl = function(element, options) {
         this.draw();        
     }.bind(this);
 
+    this.speedwheel = speedwheel;
+    this.xyzwheel = xyzwheel;
 
     // Center click on the handwheel switches us to speed adjustment
     xyzwheel.on('center', switchToSpeedwheel);
@@ -177,20 +179,14 @@ var WheelControl = function(element, options) {
     // Selecting a speed commits it and returns us to the handwheel/nudge control
     speedwheel.on('pos', function setSpeed(data) {
     	var speed = this.minSpeed + data.pos*(this.maxSpeed-this.minSpeed);
-    	var increments = speed / this.speedIncrement;
-    	speed = Math.round(increments)*this.speedIncrement;
-    	this.emit('speed', {'speed' : speed})
-    	setTimeout(switchToHandwheel, 500);
+        speed = this.snapSpeed(speed);
+    	this.emit('speed', {'speed' : this.inUnits(speed, this.units)})
     }.bind(this))
 
     // Speed selection is indicated live while dragging the speed wheel
     speedwheel.on('sweep', function updateSpeedDisplay(data) {
     	var speed = this.minSpeed + data.pos*(this.maxSpeed-this.minSpeed);
-    	var increments = speed / this.speedIncrement;
-    	speed = Math.round(increments)*this.speedIncrement;
-    	var text = speed.toFixed(this.speedDigits) + '\nin/sec';
-    	speedwheel.setCenterText(text);
-    	xyzwheel.setCenterText(text);
+    	this.setSpeed(this.snapSpeed(speed));
     }.bind(this));
 
     speedwheel.on('center', switchToHandwheel);
@@ -211,8 +207,51 @@ var WheelControl = function(element, options) {
         }
     }.bind(this));
 
+    this.setSpeed(this.snapSpeed(this.wheelSpeed))
     this.draw();
-    this.draw();
+}
+
+WheelControl.prototype.inUnits = function(value, units) {
+    if(units === 'mm') { return value; }
+    else { return this.toInches(value); }
+}
+
+WheelControl.prototype.toInches = function(value) {
+    return value*0.0393701;
+}
+WheelControl.prototype.toMM = function(value) {
+    return value/0.0393701;
+}
+
+// Accepts speed in the current units, outputs speed in mm (default units)
+WheelControl.prototype.snapSpeed = function(speed) {
+    var increments = this.inUnits(speed, this.units) / this.speedIncrement[this.units];
+    speed = Math.round(increments)*this.speedIncrement[this.units];
+    if(this.units === 'in') {
+        speed = this.toMM(speed);
+    }   
+    return speed;
+}
+
+
+WheelControl.prototype.formatSpeed = function(speed) {
+    return this.inUnits(speed, this.units).toFixed(this.speedDigits) + '\n' + this.units + '/min'
+}
+
+WheelControl.prototype.setUnits = function(units) {
+    var old_units = this.units;
+    this.units = units;
+    if(old_units != units) {
+        this.setSpeed(this.snapSpeed(this.speed));
+        this.draw();
+    }
+};
+
+WheelControl.prototype.setSpeed = function(speed) {
+    this.speed = speed;
+    var text = this.formatSpeed(speed);
+    this.speedwheel.setCenterText(text);
+    this.xyzwheel.setCenterText(text);
 }
 
 WheelControl.prototype._getMousePos = function(evt) {
