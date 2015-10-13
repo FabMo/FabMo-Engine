@@ -620,6 +620,32 @@ FabMo.prototype.add_job =  function(formdata,callback)
 	}
 };
 
+FabMo.prototype.cancel_job = function(id, callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.job + '/' + id,
+		type: "DELETE",
+		dataType : 'json', 
+		success: function( data ) {
+			if(data.status === "success") {
+				callback(null,data.data.job);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
+		error: function(data,err) {
+				console.error(err);
+				var error =that.default_error.no_device;
+				error.sys_err = err;
+			 	callback(error);
+			}
+	});
+};
 // take a form data, look for a file field, and upload the file load in it
 FabMo.prototype.submit_app =  function(formdata,callback)
 {

@@ -40,7 +40,7 @@
 		<div class="hoverdim">
 			<div class="row title">
 				<div class="small-4 columns">
-					<h4 id="pending">Pending</h4>
+					<h4>Pending</h4>
 				</div>
 				<div class="small-8 columns" style="text-align:right;">
 					<a id="run-next" class="small button success radius">Run Next</a>
@@ -110,10 +110,10 @@
 </div>
 
   <!-- Javascript inclusions -->
-  <script src="./js/jquery.js"></script>
+  <script src="/js/libs/jquery.js"></script>
   <script src="./js/jquery.dataTables.js"></script>
   <script src="./js/jquery.dragster.js"></script>
-  <script src="./js/foundation.min.js"></script>
+  <script src="/js/libs/foundation.min.js"></script>
   <script src="./js/dataTables.foundation.js"></script>
   <script src="./js/moment.js"></script>
   <script src="/js/libs/dashboard.js"></script>
@@ -258,7 +258,7 @@
                 "className":      'actions-control',
                 "orderable":      false,
                 "data":           null,
-                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div"
+                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='cancelJob' id='cancel-1'>Cancel Job</a></li><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div"
             },
         ],
         "order" : [[3,"desc"]]
@@ -273,6 +273,8 @@
 		$('.dropDownWrapper').show();//create transparent wrapper that you can click to close
  		var dd = $(this).nextAll();
 		dd.show();
+		var cancelId = $('.cancelJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, jobId)
+		$('.cancelJob').attr('id', cancelId);
 		var previewId = $('.previewJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, jobId)
 		$('.previewJob').attr('id', previewId);
 		var editId = $('.editJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, jobId)
@@ -283,6 +285,12 @@
 			$('.dropDownWrapper').hide();
 			$('.dropDown').hide();
 			$('.commentBox').hide();
+		});
+
+		$('.dropDown').on('click', 'a#cancel-'+jobId.toString(), function(e) {
+			fabmoDashboard.cancelJob(jobId, function(err, data) {
+				refresh_jobs_list();
+			});
 		});
 		$('.dropDown').on('click', 'a#preview-'+jobId.toString(), function(e) {
 			fabmoDashboard.launchApp('previewer', {'job' : jobId});
@@ -342,13 +350,10 @@
 			$('.commentBox').hide();
 		});
  			$('.dropDown').on('click', 'a#resubmit', function(e) {
-				e.preventDefault();
-				/*fabmoDashboard.resubmitJob(job._id, function(err, result) {
+				fabmoDashboard.resubmitJob(job._id, function(err, result) {
 					$('#nav-pending').click();
 					refresh_jobs_list();
-				});*/
-				$('#nav-pending').click();
-
+				});
 			});
 			$('.dropDown').on('click', 'a#preview-'+job._id.toString(), function(e) {
 				fabmoDashboard.launchApp('previewer', {'job' : job._id});

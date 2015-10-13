@@ -163,6 +163,18 @@ define(function(require) {
 			}.bind(this));
 		}.bind(this));
 
+		this._registerHandler('cancelJob', function(id, callback) { 
+			this.machine.cancel_job(id, function(err, result) {
+				if(err) {
+					callback(err);
+				} else {
+					callback(err, result);
+					//this.launchApp('job-manager', {}, callback);
+				}
+			}.bind(this));
+		}.bind(this));
+
+
 		// Get the list of jobs in the queue
 		this._registerHandler('getJobsInQueue', function(data, callback) {
 			this.machine.list_jobs_in_queue(function(err, jobs) {
