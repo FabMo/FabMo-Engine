@@ -104,8 +104,6 @@ function setupHandwheel() {
 		var distance = wheel.inUnits(Math.abs(angle*SCALE), wheel.units);
 		var axis = data.axis;
 		var speed = wheel.inUnits(wheel.speed, wheel.units);
-		console.log(distance)
-		console.log(speed);
 		if(angle > TICKS_MOVE) {
 			if(last_move) {
 				dashboard.machine.quit(function() {});

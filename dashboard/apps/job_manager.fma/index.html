@@ -40,7 +40,7 @@
 		<div class="hoverdim">
 			<div class="row title">
 				<div class="small-4 columns">
-					<h4>Pending</h4>
+					<h4 id="pending">Pending</h4>
 				</div>
 				<div class="small-8 columns" style="text-align:right;">
 					<a id="run-next" class="small button success radius">Run Next</a>
@@ -209,7 +209,7 @@
                 "className":      'actions-control',
                 "orderable":      false,
                 "data":           null,
-                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='resubmitJob' id='resubmit'>Resubmit Job</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div",
+                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='resubmitJob' id='resubmit'>Run Again</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div",
             },
         ],
         "order" : [[3,"desc"]]
@@ -322,13 +322,11 @@
 
 	// Add event listener further actions in history table
     $('#history_table tbody').on('click', 'div.ellipses', function () {
-		console.log(this);
         var tr = $(this).closest('tr');
         var row = history_table.row( tr );
 		job = row.data();
 		$('.dropDownWrapper').show();//create transparent wrapper that you can click to close
 		var dd = $(this).nextAll();
-			console.log(job._id);
 			dd.show();
 			var previewId = $('.previewJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, job._id)
 			$('.previewJob').attr('id', previewId);
@@ -344,11 +342,13 @@
 			$('.commentBox').hide();
 		});
  			$('.dropDown').on('click', 'a#resubmit', function(e) {
-				 
-				fabmoDashboard.resubmitJob(job._id, function(err, result) {
+				e.preventDefault();
+				/*fabmoDashboard.resubmitJob(job._id, function(err, result) {
 					$('#nav-pending').click();
 					refresh_jobs_list();
-				});
+				});*/
+				$('#nav-pending').click();
+
 			});
 			$('.dropDown').on('click', 'a#preview-'+job._id.toString(), function(e) {
 				fabmoDashboard.launchApp('previewer', {'job' : job._id});
