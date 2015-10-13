@@ -93,7 +93,6 @@ function setupHandwheel() {
 
 	var watchdog = null;
 	function stopToolMotion() {
-		console.log("Timeout!")
 		dashboard.machine.quit(function() {});
 	}
 
