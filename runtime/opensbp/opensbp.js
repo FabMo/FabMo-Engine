@@ -26,6 +26,7 @@ function SBPRuntime() {
 	this.current_chunk = [];
 	this.output = [];
 	this.event_handlers = {};
+	this.event_teardown = {};
 	this.running = false;
 	this.quit_pending = false;
 	this.cmd_posx = 0;
@@ -521,8 +522,12 @@ SBPRuntime.prototype._processEvents = function(callback) {
 
 				// Extract the command that is to be executed as a result of the event
 				var cmd = this.event_handlers[sw][state]
+				var teardown = this.event_teardown[sw] || {}
 				if(cmd) {
 					this.driver.queueFlush(function(err) {
+						log.debug("Tearing down the input configuration that caused the event.")
+						this.driver.setMany(teardown, function(err, result) {
+							
 							if(this._breaksStack(cmd)) {
 								this._execute(cmd, function() {
 									callback();
@@ -531,6 +536,7 @@ SBPRuntime.prototype._processEvents = function(callback) {
 								this._execute(cmd);
 								callback();
 							}
+						}.bind(this));
 					}.bind(this));
 				} else {
 					log.error("Handler registered, but with no command??  (Bad Error)");
@@ -730,6 +736,10 @@ SBPRuntime.prototype._setupEvent = function(command, callback) {
 	args = [mo,ac,fn]
 	this.driver.get(args, function(err, vals) {
 		var setup = {}
+		var teardown = {}
+		teardown[mo] = vals[0];
+		teardown[ac] = vals[1];
+		teardown[fn] = vals[2];
 		setup[mo] = command.state;
 		setup[ac] = 2 
 		setup[fn] =  0
@@ -740,6 +750,7 @@ SBPRuntime.prototype._setupEvent = function(command, callback) {
 				handler = {}
 				handler[1] = command.stmt
 				this.event_handlers[command.sw] = handler;
+				this.event_teardown[command.sw] = teardown;
 			}
 			callback();
 		}.bind(this));
