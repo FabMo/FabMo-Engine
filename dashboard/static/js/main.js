@@ -87,11 +87,13 @@ function setupHandwheel() {
 	var SCALE = 0.75;
 	var TICKS_MOVE = 20;
 	var NUDGE = {'mm' : 0.1, 'in' : 0.010};
-	var WATCHDOG_TIMEOUT = 500;
+	var WATCHDOG_TIMEOUT = 200;
 
 	var angle = 0.0;
 
 	var watchdog = null;
+	var last_move = 0;
+
 	function stopToolMotion() {
 		dashboard.machine.quit(function() {});
 	}
@@ -105,12 +107,20 @@ function setupHandwheel() {
 		console.log(distance)
 		console.log(speed);
 		if(angle > TICKS_MOVE) {
+			if(last_move) {
+				dashboard.machine.quit(function() {});
+			}
 			angle = 0;
 			dashboard.machine.fixed_move('+' + axis, distance, speed, function(err) {});
+			last_move = 0;
 		}
 		if(angle < -TICKS_MOVE) {
+			if(!last_move) {
+				dashboard.machine.quit(function() {});
+			}
 			angle = 0;
 			dashboard.machine.fixed_move('-' + axis, distance, speed, function(err) {});
+			last_move = 1;
 		}
 
 		if(watchdog) { clearTimeout(watchdog); }
