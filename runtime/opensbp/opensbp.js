@@ -395,7 +395,7 @@ SBPRuntime.prototype._end = function(error) {
 				end_function();
 			break;
 
-			case this.driver.STAT_STOP:
+			default:
 				this.driver.expectStateChange( {
 					'end':end_function,
 					'stop':end_function
@@ -405,11 +405,6 @@ SBPRuntime.prototype._end = function(error) {
 				} else {
 					this.driver.requestStatusReport();
 				}
-			break;
-
-			default:
-				log.error("Uh oh.")
-				// Hold?
 			break;
 		}
 
@@ -460,8 +455,8 @@ SBPRuntime.prototype._dispatch = function(callback) {
 						if(!event_handled) {
 							this.machine.setState(this, "paused");
 							driver.expectStateChange({
-								"running" : function(driver) { 
-									this.machine.setState(this, "running");
+								"running" : function(driver) {
+ 									this.machine.setState(this, "running");
 									run_function(driver);
 								}.bind(this),
 								"end" : function(driver) {
