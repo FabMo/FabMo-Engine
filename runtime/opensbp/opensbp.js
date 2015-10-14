@@ -341,6 +341,7 @@ SBPRuntime.prototype._continue = function() {
 SBPRuntime.prototype._end = function(error) {
 	if(this.machine) {
 		var end_function_no_nesting = function() {
+				log.debug("Calling the non-nested (toplevel) end");
 				// We are truly done
 				callback = this.end_callback;
 				this.init();
@@ -381,16 +382,12 @@ SBPRuntime.prototype._end = function(error) {
 		}.bind(this);
 
 		if((this.file_stack.length > 0) && !this.quit_pending && !error) {
+			log.debug("Doing the nested end.")
 			end_function = end_function_nested;
 		}
 		else {
-			end_function = end_function_no_nesting;
-		}
-
-		if(end_function === end_function_nested) {
-			log.debug("Doing the nested end.")
-		} else {
 			log.debug("Doing the outermost end.")
+			end_function = end_function_no_nesting;
 		}
 
 		switch(this.driver.status.stat) {
@@ -411,6 +408,7 @@ SBPRuntime.prototype._end = function(error) {
 			break;
 
 			default:
+				log.error("Uh oh.")
 				// Hold?
 			break;
 		}
@@ -449,6 +447,10 @@ SBPRuntime.prototype._dispatch = function(callback) {
 						// On alarm terminate the program (for now)
 						this._end();
 					}.bind(this),
+					"end" : function(driver) { 
+						// On end terminate the program (for now)
+						this._end();
+					}.bind(this),
 					"holding" : function(driver) {
 						// On hold, handle event that caused the hold
 						var event_handled = this._processEvents(callback);
@@ -462,13 +464,20 @@ SBPRuntime.prototype._dispatch = function(callback) {
 									this.machine.setState(this, "running");
 									run_function(driver);
 								}.bind(this),
+								"end" : function(driver) {
+									this._end();
+								}.bind(this),
+								null : function(driver) {
+									// TODO: This is probably a failure
+									log.warn("Expected a stop or hold (from the paused state) but didn't get one.");
+								}
 							});
 						}
 					}.bind(this),
 					"running" : null,
 					null : function(driver) {
 						// TODO: This is probably a failure
-						log.warn("Expected a stop or hold but didn't get one.");
+						log.warn("Expected a stop or hold (from the run state) but didn't get one.");
 					}
 				});
 			}.bind(this);
