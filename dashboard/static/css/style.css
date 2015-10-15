@@ -1102,9 +1102,77 @@ ul#loadbar li:first-child {
 	color: #5DA423;
 }
 
-.gotoJobManager:visited{
+.gotoJobManager:visited {
 	color: #F0F0F0;
 }
+
+.radial_progress {
+    background-color: #444444;
+	margin-top: -12px;
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+	float: right;
+	display: none;
+	margin-right: 20px;
+}
+
+.fill {
+    background-color: #5DA423;
+    height: 40px;
+    width: 40px;
+    transition: -webkit-transform 1s;
+    transition: -ms-transform 1s;
+    transition: transform 1s;
+    position: absolute;
+    /* rect(<top>, <right>, <bottom>, <left>) */
+    clip: rect(0px, 20px, 40px, 0px);
+    -webkit-backface-visibility: hidden;
+    border-radius: 50%;
+}
+
+.perecent_circle .mask {
+    /* rect(<top>, <right>, <bottom>, <left>) */
+      clip: rect(0px,40px,40px,20px);
+      height: 40px;
+      width: 40px;
+      position: absolute;
+      transition: -webkit-transform 1s;
+        transition: -ms-transform 1s;
+            transition: transform 1s;
+}
+.mask .fill {
+    clip: rect(0px, 20px, 40px, 0px);
+}
+.inset {
+    background-color: #333333;
+    width: 32px;
+    height: 32px;
+    position: absolute;
+    margin-left: 4px;
+    margin-top: 4px;
+    border-radius: 50%;
+    box-shadow: 3px 3px 5px rgba(0,0,0,0.2);
+}
+.shadow {
+      width: 40px;
+      height: 40px;
+      position: absolute;
+      border-radius: 50%;
+      box-shadow: inset 3px 3px 5px rgba(0,0,0,0.2);
+}
+
+.inset .percentage {
+     color: #5DA423;
+     font-size: 11px;
+     width: 28px;
+     position: absolute;
+     line-height: 1;
+     text-align: center;
+     top: 10.5px;
+     left: 2px
+}
+
 
 /* ********** Page (#modal_container) container ********** */
 #modal_container {

@@ -217,9 +217,9 @@ if ($(window).width() < 620) {
             step = 3,
             space = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
         var m = document.getElementById('marquee');
-        var t = m.innerHTML; //text
+        var t = m.innerHTML; 
         m.innerHTML = t + space;
-        m.style.position = 'absolute'; // http://stackoverflow.com/questions/2057682/determine-pixel-length-of-string-in-javascript-jquery/2057789#2057789
+        m.style.position = 'absolute'; 
         var width = (m.clientWidth + 1);
         m.style.position = '';
         m.innerHTML = t + space + t + space + t + space + t + space + t + space + t + space + t + space;

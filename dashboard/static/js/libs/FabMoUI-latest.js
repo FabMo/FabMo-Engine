@@ -192,64 +192,75 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	//Current File or job
 	if(status.job) {
 		console.log("there is a job")
-		$('#loadbar').show();
+		$('.radial_progress').show();
 		$('.startNextContainer').hide();
 		$(that.file_info_div_selector).removeClass('hide');
 		console.log(status.job);
 		$('.currentJobTitle').text(status.job.name);
 		$(that.filename_selector).html(status.job.name);
+		var transform_styles = ['-webkit-transform',
+                        '-ms-transform',
+                        'transform'];
 		var prog = ((status.line/status.nb_lines)*100).toFixed(2);
 		var percent = Math.round(prog);
 		var cc = 255 - Math.round(255*(percent/100));
-		$('.percentComplete').css('color', 'rgba('+cc+', 255, '+cc+', 1)')
-		$('.percentComplete').show();
+		var rotation = Math.round(180*(percent/100));
+ 		var fill_rotation = rotation;
+ 		var fix_rotation = rotation * 2;
+		$('.inset .percentage').css('color', 'rgba('+cc+', 255, '+cc+', 1)')
+		$('.mask .fill').css('background-color', 'rgba('+cc+', 255, '+cc+', 1)')
 		$(that.progress_selector).css("width",prog.toString() + "%");
-		$('.percentComplete').text(percent + '%');
-		if(prog >= 10) {
-			$('#layerFill1').css('-webkit-animation', 'fill .5s linear forwards')
-			$('#layerFill1').css('-moz-animation', 'fill .5s linear forwards')
+		$('.inset .percentage').text(percent + '%');
+		for(i in transform_styles) {
+			$('.fill, .mask.full').css(transform_styles[i], 'rotate(' + fill_rotation + 'deg)');
+			$('.fill.fix').css(transform_styles[i], 'rotate(' + fix_rotation + 'deg)');
 		}
-		if(prog >= 20) {
-			$('#layerFill2').css('-webkit-animation', 'fill .5s linear forwards')
-			$('#layerFill2').css('-moz-animation', 'fill .5s linear forwards')
-		}
-		if(prog >= 30) {
-			$('#layerFill3').css('-webkit-animation', 'fill .5s linear forwards')
-			$('#layerFill3').css('-moz-animation', 'fill .5s linear forwards')
-		}
-		if(prog >= 40) {
-			$('#layerFill4').css('-webkit-animation', 'fill .5s linear forwards')
-			$('#layerFill4').css('-moz-animation', 'fill .5s linear forwards')
-		}
-		if(prog >= 50) {
-			$('#layerFill5').css('-webkit-animation', 'fill .5s linear forwards')
-			$('#layerFill5').css('-moz-animation', 'fill .5s linear forwards')
-		}
-		if(prog >= 60) {
-			$('#layerFill6').css('-webkit-animation', 'fill .5s linear forwards')
-			$('#layerFill6').css('-moz-animation', 'fill .5s linear forwards')
-		}
-		if(prog >= 70) {
-			$('#layerFill7').css('-webkit-animation', 'fill .5s linear forwards')
-			$('#layerFill7').css('-moz-animation', 'fill .5s linear forwards')
-		}
-		if(prog >= 80) {
-			$('#layerFill8').css('-webkit-animation', 'fill .5s linear forwards')
-			$('#layerFill8').css('-moz-animation', 'fill .5s linear forwards')
-		}
-		if(prog >= 90) {
-			$('#layerFill9').css('-webkit-animation', 'fill .5s linear forwards')
-			$('#layerFill9').css('-moz-animation', 'fill .5s linear forwards')
-		}
-		if(prog >= 99) {
-			$('#layerFill10').css('-webkit-animation', 'fill .5s linear forwards')
-			$('#layerFill10').css('-moz-animation', 'fill .5s linear forwards')
-			$('.percentComplete').text('100%');
-		}
+		// if(prog >= 10) {
+		// 	$('#layerFill1').css('-webkit-animation', 'fill .5s linear forwards')
+		// 	$('#layerFill1').css('-moz-animation', 'fill .5s linear forwards')
+		// }
+		// if(prog >= 20) {
+		// 	$('#layerFill2').css('-webkit-animation', 'fill .5s linear forwards')
+		// 	$('#layerFill2').css('-moz-animation', 'fill .5s linear forwards')
+		// }
+		// if(prog >= 30) {
+		// 	$('#layerFill3').css('-webkit-animation', 'fill .5s linear forwards')
+		// 	$('#layerFill3').css('-moz-animation', 'fill .5s linear forwards')
+		// }
+		// if(prog >= 40) {
+		// 	$('#layerFill4').css('-webkit-animation', 'fill .5s linear forwards')
+		// 	$('#layerFill4').css('-moz-animation', 'fill .5s linear forwards')
+		// }
+		// if(prog >= 50) {
+		// 	$('#layerFill5').css('-webkit-animation', 'fill .5s linear forwards')
+		// 	$('#layerFill5').css('-moz-animation', 'fill .5s linear forwards')
+		// }
+		// if(prog >= 60) {
+		// 	$('#layerFill6').css('-webkit-animation', 'fill .5s linear forwards')
+		// 	$('#layerFill6').css('-moz-animation', 'fill .5s linear forwards')
+		// }
+		// if(prog >= 70) {
+		// 	$('#layerFill7').css('-webkit-animation', 'fill .5s linear forwards')
+		// 	$('#layerFill7').css('-moz-animation', 'fill .5s linear forwards')
+		// }
+		// if(prog >= 80) {
+		// 	$('#layerFill8').css('-webkit-animation', 'fill .5s linear forwards')
+		// 	$('#layerFill8').css('-moz-animation', 'fill .5s linear forwards')
+		// }
+		// if(prog >= 90) {
+		// 	$('#layerFill9').css('-webkit-animation', 'fill .5s linear forwards')
+		// 	$('#layerFill9').css('-moz-animation', 'fill .5s linear forwards')
+		// }
+		// if(prog >= 99) {
+		// 	$('#layerFill10').css('-webkit-animation', 'fill .5s linear forwards')
+		// 	$('#layerFill10').css('-moz-animation', 'fill .5s linear forwards')
+		// 	$('.percentComplete').text('100%');
+		// }
 	}
 	else {
 		$(that.file_info_div_selector).addClass('hide');
 		$('#loadbar').hide();
+		$('.radial_progress').hide();
 		$('.percentComplete').hide();
 		$('.startNextContainer').show();
 		$('.bar').css('-webkit-animation', '');

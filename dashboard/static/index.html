@@ -40,10 +40,25 @@
             <div class="currentContainer">
               <span class="currentJobTitle" id="marquee"></span>
             </div>
-            <span class="percentComplete"></span>
+            <div class="radial_progress">
+              <div class="perecent_circle">
+                <div class="mask full">
+                  <div class="fill"></div>
+                </div>
+                <div class="mask half">
+                  <div class="fill"></div>
+                  <div class="fill fix"></div>
+                </div>
+              <div class="shadow"></div>
+            </div>
+            <div class="inset">
+              <div class="percentage">1%</div>
+            </div>
+          </div>
+            <!--<span class="percentComplete"></span>
               <ul id="loadbar">
                 <li>
-                  <div id="layerFill1" class="bar"></div> <!-- Control Layer + Bar  -->
+                  <div id="layerFill1" class="bar"></div>
                 </li>
                 <li>
                   <div id="layerFill2" class="bar"></div>
@@ -72,7 +87,8 @@
                 <li>
                   <div id="layerFill10" class="bar"></div>
                 </li>
-              </ul>  
+              </ul> -->
+    
           <span class='fabmo-stop-button'>
             <a class='stopJob'>STOP</a>
           </span>
