@@ -240,7 +240,7 @@ if ($(window).width() < 620) {
     }
 	
 	$('.currentContainer').css('width', '100px');
-	$('.currentJobTitle').css('width', '40%');
+	$('.currentJobTitle').css('width', '50%');
 	$('.currentJobTitle').css('padding-left', '100px');
 }
 })();

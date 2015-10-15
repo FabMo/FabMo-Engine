@@ -1170,7 +1170,8 @@ ul#loadbar li:first-child {
      line-height: 1;
      text-align: center;
      top: 10.5px;
-     left: 2px
+     left: 2px;
+	 font-family: 'source_sans_proextralight'; 
 }
 
 
