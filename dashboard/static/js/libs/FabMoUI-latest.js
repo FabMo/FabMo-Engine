@@ -214,8 +214,10 @@ FabMoUI.prototype.updateStatusContent = function(status){
 			for(i in transform_styles) {
 			$('.fill, .mask.full').css(transform_styles[i], 'rotate(' + fill_rotation + 'deg)');
 			$('.fill.fix').css(transform_styles[i], 'rotate(' + fix_rotation + 'deg)');
+			$('.load_container').hide();
 		}
 		} else {
+			$('.radial_progress').hide();
    			$('.load_container').show();
 			$('.percent_comp').text(percent + '%');
 			$('.horizontal_fill').css('width', percent + '%');
