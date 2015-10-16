@@ -192,7 +192,6 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	//Current File or job
 	if(status.job) {
 		console.log("there is a job")
-		$('.radial_progress').show();
 		$('.startNextContainer').hide();
 		$(that.file_info_div_selector).removeClass('hide');
 		console.log(status.job);
@@ -207,14 +206,21 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		var rotation = Math.round(180*(percent/100));
  		var fill_rotation = rotation;
  		var fix_rotation = rotation * 2;
-		$('.inset .percentage').css('color', 'rgba('+cc+', 255, '+cc+', 1)')
-		$('.mask .fill').css('background-color', 'rgba('+cc+', 255, '+cc+', 1)')
-		$(that.progress_selector).css("width",prog.toString() + "%");
-		$('.inset .percentage').text(percent + '%');
-		for(i in transform_styles) {
+		if ($(window).width() < 620) {
+   			$('.radial_progress').show();
+			$('.inset .percentage').css('color', 'rgba('+cc+', 255, '+cc+', 1)');
+			$('.mask .fill').css('background-color', 'rgba('+cc+', 255, '+cc+', 1)');
+			$('.inset .percentage').text(percent + '%');
+			for(i in transform_styles) {
 			$('.fill, .mask.full').css(transform_styles[i], 'rotate(' + fill_rotation + 'deg)');
 			$('.fill.fix').css(transform_styles[i], 'rotate(' + fix_rotation + 'deg)');
 		}
+		} else {
+   			$('.load_container').show();
+			$('.percent_comp').text(percent + '%');
+			$('.horizontal_fill').css('width', percent + '%');
+		}
+		$(that.progress_selector).css("width",prog.toString() + "%");
 		// if(prog >= 10) {
 		// 	$('#layerFill1').css('-webkit-animation', 'fill .5s linear forwards')
 		// 	$('#layerFill1').css('-moz-animation', 'fill .5s linear forwards')
@@ -259,6 +265,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	}
 	else {
 		$(that.file_info_div_selector).addClass('hide');
+		$('.load_container').hide();
 		$('#loadbar').hide();
 		$('.radial_progress').hide();
 		$('.percentComplete').hide();
