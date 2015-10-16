@@ -23,9 +23,13 @@ event
       {return {"type":"event", "sw":sw, "state":state, "stmt":stmt};} 
 
 command 
-   = m:mnemonic 
-     args:(("," __ (arg:argument) __ ){return arg})* 
-     {return {type:"cmd","cmd":m,"args":args};}
+   = m:mnemonic arg1:((","/___) argument)?
+     args:(("," __ (arg:argument) __ ){return arg;})* 
+     {
+      if(arg1) {
+        args.unshift(arg1[1]);
+      }
+      return {type:"cmd","cmd":m,"args":args};}
 
 single
    = name:("END"i / "RETURN"i) 
