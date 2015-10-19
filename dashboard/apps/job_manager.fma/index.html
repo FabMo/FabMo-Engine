@@ -184,7 +184,7 @@
                 "className":      'details-control',
                 "orderable":      false,
                 "data":           null,
-                "defaultContent": ''
+                "defaultContent": "<div class='more-details' title='more details'><div>+</div></div>"
             },
             { 	
             	data : "name", 
@@ -372,26 +372,44 @@
 	// Add event listener for opening and closing details
     $('#history_table tbody').on('click', 'td.details-control', function () {
         var tr = $(this).closest('tr');
+		var plus = $(this).find($('.more-details div'));
+		console.log(plus);
         var row = history_table.row( tr );
  		if(row.child()) {
 	        if ( row.child.isShown() ) {
 	            // This row is already open - close it
 				row.child.hide();
 				row.child.remove();
-	            tr.removeClass('shown');
-				
+				plus.css('color', '#A6A6A6');
+				plus.css({
+        			"-webkit-transform": "rotate(0deg)",
+       				"-moz-transform": "rotate(0deg)",
+        			"transform": "rotate(0deg)" 
+   				 });	
+				plus.css({
+					'top': '5.5px',
+  					'left': '0px'	
+			});	
 	        }
 	        else {
 	            // Open this row
 	            row.child.show();
-	            tr.addClass('shown');
 		    }
  		} else {
  			job = row.data()
  			row.child( history_child_row(job) ).show();
-	        tr.addClass('shown');
+			plus.css('color', '#904848');
+			plus.css({
+        			"-webkit-transform": "rotate(135deg)",
+       				"-moz-transform": "rotate(135deg)",
+        			"transform": "rotate(135deg)" 
+   			});
+			plus.css({
+				'top': '9.5px',
+  				'left': '2px'	
+			});		
  		}
-    } );
+    });
 
 	function refresh_jobs_list(){
 		queue_table.ajax.reload();
