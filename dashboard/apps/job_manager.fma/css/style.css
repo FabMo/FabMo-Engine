@@ -93,7 +93,6 @@ td.preview-control {
 }
 
 .more-details {
-  
   width: 36px;
   height: 36px;
   color: #A6A6A6;
@@ -103,19 +102,26 @@ td.preview-control {
   float: left;
   text-align: center;
   transform-origin: center;
+  transition: transform .5s linear;
+  transform-style: preserve-3D;
 }
+
 .more-details:hover {
    border-color: #666;
    color: #666;
    transition: all .3s;
 }
+
 .more-details div {
   position: relative;
-  top: 5.5px;
   font-family: "Lucida Console", Monaco, monospace;
+  top: 5.4px;
   font-size: 1.7em;
-  transform-origin: center;
-  transition: transform .5s, color .3s;
+  transition: color .3s;
+}
+
+.more-details div:hover {
+  color: #666;
 }
 
 .ellipses {

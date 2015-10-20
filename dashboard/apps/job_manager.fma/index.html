@@ -373,6 +373,7 @@
     $('#history_table tbody').on('click', 'td.details-control', function () {
         var tr = $(this).closest('tr');
 		var plus = $(this).find($('.more-details div'));
+		var circle = $(this).find($('.more-details'));
 		console.log(plus);
         var row = history_table.row( tr );
  		if(row.child()) {
@@ -381,15 +382,11 @@
 				row.child.hide();
 				row.child.remove();
 				plus.css('color', '#A6A6A6');
-				plus.css({
+				circle.css({
         			"-webkit-transform": "rotate(0deg)",
        				"-moz-transform": "rotate(0deg)",
         			"transform": "rotate(0deg)" 
    				 });	
-				plus.css({
-					'top': '5.5px',
-  					'left': '0px'	
-			});	
 	        }
 	        else {
 	            // Open this row
@@ -399,15 +396,11 @@
  			job = row.data()
  			row.child( history_child_row(job) ).show();
 			plus.css('color', '#904848');
-			plus.css({
+			circle.css({
         			"-webkit-transform": "rotate(135deg)",
        				"-moz-transform": "rotate(135deg)",
         			"transform": "rotate(135deg)" 
    			});
-			plus.css({
-				'top': '9.5px',
-  				'left': '2px'	
-			});		
  		}
     });
 
