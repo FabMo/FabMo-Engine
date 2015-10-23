@@ -9,6 +9,35 @@ define(function(require) {
 	// Events and keypress handlers in the FabMo-Dashboard
 
 	/********** Layout Resize Fonctions **********/
+	
+ 	var openDROPush = function () {
+		 $('#right-menu').css('right', '0');
+		 $('#app-client-container').css('padding-right', '218px');
+		 $('.app-section').css('margin-right', '218px');
+	 }
+	 
+	 var closeDROPush = function () {
+		 $('#right-menu').css('right', '-222px');
+		 $('#app-client-container').css('padding-right', '0px');
+		 $('.app-section').css('margin-right', '0px');
+		
+	 }
+	 
+	 var openDROover = function () {
+		 $('#right-menu').css('right', '0');
+	 }
+	 var closeDROover = function ()  {
+		 $('#right-menu').css('right', '-222px');
+	 }
+	 
+	 $('.DRO-button').on('click', function (){
+		 if ($('#right-menu').css('right') === '0px') {
+			 closeDROPush();
+		 } else {
+			 openDROPush();
+		 }
+	 });
+	 
 	var resizedoc = function(){
 		//L & R = width of left & right menus
 		var l=0; var r=0;

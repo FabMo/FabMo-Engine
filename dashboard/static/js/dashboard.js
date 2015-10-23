@@ -5,7 +5,7 @@
  * the parts that we want the app to see.
  */
 define(function(require) {
-
+	var events = require ('./events');
 	var Dashboard = function(target) {
 		this.machine = null;
 		this.socket = null;
@@ -111,13 +111,13 @@ define(function(require) {
 			callback(null)
 		}.bind(this));
 		
-				// Show the DRO
+				// Show the footer
 		this._registerHandler('showFooter', function(data, callback) { 
 			this.openFooter();
 			callback(null);
 		}.bind(this));
 
-		// Hide the DRO
+		// Hide the footer
 		this._registerHandler('hideFooter', function() { 
 			this.closeFooter() 
 			callback(null)
@@ -442,23 +442,21 @@ define(function(require) {
 
 	//Open the right menu
 	Dashboard.prototype.openRightMenu = function() {
-		$("#main").addClass("offcanvas-overlap-left");
-		if(this.machine) {
-			this.ui.setMenuOpen();
+		if ($(window).width() < 642) {
+			console.log('wtf');
+			events.openDROover();
+		} else {
+			console.log('wtf2');
+			events.openDROPush();
 		}
-		require('events').resizedoc();
+		
+		
+		
 		//resizedoc();
 	}
 
 	//Close the right menu
-	Dashboard.prototype.closeRightMenu = function() {
-		$("#main").removeClass("offcanvas-overlap-left");
-		if(this.machine) {
-			this.ui.setMenuClosed();
-		}
-		require('events').resizedoc();
-		//resizedoc();
-	}
+
 	//Open Footer
 	Dashboard.prototype.openFooter = function() {
 		$('.footBar').css('height', '50px');

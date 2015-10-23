@@ -273,13 +273,13 @@
 		$('.dropDownWrapper').show();//create transparent wrapper that you can click to close
  		var dd = $(this).nextAll();
 		dd.show();
-		var cancelId = $('.cancelJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, jobId)
+		var cancelId = $('.cancelJob').attr('id').replace(/[0-9]+/g, jobId)
 		$('.cancelJob').attr('id', cancelId);
-		var previewId = $('.previewJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, jobId)
+		var previewId = $('.previewJob').attr('id').replace(/[0-9]+/g, jobId)
 		$('.previewJob').attr('id', previewId);
-		var editId = $('.editJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, jobId)
+		var editId = $('.editJob').attr('id').replace(/[0-9]+/g, jobId)
 		$('.editJob').attr('id', editId);
-		var downloadId = $('.downloadJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, jobId)
+		var downloadId = $('.downloadJob').attr('id').replace(/[0-9]+/g, jobId)
 		$('.downloadJob').attr('id', downloadId);
 		$('.dropDownWrapper').click(function (){ //clicking outside of the menu will cause it to hide
 			$('.dropDownWrapper').hide();
@@ -336,13 +336,13 @@
 		$('.dropDownWrapper').show();//create transparent wrapper that you can click to close
 		var dd = $(this).nextAll();
 			dd.show();
-			var previewId = $('.previewJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, job._id)
+			var previewId = $('.previewJob').attr('id').replace(/[0-9]+/g, job._id)
 			$('.previewJob').attr('id', previewId);
-			var editId = $('.editJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, job._id)
+			var editId = $('.editJob').attr('id').replace(/[0-9]+/g, job._id)
 			$('.editJob').attr('id', editId);
-			var resubmitId = $('.resubmitJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, job._id)
+			var resubmitId = $('.resubmitJob').attr('id').replace(/[0-9]+/g, job._id)
 			$('.resubmitJob').attr('id', resubmitId);
-			var downloadId = $('.downloadJob').attr('id').replace(/([0-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9])$/g, job._id)
+			var downloadId = $('.downloadJob').attr('id').replace(/[0-9]+/g, job._id)
 			$('.downloadJob').attr('id', downloadId);
 		$('.dropDownWrapper').click(function (){ //clicking outside of the menu will cause it to hide
 			$('.dropDownWrapper').hide();

@@ -115,7 +115,7 @@ td.preview-control {
 .more-details div {
   position: relative;
   font-family: "Lucida Console", Monaco, monospace;
-  top: 5.4px;
+  top: 5px;
   font-size: 1.7em;
   transition: color .3s;
 }

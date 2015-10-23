@@ -204,17 +204,21 @@ body,html{
 	width: 11.375rem;
 }
 
-.right-off-canvas-menu {
+.DRO {
+	position: fixed;
+	top: 0;
+	margin-top: 45px;
+	right: -222px;
 	background-color: #9C210C;
 	width: 222px;
-	width: 13.875rem;
+	bottom: 0;
+	z-index: 1002;
+	transition: all 0.5s;
 }
 
 
 /* Change #left-menu & #right-menu config */
-@media only screen and (min-width: 64.063em) {
-	.right-off-canvas-menu	{ float: right; }
-}
+
 
 @media only screen and (min-width: 40.063em) {
 	.left-off-canvas-menu	{ float: left; }
@@ -677,6 +681,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	width: 100%;
 	height: 100%;
 	display: none;
+	transition: all 0.5s;
 }
 
 #spinner-container {
