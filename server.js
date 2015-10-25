@@ -1,7 +1,7 @@
-var lockfile = require('lockfile');
+//var lockfile = require('lockfile'); // deactivate the second instance lock.
 var config = require('./config');
 var log = require('./log').logger('server');
-
+/*
 var lockfile_path = config.getLockFile();
 
 lockfile.lock(lockfile_path,{},function(err){
@@ -9,7 +9,7 @@ lockfile.lock(lockfile_path,{},function(err){
         log.error("You can't run a second instance of the Fabmo-Engine program");
 		process.exit(13); // this is an arbitrary setted value; Node.js is using value 1 to 12 for its own error codes
     }
-
+*/
 	var engine = require('./engine');
 	var argv = require('minimist')(process.argv);
 
@@ -21,7 +21,7 @@ lockfile.lock(lockfile_path,{},function(err){
 	});
 
 	exports.engine = engine;
-});
+/*});
 
 process.on('exit', function(code) {
 	clearLock(code);
@@ -37,4 +37,4 @@ function clearLock(code){
         {
             lockfile.unlockSync(lockfile_path);
         }
-}
+}*/
