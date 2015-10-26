@@ -5,7 +5,7 @@
  * the parts that we want the app to see.
  */
 define(function(require) {
-	var events = require ('./events');
+	var events = require ('events');
 	var Dashboard = function(target) {
 		this.machine = null;
 		this.socket = null;
@@ -442,20 +442,21 @@ define(function(require) {
 
 	//Open the right menu
 	Dashboard.prototype.openRightMenu = function() {
-		if ($(window).width() < 642) {
-			console.log('wtf');
+		if ($(window).width() < 900) {
 			events.openDROover();
 		} else {
-			console.log('wtf2');
 			events.openDROPush();
 		}
-		
-		
-		
-		//resizedoc();
 	}
 
 	//Close the right menu
+	Dashboard.prototype.closeRightMenu = function() {
+		if ($(window).width() < 900) {
+			events.closeDROover();
+		} else {
+			events.closeDROPush();
+		}
+	}
 
 	//Open Footer
 	Dashboard.prototype.openFooter = function() {

@@ -13,29 +13,47 @@ define(function(require) {
  	var openDROPush = function () {
 		 $('#right-menu').css('right', '0');
 		 $('#app-client-container').css('padding-right', '218px');
-		 $('.app-section').css('margin-right', '218px');
+		 $('#app_menu_container').css('padding-right', '220px');
 	 }
 	 
 	 var closeDROPush = function () {
 		 $('#right-menu').css('right', '-222px');
 		 $('#app-client-container').css('padding-right', '0px');
-		 $('.app-section').css('margin-right', '0px');
-		
+		 $('#app_menu_container').css('padding-right', '0px');	
 	 }
 	 
 	 var openDROover = function () {
 		 $('#right-menu').css('right', '0');
 	 }
+	 
 	 var closeDROover = function ()  {
 		 $('#right-menu').css('right', '-222px');
 	 }
 	 
-	 $('.DRO-button').on('click', function (){
-		 if ($('#right-menu').css('right') === '0px') {
-			 closeDROPush();
+	 var setRightMenuBehavior = function () {
+		  if ($('#right-menu').css('right') === '0px') {
+			 if ($(window).width() < 900) {
+				closeDROover();
+			 } else {
+				closeDROPush();
+			 }
 		 } else {
-			 openDROPush();
+			if ($(window).width() < 900) {
+			   openDROover();
+			} else {
+			   openDROPush();
+			}	
 		 }
+	 }
+	 var rightMenuLoad = function () {
+		 	if ($(window).width() > 900) {
+			   	openDROPush();
+			} else if  ($(window).width() < 900){
+				closeDROPush();
+			}
+	 }
+	 $('.DRO-button').on('click', function (){
+		setRightMenuBehavior();
 	 });
 	 
 	var resizedoc = function(){
@@ -189,11 +207,15 @@ define(function(require) {
 	      offcanvas : {
 	        open_method: 'overlap_single', 
 	      }
+		  
 	    });	
-
+		rightMenuLoad();
 		resizedoc();
 		//If size of the screen change, we resize the main & app container
-		$(window).resize( function() {resizedoc();});
+		$(window).resize( function() {
+			resizedoc();
+			rightMenuLoad();
+			});
 
 		//Idem if we colapse or un-colapse the right menu
 		$("#icon_colapse").click(function() { 
@@ -218,7 +240,10 @@ define(function(require) {
 	return {
 		'resizedocclick' : resizedocclick,
 		'resizedoc' : resizedoc,
-		'colapseMenu' : colapseMenu
-
+		'colapseMenu' : colapseMenu,
+		'openDROover' : openDROover,
+		'closeDROover' : closeDROover,
+		'openDROPush' : openDROPush,
+		'closeDROPush' : closeDROPush
 	}
 })
