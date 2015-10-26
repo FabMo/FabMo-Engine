@@ -34,6 +34,9 @@ STATE_DIR = '/var/lib/edison_config_tools'
 HOST_AP_MODE_FILE = "/.start-in-host-ap-mode"
 CURR_PACKAGE_PATH = ""
 IFNAME = 'wlan0'
+WPAPSK_REGEX=re.compile(r'\[WPA[2]?-PSK-.+\]')
+WPAEAP_REGEX=re.compile(r'\[WPA[2]?-EAP-.+\]')
+WEP_REGEX=re.compile(r'\[WEP.*\]')
 
 class wpa_templates:
   START = '''
@@ -190,7 +193,7 @@ def wifi_scan():
   network_file.write("}\n")
   network_file.close()
 
-  return (ssid_keys, network_map)
+  return network_map
 
 def configureHiddenNetwork(ssid):
   print '''
@@ -385,6 +388,25 @@ def get_wifi_mode():
     modestr = modestr[modestr.find('Mode:')+5:].split()[0]
     return modestr
 
+def get_wifi_info():
+	iwconfig = ''
+	ifconfig = ''
+	try:
+		iwconfig = subprocess.check_output('iwconfig %s' % IFNAME, shell=True)
+		ifconfig = subprocess.check_output('ifconfig %s' % IFNAME, shell=True)
+		ssid = re.compile('ESSID:"(\w+)"').search(iwconfig).group(1)
+		mode = re.compile('Mode:(\w+)').search(iwconfig).group(1)
+		a,b = re.compile('Link Quality=(\d+)\/(\d+)').search(iwconfig).groups()
+		print ssid	
+
+	except Exception, e:
+		print e	
+		print "noooo" 
+		pass
+
+	print iwconfig
+	print ifconfig
+
 
 def isRestartWithAPSet():
     try:
@@ -503,5 +525,6 @@ def enter_station_mode(ssid, password):
     disableOneTimeSetup(True)
     os.popen("systemctl restart fabmo")
 
+
 if __name__ == "__main__":
-  print wifi_scan()
+	get_wifi_info()
