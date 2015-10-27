@@ -79,8 +79,9 @@ GCodeViewer.TotalSize = function(scene) {
         if(totalSize === undefined) {
             return;
         }
+        var color = 0x000000;
         var margin = 0.5;
-        var material = new THREE.LineBasicMaterial({ color : 0xffffff });
+        var material = new THREE.LineBasicMaterial({ color : color });
         var geometry = new THREE.Geometry();
         var type = (displayInMm === false) ? "in" : "mm";
         var d = (displayInMm === false) ? 1 : GCodeToGeometry.inchToMm;
@@ -93,7 +94,6 @@ GCodeViewer.TotalSize = function(scene) {
         var fontSize = calculateFontSize(width, length, height);
         var options = {'font' : 'helvetiker','weight' : 'normal',
             'style' : 'normal','size' : fontSize,'curveSegments' : 300};
-        var color = 0xffffff;
 
         that.remove();
 

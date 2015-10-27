@@ -18,6 +18,7 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
     var that = this;
 
     var lengthBit = 1;
+    var G0Feedrate = 120;
 
     /**
      * Shows the bit in the scene.
@@ -150,7 +151,12 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
 
     function setCurrentSpeed() {
         //We use in/ms here and feedrate is in in/min
-        that.currentSpeed = that.currentPath[that.iPath].feedrate / 60000;
+        var line = that.currentPath[that.iPath];
+        if(line.type === "G0") {
+            that.currentSpeed = G0Feedrate / 60000;
+        } else {
+            that.currentSpeed = that.currentPath[that.iPath].feedrate / 60000;
+        }
     }
 
     //Check if need to change index of the path

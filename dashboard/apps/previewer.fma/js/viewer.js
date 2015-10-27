@@ -257,15 +257,14 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         that.scene.remove(that.boardBox);
     };
 
-    /**
-     * Sets the GCode and displays the result.
-     *
-     * @param {string} The GCode.
-     */
-    that.setGCode = function(string) {
+    // Function created because web front end ecosystem is so awesome that we
+    // cannot display an HTML element if the function is not over, during a
+    // loop or whatever other reason
+    function reallySetGCode(string) {
         that.gcode = GCodeToGeometry.parse(string);
         if(that.gcode.isComplete === false) {
             displayError(that.gcode.errorMessage);
+            that.gui.hideLoadingMessage();
             return;
         }
 
@@ -274,6 +273,29 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
                 that.cncConfiguration.initialPosition);
         that.refreshDisplay();  //To avoid confusion, we remove everything
         that.gui.setGCode(that.gcode.gcode);
+        that.gui.hideLoadingMessage();
+    }
+
+    /**
+     * Sets the GCode and displays the result.
+     *
+     * @param {string} The GCode.
+     * @param {function} Callback function called when the meshes are created.
+     */
+    that.setGCode = function(string, callback) {
+        that.gui.displayLoadingMessage();
+        var cb;
+        if(callback === undefined) {
+            cb = function() {
+                reallySetGCode(string);
+            };
+        } else {
+            cb = function() {
+                reallySetGCode(string);
+                callback();
+            };
+        }
+        setTimeout(cb, 100);
     };
 
     /**
@@ -359,13 +381,13 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     that.renderer.domElement.style.zIndex = 1;
     container.appendChild(that.renderer.domElement);
 
-    that.renderer.setClearColor( 0x303030 );
+    that.renderer.setClearColor( 0xebebeb );
     that.renderer.setPixelRatio( window.devicePixelRatio );
 
     that.scene = new THREE.Scene();
     setCombinedCamera();
     that.showZ();
-   
+
     that.light1 = new THREE.PointLight( 0xffffff, 1, 100 );
     that.light1.position.set( 0, 0, -10 );
     that.scene.add( that.light1 );

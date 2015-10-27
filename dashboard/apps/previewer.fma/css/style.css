@@ -6,3 +6,12 @@ body {
 h1, h2, h3, h4, h5, h6 {
   color: #666;
 }
+
+#loadingMessage {
+	background : #EBEBEB;
+	border : gray solid 1px;
+	border-radius: 10px;
+	color: black;
+	padding: 10px;
+	height: 50px;
+}
