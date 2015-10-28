@@ -62,9 +62,9 @@
 				<thead>
 	            <tr>
 	                <th>&nbsp;</th>
+	                <th>&nbsp;</th>
 	                <th>Name</th>
 	                <th>Status</th>
-	                <th>Submitted</th>
 	                <th>&nbsp;</th>
 	            </tr>
 	        	</thead>
@@ -91,9 +91,9 @@
 	            <tr>
 	                <th>&nbsp;</th>
 	                <th>Name</th>
-	                <th>Status</th>
 	                <th>Run At</th>
-	                <th>&nbsp;</th>
+	                <th>Duration</th>
+	                <th>Status</th>
 	            </tr>
 	        	</thead>
 	        	</table>
@@ -180,20 +180,15 @@
         		return json.data.jobs; }
         	},
         "columns": [
-            {
-                "className":      'details-control',
+             {
+                "className":      'actions-control',
                 "orderable":      false,
                 "data":           null,
-                "defaultContent": "<div class='more-details' title='more details'><div>+</div></div>"
+                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='resubmitJob' id='resubmit'>Run Again</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div",
             },
             { 	
             	data : "name", 
             	defaultContent : ''
-            },
-            { 
-            	data : "state",
-            	defaultContent : '',
-            	render : function(state) { return '<div class="job-' + state + '">' + state + '</div>'}
             },
             { 
             	data : "finished_at", 
@@ -205,16 +200,26 @@
     				return data;
     			}
             },
-            {
-                "className":      'actions-control',
-                "orderable":      false,
-                "data":           null,
-                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='resubmitJob' id='resubmit'>Run Again</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div",
+            { 
+            	data: {started : 'started_at',
+				finished: 'finished_at'},
+            	defaultContent : '', 
+            	render : function(started, finished) { 
+					
+					return '<div>' +moment.utc(started.finished_at - started.started_at).format('HH:mm:ss')+'</div>'
+					}
+					
+            },
+         	{ 
+            	data : "state",
+            	defaultContent : '',
+            	render : function(state) { return '<div class="job-' + state + '">' + state + '</div>'}
             },
         ],
-        "order" : [[3,"desc"]]
+        "order" : [[2,"desc"]]
     }); 
 	
+
 	
 	// DataTable
 
@@ -240,6 +245,12 @@
                 "defaultContent": '',
                 "visible": ''
             },
+			{
+                "className":      'actions-control',
+                "orderable":      false,
+                "data":           null,
+                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='cancelJob' id='cancel-1'>Cancel Job</a></li><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div"
+            },
             {
             data : "name", 
             defaultContent : ''
@@ -254,12 +265,6 @@
             visible : false, 
             defaultContent : '', 
             },    
-            {
-                "className":      'actions-control',
-                "orderable":      false,
-                "data":           null,
-                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='cancelJob' id='cancel-1'>Cancel Job</a></li><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div"
-            },
         ],
         "order" : [[3,"desc"]]
     }); // DataTable
