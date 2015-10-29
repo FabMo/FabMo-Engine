@@ -50,6 +50,21 @@ var getAppInfo = function(req, res, next) {
 	res.json(answer);
 };
 
+var getAppConfig = function(req, res, next) {
+    try {
+        var answer = {
+            status:"success",
+            data : {config : dashboard.getAppConfig(req.params.id)}
+        };
+    } catch(e) {
+        var answer = {
+            status:"error",
+            message : String(e)
+        };
+    }
+    res.json(answer);
+}
+
 /**
  * @api {delete} /apps/:id Delete App
  * @apiDescription Delete the specified app
@@ -193,6 +208,7 @@ module.exports = function(server) {
     server.post('/apps', submitApp);
     server.get('/apps', getApps);
     server.get('/apps/:id', getAppInfo);
+    server.get('/apps/:id/config', getAppConfig);
     server.del('/apps/:id', deleteApp);
     server.get('/apps/:id/files', listAppFiles);
     server.get(/\/approot\/?.*/, restify.serveStatic({

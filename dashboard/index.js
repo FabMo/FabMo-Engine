@@ -20,6 +20,10 @@ exports.getAppIndex = function() {
 	return exports.appManager.getAppIndex() || [];
 };
 
+exports.getAppConfig = function(id) {
+	return exports.appManager.getAppConfig(id);
+};
+
 exports.getAppList = function() {
 	return exports.appManager.getAppList() || [];
 };

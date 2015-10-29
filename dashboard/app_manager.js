@@ -17,16 +17,19 @@ var AppManager = function(options) {
 	this.approot_directory = options.approot_directory;
 	this.system_app_directory = path.join(__dirname, 'apps');
 	this.apps_index = {};
+	this.app_configs = {};
 	this.apps_list = [];
 };
 
 AppManager.prototype.readAppPackageInfo = function(app_info, callback) {
+	console.log(app_info);
 	var pkg_info_path = path.join(app_info.app_path, 'package.json');
 	var pathname = path.basename(app_info.app_archive_path);
 	fs.readFile(pkg_info_path, function(err, data) {
 		try {
 			var package_info = JSON.parse(data);
 			app_info.name = package_info.name;
+			app_info.config_path = path.join(app_info.app_path, '.config.json');
 			app_info.icon_path = app_info.app_path + package_info.icon;
 			app_info.icon_background_color = package_info.icon_color || 'blue';
 			app_info.icon_display = package_info.icon_display;
@@ -41,6 +44,35 @@ AppManager.prototype.readAppPackageInfo = function(app_info, callback) {
 	}.bind(this));
 };
 
+AppManager.prototype.readAppConfiguration = function(app_info, callback) {
+	
+	log.debug("Reading app configuration from " + app_info.config_path)
+	fs.readFile(app_info.config_path, function(err, data) {
+		try {
+			var cfg_data = JSON.parse(data);
+			callback(null, cfg_data);
+		} catch(e) {
+			callback(e);
+		}
+	}.bind(this))
+}
+
+AppManager.prototype.readAppMetadata = function(app_info, callback) {
+	this.readAppPackageInfo(app_info, function(err, info) {
+		if(err) {
+			callback(err);
+		} else {
+			this.readAppConfiguration(info, function(err, cfg) {
+				if(err) {
+					log.warn('Could not read app configuration: ' + err);
+				}
+				cfg = cfg || {};
+				callback(null, {'info' : info, 'config' : cfg});
+			}.bind(this))
+		}
+	}.bind(this))
+}
+
 AppManager.prototype.getAppRoot = function(id) {
 	return this.apps_index[id].app_path;
 };
@@ -53,24 +85,24 @@ AppManager.prototype.getAppList = function() {
 	return this.apps_list;
 };
 
-AppManager.prototype._setApps = function(list_of_apps) {
-	var apps_index = {};
-	for(var i in list_of_apps) {
-		apps_index[list_of_apps[i].id] = list_of_apps[i];
-	}
-	this.apps_index = apps_index;
-	this.apps_list = list_of_apps;
-};
+AppManager.prototype.getAppConfig = function(id) {
+	this.app_configs[id];
+}
+
+AppManager.prototype.setAppConfig = function(id, config, callback) {
+	this.app_configs[id] = config;
+}
 
 AppManager.prototype._addApp = function(app) {
-	if(app.id in this.apps_index) { return; }
-	this.apps_list.push(app);
-	this.apps_index[app.id] = app;
+	if(app.info.id in this.apps_index) { return; }
+	this.apps_list.push(app.info);
+	this.apps_index[app.info.id] = app.info;
+	this.app_configs[app.info.id] = app.config;
 };
 
 AppManager.prototype.reloadApp = function(id, callback) {
 	app_info = this.apps_index[id];
-	if(app_info) {
+	if(app_entry) {
 		this.loadApp(app_info.app_archive_path, {force:true}, callback);
 	} else {
 		callback(new Error("Not a valid app id: " + id));
@@ -150,12 +182,12 @@ AppManager.prototype.copyApp = function(src, dest, options, callback) {
 		
 		if(exists && !options.force) {
 			log.debug('Not copying app "' + src + '" because it already exists.');
-			this.readAppPackageInfo(app_info, function(err, info) {
+			this.readAppMetadata(app_info, function(err, app_metadata) {
 				if(err) { 
 					return callback(err); 
 				} else {
-					this._addApp(info);
-					callback(null, info);
+					this._addApp(app_metadata);
+					callback(null, app_metadata);
 				}
 			}.bind(this));
 			return;
@@ -166,12 +198,12 @@ AppManager.prototype.copyApp = function(src, dest, options, callback) {
 			if (err) {
 				return callback(err);
 			} else {
-				this.readAppPackageInfo(app_info, function(err, info) {
-					if(err) {
-						callback(err);
+				this.readAppMetadata(app_info, function(err, app_metadata) {
+					if(err) { 
+						return callback(err); 
 					} else {
-						this._addApp(info);
-						callback(null, info);
+						this._addApp(app_metadata);
+						callback(null, app_metadata);
 					}
 				}.bind(this));
 			}
@@ -195,12 +227,12 @@ AppManager.prototype.decompressApp = function(src, dest, options, callback) {
 		var exists = fs.existsSync(app_info.app_path);
 		if(exists && !options.force) {
 			log.debug('Not decompressing app "' + src + '" because it already exists.');
-			this.readAppPackageInfo(app_info, function(err, info) {
-				if(err) {
-					callback(err);
+			this.readAppMetadata(app_info, function(err, app_metadata) {
+				if(err) { 
+					return callback(err); 
 				} else {
-					this._addApp(info);
-					callback(null, info);
+					this._addApp(app_metadata);
+					callback(null, app_metadata);
 				}
 			}.bind(this));
 			return;
@@ -215,12 +247,12 @@ AppManager.prototype.decompressApp = function(src, dest, options, callback) {
 			return callback(e);
 		}
 
-		this.readAppPackageInfo(app_info, function(err, info) {
-			if(err) {
-				callback(err);
+		this.readAppMetadata(app_info, function(err, app_metadata) {
+			if(err) { 
+				return callback(err); 
 			} else {
-				this._addApp(info);
-				callback(null, info);
+				this._addApp(app_metadata);
+				callback(null, app_metadata);
 			}
 		}.bind(this));
 	}
