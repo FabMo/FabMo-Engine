@@ -178,8 +178,8 @@ G2.prototype.onSerialError = function(data) {
 
 G2.prototype.onSerialClose = function(data) {
 	this.connected= false;
-	throw new Error('G2 Core link was lost');
-	//process.exit(14); // this is a bit rude for now ...
+	log.error('G2 Core serial link was lost.')
+	process.exit(14);
 };
 
 // Write data to the control port.  Log to the system logger.
