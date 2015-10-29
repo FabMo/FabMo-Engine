@@ -26,6 +26,7 @@ function SBPRuntime() {
 	this.current_chunk = [];
 	this.output = [];
 	this.event_handlers = {};
+	this.event_teardown = {};
 	this.running = false;
 	this.quit_pending = false;
 	this.cmd_posx = 0;
@@ -46,7 +47,7 @@ util.inherits(SBPRuntime, events.EventEmitter);
 SBPRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;
-	this.machine.status.line=null;
+	this.machine.status.line=null; 
 	this.machine.status.nb_lines=null;
 	this._update();
 	this.status_handler = this._onG2Status.bind(this);
@@ -64,7 +65,9 @@ SBPRuntime.prototype.runString = function(s, callback) {
 	try {
 		var lines =  s.split('\n');
 		if(this.machine) {
-			this.machine.status.nb_lines = lines.length - 1;
+			if(this.file_stack.length == 0) {
+				this.machine.status.nb_lines = lines.length - 1;
+			}
 		}
 		this.end_callback = callback;
 		try {
@@ -73,9 +76,6 @@ SBPRuntime.prototype.runString = function(s, callback) {
 			return this._end(e.message + " (Line " + e.line + ")");
 		}
  		lines = this.program.length;
-		if(this.machine) {
-			this.machine.status.nb_lines = lines.length - 1;
-		}
 		this.init();
 		this.end_callback = callback;
 		this._setupTransforms();
@@ -341,6 +341,7 @@ SBPRuntime.prototype._continue = function() {
 SBPRuntime.prototype._end = function(error) {
 	if(this.machine) {
 		var end_function_no_nesting = function() {
+				log.debug("Calling the non-nested (toplevel) end");
 				// We are truly done
 				callback = this.end_callback;
 				this.init();
@@ -381,27 +382,32 @@ SBPRuntime.prototype._end = function(error) {
 		}.bind(this);
 
 		if((this.file_stack.length > 0) && !this.quit_pending && !error) {
+			log.debug("Doing the nested end.")
 			end_function = end_function_nested;
 		}
 		else {
+			log.debug("Doing the outermost end.")
 			end_function = end_function_no_nesting;
 		}
 
-		if(end_function === end_function_nested) {
-			log.debug("Doing the nested end.")
-		} else {
-			log.debug("Doing the outermost end.")
+		switch(this.driver.status.stat) {
+			case this.driver.STAT_END:
+				end_function();
+			break;
+
+			default:
+				this.driver.expectStateChange( {
+					'end':end_function,
+					'stop':end_function
+				});
+				if(end_function === end_function_no_nesting) {
+					this.driver.runSegment('M30\n');
+				} else {
+					this.driver.requestStatusReport();
+				}
+			break;
 		}
 
-		if(this.driver.status.stat !== this.driver.STAT_END) {
-			this.driver.expectStateChange( {
-				'end':end_function,
-				'stop':null
-			});
-			this.driver.runSegment('M30\n');
-		} else {
-			end_function();
-		}
 	} else {
 		this.init();
 		this.emit('end', this.output);
@@ -436,6 +442,10 @@ SBPRuntime.prototype._dispatch = function(callback) {
 						// On alarm terminate the program (for now)
 						this._end();
 					}.bind(this),
+					"end" : function(driver) { 
+						// On end terminate the program (for now)
+						this._end();
+					}.bind(this),
 					"holding" : function(driver) {
 						// On hold, handle event that caused the hold
 						var event_handled = this._processEvents(callback);
@@ -445,17 +455,24 @@ SBPRuntime.prototype._dispatch = function(callback) {
 						if(!event_handled) {
 							this.machine.setState(this, "paused");
 							driver.expectStateChange({
-								"running" : function(driver) { 
-									this.machine.setState(this, "running");
+								"running" : function(driver) {
+ 									this.machine.setState(this, "running");
 									run_function(driver);
 								}.bind(this),
+								"end" : function(driver) {
+									this._end();
+								}.bind(this),
+								null : function(driver) {
+									// TODO: This is probably a failure
+									log.warn("Expected a stop or hold (from the paused state) but didn't get one.");
+								}
 							});
 						}
 					}.bind(this),
 					"running" : null,
 					null : function(driver) {
 						// TODO: This is probably a failure
-						log.warn("Expected a stop or hold but didn't get one.");
+						log.warn("Expected a stop or hold (from the run state) but didn't get one.");
 					}
 				});
 			}.bind(this);
@@ -509,8 +526,12 @@ SBPRuntime.prototype._processEvents = function(callback) {
 
 				// Extract the command that is to be executed as a result of the event
 				var cmd = this.event_handlers[sw][state]
+				var teardown = this.event_teardown[sw] || {}
 				if(cmd) {
 					this.driver.queueFlush(function(err) {
+						log.debug("Tearing down the input configuration that caused the event.")
+						this.driver.setMany(teardown, function(err, result) {
+							
 							if(this._breaksStack(cmd)) {
 								this._execute(cmd, function() {
 									callback();
@@ -519,6 +540,7 @@ SBPRuntime.prototype._processEvents = function(callback) {
 								this._execute(cmd);
 								callback();
 							}
+						}.bind(this));
 					}.bind(this));
 				} else {
 					log.error("Handler registered, but with no command??  (Bad Error)");
@@ -557,9 +579,8 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 			try {
 				f(args);
 			} catch(e) {
-				log.error("ERROR IN NON STACK BREAKING COMMAND");
+				log.error("Error in a non-stack-breaking command");
 				log.error(e);
-				log.error(e.stack);
 				this._end(e);
 				throw e;
 			}
@@ -718,6 +739,10 @@ SBPRuntime.prototype._setupEvent = function(command, callback) {
 	args = [mo,ac,fn]
 	this.driver.get(args, function(err, vals) {
 		var setup = {}
+		var teardown = {}
+		teardown[mo] = vals[0];
+		teardown[ac] = vals[1];
+		teardown[fn] = vals[2];
 		setup[mo] = command.state;
 		setup[ac] = 2 
 		setup[fn] =  0
@@ -728,6 +753,7 @@ SBPRuntime.prototype._setupEvent = function(command, callback) {
 				handler = {}
 				handler[1] = command.stmt
 				this.event_handlers[command.sw] = handler;
+				this.event_teardown[command.sw] = teardown;
 			}
 			callback();
 		}.bind(this));
@@ -978,7 +1004,12 @@ SBPRuntime.prototype._popFileStack = function() {
 // Add GCode to the current chunk, which is dispatched on a break or end of program
 SBPRuntime.prototype.emit_gcode = function(s) {
 	log.debug("emit_gcode = " + s);
-	this.current_chunk.push('N' + this.pc + ' ' + s);
+	if(this.file_stack.length > 0) {
+		var n = this.file_stack[0].pc;
+	} else {
+		var n = this.pc;
+	}
+	this.current_chunk.push('N' + n + ' ' + s);
 };
 
 SBPRuntime.prototype.emit_move = function(code, pt) {
@@ -986,14 +1017,11 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 	var i;
 
 	if( code === "G0" || code === "G1" ){
-//		log.debug("emit_move-call xform = " + JSON.stringify(pt));
 		pt = this.transformation(pt);
-//		log.debug("emit_move-pt = " + JSON.stringify(pt));
 	}
 	else if( code === "G2" || code === "G3" ){
 
 	}
-	//console.log(pt);
 //	log.debug("level = " + this.transforms.level.apply );
 //	log.debug("interpolate = " + this.transforms.interpolate.apply );
 //	if(( this.transforms.level.apply === true || this.transforms.interpolate.apply === true ) && code !== "G0" ){
@@ -1007,6 +1035,12 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 //		}
 //	}
 //	else{
+
+	if(this.file_stack.length > 0) {
+		var n = this.file_stack[0].pc;
+	} else {
+		var n = this.pc;
+	}
 
 	var emit_moveContext = this;
 	var opFunction = function(pt) {  //Find a better name
@@ -1023,8 +1057,8 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 				else if(key === "C") { emit_moveContext.cmd_posc = v; }
 			}
 		}
-		log.debug("emit_move:  N " + emit_moveContext.pc + JSON.stringify(gcode));
-		emit_moveContext.current_chunk.push('N' + emit_moveContext.pc + gcode);
+		log.debug("emit_move:  N" + n + JSON.stringify(gcode));
+		emit_moveContext.current_chunk.push('N' + n + gcode);
 	};
 
 			if( this.transforms.level.apply === true  && code !== "G0") {

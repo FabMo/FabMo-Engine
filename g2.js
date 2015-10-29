@@ -4,6 +4,7 @@ var events = require('events');
 var async = require('async');
 var util = require('util');
 var Queue = require('./util').Queue;
+var Watchdog = require('./util').Watchdog;
 var log = require('./log').logger('g2');
 var process = require('process');
 
@@ -61,6 +62,7 @@ function G2() {
 	this.status = {'stat':'idle', 'posx':0, 'posy':0, 'posz':0};
 
 	this.gcode_queue = new Queue();
+	this.watchdog = new Watchdog(10000,14); //time, exit code
 	this.pause_flag = false;
 	this.connected = false;
 
@@ -115,10 +117,14 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
 	// Handle errors
 	this.control_port.on('error', this.onSerialError.bind(this));
 
+	// Handle closing
+	this.control_port.on('close', this.onSerialClose.bind(this));
+
 	// The control port is the only one to truly handle incoming data
 	this.control_port.on('data', this.onData.bind(this));
 	if(this.gcode_port !== this.control_port) {
 		this.gcode_port.on('error', this.onSerialError.bind(this));
+		this.control_port.on('close', this.onSerialClose.bind(this));
 		this.gcode_port.on('data', this.onWAT.bind(this));
 	}
 
@@ -152,6 +158,7 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
 };
 
 G2.prototype.disconnect = function(callback) {
+	this.watchdog.stop();
 	if(this.control_port !== this.gcode_port) {
 		this.control_port.close(function(callback) {
 			this.gcode_port.close(callback);   
@@ -169,8 +176,15 @@ G2.prototype.onSerialError = function(data) {
 	//}
 };
 
+G2.prototype.onSerialClose = function(data) {
+	this.connected= false;
+	log.error('G2 Core serial link was lost.')
+	process.exit(14);
+};
+
 // Write data to the control port.  Log to the system logger.
 G2.prototype.controlWrite = function(s) {
+	this.watchdog.start();
 	t = new Date().getTime();
 	log.g2('--C-' + t + '----> ' + s.trim());
 	this.control_port.write(s);
@@ -178,6 +192,7 @@ G2.prototype.controlWrite = function(s) {
 
 // Write data to the gcode port.  Log to the system logger.
 G2.prototype.gcodeWrite = function(s) {
+	this.watchdog.start();
 	t = new Date().getTime();
 	log.g2('--G-' + t + '----> ' + s.trim());
 	this.gcode_port.write(s);
@@ -185,6 +200,7 @@ G2.prototype.gcodeWrite = function(s) {
 
 // Write data to the serial port.  Log to the system logger.  Execute **callback** when transfer is complete.
 G2.prototype.controlWriteAndDrain = function(s, callback) {
+	this.watchdog.start();
 	t = new Date().getTime();
 	log.g2('--C-' + t + '----> ' + s);
 	this.control_port.write(s, function () {
@@ -193,6 +209,7 @@ G2.prototype.controlWriteAndDrain = function(s, callback) {
 };
 
 G2.prototype.gcodeWriteAndDrain = function(s, callback) {
+	this.watchdog.start();
 	t = new Date().getTime();
 	log.g2('--G-' + t + '----> ' + s);
 	this.gcode_port.write(s, function () {
@@ -201,6 +218,7 @@ G2.prototype.gcodeWriteAndDrain = function(s, callback) {
 };
 
 G2.prototype.clearAlarm = function() {
+	this.watchdog.start();
 	this.command({"clear":null});
 };
 
@@ -403,13 +421,13 @@ G2.prototype.handleFooter = function(response) {
 
 G2.prototype.handleExceptionReport = function(response) {
 	if(response.er) {
-		var stat = response.er.st
+		var stat = response.er.st;
 		if(((stat === 204) || (stat === 207)) && this.quit_pending) {
 			this.gcodeWrite("{clear:n}\nM30\n");
 			this.quit_pending = false;
 		}
 	}
-}
+};
 /*
 0	machine is initializing
 1	machine is ready for use
@@ -482,7 +500,7 @@ G2.prototype.handleStatusReport = function(response) {
 
 // Called once a proper JSON response is decoded from the chunks of data that come back from G2
 G2.prototype.onMessage = function(response) {
-	
+	this.watchdog.stop();
 	// TODO more elegant way of dealing with "response" data.
 	if(response.r) {
 		this.emit('response', false, response.r);

@@ -149,6 +149,32 @@ FabMo.prototype.get_config = function(callback)
 	});
 };
 
+FabMo.prototype.get_app_config = function(id, callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.apps + '/' + id + '/config',
+		type: "GET",
+		dataType : 'json', 
+		success: function( data ) {
+			if(data.status === "success") {
+				callback(undefined,data.data.config);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
+		error: function(data,err) {
+				var error =that.default_error.no_device;
+				error.sys_err = err;
+			 	callback(error);
+			}
+	});
+};
+
 FabMo.prototype.set_config =  function(config, callback)
 {
 	if (!callback)
@@ -159,6 +185,33 @@ FabMo.prototype.set_config =  function(config, callback)
 		type: "POST",
 		dataType : 'json', 
 		data : config,
+		success: function( data ) {
+			if(data.status === "success") {
+				callback(undefined,data.data);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
+		error: function(data, err) {
+			var error = that.default_error.no_device;
+			error.sys_err = err;
+		 	callback(error);
+		}
+	});
+};
+
+FabMo.prototype.set_app_config =  function(id, config, callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.apps + '/' + id + '/config',
+		type: "POST",
+		dataType : 'json', 
+		data : {'config': config },
 		success: function( data ) {
 			if(data.status === "success") {
 				callback(undefined,data.data);
@@ -620,6 +673,32 @@ FabMo.prototype.add_job =  function(formdata,callback)
 	}
 };
 
+FabMo.prototype.cancel_job = function(id, callback)
+{
+	if (!callback)
+		throw "this function need a callback to work !";
+	var that=this;
+	$.ajax({
+		url: this.url.job + '/' + id,
+		type: "DELETE",
+		dataType : 'json', 
+		success: function( data ) {
+			if(data.status === "success") {
+				callback(null,data.data.job);
+			} else if(data.status==="fail") {
+				callback(data.data);
+			}	else {
+				callback(data.message);
+			}
+		},
+		error: function(data,err) {
+				console.error(err);
+				var error =that.default_error.no_device;
+				error.sys_err = err;
+			 	callback(error);
+			}
+	});
+};
 // take a form data, look for a file field, and upload the file load in it
 FabMo.prototype.submit_app =  function(formdata,callback)
 {

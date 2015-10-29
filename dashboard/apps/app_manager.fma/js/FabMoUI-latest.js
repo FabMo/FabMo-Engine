@@ -30,7 +30,7 @@ function FabMoUI(tool, options){
 	this.status_div_selector = '.fabmo-'+this.prefix+'status';
 	this.keypad_div_selector = '.fabmo-'+this.prefix+'keypad';
 	this.file_control_selector = '.fabmo-'+this.prefix+'file-control';
-
+	
 
 	this.posX_selector = this.status_div_selector + ' .posx';
 	this.posY_selector = this.status_div_selector + ' .posy';
@@ -44,6 +44,7 @@ function FabMoUI(tool, options){
 	this.stop_button_selector = this.file_control_selector + ' .fabmo-stop-button'
 	this.resume_button_selector = this.file_control_selector + ' .fabmo-resume-button';
 	this.pause_button_selector = this.file_control_selector + ' .fabmo-pause-button';
+	
 
 
 	this.plusX_button_selector = this.keypad_div_selector + ' .button-plus-X';

@@ -14,19 +14,66 @@
 
   <!-- Body of the page -->
   <body>
-              <div id="spinner"></div>
-
+     
+<div id="spinner"></div>
+   <div class="collapseLeft"></div>
       <div id="main" class="off-canvas-wrap" data-offcanvas>
         <div class="inner-wrap">
+   
+          <div class="footBar fabmo-file-control">
 
+            <div class="footTab">
+              <hr>
+              <hr>
+            </div>
+            <div class='startNextContainer'>
+              <span class='startnextLabel'>
+                Next Job:
+              </span>
+              <span class='nextJob'>
+              </span>
+              <div class="playContainer">
+                <div  title="Next Job" class="play"></div>
+                <a title="Submit Job" href="#/app/job-manager" class='gotoJobManager'>&uArr;</a>
+              </div>
+            </div>  
+            <div class="currentContainer">
+              <span class="currentJobTitle" id="marquee"></span>
+            </div>
+            <div class="radial_progress">
+              <div class="perecent_circle">
+                <div class="mask full">
+                  <div class="fill"></div>
+                </div>
+                <div class="mask half">
+                  <div class="fill"></div>
+                  <div class="fill fix"></div>
+                </div>
+              <div class="shadow"></div>
+            </div>
+            <div class="inset">
+              <div class="percentage"></div>
+            </div>
+          </div>
+          
+          <div class="load_container">
+              <div class="loading_bar">
+                <div class="horizontal_fill">
+                </div>
+              </div>
+              <div class="percent_comp">10%</div>
+           </div>
+ 
+          <span class='fabmo-stop-button'>
+            <a class='stopJob'>STOP</a>
+          </span>
+          </div>
           <!-- New nav work -->
           <!-- Nav-Bar & Buttons for sliding menus -->
           <nav class="tab-bar">
  
             <!-- ***** Left-Menu Button Section ***** -->
-            <section class="left-small left show-for-small-only">
-              <a class="left-off-canvas-toggle menu-icon" href="#"><span></span></a>
-            </section>
+
 
             <section class="show-for-medium-up fabmo-status" id="left-position-container">
               <div class="small-6 columns">
@@ -45,7 +92,7 @@
 
             <!-- ***** Right-Menu Button Section ***** -->
             <section class="right-small right">
-              <a class="right-off-canvas-toggle menu-icon" href="#"><span></span></a>
+              <a class="menu-icon DRO-button" href="#"><span></span></a>
             </section>
           </nav>
 
@@ -55,7 +102,6 @@
             <!-- ********** Links Widget ********** -->
             <div id="widget-links-general" class="widget colapsed">
               <ul class="off-canvas-list" id="util-menu-small">
-                <li><label>Main Menu</label></li>
                 <li><a href="#/menu" id="icon_home"><span>Home</span></a></li>
                 <li><a href="#/app/job-manager" id="icon_jobs"><span>Job Manager</span></a></li>
                 <li><a href="#/app/editor" id="icon_editor"><span>NC Editor</span></a></li>          
@@ -69,7 +115,7 @@
             </div>
           </aside>
 
-          <aside class="right-off-canvas-menu" id="right-menu">
+          <aside class="DRO" id="right-menu">
 
             <!-- ********** Tool Position Widget ********** -->
             <div id="position" class="widget">
@@ -85,7 +131,7 @@
                             <span class="posx pos doselect"></span>
                           </label>
                         </div>
-                        <div class="small-3 columns home"><span class="button-zerox">X<label>0</label></span></div>
+                        <div class="small-3 columns home"><span class="button-zerox">0</span></div>
                     </div>
                   </form>
                   <form>
@@ -97,7 +143,7 @@
                         <span class="posy pos doselect"></span>
                         </label>
                       </div>
-                      <div class="small-3 columns home"><span class="button-zeroy">Y<label>0</label></span></div>
+                      <div class="small-3 columns home"><span class="button-zeroy">0</span></div>
                     </div>
                   </form>
                   <form>
@@ -109,7 +155,7 @@
                         <span class="posz pos doselect"></span>
                         </label>
                       </div>
-                      <div class="small-3 columns home"><span class="button-zeroz">Z<label>0</label></span></div>
+                      <div class="small-3 columns home"><span class="button-zeroz">0</span></div>
                     </div>
                   </form>
                 </li>
@@ -139,7 +185,7 @@
               </ul>
             </div>
             <div id="handwheel" class="widget fabmo-manual-control" style="text-align: center;">
-              <canvas width="220" height="220" id="wheel"></canvas>
+              <canvas width="220px" height="220px" id="wheel"></canvas>
             </div>
             <ul class="off-canvas-list fabmo-status fabmo-file-control">
                 <li style="margin: 10px" class="file-info" style="align: center;">
@@ -186,11 +232,20 @@
           <section class="main-section" style="display:none;">
             <div id="navbar_container"></div>
             <div id="modal_container" style="display:none;"></div>
-            <div id="app-client-container"></div>
+            <div id="app-client-container">
+            <div class='footBar'>
+              <div class='footTab'>
+                <hr>
+                <hr>
+                <hr>
+              </div>
+            </div>
+            </div>
+            </div>
             <div class="clear"></div>
           </section>
-
-          <a id="close_menu" class="exit-off-canvas"></a>
+       
+     
         </div>
       </div>
 
@@ -203,36 +258,46 @@
         <a class="close-reveal-modal">&#215;</a>
       </div>
 
+      <div id="disconnectDialog" class="reveal-modal small" data-reveal aria-labelledby="disconnectDialogTitle" aria-hidden="true" role="dialog" data-options="close_on_background_click:false; close_on_esc:false;">
+          <div id="waiting_spinner" style="width: 75px; height: 75px; position: relative; float: left;"></div>
+          <div style="vertical-align: middle; height: 75px; display: table-cell; padding: 10px;"> 
+          <span style="font-weight: bold;">Waiting for FabMo...</span>
+          </div>
+      </div>
+
       <script type="text/javascript" src="/js/libs/spin.min.js"></script>
-  <script type="text/javascript">
-    var opts = {
-  lines: 13 // The number of lines to draw
-, length: 28 // The length of each line
-, width: 14 // The line thickness
-, radius: 42 // The radius of the inner circle
-, scale: 1 // Scales overall size of the spinner
-, corners: 1 // Corner roundness (0..1)
-, color: '#000' // #rgb or #rrggbb or array of colors
-, opacity: 0.25 // Opacity of the lines
-, rotate: 0 // The rotation offset
-, direction: 1 // 1: clockwise, -1: counterclockwise
-, speed: 1 // Rounds per second
-, trail: 60 // Afterglow percentage
-, fps: 20 // Frames per second when using setTimeout() as a fallback for CSS
-, zIndex: 2e9 // The z-index (defaults to 2000000000)
-, className: 'spinner' // The CSS class to assign to the spinner
-, top: '50%' // Top position relative to parent
-, left: '50%' // Left position relative to parent
-, shadow: true // Whether to render a shadow
-, hwaccel: true // Whether to use hardware acceleration
-, position: 'absolute' // Element positioning
-//, top: 200
-//, left: 200
-}
-var target = document.getElementById('spinner')
-var spinner = new Spinner(opts).spin(target);
-  </script>
-    <script type="text/javascript" src="js/libs/require.js"></script>
-    <script type="text/javascript" src="js/app.js"></script>
+      <script type="text/javascript">
+        var opts = {
+            lines: 13 // The number of lines to draw
+          , length: 28 // The length of each line
+          , width: 14 // The line thickness
+          , radius: 42 // The radius of the inner circle
+          , scale: 1 // Scales overall size of the spinner
+          , corners: 1 // Corner roundness (0..1)
+          , color: '#000' // #rgb or #rrggbb or array of colors
+          , opacity: 0.25 // Opacity of the lines
+          , rotate: 0 // The rotation offset
+          , direction: 1 // 1: clockwise, -1: counterclockwise
+          , speed: 1 // Rounds per second
+          , trail: 60 // Afterglow percentage
+          , fps: 20 // Frames per second when using setTimeout() as a fallback for CSS
+          , zIndex: 2e9 // The z-index (defaults to 2000000000)
+          , className: 'spinner' // The CSS class to assign to the spinner
+          , top: '50%' // Top position relative to parent
+          , left: '50%' // Left position relative to parent
+          , shadow: true // Whether to render a shadow
+          , hwaccel: true // Whether to use hardware acceleration
+          , position: 'absolute' // Element positioning
+        }
+        var target = document.getElementById('spinner')
+        var spinner = new Spinner(opts).spin(target);
+
+        var waiting_spinner = new Spinner( {
+          color : '#2E3865',
+        }).spin(document.getElementById('waiting_spinner'))
+      </script>
+      <script type="text/javascript" src="js/libs/require.js"></script>
+      <script src="/js/libs/dashboard.js"></script>
+      <script type="text/javascript" src="js/app.js"></script>
   </body>
 </html>

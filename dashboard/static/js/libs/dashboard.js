@@ -4,6 +4,7 @@ var FabMoDashboard = function() {
 	this.window = window;
 	this._id = 0;
 	this._handlers = {};
+	this.status = {};
 	this._event_listeners = {
 		'status' : []
 	};
@@ -195,6 +196,10 @@ FabMoDashboard.prototype.getAppArgs = function(callback) {
 	this._call("getAppArgs", null, callback);
 }
 
+FabMoDashboard.prototype.getAppInfo = function(callback) {
+	this._call("getAppInfo", null, callback);
+}
+
 FabMoDashboard.prototype.launchApp = function(id, args, callback) {
 	this._call("launchApp", {'id': id, 'args':args}, callback);
 }
@@ -211,6 +216,13 @@ FabMoDashboard.prototype.hideDRO = function(callback) {
 	this._call("hideDRO", null, callback);
 }
 
+FabMoDashboard.prototype.showFooter = function(callback) {
+	this._call("showFooter", null, callback);
+}
+
+FabMoDashboard.prototype.hideFooter = function(callback) {
+	this._call("hideFooter", null, callback);
+}
 
 FabMoDashboard.prototype.notification = function(type,message,callback) {
 	this._call("notification", {'type':type,'message':message}, callback);
@@ -240,6 +252,10 @@ FabMoDashboard.prototype.submitJob = function(data, config, callback) {
 
 FabMoDashboard.prototype.resubmitJob = function(id, callback) {
 	this._call("resubmitJob", id, callback)
+}
+
+FabMoDashboard.prototype.cancelJob = function(id, callback) {
+	this._call("cancelJob", id, callback)
 }
 
 FabMoDashboard.prototype.getJobsInQueue = function(callback) {
@@ -367,6 +383,14 @@ FabMoDashboard.prototype.notify = function(type, message, callback) {
 
 FabMoDashboard.prototype.deleteMacro = function(id, callback) {
 	this._call("deleteMacro", id, callback);
+}
+
+FabMoDashboard.prototype.getAppConfig = function(callback) {
+	this._call("getAppConfig", null, callback);
+}
+
+FabMoDashboard.prototype.setAppConfig = function(config, callback) {
+	this._call("setAppConfig", config, callback);
 }
 
 fabmoDashboard = new FabMoDashboard();

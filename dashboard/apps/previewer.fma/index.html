@@ -63,8 +63,7 @@
         if('job' in args) {
           var url = '/job/' + args.job + '/file';
           $.get(url,function(data, status) {
-              viewer.setGCode(data);
-              viewer.viewPaths();
+              viewer.setGCode(data, viewer.viewPaths);
           });
         }
       });

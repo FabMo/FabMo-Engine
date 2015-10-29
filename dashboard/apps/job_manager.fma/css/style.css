@@ -31,24 +31,24 @@ body {
 #dropzone.hover { 
   border: 5px dashed #ccc; 
   border-radius: 5px;
-  -webkit-transition: all .2s ease;
-  -moz-transition: all .2s ease;
-  -o-transition: all .2s ease;
+  -webkit-transition: opacity .2s ease;
+  -moz-transition: opacity .2s ease;
+  -o-transition: opacity .2s ease;
 }
   
 #dropzone.hover .hovershow {
   opacity: 1.0;
-  -webkit-transition: all .2s ease;
-  -moz-transition: all .2s ease;
-  -o-transition: all .2s ease;
+  -webkit-transition: opacity .2s ease;
+  -moz-transition: opacity .2s ease;
+  -o-transition: opacity .2s ease;
 
 }
 
 #dropzone.hover .hoverdim {
   opacity: 0.2;
-  -webkit-transition: all .2s ease;
-  -moz-transition: all .2s ease;
-  -o-transition: all .2s ease;
+  -webkit-transition: opacity .2s ease;
+  -moz-transition: opacity .2s ease;
+  -o-transition: opacity .2s ease;
 
 }
 
@@ -72,7 +72,7 @@ h1, h2, h3, h4, h5, h6 {
 } 
  
 td.details-control {
-    background: url('images/details_open.png') no-repeat center center;
+    
     width: 50px;
     cursor: pointer;
 }
@@ -82,7 +82,7 @@ td.actions-control {
     cursor: pointer;
     content: attr('Preview Job');
     text-align: center;
-    
+
 }
 
 td.preview-control {
@@ -92,16 +92,49 @@ td.preview-control {
     content: attr('Preview Job');
 }
 
+.more-details {
+  width: 36px;
+  height: 36px;
+  color: #A6A6A6;
+  vertical-align: text-top;
+  border: 1px solid #A6A6A6;
+  border-radius: 100%;
+  float: left;
+  text-align: center;
+  transform-origin: center;
+  transition: transform .5s linear;
+  transform-style: preserve-3D;
+}
+
+.more-details:hover {
+   border-color: #666;
+   color: #666;
+   transition: all .3s;
+}
+
+.more-details div {
+  position: relative;
+  font-family: "Lucida Console", Monaco, monospace;
+  top: 5px;
+  font-size: 1.7em;
+  transition: color .3s;
+}
+
+.more-details div:hover {
+  color: #666;
+}
+
 .ellipses {
-  font-size: 1.5em;
+  font-size: 1.35em;
   width: 1.7em;
   height: 1.7em;
-  color: #dddddd;
+  color: #A6A6A6;
   vertical-align: text-top;
-  border: 1px solid #dddddd;
+  border: 1px solid #A6A6A6;
   border-radius: 100%;
   line-height: 1em;
-  float: right;
+  float: left;
+  margin-left: 0.7em;
 }
 
 .ellipses:hover {
@@ -113,9 +146,9 @@ td.preview-control {
 .dropDown {
   position: absolute;
   top: inherit;
-  right: 7px;
+  left: 7px;
   width: 175px;
-  margin-top: 3.4em;
+  margin-top: 3.1em;
   text-align: left;
   background-color: #ffffff;
   padding-top: 1.5em;
@@ -137,10 +170,10 @@ td.preview-control {
 .commentBox{
   position: absolute;
   top: inherit;
-  right: 20px;
+  left: 33px;
   width: 1em;
   height: 1em;
-  margin-top: 2.9em;
+  margin-top: 2.6em;
   transform: translatex(2.1em);
   background-color: #ffffff;
   -ms-transform: rotate(45deg); /* IE 9 */
@@ -165,7 +198,7 @@ td.preview-control {
   display: none;
 }
 tr.shown td.details-control {
-    background: url('images/details_close.png') no-repeat center center;
+    background-color: #D23334;
     width: 40px;
 }
 

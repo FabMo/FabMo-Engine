@@ -16,7 +16,9 @@ var MAX_INPUTS = 16;
 function FabMoUI(tool, options){
 	this.event_handlers = {
 		'error' : [],
-		'status' : []
+		'status' : [],
+		'disconnect' : [],
+		'reconnect' : []
 	}
 	this.tool = tool;
 	// the tool we need to check for
@@ -49,7 +51,6 @@ function FabMoUI(tool, options){
 	this.keypad_div_selector = '.fabmo-'+this.prefix+'keypad';
 	this.file_control_selector = '.fabmo-'+this.prefix+'file-control';
 
-
 	this.posX_selector = this.status_div_selector + ' .posx';
 	this.posY_selector = this.status_div_selector + ' .posy';
 	this.posZ_selector = this.status_div_selector + ' .posz';
@@ -63,7 +64,6 @@ function FabMoUI(tool, options){
 	this.stop_button_selector = this.file_control_selector + ' .fabmo-stop-button';
 	this.resume_button_selector = this.file_control_selector + ' .fabmo-resume-button';
 	this.pause_button_selector = this.file_control_selector + ' .fabmo-pause-button';
-
 
 	this.plusX_button_selector = this.keypad_div_selector + ' .button-plus-X';
 	this.minusX_button_selector = this.keypad_div_selector + ' .button-minus-X';
@@ -105,8 +105,8 @@ FabMoUI.prototype.on = function(evt, handler) {
 
 FabMoUI.prototype.emit = function(type, evt) {
 	if(type in this.event_handlers) {
-		for(i in this.event_handlers[type]) {
-			handler = this.event_handlers[type][i];
+		for(var i in this.event_handlers[type]) {
+			var handler = this.event_handlers[type][i];
 			handler(evt);
 		}
 	}
@@ -192,16 +192,91 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	//Current File or job
 	if(status.job) {
 		console.log("there is a job")
+		$('.startNextContainer').hide();
 		$(that.file_info_div_selector).removeClass('hide');
 		console.log(status.job);
+		$('.currentJobTitle').text(status.job.name);
 		$(that.filename_selector).html(status.job.name);
+		var transform_styles = ['-webkit-transform',
+                        '-ms-transform',
+                        'transform'];
 		var prog = ((status.line/status.nb_lines)*100).toFixed(2);
+		var percent = Math.round(prog);
+		var cc = 255 - Math.round(255*(percent/100));
+		var rotation = Math.round(180*(percent/100));
+ 		var fill_rotation = rotation;
+ 		var fix_rotation = rotation * 2;
+		if ($(window).width() < 620) {
+   			$('.radial_progress').show();
+			$('.inset .percentage').css('color', 'rgba('+cc+', 255, '+cc+', 1)');
+			$('.mask .fill').css('background-color', 'rgba('+cc+', 255, '+cc+', 1)');
+			$('.inset .percentage').text(percent + '%');
+			for(i in transform_styles) {
+			$('.fill, .mask.full').css(transform_styles[i], 'rotate(' + fill_rotation + 'deg)');
+			$('.fill.fix').css(transform_styles[i], 'rotate(' + fix_rotation + 'deg)');
+			$('.load_container').hide();
+		}
+		} else {
+			$('.radial_progress').hide();
+   			$('.load_container').show();
+			$('.percent_comp').text(percent + '%');
+			$('.horizontal_fill').css('width', percent + '%');
+		}
 		$(that.progress_selector).css("width",prog.toString() + "%");
+		// if(prog >= 10) {
+		// 	$('#layerFill1').css('-webkit-animation', 'fill .5s linear forwards')
+		// 	$('#layerFill1').css('-moz-animation', 'fill .5s linear forwards')
+		// }
+		// if(prog >= 20) {
+		// 	$('#layerFill2').css('-webkit-animation', 'fill .5s linear forwards')
+		// 	$('#layerFill2').css('-moz-animation', 'fill .5s linear forwards')
+		// }
+		// if(prog >= 30) {
+		// 	$('#layerFill3').css('-webkit-animation', 'fill .5s linear forwards')
+		// 	$('#layerFill3').css('-moz-animation', 'fill .5s linear forwards')
+		// }
+		// if(prog >= 40) {
+		// 	$('#layerFill4').css('-webkit-animation', 'fill .5s linear forwards')
+		// 	$('#layerFill4').css('-moz-animation', 'fill .5s linear forwards')
+		// }
+		// if(prog >= 50) {
+		// 	$('#layerFill5').css('-webkit-animation', 'fill .5s linear forwards')
+		// 	$('#layerFill5').css('-moz-animation', 'fill .5s linear forwards')
+		// }
+		// if(prog >= 60) {
+		// 	$('#layerFill6').css('-webkit-animation', 'fill .5s linear forwards')
+		// 	$('#layerFill6').css('-moz-animation', 'fill .5s linear forwards')
+		// }
+		// if(prog >= 70) {
+		// 	$('#layerFill7').css('-webkit-animation', 'fill .5s linear forwards')
+		// 	$('#layerFill7').css('-moz-animation', 'fill .5s linear forwards')
+		// }
+		// if(prog >= 80) {
+		// 	$('#layerFill8').css('-webkit-animation', 'fill .5s linear forwards')
+		// 	$('#layerFill8').css('-moz-animation', 'fill .5s linear forwards')
+		// }
+		// if(prog >= 90) {
+		// 	$('#layerFill9').css('-webkit-animation', 'fill .5s linear forwards')
+		// 	$('#layerFill9').css('-moz-animation', 'fill .5s linear forwards')
+		// }
+		// if(prog >= 99) {
+		// 	$('#layerFill10').css('-webkit-animation', 'fill .5s linear forwards')
+		// 	$('#layerFill10').css('-moz-animation', 'fill .5s linear forwards')
+		// 	$('.percentComplete').text('100%');
+		// }
 	}
 	else {
 		$(that.file_info_div_selector).addClass('hide');
+		$('.load_container').hide();
+		$('#loadbar').hide();
+		$('.radial_progress').hide();
+		$('.percentComplete').hide();
+		$('.startNextContainer').show();
+		$('.bar').css('-webkit-animation', '');
+		$('.bar').css('-moz-animation', '');
 		$(that.filename_selector).empty();
 		$(that.progress_selector).empty();
+		$('.currentJobTitle').text('');
 	}
 
 	for(var i=1; i<MAX_INPUTS+1; i++) {
@@ -325,7 +400,6 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	}
 	else {
 		$(".tools-current > li a").removeClass('paus err').addClass('disc');
-		that.forbidKeypad();
 		console.warn('Unknown status' + JSON.stringify(status));
 	}
 
@@ -344,9 +418,10 @@ FabMoUI.prototype.updateStatus = function(){
 	that.tool.get_status(function(err, status){
 		if(!err){
 			that.updateStatusContent(status);
+			that.emit('reconnect');
+
 		}
 		else if(err == that.tool.default_error.no_device){
-			that.forbidKeypad();
 			$(".tools-current > li a").removeClass('paus err').addClass('disc');
 			delete this;
 			$(that.posX_selector).html('X.XXX');
@@ -362,10 +437,9 @@ FabMoUI.prototype.updateStatus = function(){
 				$(that.pause_button_selector).addClass('hide');
 				$(that.resume_button_selector).addClass('hide');
 			}
-
+			that.emit('disconnect');
 		}
 		else{
-			that.forbidKeypad();
 			$(".tools-current > li a").removeClass('paus err').addClass('disc');
 			delete this;
 			$(that.posX_selector).html('X.XXX');
@@ -390,14 +464,15 @@ FabMoUI.prototype.FileControl = function(){
 	var that = this;
 	$(that.pause_button_selector).click(function(e) {
 		that.tool.pause(function(){});
+		
 	});
 	$(that.resume_button_selector).click(function(e) {
 		that.tool.resume(function(){});
+		console.log(that.stop_button_selector);
 	});
 	$(that.stop_button_selector).click(function(e) {
 		that.tool.quit(function(){});
 	});
-
 };
 
 return FabMoUI;

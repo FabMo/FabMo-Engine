@@ -23,7 +23,7 @@
 	      <li><a class="app-install-button">Install App...</a></li>
 	    </ul>
 	  </section>
-	</nav>
+	</nav> 
 
 	<form style="display:none;" id="fileform">
 	<input type="file" id="file">
@@ -97,11 +97,11 @@
 			});
 		});
 	};
-
+  
 	$(function() {
 		$(document).foundation();
 		refreshApps(); 
-  
+
   		$('.app-install-button').click(function(evt) {
   			jQuery('#file').trigger('click');
   		});

@@ -5,7 +5,7 @@
  * the parts that we want the app to see.
  */
 define(function(require) {
-
+	var events = require ('events');
 	var Dashboard = function(target) {
 		this.machine = null;
 		this.socket = null;
@@ -110,6 +110,18 @@ define(function(require) {
 			this.closeRightMenu() 
 			callback(null)
 		}.bind(this));
+		
+				// Show the footer
+		this._registerHandler('showFooter', function(data, callback) { 
+			this.openFooter();
+			callback(null);
+		}.bind(this));
+
+		// Hide the footer
+		this._registerHandler('hideFooter', function() { 
+			this.closeFooter() 
+			callback(null)
+		}.bind(this));
 
 		// Show a notification
 		this._registerHandler('notification', function(data,callback) { 
@@ -150,6 +162,18 @@ define(function(require) {
 				}
 			}.bind(this));
 		}.bind(this));
+
+		this._registerHandler('cancelJob', function(id, callback) { 
+			this.machine.cancel_job(id, function(err, result) {
+				if(err) {
+					callback(err);
+				} else {
+					callback(err, result);
+					//this.launchApp('job-manager', {}, callback);
+				}
+			}.bind(this));
+		}.bind(this));
+
 
 		// Get the list of jobs in the queue
 		this._registerHandler('getJobsInQueue', function(data, callback) {
@@ -360,6 +384,21 @@ define(function(require) {
 			callback(null, context.current_app_args || {});
 		}.bind(this));
 
+		this._registerHandler('getAppInfo', function(data, callback) {
+			context = require('context');
+			callback(null, context.current_app_info || {});
+		}.bind(this));
+
+		this._registerHandler('getAppConfig', function(data, callback) {
+			context = require('context');
+			this.machine.get_app_config(context.current_app_id, callback);
+		}.bind(this));
+
+		this._registerHandler('setAppConfig', function(data, callback) {
+			context = require('context');
+			this.machine.set_app_config(context.current_app_id, data, callback);
+		}.bind(this));
+
 		this._registerHandler('requestStatus', function(data, callback) {
 			this.machine.get_status(function(err,  status) {
 				if(err) {
@@ -395,7 +434,6 @@ define(function(require) {
 		}.bind(this));
 	}
 
-	/*** Prototypes ***/
 	Dashboard.prototype.updateStatus = function(status){
 		this._fireEvent("status", status);
 		if(this.ui) {
@@ -419,22 +457,30 @@ define(function(require) {
 
 	//Open the right menu
 	Dashboard.prototype.openRightMenu = function() {
-		$("#main").addClass("offcanvas-overlap-left");
-		if(this.machine) {
-			this.ui.setMenuOpen();
+		if ($(window).width() < 900) {
+			events.openDROover();
+		} else {
+			events.openDROPush();
 		}
-		require('events').resizedoc();
-		//resizedoc();
 	}
 
 	//Close the right menu
 	Dashboard.prototype.closeRightMenu = function() {
-		$("#main").removeClass("offcanvas-overlap-left");
-		if(this.machine) {
-			this.ui.setMenuClosed();
+		if ($(window).width() < 900) {
+			events.closeDROover();
+		} else {
+			events.closeDROPush();
 		}
-		require('events').resizedoc();
-		//resizedoc();
+	}
+
+	//Open Footer
+	Dashboard.prototype.openFooter = function() {
+		$('.footBar').css('height', '50px');
+	}
+	
+	//Close Footer
+	Dashboard.prototype.closeFooter = function() {
+		$('.footBar').css('height', '0px');
 	}
 
 	// Open and close the right menu

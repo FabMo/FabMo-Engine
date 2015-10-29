@@ -53,6 +53,7 @@
 			if(app) {
 				this.current_app_args = args || {};
 				this.current_app_id = id;
+				this.current_app_info = app;
 				this.appClientView.setModel(app);
 			} else {
 				if(this.apps) {

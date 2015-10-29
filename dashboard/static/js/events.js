@@ -9,6 +9,53 @@ define(function(require) {
 	// Events and keypress handlers in the FabMo-Dashboard
 
 	/********** Layout Resize Fonctions **********/
+	
+ 	var openDROPush = function () {
+		 $('#right-menu').css('right', '0');
+		 $('#app-client-container').css('padding-right', '218px');
+		 $('#app_menu_container').css('padding-right', '220px');
+	 }
+	 
+	 var closeDROPush = function () {
+		 $('#right-menu').css('right', '-222px');
+		 $('#app-client-container').css('padding-right', '0px');
+		 $('#app_menu_container').css('padding-right', '0px');	
+	 }
+	 
+	 var openDROover = function () {
+		 $('#right-menu').css('right', '0');
+	 }
+	 
+	 var closeDROover = function ()  {
+		 $('#right-menu').css('right', '-222px');
+	 }
+	 
+	 var setRightMenuBehavior = function () {
+		  if ($('#right-menu').css('right') === '0px') {
+			 if ($(window).width() < 900) {
+				closeDROover();
+			 } else {
+				closeDROPush();
+			 }
+		 } else {
+			if ($(window).width() < 900) {
+			   openDROover();
+			} else {
+			   openDROPush();
+			}	
+		 }
+	 }
+	 var rightMenuLoad = function () {
+		 	if ($(window).width() > 900) {
+			   	openDROPush();
+			} else if  ($(window).width() < 900){
+				closeDROPush();
+			}
+	 }
+	 $('.DRO-button').on('click', function (){
+		setRightMenuBehavior();
+	 });
+	 
 	var resizedoc = function(){
 		//L & R = width of left & right menus
 		var l=0; var r=0;
@@ -57,8 +104,21 @@ define(function(require) {
 			$(".main-section").width() - ($(".main-section").width() % 132 )
 		);
 	};
-
-
+	
+	/////control for footer/////
+	$('.footTab').click(function(){
+		if ($('.footBar').height() === 0) {
+			$('.footBar').css('height', '50px');
+		}
+		else {
+			$('.footBar').css('height', '.0px');
+		}
+	});
+	
+	window.setInterval(function(){
+   		$('.stopJob').toggleClass('blink');
+	}, 1000);
+	
 	var colapseMenu = function() {
 		//L & R = width of left & right menus
 		var l=0; var r=0;
@@ -67,8 +127,8 @@ define(function(require) {
 			$("#widget-links-general").removeClass("colapsed");
 			$("#left-menu").removeClass("colapsed");
 			l=parseInt($("#left-menu").css("width"))+1; //Save left menu size
-			if ($("body").width()/parseFloat($("body").css("font-size"))) {
-				$('#close_menu').css('display', 'block'); // show tinted screen to close menu
+			if ($("body").width()<640) {
+				$('.collapseLeft').show(); // show tinted screen to close menu
 			}
 		}
 
@@ -79,10 +139,16 @@ define(function(require) {
 			$("#app_menu_container").css("width",
 				$(".main-section").width() - ($(".main-section").width() % 132 )
 			);
-			$('#close_menu').css('display', 'none');	
+			$('.collapseLeft').hide();
 			l=parseInt($("#left-menu").css("width"))+1; //Save left menu size		
 		}
-
+		//Handle collapse of left 
+		$('.collapseLeft').click(function(){
+			$('.collapseLeft').hide();
+			$('#left-menu').addClass("colapsed");
+			$('#widget-links-general').addClass("colapsed");
+		});
+			
 		//As the size of document change, we call this function to ajust main div & app container size
 		//resizedoc();
 			//If wide screen and Right menu
@@ -141,11 +207,15 @@ define(function(require) {
 	      offcanvas : {
 	        open_method: 'overlap_single', 
 	      }
+		  
 	    });	
-
+		rightMenuLoad();
 		resizedoc();
 		//If size of the screen change, we resize the main & app container
-		$(window).resize( function() {resizedoc();});
+		$(window).resize( function() {
+			resizedoc();
+			rightMenuLoad();
+			});
 
 		//Idem if we colapse or un-colapse the right menu
 		$("#icon_colapse").click(function() { 
@@ -164,11 +234,16 @@ define(function(require) {
 			return false; //Override the action of the button, so the user is not redirected to another page (no data lost)
 		});
 	});
+	
+	
 
 	return {
 		'resizedocclick' : resizedocclick,
 		'resizedoc' : resizedoc,
-		'colapseMenu' : colapseMenu
-
+		'colapseMenu' : colapseMenu,
+		'openDROover' : openDROover,
+		'closeDROover' : closeDROover,
+		'openDROPush' : openDROPush,
+		'closeDROPush' : closeDROPush
 	}
 })

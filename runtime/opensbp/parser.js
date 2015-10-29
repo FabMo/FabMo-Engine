@@ -22,7 +22,6 @@ parse = function(str) {
 	output = []
 	lines = str.split('\n');
     for(i=0; i<lines.length; i++) {
-        console.log(i);
         try {            
             output.push(parseLine(lines[i]))
         } catch(err) {

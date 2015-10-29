@@ -309,6 +309,26 @@ var getJobById = function(req, res, next) {
     });
 };
 
+
+var deleteJobById = function(req, res, next) {
+    var answer;
+    db.Job.getById(req.params.id, function(err, result) {
+        if(err) {
+            log.error(err);
+            answer = {
+                    status:"fail",
+                    data:{job:err}
+            };
+            res.json(answer);
+        } else {
+            answer = {
+                status:"success",
+                data : {job:result}
+            };
+            res.json(answer);
+        }
+    });
+};
 /**
  * @apiGroup Jobs
  * @api {delete} /jobs/:id Cancel job
@@ -371,8 +391,8 @@ var getJobFile = function(req, res, next) {
 module.exports = function(server) {
     server.post('/job', submitJob);
     server.get('/jobs', getAllJobs);
-    
     server.get('/job/:id', getJobById);
+    server.del('/job/:id', cancelJob);
     server.post('/job/:id', resubmitJob);
     server.get('/job/:id/file', getJobFile);
     server.get('/jobs/queue', getQueue);
