@@ -30,6 +30,7 @@
         <a href="#">Macro</a>
         <ul class="dropdown">
           <li><a id="macro-save" href="#">Save</a></li>
+          <li><a id="macro-save-and-close" href="#">Save and Close</a></li>          
         </ul>        
       </li>
       <li class="has-dropdown"> 
@@ -57,7 +58,6 @@
   <script src="/js/libs/dashboard.js" type="text/javascript"></script>
   <script src="/js/libs/foundation.min.js" type="text/javascript"></script>
   <script src="js/ace/ace.js" type="text/javascript"></script>
-  <script src="js/ace.js" type="text/javascript"></script>
 
   <script>
     var editor;
@@ -84,6 +84,7 @@
       try {
         return 'localStorage' in window && window['localStorage'] !== null;
       } catch (e) {
+        console.warn("HTML5 Local storage unsupported?")
         return false;
       }
     }
@@ -175,11 +176,27 @@
       });
     }
  
-    function save() {
-      if(supports_html5_storage() && (source === null)) {
-        localStorage['content'] = editor.getSession().getValue();
-        pos = editor.getCursorPosition();
-        localStorage['position'] = JSON.stringify(pos);
+    function save(callback) {
+      switch(source) {
+        case null:
+          if(supports_html5_storage()) {
+            localStorage['content'] = editor.getSession().getValue();
+            pos = editor.getCursorPosition();
+            localStorage['position'] = JSON.stringify(pos);
+          }
+          callback();
+          break;
+
+        case "macro":
+          fabmoDashboard.updateMacro(source_data.index, {content: editor.getValue()}, function(err, result) {
+            fabmoDashboard.notify('info', "Macro '" + source_data.name + "' saved.");
+            callback();
+          });
+          break;
+
+        default:
+          callback();
+          break;
       }
     }
 
@@ -195,6 +212,14 @@
         bindKey: {win: "Ctrl-Enter", mac: "Command-Enter"},
         exec: function(editor) {
           execute();    
+        }
+      });
+
+      editor.commands.addCommand({
+        name: "save",
+        bindKey: {win: "Ctrl-S", mac: "Command-S"},
+        exec: function(editor) {
+          save();  
         }
       });
 
@@ -235,9 +260,15 @@
       set_language('gcode');
       evt.preventDefault();
     });
+
     $("#macro-save").click(function(evt) {
-      fabmoDashboard.updateMacro(source_data.index, {content: editor.getValue()}, function(err, result) {
-        fabmoDashboard.notify('info', "Macro '" + source_data.name + "' saved.");
+      save();
+      evt.preventDefault();
+    });
+
+    $("#macro-save-and-close").click(function(evt) {
+      save(function() {
+        fabmoDashboard.launchApp('macros');
       });
       evt.preventDefault();
     });
@@ -253,8 +284,6 @@
         $("#submit-button").addClass('disabled');
       }
     });
-
-
 
   </script>
 

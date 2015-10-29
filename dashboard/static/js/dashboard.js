@@ -6,6 +6,8 @@
  */
 define(function(require) {
 	var events = require ('events');
+	var toastr = require('toastr');
+	
 	var Dashboard = function(target) {
 		this.machine = null;
 		this.socket = null;
