@@ -24,6 +24,10 @@ exports.getAppConfig = function(id) {
 	return exports.appManager.getAppConfig(id);
 };
 
+exports.setAppConfig = function(id, cfg, callback) {
+	return exports.appManager.setAppConfig(id, cfg, callback);
+};
+
 exports.getAppList = function() {
 	return exports.appManager.getAppList() || [];
 };

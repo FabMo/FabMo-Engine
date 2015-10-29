@@ -65,6 +65,29 @@ var getAppConfig = function(req, res, next) {
     res.json(answer);
 }
 
+var postAppConfig = function(req, res, next) {
+    var new_config = {};
+    var answer;
+    dashboard.setAppConfig(req.params.id, req.params.config, function(err, result) {
+        console.log(dashboard.appManager.app_configs)
+        if(err) {
+            var answer = {
+                status:"error",
+                message : String(e)
+            };
+        }
+        else {
+            var answer = {
+                status:"success",
+                data : {}
+            };
+        }
+        res.json(answer);
+
+    }.bind(this))
+}
+
+
 /**
  * @api {delete} /apps/:id Delete App
  * @apiDescription Delete the specified app
@@ -209,6 +232,7 @@ module.exports = function(server) {
     server.get('/apps', getApps);
     server.get('/apps/:id', getAppInfo);
     server.get('/apps/:id/config', getAppConfig);
+    server.post('/apps/:id/config', postAppConfig);
     server.del('/apps/:id', deleteApp);
     server.get('/apps/:id/files', listAppFiles);
     server.get(/\/approot\/?.*/, restify.serveStatic({

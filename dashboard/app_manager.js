@@ -22,7 +22,6 @@ var AppManager = function(options) {
 };
 
 AppManager.prototype.readAppPackageInfo = function(app_info, callback) {
-	console.log(app_info);
 	var pkg_info_path = path.join(app_info.app_path, 'package.json');
 	var pathname = path.basename(app_info.app_archive_path);
 	fs.readFile(pkg_info_path, function(err, data) {
@@ -91,6 +90,7 @@ AppManager.prototype.getAppConfig = function(id) {
 
 AppManager.prototype.setAppConfig = function(id, config, callback) {
 	this.app_configs[id] = config;
+	fs.writeFile(this.apps_index[id].config_path, JSON.stringify(config), callback);
 }
 
 AppManager.prototype._addApp = function(app) {
@@ -102,7 +102,7 @@ AppManager.prototype._addApp = function(app) {
 
 AppManager.prototype.reloadApp = function(id, callback) {
 	app_info = this.apps_index[id];
-	if(app_entry) {
+	if(app_info) {
 		this.loadApp(app_info.app_archive_path, {force:true}, callback);
 	} else {
 		callback(new Error("Not a valid app id: " + id));

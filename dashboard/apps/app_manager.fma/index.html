@@ -97,11 +97,19 @@
 			});
 		});
 	};
-
+  
 	$(function() {
 		$(document).foundation();
 		refreshApps(); 
-  
+		// Silly test, take out eventually
+  		cfg = {a:1,b:2,c:3}
+  		fabmoDashboard.setAppConfig(cfg, function(err, data) {
+			console.log(data);
+			fabmoDashboard.getAppConfig(function(err, config) {
+				console.log(config);
+		  	});
+  		});
+
   		$('.app-install-button').click(function(evt) {
   			jQuery('#file').trigger('click');
   		});

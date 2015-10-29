@@ -384,6 +384,21 @@ define(function(require) {
 			callback(null, context.current_app_args || {});
 		}.bind(this));
 
+		this._registerHandler('getAppInfo', function(data, callback) {
+			context = require('context');
+			callback(null, context.current_app_info || {});
+		}.bind(this));
+
+		this._registerHandler('getAppConfig', function(data, callback) {
+			context = require('context');
+			this.machine.get_app_config(context.current_app_id, callback);
+		}.bind(this));
+
+		this._registerHandler('setAppConfig', function(data, callback) {
+			context = require('context');
+			this.machine.set_app_config(context.current_app_id, data, callback);
+		}.bind(this));
+
 		this._registerHandler('requestStatus', function(data, callback) {
 			this.machine.get_status(function(err,  status) {
 				if(err) {

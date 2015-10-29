@@ -196,6 +196,10 @@ FabMoDashboard.prototype.getAppArgs = function(callback) {
 	this._call("getAppArgs", null, callback);
 }
 
+FabMoDashboard.prototype.getAppInfo = function(callback) {
+	this._call("getAppInfo", null, callback);
+}
+
 FabMoDashboard.prototype.launchApp = function(id, args, callback) {
 	this._call("launchApp", {'id': id, 'args':args}, callback);
 }
@@ -379,6 +383,14 @@ FabMoDashboard.prototype.notify = function(type, message, callback) {
 
 FabMoDashboard.prototype.deleteMacro = function(id, callback) {
 	this._call("deleteMacro", id, callback);
+}
+
+FabMoDashboard.prototype.getAppConfig = function(callback) {
+	this._call("getAppConfig", null, callback);
+}
+
+FabMoDashboard.prototype.setAppConfig = function(config, callback) {
+	this._call("setAppConfig", config, callback);
 }
 
 fabmoDashboard = new FabMoDashboard();
