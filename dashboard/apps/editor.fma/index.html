@@ -33,7 +33,7 @@
           <li><a id="macro-save-and-close" href="#">Save and Close</a></li>          
         </ul>        
       </li>
-      <li class="has-dropdown"> 
+      <li class="has-dropdown language-dropdown"> 
         <a href="#">Language</a>
         <ul class="dropdown">
           <li><a id="lang-opensbp" href="#">OpenSBP</a></li>
@@ -107,6 +107,7 @@
     }
 
     function set_language(language) {
+
       switch(language) {
         case 'opensbp':
           $("#app-header").text("Editor (OpenSBP)");
@@ -160,6 +161,8 @@
               source = "job";
           });
         } else if('macro' in args) {
+          $('.language-dropdown').hide();
+          language = 'opensbp';
           var url = '/macros/' + args.macro;
           $.get(url,function(response, status) {
             var macro = response.data.macro;
