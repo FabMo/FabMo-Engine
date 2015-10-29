@@ -445,8 +445,18 @@
               </div>
             </div>
         </div>
-        </fieldset>
-        </div>
+        <div class="large-4 columns">
+          <div class="row collapse">
+            <label>Axis Mode</label>
+              <select id="driver_xam" class="driver_input">
+                <option value="0">Disable</option>
+                <option value="1">Linear</option>
+              </select>
+            </label>
+          </div>
+        </div>   
+      </fieldset>
+      </div>
 
       <div class="row">
         <fieldset>
@@ -484,6 +494,16 @@
               </div>
             </div>
         </div>
+        <div class="large-4 columns">
+          <div class="row collapse">
+            <label>Axis Mode</label>
+              <select id="driver_yam" class="driver_input">
+                <option value="0">Disable</option>
+                <option value="1">Linear</option>
+              </select>
+            </label>
+          </div>
+        </div>   
       </fieldset>
     </div>
 
@@ -523,8 +543,136 @@
               </div>
             </div>
         </div>
+        <div class="large-4 columns">
+          <div class="row collapse">
+            <label>Axis Mode</label>
+              <select id="driver_zam" class="driver_input">
+                <option value="0">Disable</option>
+                <option value="1">Linear</option>
+              </select>
+            </label>
+          </div>
+        </div>   
         </fieldset>
         </div>
+
+      <div class="row">
+        <fieldset>
+          <legend>A-Axis</legend>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Feedrate Maximum</label>
+              <div class="small-9 columns">
+                <input type="text" id="driver_afr" class="driver_input"/>
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">in/min</span>
+              </div>
+            </div>
+          </div>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Velocity Maximum</label>
+              <div class="small-9 columns">
+                <input type="text" id="driver_avm" class="driver_input" />
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">in/min</span>
+              </div>
+            </div>
+        </div>
+
+        <div class="large-4 columns">
+          <div class="row collapse">
+            <label>Axis Mode</label>
+              <select id="driver_aam" class="driver_input">
+                <option value="0">Disable</option>
+                <option value="3">Rotary</option>
+              </select>
+            </label>
+          </div>
+        </div>   
+      </fieldset>
+    </div>
+
+      <div class="row">
+        <fieldset>
+          <legend>B-Axis</legend>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Feedrate Maximum</label>
+              <div class="small-9 columns">
+                <input type="text" id="driver_bfr" class="driver_input"/>
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">in/min</span>
+              </div>
+            </div>
+          </div>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Velocity Maximum</label>
+              <div class="small-9 columns">
+                <input type="text" id="driver_bvm" class="driver_input" />
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">in/min</span>
+              </div>
+            </div>
+        </div>
+
+        <div class="large-4 columns">
+          <div class="row collapse">
+            <label>Axis Mode</label>
+              <select id="driver_bam" class="driver_input">
+                <option value="0">Disable</option>
+                <option value="3">Rotary</option>
+              </select>
+            </label>
+          </div>
+        </div>   
+      </fieldset>
+    </div>
+
+      <div class="row">
+        <fieldset>
+          <legend>C-Axis</legend>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Feedrate Maximum</label>
+              <div class="small-9 columns">
+                <input type="text" id="driver_cfr" class="driver_input"/>
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">in/min</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Maximum Jerk</label>
+              <div class="small-9 columns">
+                <input type="text" id="driver_cjm" class="driver_input" />
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">jerk</span>
+              </div>
+            </div>
+        </div>
+
+        <div class="large-4 columns">
+          <div class="row collapse">
+            <label>Axis Mode</label>
+              <select id="driver_cam" class="driver_input">
+                <option value="0">Disable</option>
+                <option value="3">Rotary</option>
+              </select>
+            </label>
+          </div>
+        </div>   
+      </fieldset>
+    </div>
   </section>
 
 <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel3">
