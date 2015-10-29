@@ -69,7 +69,6 @@ var postAppConfig = function(req, res, next) {
     var new_config = {};
     var answer;
     dashboard.setAppConfig(req.params.id, req.params.config, function(err, result) {
-        console.log(dashboard.appManager.app_configs)
         if(err) {
             var answer = {
                 status:"error",

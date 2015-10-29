@@ -85,7 +85,7 @@ AppManager.prototype.getAppList = function() {
 };
 
 AppManager.prototype.getAppConfig = function(id) {
-	this.app_configs[id];
+	return this.app_configs[id];
 }
 
 AppManager.prototype.setAppConfig = function(id, config, callback) {

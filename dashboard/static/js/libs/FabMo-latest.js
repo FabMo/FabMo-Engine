@@ -160,7 +160,7 @@ FabMo.prototype.get_app_config = function(id, callback)
 		dataType : 'json', 
 		success: function( data ) {
 			if(data.status === "success") {
-				callback(undefined,data.data);
+				callback(undefined,data.data.config);
 			} else if(data.status==="fail") {
 				callback(data.data);
 			}	else {
