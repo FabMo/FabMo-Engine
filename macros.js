@@ -54,12 +54,14 @@ var _createMacroFilename = function(id, type) {
 var _createMacroDefaultContent = function(macro) {
 	switch(macro.type) {
 		case 'nc':
-			return 	'( ' + macro.name + ' )\n( ' + macro.description + ' )\n\n';
-			break;
+			//return 	'( ' + macro.name + ' )\n( ' + macro.description + ' )\n\n';
+			return ''
+            break;
 
 		case 'sbp':
-			return 	"' " + macro.name + "\n' " + macro.description + "\n\n";
-			break;
+			//return 	"' " + macro.name + "\n' " + macro.description + "\n\n";
+			return ''
+            break;
 
 		default:
 			throw new Error('Invalid macro type: ' + type)
