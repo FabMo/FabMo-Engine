@@ -15,7 +15,7 @@ statement
    = (label / single / jump / pause / conditional / assignment / event / open / custom_cut / command / __)
 
 custom_cut
-   = [Cc] index:integer __ ","
+   = [Cc] index:integer __ ","?
    { return {"type":"custom", "index":index};}
 
 event
@@ -53,7 +53,7 @@ jump
 argument
    = (float / integer / expression / barestring / "")
 
-mnemonic = code: ([A-Za-z][A-Za-z0-9]) {return code.join('');}
+mnemonic = code: ([A-BD-Za-bd-z][A-Za-z0-9]) {return code.join('');}
 
 identifier
    = id:([a-zA-Z_]+[A-Za-z0-9_]*) {return id[0].join("");}

@@ -91,8 +91,8 @@ module.exports = (function() {
         peg$c48 = { type: "literal", value: "GOSUB", description: "\"GOSUB\"" },
         peg$c49 = function(cmd, lbl) {return {type:cmd.toLowerCase(), label:lbl};},
         peg$c50 = "",
-        peg$c51 = /^[A-Za-z]/,
-        peg$c52 = { type: "class", value: "[A-Za-z]", description: "[A-Za-z]" },
+        peg$c51 = /^[A-BD-Za-bd-z]/,
+        peg$c52 = { type: "class", value: "[A-BD-Za-bd-z]", description: "[A-BD-Za-bd-z]" },
         peg$c53 = /^[A-Za-z0-9]/,
         peg$c54 = { type: "class", value: "[A-Za-z0-9]", description: "[A-Za-z0-9]" },
         peg$c55 = function(code) {return code.join('');},
@@ -431,6 +431,9 @@ module.exports = (function() {
             } else {
               s4 = peg$FAILED;
               if (peg$silentFails === 0) { peg$fail(peg$c4); }
+            }
+            if (s4 === peg$FAILED) {
+              s4 = null;
             }
             if (s4 !== peg$FAILED) {
               peg$savedPos = s0;
