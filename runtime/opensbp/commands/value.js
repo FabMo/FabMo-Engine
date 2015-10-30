@@ -17,11 +17,15 @@ exports.VA = function(args, callback) {
 		var newLocation = 0.0;
 		var unitConv = 1.0;
 
-		if ( this.machine.driver.status.unit === 0 ) {  // inches
+		if ( this.machine.driver.status.unit === "in" ) {  // inches
 			unitConv = 0.039370079;
+			log.debug("current unit type = " + this.machine.driver.status.unit);
 		}
+		log.debug("unitConv = " + unitConv);
 
 		if (args[0] !== undefined) { 	//X location
+			log.debug("mpox = " + MPO.x);
+			log.debug("args[0] = " + args[0]);
 			newLocation = Number(((MPO.x * unitConv) - args[0]).toFixed(5));
 			setVA_G2.g55x = newLocation;
 			this.cmd_posx = this.posx = args[0];
