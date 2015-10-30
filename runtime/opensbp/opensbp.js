@@ -319,12 +319,11 @@ SBPRuntime.prototype._continue = function() {
 					try {
 						this._execute(line, this._continue.bind(this));
 					} catch(e) {
-						break;
+						return this._end(e.message);
 					}
 				}
 				break;
 			} else {
-				log.debug('Current chunk is nonempty: breaking to run stuff on G2.');
 				break;
 			}
 			return;
@@ -332,7 +331,7 @@ SBPRuntime.prototype._continue = function() {
 			try {
 				this._execute(line);
 			} catch(e) {
-				break;
+				return this._end(e.message);
 			}
 		}
 	}
@@ -392,10 +391,13 @@ SBPRuntime.prototype._end = function(error) {
 
 		switch(this.driver.status.stat) {
 			case this.driver.STAT_END:
+			case this.driver.STAT_STOP:
+				console.log("STAT_END/STAT_STOP")
 				end_function();
 			break;
 
 			default:
+				console.log(this.driver.status.stat)
 				this.driver.expectStateChange( {
 					'end':end_function,
 					'stop':end_function
@@ -973,7 +975,7 @@ SBPRuntime.prototype.evaluateUserVariable = function(v) {
 	if(v in this.user_vars) {
 		return this.user_vars[v];
 	} else {
-		return null;
+		throw new Error('Variable ' + v + ' was never defined.');
 	}
 };
 
@@ -986,7 +988,7 @@ SBPRuntime.prototype._pushFileStack = function() {
 	frame =  {}
 	frame.pc = this.pc+1
 	frame.program = this.program
-	frame.user_vars = this.user_vars
+	//frame.user_vars = this.user_vars
 	frame.current_chunk = this.current_chunk
 	frame.end_callback = this.end_callback
 	this.file_stack.push(frame)
@@ -996,7 +998,7 @@ SBPRuntime.prototype._popFileStack = function() {
 	frame = this.file_stack.pop()
 	this.pc = frame.pc
 	this.program = frame.program
-	this.user_vars = frame.user_vars
+	//this.user_vars = frame.user_vars
 	this.current_chunk = frame.current_chunk
 	this.end_callback = frame.end_callback
 }
