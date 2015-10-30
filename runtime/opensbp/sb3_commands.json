@@ -5609,5 +5609,25 @@
    "HA": {
       "cmd": "HA",
       "name": "help About"
+   },
+   "BF": {
+      "cmd": "BF",
+      "name": "feed bender wire",
+      "params": [
+         {
+            "name": "Wire Feed Distance",
+            "desc": "This is the distance-to-move wire and is compensated by previous bend value",
+            "abrev": "bnF",
+            "typeext": 2,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               "Table limits Y"
+            ],
+            "type": "dist"
+         }
+      ]
    }
+
 }
