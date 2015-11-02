@@ -16,6 +16,8 @@
             <li class="name">
               <h1><a id="app-header" >Network</a></h1>
             </li>
+            <li><a id="ap-mode-button" href="#">AP Mode</a></li>
+
             <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
           </ul>
           <section class="top-bar-section">
@@ -29,8 +31,8 @@
 				<h4>Wifi Networks</h4>
 			</div>
 			<div class="small-3 medium-2 large-2 columns btn switch">
-			  <input id="Wifi_toggle" type="radio" name="wifi_toggle"/>
-			  <label for="Wifi_toggle"></label>
+			  <input id="wifi_toggle" type="radio" name="wifi_toggle"/>
+			  <label for="wifi_toggle"></label>
 			</div>
 		</div>
 
@@ -209,23 +211,23 @@
         retval = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">'
         retval += '<tr>'+
                     '<td class="child-row-label">SSID:</td>'+
-                    '<td>'+ (network.ssid || '<em>No SSID?</em>') + '</td>'+
+                    '<td>'+ (network.ssid || '<em>Unknown</em>') + '</td>'+
                   '</tr>'+
                   '<tr>'+
                     '<td class="child-row-label">Security:</td>'+
-                    '<td>'+ (network.security || '<em>No security ?</em>') + '</td>'+
+                    '<td>'+ (network.security || '<em>Unknown</em>') + '</td>'+
                   '</tr>'+
                   '<tr>'+
                     '<td class="child-row-label">State:</td>'+
-                    '<td>'+ (network.state || '<em>No state ?</em>') + '</td>'+
+                    '<td>'+ (network.state || '<em>Unknown</em>') + '</td>'+
                   '</tr>'+
                   '<tr>'+
                     '<td class="child-row-label">Strength:</td>'+
-                    '<td>'+ (network.strength || '<em>No Strength?</em>') + '</td>'+
+                    '<td>'+ (network.strength || '<em>Unknown</em>') + '</td>'+
                   '</tr>'+
                   '<tr>'+
                     '<td class="child-row-label">Favorite:</td>'+
-                    '<td>'+ (network.favorite!==null?network.favorite.toString():null || '<em>No Favorite argument?</em>') + '</td>'+
+                    '<td>'+ (network.favorite || false ? 'Yes' : 'No') + '</td>'+
                   '</tr>';
         if(network.state==="online"|| network.state==="ready"){
         retval += '<tr>'+
@@ -283,11 +285,16 @@
         })
     }
 
+    $('#ap-mode-button').on('click', function(evt) {
+        console.log("AP MODE BUTTON HIT");
+        fabmoDashboard.enableWifiHotspot(function(err, data) {
+            console.error(err);
+            console.info(data);
+        });
+        evt.preventDefault();
+    })
 
-
-
-
-        // Add event listener for opening and closing details
+    // Add event listener for opening and closing details
     $('#wifi_table tbody').on('click', 'td.details-control', function () {
         var tr = $(this).closest('tr');
         var row = wifi_table.row( tr );
@@ -306,10 +313,14 @@
             network = row.data();
             row.child( wifi_child_row(network) ).show();
             // DO STUFF
-            tr.addClass('shown');
+            tr.addClass('shown'); 
         }
         save_opened=$('#wifi_table tbody').find('.shown');
 
+        $('input[name=wifi_toggle]').change(function(){
+        var value = $( 'input[name=wifi_toggle]:checked' ).val();
+        alert(value);
+        });
         // bind the disconnect button
         $('.disconnect_button').click(function(e) {
             fabmoDashboard.disconnectFromWifi(function(err,data){

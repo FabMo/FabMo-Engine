@@ -348,6 +348,9 @@ define(function(require) {
 
 		this._registerHandler('enableWifiHotspot', function(data, callback) {
 			this.machine.enable_hotspot(function(err, result) {
+				console.log("posted")
+				console.log(err)
+				console.log(result)
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));

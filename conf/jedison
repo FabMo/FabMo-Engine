@@ -139,12 +139,12 @@ def get_wifi_info():
 
     if mode == 'managed':
         a,b = re.compile('Link Quality=(\d+)\/(\d+)').search(iwconfig).groups()
-        retval['linkQuality'] = float(a)/float(b)
+        retval['strength'] = int(100*float(a)/float(b))
         ssid = re.compile('SSID:\s*"(\w+)"').search(iwconfig).group(1).lower()
-        retval['SSID'] = ssid
+        retval['ssid'] = ssid
     
-    ip = re.compile('inet addr:\s*(\d+\.\d+\.\d+\.\d+)').search(ifconfig).group(1)
-    retval['IP'] = ip
+    ipaddress = re.compile('inet addr:\s*(\d+\.\d+\.\d+\.\d+)').search(ifconfig).group(1)
+    retval['ipaddress'] = ipaddress
 
     return retval
 
@@ -167,6 +167,7 @@ def get_wifi_networks():
             network['ssid'] = match.group('ssid')
             security_string = match.group('security');
             network['security'] = security_regex.findall(security_string);
+            network['favorite'] = False
             networks.append(network)
 
     return networks

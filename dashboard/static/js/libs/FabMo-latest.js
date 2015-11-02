@@ -933,7 +933,7 @@ FabMo.prototype.disable_wifi =  function(ssid, callback)
 	});
 };
 
-FabMo.prototype.enable_hotspot =  function(ssid, callback)
+FabMo.prototype.enable_hotspot =  function(callback)
 {
 	if (!callback)
 		throw "this function need a callback to work !";
@@ -960,7 +960,7 @@ FabMo.prototype.enable_hotspot =  function(ssid, callback)
 	});
 };
 
-FabMo.prototype.disable_hotspot =  function(ssid, callback)
+FabMo.prototype.disable_hotspot =  function(callback)
 {
 	if (!callback)
 		throw "this function need a callback to work !";

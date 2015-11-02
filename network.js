@@ -20,15 +20,13 @@ var properties;
 function CHECK(err){if(err){log.error(err);/*process.exit(-1);*/}}
 
 function jedison(cmdline, callback) {
+    var callback = callback || function() {}
     doshell('./conf/jedison ' + cmdline, function(s) {
-        console.log("jedison complete")
         try {
             j = JSON.parse(s)
-            console.log('parsed')
             if(j.status == 'success') {
                 callback(null, j.data || {})
             } else {
-                console.log('fail')
                 callback(j.message)
             }
         } catch(e) {
@@ -43,7 +41,6 @@ function openHotspot(callback){
   log.info("SSID : "+ hotspot_ssid);
   log.info("Passphrase : "+ hotspot_passphrase);
   jedison('join ap', function(err, result) {
-    console.log("joined?")
     callback(err, result);
   });
 }
@@ -71,18 +68,10 @@ exports.init = function() {
 
 
 exports.getAvailableWifiNetworks = function(callback) {
+    jedison('scan');
     jedison('get networks', function(err, data) {
         callback(err, data);
     })
-/*
-    self.wifi.getNetworks(function(err,data) {
-        if(err)callback(err);
-        else{
-            callback(null,data);
-        }
-
-    });
-*/
 }
 
 exports.getAvailableWifiNetwork = function(ssid, callback) {
@@ -135,6 +124,7 @@ callback('not yet');
 }
 
 exports.turnWifiHotspotOn=function(callback){
+    console.log("Turning on wifi hotspot")
     openHotspot(callback);
 }
 
