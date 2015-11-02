@@ -3,14 +3,16 @@ var g2 = require('../../../g2');
 var sb3_commands = require('../sb3_commands');
 var config = require('../../../config');
 
-// Bender-FEED command
+// Bender-FEED command (with adjustment from bending)
 exports.BF = function(args) {
 	var y = args[0];
+	var adj = config.opensbp.get('cutterDia');       // retrieve correction for adjusting loss from prev bend, example vc at moment
 
 	log.debug( " BH args: " + JSON.stringify(args));
 	if(isNaN(y)) { throw( "Invalid BH argument: " + y ); }
 	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
 //	this.cmd_posy = y;
+	y = y + adj;
 	this.emit_move('G1',{"Y":y,'F':feedrate});
 
 };
@@ -27,6 +29,17 @@ exports.MX = function(args) {
 
 };
 
+// Move Y axis
+exports.MY = function(args) {
+	var y = args[0];
+
+	log.debug( " MX args: " + JSON.stringify(args));
+	if(isNaN(y)) { throw( "Invalid MY argument: " + y ); }
+	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+//	this.cmd_posy = y;
+	this.emit_move('G1',{"Y":y,'F':feedrate});
+
+};
 
 // Move Z axis
 exports.MZ = function(args) {
