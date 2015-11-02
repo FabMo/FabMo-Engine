@@ -45,11 +45,11 @@ EdisonNetworkManager.prototype.run = function() {
   switch(this.mode) {
     case 'ap':
       this.runAP();
-    break;
+      break;
 
     case 'station':
       this.runStation();
-    break;
+      break;
 
     default:
       this.state = 'idle';
@@ -60,36 +60,61 @@ EdisonNetworkManager.prototype.run = function() {
           else { log.warn('Unknown network mode: ' + data.mode)}
         }
 
-        setTimeout(this.run.bind(this), 1000);
+        setTimeout(this.run.bind(this), 5000);
       }.bind(this));
+      break;
   }
 }
 
 EdisonNetworkManager.prototype.runStation = function() {
   switch(this.state) {
     case 'idle':
-      this.scan();
-      this.state = 'done_scanning';
-      setTimeout(this.run.bind(this), WIFI_SCAN_INTERVAL);
+      log.info('Scanning for networks...')
+      this.scan(function(err, data) {
+        this.state = 'done_scanning';
+        setTimeout(this.run.bind(this), WIFI_SCAN_INTERVAL);        
+      }.bind(this));
       break;
 
     case 'done_scanning':
+      log.info('Getting network list...')
       this.getNetworks(function(err, data) {
         if(!err) {
-          console.log(data)
+          log.info('Got ' + data.length + ' networks.')
           this.networks = data;
         } else {
           console.warn(err);
         }
+        this.state = 'check_network';
+        setImmediate(this.run.bind(this));
+      }.bind(this));
+      break;
+
+    case 'check_network':
+      log.info('Checking network health...');
+      this.getInfo(function(err, data) {
+        if(!err) {
+          if(data.ipaddress === '?') {
+            log.error('No valid network, starting AP')
+            return this.joinAP();
+          }
+        } else {
+          log.error('No valid network, starting AP')
+          return this.joinAP();
+        }
+        log.info("Network health OK");
         this.state = 'idle';
         setImmediate(this.run.bind(this));
       }.bind(this));
+      break;
   }
 }
 
 EdisonNetworkManager.prototype.runAP = function() {
+  log.warn('Running AP')
   switch(this.state) {
     default:
+      log.info('In the runAP handler - checking state.')
       this.getInfo(function(err, data) {
         if(!err) {
           if(data.mode == 'managed') { this.mode = 'station'; }
@@ -97,12 +122,13 @@ EdisonNetworkManager.prototype.runAP = function() {
           else { log.warn('Unknown network mode: ' + data.mode)}
         }
         setTimeout(this.run.bind(this), 1000);
-      });
+      }.bind(this));
       break;
   }
 }
 
 EdisonNetworkManager.prototype.joinAP = function(callback) {
+  callback = callback || function() {};
   this.mode = 'unknown';
   jedison('join ap', function(err, result) {
     callback(err, result);

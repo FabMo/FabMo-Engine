@@ -7,6 +7,7 @@ import argparse
 import json
 import re
 import json
+import time
 
 WSREGEX = re.compile(r"\s+")
 DESTINATION_PATH = "/tmp/"
@@ -125,7 +126,7 @@ def get_wifi_info():
     try: 
         ipaddress = re.compile('inet addr:\s*(\d+\.\d+\.\d+\.\d+)').search(ifconfig).group(1)
     except:
-        ipaddress = '????'
+        ipaddress = '?'
  
     retval['ipaddress'] = ipaddress
 
@@ -138,7 +139,7 @@ def get_wifi_networks():
         raise e
 
     networks = []
-    line_regex = re.compile('(?P<bssid>(?:[a-fA-F0-9][a-fA-F0-9]:?)+)\s+(?P<frequency>\d+)\s+(?P<signal>-?\d+)\s+(?P<security>(?:\[(?:\w|\-)+\])+)\s+(?P<ssid>\w(?:\w|\s)*)')
+    line_regex = re.compile('(?P<bssid>(?:[a-fA-F0-9][a-fA-F0-9]:?)+)\s+(?P<frequency>\d+)\s+(?P<signal>-?\d+)\s+(?P<security>(?:\[(?:\w|\-)+\])+)\s+(?P<ssid>\w(?:\w|\s|\-|\_)*)')
     security_regex = re.compile('\[((?:\w|\d|\s|\-)+)\]')
     for line in results.split('\n'):
         match = line_regex.match(line)
@@ -217,7 +218,7 @@ def join_ap_mode():
     info = get_wifi_info()
     if info['mode'] == 'master':
         raise Exception("System already in AP mode")
-    os.popen("systemctl stop wpa_supplicant && sleep 2 && systemctl start hostapd && sleep 2 && systemctl restart fabmo")
+    os.popen("systemctl stop wpa_supplicant && sleep 2 && systemctl start hostapd && sleep 2")# && systemctl restart fabmo")
 
 def set_network(network_conf, ssid):
     with open('/etc/wpa_supplicant/wpa_supplicant.conf', 'w') as fp:
