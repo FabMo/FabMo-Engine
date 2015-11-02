@@ -389,23 +389,32 @@ def get_wifi_mode():
     return modestr
 
 def get_wifi_info():
-	iwconfig = ''
-	ifconfig = ''
-	try:
-		iwconfig = subprocess.check_output('iwconfig %s' % IFNAME, shell=True)
-		ifconfig = subprocess.check_output('ifconfig %s' % IFNAME, shell=True)
-		ssid = re.compile('ESSID:"(\w+)"').search(iwconfig).group(1)
-		mode = re.compile('Mode:(\w+)').search(iwconfig).group(1)
-		a,b = re.compile('Link Quality=(\d+)\/(\d+)').search(iwconfig).groups()
-		print ssid	
+    iwconfig = ''
+    ifconfig = ''
+    try:
+        iwconfig = subprocess.check_output('iwconfig %s' % IFNAME, shell=True)
+        ifconfig = subprocess.check_output('ifconfig %s' % IFNAME, shell=True)
+    except Exception, e:
+        raise e
 
-	except Exception, e:
-		print e	
-		print "noooo" 
-		pass
+    try:
+        mode = re.compile('Mode:(\w+)').search(iwconfig).group(1).lower()
+    except Exception, e:
+        raise ValueError('Could not get wifi mode')
 
-	print iwconfig
-	print ifconfig
+    retval = {'mode' : mode}
+
+    if mode == 'managed':
+        a,b = re.compile('Link Quality=(\d+)\/(\d+)').search(iwconfig).groups()
+        retval['linkQuality'] = float(a)/float(b)
+        ssid = re.compile('SSID:\s*"(\w+)"').search(iwconfig).group(1).lower()
+        retval['SSID'] = ssid
+        ip = re.compile('inet addr:\s*(\d+\.\d+\.\d+\.\d+)').search(ifconfig).group(1)
+        retval['IP'] = ip
+
+    print iwconfig
+    print ifconfig
+    print retval
 
 
 def isRestartWithAPSet():
@@ -527,4 +536,4 @@ def enter_station_mode(ssid, password):
 
 
 if __name__ == "__main__":
-	get_wifi_info()
+    get_wifi_info()
