@@ -17,7 +17,7 @@ exports.VA = function(args, callback) {
 		var newLocation = 0.0;
 		var unitConv = 1.0;
 
-		if ( this.machine.driver.status.unit === 0 ) {  // inches
+		if ( this.machine.driver.status.unit === "in" ) {  // inches
 			unitConv = 0.039370079;
 		}
 
@@ -398,12 +398,10 @@ exports.VR = function(args, callback) {
 		VRset.cjm = args[4];
 		} 
 
-//	config.opensbp.setMany(sbp_VU, function(err, values) {
 	config.driver.setMany(VRset, function(err, values) {
 		log.debug("Sent VR to g2 and sbp_settings");
 		callback();
 	});
-//	});
 
 };	
 
@@ -414,53 +412,57 @@ exports.VS = function(args,callback) {
 	var g2_values = {};
 	var sbp_values = {};
 
+	//Set XY move speed in OpenSBP only, not set in G2
 	if (args[0] !== undefined) {
 		speed_change = args[0];
-//		g2_values.xfr = (60*speed_change);
-//		g2_values.yfr = (60*speed_change);
 		sbp_values.movexy_speed = speed_change;
 	}
+	//Set Z move speed in OpenSBP only, not set in G2
 	if (args[1] !== undefined) {
 		speed_change = args[1];
-//		g2_values.zfr = (60*speed_change);
 		sbp_values.movez_speed = speed_change;
 	}
+	//Set A move speed in OpenSBP only, not set in G2
 	if (args[2] !== undefined) {
 		speed_change = args[2];
-//		g2_values.afr = (60*speed_change);
 		sbp_values.movea_speed = speed_change;
 	}
+	//Set B move speed in OpenSBP only, not set in G2
 	if (args[3] !== undefined) {
 		speed_change = args[3];
-//		g2_values.bfr = (60*speed_change);
 		sbp_values.moveb_speed = speed_change;
 	}
+	//Set C move speed in OpenSBP only, not set in G2
 	if (args[4] !== undefined) {
 		speed_change = args[4];
-//		g2_values.cfr = (60*speed_change);
 		sbp_values.movec_speed = speed_change;
 	}
+	//Set XY jog speed in G2 and OpenSBP
 	if (args[5] !== undefined) {
 		speed_change = args[5];
 		g2_values.xvm = (60*speed_change);
 		g2_values.yvm = (60*speed_change);
 		sbp_values.jogxy_speed = speed_change;
 	}
+	//Set Z jog speed in G2 and OpenSBP
 	if (args[6] !== undefined) {
 		speed_change = args[6];
 		g2_values.zvm = (60*speed_change);
 		sbp_values.jogz_speed = speed_change;
 	}
+	//Set A jog speed in G2 and OpenSBP
 	if (args[7] !== undefined) {
 		speed_change = args[7];
 		g2_values.avm = (60*speed_change);
 		sbp_values.joga_speed = speed_change;
 	}
+	//Set B jog speed in G2 and OpenSBP
 	if (args[8] !== undefined) {
 		speed_change = args[8];
 		g2_values.bvm = (60*speed_change);
 		sbp_values.jogb_speed = speed_change;
 	}
+	//Set C jog speed in G2 and OpenSBP
 	if (args[9] !== undefined) {
 		speed_change = args[9];
 		g2_values.cvm = (60*speed_change);
@@ -487,21 +489,21 @@ exports.VU = function(args,callback) {
 					'5sa','5mi',
 					'6sa','6mi' ];
 
-	var SBP_2get = ['gearBoxRatio1',
-				    'gearBoxRatio2',
-				    'gearBoxRatio3',
-				    'gearBoxRatio4',
-				    'gearBoxRatio5',
-				    'gearBoxRatio6' ];
+//	var SBP_2get = ['gearBoxRatio1',
+//				    'gearBoxRatio2',
+//				    'gearBoxRatio3',
+//				    'gearBoxRatio4',
+//				    'gearBoxRatio5',
+//				    'gearBoxRatio6' ];
 
 	var SBunitVal = 0.0;
 	var g2_VU = {};
 	var sbp_VU = {};
 	var getG2_VU = config.driver.getMany(G2_2get);
-	var getSBP_VU = config.opensbp.getMany(SBP_2get);
+//	var getSBP_VU = config.opensbp.getMany(SBP_2get);
 
 	log.debug("getG2_VU: " + JSON.stringify(getG2_VU));
-	log.debug("getSBP_VU: " + JSON.stringify(getSBP_VU));
+//	log.debug("getSBP_VU: " + JSON.stringify(getSBP_VU));
 			
 	// Channel 1 unit value
 	if (args[0] !== undefined){
@@ -546,15 +548,12 @@ exports.VU = function(args,callback) {
 	// Channel 6 multiplier
 	if (args[11] !== undefined){}
 
-	log.debug('!!!!');
 	log.debug(JSON.stringify(sbp_VU));
 	log.debug(JSON.stringify(g2_VU));	
 
 	// We set the g2 config (Which updates the g2 hardware but also our persisted copy of its settings)
 	config.opensbp.setMany(sbp_VU, function(err, values) {
 		config.driver.setMany(g2_VU, function(err, values) {
-			log.debug("Sent VU to g2 and sbp_settings");
-			log.debug(value);
 			callback();
 		});
 	});
