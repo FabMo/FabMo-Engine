@@ -52,6 +52,7 @@ EdisonNetworkManager.prototype.run = function() {
     break;
 
     default:
+      this.state = 'idle';
       this.getInfo(function(err, data) {
         if(!err) {
           if(data.mode == 'managed') { this.mode = 'station'; }
@@ -102,10 +103,20 @@ EdisonNetworkManager.prototype.runAP = function() {
 }
 
 EdisonNetworkManager.prototype.joinAP = function(callback) {
+  this.mode = 'unknown';
   jedison('join ap', function(err, result) {
     callback(err, result);
   });
 }
+
+EdisonNetworkManager.prototype.joinWifi = function(ssid, password, callback) {
+  this.mode = 'unknown';
+  this.state = 'idle';
+  jedison('join wifi --ssid=' + ssid + ' --password=' + password , function(err, result) {
+    callback(err, result);
+  });
+}
+
 
 function mainWifi(){
   wifi = new EdisonNetworkManager();
@@ -126,7 +137,7 @@ exports.getAvailableWifiNetwork = function(ssid, callback) {
 }
 
 exports.connectToAWifiNetwork= function(ssid,key,callback) {
-    callback('not yet');
+    wifi.joinWifi(ssid, key, callback);
 }
 
 
@@ -155,7 +166,7 @@ exports.turnWifiOn=function(callback){
         else callback(null);
      });
 */
-callback('not yet');
+callback('Not available on the edison wifi manager.');
 
 }
 
@@ -166,13 +177,13 @@ exports.turnWifiOff=function(callback){
         else callback(null);
      });
 */
-callback('not yet');
+callback('Not available on the edison wifi manager.');
 
 }
 
 exports.turnWifiHotspotOn=function(callback){
-    console.log("Turning on wifi hotspot")
-    openHotspot(callback);
+    log.info("Turning on wifi hotspot")
+    wifi.joinAP(callback);
 }
 
 exports.turnWifiHotspotOff=function(callback){
