@@ -142,8 +142,12 @@ def get_wifi_info():
         retval['strength'] = int(100*float(a)/float(b))
         ssid = re.compile('SSID:\s*"(\w+)"').search(iwconfig).group(1).lower()
         retval['ssid'] = ssid
-    
-    ipaddress = re.compile('inet addr:\s*(\d+\.\d+\.\d+\.\d+)').search(ifconfig).group(1)
+   
+    try: 
+        ipaddress = re.compile('inet addr:\s*(\d+\.\d+\.\d+\.\d+)').search(ifconfig).group(1)
+    except:
+        ipaddress = '????'
+ 
     retval['ipaddress'] = ipaddress
 
     return retval
@@ -306,5 +310,6 @@ if __name__ == "__main__":
             retval['data'] = data
         print json.dumps(retval)
     except Exception, e:
-        retval = {"status":"error", "message":str(e)}
+       	raise e 
+	retval = {"status":"error", "message":str(e)}
         print json.dumps(retval)

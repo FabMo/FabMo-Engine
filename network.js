@@ -3,21 +3,8 @@ var async = require('async');
 var fs = require('fs');
 var doshell = require('./util').doshell
 
-try{var wifiscanner = require('node-simplerwifiscanner');}catch(e){
-        log.warn("Did not load connman-simplified: " + e);
-}
-try{var connman = require('connman-simplified')();}catch(e){
-    log.warn("Did not load connman-simplified: " + e);
-}
-
-var PROFILES_FOLDER = "/etc/netctl/";
-var WIFI_INTERFACE = "wlan0";
-var hotspot_ssid="handibot";
-var hotspot_passphrase="shopbot";
 var wifi;
-var properties;
-
-function CHECK(err){if(err){log.error(err);/*process.exit(-1);*/}}
+var WIFI_SCAN_INTERVAL = 5000;
 
 function jedison(cmdline, callback) {
     var callback = callback || function() {}
@@ -35,43 +22,103 @@ function jedison(cmdline, callback) {
     });
 }
 
-function openHotspot(callback){
-  self=this;
-  log.info("Opening a hotspot...");
-  log.info("SSID : "+ hotspot_ssid);
-  log.info("Passphrase : "+ hotspot_passphrase);
+var EdisonNetworkManager = function() {
+  this.mode = 'unknown';
+  this.state = 'idle';
+  this.networks = [];
+  this.command = null;
+}
+
+EdisonNetworkManager.prototype.getInfo = function(callback) {
+  jedison('get wifi-info', callback);
+}
+
+EdisonNetworkManager.prototype.getNetworks = function(callback) {
+  jedison('get networks', callback);
+}
+
+EdisonNetworkManager.prototype.scan = function(callback) {
+  jedison('scan wifi', callback);
+}
+
+EdisonNetworkManager.prototype.run = function() {
+  switch(this.mode) {
+    case 'ap':
+      this.runAP();
+    break;
+
+    case 'station':
+      this.runStation();
+    break;
+
+    default:
+      this.getInfo(function(err, data) {
+        if(!err) {
+          if(data.mode == 'managed') { this.mode = 'station'; }
+          else if(data.mode == 'master') { this.mode = 'ap'; }
+          else { log.warn('Unknown network mode: ' + data.mode)}
+        }
+
+        setTimeout(this.run.bind(this), 1000);
+      }.bind(this));
+  }
+}
+
+EdisonNetworkManager.prototype.runStation = function() {
+  switch(this.state) {
+    case 'idle':
+      this.scan();
+      this.state = 'done_scanning';
+      setTimeout(this.run.bind(this), WIFI_SCAN_INTERVAL);
+      break;
+
+    case 'done_scanning':
+      this.getNetworks(function(err, data) {
+        if(!err) {
+          console.log(data)
+          this.networks = data;
+        } else {
+          console.warn(err);
+        }
+        this.state = 'idle';
+        setImmediate(this.run.bind(this));
+      }.bind(this));
+  }
+}
+
+EdisonNetworkManager.prototype.runAP = function() {
+  switch(this.state) {
+    default:
+      this.getInfo(function(err, data) {
+        if(!err) {
+          if(data.mode == 'managed') { this.mode = 'station'; }
+          else if(data.mode == 'master') { this.mode = 'ap'; }
+          else { log.warn('Unknown network mode: ' + data.mode)}
+        }
+        setTimeout(this.run.bind(this), 1000);
+      });
+      break;
+  }
+}
+
+EdisonNetworkManager.prototype.joinAP = function(callback) {
   jedison('join ap', function(err, result) {
     callback(err, result);
   });
 }
 
 function mainWifi(){
-  self=this;
-  self.wifi.getNetworks(function(err,list) { // get the list of available networks
-    CHECK(err);
-    log.info("networks: " + self.wifi.getServicesString(list));
-    self.wifi.joinFavorite(function(err){ // try to join a favorite
-      if(err){openHotspot();} // if it fails, open a hotspot point.
-      else{
-        self.wifi.service.getProperties(function(err,props){
-          log.info("you're connected to " + props.Name + " through " + props.Type);
-        });
-      }
-    });
-  });
+  wifi = new EdisonNetworkManager();
+  wifi.run();
 }
 
 exports.init = function() {
+  mainWifi();
 }
 
 
-
-
 exports.getAvailableWifiNetworks = function(callback) {
-    jedison('scan');
-    jedison('get networks', function(err, data) {
-        callback(err, data);
-    })
+  callback(null, wifi.networks);
 }
 
 exports.getAvailableWifiNetwork = function(ssid, callback) {
