@@ -19,6 +19,7 @@ table.dataTable thead .sorting_desc {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    cursor: pointer;
 }
 
 td.details-control {

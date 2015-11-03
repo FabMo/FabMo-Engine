@@ -27,6 +27,7 @@ var EdisonNetworkManager = function() {
   this.state = 'idle';
   this.networks = [];
   this.command = null;
+  this.network_health_retries = 5;
 }
 
 EdisonNetworkManager.prototype.getInfo = function(callback) {
@@ -87,6 +88,7 @@ EdisonNetworkManager.prototype.runStation = function() {
           console.warn(err);
         }
         this.state = 'check_network';
+        this.network_health_retries = 5;
         setImmediate(this.run.bind(this));
       }.bind(this));
       break;
@@ -106,12 +108,17 @@ EdisonNetworkManager.prototype.runStation = function() {
         }
         if(networkOK) {
           log.info("Network health OK");
+          this.state = 'idle';          
+          setImmediate(this.run.bind(this));
         } else {
-          log.error("Network is down.  Going to AP mode");
-       	  this.joinAP(); 
+          if(this.network_health_retries == 0) {
+              this.network_health_retries = 5;
+              log.error("Network is down.  Going to AP mode");
+       	      this.joinAP(); 
+	  }
+          this.network_health_retries--;
+          setTimeout(this.run.bind(this),1000);
 	}
-        this.state = 'idle';          
-        setImmediate(this.run.bind(this));
       }.bind(this));
       break;
   }
