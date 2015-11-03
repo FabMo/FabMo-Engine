@@ -83,7 +83,19 @@ EdisonNetworkManager.prototype.runStation = function() {
       this.getNetworks(function(err, data) {
         if(!err) {
           log.info('Got ' + data.length + ' networks.')
-          this.networks = data;
+          for(var i in data) {
+              var ssid = data[i].ssid;
+              var found = false;
+              for(var j in this.networks) {
+                  if(this.networks[j].ssid === ssid) {
+                      found = true;
+                      break;
+                  }
+              }
+             if(!found) {
+                 this.networks.push(data[i]);
+             }
+          }
         } else {
           console.warn(err);
         }
