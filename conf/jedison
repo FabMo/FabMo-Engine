@@ -259,7 +259,7 @@ def set_network(network_conf, ssid):
         fp.write(network_conf)
 	fp.flush()
 	os.fsync(fp.fileno())
-    subprocess.call("wpa_cli reconfigure && sleep 2 &> /dev/null", shell=True)
+    subprocess.call("wpa_cli reconfigure &> /dev/null && sleep 2", shell=True)
 
     network_count = int(subprocess.check_output('wpa_cli list_networks | wc -l', shell=True))
     subprocess.call("wpa_cli select_network " + str(network_count - 2 - 1) + " &> /dev/null", shell=True)
