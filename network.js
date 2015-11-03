@@ -99,11 +99,14 @@ EdisonNetworkManager.prototype.runStation = function() {
         var networkOK = true;
         if(!err) {
           if(data.ipaddress === '?') {
-            log.error('No valid network, starting AP')
             networkOK = false;
           }
+          if(data.mode === 'master') {
+             this.mode = 'ap';
+             this.state = 'idle';
+             setImmediate(this.run.bind(this));
+          }
         } else {
-          log.error('No valid network, starting AP')
           networkOK = false;
         }
         if(networkOK) {
@@ -112,6 +115,7 @@ EdisonNetworkManager.prototype.runStation = function() {
           setImmediate(this.run.bind(this));
         } else {
           if(this.network_health_retries == 0) {
+              log.error('No valid network, starting AP')
               this.network_health_retries = 5;
               log.error("Network is down.  Going to AP mode");
        	      this.joinAP(); 
@@ -130,11 +134,11 @@ EdisonNetworkManager.prototype.runAP = function() {
     default:
       this.getInfo(function(err, data) {
         if(!err) {
-          if(data.mode == 'managed') { this.mode = 'station'; }
-          else if(data.mode == 'master') { this.mode = 'ap'; }
+          if(data.mode === 'managed') { this.mode = 'station'; }
+          else if(data.mode === 'master') { this.mode = 'ap'; }
           else { log.warn('Unknown network mode: ' + data.mode)}
         }
-        setTimeout(this.run.bind(this), 1000);
+        setTimeout(this.run.bind(this), 5000);
       }.bind(this));
       break;
   }
@@ -163,7 +167,7 @@ function mainWifi(){
 }
 
 exports.init = function() {
-  mainWifi();
+   mainWifi();
 }
 
 
