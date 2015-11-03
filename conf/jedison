@@ -128,7 +128,7 @@ def get_wifi_info():
             ssid = re.compile('SSID:\s*"?((?: |\w|\d|\-|\_|\/)+)"?').search(iwconfig).group(1).strip()
             retval['ssid'] = ssid
         except:
-            print "ahhhhh" 
+            retval['ssid'] = 'none/any' 
    
     try: 
         ipaddress = re.compile('inet addr:\s*(\d+\.\d+\.\d+\.\d+)').search(ifconfig).group(1)
@@ -196,14 +196,40 @@ def make_network_configuration(network, password):
 def join_wifi_network(ssid, password):
     info = get_wifi_info()
     wifi_mode = info['mode']
-    
+
     if wifi_mode != 'managed':
+        timeout = 10
         subprocess.call("systemctl stop hostapd &> /dev/null", shell=True)
         subprocess.call("systemctl start wpa_supplicant &> /dev/null", shell=True)
-        time.sleep(10) # Heavy handed - go to a polling system eventually
+        while True:
+            time.sleep(1)
+            wifi_mode = get_wifi_info()['mode']
+            if wifi_mode == 'managed' or timeout == 0:
+                break
+            timeout -= 1
 
     if wifi_mode == 'managed':
-        networks = get_wifi_networks()
+        time.sleep(3)
+        timeout = 10
+        while timeout > 0:
+            try:
+                scan_wifi()
+                break
+            except Exception, e:
+                pass
+            timeout-=1
+            time.sleep(1)
+
+        timeout = 5
+	while timeout>0:
+            time.sleep(1)
+            try:
+                networks = get_wifi_networks()
+                break
+            except:
+                pass
+            timeout -= 1
+
         selected_network = None
         for network in networks:
             if network['ssid'] == ssid:
@@ -233,7 +259,7 @@ def set_network(network_conf, ssid):
         fp.write(network_conf)
 	fp.flush()
 	os.fsync(fp.fileno())
-    subprocess.call("wpa_cli reconfigure &> /dev/null && sleep 2", shell=True)
+    subprocess.call("wpa_cli reconfigure && sleep 2 &> /dev/null", shell=True)
 
     network_count = int(subprocess.check_output('wpa_cli list_networks | wc -l', shell=True))
     subprocess.call("wpa_cli select_network " + str(network_count - 2 - 1) + " &> /dev/null", shell=True)

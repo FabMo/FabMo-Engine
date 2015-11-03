@@ -108,7 +108,8 @@ EdisonNetworkManager.prototype.runStation = function() {
           log.info("Network health OK");
         } else {
           log.error("Network is down.  Going to AP mode");
-        }
+       	  this.joinAP(); 
+	}
         this.state = 'idle';          
         setImmediate(this.run.bind(this));
       }.bind(this));
