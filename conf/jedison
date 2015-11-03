@@ -118,10 +118,17 @@ def get_wifi_info():
     retval = {'mode' : mode}
 
     if mode == 'managed':
-        a,b = re.compile('Link Quality=(\d+)\/(\d+)').search(iwconfig).groups()
-        retval['strength'] = int(100*float(a)/float(b))
-        ssid = re.compile('SSID:\s*"(\w+)"').search(iwconfig).group(1).lower()
-        retval['ssid'] = ssid
+        try: 
+            a,b = re.compile('Link Quality=(\d+)\/(\d+)').search(iwconfig).groups()
+            retval['strength'] = int(100*float(a)/float(b))
+        except:
+            retval['strength'] = 0 
+        
+        try:
+            ssid = re.compile('SSID:\s*"?((?: |\w|\d|\-|\_|\/)+)"?').search(iwconfig).group(1).strip()
+            retval['ssid'] = ssid
+        except:
+            print "ahhhhh" 
    
     try: 
         ipaddress = re.compile('inet addr:\s*(\d+\.\d+\.\d+\.\d+)').search(ifconfig).group(1)
@@ -224,7 +231,8 @@ def set_network(network_conf, ssid):
     with open('/etc/wpa_supplicant/wpa_supplicant.conf', 'w') as fp:
         fp.write(WPA_SUPPLICANT_CONF_TEMPLATE)
         fp.write(network_conf)
-
+	fp.flush()
+	os.fsync(fp.fileno())
     subprocess.call("wpa_cli reconfigure &> /dev/null && sleep 2", shell=True)
 
     network_count = int(subprocess.check_output('wpa_cli list_networks | wc -l', shell=True))

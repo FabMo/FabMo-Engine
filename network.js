@@ -54,6 +54,7 @@ EdisonNetworkManager.prototype.run = function() {
     default:
       this.state = 'idle';
       this.getInfo(function(err, data) {
+        console.log(data)
         if(!err) {
           if(data.mode == 'managed') { this.mode = 'station'; }
           else if(data.mode == 'master') { this.mode = 'ap'; }
@@ -93,17 +94,22 @@ EdisonNetworkManager.prototype.runStation = function() {
     case 'check_network':
       log.info('Checking network health...');
       this.getInfo(function(err, data) {
+        var networkOK = true;
         if(!err) {
           if(data.ipaddress === '?') {
             log.error('No valid network, starting AP')
-            return this.joinAP();
+            networkOK = false;
           }
         } else {
           log.error('No valid network, starting AP')
-          return this.joinAP();
+          networkOK = false;
         }
-        log.info("Network health OK");
-        this.state = 'idle';
+        if(networkOK) {
+          log.info("Network health OK");
+        } else {
+          log.error("Network is down.  Going to AP mode");
+        }
+        this.state = 'idle';          
         setImmediate(this.run.bind(this));
       }.bind(this));
       break;
@@ -114,7 +120,6 @@ EdisonNetworkManager.prototype.runAP = function() {
   log.warn('Running AP')
   switch(this.state) {
     default:
-      log.info('In the runAP handler - checking state.')
       this.getInfo(function(err, data) {
         if(!err) {
           if(data.mode == 'managed') { this.mode = 'station'; }
@@ -168,19 +173,19 @@ exports.connectToAWifiNetwork= function(ssid,key,callback) {
 
 
 exports.disconnectFromAWifiNetwork= function(callback){
-/*	self.wifi.disconnect(function(err){
-		if(err)callback(err); 
-		else callback(null);
-	});*/
+/*  self.wifi.disconnect(function(err){
+    if(err)callback(err); 
+    else callback(null);
+  });*/
 callback('not yet');
      
 }
 
 exports.forgetAWifiNetwork=function(ssid,callback){
-/*	self.wifi.forgetNetwork(ssid,function(err){
-		if(err)callback(err); 
-		else callback(null);
-	})
+/*  self.wifi.forgetNetwork(ssid,function(err){
+    if(err)callback(err); 
+    else callback(null);
+  })
 */
 callback('not yet');
 }
