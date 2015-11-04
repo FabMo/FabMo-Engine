@@ -108,8 +108,8 @@ Logger.prototype.write = function(level, msg) {
 Logger.prototype.debug = function(msg) { this.write('debug', msg);};
 Logger.prototype.info = function(msg) { this.write('info', msg);};
 Logger.prototype.warn = function(msg) { this.write('warn', msg);};
-Logger.prototype.error = function(msg) { 
-	if(msg.stack) {
+Logger.prototype.error = function(msg) {
+	if(msg && msg.stack) {
 		this.write('error', msg.stack);
 	} else {
 		this.write('error', msg);
