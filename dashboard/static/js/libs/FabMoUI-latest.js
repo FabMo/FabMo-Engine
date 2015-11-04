@@ -191,10 +191,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 
 	//Current File or job
 	if(status.job) {
-		console.log("there is a job")
 		$('.startNextContainer').hide();
 		$(that.file_info_div_selector).removeClass('hide');
-		console.log(status.job);
 		$('.currentJobTitle').text(status.job.name);
 		$(that.filename_selector).html(status.job.name);
 		var transform_styles = ['-webkit-transform',
@@ -468,7 +466,6 @@ FabMoUI.prototype.FileControl = function(){
 	});
 	$(that.resume_button_selector).click(function(e) {
 		that.tool.resume(function(){});
-		console.log(that.stop_button_selector);
 	});
 	$(that.stop_button_selector).click(function(e) {
 		that.tool.quit(function(){});
