@@ -188,6 +188,7 @@ td.preview-control {
 .dropDown a:hover{
   color: #32B433;
 }
+
 .dropDownWrapper{
   position: absolute;
   top: 0;
@@ -196,6 +197,21 @@ td.preview-control {
   right: 0;
   z-index: 8;
   display: none;
+}
+.icon-row img {
+  max-width: 20px;
+  min-width: 10px;
+  margin-right: 1em;
+}
+.icon-row {
+  padding-bottom: 2em;
+  padding-top: 2em;
+}
+
+#run-next {
+ width: 170px;
+ height: 170px;
+ border: 0px;
 }
 tr.shown td.details-control {
     background-color: #D23334;
