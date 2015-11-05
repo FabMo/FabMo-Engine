@@ -71,7 +71,7 @@ define(function(require) {
 			}
 
 			var client_container = jQuery(this.el);
-			var src = '<iframe class="app-iframe" id="app-iframe" sandbox="allow-scripts allow-same-origin" src="' + url + '"></iframe>'
+			var src = '<iframe class="app-iframe" id="app-iframe" sandbox="allow-scripts allow-same-origin" src="' + url + '" allowfullscreen></iframe>'
 			client_container.html(src);
 			iframe = client_container.children();
 		},
