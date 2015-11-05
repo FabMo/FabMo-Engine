@@ -2331,8 +2331,8 @@
          }
       ]
    },
-   "C#": {
-      "cmd": "C#",
+   "C_POUND": {
+      "cmd": "C_POUND",
       "name": "Custom Number #",
       "params": [
          {
