@@ -14,7 +14,7 @@ var config = require('../../../config');
 //	if(alias_name == "BEND") { this.runCustomCut('macro_31.sbp',callback); }
 //	if(alias_name == "FEED") { this.runCustomCut('macro_32.sbp',callback); }
 
-};
+//};
 
 // Move X axis
 exports.MX = function(args) {
