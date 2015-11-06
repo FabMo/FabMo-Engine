@@ -11,8 +11,8 @@ exports._A = function(args) {
 //	if(isNaN(y)) { throw( "Invalid BH argument: " + y ); }
 //	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
 //	this.cmd_posy = y;
-	if(alias_name == "BEND") { this.runCustomCut('macro_31.sbp',function(err,MPO)); }
-	if(alias_name == "FEED") { this.runCustomCut('macro_32.sbp',function()); }
+	if(alias_name == "BEND") { this.runCustomCut('macro_31.sbp',callback); }
+	if(alias_name == "FEED") { this.runCustomCut('macro_32.sbp',callback); }
 
 };
 
