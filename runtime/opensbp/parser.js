@@ -27,9 +27,9 @@ parse = function(str) {
         } catch(err) {
             if(err.name == 'SyntaxError') {
                 log.error("Syntax Error on line " + i)
-                log.error("Expected " + err.expected.join(',') + " but found " + err.found)
-                log.error(err.line)
+                log.error("Expected " + JSON.stringify(err.expected) + " but found " + err.found)
                 err.line = i+1;
+                log.error(err.line)
             } else {
                 log.error(err);
             }

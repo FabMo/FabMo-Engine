@@ -433,7 +433,7 @@
                 <span class="postfix ipm_mmpm_label" >&nbsp;</span>
               </div>
             </div>
-        </div>
+          </div>
           <div class="large-4 columns">
             <div class="row collapse">
               <label>Maximum Jerk</label>
@@ -444,18 +444,17 @@
                 <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
               </div>
             </div>
-        </div>
-        <div class="large-4 columns">
-          <div class="row collapse">
-            <label>Axis Mode</label>
-              <select id="driver_xam" class="driver_input">
-                <option value="0">Disable</option>
-                <option value="1">Linear</option>
-              </select>
-            </label>
           </div>
-        </div>   
-      </fieldset>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Axis Mode</label>
+                <select id="driver_xam" class="driver_input">
+                  <option value="0">Disable</option>
+                  <option value="1">Linear</option>
+                </select>
+            </div>
+          </div>   
+        </fieldset>
       </div>
 
       <div class="row">
@@ -482,7 +481,7 @@
                 <span class="postfix ipm_mmpm_label">&nbsp;</span>
               </div>
             </div>
-        </div>
+          </div>
           <div class="large-4 columns">
             <div class="row collapse">
               <label>Maximum Jerk</label>
@@ -493,19 +492,18 @@
                 <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
               </div>
             </div>
-        </div>
-        <div class="large-4 columns">
-          <div class="row collapse">
-            <label>Axis Mode</label>
+          </div>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Axis Mode</label>
               <select id="driver_yam" class="driver_input">
                 <option value="0">Disable</option>
                 <option value="1">Linear</option>
               </select>
-            </label>
-          </div>
-        </div>   
-      </fieldset>
-    </div>
+            </div>
+          </div>   
+        </fieldset>
+      </div>
 
       <div class="row">
         <fieldset>
@@ -531,7 +529,7 @@
                 <span class="postfix ipm_mmpm_label">&nbsp;</span>
               </div>
             </div>
-        </div>
+          </div>
           <div class="large-4 columns">
             <div class="row collapse">
               <label>Maximum Jerk</label>
@@ -542,19 +540,18 @@
                 <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
               </div>
             </div>
-        </div>
-        <div class="large-4 columns">
-          <div class="row collapse">
-            <label>Axis Mode</label>
+          </div>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Axis Mode</label>
               <select id="driver_zam" class="driver_input">
                 <option value="0">Disable</option>
                 <option value="1">Linear</option>
               </select>
-            </label>
-          </div>
-        </div>   
+            </div>
+          </div>   
         </fieldset>
-        </div>
+      </div>
 
       <div class="row">
         <fieldset>
@@ -580,20 +577,29 @@
                 <span class="postfix">in/min</span>
               </div>
             </div>
-        </div>
-
-        <div class="large-4 columns">
-          <div class="row collapse">
-            <label>Axis Mode</label>
+          </div>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Maximum Jerk</label>
+              <div class="small-9 columns">
+                <input type="text" id="driver_ajm" class="driver_input" />
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
+              </div>
+            </div>
+          </div>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Axis Mode</label>
               <select id="driver_aam" class="driver_input">
                 <option value="0">Disable</option>
                 <option value="3">Rotary</option>
               </select>
-            </label>
-          </div>
-        </div>   
-      </fieldset>
-    </div>
+            </div>
+          </div>   
+        </fieldset>
+      </div>
 
       <div class="row">
         <fieldset>
@@ -619,20 +625,29 @@
                 <span class="postfix">in/min</span>
               </div>
             </div>
-        </div>
-
-        <div class="large-4 columns">
-          <div class="row collapse">
-            <label>Axis Mode</label>
+          </div>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Maximum Jerk</label>
+              <div class="small-9 columns">
+                <input type="text" id="driver_bjm" class="driver_input" />
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
+              </div>
+            </div>
+          </div>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Axis Mode</label>
               <select id="driver_bam" class="driver_input">
                 <option value="0">Disable</option>
                 <option value="3">Rotary</option>
               </select>
-            </label>
-          </div>
-        </div>   
-      </fieldset>
-    </div>
+            </div>
+          </div>   
+        </fieldset>
+      </div>
 
       <div class="row">
         <fieldset>
@@ -648,7 +663,17 @@
               </div>
             </div>
           </div>
-
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Velocity Maximum</label>
+              <div class="small-9 columns">
+                <input type="text" id="driver_cvm" class="driver_input" />
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">in/min</span>
+              </div>
+            </div>
+          </div>
           <div class="large-4 columns">
             <div class="row collapse">
               <label>Maximum Jerk</label>
@@ -660,7 +685,6 @@
               </div>
             </div>
         </div>
-
         <div class="large-4 columns">
           <div class="row collapse">
             <label>Axis Mode</label>
@@ -668,7 +692,6 @@
                 <option value="0">Disable</option>
                 <option value="3">Rotary</option>
               </select>
-            </label>
           </div>
         </div>   
       </fieldset>
