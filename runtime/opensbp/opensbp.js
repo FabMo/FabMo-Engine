@@ -633,7 +633,10 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 		// A C# command (custom cut)
 		case "custom":
-			return this.runCustomCut(command.index, callback);
+			return this.runCustomCut(command.index, function() {
+	this.pc += 1;
+	callback();
+}.bind(this));
 			break;
 
 		case "return":
@@ -999,7 +1002,7 @@ SBPRuntime.prototype._unhandledCommand = function(command) {
 
 SBPRuntime.prototype._pushFileStack = function() {
 	frame =  {}
-	frame.pc = this.pc+1
+	frame.pc = this.pc
 	frame.program = this.program
 	//frame.user_vars = this.user_vars
 	frame.current_chunk = this.current_chunk
