@@ -1,4 +1,16 @@
 {
+   "_A": {
+      "cmd": "_A",
+      "name": "call macro by aliased name",
+      "params": [
+         {
+            "name": "macro alias",
+            "desc": "allows easy name for use in SBP programming",
+            "abrev": "_aM",
+            "type": "str"
+         }
+      ]
+   },
    "EP": {
       "cmd": "EP",
       "name": "G2 Probe",
