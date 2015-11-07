@@ -3,16 +3,13 @@ var g2 = require('../../../g2');
 var sb3_commands = require('../sb3_commands');
 var config = require('../../../config');
 
-// ...testing aliased ... Bender-FEED command (with adjustment from bending)
+// ...TESTING::th aliased macros concept ... Bender: commands (hardcoded here at moment)
 exports._A = function(args, callback) {
 	var alias_name = args[0];
 
 	log.debug( " _A args: " + JSON.stringify(args));
-//	if(isNaN(y)) { throw( "Invalid BH argument: " + y ); }
-//	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
-//	this.cmd_posy = y;
-	if(alias_name == "BEND") { this.runCustomCut('8',callback); }
-	if(alias_name == "FEED") { this.runCustomCut('9',callback); }
+	if(alias_name == "BEND") { this.runCustomCut('31',callback); }
+	if(alias_name == "FEED") { this.runCustomCut('32',callback); }
 
 };
 
@@ -32,7 +29,7 @@ exports.MX = function(args) {
 exports.MY = function(args) {
 	var y = args[0];
 
-	log.debug( " MX args: " + JSON.stringify(args));
+	log.debug( " MY args: " + JSON.stringify(args));
 	if(isNaN(y)) { throw( "Invalid MY argument: " + y ); }
 	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
 //	this.cmd_posy = y;

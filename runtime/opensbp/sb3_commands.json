@@ -1,11 +1,11 @@
 {
    "_A": {
       "cmd": "_A",
-      "name": "call macro by aliased name",
+      "name": "TEMPORARY SYSTEM to call macro by aliased name (currently hardcoded)",
       "params": [
          {
             "name": "macro alias",
-            "desc": "allows easy name for use in SBP programming",
+            "desc": "allows easy name for use in SBP macro programming",
             "abrev": "_aM",
             "type": "str"
          }
