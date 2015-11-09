@@ -192,7 +192,6 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	//Current File or job
 	if(status.job) {
 		console.log("there is a job")
-		$('.startNextContainer').hide();
 		$(that.file_info_div_selector).removeClass('hide');
 		console.log(status.job);
 		$('.currentJobTitle').text(status.job.name);
@@ -223,60 +222,16 @@ FabMoUI.prototype.updateStatusContent = function(status){
 			$('.horizontal_fill').css('width', percent + '%');
 		}
 		$(that.progress_selector).css("width",prog.toString() + "%");
-		// if(prog >= 10) {
-		// 	$('#layerFill1').css('-webkit-animation', 'fill .5s linear forwards')
-		// 	$('#layerFill1').css('-moz-animation', 'fill .5s linear forwards')
-		// }
-		// if(prog >= 20) {
-		// 	$('#layerFill2').css('-webkit-animation', 'fill .5s linear forwards')
-		// 	$('#layerFill2').css('-moz-animation', 'fill .5s linear forwards')
-		// }
-		// if(prog >= 30) {
-		// 	$('#layerFill3').css('-webkit-animation', 'fill .5s linear forwards')
-		// 	$('#layerFill3').css('-moz-animation', 'fill .5s linear forwards')
-		// }
-		// if(prog >= 40) {
-		// 	$('#layerFill4').css('-webkit-animation', 'fill .5s linear forwards')
-		// 	$('#layerFill4').css('-moz-animation', 'fill .5s linear forwards')
-		// }
-		// if(prog >= 50) {
-		// 	$('#layerFill5').css('-webkit-animation', 'fill .5s linear forwards')
-		// 	$('#layerFill5').css('-moz-animation', 'fill .5s linear forwards')
-		// }
-		// if(prog >= 60) {
-		// 	$('#layerFill6').css('-webkit-animation', 'fill .5s linear forwards')
-		// 	$('#layerFill6').css('-moz-animation', 'fill .5s linear forwards')
-		// }
-		// if(prog >= 70) {
-		// 	$('#layerFill7').css('-webkit-animation', 'fill .5s linear forwards')
-		// 	$('#layerFill7').css('-moz-animation', 'fill .5s linear forwards')
-		// }
-		// if(prog >= 80) {
-		// 	$('#layerFill8').css('-webkit-animation', 'fill .5s linear forwards')
-		// 	$('#layerFill8').css('-moz-animation', 'fill .5s linear forwards')
-		// }
-		// if(prog >= 90) {
-		// 	$('#layerFill9').css('-webkit-animation', 'fill .5s linear forwards')
-		// 	$('#layerFill9').css('-moz-animation', 'fill .5s linear forwards')
-		// }
-		// if(prog >= 99) {
-		// 	$('#layerFill10').css('-webkit-animation', 'fill .5s linear forwards')
-		// 	$('#layerFill10').css('-moz-animation', 'fill .5s linear forwards')
-		// 	$('.percentComplete').text('100%');
-		// }
 	}
 	else {
 		$(that.file_info_div_selector).addClass('hide');
 		$('.load_container').hide();
 		$('#loadbar').hide();
 		$('.radial_progress').hide();
-		$('.percentComplete').hide();
-		$('.startNextContainer').show();
-		$('.bar').css('-webkit-animation', '');
-		$('.bar').css('-moz-animation', '');
 		$(that.filename_selector).empty();
 		$(that.progress_selector).empty();
 		$('.currentJobTitle').text('');
+		$('.footBar').css('height', '0px');
 	}
 
 	for(var i=1; i<MAX_INPUTS+1; i++) {

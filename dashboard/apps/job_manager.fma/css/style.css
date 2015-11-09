@@ -72,7 +72,6 @@ h1, h2, h3, h4, h5, h6 {
 } 
  
 td.details-control {
-    
     width: 50px;
     cursor: pointer;
 }
@@ -127,7 +126,12 @@ td.preview-control {
 .nextJobPrev {
   background-color: #F5F5F5;
   padding: 1em;
-  border-radius: 5%;
+  border-radius: 3%;
+}
+
+.nextJobDesc {
+  max-height: 80px;
+  overflow: hidden;
 }
 
 .ellipses {

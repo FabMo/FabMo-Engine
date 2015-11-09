@@ -44,13 +44,13 @@
 				</div>
 			</div>
 			<div class="row ">
-				<div class="small-6 columns">
+				<div class="small-5 medium-6 columns">
 					<h4 class='nextJobTitle'></h4>
 					<div class="small-12 columns">
 						<h5 class='nextJobDesc'></h5>
 					</div>
 				</div>
-					<div class="small-6 columns" style="text-align:right;">
+					<div class="medium-6 small-7 columns" style="text-align:right;">
 						<a>
 							<img class='nextJobPrev' id="run-next" src="css/images/player6.png">
 						</a>
@@ -58,22 +58,22 @@
 				
 			</div>
 			<div class="rows small-12 icon-row">
-				<div class="small-1 columns">
+				<div class="medium-1 small-2 columns">
 					<a class='preview'  title='Preview Job'>
 						<img src="css/images/visible9 (3).png">
 					</a>
 				</div>
-				<div class="small-1 columns">
+				<div class="medium-1 small-2 columns">
 					<a class='edit'  title='Edit Job'>
 						<img src="css/images/settings46.png">
 					</a>
 				</div>
-				<div class="small-1 columns">
+				<div class="medium-1 small-2 columns">
 					<a class='download'  title='Download Job'>
 						<img src="css/images/download151.png">
 					</a>
 				</div>
-				<div class="small-1 columns">
+				<div class="medium-1 small-2 columns">
 					<a class='cancel' title='Cancel Job'>
 						<img src="css/images/recycle.png">
 					</a>	
@@ -273,6 +273,10 @@
 			$('.nextJobTitle').text('No Jobs Pending');
 			$('.nextJobDesc').text('Drag files here or click "Submit Job"');
 			$('.nextJobPrev').hide();
+			$('.cancel').hide();
+			$('.download').hide();
+			$('.edit').hide();
+			$('.preview').hide();
 		} else {
 			$('.cancel').data('id', arr._id);
 			$('.preview').data('id', arr._id);
@@ -281,6 +285,10 @@
 			$('.nextJobTitle').text(arr.name);
 			$('.nextJobDesc').text(arr.description);
 			$('.nextJobPrev').show();
+			$('.cancel').show();
+			$('.download').show();
+			$('.edit').show();
+			$('.preview').show();
 		}
 	}
 
