@@ -51,7 +51,9 @@
 					</div>
 				</div>
 					<div class="small-6 columns" style="text-align:right;">
-						<img class='nextJobPrev' id="run-next" src="css/images/player6.png">
+						<a>
+							<img class='nextJobPrev' id="run-next" src="css/images/player6.png">
+						</a>
 					</div>
 				
 			</div>
@@ -270,6 +272,7 @@
 		if (arr == undefined ) {
 			$('.nextJobTitle').text('No Jobs Pending');
 			$('.nextJobDesc').text('Drag files here or click "Submit Job"');
+			$('.nextJobPrev').hide();
 		} else {
 			$('.cancel').data('id', arr._id);
 			$('.preview').data('id', arr._id);
@@ -277,6 +280,7 @@
 			$('.edit').data('id', arr._id);
 			$('.nextJobTitle').text(arr.name);
 			$('.nextJobDesc').text(arr.description);
+			$('.nextJobPrev').show();
 		}
 	}
 

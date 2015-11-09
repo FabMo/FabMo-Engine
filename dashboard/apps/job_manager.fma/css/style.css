@@ -124,6 +124,12 @@ td.preview-control {
   color: #666;
 }
 
+.nextJobPrev {
+  background-color: #F5F5F5;
+  padding: 1em;
+  border-radius: 5%;
+}
+
 .ellipses {
   font-size: 1.35em;
   width: 1.7em;
