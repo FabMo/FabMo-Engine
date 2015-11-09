@@ -1,11 +1,54 @@
+;(function (root, factory) {
+
+  /* CommonJS */
+  if (typeof module == 'object' && module.exports) module.exports = factory()
+
+  /* AMD module */
+  else if (typeof define == 'function' && define.amd) define(['socket.io'], factory)
+
+  /* Browser global */
+  else root.FabMoAPI = factory()
+}(this, function (io) {
+  "use strict"
+
+console.log(io)
 var FabMoAPI = function(base_url) {
-	url = base_url || '/';
+	var url = base_url || '/';
 	this.base_url = url.replace(/\/$/,'');
 	this._initializeWebsocket();
+	this.on('status', function(status) {
+		console.log("Status message!")
+		this.status = status;
+	}.bind(this));
 }
 
 FabMoAPI.prototype._initializeWebsocket = function() {
-	this.socket = io(this.base_url);
+	try {
+		this.socket = io(this.base_url);
+	} catch(e) {
+		this.socket = null;
+		console.error('connection to the engine via websocket failed : '+ e.message);		
+	}
+
+	if(this.socket) {
+		this.socket.on('connect', function() {
+			// Request a status once connected
+			// Even though the server is really supposed to send one
+			this.getStatus();
+		});
+
+		this.socket.on('message', function(message) {} );
+
+		this.socket.on('disconnect', function() {
+			// Maybe use a dashboard autorefresh thing here
+		});
+	}
+}
+
+FabMoAPI.prototype.on = function(message, func) {
+	if(this.socket) {
+		this.socket.on(message, func);
+	}
 }
 
 // Configuration
@@ -54,26 +97,63 @@ FabMoAPI.prototype.resubmitJob = function(id, callback) {
 }
 
 // Direct commands
-FabMo.prototype.quit = function(callback) {
+FabMoAPI.prototype.quit = function(callback) {
 	this._post('/quit' + id, {}, callback, function(data) {
 		callback(null);
 	});
 }
 
-FabMo.prototype.pause = function(callback) {
+FabMoAPI.prototype.pause = function(callback) {
 	this._post('/pause' + id, {}, callback, function(data) {
 		callback(null);
 	});
 }
 
-FabMo.prototype.resume = function(callback) {
+FabMoAPI.prototype.resume = function(callback) {
+	this._post('/resume' + id, {}, callback, function(data) {
+		callback(null);
+	});
+}
+
+// Jobs
+FabMoAPI.prototype.runNextJob = function(callback) {
 	this._post('/queue/run' + id, {}, callback, function(data) {
 		callback(null);
 	});
 }
 
-FabMo.prototype.runNextJob = function(callback) {
-	this._post('/resume' + id, {}, callback, function(data) {
+FabMoAPI.prototype.getJobHistory = function(callback) {
+	this._get('/jobs/history', callback, function(data) {
+		callback(null, data.jobs);
+	});
+}
+
+FabMoAPI.prototype.getJob = function(id, callback) {
+	this._get('/job/' + id, callback, function(data) {
+		callback(null, data.job);
+	}); 
+}
+
+FabMoAPI.prototype.getJobs = function(callback) {
+	this._get('/jobs', callback, function(data) {
+		callback(null, data.jobs);
+	});
+}
+
+FabMoAPI.prototype.cancelJob = function(id, callback) {
+	this._del('/jobs/' + id, function(data) {
+		callback(null, data.job);
+	});
+}
+
+FabMoAPI.prototype.submitJob = function(obj, callback) {
+	this._post('/job', makeFormData(obj), callback, function(data) {
+		callback(null);
+	});
+}
+
+FabMoAPI.prototype.clearJobQueue = function(id, callback) {
+	this._del('/jobs/queue', function(data) {
 		callback(null);
 	});
 }
@@ -92,8 +172,20 @@ FabMoAPI.prototype.deleteApp = function(id, callback) {
 }
 
 FabMoAPI.prototype.submitApp = function(app_file, callback) {
-	this._del('/apps', makeFormData(app_file), callback, function(data) {
+	this._post('/apps', makeFormData(app_file), callback, function(data) {
 		callback(null);
+	});
+}
+
+FabMoAPI.prototype.getAppConfig = function(app_id, callback) {
+	this._get('/apps/' + id + '/config', callback, function(data) {
+		callback(null, data.config);
+	});
+}
+
+FabMoAPI.prototype.setAppConfig = function(cfg_data, callback) {
+	this._post('/apps/' + id + '/config', cfg_data, callback, function(data) {
+		callback(null, data.configuration);
 	});
 }
 
@@ -122,36 +214,52 @@ FabMoAPI.prototype.deleteMacro = function(id, callback) {
 	});
 }
 
+FabMoAPI.prototype.runCode = function(runtime, code, callback) {
+	var data = {'cmd' : data, 'runtime':runtime}
+	this._post('/code', data, callback, function(data) {
+		callback(null);
+	});
+}
+
+FabMoAPI.prototype.gcode = function(code, callback) {
+	this.runCode('gcode', code, callback);
+}
+
+FabMoAPI.prototype.sbp = function(code, callback) {
+	this.runCode('sbp', code, callback);
+}
+
 function makeFormData(obj, default_name, default_type) {
 	if (obj instanceof jQuery){ //if it's a form
-		file = (obj.find('input:file'))[0].files[0];
+		var file = (obj.find('input:file'))[0].files[0];
 		// Create a new FormData object.
-		formData = new FormData();
+		var formData = new FormData();
 		formData.append('file', file, file.name);
 	}
 	else if (obj instanceof FormData) {
-		formData = obj;
+		var formData = obj;
 	} 
 	else {
-		content = obj.data || '';
-		filename = obj.config.filename || default_name;
-		formData = new FormData();
-		type = default_type || null;
+		var content = obj.data || '';
+		var filename = obj.config.filename || default_name;
+		var formData = new FormData();
+		var type = default_type || null;
 		if(!filename) {
 			throw new Error('No filename specified');
 		}
 		if(!type) {
 			throw new Error('No MIME type specified')
 		}
-		file = new Blob([content], {'type' : type});
+		var file = new Blob([content], {'type' : type});
 		formData.append('file', file, filename);
 	}
+	return formData;
 }
 
 FabMoAPI.prototype._url = function(path) { return this.base_url + '/' + path.replace(/^\//,''); }
 
 FabMoAPI.prototype._get = function(url, errback, callback) {
-	url = this._url(url);
+	var url = this._url(url);
 	callback = callback || function() {}
 	errback = errback || function() {}
 
@@ -221,3 +329,5 @@ FabMoAPI.prototype._del = function(url, data, errback, callback) {
 	});
 }
 
+return FabMoAPI;
+}));

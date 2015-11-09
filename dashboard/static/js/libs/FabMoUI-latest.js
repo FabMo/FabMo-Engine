@@ -76,8 +76,6 @@ function FabMoUI(tool, options){
 	
 	this.units_selector = this.status_div_selector + ' .units';
 
-	this.auto_refresh = null;
-
 	if(this.keypad){
 		this.my_keypad = this.Keypad;
 //		this.Keypad();
@@ -413,12 +411,13 @@ FabMoUI.prototype.updateStatusContent = function(status){
 
 FabMoUI.prototype.updateStatus = function(){
 	var that=this;
-	that.tool.get_status(function(err, status){
+	that.tool.getStatus(function(err, status){
 		if(!err){
 			that.updateStatusContent(status);
 			that.emit('reconnect');
 
 		}
+		/*
 		else if(err == that.tool.default_error.no_device){
 			$(".tools-current > li a").removeClass('paus err').addClass('disc');
 			delete this;
@@ -436,7 +435,8 @@ FabMoUI.prototype.updateStatus = function(){
 				$(that.resume_button_selector).addClass('hide');
 			}
 			that.emit('disconnect');
-		}
+		} 
+		*/
 		else{
 			$(".tools-current > li a").removeClass('paus err').addClass('disc');
 			delete this;

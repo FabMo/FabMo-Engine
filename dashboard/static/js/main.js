@@ -14,7 +14,7 @@ define(function(require) {
 	var underscore = require('underscore');
 
 	// Our libraries
-	var FabMo = require('fabmo');
+	var FabMoAPI = require('fabmo');
 	var FabMoUI = require('fabmo-ui');
 	var WheelControl = require('handwheel');
 
@@ -23,14 +23,14 @@ define(function(require) {
 	// Load the apps from the server
 	dashboard.ui= new FabMoUI(dashboard.machine);
 	context.apps = new context.models.Apps();
+
 	context.apps.fetch({
 		success: function() {
 			// Create the menu based on the apps thus retrieved 
 			context.appMenuView = new context.views.AppMenuView({collection : context.apps, el : '#app_menu_container'});
 
 			// Create a FabMo object for the dashboard
-			dashboard.machine = new FabMo(window.location.hostname, window.location.port);
-			dashboard.socket = require('websocket').SocketIO();
+			dashboard.machine = new FabMoAPI(window.location.hostname, window.location.port);
 
 			// Create a FabMoUI object for the same (but don't recreate it if it already exists)
 			if (!dashboard.ui) {
@@ -44,11 +44,11 @@ define(function(require) {
 				$('#modalDialogTitle').text('Error!');
 				$('#modalDialogLead').html('<div style="color:red">There was an error!</div>');
 				$('#modalDialogMessage').text(err || 'There is no message associated with this error.');
-				if(dashboard.machine.status_report.job) {
+				if(dashboard.machine.status.job) {
 					$('#modalDialogDetail').html(
 						'<p>' + 
-						  '<b>Job Name:  </b>' + dashboard.machine.status_report.job.name + '<br />' + 
-						  '<b>Job Description:  </b>' + dashboard.machine.status_report.job.description + 
+						  '<b>Job Name:  </b>' + dashboard.machine.status.job.name + '<br />' + 
+						  '<b>Job Description:  </b>' + dashboard.machine.status.job.description + 
 						'</p>'
 						);
 				} else {
@@ -95,7 +95,7 @@ function setupHandwheel() {
 	var last_move = 0;
 
 	function stopToolMotion() {
-		dashboard.machine.quit(function() {});
+		dashboard.machine.quit();
 	}
 
 	wheel.on('move', function makeMove(data) {
@@ -106,7 +106,7 @@ function setupHandwheel() {
 		var speed = wheel.inUnits(wheel.speed, wheel.units);
 		if(angle > TICKS_MOVE) {
 			if(last_move) {
-				dashboard.machine.quit(function() {});
+				dashboard.machine.quit();
 			}
 			angle = 0;
 			dashboard.machine.fixed_move('+' + axis, distance, speed, function(err) {});
@@ -114,7 +114,7 @@ function setupHandwheel() {
 		}
 		if(angle < -TICKS_MOVE) {
 			if(!last_move) {
-				dashboard.machine.quit(function() {});
+				dashboard.machine.quit();
 			}
 			angle = 0;
 			dashboard.machine.fixed_move('-' + axis, distance, speed, function(err) {});
@@ -127,7 +127,7 @@ function setupHandwheel() {
 	});
 
 	wheel.on('release', function quit(data) {
-		dashboard.machine.quit(function() {})
+		dashboard.machine.quit()
 	});
 
 	wheel.on('nudge', function nudge(data) {
@@ -141,19 +141,18 @@ function setupHandwheel() {
 // Kill the currently running job when the modal error dialog is dismissed
 $(document).on('close.fndtn.reveal', '[data-reveal]', function (evt) {
   var modal = $(this);
-  dashboard.machine.quit(function() {});
+  dashboard.machine.quit();
 });
 
 // Handlers for the home/probe buttons
-$('.button-zerox').click(function(e) {dashboard.machine.sbp('ZX', function(){}); });  
-$('.button-zeroy').click(function(e) {dashboard.machine.sbp('ZY', function(){}); });  
-$('.button-zeroz').click(function(e) {dashboard.machine.sbp('ZZ', function(){}); });
-
+$('.button-zerox').click(function(e) {dashboard.machine.sbp('ZX'); });  
+$('.button-zeroy').click(function(e) {dashboard.machine.sbp('ZY'); });  
+$('.button-zeroz').click(function(e) {dashboard.machine.sbp('ZZ'); });
 
 $('.play').on('click', function(e){
 	$("#main").addClass("offcanvas-overlap-left");
 	dashboard.machine.job_run(function (){
-		dashboard.machine.list_jobs_in_queue(function (err, data){
+		dashboard.machine.getJobQueue(function (err, data){
 			if (data.name == 'undefined' || data.length === 0) {
 				$('.nextJob').text('No Job Pending');
 				$('.play').hide();
@@ -172,7 +171,7 @@ dashboard.ui.on('status', function(status) {
 		wheel.setUnits(status.unit);	
 	}
 
-	dashboard.machine.list_jobs_in_queue(function (err, data){
+	dashboard.machine.getJobQueue(function (err, data){
 		if (data.name == 'undefined' || data.length === 0) {
 			$('.nextJob').text('No Job Pending');
 			$('.play').hide();
