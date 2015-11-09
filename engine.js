@@ -264,6 +264,8 @@ Engine.prototype.start = function(callback) {
             server.use(restify.bodyParser({'uploadDir':config.engine.get('upload_dir') || '/tmp'}));
             server.pre(restify.pre.sanitizePath());
 
+            log.info("Enabling gzip for transport...");
+            server.use(restify.gzipResponse());
             // Import the routes module and apply the routes to the server
             log.info("Loading routes...");
             server.io = socketio.listen(server.server);

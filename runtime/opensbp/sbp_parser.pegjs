@@ -53,7 +53,7 @@ jump
 argument
    = (float / integer / expression / barestring / "")
 
-mnemonic = code: ([A-Za-z][A-Za-z0-9]) {return code.join('');}
+mnemonic = code: ([A-Za-z][A-Za-z0-9\#]) {return code.join('').replace('#','_POUND');}
 
 identifier
    = id:([a-zA-Z_]+[A-Za-z0-9_]*) {return id[0].join("");}
@@ -87,8 +87,11 @@ system_variable
 assignment
   = v:variable __ "=" __ e:expression {return {"type": "assign", "var":v, "expr":e}}
 
-comparison
+compare
   = lhs:expression __ op:cmp_op __ rhs:expression {return {'left' : lhs, 'right' : rhs, 'op' : op};}
+
+comparison
+  = ("(" __ cmp:comparison __ ")" {return cmp;} / compare)
 
 expression
   = first:term rest:(__ add_op __ term)* {

@@ -6,13 +6,7 @@ var config = require('../../../config');
 /* CUSTOM CUTS */
 
 // Set to table base coordinates
-exports.C6 = function(args) {
-	this.emit_gcode("M4");
-	this.emit_gcode("M8");
-};
-
-// Set to table base coordinates
-exports.C7 = function(args) {
-	this.emit_gcode("M5");
-	this.emit_gcode("M9");
+exports.C_POUND = function(args) {
+	log.debug('GOT A C# COMMAND');
+	log.debug(args);
 };

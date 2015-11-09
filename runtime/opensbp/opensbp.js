@@ -392,12 +392,10 @@ SBPRuntime.prototype._end = function(error) {
 		switch(this.driver.status.stat) {
 			case this.driver.STAT_END:
 			case this.driver.STAT_STOP:
-				console.log("STAT_END/STAT_STOP")
 				end_function();
 			break;
 
 			default:
-				console.log(this.driver.status.stat)
 				this.driver.expectStateChange( {
 					'end':end_function,
 					'stop':end_function
@@ -584,7 +582,7 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 				log.error("Error in a non-stack-breaking command");
 				log.error(e);
 				this._end(e);
-				throw e;
+				throw e
 			}
 			this.pc +=1;
 			return false;
@@ -596,6 +594,22 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 		return false;
 	}
 };
+
+SBPRuntime.prototype.runCustomCut = function(number, callback) {
+	macro = macros.get(number)
+	if(macro) {
+		log.debug("Running macro: " + JSON.stringify(macro))
+		this._pushFileStack();
+		this.runFile(macro.filename, function() {
+			this._popFileStack();
+			callback();
+		}.bind(this));
+	} else {
+		this._end("Can't run custom cut (macro) C" + command.index + ": Macro not found.");
+		callback();
+	}
+	return true;
+}
 
 // Execute the provided command
 // Command is a single parsed line of OpenSBP code
@@ -618,20 +632,7 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 		// A C# command (custom cut)
 		case "custom":
-			macro = macros.get(command.index)
-			if(macro) {
-				log.debug("Running macro: " + JSON.stringify(macro))
-				this._pushFileStack();
-				this.runFile(macro.filename, function() {
-					this._popFileStack();
-					callback();
-				}.bind(this));
-			} else {
-				this._end("Can't run custom cut (macro) C" + command.index + ": Macro not found.");
-				//_end()
-				callback();
-			}
-			return true;
+			return this.runCustomCut(command.index, callback);
 			break;
 
 		case "return":
@@ -922,6 +923,17 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 		case 5: // B Location
 			return this.machine.status.posb;
 		break;
+
+		case 25:
+			units = config.machine.get('units');
+			if(units === 'in') {
+				return 0;
+			} else if(units === 'mm') {
+				return 1;
+			} else {
+				return -1;
+			}
+			break;
 
 		case 51:
 		case 52:

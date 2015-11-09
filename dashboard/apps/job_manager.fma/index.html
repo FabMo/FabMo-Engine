@@ -535,6 +535,7 @@
 			refresh_jobs_list();
 		});
 	});
+	
 
 	fabmoDashboard.on('status', function(status) {
 		var jobid;
@@ -543,27 +544,31 @@
 		} catch(e) {
 			jobid = null;
 		}
+
 		// New Job
 		if(jobid) {
 			if(jobid != current_job_id) {
 				current_job_id = jobid;
 				url = '/job/' + jobid + '/file';
+				/*
 				$.get(url, function(data) {
-					$('#nav-active').show();
 					loadFile(data);
+					$('#nav-active').show();
 				});
+				*/
 			}
 		} else {
 			if(jobid != current_job_id) {
+		/*		$('#nav-active').hide();		
+				loadFile(''); */
 				current_job_id = jobid;
 				refresh_jobs_list();
-				loadFile('');
-				$('#nav-active').hide();				
+	
 			}
 		}
 
-
 		// Hilight Current Line
+		/*
 		try {
 			line = status.line || null;
 		} catch(e) {
@@ -584,8 +589,9 @@
 				prev_line = 0;
 			}
 		}
+		*/
 	});
- 
+ 	
 	function resetFormElement(e) {
 	  e.wrap('<form>').closest('form').get(0).reset();
 	  e.unwrap();
