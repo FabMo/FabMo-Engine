@@ -596,8 +596,7 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 };
 
 SBPRuntime.prototype.runCustomCut = function(number, callback) {
-	log.debug("RunCustomNumber" + number);
-	macro = macros.get(number)
+	var macro = macros.get(number);
 	if(macro) {
 		log.debug("Running macro: " + JSON.stringify(macro))
 		this._pushFileStack();
@@ -606,7 +605,7 @@ SBPRuntime.prototype.runCustomCut = function(number, callback) {
 			callback();
 		}.bind(this));
 	} else {
-		this._end("Can't run custom cut (macro) C" + command.index + ": Macro not found.");
+		this._end("Can't run custom cut (macro) C" + number + ": Macro not found.");
 		callback();
 	}
 	return true;
@@ -634,9 +633,9 @@ SBPRuntime.prototype._execute = function(command, callback) {
 		// A C# command (custom cut)
 		case "custom":
 			return this.runCustomCut(command.index, function() {
-	this.pc += 1;
-	callback();
-}.bind(this));
+				this.pc += 1;
+				callback();
+			}.bind(this));
 			break;
 
 		case "return":
