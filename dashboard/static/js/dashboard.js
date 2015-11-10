@@ -244,7 +244,7 @@ define(function(require) {
 		}.bind(this));
 
 		this._registerHandler('getApps', function(data, callback) {
-			this.machine.list_apps(function(err, result) {
+			this.machine.getApps(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			});
@@ -256,7 +256,7 @@ define(function(require) {
 				formdata = new FormData();
 				formdata.append('file', data.file, data.file.name);
 
-				this.machine.submit_app(formdata, function(err, result) {
+				this.machine.submitApp(formdata, function(err, result) {
 					this.refreshApps();
 					if(err) {
 						callback(err);
@@ -265,7 +265,7 @@ define(function(require) {
 					}
 				}.bind(this));
 			} else if ('data' in data) {
-				this.machine.submit_app(data, function(err, result) {
+				this.machine.submitApp(data, function(err, result) {
 					if(err) {
 						callback(err);
 					} else {
@@ -276,7 +276,7 @@ define(function(require) {
 		}.bind(this));
 
 		this._registerHandler('deleteApp', function(id, callback) {
-			this.machine.delete_app(id, function(err, result) {
+			this.machine.deleteApp(id, function(err, result) {
 				this.refreshApps();
 				if(err) { callback(err); }
 				else { callback(null, result); }
@@ -298,14 +298,14 @@ define(function(require) {
 		}.bind(this));
 
 		this._registerHandler('getConfig', function(data, callback) {
-			this.machine.get_config(function(err, result) {
+			this.machine.getConfig(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 
 		this._registerHandler('setConfig', function(data, callback) {
-			this.machine.set_config(data, function(err, result) {
+			this.machine.setConfig(data, function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
