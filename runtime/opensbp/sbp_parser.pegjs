@@ -64,7 +64,7 @@ label
 decimal
   = digits:[0-9]+ { return digits.join(""); }
 integer "integer"
-  = dec:decimal { return parseInt(dec, 10); }
+  = dec:('-'? decimal) { return parseInt(dec.join(""), 10); }
 
 float "float"
   = f:('-'? decimal '\.' decimal) { return parseFloat(f.join(""));}

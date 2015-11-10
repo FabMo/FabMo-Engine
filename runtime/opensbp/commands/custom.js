@@ -6,7 +6,6 @@ var config = require('../../../config');
 /* CUSTOM CUTS */
 
 // Set to table base coordinates
-exports.C_POUND = function(args) {
-	log.debug('GOT A C# COMMAND');
-	log.debug(args);
+exports.C_POUND = function(args, callback) {
+	this.runCustomCut(args[0],callback);
 };
