@@ -102,6 +102,11 @@ function Machine(control_path, gcode_path, callback) {
 	    }
 
     }.bind(this));
+/*
+    this.on('status', function(data) {
+    	log.warn("Got machine emit");
+    })
+*/
 }
 util.inherits(Machine, events.EventEmitter);
 

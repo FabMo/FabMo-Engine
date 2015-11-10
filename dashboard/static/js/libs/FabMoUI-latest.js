@@ -86,6 +86,13 @@ function FabMoUI(tool, options){
 		this.FileControl();
 	}
 
+	this.tool.on('status', function(status_report) {
+		console.info("AAAAH");
+		console.info(status_report)
+		this.updateStatusContent(status_report);
+	}.bind(this));
+
+
 }
 
 FabMoUI.prototype.on = function(evt, handler) {

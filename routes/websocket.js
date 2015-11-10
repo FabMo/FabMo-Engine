@@ -8,6 +8,7 @@ var nb_clients=0;
 
 function broadcast_status_report(clients_sockets){
 	machine.on('status',function(status){
+		log.error("!!Broadcasting Status!!")
 		clients_sockets.emit('status',status);
 	});
 }

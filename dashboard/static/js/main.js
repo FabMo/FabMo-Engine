@@ -20,25 +20,18 @@ define(function(require) {
 
 	var wheel;
 
-	// Load the apps from the server
-	dashboard.ui= new FabMoUI(dashboard.machine);
 	context.apps = new context.models.Apps();
 
+	// Load the apps from the server
 	context.apps.fetch({
 		success: function() {
 			// Create the menu based on the apps thus retrieved 
 			context.appMenuView = new context.views.AppMenuView({collection : context.apps, el : '#app_menu_container'});
 
 			// Create a FabMo object for the dashboard
-			dashboard.machine = new FabMoAPI();
-
-			// Create a FabMoUI object for the same (but don't recreate it if it already exists)
-			if (!dashboard.ui) {
-				dashboard.ui= new FabMoUI(dashboard.machine);
-			}
-			else {
-				dashboard.ui.tool = dashboard.machine;
-			}
+			api = new FabMoAPI();
+			dashboard.setMachine(api);
+			dashboard.ui= new FabMoUI(dashboard.machine);
 
 			dashboard.ui.on('error', function(err) {
 				$('#modalDialogTitle').text('Error!');

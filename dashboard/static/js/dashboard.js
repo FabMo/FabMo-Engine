@@ -13,9 +13,6 @@ define(function(require) {
 		this.socket = null;
 		this.ui = null;
 
-		//Refresh of the tool status on the dashboard
-		this.refresh = 500; // define the tool connection refresh time (ms)
-
 		this.target = target || window;
 		this.handlers = {};
 		this.events = {
@@ -24,6 +21,14 @@ define(function(require) {
 		this._registerHandlers();
 		this._setupMessageListener();
 	};
+
+	Dashboard.prototype.setMachine = function(machine) {
+		this.machine = machine;
+		this.machine.on('status', function(data) {
+			console.log("STATUS")
+			this.updateStatus(data);
+		}.bind(this));
+	}
 
 	// Register a handler function for the provided message type
 	Dashboard.prototype._registerHandler = function(name, handler) {
@@ -438,9 +443,6 @@ define(function(require) {
 
 	Dashboard.prototype.updateStatus = function(status){
 		this._fireEvent("status", status);
-		if(this.ui) {
-			this.ui.updateStatusContent(status);
-		}
 	};
 
 	// Brings up the DRO (if separate from the keypad) in the dashboard

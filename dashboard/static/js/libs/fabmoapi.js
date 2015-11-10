@@ -19,12 +19,14 @@ var FabMoAPI = function(base_url) {
 	this.status = {};
 	this._initializeWebsocket();
 	this.on('status', function(status) {
-		console.log("Status message!")
+		console.log('GOT A STATUS MESSAGE IN FABMOAPI')
 		this.status = status;
+		console.log(status);
 	}.bind(this));
 }
 
 FabMoAPI.prototype._initializeWebsocket = function() {
+	localStorage.debug = '*'
 	try {
 		this.socket = io(this.base_url);
 	} catch(e) {
@@ -36,12 +38,14 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 		this.socket.on('connect', function() {
 			// Request a status once connected
 			// Even though the server is really supposed to send one
+			console.info("Websocket connected");
 			this.getStatus();
 		}.bind(this));
 
-		this.socket.on('message', function(message) {} );
+		this.socket.on('message', function(message) {console.info("Websocket message: " + JSON.stringify(message))} );
 
 		this.socket.on('disconnect', function() {
+			console.info("Websocket disconnected");
 			// Maybe use a dashboard autorefresh thing here
 		}.bind(this));
 	}
@@ -168,7 +172,7 @@ FabMoAPI.prototype.deleteMacro = function(id, callback) {
 }
 
 FabMoAPI.prototype.runCode = function(runtime, code, callback) {
-	var data = {'cmd' : data, 'runtime':runtime}
+	var data = {'cmd' : code, 'runtime':runtime}
 	this._post('/code', data, callback, callback);
 }
 
@@ -219,7 +223,6 @@ FabMoAPI.prototype._get = function(url, errback, callback, key) {
 		type: "GET",
 		dataType : 'json', 
 		success: function(result){
-			console.log(result);
 			if(result.status === "success") {
 				if(key) {
 					callback(null, result.data[key]);					
