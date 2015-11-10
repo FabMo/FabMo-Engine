@@ -55,172 +55,121 @@ FabMoAPI.prototype.on = function(message, func) {
 
 // Configuration
 FabMoAPI.prototype.getConfig = function(callback) {
-	this._get('/config', callback, function(data) {
-		callback(null, data.configuration);
-	});
+	this._get('/config', callback, callback, 'configuration');
 }
 
 FabMoAPI.prototype.setConfig = function(cfg_data, callback) {
 	this._post('/config', cfg_data, callback, function(data) {
+		callback = callback || function() {};
 		callback(null, data.configuration);
 	});
 }
 
 // Status
 FabMoAPI.prototype.getStatus = function(callback) {
-	this._get('/status', callback, function(data) {
-		callback(null, data.status);
-	});
+	this._get('/status', callback, callback, 'status');
 }
 
 // Jobs
 FabMoAPI.prototype.getJobHistory = function(callback) {
-	this._get('/jobs/history', callback, function(data) {
-		callback(null, data.jobs);
-	});
+	this._get('/jobs/history', callback, callback, 'jobs');
 }
 
 FabMoAPI.prototype.getJobQueue = function(callback) {
-	this._get('/jobs/queue', callback, function(data) {
-		callback(null, data.jobs);
-	});
+	this._get('/jobs/queue', callback, callback, 'jobs');
 }
 
 FabMoAPI.prototype.getJob = function(id, callback) {
-	this._get('/job/' + id, callback, function(data) {
-		callback(null, data.job);
-	});
+	this._get('/job/' + id, callback, callback, 'job');
 }
 
 FabMoAPI.prototype.resubmitJob = function(id, callback) {
-	this._post('/job/' + id, {}, callback, function(data) {
-		callback(null);
-	});
+	this._post('/job/' + id, {}, callback, callback);
 }
 
 // Direct commands
 FabMoAPI.prototype.quit = function(callback) {
-	this._post('/quit' + id, {}, callback, function(data) {
-		callback(null);
-	});
+	this._post('/quit', {}, callback, callback);
 }
 
 FabMoAPI.prototype.pause = function(callback) {
-	this._post('/pause' + id, {}, callback, function(data) {
-		callback(null);
-	});
+	this._post('/pause', {}, callback, callback);
 }
 
 FabMoAPI.prototype.resume = function(callback) {
-	this._post('/resume' + id, {}, callback, function(data) {
-		callback(null);
-	});
+	this._post('/resume', {}, callback, callback);
 }
 
 // Jobs
 FabMoAPI.prototype.runNextJob = function(callback) {
-	this._post('/queue/run' + id, {}, callback, function(data) {
-		callback(null);
-	});
+	this._post('/queue/run' + id, {}, callback, callback);
 }
 
 FabMoAPI.prototype.getJobHistory = function(callback) {
-	this._get('/jobs/history', callback, function(data) {
-		callback(null, data.jobs);
-	});
+	this._get('/jobs/history', callback, callback, 'jobs');
 }
 
 FabMoAPI.prototype.getJob = function(id, callback) {
-	this._get('/job/' + id, callback, function(data) {
-		callback(null, data.job);
-	}); 
+	this._get('/job/' + id, callback, callback, 'job');
 }
 
 FabMoAPI.prototype.getJobs = function(callback) {
-	this._get('/jobs', callback, function(data) {
-		callback(null, data.jobs);
-	});
+	this._get('/jobs', callback, callback, 'jobs');
 }
 
 FabMoAPI.prototype.cancelJob = function(id, callback) {
-	this._del('/jobs/' + id, function(data) {
-		callback(null, data.job);
-	});
+	this._del('/jobs/' + id, callback, callback, 'job');
 }
 
 FabMoAPI.prototype.submitJob = function(obj, callback) {
-	this._post('/job', makeFormData(obj), callback, function(data) {
-		callback(null);
-	});
+	this._post('/job', makeFormData(obj), callback, callback);
 }
 
 FabMoAPI.prototype.clearJobQueue = function(id, callback) {
-	this._del('/jobs/queue', function(data) {
-		callback(null);
-	});
+	this._del('/jobs/queue', callback, callback);
 }
 
 // Apps
 FabMoAPI.prototype.getApps = function(callback) {
-	this._get('/apps', callback, function(data) {
-		callback(null, data.apps);
-	});
+	this._get('/apps', callback, callback, 'apps');
 }
 
 FabMoAPI.prototype.deleteApp = function(id, callback) {
-	this._del('/apps/' + id, {}, callback, function(data) {
-		callback(null);
-	});
+	this._del('/apps/' + id, {}, callback, callback);
 }
 
 FabMoAPI.prototype.submitApp = function(app_file, callback) {
-	this._post('/apps', makeFormData(app_file), callback, function(data) {
-		callback(null);
-	});
+	this._post('/apps', makeFormData(app_file), callback, callback);
 }
 
 FabMoAPI.prototype.getAppConfig = function(app_id, callback) {
-	this._get('/apps/' + id + '/config', callback, function(data) {
-		callback(null, data.config);
-	});
+	this._get('/apps/' + id + '/config', callback, callback, 'config');
 }
 
 FabMoAPI.prototype.setAppConfig = function(cfg_data, callback) {
-	this._post('/apps/' + id + '/config', cfg_data, callback, function(data) {
-		callback(null, data.configuration);
-	});
+	this._post('/apps/' + id + '/config', cfg_data, callback, callback, 'configuration');
 }
 
 // Macros
 FabMoAPI.prototype.getMacros = function(callback) {
-	this._get('/macros', callback, function(data) {
-		callback(null, data.macros);
-	});
+	this._get('/macros', callback, callback, 'macros');
 }
 
 FabMoAPI.prototype.runMacro = function(id, callback) {
-	this._post('/macros/' + id + '/run', {}, callback, function(data) {
-		callback(null, data.macro);
-	});
+	this._post('/macros/' + id + '/run', {}, callback, callback, 'macro');
 }
 
 FabMoAPI.prototype.updateMacro = function(id, macro, callback) {
-	this._get('/macros/' + id, macro, callback, function(data) {
-		callback(null, data.macro);
-	});
+	this._get('/macros/' + id, macro, callback, callback, 'macro');
 }
 
 FabMoAPI.prototype.deleteMacro = function(id, callback) {
-	this._del('/macros/' + id, {}, callback, function(data) {
-		callback(null);
-	});
+	this._del('/macros/' + id, {}, callback, callback);
 }
 
 FabMoAPI.prototype.runCode = function(runtime, code, callback) {
 	var data = {'cmd' : data, 'runtime':runtime}
-	this._post('/code', data, callback, function(data) {
-		callback(null);
-	});
+	this._post('/code', data, callback, callback);
 }
 
 FabMoAPI.prototype.gcode = function(code, callback) {
@@ -260,7 +209,7 @@ function makeFormData(obj, default_name, default_type) {
 
 FabMoAPI.prototype._url = function(path) { return this.base_url + '/' + path.replace(/^\//,''); }
 
-FabMoAPI.prototype._get = function(url, errback, callback) {
+FabMoAPI.prototype._get = function(url, errback, callback, key) {
 	var url = this._url(url);
 	callback = callback || function() {}
 	errback = errback || function() {}
@@ -272,7 +221,11 @@ FabMoAPI.prototype._get = function(url, errback, callback) {
 		success: function(result){
 			console.log(result);
 			if(result.status === "success") {
-				callback(result.data);
+				if(key) {
+					callback(null, result.data[key]);					
+				} else {
+					callback(null, result.data);										
+				}
 			} else if(result.status==="fail") {
 				errback(result.data);
 			}	else {
@@ -285,7 +238,7 @@ FabMoAPI.prototype._get = function(url, errback, callback) {
 	});
 }
 
-FabMoAPI.prototype._post = function(url, data, errback, callback) {
+FabMoAPI.prototype._post = function(url, data, errback, callback, key) {
 	callback = callback || function() {};
 	errback = errback || function() {};
 	$.ajax({
@@ -295,11 +248,15 @@ FabMoAPI.prototype._post = function(url, data, errback, callback) {
 		data : data, 
 		success: function(result){
 			if(data.status === "success") {
-				callback(undefined,result.data);
+				if(key) {
+					callback(null,result.data[key]);					
+				} else {
+					callback(null,result.data);										
+				}
 			} else if(data.status==="fail") {
 				errback(result.data);
 			}	else {
-				errback(result.data.message);
+				errback(result.message);
 			}
 		},
 		error: function( data, err ){
@@ -308,7 +265,7 @@ FabMoAPI.prototype._post = function(url, data, errback, callback) {
 	});
 }
 
-FabMoAPI.prototype._del = function(url, data, errback, callback) {
+FabMoAPI.prototype._del = function(url, data, errback, callback, key) {
 	callback = callback || function() {};
 	errback = errback || function() {};
 	$.ajax({
@@ -318,11 +275,15 @@ FabMoAPI.prototype._del = function(url, data, errback, callback) {
 		data : data, 
 		success: function(result){
 			if(data.status === "success") {
-				callback(undefined,result.data);
+				if(key) {
+					callback(null, result.data.key);
+				} else {
+					callback(null,result.data);					
+				}
 			} else if(data.status==="fail") {
 				errback(result.data);
 			}	else {
-				errback(result.data.message);
+				errback(result.message);
 			}
 		},
 		error: function( data, err ){
