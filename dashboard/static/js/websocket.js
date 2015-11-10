@@ -1,6 +1,7 @@
 define(function(require) { 
 	
 	function SocketIO(){
+		console.log("I AM DOING A SOCKET")
 		//var dashboard = require('dashboard');
 		//var socket_io = require('libs/socket.io');
 		var dashboard = require('dashboard');

@@ -11,10 +11,12 @@
 }(this, function (io) {
   "use strict"
 
-console.log(io)
 var FabMoAPI = function(base_url) {
-	var url = base_url || '/';
+	var url = window.location.origin;
 	this.base_url = url.replace(/\/$/,'');
+	console.log(this.base_url)
+
+	this.status = {};
 	this._initializeWebsocket();
 	this.on('status', function(status) {
 		console.log("Status message!")
@@ -35,13 +37,13 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 			// Request a status once connected
 			// Even though the server is really supposed to send one
 			this.getStatus();
-		});
+		}.bind(this));
 
 		this.socket.on('message', function(message) {} );
 
 		this.socket.on('disconnect', function() {
 			// Maybe use a dashboard autorefresh thing here
-		});
+		}.bind(this));
 	}
 }
 

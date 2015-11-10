@@ -93,8 +93,9 @@ FabMoUI.prototype.on = function(evt, handler) {
 		this.event_handlers[evt].push(handler);
 	}
 	if(evt === 'error') {
-		if(this.tool.status_report.state === 'stopped') {
-			if(this.tool.status_report.info.error) {
+		console.log(this.tool)
+		if(this.tool.status.state === 'stopped') {
+			if(this.tool.status.info.error) {
 				handler(this.tool.status.info.error);
 			}
 		}

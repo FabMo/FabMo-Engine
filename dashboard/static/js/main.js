@@ -30,7 +30,7 @@ define(function(require) {
 			context.appMenuView = new context.views.AppMenuView({collection : context.apps, el : '#app_menu_container'});
 
 			// Create a FabMo object for the dashboard
-			dashboard.machine = new FabMoAPI(window.location.hostname, window.location.port);
+			dashboard.machine = new FabMoAPI();
 
 			// Create a FabMoUI object for the same (but don't recreate it if it already exists)
 			if (!dashboard.ui) {
