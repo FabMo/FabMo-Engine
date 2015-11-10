@@ -51,31 +51,31 @@
 					</div>
 				</div>
 					<div class="medium-6 small-7 columns" style="text-align:right;">
-						<a>
-							<img class='nextJobPrev' id="run-next" src="css/images/player6.png">
+						<a id="run-next">
+							<img class='nextJobPrev svg'  src="css/images/player6.svg">
 						</a>
 					</div>
 				
 			</div>
-			<div class="rows small-12 icon-row">
+			<div class="small-12 icon-row">
 				<div class="medium-1 small-2 columns">
-					<a class='preview'  title='Preview Job'>
-						<img src="css/images/visible9 (3).png">
+					<a class='preview' title='Preview Job'>
+						<img  class='svg' src="css/images/visible9.svg">
 					</a>
 				</div>
 				<div class="medium-1 small-2 columns">
-					<a class='edit'  title='Edit Job'>
-						<img src="css/images/settings46.png">
+					<a class='edit' title='Edit Job'>
+						<img class='svg' src="css/images/settings46.svg">
 					</a>
 				</div>
 				<div class="medium-1 small-2 columns">
-					<a class='download'  title='Download Job'>
-						<img src="css/images/download151.png">
+					<a class='download' title='Download Job'>
+						<img  class='svg' src="css/images/download151.svg">
 					</a>
 				</div>
 				<div class="medium-1 small-2 columns">
 					<a class='cancel' title='Cancel Job'>
-						<img src="css/images/recycle.png">
+						<img  class='svg' src="css/images/recycling10.svg">
 					</a>	
 				</div>
 			  <div class="sm-1 columns"></div>
@@ -599,6 +599,39 @@
 
 	fabmoDashboard.requestStatus(function(err, data) {});
 
+	jQuery('img.svg').each(function(){
+    var $img = jQuery(this);
+    var imgID = $img.attr('id');
+    var imgClass = $img.attr('class');
+    var imgURL = $img.attr('src');
+
+    jQuery.get(imgURL, function(data) {
+        // Get the SVG tag, ignore the rest
+        var $svg = jQuery(data).find('svg');
+
+        // Add replaced image's ID to the new SVG
+        if(typeof imgID !== 'undefined') {
+            $svg = $svg.attr('id', imgID);
+        }
+        // Add replaced image's classes to the new SVG
+        if(typeof imgClass !== 'undefined') {
+            $svg = $svg.attr('class', imgClass+' replaced-svg');
+        }
+
+        // Remove any invalid XML tags as per http://validator.w3.org
+        $svg = $svg.removeAttr('xmlns:a');
+
+        // Check if the viewport is set, if the viewport is not set the SVG wont't scale.
+        if(!$svg.attr('viewBox') && $svg.attr('height') && $svg.attr('width')) {
+            $svg.attr('viewBox', '0 0 ' + $svg.attr('height') + ' ' + $svg.attr('width'))
+        }
+
+        // Replace image with new SVG
+        $img.replaceWith($svg);
+
+    }, 'xml');
+
+	});
   });
 </script>
 

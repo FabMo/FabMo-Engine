@@ -127,8 +127,16 @@ td.preview-control {
   background-color: #F5F5F5;
   padding: 1em;
   border-radius: 3%;
+  fill: #333333;
+  transition: all 0.5s;
+  width: 170px;
+  height: 170px;
+  border: 0px;
 }
 
+.svg:hover{
+  fill: #32B433;
+}
 .nextJobDesc {
   max-height: 80px;
   overflow: hidden;
@@ -208,21 +216,18 @@ td.preview-control {
   z-index: 8;
   display: none;
 }
-.icon-row img {
+.icon-row svg {
+  fill: #333333;
   max-width: 20px;
-  min-width: 10px;
+  max-height: 20px;
   margin-right: 1em;
+  transition: all 0.2s;
 }
 .icon-row {
   padding-bottom: 2em;
   padding-top: 2em;
 }
 
-#run-next {
- width: 170px;
- height: 170px;
- border: 0px;
-}
 tr.shown td.details-control {
     background-color: #D23334;
     width: 40px;
