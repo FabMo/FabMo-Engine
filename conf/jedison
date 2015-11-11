@@ -223,21 +223,22 @@ def join_wifi_network(ssid, password):
             timeout-=1
             time.sleep(1)
 
-        timeout = 5
+        timeout = 10 
 	while timeout>0:
             time.sleep(1)
             try:
                 networks = get_wifi_networks()
-                break
+                selected_network = None
+                for network in networks:
+                    if network['ssid'] == ssid:
+                        selected_network = network
+                    break
+                if selected_network:
+                    break
             except:
                 pass
             timeout -= 1
 
-        selected_network = None
-        for network in networks:
-            if network['ssid'] == ssid:
-                selected_network = network
-                break;
  
         if selected_network: 
             network_conf = make_network_configuration(selected_network, password)

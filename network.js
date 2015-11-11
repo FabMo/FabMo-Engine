@@ -4,8 +4,8 @@ var fs = require('fs');
 var doshell = require('./util').doshell
 
 var wifi;
-var WIFI_SCAN_INTERVAL = 8000;
-var WIFI_SCAN_RETRIES = 5;
+var WIFI_SCAN_INTERVAL = 5000;
+var WIFI_SCAN_RETRIES = 3;
 
 function jedison(cmdline, callback) {
     var callback = callback || function() {}
@@ -44,6 +44,30 @@ EdisonNetworkManager.prototype.scan = function(callback) {
 }
 
 EdisonNetworkManager.prototype.run = function() {
+  if(this.command) {
+	switch(this.command.cmd) {
+		case 'join':
+			var ssid = this.command.ssid;
+			var pw = this.command.password;
+			this.command = null;
+			this.state = 'idle';
+			this.mode = 'unknown';
+			this._joinWifi(ssid,pw,function(err, data) {
+				this.run();
+			}.bind(this));
+			break;
+
+		case 'ap':
+			this.command=null;
+			this.state = 'idle'
+			this.mode = 'unknown'
+			this._joinAP(function(err, data) {
+				this.run();
+			}.bind(this));
+			break;
+	}
+	return;
+} 
   switch(this.mode) {
     case 'ap':
       this.runAP();
@@ -85,7 +109,6 @@ EdisonNetworkManager.prototype.runStation = function() {
       this.scan_retries = WIFI_SCAN_RETRIES;
       // Fall through
     case 'scan':  
-      log.info('Scanning for networks...')
       this.scan(function(err, data) {
         this.state = 'done_scanning';
         setTimeout(this.run.bind(this), WIFI_SCAN_INTERVAL);        
@@ -93,10 +116,9 @@ EdisonNetworkManager.prototype.runStation = function() {
       break;
 
     case 'done_scanning':
-      log.info('Getting network list...')
       this.getNetworks(function(err, data) {
         if(!err) {
-          log.info('Got ' + data.length + ' networks.')
+          log.debug('Scanned and found ' + data.length + ' networks.')
           for(var i in data) {
               var ssid = data[i].ssid;
               var found = false;
@@ -126,7 +148,7 @@ EdisonNetworkManager.prototype.runStation = function() {
       break;
 
     case 'check_network':
-      log.info('Checking network health...');
+      log.debug('Checking network health...');
       this.getInfo(function(err, data) {
         var networkOK = true;
         if(!err) {
@@ -142,15 +164,16 @@ EdisonNetworkManager.prototype.runStation = function() {
           networkOK = false;
         }
         if(networkOK) {
-          log.info("Network health OK");
+          log.debug("Network health OK");
           this.state = 'idle';          
           setImmediate(this.run.bind(this));
         } else {
+          log.warn("Network health in question...");
           if(this.network_health_retries == 0) {
-              log.error('No valid network, starting AP')
               this.network_health_retries = 5;
-              log.error("Network is down.  Going to AP mode");
-       	      this.joinAP(this.run.bind(this)); 
+              log.error("Network is down.  Going to AP mode.");
+       	      this.joinAP();
+              setImmediate(this.run.bind(this)); 
 	  } else {
              this.network_health_retries--;
              setTimeout(this.run.bind(this),1000);
@@ -162,7 +185,6 @@ EdisonNetworkManager.prototype.runStation = function() {
 }
 
 EdisonNetworkManager.prototype.runAP = function() {
-  log.debug("In AP mode."); 
   switch(this.state) {
     default:
       this.getInfo(function(err, data) {
@@ -177,18 +199,36 @@ EdisonNetworkManager.prototype.runAP = function() {
   }
 }
 
-EdisonNetworkManager.prototype.joinAP = function(callback) {
-  callback = callback || function() {};
-  this.mode = 'unknown';
+
+EdisonNetworkManager.prototype.joinAP = function() {
+	this.command = {
+		'cmd' : 'ap',
+	}
+}
+
+EdisonNetworkManager.prototype._joinAP = function(callback) {
   jedison('join ap', function(err, result) {
+    if(!err) {
+	log.info("Entered AP mode.");
+    }
     callback(err, result);
   });
 }
 
-EdisonNetworkManager.prototype.joinWifi = function(ssid, password, callback) {
-  this.mode = 'unknown';
-  this.state = 'idle';
+EdisonNetworkManager.prototype.joinWifi = function(ssid, password) {
+	this.command = {
+		'cmd' : 'join',
+		'ssid' : ssid,
+		'password' : password
+	}
+}
+EdisonNetworkManager.prototype._joinWifi = function(ssid, password, callback) {
+  log.info("Attempting to join wifi network: " + ssid + " with password: " + password); 
   jedison('join wifi --ssid=' + ssid + ' --password=' + password , function(err, result) {
+    if(err) {
+        log.error(err);
+    }
+    log.debug(result);
     callback(err, result);
   });
 }
@@ -256,8 +296,8 @@ callback('Not available on the edison wifi manager.');
 }
 
 exports.turnWifiHotspotOn=function(callback){
-    log.info("Turning on wifi hotspot")
-    wifi.joinAP(callback);
+    log.info("Entering AP mode...")
+    wifi.joinAP();
 }
 
 exports.turnWifiHotspotOff=function(callback){

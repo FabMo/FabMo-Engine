@@ -95,9 +95,7 @@ wifiState = function(req,res,next){
 
 
 hotspotState = function(req,res,next){
-    console.log('hotspot state request')
     state = req.params.enabled;
-    console.log(state)
     if(state===true || state === 'true'){
         network.turnWifiHotspotOn(function(err){
             if(err) {
