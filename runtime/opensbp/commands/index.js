@@ -16,7 +16,8 @@ exports.load = function() {
                log.debug('Loaded OpenSBP commands from "' + filePath + '"');
             } catch(e) {
                log.warn('Could not load OpenSBP Commands from "' + filePath + '": ' + e);
-            }
+		log.error(e);            
+}
 	}
     });
     return retval;
