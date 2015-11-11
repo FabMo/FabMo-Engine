@@ -40,12 +40,58 @@
 		<div class="hoverdim">
 			<div class="row title">
 				<div class="small-4 columns">
+					<h4>Up Next</h4>
+				</div>
+			</div>
+			<div class="row ">
+				<div class="small-5 medium-6 columns">
+					<h4 class='nextJobTitle'></h4>
+					<div class="small-12 columns">
+						<h5 class='nextJobDesc'></h5>
+					</div>
+				</div>
+					<div class="medium-6 small-7 columns" style="text-align:right;">
+						<a id="run-next">
+							<img class='nextJobPrev svg'  src="css/images/player6.svg">
+						</a>
+					</div>
+				
+			</div>
+			<div class="small-12 icon-row">
+				<div class="medium-1 small-2 columns">
+					<a class='preview' title='Preview Job'>
+						<img  class='svg' src="css/images/visible9.svg">
+					</a>
+				</div>
+				<div class="medium-1 small-2 columns">
+					<a class='edit' title='Edit Job'>
+						<img class='svg' src="css/images/settings46.svg">
+					</a>
+				</div>
+				<div class="medium-1 small-2 columns">
+					<a class='download' title='Download Job'>
+						<img  class='svg' src="css/images/download151.svg">
+					</a>
+				</div>
+				<div class="medium-1 small-2 columns">
+					<a class='cancel' title='Cancel Job'>
+						<img  class='svg' src="css/images/recycling10.svg">
+					</a>	
+				</div>
+			  <div class="sm-1 columns"></div>
+			</div>
+			<div class="row"></div>
+		</div>
+		</section>
+		<section class="container">
+			<div class="row title">
+				<div class="small-4 columns">
 					<h4>Pending</h4>
 				</div>
 				<div class="small-8 columns" style="text-align:right;">
-					<a id="run-next" class="small button success radius">Run Next</a>
 					<a id="clear-jobs" class="small button secondary radius">Clear Queue</a>
 				</div>
+	
 			</div> 
 
 			<div class="row no-jobs" style="display:none;">
@@ -70,7 +116,6 @@
 	        	</thead>
 	        	</table>
 			</div>
-		</div>
 	</section>
   </div>
 
@@ -222,6 +267,30 @@
 
 	
 	// DataTable
+	var setNextJob = function (arr) {
+		console.log(arr);
+		if (arr == undefined ) {
+			$('.nextJobTitle').text('No Jobs Pending');
+			$('.nextJobDesc').text('Drag files here or click "Submit Job"');
+			$('.nextJobPrev').hide();
+			$('.cancel').hide();
+			$('.download').hide();
+			$('.edit').hide();
+			$('.preview').hide();
+		} else {
+			$('.cancel').data('id', arr._id);
+			$('.preview').data('id', arr._id);
+			$('.download').data('id', arr._id);
+			$('.edit').data('id', arr._id);
+			$('.nextJobTitle').text(arr.name);
+			$('.nextJobDesc').text(arr.description);
+			$('.nextJobPrev').show();
+			$('.cancel').show();
+			$('.download').show();
+			$('.edit').show();
+			$('.preview').show();
+		}
+	}
 
   var queue_table = $('#queue_table').DataTable( {
     "filter": false,
@@ -235,8 +304,12 @@
         "ajax": {
         "url" : "/jobs/queue",
         "dataSrc" : function(json) { 
-        return json.data.jobs; }
+			var arr = json.data.jobs.shift();
+			console.log('i reloaded');
+			setNextJob(arr);
+        	return json.data.jobs;}
         },
+		
         "columns": [
             {
                 "className":      'details-control',
@@ -268,6 +341,26 @@
         ],
         "order" : [[3,"desc"]]
     }); // DataTable
+	
+		$('.cancel').on('click', function(e) {
+			var jobId = $(this).data('id');
+			fabmoDashboard.cancelJob(jobId, function(err, data) {
+					
+			});
+			setTimeout(function(){ refresh_jobs_list() }, 500);
+		});
+		$('.preview').on('click', function(e) {
+			var jobId = $(this).data('id');
+			fabmoDashboard.launchApp('previewer', {'job' : jobId});
+		});
+		$('.edit').on('click', function(e) {
+			var jobId = $(this).data('id');
+			fabmoDashboard.launchApp('editor', {'job' : jobId});
+		});
+		$('.download').on('click', function(e) {
+			var jobId = $(this).data('id');
+			$('.download').attr({'href':'/job/' + jobId + '/file'});
+		});	
 	
 	// Add event listener for opening and closing details 
     $('#queue_table tbody').on('click', 'div.ellipses', function () {
@@ -409,7 +502,7 @@
  		}
     });
 
-	function refresh_jobs_list(){
+	var refresh_jobs_list = function (){
 		queue_table.ajax.reload();
 		history_table.ajax.reload();
 	}
@@ -474,7 +567,6 @@
 			}
 		}
 
-
 		// Hilight Current Line
 		/*
 		try {
@@ -507,6 +599,39 @@
 
 	fabmoDashboard.requestStatus(function(err, data) {});
 
+	jQuery('img.svg').each(function(){
+    var $img = jQuery(this);
+    var imgID = $img.attr('id');
+    var imgClass = $img.attr('class');
+    var imgURL = $img.attr('src');
+
+    jQuery.get(imgURL, function(data) {
+        // Get the SVG tag, ignore the rest
+        var $svg = jQuery(data).find('svg');
+
+        // Add replaced image's ID to the new SVG
+        if(typeof imgID !== 'undefined') {
+            $svg = $svg.attr('id', imgID);
+        }
+        // Add replaced image's classes to the new SVG
+        if(typeof imgClass !== 'undefined') {
+            $svg = $svg.attr('class', imgClass+' replaced-svg');
+        }
+
+        // Remove any invalid XML tags as per http://validator.w3.org
+        $svg = $svg.removeAttr('xmlns:a');
+
+        // Check if the viewport is set, if the viewport is not set the SVG wont't scale.
+        if(!$svg.attr('viewBox') && $svg.attr('height') && $svg.attr('width')) {
+            $svg.attr('viewBox', '0 0 ' + $svg.attr('height') + ' ' + $svg.attr('width'))
+        }
+
+        // Replace image with new SVG
+        $img.replaceWith($svg);
+
+    }, 'xml');
+
+	});
   });
 </script>
 

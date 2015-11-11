@@ -150,44 +150,11 @@ $('.button-zeroy').click(function(e) {dashboard.machine.sbp('ZY', function(){});
 $('.button-zeroz').click(function(e) {dashboard.machine.sbp('ZZ', function(){}); });
 
 
-$('.play').on('click', function(e){
-	$("#main").addClass("offcanvas-overlap-left");
-	dashboard.machine.job_run(function (){
-		dashboard.machine.list_jobs_in_queue(function (err, data){
-			if (data.name == 'undefined' || data.length === 0) {
-				$('.nextJob').text('No Job Pending');
-				$('.play').hide();
-				$('.gotoJobManager').show();
-				$('.nextJob').css('top', '2px');
-				$('.startnextLabel').css('top', '2px');
-			} else {
-				$('.nextJob').text(data[0].name);
-			}
-		});
-	});
-});
 
 dashboard.ui.on('status', function(status) {
 	if(status.unit) {
 		wheel.setUnits(status.unit);	
 	}
-
-	dashboard.machine.list_jobs_in_queue(function (err, data){
-		if (data.name == 'undefined' || data.length === 0) {
-			$('.nextJob').text('No Job Pending');
-			$('.play').hide();
-			$('.gotoJobManager').show();
-			$('.nextJob').css('top', '2px');
-			$('.startnextLabel').css('top', '2px');
-		} else {
-			$('.nextJob').text(data[0].name);
-			$('.play').show();
-			$('.gotoJobManager').hide();
-			$('.nextJob').css('top', '-9.5px');
-			$('.startnextLabel').css('top', '-9.5px');
-		}
-	});
-
 });
 
 var disconnected = false;

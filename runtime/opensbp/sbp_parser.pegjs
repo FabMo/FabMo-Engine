@@ -64,7 +64,7 @@ label
 decimal
   = digits:[0-9]+ { return digits.join(""); }
 integer "integer"
-  = dec:decimal { return parseInt(dec, 10); }
+  = dec:('-'? decimal) { return parseInt(dec.join(""), 10); }
 
 float "float"
   = f:('-'? decimal '\.' decimal) { return parseFloat(f.join(""));}
@@ -87,8 +87,11 @@ system_variable
 assignment
   = v:variable __ "=" __ e:expression {return {"type": "assign", "var":v, "expr":e}}
 
-comparison
+compare
   = lhs:expression __ op:cmp_op __ rhs:expression {return {'left' : lhs, 'right' : rhs, 'op' : op};}
+
+comparison
+  = ("(" __ cmp:comparison __ ")" {return cmp;} / compare)
 
 expression
   = first:term rest:(__ add_op __ term)* {

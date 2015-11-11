@@ -908,36 +908,12 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	box-shadow: 0px -2px 15px -6px rgba(0,0,0,0.75);
 }
 
-.footTab {
-	position: relative;
-	top: -16.2px;
-	width: 100px;
-	margin-left: auto;
-	margin-right: auto;
-	height: auto;
-	background-color: #FDFDFD;
-	display: block;
-	padding-top: 0.1em;
-	padding-bottom: 0.1em;
-	border-radius: 2px;
-	border: 1px solid #CCCCCC;
-
-}
-
-.footTab hr {
-	width: 90%;
-	margin-top: 0.2em;
-	margin-bottom: 0.2em;
-	margin-left: auto;
-	margin-right: auto;
-}
-
 .stopJob {
 	position: relative;
 	display: block;
-	top: -11px;
 	text-align: center;
 	width: 150px;
+	margin-top: 5px;
 	margin-left: auto;
 	margin-right: auto;
 	border-radius: 10px;
@@ -957,76 +933,14 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	transition: all 1s;
 }
 
-.percentComplete {
-	float: right;
-	margin-top: -4.5px;
-	margin-right: 25px;
-	font-family: 'source_sans_proextralight';
-	display: none;
-}
-
-ul#loadbar {
-    list-style: none;
-    width: 140px;
-    margin: 0 auto;
-    margin-top: -5.5px;
-    padding-bottom: 75px;
-	float: right;
-	display: none;
-}
-
-ul#loadbar li {
-    float: left;
-    position: relative;
-    width: 11px;
-    height: 28px;
-    margin-left: 1px;
-    border-left: 1px solid #111;
-    border-top: 1px solid #111;
-    border-right: 1px solid #333;
-    border-bottom: 1px solid #333;
-    background: #000;
-}
-
-ul#loadbar li:first-child {
-    margin-left: 0;
-}
-
-.bar {
-    background-color: #5DA423;
-    background-image: -moz-linear-gradient(45deg, #509319 25%, #7CEA23);
-    background-image: -webkit-linear-gradient(45deg, #509319 25%, #7CEA23);
-    width: 10px;
-    height: 26px;
-    opacity: 0;
-}
-
-
-
-@-moz-keyframes fill {
-    0% {
-        opacity: 0;
-    }
-    100% {
-        opacity: 1;
-    };
-}
-
-@-webkit-keyframes fill {
-    0% {
-        opacity: 0;
-    }
-    100% {
-        opacity: 1;
-    };
-}
 
 .currentContainer {
+	margin-top: 12px;
 	margin-left: 1em;
-	margin-top: -5px;
 	float: left;
 	overflow: hidden;
 }
+
 .currentJobTitle {
 	color: #F0F0F0;
 	font-family: 'source_sans_proextralight';
@@ -1034,86 +948,9 @@ ul#loadbar li:first-child {
 	text-align: center;
 }
 
-.startNextContainer {
-	width: 100%;
-	margin-top: -5.5px;
-	margin-left: auto;
-	margin-right: auto;
-	text-align: center;
-	line-height: 1.6em;
-}
-.startnextLabel {
-	padding-right: .5em;
-	position: relative;
-	font-size: 1.2em;
-	top: -10px;
-	left: 1px;
-	color: #F0F0F0;
-	font-family: 'source_sans_proextralight';
-}
-.nextJob {
-	padding-right: .5em;
-	position: relative;
-	font-size: 1.2em;
-	top: -9.5px;
-	left: 1px;
-	color: #F0F0F0;
-	font-family: 'source_sans_proextralight';
-}
-
-.playContainer{
-	margin-left: auto;
-	margin-right: auto;
-	width: 30px;
-	height: 30px;
-	border: 1px solid #F0F0F0;
-	border-radius: 100%;
-	transition: all .5s;
-	display: inline-block;
-}
-.playContainer:hover{
-	border-color: #5DA423;
-}
-.play {
-	position: relative;
-	
-	width: 0; 
-	height: 0; 
-	top: 15%;
-	left: 30%;
-	text-align: center;
-	border-top: 10px solid transparent;
-	border-bottom: 10px solid transparent;
-	border-left: 15px solid #F0F0F0;
-	overflow: visible;
-
-}
-
-.playContainer:hover .play{
-	border-left: 15px solid #5DA423;
-}
-
-.gotoJobManager {
-	font-size: 1.5em;
-	color: #F0F0F0;
-	display: none;
-	position: relative;
-	top: 2px;
-	text-align: center;
-	text-decoration: none;
-}
-
-.playContainer:hover .gotoJobManager {
-	color: #5DA423;
-}
-
-.gotoJobManager:visited {
-	color: #F0F0F0;
-}
-
 .radial_progress {
+	margin-top: 5px;
     background-color: #444444;
-	margin-top: -12px;
     height: 40px;
     width: 40px;
     border-radius: 50%;
@@ -1180,9 +1017,9 @@ ul#loadbar li:first-child {
 }
 
 .load_container {
+	margin-top: 12px;
     width: 190px;
 	float: right;
-	margin-top: -2.5px;
 	margin-right: 15px;
 	
 }
