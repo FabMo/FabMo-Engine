@@ -4,7 +4,8 @@ var fs = require('fs');
 var doshell = require('./util').doshell
 
 var wifi;
-var WIFI_SCAN_INTERVAL = 5000;
+var WIFI_SCAN_INTERVAL = 8000;
+var WIFI_SCAN_RETRIES = 5;
 
 function jedison(cmdline, callback) {
     var callback = callback || function() {}
@@ -39,7 +40,7 @@ EdisonNetworkManager.prototype.getNetworks = function(callback) {
 }
 
 EdisonNetworkManager.prototype.scan = function(callback) {
-  jedison('scan wifi', callback);
+  jedison('scan', callback);
 }
 
 EdisonNetworkManager.prototype.run = function() {
@@ -55,14 +56,24 @@ EdisonNetworkManager.prototype.run = function() {
     default:
       this.state = 'idle';
       this.getInfo(function(err, data) {
-        console.log(data)
         if(!err) {
-          if(data.mode == 'managed') { this.mode = 'station'; }
+          var old_mode = this.mode;
+		if(data.mode == 'managed') { this.mode = 'station'; }
           else if(data.mode == 'master') { this.mode = 'ap'; }
           else { log.warn('Unknown network mode: ' + data.mode)}
-        }
+        	if(this.mode != old_mode) {
+
+        setImmediate(this.run.bind(this));
+		} else {
 
         setTimeout(this.run.bind(this), 5000);
+
+}
+	} else {
+
+        setTimeout(this.run.bind(this), 5000);
+}
+
       }.bind(this));
       break;
   }
@@ -71,6 +82,9 @@ EdisonNetworkManager.prototype.run = function() {
 EdisonNetworkManager.prototype.runStation = function() {
   switch(this.state) {
     case 'idle':
+      this.scan_retries = WIFI_SCAN_RETRIES;
+      // Fall through
+    case 'scan':  
       log.info('Scanning for networks...')
       this.scan(function(err, data) {
         this.state = 'done_scanning';
@@ -99,8 +113,14 @@ EdisonNetworkManager.prototype.runStation = function() {
         } else {
           console.warn(err);
         }
+        if(data.length === 0 && this.scan_retries > 0) {
+        log.warn("No networks?!  Retrying...");
+	this.state = 'scan'
+        this.scan_retries--;
+} else {
         this.state = 'check_network';
         this.network_health_retries = 5;
+}
         setImmediate(this.run.bind(this));
       }.bind(this));
       break;
@@ -130,10 +150,11 @@ EdisonNetworkManager.prototype.runStation = function() {
               log.error('No valid network, starting AP')
               this.network_health_retries = 5;
               log.error("Network is down.  Going to AP mode");
-       	      this.joinAP(); 
+       	      this.joinAP(this.run.bind(this)); 
+	  } else {
+             this.network_health_retries--;
+             setTimeout(this.run.bind(this),1000);
 	  }
-          this.network_health_retries--;
-          setTimeout(this.run.bind(this),1000);
 	}
       }.bind(this));
       break;
@@ -141,7 +162,7 @@ EdisonNetworkManager.prototype.runStation = function() {
 }
 
 EdisonNetworkManager.prototype.runAP = function() {
-  log.warn('Running AP')
+  log.debug("In AP mode."); 
   switch(this.state) {
     default:
       this.getInfo(function(err, data) {
@@ -172,14 +193,12 @@ EdisonNetworkManager.prototype.joinWifi = function(ssid, password, callback) {
   });
 }
 
-
-function mainWifi(){
-  wifi = new EdisonNetworkManager();
-  wifi.run();
-}
-
 exports.init = function() {
-   mainWifi();
+	log.debug("Collapsing from AP state to scan (first boot)");
+	jedison('unjoin', function(err, data) {
+  		wifi = new EdisonNetworkManager();
+  		wifi.run();
+	});
 }
 
 

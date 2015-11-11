@@ -143,7 +143,8 @@ def get_wifi_networks():
     try:
         results = subprocess.check_output('wpa_cli scan_results', shell=True)
     except Exception, e:
-        raise e
+        return []
+ 
     seen = set()
     networks = []
     line_regex = re.compile('(?P<bssid>(?:[a-fA-F0-9][a-fA-F0-9]:?)+)\s+(?P<frequency>\d+)\s+(?P<signal>-?\d+)\s+(?P<security>(?:\[(?:\w|\-)+\])+)\s+(?P<ssid>\w(?:\w|\s|\-|\_)*)')
@@ -255,6 +256,13 @@ def join_ap_mode():
         raise Exception("System already in AP mode")
     os.popen("systemctl stop wpa_supplicant && sleep 2 && systemctl start hostapd && sleep 2")# && systemctl restart fabmo")
 
+def unjoin_ap_mode():
+    info = get_wifi_info()
+    if info['mode'] != 'master':
+        raise Exception("System not in AP mode")
+    os.popen("systemctl stop hostapd && sleep 2 && systemctl start wpa_supplicant && sleep 2")
+
+
 def set_network(network_conf, ssid):
     with open('/etc/wpa_supplicant/wpa_supplicant.conf', 'w') as fp:
         fp.write(WPA_SUPPLICANT_CONF_TEMPLATE)
@@ -287,6 +295,8 @@ def join_handler(args):
         join_wifi_network(args.ssid, args.password)
     elif args.target == 'ap':
         join_ap_mode()
+def unjoin_handler(args):
+    unjoin_ap_mode()
 
 def scan_handler(args):
     scan_wifi()
@@ -318,11 +328,13 @@ if __name__ == "__main__":
     scan_parser = subparsers.add_parser('scan')
     scan_parser.set_defaults(func=scan_handler)
 
+    unjoin_parser = subparsers.add_parser('unjoin')
+    unjoin_parser.set_defaults(func=unjoin_handler)
     try:
         args = parser.parse_args()
         data = args.func(args)
         retval = {"status":"success"}
-        if data:
+        if data != None:
             retval['data'] = data
         print json.dumps(retval)
     except Exception, e:
