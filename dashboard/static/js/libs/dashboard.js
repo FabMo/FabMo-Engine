@@ -127,28 +127,52 @@ FabMoDashboard.prototype._call = function(name, data, callback) {
 FabMoDashboard.prototype._simulateCall = function(name, data, callback) {
 	switch(name) {
 		case "submitJob":
-			alert("Job Submitted: " + data.config.filename);
+			toaster();
+			$('.alert-text').text("Job Submitted: " + data.config.filename);
+			$('.alert-toaster').slideDown(null, function (){
+				setTimeout(function(){$('.alert-toaster').remove(); }, 1000);
+			})
 			this._download(data.data, data.config.filename, "text/plain");
 		break;
 
 		case "runGCode":
-			alert("GCode sent to tool: " + data)
+			toaster();
+			$('.alert-text').text("GCode sent to tool: " + data);
+			$('.alert-toaster').slideDown(null, function (){
+				setTimeout(function(){$('.alert-toaster').remove(); }, 1000);
+			})
 		break;
 
 		case "runSBP":
-			alert("OpenSBP sent to tool: " + data)
+			toaster();
+			$('.alert-text').text("OpenSBP sent to tool: " + data)
+			$('.alert-toaster').slideDown(null, function (){
+				setTimeout(function(){$('.alert-toaster').remove(); }, 1000);
+			})
 		break;
 
 		case "showDRO":
-			alert("DRO Shown.");
+			toaster();
+			$('.alert-text').text("DRO Shown.");
+			$('.alert-toaster').slideDown(null, function (){
+				setTimeout(function(){$('.alert-toaster').remove()}, 1000);
+			})
 		break;
 
 		case "hideDRO":
-			alert("DRO Hidden.");
+			toaster();
+			$('.alert-text').text("DRO Hidden.");
+			$('.alert-toaster').slideDown(null, function (){
+				setTimeout(function(){$('.alert-toaster').remove(); }, 1000);
+			})
 		break;
 		
 		default:
-			alert(name + " called.");
+			toaster();
+			$('.alert-text').text(name + " called.");
+			$('.alert-toaster').slideDown(null, function (){
+				setTimeout(function(){$('.alert-toaster').remove(); }, 1000);
+			})
 		break;
 	}
 }
@@ -391,6 +415,10 @@ FabMoDashboard.prototype.getAppConfig = function(callback) {
 
 FabMoDashboard.prototype.setAppConfig = function(config, callback) {
 	this._call("setAppConfig", config, callback);
+}
+
+var toaster = function () {
+	$('body').append("<div class='alert-toaster' style='position:fixed; margin: auto; top: 20px; right: 20px; width: 250px; height: 60px; background-color: #F3F3F3; border-radius: 3px; z-index: 1005; box-shadow: 4px 4px 7px -2px rgba(0,0,0,0.75); display: none'><span class='alert-text' style= 'position:absolute; margin: auto; top: 0; right: 0; bottom: 0; left: 0; height: 20px; width: 250px; text-align: center;'></span><div>");
 }
 
 fabmoDashboard = new FabMoDashboard();

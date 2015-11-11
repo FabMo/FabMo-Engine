@@ -895,7 +895,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	/* auto margins center the apps, but make them jump when the DRO is displayed (ick) */
 }
 
-
+/* ********** footer stuff********** */
 .footBar {
 	position: fixed;
 	bottom: 0;
