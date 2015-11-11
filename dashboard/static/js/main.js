@@ -19,6 +19,8 @@ define(function(require) {
 	var WheelControl = require('handwheel');
 
 	var wheel;
+	
+	var engine = new FabMoAPI();
 
 	context.apps = new context.models.Apps();
 
@@ -29,7 +31,6 @@ define(function(require) {
 			context.appMenuView = new context.views.AppMenuView({collection : context.apps, el : '#app_menu_container'});
 
 			// Create a FabMo object for the dashboard
-			engine = new FabMoAPI();
 			dashboard.setEngine(engine);
 			dashboard.ui= new FabMoUI(dashboard.engine);
 

@@ -51,6 +51,8 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 FabMoAPI.prototype.on = function(message, func) {
 	if(this.socket) {
 		this.socket.on(message, func);
+	} else {
+		console.warn("Not registering " + message + "event because socket has not been set up yet.")
 	}
 }
 
