@@ -9,7 +9,7 @@ define(function(require) {
 	var toastr = require('toastr');
 	
 	var Dashboard = function(target) {
-		this.machine = null;
+		this.engine = null;
 		this.socket = null;
 		this.ui = null;
 
@@ -22,10 +22,9 @@ define(function(require) {
 		this._setupMessageListener();
 	};
 
-	Dashboard.prototype.setMachine = function(machine) {
-		this.machine = machine;
-		this.machine.on('status', function(data) {
-			console.log("STATUS")
+	Dashboard.prototype.setEngine = function(engine) {
+		this.engine = engine;
+		this.engine.on('status', function(data) {
 			this.updateStatus(data);
 		}.bind(this));
 	}
@@ -142,7 +141,8 @@ define(function(require) {
 				formdata = new FormData();
 				formdata.append('file', data.file, data.file.name);
 				
-				this.machine.add_job(formdata, function(err, result) {
+				this.engine.submitJob(formdata, function(err, result) {
+					console.log("Callback");
 					if(err) {
 						callback(err);
 					} else {
@@ -150,7 +150,9 @@ define(function(require) {
 					}
 				}.bind(this));
 			} else if ('data' in data) {
-				this.machine.add_job(data, function(err, result) {
+				console.log(data)
+				this.engine.submitJob(data, function(err, result) {
+					console.log("Callback");
 					if(err) {
 						callback(err);
 					} else {
@@ -161,7 +163,7 @@ define(function(require) {
 		}.bind(this));
 
 		this._registerHandler('resubmitJob', function(id, callback) { 
-			this.machine.resubmit_job(id, function(err, result) {
+			this.engine.resubmitJob(id, function(err, result) {
 				if(err) {
 					callback(err);
 				} else {
@@ -171,7 +173,7 @@ define(function(require) {
 		}.bind(this));
 
 		this._registerHandler('cancelJob', function(id, callback) { 
-			this.machine.cancel_job(id, function(err, result) {
+			this.engine.cancelJob(id, function(err, result) {
 				if(err) {
 					callback(err);
 				} else {
@@ -184,7 +186,7 @@ define(function(require) {
 
 		// Get the list of jobs in the queue
 		this._registerHandler('getJobsInQueue', function(data, callback) {
-			this.machine.list_jobs_in_queue(function(err, jobs) {
+			this.engine.getJobsInQueue(function(err, jobs) {
 				if(err) {
 					callback(err);
 				} else {
@@ -194,7 +196,7 @@ define(function(require) {
 		}.bind(this));
 
 		this._registerHandler('getJobHistory', function(data, callback) {
-			this.machine.get_job_history(function(err, jobs) {
+			this.engine.getJobHistory(function(err, jobs) {
 				if(err) {
 					callback(err);
 				} else {
@@ -204,7 +206,7 @@ define(function(require) {
 		}.bind(this));
 
 		this._registerHandler('clearJobQueue', function(data, callback) {
-			this.machine.clear_job_queue(function(err) {
+			this.engine.clearJobQueue(function(err) {
 				if(err) {
 					callback(err);
 				} else {
@@ -214,42 +216,42 @@ define(function(require) {
 		}.bind(this));
 
 		this._registerHandler('runNext', function(data, callback) {
-			this.machine.job_run(function(err, result) {
+			this.engine.runNextJob(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null); }
 			});
 		}.bind(this));
 
 		this._registerHandler('pause', function(data, callback) {
-			this.machine.pause(function(err, result) {
+			this.engine.pause(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null); }
 			});
 		}.bind(this));
 
 		this._registerHandler('stop', function(data, callback) {
-			this.machine.quit(function(err, result) {
+			this.engine.quit(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null); }
 			});
 		}.bind(this));
 
 		this._registerHandler('resume', function(data, callback) {
-			this.machine.resume(function(err, result) {
+			this.engine.resume(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null); }
 			});
 		}.bind(this));
 
 		this._registerHandler('nudge', function(data, callback) {
-			this.machine.fixed_move(data.dir, data.dist, function(err, result) {
+			this.engine.fixed_move(data.dir, data.dist, function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null); }
 			});
 		}.bind(this));
 
 		this._registerHandler('getApps', function(data, callback) {
-			this.machine.getApps(function(err, result) {
+			this.engine.getApps(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			});
@@ -261,7 +263,7 @@ define(function(require) {
 				formdata = new FormData();
 				formdata.append('file', data.file, data.file.name);
 
-				this.machine.submitApp(formdata, function(err, result) {
+				this.engine.submitApp(formdata, function(err, result) {
 					this.refreshApps();
 					if(err) {
 						callback(err);
@@ -270,7 +272,7 @@ define(function(require) {
 					}
 				}.bind(this));
 			} else if ('data' in data) {
-				this.machine.submitApp(data, function(err, result) {
+				this.engine.submitApp(data, function(err, result) {
 					if(err) {
 						callback(err);
 					} else {
@@ -281,7 +283,7 @@ define(function(require) {
 		}.bind(this));
 
 		this._registerHandler('deleteApp', function(id, callback) {
-			this.machine.deleteApp(id, function(err, result) {
+			this.engine.deleteApp(id, function(err, result) {
 				this.refreshApps();
 				if(err) { callback(err); }
 				else { callback(null, result); }
@@ -289,77 +291,80 @@ define(function(require) {
 		}.bind(this));
 
 		this._registerHandler('runGCode', function(text, callback) {
-			this.machine.gcode(text, function(err, result) {
+			this.engine.gcode(text, function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 
 		this._registerHandler('runSBP', function(text, callback) {
-			this.machine.sbp(text, function(err, result) {
+			this.engine.sbp(text, function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 
 		this._registerHandler('getConfig', function(data, callback) {
-			this.machine.getConfig(function(err, result) {
+			this.engine.getConfig(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 
 		this._registerHandler('setConfig', function(data, callback) {
-			this.machine.setConfig(data, function(err, result) {
+			this.engine.setConfig(data, function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 
+		///
+		/// NETWORK MANAGEMENT
+		///
 		this._registerHandler('connectToWifi', function(data, callback) {
-			this.machine.connect_to_wifi(data.ssid, data.key, function(err, result) {
+			this.engine.connect_to_wifi(data.ssid, data.key, function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 
 		this._registerHandler('disconnectFromWifi', function(data, callback) {
-			this.machine.disconnect_from_wifi(function(err, result) {
+			this.engine.disconnect_from_wifi(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 
 		this._registerHandler('forgetWifi', function(data, callback) {
-			this.machine.forget_wifi(data.ssid, function(err, result) {
+			this.engine.forget_wifi(data.ssid, function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 
 		this._registerHandler('enableWifi', function(data, callback) {
-			this.machine.enable_wifi(function(err, result) {
+			this.engine.enable_wifi(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 
 		this._registerHandler('disableWifi', function(data, callback) {
-			this.machine.disable_wifi(function(err, result) {
+			this.engine.disable_wifi(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 
 		this._registerHandler('enableWifiHotspot', function(data, callback) {
-			this.machine.enable_hotspot(function(err, result) {
+			this.engine.enable_hotspot(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 
 		this._registerHandler('disableWifiHotspot', function(data, callback) {
-			this.machine.disable_hotspot(function(err, result) {
+			this.engine.disable_hotspot(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
@@ -367,18 +372,33 @@ define(function(require) {
 
 
 		this._registerHandler('getMacros', function(data, callback) {
-			this.machine.get_macros(function(err, result) {
+			this.engine.getMacros(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 
 		this._registerHandler('runMacro', function(data, callback) {
-			this.machine.run_macro(data, function(err, result) {
+			this.engine.runMacro(data, function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
+
+		this._registerHandler('updateMacro', function(data, callback) {
+			this.engine.updateMacro(data.id, data.macro, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+
+		this._registerHandler('deleteMacro', function(data, callback) {
+			this.engine.deleteMacro(data, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+
 
 		this._registerHandler('launchApp', function(data, callback) {
 			id = data.id;
@@ -398,36 +418,22 @@ define(function(require) {
 
 		this._registerHandler('getAppConfig', function(data, callback) {
 			context = require('context');
-			this.machine.get_app_config(context.current_app_id, callback);
+			this.engine.getAppConfig(context.current_app_id, callback);
 		}.bind(this));
 
 		this._registerHandler('setAppConfig', function(data, callback) {
 			context = require('context');
-			this.machine.set_app_config(context.current_app_id, data, callback);
+			this.engine.set_app_config(context.current_app_id, data, callback);
 		}.bind(this));
 
 		this._registerHandler('requestStatus', function(data, callback) {
-			this.machine.get_status(function(err,  status) {
+			this.engine.get_status(function(err,  status) {
 				if(err) {
 					callback(err);
 				} else {
 					this.updateStatus(status);
 					callback(null, status);
 				}
-			}.bind(this));
-		}.bind(this));
-
-		this._registerHandler('updateMacro', function(data, callback) {
-			this.machine.update_macro(data.id, data.macro, function(err, result) {
-				if(err) { callback(err); }
-				else { callback(null, result); }
-			}.bind(this));
-		}.bind(this));
-
-		this._registerHandler('deleteMacro', function(data, callback) {
-			this.machine.delete_macro(data, function(err, result) {
-				if(err) { callback(err); }
-				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 

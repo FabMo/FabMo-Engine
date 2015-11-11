@@ -2,17 +2,15 @@ var fs = require('fs');
 var machine = require('../machine').machine;
 var log=require('../log').logger("websocket");
 var socketio = require('socket.io');
-var clients_limit = 3;
+var clients_limit = 5;
 var nb_clients=0;
 
 
 function broadcast_status_report(clients_sockets){
 	machine.on('status',function(status){
-		log.error("!!Broadcasting Status!!")
 		clients_sockets.emit('status',status);
 	});
 }
-
 
 connect = function(socket) {
 	nb_clients++;
@@ -25,7 +23,6 @@ connect = function(socket) {
 		nb_clients--;
 	});
 };
-
 
 function socket_main(socket){
 	log.debug("client connected");

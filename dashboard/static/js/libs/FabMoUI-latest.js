@@ -87,8 +87,6 @@ function FabMoUI(tool, options){
 	}
 
 	this.tool.on('status', function(status_report) {
-		console.info("AAAAH");
-		console.info(status_report)
 		this.updateStatusContent(status_report);
 	}.bind(this));
 
@@ -100,7 +98,6 @@ FabMoUI.prototype.on = function(evt, handler) {
 		this.event_handlers[evt].push(handler);
 	}
 	if(evt === 'error') {
-		console.log(this.tool)
 		if(this.tool.status.state === 'stopped') {
 			if(this.tool.status.info.error) {
 				handler(this.tool.status.info.error);

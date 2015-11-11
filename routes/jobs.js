@@ -311,7 +311,7 @@ var getJobById = function(req, res, next) {
 
 
 var deleteJobById = function(req, res, next) {
-    var answer;
+    var answer = {status:"success", data:null};
     db.Job.getById(req.params.id, function(err, result) {
         if(err) {
             log.error(err);
@@ -319,14 +319,13 @@ var deleteJobById = function(req, res, next) {
                     status:"fail",
                     data:{job:err}
             };
-            res.json(answer);
         } else {
             answer = {
                 status:"success",
                 data : {job:result}
             };
-            res.json(answer);
         }
+        res.json(answer);
     });
 };
 /**

@@ -14,19 +14,16 @@
 var FabMoAPI = function(base_url) {
 	var url = window.location.origin;
 	this.base_url = url.replace(/\/$/,'');
-	console.log(this.base_url)
 
 	this.status = {};
 	this._initializeWebsocket();
 	this.on('status', function(status) {
-		console.log('GOT A STATUS MESSAGE IN FABMOAPI')
 		this.status = status;
-		console.log(status);
 	}.bind(this));
 }
 
 FabMoAPI.prototype._initializeWebsocket = function() {
-	localStorage.debug = '*'
+	localStorage.debug = false
 	try {
 		this.socket = io(this.base_url);
 	} catch(e) {
@@ -106,7 +103,12 @@ FabMoAPI.prototype.resume = function(callback) {
 
 // Jobs
 FabMoAPI.prototype.runNextJob = function(callback) {
-	this._post('/queue/run' + id, {}, callback, callback);
+	try {
+		this._post('/jobs/queue/run', {}, callback, callback);
+	} catch(e) {
+		console.error(e)
+	}
+	console.log("eh")
 }
 
 FabMoAPI.prototype.getJobHistory = function(callback) {
@@ -122,11 +124,11 @@ FabMoAPI.prototype.getJobs = function(callback) {
 }
 
 FabMoAPI.prototype.cancelJob = function(id, callback) {
-	this._del('/jobs/' + id, callback, callback, 'job');
+	this._del('/job/' + id, {}, callback, callback, 'job');
 }
 
 FabMoAPI.prototype.submitJob = function(obj, callback) {
-	this._post('/job', makeFormData(obj), callback, callback);
+	this._post('/job', makeFormData(obj, null, 'text/plain'), callback, callback);
 }
 
 FabMoAPI.prototype.clearJobQueue = function(id, callback) {
@@ -143,7 +145,7 @@ FabMoAPI.prototype.deleteApp = function(id, callback) {
 }
 
 FabMoAPI.prototype.submitApp = function(app_file, callback) {
-	this._post('/apps', makeFormData(app_file), callback, callback);
+	this._post('/apps', makeFormData(app_file, null, 'application/zip'), callback, callback);
 }
 
 FabMoAPI.prototype.getAppConfig = function(app_id, callback) {
@@ -196,7 +198,7 @@ function makeFormData(obj, default_name, default_type) {
 	} 
 	else {
 		var content = obj.data || '';
-		var filename = obj.config.filename || default_name;
+		var filename = obj.config.filename;
 		var formData = new FormData();
 		var type = default_type || null;
 		if(!filename) {
@@ -215,8 +217,8 @@ FabMoAPI.prototype._url = function(path) { return this.base_url + '/' + path.rep
 
 FabMoAPI.prototype._get = function(url, errback, callback, key) {
 	var url = this._url(url);
-	callback = callback || function() {}
-	errback = errback || function() {}
+	var callback = callback || function() {}
+	var errback = errback || function() {}
 
 	$.ajax({
 		url: url,
@@ -242,13 +244,16 @@ FabMoAPI.prototype._get = function(url, errback, callback, key) {
 }
 
 FabMoAPI.prototype._post = function(url, data, errback, callback, key) {
-	callback = callback || function() {};
-	errback = errback || function() {};
+	var url = this._url(url);
+	var callback = callback || function() {};
+	var errback = errback || function() {};
 	$.ajax({
 		url: url,
 		type: "POST",
+		processData : false,
+		contentType : false,
 		dataType : 'json',
-		data : data, 
+		'data' : data, 
 		success: function(result){
 			if(data.status === "success") {
 				if(key) {
@@ -269,13 +274,14 @@ FabMoAPI.prototype._post = function(url, data, errback, callback, key) {
 }
 
 FabMoAPI.prototype._del = function(url, data, errback, callback, key) {
-	callback = callback || function() {};
-	errback = errback || function() {};
+	var url = this._url(url);
+	var callback = callback || function() {};
+	var errback = errback || function() {};
 	$.ajax({
 		url: url,
-		type: "DEL",
+		type: "DELETE",
 		dataType : 'json',
-		data : data, 
+		'data' : data, 
 		success: function(result){
 			if(data.status === "success") {
 				if(key) {
@@ -285,7 +291,7 @@ FabMoAPI.prototype._del = function(url, data, errback, callback, key) {
 				}
 			} else if(data.status==="fail") {
 				errback(result.data);
-			}	else {
+			} else {
 				errback(result.message);
 			}
 		},

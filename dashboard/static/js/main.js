@@ -29,19 +29,19 @@ define(function(require) {
 			context.appMenuView = new context.views.AppMenuView({collection : context.apps, el : '#app_menu_container'});
 
 			// Create a FabMo object for the dashboard
-			api = new FabMoAPI();
-			dashboard.setMachine(api);
-			dashboard.ui= new FabMoUI(dashboard.machine);
+			engine = new FabMoAPI();
+			dashboard.setEngine(engine);
+			dashboard.ui= new FabMoUI(dashboard.engine);
 
 			dashboard.ui.on('error', function(err) {
 				$('#modalDialogTitle').text('Error!');
 				$('#modalDialogLead').html('<div style="color:red">There was an error!</div>');
 				$('#modalDialogMessage').text(err || 'There is no message associated with this error.');
-				if(dashboard.machine.status.job) {
+				if(dashboard.engine.status.job) {
 					$('#modalDialogDetail').html(
 						'<p>' + 
-						  '<b>Job Name:  </b>' + dashboard.machine.status.job.name + '<br />' + 
-						  '<b>Job Description:  </b>' + dashboard.machine.status.job.description + 
+						  '<b>Job Name:  </b>' + dashboard.engine.status.job.name + '<br />' + 
+						  '<b>Job Description:  </b>' + dashboard.engine.status.job.description + 
 						'</p>'
 						);
 				} else {
@@ -51,7 +51,7 @@ define(function(require) {
 			});
 
 			// Request a status update from the tool
-			dashboard.ui.updateStatus();
+			engine.getStatus();
 
 			// Configure handwheel input
 			wheel = setupHandwheel();
@@ -88,7 +88,7 @@ function setupHandwheel() {
 	var last_move = 0;
 
 	function stopToolMotion() {
-		dashboard.machine.quit();
+		dashboard.engine.quit();
 	}
 
 	wheel.on('move', function makeMove(data) {
@@ -99,18 +99,18 @@ function setupHandwheel() {
 		var speed = wheel.inUnits(wheel.speed, wheel.units);
 		if(angle > TICKS_MOVE) {
 			if(last_move) {
-				dashboard.machine.quit();
+				dashboard.engine.quit();
 			}
 			angle = 0;
-			dashboard.machine.fixed_move('+' + axis, distance, speed, function(err) {});
+			dashboard.engine.fixed_move('+' + axis, distance, speed, function(err) {});
 			last_move = 0;
 		}
 		if(angle < -TICKS_MOVE) {
 			if(!last_move) {
-				dashboard.machine.quit();
+				dashboard.engine.quit();
 			}
 			angle = 0;
-			dashboard.machine.fixed_move('-' + axis, distance, speed, function(err) {});
+			dashboard.engine.fixed_move('-' + axis, distance, speed, function(err) {});
 			last_move = 1;
 		}
 
@@ -120,13 +120,13 @@ function setupHandwheel() {
 	});
 
 	wheel.on('release', function quit(data) {
-		dashboard.machine.quit()
+		dashboard.engine.quit()
 	});
 
 	wheel.on('nudge', function nudge(data) {
 		var nudge = NUDGE[wheel.units];
 		var speed = wheel.inUnits(wheel.speed, wheel.units);
-		dashboard.machine.fixed_move(data.axis, nudge, wheel.speed, function(err) {});
+		dashboard.engine.fixed_move(data.axis, nudge, wheel.speed, function(err) {});
 	});
 	return wheel;
 }
@@ -134,18 +134,18 @@ function setupHandwheel() {
 // Kill the currently running job when the modal error dialog is dismissed
 $(document).on('close.fndtn.reveal', '[data-reveal]', function (evt) {
   var modal = $(this);
-  dashboard.machine.quit();
+  dashboard.engine.quit();
 });
 
 // Handlers for the home/probe buttons
-$('.button-zerox').click(function(e) {dashboard.machine.sbp('ZX'); });  
-$('.button-zeroy').click(function(e) {dashboard.machine.sbp('ZY'); });  
-$('.button-zeroz').click(function(e) {dashboard.machine.sbp('ZZ'); });
+$('.button-zerox').click(function(e) {dashboard.engine.sbp('ZX'); });  
+$('.button-zeroy').click(function(e) {dashboard.engine.sbp('ZY'); });  
+$('.button-zeroz').click(function(e) {dashboard.engine.sbp('ZZ'); });
 
 $('.play').on('click', function(e){
 	$("#main").addClass("offcanvas-overlap-left");
-	dashboard.machine.job_run(function (){
-		dashboard.machine.getJobQueue(function (err, data){
+	dashboard.engine.job_run(function (){
+		dashboard.engine.getJobQueue(function (err, data){
 			if (data.name == 'undefined' || data.length === 0) {
 				$('.nextJob').text('No Job Pending');
 				$('.play').hide();
@@ -159,12 +159,12 @@ $('.play').on('click', function(e){
 	});
 });
 
-dashboard.ui.on('status', function(status) {
+engine.on('status', function(status) {
 	if(status.unit) {
 		wheel.setUnits(status.unit);	
 	}
 
-	dashboard.machine.getJobQueue(function (err, data){
+	dashboard.engine.getJobQueue(function (err, data){
 		if (data.name == 'undefined' || data.length === 0) {
 			$('.nextJob').text('No Job Pending');
 			$('.play').hide();
@@ -184,14 +184,14 @@ dashboard.ui.on('status', function(status) {
 
 var disconnected = false;
 
-dashboard.ui.on('disconnect', function() {
+engine.on('disconnect', function() {
 	if(!disconnected) {
 		disconnected = true;
 		$('#disconnectDialog').foundation('reveal', 'open');
 	}
 });
 
-dashboard.ui.on('reconnect', function() {
+engine.on('connect', function() {
 	if(disconnected) {
 		disconnected = false;
 		$('#disconnectDialog').foundation('reveal', 'close');
