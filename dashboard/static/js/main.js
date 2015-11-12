@@ -164,7 +164,6 @@ engine.on('status', function(status) {
 	if(status.unit) {
 		wheel.setUnits(status.unit);	
 	}
-
 	dashboard.engine.getJobQueue(function (err, data){
 		if (data.name == 'undefined' || data.length === 0) {
 			$('.nextJob').text('No Job Pending');
@@ -180,7 +179,6 @@ engine.on('status', function(status) {
 			$('.startnextLabel').css('top', '-9.5px');
 		}
 	});
-
 });
 
 var disconnected = false;

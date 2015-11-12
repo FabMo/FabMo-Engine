@@ -427,7 +427,7 @@ define(function(require) {
 		}.bind(this));
 
 		this._registerHandler('requestStatus', function(data, callback) {
-			this.engine.get_status(function(err,  status) {
+			this.engine.getStatus(function(err,  status) {
 				if(err) {
 					callback(err);
 				} else {

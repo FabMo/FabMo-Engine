@@ -2,7 +2,7 @@
  * main.js is the entry point for the application.
  */
 define(function(require) {
-
+	var $ = require('jquery');
 	var foundation = require('foundation');
 	var toastr = require('toastr');
 
@@ -104,16 +104,7 @@ define(function(require) {
 			$(".main-section").width() - ($(".main-section").width() % 132 )
 		);
 	};
-	
-	/////control for footer/////
-	$('.footTab').click(function(){
-		if ($('.footBar').height() === 0) {
-			$('.footBar').css('height', '50px');
-		}
-		else {
-			$('.footBar').css('height', '.0px');
-		}
-	});
+
 	
 	window.setInterval(function(){
    		$('.stopJob').toggleClass('blink');
