@@ -133,27 +133,27 @@ Keypad.prototype.onKeyDown = function(evt) {
 	if(!this.going) {
 		switch(evt.keyCode) {
 			case KEY_UP:
-				this.start('y', '+');
+				this.start('y', 1);
 				break;
 
 			case KEY_DOWN:
-				this.start('y', '-');
+				this.start('y', -1);
 				break;
 
 			case KEY_LEFT:
-				this.start('x', '-');
+				this.start('x', -1);
 				break;
 
 			case KEY_RIGHT:
-				this.start('x', '+');
+				this.start('x', 1);
 				break;
 
 			case KEY_PGUP:
-				this.start('z', '+');
+				this.start('z', 1);
 				break;
 
 			case KEY_PGDOWN:
-				this.start('z', '-');
+				this.start('z', -1);
 				break;
 
 		}	

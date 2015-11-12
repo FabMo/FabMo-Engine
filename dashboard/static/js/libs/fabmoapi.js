@@ -193,7 +193,7 @@ FabMoAPI.prototype.executeRuntimeCode = function(runtime, code, callback) {
 }
 
 FabMoAPI.prototype.manualStart = function(axis, speed) {
-	this.executeRuntimeCode('manual', {'cmd': 'start', 'axis' : 'x', 'speed' : 120});
+	this.executeRuntimeCode('manual', {'cmd': 'start', 'axis' : axis, 'speed' : speed});
 }
 
 FabMoAPI.prototype.manualHeartbeat = function() {

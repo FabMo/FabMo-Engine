@@ -148,14 +148,12 @@ function setupKeypad() {
 
 	keypad.on('go', function(move) {
 		if(move) {
-			dashboard.machine.fixed_move(move.dir + move.axis, 0.1, 120.0, function(err) {});
-			dashboard.machine.fixed_move(move.dir + move.axis, 0.1, 120.0, function(err) {});
-			dashboard.machine.fixed_move(move.dir + move.axis, 0.1, 120.0, function(err) {});
-		}
+			dashboard.engine.manualStart(move.axis, move.dir*120.0);
+		} 
 	});
 
 	keypad.on('stop', function(evt) {
-		stopToolMotion();
+		dashboard.engine.manualStop();
 	})
 
 }

@@ -139,6 +139,8 @@ ManualRuntime.prototype.renewMoves = function() {
 }
 
 ManualRuntime.prototype.stopMotion = function() {
+	this.keep_moving = false;
+	this.moving = false;
 	this.driver.quit();
 }
 
