@@ -5,7 +5,6 @@ var code = function(req, res, next) {
 				status:"success",
 				data : null
 	};
-	console.log(req.params)
 	if(machine.status.state === 'idle') {
 		if (req.params.cmd !== undefined )
 		{
@@ -14,8 +13,6 @@ var code = function(req, res, next) {
 				switch(rt) {
 					case 'opensbp':
 					case 'sbp':
-						console.log("OpenSBPing")
-						console.log(req.params.cmd)
 						machine.sbp(req.params.cmd);
 						break;
 

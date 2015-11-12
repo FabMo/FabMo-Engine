@@ -188,6 +188,23 @@ FabMoAPI.prototype.sbp = function(code, callback) {
 	this.runCode('sbp', code, callback);
 }
 
+FabMoAPI.prototype.executeRuntimeCode = function(runtime, code, callback) {
+	this.socket.emit('code', {'rt' : runtime, 'data' : code})
+}
+
+FabMoAPI.prototype.manualStart = function(axis, speed) {
+	this.executeRuntimeCode('manual', {'cmd': 'start', 'axis' : 'x', 'speed' : 120});
+}
+
+FabMoAPI.prototype.manualHeartbeat = function() {
+	this.executeRuntimeCode('manual', {'cmd': 'maint'});
+}
+
+FabMoAPI.prototype.manualStop = function() {
+	this.executeRuntimeCode('manual', {'cmd': 'stop'});
+}
+
+
 function makeFormData(obj, default_name, default_type) {
 	if (obj instanceof jQuery){ //if it's a form
 		var file = (obj.find('input:file'))[0].files[0];
@@ -253,11 +270,22 @@ FabMoAPI.prototype._post = function(url, data, errback, callback, key) {
 	var url = this._url(url);
 	var callback = callback || function() {};
 	var errback = errback || function() {};
+	var processData = true;
+	var contentType = true;
+
+	if(data instanceof FormData) {
+		processData = false;
+		contentType = false;
+	} else {
+		contentType = 'application/x-www-form-urlencoded; charset=UTF-8'
+		processData = true;
+	}
+
 	$.ajax({
 		url: url,
 		type: "POST",
-		processData : false,
-		contentType : false,
+		processData : processData,
+		contentType : contentType,
 		dataType : 'json',
 		'data' : data, 
 		success: function(result){

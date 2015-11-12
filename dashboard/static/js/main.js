@@ -89,7 +89,7 @@ function setupHandwheel() {
 	var last_move = 0;
 
 	function stopToolMotion() {
-		dashboard.engine.quit();
+		dashboard.engine.manualStop();
 	}
 
 	wheel.on('move', function makeMove(data) {
@@ -100,10 +100,12 @@ function setupHandwheel() {
 		var speed = wheel.inUnits(wheel.speed, wheel.units);
 		if(angle > TICKS_MOVE) {
 			if(last_move) {
-				dashboard.engine.quit();
+				dashboard.engine.manualStop();
 			}
 			angle = 0;
-			dashboard.engine.fixed_move('+' + axis, distance, speed, function(err) {});
+			//dashboard.engine.fixed_move('+' + axis, distance, speed, function(err) {});
+			dashboard.engine.manualStart(axis, speed);
+
 			last_move = 0;
 		}
 		if(angle < -TICKS_MOVE) {
@@ -111,7 +113,9 @@ function setupHandwheel() {
 				dashboard.engine.quit();
 			}
 			angle = 0;
-			dashboard.engine.fixed_move('-' + axis, distance, speed, function(err) {});
+//			dashboard.engine.fixed_move('-' + axis, distance, speed, function(err) {});
+			dashboard.engine.manualStart(axis, -speed);
+
 			last_move = 1;
 		}
 

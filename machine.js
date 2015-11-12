@@ -167,7 +167,7 @@ Machine.prototype.runNextJob = function(callback) {
 		}.bind(this));
 	}
 	else {
-		callback("Cannot run next job: Driver is disconnected.");
+		callback(new Error("Cannot run next job: Driver is disconnected."));
 	}
 };
 
@@ -194,28 +194,13 @@ Machine.prototype.runFile = function(filename) {
 	}.bind(this));
 };
 
-Machine.prototype.jog = function(direction, callback) {
-	log.debug('machine jog');
-	if((this.status.state === "idle") || (this.status.state === "manual")) {
-		this.setRuntime(this.manual_runtime);
-		this.current_runtime.jog(direction);
-
-	} else {
-		typeof callback === "function" && callback(true, "Cannot jog when in '" + this.status.state + "' state.");
+Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
+	runtime = this.getRuntime(runtimeName);
+	if(runtime) {
+		this.setRuntime(runtime);
+		runtime.executeCode(code);
 	}
-
-};
-
-Machine.prototype.fixed_move = function(direction,step,speed,callback) {
-	if((this.status.state === "idle") || (this.status.state === "manual")) {
-		this.setRuntime(this.manual_runtime);
-		this.current_runtime.fixed_move(direction,step,speed);
-
-	} else {
-		typeof callback === "function" && callback(true, "Cannot move by step when in '" + this.status.state + "' state.");
-	}
-
-};
+}
 
 Machine.prototype.setRuntime = function(runtime) {
 	if(this.current_runtime != runtime) {
@@ -226,11 +211,34 @@ Machine.prototype.setRuntime = function(runtime) {
 		} finally {
 			this.current_runtime = runtime;
 			if(runtime) {
+				console.log("Connecting runtime ", runtime)
 				runtime.connect(this);
 			}
 		}
 	}
 };
+
+Machine.prototype.getRuntime = function(name) {
+	switch(name) {
+		case 'gcode':
+		case 'nc':
+		case 'g':
+			return this.gcode_runtime;
+			break;
+
+		case 'opensbp':
+		case 'sbp':
+			return this.sbp_runtime;
+			break;
+
+		case 'manual':
+			return this.manual_runtime;
+			break;
+		default:
+			return null;
+			break;
+	}
+}
 
 Machine.prototype.setState = function(source, newstate, stateinfo) {
 	if ((source === this) || (source === this.current_runtime)) {
@@ -249,10 +257,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 		log.warn("Got a state change from a runtime that's not the current one. (" + source + ")")
 	}
 	this.emit('status',this.status);
-};
-
-Machine.prototype.stopJog = function() {
-	this.current_runtime.stopJog();
 };
 
 Machine.prototype.pause = function() {

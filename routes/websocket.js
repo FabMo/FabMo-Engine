@@ -22,6 +22,12 @@ connect = function(socket) {
 		socket_close(socket);
 		nb_clients--;
 	});
+
+	socket.on('code', function(data) {
+		if('rt' in data) {
+			machine.executeRuntimeCode(data.rt, data.data)
+		}
+	});
 };
 
 function socket_main(socket){
