@@ -1079,3 +1079,26 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .fabmo-status-idle { color: blue; }
 .fabmo-status-disconnected { color: gray; }
+
+.keypad {
+	border-radius: 10px;
+	width: 200px;
+	height: 60px;
+	margin: 10px;
+	outline: none;
+	background-color: red;
+	border: 2px solid #550000;
+	color: white;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+}
+
+.keypadEnabled {
+	background-color: green;
+}
+
+.keypadDisabled {
+	background-color: red;
+}
