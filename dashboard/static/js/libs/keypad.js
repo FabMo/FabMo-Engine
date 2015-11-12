@@ -141,11 +141,11 @@ Keypad.prototype.onKeyDown = function(evt) {
 				break;
 
 			case KEY_LEFT:
-				this.start('x', '+');
+				this.start('x', '-');
 				break;
 
 			case KEY_RIGHT:
-				this.start('x', '-');
+				this.start('x', '+');
 				break;
 
 			case KEY_PGUP:

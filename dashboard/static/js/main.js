@@ -150,7 +150,9 @@ function setupKeypad() {
 
 	keypad.on('go', function(move) {
 		if(move) {
-			dashboard.machine.fixed_move(move.dir + move.axis, 0.25, 120.0, function(err) {});
+			dashboard.machine.fixed_move(move.dir + move.axis, 0.1, 120.0, function(err) {});
+			dashboard.machine.fixed_move(move.dir + move.axis, 0.1, 120.0, function(err) {});
+			dashboard.machine.fixed_move(move.dir + move.axis, 0.1, 120.0, function(err) {});
 		}
 	});
 
