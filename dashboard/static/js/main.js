@@ -142,10 +142,6 @@ function setupHandwheel() {
 function setupKeypad() {
 	var keypad = new Keypad('#keypad');
 	
-	function stopToolMotion() {
-		dashboard.machine.quit(function() {});
-	}
-
 	keypad.on('go', function(move) {
 		if(move) {
 			dashboard.engine.manualStart(move.axis, move.dir*120.0);
@@ -155,7 +151,7 @@ function setupKeypad() {
 	keypad.on('stop', function(evt) {
 		dashboard.engine.manualStop();
 	})
-
+	return keypad;
 }
 
 // Kill the currently running job when the modal error dialog is dismissed
@@ -187,6 +183,7 @@ $('.play').on('click', function(e){
 });
 
 engine.on('status', function(status) {
+try {	
 	if(status.unit) {
 		wheel.setUnits(status.unit);	
 	}
@@ -205,6 +202,9 @@ engine.on('status', function(status) {
 			$('.startnextLabel').css('top', '-9.5px');
 		}
 	});
+} catch(e) {
+
+}
 });
 
 var disconnected = false;

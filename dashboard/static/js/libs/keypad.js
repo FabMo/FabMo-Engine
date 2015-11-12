@@ -53,7 +53,7 @@ Keypad.prototype.setOptions = function(options) {
 Keypad.prototype.emit = function(evt, data) {
 	if(evt in this.listeners) {
 		console.info("Emitting " + evt + " event with " + JSON.stringify(data));
-		listeners = this.listeners[evt];
+		var listeners = this.listeners[evt];
 		for(var i=0; i<listeners.length; i++) {
 			try {
 				listeners[i](data);

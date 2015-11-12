@@ -3,6 +3,7 @@
  */
 define(function(require) {
 	var $ = require('jquery');
+	window.jQuery = $;	
 	var foundation = require('foundation');
 	var toastr = require('toastr');
 
