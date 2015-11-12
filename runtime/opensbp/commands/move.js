@@ -3,6 +3,16 @@ var g2 = require('../../../g2');
 var sb3_commands = require('../sb3_commands');
 var config = require('../../../config');
 
+// ...TESTING::th aliased macros concept ... Bender: commands (hardcoded here at moment)
+exports._A = function(args, callback) {
+	var alias_name = args[0];
+
+	log.debug( " _A args: " + JSON.stringify(args));
+	if(alias_name == "BEND") { this.runCustomCut('31',callback); }
+	if(alias_name == "FEED") { this.runCustomCut('32',callback); }
+
+};
+
 // Move X axis
 exports.MX = function(args) {
 	var x = args[0];

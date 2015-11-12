@@ -132,6 +132,7 @@ td.preview-control {
   width: 170px;
   height: 170px;
   border: 0px;
+  display: none;
 }
 
 .svg:hover{
@@ -223,6 +224,19 @@ td.preview-control {
   margin-right: 1em;
   transition: all 0.2s;
 }
+
+.icon-row img {
+  fill: #333333;
+  max-width: 20px;
+  max-height: 20px;
+  margin-right: 1em;
+  transition: all 0.2s;
+}
+
+.icon-row a {
+  display: none;
+}
+
 .icon-row {
   padding-bottom: 2em;
   padding-top: 2em;
