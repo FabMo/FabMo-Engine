@@ -200,7 +200,9 @@ function makeFormData(obj, default_name, default_type) {
 	} 
 	else {
 		var content = obj.data || '';
+		var description = obj.config.description || 'No Description'
 		var filename = obj.config.filename;
+		var name = obj.config.name || filename
 		var formData = new FormData();
 		var type = default_type || null;
 		if(!filename) {
@@ -211,6 +213,8 @@ function makeFormData(obj, default_name, default_type) {
 		}
 		var file = new Blob([content], {'type' : type});
 		formData.append('file', file, filename);
+		formData.append('name', name || filename);
+		formData.append('description', description);
 	}
 	return formData;
 }
