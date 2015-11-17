@@ -162,7 +162,7 @@
           });
         } else if('macro' in args) {
           $('.language-dropdown').hide();
-          language = 'opensbp';
+          lang = 'opensbp';
           var url = '/macros/' + args.macro;
           $.get(url,function(response, status) {
             var macro = response.data.macro;
@@ -226,10 +226,11 @@
         }
       });
 
+      /*
       editor.on('blur', function(evt) {
         save();
       });
-      
+      */
     function resize() {
         var h = window.innerHeight;
         var h2 = $('#buttonrow').height();

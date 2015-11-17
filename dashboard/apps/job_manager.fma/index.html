@@ -268,7 +268,6 @@
 	
 	// DataTable
 	var setNextJob = function (arr) {
-		console.log(arr);
 		if (arr == undefined ) {
 			$('.nextJobTitle').text('No Jobs Pending');
 			$('.nextJobDesc').text('Drag files here or click "Submit Job"');
@@ -305,7 +304,6 @@
         "url" : "/jobs/queue",
         "dataSrc" : function(json) { 
 			var arr = json.data.jobs.shift();
-			console.log('i reloaded');
 			setNextJob(arr);
         	return json.data.jobs;}
         },
@@ -472,7 +470,6 @@
         var tr = $(this).closest('tr');
 		var plus = $(this).find($('.more-details div'));
 		var circle = $(this).find($('.more-details'));
-		console.log(plus);
         var row = history_table.row( tr );
  		if(row.child()) {
 	        if ( row.child.isShown() ) {
