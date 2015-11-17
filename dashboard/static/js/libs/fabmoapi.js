@@ -110,7 +110,6 @@ FabMoAPI.prototype.runNextJob = function(callback) {
 	} catch(e) {
 		console.error(e)
 	}
-	console.log("eh")
 }
 
 FabMoAPI.prototype.getJobHistory = function(callback) {
@@ -147,7 +146,8 @@ FabMoAPI.prototype.deleteApp = function(id, callback) {
 }
 
 FabMoAPI.prototype.submitApp = function(app_file, callback) {
-	this._post('/apps', makeFormData(app_file, null, 'application/zip'), callback, callback);
+	var formdata = makeFormData(app_file, null, 'application/zip')
+	this._post('/apps', formdata, callback, callback);
 }
 
 FabMoAPI.prototype.getAppConfig = function(app_id, callback) {

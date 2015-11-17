@@ -332,7 +332,7 @@ FabMoDashboard.prototype.submitApp = function(data, config,  callback) {
 	// Just pass a plain old object that contains the data
 	else {
 		message.data = data;
-		message.config = {};
+		message.config = {'filename' : file.name};
 	}
 	this._call("submitApp", message, callback)
 }

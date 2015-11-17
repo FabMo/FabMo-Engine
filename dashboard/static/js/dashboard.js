@@ -142,7 +142,6 @@ define(function(require) {
 				formdata.append('file', data.file, data.file.name);
 				
 				this.engine.submitJob(formdata, function(err, result) {
-					console.log("Callback");
 					if(err) {
 						callback(err);
 					} else {
@@ -150,9 +149,7 @@ define(function(require) {
 					}
 				}.bind(this));
 			} else if ('data' in data) {
-				console.log(data)
 				this.engine.submitJob(data, function(err, result) {
-					console.log("Callback");
 					if(err) {
 						callback(err);
 					} else {
@@ -260,9 +257,8 @@ define(function(require) {
 		// Submit an app
 		this._registerHandler('submitApp', function(data, callback) { 
 			if('file' in data) {
-				formdata = new FormData();
+				var formdata = new FormData();
 				formdata.append('file', data.file, data.file.name);
-
 				this.engine.submitApp(formdata, function(err, result) {
 					this.refreshApps();
 					if(err) {

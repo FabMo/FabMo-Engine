@@ -108,7 +108,13 @@
 
   		$('#file').change(function(evt) {
 			fabmoDashboard.submitApp($('#fileform'), {}, function(err, data) {
+				if(err) {
+					fabmoDashboard.notify('error', JSON.stringify(err));
+				} else {
+					fabmoDashboard.notify('success', "App installed successfully.");
+				}
 				refreshApps();
+
 			});
 		});
 
@@ -127,9 +133,15 @@
 				try {
 					file = evt.originalEvent.dataTransfer.files[0];
 					fabmoDashboard.submitApp(file, {}, function(err, data) {
-						if(err){alert(err);return;}
+						if(err) {
+							fabmoDashboard.notify('error', JSON.stringify(err));
+						} else {
+							fabmoDashboard.notify('success', "App installed successfully.");
+						}
 						refreshApps();
 					});
+				} catch(e) {
+					console.error(e);
 				}
 				finally {
 					$('#dropzone').removeClass('hover');

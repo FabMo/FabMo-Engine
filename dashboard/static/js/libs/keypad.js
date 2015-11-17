@@ -162,7 +162,9 @@ Keypad.prototype.onKeyDown = function(evt) {
 
 Keypad.prototype.onMouseLeave = function(evt) {
 	this.setEnabled(false);
-	this.stop();
+	if(this.going) {
+		this.stop();
+	}
 }
 
 Keypad.prototype.onKeyUp = function(evt) {

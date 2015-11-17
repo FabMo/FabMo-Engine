@@ -58,7 +58,6 @@ define(function(require) {
 			// Configure handwheel input
 			wheel = setupHandwheel();
 			keypad = setupKeypad();
-			console.log(keypad)
 
 			// Start the application
 			router = new context.Router();
@@ -156,6 +155,7 @@ function setupKeypad() {
 		dashboard.engine.manualStop();
 	})
 
+	return keypad;
 }
 
 // Kill the currently running job when the modal error dialog is dismissed
