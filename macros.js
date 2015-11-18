@@ -230,8 +230,6 @@ var run = function(idx) {
 
 	info = macros[idx];
 	if(info) {
-		// Set the machine runtime
-		//machine.setRuntime(machine.sbp_runtime);
 
 		// Create a lightweight job
 		machine.status.job = new Job({
@@ -239,6 +237,7 @@ var run = function(idx) {
 			description : info.description
 		});
 
+		// Run it!
 		machine.status.job.start(function(err, result) {
 			machine.runFile(info.filename);
 		}.bind(this));
