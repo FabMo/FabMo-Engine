@@ -1,5 +1,14 @@
 var machine = require('../machine').machine;
 
+/**
+ * @api {post} /code Execute tool runtime code
+ * @apiGroup Direct
+ * @apiDescription Run the POSTed code using the specified runtime.
+ * @apiParam {Object} runtime Name of the runtime to run the code.  Currently suppored: `g` | `sbp`
+ * @apiParam {Object} cmd The actual code to run.
+ * @apiError {String} status `error`
+ * @apiError {Object} message Error message
+ */
 var code = function(req, res, next) {
 	var answer = {
 				status:"success",

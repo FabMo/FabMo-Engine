@@ -252,6 +252,23 @@ var getAllJobs = function(req, res, next) {
     });
 };
 
+/**
+ * @apiGroup Jobs
+ * @api {get} /jobs/history List jobs in the history
+ * @apiDescription Get a list of all jobs in the history. (This does not include the currently running job, or any jobs in the queue)
+ * @apiSuccess {String} status `success`
+ * @apiSuccess {Object} data Response data
+ * @apiSuccess {Object[]} data.jobs List of all jobs
+ * @apiSuccess {Number} data.jobs._id Unique job ID
+ * @apiSuccess {String} data.jobs.state `pending` | `running` | `finished` | `cancelled`
+ * @apiSuccess {String} data.jobs.name Human readable job name
+ * @apiSuccess {String} data.jobs.description Job description
+ * @apiSuccess {Number} data.jobs.created_at Time job was added to the queue (UNIX timestamp)
+ * @apiSuccess {Number} data.jobs.started_at Time job was started (UNIX timestamp)
+ * @apiSuccess {Number} data.jobs.finished_at Time job was finished (UNIX timestamp)
+ * @apiError {String} status `error`
+ * @apiError {Object} message Error message
+ */
 var getJobHistory = function(req, res, next) {
     var answer;
     db.Job.getHistory(function(err, result) {
@@ -309,25 +326,6 @@ var getJobById = function(req, res, next) {
     });
 };
 
-
-var deleteJobById = function(req, res, next) {
-    var answer = {status:"success", data:null};
-    db.Job.getById(req.params.id, function(err, result) {
-        if(err) {
-            log.error(err);
-            answer = {
-                    status:"fail",
-                    data:{job:err}
-            };
-        } else {
-            answer = {
-                status:"success",
-                data : {job:result}
-            };
-        }
-        res.json(answer);
-    });
-};
 /**
  * @apiGroup Jobs
  * @api {delete} /jobs/:id Cancel job
