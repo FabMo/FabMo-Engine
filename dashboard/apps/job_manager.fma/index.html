@@ -83,24 +83,12 @@
 			<div class="row"></div>
 		</div>
 		</section>
-		<section class="container">
+		<section class="container job-queue" style="display:none;">
 			<div class="row title">
 				<div class="small-4 columns">
 					<h4>Pending</h4>
 				</div>
-				<div class="small-8 columns" style="text-align:right;">
-					<a id="clear-jobs" class="small button secondary radius">Clear Queue</a>
-				</div>
-	
 			</div> 
-
-			<div class="row no-jobs" style="display:none;">
-				<div class="small-12 columns no-jobs-item">
-					<div data-alert class="alert-box secondary">
-					  No jobs, click here to add a job...
-					</div>
-				</div>
-			</div>
 
 			<div class="row jobs-row" style="">
 				<!-- JOB LISTING -->
@@ -268,7 +256,6 @@
 	
 	// DataTable
 	var setNextJob = function (arr) {
-		console.log(arr);
 		if (arr == undefined ) {
 			$('.nextJobTitle').text('No Jobs Pending');
 			$('.nextJobDesc').text('Drag files here or click "Submit Job"');
@@ -305,7 +292,6 @@
         "url" : "/jobs/queue",
         "dataSrc" : function(json) { 
 			var arr = json.data.jobs.shift();
-			console.log('i reloaded');
 			setNextJob(arr);
         	return json.data.jobs;}
         },
@@ -342,6 +328,15 @@
         "order" : [[3,"desc"]]
     }); // DataTable
 	
+	queue_table.on('xhr', function(e, settings, json) {
+		if(json.status === 'success') {
+			if(json.data.jobs.length > 1) {
+				$('.job-queue').show(500);
+			} else {
+				$('.job-queue').hide(500);
+			}
+		}
+	});
 		$('.cancel').on('click', function(e) {
 			var jobId = $(this).data('id');
 			fabmoDashboard.cancelJob(jobId, function(err, data) {
@@ -472,7 +467,6 @@
         var tr = $(this).closest('tr');
 		var plus = $(this).find($('.more-details div'));
 		var circle = $(this).find($('.more-details'));
-		console.log(plus);
         var row = history_table.row( tr );
  		if(row.child()) {
 	        if ( row.child.isShown() ) {

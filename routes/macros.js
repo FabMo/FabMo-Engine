@@ -23,7 +23,7 @@ var updateMacro = function(req, res, next) {
 
 /**
  * @apiGroup Macros
- * @api {get} /macros Get list of installed macros
+ * @api {get} /macros List all macros
  * @apiDescription Returns a listing with information about all macros
  */
 var getMacros = function(req, res, next) {
@@ -32,6 +32,18 @@ var getMacros = function(req, res, next) {
     res.json(response);
 }
 
+/**
+ * @apiGroup Macros
+ * @api {get} /macros/:id Get macro
+ * @apiDescription Returns the specified macro
+ * @apiSuccess {Object} macro The requested macro
+ * @apiSuccess {String} macro.name Macro name
+ * @apiSuccess {String} macro.description Macro description
+ * @apiSuccess {String} macro.content Macro code
+ * @apiSuccess {String} macro.type Runtime used by the macro
+ * @apiSuccess {String} macro.filename Local filename where the macro is stored
+ * @apiSuccess {Number} macro.index Macro numeric index
+ */
 var getMacro = function(req, res, next) {
     id = req.params.id;
     macro = macros.get(id);
@@ -48,6 +60,17 @@ var getMacro = function(req, res, next) {
     }
 }
 
+/**
+ * @apiGroup Macros
+ * @api {get} /macros/:id/info Get macro summary
+ * @apiDescription Returns the specified macro info (no macro content provided)
+ * @apiSuccess {Object} macro The requested macro info
+ * @apiSuccess {String} macro.name Macro name
+ * @apiSuccess {String} macro.description Macro description
+ * @apiSuccess {String} macro.type Runtime used by the macro
+ * @apiSuccess {String} macro.filename Local filename where the macro is stored
+ * @apiSuccess {Number} macro.index Macro numeric index
+ */
 var getMacroInfo = function(req, res, next) {
     id = req.params.id;
     info = macros.getInfo(id);

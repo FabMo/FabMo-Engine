@@ -27,35 +27,38 @@ var Keypad = function(id, options) {
 	this.elem.attr('tabindex', 0)
 	this.moves = 0;
 	this.init();
-	this.direction = null;
+	this.move = null;
 	this.going = false;
 	this.interval = null;
 	this.listeners = {'go' : [], 'stop': []}
+	this.setOptions(options);
 }
 
 Keypad.prototype.init = function() {
 	this.elem.click(this.onClick.bind(this));
 	this.elem.on('focus', this.onFocus.bind(this));
+	this.elem.on('mouseenter', this.onMouseEnter.bind(this));
 	this.elem.on('blur', this.onBlur.bind(this));
 	this.elem.on('mousemove', this.onMouseMove.bind(this));
 	this.elem.on('keydown', this.onKeyDown.bind(this));
+	this.elem.on('mouseleave', this.onMouseLeave.bind(this))
 	this.elem.on('keyup', this.onKeyUp.bind(this));
 }
 
 Keypad.prototype.setOptions = function(options) {
 	options = options || {}
-	this.refreshInterval = options.refreshInterval || this.refreshInterval || 1000;
+	this.refreshInterval = options.refreshInterval || this.refreshInterval || 100;
 }
 
 Keypad.prototype.emit = function(evt, data) {
 	if(evt in this.listeners) {
 		console.info("Emitting " + evt + " event with " + JSON.stringify(data));
-		listeners = this.listeners[evt];
+		var listeners = this.listeners[evt];
 		for(var i=0; i<listeners.length; i++) {
 			try {
 				listeners[i](data);
 			} catch(e) {
-				log.error("Error calling listener: " + e);
+				console.error("Error calling listener: " + e);
 			}
 		}
 	}
@@ -85,19 +88,19 @@ Keypad.prototype.refresh = function() {
 	if(!this.enabled || !this.going) {
 		this.emit('stop', null);
 	} else {
-		this.emit('go', {'dir' : this.direction});
+		this.emit('go', this.move);
 		this.interval = setTimeout(this.refresh.bind(this), this.refreshInterval);
 	}
 }
 
-Keypad.prototype.start = function(direction) {
+Keypad.prototype.start = function(axis, direction) {
 	if(this.going) { return; }
-	this.direction = direction;
+	this.move = {'axis' : axis, 'dir' : direction};
 	this.going = true;
 	this.refresh();
 }
 
-Keypad.prototype.stop = function(direction) {
+Keypad.prototype.stop = function() {
 	this.going = false;
 	if(this.interval) {
 		clearTimeout(this.interval);
@@ -113,8 +116,8 @@ Keypad.prototype.onClick = function(evt) {
 }
 
 
-Keypad.prototype.onFocus = function(evt) {
-}
+Keypad.prototype.onFocus = function(evt) {}
+Keypad.prototype.onMouseEnter = function(evt) {}
 
 Keypad.prototype.onBlur = function(evt) {
 	this.setEnabled(false);
@@ -130,9 +133,37 @@ Keypad.prototype.onKeyDown = function(evt) {
 	if(!this.going) {
 		switch(evt.keyCode) {
 			case KEY_UP:
-				this.start('+y');
+				this.start('y', 1);
 				break;
+
+			case KEY_DOWN:
+				this.start('y', -1);
+				break;
+
+			case KEY_LEFT:
+				this.start('x', -1);
+				break;
+
+			case KEY_RIGHT:
+				this.start('x', 1);
+				break;
+
+			case KEY_PGUP:
+				this.start('z', 1);
+				break;
+
+			case KEY_PGDOWN:
+				this.start('z', -1);
+				break;
+
 		}	
+	}
+}
+
+Keypad.prototype.onMouseLeave = function(evt) {
+	this.setEnabled(false);
+	if(this.going) {
+		this.stop();
 	}
 }
 

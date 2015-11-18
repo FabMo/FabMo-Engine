@@ -25,10 +25,9 @@ var log = require('../log').logger('routes');
  * @apiSuccess {Number} data.status.job.finished_at Time job was finished (UNIX timestamp)
  */
 var get_status = function(req, res, next) {
-  var s = machine.status;
   var answer = {
       status : "success",
-      data : {'status':s}
+      data : {'status':machine.status}
     };
     res.json(answer);
 };
@@ -64,6 +63,7 @@ var get_config = function(req, res, next) {
  * @apiParam {Object} engine Key-value map of updates to engine settings
  * @apiParam {Object} driver Key-value map of updates to G2 driver settings
  * @apiParam {Object} opensbp Key-value map of updates to OpenSBP settings
+ * @apiParam {Object} machine Key-value map of updates to Machine settings
  */
 var post_config = function(req, res, next) {
   var new_config = {};
@@ -144,15 +144,6 @@ var post_config = function(req, res, next) {
       });
     });
   }
-/*
-  else{
-    // TODO: Apply the driver/opensbp configurations here
-    answer = {
-          status : "error",
-          message : "not yet implemented"
-        };
-        res.json(answer);
-  }*/
 };
 
 module.exports = function(server) {

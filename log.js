@@ -6,7 +6,7 @@ var process = require('process');
 try { var colors = require('colors'); } catch(e) {var colors = false;}
 var _suppress = false;
 var log_buffer = [];
-var LOG_BUFFER_SIZE = 500;
+var LOG_BUFFER_SIZE = 5000;
 
 // String versions of the allowable log levels
 LEVELS = {
@@ -147,7 +147,12 @@ var getLogBuffer = function() {
 	return log_buffer.join('\n');
 };
 
+var clearLogBuffer = function() {
+	log_buffer = [];
+}
+
 exports.suppress = suppress;
 exports.logger = logger;
 exports.setGlobalLevel = setGlobalLevel;
 exports.getLogBuffer = getLogBuffer; 
+exports.clearLogBuffer = clearLogBuffer();

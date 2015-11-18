@@ -76,8 +76,6 @@ function FabMoUI(tool, options){
 	
 	this.units_selector = this.status_div_selector + ' .units';
 
-	this.auto_refresh = null;
-
 	if(this.keypad){
 		this.my_keypad = this.Keypad;
 //		this.Keypad();
@@ -88,6 +86,11 @@ function FabMoUI(tool, options){
 		this.FileControl();
 	}
 
+	this.tool.on('status', function(status_report) {
+		this.updateStatusContent(status_report);
+	}.bind(this));
+
+
 }
 
 FabMoUI.prototype.on = function(evt, handler) {
@@ -95,8 +98,8 @@ FabMoUI.prototype.on = function(evt, handler) {
 		this.event_handlers[evt].push(handler);
 	}
 	if(evt === 'error') {
-		if(this.tool.status_report.state === 'stopped') {
-			if(this.tool.status_report.info.error) {
+		if(this.tool.status.state === 'stopped') {
+			if(this.tool.status.info.error) {
 				handler(this.tool.status.info.error);
 			}
 		}
@@ -191,7 +194,6 @@ FabMoUI.prototype.updateStatusContent = function(status){
 
 	//Current File or job
 	if(status.job) {
-		console.log("there is a job")
 		$('.startNextContainer').hide();
 		$(that.file_info_div_selector).removeClass('hide');
 		$('.currentJobTitle').text(status.job.name);
@@ -370,29 +372,10 @@ FabMoUI.prototype.updateStatusContent = function(status){
 
 FabMoUI.prototype.updateStatus = function(){
 	var that=this;
-	that.tool.get_status(function(err, status){
+	that.tool.getStatus(function(err, status){
 		if(!err){
 			that.updateStatusContent(status);
 			that.emit('reconnect');
-
-		}
-		else if(err == that.tool.default_error.no_device){
-			$(".tools-current > li a").removeClass('paus err').addClass('disc');
-			delete this;
-			$(that.posX_selector).html('X.XXX');
-			$(that.posY_selector).html('X.XXX');
-			$(that.posZ_selector).html('X.XXX');
-			$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
-			$(that.status_div_selector).removeClass('fabmo-status-disconnected');
-			$(that.state_selector).html('Disconnected');
-			$(that.status_div_selector).trigger('statechange','Disconnected');
-			if(that.file_control)
-			{
-				$(that.stop_button_selector).addClass('hide');
-				$(that.pause_button_selector).addClass('hide');
-				$(that.resume_button_selector).addClass('hide');
-			}
-			that.emit('disconnect');
 		}
 		else{
 			$(".tools-current > li a").removeClass('paus err').addClass('disc');

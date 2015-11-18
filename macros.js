@@ -105,7 +105,6 @@ var _parseMacroFile = function(filename, callback) {
 
 var update = function(id, macro, callback) {
 	old_macro = get(id);
-
 	if(old_macro) {
 
 		function savemacro(id, callback) {
@@ -230,7 +229,18 @@ var run = function(idx) {
 
 	info = macros[idx];
 	if(info) {
-		machine.runFile(info.filename);
+
+		// Create a lightweight job
+		machine.status.job = new Job({
+			name : info.name,
+			description : info.description
+		});
+
+		// Run it!
+		machine.status.job.start(function(err, result) {
+			machine.runFile(info.filename);
+		}.bind(this));
+
 	} else {
 		throw "No such macro."
 	}

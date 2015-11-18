@@ -10,11 +10,15 @@ requirejs.config({
     	'backbone' : 'libs/backbone',
     	'foundation' : 'libs/foundation.min',
         'underscore' : 'libs/underscore',
-        'fabmo' : 'libs/FabMo-latest',
+        'fabmo' : 'libs/fabmoapi',
         'fabmo-ui' : 'libs/FabMoUI-latest',
         'socket.io' : 'libs/socket.io',
         'handwheel' : 'libs/handwheel',
+        'keypad' : 'libs/keypad',
         'toastr' : 'libs/toastr.min'
+    },
+    shim : {
+        'foundation' : {'deps' : ['jquery']}
     }
 });
 

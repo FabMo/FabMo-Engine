@@ -50,6 +50,15 @@ var getAppInfo = function(req, res, next) {
 	res.json(answer);
 };
 
+/**
+ * @api {get} /apps/:id/config App configuration
+ * @apiGroup Dashboard
+ * @apiDescription Get detailed information about the specified app
+ * @apiParam {String} id ID of requested app
+ * @apiSuccess {String} status `success`
+ * @apiSuccess {Object} data Response data
+ * @apiSuccess {Object} data.config App configuration data object
+ */
 var getAppConfig = function(req, res, next) {
     try {
         var answer = {
@@ -65,6 +74,12 @@ var getAppConfig = function(req, res, next) {
     res.json(answer);
 }
 
+/**
+ * @api {post} /apps/:id/config Update app configuration
+ * @apiGroup Dashboard
+ * @apiDescription Replace the specified app configuration with the POSTed object into the engine configuration.  Configuration updates take effect immediately.
+ * @apiParam {Object} config Generic JSON formatted object to store as the apps configuration.
+ */
 var postAppConfig = function(req, res, next) {
     var new_config = {};
     var answer;

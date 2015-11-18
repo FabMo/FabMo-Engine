@@ -126,26 +126,29 @@
           break;
       }
       if(supports_html5_storage()) {
-        localStorage['language'] = lang;
+        localStorage.fabmo_editor_language = lang;
       }
     }
 
     function loadFromBrowser() {
       if(supports_html5_storage()) {
-        var language = localStorage['language'] || 'gcode';
+        var language = localStorage.fabmo_editor_language || 'gcode';
         set_language(language);
-
-        var content = localStorage['content'] || '';
-        if(!isNaN(content) && (content !== undefined)) {
+        var content = localStorage.fabmo_editor_content || '';
+        if((content !== content) || (content === undefined)) {
+          console.warn("No saved content to load.");
+        } else {
+          console.info("Setting editor to saved content.");
           editor.setValue(content);          
         }
-
         var pos;
         try {
-          pos = JSON.parse(localStorage['position']);
+          pos = JSON.parse(localStorage.fabmo_editor_position);
         } catch(e) {
+          console.warn("Couldn't set position: " + e)
           pos = {row:0,col:0};
         }
+        console.info("Setting editor to saved cursor position: " + JSON.stringify(pos));
         editor.clearSelection();
         editor.moveCursorToPosition(pos);
       }
@@ -162,7 +165,7 @@
           });
         } else if('macro' in args) {
           $('.language-dropdown').hide();
-          language = 'opensbp';
+          lang = 'opensbp';
           var url = '/macros/' + args.macro;
           $.get(url,function(response, status) {
             var macro = response.data.macro;
@@ -180,12 +183,14 @@
     }
  
     function save(callback) {
+      var callback = callback || function() {};
       switch(source) {
+        case undefined:
         case null:
           if(supports_html5_storage()) {
-            localStorage['content'] = editor.getSession().getValue();
+            localStorage.fabmo_editor_content = editor.getSession().getValue();
             pos = editor.getCursorPosition();
-            localStorage['position'] = JSON.stringify(pos);
+            localStorage.fabmo_editor_position = JSON.stringify(pos);
           }
           callback();
           break;
@@ -209,7 +214,7 @@
       editor = ace.edit("editor");
       editor.setTheme("ace/theme/eclipse");
       editor.setShowPrintMargin(false);
-      
+      editor.$blockScrolling = Infinity;
       editor.commands.addCommand({
         name: "run_immediate",
         bindKey: {win: "Ctrl-Enter", mac: "Command-Enter"},
@@ -226,23 +231,26 @@
         }
       });
 
+      setup();
+
       editor.on('blur', function(evt) {
-        save();
+        if(!source) {
+          save();          
+        }
       });
-      
-    function resize() {
+
+      function resize() {
         var h = window.innerHeight;
         var h2 = $('#buttonrow').height();
         $("#editor").css('height',h-h2);      
-    }
+      }
 
-    $(window).resize(function(){
+      $(window).resize(function(){
       resize();
-    });
-    resize();
-    setup();
+      });
+      resize();
 
-    });
+    }); // document.ready
 
     $("#submit-immediate").click(function(evt) {
       evt.preventDefault();
