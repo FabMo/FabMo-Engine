@@ -25,10 +25,9 @@ var log = require('../log').logger('routes');
  * @apiSuccess {Number} data.status.job.finished_at Time job was finished (UNIX timestamp)
  */
 var get_status = function(req, res, next) {
-  var s = machine.status;
   var answer = {
       status : "success",
-      data : {'status':s}
+      data : {'status':machine.status}
     };
     res.json(answer);
 };

@@ -21,6 +21,11 @@ var onConnect = function(socket) {
 		log.debug("Client disconnected");
 	});
 
+	socket.on('status', function(data) {
+		console.log("Emitting status message as requested.")
+		socket.emit('status', machine.status);
+	});
+
 	socket.on('code', function(data) {
 		if('rt' in data) {
 			machine.executeRuntimeCode(data.rt, data.data)

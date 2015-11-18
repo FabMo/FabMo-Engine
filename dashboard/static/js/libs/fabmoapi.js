@@ -53,7 +53,7 @@ FabMoAPI.prototype.on = function(message, func) {
 		this.socket.on(message, func);
 		switch(message) {
 			case 'status':
-				func(this.status);
+				this.socket.emit('status', null);
 				break;
 			default:
 				break;

@@ -16,6 +16,9 @@ requirejs.config({
         'handwheel' : 'libs/handwheel',
         'keypad' : 'libs/keypad',
         'toastr' : 'libs/toastr.min'
+    },
+    shim : {
+        'foundation' : {'deps' : ['jquery']}
     }
 });
 
