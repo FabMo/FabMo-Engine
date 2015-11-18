@@ -105,7 +105,6 @@ var _parseMacroFile = function(filename, callback) {
 
 var update = function(id, macro, callback) {
 	old_macro = get(id);
-
 	if(old_macro) {
 
 		function savemacro(id, callback) {

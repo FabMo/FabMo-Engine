@@ -175,7 +175,7 @@ FabMoAPI.prototype.runMacro = function(id, callback) {
 }
 
 FabMoAPI.prototype.updateMacro = function(id, macro, callback) {
-	this._get('/macros/' + id, macro, callback, callback, 'macro');
+	this._post('/macros/' + id, macro, callback, callback, 'macro');
 }
 
 FabMoAPI.prototype.deleteMacro = function(id, callback) {
