@@ -22,7 +22,6 @@ var onConnect = function(socket) {
 	});
 
 	socket.on('status', function(data) {
-		console.log("Emitting status message as requested.")
 		socket.emit('status', machine.status);
 	});
 
