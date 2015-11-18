@@ -180,9 +180,6 @@ Machine.prototype.runFile = function(filename) {
 		} else {
 			parts = filename.split(path.sep);
 			ext = path.extname(filename).toLowerCase();
-			log.debug(filename);
-			log.debug(parts);
-			//this.status.current_file = parts[parts.length-1];
 
 			if(ext == '.sbp') {
 				this.setRuntime(this.sbp_runtime);

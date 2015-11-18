@@ -230,7 +230,19 @@ var run = function(idx) {
 
 	info = macros[idx];
 	if(info) {
-		machine.runFile(info.filename);
+		// Set the machine runtime
+		//machine.setRuntime(machine.sbp_runtime);
+
+		// Create a lightweight job
+		machine.status.job = new Job({
+			name : info.name,
+			description : info.description
+		});
+
+		machine.status.job.start(function(err, result) {
+			machine.runFile(info.filename);
+		}.bind(this));
+
 	} else {
 		throw "No such macro."
 	}
