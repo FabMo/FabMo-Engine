@@ -17,9 +17,6 @@ var FabMoAPI = function(base_url) {
 
 	this.status = {};
 	this._initializeWebsocket();
-	this.on('status', function(status) {
-		this.status = status;
-	}.bind(this));
 }
 
 FabMoAPI.prototype._initializeWebsocket = function() {
@@ -32,11 +29,14 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 	}
 
 	if(this.socket) {
+		this.on('status', function(status) {
+			this.status = status;
+		}.bind(this));
+
 		this.socket.on('connect', function() {
 			// Request a status once connected
 			// Even though the server is really supposed to send one
 			console.info("Websocket connected");
-			this.getStatus();
 		}.bind(this));
 
 		this.socket.on('message', function(message) {console.info("Websocket message: " + JSON.stringify(message))} );
@@ -51,8 +51,15 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 FabMoAPI.prototype.on = function(message, func) {
 	if(this.socket) {
 		this.socket.on(message, func);
+		switch(message) {
+			case 'status':
+				func(this.status);
+				break;
+			default:
+				break;
+		}
 	} else {
-		console.warn("Not registering " + message + "event because socket has not been set up yet.")
+		console.warn("Not registering " + message + "event because socket has not been set up yet.");
 	}
 }
 
@@ -108,7 +115,7 @@ FabMoAPI.prototype.runNextJob = function(callback) {
 	try {
 		this._post('/jobs/queue/run', {}, callback, callback);
 	} catch(e) {
-		console.error(e)
+		console.error(e);
 	}
 }
 

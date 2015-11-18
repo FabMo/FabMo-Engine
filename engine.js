@@ -13,6 +13,7 @@ var dashboard = require('./dashboard');
 var network = require('./network');
 var updater = require('./updater');
 var glob = require('glob');
+var argv = require('minimist')(process.argv);
 
 var Engine = function() {
     this.version = null;
@@ -249,6 +250,16 @@ Engine.prototype.start = function(callback) {
                     return next();
                 }
             );
+
+            if('debug' in argv && argv.debug === 'slow') {
+                // Introduce deliberate latency for testing
+                log.warn("Configuring deliberate latency for testing...")
+                server.use(
+                    function latency(req, res, next) {
+                        setTimeout(next,500*Math.random());
+                    }
+                );
+            }
 
             server.on('uncaughtException', function(req, res, route, err) {
                 log.uncaught(err);
