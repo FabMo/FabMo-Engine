@@ -52,8 +52,6 @@ define(function(require) {
 				$('#modalDialog').foundation('reveal', 'open');
 			});
 
-			// Request a status update from the tool
-			engine.getStatus();
 
 			// Configure handwheel input
 			wheel = setupHandwheel();
@@ -68,6 +66,9 @@ define(function(require) {
 
 			// Start backbone routing
 			Backbone.history.start();
+			
+			// Request a status update from the tool
+			engine.getStatus();
 		}
 	});
 
