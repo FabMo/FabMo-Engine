@@ -5,12 +5,13 @@
 	
 	<link rel="stylesheet" href="./css/normalize.css">
 	<link rel="stylesheet" href="./css/foundation.min.css">
-	<link rel="stylesheet" href="./css/style.css">
 	<link rel="stylesheet" href="./css/dataTables.foundation.css">
+	<link rel="stylesheet" href="./css/style.css">
 
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
+  <div class="sticky">
   <nav class="top-bar" data-topbar role="navigation">
   <ul class="title-area">
     <li class="name">
@@ -25,10 +26,11 @@
       <li class=""><a id="nav-active" href="#tabactive" style="display: none;">Active Job</a></li>
     </ul>
     <ul class="right">
-      <li><a id="nav-submit" href="#">Submit Job...</a></li>
+      <li><a id="nav-submit" class="submit-button" href="#">Submit Job...</a></li>
     </ul>
   </section>
 </nav>
+</div>
 <form style="display:none;" id="fileform">
 	<input type="file" id="file">
 </form>
@@ -39,18 +41,18 @@
 		<div class="hovershow message">Drop files here to fabricate...</div>
 		<div class="hoverdim">
 			<div class="row title">
-				<div class="small-4 columns">
+				<div class="small-12 columns">
 					<h4>Up Next</h4>
 				</div>
 			</div>
-			<div class="row ">
-				<div class="small-5 medium-6 columns">
+			<div class="row">
+				<div class="small-10 medium-8 columns">
 					<h4 class='nextJobTitle'></h4>
 					<div class="small-12 columns">
 						<h5 class='nextJobDesc'></h5>
 					</div>
 				</div>
-					<div class="medium-6 small-7 columns" style="text-align:right;">
+					<div class="small-2 medium-4 columns" style="text-align:right;">
 						<a id="run-next">
 							<img class='nextJobPrev svg'  src="css/images/player6.svg">
 						</a>
@@ -98,7 +100,6 @@
 	                <th>&nbsp;</th>
 	                <th>&nbsp;</th>
 	                <th>Name</th>
-	                <th>Status</th>
 	                <th>&nbsp;</th>
 	            </tr>
 	        	</thead>
@@ -108,30 +109,17 @@
   </div>
 
   <div class="content" id="tabhistory">
-	  <section class="container">
-			<div class="row title">
-				<div class="small-7 medium-9 large-10 columns">
-					<h4>History</h4>
-				</div>
-				<div class="small-5 medium-3 large-2 columns btn">
-				</div>
-			</div>
-
-			<div class="row jobs-history-row">
-				<!-- JOB HISTORY LISTING -->
-				<table class="small-12 columns" style="width:100%" id="history_table">
-				<thead>
-	            <tr>
-	                <th>&nbsp;</th>
-	                <th>Name</th>
-	                <th>Run At</th>
-	                <th>Duration</th>
-	                <th>Status</th>
-	            </tr>
-	        	</thead>
-	        	</table>
-			</div>
-		</section>
+		<!-- JOB HISTORY LISTING -->
+		<table class="small-12 columns" style="width:100%" id="history_table">
+		<thead>
+	    <tr>
+	        <th>&nbsp;</th>
+	        <th>Name</th>
+	        <th>Run At</th>
+	        <th>Duration</th>
+	    </tr>
+		</thead>
+		</table>
   </div>
 
   <div class="content" id="tabactive">
@@ -202,10 +190,11 @@
 	jQuery.fn.dataTableExt.oSort["duration-asc"] = function (x, y) {}
 
     var history_table = $('#history_table').DataTable( {
-    	"filter": true,
     	"paging": true,
+    	"filter": false,
+    	"language.paginate.previous": "Prev",
         "processing": false,
-        "bInfo": false,
+        "bInfo": false,  
         "bLengthChange":false,
         "ajax": {
         	"url" : "/jobs/history",
@@ -217,11 +206,13 @@
                 "className":      'actions-control',
                 "orderable":      false,
                 "data":           null,
-                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='resubmitJob' id='resubmit'>Run Again</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div",
+                "defaultContent": "<div class='ellipses' title='More Actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='resubmitJob' id='resubmit'>Run Again</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div",
             },
             { 	
-            	data : "name", 
-            	defaultContent : ''
+            	data : {name : 'name', state : 'state'}, 
+            	defaultContent : '',
+            	render : function(data) { return '<div class="job-' + data.state + '">' + data.name + '</div>'}
+
             },
             { 
             	data : "finished_at", 
@@ -242,11 +233,6 @@
 					return '<div>' +moment.utc(started.finished_at - started.started_at).format('HH:mm:ss')+'</div>'
 					}
 					
-            },
-         	{ 
-            	data : "state",
-            	defaultContent : '',
-            	render : function(state) { return '<div class="job-' + state + '">' + state + '</div>'}
             },
         ],
         "order" : [[2,"desc"]]
@@ -313,11 +299,6 @@
             {
             data : "name", 
             defaultContent : ''
-            },
-            { 
-            data : "state",
-            defaultContent : '',
-            render : function(state) { return '<div class="job-' + state + '">' + state + '</div>'}
             },
             { 
             data : "created_at",
@@ -519,7 +500,7 @@
 		});
 	});
 
-	$('#nav-submit').click(function(evt) {
+	$('.submit-button').click(function(evt) {
 		jQuery('#file').trigger('click');
 	});
 

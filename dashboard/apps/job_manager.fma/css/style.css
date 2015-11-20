@@ -123,14 +123,15 @@ td.preview-control {
   color: #666;
 }
 
+.columns {
+  padding: 0.1em;
+}
+
 .nextJobPrev {
   background-color: white;
-  padding: 1em;
-  border-radius: 3%;
+  padding: 0 0 0 0;
   fill: #333333;
   transition: all 0.5s;
-  width: 170px;
-  height: 170px;
   border: 0px;
   display: none;
 }
@@ -176,10 +177,14 @@ td.preview-control {
   display: none;
   z-index: 9;
 }
+
 .dropDown a{
   padding-left: 1em;
 }
 
+ul.pagination li a{
+color: #313366;
+}
 
 .jobActions {
   list-style: none;
@@ -289,7 +294,7 @@ tr.shown td.details-control {
 }
 
 .job-cancelled {
-  color: #DD8728;
+  color: #b35900;
 }
 
 .job-pending {
@@ -348,10 +353,6 @@ button.small, .button.small {
   }
 }
 
-table {
-  margin-bottom: 8px; 
-  margin-bottom: 0.5em;
-}
 
 .btn { padding: 0;}
 
@@ -516,27 +517,9 @@ section.current-job-container .btn {
 }
 
 section .no-jobs-item { cursor: pointer; }
-/*
-@media only screen and (max-width: 64.063em) and (min-width: 40.063em){
-  section.container {
-    margin-left: 1em;
-    margin-right: 1em;
-  }
-}
-
-@media only screen and (min-width: 40.063em) {
-  section { border-radius: 5px; }
-
-  section.container {
-    padding: 13px;
-    padding:0.8125rem;
-    padding-bottom: 5px;
-    padding-bottom:0.3125rem;
-  }
-}*/
 
 section > .row:not(.title) , .separator{
-  padding-top: 6px;
+/*  padding-top: 6px;*/
   padding-top : 0.375rem;
   padding-bottom: 6px;
   padding-bottom: 0.375rem;
@@ -553,6 +536,14 @@ section > .row:last-child, section > .content:last-child  > .row {
   border-bottom: none;
 }
 
+table {
+  margin: 0;
+}
+
+.tabs-content>.content {
+  margin: 0;
+  padding: 0;
+}
 /*
 *** Jobs ***
 */
