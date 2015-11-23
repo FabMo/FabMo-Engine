@@ -2,7 +2,7 @@
 	"name":"NC Editor",
 	"main":"./index.html",
 	"icon":"icon.png",
-	"icon_color":"blue",
+	"icon_color":"navy",
 	"icon_display":"none",
 	"version":"0.0.2",
 	"author":"Ryan Sturmer",

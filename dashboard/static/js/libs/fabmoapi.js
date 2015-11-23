@@ -93,6 +93,8 @@ FabMoAPI.prototype.getJob = function(id, callback) {
 	this._get('/job/' + id, callback, callback, 'job');
 }
 
+FabMoAPI.prototype.getJobInfo = FabMoAPI.prototype.getJob;
+
 FabMoAPI.prototype.resubmitJob = function(id, callback) {
 	this._post('/job/' + id, {}, callback, callback);
 }

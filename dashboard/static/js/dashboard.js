@@ -203,6 +203,16 @@ define(function(require) {
 			})
 		}.bind(this));
 
+		this._registerHandler('getJobInfo', function(id, callback) {
+			this.engine.getJobInfo(id, function(err, job) {
+				if(err) {
+					callback(err);
+				} else {
+					callback(null, job);
+				}
+			})
+		}.bind(this));
+
 		this._registerHandler('clearJobQueue', function(data, callback) {
 			this.engine.clearJobQueue(function(err) {
 				if(err) {
@@ -355,9 +365,6 @@ define(function(require) {
 
 		this._registerHandler('enableWifiHotspot', function(data, callback) {
 			this.engine.enable_hotspot(function(err, result) {
-				console.log("posted")
-				console.log(err)
-				console.log(result)
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));

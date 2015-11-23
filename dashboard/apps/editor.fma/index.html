@@ -39,7 +39,7 @@
             <li><a id="lang-gcode" href="#languagegcode">G-Code</a></li>
           </ul>
         </li>
-        <li class="has-dropdown"> 
+        <li class="has-dropdown" id="execute-menu"> 
           <a href="#executemenu" class="success">Execute</a>
           <ul class="dropdown"> 
             <li><a id="submit-immediate" href="#submitimmediate">Run Immediately (Ctrl+Enter)</a></li>
@@ -62,9 +62,11 @@
     var lang="gcode";
     var source=null;
     var source_data=null;
+    var job_description=null;
+    var job_title=null;
 
     function execute() { 
-      $("#submit-button").addClass('disabled');
+      $("#execute-menu").hide();
       var text = editor.getValue();
       switch(lang) {
         case "gcode":
@@ -88,16 +90,16 @@
     }
 
     function submit_job() {
-      $("#submit-button").addClass('disabled');
+      $("#execute-menu").hide();
       var text = editor.getValue();
       switch(lang) {
         case "gcode":
-          fabmoDashboard.submitJob(text, {filename: 'editor.nc', description: 'G-Code file from the editor'}, function(err, result) {
+          fabmoDashboard.submitJob(text, {filename: job_title || 'editor.nc', description: job_description || 'G-Code file from the editor'}, function(err, result) {
             fabmoDashboard.launchApp('job-manager');
           });
         break;
         case "opensbp":
-          fabmoDashboard.submitJob(text, {filename: 'editor.sbp', description: 'OpenSBP file from the editor.'}, function(err, result) {
+          fabmoDashboard.submitJob(text, {filename: job_title || 'editor.sbp', description: job_description || 'OpenSBP file from the editor.'}, function(err, result) {
             fabmoDashboard.launchApp('job-manager');
           });
         break;
@@ -160,7 +162,19 @@
               editor.setValue(data, -1);
               editor.clearSelection();
               source = "job";
+              fabmoDashboard.getJobInfo(args.job, function(err, info) {
+                if(!err) {
+                    job_title = info.name || null;
+                    job_description = info.description || null;
+                  if(info.name.endsWith('sbp')) {
+                    set_language('opensbp');
+                  } else {
+                    set_language('gcode');
+                  }
+                }
+              });
           });
+
         } else if('macro' in args) {
           $('.language-dropdown').hide();
           lang = 'opensbp';
@@ -172,6 +186,8 @@
             editor.clearSelection();
             source = "macro";
             source_data = macro;
+            job_description = macro.description;
+            job_title = 'macro_' + macro.index + '.sbp';
             $('#macro-menu').show();
           });      
         } else {
@@ -244,7 +260,7 @@
       }
 
       $(window).resize(function(){
-      resize();
+        resize();
       });
       resize();
 
@@ -268,7 +284,7 @@
     $("#lang-gcode").click(function(evt) {
       set_language('gcode');
       evt.preventDefault();
-    });
+    }); 
 
     $("#macro-save").click(function(evt) {
       save();
@@ -288,9 +304,9 @@
 
     fabmoDashboard.on('status', function(status) {
       if(status.state === 'idle') {
-        $("#submit-button").removeClass('disabled');
+        $("#execute-menu").show();
       } else {
-        $("#submit-button").addClass('disabled');
+        $("#execute-menu").hide();
       }
     });
 
