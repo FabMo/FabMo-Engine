@@ -11,6 +11,7 @@ var MachineConfig = function(driver) {
 util.inherits(MachineConfig, Config);
 
 MachineConfig.prototype.update = function(data, callback, force) {
+	console.log(data);
 	try {
 		extend(this._cache, data, force);
 	} catch (e) {
@@ -20,6 +21,7 @@ MachineConfig.prototype.update = function(data, callback, force) {
 		if(err) {
 			callback(err);
 		} else {
+			log.debug("MachineConfig.prototype.update: data = " + JSON.stringify(data));
 			callback(null, data);
 		}
 	});
