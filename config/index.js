@@ -5,6 +5,8 @@ var G2Config = require('./g2_config').G2Config;
 var OpenSBPConfig = require('./opensbp_config').OpenSBPConfig;
 var MachineConfig = require('./machine_config').MachineConfig;
 var DashboardCofnig = require('./dashboard_config').DashboardConfig;
+var InstanceConfig = require('./instance_config').InstanceConfig;
+
 var fs = require('fs');
 var path = require('path');
 
@@ -61,6 +63,11 @@ function configureDashboard(callback) {
 	exports.dashboard.init(callback);
 }
 
+function configureInstance(driver, callback) {
+	exports.instance = new InstanceConfig(driver);
+	exports.instance.init(callback);
+}
+
 function canWriteTo(dirname) {
 	try {
 		test_path = path.join(dirname,'/.fabmoenginetest')
@@ -95,6 +102,7 @@ exports.configureEngine = configureEngine;
 exports.configureDriver = configureDriver;
 exports.configureOpenSBP = configureOpenSBP;
 exports.configureMachine = configureMachine;
+exports.configureInstance = configureInstance;
 
 exports.createDataDirectories = Config.createDataDirectories;
 exports.getDataDir = Config.getDataDir;

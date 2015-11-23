@@ -208,7 +208,7 @@ Machine.prototype.setRuntime = function(runtime) {
 		} finally {
 			this.current_runtime = runtime;
 			if(runtime) {
-				console.log("Connecting runtime ", runtime)
+				log.debug("Connecting runtime ", runtime)
 				runtime.connect(this);
 			}
 		}
@@ -245,10 +245,20 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 		} else {
 			delete this.status.info
 		}
-		if(this.status.state === 'idle') {
-			this.status.nb_lines = null;
-			this.status.line = null;
+
+		switch(this.status.state) {
+			case 'idle':
+				this.status.nb_lines = null;
+				this.status.line = null;
+				// Deliberately fall through
+			case 'paused':
+				this.driver.get('mpo', function(err, mpo) {
+					config.instance.update({'position' : mpo});
+				});
+				break;
 		}
+		
+
 		log.info("Got a machine state change: " + this.status.state)	
 	} else {		
 		log.warn("Got a state change from a runtime that's not the current one. (" + source + ")")

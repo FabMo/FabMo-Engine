@@ -50,14 +50,14 @@ ManualRuntime.prototype._onG2Status = function(status) {
 				break;
 			}
 
-			if(status.stat === this.driver.STAT_STOP || status.stat === this.driver.STAT_END) {
+			if((status.stat === this.driver.STAT_STOP || status.stat === this.driver.STAT_END) && status.hold === 0) {
 				this._changeState("idle");
 				break;
 			}
 			break;
 
 		case "paused":
-			if(status.stat === this.driver.STAT_STOP || status.stat === this.driver.STAT_END) {
+			if((status.stat === this.driver.STAT_STOP || status.stat === this.driver.STAT_END) && status.hold === 0) {
 				this._changeState("idle");
 				break;
 			}

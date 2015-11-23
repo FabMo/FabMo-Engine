@@ -752,6 +752,21 @@ G2.prototype.sendMoreGCodes = function() {
 	}
 };
 
+G2.prototype.setMachinePosition = function(position, callback) {
+	var gcode = "G21\nG28.3 ";
+	['x','y','z','a','b','c','u','v','w'].forEach(function(axis) {
+		if(position[axis] != undefined) {
+			gcode += ' ' + axis + position[axis].toFixed(3);
+		}		
+	});
+
+	if(this.status.unit === 'in') {
+		console.log("inchy inchy")
+		gcode += '\nG20';
+	}
+	this.runString(gcode, callback);
+}
+
 // Function works like "once()" for a state change
 // callbacks is an associative array mapping states to callbacks
 // If the *next* state change matches a state in the associative array, the callback it maps to is called.
