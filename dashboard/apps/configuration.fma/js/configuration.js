@@ -38,6 +38,8 @@ function update() {
       if(err) {
         console.error(err);
       } else {
+        configData = data;
+        console.log("Read configData");
         ['driver', 'engine', 'opensbp', 'machine'].forEach(function(branchname) {
             if(branchname === 'machine') {
               branch = flattenObject(data[branchname]);
@@ -52,6 +54,18 @@ function update() {
               }
             }
         });
+        var unit1 = (360/data.driver['1sa']) * data.driver['1mi'] / data.driver['1tr'];
+        $("#opensbp_units1").val(unit1);
+        var unit2 = (360/data.driver['2sa']) * data.driver['2mi'] / data.driver['2tr'];
+        $("#opensbp_units2").val(unit2);
+        var unit3 = (360/data.driver['3sa']) * data.driver['3mi'] / data.driver['3tr'];
+        $("#opensbp_units3").val(unit3);
+        var unit4 = (360/data.driver['4sa']) * data.driver['4mi'] / data.driver['4tr'];
+        $("#opensbp_units4").val(unit4);
+        var unit5 = (360/data.driver['5sa']) * data.driver['5mi'] / data.driver['5tr'];
+        $("#opensbp_units5").val(unit5);
+        var unit6 = (360/data.driver['6sa']) * data.driver['6mi'] / data.driver['6tr'];
+        $("#opensbp_units6").val(unit6);
       }
     });
 }

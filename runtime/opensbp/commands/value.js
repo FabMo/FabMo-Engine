@@ -129,75 +129,67 @@ exports.VC = function(args) {
 };
 
 exports.VD = function(args,callback) {
-	var g2_VD = {};
-	if ( args[0] !== undefined ){
-		var numAxes = args[0];
-		if ( numAxes > 0 || x < 7 ){
 
-		}
-	}
-	if ( args[1] !== undefined ) {
-		var unitType = args[1];
+	log.debug("VD-args = " + args);
+//	var g2_VD = {};
+//	if ( args[1] !== undefined ){
+//		var numAxes = args[0];
+//		if ( numAxes > 0 || x < 7 ){
+//		}
+//	}
+	// For all axes - the values are:
+	//    0=Disable; 1=Standard Mode; 2=Inhibited; 3=Radius Mode
+	// XYZ Unit type
+	if ( args[2] !== undefined ) {
+		var unitType = args[2];
 		if ( unitType === 0 || unitType === 1 ){
 			if ( unitType === 0 ){
 				this.emit_gcode("G20"); // inches
-				config.machine.set("units","in");
+				config.machine.set("units","in",function(){
+					//config.machine.apply(callback);
+					callback();
+				});
 				log.debug("Changing units to inch");
 			}
 			else {
 				this.emit_gcode("G21"); // mm
-				config.machine.set("units","mm");
+				config.machine.set("units","mm",function() {
+					//config.machine.apply(callback);
+					callback();
+				});
 				log.debug("Changing units to mm");
 			}
 		}
 	}
-	// For all axes - the values are:
-	//    0=Disable; 1=Standard Mode; 2=Inhibited; 3=Radius Mode
-	// X Unit type
-	if ( args[2] !== undefined ){
-		var x = args[2];
-		if ( x >= 0 || x < 4 ){
-			g2_VD.xam = x;
-		}
-	}
-	// Y Unit type
-	if ( args[3] !== undefined ){
-		var y = args[3];
-		if ( y >= 0 || y < 4 ){
-			g2_VD.yam = y;
-		}
-	}
-	// Z Unit type
-	if ( args[4] !== undefined ){
-		var z = args[4];
-		if ( z >= 0 || z < 4 ){
-			g2_VD.zam = z;
-		}
-	}	
 	// A Unit type
-	if ( args[5] !== undefined ){
-		var a = args[5];
-		if ( a >= 0 || a < 4 ){
-			g2_VD.aam = a;
-		}
-	}
+//	if ( args[3] !== undefined ){
+//		var a = args[3];
+//		if ( a >= 0 || a < 4 ){
+//			g2_VD.aam = a;
+//		}
+//	}
 	// B Unit type
-	if ( args[6] !== undefined ){
-		var b = args[6];
-		if ( b >= 0 || b < 4 ){
-			g2_VD.yam = b;
-		}
-	}
+//	if ( args[4] !== undefined ){
+//		var b = args[4];
+//		if ( b >= 0 || b < 4 ){
+//			g2_VD.bam = b;
+//		}
+//	}
 	// C Unit type
-	if ( args[7] !== undefined ){
-		var c = args[7];
-		if ( c >= 0 || c < 4 ){
-			g2_VD.cam = c;
-		}
-	}	
+//	if ( args[7] !== undefined ){
+//		var c = args[7];
+//		if ( c >= 0 || c < 4 ){
+//			g2_VD.cam = c;
+//		}
+//	}	
 	// Show control console
 	// Display File Comments
 	// Keypad fixed distance
+	if ( args[8] !== undefined ){
+		var fDist = args[8];
+		log.debug("Keypad fixed distance set to: " + fDist );
+		log.debug("Fixed Distance setting not implemented" );
+	}
 	// Keypad remote
 	// Keypad Switch AutoOff
 	// Write Part File Log
@@ -206,13 +198,12 @@ exports.VD = function(args,callback) {
 	// Message Screen Location Y
 	// Message Screen Size X
 	// Message Screen Size Y
-	// Keypad switches Auto-Off
+	// Keypad outputs Auto-Off
 	// Show file Progress
 	// Main Display Type
-	config.driver.setMany(g2_VD, function(err, values) {
-		callback();
-	});
-
+//	config.driver.setMany(g2_VD, function(err, values) {
+//		callback();
+//	});
 };	
 
 exports.VI = function(args,callback) {
@@ -220,45 +211,45 @@ exports.VI = function(args,callback) {
 
 	// Driver 1 Channel
 	if ( args[0] !== undefined ){
-		if ( args[0] > 0 || args[0] < 6 ){
-			g2_VI['1ma'] = args[0];
-		}
-		else {}
+		var res1 = "xyzabcXYZABC".indexOf(String(args[0]));
+		if ( res1 >= 0 && res1<= 5 ){ g2_VI['1ma'] = res1; }
+		else if ( res1 >= 6 && res1 <= 11 ){ g2_VI['1ma'] = res1-6; }
+		else { throw new Error("VI-CH1: parameter " + args[0] + " out of range!"); }
 	}
 	// Driver 2 Channel
 	if ( args[1] !== undefined ){
-		if ( args[1] > 0 || args[1] < 6 ){
-			g2_VI['2ma'] = args[1];
-		}
-		else {}
+		var res2 = "xyzabcXYZABC".indexOf(String(args[1]));
+		if ( res2 >= 0 && res2<= 5 ){ g2_VI['2ma'] = res2; }
+		else if ( res2 >= 6 && res2 <= 11 ){ g2_VI['2ma'] = res2-6; }
+		else { throw new Error("VI-CH1: parameter " + args[1] + " out of range!"); }
 	}
 	// Driver 3 Channel
 	if ( args[2] !== undefined ){
-		if ( args[2] > 0 || args[2] < 6 ){
-			g2_VI['3ma'] = args[2];
-		}
-		else {}
+		var res3 = "xyzabcXYZABC".indexOf(String(args[2]));
+		if ( res3 >= 0 && res3<= 5 ){ g2_VI['3ma'] = res3; }
+		else if ( res3 >= 6 && res3 <= 11 ){ g2_VI['3ma'] = res3-6; }
+		else { throw new Error("VI-CH1: parameter " + args[2] + " out of range!"); }
 	}
 	// Driver 4 Channel
 	if ( args[3] !== undefined ){
-		if ( args[3] > 0 || args[3] < 6 ){
-			g2_VI['4ma'] = args[3];
-		}
-		else {}
+		var res4 = "xyzabcXYZABC".indexOf(String(args[3]));
+		if ( res4 >= 0 && res4<= 5 ){ g2_VI['4ma'] = res4; }
+		else if ( res4 >= 6 && res4 <= 11 ){ g2_VI['4ma'] = res4-6; }
+		else { throw new Error("VI-CH1: parameter " + args[3] + " out of range!"); }
 	}
 	// Driver 5 Channel
 	if ( args[4] !== undefined ){
-		if ( args[4] > 0 || args[4] < 6 ){
-			g2_VI['5ma'] = args[4];
-		}
-		else {}
+		var res5 = "xyzabcXYZABC".indexOf(String(args[4]));
+		if ( res5 >= 0 && res5<= 5 ){ g2_VI['5ma'] = res5; }
+		else if ( res5 >= 6 && res5 <= 11 ){ g2_VI['5ma'] = res5-6; }
+		else { throw new Error("VI-CH1: parameter " + args[4] + " out of range!"); }
 	}
 	// Driver 6 Channel
 	if ( args[5] !== undefined ){
-		if ( args[5] > 0 || args[0] < 6 ){
-			g2_VI['1ma'] = args[0];
-		}
-		else {}
+		var res6 = "xyzabcXYZABC".indexOf(String(args[5]));
+		if ( res6 >= 0 && res6<= 5 ){ g2_VI['6ma'] = res6; }
+		else if ( res6 >= 6 && res6 <= 11 ){ g2_VI['6ma'] = res6-6; }
+		else { throw new Error("VI-CH1: parameter " + args[5] + " out of range!"); }
 	}
 	config.driver.setMany(g2_VI, function(err, values) {
 		callback();

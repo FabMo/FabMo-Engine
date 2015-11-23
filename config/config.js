@@ -28,7 +28,9 @@ Config.prototype.getMany = function(arr) {
 };
 
 Config.prototype.set = function(k,v, callback) {
-	return this.update({k:v}, callback);
+	var u = {}
+	u[k] = v;
+	return this.update(u, callback);
 };
 
 Config.prototype.getData = function() {
