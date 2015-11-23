@@ -10,47 +10,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-  
-  <nav class="top-bar" data-topbar role="navigation">
-  <ul class="title-area">
-    <li class="name">
-      <h1><a id="app-header">Editor</a></h1>
-    </li>
-    <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
-  </ul>
-
-  <section class="top-bar-section">
-    <!-- Right Nav Section -->
-    <ul class="right">
+  <nav id="topbar" class="top-bar" data-topbar role="navigation">
+    <ul class="title-area">
+      <li class="name">
+        <h1><a id="app-header">Editor</a></h1>
+      </li>
+      <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
     </ul>
 
-    <!-- Left Nav Section -->
-    <ul class="left">
-      <li class="has-dropdown hidden" id="macro-menu">
-        <a href="#">Macro</a>
-        <ul class="dropdown">
-          <li><a id="macro-save" href="#">Save</a></li>
-          <li><a id="macro-save-and-close" href="#">Save and Close</a></li>          
-        </ul>        
-      </li>
-      <li class="has-dropdown language-dropdown"> 
-        <a href="#">Language</a>
-        <ul class="dropdown">
-          <li><a id="lang-opensbp" href="#">OpenSBP</a></li>
-          <li><a id="lang-gcode" href="#">G-Code</a></li>
-        </ul>
-      </li>
-      <li class="has-dropdown"> 
-        <a href="#" class="success">Execute</a>
-        <ul class="dropdown"> 
-          <li><a id="submit-immediate" href="#">Run Immediately (Ctrl+Enter)</a></li>
-          <li><a id="submit-job" href="#">Submit as Job</a></li>
-        </ul>
-      </li> 
-    </ul>
+    <section class="top-bar-section">
+      <!-- Right Nav Section -->
+      <ul class="right">
+      </ul>
 
-  </section>
-</nav>
+      <!-- Left Nav Section -->
+      <ul class="left">
+        <li class="has-dropdown hidden" id="macro-menu">
+          <a href="#">Macro</a>
+          <ul class="dropdown">
+            <li><a id="macro-save" href="#">Save</a></li>
+            <li><a id="macro-save-and-close" href="#">Save and Close</a></li>          
+          </ul>        
+        </li>
+        <li class="has-dropdown language-dropdown"> 
+          <a href="#">Language</a>
+          <ul class="dropdown">
+            <li><a id="lang-opensbp" href="#">OpenSBP</a></li>
+            <li><a id="lang-gcode" href="#">G-Code</a></li>
+          </ul>
+        </li>
+        <li class="has-dropdown"> 
+          <a href="#" class="success">Execute</a>
+          <ul class="dropdown"> 
+            <li><a id="submit-immediate" href="#">Run Immediately (Ctrl+Enter)</a></li>
+            <li><a id="submit-job" href="#">Submit as Job</a></li>
+          </ul>
+        </li> 
+      </ul>
+    </section>
+  </nav>
 
   <div id="editor"></div>
 
@@ -241,7 +239,7 @@
 
       function resize() {
         var h = window.innerHeight;
-        var h2 = $('#buttonrow').height();
+        var h2 = $('#topbar').height();
         $("#editor").css('height',h-h2);      
       }
 
