@@ -229,7 +229,7 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 			break;
 
 		case "assign":
-			result = false;
+			result = true;
 			break;
 			//return this._exprBreaksStack(cmd.var) || this._exprBreaksStack(cmd.expr)
 		
@@ -679,10 +679,20 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 		case "assign":
 			//TODO FIX THIS THIS DOESN'T DO SYSTEM VARS PROPERLY
-			value = this._eval(command.expr);
-			this.user_vars[command.var] = value;
-			this.pc += 1;
-			return false;
+			var value = this._eval(command.expr);
+			var persistent = this.evaluatePersistentVariable(command.var);
+
+			if(persistent != undefined) {
+				config.opensbp.setVariable(command.var, value, function() {
+					this.pc += 1;
+					callback();
+				}.bind(this));
+			} else {
+				this.user_vars[command.var] = value;
+				this.pc += 1;
+				setImmediate(callback);
+			}
+			return true;
 			break;
 
 		case "cond":
@@ -770,19 +780,32 @@ SBPRuntime.prototype._eval_value = function(expr) {
 		log.debug("  Evaluating value: " + expr);
 		sys_var = this.evaluateSystemVariable(expr);
 		if(sys_var === undefined) {
-			user_var = this.evaluateUserVariable(expr);
-			if(user_var === undefined) {
-				log.debug("  Evaluated " + expr + " as " + expr);
-				f = parseFloat(expr);
-			    if(isNaN(f)) {
-                    return expr;
-                } else {
-                    return f;
-                }
-            } else if(user_var === null) {
+			var persistent_var = this.evaluatePersistentVariable(expr);
+			console.log("PERSISTENT: " + persistent_var)
+			if(persistent_var === undefined) {
+				user_var = this.evaluateUserVariable(expr);
+				if(user_var === undefined) {
+					log.debug("  Evaluated " + expr + " as " + expr);
+					f = parseFloat(expr);
+				    if(isNaN(f)) {
+	                    return expr;
+	                } else {
+	                    return f;
+	                }
+	            } else if(user_var === null) {
+	            	log.error("Uh oh.");
+	            	// User var is undefined (return undefined??)
+				} else {
+					log.debug("  Evaluated " + expr + " as " + user_var);
+					return parseFloat(user_var);
+				}				
 			} else {
-				log.debug("  Evaluated " + expr + " as " + user_var);
-				return parseFloat(user_var);
+				f = parseFloat(persistent_var);
+				if(isNaN(f)) {
+					return expr;
+				} else {
+					return f;
+				}
 			}
 		} else if(sys_var === null) {
 			log.error("  Undefined system variable " + expr)
@@ -984,6 +1007,7 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 };
 
 SBPRuntime.prototype.evaluateUserVariable = function(v) {
+	console.log("evaluating user")
 	if(v === undefined) { return undefined;}
 	result = v.match(USERVAR_RE);
 	if(result === null) {return undefined;}
@@ -992,6 +1016,14 @@ SBPRuntime.prototype.evaluateUserVariable = function(v) {
 	} else {
 		throw new Error('Variable ' + v + ' was never defined.');
 	}
+};
+
+SBPRuntime.prototype.evaluatePersistentVariable = function(v) {
+	console.log("Evaluating persistent")
+	if(v === undefined) { return undefined;}
+	result = v.match(USERVAR_RE);
+	if(result === null) {return undefined;}
+	return config.opensbp.getVariable(v);
 };
 
 // Called for any valid shopbot mnemonic that doesn't have a handler registered

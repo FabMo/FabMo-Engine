@@ -31,7 +31,6 @@ function listify(x) {
 }
 
 function doshell(command, callback){
-    log.debug("Executing shell command: " + command)
     exec(command, function(error, stdout, stderr) { 
         callback(stdout); 
     });

@@ -1,297 +1,310 @@
 var log = require('./log').logger('network');
 var async = require('async');
 var fs = require('fs');
+var doshell = require('./util').doshell
 
-try{var wifiscanner = require('node-simplerwifiscanner');}catch(e){
-        log.warn("Did not load connman-simplified: " + e);
-}
-try{var connman = require('connman-simplified')();}catch(e){
-    log.warn("Did not load connman-simplified: " + e);
-}
-
-var PROFILES_FOLDER = "/etc/netctl/";
-var WIFI_INTERFACE = "wlan0";
-var hotspot_ssid="handibot";
-var hotspot_passphrase="shopbot";
 var wifi;
-var properties;
+var WIFI_SCAN_INTERVAL = 5000;
+var WIFI_SCAN_RETRIES = 3;
 
-function CHECK(err){if(err){log.error(err);/*process.exit(-1);*/}}
+function jedison(cmdline, callback) {
+    var callback = callback || function() {}
+    doshell('./conf/jedison ' + cmdline, function(s) {
+        try {
+            j = JSON.parse(s)
+            if(j.status == 'success') {
+                callback(null, j.data || {})
+            } else {
+                callback(j.message)
+            }
+        } catch(e) {
+            callback(e);
+        }
+    });
+}
+
+var EdisonNetworkManager = function() {
+  this.mode = 'unknown';
+  this.state = 'idle';
+  this.networks = [];
+  this.command = null;
+  this.network_health_retries = 5;
+}
+
+EdisonNetworkManager.prototype.getInfo = function(callback) {
+  jedison('get wifi-info', callback);
+}
+
+EdisonNetworkManager.prototype.getNetworks = function(callback) {
+  jedison('get networks', callback);
+}
+
+EdisonNetworkManager.prototype.scan = function(callback) {
+  jedison('scan', callback);
+}
+
+EdisonNetworkManager.prototype.run = function() {
+  if(this.command) {
+	switch(this.command.cmd) {
+		case 'join':
+			var ssid = this.command.ssid;
+			var pw = this.command.password;
+			this.command = null;
+			this.state = 'idle';
+			this.mode = 'unknown';
+			this._joinWifi(ssid,pw,function(err, data) {
+				this.run();
+			}.bind(this));
+			break;
+
+		case 'ap':
+			this.command=null;
+			this.state = 'idle'
+			this.mode = 'unknown'
+			this._joinAP(function(err, data) {
+				this.run();
+			}.bind(this));
+			break;
+	}
+	return;
+} 
+  switch(this.mode) {
+    case 'ap':
+      this.runAP();
+      break;
+
+    case 'station':
+      this.runStation();
+      break;
+
+    default:
+      this.state = 'idle';
+      this.getInfo(function(err, data) {
+        if(!err) {
+          var old_mode = this.mode;
+		if(data.mode == 'managed') { this.mode = 'station'; }
+          else if(data.mode == 'master') { this.mode = 'ap'; }
+          else { log.warn('Unknown network mode: ' + data.mode)}
+        	if(this.mode != old_mode) {
+
+        setImmediate(this.run.bind(this));
+		} else {
+
+        setTimeout(this.run.bind(this), 5000);
+
+}
+	} else {
+
+        setTimeout(this.run.bind(this), 5000);
+}
+
+      }.bind(this));
+      break;
+  }
+}
+
+EdisonNetworkManager.prototype.runStation = function() {
+  switch(this.state) {
+    case 'idle':
+      this.scan_retries = WIFI_SCAN_RETRIES;
+      // Fall through
+    case 'scan':  
+      this.scan(function(err, data) {
+        this.state = 'done_scanning';
+        setTimeout(this.run.bind(this), WIFI_SCAN_INTERVAL);        
+      }.bind(this));
+      break;
+
+    case 'done_scanning':
+      this.getNetworks(function(err, data) {
+        if(!err) {
+          log.debug('Scanned and found ' + data.length + ' networks.')
+          for(var i in data) {
+              var ssid = data[i].ssid;
+              var found = false;
+              for(var j in this.networks) {
+                  if(this.networks[j].ssid === ssid) {
+                      found = true;
+                      break;
+                  }
+              }
+             if(!found) {
+                 this.networks.push(data[i]);
+             }
+          }
+        } else {
+          console.warn(err);
+        }
+        if(data.length === 0 && this.scan_retries > 0) {
+        log.warn("No networks?!  Retrying...");
+	this.state = 'scan'
+        this.scan_retries--;
+} else {
+        this.state = 'check_network';
+        this.network_health_retries = 5;
+}
+        setImmediate(this.run.bind(this));
+      }.bind(this));
+      break;
+
+    case 'check_network':
+      log.debug('Checking network health...');
+      this.getInfo(function(err, data) {
+        var networkOK = true;
+        if(!err) {
+          if(data.ipaddress === '?') {
+            networkOK = false;
+          }
+          if(data.mode === 'master') {
+             this.mode = 'ap';
+             this.state = 'idle';
+             setImmediate(this.run.bind(this));
+          }
+        } else {
+          networkOK = false;
+        }
+        if(networkOK) {
+          log.debug("Network health OK");
+          this.state = 'idle';          
+          setImmediate(this.run.bind(this));
+        } else {
+          log.warn("Network health in question...");
+          if(this.network_health_retries == 0) {
+              this.network_health_retries = 5;
+              log.error("Network is down.  Going to AP mode.");
+       	      this.joinAP();
+              setImmediate(this.run.bind(this)); 
+	  } else {
+             this.network_health_retries--;
+             setTimeout(this.run.bind(this),1000);
+	  }
+	}
+      }.bind(this));
+      break;
+  }
+}
+
+EdisonNetworkManager.prototype.runAP = function() {
+  switch(this.state) {
+    default:
+      this.getInfo(function(err, data) {
+        if(!err) {
+          if(data.mode === 'managed') { this.mode = 'station'; }
+          else if(data.mode === 'master') { this.mode = 'ap'; }
+          else { log.warn('Unknown network mode: ' + data.mode)}
+        }
+        setTimeout(this.run.bind(this), 5000);
+      }.bind(this));
+      break;
+  }
+}
 
 
-function openHotspot(){
-  self=this;
-  log.info("Opening a hotspot...");
-  log.info("SSID : "+ hotspot_ssid);
-  log.info("Passphrase : "+ hotspot_passphrase);
-  self.wifi.openHotspot(hotspot_ssid,hotspot_passphrase,function(err) {
-    CHECK(err);
+EdisonNetworkManager.prototype.joinAP = function() {
+	this.command = {
+		'cmd' : 'ap',
+	}
+}
+
+EdisonNetworkManager.prototype._joinAP = function(callback) {
+  jedison('join ap', function(err, result) {
+    if(!err) {
+	log.info("Entered AP mode.");
+    }
+    callback(err, result);
   });
 }
 
-function mainWifi(){
-  self=this;
-  self.wifi.getNetworks(function(err,list) { // get the list of available networks
-    CHECK(err);
-    log.info("networks: " + self.wifi.getServicesString(list));
-    self.wifi.joinFavorite(function(err){ // try to join a favorite
-      if(err){openHotspot();} // if it fails, open a hotspot point.
-      else{
-        self.wifi.service.getProperties(function(err,props){
-          log.info("you're connected to " + props.Name + " through " + props.Type);
-        });
-      }
-    });
+EdisonNetworkManager.prototype.joinWifi = function(ssid, password) {
+	this.command = {
+		'cmd' : 'join',
+		'ssid' : ssid,
+		'password' : password
+	}
+}
+EdisonNetworkManager.prototype._joinWifi = function(ssid, password, callback) {
+  log.info("Attempting to join wifi network: " + ssid + " with password: " + password); 
+  jedison('join wifi --ssid=' + ssid + ' --password=' + password , function(err, result) {
+    if(err) {
+        log.error(err);
+    }
+    log.debug(result);
+    callback(err, result);
   });
 }
 
 exports.init = function() {
-    connman.init(function(err) {
-      self=this;
-      CHECK(err);
-      connman.initWiFi(function(err,wifi,properties) {
-        CHECK(err);
-        self.wifi=wifi;
-        self.properties=properties;
-        wifi.closeHotspot(function(err) {CHECK(err);});// be sure to close a previous hotspot before scanning
-          wifi.enable(function(err){
-          mainWifi();
-        });
-
-      });
-    });    
+	log.debug("Collapsing from AP state to scan (first boot)");
+	jedison('unjoin', function(err, data) {
+  		wifi = new EdisonNetworkManager();
+  		wifi.run();
+	});
 }
-
-
 
 
 exports.getAvailableWifiNetworks = function(callback) {
-
-    /*
-    wifiscanner.scan(function(err,data){
-        if (err) {
-            callback(err)
-        } else {
-            callback(null, data)
-        }
-    });
-*/
-    self.wifi.getNetworks(function(err,data) {
-        if(err)callback(err);
-        else{
-            callback(null,data);
-        }
-
-    });
+  callback(null, wifi.networks);
 }
 
 exports.getAvailableWifiNetwork = function(ssid, callback) {
-
-/* 
-    exports.getAvailableWifiNetworks(function(err, networks) {
-        if(err) {
-            callback(err)
-        } else {
-            var result = null;
-            networks.some(function(network) {
-                if(network.ssid == ssid) {
-                    result = network;
-                    return true;
-                }
-            });
-            if(result) {
-                callback(null, result);
-            } else {
-                callback('No such network.');
-            }
-        }
-    })
-*/
-    self.wifi.getServiceBySSID(function(err,service){
-            if(err) {
-                callback(err);
-            }else {
-                service.getProperties(function(err,props){
-                    if(err) {
-                        callback(err);
-                    }else {
-                        callback(null,service.getProperties());
-                    }
-                });
-            }
-    });
+    callback('not yet');
 }
 
 exports.connectToAWifiNetwork= function(ssid,key,callback) {
-
-    /*
-    wifiscanner.scan(function(err,data){
-        if (err) {
-            callback(err)
-        } else {
-            callback(null, data)
-        }
-    });
-*/
-    self.wifi.join(ssid,key,function(err,data) {
-        if(err){
-        callback(err.message);
-        mainWifi();
-        }
-        else{
-            callback(null,data);
-        }
-
-    });
+    wifi.joinWifi(ssid, key, callback);
 }
 
 
 exports.disconnectFromAWifiNetwork= function(callback){
-	self.wifi.disconnect(function(err){
-		if(err)callback(err); 
-		else callback(null);
-	});
+/*  self.wifi.disconnect(function(err){
+    if(err)callback(err); 
+    else callback(null);
+  });*/
+callback('not yet');
      
 }
 
 exports.forgetAWifiNetwork=function(ssid,callback){
-	self.wifi.forgetNetwork(ssid,function(err){
-		if(err)callback(err); 
-		else callback(null);
-	})
+/*  self.wifi.forgetNetwork(ssid,function(err){
+    if(err)callback(err); 
+    else callback(null);
+  })
+*/
+callback('not yet');
 }
 
 
 exports.turnWifiOn=function(callback){
-     self.wifi.enable(function(err){
+/*     self.wifi.enable(function(err){
         if(err)callback(err); 
         else callback(null);
      });
+*/
+callback('Not available on the edison wifi manager.');
+
 }
 
 exports.turnWifiOff=function(callback){
+/*
      self.wifi.disable(function(err){
         if(err)callback(err); 
         else callback(null);
      });
+*/
+callback('Not available on the edison wifi manager.');
+
 }
 
 exports.turnWifiHotspotOn=function(callback){
-     self.wifi.openHotspot(hotspot_ssid,hotspot_passphrase,function(err) {
-        if(err)callback(err); 
-        else callback(null);
-     });
+    log.info("Entering AP mode...")
+    wifi.joinAP();
 }
 
 exports.turnWifiHotspotOff=function(callback){
-     self.wifi.closeHotspot(function(err){
+/*     self.wifi.closeHotspot(function(err){
         if(err)callback(err); 
         else callback(null);
      });
+*/
+callback('not yet');
 }
-
-
-/*******************************************************************************************/
-/*************************************  OLD MANAGER  ***************************************/
-/*******************************************************************************************/
-
-exports.createProfileForAvailableWirelessNetwork = function(ssid, key, callback) {
-    exports.getAvailableWifiNetwork(ssid, function(err, network) {
-        if(err) {
-            callback(err);
-        } else {
-            wifi_info = {}
-            wifi_info.ssid = ssid
-            wifi_info.security = network.security
-            wifi_info.itr = WIFI_INTERFACE
-            wifi_info.key = key
-            exports.addWifiProfile(wifi_info, callback);
-        }
-    })
-}
-
-var loadNetworkProfile = function(filename, callback) {
-    fs.readFile(PROFILES_FOLDER+filename, function (err, data) {
-        if(err){
-            callback(err);
-        } else {
-            var profile = parseNetworkProfile(data)
-            callback(null, profile);
-        }
-    });
-}
-
-var parseNetworkProfile = function(profile_txt){
-    var profile = {};
-    var lines = profile_txt.toString().split('\n');
-    for(var index in lines){
-        var arg = lines[index].trim().split('=');
-        if(arg[0])
-            profile[arg[0]]=arg[1];
-    }
-    return profile;
-}
-
-exports.getWifiProfiles = function(callback) {
-    fs.readdir(PROFILES_FOLDER,function(err,files){
-        if(err){
-            callback(err);
-        } else {
-            var wifi_profiles = files.filter(function(filename) {
-                var is_profile = filename.indexOf(WIFI_INTERFACE+"-")===0
-                return is_profile
-            });
-            async.map(wifi_profiles, loadNetworkProfile, callback);
-        }
-    });
-}
-
-exports.getWifiProfile = function(ssid, callback) {
-    loadNetworkProfile(WIFI_INTERFACE+'-'+ssid, callback);
-}
-
-exports.formatWifiProfile = function(wifi_info){
-    if(!wifi_info)
-        return undefined;
-    if(wifi_info.security !== "none" && wifi_info.security && "wep" && wifi_info.security !== "wpa" )
-        return undefined;
-    if(!wifi_info.ssid)
-        return undefined;
-
-    var profile_string="";
-    profile_string+=    "Description='FabMo Wireless Manager Profile " + wifi_info.ssid + "'\n";
-    profile_string+=    "Interface="+WIFI_INTERFACE+'\n';
-    profile_string+=    "Connection=wireless\n";
-    profile_string+=    "Security="+wifi_info.security+'\n';
-    profile_string+=    "ESSID="+wifi_info.ssid+'\n';
-    profile_string+=    "IP=dhcp\n";
-    if(wifi_info.security!=="none" && wifi_info.key === undefined)
-        return undefined;
-    else
-        profile_string+="Key="+wifi_info.key+'\n';
-
-    return profile_string;
-}
-
-exports.addWifiProfile = function(wifi_info, callback) {
-    var txt = exports.formatWifiProfile(wifi_info);
-    if(txt) {
-        fs.writeFile(PROFILES_FOLDER + WIFI_INTERFACE + '-' + wifi_info.ssid, txt, function(err) {
-            callback(err);
-        });
-    } else {
-        err = "Could not convert " + JSON.stringify(wifi_info) + " into a valid wifi profile";
-        callback(err);
-    }
-}
-
-exports.removeWifiProfile = function(ssid, callback) {
-    fs.unlink(PROFILES_FOLDER+WIFI_INTERFACE+'-'+ssid, function (err) {
-        callback(err);
-    });
-}
-
-
-/*******************************************************************************************/
-/********************************* END OF OLD MANAGER  *************************************/
-/*******************************************************************************************/

@@ -10,6 +10,7 @@ define(function(require) {
 	
 	var Dashboard = function(target) {
 		this.engine = null;
+		this.machine = null;
 		this.socket = null;
 		this.ui = null;
 
@@ -354,6 +355,9 @@ define(function(require) {
 
 		this._registerHandler('enableWifiHotspot', function(data, callback) {
 			this.engine.enable_hotspot(function(err, result) {
+				console.log("posted")
+				console.log(err)
+				console.log(result)
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
@@ -430,6 +434,20 @@ define(function(require) {
 					this.updateStatus(status);
 					callback(null, status);
 				}
+			}.bind(this));
+		}.bind(this));
+
+		this._registerHandler('updateMacro', function(data, callback) {
+			this.machine.update_macro(data.id, data.macro, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+
+		this._registerHandler('deleteMacro', function(data, callback) {
+			this.machine.delete_macro(data, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 
