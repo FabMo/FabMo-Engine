@@ -11,8 +11,8 @@
 }(this, function () {
   "use strict"
 
-var MOVE_THRESH = 5;
-var keypad_enabled = false;
+var MOVE_THRESH = 10;
+var Keyboard_enabled = false;
   var KEY_RIGHT = 39;
   var KEY_LEFT = 37;
   var KEY_UP = 38;
@@ -21,7 +21,7 @@ var keypad_enabled = false;
   var KEY_PGDOWN = 34;
 
 
-var Keypad = function(id, options) {
+var Keyboard = function(id, options) {
 	this.id = id;
 	this.elem = $(id);
 	this.elem.attr('tabindex', 0)
@@ -34,7 +34,7 @@ var Keypad = function(id, options) {
 	this.setOptions(options);
 }
 
-Keypad.prototype.init = function() {
+Keyboard.prototype.init = function() {
 	this.elem.click(this.onClick.bind(this));
 	this.elem.on('focus', this.onFocus.bind(this));
 	this.elem.on('mouseenter', this.onMouseEnter.bind(this));
@@ -45,12 +45,12 @@ Keypad.prototype.init = function() {
 	this.elem.on('keyup', this.onKeyUp.bind(this));
 }
 
-Keypad.prototype.setOptions = function(options) {
+Keyboard.prototype.setOptions = function(options) {
 	options = options || {}
 	this.refreshInterval = options.refreshInterval || this.refreshInterval || 100;
 }
 
-Keypad.prototype.emit = function(evt, data) {
+Keyboard.prototype.emit = function(evt, data) {
 	if(evt in this.listeners) {
 		console.info("Emitting " + evt + " event with " + JSON.stringify(data));
 		var listeners = this.listeners[evt];
@@ -64,27 +64,27 @@ Keypad.prototype.emit = function(evt, data) {
 	}
 }
 
-Keypad.prototype.on = function(evt, func) {
+Keyboard.prototype.on = function(evt, func) {
 	if(evt in this.listeners) {
 		this.listeners[evt].push(func);
 	}
 }
 
-Keypad.prototype.setEnabled = function(enabled) {
+Keyboard.prototype.setEnabled = function(enabled) {
 	this.enabled = enabled;
 	if(enabled) {
 		this.moves = MOVE_THRESH;
-		this.elem.removeClass('keypadDisabled');				
-		this.elem.addClass('keypadEnabled');		
+		this.elem.removeClass('keyboardDisabled');				
+		this.elem.addClass('keyboardEnabled');		
 	} else {
 		this.moves = 0;
-		this.elem.addClass('keypadDisabled');		
-		this.elem.removeClass('keypadEnabled');		
+		this.elem.addClass('keyboardDisabled');		
+		this.elem.removeClass('keyboardEnabled');		
 	}
 }
 
 
-Keypad.prototype.refresh = function() {
+Keyboard.prototype.refresh = function() {
 	if(!this.enabled || !this.going) {
 		this.emit('stop', null);
 	} else {
@@ -93,14 +93,14 @@ Keypad.prototype.refresh = function() {
 	}
 }
 
-Keypad.prototype.start = function(axis, direction) {
+Keyboard.prototype.start = function(axis, direction) {
 	if(this.going) { return; }
 	this.move = {'axis' : axis, 'dir' : direction};
 	this.going = true;
 	this.refresh();
 }
 
-Keypad.prototype.stop = function() {
+Keyboard.prototype.stop = function() {
 	this.going = false;
 	if(this.interval) {
 		clearTimeout(this.interval);
@@ -110,26 +110,26 @@ Keypad.prototype.stop = function() {
 }
 
 
-Keypad.prototype.onClick = function(evt) {
+Keyboard.prototype.onClick = function(evt) {
 	this.setEnabled(!this.enabled);
 	console.log('Click')
 }
 
 
-Keypad.prototype.onFocus = function(evt) {}
-Keypad.prototype.onMouseEnter = function(evt) {}
+Keyboard.prototype.onFocus = function(evt) {}
+Keyboard.prototype.onMouseEnter = function(evt) {}
 
-Keypad.prototype.onBlur = function(evt) {
+Keyboard.prototype.onBlur = function(evt) {
 	this.setEnabled(false);
 }
 
-Keypad.prototype.onMouseMove = function(evt) {
+Keyboard.prototype.onMouseMove = function(evt) {
 	if(this.moves-- <= 0) {
 		this.setEnabled(false);
 	}
 }
 
-Keypad.prototype.onKeyDown = function(evt) {
+Keyboard.prototype.onKeyDown = function(evt) {
 	if(!this.going) {
 		switch(evt.keyCode) {
 			case KEY_UP:
@@ -160,18 +160,18 @@ Keypad.prototype.onKeyDown = function(evt) {
 	}
 }
 
-Keypad.prototype.onMouseLeave = function(evt) {
+Keyboard.prototype.onMouseLeave = function(evt) {
 	this.setEnabled(false);
 	if(this.going) {
 		this.stop();
 	}
 }
 
-Keypad.prototype.onKeyUp = function(evt) {
+Keyboard.prototype.onKeyUp = function(evt) {
 	this.stop();
 }
 
 
-return Keypad;
+return Keyboard;
 }));
 
