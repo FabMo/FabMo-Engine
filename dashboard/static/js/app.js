@@ -14,7 +14,7 @@ requirejs.config({
         'fabmo-ui' : 'libs/FabMoUI-latest',
         'socket.io' : 'libs/socket.io',
         'handwheel' : 'libs/handwheel',
-        'keypad' : 'libs/keypad',
+        'keyboard' : 'libs/keyboard',
         'toastr' : 'libs/toastr.min'
     },
     shim : {
