@@ -104,9 +104,8 @@ var _parseMacroFile = function(filename, callback) {
 }
 
 var update = function(id, macro, callback) {
-	old_macro = get(id);
+	var old_macro = get(id);
 	if(old_macro) {
-
 		function savemacro(id, callback) {
 			old_macro.name = macro.name || old_macro.name;
 			old_macro.description = macro.description || old_macro.description;
@@ -116,12 +115,18 @@ var update = function(id, macro, callback) {
 			old_macro.filename = _createMacroFilename(old_macro.index, old_macro.type);
 			save(id, callback);
 		}
-		if(macro.index && (macro.index != old_macro.index)) {
-			macros[macro.index] = old_macro;
-			delete macros[old_macro.index];
-			_deleteMacroFile(old_macro.index, function(err) {
-				savemacro(macro.index, callback);
-			});
+
+		if(macro.index) {
+			var new_index = parseInt(macro.index);
+			if(new_index != old_macro.index) {
+				macros[new_index] = old_macro;
+				delete macros[old_macro.index];
+				_deleteMacroFile(old_macro.index, function(err) {
+					savemacro(new_index, callback);
+				});
+			} else {
+				savemacro(id, callback);
+			}
 		} else {
 			savemacro(id, callback);
 		}
@@ -213,7 +218,7 @@ var getInfo = function(idx) {
 			'description' : macro.description,
 			'enabled' : macro.enabled,
 			'type' : macro.type,
-			'index' : macro.index
+			'index' : parseInt(macro.index)
 		}
 	} else {
 		return null; 

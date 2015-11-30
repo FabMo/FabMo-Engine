@@ -444,26 +444,12 @@ define(function(require) {
 			}.bind(this));
 		}.bind(this));
 
-		this._registerHandler('updateMacro', function(data, callback) {
-			this.machine.update_macro(data.id, data.macro, function(err, result) {
-				if(err) { callback(err); }
-				else { callback(null, result); }
-			}.bind(this));
-		}.bind(this));
-
-		this._registerHandler('deleteMacro', function(data, callback) {
-			this.machine.delete_macro(data, function(err, result) {
-				if(err) { callback(err); }
-				else { callback(null, result); }
-			}.bind(this));
-		}.bind(this));
-
 		this._registerHandler('notify', function(data, callback) {
 			if(data.message) {
 				this.notification(data.type || 'info', data.message);
 				callback(null);
 			} else {
-				callback('Must provide a message to notify.');
+				callback(new Error('Must provide a message to notify.'));
 			}
 		}.bind(this));
 	}
