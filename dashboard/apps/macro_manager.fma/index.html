@@ -121,9 +121,6 @@
                 "order" : [[1,"asc"]]
             }); // DataTable
 
-            $('.editable').on('blur', function() {
-                $(this).attr('contenteditable', false);
-            });
 
             $('#macro-new').on('click', function(evt) {
                 var indices = macro_table.columns(1).data().toArray()[0];
@@ -151,51 +148,59 @@
                     td.attr('contenteditable', true);
                     td.focus();
                     td.selectText();
+                    
+                    function save() {
+                        var update = {};
+                        var ok_to_update = true;
+                        if(key === 'index') {
+                            try {
+                                v = parseInt(td.text())
+                                update[key] = v;
+                                if(ids.indexOf(v) != -1) {
+                                    ok_to_update = false;
+                                    error_message = "Macro number " + v + " already exists."
+                                }
+                            } catch(e) {
+                                ok_to_update = false;
+                            }
+                        } else {
+                            update[key] = td.text();
+                        }
+                        if(ok_to_update) {
+                            fabmoDashboard.updateMacro(parseInt(macro.index), update, function(err, result) {
+                                macro_table.ajax.reload();
+                            });                                    
+                        } else {
+                            td.text(saved_text);                                    
+                            if(error_message) {
+                                fabmoDashboard.notify('error', error_message);
+                            }
+                        }
+                    }
+
                     td.on('keydown', function(evt) {
                         switch(evt.which) {
                             case 09:
                             case 13: // Enter
-                                td.attr('contenteditable', true);
-                                td.blur();
-                                var update = {};
-                                var ok_to_update = true;
-                                if(key === 'index') {
-                                    try {
-                                        v = parseInt(td.text())
-                                        update[key] = v;
-                                        if(ids.indexOf(v) != -1) {
-                                            ok_to_update = false;
-                                            error_message = "Macro number " + v + " already exists."
-                                        }
-                                    } catch(e) {
-                                        ok_to_update = false;
-                                    }
-                                } else {
-                                    update[key] = td.text();
-                                }
-                                if(ok_to_update) {
-                                    fabmoDashboard.updateMacro(parseInt(macro.index), update, function(err, result) {
-                                        macro_table.ajax.reload();
-                                    });                                    
-                                } else {
-                                    td.text(saved_text);                                    
-                                    if(error_message) {
-                                        fabmoDashboard.notify('error', error_message);
-                                    }
-                                }
-
+                                save();
                                 evt.preventDefault();
                                 td.off('keydown');
                                 break;
-
                             case 27: // Esc
                                 td.text(saved_text)
                                 td.blur();
                                 break;
                         }
                     });
+
+                    td.on('blur', function(evt) {
+                        td.off('blur');
+                        save();
+                    });
+
                 }
             } );
+
 
             $('#macro_table tbody').on( 'click', 'td', function () {
                 var tr = $(this).closest('tr');
