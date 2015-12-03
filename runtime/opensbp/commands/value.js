@@ -471,14 +471,14 @@ exports.VS = function(args,callback) {
 
 };
 
-exports.VU = function(args,callback) {
+//exports.VU = function(args,callback) {
 
-	var G2_2get = [	'1sa','1mi',
-					'2sa','2mi',
-					'3sa','3mi',
-					'4sa','4mi',
-					'5sa','5mi',
-					'6sa','6mi' ];
+//	var G2_2get = [	'1sa','1mi',
+//					'2sa','2mi',
+//					'3sa','3mi',
+//					'4sa','4mi',
+//					'5sa','5mi',
+//					'6sa','6mi' ];
 
 //	var SBP_2get = ['gearBoxRatio1',
 //				    'gearBoxRatio2',
@@ -487,65 +487,65 @@ exports.VU = function(args,callback) {
 //				    'gearBoxRatio5',
 //				    'gearBoxRatio6' ];
 
-	var SBunitVal = 0.0;
-	var g2_VU = {};
-	var sbp_VU = {};
-	var getG2_VU = config.driver.getMany(G2_2get);
+//	var SBunitVal = 0.0;
+//	var g2_VU = {};
+//	var sbp_VU = {};
+//	var getG2_VU = config.driver.getMany(G2_2get);
 //	var getSBP_VU = config.opensbp.getMany(SBP_2get);
 
-	log.debug("getG2_VU: " + JSON.stringify(getG2_VU));
+//	log.debug("getG2_VU: " + JSON.stringify(getG2_VU));
 //	log.debug("getSBP_VU: " + JSON.stringify(getSBP_VU));
 			
 	// Channel 1 unit value
-	if (args[0] !== undefined){
-		sbp_VU.units1 = args[0];
-		g2_VU['1tr'] = ((360/getG2_VU['1sa']) * getG2_VU['1mi']) / sbp_VU.units1;
-	}
-	// Channel 2 unit value
-	if (args[1] !== undefined){
-		sbp_VU.units2 = args[1];
-		g2_VU['2tr'] = ((360/getG2_VU['2sa']) * getG2_VU['2mi']) / sbp_VU.units2;
-	}
+//	if (args[0] !== undefined){
+//		sbp_VU.units1 = args[0];
+//		g2_VU['1tr'] = ((360/getG2_VU['1sa']) * getG2_VU['1mi']) / sbp_VU.units1;
+//	}
+//	// Channel 2 unit value
+//	if (args[1] !== undefined){
+//		sbp_VU.units2 = args[1];
+//		g2_VU['2tr'] = ((360/getG2_VU['2sa']) * getG2_VU['2mi']) / sbp_VU.units2;
+//	}
 	// Channel 3 unit value
-	if (args[2] !== undefined){
-		sbp_VU.units3 = args[2];
-		g2_VU['3tr'] = ((360/getG2_VU['3sa']) * getG2_VU['3mi']) / sbp_VU.units3;
-	}
+//	if (args[2] !== undefined){
+//		sbp_VU.units3 = args[2];
+//		g2_VU['3tr'] = ((360/getG2_VU['3sa']) * getG2_VU['3mi']) / sbp_VU.units3;
+//	}
 	// Channel 4 unit value
-	if (args[3] !== undefined){
-		sbp_VU.units4 = args[3];				
-		g2_VU['4tr'] = ((360/getG2_VU['4sa']) * getG2_VU['4mi']) / sbp_VU.units4;
-	}
+//	if (args[3] !== undefined){
+//		sbp_VU.units4 = args[3];				
+//		g2_VU['4tr'] = ((360/getG2_VU['4sa']) * getG2_VU['4mi']) / sbp_VU.units4;
+//	}
 	// Channel 5 unit value
-	if (args[4] !== undefined){
-		sbp_VU.units5 = args[4];
-		g2_VU['5tr'] = ((360/getG2_VU['5sa']) * getG2_VU['5mi']) / sbp_VU.units5;
-	}
+//	if (args[4] !== undefined){
+//		sbp_VU.units5 = args[4];
+//		g2_VU['5tr'] = ((360/getG2_VU['5sa']) * getG2_VU['5mi']) / sbp_VU.units5;
+//	}
 	// Channel 6 unit value
-	if (args[5] !== undefined){
-		sbp_VU.units6 = args[5];
-		g2_VU['6tr'] = ((360/getG2_VU['6sa']) * getG2_VU['6mi']) / sbp_VU.units6;
-	}
-	// Channel 1 multiplier
-	if (args[6] !== undefined){}
-	// Channel 2 multiplier
-	if (args[7] !== undefined){}
-	// Channel 3 multiplier
-	if (args[8] !== undefined){}
-	// Channel 4 multiplier
-	if (args[9] !== undefined){}
-	// Channel 5 multiplier
-	if (args[10] !== undefined){}
-	// Channel 6 multiplier
-	if (args[11] !== undefined){}
+	// if (args[5] !== undefined){
+	// 	sbp_VU.units6 = args[5];
+	// 	g2_VU['6tr'] = ((360/getG2_VU['6sa']) * getG2_VU['6mi']) / sbp_VU.units6;
+	// }
+	// // Channel 1 multiplier
+	// if (args[6] !== undefined){}
+	// // Channel 2 multiplier
+	// if (args[7] !== undefined){}
+	// // Channel 3 multiplier
+	// if (args[8] !== undefined){}
+	// // Channel 4 multiplier
+	// if (args[9] !== undefined){}
+	// // Channel 5 multiplier
+	// if (args[10] !== undefined){}
+	// // Channel 6 multiplier
+	// if (args[11] !== undefined){}
 
-	log.debug(JSON.stringify(sbp_VU));
-	log.debug(JSON.stringify(g2_VU));	
+	// log.debug(JSON.stringify(sbp_VU));
+	// log.debug(JSON.stringify(g2_VU));	
 
 	// We set the g2 config (Which updates the g2 hardware but also our persisted copy of its settings)
-	config.opensbp.setMany(sbp_VU, function(err, values) {
-		config.driver.setMany(g2_VU, function(err, values) {
-			callback();
-		});
-	});
-};
+// 	config.opensbp.setMany(sbp_VU, function(err, values) {
+// 		config.driver.setMany(g2_VU, function(err, values) {
+// 			callback();
+// 		});
+// 	});
+// };

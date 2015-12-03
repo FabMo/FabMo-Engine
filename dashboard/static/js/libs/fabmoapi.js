@@ -30,7 +30,7 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 
 	if(this.socket) {
 		this.on('status', function(status) {
-			this.status = status;
+			this._setStatus(status);
 		}.bind(this));
 
 		this.socket.on('connect', function() {
@@ -61,6 +61,10 @@ FabMoAPI.prototype.on = function(message, func) {
 	} else {
 		console.warn("Not registering " + message + "event because socket has not been set up yet.");
 	}
+}
+
+FabMoAPI.prototype._setStatus = function(status) {
+	this.status = status;
 }
 
 // Configuration
@@ -211,6 +215,39 @@ FabMoAPI.prototype.manualHeartbeat = function() {
 
 FabMoAPI.prototype.manualStop = function() {
 	this.executeRuntimeCode('manual', {'cmd': 'stop'});
+}
+
+FabMoAPI.prototype.connectToWifi = function(ssid, key, callback) {
+	var data = {'ssid' : ssid, 'key' : key};
+	this._post('/network/wifi/connect', data, callback, callback);
+}
+
+FabMoAPI.prototype.disconnectFromWifi = function(callback) {
+	this._post('/network/wifi/disconnect', {}, callback, callback);
+}
+
+FabMoAPI.prototype.forgetWifi = function(callback) {
+	this._post('/network/wifi/forget', {}, callback, callback);
+}
+
+FabMoAPI.prototype.enableWifi = function(callback) {
+	var data = {'enabled' : true};
+	this._post('/network/wifi/state', data, callback, callback);
+}
+
+FabMoAPI.prototype.disableWifi = function(callback) {
+	var data = {'enabled' : false};
+	this._post('/network/wifi/state', data, callback, callback);
+}
+
+FabMoAPI.prototype.enableHotspot = function(callback) {
+	var data = {'enabled' : true};
+	this._post('/network/hotspot/state', data, callback, callback);
+}
+
+FabMoAPI.prototype.disableHotspot = function(callback) {
+	var data = {'enabled' : false};
+	this._post('/network/hotspot/state', data, callback, callback);
 }
 
 

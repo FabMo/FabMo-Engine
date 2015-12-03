@@ -6,7 +6,7 @@ requirejs.config({
     baseUrl: '/js',
     urlArgs: "ts="+new Date().getTime(),
     paths: {
-    	'jquery' : 'libs/jquery',
+    	'jquery' : 'libs/jquery.min',
     	'backbone' : 'libs/backbone',
     	'foundation' : 'libs/foundation.min',
         'underscore' : 'libs/underscore',
@@ -14,7 +14,7 @@ requirejs.config({
         'fabmo-ui' : 'libs/FabMoUI-latest',
         'socket.io' : 'libs/socket.io',
         'handwheel' : 'libs/handwheel',
-        'keypad' : 'libs/keypad',
+        'keyboard' : 'libs/keyboard',
         'toastr' : 'libs/toastr.min'
     },
     shim : {

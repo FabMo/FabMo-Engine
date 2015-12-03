@@ -517,12 +517,12 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	vertical-align: baseline;
 }
 
-#position ul .axis .home, #keypad ul .set {
+#position ul .axis .home, #keyboard ul .set {
 	padding: 0;
 	text-align: center;
 }
 
-#position ul .axis .home span, #keypad ul .set span {
+#position ul .axis .home span, #keyboard ul .set span {
 	width: 34px;
 	width: 2.125rem;
 	height: 34px;
@@ -532,7 +532,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	margin-top: 0.5rem;
 }
 
-#position ul .axis .home:hover, #keypad ul .set:hover {
+#position ul .axis .home:hover, #keyboard ul .set:hover {
 	cursor: pointer;
 }
 
@@ -1080,7 +1080,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .fabmo-status-idle { color: blue; }
 .fabmo-status-disconnected { color: gray; }
 
-.keypad {
+.keyboard {
 	border-radius: 10px;
 	width: 200px;
 	height: 60px;
@@ -1095,10 +1095,10 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	cursor: pointer;
 }
 
-.keypadEnabled {
+.keyboardEnabled {
 	background-color: green;
 }
 
-.keypadDisabled {
+.keyboardDisabled {
 	background-color: red;
 }

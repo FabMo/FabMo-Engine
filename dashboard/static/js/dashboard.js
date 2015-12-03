@@ -13,11 +13,13 @@ define(function(require) {
 		this.machine = null;
 		this.socket = null;
 		this.ui = null;
-
+		this.status = {job:null};
 		this.target = target || window;
 		this.handlers = {};
 		this.events = {
-			'status' : []
+			'status' : [],
+			'job_start' : [],
+			'job_end' : []
 		};
 		this._registerHandlers();
 		this._setupMessageListener();
@@ -28,6 +30,8 @@ define(function(require) {
 		this.engine.on('status', function(data) {
 			this.updateStatus(data);
 		}.bind(this));
+
+
 	}
 
 	// Register a handler function for the provided message type
@@ -329,55 +333,58 @@ define(function(require) {
 		/// NETWORK MANAGEMENT
 		///
 		this._registerHandler('connectToWifi', function(data, callback) {
-			this.engine.connect_to_wifi(data.ssid, data.key, function(err, result) {
+			this.engine.connectToWifi(data.ssid, data.key, function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 
 		this._registerHandler('disconnectFromWifi', function(data, callback) {
-			this.engine.disconnect_from_wifi(function(err, result) {
+			this.engine.disconnectFromWifi(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 
 		this._registerHandler('forgetWifi', function(data, callback) {
-			this.engine.forget_wifi(data.ssid, function(err, result) {
+			this.engine.forgetWifi(data.ssid, function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 
 		this._registerHandler('enableWifi', function(data, callback) {
-			this.engine.enable_wifi(function(err, result) {
+			this.engine.enableWifi(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 
 		this._registerHandler('disableWifi', function(data, callback) {
-			this.engine.disable_wifi(function(err, result) {
+			this.engine.disableWifi(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 
 		this._registerHandler('enableWifiHotspot', function(data, callback) {
-			this.engine.enable_hotspot(function(err, result) {
+			this.engine.enableHotspot(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 
 		this._registerHandler('disableWifiHotspot', function(data, callback) {
-			this.engine.disable_hotspot(function(err, result) {
+			this.engine.disableHotspot(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
 		}.bind(this));
 
 
+		///
+		/// MACROS
+		///
 		this._registerHandler('getMacros', function(data, callback) {
 			this.engine.getMacros(function(err, result) {
 				if(err) { callback(err); }
@@ -407,6 +414,9 @@ define(function(require) {
 		}.bind(this));
 
 
+		///
+		/// DASHBOARD (APP MANAGEMENT)
+		///
 		this._registerHandler('launchApp', function(data, callback) {
 			id = data.id;
 			args = data.args || {};
@@ -444,31 +454,25 @@ define(function(require) {
 			}.bind(this));
 		}.bind(this));
 
-		this._registerHandler('updateMacro', function(data, callback) {
-			this.machine.update_macro(data.id, data.macro, function(err, result) {
-				if(err) { callback(err); }
-				else { callback(null, result); }
-			}.bind(this));
-		}.bind(this));
-
-		this._registerHandler('deleteMacro', function(data, callback) {
-			this.machine.delete_macro(data, function(err, result) {
-				if(err) { callback(err); }
-				else { callback(null, result); }
-			}.bind(this));
-		}.bind(this));
-
 		this._registerHandler('notify', function(data, callback) {
 			if(data.message) {
 				this.notification(data.type || 'info', data.message);
 				callback(null);
 			} else {
-				callback('Must provide a message to notify.');
+				callback(new Error('Must provide a message to notify.'));
 			}
 		}.bind(this));
 	}
 
 	Dashboard.prototype.updateStatus = function(status){
+		if(this.status.job && !status.job) {
+			this._fireEvent('job_end', null);
+		}
+
+		if(!this.status.job && status.job) {
+			this._fireEvent('job_start', null);
+		}
+		this.status = status;
 		this._fireEvent("status", status);
 	};
 

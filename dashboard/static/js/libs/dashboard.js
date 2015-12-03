@@ -1,4 +1,3 @@
-
 var FabMoDashboard = function() {
 	this.target = window.parent;
 	this.window = window;
@@ -6,7 +5,9 @@ var FabMoDashboard = function() {
 	this._handlers = {};
 	this.status = {};
 	this._event_listeners = {
-		'status' : []
+		'status' : [],
+		'job_start' : [],
+		'job_end' : []
 	};
 	this._setupMessageListener();
 }
@@ -113,6 +114,7 @@ FabMoDashboard.prototype._download = function(data, strFileName, strMimeType) {
 
 FabMoDashboard.prototype._call = function(name, data, callback) {
 	if(this.isPresent()) {
+		//console.debug("Calling " + name + " with " + JSON.stringify(data));
 		message = {"call":name, "data":data}
 		if(callback) {
 			message.id = this._id++;
@@ -120,6 +122,7 @@ FabMoDashboard.prototype._call = function(name, data, callback) {
 		}
 		this.target.postMessage(message, '*');
 	} else {
+		//console.debug("Simulating " + name + " with " + JSON.stringify(data));		
 		this._simulateCall(name, data, callback);
 	}
 }
