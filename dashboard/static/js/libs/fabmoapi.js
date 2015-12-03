@@ -11,7 +11,14 @@
 }(this, function (io) {
   "use strict"
 
+var PING_TIMEOUT = 1000;
+
 var FabMoAPI = function(base_url) {
+	this.events = {
+		'status' : [],
+		'disconnect' : [],
+		'connect' : []
+	};
 	var url = window.location.origin;
 	this.base_url = url.replace(/\/$/,'');
 
@@ -34,37 +41,57 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 		}.bind(this));
 
 		this.socket.on('connect', function() {
-			// Request a status once connected
-			// Even though the server is really supposed to send one
 			console.info("Websocket connected");
+			this.emit('connect');
+			this.getStatus();
 		}.bind(this));
 
 		this.socket.on('message', function(message) {console.info("Websocket message: " + JSON.stringify(message))} );
 
 		this.socket.on('disconnect', function() {
+			this.emit('disconnect');
 			console.info("Websocket disconnected");
-			// Maybe use a dashboard autorefresh thing here
+		}.bind(this));
+
+		this.socket.on('status', function(status) {
+			this.emit('status', status);
 		}.bind(this));
 	}
 }
 
-FabMoAPI.prototype.on = function(message, func) {
-	if(this.socket) {
-		this.socket.on(message, func);
-		switch(message) {
-			case 'status':
-				this.socket.emit('status', null);
-				break;
-			default:
-				break;
+FabMoAPI.prototype.emit = function(evt, data) {
+	var handlers = this.events[evt];
+	if(handlers) {
+		for(var i=0; i<handlers.length; i++) {
+			handlers[i](data);
 		}
-	} else {
-		console.warn("Not registering " + message + "event because socket has not been set up yet.");
+	}
+}
+
+FabMoAPI.prototype.on = function(message, func) {
+	if(message in this.events) {
+		this.events[message].push(func);
 	}
 }
 
 FabMoAPI.prototype._setStatus = function(status) {
 	this.status = status;
+}
+
+FabMoAPI.prototype.ping = function(callback) {
+	if(this.socket) {
+		var start = Date.now();
+
+		var fail = setTimeout(function() {
+			callback(new Error('Timeout waiting for ping response.'), null);
+		}, PING_TIMEOUT);
+
+		this.socket.once('pong', function() {
+			clearTimeout(fail);
+			callback(null, Date.now()-start);
+		});
+		this.socket.emit('ping');
+	}
 }
 
 // Configuration

@@ -223,6 +223,16 @@ engine.on('connect', function() {
 	}
 });
 
+setInterval(function() {
+	engine.ping(function(err, time) {
+		if(err) {
+			console.error(err);
+		} else {
+			console.info("PING Response time: " + time + "ms");
+		}
+	});
+}, 3000);
+
 (function () {
 if ($(window).width() < 620) {
     function start_marquee() {

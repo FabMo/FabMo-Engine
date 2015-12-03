@@ -30,6 +30,10 @@ var onConnect = function(socket) {
 			machine.executeRuntimeCode(data.rt, data.data)
 		}
 	});
+
+	socket.on('ping', function(data) {
+		socket.emit('pong');
+	});
 };
 
 module.exports = function(server) {
