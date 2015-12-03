@@ -189,6 +189,9 @@
 	jQuery.fn.dataTableExt.oSort["duration-desc"] = function (x, y) {return 1};
 	jQuery.fn.dataTableExt.oSort["duration-asc"] = function (x, y) {}
 
+	fabmoDashboard.on('job_start', function() {console.log("Job started")});
+	fabmoDashboard.on('job_end', function() {console.log("Job ended")}); 
+
     var history_table = $('#history_table').DataTable( {
     	"paging": true,
     	"filter": false,

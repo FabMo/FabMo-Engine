@@ -61,7 +61,7 @@
 
       fabmoDashboard.getAppArgs(function(err, args) {
         if('job' in args) {
-          var url = '/job/' + args.job + '/file';
+          var url = '/job/' + args.job + '/gcode';
           $.get(url,function(data, status) {
               viewer.setGCode(data, viewer.viewPaths);
           });

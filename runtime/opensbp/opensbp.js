@@ -100,6 +100,15 @@ SBPRuntime.prototype.runFile = function(filename, callback) {
 	}.bind(this));
 };
 
+SBPRuntime.prototype.simulateString = function(s, callback) {
+	var saved_machine = this.machine;
+	this.machine = null;
+	this.runString(s, function(err, data) {
+		this.machine = saved_machine;
+		callback(err, data);
+	});
+}
+
 SBPRuntime.prototype.pause = function() {
 	this.machine.driver.feedHold();
 }
@@ -409,8 +418,17 @@ SBPRuntime.prototype._end = function(error) {
 		}
 
 	} else {
+		var callback = this.end_callback;
+		var gcode = this.output;
 		this.init();
 		this.emit('end', this.output);
+		if(callback) {
+			if(error) {
+				callback(error, null);
+			} else {
+				callback(null, gcode.join('\n'));
+			}
+		}
 	}
 };
 
@@ -781,11 +799,9 @@ SBPRuntime.prototype._eval_value = function(expr) {
 		sys_var = this.evaluateSystemVariable(expr);
 		if(sys_var === undefined) {
 			var persistent_var = this.evaluatePersistentVariable(expr);
-			console.log("PERSISTENT: " + persistent_var)
 			if(persistent_var === undefined) {
 				user_var = this.evaluateUserVariable(expr);
 				if(user_var === undefined) {
-					log.debug("  Evaluated " + expr + " as " + expr);
 					f = parseFloat(expr);
 				    if(isNaN(f)) {
 	                    return expr;
@@ -1007,7 +1023,6 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 };
 
 SBPRuntime.prototype.evaluateUserVariable = function(v) {
-	console.log("evaluating user")
 	if(v === undefined) { return undefined;}
 	result = v.match(USERVAR_RE);
 	if(result === null) {return undefined;}
@@ -1019,7 +1034,6 @@ SBPRuntime.prototype.evaluateUserVariable = function(v) {
 };
 
 SBPRuntime.prototype.evaluatePersistentVariable = function(v) {
-	console.log("Evaluating persistent")
 	if(v === undefined) { return undefined;}
 	result = v.match(USERVAR_RE);
 	if(result === null) {return undefined;}

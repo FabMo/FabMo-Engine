@@ -171,6 +171,27 @@ Machine.prototype.runNextJob = function(callback) {
 	}
 };
 
+Machine.prototype.getGCodeForFile = function(filename, callback) {
+	fs.readFile(filename, 'utf8', function (err,data) {
+		if (err) {
+			log.error('Error reading file ' + filename);
+				log.error(err);
+				return;
+		} else {
+			parts = filename.split(path.sep);
+			ext = path.extname(filename).toLowerCase();
+
+			if(ext == '.sbp') {
+				this.setRuntime(this.sbp_runtime);
+				this.current_runtime.simulateString(data, callback);
+			} else {
+				this.setRuntime(this.gcode_runtime);
+				fs.readFile(filename, callback);
+			}
+		}
+	}.bind(this));
+}
+
 Machine.prototype.runFile = function(filename) {
 	fs.readFile(filename, 'utf8', function (err,data) {
 		if (err) {
@@ -190,6 +211,7 @@ Machine.prototype.runFile = function(filename) {
 		}
 	}.bind(this));
 };
+
 
 Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
 	runtime = this.getRuntime(runtimeName);
