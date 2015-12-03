@@ -36,7 +36,7 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 	}
 
 	if(this.socket) {
-		this.on('status', function(status) {
+		this.socket.on('status', function(status) {
 			this._setStatus(status);
 			this.emit('status', status);
 		}.bind(this));
@@ -52,10 +52,6 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 		this.socket.on('disconnect', function() {
 			this.emit('disconnect');
 			console.info("Websocket disconnected");
-		}.bind(this));
-
-		this.socket.on('status', function(status) {
-			this.emit('status', status);
 		}.bind(this));
 	}
 }
