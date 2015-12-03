@@ -40,10 +40,12 @@
 	<section class="container" id="dropzone">
 		<div class="hovershow message">Drop files here to fabricate...</div>
 		<div class="hoverdim">
-			<div class="row title">
+			<div class="row title jobs-title">
 				<div class="small-12 columns">
-					<h4>Up Next</h4>
+					<h4 class="up-next">Up Next</h4>
+					<h4 class="now-running">Now Running</h4>
 				</div>
+
 			</div>
 			<div class="row">
 				<div class="small-10 medium-8 columns">
@@ -52,10 +54,22 @@
 						<h5 class='nextJobDesc'></h5>
 					</div>
 				</div>
-					<div class="small-2 medium-4 columns" style="text-align:right;">
-						<a id="run-next">
-							<img class='nextJobPrev svg'  src="css/images/player6.svg">
-						</a>
+					<div class="small-2 medium-4 columns play-button" style="text-align:right;">
+							<div class="radial_progress">
+								<div class="perecent_circle">
+									<div class="mask full">
+										<div class="fill"></div>
+									</div>
+									<div class="mask half">
+										<div class="fill"></div>
+										<div class="fill fix"></div>
+									</div>
+								<div class="shadow"></div>
+								</div>
+								<div class="inset">
+									<div id="run-next" class="play"><span></span></div>
+								</div>
+							</div>
 					</div>
 				
 			</div>
@@ -206,7 +220,7 @@
                 "className":      'actions-control',
                 "orderable":      false,
                 "data":           null,
-                "defaultContent": "<div class='ellipses' title='More Actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='resubmitJob' id='resubmit'>Run Again</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div",
+                "defaultContent": "<div class='ellipses' title='More Actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='resubmitJob' id='resubmit'>Run Again</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div>",
             },
             { 	
             	data : {name : 'name', state : 'state'}, 
@@ -243,13 +257,13 @@
 	// DataTable
 	var setNextJob = function (arr) {
 		if (arr == undefined ) {
+
 			$('.nextJobTitle').text('No Jobs Pending');
 			$('.nextJobDesc').text('Drag files here or click "Submit Job"');
-			$('.nextJobPrev').hide();
-			$('.cancel').hide();
-			$('.download').hide();
-			$('.edit').hide();
-			$('.preview').hide();
+			$('.cancel').slideUp(500);
+			$('.download').slideUp(500);
+			$('.edit').slideUp(500);
+			$('.preview').slideUp(500);
 		} else {
 			$('.cancel').data('id', arr._id);
 			$('.preview').data('id', arr._id);
@@ -257,11 +271,11 @@
 			$('.edit').data('id', arr._id);
 			$('.nextJobTitle').text(arr.name);
 			$('.nextJobDesc').text(arr.description);
-			$('.nextJobPrev').show();
-			$('.cancel').show();
-			$('.download').show();
-			$('.edit').show();
-			$('.preview').show();
+			$('.cancel').show(500);
+			$('.download').show(500);
+			$('.edit').show(500);
+			$('.preview').show(500);
+			$('.play-button').show(500);
 		}
 	}
 
@@ -314,7 +328,7 @@
 			if(json.data.jobs.length > 1) {
 				$('.job-queue').show(500);
 			} else {
-				$('.job-queue').hide(500);
+				$('.job-queue').slideUp(500);
 			}
 		}
 	});
@@ -487,11 +501,20 @@
 	});
 
 	$('#run-next').click(function(e) { 
-		fabmoDashboard.runNext(function(err, data) {
+		if ($('.play').hasClass('active')){
+			$('.play').toggleClass('active');
+			fabmoDashboard.stop(function(err, data) {
 			refresh_jobs_list();
-			fabmoDashboard.showDRO();
-			fabmoDashboard.showFooter();
+			fabmoDashboard.hideFooter();
 		});
+		} else {
+			$('.play').toggleClass('active');
+			fabmoDashboard.runNext(function(err, data) {
+				refresh_jobs_list();
+				fabmoDashboard.showDRO();
+				fabmoDashboard.showFooter();
+			});	
+		}		
 	});
 
 	$('#clear-jobs').click(function(e) { 
@@ -513,15 +536,36 @@
 	
 
 	fabmoDashboard.on('status', function(status) {
+		console.log(status);
+		var prog = ((status.line/status.nb_lines)*100).toFixed(2);
+		var percent = Math.ceil(prog);
+		var rotation = Math.ceil(180*(percent/100));
+ 		var fill_rotation = 3 + rotation;
+ 		var fix_rotation = 6 + rotation * 2;
 		var jobid;
+		var transform_styles = ['-webkit-transform',
+                        '-ms-transform',
+                        'transform'];
 		try {
 			jobid = status.job._id || null;
 		} catch(e) {
 			jobid = null;
 		}
-
+		if (status.state === "idle") {
+			$('.up-next').css('left', '0px');
+			$('.now-running').css('left', '-200px');
+			$('.play').removeClass('active');
+			$('.fill, .mask.full').css(transform_styles[i], 'rotate(0deg)');
+			$('.fill.fix').css(transform_styles[i], 'rotate(0deg)');
+			
+		} else if(status.state === "running" ) {
+			$('.up-next').css('left', '-200px');
+			$('.now-running').css('left', '0px');
+			console.log(status.jobid);
+		}
 		// New Job
 		if(jobid) {
+			
 			if(jobid != current_job_id) {
 				current_job_id = jobid;
 				url = '/job/' + jobid + '/file';
@@ -540,8 +584,12 @@
 				refresh_jobs_list();
 	
 			}
+	
 		}
-
+		for(i in transform_styles) {
+				$('.fill, .mask.full').css(transform_styles[i], 'rotate(' + fill_rotation + 'deg)');
+				$('.fill.fix').css(transform_styles[i], 'rotate(' + fix_rotation + 'deg)');
+		}
 		// Hilight Current Line
 		/*
 		try {
@@ -603,6 +651,7 @@
 
         // Replace image with new SVG
         $img.replaceWith($svg);
+
 
     }, 'xml');
 

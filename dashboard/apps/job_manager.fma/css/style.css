@@ -51,8 +51,12 @@ body {
   -o-transition: opacity .2s ease;
 
 }
-
 #dropzone .message {
+  display: none;
+}
+
+#dropzone.hover .message {
+  display: block;
   z-index: 3;
   display: block; 
   position: absolute;
@@ -70,7 +74,21 @@ body {
 h1, h2, h3, h4, h5, h6 {
   color: #666;
 } 
- 
+.jobs-title:first-child {
+  min-height: 50px;
+}
+ .up-next{
+   position: absolute;
+   left: -200px;
+   top: 0;
+   transition: all 0.5s;
+ }
+ .now-running{
+   position: absolute;
+   top: 0;
+   left: -200px;
+   transition: all 0.5s;
+ }
 td.details-control {
     width: 50px;
     cursor: pointer;
@@ -134,6 +152,7 @@ td.preview-control {
   transition: all 0.5s;
   border: 0px;
   display: none;
+  max-width:200px;
 }
 
 .svg:hover{
@@ -286,11 +305,11 @@ tr.shown td.details-control {
 }
 
 .job-failed {
-  color: #ff0000;
+  color: #gmailFB0000;
 }
 
 .job-finished {
-  color: #19760A;
+  color: #32B433;
 }
 
 .job-cancelled {
@@ -740,4 +759,169 @@ td.edit span{
     -webkit-transform: rotate(450deg);
     transform: rotate(450deg);
   }
+}
+
+.play-button {
+  display: none;
+}
+
+.radial_progress {
+	margin-top: 5px;
+    background-color: #eee;
+    height: 100px;
+    width: 100px;
+    border-radius: 50%;
+	float: right;
+	margin-right: 50px;
+}
+
+.fill {
+    background-color: #32B433;
+    height: 100px;
+    width: 100px;
+    transition: -webkit-transform 1s;
+    transition: -ms-transform 1s;
+    transition: transform 1s;
+    position: absolute;
+    /* rect(<top>, <right>, <bottom>, <left>) */
+    clip: rect(0px, 50px, 1000px, 0px);
+    -webkit-backface-visibility: hidden;
+    border-radius: 50%;    
+}
+
+.perecent_circle .mask {
+    /* rect(<top>, <right>, <bottom>, <left>) */
+      clip: rect(0px,100px,100px,50px);
+      height: 100px;
+      width: 100px;
+      position: absolute;
+      transition: -webkit-transform 1s;
+        transition: -ms-transform 1s;
+            transition: transform 1s;
+}
+.mask .fill {
+    clip: rect(0px, 50px, 100px, 0px);
+}
+.inset {
+    background-color: #FFFFFF;
+    width: 90px;
+    height: 90px;
+    position: absolute;
+    margin-left: 5px;
+    margin-top: 5px;
+    border-radius: 50%;
+    box-shadow: 3px 3px 5px rgba(0,0,0,0.2);
+}
+.shadow {
+      width: 100px;
+      height: 100px;
+      position: absolute;
+      border-radius: 50%;
+      box-shadow: inset 3px 3px 5px rgba(0,0,0,0.2);
+}
+
+.inset .percentage {
+     color: #32B433;
+     font-size: 11px;
+     width: 28px;
+     position: absolute;
+     line-height: 1;
+     text-align: center;
+     top: 10.5px;
+     left: 2px;
+	 font-family: 'source_sans_proextralight'; 
+}
+
+
+
+.play span {
+  height: 80px;
+  width: 80px;
+  display: block;
+  position: relative;
+  top: 0;
+  left: 0;
+  text-indent: -9999px;
+}
+
+.play span:before,
+.play span:after {
+  -webkit-transition: all 0.4s;
+  -moz-transition: all 0.4s;
+  -o-transition: all 0.4s;
+  transition: all 0.4s;
+}
+.play {
+  width: 80px;
+  height: 80px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin:-40px 0 0 -40px;
+  display: Block;
+}
+.play span {
+  margin: 0;
+}
+.play span:before {
+  content: '';
+  height: 0px;
+  width: 0px;
+  display: block;
+  background: transparent;
+  border: 25px transparent solid;
+  border-right-width: 0;
+  border-left-color: #32B433;
+  position: absolute;
+  top: 45%;
+  left: 60%;
+  margin: -20px 0 0 -15px;
+}
+.play span:after {
+  content: '';
+  height: 0px;
+  width: 0px;
+  display: block;
+  background: transparent;
+  border: 25px transparent solid;
+  border-right-width: 0;
+  border-left-color: #32B433;
+  position: absolute;
+  top: 45%;
+  left: 60%;
+  margin: -20px 0 0 -15px;
+}
+.play.active {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  left: 50%;
+  top: 50%;
+  z-index: 0;
+}
+.play.active span:before {
+  content: '';
+  border: 20px #9C210C solid;
+  border-top-width: 40px;
+  border-bottom-width: 0px;
+  top: 50%;
+  left: 45%;
+  -webkit-transform: rotate(90deg);
+  -moz-transform: rotate(90deg);
+  -ms-transform: rotate(90deg);
+  -o-transform: rotate(90deg);
+  transform: rotate(90deg);
+}
+.play.active span:after {
+  content: '';
+  border: 20px #9C210C solid;
+  border-bottom-width: 0;
+  border-top-width: 40px;
+  top: 50%;
+  left: 45%;
+  -webkit-transform: rotate(-90deg);
+  -moz-transform: rotate(-90deg);
+  -ms-transform: rotate(-90deg);
+  -o-transform: rotate(-90deg);
+  transform: rotate(-90deg);
 }
