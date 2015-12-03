@@ -30,7 +30,7 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 
 	if(this.socket) {
 		this.on('status', function(status) {
-			this.status = status;
+			this._setStatus(status);
 		}.bind(this));
 
 		this.socket.on('connect', function() {
@@ -61,6 +61,10 @@ FabMoAPI.prototype.on = function(message, func) {
 	} else {
 		console.warn("Not registering " + message + "event because socket has not been set up yet.");
 	}
+}
+
+FabMoAPI.prototype._setStatus = function(status) {
+	this.status = status;
 }
 
 // Configuration

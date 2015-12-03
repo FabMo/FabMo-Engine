@@ -5,7 +5,9 @@ var FabMoDashboard = function() {
 	this._handlers = {};
 	this.status = {};
 	this._event_listeners = {
-		'status' : []
+		'status' : [],
+		'job_start' : [],
+		'job_end' : []
 	};
 	this._setupMessageListener();
 }

@@ -13,11 +13,13 @@ define(function(require) {
 		this.machine = null;
 		this.socket = null;
 		this.ui = null;
-
+		this.status = {job:null};
 		this.target = target || window;
 		this.handlers = {};
 		this.events = {
-			'status' : []
+			'status' : [],
+			'job_start' : [],
+			'job_end' : []
 		};
 		this._registerHandlers();
 		this._setupMessageListener();
@@ -28,6 +30,8 @@ define(function(require) {
 		this.engine.on('status', function(data) {
 			this.updateStatus(data);
 		}.bind(this));
+
+
 	}
 
 	// Register a handler function for the provided message type
@@ -461,6 +465,14 @@ define(function(require) {
 	}
 
 	Dashboard.prototype.updateStatus = function(status){
+		if(this.status.job && !status.job) {
+			this._fireEvent('job_end', null);
+		}
+
+		if(!this.status.job && status.job) {
+			this._fireEvent('job_start', null);
+		}
+		this.status = status;
 		this._fireEvent("status", status);
 	};
 
