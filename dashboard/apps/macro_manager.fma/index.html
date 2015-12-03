@@ -150,6 +150,7 @@
                     td.selectText();
                     
                     function save() {
+                        console.info("Calling SAVE")
                         var update = {};
                         var ok_to_update = true;
                         if(key === 'index') {
@@ -182,9 +183,9 @@
                         switch(evt.which) {
                             case 09:
                             case 13: // Enter
-                                save();
+                                td.off('keydown'); 
+                                td.blur();
                                 evt.preventDefault();
-                                td.off('keydown');
                                 break;
                             case 27: // Esc
                                 td.text(saved_text)
