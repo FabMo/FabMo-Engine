@@ -38,6 +38,7 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 	if(this.socket) {
 		this.on('status', function(status) {
 			this._setStatus(status);
+			this.emit('status', status);
 		}.bind(this));
 
 		this.socket.on('connect', function() {
