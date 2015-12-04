@@ -44,7 +44,7 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 		this.socket.on('connect', function() {
 			console.info("Websocket connected");
 			this.emit('connect');
-			this.getStatus();
+			this.requestStatus();
 		}.bind(this));
 
 		this.socket.on('message', function(message) {console.info("Websocket message: " + JSON.stringify(message))} );
@@ -53,6 +53,7 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 			this.emit('disconnect');
 			console.info("Websocket disconnected");
 		}.bind(this));
+
 	}
 }
 
@@ -91,6 +92,10 @@ FabMoAPI.prototype.ping = function(callback) {
 	}
 }
 
+FabMoAPI.prototype.command = function(name, args) {
+	this.socket.emit('cmd', {'name':name, 'args':args||{} } );
+}
+
 // Configuration
 FabMoAPI.prototype.getConfig = function(callback) {
 	this._get('/config', callback, callback, 'configuration');
@@ -106,6 +111,10 @@ FabMoAPI.prototype.setConfig = function(cfg_data, callback) {
 // Status
 FabMoAPI.prototype.getStatus = function(callback) {
 	this._get('/status', callback, callback, 'status');
+}
+
+FabMoAPI.prototype.requestStatus = function() {
+	this.socket.emit('status');
 }
 
 // Jobs
@@ -129,15 +138,18 @@ FabMoAPI.prototype.resubmitJob = function(id, callback) {
 
 // Direct commands
 FabMoAPI.prototype.quit = function(callback) {
-	this._post('/quit', {}, callback, callback);
+	this.command('quit');
+	//this._post('/quit', {}, callback, callback);
 }
 
 FabMoAPI.prototype.pause = function(callback) {
-	this._post('/pause', {}, callback, callback);
+	this.command('pause');
+	//this._post('/pause', {}, callback, callback);
 }
 
 FabMoAPI.prototype.resume = function(callback) {
-	this._post('/resume', {}, callback, callback);
+	this.command('resume');
+	//this._post('/resume', {}, callback, callback);
 }
 
 // Jobs

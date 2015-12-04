@@ -483,6 +483,9 @@
 	var refresh_jobs_list = function (){
 		queue_table.ajax.reload();
 		history_table.ajax.reload();
+		fabmoDashboard.getJobsInQueue(function(err, data) {
+			
+		});
 	}
 
 	$('.no-jobs-item').click(function(e) {

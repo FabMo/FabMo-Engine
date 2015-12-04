@@ -33,7 +33,7 @@ define(function(require) {
 
 			// Create a FabMo object for the dashboard
 			dashboard.setEngine(engine);
-			dashboard.ui= new FabMoUI(dashboard.engine);
+			dashboard.ui=new FabMoUI(dashboard.engine);
 
 			dashboard.ui.on('error', function(err) {
 				$('#modalDialogTitle').text('Error!');
