@@ -6,11 +6,11 @@ var config = require('../../../config');
 
 exports.VA = function(args, callback) {
 
-	log.debug("VA Command: " + args);
+//	log.debug("VA Command: " + args);
 	
 	this.machine.driver.get('mpo', function(err, MPO) {
 
-		log.debug("Current Machine Base Coordinates (mm): " + JSON.stringify(MPO));
+//		log.debug("Current Machine Base Coordinates (mm): " + JSON.stringify(MPO));
 
 		var setVA_G2 = {};	
 		var setVA_SBP = {};	
@@ -96,7 +96,7 @@ exports.VA = function(args, callback) {
 
 exports.VC = function(args) {
 
-	log.debug( "VC - args = " + args );
+//	log.debug( "VC - args = " + args );
 
 	var sbp_values = {};
 
@@ -130,13 +130,6 @@ exports.VC = function(args) {
 
 exports.VD = function(args,callback) {
 
-	log.debug("VD-args = " + args);
-//	var g2_VD = {};
-//	if ( args[1] !== undefined ){
-//		var numAxes = args[0];
-//		if ( numAxes > 0 || x < 7 ){
-//		}
-//	}
 	// For all axes - the values are:
 	//    0=Disable; 1=Standard Mode; 2=Inhibited; 3=Radius Mode
 	// XYZ Unit type
@@ -187,7 +180,7 @@ exports.VD = function(args,callback) {
 	// Keypad fixed distance
 	if ( args[8] !== undefined ){
 		var fDist = args[8];
-		log.debug("Keypad fixed distance set to: " + fDist );
+//		log.debug("Keypad fixed distance set to: " + fDist );
 		log.debug("Fixed Distance setting not implemented" );
 	}
 	// Keypad remote

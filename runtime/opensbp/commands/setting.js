@@ -16,14 +16,14 @@ exports.SR = function(args) {
 };
 
 // Set to MOVE mode
-exports.SM = function(args) {
+// exports.SM = function(args) {
 	
-};
+// };
 
 // Set to PREVIEW mode
-exports.SP = function(args) {
+// exports.SP = function(args) {
 	
-};
+// };
 
 // Set to table base coordinates
 exports.ST = function(args, callback) {
@@ -69,5 +69,5 @@ exports.SO = function(args) {
 				break;
 		}
 	}
-}
+};
 

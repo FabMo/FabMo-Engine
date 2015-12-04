@@ -385,6 +385,26 @@ var getJobFile = function(req, res, next) {
     });
 };
 
+var getJobGCode = function(req, res, next) {
+    db.Job.getFileForJobId(req.params.id, function(err, file) {
+        if(err) {
+            log.error(err);
+            var answer = {
+                    status:"fail",
+                    data:{file:err}
+            };
+            res.json(answer);                        
+        } else {
+            var gcode_filename = 'gcode.nc';
+            machine.getGCodeForFile(file.path, function(err, gcode) {                
+                res.setHeader('content-type', 'applications/octet-stream');
+                res.setHeader('content-disposition', 'filename="' + gcode_filename + '"');
+                res.send(gcode);
+            });
+        }
+    });
+};
+
 module.exports = function(server) {
     server.post('/job', submitJob);
     server.get('/jobs', getAllJobs);
@@ -392,6 +412,8 @@ module.exports = function(server) {
     server.del('/job/:id', cancelJob);
     server.post('/job/:id', resubmitJob);
     server.get('/job/:id/file', getJobFile);
+    server.get('/job/:id/gcode', getJobGCode);
+
     server.get('/jobs/queue', getQueue);
     server.del('/jobs/queue', clearQueue);
     server.post('/jobs/queue/run', runNextJob);
