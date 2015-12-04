@@ -90,7 +90,7 @@ function FabMoUI(tool, options){
 		this.updateStatusContent(status_report);
 	}.bind(this));
 
-
+	this.tool.requestStatus();
 }
 
 FabMoUI.prototype.on = function(evt, handler) {

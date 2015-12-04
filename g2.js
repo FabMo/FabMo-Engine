@@ -761,7 +761,6 @@ G2.prototype.setMachinePosition = function(position, callback) {
 	});
 
 	if(this.status.unit === 'in') {
-		console.log("inchy inchy")
 		gcode += '\nG20';
 	}
 	this.runString(gcode, callback);
