@@ -37,7 +37,7 @@
 
 <div class="tabs-content">
   <div class="content active" id="tabpending">
-	<section class="container" id="dropzone">
+	<section class="container dropzone" id="dropzone">
 		<div class="hovershow message">Drop files here to fabricate...</div>
 		<div class="hoverdim">
 			<div class="row title jobs-title">
@@ -48,7 +48,7 @@
 
 			</div>
 			<div class="row">
-				<div class="small-10 medium-8 columns">
+				<div class="small-8 medium-8 columns">
 					<h4 class='nextJobTitle'></h4>
 					<div class="small-12 columns">
 						<h5 class='nextJobDesc'></h5>
@@ -255,29 +255,7 @@
 
 	
 	// DataTable
-	var setNextJob = function (arr) {
-		if (arr == undefined ) {
 
-			$('.nextJobTitle').text('No Jobs Pending');
-			$('.nextJobDesc').text('Drag files here or click "Submit Job"');
-			$('.cancel').slideUp(500);
-			$('.download').slideUp(500);
-			$('.edit').slideUp(500);
-			$('.preview').slideUp(500);
-		} else {
-			$('.cancel').data('id', arr._id);
-			$('.preview').data('id', arr._id);
-			$('.download').data('id', arr._id);
-			$('.edit').data('id', arr._id);
-			$('.nextJobTitle').text(arr.name);
-			$('.nextJobDesc').text(arr.description);
-			$('.cancel').show(500);
-			$('.download').show(500);
-			$('.edit').show(500);
-			$('.preview').show(500);
-			$('.play-button').show(500);
-		}
-	}
 
   var queue_table = $('#queue_table').DataTable( {
     "filter": false,
@@ -533,10 +511,55 @@
 			refresh_jobs_list();
 		});
 	});
+		var setNextJob = function (arr) {
+		if (arr == undefined ) {
+
+			
+			$('.cancel').slideUp(500);
+			$('.download').slideUp(500);
+			$('.edit').slideUp(500);
+			$('.preview').slideUp(500);
+		} else {
+			$('.cancel').data('id', arr._id);
+			$('.preview').data('id', arr._id);
+			$('.download').data('id', arr._id);
+			$('.edit').data('id', arr._id);
+			$('.nextJobTitle').text(arr.name);
+			$('.nextJobDesc').text(arr.description);
+			$('.cancel').show(500);
+			$('.download').show(500);
+			$('.edit').show(500);
+			$('.preview').show(500);
+			$('.play-button').show(500);
+		}
+	}
+
 	
+	fabmoDashboard.on('job_start', function(){
+		fabmoDashboard.requestStatus(function(err, data) {
+			console.log(data);
+			$('.nextJobTitle').text(data.job.name);
+			$('.nextJobDesc').text(data.job.description);
+		});
+		$('.cancel').slideUp(500);
+		$('.download').slideUp(500);
+		$('.edit').slideUp(500);
+		$('.preview').slideUp(500);
+		$('body').css('background-color', '#898989');
+		jobrunning = window.setInterval(function(){
+   			$('.dropzone').toggleClass('blink');
+		}, 1000);
+	});
+	fabmoDashboard.on('job_end', function(){
+   			clearInterval(jobrunning);
+			$('.dropzone').removeClass('blink');
+			$('body').css('background-color', '#EEEEEE');
+			fabmoDashboard.getJobsInQueue(function(err, data) {
+				console.log('yay');
+			});
+	});
 
 	fabmoDashboard.on('status', function(status) {
-		console.log(status);
 		var prog = ((status.line/status.nb_lines)*100).toFixed(2);
 		var percent = Math.ceil(prog);
 		var rotation = Math.ceil(180*(percent/100));
@@ -561,7 +584,6 @@
 		} else if(status.state === "running" ) {
 			$('.up-next').css('left', '-200px');
 			$('.now-running').css('left', '0px');
-			console.log(status.jobid);
 		}
 		// New Job
 		if(jobid) {
