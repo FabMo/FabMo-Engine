@@ -173,6 +173,10 @@ FabMoAPI.prototype.clearJobQueue = function(id, callback) {
 	this._del('/jobs/queue', callback, callback);
 }
 
+FabMoAPI.prototype.getJobsInQueue = function(callback) {
+	this._get('/jobs/queue', callback, callback, 'jobs');
+}
+
 // Apps
 FabMoAPI.prototype.getApps = function(callback) {
 	this._get('/apps', callback, callback, 'apps');
