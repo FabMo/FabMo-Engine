@@ -7,8 +7,6 @@ var config = require('../../../config');
 // Jog (rapid) the X axis
 exports.JX = function(args) {
 	var x = args[0];
-
-	log.debug( " JX args: " + JSON.stringify(args));
 	if(isNaN(x)) { throw( "Invalid JX argument: " + x ); }
 	this.cmd_posx = x;
 	this.emit_move('G0',{"X":x});
@@ -18,8 +16,6 @@ exports.JX = function(args) {
 // Jog (rapid) the Y axis
 exports.JY = function(args) {
 	var y = args[0];
-
-	log.debug( " JY args: " + JSON.stringify(args));
 	if(isNaN(y)) { throw( "Invalid JY argument: " + y ); }
 	this.cmd_posy = y;
 	this.emit_move('G0',{"Y":y});
@@ -29,8 +25,6 @@ exports.JY = function(args) {
 // Jog (rapid) the Z axis
 exports.JZ = function(args) {
 	var z = args[0];
-
-	log.debug( " JZ args: " + JSON.stringify(args));
 	if(isNaN(z)) { throw( "Invalid JZ argument: " + z ); }
 	this.cmd_posz = z;
 	this.emit_move('G0',{"Z":z});
@@ -40,8 +34,6 @@ exports.JZ = function(args) {
 // Jog (rapid) the A axis
 exports.JA = function(args) {
 	var a = args[0];
-
-	log.debug( " JA args: " + JSON.stringify(args));
 	if(isNaN(a)) { throw( "Invalid JA argument: " + a ); }
 	this.cmd_posa = a;
 	this.emit_move('G0',{"A":a});
@@ -51,8 +43,6 @@ exports.JA = function(args) {
 // Jog (rapid) the B axis
 exports.JB = function(args) {
 	var b = args[0];
-
-	log.debug( " JB args: " + JSON.stringify(args));
 	if(isNaN(b)) { throw( "Invalid JB argument: " + b ); }
 	this.cmd_posb = b;
 	this.emit_move('G0',{"B":b});
@@ -62,8 +52,6 @@ exports.JB = function(args) {
 // Jog (rapid) the C axis
 exports.JC = function(args) {
 	var c = args[0];
-
-	log.debug( " JC args: " + JSON.stringify(args));
 	if(isNaN(c)) { throw( "Invalid JC argument: " + c ); }
 	this.cmd_posc = c;
 	this.emit_move('G0',{"C":c});
@@ -106,7 +94,7 @@ exports.J6 = function(args) {
 };
 
 process_jog = function(args) {
-    log.debug(" process_move: " + JSON.stringify(args));
+//    log.debug(" process_move: " + JSON.stringify(args));
 	var params = {};
 
 	if(args[0] && typeof args[0] === "number"){ 
@@ -135,8 +123,6 @@ process_jog = function(args) {
 exports.JH = function(args) {
 	var x = 0;
 	var y = 0;
-
-	log.debug( "JH" );
 	this.cmd_posx = 0;
 	this.cmd_posy = 0;
 	this.emit_move('G0',{"X":x,"Y":y});
@@ -144,9 +130,6 @@ exports.JH = function(args) {
 
 // Set the Jog (Rapid) speed for any of the 6 axes
 exports.JS = function(args, callback) {
-
-	log.debug( "JS - args = " + args );
-
 	var speed_change = 0.0;
 	var g2_values = {};
 	var sbp_values = {};
@@ -181,16 +164,12 @@ exports.JS = function(args, callback) {
 		g2_values.cvm = (60 * speed_change);
 		sbp_values.jogc_speed = speed_change;
 	}
-
-	log.debug( "JS-g2_values = " + JSON.stringify(g2_values) );
-	log.debug( "JS-sbp_values = " + JSON.stringify(sbp_values) );
-
 	// We have created the objects containing both the values to set on the G2 driver as well as for shopbot
 	// Now send them to their appropriate places (shopbot first, followed by G2)
 	config.opensbp.setMany(sbp_values, function(err, values) {
-		log.debug("SBP getMany values = " + JSON.stringify(values));
+//		log.debug("SBP getMany values = " + JSON.stringify(values));
 		config.driver.setMany(g2_values, function(err, values) {
-			log.debug("g2 getMany values = " + JSON.stringify(values));
+//			log.debug("g2 getMany values = " + JSON.stringify(values));
 			callback();
 		});
 	});

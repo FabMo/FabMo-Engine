@@ -9,7 +9,6 @@ exports.CA = function(args) {
   var startX = this.cmd_posx;
   var startY = this.cmd_posy;
   var startZ = this.cmd_posz;
-
   var len = args[0] !== undefined ? Math.abs(args[0]) : undefined;
   var ht  = args[1] !== undefined ? Math.abs(args[1]) : undefined;
   var inStr = args[2] !== undefined ? args[2].toUpperCase() : 'T';
@@ -68,8 +67,6 @@ exports.CC = function(args) {
   var plgFromZero = args[11] !== undefined ? args[11] : undefined;
   var comp = 0;
 
-  log.debug("startX = " + startX + "  startY = " + startY + "  startZ = " + startZ );
-
   if (OIT === 'O') {
     comp = 1;
   } 
@@ -123,9 +120,7 @@ exports.CC = function(args) {
 };
 
 exports.CP = function(args) {
-
   var startZ = this.cmd_posz;
-
   var Dia = args[0] !== undefined ? args[0] : undefined;
   var centerX = args[1] !== undefined ? args[1] : this.cmd_posx;
   var centerY = args[2] !== undefined ? args[2] : this.cmd_posy;
@@ -213,9 +208,7 @@ exports.CP = function(args) {
 //			  <No Pull Up after cut>,<Plunge from Z zero>
 //	
 exports.CG = function(args) {
-
-  log.debug("CG-args = " + args);
-
+//  log.debug("CG-args = " + args);
   var startX = this.cmd_posx;
   var startY = this.cmd_posy;
   var startZ = this.cmd_posz;
@@ -239,15 +232,15 @@ exports.CG = function(args) {
 	var outStr;
   var tolerance = 0.000001;
 
-  log.debug("start X:" + startX );
-  log.debug("start Y:" + startY );
-  log.debug("start Z:" + startZ );
-  log.debug("end X:" + endX );
-  log.debug("end Y:" + endY );
-  log.debug("center X:" + centerX );
-  log.debug("center Y:" + centerY );
-  log.debug("I-O-T:" + OIT );
-  log.debug("Dir:" + Dir );
+  // log.debug("start X:" + startX );
+  // log.debug("start Y:" + startY );
+  // log.debug("start Z:" + startZ );
+  // log.debug("end X:" + endX );
+  // log.debug("end Y:" + endY );
+  // log.debug("center X:" + centerX );
+  // log.debug("center Y:" + centerY );
+  // log.debug("I-O-T:" + OIT );
+  // log.debug("Dir:" + Dir );
 
   if ((propX < 0 && propY > 0) || (propX > 0 && propY < 0 )) { 
     Dir *= (-1);
@@ -280,8 +273,8 @@ exports.CG = function(args) {
   	stepOver = config.opensbp.get('cutterDia') * ((100 - config.opensbp.get('pocketOverlap')) / 100);	// Calculate the overlap
   	Pocket_StepX = stepOver * Math.cos(PocketAngle);						// Calculate the stepover in X based on the radius of the cutter * overlap
   	Pocket_StepY = stepOver * Math.sin(PocketAngle);						// Calculate the stepover in Y based on the radius of the cutter * overlap
-log.debug("CG: StepX = " + Pocket_StepX);
-log.debug("CG: StepY = " + Pocket_StepY);
+// log.debug("CG: StepX = " + Pocket_StepX);
+// log.debug("CG: StepY = " + Pocket_StepY);
   }
 
   if ( plgFromZero == 1 ) {										// If plunge depth is specified move to that depth * number of reps
@@ -385,11 +378,7 @@ log.debug("CG: StepY = " + Pocket_StepY);
 
   if( noPullUp === 0 && currentZ != startZ){    	//If No pull-up is set to YES, pull up to the starting Z location
     this.emit_move('G0',{'Z':startZ});
-//   	this.cmd_posz = startZ;
   }
-
-//  this.cmd_posx = endX;
-//	this.cmd_posy = endY;
 
 };
 
@@ -468,7 +457,7 @@ exports.interpolate_circle = function(startX,startY,startZ,endX,endY,plunge,cent
     nextX = Xfactor1 * (Math.sin(t + (increment * Dir))) + Xfactor1;
     nextY = Yfactor1 * (Math.cos(t + (increment * Dir))) + Yfactor1;
 
-  log.debug( " Interpolate - Next Point: " + JSON.stringify(args));
+//  log.debug( " Interpolate - Next Point: " + JSON.stringify(args));
   feedrate = (60.0 * config.opensbp.get('movexy_speed'));
   this.emit_move('G1',{"X":x,"Y":y,"Z":z, 'F':feedrate});
 
