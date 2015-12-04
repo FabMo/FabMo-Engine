@@ -48,12 +48,19 @@
 
 			</div>
 			<div class="row">
-				<div class="small-8 medium-8 columns">
+				<div class="small-8 medium-8 columns with-job">
 					<h4 class='nextJobTitle'></h4>
 					<div class="small-12 columns">
 						<h5 class='nextJobDesc'></h5>
 					</div>
 				</div>
+				<div class="small-12 columns without-job">
+					<h4 class='no-job'>No Job Pending</h4>
+					<div class="small-11 columns">
+						<h5 class='add-job-please'>To add a Job click "Submit Job"" or drag file here</h5>
+					</div>
+				</div>
+				<div>
 					<div class="small-2 medium-4 columns play-button" style="text-align:right;">
 							<div class="radial_progress">
 								<div class="perecent_circle">
@@ -73,7 +80,7 @@
 					</div>
 				
 			</div>
-			<div class="small-12 icon-row">
+			<div class="small-8 medium-12 icon-row">
 				<div class="medium-1 small-2 columns">
 					<a class='preview' title='Preview Job'>
 						<img  class='svg' src="css/images/visible9.svg">
@@ -191,6 +198,9 @@
 					fabmoDashboard.submitJob(file, {filename : file.name}, function(err, data) {
 						if(err){alert(err);return;}
 						refresh_jobs_list();
+						fabmoDashboard.getJobsInQueue(function(err, data) {
+							setNextJob(data);
+						});
 					});
 				}
 				finally {
@@ -273,7 +283,6 @@
         "url" : "/jobs/queue",
         "dataSrc" : function(json) { 
 			var arr = json.data.jobs.shift();
-			setNextJob(arr);
         	return json.data.jobs;}
         },
 		
@@ -304,21 +313,17 @@
         "order" : [[3,"desc"]]
     }); // DataTable
 	
-	queue_table.on('xhr', function(e, settings, json) {
-		if(json.status === 'success') {
-			if(json.data.jobs.length > 1) {
-				$('.job-queue').show(500);
-			} else {
-				$('.job-queue').slideUp(500);
-			}
-		}
-	});
 		$('.cancel').on('click', function(e) {
 			var jobId = $(this).data('id');
 			fabmoDashboard.cancelJob(jobId, function(err, data) {
 					
 			});
-			setTimeout(function(){ refresh_jobs_list() }, 500);
+			setTimeout(function(){ 
+				refresh_jobs_list() 
+				fabmoDashboard.getJobsInQueue(function(err, data) {
+						setNextJob(data);
+				});
+			}, 500);
 		});
 		$('.preview').on('click', function(e) {
 			var jobId = $(this).data('id');
@@ -359,6 +364,9 @@
 		$('.dropDown').on('click', 'a#cancel-'+jobId.toString(), function(e) {
 			fabmoDashboard.cancelJob(jobId, function(err, data) {
 				refresh_jobs_list();
+				fabmoDashboard.getJobsInQueue(function(err, data) {
+						setNextJob(data);
+				});
 			});
 		});
 		$('.dropDown').on('click', 'a#preview-'+jobId.toString(), function(e) {
@@ -422,6 +430,9 @@
 				fabmoDashboard.resubmitJob(job._id, function(err, result) {
 					$('#nav-pending').click();
 					refresh_jobs_list();
+					fabmoDashboard.getJobsInQueue(function(err, data) {
+						setNextJob(data);
+					});
 				});
 				$('.dropDownWrapper').hide();
 			});
@@ -475,6 +486,8 @@
 	var refresh_jobs_list = function (){
 		queue_table.ajax.reload();
 		history_table.ajax.reload();
+
+		
 	}
 
 	$('.no-jobs-item').click(function(e) {
@@ -485,13 +498,11 @@
 		if ($('.play').hasClass('active')){
 			$('.play').toggleClass('active');
 			fabmoDashboard.stop(function(err, data) {
-			refresh_jobs_list();
 			fabmoDashboard.hideFooter();
 		});
 		} else {
 			$('.play').toggleClass('active');
 			fabmoDashboard.runNext(function(err, data) {
-				refresh_jobs_list();
 				fabmoDashboard.showDRO();
 				fabmoDashboard.showFooter();
 			});	
@@ -512,23 +523,36 @@
 		fabmoDashboard.submitJob($('#fileform'), {}, function(err, data) {
 			resetFormElement($('#file'));
 			refresh_jobs_list();
+			fabmoDashboard.getJobsInQueue(function(err, data) {
+				setNextJob(data);
+			});
 		});
 	});
-		var setNextJob = function (arr) {
-		if (arr == undefined ) {
-
-			
+	var setNextJob = function (arr) {
+		if ( arr.length === 0 ) {
+			$('.nextJobTitle').slideUp(500);
+			$('.nextJobDesc').slideUp(500);
 			$('.cancel').slideUp(500);
 			$('.download').slideUp(500);
 			$('.edit').slideUp(500);
 			$('.preview').slideUp(500);
+			$('.play-button').slideUp(1000);
+			$('.without-job').show(1000);
 		} else {
-			$('.cancel').data('id', arr._id);
-			$('.preview').data('id', arr._id);
-			$('.download').data('id', arr._id);
-			$('.edit').data('id', arr._id);
-			$('.nextJobTitle').text(arr.name);
-			$('.nextJobDesc').text(arr.description);
+			if ( arr.length > 1) {
+				$('.job-queue').show(500);
+			} else {
+				$('.job-queue').slideUp(500);
+			}
+			$('.without-job').hide();
+			$('.cancel').data('id', arr[0]._id);
+			$('.preview').data('id', arr[0]._id);
+			$('.download').data('id', arr[0]._id);
+			$('.edit').data('id', arr[0]._id);
+			$('.nextJobTitle').text(arr[0].name);
+			$('.nextJobDesc').text(arr[0].description);
+			$('.nextJobTitle').show(500);
+			$('.nextJobDesc').show(500);
 			$('.cancel').show(500);
 			$('.download').show(500);
 			$('.edit').show(500);
@@ -540,7 +564,6 @@
 	
 	fabmoDashboard.on('job_start', function(){
 		fabmoDashboard.requestStatus(function(err, data) {
-			console.log(data);
 			$('.nextJobTitle').text(data.job.name);
 			$('.nextJobDesc').text(data.job.description);
 		});
@@ -558,7 +581,7 @@
 			$('.dropzone').removeClass('blink');
 			$('body').css('background-color', '#EEEEEE');
 			fabmoDashboard.getJobsInQueue(function(err, data) {
-				console.log('yay');
+				setNextJob(data);
 			});
 	});
 
@@ -578,6 +601,10 @@
 			jobid = null;
 		}
 		if (status.state === "idle") {
+			fabmoDashboard.getJobsInQueue(function(err, data) {
+				console.log(data);
+				setNextJob(data);
+			});
 			$('.up-next').css('left', '0px');
 			$('.now-running').css('left', '-200px');
 			$('.play').removeClass('active');

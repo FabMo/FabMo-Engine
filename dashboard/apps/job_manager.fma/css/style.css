@@ -18,9 +18,13 @@ body {
 }
 
 .dropzone.blink { 
-  -webkit-box-shadow: 0px 0px 10px 2px rgba(237,67,55,1);
-    -moz-box-shadow: 0px 0px 10px 2px rgba(237,67,55,1);
-      box-shadow: 0px 0px 10px 2px rgba(237,67,55,1);
+  -webkit-box-shadow: 0px 0px 12px 5px rgba(251,0,0,1);
+    -moz-box-shadow: 0px 0px 12px 5px rgba(251,0,0,1);
+      box-shadow: 0px 0px 12px 5px rgba(251,0,0,1);
+}
+
+.dropzone {
+  min-height: 170px;
 }
 
 #dropzone .hovershow {
@@ -78,7 +82,7 @@ h1, h2, h3, h4, h5, h6 {
   color: #666;
 } 
 .jobs-title:first-child {
-  min-height: 50px;
+  min-height: 40px;
 }
  .up-next{
    position: absolute;
@@ -90,6 +94,20 @@ h1, h2, h3, h4, h5, h6 {
    position: absolute;
    top: 0;
    left: -200px;
+   font-weight: bold;
+   transition: all 0.5s;
+ }
+ .without-job{
+   position: absolute;
+   float:left;
+   display:none;
+ }
+ .nextJobTitle{
+   display:none;
+   transition: all 0.5s;
+ }
+  .nextJobDesc{
+   display:none;
    transition: all 0.5s;
  }
 td.details-control {
@@ -308,7 +326,7 @@ tr.shown td.details-control {
 }
 
 .job-failed {
-  color: #gmailFB0000;
+  color: #FB0000;
 }
 
 .job-finished {
@@ -778,8 +796,14 @@ td.edit span{
 	margin-right: 50px;
 }
 @media screen and (max-width: 630px){
-  .radial_progress{
-    margin-right: 10px;
+  .play-button{
+    position: absolute;
+    right: 0px;
+    width: 5%;
+  }
+    .radial_progress{
+    position: relative;
+    right: 0;
   }
 }
 
