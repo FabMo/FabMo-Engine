@@ -95,6 +95,7 @@ FabMoAPI.prototype.ping = function(callback) {
 
 FabMoAPI.prototype._setStatus = function(status) {
 	this.status = status;
+}
 
 FabMoAPI.prototype.command = function(name, args) {
 	this.socket.emit('cmd', {'name':name, 'args':args||{} } );
