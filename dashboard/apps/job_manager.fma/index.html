@@ -503,6 +503,8 @@
 			fabmoDashboard.runNext(function(err, data) {
 				fabmoDashboard.showDRO();
 				fabmoDashboard.showFooter();
+				console.log(err);
+				alert(err);
 			});	
 		}		
 	});
@@ -600,7 +602,6 @@
 		}
 		if (status.state === "idle") {
 			fabmoDashboard.getJobsInQueue(function(err, data) {
-				console.log(data);
 				setNextJob(data);
 			});
 			$('.up-next').css('left', '0px');
