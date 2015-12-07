@@ -8,9 +8,9 @@ The FabMo engine is host software that connects to a G2 motion control platform 
 * Hosting of the "FabMo Dashboard" a web frontend to the FabMo Engine that provides an app hosting environment
 
 ## Documentation
-[Source Code Documentation](http://shopbottools.github.io/FabMo-Engine/) 
+[Source Code Documentation](http://fabmo.github.io/FabMo-Engine/) 
 
-[API Documentation](http://shopbottools.github.io/FabMo-Engine/api)
+[API Documentation](http://fabmo.github.io/FabMo-Engine/api)
 
 ## Quick Start
 1. Install nodejs - The officially supported version is v0.12.7  - Newer versions *do not work at this time*
