@@ -54,6 +54,15 @@
         </div>
         <div class="large-4 columns">
           <div class="row collapse">
+            <label>Distance Mode</label>
+                <select id="driver_gdi" class="driver_input">
+                  <option value="0">Absolute</option>
+                  <option value="1">Incremental</option>
+                </select>
+          </div>
+        </div>
+        <div class="large-4 columns">
+          <div class="row collapse">
             <label>Chordal Tolerance</label>
             <div class="small-9 columns">
               <input type="text" id="driver_ct" class="driver_input"/>
@@ -1551,7 +1560,21 @@
 
       // Update settings on change
       $('.driver_input').change( function() {
-        setConfig(this.id, this.value);
+        var parts = this.id.split("_");
+        var new_config = {};
+        new_config.driver = {};
+        var v = parts[1];
+        if(v === "gdi") {
+          new_config.driver.gdi = this.value;
+          console.log("Distance mode = " + JSON.stringify(new_config));
+          fabmoDashboard.setConfig(new_config, function(err, data) {
+            setTimeout(update, 500);
+          });  
+        }
+        else {
+          setConfig(this.id, this.value);
+        }
+        // How to send G90 or G91 from here?
       });
 
       $('.engine_input').change( function() {

@@ -15,9 +15,10 @@ exports._A = function(args, callback) {
 
 // Move X axis
 exports.MX = function(args) {
+	log.debug("MX");
 	var x = args[0];
 	if(isNaN(x)) { throw( "Invalid MX argument: " + x ); }
-	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	var feedrate = this.movespeed_xy * 60;
 	this.emit_move('G1',{"X":x,'F':feedrate});
 };
 
@@ -25,7 +26,7 @@ exports.MX = function(args) {
 exports.MY = function(args) {
 	var y = args[0];
 	if(isNaN(y)) { throw( "Invalid MY argument: " + y ); }
-	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	var feedrate = this.movespeed_xy * 60;
 	this.emit_move('G1',{"Y":y,'F':feedrate});
 };
 
@@ -33,7 +34,7 @@ exports.MY = function(args) {
 exports.MZ = function(args) {
 	var z = args[0];
 	if(isNaN(z)) { throw( "Invalid MZ argument: " + z ); }
-	feedrate = (60.0 * config.opensbp.get('movez_speed'));
+	var feedrate = this.movespeed_z * 60;
 	this.emit_move('G1',{"Z":z,'F':feedrate});
 };
 
@@ -41,7 +42,7 @@ exports.MZ = function(args) {
 exports.MA = function(args) {
 	var a = args[0];
 	if(isNaN(a)) { throw( "Invalid MA argument: " + a ); }
-	feedrate = (60.0 * config.opensbp.get('movea_speed'));
+	var feedrate = this.movespeed_a * 60;
 	this.emit_move('G1',{"A":a,'F':feedrate});
 };
 
@@ -49,7 +50,7 @@ exports.MA = function(args) {
 exports.MB = function(args) {
 	var b = args[0];
 	if(isNaN(b)) { throw( "Invalid MB argument: " + b ); }
-	feedrate = (60.0 * config.opensbp.get('moveb_speed'));
+	var feedrate = this.movespeed_b * 60;
 	this.emit_move('G1',{"B":b,'F':feedrate});
 };
 
@@ -57,7 +58,7 @@ exports.MB = function(args) {
 exports.MC = function(args) {
 	var c = args[0];
 	if(isNaN(c)) { throw( "Invalid MC argument: " + c ); }
-	feedrate = (60.0 * config.opensbp.get('movec_speed'));
+	var feedrate = this.movespeed_c * 60;
 	this.emit_move('G1',{"C":c,'F':feedrate});
 };
 
@@ -99,8 +100,7 @@ exports.M6 = function(args) {
 process_move = function(args) {
 //    log.debug(" process_move: " + JSON.stringify(args));
 	var params = {};
-
-	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	var feedrate = this.movespeed_xy * 60;
 	if(args[0] === 0 || args[0] && typeof args[0] === "number"){
 		params.X = args[0];
 	}
@@ -119,7 +119,7 @@ process_move = function(args) {
 	if(args[1] === 0 || args[5] && typeof args[5] === "number"){ 
 		params.C = args[5];
 	}  
-	params.F = (60.0 * config.opensbp.get('movexy_speed'));
+	params.F = feedrate;
 
 	return params;
 };
@@ -129,56 +129,44 @@ exports.MH = function(args) {
 	var x = 0;
 	var y = 0;
 
-  // Need to add pull-up to safez height
+  // ********Need to add pull-up to safez height
 //	log.debug( "MH" );
-	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	var feedrate = this.movespeed_xy * 60;
 	this.cmd_posx = 0;
 	this.cmd_posy = 0;
 	this.emit_move('G1',{"X":x,"Y":y,'F':feedrate});
-
 };
 
 // Set the Move (cut) speed for any of the 6 axes
 exports.MS = function(args, callback) {
 	var speed_change = 0.0;
-	var g2_values = {};
 	var sbp_values = {};
 
 	if (args[0] !== undefined) {
 		speed_change = args[0];
 		if(isNaN(speed_change)) { throw( "Invalid MS-XY argument: " + speed_change ); }
-		sbp_values.movexy_speed = speed_change;
+		this.movespeed_xy = speed_change;
 	}
 	if (args[1] !== undefined) {
 		speed_change = args[1];
 		if(isNaN(speed_change)) { throw( "Invalid MS-Z argument: " + speed_change ); }
-		sbp_values.movez_speed = speed_change;
+		this.movespeed_z = speed_change;
 	}
 	if (args[2] !== undefined) {
 		speed_change = args[2];
 		if(isNaN(speed_change)) { throw( "Invalid MS-A argument: " + speed_change ); }
-		sbp_values.movea_speed = speed_change;
+		this.movespeed_a = speed_change;
 	}
 	if (args[3] !== undefined) {
 		speed_change = args[3];
 		if(isNaN(speed_change)) { throw( "Invalid MS-B argument: " + speed_change ); }
-		sbp_values.moveb_speed = speed_change;
+		this.movespeed_b = speed_change;
 	}
 	if (args[4] !== undefined) {
 		speed_change = args[4];
 		if(isNaN(speed_change)) { throw( "Invalid MS-C argument: " + speed_change ); }
-		sbp_values.movec_speed = speed_change;
-	}
-	// We have created the objects containing both the values to set on the G2 driver as well as for shopbot
-	// Now send them to their appropriate places (shopbot first, followed by G2)
-	config.opensbp.setMany(sbp_values, function(err, values) {
-//		log.debug("SBP_setMany values:" + JSON.stringify(values));
-		config.driver.setMany(g2_values, function(err, values) {
-//			log.debug("G2_setMany values:" + JSON.stringify(values));
-			callback();
-		});
-	});
-
+		this.movespeed_c = speed_change;
+		}
 };
 
 exports.MI = function(args) {

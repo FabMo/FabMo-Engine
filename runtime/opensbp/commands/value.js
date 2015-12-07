@@ -128,7 +128,7 @@ exports.VC = function(args) {
 	});
 };
 
-exports.VD = function(args,callback) {
+exports.VD = function(args) {
 
 	// For all axes - the values are:
 	//    0=Disable; 1=Standard Mode; 2=Inhibited; 3=Radius Mode
@@ -138,18 +138,10 @@ exports.VD = function(args,callback) {
 		if ( unitType === 0 || unitType === 1 ){
 			if ( unitType === 0 ){
 				this.emit_gcode("G20"); // inches
-				config.machine.set("units","in",function(){
-					//config.machine.apply(callback);
-					callback();
-				});
 				log.debug("Changing units to inch");
 			}
 			else {
 				this.emit_gcode("G21"); // mm
-				config.machine.set("units","mm",function() {
-					//config.machine.apply(callback);
-					callback();
-				});
 				log.debug("Changing units to mm");
 			}
 		}
@@ -178,11 +170,11 @@ exports.VD = function(args,callback) {
 	// Show control console
 	// Display File Comments
 	// Keypad fixed distance
-	if ( args[8] !== undefined ){
-		var fDist = args[8];
-//		log.debug("Keypad fixed distance set to: " + fDist );
-		log.debug("Fixed Distance setting not implemented" );
-	}
+// 	if ( args[8] !== undefined ){
+// 		var fDist = args[8];
+// //		log.debug("Keypad fixed distance set to: " + fDist );
+// 		log.debug("Fixed Distance setting not implemented" );
+// 	}
 	// Keypad remote
 	// Keypad Switch AutoOff
 	// Write Part File Log
@@ -400,58 +392,60 @@ exports.VS = function(args,callback) {
 	if (args[0] !== undefined) {
 		speed_change = args[0];
 		sbp_values.movexy_speed = speed_change;
+		this.movespeed_xy = speed_change;
 	}
 	//Set Z move speed in OpenSBP only, not set in G2
 	if (args[1] !== undefined) {
 		speed_change = args[1];
 		sbp_values.movez_speed = speed_change;
+		this.movespeed_z = speed_change;
 	}
 	//Set A move speed in OpenSBP only, not set in G2
 	if (args[2] !== undefined) {
 		speed_change = args[2];
 		sbp_values.movea_speed = speed_change;
+		this.movespeed_a = speed_change;
 	}
 	//Set B move speed in OpenSBP only, not set in G2
 	if (args[3] !== undefined) {
 		speed_change = args[3];
 		sbp_values.moveb_speed = speed_change;
+		this.movespeed_b = speed_change;
 	}
 	//Set C move speed in OpenSBP only, not set in G2
 	if (args[4] !== undefined) {
 		speed_change = args[4];
 		sbp_values.movec_speed = speed_change;
+		this.movespeed_c = speed_change;
 	}
 	//Set XY jog speed in G2 and OpenSBP
 	if (args[5] !== undefined) {
 		speed_change = args[5];
 		g2_values.xvm = (60*speed_change);
 		g2_values.yvm = (60*speed_change);
-		sbp_values.jogxy_speed = speed_change;
 	}
 	//Set Z jog speed in G2 and OpenSBP
 	if (args[6] !== undefined) {
 		speed_change = args[6];
 		g2_values.zvm = (60*speed_change);
-		sbp_values.jogz_speed = speed_change;
 	}
 	//Set A jog speed in G2 and OpenSBP
 	if (args[7] !== undefined) {
 		speed_change = args[7];
 		g2_values.avm = (60*speed_change);
-		sbp_values.joga_speed = speed_change;
 	}
 	//Set B jog speed in G2 and OpenSBP
 	if (args[8] !== undefined) {
 		speed_change = args[8];
 		g2_values.bvm = (60*speed_change);
-		sbp_values.jogb_speed = speed_change;
 	}
 	//Set C jog speed in G2 and OpenSBP
 	if (args[9] !== undefined) {
 		speed_change = args[9];
 		g2_values.cvm = (60*speed_change);
-		sbp_values.jogc_speed = speed_change;
 	}
+
+//	log.debug("VS - sbp_values = " + JSON.stringify(sbp_values));
 
 	config.opensbp.setMany(sbp_values, function(err, values) {
 		if(err) {

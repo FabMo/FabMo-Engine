@@ -35,6 +35,11 @@ function SBPRuntime() {
 	this.cmd_posa = 0;
 	this.cmd_posb = 0;
 	this.cmd_posc = 0;
+	this.movespeed_xy = 0;
+	this.movespeed_z = 0;
+	this.movespeed_a = 0;
+	this.movespeed_b = 0;
+	this.movespeed_c = 0;
 	this.nonXfrm_posx = 0; 
 	this.nonXfrm_posy = 0; 
 	this.nonXfrm_posz = 0; 
@@ -65,11 +70,10 @@ SBPRuntime.prototype.runString = function(s, callback) {
 	try {
 		var lines =  s.split('\n');
 		if(this.machine) {
-			if(this.file_stack.length == 0) {
+			if(this.file_stack.length === 0) {
 				this.machine.status.nb_lines = lines.length - 1;
 			}
 		}
-		this.end_callback = callback;
 		try {
 			this.program = parser.parse(s);
 		} catch(e) {
@@ -78,12 +82,26 @@ SBPRuntime.prototype.runString = function(s, callback) {
  		lines = this.program.length;
 		this.init();
 		this.end_callback = callback;
+		// get speed settings from opensbp.json to be used in files
+		var SBP_2get = ['movexy_speed',
+					    'movez_speed',
+					    'movea_speed',
+					    'moveb_speed',
+				    	'movec_speed' ];
+	    var getSBP_speed = config.opensbp.getMany(SBP_2get);
+		this.movespeed_xy = getSBP_speed.movexy_speed;
+		this.movespeed_z = getSBP_speed.movez_speed;
+		this.movespeed_a = getSBP_speed.movea_speed;
+		this.movespeed_b = getSBP_speed.moveb_speed;
+		this.movespeed_c = getSBP_speed.movec_speed;
+
 		this._setupTransforms();
 		this._analyzeLabels();  // Build a table of labels
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table
 		this._run();
+
 	} catch(err) {
-		throw err
+//		throw err;
 		if(callback) {
 			setImmediate(callback, err);
 		}
