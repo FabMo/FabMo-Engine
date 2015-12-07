@@ -132,46 +132,35 @@ exports.JH = function(args) {
 exports.JS = function(args, callback) {
 	var speed_change = 0.0;
 	var g2_values = {};
-	var sbp_values = {};
 
 	if (args[0] !== undefined) {
 		speed_change = args[0];
 		if(isNaN(speed_change)) { throw "Invalid JS-XY argument: " + speed_change; }
 		g2_values.xvm = g2_values.yvm = (60 * speed_change);
-		sbp_values.jogxy_speed = speed_change;
 	}
 	if (args[1] !== undefined) {
 		speed_change = args[1];
 		if(isNaN(speed_change)) { throw "Invalid JS-Z argument: " + speed_change; }
 		g2_values.zvm = (60 * speed_change);
-		sbp_values.jogz_speed = speed_change;
 	}
 	if (args[2] !== undefined) {
 		speed_change = args[2];
 		if(isNaN(speed_change)) { throw "Invalid JS-A argument: " + speed_change; }
 		g2_values.avm = (60 * speed_change);
-		sbp_values.joga_speed = speed_change;
 	}
 	if (args[3] !== undefined) {
 		speed_change = args[3];
 		if(isNaN(speed_change)) { throw "Invalid JS-B argument: " + speed_change; }
 		g2_values.bvm = (60 * speed_change);
-		sbp_values.jogb_speed = speed_change;
 	}
 	if (args[4] !== undefined) {
 		speed_change = args[4];
 		if(isNaN(speed_change)) { throw "Invalid JS-C argument: " + speed_change; }
 		g2_values.cvm = (60 * speed_change);
-		sbp_values.jogc_speed = speed_change;
 	}
 	// We have created the objects containing both the values to set on the G2 driver as well as for shopbot
 	// Now send them to their appropriate places (shopbot first, followed by G2)
-	config.opensbp.setMany(sbp_values, function(err, values) {
-//		log.debug("SBP getMany values = " + JSON.stringify(values));
-		config.driver.setMany(g2_values, function(err, values) {
-//			log.debug("g2 getMany values = " + JSON.stringify(values));
-			callback();
-		});
+	config.driver.setMany(g2_values, function(err, values) {
+		callback();
 	});
-
 };

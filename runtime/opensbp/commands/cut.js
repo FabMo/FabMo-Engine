@@ -139,6 +139,7 @@ exports.CP = function(args) {
   var currentZ = startZ;
   var res = 5;
   var comp = 0;
+  var feedrate = 0;
 
   if (OIT === 'O') {
     comp = 1;
@@ -180,7 +181,7 @@ exports.CP = function(args) {
   var endY = centerY + radius * Math.sin(Eradians);
 
   if( this.cmd_posx !== startX && this.cmd_posy !== startY ){
-      feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+      feedrate = this.movespeed_xy * 60;
       var safeZ = config.opensbp.get('safeZpullUp');
       if( currentZ !== safeZ ){
         this.emit_move('G1',{'X':startX,'Y':startY,'Z':startZ,'F':feedrate});
@@ -226,8 +227,8 @@ exports.CG = function(args) {
   var optCG = args[11] !== undefined ? args[11] : 0;
   var noPullUp = args[12] !== undefined ? args[12] : 0;
   var plgFromZero = args[13] !== undefined ? args[13] : 0;
-  var feedrateZ = (60 * config.opensbp.get('movez_speed'));
-  var feedrateXY = (60 * config.opensbp.get('movexy_speed'));
+  var feedrateXY = this.movespeed_xy * 60;
+  var feedrateZ = this.movespeed_z * 60;
 	var currentZ;
 	var outStr;
   var tolerance = 0.000001;
@@ -458,7 +459,7 @@ exports.interpolate_circle = function(startX,startY,startZ,endX,endY,plunge,cent
     nextY = Yfactor1 * (Math.cos(t + (increment * Dir))) + Yfactor1;
 
 //  log.debug( " Interpolate - Next Point: " + JSON.stringify(args));
-  feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+  var feedrate = this.movespeed_xy * 60;
   this.emit_move('G1',{"X":x,"Y":y,"Z":z, 'F':feedrate});
 
 };
@@ -513,6 +514,9 @@ exports.CR = function(args) {
   var pckt_stepX = 0.0;
   var pckt_stepY = 0.0;
   var steps = 1.0;
+
+  var feedrateXY = this.movespeed_xy * 60;
+  var feedrateZ = this.movespeed_xy * 60;
 
   if (RotationAngle !== 0 ) { 
    	RotationAngle *= 0.01745329252;							// Convert rotation angle in degrees to radians
@@ -618,17 +622,17 @@ exports.CR = function(args) {
 			outStr = "G1X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
 						   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4); 
 		}
-    this.emit_gcode( "G1Z" + startZ + "F" + ( 60 * config.opensbp.get('movez_speed')));
+    this.emit_gcode( "G1Z" + startZ + "F" + feedrateZ );
     this.emit_gcode( outStr );
   }
 
   for (i = 0; i < reps; i++) {  
    	if ( spiralPlg != 1 ) {								// If plunge depth is specified move to that depth * number of reps
     	currentZ += Plg;
-    	this.emit_gcode( "G1Z" + currentZ + "F" + ( 60 * config.opensbp.get('movez_speed')) );    		
+    	this.emit_gcode( "G1Z" + currentZ + "F" + feedrateZ );    		
     }
     else {
-    	this.emit_gcode( "G1Z" + currentZ + "F" + ( 60 * config.opensbp.get('movez_speed')) );    		
+    	this.emit_gcode( "G1Z" + currentZ + "F" + feedrateZ );    		
     }
     	
     pass = cnt = 0;
@@ -657,7 +661,7 @@ exports.CR = function(args) {
     						outStr += "Z" + (PlgSp).toFixed(4);
     					}
     						
-    					outStr += "F" + ( 60 * config.opensbp.get('movexy_speed'));
+    					outStr += "F" + feedrateXY;
     					this.emit_gcode (outStr);
     				break;
 
@@ -678,7 +682,7 @@ exports.CR = function(args) {
    							outStr += "Z" + (PlgSp).toFixed(4);
    						}
 
-   						outStr += "F" + ( 60 * config.opensbp.get('movexy_speed'));
+   						outStr += "F" + feedrateXY;
     					this.emit_gcode (outStr);
    					break;
 
@@ -699,7 +703,7 @@ exports.CR = function(args) {
    							outStr += "Z" + (PlgSp).toFixed(4); 
    						}	
 
-   						outStr += "F" + ( 60 * config.opensbp.get('movexy_speed'));
+   						outStr += "F" + feedrateXY;
     					this.emit_gcode (outStr);
     				break;
 
@@ -727,7 +731,7 @@ exports.CR = function(args) {
    							cnt = 1;
    						}
 
-   						outStr += "F" + ( 60 * config.opensbp.get('movexy_speed'));
+   						outStr += "F" + feedrateXY;
    						this.emit_gcode (outStr);
    					break;
 
@@ -748,7 +752,7 @@ exports.CR = function(args) {
    				outStr = "G1X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
    							   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4); 
    			}
-   			outStr += "F" + ( 60 * config.opensbp.get('movexy_speed'));
+   			outStr += "F" + feedrateXY;
     		this.emit_gcode (outStr);
    		}
    	}
@@ -757,7 +761,7 @@ exports.CR = function(args) {
 	  if ( optCR > 1 || stCorner === 0 ) {
     	this.emit_gcode( "G0Z" + safeZCG );
     	outStr = "G1X" + startX + "Y" + startY;
-			outStr += "F" + ( 60 * config.opensbp.get('movexy_speed'));
+			outStr += "F" + feedrateXY;
      	this.emit_gcode( outStr );
      	if ( ( i + 1 ) != reps ) { 
      		this.emit_gcode( "G1Z" + currentZ ); 
