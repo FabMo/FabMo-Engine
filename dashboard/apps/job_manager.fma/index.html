@@ -23,7 +23,7 @@
     <ul class="left" role="tablist" data-tab>
       <li class="active"><a id="nav-pending" href="#tabpending">Pending</a></li>
       <li class=""><a id="nav-history" href="#tabhistory">History</a></li>
-      <li class=""><a id="nav-active" href="#tabactive" style="display: none;">Active Job</a></li>
+      
     </ul>
     <ul class="right">
       <li><a id="nav-submit" class="submit-button" href="#">Submit Job...</a></li>
@@ -428,6 +428,7 @@
 		});
  			$('.dropDown').on('click', 'a#resubmit', function(e) {
 				fabmoDashboard.resubmitJob(job._id, function(err, result) {
+					$('.toggle-topbar').click();
 					$('#nav-pending').click();
 					refresh_jobs_list();
 					fabmoDashboard.getJobsInQueue(function(err, data) {
