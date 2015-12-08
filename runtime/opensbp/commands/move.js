@@ -125,20 +125,37 @@ process_move = function(args) {
 };
 
 // Move to the XY home position (0,0)
-exports.MH = function(args) {
+exports.MH = function(args,callback) {
 	var x = 0;
 	var y = 0;
+	var safeZ = config.opensbp.get('safeZpullUp');
+	var feedrateXY = this.movespeed_xy * 60;
+	var feedrateZ = this.movespeed_z * 60;
 
-  // ********Need to add pull-up to safez height
-//	log.debug( "MH" );
-	var feedrate = this.movespeed_xy * 60;
-	this.cmd_posx = 0;
-	this.cmd_posy = 0;
-	this.emit_move('G1',{"X":x,"Y":y,'F':feedrate});
+	this.machine.driver.get('posz', function(err, MPO) {
+		var unitConv = 1;
+		log.debug( "MH" );
+	 	if ( this.machine.driver.status.unit === 'in' ) {  // inches
+	 		unitConv = 0.039370079;
+	 	}
+	 	var z = MPO;
+		log.debug("z = " + z);
+	 	if ( z < safeZ ){
+			this.emit_move('G1',{"Z":safeZ,'F':feedrateZ});
+			this.emit_move('G1',{"X":x,"Y":y,'F':feedrateXY});
+ 		}
+ 		else{
+ 			this.emit_move('G1',{"X":x,"Y":y,'F':feedrateXY});
+ 		}
+		this.cmd_posx = 0;
+		this.cmd_posy = 0;
+		this.cmd_posz = safeZ;
+		callback();
+	}.bind(this));
 };
 
 // Set the Move (cut) speed for any of the 6 axes
-exports.MS = function(args, callback) {
+exports.MS = function(args) {
 	var speed_change = 0.0;
 	var sbp_values = {};
 

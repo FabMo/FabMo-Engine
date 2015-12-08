@@ -120,12 +120,31 @@ process_jog = function(args) {
 };
 
 // Jog (rapid) XY to the Home position (0,0) 
-exports.JH = function(args) {
+exports.JH = function(args,callback) {
 	var x = 0;
 	var y = 0;
-	this.cmd_posx = 0;
-	this.cmd_posy = 0;
-	this.emit_move('G0',{"X":x,"Y":y});
+	var safeZ = config.opensbp.get('safeZpullUp');
+
+	this.machine.driver.get('posz', function(err, MPO) {
+		var unitConv = 1;
+		log.debug( "JH" );
+	 	if ( this.machine.driver.status.unit === 'in' ) {  // inches
+	 		unitConv = 0.039370079;
+	 	}
+	 	var z = MPO;
+		log.debug("z = " + z);
+	 	if ( z < safeZ ){
+			this.emit_move('G0',{"Z":safeZ});
+			this.emit_move('G0',{"X":x,"Y":y});
+ 		}
+ 		else{
+ 			this.emit_move('G0',{"X":x,"Y":y});
+ 		}
+		this.cmd_posx = 0;
+		this.cmd_posy = 0;
+		this.cmd_posz = safeZ;
+		callback();
+	}.bind(this));
 };
 
 // Set the Jog (Rapid) speed for any of the 6 axes
