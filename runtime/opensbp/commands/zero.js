@@ -19,7 +19,7 @@ exports.ZX = function(args, callback) {
 	this.machine.driver.get('mpox', function(err, MPO) {
 		if(err) { return callback(err); }
 		var zxObj = {};
-		log.debug( JSON.stringify(MPO) );
+//		log.debug( JSON.stringify(MPO) );
 		var unitConv = 1.0;
 		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
@@ -249,7 +249,7 @@ exports.ZT = function(args, callback) {
 		this.cmd_posy = this.posy = 0;
 		this.cmd_posz = this.posz = 0;
 		this.driver.requestStatusReport(function(report) {
-			log.debug("report = " + JSON.stringify(report));
+//			log.debug("report = " + JSON.stringify(report));
 			callback();
 		});
 	}.bind(this));

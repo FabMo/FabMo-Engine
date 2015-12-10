@@ -90,7 +90,7 @@ function FabMoUI(tool, options){
 		this.updateStatusContent(status_report);
 	}.bind(this));
 
-
+	this.tool.requestStatus();
 }
 
 FabMoUI.prototype.on = function(evt, handler) {
@@ -234,6 +234,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.progress_selector).empty();
 		$('.currentJobTitle').text('');
 		$('.footBar').css('height', '0px');
+		$('#app-client-container').css('padding-bottom', '0px');	
 	}
 
 	for(var i=1; i<MAX_INPUTS+1; i++) {

@@ -3,18 +3,19 @@
 	<meta charset="utf-8">
 	<title>Job Manager</title>
 	
-	<link rel="stylesheet" href="./css/normalize.css">
-	<link rel="stylesheet" href="./css/foundation.min.css">
-	<link rel="stylesheet" href="./css/style.css">
+	<link rel="stylesheet" href="/css/normalize.css">
+	<link rel="stylesheet" href="/css/foundation.min.css">
 	<link rel="stylesheet" href="./css/dataTables.foundation.css">
+	<link rel="stylesheet" href="./css/style.css">
 
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
+  <div class="sticky">
   <nav class="top-bar" data-topbar role="navigation">
   <ul class="title-area">
     <li class="name">
-      <h1><a id="app-header" >Job Manager</a></h1>
+      <h1><a id="app-header">Job Manager</a></h1>
     </li>
     <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
   </ul>
@@ -22,42 +23,64 @@
     <ul class="left" role="tablist" data-tab>
       <li class="active"><a id="nav-pending" href="#tabpending">Pending</a></li>
       <li class=""><a id="nav-history" href="#tabhistory">History</a></li>
-      <li class=""><a id="nav-active" href="#tabactive" style="display: none;">Active Job</a></li>
+      
     </ul>
     <ul class="right">
-      <li><a id="nav-submit" href="#">Submit Job...</a></li>
+      <li><a id="nav-submit" class="submit-button" href="#">Submit Job...</a></li>
     </ul>
   </section>
 </nav>
+</div>
 <form style="display:none;" id="fileform">
 	<input type="file" id="file">
 </form>
 
 <div class="tabs-content">
   <div class="content active" id="tabpending">
-	<section class="container" id="dropzone">
+	<section class="container dropzone" id="dropzone">
 		<div class="hovershow message">Drop files here to fabricate...</div>
 		<div class="hoverdim">
-			<div class="row title">
-				<div class="small-4 columns">
-					<h4>Up Next</h4>
+			<div class="row title jobs-title">
+				<div class="small-12 columns">
+					<h4 class="up-next">Up Next</h4>
+					<h4 class="now-running">Now Running</h4>
 				</div>
+
 			</div>
-			<div class="row ">
-				<div class="small-5 medium-6 columns">
+			<div class="row">
+				<div class="small-8 medium-8 columns with-job">
 					<h4 class='nextJobTitle'></h4>
 					<div class="small-12 columns">
 						<h5 class='nextJobDesc'></h5>
 					</div>
 				</div>
-					<div class="medium-6 small-7 columns" style="text-align:right;">
-						<a id="run-next">
-							<img class='nextJobPrev svg'  src="css/images/player6.svg">
-						</a>
+				<div class="small-12 columns without-job">
+					<h4 class='no-job'>No Job Pending</h4>
+					<div class="small-11 columns">
+						<h5 class='add-job-please'>To add a Job click "Submit Job"" or drag file here</h5>
+					</div>
+				</div>
+				<div>
+					<div class="small-2 medium-4 columns play-button" style="text-align:right;">
+							<div class="radial_progress">
+								<div class="perecent_circle">
+									<div class="mask full">
+										<div class="fill"></div>
+									</div>
+									<div class="mask half">
+										<div class="fill"></div>
+										<div class="fill fix"></div>
+									</div>
+								<div class="shadow"></div>
+								</div>
+								<div class="inset">
+									<div id="run-next" class="play"><span></span></div>
+								</div>
+							</div>
 					</div>
 				
 			</div>
-			<div class="small-12 icon-row">
+			<div class="small-8 medium-12 icon-row">
 				<div class="medium-1 small-2 columns">
 					<a class='preview' title='Preview Job'>
 						<img  class='svg' src="css/images/visible9.svg">
@@ -98,7 +121,6 @@
 	                <th>&nbsp;</th>
 	                <th>&nbsp;</th>
 	                <th>Name</th>
-	                <th>Status</th>
 	                <th>&nbsp;</th>
 	            </tr>
 	        	</thead>
@@ -108,30 +130,17 @@
   </div>
 
   <div class="content" id="tabhistory">
-	  <section class="container">
-			<div class="row title">
-				<div class="small-7 medium-9 large-10 columns">
-					<h4>History</h4>
-				</div>
-				<div class="small-5 medium-3 large-2 columns btn">
-				</div>
-			</div>
-
-			<div class="row jobs-history-row">
-				<!-- JOB HISTORY LISTING -->
-				<table class="small-12 columns" style="width:100%" id="history_table">
-				<thead>
-	            <tr>
-	                <th>&nbsp;</th>
-	                <th>Name</th>
-	                <th>Run At</th>
-	                <th>Duration</th>
-	                <th>Status</th>
-	            </tr>
-	        	</thead>
-	        	</table>
-			</div>
-		</section>
+		<!-- JOB HISTORY LISTING -->
+		<table class="small-12 columns" style="width:100%" id="history_table">
+		<thead>
+	    <tr>
+	        <th>&nbsp;</th>
+	        <th>Name</th>
+	        <th>Run At</th>
+	        <th>Duration</th>
+	    </tr>
+		</thead>
+		</table>
   </div>
 
   <div class="content" id="tabactive">
@@ -143,13 +152,13 @@
 </div>
 
   <!-- Javascript inclusions -->
-  <script src="/js/libs/jquery.js"></script>
+  <script src="/js/libs/jquery.min.js"></script>
   <script src="./js/jquery.dataTables.js"></script>
   <script src="./js/jquery.dragster.js"></script>
   <script src="/js/libs/foundation.min.js"></script>
   <script src="./js/dataTables.foundation.js"></script>
   <script src="./js/moment.js"></script>
-  <script src="/js/libs/dashboard.js"></script>
+  <script src="/js/libs/fabmo.js"></script>
 
 
   <script type="text/javascript">
@@ -189,6 +198,9 @@
 					fabmoDashboard.submitJob(file, {filename : file.name}, function(err, data) {
 						if(err){alert(err);return;}
 						refresh_jobs_list();
+						fabmoDashboard.getJobsInQueue(function(err, data) {
+							setNextJob(data);
+						});
 					});
 				}
 				finally {
@@ -201,11 +213,15 @@
 	jQuery.fn.dataTableExt.oSort["duration-desc"] = function (x, y) {return 1};
 	jQuery.fn.dataTableExt.oSort["duration-asc"] = function (x, y) {}
 
+	fabmoDashboard.on('job_start', function() {console.log("Job started")});
+	fabmoDashboard.on('job_end', function() {console.log("Job ended")}); 
+
     var history_table = $('#history_table').DataTable( {
-    	"filter": true,
     	"paging": true,
+    	"filter": false,
+    	"language.paginate.previous": "Prev",
         "processing": false,
-        "bInfo": false,
+        "bInfo": false,  
         "bLengthChange":false,
         "ajax": {
         	"url" : "/jobs/history",
@@ -217,11 +233,13 @@
                 "className":      'actions-control',
                 "orderable":      false,
                 "data":           null,
-                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='resubmitJob' id='resubmit'>Run Again</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div",
+                "defaultContent": "<div class='ellipses' title='More Actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='resubmitJob' id='resubmit'>Run Again</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div>",
             },
             { 	
-            	data : "name", 
-            	defaultContent : ''
+            	data : {name : 'name', state : 'state'}, 
+            	defaultContent : '',
+            	render : function(data) { return '<div class="job-' + data.state + '">' + data.name + '</div>'}
+
             },
             { 
             	data : "finished_at", 
@@ -243,11 +261,6 @@
 					}
 					
             },
-         	{ 
-            	data : "state",
-            	defaultContent : '',
-            	render : function(state) { return '<div class="job-' + state + '">' + state + '</div>'}
-            },
         ],
         "order" : [[2,"desc"]]
     }); 
@@ -255,29 +268,7 @@
 
 	
 	// DataTable
-	var setNextJob = function (arr) {
-		if (arr == undefined ) {
-			$('.nextJobTitle').text('No Jobs Pending');
-			$('.nextJobDesc').text('Drag files here or click "Submit Job"');
-			$('.nextJobPrev').hide();
-			$('.cancel').hide();
-			$('.download').hide();
-			$('.edit').hide();
-			$('.preview').hide();
-		} else {
-			$('.cancel').data('id', arr._id);
-			$('.preview').data('id', arr._id);
-			$('.download').data('id', arr._id);
-			$('.edit').data('id', arr._id);
-			$('.nextJobTitle').text(arr.name);
-			$('.nextJobDesc').text(arr.description);
-			$('.nextJobPrev').show();
-			$('.cancel').show();
-			$('.download').show();
-			$('.edit').show();
-			$('.preview').show();
-		}
-	}
+
 
   var queue_table = $('#queue_table').DataTable( {
     "filter": false,
@@ -292,7 +283,6 @@
         "url" : "/jobs/queue",
         "dataSrc" : function(json) { 
 			var arr = json.data.jobs.shift();
-			setNextJob(arr);
         	return json.data.jobs;}
         },
 		
@@ -315,11 +305,6 @@
             defaultContent : ''
             },
             { 
-            data : "state",
-            defaultContent : '',
-            render : function(state) { return '<div class="job-' + state + '">' + state + '</div>'}
-            },
-            { 
             data : "created_at",
             visible : false, 
             defaultContent : '', 
@@ -328,21 +313,17 @@
         "order" : [[3,"desc"]]
     }); // DataTable
 	
-	queue_table.on('xhr', function(e, settings, json) {
-		if(json.status === 'success') {
-			if(json.data.jobs.length > 1) {
-				$('.job-queue').show(500);
-			} else {
-				$('.job-queue').hide(500);
-			}
-		}
-	});
 		$('.cancel').on('click', function(e) {
 			var jobId = $(this).data('id');
 			fabmoDashboard.cancelJob(jobId, function(err, data) {
 					
 			});
-			setTimeout(function(){ refresh_jobs_list() }, 500);
+			setTimeout(function(){ 
+				refresh_jobs_list() 
+				fabmoDashboard.getJobsInQueue(function(err, data) {
+						setNextJob(data);
+				});
+			}, 500);
 		});
 		$('.preview').on('click', function(e) {
 			var jobId = $(this).data('id');
@@ -383,6 +364,9 @@
 		$('.dropDown').on('click', 'a#cancel-'+jobId.toString(), function(e) {
 			fabmoDashboard.cancelJob(jobId, function(err, data) {
 				refresh_jobs_list();
+				fabmoDashboard.getJobsInQueue(function(err, data) {
+						setNextJob(data);
+				});
 			});
 		});
 		$('.dropDown').on('click', 'a#preview-'+jobId.toString(), function(e) {
@@ -444,8 +428,12 @@
 		});
  			$('.dropDown').on('click', 'a#resubmit', function(e) {
 				fabmoDashboard.resubmitJob(job._id, function(err, result) {
+					$('.toggle-topbar').click();
 					$('#nav-pending').click();
 					refresh_jobs_list();
+					fabmoDashboard.getJobsInQueue(function(err, data) {
+						setNextJob(data);
+					});
 				});
 				$('.dropDownWrapper').hide();
 			});
@@ -506,11 +494,18 @@
 	});
 
 	$('#run-next').click(function(e) { 
-		fabmoDashboard.runNext(function(err, data) {
-			refresh_jobs_list();
-			fabmoDashboard.showDRO();
-			fabmoDashboard.showFooter();
+		if ($('.play').hasClass('active')){
+			$('.play').toggleClass('active');
+			fabmoDashboard.stop(function(err, data) {
+			fabmoDashboard.hideFooter();
 		});
+		} else {
+			$('.play').toggleClass('active');
+			fabmoDashboard.runNext(function(err, data) {
+				fabmoDashboard.showDRO();
+				fabmoDashboard.showFooter();
+			});	
+		}		
 	});
 
 	$('#clear-jobs').click(function(e) { 
@@ -519,7 +514,7 @@
 		});
 	});
 
-	$('#nav-submit').click(function(evt) {
+	$('.submit-button').click(function(evt) {
 		jQuery('#file').trigger('click');
 	});
 
@@ -527,20 +522,100 @@
 		fabmoDashboard.submitJob($('#fileform'), {}, function(err, data) {
 			resetFormElement($('#file'));
 			refresh_jobs_list();
+			fabmoDashboard.getJobsInQueue(function(err, data) {
+				setNextJob(data);
+			});
 		});
 	});
+	var setNextJob = function (arr) {
+		if ( arr.length === 0 ) {
+			$('.nextJobTitle').slideUp(500);
+			$('.nextJobDesc').slideUp(500);
+			$('.cancel').slideUp(500);
+			$('.download').slideUp(500);
+			$('.edit').slideUp(500);
+			$('.preview').slideUp(500);
+			$('.play-button').slideUp(1000);
+			$('.without-job').show(1000);
+		} else {
+			if ( arr.length > 1) {
+				$('.job-queue').show(500);
+			} else {
+				$('.job-queue').slideUp(500);
+			}
+			$('.without-job').hide();
+			$('.cancel').data('id', arr[0]._id);
+			$('.preview').data('id', arr[0]._id);
+			$('.download').data('id', arr[0]._id);
+			$('.edit').data('id', arr[0]._id);
+			$('.nextJobTitle').text(arr[0].name);
+			$('.nextJobDesc').text(arr[0].description);
+			$('.nextJobTitle').show(500);
+			$('.nextJobDesc').show(500);
+			$('.cancel').show(500);
+			$('.download').show(500);
+			$('.edit').show(500);
+			$('.preview').show(500);
+			$('.play-button').show(500);
+		}
+	}
+
 	
+	fabmoDashboard.on('job_start', function(){
+		fabmoDashboard.requestStatus(function(err, data) {
+			$('.nextJobTitle').text(data.job.name);
+			$('.nextJobDesc').text(data.job.description);
+		});
+		$('.cancel').slideUp(500);
+		$('.download').slideUp(500);
+		$('.edit').slideUp(500);
+		$('.preview').slideUp(500);
+		$('body').css('background-color', '#898989');
+		jobrunning = window.setInterval(function(){
+   			$('.dropzone').toggleClass('blink');
+		}, 1000);
+	});
+	fabmoDashboard.on('job_end', function(){
+   			clearInterval(jobrunning);
+			$('.dropzone').removeClass('blink');
+			$('body').css('background-color', '#EEEEEE');
+			fabmoDashboard.getJobsInQueue(function(err, data) {
+				setNextJob(data);
+			});
+	});
 
 	fabmoDashboard.on('status', function(status) {
+		var prog = ((status.line/status.nb_lines)*100).toFixed(2);
+		var percent = Math.ceil(prog);
+		var rotation = Math.ceil(180*(percent/100));
+ 		var fill_rotation = 3 + rotation;
+ 		var fix_rotation = 6 + rotation * 2;
 		var jobid;
+		var transform_styles = ['-webkit-transform',
+                        '-ms-transform',
+                        'transform'];
 		try {
 			jobid = status.job._id || null;
 		} catch(e) {
 			jobid = null;
 		}
-
+		if (status.state === "idle") {
+			fabmoDashboard.getJobsInQueue(function(err, data) {
+				setNextJob(data);
+			});
+			$('.up-next').css('left', '0px');
+			$('.now-running').css('left', '-200px');
+			$('.play').removeClass('active');
+			$('.fill, .mask.full').css(transform_styles[i], 'rotate(0deg)');
+			$('.fill.fix').css(transform_styles[i], 'rotate(0deg)');
+			
+		} else if(status.state === "running" ) {
+			$('.up-next').css('left', '-200px');
+			$('.now-running').css('left', '0px');
+		}
 		// New Job
 		if(jobid) {
+			
 			if(jobid != current_job_id) {
 				current_job_id = jobid;
 				url = '/job/' + jobid + '/file';
@@ -559,8 +634,12 @@
 				refresh_jobs_list();
 	
 			}
+	
 		}
-
+		for(i in transform_styles) {
+				$('.fill, .mask.full').css(transform_styles[i], 'rotate(' + fill_rotation + 'deg)');
+				$('.fill.fix').css(transform_styles[i], 'rotate(' + fix_rotation + 'deg)');
+		}
 		// Hilight Current Line
 		/*
 		try {
@@ -622,6 +701,7 @@
 
         // Replace image with new SVG
         $img.replaceWith($svg);
+
 
     }, 'xml');
 

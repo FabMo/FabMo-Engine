@@ -32,5 +32,21 @@ OpenSBPConfig.prototype.apply = function(callback) {
 	setImmediate(callback, null);
 };
 
+OpenSBPConfig.prototype.getVariable = function(name) {
+	var name = name.replace('&','');
+	var variables = this._cache['variables'];
+	if(variables && (name in variables)) {
+		return variables[name];
+	} else {
+		return undefined;
+	}
+}
+
+OpenSBPConfig.prototype.setVariable = function(name, value, callback) {
+	var name = name.replace('&','');
+	var u = {'variables' : {}}
+	u.variables[name] = value;
+	this.update(u, callback);
+}
 
 exports.OpenSBPConfig = OpenSBPConfig;

@@ -31,7 +31,6 @@ function listify(x) {
 }
 
 function doshell(command, callback){
-    log.debug("Executing shell command: " + command)
     exec(command, function(error, stdout, stderr) { 
         callback(stdout); 
     });
@@ -398,6 +397,11 @@ function Watchdog(timeout,exit_code){
     };
 }
 
+var getClientAddress = function (req) {
+        return (req.headers['x-forwarded-for'] || '').split(',')[0] 
+        || req.connection.remoteAddress;
+};
+
 exports.serveStatic = serveStatic;
 exports.Queue = Queue;
 exports.Watchdog = Watchdog;
@@ -409,5 +413,5 @@ exports.createUniqueFilename = createUniqueFilename;
 exports.fixJSON = fixJSON;
 exports.extend = extend;
 exports.doshell = doshell;
-
+exports.getClientAddress = getClientAddress;
 

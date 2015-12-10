@@ -171,40 +171,38 @@
             <div id="handwheel" class="widget fabmo-manual-control" style="text-align: center;">
               <canvas width="220px" height="220px" id="wheel"></canvas>
             </div>
-            <div id="mykeypad" class="widget fabmo-manual-control" style="text-align: center; width: 220px; height: 75px;">
-              <div id="keypad" class="keypad noselect">Keyboard</div>
+
+            <div id="mykeypad" class="widget fabmo-manual-control hide" style="text-align: center; width: 220px; height: 75px;">
+              <div id="keyboard" class="keyboard noselect">Keyboard</div>
             </div>
 
-            <ul class="off-canvas-list fabmo-status fabmo-file-control">
-                <li style="margin: 10px" class="file-info" style="align: center;">
-                  <div class="filename" style="text-align: center;"></div>
-                </li>
-                <li style="margin: 10px" class="file-info" style="align: center;">
-                <div class="progress-container">
-                  <div class="progress" style=""></div>
-                </div>
-                </li>
-            </ul>
-
-            <!-- ************ File Control Widget ************ -->
             <div id="job-info" class="widget">
-              <ul class="off-canvas-list fabmo-status fabmo-file-control">
-                <li style="margin: 10px">
-                      <span class="fabmo-pause-button hide">
-                        <a class="med button warning radius" style="border: 2px solid black;">Pause</a>
-                      </span>
-                </li>
-                <li style="margin: 10px">
-                      <span class="fabmo-resume-button hide">
-                        <a class="med button success radius" style="border: 2px solid black;">Resume</a>
-                      </span>
-                </li>
-                <li style="margin: 10px">
-                      <span class="fabmo-stop-button hide">
-                        <a class="med button alert radius" style="border: 2px solid black;">Stop</a>
-                      </span>
-                </li>
-              </ul>
+
+                <ul class="off-canvas-list fabmo-status fabmo-file-control">
+                  <li style="margin: 10px" class="file-info" style="align: center;">
+                    <div class="filename" style="text-align: center;"></div>
+                  </li>
+                  <li style="margin: 10px" class="file-info" style="align: center;">
+                  <div class="progress-container">
+                    <div class="progress" style=""></div>
+                  </div>
+                  </li>
+                  <li style="margin: 10px">
+                        <span class="fabmo-pause-button hide">
+                          <a class="med button warning radius" style="border: 2px solid black;">Pause</a>
+                        </span>
+                  </li>
+                  <li style="margin: 10px">
+                        <span class="fabmo-resume-button hide">
+                          <a class="med button success radius" style="border: 2px solid black;">Resume</a>
+                        </span>
+                  </li>
+                  <li style="margin: 10px">
+                        <span class="fabmo-stop-button hide">
+                          <a class="med button alert radius" style="border: 2px solid black;">Stop</a>
+                        </span>
+                  </li>
+                </ul>
             </div>
 
           </aside>
@@ -279,8 +277,7 @@
           color : '#2E3865',
         }).spin(document.getElementById('waiting_spinner'))
       </script>
-     <script type="text/javascript" src="js/libs/jquery.js"></script> 
-	<script type="text/javascript" src="js/libs/require.js"></script>
+	    <script type="text/javascript" src="js/libs/require.js"></script>
       <script src="/js/libs/dashboard.js"></script>
       <script type="text/javascript" src="js/app.js"></script>
   </body>

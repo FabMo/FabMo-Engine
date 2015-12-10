@@ -1,5 +1,4 @@
 body {
-  background: #eee;
 }
 
 .delete-button {
@@ -12,7 +11,7 @@ body {
 
 #dropzone { 
   border: 5px solid transparent;
-  border-radius: 5px;   
+  border-radius: 10px;   
 }
 
 #dropzone .hovershow {
@@ -25,26 +24,15 @@ body {
 
 #dropzone.hover { 
   border: 5px dashed #ccc; 
-  border-radius: 5px;
-  -webkit-transition: all .2s ease;
-  -moz-transition: all .2s ease;
-  -o-transition: all .2s ease;
+  border-radius: 10px;
 }
  
 #dropzone.hover .hovershow {
   opacity: 1.0;
-  -webkit-transition: all .2s ease;
-  -moz-transition: all .2s ease;
-  -o-transition: all .2s ease;
-
 }
 
 #dropzone.hover .hoverdim {
   opacity: 0.2;
-  -webkit-transition: all .2s ease;
-  -moz-transition: all .2s ease;
-  -o-transition: all .2s ease;
-
 }
 
 #dropzone .message {

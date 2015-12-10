@@ -11,7 +11,14 @@
 }(this, function (io) {
   "use strict"
 
+var PING_TIMEOUT = 1000;
+
 var FabMoAPI = function(base_url) {
+	this.events = {
+		'status' : [],
+		'disconnect' : [],
+		'connect' : []
+	};
 	var url = window.location.origin;
 	this.base_url = url.replace(/\/$/,'');
 
@@ -29,38 +36,70 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 	}
 
 	if(this.socket) {
-		this.on('status', function(status) {
-			this.status = status;
+		this.socket.on('status', function(status) {
+			this._setStatus(status);
+			this.emit('status', status);
 		}.bind(this));
 
 		this.socket.on('connect', function() {
-			// Request a status once connected
-			// Even though the server is really supposed to send one
 			console.info("Websocket connected");
+			this.emit('connect');
+			this.requestStatus();
 		}.bind(this));
 
 		this.socket.on('message', function(message) {console.info("Websocket message: " + JSON.stringify(message))} );
 
 		this.socket.on('disconnect', function() {
+			this.emit('disconnect');
 			console.info("Websocket disconnected");
-			// Maybe use a dashboard autorefresh thing here
 		}.bind(this));
+
+	}
+}
+
+FabMoAPI.prototype.emit = function(evt, data) {
+	var handlers = this.events[evt];
+	if(handlers) {
+		for(var i=0; i<handlers.length; i++) {
+			handlers[i](data);
+		}
 	}
 }
 
 FabMoAPI.prototype.on = function(message, func) {
-	if(this.socket) {
-		this.socket.on(message, func);
-		switch(message) {
-			case 'status':
-				this.socket.emit('status', null);
-				break;
-			default:
-				break;
-		}
-	} else {
-		console.warn("Not registering " + message + "event because socket has not been set up yet.");
+	if(message in this.events) {
+		this.events[message].push(func);
 	}
+}
+
+FabMoAPI.prototype._setStatus = function(status) {
+	this.status = status;
+}
+
+FabMoAPI.prototype.ping = function(callback) {
+	if(this.socket) {
+		var start = Date.now();
+
+		var fail = setTimeout(function() {
+			callback(new Error('Timeout waiting for ping response.'), null);
+		}, PING_TIMEOUT);
+
+		this.socket.once('pong', function() {
+			clearTimeout(fail);
+			callback(null, Date.now()-start);
+		});
+		this.socket.emit('ping');
+	}
+}
+
+
+FabMoAPI.prototype._setStatus = function(status) {
+	this.status = status;
+}
+
+FabMoAPI.prototype.command = function(name, args) {
+	this.socket.emit('cmd', {'name':name, 'args':args||{} } );
+
 }
 
 // Configuration
@@ -80,6 +119,10 @@ FabMoAPI.prototype.getStatus = function(callback) {
 	this._get('/status', callback, callback, 'status');
 }
 
+FabMoAPI.prototype.requestStatus = function() {
+	this.socket.emit('status');
+}
+
 // Jobs
 FabMoAPI.prototype.getJobHistory = function(callback) {
 	this._get('/jobs/history', callback, callback, 'jobs');
@@ -93,21 +136,26 @@ FabMoAPI.prototype.getJob = function(id, callback) {
 	this._get('/job/' + id, callback, callback, 'job');
 }
 
+FabMoAPI.prototype.getJobInfo = FabMoAPI.prototype.getJob;
+
 FabMoAPI.prototype.resubmitJob = function(id, callback) {
 	this._post('/job/' + id, {}, callback, callback);
 }
 
 // Direct commands
 FabMoAPI.prototype.quit = function(callback) {
-	this._post('/quit', {}, callback, callback);
+	this.command('quit');
+	//this._post('/quit', {}, callback, callback);
 }
 
 FabMoAPI.prototype.pause = function(callback) {
-	this._post('/pause', {}, callback, callback);
+	this.command('pause');
+	//this._post('/pause', {}, callback, callback);
 }
 
 FabMoAPI.prototype.resume = function(callback) {
-	this._post('/resume', {}, callback, callback);
+	this.command('resume');
+	//this._post('/resume', {}, callback, callback);
 }
 
 // Jobs
@@ -141,6 +189,10 @@ FabMoAPI.prototype.submitJob = function(obj, callback) {
 
 FabMoAPI.prototype.clearJobQueue = function(id, callback) {
 	this._del('/jobs/queue', callback, callback);
+}
+
+FabMoAPI.prototype.getJobsInQueue = function(callback) {
+	this._get('/jobs/queue', callback, callback, 'jobs');
 }
 
 // Apps
@@ -209,6 +261,39 @@ FabMoAPI.prototype.manualHeartbeat = function() {
 
 FabMoAPI.prototype.manualStop = function() {
 	this.executeRuntimeCode('manual', {'cmd': 'stop'});
+}
+
+FabMoAPI.prototype.connectToWifi = function(ssid, key, callback) {
+	var data = {'ssid' : ssid, 'key' : key};
+	this._post('/network/wifi/connect', data, callback, callback);
+}
+
+FabMoAPI.prototype.disconnectFromWifi = function(callback) {
+	this._post('/network/wifi/disconnect', {}, callback, callback);
+}
+
+FabMoAPI.prototype.forgetWifi = function(callback) {
+	this._post('/network/wifi/forget', {}, callback, callback);
+}
+
+FabMoAPI.prototype.enableWifi = function(callback) {
+	var data = {'enabled' : true};
+	this._post('/network/wifi/state', data, callback, callback);
+}
+
+FabMoAPI.prototype.disableWifi = function(callback) {
+	var data = {'enabled' : false};
+	this._post('/network/wifi/state', data, callback, callback);
+}
+
+FabMoAPI.prototype.enableHotspot = function(callback) {
+	var data = {'enabled' : true};
+	this._post('/network/hotspot/state', data, callback, callback);
+}
+
+FabMoAPI.prototype.disableHotspot = function(callback) {
+	var data = {'enabled' : false};
+	this._post('/network/hotspot/state', data, callback, callback);
 }
 
 

@@ -4,31 +4,36 @@
 	<title>Apps</title>
 
 	<!-- CSS standardisation & inclusion -->
-	<link rel="stylesheet" href="./css/foundation.min.css">
-	<link rel="stylesheet" href="./css/normalize.css">
+	<link rel="stylesheet" href="/css/foundation.min.css">
+	<link rel="stylesheet" href="/css/normalize.css">
 	<link rel="stylesheet" href="./css/style.css">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-    
+    <div class="sticky">
 	<nav class="top-bar" data-topbar role="navigation">
 	  <ul class="title-area">
 	    <li class="name">
-	      <h1><a >Apps</a></h1>
+	      <h1><a>Apps</a></h1> 
 	    </li>
-	    <li class="toggle-topbar menu-icon"><a href="#"><span></span></a></li>
+	    <li class="toggle-topbar menu-icon">
+	    	<a href="#"><span></span></a>
+	    </li>
 	  </ul>
-	  <section class="top-bar-section">
-	    <ul class="right">
-	      <li><a class="app-install-button">Install App...</a></li>
-	    </ul>
+	    <section class="top-bar-section">    
+
+	  <ul class="left">
+	    <li>
+	    	<a class="app-install-button">Install App...</a>
+	    </li>
+	  </ul>
 	  </section>
 	</nav> 
-
+	</div>
 	<form style="display:none;" id="fileform">
 	<input type="file" id="file">
 	</form>
-	<div id="table-outer" style="margin: 30px;">
+	<div id="table-outer" style="margin: 1em;">
 		<div id="dropzone" class="container">
 			<div class="hovershow message">Drag app here to install...</div>
 			<div class="hoverdim">
@@ -49,10 +54,10 @@
 	</div>
 
   <!-- Javascript inclusions -->
-  <script src="./js/libs/jquery-1.10.2.js"></script>
-  <script src="./js/libs/foundation.min.js"></script>
+  <script src="/js/libs/jquery.min.js"></script>
+  <script src="/js/libs/foundation.min.js"></script>
   <script src="./js/libs/jquery.dragster.js"></script>
-  <script src="/js/libs/dashboard.js"></script>
+  <script src="/js/libs/fabmo.js"></script>
  
   <script type="text/javascript">
 
@@ -63,6 +68,7 @@
 			$(".app-listing").empty();
 			$.each( apps, function( key, val ) {
 				var appid = 'app_' + val.id;
+				var appiconid = 'appicon_' + val.id;
 				var id = val.id;
 				var delete_button = '';
 				if(val.icon_display !== 'none') {
@@ -70,7 +76,9 @@
 				}
 				html = [
 				'<tr><td>',
+				'<a id="' +  appiconid + '" class="app-icon-link">',
 				'<img src="' + location.origin + '/' + val.icon_url + '" class="app-icon" style="background-color: ' + val.icon_background_color + '" />',
+				'</a>',
 				'</td><td>',
 				'<a id="' +  appid + '" class="app-link">',
 					val.name,
@@ -86,7 +94,7 @@
 					fabmoDashboard.deleteApp(id, function(err, result) {
 						if(err) {
 							console.error(err);
-						} else {
+						} else { 
 							refreshApps();
 						}
 					});
@@ -94,6 +102,10 @@
 				$('#' + appid).click(function() {
 					fabmoDashboard.launchApp(id);
 				});
+				$('#' + appiconid).click(function() {
+					fabmoDashboard.launchApp(id);
+				});
+
 			});
 		});
 	};

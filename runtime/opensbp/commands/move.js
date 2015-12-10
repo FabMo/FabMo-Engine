@@ -15,74 +15,51 @@ exports._A = function(args, callback) {
 
 // Move X axis
 exports.MX = function(args) {
+	log.debug("MX");
 	var x = args[0];
-
-	log.debug( " MX args: " + JSON.stringify(args));
 	if(isNaN(x)) { throw( "Invalid MX argument: " + x ); }
-	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
-//	this.cmd_posx = x;
+	var feedrate = this.movespeed_xy * 60;
 	this.emit_move('G1',{"X":x,'F':feedrate});
-
 };
 
 // Move Y axis
 exports.MY = function(args) {
 	var y = args[0];
-
-	log.debug( " MY args: " + JSON.stringify(args));
 	if(isNaN(y)) { throw( "Invalid MY argument: " + y ); }
-	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
-//	this.cmd_posy = y;
+	var feedrate = this.movespeed_xy * 60;
 	this.emit_move('G1',{"Y":y,'F':feedrate});
-
 };
 
 // Move Z axis
 exports.MZ = function(args) {
 	var z = args[0];
-
-	log.debug( " MZ args: " + JSON.stringify(args));
 	if(isNaN(z)) { throw( "Invalid MZ argument: " + z ); }
-	feedrate = (60.0 * config.opensbp.get('movez_speed'));
-//	this.cmd_posz = z;
+	var feedrate = this.movespeed_z * 60;
 	this.emit_move('G1',{"Z":z,'F':feedrate});
-
 };
 
 // Move A axis
 exports.MA = function(args) {
 	var a = args[0];
-
-	log.debug( " MA args: " + JSON.stringify(args));
 	if(isNaN(a)) { throw( "Invalid MA argument: " + a ); }
-	feedrate = (60.0 * config.opensbp.get('movea_speed'));
-//	this.cmd_posa = a;
+	var feedrate = this.movespeed_a * 60;
 	this.emit_move('G1',{"A":a,'F':feedrate});
-
 };
 
 // Move B axis
 exports.MB = function(args) {
 	var b = args[0];
-
-	log.debug( " MB args: " + JSON.stringify(args));
 	if(isNaN(b)) { throw( "Invalid MB argument: " + b ); }
-	feedrate = (60.0 * config.opensbp.get('moveb_speed'));
-//	this.cmd_posb = b;
+	var feedrate = this.movespeed_b * 60;
 	this.emit_move('G1',{"B":b,'F':feedrate});
-
 };
 
 // Move C axis
 exports.MC = function(args) {
 	var c = args[0];
-
-	log.debug( " MC args: " + JSON.stringify(args));
 	if(isNaN(c)) { throw( "Invalid MC argument: " + c ); }
-	feedrate = (60.0 * config.opensbp.get('movec_speed'));
-//	this.cmd_posc = c;
+	var feedrate = this.movespeed_c * 60;
 	this.emit_move('G1',{"C":c,'F':feedrate});
-
 };
 
 // Move 2 axes (XY). This is a modal command, any axis location that is left out
@@ -121,10 +98,9 @@ exports.M6 = function(args) {
 };
 
 process_move = function(args) {
-    log.debug(" process_move: " + JSON.stringify(args));
+//    log.debug(" process_move: " + JSON.stringify(args));
 	var params = {};
-
-	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
+	var feedrate = this.movespeed_xy * 60;
 	if(args[0] === 0 || args[0] && typeof args[0] === "number"){
 		params.X = args[0];
 	}
@@ -143,78 +119,71 @@ process_move = function(args) {
 	if(args[1] === 0 || args[5] && typeof args[5] === "number"){ 
 		params.C = args[5];
 	}  
-	params.F = (60.0 * config.opensbp.get('movexy_speed'));
+	params.F = feedrate;
 
 	return params;
 };
 
 // Move to the XY home position (0,0)
-exports.MH = function(args) {
+exports.MH = function(args,callback) {
 	var x = 0;
 	var y = 0;
+	var safeZ = config.opensbp.get('safeZpullUp');
+	var feedrateXY = this.movespeed_xy * 60;
+	var feedrateZ = this.movespeed_z * 60;
 
-  // Need to add pull-up to safez height
-	log.debug( "MH" );
-	feedrate = (60.0 * config.opensbp.get('movexy_speed'));
-	this.cmd_posx = 0;
-	this.cmd_posy = 0;
-	this.emit_move('G1',{"X":x,"Y":y,'F':feedrate});
-
+	this.machine.driver.get('posz', function(err, MPO) {
+		var unitConv = 1;
+		log.debug( "MH" );
+	 	if ( this.machine.driver.status.unit === 'in' ) {  // inches
+	 		unitConv = 0.039370079;
+	 	}
+	 	var z = MPO;
+		log.debug("z = " + z);
+	 	if ( z < safeZ ){
+			this.emit_move('G1',{"Z":safeZ,'F':feedrateZ});
+			this.emit_move('G1',{"X":x,"Y":y,'F':feedrateXY});
+ 		}
+ 		else{
+ 			this.emit_move('G1',{"X":x,"Y":y,'F':feedrateXY});
+ 		}
+		this.cmd_posx = 0;
+		this.cmd_posy = 0;
+		this.cmd_posz = safeZ;
+		callback();
+	}.bind(this));
 };
 
 // Set the Move (cut) speed for any of the 6 axes
-exports.MS = function(args, callback) {
-
-	log.debug( "MS - args = " + args );
-
+exports.MS = function(args) {
 	var speed_change = 0.0;
-	var g2_values = {};
 	var sbp_values = {};
 
 	if (args[0] !== undefined) {
 		speed_change = args[0];
 		if(isNaN(speed_change)) { throw( "Invalid MS-XY argument: " + speed_change ); }
-//		g2_values.xfr = g2_values.yfr = (60 * speed_change);
-		sbp_values.movexy_speed = speed_change;
+		this.movespeed_xy = speed_change;
 	}
 	if (args[1] !== undefined) {
 		speed_change = args[1];
 		if(isNaN(speed_change)) { throw( "Invalid MS-Z argument: " + speed_change ); }
-//		g2_values.zfr = (60 * speed_change);
-		sbp_values.movez_speed = speed_change;
+		this.movespeed_z = speed_change;
 	}
 	if (args[2] !== undefined) {
 		speed_change = args[2];
 		if(isNaN(speed_change)) { throw( "Invalid MS-A argument: " + speed_change ); }
-//		g2_values.afr = (60 * speed_change);
-		sbp_values.movea_speed = speed_change;
+		this.movespeed_a = speed_change;
 	}
 	if (args[3] !== undefined) {
 		speed_change = args[3];
 		if(isNaN(speed_change)) { throw( "Invalid MS-B argument: " + speed_change ); }
-//		g2_values.bfr = (60 * speed_change);
-		sbp_values.moveb_speed = speed_change;
+		this.movespeed_b = speed_change;
 	}
 	if (args[4] !== undefined) {
 		speed_change = args[4];
 		if(isNaN(speed_change)) { throw( "Invalid MS-C argument: " + speed_change ); }
-//		g2_values.cfr = (60 * speed_change);
-		sbp_values.movec_speed = speed_change;
-	}
-
-	log.debug( "MS-g2_values = " + JSON.stringify(g2_values) );
-	log.debug( "MS-sbp_values = " + JSON.stringify(sbp_values) );
-
-	// We have created the objects containing both the values to set on the G2 driver as well as for shopbot
-	// Now send them to their appropriate places (shopbot first, followed by G2)
-	config.opensbp.setMany(sbp_values, function(err, values) {
-		log.debug("SBP_setMany values:" + JSON.stringify(values));
-		config.driver.setMany(g2_values, function(err, values) {
-			log.debug("G2_setMany values:" + JSON.stringify(values));
-			callback();
-		});
-	});
-
+		this.movespeed_c = speed_change;
+		}
 };
 
 exports.MI = function(args) {

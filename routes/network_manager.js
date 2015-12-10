@@ -96,7 +96,7 @@ wifiState = function(req,res,next){
 
 hotspotState = function(req,res,next){
     state = req.params.enabled;
-    if(state===true){
+    if(state===true || state === 'true'){
         network.turnWifiHotspotOn(function(err){
             if(err) {
                 res.json({'status':'error', 'message' : err});
@@ -104,7 +104,7 @@ hotspotState = function(req,res,next){
                 res.json({'status':'success'});
             }
         });
-    }else if(state===false){
+    }else if(state===false || state === 'false'){
         network.turnWifiHotspotOff(function(err){
         if(err) {
             res.json({'status':'error', 'message' : err});

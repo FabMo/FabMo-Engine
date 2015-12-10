@@ -1,4 +1,5 @@
 var fs = require('fs');
+var util = require('../util');
 var machine = require('../machine').machine;
 var log=require('../log').logger("websocket");
 var clients_limit = 5;
@@ -11,11 +12,11 @@ function setupStatusBroadcasts(clients_sockets){
 	});
 }
 
+
 var onConnect = function(socket) {
 
-	log.debug("Client connected");
-
-	socket.emit('status', machine.status)
+	var client = util.getClientAddress(socket.client.request)
+	log.info("Client " + client + " connected.");
 
 	socket.on('disconnect', function() {
 		log.debug("Client disconnected");
@@ -28,6 +29,30 @@ var onConnect = function(socket) {
 	socket.on('code', function(data) {
 		if('rt' in data) {
 			machine.executeRuntimeCode(data.rt, data.data)
+		}
+	});
+
+	socket.on('ping', function(data) {
+		socket.emit('pong');
+	});
+
+	socket.on('cmd', function(data) {
+		switch(data.name) {
+			case 'pause':
+				machine.pause();
+				break;
+
+			case 'quit':
+				machine.quit();
+				break;
+
+			case 'resume':
+				machine.resume();
+				break;
+
+			default:
+				// Meh?
+				break;
 		}
 	});
 };

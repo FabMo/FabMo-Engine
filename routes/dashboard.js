@@ -234,7 +234,7 @@ var submitApp = function(req, res, next) {
     else{
         answer = {
             status:"fail",
-            data : {"job" : "Problem receiving the app : bad request."}
+            data : {"app" : "Problem receiving the app : bad request."}
         };
         res.json(answer);
     }

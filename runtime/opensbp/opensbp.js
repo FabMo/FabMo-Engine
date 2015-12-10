@@ -35,6 +35,11 @@ function SBPRuntime() {
 	this.cmd_posa = 0;
 	this.cmd_posb = 0;
 	this.cmd_posc = 0;
+	this.movespeed_xy = 0;
+	this.movespeed_z = 0;
+	this.movespeed_a = 0;
+	this.movespeed_b = 0;
+	this.movespeed_c = 0;
 	this.nonXfrm_posx = 0; 
 	this.nonXfrm_posy = 0; 
 	this.nonXfrm_posz = 0; 
@@ -65,11 +70,10 @@ SBPRuntime.prototype.runString = function(s, callback) {
 	try {
 		var lines =  s.split('\n');
 		if(this.machine) {
-			if(this.file_stack.length == 0) {
+			if(this.file_stack.length === 0) {
 				this.machine.status.nb_lines = lines.length - 1;
 			}
 		}
-		this.end_callback = callback;
 		try {
 			this.program = parser.parse(s);
 		} catch(e) {
@@ -78,15 +82,30 @@ SBPRuntime.prototype.runString = function(s, callback) {
  		lines = this.program.length;
 		this.init();
 		this.end_callback = callback;
+		// get speed settings from opensbp.json to be used in files
+		var SBP_2get = ['movexy_speed',
+					    'movez_speed',
+					    'movea_speed',
+					    'moveb_speed',
+				    	'movec_speed' ];
+	    var getSBP_speed = config.opensbp.getMany(SBP_2get);
+		this.movespeed_xy = getSBP_speed.movexy_speed;
+		this.movespeed_z = getSBP_speed.movez_speed;
+		this.movespeed_a = getSBP_speed.movea_speed;
+		this.movespeed_b = getSBP_speed.moveb_speed;
+		this.movespeed_c = getSBP_speed.movec_speed;
+
 		this._setupTransforms();
+		log.debug("Made it past transforms.")
 		this._analyzeLabels();  // Build a table of labels
+		log.debug("Made it past labels.")
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table
+		log.debug("Made it past gotos.")
+
 		this._run();
-	} catch(err) {
-		throw err
-		if(callback) {
-			setImmediate(callback, err);
-		}
+
+	} catch(e) {
+		return this._end(e.message + " (Line " + e.line + ")");
 	}
 };
 
@@ -99,6 +118,15 @@ SBPRuntime.prototype.runFile = function(filename, callback) {
 		}
 	}.bind(this));
 };
+
+SBPRuntime.prototype.simulateString = function(s, callback) {
+	var saved_machine = this.machine;
+	this.machine = null;
+	this.runString(s, function(err, data) {
+		this.machine = saved_machine;
+		callback(err, data);
+	});
+}
 
 SBPRuntime.prototype.pause = function() {
 	this.machine.driver.feedHold();
@@ -229,7 +257,7 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 			break;
 
 		case "assign":
-			result = false;
+			result = true;
 			break;
 			//return this._exprBreaksStack(cmd.var) || this._exprBreaksStack(cmd.expr)
 		
@@ -409,8 +437,17 @@ SBPRuntime.prototype._end = function(error) {
 		}
 
 	} else {
+		var callback = this.end_callback;
+		var gcode = this.output;
 		this.init();
 		this.emit('end', this.output);
+		if(callback) {
+			if(error) {
+				callback(error, null);
+			} else {
+				callback(null, gcode.join('\n'));
+			}
+		}
 	}
 };
 
@@ -679,10 +716,20 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 		case "assign":
 			//TODO FIX THIS THIS DOESN'T DO SYSTEM VARS PROPERLY
-			value = this._eval(command.expr);
-			this.user_vars[command.var] = value;
-			this.pc += 1;
-			return false;
+			var value = this._eval(command.expr);
+			var persistent = this.evaluatePersistentVariable(command.var);
+
+			if(persistent != undefined) {
+				config.opensbp.setVariable(command.var, value, function() {
+					this.pc += 1;
+					callback();
+				}.bind(this));
+			} else {
+				this.user_vars[command.var] = value;
+				this.pc += 1;
+				setImmediate(callback);
+			}
+			return true;
 			break;
 
 		case "cond":
@@ -770,19 +817,30 @@ SBPRuntime.prototype._eval_value = function(expr) {
 		log.debug("  Evaluating value: " + expr);
 		sys_var = this.evaluateSystemVariable(expr);
 		if(sys_var === undefined) {
-			user_var = this.evaluateUserVariable(expr);
-			if(user_var === undefined) {
-				log.debug("  Evaluated " + expr + " as " + expr);
-				f = parseFloat(expr);
-			    if(isNaN(f)) {
-                    return expr;
-                } else {
-                    return f;
-                }
-            } else if(user_var === null) {
+			var persistent_var = this.evaluatePersistentVariable(expr);
+			if(persistent_var === undefined) {
+				user_var = this.evaluateUserVariable(expr);
+				if(user_var === undefined) {
+					f = parseFloat(expr);
+				    if(isNaN(f)) {
+	                    return expr;
+	                } else {
+	                    return f;
+	                }
+	            } else if(user_var === null) {
+	            	log.error("Uh oh.");
+	            	// User var is undefined (return undefined??)
+				} else {
+					log.debug("  Evaluated " + expr + " as " + user_var);
+					return parseFloat(user_var);
+				}				
 			} else {
-				log.debug("  Evaluated " + expr + " as " + user_var);
-				return parseFloat(user_var);
+				f = parseFloat(persistent_var);
+				if(isNaN(f)) {
+					return expr;
+				} else {
+					return f;
+				}
 			}
 		} else if(sys_var === null) {
 			log.error("  Undefined system variable " + expr)
@@ -886,15 +944,18 @@ SBPRuntime.prototype._analyzeGOTOs = function() {
 				switch(line.type) {
 					case "cond":
 						line = line.stmt;
-						// No break: fall through to next state
+						// No break: fall through to next state(s)
 					case "goto":
 					case "gosub":
 						if (line.label in this.label_index) {
-							
+							// pass
 						} else {
 							// Add one to the line number so they start at 1
-							throw "Undefined label " + line.label + " on line " + (i+1);
+							throw new Error("Undefined label " + line.label + " on line " + (i+1));
 						}
+						break;
+					default:
+						// pass
 						break;
 				}
 			}
@@ -994,6 +1055,13 @@ SBPRuntime.prototype.evaluateUserVariable = function(v) {
 	}
 };
 
+SBPRuntime.prototype.evaluatePersistentVariable = function(v) {
+	if(v === undefined) { return undefined;}
+	result = v.match(USERVAR_RE);
+	if(result === null) {return undefined;}
+	return config.opensbp.getVariable(v);
+};
+
 // Called for any valid shopbot mnemonic that doesn't have a handler registered
 SBPRuntime.prototype._unhandledCommand = function(command) {
 	log.warn('Unhandled Command: ' + JSON.stringify(command));
@@ -1074,7 +1142,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 				else if(key === "C") { emit_moveContext.cmd_posc = v; }
 			}
 		}
-		log.debug("emit_move:  N" + n + JSON.stringify(gcode));
+		log.debug("emit_move: N" + n + JSON.stringify(gcode));
 		emit_moveContext.current_chunk.push('N' + n + gcode);
 	};
 

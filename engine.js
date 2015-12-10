@@ -235,6 +235,16 @@ Engine.prototype.start = function(callback) {
             macros.load(callback);
         },
 
+        function load_instance_config(callback) {
+            log.info("Loading instance info...");
+            config.configureInstance(this.machine.driver, callback);
+        }.bind(this),
+
+        function apply_instance_config(callback) {
+            log.info("Applying instance configuration...");
+            config.instance.apply(callback);
+        },
+
         // Kick off the server if all of the above went OK.
         function start_server(callback) {
             log.info("Setting up the webserver...");

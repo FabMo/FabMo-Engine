@@ -1,32 +1,13 @@
 #!/usr/bin/python
 
-# Copyright (c) 2014, Intel Corporation.
-#
-# This program is free software; you can redistribute it and/or modify it
-# under the terms and conditions of the GNU Lesser General Public License,
-# version 2.1, as published by the Free Software Foundation.
-#
-# This program is distributed in the hope it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
-# more details.
-#
-
 import os
 import sys
-from sys import stdout
-import time
-import termios
-import fcntl
 import subprocess
-import signal
-import urllib2
-import hashlib
 import argparse
 import json
 import re
-import popen2
-from array import *
+import json
+import time
 
 WSREGEX = re.compile(r"\s+")
 DESTINATION_PATH = "/tmp/"
@@ -34,9 +15,20 @@ STATE_DIR = '/var/lib/edison_config_tools'
 HOST_AP_MODE_FILE = "/.start-in-host-ap-mode"
 CURR_PACKAGE_PATH = ""
 IFNAME = 'wlan0'
-WPAPSK_REGEX=re.compile(r'\[WPA[2]?-PSK-.+\]')
-WPAEAP_REGEX=re.compile(r'\[WPA[2]?-EAP-.+\]')
+WPAPSK_REGEX=re.compile(r'WPA[2]?-PSK-.+')
+WPAEAP_REGEX=re.compile(r'WPA[2]?-EAP-.+')
 WEP_REGEX=re.compile(r'\[WEP.*\]')
+
+WPA_SUPPLICANT_CONF_TEMPLATE = '''
+ctrl_interface=/var/run/wpa_supplicant
+ctrl_interface_group=0
+config_methods=virtual_push_button virtual_display push_button keypad
+update_config=1
+fast_reauth=1
+device_name=Edison
+manufacturer=Intel
+model_name=Edison
+'''
 
 class wpa_templates:
   START = '''
@@ -100,293 +92,14 @@ network={
 }
 '''
 
-def has_whitespace(s):
-  return re.compile(r"\s+").search(s)
+def set_hostname(hostname):
+    with open('/etc/hostname','w') as fp:
+        fp.write(hostname + "\n")
+    subprocess.call("hostname -F /etc/hostname", shell=True)
 
-def change_name(name):
-  if has_whitespace(name):
-    raise ValueError('Hostname "%s" contains whitespace.' % name)      
-  change_hostname(name)
-  change_ap_ssid(name)
-
-def change_hostname(newName):
-  hostname_file = open('/etc/hostname','w')
-  hostname_file.write(newName + "\n")
-  hostname_file.close();
-  subprocess.call("hostname -F /etc/hostname", shell=True)
-
-def change_ap_ssid(ssid):
-  saveDefaultSSID()
-  subprocess.call(["sed", "-i", "s/^ssid=.*/ssid=" + ssid + "/", "/etc/hostapd/hostapd.conf"])
-  subprocess.call("systemctl restart mdns && sleep 2", shell=True)
-
-
-def change_password(password):
-  if has_whitespace(password):
-    raise ValueError("New password contains whitespaces. Ignoring")
-
-
-  change_root_password(password)
-  if len(password) > 0:
-    change_ap_password(password)
-
-  if (not os.path.isfile(STATE_DIR + "/password-setup.done")):
-    pass_done = open(STATE_DIR + "/password-setup.done", "w")
-    pass_done.write("Indicates that password has been changed via oobe.\n")
-    pass_done.close()
-    subprocess.call("sed -i 's/^BindToDevice=/# BindToDevice=/g' /lib/systemd/system/sshd.socket ; sync ; systemctl daemon-reload; systemctl restart sshd.socket", shell=True)
-
-def change_root_password(password):
-  echoSub = subprocess.Popen(["echo", "root:" + password], stdout=subprocess.PIPE)
-  chpasswdSub = subprocess.Popen(["chpasswd"], stdin=echoSub.stdout, stdout=subprocess.PIPE)
-  echoSub.stdout.close()  # Allow echoSub to receive a SIGPIPE if chpasswdSub exits.
-  chpasswdSub.communicate()[0]
-
-def change_ap_password(password):
-  subprocess.call(["sed", "-i", "s/^wpa_passphrase=.*/wpa_passphrase=" + password + "/", "/etc/hostapd/hostapd.conf"])
-
-
-def set_edison_password(password):
-  if len(password) < 8 or len(password) > 63:
-    raise ValueError('Password is incorrect length (must be between 8 and 63 characters)')   
-  change_password(password)
-
-def wifi_scan():
-  #os.popen("systemctl stop hostapd && sleep 2 && systemctl start wpa_supplicant")
-  r = range(10,0,-1)
-  for i in r:
-    if i == 6:
-      os.popen("wpa_cli scan")
-    time.sleep(1)
-
-  data = os.popen("wpa_cli scan_results").read().split("\n")
-
-  print "\n"
-  network_map = {}
-  ssid_keys = []
-
-  while (len(data)):
-    line = data.pop().split("\t")
-    if (len(line) == 5):
-      ssid = line.pop()
-      if ssid not in ssid_keys and not ssid == "" and "\\x00" not in ssid:
-        tokens = line.pop()
-        if WPAPSK_REGEX.search(tokens):
-          network_map[ssid] = "WPA-PSK"
-        elif WPAEAP_REGEX.search(tokens):
-          network_map[ssid] = "WPA-EAP"
-        elif WEP_REGEX.search(tokens):
-          network_map[ssid] = "WEP"
-        else:
-          network_map[ssid] = "OPEN"
-
-        ssid_keys.append(ssid)
-
-  network_file = open(STATE_DIR + "/networks.txt", "w")
-  network_file.write("{\n")
-  for i in range(0, len(ssid_keys)):
-    network_file.write('\t"' + ssid_keys[i] + '": "' + network_map[ssid_keys[i]])
-    if i == len(ssid_keys)-1:
-        network_file.write('"\n')
-    else:
-        network_file.write('",\n')
-  network_file.write("}\n")
-  network_file.close()
-
-  return network_map
-
-def configureHiddenNetwork(ssid):
-  print '''
-    0: OPEN
-    1: WEP
-    2: WPA-Personal(PSK)
-    3: WPA-Enterprise (EAP)
-  '''
-  while 1:
-    try:
-      security = int(raw_input("Select the type of security [0 to 3]: "))
-    except TypeError:
-      security = -1
-    except ValueError:
-      security = -1
-
-    if security == 0:
-      return wpa_templates.OPEN % (ssid, "scan_ssid=1")
-    elif security == 1:
-      password = ''
-      while len(password) != 5 and len(password) != 13:
-        print "Password must be either 5 or 13 characters."
-        password = getNetworkPassword()
-      return wpa_templates.WEP % (ssid, "scan_ssid=1", password)
-    elif security == 2:
-      password = ''
-      while len(password) < 8 or len(password) > 63:
-        print "Password must be between 8 and 63 characters."
-        password = getNetworkPassword()
-      return wpa_templates.WPAPSK % (ssid, "scan_ssid=1", password)
-    elif security == 3:
-      identity = getNetworkIdentity()
-      password = getNetworkPassword()
-      return wpa_templates.WPAEAP % (ssid, "scan_ssid=1", identity, password)
-    else:
-      print "Invalid input."
-  return network_template_open % ssid
-
-def configureNetwork(choice,ssid_keys,network_map):
-  ssid = ssid_keys[choice-3]
-  if network_map[ssid] == "OPEN":
-    return wpa_templates.OPEN % (ssid, "")
-  elif network_map[ssid] == "WEP":
-    password = ''
-    while len(password) != 5 and len(password) != 13:
-        print "Password must be either 5 or 13 characters."
-        password = getNetworkPassword()
-    return wpa_templates.WEP % (ssid, "", password)
-  elif network_map[ssid] == "WPA-PSK":
-    password = ''
-    while len(password) < 8 or len(password) > 63:
-        print "Password must be between 8 and 63 characters."
-        password = getNetworkPassword()
-    return wpa_templates.WPAPSK % (ssid, "", password)
-  elif network_map[ssid] == "WPA-EAP":
-    identity = getNetworkIdentity()
-    password = getNetworkPassword()
-    return wpa_templates.WPAEAP % (ssid, "", identity, password)
-  else:
-    print noooo("the last line of startNetworkConfig")
-
-def configureNetworkAP(changewifi):
-  protocol = changewifi[0]
-  ssid = changewifi[1]
-  if protocol == "OPEN":
-    return wpa_templates.OPEN % (ssid, "scan_ssid=1")
-  elif protocol == "WEP":
-    password = changewifi[2]
-    if len(password) != 5 and len(password) != 13:
-        print "Password must be either 5 or 13 characters."
-        return None
-    return wpa_templates.WEP % (ssid, "scan_ssid=1", password)
-  elif protocol == "WPA-PSK":
-    password = changewifi[2]
-    if len(password) < 8 or len(password) > 63:
-        print "Password must be between 8 and 63 characters."
-        return None
-    return wpa_templates.WPAPSK % (ssid, "scan_ssid=1", password)
-  elif protocol == "WPA-EAP":
-    if len(changewifi) != 4:
-      print "Both Identify and Password must be provided. Unable to proceed"
-      return
-    identity = changewifi[2]
-    password = changewifi[3]
-    return wpa_templates.WPAEAP % (ssid, "scan_ssid=1", identity, password)
-  else:
-    print noooo("the last line of startNetworkConfig")
-
-def set_network(network_conf, ssid):
-    if not os.path.isfile('/etc/wpa_supplicant/wpa_supplicant.conf.original'):
-        subprocess.call("cp /etc/wpa_supplicant/wpa_supplicant.conf /etc/wpa_supplicant/wpa_supplicant.conf.original", shell=True)
-
-    wpa_supplicant = open('/etc/wpa_supplicant/wpa_supplicant.conf','a') #Will not take care of duplicates at the moment.
-    wpa_supplicant.write(network_conf)
-    wpa_supplicant.close();
-
-    print "Initiating connection to " + ssid + ". Please wait..."
-
-    try:
-        if int(subprocess.check_output("systemctl status wpa_supplicant | grep 'active (running)' | wc -l", shell=True)) == 0:
-          subprocess.call("systemctl stop hostapd &> /dev/null", shell=True)
-          subprocess.call("systemctl start wpa_supplicant &> /dev/null", shell=True)
-          time.sleep(10)
-        else:
-          subprocess.call("wpa_cli reconfigure &> /dev/null && sleep 2", shell=True)
-
-        network_count = int(subprocess.check_output('wpa_cli list_networks | wc -l', shell=True))
-        subprocess.call("wpa_cli select_network " + str(network_count - 2 - 1) + " &> /dev/null", shell=True)
-        time.sleep(5)
-
-        ifarray = subprocess.check_output("wpa_cli ifname", shell=True).split()
-        subprocess.call("udhcpc -i " + ifarray[len(ifarray)-1] + " -n &> /dev/null", shell=True)
-    except Exception as e:
-        print e
-        print "Sorry. Could not get an IP address."
-    else:
-        print "Attempting to enable network access, please check 'wpa_cli status' after a minute to confirm."
-
-def checkNetwork():
-  i = 60
-  while 1:
-    waiting = "Connecting: %s seconds left         \r" % i
-    stdout.write(waiting)
-    stdout.flush()
-    time.sleep(1)
-    address = os.popen("ifconfig | grep -A1 '%s' | grep 'inet'| awk -F' ' '{ print $2 }' | awk -F':' '{ print $2 }'" % IFNAME).read().rstrip()
-    if not address == "":
-      print "Done. Please connect your laptop or PC to the same network as this device and go to " + \
-        text_colors.CYAN + "http://" + address + text_colors.END + " or " + text_colors.CYAN + \
-        "http://" + subprocess.check_output('hostname').strip() + ".local" + text_colors.END + \
-        " in your browser."
-      break
-    if i == 0:
-      print "Not connected. Something went wrong."
-      break
-    i = i-1
-
-def connect_to_network(ssid, password):
-  network_conf = ""
-  ssid = ""
-  (ssid_keys, network_map) = wifi_scan()
-  choice = selectNetwork(ssid_keys)
-
-  #choice is validated within selectNetwork.
-  if choice == 2:
-    while 1:
-        ssid = raw_input("Please enter the hidden network SSID: ")
-        if verified(ssid):
-            break
-    network_conf = configureHiddenNetwork(ssid)
-
-  elif choice:
-    network_conf = configureNetwork(choice, ssid_keys,network_map)
-    ssid = ssid_keys[choice-3]
-
-
-  #print network_conf
-  setNetwork(network_conf, ssid)
-  checkNetwork()
-  disableOneTimeSetup(True)
-
-def showWiFiIP():
-    ipstr = ''
-    try:
-        ipstr = subprocess.check_output('ifconfig wlan0 | grep \'inet addr:\'', shell=True)
-    except subprocess.CalledProcessError:
-        print >> sys.stderr, "No IP address found. Device not connected?"
-        return "none"
-    except Exception as inst:
-        print >> sys.stderr, type(inst)
-        print >> sys.stderr, inst
-        return "none"
-
-    startIdx = ipstr.find('inet addr:')
-    if (startIdx == -1):
-         return "none"
-    ipstr = ipstr[ipstr.find('inet addr:')+10:].split()[0]
-    return ipstr
-
-def get_wifi_mode():
-    modestr = ''
-    try:
-        modestr = subprocess.check_output('iwconfig wlan0 | grep Mode:', shell=True).strip().lower()
-    except subprocess.CalledProcessError:
-        return "none"
-    except Exception as inst:
-        return "none"
-
-    startIdx = modestr.find('Mode:')
-    if (startIdx == -1):
-         return "none"
-    modestr = modestr[modestr.find('Mode:')+5:].split()[0]
-    return modestr
+def get_hostname():
+    hostname = subprocess.check_output('hostname', shell=True)
+    return {'hostname' : hostname.strip()}
 
 def get_wifi_info():
     iwconfig = ''
@@ -405,135 +118,227 @@ def get_wifi_info():
     retval = {'mode' : mode}
 
     if mode == 'managed':
-        a,b = re.compile('Link Quality=(\d+)\/(\d+)').search(iwconfig).groups()
-        retval['linkQuality'] = float(a)/float(b)
-        ssid = re.compile('SSID:\s*"(\w+)"').search(iwconfig).group(1).lower()
-        retval['SSID'] = ssid
-        ip = re.compile('inet addr:\s*(\d+\.\d+\.\d+\.\d+)').search(ifconfig).group(1)
-        retval['IP'] = ip
+        try: 
+            a,b = re.compile('Link Quality=(\d+)\/(\d+)').search(iwconfig).groups()
+            retval['strength'] = int(100*float(a)/float(b))
+        except:
+            retval['strength'] = 0 
+        
+        try:
+            ssid = re.compile('SSID:\s*"?((?: |\w|\d|\-|\_|\/)+)"?').search(iwconfig).group(1).strip()
+            retval['ssid'] = ssid
+        except:
+            retval['ssid'] = 'none/any' 
+   
+    try: 
+        ipaddress = re.compile('inet addr:\s*(\d+\.\d+\.\d+\.\d+)').search(ifconfig).group(1)
+    except:
+        ipaddress = '?'
+ 
+    retval['ipaddress'] = ipaddress
 
-    print iwconfig
-    print ifconfig
-    print retval
+    return retval
 
-
-def isRestartWithAPSet():
+def get_wifi_networks():
     try:
-        ret_value = subprocess.call("mkdir -p /update", shell=True)
-        if ret_value != 0:
-            print "Could not create destination folder."
-            return False
-    except Exception as inst:
-        print "Could not create destination folder."
-        print >> sys.stderr, type(inst)
-        print >> sys.stderr, inst
-        return False
+        results = subprocess.check_output('wpa_cli scan_results', shell=True)
+    except Exception, e:
+        return []
+ 
+    seen = set()
+    networks = []
+    line_regex = re.compile('(?P<bssid>(?:[a-fA-F0-9][a-fA-F0-9]:?)+)\s+(?P<frequency>\d+)\s+(?P<signal>-?\d+)\s+(?P<security>(?:\[(?:\w|\-)+\])+)\s+(?P<ssid>\w(?:\w|\s|\-|\_)*)')
+    security_regex = re.compile('\[((?:\w|\d|\s|\-)+)\]')
+    for line in results.split('\n'):
+        match = line_regex.match(line)
+        if match:
+            network = {}
+            network['bssid'] = match.group('bssid')
+            network['frequency'] = int(match.group('frequency'))
+            network['signal'] = int(match.group('signal'))
+            network['ssid'] = match.group('ssid')
+            security_string = match.group('security');
+            network['security'] = security_regex.findall(security_string);
+            network['favorite'] = False
+            if network['ssid'] not in seen:
+                seen.add(network['ssid'])
+                networks.append(network)
 
-    try:
-        ret_value = subprocess.call("losetup -o 8192 /dev/loop0 /dev/disk/by-partlabel/update", shell=True)
-        if ret_value != 0:
-            print "Could not setup loop device"
-            return False
-    except Exception as inst:
-        print "Could not setup loop device"
-        print >> sys.stderr, type(inst)
-        print >> sys.stderr, inst
-        return False
+    return networks
 
-    try:
-        ret_value = subprocess.call("mount /dev/loop0 /update", shell=True)
-        if ret_value != 0:
-            print "Could not perform mount operation."
-            return False
-    except Exception as inst:
-        print "Could not perform mount operation."
-        print >> sys.stderr, type(inst)
-        print >> sys.stderr, inst
-        return False
+def make_network_configuration(network, password):
+    ssid = network['ssid']
+    security = network['security']
 
-    if os.path.isfile("/update" + HOST_AP_MODE_FILE):
-        ap_mode = True
+    for s in security:
+        if WPAPSK_REGEX.search(s):
+           security_type = "WPA-PSK"
+           break;
+        elif WEP_REGEX.search(s):
+            security_type = "WEP"
+            break;
+        elif WPAEAP_REGEX.search(s):
+            security_type = "WPA-EAP"
+            break;
+        else:
+            security_type = "OPEN"
+
+    if security_type == "WPA-PSK":
+        if len(password) < 8 or len(password) > 63:
+            raise Exception("Password must be between 8 and 63 characters.")
+        return wpa_templates.WPAPSK % (ssid, "", password)
+    elif security_type ==  "WEP":
+        if len(password) != 5 and len(password) != 13:
+            raise Exception("Password must be either 5 or 13 characters.")
+        return wpa_templates.WEP % (ssid, "", password)
+    elif security_type == "WPA-EAP":
+        raise Exception("Don't know how to deal with WPA-EAP.")
     else:
-        ap_mode = False
-    try:
-        ret_value = subprocess.call("umount /update", shell=True)
-        if ret_value != 0:
-            print "Could not perform umount operation."
-            return False
-    except Exception as inst:
-        print "Could not perform umount operation."
-        print >> sys.stderr, type(inst)
-        print >> sys.stderr, inst
-        return False
-    try:
-        ret_value = subprocess.call("rmdir /update", shell=True)
-        if ret_value != 0:
-            print "Could not delete destination folder."
-            return False
-    except Exception as inst:
-        print "Could not delete destination folder."
-        print >> sys.stderr, type(inst)
-        print >> sys.stderr, inst
-        return False
+        return wpa_templates.OPEN % (ssid, "")
 
-    return ap_mode
+def join_wifi_network(ssid, password):
+    info = get_wifi_info()
+    wifi_mode = info['mode']
 
-def get_ssid():
-    return subprocess.check_output("grep -o '^ssid=.*' /etc/hostapd/hostapd.conf | awk -F'=' '{print $2}'", shell=True).strip()
+    if wifi_mode != 'managed':
+        timeout = 10
+        subprocess.call("systemctl stop hostapd &> /dev/null", shell=True)
+        subprocess.call("systemctl start wpa_supplicant &> /dev/null", shell=True)
+        while True:
+            time.sleep(1)
+            wifi_mode = get_wifi_info()['mode']
+            if wifi_mode == 'managed' or timeout == 0:
+                break
+            timeout -= 1
 
-def save_default_ssid():
-    if not os.path.isfile(STATE_DIR + "/default-ssid.txt"):
-        curr_ssid = getSSID()
-        default_ssid_file = open(STATE_DIR + "/default-ssid.txt", "w")
-        default_ssid_file.write(curr_ssid + "\n")
-        default_ssid_file.close()
+    if wifi_mode == 'managed':
+        time.sleep(3)
+        timeout = 10
+        while timeout > 0:
+            try:
+                scan_wifi()
+                break
+            except Exception, e:
+                pass
+            timeout-=1
+            time.sleep(1)
 
-def get_default_ssid():
-    save_default_ssid()
-    default_ssid_file = open(STATE_DIR + "/default-ssid.txt", "r")
-    curr_ssid = default_ssid_file.readline()
-    default_ssid_file.close()
-    return curr_ssid.strip()
+        timeout = 10 
+	while timeout>0:
+            time.sleep(1)
+            try:
+                networks = get_wifi_networks()
+                selected_network = None
+                for network in networks:
+                    if network['ssid'] == ssid:
+                        selected_network = network
+                    break
+                if selected_network:
+                    break
+            except:
+                pass
+            timeout -= 1
 
-def get_names():
-    hostname = subprocess.check_output('hostname', shell=True).strip()
-    ssid = getSSID()
-    default_ssid = getDefaultSSID()
-    return {'hostname' : hostname, 'ssid' : ssid, 'default_ssid' : default_ssid }
+ 
+        if selected_network: 
+            network_conf = make_network_configuration(selected_network, password)
+            set_network(network_conf, ssid)
+        else:
+            raise Exception("No such SSID in the site survey: %s" % ssid)
+   
+def scan_wifi():
+    result = subprocess.check_output("wpa_cli scan", shell=True);
+    if result.split('\n')[1].strip() != 'OK':
+        raise Exception('Unexpected response from wpa_cli: %s' % result)
 
-def configure_network_silently(ssid,network_map, password):
-  if network_map[ssid] == "OPEN":
-    return wpa_templates.OPEN % (ssid, "")
-  elif network_map[ssid] == "WEP":
-    if len(password) != 5 and len(password) != 13:
-        raise Exception("Password must be either 5 or 13 characters.")
-    return wpa_templates.WEP % (ssid, "", password)
-  elif network_map[ssid] == "WPA-PSK":
-    if len(password) < 8 or len(password) > 63:
-        raise Exception("Password must be between 8 and 63 characters.")
-    return wpa_templates.WPAPSK % (ssid, "", password)
-  else:
-    raise Exception("Unknown network authentication type: %s" % network_map[ssid])
-
-def enter_ap_mode():
-    mode = get_wifi_mode()
-    if mode == 'master':
+def join_ap_mode():
+    info = get_wifi_info()
+    if info['mode'] == 'master':
         raise Exception("System already in AP mode")
-    os.popen("systemctl stop wpa_supplicant && sleep 2 && systemctl start hostapd && sleep 2 && systemctl restart fabmo")
+    os.popen("systemctl stop wpa_supplicant && sleep 2 && systemctl start hostapd && sleep 2")# && systemctl restart fabmo")
 
-def enter_station_mode(ssid, password):
-    mode = get_wifi_mode()
-    
-    (ssid_keys, network_map) = wifi_scan()
-    if ssid not in ssid_keys:
-      raise Exception("No such SSID in the site survey: %s" % ssid)
-    
-    network_conf = configureNetworkSilently(ssid, network_map, password)
-    setNetwork(network_conf, ssid)
-    checkNetwork()
-    disableOneTimeSetup(True)
-    os.popen("systemctl restart fabmo")
+def unjoin_ap_mode():
+    info = get_wifi_info()
+    if info['mode'] != 'master':
+        raise Exception("System not in AP mode")
+    os.popen("systemctl stop hostapd && sleep 2 && systemctl start wpa_supplicant && sleep 2")
 
+
+def set_network(network_conf, ssid):
+    with open('/etc/wpa_supplicant/wpa_supplicant.conf', 'w') as fp:
+        fp.write(WPA_SUPPLICANT_CONF_TEMPLATE)
+        fp.write(network_conf)
+	fp.flush()
+	os.fsync(fp.fileno())
+    subprocess.call("wpa_cli reconfigure &> /dev/null && sleep 2", shell=True)
+
+    network_count = int(subprocess.check_output('wpa_cli list_networks | wc -l', shell=True))
+    subprocess.call("wpa_cli select_network " + str(network_count - 2 - 1) + " &> /dev/null", shell=True)
+    time.sleep(5)
+
+    ifarray = subprocess.check_output("wpa_cli ifname", shell=True).split()
+    subprocess.call("udhcpc -i " + ifarray[len(ifarray)-1] + " -n &> /dev/null", shell=True)
+
+def get_handler(args):
+    if args.target == 'networks':
+        return get_wifi_networks()
+    if args.target == 'wifi-info':
+        return get_wifi_info()
+    if args.target == 'hostname':
+        return get_hostname()
+
+def set_handler(args):
+    if args.target == 'hostname':
+        set_hostname(args.value)
+
+def join_handler(args):
+    if args.target == 'wifi':
+        join_wifi_network(args.ssid, args.password)
+    elif args.target == 'ap':
+        join_ap_mode()
+def unjoin_handler(args):
+    unjoin_ap_mode()
+
+def scan_handler(args):
+    scan_wifi()
 
 if __name__ == "__main__":
-    get_wifi_info()
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Manage the Intel Edison')
+    subparsers = parser.add_subparsers()
+
+    # GET command
+    get_parser = subparsers.add_parser('get')
+    get_parser.set_defaults(func=get_handler)
+    get_parser.add_argument('target', action='store', help='Configuration property to retrieve')
+
+    # SET command
+    set_parser = subparsers.add_parser('set')
+    set_parser.set_defaults(func=set_handler)
+    set_parser.add_argument('target', action='store')
+    set_parser.add_argument('value', action='store')
+
+    # JOIN command
+    join_parser = subparsers.add_parser('join')
+    join_parser.set_defaults(func=join_handler)
+    join_parser.add_argument('target', action='store')
+    join_parser.add_argument('--ssid', action='store')
+    join_parser.add_argument('--password', action='store')
+
+    scan_parser = subparsers.add_parser('scan')
+    scan_parser.set_defaults(func=scan_handler)
+
+    unjoin_parser = subparsers.add_parser('unjoin')
+    unjoin_parser.set_defaults(func=unjoin_handler)
+    try:
+        args = parser.parse_args()
+        data = args.func(args)
+        retval = {"status":"success"}
+        if data != None:
+            retval['data'] = data
+        print json.dumps(retval)
+    except Exception, e:
+       	raise e 
+	retval = {"status":"error", "message":str(e)}
+        print json.dumps(retval)

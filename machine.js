@@ -171,6 +171,27 @@ Machine.prototype.runNextJob = function(callback) {
 	}
 };
 
+Machine.prototype.getGCodeForFile = function(filename, callback) {
+	fs.readFile(filename, 'utf8', function (err,data) {
+		if (err) {
+			log.error('Error reading file ' + filename);
+				log.error(err);
+				return;
+		} else {
+			parts = filename.split(path.sep);
+			ext = path.extname(filename).toLowerCase();
+
+			if(ext == '.sbp') {
+				this.setRuntime(this.sbp_runtime);
+				this.current_runtime.simulateString(data, callback);
+			} else {
+				this.setRuntime(this.gcode_runtime);
+				fs.readFile(filename, callback);
+			}
+		}
+	}.bind(this));
+}
+
 Machine.prototype.runFile = function(filename) {
 	fs.readFile(filename, 'utf8', function (err,data) {
 		if (err) {
@@ -191,6 +212,7 @@ Machine.prototype.runFile = function(filename) {
 	}.bind(this));
 };
 
+
 Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
 	runtime = this.getRuntime(runtimeName);
 	if(runtime) {
@@ -208,7 +230,7 @@ Machine.prototype.setRuntime = function(runtime) {
 		} finally {
 			this.current_runtime = runtime;
 			if(runtime) {
-				console.log("Connecting runtime ", runtime)
+				log.debug("Connecting runtime ", runtime)
 				runtime.connect(this);
 			}
 		}
@@ -245,10 +267,20 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 		} else {
 			delete this.status.info
 		}
-		if(this.status.state === 'idle') {
-			this.status.nb_lines = null;
-			this.status.line = null;
+
+		switch(this.status.state) {
+			case 'idle':
+				this.status.nb_lines = null;
+				this.status.line = null;
+				// Deliberately fall through
+			case 'paused':
+				this.driver.get('mpo', function(err, mpo) {
+					config.instance.update({'position' : mpo});
+				});
+				break;
 		}
+		
+
 		log.info("Got a machine state change: " + this.status.state)	
 	} else {		
 		log.warn("Got a state change from a runtime that's not the current one. (" + source + ")")

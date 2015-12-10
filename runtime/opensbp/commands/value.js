@@ -6,11 +6,11 @@ var config = require('../../../config');
 
 exports.VA = function(args, callback) {
 
-	log.debug("VA Command: " + args);
+//	log.debug("VA Command: " + args);
 	
 	this.machine.driver.get('mpo', function(err, MPO) {
 
-		log.debug("Current Machine Base Coordinates (mm): " + JSON.stringify(MPO));
+//		log.debug("Current Machine Base Coordinates (mm): " + JSON.stringify(MPO));
 
 		var setVA_G2 = {};	
 		var setVA_SBP = {};	
@@ -96,7 +96,7 @@ exports.VA = function(args, callback) {
 
 exports.VC = function(args) {
 
-	log.debug( "VC - args = " + args );
+//	log.debug( "VC - args = " + args );
 
 	var sbp_values = {};
 
@@ -128,76 +128,53 @@ exports.VC = function(args) {
 	});
 };
 
-exports.VD = function(args,callback) {
-	var g2_VD = {};
-	if ( args[0] !== undefined ){
-		var numAxes = args[0];
-		if ( numAxes > 0 || x < 7 ){
+exports.VD = function(args) {
 
-		}
-	}
-	if ( args[1] !== undefined ) {
-		var unitType = args[1];
+	// For all axes - the values are:
+	//    0=Disable; 1=Standard Mode; 2=Inhibited; 3=Radius Mode
+	// XYZ Unit type
+	if ( args[2] !== undefined ) {
+		var unitType = args[2];
 		if ( unitType === 0 || unitType === 1 ){
 			if ( unitType === 0 ){
 				this.emit_gcode("G20"); // inches
-				config.machine.set("units","in");
 				log.debug("Changing units to inch");
 			}
 			else {
 				this.emit_gcode("G21"); // mm
-				config.machine.set("units","mm");
 				log.debug("Changing units to mm");
 			}
 		}
 	}
-	// For all axes - the values are:
-	//    0=Disable; 1=Standard Mode; 2=Inhibited; 3=Radius Mode
-	// X Unit type
-	if ( args[2] !== undefined ){
-		var x = args[2];
-		if ( x >= 0 || x < 4 ){
-			g2_VD.xam = x;
-		}
-	}
-	// Y Unit type
-	if ( args[3] !== undefined ){
-		var y = args[3];
-		if ( y >= 0 || y < 4 ){
-			g2_VD.yam = y;
-		}
-	}
-	// Z Unit type
-	if ( args[4] !== undefined ){
-		var z = args[4];
-		if ( z >= 0 || z < 4 ){
-			g2_VD.zam = z;
-		}
-	}	
 	// A Unit type
-	if ( args[5] !== undefined ){
-		var a = args[5];
-		if ( a >= 0 || a < 4 ){
-			g2_VD.aam = a;
-		}
-	}
+//	if ( args[3] !== undefined ){
+//		var a = args[3];
+//		if ( a >= 0 || a < 4 ){
+//			g2_VD.aam = a;
+//		}
+//	}
 	// B Unit type
-	if ( args[6] !== undefined ){
-		var b = args[6];
-		if ( b >= 0 || b < 4 ){
-			g2_VD.yam = b;
-		}
-	}
+//	if ( args[4] !== undefined ){
+//		var b = args[4];
+//		if ( b >= 0 || b < 4 ){
+//			g2_VD.bam = b;
+//		}
+//	}
 	// C Unit type
-	if ( args[7] !== undefined ){
-		var c = args[7];
-		if ( c >= 0 || c < 4 ){
-			g2_VD.cam = c;
-		}
-	}	
+//	if ( args[7] !== undefined ){
+//		var c = args[7];
+//		if ( c >= 0 || c < 4 ){
+//			g2_VD.cam = c;
+//		}
+//	}	
 	// Show control console
 	// Display File Comments
 	// Keypad fixed distance
+// 	if ( args[8] !== undefined ){
+// 		var fDist = args[8];
+// //		log.debug("Keypad fixed distance set to: " + fDist );
+// 		log.debug("Fixed Distance setting not implemented" );
+// 	}
 	// Keypad remote
 	// Keypad Switch AutoOff
 	// Write Part File Log
@@ -206,13 +183,12 @@ exports.VD = function(args,callback) {
 	// Message Screen Location Y
 	// Message Screen Size X
 	// Message Screen Size Y
-	// Keypad switches Auto-Off
+	// Keypad outputs Auto-Off
 	// Show file Progress
 	// Main Display Type
-	config.driver.setMany(g2_VD, function(err, values) {
-		callback();
-	});
-
+//	config.driver.setMany(g2_VD, function(err, values) {
+//		callback();
+//	});
 };	
 
 exports.VI = function(args,callback) {
@@ -220,45 +196,45 @@ exports.VI = function(args,callback) {
 
 	// Driver 1 Channel
 	if ( args[0] !== undefined ){
-		if ( args[0] > 0 || args[0] < 6 ){
-			g2_VI['1ma'] = args[0];
-		}
-		else {}
+		var res1 = "xyzabcXYZABC".indexOf(String(args[0]));
+		if ( res1 >= 0 && res1<= 5 ){ g2_VI['1ma'] = res1; }
+		else if ( res1 >= 6 && res1 <= 11 ){ g2_VI['1ma'] = res1-6; }
+		else { throw new Error("VI-CH1: parameter " + args[0] + " out of range!"); }
 	}
 	// Driver 2 Channel
 	if ( args[1] !== undefined ){
-		if ( args[1] > 0 || args[1] < 6 ){
-			g2_VI['2ma'] = args[1];
-		}
-		else {}
+		var res2 = "xyzabcXYZABC".indexOf(String(args[1]));
+		if ( res2 >= 0 && res2<= 5 ){ g2_VI['2ma'] = res2; }
+		else if ( res2 >= 6 && res2 <= 11 ){ g2_VI['2ma'] = res2-6; }
+		else { throw new Error("VI-CH1: parameter " + args[1] + " out of range!"); }
 	}
 	// Driver 3 Channel
 	if ( args[2] !== undefined ){
-		if ( args[2] > 0 || args[2] < 6 ){
-			g2_VI['3ma'] = args[2];
-		}
-		else {}
+		var res3 = "xyzabcXYZABC".indexOf(String(args[2]));
+		if ( res3 >= 0 && res3<= 5 ){ g2_VI['3ma'] = res3; }
+		else if ( res3 >= 6 && res3 <= 11 ){ g2_VI['3ma'] = res3-6; }
+		else { throw new Error("VI-CH1: parameter " + args[2] + " out of range!"); }
 	}
 	// Driver 4 Channel
 	if ( args[3] !== undefined ){
-		if ( args[3] > 0 || args[3] < 6 ){
-			g2_VI['4ma'] = args[3];
-		}
-		else {}
+		var res4 = "xyzabcXYZABC".indexOf(String(args[3]));
+		if ( res4 >= 0 && res4<= 5 ){ g2_VI['4ma'] = res4; }
+		else if ( res4 >= 6 && res4 <= 11 ){ g2_VI['4ma'] = res4-6; }
+		else { throw new Error("VI-CH1: parameter " + args[3] + " out of range!"); }
 	}
 	// Driver 5 Channel
 	if ( args[4] !== undefined ){
-		if ( args[4] > 0 || args[4] < 6 ){
-			g2_VI['5ma'] = args[4];
-		}
-		else {}
+		var res5 = "xyzabcXYZABC".indexOf(String(args[4]));
+		if ( res5 >= 0 && res5<= 5 ){ g2_VI['5ma'] = res5; }
+		else if ( res5 >= 6 && res5 <= 11 ){ g2_VI['5ma'] = res5-6; }
+		else { throw new Error("VI-CH1: parameter " + args[4] + " out of range!"); }
 	}
 	// Driver 6 Channel
 	if ( args[5] !== undefined ){
-		if ( args[5] > 0 || args[0] < 6 ){
-			g2_VI['1ma'] = args[0];
-		}
-		else {}
+		var res6 = "xyzabcXYZABC".indexOf(String(args[5]));
+		if ( res6 >= 0 && res6<= 5 ){ g2_VI['6ma'] = res6; }
+		else if ( res6 >= 6 && res6 <= 11 ){ g2_VI['6ma'] = res6-6; }
+		else { throw new Error("VI-CH1: parameter " + args[5] + " out of range!"); }
 	}
 	config.driver.setMany(g2_VI, function(err, values) {
 		callback();
@@ -416,58 +392,60 @@ exports.VS = function(args,callback) {
 	if (args[0] !== undefined) {
 		speed_change = args[0];
 		sbp_values.movexy_speed = speed_change;
+		this.movespeed_xy = speed_change;
 	}
 	//Set Z move speed in OpenSBP only, not set in G2
 	if (args[1] !== undefined) {
 		speed_change = args[1];
 		sbp_values.movez_speed = speed_change;
+		this.movespeed_z = speed_change;
 	}
 	//Set A move speed in OpenSBP only, not set in G2
 	if (args[2] !== undefined) {
 		speed_change = args[2];
 		sbp_values.movea_speed = speed_change;
+		this.movespeed_a = speed_change;
 	}
 	//Set B move speed in OpenSBP only, not set in G2
 	if (args[3] !== undefined) {
 		speed_change = args[3];
 		sbp_values.moveb_speed = speed_change;
+		this.movespeed_b = speed_change;
 	}
 	//Set C move speed in OpenSBP only, not set in G2
 	if (args[4] !== undefined) {
 		speed_change = args[4];
 		sbp_values.movec_speed = speed_change;
+		this.movespeed_c = speed_change;
 	}
 	//Set XY jog speed in G2 and OpenSBP
 	if (args[5] !== undefined) {
 		speed_change = args[5];
 		g2_values.xvm = (60*speed_change);
 		g2_values.yvm = (60*speed_change);
-		sbp_values.jogxy_speed = speed_change;
 	}
 	//Set Z jog speed in G2 and OpenSBP
 	if (args[6] !== undefined) {
 		speed_change = args[6];
 		g2_values.zvm = (60*speed_change);
-		sbp_values.jogz_speed = speed_change;
 	}
 	//Set A jog speed in G2 and OpenSBP
 	if (args[7] !== undefined) {
 		speed_change = args[7];
 		g2_values.avm = (60*speed_change);
-		sbp_values.joga_speed = speed_change;
 	}
 	//Set B jog speed in G2 and OpenSBP
 	if (args[8] !== undefined) {
 		speed_change = args[8];
 		g2_values.bvm = (60*speed_change);
-		sbp_values.jogb_speed = speed_change;
 	}
 	//Set C jog speed in G2 and OpenSBP
 	if (args[9] !== undefined) {
 		speed_change = args[9];
 		g2_values.cvm = (60*speed_change);
-		sbp_values.jogc_speed = speed_change;
 	}
+
+//	log.debug("VS - sbp_values = " + JSON.stringify(sbp_values));
 
 	config.opensbp.setMany(sbp_values, function(err, values) {
 		if(err) {
@@ -480,14 +458,14 @@ exports.VS = function(args,callback) {
 
 };
 
-exports.VU = function(args,callback) {
+//exports.VU = function(args,callback) {
 
-	var G2_2get = [	'1sa','1mi',
-					'2sa','2mi',
-					'3sa','3mi',
-					'4sa','4mi',
-					'5sa','5mi',
-					'6sa','6mi' ];
+//	var G2_2get = [	'1sa','1mi',
+//					'2sa','2mi',
+//					'3sa','3mi',
+//					'4sa','4mi',
+//					'5sa','5mi',
+//					'6sa','6mi' ];
 
 //	var SBP_2get = ['gearBoxRatio1',
 //				    'gearBoxRatio2',
@@ -496,65 +474,65 @@ exports.VU = function(args,callback) {
 //				    'gearBoxRatio5',
 //				    'gearBoxRatio6' ];
 
-	var SBunitVal = 0.0;
-	var g2_VU = {};
-	var sbp_VU = {};
-	var getG2_VU = config.driver.getMany(G2_2get);
+//	var SBunitVal = 0.0;
+//	var g2_VU = {};
+//	var sbp_VU = {};
+//	var getG2_VU = config.driver.getMany(G2_2get);
 //	var getSBP_VU = config.opensbp.getMany(SBP_2get);
 
-	log.debug("getG2_VU: " + JSON.stringify(getG2_VU));
+//	log.debug("getG2_VU: " + JSON.stringify(getG2_VU));
 //	log.debug("getSBP_VU: " + JSON.stringify(getSBP_VU));
 			
 	// Channel 1 unit value
-	if (args[0] !== undefined){
-		sbp_VU.units1 = args[0];
-		g2_VU['1tr'] = ((360/getG2_VU['1sa']) * getG2_VU['1mi']) / sbp_VU.units1;
-	}
-	// Channel 2 unit value
-	if (args[1] !== undefined){
-		sbp_VU.units2 = args[1];
-		g2_VU['2tr'] = ((360/getG2_VU['2sa']) * getG2_VU['2mi']) / sbp_VU.units2;
-	}
+//	if (args[0] !== undefined){
+//		sbp_VU.units1 = args[0];
+//		g2_VU['1tr'] = ((360/getG2_VU['1sa']) * getG2_VU['1mi']) / sbp_VU.units1;
+//	}
+//	// Channel 2 unit value
+//	if (args[1] !== undefined){
+//		sbp_VU.units2 = args[1];
+//		g2_VU['2tr'] = ((360/getG2_VU['2sa']) * getG2_VU['2mi']) / sbp_VU.units2;
+//	}
 	// Channel 3 unit value
-	if (args[2] !== undefined){
-		sbp_VU.units3 = args[2];
-		g2_VU['3tr'] = ((360/getG2_VU['3sa']) * getG2_VU['3mi']) / sbp_VU.units3;
-	}
+//	if (args[2] !== undefined){
+//		sbp_VU.units3 = args[2];
+//		g2_VU['3tr'] = ((360/getG2_VU['3sa']) * getG2_VU['3mi']) / sbp_VU.units3;
+//	}
 	// Channel 4 unit value
-	if (args[3] !== undefined){
-		sbp_VU.units4 = args[3];				
-		g2_VU['4tr'] = ((360/getG2_VU['4sa']) * getG2_VU['4mi']) / sbp_VU.units4;
-	}
+//	if (args[3] !== undefined){
+//		sbp_VU.units4 = args[3];				
+//		g2_VU['4tr'] = ((360/getG2_VU['4sa']) * getG2_VU['4mi']) / sbp_VU.units4;
+//	}
 	// Channel 5 unit value
-	if (args[4] !== undefined){
-		sbp_VU.units5 = args[4];
-		g2_VU['5tr'] = ((360/getG2_VU['5sa']) * getG2_VU['5mi']) / sbp_VU.units5;
-	}
+//	if (args[4] !== undefined){
+//		sbp_VU.units5 = args[4];
+//		g2_VU['5tr'] = ((360/getG2_VU['5sa']) * getG2_VU['5mi']) / sbp_VU.units5;
+//	}
 	// Channel 6 unit value
-	if (args[5] !== undefined){
-		sbp_VU.units6 = args[5];
-		g2_VU['6tr'] = ((360/getG2_VU['6sa']) * getG2_VU['6mi']) / sbp_VU.units6;
-	}
-	// Channel 1 multiplier
-	if (args[6] !== undefined){}
-	// Channel 2 multiplier
-	if (args[7] !== undefined){}
-	// Channel 3 multiplier
-	if (args[8] !== undefined){}
-	// Channel 4 multiplier
-	if (args[9] !== undefined){}
-	// Channel 5 multiplier
-	if (args[10] !== undefined){}
-	// Channel 6 multiplier
-	if (args[11] !== undefined){}
+	// if (args[5] !== undefined){
+	// 	sbp_VU.units6 = args[5];
+	// 	g2_VU['6tr'] = ((360/getG2_VU['6sa']) * getG2_VU['6mi']) / sbp_VU.units6;
+	// }
+	// // Channel 1 multiplier
+	// if (args[6] !== undefined){}
+	// // Channel 2 multiplier
+	// if (args[7] !== undefined){}
+	// // Channel 3 multiplier
+	// if (args[8] !== undefined){}
+	// // Channel 4 multiplier
+	// if (args[9] !== undefined){}
+	// // Channel 5 multiplier
+	// if (args[10] !== undefined){}
+	// // Channel 6 multiplier
+	// if (args[11] !== undefined){}
 
-	log.debug(JSON.stringify(sbp_VU));
-	log.debug(JSON.stringify(g2_VU));	
+	// log.debug(JSON.stringify(sbp_VU));
+	// log.debug(JSON.stringify(g2_VU));	
 
 	// We set the g2 config (Which updates the g2 hardware but also our persisted copy of its settings)
-	config.opensbp.setMany(sbp_VU, function(err, values) {
-		config.driver.setMany(g2_VU, function(err, values) {
-			callback();
-		});
-	});
-};
+// 	config.opensbp.setMany(sbp_VU, function(err, values) {
+// 		config.driver.setMany(g2_VU, function(err, values) {
+// 			callback();
+// 		});
+// 	});
+// };

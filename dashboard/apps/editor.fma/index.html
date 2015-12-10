@@ -4,57 +4,55 @@
   <title>G-Code Editor</title>
   <meta charset="utf-8"/>
   
-  <link rel="stylesheet" href="css/foundation.min.css">
-  <link rel="stylesheet" href="css/normalize.css">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="/css/foundation.min.css">
+  <link rel="stylesheet" href="/css/normalize.css">
+  <link rel="stylesheet" href="/css/style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-  
-  <nav class="top-bar" data-topbar role="navigation">
-  <ul class="title-area">
-    <li class="name">
-      <h1><a id="app-header">Editor</a></h1>
-    </li>
-    <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
-  </ul>
-
-  <section class="top-bar-section">
-    <!-- Right Nav Section -->
-    <ul class="right">
+  <nav id="topbar" class="top-bar" data-topbar role="navigation">
+    <ul class="title-area">
+      <li class="name">
+        <h1><a id="app-header">Editor</a></h1>
+      </li>
+      <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
     </ul>
 
-    <!-- Left Nav Section -->
-    <ul class="left">
-      <li class="has-dropdown hidden" id="macro-menu">
-        <a href="#">Macro</a>
-        <ul class="dropdown">
-          <li><a id="macro-save" href="#">Save</a></li>
-          <li><a id="macro-save-and-close" href="#">Save and Close</a></li>          
-        </ul>        
-      </li>
-      <li class="has-dropdown language-dropdown"> 
-        <a href="#">Language</a>
-        <ul class="dropdown">
-          <li><a id="lang-opensbp" href="#">OpenSBP</a></li>
-          <li><a id="lang-gcode" href="#">G-Code</a></li>
-        </ul>
-      </li>
-      <li class="has-dropdown"> 
-        <a href="#" class="success">Execute</a>
-        <ul class="dropdown"> 
-          <li><a id="submit-immediate" href="#">Run Immediately (Ctrl+Enter)</a></li>
-          <li><a id="submit-job" href="#">Submit as Job</a></li>
-        </ul>
-      </li> 
-    </ul>
+    <section class="top-bar-section">
+      <!-- Right Nav Section -->
+      <ul class="right">
+      </ul>
 
-  </section>
-</nav>
+      <!-- Left Nav Section -->
+      <ul class="left">
+        <li class="has-dropdown hidden" id="macro-menu">
+          <a href="#macromenu">Macro</a>
+          <ul class="dropdown">
+            <li><a id="macro-save" href="#macrosave">Save</a></li>
+            <li><a id="macro-save-and-close" href="#macrosaveandclose">Save and Close</a></li>          
+          </ul>        
+        </li>
+        <li class="has-dropdown language-dropdown"> 
+          <a href="#languagemenu">Language</a>
+          <ul class="dropdown">
+            <li><a id="lang-opensbp" href="#languageopensbp">OpenSBP</a></li>
+            <li><a id="lang-gcode" href="#languagegcode">G-Code</a></li>
+          </ul>
+        </li>
+        <li class="has-dropdown" id="execute-menu"> 
+          <a href="#executemenu" class="success">Execute</a>
+          <ul class="dropdown"> 
+            <li><a id="submit-immediate" href="#submitimmediate">Run Immediately (Ctrl+Enter)</a></li>
+            <li><a id="submit-job" href="#submitasjob">Submit as Job</a></li>
+          </ul>
+        </li> 
+      </ul>
+    </section>
+  </nav>
 
   <div id="editor"></div>
 
-  <script src="/js/libs/jquery.js" type="text/javascript"></script>
+  <script src="/js/libs/jquery.min.js" type="text/javascript"></script>
   <script src="/js/libs/dashboard.js" type="text/javascript"></script>
   <script src="/js/libs/foundation.min.js" type="text/javascript"></script>
   <script src="js/ace/ace.js" type="text/javascript"></script>
@@ -64,9 +62,11 @@
     var lang="gcode";
     var source=null;
     var source_data=null;
+    var job_description=null;
+    var job_title=null;
 
     function execute() { 
-      $("#submit-button").addClass('disabled');
+      $("#execute-menu").hide();
       var text = editor.getValue();
       switch(lang) {
         case "gcode":
@@ -90,16 +90,16 @@
     }
 
     function submit_job() {
-      $("#submit-button").addClass('disabled');
+      $("#execute-menu").hide();
       var text = editor.getValue();
       switch(lang) {
         case "gcode":
-          fabmoDashboard.submitJob(text, {filename: 'editor.nc', description: 'G-Code file from the editor'}, function(err, result) {
+          fabmoDashboard.submitJob(text, {filename: job_title || 'editor.nc', description: job_description || 'G-Code file from the editor'}, function(err, result) {
             fabmoDashboard.launchApp('job-manager');
           });
         break;
         case "opensbp":
-          fabmoDashboard.submitJob(text, {filename: 'editor.sbp', description: 'OpenSBP file from the editor.'}, function(err, result) {
+          fabmoDashboard.submitJob(text, {filename: job_title || 'editor.sbp', description: job_description || 'OpenSBP file from the editor.'}, function(err, result) {
             fabmoDashboard.launchApp('job-manager');
           });
         break;
@@ -162,7 +162,19 @@
               editor.setValue(data, -1);
               editor.clearSelection();
               source = "job";
+              fabmoDashboard.getJobInfo(args.job, function(err, info) {
+                if(!err) {
+                    job_title = info.name || null;
+                    job_description = info.description || null;
+                  if(info.name.endsWith('sbp')) {
+                    set_language('opensbp');
+                  } else {
+                    set_language('gcode');
+                  }
+                }
+              });
           });
+
         } else if('macro' in args) {
           $('.language-dropdown').hide();
           lang = 'opensbp';
@@ -174,6 +186,8 @@
             editor.clearSelection();
             source = "macro";
             source_data = macro;
+            job_description = macro.description;
+            job_title = 'macro_' + macro.index + '.sbp';
             $('#macro-menu').show();
           });      
         } else {
@@ -241,12 +255,12 @@
 
       function resize() {
         var h = window.innerHeight;
-        var h2 = $('#buttonrow').height();
+        var h2 = $('#topbar').height();
         $("#editor").css('height',h-h2);      
       }
 
       $(window).resize(function(){
-      resize();
+        resize();
       });
       resize();
 
@@ -270,7 +284,7 @@
     $("#lang-gcode").click(function(evt) {
       set_language('gcode');
       evt.preventDefault();
-    });
+    }); 
 
     $("#macro-save").click(function(evt) {
       save();
@@ -290,9 +304,9 @@
 
     fabmoDashboard.on('status', function(status) {
       if(status.state === 'idle') {
-        $("#submit-button").removeClass('disabled');
+        $("#execute-menu").show();
       } else {
-        $("#submit-button").addClass('disabled');
+        $("#execute-menu").hide();
       }
     });
 

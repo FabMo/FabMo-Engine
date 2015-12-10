@@ -17,7 +17,7 @@ define(function(require) {
 	var FabMoAPI = require('fabmo');
 	var FabMoUI = require('fabmo-ui');
 	var WheelControl = require('handwheel');
-	var Keypad = require('keypad');
+	var Keyboard = require('keyboard');
 
 	var wheel;
 	
@@ -33,7 +33,7 @@ define(function(require) {
 
 			// Create a FabMo object for the dashboard
 			dashboard.setEngine(engine);
-			dashboard.ui= new FabMoUI(dashboard.engine);
+			dashboard.ui=new FabMoUI(dashboard.engine);
 
 			dashboard.ui.on('error', function(err) {
 				$('#modalDialogTitle').text('Error!');
@@ -55,7 +55,7 @@ define(function(require) {
 
 			// Configure handwheel input
 			wheel = setupHandwheel();
-			keypad = setupKeypad();
+			keyboard = setupKeyboard();
 
 			// Start the application
 			router = new context.Router();
@@ -139,19 +139,19 @@ function setupHandwheel() {
 	return wheel;
 }
 
-function setupKeypad() {
-	var keypad = new Keypad('#keypad');
+function setupKeyboard() {
+	var keyboard = new Keyboard('#keyboard');
 	
-	keypad.on('go', function(move) {
+	keyboard.on('go', function(move) {
 		if(move) {
 			dashboard.engine.manualStart(move.axis, move.dir*120.0);
 		} 
 	});
 
-	keypad.on('stop', function(evt) {
+	keyboard.on('stop', function(evt) {
 		dashboard.engine.manualStop();
 	})
-	return keypad;
+	return keyboard;
 }
 
 // Kill the currently running job when the modal error dialog is dismissed
@@ -222,6 +222,16 @@ engine.on('connect', function() {
 		$('#disconnectDialog').foundation('reveal', 'close');
 	}
 });
+
+setInterval(function() {
+	engine.ping(function(err, time) {
+		if(err) {
+			console.error(err);
+		} else {
+			console.info("PING Response time: " + time + "ms");
+		}
+	});
+}, 3000);
 
 (function () {
 if ($(window).width() < 620) {
