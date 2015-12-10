@@ -1548,7 +1548,7 @@
       registerUnitLabel('.ipm_mmpm_label', 'in/min', 'mm/min');
       registerUnitLabel('.ipm2_mmpm2_label', 'in/min<sup>2</sup>', 'mm/min<sup>2</sup>');
       registerUnitLabel('.inrev_mmrev_label', 'in/rev', 'mm/rev');
-      registerUnitLabel('.inpm3_mmpm3_label', 'in/min<sup>3', 'mm/min<sup>3')
+      registerUnitLabel('.inpm3_mmpm3_label', 'in/min<sup>3', 'mm/min<sup>3');
 
       fabmoDashboard.on('status', function(status) {
         updateLabels(status.unit);
@@ -1567,6 +1567,9 @@
         if(v === "gdi") {
           new_config.driver.gdi = this.value;
           console.log("Distance mode = " + JSON.stringify(new_config));
+          console.log("this.value = " + this.value);
+          if (this.value == 0) { fabmoDashboard.runGCode("G90"); }
+          else { fabmoDashboard.runGCode("G91"); }
           fabmoDashboard.setConfig(new_config, function(err, data) {
             setTimeout(update, 500);
           });  

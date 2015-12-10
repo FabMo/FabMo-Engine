@@ -96,15 +96,16 @@ SBPRuntime.prototype.runString = function(s, callback) {
 		this.movespeed_c = getSBP_speed.movec_speed;
 
 		this._setupTransforms();
+		log.debug("Made it past transforms.")
 		this._analyzeLabels();  // Build a table of labels
+		log.debug("Made it past labels.")
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table
+		log.debug("Made it past gotos.")
+
 		this._run();
 
-	} catch(err) {
-//		throw err;
-		if(callback) {
-			setImmediate(callback, err);
-		}
+	} catch(e) {
+		return this._end(e.message + " (Line " + e.line + ")");
 	}
 };
 
@@ -943,15 +944,18 @@ SBPRuntime.prototype._analyzeGOTOs = function() {
 				switch(line.type) {
 					case "cond":
 						line = line.stmt;
-						// No break: fall through to next state
+						// No break: fall through to next state(s)
 					case "goto":
 					case "gosub":
 						if (line.label in this.label_index) {
-							
+							// pass
 						} else {
 							// Add one to the line number so they start at 1
-							throw "Undefined label " + line.label + " on line " + (i+1);
+							throw new Error("Undefined label " + line.label + " on line " + (i+1));
 						}
+						break;
+					default:
+						// pass
 						break;
 				}
 			}
@@ -1138,7 +1142,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 				else if(key === "C") { emit_moveContext.cmd_posc = v; }
 			}
 		}
-		log.debug("emit_move:  N" + n + JSON.stringify(gcode));
+		log.debug("emit_move: N" + n + JSON.stringify(gcode));
 		emit_moveContext.current_chunk.push('N' + n + gcode);
 	};
 
