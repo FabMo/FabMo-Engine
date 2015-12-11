@@ -33,6 +33,10 @@ exports.CA = function(args) {
 
   var radius = (ht/2) + ((len*len) / (8*ht)) + (config.opensbp.get('cutterDia')/2 * comp);
 
+  if ( radius === undefined || radius <= 0 ){
+    throw( "Zero radius circle: CA" );
+  }
+
   var xOffset = startX + (len/2);
   var yOffset = startY + (ht - radius);
 
@@ -73,7 +77,7 @@ exports.CC = function(args) {
   else if (OIT === 'I') {
     comp = -1;
   }
-  if ( Dia === undefined ){
+  if ( Dia === undefined || Dia <= 0 ){
     // Error: Zero diameter circle
     throw( "Zero Diameter Circle: CC" ); 
   }
@@ -149,7 +153,7 @@ exports.CP = function(args) {
   }
 
   if ( Dia === undefined || Dia <= 0 ){
-    throw( "Zero diameter circle: CP" );
+    throw( "Zero diameter circle: CC" );
   }
   var WBang = 450 - Bang;
   if ( WBang > 360 || WBang === 360 ) { 
@@ -242,6 +246,10 @@ exports.CG = function(args) {
   // log.debug("center Y:" + centerY );
   // log.debug("I-O-T:" + OIT );
   // log.debug("Dir:" + Dir );
+
+  if ( centerX === 0 && centerY === 0 ){
+    throw( "Zero diameter circle: CG" );
+  }
 
   if ((propX < 0 && propY > 0) || (propX > 0 && propY < 0 )) { 
     Dir *= (-1);
