@@ -135,7 +135,7 @@ exports.CP = function(args) {
   var Eang = args[6] !== undefined ? args[6] : 0;
   var Plg = args[7] !== undefined ? args[7] : undefined;
   var reps = args[8] !== undefined ? args[8] : undefined;
-  var propX = args[9] !== undefined ? [9] : undefined;
+  var propX = args[9] !== undefined ? args[9] : undefined;
   var propY = args[10] !== undefined ? args[10] : undefined;
   var optCP = args[11] !== undefined ? args[11] : undefined;
   var noPullUp = args[12] !== undefined ? args[12] : undefined;
@@ -227,7 +227,7 @@ exports.CG = function(args) {
   var Plg = args[7] !== undefined ? args[7] : 0;
   var reps = args[8] !== undefined ? args[8] : 1;
   var propX = args[9] !== undefined ? args[9] : 1;
-  var propY = args[10] !== undefined ? [10] : 1;
+  var propY = args[10] !== undefined ? args[10] : 1;
   var optCG = args[11] !== undefined ? args[11] : 0;
   var noPullUp = args[12] !== undefined ? args[12] : 0;
   var plgFromZero = args[13] !== undefined ? args[13] : 0;
@@ -237,15 +237,15 @@ exports.CG = function(args) {
 	var outStr;
   var tolerance = 0.000001;
 
-  // log.debug("start X:" + startX );
-  // log.debug("start Y:" + startY );
-  // log.debug("start Z:" + startZ );
-  // log.debug("end X:" + endX );
-  // log.debug("end Y:" + endY );
-  // log.debug("center X:" + centerX );
-  // log.debug("center Y:" + centerY );
-  // log.debug("I-O-T:" + OIT );
-  // log.debug("Dir:" + Dir );
+  log.debug("start X:" + startX );
+  log.debug("start Y:" + startY );
+  log.debug("start Z:" + startZ );
+  log.debug("end X:" + endX );
+  log.debug("end Y:" + endY );
+  log.debug("center X:" + centerX );
+  log.debug("center Y:" + centerY );
+  log.debug("I-O-T:" + OIT );
+  log.debug("Dir:" + Dir );
 
   if ( centerX === 0 && centerY === 0 ){
     throw( "Zero diameter circle: CG" );
@@ -282,8 +282,6 @@ exports.CG = function(args) {
   	stepOver = config.opensbp.get('cutterDia') * ((100 - config.opensbp.get('pocketOverlap')) / 100);	// Calculate the overlap
   	Pocket_StepX = stepOver * Math.cos(PocketAngle);						// Calculate the stepover in X based on the radius of the cutter * overlap
   	Pocket_StepY = stepOver * Math.sin(PocketAngle);						// Calculate the stepover in Y based on the radius of the cutter * overlap
-// log.debug("CG: StepX = " + Pocket_StepX);
-// log.debug("CG: StepY = " + Pocket_StepY);
   }
 
   if ( plgFromZero == 1 ) {										// If plunge depth is specified move to that depth * number of reps
@@ -314,7 +312,6 @@ exports.CG = function(args) {
                                   optCG );
         } 
   	   	else {
-
           if ( Dir === 1 ) { outStr = 'G2'; }	  // Clockwise circle/arc
    			  else { outStr = 'G3'; }	              // CounterClockwise circle/arc
             this.emit_move(outStr,{ 'X':nextX,
