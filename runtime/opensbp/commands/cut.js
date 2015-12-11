@@ -148,7 +148,7 @@ exports.CP = function(args) {
     comp = -1;
   }
 
-  if ( Dia === undefined ){
+  if ( Dia === undefined || Dia <= 0 ){
     throw( "Zero diameter circle: CP" );
   }
   var WBang = 450 - Bang;
