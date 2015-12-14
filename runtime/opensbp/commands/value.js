@@ -421,27 +421,32 @@ exports.VS = function(args,callback) {
 	//Set XY jog speed in G2 and OpenSBP
 	if (args[5] !== undefined) {
 		speed_change = args[5];
+		sbp_values.jogxy_speed = speed_change;
 		g2_values.xvm = (60*speed_change);
 		g2_values.yvm = (60*speed_change);
 	}
 	//Set Z jog speed in G2 and OpenSBP
 	if (args[6] !== undefined) {
 		speed_change = args[6];
+		sbp_values.jogz_speed = speed_change;
 		g2_values.zvm = (60*speed_change);
 	}
 	//Set A jog speed in G2 and OpenSBP
 	if (args[7] !== undefined) {
 		speed_change = args[7];
+		sbp_values.joga_speed = speed_change;
 		g2_values.avm = (60*speed_change);
 	}
 	//Set B jog speed in G2 and OpenSBP
 	if (args[8] !== undefined) {
 		speed_change = args[8];
+		sbp_values.jogb_speed = speed_change;
 		g2_values.bvm = (60*speed_change);
 	}
 	//Set C jog speed in G2 and OpenSBP
 	if (args[9] !== undefined) {
 		speed_change = args[9];
+		sbp_values.jogc_speed = speed_change;
 		g2_values.cvm = (60*speed_change);
 	}
 
