@@ -557,7 +557,7 @@ SBPRuntime.prototype._processEvents = function(callback) {
 			if(input_state === 1) {
 
 				event_handled = true;
-
+	
 				// Save the current PC, which is encoded as the current G-Code line as reported by G2
 				this.pc = parseInt(this.driver.status.line)
 
@@ -588,8 +588,11 @@ SBPRuntime.prototype._processEvents = function(callback) {
 			}
 		}
 	}
-	return event_handled;
-}
+	if(event_handled) {
+		delete this.event_handlers[sw];	
+	}
+		return event_handled;
+	}
 
 SBPRuntime.prototype._executeCommand = function(command, callback) {
 	if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
@@ -796,7 +799,7 @@ SBPRuntime.prototype._setupEvent = function(command, callback) {
 		teardown[mo] = vals[0];
 		teardown[ac] = vals[1];
 		teardown[fn] = vals[2];
-		setup[mo] = command.state;
+		setup[mo] = command.state ? vals[0] : (vals[0] ? 0 : 1); 
 		setup[ac] = 2 
 		setup[fn] =  0
 		this.driver.setMany(setup, function(err, data) {
@@ -1034,9 +1037,27 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 			return config.opensbp.get('movec_speed');
 		break;
 
+                case 81:
+			return config.driver.get('xjm');
+               		break; 
+		case 82:
+			return config.driver.get('yjm');
+               		break; 
+		case 83:
+			return config.driver.get('zjm');
+               		break; 
+                case 84:
+			return config.driver.get('ajm');
+               		break; 
+                case 85:
+			return config.driver.get('bjm');
+               		break; 
+                case 86:
+			return config.driver.get('cjm');
+               		break; 
 		case 144:
 			return this.machine.status.posc;
-		break;
+               		break; 
 
 		default:
 			return null;
