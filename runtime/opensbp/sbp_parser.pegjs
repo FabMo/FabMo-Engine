@@ -56,7 +56,7 @@ argument
 mnemonic = code: ([_A-Za-z][_A-Za-z0-9\#]) {return code.join('').replace('#','_POUND');}
 
 identifier
-   = id:([a-zA-Z_]+[A-Za-z0-9_]*) {console.log(id); return id[0].join("") + id[1].join(""); }
+   = id:([a-zA-Z_]+[A-Za-z0-9_]*) {return id[0].join("") + id[1].join(""); }
 
 label
    = id:identifier ":" {return {type:"label", value:id};}
