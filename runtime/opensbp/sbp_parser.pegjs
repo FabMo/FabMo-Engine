@@ -23,11 +23,11 @@ event
       {return {"type":"event", "sw":sw, "state":state, "stmt":stmt};} 
 
 command 
-   = m:mnemonic arg1:((","/___) argument)?
+   = m:mnemonic arg1:((","/whitespace?) __ argument)?
      args:(("," __ (arg:argument) __ ){return arg;})* 
      {
       if(arg1) {
-        args.unshift(arg1[1]);
+        args.unshift(arg1[2]);
       }
       return {type:"cmd","cmd":m,"args":args};}
 

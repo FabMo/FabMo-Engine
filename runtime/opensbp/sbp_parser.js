@@ -54,7 +54,7 @@ module.exports = (function() {
         peg$c15 = function(m, arg1, arg) {return arg;},
         peg$c16 = function(m, arg1, args) {
               if(arg1) {
-                args.unshift(arg1[1]);
+                args.unshift(arg1[2]);
               }
               return {type:"cmd","cmd":m,"args":args};},
         peg$c17 = "end",
@@ -618,13 +618,22 @@ module.exports = (function() {
           if (peg$silentFails === 0) { peg$fail(peg$c4); }
         }
         if (s3 === peg$FAILED) {
-          s3 = peg$parse___();
+          s3 = peg$parsewhitespace();
+          if (s3 === peg$FAILED) {
+            s3 = null;
+          }
         }
         if (s3 !== peg$FAILED) {
-          s4 = peg$parseargument();
+          s4 = peg$parse__();
           if (s4 !== peg$FAILED) {
-            s3 = [s3, s4];
-            s2 = s3;
+            s5 = peg$parseargument();
+            if (s5 !== peg$FAILED) {
+              s3 = [s3, s4, s5];
+              s2 = s3;
+            } else {
+              peg$currPos = s2;
+              s2 = peg$FAILED;
+            }
           } else {
             peg$currPos = s2;
             s2 = peg$FAILED;
