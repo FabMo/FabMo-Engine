@@ -30,8 +30,6 @@ define(function(require) {
 		this.engine.on('status', function(data) {
 			this.updateStatus(data);
 		}.bind(this));
-
-
 	}
 
 	// Register a handler function for the provided message type
@@ -255,8 +253,29 @@ define(function(require) {
 			});
 		}.bind(this));
 
-		this._registerHandler('nudge', function(data, callback) {
-			this.engine.fixed_move(data.dir, data.dist, function(err, result) {
+		this._registerHandler('manualNudge', function(data, callback) {
+			this.engine.manualNudge(data.dir, data.dist, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null); }
+			});
+		}.bind(this));
+
+		this._registerHandler('manualStart', function(data, callback) {
+			this.engine.manualStart(data.axis, data.speed, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null); }
+			});
+		}.bind(this));
+
+		this._registerHandler('manualHeartbeat', function(data, callback) {
+			this.engine.manualHeartbeat(function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null); }
+			});
+		}.bind(this));
+
+		this._registerHandler('manualStop', function(data, callback) {
+			this.engine.manualStop(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null); }
 			});

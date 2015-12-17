@@ -60,10 +60,11 @@
   <script src="/js/libs/fabmo.js"></script>
  
   <script type="text/javascript">
+  	var dashboard = new FabMoDashboard();
 
 	function refreshApps(){
 		// Load the list of apps available on the tool
-		fabmoDashboard.getApps(function(err,apps){
+		fabmo.getApps(function(err,apps){
 			if(err) { return console.log(err); }
 			$(".app-listing").empty();
 			$.each( apps, function( key, val ) {
@@ -91,7 +92,7 @@
 
 				$('#delete_'+appid).click(function() {
 					//$('#myModal').foundation('reveal', 'open');
-					fabmoDashboard.deleteApp(id, function(err, result) {
+					fabmo.deleteApp(id, function(err, result) {
 						if(err) {
 							console.error(err);
 						} else { 
@@ -100,10 +101,10 @@
 					});
 				});
 				$('#' + appid).click(function() {
-					fabmoDashboard.launchApp(id);
+					fabmo.launchApp(id);
 				});
 				$('#' + appiconid).click(function() {
-					fabmoDashboard.launchApp(id);
+					fabmo.launchApp(id);
 				});
 
 			});
@@ -119,11 +120,11 @@
   		});
 
   		$('#file').change(function(evt) {
-			fabmoDashboard.submitApp($('#fileform'), {}, function(err, data) {
+			fabmo.submitApp($('#fileform'), {}, function(err, data) {
 				if(err) {
-					fabmoDashboard.notify('error', JSON.stringify(err));
+					fabmo.notify('error', JSON.stringify(err));
 				} else {
-					fabmoDashboard.notify('success', "App installed successfully.");
+					fabmo.notify('success', "App installed successfully.");
 				}
 				refreshApps();
 
@@ -144,11 +145,11 @@
 				evt.preventDefault();
 				try {
 					file = evt.originalEvent.dataTransfer.files[0];
-					fabmoDashboard.submitApp(file, {}, function(err, data) {
+					fabmo.submitApp(file, {}, function(err, data) {
 						if(err) {
-							fabmoDashboard.notify('error', JSON.stringify(err));
+							fabmo.notify('error', JSON.stringify(err));
 						} else {
-							fabmoDashboard.notify('success', "App installed successfully.");
+							fabmo.notify('success', "App installed successfully.");
 						}
 						refreshApps();
 					});

@@ -58,6 +58,8 @@
   <script src="js/ace/ace.js" type="text/javascript"></script>
 
   <script>
+    var fabmo = new FabMoDashboard();
+
     var editor;
     var lang="gcode";
     var source=null;
@@ -70,12 +72,12 @@
       var text = editor.getValue();
       switch(lang) {
         case "gcode":
-          fabmoDashboard.notify('info', 'Executing G-Code program.');
-          fabmoDashboard.runGCode(text);
+          fabmo.notify('info', 'Executing G-Code program.');
+          fabmo.runGCode(text);
         break;
         case "opensbp":
-          fabmoDashboard.notify('info', 'Executing OpenSBP program.');
-          fabmoDashboard.runSBP(text);
+          fabmo.notify('info', 'Executing OpenSBP program.');
+          fabmo.runSBP(text);
         break;
       } 
     }
@@ -94,13 +96,13 @@
       var text = editor.getValue();
       switch(lang) {
         case "gcode":
-          fabmoDashboard.submitJob(text, {filename: job_title || 'editor.nc', description: job_description || 'G-Code file from the editor'}, function(err, result) {
-            fabmoDashboard.launchApp('job-manager');
+          fabmo.submitJob(text, {filename: job_title || 'editor.nc', description: job_description || 'G-Code file from the editor'}, function(err, result) {
+            fabmo.launchApp('job-manager');
           });
         break;
         case "opensbp":
-          fabmoDashboard.submitJob(text, {filename: job_title || 'editor.sbp', description: job_description || 'OpenSBP file from the editor.'}, function(err, result) {
-            fabmoDashboard.launchApp('job-manager');
+          fabmo.submitJob(text, {filename: job_title || 'editor.sbp', description: job_description || 'OpenSBP file from the editor.'}, function(err, result) {
+            fabmo.launchApp('job-manager');
           });
         break;
       } 
@@ -155,14 +157,14 @@
     }
 
     function setup() {
-      fabmoDashboard.getAppArgs(function(err, args) {
+      fabmo.getAppArgs(function(err, args) {
         if('job' in args) {
           var url = '/job/' + args.job + '/file';
           $.get(url,function(data, status) {
               editor.setValue(data, -1);
               editor.clearSelection();
               source = "job";
-              fabmoDashboard.getJobInfo(args.job, function(err, info) {
+              fabmo.getJobInfo(args.job, function(err, info) {
                 if(!err) {
                     job_title = info.name || null;
                     job_description = info.description || null;
@@ -210,8 +212,8 @@
           break;
 
         case "macro":
-          fabmoDashboard.updateMacro(source_data.index, {content: editor.getValue()}, function(err, result) {
-            fabmoDashboard.notify('info', "Macro '" + source_data.name + "' saved.");
+          fabmo.updateMacro(source_data.index, {content: editor.getValue()}, function(err, result) {
+            fabmo.notify('info', "Macro '" + source_data.name + "' saved.");
             callback();
           });
           break;
@@ -293,7 +295,7 @@
 
     $("#macro-save-and-close").click(function(evt) {
       save(function() {
-        fabmoDashboard.launchApp('macros');
+        fabmo.launchApp('macros');
       });
       evt.preventDefault();
     });
@@ -302,7 +304,7 @@
       return false;
     });
 
-    fabmoDashboard.on('status', function(status) {
+    fabmo.on('status', function(status) {
       if(status.state === 'idle') {
         $("#execute-menu").show();
       } else {

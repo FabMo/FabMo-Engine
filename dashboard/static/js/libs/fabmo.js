@@ -1,3 +1,16 @@
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        // AMD
+        define([], factory);
+    } else if (typeof exports === 'object') {
+        // Node, CommonJS-like
+        module.exports = factory();
+    } else {
+        // Browser globals (root is window)
+        root.FabMoDashboard = factory();
+    }
+}(this, function () {
+
 var FabMoDashboard = function() {
 	this.target = window.parent;
 	this.window = window;
@@ -188,6 +201,11 @@ FabMoDashboard.prototype._on = function(name, callback) {
 	this.target.postMessage(message, '*');
 }
 
+FabMoDashboard.prototype.on = function(name, callback) {
+	this._on(name, callback);
+}
+
+
 FabMoDashboard.prototype._setupMessageListener = function() {
 	this.window.addEventListener('message', function (evt) {
 		var message = evt.data;
@@ -219,6 +237,7 @@ FabMoDashboard.prototype._setupMessageListener = function() {
 	}.bind(this));
 }
 
+// App Functions
 FabMoDashboard.prototype.getAppArgs = function(callback) {
 	this._call("getAppArgs", null, callback);
 }
@@ -231,10 +250,7 @@ FabMoDashboard.prototype.launchApp = function(id, args, callback) {
 	this._call("launchApp", {'id': id, 'args':args}, callback);
 }
 
-FabMoDashboard.prototype.on = function(name, callback) {
-	this._on(name, callback);
-}
-
+// DRO Functions
 FabMoDashboard.prototype.showDRO = function(callback) {
 	this._call("showDRO", null, callback);
 }
@@ -243,6 +259,7 @@ FabMoDashboard.prototype.hideDRO = function(callback) {
 	this._call("hideDRO", null, callback);
 }
 
+// Footer Functions
 FabMoDashboard.prototype.showFooter = function(callback) {
 	this._call("showFooter", null, callback);
 }
@@ -251,10 +268,13 @@ FabMoDashboard.prototype.hideFooter = function(callback) {
 	this._call("hideFooter", null, callback);
 }
 
+// Notification functions
 FabMoDashboard.prototype.notification = function(type,message,callback) {
 	this._call("notification", {'type':type,'message':message}, callback);
 }
+FabMoDashboard.prototype.notify = FabMoDashboard.prototype.notification;
 
+// Job and Queue Functions
 FabMoDashboard.prototype.submitJob = function(data, config, callback) {
 	var message = {};
 
@@ -305,6 +325,7 @@ FabMoDashboard.prototype.runNext = function(callback) {
 	this._call("runNext",null, callback);
 }
 
+// Direct Control Functions
 FabMoDashboard.prototype.pause = function(callback) {
 	this._call("pause",null, callback);
 }
@@ -317,8 +338,21 @@ FabMoDashboard.prototype.resume = function(callback) {
 	this._call("resume",null, callback);
 }
 
-FabMoDashboard.prototype.nudge = function(dir, distance, callback) {
-	this._call("nudge",{"dir":dir, "dist":distance}, callback);
+// Manual Drive Functions
+FabMoDashboard.prototype.manualNudge = function(dir, distance, callback) {
+	this._call("manualNudge",{"dir":dir, "dist":distance}, callback);
+}
+
+FabMoDashboard.prototype.manualStart = function(axis, speed) {
+	this._call("manualStart",{"axis":axis, "speed":speed}, callback);
+}
+
+FabMoDashboard.prototype.manualHeartbeat = function() {
+	this._call("manualHeartbeat",{}, callback);
+}
+
+FabMoDashboard.prototype.manualStop = function() {
+	this._call("manualStop",{}, callback);
 }
 
 FabMoDashboard.prototype.getApps = function(callback) {
@@ -428,4 +462,6 @@ var toaster = function () {
 	$('body').append("<div class='alert-toaster' style='position:fixed; margin: auto; top: 20px; right: 20px; width: 250px; height: 60px; background-color: #F3F3F3; border-radius: 3px; z-index: 1005; box-shadow: 4px 4px 7px -2px rgba(0,0,0,0.75); display: none'><span class='alert-text' style= 'position:absolute; margin: auto; top: 0; right: 0; bottom: 0; left: 0; height: 20px; width: 250px; text-align: center;'></span><div>");
 }
 
-fabmoDashboard = new FabMoDashboard();
+return FabMoDashboard;
+
+}));

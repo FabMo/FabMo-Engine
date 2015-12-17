@@ -1580,7 +1580,8 @@
   <script src="./js/configuration.js"></script>
   <script>
     var configData = null;
-
+    var fabmo = new FabMoDashboard();
+    
     $(document).ready(function() {
       $(document).foundation();
 
@@ -1591,10 +1592,10 @@
       registerUnitLabel('.inrev_mmrev_label', 'in/rev', 'mm/rev');
       registerUnitLabel('.inpm3_mmpm3_label', 'in/min<sup>3', 'mm/min<sup>3');
 
-      fabmoDashboard.on('status', function(status) {
+      fabmo.on('status', function(status) {
         updateLabels(status.unit);
       });
-      fabmoDashboard.requestStatus();
+      fabmo.requestStatus();
 
       // Populate Settings
       update();
@@ -1609,9 +1610,9 @@
           new_config.driver.gdi = this.value;
           console.log("Distance mode = " + JSON.stringify(new_config));
           console.log("this.value = " + this.value);
-          if (this.value == 0) { fabmoDashboard.runGCode("G90"); }
-          else { fabmoDashboard.runGCode("G91"); }
-          fabmoDashboard.setConfig(new_config, function(err, data) {
+          if (this.value == 0) { fabmo.runGCode("G90"); }
+          else { fabmo.runGCode("G91"); }
+          fabmo.setConfig(new_config, function(err, data) {
             setTimeout(update, 500);
           });  
         }
@@ -1660,7 +1661,7 @@
           } 
         }
         console.log("units = " + JSON.stringify(new_config));
-        fabmoDashboard.setConfig(new_config, function(err, data) {
+        fabmo.setConfig(new_config, function(err, data) {
           setTimeout(update, 500);
         });
       });

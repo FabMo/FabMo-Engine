@@ -92,14 +92,8 @@ FabMoAPI.prototype.ping = function(callback) {
 	}
 }
 
-
 FabMoAPI.prototype._setStatus = function(status) {
 	this.status = status;
-}
-
-FabMoAPI.prototype.command = function(name, args) {
-	this.socket.emit('cmd', {'name':name, 'args':args||{} } );
-
 }
 
 // Configuration
@@ -145,26 +139,19 @@ FabMoAPI.prototype.resubmitJob = function(id, callback) {
 // Direct commands
 FabMoAPI.prototype.quit = function(callback) {
 	this.command('quit');
-	//this._post('/quit', {}, callback, callback);
 }
 
 FabMoAPI.prototype.pause = function(callback) {
 	this.command('pause');
-	//this._post('/pause', {}, callback, callback);
 }
 
 FabMoAPI.prototype.resume = function(callback) {
 	this.command('resume');
-	//this._post('/resume', {}, callback, callback);
 }
 
 // Jobs
 FabMoAPI.prototype.runNextJob = function(callback) {
-	try {
-		this._post('/jobs/queue/run', {}, callback, callback);
-	} catch(e) {
-		console.error(e);
-	}
+	this._post('/jobs/queue/run', {}, callback, callback);
 }
 
 FabMoAPI.prototype.getJobHistory = function(callback) {
@@ -186,6 +173,7 @@ FabMoAPI.prototype.cancelJob = function(id, callback) {
 FabMoAPI.prototype.submitJob = function(obj, callback) {
 	this._post('/job', makeFormData(obj, null, 'text/plain'), callback, callback);
 }
+FabMoAPI.prototype.submitJobs = FabMoAPI.prototype.submitJob;
 
 FabMoAPI.prototype.clearJobQueue = function(id, callback) {
 	this._del('/jobs/queue', callback, callback);
@@ -296,7 +284,6 @@ FabMoAPI.prototype.disableHotspot = function(callback) {
 	this._post('/network/hotspot/state', data, callback, callback);
 }
 
-
 function makeFormData(obj, default_name, default_type) {
 	if (obj instanceof jQuery){ //if it's a form
 		var file = (obj.find('input:file'))[0].files[0];
@@ -306,7 +293,12 @@ function makeFormData(obj, default_name, default_type) {
 	}
 	else if (obj instanceof FormData) {
 		var formData = obj;
-	} 
+	} else if(obj instanceof Array) {
+		var formData = [];
+		obj.forEach(function(item) {
+			formData.push(makeFormData(item));
+		});
+	}
 	else {
 		var content = obj.data || '';
 		var description = obj.config.description || 'No Description'
@@ -326,6 +318,10 @@ function makeFormData(obj, default_name, default_type) {
 		formData.append('description', description);
 	}
 	return formData;
+}
+
+FabMoAPI.prototype.command = function(name, args) {
+	this.socket.emit('cmd', {'name':name, 'args':args||{} } );
 }
 
 FabMoAPI.prototype._url = function(path) { return this.base_url + '/' + path.replace(/^\//,''); }

@@ -34,7 +34,7 @@ var flattenObject = function(ob) {
 };
 
 function update() {
-    fabmoDashboard.getConfig(function(err, data) {
+    fabmo.getConfig(function(err, data) {
       if(err) {
         console.error(err);
       } else {
@@ -82,7 +82,7 @@ function setConfig(id, value) {
     o[key] = value;
     cfg = {};
     cfg[type] = o;
-    fabmoDashboard.setConfig(cfg, function(err, data) {
+    fabmo.setConfig(cfg, function(err, data) {
       update();
     });
 }
@@ -101,7 +101,7 @@ function setConfig(id, value) {
 	} while(i++ < parts.length-1 );
 
 	co[parts[parts.length-1]] = value;
-	fabmoDashboard.setConfig(o, function(err, data) {
+	fabmo.setConfig(o, function(err, data) {
 	  update();
 	});
 }

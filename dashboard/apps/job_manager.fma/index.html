@@ -162,6 +162,8 @@
 
 
   <script type="text/javascript">
+  var fabmo = new FabMoDashboard();
+
   var current_job_id = 0;
   var prev_line = 0;
   function loadFile(data) {
@@ -195,10 +197,10 @@
 				evt.preventDefault();
 				try {
 					file = evt.originalEvent.dataTransfer.files[0];
-					fabmoDashboard.submitJob(file, {filename : file.name}, function(err, data) {
+					fabmo.submitJob(file, {filename : file.name}, function(err, data) {
 						if(err){alert(err);return;}
 						refresh_jobs_list();
-						fabmoDashboard.getJobsInQueue(function(err, data) {
+						fabmo.getJobsInQueue(function(err, data) {
 							setNextJob(data);
 						});
 					});
@@ -213,8 +215,8 @@
 	jQuery.fn.dataTableExt.oSort["duration-desc"] = function (x, y) {return 1};
 	jQuery.fn.dataTableExt.oSort["duration-asc"] = function (x, y) {}
 
-	fabmoDashboard.on('job_start', function() {console.log("Job started")});
-	fabmoDashboard.on('job_end', function() {console.log("Job ended")}); 
+	fabmo.on('job_start', function() {console.log("Job started")});
+	fabmo.on('job_end', function() {console.log("Job ended")}); 
 
     var history_table = $('#history_table').DataTable( {
     	"paging": true,
@@ -315,23 +317,23 @@
 	
 		$('.cancel').on('click', function(e) {
 			var jobId = $(this).data('id');
-			fabmoDashboard.cancelJob(jobId, function(err, data) {
+			fabmo.cancelJob(jobId, function(err, data) {
 					
 			});
 			setTimeout(function(){ 
 				refresh_jobs_list() 
-				fabmoDashboard.getJobsInQueue(function(err, data) {
+				fabmo.getJobsInQueue(function(err, data) {
 						setNextJob(data);
 				});
 			}, 500);
 		});
 		$('.preview').on('click', function(e) {
 			var jobId = $(this).data('id');
-			fabmoDashboard.launchApp('previewer', {'job' : jobId});
+			fabmo.launchApp('previewer', {'job' : jobId});
 		});
 		$('.edit').on('click', function(e) {
 			var jobId = $(this).data('id');
-			fabmoDashboard.launchApp('editor', {'job' : jobId});
+			fabmo.launchApp('editor', {'job' : jobId});
 		});
 		$('.download').on('click', function(e) {
 			var jobId = $(this).data('id');
@@ -362,18 +364,18 @@
 		});
 
 		$('.dropDown').on('click', 'a#cancel-'+jobId.toString(), function(e) {
-			fabmoDashboard.cancelJob(jobId, function(err, data) {
+			fabmo.cancelJob(jobId, function(err, data) {
 				refresh_jobs_list();
-				fabmoDashboard.getJobsInQueue(function(err, data) {
+				fabmo.getJobsInQueue(function(err, data) {
 						setNextJob(data);
 				});
 			});
 		});
 		$('.dropDown').on('click', 'a#preview-'+jobId.toString(), function(e) {
-			fabmoDashboard.launchApp('previewer', {'job' : jobId});
+			fabmo.launchApp('previewer', {'job' : jobId});
 		});
 		$('.dropDown').on('click', 'a#edit-'+jobId.toString(), function(e) {
-			fabmoDashboard.launchApp('editor', {'job' : jobId});
+			fabmo.launchApp('editor', {'job' : jobId});
 		});
 		$('.dropDown').on('click', 'a#download-'+jobId.toString(), function(e) {
 			$('.downloadJob').attr({'href':'/job/' + jobId + '/file'});
@@ -427,21 +429,21 @@
 			$('.commentBox').hide();
 		});
  			$('.dropDown').on('click', 'a#resubmit', function(e) {
-				fabmoDashboard.resubmitJob(job._id, function(err, result) {
+				fabmo.resubmitJob(job._id, function(err, result) {
 					$('.toggle-topbar').click();
 					$('#nav-pending').click();
 					refresh_jobs_list();
-					fabmoDashboard.getJobsInQueue(function(err, data) {
+					fabmo.getJobsInQueue(function(err, data) {
 						setNextJob(data);
 					});
 				});
 				$('.dropDownWrapper').hide();
 			});
 			$('.dropDown').on('click', 'a#preview-'+job._id.toString(), function(e) {
-				fabmoDashboard.launchApp('previewer', {'job' : job._id});
+				fabmo.launchApp('previewer', {'job' : job._id});
 			});
 			$('.dropDown').on('click', 'a#edit-'+job._id.toString(), function(e) {
-				fabmoDashboard.launchApp('editor', {'job' : job._id});
+				fabmo.launchApp('editor', {'job' : job._id});
 			});
 			$('.dropDown').on('click', 'a#download-'+job._id.toString(), function(e) {
 				$('.downloadJob').attr({'href':'/job/' + job._id + '/file'});
@@ -496,20 +498,20 @@
 	$('#run-next').click(function(e) { 
 		if ($('.play').hasClass('active')){
 			$('.play').toggleClass('active');
-			fabmoDashboard.stop(function(err, data) {
-			fabmoDashboard.hideFooter();
+			fabmo.stop(function(err, data) {
+			fabmo.hideFooter();
 		});
 		} else {
 			$('.play').toggleClass('active');
-			fabmoDashboard.runNext(function(err, data) {
-				fabmoDashboard.showDRO();
-				fabmoDashboard.showFooter();
+			fabmo.runNext(function(err, data) {
+				fabmo.showDRO();
+				fabmo.showFooter();
 			});	
 		}		
 	});
 
 	$('#clear-jobs').click(function(e) { 
-		fabmoDashboard.clearJobQueue(function(err, data) {
+		fabmo.clearJobQueue(function(err, data) {
 			refresh_jobs_list();
 		});
 	});
@@ -519,10 +521,10 @@
 	});
 
 	$('#file').change(function(evt) {
-		fabmoDashboard.submitJob($('#fileform'), {}, function(err, data) {
+		fabmo.submitJob($('#fileform'), {}, function(err, data) {
 			resetFormElement($('#file'));
 			refresh_jobs_list();
-			fabmoDashboard.getJobsInQueue(function(err, data) {
+			fabmo.getJobsInQueue(function(err, data) {
 				setNextJob(data);
 			});
 		});
@@ -561,8 +563,8 @@
 	}
 
 	
-	fabmoDashboard.on('job_start', function(){
-		fabmoDashboard.requestStatus(function(err, data) {
+	fabmo.on('job_start', function(){
+		fabmo.requestStatus(function(err, data) {
 			$('.nextJobTitle').text(data.job.name);
 			$('.nextJobDesc').text(data.job.description);
 		});
@@ -575,16 +577,16 @@
    			$('.dropzone').toggleClass('blink');
 		}, 1000);
 	});
-	fabmoDashboard.on('job_end', function(){
+	fabmo.on('job_end', function(){
    			clearInterval(jobrunning);
 			$('.dropzone').removeClass('blink');
 			$('body').css('background-color', '#EEEEEE');
-			fabmoDashboard.getJobsInQueue(function(err, data) {
+			fabmo.getJobsInQueue(function(err, data) {
 				setNextJob(data);
 			});
 	});
 
-	fabmoDashboard.on('status', function(status) {
+	fabmo.on('status', function(status) {
 		var prog = ((status.line/status.nb_lines)*100).toFixed(2);
 		var percent = Math.ceil(prog);
 		var rotation = Math.ceil(180*(percent/100));
@@ -600,7 +602,7 @@
 			jobid = null;
 		}
 		if (status.state === "idle") {
-			fabmoDashboard.getJobsInQueue(function(err, data) {
+			fabmo.getJobsInQueue(function(err, data) {
 				setNextJob(data);
 			});
 			$('.up-next').css('left', '0px');
@@ -670,7 +672,7 @@
 	  e.unwrap();
 	}
 
-	fabmoDashboard.requestStatus(function(err, data) {});
+	fabmo.requestStatus(function(err, data) {});
 
 	jQuery('img.svg').each(function(){
     var $img = jQuery(this);

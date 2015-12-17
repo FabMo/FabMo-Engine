@@ -75,6 +75,8 @@
   <script src="/js/libs/fabmo.js"></script>
 
   <script type="text/javascript">
+  var fabmo = new FabMoDashboard();
+  
   $(document).ready(function() {
 
   	//Foundation Init
@@ -184,18 +186,18 @@
                     row.child(wifi_child_row(network)).show();
 
                     $('.disconnect_button').click(function(e) {
-                        fabmoDashboard.disconnectFromWifi(function(err,data){
-                                if(err)fabmoDashboard.notification('error',err);
-                                else fabmoDashboard.notification('success',"succesfully disconnected !");
+                        fabmo.disconnectFromWifi(function(err,data){
+                                if(err)fabmo.notification('error',err);
+                                else fabmo.notification('success',"succesfully disconnected !");
                         });
                      });
 
                     $('.forget_button').click(function(e) {
                         var tr=$(this).closest('tr').parent().closest('tr').prev();
                         var ssid = wifi_table.row(tr).data().ssid;
-                        fabmoDashboard.forgetWifi(ssid,function(err,data){
-                                if(err)fabmoDashboard.notification('error',err);
-                                else fabmoDashboard.notification('success',"Network succesfully forgotten !");
+                        fabmo.forgetWifi(ssid,function(err,data){
+                                if(err)fabmo.notification('error',err);
+                                else fabmo.notification('success',"Network succesfully forgotten !");
                          });
                     });
                 ;})
@@ -249,15 +251,15 @@
         var row = wifi_table.row( tr );
         var network = row.data();
         if(network.favorite){
-            fabmoDashboard.connectToWifi(name, null,function(err,data){
-                if(err)fabmoDashboard.notification('error',err);
-                else fabmoDashboard.notification('success',"you're connected !");
+            fabmo.connectToWifi(name, null,function(err,data){
+                if(err)fabmo.notification('error',err);
+                else fabmo.notification('success',"you're connected !");
             });
         }else{
             requestPassword(function(passwd){
-                fabmoDashboard.connectToWifi(name, passwd,function(err,data){
-                    if(err)fabmoDashboard.notification('error',err);
-                    else fabmoDashboard.notification('success',"you're connected !");
+                fabmo.connectToWifi(name, passwd,function(err,data){
+                    if(err)fabmo.notification('error',err);
+                    else fabmo.notification('success',"you're connected !");
                 });
             });
         }
@@ -282,7 +284,7 @@
 
     $('#ap-mode-button').on('click', function(evt) {
         console.log("AP MODE BUTTON HIT");
-        fabmoDashboard.enableWifiHotspot(function(err, data) {
+        fabmo.enableWifiHotspot(function(err, data) {
             console.error(err);
             console.info(data);
         });
@@ -318,9 +320,9 @@
         });
         // bind the disconnect button
         $('.disconnect_button').click(function(e) {
-            fabmoDashboard.disconnectFromWifi(function(err,data){
-                    if(err)fabmoDashboard.notification('error',err);
-                    else fabmoDashboard.notification('success',"succesfully disconnected !");
+            fabmo.disconnectFromWifi(function(err,data){
+                    if(err)fabmo.notification('error',err);
+                    else fabmo.notification('success',"succesfully disconnected !");
             });
         });
 
@@ -328,9 +330,9 @@
             var tr=$(this).closest('tr').parent().closest('tr').prev();
             var ssid = wifi_table.row(tr).data().ssid;
             
-            fabmoDashboard.forgetWifi(ssid,function(err,data){
-                    if(err)fabmoDashboard.notification('error',err);
-                    else fabmoDashboard.notification('success',"Network succesfully forgotten !");
+            fabmo.forgetWifi(ssid,function(err,data){
+                    if(err)fabmo.notification('error',err);
+                    else fabmo.notification('success',"Network succesfully forgotten !");
             });
         });
 
