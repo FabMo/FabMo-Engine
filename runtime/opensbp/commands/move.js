@@ -10,7 +10,8 @@ exports._A = function(args, callback) {
 	log.debug( " _A args: " + JSON.stringify(args));
 	if(alias_name == "BEND") { this.runCustomCut('31',callback); }
 	if(alias_name == "FEED") { this.runCustomCut('32',callback); }
-
+	if(alias_name == "HOME") { this.runCustomCut('35',callback); }
+	if(alias_name == "CONFIGURE") { this.runCustomCut('36',callback); }
 };
 
 // Move X axis
