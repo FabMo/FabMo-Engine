@@ -135,6 +135,10 @@ Engine.prototype.start = function(callback) {
             config.engine.set('version', this_time_version);
         }.bind(this),
 
+        function create_data_directories(callback) {
+            config.createDataDirectories(callback);
+        }.bind(this),
+
         // "Apply" the engine configuration, that is, take the configuration values loaded and actually
         // set up the application based on them.
         function apply_engine_config(callback) {
