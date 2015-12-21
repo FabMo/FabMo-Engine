@@ -1,7 +1,10 @@
 {
    function buildTree(first, rest) {
       if(rest[0]) {
-          return {left: first, right: rest[0][3], op: rest[0][1]};
+          var l = first;
+          var r = buildTree(rest[0][3], rest.slice(1));
+          return {left : l, right : r, op : rest[0][1]};
+          //return {left: l, right: rest[0][3], op: rest[0][1]};
       } else {
           return first;
       }
@@ -103,16 +106,17 @@ term
       return buildTree(first, rest);
     }
 
-mul_op = "*" / "/"
-add_op = "+" / "-"
-cmp_op = "<=" / ">=" / "==" / "<" / ">" / "!=" / "="
-
 factor
   = "(" __ expr:expression __ ")" { return expr; }
   / float
   / integer
   / variable
   / barestring
+
+mul_op = "*" / "/"
+add_op = "+" / "-"
+cmp_op = "<=" / ">=" / "==" / "<" / ">" / "!=" / "="
+
 
 whitespace
    = [ \t]
