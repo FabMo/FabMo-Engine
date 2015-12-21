@@ -123,12 +123,14 @@ GCodeRuntime.prototype._idle = function() {
 GCodeRuntime.prototype.runString = function(string, callback) {
 	if(this.machine.status.state === 'idle') {
 		var lines =  string.split('\n');
+		var mode = config.driver.get('gdi') ? 'G91': 'G90';
 		this.machine.status.nb_lines = lines.length;
 		for (i=0;i<lines.length;i++){
 			if (lines[i][0]!==undefined && lines[i][0].toUpperCase() !== 'N' ){
 				lines[i]= 'N'+ (i+1) + lines[i];
 			}
 		}
+		lines.unshift(mode);
 		lines.push('M30\n');
 		string = lines.join("\n");
 		this.driver.runString(string,this.machine.status);

@@ -1,8 +1,8 @@
 var log = require('../log').logger('manual');
 
-var T_RENEW = 250;
-var SAFETY_FACTOR = 1.1;
-var RENEW_SEGMENTS = 10;
+var T_RENEW = 500;
+var SAFETY_FACTOR = 1.25;
+var RENEW_SEGMENTS = 15;
 
 function ManualRuntime() {
 	this.machine = null;
@@ -148,9 +148,5 @@ ManualRuntime.prototype.pause = function() {
 	this.driver.feedHold();
 }
 
-ManualRuntime.prototype.quit = function() {
-	this.driver.command("G90");
-	this.driver.quit();
-}
 
 exports.ManualRuntime = ManualRuntime;

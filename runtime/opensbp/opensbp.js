@@ -101,7 +101,8 @@ SBPRuntime.prototype.runString = function(s, callback) {
 		log.debug("Made it past labels.")
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table
 		log.debug("Made it past gotos.")
-
+		
+		this.emit_gcode(config.driver.get('gdi') ? 'G91' : 'G90');
 		this._run();
 
 	} catch(e) {
