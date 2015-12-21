@@ -102,6 +102,39 @@ Engine.prototype.start = function(callback) {
             }.bind(this));
         }.bind(this),
 
+        function clear_approot(callback) {
+            if('debug' in argv) {
+                log.info("Running in debug mode - clearing the approot.");
+                config.clearAppRoot(function(err, stdout) {
+                    if(err) { log.error(err); }
+                    else {
+                        log.debug(stdout);
+                    }
+                    callback();
+                });
+            } else {
+                var last_time_version = config.engine.get('version');
+                var this_time_version = this.version;
+                log.debug("Previous engine version: " + last_time_version);
+                log.debug(" Current engine version: " + this_time_version);
+
+                if(last_time_version != this_time_version) {
+                    log.info("Engine version has changed - clearing the approot.");
+                    config.clearAppRoot(function(err, stdout) {
+                        if(err) { log.error(err); }
+                        else {
+                            log.debug(stdout);
+                        }
+                        callback();
+                    });
+                } else {
+                    log.info("Engine version is unchanged since last run.");
+                    callback();
+                }
+            }
+            config.engine.set('version', this_time_version);
+        }.bind(this),
+
         // "Apply" the engine configuration, that is, take the configuration values loaded and actually
         // set up the application based on them.
         function apply_engine_config(callback) {

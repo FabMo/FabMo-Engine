@@ -98,6 +98,11 @@ function getLockFile() {
 	}
 }
 
+function clearAppRoot(callback) {
+    util.doshell('rm -rf ' + Config.getDataDir('approot'), callback);
+}
+
+
 exports.configureEngine = configureEngine;
 exports.configureDriver = configureDriver;
 exports.configureOpenSBP = configureOpenSBP;
@@ -108,4 +113,5 @@ exports.createDataDirectories = Config.createDataDirectories;
 exports.getDataDir = Config.getDataDir;
 exports.getLockFile = getLockFile;
 
+exports.clearAppRoot = clearAppRoot
 exports.platform = require('process').platform;
