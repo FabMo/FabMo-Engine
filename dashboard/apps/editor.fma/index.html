@@ -192,6 +192,19 @@
             job_title = 'macro_' + macro.index + '.sbp';
             $('#macro-menu').show();
           });      
+        } else if('new' in args) {
+          editor.setValue(args.content || '', -1);
+          editor.clearSelection();
+          source = null;
+          switch(args.language) {
+            case 'sbp':
+            case 'opensbp':
+              set_language('opensbp');
+              break;                  
+            default:
+              set_language('gcode');
+              break;
+          }
         } else {
           loadFromBrowser();
         }

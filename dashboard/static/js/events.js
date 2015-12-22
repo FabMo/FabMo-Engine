@@ -1,6 +1,3 @@
-/*
- * main.js is the entry point for the application.
- */
 define(function(require) {
 	require('jquery');
 	var foundation = require('foundation');
