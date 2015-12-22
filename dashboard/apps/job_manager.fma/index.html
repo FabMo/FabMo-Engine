@@ -181,8 +181,10 @@
   }
 
   $(document).ready(function() {
+
   	//Foundation Init
 	$(document).foundation();
+
 		$('#dropzone').dragster({
 			enter : function(devt, evt) {
 				$('#dropzone').addClass('hover');
@@ -614,6 +616,13 @@
 		} else if(status.state === "running" ) {
 			$('.up-next').css('left', '-200px');
 			$('.now-running').css('left', '0px');
+			$('.nextJobTitle').show();
+			$('.nextJobDesc').show();
+			$('.play-button').show();
+			$('.nextJobTitle').text(status.job.name);
+			$('.nextJobDesc').text(status.job.description);
+			console.log('wtf');
+
 		}
 		// New Job
 		if(jobid) {

@@ -84,6 +84,10 @@ h1, h2, h3, h4, h5, h6 {
 .jobs-title:first-child {
   min-height: 40px;
 }
+
+.jobs-title{
+  overflow: hidden;
+}
  .up-next{
    position: absolute;
    left: -200px;
