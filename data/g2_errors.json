@@ -600,7 +600,7 @@
       "soft limit error"
    ], 
    "181": [
-      "STAT_ERROR_181", 
+      "STAT_T_WORD_IS_INVALID", 
       ""
    ], 
    "253": [
@@ -620,8 +620,8 @@
       ""
    ], 
    "180": [
-      "STAT_ERROR_180", 
-      "reserved for Gcode errors"
+      "STAT_T_WORD_IS_MISSING", 
+      ""
    ], 
    "2": [
       "STAT_EAGAIN", 
@@ -788,7 +788,7 @@
       "command was not processed because machine is alarmed"
    ], 
    "151": [
-      "STAT_S_WORD_IS_MISSING", 
+      "STAT_SPINDLE_MUST_BE_OFF", 
       ""
    ], 
    "150": [
@@ -796,20 +796,20 @@
       ""
    ], 
    "153": [
-      "STAT_SPINDLE_MUST_BE_OFF", 
-      ""
+      "STAT_ARC_ERROR_RESERVED", 
+      "Reserved"
    ], 
    "152": [
-      "STAT_S_WORD_IS_INVALID", 
-      ""
+      "STAT_SPINDLE_MUST_BE_TURNING", 
+      "some canned cycles require spindle to be turning when called"
    ], 
    "155": [
       "STAT_ARC_SPECIFICATION_ERROR", 
       "generic arc specification error"
    ], 
    "154": [
-      "STAT_SPINDLE_MUST_BE_TURNING", 
-      "some canned cycles require spindle to be turning when called"
+      "STAT_ARC_HAS_IMPOSSIBLE_CENTER_POINT", 
+      "trap (.05 inch/.5 mm) OR ((.0005 inch/.005mm) AND .1% of radius condition"
    ], 
    "157": [
       "STAT_ARC_OFFSETS_MISSING_FOR_SELECTED_PLANE", 
