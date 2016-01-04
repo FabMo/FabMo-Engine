@@ -74,12 +74,10 @@ Keyboard.prototype.setEnabled = function(enabled) {
 	this.enabled = enabled;
 	if(enabled) {
 		this.moves = MOVE_THRESH;
-		this.elem.removeClass('keyboardDisabled');				
-		this.elem.addClass('keyboardEnabled');		
+		this.elem.removeClass('keyboard-button-inactive').addClass('keyboard-button-active');				
 	} else {
 		this.moves = 0;
-		this.elem.addClass('keyboardDisabled');		
-		this.elem.removeClass('keyboardEnabled');		
+		this.elem.removeClass('keyboard-button-active').addClass('keyboard-button-inactive');				
 	}
 }
 

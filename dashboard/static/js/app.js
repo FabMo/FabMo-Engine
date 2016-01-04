@@ -15,6 +15,7 @@ requirejs.config({
         'socket.io' : 'libs/socket.io',
         'handwheel' : 'libs/handwheel',
         'keyboard' : 'libs/keyboard',
+        'keypad' : 'libs/keypad',
         'toastr' : 'libs/toastr.min'
     },
     shim : {

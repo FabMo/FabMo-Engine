@@ -10,6 +10,7 @@ body,html{
     font-family: 'source_sans_proregular';
 }
 
+
 .noselect {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -1081,24 +1082,63 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .fabmo-status-disconnected { color: gray; }
 
 .keyboard {
+	text-align: center;
+}
+
+
+.keypad-button {
+	text-align: center;
+	width  : 64px;
+	height : 64px;
+	border : 2px solid #642315;
 	border-radius: 10px;
-	width: 200px;
-	height: 60px;
-	margin: 10px;
-	outline: none;
-	background-color: red;
-	border: 2px solid #550000;
+	background : #91331E;
 	color: white;
-	display: flex;
-	align-items: center;
-	justify-content: center;
 	cursor: pointer;
+	line-height: 64px;
+	font-weight: bolder;
+	font-size: 24px;
+	-webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
-.keyboardEnabled {
-	background-color: green;
+.keyboard-button-active {
+	background: #5DAA35;
 }
 
-.keyboardDisabled {
-	background-color: red;
+.keyboard-button-inactive {
+	background : #91331E;
 }
+
+.drive-button {
+
+}
+
+.drive-button-active {
+	background: #D48B3A;
+	color: black;
+}
+
+.drive-button-inactive {
+	background-color: #91331E;
+	color: white;
+}
+
+.keypad {
+	display: table;
+}
+
+.keypad-row {
+	display: table-row;
+}
+
+.keypad-cell {
+	display: table-cell;
+	padding: 4px;
+}
+
+

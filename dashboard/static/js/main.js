@@ -16,10 +16,12 @@ define(function(require) {
 	// Our libraries
 	var FabMoAPI = require('fabmo');
 	var FabMoUI = require('fabmo-ui');
+	
 	var WheelControl = require('handwheel');
 	var Keyboard = require('keyboard');
+	var Keypad = require('keypad');
 
-	var wheel;
+	var wheel, keypad, keyboard;
 	
 	var engine = new FabMoAPI();
 
@@ -56,6 +58,7 @@ define(function(require) {
 			// Configure handwheel input
 			wheel = setupHandwheel();
 			keyboard = setupKeyboard();
+			keypad = setupKeypad();
 
 			// Start the application
 			router = new context.Router();
@@ -152,6 +155,24 @@ function setupKeyboard() {
 		dashboard.engine.manualStop();
 	})
 	return keyboard;
+}
+
+function setupKeypad() {
+	console.log("Setting up keypad")
+	console.log(Keypad)
+	var keypad = new Keypad('#keypad');
+
+	keypad.on('go', function(move) {
+		if(move) {
+			dashboard.engine.manualStart(move.axis, move.dir*120.0);
+		} 
+	});
+
+	keypad.on('stop', function(evt) {
+		dashboard.engine.manualStop();
+	})
+
+	return keypad;
 }
 
 // Kill the currently running job when the modal error dialog is dismissed
