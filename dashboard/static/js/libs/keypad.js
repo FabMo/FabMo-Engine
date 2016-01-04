@@ -4,11 +4,11 @@
   if (typeof module == 'object' && module.exports) module.exports = factory()
 
   /* AMD module */
-  else if (typeof define == 'function' && define.amd) define(factory)
+  else if (typeof define == 'function' && define.amd) define(['hammer'],factory)
 
   /* Browser global */
-  else root.WheelControl = factory()
-}(this, function () {
+  else root.WheelControl = factory(Hammer)
+}(this, function (Hammer) {
   "use strict"
 
 var Keypad = function(id, options) {
@@ -26,23 +26,26 @@ var Keypad = function(id, options) {
 
 Keypad.prototype.init = function() {
 	var e = this.elem;
-	console.log(e)
-	var xp = e.find(".x_pos")
-	var xn = e.find(".x_neg")
-	var yp = e.find(".y_pos")
-	var yn = e.find(".y_neg")
-	var zp = e.find(".z_pos")
-	var zn = e.find(".z_neg")
-	var all = [xp,xn,yp,yn,zp,zn];
-	console.log(all)
-	all.forEach(function(element) {
-		console.log(element);
-		element.on('mousedown', this.onDriveMousedown.bind(this))
-		element.on('mouseup', this.onDriveMouseup.bind(this))
-		//element.on('focus', this.onDriveFocus.bind(this))
-		element.on('blur', this.onDriveBlur.bind(this))
-		//element.on('mouseenter', this.onDriveMouseEnter.bind(this))
-		element.on('mouseleave', this.onDriveMouseLeave.bind(this))
+	/*
+	var drive_buttons = e.find('.drive-button')
+	drive_buttons.on('mousedown', this.onDriveMousedown.bind(this))
+	drive_buttons.on('mouseup', this.onDriveMouseup.bind(this))
+	//element.on('focus', this.onDriveFocus.bind(this))
+	drive_buttons.on('blur', this.onDriveBlur.bind(this))
+	//element.on('mouseenter', this.onDriveMouseEnter.bind(this))
+	drive_buttons.on('mouseleave', this.onDriveMouseLeave.bind(this))
+	*/
+
+	var drive_buttons = e.find('.drive-button');
+	drive_buttons.each(function(index, element) {
+		var hammer = new Hammer.Manager(element);
+		hammer.add(new Hammer.Press({time: 50}));
+		hammer.on('press', this.onDriveMousedown.bind(this));
+		hammer.on('pressup', this.onDriveMouseup.bind(this));
+
+		$(element).on('blur', this.onDriveBlur.bind(this));
+		$(element).on('mouseleave', this.onDriveMouseleave.bind(this));
+
 	}.bind(this));
 }
 
@@ -148,7 +151,7 @@ Keypad.prototype.onDriveMouseup = function(evt) {
 	}
 }
 
-Keypad.prototype.onDriveMouseLeave = function(evt) {
+Keypad.prototype.onDriveMouseleave = function(evt) {
 	this.setEnabled(false);
 	if(this.going) {
 		this.stop();
