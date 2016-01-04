@@ -1,1 +1,8 @@
-{}
+{
+	"manual" : {		
+		"xy_speed" : 2.0,
+		"z_speed" : 1.0,
+		"xy_increment" : 0.010,
+		"z_increment" : 0.005
+	}
+}

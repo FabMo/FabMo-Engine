@@ -16,6 +16,7 @@ var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
 function SBPRuntime() {
 	// Handle Inheritance
 	events.EventEmitter.call(this);
+	this.ok_to_disconnect = true;
 	this.program = [];
 	this.pc = 0;
 	this.start_of_the_chunk = 0;
@@ -61,8 +62,12 @@ SBPRuntime.prototype.connect = function(machine) {
 };
 
 SBPRuntime.prototype.disconnect = function() {
-	log.info('Disconnected ShopBot runtime.');
-	this.driver.removeListener(this.status_handler);
+	if(this.ok_to_disconnect) {
+		log.info('Disconnecting OpenSBP runtime.');
+		this.driver.removeListener('status', this.status_handler);		
+	} else {
+		throw new Error("Cannot disconnect OpenSBP runtime.")
+	}
 };
 
 // Run the provided string as a program
@@ -394,6 +399,7 @@ SBPRuntime.prototype._end = function(error) {
 							this.machine.setState(this, 'idle');
 						}.bind(this));
 					}
+					this.ok_to_disconnect = true;
 					this.emit('end', this);
 					if(callback) {
 						callback();

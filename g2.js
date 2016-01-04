@@ -753,15 +753,15 @@ G2.prototype.sendMoreGCodes = function() {
 };
 
 G2.prototype.setMachinePosition = function(position, callback) {
-	var gcode = "G21\nG28.3 ";
+	var gcode = "G21\n";
 	['x','y','z','a','b','c','u','v','w'].forEach(function(axis) {
 		if(position[axis] != undefined) {
-			gcode += ' ' + axis + position[axis].toFixed(3);
+			gcode += 'G28.3 ' + axis + position[axis].toFixed(5) + '\n';
 		}		
 	});
 
 	if(this.status.unit === 'in') {
-		gcode += '\nG20';
+		gcode += 'G20\n';
 	}
 	this.runString(gcode, callback);
 }

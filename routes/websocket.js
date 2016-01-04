@@ -28,7 +28,11 @@ var onConnect = function(socket) {
 
 	socket.on('code', function(data) {
 		if('rt' in data) {
-			machine.executeRuntimeCode(data.rt, data.data)
+			try {
+				machine.executeRuntimeCode(data.rt, data.data)
+			} catch(e) {
+				log.error(e);
+			}
 		}
 	});
 

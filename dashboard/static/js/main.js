@@ -158,10 +158,8 @@ function setupKeyboard() {
 }
 
 function setupKeypad() {
-	console.log("Setting up keypad")
-	console.log(Keypad)
-	var keypad = new Keypad('#keypad');
 
+	var keypad = new Keypad('#keypad');
 	keypad.on('go', function(move) {
 		if(move) {
 			dashboard.engine.manualStart(move.axis, move.dir*120.0);
@@ -171,7 +169,6 @@ function setupKeypad() {
 	keypad.on('stop', function(evt) {
 		dashboard.engine.manualStop();
 	})
-
 	return keypad;
 }
 

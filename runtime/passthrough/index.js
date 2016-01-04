@@ -1,4 +1,4 @@
-var log = require('../log').logger('passthrough');
+var log = require('../../log').logger('passthrough');
 
 function PassthroughRuntime() {
 	this.machine = null;
@@ -27,7 +27,6 @@ PassthroughRuntime.prototype.disconnect = function() {
 	this.driver.removeListener('status',this.status_handler);
 	this.machine.quit();
 	this.machine.setState(this, "idle");
-
 };
 
 

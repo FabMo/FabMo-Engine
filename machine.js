@@ -13,7 +13,7 @@ var GCodeRuntime = require('./runtime/gcode').GCodeRuntime;
 var SBPRuntime = require('./runtime/opensbp').SBPRuntime;
 var ManualRuntime = require('./runtime/manual').ManualRuntime;
 var PassthroughRuntime = require('./runtime/passthrough').PassthroughRuntime;
-
+var IdleRuntime = require('./runtime/idle').IdleRuntime;
 
 function connect(callback) {
 
@@ -89,9 +89,10 @@ function Machine(control_path, gcode_path, callback) {
 	    this.sbp_runtime = new SBPRuntime();
 	    this.manual_runtime = new ManualRuntime();
 	    this.passthrough_runtime = new PassthroughRuntime();
+	    this.idle_runtime = new IdleRuntime();
 
 	    // GCode is the default runtime
-	    this.setRuntime(this.gcode_runtime);
+	    this.setRuntime(this.idle_runtime);
 
 	    if(err) {
 		    typeof callback === "function" && callback(err);
@@ -222,18 +223,14 @@ Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
 }
 
 Machine.prototype.setRuntime = function(runtime) {
-	if(this.current_runtime != runtime) {
-		try {
-			this.current_runtime.disconnect();
-		} catch (e) {
-
-		} finally {
-			this.current_runtime = runtime;
-			if(runtime) {
-				log.debug("Connecting runtime ", runtime)
-				runtime.connect(this);
-			}
+	if(runtime && runtime !== this.current_runtime) {
+		if(this.current_runtime) {
+			this.current_runtime.disconnect();					
 		}
+		runtime.connect(this);
+		this.current_runtime = runtime;
+	} else {
+
 	}
 };
 
@@ -261,6 +258,8 @@ Machine.prototype.getRuntime = function(name) {
 
 Machine.prototype.setState = function(source, newstate, stateinfo) {
 	if ((source === this) || (source === this.current_runtime)) {
+		log.info("Got a machine state change: " + this.status.state)	
+
 		this.status.state = newstate;
 		if(stateinfo) {
 			this.status.info = stateinfo
@@ -281,7 +280,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 		}
 		
 
-		log.info("Got a machine state change: " + this.status.state)	
 	} else {		
 		log.warn("Got a state change from a runtime that's not the current one. (" + source + ")")
 	}
@@ -290,7 +288,9 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 
 Machine.prototype.pause = function() {
 	if(this.status.state === "running") {
-		this.current_runtime.pause();
+		if(this.current_runtime) {
+			this.current_runtime.pause();
+		}
 	}
 };
 
@@ -298,11 +298,16 @@ Machine.prototype.quit = function() {
 	if(this.status.job) {
 		this.status.job.pending_cancel = true;
 	}
-	this.current_runtime.quit();
+	if(this.current_runtime) {
+		this.current_runtime.quit();
+	}
 };
 
 Machine.prototype.resume = function() {
+		if(this.current_runtime) {
 	current_runtime.resume();
+	}
+
 };
 
 Machine.prototype.enable_passthrough = function(callback) {
@@ -319,7 +324,7 @@ Machine.prototype.enable_passthrough = function(callback) {
 
 Machine.prototype.disable_passthrough = function(string) {
 	log.info("disable passthrough");
-	this.setRuntime(this.gcode_runtime);
+	this.setRuntime(null);
 };
 
 exports.connect = connect;

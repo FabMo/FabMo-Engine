@@ -5,6 +5,7 @@ var config = require('../../config');
 function GCodeRuntime() {
 	this.machine = null;
 	this.driver = null;
+	this.ok_to_disconnect = true;
 }
 
 GCodeRuntime.prototype.connect = function(machine) {
@@ -16,7 +17,11 @@ GCodeRuntime.prototype.connect = function(machine) {
 };
 
 GCodeRuntime.prototype.disconnect = function() {
-	this.driver.removeListener('status', this.status_handler);
+	if(this.ok_to_disconnect) {
+		this.driver.removeListener('status', this.status_handler);
+	} else {
+		throw new Error("Cannot disconnect GCode Runtime")
+	}
 };
 
 GCodeRuntime.prototype.pause = function() {
@@ -101,6 +106,7 @@ GCodeRuntime.prototype._idle = function() {
 	// Set the machine state to idle and return the units to their default configuration
 	var finishUp = function() {
 		this.driver.setUnits(config.machine.get('units'), function() {
+			this.ok_to_disconnect = true;
 			this.machine.setState(this, 'idle');
 		}.bind(this))
 	}.bind(this);
@@ -126,6 +132,7 @@ GCodeRuntime.prototype._idle = function() {
 // callback runs only when execution is complete.
 GCodeRuntime.prototype.runString = function(string, callback) {
 	if(this.machine.status.state === 'idle') {
+		this.ok_to_disconnect = false;
 		var lines =  string.split('\n');
 		var mode = config.driver.get('gdi') ? 'G91': 'G90';
 		this.machine.status.nb_lines = lines.length;

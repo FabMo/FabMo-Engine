@@ -1,4 +1,4 @@
-var log = require('../log').logger('manual');
+var log = require('../../log').logger('manual');
 
 var T_RENEW = 500;
 var SAFETY_FACTOR = 1.25;
@@ -12,6 +12,7 @@ function ManualRuntime() {
 ManualRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;
+	this.ok_to_disconnect = true;
 	this.machine.setState(this, "manual");
 	this.moving = false;
 	this.keep_moving = false;
@@ -22,11 +23,20 @@ ManualRuntime.prototype.connect = function(machine) {
 };
 
 ManualRuntime.prototype.disconnect = function() {
-	this.driver.removeListener('status', this.status_handler);
-	this._changeState("idle");
+	if(this.ok_to_disconnect) {
+		this.driver.removeListener('status', this.status_handler);
+		this._changeState("idle");	
+	} else {
+		throw new Error("Cannot disconnect while manually driving the tool.");
+	}
 };
 
 ManualRuntime.prototype._changeState = function(newstate) {
+	if(newstate === "idle") {
+		this.ok_to_disconnect = true;
+	} else {
+		this.ok_to_disconnect = false;
+	}
 	this.machine.setState(this, newstate);
 };
 
