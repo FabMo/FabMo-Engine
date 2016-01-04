@@ -1244,6 +1244,9 @@ SBPRuntime.prototype.transformation = function(TranPt){
 
 };
 
+SBPRuntime.prototype.resume = function() {
+	this.driver.resume();
+}
 
 exports.SBPRuntime = SBPRuntime;
 

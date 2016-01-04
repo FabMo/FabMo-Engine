@@ -302,7 +302,7 @@ Machine.prototype.quit = function() {
 };
 
 Machine.prototype.resume = function() {
-	this.driver.resume();
+	current_runtime.resume();
 };
 
 Machine.prototype.enable_passthrough = function(callback) {

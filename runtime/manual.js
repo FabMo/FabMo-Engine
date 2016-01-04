@@ -105,13 +105,14 @@ ManualRuntime.prototype.startMotion = function(axis, speed) {
 	var dir = speed < 0 ? -1.0 : 1.0;
 	speed = Math.abs(speed);
 	if(this.moving) {
-		log.debug("Already moving");
+		log.debug("startMotion: Already moving");
 		if(axis === this.currentAxis && speed === this.currentSpeed) {
 			this.maintainMotion();
 		} else {
 			// Deal with direction changes here
 		}
 	} else {
+		log.debug("startMotion: Not moving yet.")
 		this.currentAxis = axis;
 		this.currentSpeed = speed;
 		this.currentDirection = dir;
@@ -146,6 +147,14 @@ ManualRuntime.prototype.stopMotion = function() {
 
 ManualRuntime.prototype.pause = function() {
 	this.driver.feedHold();
+}
+
+ManualRuntime.prototype.quit = function() {
+	this.driver.quit();
+}
+
+ManualRuntime.prototype.resume = function() {
+	this.driver.resume();
 }
 
 

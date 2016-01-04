@@ -158,6 +158,7 @@ function setupKeyboard() {
 $(document).on('close.fndtn.reveal', '[data-reveal]', function (evt) {
   var modal = $(this);
   dashboard.engine.quit();
+  console.info("Quitting the tool on dismiss")
 });
 
 // Handlers for the home/probe buttons

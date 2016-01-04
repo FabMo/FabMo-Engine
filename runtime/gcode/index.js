@@ -27,6 +27,10 @@ GCodeRuntime.prototype.quit = function() {
 	this.driver.quit();
 }
 
+GCodeRuntime.prototype.resume = function() {
+	this.driver.resume();
+}
+
 GCodeRuntime.prototype._changeState = function(newstate) {
 	this.machine.setState(this, newstate);
 };
