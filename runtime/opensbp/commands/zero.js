@@ -19,7 +19,6 @@ exports.ZX = function(args, callback) {
 	this.machine.driver.get('mpox', function(err, MPO) {
 		if(err) { return callback(err); }
 		var zxObj = {};
-//		log.debug( JSON.stringify(MPO) );
 		var unitConv = 1.0;
 		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;

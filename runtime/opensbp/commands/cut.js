@@ -145,6 +145,8 @@ exports.CP = function(args) {
   var comp = 0;
   var feedrate = 0;
 
+  log.debug("CP: " + JSON.stringify(args));
+  
   if (OIT === 'O') {
     comp = 1;
   } 
@@ -184,16 +186,20 @@ exports.CP = function(args) {
   var endX = centerX + radius * Math.cos(Eradians);
   var endY = centerY + radius * Math.sin(Eradians);
 
-  if( this.cmd_posx !== startX && this.cmd_posy !== startY ){
+  if( this.cmd_posx !== startX || this.cmd_posy !== startY ){
       feedrate = this.movespeed_xy * 60;
       var safeZ = config.opensbp.get('safeZpullUp');
-      if( currentZ !== safeZ ){
-        this.emit_move('G1',{'X':startX,'Y':startY,'Z':startZ,'F':feedrate});
+      if( currentZ <= safeZ ){
+        this.emit_move('G0',{'Z':safeZ,'F':feedrate});
         this.cmd_posz = safeZ;
       }
       this.emit_move('G0',{'X':startX,'Y':startY});
       this.cmd_posx = startX;
       this.cmd_posy = startY;
+      if( currentZ <= safeZ ){
+        this.emit_move('G1',{'Z':currentZ,'F':feedrate});
+        this.cmd_posz = safeZ;              
+      }
   }
 
   this.CG([undefined,endX,endY,xOffset,yOffset,OIT,Dir,Plg,reps,propX,propY,optCP,noPullUp,plgFromZero]);
@@ -237,6 +243,8 @@ exports.CG = function(args) {
 	var outStr;
   var tolerance = 0.000001;
 
+  log.debug("CG: " + JSON.stringify(args));
+
   log.debug("start X:" + startX );
   log.debug("start Y:" + startY );
   log.debug("start Z:" + startZ );
@@ -246,6 +254,8 @@ exports.CG = function(args) {
   log.debug("center Y:" + centerY );
   log.debug("I-O-T:" + OIT );
   log.debug("Dir:" + Dir );
+  log.debug("reps:" + reps );
+  log.debug("Plg:" + Plg );  
 
   if ( centerX === 0 && centerY === 0 ){
     throw( "Zero diameter circle: CG" );
@@ -385,6 +395,8 @@ exports.CG = function(args) {
   if( noPullUp === 0 && currentZ != startZ){    	//If No pull-up is set to YES, pull up to the starting Z location
     this.emit_move('G0',{'Z':startZ});
   }
+
+  log.debug("End of CG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
 };
 
