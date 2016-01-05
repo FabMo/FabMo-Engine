@@ -627,7 +627,7 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 			} catch(e) {
 				log.error("Error in a non-stack-breaking command");
 				log.error(e);
-				this._end(e);
+				this._end(e.message);
 				throw e
 			}
 			this.pc +=1;
