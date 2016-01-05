@@ -186,17 +186,24 @@ exports.CP = function(args) {
   var endX = centerX + radius * Math.cos(Eradians);
   var endY = centerY + radius * Math.sin(Eradians);
 
+// log.debug(" StartX = " + startX );
+// log.debug(" posX = " + this.cmd_posx );
+// log.debug(" StartY = " + startY );
+// log.debug(" posY = " + this.cmd_posy );
+
   if( this.cmd_posx !== startX || this.cmd_posy !== startY ){
       feedrate = this.movespeed_xy * 60;
       var safeZ = config.opensbp.get('safeZpullUp');
-      if( currentZ <= safeZ ){
+      log.debug("currentZ = " + currentZ);
+      log.debug("safeZ = " + safeZ );
+      if( currentZ < safeZ ){
         this.emit_move('G0',{'Z':safeZ,'F':feedrate});
         this.cmd_posz = safeZ;
       }
       this.emit_move('G0',{'X':startX,'Y':startY});
       this.cmd_posx = startX;
       this.cmd_posy = startY;
-      if( currentZ <= safeZ ){
+      if( this.cmd_posz !== currentZ ){
         this.emit_move('G1',{'Z':currentZ,'F':feedrate});
         this.cmd_posz = safeZ;              
       }
@@ -219,7 +226,6 @@ exports.CP = function(args) {
 //			  <No Pull Up after cut>,<Plunge from Z zero>
 //	
 exports.CG = function(args) {
-//  log.debug("CG-args = " + args);
   var startX = this.cmd_posx;
   var startY = this.cmd_posy;
   var startZ = this.cmd_posz;
@@ -243,19 +249,19 @@ exports.CG = function(args) {
 	var outStr;
   var tolerance = 0.000001;
 
-  log.debug("CG: " + JSON.stringify(args));
+  // log.debug("CG: " + JSON.stringify(args));
 
-  log.debug("start X:" + startX );
-  log.debug("start Y:" + startY );
-  log.debug("start Z:" + startZ );
-  log.debug("end X:" + endX );
-  log.debug("end Y:" + endY );
-  log.debug("center X:" + centerX );
-  log.debug("center Y:" + centerY );
-  log.debug("I-O-T:" + OIT );
-  log.debug("Dir:" + Dir );
-  log.debug("reps:" + reps );
-  log.debug("Plg:" + Plg );  
+  // log.debug("start X:" + startX );
+  // log.debug("start Y:" + startY );
+  // log.debug("start Z:" + startZ );
+  // log.debug("end X:" + endX );
+  // log.debug("end Y:" + endY );
+  // log.debug("center X:" + centerX );
+  // log.debug("center Y:" + centerY );
+  // log.debug("I-O-T:" + OIT );
+  // log.debug("Dir:" + Dir );
+  // log.debug("reps:" + reps );
+  // log.debug("Plg:" + Plg );  
 
   if ( centerX === 0 && centerY === 0 ){
     throw( "Zero diameter circle: CG" );
@@ -396,7 +402,7 @@ exports.CG = function(args) {
     this.emit_move('G0',{'Z':startZ});
   }
 
-  log.debug("End of CG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+  // log.debug("End of CG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
 };
 
