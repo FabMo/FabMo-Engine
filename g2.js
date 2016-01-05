@@ -453,9 +453,6 @@ G2.prototype.handleStatusReport = function(response) {
 			this.status[key] = value;
 		}
 
-		// Emit status no matter what
-		this.emit('status', this.status);
-
 		// Send more g-codes if warranted
 		if('line' in response.sr) {
 			line = response.sr.line;
@@ -484,6 +481,7 @@ G2.prototype.handleStatusReport = function(response) {
 					if(expectation[stat] === null) {
 						this.expectations.push(expectation);
 					} else {
+						console.log(response)
 						expectation[stat](this);
 					}
 				} else if(null in expectation) {
@@ -495,6 +493,8 @@ G2.prototype.handleStatusReport = function(response) {
 		this.stat = this.status.stat !== undefined ? this.status.stat : this.stat;
 		this.hold = this.status.hold !== undefined ? this.status.hold : this.hold;
 
+		// Emit status no matter what
+		this.emit('status', this.status);
 	}
 };
 
