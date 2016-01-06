@@ -39,13 +39,11 @@ function update() {
         console.error(err);
       } else {
         configData = data;
-        console.log("Read configData");
         ['driver', 'engine', 'opensbp', 'machine'].forEach(function(branchname) {
             branch = flattenObject(data[branchname]);
             for(key in branch) {
               v = branch[key];
               input = $('#' + branchname + '-' + key);
-              console.log(input)
               if(input.length) {
                 input.val(String(v));
               }
@@ -85,7 +83,7 @@ function setConfig(id, value) {
 }
 
 function setConfig(id, value) {
-	var parts = id.split("_");
+	var parts = id.split("-");
 	var o = {};
 	var co = o;
 	var i=0;

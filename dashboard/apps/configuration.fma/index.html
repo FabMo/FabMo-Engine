@@ -1649,7 +1649,7 @@
 
       // Update settings on change
       $('.driver-input').change( function() {
-        var parts = this.id.split("_");
+        var parts = this.id.split("-");
         var new_config = {};
         new_config.driver = {};
         var v = parts[1];
