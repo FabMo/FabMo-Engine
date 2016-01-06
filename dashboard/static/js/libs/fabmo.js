@@ -20,7 +20,8 @@ var FabMoDashboard = function() {
 	this._event_listeners = {
 		'status' : [],
 		'job_start' : [],
-		'job_end' : []
+		'job_end' : [],
+		'change' : []
 	};
 	this._setupMessageListener();
 }
@@ -33,9 +34,9 @@ FabMoDashboard.prototype.isPresent = function() {
     }
 }
 
-// https://github.com/rndme/download
-// data can be a string, Blob, File, or dataURL
 FabMoDashboard.prototype._download = function(data, strFileName, strMimeType) {
+	// https://github.com/rndme/download
+	// data can be a string, Blob, File, or dataURL
 	
 	var self = window 						// this script is only for browsers anyway...
 	var u = "application/octet-stream" 		// this default mime also triggers iframe downloads
@@ -339,8 +340,8 @@ FabMoDashboard.prototype.resume = function(callback) {
 }
 
 // Manual Drive Functions
-FabMoDashboard.prototype.manualNudge = function(dir, distance, callback) {
-	this._call("manualNudge",{"dir":dir, "dist":distance}, callback);
+FabMoDashboard.prototype.manualMoveFixed = function(axis, speed, distance, callback) {
+	this._call("manualMoveFixed",{"axis":axis, "speed": speed, "dist":distance}, callback);
 }
 
 FabMoDashboard.prototype.manualStart = function(axis, speed) {
