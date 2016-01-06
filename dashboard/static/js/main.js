@@ -25,6 +25,9 @@ define(function(require) {
 	
 	var engine = new FabMoAPI();
 
+	// Initial read of engine configuration
+	engine.getConfig();
+
 	context.apps = new context.models.Apps();
 
 	// Load the apps from the server
@@ -56,7 +59,12 @@ define(function(require) {
 
 
 			// Configure handwheel input
-			wheel = setupHandwheel();
+			try {
+				wheel = setupHandwheel();
+
+			} catch(e) {
+				console.error(e);
+			}
 			keyboard = setupKeyboard();
 			keypad = setupKeypad();
 
@@ -137,17 +145,53 @@ function setupHandwheel() {
 	wheel.on('nudge', function nudge(data) {
 		var nudge = NUDGE[wheel.units];
 		var speed = wheel.inUnits(wheel.speed, wheel.units);
-		dashboard.engine.fixed_move(data.axis, nudge, wheel.speed, function(err) {});
+		dashboard.engine.manualMoveFixed(data.axis, wheel.speed, nudge, function(err) {});
 	});
 	return wheel;
 }
 
+function getManualMoveSpeed(move) {
+	var speed_ips = null;
+	try {
+		switch(move.axis) {
+			case 'x':
+			case 'y':
+				speed_ips = engine.config.machine.manual.xy_speed;
+				break;
+			case 'z':
+				speed_ips = engine.config.machine.manual.z_speed;
+				break; 
+		}
+	} catch(e) {
+		console.error(e);
+	}
+	return speed_ips;
+}
+
+function getManualNudgeIncrement(move) {
+	var increment_inches = null;
+	try {
+		switch(move.axis) {
+			case 'x':
+			case 'y':
+				increment_inches = engine.config.machine.manual.xy_increment;
+				break;
+			case 'z':
+				increment_inches = engine.config.machine.manual.z_increment;
+				break; 
+		}
+	} catch(e) {
+		console.error(e);
+	}
+	return increment_inches;
+}
+
 function setupKeyboard() {
 	var keyboard = new Keyboard('#keyboard');
-	
 	keyboard.on('go', function(move) {
+		
 		if(move) {
-			dashboard.engine.manualStart(move.axis, move.dir*120.0);
+			dashboard.engine.manualStart(move.axis, move.dir*60.0*(getManualMoveSpeed(move) || 0.1));
 		} 
 	});
 
@@ -162,21 +206,30 @@ function setupKeypad() {
 	var keypad = new Keypad('#keypad');
 	keypad.on('go', function(move) {
 		if(move) {
-			dashboard.engine.manualStart(move.axis, move.dir*120.0);
+			dashboard.engine.manualStart(move.axis, move.dir*60.0*(getManualMoveSpeed(move) || 0.1));
 		} 
 	});
 
 	keypad.on('stop', function(evt) {
 		dashboard.engine.manualStop();
-	})
+	});
+
+	keypad.on('nudge', function(nudge) {
+		dashboard.engine.manualMoveFixed(nudge.axis, 60*getManualMoveSpeed(nudge), nudge.dir*getManualNudgeIncrement(nudge))
+		//dashboard.engine.manualMoveFixed(nudge.axis, null, nudge.dir*getManualNudgeIncrement(nudge) || 0.010);
+	});
 	return keypad;
 }
 
 // Kill the currently running job when the modal error dialog is dismissed
 $(document).on('close.fndtn.reveal', '[data-reveal]', function (evt) {
   var modal = $(this);
-  dashboard.engine.quit();
-  console.info("Quitting the tool on dismiss")
+  if(engine.status.state === "stopped") {
+	  dashboard.engine.quit();
+	  console.info("Quitting the tool on dismiss")  	
+  } else {
+	  console.warn("Not quitting the tool because it's not stopped.")  	
+  }
 });
 
 // Handlers for the home/probe buttons

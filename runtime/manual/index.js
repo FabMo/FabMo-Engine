@@ -98,6 +98,11 @@ ManualRuntime.prototype.executeCode = function(code) {
 		case 'maint':
 			this.maintainMotion();
 			break;
+
+		case 'fixed':
+			this.fixedMove(code.axis, code.speed, code.dist);
+			break;
+
 		default:
 			log.error("Don't know what to do with '" + code.cmd + "' in manual command.")
 	}
@@ -153,6 +158,22 @@ ManualRuntime.prototype.stopMotion = function() {
 	this.keep_moving = false;
 	this.moving = false;
 	this.driver.quit();
+}
+
+ManualRuntime.prototype.fixedMove = function(axis, speed, distance) {
+	if(this.moving) {
+		log.warn("fixedMove: Already moving");
+	} else {
+		var axis = axis.toUpperCase();
+		if('XYZABCUVW'.indexOf(axis) >= 0) {
+			if(speed) {
+				var move = 'G91\nG1 ' + axis + distance.toFixed(5) + ' F' + speed.toFixed(3) + '\n';
+			} else {
+				var move = 'G91\nG0 ' + axis + distance.toFixed(5) + '\n';				
+			}
+			this.driver.gcodeWrite(move);
+		}
+	}
 }
 
 ManualRuntime.prototype.pause = function() {

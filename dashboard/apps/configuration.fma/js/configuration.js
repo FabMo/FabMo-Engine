@@ -24,7 +24,7 @@ var flattenObject = function(ob) {
       for (var x in flatObject) {
         if (!flatObject.hasOwnProperty(x)) continue;
     
-        toReturn[i + '_' + x] = flatObject[x];
+        toReturn[i + '-' + x] = flatObject[x];
       }
     } else {
       toReturn[i] = ob[i];
@@ -41,14 +41,11 @@ function update() {
         configData = data;
         console.log("Read configData");
         ['driver', 'engine', 'opensbp', 'machine'].forEach(function(branchname) {
-            if(branchname === 'machine') {
-              branch = flattenObject(data[branchname]);
-            } else {
-              branch = data[branchname];
-            }
+            branch = flattenObject(data[branchname]);
             for(key in branch) {
               v = branch[key];
-              input = $('#' + branchname + '_' + key);
+              input = $('#' + branchname + '-' + key);
+              console.log(input)
               if(input.length) {
                 input.val(String(v));
               }

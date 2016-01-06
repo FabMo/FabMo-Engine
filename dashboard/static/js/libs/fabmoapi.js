@@ -23,6 +23,7 @@ var FabMoAPI = function(base_url) {
 	this.base_url = url.replace(/\/$/,'');
 
 	this.status = {};
+	this.config = {};
 	this._initializeWebsocket();
 }
 
@@ -98,7 +99,11 @@ FabMoAPI.prototype._setStatus = function(status) {
 
 // Configuration
 FabMoAPI.prototype.getConfig = function(callback) {
-	this._get('/config', callback, callback, 'configuration');
+	callback = callback || function() {};
+	this._get('/config', callback, function(err, data) {
+		this.config = data;
+		callback(err, data);
+	}.bind(this), 'configuration');
 }
 
 FabMoAPI.prototype.setConfig = function(cfg_data, callback) {
@@ -249,6 +254,10 @@ FabMoAPI.prototype.manualHeartbeat = function() {
 
 FabMoAPI.prototype.manualStop = function() {
 	this.executeRuntimeCode('manual', {'cmd': 'stop'});
+}
+
+FabMoAPI.prototype.manualMoveFixed = function(axis, speed, distance) {
+	this.executeRuntimeCode('manual', {'cmd': 'fixed', 'axis' : axis, 'speed' : speed, 'dist' : distance});	
 }
 
 FabMoAPI.prototype.connectToWifi = function(ssid, key, callback) {

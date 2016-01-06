@@ -102,7 +102,6 @@ function clearAppRoot(callback) {
     util.doshell('rm -rf ' + Config.getDataDir('approot'), callback);
 }
 
-
 exports.configureEngine = configureEngine;
 exports.configureDriver = configureDriver;
 exports.configureOpenSBP = configureOpenSBP;

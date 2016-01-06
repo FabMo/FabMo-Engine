@@ -52,7 +52,6 @@ Keyboard.prototype.setOptions = function(options) {
 
 Keyboard.prototype.emit = function(evt, data) {
 	if(evt in this.listeners) {
-		console.info("Emitting " + evt + " event with " + JSON.stringify(data));
 		var listeners = this.listeners[evt];
 		for(var i=0; i<listeners.length; i++) {
 			try {
@@ -110,7 +109,6 @@ Keyboard.prototype.stop = function() {
 
 Keyboard.prototype.onClick = function(evt) {
 	this.setEnabled(!this.enabled);
-	console.log('Click')
 }
 
 

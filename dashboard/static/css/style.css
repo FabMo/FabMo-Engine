@@ -1087,17 +1087,10 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 
 .keypad-button {
-	text-align: center;
-	width  : 64px;
-	height : 64px;
 	border : 2px solid #642315;
 	border-radius: 10px;
 	background : #91331E;
-	color: white;
 	cursor: pointer;
-	line-height: 64px;
-	font-weight: bolder;
-	font-size: 24px;
 	-webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
@@ -1115,10 +1108,41 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .drive-button {
+	color: white;
+	line-height: 64px;
+	font-weight: bolder;
+	font-size: 24px;
+	text-align: center;
+	width  : 64px;
+	height : 64px;
+}
 
+.keyboard-button {
+	color: white;
+	line-height: 64px;
+	font-weight: bolder;
+	font-size: 24px;
+	text-align: center;
+	width  : 64px;
+	height : 64px;
+}
+
+.settings-button {
+	color: white;
+	line-height: 48px;
+	font-weight: bold;
+	font-size: 16px;
+	text-align: center;
+	width  : 100%;
+	height : 48px;
 }
 
 .drive-button-active {
+	background: #5DAA35;
+
+}
+
+.drive-button-active-transient {
 	background: #D48B3A;
 	color: black;
 }
@@ -1128,7 +1152,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	color: white;
 }
 
-.keypad {
+.keypad-table {
 	display: table;
 }
 
