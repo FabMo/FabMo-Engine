@@ -23,7 +23,7 @@ var Keypad = function(id, options) {
 	this.interval = null;
 	this.enabled = false;
 	this.listeners = {'go' : [], 'stop': [], 'nudge':[]}
-	this.pressThreshold = 10;
+	this.pressThreshold = 50;
 	this.pressTime = 250;
 	this.tapInterval = 250;
 }
@@ -41,6 +41,9 @@ Keypad.prototype.init = function() {
 		hammer.on('tap', this.onDriveTap.bind(this));
 		$(element).on('blur', this.onDriveBlur.bind(this));
 		$(element).on('mouseleave', this.onDriveMouseleave.bind(this));
+		$(element).on('touchend', this.end.bind(this));
+		$(document).on('scroll', this.end.bind(this));
+
 	}.bind(this));
 }
 
@@ -111,8 +114,11 @@ Keypad.prototype.stop = function() {
 	this.emit('stop', null);
 }
 
-Keypad.prototype.onDriveRelease = function(evt) {
-	this.setEnabled(false);
+Keypad.prototype.end = function() {
+
+	if(this.enabled) {
+		this.setEnabled(false);
+	}
 	if(this.going) {
 		this.stop();
 	}
@@ -149,7 +155,9 @@ Keypad.prototype.onDrivePress = function(evt) {
 Keypad.prototype.onDriveTap = function(evt) {
 	console.log("driveTap")
 	var e = $(evt.target);
-	if(!this.going) {
+	if(this.going) {
+		this.end();
+	} else {
 		if(e.hasClass('x_pos')) {
 			this.nudge('x', 1);
 		}
@@ -180,18 +188,21 @@ Keypad.prototype.onDriveTap = function(evt) {
 }
 
 Keypad.prototype.onDriveMouseleave = function(evt) {
-	this.setEnabled(false);
-	if(this.going) {
-		this.stop();
-	}
+	this.end();
+}
+
+Keypad.prototype.onDriveTouchend = function(evt) {
+	this.end();
 }
 
 Keypad.prototype.onDriveBlur = function(evt) {
-	this.setEnabled(false);
-	if(this.going) {
-		this.stop();
-	}
+	this.end();
 }
+
+Keypad.prototype.onDriveRelease = function(evt) {
+	this.end();
+}
+
 
 return Keypad;
 }));
