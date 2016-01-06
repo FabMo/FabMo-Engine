@@ -95,31 +95,5 @@ define(function(require) {
 		}
 	});
 
-	views.WidgetView = Backbone.View.extend({
-		template : _.template(require('text!templates/widget.html')),
-		initialize : function() {
-			_.bindAll(this, 'render');
-			this.render();
-		},
-		render : function() {
-			this.setElement('#'+this.model.get('host_id'));
-			this.$el.append(this.template(this.model.toJSON()));
-			return this;
-		}
-	});
-
-	views.SingleMachineView = Backbone.View.extend({
-		template : _.template(require('text!templates/single-machine-view.html')),
-		initialize : function() {
-			_.bindAll(this, 'render');
-			this.render();
-		},
-		render : function() {
-			this.model.set("id",this.model.cid);
-			this.$el.append(this.template(this.model.toJSON()));
-			return this;
-		}
-	});
-
 	return views;
 });

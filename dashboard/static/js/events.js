@@ -1,11 +1,11 @@
 define(function(require) {
-	require('jquery');
+	var $ = require('jquery');
 	var foundation = require('foundation');
 	var toastr = require('toastr');
 
 	// Events and keypress handlers in the FabMo-Dashboard
 
-	/********** Layout Resize Fonctions **********/
+	/********** Layout Resize Functions **********/
 	
  	var openDROPush = function () {
 		 $('#right-menu').css('right', '0');

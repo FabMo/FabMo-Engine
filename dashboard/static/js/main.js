@@ -23,6 +23,7 @@ define(function(require) {
 
 	var wheel, keypad, keyboard;
 	
+	// API object defines our connection to the tool.
 	var engine = new FabMoAPI();
 
 	// Initial read of engine configuration
@@ -61,7 +62,6 @@ define(function(require) {
 			// Configure handwheel input
 			try {
 				wheel = setupHandwheel();
-
 			} catch(e) {
 				console.error(e);
 			}

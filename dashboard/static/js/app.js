@@ -4,7 +4,7 @@
  */
 requirejs.config({
     baseUrl: '/js',
-    urlArgs: "ts="+new Date().getTime(),
+    /*urlArgs: "ts="+new Date().getTime(),*/
     paths: {
     	'jquery' : 'libs/jquery.min',
     	'backbone' : 'libs/backbone',
