@@ -402,13 +402,13 @@ log.debug("320   currentZ = " + currentZ + "   Plg = " + Plg + "   noPullUp = " 
 
   if (optCG === 4 ) { // Add bottom circle if spiral with bottom clr is specified
     if( endX != startX || endY != startY ) {	//If an arc, pullup and jog back to the start position
-      // this.emit_move('G0',{'Z':safeZCG});
-      // this.cmd_posz = safeZCG;
+      this.emit_move('G0',{'Z':safeZCG});
+      this.cmd_posz = safeZCG;
       this.emit_move('G0',{ 'X':startX, 'Y':startY });
       this.cmd_posx = startX;
       this.cmd_posy = startY;
-      // this.emit_move('G1',{ 'Z':currentZ, 'F':feedrateZ });
-      // this.cmd_posz = currentZ;
+      this.emit_move('G1',{ 'Z':currentZ, 'F':feedrateZ });
+      this.cmd_posz = currentZ;
     }
     if ( Math.abs(propX) !== Math.abs(propY) ) {      // calculate out to an interpolated ellipse
 
