@@ -39,6 +39,7 @@ function SBPRuntime() {
 	this.event_teardown = {};
 	this.running = false;
 	this.quit_pending = false;
+	this.cmd_result = 0;
 	this.cmd_posx = 0;
 	this.cmd_posy = 0;
 	this.cmd_posz = 0;
@@ -1134,6 +1135,8 @@ SBPRuntime.prototype.emit_gcode = function(s) {
 SBPRuntime.prototype.emit_move = function(code, pt) {
 	var gcode = code;
 	var i;
+//log.debug("   emit_move code = " + code);
+//log.debug("   emit_move pt = " + JSON.stringify(pt));
 
 	if( code === "G0" || code === "G1" ){
 		pt = this.transformation(pt);

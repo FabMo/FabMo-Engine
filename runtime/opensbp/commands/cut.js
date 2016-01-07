@@ -140,7 +140,6 @@ exports.CP = function(args) {
   var optCP = args[11] !== undefined ? args[11] : undefined;
   var noPullUp = args[12] !== undefined ? args[12] : undefined;
   var plgFromZero = args[13] !== undefined ? args[13] : undefined;
-  var currentZ = startZ;
   var res = 5;
   var comp = 0;
   var feedrate = 0;
@@ -186,6 +185,8 @@ exports.CP = function(args) {
   var endX = centerX + radius * Math.cos(Eradians);
   var endY = centerY + radius * Math.sin(Eradians);
 
+// log.debug(" WBang = " + WBang );
+// log.debug(" WEang = " + WEang );
 // log.debug(" StartX = " + startX );
 // log.debug(" posX = " + this.cmd_posx );
 // log.debug(" StartY = " + startY );
@@ -194,18 +195,20 @@ exports.CP = function(args) {
   if( this.cmd_posx !== startX || this.cmd_posy !== startY ){
       feedrate = this.movespeed_xy * 60;
       var safeZ = config.opensbp.get('safeZpullUp');
-      log.debug("currentZ = " + currentZ);
+      log.debug("startZ = " + startZ);
       log.debug("safeZ = " + safeZ );
-      if( currentZ < safeZ ){
+      if( startZ < safeZ ){
         this.emit_move('G0',{'Z':safeZ,'F':feedrate});
         this.cmd_posz = safeZ;
       }
       this.emit_move('G0',{'X':startX,'Y':startY});
       this.cmd_posx = startX;
       this.cmd_posy = startY;
-      if( this.cmd_posz !== currentZ ){
-        this.emit_move('G1',{'Z':currentZ,'F':feedrate});
-        this.cmd_posz = safeZ;              
+      if( this.cmd_posz !== startZ ){
+  log.debug( "    startZ = " + startZ );
+  log.debug( "    z pos  = " + this.cmd_posz );      
+        this.emit_move('G1',{'Z':startZ,'F':feedrate});
+        this.cmd_posz = startZ;              
       }
   }
 
@@ -248,20 +251,24 @@ exports.CG = function(args) {
 	var currentZ;
 	var outStr;
   var tolerance = 0.000001;
+  var Pocket_StepX = 0;
+  var Pocket_StepY = 0;
+  var PocketAngle = 0;
+  var j = 0;
 
-  // log.debug("CG: " + JSON.stringify(args));
+  log.debug("CG: " + JSON.stringify(args));
 
-  // log.debug("start X:" + startX );
-  // log.debug("start Y:" + startY );
-  // log.debug("start Z:" + startZ );
-  // log.debug("end X:" + endX );
-  // log.debug("end Y:" + endY );
-  // log.debug("center X:" + centerX );
-  // log.debug("center Y:" + centerY );
-  // log.debug("I-O-T:" + OIT );
-  // log.debug("Dir:" + Dir );
-  // log.debug("reps:" + reps );
-  // log.debug("Plg:" + Plg );  
+  log.debug("start X:" + startX );
+  log.debug("start Y:" + startY );
+  log.debug("start Z:" + startZ );
+  log.debug("end X:" + endX );
+  log.debug("end Y:" + endY );
+  log.debug("center X:" + centerX );
+  log.debug("center Y:" + centerY );
+  log.debug("I-O-T:" + OIT );
+  log.debug("Dir:" + Dir );
+  log.debug("reps:" + reps );
+  log.debug("Plg:" + Plg );  
 
   if ( centerX === 0 && centerY === 0 ){
     throw( "Zero diameter circle: CG" );
@@ -290,35 +297,41 @@ exports.CG = function(args) {
   if (Plg !== 0 && plgFromZero == 1){ currentZ = 0; }
   else { currentZ = startZ; }
   var safeZCG = currentZ + config.opensbp.get('safeZpullUp');
-  var spiralPlunge = (optCG === 2 || optCG === 4) ? 1 : 0;
+  var spiralPlunge = (optCG === 2 || optCG === 3 || optCG === 4) ? 1 : 0;
 
   if ( optCG == 2 ) {
   	circRadius = Math.sqrt((centerX * centerX) + (centerY * centerY));
-  	PocketAngle = Math.atan2(centerY, centerX);								// Find the angle of the step over between passes
+  	PocketAngle = Math.atan2(centerY, centerX);				// Find the angle of the step over between passes
   	stepOver = config.opensbp.get('cutterDia') * ((100 - config.opensbp.get('pocketOverlap')) / 100);	// Calculate the overlap
-  	Pocket_StepX = stepOver * Math.cos(PocketAngle);						// Calculate the stepover in X based on the radius of the cutter * overlap
-  	Pocket_StepY = stepOver * Math.sin(PocketAngle);						// Calculate the stepover in Y based on the radius of the cutter * overlap
+  	Pocket_StepX = stepOver * Math.cos(PocketAngle);	// Calculate the stepover in X based on the radius of the cutter * overlap
+  	Pocket_StepY = stepOver * Math.sin(PocketAngle);	// Calculate the stepover in Y based on the radius of the cutter * overlap
   }
 
-  if ( plgFromZero == 1 ) {										// If plunge depth is specified move to that depth * number of reps
-    this.emit_move('G1',{ 'Z':currentZ, 'F':feedrateZ });
+  if ( plgFromZero == 1 && currentZ !== Plg && optCG < 3 ) {	 // If plunge depth is specified move to that depth
+    log.debug("plgFromZero = " + plgFromZero);
+    this.emit_move('G1',{ 'Z':Plg, 'F':feedrateZ });
+    this.cmd_posz = Plg;
   }
 
   var nextX = 0;
   var nextY = 0;
 
-  for (i=0; i<reps;i++){
-  	if (Plg !== 0 && optCG < 3 ) {										// If plunge depth is specified move to that depth * number of reps
+  for (var i=0; i<reps;i++){
+log.debug("320   currentZ = " + currentZ + "   Plg = " + Plg + "   noPullUp = " + noPullUp + "   optCG = " + optCG);
+  	if (Plg !== 0 && optCG < 3 ) {  // If plunge depth is specified move to that depth * number of reps
   		currentZ += Plg;
       this.emit_move('G1',{ 'Z':currentZ, 'F':feedrateZ });
+      this.cmd_posz = currentZ;
    	}  
-   	if (optCG === 2) { 															// Pocket circle from the outside inward to center
+   	if (optCG === 2) { 	// Pocket circle from the outside inward to center
    		// Loop passes until overlapping the center
    		for (j=0; (Math.abs(Pocket_StepX * j) < circRadius) && (Math.abs(Pocket_StepY * j) < circRadius) ; j++){
         nextX = (startX + (j*Pocket_StepX));
         nextY = (startY + (j*Pocket_StepY));
         if ( j > 0 ) {
     	   	this.emit_move('G1',{ 'X':nextX, 'Y':nextY, 'F':feedrateXY });
+          this.cmd_posx = nextX;
+          this.cmd_posy = nextY;
         }
         if ( Math.abs(propX) !== Math.abs(propY) ) {      // calculate an interpolated ellipse
           this.interpolate_circle(startX,startY,startZ,
@@ -334,10 +347,14 @@ exports.CG = function(args) {
                                     'I':(centerX - (j*Pocket_StepX)),
                                     'J':(centerY - (j*Pocket_StepY)),
                                     'F':feedrateXY });
+            this.cmd_posx = nextX;
         }										
     	}
     	this.emit_move('G0',{'Z':safeZCG});
+      this.cmd_posz = safeZCG;
       this.emit_move('G0',{ 'X':startX, 'Y':startY });
+      this.cmd_posx = startX;
+      this.cmd_posy = startY;
     } 
     else {
       if ( Math.abs(propX) !== Math.abs(propY) ) {      // calculate out to an interpolated ellipse
@@ -353,26 +370,31 @@ exports.CG = function(args) {
         else { 
           outStr = 'G3';
         }			// CounterClockwise circle/arc
-        
-        if (parseInt(startX * 100000) !== parseInt(endX * 100000)) {
-          emitObj.X = endX;
-        }
-        if (parseInt(startY * 100000) !== parseInt(endY * 100000)) {
-          emitObj.Y = endY;
-        }
-
+//        if (parseInt(startX * 100000) !== parseInt(endX * 100000)) {
+        emitObj.X = endX;
+//        }
+//        if (parseInt(startY * 100000) !== parseInt(endY * 100000)) {
+        emitObj.Y = endY;
+//        }
 		    emitObj.I = centerX;
         emitObj.J = centerY;
-        if (Plg !== 0 && optCG === 3 ) { 
-          emitObj.Z = (currentZ + Plg); 
+        if (Plg !== 0 && optCG > 2 ) { 
           currentZ += Plg;
+          emitObj.Z = currentZ; 
+          this.cmd_posz = currentZ; 
         } // Add Z for spiral plunge
-        emitObj.F = feedrateZ;
-        this.emit_move(outStr,emitObj); 
+        emitObj.F = feedrateXY;
+        this.emit_move(outStr,emitObj);
+        this.cmd_posx = endX;
+        this.cmd_posy = endY;
 	    	
         if( i+1 < reps && ( endX != startX || endY != startY ) ){					//If an arc, pullup and jog back to the start position
-          this.emit_move('G0',{'Z':safeZCG});
+          if ( this.cmd_posz != safeZCG ) {
+            this.emit_move('G0',{'Z':safeZCG});
+          }
           this.emit_move('G0',{ 'X':startX, 'Y':startY });
+          this.cmd_posx = startX;
+          this.cmd_posy = startY;
         }
 		  }
     }
@@ -380,9 +402,13 @@ exports.CG = function(args) {
 
   if (optCG === 4 ) { // Add bottom circle if spiral with bottom clr is specified
     if( endX != startX || endY != startY ) {	//If an arc, pullup and jog back to the start position
-      this.emit_move('G0',{'Z':safeZCG});
+      // this.emit_move('G0',{'Z':safeZCG});
+      // this.cmd_posz = safeZCG;
       this.emit_move('G0',{ 'X':startX, 'Y':startY });
-      this.emit_move('G1',{ 'Z':currentZ, 'F':feedrateZ });
+      this.cmd_posx = startX;
+      this.cmd_posy = startY;
+      // this.emit_move('G1',{ 'Z':currentZ, 'F':feedrateZ });
+      // this.cmd_posz = currentZ;
     }
     if ( Math.abs(propX) !== Math.abs(propY) ) {      // calculate out to an interpolated ellipse
 
@@ -390,19 +416,28 @@ exports.CG = function(args) {
     else {
       if (Dir === 1 ){ outStr = "G2"; } 		// Clockwise circle/arc
       else { outStr = "G3"; }					// CounterClockwise circle/arc
+// log.debug("409");
+// log.debug("startX = " + startX);
+// log.debug("startY = " + startY);
+// log.debug("centerX = " + centerX);
+// log.debug("centerY = " + centerY);
+// log.debug("Pocket_StepX = " + Pocket_StepX);
+// log.debug("Pocket_StepY = " + Pocket_StepY);
+// log.debug("J = " + j);
         this.emit_move(outStr,{ 'X':(startX + (j*Pocket_StepX)),
                                 'Y':(startY + (j*Pocket_StepY)),
                                 'I':(centerX - (j*Pocket_StepX)),
                                 'J':(centerY - (j*Pocket_StepY)),
                                 'F':feedrateXY });
+        this.cmd_posx = startX;
+        this.cmd_posy = startY;
     }
   }
 
   if( noPullUp === 0 && currentZ != startZ){    	//If No pull-up is set to YES, pull up to the starting Z location
     this.emit_move('G0',{'Z':startZ});
+    this.cmd_posz = startZ;
   }
-
-  // log.debug("End of CG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
 };
 
