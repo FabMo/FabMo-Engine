@@ -55,6 +55,11 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 			console.info("Websocket disconnected");
 		}.bind(this));
 
+		this.socket.on('connect_error', function() {
+			this.emit('disconnect');
+			console.info("Websocket disconnected (connection error)");
+		}.bind(this));
+
 	}
 }
 
