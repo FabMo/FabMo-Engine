@@ -481,7 +481,6 @@ G2.prototype.handleStatusReport = function(response) {
 					if(expectation[stat] === null) {
 						this.expectations.push(expectation);
 					} else {
-						console.log(response)
 						expectation[stat](this);
 					}
 				} else if(null in expectation) {

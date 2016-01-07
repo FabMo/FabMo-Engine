@@ -332,6 +332,10 @@ SBPRuntime.prototype._continue = function() {
 			}
 		}
 
+		if(this.quit_pending) {
+			return this._end();
+		}
+
 		// Pull the current line of the program from the list
 		line = this.program[this.pc];
 		if(this._breaksStack(line)) {
@@ -920,6 +924,7 @@ SBPRuntime.prototype.init = function() {
 	this.output = [];				// Used in simulation mode only
 	this.event_handlers = {};		// For ON INPUT etc..
 	this.end_callback = null;
+	this.quit_pending = false;
 };
 
 // Compile an index of all the labels in the program

@@ -258,8 +258,7 @@ Machine.prototype.getRuntime = function(name) {
 
 Machine.prototype.setState = function(source, newstate, stateinfo) {
 	if ((source === this) || (source === this.current_runtime)) {
-		log.info("Got a machine state change: " + this.status.state)	
-
+		log.info("Got a machine state change: " + newstate)	
 		this.status.state = newstate;
 		if(stateinfo) {
 			this.status.info = stateinfo
@@ -304,8 +303,8 @@ Machine.prototype.quit = function() {
 };
 
 Machine.prototype.resume = function() {
-		if(this.current_runtime) {
-	current_runtime.resume();
+	if(this.current_runtime) {
+		this.current_runtime.resume();
 	}
 
 };
