@@ -96,12 +96,12 @@
       var text = editor.getValue();
       switch(lang) {
         case "gcode":
-          fabmo.submitJob(text, {filename: job_title || 'editor.nc', description: job_description || 'G-Code file from the editor'}, function(err, result) {
+          fabmo.submitJob(text, {filename: job_title || 'editor.nc', description: job_description || 'G-Code job from the editor'}, function(err, result) {
             fabmo.launchApp('job-manager');
           });
         break;
         case "opensbp":
-          fabmo.submitJob(text, {filename: job_title || 'editor.sbp', description: job_description || 'OpenSBP file from the editor.'}, function(err, result) {
+          fabmo.submitJob(text, {filename: job_title || 'editor.sbp', description: job_description || 'OpenSBP job from the editor.'}, function(err, result) {
             fabmo.launchApp('job-manager');
           });
         break;
