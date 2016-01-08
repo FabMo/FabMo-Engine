@@ -377,30 +377,10 @@ var getJobFile = function(req, res, next) {
             };
             res.json(answer);                        
         } else {
-            fs.stat(file.path, function(err, stat) {
-                if (err) { 
-                    var answer = {
-                        status:"fail",
-                        data:{file:err}
-                    };
-                    res.json(answer);                        
-                }
-                res.status(200);
-                res.setHeader('content-type', 'application/octet-stream');
+            fs.readFile(file.path, function(err, data) {
+                res.setHeader('content-type', 'application/download-this-file');
                 res.setHeader('content-disposition', 'filename="' + file.filename + '"');
-                //console.log("Content length: " + stat.size)
-                //res.setHeader('content-length', stat.size);
-                var readStream = fs.createReadStream(file.path);
-                readStream.on('end', function() {
-                    console.log("end of stream");
-                    res.end();
-                });
-                res.on('end', function() {
-                    console.log("end of response");
-
-                })
-                readStream.pipe(res);
-                next();
+                res.send(data, 200);
             });
         }
     });
