@@ -355,6 +355,7 @@ SBPRuntime.prototype._continue = function() {
 					}
 				} else {
 					try {
+						console.log("executing + " + line)
 						this._execute(line, this._continue.bind(this));
 					} catch(e) {
 						return this._end(e.message);
@@ -674,6 +675,8 @@ SBPRuntime.prototype._execute = function(command, callback) {
 		this.pc += 1;
 		return;
 	}
+
+	log.debug("Executing: " + JSON.stringify(command));
 	// All correctly parsed commands have a type
 	switch(command.type) {
 
@@ -708,12 +711,14 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 		case "goto":
 			if(command.label in this.label_index) {
-				this.pc = this.label_index[command.label];
-				log.debug("Hit a GOTO: Going to line " + this.pc + "(Label: " + command.label + ")");
+				var pc = this.label_index[command.label];
+				log.debug("Hit a GOTO: Going to line " + pc + "(Label: " + command.label + ")");
+				this.pc = pc;
 				setImmediate(callback);
 				return true;
 			} else {
-				throw "Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc;
+
+				throw new Error("Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc);
 			}
 			break;
 
@@ -1109,6 +1114,7 @@ SBPRuntime.prototype._pushFileStack = function() {
 	//frame.user_vars = this.user_vars
 	frame.current_chunk = this.current_chunk
 	frame.end_callback = this.end_callback
+	frame.label_index = this.label_index
 	this.file_stack.push(frame)
 }
 
@@ -1118,6 +1124,7 @@ SBPRuntime.prototype._popFileStack = function() {
 	this.program = frame.program
 	this.stack = frame.stack
 	//this.user_vars = frame.user_vars
+	this.label_index = frame.label_index;
 	this.current_chunk = frame.current_chunk
 	this.end_callback = frame.end_callback
 }

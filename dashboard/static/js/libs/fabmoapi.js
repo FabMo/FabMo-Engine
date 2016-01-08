@@ -17,7 +17,9 @@ var FabMoAPI = function(base_url) {
 	this.events = {
 		'status' : [],
 		'disconnect' : [],
-		'connect' : []
+		'connect' : [],
+		'job_start' : [],
+		'job_end' : []
 	};
 	var url = window.location.origin;
 	this.base_url = url.replace(/\/$/,'');
@@ -55,6 +57,11 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 			console.info("Websocket disconnected");
 		}.bind(this));
 
+		this.socket.on('connect_error', function() {
+			this.emit('disconnect');
+			console.info("Websocket disconnected (connection error)");
+		}.bind(this));
+
 	}
 }
 
@@ -74,7 +81,15 @@ FabMoAPI.prototype.on = function(message, func) {
 }
 
 FabMoAPI.prototype._setStatus = function(status) {
+	var old_status = this.status;
 	this.status = status;
+	if(old_status.job && !status.job) {
+		this.emit('job_end', old_status.job);
+	}
+	if(!old_status.job && status.job) {
+		this.emit('job_start', status.job);
+	}
+
 }
 
 FabMoAPI.prototype.ping = function(callback) {
@@ -91,10 +106,6 @@ FabMoAPI.prototype.ping = function(callback) {
 		});
 		this.socket.emit('ping');
 	}
-}
-
-FabMoAPI.prototype._setStatus = function(status) {
-	this.status = status;
 }
 
 // Configuration
