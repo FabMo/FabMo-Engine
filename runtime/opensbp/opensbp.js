@@ -56,7 +56,8 @@ function SBPRuntime() {
 	this.nonXfrm_posz = 0; 
 	this.nonXfrm_posa = 0; 
 	this.nonXfrm_posb = 0; 
-	this.nonXfrm_posc = 0; 
+	this.nonXfrm_posc = 0;
+	this.lastNoZPullup = 0; 
 }
 util.inherits(SBPRuntime, events.EventEmitter);
 
