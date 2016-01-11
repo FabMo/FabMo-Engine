@@ -109,7 +109,7 @@
     }
 
     function set_language(language) {
-
+      console.log("Setting language");
       switch(language) {
         case 'opensbp':
           $("#app-header").text("Editor (OpenSBP)");
@@ -133,6 +133,7 @@
     }
 
     function loadFromBrowser() {
+      console.log("loading from browser")
       if(supports_html5_storage()) {
         var language = localStorage.fabmo_editor_language || 'gcode';
         set_language(language);
@@ -244,6 +245,10 @@
       editor.setTheme("ace/theme/eclipse");
       editor.setShowPrintMargin(false);
       editor.$blockScrolling = Infinity;
+      editor.on("change", function() {
+        console.log("clearing selection")
+        editor.clearSelection();
+      });
       editor.commands.addCommand({
         name: "run_immediate",
         bindKey: {win: "Ctrl-Enter", mac: "Command-Enter"},
@@ -269,12 +274,14 @@
       });
 
       function resize() {
+        console.log("resizing");
         var h = window.innerHeight;
         var h2 = $('#topbar').height();
         $("#editor").css('height',h-h2);      
       }
 
       $(window).resize(function(){
+        console.log("resize")
         resize();
       });
       resize();

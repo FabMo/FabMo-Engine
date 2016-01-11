@@ -1168,4 +1168,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	padding: 4px;
 }
 
+#modalDialogButtons {
+	width: 100%;
+	text-align: right;
+}
 

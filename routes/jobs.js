@@ -377,10 +377,13 @@ var getJobFile = function(req, res, next) {
             };
             res.json(answer);                        
         } else {
-            res.setHeader('content-type', 'applications/octet-stream');
-            res.setHeader('content-disposition', 'filename="' + file.filename + '"');
-            var readStream = fs.createReadStream(file.path);
-            readStream.pipe(res);
+            fs.readFile(file.path, function(err, data) {
+                res.header('Content-Type', 'text/plain');
+                res.header('Content-Disposition', 'attachment; filename="' + file.filename + '"');
+                res.status(200);
+                res.write(data);
+                res.end();
+            });
         }
     });
 };
