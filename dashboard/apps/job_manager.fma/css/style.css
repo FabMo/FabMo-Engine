@@ -25,6 +25,7 @@ body {
 
 .dropzone {
   min-height: 170px;
+  overflow: visible;
 }
 
 #dropzone .hovershow {
@@ -104,21 +105,23 @@ h1, h2, h3, h4, h5, h6 {
  }
  .without-job{
    position: absolute;
-   left: -400px;
+   left: -1000px;
+   top: 0;
+   transition: all 0.5s;
+ }
+ .with-job{
+   position: absolute;
+   left: -1000px;
+   top: 0;
+   transition: all 0.5s;
+ 
  }
  
  .jobs-wrapper{
-   height: auto;
-   overflow: hidden;
+   position: relative;
+ 
  }
- .nextJobTitle{
-   display:none;
-   transition: all 0.5s;
- }
-  .nextJobDesc{
-   display:none;
-   transition: all 0.5s;
- }
+
 td.details-control {
     width: 50px;
     cursor: pointer;
@@ -790,9 +793,14 @@ td.edit span{
     transform: rotate(450deg);
   }
 }
-
+#tabpending{
+  position: relative;
+}
 .play-button {
   display: none;
+  position: absolute;
+  top: 60;
+  right: 0;
 }
 
 .radial_progress {

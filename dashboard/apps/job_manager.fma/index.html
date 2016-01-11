@@ -508,27 +508,45 @@
 			}
 		});
 	}
+	var setJobheight = function () {
+		var w = $('.with-job').height();
+		var wo = $('.without-job').height();
+		var height = 0;
+		if (w > wo) {
+			height = w;
+			
+		} else {
+			height = wo;
+			
+		}
+		console.log(height);
+		$('.jobs-wrapper').height(height);
+	};
+	setJobheight();
+	$( window ).resize(function() {
+  		setJobheight();
+	});
    var noJob = function () {
-	   		$('.nextJobTitle').slideUp();
-			$('.nextJobDesc').slideUp();
+	   		$('.nextJobTitle').text('');
+			$('.nextJobDesc').text('');
+			$('.with-job').css('left','-1000px');
 			$('.cancel').slideUp();
 			$('.download').slideUp();
 			$('.edit').slideUp();
 			$('.preview').slideUp();
 			$('.play-button').slideUp();
-			$('.without-job').show();
+			$('.without-job').css('left', '10px');;
    };
    
    var nextJob= function (arr) {
-	   		$('.without-job').hide();
+	   		$('.without-job').css('left','-1000px');;
 			$('.cancel').data('id', arr[0]._id);
 			$('.preview').data('id', arr[0]._id);
 			$('.download').data('id', arr[0]._id);
 			$('.edit').data('id', arr[0]._id);
+			$('.with-job').css('left','10px');
 			$('.nextJobTitle').text(arr[0].name);
 			$('.nextJobDesc').text(arr[0].description);
-			$('.nextJobTitle').show();
-			$('.nextJobDesc').show();
 			$('.cancel').show();
 			$('.download').show();
 			$('.edit').show();
@@ -550,8 +568,7 @@
 		}, 1000);
 		$('.up-next').css('left', '-200px');
 		$('.now-running').css('left', '0px');
-		$('.nextJobTitle').show();
-		$('.nextJobDesc').show();
+		$('.with-job').css('left','10px');
 		$('.play-button').show();
    };
  fabmo.requestStatus(function(err, data) {
