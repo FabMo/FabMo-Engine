@@ -252,10 +252,10 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 
 		// For now, pause translates to "dwell" which is just a G-Code
 		case "pause":
-			if(cmd.message) {
-				result = true;
+			if(cmd.expr) {
+				result = false;
 			} else {
-				result =  false;				
+				result =  true;				
 			}
 			break;
 
@@ -793,7 +793,7 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			} else {
 				this.paused = true;
 				this.continue_callback = callback;
-				this.machine.setState(this, 'paused', {'message' : command.message });
+				this.machine.setState(this, 'paused', {'message' : command.message || "Paused." });
 				return true;
 			}
 			break;

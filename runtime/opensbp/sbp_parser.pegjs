@@ -43,6 +43,7 @@ end
 
 pause
    = name:("PAUSE"i) __ arg:(e:expression {return {expr: e}} / msg:quotedstring {return {message : msg}})? {
+    var arg = arg || {};
     if(arg['expr']) { return {'type' : 'pause', 'expr' : arg.expr}}
     else if(arg['message']) { return {'type' : 'pause', 'message' : arg.message}}
     else {return {'type':'pause'}};

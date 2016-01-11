@@ -68,7 +68,7 @@ module.exports = (function() {
         peg$c25 = function(name, e) {return {expr: e}},
         peg$c26 = function(name, msg) {return {message : msg}},
         peg$c27 = function(name, arg) {
-            console.log(JSON.stringify(arg));
+            var arg = arg || {};
             if(arg['expr']) { return {'type' : 'pause', 'expr' : arg.expr}}
             else if(arg['message']) { return {'type' : 'pause', 'message' : arg.message}}
             else {return {'type':'pause'}};
@@ -124,7 +124,7 @@ module.exports = (function() {
         peg$c76 = { type: "literal", value: ".", description: "\".\"" },
         peg$c77 = function(f) { return parseFloat(f.join(""));},
         peg$c78 = /^[^,\n"]/,
-        peg$c79 = { type: "class", value: "[^,\\n\\\"]", description: "[^,\\n\\\"]" },
+        peg$c79 = { type: "class", value: "[^,\\n\"]", description: "[^,\\n\"]" },
         peg$c80 = function(s) { return s.join("").trim() || undefined; },
         peg$c81 = "\"",
         peg$c82 = { type: "literal", value: "\"", description: "\"\\\"\"" },
