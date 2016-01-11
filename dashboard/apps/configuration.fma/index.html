@@ -1655,8 +1655,6 @@
         var v = parts[1];
         if(v === "gdi") {
           new_config.driver.gdi = this.value;
-          console.log("Distance mode = " + JSON.stringify(new_config));
-          console.log("this.value = " + this.value);
           if (this.value == 0) { fabmo.runGCode("G90"); }
           else { fabmo.runGCode("G91"); }
           fabmo.setConfig(new_config, function(err, data) {
@@ -1707,7 +1705,7 @@
             new_config.driver['6tr']=(360/configData.driver["6sa"])*configData.driver["6mi"]/this.value;
           } 
         }
-        console.log("units = " + JSON.stringify(new_config));
+        // console.log("units = " + JSON.stringify(new_config));
         fabmo.setConfig(new_config, function(err, data) {
           setTimeout(update, 500);
         });
