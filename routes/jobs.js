@@ -378,9 +378,11 @@ var getJobFile = function(req, res, next) {
             res.json(answer);                        
         } else {
             fs.readFile(file.path, function(err, data) {
-                res.setHeader('content-type', 'application/download-this-file');
-                res.setHeader('content-disposition', 'filename="' + file.filename + '"');
-                res.send(data, 200);
+                res.header('Content-Type', 'text/plain');
+                res.header('Content-Disposition', 'attachment; filename="' + file.filename + '"');
+                res.status(200);
+                res.write(data);
+                res.end();
             });
         }
     });

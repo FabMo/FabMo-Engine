@@ -16,6 +16,7 @@ var MAX_INPUTS = 16;
 function FabMoUI(tool, options){
 	this.event_handlers = {
 		'error' : [],
+		'message' : [],
 		'status' : [],
 		'disconnect' : [],
 		'reconnect' : []
@@ -157,8 +158,14 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	that.tool.state=status.state;
 
 	if(prev_state !== status.state) {
-		if(status.state === 'stopped' && status.info.error) {
-			this.emit('error', status.info.error);
+		if(status.state === 'stopped') {
+			if(status.info.error) {
+				this.emit('error', status.info.error);
+			}	
+		} else if(status.state === 'paused') {
+			if(status.info.message) {
+				this.emit('message', status.info.message);
+			}	
 		}
 	}
 

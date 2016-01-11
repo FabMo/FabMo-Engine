@@ -57,6 +57,8 @@ function SBPRuntime() {
 	this.nonXfrm_posa = 0; 
 	this.nonXfrm_posb = 0; 
 	this.nonXfrm_posc = 0; 
+	this.paused = false;
+	this.continue_callback = null;
 }
 util.inherits(SBPRuntime, events.EventEmitter);
 
@@ -249,7 +251,11 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 
 		// For now, pause translates to "dwell" which is just a G-Code
 		case "pause":
-			result =  false;
+			if(cmd.message) {
+				result = true;
+			} else {
+				result =  false;				
+			}
 			break;
 
 		case "cond":
@@ -329,7 +335,7 @@ SBPRuntime.prototype._continue = function() {
 				return this._dispatch(this._continue.bind(this));
 			} else {
 				log.info("No g-codes remain to dispatch.")
-				return this._end();
+				return this._end(this.end_message);
 			}
 		}
 
@@ -705,6 +711,9 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 		case "end":
 			this.pc = this.program.length;
+			if(command.message) {
+				this.end_message = command.message;
+			}
 			return false;
 			break;
 
@@ -779,9 +788,13 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			this.pc += 1;
 			if(command.expr) {
 				this.emit_gcode('G4 P' + this._eval(command.expr));
+				return false;
+			} else {
+				this.paused = true;
+				this.continue_callback = callback;
+				this.machine.setState(this, 'paused', {'message' : command.message });
+				return true;
 			}
-			// Todo handle indefinite pause or pause with message
-			return false;
 			break;
 
 		case "event":
@@ -931,6 +944,7 @@ SBPRuntime.prototype.init = function() {
 	this.event_handlers = {};		// For ON INPUT etc..
 	this.end_callback = null;
 	this.quit_pending = false;
+	this.end_message = null;
 };
 
 // Compile an index of all the labels in the program
@@ -1273,7 +1287,7 @@ SBPRuntime.prototype.pause = function() {
 }
 
 SBPRuntime.prototype.quit = function() {
-	if(this.machine.status.state == 'stopped') {
+	if(this.machine.status.state == 'stopped' || this.paused) {
 		if(this.machine.status.job) {
 			this.machine.status.job.fail(function(err, job) {
 				this.machine.status.job=null;
@@ -1293,7 +1307,13 @@ SBPRuntime.prototype.quit = function() {
 }
 
 SBPRuntime.prototype.resume = function() {
-	this.driver.resume();
+	if(this.paused) {
+		this.machine.setState(this, 'running');
+		this.paused = false;
+		this.continue_callback();
+	} else {
+		this.driver.resume();		
+	}
 }
 
 exports.SBPRuntime = SBPRuntime;
