@@ -1676,7 +1676,7 @@
         new_config.driver = {};
         var v = parts[1];
 
-        if (!configData) { return;}
+        if (!configData) { return; }
         if(v !== undefined) {
           if(v === "units1"){
             new_config.driver['1tr']=(360/configData.driver["1sa"])*configData.driver["1mi"]/this.value;
@@ -1696,11 +1696,11 @@
           else if(v === "units6"){
             new_config.driver['6tr']=(360/configData.driver["6sa"])*configData.driver["6mi"]/this.value;
           } 
-        }
         // console.log("units = " + JSON.stringify(new_config));
-        fabmo.setConfig(new_config, function(err, data) {
-          setTimeout(update, 500);
-        });
+          fabmo.setConfig(new_config, function(err, data) {
+            setTimeout(update, 500);
+          });
+        }
       });
     });
   </script>
