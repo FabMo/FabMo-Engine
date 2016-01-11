@@ -232,6 +232,14 @@ $(document).on('close.fndtn.reveal', '[data-reveal]', function (evt) {
   }
 });
 
+// listen for escape key press to quit the engine
+$(document).on('keyup', function(e) {
+    if(e.keyCode == 27) {
+        console.log("ESC key pressed - quitting engine.");
+        dashboard.engine.quit();
+    }
+});
+
 // Handlers for the home/probe buttons
 $('.button-zerox').click(function(e) {dashboard.engine.sbp('ZX'); });  
 $('.button-zeroy').click(function(e) {dashboard.engine.sbp('ZY'); });  
