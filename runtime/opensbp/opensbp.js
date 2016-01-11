@@ -58,6 +58,7 @@ function SBPRuntime() {
 	this.nonXfrm_posb = 0; 
 	this.nonXfrm_posc = 0; 
 	this.paused = false;
+	this.lastNoZPullup = 0; 
 	this.continue_callback = null;
 }
 util.inherits(SBPRuntime, events.EventEmitter);
@@ -1206,13 +1207,13 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 
 			if( this.transforms.level.apply === true  && code !== "G0") {
 				var callback = function() {
-					var x = (pt.X === undefined) ? emit_moveContext.cmd_posx : pt.X;
-					var y = (pt.Y === undefined) ? emit_moveContext.cmd_posy : pt.Y;
-					var z = (pt.Z === undefined) ? emit_moveContext.cmd_posz : pt.Z;
-					var arrPoint = leveler.findHeight([x, y, z]);
-					pt.x = arrPoint[0];
-					pt.y = arrPoint[1];
-					pt.z = arrPoint[2];
+					var X = (pt.X === undefined) ? emit_moveContext.cmd_posx : pt.X;
+					var Y = (pt.Y === undefined) ? emit_moveContext.cmd_posy : pt.Y;
+					var Z = (pt.Z === undefined) ? emit_moveContext.cmd_posz : pt.Z;
+					var arrPoint = leveler.findHeight([X, Y, Z]);
+					pt.X = arrPoint[0];
+					pt.Y = arrPoint[1];
+					pt.Z = arrPoint[2];
 					opFunction(pt);
 				};
 				log.debug("emit_move:level");

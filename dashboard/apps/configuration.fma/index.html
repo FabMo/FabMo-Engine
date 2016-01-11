@@ -293,17 +293,23 @@
             </div>
           </div> 
         </div>
-        <div class="large-4 columns">
-          <div class="row collapse">
-            <label>Shear Angle X</label>
-            <div class="small-9 columns">
-              <input type="number" id="opensbp-transforms-shearx-angle" class="opensbp-input"/>
-            </div>
-            <div class="small-3 columns">
-              <span class="postfix">degrees</span>
-            </div>
-          </div> 
-        </div>
+      </fieldset>
+    </div>
+
+    <div class="row">
+      <fieldset>
+        <legend>Shear X</legend>
+          <div class="large-4 columns">
+            <div class="row collapse">
+              <label>Shear Angle X</label>
+              <div class="small-9 columns">
+                <input type="number" id="opensbp-transforms-shearx-angle" class="opensbp-input"/>
+              </div>
+              <div class="small-3 columns">
+                <span class="postfix">degrees</span>
+              </div>
+            </div> 
+          </div>
         <div class="large-4 columns">
           <div class="row collapse">
             <label>Shear Angle Y</label>
@@ -315,22 +321,7 @@
             </div>
           </div> 
         </div>
-      </fieldset>
-    </div>
 
-    <div class="row">
-      <fieldset>
-        <legend>Shear X</legend>
-        <div class="large-4 columns">
-            <div class="row collapse">
-              <label>Shear X
-                <select id="opensbp-transforms-shearx-apply" class="opensbp-input">
-                  <option value="false">Disabled</option>
-                  <option value="true">Enabled</option>
-                </select>
-              </label>
-            </div>
-        </div>
         <div class="large-4 columns">
           <div class="row collapse">
             <label>Shear Angle X</label>
@@ -1655,8 +1646,6 @@
         var v = parts[1];
         if(v === "gdi") {
           new_config.driver.gdi = this.value;
-          console.log("Distance mode = " + JSON.stringify(new_config));
-          console.log("this.value = " + this.value);
           if (this.value == 0) { fabmo.runGCode("G90"); }
           else { fabmo.runGCode("G91"); }
           fabmo.setConfig(new_config, function(err, data) {
@@ -1682,10 +1671,12 @@
       });
 
       $('.opensbp-values').change( function() {
-        var parts = this.id.split("_");
+        var parts = this.id.split("-");
         var new_config = {};
         new_config.driver = {};
         var v = parts[1];
+  console.log("v = " + v );
+  console.log("this.value = " + this.value );
         if (!configData) { return;}
         if(v !== undefined) {
           if(v === "units1"){
@@ -1707,7 +1698,7 @@
             new_config.driver['6tr']=(360/configData.driver["6sa"])*configData.driver["6mi"]/this.value;
           } 
         }
-        console.log("units = " + JSON.stringify(new_config));
+        // console.log("units = " + JSON.stringify(new_config));
         fabmo.setConfig(new_config, function(err, data) {
           setTimeout(update, 500);
         });
