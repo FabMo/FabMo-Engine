@@ -22,10 +22,10 @@ exports.VA = function(args, callback) {
 log.debug("arg 6 = " + args[6]);
 
 		if (args[6] !== undefined) { 	//X Base Coordinate
-			offset = (config.driver.get('g55x')) - Number(((MPO.x * unitConv);
+			offset = (config.driver.get('g55x')) - Number(MPO.x * unitConv);
 			newLocation = args[6];
-			log.debug("new X Base Coordinate = " + newLocation);
-			log.debug("    X Offset from Base = " + offsetX );
+			// log.debug("new X Base Coordinate = " + newLocation);
+			// log.debug("    X Offset from Base = " + offsetX );
 		    this.emit_gcode("G28.3 X" + newLocation);
 			setVA_G2.g55x = newLocation;
 		}
