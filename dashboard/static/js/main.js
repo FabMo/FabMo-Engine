@@ -26,6 +26,8 @@ define(function(require) {
 	// API object defines our connection to the tool.
 	var engine = new FabMoAPI();
 
+	var modalIsShown = false;
+
 	// Initial read of engine configuration
 	engine.getConfig();
 
@@ -40,24 +42,6 @@ define(function(require) {
 			// Create a FabMo object for the dashboard
 			dashboard.setEngine(engine);
 			dashboard.ui=new FabMoUI(dashboard.engine);
-
-			dashboard.ui.on('error', function(err) {
-				$('#modalDialogTitle').text('Error!');
-				$('#modalDialogLead').html('<div style="color:red">There was an error!</div>');
-				$('#modalDialogMessage').text(err || 'There is no message associated with this error.');
-				if(dashboard.engine.status.job) {
-					$('#modalDialogDetail').html(
-						'<p>' + 
-						  '<b>Job Name:  </b>' + dashboard.engine.status.job.name + '<br />' + 
-						  '<b>Job Description:  </b>' + dashboard.engine.status.job.description + 
-						'</p>'
-						);
-				} else {
-					$('#modalDialogDetail').html('<p>Additional information for this error is unavailable.</p>');										
-				}
-				$('#modalDialog').foundation('reveal', 'open');
-			});
-
 
 			// Configure handwheel input
 			try {
@@ -221,15 +205,93 @@ function setupKeypad() {
 	return keypad;
 }
 
+function showModal(options) {
+	if(modalIsShown) {
+		return;
+	}
+	modalIsShown = true;
+
+	if(options['title']) {
+		$('#modalDialogTitle').html(options.title).show();		
+	} else {		
+		$('#modalDialogTitle').hide();
+	}
+
+	if(options['lead']) {
+		$('#modalDialogLead').html(options.lead).show();		
+	} else {		
+		$('#modalDialogLead').hide();
+	}
+
+	if(options['message']) {
+		$('#modalDialogMessage').html(options.message).show();		
+	} else {		
+		$('#modalDialogMessage').hide();
+	}
+
+	if(options['detail']) {
+		$('#modalDialogDetail').html(options.detail).show();		
+	} else {		
+		$('#modalDialogDetail').hide();
+	}
+
+	$('#modalDialogButtons').hide();
+	if(options['okText']) {
+		$('#modalDialogButtons').show();
+		$('#modalDialogOKButton').text(options.okText).show().one('click', function() {
+			$('#modalDialogCancelButton').off('click');
+			(options['ok'] || function() {})();
+		});
+	} else {
+		$('#modalDialogOKButton').hide();
+	}
+
+	if(options['cancelText']) {
+		$('#modalDialogButtons').show();
+		$('#modalDialogCancelButton').text(options.cancelText).show().one('click', function() {
+			$('#modalDialogOKButton').off('click');
+			(options['cancel'] || function() {})();
+		});
+	} else {
+		$('#modalDialogCancelButton').hide();
+	}
+
+	if(options['cancel']) {
+		$('#modalDialogClose').show().one('click', function() {
+			options.cancel();
+		});
+	} else {
+		$('#modalDialogClose').hide();
+	}
+
+	$('#modalDialog').foundation('reveal', 'open');
+}
+
+function hideModal() {
+	if(!modalIsShown) { return; }
+	modalIsShown = false;
+	$('#modalDialog').foundation('reveal', 'close');	
+}
+
 // Kill the currently running job when the modal error dialog is dismissed
-$(document).on('close.fndtn.reveal', '[data-reveal]', function (evt) {
+/*$(document).on('close.fndtn.reveal', '[data-reveal]', function (evt) {
   var modal = $(this);
   if(engine.status.state === "stopped") {
 	  dashboard.engine.quit();
 	  console.info("Quitting the tool on dismiss")  	
+  } else if(engine.status.state === "paused") {
+  	dashboard.engine.resume();
   } else {
 	  console.warn("Not quitting the tool because it's not stopped.")  	
   }
+});*/
+
+// listen for escape key press to quit the engine
+$(document).on('keyup', function(e) {
+    if(e.keyCode == 27) {
+        console.log("ESC key pressed - quitting engine.");
+        dashboard.engine.quit();
+    }
 });
 
 // Handlers for the home/probe buttons
@@ -255,28 +317,28 @@ $('.play').on('click', function(e){
 });
 
 engine.on('status', function(status) {
-try {	
-	if(status.unit) {
-		wheel.setUnits(status.unit);	
-	}
-	dashboard.engine.getJobQueue(function (err, data){
-		if (data.name == 'undefined' || data.length === 0) {
-			$('.nextJob').text('No Job Pending');
-			$('.play').hide();
-			$('.gotoJobManager').show();
-			$('.nextJob').css('top', '2px');
-			$('.startnextLabel').css('top', '2px');
-		} else {
-			$('.nextJob').text(data[0].name);
-			$('.play').show();
-			$('.gotoJobManager').hide();
-			$('.nextJob').css('top', '-9.5px');
-			$('.startnextLabel').css('top', '-9.5px');
+	try {	
+		if(status.unit) {
+			wheel.setUnits(status.unit);	
 		}
-	});
-} catch(e) {
+		dashboard.engine.getJobQueue(function (err, data){
+			if (data.name == 'undefined' || data.length === 0) {
+				$('.nextJob').text('No Job Pending');
+				$('.play').hide();
+				$('.gotoJobManager').show();
+				$('.nextJob').css('top', '2px');
+				$('.startnextLabel').css('top', '2px');
+			} else {
+				$('.nextJob').text(data[0].name);
+				$('.play').show();
+				$('.gotoJobManager').hide();
+				$('.nextJob').css('top', '-9.5px');
+				$('.startnextLabel').css('top', '-9.5px');
+			}
+		});
+	} catch(e) {
 
-}
+	}
 });
 
 var disconnected = false;
@@ -295,6 +357,50 @@ engine.on('connect', function() {
 	}
 });
 
+engine.on('status', function(status) {
+	if(status['info']) {
+		if(status.info['message']) {
+			showModal({
+				title : 'Message',
+				lead : status.info.message,
+				okText : 'Continue',
+				cancelText : 'Quit',
+				ok : function() {
+					dashboard.engine.resume();
+				},
+				cancel : function() {
+					dashboard.engine.quit();
+				}
+
+ 			})
+		} else if(status.info['error']) {
+
+			if(dashboard.engine.status.job) {
+				var detailHTML = '<p>' + 
+					  '<b>Job Name:  </b>' + dashboard.engine.status.job.name + '<br />' + 
+					  '<b>Job Description:  </b>' + dashboard.engine.status.job.description + 
+					'</p>'
+			} else {
+				var detailHTML = '<p>Additional information for this error is unavailable.</p>';										
+			}
+
+			showModal({
+				title : 'Message',
+				lead : '<div style="color:red">An error has occurred!</div>',
+				message: status.info.error,
+				detail : detailHTML,
+				cancelText : 'Quit',
+				cancel : function() {
+					dashboard.engine.quit();
+				}
+
+ 			})
+
+		}
+	} else {
+		hideModal();
+	}
+});
 setInterval(function() {
 	engine.ping(function(err, time) {
 		if(err) {

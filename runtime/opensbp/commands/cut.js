@@ -144,7 +144,7 @@ exports.CP = function(args) {
   var comp = 0;
   var feedrate = 0;
 
-  log.debug("CP: " + JSON.stringify(args));
+  // log.debug("CP: " + JSON.stringify(args));
   
   if (OIT === 'O') {
     comp = 1;
@@ -193,25 +193,23 @@ exports.CP = function(args) {
 // log.debug(" posY = " + this.cmd_posy );
 
   if( this.cmd_posx !== startX || this.cmd_posy !== startY ){
-      feedrate = this.movespeed_xy * 60;
-      var safeZ = config.opensbp.get('safeZpullUp');
-      log.debug("startZ = " + startZ);
-      log.debug("safeZ = " + safeZ );
-      if( startZ < safeZ ){
-        this.emit_move('G0',{'Z':safeZ,'F':feedrate});
-        this.cmd_posz = safeZ;
-      }
+    feedrate = this.movespeed_xy * 60;
+    var safeZ = config.opensbp.get('safeZpullUp');
+    if( startZ < safeZ && this.lastNoZPullup !== 1 ){
+      this.emit_move('G0',{'Z':safeZ,'F':feedrate});
+      this.cmd_posz = safeZ;
       this.emit_move('G0',{'X':startX,'Y':startY});
-      this.cmd_posx = startX;
-      this.cmd_posy = startY;
-      if( this.cmd_posz !== startZ ){
-  log.debug( "    startZ = " + startZ );
-  log.debug( "    z pos  = " + this.cmd_posz );      
-        this.emit_move('G1',{'Z':startZ,'F':feedrate});
-        this.cmd_posz = startZ;              
-      }
+    }
+    else {
+      this.emit_move('G1',{'X':startX,'Y':startY,'F':feedrate});
+    }
+    this.cmd_posx = startX;
+    this.cmd_posy = startY;
+    if( this.cmd_posz !== startZ && this.lastNoZPullup !== 1 ){
+      this.emit_move('G1',{'Z':startZ,'F':feedrate});
+      this.cmd_posz = startZ;              
+    }
   }
-
   this.CG([undefined,endX,endY,xOffset,yOffset,OIT,Dir,Plg,reps,propX,propY,optCP,noPullUp,plgFromZero]);
 
 };
@@ -256,19 +254,21 @@ exports.CG = function(args) {
   var PocketAngle = 0;
   var j = 0;
 
+  this.lastNoZPullup = plgFromZero;
+
   log.debug("CG: " + JSON.stringify(args));
 
-  log.debug("start X:" + startX );
-  log.debug("start Y:" + startY );
-  log.debug("start Z:" + startZ );
-  log.debug("end X:" + endX );
-  log.debug("end Y:" + endY );
-  log.debug("center X:" + centerX );
-  log.debug("center Y:" + centerY );
-  log.debug("I-O-T:" + OIT );
-  log.debug("Dir:" + Dir );
-  log.debug("reps:" + reps );
-  log.debug("Plg:" + Plg );  
+  // log.debug("start X:" + startX );
+  // log.debug("start Y:" + startY );
+  // log.debug("start Z:" + startZ );
+  // log.debug("end X:" + endX );
+  // log.debug("end Y:" + endY );
+  // log.debug("center X:" + centerX );
+  // log.debug("center Y:" + centerY );
+  // log.debug("I-O-T:" + OIT );
+  // log.debug("Dir:" + Dir );
+  // log.debug("reps:" + reps );
+  // log.debug("Plg:" + Plg );  
 
   if ( centerX === 0 && centerY === 0 ){
     throw( "Zero diameter circle: CG" );
@@ -294,9 +294,8 @@ exports.CG = function(args) {
     }
   }
   
-  if (Plg !== 0 && plgFromZero == 1){ currentZ = 0; }
-  else { currentZ = startZ; }
-  var safeZCG = currentZ + config.opensbp.get('safeZpullUp');
+  currentZ = startZ;
+  var safeZCG = config.opensbp.get('safeZpullUp');
   var spiralPlunge = (optCG === 2 || optCG === 3 || optCG === 4) ? 1 : 0;
 
   if ( optCG == 2 ) {
@@ -307,17 +306,16 @@ exports.CG = function(args) {
   	Pocket_StepY = stepOver * Math.sin(PocketAngle);	// Calculate the stepover in Y based on the radius of the cutter * overlap
   }
 
-  if ( plgFromZero == 1 && currentZ !== Plg && optCG < 3 ) {	 // If plunge depth is specified move to that depth
-    log.debug("plgFromZero = " + plgFromZero);
-    this.emit_move('G1',{ 'Z':Plg, 'F':feedrateZ });
-    this.cmd_posz = Plg;
+  if ( plgFromZero == 1 && currentZ !== 0 ) {	 // If plunge depth is specified move to that depth
+    currentZ = 0;
+    this.emit_move('G0',{ 'Z':currentZ });
+    this.cmd_posz = currentZ;
   }
 
   var nextX = 0;
   var nextY = 0;
 
   for (var i=0; i<reps;i++){
-log.debug("320   currentZ = " + currentZ + "   Plg = " + Plg + "   noPullUp = " + noPullUp + "   optCG = " + optCG);
   	if (Plg !== 0 && optCG < 3 ) {  // If plunge depth is specified move to that depth * number of reps
   		currentZ += Plg;
       this.emit_move('G1',{ 'Z':currentZ, 'F':feedrateZ });
@@ -370,12 +368,8 @@ log.debug("320   currentZ = " + currentZ + "   Plg = " + Plg + "   noPullUp = " 
         else { 
           outStr = 'G3';
         }			// CounterClockwise circle/arc
-//        if (parseInt(startX * 100000) !== parseInt(endX * 100000)) {
         emitObj.X = endX;
-//        }
-//        if (parseInt(startY * 100000) !== parseInt(endY * 100000)) {
         emitObj.Y = endY;
-//        }
 		    emitObj.I = centerX;
         emitObj.J = centerY;
         if (Plg !== 0 && optCG > 2 ) { 
@@ -416,14 +410,6 @@ log.debug("320   currentZ = " + currentZ + "   Plg = " + Plg + "   noPullUp = " 
     else {
       if (Dir === 1 ){ outStr = "G2"; } 		// Clockwise circle/arc
       else { outStr = "G3"; }					// CounterClockwise circle/arc
-// log.debug("409");
-// log.debug("startX = " + startX);
-// log.debug("startY = " + startY);
-// log.debug("centerX = " + centerX);
-// log.debug("centerY = " + centerY);
-// log.debug("Pocket_StepX = " + Pocket_StepX);
-// log.debug("Pocket_StepY = " + Pocket_StepY);
-// log.debug("J = " + j);
         this.emit_move(outStr,{ 'X':(startX + (j*Pocket_StepX)),
                                 'Y':(startY + (j*Pocket_StepY)),
                                 'I':(centerX - (j*Pocket_StepX)),
@@ -434,7 +420,7 @@ log.debug("320   currentZ = " + currentZ + "   Plg = " + Plg + "   noPullUp = " 
     }
   }
 
-  if( noPullUp === 0 && currentZ != startZ){    	//If No pull-up is set to YES, pull up to the starting Z location
+  if( noPullUp === 0 && currentZ !== startZ){    	//If No pull-up is set to YES, pull up to the starting Z location
     this.emit_move('G0',{'Z':startZ});
     this.cmd_posz = startZ;
   }

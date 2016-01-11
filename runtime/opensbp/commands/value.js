@@ -5,22 +5,60 @@ var config = require('../../../config');
 /* VALUES */
 
 exports.VA = function(args, callback) {
-
-//	log.debug("VA Command: " + args);
+	log.debug("VA Command: " + args);
 	
 	this.machine.driver.get('mpo', function(err, MPO) {
-
-//		log.debug("Current Machine Base Coordinates (mm): " + JSON.stringify(MPO));
-
 		var setVA_G2 = {};	
 		var setVA_SBP = {};	
 		var newLocation = 0.0;
 		var unitConv = 1.0;
+		var offset = 0;
+
 
 		if ( this.machine.driver.status.unit === "in" ) {  // inches
 			unitConv = 0.039370079;
 		}
 
+log.debug("arg 6 = " + args[6]);
+
+		if (args[6] !== undefined) { 	//X Base Coordinate
+			offset = (config.driver.get('g55x')) - Number(MPO.x * unitConv);
+			newLocation = args[6];
+			// log.debug("new X Base Coordinate = " + newLocation);
+			// log.debug("    X Offset from Base = " + offsetX );
+		    this.emit_gcode("G28.3 X" + newLocation);
+			setVA_G2.g55x = newLocation;
+		}
+		if (args[7] !== undefined) { 	//Y Base Coordinate
+			newLocation = args[7];
+			log.debug("new Y Base Coordinate = " + newLocation);
+		    this.emit_gcode("G28.3 Y" + newLocation);
+			setVA_G2.g54y = newLocation;
+		}
+		if (args[8] !== undefined) { 	//Z Base Coordinate
+			newLocation = args[8];
+			log.debug("new Z Base Coordinate = " + newLocation);
+		    this.emit_gcode("G28.3 Z" + newLocation);
+			setVA_G2.g54z = newLocation;
+		}
+		if (args[9] !== undefined) { 	//A Base Coordinate
+			newLocation = args[9];
+			log.debug("new A Base Coordinate = " + newLocation);
+		    this.emit_gcode("G28.3 A" + newLocation);
+			setVA_G2.g54a = newLocation;
+		}
+		if (args[10] !== undefined) { 	//B Base Coordinate
+			newLocation = args[10];
+			log.debug("new B Base Coordinate = " + newLocation);
+		    this.emit_gcode("G28.3 B" + newLocation);
+			setVA_G2.g54b = newLocation;
+		}
+		if (args[11] !== undefined) { 	//C Base Coordinate
+			newLocation = args[11];
+			log.debug("new C Base Coordinate = " + newLocation);
+		    this.emit_gcode("G28.3 C" + newLocation);
+			setVA_G2.g55c = newLocation;
+		}
 		if (args[0] !== undefined) { 	//X location
 			newLocation = Number(((MPO.x * unitConv) - args[0]).toFixed(5));
 			setVA_G2.g55x = newLocation;
@@ -57,36 +95,6 @@ exports.VA = function(args, callback) {
 			this.cmd_posc = this.posc = args[5];
 			log.debug("new C = " + newLocation);	
 		}
-//		if (args[6] !== undefined) { 	//X Base Coordinate
-//			newLocation = args[6];
-//			log.debug("new X Base Coordinate = " + newLocation);
-//			setVA_G2.g54x = newLocation;
-//		}
-//		if (args[7] !== undefined) { 	//Y Base Coordinate
-//			newLocation = args[7];
-//			log.debug("new Y Base Coordinate = " + newLocation);
-//			setVA_G2.g54y = newLocation;
-//		}
-//		if (args[8] !== undefined) { 	//Z Base Coordinate
-//			newLocation = args[8];
-//			log.debug("new Z Base Coordinate = " + newLocation);
-//			setVA_G2.g54z = newLocation;
-//		}
-//		if (args[9] !== undefined) { 	//A Base Coordinate
-//			newLocation = args[9];
-//			log.debug("new A Base Coordinate = " + newLocation);
-//			setVA_G2.g54a = newLocation;
-//		}
-//		if (args[10] !== undefined) { 	//B Base Coordinate
-//			newLocation = args[10];
-//			log.debug("new B Base Coordinate = " + newLocation);
-//			setVA_G2.g54b = newLocation;
-//		}
-//		if (args[11] !== undefined) { 	//C Base Coordinate
-//			newLocation = args[11];
-//			log.debug("new C Base Coordinate = " + newLocation);
-//			setVA_G2.g54c = newLocation;
-//		}
 
 		config.driver.setMany(setVA_G2, function(err, value) {
 			callback();

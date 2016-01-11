@@ -57,6 +57,9 @@ function SBPRuntime() {
 	this.nonXfrm_posa = 0; 
 	this.nonXfrm_posb = 0; 
 	this.nonXfrm_posc = 0; 
+	this.paused = false;
+	this.lastNoZPullup = 0; 
+	this.continue_callback = null;
 }
 util.inherits(SBPRuntime, events.EventEmitter);
 
@@ -249,7 +252,11 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 
 		// For now, pause translates to "dwell" which is just a G-Code
 		case "pause":
-			result =  false;
+			if(cmd.expr) {
+				result = false;
+			} else {
+				result =  true;				
+			}
 			break;
 
 		case "cond":
@@ -329,7 +336,7 @@ SBPRuntime.prototype._continue = function() {
 				return this._dispatch(this._continue.bind(this));
 			} else {
 				log.info("No g-codes remain to dispatch.")
-				return this._end();
+				return this._end(this.end_message);
 			}
 		}
 
@@ -705,6 +712,9 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 		case "end":
 			this.pc = this.program.length;
+			if(command.message) {
+				this.end_message = command.message;
+			}
 			return false;
 			break;
 
@@ -779,9 +789,20 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			this.pc += 1;
 			if(command.expr) {
 				this.emit_gcode('G4 P' + this._eval(command.expr));
+				return false;
+			} else {
+				this.paused = true;
+				this.continue_callback = callback;
+				var message = command.message;
+				if(!message) {
+					var last_command = this.program[this.pc-2];
+					if(last_command && last_command.type === 'comment') {
+						message = last_command.comment.join('').trim();
+					}
+				}
+				this.machine.setState(this, 'paused', {'message' : message || "Paused." });
+				return true;
 			}
-			// Todo handle indefinite pause or pause with message
-			return false;
 			break;
 
 		case "event":
@@ -931,6 +952,7 @@ SBPRuntime.prototype.init = function() {
 	this.event_handlers = {};		// For ON INPUT etc..
 	this.end_callback = null;
 	this.quit_pending = false;
+	this.end_message = null;
 };
 
 // Compile an index of all the labels in the program
@@ -1192,13 +1214,13 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 
 			if( this.transforms.level.apply === true  && code !== "G0") {
 				var callback = function() {
-					var x = (pt.X === undefined) ? emit_moveContext.cmd_posx : pt.X;
-					var y = (pt.Y === undefined) ? emit_moveContext.cmd_posy : pt.Y;
-					var z = (pt.Z === undefined) ? emit_moveContext.cmd_posz : pt.Z;
-					var arrPoint = leveler.findHeight([x, y, z]);
-					pt.x = arrPoint[0];
-					pt.y = arrPoint[1];
-					pt.z = arrPoint[2];
+					var X = (pt.X === undefined) ? emit_moveContext.cmd_posx : pt.X;
+					var Y = (pt.Y === undefined) ? emit_moveContext.cmd_posy : pt.Y;
+					var Z = (pt.Z === undefined) ? emit_moveContext.cmd_posz : pt.Z;
+					var arrPoint = leveler.findHeight([X, Y, Z]);
+					pt.X = arrPoint[0];
+					pt.Y = arrPoint[1];
+					pt.Z = arrPoint[2];
 					opFunction(pt);
 				};
 				log.debug("emit_move:level");
@@ -1273,7 +1295,7 @@ SBPRuntime.prototype.pause = function() {
 }
 
 SBPRuntime.prototype.quit = function() {
-	if(this.machine.status.state == 'stopped') {
+	if(this.machine.status.state == 'stopped' || this.paused) {
 		if(this.machine.status.job) {
 			this.machine.status.job.fail(function(err, job) {
 				this.machine.status.job=null;
@@ -1293,7 +1315,13 @@ SBPRuntime.prototype.quit = function() {
 }
 
 SBPRuntime.prototype.resume = function() {
-	this.driver.resume();
+	if(this.paused) {
+		this.machine.setState(this, 'running');
+		this.paused = false;
+		this.continue_callback();
+	} else {
+		this.driver.resume();		
+	}
 }
 
 exports.SBPRuntime = SBPRuntime;
