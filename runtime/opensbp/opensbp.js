@@ -793,7 +793,14 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			} else {
 				this.paused = true;
 				this.continue_callback = callback;
-				this.machine.setState(this, 'paused', {'message' : command.message || "Paused." });
+				var message = command.message;
+				if(!message) {
+					var last_command = this.program[this.pc-2];
+					if(last_command && last_command.type === 'comment') {
+						message = last_command.comment.join('').trim();
+					}
+				}
+				this.machine.setState(this, 'paused', {'message' : message || "Paused." });
 				return true;
 			}
 			break;
