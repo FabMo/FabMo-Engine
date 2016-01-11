@@ -48,16 +48,18 @@
 
 			</div>
 			<div class="row">
-				<div class="small-8 medium-8 columns with-job">
-					<h4 class='nextJobTitle'></h4>
-					<div class="small-12 columns">
-						<h5 class='nextJobDesc'></h5>
+				<div class="small-8 jobs-wrapper">
+					<div class="small-8 medium-8 columns with-job">
+						<h4 class='nextJobTitle'></h4>
+						<div class="small-12 columns">
+							<h5 class='nextJobDesc'></h5>
+						</div>
 					</div>
-				</div>
-				<div class="small-12 columns without-job">
-					<h4 class='no-job'>No Job Pending</h4>
-					<div class="small-11 columns">
-						<h5 class='add-job-please'>To add a Job click "Submit Job"" or drag file here</h5>
+					<div class="small-12 columns without-job">
+						<h4 class='no-job'>No Job Pending</h4>
+						<div class="small-11 columns">
+							<h5 class='add-job-please'>To add a Job click "Submit Job"" or drag file here</h5>
+						</div>
 					</div>
 				</div>
 				<div>
@@ -515,7 +517,7 @@
 			$('.edit').slideUp();
 			$('.preview').slideUp();
 			$('.play-button').slideUp();
-			$('.without-job').show(1500);
+			$('.without-job').show();
    };
    
    var nextJob= function (arr) {
@@ -597,6 +599,13 @@
 		if (status.state === "idle") {
 			$('.fill, .mask.full').css(transform_styles[i], 'rotate(0deg)');
 			$('.fill.fix').css(transform_styles[i], 'rotate(0deg)');
+			setNextJob();
+			$('.up-next').css('left', '0px');
+			$('.now-running').css('left', '-200px');
+			$('.play').removeClass('active');
+		} else if (status.state === "manual") {
+			$('.fill, .mask.full').css(transform_styles[i], 'rotate(360deg)');
+			$('.fill.fix').css(transform_styles[i], 'rotate(360deg)');
 			setNextJob();
 			$('.up-next').css('left', '0px');
 			$('.now-running').css('left', '-200px');
