@@ -15,7 +15,7 @@ start
    = __ stmt:statement __ {return stmt}
 
 statement
-   = (label / single / end / jump / pausemsg / pause / conditional / assignment / event / open / custom_cut / command / __)
+   = (label / single / end / jump / pause / conditional / assignment / event / open / custom_cut / command / __)
 
 custom_cut
    = [Cc] index:integer __ ","?
@@ -42,10 +42,11 @@ end
   = name:("END"i) __ message:quotedstring? {return {"type" : "end", "message": message}}
 
 pause
-   = name:("PAUSE"i) __ expr:expression? {return {"type":"pause", "expr":expr}}
-
-pausemsg
-   = name:("PAUSE"i) __ message:quotedstring? {return {"type":"pause", "message":message}}
+   = name:("PAUSE"i) __ arg:(e:expression {return {expr: e}} / msg:quotedstring {return {message : msg}})? {
+    if(arg['expr']) { return {'type' : 'pause', 'expr' : arg.expr}}
+    else if(arg['message']) { return {'type' : 'pause', 'message' : arg.message}}
+    else {return {'type':'pause'}};
+   }
 
 conditional
    = "IF" ___ cmp:comparison ___ "THEN" ___ stmt:(jump) { return {"type":"cond", "cmp":cmp, "stmt":stmt};}
@@ -79,7 +80,7 @@ float "float"
   = f:('-'? decimal '\.' decimal) { return parseFloat(f.join(""));}
 
 barestring
-  = s:[^,\n]+ { return s.join("").trim() || undefined; }
+  = s:[^,\n"]+ { return s.join("").trim() || undefined; }
 
 quotedstring
   = '"' s:[^\"\n]+ '"' {return s.join("")}
