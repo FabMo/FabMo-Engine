@@ -1,5 +1,6 @@
 body {
   background: #eee;
+  height: 100%;
 }
 
 .code-area {
@@ -25,7 +26,6 @@ body {
 
 .dropzone {
   min-height: 170px;
-  overflow: visible;
 }
 
 #dropzone .hovershow {

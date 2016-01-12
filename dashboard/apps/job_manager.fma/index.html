@@ -519,7 +519,6 @@
 			height = wo;
 			
 		}
-		console.log(height);
 		$('.jobs-wrapper').height(height);
 	};
 	setJobheight();
@@ -527,15 +526,15 @@
   		setJobheight();
 	});
    var noJob = function () {
-	   		$('.nextJobTitle').text('');
-			$('.nextJobDesc').text('');
 			$('.with-job').css('left','-1000px');
 			$('.cancel').slideUp();
 			$('.download').slideUp();
 			$('.edit').slideUp();
 			$('.preview').slideUp();
 			$('.play-button').slideUp();
-			$('.without-job').css('left', '10px');;
+			$('.without-job').css('left', '10px');
+			$('.nextJobTitle').text('');
+			$('.nextJobDesc').text('');
    };
    
    var nextJob= function (arr) {
