@@ -27,6 +27,10 @@ define(function(require) {
 	var engine = new FabMoAPI();
 
 	var modalIsShown = false;
+	
+	// Detect touch screen
+	
+	var supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
 
 	// Initial read of engine configuration
 	engine.getConfig();
@@ -452,7 +456,12 @@ if ($(window).width() < 620) {
 $.post('/time', {
 	'utc' : new Date().toUTCString()
 });
-
+function touchScreen () {
+	if (supportsTouch) {
+		$('#app-client-container').css({'-webkit-overflow-scrolling':'touch','overflow-y':'scroll'});
+	} 
+}
+touchScreen();
 });
 
 
