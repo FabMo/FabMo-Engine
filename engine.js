@@ -145,7 +145,7 @@ Engine.prototype.start = function(callback) {
             log.info("Applying engine configuration...");
             config.engine.apply(callback);
         },
-
+/*
 	function setup_network(callback) {
 		if(config.engine.get('wifi_manager')) {
 			log.info("Setting up the network...");
@@ -161,7 +161,7 @@ Engine.prototype.start = function(callback) {
 			callback(null);
 		}
 	},
-
+*/
         // Configure the DB
         function setup_database(callback) {
             log.info("Configuring database...");
