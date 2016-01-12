@@ -91,7 +91,7 @@ function Machine(control_path, gcode_path, callback) {
 	    this.passthrough_runtime = new PassthroughRuntime();
 	    this.idle_runtime = new IdleRuntime();
 
-	    // GCode is the default runtime
+	    // Idle 
 	    this.setRuntime(this.idle_runtime);
 
 	    if(err) {
@@ -306,7 +306,6 @@ Machine.prototype.resume = function() {
 	if(this.current_runtime) {
 		this.current_runtime.resume();
 	}
-
 };
 
 Machine.prototype.enable_passthrough = function(callback) {
