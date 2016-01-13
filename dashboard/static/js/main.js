@@ -459,7 +459,6 @@ $.post('/time', {
 function touchScreen () {
 	if (supportsTouch) {
 		$('#app-client-container').css({'-webkit-overflow-scrolling':'touch','overflow-y':'scroll'});
-		alert('im touch');
 	} 
 }
 touchScreen();
