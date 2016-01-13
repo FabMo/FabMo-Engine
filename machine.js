@@ -223,6 +223,7 @@ Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
 }
 
 Machine.prototype.setRuntime = function(runtime) {
+	log.info("Setting runtime to " + runtime)
 	if(runtime && runtime !== this.current_runtime) {
 		if(this.current_runtime) {
 			this.current_runtime.disconnect();					

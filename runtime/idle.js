@@ -5,6 +5,10 @@ function IdleRuntime() {
 	this.driver = null;
 }
 
+IdleRuntime.prototype.toString = function() {
+	return "[IdleRuntime]";
+}
+
 IdleRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;

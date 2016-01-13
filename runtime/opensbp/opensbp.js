@@ -63,6 +63,10 @@ function SBPRuntime() {
 }
 util.inherits(SBPRuntime, events.EventEmitter);
 
+SBPRuntime.prototype.toString = function() {
+	return "[SBPRuntime]";
+}
+
 // This must be called at least once before instantiating an SBPRuntime object
 // TODO: Make this a "class method" rather than an instance method
 SBPRuntime.prototype.loadCommands = function(callback) {
