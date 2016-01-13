@@ -41,7 +41,7 @@ function extend(a,b, force) {
         if(a.hasOwnProperty(k) || force) {
             if(typeof b[k] === 'object' && b[k] !== null) {
                 if(typeof a[k] === 'object' && a[k] !== null) {
-                    extend(a[k], b[k]);
+                    extend(a[k], b[k], force);
                 } else {
                     if(force) {
                         a[k] = b[k];

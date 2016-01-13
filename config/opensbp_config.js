@@ -17,7 +17,7 @@ OpenSBPConfig.prototype.update = function(data, callback, force) {
 	} catch (e) {
 		return callback(e);
 	}
-	this.save(function(err, result) {
+		this.save(function(err, result) {
 		if(err) {
 			callback(err);
 		} else {
@@ -33,7 +33,7 @@ OpenSBPConfig.prototype.apply = function(callback) {
 };
 
 OpenSBPConfig.prototype.getVariable = function(name) {
-	var name = name.replace('&','');
+	var name = name.replace('$','');
 	var variables = this._cache['variables'];
 	if(variables && (name in variables)) {
 		return variables[name];
@@ -43,10 +43,11 @@ OpenSBPConfig.prototype.getVariable = function(name) {
 }
 
 OpenSBPConfig.prototype.setVariable = function(name, value, callback) {
-	var name = name.replace('&','');
+	var name = name.replace('$','');
 	var u = {'variables' : {}}
 	u.variables[name] = value;
-	this.update(u, callback);
+	console.log(u)
+	this.update(u, callback, true);
 }
 
 exports.OpenSBPConfig = OpenSBPConfig;
