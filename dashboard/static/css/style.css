@@ -10,7 +10,6 @@ body,html{
     font-family: 'source_sans_proregular';
 }
 
-
 .noselect {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -496,19 +495,32 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	margin-right: 4px;
 	margin-right: 0.25rem;
 	font-weight: 100;
-	letter-spacing: 1px;
 }
 
 #position ul .axis input.pos {
 	width: 5rem;
 	text-align: center;
 	float: right;
-	font-size: 28px;
-	font-size: 1.75rem;
+	font-size: 25px;
 	padding : 2px 4px;
 	padding: 0.125rem 0.25rem;
 	margin-top: 3px;
 	margin-top: 0.1925rem;
+	background-color: #9C210C;
+	height: 37px;
+	border: none;
+}
+
+.go-here{
+	width: 90%;
+	margin-left: 0.5rem;
+	margin-top: 1em;
+	border-radius: 5px;
+	background-color: #5DAA35;
+	transition: all 0.5s;
+}
+.go-here:hover{
+	background-color: #5DAA35;
 }
 
 #position ul .axis .units {

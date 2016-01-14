@@ -11,7 +11,7 @@
   </head>
 
   <body>
-     
+    
 <div id="spinner"></div>
    <div class="collapseLeft"></div>
       <div id="main" class="off-canvas-wrap" data-offcanvas>
@@ -109,7 +109,7 @@
                           <label style="border-top: 1px solid #eee;" class="noselect">
                             X
                             <span class="units">&nbsp;</span>
-                            <span class="posx pos doselect"></span>
+                            <input class="posx pos doselect" id="axis"maxlength="5">
                           </label>
                         </div>
                         <div class="small-3 columns home"><span class="button-zerox">0</span></div>
@@ -121,7 +121,7 @@
                         <label class="noselect">
                         Y
                         <span class="units">&nbsp;</span>
-                        <span class="posy pos doselect"></span>
+                        <input class="posy pos doselect"  id="axis" maxlength="5">
                         </label>
                       </div>
                       <div class="small-3 columns home"><span class="button-zeroy">0</span></div>
@@ -133,12 +133,15 @@
                         <label class="noselect">
                         Z
                         <span class="units">&nbsp;</span>
-                        <span class="posz pos doselect"></span>
+                        <input class="posz pos doselect" id="axis" maxlength="5">
                         </label>
                       </div>
                       <div class="small-3 columns home"><span class="button-zeroz">0</span></div>
                     </div>
                   </form>
+                </li>
+                <li>
+                   <button class="go-here" id="go-here" style="display:none">Go</button>
                 </li>
                 <li>
                   <div class="row inOut">
