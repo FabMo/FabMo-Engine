@@ -3,6 +3,7 @@ var g2 = require('../../../g2');
 var sb3_commands = require('../sb3_commands');
 var config = require('../../../config');
 
-exports.EP = function(args) {
-	this.emit_gcode("G38.2 Z" + args[0]);
-};
+exports.EX = function(args, callback) {
+	log.info("Breaking the stack for an EX command.  (Experimental Stack Break)");
+	callback();
+}
