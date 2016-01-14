@@ -7,7 +7,6 @@ function networkRedirect(req, res, next) {
 	var host = req.headers.host.split(':')[0].trim('/');
 	var path = req.params[0];
 	var url = 'http://' + host + ':' + 9877 + '/' + path;
-	//log.debug("Redirecting to: " + url);	
 	res.redirect(307, url, next);	
 }
 

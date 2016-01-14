@@ -8,6 +8,9 @@ function GCodeRuntime() {
 	this.ok_to_disconnect = true;
 }
 
+GCodeRuntime.prototype.toString = function() {
+	return "[GCodeRuntime]";
+}
 GCodeRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;

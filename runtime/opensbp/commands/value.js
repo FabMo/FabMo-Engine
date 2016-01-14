@@ -12,7 +12,7 @@ exports.VA = function(args, callback) {
 		var setVA_G2 = {};
 		var setVA_SBP = {};
 		var newLocation = 0;
-		var unitConv = 1.0;
+		var unitConv = 1;
 		var offset = 0;
 
 		if ( this.machine.driver.status.unit === "in" ) {  // inches
@@ -20,30 +20,32 @@ exports.VA = function(args, callback) {
 		}
 
 		if (args[6] !== undefined) { 	//X Base Coordinate
-		    this.emit_gcode("G28.3 X" + args[6]);
+		    this.emit_gcode("G28.3 X" + args[6] );
 		    MPO.x = args[6] / unitConv;
 		}
 		if (args[7] !== undefined) { 	//Y Base Coordinate
-		    this.emit_gcode("G28.3 Y" + args[7]);
+		    this.emit_gcode("G28.3 Y" + args[7] );
 		    MPO.y = args[7] / unitConv;
 		}
 		if (args[8] !== undefined) { 	//Z Base Coordinate
-		    this.emit_gcode("G28.3 Z" + args[8]);
+		    this.emit_gcode("G28.3 Z" + args[8] );
 		    MPO.z = args[8] / unitConv;
 		}
 		if (args[9] !== undefined) { 	//A Base Coordinate
-		    this.emit_gcode("G28.3 A" + args[9]);
+		    this.emit_gcode("G28.3 A" + args[9] );
 		    MPO.a = args[9] / unitConv;
 		}
 		if (args[10] !== undefined) { 	//B Base Coordinate
-		    this.emit_gcode("G28.3 B" + args[10]);
+		    this.emit_gcode("G28.3 B" + args[10] );
 		    MPO.b = args[10] / unitConv;
 		}
 		if (args[11] !== undefined) { 	//C Base Coordinate
-		    this.emit_gcode("G28.3 C" + args[11]);
+		    this.emit_gcode("G28.3 C" + args[11] );
 		    MPO.c = args[11] / unitConv;
 		}
 		if (args[0] !== undefined) { 	//X location
+			log.debug("VA      MPO.X = " + (MPO.x * unitConv));
+			log.debug("        new X = " + args[0]); 
 			setVA_G2.g55x = Number(((MPO.x * unitConv) - args[0]).toFixed(5));
 			this.cmd_posx = this.posx = args[0];
 		}

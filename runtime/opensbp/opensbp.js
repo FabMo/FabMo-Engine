@@ -12,6 +12,7 @@ var Leveler = require('./commands/leveler').Leveler;
 
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
+var PERSISTENTVAR_RE = /\$([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
 
 /**
  * The SBPRuntime object is responsible for running OpenSBP code.
@@ -62,6 +63,10 @@ function SBPRuntime() {
 	this.continue_callback = null;
 }
 util.inherits(SBPRuntime, events.EventEmitter);
+
+SBPRuntime.prototype.toString = function() {
+	return "[SBPRuntime]";
+}
 
 // This must be called at least once before instantiating an SBPRuntime object
 // TODO: Make this a "class method" rather than an instance method
@@ -361,7 +366,7 @@ SBPRuntime.prototype._continue = function() {
 					}
 				} else {
 					try {
-						console.log("executing + " + line)
+						log.debug("executing + " + JSON.stringify(line))
 						this._execute(line, this._continue.bind(this));
 					} catch(e) {
 						return this._end(e.message);
@@ -640,7 +645,7 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 			} catch(e) {
 				log.error("Error in a non-stack-breaking command");
 				log.error(e);
-				this._end(e.message);
+				this._end(e);
 				throw e
 			}
 			this.pc +=1;
@@ -745,19 +750,11 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 		case "assign":
 			//TODO FIX THIS THIS DOESN'T DO SYSTEM VARS PROPERLY
+			this.pc += 1;
 			var value = this._eval(command.expr);
-			var persistent = this.evaluatePersistentVariable(command.var);
-
-			if(persistent != undefined) {
-				config.opensbp.setVariable(command.var, value, function() {
-					this.pc += 1;
-					callback();
-				}.bind(this));
-			} else {
-				this.user_vars[command.var] = value;
-				this.pc += 1;
-				setImmediate(callback);
-			}
+			this._assign(command.var, value, function() {
+				callback();
+			})				
 			return true;
 			break;
 
@@ -823,6 +820,27 @@ SBPRuntime.prototype._execute = function(command, callback) {
 	}
 	throw new Error("Shouldn't ever get here.");
 };
+
+SBPRuntime.prototype._assign = function(identifier, value, callback) {
+	result = identifier.match(USERVAR_RE);
+	if(result) {
+		this.user_vars[identifier] = value;
+		setImmediate(callback);
+		return
+	}
+	log.debug(identifier + ' is not a user variable');
+
+	result = identifier.match(PERSISTENTVAR_RE);
+	if(result) {
+		console.log("ASSIGNING THE PERSISTENT VARIABLE " + identifier + " A value of " + value)
+		config.opensbp.setVariable(identifier, value, callback)
+		return
+	}
+	log.debug(identifier + ' is not a persistent variable');
+
+	throw Error("Cannot assign to " + identifier);
+
+}
 
 SBPRuntime.prototype._setupEvent = function(command, callback) {
 	var sw = command.sw;
@@ -1117,7 +1135,7 @@ SBPRuntime.prototype.evaluateUserVariable = function(v) {
 
 SBPRuntime.prototype.evaluatePersistentVariable = function(v) {
 	if(v === undefined) { return undefined;}
-	result = v.match(USERVAR_RE);
+	result = v.match(PERSISTENTVAR_RE);
 	if(result === null) {return undefined;}
 	return config.opensbp.getVariable(v);
 };

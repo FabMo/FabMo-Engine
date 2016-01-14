@@ -87,10 +87,13 @@ quotedstring
   = '"' s:[^\"\n]+ '"' {return s.join("")}
 
 variable
-  = (user_variable / system_variable)
+  = (user_variable / system_variable / persistent_variable)
 
 user_variable
   = v:("&" identifier) {return v.join("")}
+
+persistent_variable
+  = v:("$" identifier ) {return v.join("")}
 
 system_variable
   = v:("%" "(" __ integer __ ")") {return v.join("")}

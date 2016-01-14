@@ -63,7 +63,7 @@ AppManager.prototype.readAppMetadata = function(app_info, callback) {
 		} else {
 			this.readAppConfiguration(info, function(err, cfg) {
 				if(err) {
-					log.warn('Could not read app configuration: ' + err);
+					//log.warn('Could not read app configuration: ' + err);
 				}
 				cfg = cfg || {};
 				callback(null, {'info' : info, 'config' : cfg});

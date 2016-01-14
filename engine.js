@@ -1,4 +1,5 @@
 var restify = require('restify');
+var util = require('./util');
 var socketio = require('socket.io');
 var async = require('async');
 var process = require('process');
@@ -11,7 +12,6 @@ var db = require('./db');
 var macros = require('./macros');
 var dashboard = require('./dashboard');
 var network = require('./network');
-var updater = require('./updater');
 var glob = require('glob');
 var argv = require('minimist')(process.argv);
 
@@ -64,6 +64,14 @@ Engine.prototype.stop = function(callback) {
     callback(null);
 };
 
+Engine.prototype.getVersion = function(callback) {
+    util.doshell('git rev-parse --verify HEAD', function(data) {
+        var version = (data || "").trim();
+        console.log(version);
+        callback(null, data);
+    });
+}
+
 Engine.prototype.start = function(callback) {
 
     async.series([
@@ -88,16 +96,15 @@ Engine.prototype.start = function(callback) {
             }
         },
 
-        // Create the version string that will be used to identify the software version
         function get_fabmo_version(callback) {
             log.info("Getting engine version...");
-            updater.getFabmoVersionString(function(err, string) {
-                if(!err) {
-                    log.info("Engine version: " + string);
-                    this.version = string;
-                } else {
+            this.getVersion(function(err, data) {
+                if(err) {
                     log.error(err);
+                    this.version = "";
+                    return callback();
                 }
+                this.version = data;
                 callback();
             }.bind(this));
         }.bind(this),

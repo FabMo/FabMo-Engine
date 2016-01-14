@@ -9,6 +9,10 @@ function ManualRuntime() {
 	this.driver = null;
 }
 
+ManualRuntime.prototype.toString = function() {
+	return "[ManualRuntime]";
+}
+
 ManualRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;
