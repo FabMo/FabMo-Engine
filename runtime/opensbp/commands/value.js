@@ -44,8 +44,6 @@ exports.VA = function(args, callback) {
 		    MPO.c = args[11] / unitConv;
 		}
 		if (args[0] !== undefined) { 	//X location
-			log.debug("VA      MPO.X = " + (MPO.x * unitConv));
-			log.debug("        new X = " + args[0]); 
 			setVA_G2.g55x = Number(((MPO.x * unitConv) - args[0]).toFixed(5));
 			this.cmd_posx = this.posx = args[0];
 		}

@@ -84,7 +84,8 @@ exports.MC = function(args) {
 //   of the command will default to it's current position and not move
 exports.M2 = function(args) {
     var params = process_move.bind(this)(args);
-    if ( this.cmd_result === 0 ){
+    if ( this.cmd_result < 2 ){
+    log.debug("  M2 ************** result = " + this.cmd_result );
 		this.emit_move('G1',params);
 	}
 };
@@ -93,7 +94,7 @@ exports.M2 = function(args) {
 //   of the command will default to it's current position and not move
 exports.M3 = function(args) {
     var params = process_move.bind(this)(args);
-    if ( this.cmd_result === 0 ){
+    if ( this.cmd_result < 3 ){
 		this.emit_move('G1',params);
 	}
 };
@@ -102,7 +103,7 @@ exports.M3 = function(args) {
 //   of the command will default to it's current position and not move
 exports.M4 = function(args) {
     var params = process_move.bind(this)(args);
-    if ( this.cmd_result === 0 ){
+    if ( this.cmd_result < 4 ){
 		this.emit_move('G1',params);
 	}
 };
@@ -111,7 +112,7 @@ exports.M4 = function(args) {
 //   of the command will default to it's current position and not move
 exports.M5 = function(args) {
     var params = process_move.bind(this)(args);
-    if ( this.cmd_result === 0 ){
+    if ( this.cmd_result < 5 ){
 		this.emit_move('G1',params);
 	}
 };
@@ -120,7 +121,7 @@ exports.M5 = function(args) {
 //   of the command will default to it's current position and not move
 exports.M6 = function(args) {
     var params = process_move.bind(this)(args);
-    if ( this.cmd_result === 0 ){
+    if ( this.cmd_result < 6 ){
 		this.emit_move('G1',params);
 	}
 };
