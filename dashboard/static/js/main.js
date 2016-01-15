@@ -301,12 +301,10 @@ $(document).on('keyup', function(e) {
 //goto this location 
 
 $('html').on('click', function (e) {
-	console.log(e.target.id);
 		if (e.target.id === "go-here") {
 		var x = $('.posx').attr('value','')[1].value;
 		var y = $('.posy').attr('value','')[1].value;
 		var z = $('.posz').attr('value','')[1].value;
-		console.log(x);
 		var gcode = "G0 X" + x + " Y" + y + " Z" + z;
 		dashboard.engine.gcode(gcode);
 		$('.go-here').hide();
@@ -316,7 +314,17 @@ $('html').on('click', function (e) {
 			$('.go-here').hide();
 		}
 });
-	
+$('.posx, .posy, .posz').keyup(function(event){
+    if(event.keyCode == 13){
+        var x = $('.posx').attr('value','')[1].value;
+		var y = $('.posy').attr('value','')[1].value;
+		var z = $('.posz').attr('value','')[1].value;
+		var gcode = "G0 X" + x + " Y" + y + " Z" + z;
+		dashboard.engine.gcode(gcode);
+		$('.go-here').hide();
+    }
+});
+
 
 
 // Handlers for the home/probe buttons
