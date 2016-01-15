@@ -337,7 +337,7 @@ Engine.prototype.start = function(callback) {
             var routes = require('./routes')(server);
 
             // Kick off the server listening for connections
-            server.listen(config.engine.get('server_port'), function() {
+            server.listen(config.engine.get('server_port'), "0.0.0.0", function() {
                 log.info(server.name+ ' listening at '+ server.url);
                 callback(null, server);
             });
