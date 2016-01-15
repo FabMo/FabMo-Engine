@@ -24,8 +24,9 @@ var Keypad = function(id, options) {
 	this.enabled = false;
 	this.listeners = {'go' : [], 'stop': [], 'nudge':[]}
 	this.pressThreshold = 50;
-	this.pressTime = 250;
-	this.tapInterval = 250;
+	this.pressTime = 150;
+	this.tapInterval = 150;
+	this.target = null;
 }
 
 Keypad.prototype.init = function() {
@@ -125,8 +126,10 @@ Keypad.prototype.end = function() {
 }
 
 Keypad.prototype.onDrivePress = function(evt) {
+	this.target = evt.target;
 	this.setEnabled(true);
 	var e = $(evt.target);
+	e.focus();
 	if(!this.going) {
 		if(e.hasClass('x_pos')) {
 			this.start('x', 1);
@@ -153,7 +156,6 @@ Keypad.prototype.onDrivePress = function(evt) {
 }
 
 Keypad.prototype.onDriveTap = function(evt) {
-	console.log("driveTap")
 	var e = $(evt.target);
 	if(this.going) {
 		this.end();
@@ -188,7 +190,9 @@ Keypad.prototype.onDriveTap = function(evt) {
 }
 
 Keypad.prototype.onDriveMouseleave = function(evt) {
-	this.end();
+	if(evt.target == this.target) {
+		this.end();		
+	}
 }
 
 Keypad.prototype.onDriveTouchend = function(evt) {
