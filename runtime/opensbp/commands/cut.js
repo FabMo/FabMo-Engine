@@ -807,7 +807,7 @@ exports.CR = function(args) {
     	outStr = "G1X" + startX + "Y" + startY;
 			outStr += "F" + feedrateXY;
      	this.emit_gcode( outStr );
-     	if ( ( i + 1 ) != reps ) { 
+     	if ( ( i + 1 ) < reps ) { 
      		this.emit_gcode( "G1Z" + currentZ ); 
      	}
    	}
