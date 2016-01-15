@@ -1100,9 +1100,9 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 
 .keypad-button {
-	border : 2px solid #642315;
+	border : 2px solid #333333;
 	border-radius: 10px;
-	background : #91331E;
+	background : #444444;
 	cursor: pointer;
 	-webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -1117,7 +1117,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .keyboard-button-inactive {
-	background : #91331E;
+	background : #444444;
 }
 
 .drive-button {
@@ -1152,7 +1152,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .drive-button-active {
 	background: #5DAA35;
-
 }
 
 .drive-button-active-transient {
@@ -1161,7 +1160,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .drive-button-inactive {
-	background-color: #91331E;
+	background-color: #444444;
 	color: white;
 }
 
