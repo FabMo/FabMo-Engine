@@ -971,6 +971,9 @@ SBPRuntime.prototype.init = function() {
 	this.end_callback = null;
 	this.quit_pending = false;
 	this.end_message = null;
+	if(this.transforms.level.apply === true) {
+		leveler = new Leveler(this.transforms.level.ptDataFile);
+	}
 };
 
 // Compile an index of all the labels in the program
@@ -1230,20 +1233,19 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		emit_moveContext.current_chunk.push('N' + n + gcode);
 	};
 
-			if( this.transforms.level.apply === true  && code !== "G0") {
-				var callback = function() {
-					var X = (pt.X === undefined) ? emit_moveContext.cmd_posx : pt.X;
-					var Y = (pt.Y === undefined) ? emit_moveContext.cmd_posy : pt.Y;
-					var Z = (pt.Z === undefined) ? emit_moveContext.cmd_posz : pt.Z;
-					var arrPoint = leveler.findHeight([X, Y, Z]);
-					pt.X = arrPoint[0];
-					pt.Y = arrPoint[1];
-					pt.Z = arrPoint[2];
-					opFunction(pt);
-				};
+			if(this.transforms.level.apply === true  && code !== "G0") {
+				var X = (pt.X === undefined) ? emit_moveContext.cmd_posx : pt.X;
+				var Y = (pt.Y === undefined) ? emit_moveContext.cmd_posy : pt.Y;
+				var Z = (pt.Z === undefined) ? emit_moveContext.cmd_posz : pt.Z;
+				var height = leveler.findHeight(X, Y, Z);
+				if(height === false) {
+					log.error("Impossible to find the point height with the leveler.");
+					return;
+				}
+				pt.Z = height;
+				opFunction(pt);
 				log.debug("emit_move:level");
-				leveler = new Leveler(this.transforms.level.ptDataFile, callback);
-			}  
+			}
 			else {
 				opFunction(pt);
 		}
