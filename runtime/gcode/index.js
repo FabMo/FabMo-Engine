@@ -40,6 +40,11 @@ GCodeRuntime.prototype.resume = function() {
 }
 
 GCodeRuntime.prototype._changeState = function(newstate) {
+	if(newstate == "idle") {
+		this.ok_to_disconnect = true;
+	} else {
+		this.ok_to_disconnect = false;
+	}
 	this.machine.setState(this, newstate);
 };
 
@@ -135,7 +140,6 @@ GCodeRuntime.prototype._idle = function() {
 // callback runs only when execution is complete.
 GCodeRuntime.prototype.runString = function(string, callback) {
 	if(this.machine.status.state === 'idle') {
-		this.ok_to_disconnect = false;
 		var lines =  string.split('\n');
 		var mode = config.driver.get('gdi') ? 'G91': 'G90';
 		this.machine.status.nb_lines = lines.length;
