@@ -133,7 +133,7 @@ var Leveler = function(file, callback) {
         var arr = data.split("\n"), point = [], points = [];
 
         for(i=0; i < arr.length; i++) {
-            point = arr[i].split(",");
+            point = arr[i].split(" ");
 
             if(point.length === 3) {
                 points.push([
@@ -151,7 +151,6 @@ var Leveler = function(file, callback) {
     function parseFile(error, data) {
         if(error) {
             console.error(error);
-            return;
         }
 
         var i = 0, hightest = 0;
@@ -176,6 +175,10 @@ var Leveler = function(file, callback) {
 
         points2D = convertPointsForTriangulation(that.points);
         that.triangles = triangulate(points2D);
+
+        if(that.triangles === undefined) {
+            console.error("Impossible to triangulate the point cloud.");
+        }
 
         if(callback !== undefined) {
             callback();
