@@ -316,7 +316,6 @@ $('html').on('click', function (e) {
 });
 $('.posx, .posy, .posz').keyup(function(event){
     if(event.keyCode == 13){
-		console.log('what');
         var x = $('.posx').attr('value','')[1].value;
 		var y = $('.posy').attr('value','')[1].value;
 		var z = $('.posz').attr('value','')[1].value;
