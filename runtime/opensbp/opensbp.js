@@ -971,9 +971,10 @@ SBPRuntime.prototype.init = function() {
 	this.end_callback = null;
 	this.quit_pending = false;
 	this.end_message = null;
+	/*
 	if(this.transforms.level.apply === true) {
 		leveler = new Leveler(this.transforms.level.ptDataFile);
-	}
+	}*/
 };
 
 // Compile an index of all the labels in the program
