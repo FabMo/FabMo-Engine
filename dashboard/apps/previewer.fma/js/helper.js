@@ -9,22 +9,6 @@
  * This file contains the class managing the UI helpers (arrows, axis, etc).
  */
 
-GCodeViewer.AxisHelper = function(scene) {
-    "use strict";
-    var that = this;
-
-    that.addAxisHelper = function() {
-        that.scene.add(that.axisHelpers);
-    };
-
-    that.removeAxisHelper = function() {
-        that.scene.remove(that.axisHelpers);
-    };
-
-    that.scene = scene;
-
-};
-
 GCodeViewer.Helpers = function(scene) {
     "use strict";
     var that = this;

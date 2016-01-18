@@ -10,7 +10,6 @@
  */
 
 //refreshFunction is the function to refresh the display/render the scene
-//speeds are in inches by minutes (feedrate)
 //path is the instance of the class Path
 GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
         initialPosition) {
@@ -77,7 +76,7 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
         var dZ = destination.z - position.z;
         var length = Math.sqrt(dX * dX + dY * dY + dZ * dZ);
 
-        if(length === 0) {
+        if(length === 0 || speed > length) {
             return { x : dX, y : dY, z : dZ };
         }
 
@@ -87,9 +86,6 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
             z : dZ / length * speed
         };
 
-        if(GCodeToGeometry.lengthVector3(move) > length) {
-            return { x : dX, y : dY, z : dZ };
-        }
         return move;
     }
 
@@ -257,7 +253,6 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
     // returns -1 if nothing found
     function fineIndexPath(lineNumber) {
         var i = 0;
-        console.log("Finding: " + lineNumber);
         for(i=0; i < that.currentPath.length; i++) {
             if(that.currentPath[i].lineNumber === lineNumber) {
                 return i;
@@ -278,15 +273,12 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
         that.stop();
         that.currentPath = that.path.getPath();
         var iLine = fineIndexPath(lineNumber);
-        console.log("iLine = " + iLine);
         var pos = { x : 0, y : 0, z : 0 };
         var pointPath;
 
         if(iLine === -1) {
             return false;
         }
-
-        that.iPath = 0;
 
         for(that.iPath=0; that.iPath <= iLine; that.iPath++) {
             pointPath = that.currentPath[that.iPath];

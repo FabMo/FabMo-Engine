@@ -15,7 +15,6 @@ GCodeViewer.Gui = function(domElement, configuration, callbacks) {
     var that = this;
 
     var highlightedElt = null;
-    
     var configuration = configuration || {};
 
     that.hideXButton = configuration.hideXButton || false;
@@ -50,11 +49,9 @@ GCodeViewer.Gui = function(domElement, configuration, callbacks) {
             return;
         }
         if(highlightedElt !== null) {
-            highlightedElt.children[0].style.background = "#ffffd7";
-            highlightedElt.children[0].style.color = "#585858";
+            highlightedElt.children[0].id = "";
         }
-        elt.children[0].style.background = "#af8700";
-        elt.children[0].style.color = "#ffffd7";
+        elt.children[0].id = "highlighted";
         highlightedElt = elt;
         scrollTo(elt, lineNumber);
     };
@@ -82,12 +79,10 @@ GCodeViewer.Gui = function(domElement, configuration, callbacks) {
         elt.id = id;
         that.widgets[id] = elt;
         elt.src = src;
-        elt.style.cursor = "pointer";
-        elt.style.position = "absolute";
+        elt.className = "widget";
         if(hide) {
-            elt.style.visibility = "hidden"
+            elt.style.visibility = "hidden";
         }
-        elt.style.zIndex = 2;
         domElement.parentNode.appendChild(elt);
         placeWidget(id, x, y);
     }
@@ -188,11 +183,6 @@ GCodeViewer.Gui = function(domElement, configuration, callbacks) {
         var div = document.createElement("div");
         var width = 200;
         div.id = id;
-        div.style.position = "absolute";
-        div.style.width = width + "px";
-        div.style.zIndex = 2;
-        div.style.background = "#ff6600";
-        div.style.color = "#ffffff";
         if(that.hideGCode) {
             div.style.visibility = "hidden";
         }
@@ -201,24 +191,14 @@ GCodeViewer.Gui = function(domElement, configuration, callbacks) {
         placeWidget("divGCode", ((domElement.width - width) / 2), y);
 
         var p = document.createElement("p");
-        p.style.width = "100%";
-        p.style.cursor = "pointer";
-        p.style.textAlign = "center";
-        p.style.padding = "0px";
-        p.style.margin = "0px";
+        p.id = "toggleGCode";
         p.innerHTML = "Toggle GCode";
         div.appendChild(p);
 
         var ul = document.createElement("ul");
         div.appendChild(ul);
         ul.hidden = true;
-        ul.style.width = "100%";
-        ul.style.background = "#ffffd7";
-        ul.style.color = "#585858";
-        ul.style.maxHeight = "200px";
-        ul.style.overflow = "auto";
-        ul.style.padding = "0px";
-        ul.style.margin = "0px";
+        ul.id = "linesGCode";
 
         p.onclick = function() {
             ul.hidden = !ul.hidden;
@@ -258,16 +238,12 @@ GCodeViewer.Gui = function(domElement, configuration, callbacks) {
         that.widgets.listGCode.innerHTML = "";
         for(i=0; i < gcode.length; i++) {
             pre = document.createElement("pre");
-            pre.style.margin = "0px";
-            pre.style.padding = "0px";
-            pre.style.background = "#ffffd7";
+            pre.className = "preGCode";
             pre.innerHTML = lineFormat(i+1, gcode.length) + gcode[i];
             li = document.createElement("li");
             li.appendChild(pre);
             li.id = "li-"+(i+1);
-            li.style.listStyleType = "none";
-            li.style.background = "#ffffd7";
-            li.style.cursor = "pointer";
+            li.className = "liGCode";
             that.widgets.listGCode.appendChild(li);
             li.onclick = makeLiHandler(i+1);
         }
@@ -280,11 +256,10 @@ GCodeViewer.Gui = function(domElement, configuration, callbacks) {
     function createLoadingMessage() {
         var div = document.createElement("div");
         var p = document.createElement("p");
-        p.innerHTML = "Loading job...";
+        p.innerHTML = "Loading file. Please wait.";
         div.appendChild(p);
 
         div.id = "loadingMessage";
-        div.style.position = "absolute";
         domElement.parentNode.appendChild(div);
 
         //Stupid trick to set the correct width and height of the div:

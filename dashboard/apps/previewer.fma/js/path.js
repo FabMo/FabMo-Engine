@@ -235,6 +235,12 @@ GCodeViewer.Path = function(scene) {
     function setGeometries(lines) {
         var i = 0, j = 0;
         var geometry = new THREE.Geometry();
+        // var startIndex = 0, endIndex = 0;
+        // var previousTotal = 0;
+
+        //Store the number of vertices of each command
+        that.commandsUndoneManager = [];  //TODO: find a better name
+        that.commandsDoneManager = [];  //TODO: find a better name
 
         if(lines.length === 0) {
             return;
@@ -244,9 +250,27 @@ GCodeViewer.Path = function(scene) {
             if(lines[i].type === "G0") {
                 geometry = getGeometryStraight(lines[i]);
                 that.geoG0Undone.merge(geometry);
+
+                that.commandsUndoneManager.push({
+                    type : lines[i].type,
+                    lineNumber : lines[i].lineNumber,
+                    feedrate : lines[i].feedrate,
+                    start : GCodeViewer.copyPoint(geometry.vertices[0]),
+                    end : GCodeViewer.copyPoint(geometry.vertices[geometry.vertices.length - 1]),
+                    numberVertices : geometry.vertices.length
+                });
             } else if(lines[i].type === "G1") {
                 geometry = getGeometryStraight(lines[i]);
                 that.geoG1Undone.merge(geometry);
+
+                that.commandsUndoneManager.push({
+                    type : lines[i].type,
+                    lineNumber : lines[i].lineNumber,
+                    feedrate : lines[i].feedrate,
+                    start : GCodeViewer.copyPoint(geometry.vertices[0]),
+                    end : GCodeViewer.copyPoint(geometry.vertices[geometry.vertices.length - 1]),
+                    numberVertices : geometry.vertices.length
+                });
             } else if(lines[i].type === "G2" || lines[i].type === "G3") {
                 geometry = getGeometryCurve(lines[i]);
                 that.geoG2G3Undone.vertices.push(geometry.vertices[0]);
@@ -254,11 +278,18 @@ GCodeViewer.Path = function(scene) {
                     that.geoG2G3Undone.vertices.push(geometry.vertices[j]);
                     that.geoG2G3Undone.vertices.push(geometry.vertices[j]);
                 }
-                if(geometry.vertices.length > 1) {
-                    that.geoG2G3Undone.vertices.push(
-                            geometry.vertices[geometry.vertices.length - 1]
-                            );
-                }
+                that.geoG2G3Undone.vertices.push(
+                        geometry.vertices[geometry.vertices.length - 1]
+                        );
+
+                that.commandsUndoneManager.push({
+                    type : lines[i].type,
+                    lineNumber : lines[i].lineNumber,
+                    feedrate : lines[i].feedrate,
+                    start : GCodeViewer.copyPoint(geometry.vertices[0]),
+                    end : GCodeViewer.copyPoint(geometry.vertices[geometry.vertices.length - 1]),
+                    numberVertices : (geometry.vertices.length - 1) * 2
+                });
             }
         }
     }
@@ -318,55 +349,6 @@ GCodeViewer.Path = function(scene) {
         that.add();
     };
 
-    //Return the next index
-    function setPathFromVertices(path, vertices, index, end, type, lineNumber,
-            feedrate) {
-        if(index >= vertices.length) {
-            return -1;
-        }
-        var numberAdded = 0;
-
-        while(index < vertices.length &&
-                GCodeViewer.pointsEqual(vertices[index], end) === false)
-        {
-            numberAdded++;
-            path.push({
-                point : GCodeViewer.copyPoint(vertices[index]),
-                type : type,
-                lineNumber : lineNumber,
-                feedrate : feedrate
-            });
-            index++;
-        }
-
-        if(index < vertices.length &&
-                GCodeViewer.pointsEqual(vertices[index], end) === true)
-        {
-            numberAdded++;
-            path.push({
-                point : GCodeViewer.copyPoint(vertices[index]),
-                type : type,
-                lineNumber : lineNumber,
-                feedrate : feedrate
-            });
-            index++;
-        }
-
-        //A path have at least 2 points. It happens this isn't the case here...
-        if(numberAdded === 1) {
-            path.push({
-                point : GCodeViewer.copyPoint(vertices[index]),
-                type : type,
-                lineNumber : lineNumber,
-                feedrate : feedrate
-            });
-            index++;
-            numberAdded++;  //Not useful here
-        }
-
-        return index;
-    }
-
     //Return the new path without the doubloons
     function removeDoubloons(path) {
         var iPath = 0, iSP = 0, lineNumber = 0; //iSinglePath
@@ -401,7 +383,6 @@ GCodeViewer.Path = function(scene) {
                 newPath.push(singlePath[iSP]);
             }
 
-
         }
 
         return newPath;
@@ -413,47 +394,45 @@ GCodeViewer.Path = function(scene) {
      * @return {array} The path the animation has to follow.
      */
     that.getPath = function() {
+        var iG0 = 0, iG1 = 0, iG2G3 = 0;
+        var iCommand = 0, iCurrent = 0, iEnd = 0;
+        var command = {};
         var path = [], vertices = [];
-        var iLine = 0, iG0 = 0, iG1 = 0, iG2G3 = 0;
-        var line = {}, end = {}, type = "", lineNumber = 0;
-        var feedrate = 0;
 
         if(that.lines === undefined) {
             return [];
         }
 
-        //Copy all the vertices to the path
-        for(iLine = 0; iLine < that.lines.length; iLine++) {
-            line = that.lines[iLine];
-            type = line.type;
-            lineNumber = line.lineNumber;
-            feedrate = line.feedrate;
-            if(type === "G0") {
+        for(iCommand=0; iCommand < that.commandsUndoneManager.length; iCommand++) {
+            command = that.commandsUndoneManager[iCommand];
+            if(command.type === "G0") {
+                iCurrent = iG0;
                 vertices = that.meshG0Undone.geometry.vertices;
-                end = line.end;
-                iG0 = setPathFromVertices(path, vertices, iG0, end, type,
-                        lineNumber, feedrate);
-                if(iG0 < 0) {
-                    return [];
-                }
-            } else if(type === "G1") {
+            } else if(command.type === "G1") {
+                iCurrent = iG1;
                 vertices = that.meshG1Undone.geometry.vertices;
-                end = line.end;
-                iG1 = setPathFromVertices(path, vertices, iG1, end, type,
-                        lineNumber, feedrate);
-                if(iG1 < 0) {
-                    return [];
-                }
-            } else if(type === "G2" || type === "G3") {
-                vertices = that.meshG2G3Undone.geometry.vertices;
-                end = line.beziers[line.beziers.length - 1].p3;
-                iG2G3 = setPathFromVertices(path, vertices, iG2G3, end, type,
-                        lineNumber, feedrate);
-                if(iG2G3 < 0) {
-                    return [];
-                }
             } else {
-                return [];  //unknown type
+                iCurrent = iG2G3;
+                vertices = that.meshG2G3Undone.geometry.vertices;
+            }
+            iEnd = iCurrent + command.numberVertices;
+
+            while(iCurrent < iEnd) {
+                path.push({
+                    point : GCodeViewer.copyPoint(vertices[iCurrent]),
+                    type : command.type,
+                    lineNumber : command.lineNumber,
+                    feedrate : command.feedrate
+                });
+                iCurrent++;
+            }
+
+            if(command.type === "G0") {
+               iG0 = iCurrent ;
+            } else if(command.type === "G1") {
+               iG1 = iCurrent ;
+            } else {
+               iG2G3 = iCurrent;
             }
         }
 
@@ -616,14 +595,10 @@ GCodeViewer.Path = function(scene) {
     that.scene = scene;
     resetPathsGeo();
     resetPathsMesh();
-    that.matG0Undone = new THREE.LineDashedMaterial(
-            { color : 0xff0000, dashSize : 7 });
-    that.matG1Undone = new THREE.LineBasicMaterial(
-            { color : 0x000ff });
-    that.matG2G3Undone = new THREE.LineBasicMaterial(
-            { color : 0x000ff });
-    that.matG0Done = new THREE.LineDashedMaterial(
-            { color : 0xff00ff, dashSize : 2 });
-    that.matG1Done = new THREE.LineBasicMaterial({ color : 0xff00ff });
+    that.matG0Undone = new THREE.LineBasicMaterial({ color : 0xff0000 });
+    that.matG1Undone = new THREE.LineBasicMaterial({ color : 0x000ff });
+    that.matG2G3Undone = new THREE.LineBasicMaterial({ color : 0x000ff });
+    that.matG0Done = new THREE.LineBasicMaterial({ color : 0xff00ff });
+    that.matG1Done = new THREE.LineBasicMaterial({color : 0xff00ff });
     that.matG2G3Done = new THREE.LineBasicMaterial({ color : 0xff00ff });
 };
