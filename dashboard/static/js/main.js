@@ -326,8 +326,6 @@ $('.posx, .posy, .posz').keyup(function(event){
     }
 });
 
-
-
 // Handlers for the home/probe buttons
 $('.button-zerox').click(function(e) {dashboard.engine.sbp('ZX'); });  
 $('.button-zeroy').click(function(e) {dashboard.engine.sbp('ZY'); });  

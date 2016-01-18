@@ -53,7 +53,7 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         that.camera.updateProjectionMatrix();
         that.refreshDisplay();
 
-        that.gui.resized();
+        that.gui.resized(width, height);
     };
 
     /**
@@ -317,7 +317,8 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     that.viewPaths = function() {
         that.path.remove();  //Don't know how to check if already in scene
         that.path.add();
-        that.totalSize.setMeshes(that.gcode.size, that.inMm,
+        that.totalSize.setMeshes(that.gcode.size,
+                that.gcode.displayInInch === false,
                 that.cncConfiguration.initialPosition);
 
         var lx = ((that.gcode.size.max.x - that.gcode.size.min.x) / 2.0 ) || 0.0;
@@ -437,7 +438,8 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         goToLine : goToLineFun
 
     };
-    that.gui = new GCodeViewer.Gui(that.renderer.domElement, that.cncConfiguration, callbacks);
+    that.gui = new GCodeViewer.Gui(that.renderer, widthCanvas, heightCanvas,
+            that.cncConfiguration, callbacks);
 
     //Add animation
     that.animation = new GCodeViewer.Animation(that.scene, that.refreshDisplay,
