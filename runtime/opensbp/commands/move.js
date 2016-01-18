@@ -191,35 +191,40 @@ exports.MH = function(args,callback) {
 };
 
 // Set the Move (cut) speed for any of the 6 axes
-exports.MS = function(args) {
+exports.MS = function(args, callback) {
 	var speed_change = 0.0;
 	var sbp_values = {};
 
 	if (args[0] !== undefined) {
 		speed_change = args[0];
 		if(isNaN(speed_change)) { throw( "Invalid MS-XY argument: " + speed_change ); }
-		this.movespeed_xy = speed_change;
+		sbp_values.movexy_speed = this.movespeed_xy = speed_change;
 	}
 	if (args[1] !== undefined) {
 		speed_change = args[1];
 		if(isNaN(speed_change)) { throw( "Invalid MS-Z argument: " + speed_change ); }
-		this.movespeed_z = speed_change;
+		sbp_values.movez_speed = this.movespeed_z = speed_change;
 	}
 	if (args[2] !== undefined) {
 		speed_change = args[2];
 		if(isNaN(speed_change)) { throw( "Invalid MS-A argument: " + speed_change ); }
-		this.movespeed_a = speed_change;
+		sbp_values.movea_speed = this.movespeed_a = speed_change;
 	}
 	if (args[3] !== undefined) {
 		speed_change = args[3];
 		if(isNaN(speed_change)) { throw( "Invalid MS-B argument: " + speed_change ); }
-		this.movespeed_b = speed_change;
+		sbp_values.moveb_speed = this.movespeed_b = speed_change;
 	}
 	if (args[4] !== undefined) {
 		speed_change = args[4];
 		if(isNaN(speed_change)) { throw( "Invalid MS-C argument: " + speed_change ); }
-		this.movespeed_c = speed_change;
-		}
+		sbp_values.movec_speed = this.movespeed_c = speed_change;
+	}
+
+	config.opensbp.setMany(sbp_values, function(err, values) {
+		log.debug( "sbp_values = " + JSON.stringify(sbp_values) );
+		callback();
+	});
 };
 
 exports.MI = function(args) {

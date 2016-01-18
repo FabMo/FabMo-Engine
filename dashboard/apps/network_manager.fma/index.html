@@ -37,12 +37,12 @@
 			<table class="small-12 columns" style="width:100%" id="wifi_table">
 			<thead>
             	<tr>
-                	<th>&nbsp;</th>
+                	<!--<th>&nbsp;</th>-->
                 	<th>SSID</th>
                 	<th>Security</th>
                     <th>Strength</th>
-                    <th>State</th>
-                    <th>Known</th>
+<!--                    <th>State</th> -->
+                   <!-- <th>Known</th> -->
             	</tr>
         	</thead>
         	</table>
@@ -94,12 +94,12 @@
         		return json.data.wifi; }
         	},
         "columns": [
-            {
+            /*{
                 className:      'details-control',
                 orderable:      false,
                 data:           null,
                 defaultContent: '',
-            },
+            },*/
             {
               className: 'ssid noselect',
               orderable:      false,
@@ -138,8 +138,8 @@
                     else if(data <= 100) { classname = 'wifi4';}
                     return '<div class="' + classname + '" data-order="'+data_order+'"></div>'
                 }
-            },
-            {
+            }
+           /* {
                 className: 'state',
                 data :"state",
                 width : '40px',
@@ -167,9 +167,9 @@
                     	return '<div class="notfavorite"></div>';
                     }
                 }
-            },
+            },*/
         ],
-        "order": [[ 5, 'desc' ], [ 4, 'asc' ],[3,'desc']],
+        "order": [[ 0, 'desc' ]],
 
     }); // DataTable
 

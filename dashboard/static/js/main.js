@@ -317,6 +317,7 @@ $('html').on('click', function (e) {
 });
 $('.posx, .posy, .posz').keyup(function(event){
     if(event.keyCode == 13){
+    	event.preventDefault();
         var x = $('.posx').attr('value','')[1].value;
 		var y = $('.posy').attr('value','')[1].value;
 		var z = $('.posz').attr('value','')[1].value;
@@ -325,8 +326,6 @@ $('.posx, .posy, .posz').keyup(function(event){
 		$('.go-here').hide();
     }
 });
-
-
 
 // Handlers for the home/probe buttons
 $('.button-zerox').click(function(e) {dashboard.engine.sbp('ZX'); });  
