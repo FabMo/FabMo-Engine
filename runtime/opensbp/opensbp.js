@@ -128,6 +128,7 @@ SBPRuntime.prototype.runString = function(s, callback) {
 			return this._end(e.message + " (Line " + e.line + ")");
 		}
  		lines = this.program.length;
+		this._setupTransforms();
 		this.init();
 		this.end_callback = callback;
 		// get speed settings from opensbp.json to be used in files
@@ -142,8 +143,6 @@ SBPRuntime.prototype.runString = function(s, callback) {
 		this.movespeed_a = getSBP_speed.movea_speed;
 		this.movespeed_b = getSBP_speed.moveb_speed;
 		this.movespeed_c = getSBP_speed.movec_speed;
-
-		this._setupTransforms();
 		log.debug("Transforms configured...")
 		this._analyzeLabels();  // Build a table of labels
 		log.debug("Labels analyzed...")
@@ -980,10 +979,9 @@ SBPRuntime.prototype.init = function() {
 	this.end_callback = null;
 	this.quit_pending = false;
 	this.end_message = null;
-	/*
-	if(this.transforms.level.apply === true) {
+	if(this.transforms != null && this.transforms.level.apply === true) {
 		leveler = new Leveler(this.transforms.level.ptDataFile);
-	}*/
+	}
 };
 
 // Compile an index of all the labels in the program
@@ -1198,13 +1196,6 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 //log.debug("   emit_move code = " + code);
 //log.debug("   emit_move pt = " + JSON.stringify(pt));
 
-	if( code === "G0" || code === "G1" ){
-		pt = this.transformation(pt);
-	}
-	else if( code === "G2" || code === "G3" ){
-
-	}
-//	log.debug("level = " + this.transforms.level.apply );
 //	log.debug("interpolate = " + this.transforms.interpolate.apply );
 //	if(( this.transforms.level.apply === true || this.transforms.interpolate.apply === true ) && code !== "G0" ){
 //		if( code === "G1"){
@@ -1258,7 +1249,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 			}
 			else {
 				opFunction(pt);
-		}
+			}
 //	}
 };
 
@@ -1268,13 +1259,6 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 SBPRuntime.prototype._setupTransforms = function() {
 	log.debug("_setupTransforms");
 	this.transforms = JSON.parse(JSON.stringify(config.opensbp.get('transforms')));
-	try {
-	    this.levelerData = JSON.parse(fs.readFileSync(this.transforms.level.ptDataFile));
-	} catch(e) {
-		log.warn('Could not read leveler data: ' + e);
-		this.levelerData = null;
-	}
-    log.debug("_setupTransforms: " + JSON.stringify(this.levelerData) );
 };
 
 SBPRuntime.prototype.transformation = function(TranPt){
