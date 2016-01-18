@@ -1,4 +1,5 @@
 body {
+  background: #eee
 }
 
 .delete-button {
@@ -58,4 +59,5 @@ body {
   padding: 5px;
   box-shadow: 3px 3px 3px #aaaaaa;
 }
+
 .hidden, .hide { display:none; }
