@@ -309,6 +309,7 @@ $('html').on('click', function (e) {
 		dashboard.engine.gcode(gcode);
 		$('.go-here').hide();
 		} else if (e.target.id === "axis"){
+			 $("input:text").focus(function() { $(this).select(); } );
 			$('.go-here').show();
 		} else {
 			$('.go-here').hide();
