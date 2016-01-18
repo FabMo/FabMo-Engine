@@ -567,7 +567,8 @@
 		}, 1000);
 		$('.up-next').css('left', '-200px');
 		$('.now-running').css('left', '0px');
-		$('.with-job').css('left','10px');
+		$('.without-job').css('left','-1000px');;
+		$('.with-job').css('left','10px');	
 		$('.play-button').show();
    };
  fabmo.requestStatus(function(err, data) {
@@ -600,8 +601,8 @@
 		var prog = ((status.line/status.nb_lines)*100).toFixed(2);
 		var percent = Math.ceil(prog);
 		var rotation = Math.ceil(180*(percent/100));
- 		var fill_rotation = 3 + rotation;
- 		var fix_rotation = 6 + rotation * 2;
+ 		var fill_rotation = rotation;
+ 		var fix_rotation = rotation * 2;
 		var jobid;
 		var transform_styles = ['-webkit-transform',
                         '-ms-transform',
@@ -618,14 +619,7 @@
 			$('.up-next').css('left', '0px');
 			$('.now-running').css('left', '-200px');
 			$('.play').removeClass('active');
-		} else if (status.state === "manual") {
-			$('.fill, .mask.full').css(transform_styles[i], 'rotate(360deg)');
-			$('.fill.fix').css(transform_styles[i], 'rotate(360deg)');
-			setNextJob();
-			$('.up-next').css('left', '0px');
-			$('.now-running').css('left', '-200px');
-			$('.play').removeClass('active');
-		}
+		} 
 		// New Job
 		if(jobid) {
 			
