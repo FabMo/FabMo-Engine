@@ -183,10 +183,12 @@ Machine.prototype.getGCodeForFile = function(filename, callback) {
 			ext = path.extname(filename).toLowerCase();
 
 			if(ext == '.sbp') {
-				this.setRuntime(this.sbp_runtime);
-				this.current_runtime.simulateString(data, callback);
+				if(this.status.state != 'idle') {
+					return callback(new Error('Cannot generate G-Code from OpenSBP while machine is running.'));
+				}
+				this.setRuntime(null);
+				this.sbp_runtime.simulateString(data, callback);
 			} else {
-				this.setRuntime(this.gcode_runtime);
 				fs.readFile(filename, callback);
 			}
 		}
@@ -224,14 +226,15 @@ Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
 
 Machine.prototype.setRuntime = function(runtime) {
 	log.info("Setting runtime to " + runtime)
-	if(runtime && runtime !== this.current_runtime) {
-		if(this.current_runtime) {
+	if(runtime) {
+		if(this.current_runtime && this.current_runtime != runtime) {
 			this.current_runtime.disconnect();					
 		}
 		runtime.connect(this);
 		this.current_runtime = runtime;
 	} else {
-
+		this.current_runtime = this.idle_runtime;
+		this.current_runtime.connect(this);
 	}
 };
 

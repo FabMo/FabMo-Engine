@@ -61,6 +61,10 @@ function SBPRuntime() {
 	this.paused = false;
 	this.lastNoZPullup = 0; 
 	this.continue_callback = null;
+
+	// Physical machine state
+	this.machine = null;
+	this.driver = null;
 }
 util.inherits(SBPRuntime, events.EventEmitter);
 
@@ -88,16 +92,22 @@ SBPRuntime.prototype.connect = function(machine) {
 	this._update();
 	this.status_handler = this._onG2Status.bind(this);
 	this.driver.on('status', this.status_handler);
-	log.info('Connected ShopBot runtime.');
+	log.info('Connected OpenSBP runtime.');
 };
 
 // Disconnect this runtime from the machine model.
 // Throws an exception if the runtime can't be disconnected.
 // (Runtime can't be disconnected when it is busy running a file)
 SBPRuntime.prototype.disconnect = function() {
+	if(!this.machine) {
+		return;
+	}
+
 	if(this.ok_to_disconnect) {
-		log.info('Disconnecting OpenSBP runtime.');
-		this.driver.removeListener('status', this.status_handler);		
+		this.driver.removeListener('status', this.status_handler);
+		this.machine = null;	
+		this.driver = null;
+		log.info('Disconnected OpenSBP runtime.');
 	} else {
 		throw new Error("Cannot disconnect OpenSBP runtime.")
 	}
@@ -161,6 +171,7 @@ SBPRuntime.prototype.runFile = function(filename, callback) {
 // Simulate the provided file, returning the result as g-code
 SBPRuntime.prototype.simulateString = function(s, callback) {
 	if(this.ok_to_disconnect) {
+		var saved_machine = this.machine;
 		this.disconnect();
 		this.runString(s, function(err, data) {
 			this.machine = saved_machine;
@@ -486,7 +497,6 @@ SBPRuntime.prototype._dispatch = function(callback) {
 
 		// And we have are connected to a real tool
 		if(this.machine) {
-
 			// Dispatch the g-codes and look for the tool to start running them
 			//log.info("dispatching a chunk: " + this.current_chunk);
 
@@ -832,7 +842,6 @@ SBPRuntime.prototype._assign = function(identifier, value, callback) {
 
 	result = identifier.match(PERSISTENTVAR_RE);
 	if(result) {
-		console.log("ASSIGNING THE PERSISTENT VARIABLE " + identifier + " A value of " + value)
 		config.opensbp.setVariable(identifier, value, callback)
 		return
 	}
@@ -1231,7 +1240,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 			}
 		}
 		log.debug("emit_move: N" + n + JSON.stringify(gcode));
-		emit_moveContext.current_chunk.push('N' + n + gcode);
+		emit_moveContext.current_chunk.push('N' + n + ' ' + gcode);
 	};
 
 			if(this.transforms.level.apply === true  && code !== "G0") {
