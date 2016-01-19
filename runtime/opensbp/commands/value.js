@@ -74,7 +74,7 @@ exports.VA = function(args, callback) {
 	}.bind(this));
 };
 
-exports.VC = function(args) {
+exports.VC = function(args, callback) {
 
 //	log.debug( "VC - args = " + args );
 
