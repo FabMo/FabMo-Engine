@@ -230,8 +230,11 @@ Machine.prototype.setRuntime = function(runtime) {
 		if(this.current_runtime && this.current_runtime != runtime) {
 			this.current_runtime.disconnect();					
 		}
-		runtime.connect(this);
-		this.current_runtime = runtime;
+		if(this.current_runtime != runtime) {
+			runtime.connect(this);
+			this.current_runtime = runtime;
+
+		}
 	} else {
 		this.current_runtime = this.idle_runtime;
 		this.current_runtime.connect(this);
