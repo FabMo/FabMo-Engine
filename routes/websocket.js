@@ -6,9 +6,17 @@ var clients_limit = 5;
 var nb_clients=0;
 
 
-function setupStatusBroadcasts(clients_sockets){
+function setupStatusBroadcasts(server){
+	var previous_status = {'state':null}
 	machine.on('status',function(status){
-		clients_sockets.emit('status',status);
+		server.io.sockets.sockets.forEach(function (socket) { 
+			if(status.state != previous_status.state) {
+				socket.emit('status',status);
+			} else {
+				socket.volatile.emit('status', status);
+			}
+		});
+		previous_status = status;
 	});
 }
 
@@ -63,7 +71,7 @@ var onConnect = function(socket) {
 
 module.exports = function(server) {
 	server.io.on('connection', onConnect);
-	setupStatusBroadcasts(server.io.sockets);
+	setupStatusBroadcasts(server);
 };
 
 
