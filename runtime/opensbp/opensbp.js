@@ -1245,8 +1245,8 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 				return;
 			}
             console.log("height = " + height);
-			pt.Z = Z + height;
-			opFunction(pt);
+			// pt.Z = Z + height;
+			opFunction({X : X, Y : Y, Z : Z + height });
 			log.debug("emit_move:level");
 		}
 		else {
