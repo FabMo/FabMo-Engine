@@ -201,7 +201,7 @@ exports.CP = function(args) {
       this.emit_move('G0',{'X':startX,'Y':startY});
     }
     else {
-      this.emit_move('G1',{'X':startX,'Y':startY,'F':feedrate});
+      this.emit_move('G0',{'X':startX,'Y':startY});
     }
     this.cmd_posx = startX;
     this.cmd_posy = startY;
