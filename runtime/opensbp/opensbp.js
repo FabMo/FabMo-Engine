@@ -1243,7 +1243,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 			log.error("Impossible to find the point height with the leveler.");
 				return;
 			}
-			pt.Z = height;
+			pt.Z += height;
 			opFunction(pt);
 			log.debug("emit_move:level");
 		}
