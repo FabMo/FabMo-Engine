@@ -25,6 +25,22 @@ define(function(require) {
 		this._setupMessageListener();
 	};
 
+	Dashboard.prototype.browseForFile = function(callback) {
+		var file_input = $('#hidden-file-input'); 
+		callback = callback || function() {};
+
+		file_input.one('click', function() {
+			file_input.val(null);
+			file_input.off('change');
+			file_input.one('change', function(evt) {
+				callback(evt);
+			});
+		});
+		
+
+		file_input.click();
+	}
+
 	Dashboard.prototype.setEngine = function(engine) {
 		this.engine = engine;
 		this.engine.on('status', function(data) {

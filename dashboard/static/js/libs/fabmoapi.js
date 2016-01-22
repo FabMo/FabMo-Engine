@@ -306,7 +306,14 @@ FabMoAPI.prototype.disableHotspot = function(callback) {
 
 function makeFormData(obj, default_name, default_type) {
 	if (obj instanceof jQuery){ //if it's a form
-		var file = (obj.find('input:file'))[0].files[0];
+		if(obj.is('input:file')) {
+			obj = obj[0];
+		} else {
+			obj = obj.find('input:file')[0];
+		}
+
+		var file = obj.files[0];
+		
 		// Create a new FormData object.
 		var formData = new FormData();
 		formData.append('file', file, file.name);

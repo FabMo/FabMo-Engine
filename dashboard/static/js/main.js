@@ -47,12 +47,6 @@ define(function(require) {
 			dashboard.setEngine(engine);
 			dashboard.ui=new FabMoUI(dashboard.engine);
 
-			// Configure handwheel input
-			try {
-				wheel = setupHandwheel();
-			} catch(e) {
-				console.error(e);
-			}
 			keyboard = setupKeyboard();
 			keypad = setupKeypad();
 
@@ -70,73 +64,6 @@ define(function(require) {
 			engine.getStatus();
 		}
 	});
-
-
-
-
-function setupHandwheel() {
-
-	var wheel = new WheelControl('wheel', {
-		labelColor : 'white'
-	});	
-
-	var SCALE = 0.75;
-	var TICKS_MOVE = 20;
-	var NUDGE = {'mm' : 0.1, 'in' : 0.010};
-	var WATCHDOG_TIMEOUT = 200;
-
-	var angle = 0.0;
-
-	var watchdog = null;
-	var last_move = 0;
-
-	function stopToolMotion() {
-		dashboard.engine.manualStop();
-	}
-
-	wheel.on('move', function makeMove(data) {
-		var degrees = data.angle*180.0/Math.PI;
-		angle += degrees;
-		var distance = wheel.inUnits(Math.abs(angle*SCALE), wheel.units);
-		var axis = data.axis;
-		var speed = wheel.inUnits(wheel.speed, wheel.units);
-		if(angle > TICKS_MOVE) {
-			if(last_move) {
-				dashboard.engine.manualStop();
-			}
-			angle = 0;
-			//dashboard.engine.fixed_move('+' + axis, distance, speed, function(err) {});
-			dashboard.engine.manualStart(axis, speed);
-
-			last_move = 0;
-		}
-		if(angle < -TICKS_MOVE) {
-			if(!last_move) {
-				dashboard.engine.quit();
-			}
-			angle = 0;
-//			dashboard.engine.fixed_move('-' + axis, distance, speed, function(err) {});
-			dashboard.engine.manualStart(axis, -speed);
-
-			last_move = 1;
-		}
-
-		if(watchdog) { clearTimeout(watchdog); }
-		watchdog = setTimeout(stopToolMotion, WATCHDOG_TIMEOUT);
-
-	});
-
-	wheel.on('release', function quit(data) {
-		dashboard.engine.quit()
-	});
-
-	wheel.on('nudge', function nudge(data) {
-		var nudge = NUDGE[wheel.units];
-		var speed = wheel.inUnits(wheel.speed, wheel.units);
-		dashboard.engine.manualMoveFixed(data.axis, wheel.speed, nudge, function(err) {});
-	});
-	return wheel;
-}
 
 function getManualMoveSpeed(move) {
 	var speed_ips = null;
@@ -204,7 +131,6 @@ function setupKeypad() {
 
 	keypad.on('nudge', function(nudge) {
 		dashboard.engine.manualMoveFixed(nudge.axis, 60*getManualMoveSpeed(nudge), nudge.dir*getManualNudgeIncrement(nudge))
-		//dashboard.engine.manualMoveFixed(nudge.axis, null, nudge.dir*getManualNudgeIncrement(nudge) || 0.010);
 	});
 	return keypad;
 }

@@ -22,6 +22,29 @@ define(function(require) {
 		}
 	});
 
+	views.AddAppView = Backbone.View.extend({
+		tagName : 'li',
+		className : 'app-icon',
+		template : _.template(require('text!templates/app-icon-add.html')),
+		initialize : function() {
+			_.bindAll(this, 'render');
+		},
+		render : function() {
+			this.$el.html(this.template({}));
+			this.$el.on('click', function(evt) {
+				var dashboard = require('dashboard');
+				dashboard.browseForFile(function(evt) {
+					dashboard.engine.submitApp($(evt.target), function(err, data) {
+						var context = require('context');
+						context.apps.fetch();
+					});
+				});
+			});
+			return this;
+		}
+	});
+
+
 	views.AppMenuView = Backbone.View.extend({
 		tagName : 'div',
 		className : 'app-menu',
@@ -42,7 +65,8 @@ define(function(require) {
 			this.collection.forEach(function(item) {
 				var appIconView = new views.AppIconView({ model: item });
 				element.append(appIconView.render().el);
-			});
+			});				
+			element.append(new views.AddAppView().render().el);				
 			return this;
 		},
 		show : function() {
