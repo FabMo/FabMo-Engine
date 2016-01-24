@@ -1235,9 +1235,19 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 	};
 
 		if(this.transforms.level.apply === true  && code !== "G0") {
+			var previousHeight = leveler.foundHeight;
 			var X = (pt.X === undefined) ? emit_moveContext.cmd_posx : pt.X;
 			var Y = (pt.Y === undefined) ? emit_moveContext.cmd_posy : pt.Y;
-			var Z = (pt.Z === undefined) ? emit_moveContext.cmd_posz : pt.Z;
+			var Z = 0;
+			// cmd_posz stores the last Z position. But when using the leveler,
+			// the stored Z is the real Z of the bit, not the wanted Z relative
+			// to the board. Therefore, we delete the previousely found height
+			// when using cmd_posz but not when using pt.Z
+			if(pt.Z === undefined) {
+			    Z = emit_moveContext.cmd_posz - previousHeight;
+			} else {
+			    Z =  pt.Z;
+			}
 			var height = leveler.findHeight(X, Y, Z);
             console.log("Z = " + Z);
 			if(height === false) {
@@ -1245,8 +1255,8 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 				return;
 			}
             console.log("height = " + height);
-			// pt.Z = Z + height;
-			opFunction({X : X, Y : Y, Z : Z + height });
+			pt.Z = Z + height;
+			opFunction(pt);
 			log.debug("emit_move:level");
 		}
 		else {
