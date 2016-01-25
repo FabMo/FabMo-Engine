@@ -2,10 +2,10 @@
 	"name":"Job Manager",
 	"main":"./index.html",
 	"icon":"icon.png",
-	"icon_color":"navy",
+	"icon_color":"#313366",
 	"icon_display":"none",
 	"version":"0.0.1",
-	"author":"Ryan Sturmer",
+	"author":"Brendan Collins",
 	"website":"http://shopbottools.com",
 	"id":"job-manager",
     "description":"System app for submitting CAM files to the tool and managing the job queue"

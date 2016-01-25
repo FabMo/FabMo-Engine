@@ -2,10 +2,10 @@
 	"name":"Previewer",
 	"main":"./index.html",
 	"icon":"icon.png",
-	"icon_color":"black",
+	"icon_color":"#313366",
 	"icon_display":"none",
 	"version":"0.0.1",
-	"author":"Ryan Sturmer",
+	"author":"Alex Canales",
 	"website":"http://shopbottools.com",
 	"id":"previewer",
     "description":"System app for previewing files"
