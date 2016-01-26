@@ -110,7 +110,7 @@ FabMoAPI.prototype.ping = function(callback) {
 
 // Configuration
 FabMoAPI.prototype.getConfig = function(callback) {
-	callback = callback || function() {};
+	var callback = callback || function() {};
 	this._get('/config', callback, function(err, data) {
 		this.config = data;
 		callback(err, data);
@@ -217,8 +217,8 @@ FabMoAPI.prototype.getAppConfig = function(app_id, callback) {
 	this._get('/apps/' + id + '/config', callback, callback, 'config');
 }
 
-FabMoAPI.prototype.setAppConfig = function(cfg_data, callback) {
-	this._post('/apps/' + id + '/config', cfg_data, callback, callback, 'configuration');
+FabMoAPI.prototype.setAppConfig = function(id, cfg_data, callback) {
+	this._post('/apps/' + id + '/config', {'config': cfg_data}, callback, callback, 'config');
 }
 
 // Macros
@@ -395,7 +395,6 @@ FabMoAPI.prototype._post = function(url, data, errback, callback, key) {
 		contentType = 'application/x-www-form-urlencoded; charset=UTF-8'
 		processData = true;
 	}
-
 	$.ajax({
 		url: url,
 		type: "POST",

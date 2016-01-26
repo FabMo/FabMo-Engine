@@ -475,7 +475,7 @@ define(function(require) {
 
 		this._registerHandler('setAppConfig', function(data, callback) {
 			context = require('context');
-			this.engine.set_app_config(context.current_app_id, data, callback);
+			this.engine.setAppConfig(context.current_app_id, data, callback);
 		}.bind(this));
 
 		this._registerHandler('requestStatus', function(data, callback) {
