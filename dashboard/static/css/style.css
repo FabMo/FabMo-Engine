@@ -717,17 +717,26 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	padding: 0.75rem;
 	border-radius: 8px;
 	border-radius: 0.5rem;
-	border: dashed 3px #999;
-	color: #aaa;
+	border: dashed 3px #bbb;
+	color: #bbb;
 	font-size: 60px;
 	font-weight: 900;
+}
+
+.app-icon:hover .add {
+	border: dashed 3px #666;
+	color: #666;
+}
+
+.app-icon:hover .add-title {
+	color: #666;	
 }
 
 .add-title {
 	margin-top: 4px;
 	margin-top: 0.25rem;
 	font-family: 'source_sans_proregular';
-	color: #999;
+	color: #bbb;
 	font-style: italic;
 }
 
