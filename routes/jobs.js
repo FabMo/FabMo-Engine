@@ -6,6 +6,13 @@ var log = require('../log').logger('routes');
 var machine = require('../machine').machine;
 var fs = require('fs');
 var uuid = require('node-uuid');
+var upload = require('./upload').upload;
+
+var submitJob2 = function(req, res, next) {
+    upload(req, res, next, function(err, uploaded) {
+        console.log(uploaded);
+    });
+}
 
 /**
  * @apiGroup Jobs
@@ -25,6 +32,7 @@ var submitJob = function(req, res, next) {
     var file = req.files.file;
     var answer;
 
+    console.log(req.params)
     // Only write "allowed files"
     if(file && util.allowed_file(file.name))
     {
@@ -410,6 +418,7 @@ var getJobGCode = function(req, res, next) {
 
 module.exports = function(server) {
     server.post('/job', submitJob);
+    server.post('/job2', submitJob2);
     server.get('/jobs', getAllJobs);
     server.get('/job/:id', getJobById);
     server.del('/job/:id', cancelJob);

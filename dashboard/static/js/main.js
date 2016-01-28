@@ -253,6 +253,29 @@ $('.posx, .posy, .posz').keyup(function(event){
     }
 });
 
+$('#icon_edit').click(function() {
+	dashboard.browseForFile(function(evt) {
+		var file = evt.target.files[0];
+		var jobs = [];
+		console.log("got a file")
+		jobs.push({
+			file : file,
+			name : file.name,
+			description : file.name + ' uploaded from the dashbord.'
+		});
+
+		jobs.push({
+			file : file,
+			name : file.name + ' 2',
+			description : file.name + ' uploaded from the dashbord.'
+		});
+
+		console.log("Submitting job 2");
+		console.log(jobs);
+		dashboard.engine.submitJob2(jobs)
+	});
+});
+
 // Handlers for the home/probe buttons
 $('.button-zerox').click(function(e) {dashboard.engine.sbp('ZX'); });  
 $('.button-zeroy').click(function(e) {dashboard.engine.sbp('ZY'); });  

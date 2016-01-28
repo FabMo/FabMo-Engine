@@ -304,6 +304,10 @@ FabMoAPI.prototype.disableHotspot = function(callback) {
 	this._post('/network/hotspot/state', data, callback, callback);
 }
 
+FabMoAPI.prototype.submitJob2 = function(jobs, callback) {
+	this._postUpload('/job2', jobs, callback, callback);
+}
+
 function makeFormData(obj, default_name, default_type) {
 	if (obj instanceof jQuery){ //if it's a form
 		if(obj.is('input:file')) {
@@ -344,6 +348,7 @@ function makeFormData(obj, default_name, default_type) {
 		formData.append('name', name || filename);
 		formData.append('description', description);
 	}
+	formdata.append('jobs', [1,2,3,4]);
 	return formData;
 }
 
@@ -381,44 +386,104 @@ FabMoAPI.prototype._get = function(url, errback, callback, key) {
 	});
 }
 
+FabMoAPI.prototype._postUpload = function(url, data, errback, callback, key) {
+	//var url = this._url(url);
+	var callback = callback || function() {};
+	var errback = errback || function() {};
+
+	// The POST Upload is done in two pieces.  First is a metadata post which transmits
+	// an array of json objects that describe the files in question.
+	// Following the metadata is a multipart request for each uploaded file.
+	// So for N files, you have N+1 requests, the first for the metadata, and then N remaining for the files themselves.
+	if(!Array.isArray(data)) {
+		data = [data];
+	}
+
+	var files = [];
+	data.forEach(function(item) {
+		files.push(item.file);
+		delete item.file;
+	});
+
+	var onMetaDataUploadComplete = function(err, k) {
+		if(err) {
+			return errback(err);
+		}
+		console.log("Got the key: " + k);
+		var requests = [];
+		files.forEach(function(file, index) {
+			var fd = new FormData();
+			fd.append('key', k);
+			fd.append('index', index);
+			fd.append('file', file);
+			var onFileUploadComplete = function(err, data) {
+				if(err) {
+					// Bail out here too - fail on any one file upload failure
+					requests.forEach(function(req) {
+						req.abort();
+					});
+					return errback(err);
+				}
+				if(data.status && data.status === 'complete') {
+					if(key) {
+						callback(null, data.data[key]);						
+					} else {
+						callback(null, data.data);
+					}
+				}
+			}.bind(this);
+			var request = this._post(url, fd, onFileUploadComplete, onFileUploadComplete);
+			requests.push(request);
+		}.bind(this));
+	}.bind(this);
+	this._post(url, data, onMetaDataUploadComplete, onMetaDataUploadComplete, 'key');
+}
+
 FabMoAPI.prototype._post = function(url, data, errback, callback, key) {
 	var url = this._url(url);
 	var callback = callback || function() {};
 	var errback = errback || function() {};
-	var processData = true;
-	var contentType = true;
 
-	if(data instanceof FormData) {
-		processData = false;
-		contentType = false;
-	} else {
-		contentType = 'application/x-www-form-urlencoded; charset=UTF-8'
-		processData = true;
+	var xhr = new XMLHttpRequest();
+	xhr.open('POST', url);
+
+	if(!(data instanceof FormData)) {
+		xhr.setRequestHeader('Content-Type', 'application/json');
+		data = JSON.stringify(data);
 	}
-	$.ajax({
-		url: url,
-		type: "POST",
-		processData : processData,
-		contentType : contentType,
-		dataType : 'json',
-		'data' : data, 
-		success: function(result){
-			if(data.status === "success") {
-				if(key) {
-					callback(null,result.data[key]);					
-				} else {
-					callback(null,result.data);										
+
+	xhr.onload = function() {
+		switch(xhr.status) {
+			case 200:
+				var response = JSON.parse(xhr.responseText);
+				switch(response.status) {
+					case 'success':
+						if(key) {
+							callback(null, response.data[key]);
+						} else {
+							callback(null, response.data);
+						}
+						break;
+
+					case 'fail':
+						if(key) {
+							errback(response.data[key]);
+						} else {
+							errback(response.data);
+						}
+						break;
+					default:
+						errback(response.message);
+						break;
 				}
-			} else if(data.status==="fail") {
-				errback(result.data);
-			}	else {
-				errback(result.message);
-			}
-		},
-		error: function( data, err ){
-			 errback(err);
+			break;
+			default:
+				console.error("Got a bad response from server: " + xhr.status);
+				break;
 		}
-	});
+    }
+	xhr.send(data);
+	return xhr;
 }
 
 FabMoAPI.prototype._del = function(url, data, errback, callback, key) {
