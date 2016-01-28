@@ -1195,7 +1195,11 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 	var i;
 //log.debug("   emit_move code = " + code);
 //log.debug("   emit_move pt = " + JSON.stringify(pt));
+	log.debug("Emit_move original point: " + JSON.stringify(pt));
+	
+	tPt = this.transformation(pt);
 
+	log.debug("Emit_move Transformed point: " + JSON.stringify(tPt));
 //	log.debug("interpolate = " + this.transforms.interpolate.apply );
 //	if(( this.transforms.level.apply === true || this.transforms.interpolate.apply === true ) && code !== "G0" ){
 //		if( code === "G1"){
@@ -1217,8 +1221,9 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 
 	var emit_moveContext = this;
 	var opFunction = function(pt) {  //Find a better name
-		for(key in pt) {
-			var v = pt[key];
+		// for(key in tPt) {
+		['X','Y','Z','A','B','C','I','J','K','F'].forEach(function(key){
+			var v = tPt[key];
 			if(v !== undefined) {
 				if(isNaN(v)) { throw( "Invalid " + key + " argument: " + v ); } 
 				gcode += (key + v.toFixed(5));
@@ -1229,39 +1234,39 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 				else if(key === "B") { emit_moveContext.cmd_posb = v; }
 				else if(key === "C") { emit_moveContext.cmd_posc = v; }
 			}
-		}
+		});
 		log.debug("emit_move: N" + n + JSON.stringify(gcode));
 		emit_moveContext.current_chunk.push('N' + n + ' ' + gcode);
 	};
 
-		if(this.transforms.level.apply === true  && code !== "G0") {
-			var previousHeight = leveler.foundHeight;
-			var X = (pt.X === undefined) ? emit_moveContext.cmd_posx : pt.X;
-			var Y = (pt.Y === undefined) ? emit_moveContext.cmd_posy : pt.Y;
-			var Z = 0;
-			// cmd_posz stores the last Z position. But when using the leveler,
-			// the stored Z is the real Z of the bit, not the wanted Z relative
-			// to the board. Therefore, we delete the previousely found height
-			// when using cmd_posz but not when using pt.Z
-			if(pt.Z === undefined) {
-			    Z = emit_moveContext.cmd_posz - previousHeight;
-			} else {
-			    Z =  pt.Z;
-			}
-			var height = leveler.findHeight(X, Y, Z);
-            console.log("Z = " + Z);
-			if(height === false) {
-				log.error("Impossible to find the point height with the leveler.");
-				return;
-			}
-            console.log("height = " + height);
-			pt.Z = Z + height;
-			opFunction(pt);
-			log.debug("emit_move:level");
+	if(this.transforms.level.apply === true  && code !== "G0") {
+		var previousHeight = leveler.foundHeight;
+		var X = (tPt.X === undefined) ? emit_moveContext.cmd_posx : tPt.X;
+		var Y = (tPt.Y === undefined) ? emit_moveContext.cmd_posy : tPt.Y;
+		var Z = 0;
+		// cmd_posz stores the last Z position. But when using the leveler,
+		// the stored Z is the real Z of the bit, not the wanted Z relative
+		// to the board. Therefore, we delete the previousely found height
+		// when using cmd_posz but not when using pt.Z
+		if(tPt.Z === undefined) {
+		    Z = emit_moveContext.cmd_posz - previousHeight;
+		} else {
+		    Z =  tPt.Z;
 		}
-		else {
-			opFunction(pt);
+		var height = leveler.findHeight(X, Y, Z);
+           console.log("Z = " + Z);
+		if(height === false) {
+			log.error("Impossible to find the point height with the leveler.");
+			return;
 		}
+        console.log("height = " + height);
+		tPt.Z = Z + height;
+		opFunction(tPt);
+		log.debug("emit_move:level");
+	}
+	else {
+		opFunction(tPt);
+	}
 //	}
 };
 
@@ -1271,29 +1276,32 @@ SBPRuntime.prototype._setupTransforms = function() {
 };
 
 SBPRuntime.prototype.transformation = function(TranPt){
-//  log.debug("transformation = " + JSON.stringify(TranPt));
+ log.debug("transformation = " + JSON.stringify(TranPt));
 	if (this.transforms.rotate.apply !== false){
-//  		log.debug("rotation apply = " + this.transforms.rotate.apply);
-//		log.debug("Rotate: " + JSON.stringify(this.transforms.rotate));
-        if ( !("X" in TranPt) ) { TranPt.X = this.cmd_posx; }
-        if ( !("Y" in TranPt) ) { TranPt.Y = this.cmd_posy; }
-		var angle = this.transforms.rotate.angle;
-		var x = TranPt.X;
-		var y = TranPt.Y;
-		var PtRotX = this.transforms.rotate.x;
-		var PtRotY = this.transforms.rotate.y;
-		TranPt = tform.rotate(TranPt,angle,PtRotX,PtRotY);
+ 		log.debug("rotation apply = " + this.transforms.rotate.apply);
+		log.debug("Rotate: " + JSON.stringify(this.transforms.rotate));
+		if ( "X" in TranPt || "Y" in TranPt ){
+            if ( !("X" in TranPt) ) { TranPt.X = this.cmd_posx; }
+            if ( !("Y" in TranPt) ) { TranPt.Y = this.cmd_posy; }
+       	log.debug("transformation TranPt: " + JSON.stringify(TranPt));
+		    var angle = this.transforms.rotate.angle;
+            var x = TranPt.X;
+            var y = TranPt.Y;
+            var PtRotX = this.transforms.rotate.x;
+            var PtRotY = this.transforms.rotate.y;
+            TranPt = tform.rotate(TranPt,angle,PtRotX,PtRotY);
+        }
 	}
 	if (this.transforms.shearx.apply !== false){
-//		log.debug("ShearX: " + JSON.stringify(this.transforms.shearx));
+		log.debug("ShearX: " + JSON.stringify(this.transforms.shearx));
 		TranPt = tform.shearX(TranPt);
 	}
 	if (this.transforms.sheary.apply !== false){
-//		log.debug("ShearY: " + JSON.stringify(this.transforms.sheary));
+		log.debug("ShearY: " + JSON.stringify(this.transforms.sheary));
 		TranPt = tform.shearY(TranPt);
 	}
 	if (this.transforms.scale.apply !== false){
-//		log.debug("Scale: " + JSON.stringify(this.transforms.scale));
+		log.debug("Scale: " + JSON.stringify(this.transforms.scale));
 		var ScaleX = this.transforms.scale.scalex;
 		var ScaleY = this.transforms.scale.scaley;
 		var PtX = this.transforms.scale.x;
@@ -1302,7 +1310,7 @@ SBPRuntime.prototype.transformation = function(TranPt){
 		TranPt = tform.scale(TranPt,ScaleX,ScaleY,PtX,PtY);
 	}
 	if (this.transforms.move.apply !== false){
-//		log.debug("Move: " + JSON.stringify(this.transforms.move));
+		log.debug("Move: " + JSON.stringify(this.transforms.move));
 		TranPt = tform.translate(TranPt, 
 								 this.transforms.move.x, 
 								 this.transforms.move.y, 
