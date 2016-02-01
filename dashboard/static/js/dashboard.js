@@ -156,7 +156,6 @@ define(function(require) {
 
 		// Submit a job
 		this._registerHandler('submitJob', function(data, callback) {
-			console.log("Data passed through to dashboard: " +  JSON.stringify(data))
 			// TODO deal with options here, don't just pass them through
 			this.engine.submitJob(data.jobs, data.options, function(err, result) {
 				if(err) {
@@ -295,26 +294,11 @@ define(function(require) {
 
 		// Submit an app
 		this._registerHandler('submitApp', function(data, callback) { 
-			if('file' in data) {
-				var formdata = new FormData();
-				formdata.append('file', data.file, data.file.name);
-				this.engine.submitApp(formdata, function(err, result) {
-					this.refreshApps();
-					if(err) {
-						callback(err);
-					} else {
-						callback(null, result);
-					}
-				}.bind(this));
-			} else if ('data' in data) {
-				this.engine.submitApp(data, function(err, result) {
-					if(err) {
-						callback(err);
-					} else {
-						callback(null);
-					}
-				}.bind(this));
-			}
+			this.engine.submitApp(data.apps, data.options, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+
 		}.bind(this));
 
 		this._registerHandler('deleteApp', function(id, callback) {

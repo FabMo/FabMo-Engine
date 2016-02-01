@@ -200,8 +200,10 @@
 				evt.preventDefault();
 				try {
 					file = evt.originalEvent.dataTransfer.files[0];
-					fabmo.submitJob(file, {filename : file.name}, function(err, data) {
-						if(err){alert(err);return;}
+					fabmo.submitJob(file, {}, function(err, data) {
+						if(err){
+							fabmo.notify('error', err);
+						}
 						refresh_jobs_list();
 						fabmo.getJobsInQueue(function(err, data) {
 							setNextJob(data);
@@ -218,8 +220,8 @@
 	jQuery.fn.dataTableExt.oSort["duration-desc"] = function (x, y) {return 1};
 	jQuery.fn.dataTableExt.oSort["duration-asc"] = function (x, y) {}
 
-	fabmo.on('job_start', function() {console.log("Job started")});
-	fabmo.on('job_end', function() {console.log("Job ended")}); 
+	fabmo.on('job_start', function() {console.info("Job started")});
+	fabmo.on('job_end', function() {console.info("Job ended")}); 
 
     var history_table = $('#history_table').DataTable( {
     	"paging": true,
@@ -488,8 +490,10 @@
 	});
 
 	$('#file').change(function(evt) {
-		console.log("Submitting job....");
 		fabmo.submitJob($('#fileform'), {}, function(err, data) {
+			if(err){
+				fabmo.notify('error', err);
+			}
 			resetFormElement($('#file'));
 			refresh_jobs_list();
 			setNextJob();

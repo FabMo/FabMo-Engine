@@ -21,7 +21,7 @@ function createUpload(metadata, callback) {
     log.info('Creating upload ' + key);
     UPLOAD_INDEX[key] = {
         file_count : metadata.files.length,
-        meta : metadata.meta,
+        meta : metadata.meta || {},
         files : metadata.files,
         callback : callback
     }
@@ -45,6 +45,8 @@ function expireUpload(key) {
         clearTimeout(upload.timeout);
         delete UPLOAD_INDEX[key];
         return upload;    
+    } else {
+        log.warn("Tried to expire upload " + key + " that doesn't exist.");
     }
 }
 
@@ -55,8 +57,9 @@ function updateUpload(key, index, file) {
         var meta = upload.files[index];
         if(!meta) { throw new Error('No upload metadata for file ' + index + ' of ' + key); }
         meta.file = file;
+        if(!file) { throw new Error('No file supplied in request.')}
+
         upload.file_count--;
-        console.log(meta)
         log.info('Recieved file #' + index + ' (' + file.name + ') for upload ' + key);
         if(upload.file_count === 0) {
             log.info('Upload of ' + key + ' complete.')
@@ -86,7 +89,7 @@ function upload(req, res, next, callback) {
         }
 
         if(upload_data) {
-            if(upload_data.callback) {
+            if(callback) {
                 //var cb = upload_data.callback;
                 delete upload_data.callback;
                 delete upload_data.file_count;

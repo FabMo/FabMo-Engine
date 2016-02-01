@@ -232,7 +232,6 @@ File.prototype.saverun = function(){
 };
 
 File.add = function(friendly_filename, pathname, callback) {
-	log.debug('Adding a file: ' + pathname);
 	// Create a unique name for actual storage
 	var filename = util.createUniqueFilename(friendly_filename);
 	var full_path = path.join(config.getDataDir('files'), filename);
@@ -287,8 +286,6 @@ File.getByID = function(id,callback)
 // Given a file and metadata, create a new file and job in the database
 // callback with the job object if success.
 var createJob = function(file, options, callback) {
-	log.info("Creating a job: " + file)
-	console.log(options)
 	File.add(options.filename || file.name, file.path, function(err, dbfile) {
 
 	    if (err) { return callback(err); }

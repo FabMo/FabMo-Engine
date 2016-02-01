@@ -65,7 +65,7 @@
 	function refreshApps(){
 		// Load the list of apps available on the tool
 		fabmo.getApps(function(err,apps){
-			if(err) { return console.log(err); }
+			if(err) { return console.error(err); }
 			$(".app-listing").empty();
 			$.each( apps, function( key, val ) {
 				var appid = 'app_' + val.id;
@@ -94,10 +94,9 @@
 					//$('#myModal').foundation('reveal', 'open');
 					fabmo.deleteApp(id, function(err, result) {
 						if(err) {
-							console.error(err);
-						} else { 
-							refreshApps();
-						}
+							fabmo.notify('error', err);
+						}  
+						refreshApps();
 					});
 				});
 				$('#' + appid).click(function() {
@@ -120,7 +119,7 @@
   		});
 
   		$('#file').change(function(evt) {
-			fabmo.submitApp($('#fileform'), {}, function(err, data) {
+			fabmo.submitApp($('#file'), {}, function(err, data) {
 				if(err) {
 					fabmo.notify('error', JSON.stringify(err));
 				} else {
@@ -144,8 +143,8 @@
 			drop : function (devt, evt) {
 				evt.preventDefault();
 				try {
-					file = evt.originalEvent.dataTransfer.files[0];
-					fabmo.submitApp(file, {}, function(err, data) {
+					files = evt.originalEvent.dataTransfer.files;
+					fabmo.submitApp(files, {}, function(err, data) {
 						if(err) {
 							fabmo.notify('error', JSON.stringify(err));
 						} else {

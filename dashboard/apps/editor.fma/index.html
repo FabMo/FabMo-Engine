@@ -119,7 +119,6 @@
     }
 
     function set_language(language) {
-      console.log("Setting language");
       switch(language) {
         case 'opensbp':
           $("#app-header").text("Editor (OpenSBP)");
@@ -143,7 +142,6 @@
     }
 
     function loadFromBrowser() {
-      console.log("loading from browser")
       if(supports_html5_storage()) {
         var language = localStorage.fabmo_editor_language || 'gcode';
         set_language(language);
@@ -151,7 +149,6 @@
         if((content !== content) || (content === undefined)) {
           console.warn("No saved content to load.");
         } else {
-          console.info("Setting editor to saved content.");
           editor.setValue(content);          
         }
         var pos;
@@ -161,7 +158,6 @@
           console.warn("Couldn't set position: " + e)
           pos = {row:0,col:0};
         }
-        console.info("Setting editor to saved cursor position: " + JSON.stringify(pos));
         editor.clearSelection();
         editor.moveCursorToPosition(pos);
       }
@@ -256,7 +252,6 @@
       editor.setShowPrintMargin(false);
       editor.$blockScrolling = Infinity;
       editor.on("change", function() {
-        console.log("clearing selection")
         editor.clearSelection();
       });
       editor.commands.addCommand({

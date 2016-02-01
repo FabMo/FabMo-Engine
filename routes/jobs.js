@@ -9,41 +9,49 @@ var uuid = require('node-uuid');
 var upload = require('./upload').upload;
 
 var submitJob = function(req, res, next) {
-    console.log("got a job submit")
     upload(req, res, next, function(err, upload) {
         uploads = upload.files
         // Single file only, for now
         if(uploads.length > 1) {
             log.warn("Got an upload of " + uploads.length + ' files for a submitted job when only one is allowed.')
         }
-        var first_upload = uploads[0];
-        var file = first_upload.file;
-        var filename = !file.name || file.name === 'blob' ? first_upload.filename : file.name;
-        // Reject disallowed files
-        if(!util.allowed_file(filename)) {
-            return res.json({
-                status:"fail",
-                data : {"job" : "Wrong file format"}
-            });
-        }
 
-        // Create a job and respond
-        db.createJob(file, first_upload, function(err, job) {
-            if(err) {
-                return res.json({
-                    status:"error",
-                    message:err.message
-                });
-            } 
-            return res.json({
-                status:"success",
-                data : {
-                    status : 'complete',
-                    data : {job:job}
+        async.map(
+            uploads, 
+            function create_job(item, callback) {
+                var file = item.file;
+                var filename = item.filename || (!file.name || file.name === 'blob') ? item.filename : file.name;
+                item.filename = filename;
+                item.name = item.name || filename;
+
+                // Reject disallowed files
+                if(!util.allowed_file(filename)) {
+                    return callback(new Error("File " + filename + " is not allowed."));
                 }
-            });
-        });
-    });
+
+                // Create a job and respond
+                db.createJob(file, item, function(err, job) {
+                    callback(err, job);
+                });
+            }, // create_job
+            function on_complete(err, jobs) {
+                log.info("Just completed upload of " + uploads.length + " jobs.");
+                    if(err) {
+                        log.error(err.message);
+                        return res.json({
+                            status:"error",
+                            message:err.message
+                        });
+                    } 
+                    return res.json({
+                        status:"success",
+                        data : {
+                            status : 'complete',
+                            data : {'jobs':jobs}
+                        }
+                    });
+            }); // on_complete
+        }); // async.map
 } // submitJob
 
 /**

@@ -14,7 +14,6 @@
 var PING_TIMEOUT = 1000;
 
 var makePostData = function(obj, options) {
-	console.log("making post data")
 	var file = null;
 	if(obj instanceof jQuery) {
 		if(obj.is('input:file')) {
@@ -32,8 +31,7 @@ var makePostData = function(obj, options) {
 	}
 
 	if(!file) {
-		var msg = 'Cannot make job from ' + JSON.stringify(obj);
-		console.error(msg);
+		var msg = 'Cannot make post data from ' + JSON.stringify(obj);
 		throw new Error(msg);
 	}
 	
@@ -43,8 +41,6 @@ var makePostData = function(obj, options) {
 		job[key] = options[key];
 	}
 	job.file = file;
-	console.log("POST DATA: ")
-	console.log(job);
 	return job;
 }
 
@@ -240,9 +236,8 @@ FabMoAPI.prototype.deleteApp = function(id, callback) {
 	this._del('/apps/' + id, {}, callback, callback);
 }
 
-FabMoAPI.prototype.submitApp = function(app_file, callback) {
-	var postData = makePostData(app_file);
-	this._postUpload('/apps', postData, callback, callback);
+FabMoAPI.prototype.submitApp = function(apps, options, callback) {
+	this._postUpload('/apps', apps, {}, callback, callback, 'app');
 }
 
 FabMoAPI.prototype.getAppConfig = function(app_id, callback) {
@@ -399,7 +394,6 @@ FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback
 		meta.files.push(item);
 	});
 
-	console.log(meta);
 	var onMetaDataUploadComplete = function(err, k) {
 		if(err) {
 			return errback(err);
@@ -419,7 +413,6 @@ FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback
 					return errback(err);
 				}
 				if(data.status && data.status === 'complete') {
-					console.log('Finished uploading');
 					if(key) {
 						callback(null, data.data[key]);						
 					} else {
@@ -453,7 +446,6 @@ FabMoAPI.prototype._post = function(url, data, errback, callback, key) {
 				var response = JSON.parse(xhr.responseText);
 				switch(response.status) {
 					case 'success':
-						console.log(response)
 						if(key) {
 							callback(null, response.data[key]);
 						} else {

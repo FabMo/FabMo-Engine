@@ -3,6 +3,8 @@ var restify = require('restify');
 var dashboard = require('../dashboard');
 var util = require('../util');
 var fs = require('fs');
+var upload = require('./upload').upload;
+
 
 /**
  * @api {get} /apps List Apps
@@ -158,88 +160,69 @@ var listAppFiles = function(req, res, next) {
 	res.json(answer);
 };
 
-/**
- * @apiGroup Dashboard
- * @api {post} /app Install App
- * @apiDescription Install an app to the user's app installation directory.  App will be decompressed and installed immediately.
- */
 var submitApp = function(req, res, next) {
 
-    // Get the one and only one file you're currently allowed to upload at a time
-    var file = req.files.file;
-    var answer;
+    upload(req, res, next, function(err, uploads) {
 
-    log.debug("Submitting an app...");
+        // Multiple apps can be submitted at once.  Process each of them in turn.
+        async.map(uploads.files, function(upload_data, callback) {
+            var file = upload_data.file;
+            console.log(upload_data.file)
+            if(file && util.allowedAppFile(file.name)) {
+                // Keep the name of the file uploaded for a "friendly name"
+                var friendly_filename = file.name || upload_data.filename || 'app.fma';
 
-    // Only write "allowed files"
-    if(file && util.allowedAppFile(file.name))
-    {
-        log.debug(file);
-        log.debug("This is an allowed file!");
+                // But create a unique name for actual storage
+                var filename = util.createUniqueFilename(friendly_filename);
+                var full_path = path.join(config.getDataDir('apps'), filename);
 
-        // Keep the name of the file uploaded for a "friendly name"
-        var friendly_filename = file.name;
+                // Move the file to the apps directory
+                util.move(file.path, full_path, function(err) {
+                    log.debug("Done with a move");
+                    if (err) {
+                        callback(new Error('Failed to move the app from the temporary folder to the installation folder.'));
+                        /*
+                        return res.json({
+                            status:"error",
+                            message:"failed to move the app from temporary folder to app installation folder"
+                        }); */
+                    }
+                    log.debug("No error.");
+                    // delete the temporary file (no longer needed)
+                    fs.unlink(file.path, function(err) {
+                        if (err) {
+                            log.warn("failed to remove the app from temporary folder: " + err);
+                        }
+                    }); // unlink
 
-        // But create a unique name for actual storage
-        var filename = util.createUniqueFilename(friendly_filename);
-        var full_path = path.join(config.getDataDir('apps'), filename);
-
-        log.debug(filename);
-        log.debug(full_path);
-
-        // Move the file
-        util.move(file.path, full_path, function(err) {
-            log.debug("Done with a move");
-            if (err) {
-                answer = {
-                    status:"error",
-                    message:"failed to move the app from temporary folder to app installation folder"
-                }; 
-                return res.json(answer);
-                //throw err; 
+                    // And create the app metadata in memory
+                    dashboard.loadApp(full_path, {}, function(err, data) {
+                        callback(err, data);
+                    }); // loadApp
+                }); // move
+            } else if(file) {
+                callback(new Error('Cannot accept ' + file.name + ': Incorrect file format.'));
+            } else {
+                callback(new Error('Bad request.'));
             }
-            log.debug("No error.");
-            // delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
-            fs.unlink(file.path, function(err) {
-                if (err) {
-                    log.warn("failed to remove the app from temporary folder: " + err);
+        }, 
+        function all_finished(err, apps) {
+            if(err) {
+                return res.json({
+                    status: "error",
+                    message : err.message
+                });
+            }
+            return res.json({
+                status: "success",
+                data : {
+                    status : "complete", 
+                    data : {"apps" : apps}
                 }
-            }); // unlink
-            
-            dashboard.loadApp(full_path, {}, function(err, data) {
-                var answer;
-                if(err) {
-                    answer = {
-                        status: "error",
-                        data : {"app" : err}
-                    };
-                } else {
-                    answer = {
-                        status: "success",
-                        data : {"app" : data}
-                    };
-                }
-                res.json(answer);
             });
-
-        }); // move
-    } // if file and allowed
-    else if (file){
-        answer = {
-            status:"fail",
-            data : {"app" : "Wrong file format for app upload."}
-        };
-        res.json(answer);
-    }
-    else{
-        answer = {
-            status:"fail",
-            data : {"app" : "Problem receiving the app : bad request."}
-        };
-        res.json(answer);
-    }
-}; // submitJob
-
+        }); // async.map
+    }); // upload
+}; // submitApp
 
 module.exports = function(server) {
     server.post('/apps', submitApp);

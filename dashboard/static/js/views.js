@@ -34,7 +34,10 @@ define(function(require) {
 			this.$el.on('click', function(evt) {
 				var dashboard = require('dashboard');
 				dashboard.browseForFile(function(evt) {
-					dashboard.engine.submitApp($(evt.target), function(err, data) {
+					dashboard.engine.submitApp({file:evt.target.files[0]}, {}, function(err, data) {
+						if(err) {
+							dashboard.notify('error', err.message);
+						}
 						var context = require('context');
 						context.apps.fetch();
 					});

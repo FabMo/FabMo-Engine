@@ -284,7 +284,6 @@ FabMoDashboard.prototype.notify = FabMoDashboard.prototype.notification;
 
 function _makeFile(obj) {
 	if(obj instanceof jQuery) {
-		console.info('input is jquery')
 		if(obj.is('input:file')) {
 			obj = obj[0];
 		} else {
@@ -292,16 +291,12 @@ function _makeFile(obj) {
 		}
 		file = obj.files[0];
 	} else if(obj instanceof HTMLInputElement) {
-		console.info('input is input dom element')
 		file = obj.files[0];
 	} else if(obj instanceof File || obj instanceof Blob) {
-		console.info('input is file or blob')
 		file = obj;
 	} else if(typeof obj === "string") {
-		console.info('input is string')		
 		file = new Blob([obj], {'type' : 'text/plain'});
 	} else {
-		console.info('nope')				
 		throw new Error('Cannot make File object out of ' + obj);
 	}
 	return file;
@@ -337,7 +332,6 @@ function _makeJob(obj) {
  */
 // Job and Queue Functions
 FabMoDashboard.prototype.submitJob = function(jobs, options, callback) {
-	console.log(jobs);
 	var args = {jobs : []};
 
 	if (!(jobs instanceof Array)) {
@@ -353,8 +347,6 @@ FabMoDashboard.prototype.submitJob = function(jobs, options, callback) {
 	}
 
 	args.options = options || {};
-	console.log("ARGS:")
-	console.info(args);
 	this._call("submitJob", args, callback)
 }
 
@@ -420,23 +412,24 @@ FabMoDashboard.prototype.getApps = function(callback) {
 	this._call("getApps",null,callback);
 }
 
-FabMoDashboard.prototype.submitApp = function(data, config,  callback) {
-	var message = {};
+FabMoDashboard.prototype.submitApp = function(apps, options, callback) {
+	var args = {apps : []};
 
-	// Pass a form to get a file that was browsed for
-	if (data instanceof jQuery) {
-		message.file = (data.find('input:file'))[0].files[0];
+	if (!(apps.length)) {
+		apps = [apps];
 	}
-	// Pass the FormData object if you're a real go-getter
-	else if (data instanceof FormData) {
-		message.file = data.file;
-	} 
-	// Just pass a plain old object that contains the data
-	else {
-		message.data = data;
-		message.config = {'filename' : file.name};
+
+	for(var i=0; i<apps.length; i++) {
+		args.apps.push({'file' : _makeFile(apps[i])});		
 	}
-	this._call("submitApp", message, callback)
+	
+	if(typeof options === 'function') {
+		callback = options;
+		options = {};
+	}
+
+	args.options = options || {};
+	this._call("submitApp", args, callback)
 }
 
 FabMoDashboard.prototype.getConfig = function(callback) {
