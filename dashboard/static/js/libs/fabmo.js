@@ -151,12 +151,27 @@ FabMoDashboard.prototype._call = function(name, data, callback) {
 FabMoDashboard.prototype._simulateCall = function(name, data, callback) {
 	switch(name) {
 		case "submitJob":
+
+			var files = [];
+			data.jobs.forEach(function(job) {
+				var name = job.filename || job.file.name;
+				this._download(job.file, name, "text/plain");
+				files.push(name);
+			}.bind(this));
+
+			// Data.length
+			if(data.jobs.length === 1) {
+				var msg = "Job Submitted: " + data.jobs[0].filename
+			} else {
+				var msg = data.jobs.length + " Jobs Submitted: " + files.join(',');
+			}
+			console.log(msg);
 			toaster();
-			$('.alert-text').text("Job Submitted: " + data.config.filename);
+			$('.alert-text').text(msg);
 			$('.alert-toaster').slideDown(null, function (){
 				setTimeout(function(){$('.alert-toaster').remove(); }, 1000);
-			})
-			this._download(data.data, data.config.filename, "text/plain");
+			})				
+
 		break;
 
 		case "runGCode":
