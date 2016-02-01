@@ -376,7 +376,6 @@ FabMoAPI.prototype._get = function(url, errback, callback, key) {
 }
 
 FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback, key) {
-	console.log("THIS POST UPLOAD")
 	//var url = this._url(url);
 	var callback = callback || function() {};
 	var errback = errback || function() {};

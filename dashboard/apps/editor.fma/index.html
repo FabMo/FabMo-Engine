@@ -8,6 +8,33 @@
   <link rel="stylesheet" href="/css/normalize.css"> 
   <link rel="stylesheet" href="./css/style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <div id="jobsubmit-modal" class="reveal-modal medium" data-reveal>
+    <div id="modal-title">Submit Job</div>
+    <form id="jobsubmit-form">
+        <div class="row">
+            <label for="jobsubmit-name">Name:</label>
+            <input id="jobsubmit-name" type="text" name="jobsubmit-name" value="" />
+        </div>
+        <div class="row">
+            <label for="jobsubmit-name">Description:</label>
+            <input id="jobsubmit-description" type="text" name="jobsubmit-name" value="" />
+        </div>
+        <div class="row">
+            <label for="jobsubmit-filename">Filename:</label>
+            <input id="jobsubmit-filename" type="text" name="jobsubmit-filename" value="" />
+        </div>
+
+        <div class="row">
+             <div class="right">
+                 <button id="jobsubmit-cancel" class="button radius alert">Cancel</button>
+                 <button type="submit" class="button radius success">Submit Job</button>
+             </div>
+         </div>
+     </form>
+     <a class="close-reveal-modal" id="close-jobsubmit-modal">&#215;</a>
+    </div>
+
 </head>
 <body>
   <nav id="topbar" class="top-bar" data-topbar role="navigation">
@@ -89,29 +116,6 @@
         console.warn("HTML5 Local storage unsupported?")
         return false;
       }
-    }
-
-    function submit_job() {
-      $("#execute-menu").hide();
-      var text = editor.getValue();
-      switch(lang) {
-        case "gcode":
-          fabmo.submitJob({
-            file : text,
-            filename: job_title || 'editor.nc', 
-            name : "Editor",
-            description: job_description || 'G-Code job from the editor'
-          }, 
-            function(err, result) {
-              fabmo.launchApp('job-manager');
-           });
-        break;
-        case "opensbp":
-          fabmo.submitJob(text, {filename: job_title || 'editor.sbp', description: job_description || 'OpenSBP job from the editor.'}, function(err, result) {
-            fabmo.launchApp('job-manager');
-          });
-        break;
-      } 
     }
 
     function set_language(language) {
@@ -280,14 +284,13 @@
       });
 
       function resize() {
-        console.log("resizing");
         var h = window.innerHeight;
         var h2 = $('#topbar').height();
         $("#editor").css('height',h-h2);      
+        $(document).foundation('reflow');
       }
 
       $(window).resize(function(){
-        console.log("resize")
         resize();
       });
       resize();
@@ -301,7 +304,8 @@
 
     $("#submit-job").click(function(evt) {
       evt.preventDefault();
-      submit_job();
+      //submit_job();
+      submitJob();
     });
 
     $("#lang-opensbp").click(function(evt) {
@@ -330,12 +334,76 @@
       return false;
     });
 
+    function submitJob(){
+        $('#modal-title').text('Submit Job'); 
+        switch(lang) {
+          case 'gcode':
+            $('#jobsubmit-name').val('G-Code (Editor)');
+            $('#jobsubmit-description').val('A G-Code job from the editor');
+            $('#jobsubmit-filename').val('editor.nc');
+            break;
+          case 'opensbp':
+            $('#jobsubmit-name').val('OpenSBP (Editor)');
+            $('#jobsubmit-description').val('An OpenSBP job from the editor');
+            $('#jobsubmit-filename').val('editor.sbp');
+            break;
+          default:
+            fabmo.notify('warn', 'Unknown file format in editor?!');
+            break;
+        }
+        $('#jobsubmit-modal').foundation('reveal', 'open');
+        $('#jobsubmit-name').focus();           
+
+        $('#jobsubmit-form').one('submit', function( event ) {
+          event.preventDefault();
+          var name = $('#jobsubmit-name').val();
+          var description = $('#jobsubmit-description').val();
+          var filename = $('#jobsubmit-filename').val();
+
+          //$("#execute-menu").hide();
+          
+          var text = editor.getValue();
+          fabmo.submitJob({
+              file : text,
+              filename: filename, 
+              name : name,
+              description: description
+            }, 
+            function(err, result) {
+              if(err) {
+                if(err.message) {
+                  fabmo.notify('error', err.message);
+                } else if(err.job) {
+                  fabmo.notify('warn', err.job);
+                } else {
+                  fabmo.notify('error', err);
+                }
+              } else {
+                fabmo.launchApp('job-manager');
+              }   
+            }
+          );
+          
+          $('#jobsubmit-modal').foundation('reveal', 'close');
+          $("#jobsubmit-form").trigger('reset'); 
+        });
+
+        $('#jobsubmit-modal').bind('closed.fndtn.reveal', function (event) {
+            $("#jobsubmit-form").off('submit');            
+        });
+    }
+
     fabmo.on('status', function(status) {
       if(status.state === 'idle') {
         $("#execute-menu").show();
       } else {
         $("#execute-menu").hide();
       }
+    });
+
+    $('#jobsubmit-cancel').click(function(evt) {
+      evt.preventDefault();
+      $('#jobsubmit-modal').foundation('reveal', 'close');
     });
 
   </script>
