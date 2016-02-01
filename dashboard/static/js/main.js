@@ -270,9 +270,9 @@ $('#icon_edit').click(function() {
 			description : file.name + ' uploaded from the dashbord.'
 		});
 
-		console.log("Submitting job 2");
+		console.log("Submitting job");
 		console.log(jobs);
-		dashboard.engine.submitJob2(jobs)
+		dashboard.engine.submitJob(evt.target)
 	});
 });
 

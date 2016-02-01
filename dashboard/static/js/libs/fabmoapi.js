@@ -304,8 +304,9 @@ FabMoAPI.prototype.disableHotspot = function(callback) {
 	this._post('/network/hotspot/state', data, callback, callback);
 }
 
-FabMoAPI.prototype.submitJob2 = function(jobs, callback) {
-	this._postUpload('/job2', jobs, callback, callback);
+FabMoAPI.prototype.submitJob = function(job, callback) {
+	job = makeJob(job);
+	this._postUpload('/job', job, {}, callback, callback);
 }
 
 function makeFormData(obj, default_name, default_type) {
@@ -352,6 +353,33 @@ function makeFormData(obj, default_name, default_type) {
 	return formData;
 }
 
+var makeJob = function(obj, options) {
+	var file = null;
+	if(obj instanceof jQuery) {
+		if(obj.is('input:file')) {
+			obj = obj[0];
+		} else {
+			obj = obj.find('input:file')[0];
+		}
+		file = obj.files[0];
+	} else if(obj instanceof HTMLInputElement) {
+		file = obj.files[0];
+	} else if(typeof obj === "string") {
+		file = Blob(obj, {'type' : 'text/plain'});
+	}
+
+	if(!file) {throw new Error('Cannot make a job from ' + obj)}
+	
+	var job = {}
+	var options = options || {};
+	for(var key in options) {
+		job[key] = options[key];
+	}
+	job.file = file;
+	console.log(job);
+	return job;
+}
+
 FabMoAPI.prototype.command = function(name, args) {
 	this.socket.emit('cmd', {'name':name, 'args':args||{} } );
 }
@@ -386,7 +414,7 @@ FabMoAPI.prototype._get = function(url, errback, callback, key) {
 	});
 }
 
-FabMoAPI.prototype._postUpload = function(url, data, errback, callback, key) {
+FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback, key) {
 	//var url = this._url(url);
 	var callback = callback || function() {};
 	var errback = errback || function() {};
@@ -405,7 +433,13 @@ FabMoAPI.prototype._postUpload = function(url, data, errback, callback, key) {
 		delete item.file;
 	});
 
+	var meta = {
+		files : files,
+		meta : metadata
+	}
+
 	var onMetaDataUploadComplete = function(err, k) {
+		console.log("META")
 		if(err) {
 			return errback(err);
 		}
@@ -417,14 +451,18 @@ FabMoAPI.prototype._postUpload = function(url, data, errback, callback, key) {
 			fd.append('index', index);
 			fd.append('file', file);
 			var onFileUploadComplete = function(err, data) {
+				console.log("FILE UPLOAD COMPLETE")
 				if(err) {
+					console.error(err);
 					// Bail out here too - fail on any one file upload failure
 					requests.forEach(function(req) {
 						req.abort();
 					});
 					return errback(err);
 				}
+				console.log(data);
 				if(data.status && data.status === 'complete') {
+					console.log('Finished uploading');
 					if(key) {
 						callback(null, data.data[key]);						
 					} else {
@@ -436,10 +474,11 @@ FabMoAPI.prototype._postUpload = function(url, data, errback, callback, key) {
 			requests.push(request);
 		}.bind(this));
 	}.bind(this);
-	this._post(url, data, onMetaDataUploadComplete, onMetaDataUploadComplete, 'key');
+	this._post(url, meta, onMetaDataUploadComplete, onMetaDataUploadComplete, 'key');
 }
 
 FabMoAPI.prototype._post = function(url, data, errback, callback, key) {
+	console.log("posting " + url + " " + data + " " + errback + " " + callback + " " + key)
 	var url = this._url(url);
 	var callback = callback || function() {};
 	var errback = errback || function() {};
@@ -458,6 +497,7 @@ FabMoAPI.prototype._post = function(url, data, errback, callback, key) {
 				var response = JSON.parse(xhr.responseText);
 				switch(response.status) {
 					case 'success':
+						console.log(response)
 						if(key) {
 							callback(null, response.data[key]);
 						} else {
@@ -473,6 +513,7 @@ FabMoAPI.prototype._post = function(url, data, errback, callback, key) {
 						}
 						break;
 					default:
+						console.error("ERRRRRR")
 						errback(response.message);
 						break;
 				}

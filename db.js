@@ -69,42 +69,19 @@ Job.prototype.cancel = function(callback) {
 
 Job.prototype.save = function(callback) {
 	if(!this.file_id) {
-		log.warn('Not saving this job because no file_id')
-		setImmediate(callback, null, this);
-		return;
+		log.info('Not saving this job because no file_id')
+		return callback(null, this);
 	}
 
-	jobs.findOne({_id: this._id}, function(err,document){
-		if(err) {
-			callback(err);
+	delete this.pending_cancel;
+
+	jobs.save(this, function(err, record) {
+		if(!record) {
+			return;
 		}
-		else if(document){
-			delete this.pending_cancel
-			// update the current entry in the database instead of creating a new one.
-			log.info('Updating job id ' + document._id);
-			jobs.update({'_id' : document._id},this,function(err){
-				if(err) {
-					callback(err);
-				} else {
-					callback(null, this);
-				}
-			}.bind(this));
-		}
-		else{
-			delete this.pending_cancel
-			// Create a new entry in the database
-			log.info('Creating a new job.');
-			jobs.insert(this, function(err,records){
-				if(err) {
-					callback(err, null);
-				}
-				else {
-					// Return the newly created job
-					callback(null, this);
-				}
-			}.bind(this));
-		}
+		callback(null, this);
 	}.bind(this));
+	
 };
 
 Job.prototype.delete = function(callback){
@@ -217,7 +194,7 @@ File.checksum = function(data) {
 };
 
 // Save information about this file to back to the database
-File.prototype.save = function(callback){
+File.prototype.save = function(callback) {
 	var that = this;
 	files.findOne({path: that.path},function(err,document){
 	if (err){
@@ -233,10 +210,12 @@ File.prototype.save = function(callback){
 	else{
 		log.info('Creating a new document.');
 		files.insert(that, function(err,records){
-			if(!err)
+			if(!err) {
 				callback(null, records[0]);
-			else
+			}
+			else {
 				callback(err);
+			}
 		});
 	}
 	});
@@ -253,14 +232,14 @@ File.prototype.saverun = function(){
 };
 
 File.add = function(friendly_filename, pathname, callback) {
-
+	log.debug('Adding a file: ' + pathname);
 	// Create a unique name for actual storage
 	var filename = util.createUniqueFilename(friendly_filename);
 	var full_path = path.join(config.getDataDir('files'), filename);
 	// Move the file
 	util.move(pathname, full_path, function(err) {
 		if(err) {
-			callback(err);
+			return callback(err);
 		}
 		// delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
 		fs.unlink(pathname, function(err) {
@@ -304,6 +283,31 @@ File.getByID = function(id,callback)
 		callback(null, file);
 	});
 };
+
+// Given a file and metadata, create a new file and job in the database
+// callback with the job object if success.
+var createJob = function(file, options, callback) {
+
+	File.add(options.filename || file.name, file.path, function(err, dbfile) {
+
+	    if (err) { return callback(err); }
+
+        try {
+            var job = new Job({
+                file_id : dbfile._id,
+                name : options.name || file.name,
+                description : options.description
+            });
+        } catch(e) {
+        	log.error(e);
+            return callback(e);
+        }
+        job.save(function(err, job) {
+        	if(err) { return callback(err); }
+        	callback(null, job);
+        });
+    });
+}
 
 checkCollection = function(collection, callback) {
 	collection.find().toArray(function(err, data) {
@@ -384,6 +388,4 @@ exports.cleanup = function(callback) {
 
 exports.File = File;
 exports.Job = Job;
-
-/*****************************************/
-
+exports.createJob = createJob;

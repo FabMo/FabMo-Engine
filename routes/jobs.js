@@ -8,87 +8,44 @@ var fs = require('fs');
 var uuid = require('node-uuid');
 var upload = require('./upload').upload;
 
-var submitJob2 = function(req, res, next) {
-    upload(req, res, next, function(err, uploaded) {
-        console.log(uploaded);
-    });
-}
-
-/**
- * @apiGroup Jobs
- * @api {post} /job Submit a job
- * @apiDescription Add a job to the job queue.
- * @apiParam {String} name Job name
- * @apiParam {String} description Job description
- * @apiParam {Object} file G-Code or OpenSBP file submission
- * @apiSuccess {String} status `success`
- * @apiSuccess {Object} data null
- * @apiError {String} status `error`
- * @apiError {Object} message Error message
- */
 var submitJob = function(req, res, next) {
+    upload(req, res, next, function(err, upload) {
+        uploads = upload.files
+        // Single file only, for now
+        if(uploads.length > 1) {
+            log.warn("Got an upload of " + uploads.length + ' files for a submitted job when only one is allowed.')
+        }
+        var first_upload = uploads[0];
+        var file = first_upload.file;
 
-    // Get the one and only one file you're currently allowed to upload at a time
-    var file = req.files.file;
-    var answer;
+        // Reject disallowed files
+        if(!util.allowed_file(file.name)) {
+            return res.json({
+                status:"fail",
+                data : {"job" : "Wrong file format"}
+            });
+        }
 
-    console.log(req.params)
-    // Only write "allowed files"
-    if(file && util.allowed_file(file.name))
-    {
-        db.File.add(file.name, file.path, function(err, dbfile) {
-            if (err) {
-                answer = {
+        // Create a job and respond
+        db.createJob(file, first_upload, function(err, job) {
+            if(err) {
+                console.log("Err response")
+                return res.json({
                     status:"error",
-                    message:err
-                };
-                return res.json(answer);
-            }
-            var job;
-            try {
-                job = new db.Job({
-                    file_id : dbfile._id,
-                    name : req.body.name || file.name,
-                    description : req.body.description
+                    message:err.message
                 });
-            } catch(e) {
-                log.error(e);
-            }
-
-            log.info('Created a job.');
-            job.save(function(err, job) {
-                if(err) {
-                    log.error(err);
-                answer = {
-                        status:"error",
-                        message:err
-                    };
-                    res.json(answer);
-                } else {
-                answer = {
-                        status:"success",
-                        data : {job:job}
-                    };
-                    res.json(answer);
+            } 
+            console.log("complete response")
+            return res.json({
+                status:"success",
+                data : {
+                    status : 'complete',
+                    data : {job:job}
                 }
-            }); // job.save
+            });
         });
-    } // if file and allowed
-    else if (file){
-        answer = {
-            status:"fail",
-            data : {"job" : "Wrong file format"}
-        };
-        res.json(answer);
-    }
-    else{
-        answer = {
-            status:"fail",
-            data : {"job" : "Problem receiving the job : bad request"}
-        };
-        res.json(answer);
-    }
-}; // submitJob
+    });
+} // submitJob
 
 /**
  * @api {delete} /jobs/queue Clear job queue
@@ -162,7 +119,6 @@ var resubmitJob = function(req, res, next) {
     var answer;
     log.debug("Resubmitting job " + req.params.id);
     db.Job.getById(req.params.id, function(err, result) {
-        log.debug(result);
         if(err) {
             log.error(JSON.stringify(err));
         }
@@ -418,7 +374,7 @@ var getJobGCode = function(req, res, next) {
 
 module.exports = function(server) {
     server.post('/job', submitJob);
-    server.post('/job2', submitJob2);
+    //server.post('/job2', submitJob2);
     server.get('/jobs', getAllJobs);
     server.get('/job/:id', getJobById);
     server.del('/job/:id', cancelJob);
