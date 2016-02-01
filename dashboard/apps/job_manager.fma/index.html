@@ -488,6 +488,7 @@
 	});
 
 	$('#file').change(function(evt) {
+		console.log("Submitting job....");
 		fabmo.submitJob($('#fileform'), {}, function(err, data) {
 			resetFormElement($('#file'));
 			refresh_jobs_list();

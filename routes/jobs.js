@@ -9,6 +9,7 @@ var uuid = require('node-uuid');
 var upload = require('./upload').upload;
 
 var submitJob = function(req, res, next) {
+    console.log("got a job submit")
     upload(req, res, next, function(err, upload) {
         uploads = upload.files
         // Single file only, for now
@@ -17,9 +18,9 @@ var submitJob = function(req, res, next) {
         }
         var first_upload = uploads[0];
         var file = first_upload.file;
-
+        var filename = !file.name || file.name === 'blob' ? first_upload.filename : file.name;
         // Reject disallowed files
-        if(!util.allowed_file(file.name)) {
+        if(!util.allowed_file(filename)) {
             return res.json({
                 status:"fail",
                 data : {"job" : "Wrong file format"}
@@ -29,13 +30,11 @@ var submitJob = function(req, res, next) {
         // Create a job and respond
         db.createJob(file, first_upload, function(err, job) {
             if(err) {
-                console.log("Err response")
                 return res.json({
                     status:"error",
                     message:err.message
                 });
             } 
-            console.log("complete response")
             return res.json({
                 status:"success",
                 data : {
@@ -374,7 +373,6 @@ var getJobGCode = function(req, res, next) {
 
 module.exports = function(server) {
     server.post('/job', submitJob);
-    //server.post('/job2', submitJob2);
     server.get('/jobs', getAllJobs);
     server.get('/job/:id', getJobById);
     server.del('/job/:id', cancelJob);

@@ -155,27 +155,16 @@ define(function(require) {
 		}.bind(this))
 
 		// Submit a job
-		this._registerHandler('submitJob', function(data, callback) { 
-			if('file' in data) {
-				formdata = new FormData();
-				formdata.append('file', data.file, data.file.name);
-				
-				this.engine.submitJob(formdata, function(err, result) {
-					if(err) {
-						callback(err);
-					} else {
-						this.launchApp('job-manager', {}, callback);
-					}
-				}.bind(this));
-			} else if ('data' in data) {
-				this.engine.submitJob(data, function(err, result) {
-					if(err) {
-						callback(err);
-					} else {
-						this.launchApp('job-manager', {}, callback);
-					}
-				}.bind(this));				
-			}
+		this._registerHandler('submitJob', function(data, callback) {
+			console.log("Data passed through to dashboard: " +  JSON.stringify(data))
+			// TODO deal with options here, don't just pass them through
+			this.engine.submitJob(data.jobs, data.options, function(err, result) {
+				if(err) {
+					callback(err);
+				} else {
+					this.launchApp('job-manager', {}, callback);
+				}
+			}.bind(this));
 		}.bind(this));
 
 		this._registerHandler('resubmitJob', function(id, callback) { 

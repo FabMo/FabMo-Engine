@@ -282,27 +282,80 @@ FabMoDashboard.prototype.notification = function(type,message,callback) {
 }
 FabMoDashboard.prototype.notify = FabMoDashboard.prototype.notification;
 
-// Job and Queue Functions
-FabMoDashboard.prototype.submitJob = function(data, config, callback) {
-	var message = {};
+function _makeFile(obj) {
+	if(obj instanceof jQuery) {
+		console.info('input is jquery')
+		if(obj.is('input:file')) {
+			obj = obj[0];
+		} else {
+			obj = obj.find('input:file')[0];
+		}
+		file = obj.files[0];
+	} else if(obj instanceof HTMLInputElement) {
+		console.info('input is input dom element')
+		file = obj.files[0];
+	} else if(obj instanceof File || obj instanceof Blob) {
+		console.info('input is file or blob')
+		file = obj;
+	} else if(typeof obj === "string") {
+		console.info('input is string')		
+		file = new Blob([obj], {'type' : 'text/plain'});
+	} else {
+		console.info('nope')				
+		throw new Error('Cannot make File object out of ' + obj);
+	}
+	return file;
+}
+function _makeJob(obj) {
+	var file = null;
 
-	// Pass a form to get a file that was browsed for
-	if (data instanceof jQuery) {
-		message.file = (data.find('input:file'))[0].files[0];
+	try {
+		file = _makeFile(obj);
+	} catch(e) {}
+
+	if(file) {
+		return {file : file};
+	} else {
+		var job = {};
+		for (var key in obj) {
+  			if (obj.hasOwnProperty(key)) {
+  				if(key === 'file') {
+  					job['file'] = _makeFile(obj.file);
+  				} else {
+  					job[key] = obj[key];
+  				}
+  			}
+		}
+		return job;
 	}
-	// Pass the FormData object if you're a real go-getter
-	else if (data instanceof FormData) {
-		message.file = data.file;
-	} 
-	// Just pass an object that contains the data
-	else {
-		message.data = data;
-		message.config = {};
-		message.config.filename = config.filename || 'job.nc';
-		message.config.name = config.name || message.config.filename;
-		message.config.description = config.description || 'No description'
+}
+/*
+ * Job Submission
+ * @param jobs: array containing job objects
+ * @param options: sumission options (applies to all jobs)
+ * job object must have a 'file' member that's either a string or a file or a blob
+ */
+// Job and Queue Functions
+FabMoDashboard.prototype.submitJob = function(jobs, options, callback) {
+	console.log(jobs);
+	var args = {jobs : []};
+
+	if (!(jobs instanceof Array)) {
+		jobs = [jobs];
 	}
-	this._call("submitJob", message, callback)
+
+	jobs.forEach(function(job) {
+		args.jobs.push(_makeJob(job));
+	});
+	if(typeof options === 'function') {
+		callback = options;
+		options = {};
+	}
+
+	args.options = options || {};
+	console.log("ARGS:")
+	console.info(args);
+	this._call("submitJob", args, callback)
 }
 
 FabMoDashboard.prototype.resubmitJob = function(id, callback) {

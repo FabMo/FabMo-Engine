@@ -56,6 +56,7 @@ function updateUpload(key, index, file) {
         if(!meta) { throw new Error('No upload metadata for file ' + index + ' of ' + key); }
         meta.file = file;
         upload.file_count--;
+        console.log(meta)
         log.info('Recieved file #' + index + ' (' + file.name + ') for upload ' + key);
         if(upload.file_count === 0) {
             log.info('Upload of ' + key + ' complete.')
