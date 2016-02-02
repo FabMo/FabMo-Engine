@@ -237,7 +237,7 @@ FabMoAPI.prototype.deleteApp = function(id, callback) {
 }
 
 FabMoAPI.prototype.submitApp = function(apps, options, callback) {
-	this._postUpload('/apps', apps, {}, callback, callback, 'app');
+	this._postUpload('/apps', apps, {}, callback, callback, 'apps');
 }
 
 FabMoAPI.prototype.getAppConfig = function(app_id, callback) {
@@ -412,7 +412,7 @@ FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback
 					});
 					return errback(err);
 				}
-				if(data.status && data.status === 'complete') {
+				if(data.status === 'complete') {
 					if(key) {
 						callback(null, data.data[key]);						
 					} else {

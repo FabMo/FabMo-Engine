@@ -24,14 +24,14 @@
 
 	  <ul class="left">
 	    <li>
-	    	<a class="app-install-button">Install App...</a>
+	    	<a class="app-install-button">Install Apps...</a>
 	    </li>
 	  </ul>
 	  </section>
 	</nav> 
 	</div>
 	<form style="display:none;" id="fileform">
-	<input type="file" id="file">
+	<input type="file" id="file" multiple>
 	</form>
 	<div id="table-outer" style="margin: 1em;">
 		<div id="dropzone" class="container">
@@ -123,7 +123,7 @@
 				if(err) {
 					fabmo.notify('error', JSON.stringify(err));
 				} else {
-					fabmo.notify('success', "App installed successfully.");
+					fabmo.notify('success', data.length + " app" + ((data.length > 1) ? 's' : '') + " installed successfully.");
 				}
 				refreshApps();
 

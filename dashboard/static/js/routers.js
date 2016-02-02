@@ -10,6 +10,7 @@ define(function(require) {
 		routes: {
 			"app/:id"     		: "launch_app",
 			"menu"        		: "show_menu",
+			""					: "show_menu"
 		},
 		launch_app: function(id) {
 			this.context.launchApp(id, {}, function(err, data) {});

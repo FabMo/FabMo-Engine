@@ -33,10 +33,16 @@ define(function(require) {
 			this.$el.html(this.template({}));
 			this.$el.on('click', function(evt) {
 				var dashboard = require('dashboard');
-				dashboard.browseForFile(function(evt) {
-					dashboard.engine.submitApp({file:evt.target.files[0]}, {}, function(err, data) {
+				dashboard.browseForFiles(function(evt) {
+					var files = [];
+					for(var i=0; i<evt.target.files.length; i++) {
+						files.push({file:evt.target.files[i]});
+					}
+					dashboard.engine.submitApp(files, {}, function(err, data) {
 						if(err) {
-							dashboard.notify('error', err.message);
+							dashboard.notification('error', err.message);
+						} else {
+							dashboard.notification('success', data.length + " app" + ((data.length > 1) ? 's' : '') + " installed successfully.");
 						}
 						var context = require('context');
 						context.apps.fetch();

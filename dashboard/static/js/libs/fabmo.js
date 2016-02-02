@@ -165,7 +165,6 @@ FabMoDashboard.prototype._simulateCall = function(name, data, callback) {
 			} else {
 				var msg = data.jobs.length + " Jobs Submitted: " + files.join(',');
 			}
-			console.log(msg);
 			toaster();
 			$('.alert-text').text(msg);
 			$('.alert-toaster').slideDown(null, function (){
@@ -316,6 +315,11 @@ function _makeFile(obj) {
 	}
 	return file;
 }
+
+function _makeApp(obj) {
+	return {file : _makeFile(obj)};
+}
+
 function _makeJob(obj) {
 	var file = null;
 
@@ -370,7 +374,6 @@ FabMoDashboard.prototype.submitJob = function(jobs, options, callback) {
 
 	for(var i=0; i<jobs.length; i++) {
 		args.jobs.push(_makeJob(jobs[i]));
-
 	}
 	
 	if(typeof options === 'function') {
@@ -447,12 +450,27 @@ FabMoDashboard.prototype.getApps = function(callback) {
 FabMoDashboard.prototype.submitApp = function(apps, options, callback) {
 	var args = {apps : []};
 
-	if (!(apps.length)) {
-		apps = [apps];
+	if(apps instanceof jQuery) {
+		if(apps.is('input:file')) {
+			apps = apps[0];
+		} else {
+			apps = apps.find('input:file')[0];
+		}
+		var files = apps.files;
+		if(files.length) {
+			apps = [];
+			for(var i=0; i<files.length; i++) {
+				apps.push(files[i]);
+			}
+		}
+	} else {
+		if(!apps.length) {
+			apps = [apps];
+		}
 	}
 
 	for(var i=0; i<apps.length; i++) {
-		args.apps.push({'file' : _makeFile(apps[i])});		
+		args.apps.push(_makeApp(apps[i]));
 	}
 	
 	if(typeof options === 'function') {

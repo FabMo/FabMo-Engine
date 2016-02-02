@@ -25,7 +25,7 @@ define(function(require) {
 		this._setupMessageListener();
 	};
 
-	Dashboard.prototype.browseForFile = function(callback) {
+	function browse(callback) {
 		var file_input = $('#hidden-file-input'); 
 		callback = callback || function() {};
 
@@ -36,9 +36,17 @@ define(function(require) {
 				callback(evt);
 			});
 		});
-		
-
 		file_input.click();
+	}
+
+	Dashboard.prototype.browseForFiles = function(callback) {
+		document.getElementById("hidden-file-input").multiple=true;
+		browse(callback);		
+	}
+
+	Dashboard.prototype.browseForFile = function(callback) {
+		document.getElementById("hidden-file-input").multiple=false;
+		browse(callback);		
 	}
 
 	Dashboard.prototype.setEngine = function(engine) {

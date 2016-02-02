@@ -167,7 +167,6 @@ var submitApp = function(req, res, next) {
         // Multiple apps can be submitted at once.  Process each of them in turn.
         async.map(uploads.files, function(upload_data, callback) {
             var file = upload_data.file;
-            console.log(upload_data.file)
             if(file && util.allowedAppFile(file.name)) {
                 // Keep the name of the file uploaded for a "friendly name"
                 var friendly_filename = file.name || upload_data.filename || 'app.fma';
@@ -181,13 +180,7 @@ var submitApp = function(req, res, next) {
                     log.debug("Done with a move");
                     if (err) {
                         callback(new Error('Failed to move the app from the temporary folder to the installation folder.'));
-                        /*
-                        return res.json({
-                            status:"error",
-                            message:"failed to move the app from temporary folder to app installation folder"
-                        }); */
                     }
-                    log.debug("No error.");
                     // delete the temporary file (no longer needed)
                     fs.unlink(file.path, function(err) {
                         if (err) {
