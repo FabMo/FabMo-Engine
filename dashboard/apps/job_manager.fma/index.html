@@ -31,7 +31,7 @@
 </nav>
 </div>
 <form style="display:none;" id="fileform">
-	<input type="file" id="file">
+	<input type="file" id="file" multiple>
 </form>
 
 <div class="tabs-content">
@@ -199,7 +199,8 @@
 			drop : function (devt, evt) {
 				evt.preventDefault();
 				try {
-					file = evt.originalEvent.dataTransfer.files[0];
+					file = evt.originalEvent.dataTransfer.files;
+					console.log(file);
 					fabmo.submitJob(file, {}, function(err, data) {
 						if(err){
 							fabmo.notify('error', err);

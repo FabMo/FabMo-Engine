@@ -349,13 +349,30 @@ function _makeJob(obj) {
 FabMoDashboard.prototype.submitJob = function(jobs, options, callback) {
 	var args = {jobs : []};
 
-	if (!(jobs instanceof Array)) {
-		jobs = [jobs];
+	if(jobs instanceof jQuery) {
+		if(jobs.is('input:file')) {
+			jobs = obj[0];
+		} else {
+			jobs = jobs.find('input:file')[0];
+		}
+		var files = jobs.files;
+		if(files.length) {
+			jobs = [];
+			for(var i=0; i<files.length; i++) {
+				jobs.push(files[i]);
+			}
+		}
+	} else {
+		if(!jobs.length) {
+			jobs = [jobs];
+		}
 	}
 
-	jobs.forEach(function(job) {
-		args.jobs.push(_makeJob(job));
-	});
+	for(var i=0; i<jobs.length; i++) {
+		args.jobs.push(_makeJob(jobs[i]));
+
+	}
+	
 	if(typeof options === 'function') {
 		callback = options;
 		options = {};
