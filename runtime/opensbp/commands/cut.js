@@ -34,7 +34,7 @@ exports.CA = function(args) {
   var radius = (ht/2) + ((len*len) / (8*ht)) + (config.opensbp.get('cutterDia')/2 * comp);
 
   if ( radius === undefined || radius <= 0 ){
-    throw( "Zero radius circle: CA" );
+    throw( "Invalid CA circle: Zero Radius" );
   }
 
   var xOffset = startX + (len/2);
@@ -79,7 +79,7 @@ exports.CC = function(args) {
   }
   if ( Dia === undefined || Dia <= 0 ){
     // Error: Zero diameter circle
-    throw( "Zero Diameter Circle: CC" ); 
+    throw( "Invalid CC circle: Zero diameter" ); 
   }
 
   var WBang = 450 - Bang;
@@ -256,8 +256,7 @@ exports.CG = function(args) {
 
   this.lastNoZPullup = plgFromZero;
 
-  log.debug("CG: " + JSON.stringify(args));
-
+  // log.debug("CG: " + JSON.stringify(args));
   // log.debug("start X:" + startX );
   // log.debug("start Y:" + startY );
   // log.debug("start Z:" + startZ );
@@ -270,8 +269,8 @@ exports.CG = function(args) {
   // log.debug("reps:" + reps );
   // log.debug("Plg:" + Plg );  
 
-  if ( centerX === 0 && centerY === 0 ){
-    throw( "Zero diameter circle: CG" );
+  if ((centerX === 0 || centerX === undefined) && (centerY === 0 || centerY === undefined)){
+    throw( "Invalid CG circle: Zero diameter" );
   }
 
   if ((propX < 0 && propY > 0) || (propX > 0 && propY < 0 )) { 

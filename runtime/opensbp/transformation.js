@@ -2,6 +2,7 @@ var log = require('../../log').logger('sbp');
 
 // Point X, Point Y, Point Z, Angle(in radians), Rotation Point X, Rotation Point Y
 exports.rotate = function(PtNew,angle,RotPtX,RotPtY){
+	log.debug("         Pt to Rotate: " + JSON.stringify(PtNew));
 	if ( angle !== 0 ) {
 		var x = PtNew.X;
 		var y = PtNew.Y;		
@@ -12,6 +13,7 @@ exports.rotate = function(PtNew,angle,RotPtX,RotPtY){
 		if (RotPtY === undefined) { RotPtY = 0; }
 		PtNew.X = ((cosB * (x-RotPtX)) - (sinB * (y-RotPtY))) + RotPtX;
 		PtNew.Y = ((sinB * (x-RotPtX)) + (cosB * (y-RotPtY))) + RotPtY;
+	log.debug("         Pt Rotated: " + JSON.stringify(PtNew));
 	}
 
 	return PtNew;

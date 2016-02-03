@@ -214,7 +214,7 @@ FabMoAPI.prototype.submitApp = function(app_file, callback) {
 }
 
 FabMoAPI.prototype.getAppConfig = function(app_id, callback) {
-	this._get('/apps/' + id + '/config', callback, callback, 'config');
+	this._get('/apps/' + app_id + '/config', callback, callback, 'config');
 }
 
 FabMoAPI.prototype.setAppConfig = function(id, cfg_data, callback) {
