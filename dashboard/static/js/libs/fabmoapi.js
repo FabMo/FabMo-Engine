@@ -146,13 +146,13 @@ FabMoAPI.prototype.getConfig = function(callback) {
 	this._get('/config', callback, function(err, data) {
 		this.config = data;
 		callback(err, data);
-	}.bind(this), 'configuration');
+	}.bind(this), 'config');
 }
 
 FabMoAPI.prototype.setConfig = function(cfg_data, callback) {
-	this._post('/config', cfg_data, callback, function(data) {
+	this._post('/config', cfg_data, callback, function(err, data) {
 		callback = callback || function() {};
-		callback(null, data.configuration);
+		callback(null, data.config);
 	});
 }
 

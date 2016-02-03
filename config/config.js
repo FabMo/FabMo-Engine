@@ -3,6 +3,8 @@ var fs = require('fs');
 var path = require('path');
 var PLATFORM = require('process').platform;
 var log = require('../log').logger('config');
+var EventEmitter = require('events');
+var util = require('util');
 
 // Config is the superclass from which all configuration objects descend
 Config = function(config_name) {
@@ -12,7 +14,10 @@ Config = function(config_name) {
 	this.config_file = Config.getDataDir('config') + '/' + config_name + '.json';
 	this._loaded = false;
 	this.userConfigLoaded = false;
+	EventEmitter.call(this);
 };
+util.inherits(Config,EventEmitter);
+
 
 Config.prototype.get = function(k) {
 	return this._cache[k];
@@ -30,8 +35,20 @@ Config.prototype.getMany = function(arr) {
 Config.prototype.set = function(k,v, callback) {
 	var u = {}
 	u[k] = v;
-	return this.update(u, callback);
+	this.setMany(u, callback);
 };
+
+Config.prototype.setMany = function(data, callback) {
+	this.update(data, function(err, result) {
+		if(callback && typeof callback === 'function') {
+			callback(err, result);
+		} else {
+			log.warn("No callback passed to setMany");
+
+		}
+		this.emit('change', data);
+	}.bind(this));
+}
 
 Config.prototype.getData = function() {
 	return this._cache;

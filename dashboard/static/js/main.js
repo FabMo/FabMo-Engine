@@ -257,6 +257,8 @@ $('.posx, .posy, .posz').keyup(function(event){
 $('.button-zerox').click(function(e) {dashboard.engine.sbp('ZX'); });  
 $('.button-zeroy').click(function(e) {dashboard.engine.sbp('ZY'); });  
 $('.button-zeroz').click(function(e) {dashboard.engine.sbp('ZZ'); });
+$('.button-zeroa').click(function(e) {dashboard.engine.sbp('ZA'); });
+$('.button-zerob').click(function(e) {dashboard.engine.sbp('ZB'); });
 
 $('.play').on('click', function(e){
 	$("#main").addClass("offcanvas-overlap-left");

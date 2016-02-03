@@ -11,7 +11,7 @@ requirejs.config({
     	'foundation' : 'libs/foundation.min',
         'underscore' : 'libs/underscore',
         'fabmo' : 'libs/fabmoapi',
-        'fabmo-ui' : 'libs/FabMoUI-latest',
+        'fabmo-ui' : 'libs/fabmoui',
         'socket.io' : 'libs/socket.io',
         'handwheel' : 'libs/handwheel',
         'hammer' : 'libs/hammer.min',

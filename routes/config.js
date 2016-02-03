@@ -51,7 +51,7 @@ var get_config = function(req, res, next) {
   var answer = 
   {
     status : "success",
-    data : {'configuration':retval}
+    data : {'config':retval}
   };
   res.json(answer);
 };
@@ -70,7 +70,7 @@ var post_config = function(req, res, next) {
   var answer;
 
   if('engine' in req.params) {
-    config.engine.update(util.fixJSON(req.params.engine), function(err, result) {
+    config.engine.setMany(util.fixJSON(req.params.engine), function(err, result) {
       config.engine.apply(function(err, result) {
         if(err) {
           answer = {
@@ -90,7 +90,7 @@ var post_config = function(req, res, next) {
   }
 
   if('driver' in req.params) {
-    config.driver.update(util.fixJSON(req.params.driver), function(err, result) {
+    config.driver.setMany(util.fixJSON(req.params.driver), function(err, result) {
       if(err) {
         answer = {
           status : "fail",
@@ -108,7 +108,7 @@ var post_config = function(req, res, next) {
   }
 
   if('opensbp' in req.params) {
-    config.opensbp.update(util.fixJSON(req.params.opensbp), function(err, result) {
+    config.opensbp.setMany(util.fixJSON(req.params.opensbp), function(err, result) {
       if(err) {
         answer = {
           status : "fail",
@@ -126,7 +126,7 @@ var post_config = function(req, res, next) {
   }
 
   if('machine' in req.params) {
-    config.machine.update(util.fixJSON(req.params.machine), function(err, result) {
+    config.machine.setMany(util.fixJSON(req.params.machine), function(err, result) {
       config.machine.apply(function(err, result) {
         if(err) {
           answer = {
