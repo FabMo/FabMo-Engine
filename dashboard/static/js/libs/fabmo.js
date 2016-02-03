@@ -151,12 +151,26 @@ FabMoDashboard.prototype._call = function(name, data, callback) {
 FabMoDashboard.prototype._simulateCall = function(name, data, callback) {
 	switch(name) {
 		case "submitJob":
+
+			var files = [];
+			data.jobs.forEach(function(job) {
+				var name = job.filename || job.file.name;
+				this._download(job.file, name, "text/plain");
+				files.push(name);
+			}.bind(this));
+
+			// Data.length
+			if(data.jobs.length === 1) {
+				var msg = "Job Submitted: " + data.jobs[0].filename
+			} else {
+				var msg = data.jobs.length + " Jobs Submitted: " + files.join(',');
+			}
 			toaster();
-			$('.alert-text').text("Job Submitted: " + data.config.filename);
+			$('.alert-text').text(msg);
 			$('.alert-toaster').slideDown(null, function (){
 				setTimeout(function(){$('.alert-toaster').remove(); }, 1000);
-			})
-			this._download(data.data, data.config.filename, "text/plain");
+			})				
+
 		break;
 
 		case "runGCode":
@@ -282,27 +296,93 @@ FabMoDashboard.prototype.notification = function(type,message,callback) {
 }
 FabMoDashboard.prototype.notify = FabMoDashboard.prototype.notification;
 
-// Job and Queue Functions
-FabMoDashboard.prototype.submitJob = function(data, config, callback) {
-	var message = {};
+function _makeFile(obj) {
+	if(obj instanceof jQuery) {
+		if(obj.is('input:file')) {
+			obj = obj[0];
+		} else {
+			obj = obj.find('input:file')[0];
+		}
+		file = obj.files[0];
+	} else if(obj instanceof HTMLInputElement) {
+		file = obj.files[0];
+	} else if(obj instanceof File || obj instanceof Blob) {
+		file = obj;
+	} else if(typeof obj === "string") {
+		file = new Blob([obj], {'type' : 'text/plain'});
+	} else {
+		throw new Error('Cannot make File object out of ' + obj);
+	}
+	return file;
+}
 
-	// Pass a form to get a file that was browsed for
-	if (data instanceof jQuery) {
-		message.file = (data.find('input:file'))[0].files[0];
+function _makeApp(obj) {
+	return {file : _makeFile(obj)};
+}
+
+function _makeJob(obj) {
+	var file = null;
+
+	try {
+		file = _makeFile(obj);
+	} catch(e) {}
+
+	if(file) {
+		return {file : file};
+	} else {
+		var job = {};
+		for (var key in obj) {
+  			if (obj.hasOwnProperty(key)) {
+  				if(key === 'file') {
+  					job['file'] = _makeFile(obj.file);
+  				} else {
+  					job[key] = obj[key];
+  				}
+  			}
+		}
+		return job;
 	}
-	// Pass the FormData object if you're a real go-getter
-	else if (data instanceof FormData) {
-		message.file = data.file;
-	} 
-	// Just pass an object that contains the data
-	else {
-		message.data = data;
-		message.config = {};
-		message.config.filename = config.filename || 'job.nc';
-		message.config.name = config.name || message.config.filename;
-		message.config.description = config.description || 'No description'
+}
+/*
+ * Job Submission
+ * @param jobs: array containing job objects
+ * @param options: sumission options (applies to all jobs)
+ * job object must have a 'file' member that's either a string or a file or a blob
+ */
+// Job and Queue Functions
+FabMoDashboard.prototype.submitJob = function(jobs, options, callback) {
+	var args = {jobs : []};
+
+	if(jobs instanceof jQuery) {
+		if(jobs.is('input:file')) {
+			jobs = obj[0];
+		} else {
+			jobs = jobs.find('input:file')[0];
+		}
+		var files = jobs.files;
+		if(files.length) {
+			jobs = [];
+			for(var i=0; i<files.length; i++) {
+				jobs.push(files[i]);
+			}
+		}
+	} else {
+		if(!jobs.length) {
+			jobs = [jobs];
+		}
 	}
-	this._call("submitJob", message, callback)
+
+	for(var i=0; i<jobs.length; i++) {
+		args.jobs.push(_makeJob(jobs[i]));
+	}
+	
+	if(typeof options === 'function') {
+		callback = options;
+		options = {};
+	}
+
+	args.options = options || {};
+	this._call("submitJob", args, callback)
 }
 
 FabMoDashboard.prototype.resubmitJob = function(id, callback) {
@@ -367,23 +447,39 @@ FabMoDashboard.prototype.getApps = function(callback) {
 	this._call("getApps",null,callback);
 }
 
-FabMoDashboard.prototype.submitApp = function(data, config,  callback) {
-	var message = {};
+FabMoDashboard.prototype.submitApp = function(apps, options, callback) {
+	var args = {apps : []};
 
-	// Pass a form to get a file that was browsed for
-	if (data instanceof jQuery) {
-		message.file = (data.find('input:file'))[0].files[0];
+	if(apps instanceof jQuery) {
+		if(apps.is('input:file')) {
+			apps = apps[0];
+		} else {
+			apps = apps.find('input:file')[0];
+		}
+		var files = apps.files;
+		if(files.length) {
+			apps = [];
+			for(var i=0; i<files.length; i++) {
+				apps.push(files[i]);
+			}
+		}
+	} else {
+		if(!apps.length) {
+			apps = [apps];
+		}
 	}
-	// Pass the FormData object if you're a real go-getter
-	else if (data instanceof FormData) {
-		message.file = data.file;
-	} 
-	// Just pass a plain old object that contains the data
-	else {
-		message.data = data;
-		message.config = {'filename' : file.name};
+
+	for(var i=0; i<apps.length; i++) {
+		args.apps.push(_makeApp(apps[i]));
 	}
-	this._call("submitApp", message, callback)
+	
+	if(typeof options === 'function') {
+		callback = options;
+		options = {};
+	}
+
+	args.options = options || {};
+	this._call("submitApp", args, callback)
 }
 
 FabMoDashboard.prototype.getConfig = function(callback) {

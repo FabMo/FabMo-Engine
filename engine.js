@@ -120,8 +120,8 @@ Engine.prototype.start = function(callback) {
                     callback();
                 });
             } else {
-                var last_time_version = config.engine.get('version');
-                var this_time_version = this.version;
+                var last_time_version = config.engine.get('version').trim();
+                var this_time_version = this.version.trim();
                 log.debug("Previous engine version: " + last_time_version);
                 log.debug(" Current engine version: " + this_time_version);
 
@@ -313,6 +313,14 @@ Engine.prototype.start = function(callback) {
                         setTimeout(next,500*Math.random());
                     }
                 );
+            }
+
+            if('debug' in argv) {
+                server.use(
+                    function debug(req, res, next) {
+                        log.debug(req.method + ' ' + req.url);
+                        next();
+                    });
             }
 
             server.on('uncaughtException', function(req, res, route, err) {

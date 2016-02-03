@@ -1,0 +1,12 @@
+{
+	"name":"Self-Test App",
+	"main":"./index.html",
+	"icon":"icon.png",
+	"icon_color":"#313366",
+	"icon_display":"none",
+	"version":"0.0.0",
+	"author":"Ryan Sturmer",
+	"website":"http://shopbottools.com",
+	"id":"selftest",
+    "description":"System app for running self tests on the fabmo software framework."
+}
