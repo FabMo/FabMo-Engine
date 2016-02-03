@@ -3,11 +3,11 @@ var fs = require('fs');
 var path = require('path');
 var PLATFORM = require('process').platform;
 var log = require('../log').logger('config');
-var EventEmitter = require('events');
+var EventEmitter = require('events').EventEmitter;
 var util = require('util');
 
 // Config is the superclass from which all configuration objects descend
-Config = function(config_name) {
+var Config = function(config_name) {
 	this._cache = {};
 	this.config_name = config_name;
 	this.default_config_file = __dirname + '/default/' + config_name + '.json';
