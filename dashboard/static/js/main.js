@@ -241,16 +241,19 @@ $('html').on('click', function (e) {
 			$('.go-here').hide();
 		}
 });
-$('.posx, .posy, .posz').keyup(function(event){
-    if(event.keyCode == 13){
-    	event.preventDefault();
+$('.posx, .posy, .posz').keyup(function(e){
+    if(e.keyCode == 13){
+    	e.preventDefault();
+        e.stopPropagation();
         var x = $('.posx').attr('value','')[1].value;
 		var y = $('.posy').attr('value','')[1].value;
 		var z = $('.posz').attr('value','')[1].value;
 		var gcode = "G0 X" + x + " Y" + y + " Z" + z;
 		dashboard.engine.gcode(gcode);
 		$('.go-here').hide();
+        
     }
+
 });
 
 // Handlers for the home/probe buttons
