@@ -1,8 +1,7 @@
 var log = require('../../log').logger('sbp');
 
 // Point X, Point Y, Point Z, Angle(in radians), Rotation Point X, Rotation Point Y
-exports.rotate = function(PtNew,angle,RotPtX,RotPtY){
-	log.debug("         Pt to Rotate: " + JSON.stringify(PtNew));
+exports.rotate = function(PtNew,angle,RotPtX,RotPtY,xStart,yStart){
 	if ( angle !== 0 ) {
 		var x = PtNew.X;
 		var y = PtNew.Y;		
@@ -13,9 +12,16 @@ exports.rotate = function(PtNew,angle,RotPtX,RotPtY){
 		if (RotPtY === undefined) { RotPtY = 0; }
 		PtNew.X = ((cosB * (x-RotPtX)) - (sinB * (y-RotPtY))) + RotPtX;
 		PtNew.Y = ((sinB * (x-RotPtX)) + (cosB * (y-RotPtY))) + RotPtY;
-	log.debug("         Pt Rotated: " + JSON.stringify(PtNew));
+     	if ( 'I' in PtNew || 'J' in PtNew ){
+            var Ipos = PtNew.I === undefined ? xStart : (xStart + PtNew.I);
+            var Jpos = PtNew.J === undefined ? yStart : (yStart + PtNew.J);
+            log.debug("          Ipos = " + Ipos.toFixed(5) + "  Jpos = " + Jpos.toFixed(5));
+            var newIpos = ((cosB * (Ipos-RotPtX)) - (sinB * (Jpos-RotPtY))) + RotPtX;
+            var newJpos = ((sinB * (Ipos-RotPtX)) + (cosB * (Jpos-RotPtY))) + RotPtY;
+            PtNew.I = PtNew.X - newIpos;
+            PtNew.J = PtNew.Y - newJpos;
+		}
 	}
-
 	return PtNew;
 };
 
