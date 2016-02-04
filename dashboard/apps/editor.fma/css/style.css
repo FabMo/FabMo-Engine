@@ -1,13 +1,14 @@
-.CodeMirror {
-  border: 1px solid #eee;
-}
-
 #editor { 
     position: relative;
     top: 0; 
     right: 0;
     bottom: 0;
     left: 0;
+}
+
+#modal-title {
+  font-weight: 700;
+  color: #2E3865;
 }
 
 body {

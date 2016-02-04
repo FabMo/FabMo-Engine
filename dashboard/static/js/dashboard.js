@@ -25,7 +25,7 @@ define(function(require) {
 		this._setupMessageListener();
 	};
 
-	Dashboard.prototype.browseForFile = function(callback) {
+	function browse(callback) {
 		var file_input = $('#hidden-file-input'); 
 		callback = callback || function() {};
 
@@ -36,9 +36,17 @@ define(function(require) {
 				callback(evt);
 			});
 		});
-		
-
 		file_input.click();
+	}
+
+	Dashboard.prototype.browseForFiles = function(callback) {
+		document.getElementById("hidden-file-input").multiple=true;
+		browse(callback);		
+	}
+
+	Dashboard.prototype.browseForFile = function(callback) {
+		document.getElementById("hidden-file-input").multiple=false;
+		browse(callback);		
 	}
 
 	Dashboard.prototype.setEngine = function(engine) {
@@ -155,27 +163,15 @@ define(function(require) {
 		}.bind(this))
 
 		// Submit a job
-		this._registerHandler('submitJob', function(data, callback) { 
-			if('file' in data) {
-				formdata = new FormData();
-				formdata.append('file', data.file, data.file.name);
-				
-				this.engine.submitJob(formdata, function(err, result) {
-					if(err) {
-						callback(err);
-					} else {
-						this.launchApp('job-manager', {}, callback);
-					}
-				}.bind(this));
-			} else if ('data' in data) {
-				this.engine.submitJob(data, function(err, result) {
-					if(err) {
-						callback(err);
-					} else {
-						this.launchApp('job-manager', {}, callback);
-					}
-				}.bind(this));				
-			}
+		this._registerHandler('submitJob', function(data, callback) {
+			// TODO deal with options here, don't just pass them through
+			this.engine.submitJob(data.jobs, data.options, function(err, result) {
+				if(err) {
+					callback(err);
+				} else {
+					this.launchApp('job-manager', {}, callback);
+				}
+			}.bind(this));
 		}.bind(this));
 
 		this._registerHandler('resubmitJob', function(id, callback) { 
@@ -306,26 +302,11 @@ define(function(require) {
 
 		// Submit an app
 		this._registerHandler('submitApp', function(data, callback) { 
-			if('file' in data) {
-				var formdata = new FormData();
-				formdata.append('file', data.file, data.file.name);
-				this.engine.submitApp(formdata, function(err, result) {
-					this.refreshApps();
-					if(err) {
-						callback(err);
-					} else {
-						callback(null, result);
-					}
-				}.bind(this));
-			} else if ('data' in data) {
-				this.engine.submitApp(data, function(err, result) {
-					if(err) {
-						callback(err);
-					} else {
-						callback(null);
-					}
-				}.bind(this));
-			}
+			this.engine.submitApp(data.apps, data.options, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+
 		}.bind(this));
 
 		this._registerHandler('deleteApp', function(id, callback) {

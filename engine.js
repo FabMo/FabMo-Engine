@@ -48,7 +48,7 @@ Engine.prototype.setTime = function(obj) {
         var d = new Date(obj.utc);
         log.debug("Setting the time to " + d.toUTCString());
         var t = d.getUTCFullYear() + '-' + d.getUTCMonth() + '-' + d.getUTCDay() + ' ' + d.getUTCHours() + ':' + d.getUTCMinutes() + ':' + d.getUTCSeconds()
-	cmd = 'timedatectl set-time ' + t + '; timedatectl';
+    cmd = 'timedatectl set-time ' + t + '; timedatectl';
         util.doshell(cmd, function(stdout) {
             console.log(stdout);
         });
@@ -120,8 +120,8 @@ Engine.prototype.start = function(callback) {
                     callback();
                 });
             } else {
-                var last_time_version = config.engine.get('version');
-                var this_time_version = this.version;
+                var last_time_version = config.engine.get('version').trim();
+                var this_time_version = this.version.trim();
                 log.debug("Previous engine version: " + last_time_version);
                 log.debug(" Current engine version: " + this_time_version);
 
@@ -152,23 +152,7 @@ Engine.prototype.start = function(callback) {
             log.info("Applying engine configuration...");
             config.engine.apply(callback);
         },
-/*
-	function setup_network(callback) {
-		if(config.engine.get('wifi_manager')) {
-			log.info("Setting up the network...");
-            try {
-                network.init();
-            } catch(e) {
-                log.error('Problem starting network manager:')
-                log.error(e);
-            }
-			callback(null);
-		} else {
-			log.warn("Skipping network setup because wifi manager is disabled.");
-			callback(null);
-		}
-	},
-*/
+
         // Configure the DB
         function setup_database(callback) {
             log.info("Configuring database...");
@@ -198,17 +182,17 @@ Engine.prototype.start = function(callback) {
         function load_machine_config(callback) {
             this.machine = machine.machine;
             log.info('Loading the machine configuration...')
-            config.configureMachine(this.machine.driver, function(err, result) {
+            config.configureMachine(this.machine, function(err, result) {
                 if(err) {
                     log.warn(err);
                 }
                 callback(null);
             });
         }.bind(this),
-	
-	function set_units(callback) {
-		this.machine.driver.setUnits(config.machine.get('units'), callback);
-	}.bind(this),
+    
+        function set_units(callback) {
+            this.machine.driver.setUnits(config.machine.get('units'), callback);
+        }.bind(this),
 
         // Configure G2 by loading all its json settings and static configuration parameters
         function load_driver_config(callback) {
@@ -244,7 +228,7 @@ Engine.prototype.start = function(callback) {
                 log.warn("Skipping G2 firmware version check due to no connection.")
                 callback(null);
             }
-    	}.bind(this),
+        }.bind(this),
 
         function apply_machine_config(callback) {
             log.info("Applying machine configuration...");
@@ -313,6 +297,14 @@ Engine.prototype.start = function(callback) {
                         setTimeout(next,500*Math.random());
                     }
                 );
+            }
+
+            if('debug' in argv) {
+                server.use(
+                    function debug(req, res, next) {
+                        log.debug(req.method + ' ' + req.url);
+                        next();
+                    });
             }
 
             server.on('uncaughtException', function(req, res, route, err) {

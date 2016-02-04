@@ -57,7 +57,7 @@ function Machine(control_path, gcode_path, callback) {
 		state : "not_ready",
 		posx : 0.0,
 		posy : 0.0,
-		posz : 0.0, 
+		posz : 0.0,
 		in1 : 1,
 		in2 : 1,
 		in3 : 1,
@@ -74,14 +74,16 @@ function Machine(control_path, gcode_path, callback) {
 	};
 
 	this.driver = new g2.G2();
-	this.driver.on("error", function(data) {log.error(data);});
+	this.driver.on("error", function(err) {log.error(err);});
+
 	this.driver.connect(control_path, gcode_path, function(err, data) {
+	
 	    // Set the initial state based on whether or not we got a valid connection to G2
 	    if(err){
-	    	log.debug("Setting the disconnected state");
+	    	log.warn("Setting the disconnected state");
 		    this.status.state = 'not_ready';
 	    } else {
-		    this.status.state = "idle";
+		    this.status.state = 'idle';
 	    }
 
 	    // Create runtimes for different functions/command languages
@@ -103,11 +105,22 @@ function Machine(control_path, gcode_path, callback) {
 	    }
 
     }.bind(this));
-/*
-    this.on('status', function(data) {
-    	log.warn("Got machine emit");
-    })
-*/
+
+    config.driver.on('change', function(update) {
+    	['x','y','z','a','b'].forEach(function(axis) {
+    		var mode = axis + 'am';
+    		var pos = 'pos' + axis;
+    		if(mode in update) {
+    			if(update[mode] === 0) {
+    				log.debug('Disabling display for ' + axis + ' axis.');
+    				delete this.status[pos];
+    			} else {
+    				log.debug('Enabling display for ' + axis + ' axis.');
+    				this.status[pos] = 0;
+    			}
+    		}
+    	}.bind(this));
+    }.bind(this));
 }
 util.inherits(Machine, events.EventEmitter);
 

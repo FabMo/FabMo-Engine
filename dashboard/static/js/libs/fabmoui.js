@@ -33,10 +33,6 @@ function FabMoUI(tool, options){
 	this.keypad = true;
 	// able or disable the keypad.
 
-	this.fixe_move = false;
-	this.fixe_move_step = 0.01;
-
-	this.move_step = '0.5';
 	//1 step of keypad, in inches
 
 	this.file_control= true;
@@ -55,6 +51,9 @@ function FabMoUI(tool, options){
 	this.posX_selector = this.status_div_selector + ' .posx';
 	this.posY_selector = this.status_div_selector + ' .posy';
 	this.posZ_selector = this.status_div_selector + ' .posz';
+	this.posA_selector = this.status_div_selector + ' .posz';
+	this.posB_selector = this.status_div_selector + ' .posz';
+
 	this.state_selector = this.status_div_selector + ' .state';
 	this.file_info_div_selector = this.status_div_selector + ' .file-info';
 	this.filename_selector = this.file_info_div_selector + ' .filename';
@@ -169,25 +168,23 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		}
 	}
 
-	var unit = '??';
-	if(status.unit != null) {
-		unit = status.unit;
-	}
-
-	try {
-		var digits = unit === 'mm' ? 2 : 3; 
-		var x = status.posx.toFixed(digits);
-		var y = status.posy.toFixed(digits);
-		var z = status.posz.toFixed(digits);
-	} catch(e) {
-		var x = 'X.XXX'
-		var y = 'X.XXX'
-		var z = 'X.XXX'
-	}
-
-	that.updateText($(that.posX_selector), x);
-	that.updateText($(that.posY_selector), y);
-	that.updateText($(that.posZ_selector), z);
+	var unit = status.unit || '??';	
+	var digits = unit === 'mm' ? 2 : 3; 
+	['x','y','z','a','b'].forEach(function(axis) {
+		var pos = 'pos' + axis;
+		if(pos in status) {
+			$('.' + axis + 'axis').show();
+			try {
+				var posText = status[pos].toFixed(digits);
+			} catch(e) {
+				var posText = (pos + '.' + pos + pos + pos).toUpperCase();				
+			}
+			that.updateText($('.' + pos), posText);
+		} else {
+			$('.' + axis + 'axis').hide();
+		}
+	});
+	
 	that.updateText($(that.units_selector), unit)
 
 	//Current File or job
