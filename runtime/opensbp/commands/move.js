@@ -83,9 +83,9 @@ exports.MC = function(args) {
 // Move 2 axes (XY). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.M2 = function(args) {
+	log.debug("  X param = " + args[0] + "  Y param = " + args[1]);
     var params = process_move.bind(this)(args);
     if ( this.cmd_result < 2 ){
-    log.debug("  M2 ************** result = " + this.cmd_result );
 		this.emit_move('G1',params);
 	}
 };
@@ -127,31 +127,30 @@ exports.M6 = function(args) {
 };
 
 process_move = function(args) {
-//    log.debug(" process_move: " + JSON.stringify(args));
 	this.cmd_result = 0;
 	var params = {};
 	var feedrate = this.movespeed_xy * 60;
-	if(args[0] === 0 || args[0] && typeof args[0] === "number"){
+	if( args[0] === 0 || args[0] && typeof args[0] === "number"){  //args[0] === 0 ||
 		params.X = args[0];
 		if ( params.X === this.cmd_posx ) { this.cmd_result += 1; }
 	}
-	if(args[1] === 0 || args[1] && typeof args[1] === "number"){ 
+	if( args[1] === 0 || args[1] && typeof args[1] === "number"){  //args[1] === 0 || 
 		params.Y = args[1];
 		if ( params.Y === this.cmd_posy ) { this.cmd_result += 1; }
 	}  
-	if(args[1] === 0 || args[2] && typeof args[2] === "number"){ 
+	if(args[2] === 0 || args[2] && typeof args[2] === "number"){ 
 		params.Z = args[2];
 		if ( params.Z === this.cmd_posz ) { this.cmd_result += 1; }
 	}  
-	if(args[1] === 0 || args[3] && typeof args[3] === "number"){ 
+	if(args[3] === 0 || args[3] && typeof args[3] === "number"){ 
 		params.A = args[3];
 		if ( params.A === this.cmd_posa ) { this.cmd_result += 1; }
 	}
-	if(args[1] === 0 || args[4] && typeof args[4] === "number"){ 
+	if(args[4] === 0 || args[4] && typeof args[4] === "number"){ 
 		params.B = args[4];
 		if ( params.B === this.cmd_posb ) { this.cmd_result += 1; }
 	}  
-	if(args[1] === 0 || args[5] && typeof args[5] === "number"){ 
+	if(args[5] === 0 || args[5] && typeof args[5] === "number"){ 
 		params.C = args[5];
 		if ( params.C === this.cmd_posc ) { this.cmd_result += 1; }
 	}  

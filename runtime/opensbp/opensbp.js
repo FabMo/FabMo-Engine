@@ -41,12 +41,12 @@ function SBPRuntime() {
 	this.running = false;
 	this.quit_pending = false;
 	this.cmd_result = 0;
-	this.cmd_posx = 0;
-	this.cmd_posy = 0;
-	this.cmd_posz = 0;
-	this.cmd_posa = 0;
-	this.cmd_posb = 0;
-	this.cmd_posc = 0;
+	this.cmd_posx = undefined;
+	this.cmd_posy = undefined;
+	this.cmd_posz = undefined;
+	this.cmd_posa = undefined;
+	this.cmd_posb = undefined;
+	this.cmd_posc = undefined;
 	this.movespeed_xy = 0;
 	this.movespeed_z = 0;
 	this.movespeed_a = 0;
@@ -65,6 +65,7 @@ function SBPRuntime() {
 	// Physical machine state
 	this.machine = null;
 	this.driver = null;
+
 }
 util.inherits(SBPRuntime, events.EventEmitter);
 
@@ -128,6 +129,11 @@ SBPRuntime.prototype.runString = function(s, callback) {
 			return this._end(e.message + " (Line " + e.line + ")");
 		}
  		lines = this.program.length;
+ 		
+ 		this.cmd_posx = this.posx;
+        this.cmd_posy = this.posy;
+        this.cmd_posz = this.posz;
+
 		this._setupTransforms();
 		this.init();
 		this.end_callback = callback;
@@ -210,7 +216,7 @@ SBPRuntime.prototype._update = function() {
 // Evaluate a list of arguments provided (for commands)
 // Returns a scrubbed list of evaluated arguments to be passed to command handlers
 SBPRuntime.prototype._evaluateArguments = function(command, args) {
-	log.debug("Evaluating arguments: " + command + "," + JSON.stringify(args));
+	// log.debug("Evaluating arguments: " + command + "," + JSON.stringify(args));
 	// Scrub the argument list:  extend to the correct length, sub in defaults where necessary.
 	scrubbed_args = [];
 	if(command in sb3_commands) {
@@ -222,19 +228,19 @@ SBPRuntime.prototype._evaluateArguments = function(command, args) {
 			prm_param = params[i];
 			user_param = args[i];
 			if((args[i] !== undefined) && (args[i] !== "")) {
-				log.debug('Taking the users argument: ' + args[i]);
+				// log.debug('Taking the users argument: ' + args[i]);
 				scrubbed_args.push(args[i]);
 			} else {
 				//log.debug("Taking the default argument: " + args[i] + " (PRN file)");
 				//scrubbed_args.push(prm_param.default || undefined);
-				log.debug('No user specified argument.  Using undefined.');
+				// log.debug('No user specified argument.  Using undefined.');
 				scrubbed_args.push(undefined);
 			}
 		}
 	} else {
 		scrubbed_args = [];
 	}
-	log.debug("Scrubbed arguments: " + JSON.stringify(scrubbed_args));
+	// log.debug("Scrubbed arguments: " + JSON.stringify(scrubbed_args));
 	
 	// Create the list of evaluated arguments to be returned
 	retval = [];
@@ -326,6 +332,10 @@ SBPRuntime.prototype._run = function() {
 	if(this.machine) {
 		this.machine.setState(this, "running");
 	}
+	// this.cmd_posx = this.posx;
+	// this.cmd_posy = this.posy;
+	// log.debug("*******************run: cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy);
+
 	this._continue();
 };
 
@@ -696,7 +706,7 @@ SBPRuntime.prototype._execute = function(command, callback) {
 		return;
 	}
 
-	log.debug("Executing: " + JSON.stringify(command));
+	// log.debug("Executing: " + JSON.stringify(command));
 	// All correctly parsed commands have a type
 	switch(command.type) {
 
@@ -880,7 +890,7 @@ SBPRuntime.prototype._setupEvent = function(command, callback) {
 }
 
 SBPRuntime.prototype._eval_value = function(expr) {
-		log.debug("  Evaluating value: " + expr);
+		// log.debug("  Evaluating value: " + expr);
 		sys_var = this.evaluateSystemVariable(expr);
 		if(sys_var === undefined) {
 			var persistent_var = this.evaluatePersistentVariable(expr);
@@ -920,7 +930,7 @@ SBPRuntime.prototype._eval_value = function(expr) {
 // Evaluate an expression.  Return the result.
 // TODO: Make this robust to undefined user variables
 SBPRuntime.prototype._eval = function(expr) {
-	log.debug("Evaluating expression: " + JSON.stringify(expr));
+//	log.debug("Evaluating expression: " + JSON.stringify(expr));
 	if(expr === undefined) {return undefined;}
 
 	if(expr.op === undefined) {
@@ -979,9 +989,6 @@ SBPRuntime.prototype.init = function() {
 	this.end_callback = null;
 	this.quit_pending = false;
 	this.end_message = null;
-	// this.cmd_posx = this.posx;
-	// this.cmd_posy = this.posy;
-	log.debug("    init: cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy);
 
 	if(this.transforms != null && this.transforms.level.apply === true) {
 		leveler = new Leveler(this.transforms.level.ptDataFile);
@@ -1198,7 +1205,6 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 	var gcode = code;
 	var i;
     log.debug("Emit_move: " + code + " " + JSON.stringify(pt));
-	log.debug("  cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy);
 
 	['X','Y','Z','A','B','C','I','J','K','F'].forEach(function(key){
 		var c = pt[key];
@@ -1217,7 +1223,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 	// Where to save the start point of an arc that isn't transformed??????????
 	var tPt = this.transformation(pt);
 
-	log.debug("Emit_move Transformed point: " + JSON.stringify(tPt));
+	// log.debug("Emit_move: Transformed point: " + JSON.stringify(tPt));
 
 //	log.debug("interpolate = " + this.transforms.interpolate.apply );
 //	if(( this.transforms.level.apply === true || this.transforms.interpolate.apply === true ) && code !== "G0" ){
@@ -1285,7 +1291,8 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 
 SBPRuntime.prototype._setupTransforms = function() {
 	log.debug("_setupTransforms");
-	this.transforms = JSON.parse(JSON.stringify(config.opensbp.get('transforms')));
+
+    this.transforms = JSON.parse(JSON.stringify(config.opensbp.get('transforms')));
 };
 
 SBPRuntime.prototype.transformation = function(TranPt){

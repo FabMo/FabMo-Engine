@@ -193,10 +193,10 @@ exports.CP = function(args) {
     var safeZ = config.opensbp.get('safeZpullUp');
     if( CPstartZ < safeZ && this.lastNoZPullup !== 1 ){
       this.emit_move('G0',{'Z':safeZ,'F':feedrate});
-      this.emit_move('G1',{'X':CPstartX,'Y':CPstartY});
+      this.emit_move('G0',{'X':CPstartX,'Y':CPstartY});
     }
     else {
-      this.emit_move('G1',{'X':CPstartX,'Y':CPstartY});
+      this.emit_move('G0',{'X':CPstartX,'Y':CPstartY});
     }
     if( this.cmd_posz !== CPstartZ && this.lastNoZPullup !== 1 ){
       this.emit_move('G1',{'Z':CPstartZ,'F':feedrate});
@@ -305,10 +305,10 @@ exports.CG = function(args) {
 
   var nextX = 0;
   var nextY = 0;
-  log.debug("  (317)  ");
-  log.debug("  CGstartX = " + CGstartX);
-  log.debug("  CGstartY = " + CGstartY);
-  log.debug("  CGstart Z:" + CGstartZ );
+  // log.debug("  (317)  ");
+  // log.debug("  CGstartX = " + CGstartX);
+  // log.debug("  CGstartY = " + CGstartY);
+  // log.debug("  CGstart Z:" + CGstartZ );
 
   for (var i=0; i<reps;i++){
   	if (Plg !== 0 && optCG < 3 ) {  // If plunge depth is specified move to that depth * number of reps
@@ -366,10 +366,10 @@ exports.CG = function(args) {
         } // Add Z for spiral plunge
         emitObj.F = feedrateXY;
         this.emit_move(outStr,emitObj);
-        log.debug("  (392)  ");
-        log.debug("  CGstartX = " + CGstartX);
-        log.debug("  CGstartY = " + CGstartY);
-        log.debug("  CGstart Z:" + CGstartZ );
+        // log.debug("  (392)  ");
+        // log.debug("  CGstartX = " + CGstartX);
+        // log.debug("  CGstartY = " + CGstartY);
+        // log.debug("  CGstart Z:" + CGstartZ );
 	    	
         if( i+1 < reps && ( endX != CGstartX || endY != CGstartY ) ){					//If an arc, pullup and jog back to the start position
           if ( this.cmd_posz != safeZCG ) {
