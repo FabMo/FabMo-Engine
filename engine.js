@@ -22,7 +22,11 @@ var Engine = function() {
 
 function EngineConfigFirstTime(callback) {
     switch(PLATFORM) {
+        case 'linux':
+            callback();
+            break;
         case 'darwin':
+            config.engine.set('server_port', 9876);
             glob.glob('/dev/cu.usbmodem*', function(err, files) {
                 if(files.length >= 2) {
                     var ports = {
@@ -32,6 +36,8 @@ function EngineConfigFirstTime(callback) {
                     config.engine.update(ports, function() {
                         callback();
                     });
+                } else {
+                    callback();
                 }
             });
         break;
