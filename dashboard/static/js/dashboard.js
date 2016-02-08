@@ -303,6 +303,7 @@ define(function(require) {
 		// Submit an app
 		this._registerHandler('submitApp', function(data, callback) { 
 			this.engine.submitApp(data.apps, data.options, function(err, result) {
+				context.apps.fetch();
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));

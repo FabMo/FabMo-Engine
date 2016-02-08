@@ -129,6 +129,7 @@ FabMoAPI.prototype.ping = function(callback) {
 		var start = Date.now();
 
 		var fail = setTimeout(function() {
+			this.socket.off('pong');
 			callback(new Error('Timeout waiting for ping response.'), null);
 		}, PING_TIMEOUT);
 
