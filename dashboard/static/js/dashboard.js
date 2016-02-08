@@ -115,11 +115,15 @@ define(function(require) {
 										"data" : data, 
 										"id" : id }
 							}
-							source.postMessage(msg, evt.origin);
+							if(source) {
+								source.postMessage(msg, evt.origin);								
+							}
 						});
 					} catch(e) {
 						var msg = {"status" : "error", "type" : "cb", "message" : JSON.stringify(e) , "id" : id}
-						source.postMessage(JSON.stringify(msg), evt.origin);
+						if(source) {
+							source.postMessage(JSON.stringify(msg), evt.origin);							
+						}
 					}
 				}
 			} else if('on' in evt.data) {
