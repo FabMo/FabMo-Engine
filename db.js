@@ -36,21 +36,21 @@ Job.prototype.clone = function(callback) {
 };
 
 Job.prototype.start = function(callback) {
-	log.debug("Starting job id " + this._id ? this._id : '<volatile job>');
+	log.info("Starting job id " + this._id ? this._id : '<volatile job>');
 	this.state = 'running';
 	this.started_at = Date.now();
 	this.save(callback);
 };
 
 Job.prototype.finish = function(callback) {
-	log.debug("Finishing job id " + this._id ? this._id : '<volatile job>');
+	log.info("Finishing job id " + this._id ? this._id : '<volatile job>');
 	this.state = 'finished';
 	this.finished_at = Date.now();
 	this.save(callback);
 };
 
 Job.prototype.fail = function(callback) {
-	log.warn("Failing job id " + (this._id ? this._id : '<volatile job>'));
+	log.info("Failing job id " + (this._id ? this._id : '<volatile job>'));
 	this.state = 'failed';
 	this.finished_at = Date.now();
 	this.save(callback);
