@@ -61,11 +61,10 @@
 		
 		var hash = this.app_reload_index[id];
 		if(hash && hash != this.engineVersion.hash) {
-			console.info("Hard refresh of app " + id + " becuase hash " + hash + "doesn't match " + this.engineVersion.hash);
+			console.info("Hard refresh of app " + id + " becuase hash " + hash + " doesn't match " + this.engineVersion.hash);
 			hard_refresh = true;
-		} else {
-			console.info("Not refreshing app " + id);
 		}
+		
 		this.app_reload_index[id] = this.engineVersion.hash;
 		Lockr.set('fabmo_app_reload_index', this.app_reload_index);
 
