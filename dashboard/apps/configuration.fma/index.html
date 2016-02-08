@@ -28,7 +28,10 @@
     <li class="tab-title" role="presentational" ><a href="#tabpanel3" role="tab" tabindex="0"aria-selected="false" controls="tabpanel3">Inputs</a></li>
     <li class="tab-title" role="presentational" ><a href="#tabpanel4" role="tab" tabindex="0"aria-selected="false" controls="tabpanel4">Channels</a></li>
     <li class="tab-title" role="presentational" ><a href="#tabpanel5" role="tab" tabindex="0"aria-selected="false" controls="tabpanel5">Machine</a></li>
-
+    </ul>
+    <ul class="right">
+      <li><a id="engine-version" href=""></a>
+    </li>
     </ul>
   </section>
 </nav>
@@ -1648,6 +1651,11 @@
         // How to send G90 or G91 from here?
       });
 
+      $('#engine-version').click(function(evt) {
+        evt.preventDefault();
+        fabmo.navigate('/updater');
+      });
+      
       $('.engine-input').change( function() {
         setConfig(this.id, this.value);
       });

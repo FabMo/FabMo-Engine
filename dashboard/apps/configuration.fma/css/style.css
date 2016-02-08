@@ -8,15 +8,11 @@ h1, h2, h3, h4, h5, h6 {
   color: #666;
 }
 
+#engine-version {
+  color: #888888;
+}
 fieldset {
   color: #000000;
-}
-.job-failed {
-  color: #ff0000;
-}
-
-.job-finished {
-  color: #19760A;
 }
 
 .alert-box .close {

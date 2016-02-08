@@ -464,6 +464,10 @@ define(function(require) {
 			this.engine.setAppConfig(context.current_app_id, data, callback);
 		}.bind(this));
 
+		this._registerHandler('getVersion', function(data, callback) {
+			this.engine.getVersion(callback);
+		}.bind(this));
+
 		this._registerHandler('requestStatus', function(data, callback) {
 			this.engine.getStatus(function(err,  status) {
 				if(err) {
@@ -474,6 +478,15 @@ define(function(require) {
 				}
 			}.bind(this));
 		}.bind(this));
+
+		this._registerHandler('navigate', function(data, callback) {
+			if(data.url) {
+				window.location.href = data.url;
+			} else {
+				callback(new Error("No URL specified"));
+			}
+		}.bind(this));
+
 
 		this._registerHandler('notify', function(data, callback) {
 			if(data.message) {

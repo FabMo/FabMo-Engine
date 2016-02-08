@@ -60,8 +60,13 @@
 		var hard_refresh = false;
 		
 		var hash = this.app_reload_index[id];
+
 		if(hash && hash != this.engineVersion.hash) {
 			console.info("Hard refresh of app " + id + " becuase hash " + hash + " doesn't match " + this.engineVersion.hash);
+			hard_refresh = true;
+		}
+
+		if(this.engineVersion.debug) {
 			hard_refresh = true;
 		}
 

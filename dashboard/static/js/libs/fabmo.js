@@ -558,6 +558,14 @@ FabMoDashboard.prototype.getAppConfig = function(callback) {
 	this._call("getAppConfig", null, callback);
 }
 
+FabMoDashboard.prototype.getVersion = function(callback) {
+	this._call("getVersion", null, callback);
+}
+
+FabMoDashboard.prototype.navigate = function(url, options, callback) {
+	this._call("navigate", {'url' : url}, callback);
+}
+
 FabMoDashboard.prototype.setAppConfig = function(config, callback) {
 	this._call("setAppConfig", config, callback);
 }
