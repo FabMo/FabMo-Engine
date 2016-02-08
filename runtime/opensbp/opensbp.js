@@ -189,6 +189,15 @@ SBPRuntime.prototype.simulateString = function(s, callback) {
 
 // Handler for G2 statue reports
 SBPRuntime.prototype._onG2Status = function(status) {
+	
+	switch(status.stat) {
+		case this.driver.STAT_INTERLOCK:
+		case this.driver.STAT_SHUTDOWN:
+		case this.driver.STAT_PANIC:
+			return this.machine.die('A G2 exception has occurred. You must reboot your tool.');
+			break;
+	}
+
 	// Update our copy of the system status
 	for (var key in this.machine.status) {
 		if(key in status) {

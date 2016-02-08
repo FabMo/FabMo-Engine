@@ -40,7 +40,7 @@ GCodeRuntime.prototype.resume = function() {
 }
 
 GCodeRuntime.prototype._changeState = function(newstate) {
-	if(newstate == "idle") {
+	if(newstate === "idle") {
 		this.ok_to_disconnect = true;
 	} else {
 		this.ok_to_disconnect = false;
@@ -60,6 +60,14 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 	// Update the machine copy of g2 status variables
 	for (key in status) {
 		this.status_report[key] = status[key];
+	}
+
+	switch(this.status_report.stat) {
+		case this.driver.STAT_INTERLOCK:
+		case this.driver.STAT_SHUTDOWN:
+		case this.driver.STAT_PANIC:
+			return this._die();
+			break;
 	}
 
 	switch(this.machine.status.state) {
@@ -99,13 +107,26 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 				break;
 			}
 			break;
+
 	}
 	this.machine.emit('status',this.machine.status);
 
 };
 
+GCodeRuntime.prototype._die = function() {
+	this.machine.status.current_file = null;
+	this.machine.status.line=null;
+	this.machine.status.nb_lines=null;
+ 	try {
+ 		this.machine.status.job.fail();
+ 	} catch(e) {}
+ 	finally {
+		this.machine.status.job=null;
+ 		this.machine.setState(this, 'dead', {error : 'A G2 exception has occurred. You must reboot your tool.'});
+ 	}
+}
+
 GCodeRuntime.prototype._idle = function() {
-	//console.log(this.machine.driver.gcode_queue.getContents())
 	this.machine.status.current_file = null;
 	this.machine.status.line=null;
 	this.machine.status.nb_lines=null;
@@ -150,6 +171,7 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 		}
 		lines.unshift(mode);
 		lines.push('M30\n');
+		// TODO no need to stitch this string back together, it's just going to be split again in the driver
 		string = lines.join("\n");
 		this.driver.runString(string,this.machine.status);
 	}

@@ -99,7 +99,16 @@ function Machine(control_path, gcode_path, callback) {
 	    if(err) {
 		    typeof callback === "function" && callback(err);
 	    } else {
-		    this.driver.requestStatusReport(function(err, result) {
+		    this.driver.requestStatusReport(function(result) {
+		    	if('stat' in result) {
+		    		switch(result.stat) {
+		    			case g2.STAT_INTERLOCK:
+		    			case g2.STAT_SHUTDOWN:
+		    			case g2.STAT_PANIC:
+		    				this.die('A G2 exception has occurred. You must reboot your tool.');
+		    				break;
+		    		}
+		    	}
 			    typeof callback === "function" && callback(null, this);
 		    }.bind(this));
 	    }
@@ -123,6 +132,11 @@ function Machine(control_path, gcode_path, callback) {
     }.bind(this));
 }
 util.inherits(Machine, events.EventEmitter);
+
+Machine.prototype.die = function(err_msg) {
+	this.setState(this, 'dead', {error : 'A G2 exception has occurred. You must reboot your tool.'});
+	this.emit('status',this.status);
+}
 
 Machine.prototype.isConnected = function() {
 	return this.status.state !== 'not_ready';
@@ -295,6 +309,10 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				this.driver.get('mpo', function(err, mpo) {
 					config.instance.update({'position' : mpo});
 				});
+				break;
+
+			case 'dead':
+				log.error('G2 is dead!');
 				break;
 		}
 		

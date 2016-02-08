@@ -1,7 +1,7 @@
 var assert = require('assert');
 var fs = require('fs-extra');
 var crypto = require('crypto'); // for the checksum
-var log = require('./log').logger('files');
+var log = require('./log').logger('db');
 var config = require('./config');
 var util = require('./util');
 var ncp = require('ncp').ncp;
@@ -50,7 +50,7 @@ Job.prototype.finish = function(callback) {
 };
 
 Job.prototype.fail = function(callback) {
-	log.warn("Failing job id " + this._id ? this._id : '<volatile job>');
+	log.warn("Failing job id " + (this._id ? this._id : '<volatile job>'));
 	this.state = 'failed';
 	this.finished_at = Date.now();
 	this.save(callback);

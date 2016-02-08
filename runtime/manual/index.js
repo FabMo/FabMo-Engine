@@ -45,6 +45,14 @@ ManualRuntime.prototype._changeState = function(newstate) {
 };
 
 ManualRuntime.prototype._onG2Status = function(status) {
+	switch(status.stat) {
+		case this.driver.STAT_INTERLOCK:
+		case this.driver.STAT_SHUTDOWN:
+		case this.driver.STAT_PANIC:
+			return this.machine.die('A G2 exception has occurred. You must reboot your tool.');
+			break;
+	}
+
 	// Update our copy of the system status
 	for (var key in this.machine.status) {
 		if(key in status) {

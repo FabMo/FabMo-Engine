@@ -17,17 +17,17 @@ define(function(require) {
 	var FabMoAPI = require('fabmo');
 	var FabMoUI = require('fabmo-ui');
 	
-	var WheelControl = require('handwheel');
 	var Keyboard = require('keyboard');
 	var Keypad = require('keypad');
 
-	var wheel, keypad, keyboard;
+	var keypad, keyboard;
 	
 	// API object defines our connection to the tool.
 	var engine = new FabMoAPI();
 
 	var modalIsShown = false;
-	
+	var daisyIsShown = false;
+
 	// Detect touch screen
 	
 	var supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
@@ -135,10 +135,37 @@ function setupKeypad() {
 	return keypad;
 }
 
+function showDaisy(callback) {
+	if(daisyIsShown) {
+		return;
+	}
+	hideModal(function() {
+		daisyIsShown = true;
+		$('#disconnectDialog').foundation('reveal', 'open');
+	});
+
+}
+
+function hideDaisy(callback) {
+	var callback = callback || function() {};
+	if(!daisyIsShown) { callback(); }
+	daisyIsShown = false;
+	$(document).one('closed.fndtn.reveal', '[data-reveal]', function () {
+ 		var modal = $(this);
+ 		if(modal.attr('id') === 'disconnectDialog') {
+ 			callback();
+ 		}
+	});
+	$('#disconnectDialog').foundation('reveal', 'close');	
+}
+
 function showModal(options) {
 	if(modalIsShown) {
 		return;
 	}
+
+	hideDaisy(function() {
+
 	modalIsShown = true;
 
 	if(options['title']) {
@@ -183,6 +210,7 @@ function showModal(options) {
 			(options['cancel'] || function() {})();
 		});
 	} else {
+		$('#modalDialogClose').hide();
 		$('#modalDialogCancelButton').hide();
 	}
 
@@ -195,31 +223,26 @@ function showModal(options) {
 	}
 
 	$('#modalDialog').foundation('reveal', 'open');
+});
 }
 
-function hideModal() {
-	if(!modalIsShown) { return; }
+function hideModal(callback) {
+	var callback = callback || function() {};
+	if(!modalIsShown) { callback(); }
 	modalIsShown = false;
+	$(document).one('closed.fndtn.reveal', '[data-reveal]', function () {
+ 		var modal = $(this);
+ 		if(modal.attr('id') === 'modalDialog') {
+ 			callback();
+ 		}
+	});
 	$('#modalDialog').foundation('reveal', 'close');	
 }
-
-// Kill the currently running job when the modal error dialog is dismissed
-/*$(document).on('close.fndtn.reveal', '[data-reveal]', function (evt) {
-  var modal = $(this);
-  if(engine.status.state === "stopped") {
-	  dashboard.engine.quit();
-	  console.info("Quitting the tool on dismiss")  	
-  } else if(engine.status.state === "paused") {
-  	dashboard.engine.resume();
-  } else {
-	  console.warn("Not quitting the tool because it's not stopped.")  	
-  }
-});*/
 
 // listen for escape key press to quit the engine
 $(document).on('keyup', function(e) {
     if(e.keyCode == 27) {
-        console.log("ESC key pressed - quitting engine.");
+        console.warn("ESC key pressed - quitting engine.");
         dashboard.engine.quit();
     }
 });
@@ -290,25 +313,18 @@ var disconnected = false;
 engine.on('disconnect', function() {
 	if(!disconnected) {
 		disconnected = true;
-		$('#disconnectDialog').foundation('reveal', 'open');
+		showDaisy();
 	}
 });
 
 engine.on('connect', function() {
 	if(disconnected) {
 		disconnected = false;
-		$('#disconnectDialog').foundation('reveal', 'close');
+		hideDaisy();
 	}
 });
 
 engine.on('status', function(status) {
-   try {	
-		if(status.unit) {
-			wheel.setUnits(status.unit);	
-		}
-	} catch(e) {
-
-	}
     if (status.state != 'idle'){
         $('#position input').attr('disabled', true);
     } else {
@@ -327,8 +343,7 @@ engine.on('status', function(status) {
 				cancel : function() {
 					dashboard.engine.quit();
 				}
-
- 			})
+ 			});
 		} else if(status.info['error']) {
 
 			if(dashboard.engine.status.job) {
@@ -337,21 +352,19 @@ engine.on('status', function(status) {
 					  '<b>Job Description:  </b>' + dashboard.engine.status.job.description + 
 					'</p>'
 			} else {
-				var detailHTML = '<p>Additional information for this error is unavailable.</p>';										
+				var detailHTML = '<p>Check the <a style="text-decoration: underline;" href="/log">debug log</a> for more information.</p>';
 			}
 
 			showModal({
 				title : 'Message',
-				lead : '<div style="color:red">An error has occurred!</div>',
+				lead : '<div style="color:#91331E; font-weight: bolder;">An Error Has Occurred!</div>',
 				message: status.info.error,
 				detail : detailHTML,
-				cancelText : 'Quit',
-				cancel : function() {
+				cancelText : status.state === 'dead' ? undefined : 'Quit',
+				cancel : status.state === 'dead' ? undefined : function() {
 					dashboard.engine.quit();
 				}
-
- 			})
-
+			});
 		}
 	} else {
 		hideModal();
@@ -362,10 +375,10 @@ setInterval(function() {
 		if(err) {
 			console.error(err);
 		} else {
-			console.info("PING Response time: " + time + "ms");
+			//console.info("PING Response time: " + time + "ms");
 		}
 	});
-}, 3000);
+}, 5000);
 
 (function () {
 if ($(window).width() < 620) {

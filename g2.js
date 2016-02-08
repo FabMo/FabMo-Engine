@@ -19,6 +19,9 @@ var STAT_HOLDING = 6;
 var STAT_PROBE = 7;
 var STAT_CYCLING = 8;
 var STAT_HOMING = 9;
+var STAT_INTERLOCK = 11;
+var STAT_SHUTDOWN = 12;
+var STAT_PANIC = 13;
 
 // Should take no longer than CMD_TIMEOUT to do a get or a set operation
 var CMD_TIMEOUT = 10000;
@@ -415,6 +418,7 @@ G2.prototype.handleFooter = function(response) {
 			// TODO we'll have to go back and clean up alarms later
 			// For now, let's not emit a bunch of errors into the log that don't mean anything to us
 			this.emit('error', [err_code, err_msg[0], err_msg[1]]);
+			return new Error(err_msg[1]);
 		}
 	}
 };
@@ -518,7 +522,7 @@ G2.prototype.onMessage = function(response) {
 	this.handleQueueReport(r);
 
 	// Deal with footer
-	this.handleFooter(response); 
+	var err = this.handleFooter(response); 
 
 	// Emitted everytime a message is received, regardless of content
 	this.emit('message', response);
@@ -528,7 +532,11 @@ G2.prototype.onMessage = function(response) {
 			if(typeof this.readers[key][this.readers[key].length-1] === 'function') {
 				//if(r[key] !== null) {
 					callback = this.readers[key].shift();
-					callback(null, r[key]);
+					if(err) {
+						callback(err);						
+					} else {
+						callback(null, r[key]);						
+					}
 				//}
 			}
 		}
@@ -806,10 +814,13 @@ states = {
 	6 : "holding",
 	7 : "probe",
 	8 : "cycling",
-	9 : "homing"
+	9 : "homing", 
+	11 : "interlock",
+	12 : "shutdown",
+	13 : "panic"
 };
 
-state = function(s) {
+var state = function(s) {
 	return states[s];
 };
 
@@ -826,6 +837,9 @@ exports.STAT_HOLDING = STAT_HOLDING;
 exports.STAT_PROBE = STAT_PROBE;
 exports.STAT_CYCLING = STAT_CYCLING;
 exports.STAT_HOMING = STAT_HOMING;
+exports.STAT_INTERLOCK = STAT_INTERLOCK;
+exports.STAT_SHUTDOWN = STAT_SHUTDOWN;
+exports.STAT_PANIC = STAT_PANIC;
 
 G2.prototype.STAT_INIT = STAT_INIT;
 G2.prototype.STAT_READY = STAT_READY;
@@ -837,3 +851,7 @@ G2.prototype.STAT_HOLDING = STAT_HOLDING;
 G2.prototype.STAT_PROBE = STAT_PROBE;
 G2.prototype.STAT_CYCLING = STAT_CYCLING;
 G2.prototype.STAT_HOMING = STAT_HOMING;
+G2.prototype.STAT_INTERLOCK = STAT_INTERLOCK;
+G2.prototype.STAT_SHUTDOWN = STAT_SHUTDOWN;
+G2.prototype.STAT_PANIC = STAT_PANIC;
+

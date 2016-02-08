@@ -326,7 +326,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 			$(that.stop_button_selector).addClass('hide');
 		}
 	}
-	else if(status.state == 'not_ready') {
+	else if(status.state == 'not_ready' || status.state == 'dead') {
 		statename = 'Unavailable';
 		that.forbidKeypad();
 		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');

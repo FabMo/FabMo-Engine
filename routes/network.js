@@ -6,7 +6,7 @@ var network = require('../network');
 function networkRedirect(req, res, next) {
 	var host = req.headers.host.split(':')[0].trim('/');
 	var path = req.params[0];
-	var url = 'http://' + host + ':' + 9877 + '/' + path;
+	var url = 'http://' + host + ':' + (config.engine.get('server_port') + 1) + '/' + path;
 	res.redirect(307, url, next);	
 }
 
