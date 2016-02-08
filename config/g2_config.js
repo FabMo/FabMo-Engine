@@ -2,14 +2,20 @@ async = require('async');
 util = require('util');
 Config = require('./config').Config;
 
+var log = require('../log').logger('g2config');
+
 // A G2Config is the configuration object that stores the configuration values for G2.
 // G2 configuration data is *already* JSON formatted, so G2Config objects are easy to create from config files using `load()`
 // A G2Config object is bound to a driver, which gets updated when configuration values are loaded/changed.
 G2Config = function(driver) {
 	Config.call(this, 'g2');
-	this.driver = driver;
 };
 util.inherits(G2Config, Config);
+
+G2Config.prototype.init = function(driver, callback) {
+	this.driver = driver;
+	Config.prototype.init.call(this, callback);
+}
 
 G2Config.prototype.changeUnits = function(units, callback) {
 	this.driver.setUnits(units, function(err, data) {
@@ -20,7 +26,7 @@ G2Config.prototype.changeUnits = function(units, callback) {
 				if(err) { 
 					callback(err); 
 				} else  {
-					this.update(g2_values, callback);
+					this.setMany(g2_values, callback);
 				}
 			}.bind(this));			
 		}
@@ -82,9 +88,6 @@ G2Config.prototype.update = function(data, callback) {
 		}.bind(this)
 	);
 };
-
-// setMany aliases to update, to provide similar interface as G2 driver
-G2Config.prototype.setMany = G2Config.prototype.update;
 
 // Status reports are special, and their format must be whats expected for the machine/runtime environments
 // to work properly.  

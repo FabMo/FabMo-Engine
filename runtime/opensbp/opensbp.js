@@ -41,23 +41,23 @@ function SBPRuntime() {
 	this.running = false;
 	this.quit_pending = false;
 	this.cmd_result = 0;
-	this.cmd_posx = 0;
-	this.cmd_posy = 0;
-	this.cmd_posz = 0;
-	this.cmd_posa = 0;
-	this.cmd_posb = 0;
-	this.cmd_posc = 0;
+	this.cmd_posx = undefined;
+	this.cmd_posy = undefined;
+	this.cmd_posz = undefined;
+	this.cmd_posa = undefined;
+	this.cmd_posb = undefined;
+	this.cmd_posc = undefined;
 	this.movespeed_xy = 0;
 	this.movespeed_z = 0;
 	this.movespeed_a = 0;
 	this.movespeed_b = 0;
 	this.movespeed_c = 0;
-	this.nonXfrm_posx = 0; 
-	this.nonXfrm_posy = 0; 
-	this.nonXfrm_posz = 0; 
-	this.nonXfrm_posa = 0; 
-	this.nonXfrm_posb = 0; 
-	this.nonXfrm_posc = 0; 
+	this.cmd_StartX = 0; 
+	this.cmd_StartY = 0; 
+	this.cmd_StartZ = 0; 
+	this.cmd_StartA = 0; 
+	this.cmd_StartB = 0; 
+	this.cmd_StartC = 0; 
 	this.paused = false;
 	this.lastNoZPullup = 0; 
 	this.continue_callback = null;
@@ -65,6 +65,7 @@ function SBPRuntime() {
 	// Physical machine state
 	this.machine = null;
 	this.driver = null;
+
 }
 util.inherits(SBPRuntime, events.EventEmitter);
 
@@ -128,6 +129,11 @@ SBPRuntime.prototype.runString = function(s, callback) {
 			return this._end(e.message + " (Line " + e.line + ")");
 		}
  		lines = this.program.length;
+ 		
+ 		this.cmd_posx = this.posx;
+        this.cmd_posy = this.posy;
+        this.cmd_posz = this.posz;
+
 		this._setupTransforms();
 		this.init();
 		this.end_callback = callback;
@@ -210,7 +216,7 @@ SBPRuntime.prototype._update = function() {
 // Evaluate a list of arguments provided (for commands)
 // Returns a scrubbed list of evaluated arguments to be passed to command handlers
 SBPRuntime.prototype._evaluateArguments = function(command, args) {
-	log.debug("Evaluating arguments: " + command + "," + JSON.stringify(args));
+	// log.debug("Evaluating arguments: " + command + "," + JSON.stringify(args));
 	// Scrub the argument list:  extend to the correct length, sub in defaults where necessary.
 	scrubbed_args = [];
 	if(command in sb3_commands) {
@@ -222,19 +228,19 @@ SBPRuntime.prototype._evaluateArguments = function(command, args) {
 			prm_param = params[i];
 			user_param = args[i];
 			if((args[i] !== undefined) && (args[i] !== "")) {
-				log.debug('Taking the users argument: ' + args[i]);
+				// log.debug('Taking the users argument: ' + args[i]);
 				scrubbed_args.push(args[i]);
 			} else {
 				//log.debug("Taking the default argument: " + args[i] + " (PRN file)");
 				//scrubbed_args.push(prm_param.default || undefined);
-				log.debug('No user specified argument.  Using undefined.');
+				// log.debug('No user specified argument.  Using undefined.');
 				scrubbed_args.push(undefined);
 			}
 		}
 	} else {
 		scrubbed_args = [];
 	}
-	log.debug("Scrubbed arguments: " + JSON.stringify(scrubbed_args));
+	// log.debug("Scrubbed arguments: " + JSON.stringify(scrubbed_args));
 	
 	// Create the list of evaluated arguments to be returned
 	retval = [];
@@ -326,6 +332,10 @@ SBPRuntime.prototype._run = function() {
 	if(this.machine) {
 		this.machine.setState(this, "running");
 	}
+	// this.cmd_posx = this.posx;
+	// this.cmd_posy = this.posy;
+	// log.debug("*******************run: cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy);
+
 	this._continue();
 };
 
@@ -696,7 +706,7 @@ SBPRuntime.prototype._execute = function(command, callback) {
 		return;
 	}
 
-	log.debug("Executing: " + JSON.stringify(command));
+	// log.debug("Executing: " + JSON.stringify(command));
 	// All correctly parsed commands have a type
 	switch(command.type) {
 
@@ -880,7 +890,7 @@ SBPRuntime.prototype._setupEvent = function(command, callback) {
 }
 
 SBPRuntime.prototype._eval_value = function(expr) {
-		log.debug("  Evaluating value: " + expr);
+		// log.debug("  Evaluating value: " + expr);
 		sys_var = this.evaluateSystemVariable(expr);
 		if(sys_var === undefined) {
 			var persistent_var = this.evaluatePersistentVariable(expr);
@@ -920,7 +930,7 @@ SBPRuntime.prototype._eval_value = function(expr) {
 // Evaluate an expression.  Return the result.
 // TODO: Make this robust to undefined user variables
 SBPRuntime.prototype._eval = function(expr) {
-	log.debug("Evaluating expression: " + JSON.stringify(expr));
+//	log.debug("Evaluating expression: " + JSON.stringify(expr));
 	if(expr === undefined) {return undefined;}
 
 	if(expr.op === undefined) {
@@ -979,6 +989,7 @@ SBPRuntime.prototype.init = function() {
 	this.end_callback = null;
 	this.quit_pending = false;
 	this.end_message = null;
+
 	if(this.transforms != null && this.transforms.level.apply === true) {
 		leveler = new Leveler(this.transforms.level.ptDataFile);
 	}
@@ -1193,8 +1204,26 @@ SBPRuntime.prototype.emit_gcode = function(s) {
 SBPRuntime.prototype.emit_move = function(code, pt) {
 	var gcode = code;
 	var i;
-//log.debug("   emit_move code = " + code);
-//log.debug("   emit_move pt = " + JSON.stringify(pt));
+    log.debug("Emit_move: " + code + " " + JSON.stringify(pt));
+
+	['X','Y','Z','A','B','C','I','J','K','F'].forEach(function(key){
+		var c = pt[key];
+		if(c !== undefined) {
+			if(isNaN(c)) { throw( "Invalid " + key + " argument: " + c ); } 
+			if(key === "X") { this.cmd_posx = c; }
+			else if(key === "Y") { this.cmd_posy = c; }
+			else if(key === "Z") { this.cmd_posz = c; }
+			else if(key === "A") { this.cmd_posa = c; }
+			else if(key === "B") { this.cmd_posb = c; }
+			else if(key === "C") { this.cmd_posc = c; }
+		}
+	}.bind(this));
+
+
+	// Where to save the start point of an arc that isn't transformed??????????
+	var tPt = this.transformation(pt);
+
+	// log.debug("Emit_move: Transformed point: " + JSON.stringify(tPt));
 
 //	log.debug("interpolate = " + this.transforms.interpolate.apply );
 //	if(( this.transforms.level.apply === true || this.transforms.interpolate.apply === true ) && code !== "G0" ){
@@ -1215,85 +1244,86 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		var n = this.pc;
 	}
 
-	var emit_moveContext = this;
-	var opFunction = function(pt) {  //Find a better name
-		for(key in pt) {
-			var v = pt[key];
+	var opFunction = function(Pt) {  //Find a better name
+		// for(key in tPt) {
+		['X','Y','Z','A','B','C','I','J','K','F'].forEach(function(key){
+			var v = Pt[key];
 			if(v !== undefined) {
 				if(isNaN(v)) { throw( "Invalid " + key + " argument: " + v ); } 
 				gcode += (key + v.toFixed(5));
-				if(key === "X") { emit_moveContext.cmd_posx = v; }
-				else if(key === "Y") { emit_moveContext.cmd_posy = v; }
-				else if(key === "Z") { emit_moveContext.cmd_posz = v; }
-				else if(key === "A") { emit_moveContext.cmd_posa = v; }
-				else if(key === "B") { emit_moveContext.cmd_posb = v; }
-				else if(key === "C") { emit_moveContext.cmd_posc = v; }
 			}
-		}
-		log.debug("emit_move: N" + n + JSON.stringify(gcode));
-		emit_moveContext.current_chunk.push('N' + n + ' ' + gcode);
-	};
+		}.bind(this));
+		// }
+        log.debug("emit_move: N" + n + JSON.stringify(gcode));
+        this.current_chunk.push('N' + n + ' ' + gcode);
+	}.bind(this);
 
-		if(this.transforms.level.apply === true  && code !== "G0") {
-			var previousHeight = leveler.foundHeight;
-			var X = (pt.X === undefined) ? emit_moveContext.cmd_posx : pt.X;
-			var Y = (pt.Y === undefined) ? emit_moveContext.cmd_posy : pt.Y;
-			var Z = 0;
-			// cmd_posz stores the last Z position. But when using the leveler,
-			// the stored Z is the real Z of the bit, not the wanted Z relative
-			// to the board. Therefore, we delete the previousely found height
-			// when using cmd_posz but not when using pt.Z
-			if(pt.Z === undefined) {
-			    Z = emit_moveContext.cmd_posz - previousHeight;
-			} else {
-			    Z =  pt.Z;
-			}
-			var height = leveler.findHeight(X, Y, Z);
-            console.log("Z = " + Z);
-			if(height === false) {
-				log.error("Impossible to find the point height with the leveler.");
-				return;
-			}
-            console.log("height = " + height);
-			pt.Z = Z + height;
-			opFunction(pt);
-			log.debug("emit_move:level");
+	if(this.transforms.level.apply === true  && code !== "G0") {
+		var previousHeight = leveler.foundHeight;
+		var X = (tPt.X === undefined) ? this.cmd_posx : tPt.X;
+		var Y = (tPt.Y === undefined) ? this.cmd_posy : tPt.Y;
+		var Z = 0;
+		// cmd_posz stores the last Z position. But when using the leveler,
+		// the stored Z is the real Z of the bit, not the wanted Z relative
+		// to the board. Therefore, we delete the previousely found height
+		// when using cmd_posz but not when using pt.Z
+		if(tPt.Z === undefined) {
+		    Z = this.cmd_posz - previousHeight;
+		} else {
+		    Z =  tPt.Z;
 		}
-		else {
-			opFunction(pt);
+		var height = leveler.findHeight(X, Y, Z);
+           console.log("Z = " + Z);
+		if(height === false) {
+			log.error("Impossible to find the point height with the leveler.");
+			return;
 		}
-//	}
+        console.log("height = " + height);
+		tPt.Z = Z + height;
+		opFunction(tPt);
+		log.debug("emit_move:level");
+	}
+	else {
+		opFunction(tPt);
+	}
+
 };
 
 SBPRuntime.prototype._setupTransforms = function() {
 	log.debug("_setupTransforms");
-	this.transforms = JSON.parse(JSON.stringify(config.opensbp.get('transforms')));
+
+    this.transforms = JSON.parse(JSON.stringify(config.opensbp.get('transforms')));
 };
 
 SBPRuntime.prototype.transformation = function(TranPt){
-//  log.debug("transformation = " + JSON.stringify(TranPt));
 	if (this.transforms.rotate.apply !== false){
-//  		log.debug("rotation apply = " + this.transforms.rotate.apply);
+        log.debug("transformation = " + JSON.stringify(TranPt));
+ 		// log.debug("rotation apply = " + this.transforms.rotate.apply);
 //		log.debug("Rotate: " + JSON.stringify(this.transforms.rotate));
-        if ( !("X" in TranPt) ) { TranPt.X = this.cmd_posx; }
-        if ( !("Y" in TranPt) ) { TranPt.Y = this.cmd_posy; }
-		var angle = this.transforms.rotate.angle;
-		var x = TranPt.X;
-		var y = TranPt.Y;
-		var PtRotX = this.transforms.rotate.x;
-		var PtRotY = this.transforms.rotate.y;
-		TranPt = tform.rotate(TranPt,angle,PtRotX,PtRotY);
+		log.debug("  cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy);
+		if ( "X" in TranPt || "Y" in TranPt ){
+            if ( !("X" in TranPt) ) { TranPt.X = this.cmd_posx; }
+            if ( !("Y" in TranPt) ) { TranPt.Y = this.cmd_posy; }
+       	    log.debug("transformation TranPt: " + JSON.stringify(TranPt));
+		    var angle = this.transforms.rotate.angle;
+            var x = TranPt.X;
+            var y = TranPt.Y;
+            var PtRotX = this.transforms.rotate.x;
+            var PtRotY = this.transforms.rotate.y;
+            log.debug("transformation: cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy);
+            TranPt = tform.rotate(TranPt,angle,PtRotX,PtRotY, this.cmd_StartX,this.cmd_StartY);
+        }
 	}
 	if (this.transforms.shearx.apply !== false){
-//		log.debug("ShearX: " + JSON.stringify(this.transforms.shearx));
+		log.debug("ShearX: " + JSON.stringify(this.transforms.shearx));
 		TranPt = tform.shearX(TranPt);
 	}
 	if (this.transforms.sheary.apply !== false){
-//		log.debug("ShearY: " + JSON.stringify(this.transforms.sheary));
+		log.debug("ShearY: " + JSON.stringify(this.transforms.sheary));
 		TranPt = tform.shearY(TranPt);
 	}
 	if (this.transforms.scale.apply !== false){
-//		log.debug("Scale: " + JSON.stringify(this.transforms.scale));
+		log.debug("Scale: " + JSON.stringify(this.transforms.scale));
 		var ScaleX = this.transforms.scale.scalex;
 		var ScaleY = this.transforms.scale.scaley;
 		var PtX = this.transforms.scale.x;
@@ -1302,7 +1332,7 @@ SBPRuntime.prototype.transformation = function(TranPt){
 		TranPt = tform.scale(TranPt,ScaleX,ScaleY,PtX,PtY);
 	}
 	if (this.transforms.move.apply !== false){
-//		log.debug("Move: " + JSON.stringify(this.transforms.move));
+		log.debug("Move: " + JSON.stringify(this.transforms.move));
 		TranPt = tform.translate(TranPt, 
 								 this.transforms.move.x, 
 								 this.transforms.move.y, 

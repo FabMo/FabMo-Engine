@@ -235,28 +235,36 @@ $('html').on('click', function (e) {
 		dashboard.engine.gcode(gcode);
 		$('.go-here').hide();
 		} else if (e.target.id === "axis"){
-			 $("input:text").focus(function() { $(this).select(); } );
-			$('.go-here').show();
+			 $("input:text").focus(function() { 
+             $(this).select(); 
+             $('.go-here').show();
+             } );
+			
 		} else {
 			$('.go-here').hide();
 		}
 });
-$('.posx, .posy, .posz').keyup(function(event){
-    if(event.keyCode == 13){
-    	event.preventDefault();
+$('.posx, .posy, .posz').keyup(function(e){
+    if(e.keyCode == 13){
+    	e.preventDefault();
+        e.stopPropagation();
         var x = $('.posx').attr('value','')[1].value;
 		var y = $('.posy').attr('value','')[1].value;
 		var z = $('.posz').attr('value','')[1].value;
 		var gcode = "G0 X" + x + " Y" + y + " Z" + z;
 		dashboard.engine.gcode(gcode);
 		$('.go-here').hide();
+        
     }
+
 });
 
 // Handlers for the home/probe buttons
 $('.button-zerox').click(function(e) {dashboard.engine.sbp('ZX'); });  
 $('.button-zeroy').click(function(e) {dashboard.engine.sbp('ZY'); });  
 $('.button-zeroz').click(function(e) {dashboard.engine.sbp('ZZ'); });
+$('.button-zeroa').click(function(e) {dashboard.engine.sbp('ZA'); });
+$('.button-zerob').click(function(e) {dashboard.engine.sbp('ZB'); });
 
 $('.play').on('click', function(e){
 	$("#main").addClass("offcanvas-overlap-left");
@@ -275,30 +283,7 @@ $('.play').on('click', function(e){
 	});
 });
 
-engine.on('status', function(status) {
-	try {	
-		if(status.unit) {
-			wheel.setUnits(status.unit);	
-		}
-		dashboard.engine.getJobQueue(function (err, data){
-			if (data.name == 'undefined' || data.length === 0) {
-				$('.nextJob').text('No Job Pending');
-				$('.play').hide();
-				$('.gotoJobManager').show();
-				$('.nextJob').css('top', '2px');
-				$('.startnextLabel').css('top', '2px');
-			} else {
-				$('.nextJob').text(data[0].name);
-				$('.play').show();
-				$('.gotoJobManager').hide();
-				$('.nextJob').css('top', '-9.5px');
-				$('.startnextLabel').css('top', '-9.5px');
-			}
-		});
-	} catch(e) {
 
-	}
-});
 
 var disconnected = false;
 
@@ -317,7 +302,19 @@ engine.on('connect', function() {
 });
 
 engine.on('status', function(status) {
-	if(status['info']) {
+   try {	
+		if(status.unit) {
+			wheel.setUnits(status.unit);	
+		}
+	} catch(e) {
+
+	}
+    if (status.state != 'idle'){
+        $('#position input').attr('disabled', true);
+    } else {
+        $('#position input').attr('disabled', false);
+    }
+    if(status['info']) {
 		if(status.info['message']) {
 			showModal({
 				title : 'Message',

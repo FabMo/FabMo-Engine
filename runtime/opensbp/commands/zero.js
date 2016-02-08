@@ -93,7 +93,7 @@ exports.ZB = function(args, callback) {
 		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
 		}
-		zaObj.g55a = Number((MPO * unitConv).toFixed(5));
+		zbObj.g55b = Number((MPO * unitConv).toFixed(5));
 		config.driver.setMany(zbObj, function(err, value) {
 			if(err) { return callback(err); }
 			this.cmd_posb = this.posb = 0;

@@ -13,8 +13,12 @@ module.exports = function(server) {
 		if((path.extname(filePath) == '.js') && (path.basename(filePath) != 'index.js')) {
 		try{
 			routes = require(filePath);
-			routes(server);
-			log.debug('  Loaded routes from "' + filePath + '"');
+			if(typeof(routes) == 'function') {
+				routes(server);
+				log.debug('  Loaded routes from "' + filePath + '"');				
+			} else {
+				log.debug('  (Skipping route load for ' + filePath + ')');
+			}
 		} catch(e) {
 			log.warn('Could not load routes from "' + filePath + '": ' + e);
 		}

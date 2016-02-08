@@ -67,10 +67,15 @@
             <!-- ***** Tool Position Section ***** -->
             <section class="right show-for-small-up fabmo-status" id="right-position-container">
             <div style="display: table-row;">
-                <div style="display: table-cell; padding-right: 1em; padding-top: 0.7em;"><label>X : <span class="posx">X.XXX</span></label></div>
-                <div style="display: table-cell; padding-right: 1em; padding-top: 0.7em;"><label>Y : <span class="posy">Y.YYY</span></label></div>
-                <div style="display: table-cell; padding-right: 1em; padding-top: 0.7em;"><label>Z : <span class="posz">Z.ZZZ</span></label></div> 
+                <div class="xaxis" style="display: table-cell; padding-right: 1em"><label>X : <span class="posx">X.XXX</span></label></div>
+                <div class="yaxis" style="display: table-cell; padding-right: 1em"><label>Y : <span class="posy">Y.YYY</span></label></div>
+                <div class="zaxis" style="display: table-cell; padding-right: 1em"><label>Z : <span class="posz">Z.ZZZ</span></label></div> 
             </div>
+            <div style="display: table-row;">
+                <div class="aaxis" style="display: table-cell; padding-right: 1em"><label>A : <span class="posa">A.AAA</span></label></div>
+                <div class="baxis" style="display: table-cell; padding-right: 1em"><label>B : <span class="posb">B.BBB</span></label></div>
+            </div>
+
             </section>
 
             <!-- ***** Right-Menu Button Section ***** -->
@@ -105,10 +110,13 @@
               <ul class="off-canvas-list fabmo-status noselect">
                 <li><label class="">Position<div id="units"></div></label></li>
                 <li>
-                  <form>
                     <div class="row axis">
+                      <div class="small-9 columns">
+                      <label class="noselect"></label></div>
+                    </div>
+                    <div class="row axis xaxis">
                         <div class="small-9 columns">
-                          <label style="border-top: 1px solid #eee;" class="noselect">
+                           <label  class="noselect">
                             X
                             <span class="units">&nbsp;</span>
                             <input class="posx pos doselect" id="axis"maxlength="5">
@@ -116,9 +124,7 @@
                         </div>
                         <div class="small-3 columns home"><span class="button-zerox">0</span></div>
                     </div>
-                  </form>
-                  <form>
-                    <div class="row axis">
+                    <div class="row axis yaxis">
                       <div class="small-9 columns">
                         <label class="noselect">
                         Y
@@ -128,9 +134,7 @@
                       </div>
                       <div class="small-3 columns home"><span class="button-zeroy">0</span></div>
                     </div>
-                  </form>
-                  <form>
-                    <div class="row axis">
+                    <div class="row axis zaxis">
                       <div class="small-9 columns">
                         <label class="noselect">
                         Z
@@ -140,7 +144,26 @@
                       </div>
                       <div class="small-3 columns home"><span class="button-zeroz">0</span></div>
                     </div>
-                  </form>
+                    <div class="row axis aaxis">
+                        <div class="small-9 columns">
+                          <label class="noselect">
+                            A
+                            <span class="units">&nbsp;</span>
+                            <input class="posa pos doselect" id="axis"maxlength="5">
+                          </label>
+                        </div>
+                        <div class="small-3 columns home"><span class="button-zeroa">0</span></div>
+                    </div>
+                    <div class="row axis baxis">
+                        <div class="small-9 columns">
+                          <label class="noselect">
+                            B
+                            <span class="units">&nbsp;</span>
+                            <input class="posb pos doselect" id="axis"maxlength="5">
+                          </label>
+                        </div>
+                        <div class="small-3 columns home"><span class="button-zerob">0</span></div>
+                    </div>
                 </li>
                 <li>
                    <button class="go-here" id="go-here" style="display:none">Go</button>
