@@ -13,17 +13,27 @@
 
  define(function (require) {
 
+ 	var Lockr = require('lockr');
+
 	ApplicationContext = function() {
 		// Model/View/Router Prototypes
 		this.models = require('models');
 		this.views = require('views');
 		this.Router = require('routers');
 
+		this.engine = null;
 		// View Instances
 		this.appClientView = new this.views.AppClientView({el : "#app-client-container"});
 
 		this.current_app_id = null;
+		this.reload_on_demand = false;
+		this.app_reload_index = {};
 	};
+
+	ApplicationContext.prototype.setEngineVersion = function(version) {
+		this.engineVersion = version;
+		this.app_reload_index = Lockr.get('fabmo_app_reload_index');
+	}
 
 	ApplicationContext.prototype.openDROPanel = function(){
 		$('.off-canvas-wrap').foundation('offcanvas', 'show', 'offcanvas-overlap-left');
@@ -47,6 +57,18 @@
 	}
 
 	ApplicationContext.prototype.launchApp = function(id, args, callback) {
+		var hard_refresh = false;
+		
+		var hash = this.app_reload_index[id];
+		if(hash && hash != this.engineVersion.hash) {
+			console.info("Hard refresh of app " + id + " becuase hash " + hash + "doesn't match " + this.engineVersion.hash);
+			hard_refresh = true;
+		} else {
+			console.info("Not refreshing app " + id);
+		}
+		this.app_reload_index[id] = this.engineVersion.hash;
+		Lockr.set('fabmo_app_reload_index', this.app_reload_index);
+
 		current_app = this.getCurrentApp();
 		if(current_app.id != id) {
 			app = this.apps.get(id);
@@ -54,7 +76,7 @@
 				this.current_app_args = args || {};
 				this.current_app_id = id;
 				this.current_app_info = app;
-				this.appClientView.setModel(app);
+				this.appClientView.setModel(app, hard_refresh);
 			} else {
 				if(this.apps) {
 					callback("Couldn't launch app: " + id + ": Apps list not available yet.");

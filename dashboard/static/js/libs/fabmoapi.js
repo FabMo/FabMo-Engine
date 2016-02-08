@@ -158,6 +158,17 @@ FabMoAPI.prototype.setConfig = function(cfg_data, callback) {
 }
 
 // Status
+FabMoAPI.prototype.getVersion = function(callback) {
+	this._get('/version', callback, function(err, version) {
+		if(err) {
+			callback(err);			
+		}
+		this.version = version;
+		callback(null, version);
+	}.bind(this), 'version');
+}
+
+// Status
 FabMoAPI.prototype.getStatus = function(callback) {
 	this._get('/status', callback, callback, 'status');
 }

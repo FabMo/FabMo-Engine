@@ -34,9 +34,11 @@ define(function(require) {
 
 	// Initial read of engine configuration
 	engine.getConfig();
+	engine.getVersion(function(err, version) {
+		context.setEngineVersion(version);
+	});
 
 	context.apps = new context.models.Apps();
-
 	// Load the apps from the server
 	context.apps.fetch({
 		success: function() {

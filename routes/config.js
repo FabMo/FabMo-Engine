@@ -1,6 +1,7 @@
 var machine = require('../machine').machine;
 var config = require('../config');
 var log = require('../log').logger('routes');
+var engine = require('../engine');
 
 /**
  * @api {get} /status Engine status
@@ -146,8 +147,20 @@ var post_config = function(req, res, next) {
   }
 };
 
+var get_version = function(req, res, next) {
+  var retval = {};
+  var answer = 
+  {
+    status : "success",
+    data : {'version':engine.version}
+  };
+  res.json(answer);
+};
+
+
 module.exports = function(server) {
-  server.get('/status', get_status);     //OK
-  server.get('/config',get_config);      //OK
-  server.post('/config', post_config);   //TODO
+  server.get('/status', get_status);
+  server.get('/config',get_config);
+  server.post('/config', post_config);
+  server.get('/version', get_version);
 };
