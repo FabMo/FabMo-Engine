@@ -32,7 +32,7 @@
 
 	ApplicationContext.prototype.setEngineVersion = function(version) {
 		this.engineVersion = version;
-		this.app_reload_index = Lockr.get('fabmo_app_reload_index');
+		this.app_reload_index = Lockr.get('fabmo_app_reload_index') || {};
 	}
 
 	ApplicationContext.prototype.openDROPanel = function(){
@@ -64,7 +64,7 @@
 			console.info("Hard refresh of app " + id + " becuase hash " + hash + " doesn't match " + this.engineVersion.hash);
 			hard_refresh = true;
 		}
-		
+
 		this.app_reload_index[id] = this.engineVersion.hash;
 		Lockr.set('fabmo_app_reload_index', this.app_reload_index);
 
