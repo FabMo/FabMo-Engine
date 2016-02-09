@@ -439,8 +439,10 @@ FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback
 	this._post(url, meta, onMetaDataUploadComplete, onMetaDataUploadComplete, 'key');
 }
 
-FabMoAPI.prototype._post = function(url, data, errback, callback, key) {
-	var url = this._url(url);
+FabMoAPI.prototype._post = function(url, data, errback, callback, key, redirect) {
+	if(!redirect) {
+		var url = this._url(url);		
+	}
 	var callback = callback || function() {};
 	var errback = errback || function() {};
 
@@ -449,7 +451,9 @@ FabMoAPI.prototype._post = function(url, data, errback, callback, key) {
 
 	if(!(data instanceof FormData)) {
 		xhr.setRequestHeader('Content-Type', 'application/json');
-		data = JSON.stringify(data);
+		if(typeof data != 'string') {
+			data = JSON.stringify(data);
+		}
 	}
 
 	xhr.onload = function() {
@@ -477,11 +481,28 @@ FabMoAPI.prototype._post = function(url, data, errback, callback, key) {
 						break;
 				}
 			break;
+
+			case 300:
+				// TODO infinite loop issue here?
+				console.log(xhr);
+				try {
+					var response = JSON.parse(xhr.responseText);
+					console.log(response)
+					if(response.url) {
+						this._post(response.url, data, errback, callback, key, true);
+					} else {
+						console.error("Bad redirect in FabMo API");
+					}
+				} catch(e) {
+					console.log(e);
+				}
+				break;
+
 			default:
 				console.error("Got a bad response from server: " + xhr.status);
 				break;
 		}
-    }
+    }.bind(this);
 	xhr.send(data);
 	return xhr;
 }
