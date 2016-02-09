@@ -7,7 +7,7 @@ function networkRedirect(req, res, next) {
 	var host = req.headers.host.split(':')[0].trim('/');
 	var path = req.params[0];
 	var url = 'http://' + host + ':' + (config.engine.get('server_port') + 1) + '/' + path;
-	res.redirect(307, url, next);	
+	res.redirect(301, url, next);	
 }
 
 module.exports = function(server) {

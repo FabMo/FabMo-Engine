@@ -49,6 +49,7 @@ Keypad.prototype.init = function() {
 		$(element).on('mouseleave', this.onDriveMouseleave.bind(this));
 		$(element).on('touchend', this.end.bind(this));
 		$(document).on('scroll', this.end.bind(this));
+		element.addEventListener("contextmenu", function(evt) {evt.preventDefault()});
 	}.bind(this));
 }
 
