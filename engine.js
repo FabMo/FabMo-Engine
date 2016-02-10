@@ -94,7 +94,7 @@ Engine.prototype.getVersion = function(callback) {
             } finally {
                 callback(null, this.version);
             }
-        })
+        }.bind(this))
     });
 }
 
