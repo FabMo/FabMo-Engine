@@ -1,6 +1,6 @@
 var assert = require('assert');
 var fs = require('fs-extra');
-var crypto = require('crypto'); // for the checksum
+var crypto = require('crypto');
 var log = require('./log').logger('db');
 var config = require('./config');
 var util = require('./util');
@@ -171,27 +171,32 @@ Job.deletePending = function(callback) {
 // The File class represents a fabrication file on disk
 // In addition to the filename and path, file statistics such as 
 // The run count, last time run, etc. are stored in the database.
-function File(filename,path){
+function File(filename,path, callback){
 	var that=this;
 	this.filename = filename;
 	this.path = path;
 	this.created = Date.now();
 	this.last_run = null;
 	this.run_count = 0;
+	this.hash = null;
 	fs.stat(path, function(err, stat) {
 		if(err) {
 			throw err;
 		}
 		that.size = stat.size;
 	});
-	fs.readFile(this.path, function (err, data) {
-		this.checksum = File.checksum(data);
-	}.bind(this));
 }
 
-File.checksum = function(data) {
-	return crypto.createHash('md5').update(data, 'utf8').digest('hex');
-};
+File.hash = function(path, callback) {
+	var fd = fs.createReadStream(path);
+	var hash = crypto.createHash('md5');
+	hash.setEncoding('hex');
+	fd.on('end', function() {
+	    hash.end();
+	    callback(null, hash.read())
+	});
+	fd.pipe(hash);
+}
 
 // Save information about this file to back to the database
 File.prototype.save = function(callback) {
@@ -235,28 +240,46 @@ File.add = function(friendly_filename, pathname, callback) {
 	// Create a unique name for actual storage
 	var filename = util.createUniqueFilename(friendly_filename);
 	var full_path = path.join(config.getDataDir('files'), filename);
-	// Move the file
-	util.move(pathname, full_path, function(err) {
-		if(err) {
-			return callback(err);
-		}
-		// delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
-		fs.unlink(pathname, function(err) {
-			if (err) {
-				// Failure to delete the temporary file is bad, but non-fatal
-				log.warn("failed to remove the job from temporary folder: " + err);
-			}
 
-			var file = new File(friendly_filename, full_path);
-			file.save(function(err, file){
-				if(err) {
-					return callback(err);
-				}
-				log.info('Saved a file: ' + file.filename + ' (' + file.path + ')');
-				callback(null, file)
-			}.bind(this)); // save
-		}.bind(this)); // unlink
-	}); // move
+	// Compute the hash for the file to be added
+	File.hash(pathname, function(err, hash) {
+		// Check to see if the hash is already found in the database
+		files.findOne({hash:hash},function(err,document) {
+			if(document) {
+				log.info("Using file with hash of " + hash + " which already exists in the database.");
+				var file = document;
+				file.__proto__ = File.prototype;
+				callback(null, file);
+			} else {
+				log.info("Saving a new file with a hash of " + hash + ".");
+				// Move the file
+				util.move(pathname, full_path, function(err) {
+					if(err) {
+						return callback(err);
+					}
+					// delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
+					fs.unlink(pathname, function(err) {
+						if (err) {
+							// Failure to delete the temporary file is bad, but non-fatal
+							log.warn("failed to remove the job from temporary folder: " + err);
+						}
+
+						var file = new File(friendly_filename, full_path);
+						file.hash = hash;
+						file.save(function(err, file){
+							if(err) {
+								return callback(err);
+							}
+							log.info('Saved a file: ' + file.filename + ' (' + file.path + ')');
+							callback(null, file)
+						}.bind(this)); // save
+					}.bind(this)); // unlink
+				}); // move
+			}
+		});		
+	})
+
+
 } // add
 
 // Return a list of all the files in the database
