@@ -194,7 +194,6 @@ define(function(require) {
 					callback(err);
 				} else {
 					callback(err, result);
-					//this.launchApp('job-manager', {}, callback);
 				}
 			}.bind(this));
 		}.bind(this));
@@ -208,11 +207,11 @@ define(function(require) {
 				} else {
 					callback(null, jobs);
 				}
-			})
+			});
 		}.bind(this));
 
-		this._registerHandler('getJobHistory', function(data, callback) {
-			this.engine.getJobHistory(function(err, jobs) {
+		this._registerHandler('getJobHistory', function(options, callback) {
+			this.engine.getJobHistory(options || {}, function(err, jobs) {
 				if(err) {
 					callback(err);
 				} else {

@@ -177,25 +177,6 @@ FabMoAPI.prototype.requestStatus = function() {
 	this.socket.emit('status');
 }
 
-// Jobs
-FabMoAPI.prototype.getJobHistory = function(callback) {
-	this._get('/jobs/history', callback, callback, 'jobs');
-}
-
-FabMoAPI.prototype.getJobQueue = function(callback) {
-	this._get('/jobs/queue', callback, callback, 'jobs');
-}
-
-FabMoAPI.prototype.getJob = function(id, callback) {
-	this._get('/job/' + id, callback, callback, 'job');
-}
-
-FabMoAPI.prototype.getJobInfo = FabMoAPI.prototype.getJob;
-
-FabMoAPI.prototype.resubmitJob = function(id, callback) {
-	this._post('/job/' + id, {}, callback, callback);
-}
-
 // Direct commands
 FabMoAPI.prototype.quit = function(callback) {
 	this.command('quit');
@@ -210,12 +191,28 @@ FabMoAPI.prototype.resume = function(callback) {
 }
 
 // Jobs
+FabMoAPI.prototype.getJobQueue = function(callback) {
+	this._get('/jobs/queue', callback, callback, 'jobs');
+}
+
+FabMoAPI.prototype.getJob = function(id, callback) {
+	this._get('/job/' + id, callback, callback, 'job');
+}
+
+FabMoAPI.prototype.getJobInfo = FabMoAPI.prototype.getJob;
+
+FabMoAPI.prototype.resubmitJob = function(id, callback) {
+	this._post('/job/' + id, {}, callback, callback);
+}
+
 FabMoAPI.prototype.runNextJob = function(callback) {
 	this._post('/jobs/queue/run', {}, callback, callback);
 }
 
-FabMoAPI.prototype.getJobHistory = function(callback) {
-	this._get('/jobs/history', callback, callback, 'jobs');
+FabMoAPI.prototype.getJobHistory = function(options, callback) {
+	var start = options.start || 0;
+	var count = options.count || 0;
+	this._get('/jobs/history?start=' + start + '&count=' + count, callback, callback, 'jobs');
 }
 
 FabMoAPI.prototype.getJob = function(id, callback) {

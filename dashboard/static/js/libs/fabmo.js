@@ -405,8 +405,8 @@ FabMoDashboard.prototype.clearJobQueue = function(callback) {
 	this._call("clearJobQueue",null, callback);
 }
 
-FabMoDashboard.prototype.getJobHistory = function(callback) {
-	this._call("getJobHistory",null, callback);
+FabMoDashboard.prototype.getJobHistory = function(options, callback) {
+	this._call("getJobHistory",options, callback);
 }
 
 FabMoDashboard.prototype.runNext = function(callback) {

@@ -92,8 +92,24 @@ Job.getPending = function(callback) {
 	jobs.find({state:'pending'}).toArray(callback);
 };
 
-Job.getHistory = function(callback) {
-	jobs.find({state: {$in : ['finished', 'cancelled', 'failed']}}).sort({'created_at' : -1 }).toArray(callback);
+Job.getHistory = function(options, callback) {
+	var total = jobs.count({
+		state: {$in : ['finished', 'cancelled', 'failed']}
+	}, function(err, total) {
+		if(err) { return callback(err); }
+		jobs.find({
+			state: {$in : ['finished', 'cancelled', 'failed']}
+		}).skip(options.start || 0).limit(options.count || 0).sort({'created_at' : -1 }).toArray(function(err, data) {
+			if(err) {
+				callback(err);
+			}
+			callback(null, {
+				'total_count' : total,
+				'data' : data
+			});
+		});
+	});
+
 };
 
 Job.getAll = function(callback) {

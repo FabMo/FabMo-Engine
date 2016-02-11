@@ -333,6 +333,8 @@ Engine.prototype.start = function(callback) {
                     });
             }
 
+            server.use(restify.queryParser());
+            
             server.on('uncaughtException', function(req, res, route, err) {
                 log.uncaught(err);
                 answer = {

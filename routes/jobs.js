@@ -242,7 +242,12 @@ var getAllJobs = function(req, res, next) {
  */
 var getJobHistory = function(req, res, next) {
     var answer;
-    db.Job.getHistory(function(err, result) {
+    var options = {
+        start : req.params.start || 0,
+        count : req.params.count || 0
+    }
+
+    db.Job.getHistory(options, function(err, result) {
         if(err) {
             log.error(err);
             answer = {
