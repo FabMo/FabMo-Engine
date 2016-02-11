@@ -15,6 +15,9 @@ body {
   border-bottom: 1px solid #91331E;
 }
 
+.blink .nextJobTitle {
+  color: #91331E;
+}
 @keyframes pulse {
   0% {
     background-color: #ffffff;
@@ -823,7 +826,7 @@ td.edit span{
 }
 
 .fill {
-    background-color: #32B433;
+    background-color: #91331E;
     height: 100px;
     width: 100px;
     transition: -webkit-transform 1s;
