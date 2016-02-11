@@ -813,6 +813,23 @@ td.edit span{
 	float: right;
 	margin-right: 50px;
 }
+
+.blink .radial_progress {
+    animation: pulse_progress 1s infinite;
+
+}
+
+@keyframes pulse_progress {
+  0% {
+    background-color: #eee;
+  }
+  50% {
+    background-color: #d4b6b8;
+  }
+  0% {
+    background-color: #eee;
+  }
+}
 @media screen and (max-width: 630px){
   .play-button{
     position: absolute;
