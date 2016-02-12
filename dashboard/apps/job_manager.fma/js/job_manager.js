@@ -9,9 +9,6 @@ var blinkTimer = null;
 // The currently running Job ID
 var currentJobId = -1; 
 
-/*
- * Configure the target for files dropped on the pending tab.
- */
 function setupDropTarget() {
 	$('#tabpending').dragster({
 		enter : function(devt, evt) {
@@ -96,7 +93,7 @@ function addQueueEntries(jobs) {
 		menu.innerHTML = createQueueMenu(job._id);
 		name.innerHTML = job.name;
 	});
-	bindHistoryEvents();
+	bindMenuEvents();
 }
 
 /*
@@ -104,7 +101,7 @@ function addQueueEntries(jobs) {
  *   HISTORY
  * -----------
  */
-function updateHistoryTable(callback) {
+function updateHistory(callback) {
 	fabmo.getJobHistory({
 		start : historyStart,
 		count : historyCount
@@ -124,12 +121,12 @@ function updateHistoryTable(callback) {
 function historyPreviousPage(callback) {
 	historyStart -= historyCount;
 	if(historyStart < 0) { historyStart = 0;}
-	updateHistoryTable(callback);
+	updateHistory(callback);
 }
 
 function historyNextPage(callback) {
 	historyStart += historyCount;
-	updateHistoryTable(callback);
+	updateHistory(callback);
 }
 
 function clearHistory() {
@@ -163,7 +160,7 @@ function addHistoryEntries(jobs) {
 	bindHistoryEvents();
 }
 
-function bindHistoryEvents() {
+function bindMenuEvents() {
 	function hideDropDown() {
 		$('.dropDownWrapper').hide();
 		$('.dropDown').hide();
@@ -176,10 +173,21 @@ function bindHistoryEvents() {
 			console.log("Resubmitted");
 			//refresh_jobs_list();
 			fabmo.getJobsInQueue(function(err, data) {
-				setNextJob(data);
 				$('.toggle-topbar').click();
 				$('#nav-pending').click();
+				updateQueue(false);
 			});
+		});
+		hideDropDown();
+	});
+
+	$('.cancelJob').click(function(e) {
+		fabmo.cancelJob(this.dataset.jobid, function(err, data) {
+			if(err) { fabmo.notify(err); }
+			else {
+				updateQueue();
+				updateHistory();
+			}
 		});
 		hideDropDown();
 	});
@@ -208,6 +216,24 @@ function bindHistoryEvents() {
 		var dd = $(this).nextAll();
 		dd.show();
  	});
+}
+
+function bindNextJobEvents() {
+		$('.cancel').on('click', function(e) {
+			fabmo.cancelJob( $(this).data('id'), function(err, data) {
+				updateQueue(false);
+				updateHistory();					
+			});
+		});
+		$('.preview').on('click', function(e) {
+			fabmo.launchApp('previewer', {'job' : $(this).data('id')});
+		});
+		$('.edit').on('click', function(e) {
+			fabmo.launchApp('editor', {'job' : $(this).data('id')});
+		});
+		$('.download').on('click', function(e) {
+			$('.download').attr({'href':'/job/' + $(this).data('id') + '/file'});
+		});	
 }
 
 function noJob() {
@@ -325,7 +351,7 @@ function handleStatusReport(status) {
 
 			currentJobId = null;
 			updateQueue(false);
-			updateHistoryTable();
+			updateHistory();
 		}
 	}
 }

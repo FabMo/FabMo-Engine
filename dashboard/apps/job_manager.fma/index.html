@@ -120,9 +120,7 @@
 	                <th>Name</th>
 	            </tr>
 	        	</thead>
-	        	<tbody>
-	        	<tr></tr>
-	        	</tbody>
+	        	<tbody><tr></tr></tbody>
 	        	</table>
 			</div>
 	</section>
@@ -142,12 +140,6 @@
 		<tbody><tr></tr></tbody>
 		</table>
 		<a href="#" id="history_page_prev">&lt;&lt; Prev</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="#" id="history_page_next">Next &gt;&gt;</a>
-  </div>
-
-  <div class="content" id="tabactive">
-	  <section class="container">
-	  <div id="currentfile" class="code-area">This is where the currently running job goes</div>
-	  </section>
   </div>
   <div class="dropDownWrapper"></div>
 </div>
@@ -170,12 +162,16 @@
 
   	//Foundation Init
 	$(document).foundation();
-	
-	updateHistoryTable();
-	//updateQueue();
+
+	// Request infoes from the tool
+	// The queue will update when the status report comes in
+	// But the history needs to be updated manually
 	fabmo.requestStatus();
+	updateHistory();
+
+	bindNextJobEvents();
 	setupDropTarget();
-	
+
 	$('#history_page_next').click(function(evt) {
 		evt.preventDefault();
 		historyNextPage();
@@ -216,10 +212,7 @@
 	});
 
 	$('#file').change(function(evt) {
-		fabmo.submitJob({
-			file : $('#fileform'),
-			description : "File submitted from the job manager."
-		}, {}, function(err, data) {
+		fabmo.submitJob($('#fileform'), {}, function(err, data) {
 			if(err){
 				fabmo.notify('error', err);
 			}
@@ -241,40 +234,7 @@
 	  e.unwrap();
 	}
 
-	jQuery('img.svg').each(function(){
-    var $img = jQuery(this);
-    var imgID = $img.attr('id');
-    var imgClass = $img.attr('class');
-    var imgURL = $img.attr('src');
-
-    jQuery.get(imgURL, function(data) {
-        // Get the SVG tag, ignore the rest
-        var $svg = jQuery(data).find('svg');
-
-        // Add replaced image's ID to the new SVG
-        if(typeof imgID !== 'undefined') {
-            $svg = $svg.attr('id', imgID);
-        }
-        // Add replaced image's classes to the new SVG
-        if(typeof imgClass !== 'undefined') {
-            $svg = $svg.attr('class', imgClass+' replaced-svg');
-        }
-
-        // Remove any invalid XML tags as per http://validator.w3.org
-        $svg = $svg.removeAttr('xmlns:a');
-
-        // Check if the viewport is set, if the viewport is not set the SVG wont't scale.
-        if(!$svg.attr('viewBox') && $svg.attr('height') && $svg.attr('width')) {
-            $svg.attr('viewBox', '0 0 ' + $svg.attr('height') + ' ' + $svg.attr('width'))
-        }
-
-        // Replace image with new SVG
-        $img.replaceWith($svg);
-
-
-    }, 'xml');
-
-	});
+	
   });
 </script>
 

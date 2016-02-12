@@ -3,53 +3,36 @@ body {
   height: 100%;
 }
 
+.running { 
+  animation: pulse 2s infinite;
+}
+.running .inset {
+  animation: pulse 2s infinite;
+}
+.running .radial_progress {
+    animation: pulse_progress 2s infinite;
+}
+
 .topjob.running {
   border: 1px solid #91331E;
 }
-
-.running { 
-  animation: pulse 1s infinite;
+.running .nextJobTitle {
+  color: #91331E;
 }
-
-.running .inset {
-  animation: pulse 1s infinite;
-}
-
 .running .row.title {
   border-bottom: 1px solid #91331E;
 }
 
-.running .nextJobTitle {
-  color: #91331E;
-}
-
-.running .radial_progress {
-    animation: pulse_progress 1s infinite;
-
-}
-
 @keyframes pulse_progress {
-  0% {
-    background-color: #eee;
-  }
-  50% {
-    background-color: #d4b6b8;
-  }
-  0% {
-    background-color: #eee;
-  }
+  00% { background-color: #eee;}
+  50% { background-color: #F9D5D8;}
+  00% { background-color: #eee;}
 }
-
+/* //#F9D5D8; */
 @keyframes pulse {
-  0% {
-    background-color: #ffffff;
-  }
-  50% {
-    background-color: #F9D5D8;
-  }
-  0% {
-    background-color: #ffffff;
-  }
+  00% { background-color: #ffffff;}
+  50% { background-color: #F9D5D8;}
+  00% { background-color: #ffffff;}
 }
 
 .topjob {
@@ -129,59 +112,14 @@ h1, h2, h3, h4, h5, h6 {
  
  .jobs-wrapper{
    position: relative;
- 
  }
-
-td.details-control {
-    width: 50px;
-    cursor: pointer;
-}
 
 td.actions-control {
     width: 80px;
     cursor: pointer;
-    content: attr('Preview Job');
+    content: attr('&nbsp;');
     text-align: center;
 
-}
-
-td.preview-control {
-    background: url('images/preview.png') no-repeat center center;
-    width: 80px;
-    cursor: pointer;
-    content: attr('Preview Job');
-}
-
-.more-details {
-  width: 36px;
-  height: 36px;
-  color: #A6A6A6;
-  vertical-align: text-top;
-  border: 1px solid #A6A6A6;
-  border-radius: 100%;
-  float: left;
-  text-align: center;
-  transform-origin: center;
-  transition: transform .5s linear;
-  transform-style: preserve-3D;
-}
-
-.more-details:hover {
-   border-color: #666;
-   color: #666;
-   transition: all .3s;
-}
-
-.more-details div {
-  position: relative;
-  font-family: "Lucida Console", Monaco, monospace;
-  top: 5px;
-  font-size: 1.7em;
-  transition: color .3s;
-}
-
-.more-details div:hover {
-  color: #666;
 }
 
 .columns {
@@ -244,10 +182,6 @@ td.preview-control {
   padding-left: 1em;
 }
 
-ul.pagination li a{
-color: #313366;
-}
-
 .jobActions {
   list-style: none;
   line-height: 2em;
@@ -284,6 +218,7 @@ color: #313366;
   z-index: 8;
   display: none;
 }
+
 .icon-row svg {
   fill: #333333;
   max-width: 20px;
@@ -323,30 +258,6 @@ tr.shown td.details-control {
     user-select: none;
 }
 
-#holder { 
-  border: 5px dashed #ccc; 
-  border-radius: 5px; 
-  width: 100%; 
-  height: 100px; 
-  text-align:center; 
-  vertical-align: middle;
-  color: #ccc;
-  font-size: 20px;
-  padding-top: 20px;
-  cursor: pointer;
-}
-
-#holder.hover { 
-  border: 5px dashed black; 
-  color: black;
-  cursor: copy;
-}
-
-.child-row-label: {
-  font-weight: bold;
-  font-color: red;
-}
-
 .job-failed {
   color: #FB0000;
 }
@@ -369,16 +280,6 @@ tr.shown td.details-control {
 
 td input, td select {margin:0 !important;}
 
-td.switch {
-  text-align: center;
-}
-
-td .button {
-  margin-bottom: 0;
-  padding: 13px 24px;
-  padding: 0.8125rem 1.5rem;
-}
-
 .tabs dd.active a, .tabs .tab-title.active a {
   background: #666;
   color: #fff;
@@ -392,57 +293,7 @@ td .button {
 
 header { padding: 0 3rem;}
 
-input[type="file"] {
-  color: #444;
-  height: 21px;
-  height: 2.3125rem;
-  padding: 8px;
-  padding: 0.5rem;
-}
-
-
-input[type="file"]:hover::before {
-  background-color: #272952;
-  -webkit-transition: background-color .3s;
-  transition: background-color .3s;
-}
-
-input[type="file"]:active {
-  outline: 0;
-}
-
-input[type="file"]:active::before {
-  background: #e3e3e3; /* Old browsers */
-  background: -moz-linear-gradient(top,  #e3e3e3 0%, #f9f9f9 100%); /* FF3.6+ */
-  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#e3e3e3), color-stop(100%,#f9f9f9)); /* Chrome,Safari4+ */
-  background : -webkit-linear-gradient(top, #e3e3e3 0%, #f9f9f9 100%); /* Chrome10+,Safari5.1+ */
-  background: -o-linear-gradient(top,  #e3e3e3 0%,#f9f9f9 100%); /* Opera 11.10+ */
-  background: -ms-linear-gradient(top,  #e3e3e3 0%,#f9f9f9 100%); /* IE10+ */
-  background: linear-gradient(to bottom,  #e3e3e3 0%,#f9f9f9 100%); /* W3C */
-  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e3e3e3', endColorstr='#f9f9f9',GradientType=0 ); /* IE6-9 */
-}
-
-
-
-
-/* Custom Style */
-
-/*
-*** General ***
-*/
 .hidden, .hide { display:none; }
-
-
-
-
-/*
-*** Header ***
-*/
-
-.blue   { background-color:#313366 !important;  }
-.orange { background-color: #dd8728 !important; }
-.red    { background-color: #9c210c !important; }
-.grey   { background-color: #666 !important;    }
 
 header h2 {
   color:#fff;
@@ -521,105 +372,9 @@ table {
   margin: 0;
 }
 
-.tabs-content>.content {
-  margin: 0;
+.content.active {
   padding: 0;
 }
-/*
-*** Jobs ***
-*/
-
-.jobs-listing { color: #666; }
-.jobs-listing .name { font-size: 1.125rem; }
-.jobs-listing .option {
-  padding-right: 0px;
-  padding-left: 0px;
-  margin-right: 15px;
-  margin-right: 0.9375em;
-  margin-left: -15px;
-  margin-left: -0.9375em;
-  background: #dd8728;
-  text-align: center;
-  color: #eee;
-}
-
-
-
-
-
-/*
-*** Colors ***
-*/
-td[type="color"] div {
-  width: 32px;
-  width: 2rem;
-  height: 32px;
-  height: 2rem;
-  display: inline-block;
-  margin-right: 12px;
-  margin-right: 0.75rem;
-  border-radius: 16px;
-  border-radius: 1rem;
-  -moz-box-shadow: 0 0 3px rgba(0,0,0,0.4);
-  -webkit-box-shadow: 0 0 3px rgba(0,0,0,0.4);
-  box-shadow: 0 0 3px rgba(0,0,0,0.4);
-}
-
-td[type="color"] div.selected {
-  -moz-box-shadow: inset 0 0 1rem 1rem rgba(255,255,255,0.5);
-  -webkit-box-shadow: inset 0 0 1rem 1rem rgba(255,255,255,0.5);
-  box-shadow: inset 0 0 1rem 1rem rgba(255,255,255,0.5);
-}
-
-td[type="color"] div:hover {
-  cursor:pointer;
-}
-
-td[type="color"] div.add {
-  background : url('../img/icon_plus_cross.png') #fff no-repeat center;
-  background-size: 16px;
-  background-size: 1rem;
-}
-
-
-/*
-*** Tasks Lists ***
-*/
-
-tr.current {
-  background-color: rgb(221,135,40);
-  background-color: rgba(221,135,40,0.8);
-}
-
-tr.current td { color:#fff; }
-
-td.delete:hover, td.edit:hover {
-  cursor:pointer;
-}
-
-td.delete, td.edit {
-  padding: 0 3px;
-  padding: 0 0.1875rem;
-}
-
-td.delete span {
-  background-color: #9c210c;
-  color: #fff;
-  border-radius: 16px;
-  border-radius: 1rem;
-  padding: 5px 8px;
-  padding: 0.3125rem 0.5rem;
-}
-
-td.edit span{
-  background-color: #666;
-  color:#fff;
-  border-radius: 1rem;
-  padding: 5px 8px;
-  padding: 0.3125rem 0.5rem;
-}
-
-
 /* Special Custom Style : rotations et animations */
 .spinner {
   -webkit-animation: rotator 1.4s linear infinite;
