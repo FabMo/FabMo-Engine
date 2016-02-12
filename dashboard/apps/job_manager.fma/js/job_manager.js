@@ -157,7 +157,7 @@ function addHistoryEntries(jobs) {
 		done.innerHTML = moment(job.finished_at).fromNow();
 		time.innerHTML = moment.utc(job.finished_at - job.started_at).format('HH:mm:ss');
 	});
-	bindHistoryEvents();
+	bindMenuEvents();
 }
 
 function bindMenuEvents() {
