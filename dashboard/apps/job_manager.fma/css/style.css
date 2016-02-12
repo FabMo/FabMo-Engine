@@ -100,6 +100,31 @@ h1, h2, h3, h4, h5, h6 {
    left: -1000px;
    top: 0;
    transition: all 0.5s;
+   width: 100%;
+   border: 3px dashed #666666;
+   height: 150px;
+ }
+ 
+ .without-job img{
+     height: 55px;
+     width: auto;
+ }
+ 
+ .without-job p {
+     color: #666666
+ }
+ 
+ .submitWrapper{
+     position: relative;
+     height: 100%;
+     width: 100%;
+ }
+ 
+ .submitActions{
+     text-align: center;
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
  }
 
  .with-job{
@@ -112,6 +137,7 @@ h1, h2, h3, h4, h5, h6 {
  
  .jobs-wrapper{
    position: relative;
+   width: 100%;
  }
 
 td.actions-control {
@@ -240,8 +266,7 @@ td.actions-control {
 }
 
 .icon-row {
-  padding-bottom: 2em;
-  padding-top: 2em;
+
 }
 
 tr.shown td.details-control {

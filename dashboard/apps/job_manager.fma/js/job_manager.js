@@ -243,7 +243,7 @@ function noJob() {
 		$('.edit').slideUp();
 		$('.preview').slideUp();
 		$('.play-button').slideUp();
-		$('.without-job').css('left', '10px');
+		$('.without-job').css('left', '0px');
 		$('.nextJobTitle').text('');
 		$('.nextJobDesc').text('');
 };
