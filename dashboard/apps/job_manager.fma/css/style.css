@@ -3,21 +3,43 @@ body {
   height: 100%;
 }
 
-.blink { 
+.topjob.running {
+  border: 1px solid #91331E;
+}
+
+.running { 
   animation: pulse 1s infinite;
 }
 
-.blink .inset {
+.running .inset {
   animation: pulse 1s infinite;
 }
 
-.blink .row.title {
+.running .row.title {
   border-bottom: 1px solid #91331E;
 }
 
-.blink .nextJobTitle {
+.running .nextJobTitle {
   color: #91331E;
 }
+
+.running .radial_progress {
+    animation: pulse_progress 1s infinite;
+
+}
+
+@keyframes pulse_progress {
+  0% {
+    background-color: #eee;
+  }
+  50% {
+    background-color: #d4b6b8;
+  }
+  0% {
+    background-color: #eee;
+  }
+}
+
 @keyframes pulse {
   0% {
     background-color: #ffffff;
@@ -34,47 +56,34 @@ body {
   min-height: 170px;
 }
 
-#tabpending.hover { 
-  /*border: 5px dashed #ccc; 
-  border-radius: 5px;*/
+.hover .hoverdim { 
   -webkit-transition: opacity .2s ease;
   -moz-transition: opacity .2s ease;
   -o-transition: opacity .2s ease;
+  opacity: 0.2;
 }
   
-#tabpending.hover .hovershow {
-  opacity: 1.0;
-  -webkit-transition: opacity .2s ease;
-  -moz-transition: opacity .2s ease;
-  -o-transition: opacity .2s ease;
-
+#droptarget {
+  visibility: hidden;
+  opacity: 0;
 }
 
-#tabpending.hover .hoverdim {
-  opacity: 0.2;
-  -webkit-transition: opacity .2s ease;
-  -moz-transition: opacity .2s ease;
-  -o-transition: opacity .2s ease;
-
-}
-#tabpending .message {
-  display: none;
-}
-
-#tabpending.hover .message {
-  display: block;
+.hover #droptarget {
+  visibility: visible;
+  opacity: 1;
   z-index: 3;
   position: absolute;
   text-align: center;
   width: 100%;
   height: 100%;
-  font-weight: bolder;
-  font-size: 3em;
   color: #444444;
   background-image: url('../images/droptarget.png');
   background-repeat: no-repeat;
   background-size: contain;
   background-position: center;
+  -webkit-transition: opacity .2s ease;
+  -moz-transition: opacity .2s ease;
+  -o-transition: opacity .2s ease;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -354,60 +363,9 @@ tr.shown td.details-control {
   color: blue;
 }
 
-.alert-box .close {
-  color: #eee;
-  filter: alpha(opacity=95); /* For IE8 and earlier */
-  opacity: 0.95;
+.pending {
+  font-weight: bold;
 }
-
-.reveal-modal {
-  padding: 13px;
-  padding: 0.8125rem;
-  min-height: none;
-}
-
-.reveal-modal .row.title {
-  border-bottom: 1px solid #ccc;
-  margin-bottom: 10px;
-  margin-bottom: 0.625em;
-}
-
-.button-group>li { margin: 0; }
-
-.button-bar .button-group { margin-right: 0; }
-
-.button-bar .button-group li:first-child a {
-  border-top-left-radius: 5px;
-  border-bottom-left-radius: 5px;
-}
-
-.button-bar .button-group li:last-child a {
-  border-top-right-radius: 5px;
-  border-bottom-right-radius: 5px;
-}
-
-button.small, .button.small {
-  padding-top: 13px;
-  padding-top: 0.8125rem;
-  padding-bottom: 13px;
-  padding-bottom: 0.8125rem;
-}
-
-@media only screen and (max-width: 40.063em) {
-  button.small, .button.small {
-    padding-top: 9px;
-    padding-top: 0.5625rem;
-    padding-bottom: 9px;
-    padding-bottom: 0.5625rem;
-    padding-right: 18px;
-    padding-right:  1.125rem;
-    padding-left: 18px;
-    padding-left: 1.125rem;
-  }
-}
-
-
-.btn { padding: 0;}
 
 td input, td select {margin:0 !important;}
 
@@ -442,36 +400,6 @@ input[type="file"] {
   padding: 0.5rem;
 }
 
-input[type="file"]::-webkit-file-upload-button {
-  visibility: hidden !important;
-  padding:0 !important;
-}
-
-input[type="file"]::before,
-input[type="file"]::-webkit-file-upload-button {
-  content: 'Select a file';
-  color: #eee;
-  display: inline-block;
-  background: #313366;
-  border: 1px solid #272952;
-  padding: 8px;
-  padding: 0.5rem;
-  outline: none;
-  #fff-space: nowrap;
-  -moz-user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-  -o-user-select: none;
-  user-select: none;
-  cursor: pointer;
-  width:33%;
-  text-align: center;
-  position: absolute;
-  top:0;
-  left:0;
-   -webkit-transition: background-color .5s;
-  transition: background-color .5s;
-}
 
 input[type="file"]:hover::before {
   background-color: #272952;
@@ -814,22 +742,7 @@ td.edit span{
 	margin-right: 50px;
 }
 
-.blink .radial_progress {
-    animation: pulse_progress 1s infinite;
 
-}
-
-@keyframes pulse_progress {
-  0% {
-    background-color: #eee;
-  }
-  50% {
-    background-color: #d4b6b8;
-  }
-  0% {
-    background-color: #eee;
-  }
-}
 @media screen and (max-width: 630px){
   .play-button{
     position: absolute;
@@ -879,6 +792,7 @@ td.edit span{
     border-radius: 50%;
     box-shadow: 3px 3px 5px rgba(0,0,0,0.2);
 }
+
 .shadow {
       width: 100px;
       height: 100px;

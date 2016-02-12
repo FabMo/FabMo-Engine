@@ -246,7 +246,7 @@ function runningJob(job) {
 	$('.edit').slideUp(500);
 	$('.preview').slideUp(500);
 	$('body').css('background-color', '#898989');
-	$('.topjob').addClass('blink');
+	$('.topjob').addClass('running');
 	$('.up-next').css('left', '-200px');
 	$('.now-running').css('left', '0px');
 	$('.without-job').css('left','-1000px');;
@@ -316,11 +316,10 @@ function handleStatusReport(status) {
 		}
 	} else {
 		if(currentJobId) {
-			console.log("updating jaaaaaaz")
 			$('.play').removeClass('active')
 			setProgress(status);
 			// UI Stuff
-			$('.topjob').removeClass('blink');
+			$('.topjob').removeClass('running');
 			$('body').css('background-color', '#EEEEEE');
 			$('.play').removeClass('active');
 
