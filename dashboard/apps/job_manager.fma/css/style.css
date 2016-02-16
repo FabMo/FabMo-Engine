@@ -694,3 +694,34 @@ table {
   -o-transform: rotate(-90deg);
   transform: rotate(-90deg);
 }
+
+#history_page_prev, #history_page_next{
+    background-color: #666;
+    width: 100px;
+    text-align: center;
+    margin: 1em;
+    padding-top: .1em;
+    height: 30px;
+    border-radius: 5px;
+    color: #f2f2f2;
+    text-transform: normal;
+    -o-text-overflow: clip;
+    text-overflow: clip;
+    white-space: pre;
+    text-shadow: #fff 1px 1px 0;
+    text-shadow: -.3px -.3px .3px rgba(0,0,0,0.67);
+    box-shadow: 0 1px 0 rgba(0,0,0,.15);
+    transition: all .3s;
+}
+
+#history_page_prev:hover, #history_page_next:hover{
+  background-color: #999;
+}
+
+#history_page_prev{
+     float: left;
+}
+
+#history_page_next{
+    float: right;
+}
