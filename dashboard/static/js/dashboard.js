@@ -480,7 +480,7 @@ define(function(require) {
 
 		this._registerHandler('navigate', function(data, callback) {
 			if(data.url) {
-				window.location.href = data.url;
+				window.open(data.url,data.options.target)
 			} else {
 				callback(new Error("No URL specified"));
 			}

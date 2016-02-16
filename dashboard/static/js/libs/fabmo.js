@@ -563,7 +563,7 @@ FabMoDashboard.prototype.getVersion = function(callback) {
 }
 
 FabMoDashboard.prototype.navigate = function(url, options, callback) {
-	this._call("navigate", {'url' : url}, callback);
+	this._call("navigate", {'url' : url, 'options' : options}, callback);
 }
 
 FabMoDashboard.prototype.setAppConfig = function(config, callback) {
