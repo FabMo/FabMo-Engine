@@ -157,7 +157,6 @@ var get_version = function(req, res, next) {
   res.json(answer);
 };
 
-
 module.exports = function(server) {
   server.get('/status', get_status);
   server.get('/config',get_config);

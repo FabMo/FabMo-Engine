@@ -37,10 +37,10 @@ function update() {
   fabmo.getVersion(function(err, version) {
     switch(version.type) {
       case 'dev':
-        $('#engine-version').text(version.hash.substring(0,12) + '-dev');
+        $('.engine-version').text(version.hash.substring(0,12) + '-dev');
         break;
       case 'release':
-        $('#engine-version').text('v' + version.number);
+        $('.engine-version').text('v' + version.number);
         break;
     }
   });
