@@ -30,7 +30,7 @@
     <li class="tab-title" role="presentational" ><a href="#tabpanel5" role="tab" tabindex="0"aria-selected="false" controls="tabpanel5">Machine</a></li>
     </ul>
     <ul class="right">
-      <li><a id="engine-version" href=""></a>
+      <li><a id="engine-version" class="engine-version" href=""></a>
     </li>
     </ul>
   </section>
@@ -119,8 +119,28 @@
           </div>
         </div>
       </fieldset>
-    </div> 
+    </div>
 
+    <div class="row">
+      <fieldset>
+        <legend>Updates</legend>
+
+        <div class="large-4 columns">
+          <div class="row collapse">
+            <label>Software Version</label>
+            <div class="columns">
+            <span class="engine-version"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="large-4 columns">
+          <div class="row collapse">
+              <button id="btn-update">Update Software</button>
+          </div>
+        </div>
+      </fieldset>
+    </div>
     <div class="row">
       <fieldset>
         <legend>Rotation</legend>
@@ -1612,7 +1632,18 @@
   <script>
     var configData = null;
     var fabmo = new FabMoDashboard();
-    
+    $('#btn-update').click(function(evt) {
+      evt.preventDefault();
+      var location = window.location;
+      var protocol = location.protocol;
+      var slashes = protocol.concat("//");
+      var host = slashes.concat(window.location.hostname);
+      var port = ':' + (parseInt((location.port || 80)) + 1);
+      var url = host.concat(port).concat('/do_update')
+      console.log("bweeeeeeh")
+      fabmo.navigate(url, {});
+      console.log("bweeeeh")
+    });
     $(document).ready(function() {
       $(document).foundation();
 
