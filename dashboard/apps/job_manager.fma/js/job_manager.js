@@ -246,6 +246,8 @@ function noJob() {
 		$('.without-job').css('left', '0px');
 		$('.nextJobTitle').text('');
 		$('.nextJobDesc').text('');
+        $('.no-jobs').css('left', '0px');
+        $('.up-next').css('left', '-1000px');
 };
 
 function nextJob(job) {
@@ -262,6 +264,8 @@ function nextJob(job) {
 		$('.edit').show();
 		$('.preview').show();
 		$('.play-button').show();
+        $('.up-next').css('left', '0px');
+        $('.no-jobs').css('left', '-1000px');
 };
 
 function runningJob(job) {
@@ -273,7 +277,8 @@ function runningJob(job) {
 	$('.preview').slideUp(500);
 	$('body').css('background-color', '#898989');
 	$('.topjob').addClass('running');
-	$('.up-next').css('left', '-200px');
+	$('.up-next').css('left', '-1000px');
+    $('.no-jobs').css('left', '-1000px');
 	$('.now-running').css('left', '0px');
 	$('.without-job').css('left','-1000px');;
 	$('.with-job').css('left','10px');	

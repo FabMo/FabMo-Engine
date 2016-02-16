@@ -43,6 +43,7 @@
 				<div class="small-12 columns">
 					<h4 class="up-next">Up Next</h4>
 					<h4 class="now-running">Now Running</h4>
+                    <h4 class="no-jobs">No Jobs</h4>
 				</div>
 			</div>
 			<div class="row">
@@ -214,6 +215,10 @@
 	});
 
 	$('.submit-button').click(function(evt) {
+		jQuery('#file').trigger('click');
+	});
+    
+    $('.without-job').click(function(evt) {
 		jQuery('#file').trigger('click');
 	});
 
