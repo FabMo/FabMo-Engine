@@ -237,7 +237,6 @@ function bindNextJobEvents() {
 }
 
 function noJob() {
-		$('.with-job').css('left','-1000px');
 		$('.cancel').slideUp();		
 		$('.download').slideUp();
 		$('.edit').slideUp();
@@ -247,11 +246,12 @@ function noJob() {
 		$('.nextJobTitle').text('');
 		$('.nextJobDesc').text('');
         $('.no-jobs').css('left', '0px');
-        $('.up-next').css('left', '-1000px');
+        $('.up-next').css('left', '-2000px');
+        $('.with-job').css('left','-2000px');
 };
 
 function nextJob(job) {
-   		$('.without-job').css('left','-1000px');;
+   		$('.without-job').css('left','-2000px');
 		$('.cancel').data('id', job._id);
 		$('.preview').data('id', job._id);
 		$('.download').data('id', job._id);
@@ -259,30 +259,31 @@ function nextJob(job) {
 		$('.with-job').css('left','10px');
 		$('.nextJobTitle').text(job.name);
 		$('.nextJobDesc').text(job.description);
-		$('.cancel').show();
-		$('.download').show();
-		$('.edit').show();
-		$('.preview').show();
+		$('.cancel').show(500);
+		$('.download').show(500);
+		$('.edit').show(500);
+		$('.preview').show(500);
 		$('.play-button').show();
         $('.up-next').css('left', '0px');
-        $('.no-jobs').css('left', '-1000px');
+        $('.no-jobs').css('left', '-2000px');
 };
 
 function runningJob(job) {
    	$('.nextJobTitle').text(job.name);
 	$('.nextJobDesc').text(job.description);
-	$('.cancel').slideUp(500);
-	$('.download').slideUp(500);
-	$('.edit').slideUp(500);
-	$('.preview').slideUp(500);
+	$('.cancel').slideUp(100);
+	$('.download').slideUp(100);
+	$('.edit').slideUp(100);
+	$('.preview').slideUp(100);
 	$('body').css('background-color', '#898989');
 	$('.topjob').addClass('running');
-	$('.up-next').css('left', '-1000px');
-    $('.no-jobs').css('left', '-1000px');
+	$('.up-next').css('left', '-2000px');
+    $('.no-jobs').css('left', '-2000px');
 	$('.now-running').css('left', '0px');
-	$('.without-job').css('left','-1000px');;
+	$('.without-job').css('left','-2000px');;
 	$('.with-job').css('left','10px');	
 	$('.play-button').show();
+    fabmo.showFooter();
 };
 
 var setNextJob = function (job) {
@@ -313,8 +314,8 @@ var setProgress = function(status) {
 	if (!status.job) {
 		$('.fill, .mask.full').css(transform_styles[i], 'rotate(0deg)');
 		$('.fill.fix').css(transform_styles[i], 'rotate(0deg)');
-		$('.up-next').css('left', '0px');
-		$('.now-running').css('left', '-200px');
+		$('.up-next').css('left', '-2000px');
+		$('.now-running').css('left', '-2000px');
 		$('.play').removeClass('active');
 	} 
 	for(i in transform_styles) {

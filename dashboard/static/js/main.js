@@ -293,6 +293,7 @@ $('.button-zerob').click(function(e) {dashboard.engine.sbp('ZB'); });
 
 $('.play').on('click', function(e){
 	$("#main").addClass("offcanvas-overlap-left");
+    console.log('is this still a thing?')
 	dashboard.engine.job_run(function (){
 		dashboard.engine.getJobQueue(function (err, data){
 			if (data.name == 'undefined' || data.length === 0) {

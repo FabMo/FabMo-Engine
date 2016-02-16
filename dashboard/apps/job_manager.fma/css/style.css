@@ -14,7 +14,7 @@ body {
 }
 
 .topjob.running {
-  border: 1px solid #91331E;
+  border: 10px solid #91331E;
 }
 .running .nextJobTitle {
   color: #91331E;
@@ -25,18 +25,19 @@ body {
 
 @keyframes pulse_progress {
   00% { background-color: #eee;}
-  50% { background-color: #F9D5D8;}
+  50% { background-color: #bcbcbc;}
   00% { background-color: #eee;}
 }
 /* //#F9D5D8; */
 @keyframes pulse {
   00% { background-color: #ffffff;}
-  50% { background-color: #F9D5D8;}
+  50% { background-color: #bcbcbc;}
   00% { background-color: #ffffff;}
 }
 
 .topjob {
   min-height: 170px;
+  transition: all 0.5s;
 }
 
 .hover .hoverdim { 
@@ -81,7 +82,7 @@ h1, h2, h3, h4, h5, h6 {
 }
  .up-next{
    position: absolute;
-   left: -1000px;
+   left: -2000px;
    top: 0;
    font-weight: bold;
    transition: all 0.5s;
@@ -89,7 +90,7 @@ h1, h2, h3, h4, h5, h6 {
  
  .no-jobs {
    position: absolute;
-   left: -1000px;
+   left: -2000px;
    top: 0;
    font-weight: bold;
    transition: all 0.5s;
@@ -97,7 +98,7 @@ h1, h2, h3, h4, h5, h6 {
  .now-running{
    position: absolute;
    top: 0;
-   left: -1000px;
+   left: -2000px;
    font-weight: bold;
    transition: all 0.5s;
    color: #91331E;
@@ -105,7 +106,7 @@ h1, h2, h3, h4, h5, h6 {
 
  .without-job{
    position: absolute;
-   left: -1000px;
+   left: -2000px;
    top: 0;
    transition: all 0.5s;
    width: 100%;
@@ -137,7 +138,7 @@ h1, h2, h3, h4, h5, h6 {
 
  .with-job{
    position: absolute;
-   left: -1000px;
+   left: -2000px;
    top: 0;
    transition: all 0.5s;
  
