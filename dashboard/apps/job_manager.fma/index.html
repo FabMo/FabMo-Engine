@@ -43,6 +43,7 @@
 				<div class="small-12 columns">
 					<h4 class="up-next">Up Next</h4>
 					<h4 class="now-running">Now Running</h4>
+                    <h4 class="no-jobs">No Jobs</h4>
 				</div>
 			</div>
 			<div class="row">
@@ -54,7 +55,13 @@
 						</div>
 					</div>
 					<div class="small-12 columns without-job">
-						<h4 class='no-job'>No Job Pending</h4>
+                        <div class="submitWrapper">
+                            <div class="submitActions">
+                                <h5 class='no-job'>Drag files here</h5>
+                                <p>or</p>
+                                <img src="images/click.png">
+                            </div>
+                        </div>
 						<div class="small-11 columns">
 							<h5 class='add-job-please'></h5>
 						</div>
@@ -139,7 +146,8 @@
 		</thead>
 		<tbody><tr></tr></tbody>
 		</table>
-		<a href="#" id="history_page_prev">&lt;&lt; Prev</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="#" id="history_page_next">Next &gt;&gt;</a>
+		<div href="#" id="history_page_prev"><p>&lt;&lt; Prev</p></div>
+        <div href="#" id="history_page_next"><p>Next &gt;&gt;</p></div>
   </div>
   <div class="dropDownWrapper"></div>
 </div>
@@ -208,6 +216,10 @@
 	});
 
 	$('.submit-button').click(function(evt) {
+		jQuery('#file').trigger('click');
+	});
+    
+    $('.without-job').click(function(evt) {
 		jQuery('#file').trigger('click');
 	});
 
