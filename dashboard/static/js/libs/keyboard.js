@@ -52,7 +52,6 @@ Keyboard.prototype.setOptions = function(options) {
 
 Keyboard.prototype.emit = function(evt, data) {
 	if(evt in this.listeners) {
-		console.info("Emitting " + evt + " event with " + JSON.stringify(data));
 		var listeners = this.listeners[evt];
 		for(var i=0; i<listeners.length; i++) {
 			try {
@@ -74,12 +73,10 @@ Keyboard.prototype.setEnabled = function(enabled) {
 	this.enabled = enabled;
 	if(enabled) {
 		this.moves = MOVE_THRESH;
-		this.elem.removeClass('keyboardDisabled');				
-		this.elem.addClass('keyboardEnabled');		
+		this.elem.removeClass('keyboard-button-inactive').addClass('keyboard-button-active');				
 	} else {
 		this.moves = 0;
-		this.elem.addClass('keyboardDisabled');		
-		this.elem.removeClass('keyboardEnabled');		
+		this.elem.removeClass('keyboard-button-active').addClass('keyboard-button-inactive');				
 	}
 }
 
@@ -112,7 +109,6 @@ Keyboard.prototype.stop = function() {
 
 Keyboard.prototype.onClick = function(evt) {
 	this.setEnabled(!this.enabled);
-	console.log('Click')
 }
 
 

@@ -1,17 +1,59 @@
-body {
-  background-color: #303030;
-  overflow: hidden;
-} 
-
-h1, h2, h3, h4, h5, h6 {
-  color: #666;
+/* General */
+#loadingMessage {
+    position: absolute;
+    background: #ffffff;
+    border: black solid 1px;
+    z-index: 10;
+    width = auto;
+    height = 100px;
 }
 
-#loadingMessage {
-	background : #EBEBEB;
-	border : gray solid 1px;
-	border-radius: 10px;
-	color: black;
-	padding: 10px;
-	height: 50px;
+.widget {
+    cursor: pointer;
+    position: absolute;
+    z-index: 2;
+}
+
+/* GCode display */
+#highlighted {
+    background: #af8700;
+    color: #ffffd7;
+}
+
+.preGCode {
+    margin: 0px;
+    padding: 0px;
+    background: #ffffd7;
+}
+
+.liGCode {
+    list-style-type: none;
+    background: #ffffd7;
+    cursor: pointer;
+}
+
+#divGCode {
+    position: absolute;
+    width: 200px;
+    z-index: 2;
+    background: #ff6600;
+    color: #ffffff;
+}
+
+#toggleGCode {
+    width: 100%;
+    cursor: pointer;
+    text-align: center;
+    padding: 0px;
+    margin: 0px;
+}
+
+#linesGCode {
+    width: 100%;
+    background: #ffffd7;
+    color: #585858;
+    max-height: 200px;
+    overflow: auto;
+    padding: 0px;
+    margin: 0px;
 }

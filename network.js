@@ -40,6 +40,7 @@ EdisonNetworkManager.prototype.getNetworks = function(callback) {
 }
 
 EdisonNetworkManager.prototype.scan = function(callback) {
+  console.log("Scanning for networks..."); 
   jedison('scan', callback);
 }
 
@@ -153,10 +154,12 @@ EdisonNetworkManager.prototype.runStation = function() {
         var networkOK = true;
         if(!err) {
           if(data.ipaddress === '?') {
-            networkOK = false;
+           	log.info("Ip address == ?"); 
+		networkOK = false;
           }
           if(data.mode === 'master') {
-             this.mode = 'ap';
+             log.info("In master mode..."); 
+	     this.mode = 'ap';
              this.state = 'idle';
              setImmediate(this.run.bind(this));
           }

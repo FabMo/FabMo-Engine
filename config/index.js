@@ -29,21 +29,20 @@ function configureEngine(callback) {
 // Also, create `exports.driver` which is a G2Config object
 function configureDriver(driver, callback) {
     if(driver) {
-    	log.debug("Configuring driver...");
-    	exports.driver = new G2Config(driver);
+    	log.info("Configuring G2 Driver...");
+    	//exports.driver = new G2Config(driver);
 		async.series([
-		function(callback) { exports.driver.init(callback); },
+		function(callback) { exports.driver.init(driver, callback); },
 		function(callback) { exports.driver.configureStatusReports(callback); }
 		],
 		function finished(err, result) {
-			log.debug('finished');
 			if(err) { callback(err); }
 			else {
 				callback(null, exports.driver);
 			}
 		});
     } else {
-    	log.debug("Creating dummy driver configuration...");
+    	log.info("Creating dummy driver configuration...");
     	exports.driver = new Config();
     }
 }
@@ -53,9 +52,8 @@ function configureOpenSBP(callback) {
 	exports.opensbp.init(callback);
 }
 
-function configureMachine(driver, callback) {
-	exports.machine = new MachineConfig(driver);
-	exports.machine.init(callback);
+function configureMachine(machine, callback) {
+	exports.machine.init(machine, callback);
 }
 
 function configureDashboard(callback) {
@@ -98,6 +96,13 @@ function getLockFile() {
 	}
 }
 
+function clearAppRoot(callback) {
+    util.doshell('rm -rf ' + Config.getDataDir('approot'), callback);
+}
+
+exports.machine = new MachineConfig();
+exports.driver = new G2Config();
+
 exports.configureEngine = configureEngine;
 exports.configureDriver = configureDriver;
 exports.configureOpenSBP = configureOpenSBP;
@@ -108,4 +113,5 @@ exports.createDataDirectories = Config.createDataDirectories;
 exports.getDataDir = Config.getDataDir;
 exports.getLockFile = getLockFile;
 
+exports.clearAppRoot = clearAppRoot
 exports.platform = require('process').platform;

@@ -13,7 +13,7 @@ var GCodeRuntime = require('./runtime/gcode').GCodeRuntime;
 var SBPRuntime = require('./runtime/opensbp').SBPRuntime;
 var ManualRuntime = require('./runtime/manual').ManualRuntime;
 var PassthroughRuntime = require('./runtime/passthrough').PassthroughRuntime;
-
+var IdleRuntime = require('./runtime/idle').IdleRuntime;
 
 function connect(callback) {
 
@@ -57,7 +57,7 @@ function Machine(control_path, gcode_path, callback) {
 		state : "not_ready",
 		posx : 0.0,
 		posy : 0.0,
-		posz : 0.0, 
+		posz : 0.0,
 		in1 : 1,
 		in2 : 1,
 		in3 : 1,
@@ -74,14 +74,16 @@ function Machine(control_path, gcode_path, callback) {
 	};
 
 	this.driver = new g2.G2();
-	this.driver.on("error", function(data) {log.error(data);});
+	this.driver.on("error", function(err) {log.error(err);});
+
 	this.driver.connect(control_path, gcode_path, function(err, data) {
+	
 	    // Set the initial state based on whether or not we got a valid connection to G2
 	    if(err){
-	    	log.debug("Setting the disconnected state");
+	    	log.warn("Setting the disconnected state");
 		    this.status.state = 'not_ready';
 	    } else {
-		    this.status.state = "idle";
+		    this.status.state = 'idle';
 	    }
 
 	    // Create runtimes for different functions/command languages
@@ -89,26 +91,52 @@ function Machine(control_path, gcode_path, callback) {
 	    this.sbp_runtime = new SBPRuntime();
 	    this.manual_runtime = new ManualRuntime();
 	    this.passthrough_runtime = new PassthroughRuntime();
+	    this.idle_runtime = new IdleRuntime();
 
-	    // GCode is the default runtime
-	    this.setRuntime(this.gcode_runtime);
+	    // Idle 
+	    this.setRuntime(this.idle_runtime);
 
 	    if(err) {
 		    typeof callback === "function" && callback(err);
 	    } else {
-		    this.driver.requestStatusReport(function(err, result) {
+		    this.driver.requestStatusReport(function(result) {
+		    	if('stat' in result) {
+		    		switch(result.stat) {
+		    			case g2.STAT_INTERLOCK:
+		    			case g2.STAT_SHUTDOWN:
+		    			case g2.STAT_PANIC:
+		    				this.die('A G2 exception has occurred. You must reboot your tool.');
+		    				break;
+		    		}
+		    	}
 			    typeof callback === "function" && callback(null, this);
 		    }.bind(this));
 	    }
 
     }.bind(this));
-/*
-    this.on('status', function(data) {
-    	log.warn("Got machine emit");
-    })
-*/
+
+    config.driver.on('change', function(update) {
+    	['x','y','z','a','b'].forEach(function(axis) {
+    		var mode = axis + 'am';
+    		var pos = 'pos' + axis;
+    		if(mode in update) {
+    			if(update[mode] === 0) {
+    				log.debug('Disabling display for ' + axis + ' axis.');
+    				delete this.status[pos];
+    			} else {
+    				log.debug('Enabling display for ' + axis + ' axis.');
+    				this.status[pos] = 0;
+    			}
+    		}
+    	}.bind(this));
+    }.bind(this));
 }
 util.inherits(Machine, events.EventEmitter);
+
+Machine.prototype.die = function(err_msg) {
+	this.setState(this, 'dead', {error : 'A G2 exception has occurred. You must reboot your tool.'});
+	this.emit('status',this.status);
+}
 
 Machine.prototype.isConnected = function() {
 	return this.status.state !== 'not_ready';
@@ -182,10 +210,12 @@ Machine.prototype.getGCodeForFile = function(filename, callback) {
 			ext = path.extname(filename).toLowerCase();
 
 			if(ext == '.sbp') {
-				this.setRuntime(this.sbp_runtime);
-				this.current_runtime.simulateString(data, callback);
+				if(this.status.state != 'idle') {
+					return callback(new Error('Cannot generate G-Code from OpenSBP while machine is running.'));
+				}
+				this.setRuntime(null);
+				this.sbp_runtime.simulateString(data, callback);
 			} else {
-				this.setRuntime(this.gcode_runtime);
 				fs.readFile(filename, callback);
 			}
 		}
@@ -222,18 +252,19 @@ Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
 }
 
 Machine.prototype.setRuntime = function(runtime) {
-	if(this.current_runtime != runtime) {
-		try {
-			this.current_runtime.disconnect();
-		} catch (e) {
-
-		} finally {
-			this.current_runtime = runtime;
-			if(runtime) {
-				log.debug("Connecting runtime ", runtime)
-				runtime.connect(this);
-			}
+	log.info("Setting runtime to " + runtime)
+	if(runtime) {
+		if(this.current_runtime && this.current_runtime != runtime) {
+			this.current_runtime.disconnect();					
 		}
+		if(this.current_runtime != runtime) {
+			runtime.connect(this);
+			this.current_runtime = runtime;
+
+		}
+	} else {
+		this.current_runtime = this.idle_runtime;
+		this.current_runtime.connect(this);
 	}
 };
 
@@ -261,6 +292,7 @@ Machine.prototype.getRuntime = function(name) {
 
 Machine.prototype.setState = function(source, newstate, stateinfo) {
 	if ((source === this) || (source === this.current_runtime)) {
+		log.info("Got a machine state change: " + newstate)	
 		this.status.state = newstate;
 		if(stateinfo) {
 			this.status.info = stateinfo
@@ -278,10 +310,13 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 					config.instance.update({'position' : mpo});
 				});
 				break;
+
+			case 'dead':
+				log.error('G2 is dead!');
+				break;
 		}
 		
 
-		log.info("Got a machine state change: " + this.status.state)	
 	} else {		
 		log.warn("Got a state change from a runtime that's not the current one. (" + source + ")")
 	}
@@ -290,7 +325,9 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 
 Machine.prototype.pause = function() {
 	if(this.status.state === "running") {
-		this.current_runtime.pause();
+		if(this.current_runtime) {
+			this.current_runtime.pause();
+		}
 	}
 };
 
@@ -298,11 +335,15 @@ Machine.prototype.quit = function() {
 	if(this.status.job) {
 		this.status.job.pending_cancel = true;
 	}
-	this.current_runtime.quit();
+	if(this.current_runtime) {
+		this.current_runtime.quit();
+	}
 };
 
 Machine.prototype.resume = function() {
-	this.driver.resume();
+	if(this.current_runtime) {
+		this.current_runtime.resume();
+	}
 };
 
 Machine.prototype.enable_passthrough = function(callback) {
@@ -319,7 +360,7 @@ Machine.prototype.enable_passthrough = function(callback) {
 
 Machine.prototype.disable_passthrough = function(string) {
 	log.info("disable passthrough");
-	this.setRuntime(this.gcode_runtime);
+	this.setRuntime(null);
 };
 
 exports.connect = connect;

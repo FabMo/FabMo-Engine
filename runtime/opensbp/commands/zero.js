@@ -19,7 +19,6 @@ exports.ZX = function(args, callback) {
 	this.machine.driver.get('mpox', function(err, MPO) {
 		if(err) { return callback(err); }
 		var zxObj = {};
-//		log.debug( JSON.stringify(MPO) );
 		var unitConv = 1.0;
 		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
@@ -94,7 +93,7 @@ exports.ZB = function(args, callback) {
 		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
 		}
-		zaObj.g55a = Number((MPO * unitConv).toFixed(5));
+		zbObj.g55b = Number((MPO * unitConv).toFixed(5));
 		config.driver.setMany(zbObj, function(err, value) {
 			if(err) { return callback(err); }
 			this.cmd_posb = this.posb = 0;

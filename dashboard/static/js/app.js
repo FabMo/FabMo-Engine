@@ -4,18 +4,21 @@
  */
 requirejs.config({
     baseUrl: '/js',
-    urlArgs: "ts="+new Date().getTime(),
+    /*urlArgs: "ts="+new Date().getTime(),*/
     paths: {
     	'jquery' : 'libs/jquery.min',
     	'backbone' : 'libs/backbone',
     	'foundation' : 'libs/foundation.min',
         'underscore' : 'libs/underscore',
         'fabmo' : 'libs/fabmoapi',
-        'fabmo-ui' : 'libs/FabMoUI-latest',
+        'fabmo-ui' : 'libs/fabmoui',
         'socket.io' : 'libs/socket.io',
         'handwheel' : 'libs/handwheel',
+        'hammer' : 'libs/hammer.min',
         'keyboard' : 'libs/keyboard',
-        'toastr' : 'libs/toastr.min'
+        'keypad' : 'libs/keypad',
+        'toastr' : 'libs/toastr.min',
+        'lockr' : 'libs/lockr.min'
     },
     shim : {
         'foundation' : {'deps' : ['jquery']}

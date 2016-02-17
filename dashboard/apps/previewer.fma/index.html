@@ -30,7 +30,7 @@
     <div id="preview" style="display: inline-block;">
     </div>
 
-  <script src="/js/libs/dashboard.js"></script>
+  <script src="/js/libs/fabmo.js"></script>
   <script src="js/gcodetogeometry.min.js"></script>
 
   <script src="js/three.min.js"></script>
@@ -46,6 +46,8 @@
   <script src="js/viewer.js"></script>
 
   <script>
+    var fabmo = new FabMoDashboard();
+    
     $(document).ready(function() {
       
       $(document).foundation();
@@ -53,13 +55,13 @@
         document.getElementById("preview"),
         100, 
         100, 
-        function(msg) { fabmoDashboard.notify('warning', msg); },
+        function(msg) { fabmo.notify('warning', msg); },
         {
           hideGCode : true
         }
       );
 
-      fabmoDashboard.getAppArgs(function(err, args) {
+      fabmo.getAppArgs(function(err, args) {
         if('job' in args) {
           var url = '/job/' + args.job + '/gcode';
           $.get(url,function(data, status) {

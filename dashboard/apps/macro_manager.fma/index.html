@@ -18,7 +18,7 @@
             <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
           </ul>
           <section class="top-bar-section">
-            <ul class="right">
+            <ul class="left">
               <li><a id="macro-new" href="#">Create new macro...</a></li>
             </ul>
           </section>
@@ -44,11 +44,12 @@
           <script src="/js/libs/jquery.min.js"></script>
           <script src="/js/libs/foundation.min.js"></script>
           <script src="/js/libs/fabmo.js"></script>
-          <script src="./js/jquery.dataTables.js"></script>
-          <script src="./js/dataTables.foundation.js"></script>
-          <script src="./js/moment.js"></script>
+          <script src="./js/libs/jquery.dataTables.min.js"></script>
+          <script src="./js/libs/dataTables.foundation.js"></script>
+          <script src="./js/libs/moment.js"></script>
 
           <script type="text/javascript">
+            var fabmo = new FabMoDashboard();
             $.fn.selectText = function () {
                 var range, selection;
                 var node = this.get(0);
@@ -125,9 +126,9 @@
             $('#macro-new').on('click', function(evt) {
                 var indices = macro_table.columns(1).data().toArray()[0];
                 var new_idx = indices.length > 0 ? Math.max.apply(null, indices) + 1 : 1;
-                fabmoDashboard.updateMacro(new_idx, {}, function(err, result) {
+                fabmo.updateMacro(new_idx, {}, function(err, result) {
                     macro_table.ajax.reload();
-                    fabmoDashboard.notify('error', err);
+                    fabmo.notify('error', err);
                 });
                 evt.preventDefault();
             }); 
@@ -167,13 +168,13 @@
                             update[key] = td.text();
                         }
                         if(ok_to_update) {
-                            fabmoDashboard.updateMacro(parseInt(macro.index), update, function(err, result) {
+                            fabmo.updateMacro(parseInt(macro.index), update, function(err, result) {
                                 macro_table.ajax.reload();
                             });                                    
                         } else {
                             td.text(saved_text);                                    
                             if(error_message) {
-                                fabmoDashboard.notify('error', error_message);
+                                fabmo.notify('error', error_message);
                             }
                         }
                     }
@@ -209,13 +210,13 @@
                 var macro = row.data();
                 switch(cell.index().column) {
                     case 0:
-                        fabmoDashboard.runMacro(macro.index)
+                        fabmo.runMacro(macro.index)
                         break;
                     case 4:
-                        fabmoDashboard.launchApp('editor', {'macro' : macro.index});
+                        fabmo.launchApp('editor', {'macro' : macro.index});
                         break;
                     case 5:
-                        fabmoDashboard.deleteMacro(macro.index, function(err) {
+                        fabmo.deleteMacro(macro.index, function(err) {
                             macro_table.ajax.reload();
                         });
                         break;

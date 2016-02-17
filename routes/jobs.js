@@ -6,81 +6,53 @@ var log = require('../log').logger('routes');
 var machine = require('../machine').machine;
 var fs = require('fs');
 var uuid = require('node-uuid');
+var upload = require('./upload').upload;
 
-/**
- * @apiGroup Jobs
- * @api {post} /job Submit a job
- * @apiDescription Add a job to the job queue.
- * @apiParam {String} name Job name
- * @apiParam {String} description Job description
- * @apiParam {Object} file G-Code or OpenSBP file submission
- * @apiSuccess {String} status `success`
- * @apiSuccess {Object} data null
- * @apiError {String} status `error`
- * @apiError {Object} message Error message
- */
 var submitJob = function(req, res, next) {
+    upload(req, res, next, function(err, upload) {
+        uploads = upload.files
+        // Single file only, for now
+        if(uploads.length > 1) {
+            log.warn("Got an upload of " + uploads.length + ' files for a submitted job when only one is allowed.')
+        }
 
-    // Get the one and only one file you're currently allowed to upload at a time
-    var file = req.files.file;
-    var answer;
+        async.map(
+            uploads, 
+            function create_job(item, callback) {
+                var file = item.file;
+                var filename = item.filename || (!file.name || file.name === 'blob') ? item.filename : file.name;
+                item.filename = filename;
+                item.name = item.name || filename;
 
-    // Only write "allowed files"
-    if(file && util.allowed_file(file.name))
-    {
-        db.File.add(file.name, file.path, function(err, dbfile) {
-            if (err) {
-                answer = {
-                    status:"error",
-                    message:err
-                };
-                return res.json(answer);
-            }
-            var job;
-            try {
-                job = new db.Job({
-                    file_id : dbfile._id,
-                    name : req.body.name || file.name,
-                    description : req.body.description
-                });
-            } catch(e) {
-                log.error(e);
-            }
-
-            log.info('Created a job.');
-            job.save(function(err, job) {
-                if(err) {
-                    log.error(err);
-                answer = {
-                        status:"error",
-                        message:err
-                    };
-                    res.json(answer);
-                } else {
-                answer = {
-                        status:"success",
-                        data : {job:job}
-                    };
-                    res.json(answer);
+                // Reject disallowed files
+                if(!util.allowed_file(filename)) {
+                    return callback(new Error("File " + filename + " is not allowed."));
                 }
-            }); // job.save
-        });
-    } // if file and allowed
-    else if (file){
-        answer = {
-            status:"fail",
-            data : {"job" : "Wrong file format"}
-        };
-        res.json(answer);
-    }
-    else{
-        answer = {
-            status:"fail",
-            data : {"job" : "Problem receiving the job : bad request"}
-        };
-        res.json(answer);
-    }
-}; // submitJob
+
+                // Create a job and respond
+                db.createJob(file, item, function(err, job) {
+                    callback(err, job);
+                });
+            }, // create_job
+            function on_complete(err, jobs) {
+                log.info("Just completed upload of " + uploads.length + " jobs.");
+                    if(err) {
+                        log.error(err.message);
+                        return res.json({
+                            status:"error",
+                            message:err.message
+                        });
+                    } 
+                    return res.json({
+                        status:"success",
+                        data : {
+                            status : 'complete',
+                            data : {'jobs':jobs}
+                        }
+                    });
+            }); // on_complete
+        }); // async.map
+} // submitJob
 
 /**
  * @api {delete} /jobs/queue Clear job queue
@@ -154,7 +126,6 @@ var resubmitJob = function(req, res, next) {
     var answer;
     log.debug("Resubmitting job " + req.params.id);
     db.Job.getById(req.params.id, function(err, result) {
-        log.debug(result);
         if(err) {
             log.error(JSON.stringify(err));
         }
@@ -271,7 +242,12 @@ var getAllJobs = function(req, res, next) {
  */
 var getJobHistory = function(req, res, next) {
     var answer;
-    db.Job.getHistory(function(err, result) {
+    var options = {
+        start : req.params.start || 0,
+        count : req.params.count || 0
+    }
+
+    db.Job.getHistory(options, function(err, result) {
         if(err) {
             log.error(err);
             answer = {
@@ -377,10 +353,13 @@ var getJobFile = function(req, res, next) {
             };
             res.json(answer);                        
         } else {
-            res.setHeader('content-type', 'applications/octet-stream');
-            res.setHeader('content-disposition', 'filename="' + file.filename + '"');
-            var readStream = fs.createReadStream(file.path);
-            readStream.pipe(res);
+            fs.readFile(file.path, function(err, data) {
+                res.header('Content-Type', 'text/plain');
+                res.header('Content-Disposition', 'attachment; filename="' + file.filename + '"');
+                res.status(200);
+                res.write(data);
+                res.end();
+            });
         }
     });
 };

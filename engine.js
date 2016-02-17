@@ -1,4 +1,5 @@
 var restify = require('restify');
+var util = require('./util');
 var socketio = require('socket.io');
 var async = require('async');
 var process = require('process');
@@ -11,9 +12,9 @@ var db = require('./db');
 var macros = require('./macros');
 var dashboard = require('./dashboard');
 var network = require('./network');
-var updater = require('./updater');
 var glob = require('glob');
 var argv = require('minimist')(process.argv);
+var fs = require('fs');
 
 var Engine = function() {
     this.version = null;
@@ -22,7 +23,11 @@ var Engine = function() {
 
 function EngineConfigFirstTime(callback) {
     switch(PLATFORM) {
+        case 'linux':
+            callback();
+            break;
         case 'darwin':
+            config.engine.set('server_port', 9876);
             glob.glob('/dev/cu.usbmodem*', function(err, files) {
                 if(files.length >= 2) {
                     var ports = {
@@ -32,6 +37,8 @@ function EngineConfigFirstTime(callback) {
                     config.engine.update(ports, function() {
                         callback();
                     });
+                } else {
+                    callback();
                 }
             });
         break;
@@ -48,7 +55,7 @@ Engine.prototype.setTime = function(obj) {
         var d = new Date(obj.utc);
         log.debug("Setting the time to " + d.toUTCString());
         var t = d.getUTCFullYear() + '-' + d.getUTCMonth() + '-' + d.getUTCDay() + ' ' + d.getUTCHours() + ':' + d.getUTCMinutes() + ':' + d.getUTCSeconds()
-	cmd = 'timedatectl set-time ' + t + '; timedatectl';
+    cmd = 'timedatectl set-time ' + t + '; timedatectl';
         util.doshell(cmd, function(stdout) {
             console.log(stdout);
         });
@@ -63,6 +70,33 @@ Engine.prototype.stop = function(callback) {
     //this.server.io.server.close();
     callback(null);
 };
+
+Engine.prototype.getVersion = function(callback) {
+    util.doshell('git rev-parse --verify HEAD', function(data) {
+        this.version = {};
+        this.version.hash = (data || "").trim();
+        this.version.number = "";
+        this.version.debug = ('debug' in argv);
+        fs.readFile('version.json', 'utf8', function(err, data) {
+            if(err) {
+                this.version.type = 'dev';
+                return callback(null, this.version);
+            }
+            try {
+                data = JSON.parse(data);
+                if(data.number) {
+                    this.version.number = data.number;                    
+                    this.version.type = 'release';
+                }
+            } catch(e) {
+                this.version.type = 'dev';
+                this.version.number
+            } finally {
+                callback(null, this.version);
+            }
+        }.bind(this))
+    });
+}
 
 Engine.prototype.start = function(callback) {
 
@@ -88,18 +122,54 @@ Engine.prototype.start = function(callback) {
             }
         },
 
-        // Create the version string that will be used to identify the software version
         function get_fabmo_version(callback) {
             log.info("Getting engine version...");
-            updater.getFabmoVersionString(function(err, string) {
-                if(!err) {
-                    log.info("Engine version: " + string);
-                    this.version = string;
-                } else {
+            this.getVersion(function(err, data) {
+                if(err) {
                     log.error(err);
+                    this.version = "";
+                    return callback();
                 }
+                this.version = data;
                 callback();
             }.bind(this));
+        }.bind(this),
+
+        function clear_approot(callback) {
+            if('debug' in argv) {
+                log.info("Running in debug mode - clearing the approot.");
+                config.clearAppRoot(function(err, stdout) {
+                    if(err) { log.error(err); }
+                    else {
+                        log.debug(stdout);
+                    }
+                    callback();
+                });
+            } else {
+                var last_time_version = config.engine.get('version').trim();
+                var this_time_version = this.version.hash.trim();
+                log.debug("Previous engine version: " + last_time_version);
+                log.debug(" Current engine version: " + this_time_version);
+
+                if(last_time_version != this_time_version) {
+                    log.info("Engine version has changed - clearing the approot.");
+                    config.clearAppRoot(function(err, stdout) {
+                        if(err) { log.error(err); }
+                        else {
+                            log.debug(stdout);
+                        }
+                        callback();
+                    });
+                } else {
+                    log.info("Engine version is unchanged since last run.");
+                    callback();
+                }
+            }
+            config.engine.set('version', this_time_version);
+        }.bind(this),
+
+        function create_data_directories(callback) {
+            config.createDataDirectories(callback);
         }.bind(this),
 
         // "Apply" the engine configuration, that is, take the configuration values loaded and actually
@@ -108,22 +178,6 @@ Engine.prototype.start = function(callback) {
             log.info("Applying engine configuration...");
             config.engine.apply(callback);
         },
-
-	function setup_network(callback) {
-		if(config.engine.get('wifi_manager')) {
-			log.info("Setting up the network...");
-            try {
-                network.init();
-            } catch(e) {
-                log.error('Problem starting network manager:')
-                log.error(e);
-            }
-			callback(null);
-		} else {
-			log.warn("Skipping network setup because wifi manager is disabled.");
-			callback(null);
-		}
-	},
 
         // Configure the DB
         function setup_database(callback) {
@@ -154,17 +208,17 @@ Engine.prototype.start = function(callback) {
         function load_machine_config(callback) {
             this.machine = machine.machine;
             log.info('Loading the machine configuration...')
-            config.configureMachine(this.machine.driver, function(err, result) {
+            config.configureMachine(this.machine, function(err, result) {
                 if(err) {
                     log.warn(err);
                 }
                 callback(null);
             });
         }.bind(this),
-	
-	function set_units(callback) {
-		this.machine.driver.setUnits(config.machine.get('units'), callback);
-	}.bind(this),
+    
+        function set_units(callback) {
+            this.machine.driver.setUnits(config.machine.get('units'), callback);
+        }.bind(this),
 
         // Configure G2 by loading all its json settings and static configuration parameters
         function load_driver_config(callback) {
@@ -200,7 +254,7 @@ Engine.prototype.start = function(callback) {
                 log.warn("Skipping G2 firmware version check due to no connection.")
                 callback(null);
             }
-    	}.bind(this),
+        }.bind(this),
 
         function apply_machine_config(callback) {
             log.info("Applying machine configuration...");
@@ -271,6 +325,16 @@ Engine.prototype.start = function(callback) {
                 );
             }
 
+            if('debug' in argv) {
+                server.use(
+                    function debug(req, res, next) {
+                        log.debug(req.method + ' ' + req.url);
+                        next();
+                    });
+            }
+
+            server.use(restify.queryParser());
+            
             server.on('uncaughtException', function(req, res, route, err) {
                 log.uncaught(err);
                 answer = {
@@ -293,7 +357,7 @@ Engine.prototype.start = function(callback) {
             var routes = require('./routes')(server);
 
             // Kick off the server listening for connections
-            server.listen(config.engine.get('server_port'), function() {
+            server.listen(config.engine.get('server_port'), "0.0.0.0", function() {
                 log.info(server.name+ ' listening at '+ server.url);
                 callback(null, server);
             });

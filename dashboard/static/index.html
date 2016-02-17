@@ -4,17 +4,16 @@
     <meta charset="utf-8" />
     <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
     <title>FabMo Dashboard</title>
-
     <link rel="stylesheet" href="css/normalize.css" />
     <link rel="stylesheet" href="css/foundation.min.css" />
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="css/toastr.min.css" />
   </head>
 
-
-  <!-- Body of the page -->
   <body>
-     
+  <form>
+  <input type="file" id="hidden-file-input" style="position: fixed; top:-1000" />
+  </form>
 <div id="spinner"></div>
    <div class="collapseLeft"></div>
       <div id="main" class="off-canvas-wrap" data-offcanvas>
@@ -68,10 +67,15 @@
             <!-- ***** Tool Position Section ***** -->
             <section class="right show-for-small-up fabmo-status" id="right-position-container">
             <div style="display: table-row;">
-                <div style="display: table-cell; padding-right: 1em; padding-top: 0.7em;"><label>X : <span class="posx">X.XXX</span></label></div>
-                <div style="display: table-cell; padding-right: 1em; padding-top: 0.7em;"><label>Y : <span class="posy">Y.YYY</span></label></div>
-                <div style="display: table-cell; padding-right: 1em; padding-top: 0.7em;"><label>Z : <span class="posz">Z.ZZZ</span></label></div> 
+                <div class="xaxis" style="display: table-cell; padding-right: 1em"><label>X : <span class="posx">X.XXX</span></label></div>
+                <div class="yaxis" style="display: table-cell; padding-right: 1em"><label>Y : <span class="posy">Y.YYY</span></label></div>
+                <div class="zaxis" style="display: table-cell; padding-right: 1em"><label>Z : <span class="posz">Z.ZZZ</span></label></div> 
             </div>
+            <div style="display: table-row;">
+                <div class="aaxis" style="display: table-cell; padding-right: 1em"><label>A : <span class="posa">A.AAA</span></label></div>
+                <div class="baxis" style="display: table-cell; padding-right: 1em"><label>B : <span class="posb">B.BBB</span></label></div>
+            </div>
+
             </section>
 
             <!-- ***** Right-Menu Button Section ***** -->
@@ -106,42 +110,63 @@
               <ul class="off-canvas-list fabmo-status noselect">
                 <li><label class="">Position<div id="units"></div></label></li>
                 <li>
-                  <form>
                     <div class="row axis">
+                      <div class="small-9 columns">
+                      <label class="noselect"></label></div>
+                    </div>
+                    <div class="row axis xaxis">
                         <div class="small-9 columns">
-                          <label style="border-top: 1px solid #eee;" class="noselect">
+                           <label  class="noselect">
                             X
                             <span class="units">&nbsp;</span>
-                            <span class="posx pos doselect"></span>
+                            <input class="posx pos doselect" id="axis"maxlength="5">
                           </label>
                         </div>
                         <div class="small-3 columns home"><span class="button-zerox">0</span></div>
                     </div>
-                  </form>
-                  <form>
-                    <div class="row axis">
+                    <div class="row axis yaxis">
                       <div class="small-9 columns">
                         <label class="noselect">
                         Y
                         <span class="units">&nbsp;</span>
-                        <span class="posy pos doselect"></span>
+                        <input class="posy pos doselect"  id="axis" maxlength="5">
                         </label>
                       </div>
                       <div class="small-3 columns home"><span class="button-zeroy">0</span></div>
                     </div>
-                  </form>
-                  <form>
-                    <div class="row axis">
+                    <div class="row axis zaxis">
                       <div class="small-9 columns">
                         <label class="noselect">
                         Z
                         <span class="units">&nbsp;</span>
-                        <span class="posz pos doselect"></span>
+                        <input class="posz pos doselect" id="axis" maxlength="5">
                         </label>
                       </div>
                       <div class="small-3 columns home"><span class="button-zeroz">0</span></div>
                     </div>
-                  </form>
+                    <div class="row axis aaxis">
+                        <div class="small-9 columns">
+                          <label class="noselect">
+                            A
+                            <span class="units">&nbsp;</span>
+                            <input class="posa pos doselect" id="axis"maxlength="5">
+                          </label>
+                        </div>
+                        <div class="small-3 columns home"><span class="button-zeroa">0</span></div>
+                    </div>
+                    <div class="row axis baxis">
+                        <div class="small-9 columns">
+                          <label class="noselect">
+                            B
+                            <span class="units">&nbsp;</span>
+                            <input class="posb pos doselect" id="axis"maxlength="5">
+                          </label>
+                        </div>
+                        <div class="small-3 columns home"><span class="button-zerob">0</span></div>
+                    </div>
+                </li>
+                <li>
+                   <button class="go-here" id="go-here" style="display:none">Go</button>
                 </li>
                 <li>
                   <div class="row inOut">
@@ -168,12 +193,38 @@
                 </li>
               </ul>
             </div>
+            <!--
             <div id="handwheel" class="widget fabmo-manual-control" style="text-align: center;">
               <canvas width="220px" height="220px" id="wheel"></canvas>
             </div>
+            -->
 
-            <div id="mykeypad" class="widget fabmo-manual-control hide" style="text-align: center; width: 220px; height: 75px;">
-              <div id="keyboard" class="keyboard noselect">Keyboard</div>
+            <div id="keypad" class="widget fabmo-manual-control keypad" style="text-align: center;">
+              <div class="keypad-table">
+                <div class="keypad-row">
+                  <div class="keypad-cell"></div>
+                  <div class="keypad-cell"><div class="y_pos keypad-button drive-button">Y+</div></div>
+                  <div class="keypad-cell"><div class="z_pos keypad-button drive-button">Z+</div></div>
+                </div>
+
+                <div class="keypad-row">
+                  <div class="keypad-cell"><div class="x_neg keypad-button drive-button">X-</div></div>
+                  <div class="keypad-cell"><div id="keyboard" class="keyboard noselect keyboard-button keypad-button">KB</div></div>
+                  <div class="keypad-cell"><div class="x_pos keypad-button drive-button">X+</div></div>
+                </div>
+
+                <div class="keypad-row">
+                  <div class="keypad-cell"></div>
+                  <div class="keypad-cell"><div class="y_neg keypad-button drive-button">Y-</div></div>
+                  <div class="keypad-cell"><div class="z_neg keypad-button drive-button">Z-</div></div>
+                </div>
+              </div>
+              <!--
+              <div>
+                <div style="width: 50%; padding: 4px;"><div class="keypad-button settings-button">Settings</div></div>
+                <div style="width: 50%"></div>                
+              </div>
+              -->
             </div>
 
             <div id="job-info" class="widget">
@@ -232,11 +283,15 @@
 
       <!-- The Dialog -->
       <div id="modalDialog" class="reveal-modal" data-reveal aria-labelledby="modalDialogTitle" aria-hidden="true" role="dialog" data-options="close_on_background_click:false;">
-        <h2 id="modaDialoglTitle"></h2>
-        <p id="modalDialogLead" class="lead"></p>
-        <p id="modalDialogMessage"></p>
-        <div id="modalDialogDetail"></div>        
-        <a class="close-reveal-modal">&#215;</a>
+        <h2 id="modaDialoglTitle" class="hide"></h2>
+        <p id="modalDialogLead" class="lead hide"></p>
+        <p id="modalDialogMessage" class="hide"></p>
+        <div id="modalDialogDetail" class="hide"></div>
+        <div id="modalDialogButtons" class="hide">
+          <a id="modalDialogCancelButton" class="med button alert radius" style="border: 2px solid black;">&nbsp;</a>
+          <a id="modalDialogOKButton" class="med button success radius" style="border: 2px solid black;">&nbsp;</a>
+        </div>        
+        <a class="close-reveal-modal" id="modalDialogClose">&#215;</a>
       </div>
 
       <div id="disconnectDialog" class="reveal-modal small" data-reveal aria-labelledby="disconnectDialogTitle" aria-hidden="true" role="dialog" data-options="close_on_background_click:false; close_on_esc:false;">
@@ -278,7 +333,6 @@
         }).spin(document.getElementById('waiting_spinner'))
       </script>
 	    <script type="text/javascript" src="js/libs/require.js"></script>
-      <script src="/js/libs/fabmo.js"></script>
       <script type="text/javascript" src="js/app.js"></script>
   </body>
 </html>

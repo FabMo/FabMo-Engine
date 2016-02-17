@@ -16,15 +16,29 @@ define(function(require) {
 	// Our libraries
 	var FabMoAPI = require('fabmo');
 	var FabMoUI = require('fabmo-ui');
-	var WheelControl = require('handwheel');
-	var Keyboard = require('keyboard');
-
-	var wheel;
 	
+	var Keyboard = require('keyboard');
+	var Keypad = require('keypad');
+
+	var keypad, keyboard;
+	
+	// API object defines our connection to the tool.
 	var engine = new FabMoAPI();
 
-	context.apps = new context.models.Apps();
+	var modalIsShown = false;
+	var daisyIsShown = false;
 
+	// Detect touch screen
+	
+	var supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
+
+	// Initial read of engine configuration
+	engine.getConfig();
+	engine.getVersion(function(err, version) {
+		context.setEngineVersion(version);
+	});
+
+	context.apps = new context.models.Apps();
 	// Load the apps from the server
 	context.apps.fetch({
 		success: function() {
@@ -35,27 +49,8 @@ define(function(require) {
 			dashboard.setEngine(engine);
 			dashboard.ui=new FabMoUI(dashboard.engine);
 
-			dashboard.ui.on('error', function(err) {
-				$('#modalDialogTitle').text('Error!');
-				$('#modalDialogLead').html('<div style="color:red">There was an error!</div>');
-				$('#modalDialogMessage').text(err || 'There is no message associated with this error.');
-				if(dashboard.engine.status.job) {
-					$('#modalDialogDetail').html(
-						'<p>' + 
-						  '<b>Job Name:  </b>' + dashboard.engine.status.job.name + '<br />' + 
-						  '<b>Job Description:  </b>' + dashboard.engine.status.job.description + 
-						'</p>'
-						);
-				} else {
-					$('#modalDialogDetail').html('<p>Additional information for this error is unavailable.</p>');										
-				}
-				$('#modalDialog').foundation('reveal', 'open');
-			});
-
-
-			// Configure handwheel input
-			wheel = setupHandwheel();
 			keyboard = setupKeyboard();
+			keypad = setupKeypad();
 
 			// Start the application
 			router = new context.Router();
@@ -72,79 +67,48 @@ define(function(require) {
 		}
 	});
 
-
-
-
-function setupHandwheel() {
-
-	var wheel = new WheelControl('wheel', {
-		labelColor : 'white'
-	});	
-
-	var SCALE = 0.75;
-	var TICKS_MOVE = 20;
-	var NUDGE = {'mm' : 0.1, 'in' : 0.010};
-	var WATCHDOG_TIMEOUT = 200;
-
-	var angle = 0.0;
-
-	var watchdog = null;
-	var last_move = 0;
-
-	function stopToolMotion() {
-		dashboard.engine.manualStop();
+function getManualMoveSpeed(move) {
+	var speed_ips = null;
+	try {
+		switch(move.axis) {
+			case 'x':
+			case 'y':
+				speed_ips = engine.config.machine.manual.xy_speed;
+				break;
+			case 'z':
+				speed_ips = engine.config.machine.manual.z_speed;
+				break; 
+		}
+	} catch(e) {
+		console.error(e);
 	}
+	return speed_ips;
+}
 
-	wheel.on('move', function makeMove(data) {
-		var degrees = data.angle*180.0/Math.PI;
-		angle += degrees;
-		var distance = wheel.inUnits(Math.abs(angle*SCALE), wheel.units);
-		var axis = data.axis;
-		var speed = wheel.inUnits(wheel.speed, wheel.units);
-		if(angle > TICKS_MOVE) {
-			if(last_move) {
-				dashboard.engine.manualStop();
-			}
-			angle = 0;
-			//dashboard.engine.fixed_move('+' + axis, distance, speed, function(err) {});
-			dashboard.engine.manualStart(axis, speed);
-
-			last_move = 0;
+function getManualNudgeIncrement(move) {
+	var increment_inches = null;
+	try {
+		switch(move.axis) {
+			case 'x':
+			case 'y':
+				increment_inches = engine.config.machine.manual.xy_increment;
+				break;
+			case 'z':
+				increment_inches = engine.config.machine.manual.z_increment;
+				break; 
 		}
-		if(angle < -TICKS_MOVE) {
-			if(!last_move) {
-				dashboard.engine.quit();
-			}
-			angle = 0;
-//			dashboard.engine.fixed_move('-' + axis, distance, speed, function(err) {});
-			dashboard.engine.manualStart(axis, -speed);
-
-			last_move = 1;
-		}
-
-		if(watchdog) { clearTimeout(watchdog); }
-		watchdog = setTimeout(stopToolMotion, WATCHDOG_TIMEOUT);
-
-	});
-
-	wheel.on('release', function quit(data) {
-		dashboard.engine.quit()
-	});
-
-	wheel.on('nudge', function nudge(data) {
-		var nudge = NUDGE[wheel.units];
-		var speed = wheel.inUnits(wheel.speed, wheel.units);
-		dashboard.engine.fixed_move(data.axis, nudge, wheel.speed, function(err) {});
-	});
-	return wheel;
+	} catch(e) {
+		console.error(e);
+	}
+	return increment_inches;
 }
 
 function setupKeyboard() {
 	var keyboard = new Keyboard('#keyboard');
-	
 	keyboard.on('go', function(move) {
+		
 		if(move) {
-			dashboard.engine.manualStart(move.axis, move.dir*120.0);
+			dashboard.engine.manualStart(move.axis, move.dir*60.0*(getManualMoveSpeed(move) || 0.1));
 		} 
 	});
 
@@ -154,19 +118,182 @@ function setupKeyboard() {
 	return keyboard;
 }
 
-// Kill the currently running job when the modal error dialog is dismissed
-$(document).on('close.fndtn.reveal', '[data-reveal]', function (evt) {
-  var modal = $(this);
-  dashboard.engine.quit();
+function setupKeypad() {
+
+	var keypad = new Keypad('#keypad');
+	keypad.on('go', function(move) {
+		if(move) {
+			dashboard.engine.manualStart(move.axis, move.dir*60.0*(getManualMoveSpeed(move) || 0.1));
+		} 
+	});
+
+	keypad.on('stop', function(evt) {
+		dashboard.engine.manualStop();
+	});
+
+	keypad.on('nudge', function(nudge) {
+		dashboard.engine.manualMoveFixed(nudge.axis, 60*getManualMoveSpeed(nudge), nudge.dir*getManualNudgeIncrement(nudge))
+	});
+	return keypad;
+}
+
+function showDaisy(callback) {
+	if(daisyIsShown) {
+		return;
+	}
+	hideModal(function() {
+		daisyIsShown = true;
+		$('#disconnectDialog').foundation('reveal', 'open');
+	});
+
+}
+
+function hideDaisy(callback) {
+	var callback = callback || function() {};
+	if(!daisyIsShown) { callback(); }
+	daisyIsShown = false;
+	$(document).one('closed.fndtn.reveal', '[data-reveal]', function () {
+ 		var modal = $(this);
+ 		if(modal.attr('id') === 'disconnectDialog') {
+ 			callback();
+ 		}
+	});
+	$('#disconnectDialog').foundation('reveal', 'close');	
+}
+
+function showModal(options) {
+	if(modalIsShown) {
+		return;
+	}
+
+	hideDaisy(function() {
+
+	modalIsShown = true;
+
+	if(options['title']) {
+		$('#modalDialogTitle').html(options.title).show();		
+	} else {		
+		$('#modalDialogTitle').hide();
+	}
+
+	if(options['lead']) {
+		$('#modalDialogLead').html(options.lead).show();		
+	} else {		
+		$('#modalDialogLead').hide();
+	}
+
+	if(options['message']) {
+		$('#modalDialogMessage').html(options.message).show();		
+	} else {		
+		$('#modalDialogMessage').hide();
+	}
+
+	if(options['detail']) {
+		$('#modalDialogDetail').html(options.detail).show();		
+	} else {		
+		$('#modalDialogDetail').hide();
+	}
+
+	$('#modalDialogButtons').hide();
+	if(options['okText']) {
+		$('#modalDialogButtons').show();
+		$('#modalDialogOKButton').text(options.okText).show().one('click', function() {
+			$('#modalDialogCancelButton').off('click');
+			(options['ok'] || function() {})();
+		});
+	} else {
+		$('#modalDialogOKButton').hide();
+	}
+
+	if(options['cancelText']) {
+		$('#modalDialogButtons').show();
+		$('#modalDialogCancelButton').text(options.cancelText).show().one('click', function() {
+			$('#modalDialogOKButton').off('click');
+			(options['cancel'] || function() {})();
+		});
+	} else {
+		$('#modalDialogClose').hide();
+		$('#modalDialogCancelButton').hide();
+	}
+
+	if(options['cancel']) {
+		$('#modalDialogClose').show().one('click', function() {
+			options.cancel();
+		});
+	} else {
+		$('#modalDialogClose').hide();
+	}
+
+	$('#modalDialog').foundation('reveal', 'open');
+});
+}
+
+function hideModal(callback) {
+	var callback = callback || function() {};
+	if(!modalIsShown) { callback(); }
+	modalIsShown = false;
+	$(document).one('closed.fndtn.reveal', '[data-reveal]', function () {
+ 		var modal = $(this);
+ 		if(modal.attr('id') === 'modalDialog') {
+ 			callback();
+ 		}
+	});
+	$('#modalDialog').foundation('reveal', 'close');	
+}
+
+// listen for escape key press to quit the engine
+$(document).on('keyup', function(e) {
+    if(e.keyCode == 27) {
+        console.warn("ESC key pressed - quitting engine.");
+        dashboard.engine.quit();
+    }
+});
+
+//goto this location 
+
+$('html').on('click', function (e) {
+		if (e.target.id === "go-here") {
+		var x = $('.posx').attr('value','')[1].value;
+		var y = $('.posy').attr('value','')[1].value;
+		var z = $('.posz').attr('value','')[1].value;
+		var gcode = "G0 X" + x + " Y" + y + " Z" + z;
+		dashboard.engine.gcode(gcode);
+		$('.go-here').hide();
+		} else if (e.target.id === "axis"){
+			 $("input:text").focus(function() { 
+             $(this).select(); 
+             $('.go-here').show();
+             } );
+			
+		} else {
+			$('.go-here').hide();
+		}
+});
+$('.posx, .posy, .posz').keyup(function(e){
+    if(e.keyCode == 13){
+    	e.preventDefault();
+        e.stopPropagation();
+        var x = $('.posx').attr('value','')[1].value;
+		var y = $('.posy').attr('value','')[1].value;
+		var z = $('.posz').attr('value','')[1].value;
+		var gcode = "G0 X" + x + " Y" + y + " Z" + z;
+		dashboard.engine.gcode(gcode);
+		$('.go-here').hide();
+        
+    }
+
 });
 
 // Handlers for the home/probe buttons
 $('.button-zerox').click(function(e) {dashboard.engine.sbp('ZX'); });  
 $('.button-zeroy').click(function(e) {dashboard.engine.sbp('ZY'); });  
 $('.button-zeroz').click(function(e) {dashboard.engine.sbp('ZZ'); });
+$('.button-zeroa').click(function(e) {dashboard.engine.sbp('ZA'); });
+$('.button-zerob').click(function(e) {dashboard.engine.sbp('ZB'); });
 
 $('.play').on('click', function(e){
 	$("#main").addClass("offcanvas-overlap-left");
+    console.log('is this still a thing?')
 	dashboard.engine.job_run(function (){
 		dashboard.engine.getJobQueue(function (err, data){
 			if (data.name == 'undefined' || data.length === 0) {
@@ -182,56 +309,79 @@ $('.play').on('click', function(e){
 	});
 });
 
-engine.on('status', function(status) {
-try {	
-	if(status.unit) {
-		wheel.setUnits(status.unit);	
-	}
-	dashboard.engine.getJobQueue(function (err, data){
-		if (data.name == 'undefined' || data.length === 0) {
-			$('.nextJob').text('No Job Pending');
-			$('.play').hide();
-			$('.gotoJobManager').show();
-			$('.nextJob').css('top', '2px');
-			$('.startnextLabel').css('top', '2px');
-		} else {
-			$('.nextJob').text(data[0].name);
-			$('.play').show();
-			$('.gotoJobManager').hide();
-			$('.nextJob').css('top', '-9.5px');
-			$('.startnextLabel').css('top', '-9.5px');
-		}
-	});
-} catch(e) {
 
-}
-});
 
 var disconnected = false;
 
 engine.on('disconnect', function() {
 	if(!disconnected) {
 		disconnected = true;
-		$('#disconnectDialog').foundation('reveal', 'open');
+		showDaisy();
 	}
 });
 
 engine.on('connect', function() {
 	if(disconnected) {
 		disconnected = false;
-		$('#disconnectDialog').foundation('reveal', 'close');
+		hideDaisy();
 	}
 });
 
+engine.on('status', function(status) {
+    if (status.state != 'idle'){
+        $('#position input').attr('disabled', true);
+    } else {
+        $('#position input').attr('disabled', false);
+    }
+    if(status['info']) {
+		if(status.info['message']) {
+			showModal({
+				title : 'Message',
+				lead : status.info.message,
+				okText : 'Continue',
+				cancelText : 'Quit',
+				ok : function() {
+					dashboard.engine.resume();
+				},
+				cancel : function() {
+					dashboard.engine.quit();
+				}
+ 			});
+		} else if(status.info['error']) {
+
+			if(dashboard.engine.status.job) {
+				var detailHTML = '<p>' + 
+					  '<b>Job Name:  </b>' + dashboard.engine.status.job.name + '<br />' + 
+					  '<b>Job Description:  </b>' + dashboard.engine.status.job.description + 
+					'</p>'
+			} else {
+				var detailHTML = '<p>Check the <a style="text-decoration: underline;" href="/log">debug log</a> for more information.</p>';
+			}
+
+			showModal({
+				title : 'Message',
+				lead : '<div style="color:#91331E; font-weight: bolder;">An Error Has Occurred!</div>',
+				message: status.info.error,
+				detail : detailHTML,
+				cancelText : status.state === 'dead' ? undefined : 'Quit',
+				cancel : status.state === 'dead' ? undefined : function() {
+					dashboard.engine.quit();
+				}
+			});
+		}
+	} else {
+		hideModal();
+	}
+});
 setInterval(function() {
 	engine.ping(function(err, time) {
 		if(err) {
 			console.error(err);
 		} else {
-			console.info("PING Response time: " + time + "ms");
+			//console.info("PING Response time: " + time + "ms");
 		}
 	});
-}, 3000);
+}, 5000);
 
 (function () {
 if ($(window).width() < 620) {
@@ -274,7 +424,12 @@ if ($(window).width() < 620) {
 $.post('/time', {
 	'utc' : new Date().toUTCString()
 });
-
+function touchScreen () {
+	if (supportsTouch) {
+		$('#app-client-container').css({'-webkit-overflow-scrolling':'touch','overflow-y':'scroll'});
+	} 
+}
+touchScreen();
 });
 
 

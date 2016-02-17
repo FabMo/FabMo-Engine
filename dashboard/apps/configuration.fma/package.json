@@ -2,7 +2,7 @@
 	"name":"Configuration Editor",
 	"main":"./index.html",
 	"icon":"icon.png",
-	"icon_color":"navy",
+	"icon_color":"#313366",
 	"icon_display":"none",
 	"version":"0.0.1",
 	"author":"Ryan Sturmer",

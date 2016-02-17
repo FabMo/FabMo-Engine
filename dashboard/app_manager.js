@@ -43,9 +43,7 @@ AppManager.prototype.readAppPackageInfo = function(app_info, callback) {
 	}.bind(this));
 };
 
-AppManager.prototype.readAppConfiguration = function(app_info, callback) {
-	
-	log.debug("Reading app configuration from " + app_info.config_path)
+AppManager.prototype.readAppConfiguration = function(app_info, callback) {	
 	fs.readFile(app_info.config_path, function(err, data) {
 		try {
 			var cfg_data = JSON.parse(data);
@@ -63,7 +61,7 @@ AppManager.prototype.readAppMetadata = function(app_info, callback) {
 		} else {
 			this.readAppConfiguration(info, function(err, cfg) {
 				if(err) {
-					log.warn('Could not read app configuration: ' + err);
+					//log.warn('Could not read app configuration: ' + err);
 				}
 				cfg = cfg || {};
 				callback(null, {'info' : info, 'config' : cfg});
@@ -89,7 +87,7 @@ AppManager.prototype.getAppConfig = function(id) {
 }
 
 AppManager.prototype.setAppConfig = function(id, config, callback) {
-	this.app_configs[id] = config;
+	this.app_configs[id] = config || {};
 	fs.writeFile(this.apps_index[id].config_path, JSON.stringify(config), callback);
 }
 

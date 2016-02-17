@@ -5,7 +5,7 @@
 	
 	<link rel="stylesheet" href="/css/normalize.css">
 	<link rel="stylesheet" href="/css/foundation.min.css">
-	<link rel="stylesheet" href="./css/dataTables.foundation.css">
+	<!--<link rel="stylesheet" href="./css/dataTables.foundation.css">-->
 	<link rel="stylesheet" href="./css/style.css">
 
 	<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -23,41 +23,48 @@
     <ul class="left" role="tablist" data-tab>
       <li class="active"><a id="nav-pending" href="#tabpending">Pending</a></li>
       <li class=""><a id="nav-history" href="#tabhistory">History</a></li>
-      
     </ul>
-    <ul class="right">
-      <li><a id="nav-submit" class="submit-button" href="#">Submit Job...</a></li>
+    <ul class="left">
+      <li><a id="nav-submit" class="submit-button" href="#">Submit Jobs...</a></li>
     </ul>
   </section>
 </nav>
 </div>
 <form style="display:none;" id="fileform">
-	<input type="file" id="file">
+	<input type="file" id="file" multiple>
 </form>
 
 <div class="tabs-content">
-  <div class="content active" id="tabpending">
-	<section class="container dropzone" id="dropzone">
-		<div class="hovershow message">Drop files here to fabricate...</div>
-		<div class="hoverdim">
+  <div class="content active dropzone" id="tabpending">
+  	<div id="droptarget">
+  	</div>
+	<section class="container topjob hoverdim">
 			<div class="row title jobs-title">
 				<div class="small-12 columns">
 					<h4 class="up-next">Up Next</h4>
 					<h4 class="now-running">Now Running</h4>
+                    <h4 class="no-jobs">No Jobs</h4>
 				</div>
-
 			</div>
 			<div class="row">
-				<div class="small-8 medium-8 columns with-job">
-					<h4 class='nextJobTitle'></h4>
-					<div class="small-12 columns">
-						<h5 class='nextJobDesc'></h5>
+				<div class="small-8 jobs-wrapper">
+					<div class="small-8 medium-8 columns with-job">
+						<h4 class='nextJobTitle'></h4>
+						<div class="small-12 columns">
+							<h5 class='nextJobDesc'></h5>
+						</div>
 					</div>
-				</div>
-				<div class="small-12 columns without-job">
-					<h4 class='no-job'>No Job Pending</h4>
-					<div class="small-11 columns">
-						<h5 class='add-job-please'>To add a Job click "Submit Job"" or drag file here</h5>
+					<div class="small-12 columns without-job">
+                        <div class="submitWrapper">
+                            <div class="submitActions">
+                                <h5 class='no-job'>Drag files here</h5>
+                                <p>or</p>
+                                <img src="images/click.png">
+                            </div>
+                        </div>
+						<div class="small-11 columns">
+							<h5 class='add-job-please'></h5>
+						</div>
 					</div>
 				</div>
 				<div>
@@ -106,12 +113,10 @@
 			<div class="row"></div>
 		</div>
 		</section>
-		<section class="container job-queue" style="display:none;">
-			<div class="row title">
+		<section class="container job-queue hoverdim" style="display:none;">
 				<div class="small-4 columns">
-					<h4>Pending</h4>
+					<h4 class="pending">Pending</h4>
 				</div>
-			</div> 
 
 			<div class="row jobs-row" style="">
 				<!-- JOB LISTING -->
@@ -119,11 +124,10 @@
 				<thead>
 	            <tr>
 	                <th>&nbsp;</th>
-	                <th>&nbsp;</th>
 	                <th>Name</th>
-	                <th>&nbsp;</th>
 	            </tr>
 	        	</thead>
+	        	<tbody><tr></tr></tbody>
 	        	</table>
 			</div>
 	</section>
@@ -140,354 +144,51 @@
 	        <th>Duration</th>
 	    </tr>
 		</thead>
+		<tbody><tr></tr></tbody>
 		</table>
-  </div>
-
-  <div class="content" id="tabactive">
-	  <section class="container">
-	  <div id="currentfile" class="code-area">This is where the currently running job goes</div>
-	  </section>
+		<div href="#" class="noselect" id="history_page_prev"><p>&lt;&lt; Prev</p></div>
+        <div href="#" class="noselect" id="history_page_next"><p>Next &gt;&gt;</p></div>
   </div>
   <div class="dropDownWrapper"></div>
 </div>
 
   <!-- Javascript inclusions -->
   <script src="/js/libs/jquery.min.js"></script>
-  <script src="./js/jquery.dataTables.js"></script>
-  <script src="./js/jquery.dragster.js"></script>
   <script src="/js/libs/foundation.min.js"></script>
-  <script src="./js/dataTables.foundation.js"></script>
+  <script src="./js/jquery.dragster.js"></script>
   <script src="./js/moment.js"></script>
   <script src="/js/libs/fabmo.js"></script>
+  <script src="./js/job_manager.js"></script>
 
 
   <script type="text/javascript">
-  var current_job_id = 0;
-  var prev_line = 0;
-  function loadFile(data) {
-  	txt = data.split("\n");
-  	digits = ('' + (txt.length+1)).length;
+  var fabmo = new FabMoDashboard();
 
-	for(var x=0;x<txt.length-1;x++) {
-		lineno = '' + (x+1);
-		while(lineno.length < digits) {
-			lineno = '0' + lineno;
-		}
-	    txt[x] = "<div class='line' id='file_line" + (x+1) + "'> <span class='lineno'>"+lineno+'</span> '+txt[x]+"</div>";
-	}
-	$('#currentfile').html(txt.join('\n'));
-  }
+  var current_job_id = 0;
 
   $(document).ready(function() {
+
   	//Foundation Init
 	$(document).foundation();
-		$('#dropzone').dragster({
-			enter : function(devt, evt) {
-				$('#dropzone').addClass('hover');
-				return false; 
-			}, 
- 
-			leave : function (devt, evt) {
-				$('#dropzone').removeClass('hover');
-				return false;
-			},
-			drop : function (devt, evt) {
-				evt.preventDefault();
-				try {
-					file = evt.originalEvent.dataTransfer.files[0];
-					fabmoDashboard.submitJob(file, {filename : file.name}, function(err, data) {
-						if(err){alert(err);return;}
-						refresh_jobs_list();
-						fabmoDashboard.getJobsInQueue(function(err, data) {
-							setNextJob(data);
-						});
-					});
-				}
-				finally {
-					$('#dropzone').removeClass('hover');
-					return false;
-				}
-			}
-		});
 
-	jQuery.fn.dataTableExt.oSort["duration-desc"] = function (x, y) {return 1};
-	jQuery.fn.dataTableExt.oSort["duration-asc"] = function (x, y) {}
+	// Request infoes from the tool
+	// The queue will update when the status report comes in
+	// But the history needs to be updated manually
+	fabmo.requestStatus();
+	updateHistory();
 
-	fabmoDashboard.on('job_start', function() {console.log("Job started")});
-	fabmoDashboard.on('job_end', function() {console.log("Job ended")}); 
+	bindNextJobEvents();
+	setupDropTarget();
 
-    var history_table = $('#history_table').DataTable( {
-    	"paging": true,
-    	"filter": false,
-    	"language.paginate.previous": "Prev",
-        "processing": false,
-        "bInfo": false,  
-        "bLengthChange":false,
-        "ajax": {
-        	"url" : "/jobs/history",
-        	"dataSrc" : function(json) { 
-        		return json.data.jobs; }
-        	},
-        "columns": [
-             {
-                "className":      'actions-control',
-                "orderable":      false,
-                "data":           null,
-                "defaultContent": "<div class='ellipses' title='More Actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='resubmitJob' id='resubmit'>Run Again</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div>",
-            },
-            { 	
-            	data : {name : 'name', state : 'state'}, 
-            	defaultContent : '',
-            	render : function(data) { return '<div class="job-' + data.state + '">' + data.name + '</div>'}
+	$('#history_page_next').click(function(evt) {
+		evt.preventDefault();
+		historyNextPage();
+	});
 
-            },
-            { 
-            	data : "finished_at", 
-            	defaultContent : '', 
-            	render: function (data, type, full, meta) { 
- 				   if (type == "display") { 
-        			return moment(data).fromNow() 
-    				} 
-    				return data;
-    			}
-            },
-            { 
-            	data: {started : 'started_at',
-				finished: 'finished_at'},
-            	defaultContent : '', 
-            	render : function(started, finished) { 
-					
-					return '<div>' +moment.utc(started.finished_at - started.started_at).format('HH:mm:ss')+'</div>'
-					}
-					
-            },
-        ],
-        "order" : [[2,"desc"]]
-    }); 
-	
-
-	
-	// DataTable
-
-
-  var queue_table = $('#queue_table').DataTable( {
-    "filter": false,
-    "paging": false,
-        "processing": false,
-        "bInfo": false,
-        "bSort":false,
-        "language": {
-        "emptyTable" : "There are no pending jobs."
-        },
-        "ajax": {
-        "url" : "/jobs/queue",
-        "dataSrc" : function(json) { 
-			var arr = json.data.jobs.shift();
-        	return json.data.jobs;}
-        },
-		
-        "columns": [
-            {
-                "className":      'details-control',
-                "orderable":      false,
-                "data":           null,
-                "defaultContent": '',
-                "visible": ''
-            },
-			{
-                "className":      'actions-control',
-                "orderable":      false,
-                "data":           null,
-                "defaultContent": "<div class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='cancelJob' id='cancel-1'>Cancel Job</a></li><li><a class='previewJob' id='preview-1'>Preview Job</a></li><li><a class='editJob'  id='edit-1'>Edit Job</a></li><li><a class='downloadJob' id='download-1' download>Download Job</a></li></ul></div"
-            },
-            {
-            data : "name", 
-            defaultContent : ''
-            },
-            { 
-            data : "created_at",
-            visible : false, 
-            defaultContent : '', 
-            },    
-        ],
-        "order" : [[3,"desc"]]
-    }); // DataTable
-	
-		$('.cancel').on('click', function(e) {
-			var jobId = $(this).data('id');
-			fabmoDashboard.cancelJob(jobId, function(err, data) {
-					
-			});
-			setTimeout(function(){ 
-				refresh_jobs_list() 
-				fabmoDashboard.getJobsInQueue(function(err, data) {
-						setNextJob(data);
-				});
-			}, 500);
-		});
-		$('.preview').on('click', function(e) {
-			var jobId = $(this).data('id');
-			fabmoDashboard.launchApp('previewer', {'job' : jobId});
-		});
-		$('.edit').on('click', function(e) {
-			var jobId = $(this).data('id');
-			fabmoDashboard.launchApp('editor', {'job' : jobId});
-		});
-		$('.download').on('click', function(e) {
-			var jobId = $(this).data('id');
-			$('.download').attr({'href':'/job/' + jobId + '/file'});
-		});	
-	
-	// Add event listener for opening and closing details 
-    $('#queue_table tbody').on('click', 'div.ellipses', function () {
-        var tr = $(this).closest('tr');
-        var row = queue_table.row( tr );
-        job = row.data();
-		var jobId = job._id;
-		$('.dropDownWrapper').show();//create transparent wrapper that you can click to close
- 		var dd = $(this).nextAll();
-		dd.show();
-		var cancelId = $('.cancelJob').attr('id').replace(/[0-9]+/g, jobId)
-		$('.cancelJob').attr('id', cancelId);
-		var previewId = $('.previewJob').attr('id').replace(/[0-9]+/g, jobId)
-		$('.previewJob').attr('id', previewId);
-		var editId = $('.editJob').attr('id').replace(/[0-9]+/g, jobId)
-		$('.editJob').attr('id', editId);
-		var downloadId = $('.downloadJob').attr('id').replace(/[0-9]+/g, jobId)
-		$('.downloadJob').attr('id', downloadId);
-		$('.dropDownWrapper').click(function (){ //clicking outside of the menu will cause it to hide
-			$('.dropDownWrapper').hide();
-			$('.dropDown').hide();
-			$('.commentBox').hide();
-		});
-
-		$('.dropDown').on('click', 'a#cancel-'+jobId.toString(), function(e) {
-			fabmoDashboard.cancelJob(jobId, function(err, data) {
-				refresh_jobs_list();
-				fabmoDashboard.getJobsInQueue(function(err, data) {
-						setNextJob(data);
-				});
-			});
-		});
-		$('.dropDown').on('click', 'a#preview-'+jobId.toString(), function(e) {
-			fabmoDashboard.launchApp('previewer', {'job' : jobId});
-		});
-		$('.dropDown').on('click', 'a#edit-'+jobId.toString(), function(e) {
-			fabmoDashboard.launchApp('editor', {'job' : jobId});
-		});
-		$('.dropDown').on('click', 'a#download-'+jobId.toString(), function(e) {
-			$('.downloadJob').attr({'href':'/job/' + jobId + '/file'});
-		});	
-    });
-
-    function history_child_row(job) {
-    	retval = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px; width: 100%;">'
-    	if(job.description) {
-	        retval += '<tr>'+
-	            '<td class="child-row-label">Description:</td>'+
-	            '<td>'+ (job.description || '<em>No description</em>') + '</td>'+
-	        '</tr>'
-    	}
-    	retval += '<tr>'+
-	            '<td class="child-row-label">Submitted:</td>'+
-	            '<td>'+moment(job.started_at).fromNow()+'</td>'+
-	        '</tr>'+
-	        '<tr>'+
-	            '<td class="child-row-label">Duration:</td>'+
-	            '<td>'+moment.utc(job.finished_at-job.started_at).format('HH:mm:ss')+'</td>'+
-	        '</tr>'+
-	    '</table>';
-	    return retval;
-    }
-	
-
-    function queue_child_row(job) {
-    	return ''
-    }
-
-	// Add event listener further actions in history table
-    $('#history_table tbody').on('click', 'div.ellipses', function () {
-        var tr = $(this).closest('tr');
-        var row = history_table.row( tr );
-		job = row.data();
-		$('.dropDownWrapper').show();//create transparent wrapper that you can click to close
-		var dd = $(this).nextAll();
-			dd.show();
-			var previewId = $('.previewJob').attr('id').replace(/[0-9]+/g, job._id)
-			$('.previewJob').attr('id', previewId);
-			var editId = $('.editJob').attr('id').replace(/[0-9]+/g, job._id)
-			$('.editJob').attr('id', editId);
-			var resubmitId = $('.resubmitJob').attr('id').replace(/[0-9]+/g, job._id)
-			$('.resubmitJob').attr('id', resubmitId);
-			var downloadId = $('.downloadJob').attr('id').replace(/[0-9]+/g, job._id)
-			$('.downloadJob').attr('id', downloadId);
-		$('.dropDownWrapper').click(function (){ //clicking outside of the menu will cause it to hide
-			$('.dropDownWrapper').hide();
-			$('.dropDown').hide();
-			$('.commentBox').hide();
-		});
- 			$('.dropDown').on('click', 'a#resubmit', function(e) {
-				fabmoDashboard.resubmitJob(job._id, function(err, result) {
-					$('.toggle-topbar').click();
-					$('#nav-pending').click();
-					refresh_jobs_list();
-					fabmoDashboard.getJobsInQueue(function(err, data) {
-						setNextJob(data);
-					});
-				});
-				$('.dropDownWrapper').hide();
-			});
-			$('.dropDown').on('click', 'a#preview-'+job._id.toString(), function(e) {
-				fabmoDashboard.launchApp('previewer', {'job' : job._id});
-			});
-			$('.dropDown').on('click', 'a#edit-'+job._id.toString(), function(e) {
-				fabmoDashboard.launchApp('editor', {'job' : job._id});
-			});
-			$('.dropDown').on('click', 'a#download-'+job._id.toString(), function(e) {
-				$('.downloadJob').attr({'href':'/job/' + job._id + '/file'});
-				$('.downloadJob').click();
-			});	
- 		});
-
-
-	// Add event listener for opening and closing details
-    $('#history_table tbody').on('click', 'td.details-control', function () {
-        var tr = $(this).closest('tr');
-		var plus = $(this).find($('.more-details div'));
-		var circle = $(this).find($('.more-details'));
-        var row = history_table.row( tr );
- 		if(row.child()) {
-	        if ( row.child.isShown() ) {
-	            // This row is already open - close it
-				row.child.hide();
-				row.child.remove();
-				plus.css('color', '#A6A6A6');
-				circle.css({
-        			"-webkit-transform": "rotate(0deg)",
-       				"-moz-transform": "rotate(0deg)",
-        			"transform": "rotate(0deg)" 
-   				 });	
-	        }
-	        else {
-	            // Open this row
-	            row.child.show();
-		    }
- 		} else {
- 			job = row.data()
- 			row.child( history_child_row(job) ).show();
-			plus.css('color', '#904848');
-			circle.css({
-        			"-webkit-transform": "rotate(135deg)",
-       				"-moz-transform": "rotate(135deg)",
-        			"transform": "rotate(135deg)" 
-   			});
- 		}
-    });
-
-	var refresh_jobs_list = function (){
-		queue_table.ajax.reload();
-		history_table.ajax.reload();
-	}
+	$('#history_page_prev').click(function(evt) {
+		evt.preventDefault();
+		historyPreviousPage();
+	});
 
 	$('.no-jobs-item').click(function(e) {
 		$('#job_selector').click();
@@ -496,173 +197,48 @@
 	$('#run-next').click(function(e) { 
 		if ($('.play').hasClass('active')){
 			$('.play').toggleClass('active');
-			fabmoDashboard.stop(function(err, data) {
-			fabmoDashboard.hideFooter();
+			fabmo.stop(function(err, data) {
 		});
 		} else {
 			$('.play').toggleClass('active');
-			fabmoDashboard.runNext(function(err, data) {
-				fabmoDashboard.showDRO();
-				fabmoDashboard.showFooter();
+			fabmo.runNext(function(err, data) {
+				if(err) {
+					fabmo.notify(err);
+				}
 			});	
 		}		
 	});
 
 	$('#clear-jobs').click(function(e) { 
-		fabmoDashboard.clearJobQueue(function(err, data) {
-			refresh_jobs_list();
+		fabmo.clearJobQueue(function(err, data) {
+			updateQueue();
 		});
 	});
 
 	$('.submit-button').click(function(evt) {
 		jQuery('#file').trigger('click');
 	});
+    
+    $('.without-job').click(function(evt) {
+		jQuery('#file').trigger('click');
+	});
 
 	$('#file').change(function(evt) {
-		fabmoDashboard.submitJob($('#fileform'), {}, function(err, data) {
+		fabmo.submitJob($('#fileform'), {}, function(err, data) {
+			if(err){
+				fabmo.notify('error', err);
+			}
 			resetFormElement($('#file'));
-			refresh_jobs_list();
-			fabmoDashboard.getJobsInQueue(function(err, data) {
-				setNextJob(data);
-			});
+			updateQueue();
 		});
 	});
-	var setNextJob = function (arr) {
-		if ( arr.length === 0 ) {
-			$('.nextJobTitle').slideUp(500);
-			$('.nextJobDesc').slideUp(500);
-			$('.cancel').slideUp(500);
-			$('.download').slideUp(500);
-			$('.edit').slideUp(500);
-			$('.preview').slideUp(500);
-			$('.play-button').slideUp(1000);
-			$('.without-job').show(1000);
-		} else {
-			if ( arr.length > 1) {
-				$('.job-queue').show(500);
-			} else {
-				$('.job-queue').slideUp(500);
-			}
-			$('.without-job').hide();
-			$('.cancel').data('id', arr[0]._id);
-			$('.preview').data('id', arr[0]._id);
-			$('.download').data('id', arr[0]._id);
-			$('.edit').data('id', arr[0]._id);
-			$('.nextJobTitle').text(arr[0].name);
-			$('.nextJobDesc').text(arr[0].description);
-			$('.nextJobTitle').show(500);
-			$('.nextJobDesc').show(500);
-			$('.cancel').show(500);
-			$('.download').show(500);
-			$('.edit').show(500);
-			$('.preview').show(500);
-			$('.play-button').show(500);
-		}
-	}
 
+	$( window ).resize(function() {
+  		setJobheight();
+	}).resize();
 	
-	fabmoDashboard.on('job_start', function(){
-		fabmoDashboard.requestStatus(function(err, data) {
-			$('.nextJobTitle').text(data.job.name);
-			$('.nextJobDesc').text(data.job.description);
-		});
-		$('.cancel').slideUp(500);
-		$('.download').slideUp(500);
-		$('.edit').slideUp(500);
-		$('.preview').slideUp(500);
-		$('body').css('background-color', '#898989');
-		jobrunning = window.setInterval(function(){
-   			$('.dropzone').toggleClass('blink');
-		}, 1000);
-	});
-	fabmoDashboard.on('job_end', function(){
-   			clearInterval(jobrunning);
-			$('.dropzone').removeClass('blink');
-			$('body').css('background-color', '#EEEEEE');
-			fabmoDashboard.getJobsInQueue(function(err, data) {
-				setNextJob(data);
-			});
-	});
-
-	fabmoDashboard.on('status', function(status) {
-		var prog = ((status.line/status.nb_lines)*100).toFixed(2);
-		var percent = Math.ceil(prog);
-		var rotation = Math.ceil(180*(percent/100));
- 		var fill_rotation = 3 + rotation;
- 		var fix_rotation = 6 + rotation * 2;
-		var jobid;
-		var transform_styles = ['-webkit-transform',
-                        '-ms-transform',
-                        'transform'];
-		try {
-			jobid = status.job._id || null;
-		} catch(e) {
-			jobid = null;
-		}
-		if (status.state === "idle") {
-			fabmoDashboard.getJobsInQueue(function(err, data) {
-				setNextJob(data);
-			});
-			$('.up-next').css('left', '0px');
-			$('.now-running').css('left', '-200px');
-			$('.play').removeClass('active');
-			$('.fill, .mask.full').css(transform_styles[i], 'rotate(0deg)');
-			$('.fill.fix').css(transform_styles[i], 'rotate(0deg)');
-			
-		} else if(status.state === "running" ) {
-			$('.up-next').css('left', '-200px');
-			$('.now-running').css('left', '0px');
-		}
-		// New Job
-		if(jobid) {
-			
-			if(jobid != current_job_id) {
-				current_job_id = jobid;
-				url = '/job/' + jobid + '/file';
-				/*
-				$.get(url, function(data) {
-					loadFile(data);
-					$('#nav-active').show();
-				});
-				*/
-			}
-		} else {
-			if(jobid != current_job_id) {
-		/*		$('#nav-active').hide();		
-				loadFile(''); */
-				current_job_id = jobid;
-				refresh_jobs_list();
-	
-			}
-	
-		}
-		for(i in transform_styles) {
-				$('.fill, .mask.full').css(transform_styles[i], 'rotate(' + fill_rotation + 'deg)');
-				$('.fill.fix').css(transform_styles[i], 'rotate(' + fix_rotation + 'deg)');
-		}
-		// Hilight Current Line
-		/*
-		try {
-			line = status.line || null;
-		} catch(e) {
-			line = null;
-		}
-
-		if(line) {
-			try {
-				$($('#currentfile').children()[prev_line-1]).removeClass('active-line');				
-			} catch(e) {}
-
-			linediv = $($('#currentfile').children()[line-1])
-			linediv.addClass('active-line');
-			prev_line = line
-		} else {
-			if(prev_line) {
-				$($('#currentfile').children()[prev_line-1]).removeClass('active-line');
-				prev_line = 0;
-			}
-		}
-		*/
+	fabmo.on('status', function(status) {
+		handleStatusReport(status);
 	});
  	
 	function resetFormElement(e) {
@@ -670,42 +246,7 @@
 	  e.unwrap();
 	}
 
-	fabmoDashboard.requestStatus(function(err, data) {});
-
-	jQuery('img.svg').each(function(){
-    var $img = jQuery(this);
-    var imgID = $img.attr('id');
-    var imgClass = $img.attr('class');
-    var imgURL = $img.attr('src');
-
-    jQuery.get(imgURL, function(data) {
-        // Get the SVG tag, ignore the rest
-        var $svg = jQuery(data).find('svg');
-
-        // Add replaced image's ID to the new SVG
-        if(typeof imgID !== 'undefined') {
-            $svg = $svg.attr('id', imgID);
-        }
-        // Add replaced image's classes to the new SVG
-        if(typeof imgClass !== 'undefined') {
-            $svg = $svg.attr('class', imgClass+' replaced-svg');
-        }
-
-        // Remove any invalid XML tags as per http://validator.w3.org
-        $svg = $svg.removeAttr('xmlns:a');
-
-        // Check if the viewport is set, if the viewport is not set the SVG wont't scale.
-        if(!$svg.attr('viewBox') && $svg.attr('height') && $svg.attr('width')) {
-            $svg.attr('viewBox', '0 0 ' + $svg.attr('height') + ' ' + $svg.attr('width'))
-        }
-
-        // Replace image with new SVG
-        $img.replaceWith($svg);
-
-
-    }, 'xml');
-
-	});
+	
   });
 </script>
 

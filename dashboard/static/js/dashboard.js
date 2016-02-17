@@ -25,13 +25,35 @@ define(function(require) {
 		this._setupMessageListener();
 	};
 
+	function browse(callback) {
+		var file_input = $('#hidden-file-input'); 
+		callback = callback || function() {};
+
+		file_input.one('click', function() {
+			file_input.val(null);
+			file_input.off('change');
+			file_input.one('change', function(evt) {
+				callback(evt);
+			});
+		});
+		file_input.click();
+	}
+
+	Dashboard.prototype.browseForFiles = function(callback) {
+		document.getElementById("hidden-file-input").multiple=true;
+		browse(callback);		
+	}
+
+	Dashboard.prototype.browseForFile = function(callback) {
+		document.getElementById("hidden-file-input").multiple=false;
+		browse(callback);		
+	}
+
 	Dashboard.prototype.setEngine = function(engine) {
 		this.engine = engine;
 		this.engine.on('status', function(data) {
 			this.updateStatus(data);
 		}.bind(this));
-
-
 	}
 
 	// Register a handler function for the provided message type
@@ -93,11 +115,15 @@ define(function(require) {
 										"data" : data, 
 										"id" : id }
 							}
-							source.postMessage(msg, evt.origin);
+							if(source) {
+								source.postMessage(msg, evt.origin);								
+							}
 						});
 					} catch(e) {
 						var msg = {"status" : "error", "type" : "cb", "message" : JSON.stringify(e) , "id" : id}
-						source.postMessage(JSON.stringify(msg), evt.origin);
+						if(source) {
+							source.postMessage(JSON.stringify(msg), evt.origin);							
+						}
 					}
 				}
 			} else if('on' in evt.data) {
@@ -141,27 +167,15 @@ define(function(require) {
 		}.bind(this))
 
 		// Submit a job
-		this._registerHandler('submitJob', function(data, callback) { 
-			if('file' in data) {
-				formdata = new FormData();
-				formdata.append('file', data.file, data.file.name);
-				
-				this.engine.submitJob(formdata, function(err, result) {
-					if(err) {
-						callback(err);
-					} else {
-						this.launchApp('job-manager', {}, callback);
-					}
-				}.bind(this));
-			} else if ('data' in data) {
-				this.engine.submitJob(data, function(err, result) {
-					if(err) {
-						callback(err);
-					} else {
-						this.launchApp('job-manager', {}, callback);
-					}
-				}.bind(this));				
-			}
+		this._registerHandler('submitJob', function(data, callback) {
+			// TODO deal with options here, don't just pass them through
+			this.engine.submitJob(data.jobs, data.options, function(err, result) {
+				if(err) {
+					callback(err);
+				} else {
+					this.launchApp('job-manager', {}, callback);
+				}
+			}.bind(this));
 		}.bind(this));
 
 		this._registerHandler('resubmitJob', function(id, callback) { 
@@ -180,7 +194,6 @@ define(function(require) {
 					callback(err);
 				} else {
 					callback(err, result);
-					//this.launchApp('job-manager', {}, callback);
 				}
 			}.bind(this));
 		}.bind(this));
@@ -194,11 +207,11 @@ define(function(require) {
 				} else {
 					callback(null, jobs);
 				}
-			})
+			});
 		}.bind(this));
 
-		this._registerHandler('getJobHistory', function(data, callback) {
-			this.engine.getJobHistory(function(err, jobs) {
+		this._registerHandler('getJobHistory', function(options, callback) {
+			this.engine.getJobHistory(options || {}, function(err, jobs) {
 				if(err) {
 					callback(err);
 				} else {
@@ -255,8 +268,29 @@ define(function(require) {
 			});
 		}.bind(this));
 
-		this._registerHandler('nudge', function(data, callback) {
-			this.engine.fixed_move(data.dir, data.dist, function(err, result) {
+		this._registerHandler('manualNudge', function(data, callback) {
+			this.engine.manualNudge(data.dir, data.dist, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null); }
+			});
+		}.bind(this));
+
+		this._registerHandler('manualStart', function(data, callback) {
+			this.engine.manualStart(data.axis, data.speed, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null); }
+			});
+		}.bind(this));
+
+		this._registerHandler('manualHeartbeat', function(data, callback) {
+			this.engine.manualHeartbeat(function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null); }
+			});
+		}.bind(this));
+
+		this._registerHandler('manualStop', function(data, callback) {
+			this.engine.manualStop(function(err, result) {
 				if(err) { callback(err); }
 				else { callback(null); }
 			});
@@ -271,26 +305,12 @@ define(function(require) {
 
 		// Submit an app
 		this._registerHandler('submitApp', function(data, callback) { 
-			if('file' in data) {
-				var formdata = new FormData();
-				formdata.append('file', data.file, data.file.name);
-				this.engine.submitApp(formdata, function(err, result) {
-					this.refreshApps();
-					if(err) {
-						callback(err);
-					} else {
-						callback(null, result);
-					}
-				}.bind(this));
-			} else if ('data' in data) {
-				this.engine.submitApp(data, function(err, result) {
-					if(err) {
-						callback(err);
-					} else {
-						callback(null);
-					}
-				}.bind(this));
-			}
+			this.engine.submitApp(data.apps, data.options, function(err, result) {
+				context.apps.fetch();
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+
 		}.bind(this));
 
 		this._registerHandler('deleteApp', function(id, callback) {
@@ -440,7 +460,11 @@ define(function(require) {
 
 		this._registerHandler('setAppConfig', function(data, callback) {
 			context = require('context');
-			this.engine.set_app_config(context.current_app_id, data, callback);
+			this.engine.setAppConfig(context.current_app_id, data, callback);
+		}.bind(this));
+
+		this._registerHandler('getVersion', function(data, callback) {
+			this.engine.getVersion(callback);
 		}.bind(this));
 
 		this._registerHandler('requestStatus', function(data, callback) {
@@ -453,6 +477,15 @@ define(function(require) {
 				}
 			}.bind(this));
 		}.bind(this));
+
+		this._registerHandler('navigate', function(data, callback) {
+			if(data.url) {
+				window.open(data.url,data.options.target)
+			} else {
+				callback(new Error("No URL specified"));
+			}
+		}.bind(this));
+
 
 		this._registerHandler('notify', function(data, callback) {
 			if(data.message) {

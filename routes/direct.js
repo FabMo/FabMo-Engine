@@ -14,6 +14,7 @@ var code = function(req, res, next) {
 				status:"success",
 				data : null
 	};
+
 	if(machine.status.state === 'idle') {
 		if (req.params.cmd !== undefined )
 		{

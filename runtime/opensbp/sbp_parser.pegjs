@@ -1,7 +1,10 @@
 {
    function buildTree(first, rest) {
       if(rest[0]) {
-          return {left: first, right: rest[0][3], op: rest[0][1]};
+          var l = first;
+          var r = buildTree(rest[0][3], rest.slice(1));
+          return {left : l, right : r, op : rest[0][1]};
+          //return {left: l, right: rest[0][3], op: rest[0][1]};
       } else {
           return first;
       }
@@ -12,7 +15,7 @@ start
    = __ stmt:statement __ {return stmt}
 
 statement
-   = (label / single / jump / pause / conditional / assignment / event / open / custom_cut / command / __)
+   = (label / single / end / jump / pause / conditional / assignment / event / open / custom_cut / command / __)
 
 custom_cut
    = [Cc] index:integer __ ","?
@@ -23,20 +26,28 @@ event
       {return {"type":"event", "sw":sw, "state":state, "stmt":stmt};} 
 
 command 
-   = m:mnemonic arg1:((","/___) argument)?
+   = m:mnemonic arg1:((","/whitespace?) __ argument)?
      args:(("," __ (arg:argument) __ ){return arg;})* 
      {
       if(arg1) {
-        args.unshift(arg1[1]);
+        args.unshift(arg1[2]);
       }
       return {type:"cmd","cmd":m,"args":args};}
 
 single
-   = name:("END"i / "RETURN"i) 
+   = name:("RETURN"i) 
      {return {type:name.toLowerCase()}}
 
+end
+  = name:("END"i) __ message:quotedstring? {return {"type" : "end", "message": message}}
+
 pause
-   = name:("PAUSE"i) __ expr:expression? {return {"type":"pause", "expr":expr}}
+   = name:("PAUSE"i) __ arg:(e:expression {return {expr: e}} / msg:quotedstring {return {message : msg}})? {
+    var arg = arg || {};
+    if(arg['expr']) { return {'type' : 'pause', 'expr' : arg.expr}}
+    else if(arg['message']) { return {'type' : 'pause', 'message' : arg.message}}
+    else {return {'type':'pause'}};
+   }
 
 conditional
    = "IF" ___ cmp:comparison ___ "THEN" ___ stmt:(jump) { return {"type":"cond", "cmp":cmp, "stmt":stmt};}
@@ -56,7 +67,7 @@ argument
 mnemonic = code: ([_A-Za-z][_A-Za-z0-9\#]) {return code.join('').replace('#','_POUND');}
 
 identifier
-   = id:([a-zA-Z_]+[A-Za-z0-9_]*) {console.log(id); return id[0].join("") + id[1].join(""); }
+   = id:([a-zA-Z_]+[A-Za-z0-9_]*) {return id[0].join("") + id[1].join(""); }
 
 label
    = id:identifier ":" {return {type:"label", value:id};}
@@ -70,16 +81,19 @@ float "float"
   = f:('-'? decimal '\.' decimal) { return parseFloat(f.join(""));}
 
 barestring
-  = s:[^,\n]+ { return s.join("").trim() || undefined; }
+  = s:[^,\n"]+ { return s.join("").trim() || undefined; }
 
 quotedstring
   = '"' s:[^\"\n]+ '"' {return s.join("")}
 
 variable
-  = (user_variable / system_variable)
+  = (user_variable / system_variable / persistent_variable)
 
 user_variable
   = v:("&" identifier) {return v.join("")}
+
+persistent_variable
+  = v:("$" identifier ) {return v.join("")}
 
 system_variable
   = v:("%" "(" __ integer __ ")") {return v.join("")}
@@ -103,16 +117,17 @@ term
       return buildTree(first, rest);
     }
 
-mul_op = "*" / "/"
-add_op = "+" / "-"
-cmp_op = "<=" / ">=" / "==" / "<" / ">" / "!=" / "="
-
 factor
   = "(" __ expr:expression __ ")" { return expr; }
   / float
   / integer
   / variable
   / barestring
+
+mul_op = "*" / "/"
+add_op = "+" / "-"
+cmp_op = "<=" / ">=" / "==" / "<" / ">" / "!=" / "="
+
 
 whitespace
    = [ \t]

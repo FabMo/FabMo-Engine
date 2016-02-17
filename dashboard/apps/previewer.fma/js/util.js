@@ -6,6 +6,32 @@
  */
 
 /**
+ * Checks if WebGL is enabled or not.
+ * @return {boolean} True is enabled
+ */
+GCodeViewer.webGLEnabled = function() {
+    // From http://www.browserleaks.com/webgl#howto-detect-webgl
+    if(!!window.WebGLRenderingContext) {
+        var canvas = document.createElement("canvas"),
+            names = ["webgl", "experimental-webgl", "moz-webgl"],
+            gl = false;
+        for(var i=0; i < names.length; i++) {
+            try {
+                gl = canvas.getContext(names[i]);
+                if (gl && typeof gl.getParameter == "function") {
+                    /* WebGL is enabled */
+                    return true;
+                }
+            } catch(e) {}
+        }
+        /* WebGL is supported, but disabled */
+        return false;
+    }
+    /* WebGL not supported*/
+    return false;
+};
+
+/**
  * Checks if two points in 3D are equal.
  *
  * @param {object} a Point A.
@@ -35,7 +61,7 @@ GCodeViewer.copyPoint = function(point) {
  * @return {boolean} True if the two value are nearly equal.
  */
 GCodeViewer.nearlyEqual = function(a, b) {
-    return Math.abs(b - a) <= 0.001;
+    return Math.abs(b - a) <= 0.0001;
 };
 
 /**

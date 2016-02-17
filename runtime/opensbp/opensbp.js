@@ -12,10 +12,21 @@ var Leveler = require('./commands/leveler').Leveler;
 
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
+var PERSISTENTVAR_RE = /\$([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
 
+/**
+ * The SBPRuntime object is responsible for running OpenSBP code.
+ * 
+ * For more info and command reference: http://www.opensbp.com/
+ * Note that not ALL of the OpenSBP standard listed at the above URL is supported.
+ * 
+ * FabMo supports a limited subset of the original standard, as not all commands make sense
+ * to use in the FabMo universe.
+ */
 function SBPRuntime() {
 	// Handle Inheritance
 	events.EventEmitter.call(this);
+	this.ok_to_disconnect = true;
 	this.program = [];
 	this.pc = 0;
 	this.start_of_the_chunk = 0;
@@ -29,26 +40,51 @@ function SBPRuntime() {
 	this.event_teardown = {};
 	this.running = false;
 	this.quit_pending = false;
-	this.cmd_posx = 0;
-	this.cmd_posy = 0;
-	this.cmd_posz = 0;
-	this.cmd_posa = 0;
-	this.cmd_posb = 0;
-	this.cmd_posc = 0;
+	this.cmd_result = 0;
+	this.cmd_posx = undefined;
+	this.cmd_posy = undefined;
+	this.cmd_posz = undefined;
+	this.cmd_posa = undefined;
+	this.cmd_posb = undefined;
+	this.cmd_posc = undefined;
 	this.movespeed_xy = 0;
 	this.movespeed_z = 0;
 	this.movespeed_a = 0;
 	this.movespeed_b = 0;
 	this.movespeed_c = 0;
-	this.nonXfrm_posx = 0; 
-	this.nonXfrm_posy = 0; 
-	this.nonXfrm_posz = 0; 
-	this.nonXfrm_posa = 0; 
-	this.nonXfrm_posb = 0; 
-	this.nonXfrm_posc = 0; 
+	this.cmd_StartX = 0; 
+	this.cmd_StartY = 0; 
+	this.cmd_StartZ = 0; 
+	this.cmd_StartA = 0; 
+	this.cmd_StartB = 0; 
+	this.cmd_StartC = 0; 
+	this.paused = false;
+	this.lastNoZPullup = 0; 
+	this.continue_callback = null;
+
+	// Physical machine state
+	this.machine = null;
+	this.driver = null;
+
 }
 util.inherits(SBPRuntime, events.EventEmitter);
 
+SBPRuntime.prototype.toString = function() {
+	return "[SBPRuntime]";
+}
+
+// This must be called at least once before instantiating an SBPRuntime object
+// TODO: Make this a "class method" rather than an instance method
+SBPRuntime.prototype.loadCommands = function(callback) {
+	commands=require('./commands').load();
+	proto = Object.getPrototypeOf(this);
+	for(var attr in commands) {
+		proto[attr] = commands[attr];
+	}
+	callback(null, this)
+}
+
+// Connect this runtime to the machine model.
 SBPRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;
@@ -57,15 +93,28 @@ SBPRuntime.prototype.connect = function(machine) {
 	this._update();
 	this.status_handler = this._onG2Status.bind(this);
 	this.driver.on('status', this.status_handler);
-	log.info('Connected ShopBot runtime.');
+	log.info('Connected OpenSBP runtime.');
 };
 
+// Disconnect this runtime from the machine model.
+// Throws an exception if the runtime can't be disconnected.
+// (Runtime can't be disconnected when it is busy running a file)
 SBPRuntime.prototype.disconnect = function() {
-	log.info('Disconnected ShopBot runtime.');
-	this.driver.removeListener(this.status_handler);
+	if(!this.machine) {
+		return;
+	}
+
+	if(this.ok_to_disconnect) {
+		this.driver.removeListener('status', this.status_handler);
+		this.machine = null;	
+		this.driver = null;
+		log.info('Disconnected OpenSBP runtime.');
+	} else {
+		throw new Error("Cannot disconnect OpenSBP runtime.")
+	}
 };
 
-// Run the provided string as a program
+// Run the provided string in OpenSBP format
 SBPRuntime.prototype.runString = function(s, callback) {
 	try {
 		var lines =  s.split('\n');
@@ -80,6 +129,12 @@ SBPRuntime.prototype.runString = function(s, callback) {
 			return this._end(e.message + " (Line " + e.line + ")");
 		}
  		lines = this.program.length;
+ 		
+ 		this.cmd_posx = this.posx;
+        this.cmd_posy = this.posy;
+        this.cmd_posz = this.posz;
+
+		this._setupTransforms();
 		this.init();
 		this.end_callback = callback;
 		// get speed settings from opensbp.json to be used in files
@@ -94,21 +149,20 @@ SBPRuntime.prototype.runString = function(s, callback) {
 		this.movespeed_a = getSBP_speed.movea_speed;
 		this.movespeed_b = getSBP_speed.moveb_speed;
 		this.movespeed_c = getSBP_speed.movec_speed;
-
-		this._setupTransforms();
-		log.debug("Made it past transforms.")
+		log.debug("Transforms configured...")
 		this._analyzeLabels();  // Build a table of labels
-		log.debug("Made it past labels.")
+		log.debug("Labels analyzed...")
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table
-		log.debug("Made it past gotos.")
-
+		log.debug("GOTOs analyzed...")
+		this.emit_gcode(config.driver.get('gdi') ? 'G91' : 'G90');
+		log.debug("Rainbows organized...")
 		this._run();
-
 	} catch(e) {
 		return this._end(e.message + " (Line " + e.line + ")");
 	}
 };
 
+// Run the provided file on disk
 SBPRuntime.prototype.runFile = function(filename, callback) {
 	fs.readFile(filename, 'utf8', function(err, data) {
 		if(err) {
@@ -119,40 +173,31 @@ SBPRuntime.prototype.runFile = function(filename, callback) {
 	}.bind(this));
 };
 
+// Simulate the provided file, returning the result as g-code
 SBPRuntime.prototype.simulateString = function(s, callback) {
-	var saved_machine = this.machine;
-	this.machine = null;
-	this.runString(s, function(err, data) {
-		this.machine = saved_machine;
-		callback(err, data);
-	});
-}
-
-SBPRuntime.prototype.pause = function() {
-	this.machine.driver.feedHold();
-}
-
-SBPRuntime.prototype.quit = function() {
-	if(this.machine.status.state == 'stopped') {
-		if(this.machine.status.job) {
-			this.machine.status.job.fail(function(err, job) {
-				this.machine.status.job=null;
-				this.driver.setUnits(config.machine.get('units'), function() {
-					this.machine.setState(this, 'idle');
-				}.bind(this));
-			}.bind(this));
-		} else {
-			this.driver.setUnits(config.machine.get('units'), function() {
-				this.machine.setState(this, 'idle');
-			}.bind(this));
-		}
+	if(this.ok_to_disconnect) {
+		var saved_machine = this.machine;
+		this.disconnect();
+		this.runString(s, function(err, data) {
+			this.machine = saved_machine;
+			callback(err, data);
+		});
 	} else {
-		this.quit_pending = true;
-		this.machine.driver.quit();		
+		callback(new Error("Cannot simulate while OpenSBP runtime is busy."));
 	}
 }
 
+// Handler for G2 statue reports
 SBPRuntime.prototype._onG2Status = function(status) {
+	
+	switch(status.stat) {
+		case this.driver.STAT_INTERLOCK:
+		case this.driver.STAT_SHUTDOWN:
+		case this.driver.STAT_PANIC:
+			return this.machine.die('A G2 exception has occurred. You must reboot your tool.');
+			break;
+	}
+
 	// Update our copy of the system status
 	for (var key in this.machine.status) {
 		if(key in status) {
@@ -177,45 +222,34 @@ SBPRuntime.prototype._update = function() {
 	this.posc = status.posc || 0.0;
 };
 
-SBPRuntime.prototype._setupTransforms = function() {
-	log.debug("_setupTransforms");
-	this.transforms = JSON.parse(JSON.stringify(config.opensbp.get('transforms')));
-	try {
-	    this.levelerData = JSON.parse(fs.readFileSync(this.transforms.level.ptDataFile));
-	} catch(e) {
-		log.warn('Could not read leveler data: ' + e);
-		this.levelerData = null;
-	}
-    log.debug("_setupTransforms: " + JSON.stringify(this.levelerData) );
-};
-
 // Evaluate a list of arguments provided (for commands)
+// Returns a scrubbed list of evaluated arguments to be passed to command handlers
 SBPRuntime.prototype._evaluateArguments = function(command, args) {
-	log.debug("Evaluating arguments: " + command + "," + JSON.stringify(args));
+	// log.debug("Evaluating arguments: " + command + "," + JSON.stringify(args));
 	// Scrub the argument list:  extend to the correct length, sub in defaults where necessary.
 	scrubbed_args = [];
 	if(command in sb3_commands) {
 		params = sb3_commands[command].params || [];
 		if(args.length > params.length) {
-			log.warn('MORE parameters passed into ' + command + ' than are supported by the command.');
+			log.warn('More parameters passed into ' + command + ' (' + args.length + ') than are supported by the command. (' + params.length + ')');
 		}
 		for(i=0; i<params.length; i++) {
 			prm_param = params[i];
 			user_param = args[i];
 			if((args[i] !== undefined) && (args[i] !== "")) {
-				log.debug('Taking the users argument: ' + args[i]);
+				// log.debug('Taking the users argument: ' + args[i]);
 				scrubbed_args.push(args[i]);
 			} else {
 				//log.debug("Taking the default argument: " + args[i] + " (PRN file)");
 				//scrubbed_args.push(prm_param.default || undefined);
-				log.debug('No user specified argument.  Using undefined.');
+				// log.debug('No user specified argument.  Using undefined.');
 				scrubbed_args.push(undefined);
 			}
 		}
 	} else {
 		scrubbed_args = [];
 	}
-	log.debug("Scrubbed arguments: " + JSON.stringify(scrubbed_args));
+	// log.debug("Scrubbed arguments: " + JSON.stringify(scrubbed_args));
 	
 	// Create the list of evaluated arguments to be returned
 	retval = [];
@@ -248,7 +282,11 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 
 		// For now, pause translates to "dwell" which is just a G-Code
 		case "pause":
-			result =  false;
+			if(cmd.expr) {
+				result = false;
+			} else {
+				result =  true;				
+			}
 			break;
 
 		case "cond":
@@ -286,6 +324,8 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 	return result;
 };
 
+// Returns true if this expression breaks the stack.
+// System variable evaluation breaks the stack.  No other expressions do.
 SBPRuntime.prototype._exprBreaksStack = function(expr) {
 	if(expr.op === undefined) {
 		return expr[0] == '%'; // For now, all system variable evaluations are stack-breaking
@@ -296,11 +336,15 @@ SBPRuntime.prototype._exprBreaksStack = function(expr) {
 
 // Start the stored program running
 SBPRuntime.prototype._run = function() {
-	log.info("Setting the running state");
+	log.info("Starting OpenSBP program")
 	this.started = true;
 	if(this.machine) {
 		this.machine.setState(this, "running");
 	}
+	// this.cmd_posx = this.posx;
+	// this.cmd_posy = this.posy;
+	// log.debug("*******************run: cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy);
+
 	this._continue();
 };
 
@@ -319,19 +363,25 @@ SBPRuntime.prototype._continue = function() {
 	while(true) {
 		// If we've run off the end of the program, we're done!
 		if(this.pc >= this.program.length) {
-			log.info("Program over. (pc = " + this.pc + ")");
+			log.info("End of program reached. (pc = " + this.pc + ")");
 			// We may yet have g-codes that are pending.  Run those.
 			if(this.current_chunk.length > 0) {
+				log.info("Dispatching final g-codes")
 				return this._dispatch(this._continue.bind(this));
 			} else {
-				return this._end();
+				log.info("No g-codes remain to dispatch.")
+				return this._end(this.end_message);
 			}
+		}
+
+		if(this.quit_pending) {
+			return this._end();
 		}
 
 		// Pull the current line of the program from the list
 		line = this.program[this.pc];
 		if(this._breaksStack(line)) {
-			log.debug("STACK BREAK: " + JSON.stringify(line));
+			log.debug("Stack break: " + JSON.stringify(line));
 			dispatched = this._dispatch(this._continue.bind(this));
 			if(!dispatched) {
 				log.debug('Nothing to execute in the queue: continuing.');
@@ -345,6 +395,7 @@ SBPRuntime.prototype._continue = function() {
 					}
 				} else {
 					try {
+						log.debug("executing + " + JSON.stringify(line))
 						this._execute(line, this._continue.bind(this));
 					} catch(e) {
 						return this._end(e.message);
@@ -352,6 +403,7 @@ SBPRuntime.prototype._continue = function() {
 				}
 				break;
 			} else {
+				log.debug('Dispatching g-codes to tool.')
 				break;
 			}
 			return;
@@ -393,6 +445,7 @@ SBPRuntime.prototype._end = function(error) {
 							this.machine.setState(this, 'idle');
 						}.bind(this));
 					}
+					this.ok_to_disconnect = true;
 					this.emit('end', this);
 					if(callback) {
 						callback();
@@ -402,6 +455,7 @@ SBPRuntime.prototype._end = function(error) {
 		}.bind(this);
 
 		var end_function_nested = function() {
+			log.debug("Calling the nested end.");
 			callback = this.end_callback;
 			if(callback) {
 				callback();
@@ -451,9 +505,8 @@ SBPRuntime.prototype._end = function(error) {
 	}
 };
 
-// Pack up the current chunk and send it to G2
-// Returns true if there was data to send to G2
-// Returns false if nothing was sent
+// Pack up the current chunk (if it is nonempty) and send it to G2
+// Returns true if there was data to send to G2, false otherwise.
 SBPRuntime.prototype._dispatch = function(callback) {
 	var runtime = this;
 
@@ -462,7 +515,6 @@ SBPRuntime.prototype._dispatch = function(callback) {
 
 		// And we have are connected to a real tool
 		if(this.machine) {
-
 			// Dispatch the g-codes and look for the tool to start running them
 			//log.info("dispatching a chunk: " + this.current_chunk);
 
@@ -522,18 +574,19 @@ SBPRuntime.prototype._dispatch = function(callback) {
 					log.warn("Expected a start but didn't get one. (" + t + ")"); 
 				},
 				"timeout" : function(driver) {
+					log.warn("State change timeout??")
 					this._continue();
 				}.bind(this)
 			});
 
-			this.driver.runSegment(this.current_chunk.join('\n') + '\n');
+			var segment = this.current_chunk.join('\n') + '\n';
+			this.driver.runSegment(segment);
 			this.current_chunk = [];
 			return true;
-		} else {
-			log.info("Dispatching a chunk (no driver)");
+		} else { // Not connected to a real tool
 			Array.prototype.push.apply(this.output, this.current_chunk);
 			this.current_chunk = []
-			setTimeout(callback, 100)
+			setImmediate(callback)
 			return true;
 		}
 	} else {
@@ -552,8 +605,7 @@ SBPRuntime.prototype._processEvents = function(callback) {
 		log.debug("Checking event handlers for " + input_name)
 		// Iterate over all the states of this input for which handlers are registered
 		for(var state in this.event_handlers[sw]) {
-			log.debug("Checking state " + state)
-			log.debug("Against " + input_state)
+			log.debug("Checking state " + state + " against " + input_state)
 			if(input_state === 1) {
 
 				event_handled = true;
@@ -662,6 +714,8 @@ SBPRuntime.prototype._execute = function(command, callback) {
 		this.pc += 1;
 		return;
 	}
+
+	// log.debug("Executing: " + JSON.stringify(command));
 	// All correctly parsed commands have a type
 	switch(command.type) {
 
@@ -691,17 +745,22 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 		case "end":
 			this.pc = this.program.length;
+			if(command.message) {
+				this.end_message = command.message;
+			}
 			return false;
 			break;
 
 		case "goto":
 			if(command.label in this.label_index) {
-				this.pc = this.label_index[command.label];
-				log.debug("Hit a GOTO: Going to line " + this.pc + "(Label: " + command.label + ")");
+				var pc = this.label_index[command.label];
+				log.debug("Hit a GOTO: Going to line " + pc + "(Label: " + command.label + ")");
+				this.pc = pc;
 				setImmediate(callback);
 				return true;
 			} else {
-				throw "Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc;
+
+				throw new Error("Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc);
 			}
 			break;
 
@@ -719,19 +778,11 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 		case "assign":
 			//TODO FIX THIS THIS DOESN'T DO SYSTEM VARS PROPERLY
+			this.pc += 1;
 			var value = this._eval(command.expr);
-			var persistent = this.evaluatePersistentVariable(command.var);
-
-			if(persistent != undefined) {
-				config.opensbp.setVariable(command.var, value, function() {
-					this.pc += 1;
-					callback();
-				}.bind(this));
-			} else {
-				this.user_vars[command.var] = value;
-				this.pc += 1;
-				setImmediate(callback);
-			}
+			this._assign(command.var, value, function() {
+				callback();
+			})				
 			return true;
 			break;
 
@@ -763,9 +814,20 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			this.pc += 1;
 			if(command.expr) {
 				this.emit_gcode('G4 P' + this._eval(command.expr));
+				return false;
+			} else {
+				this.paused = true;
+				this.continue_callback = callback;
+				var message = command.message;
+				if(!message) {
+					var last_command = this.program[this.pc-2];
+					if(last_command && last_command.type === 'comment') {
+						message = last_command.comment.join('').trim();
+					}
+				}
+				this.machine.setState(this, 'paused', {'message' : message || "Paused." });
+				return true;
 			}
-			// Todo handle indefinite pause or pause with message
-			return false;
 			break;
 
 		case "event":
@@ -776,16 +838,36 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 		default:
 			try {
-			log.error("Unknown command: " + JSON.stringify(command));
+				log.error("Unknown command: " + JSON.stringify(command));
 			} catch(e) {
-			log.error("Unknown command: " + command);
+				log.error("Unknown command: " + command);
 			}
 			this.pc += 1;
 			return false;
 			break;
 	}
-	throw "Shouldn't ever get here.";
+	throw new Error("Shouldn't ever get here.");
 };
+
+SBPRuntime.prototype._assign = function(identifier, value, callback) {
+	result = identifier.match(USERVAR_RE);
+	if(result) {
+		this.user_vars[identifier] = value;
+		setImmediate(callback);
+		return
+	}
+	log.debug(identifier + ' is not a user variable');
+
+	result = identifier.match(PERSISTENTVAR_RE);
+	if(result) {
+		config.opensbp.setVariable(identifier, value, callback)
+		return
+	}
+	log.debug(identifier + ' is not a persistent variable');
+
+	throw Error("Cannot assign to " + identifier);
+
+}
 
 SBPRuntime.prototype._setupEvent = function(command, callback) {
 	var sw = command.sw;
@@ -817,7 +899,7 @@ SBPRuntime.prototype._setupEvent = function(command, callback) {
 }
 
 SBPRuntime.prototype._eval_value = function(expr) {
-		log.debug("  Evaluating value: " + expr);
+		// log.debug("  Evaluating value: " + expr);
 		sys_var = this.evaluateSystemVariable(expr);
 		if(sys_var === undefined) {
 			var persistent_var = this.evaluatePersistentVariable(expr);
@@ -831,7 +913,7 @@ SBPRuntime.prototype._eval_value = function(expr) {
 	                    return f;
 	                }
 	            } else if(user_var === null) {
-	            	log.error("Uh oh.");
+	            	log.error("  Uh oh. (" + expr + ")");
 	            	// User var is undefined (return undefined??)
 				} else {
 					log.debug("  Evaluated " + expr + " as " + user_var);
@@ -857,7 +939,7 @@ SBPRuntime.prototype._eval_value = function(expr) {
 // Evaluate an expression.  Return the result.
 // TODO: Make this robust to undefined user variables
 SBPRuntime.prototype._eval = function(expr) {
-	log.debug("Evaluating expression: " + JSON.stringify(expr));
+//	log.debug("Evaluating expression: " + JSON.stringify(expr));
 	if(expr === undefined) {return undefined;}
 
 	if(expr.op === undefined) {
@@ -914,6 +996,12 @@ SBPRuntime.prototype.init = function() {
 	this.output = [];				// Used in simulation mode only
 	this.event_handlers = {};		// For ON INPUT etc..
 	this.end_callback = null;
+	this.quit_pending = false;
+	this.end_message = null;
+
+	if(this.transforms != null && this.transforms.level.apply === true) {
+		leveler = new Leveler(this.transforms.level.ptDataFile);
+	}
 };
 
 // Compile an index of all the labels in the program
@@ -1078,7 +1166,7 @@ SBPRuntime.prototype.evaluateUserVariable = function(v) {
 
 SBPRuntime.prototype.evaluatePersistentVariable = function(v) {
 	if(v === undefined) { return undefined;}
-	result = v.match(USERVAR_RE);
+	result = v.match(PERSISTENTVAR_RE);
 	if(result === null) {return undefined;}
 	return config.opensbp.getVariable(v);
 };
@@ -1092,9 +1180,11 @@ SBPRuntime.prototype._pushFileStack = function() {
 	frame =  {}
 	frame.pc = this.pc
 	frame.program = this.program
+	frame.stack = this.stack;
 	//frame.user_vars = this.user_vars
 	frame.current_chunk = this.current_chunk
 	frame.end_callback = this.end_callback
+	frame.label_index = this.label_index
 	this.file_stack.push(frame)
 }
 
@@ -1102,7 +1192,9 @@ SBPRuntime.prototype._popFileStack = function() {
 	frame = this.file_stack.pop()
 	this.pc = frame.pc
 	this.program = frame.program
+	this.stack = frame.stack
 	//this.user_vars = frame.user_vars
+	this.label_index = frame.label_index;
 	this.current_chunk = frame.current_chunk
 	this.end_callback = frame.end_callback
 }
@@ -1121,14 +1213,27 @@ SBPRuntime.prototype.emit_gcode = function(s) {
 SBPRuntime.prototype.emit_move = function(code, pt) {
 	var gcode = code;
 	var i;
+    log.debug("Emit_move: " + code + " " + JSON.stringify(pt));
 
-	if( code === "G0" || code === "G1" ){
-		pt = this.transformation(pt);
-	}
-	else if( code === "G2" || code === "G3" ){
+	['X','Y','Z','A','B','C','I','J','K','F'].forEach(function(key){
+		var c = pt[key];
+		if(c !== undefined) {
+			if(isNaN(c)) { throw( "Invalid " + key + " argument: " + c ); } 
+			if(key === "X") { this.cmd_posx = c; }
+			else if(key === "Y") { this.cmd_posy = c; }
+			else if(key === "Z") { this.cmd_posz = c; }
+			else if(key === "A") { this.cmd_posa = c; }
+			else if(key === "B") { this.cmd_posb = c; }
+			else if(key === "C") { this.cmd_posc = c; }
+		}
+	}.bind(this));
 
-	}
-//	log.debug("level = " + this.transforms.level.apply );
+
+	// Where to save the start point of an arc that isn't transformed??????????
+	var tPt = this.transformation(pt);
+
+	// log.debug("Emit_move: Transformed point: " + JSON.stringify(tPt));
+
 //	log.debug("interpolate = " + this.transforms.interpolate.apply );
 //	if(( this.transforms.level.apply === true || this.transforms.interpolate.apply === true ) && code !== "G0" ){
 //		if( code === "G1"){
@@ -1148,80 +1253,86 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		var n = this.pc;
 	}
 
-	var emit_moveContext = this;
-	var opFunction = function(pt) {  //Find a better name
-		for(key in pt) {
-			var v = pt[key];
+	var opFunction = function(Pt) {  //Find a better name
+		// for(key in tPt) {
+		['X','Y','Z','A','B','C','I','J','K','F'].forEach(function(key){
+			var v = Pt[key];
 			if(v !== undefined) {
 				if(isNaN(v)) { throw( "Invalid " + key + " argument: " + v ); } 
 				gcode += (key + v.toFixed(5));
-				if(key === "X") { emit_moveContext.cmd_posx = v; }
-				else if(key === "Y") { emit_moveContext.cmd_posy = v; }
-				else if(key === "Z") { emit_moveContext.cmd_posz = v; }
-				else if(key === "A") { emit_moveContext.cmd_posa = v; }
-				else if(key === "B") { emit_moveContext.cmd_posb = v; }
-				else if(key === "C") { emit_moveContext.cmd_posc = v; }
 			}
-		}
-		log.debug("emit_move: N" + n + JSON.stringify(gcode));
-		emit_moveContext.current_chunk.push('N' + n + gcode);
-	};
+		}.bind(this));
+		// }
+        log.debug("emit_move: N" + n + JSON.stringify(gcode));
+        this.current_chunk.push('N' + n + ' ' + gcode);
+	}.bind(this);
 
-			if( this.transforms.level.apply === true  && code !== "G0") {
-				var callback = function() {
-					var x = (pt.X === undefined) ? emit_moveContext.cmd_posx : pt.X;
-					var y = (pt.Y === undefined) ? emit_moveContext.cmd_posy : pt.Y;
-					var z = (pt.Z === undefined) ? emit_moveContext.cmd_posz : pt.Z;
-					var arrPoint = leveler.findHeight([x, y, z]);
-					pt.x = arrPoint[0];
-					pt.y = arrPoint[1];
-					pt.z = arrPoint[2];
-					opFunction(pt);
-				};
-				log.debug("emit_move:level");
-				leveler = new Leveler(this.transforms.level.ptDataFile, callback);
-			}  
-			else {
-				opFunction(pt);
+	if(this.transforms.level.apply === true  && code !== "G0") {
+		var previousHeight = leveler.foundHeight;
+		var X = (tPt.X === undefined) ? this.cmd_posx : tPt.X;
+		var Y = (tPt.Y === undefined) ? this.cmd_posy : tPt.Y;
+		var Z = 0;
+		// cmd_posz stores the last Z position. But when using the leveler,
+		// the stored Z is the real Z of the bit, not the wanted Z relative
+		// to the board. Therefore, we delete the previousely found height
+		// when using cmd_posz but not when using pt.Z
+		if(tPt.Z === undefined) {
+		    Z = this.cmd_posz - previousHeight;
+		} else {
+		    Z =  tPt.Z;
 		}
-//	}
+		var height = leveler.findHeight(X, Y, Z);
+           console.log("Z = " + Z);
+		if(height === false) {
+			log.error("Impossible to find the point height with the leveler.");
+			return;
+		}
+        console.log("height = " + height);
+		tPt.Z = Z + height;
+		opFunction(tPt);
+		log.debug("emit_move:level");
+	}
+	else {
+		opFunction(tPt);
+	}
+
 };
 
+SBPRuntime.prototype._setupTransforms = function() {
+	log.debug("_setupTransforms");
 
-// This must be called at least once before instantiating an SBPRuntime object
-SBPRuntime.prototype.loadCommands = function(callback) {
-	commands=require('./commands').load();
-	proto = Object.getPrototypeOf(this);
-	for(var attr in commands) {
-		proto[attr] = commands[attr];
-	}
-	callback(null, this)
-}
+    this.transforms = JSON.parse(JSON.stringify(config.opensbp.get('transforms')));
+};
 
 SBPRuntime.prototype.transformation = function(TranPt){
-//  log.debug("transformation = " + JSON.stringify(TranPt));
 	if (this.transforms.rotate.apply !== false){
-//  		log.debug("rotation apply = " + this.transforms.rotate.apply);
+        log.debug("transformation = " + JSON.stringify(TranPt));
+ 		// log.debug("rotation apply = " + this.transforms.rotate.apply);
 //		log.debug("Rotate: " + JSON.stringify(this.transforms.rotate));
-        if ( !("X" in TranPt) ) { TranPt.X = this.cmd_posx; }
-        if ( !("Y" in TranPt) ) { TranPt.Y = this.cmd_posy; }
-		var angle = this.transforms.rotate.angle;
-		var x = TranPt.X;
-		var y = TranPt.Y;
-		var PtRotX = this.transforms.rotate.x;
-		var PtRotY = this.transforms.rotate.y;
-		TranPt = tform.rotate(TranPt,angle,PtRotX,PtRotY);
+		log.debug("  cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy);
+		if ( "X" in TranPt || "Y" in TranPt ){
+            if ( !("X" in TranPt) ) { TranPt.X = this.cmd_posx; }
+            if ( !("Y" in TranPt) ) { TranPt.Y = this.cmd_posy; }
+       	    log.debug("transformation TranPt: " + JSON.stringify(TranPt));
+		    var angle = this.transforms.rotate.angle;
+            var x = TranPt.X;
+            var y = TranPt.Y;
+            var PtRotX = this.transforms.rotate.x;
+            var PtRotY = this.transforms.rotate.y;
+            log.debug("transformation: cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy);
+            TranPt = tform.rotate(TranPt,angle,PtRotX,PtRotY, this.cmd_StartX,this.cmd_StartY);
+        }
 	}
 	if (this.transforms.shearx.apply !== false){
-//		log.debug("ShearX: " + JSON.stringify(this.transforms.shearx));
+		log.debug("ShearX: " + JSON.stringify(this.transforms.shearx));
 		TranPt = tform.shearX(TranPt);
 	}
 	if (this.transforms.sheary.apply !== false){
-//		log.debug("ShearY: " + JSON.stringify(this.transforms.sheary));
+		log.debug("ShearY: " + JSON.stringify(this.transforms.sheary));
 		TranPt = tform.shearY(TranPt);
 	}
 	if (this.transforms.scale.apply !== false){
-//		log.debug("Scale: " + JSON.stringify(this.transforms.scale));
+		log.debug("Scale: " + JSON.stringify(this.transforms.scale));
 		var ScaleX = this.transforms.scale.scalex;
 		var ScaleY = this.transforms.scale.scaley;
 		var PtX = this.transforms.scale.x;
@@ -1230,7 +1341,7 @@ SBPRuntime.prototype.transformation = function(TranPt){
 		TranPt = tform.scale(TranPt,ScaleX,ScaleY,PtX,PtY);
 	}
 	if (this.transforms.move.apply !== false){
-//		log.debug("Move: " + JSON.stringify(this.transforms.move));
+		log.debug("Move: " + JSON.stringify(this.transforms.move));
 		TranPt = tform.translate(TranPt, 
 								 this.transforms.move.x, 
 								 this.transforms.move.y, 
@@ -1241,6 +1352,39 @@ SBPRuntime.prototype.transformation = function(TranPt){
 
 };
 
+SBPRuntime.prototype.pause = function() {
+	this.machine.driver.feedHold();
+}
+
+SBPRuntime.prototype.quit = function() {
+	if(this.machine.status.state == 'stopped' || this.paused) {
+		if(this.machine.status.job) {
+			this.machine.status.job.fail(function(err, job) {
+				this.machine.status.job=null;
+				this.driver.setUnits(config.machine.get('units'), function() {
+					this.machine.setState(this, 'idle');
+				}.bind(this));
+			}.bind(this));
+		} else {
+			this.driver.setUnits(config.machine.get('units'), function() {
+				this.machine.setState(this, 'idle');
+			}.bind(this));
+		}
+	} else {
+		this.quit_pending = true;
+		this.machine.driver.quit();		
+	}
+}
+
+SBPRuntime.prototype.resume = function() {
+	if(this.paused) {
+		this.machine.setState(this, 'running');
+		this.paused = false;
+		this.continue_callback();
+	} else {
+		this.driver.resume();		
+	}
+}
 
 exports.SBPRuntime = SBPRuntime;
 

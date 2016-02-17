@@ -3,6 +3,7 @@
 *.bak
 *.tmp
 *.log
+version.json
 node_modules
 npm-debug.log
 app_settings.json

@@ -53,7 +53,7 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         that.camera.updateProjectionMatrix();
         that.refreshDisplay();
 
-        that.gui.resized();
+        that.gui.resized(width, height);
     };
 
     /**
@@ -94,6 +94,8 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     // position). If there is no path, return (0; 0; 0).
     function centerPath() {
         var center = { x : 0, y : 0, z : 0 };
+
+        //If no GCode given yet
         if(that.gcode.size === undefined) {
             return center;
         }
@@ -261,11 +263,13 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     // cannot display an HTML element if the function is not over, during a
     // loop or whatever other reason
     function reallySetGCode(string) {
+        var message = "";
         that.gcode = GCodeToGeometry.parse(string);
-        if(that.gcode.isComplete === false) {
-            displayError(that.gcode.errorMessage);
+        if(that.gcode.errorList.length > 0) {
+            message = "Be careful, some issues appear in this file.";
+            message += "\nThe machine may not do as displayed here.";
+            displayError(message);
             that.gui.hideLoadingMessage();
-            return;
         }
 
         that.path.remove();  //Removing old stuff
@@ -280,7 +284,8 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
      * Sets the GCode and displays the result.
      *
      * @param {string} The GCode.
-     * @param {function} Callback function called when the meshes are created.
+     * @param {function} Callback function called when the meshes are created
+     *                   (in case want to do something fancy).
      */
     that.setGCode = function(string, callback) {
         that.gui.displayLoadingMessage();
@@ -310,13 +315,10 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
      * Show the paths that the bit will take.
      */
     that.viewPaths = function() {
-        if(that.gcode.size === false) {
-            return;
-        }
-
         that.path.remove();  //Don't know how to check if already in scene
         that.path.add();
-        that.totalSize.setMeshes(that.gcode.size, that.inMm,
+        that.totalSize.setMeshes(that.gcode.size,
+                that.gcode.displayInInch === false,
                 that.cncConfiguration.initialPosition);
 
         var lx = ((that.gcode.size.max.x - that.gcode.size.min.x) / 2.0 ) || 0.0;
@@ -359,6 +361,7 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     };
 
     // initialize
+
     //Members declaration
     that.renderer = {};
     that.camera = {};
@@ -370,6 +373,11 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     that.inMm = false;
     that.inchToVector = 1; //Convert an inch to the value to put in vectors
     that.callbackError = callbackError;
+
+    if(GCodeViewer.webGLEnabled() === false) {
+        displayError("WebGL is not enable. Impossible to preview.");
+        return;
+    }
 
     if(container === undefined || container === null) {
         displayError("No container set.");
@@ -430,7 +438,8 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         goToLine : goToLineFun
 
     };
-    that.gui = new GCodeViewer.Gui(that.renderer.domElement, that.cncConfiguration, callbacks);
+    that.gui = new GCodeViewer.Gui(that.renderer, widthCanvas, heightCanvas,
+            that.cncConfiguration, callbacks);
 
     //Add animation
     that.animation = new GCodeViewer.Animation(that.scene, that.refreshDisplay,

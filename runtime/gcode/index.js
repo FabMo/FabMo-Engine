@@ -5,8 +5,12 @@ var config = require('../../config');
 function GCodeRuntime() {
 	this.machine = null;
 	this.driver = null;
+	this.ok_to_disconnect = true;
 }
 
+GCodeRuntime.prototype.toString = function() {
+	return "[GCodeRuntime]";
+}
 GCodeRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;
@@ -16,7 +20,11 @@ GCodeRuntime.prototype.connect = function(machine) {
 };
 
 GCodeRuntime.prototype.disconnect = function() {
-	this.driver.removeListener('status', this.status_handler);
+	if(this.ok_to_disconnect) {
+		this.driver.removeListener('status', this.status_handler);
+	} else {
+		throw new Error("Cannot disconnect GCode Runtime")
+	}
 };
 
 GCodeRuntime.prototype.pause = function() {
@@ -27,7 +35,16 @@ GCodeRuntime.prototype.quit = function() {
 	this.driver.quit();
 }
 
+GCodeRuntime.prototype.resume = function() {
+	this.driver.resume();
+}
+
 GCodeRuntime.prototype._changeState = function(newstate) {
+	if(newstate === "idle") {
+		this.ok_to_disconnect = true;
+	} else {
+		this.ok_to_disconnect = false;
+	}
 	this.machine.setState(this, newstate);
 };
 
@@ -43,6 +60,14 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 	// Update the machine copy of g2 status variables
 	for (key in status) {
 		this.status_report[key] = status[key];
+	}
+
+	switch(this.status_report.stat) {
+		case this.driver.STAT_INTERLOCK:
+		case this.driver.STAT_SHUTDOWN:
+		case this.driver.STAT_PANIC:
+			return this._die();
+			break;
 	}
 
 	switch(this.machine.status.state) {
@@ -82,13 +107,26 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 				break;
 			}
 			break;
+
 	}
 	this.machine.emit('status',this.machine.status);
 
 };
 
+GCodeRuntime.prototype._die = function() {
+	this.machine.status.current_file = null;
+	this.machine.status.line=null;
+	this.machine.status.nb_lines=null;
+ 	try {
+ 		this.machine.status.job.fail();
+ 	} catch(e) {}
+ 	finally {
+		this.machine.status.job=null;
+ 		this.machine.setState(this, 'dead', {error : 'A G2 exception has occurred. You must reboot your tool.'});
+ 	}
+}
+
 GCodeRuntime.prototype._idle = function() {
-	//console.log(this.machine.driver.gcode_queue.getContents())
 	this.machine.status.current_file = null;
 	this.machine.status.line=null;
 	this.machine.status.nb_lines=null;
@@ -97,6 +135,7 @@ GCodeRuntime.prototype._idle = function() {
 	// Set the machine state to idle and return the units to their default configuration
 	var finishUp = function() {
 		this.driver.setUnits(config.machine.get('units'), function() {
+			this.ok_to_disconnect = true;
 			this.machine.setState(this, 'idle');
 		}.bind(this))
 	}.bind(this);
@@ -123,13 +162,16 @@ GCodeRuntime.prototype._idle = function() {
 GCodeRuntime.prototype.runString = function(string, callback) {
 	if(this.machine.status.state === 'idle') {
 		var lines =  string.split('\n');
+		var mode = config.driver.get('gdi') ? 'G91': 'G90';
 		this.machine.status.nb_lines = lines.length;
 		for (i=0;i<lines.length;i++){
 			if (lines[i][0]!==undefined && lines[i][0].toUpperCase() !== 'N' ){
 				lines[i]= 'N'+ (i+1) + lines[i];
 			}
 		}
+		lines.unshift(mode);
 		lines.push('M30\n');
+		// TODO no need to stitch this string back together, it's just going to be split again in the driver
 		string = lines.join("\n");
 		this.driver.runString(string,this.machine.status);
 	}

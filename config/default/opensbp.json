@@ -8,7 +8,8 @@
     "pocketOverlap": 50,
     "safeZpullUp": 0.25,
     "safeApullUp": 0.25,
-    "variables" : {"z_offset" : 3.5},
+    "variables" : {
+    },
     "transforms": {
         "rotate": {
             "apply": false,

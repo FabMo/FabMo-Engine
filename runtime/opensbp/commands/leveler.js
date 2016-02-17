@@ -46,9 +46,9 @@ var Leveler = function(file, callback) {
         return v1[0] * v2[0] + v1[1] * v2[1];
     }
 
-    //Return false if not in triangle, else { triangle, u, v }
-    //u and v are the coefficient of the barycenter from the point 0 of
-    // the triangle
+    //Return false if not in triangle, else { triangle, coeffAC, coeffAB }
+    //coeffAC and coeffAB are the coefficient of the barycenter from the point
+    //0 (A) of the triangle
     function pointInTriangle(triangle, point) {
         if(pointOutsideBoundary(triangle, point) === true) {
             return false;
@@ -67,20 +67,27 @@ var Leveler = function(file, callback) {
 
         //Find barycenter coefficients
         var invDenominator = 1 / (dotACAC * dotABAB - dotACAB * dotACAB);
-        var u = (dotABAB * dotACAP - dotACAB * dotABAP) * invDenominator;
-        var v = (dotACAC * dotABAP - dotACAB * dotACAP) * invDenominator;
+        var coeffAC = (dotABAB * dotACAP - dotACAB * dotABAP) * invDenominator;
+        var coeffAB = (dotACAC * dotABAP - dotACAB * dotACAP) * invDenominator;
 
-        if(u < 0 || v < 0 || (u + v > 1)) {
+        if(coeffAC < 0 || coeffAB < 0 || (coeffAC + coeffAB > 1)) {
             return false;
         }
 
-        return { triangle : triangle, u : u, v : v };
+        return { triangle : triangle, coeffAC : coeffAC, coeffAB : coeffAB };
     }
 
     //triangle is the triangle with the coordinates of each point
-    that.findTriangle = function(coordinate) {
+    //Returns false if cannot find a triangle else the triangle with the
+    //barycenter coefficients
+    that.findTriangleAndCoefficients = function(coordinate) {
         var i = 0;
         var result, triangle;
+
+        if(that.triangles === undefined) {
+            return false;
+        }
+
         for(i = 0; i < that.triangles.length; i++) {
             triangle = [
                 that.points[that.triangles[i][0]],
@@ -97,16 +104,20 @@ var Leveler = function(file, callback) {
         return false;
     };
 
-    that.findHeight = function(coordinate) {
-        var triangle = that.findTriangle(coordinate);
+    //Changes foundHeight by the found height.
+    //Returns false if cannot find the height, else returns the height
+    that.findHeight = function(x, y, z) {
+        var triangle = that.findTriangleAndCoefficients([x, y, z]);
         if(triangle === false) {
             return false;
         }
         //Recuperate the true points and calculate the height
-        var tr = triangle.triangle, u = triangle.u, v = triangle.v;
+        var tr = triangle.triangle, coeffAC = triangle.coeffAC;
+        var coeffAB = triangle.coeffAB;
         var a = that.points[tr[0]],  b = that.points[tr[1]];
         var c = that.points[tr[2]];
-        var height = a[2] + u * (c[2] - a[2]) + v * (b[2] - a[2]);
+        var height = a[2] + coeffAC * (c[2] - a[2]) + coeffAB * (b[2] - a[2]);
+        that.foundHeight = height;
         return height;
     };
 
@@ -133,7 +144,7 @@ var Leveler = function(file, callback) {
         var arr = data.split("\n"), point = [], points = [];
 
         for(i=0; i < arr.length; i++) {
-            point = arr[i].split(",");
+            point = arr[i].split(" ");
 
             if(point.length === 3) {
                 points.push([
@@ -151,7 +162,6 @@ var Leveler = function(file, callback) {
     function parseFile(error, data) {
         if(error) {
             console.error(error);
-            return;
         }
 
         var i = 0, hightest = 0;
@@ -177,10 +187,19 @@ var Leveler = function(file, callback) {
         points2D = convertPointsForTriangulation(that.points);
         that.triangles = triangulate(points2D);
 
+        if(that.triangles === undefined) {
+            //Should stop the job
+            log.error(new Error("Impossible to triangulate the point cloud."));
+        }
+
         if(callback !== undefined) {
-            callback();
+            callback(null);
         }
     }
+
+    that.points = [];
+    that.triangles = [];
+    that.foundHeight = 0;  //Useful for comparing with the previous found height
 
     fs.readFile(file, "utf8", parseFile);
 };

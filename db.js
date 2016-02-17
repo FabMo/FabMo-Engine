@@ -1,7 +1,7 @@
 var assert = require('assert');
 var fs = require('fs-extra');
-var crypto = require('crypto'); // for the checksum
-var log = require('./log').logger('files');
+var crypto = require('crypto');
+var log = require('./log').logger('db');
 var config = require('./config');
 var util = require('./util');
 var ncp = require('ncp').ncp;
@@ -36,21 +36,21 @@ Job.prototype.clone = function(callback) {
 };
 
 Job.prototype.start = function(callback) {
-	log.debug("Starting job id " + this._id ? this._id : '<volatile job>');
+	log.info("Starting job id " + this._id ? this._id : '<volatile job>');
 	this.state = 'running';
 	this.started_at = Date.now();
 	this.save(callback);
 };
 
 Job.prototype.finish = function(callback) {
-	log.debug("Finishing job id " + this._id ? this._id : '<volatile job>');
+	log.info("Finishing job id " + this._id ? this._id : '<volatile job>');
 	this.state = 'finished';
 	this.finished_at = Date.now();
 	this.save(callback);
 };
 
 Job.prototype.fail = function(callback) {
-	log.warn("Failing job id " + this._id ? this._id : '<volatile job>');
+	log.info("Failing job id " + (this._id ? this._id : '<volatile job>'));
 	this.state = 'failed';
 	this.finished_at = Date.now();
 	this.save(callback);
@@ -69,42 +69,19 @@ Job.prototype.cancel = function(callback) {
 
 Job.prototype.save = function(callback) {
 	if(!this.file_id) {
-		log.warn('Not saving this job because no file_id')
-		setImmediate(callback, null, this);
-		return;
+		log.info('Not saving this job because no file_id')
+		return callback(null, this);
 	}
 
-	jobs.findOne({_id: this._id}, function(err,document){
-		if(err) {
-			callback(err);
+	delete this.pending_cancel;
+
+	jobs.save(this, function(err, record) {
+		if(!record) {
+			return;
 		}
-		else if(document){
-			delete this.pending_cancel
-			// update the current entry in the database instead of creating a new one.
-			log.info('Updating job id ' + document._id);
-			jobs.update({'_id' : document._id},this,function(err){
-				if(err) {
-					callback(err);
-				} else {
-					callback(null, this);
-				}
-			}.bind(this));
-		}
-		else{
-			delete this.pending_cancel
-			// Create a new entry in the database
-			log.info('Creating a new job.');
-			jobs.insert(this, function(err,records){
-				if(err) {
-					callback(err, null);
-				}
-				else {
-					// Return the newly created job
-					callback(null, this);
-				}
-			}.bind(this));
-		}
+		callback(null, this);
 	}.bind(this));
+	
 };
 
 Job.prototype.delete = function(callback){
@@ -115,8 +92,24 @@ Job.getPending = function(callback) {
 	jobs.find({state:'pending'}).toArray(callback);
 };
 
-Job.getHistory = function(callback) {
-	jobs.find({state: {$in : ['finished', 'cancelled', 'failed']}}).sort({'created_at' : -1 }).toArray(callback);
+Job.getHistory = function(options, callback) {
+	var total = jobs.count({
+		state: {$in : ['finished', 'cancelled', 'failed']}
+	}, function(err, total) {
+		if(err) { return callback(err); }
+		jobs.find({
+			state: {$in : ['finished', 'cancelled', 'failed']}
+		}).skip(options.start || 0).limit(options.count || 0).sort({'created_at' : -1 }).toArray(function(err, data) {
+			if(err) {
+				callback(err);
+			}
+			callback(null, {
+				'total_count' : total,
+				'data' : data
+			});
+		});
+	});
+
 };
 
 Job.getAll = function(callback) {
@@ -194,30 +187,35 @@ Job.deletePending = function(callback) {
 // The File class represents a fabrication file on disk
 // In addition to the filename and path, file statistics such as 
 // The run count, last time run, etc. are stored in the database.
-function File(filename,path){
+function File(filename,path, callback){
 	var that=this;
 	this.filename = filename;
 	this.path = path;
 	this.created = Date.now();
 	this.last_run = null;
 	this.run_count = 0;
+	this.hash = null;
 	fs.stat(path, function(err, stat) {
 		if(err) {
 			throw err;
 		}
 		that.size = stat.size;
 	});
-	fs.readFile(this.path, function (err, data) {
-		this.checksum = File.checksum(data);
-	}.bind(this));
 }
 
-File.checksum = function(data) {
-	return crypto.createHash('md5').update(data, 'utf8').digest('hex');
-};
+File.hash = function(path, callback) {
+	var fd = fs.createReadStream(path);
+	var hash = crypto.createHash('md5');
+	hash.setEncoding('hex');
+	fd.on('end', function() {
+	    hash.end();
+	    callback(null, hash.read())
+	});
+	fd.pipe(hash);
+}
 
 // Save information about this file to back to the database
-File.prototype.save = function(callback){
+File.prototype.save = function(callback) {
 	var that = this;
 	files.findOne({path: that.path},function(err,document){
 	if (err){
@@ -233,10 +231,12 @@ File.prototype.save = function(callback){
 	else{
 		log.info('Creating a new document.');
 		files.insert(that, function(err,records){
-			if(!err)
+			if(!err) {
 				callback(null, records[0]);
-			else
+			}
+			else {
 				callback(err);
+			}
 		});
 	}
 	});
@@ -253,32 +253,49 @@ File.prototype.saverun = function(){
 };
 
 File.add = function(friendly_filename, pathname, callback) {
-
 	// Create a unique name for actual storage
 	var filename = util.createUniqueFilename(friendly_filename);
 	var full_path = path.join(config.getDataDir('files'), filename);
-	// Move the file
-	util.move(pathname, full_path, function(err) {
-		if(err) {
-			callback(err);
-		}
-		// delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
-		fs.unlink(pathname, function(err) {
-			if (err) {
-				// Failure to delete the temporary file is bad, but non-fatal
-				log.warn("failed to remove the job from temporary folder: " + err);
-			}
 
-			var file = new File(friendly_filename, full_path);
-			file.save(function(err, file){
-				if(err) {
-					return callback(err);
-				}
-				log.info('Saved a file: ' + file.filename + ' (' + file.path + ')');
-				callback(null, file)
-			}.bind(this)); // save
-		}.bind(this)); // unlink
-	}); // move
+	// Compute the hash for the file to be added
+	File.hash(pathname, function(err, hash) {
+		// Check to see if the hash is already found in the database
+		files.findOne({hash:hash},function(err,document) {
+			if(document) {
+				log.info("Using file with hash of " + hash + " which already exists in the database.");
+				var file = document;
+				file.__proto__ = File.prototype;
+				callback(null, file);
+			} else {
+				log.info("Saving a new file with a hash of " + hash + ".");
+				// Move the file
+				util.move(pathname, full_path, function(err) {
+					if(err) {
+						return callback(err);
+					}
+					// delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
+					fs.unlink(pathname, function(err) {
+						if (err) {
+							// Failure to delete the temporary file is bad, but non-fatal
+							log.warn("failed to remove the job from temporary folder: " + err);
+						}
+
+						var file = new File(friendly_filename, full_path);
+						file.hash = hash;
+						file.save(function(err, file){
+							if(err) {
+								return callback(err);
+							}
+							log.info('Saved a file: ' + file.filename + ' (' + file.path + ')');
+							callback(null, file)
+						}.bind(this)); // save
+					}.bind(this)); // unlink
+				}); // move
+			}
+		});		
+	})
+
+
 } // add
 
 // Return a list of all the files in the database
@@ -304,6 +321,30 @@ File.getByID = function(id,callback)
 		callback(null, file);
 	});
 };
+
+// Given a file and metadata, create a new file and job in the database
+// callback with the job object if success.
+var createJob = function(file, options, callback) {
+	File.add(options.filename || file.name, file.path, function(err, dbfile) {
+
+	    if (err) { return callback(err); }
+
+        try {
+            var job = new Job({
+                file_id : dbfile._id,
+                name : options.name || file.name,
+                description : options.description
+            });
+        } catch(e) {
+        	log.error(e);
+            return callback(e);
+        }
+        job.save(function(err, job) {
+        	if(err) { return callback(err); }
+        	callback(null, job);
+        });
+    });
+}
 
 checkCollection = function(collection, callback) {
 	collection.find().toArray(function(err, data) {
@@ -384,6 +425,4 @@ exports.cleanup = function(callback) {
 
 exports.File = File;
 exports.Job = Job;
-
-/*****************************************/
-
+exports.createJob = createJob;

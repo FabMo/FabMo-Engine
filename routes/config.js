@@ -1,6 +1,7 @@
 var machine = require('../machine').machine;
 var config = require('../config');
 var log = require('../log').logger('routes');
+var engine = require('../engine');
 
 /**
  * @api {get} /status Engine status
@@ -51,7 +52,7 @@ var get_config = function(req, res, next) {
   var answer = 
   {
     status : "success",
-    data : {'configuration':retval}
+    data : {'config':retval}
   };
   res.json(answer);
 };
@@ -70,7 +71,7 @@ var post_config = function(req, res, next) {
   var answer;
 
   if('engine' in req.params) {
-    config.engine.update(util.fixJSON(req.params.engine), function(err, result) {
+    config.engine.setMany(util.fixJSON(req.params.engine), function(err, result) {
       config.engine.apply(function(err, result) {
         if(err) {
           answer = {
@@ -90,7 +91,7 @@ var post_config = function(req, res, next) {
   }
 
   if('driver' in req.params) {
-    config.driver.update(util.fixJSON(req.params.driver), function(err, result) {
+    config.driver.setMany(util.fixJSON(req.params.driver), function(err, result) {
       if(err) {
         answer = {
           status : "fail",
@@ -108,7 +109,7 @@ var post_config = function(req, res, next) {
   }
 
   if('opensbp' in req.params) {
-    config.opensbp.update(util.fixJSON(req.params.opensbp), function(err, result) {
+    config.opensbp.setMany(util.fixJSON(req.params.opensbp), function(err, result) {
       if(err) {
         answer = {
           status : "fail",
@@ -126,7 +127,7 @@ var post_config = function(req, res, next) {
   }
 
   if('machine' in req.params) {
-    config.machine.update(util.fixJSON(req.params.machine), function(err, result) {
+    config.machine.setMany(util.fixJSON(req.params.machine), function(err, result) {
       config.machine.apply(function(err, result) {
         if(err) {
           answer = {
@@ -146,8 +147,19 @@ var post_config = function(req, res, next) {
   }
 };
 
+var get_version = function(req, res, next) {
+  var retval = {};
+  var answer = 
+  {
+    status : "success",
+    data : {'version':engine.version}
+  };
+  res.json(answer);
+};
+
 module.exports = function(server) {
-  server.get('/status', get_status);     //OK
-  server.get('/config',get_config);      //OK
-  server.post('/config', post_config);   //TODO
+  server.get('/status', get_status);
+  server.get('/config',get_config);
+  server.post('/config', post_config);
+  server.get('/version', get_version);
 };

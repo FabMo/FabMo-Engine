@@ -1,0 +1,97 @@
+<html> 
+<head>
+	<meta charset="utf-8">
+	<title>Self-Test App</title>
+	<link rel="stylesheet" href="./css/pure-min.css">
+</head>
+<body>
+  <ul>
+    <li><a href="#" id="submitSingleString">Submit a Single String</a></li>
+    <li><a href="#" id="submitArrayOfStrings">Submit an array of Strings</a></li>
+
+    <li><a href="#" id="submitSingleObject">Submit a Single Object</a></li>
+    <li><a href="#" id="submitArrayOfObjects">Submit an array of Objects</a></li>
+    
+    <li><a href="#" id="submitMultipleJobs">Submit Multiple Jobs</a></li>
+  </ul>
+
+  <form id="fileForm">
+  <input type="file" id="fileInput"/>
+  <button type="submit" id="fileSubmit">Submit</button>
+  </form>
+    
+  <script src="/js/libs/jquery.min.js"></script>
+  <script src="/js/libs/fabmo.js"></script> 
+
+  <script type="text/javascript">
+  	var fabmo = new FabMoDashboard();
+
+  	$(document).ready(function() {
+	  	$('#submitSingleString').click(function(evt){
+	  		evt.preventDefault();
+	  		console.info("Submitting a single string")
+	  		fabmo.submitJob({file : "G0 X1", filename : 'myfile.nc'}, function(err, result) {
+	  			if(err) { 
+	  				fabmo.notify('error', err); 
+	  			}
+	  			else {
+	  				fabmo.notify('Success');	  				
+	  			}
+	  		});
+	  	});
+
+	  	$('#submitArrayOfStrings').click(function(evt){
+	  		evt.preventDefault();
+	  		console.info("Submitting an array of strings")
+	  		fabmo.submitJob([
+	  			{file : "G0 X1", filename : "ex_one.nc"},
+	  			{file : "G0 Y1", filename : "wye_one.nc"},
+	  			{file : "G0 Z1", filename : "zee_one.nc"}
+	  			], function(err, result) {
+
+	  		});
+	  	});
+
+	  	$('#submitSingleObject').click(function(evt){
+	  		evt.preventDefault();
+	  		fabmo.submitJobs({
+	  			filename : 'job1.nc', 
+	  			data : 'G0 X1', 
+	  			name : 'Job 1', 
+	  			description : "Job 1"
+	  		});
+	  	});
+
+	  	$('#submitArrayOfObjects').click(function(evt){
+	  		evt.preventDefault();
+	  		fabmo.submitJobs([{
+	  			filename : 'job1.nc', 
+	  			data : 'G0 X1', 
+	  			name : 'Job 1', 
+	  			description : "Job 1"
+	  		},
+
+	  		{
+	  			filename : 'job1.nc', 
+	  			data : 'G0 X1', 
+	  			name : 'Job 1', 
+	  			description : "Job 1"
+	  		},
+
+	  		{
+	  			filename : 'job1.nc', 
+	  			data : 'G0 X1', 
+	  			name : 'Job 1', 
+	  			description : "Job 1"
+	  		}]);
+	  	});
+
+	  	$('#fileForm').submit(function(evt){
+	  		evt.preventDefault();
+	  		fabmo.submitJobs($('#fileForm'));
+	  	});
+
+
+  	});
+  </script>
+</body>
