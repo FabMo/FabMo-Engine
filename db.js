@@ -107,6 +107,11 @@ Job.getPending = function(callback) {
 	jobs.find({state:'pending'}).toArray(callback);
 };
 
+Job.getRunning = function(callback) {
+	jobs.find({state:'running'}).toArray(callback);
+};
+
+
 Job.getHistory = function(options, callback) {
 	var total = jobs.count({
 		state: {$in : ['finished', 'cancelled', 'failed']}

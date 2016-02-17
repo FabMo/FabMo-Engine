@@ -182,6 +182,7 @@
 	// The queue will update when the status report comes in
 	// But the history needs to be updated manually
 	fabmo.requestStatus();
+	updateQueue();
 	updateHistory();
 
 	bindNextJobEvents();
@@ -203,11 +204,9 @@
 
 	$('#run-next').click(function(e) { 
 		if ($('.play').hasClass('active')){
-			$('.play').toggleClass('active');
 			fabmo.stop(function(err, data) {
 		});
 		} else {
-			$('.play').toggleClass('active');
 			fabmo.runNext(function(err, data) {
 				if(err) {
 					fabmo.notify(err);
