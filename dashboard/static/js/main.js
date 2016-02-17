@@ -257,37 +257,48 @@ $(document).on('keyup', function(e) {
 
 //goto this location 
 
-$('html').on('click', function (e) {
-		if (e.target.id === "go-here") {
-		var x = $('.posx').attr('value','')[1].value;
-		var y = $('.posy').attr('value','')[1].value;
-		var z = $('.posz').attr('value','')[1].value;
-		var gcode = "G0 X" + x + " Y" + y + " Z" + z;
-		dashboard.engine.gcode(gcode);
-		$('.go-here').hide();
-		} else if (e.target.id === "axis"){
-			 $("input:text").focus(function() { 
-             $(this).select(); 
-             $('.go-here').show();
-             } );
-			
-		} else {
-			$('.go-here').hide();
-		}
+var axisValues = [];
+$('.axi').each( function(){
+    var strings = this.getAttribute('class').split(" ")[0];
+    var axis = strings.slice(-1).toUpperCase();
+    axisValues.push({"className" : ("."+strings), "axis": axis});
 });
-$('.posx, .posy, .posz').keyup(function(e){
-    if(e.keyCode == 13){
-    	e.preventDefault();
-        e.stopPropagation();
-        var x = $('.posx').attr('value','')[1].value;
-		var y = $('.posy').attr('value','')[1].value;
-		var z = $('.posz').attr('value','')[1].value;
-		var gcode = "G0 X" + x + " Y" + y + " Z" + z;
-		dashboard.engine.gcode(gcode);
-		$('.go-here').hide();
-        
-    }
 
+$('.go-here').on('mousedown', function () {
+    var gcode = "G0 ";
+    for (var i = 0; i<axisValues.length; i++) {
+        if ($(axisValues[i].className).attr('value','')[1].value.length > 0){
+        gcode += axisValues[i].axis + $(axisValues[i].className).attr('value','')[1].value + " ";
+        }
+    }
+    dashboard.engine.gcode(gcode);
+    $('.go-here').hide();
+    
+});
+    
+$('.axi').on('focus', function() { 
+    $(this).select(); 
+    $('.go-here').show();
+});
+
+$('.axi').on('blur', function() { 
+    $('.posx').val($('.posx').val());
+    $('.posy').val($('.posy').val());
+    $('.posz').val($('.posz').val());
+    $('.go-here').hide();
+});
+
+$('.axi').keyup(function(e){
+    if(e.keyCode == 13){
+        var gcode = "G0 ";
+        for (var i = 0; i<axisValues.length; i++) {
+            if ($(axisValues[i].className).attr('value','')[1].value.length > 0){
+            gcode += axisValues[i].axis + $(axisValues[i].className).attr('value','')[1].value + " ";
+            }
+        }
+		dashboard.engine.gcode(gcode);
+		$('.go-here').hide();    
+    }
 });
 
 // Handlers for the home/probe buttons
