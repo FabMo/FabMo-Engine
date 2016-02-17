@@ -8,6 +8,7 @@ var blinkTimer = null;
 
 // The currently running Job ID
 var currentJobId = -1; 
+var currentStatus = {};
 
 function setupDropTarget() {
 	$('#tabpending').dragster({
@@ -43,6 +44,7 @@ function setupDropTarget() {
 }
 
 function updateQueue(running, callback) {
+	running = currentStatus.job;
 	// Update the queue display.
 	fabmo.getJobsInQueue(function(err, jobs) {
 		if(err) { return callback(err); }
@@ -54,7 +56,6 @@ function updateQueue(running, callback) {
 					$('.job-queue').show(500);
 				}
 			} else {
-				console.log("not running")
 				setNextJob(jobs[0]);
 				if (jobs.length > 1) { // Show the queue table if there's more than one job in the queue.
 					$('.job-queue').show(500);
@@ -330,7 +331,8 @@ var setProgress = function(status) {
  * ---------
  */
 function handleStatusReport(status) {
-
+	currentStatus = status;
+	
 	// Either we're running a job currently or null
 	try {
 		var jobid = status.job._id || null;

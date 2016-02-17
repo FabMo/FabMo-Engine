@@ -310,7 +310,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 					config.instance.update({'position' : mpo});
 				});
 				break;
-
 			case 'dead':
 				log.error('G2 is dead!');
 				break;

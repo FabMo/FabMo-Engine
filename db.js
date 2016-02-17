@@ -16,6 +16,13 @@ var db;
 var files;
 var jobs;
 
+function notifyChange() {
+	var machine = require('./machine').machine;
+	if(machine) {
+		machine.emit('change', 'jobs');
+	}
+}
+
 Job = function(options) {
     this.file_id = options.file_id || null;
     this.name = options.name || "Untitled Job";
@@ -80,12 +87,20 @@ Job.prototype.save = function(callback) {
 			return;
 		}
 		callback(null, this);
+		notifyChange();
 	}.bind(this));
 	
 };
 
 Job.prototype.delete = function(callback){
-	jobs.remove({_id : this._id},function(err){if(!err)callback();else callback(err);});
+	jobs.remove({_id : this._id},function(err){
+		if(err) {
+			callback(err)
+		} else {
+			callback();
+			notifyChange();
+		}
+	});
 };
 
 Job.getPending = function(callback) {

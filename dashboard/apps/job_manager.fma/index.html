@@ -171,6 +171,13 @@
   	//Foundation Init
 	$(document).foundation();
 
+	fabmo.on('change', function(topic) {
+		if(topic === 'jobs') {
+			updateQueue();
+			updateHistory();
+		}
+	});
+
 	// Request infoes from the tool
 	// The queue will update when the status report comes in
 	// But the history needs to be updated manually
