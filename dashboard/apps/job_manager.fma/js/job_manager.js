@@ -14,20 +14,17 @@ function setupDropTarget() {
 	$('#tabpending').dragster({
 		enter : function(devt, evt) {
 			$('#tabpending').addClass('hover');
-			console.log("Hovering")
 			return false; 
 		}, 
 
 		leave : function (devt, evt) {
 			$('#tabpending').removeClass('hover');
-			console.log("Exiting")
 			return false;
 		},
 		drop : function (devt, evt) {
 			evt.preventDefault();
 			try {
 				file = evt.originalEvent.dataTransfer.files;
-				console.log(file);
 				fabmo.submitJob(file, {}, function(err, data) {
 					if(err){
 						fabmo.notify('error', err);
@@ -50,7 +47,6 @@ function updateQueue(running, callback) {
 	fabmo.getJobsInQueue(function(err, jobs) {
 		if(err) { return callback(err); }
 		clearQueue();
-		console.log(jobs)
 		if(jobs.running.length) {
 			runningJob(jobs.running[0]);
 			if(jobs.pending.length > 0) {
@@ -174,9 +170,7 @@ function bindMenuEvents() {
 
 	$('.resubmitJob').off('click');
 	$('.resubmitJob').click(function(e) {
-		console.log("resubmit")
 		fabmo.resubmitJob(this.dataset.jobid, function(err, result) {
-			console.log("Resubmitted");
 			//refresh_jobs_list();
 			fabmo.getJobsInQueue(function(err, data) {
 				$('.toggle-topbar').click();
