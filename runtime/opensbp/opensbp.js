@@ -187,6 +187,17 @@ SBPRuntime.prototype.simulateString = function(s, callback) {
 	}
 }
 
+SBPRuntime.prototype._limit = function() {
+	var er = this.driver.getLastException();
+	if(er && er.st == 203) {
+		var msg = er.msg.replace(/\[[^\[\]]*\]/,'');
+		this.driver.clearLastException();
+		this._end(msg);
+		return true;
+	}
+	return false;
+}
+
 // Handler for G2 statue reports
 SBPRuntime.prototype._onG2Status = function(status) {
 	
@@ -529,6 +540,7 @@ SBPRuntime.prototype._dispatch = function(callback) {
 					},
 					"alarm" : function(driver) { 
 						// On alarm terminate the program (for now)
+						if(this._limit()) {return;}
 						this._end();
 					}.bind(this),
 					"end" : function(driver) { 

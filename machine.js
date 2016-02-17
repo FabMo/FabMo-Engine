@@ -314,8 +314,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				log.error('G2 is dead!');
 				break;
 		}
-		
-
 	} else {		
 		log.warn("Got a state change from a runtime that's not the current one. (" + source + ")")
 	}
