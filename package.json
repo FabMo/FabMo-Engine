@@ -26,7 +26,6 @@
     "tingodb": "0.3.x",
     "tough-cookie": "^2.0.0",
     "lockfile":"1.0.x",
-    "bad_fabmo_dependency":"1.0.0"
   },
   "devDependencies": {
     "chai": "3.2.x",
