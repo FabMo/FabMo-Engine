@@ -40,7 +40,7 @@ function update() {
         $('.engine-version').text(version.hash.substring(0,12) + '-dev');
         break;
       case 'release':
-        $('.engine-version').text('v' + version.number);
+        $('.engine-version').text(version.number);
         break;
     }
   });
