@@ -64,6 +64,12 @@ define(function(require) {
 			
 			// Request a status update from the tool
 			engine.getStatus();
+
+			dashboard.engine.on('change', function(topic) {
+				if(topic === 'apps') {
+					context.apps.fetch();
+				}
+			});
 		}
 	});
 

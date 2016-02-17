@@ -18,6 +18,12 @@ function setupStatusBroadcasts(server){
 		});
 		previous_status = status;
 	});
+
+	machine.on('change', function(topic) {
+		server.io.sockets.sockets.forEach(function (socket) { 
+			socket.emit('change',topic);
+		});
+	});
 }
 
 

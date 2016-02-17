@@ -109,7 +109,12 @@
 			});
 		});
 	};
-  
+  	fabmo.on('change', function(topic) {
+  		if(topic === 'apps') {
+  			refreshApps();
+  		}
+  	});
+
 	$(function() {
 		$(document).foundation();
 		refreshApps(); 

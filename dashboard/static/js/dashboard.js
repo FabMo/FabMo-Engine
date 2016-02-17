@@ -19,7 +19,8 @@ define(function(require) {
 		this.events = {
 			'status' : [],
 			'job_start' : [],
-			'job_end' : []
+			'job_end' : [],
+			'change' : []
 		};
 		this._registerHandlers();
 		this._setupMessageListener();
@@ -53,6 +54,9 @@ define(function(require) {
 		this.engine = engine;
 		this.engine.on('status', function(data) {
 			this.updateStatus(data);
+		}.bind(this));
+		this.engine.on('change', function(topic) {
+			this._fireEvent('change', topic);
 		}.bind(this));
 	}
 

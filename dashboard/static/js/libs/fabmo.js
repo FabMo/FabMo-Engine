@@ -27,7 +27,7 @@ var FabMoDashboard = function() {
     // listen for escape key press to quit the engine
     $(document).on('keyup', function(e) {
         if(e.keyCode == 27) {
-            console.log("ESC key pressed - quitting engine.");
+            console.warn("ESC key pressed - quitting engine.");
             this.stop();
         }
     }.bind(this));
