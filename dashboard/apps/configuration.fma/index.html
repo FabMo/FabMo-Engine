@@ -1622,6 +1622,37 @@
         </div>
       </fieldset>
     </div>
+
+    <div class="row">  
+      <fieldset>
+        <legend>Authorization</legend>
+        <div class="large-6 columns">
+          <div class="row collapse">
+           <label>Authorization Input
+                <select id="machine-auth_input" class="machine-input">
+                  <option value="1">Input 1</option>
+                  <option value="2">Input 2</option>
+                  <option value="3">Input 3</option>
+                  <option value="4">Input 4</option>
+                  <option value="5">Input 5</option>
+                  <option value="6">Input 6</option>
+                  <option value="7">Input 7</option>
+                  <option value="8">Input 8</option>
+                </select>
+              </label>
+          </div> 
+          <div class="row collapse">
+            <label>Authorization Timeout</label>
+            <div class="small-9 columns">
+              <input type="number" id="machine-auth_timeout" class="machine-input"/>
+            </div>
+            <div class="small-3 columns">
+              <span class="postfix">seconds</span>
+            </div>
+          </div> 
+        </div>
+      </fieldset>
+    </div>
   </section>
 </div>
 </form>
@@ -1640,9 +1671,7 @@
       var host = slashes.concat(window.location.hostname);
       var port = ':' + (parseInt((location.port || 80)) + 1);
       var url = host.concat(port).concat('/do_update')
-      console.log("bweeeeeeh")
       fabmo.navigate(url, {});
-      console.log("bweeeeh")
     });
     $(document).ready(function() {
       $(document).foundation();
