@@ -395,12 +395,32 @@ engine.on('status', function(status) {
 		hideModal();
 	}
 });
+
+function setConnectionStrength(level) {
+	if(level === null) {
+		level = 0;		
+	}
+	for(i=1; i<5; i++) {
+		 var bar = $('#cs' + i);
+		 if(i<=level) {
+		 	bar.attr('class', 'on');
+		 } else {
+		 	bar.attr('class', 'off');
+		 }
+	}
+}
+
 setInterval(function() {
 	engine.ping(function(err, time) {
 		if(err) {
+			setConnectionStrength(0);
 			console.error(err);
 		} else {
-			//console.info("PING Response time: " + time + "ms");
+			if(time < 50) {setConnectionStrength(4);}
+			else if(time < 100) { setConnectionStrength(3);}
+			else if(time < 200) { setConnectionStrength(2);}
+			else if(time < 300) { setConnectionStrength(1);}
+			else { setConnectionStrength(0);}
 		}
 	});
 }, 5000);
