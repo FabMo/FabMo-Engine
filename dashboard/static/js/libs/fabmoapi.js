@@ -11,7 +11,7 @@
 }(this, function (io) {
   "use strict"
 
-var PING_TIMEOUT = 1000;
+var PING_TIMEOUT = 3000;
 
 var makePostData = function(obj, options) {
 	var file = null;

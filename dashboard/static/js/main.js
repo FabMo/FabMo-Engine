@@ -429,11 +429,10 @@ var err_count = 0;
 
 function ping() {
 	engine.ping(function(err, time) {
-
-		// 4-point Moving average
+		// 5-point Moving average
 		signal_window.push(time);
-		if(signal_window.length > 4) {
-			signal_window.unshift();
+		if(signal_window.length > 5) {
+			signal_window.shift(0);
 		}
 		var sum = 0;
 		for(var i=0; i<signal_window.length; i++) {
