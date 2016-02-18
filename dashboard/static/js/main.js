@@ -407,23 +407,25 @@ engine.on('status', function(status) {
 });
 
 function setConnectionStrength(level) {
+	var onclass = 'on';
 	if(level === null) {
-		level = 0;		
+		level = 4;
+		onclass = 'err';
 	}
 	for(i=1; i<5; i++) {
 		 var bar = $('#cs' + i);
 		 if(i<=level) {
-		 	bar.attr('class', 'on');
+		 	bar.attr('class', onclass);
 		 } else {
 		 	bar.attr('class', 'off');
 		 }
 	}
 }
 
-setInterval(function() {
+function ping() {
 	engine.ping(function(err, time) {
 		if(err) {
-			setConnectionStrength(0);
+			setConnectionStrength(null);
 			console.error(err);
 		} else {
 			if(time < 50) {setConnectionStrength(4);}
@@ -432,8 +434,11 @@ setInterval(function() {
 			else if(time < 300) { setConnectionStrength(1);}
 			else { setConnectionStrength(0);}
 		}
+		setTimeout(ping, 3000);
 	});
-}, 5000);
+};
+
+ping();
 
 (function () {
 if ($(window).width() < 620) {
