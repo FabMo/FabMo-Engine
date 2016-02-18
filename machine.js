@@ -52,6 +52,7 @@ function Machine(control_path, gcode_path, callback) {
 	// Handle Inheritance
 	events.EventEmitter.call(this);
 
+	console.log(config.machine.get('auth_timeout'));
 	// Instantiate driver and connect to G2
 	this.status = {
 		state : "not_ready",
@@ -70,7 +71,8 @@ function Machine(control_path, gcode_path, callback) {
 		info : null,
 		unit : 'mm',
 		line : null,
-		nb_lines : null
+		nb_lines : null,
+		auth : false
 	};
 
 	this.driver = new g2.G2();
@@ -94,7 +96,7 @@ function Machine(control_path, gcode_path, callback) {
 	    this.idle_runtime = new IdleRuntime();
 
 	    // Idle 
-	    this.setRuntime(this.idle_runtime);
+	    this.setRuntime(this.idle_runtime, function() {});
 
 	    if(err) {
 		    typeof callback === "function" && callback(err);
@@ -130,12 +132,49 @@ function Machine(control_path, gcode_path, callback) {
     		}
     	}.bind(this));
     }.bind(this));
+
+    this.driver.on('status', function(stat) {
+    	var auth_input = 'in' + config.machine.get('auth_input');
+    	if(stat[auth_input]) {
+    		this.authorize();
+    	}
+    }.bind(this));
 }
 util.inherits(Machine, events.EventEmitter);
 
 Machine.prototype.die = function(err_msg) {
 	this.setState(this, 'dead', {error : 'A G2 exception has occurred. You must reboot your tool.'});
 	this.emit('status',this.status);
+}
+
+Machine.prototype.authorize = function(timeout) {
+	var timeout = timeout || config.machine.get('auth_timeout');
+	if(timeout) {
+		if(!this.status.auth) {
+			log.info("Machine is authorized for the next " + timeout + " seconds.");			
+		}
+		if(this._authTimer) { clearTimeout(this._authTimer);}
+		this._authTimer = setTimeout(function() {
+			log.info('Authorization timeout (' + timeout + 's) expired.');
+			this.deauthorize();
+		}.bind(this), timeout*1000);		
+	} else {
+		if(!this.status.auth) {
+			log.info("Machine is authorized indefinitely.");
+		}
+	}
+	this.status.auth = true;
+	this.emit('status', this.status);
+}
+
+Machine.prototype.deauthorize = function() {
+	if(!config.machine.get('auth_timeout')) { return; }
+	if(this._authTimer) {
+		clearTimeout(this._authTimer);
+	}
+	log.info('Machine is deauthorized.');
+	this.status.auth = false;
+	this.emit('status', this.status);
 }
 
 Machine.prototype.isConnected = function() {
@@ -151,19 +190,21 @@ Machine.prototype.toString = function() {
 };
 
 Machine.prototype.gcode = function(string) {
-	this.setRuntime(this.gcode_runtime);
-	this.current_runtime.runString(string);
+	this.setRuntime(this.gcode_runtime, function(err, runtime) {
+		if(err) {
+			return log.error(err)
+		}
+		runtime.runString(string);
+	});
 };
 
 Machine.prototype.sbp = function(string) {
-	this.setRuntime(this.sbp_runtime);
-	this.status.job = new Job({
-		name : 'OpenSBP String',
-		description : 'Direct OpenSBP String Command'
+	this.setRuntime(this.sbp_runtime, function(err, runtime) {
+		if(err) {
+			return log.error(err);
+		}
+		runtime.runString(string);
 	});
-	this.status.job.start(function(err, result) {
-		this.current_runtime.runString(string);
-	}.bind(this));
 };
 
 Machine.prototype.runJob = function(job) {
@@ -223,49 +264,71 @@ Machine.prototype.getGCodeForFile = function(filename, callback) {
 }
 
 Machine.prototype.runFile = function(filename) {
-	fs.readFile(filename, 'utf8', function (err,data) {
-		if (err) {
-			log.error('Error reading file ' + filename);
+	var parts = filename.split(path.sep);
+	var ext = path.extname(filename).toLowerCase();
+
+	// Choose the appropriate runtime based on the file extension	
+	var runtime = this.gcode_runtime;
+	if(ext === '.sbp') {
+		runtime = this.sbp_runtime;
+	}
+
+	// Set the appropriate runtime
+	this.setRuntime(runtime, function(err, runtime) {
+		if(err) {
+			return log.error(err);
+		}
+		fs.readFile(filename, 'utf8', function (err,data) {
+			if (err) {
 				log.error(err);
 				return;
-		} else {
-			parts = filename.split(path.sep);
-			ext = path.extname(filename).toLowerCase();
-
-			if(ext == '.sbp') {
-				this.setRuntime(this.sbp_runtime);
 			} else {
-				this.setRuntime(this.gcode_runtime);
+				runtime.runString(data);
 			}
-			this.current_runtime.runString(data);
-		}
-	}.bind(this));
+		}.bind(this));
+	});
 };
 
 
 Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
 	runtime = this.getRuntime(runtimeName);
 	if(runtime) {
-		this.setRuntime(runtime);
-		runtime.executeCode(code);
+		this.setRuntime(runtime, function(err, runtime) {
+			if(err) {
+				log.error(err);
+			} else {
+				runtime.executeCode(code);			
+				this.authorize();
+			}
+		}.bind(this));
 	}
 }
 
-Machine.prototype.setRuntime = function(runtime) {
-	log.info("Setting runtime to " + runtime)
-	if(runtime) {
-		if(this.current_runtime && this.current_runtime != runtime) {
-			this.current_runtime.disconnect();					
-		}
-		if(this.current_runtime != runtime) {
-			runtime.connect(this);
-			this.current_runtime = runtime;
-
-		}
-	} else {
-		this.current_runtime = this.idle_runtime;
-		this.current_runtime.connect(this);
+Machine.prototype.setRuntime = function(runtime, callback) {
+	if(runtime != this.idle_runtime && this.status.state === 'idle' && !this.status.auth) {
+		return this.setState(this, 'idle', {
+			'auth' : 'Authorization required.'
+		});
 	}
+
+	try {
+		if(runtime) {
+			if(this.current_runtime != runtime) {
+				if(this.current_runtime) {
+					this.current_runtime.disconnect();					
+				}
+				runtime.connect(this);
+				this.current_runtime = runtime;
+			}
+		} else {
+			this.current_runtime = this.idle_runtime;
+			this.current_runtime.connect(this);
+		}
+
+	} catch(e) {
+		setImmediate(callback, e);
+	}
+	setImmediate(callback,null, runtime);
 };
 
 Machine.prototype.getRuntime = function(name) {
@@ -294,6 +357,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 	if ((source === this) || (source === this.current_runtime)) {
 		log.info("Got a machine state change: " + newstate)	
 		this.status.state = newstate;
+		
 		if(stateinfo) {
 			this.status.info = stateinfo
 		} else {
@@ -329,6 +393,14 @@ Machine.prototype.pause = function() {
 };
 
 Machine.prototype.quit = function() {
+
+	// Quitting from the idle state dismisses the 'info' data
+	if(this.status.state === "idle") {
+		delete this.status.info;
+		this.emit('status', this.status);
+	}
+
+	// Cancel the currently running job, if there is one
 	if(this.status.job) {
 		this.status.job.pending_cancel = true;
 	}
@@ -341,23 +413,6 @@ Machine.prototype.resume = function() {
 	if(this.current_runtime) {
 		this.current_runtime.resume();
 	}
-};
-
-Machine.prototype.enable_passthrough = function(callback) {
-	log.info("enable passthrough");
-	if(this.status.state === "idle"){
-		this.setState("passthrough");
-		this.setRuntime(this.passthrough_runtime);
-		typeof callback === "function" && callback(false);
-	}
-	else{
-		typeof callback === "function" && callback(true, "Cannot jog when in '" + this.status.state + "' state.");
-	}
-};
-
-Machine.prototype.disable_passthrough = function(string) {
-	log.info("disable passthrough");
-	this.setRuntime(null);
 };
 
 exports.connect = connect;

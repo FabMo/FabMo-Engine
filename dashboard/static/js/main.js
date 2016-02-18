@@ -355,6 +355,7 @@ engine.on('status', function(status) {
     } else {
         $('#position input').attr('disabled', false);
     }
+
     if(status['info']) {
 		if(status.info['message']) {
 			showModal({
@@ -370,7 +371,6 @@ engine.on('status', function(status) {
 				}
  			});
 		} else if(status.info['error']) {
-
 			if(dashboard.engine.status.job) {
 				var detailHTML = '<p>' + 
 					  '<b>Job Name:  </b>' + dashboard.engine.status.job.name + '<br />' + 
@@ -387,6 +387,16 @@ engine.on('status', function(status) {
 				detail : detailHTML,
 				cancelText : status.state === 'dead' ? undefined : 'Quit',
 				cancel : status.state === 'dead' ? undefined : function() {
+					dashboard.engine.quit();
+				}
+			});
+		} else if(status.info['auth']) {
+			showModal({
+				title : 'Authorization Required!',
+				lead : '<div style="color:#7F5323; font-weight: bolder;">Authorization is required to complete the requested operation.</div>',
+				message: 'To authorize your tool, press and hold the green button for one second.  Tool authorization duration can be adjusted in the tool configuration.',
+				cancelText : 'Got it!',
+				cancel : function() {
 					dashboard.engine.quit();
 				}
 			});
