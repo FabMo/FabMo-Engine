@@ -428,10 +428,10 @@ function ping() {
 			setConnectionStrength(null);
 			console.error(err);
 		} else {
-			if(time < 50) {setConnectionStrength(4);}
-			else if(time < 100) { setConnectionStrength(3);}
-			else if(time < 200) { setConnectionStrength(2);}
-			else if(time < 300) { setConnectionStrength(1);}
+			if(time < 100) {setConnectionStrength(4);}
+			else if(time < 250) { setConnectionStrength(3);}
+			else if(time < 500) { setConnectionStrength(2);}
+			else if(time < 750) { setConnectionStrength(1);}
 			else { setConnectionStrength(0);}
 		}
 		setTimeout(ping, 3000);
