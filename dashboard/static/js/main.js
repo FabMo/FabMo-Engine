@@ -338,6 +338,7 @@ var disconnected = false;
 engine.on('disconnect', function() {
 	if(!disconnected) {
 		disconnected = true;
+		setConnectionStrength(null);
 		showDaisy();
 	}
 });
@@ -345,6 +346,7 @@ engine.on('disconnect', function() {
 engine.on('connect', function() {
 	if(disconnected) {
 		disconnected = false;
+		setConnectionStrength(5);
 		hideDaisy();
 	}
 });
@@ -423,13 +425,14 @@ function setConnectionStrength(level) {
 }
 
 var signal_window = [];
+var err_count = 0;
 
 function ping() {
 	engine.ping(function(err, time) {
 
 		// 4-point Moving average
 		signal_window.push(time);
-		if(signal_window.length > 5) {
+		if(signal_window.length > 4) {
 			signal_window.unshift();
 		}
 		var sum = 0;
@@ -439,16 +442,15 @@ function ping() {
 		var avg = sum/signal_window.length;
 		
 		if(err) {
-			setConnectionStrength(null);
 			console.error(err);
 		} else {
-			if(avg < 200) {setConnectionStrength(4);}
-			else if(avg < 400) { setConnectionStrength(3);}
-			else if(avg < 600) { setConnectionStrength(2);}
+			if(avg < 100) {setConnectionStrength(4);}
+			else if(avg < 200) { setConnectionStrength(3);}
+			else if(avg < 400) { setConnectionStrength(2);}
 			else if(avg < 800) { setConnectionStrength(1);}
 			else { setConnectionStrength(0);}
 		}
-		setTimeout(ping, 3000);
+		setTimeout(ping, 2000);
 	});
 };
 
