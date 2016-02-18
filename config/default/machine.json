@@ -2,7 +2,7 @@
 	"units" : "in",
 	"time_units" : "s",
 	"auth_timeout" : 30,
-	"auth_input" : 1,
+	"auth_input" : 2,
 	"envelope" : {
 		"xmin" : 0.0,
 		"xmax" : 6.0,
