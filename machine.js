@@ -52,6 +52,7 @@ function Machine(control_path, gcode_path, callback) {
 	// Handle Inheritance
 	events.EventEmitter.call(this);
 
+	console.log(config.machine.get('auth_timeout'));
 	// Instantiate driver and connect to G2
 	this.status = {
 		state : "not_ready",
@@ -71,7 +72,7 @@ function Machine(control_path, gcode_path, callback) {
 		unit : 'mm',
 		line : null,
 		nb_lines : null,
-		auth : (config.machine.get('auth_timeout') == 0) // Tool starts out authorized if no auth_timeout
+		auth : false
 	};
 
 	this.driver = new g2.G2();
@@ -138,10 +139,6 @@ function Machine(control_path, gcode_path, callback) {
     		this.authorize();
     	}
     }.bind(this));
-
-    config.machine.on('change', function(update) {
-    	this.deauthorize();
-    }.bind(this));
 }
 util.inherits(Machine, events.EventEmitter);
 
@@ -153,15 +150,21 @@ Machine.prototype.die = function(err_msg) {
 Machine.prototype.authorize = function(timeout) {
 	var timeout = timeout || config.machine.get('auth_timeout');
 	if(timeout) {
-		log.info("Machine is authorized for the next " + timeout + " seconds.");
+		if(!this.status.auth) {
+			log.info("Machine is authorized for the next " + timeout + " seconds.");			
+		}
 		if(this._authTimer) { clearTimeout(this._authTimer);}
 		this._authTimer = setTimeout(function() {
 			log.info('Authorization timeout (' + timeout + 's) expired.');
 			this.deauthorize();
 		}.bind(this), timeout*1000);		
+	} else {
+		if(!this.status.auth) {
+			log.info("Machine is authorized indefinitely.");
+		}
 	}
-	log.info("Machine is authorized indefinitely.");
 	this.status.auth = true;
+	this.emit('status', this.status);
 }
 
 Machine.prototype.deauthorize = function() {
@@ -171,6 +174,7 @@ Machine.prototype.deauthorize = function() {
 	}
 	log.info('Machine is deauthorized.');
 	this.status.auth = false;
+	this.emit('status', this.status);
 }
 
 Machine.prototype.isConnected = function() {
