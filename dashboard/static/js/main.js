@@ -268,7 +268,9 @@ $('.go-here').on('mousedown', function () {
     var gcode = "G0 ";
     for (var i = 0; i<axisValues.length; i++) {
         if ($(axisValues[i].className).attr('value','')[1].value.length > 0){
-        gcode += axisValues[i].axis + $(axisValues[i].className).attr('value','')[1].value + " ";
+            if ($(axisValues[i].className).attr('value','')[1].value != $(axisValues[i].className).val()) {
+                gcode += axisValues[i].axis + $(axisValues[i].className).attr('value','')[1].value + " ";
+            }
         }
     }
     dashboard.engine.gcode(gcode);
@@ -276,12 +278,13 @@ $('.go-here').on('mousedown', function () {
     
 });
     
-$('.axi').on('focus', function() { 
+$('.axi').on('click', function(e) { 
+    e.stopPropagation();
     $(this).select(); 
     $('.go-here').show();
 });
 
-$('.axi').on('blur', function() { 
+$(document).on('click', function() { 
     $('.posx').val($('.posx').val());
     $('.posy').val($('.posy').val());
     $('.posz').val($('.posz').val());
@@ -293,7 +296,9 @@ $('.axi').keyup(function(e){
         var gcode = "G0 ";
         for (var i = 0; i<axisValues.length; i++) {
             if ($(axisValues[i].className).attr('value','')[1].value.length > 0){
-            gcode += axisValues[i].axis + $(axisValues[i].className).attr('value','')[1].value + " ";
+                if ($(axisValues[i].className).attr('value','')[1].value != $(axisValues[i].className).val()) {
+                    gcode += axisValues[i].axis + $(axisValues[i].className).attr('value','')[1].value + " ";
+                }
             }
         }
 		dashboard.engine.gcode(gcode);
