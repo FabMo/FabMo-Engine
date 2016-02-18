@@ -180,6 +180,31 @@ body,html{
 	font-size: 0.9375rem;
 }
 
+#left-position-container {
+	height: 100%;
+}
+
+#connection-strength-indicator {
+	height: 100%; 
+	box-sizing: border-box;
+}
+
+.svg-container {
+	height: 100%;
+	padding: 5px;
+}
+
+#connection-strength-indicator .on {
+	fill: #EEEEEE;
+}
+
+#connection-strength-indicator .off {
+	fill: #535D8A;
+}
+
+#connection-strength-indicator .err {
+	fill: #91331E;
+}
 
 
 
