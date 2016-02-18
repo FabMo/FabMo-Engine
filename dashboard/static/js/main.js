@@ -422,16 +422,30 @@ function setConnectionStrength(level) {
 	}
 }
 
+var signal_window = [];
+
 function ping() {
 	engine.ping(function(err, time) {
+
+		// 4-point Moving average
+		signal_window.push(time);
+		if(signal_window.length > 5) {
+			signal_window.unshift();
+		}
+		var sum = 0;
+		for(var i=0; i<signal_window.length; i++) {
+			sum += signal_window[i];
+		}
+		var avg = sum/signal_window.length;
+		
 		if(err) {
 			setConnectionStrength(null);
 			console.error(err);
 		} else {
-			if(time < 100) {setConnectionStrength(4);}
-			else if(time < 250) { setConnectionStrength(3);}
-			else if(time < 500) { setConnectionStrength(2);}
-			else if(time < 750) { setConnectionStrength(1);}
+			if(avg < 200) {setConnectionStrength(4);}
+			else if(avg < 400) { setConnectionStrength(3);}
+			else if(avg < 600) { setConnectionStrength(2);}
+			else if(avg < 800) { setConnectionStrength(1);}
 			else { setConnectionStrength(0);}
 		}
 		setTimeout(ping, 3000);
