@@ -502,6 +502,16 @@ function touchScreen () {
 	} 
 }
 touchScreen();
+
+$('.dro-button').click(function() {
+	console.log('Clicky click')
+	console.log(this);
+	$('.dro-button').removeClass('active');
+	$(this).addClass('active')
+	$('.dro-view').hide();
+	$('#' + this.dataset.view).show();
+});
+
 });
 
 

@@ -1,7 +1,5 @@
 @import "fonts.css";
 
-/* ********** Global Settings ********** */
-
 body,html{
     height: 100%;
     width: 100%;
@@ -482,6 +480,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	margin-bottom: 0;
 	padding-bottom: 8px;
 	padding-bottom: 0.5rem;
+	margin-top: 10px;
 }
 
 #position ul .axis {
@@ -1053,17 +1052,31 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .drive-button {
 	color: white;
-	line-height: 64px;
 	font-weight: bolder;
 	font-size: 24px;
 	text-align: center;
+}
+
+.drive-button.square {
 	width  : 64px;
 	height : 64px;
+	line-height: 64px;
 }
+
+.drive-button.bar {
+	text-align: center;
+	padding: 4px;
+	line-height: 48px;
+	color: white;
+	font-weight: bolder;
+	width  : 100%;
+}
+
 
 .keyboard-button {
 	color: white;
 	line-height: 64px;
+	border-radius: 32px;
 	font-weight: bolder;
 	font-size: 24px;
 	text-align: center;
@@ -1087,7 +1100,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .drive-button-active-transient {
 	background: #D48B3A;
-	color: black;
 }
 
 .drive-button-inactive {
@@ -1108,8 +1120,96 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	padding: 4px;
 }
 
+.keypad-bar {
+	padding: 4px;
+	display: table-caption; 
+
+}
+
+.keypad-bar.top {
+
+	caption-side: top; 	
+}
+
+.keypad-bar.bottom {
+	caption-side: bottom; 		
+}
+
 #modalDialogButtons {
 	width: 100%;
 	text-align: right;
+	color: white;
+	line-height: 64px;
+	font-weight: bolder;
+	font-size: 24px;
+	text-align: center;
 }
 
+#dro-choice {
+	text-align: center;
+}
+
+#dro-choice ul {
+	color: white;
+	list-style-type: none;
+	font-family: 'source_sans_proextralight';
+	width: 100%;
+	margin-top: 10px;
+	margin-bottom: 10px;
+	margin-left: 0px;
+	padding-left: 0px;
+}
+
+#dro-choice li {
+	display: inline;
+	border-radius : 0.5em;
+	padding: 0.375em;
+	background-color: #7F2D1A;
+	margin-left: 1em;
+	margin-right: 1em;
+	opacity: 0.1;
+	cursor: pointer;
+	-webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+#dro-choice li.active {
+	opacity: 1;
+}
+
+.dro-view.active {
+	display: block;
+}
+
+.dro-view {
+	display: none;
+}
+
+.dro-view label {
+	font-size: 36px;
+	font-size: 1.5rem;
+	font-family: 'source_sans_proextralight';
+	font-weight: 300;
+	text-transform: capitalize;
+	text-align: center;
+	border-bottom: none;
+	color: white;
+	/*border-bottom: 1px solid white;
+	margin-left: 1em;
+	margin-right: 1em;*/
+}
+
+.fa-keypad {
+	line-height: inherit;
+	text-shadow: 1px 1px 4px black;
+	display: block;
+	pointer-events: none;
+}
+
+#keypad {
+	margin-left: 4px;
+}

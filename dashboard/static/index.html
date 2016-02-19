@@ -5,6 +5,7 @@
     <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
     <title>FabMo Dashboard</title>
     <link rel="stylesheet" href="css/normalize.css" />
+    <link rel="stylesheet" href="css/font-awesome.min.css" />    
     <link rel="stylesheet" href="css/foundation.min.css" />
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="css/toastr.min.css" />
@@ -117,15 +118,19 @@
           </aside>
 
           <aside class="DRO" id="right-menu">
-
+          <div id="dro-choice">
+          <ul>
+            <li class="dro-button active" id="dro-status-button" data-view="position">Status</li>
+            <li class="dro-button" id="dro-pendant-button" data-view="keypad">Pendant</li>
+          </ul>
+          </div>
             <!-- ********** Tool Position Widget ********** -->
-            <div id="position" class="widget">
+            <div id="position" class="widget dro-view active">
               <ul class="off-canvas-list fabmo-status noselect">
-                <li><label class="">Position<div id="units"></div></label></li>
                 <li>
                     <div class="row axis">
                       <div class="small-9 columns">
-                      <label class="noselect"></label></div>
+                      <label class="noselect">Position</label></div>
                     </div>
                     <div class="row axis xaxis">
                         <div class="small-9 columns">
@@ -212,24 +217,36 @@
             </div>
             -->
 
-            <div id="keypad" class="widget fabmo-manual-control keypad" style="text-align: center;">
+            <div id="keypad" class="widget fabmo-manual-control keypad dro-view" style="text-align: center;">
+              <label>Pendant</label>
               <div class="keypad-table">
+                <div class="keypad-bar top">
+                  <div class="z_pos keypad-button drive-button bar">Z+</div>
+                </div>
                 <div class="keypad-row">
                   <div class="keypad-cell"></div>
-                  <div class="keypad-cell"><div class="y_pos keypad-button drive-button">Y+</div></div>
-                  <div class="keypad-cell"><div class="z_pos keypad-button drive-button">Z+</div></div>
+                  <div class="keypad-cell"><div class="y_pos keypad-button drive-button square"><i class="fa fa-keypad fa-lg fa-arrow-up"></i></div></div>
+                  <div class="keypad-cell"></div>
                 </div>
 
                 <div class="keypad-row">
-                  <div class="keypad-cell"><div class="x_neg keypad-button drive-button">X-</div></div>
-                  <div class="keypad-cell"><div id="keyboard" class="keyboard noselect keyboard-button keypad-button">KB</div></div>
-                  <div class="keypad-cell"><div class="x_pos keypad-button drive-button">X+</div></div>
+                  <div class="keypad-cell">
+                    <div class="x_neg keypad-button drive-button square">
+                      <i class="fa fa-keypad fa-lg fa-arrow-left"></i>
+                      </div>
+                    </div>
+                  <div class="keypad-cell"><div id="keyboard" class="keyboard noselect keyboard-button keypad-button"><i class="fa fa-keypad fa-lg fa-keyboard-o"></i></div></div>
+                  <div class="keypad-cell"><div class="x_pos keypad-button drive-button square"><i class="fa fa-keypad fa-lg fa-arrow-right"></i></div></div>
                 </div>
 
                 <div class="keypad-row">
                   <div class="keypad-cell"></div>
-                  <div class="keypad-cell"><div class="y_neg keypad-button drive-button">Y-</div></div>
-                  <div class="keypad-cell"><div class="z_neg keypad-button drive-button">Z-</div></div>
+                  <div class="keypad-cell"><div class="y_neg keypad-button drive-button square"><i class="fa fa-keypad fa-lg fa-arrow-down"></i></div></div>
+                  <div class="keypad-cell"></div>
+                </div>
+
+                <div class="keypad-bar bottom">
+                  <div class="z_neg keypad-button drive-button bar">Z-</div>
                 </div>
               </div>
               <!--
