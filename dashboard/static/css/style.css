@@ -1167,7 +1167,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	background-color: #7F2D1A;
 	margin-left: 1em;
 	margin-right: 1em;
-	opacity: 0.1;
+	opacity: 0.25;
 	cursor: pointer;
 	-webkit-touch-callout: none;
     -webkit-user-select: none;
