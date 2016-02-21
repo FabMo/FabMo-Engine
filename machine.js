@@ -164,6 +164,9 @@ Machine.prototype.authorize = function(timeout) {
 		}
 	}
 	this.status.auth = true;
+	if(this.status.info && this.status.info.auth) {
+		delete this.status.info;
+	}
 	this.emit('status', this.status);
 }
 
@@ -208,12 +211,12 @@ Machine.prototype.sbp = function(string) {
 };
 
 Machine.prototype.runJob = function(job) {
-	this.status.job = job;
 	db.File.getByID(job.file_id,function(err, file){
 		if(err) {
 			// TODO deal with no file found
 		} else {
 			log.info("Running file " + file.path);
+			this.status.job = job;
 			this.runFile(file.path);			
 		}
 	}.bind(this));	
@@ -221,21 +224,34 @@ Machine.prototype.runJob = function(job) {
 
 Machine.prototype.runNextJob = function(callback) {
 	if(this.isConnected()) {
-
-	log.info("Running next job");
-		db.Job.dequeue(function(err, result) {
-			log.info(result);
-			if(err) {
-				log.error(err);
-				callback(err, null);
+		console.log("connected")
+		if(this.status.state === 'idle') {
+			console.log("idle")
+			if(this.status.auth) {
+				console.log("authorized")
+				log.info("Running next job");
+				db.Job.dequeue(function(err, result) {
+					log.info(result);
+					if(err) {
+						log.error(err);
+						callback(err, null);
+					} else {
+						log.info('Running job ' + JSON.stringify(result));
+						this.runJob(result);
+						callback(null, result);
+					}
+				}.bind(this));
 			} else {
-				log.info('Running job ' + JSON.stringify(result));
-				this.runJob(result);
-				callback(null, result);
+				log.error("Machine not authorized");
+				this.setState(this, 'idle', {
+				'auth' : 'Authorization required.'
+				});
+				callback(new Error("Machine not authorized."));
 			}
-		}.bind(this));
-	}
-	else {
+		} else {
+			callback(new Error("Cannot run next job: Machine not idle"));
+		}
+	} else {
 		callback(new Error("Cannot run next job: Driver is disconnected."));
 	}
 };

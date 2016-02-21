@@ -27,7 +27,7 @@ define(function(require) {
 
 	var modalIsShown = false;
 	var daisyIsShown = false;
-
+	var authorizeDialog = false;
 	// Detect touch screen
 	
 	var supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
@@ -112,7 +112,6 @@ function getManualNudgeIncrement(move) {
 function setupKeyboard() {
 	var keyboard = new Keyboard('#keyboard');
 	keyboard.on('go', function(move) {
-		
 		if(move) {
 			dashboard.engine.manualStart(move.axis, move.dir*60.0*(getManualMoveSpeed(move) || 0.1));
 		} 
@@ -120,7 +119,12 @@ function setupKeyboard() {
 
 	keyboard.on('stop', function(evt) {
 		dashboard.engine.manualStop();
-	})
+	});
+
+	keyboard.on('nudge', function(nudge) {
+		dashboard.engine.manualMoveFixed(nudge.axis, 60*getManualMoveSpeed(nudge), nudge.dir*getManualNudgeIncrement(nudge))
+	});
+
 	return keyboard;
 }
 
@@ -352,10 +356,14 @@ engine.on('connect', function() {
 });
 
 engine.on('status', function(status) {
-    if (status.state != 'idle'){
+  if (status.state != 'idle'){
         $('#position input').attr('disabled', true);
     } else {
         $('#position input').attr('disabled', false);
+    }
+
+    if(status.auth && authorizeDialog) {
+    	hideModal();
     }
 
     if(status['info']) {
@@ -393,12 +401,14 @@ engine.on('status', function(status) {
 				}
 			});
 		} else if(status.info['auth']) {
+			authorizeDialog = true;
 			showModal({
 				title : 'Authorization Required!',
 				lead : '<div style="color:#7F5323; font-weight: bolder;">Authorization is required to complete the requested operation.</div>',
 				message: 'To authorize your tool, press and hold the green button for one second.  Tool authorization duration can be adjusted in the tool configuration.',
 				cancelText : 'Got it!',
 				cancel : function() {
+					authorizeDialog=false;
 					dashboard.engine.quit();
 				}
 			});
@@ -504,8 +514,6 @@ function touchScreen () {
 touchScreen();
 
 $('.dro-button').click(function() {
-	console.log('Clicky click')
-	console.log(this);
 	$('.dro-button').removeClass('active');
 	$(this).addClass('active')
 	$('.dro-view').hide();

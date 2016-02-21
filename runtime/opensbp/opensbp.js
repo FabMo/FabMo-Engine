@@ -613,8 +613,9 @@ SBPRuntime.prototype._processEvents = function(callback) {
 	// Iterate over all inputs for which handlers are registered
 	for(var sw in this.event_handlers) {
 		var input_name = 'in' + sw
-		var input_state = this.machine.status[input_name]
+		var input_state = this.driver.status[input_name]
 		log.debug("Checking event handlers for " + input_name)
+		console.log(this.machine.status);
 		// Iterate over all the states of this input for which handlers are registered
 		for(var state in this.event_handlers[sw]) {
 			log.debug("Checking state " + state + " against " + input_state)

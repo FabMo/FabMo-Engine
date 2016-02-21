@@ -86,8 +86,8 @@ Job.prototype.save = function(callback) {
 		if(!record) {
 			return;
 		}
-		callback(null, this);
 		notifyChange();
+		callback(null, this);
 	}.bind(this));
 	
 };
