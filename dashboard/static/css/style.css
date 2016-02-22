@@ -1069,7 +1069,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	line-height: 48px;
 	color: white;
 	font-weight: bolder;
-	width  : 100%;
+	width  : 216px;
+    position: absolute;
 }
 
 
@@ -1122,17 +1123,16 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .keypad-bar {
 	padding: 4px;
-	display: table-caption; 
-
+    height: 60px;
 }
 
 .keypad-bar.top {
-
-	caption-side: top; 	
+    margin-bottom: 2em;
+    display: table-row; 
 }
 
 .keypad-bar.bottom {
-	caption-side: bottom; 		
+    display: table-row; 
 }
 
 #modalDialogButtons {
