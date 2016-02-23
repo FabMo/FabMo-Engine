@@ -284,10 +284,14 @@ $('.go-here').on('mousedown', function () {
     
 $('.axi').on('click', function(e) { 
     e.stopPropagation();
-    $(this).val(parseFloat($(this).val().toString()));
     $('.go-here').show();
 });
 
+$('.axi').on('focus', function(e) { 
+    e.stopPropagation();
+    $(this).val(parseFloat($(this).val().toString()));
+    $(this).select();
+});
 $(document).on('click', function() { 
     $('.posx').val($('.posx').val());
     $('.posy').val($('.posy').val());
