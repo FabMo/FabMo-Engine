@@ -284,7 +284,7 @@ $('.go-here').on('mousedown', function () {
     
 $('.axi').on('click', function(e) { 
     e.stopPropagation();
-    $(this).select(); 
+    $(this).val(parseFloat($(this).val().toString()));
     $('.go-here').show();
 });
 
