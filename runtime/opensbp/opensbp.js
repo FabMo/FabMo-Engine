@@ -378,7 +378,12 @@ SBPRuntime.prototype._continue = function() {
 			// We may yet have g-codes that are pending.  Run those.
 			if(this.current_chunk.length > 0) {
 				log.info("Dispatching final g-codes")
-				return this._dispatch(this._continue.bind(this));
+				if(!this.machine) {
+					this._dispatch();
+					this._end();
+				} else {
+					this._dispatch(this._continue.bind(this));
+				}
 			} else {
 				log.info("No g-codes remain to dispatch.")
 				return this._end(this.end_message);
@@ -392,8 +397,11 @@ SBPRuntime.prototype._continue = function() {
 		// Pull the current line of the program from the list
 		line = this.program[this.pc];
 		if(this._breaksStack(line)) {
+			// If it's a stack breaker go ahead and distpatch the current g-code list to the tool
 			log.debug("Stack break: " + JSON.stringify(line));
 			dispatched = this._dispatch(this._continue.bind(this));
+
+			// If we dispatched anything
 			if(!dispatched) {
 				log.debug('Nothing to execute in the queue: continuing.');
 				if(!this.machine) {
@@ -414,8 +422,12 @@ SBPRuntime.prototype._continue = function() {
 				}
 				break;
 			} else {
-				log.debug('Dispatching g-codes to tool.')
-				break;
+				if(this.machine) {
+					log.debug('Dispatching g-codes to tool.')
+					break;
+				} else {
+					setImmediate(this._continue.bind(this));
+				}
 			}
 			return;
 		} else {
@@ -598,8 +610,8 @@ SBPRuntime.prototype._dispatch = function(callback) {
 		} else { // Not connected to a real tool
 			Array.prototype.push.apply(this.output, this.current_chunk);
 			this.current_chunk = []
-			setImmediate(callback)
-			return true;
+			//setImmediate(callback)
+			return false;
 		}
 	} else {
 		return false;
@@ -615,7 +627,6 @@ SBPRuntime.prototype._processEvents = function(callback) {
 		var input_name = 'in' + sw
 		var input_state = this.driver.status[input_name]
 		log.debug("Checking event handlers for " + input_name)
-		console.log(this.machine.status);
 		// Iterate over all the states of this input for which handlers are registered
 		for(var state in this.event_handlers[sw]) {
 			log.debug("Checking state " + state + " against " + input_state)
@@ -1295,12 +1306,10 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		    Z =  tPt.Z;
 		}
 		var height = leveler.findHeight(X, Y, Z);
-           console.log("Z = " + Z);
 		if(height === false) {
 			log.error("Impossible to find the point height with the leveler.");
 			return;
 		}
-        console.log("height = " + height);
 		tPt.Z = Z + height;
 		opFunction(tPt);
 		log.debug("emit_move:level");
@@ -1313,7 +1322,6 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 
 SBPRuntime.prototype._setupTransforms = function() {
 	log.debug("_setupTransforms");
-
     this.transforms = JSON.parse(JSON.stringify(config.opensbp.get('transforms')));
 };
 
