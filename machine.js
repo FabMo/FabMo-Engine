@@ -321,7 +321,11 @@ Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
 }
 
 Machine.prototype.setRuntime = function(runtime, callback) {
-	if(runtime != this.idle_runtime && this.status.state === 'idle' && !this.status.auth) {
+	if( runtime &&
+		runtime != this.idle_runtime && 
+		this.status.state === 'idle' 
+		&& !this.status.auth) {
+		
 		return this.setState(this, 'idle', {
 			'auth' : 'Authorization required.'
 		});
