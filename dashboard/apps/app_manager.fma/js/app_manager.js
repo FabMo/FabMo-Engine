@@ -33,11 +33,21 @@ function refreshApps() {
 
       $('#delete_' + appid).click(function() {
         //$('#myModal').foundation('reveal', 'open');
-        fabmo.deleteApp(id, function(err, result) {
-          if (err) {
-            fabmo.notify('error', err);
-          }
-          refreshApps();
+        $('.modal-background').fadeIn(500);
+        $('.modal-content').css('top', '50%');
+        $('.deleteCancel').click(function(){
+             $('.modal-background').fadeOut();
+             $('.modal-content').css('top', '-500%');
+        });
+        $('.deleteOkay').click(function(){
+            fabmo.deleteApp(id, function(err, result) {
+            if (err) {
+                fabmo.notify('error', err);
+            }
+            refreshApps();
+            });
+            $('.modal-background').fadeOut();
+            $('.modal-content').css('top', '-500%');
         });
       });
       $('#' + appid).click(function() {
@@ -58,6 +68,7 @@ fabmo.on('change', function(topic) {
 
 $(document).ready(function() {
   refreshApps();
+
 
   $('.app-install-button').click(function(evt) {
     jQuery('#file').trigger('click');

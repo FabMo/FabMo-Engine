@@ -10,12 +10,9 @@ body {
   padding: .7em;
   border: 1px solid #444444;
   border-radius: 5px;
+  box-shadow: .5px .5px .5px #aaaaaa;
 }
 
-
-#dropzone { 
-
-}
 
 #dropzone .hovershow {
   opacity: 0.0;
@@ -29,6 +26,7 @@ body {
   width: 99%;
   border: 5px dashed #ccc; 
   border-radius: 10px;
+ 
 }
  
 #dropzone.hover .hovershow {
@@ -60,7 +58,77 @@ body {
   min-width: 50px;
   border-radius: 5px;
   padding: 5px;
-  box-shadow: 2px 2px 2px #aaaaaa;
+  box-shadow: 1px 1px 1px #aaaaaa;
 }
 
 .hidden, .hide { display:none; }
+
+.modal-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background-color: #000;
+    opacity: 0.5;
+    z-index: 9;
+    display: none;
+}
+
+.modal-content{
+    background-color: rgba(20,20,20,0.98);
+    text-align: center;
+    width: 60%;
+    min-height: 200px;
+    box-shadow: 0 50px 100px rgba(0,0,0,0.8);
+    position: fixed;
+    top: -500%;
+    left: 50%;
+    margin-right: -50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    border-radius: 5px;
+    filter: blur(10px);
+    max-width: 500px;
+    min-width: 300px;
+    padding: 4em 1em 0 1em;
+    transition: all .5s;
+}
+
+
+.deleteCancel{
+    position: absolute;
+    width: 50%;
+    bottom: 0;
+    left: 0;
+    background-color: #444444;
+    opacity: 1;
+    border-radius: 0 0 0 5px;
+}
+
+.deleteCancel:hover{
+    background-color: #444444;
+}
+
+.deleteCancel:focus{
+    background-color: #444444;
+}
+
+.deleteOkay{
+    position: absolute;
+    width: 50%;
+    bottom: 0;
+    right: 0;
+    background-color: #32B433;
+    opacity: 1;
+    border-radius: 0 0 5px 0;
+}
+
+.deleteOkay:hover{
+    background-color: #32B433;
+}
+
+.deleteOkay:focus{
+    background-color: #32B433;
+}
+
