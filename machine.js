@@ -52,7 +52,6 @@ function Machine(control_path, gcode_path, callback) {
 	// Handle Inheritance
 	events.EventEmitter.call(this);
 
-	console.log(config.machine.get('auth_timeout'));
 	// Instantiate driver and connect to G2
 	this.status = {
 		state : "not_ready",
@@ -224,11 +223,8 @@ Machine.prototype.runJob = function(job) {
 
 Machine.prototype.runNextJob = function(callback) {
 	if(this.isConnected()) {
-		console.log("connected")
 		if(this.status.state === 'idle') {
-			console.log("idle")
 			if(this.status.auth) {
-				console.log("authorized")
 				log.info("Running next job");
 				db.Job.dequeue(function(err, result) {
 					log.info(result);
@@ -270,7 +266,7 @@ Machine.prototype.getGCodeForFile = function(filename, callback) {
 				if(this.status.state != 'idle') {
 					return callback(new Error('Cannot generate G-Code from OpenSBP while machine is running.'));
 				}
-				this.setRuntime(null);
+				this.setRuntime(null, function() {});
 				this.sbp_runtime.simulateString(data, callback);
 			} else {
 				fs.readFile(filename, callback);
@@ -346,6 +342,7 @@ Machine.prototype.setRuntime = function(runtime, callback) {
 		}
 
 	} catch(e) {
+		log.error(e)
 		setImmediate(callback, e);
 	}
 	setImmediate(callback,null, runtime);

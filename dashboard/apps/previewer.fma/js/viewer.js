@@ -266,6 +266,7 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         var message = "";
         that.gcode = GCodeToGeometry.parse(string);
         if(that.gcode.errorList.length > 0) {
+            console.log(that.gcode.errorList)
             message = "Be careful, some issues appear in this file.";
             message += "\nThe machine may not do as displayed here.";
             displayError(message);
