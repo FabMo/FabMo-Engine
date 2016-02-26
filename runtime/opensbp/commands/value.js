@@ -283,7 +283,7 @@ exports.VL = function(args,callback) {
 	});
 };	
 
-exports.VN = function(args) {
+//exports.VN = function(args) {
 		// Limits 0-OFF, 1-ON
 		// Input #4 Switch mode 0-Nrm Closed Stop, 1-Nrm Open Stop, 2-Not Used 
 		// Enable Torch Height Controller, Laser or Analog Control
@@ -314,7 +314,7 @@ exports.VN = function(args) {
 		// Output #11 Mode
 		// Output #12 Mode
 
-};	
+//};	
 
 exports.VP = function(args) {
 	// Grid

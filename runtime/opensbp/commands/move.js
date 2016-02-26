@@ -1,10 +1,10 @@
 var log = require('../../../log').logger('sbp');
-var g2 = require('../../../g2');
-var sb3_commands = require('../sb3_commands');
+// var g2 = require('../../../g2');
+// var sb3_commands = require('../sb3_commands');
 var config = require('../../../config');
 
 // ...TESTING::th aliased macros concept ... Bender: commands (hardcoded here at moment)
-exports._A = function(args, callback) {
+exports._A = function (args, callback) {
 	var alias_name = args[0];
 
 	log.debug( " _A args: " + JSON.stringify(args));
