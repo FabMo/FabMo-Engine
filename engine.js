@@ -339,7 +339,7 @@ Engine.prototype.start = function(callback) {
                 log.uncaught(err);
                 answer = {
                     status:"error",
-                    message:err
+                    message:err.message
                 };
                 res.json(answer)
             });

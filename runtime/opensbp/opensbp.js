@@ -157,6 +157,7 @@ SBPRuntime.prototype.runString = function(s, callback) {
 		this.emit_gcode(config.driver.get('gdi') ? 'G91' : 'G90');
 		log.debug("Rainbows organized...")
 		this._run();
+		log.debug("Returning from run...");
 	} catch(e) {
 		return this._end(e.message + " (Line " + e.line + ")");
 	}
@@ -402,7 +403,7 @@ SBPRuntime.prototype._continue = function() {
 						this._execute(line, this._continue.bind(this));
 					} catch(e) {
 						log.error('There was a problem: ' + e);
-						setImmediate(this._continue().bind(this));
+						setImmediate(this._continue.bind(this));
 					}
 				} else {
 					try {
@@ -598,6 +599,7 @@ SBPRuntime.prototype._dispatch = function(callback) {
 		} else { // Not connected to a real tool
 			Array.prototype.push.apply(this.output, this.current_chunk);
 			this.current_chunk = []
+			console.log(callback);
 			setImmediate(callback)
 			return true;
 		}

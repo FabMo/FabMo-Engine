@@ -270,7 +270,7 @@ Machine.prototype.getGCodeForFile = function(filename, callback) {
 				if(this.status.state != 'idle') {
 					return callback(new Error('Cannot generate G-Code from OpenSBP while machine is running.'));
 				}
-				this.setRuntime(null);
+				this.setRuntime(null, function() {});
 				this.sbp_runtime.simulateString(data, callback);
 			} else {
 				fs.readFile(filename, callback);
@@ -346,8 +346,13 @@ Machine.prototype.setRuntime = function(runtime, callback) {
 		}
 
 	} catch(e) {
+		log.error(e)
+		log.error('!!!!!!');
+		console.log(callback);
 		setImmediate(callback, e);
 	}
+	console.log('????????');
+		console.log(callback);
 	setImmediate(callback,null, runtime);
 };
 
