@@ -2,10 +2,14 @@
 #loadingMessage {
     position: absolute;
     background: #ffffff;
+    color: black;
     border: black solid 1px;
+    border-radius: 10px;
     z-index: 10;
     width = auto;
     height = 100px;
+    margin: 20px;
+    padding: 20px;
 }
 
 .widget {
