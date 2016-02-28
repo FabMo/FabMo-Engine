@@ -6,7 +6,6 @@ var fs = require('fs');
 var upload = require('./upload').upload;
 
 
-
 /**
  * @api {get} /apps List Apps
  * @apiGroup Dashboard
@@ -218,13 +217,6 @@ var submitApp = function(req, res, next) {
     }); // upload
 }; // submitApp
 
-var updater = function(req, res, next) {
-    var host = req.headers.host.split(':')[0].trim('/');
-    var url = 'http://' + host + ':' + (config.engine.get('server_port') + 1);
-    console.log(url);
-    res.redirect(303, url, next);   
-}
-
 module.exports = function(server) {
     server.post('/apps', submitApp);
     server.get('/apps', getApps);
@@ -236,6 +228,4 @@ module.exports = function(server) {
     server.get(/\/approot\/?.*/, restify.serveStatic({
         directory: config.getDataDir('approot'),
     }));
-    server.get('/updater', updater);
-
 };

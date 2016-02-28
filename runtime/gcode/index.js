@@ -40,24 +40,13 @@ GCodeRuntime.prototype.resume = function() {
 }
 
 GCodeRuntime.prototype._changeState = function(newstate) {
-	if(newstate === "idle") {
+	if(newstate == "idle") {
 		this.ok_to_disconnect = true;
 	} else {
 		this.ok_to_disconnect = false;
 	}
 	this.machine.setState(this, newstate);
 };
-
-GCodeRuntime.prototype._limit = function() {
-	var er = this.driver.getLastException();
-	if(er && er.st == 203) {
-		var msg = er.msg.replace(/\[[^\[\]]*\]/,'');
-		this.driver.clearLastException();
-		this._fail(msg);
-		return true;
-	}
-	return false;
-}
 
 GCodeRuntime.prototype._onDriverStatus = function(status) {
 
@@ -73,18 +62,6 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 		this.status_report[key] = status[key];
 	}
 
-	switch(this.status_report.stat) {
-		case this.driver.STAT_INTERLOCK:
-		case this.driver.STAT_SHUTDOWN:
-		case this.driver.STAT_PANIC:
-			return this._die();
-			break;
-		case this.driver.STAT_ALARM:
-			if(this._limit()) { return; }
-			break;
-	}
-
-
 	switch(this.machine.status.state) {
 		case "not_ready":
 			// This shouldn't happen.
@@ -92,16 +69,15 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 			break;
 
 		case "running":
-			switch(this.status_report.stat) {
-				case this.driver.STAT_HOLDING:
-					this._changeState("paused");
-					this.machine.emit('job_pause', this);
-					break;
-				case this.driver.STAT_STOP:			
-				case this.driver.STAT_END:
-					this._idle();
-					this.machine.emit('job_complete', this);
-					break;
+			if(this.status_report.stat === this.driver.STAT_HOLDING /*&& this.status_report.stat === 0*/) {
+				this._changeState("paused");
+				this.machine.emit('job_pause', this);
+				break;
+			}
+			if(this.status_report.stat === this.driver.STAT_STOP || this.status_report.stat === this.driver.STAT_END) {
+				this._idle();
+				this.machine.emit('job_complete', this);
+				break;
 			}
 			break;
 
@@ -123,47 +99,13 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 				break;
 			}
 			break;
-
-		case "stopped":
-			switch(this.status_report.stat) {
-				case this.driver.STAT_STOP:			
-				case this.driver.STAT_END:
-					this._idle();
-					this.machine.emit('job_complete', this);
-					break;
-			}
 	}
 	this.machine.emit('status',this.machine.status);
 
 };
 
-GCodeRuntime.prototype._die = function() {
-	this.machine.status.current_file = null;
-	this.machine.status.line=null;
-	this.machine.status.nb_lines=null;
- 	try {
- 		this.machine.status.job.fail();
- 	} catch(e) {}
- 	finally {
-		this.machine.status.job=null;
- 		this.machine.setState(this, 'dead', {error : 'A G2 exception has occurred. You must reboot your tool.'});
- 	}
-}
-
-GCodeRuntime.prototype._fail = function(message) {
-	this.machine.status.current_file = null;
-	this.machine.status.line=null;
-	this.machine.status.nb_lines=null;
- 	try {
- 		this.machine.status.job.fail();
- 	} catch(e) {}
- 	finally {
-		this.machine.status.job=null;
- 		this.machine.setState(this, 'stopped', {error : message});
- 	}	
-}
-
 GCodeRuntime.prototype._idle = function() {
+	//console.log(this.machine.driver.gcode_queue.getContents())
 	this.machine.status.current_file = null;
 	this.machine.status.line=null;
 	this.machine.status.nb_lines=null;
@@ -208,7 +150,6 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 		}
 		lines.unshift(mode);
 		lines.push('M30\n');
-		// TODO no need to stitch this string back together, it's just going to be split again in the driver
 		string = lines.join("\n");
 		this.driver.runString(string,this.machine.status);
 	}

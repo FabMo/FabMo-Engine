@@ -3,7 +3,7 @@ var fs = require('fs');
 var uuid = require('node-uuid');
 
 UPLOAD_INDEX = {};
-UPLOAD_TIMEOUT = 3600000;
+UPLOAD_TIMEOUT = 5000;
 
 /*
  * Incoming metadata looks like this:

@@ -11,9 +11,8 @@
 }(this, function () {
   "use strict"
 
-  var NUDGE_TIMEOUT = 100;
-  var MOVE_THRESH = 10;
-  var Keyboard_enabled = false;
+var MOVE_THRESH = 10;
+var Keyboard_enabled = false;
   var KEY_RIGHT = 39;
   var KEY_LEFT = 37;
   var KEY_UP = 38;
@@ -31,9 +30,8 @@ var Keyboard = function(id, options) {
 	this.move = null;
 	this.going = false;
 	this.interval = null;
-	this.listeners = {'go' : [], 'stop': [], 'nudge' :  []}
+	this.listeners = {'go' : [], 'stop': []}
 	this.setOptions(options);
-	this.nudgeTimer = null;
 }
 
 Keyboard.prototype.init = function() {
@@ -128,38 +126,34 @@ Keyboard.prototype.onMouseMove = function(evt) {
 }
 
 Keyboard.prototype.onKeyDown = function(evt) {
-	if(this.going) {return}
-	this.nudgeTimer = setTimeout(function() {
-		this.nudgeTimer = null;
-		if(!this.going) {
-			switch(evt.keyCode) {
-				case KEY_UP:
-					this.start('y', 1);
-					break;
+	if(!this.going) {
+		switch(evt.keyCode) {
+			case KEY_UP:
+				this.start('y', 1);
+				break;
 
-				case KEY_DOWN:
-					this.start('y', -1);
-					break;
+			case KEY_DOWN:
+				this.start('y', -1);
+				break;
 
-				case KEY_LEFT:
-					this.start('x', -1);
-					break;
+			case KEY_LEFT:
+				this.start('x', -1);
+				break;
 
-				case KEY_RIGHT:
-					this.start('x', 1);
-					break;
+			case KEY_RIGHT:
+				this.start('x', 1);
+				break;
 
-				case KEY_PGUP:
-					this.start('z', 1);
-					break;
+			case KEY_PGUP:
+				this.start('z', 1);
+				break;
 
-				case KEY_PGDOWN:
-					this.start('z', -1);
-					break;
+			case KEY_PGDOWN:
+				this.start('z', -1);
+				break;
 
-			}	
-		}
-	}.bind(this), NUDGE_TIMEOUT);
+		}	
+	}
 }
 
 Keyboard.prototype.onMouseLeave = function(evt) {
@@ -170,45 +164,9 @@ Keyboard.prototype.onMouseLeave = function(evt) {
 }
 
 Keyboard.prototype.onKeyUp = function(evt) {
-	if(this.going) { this.stop(); }
-	if(this.nudgeTimer) {
-		clearTimeout(this.nudgeTimer);
-		this.nudgeTimer = null;
-		switch(evt.keyCode) {
-				case KEY_UP:
-					this.nudge('y', 1);
-					break;
-
-				case KEY_DOWN:
-					this.nudge('y', -1);
-					break;
-
-				case KEY_LEFT:
-					this.nudge('x', -1);
-					break;
-
-				case KEY_RIGHT:
-					this.nudge('x', 1);
-					break;
-
-				case KEY_PGUP:
-					this.nudge('z', 1);
-					break;
-
-				case KEY_PGDOWN:
-					this.nudge('z', -1);
-					break;
-			}	
-	} else {
-		this.stop();		
-	}
+	this.stop();
 }
 
-Keyboard.prototype.nudge = function(axis, direction) {
-	if(this.going) { return this.stop(); }
-	var nudge = {'axis' : axis, 'dir' : direction};
-	this.emit('nudge', nudge);
-}
 
 return Keyboard;
 }));

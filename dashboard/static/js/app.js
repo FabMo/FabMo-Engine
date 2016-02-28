@@ -17,8 +17,7 @@ requirejs.config({
         'hammer' : 'libs/hammer.min',
         'keyboard' : 'libs/keyboard',
         'keypad' : 'libs/keypad',
-        'toastr' : 'libs/toastr.min',
-        'lockr' : 'libs/lockr.min'
+        'toastr' : 'libs/toastr.min'
     },
     shim : {
         'foundation' : {'deps' : ['jquery']}

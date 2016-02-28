@@ -27,7 +27,7 @@ var FabMoDashboard = function() {
     // listen for escape key press to quit the engine
     $(document).on('keyup', function(e) {
         if(e.keyCode == 27) {
-            console.warn("ESC key pressed - quitting engine.");
+            console.log("ESC key pressed - quitting engine.");
             this.stop();
         }
     }.bind(this));
@@ -405,8 +405,8 @@ FabMoDashboard.prototype.clearJobQueue = function(callback) {
 	this._call("clearJobQueue",null, callback);
 }
 
-FabMoDashboard.prototype.getJobHistory = function(options, callback) {
-	this._call("getJobHistory",options, callback);
+FabMoDashboard.prototype.getJobHistory = function(callback) {
+	this._call("getJobHistory",null, callback);
 }
 
 FabMoDashboard.prototype.runNext = function(callback) {
@@ -556,14 +556,6 @@ FabMoDashboard.prototype.deleteMacro = function(id, callback) {
 
 FabMoDashboard.prototype.getAppConfig = function(callback) {
 	this._call("getAppConfig", null, callback);
-}
-
-FabMoDashboard.prototype.getVersion = function(callback) {
-	this._call("getVersion", null, callback);
-}
-
-FabMoDashboard.prototype.navigate = function(url, options, callback) {
-	this._call("navigate", {'url' : url, 'options' : options || {}}, callback);
 }
 
 FabMoDashboard.prototype.setAppConfig = function(config, callback) {

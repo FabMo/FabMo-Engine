@@ -94,30 +94,20 @@ define(function(require) {
 		model : new models.App(),
 		initialize : function(options) {
 			this.is_visible = false;
-			this.iframe = null;
-			this.hard_refresh = false;
 			_.bindAll(this, 'render');
 		},
-		render : function(hard_refresh) {
+		render : function() {
 			if(this.model) {
 				url = this.model.get('app_url');
 			} else {
 				url = "about:blank";
 			}
+
 			var client_container = jQuery(this.el);
-			var src = '<iframe class="app-iframe" id="app-iframe" sandbox="allow-scripts allow-same-origin" allowfullscreen></iframe>'
+			var src = '<iframe class="app-iframe" id="app-iframe" sandbox="allow-scripts allow-same-origin" src="' + url + '" allowfullscreen></iframe>'
 			client_container.html(src);
-			this.iframe = $(client_container.children()[0]);
-			if(hard_refresh) {
-				this.iframe.one('load', function() {
-					this.hardRefresh();
-				}.bind(this));
-			}
-			this.iframe.attr('src', url);
+			iframe = client_container.children();
 		},
-		hardRefresh : function() {
-			this.iframe[0].contentWindow.location.reload(true);
- 		},
 		show : function() {
 			$(".main-section").show();
 			$(this.el).show();
@@ -128,14 +118,13 @@ define(function(require) {
 			$(this.el).hide();
 			this.is_visible = false;
 		},
-		setModel : function(model, hard_refresh) {
+		setModel : function(model) {
 			if(model) {
-				this.hard_refresh = hard_refresh;
 				this.model.set(model.toJSON());
 			} else {
 				this.model.set(null);
 			}
-			this.render(hard_refresh);
+			this.render();
 		}
 	});
 

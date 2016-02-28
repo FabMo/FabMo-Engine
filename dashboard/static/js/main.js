@@ -17,28 +17,26 @@ define(function(require) {
 	var FabMoAPI = require('fabmo');
 	var FabMoUI = require('fabmo-ui');
 	
+	var WheelControl = require('handwheel');
 	var Keyboard = require('keyboard');
 	var Keypad = require('keypad');
 
-	var keypad, keyboard;
+	var wheel, keypad, keyboard;
 	
 	// API object defines our connection to the tool.
 	var engine = new FabMoAPI();
 
 	var modalIsShown = false;
-	var daisyIsShown = false;
-	var authorizeDialog = false;
+	
 	// Detect touch screen
 	
 	var supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
 
 	// Initial read of engine configuration
 	engine.getConfig();
-	engine.getVersion(function(err, version) {
-		context.setEngineVersion(version);
-	});
 
 	context.apps = new context.models.Apps();
+
 	// Load the apps from the server
 	context.apps.fetch({
 		success: function() {
@@ -64,12 +62,6 @@ define(function(require) {
 			
 			// Request a status update from the tool
 			engine.getStatus();
-
-			dashboard.engine.on('change', function(topic) {
-				if(topic === 'apps') {
-					context.apps.fetch();
-				}
-			});
 		}
 	});
 
@@ -112,6 +104,7 @@ function getManualNudgeIncrement(move) {
 function setupKeyboard() {
 	var keyboard = new Keyboard('#keyboard');
 	keyboard.on('go', function(move) {
+		
 		if(move) {
 			dashboard.engine.manualStart(move.axis, move.dir*60.0*(getManualMoveSpeed(move) || 0.1));
 		} 
@@ -119,12 +112,7 @@ function setupKeyboard() {
 
 	keyboard.on('stop', function(evt) {
 		dashboard.engine.manualStop();
-	});
-
-	keyboard.on('nudge', function(nudge) {
-		dashboard.engine.manualMoveFixed(nudge.axis, 60*getManualMoveSpeed(nudge), nudge.dir*getManualNudgeIncrement(nudge))
-	});
-
+	})
 	return keyboard;
 }
 
@@ -147,37 +135,10 @@ function setupKeypad() {
 	return keypad;
 }
 
-function showDaisy(callback) {
-	if(daisyIsShown) {
-		return;
-	}
-	hideModal(function() {
-		daisyIsShown = true;
-		$('#disconnectDialog').foundation('reveal', 'open');
-	});
-
-}
-
-function hideDaisy(callback) {
-	var callback = callback || function() {};
-	if(!daisyIsShown) { callback(); }
-	daisyIsShown = false;
-	$(document).one('closed.fndtn.reveal', '[data-reveal]', function () {
- 		var modal = $(this);
- 		if(modal.attr('id') === 'disconnectDialog') {
- 			callback();
- 		}
-	});
-	$('#disconnectDialog').foundation('reveal', 'close');	
-}
-
 function showModal(options) {
 	if(modalIsShown) {
 		return;
 	}
-
-	hideDaisy(function() {
-
 	modalIsShown = true;
 
 	if(options['title']) {
@@ -222,7 +183,6 @@ function showModal(options) {
 			(options['cancel'] || function() {})();
 		});
 	} else {
-		$('#modalDialogClose').hide();
 		$('#modalDialogCancelButton').hide();
 	}
 
@@ -235,83 +195,68 @@ function showModal(options) {
 	}
 
 	$('#modalDialog').foundation('reveal', 'open');
-});
 }
 
-function hideModal(callback) {
-	var callback = callback || function() {};
-	if(!modalIsShown) { callback(); }
+function hideModal() {
+	if(!modalIsShown) { return; }
 	modalIsShown = false;
-	$(document).one('closed.fndtn.reveal', '[data-reveal]', function () {
- 		var modal = $(this);
- 		if(modal.attr('id') === 'modalDialog') {
- 			callback();
- 		}
-	});
 	$('#modalDialog').foundation('reveal', 'close');	
 }
+
+// Kill the currently running job when the modal error dialog is dismissed
+/*$(document).on('close.fndtn.reveal', '[data-reveal]', function (evt) {
+  var modal = $(this);
+  if(engine.status.state === "stopped") {
+	  dashboard.engine.quit();
+	  console.info("Quitting the tool on dismiss")  	
+  } else if(engine.status.state === "paused") {
+  	dashboard.engine.resume();
+  } else {
+	  console.warn("Not quitting the tool because it's not stopped.")  	
+  }
+});*/
 
 // listen for escape key press to quit the engine
 $(document).on('keyup', function(e) {
     if(e.keyCode == 27) {
-        console.warn("ESC key pressed - quitting engine.");
+        console.log("ESC key pressed - quitting engine.");
         dashboard.engine.quit();
     }
 });
 
 //goto this location 
 
-var axisValues = [];
-$('.axi').each( function(){
-    var strings = this.getAttribute('class').split(" ")[0];
-    var axis = strings.slice(-1).toUpperCase();
-    axisValues.push({"className" : ("."+strings), "axis": axis});
-});
-
-$('.go-here').on('mousedown', function () {
-    var gcode = "G0 ";
-    for (var i = 0; i<axisValues.length; i++) {
-        if ($(axisValues[i].className).attr('value','')[1].value.length > 0){
-            if ($(axisValues[i].className).attr('value','')[1].value != $(axisValues[i].className).val()) {
-                gcode += axisValues[i].axis + $(axisValues[i].className).attr('value','')[1].value + " ";
-            }
-        }
-    }
-    dashboard.engine.gcode(gcode);
-    $('.go-here').hide();
-    
-});
-    
-$('.axi').on('click', function(e) { 
-    e.stopPropagation();
-    $('.go-here').show();
-});
-
-$('.axi').on('focus', function(e) { 
-    e.stopPropagation();
-    $(this).val(parseFloat($(this).val().toString()));
-    $(this).select();
-});
-$(document).on('click', function() { 
-    $('.posx').val($('.posx').val());
-    $('.posy').val($('.posy').val());
-    $('.posz').val($('.posz').val());
-    $('.go-here').hide();
-});
-
-$('.axi').keyup(function(e){
-    if(e.keyCode == 13){
-        var gcode = "G0 ";
-        for (var i = 0; i<axisValues.length; i++) {
-            if ($(axisValues[i].className).attr('value','')[1].value.length > 0){
-                if ($(axisValues[i].className).attr('value','')[1].value != $(axisValues[i].className).val()) {
-                    gcode += axisValues[i].axis + $(axisValues[i].className).attr('value','')[1].value + " ";
-                }
-            }
-        }
+$('html').on('click', function (e) {
+		if (e.target.id === "go-here") {
+		var x = $('.posx').attr('value','')[1].value;
+		var y = $('.posy').attr('value','')[1].value;
+		var z = $('.posz').attr('value','')[1].value;
+		var gcode = "G0 X" + x + " Y" + y + " Z" + z;
 		dashboard.engine.gcode(gcode);
-		$('.go-here').hide();    
+		$('.go-here').hide();
+		} else if (e.target.id === "axis"){
+			 $("input:text").focus(function() { 
+             $(this).select(); 
+             $('.go-here').show();
+             } );
+			
+		} else {
+			$('.go-here').hide();
+		}
+});
+$('.posx, .posy, .posz').keyup(function(e){
+    if(e.keyCode == 13){
+    	e.preventDefault();
+        e.stopPropagation();
+        var x = $('.posx').attr('value','')[1].value;
+		var y = $('.posy').attr('value','')[1].value;
+		var z = $('.posz').attr('value','')[1].value;
+		var gcode = "G0 X" + x + " Y" + y + " Z" + z;
+		dashboard.engine.gcode(gcode);
+		$('.go-here').hide();
+        
     }
+
 });
 
 // Handlers for the home/probe buttons
@@ -323,7 +268,6 @@ $('.button-zerob').click(function(e) {dashboard.engine.sbp('ZB'); });
 
 $('.play').on('click', function(e){
 	$("#main").addClass("offcanvas-overlap-left");
-    console.log('is this still a thing?')
 	dashboard.engine.job_run(function (){
 		dashboard.engine.getJobQueue(function (err, data){
 			if (data.name == 'undefined' || data.length === 0) {
@@ -346,30 +290,30 @@ var disconnected = false;
 engine.on('disconnect', function() {
 	if(!disconnected) {
 		disconnected = true;
-		setConnectionStrength(null);
-		showDaisy();
+		$('#disconnectDialog').foundation('reveal', 'open');
 	}
 });
 
 engine.on('connect', function() {
 	if(disconnected) {
 		disconnected = false;
-		setConnectionStrength(5);
-		hideDaisy();
+		$('#disconnectDialog').foundation('reveal', 'close');
 	}
 });
 
 engine.on('status', function(status) {
-  if (status.state != 'idle'){
+   try {	
+		if(status.unit) {
+			wheel.setUnits(status.unit);	
+		}
+	} catch(e) {
+
+	}
+    if (status.state != 'idle'){
         $('#position input').attr('disabled', true);
     } else {
         $('#position input').attr('disabled', false);
     }
-
-    if(status.auth && authorizeDialog) {
-    	hideModal();
-    }
-
     if(status['info']) {
 		if(status.info['message']) {
 			showModal({
@@ -383,91 +327,45 @@ engine.on('status', function(status) {
 				cancel : function() {
 					dashboard.engine.quit();
 				}
- 			});
+
+ 			})
 		} else if(status.info['error']) {
+
 			if(dashboard.engine.status.job) {
 				var detailHTML = '<p>' + 
 					  '<b>Job Name:  </b>' + dashboard.engine.status.job.name + '<br />' + 
 					  '<b>Job Description:  </b>' + dashboard.engine.status.job.description + 
 					'</p>'
 			} else {
-				var detailHTML = '<p>Check the <a style="text-decoration: underline;" href="/log">debug log</a> for more information.</p>';
+				var detailHTML = '<p>Additional information for this error is unavailable.</p>';										
 			}
 
 			showModal({
 				title : 'Message',
-				lead : '<div style="color:#91331E; font-weight: bolder;">An Error Has Occurred!</div>',
+				lead : '<div style="color:red">An error has occurred!</div>',
 				message: status.info.error,
 				detail : detailHTML,
-				cancelText : status.state === 'dead' ? undefined : 'Quit',
-				cancel : status.state === 'dead' ? undefined : function() {
-					dashboard.engine.quit();
-				}
-			});
-		} else if(status.info['auth']) {
-			authorizeDialog = true;
-			showModal({
-				title : 'Authorization Required!',
-				lead : '<div style="color:#7F5323; font-weight: bolder;">Authorization is required to complete the requested operation.</div>',
-				message: 'To authorize your tool, press and hold the green button for one second.  Tool authorization duration can be adjusted in the tool configuration.',
-				cancelText : 'Got it!',
+				cancelText : 'Quit',
 				cancel : function() {
-					authorizeDialog=false;
 					dashboard.engine.quit();
 				}
-			});
+
+ 			})
+
 		}
 	} else {
 		hideModal();
 	}
 });
-
-function setConnectionStrength(level) {
-	var onclass = 'on';
-	if(level === null) {
-		level = 4;
-		onclass = 'err';
-	}
-	for(i=1; i<5; i++) {
-		 var bar = $('#cs' + i);
-		 if(i<=level) {
-		 	bar.attr('class', onclass);
-		 } else {
-		 	bar.attr('class', 'off');
-		 }
-	}
-}
-
-var signal_window = [];
-var err_count = 0;
-
-function ping() {
+setInterval(function() {
 	engine.ping(function(err, time) {
-		// 5-point Moving average
-		signal_window.push(time);
-		if(signal_window.length > 5) {
-			signal_window.shift(0);
-		}
-		var sum = 0;
-		for(var i=0; i<signal_window.length; i++) {
-			sum += signal_window[i];
-		}
-		var avg = sum/signal_window.length;
-		
 		if(err) {
 			console.error(err);
 		} else {
-			if(avg < 100) {setConnectionStrength(4);}
-			else if(avg < 200) { setConnectionStrength(3);}
-			else if(avg < 400) { setConnectionStrength(2);}
-			else if(avg < 800) { setConnectionStrength(1);}
-			else { setConnectionStrength(0);}
+			console.info("PING Response time: " + time + "ms");
 		}
-		setTimeout(ping, 2000);
 	});
-};
-
-ping();
+}, 3000);
 
 (function () {
 if ($(window).width() < 620) {
@@ -516,14 +414,6 @@ function touchScreen () {
 	} 
 }
 touchScreen();
-
-$('.dro-button').click(function() {
-	$('.dro-button').removeClass('active');
-	$(this).addClass('active')
-	$('.dro-view').hide();
-	$('#' + this.dataset.view).show();
-});
-
 });
 
 
