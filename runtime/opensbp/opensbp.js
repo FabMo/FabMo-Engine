@@ -124,9 +124,7 @@ SBPRuntime.prototype.runString = function(s, callback) {
 			}
 		}
 		try {
-			console.log("Parsing...");
 			this.program = parser.parse(s);
-			console.log("Parsed.");
 		} catch(e) {
 			return this._end(e.message + " (Line " + e.line + ")");
 		}

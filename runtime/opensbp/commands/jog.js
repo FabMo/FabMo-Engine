@@ -5,68 +5,75 @@ var config = require('../../../config');
 
 
 // Jog (rapid) the X axis
-exports.JX = function(args) {
+exports.JX = function(args, callback) {
 	var x = args[0];
 	if ( x !== this.cmd_posx ){
 		if(isNaN(x)) { throw( "Invalid JX argument: " + x ); }
 		this.cmd_posx = x;
 		this.emit_move('G0',{"X":x});
 	}
+	setImmediate(callback);
 };
 
 // Jog (rapid) the Y axis
-exports.JY = function(args) {
+exports.JY = function(args, callback) {
 	var y = args[0];
 	if ( y !== this.cmd_posy ){
 		if(isNaN(y)) { throw( "Invalid JY argument: " + y ); }
 		this.cmd_posy = y;
 		this.emit_move('G0',{"Y":y});
 	}
+	setImmediate(callback);
 };
 
 // Jog (rapid) the Z axis
-exports.JZ = function(args) {
+exports.JZ = function(args, callback) {
 	var z = args[0];
 	if ( z !== this.cmd_posz ){
 		if(isNaN(z)) { throw( "Invalid JZ argument: " + z ); }
 		this.cmd_posz = z;
 		this.emit_move('G0',{"Z":z});
 	}
+	setImmediate(callback);
 };
 
 // Jog (rapid) the A axis
-exports.JA = function(args) {
+exports.JA = function(args, callback) {
 	var a = args[0];
 	if ( a !== this.cmd_posa ){
 		if(isNaN(a)) { throw( "Invalid JA argument: " + a ); }
 		this.cmd_posa = a;
 		this.emit_move('G0',{"A":a});
 	}
+	setImmediate(callback);
 };
 
 // Jog (rapid) the B axis
-exports.JB = function(args) {
+exports.JB = function(args, callback) {
 	var b = args[0];
 	if ( b !== this.cmd_posb ){
 		if(isNaN(b)) { throw( "Invalid JB argument: " + b ); }
 		this.cmd_posb = b;
 		this.emit_move('G0',{"B":b});
 	}
+	setImmediate(callback);
 };
 
 // Jog (rapid) the C axis
-exports.JC = function(args) {
+exports.JC = function(args, callback) {
 	var c = args[0];
 	if ( c !== this.cmd_posc ){
 		if(isNaN(c)) { throw( "Invalid JC argument: " + c ); }
 		this.cmd_posc = c;
 		this.emit_move('G0',{"C":c});
 	}
+	setImmediate(callback);
+
 };
 
 // Jog (rapid) 2 axes (XY).This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
-exports.J2 = function(args) {
+exports.J2 = function(args, callback) {
 	log.debug(" J2");
     var params = process_jog.bind(this)(args);
     log.debug( "  J2 params = " + JSON.stringify(params) );
@@ -74,42 +81,51 @@ exports.J2 = function(args) {
 	if ( this.cmd_result < 2 ){
 		this.emit_move('G0',params);
 	}
+	setImmediate(callback);
 };
 
 // Jog (rapid) 3 axes (XYZ). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
-exports.J3 = function(args) {
+exports.J3 = function(args, callback) {
     var params = process_jog.bind(this)(args);
 	if ( this.cmd_result < 3 ){
 		this.emit_move('G0',params);
 	}
+		setImmediate(callback);
+
 };
 
 // Jog (rapid) 4 axes (XYZA). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
-exports.J4 = function(args) {
+exports.J4 = function(args,callback) {
     var params = process_jog.bind(this)(args);
     if ( this.cmd_result < 4 ){
 		this.emit_move('G0',params);
 	}
+		setImmediate(callback);
+
 };
 
 // Jog (rapid) 5 axes (XYZAB). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
-exports.J5 = function(args) {
+exports.J5 = function(args,callback) {
     var params = process_jog.bind(this)(args);
     if ( this.cmd_result < 5 ){
 		this.emit_move('G0',params);
 	}
+		setImmediate(callback);
+
 };
 
 // Jog (rapid) 6 axes (XYZABC). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
-exports.J6 = function(args) {
+exports.J6 = function(args, callback) {
     var params = process_jog.bind(this)(args);
     if ( this.cmd_result < 6 ){
 		this.emit_move('G0',params);
 	}
+		setImmediate(callback);
+
 };
 
 process_jog = function(args) {

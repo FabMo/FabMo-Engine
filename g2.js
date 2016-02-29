@@ -25,7 +25,7 @@ var STAT_PANIC = 13;
 
 // Should take no longer than CMD_TIMEOUT to do a get or a set operation
 var CMD_TIMEOUT = 10000;
-var EXPECT_TIMEOUT = 5000;
+var EXPECT_TIMEOUT = 15000;
 
 // When jogging, "keepalive" jog commands must arrive faster than this interval (ms)
 // This can be slowed down if necessary for spotty connections, but a slow timeout means
