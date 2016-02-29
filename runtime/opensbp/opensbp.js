@@ -395,8 +395,6 @@ SBPRuntime.prototype._continue = function() {
 		// Whether we get a stack break or not, 
 		if(this.banked_lines >= MAX_BANKED_LINES) {
 			this._inlineDispatch();
-			this.banked_lines = 0;
-			break;
 		}
 
 		// Pull the current line of the program from the list
@@ -535,7 +533,9 @@ SBPRuntime.prototype._end = function(error) {
 };
 
 SBPRuntime.prototype._inlineDispatch = function() {
+	log.info("Hit the banked lines limit.  Dispatching current moves inline...");
 	this.driver.runSegment(this.current_chunk);
+	this.banked_lines = 0;
 	this.current_chunk = [];
 }
 
