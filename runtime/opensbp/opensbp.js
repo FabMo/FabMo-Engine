@@ -11,9 +11,9 @@ var interp = require('./interpolate');
 var Leveler = require('./commands/leveler').Leveler;
 
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
-var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
-var PERSISTENTVAR_RE = /\$([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
-
+var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i;
+var PERSISTENTVAR_RE = /\$([a-zA-Z_]+[A-Za-z0-9_]*)/i;
+var MAX_BANKED_LINES = 500;
 /**
  * The SBPRuntime object is responsible for running OpenSBP code.
  * 
@@ -61,6 +61,7 @@ function SBPRuntime() {
 	this.paused = false;
 	this.lastNoZPullup = 0; 
 	this.continue_callback = null;
+	this.banked_lines = 0;
 
 	// Physical machine state
 	this.machine = null;
@@ -393,6 +394,13 @@ SBPRuntime.prototype._continue = function() {
 			return this._end();
 		}
 
+		// Whether we get a stack break or not, 
+		if(this.banked_lines >= MAX_BANKED_LINES) {
+			this._dispatch(this._continue.bind(this));
+			this.banked_lines = 0;
+			break;
+		}
+
 		// Pull the current line of the program from the list
 		line = this.program[this.pc];
 		if(this._breaksStack(line)) {
@@ -432,6 +440,7 @@ SBPRuntime.prototype._continue = function() {
 		} else {
 			try {
 				this._execute(line);
+				this.banked_lines += 1;
 			} catch(e) {
 				return this._end(e.message);
 			}
@@ -1023,6 +1032,7 @@ SBPRuntime.prototype.init = function() {
 	this.quit_pending = false;
 	this.end_message = null;
 	this.paused = false;
+	this.banked_lines = 0;
 
 	if(this.transforms != null && this.transforms.level.apply === true) {
 		leveler = new Leveler(this.transforms.level.ptDataFile);
