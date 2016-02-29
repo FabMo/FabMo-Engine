@@ -18,15 +18,22 @@ parseLine = function(line) {
     return obj
 }
 
-parse = function(str) {
+parse = function(data) {
 	output = []
-	lines = str.split('\n');
+    
+    // Parse from a string or an array of strings
+    if(Array.isArray(data)) {
+        lines = data;
+    } else {
+        lines = data.split('\n');
+    }
+
     for(i=0; i<lines.length; i++) {
         try {            
             output.push(parseLine(lines[i]))
         } catch(err) {
             if(err.name == 'SyntaxError') {
-                log.error("Syntax Error on line " + i)
+                log.error("Syntax Error on line " + (i+1))
                 log.error("Expected " + JSON.stringify(err.expected) + " but found " + err.found)
                 err.line = i+1;
                 log.error(err.line)
@@ -39,5 +46,28 @@ parse = function(str) {
     return output
 }
 
-
 exports.parse = parse
+
+
+var main = function(){
+    var argv = require('minimist')(process.argv);
+    var fs = require('fs');
+    var filename = argv['_'][2]
+    if(filename) {
+        fs.readFile(filename, 'utf8', function(err, data) {
+            if(err) {
+                return console.log(err);
+            } 
+            
+            console.log(parse(data));                
+
+        });
+    } else {
+        console.log("Usage: node parser.js filename.sbp");
+    }
+}
+
+if (require.main === module) {
+    main();
+}
+
