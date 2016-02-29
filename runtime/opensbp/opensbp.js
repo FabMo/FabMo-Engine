@@ -159,6 +159,7 @@ SBPRuntime.prototype.runString = function(s, callback) {
 		this._run();
 		log.debug("Returning from run...");
 	} catch(e) {
+		log.error(e);
 		return this._end(e.message + " (Line " + e.line + ")");
 	}
 };
@@ -379,7 +380,7 @@ SBPRuntime.prototype._continue = function() {
 			// We may yet have g-codes that are pending.  Run those.
 			if(this.current_chunk.length > 0) {
 				log.info("Dispatching final g-codes")
-				this._dispatch(this._continue.bind(this));
+				return this._dispatch(this._continue.bind(this));
 			} else {
 				log.info("No g-codes remain to dispatch.")
 				return this._end(this.end_message);
