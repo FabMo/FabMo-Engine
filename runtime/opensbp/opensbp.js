@@ -125,9 +125,7 @@ SBPRuntime.prototype.runString = function(s, callback) {
 			}
 		}
 		try {
-			console.log("Parsing...");
 			this.program = parser.parse(s);
-			console.log("Parsed.");
 		} catch(e) {
 			return this._end(e.message + " (Line " + e.line + ")");
 		}
@@ -396,7 +394,7 @@ SBPRuntime.prototype._continue = function() {
 
 		// Whether we get a stack break or not, 
 		if(this.banked_lines >= MAX_BANKED_LINES) {
-			this._dispatch(this._continue.bind(this));
+			this._inlineDispatch();
 			this.banked_lines = 0;
 			break;
 		}
@@ -536,6 +534,11 @@ SBPRuntime.prototype._end = function(error) {
 	}
 };
 
+SBPRuntime.prototype._inlineDispatch = function() {
+	this.driver.runSegment(this.current_chunk);
+	this.current_chunk = [];
+}
+
 // Pack up the current chunk (if it is nonempty) and send it to G2
 // Returns true if there was data to send to G2, false otherwise.
 SBPRuntime.prototype._dispatch = function(callback) {
@@ -611,8 +614,7 @@ SBPRuntime.prototype._dispatch = function(callback) {
 				}.bind(this)
 			});
 
-			var segment = this.current_chunk.join('\n') + '\n';
-			this.driver.runSegment(segment);
+			this.driver.runSegment(this.current_chunk);
 			this.current_chunk = [];
 			return true;
 		} else { // Not connected to a real tool
