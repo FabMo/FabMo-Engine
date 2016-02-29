@@ -211,6 +211,11 @@
                 </li>
               </ul>
             </div>
+            <!--
+            <div id="handwheel" class="widget fabmo-manual-control" style="text-align: center;">
+              <canvas width="220px" height="220px" id="wheel"></canvas>
+            </div>
+            -->
 
             <div id="keypad" class="widget fabmo-manual-control keypad dro-view" style="text-align: center;">
               <label>Pendant</label>
@@ -244,7 +249,43 @@
                   <div class="z_neg keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-down"></i></div>
                 </div>
               </div>
+              <!--
+              <div>
+                <div style="width: 50%; padding: 4px;"><div class="keypad-button settings-button">Settings</div></div>
+                <div style="width: 50%"></div>                
+              </div>
+              -->
             </div>
+
+            <div id="job-info" class="widget">
+
+                <ul class="off-canvas-list fabmo-status fabmo-file-control">
+                  <li style="margin: 10px" class="file-info" style="align: center;">
+                    <div class="filename" style="text-align: center;"></div>
+                  </li>
+                  <li style="margin: 10px" class="file-info" style="align: center;">
+                  <div class="progress-container">
+                    <div class="progress" style=""></div>
+                  </div>
+                  </li>
+                  <li style="margin: 10px">
+                        <span class="fabmo-pause-button hide">
+                          <a class="med button warning radius" style="border: 2px solid black;">Pause</a>
+                        </span>
+                  </li>
+                  <li style="margin: 10px">
+                        <span class="fabmo-resume-button hide">
+                          <a class="med button success radius" style="border: 2px solid black;">Resume</a>
+                        </span>
+                  </li>
+                  <li style="margin: 10px">
+                        <span class="fabmo-stop-button hide">
+                          <a class="med button alert radius" style="border: 2px solid black;">Stop</a>
+                        </span>
+                  </li>
+                </ul>
+            </div>
+
           </aside>
 
           <!-- App Menu -->
