@@ -997,6 +997,7 @@ SBPRuntime.prototype._eval = function(expr) {
 			case '=':
 				return this._eval(expr.left) == this._eval(expr.right);
 				break;
+			case '<>':
 			case '!=':
 				return this._eval(expr.left) != this._eval(expr.right);
 				break;
