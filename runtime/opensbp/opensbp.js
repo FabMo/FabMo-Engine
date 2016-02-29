@@ -13,7 +13,7 @@ var Leveler = require('./commands/leveler').Leveler;
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i;
 var PERSISTENTVAR_RE = /\$([a-zA-Z_]+[A-Za-z0-9_]*)/i;
-var MAX_BANKED_LINES = 1000;
+var MAX_BANKED_LINES = 500;
 /**
  * The SBPRuntime object is responsible for running OpenSBP code.
  * 
@@ -392,10 +392,14 @@ SBPRuntime.prototype._continue = function() {
 			return this._end();
 		}
 
+		// Whether we get a stack break or not, 
+		if(this.banked_lines >= MAX_BANKED_LINES) {
+			this._inlineDispatch();
+		}
+
 		// Pull the current line of the program from the list
 		line = this.program[this.pc];
-
-		if(this._breaksStack(line)  || (this.banked_lines >= MAX_BANKED_LINES)) {
+		if(this._breaksStack(line)) {
 			// If it's a stack breaker go ahead and distpatch the current g-code list to the tool
 			log.debug("Stack break: " + JSON.stringify(line));
 			dispatched = this._dispatch(this._continue.bind(this));
@@ -540,11 +544,10 @@ SBPRuntime.prototype._inlineDispatch = function() {
 SBPRuntime.prototype._dispatch = function(callback) {
 	var runtime = this;
 
-	this.banked_lines = 0;
 	// If there's g-codes to be dispatched to the tool
 	if(this.current_chunk.length > 0) {
 
-		// And we are connected to a real tool
+		// And we have are connected to a real tool
 		if(this.machine) {
 			// Dispatch the g-codes and look for the tool to start running them
 			//log.info("dispatching a chunk: " + this.current_chunk);
