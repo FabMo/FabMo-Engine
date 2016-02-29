@@ -34,6 +34,16 @@ var flattenObject = function(ob) {
 };
 
 function update() {
+  fabmo.getVersion(function(err, version) {
+    switch(version.type) {
+      case 'dev':
+        $('.engine-version').text(version.hash.substring(0,12) + '-dev');
+        break;
+      case 'release':
+        $('.engine-version').text(version.number);
+        break;
+    }
+  });
     fabmo.getConfig(function(err, data) {
       if(err) {
         console.error(err);

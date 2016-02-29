@@ -31,6 +31,12 @@ MachineConfig.prototype.update = function(data, callback, force) {
 
 
 MachineConfig.prototype.apply = function(callback) {
+	if(this.get('auth_timeout') === 0) {
+		this.machine.authorize();
+	} else {
+		this.machine.deauthorize();
+	}
+
 	try {
 		if(config.driver.changeUnits) {
 			var units = this.get('units');
@@ -47,7 +53,6 @@ MachineConfig.prototype.apply = function(callback) {
 		} else {
 			callback(null);
 		}
-
 	}
 	catch (e) {
 		log.warn("Couldn't access driver configuration...");

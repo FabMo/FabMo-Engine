@@ -37,14 +37,19 @@ Keypad.prototype.init = function() {
 		var hammer = new Hammer.Manager(element);
 		hammer.add(new Hammer.Tap({time: this.pressTime-1, interval: this.tapInterval, threshold: this.pressThreshold}));
 		hammer.add(new Hammer.Press({time: this.pressTime, threshold: this.pressThreshold}));
+		hammer.add(new Hammer.Pan({threshold: this.pressThreshold}));
+
 		hammer.on('press', this.onDrivePress.bind(this));
-		hammer.on('pressup', this.onDriveRelease.bind(this));
+		hammer.on('pressup', this.end.bind(this));
 		hammer.on('tap', this.onDriveTap.bind(this));
-		$(element).on('blur', this.onDriveBlur.bind(this));
+		hammer.on('panend', this.end.bind(this));
+		hammer.on('pancancel', this.end.bind(this));
+
+		$(element).on('blur', this.end.bind(this));
 		$(element).on('mouseleave', this.onDriveMouseleave.bind(this));
 		$(element).on('touchend', this.end.bind(this));
 		$(document).on('scroll', this.end.bind(this));
-
+		element.addEventListener("contextmenu", function(evt) {evt.preventDefault()});
 	}.bind(this));
 }
 
@@ -194,19 +199,6 @@ Keypad.prototype.onDriveMouseleave = function(evt) {
 		this.end();		
 	}
 }
-
-Keypad.prototype.onDriveTouchend = function(evt) {
-	this.end();
-}
-
-Keypad.prototype.onDriveBlur = function(evt) {
-	this.end();
-}
-
-Keypad.prototype.onDriveRelease = function(evt) {
-	this.end();
-}
-
 
 return Keypad;
 }));

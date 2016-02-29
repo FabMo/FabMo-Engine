@@ -19,7 +19,19 @@ var AppManager = function(options) {
 	this.apps_index = {};
 	this.app_configs = {};
 	this.apps_list = [];
+	try { 
+		this.machine = require('../machine').machine;
+	} catch(e) {
+		log.warn('No machine bound to AppManager');
+		this.machine = null;
+	}
 };
+
+AppManager.prototype.notifyChange = function() {
+	if(this.machine) {
+		this.machine.emit('change', 'apps');
+	}
+}
 
 AppManager.prototype.readAppPackageInfo = function(app_info, callback) {
 	var pkg_info_path = path.join(app_info.app_path, 'package.json');
@@ -96,6 +108,7 @@ AppManager.prototype._addApp = function(app) {
 	this.apps_list.push(app.info);
 	this.apps_index[app.info.id] = app.info;
 	this.app_configs[app.info.id] = app.config;
+	this.notifyChange();
 };
 
 AppManager.prototype.reloadApp = function(id, callback) {
@@ -158,6 +171,7 @@ AppManager.prototype.deleteApp = function(id, callback) {
 							log.warn("Inconsistency in the app index observed when removing app " + app_id);
 						}
 						callback(null, app_info);
+						this.notifyChange();
 					}
 				}.bind(this)); // remove app archive
 			}

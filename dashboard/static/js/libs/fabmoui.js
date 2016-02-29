@@ -158,13 +158,17 @@ FabMoUI.prototype.updateStatusContent = function(status){
 
 	if(prev_state !== status.state) {
 		if(status.state === 'stopped') {
-			if(status.info.error) {
-				this.emit('error', status.info.error);
-			}	
+			if(status.info) {
+				if(status.info.error) {
+					this.emit('error', status.info.error);
+				}					
+			}
 		} else if(status.state === 'paused') {
-			if(status.info.message) {
-				this.emit('message', status.info.message);
-			}	
+			if(status.info) {
+				if(status.info.message) {
+					this.emit('message', status.info.message);
+				}	
+			}
 		}
 	}
 
@@ -326,7 +330,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 			$(that.stop_button_selector).addClass('hide');
 		}
 	}
-	else if(status.state == 'not_ready') {
+	else if(status.state == 'not_ready' || status.state == 'dead') {
 		statename = 'Unavailable';
 		that.forbidKeypad();
 		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');

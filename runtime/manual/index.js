@@ -35,16 +35,39 @@ ManualRuntime.prototype.disconnect = function() {
 	}
 };
 
-ManualRuntime.prototype._changeState = function(newstate) {
+ManualRuntime.prototype._changeState = function(newstate, message) {
 	if(newstate === "idle") {
 		this.ok_to_disconnect = true;
 	} else {
 		this.ok_to_disconnect = false;
 	}
-	this.machine.setState(this, newstate);
+	this.machine.setState(this, newstate, message);
 };
 
+ManualRuntime.prototype._limit = function() {
+	var er = this.driver.getLastException();
+	if(er && er.st == 203) {
+		var msg = er.msg.replace(/\[[^\[\]]*\]/,'');
+		this.keep_moving = false;
+		this.moving = false;
+		this.driver.clearLastException();
+		this._changeState('stopped', {error : msg});
+		return true;
+	}
+	return false;
+}
 ManualRuntime.prototype._onG2Status = function(status) {
+	switch(status.stat) {
+		case this.driver.STAT_INTERLOCK:
+		case this.driver.STAT_SHUTDOWN:
+		case this.driver.STAT_PANIC:
+			return this.machine.die('A G2 exception has occurred. You must reboot your tool.');
+			break;
+		case this.driver.STAT_ALARM:
+			if(this._limit()) { return; }
+			break;
+	}
+
 	// Update our copy of the system status
 	for (var key in this.machine.status) {
 		if(key in status) {
@@ -83,6 +106,16 @@ ManualRuntime.prototype._onG2Status = function(status) {
 				break;
 			}
 			break;
+
+		case "stopped":
+			switch(status.stat) {
+				case this.driver.STAT_STOP:			
+				case this.driver.STAT_END:
+					this._changeState("idle");
+					break;
+			}
+			break;
+
 	}
 	this.machine.emit('status',this.machine.status);
 };
@@ -90,6 +123,13 @@ ManualRuntime.prototype._onG2Status = function(status) {
 
 ManualRuntime.prototype.executeCode = function(code) {
 	log.debug("Recieved manual command: " + JSON.stringify(code));
+	
+	// Don't honor commands if we're not in a position to do so
+	switch(this.machine.status.state) {
+		case "stopped":
+			return;
+	}
+
 	switch(code.cmd) {
 		case 'start':
 			this.startMotion(code.axis, code.speed);
@@ -152,13 +192,14 @@ ManualRuntime.prototype.renewMoves = function() {
 		this.driver.gcodeWrite(move);
 		setTimeout(this.renewMoves.bind(this), T_RENEW)		
 	} else {
-		this.moving = false;
-		this.keep_moving = false;
-		this.driver.quit();
+		if(this.machine.status.state != "stopped") {
+			this.stopMotion();	
+		}
 	}
 }
 
 ManualRuntime.prototype.stopMotion = function() {
+	if(this._limit()) { return; }
 	this.keep_moving = false;
 	this.moving = false;
 	this.driver.quit();

@@ -11,7 +11,7 @@
 }(this, function (io) {
   "use strict"
 
-var PING_TIMEOUT = 1000;
+var PING_TIMEOUT = 3000;
 
 var makePostData = function(obj, options) {
 	var file = null;
@@ -51,7 +51,8 @@ var FabMoAPI = function(base_url) {
 		'disconnect' : [],
 		'connect' : [],
 		'job_start' : [],
-		'job_end' : []
+		'job_end' : [],
+		'change' : []
 	};
 	var url = window.location.origin;
 	this.base_url = url.replace(/\/$/,'');
@@ -74,6 +75,10 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 		this.socket.on('status', function(status) {
 			this._setStatus(status);
 			this.emit('status', status);
+		}.bind(this));
+
+		this.socket.on('change', function(topic) {
+			this.emit('change', topic);
 		}.bind(this));
 
 		this.socket.on('connect', function() {
@@ -129,8 +134,9 @@ FabMoAPI.prototype.ping = function(callback) {
 		var start = Date.now();
 
 		var fail = setTimeout(function() {
+			this.socket.off('pong');
 			callback(new Error('Timeout waiting for ping response.'), null);
-		}, PING_TIMEOUT);
+		}.bind(this), PING_TIMEOUT);
 
 		this.socket.once('pong', function() {
 			clearTimeout(fail);
@@ -157,31 +163,23 @@ FabMoAPI.prototype.setConfig = function(cfg_data, callback) {
 }
 
 // Status
+FabMoAPI.prototype.getVersion = function(callback) {
+	this._get('/version', callback, function(err, version) {
+		if(err) {
+			callback(err);			
+		}
+		this.version = version;
+		callback(null, version);
+	}.bind(this), 'version');
+}
+
+// Status
 FabMoAPI.prototype.getStatus = function(callback) {
 	this._get('/status', callback, callback, 'status');
 }
 
 FabMoAPI.prototype.requestStatus = function() {
 	this.socket.emit('status');
-}
-
-// Jobs
-FabMoAPI.prototype.getJobHistory = function(callback) {
-	this._get('/jobs/history', callback, callback, 'jobs');
-}
-
-FabMoAPI.prototype.getJobQueue = function(callback) {
-	this._get('/jobs/queue', callback, callback, 'jobs');
-}
-
-FabMoAPI.prototype.getJob = function(id, callback) {
-	this._get('/job/' + id, callback, callback, 'job');
-}
-
-FabMoAPI.prototype.getJobInfo = FabMoAPI.prototype.getJob;
-
-FabMoAPI.prototype.resubmitJob = function(id, callback) {
-	this._post('/job/' + id, {}, callback, callback);
 }
 
 // Direct commands
@@ -198,12 +196,28 @@ FabMoAPI.prototype.resume = function(callback) {
 }
 
 // Jobs
+FabMoAPI.prototype.getJobQueue = function(callback) {
+	this._get('/jobs/queue', callback, callback, 'jobs');
+}
+
+FabMoAPI.prototype.getJob = function(id, callback) {
+	this._get('/job/' + id, callback, callback, 'job');
+}
+
+FabMoAPI.prototype.getJobInfo = FabMoAPI.prototype.getJob;
+
+FabMoAPI.prototype.resubmitJob = function(id, callback) {
+	this._post('/job/' + id, {}, callback, callback);
+}
+
 FabMoAPI.prototype.runNextJob = function(callback) {
 	this._post('/jobs/queue/run', {}, callback, callback);
 }
 
-FabMoAPI.prototype.getJobHistory = function(callback) {
-	this._get('/jobs/history', callback, callback, 'jobs');
+FabMoAPI.prototype.getJobHistory = function(options, callback) {
+	var start = options.start || 0;
+	var count = options.count || 0;
+	this._get('/jobs/history?start=' + start + '&count=' + count, callback, callback, 'jobs');
 }
 
 FabMoAPI.prototype.getJob = function(id, callback) {
@@ -427,8 +441,10 @@ FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback
 	this._post(url, meta, onMetaDataUploadComplete, onMetaDataUploadComplete, 'key');
 }
 
-FabMoAPI.prototype._post = function(url, data, errback, callback, key) {
-	var url = this._url(url);
+FabMoAPI.prototype._post = function(url, data, errback, callback, key, redirect) {
+	if(!redirect) {
+		var url = this._url(url);		
+	}
 	var callback = callback || function() {};
 	var errback = errback || function() {};
 
@@ -437,7 +453,9 @@ FabMoAPI.prototype._post = function(url, data, errback, callback, key) {
 
 	if(!(data instanceof FormData)) {
 		xhr.setRequestHeader('Content-Type', 'application/json');
-		data = JSON.stringify(data);
+		if(typeof data != 'string') {
+			data = JSON.stringify(data);
+		}
 	}
 
 	xhr.onload = function() {
@@ -465,11 +483,26 @@ FabMoAPI.prototype._post = function(url, data, errback, callback, key) {
 						break;
 				}
 			break;
+
+			case 300:
+				// TODO infinite loop issue here?
+				try {
+					var response = JSON.parse(xhr.responseText);
+					if(response.url) {
+						this._post(response.url, data, errback, callback, key, true);
+					} else {
+						console.error("Bad redirect in FabMo API");
+					}
+				} catch(e) {
+					console.error(e);
+				}
+				break;
+
 			default:
 				console.error("Got a bad response from server: " + xhr.status);
 				break;
 		}
-    }
+    }.bind(this);
 	xhr.send(data);
 	return xhr;
 }

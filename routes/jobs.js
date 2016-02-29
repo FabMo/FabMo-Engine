@@ -167,22 +167,34 @@ var resubmitJob = function(req, res, next) {
  * @apiError {Object} message Error message
  */
 var getQueue = function(req, res, next) {
-    var answer;
-    db.Job.getPending(function(err, result) {
+    db.Job.getPending(function(err, pending) {
         if(err) {
             log.error(err);
-            answer = {
+            return res.json({
                 status:"error",
-                message:"failed to get jobs from DB"
-            };
-            res.json(answer);
-        } else {
-            answer = {
+                message:"failed to get pending jobs from DB"
+            });
+        }   
+
+        db.Job.getRunning(function(err, running) {
+            if(err) {
+                log.error(err);
+                return res.json({
+                    status:"error",
+                    message:"failed to get running jobs from DB"
+                });
+            }
+
+            return res.json({
                 status:"success",
-                data : {jobs:result}
-            };
-            res.json(answer);
-        }
+                data : {
+                    jobs:{
+                        pending : pending,
+                        running : running
+                    }
+                }
+            });
+        });
     });
 };
 
@@ -242,7 +254,12 @@ var getAllJobs = function(req, res, next) {
  */
 var getJobHistory = function(req, res, next) {
     var answer;
-    db.Job.getHistory(function(err, result) {
+    var options = {
+        start : req.params.start || 0,
+        count : req.params.count || 0
+    }
+
+    db.Job.getHistory(options, function(err, result) {
         if(err) {
             log.error(err);
             answer = {
@@ -371,9 +388,9 @@ var getJobGCode = function(req, res, next) {
         } else {
             var gcode_filename = 'gcode.nc';
             machine.getGCodeForFile(file.path, function(err, gcode) {                
-                res.setHeader('content-type', 'applications/octet-stream');
-                res.setHeader('content-disposition', 'filename="' + gcode_filename + '"');
-                res.send(gcode);
+		      res.setHeader('content-type', 'applications/octet-stream');
+              res.setHeader('content-disposition', 'filename="' + gcode_filename + '"');
+              res.send(gcode);
             });
         }
     });

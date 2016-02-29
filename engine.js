@@ -14,6 +14,7 @@ var dashboard = require('./dashboard');
 var network = require('./network');
 var glob = require('glob');
 var argv = require('minimist')(process.argv);
+var fs = require('fs');
 
 var Engine = function() {
     this.version = null;
@@ -22,7 +23,11 @@ var Engine = function() {
 
 function EngineConfigFirstTime(callback) {
     switch(PLATFORM) {
+        case 'linux':
+            callback();
+            break;
         case 'darwin':
+            config.engine.set('server_port', 9876);
             glob.glob('/dev/cu.usbmodem*', function(err, files) {
                 if(files.length >= 2) {
                     var ports = {
@@ -32,6 +37,8 @@ function EngineConfigFirstTime(callback) {
                     config.engine.update(ports, function() {
                         callback();
                     });
+                } else {
+                    callback();
                 }
             });
         break;
@@ -66,9 +73,28 @@ Engine.prototype.stop = function(callback) {
 
 Engine.prototype.getVersion = function(callback) {
     util.doshell('git rev-parse --verify HEAD', function(data) {
-        var version = (data || "").trim();
-        console.log(version);
-        callback(null, data);
+        this.version = {};
+        this.version.hash = (data || "").trim();
+        this.version.number = "";
+        this.version.debug = ('debug' in argv);
+        fs.readFile('version.json', 'utf8', function(err, data) {
+            if(err) {
+                this.version.type = 'dev';
+                return callback(null, this.version);
+            }
+            try {
+                data = JSON.parse(data);
+                if(data.number) {
+                    this.version.number = data.number;                    
+                    this.version.type = 'release';
+                }
+            } catch(e) {
+                this.version.type = 'dev';
+                this.version.number
+            } finally {
+                callback(null, this.version);
+            }
+        }.bind(this))
     });
 }
 
@@ -121,7 +147,7 @@ Engine.prototype.start = function(callback) {
                 });
             } else {
                 var last_time_version = config.engine.get('version').trim();
-                var this_time_version = this.version.trim();
+                var this_time_version = this.version.hash.trim();
                 log.debug("Previous engine version: " + last_time_version);
                 log.debug(" Current engine version: " + this_time_version);
 
@@ -307,11 +333,13 @@ Engine.prototype.start = function(callback) {
                     });
             }
 
+            server.use(restify.queryParser());
+            
             server.on('uncaughtException', function(req, res, route, err) {
                 log.uncaught(err);
                 answer = {
                     status:"error",
-                    message:err
+                    message:err.message
                 };
                 res.json(answer)
             });

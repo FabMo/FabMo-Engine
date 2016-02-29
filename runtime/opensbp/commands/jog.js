@@ -67,7 +67,10 @@ exports.JC = function(args) {
 // Jog (rapid) 2 axes (XY).This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J2 = function(args) {
-    var params = process_move.bind(this)(args);
+	log.debug(" J2");
+    var params = process_jog.bind(this)(args);
+    log.debug( "  J2 params = " + JSON.stringify(params) );
+    log.debug( "     result = " + this.cmd_result );
 	if ( this.cmd_result < 2 ){
 		this.emit_move('G0',params);
 	}
@@ -76,7 +79,7 @@ exports.J2 = function(args) {
 // Jog (rapid) 3 axes (XYZ). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J3 = function(args) {
-    var params = process_move.bind(this)(args);
+    var params = process_jog.bind(this)(args);
 	if ( this.cmd_result < 3 ){
 		this.emit_move('G0',params);
 	}
@@ -85,7 +88,7 @@ exports.J3 = function(args) {
 // Jog (rapid) 4 axes (XYZA). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J4 = function(args) {
-    var params = process_move.bind(this)(args);
+    var params = process_jog.bind(this)(args);
     if ( this.cmd_result < 4 ){
 		this.emit_move('G0',params);
 	}
@@ -94,7 +97,7 @@ exports.J4 = function(args) {
 // Jog (rapid) 5 axes (XYZAB). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J5 = function(args) {
-    var params = process_move.bind(this)(args);
+    var params = process_jog.bind(this)(args);
     if ( this.cmd_result < 5 ){
 		this.emit_move('G0',params);
 	}
@@ -103,42 +106,41 @@ exports.J5 = function(args) {
 // Jog (rapid) 6 axes (XYZABC). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J6 = function(args) {
-    var params = process_move.bind(this)(args);
+    var params = process_jog.bind(this)(args);
     if ( this.cmd_result < 6 ){
 		this.emit_move('G0',params);
 	}
 };
 
 process_jog = function(args) {
-//    log.debug(" process_move: " + JSON.stringify(args));
+    log.debug(" process_jog: " + JSON.stringify(args));
 	var params = {};
 	this.cmd_result = 0;
+	if( args[0] === 0 || args[0] && typeof args[0] === "number"){  //args[0] === 0 ||
+		params.X = args[0];
+		if ( params.X === this.cmd_posx ) { this.cmd_result += 1; }
+	}
+	if( args[1] === 0 || args[1] && typeof args[1] === "number"){  //args[1] === 0 || 
+		params.Y = args[1];
+		if ( params.Y === this.cmd_posy ) { this.cmd_result += 1; }
+	}  
+	if(args[2] === 0 || args[2] && typeof args[2] === "number"){ 
+		params.Z = args[2];
+		if ( params.Z === this.cmd_posz ) { this.cmd_result += 1; }
+	}  
+	if(args[3] === 0 || args[3] && typeof args[3] === "number"){ 
+		params.A = args[3];
+		if ( params.A === this.cmd_posa ) { this.cmd_result += 1; }
+	}
+	if(args[4] === 0 || args[4] && typeof args[4] === "number"){ 
+		params.B = args[4];
+		if ( params.B === this.cmd_posb ) { this.cmd_result += 1; }
+	}  
+	if(args[5] === 0 || args[5] && typeof args[5] === "number"){ 
+		params.C = args[5];
+		if ( params.C === this.cmd_posc ) { this.cmd_result += 1; }
+	}  
 
-	if(args[0] && typeof args[0] === "number"){ 
-	  this.cmd_posx = params.X = args[0];
-      if ( params.X === this.cmd_posx ) { this.cmd_result += 1; }
-	}
-	if(args[1] && typeof args[1] === "number"){ 
-	  this.cmd_posy = params.Y = args[1];
-	  if ( params.Y === this.cmd_posy ) { this.cmd_result += 1; }
-	}  
-	if(args[2] && typeof args[2] === "number"){ 
-	  this.cmd_posz = params.Z = args[2];
-	  if ( params.Z === this.cmd_posz ) { this.cmd_result += 1; }
-	}  
-	if(args[3] && typeof args[3] === "number"){ 
-	  this.cmd_posa = params.A = args[3];
-	  if ( params.A === this.cmd_posa ) { this.cmd_result += 1; }
-	}
-	if(args[4] && typeof args[4] === "number"){ 
-	  this.cmd_posb = params.B = args[4];
-	  if ( params.B === this.cmd_posb ) { this.cmd_result += 1; }
-	}  
-	if(args[5] && typeof args[5] === "number"){ 
-	  this.cmd_posc = params.C = args[5];
-	  if ( params.C === this.cmd_posc ) { this.cmd_result += 1; }
-	}  
-	params.F = (60.0 * config.opensbp.get('movexy_speed'));
 	return params;
 };
 

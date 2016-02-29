@@ -19,7 +19,8 @@ define(function(require) {
 		this.events = {
 			'status' : [],
 			'job_start' : [],
-			'job_end' : []
+			'job_end' : [],
+			'change' : []
 		};
 		this._registerHandlers();
 		this._setupMessageListener();
@@ -53,6 +54,9 @@ define(function(require) {
 		this.engine = engine;
 		this.engine.on('status', function(data) {
 			this.updateStatus(data);
+		}.bind(this));
+		this.engine.on('change', function(topic) {
+			this._fireEvent('change', topic);
 		}.bind(this));
 	}
 
@@ -115,11 +119,15 @@ define(function(require) {
 										"data" : data, 
 										"id" : id }
 							}
-							source.postMessage(msg, evt.origin);
+							if(source) {
+								source.postMessage(msg, evt.origin);								
+							}
 						});
 					} catch(e) {
 						var msg = {"status" : "error", "type" : "cb", "message" : JSON.stringify(e) , "id" : id}
-						source.postMessage(JSON.stringify(msg), evt.origin);
+						if(source) {
+							source.postMessage(JSON.stringify(msg), evt.origin);							
+						}
 					}
 				}
 			} else if('on' in evt.data) {
@@ -190,7 +198,6 @@ define(function(require) {
 					callback(err);
 				} else {
 					callback(err, result);
-					//this.launchApp('job-manager', {}, callback);
 				}
 			}.bind(this));
 		}.bind(this));
@@ -204,11 +211,11 @@ define(function(require) {
 				} else {
 					callback(null, jobs);
 				}
-			})
+			});
 		}.bind(this));
 
-		this._registerHandler('getJobHistory', function(data, callback) {
-			this.engine.getJobHistory(function(err, jobs) {
+		this._registerHandler('getJobHistory', function(options, callback) {
+			this.engine.getJobHistory(options || {}, function(err, jobs) {
 				if(err) {
 					callback(err);
 				} else {
@@ -303,6 +310,7 @@ define(function(require) {
 		// Submit an app
 		this._registerHandler('submitApp', function(data, callback) { 
 			this.engine.submitApp(data.apps, data.options, function(err, result) {
+				context.apps.fetch();
 				if(err) { callback(err); }
 				else { callback(null, result); }
 			}.bind(this));
@@ -459,6 +467,10 @@ define(function(require) {
 			this.engine.setAppConfig(context.current_app_id, data, callback);
 		}.bind(this));
 
+		this._registerHandler('getVersion', function(data, callback) {
+			this.engine.getVersion(callback);
+		}.bind(this));
+
 		this._registerHandler('requestStatus', function(data, callback) {
 			this.engine.getStatus(function(err,  status) {
 				if(err) {
@@ -469,6 +481,15 @@ define(function(require) {
 				}
 			}.bind(this));
 		}.bind(this));
+
+		this._registerHandler('navigate', function(data, callback) {
+			if(data.url) {
+				window.open(data.url,data.options.target)
+			} else {
+				callback(new Error("No URL specified"));
+			}
+		}.bind(this));
+
 
 		this._registerHandler('notify', function(data, callback) {
 			if(data.message) {

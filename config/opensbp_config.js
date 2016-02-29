@@ -46,7 +46,6 @@ OpenSBPConfig.prototype.setVariable = function(name, value, callback) {
 	var name = name.replace('$','');
 	var u = {'variables' : {}}
 	u.variables[name] = value;
-	console.log(u)
 	this.update(u, callback, true);
 }
 
