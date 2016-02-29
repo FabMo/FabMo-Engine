@@ -31,7 +31,13 @@ define(function(require) {
 	// Detect touch screen
 	
 	var supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
+    
+    //Give editor focus 
+    
+    $('#icon_editor').on('click', function(){
+        $('iframe').focus();
 
+    });
 	// Initial read of engine configuration
 	engine.getConfig();
 	engine.getVersion(function(err, version) {
