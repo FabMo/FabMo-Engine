@@ -38,7 +38,7 @@ OpenSBPConfig.prototype.getVariable = function(name) {
 	if(variables && (name in variables)) {
 		return variables[name];
 	} else {
-		return undefined;
+		throw new Error("Undefined persistent variable '" + name + "'");
 	}
 }
 

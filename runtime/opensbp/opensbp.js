@@ -448,6 +448,7 @@ SBPRuntime.prototype._end = function(error) {
 				// We are truly done
 				callback = this.end_callback;
 				this.init();
+				this.user_vars = {};
 				if(error) {
 					this.machine.setState(this, 'stopped', {'error' : error });
 					this.emit('end', this);
@@ -808,7 +809,6 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			break;
 
 		case "assign":
-			//TODO FIX THIS THIS DOESN'T DO SYSTEM VARS PROPERLY
 			this.pc += 1;
 			var value = this._eval(command.expr);
 			this._assign(command.var, value, function() {
@@ -957,42 +957,21 @@ SBPRuntime.prototype._setupEvent = function(command, callback) {
 }
 
 SBPRuntime.prototype._eval_value = function(expr) {
-		// log.debug("  Evaluating value: " + expr);
-		sys_var = this.evaluateSystemVariable(expr);
-		if(sys_var === undefined) {
-			var persistent_var = this.evaluatePersistentVariable(expr);
-			if(persistent_var === undefined) {
-				user_var = this.evaluateUserVariable(expr);
-				if(user_var === undefined) {
-					f = parseFloat(expr);
-				    if(isNaN(f)) {
-	                    return expr;
-	                } else {
-	                    return f;
-	                }
-	            } else if(user_var === null) {
-	            	throw new Error("Undefined variable: " + expr)
-	            	log.error("  Uh oh. (" + expr + ")");
-	            	// User var is undefined (return undefined??)
-				} else {
-					log.debug("  Evaluated " + expr + " as " + user_var);
-					return parseFloat(user_var);
-				}				
-			} else {
-				f = parseFloat(persistent_var);
-				if(isNaN(f)) {
-					return expr;
-				} else {
-					return f;
-				}
-			}
-		} else if(sys_var === null) {
-			log.error("  Undefined system variable " + expr)
-		} else {
-			log.debug("  Evaluated " + expr + " as " + sys_var);
-			this.sysvar_evaluated = true;
-			return parseFloat(sys_var);
-		}	
+	switch(this._variableType(expr)) {
+		case 'user':
+			return this.evaluateUserVariable(expr);
+		break;
+		case 'system':
+			return this.evaluateSystemVariable(expr);
+		break;
+		case 'persistent':
+			return this.evaluatePersistentVariable(expr);
+		break;
+		default:
+			var n = Number(expr);
+			return isNaN(n) ? expr : n;
+		break;
+	}
 };
 
 // Evaluate an expression.  Return the result.
@@ -1210,13 +1189,15 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
                		break; 
 
 		default:
-			return null;
+			throw new Error("Unknown System Variable: " + v)
 		break;
 	}
 };
 
 SBPRuntime.prototype._isVariable = function(v) {
-	return _isUserVariable(v) || _isPersistentVariable(v) || _isSystemVariable(v);	
+	return 	this._isUserVariable(v) || 
+			this._isPersistentVariable(v) || 
+			this._isSystemVariable(v);	
 }
 
 
@@ -1230,6 +1211,12 @@ SBPRuntime.prototype._isUserVariable = function(v) {
 
 SBPRuntime.prototype._isPersistentVariable = function(v) {
 	return v.match(PERSISTENTVAR_RE);	
+}
+
+SBPRuntime.prototype._variableType = function(v) {
+	if(this._isUserVariable(v)) {return 'user';}
+	if(this._isSystemVariable(v)) {return 'system';}
+	if(this._isPersistentVariable(v)) {return 'persistent';}
 }
 
 SBPRuntime.prototype.evaluateUserVariable = function(v) {

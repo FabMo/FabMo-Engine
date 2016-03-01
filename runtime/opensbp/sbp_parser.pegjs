@@ -102,7 +102,7 @@ assignment
   = v:variable __ "=" __ e:expression {return {"type": "assign", "var":v, "expr":e}}
 
 weak_assignment
-  = v:variable __ ":=" __ e.expression {return {"type": "weak_assign", "var":v, "expr":e}}
+  = v:variable __ ":=" __ e:expression {return {"type": "weak_assign", "var":v, "expr":e}}
 
 compare
   = lhs:expression __ op:cmp_op __ rhs:expression {return {'left' : lhs, 'right' : rhs, 'op' : op};}
