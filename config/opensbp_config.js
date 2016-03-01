@@ -49,4 +49,9 @@ OpenSBPConfig.prototype.setVariable = function(name, value, callback) {
 	this.update(u, callback, true);
 }
 
+OpenSBPConfig.prototype.hasVariable = function(name) {
+	var name = name.replace('$','');
+	return name in this._cache.variables;
+}
+
 exports.OpenSBPConfig = OpenSBPConfig;

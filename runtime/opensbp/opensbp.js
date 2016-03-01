@@ -817,6 +817,20 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			return true;
 			break;
 
+		case "weak_assign":
+			//TODO FIX THIS THIS DOESN'T DO SYSTEM VARS PROPERLY
+			this.pc += 1;
+			if(!this._varExists(command.var)) {
+				var value = this._eval(command.expr);
+				this._assign(command.var, value, function() {
+					callback();
+				});								
+			} else {
+				setImmediate(callback);
+			}
+			return true;
+			break;
+
 		case "cond":
 			if(this._eval(command.cmp)) {
 				return this._execute(command.stmt, callback);  // Warning RECURSION!
@@ -880,6 +894,19 @@ SBPRuntime.prototype._execute = function(command, callback) {
 	throw new Error("Shouldn't ever get here.");
 };
 
+SBPRuntime.prototype._varExists = function(identifier) {
+	result = identifier.match(USERVAR_RE);
+	if(result) {
+		return (identifier in this.user_vars);
+	}
+
+	result = identifier.match(PERSISTENTVAR_RE);
+	if(result) {
+		return config.opensbp.hasVariable(identifier)
+	}
+	return false;
+}
+
 SBPRuntime.prototype._assign = function(identifier, value, callback) {
 	result = identifier.match(USERVAR_RE);
 	if(result) {
@@ -896,7 +923,7 @@ SBPRuntime.prototype._assign = function(identifier, value, callback) {
 	}
 	log.debug(identifier + ' is not a persistent variable');
 
-	throw Error("Cannot assign to " + identifier);
+	throw new Error("Cannot assign to " + identifier);
 
 }
 
@@ -944,6 +971,7 @@ SBPRuntime.prototype._eval_value = function(expr) {
 	                    return f;
 	                }
 	            } else if(user_var === null) {
+	            	throw new Error("Undefined variable: " + expr)
 	            	log.error("  Uh oh. (" + expr + ")");
 	            	// User var is undefined (return undefined??)
 				} else {
@@ -1186,6 +1214,23 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 		break;
 	}
 };
+
+SBPRuntime.prototype._isVariable = function(v) {
+	return _isUserVariable(v) || _isPersistentVariable(v) || _isSystemVariable(v);	
+}
+
+
+SBPRuntime.prototype._isSystemVariable = function(v) {
+	return v.match(SYSVAR_RE);	
+}
+
+SBPRuntime.prototype._isUserVariable = function(v) {
+	return v.match(USERVAR_RE);	
+}
+
+SBPRuntime.prototype._isPersistentVariable = function(v) {
+	return v.match(PERSISTENTVAR_RE);	
+}
 
 SBPRuntime.prototype.evaluateUserVariable = function(v) {
 	if(v === undefined) { return undefined;}
