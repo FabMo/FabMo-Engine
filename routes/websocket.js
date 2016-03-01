@@ -16,7 +16,7 @@ function setupStatusBroadcasts(server){
 				socket.volatile.emit('status', status);
 			}
 		});
-		previous_status = status;
+		previous_status.state = status.state;
 	});
 
 	machine.on('change', function(topic) {
