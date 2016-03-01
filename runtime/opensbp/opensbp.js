@@ -1215,7 +1215,7 @@ SBPRuntime.prototype.evaluateUserVariable = function(v) {
 	if(v in this.user_vars) {
 		return this.user_vars[v];
 	} else {
-		throw new Error('Variable ' + v + ' was never defined.');
+		throw new Error('Variable ' + v + ' was used but not defined.');
 	}
 };
 
