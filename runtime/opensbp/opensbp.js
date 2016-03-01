@@ -11,9 +11,9 @@ var interp = require('./interpolate');
 var Leveler = require('./commands/leveler').Leveler;
 
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
-var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i;
-var PERSISTENTVAR_RE = /\$([a-zA-Z_]+[A-Za-z0-9_]*)/i;
-var MAX_BANKED_LINES = 1000;
+var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
+var PERSISTENTVAR_RE = /\$([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
+
 /**
  * The SBPRuntime object is responsible for running OpenSBP code.
  * 
@@ -61,7 +61,6 @@ function SBPRuntime() {
 	this.paused = false;
 	this.lastNoZPullup = 0; 
 	this.continue_callback = null;
-	this.banked_lines = 0;
 
 	// Physical machine state
 	this.machine = null;
@@ -394,8 +393,7 @@ SBPRuntime.prototype._continue = function() {
 
 		// Pull the current line of the program from the list
 		line = this.program[this.pc];
-
-		if(this._breaksStack(line)  || (this.banked_lines >= MAX_BANKED_LINES)) {
+		if(this._breaksStack(line)) {
 			// If it's a stack breaker go ahead and distpatch the current g-code list to the tool
 			log.debug("Stack break: " + JSON.stringify(line));
 			dispatched = this._dispatch(this._continue.bind(this));
@@ -432,7 +430,6 @@ SBPRuntime.prototype._continue = function() {
 		} else {
 			try {
 				this._execute(line);
-				this.banked_lines += 1;
 			} catch(e) {
 				return this._end(e);
 			}
@@ -529,23 +526,15 @@ SBPRuntime.prototype._end = function(error) {
 	}
 };
 
-SBPRuntime.prototype._inlineDispatch = function() {
-	log.info("Hit the banked lines limit.  Dispatching current moves inline...");
-	this.driver.runSegment(this.current_chunk);
-	this.banked_lines = 0;
-	this.current_chunk = [];
-}
-
 // Pack up the current chunk (if it is nonempty) and send it to G2
 // Returns true if there was data to send to G2, false otherwise.
 SBPRuntime.prototype._dispatch = function(callback) {
 	var runtime = this;
 
-	this.banked_lines = 0;
 	// If there's g-codes to be dispatched to the tool
 	if(this.current_chunk.length > 0) {
 
-		// And we are connected to a real tool
+		// And we have are connected to a real tool
 		if(this.machine) {
 			// Dispatch the g-codes and look for the tool to start running them
 			//log.info("dispatching a chunk: " + this.current_chunk);
@@ -612,7 +601,8 @@ SBPRuntime.prototype._dispatch = function(callback) {
 				}.bind(this)
 			});
 
-			this.driver.runSegment(this.current_chunk);
+			var segment = this.current_chunk.join('\n') + '\n';
+			this.driver.runSegment(segment);
 			this.current_chunk = [];
 			return true;
 		} else { // Not connected to a real tool
@@ -1038,7 +1028,6 @@ SBPRuntime.prototype.init = function() {
 	this.quit_pending = false;
 	this.end_message = null;
 	this.paused = false;
-	this.banked_lines = 0;
 
 	if(this.transforms != null && this.transforms.level.apply === true) {
 		leveler = new Leveler(this.transforms.level.ptDataFile);

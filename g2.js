@@ -25,7 +25,7 @@ var STAT_PANIC = 13;
 
 // Should take no longer than CMD_TIMEOUT to do a get or a set operation
 var CMD_TIMEOUT = 10000;
-var EXPECT_TIMEOUT = 10000;
+var EXPECT_TIMEOUT = 15000;
 
 // When jogging, "keepalive" jog commands must arrive faster than this interval (ms)
 // This can be slowed down if necessary for spotty connections, but a slow timeout means
@@ -737,11 +737,8 @@ G2.prototype.runImmediate = function(data, callback) {
 G2.prototype.runSegment = function(data, callback) {
 	line_count = 0;
 
-	var lines = data;
-    // Works from a string or an array of lines
-    if(!Array.isArray(data)) {
-        lines = data.split('\n');
-    }
+	// Divide string into a list of lines
+	lines = data.split('\n');
 
 	// Cleanup the lines and enqueue
 	for(var i=0; i<lines.length; i++) {
@@ -761,17 +758,15 @@ G2.prototype.runSegment = function(data, callback) {
 		this.pause_flag = false;
 		typeof callback === "function" && callback(null);
 	} else {
-		typeof callback === "function" && callback(new Error("No G-codes were present in the provided data."));
+		typeof callback === "function" && callback(new Error("No G-codes were present in the provided string"));
 	}
 };
 
 G2.prototype.sendMoreGCodes = function() {
 	codes = this.gcode_queue.multiDequeue(GCODE_BLOCK_SEND_SIZE);
 	if(codes.length > 0) {
-		codes.forEach(function(code) {
-			this.gcodeWrite(code + '\n');
-			this.lines_sent += 1;
-		}.bind(this));
+		this.lines_sent += codes.length;
+		this.gcodeWrite(codes.join('\n') + '\n');
 	}
 };
 
