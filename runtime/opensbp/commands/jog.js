@@ -3,9 +3,12 @@ var g2 = require('../../../g2');
 var sb3_commands = require('../sb3_commands');
 var config = require('../../../config');
 
+// Note that jogs don't need to be stack breakers, they only are to be consistent with sb3 behavior
+// and to improve performance by breaking up large files.  Down the road, if the sender is improved, these
+// should be made back into inline commands.
 
 // Jog (rapid) the X axis
-exports.JX = function(args, callback) {
+exports.JX = function(args) {
 	var x = args[0];
 	if ( x !== this.cmd_posx ){
 		if(isNaN(x)) { throw( "Invalid JX argument: " + x ); }
