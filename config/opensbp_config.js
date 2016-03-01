@@ -33,12 +33,12 @@ OpenSBPConfig.prototype.apply = function(callback) {
 };
 
 OpenSBPConfig.prototype.getVariable = function(name) {
-	var name = name.replace('$','');
+	var scrubbedName = name.replace('$','');
 	var variables = this._cache['variables'];
-	if(variables && (name in variables)) {
-		return variables[name];
+	if(variables && (scrubbedName in variables)) {
+		return variables[scrubbedName];
 	} else {
-		return undefined;
+		throw new Error("Variable " + name + " was used but not defined.");
 	}
 }
 
@@ -47,6 +47,11 @@ OpenSBPConfig.prototype.setVariable = function(name, value, callback) {
 	var u = {'variables' : {}}
 	u.variables[name] = value;
 	this.update(u, callback, true);
+}
+
+OpenSBPConfig.prototype.hasVariable = function(name) {
+	var name = name.replace('$','');
+	return name in this._cache.variables;
 }
 
 exports.OpenSBPConfig = OpenSBPConfig;
