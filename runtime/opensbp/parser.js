@@ -25,8 +25,12 @@ fastParse = function(statement) {
         }
         args = match[2].split(',');
         args.slice(1).forEach(function(arg) {
-            var n = Number(arg);
-            retval.args.push(n == n ? n : arg);
+            if(arg.trim() === '') {
+                retval.args.push(undefined);
+            } else {
+                var n = Number(arg);
+                retval.args.push(isNaN(n) ? arg : n);
+            }
         });
         return retval;
     }
