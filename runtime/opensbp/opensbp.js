@@ -431,13 +431,14 @@ SBPRuntime.prototype._continue = function() {
 			try {
 				this._execute(line);
 			} catch(e) {
-				return this._end(e.message);
+				return this._end(e);
 			}
 		}
 	}
 };
 
 SBPRuntime.prototype._end = function(error) {
+	error = error ? error.message || error : null;
 	if(this.machine) {
 		var end_function_no_nesting = function() {
 				log.debug("Calling the non-nested (toplevel) end");
@@ -450,7 +451,6 @@ SBPRuntime.prototype._end = function(error) {
 					if(callback) {
 						callback();
 					}
-
 				} else {
 
 					if(this.machine.status.job) {
@@ -694,8 +694,8 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 			} catch(e) {
 				log.error("Error in a non-stack-breaking command");
 				log.error(e);
-				this._end(e);
-				throw e
+				//this._end(e);
+				throw e;
 			}
 			this.pc +=1;
 			return false;

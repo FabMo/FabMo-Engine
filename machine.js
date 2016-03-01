@@ -372,7 +372,7 @@ Machine.prototype.getRuntime = function(name) {
 
 Machine.prototype.setState = function(source, newstate, stateinfo) {
 	if ((source === this) || (source === this.current_runtime)) {
-		log.info("Got a machine state change: " + newstate)	
+		log.info("Got a machine state change: " + newstate)
 		this.status.state = newstate;
 		
 		if(stateinfo) {
