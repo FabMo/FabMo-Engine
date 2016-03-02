@@ -445,7 +445,7 @@ SBPRuntime.prototype._end = function(error) {
 				// We are truly done
 				callback = this.end_callback;
 				this.init();
-				this.user_vars = {};
+				//this.user_vars = {};
 				if(error) {
 					this.machine.setState(this, 'stopped', {'error' : error });
 					this.emit('end', this);
