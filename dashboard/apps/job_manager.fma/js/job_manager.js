@@ -328,14 +328,18 @@ var setProgress = function(status) {
  	var fix_rotation = rotation * 2;
 	var transform_styles = ['-webkit-transform','-ms-transform','transform'];
 	if (!status.job) {
-		$('.fill, .mask.full').css(transform_styles[i], 'rotate(0deg)');
-		$('.fill.fix').css(transform_styles[i], 'rotate(0deg)');
 		$('.up-next').css('left', '-2000px');
 		$('.now-running').css('left', '-2000px');
+
+		for(i in transform_styles) {
+			$('.fill, .mask.full').css(transform_styles[i], 'rotate(0deg)');
+			$('.fill.fix').css(transform_styles[i], 'rotate(0deg)');
+		}
+
 	} 
 	for(i in transform_styles) {
-			$('.fill, .mask.full').css(transform_styles[i], 'rotate(' + fill_rotation + 'deg)');
-			$('.fill.fix').css(transform_styles[i], 'rotate(' + fix_rotation + 'deg)');
+		$('.fill, .mask.full').css(transform_styles[i], 'rotate(' + fill_rotation + 'deg)');
+		$('.fill.fix').css(transform_styles[i], 'rotate(' + fix_rotation + 'deg)');
 	}
 }
 
