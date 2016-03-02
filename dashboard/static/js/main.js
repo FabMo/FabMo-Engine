@@ -366,8 +366,6 @@ engine.on('connect', function() {
 });
 
 engine.on('status', function(status) {
-console.log("Status absorbed")
-console.log(status)
   if (status.state != 'idle'){
         $('#position input').attr('disabled', true);
     } else {

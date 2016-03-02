@@ -16,9 +16,11 @@ define(function(require) {
 			this.context.launchApp(id, {}, function(err, data) {});
 		},
 		show_menu: function() {
+			$('#waiting_container').hide();
 			this.context.appClientView.hide();
 			this.context.appMenuView.show();
 			this.context.hideModalContainer();
+			this.context.menuShown = true;
 		},
 		setContext: function(context) {
 			this.context = context;

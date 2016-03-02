@@ -28,6 +28,7 @@
 		this.current_app_id = null;
 		this.reload_on_demand = false;
 		this.app_reload_index = {};
+		this.menuShown = true;
 	};
 
 	ApplicationContext.prototype.setEngineVersion = function(version) {
@@ -61,13 +62,22 @@
 		
 		var hash = this.app_reload_index[id];
 
-		if(hash && hash != this.engineVersion.hash) {
-			console.info("Hard refresh of app " + id + " becuase hash " + hash + " doesn't match " + this.engineVersion.hash);
-			hard_refresh = true;
+		try {
+			if(hash && hash != this.engineVersion.hash) {
+				console.info("Hard refresh of app " + id + " becuase hash " + hash + " doesn't match " + this.engineVersion.hash);
+				hard_refresh = true;
+			}
+
+		} catch(e) {
+			console.warn(e);
 		}
 
-		if(this.engineVersion.debug) {
-			hard_refresh = true;
+		try {
+			if(this.engineVersion.debug) {
+				hard_refresh = true;
+			}			
+		} catch(e) {
+			console.warn(e);
 		}
 
 		this.app_reload_index[id] = this.engineVersion.hash;
@@ -80,20 +90,33 @@
 				this.current_app_args = args || {};
 				this.current_app_id = id;
 				this.current_app_info = app;
-				this.appClientView.setModel(app, hard_refresh);
+				this.appMenuView.hide();
+				this.appClientView.hide();
+				$('#waiting_container').show();
+				this.menuShown = false;
+				this.appClientView.setModel(app, hard_refresh, function() {
+					if(!this.menuShown) {
+						$('#waiting_container').hide();
+						this.hideModalContainer();
+						this.appClientView.show();						
+					}
+					callback(null);					
+				}.bind(this));
 			} else {
 				if(this.apps) {
 					callback("Couldn't launch app: " + id + ": Apps list not available yet.");
 				} else {
 					callback("Couldn't launch app: " + id + ": No such app?");
 				}
-				return;
 			}
+		} else {
+			this.menuShown = false;
+			this.appMenuView.hide();
+			$('#waiting_container').hide();
+			this.hideModalContainer();
+			this.appClientView.show();						
+
 		}
-		this.appMenuView.hide();
-		this.appClientView.show();
-		this.hideModalContainer();
-		callback(null);
 	};
 
 	ApplicationContext.prototype.getCurrentApp = function() {
