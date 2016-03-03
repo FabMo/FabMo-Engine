@@ -118,20 +118,10 @@
           </aside>
 
           <aside class="DRO" id="right-menu">
-          <div id="dro-choice">
-          <ul>
-            <li class="dro-button active" id="dro-status-button" data-view="position">Status</li>
-            <li class="dro-button" id="dro-pendant-button" data-view="keypad">Pendant</li>
-          </ul>
-          </div>
             <!-- ********** Tool Position Widget ********** -->
             <div id="position" class="widget dro-view active">
               <ul class="off-canvas-list fabmo-status noselect">
                 <li>
-                    <div class="row axis">
-                      <div class="small-9 columns">
-                      <label class="noselect">Position</label></div>
-                    </div>
                     <div class="row axis xaxis">
                         <div class="small-9 columns">
                            <label  class="noselect">
@@ -188,11 +178,8 @@
                 </li>
                 <li>
                   <div class="row inOut">
-                    <div class="small-12 columns">Inputs</div>
-                  </div>
-                  <div class="row inOutSwitch">
-                    <div class="small-12 columns">
-                      <div class="row switch">
+                    <div class="inoutLabel small-1 columns ">In:</div>
+                       <div class="inOutSwitch"> 
                         <div style="" class="small-1 columns in1 input"> 1 </div>
                         <div style="" class="small-1 columns in2 input"> 2 </div>
                         <div style="" class="small-1 columns in3 input"> 3 </div>
@@ -203,10 +190,24 @@
                         <div style="" class="small-1 columns in8 input"> 8 </div>
                         <div style="" class="small-1 columns"></div>
                         <div style="" class="small-1 columns"></div>
+                      </div>                   
+                  </div>
+                </li>
+                <li>
+                  <div class="row inOut">
+                    <div class="inoutLabel small-1 columns ">Out:</div>
+                       <div class="inOutSwitch"> 
+                        <div style="" class="small-1 columns out1 output off"> 1 </div>
+                        <div style="" class="small-1 columns out2 output off"> 2 </div>
+                        <div style="" class="small-1 columns out3 output off"> 3 </div>
+                        <div style="" class="small-1 columns out4 output off"> 4 </div>
+                        <div style="" class="small-1 columns out5 output off"> 5 </div>
+                        <div style="" class="small-1 columns out6 output off"> 6 </div>
+                        <div style="" class="small-1 columns out7 output off"> 7 </div>
+                        <div style="" class="small-1 columns out8 output off"> 8 </div>
                         <div style="" class="small-1 columns"></div>
                         <div style="" class="small-1 columns"></div>
-                      </div>
-                    </div>
+                      </div>                   
                   </div>
                 </li>
               </ul>
@@ -218,11 +219,15 @@
             -->
 
             <div id="keypad" class="widget fabmo-manual-control keypad dro-view" style="text-align: center;">
-              <label>Pendant</label>
-              <div class="keypad-table">
-                <div class="keypad-bar top">
+               <div class="keypad-bar top">
                   <div class="z_pos keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-up"></i></div>
                 </div>
+                <div class='button-border top'></div>
+                <div class="keypad-bar bottom">
+                  <div class="z_neg keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-down"></i></div>
+                </div>
+                <div class='button-border bottom'></div>
+              <div class="keypad-table">
                 <div class="keypad-row">
                   <div class="keypad-cell"></div>
                   <div class="keypad-cell"><div class="y_pos keypad-button drive-button square"><i class="fa fa-keypad fa-lg fa-arrow-up"></i></div></div>
@@ -238,15 +243,10 @@
                   <div class="keypad-cell"><div id="keyboard" class="keyboard noselect keyboard-button keypad-button"><i class="fa fa-keypad fa-lg fa-keyboard-o"></i></div></div>
                   <div class="keypad-cell"><div class="x_pos keypad-button drive-button square"><i class="fa fa-keypad fa-lg fa-arrow-right"></i></div></div>
                 </div>
-
                 <div class="keypad-row">
                   <div class="keypad-cell"></div>
                   <div class="keypad-cell"><div class="y_neg keypad-button drive-button square"><i class="fa fa-keypad fa-lg fa-arrow-down"></i></div></div>
                   <div class="keypad-cell"></div>
-                </div>
-
-                <div class="keypad-bar bottom">
-                  <div class="z_neg keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-down"></i></div>
                 </div>
               </div>
               <!--

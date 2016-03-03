@@ -125,11 +125,11 @@ define(function(require) {
  		},
 		show : function() {
 			$(".main-section").show();
-			$(this.el).show();
+			$(this.el).css('visibility', 'visible');
 			this.is_visible = true;
 		},
 		hide : function(arg) {
-			$(this.el).hide();
+			$(this.el).css('visibility', 'hidden');
 			this.is_visible = false;
 		},
 		setModel : function(model, hard_refresh, callback) {
