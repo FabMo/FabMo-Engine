@@ -13,6 +13,7 @@ IdleRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;
 	this.ok_to_disconnect = true;
+	this.status_report = {};
 	this.machine.setState(this, "idle");
 	this.status_handler =  this._onG2Status.bind(this);
 	this.driver.on('status',this.status_handler);
@@ -27,6 +28,17 @@ IdleRuntime.prototype._changeState = function(newstate) {
 	this.machine.setState(this, newstate);
 };
 
+IdleRuntime.prototype._limit = function() {
+	var er = this.driver.getLastException();
+	if(er && er.st == 203) {
+		var msg = er.msg.replace(/\[[^\[\]]*\]/,'');
+		this.driver.clearLastException();
+		this.machine.setState(this, 'stopped', {'error' : msg});
+		return true;
+	}
+	return false;
+}
+
 IdleRuntime.prototype._onG2Status = function(status) {
 
 	console.log("Idle runtime handling status report")
@@ -36,6 +48,23 @@ IdleRuntime.prototype._onG2Status = function(status) {
 			this.machine.status[key] = status[key];
 		}
 	}
+
+	// Update the machine copy of g2 status variables
+	for (key in status) {
+		this.status_report[key] = status[key];
+	}
+
+	switch(this.status_report.stat) {
+		case this.driver.STAT_INTERLOCK:
+		case this.driver.STAT_SHUTDOWN:
+		case this.driver.STAT_PANIC:
+			return this._die();
+			break;
+		case this.driver.STAT_ALARM:
+			if(this._limit()) { return; }
+			break;
+	}
+
 
 	switch(this.machine.status.state) {
 		case "not_ready":
@@ -55,6 +84,7 @@ IdleRuntime.prototype._onG2Status = function(status) {
 			}
 			break;
 
+		case "stopped":
 		case "paused":
 			if((status.stat === this.driver.STAT_STOP || status.stat === this.driver.STAT_END) && status.hold === 0) {
 				this._changeState("idle");
@@ -68,6 +98,8 @@ IdleRuntime.prototype._onG2Status = function(status) {
 				break;
 			}
 			break;
+
+
 	}
 	this.machine.emit('status',this.machine.status);
 };
@@ -75,7 +107,9 @@ IdleRuntime.prototype._onG2Status = function(status) {
 
 IdleRuntime.prototype.executeCode = function(code) {}
 IdleRuntime.prototype.pause = function() { /*this.driver.feedHold();*/ }
-IdleRuntime.prototype.quit = function() { /*this.driver.quit();*/ }
+IdleRuntime.prototype.quit = function() { 
+	console.log("quite");
+	this.driver.quit(); }
 IdleRuntime.prototype.resume = function() { /*this.driver.resume();*/ }
 
 exports.IdleRuntime = IdleRuntime;
