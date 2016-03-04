@@ -1124,8 +1124,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .keypad-bar.top {
     top: 4px;
-    -webkit-clip-path: polygon(100% 0, 100% 100%, 50% 100%, 50% 68%, 0 68%, 0 0);
-clip-path: polygon(100% 0, 100% 100%, 50% 100%, 50% 68%, 0 68%, 0 0);
+
 }
 
 .keypad-bar.top i {
@@ -1158,8 +1157,7 @@ clip-path: polygon(100% 0, 100% 100%, 50% 100%, 50% 68%, 0 68%, 0 0);
 
 .keypad-bar.bottom {
     top: 93px;
-   -webkit-clip-path: polygon(100% 0, 100% 100%, 0 100%, 0 35%, 50% 35%, 50% 0);
-    clip-path: polygon(100% 0, 100% 100%, 0 100%, 0 35%, 50% 35%, 50% 0);
+
 }
 
 #modalDialogButtons {
