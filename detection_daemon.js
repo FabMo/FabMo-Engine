@@ -25,7 +25,7 @@ var start = function(port) {
 	socket.on("message", function ( data, rinfo ) {
 		if(data.toString() == REQ) // Respond properly to queries asking if we are a FabMo device
 		{
-			log.info('scan in progress by '+ rinfo.address);
+			//log.debug('scan in progress by '+ rinfo.address);
 
 			// Respond indicating that we are a FabMo system
 			socket.send(new Buffer(OK), 0, OK.length, rinfo.port, rinfo.address, function (err) {
@@ -49,7 +49,7 @@ var start = function(port) {
 					}
 				});
 			},os.networkInterfaces());
-			log.info(JSON.stringify(result));
+			//log.debug(JSON.stringify(result));
 			socket.send(new Buffer(JSON.stringify(result)), 0, JSON.stringify(result).length, rinfo.port, rinfo.address, function (err) {
 				if (err) log.error(err);
 						//console.log("ask info");
@@ -58,7 +58,7 @@ var start = function(port) {
 		}
 		else
 		{
-			log.info("received from "+rinfo.address+" : unknown message : '"+ data.toString() +"'");
+			log.error("received from "+rinfo.address+" : unknown message : '"+ data.toString() +"'");
 		}
 	});
 
