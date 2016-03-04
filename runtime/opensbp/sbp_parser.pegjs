@@ -15,7 +15,7 @@ start
    = __ stmt:statement __ {return stmt}
 
 statement
-   = (label / single / end / jump / pause / conditional / assignment / event / open / custom_cut / command / __)
+   = (label / single / end / jump / pause / conditional / assignment / weak_assignment / event / open / custom_cut / command / __)
 
 custom_cut
    = [Cc] index:integer __ ","?
@@ -101,6 +101,9 @@ system_variable
 assignment
   = v:variable __ "=" __ e:expression {return {"type": "assign", "var":v, "expr":e}}
 
+weak_assignment
+  = v:variable __ ":=" __ e:expression {return {"type": "weak_assign", "var":v, "expr":e}}
+
 compare
   = lhs:expression __ op:cmp_op __ rhs:expression {return {'left' : lhs, 'right' : rhs, 'op' : op};}
 
@@ -126,7 +129,7 @@ factor
 
 mul_op = "*" / "/"
 add_op = "+" / "-"
-cmp_op = "<=" / ">=" / "==" / "<" / ">" / "!=" / "="
+cmp_op = "<=" / ">=" / "==" / "<" / ">" / "!=" / "=" / "<>"
 
 
 whitespace

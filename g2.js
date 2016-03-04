@@ -25,7 +25,7 @@ var STAT_PANIC = 13;
 
 // Should take no longer than CMD_TIMEOUT to do a get or a set operation
 var CMD_TIMEOUT = 10000;
-var EXPECT_TIMEOUT = 5000;
+var EXPECT_TIMEOUT = 15000;
 
 // When jogging, "keepalive" jog commands must arrive faster than this interval (ms)
 // This can be slowed down if necessary for spotty connections, but a slow timeout means
@@ -425,13 +425,23 @@ G2.prototype.handleFooter = function(response) {
 
 G2.prototype.handleExceptionReport = function(response) {
 	if(response.er) {
+		this._lastExceptionReport = response.er;
 		var stat = response.er.st;
 		if(((stat === 204) || (stat === 207)) && this.quit_pending) {
-			this.gcodeWrite("{clear:n}\nM30\n");
+			this.gcodeWrite("{clr:n}\nM30\n");
 			this.quit_pending = false;
 		}
 	}
 };
+
+G2.prototype.getLastException = function() {
+	return this._lastExceptionReport || null;
+}
+
+G2.prototype.clearLastException = function() {
+	this._lastExceptionReport = null;
+}
+
 /*
 0	machine is initializing
 1	machine is ready for use
@@ -560,7 +570,7 @@ G2.prototype.feedHold = function(callback) {
 G2.prototype.queueFlush = function(callback) {
 	log.debug('Clearing the queue.');
 	this.flushcallback = callback;
-	this.gcodeWrite('{clear:n}\n');
+	this.gcodeWrite('{clr:n}\n');
 	this.controlWrite('\%\n');
 };
 
@@ -573,6 +583,7 @@ G2.prototype.resume = function() {
 G2.prototype.quit = function() {
 	this.quit_pending = true;
 	this.gcode_queue.clear();
+	this.gcodeWrite('{clr:n}\n');	
 	this.controlWrite('\x04');
 }
 

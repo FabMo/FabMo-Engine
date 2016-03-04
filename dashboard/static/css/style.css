@@ -1,7 +1,5 @@
 @import "fonts.css";
 
-/* ********** Global Settings ********** */
-
 body,html{
     height: 100%;
     width: 100%;
@@ -28,22 +26,6 @@ body,html{
  cursor: text;
 }
 
-.on {
-	color: #ffffff;
-}
-
-.off {
-	color: #000000;
-}
-
-.exit-off-canvas {
-	position: fixed !important;
-}
-
-.disabled {
-	color: #9c210c;
-}
-
 .main-section, .app-section, .spinner-section { 
 	height: auto;
 }
@@ -54,21 +36,14 @@ body,html{
 	padding-top: 1.4em;
 }
 
-.page{ height: 100%; }
-
-
 /* ********** Top Bar Settings ********** */
 
 .tab-bar { 
 	background: #313366;
-	z-index: 1000;
+	z-index: 1005;
 	position: fixed;
 	width: 100%;
 	top: 0;
-}
-
-@media only screen and (min-width: 40.063em) {
-	.tab-bar {z-index: 1005;}
 }
 
 .tab-bar a { color : #fff;}
@@ -96,7 +71,7 @@ body,html{
 	max-width: 192px;
 	max-width: 12rem;
 	overflow: hidden;
-	#fff-space: nowrap;
+	white-space: nowrap;
 	text-overflow: ellipsis;
 }
 
@@ -180,6 +155,31 @@ body,html{
 	font-size: 0.9375rem;
 }
 
+#left-position-container {
+	height: 100%;
+}
+
+#connection-strength-indicator {
+	height: 100%; 
+	box-sizing: border-box;
+}
+
+.svg-container {
+	height: 100%;
+	padding: 5px;
+}
+
+#connection-strength-indicator .on {
+	fill: #EEEEEE;
+}
+
+#connection-strength-indicator .off {
+	fill: #535D8A;
+}
+
+#connection-strength-indicator .err {
+	fill: #91331E;
+}
 
 
 
@@ -447,9 +447,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .colapsed #icon_colapse { background-image: url('../img/icon_colapse.png');	}
 
-/***
-*** Right Menu ***
-***/
+/****** Right Menu ******/
 
 #position {
 	background-color: #9c210c;
@@ -457,6 +455,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	margin-bottom: 0;
 	padding-bottom: 8px;
 	padding-bottom: 0.5rem;
+	margin-top: 10px;
 }
 
 #position ul .axis {
@@ -464,15 +463,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	font-family: 'source_sans_proextralight';
 }
 
-#position ul li:first-child label {
-	font-size: 36px;
-	font-size: 1.5rem;
-	font-family: 'source_sans_proextralight';
-	font-weight: 300;
-	text-transform: capitalize;
-	text-align: center;
-	border-bottom: none;
-}
 
 #position ul .axis > .columns > label {
 	border: none;
@@ -523,9 +513,16 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	background-color: #5DAA35;
 }
 
+.on {
+	color: #ffffff;
+}
+
+.off {
+	color: #000000;
+}
+
 #position ul .axis .units {
 	font-size: 12px;
-	font-size: 0.75rem;
 	text-transform: lowercase;
 	vertical-align: baseline;
 }
@@ -576,13 +573,26 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 #position ul .inOut {
+    margin-top: .3em;
 	font-size: 14px;
 	font-size: 0.875rem;
+}
+
+.inOut:first-child{
+    margin-left: 1em;
+}
+
+.inOutSwitch{
+    margin-left: 2em;
+    height: 20px;
 }
 
 #position ul .inOut .columns {
 	font-size: 13px;
 	font-size: 0.8125rem;
+    padding: 0;
+    margin: 0;
+    font-weight: 900;
 }
 
 #position ul .inOut:not(.hidden) .columns::after{
@@ -592,19 +602,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	bottom:0;
 }
 
-#position ul .inOut:(.hidden) .columns::after{
-	border-bottom-color: #eee;
-	right: 15px;
-	right: 0.9375em;
-}
-
-#position ul .switch {
-	padding-left: 15px;
-	padding-left: 0.9375em;
-	padding-right: 15px;
-	padding-right: 0.375em;
-}
-
 #position ul .switch .columns {
 	text-align: left;
 	padding: 0;
@@ -612,6 +609,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	font-size: 0.75rem;
 	font-family: 'source_sans_probold';
 }
+
 
 #job-info ul li:first-child label {
 	background-color: #aaa;
@@ -684,9 +682,21 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #app-client-container {
 	width: 100%;
 	height: 100%;
+}
+
+#waiting_container {
+	width: 100%;
+	height: 100%;
+	margin: auto;
+	text-align: center;
 	display: none;
-	transition: all 0.5s;
-	
+}
+
+#waiting_container i {
+	position: relative;
+  	top: 50%;
+  	transform: translateY(-50%);
+  	color: #2E3865
 }
 
 #spinner-container {
@@ -887,14 +897,12 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     transition: -ms-transform 1s;
     transition: transform 1s;
     position: absolute;
-    /* rect(<top>, <right>, <bottom>, <left>) */
     clip: rect(0px, 20px, 40px, 0px);
     -webkit-backface-visibility: hidden;
     border-radius: 50%;
 }
 
 .perecent_circle .mask {
-    /* rect(<top>, <right>, <bottom>, <left>) */
       clip: rect(0px,40px,40px,20px);
       height: 40px;
       width: 40px;
@@ -1028,22 +1036,40 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .drive-button {
 	color: white;
-	line-height: 64px;
 	font-weight: bolder;
 	font-size: 24px;
 	text-align: center;
-	width  : 64px;
-	height : 64px;
 }
+
+.drive-button.square {
+	width  : 50px;
+	height : 50px;
+	line-height: 45px;
+    position: relative;
+    z-index: 10;
+}
+
+.drive-button.bar {
+	text-align: center;
+	padding: 4px;
+	color: white;
+	font-weight: bolder;
+	width  : 60px;
+    height: 82px;
+    position: relative;
+    right: 10px;
+}
+
 
 .keyboard-button {
 	color: white;
-	line-height: 64px;
+	line-height: 50px;
+	border-radius: 32px;
 	font-weight: bolder;
 	font-size: 24px;
 	text-align: center;
-	width  : 64px;
-	height : 64px;
+	width  : 50px;
+	height : 50px;
 }
 
 .settings-button {
@@ -1062,7 +1088,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .drive-button-active-transient {
 	background: #D48B3A;
-	color: black;
 }
 
 .drive-button-inactive {
@@ -1081,10 +1106,132 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .keypad-cell {
 	display: table-cell;
 	padding: 4px;
+
+}
+
+.button-border{
+    position: relative;
+    width: 36px;
+    height: 30px;
+    right: 39px;
+    border-right: 2px solid #333333;
+}
+.keypad-bar {
+	 position: absolute;
+     right: 5px;
+}
+
+.keypad-bar.top {
+    top: 4px;
+
+}
+
+.keypad-bar.top i {
+   position: relative;
+   top: -15px;
+    
+}
+
+.top.button-border{
+    background-color: #9C210C;
+    position: absolute;
+    top: 56px;
+    border-top: 2px solid #333333;
+
+}
+
+.bottom.button-border{
+    background-color: #9C210C;
+    position: absolute;
+    top: 93px;
+    border-bottom: 2px solid #333333;
+
+}
+
+.keypad-bar.bottom i {
+   position: relative;
+   bottom: -23px;
+    
+}
+
+.keypad-bar.bottom {
+    top: 93px;
 }
 
 #modalDialogButtons {
 	width: 100%;
 	text-align: right;
+	color: white;
+	line-height: 64px;
+	font-weight: bolder;
+	font-size: 24px;
+	text-align: center;
 }
 
+#dro-choice {
+	text-align: center;
+}
+
+#dro-choice ul {
+	color: white;
+	list-style-type: none;
+	font-family: 'source_sans_proextralight';
+	width: 100%;
+	margin-top: 10px;
+	margin-bottom: 10px;
+	margin-left: 0px;
+	padding-left: 0px;
+}
+
+#dro-choice li {
+	display: inline;
+	border-radius : 0.5em;
+	padding: 0.375em;
+	background-color: #7F2D1A;
+	margin-left: 1em;
+	margin-right: 1em;
+	opacity: 0.25;
+	cursor: pointer;
+	-webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+#dro-choice li.active {
+	opacity: 1;
+}
+
+.dro-view.active {
+	display: block;
+}
+
+
+
+.dro-view label {
+	font-size: 36px;
+	font-size: 1.5rem;
+	font-family: 'source_sans_proextralight';
+	font-weight: 300;
+	text-transform: capitalize;
+	text-align: center;
+	border-bottom: none;
+	color: white;
+	/*border-bottom: 1px solid white;
+	margin-left: 1em;
+	margin-right: 1em;*/
+}
+
+.fa-keypad {
+	line-height: inherit;
+	text-shadow: 1px 1px 4px black;
+	display: block;
+	pointer-events: none;
+}
+
+#keypad {
+	margin-left: 4px;
+    position: relative;
+}

@@ -8,25 +8,23 @@ var blinkTimer = null;
 
 // The currently running Job ID
 var currentJobId = -1; 
+var currentStatus = {};
 
 function setupDropTarget() {
 	$('#tabpending').dragster({
 		enter : function(devt, evt) {
 			$('#tabpending').addClass('hover');
-			console.log("Hovering")
 			return false; 
 		}, 
 
 		leave : function (devt, evt) {
 			$('#tabpending').removeClass('hover');
-			console.log("Exiting")
 			return false;
 		},
 		drop : function (devt, evt) {
 			evt.preventDefault();
 			try {
 				file = evt.originalEvent.dataTransfer.files;
-				console.log(file);
 				fabmo.submitJob(file, {}, function(err, data) {
 					if(err){
 						fabmo.notify('error', err);
@@ -43,28 +41,31 @@ function setupDropTarget() {
 }
 
 function updateQueue(running, callback) {
+	callback = callback || function() {};
+	running = currentStatus.job;
 	// Update the queue display.
 	fabmo.getJobsInQueue(function(err, jobs) {
 		if(err) { return callback(err); }
 		clearQueue();
-		if(jobs) {
-			if(running) {
-				if(jobs.length > 0) {
-					addQueueEntries(jobs);
-					$('.job-queue').show(500);
-				}
+		if(jobs.running.length) {
+			runningJob(jobs.running[0]);
+			if(jobs.pending.length > 0) {
+				addQueueEntries(jobs.pending);
+				$('.job-queue').show(500);
 			} else {
-				console.log("not running")
-				setNextJob(jobs[0]);
-				if (jobs.length > 1) { // Show the queue table if there's more than one job in the queue.
-					$('.job-queue').show(500);
-					addQueueEntries(jobs.slice(1));
-				} else {
-					$('.job-queue').slideUp(500);
-				}				
-			}
+				$('.job-queue').slideUp(500);				
+			}		
+		} else {
+			runningJob(null);
+			setNextJob(jobs.pending[0]);
+			if (jobs.pending.length > 1) { // Show the queue table if there's more than one job in the queue.
+				$('.job-queue').show(500);
+				addQueueEntries(jobs.pending.slice(1));
+			} else {
+				$('.job-queue').slideUp(500);
+			}			
 		}
-		typeof callback === 'function' && callback();
+		callback();
 	});
 
 }
@@ -167,10 +168,9 @@ function bindMenuEvents() {
 		$('.commentBox').hide();
 	}
 
+	$('.resubmitJob').off('click');
 	$('.resubmitJob').click(function(e) {
-		console.log("resubmit")
 		fabmo.resubmitJob(this.dataset.jobid, function(err, result) {
-			console.log("Resubmitted");
 			//refresh_jobs_list();
 			fabmo.getJobsInQueue(function(err, data) {
 				$('.toggle-topbar').click();
@@ -181,6 +181,7 @@ function bindMenuEvents() {
 		hideDropDown();
 	});
 
+	$('.cancelJob').off('click');
 	$('.cancelJob').click(function(e) {
 		fabmo.cancelJob(this.dataset.jobid, function(err, data) {
 			if(err) { fabmo.notify(err); }
@@ -192,24 +193,29 @@ function bindMenuEvents() {
 		hideDropDown();
 	});
 
+	$('.previewJob').off('click');
 	$('.previewJob').click(function(e) {
 		fabmo.launchApp('previewer', {'job' : this.dataset.jobid});
 		hideDropDown();
 	});
 
+	$('.editJob').off('click');
 	$('.editJob').click(function(e) {
 		fabmo.launchApp('editor', {'job' : this.dataset.jobid});
 		hideDropDown();
 	});
 
+	$('.downloadJob').off('click')
 	$('.downloadJob').click(function(e) {
 		fabmo.navigate('/job/' + this.dataset.jobid + '/file');
 	});	
 
+	$('.dropDownWrapper').off('click')
 	$('.dropDownWrapper').click(function (){
 		hideDropDown();
 	});
 
+	$('.ellipses').off('click')
     $('.ellipses').click(function (evt) {
     	//create and show a transparent overlay that you can click to close
 		$('.dropDownWrapper').show();
@@ -269,6 +275,15 @@ function nextJob(job) {
 };
 
 function runningJob(job) {
+	if(!job) {
+		setProgress({status});
+		$('.play').removeClass('active')
+		$('.topjob').removeClass('running');
+		$('body').css('background-color', '#EEEEEE');
+		$('.play').removeClass('active');
+		return
+	}
+
    	$('.nextJobTitle').text(job.name);
 	$('.nextJobDesc').text(job.description);
 	$('.cancel').slideUp(100);
@@ -283,6 +298,7 @@ function runningJob(job) {
 	$('.without-job').css('left','-2000px');;
 	$('.with-job').css('left','10px');	
 	$('.play-button').show();
+	$('.play').addClass('active')
     fabmo.showFooter();
 };
 
@@ -312,25 +328,29 @@ var setProgress = function(status) {
  	var fix_rotation = rotation * 2;
 	var transform_styles = ['-webkit-transform','-ms-transform','transform'];
 	if (!status.job) {
-		$('.fill, .mask.full').css(transform_styles[i], 'rotate(0deg)');
-		$('.fill.fix').css(transform_styles[i], 'rotate(0deg)');
 		$('.up-next').css('left', '-2000px');
 		$('.now-running').css('left', '-2000px');
-		$('.play').removeClass('active');
+
+		for(i in transform_styles) {
+			$('.fill, .mask.full').css(transform_styles[i], 'rotate(0deg)');
+			$('.fill.fix').css(transform_styles[i], 'rotate(0deg)');
+		}
+
 	} 
 	for(i in transform_styles) {
-			$('.fill, .mask.full').css(transform_styles[i], 'rotate(' + fill_rotation + 'deg)');
-			$('.fill.fix').css(transform_styles[i], 'rotate(' + fix_rotation + 'deg)');
+		$('.fill, .mask.full').css(transform_styles[i], 'rotate(' + fill_rotation + 'deg)');
+		$('.fill.fix').css(transform_styles[i], 'rotate(' + fix_rotation + 'deg)');
 	}
 }
+
+
 
 /*
  * ---------
  *  STATUS
  * ---------
  */
-function handleStatusReport(status) {
-
+function handleStatusReport(status) {	
 	// Either we're running a job currently or null
 	try {
 		var jobid = status.job._id || null;
@@ -340,24 +360,5 @@ function handleStatusReport(status) {
 
 	if(jobid) { // Job is currently running
 		setProgress(status);
-		if(jobid != currentJobId) { // Freshly started or changed job
-			$('.play').addClass('active')
-			currentJobId = jobid;
-			runningJob(status.job);
-			updateQueue(true);
-		}
-	} else {
-		if(currentJobId) {
-			$('.play').removeClass('active')
-			setProgress(status);
-			// UI Stuff
-			$('.topjob').removeClass('running');
-			$('body').css('background-color', '#EEEEEE');
-			$('.play').removeClass('active');
-
-			currentJobId = null;
-			updateQueue(false);
-			updateHistory();
-		}
 	}
 }

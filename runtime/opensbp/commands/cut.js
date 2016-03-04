@@ -123,6 +123,21 @@ exports.CC = function(args) {
 
 };
 
+//  The CP command will cut a circle as defined by its center point.
+//  This command closely resembles a G-code circle (G02 or G03)
+//  Though, this command has several added features that its G-code counterparts don't:
+//    - Spiral plunge with multiple passes
+//    - Pocketing
+//    - Pocketing with multiple passes
+//  Can also be used for Arcs and Arcs with multiple passes
+//    
+//  Usage: CP,<Dia>,<X Center>,<Y Center>,<I-O-T>,<Direction>,
+//            <Begin Angle>,<End Angle>,<Plunge Depth>,
+//            <Repetitions>,<X Prop>,<Y Prop>,<Options-
+//             2=Pocket,3=Spiral Plunge,4=Spiral Plunge with
+//             Bottom pass>,<No Pull Up after cut>,
+//            <Plunge from Z zero>
+//
 exports.CP = function(args) {
   var CPstartZ = this.cmd_posz;
   var Dia = args[0] !== undefined ? args[0] : undefined;
@@ -146,32 +161,21 @@ exports.CP = function(args) {
 
   // log.debug("CP: " + JSON.stringify(args));
   
-  if (OIT === 'O') {
-    comp = 1;
-  } 
-  else if (OIT === 'I') {
-    comp = -1;
-  }
+  if (OIT === 'O') { comp = 1; } 
+  else if (OIT === 'I') { comp = -1; }
 
   if ( Dia === undefined || Dia <= 0 ){
     throw( "Zero diameter circle: CC" );
   }
+
   var WBang = 450 - Bang;
-  if ( WBang > 360 || WBang === 360 ) { 
-    WBang -= 360;
-  } 
-  else if ( WBang < -360 || WBang === -360 ) {
-    WBang += 360;
-  }
+  if ( WBang > 360 || WBang === 360 ) { WBang -= 360; } 
+  else if ( WBang < -360 || WBang === -360 ) { WBang += 360; }
   var Bradians = WBang*0.01745329252;
 
   var WEang = 450 - Eang;
-  if ( WEang > 360 || WEang === 360 ) {
-    WEang -= 360;
-  }
-  else if ( WEang < -360 || WEang === -360 ) {
-    WEang += 360;
-  }
+  if ( WEang > 360 || WEang === 360 ) { WEang -= 360; }
+  else if ( WEang < -360 || WEang === -360 ) { WEang += 360; }
   var Eradians = WEang*0.01745329252;
 
   // Find Center offset
@@ -208,18 +212,18 @@ exports.CP = function(args) {
 
 
 //	The CG command will cut a circle. This command closely resembles a G-code circle (G02 or G03)
-//		Though, this command has several added features that its G-code counterparts don't:
-//			- Spiral plunge with multiple passes
-//			- Pocketing
-//			- Pocketing with multiple passes
-//		Can also be used for Arcs and Arcs with multiple passes
+//  Though, this command has several added features that its G-code counterparts don't:
+//	  - Spiral plunge with multiple passes
+//		- Pocketing
+//		- Pocketing with multiple passes
+//	Can also be used for Arcs and Arcs with multiple passes
 //		
-//	Usage: CG,<no used>,<X End>,<Y End>,<X Center>,<Y Center>,<I-O-T>,<Direction>,<Plunge Depth>,
-//			  <Repetitions>,<>,<>,<Options-2=Pocket,3=Spiral Plunge,4=Spiral Plunge with Bottom pass>,
-//			  <No Pull Up after cut>,<Plunge from Z zero>
+//	Usage: CG,<no used>,<X End>,<Y End>,<X Center>,<Y Center>,<I-O-T>,
+//            <Direction>,<Plunge Depth>,<Repetitions>,<>,<>,
+//            <Options-2=Pocket,3=Spiral Plunge,4=Spiral Plunge with 
+//             Bottom pass>,<No Pull Up after cut>,<Plunge from Z zero>
 //	
 exports.CG = function(args) {
-  // log.debug("CG: cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy);
   var CGstartX = this.cmd_StartX = this.cmd_posx;
   var CGstartY = this.cmd_StartY = this.cmd_posy;
   var CGstartZ = this.cmd_StartZ = this.cmd_posz;
@@ -249,19 +253,6 @@ exports.CG = function(args) {
 
   this.lastNoZPullup = plgFromZero;
 
-  // log.debug("CG: " + JSON.stringify(args));
-  // log.debug("  CGstartX = " + CGstartX);
-  // log.debug("  CGstartY = " + CGstartY);
-  // log.debug("  CGstart Z:" + CGstartZ );
-  // log.debug("end X:" + endX );
-  // log.debug("end Y:" + endY );
-  // log.debug("center X:" + centerX );
-  // log.debug("center Y:" + centerY );
-  // log.debug("I-O-T:" + OIT );
-  // log.debug("Dir:" + Dir );
-  // log.debug("reps:" + reps );
-  // log.debug("Plg:" + Plg );  
-
   if ((centerX === 0 || centerX === undefined) && (centerY === 0 || centerY === undefined)){
     throw( "Invalid CG circle: Zero diameter" );
   }
@@ -269,7 +260,7 @@ exports.CG = function(args) {
   if ((propX < 0 && propY > 0) || (propX > 0 && propY < 0 )) { 
     Dir *= (-1);
   }
-  if (propX === propY){
+  if (propX === propY){  // If X & Y are equal proportion, calc new points
     if (propX !== 1 || propY !== 1) {
       endX = CGstartX + (centerX * Math.abs(propX)) + ((endX - (CGstartX + centerX)) * Math.abs(propX));
       endY = CGstartY + (centerY * Math.abs(propY)) + ((endY - (CGstartX + centerY)) * Math.abs(propY));
@@ -297,18 +288,14 @@ exports.CG = function(args) {
   	Pocket_StepX = stepOver * Math.cos(PocketAngle);	// Calculate the stepover in X based on the radius of the cutter * overlap
   	Pocket_StepY = stepOver * Math.sin(PocketAngle);	// Calculate the stepover in Y based on the radius of the cutter * overlap
   }
-
-  if ( plgFromZero == 1 && currentZ !== 0 ) {	 // If plunge depth is specified move to that depth
+  // If plunge depth is specified move to that depth
+  if ( plgFromZero == 1 && currentZ !== 0 ) {	 
     currentZ = 0;
     this.emit_move('G0',{ 'Z':currentZ });
   }
 
   var nextX = 0;
   var nextY = 0;
-  // log.debug("  (317)  ");
-  // log.debug("  CGstartX = " + CGstartX);
-  // log.debug("  CGstartY = " + CGstartY);
-  // log.debug("  CGstart Z:" + CGstartZ );
 
   for (var i=0; i<reps;i++){
   	if (Plg !== 0 && optCG < 3 ) {  // If plunge depth is specified move to that depth * number of reps
@@ -366,10 +353,6 @@ exports.CG = function(args) {
         } // Add Z for spiral plunge
         emitObj.F = feedrateXY;
         this.emit_move(outStr,emitObj);
-        // log.debug("  (392)  ");
-        // log.debug("  CGstartX = " + CGstartX);
-        // log.debug("  CGstartY = " + CGstartY);
-        // log.debug("  CGstart Z:" + CGstartZ );
 	    	
         if( i+1 < reps && ( endX != CGstartX || endY != CGstartY ) ){					//If an arc, pullup and jog back to the start position
           if ( this.cmd_posz != safeZCG ) {
@@ -494,22 +477,23 @@ exports.interpolate_circle = function(ICstartX,ICstartY,ICstartZ,endX,endY,plung
 //			- Pocketing
 //			- Pocketing with multiple passes
 //			- Rotation around the starting point
+//      - Define by center start point
 //		
-//	Usage: CR,<X Length>,<Y Length>,<I-O-T>,<Direction>,<Plunge Depth>,<Repetitions>,
-//			  <Options-2=Pocket OUT-IN,3=Pocket IN-OUT>,<Plunge from Z zero>,<Angle of Rotation>,
-//			  <Sprial Plunge>
+//	Usage: CR,<X Length>,<Y Length>,<I-O-T>,<Direction>,<Start Corner - 0-4>,
+//            <Plunge Depth>,<Repetitions>,<Options-2=Pocket OUT-IN,
+//             3=Pocket IN-OUT>,<Plunge from Z zero>,<Angle of Rotation>,
+//            <Sprial Plunge>,<X Center>,<Y Center>
 //	
+
 exports.CR = function(args) {
 	//calc and output commands to cut a rectangle
   var n = 0.0;
 	var CRstartX = this.cmd_posx;
   var CRstartY = this.cmd_posy;
   var CRstartZ = this.cmd_posz;
-  var pckt_startX = startX;
-  var pckt_startY = startY;
+  var pckt_startX = CRstartX;
+  var pckt_startY = CRstartY;
   var currentZ = CRstartZ;
-  var rotPtX = 0.0;
-  var rotPtY = 0.0;
   var xDir = 1;
   var yDir = 1;
 
@@ -517,15 +501,17 @@ exports.CR = function(args) {
   var lenY = args[1] !== undefined ? args[1] : undefined;		// Y length
   var inStr = args[2] !== undefined ? args[2].toUpperCase() : "T";
   var OIT = (inStr === "O" || inStr === "I" || inStr === "T") ? inStr : "T"; // Cutter compentsation (I=inside, T=no comp, O=outside)
-  var Dir = args[3] !== undefined ? args[3] : 1; 				// Direction of cut (-1=CCW, 1=CW)
-  var stCorner = args[4] !== undefined ? args[4] : 4;			// Start Corner - default is 4, the bottom left corner. 0=Center
-  var Plg = args[5] !== undefined ? args[5] : 0.0;			// Plunge depth per repetion
-  var reps = args[6] !== undefined ? args[6] : 1;				// Repetions
-  var optCR = args[7] !== undefined ? args[7] : 0;			// Options - 1-Tab, 2-Pocket Outside-In, 3-Pocket Inside-Out
-  var plgFromZero = args[8] !== undefined ? args[8] : 0;		// Start Plunge from Zero <0-NO, 1-YES>
-  var RotationAngle = args[9] !== undefined ? args[9] : 0.0;	// Angle to rotate rectangle around starting point
-  var PlgAxis = args[10] !== undefined ? args[10] : 'Z';		// Axis to plunge <Z or A>
-	var spiralPlg = args[11] !== undefined ? args[11] : 0;		// Turn spiral plunge ON for first pass (0=OFF, 1=ON)
+  var Dir = args[3] !== undefined ? args[3] : 1;  // Direction of cut (-1=CCW, 1=CW)
+  var stCorner = args[4] !== undefined ? args[4] : 4;  // Start Corner - default is 4, the bottom left corner. 0=Center
+  var Plg = args[5] !== undefined ? args[5] : 0.0;  // Plunge depth per repetition
+  var reps = args[6] !== undefined ? args[6] : 1;  // Repetions
+  var optCR = args[7] !== undefined ? args[7] : 0;  // Options - 1-Tab, 2-Pocket Outside-In, 3-Pocket Inside-Out
+  var plgFromZero = args[8] !== undefined ? args[8] : 0;  // Start Plunge from Zero <0-NO, 1-YES>
+  var RotationAngle = args[9] !== undefined ? args[9] : 0.0;  // Angle to rotate rectangle around starting point
+  var PlgAxis = args[10] !== undefined ? args[10] : 'Z';  // Axis to plunge <Z or A>
+	var spiralPlg = args[11] !== undefined ? args[11] : 0;  // Turn spiral plunge ON for first pass (0=OFF, 1=ON)
+  var xCenter =  args[12] !== undefined ? args[12] : undefined;  // X center coordinate
+  var yCenter = args[13] !== undefined ? args[13] : undefined;  // Y center coordinate
 
 	var PlgSp = 0.0;
 	var noPullUp = 0;
@@ -538,73 +524,102 @@ exports.CR = function(args) {
   var pckt_stepX = 0.0;
   var pckt_stepY = 0.0;
   var steps = 1.0;
+  var rotPtX = pckt_startX;  // Rotation point X
+  var rotPtY = pckt_startY;  // Rotation point Y
 
   var feedrateXY = this.movespeed_xy * 60;
   var feedrateZ = this.movespeed_xy * 60;
 
+  // Set Order and directions based on starting corner
+  if ( stCorner == 1 ) { 
+    yDir = -1;
+    if ( Dir == -1 ) { 
+      order = [3,2,1,4]; 
+    }
+  } 
+  else if ( stCorner == 2 ) {
+    xDir = -1;
+    yDir = -1;
+    if ( Dir == 1 ) { 
+      order = [3,2,1,4]; 
+    }
+  }
+  else if ( stCorner == 3 ) { 
+    xDir = -1; 
+    if ( Dir == -1 ) {
+      order = [3,2,1,4]; 
+    }
+  }
+  else { 
+    if ( Dir == 1 ) {
+      order = [3,2,1,4]; 
+    }
+  }
+
+  if ( OIT == "O" ) { 
+    lenX += config.opensbp.get('cutterDia') * xDir;
+    lenY += config.opensbp.get('cutterDia') * yDir;
+  }
+  else if ( OIT == "I" ) {
+    lenX -= config.opensbp.get('cutterDia') * xDir;
+    lenY -= config.opensbp.get('cutterDia') * yDir;
+  }
+  else {
+    lenX *= xDir;
+    lenY *= yDir;
+  }
+
+  if ( stCorner === 0 ) {
+    pckt_startX = xCenter - (lenX/2);
+    pckt_startY = yCenter - (lenY/2);        
+  }
+
   if (RotationAngle !== 0 ) { 
-   	RotationAngle *= 0.01745329252;							// Convert rotation angle in degrees to radians
-   	cosRA = Math.cos(RotationAngle);						// Calculate the Cosine of the rotation angle
-   	sinRA = Math.sin(RotationAngle);						// Calculate the Sine of the rotation angle
-   	rotPtX = pckt_startX; 									// Rotation point X
-   	rotPtY = pckt_startY;									// Rotation point Y
+   	RotationAngle *= 0.01745329252;  // Rotation angle in degrees to radians
+   	cosRA = Math.cos(RotationAngle); // Cosine of the rotation angle
+   	sinRA = Math.sin(RotationAngle); // Sine of the rotation angle
+    if ( stCorner !== 0 ) {
+      rotPtX = xCenter;  // Rotation point X
+      rotPtY = yCenter;  // Rotation point Y
+
+    }
   }
     
   if (Plg !== 0 && plgFromZero === 1){ currentZ = 0; }
   else{ currentZ = CRstartZ; }
-  var safeZCG = currentZ + config.opensbp.get('safeZpullUp');
+  var safeZCR = currentZ + config.opensbp.get('safeZpullUp');
 
-  // Set Order and directions based on starting corner
-  if ( stCorner == 1 ) { 
-  	yDir = -1;
-   	if ( Dir == -1 ) { 
-   		order = [3,2,1,4]; 
-   	}
-  }	
-  else if ( stCorner == 2 ) {
-   	xDir = -1;
-   	yDir = -1;
-   	if ( Dir == 1 ) { 
-   		order = [3,2,1,4]; 
-   	}
-  }
-  else if ( stCorner == 3 ) { 
-   	xDir = -1; 
-   	if ( Dir == -1 ) {
-   		order = [3,2,1,4]; 
-   	}
-  }
-  else { 
-   	if ( Dir == 1 ) {
-   		order = [3,2,1,4]; 
-   	}
-  }
-
-  if ( OIT == "O" ) { 
-   	lenX += config.opensbp.get('cutterDia') * xDir;
-   	lenY += config.opensbp.get('cutterDia') * yDir;
-  }
-  else if ( OIT == "I" ) {
-   	lenX -= config.opensbp.get('cutterDia') * xDir;
-   	lenY -= config.opensbp.get('cutterDia') * yDir;
-  }
-  else {
-   	lenX *= xDir;
-   	lenY *= yDir;
-  }
-
-  if ( stCorner === 0 ) {
-  	pckt_startX = CRstartX - (lenX/2);
-  	pckt_startY = CRstartY - (lenY/2);    		
+  // Jog to the start position if not already there
+  if ( stCorner === 0 && ( CRstartX !== pckt_startX || CRstartY !== pckt_startY )){
+    if( currentZ < safeZCR && this.lastNoZPullup !== 1 ){
+      this.emit_move('G0',{'Z':safeZCR});
+    }
+    if ( RotationAngle === 0.0 ) { 
+        outStr = "G0X" + nextX + "Y" + nextY;
+      }
+      else {
+        outStr = "G0X" + ((nextX*cosRA)-(nextY*sinRA)+(rotPtX*(1-cosRA))+(rotPtY*sinRA)).toFixed(4)+
+                   "Y" + ((nextX*sinRA)+(nextY*cosRA)+(rotPtX*(1-cosRA))-(rotPtY*sinRA)).toFixed(4); 
+      }
+    if ( RotationAngle !== 0 ) {
+      pckt_startX = ((pckt_startX*cosRA)-(pckt_startY*sinRA)+(rotPtX*(1-cosRA))+(rotPtY*sinRA));
+      pckt_startY = ((pckt_startX*sinRA)+(pckt_startY*cosRA)+(rotPtX*(1-cosRA))-(rotPtY*sinRA));
+    }   
+    // this.emit_move('G0',{'X':pckt_startX,'Y':pckt_startY});
+    this.emit_gcode( outStr);
+    if( this.cmd_posz !== currentZ && this.lastNoZPullup !== 1 ){
+      this.emit_move('G1',{'Z':currentZ,'F':feedrateZ});
+    }
   }
 
 	// If a pocket, calculate the step over and number of steps to pocket out the complete rectangle.
   if (optCR > 1) {
-   	stepOver = config.opensbp.get('cutterDia') * ((100 - config.opensbp.get('pocketOverlap')) / 100);	// Calculate the overlap
+    // Calculate the overlap distacne
+   	stepOver = config.opensbp.get('cutterDia') * ((100 - config.opensbp.get('pocketOverlap')) / 100);
    	pckt_stepX = pckt_stepY = stepOver;
   	pckt_stepX *= xDir;
   	pckt_stepY *= yDir;
-   	// Base the numvber of steps on the short side of the rectangle.
+   	// Base the number of steps on the short side of the rectangle.
 	 	if ( Math.abs(lenX) < Math.abs(lenY) ) {
 	 		steps = Math.floor((Math.abs(lenX)/2)/Math.abs(stepOver)) + 1; 
 	 	}
@@ -625,8 +640,8 @@ exports.CR = function(args) {
 		    outStr = "G0X" + nextX + "Y" + nextY;
       }
       else {
-		    outStr = "G0X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
-			    		   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4); 
+		    outStr = "G0X" + ((nextX*cosRA)-(nextY*sinRA)+(rotPtX*(1-cosRA))+(rotPtY*sinRA)).toFixed(4) +
+			    		     "Y" + ((nextX*sinRA)+(nextY*cosRA)+(rotPtX*(1-cosRA))-(rotPtY*sinRA)).toFixed(4); 
       }
       this.emit_gcode( outStr);
     }
@@ -634,7 +649,7 @@ exports.CR = function(args) {
 
   // If an inside-out pocket, move to the start point of the pocket
   if ( optCR == 3 || stCorner === 0 ) {
-    this.emit_gcode( "G0Z" + safeZCG );
+    this.emit_gcode( "G0Z" + safeZCR );
 
     nextX = pckt_startX + pckt_offsetX;
     nextY = pckt_startY + pckt_offsetY;
@@ -643,8 +658,8 @@ exports.CR = function(args) {
 			outStr = "G1X" + nextX + "Y" + nextY;
 		}
 		else {
-			outStr = "G1X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
-						   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4); 
+			outStr = "G1X" + ((nextX*cosRA)-(nextY*sinRA)+(rotPtX*(1-cosRA))+(rotPtY*sinRA)).toFixed(4) +
+						     "Y" + ((nextX*sinRA)+(nextY*cosRA)+(rotPtX*(1-cosRA))-(rotPtY*sinRA)).toFixed(4); 
 		}
     this.emit_gcode( "G1Z" + CRstartZ + "F" + feedrateZ );
     this.emit_gcode( outStr );
@@ -676,8 +691,8 @@ exports.CR = function(args) {
     						outStr = "G1X" + nextX + "Y" + nextY;
     					}
     					else {
-    						outStr = "G1X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
-    									   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4); 
+    						outStr = "G1X"+((nextX*cosRA)-(nextY*sinRA)+(rotPtX*(1-cosRA))+(rotPtY*sinRA)).toFixed(4) +
+    									     "Y"+((nextX*sinRA)+(nextY*cosRA)+(rotPtX*(1-cosRA))-(rotPtY*sinRA)).toFixed(4); 
     					}
     						
     					if ( spiralPlg == 1 && pass === 0 ) {
@@ -697,8 +712,8 @@ exports.CR = function(args) {
     						outStr = "G1X" + nextX + "Y" + nextY;
     					}	
    						else {
-   							outStr = "G1X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
-   										   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4); 
+   							outStr = "G1X" + ((nextX*cosRA)-(nextY*sinRA)+(rotPtX*(1-cosRA))+(rotPtY*sinRA)).toFixed(4) +
+   										     "Y" + ((nextX*sinRA)+(nextY*cosRA)+(rotPtX*(1-cosRA))-(rotPtY*sinRA)).toFixed(4); 
    						}
 
    						if ( spiralPlg === 1 && pass === 0 ) { 
@@ -718,8 +733,8 @@ exports.CR = function(args) {
     						outStr = "G1X" + nextX + "Y" + nextY;
     					}
    						else {
-   							outStr = "G1X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
-   										   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4); 
+   							outStr = "G1X" + ((nextX*cosRA)-(nextY*sinRA)+(rotPtX*(1-cosRA))+(rotPtY*sinRA)).toFixed(4) +
+   										     "Y" + ((nextX*sinRA)+(nextY*cosRA)+(rotPtX*(1-cosRA))-(rotPtY*sinRA)).toFixed(4); 
    						}
 
    						if ( spiralPlg == 1 && pass === 0 ) { 
@@ -739,8 +754,8 @@ exports.CR = function(args) {
     						outStr = "G1X" + nextX + "Y" + nextY;
     					}
    						else {
-   							outStr = "G1X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
-   										   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4); 
+   							outStr = "G1X" + ((nextX*cosRA)-(nextY*sinRA)+(rotPtX*(1-cosRA))+(rotPtY*sinRA)).toFixed(4) +
+   										     "Y" + ((nextX*sinRA)+(nextY*cosRA)+(rotPtX*(1-cosRA))-(rotPtY*sinRA)).toFixed(4); 
    						}
 
    						if ( spiralPlg === 1 && pass === 0 ) {
@@ -773,8 +788,8 @@ exports.CR = function(args) {
    							   "Y" + nextY;
    			}
    			else {
-   				outStr = "G1X" + ((nextX * cosRA) - (nextY * sinRA) + (rotPtX * (1-cosRA)) + (rotPtY * sinRA)).toFixed(4) +
-   							   "Y" + ((nextX * sinRA) + (nextY * cosRA) + (rotPtX * (1-cosRA)) - (rotPtY * sinRA)).toFixed(4); 
+   				outStr = "G1X" + ((nextX*cosRA)-(nextY*sinRA)+(rotPtX*(1-cosRA))+(rotPtY*sinRA)).toFixed(4) +
+   							     "Y" + ((nextX*sinRA)+(nextY*cosRA)+(rotPtX*(1-cosRA))-(rotPtY*sinRA)).toFixed(4); 
    			}
    			outStr += "F" + feedrateXY;
     		this.emit_gcode (outStr);
@@ -783,7 +798,7 @@ exports.CR = function(args) {
 
    	// If a pocket, move to the start point of the pocket
 	  if ( optCR > 1 || stCorner === 0 ) {
-    	this.emit_gcode( "G0Z" + safeZCG );
+    	this.emit_gcode( "G0Z" + safeZCR );
     	outStr = "G1X" + CRstartX + "Y" + CRstartY;
 			outStr += "F" + feedrateXY;
      	this.emit_gcode( outStr );

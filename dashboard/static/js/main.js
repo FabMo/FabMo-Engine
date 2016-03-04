@@ -27,11 +27,17 @@ define(function(require) {
 
 	var modalIsShown = false;
 	var daisyIsShown = false;
-
+	var authorizeDialog = false;
 	// Detect touch screen
 	
 	var supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
+    
+    //Give editor focus 
+    
+    $('#icon_editor').on('click', function(){
+        $('iframe').focus();
 
+    });
 	// Initial read of engine configuration
 	engine.getConfig();
 	engine.getVersion(function(err, version) {
@@ -64,6 +70,12 @@ define(function(require) {
 			
 			// Request a status update from the tool
 			engine.getStatus();
+
+			dashboard.engine.on('change', function(topic) {
+				if(topic === 'apps') {
+					context.apps.fetch();
+				}
+			});
 		}
 	});
 
@@ -106,7 +118,6 @@ function getManualNudgeIncrement(move) {
 function setupKeyboard() {
 	var keyboard = new Keyboard('#keyboard');
 	keyboard.on('go', function(move) {
-		
 		if(move) {
 			dashboard.engine.manualStart(move.axis, move.dir*60.0*(getManualMoveSpeed(move) || 0.1));
 		} 
@@ -114,7 +125,12 @@ function setupKeyboard() {
 
 	keyboard.on('stop', function(evt) {
 		dashboard.engine.manualStop();
-	})
+	});
+
+	keyboard.on('nudge', function(nudge) {
+		dashboard.engine.manualMoveFixed(nudge.axis, 60*getManualMoveSpeed(nudge), nudge.dir*getManualNudgeIncrement(nudge))
+	});
+
 	return keyboard;
 }
 
@@ -251,37 +267,57 @@ $(document).on('keyup', function(e) {
 
 //goto this location 
 
-$('html').on('click', function (e) {
-		if (e.target.id === "go-here") {
-		var x = $('.posx').attr('value','')[1].value;
-		var y = $('.posy').attr('value','')[1].value;
-		var z = $('.posz').attr('value','')[1].value;
-		var gcode = "G0 X" + x + " Y" + y + " Z" + z;
-		dashboard.engine.gcode(gcode);
-		$('.go-here').hide();
-		} else if (e.target.id === "axis"){
-			 $("input:text").focus(function() { 
-             $(this).select(); 
-             $('.go-here').show();
-             } );
-			
-		} else {
-			$('.go-here').hide();
-		}
+var axisValues = [];
+$('.axi').each( function(){
+    var strings = this.getAttribute('class').split(" ")[0];
+    var axis = strings.slice(-1).toUpperCase();
+    axisValues.push({"className" : ("."+strings), "axis": axis});
 });
-$('.posx, .posy, .posz').keyup(function(e){
-    if(e.keyCode == 13){
-    	e.preventDefault();
-        e.stopPropagation();
-        var x = $('.posx').attr('value','')[1].value;
-		var y = $('.posy').attr('value','')[1].value;
-		var z = $('.posz').attr('value','')[1].value;
-		var gcode = "G0 X" + x + " Y" + y + " Z" + z;
-		dashboard.engine.gcode(gcode);
-		$('.go-here').hide();
-        
-    }
 
+$('.go-here').on('mousedown', function () {
+    var gcode = "G0 ";
+    for (var i = 0; i<axisValues.length; i++) {
+        if ($(axisValues[i].className).attr('value','')[1].value.length > 0){
+            if ($(axisValues[i].className).attr('value','')[1].value != $(axisValues[i].className).val()) {
+                gcode += axisValues[i].axis + $(axisValues[i].className).attr('value','')[1].value + " ";
+            }
+        }
+    }
+    dashboard.engine.gcode(gcode);
+    $('.go-here').hide();
+    
+});
+    
+$('.axi').on('click', function(e) { 
+    e.stopPropagation();
+    $('.go-here').show();
+});
+
+$('.axi').on('focus', function(e) { 
+    e.stopPropagation();
+    $(this).val(parseFloat($(this).val().toString()));
+    $(this).select();
+});
+$(document).on('click', function() { 
+    $('.posx').val($('.posx').val());
+    $('.posy').val($('.posy').val());
+    $('.posz').val($('.posz').val());
+    $('.go-here').hide();
+});
+
+$('.axi').keyup(function(e){
+    if(e.keyCode == 13){
+        var gcode = "G0 ";
+        for (var i = 0; i<axisValues.length; i++) {
+            if ($(axisValues[i].className).attr('value','')[1].value.length > 0){
+                if ($(axisValues[i].className).attr('value','')[1].value != $(axisValues[i].className).val()) {
+                    gcode += axisValues[i].axis + $(axisValues[i].className).attr('value','')[1].value + " ";
+                }
+            }
+        }
+		dashboard.engine.gcode(gcode);
+		$('.go-here').hide();    
+    }
 });
 
 // Handlers for the home/probe buttons
@@ -316,6 +352,7 @@ var disconnected = false;
 engine.on('disconnect', function() {
 	if(!disconnected) {
 		disconnected = true;
+		setConnectionStrength(null);
 		showDaisy();
 	}
 });
@@ -323,16 +360,22 @@ engine.on('disconnect', function() {
 engine.on('connect', function() {
 	if(disconnected) {
 		disconnected = false;
+		setConnectionStrength(5);
 		hideDaisy();
 	}
 });
 
 engine.on('status', function(status) {
-    if (status.state != 'idle'){
+  if (status.state != 'idle'){
         $('#position input').attr('disabled', true);
     } else {
         $('#position input').attr('disabled', false);
     }
+
+    if(status.auth && authorizeDialog) {
+    	hideModal();
+    }
+
     if(status['info']) {
 		if(status.info['message']) {
 			showModal({
@@ -348,7 +391,6 @@ engine.on('status', function(status) {
 				}
  			});
 		} else if(status.info['error']) {
-
 			if(dashboard.engine.status.job) {
 				var detailHTML = '<p>' + 
 					  '<b>Job Name:  </b>' + dashboard.engine.status.job.name + '<br />' + 
@@ -368,20 +410,70 @@ engine.on('status', function(status) {
 					dashboard.engine.quit();
 				}
 			});
+		} else if(status.info['auth']) {
+			authorizeDialog = true;
+			showModal({
+				title : 'Authorization Required!',
+				lead : '<div style="color:#7F5323; font-weight: bolder;">Authorization is required to complete the requested operation.</div>',
+				message: 'To authorize your tool, press and hold the green button for one second.  Tool authorization duration can be adjusted in the tool configuration.',
+				cancelText : 'Got it!',
+				cancel : function() {
+					authorizeDialog=false;
+					dashboard.engine.quit();
+				}
+			});
 		}
 	} else {
 		hideModal();
 	}
 });
-setInterval(function() {
+
+function setConnectionStrength(level) {
+	var onclass = 'on';
+	if(level === null) {
+		level = 4;
+		onclass = 'err';
+	}
+	for(i=1; i<5; i++) {
+		 var bar = $('#cs' + i);
+		 if(i<=level) {
+		 	bar.attr('class', onclass);
+		 } else {
+		 	bar.attr('class', 'off');
+		 }
+	}
+}
+
+var signal_window = [];
+var err_count = 0;
+
+function ping() {
 	engine.ping(function(err, time) {
+		// 5-point Moving average
+		signal_window.push(time);
+		if(signal_window.length > 5) {
+			signal_window.shift(0);
+		}
+		var sum = 0;
+		for(var i=0; i<signal_window.length; i++) {
+			sum += signal_window[i];
+		}
+		var avg = sum/signal_window.length;
+		
 		if(err) {
 			console.error(err);
 		} else {
-			//console.info("PING Response time: " + time + "ms");
+			if(avg < 100) {setConnectionStrength(4);}
+			else if(avg < 200) { setConnectionStrength(3);}
+			else if(avg < 400) { setConnectionStrength(2);}
+			else if(avg < 800) { setConnectionStrength(1);}
+			else { setConnectionStrength(0);}
 		}
+		setTimeout(ping, 2000);
 	});
-}, 5000);
+};
+
+ping();
 
 (function () {
 if ($(window).width() < 620) {
@@ -430,6 +522,14 @@ function touchScreen () {
 	} 
 }
 touchScreen();
+
+// $('.dro-button').click(function() {
+// 	$('.dro-button').removeClass('active');
+// 	$(this).addClass('active')
+// 	$('.dro-view').hide();
+// 	$('#' + this.dataset.view).show();
+// });
+
 });
 
 

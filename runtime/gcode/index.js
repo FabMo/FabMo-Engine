@@ -48,6 +48,17 @@ GCodeRuntime.prototype._changeState = function(newstate) {
 	this.machine.setState(this, newstate);
 };
 
+GCodeRuntime.prototype._limit = function() {
+	var er = this.driver.getLastException();
+	if(er && er.st == 203) {
+		var msg = er.msg.replace(/\[[^\[\]]*\]/,'');
+		this.driver.clearLastException();
+		this._fail(msg);
+		return true;
+	}
+	return false;
+}
+
 GCodeRuntime.prototype._onDriverStatus = function(status) {
 
 	// Update the machine copy of g2 status variables
@@ -68,7 +79,11 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 		case this.driver.STAT_PANIC:
 			return this._die();
 			break;
+		case this.driver.STAT_ALARM:
+			if(this._limit()) { return; }
+			break;
 	}
+
 
 	switch(this.machine.status.state) {
 		case "not_ready":
@@ -77,15 +92,16 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 			break;
 
 		case "running":
-			if(this.status_report.stat === this.driver.STAT_HOLDING /*&& this.status_report.stat === 0*/) {
-				this._changeState("paused");
-				this.machine.emit('job_pause', this);
-				break;
-			}
-			if(this.status_report.stat === this.driver.STAT_STOP || this.status_report.stat === this.driver.STAT_END) {
-				this._idle();
-				this.machine.emit('job_complete', this);
-				break;
+			switch(this.status_report.stat) {
+				case this.driver.STAT_HOLDING:
+					this._changeState("paused");
+					this.machine.emit('job_pause', this);
+					break;
+				case this.driver.STAT_STOP:			
+				case this.driver.STAT_END:
+					this._idle();
+					this.machine.emit('job_complete', this);
+					break;
 			}
 			break;
 
@@ -108,6 +124,14 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 			}
 			break;
 
+		case "stopped":
+			switch(this.status_report.stat) {
+				case this.driver.STAT_STOP:			
+				case this.driver.STAT_END:
+					this._idle();
+					this.machine.emit('job_complete', this);
+					break;
+			}
 	}
 	this.machine.emit('status',this.machine.status);
 
@@ -124,6 +148,19 @@ GCodeRuntime.prototype._die = function() {
 		this.machine.status.job=null;
  		this.machine.setState(this, 'dead', {error : 'A G2 exception has occurred. You must reboot your tool.'});
  	}
+}
+
+GCodeRuntime.prototype._fail = function(message) {
+	this.machine.status.current_file = null;
+	this.machine.status.line=null;
+	this.machine.status.nb_lines=null;
+ 	try {
+ 		this.machine.status.job.fail();
+ 	} catch(e) {}
+ 	finally {
+		this.machine.status.job=null;
+ 		this.machine.setState(this, 'stopped', {error : message});
+ 	}	
 }
 
 GCodeRuntime.prototype._idle = function() {

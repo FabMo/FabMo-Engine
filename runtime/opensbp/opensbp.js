@@ -157,7 +157,9 @@ SBPRuntime.prototype.runString = function(s, callback) {
 		this.emit_gcode(config.driver.get('gdi') ? 'G91' : 'G90');
 		log.debug("Rainbows organized...")
 		this._run();
+		log.debug("Returning from run...");
 	} catch(e) {
+		log.error(e);
 		return this._end(e.message + " (Line " + e.line + ")");
 	}
 };
@@ -185,6 +187,17 @@ SBPRuntime.prototype.simulateString = function(s, callback) {
 	} else {
 		callback(new Error("Cannot simulate while OpenSBP runtime is busy."));
 	}
+}
+
+SBPRuntime.prototype._limit = function() {
+	var er = this.driver.getLastException();
+	if(er && er.st == 203) {
+		var msg = er.msg.replace(/\[[^\[\]]*\]/,'');
+		this.driver.clearLastException();
+		this._end(msg);
+		return true;
+	}
+	return false;
 }
 
 // Handler for G2 statue reports
@@ -381,8 +394,11 @@ SBPRuntime.prototype._continue = function() {
 		// Pull the current line of the program from the list
 		line = this.program[this.pc];
 		if(this._breaksStack(line)) {
+			// If it's a stack breaker go ahead and distpatch the current g-code list to the tool
 			log.debug("Stack break: " + JSON.stringify(line));
 			dispatched = this._dispatch(this._continue.bind(this));
+
+			// If we dispatched anything
 			if(!dispatched) {
 				log.debug('Nothing to execute in the queue: continuing.');
 				if(!this.machine) {
@@ -391,7 +407,7 @@ SBPRuntime.prototype._continue = function() {
 						this._execute(line, this._continue.bind(this));
 					} catch(e) {
 						log.error('There was a problem: ' + e);
-						setImmediate(this._continue().bind(this));
+						setImmediate(this._continue.bind(this));
 					}
 				} else {
 					try {
@@ -403,34 +419,39 @@ SBPRuntime.prototype._continue = function() {
 				}
 				break;
 			} else {
-				log.debug('Dispatching g-codes to tool.')
-				break;
+				if(this.machine) {
+					log.debug('Dispatching g-codes to tool.')
+					break;
+				} else {
+					setImmediate(this._continue.bind(this));
+				}
 			}
 			return;
 		} else {
 			try {
 				this._execute(line);
 			} catch(e) {
-				return this._end(e.message);
+				return this._end(e);
 			}
 		}
 	}
 };
 
 SBPRuntime.prototype._end = function(error) {
+	error = error ? error.message || error : null;
 	if(this.machine) {
 		var end_function_no_nesting = function() {
 				log.debug("Calling the non-nested (toplevel) end");
 				// We are truly done
 				callback = this.end_callback;
 				this.init();
+				//this.user_vars = {};
 				if(error) {
 					this.machine.setState(this, 'stopped', {'error' : error });
 					this.emit('end', this);
 					if(callback) {
 						callback();
 					}
-
 				} else {
 
 					if(this.machine.status.job) {
@@ -529,6 +550,7 @@ SBPRuntime.prototype._dispatch = function(callback) {
 					},
 					"alarm" : function(driver) { 
 						// On alarm terminate the program (for now)
+						if(this._limit()) {return;}
 						this._end();
 					}.bind(this),
 					"end" : function(driver) { 
@@ -601,7 +623,7 @@ SBPRuntime.prototype._processEvents = function(callback) {
 	// Iterate over all inputs for which handlers are registered
 	for(var sw in this.event_handlers) {
 		var input_name = 'in' + sw
-		var input_state = this.machine.status[input_name]
+		var input_state = this.driver.status[input_name]
 		log.debug("Checking event handlers for " + input_name)
 		// Iterate over all the states of this input for which handlers are registered
 		for(var state in this.event_handlers[sw]) {
@@ -673,8 +695,8 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 			} catch(e) {
 				log.error("Error in a non-stack-breaking command");
 				log.error(e);
-				this._end(e);
-				throw e
+				//this._end(e);
+				throw e;
 			}
 			this.pc +=1;
 			return false;
@@ -777,12 +799,25 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			break;
 
 		case "assign":
-			//TODO FIX THIS THIS DOESN'T DO SYSTEM VARS PROPERLY
 			this.pc += 1;
 			var value = this._eval(command.expr);
 			this._assign(command.var, value, function() {
 				callback();
 			})				
+			return true;
+			break;
+
+		case "weak_assign":
+			//TODO FIX THIS THIS DOESN'T DO SYSTEM VARS PROPERLY
+			this.pc += 1;
+			if(!this._varExists(command.var)) {
+				var value = this._eval(command.expr);
+				this._assign(command.var, value, function() {
+					callback();
+				});								
+			} else {
+				setImmediate(callback);
+			}
 			return true;
 			break;
 
@@ -849,6 +884,19 @@ SBPRuntime.prototype._execute = function(command, callback) {
 	throw new Error("Shouldn't ever get here.");
 };
 
+SBPRuntime.prototype._varExists = function(identifier) {
+	result = identifier.match(USERVAR_RE);
+	if(result) {
+		return (identifier in this.user_vars);
+	}
+
+	result = identifier.match(PERSISTENTVAR_RE);
+	if(result) {
+		return config.opensbp.hasVariable(identifier)
+	}
+	return false;
+}
+
 SBPRuntime.prototype._assign = function(identifier, value, callback) {
 	result = identifier.match(USERVAR_RE);
 	if(result) {
@@ -865,7 +913,7 @@ SBPRuntime.prototype._assign = function(identifier, value, callback) {
 	}
 	log.debug(identifier + ' is not a persistent variable');
 
-	throw Error("Cannot assign to " + identifier);
+	throw new Error("Cannot assign to " + identifier);
 
 }
 
@@ -899,41 +947,21 @@ SBPRuntime.prototype._setupEvent = function(command, callback) {
 }
 
 SBPRuntime.prototype._eval_value = function(expr) {
-		// log.debug("  Evaluating value: " + expr);
-		sys_var = this.evaluateSystemVariable(expr);
-		if(sys_var === undefined) {
-			var persistent_var = this.evaluatePersistentVariable(expr);
-			if(persistent_var === undefined) {
-				user_var = this.evaluateUserVariable(expr);
-				if(user_var === undefined) {
-					f = parseFloat(expr);
-				    if(isNaN(f)) {
-	                    return expr;
-	                } else {
-	                    return f;
-	                }
-	            } else if(user_var === null) {
-	            	log.error("  Uh oh. (" + expr + ")");
-	            	// User var is undefined (return undefined??)
-				} else {
-					log.debug("  Evaluated " + expr + " as " + user_var);
-					return parseFloat(user_var);
-				}				
-			} else {
-				f = parseFloat(persistent_var);
-				if(isNaN(f)) {
-					return expr;
-				} else {
-					return f;
-				}
-			}
-		} else if(sys_var === null) {
-			log.error("  Undefined system variable " + expr)
-		} else {
-			log.debug("  Evaluated " + expr + " as " + sys_var);
-			this.sysvar_evaluated = true;
-			return parseFloat(sys_var);
-		}	
+	switch(this._variableType(expr)) {
+		case 'user':
+			return this.evaluateUserVariable(expr);
+		break;
+		case 'system':
+			return this.evaluateSystemVariable(expr);
+		break;
+		case 'persistent':
+			return this.evaluatePersistentVariable(expr);
+		break;
+		default:
+			var n = Number(expr);
+			return isNaN(n) ? expr : n;
+		break;
+	}
 };
 
 // Evaluate an expression.  Return the result.
@@ -974,6 +1002,7 @@ SBPRuntime.prototype._eval = function(expr) {
 			case '=':
 				return this._eval(expr.left) == this._eval(expr.right);
 				break;
+			case '<>':
 			case '!=':
 				return this._eval(expr.left) != this._eval(expr.right);
 				break;
@@ -998,6 +1027,7 @@ SBPRuntime.prototype.init = function() {
 	this.end_callback = null;
 	this.quit_pending = false;
 	this.end_message = null;
+	this.paused = false;
 
 	if(this.transforms != null && this.transforms.level.apply === true) {
 		leveler = new Leveler(this.transforms.level.ptDataFile);
@@ -1148,10 +1178,35 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
                		break; 
 
 		default:
-			return null;
+			throw new Error("Unknown System Variable: " + v)
 		break;
 	}
 };
+
+SBPRuntime.prototype._isVariable = function(v) {
+	return 	this._isUserVariable(v) || 
+			this._isPersistentVariable(v) || 
+			this._isSystemVariable(v);	
+}
+
+
+SBPRuntime.prototype._isSystemVariable = function(v) {
+	return v.match(SYSVAR_RE);	
+}
+
+SBPRuntime.prototype._isUserVariable = function(v) {
+	return v.match(USERVAR_RE);	
+}
+
+SBPRuntime.prototype._isPersistentVariable = function(v) {
+	return v.match(PERSISTENTVAR_RE);	
+}
+
+SBPRuntime.prototype._variableType = function(v) {
+	if(this._isUserVariable(v)) {return 'user';}
+	if(this._isSystemVariable(v)) {return 'system';}
+	if(this._isPersistentVariable(v)) {return 'persistent';}
+}
 
 SBPRuntime.prototype.evaluateUserVariable = function(v) {
 	if(v === undefined) { return undefined;}
@@ -1160,7 +1215,7 @@ SBPRuntime.prototype.evaluateUserVariable = function(v) {
 	if(v in this.user_vars) {
 		return this.user_vars[v];
 	} else {
-		throw new Error('Variable ' + v + ' was never defined.');
+		throw new Error('Variable ' + v + ' was used but not defined.');
 	}
 };
 
@@ -1282,12 +1337,10 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		    Z =  tPt.Z;
 		}
 		var height = leveler.findHeight(X, Y, Z);
-           console.log("Z = " + Z);
 		if(height === false) {
 			log.error("Impossible to find the point height with the leveler.");
 			return;
 		}
-        console.log("height = " + height);
 		tPt.Z = Z + height;
 		opFunction(tPt);
 		log.debug("emit_move:level");
@@ -1300,7 +1353,6 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 
 SBPRuntime.prototype._setupTransforms = function() {
 	log.debug("_setupTransforms");
-
     this.transforms = JSON.parse(JSON.stringify(config.opensbp.get('transforms')));
 };
 

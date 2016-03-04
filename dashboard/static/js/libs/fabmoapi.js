@@ -11,7 +11,7 @@
 }(this, function (io) {
   "use strict"
 
-var PING_TIMEOUT = 1000;
+var PING_TIMEOUT = 3000;
 
 var makePostData = function(obj, options) {
 	var file = null;
@@ -51,7 +51,8 @@ var FabMoAPI = function(base_url) {
 		'disconnect' : [],
 		'connect' : [],
 		'job_start' : [],
-		'job_end' : []
+		'job_end' : [],
+		'change' : []
 	};
 	var url = window.location.origin;
 	this.base_url = url.replace(/\/$/,'');
@@ -74,6 +75,10 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 		this.socket.on('status', function(status) {
 			this._setStatus(status);
 			this.emit('status', status);
+		}.bind(this));
+
+		this.socket.on('change', function(topic) {
+			this.emit('change', topic);
 		}.bind(this));
 
 		this.socket.on('connect', function() {
@@ -481,17 +486,15 @@ FabMoAPI.prototype._post = function(url, data, errback, callback, key, redirect)
 
 			case 300:
 				// TODO infinite loop issue here?
-				console.log(xhr);
 				try {
 					var response = JSON.parse(xhr.responseText);
-					console.log(response)
 					if(response.url) {
 						this._post(response.url, data, errback, callback, key, true);
 					} else {
 						console.error("Bad redirect in FabMo API");
 					}
 				} catch(e) {
-					console.log(e);
+					console.error(e);
 				}
 				break;
 

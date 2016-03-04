@@ -3,6 +3,9 @@ var g2 = require('../../../g2');
 var sb3_commands = require('../sb3_commands');
 var config = require('../../../config');
 
+// Note that jogs don't need to be stack breakers, they only are to be consistent with sb3 behavior
+// and to improve performance by breaking up large files.  Down the road, if the sender is improved, these
+// should be made back into inline commands.
 
 // Jog (rapid) the X axis
 exports.JX = function(args) {
@@ -12,133 +15,151 @@ exports.JX = function(args) {
 		this.cmd_posx = x;
 		this.emit_move('G0',{"X":x});
 	}
+	setImmediate(callback);
 };
 
 // Jog (rapid) the Y axis
-exports.JY = function(args) {
+exports.JY = function(args, callback) {
 	var y = args[0];
 	if ( y !== this.cmd_posy ){
 		if(isNaN(y)) { throw( "Invalid JY argument: " + y ); }
 		this.cmd_posy = y;
 		this.emit_move('G0',{"Y":y});
 	}
+	setImmediate(callback);
 };
 
 // Jog (rapid) the Z axis
-exports.JZ = function(args) {
+exports.JZ = function(args, callback) {
 	var z = args[0];
 	if ( z !== this.cmd_posz ){
 		if(isNaN(z)) { throw( "Invalid JZ argument: " + z ); }
 		this.cmd_posz = z;
 		this.emit_move('G0',{"Z":z});
 	}
+	setImmediate(callback);
 };
 
 // Jog (rapid) the A axis
-exports.JA = function(args) {
+exports.JA = function(args, callback) {
 	var a = args[0];
 	if ( a !== this.cmd_posa ){
 		if(isNaN(a)) { throw( "Invalid JA argument: " + a ); }
 		this.cmd_posa = a;
 		this.emit_move('G0',{"A":a});
 	}
+	setImmediate(callback);
 };
 
 // Jog (rapid) the B axis
-exports.JB = function(args) {
+exports.JB = function(args, callback) {
 	var b = args[0];
 	if ( b !== this.cmd_posb ){
 		if(isNaN(b)) { throw( "Invalid JB argument: " + b ); }
 		this.cmd_posb = b;
 		this.emit_move('G0',{"B":b});
 	}
+	setImmediate(callback);
 };
 
 // Jog (rapid) the C axis
-exports.JC = function(args) {
+exports.JC = function(args, callback) {
 	var c = args[0];
 	if ( c !== this.cmd_posc ){
 		if(isNaN(c)) { throw( "Invalid JC argument: " + c ); }
 		this.cmd_posc = c;
 		this.emit_move('G0',{"C":c});
 	}
+	setImmediate(callback);
+
 };
 
 // Jog (rapid) 2 axes (XY).This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
-exports.J2 = function(args) {
-    var params = process_move.bind(this)(args);
+exports.J2 = function(args, callback) {
+	log.debug(" J2");
+    var params = process_jog.bind(this)(args);
+    log.debug( "  J2 params = " + JSON.stringify(params) );
+    log.debug( "     result = " + this.cmd_result );
 	if ( this.cmd_result < 2 ){
 		this.emit_move('G0',params);
 	}
+	setImmediate(callback);
 };
 
 // Jog (rapid) 3 axes (XYZ). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
-exports.J3 = function(args) {
-    var params = process_move.bind(this)(args);
+exports.J3 = function(args, callback) {
+    var params = process_jog.bind(this)(args);
 	if ( this.cmd_result < 3 ){
 		this.emit_move('G0',params);
 	}
+		setImmediate(callback);
+
 };
 
 // Jog (rapid) 4 axes (XYZA). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
-exports.J4 = function(args) {
-    var params = process_move.bind(this)(args);
+exports.J4 = function(args,callback) {
+    var params = process_jog.bind(this)(args);
     if ( this.cmd_result < 4 ){
 		this.emit_move('G0',params);
 	}
+		setImmediate(callback);
+
 };
 
 // Jog (rapid) 5 axes (XYZAB). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
-exports.J5 = function(args) {
-    var params = process_move.bind(this)(args);
+exports.J5 = function(args,callback) {
+    var params = process_jog.bind(this)(args);
     if ( this.cmd_result < 5 ){
 		this.emit_move('G0',params);
 	}
+		setImmediate(callback);
+
 };
 
 // Jog (rapid) 6 axes (XYZABC). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
-exports.J6 = function(args) {
-    var params = process_move.bind(this)(args);
+exports.J6 = function(args, callback) {
+    var params = process_jog.bind(this)(args);
     if ( this.cmd_result < 6 ){
 		this.emit_move('G0',params);
 	}
+		setImmediate(callback);
+
 };
 
 process_jog = function(args) {
-//    log.debug(" process_move: " + JSON.stringify(args));
+    log.debug(" process_jog: " + JSON.stringify(args));
 	var params = {};
 	this.cmd_result = 0;
+	if( args[0] === 0 || args[0] && typeof args[0] === "number"){  //args[0] === 0 ||
+		params.X = args[0];
+		if ( params.X === this.cmd_posx ) { this.cmd_result += 1; }
+	}
+	if( args[1] === 0 || args[1] && typeof args[1] === "number"){  //args[1] === 0 || 
+		params.Y = args[1];
+		if ( params.Y === this.cmd_posy ) { this.cmd_result += 1; }
+	}  
+	if(args[2] === 0 || args[2] && typeof args[2] === "number"){ 
+		params.Z = args[2];
+		if ( params.Z === this.cmd_posz ) { this.cmd_result += 1; }
+	}  
+	if(args[3] === 0 || args[3] && typeof args[3] === "number"){ 
+		params.A = args[3];
+		if ( params.A === this.cmd_posa ) { this.cmd_result += 1; }
+	}
+	if(args[4] === 0 || args[4] && typeof args[4] === "number"){ 
+		params.B = args[4];
+		if ( params.B === this.cmd_posb ) { this.cmd_result += 1; }
+	}  
+	if(args[5] === 0 || args[5] && typeof args[5] === "number"){ 
+		params.C = args[5];
+		if ( params.C === this.cmd_posc ) { this.cmd_result += 1; }
+	}  
 
-	if(args[0] && typeof args[0] === "number"){ 
-	  this.cmd_posx = params.X = args[0];
-      if ( params.X === this.cmd_posx ) { this.cmd_result += 1; }
-	}
-	if(args[1] && typeof args[1] === "number"){ 
-	  this.cmd_posy = params.Y = args[1];
-	  if ( params.Y === this.cmd_posy ) { this.cmd_result += 1; }
-	}  
-	if(args[2] && typeof args[2] === "number"){ 
-	  this.cmd_posz = params.Z = args[2];
-	  if ( params.Z === this.cmd_posz ) { this.cmd_result += 1; }
-	}  
-	if(args[3] && typeof args[3] === "number"){ 
-	  this.cmd_posa = params.A = args[3];
-	  if ( params.A === this.cmd_posa ) { this.cmd_result += 1; }
-	}
-	if(args[4] && typeof args[4] === "number"){ 
-	  this.cmd_posb = params.B = args[4];
-	  if ( params.B === this.cmd_posb ) { this.cmd_result += 1; }
-	}  
-	if(args[5] && typeof args[5] === "number"){ 
-	  this.cmd_posc = params.C = args[5];
-	  if ( params.C === this.cmd_posc ) { this.cmd_result += 1; }
-	}  
-	params.F = (60.0 * config.opensbp.get('movexy_speed'));
 	return params;
 };
 

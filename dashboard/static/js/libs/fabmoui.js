@@ -158,13 +158,17 @@ FabMoUI.prototype.updateStatusContent = function(status){
 
 	if(prev_state !== status.state) {
 		if(status.state === 'stopped') {
-			if(status.info.error) {
-				this.emit('error', status.info.error);
-			}	
+			if(status.info) {
+				if(status.info.error) {
+					this.emit('error', status.info.error);
+				}					
+			}
 		} else if(status.state === 'paused') {
-			if(status.info.message) {
-				this.emit('message', status.info.message);
-			}	
+			if(status.info) {
+				if(status.info.message) {
+					this.emit('message', status.info.message);
+				}	
+			}
 		}
 	}
 

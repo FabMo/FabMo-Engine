@@ -10,13 +10,19 @@ function setupStatusBroadcasts(server){
 	var previous_status = {'state':null}
 	machine.on('status',function(status){
 		server.io.sockets.sockets.forEach(function (socket) { 
-			if(status.state != previous_status.state) {
+			if(status.state === 'idle' || status.state != previous_status.state) {
 				socket.emit('status',status);
 			} else {
 				socket.volatile.emit('status', status);
 			}
 		});
-		previous_status = status;
+		previous_status.state = status.state;
+	});
+
+	machine.on('change', function(topic) {
+		server.io.sockets.sockets.forEach(function (socket) { 
+			socket.emit('change',topic);
+		});
 	});
 }
 

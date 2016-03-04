@@ -5,7 +5,6 @@
 	
 	<link rel="stylesheet" href="/css/normalize.css">
 	<link rel="stylesheet" href="/css/foundation.min.css">
-	<!--<link rel="stylesheet" href="./css/dataTables.foundation.css">-->
 	<link rel="stylesheet" href="./css/style.css">
 
 	<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -155,9 +154,9 @@
   <!-- Javascript inclusions -->
   <script src="/js/libs/jquery.min.js"></script>
   <script src="/js/libs/foundation.min.js"></script>
+  <script src="/js/libs/fabmo.js"></script>
   <script src="./js/jquery.dragster.js"></script>
   <script src="./js/moment.js"></script>
-  <script src="/js/libs/fabmo.js"></script>
   <script src="./js/job_manager.js"></script>
 
 
@@ -171,10 +170,18 @@
   	//Foundation Init
 	$(document).foundation();
 
+	fabmo.on('change', function(topic) {
+		if(topic === 'jobs') {
+			updateQueue();
+			updateHistory();
+		}
+	});
+
 	// Request infoes from the tool
 	// The queue will update when the status report comes in
 	// But the history needs to be updated manually
 	fabmo.requestStatus();
+	updateQueue();
 	updateHistory();
 
 	bindNextJobEvents();
@@ -196,11 +203,9 @@
 
 	$('#run-next').click(function(e) { 
 		if ($('.play').hasClass('active')){
-			$('.play').toggleClass('active');
 			fabmo.stop(function(err, data) {
 		});
 		} else {
-			$('.play').toggleClass('active');
 			fabmo.runNext(function(err, data) {
 				if(err) {
 					fabmo.notify(err);

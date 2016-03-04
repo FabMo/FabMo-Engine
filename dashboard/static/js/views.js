@@ -98,7 +98,7 @@ define(function(require) {
 			this.hard_refresh = false;
 			_.bindAll(this, 'render');
 		},
-		render : function(hard_refresh) {
+		render : function(hard_refresh, callback) {
 			if(this.model) {
 				url = this.model.get('app_url');
 			} else {
@@ -110,32 +110,37 @@ define(function(require) {
 			this.iframe = $(client_container.children()[0]);
 			if(hard_refresh) {
 				this.iframe.one('load', function() {
-					this.hardRefresh();
+					this.hardRefresh(callback);
 				}.bind(this));
+			} else {
+				this.iframe.one('load', callback);
 			}
 			this.iframe.attr('src', url);
 		},
-		hardRefresh : function() {
+		hardRefresh : function(callback) {
+			this.iframe.one('load', function() {
+				callback();
+			});
 			this.iframe[0].contentWindow.location.reload(true);
  		},
 		show : function() {
-			$(".main-section").show();
-			$(this.el).show();
+			$(this.el).css('visibility', 'visible');
 			this.is_visible = true;
+
 		},
 		hide : function(arg) {
-			$(".main-section").hide();
-			$(this.el).hide();
+			$(this.el).css('visibility', 'hidden');
 			this.is_visible = false;
+
 		},
-		setModel : function(model, hard_refresh) {
+		setModel : function(model, hard_refresh, callback) {
 			if(model) {
 				this.hard_refresh = hard_refresh;
 				this.model.set(model.toJSON());
 			} else {
 				this.model.set(null);
 			}
-			this.render(hard_refresh);
+			this.render(hard_refresh, callback);
 		}
 	});
 
