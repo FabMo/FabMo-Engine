@@ -40,7 +40,7 @@ To install the engine in the "standard" location on the Intel Edison, perform th
 8. After the engine has had time to start, check its status: `systemctl status fabmo`
 
 ## Running the Engine
-For debugging the engine, you can run it directly from the command prompt with `npm start` or `node server.js`
+For debugging the engine, you can run it directly from the command prompt with `npm start` or `node server.js`  Running with `npm run debug` puts the engine in debug mode, in which it does more agressive app reloading.  `npm debug slow` introduces deliberate network latency on GET/POST requests, for testing.
 
 ## Development
 A number of grunt tasks have been set up to facilitate engine development.  To see them, run `grunt` with no arguments in the source directory, and a list will be produced with explanations.  Currently, tasks exist for testing and generating/publishing documentation.
