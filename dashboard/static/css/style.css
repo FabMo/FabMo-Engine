@@ -214,7 +214,6 @@ body,html{
 	bottom: 0;
 	z-index: 1002;
 	transition: all 0.5s;
-    overflow: scroll;
 }
 
 
@@ -1157,7 +1156,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .keypad-bar.bottom {
     top: 93px;
-
 }
 
 #modalDialogButtons {
