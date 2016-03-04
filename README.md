@@ -43,4 +43,4 @@ To install the engine in the "standard" location on the Intel Edison, perform th
 For debugging the engine, you can run it directly from the command prompt with `npm start` or `node server.js`
 
 ## Development
-A number of grunt tasks have been set up to facilitate engine development.  To see them, run `grunt` with no arguments in the source directory, and a list will be produced with explanations.  Currently, tasks exist for testing and generating/publishing documentation.
+A number of grunt tasks have been set up to facilitate engine development.  To see them, run `grunt` with no arguments in the source directory, and a list will be produced with explanations.  Currently, tasks exist for testing and generating/publishing documentation.,
