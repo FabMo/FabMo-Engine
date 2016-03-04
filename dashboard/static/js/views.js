@@ -124,25 +124,12 @@ define(function(require) {
 			this.iframe[0].contentWindow.location.reload(true);
  		},
 		show : function() {
-			$(".main-section").show();
 			$(this.el).css('visibility', 'visible');
-			/*var el = $(this.el);
-			el.css('position', 'static');
-			el.css('width', '100%');
-			el.css('height', '100%');
-			el.css('top', 'auto');
-			el.css('left', 'auto');*/
 			this.is_visible = true;
 
 		},
 		hide : function(arg) {
 			$(this.el).css('visibility', 'hidden');
-			/*var el = $(this.el);
-			el.css('position', 'absolute');
-			el.css('width', 100);
-			el.css('height', 100);
-			el.css('top', 300);
-			el.css('left', 300);*/
 			this.is_visible = false;
 
 		},

@@ -95,7 +95,7 @@ function Machine(control_path, gcode_path, callback) {
 	    this.idle_runtime = new IdleRuntime();
 
 	    // Idle 
-	    this.setRuntime(this.idle_runtime, function() {});
+	    this.setRuntime(null, function() {});
 
 	    if(err) {
 		    typeof callback === "function" && callback(err);
@@ -387,8 +387,11 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				this.status.line = null;
 				// Deliberately fall through
 			case 'paused':
+
 				this.driver.get('mpo', function(err, mpo) {
-					config.instance.update({'position' : mpo});
+					if(config.instance) {
+						config.instance.update({'position' : mpo});						
+					}
 				});
 				break;
 			case 'dead':
