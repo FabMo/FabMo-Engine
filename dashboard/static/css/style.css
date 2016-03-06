@@ -684,6 +684,9 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	height: 100%;
 }
 
+#app-menu-container {
+	visibility: invisible;
+}
 #waiting_container {
 	width: 100%;
 	height: 100%;
