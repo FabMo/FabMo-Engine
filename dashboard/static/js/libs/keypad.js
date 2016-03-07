@@ -45,6 +45,8 @@ Keypad.prototype.init = function() {
 		hammer.on('panend', this.end.bind(this));
 		hammer.on('pancancel', this.end.bind(this));
 
+		window.addEventListener('orientationchange', this.end.bind(this));
+
 		$(element).on('blur', this.end.bind(this));
 		$(element).on('mouseleave', this.onDriveMouseleave.bind(this));
 		$(element).on('touchend', this.end.bind(this));
