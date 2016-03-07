@@ -14,7 +14,7 @@ body {
 }
 
 .topjob.running {
-  border: 10px solid #91331E;
+  border: 2px solid #91331E;
 }
 .running .nextJobTitle {
   color: #91331E;
@@ -23,17 +23,17 @@ body {
   border-bottom: 1px solid #91331E;
 }
 
-@keyframes pulse_progress {
+/*@keyframes pulse_progress {
   00% { background-color: #eee;}
   50% { background-color: #bcbcbc;}
   00% { background-color: #eee;}
-}
+}*/
 /* //#F9D5D8; */
-@keyframes pulse {
+/*@keyframes pulse {
   00% { background-color: #ffffff;}
   50% { background-color: #bcbcbc;}
   00% { background-color: #ffffff;}
-}
+}*/
 
 .topjob {
   min-height: 170px;
@@ -726,4 +726,43 @@ table {
 
 #history_page_next{
     float: right;
+}
+
+
+.job-status-indicator{
+    position: absolute;
+    top: 7px;
+    right: 15px;
+    border-radius: 50%;
+    background-color: rgba(0,0,0,0.6);
+    box-shadow: inset 3px 3px 5px rgba(0,0,0,0.2);
+    width: 36px;
+    height: 36px;
+    display: none;
+}
+
+.job-status-light{
+    position: relative;
+    border-radius: 50%;
+    width: 32px;
+    height:32px;
+    top: 50%; left: 50%;
+    transform: translate(-49.5%,-49.5%);
+    box-shadow: 3px 3px 5px rgba(0,0,0,0.2);
+    background: #e71600; /* Old browsers */
+    background: -moz-radial-gradient(center, ellipse cover, #e71600 0%, #f3b40a 0%, #e71600 61%, #d2460e 100%); /* FF3.6-15 */
+    background: -webkit-radial-gradient(center, ellipse cover, #e71600 0%,#f3b40a 0%,#e71600 61%,#d2460e 100%); /* Chrome10-25,Safari5.1-6 */
+    background: radial-gradient(ellipse at center, #e71600 0%,#f3b40a 0%,#e71600 61%,#d2460e 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e71600', endColorstr='#d2460e',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+}
+
+
+
+.job-status-light.off{
+background: #e71600; /* Old browsers */
+background: -moz-radial-gradient(center, ellipse cover, #e71600 0%, #600404 0%, #890000 61%, #9e0b0b 100%); /* FF3.6-15 */
+background: -webkit-radial-gradient(center, ellipse cover, #e71600 0%,#600404 0%,#890000 61%,#9e0b0b 100%); /* Chrome10-25,Safari5.1-6 */
+background: radial-gradient(ellipse at center, #e71600 0%,#600404 0%,#890000 61%,#9e0b0b 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e71600', endColorstr='#9e0b0b',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+transition: all 1s;
 }

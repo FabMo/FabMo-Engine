@@ -279,6 +279,7 @@ function runningJob(job) {
 		setProgress({status});
 		$('.play').removeClass('active')
 		$('.topjob').removeClass('running');
+        $('.job-status-indicator').hide();
 		$('body').css('background-color', '#EEEEEE');
 		$('.play').removeClass('active');
 		return
@@ -292,6 +293,7 @@ function runningJob(job) {
 	$('.preview').slideUp(100);
 	$('body').css('background-color', '#898989');
 	$('.topjob').addClass('running');
+    $('.job-status-indicator').show();
 	$('.up-next').css('left', '-2000px');
     $('.no-jobs').css('left', '-2000px');
 	$('.now-running').css('left', '0px');
