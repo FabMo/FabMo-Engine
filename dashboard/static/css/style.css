@@ -682,6 +682,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	height: 100%;
     -webkit-transition: width 0.5s; /* Safari */
     transition: padding 0.5s;
+    visibility: hidden;
 }
 
 #app-menu-container {
