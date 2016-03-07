@@ -790,10 +790,7 @@ SBPRuntime.prototype._execute = function(command, callback) {
 				var pc = this.label_index[command.label];
 				log.debug("Hit a GOTO: Going to line " + pc + "(Label: " + command.label + ")");
 				this.pc = pc;
-				setImmediate(function() {
-					console.log("goto callback")
-					callback();}
-				);
+				setImmediate(callback);
 				return true;
 			} else {
 
