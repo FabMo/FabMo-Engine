@@ -680,7 +680,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #app-client-container {
 	width: 100%;
 	height: 100%;
-    transition: all 0.5s;
+    -webkit-transition: width 0.5s; /* Safari */
+    transition: padding 0.5s;
 }
 
 #waiting_container {
