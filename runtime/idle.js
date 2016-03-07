@@ -41,7 +41,6 @@ IdleRuntime.prototype._limit = function() {
 
 IdleRuntime.prototype._onG2Status = function(status) {
 
-	console.log("Idle runtime handling status report")
 	// Update our copy of the system status
 	for (var key in this.machine.status) {
 		if(key in status) {
