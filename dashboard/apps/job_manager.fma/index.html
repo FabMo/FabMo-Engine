@@ -45,9 +45,7 @@
                     <h4 class="no-jobs">No Jobs</h4>
 				</div>
 			</div>
-             <div class="job-status-indicator">
-                <div class="job-status-light"></div>
-            </div>
+            
 			<div class="row">
 				<div class="small-8 jobs-wrapper">
 					<div class="small-8 medium-8 columns with-job">
@@ -113,6 +111,17 @@
 			  <div class="sm-1 columns"></div>
 			</div>
 			<div class="row"></div>
+            <div class="job-lights-container">
+                <div class="job-status-light one off">
+                    <div class="job-status-indicator"></div>
+                </div>
+                 <div class="job-status-light two off">
+                    <div class="job-status-indicator"></div>
+                </div>
+                 <div class="job-status-light three off">
+                    <div class="job-status-indicator"></div>
+                </div>
+            </div>
 		</div>
 		</section>
 		<section class="container job-queue hoverdim" style="display:none;">
@@ -254,9 +263,9 @@
 	  e.unwrap();
 	}
     
-   window.setInterval(function(){
-   		$('.job-status-light').toggleClass('off');
-	}, 1000);
+//    window.setInterval(function(){
+//    		$('.job-status-light').toggleClass('off');
+// 	}, 1000);
 
 	
   });

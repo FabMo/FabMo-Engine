@@ -519,6 +519,7 @@ table {
   position: absolute;
   top: 60;
   right: 0;
+  cursor: pointer;
 }
 
 .radial_progress {
@@ -729,40 +730,63 @@ table {
 }
 
 
+.job-lights-container{
+    display: none;
+    bottom: 7px;
+    width: 50%;
+    height: 36px;
+    text-align: center;
+    margin-right: auto;
+    margin-left: auto;
+}
 .job-status-indicator{
-    position: absolute;
-    top: 7px;
-    right: 15px;
+    position: relative;
+    background-color: #FFFFFF;
+    top: 50%; left: 50%;
+    transform: translate(-49.5%,-49.5%);
     border-radius: 50%;
-    background-color: rgba(0,0,0,0.6);
-    box-shadow: inset 3px 3px 5px rgba(0,0,0,0.2);
     width: 36px;
     height: 36px;
-    display: none;
+    transition: all 1s;
 }
 
 .job-status-light{
+    display: inline-block;
+    margin-right: 3%;
+    margin-left: 3%;
     position: relative;
     border-radius: 50%;
-    width: 32px;
-    height:32px;
-    top: 50%; left: 50%;
-    transform: translate(-49.5%,-49.5%);
-    box-shadow: 3px 3px 5px rgba(0,0,0,0.2);
-    background: #e71600; /* Old browsers */
-    background: -moz-radial-gradient(center, ellipse cover, #e71600 0%, #f3b40a 0%, #e71600 61%, #d2460e 100%); /* FF3.6-15 */
-    background: -webkit-radial-gradient(center, ellipse cover, #e71600 0%,#f3b40a 0%,#e71600 61%,#d2460e 100%); /* Chrome10-25,Safari5.1-6 */
-    background: radial-gradient(ellipse at center, #e71600 0%,#f3b40a 0%,#e71600 61%,#d2460e 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
-    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e71600', endColorstr='#d2460e',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+    width: 38px;
+    height:38px;
+    animation: off 1.5s infinite;
+}
+
+@-webkit-keyframes off {
+    0% {
+    background: #B10000; /* Old browsers */
+        -webkit-box-shadow: 0px 0px 6px 2px #B10000;
+-moz-box-shadow: 0px 0px 6px 2px #B10000;
+box-shadow: 0px 0px 6px 2px #B10000;
+   
+    }
+    90%{
+     background: none; /* Old browsers */
+  
+    }
+    100% {
+    background: #B10000; /* Old browsers */
+
+    }
+}
+.job-status-light.one {
+  
 }
 
 
+.job-status-light.two {
+  animation-delay: .5s;
+}
 
-.job-status-light.off{
-background: #e71600; /* Old browsers */
-background: -moz-radial-gradient(center, ellipse cover, #e71600 0%, #600404 0%, #890000 61%, #9e0b0b 100%); /* FF3.6-15 */
-background: -webkit-radial-gradient(center, ellipse cover, #e71600 0%,#600404 0%,#890000 61%,#9e0b0b 100%); /* Chrome10-25,Safari5.1-6 */
-background: radial-gradient(ellipse at center, #e71600 0%,#600404 0%,#890000 61%,#9e0b0b 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
-filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e71600', endColorstr='#9e0b0b',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
-transition: all 1s;
+.job-status-light.three {
+  animation-delay: 1s;
 }
