@@ -518,7 +518,7 @@ $.post('/time', {
 	'utc' : new Date().toUTCString()
 });
 function touchScreen () {
-	if (supportsTouch) {
+	if (supportsTouch && window.innerWidth < 800) {
 		$('#app-client-container').css({'-webkit-overflow-scrolling':'touch','overflow-y':'scroll'});
 	} 
 }
