@@ -14,7 +14,7 @@ body {
 }
 
 .topjob.running {
-  border: 10px solid #91331E;
+  border: 2px solid #91331E;
 }
 .running .nextJobTitle {
   color: #91331E;
@@ -23,17 +23,17 @@ body {
   border-bottom: 1px solid #91331E;
 }
 
-@keyframes pulse_progress {
+/*@keyframes pulse_progress {
   00% { background-color: #eee;}
   50% { background-color: #bcbcbc;}
   00% { background-color: #eee;}
-}
+}*/
 /* //#F9D5D8; */
-@keyframes pulse {
+/*@keyframes pulse {
   00% { background-color: #ffffff;}
   50% { background-color: #bcbcbc;}
   00% { background-color: #ffffff;}
-}
+}*/
 
 .topjob {
   min-height: 170px;
@@ -519,6 +519,7 @@ table {
   position: absolute;
   top: 60;
   right: 0;
+  cursor: pointer;
 }
 
 .radial_progress {
@@ -726,4 +727,66 @@ table {
 
 #history_page_next{
     float: right;
+}
+
+
+.job-lights-container{
+    display: none;
+    bottom: 7px;
+    width: 50%;
+    height: 36px;
+    text-align: center;
+    margin-right: auto;
+    margin-left: auto;
+}
+.job-status-indicator{
+    position: relative;
+    background-color: #FFFFFF;
+    top: 50%; left: 50%;
+    transform: translate(-49.5%,-49.5%);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    transition: all 1s;
+}
+
+.job-status-light{
+    display: inline-block;
+    margin-right: 3%;
+    margin-left: 3%;
+    position: relative;
+    border-radius: 50%;
+    width: 38px;
+    height:38px;
+    animation: off 1.5s infinite;
+}
+
+@-webkit-keyframes off {
+    0% {
+    background: #B10000; /* Old browsers */
+        -webkit-box-shadow: 0px 0px 6px 2px #B10000;
+-moz-box-shadow: 0px 0px 6px 2px #B10000;
+box-shadow: 0px 0px 6px 2px #B10000;
+   
+    }
+    90%{
+     background: none; /* Old browsers */
+  
+    }
+    100% {
+    background: #B10000; /* Old browsers */
+
+    }
+}
+.job-status-light.one {
+  
+}
+
+
+.job-status-light.two {
+  animation-delay: .5s;
+}
+
+.job-status-light.three {
+  animation-delay: 1s;
 }

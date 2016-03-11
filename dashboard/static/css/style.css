@@ -697,7 +697,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	display: none;
 }
 
-#waiting_container i {
+#waiting_container svg {
 	position: relative;
   	top: 50%;
   	transform: translateY(-50%);
@@ -1239,4 +1239,85 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #keypad {
 	margin-left: 4px;
     position: relative;
+}
+
+@keyframes chipflyone {
+  0% {
+    transform: translate(0px, -10px);
+    opacity: 1;
+  }
+  25% {
+    transform: translate(-20px, -20px);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50px, -30px);
+    opacity: .5;
+  }
+  75% {
+    transform: translate(-50px, -30px);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50px, -30px);
+    opacity: 0;
+  }
+}
+
+@keyframes chipflytwo {
+  0% {
+    transform: translate(0px, -10px);
+    opacity: 1;
+  }
+  25% {
+    transform: translate(25px, -30px);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(50px, -50px);
+    opacity: .5;
+  }
+  75% {
+    transform: translate(50px, -50px);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(50px, -50px);
+    opacity: 0;
+  }
+}
+
+@keyframes chipflythree {
+  0% {
+    transform: translate(0px, -10px);
+    opacity: 1;
+  }
+  25% {
+    transform: translate(-25px, -20px);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-55px, -20px);
+    opacity: .5;
+  }
+  75% {
+    transform: translate(-55px, -20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-55px, -20px);
+    opacity: 0;
+  }
+}
+
+.chip.one {
+    animation: chipflyone .5s ease infinite;
+}
+
+.chip.two {
+    animation: chipflytwo .5s .2s ease infinite;
+}
+
+.chip.three {
+    animation: chipflythree .5s .4s ease infinite;
 }
