@@ -303,8 +303,9 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 			break;
 
 		case "cond":
-			result = false;
-			//return this._exprBreaksStack(cmd.cmp);
+			return true;
+			//TODO , we should check the expression for a stack break, as well as the .stmt
+			//return _breaksStack(cmd.stmt);
 			break;
 
 		case "assign":
@@ -419,8 +420,9 @@ SBPRuntime.prototype._continue = function() {
 				}
 				break;
 			} else {
+
 				if(this.machine) {
-					log.debug('Dispatching g-codes to tool.')
+					log.debug('Dispatched g-codes to tool.')
 					break;
 				} else {
 					setImmediate(this._continue.bind(this));
@@ -428,6 +430,8 @@ SBPRuntime.prototype._continue = function() {
 			}
 			return;
 		} else {
+				log.debug("Non-Stack break: " + JSON.stringify(line));
+
 			try {
 				this._execute(line);
 			} catch(e) {
@@ -539,6 +543,33 @@ SBPRuntime.prototype._dispatch = function(callback) {
 			// Dispatch the g-codes and look for the tool to start running them
 			//log.info("dispatching a chunk: " + this.current_chunk);
 
+			var hold_function = function(driver) {
+				// On hold, handle event that caused the hold
+				var event_handled = this._processEvents(callback);
+
+				// If no event claims the hold, we actually enter the paused state
+				// (And expect a resume or a stop)
+				if(!event_handled) {
+					this.machine.setState(this, "paused");
+					driver.expectStateChange({
+						"running" : function(driver) {
+								this.machine.setState(this, "running");
+							run_function(driver);
+						}.bind(this),
+						"end" : function(driver) {
+							this._end();
+						}.bind(this),
+						"stop" : function(driver) {
+							callback();
+						},
+						null : function(driver) {
+							// TODO: This is probably a failure
+							log.warn("Expected a stop or hold (from the paused state) but didn't get one.");
+						}
+					});
+				}
+			}.bind(this);
+
 			var run_function = function(driver) {
 				log.debug("Expected a running state change and got one.");
 				
@@ -557,29 +588,9 @@ SBPRuntime.prototype._dispatch = function(callback) {
 						// On end terminate the program (for now)
 						this._end();
 					}.bind(this),
-					"holding" : function(driver) {
-						// On hold, handle event that caused the hold
-						var event_handled = this._processEvents(callback);
+					
+					"holding" : hold_function,
 
-						// If no event claims the hold, we actually enter the paused state
-						// (And expect a resume or a stop)
-						if(!event_handled) {
-							this.machine.setState(this, "paused");
-							driver.expectStateChange({
-								"running" : function(driver) {
- 									this.machine.setState(this, "running");
-									run_function(driver);
-								}.bind(this),
-								"end" : function(driver) {
-									this._end();
-								}.bind(this),
-								null : function(driver) {
-									// TODO: This is probably a failure
-									log.warn("Expected a stop or hold (from the paused state) but didn't get one.");
-								}
-							});
-						}
-					}.bind(this),
 					"running" : null,
 					null : function(driver) {
 						// TODO: This is probably a failure
@@ -592,6 +603,7 @@ SBPRuntime.prototype._dispatch = function(callback) {
 				"running" : run_function,
 				"stop" : function(driver) { callback(); },
 				"end" : function(driver) { callback(); },
+				"holding" : hold_function,
 				null : function(t) {
 					log.warn("Expected a start but didn't get one. (" + t + ")"); 
 				},
