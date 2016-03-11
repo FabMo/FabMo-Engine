@@ -279,6 +279,12 @@ function runningJob(job) {
 		setProgress({status});
 		$('.play').removeClass('active')
 		$('.topjob').removeClass('running');
+        $('.job-status-indicator').css({
+            '-moz-box-shadow': 'none',
+            '-webkit-box-shadow':'none',
+            'box-shadow':'none'
+        })
+        $('.job-lights-container').delay(1000).hide();
 		$('body').css('background-color', '#EEEEEE');
 		$('.play').removeClass('active');
 		return
@@ -292,6 +298,12 @@ function runningJob(job) {
 	$('.preview').slideUp(100);
 	$('body').css('background-color', '#898989');
 	$('.topjob').addClass('running');
+    $('.job-lights-container').show();
+    $('.job-status-indicator').css({
+        '-moz-box-shadow': '0 .5px 1px rgba(0, 0, 0, .25), 0 2px 3px rgba(0, 0, 0, .1)',
+        '-webkit-box-shadow':'0 .5px 1px rgba(0, 0, 0, .25), 0 2px 3px rgba(0, 0, 0, .1)',
+        'box-shadow':'0 .5px 1px rgba(0, 0, 0, .25), 0 2px 3px rgba(0, 0, 0, .1)'
+    })
 	$('.up-next').css('left', '-2000px');
     $('.no-jobs').css('left', '-2000px');
 	$('.now-running').css('left', '0px');
@@ -344,8 +356,22 @@ var setProgress = function(status) {
 }
 
 
-
-/*
+// var lightsOn = function (param) {
+//     if (param === "on"){
+//     var arr = ['one','two','three'];
+//     var i = 0;
+//     setInterval(
+//        function (){
+//             $('.job-status-light.' + arr[i]).toggleClass('off', 500);
+//             i++;
+//             if(i >= arr.length) i = 0;
+//         },500);
+//     } else if (param === "off") {
+        
+//         return f
+//     }
+// }
+/* 
  * ---------
  *  STATUS
  * ---------

@@ -177,6 +177,7 @@ define(function(require) {
 				if(err) {
 					callback(err);
 				} else {
+					callback(err, result);
 					this.launchApp('job-manager', {}, callback);
 				}
 			}.bind(this));
@@ -187,6 +188,7 @@ define(function(require) {
 				if(err) {
 					callback(err);
 				} else {
+					callback(err, result);
 					this.launchApp('job-manager', {}, callback);
 				}
 			}.bind(this));
