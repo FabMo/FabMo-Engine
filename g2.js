@@ -25,7 +25,7 @@ var STAT_PANIC = 13;
 
 // Should take no longer than CMD_TIMEOUT to do a get or a set operation
 var CMD_TIMEOUT = 10000;
-var EXPECT_TIMEOUT = 15000;
+var EXPECT_TIMEOUT = 300000;
 
 // When jogging, "keepalive" jog commands must arrive faster than this interval (ms)
 // This can be slowed down if necessary for spotty connections, but a slow timeout means
@@ -455,6 +455,13 @@ G2.prototype.clearLastException = function() {
 9	machine is homing
 */
 G2.prototype.handleStatusReport = function(response) {
+	/* RAS: Keeping this around for debugging a bit longer - 2016/03/11
+	if(response.sr && ((response.sr.stat === this.STAT_END) || (response.sr.stat === this.STAT_RUNNING))) {
+		if(this.status.stat === this.STAT_END) {
+			console.log("STAT IS ALREADY 4")
+		}
+		console.log(response);		
+	}*/
 	if(response.sr) {
 
 		// Update our copy of the system status

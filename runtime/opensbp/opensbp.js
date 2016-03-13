@@ -544,6 +544,7 @@ SBPRuntime.prototype._dispatch = function(callback) {
 			//log.info("dispatching a chunk: " + this.current_chunk);
 
 			var hold_function = function(driver) {
+				log.info("Expected hold and got one.")
 				// On hold, handle event that caused the hold
 				var event_handled = this._processEvents(callback);
 
@@ -599,20 +600,25 @@ SBPRuntime.prototype._dispatch = function(callback) {
 				});
 			}.bind(this);
 
-			this.driver.expectStateChange({
-				"running" : run_function,
-				"stop" : function(driver) { callback(); },
-				"end" : function(driver) { callback(); },
-				"holding" : hold_function,
-				null : function(t) {
-					log.warn("Expected a start but didn't get one. (" + t + ")"); 
-				},
-				"timeout" : function(driver) {
-					log.warn("State change timeout??")
-					this._continue();
-				}.bind(this)
-			});
+			var stopped_function = function(driver) {
 
+				this.driver.expectStateChange({
+					"running" : run_function,
+					"stop" : function(driver) { callback(); },
+					"end" : function(driver) { callback(); },
+					"holding" : hold_function,
+					null : function(t) {
+						log.warn("Expected a start but didn't get one. (" + t + ")"); 
+					},
+					"timeout" : function(driver) {
+						log.warn("State change timeout??")
+						this._continue();
+					}.bind(this)
+				});
+
+			}.bind(this);
+
+			stopped_function(this.driver);
 			var segment = this.current_chunk.join('\n') + '\n';
 			this.driver.runSegment(segment);
 			this.current_chunk = [];
@@ -624,6 +630,7 @@ SBPRuntime.prototype._dispatch = function(callback) {
 			return true;
 		}
 	} else {
+		log.debug("Empty dispatch")
 		return false;
 	}
 };
