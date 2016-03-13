@@ -1104,21 +1104,32 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 		case 1: // X Location
 			return this.machine.status.posx;
 		break;
-
 		case 2: // Y Location
 			return this.machine.status.posy;
 		break;
-
 		case 3: // Z Location
 			return this.machine.status.posz;
 		break;
-
 		case 4: // A Location
 			return this.machine.status.posa;
 		break;
-
 		case 5: // B Location
 			return this.machine.status.posb;
+		break;
+		case 6: // X Table Base
+			return this.config.g2.g55x;
+		break;
+		case 7: // Y Table Base
+			return this.config.g2.g55y;
+		break;
+		case 8: // Z Table Base
+			return this.config.g2.g55z;
+		break;
+		case 9: // A Table Base
+			return this.config.g2.g55a;
+		break;
+		case 10: // B Table Base
+			return this.config.g2.g55b;
 		break;
 
 		case 25:
