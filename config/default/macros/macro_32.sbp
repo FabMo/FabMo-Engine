@@ -1,0 +1,6 @@
+'!FABMO!name:FEED
+'!FABMO!description:Bender: FEED Function
+'Feed by current next_feed value
+
+&feed_to = &next_feed + %(2)              'add feed distance to current Y location
+MY, &feed_to
