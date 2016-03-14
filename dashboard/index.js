@@ -41,6 +41,10 @@ exports.loadApp = function(pathname, options, callback) {
 	return exports.appManager.loadApp(pathname, options, callback);
 };
 
+exports.installAppArchive = function(path, name, callback) {
+	return exports.appManager.installAppArchive(path, name, callback);
+};
+
 exports.deleteApp = function(id, callback) {
 	return exports.appManager.deleteApp(id, callback);
 };
