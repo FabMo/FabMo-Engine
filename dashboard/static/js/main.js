@@ -42,42 +42,43 @@ define(function(require) {
 	engine.getConfig();
 	engine.getVersion(function(err, version) {
 		context.setEngineVersion(version);
+
+		context.apps = new context.models.Apps();
+		// Load the apps from the server
+		context.apps.fetch({
+			success: function() {
+				// Create the menu based on the apps thus retrieved 
+				context.appMenuView = new context.views.AppMenuView({collection : context.apps, el : '#app_menu_container'});
+
+				// Create a FabMo object for the dashboard
+				dashboard.setEngine(engine);
+				dashboard.ui=new FabMoUI(dashboard.engine);
+
+				keyboard = setupKeyboard();
+				keypad = setupKeypad();
+
+				// Start the application
+				router = new context.Router();
+				router.setContext(context);
+
+				// Sort of a hack, but works OK.
+				$('#spinner').hide();
+
+				// Start backbone routing
+				Backbone.history.start();
+				
+				// Request a status update from the tool
+				engine.getStatus();
+
+				dashboard.engine.on('change', function(topic) {
+					if(topic === 'apps') {
+						context.apps.fetch();
+					}
+				});
+			}
+		});
 	});
 
-	context.apps = new context.models.Apps();
-	// Load the apps from the server
-	context.apps.fetch({
-		success: function() {
-			// Create the menu based on the apps thus retrieved 
-			context.appMenuView = new context.views.AppMenuView({collection : context.apps, el : '#app_menu_container'});
-
-			// Create a FabMo object for the dashboard
-			dashboard.setEngine(engine);
-			dashboard.ui=new FabMoUI(dashboard.engine);
-
-			keyboard = setupKeyboard();
-			keypad = setupKeypad();
-
-			// Start the application
-			router = new context.Router();
-			router.setContext(context);
-
-			// Sort of a hack, but works OK.
-			$('#spinner').hide();
-
-			// Start backbone routing
-			Backbone.history.start();
-			
-			// Request a status update from the tool
-			engine.getStatus();
-
-			dashboard.engine.on('change', function(topic) {
-				if(topic === 'apps') {
-					context.apps.fetch();
-				}
-			});
-		}
-	});
 
 function getManualMoveSpeed(move) {
 	var speed_ips = null;
@@ -517,7 +518,7 @@ $.post('/time', {
 	'utc' : new Date().toUTCString()
 });
 function touchScreen () {
-	if (supportsTouch) {
+	if (supportsTouch && window.innerWidth < 800) {
 		$('#app-client-container').css({'-webkit-overflow-scrolling':'touch','overflow-y':'scroll'});
 	} 
 }

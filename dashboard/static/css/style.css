@@ -27,7 +27,7 @@ body,html{
 }
 
 .main-section, .app-section, .spinner-section { 
-	height: auto;
+	height: 98%;
 }
 
 .off-canvas-wrap, .inner-wrap {
@@ -211,6 +211,7 @@ body,html{
 	right: -222px;
 	background-color: #9C210C;
 	width: 222px;
+    min-width: 222px;
 	bottom: 0;
 	z-index: 1002;
 	transition: all 0.5s;
@@ -460,7 +461,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 #position ul .axis {
 	padding: 0;
-	font-family: 'source_sans_proextralight';
+	font-family: 'Droid_Sans_Mono';
 }
 
 
@@ -469,11 +470,11 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	color: #eee;
 	border-bottom: 1px solid #eee;
 	background: none;
-	font-size: 34px;
-	font-size: 1.75rem;
+	font-size: 1.65rem;
 	padding: 0;
-	font-family: 'source_sans_proextralight';
+	font-family: 'Droid_Sans_Mono';
 	font-weight: 100;
+    text-align: left;
 }
 
 #position ul .axis span {
@@ -481,23 +482,22 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 #position ul .axis .pos {
-	font-family: 'source_sans_proregular';
+	font-family: 'Droid_Sans_Mono';
 	margin-right: 4px;
 	margin-right: 0.25rem;
 	font-weight: 100;
 }
 
 #position ul .axis input.pos {
-	width: 5rem;
+	width: 7rem;
 	text-align: center;
 	float: right;
-	font-size: 25px;
+	font-size: 24px;
 	padding : 2px 4px;
 	padding: 0.125rem 0.25rem;
 	margin-top: 3px;
 	margin-top: 0.1925rem;
 	background-color: #9C210C;
-	height: 37px;
 	border: none;
 }
 
@@ -533,10 +533,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 #position ul .axis .home span, #keyboard ul .set span {
-	width: 34px;
-	width: 2.125rem;
-	height: 34px;
-	height: 2.125rem;
+	width: 32px;
+	height: 32px;
 	float: left;
 	margin-top: 8px;
 	margin-top: 0.5rem;
@@ -548,7 +546,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 #position ul .axis .home span {
 	background: #dd8728;
-	font-family: 'source_sans_proextralight';
+	font-family: 'Droid_Sans_Mono';
 	font-size: 21px;
 	font-size: 1.3175rem;
 	font-weight: bold;
@@ -607,7 +605,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	padding: 0;
 	font-size: 12px;
 	font-size: 0.75rem;
-	font-family: 'source_sans_probold';
+	font-family: 'Droid_Sans_Mono';
 }
 
 
@@ -615,7 +613,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	background-color: #aaa;
 	text-align: center;
 	color: #fff;
-	font-family: 'source_sans_probold';
+	font-family: 'Droid_Sans_Mono';
 	font-size: 15rem;
 	font-size: 0.9375rem;
 	font-weight: bolder;
@@ -654,7 +652,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	border: none;
 	color: #fff;
 	background: #aaa;
-	font-family: 'source_sans_probold';
+	font-family: 'Droid_Sans_Mono';
 	font-size: 16px;
 	font-size: 1rem;
 }
@@ -682,6 +680,10 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #app-client-container {
 	width: 100%;
 	height: 100%;
+    -webkit-transition: padding 0.5s; /* Safari */
+    transition: padding 0.5s;
+    visibility: hidden;
+    overflow: hidden;
 }
 
 #app-menu-container {
@@ -695,7 +697,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	display: none;
 }
 
-#waiting_container i {
+#waiting_container svg {
 	position: relative;
   	top: 50%;
   	transform: translateY(-50%);
@@ -1153,7 +1155,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .keypad-bar.bottom i {
    position: relative;
-   bottom: -23px;
+   bottom: -35px;
     
 }
 
@@ -1237,4 +1239,85 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #keypad {
 	margin-left: 4px;
     position: relative;
+}
+
+@keyframes chipflyone {
+  0% {
+    transform: translate(0px, -10px);
+    opacity: 1;
+  }
+  25% {
+    transform: translate(-20px, -20px);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50px, -30px);
+    opacity: .5;
+  }
+  75% {
+    transform: translate(-50px, -30px);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50px, -30px);
+    opacity: 0;
+  }
+}
+
+@keyframes chipflytwo {
+  0% {
+    transform: translate(0px, -10px);
+    opacity: 1;
+  }
+  25% {
+    transform: translate(25px, -30px);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(50px, -50px);
+    opacity: .5;
+  }
+  75% {
+    transform: translate(50px, -50px);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(50px, -50px);
+    opacity: 0;
+  }
+}
+
+@keyframes chipflythree {
+  0% {
+    transform: translate(0px, -10px);
+    opacity: 1;
+  }
+  25% {
+    transform: translate(-25px, -20px);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-55px, -20px);
+    opacity: .5;
+  }
+  75% {
+    transform: translate(-55px, -20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-55px, -20px);
+    opacity: 0;
+  }
+}
+
+.chip.one {
+    animation: chipflyone .5s ease infinite;
+}
+
+.chip.two {
+    animation: chipflytwo .5s .2s ease infinite;
+}
+
+.chip.three {
+    animation: chipflythree .5s .4s ease infinite;
 }
