@@ -38,7 +38,7 @@ define(function(require) {
 					for(var i=0; i<evt.target.files.length; i++) {
 						files.push({file:evt.target.files[i]});
 					}
-					dashboard.engine.submitApp(files, {}, function(err, data) {
+					dashboard.submitApp(files, {}, function(err, data) {
 						if(err) {
 							dashboard.notification('error', err.message);
 						} else {

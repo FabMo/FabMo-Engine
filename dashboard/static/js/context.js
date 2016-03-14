@@ -31,6 +31,13 @@
 		this.menuShown = true;
 	};
 
+	ApplicationContext.prototype.markAppForRefresh = function(id) {
+		if(id in this.app_reload_index) {
+			this.app_reload_index[id] = true;
+		}
+		Lockr.set('fabmo_app_reload_index', this.app_reload_index);
+	}
+
 	ApplicationContext.prototype.setEngineVersion = function(version) {
 		this.engineVersion = version;
 		this.app_reload_index = Lockr.get('fabmo_app_reload_index') || {};
@@ -62,6 +69,7 @@
 		
 		var hash = this.app_reload_index[id];
 
+
 		try {
 			if(hash && hash != this.engineVersion.hash) {
 				console.info("Hard refresh of app " + id + " becuase hash " + hash + " doesn't match " + this.engineVersion.hash);
@@ -75,6 +83,7 @@
 		try {
 			if(this.engineVersion.debug) {
 				hard_refresh = true;
+				console.info("Hard refresh of app " + id + " because debug mode.");
 			}			
 		} catch(e) {
 			console.warn(e);

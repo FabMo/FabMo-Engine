@@ -162,38 +162,12 @@ var listAppFiles = function(req, res, next) {
 };
 
 var submitApp = function(req, res, next) {
-
     upload(req, res, next, function(err, uploads) {
-
         // Multiple apps can be submitted at once.  Process each of them in turn.
         async.map(uploads.files, function(upload_data, callback) {
             var file = upload_data.file;
             if(file && util.allowedAppFile(file.name)) {
-                // Keep the name of the file uploaded for a "friendly name"
-                var friendly_filename = file.name || upload_data.filename || 'app.fma';
-
-                // But create a unique name for actual storage
-                var filename = util.createUniqueFilename(friendly_filename);
-                var full_path = path.join(config.getDataDir('apps'), filename);
-
-                // Move the file to the apps directory
-                util.move(file.path, full_path, function(err) {
-                    log.debug("Done with a move");
-                    if (err) {
-                        callback(new Error('Failed to move the app from the temporary folder to the installation folder.'));
-                    }
-                    // delete the temporary file (no longer needed)
-                    fs.unlink(file.path, function(err) {
-                        if (err) {
-                            log.warn("failed to remove the app from temporary folder: " + err);
-                        }
-                    }); // unlink
-
-                    // And create the app metadata in memory
-                    dashboard.loadApp(full_path, {}, function(err, data) {
-                        callback(err, data);
-                    }); // loadApp
-                }); // move
+                dashboard.installAppArchive(file.path, file.name, callback);
             } else if(file) {
                 callback(new Error('Cannot accept ' + file.name + ': Incorrect file format.'));
             } else {
@@ -221,7 +195,6 @@ var submitApp = function(req, res, next) {
 var updater = function(req, res, next) {
     var host = req.headers.host.split(':')[0].trim('/');
     var url = 'http://' + host + ':' + (config.engine.get('server_port') + 1);
-    console.log(url);
     res.redirect(303, url, next);   
 }
 

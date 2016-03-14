@@ -8,6 +8,7 @@ var uuid = require('node-uuid');
 var log = require('../log').logger('app_manager');
 var util = require('../util');
 var glob = require('glob');
+var config = require('../config');
 
 // Maximum depth of a deep copy operation
 ncp.limit = 16;
@@ -103,11 +104,24 @@ AppManager.prototype.setAppConfig = function(id, config, callback) {
 	fs.writeFile(this.apps_index[id].config_path, JSON.stringify(config), callback);
 }
 
+AppManager.prototype.rebuildAppList = function() {
+	this.apps_list = [];
+	for(var key in this.apps_index) {
+		this.apps_list.push(this.apps_index[key]);
+	}
+}
 AppManager.prototype._addApp = function(app) {
-	if(app.info.id in this.apps_index) { return; }
-	this.apps_list.push(app.info);
+	if(app.info.id in this.apps_index) { 
+		var old_app = this.apps_index[app.info.id]
+	    fs.unlink(old_app.app_archive_path, function(err) {
+	        if (err) {
+	            log.warn("failed to remove an old app archive: " + err);
+	        }
+	    }); // unlink
+	}
 	this.apps_index[app.info.id] = app.info;
 	this.app_configs[app.info.id] = app.config;
+	this.rebuildAppList();
 	this.notifyChange();
 };
 
@@ -273,6 +287,37 @@ AppManager.prototype.decompressApp = function(src, dest, options, callback) {
 		callback(e);
 	}
 };
+
+AppManager.prototype.installAppArchive = function(pathname, name, callback) {
+    // Keep the name of the file uploaded for a "friendly name"
+    var friendly_filename = name || 'app.fma';
+
+    // But create a unique name for actual storage
+    var filename = util.createUniqueFilename(friendly_filename);
+    var full_path = path.join(config.getDataDir('apps'), filename);
+
+	// Move the file to the apps directory
+	util.move(pathname, full_path, function(err) {
+	    log.debug("Done with a move");
+	    if (err) {
+	        callback(new Error('Failed to move the app from the temporary folder to the installation folder.'));
+	    }
+	    // delete the temporary file (no longer needed)
+	    fs.unlink(pathname, function(err) {
+	        if (err) {
+	            log.warn("failed to remove the app from temporary folder: " + err);
+	        }
+	    }); // unlink
+
+	    // And create the app metadata in memory
+	    this.loadApp(full_path, {}, function(err, data) {
+	    	if(err) {
+	    		return callback(err);
+	    	}
+	        callback(err, data);
+	    }); // loadApp
+	}.bind(this)); // move
+}
 
 AppManager.prototype.getAppPaths = function(callback) {
 	var app_pattern = this.app_directory + '/@(*.zip|*.fma)'
