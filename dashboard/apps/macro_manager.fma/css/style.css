@@ -19,24 +19,49 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 td.run-control {
-    background: url('images/play_icon.png') no-repeat center center;
-    background-size: 90%;
-    width: 40px;
+    width: 60px;
     cursor: pointer;
+    padding: .3em;
+    text-align: center;
+    margin-left: 1em;
+}
+
+
+td.run-control img {
+    margin-left: .5em;
+    padding: .3em;
+    border-radius: 5px;
+    border: 1px solid #333333;
+    box-shadow: .5px .5px .5px #aaaaaa;
+    transform: translateX(-5px);
 }
 
 td.edit-control {
-    background: url('images/edit_icon.png') no-repeat center center;
-    background-size: 90%;
-    width: 40px;
+    width: 60px;
     cursor: pointer;
+    padding: .3em;
+    
+}
+
+td.edit-control img{
+    padding: .5em;
+    border: 1px solid #333333;
+    border-radius: 5px;
+    box-shadow: .5px .5px .5px #aaaaaa;
 }
 
 td.delete-control {
-    background: url('images/delete.png') no-repeat center center;
-    background-size: 90%;
-    width: 40px;
+    padding: .3em;
+    width: 60px;
     cursor: pointer;
+    margin-left: 1em; 
+}
+
+td.delete-control img {
+    padding: .5em;
+    border-radius: 5px;
+    border: 1px solid #333333;
+    box-shadow: .5px .5px .5px #aaaaaa;
 }
 
 tr.shown td.details-control {
@@ -44,7 +69,7 @@ tr.shown td.details-control {
     width: 40px;
 }
 
-.child-row-label: {
+.child-row-label {
   font-weight: bold;
   color: red;
 }
