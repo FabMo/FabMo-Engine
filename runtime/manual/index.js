@@ -38,7 +38,6 @@ ManualRuntime.prototype.disconnect = function() {
 
 ManualRuntime.prototype._changeState = function(newstate, message) {
 	if(newstate === "idle") {
-		console.log("going to idle manual")
 		this.ok_to_disconnect = true;
 		var callback = this.completeCallback || function() {};
 		this.completeCallback = null;

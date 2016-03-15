@@ -6,6 +6,7 @@ function GCodeRuntime() {
 	this.machine = null;
 	this.driver = null;
 	this.ok_to_disconnect = true;
+	this.completeCallback = null;
 }
 
 GCodeRuntime.prototype.toString = function() {
@@ -40,9 +41,7 @@ GCodeRuntime.prototype.resume = function() {
 }
 
 GCodeRuntime.prototype._changeState = function(newstate) {
-	if(newstate === "idle") {
-		this.ok_to_disconnect = true;
-	} else {
+	if(newstate != "idle") {
 		this.ok_to_disconnect = false;
 	}
 	this.machine.setState(this, newstate);
@@ -116,6 +115,7 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 			}
 			break;
 
+		case "armed":
 		case "idle":
 			if(this.status_report.stat === this.driver.STAT_RUNNING) {
 				this._changeState("running");
@@ -172,8 +172,11 @@ GCodeRuntime.prototype._idle = function() {
 	// Set the machine state to idle and return the units to their default configuration
 	var finishUp = function() {
 		this.driver.setUnits(config.machine.get('units'), function() {
-			this.ok_to_disconnect = true;
+			var callback = this.completeCallback || function() {};
 			this.machine.setState(this, 'idle');
+			this.ok_to_disconnect = true;
+			this.completeCallback = null;
+			callback();
 		}.bind(this))
 	}.bind(this);
 
@@ -197,7 +200,7 @@ GCodeRuntime.prototype._idle = function() {
 // Run the provided string
 // callback runs only when execution is complete.
 GCodeRuntime.prototype.runString = function(string, callback) {
-	if(this.machine.status.state === 'idle') {
+	if(this.machine.status.state === 'idle' || this.machine.status.state === 'armed') {
 		var lines =  string.split('\n');
 		var mode = config.driver.get('gdi') ? 'G91': 'G90';
 		this.machine.status.nb_lines = lines.length;
@@ -210,7 +213,8 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 		lines.push('M30\n');
 		// TODO no need to stitch this string back together, it's just going to be split again in the driver
 		string = lines.join("\n");
-		this.driver.runString(string,this.machine.status);
+		this.completeCallback = callback;
+		this.driver.runString(string);//this.machine.status);
 	}
 
 };
