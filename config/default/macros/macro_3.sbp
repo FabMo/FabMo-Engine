@@ -1,66 +1,71 @@
-'!FABMO!name:Home
-'!FABMO!description:Home to prox switches
-' HOMING ROUTINE
-' WRITTEN FOR FABMO PLATFORM FOR A HANDIBOT
+'!FABMO!name:Set Zero Locations
+'!FABMO!description:Automatically Set Axis Zero for XYZ
+'Set XYZ Zero Locations -- MACRO #3 -- [C3] in OpenSBP Language // HANDIBOT VERSION
+' ... written in OpenSBP; 3/1/2016 th
 
-&approach_speed_fast = 1.0
-&approach_speed_slow = 0.25
-&search_distance_x = -8.0
-&search_distance_y = -10.0
-&backoff_x = 0.25
-&backoff_y = 0.25
-&backoff_z = 0.25
+'Initialize
+    'Read Offset or Set Defaults
+        $current_cutter_Zoffset := .25
+        $x_backoff := .10
+        $y_backoff := .10
+    'Get Speeds at Startup
+		&startXY_speed = %(71)
+		&startZ_speed = %(73)
+	'Get Acc/Dec Ramps at Startup
+		&startXY_ramp = %(81)  ' X and Y ramps are the same, treated as single parameter in OpenSBP
+		&startZ_ramp = %(83)
+    VS, 4,4				' Set Approach Speeds
+    VR, 250, 250    	' Set Aggressive Ramp to reduce pounding ...
+	ZT,					' ??Initialize all locations and TBC's to zero
+						' [* To insure consistency, tool needs to be at nomimal "Full Step" position.
+                        '     So this macro is best run just after powering-on your Handibot.]
 
-'Save the XY speed
-&saved_speed = %(71)
+'[Z Axis is set first to make sure cutter is clear before making X or Y move.]
+'Z-Axis Set Zero Routine (setting the Table Base Zero Coordinate; BASED ON CUTTER LENGTH OFFSET)
+	MZ, 5.0				' Hit Top Hardstop
+	PAUSE .25
+    MZ, 4.5				' Position for final approach
+    VS, ,5				' ... approach fast (less force)
+    VR, ,1000           ' ... limit ramp bounce
+    MZ, 5.5
+	&z_dist = 0.0 + $current_cutter_Zoffset
+    VA, ,, &z_dist,,,,,, &z_dist          ' Set Z Table Base Coordinate (offset to Zero) 
+    VS, ,4				' ... reset
+	VR, ,100
+	&tempPark = $current_cutter_Zoffset - .25
+	MZ, &tempPark		' Move to X-Zero // Z-Zero location now accurate
 
-' Make sure we're off the switches
-IF %(53) = 1 THEN GOSUB backoff_all
+'X-Axis Set Zero Routine (setting the Table Base Zero Coordinate)
+	MX, 7.0				' Hit Right-Side Hardstop
+	PAUSE .25
+    MX, 6.0				' Position for final approach
+    VS, 5				' ... approach fast (less force)
+    VR, 1000            ' ... limit ramp bounce
+    MX, 8.0
+	PAUSE .25
+	&temp_loc = 6 + $x_backoff
+    VA, &temp_loc,,,,,, &temp_loc ' Set X Table Base Coordinate (offset to Zero) 
+    VS, 4				' ... reset
+	VR, 100				
+	MX, 0.0				' Move to X-Zero // X-Zero location now accurate
 
-' Home the X-axis
-VS,&approach_speed_fast
-GOSUB approach_x
-GOSUB backoff_x
-VS,&approach_speed_slow
-GOSUB approach_x
-ZX
-GOSUB backoff_x
+'Y-Axis Set Zero Routine (setting the Table Base Zero Coordinate)
+	MY, 9.0				' Hit Rear Hardstop
+	PAUSE .25
+    MY, 8.0				' Position for final approach
+    VS, 5				' ... approach fast (less force)
+    VR, 1000            ' ... limit ramp bounce
+    MY, 10.0
+	PAUSE .25
+	&temp_loc = 8 + $y_backoff
+    VA, ,&temp_loc ,,,,,, &temp_loc' Set Y Table Base Coordinate (offset to Zero) 
+    VS, 4				' ... reset
+	VR, 100				
+	MY, 0.0				' Move to Y-Zero // Y-Zero location now accurate
 
-' Home the Y-axis
-VS,&approach_speed_fast
-GOSUB approach_y
-GOSUB backoff_y
-VS,&approach_speed_slow 
-GOSUB approach_y
-ZY
-GOSUB backoff_y
 
-' Restore the XY speed
-VS,&saved_speed
+' Reset Starting Values
+    VS, &startXY_speed, &startZ_speed
+    VR, &startXY_ramp, &startZ_ramp
+
 END
-
-' SUBROUTINES BELOW HERE
-
-approach_x:
-   ON INPUT(3,0) RETURN
-   MX,&search_distance_x
-   ' FAIL if we got here
-   END
-   
-approach_y:
-   ON INPUT(3,0) RETURN
-   MY,&search_distance_y
-   'FAIL if we got here also
-   END
-   
-backoff_x:
-   JX,%(1) + &backoff_x
-   RETURN
-
-backoff_y:
-   JY,%(2) + &backoff_y
-   RETURN
-
-backoff_all:
-   J2,%(1)+&backoff_x,%(2)+&backoff_y
-   RETURN
