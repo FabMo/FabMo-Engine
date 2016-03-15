@@ -153,15 +153,15 @@ define(function(require) {
 		}.bind(this));
 		
 				// Show the footer
-		this._registerHandler('showFooter', function(data, callback) { 
+		this._registerHandler('showFooter', function() { 
 			this.openFooter();
-			callback(null);
+			
 		}.bind(this));
 
 		// Hide the footer
-		this._registerHandler('hideFooter', function(data, callback) { 
+		this._registerHandler('hideFooter', function() { 
 			this.closeFooter() 
-			callback(null)
+			
 		}.bind(this));
 
 		// Show a notification
