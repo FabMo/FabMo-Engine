@@ -166,6 +166,7 @@ Machine.prototype.arm = function(action, timeout) {
 	}	
 
 	this.action = action;
+	log.info("Arming the machine" + (action ? ('for ' + action.type) : '(No action)'));
 
 	if(this._armTimer) { clearTimeout(this._armTimer);}
 	this._armTimer = setTimeout(function() {
@@ -206,6 +207,10 @@ Machine.prototype.fire = function() {
 			console.log(name)
 			console.log(code)
 			this._executeRuntimeCode(name, code);
+			break;
+
+		case 'resume':
+			this._resume();
 			break;
 	}
 }
