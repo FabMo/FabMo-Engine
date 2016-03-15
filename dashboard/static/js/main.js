@@ -411,19 +411,19 @@ engine.on('status', function(status) {
 					dashboard.engine.quit();
 				}
 			});
-		} else if(status.info['auth']) {
-			authorizeDialog = true;
-			showModal({
-				title : 'Authorization Required!',
-				lead : '<div style="color:#7F5323; font-weight: bolder;">Authorization is required to complete the requested operation.</div>',
-				message: 'To authorize your tool, press and hold the green button for one second.  Tool authorization duration can be adjusted in the tool configuration.',
-				cancelText : 'Got it!',
-				cancel : function() {
-					authorizeDialog=false;
-					dashboard.engine.quit();
-				}
-			});
-		}
+		} 
+	} else if(status.state == 'armed') {
+		authorizeDialog = true;
+		showModal({
+			title : 'Authorization Required!',
+			lead : '<div style="color:#7F5323; font-weight: bolder;">Authorization is required to complete the requested operation.</div>',
+			message: 'To authorize your tool, press and hold the green button for one second.  Tool authorization duration can be adjusted in the tool configuration.',
+			cancelText : 'Got it!',
+			cancel : function() {
+				authorizeDialog=false;
+				dashboard.engine.quit();
+			}
+		});
 	} else {
 		hideModal();
 	}

@@ -134,16 +134,80 @@ function Machine(control_path, gcode_path, callback) {
 
     this.driver.on('status', function(stat) {
     	var auth_input = 'in' + config.machine.get('auth_input');
-    	if(stat[auth_input]) {
-    		this.authorize();
+    	if(stat[auth_input] && this.status.state === 'armed') {
+    		this.fire();
     	}
     }.bind(this));
 }
 util.inherits(Machine, events.EventEmitter);
 
+/*
+ * State Functions
+ */
 Machine.prototype.die = function(err_msg) {
 	this.setState(this, 'dead', {error : 'A G2 exception has occurred. You must reboot your tool.'});
 	this.emit('status',this.status);
+}
+
+Machine.prototype.arm = function(action, timeout) {
+	switch(this.status.state) {
+		case 'idle':
+		break;
+
+		case 'paused':
+		case 'stopped':
+			if(action.type != 'resume') {
+				throw new Error('Cannot arm the machine for ' + action.type + ' when ' + this.status.state);
+			}
+			break;
+		default:
+		throw new Error("Cannot arm the machine from the " + this.status.state + " state.");
+		break;		
+	}	
+
+	this.action = action;
+
+	if(this._armTimer) { clearTimeout(this._armTimer);}
+	this._armTimer = setTimeout(function() {
+		log.info('Arm timeout (' + timeout + 's) expired.');
+		this.disarm();
+	}.bind(this), timeout*1000);
+
+	this.setState(this, 'armed');
+
+//	this.emit('status', this.status);
+}
+
+Machine.prototype.disarm = function() {
+	if(this._armTimer) { clearTimeout(this._armTimer);}
+	this.action = null;
+	this.setState(this, 'idle')
+}
+
+Machine.prototype.fire = function() {
+	log.info("FIRE button hit!")
+	if(this._armTimer) { clearTimeout(this._armTimer);}
+	if(this.status.state != 'armed') {
+		throw new Error("Cannot fire: Not armed.");
+	}
+
+	if(!this.action) {
+		return this.authorize(config.machine.get('auth_timeout'));
+	}
+
+	switch(this.action.type) {
+		case 'nextJob':
+			this._runNextJob(function() {});
+			break;
+
+		case 'runtimeCode':
+			var name = this.action.payload.name
+			var code = this.action.payload.code
+			console.log(name)
+			console.log(code)
+			this._executeRuntimeCode(name, code);
+			break;
+	}
 }
 
 Machine.prototype.authorize = function(timeout) {
@@ -163,6 +227,7 @@ Machine.prototype.authorize = function(timeout) {
 		}
 	}
 	this.status.auth = true;
+	this.setState(this, 'idle');
 	if(this.status.info && this.status.info.auth) {
 		delete this.status.info;
 	}
@@ -189,24 +254,6 @@ Machine.prototype.disconnect = function(callback) {
 
 Machine.prototype.toString = function() {
 	return "[Machine Model on '" + this.driver.path + "']";
-};
-
-Machine.prototype.gcode = function(string) {
-	this.setRuntime(this.gcode_runtime, function(err, runtime) {
-		if(err) {
-			return log.error(err)
-		}
-		runtime.runString(string);
-	});
-};
-
-Machine.prototype.sbp = function(string) {
-	this.setRuntime(this.sbp_runtime, function(err, runtime) {
-		if(err) {
-			return log.error(err);
-		}
-		runtime.runString(string);
-	});
 };
 
 Machine.prototype.runJob = function(job) {
@@ -301,22 +348,8 @@ Machine.prototype.runFile = function(filename) {
 	});
 };
 
-
-Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
-	runtime = this.getRuntime(runtimeName);
-	if(runtime) {
-		this.setRuntime(runtime, function(err, runtime) {
-			if(err) {
-				log.error(err);
-			} else {
-				runtime.executeCode(code);			
-				this.authorize();
-			}
-		}.bind(this));
-	}
-}
-
 Machine.prototype.setRuntime = function(runtime, callback) {
+	/*
 	if( runtime &&
 		runtime != this.idle_runtime && 
 		this.status.state === 'idle' 
@@ -325,7 +358,7 @@ Machine.prototype.setRuntime = function(runtime, callback) {
 		return this.setState(this, 'idle', {
 			'auth' : 'Authorization required.'
 		});
-	}
+	}*/
 
 	try {
 		if(runtime) {
@@ -413,7 +446,7 @@ Machine.prototype.pause = function() {
 };
 
 Machine.prototype.quit = function() {
-
+	this.disarm();
 	// Quitting from the idle state dismisses the 'info' data
 	if(this.status.state === "idle") {
 		delete this.status.info;
@@ -430,8 +463,86 @@ Machine.prototype.quit = function() {
 };
 
 Machine.prototype.resume = function() {
+	this.arm({
+		type : 'resume'
+	}, config.machine.get('auth_timeout'));
+}
+
+Machine.prototype.runNextJob = function() {
+	this.arm({
+		type : 'nextJob'
+	}, config.machine.get('auth_timeout'));
+}
+
+Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
+	console.log("Executing runtime code");
+	if(this.status.auth) {
+		return this._executeRuntimeCode(runtimeName, code);
+	}
+	if(runtimeName === 'manual') {
+		this.arm(null, config.machine.get('auth_timeout'));		
+		return;
+	} else {
+		this.arm({
+			type : 'runtimeCode',
+			payload : {
+				name : runtimeName,
+				code : code
+			}
+		}, config.machine.get('auth_timeout'));		
+	}
+}
+
+Machine.prototype.sbp = function(string) {
+	this.executeRuntimeCode('sbp', string);
+}
+
+Machine.prototype.gcode = function(string) {
+	this.executeRuntimeCode('gcode', string);
+}
+
+Machine.prototype._resume = function() {
 	if(this.current_runtime) {
 		this.current_runtime.resume();
+	}
+};
+
+Machine.prototype._executeRuntimeCode = function(runtimeName, code) {
+	runtime = this.getRuntime(runtimeName);
+	if(runtime) {
+		console.log(runtime)
+		this.setRuntime(runtime, function(err, runtime) {
+			if(err) {
+				log.error(err);
+			} else {
+				runtime.executeCode(code);			
+				this.authorize();
+			}
+		}.bind(this));
+	}
+}
+
+
+Machine.prototype._runNextJob = function(callback) {
+	if(this.isConnected()) {
+		if(this.status.state === 'armed') {
+			log.info("Running next job");
+			db.Job.dequeue(function(err, result) {
+				log.info(result);
+				if(err) {
+					log.error(err);
+					callback(err, null);
+				} else {
+					log.info('Running job ' + JSON.stringify(result));
+					this.runJob(result);
+					callback(null, result);
+				}
+			}.bind(this));
+		} else {
+			callback(new Error("Cannot run next job: Machine not idle"));
+		}
+	} else {
+		callback(new Error("Cannot run next job: Driver is disconnected."));
 	}
 };
 
