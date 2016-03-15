@@ -197,7 +197,9 @@ Machine.prototype.fire = function() {
 	}
 
 	if(!this.action) {
-		return this.authorize(config.machine.get('auth_timeout'));
+		this.authorize(config.machine.get('auth_timeout'));
+		this.setState(this, 'idle');
+		return;
 	}
 	this.deauthorize();
 
@@ -221,9 +223,9 @@ Machine.prototype.fire = function() {
 Machine.prototype.authorize = function(timeout) {
 	var timeout = timeout || config.machine.get('auth_timeout');
 	if(timeout) {
-		if(!this.status.auth) {
+//		if(!this.status.auth) {
 			log.info("Machine is authorized for the next " + timeout + " seconds.");			
-		}
+//		}
 		if(this._authTimer) { clearTimeout(this._authTimer);}
 		this._authTimer = setTimeout(function() {
 			log.info('Authorization timeout (' + timeout + 's) expired.');

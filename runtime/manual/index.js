@@ -23,6 +23,7 @@ ManualRuntime.prototype.connect = function(machine) {
 	this.current_axis = null;
 	this.current_speed = null;
 	this.status_handler =  this._onG2Status.bind(this);
+	this.completeCallback = null;
 	this.driver.on('status',this.status_handler);
 };
 
@@ -37,7 +38,11 @@ ManualRuntime.prototype.disconnect = function() {
 
 ManualRuntime.prototype._changeState = function(newstate, message) {
 	if(newstate === "idle") {
+		console.log("going to idle manual")
 		this.ok_to_disconnect = true;
+		var callback = this.completeCallback || function() {};
+		this.completeCallback = null;
+		callback();
 	} else {
 		this.ok_to_disconnect = false;
 	}
@@ -121,7 +126,8 @@ ManualRuntime.prototype._onG2Status = function(status) {
 };
 
 
-ManualRuntime.prototype.executeCode = function(code) {
+ManualRuntime.prototype.executeCode = function(code, callback) {
+	this.completeCallback = callback;
 	log.debug("Recieved manual command: " + JSON.stringify(code));
 	
 	// Don't honor commands if we're not in a position to do so
