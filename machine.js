@@ -52,6 +52,7 @@ function Machine(control_path, gcode_path, callback) {
 	// Handle Inheritance
 	events.EventEmitter.call(this);
 
+	this.fireButtonDebounce = false;
 	// Instantiate driver and connect to G2
 	this.status = {
 		state : "not_ready",
@@ -182,13 +183,18 @@ Machine.prototype.arm = function(action, timeout) {
 Machine.prototype.disarm = function() {
 	if(this._armTimer) { clearTimeout(this._armTimer);}
 	this.action = null;
+	this.fireButtonDebounce = false;
 	if(this.status.state === 'armed') {
 		this.setState(this, 'idle')
 	}
 }
 
 Machine.prototype.fire = function() {
+	if(this.fireButtonDebounce) {return;}
+
 	log.info("FIRE button hit!")
+	this.fireButtonDebounce = true;
+
 	if(this._armTimer) { clearTimeout(this._armTimer);}
 	if(this._authTimer) { clearTimeout(this._authTimer);}
 
@@ -223,9 +229,7 @@ Machine.prototype.fire = function() {
 Machine.prototype.authorize = function(timeout) {
 	var timeout = timeout || config.machine.get('auth_timeout');
 	if(timeout) {
-//		if(!this.status.auth) {
 			log.info("Machine is authorized for the next " + timeout + " seconds.");			
-//		}
 		if(this._authTimer) { clearTimeout(this._authTimer);}
 		this._authTimer = setTimeout(function() {
 			log.info('Authorization timeout (' + timeout + 's) expired.');
@@ -372,6 +376,7 @@ Machine.prototype.getRuntime = function(name) {
 }
 
 Machine.prototype.setState = function(source, newstate, stateinfo) {
+	this.fireButtonDebounce = false ;
 	if ((source === this) || (source === this.current_runtime)) {
 		log.info("Got a machine state change: " + newstate)
 		this.status.state = newstate;
@@ -482,6 +487,7 @@ Machine.prototype.gcode = function(string) {
  * Don't call them unless the tool is authorized!
  */
 Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
+	console.log("executing runtime code")
 	runtime = this.getRuntime(runtimeName);
 	if(runtime) {
 		this.setRuntime(runtime, function(err, runtime) {
