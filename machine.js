@@ -321,7 +321,7 @@ Machine.prototype.runFile = function(filename) {
 				log.error(err);
 				return;
 			} else {
-				runtime.runString(data);
+				runtime.runString(data, function() {});
 			}
 		}.bind(this));
 	});

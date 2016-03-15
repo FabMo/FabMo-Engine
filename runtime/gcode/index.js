@@ -116,6 +116,7 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 			}
 			break;
 
+		case "armed":
 		case "idle":
 			if(this.status_report.stat === this.driver.STAT_RUNNING) {
 				this._changeState("running");
@@ -197,7 +198,7 @@ GCodeRuntime.prototype._idle = function() {
 // Run the provided string
 // callback runs only when execution is complete.
 GCodeRuntime.prototype.runString = function(string, callback) {
-	if(this.machine.status.state === 'idle') {
+	if(this.machine.status.state === 'idle' || this.machine.status.state === 'armed') {
 		var lines =  string.split('\n');
 		var mode = config.driver.get('gdi') ? 'G91': 'G90';
 		this.machine.status.nb_lines = lines.length;
