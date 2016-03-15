@@ -372,11 +372,11 @@ engine.on('status', function(status) {
 		case 'paused':
 		case 'stopped':
 			console.log("openin dat footer");
-			dashboard.openFooter();
+			dashboard.showFooter();
 			break;
 		default:
 			console.log("Closin dat footer");
-			dashboard.closeFooter();
+			dashboard.hideFooter();
 			break;
 	}
 
