@@ -551,7 +551,7 @@ define(function(require) {
 	//Close Footer
 	Dashboard.prototype.closeFooter = function() {
 		$('.footBar').css('height', '0px');
-		$('#app-client-container').css('padding-bottom', '0px');	
+		$('#app-client-container').css('padding-bottom', '0px');
 	}
 
 	// Open and close the right menu

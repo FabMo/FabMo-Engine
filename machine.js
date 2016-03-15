@@ -326,17 +326,6 @@ Machine.prototype.runFile = function(filename) {
 };
 
 Machine.prototype.setRuntime = function(runtime, callback) {
-	/*
-	if( runtime &&
-		runtime != this.idle_runtime && 
-		this.status.state === 'idle' 
-		&& !this.status.auth) {
-		
-		return this.setState(this, 'idle', {
-			'auth' : 'Authorization required.'
-		});
-	}*/
-
 	try {
 		if(runtime) {
 			if(this.current_runtime != runtime) {

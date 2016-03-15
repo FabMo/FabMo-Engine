@@ -215,4 +215,8 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 
 };
 
+GCodeRuntime.prototype.executeCode = function(string, callback) {
+	this.runString(string, callback);
+}
+
 exports.GCodeRuntime = GCodeRuntime;
