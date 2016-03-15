@@ -367,6 +367,19 @@ engine.on('connect', function() {
 });
 
 engine.on('status', function(status) {
+	switch(status.state) {
+		case 'running':
+		case 'paused':
+		case 'stopped':
+			console.log("openin dat footer");
+			dashboard.openFooter();
+			break;
+		default:
+			console.log("Closin dat footer");
+			dashboard.closeFooter();
+			break;
+	}
+
   if (status.state != 'idle'){
         $('#position input').attr('disabled', true);
     } else {
@@ -416,7 +429,7 @@ engine.on('status', function(status) {
 		authorizeDialog = true;
 		showModal({
 			title : 'Authorization Required!',
-			lead : '<div style="color:#7F5323; font-weight: bolder;">Authorization is required to complete the requested operation.</div>',
+			lead : '<div style="color:#7F5323; font-weight: bolder;">Your tool </div>',
 			message: 'To authorize your tool, press and hold the green button for one second.  Tool authorization duration can be adjusted in the tool configuration.',
 			cancelText : 'Got it!',
 			cancel : function() {

@@ -182,12 +182,16 @@ Machine.prototype.arm = function(action, timeout) {
 Machine.prototype.disarm = function() {
 	if(this._armTimer) { clearTimeout(this._armTimer);}
 	this.action = null;
-	this.setState(this, 'idle')
+	if(this.status.state === 'armed') {
+		this.setState(this, 'idle')
+	}
 }
 
 Machine.prototype.fire = function() {
 	log.info("FIRE button hit!")
 	if(this._armTimer) { clearTimeout(this._armTimer);}
+	if(this._authTimer) { clearTimeout(this._authTimer);}
+
 	if(this.status.state != 'armed') {
 		throw new Error("Cannot fire: Not armed.");
 	}
@@ -195,6 +199,7 @@ Machine.prototype.fire = function() {
 	if(!this.action) {
 		return this.authorize(config.machine.get('auth_timeout'));
 	}
+	this.deauthorize();
 
 	switch(this.action.type) {
 		case 'nextJob':
@@ -204,8 +209,6 @@ Machine.prototype.fire = function() {
 		case 'runtimeCode':
 			var name = this.action.payload.name
 			var code = this.action.payload.code
-			console.log(name)
-			console.log(code)
 			this._executeRuntimeCode(name, code);
 			break;
 
@@ -232,7 +235,7 @@ Machine.prototype.authorize = function(timeout) {
 		}
 	}
 	this.status.auth = true;
-	this.setState(this, 'idle');
+	//this.setState(this, 'idle');
 	if(this.status.info && this.status.info.auth) {
 		delete this.status.info;
 	}
@@ -273,39 +276,8 @@ Machine.prototype.runJob = function(job) {
 	}.bind(this));	
 };
 
-Machine.prototype.runNextJob = function(callback) {
-	if(this.isConnected()) {
-		if(this.status.state === 'idle') {
-			if(this.status.auth) {
-				log.info("Running next job");
-				db.Job.dequeue(function(err, result) {
-					log.info(result);
-					if(err) {
-						log.error(err);
-						callback(err, null);
-					} else {
-						log.info('Running job ' + JSON.stringify(result));
-						this.runJob(result);
-						callback(null, result);
-					}
-				}.bind(this));
-			} else {
-				log.error("Machine not authorized");
-				this.setState(this, 'idle', {
-				'auth' : 'Authorization required.'
-				});
-				callback(new Error("Machine not authorized."));
-			}
-		} else {
-			callback(new Error("Cannot run next job: Machine not idle"));
-		}
-	} else {
-		callback(new Error("Cannot run next job: Driver is disconnected."));
-	}
-};
-
 Machine.prototype.getGCodeForFile = function(filename, callback) {
-	fs.readFile(filename, 'utf8', function (err,data) {
+	fs.readFile(filename, 'utf8', function (err,data) { 
 		if (err) {
 			log.error('Error reading file ' + filename);
 				log.error(err);
@@ -423,9 +395,18 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 			case 'idle':
 				this.status.nb_lines = null;
 				this.status.line = null;
+				if(this.action) {
+					switch(this.action.type) {
+						case 'nextJob':
+						break;
+						default:
+							this.authorize();
+							break;
+					}
+				}
+				this.action = null;
 				// Deliberately fall through
 			case 'paused':
-
 				this.driver.get('mpo', function(err, mpo) {
 					if(config.instance) {
 						config.instance.update({'position' : mpo});						
@@ -480,7 +461,6 @@ Machine.prototype.runNextJob = function() {
 }
 
 Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
-	console.log("Executing runtime code");
 	if(this.status.auth) {
 		return this._executeRuntimeCode(runtimeName, code);
 	}
@@ -506,27 +486,33 @@ Machine.prototype.gcode = function(string) {
 	this.executeRuntimeCode('gcode', string);
 }
 
-Machine.prototype._resume = function() {
-	if(this.current_runtime) {
-		this.current_runtime.resume();
-	}
-};
-
-Machine.prototype._executeRuntimeCode = function(runtimeName, code) {
+/*
+ * Functions below require authorization to run
+ * Don't call them unless the tool is authorized!
+ */
+Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 	runtime = this.getRuntime(runtimeName);
 	if(runtime) {
-		console.log(runtime)
 		this.setRuntime(runtime, function(err, runtime) {
 			if(err) {
 				log.error(err);
 			} else {
-				runtime.executeCode(code);			
-				this.authorize();
+				runtime.executeCode(code, function(err, data) {
+					log.info("END OF RUNTIME CODE")
+					this.authorize();
+					var callback = callback || function() {};
+					callback(err, data);
+				}.bind(this));			
 			}
 		}.bind(this));
 	}
 }
 
+Machine.prototype._resume = function() {
+	if(this.current_runtime) {
+		this.current_runtime.resume();
+	}
+};
 
 Machine.prototype._runNextJob = function(callback) {
 	if(this.isConnected()) {

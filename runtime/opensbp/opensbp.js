@@ -114,8 +114,8 @@ SBPRuntime.prototype.disconnect = function() {
 	}
 };
 
-SBPRuntime.prototype.executeCode = function(s) {
-	this.runString(s, function() {});
+SBPRuntime.prototype.executeCode = function(s, callback) {
+	this.runString(s, callback);
 }
 // Run the provided string in OpenSBP format
 SBPRuntime.prototype.runString = function(s, callback) {
