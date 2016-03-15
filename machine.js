@@ -192,7 +192,7 @@ Machine.prototype.disarm = function() {
 Machine.prototype.fire = function() {
 	if(this.fireButtonDebounce) {return;}
 
-	log.info("FIRE button hit!")
+	log.info("Fire button hit!")
 	this.fireButtonDebounce = true;
 
 	if(this._armTimer) { clearTimeout(this._armTimer);}
@@ -487,7 +487,6 @@ Machine.prototype.gcode = function(string) {
  * Don't call them unless the tool is authorized!
  */
 Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
-	console.log("executing runtime code")
 	runtime = this.getRuntime(runtimeName);
 	if(runtime) {
 		this.setRuntime(runtime, function(err, runtime) {
@@ -495,7 +494,6 @@ Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 				log.error(err);
 			} else {
 				runtime.executeCode(code, function(err, data) {
-					log.info("END OF RUNTIME CODE")
 					this.authorize();
 					var callback = callback || function() {};
 					callback(err, data);
