@@ -54,8 +54,14 @@ define(function(require) {
 	 }
 	 $('.DRO-button').on('click', function (){
 		setRightMenuBehavior();
+        var el = $(this),  
+        newone = el.clone(true);
+        el.before(newone);
+        $("." + el.attr("class") + ":last").remove();
+        
 	 });
-	 
+     
+
 	var resizedoc = function(){
 		//L & R = width of left & right menus
 		var l=0; var r=0;

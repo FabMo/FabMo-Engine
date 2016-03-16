@@ -1354,7 +1354,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     height: 10px;
     border: 1px solid #FEFEFE;
     border-radius: 50%;
-    animation: width 1s ease;
+    animation: width .4s linear;
 }
 
 @keyframes pulse {
