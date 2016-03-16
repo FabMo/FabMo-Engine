@@ -51,8 +51,8 @@ function FabMoUI(tool, options){
 	this.posX_selector = this.status_div_selector + ' .posx';
 	this.posY_selector = this.status_div_selector + ' .posy';
 	this.posZ_selector = this.status_div_selector + ' .posz';
-	this.posA_selector = this.status_div_selector + ' .posz';
-	this.posB_selector = this.status_div_selector + ' .posz';
+	this.posA_selector = this.status_div_selector + ' .posa';
+	this.posB_selector = this.status_div_selector + ' .posb';
 
 	this.state_selector = this.status_div_selector + ' .state';
 	this.file_info_div_selector = this.status_div_selector + ' .file-info';
@@ -61,8 +61,8 @@ function FabMoUI(tool, options){
 
 	this.manual_controls_selector = '.fabmo-manual-control';
 
-	this.stop_button_selector = this.file_control_selector + ' .fabmo-stop-button';
-	this.resume_button_selector = this.file_control_selector + ' .fabmo-resume-button';
+	this.stop_button_selector = this.file_control_selector + ' .stopJob';
+	this.resume_button_selector = this.file_control_selector + ' .resumeJob';
 	this.pause_button_selector = this.file_control_selector + ' .fabmo-pause-button';
 
 	this.units_selector = this.status_div_selector + ' .units';
