@@ -167,8 +167,8 @@ Machine.prototype.arm = function(action, timeout) {
 	}	
 
 	this.action = action;
-	log.info("Arming the machine" + (action ? ('for ' + action.type) : '(No action)'));
-
+	log.info("Arming the machine" + (action ? (' for ' + action.type) : '(No action)'));
+	log.error(new Error());
 	if(this._armTimer) { clearTimeout(this._armTimer);}
 	this._armTimer = setTimeout(function() {
 		log.info('Arm timeout (' + timeout + 's) expired.');
@@ -450,10 +450,20 @@ Machine.prototype.resume = function() {
 	}, config.machine.get('auth_timeout'));
 }
 
-Machine.prototype.runNextJob = function() {
-	this.arm({
-		type : 'nextJob'
-	}, config.machine.get('auth_timeout'));
+Machine.prototype.runNextJob = function(callback) {
+	db.Job.getPending(function(err, pendingJobs) {
+		if(err) {
+			return callback(err);
+		}
+		if(pendingJobs.length > 0) {
+			this.arm({
+				type : 'nextJob'
+			}, config.machine.get('auth_timeout'));	
+			callback();		
+		} else {
+			callback(new Error('No pending jobs.'));
+		}
+	}.bind(this));
 }
 
 Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
