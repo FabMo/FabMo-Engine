@@ -213,9 +213,9 @@
 		$('#job_selector').click();
 	});
 
-	$('#run-next').click(function(e) { 
+	$('.play-button').click(function(e) { 
 		if ($('.play').hasClass('active')){
-			fabmo.stop(function(err, data) {
+			fabmo.pause(function(err, data) {
 		});
 		} else {
 			fabmo.runNext(function(err, data) {
