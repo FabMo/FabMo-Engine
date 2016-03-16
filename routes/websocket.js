@@ -51,10 +51,13 @@ var onConnect = function(socket) {
 	});
 
 	socket.on('ping', function(data) {
+		console.log("Responding to ping");
 		socket.emit('pong');
 	});
 
 	socket.on('cmd', function(data) {
+		try {
+
 		switch(data.name) {
 			case 'pause':
 				machine.pause();
@@ -71,6 +74,9 @@ var onConnect = function(socket) {
 			default:
 				// Meh?
 				break;
+		}
+		} catch(e) {
+			// pass
 		}
 	});
 };

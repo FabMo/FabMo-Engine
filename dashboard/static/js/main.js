@@ -167,7 +167,7 @@ function showDaisy(callback) {
 
 function hideDaisy(callback) {
 	var callback = callback || function() {};
-	if(!daisyIsShown) { callback(); }
+	if(!daisyIsShown) { return callback(); }
 	daisyIsShown = false;
 	$(document).one('closed.fndtn.reveal', '[data-reveal]', function () {
  		var modal = $(this);
@@ -179,11 +179,10 @@ function hideDaisy(callback) {
 }
 
 function showModal(options) {
-	if(modalIsShown) {
-		return;
-	}
 
 	hideDaisy(function() {
+
+	var modalAlreadyUp = modalIsShown;
 
 	modalIsShown = true;
 
@@ -241,11 +240,22 @@ function showModal(options) {
 		$('#modalDialogClose').hide();
 	}
 
-	$('#modalDialog').foundation('reveal', 'open');
+	if(!modalAlreadyUp) {
+		var modalTry = function() {
+			try {
+				$('#modalDialog').foundation('reveal', 'open');				
+			} catch(e) {
+				console.log("fail")
+				setTimeout(modalTry, 10);
+			}
+		}
+		modalTry();
+	}
 });
 }
 
 function hideModal(callback) {
+	console.log('hide')
 	var callback = callback || function() {};
 	if(!modalIsShown) { callback(); }
 	modalIsShown = false;
@@ -362,7 +372,7 @@ engine.on('connect', function() {
 	if(disconnected) {
 		disconnected = false;
 		setConnectionStrength(5);
-		hideDaisy();
+//		hideDaisy();
 	}
 });
 
@@ -386,10 +396,11 @@ engine.on('status', function(status) {
         $('#position input').attr('disabled', false);
     }
 
+/*
     if(status.auth && authorizeDialog) {
     	hideModal();
     }
-
+*/
     if(status['info']) {
 		if(status.info['message']) {
 			showModal({
@@ -424,7 +435,9 @@ engine.on('status', function(status) {
 					dashboard.engine.quit();
 				}
 			});
-		} 
+		} else {
+			hideModal();
+		}
 	} else if(status.state == 'armed') {
 		authorizeDialog = true;
 		showModal({
