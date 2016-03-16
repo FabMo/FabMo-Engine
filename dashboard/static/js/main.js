@@ -442,7 +442,7 @@ engine.on('status', function(status) {
 		authorizeDialog = true;
 		showModal({
 			title : 'Authorization Required!',
-			lead : '<div style="color:#7F5323; font-weight: bolder;">Press Green</div>',
+			lead : '<div style="color:#7F5323; font-weight: bolder;">Press Green Button to Continue</div>',
 			message: 'To authorize your tool, press and hold the green button for one second.',
 			cancelText : 'Quit',
 			cancel : function() {
