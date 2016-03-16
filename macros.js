@@ -234,20 +234,9 @@ var run = function(idx) {
 
 	info = macros[idx];
 	if(info) {
-
-		// Create a lightweight job
-		machine.status.job = new Job({
-			name : info.name,
-			description : info.description
-		});
-
-		// Run it!
-		machine.status.job.start(function(err, result) {
 			machine.runFile(info.filename);
-		}.bind(this));
-
 	} else {
-		throw "No such macro."
+		throw new Error("No such macro.")
 	}
 }
 

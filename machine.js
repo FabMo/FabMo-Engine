@@ -221,6 +221,10 @@ Machine.prototype.fire = function() {
 			this._executeRuntimeCode(name, code);
 			break;
 
+		case 'runFile':
+			var filename = this.action.payload.filename
+			this._runFile(filename);
+			break;
 		case 'resume':
 			this._resume();
 			break;
@@ -278,7 +282,7 @@ Machine.prototype.runJob = function(job) {
 		} else {
 			log.info("Running file " + file.path);
 			this.status.job = job;
-			this.runFile(file.path);			
+			this._runFile(file.path);			
 		}
 	}.bind(this));	
 };
@@ -306,7 +310,7 @@ Machine.prototype.getGCodeForFile = function(filename, callback) {
 	}.bind(this));
 }
 
-Machine.prototype.runFile = function(filename) {
+Machine.prototype._runFile = function(filename) {
 	var parts = filename.split(path.sep);
 	var ext = path.extname(filename).toLowerCase();
 
@@ -448,6 +452,15 @@ Machine.prototype.quit = function() {
 Machine.prototype.resume = function() {
 	this.arm({
 		type : 'resume'
+	}, config.machine.get('auth_timeout'));
+}
+
+Machine.prototype.runFile = function(filename) {
+	this.arm({
+		type : 'runFile',
+		payload : {
+			filename : filename
+		}
 	}, config.machine.get('auth_timeout'));
 }
 
