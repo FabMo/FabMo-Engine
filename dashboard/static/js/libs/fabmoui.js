@@ -231,9 +231,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$('.radial_progress').hide();
 		$(that.filename_selector).empty();
 		$(that.progress_selector).empty();
-		$('.currentJobTitle').text('');
-		$('.footBar').css('height', '0px');
-		$('#app-client-container').css('padding-bottom', '0px');	
+		$('.currentJobTitle').text('');	
 	}
 
 	for(var i=1; i<MAX_INPUTS+1; i++) {

@@ -311,7 +311,6 @@ function runningJob(job) {
 	$('.with-job').css('left','10px');	
 	$('.play-button').show();
 	$('.play').addClass('active')
-    fabmo.showFooter();
 };
 
 var setNextJob = function (job) {
