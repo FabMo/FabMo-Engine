@@ -64,7 +64,7 @@ function FabMoUI(tool, options){
 	this.stop_button_selector = this.file_control_selector + ' .fabmo-stop-button';
 	this.resume_button_selector = this.file_control_selector + ' .fabmo-resume-button';
 	this.pause_button_selector = this.file_control_selector + ' .fabmo-pause-button';
-	
+
 	this.units_selector = this.status_div_selector + ' .units';
 
 	if(this.keypad){
@@ -277,7 +277,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.state_selector).html(statename);
 		if(that.file_control)
 		{
-			$(that.stop_button_selector).removeClass('hide');
+			$(that.stop_button_selector).addClass('hide');
 			$(that.pause_button_selector).removeClass('hide');
 			$(that.resume_button_selector).addClass('hide');
 		}
@@ -296,12 +296,15 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		}
 	}
 	else if(status.state === 'paused') {
+		console.log("pausypause");
 		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
 		$(that.status_div_selector).removeClass('fabmo-status-paused');
 		$(".tools-current > li a").removeClass('paus disc err').addClass('paus');
 		$(that.state_selector).html(statename);
+		console.log('almost');
 		if(that.file_control)
 		{
+			console.log('doing it');
 			$(that.stop_button_selector).removeClass('hide');
 			$(that.pause_button_selector).addClass('hide');
 			$(that.resume_button_selector).removeClass('hide');

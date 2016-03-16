@@ -868,6 +868,57 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	transition: all 1s;
 }
 
+.resumeJob {
+	position: relative;
+	display: block;
+	text-align: center;
+	width: 150px;
+	margin-top: 5px;
+	margin-left: auto;
+	margin-right: auto;
+	border-radius: 10px;
+	font-family: Arial;
+	color: #ffffff;
+	font-size: 17px;
+	background: #00FF00;
+	padding-top: 3.5px;
+	padding-bottom: 3.5px;
+	border: solid #00A600 4px;
+	text-decoration: none;
+	transition: all 1s;
+}
+
+.resumeJob.blink{
+	background-color: #00A600;
+	border: solid #00ff00 4px;
+	transition: all 1s;
+}
+
+.quitJob {
+	position: relative;
+	display: block;
+	text-align: center;
+	width: 150px;
+	margin-top: 5px;
+	margin-left: auto;
+	margin-right: auto;
+	border-radius: 10px;
+	font-family: Arial;
+	color: #ffffff;
+	font-size: 17px;
+	background: #00FF00;
+	padding-top: 3.5px;
+	padding-bottom: 3.5px;
+	border: solid #00A600 4px;
+	text-decoration: none;
+	transition: all 1s;
+}
+
+.quitJob.blink{
+	background-color: #00A600;
+	border: solid #00ff00 4px;
+	transition: all 1s;
+}
 
 .currentContainer {
 	margin-top: 12px;

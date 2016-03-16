@@ -429,9 +429,9 @@ engine.on('status', function(status) {
 		authorizeDialog = true;
 		showModal({
 			title : 'Authorization Required!',
-			lead : '<div style="color:#7F5323; font-weight: bolder;">Your tool </div>',
-			message: 'To authorize your tool, press and hold the green button for one second.  Tool authorization duration can be adjusted in the tool configuration.',
-			cancelText : 'Got it!',
+			lead : '<div style="color:#7F5323; font-weight: bolder;">Press Green</div>',
+			message: 'To authorize your tool, press and hold the green button for one second.',
+			cancelText : 'Quit',
 			cancel : function() {
 				authorizeDialog=false;
 				dashboard.engine.quit();
