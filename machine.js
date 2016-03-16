@@ -151,6 +151,7 @@ Machine.prototype.die = function(err_msg) {
 }
 
 Machine.prototype.arm = function(action, timeout) {
+	this.preArmedState = this.status.state;
 	switch(this.status.state) {
 		case 'idle':
 		break;
@@ -185,7 +186,7 @@ Machine.prototype.disarm = function() {
 	this.action = null;
 	this.fireButtonDebounce = false;
 	if(this.status.state === 'armed') {
-		this.setState(this, 'idle')
+		this.setState(this, this.preArmedState || 'idle');
 	}
 }
 
