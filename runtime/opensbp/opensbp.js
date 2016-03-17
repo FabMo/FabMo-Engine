@@ -91,6 +91,12 @@ SBPRuntime.prototype.connect = function(machine) {
 	this.machine.status.line=null; 
 	this.machine.status.nb_lines=null;
 	this._update();
+	this.cmd_posx = this.posx;
+	this.cmd_posy = this.posy;
+	this.cmd_posz = this.posz;
+	this.cmd_posa = this.posa;
+	this.cmd_posb = this.posb;
+	this.cmd_posc = this.posc;
 	this.status_handler = this._onG2Status.bind(this);
 	this.driver.on('status', this.status_handler);
 	log.info('Connected OpenSBP runtime.');
@@ -132,11 +138,6 @@ SBPRuntime.prototype.runString = function(s, callback) {
 			return this._end(e.message + " (Line " + e.line + ")");
 		}
  		lines = this.program.length;
- 		
- 		this.cmd_posx = this.posx;
-        this.cmd_posy = this.posy;
-        this.cmd_posz = this.posz;
-
 		this._setupTransforms();
 		this.init();
 		this.end_callback = callback;
@@ -358,10 +359,6 @@ SBPRuntime.prototype._run = function() {
 	if(this.machine) {
 		this.machine.setState(this, "running");
 	}
-	// this.cmd_posx = this.posx;
-	// this.cmd_posy = this.posy;
-	// log.debug("*******************run: cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy);
-
 	this._continue();
 };
 
@@ -1322,7 +1319,9 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		var c = pt[key];
 		if(c !== undefined) {
 			if(isNaN(c)) { throw( "Invalid " + key + " argument: " + c ); } 
-			if(key === "X") { this.cmd_posx = c; }
+			if(key === "X") { this.cmd_posx = c; 
+			  log.debug("   emit_move: this.cmd_posx = " + this.cmd_posx );
+            }
 			else if(key === "Y") { this.cmd_posy = c; }
 			else if(key === "Z") { this.cmd_posz = c; }
 			else if(key === "A") { this.cmd_posa = c; }
@@ -1331,6 +1330,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		}
 	}.bind(this));
 
+log.debug("   emit_move: this.cmd_posx = " + this.cmd_posx );
 
 	// Where to save the start point of an arc that isn't transformed??????????
 	var tPt = this.transformation(pt);
