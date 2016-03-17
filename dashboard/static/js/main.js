@@ -36,7 +36,9 @@ define(function(require) {
     
     engine.getNetworkIdentity(function(err, id) {
     	if(!id) { return; }
-    	$('#tool-name').text(id.name || "butts");
+    	var name = id.name || "";
+    	$('#tool-name').text(name);
+    	document.title = name || "FabMo Dashboard";
     });
 
     $('#icon_editor').on('click', function(){
