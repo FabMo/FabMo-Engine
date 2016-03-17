@@ -506,6 +506,8 @@ G2.prototype.handleStatusReport = function(response) {
 					}
 				} else if(null in expectation) {
 					expectation[null](this);
+				} else {
+					this.expectations.push(expectation);
 				}
 			}
 		}
