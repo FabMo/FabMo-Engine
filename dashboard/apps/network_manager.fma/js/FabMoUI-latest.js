@@ -41,8 +41,8 @@ function FabMoUI(tool, options){
 	this.progress_selector = this.file_info_div_selector + ' .progress';
 
 
-	this.stop_button_selector = this.file_control_selector + ' .fabmo-stop-button'
-	this.resume_button_selector = this.file_control_selector + ' .fabmo-resume-button';
+	this.stop_button_selector = this.file_control_selector + ' .stopJob'
+	this.resume_button_selector = this.file_control_selector + ' .resumeJob';
 	this.pause_button_selector = this.file_control_selector + ' .fabmo-pause-button';
 
 
