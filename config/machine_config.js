@@ -29,7 +29,6 @@ MachineConfig.prototype.update = function(data, callback, force) {
 	});
 };
 
-
 MachineConfig.prototype.apply = function(callback) {
 	if(this.get('auth_timeout') === 0) {
 		this.machine.authorize();

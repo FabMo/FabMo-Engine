@@ -153,15 +153,15 @@ define(function(require) {
 		}.bind(this));
 		
 				// Show the footer
-		this._registerHandler('showFooter', function(data, callback) { 
+		this._registerHandler('showFooter', function() { 
 			this.openFooter();
-			callback(null);
+			
 		}.bind(this));
 
 		// Hide the footer
-		this._registerHandler('hideFooter', function(data, callback) { 
+		this._registerHandler('hideFooter', function() { 
 			this.closeFooter() 
-			callback(null)
+			
 		}.bind(this));
 
 		// Show a notification
@@ -177,6 +177,7 @@ define(function(require) {
 				if(err) {
 					callback(err);
 				} else {
+					callback(err, result);
 					this.launchApp('job-manager', {}, callback);
 				}
 			}.bind(this));
@@ -187,6 +188,7 @@ define(function(require) {
 				if(err) {
 					callback(err);
 				} else {
+					callback(err, result);
 					this.launchApp('job-manager', {}, callback);
 				}
 			}.bind(this));
@@ -309,12 +311,7 @@ define(function(require) {
 
 		// Submit an app
 		this._registerHandler('submitApp', function(data, callback) { 
-			this.engine.submitApp(data.apps, data.options, function(err, result) {
-				context.apps.fetch();
-				if(err) { callback(err); }
-				else { callback(null, result); }
-			}.bind(this));
-
+			this.submitApps(data.apps, {}, callback);
 		}.bind(this));
 
 		this._registerHandler('deleteApp', function(id, callback) {
@@ -554,7 +551,7 @@ define(function(require) {
 	//Close Footer
 	Dashboard.prototype.closeFooter = function() {
 		$('.footBar').css('height', '0px');
-		$('#app-client-container').css('padding-bottom', '0px');	
+		$('#app-client-container').css('padding-bottom', '0px');
 	}
 
 	// Open and close the right menu
@@ -597,6 +594,21 @@ define(function(require) {
 	Dashboard.prototype.refreshApps = function() {
 		context = require('context');
 		context.apps.fetch();
+	}
+
+	Dashboard.prototype.submitApp = function(data, options, callback) {
+		this.engine.submitApp(data, data.options, function(err, result) {
+			context = require('context');
+			context.apps.fetch();
+			
+			if(err) { callback(err); }
+			else { 
+				result.forEach(function(item) {
+					context.markAppForRefresh(item.info.id);
+				});
+				callback(null, result); 
+			}
+		}.bind(this));
 	}
 
 	// The dashboard is a singleton which we create here and make available as this module's export.

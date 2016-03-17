@@ -42,42 +42,43 @@ define(function(require) {
 	engine.getConfig();
 	engine.getVersion(function(err, version) {
 		context.setEngineVersion(version);
+
+		context.apps = new context.models.Apps();
+		// Load the apps from the server
+		context.apps.fetch({
+			success: function() {
+				// Create the menu based on the apps thus retrieved 
+				context.appMenuView = new context.views.AppMenuView({collection : context.apps, el : '#app_menu_container'});
+
+				// Create a FabMo object for the dashboard
+				dashboard.setEngine(engine);
+				dashboard.ui=new FabMoUI(dashboard.engine);
+
+				keyboard = setupKeyboard();
+				keypad = setupKeypad();
+
+				// Start the application
+				router = new context.Router();
+				router.setContext(context);
+
+				// Sort of a hack, but works OK.
+				$('#spinner').hide();
+
+				// Start backbone routing
+				Backbone.history.start();
+				
+				// Request a status update from the tool
+				engine.getStatus();
+
+				dashboard.engine.on('change', function(topic) {
+					if(topic === 'apps') {
+						context.apps.fetch();
+					}
+				});
+			}
+		});
 	});
 
-	context.apps = new context.models.Apps();
-	// Load the apps from the server
-	context.apps.fetch({
-		success: function() {
-			// Create the menu based on the apps thus retrieved 
-			context.appMenuView = new context.views.AppMenuView({collection : context.apps, el : '#app_menu_container'});
-
-			// Create a FabMo object for the dashboard
-			dashboard.setEngine(engine);
-			dashboard.ui=new FabMoUI(dashboard.engine);
-
-			keyboard = setupKeyboard();
-			keypad = setupKeypad();
-
-			// Start the application
-			router = new context.Router();
-			router.setContext(context);
-
-			// Sort of a hack, but works OK.
-			$('#spinner').hide();
-
-			// Start backbone routing
-			Backbone.history.start();
-			
-			// Request a status update from the tool
-			engine.getStatus();
-
-			dashboard.engine.on('change', function(topic) {
-				if(topic === 'apps') {
-					context.apps.fetch();
-				}
-			});
-		}
-	});
 
 function getManualMoveSpeed(move) {
 	var speed_ips = null;
@@ -166,7 +167,7 @@ function showDaisy(callback) {
 
 function hideDaisy(callback) {
 	var callback = callback || function() {};
-	if(!daisyIsShown) { callback(); }
+	if(!daisyIsShown) { return callback(); }
 	daisyIsShown = false;
 	$(document).one('closed.fndtn.reveal', '[data-reveal]', function () {
  		var modal = $(this);
@@ -178,11 +179,10 @@ function hideDaisy(callback) {
 }
 
 function showModal(options) {
-	if(modalIsShown) {
-		return;
-	}
 
 	hideDaisy(function() {
+
+	var modalAlreadyUp = modalIsShown;
 
 	modalIsShown = true;
 
@@ -240,7 +240,16 @@ function showModal(options) {
 		$('#modalDialogClose').hide();
 	}
 
-	$('#modalDialog').foundation('reveal', 'open');
+	if(!modalAlreadyUp) {
+		var modalTry = function() {
+			try {
+				$('#modalDialog').foundation('reveal', 'open');				
+			} catch(e) {
+				setTimeout(modalTry, 10);
+			}
+		}
+		modalTry();
+	}
 });
 }
 
@@ -361,19 +370,25 @@ engine.on('connect', function() {
 	if(disconnected) {
 		disconnected = false;
 		setConnectionStrength(5);
-		hideDaisy();
 	}
 });
 
 engine.on('status', function(status) {
+	switch(status.state) {
+		case 'running':
+		case 'paused':
+		case 'stopped':
+			dashboard.handlers.showFooter();
+			break;
+		default:
+            dashboard.handlers.hideFooter();
+			break;
+	}
+
   if (status.state != 'idle'){
         $('#position input').attr('disabled', true);
     } else {
         $('#position input').attr('disabled', false);
-    }
-
-    if(status.auth && authorizeDialog) {
-    	hideModal();
     }
 
     if(status['info']) {
@@ -410,19 +425,21 @@ engine.on('status', function(status) {
 					dashboard.engine.quit();
 				}
 			});
-		} else if(status.info['auth']) {
-			authorizeDialog = true;
-			showModal({
-				title : 'Authorization Required!',
-				lead : '<div style="color:#7F5323; font-weight: bolder;">Authorization is required to complete the requested operation.</div>',
-				message: 'To authorize your tool, press and hold the green button for one second.  Tool authorization duration can be adjusted in the tool configuration.',
-				cancelText : 'Got it!',
-				cancel : function() {
-					authorizeDialog=false;
-					dashboard.engine.quit();
-				}
-			});
+		} else {
+			hideModal();
 		}
+	} else if(status.state == 'armed') {
+		authorizeDialog = true;
+		showModal({
+			title : 'Authorization Required!',
+			lead : '<div style="color:#7F5323; font-weight: bolder;">Press Green Button to Continue</div>',
+			message: 'To authorize your tool, press and hold the green button for one second.',
+			cancelText : 'Quit',
+			cancel : function() {
+				authorizeDialog=false;
+				dashboard.engine.quit();
+			}
+		});
 	} else {
 		hideModal();
 	}
@@ -517,7 +534,7 @@ $.post('/time', {
 	'utc' : new Date().toUTCString()
 });
 function touchScreen () {
-	if (supportsTouch) {
+	if (supportsTouch && window.innerWidth < 800) {
 		$('#app-client-container').css({'-webkit-overflow-scrolling':'touch','overflow-y':'scroll'});
 	} 
 }

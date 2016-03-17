@@ -11,12 +11,15 @@ define(function(require) {
 		 $('#right-menu').css('right', '0');
 		 $('#app-client-container').css('padding-right', '218px');
 		 $('#app_menu_container').css('padding-right', '220px');
+         $('#waiting_container').css('padding-right', '220px');
+         
 	 }
 	 
 	 var closeDROPush = function () {
 		 $('#right-menu').css('right', '-222px');
 		 $('#app-client-container').css('padding-right', '0px');
-		 $('#app_menu_container').css('padding-right', '0px');	
+		 $('#app_menu_container').css('padding-right', '0px');
+         $('#waiting_container').css('padding-right', '0px');	
 	 }
 	 
 	 var openDROover = function () {
@@ -104,7 +107,7 @@ define(function(require) {
 
 	
 	window.setInterval(function(){
-   		$('.stopJob').toggleClass('blink');
+   		$('.pauseJob').toggleClass('blink');
 	}, 1000);
 	
 	var colapseMenu = function() {
