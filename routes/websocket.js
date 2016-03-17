@@ -55,6 +55,8 @@ var onConnect = function(socket) {
 	});
 
 	socket.on('cmd', function(data) {
+		try {
+
 		switch(data.name) {
 			case 'pause':
 				machine.pause();
@@ -71,6 +73,9 @@ var onConnect = function(socket) {
 			default:
 				// Meh?
 				break;
+		}
+		} catch(e) {
+			// pass
 		}
 	});
 };

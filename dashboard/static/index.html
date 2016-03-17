@@ -47,10 +47,16 @@
               </div>
               <div class="percent_comp">10%</div>
            </div>
- 
-          <span class='fabmo-stop-button'>
-            <a class='stopJob'>STOP</a>
+
+          <span class='fabmo-pause-button'>
+            <div class='pauseJob'>STOP</div>
           </span>
+
+          <span class='fabmo-resume-stop'>
+            <div class='resumeJob'>RESUME</div> 
+            <div class='stopJob'>QUIT</div>
+          </span>
+
           </div>
           <!-- New nav work -->
           <!-- Nav-Bar & Buttons for sliding menus -->
@@ -132,7 +138,7 @@
                            <label  class="noselect">
                             X
                             <span class="units">&nbsp;</span>
-                            <input class="posx pos doselect axi" maxlength="6">
+                            <input class="posx pos doselect axi" maxlength="6" type="number">
                           </label>
                         </div>
                         <div class="small-2 columns home"><span class="button-zerox">0</span></div>
@@ -142,7 +148,7 @@
                         <label class="noselect">
                         Y
                         <span class="units">&nbsp;</span>
-                        <input class="posy pos doselect axi"  maxlength="6">
+                        <input class="posy pos doselect axi"  maxlength="6" type="number">
                         </label>
                       </div>
                       <div class="small-2 columns home"><span class="button-zeroy">0</span></div>
@@ -152,7 +158,7 @@
                         <label class="noselect">
                         Z
                         <span class="units">&nbsp;</span>
-                        <input class="posz pos doselect axi" maxlength="6">
+                        <input class="posz pos doselect axi" maxlength="6" type="number">
                         </label>
                       </div>
                       <div class="small-2 columns home"><span class="button-zeroz">0</span></div>
@@ -162,7 +168,7 @@
                           <label class="noselect">
                             A
                             <span class="units">&nbsp;</span>
-                            <input class="posa pos doselect axi" maxlength="6">
+                            <input class="posa pos doselect axi" maxlength="6" type="number">
                           </label>
                         </div>
                         <div class="small-2 columns home"><span class="button-zeroa">0</span></div>
@@ -172,7 +178,7 @@
                           <label class="noselect">
                             B
                             <span class="units">&nbsp;</span>
-                            <input class="posb pos doselect axi" maxlength="6">
+                            <input class="posb pos doselect axi" maxlength="6" type="number">
                           </label>
                         </div>
                         <div class="small-2 columns home"><span class="button-zerob">0</span></div>
@@ -217,11 +223,6 @@
                 </li>
               </ul>
             </div>
-            <!--
-            <div id="handwheel" class="widget fabmo-manual-control" style="text-align: center;">
-              <canvas width="220px" height="220px" id="wheel"></canvas>
-            </div>
-            -->
 
             <div id="keypad" class="widget fabmo-manual-control keypad dro-view" style="text-align: center;">
                <div class="keypad-bar top">
@@ -254,43 +255,7 @@
                   <div class="keypad-cell"></div>
                 </div>
               </div>
-              <!--
-              <div>
-                <div style="width: 50%; padding: 4px;"><div class="keypad-button settings-button">Settings</div></div>
-                <div style="width: 50%"></div>                
-              </div>
-              -->
             </div>
-
-            <div id="job-info" class="widget noselect">
-
-                <ul class="off-canvas-list fabmo-status fabmo-file-control">
-                  <li style="margin: 10px" class="file-info" style="align: center;">
-                    <div class="filename" style="text-align: center;"></div>
-                  </li>
-                  <li style="margin: 10px" class="file-info" style="align: center;">
-                  <div class="progress-container">
-                    <div class="progress" style=""></div>
-                  </div>
-                  </li>
-                  <li style="margin: 10px">
-                        <span class="fabmo-pause-button hide">
-                          <a class="med button warning radius noselect" style="border: 2px solid black;">Pause</a>
-                        </span>
-                  </li>
-                  <li style="margin: 10px">
-                        <span class="fabmo-resume-button hide">
-                          <a class="med button success radius noselect" style="border: 2px solid black;">Resume</a>
-                        </span>
-                  </li>
-                  <li style="margin: 10px">
-                        <span class="fabmo-stop-button hide">
-                          <a class="med button alert radius noselect" style="border: 2px solid black;">Stop</a>
-                        </span>
-                  </li>
-                </ul>
-            </div>
-
           </aside>
 
           <!-- App Menu -->
