@@ -51,7 +51,6 @@ var onConnect = function(socket) {
 	});
 
 	socket.on('ping', function(data) {
-		console.log("Responding to ping");
 		socket.emit('pong');
 	});
 

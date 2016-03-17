@@ -136,6 +136,7 @@ function Machine(control_path, gcode_path, callback) {
     this.driver.on('status', function(stat) {
     	var auth_input = 'in' + config.machine.get('auth_input');
     	if(stat[auth_input] && this.status.state === 'armed') {
+    		log.info("Fire button hit!")
     		this.fire();
     	}
     }.bind(this));
@@ -166,14 +167,13 @@ Machine.prototype.arm = function(action, timeout) {
 		break;		
 	}	
 
+	delete this.status.info
 	this.action = action;
 	log.info("Arming the machine" + (action ? (' for ' + action.type) : '(No action)'));
 	log.error(new Error());
 	if(this._armTimer) { clearTimeout(this._armTimer);}
 	this._armTimer = setTimeout(function() {
 		log.info('Arm timeout (' + timeout + 's) expired.');
-		console.log(this.preArmedState);
-		console.log(this.preArmedInfo);
 		this.disarm();
 	}.bind(this), timeout*1000);
 
@@ -181,8 +181,13 @@ Machine.prototype.arm = function(action, timeout) {
 	this.preArmedInfo = this.status.info;
 
 
-	this.setState(this, 'armed');
 
+	if(config.machine.get('auth_input') == 0) {
+		log.info("Firing automatically since authorization is disabled.");
+		this.fire(true);
+	} else {
+		this.setState(this, 'armed');	
+	}
 //	this.emit('status', this.status);
 }
 
@@ -195,16 +200,15 @@ Machine.prototype.disarm = function() {
 	}
 }
 
-Machine.prototype.fire = function() {
+Machine.prototype.fire = function(force) {
 	if(this.fireButtonDebounce) {return;}
 
-	log.info("Fire button hit!")
 	this.fireButtonDebounce = true;
 
 	if(this._armTimer) { clearTimeout(this._armTimer);}
 	if(this._authTimer) { clearTimeout(this._authTimer);}
 
-	if(this.status.state != 'armed') {
+	if(this.status.state != 'armed' && !force) {
 		throw new Error("Cannot fire: Not armed.");
 	}
 

@@ -294,15 +294,12 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		}
 	}
 	else if(status.state === 'paused') {
-		console.log("pausypause");
 		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
 		$(that.status_div_selector).removeClass('fabmo-status-paused');
 		$(".tools-current > li a").removeClass('paus disc err').addClass('paus');
 		$(that.state_selector).html(statename);
-		console.log('almost');
 		if(that.file_control)
 		{
-			console.log('doing it');
 			$(that.stop_button_selector).removeClass('hide');
 			$(that.pause_button_selector).addClass('hide');
 			$(that.resume_button_selector).removeClass('hide');

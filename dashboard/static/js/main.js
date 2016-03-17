@@ -245,7 +245,6 @@ function showModal(options) {
 			try {
 				$('#modalDialog').foundation('reveal', 'open');				
 			} catch(e) {
-				console.log("fail")
 				setTimeout(modalTry, 10);
 			}
 		}
@@ -255,7 +254,6 @@ function showModal(options) {
 }
 
 function hideModal(callback) {
-	console.log('hide')
 	var callback = callback || function() {};
 	if(!modalIsShown) { callback(); }
 	modalIsShown = false;
@@ -372,7 +370,6 @@ engine.on('connect', function() {
 	if(disconnected) {
 		disconnected = false;
 		setConnectionStrength(5);
-//		hideDaisy();
 	}
 });
 
@@ -381,11 +378,9 @@ engine.on('status', function(status) {
 		case 'running':
 		case 'paused':
 		case 'stopped':
-			console.log("openin dat footer");
 			dashboard.handlers.showFooter();
 			break;
 		default:
-			console.log("Closin dat footer");
             dashboard.handlers.hideFooter();
 			break;
 	}
@@ -396,11 +391,6 @@ engine.on('status', function(status) {
         $('#position input').attr('disabled', false);
     }
 
-/*
-    if(status.auth && authorizeDialog) {
-    	hideModal();
-    }
-*/
     if(status['info']) {
 		if(status.info['message']) {
 			showModal({
