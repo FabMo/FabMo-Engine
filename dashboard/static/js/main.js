@@ -34,6 +34,11 @@ define(function(require) {
     
     //Give editor focus 
     
+    engine.getNetworkIdentity(function(err, id) {
+    	if(!id) { return; }
+    	$('#tool-name').text(id.name || "butts");
+    });
+
     $('#icon_editor').on('click', function(){
         $('iframe').focus();
 
