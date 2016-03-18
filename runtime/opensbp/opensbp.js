@@ -52,6 +52,16 @@ function SBPRuntime() {
 	this.movespeed_a = 0;
 	this.movespeed_b = 0;
 	this.movespeed_c = 0;
+	this.jogspeed_xy = 0;
+	this.jogspeed_z = 0;
+	this.jogspeed_a = 0;
+	this.jogspeed_b = 0;
+	this.jogspeed_c = 0;
+	this.maxjerk_xy = 100;
+	this.maxjerk_z = 50;
+	this.maxjerk_a = 20;
+	this.maxjerk_b = 20;
+	this.maxjerk_c = 20;
 	this.cmd_StartX = 0; 
 	this.cmd_StartY = 0; 
 	this.cmd_StartZ = 0; 
@@ -61,6 +71,7 @@ function SBPRuntime() {
 	this.paused = false;
 	this.lastNoZPullup = 0; 
 	this.continue_callback = null;
+	this.vs_change = 0;
 
 	// Physical machine state
 	this.machine = null;
@@ -148,11 +159,24 @@ SBPRuntime.prototype.runString = function(s, callback) {
 					    'moveb_speed',
 				    	'movec_speed' ];
 	    var getSBP_speed = config.opensbp.getMany(SBP_2get);
+	    var G2_2get = ['xvm','yvm','zvm','avm','bvm','cvm',
+	                   'xjm','yjm','zjm','ajm','bjm','cjm' ];
+        var getG2_settings = config.driver.getMany(G2_2get);
 		this.movespeed_xy = getSBP_speed.movexy_speed;
 		this.movespeed_z = getSBP_speed.movez_speed;
 		this.movespeed_a = getSBP_speed.movea_speed;
 		this.movespeed_b = getSBP_speed.moveb_speed;
 		this.movespeed_c = getSBP_speed.movec_speed;
+		this.jogspeed_xy = getG2_settings.xvm;
+		this.jogspeed_z = getG2_settings.zvm;
+		this.jogspeed_a = getG2_settings.avm;
+		this.jogspeed_b = getG2_settings.bvm;
+		this.jogspeed_c = getG2_settings.cvm;
+        this.maxjerk_xy = getG2_settings.xjm;
+        this.maxjerk_z = getG2_settings.zjm;
+        this.maxjerk_a = getG2_settings.ajm;
+        this.maxjerk_b = getG2_settings.bjm;
+        this.maxjerk_c = getG2_settings.cjm;
 		log.debug("Transforms configured...")
 		this._analyzeLabels();  // Build a table of labels
 		log.debug("Labels analyzed...")
@@ -1319,9 +1343,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		var c = pt[key];
 		if(c !== undefined) {
 			if(isNaN(c)) { throw( "Invalid " + key + " argument: " + c ); } 
-			if(key === "X") { this.cmd_posx = c; 
-			  log.debug("   emit_move: this.cmd_posx = " + this.cmd_posx );
-            }
+			if(key === "X") { this.cmd_posx = c; }
 			else if(key === "Y") { this.cmd_posy = c; }
 			else if(key === "Z") { this.cmd_posz = c; }
 			else if(key === "A") { this.cmd_posa = c; }
@@ -1330,7 +1352,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		}
 	}.bind(this));
 
-log.debug("   emit_move: this.cmd_posx = " + this.cmd_posx );
+//log.debug("   emit_move: this.cmd_posx = " + this.cmd_posx );
 
 	// Where to save the start point of an arc that isn't transformed??????????
 	var tPt = this.transformation(pt);

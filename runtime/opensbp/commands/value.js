@@ -329,113 +329,66 @@ exports.VP = function(args) {
 };	
 
 exports.VR = function(args, callback) {
-	var VRset = {};
 	// XY Move Ramp Speed
 	if (args[0] !== undefined) {
-		VRset.xjm = args[0];
-		VRset.yjm = args[0]; 
+		this.maxjerk_xy = args[0];
+		this.machine.driver.command({'xjm':this.maxjerk_xy});
+		this.machine.driver.command({'yjm':this.maxjerk_xy});
 	}
-	// Z Move Ramp Speed
+	// Z Move Ramp Speed = args[0];
 	if (args[1] !== undefined) { 
-		VRset.zjm = args[1];
+		this.maxjerk_z = args[1];
+		this.machine.driver.command({'zjm':this.maxjerk_z});
 	} 
 	// A Move Ramp Speed
 	if (args[2] !== undefined) { 
-		VRset.ajm = args[2];
+		this.maxjerk_a = args[2];
+		this.machine.driver.command({'ajm':this.maxjerk_a});
 	} 
 	// B Move Ramp Speed
 	if (args[3] !== undefined) { 
-		VRset.bjm = args[3];
+		this.maxjerk_b = args[3];
+		this.machine.driver.command({'bjm':this.maxjerk_b});
 	}
 	// C Move Ramp Speed
 	if (args[4] !== undefined) {
-		VRset.cjm = args[4];
+		this.maxjerk_c = args[4];
+		this.machine.driver.command({'cjm':this.maxjerk_c});
 	}
 
-	config.driver.setMany(VRset, function(err, values) {
-		callback();
-	});
+    vs_change = 1;
+
+    callback();
+
 };	
 
-exports.VS = function(args,callback) {
-	
+// exports.VS = function(args,callback) {
+exports.VS = function(args) {
 	var speed_change = 0.0;
 
-	var g2_values = {};
-	var sbp_values = {};
+	//Set XY move speed
+	if (args[0] !== undefined) { this.movespeed_xy = args[0]; }
+	//Set Z move speed
+	if (args[1] !== undefined) { this.movespeed_z = args[1]; }
+	//Set A move speed
+	if (args[2] !== undefined) { this.movespeed_a = args[2]; }
+	//Set B move speed
+	if (args[3] !== undefined) { this.movespeed_b = args[3]; }
+	//Set C move speed
+	if (args[4] !== undefined) { this.movespeed_c = args[4]; }
+	//Set XY jog speed 
+	if (args[5] !== undefined) { this.jogspeed_xy = args[5]; }
+	//Set Z jog speed
+	if (args[6] !== undefined) { this.jogspeed_z = args[6]; }
+	//Set A jog speed
+	if (args[7] !== undefined) { this.jogspeed_a = args[7]; }
+	//Set B jog speed
+	if (args[8] !== undefined) { this.jogspeed_b = args[8]; }
+	//Set C jog speed
+	if (args[9] !== undefined) { this.jogspeed_c = args[9]; }
 
-	//Set XY move speed in OpenSBP only, not set in G2
-	if (args[0] !== undefined) {
-		speed_change = args[0];
-		sbp_values.movexy_speed = speed_change;
-		this.movespeed_xy = speed_change;
-	}
-	//Set Z move speed in OpenSBP only, not set in G2
-	if (args[1] !== undefined) {
-		speed_change = args[1];
-		sbp_values.movez_speed = speed_change;
-		this.movespeed_z = speed_change;
-	}
-	//Set A move speed in OpenSBP only, not set in G2
-	if (args[2] !== undefined) {
-		speed_change = args[2];
-		sbp_values.movea_speed = speed_change;
-		this.movespeed_a = speed_change;
-	}
-	//Set B move speed in OpenSBP only, not set in G2
-	if (args[3] !== undefined) {
-		speed_change = args[3];
-		sbp_values.moveb_speed = speed_change;
-		this.movespeed_b = speed_change;
-	}
-	//Set C move speed in OpenSBP only, not set in G2
-	if (args[4] !== undefined) {
-		speed_change = args[4];
-		sbp_values.movec_speed = speed_change;
-		this.movespeed_c = speed_change;
-	}
-	//Set XY jog speed in G2 and OpenSBP
-	if (args[5] !== undefined) {
-		speed_change = args[5];
-		sbp_values.jogxy_speed = speed_change;
-		g2_values.xvm = (60*speed_change);
-		g2_values.yvm = (60*speed_change);
-	}
-	//Set Z jog speed in G2 and OpenSBP
-	if (args[6] !== undefined) {
-		speed_change = args[6];
-		sbp_values.jogz_speed = speed_change;
-		g2_values.zvm = (60*speed_change);
-	}
-	//Set A jog speed in G2 and OpenSBP
-	if (args[7] !== undefined) {
-		speed_change = args[7];
-		sbp_values.joga_speed = speed_change;
-		g2_values.avm = (60*speed_change);
-	}
-	//Set B jog speed in G2 and OpenSBP
-	if (args[8] !== undefined) {
-		speed_change = args[8];
-		sbp_values.jogb_speed = speed_change;
-		g2_values.bvm = (60*speed_change);
-	}
-	//Set C jog speed in G2 and OpenSBP
-	if (args[9] !== undefined) {
-		speed_change = args[9];
-		sbp_values.jogc_speed = speed_change;
-		g2_values.cvm = (60*speed_change);
-	}
+    vs_change = 1;
 
-//	log.debug("VS - sbp_values = " + JSON.stringify(sbp_values));
-
-	config.opensbp.setMany(sbp_values, function(err, values) {
-		if(err) {
-			log.error(err);
-		}
-		config.driver.setMany(g2_values, function(err, values) {
-			callback();
-		});
-	});
 };
 
 //exports.VU = function(args,callback) {
