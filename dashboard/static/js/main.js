@@ -315,9 +315,9 @@ $('.axi').on('focus', function(e) {
     $(this).select();
 });
 $(document).on('click', function() { 
-    $('.posx').val($('.posx').val().toFixed(4));
-    $('.posy').val($('.posy').val().toFixed(4));
-    $('.posz').val($('.posz').val().toFixed(4));
+    $('.posx').val($('.posx').val());
+    $('.posy').val($('.posy').val());
+    $('.posz').val($('.posz').val());
     $('.go-here').hide();
 });
 
