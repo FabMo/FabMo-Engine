@@ -562,11 +562,8 @@ SBPRuntime.prototype._dispatch = function(callback) {
 						}.bind(this),
 						"stop" : function(driver) {
 							callback();
-						}/*,
-						null : function(driver) {
-							// TODO: This is probably a failure
-							log.warn("Expected a stop or hold (from the paused state) but didn't get one.");
-						}*/
+						},
+						"alarm" : hold_function
 					});
 				}
 			}.bind(this);
