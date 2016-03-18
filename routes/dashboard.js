@@ -3,7 +3,7 @@ var restify = require('restify');
 var dashboard = require('../dashboard');
 var util = require('../util');
 var fs = require('fs');
-var upload = require('./upload').upload;
+var upload = require('./util').upload;
 
 
 

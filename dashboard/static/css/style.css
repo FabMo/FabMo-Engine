@@ -148,6 +148,15 @@ body,html{
 	vertical-align: middle;
 }
 
+#tool-name-container {
+	height: 100%;
+	width: 15rem;
+	position: absolute;
+	color: #eee;
+	left: 3rem;
+	top: 0;
+	vertical-align: middle;
+}
 
 #right-position-container span, #right-position-container label {
 	color: #fff;
@@ -490,15 +499,17 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 #position ul .axis input.pos {
 	width: 7rem;
-	text-align: center;
+	text-align: right;
 	float: right;
-	font-size: 24px;
-	padding : 2px 4px;
-	padding: 0.125rem 0.25rem;
+    padding: 0;
+    height: auto;
+	font-size: 23px;
 	margin-top: 3px;
 	margin-top: 0.1925rem;
 	background-color: #9C210C;
 	border: none;
+    box-shadow: none;
+    color: #eee;
 }
 
 .go-here{
@@ -843,7 +854,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	box-shadow: 0px -2px 15px -6px rgba(0,0,0,0.75);
 }
 
-.stopJob {
+.pauseJob {
+    cursor: pointer;
 	position: relative;
 	display: block;
 	text-align: center;
@@ -862,12 +874,73 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	transition: all 1s;
 }
 
-.stopJob.blink{
+.pauseJob.blink{
 	background-color: #A60000;
 	border: solid #ff0000 4px;
 	transition: all 1s;
 }
 
+
+
+.resumeJob.blink{
+	background-color: #00A600;
+	border: solid #00ff00 4px;
+	transition: all 1s;
+}
+
+.fabmo-resume-stop {
+    margin-top: 7px;
+    width: 35%;
+    display: block;
+    text-align: center;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.fabmo-resume-stop div {
+    display: inline-block;
+    cursor: pointer;
+	text-align: center;
+	font-family: Arial;
+	color: #ffffff;
+	font-size: 17px;
+	padding-top: 3.5px;
+	padding-bottom: 3.5px;
+	text-decoration: none;
+	transition: all 1s;
+}
+
+@media only screen and (max-width: 600px){
+    .fabmo-resume-stop div {
+        font-size: 13px;
+    }
+    .fabmo-resume-stop {
+        margin-top: 10px;
+        width: 40%;
+    }
+    
+}
+
+.stopJob {
+   background: #f20000;
+   border: solid #ff0000 1px;
+   width: 50%;
+   margin-left: -2.5px;
+   border-radius: 0 5px 5px 0;
+}
+.resumeJob {
+    background: #32B433;
+	border: solid #00A600 1px;
+    width: 50%;  
+    margin-right: -2.5px;
+    border-radius: 5px 0 0 5px;
+}
+
+.quitJob.blink{
+	background-color: #00A600;
+	border: solid #00ff00 4px;
+	transition: all 1s;
+}
 
 .currentContainer {
 	margin-top: 12px;

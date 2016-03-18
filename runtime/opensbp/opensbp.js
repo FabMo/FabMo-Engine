@@ -91,6 +91,12 @@ SBPRuntime.prototype.connect = function(machine) {
 	this.machine.status.line=null; 
 	this.machine.status.nb_lines=null;
 	this._update();
+	this.cmd_posx = this.posx;
+	this.cmd_posy = this.posy;
+	this.cmd_posz = this.posz;
+	this.cmd_posa = this.posa;
+	this.cmd_posb = this.posb;
+	this.cmd_posc = this.posc;
 	this.status_handler = this._onG2Status.bind(this);
 	this.driver.on('status', this.status_handler);
 	log.info('Connected OpenSBP runtime.');
@@ -114,6 +120,9 @@ SBPRuntime.prototype.disconnect = function() {
 	}
 };
 
+SBPRuntime.prototype.executeCode = function(s, callback) {
+	this.runString(s, callback);
+}
 // Run the provided string in OpenSBP format
 SBPRuntime.prototype.runString = function(s, callback) {
 	try {
@@ -129,11 +138,6 @@ SBPRuntime.prototype.runString = function(s, callback) {
 			return this._end(e.message + " (Line " + e.line + ")");
 		}
  		lines = this.program.length;
- 		
- 		this.cmd_posx = this.posx;
-        this.cmd_posy = this.posy;
-        this.cmd_posz = this.posz;
-
 		this._setupTransforms();
 		this.init();
 		this.end_callback = callback;
@@ -355,10 +359,6 @@ SBPRuntime.prototype._run = function() {
 	if(this.machine) {
 		this.machine.setState(this, "running");
 	}
-	// this.cmd_posx = this.posx;
-	// this.cmd_posy = this.posy;
-	// log.debug("*******************run: cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy);
-
 	this._continue();
 };
 
@@ -562,11 +562,11 @@ SBPRuntime.prototype._dispatch = function(callback) {
 						}.bind(this),
 						"stop" : function(driver) {
 							callback();
-						},
+						}/*,
 						null : function(driver) {
 							// TODO: This is probably a failure
 							log.warn("Expected a stop or hold (from the paused state) but didn't get one.");
-						}
+						}*/
 					});
 				}
 			}.bind(this);
@@ -1111,32 +1111,41 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 		case 1: // X Location
 			return this.machine.status.posx;
 		break;
+
 		case 2: // Y Location
 			return this.machine.status.posy;
 		break;
+
 		case 3: // Z Location
 			return this.machine.status.posz;
 		break;
+
 		case 4: // A Location
 			return this.machine.status.posa;
 		break;
+
 		case 5: // B Location
 			return this.machine.status.posb;
 		break;
+
 		case 6: // X Table Base
-			return this.config.g2.g55x;
+			return config.driver.get('g55x');
 		break;
+
 		case 7: // Y Table Base
-			return this.config.g2.g55y;
+			return config.driver.get('g55y');
 		break;
+
 		case 8: // Z Table Base
-			return this.config.g2.g55z;
+			return config.driver.get('g55z');
 		break;
+
 		case 9: // A Table Base
-			return this.config.g2.g55a;
+			return config.driver.get('g55a');
 		break;
+
 		case 10: // B Table Base
-			return this.config.g2.g55b;
+			return config.driver.get('g55b');
 		break;
 
 		case 25:
@@ -1185,27 +1194,33 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 			return config.opensbp.get('movec_speed');
 		break;
 
-                case 81:
+        case 81:
 			return config.driver.get('xjm');
-               		break; 
+        break; 
+
 		case 82:
 			return config.driver.get('yjm');
-               		break; 
+        break; 
+
 		case 83:
 			return config.driver.get('zjm');
-               		break; 
-                case 84:
+        break; 
+
+        case 84:
 			return config.driver.get('ajm');
-               		break; 
-                case 85:
+        break; 
+
+        case 85:
 			return config.driver.get('bjm');
-               		break; 
-                case 86:
+        break; 
+
+        case 86:
 			return config.driver.get('cjm');
-               		break; 
+        break; 
+
 		case 144:
 			return this.machine.status.posc;
-               		break; 
+        break; 
 
 		default:
 			throw new Error("Unknown System Variable: " + v)
@@ -1304,7 +1319,9 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		var c = pt[key];
 		if(c !== undefined) {
 			if(isNaN(c)) { throw( "Invalid " + key + " argument: " + c ); } 
-			if(key === "X") { this.cmd_posx = c; }
+			if(key === "X") { this.cmd_posx = c; 
+			  log.debug("   emit_move: this.cmd_posx = " + this.cmd_posx );
+            }
 			else if(key === "Y") { this.cmd_posy = c; }
 			else if(key === "Z") { this.cmd_posz = c; }
 			else if(key === "A") { this.cmd_posa = c; }
@@ -1313,6 +1330,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		}
 	}.bind(this));
 
+log.debug("   emit_move: this.cmd_posx = " + this.cmd_posx );
 
 	// Where to save the start point of an arc that isn't transformed??????????
 	var tPt = this.transformation(pt);

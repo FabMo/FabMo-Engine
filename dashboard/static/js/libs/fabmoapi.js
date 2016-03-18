@@ -146,6 +146,13 @@ FabMoAPI.prototype.ping = function(callback) {
 	}
 }
 
+FabMoAPI.prototype.sendTime = function(callback) {
+	var d = new Date();
+	var t = d.getTime();
+	var data = {'ms' : t };
+	this._post('/time/date', data, callback, callback);
+}
+
 // Configuration
 FabMoAPI.prototype.getConfig = function(callback) {
 	var callback = callback || function() {};
@@ -343,6 +350,10 @@ FabMoAPI.prototype.enableHotspot = function(callback) {
 FabMoAPI.prototype.disableHotspot = function(callback) {
 	var data = {'enabled' : false};
 	this._post('/network/hotspot/state', data, callback, callback);
+}
+
+FabMoAPI.prototype.getNetworkIdentity = function(callback) {
+	this._get('/network/identity', callback, callback);
 }
 
 FabMoAPI.prototype.submitJob = function(job, options, callback) {

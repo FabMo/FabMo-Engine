@@ -71,6 +71,8 @@ exports.CC = function(args) {
   var plgFromZero = args[11] !== undefined ? args[11] : undefined;
   var comp = 0;
 
+  log.debug("CC:   startX = " + CCstartX + "  startY = " + CCstartY + "  startZ = " + CCstartZ );
+
   if (OIT === 'O') {
     comp = 1;
   } 
@@ -118,6 +120,8 @@ exports.CC = function(args) {
     endX = centerX + radius * Math.cos(Eradians);
     endY = centerY + radius * Math.sin(Eradians);
   }
+
+  log.debug("CC:   endX = " + endX + "  endY = " + endY + "  xOffset = " + xOffset + "  yOffset " + yOffset);
 
   this.CG([undefined,endX,endY,xOffset,yOffset,OIT,Dir,Plg,reps,propX,propY,optCC,noPullUp,plgFromZero]);
 
