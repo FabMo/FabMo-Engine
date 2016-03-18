@@ -1394,3 +1394,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .chip.three {
     animation: chipflythree .5s .4s ease infinite;
 }
+
+.toast {
+    opacity:0.9 !important;
+}
