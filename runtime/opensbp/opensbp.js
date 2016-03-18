@@ -451,32 +451,35 @@ SBPRuntime.prototype._end = function(error) {
 				this.init();
 				//this.user_vars = {};
 				if(error) {
-					this.machine.setState(this, 'stopped', {'error' : error });
-					this.emit('end', this);
-					if(callback) {
-						callback();
-					}
+					config.driver.restore( function() {
+						this.machine.setState(this, 'stopped', {'error' : error });
+						this.emit('end', this);
+						if(callback) {
+							callback();
+						}						
+					});
 				} else {
-
-					if(this.machine.status.job) {
-						this.machine.status.job.finish(function(err, job) {
-							this.machine.status.job=null;
+					config.driver.restore(function() {
+						if(this.machine.status.job) {
+							this.machine.status.job.finish(function(err, job) {
+								this.machine.status.job=null;
+								this.driver.setUnits(config.machine.get('units'), function() {
+									this.machine.setState(this, 'idle');
+								}.bind(this));
+							}.bind(this));
+						} else {
 							this.driver.setUnits(config.machine.get('units'), function() {
 								this.machine.setState(this, 'idle');
 							}.bind(this));
-						}.bind(this));
-					} else {
-						this.driver.setUnits(config.machine.get('units'), function() {
-							this.machine.setState(this, 'idle');
-						}.bind(this));
+						}
+						this.ok_to_disconnect = true;
+						this.emit('end', this);
+						if(callback) {
+							callback();
+						}									
+
+						}.bind(this));					
 					}
-					this.ok_to_disconnect = true;
-					this.emit('end', this);
-					if(callback) {
-						callback();
-					}
-			
-				}
 		}.bind(this);
 
 		var end_function_nested = function() {
@@ -562,11 +565,8 @@ SBPRuntime.prototype._dispatch = function(callback) {
 						}.bind(this),
 						"stop" : function(driver) {
 							callback();
-						}/*,
-						null : function(driver) {
-							// TODO: This is probably a failure
-							log.warn("Expected a stop or hold (from the paused state) but didn't get one.");
-						}*/
+						},
+						"alarm" : hold_function
 					});
 				}
 			}.bind(this);
@@ -634,6 +634,11 @@ SBPRuntime.prototype._dispatch = function(callback) {
 		return false;
 	}
 };
+
+SBPRuntime.prototype._teardownEvents = function(callback) {
+	console.log("Leftover Events:");
+	console.log(this.event_teardown);
+}
 
 // To be called when a hold is encountered spontaneously (to handle ON INPUT events)
 SBPRuntime.prototype._processEvents = function(callback) {

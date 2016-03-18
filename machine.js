@@ -184,6 +184,7 @@ Machine.prototype.arm = function(action, timeout) {
 
 	if(config.machine.get('auth_input') == 0) {
 		log.info("Firing automatically since authorization is disabled.");
+		//this.status.state = 'armed';
 		this.fire(true);
 	} else {
 		this.setState(this, 'armed');	
@@ -221,7 +222,7 @@ Machine.prototype.fire = function(force) {
 
 	switch(this.action.type) {
 		case 'nextJob':
-			this._runNextJob(function() {});
+			this._runNextJob(force, function() {});
 			break;
 
 		case 'runtimeCode':
@@ -542,9 +543,9 @@ Machine.prototype._resume = function() {
 	}
 };
 
-Machine.prototype._runNextJob = function(callback) {
+Machine.prototype._runNextJob = function(force, callback) {
 	if(this.isConnected()) {
-		if(this.status.state === 'armed') {
+		if(this.status.state === 'armed' || force) {
 			log.info("Running next job");
 			db.Job.dequeue(function(err, result) {
 				log.info(result);
