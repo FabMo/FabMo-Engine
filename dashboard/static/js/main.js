@@ -34,6 +34,13 @@ define(function(require) {
     
     //Give editor focus 
     
+    engine.getNetworkIdentity(function(err, id) {
+    	if(!id) { return; }
+    	var name = id.name || "";
+    	$('#tool-name').text(name);
+    	document.title = name || "FabMo Dashboard";
+    });
+
     $('#icon_editor').on('click', function(){
         $('iframe').focus();
 

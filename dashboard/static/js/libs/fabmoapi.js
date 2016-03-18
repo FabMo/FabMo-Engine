@@ -345,6 +345,10 @@ FabMoAPI.prototype.disableHotspot = function(callback) {
 	this._post('/network/hotspot/state', data, callback, callback);
 }
 
+FabMoAPI.prototype.getNetworkIdentity = function(callback) {
+	this._get('/network/identity', callback, callback);
+}
+
 FabMoAPI.prototype.submitJob = function(job, options, callback) {
 	this._postUpload('/job', job, {}, callback, callback);
 }
