@@ -31,7 +31,7 @@
 	&z_dist = 0.0 + $current_cutter_Zoffset
     VA, ,, &z_dist,,,,,, &z_dist          ' Set Z Table Base Coordinate (offset to Zero) 
     VS, ,4				' ... reset
-	VR, ,100
+	VR, ,50
 	&tempPark = $current_cutter_Zoffset - .25
 	MZ, &tempPark		' Move to X-Zero // Z-Zero location now accurate
 
@@ -46,7 +46,7 @@
 	&temp_loc = 6 + $x_backoff
     VA, &temp_loc,,,,,, &temp_loc ' Set X Table Base Coordinate (offset to Zero) 
     VS, 4				' ... reset
-	VR, 100				
+	VR, 50			
 	MX, 0.0				' Move to X-Zero // X-Zero location now accurate
 
 'Y-Axis Set Zero Routine (setting the Table Base Zero Coordinate)
@@ -60,7 +60,7 @@
 	&temp_loc = 8 + $y_backoff
     VA, ,&temp_loc ,,,,,, &temp_loc' Set Y Table Base Coordinate (offset to Zero) 
     VS, 4				' ... reset
-	VR, 100				
+	VR, 50			
 	MY, 0.0				' Move to Y-Zero // Y-Zero location now accurate
 
 

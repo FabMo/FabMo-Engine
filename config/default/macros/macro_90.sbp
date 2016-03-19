@@ -17,7 +17,7 @@
 
 
 'THESE ARE OLD METHOD FOR SYSTEM VAR AND MACROS ... in process of re-implementing
-,=========================================================
+'=========================================================
 'MY_VARIABLES.SBC -- File Containing Common User Defined Variables -- Call at the beginning of any file needing to use them
 'Tracks whether Shopbot Setup has run
 &my_hasrunsetup=0
