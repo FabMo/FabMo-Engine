@@ -818,7 +818,7 @@ SBPRuntime.prototype._execute = function(command, callback) {
 				setImmediate(callback);
 				return true;
 			} else {
-				throw "Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc;
+				throw new Error("Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc);
 			}
 			break;
 
@@ -850,7 +850,8 @@ SBPRuntime.prototype._execute = function(command, callback) {
 				return this._execute(command.stmt, callback);  // Warning RECURSION!
 			} else {
 				this.pc += 1;
-				return false;
+				setImmediate(callback)
+				return true;
 			}
 			break;
 
