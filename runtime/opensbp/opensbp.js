@@ -457,7 +457,7 @@ SBPRuntime.prototype._end = function(error) {
 						if(callback) {
 							callback();
 						}						
-					});
+					}.bind(this));
 				} else {
 					config.driver.restore(function() {
 						if(this.machine.status.job) {
