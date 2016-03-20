@@ -32,8 +32,8 @@
     VA, ,, &z_dist,,,,,, &z_dist          ' Set Z Table Base Coordinate (offset to Zero) 
     VS, ,4				' ... reset
 	VR, ,50
-	&tempPark = $current_cutter_Zoffset - .25
-	MZ, &tempPark		' Move to X-Zero // Z-Zero location now accurate
+	&tempPark = $current_cutter_Zoffset - .25    ' about as high as you can safely be
+	MZ, &tempPark		' Move to Z-Zero // Z-Zero location now accurate
 
 'X-Axis Set Zero Routine (setting the Table Base Zero Coordinate)
 	MX, 7.0				' Hit Right-Side Hardstop
