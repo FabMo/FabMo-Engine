@@ -9,6 +9,8 @@ $zero_plate_adder := .75
 'First Set XYZ Zero with routine if you have not (Macro#3). And, measure cutter length if you nave not (Macro#2).
 	PAUSE
 
+    PAUSE 3
+
 'The other thing you need to do is to carefully move the cutter tip exactly to the surface, and click the zero button there ... click QUIT now and do that if you have not.
 	PAUSE
 

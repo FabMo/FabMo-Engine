@@ -6,8 +6,8 @@
 'Initialize
     'Read Offset or Set Defaults
         $current_cutter_Zoffset := .25
-        $x_backoff := .10
-        $y_backoff := .10
+        $x_backoff := .075
+        $y_backoff := .075
     'Get Speeds at Startup
 		&startXY_speed = %(71)
 		&startZ_speed = %(73)
@@ -28,8 +28,8 @@
     VS, ,5				' ... approach fast (less force)
     VR, ,1000           ' ... limit ramp bounce
     MZ, 5.5
-	&z_dist = 0.0 + $current_cutter_Zoffset
-    VA, ,, &z_dist,,,,,, &z_dist          ' Set Z Table Base Coordinate (offset to Zero) 
+	&z_dist = 0.0 + $current_cutter_Zoffset      ' This persistent var = distance for Z move from tip at 0 til top stop
+    VA, ,, &z_dist,,,,,, &z_dist                 ' Set Z Table Base Coordinate (offset to Zero) 
     VS, ,4				' ... reset
 	VR, ,50
 	&tempPark = $current_cutter_Zoffset - .25    ' about as high as you can safely be

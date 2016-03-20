@@ -1,13 +1,13 @@
 '!FABMO!name:MY_Variables
-'!FABMO!description:Load variables (with variable information)
+'!FABMO!description:Load variables (with variable information
 
 'SYSTEM / PERSISTENT VARIABLES with DEFAULTS ( ":=" syntax serves to set to default if not a value)
 
 'For Zeroing Handibot V2.0
 	$current_cutter_Zoffset := .25	'| These two variables added = distance from 0 (tip touching surface)
 	$zero_plate_adder := .75		'|	... to the Z top Hard-Stop
-	$x_backoff := .10
-	$y_backoff := .10
+	$x_backoff := .075
+	$y_backoff := .075
 
 'For Parking
 	$x_park := 3
