@@ -1451,3 +1451,30 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
        height: 10px;
     }
 }
+
+.newModal{
+    width: 40%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3001;
+    background-color: #313366;
+    color: #333333;
+    padding: 2em;
+}
+
+.modalDim{
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #313366;
+    opacity: 0.8;
+    z-index: 3000;
+}
+
+.modalSubContent{
+    display: inline-block;
+}
