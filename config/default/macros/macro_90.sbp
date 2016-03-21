@@ -23,11 +23,11 @@
 &my_hasrunsetup=0
 
 'Personal info that might help tech support at some point
-&my_name="Typeyournamehere"
-&my_email="Typeyouremailaddress"
-&my_phone="Typeyourphonenumber"
-&my_purchasedate="Purchasedate"
-&my_sbtype="Which:PRSalpha;PRSstandard;PRTalpha;PRTstandard;Buddyalpha;Buddystandard"
+'&my_name="Typeyournamehere"
+'&my_email="Typeyouremailaddress"
+'&my_phone="Typeyourphonenumber"
+'&my_purchasedate="Purchasedate"
+'&my_sbtype="Which:PRSalpha;PRSstandard;PRTalpha;PRTstandard;Buddyalpha;Buddystandard"
 
 'These values are used in the ZZero routine
 &my_hasZzero=1
