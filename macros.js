@@ -189,11 +189,13 @@ var load = function(callback) {
 				results.forEach(function(info) {
 					if(info) {
 						groups = info.filename.match(re);
-						idx = parseInt(groups[1]);
-						ext = groups[2];
-						info.index = idx;
-						info.type = ext;
-						macros[idx] = info;
+						if(groups) {
+							idx = parseInt(groups[1]);
+							ext = groups[2];
+							info.index = idx;
+							info.type = ext;
+							macros[idx] = info;							
+						}
 					}
 				});
 				callback(null);
