@@ -1462,19 +1462,19 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .newModal{
-    width: 40%;
-    position: absolute;
+    width: 50%;
+    position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 3001;
-    background-color: #313366;
-    color: #333333;
-    padding: 2em;
+    background-color: #eee;
+    padding: 1em;
+    border-radius: 5px;
 }
 
 .modalDim{
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
@@ -1484,8 +1484,90 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     z-index: 3000;
 }
 
+.modalLogo{
+    position: relative;
+    height: 30px;
+    padding-bottom: 30px;
+}
+
+.modalLogo svg{
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.modalTitle{
+    text-align: left;
+     color: #333333;
+    padding: 0;
+    margin: 0;
+   
+}
 .modalSubContent{
     display: inline-block;
+    
+}
+.modalImage{
+    position: relative;
+    display: inline-block;
+    width: 25%;
+    padding-top:25%;
+    vertical-align: top;
+}
+
+.modalImage img{
+    direction: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+
+
+.modalDialogue{
+    font-size: 20px;
+     color: #333333;
+    display: inline-block;
+    margin-right: 1em;
+    width: 65%;
+    height: 100%;
+    padding: 0;
+}
+
+@media screen and (max-width: 750px) {
+    .newModal{
+        width: 90%;
+    }
+}
+
+.modalButtons {
+    margin-top: 10px;
+    font-size: 20px;
+    text-align: center;
+}
+
+.modalOkay{
+    cursor: pointer;
+    display: inline-block;
+    height: 30px;
+    width: 40%;
+    text-align: center;
+    background-color: #5DAA35;
+    border-radius: 5px;
+}
+
+.modalCancel{
+    cursor: pointer;
+    display: inline-block;
+    height: 30px;
+    width: 40%;
+    text-align: center;
+    background-color: #9C210C;
+    border-radius: 5px;
 }
 
 .toast {
