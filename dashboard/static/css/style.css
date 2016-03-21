@@ -148,6 +148,15 @@ body,html{
 	vertical-align: middle;
 }
 
+#tool-name-container {
+	height: 100%;
+	width: 15rem;
+	position: absolute;
+	color: #eee;
+	left: 3rem;
+	top: 0;
+	vertical-align: middle;
+}
 
 #right-position-container span, #right-position-container label {
 	color: #fff;
@@ -1477,4 +1486,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .modalSubContent{
     display: inline-block;
+}
+
+.toast {
+    opacity:0.9 !important;
 }

@@ -758,15 +758,15 @@ table {
     border-radius: 50%;
     width: 38px;
     height:38px;
-    animation: off 1.5s infinite;
+    
 }
 
 @-webkit-keyframes off {
     0% {
     background: #B10000; /* Old browsers */
-        -webkit-box-shadow: 0px 0px 6px 2px #B10000;
--moz-box-shadow: 0px 0px 6px 2px #B10000;
-box-shadow: 0px 0px 6px 2px #B10000;
+    -webkit-box-shadow: 0px 0px 6px 2px #B10000;
+        -moz-box-shadow: 0px 0px 6px 2px #B10000;
+            box-shadow: 0px 0px 6px 2px #B10000;
    
     }
     90%{
@@ -778,15 +778,69 @@ box-shadow: 0px 0px 6px 2px #B10000;
 
     }
 }
+
+@-moz-keyframes off {
+    0% {
+    background: #B10000; /* Old browsers */
+    -webkit-box-shadow: 0px 0px 6px 2px #B10000;
+        -moz-box-shadow: 0px 0px 6px 2px #B10000;
+            box-shadow: 0px 0px 6px 2px #B10000;
+   
+    }
+    90%{
+     background: none; /* Old browsers */
+  
+    }
+    100% {
+    background: #B10000; /* Old browsers */
+
+    }
+}
+@-webkit-keyframes pause {
+    0% {
+    background: #DD8728; /* Old browsers */
+    -webkit-box-shadow: 0px 0px 6px 2px #DD8728;
+        -moz-box-shadow: 0px 0px 6px 2px #DD8728;
+            box-shadow: 0px 0px 6px 2px #DD8728;
+   
+    }
+    90%{
+     background: none; /* Old browsers */
+  
+    }
+    100% {
+    background: #DD8728; /* Old browsers */
+
+    }
+}
+
+@-moz-keyframes pause {
+    0% {
+    background: #DD8728; /* Old browsers */
+    -webkit-box-shadow: 0px 0px 6px 2px #DD8728;
+        -moz-box-shadow: 0px 0px 6px 2px #DD8728;
+            box-shadow: 0px 0px 6px 2px #DD8728;
+   
+    }
+    90%{
+     background: none; /* Old browsers */
+  
+    }
+    100% {
+    background: #DD8728; /* Old browsers */
+
+    }
+}
+
 .job-status-light.one {
   
 }
 
 
 .job-status-light.two {
-  animation-delay: .5s;
+ 
 }
 
 .job-status-light.three {
-  animation-delay: 1s;
+ 
 }

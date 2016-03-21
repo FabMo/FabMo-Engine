@@ -52,6 +52,16 @@ function SBPRuntime() {
 	this.movespeed_a = 0;
 	this.movespeed_b = 0;
 	this.movespeed_c = 0;
+	this.jogspeed_xy = 0;
+	this.jogspeed_z = 0;
+	this.jogspeed_a = 0;
+	this.jogspeed_b = 0;
+	this.jogspeed_c = 0;
+	this.maxjerk_xy = 100;
+	this.maxjerk_z = 50;
+	this.maxjerk_a = 20;
+	this.maxjerk_b = 20;
+	this.maxjerk_c = 20;
 	this.cmd_StartX = 0; 
 	this.cmd_StartY = 0; 
 	this.cmd_StartZ = 0; 
@@ -61,6 +71,7 @@ function SBPRuntime() {
 	this.paused = false;
 	this.lastNoZPullup = 0; 
 	this.continue_callback = null;
+	this.vs_change = 0;
 
 	// Physical machine state
 	this.machine = null;
@@ -91,6 +102,12 @@ SBPRuntime.prototype.connect = function(machine) {
 	this.machine.status.line=null; 
 	this.machine.status.nb_lines=null;
 	this._update();
+	this.cmd_posx = this.posx;
+	this.cmd_posy = this.posy;
+	this.cmd_posz = this.posz;
+	this.cmd_posa = this.posa;
+	this.cmd_posb = this.posb;
+	this.cmd_posc = this.posc;
 	this.status_handler = this._onG2Status.bind(this);
 	this.driver.on('status', this.status_handler);
 	log.info('Connected OpenSBP runtime.');
@@ -132,11 +149,6 @@ SBPRuntime.prototype.runString = function(s, callback) {
 			return this._end(e.message + " (Line " + e.line + ")");
 		}
  		lines = this.program.length;
- 		
- 		this.cmd_posx = this.posx;
-        this.cmd_posy = this.posy;
-        this.cmd_posz = this.posz;
-
 		this._setupTransforms();
 		this.init();
 		this.end_callback = callback;
@@ -147,11 +159,24 @@ SBPRuntime.prototype.runString = function(s, callback) {
 					    'moveb_speed',
 				    	'movec_speed' ];
 	    var getSBP_speed = config.opensbp.getMany(SBP_2get);
+	    var G2_2get = ['xvm','yvm','zvm','avm','bvm','cvm',
+	                   'xjm','yjm','zjm','ajm','bjm','cjm' ];
+        var getG2_settings = config.driver.getMany(G2_2get);
 		this.movespeed_xy = getSBP_speed.movexy_speed;
 		this.movespeed_z = getSBP_speed.movez_speed;
 		this.movespeed_a = getSBP_speed.movea_speed;
 		this.movespeed_b = getSBP_speed.moveb_speed;
 		this.movespeed_c = getSBP_speed.movec_speed;
+		this.jogspeed_xy = getG2_settings.xvm;
+		this.jogspeed_z = getG2_settings.zvm;
+		this.jogspeed_a = getG2_settings.avm;
+		this.jogspeed_b = getG2_settings.bvm;
+		this.jogspeed_c = getG2_settings.cvm;
+        this.maxjerk_xy = getG2_settings.xjm;
+        this.maxjerk_z = getG2_settings.zjm;
+        this.maxjerk_a = getG2_settings.ajm;
+        this.maxjerk_b = getG2_settings.bjm;
+        this.maxjerk_c = getG2_settings.cjm;
 		log.debug("Transforms configured...")
 		this._analyzeLabels();  // Build a table of labels
 		log.debug("Labels analyzed...")
@@ -358,10 +383,6 @@ SBPRuntime.prototype._run = function() {
 	if(this.machine) {
 		this.machine.setState(this, "running");
 	}
-	// this.cmd_posx = this.posx;
-	// this.cmd_posy = this.posy;
-	// log.debug("*******************run: cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy);
-
 	this._continue();
 };
 
@@ -454,32 +475,35 @@ SBPRuntime.prototype._end = function(error) {
 				this.init();
 				//this.user_vars = {};
 				if(error) {
-					this.machine.setState(this, 'stopped', {'error' : error });
-					this.emit('end', this);
-					if(callback) {
-						callback();
-					}
+					config.driver.restore( function() {
+						this.machine.setState(this, 'stopped', {'error' : error });
+						this.emit('end', this);
+						if(callback) {
+							callback();
+						}						
+					});
 				} else {
-
-					if(this.machine.status.job) {
-						this.machine.status.job.finish(function(err, job) {
-							this.machine.status.job=null;
+					config.driver.restore(function() {
+						if(this.machine.status.job) {
+							this.machine.status.job.finish(function(err, job) {
+								this.machine.status.job=null;
+								this.driver.setUnits(config.machine.get('units'), function() {
+									this.machine.setState(this, 'idle');
+								}.bind(this));
+							}.bind(this));
+						} else {
 							this.driver.setUnits(config.machine.get('units'), function() {
 								this.machine.setState(this, 'idle');
 							}.bind(this));
-						}.bind(this));
-					} else {
-						this.driver.setUnits(config.machine.get('units'), function() {
-							this.machine.setState(this, 'idle');
-						}.bind(this));
+						}
+						this.ok_to_disconnect = true;
+						this.emit('end', this);
+						if(callback) {
+							callback();
+						}									
+
+						}.bind(this));					
 					}
-					this.ok_to_disconnect = true;
-					this.emit('end', this);
-					if(callback) {
-						callback();
-					}
-			
-				}
 		}.bind(this);
 
 		var end_function_nested = function() {
@@ -566,10 +590,7 @@ SBPRuntime.prototype._dispatch = function(callback) {
 						"stop" : function(driver) {
 							callback();
 						},
-						null : function(driver) {
-							// TODO: This is probably a failure
-							log.warn("Expected a stop or hold (from the paused state) but didn't get one.");
-						}
+						"alarm" : hold_function
 					});
 				}
 			}.bind(this);
@@ -637,6 +658,11 @@ SBPRuntime.prototype._dispatch = function(callback) {
 		return false;
 	}
 };
+
+SBPRuntime.prototype._teardownEvents = function(callback) {
+	console.log("Leftover Events:");
+	console.log(this.event_teardown);
+}
 
 // To be called when a hold is encountered spontaneously (to handle ON INPUT events)
 SBPRuntime.prototype._processEvents = function(callback) {
@@ -1114,32 +1140,41 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 		case 1: // X Location
 			return this.machine.status.posx;
 		break;
+
 		case 2: // Y Location
 			return this.machine.status.posy;
 		break;
+
 		case 3: // Z Location
 			return this.machine.status.posz;
 		break;
+
 		case 4: // A Location
 			return this.machine.status.posa;
 		break;
+
 		case 5: // B Location
 			return this.machine.status.posb;
 		break;
+
 		case 6: // X Table Base
-			return this.config.g2.g55x;
+			return config.driver.get('g55x');
 		break;
+
 		case 7: // Y Table Base
-			return this.config.g2.g55y;
+			return config.driver.get('g55y');
 		break;
+
 		case 8: // Z Table Base
-			return this.config.g2.g55z;
+			return config.driver.get('g55z');
 		break;
+
 		case 9: // A Table Base
-			return this.config.g2.g55a;
+			return config.driver.get('g55a');
 		break;
+
 		case 10: // B Table Base
-			return this.config.g2.g55b;
+			return config.driver.get('g55b');
 		break;
 
 		case 25:
@@ -1188,27 +1223,33 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 			return config.opensbp.get('movec_speed');
 		break;
 
-                case 81:
+        case 81:
 			return config.driver.get('xjm');
-               		break; 
+        break; 
+
 		case 82:
 			return config.driver.get('yjm');
-               		break; 
+        break; 
+
 		case 83:
 			return config.driver.get('zjm');
-               		break; 
-                case 84:
+        break; 
+
+        case 84:
 			return config.driver.get('ajm');
-               		break; 
-                case 85:
+        break; 
+
+        case 85:
 			return config.driver.get('bjm');
-               		break; 
-                case 86:
+        break; 
+
+        case 86:
 			return config.driver.get('cjm');
-               		break; 
+        break; 
+
 		case 144:
 			return this.machine.status.posc;
-               		break; 
+        break; 
 
 		default:
 			throw new Error("Unknown System Variable: " + v)
@@ -1316,6 +1357,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		}
 	}.bind(this));
 
+//log.debug("   emit_move: this.cmd_posx = " + this.cmd_posx );
 
 	// Where to save the start point of an arc that isn't transformed??????????
 	var tPt = this.transformation(pt);

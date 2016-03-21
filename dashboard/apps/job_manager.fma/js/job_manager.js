@@ -2,7 +2,6 @@
 var historyStart = 0;
 var historyCount = 10;
 var historyTotal = 0;
-
 // Timer for the running job indicator
 var blinkTimer = null;
 
@@ -54,7 +53,7 @@ function updateQueue(running, callback) {
 				$('.job-queue').show(500);
 			} else {
 				$('.job-queue').slideUp(500);				
-			}		
+			}	
 		} else {
 			runningJob(null);
 			setNextJob(jobs.pending[0]);
@@ -63,7 +62,7 @@ function updateQueue(running, callback) {
 				addQueueEntries(jobs.pending.slice(1));
 			} else {
 				$('.job-queue').slideUp(500);
-			}			
+			}		
 		}
 		callback();
 	});
@@ -243,6 +242,7 @@ function bindNextJobEvents() {
 }
 
 function noJob() {
+         $('.with-job').data('job',false);
 		$('.cancel').slideUp();		
 		$('.download').slideUp();
 		$('.edit').slideUp();
@@ -257,6 +257,7 @@ function noJob() {
 };
 
 function nextJob(job) {
+        $('.with-job').data('job',true);
    		$('.without-job').css('left','-2000px');
 		$('.cancel').data('id', job._id);
 		$('.preview').data('id', job._id);

@@ -176,38 +176,53 @@ exports.JH = function(args,callback) {
 };
 
 // Set the Jog (Rapid) speed for any of the 6 axes
+// This is a stack break command that won't change the persistent
+//   setting of jog speed. Once a file has stopped the jog speed
+//   back to the persistent values in G2.json
 exports.JS = function(args, callback) {
 	var speed_change = 0.0;
-	var g2_values = {};
+	// var g2_values = {};
 
 	if (args[0] !== undefined) {
 		speed_change = args[0];
 		if(isNaN(speed_change)) { throw "Invalid JS-XY argument: " + speed_change; }
-		g2_values.xvm = g2_values.yvm = (60 * speed_change);
+		// g2_values.xvm = g2_values.yvm = (60 * speed_change);
+		this.machine.driver.command({'xvm':(60 * speed_change)});
+		this.machine.driver.command({'yvm':(60 * speed_change)});
+		this.jogspeed_xy = speed_change;
 	}
 	if (args[1] !== undefined) {
 		speed_change = args[1];
 		if(isNaN(speed_change)) { throw "Invalid JS-Z argument: " + speed_change; }
-		g2_values.zvm = (60 * speed_change);
+		// g2_values.zvm = (60 * speed_change);
+		this.machine.driver.command({'zvm':(60 * speed_change)});
+		this.jogspeed_z = speed_change;
 	}
 	if (args[2] !== undefined) {
 		speed_change = args[2];
 		if(isNaN(speed_change)) { throw "Invalid JS-A argument: " + speed_change; }
-		g2_values.avm = (60 * speed_change);
+		// g2_values.avm = (60 * speed_change);
+		this.machine.driver.command({'avm':(60 * speed_change)});
+		this.jogspeed_a = speed_change;
 	}
 	if (args[3] !== undefined) {
 		speed_change = args[3];
 		if(isNaN(speed_change)) { throw "Invalid JS-B argument: " + speed_change; }
-		g2_values.bvm = (60 * speed_change);
+		// g2_values.bvm = (60 * speed_change);
+		this.machine.driver.command({'bvm':(60 * speed_change)});
+		this.jogspeed_b = speed_change;
 	}
 	if (args[4] !== undefined) {
 		speed_change = args[4];
 		if(isNaN(speed_change)) { throw "Invalid JS-C argument: " + speed_change; }
-		g2_values.cvm = (60 * speed_change);
+		// g2_values.cvm = (60 * speed_change);
+		this.machine.driver.command({'cvm':(60 * speed_change)});
+		this.jogspeed_c = speed_change;
 	}
 	// We have created the objects containing both the values to set on the G2 driver as well as for shopbot
 	// Now send them to their appropriate places (shopbot first, followed by G2)
-	config.driver.setMany(g2_values, function(err, values) {
-		callback();
-	});
+	// config.driver.setMany(g2_values, function(err, values) {
+    this.vs_change = 1;	
+	callback();
+	// });
 };

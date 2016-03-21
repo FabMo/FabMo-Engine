@@ -129,4 +129,23 @@ function upload(req, res, next, callback) {
     };
 }
 
+function updaterRedirect(req, res, next) {
+    switch(req.method) {
+        case 'GET':
+            var host = req.headers.host.split(':')[0].trim('/');
+            var path = req.params[0];
+            var url = 'http://' + host + ':' + (config.engine.get('server_port') + 1) + '/' + path;
+            res.redirect(302, url, next);   
+            break;
+
+        case 'POST':
+            var host = req.headers.host.split(':')[0].trim('/');
+            var path = req.params[0];
+            var url = 'http://' + host + ':' + (config.engine.get('server_port') + 1) + '/' + path;
+            var response = {'url' : url};
+            res.json(300, response);
+            break;
+    }
+}
 module.exports.upload = upload;
+module.exports.updaterRedirect = updaterRedirect;

@@ -71,6 +71,8 @@ exports.CC = function(args) {
   var plgFromZero = args[11] !== undefined ? args[11] : undefined;
   var comp = 0;
 
+  log.debug("CC:   startX = " + CCstartX + "  startY = " + CCstartY + "  startZ = " + CCstartZ );
+
   if (OIT === 'O') {
     comp = 1;
   } 

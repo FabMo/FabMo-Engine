@@ -221,7 +221,11 @@ define(function(require) {
 			});
 
 		//Define the positions of the dashboard notifications
-		toastr.options["positionClass"] = "toast-bottom-center";
+		toastr.options["positionClass"] = "toast-top-center";
+		toastr.options.showMethod = 'slideDown';
+		toastr.options.hideMethod = 'slideUp';
+		toastr.options.preventDuplicates = true;
+
 
 		//Click & Swipe listener
 		slideMenu();
