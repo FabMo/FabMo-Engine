@@ -255,10 +255,10 @@
 	}).resize();
 	
 	fabmo.on('status', function(status) {
-		handleStatusReport(status);
+        handleStatusReport(status);
         if (status.job == null && status.state != 'idle') {
             $('.play-button').hide();
-        } else if (status.state == 'idle') {
+        } else if (status.state == 'idle' && $('.with-job').data('job') == true) {
            $('.play-button').show();
         }
         if (status.state == 'running') {
