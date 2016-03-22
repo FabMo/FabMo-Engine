@@ -534,7 +534,13 @@ if ($(window).width() < 620) {
 	$('.currentContainer').css('width', '100px');
 	$('.currentJobTitle').css('width', '50%');
 	$('.currentJobTitle').css('padding-left', '100px');
-}
+    
+    if ($(window).width() < 400) {
+        $('.currentContainer').css('width', '50px');
+	$('.currentJobTitle').css('width', '50%');
+	$('.currentJobTitle').css('padding-left', '50px');
+    }
+} 
 })();
 engine.sendTime();
 function touchScreen () {
