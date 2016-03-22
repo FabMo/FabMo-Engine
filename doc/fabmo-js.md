@@ -15,7 +15,6 @@ fabmo.js provides the complete API needed to communicate with a FabMo tool from 
  1. Drive the tool manually.
  1. Interact with the FabMo dashboard. (Post notifications, Display the DRO, Prompt the user)
 
-
 # Usage
 
 Get started
@@ -65,11 +64,11 @@ fabmo.on('status', function(status) {
 
 # Examples
 There are lots of good examples online!
- * [The Official FabMo Example App](http://fabmo.github.io/fabmo-example-app/) - Covers a lot of the API in simple examples
- * [FabMo Touch-And-Go](http://fabmo.github.io/fabmo-touchandgo-app/) - Runs immediate code, interacts with configuration, responds to status reports
- * [Hole Cutter](http://fabmo.github.io/fabmo-holecutter-app/) - Submits a job based on input parameters
- * [Terrainman](http://fabmo.github.io/fabmo-terrainman-app/) - More complex job based on input parameters
+ * [The Official FabMo Example App](http://fabmo.github.io/fabmo-example-app/) - Covers a lot of the API in simple examples.
+ * [FabMo Touch-And-Go](http://fabmo.github.io/fabmo-touchandgo-app/) - Runs immediate code, interacts with configuration, responds to status reports.
+ * [Hole Cutter](http://fabmo.github.io/fabmo-holecutter-app/) - Submits a job based on input parameters.
+ * [Terrainman](http://fabmo.github.io/fabmo-terrainman-app/) - More complex job based on input parameters.
+ * [Handibot News](http://fabmo.github.io/fabmo-the-news-app/) - Display a simple page from an external site.
 
 # Browser Compatibility
 The FabMo dashboard runs in Chrome, Firefox and Safari (TODO include tested versions)
-
