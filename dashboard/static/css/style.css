@@ -1462,6 +1462,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .newModal{
+    display: none;
     width: 50%;
     position: fixed;
     top: 50%;
@@ -1469,11 +1470,12 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     transform: translate(-50%, -50%);
     z-index: 3001;
     background-color: #eee;
-    padding: 1em;
+    padding: 1.5em;
     border-radius: 5px;
 }
 
 .modalDim{
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
@@ -1551,9 +1553,10 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .modalOkay{
+    padding-top: .5em;
     cursor: pointer;
     display: inline-block;
-    height: 30px;
+    height: 50px;
     width: 40%;
     text-align: center;
     background-color: #5DAA35;
@@ -1561,9 +1564,10 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .modalCancel{
+    padding-top: .5em;
     cursor: pointer;
     display: inline-block;
-    height: 30px;
+    height: 50px;
     width: 40%;
     text-align: center;
     background-color: #9C210C;
