@@ -146,6 +146,13 @@ FabMoAPI.prototype.ping = function(callback) {
 	}
 }
 
+FabMoAPI.prototype.sendTime = function(callback) {
+	var d = new Date();
+	var t = d.getTime();
+	var data = {'ms' : t };
+	this._post('/time/date', data, callback, callback);
+}
+
 // Configuration
 FabMoAPI.prototype.getConfig = function(callback) {
 	var callback = callback || function() {};
