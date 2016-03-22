@@ -1,11 +1,10 @@
-fabmo.js
+# fabmo.js
+**Bring apps to the world of CNC!**
 
-Write apps for CNC
-
-# Overview
+## Overview
 FabMo is a software framework for next generation CNC.  fabmo.js connects app developers to their tool by way of the FabMo API.  Don't know FabMo?  [Go FabMo!](https://gofabmo.org/)
 
-# Features
+## Features
 fabmo.js provides the complete API needed to communicate with a FabMo tool from your app.  Key functions include:
  
  1. Submit jobs to the tool
@@ -15,21 +14,21 @@ fabmo.js provides the complete API needed to communicate with a FabMo tool from 
  1. Drive the tool manually.
  1. Interact with the FabMo dashboard. (Post notifications, Display the DRO, Prompt the user)
 
-# Usage
+## Usage
 
-Get started
-```
+### Get started
+```js
 var fabmo = new FabMoDashboard();
 console.log(fabmo.version);
 ```
 
-Run some code (right away!)
-```
+### Run some code (right away!)
+```js
 fabmo.runGCode('G0 X0 Y0');
 ```
 
-Start a job
-```
+### Start a job
+```js
 var gcodes = [
 	'G0 X0 Y0 (Go Home)',
 	'G0 Z0.5 (Pull Up)',
@@ -53,8 +52,8 @@ fabmo.submitJob({
 });
 ```
 
-Get notified
-```
+### Get notified
+```js
 fabmo.on('status', function(status) {
 	document.getElementById('x-display').innerHTML = status.posx;
 	document.getElementById('y-display').innerHTML = status.posy;
@@ -62,8 +61,8 @@ fabmo.on('status', function(status) {
 });
 ```
 
-# Examples
-There are lots of good examples online!
+# Example Apps
+There are lots of good examples online of apps that use `fabmo.js` - Choose one that's similar to your application:
  * [The Official FabMo Example App](http://fabmo.github.io/fabmo-example-app/) - Covers a lot of the API in simple examples.
  * [FabMo Touch-And-Go](http://fabmo.github.io/fabmo-touchandgo-app/) - Runs immediate code, interacts with configuration, responds to status reports.
  * [Hole Cutter](http://fabmo.github.io/fabmo-holecutter-app/) - Submits a job based on input parameters.
