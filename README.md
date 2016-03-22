@@ -22,7 +22,7 @@ The FabMo engine is host software that connects to a G2 motion control platform 
 
 ** Note that you should not need to run the engine as a priveleged user.  If you have to run your engine using `sudo` check your node installation and the permissions settings for the /opt/fabmo directory **
 
-When the engine starts, it will connect to G2 and setup an http server to accept connections on port 9876.  Once the engine is running you can visit [http://localhost:9876/](http://localhost:9876/) to use the fabmo dashboard.
+When the engine starts, it will connect to G2 and setup an http server to accept connections on port 80.  Once the engine is running you can visit [http://localhost/](http://localhost/) to use the fabmo dashboard.
 
 ## Installing the Engine
 The engine is run from source, and only needs to be checked out and stored in a local directory.  Run `npm install` from the source directory to install the needed dependencies.
