@@ -42,10 +42,9 @@ end
   = name:("END"i) __ message:quotedstring? {return {"type" : "end", "message": message}}
 
 pause
-   = name:("PAUSE"i) __ arg:(e:expression {return {expr: e}} / msg:quotedstring {return {message : msg}})? {
+   = name:("PAUSE"i) __ arg:(e:expression {return {expr: e}})? {
     var arg = arg || {};
     if(arg['expr']) { return {'type' : 'pause', 'expr' : arg.expr}}
-    else if(arg['message']) { return {'type' : 'pause', 'message' : arg.message}}
     else {return {'type':'pause'}};
    }
 
@@ -62,7 +61,7 @@ jump
      {return {type:cmd.toLowerCase(), label:lbl};}
 
 argument
-   = (float / integer / expression / barestring / "")
+   = (float / integer / expression / barestring / quotedstring / "")
 
 mnemonic = code: ([_A-Za-z][_A-Za-z0-9\#]) {return code.join('').replace('#','_POUND');}
 
@@ -125,6 +124,7 @@ factor
   / float
   / integer
   / variable
+  / quotedstring
   / barestring
 
 mul_op = "*" / "/"

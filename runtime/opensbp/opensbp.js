@@ -323,11 +323,7 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 
 		// For now, pause translates to "dwell" which is just a G-Code
 		case "pause":
-			if(cmd.expr) {
-				result = false;
-			} else {
-				result =  true;				
-			}
+			return true;
 			break;
 
 		case "cond":
@@ -543,7 +539,6 @@ SBPRuntime.prototype._end = function(error) {
 		}
 
 	} else {
-		console.log("No machine, ending with callback for gcodes.")
 		var callback = this.end_callback;
 		var gcode = this.output;
 		this.init();
@@ -661,8 +656,8 @@ SBPRuntime.prototype._dispatch = function(callback) {
 };
 
 SBPRuntime.prototype._teardownEvents = function(callback) {
-	console.log("Leftover Events:");
-	console.log(this.event_teardown);
+	log.debug("Leftover Events:");
+	log.debug(this.event_teardown);
 }
 
 // To be called when a hold is encountered spontaneously (to handle ON INPUT events)
@@ -900,21 +895,23 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 		case "pause":
 			this.pc += 1;
-			if(command.expr) {
+			var arg = this._eval(command.expr);
+			if(util.isANumber(arg)) {
 				this.emit_gcode('G4 P' + this._eval(command.expr));
-				return false;
+				setImmediate(callback);
+				return true;
 			} else {
-				this.paused = true;
-				this.continue_callback = callback;
-				var message = command.message;
+				var message = arg;
 				if(!message) {
 					var last_command = this.program[this.pc-2];
 					if(last_command && last_command.type === 'comment') {
 						message = last_command.comment.join('').trim();
 					}
 				}
+				this.paused = true;
+				this.continue_callback = this._continue.bind(this);
 				this.machine.setState(this, 'paused', {'message' : message || "Paused." });
-				return true;
+				return true;				
 			}
 			break;
 
