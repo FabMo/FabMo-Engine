@@ -402,7 +402,7 @@ engine.on('status', function(status) {
 			showModal({
 				title : 'Message',
 				lead : status.info.message,
-				okText : 'Continue',
+				okText : 'Resume',
 				cancelText : 'Quit',
 				ok : function() {
 					dashboard.engine.resume();
