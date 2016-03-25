@@ -759,6 +759,9 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 };
 
 SBPRuntime.prototype.runCustomCut = function(number, callback) {
+	if(!this.machine) {
+		return callback();
+	}
 	var macro = macros.get(number);
 	if(macro) {
 		log.debug("Running macro: " + JSON.stringify(macro))
