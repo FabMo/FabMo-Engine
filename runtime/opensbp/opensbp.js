@@ -1394,7 +1394,6 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 				gcode += (key + v.toFixed(5));
 			}
 		}.bind(this));
-		// }
         log.debug("emit_move: N" + n + JSON.stringify(gcode));
         this.current_chunk.push('N' + n + ' ' + gcode);
 	}.bind(this);
