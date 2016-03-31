@@ -519,6 +519,7 @@ SBPRuntime.prototype._end = function(error) {
 		}
 
 	} else {
+		console.log("No machine, ending with callback for gcodes.")
 		var callback = this.end_callback;
 		var gcode = this.output;
 		this.init();
