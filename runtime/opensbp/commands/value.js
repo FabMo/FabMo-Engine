@@ -355,11 +355,8 @@ exports.VR = function(args, callback) {
 		this.maxjerk_c = args[4];
 		this.machine.driver.command({'cjm':this.maxjerk_c});
 	}
-
     vs_change = 1;
-
     callback();
-
 };	
 
 // exports.VS = function(args,callback) {
