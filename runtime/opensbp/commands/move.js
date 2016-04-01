@@ -221,8 +221,8 @@ exports.MS = function(args, callback) {
 		this.movespeed_c = speed_change;
 	}
 
-    vs_change = 1;
-
+    this.vs_change = 1;
+    log.debug("  MS: vs_change = " + this.vs_change);
     callback();
 
 };
