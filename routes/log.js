@@ -1,6 +1,7 @@
 var machine = require('../machine').machine;
 var config = require('../config');
 var log = require('../log');
+var passport = require('../authentication').passport;
 
 
 /**
@@ -32,5 +33,5 @@ var clearLog = function(req, res, next) {
 
 module.exports = function(server) {
   server.get('/log', getLog);
-  server.del('/log', clearLog)
+  server.del('/log',passport.authenticate('local'), clearLog)
 };

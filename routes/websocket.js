@@ -2,6 +2,8 @@ var fs = require('fs');
 var util = require('../util');
 var machine = require('../machine').machine;
 var log=require('../log').logger("websocket");
+var passport = require('../authentication').passport;
+
 var clients_limit = 5;
 var nb_clients=0;
 
@@ -9,7 +11,7 @@ var nb_clients=0;
 function setupStatusBroadcasts(server){
 	var previous_status = {'state':null}
 	machine.on('status',function(status){
-		server.io.sockets.sockets.forEach(function (socket) { 
+		server.io.sockets.sockets.forEach(function (socket) {
 			if(status.state === 'idle' || status.state != previous_status.state) {
 				socket.emit('status',status);
 			} else {
@@ -20,7 +22,7 @@ function setupStatusBroadcasts(server){
 	});
 
 	machine.on('change', function(topic) {
-		server.io.sockets.sockets.forEach(function (socket) { 
+		server.io.sockets.sockets.forEach(function (socket) {
 			socket.emit('change',topic);
 		});
 	});
@@ -83,5 +85,3 @@ module.exports = function(server) {
 	server.io.on('connection', onConnect);
 	setupStatusBroadcasts(server);
 };
-
-

@@ -4,6 +4,7 @@ var dashboard = require('../dashboard');
 var util = require('../util');
 var fs = require('fs');
 var upload = require('./util').upload;
+var passport = require('../authentication').passport;
 
 
 
@@ -173,7 +174,7 @@ var submitApp = function(req, res, next) {
             } else {
                 callback(new Error('Bad request.'));
             }
-        }, 
+        },
         function all_finished(err, apps) {
             if(err) {
                 return res.json({
@@ -184,7 +185,7 @@ var submitApp = function(req, res, next) {
             return res.json({
                 status: "success",
                 data : {
-                    status : "complete", 
+                    status : "complete",
                     data : {"apps" : apps}
                 }
             });
@@ -195,20 +196,20 @@ var submitApp = function(req, res, next) {
 var updater = function(req, res, next) {
     var host = req.headers.host.split(':')[0].trim('/');
     var url = 'http://' + host + ':' + (config.engine.get('server_port') + 1);
-    res.redirect(303, url, next);   
+    res.redirect(303, url, next);
 }
 
 module.exports = function(server) {
-    server.post('/apps', submitApp);
-    server.get('/apps', getApps);
-    server.get('/apps/:id', getAppInfo);
-    server.get('/apps/:id/config', getAppConfig);
-    server.post('/apps/:id/config', postAppConfig);
-    server.del('/apps/:id', deleteApp);
-    server.get('/apps/:id/files', listAppFiles);
-    server.get(/\/approot\/?.*/, restify.serveStatic({
+    server.post('/apps',passport.authenticate('local'), submitApp);
+    server.get('/apps',passport.authenticate('local'), getApps);
+    server.get('/apps/:id',passport.authenticate('local'), getAppInfo);
+    server.get('/apps/:id/config',passport.authenticate('local'), getAppConfig);
+    server.post('/apps/:id/config',passport.authenticate('local'), postAppConfig);
+    server.del('/apps/:id',passport.authenticate('local'), deleteApp);
+    server.get('/apps/:id/files',passport.authenticate('local'), listAppFiles);
+    server.get(/\/approot\/?.*/,passport.authenticate('local'), restify.serveStatic({
         directory: config.getDataDir('approot'),
     }));
-    server.get('/updater', updater);
+    server.get('/updater',passport.authenticate('local'), updater);
 
 };

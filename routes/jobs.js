@@ -7,6 +7,7 @@ var machine = require('../machine').machine;
 var fs = require('fs');
 var uuid = require('node-uuid');
 var upload = require('./util').upload;
+var passport = require('../authentication').passport;
 
 var submitJob = function(req, res, next) {
     upload(req, res, next, function(err, upload) {
@@ -17,7 +18,7 @@ var submitJob = function(req, res, next) {
         }
 
         async.map(
-            uploads, 
+            uploads,
             function create_job(item, callback) {
                 var file = item.file;
                 var filename = item.filename || (!file.name || file.name === 'blob') ? item.filename : file.name;
@@ -42,7 +43,7 @@ var submitJob = function(req, res, next) {
                             status:"error",
                             message:err.message
                         });
-                    } 
+                    }
                     return res.json({
                         status:"success",
                         data : {
@@ -174,7 +175,7 @@ var getQueue = function(req, res, next) {
                 status:"error",
                 message:"failed to get pending jobs from DB"
             });
-        }   
+        }
 
         db.Job.getRunning(function(err, running) {
             if(err) {
@@ -283,7 +284,7 @@ var getJobHistory = function(req, res, next) {
  * @apiDescription Get detailed information about a specific job.
  * @apiParam {String} id ID of requested job
  * @apiSuccess {Object} data Response data
- * @apiSuccess {Object} data.job Requested job 
+ * @apiSuccess {Object} data.job Requested job
  * @apiSuccess {Number} data.job._id Unique job ID
  * @apiSuccess {String} data.job.state `pending` | `running` | `finished` | `cancelled`
  * @apiSuccess {String} data.job.name Human readable job name
@@ -363,7 +364,7 @@ var getJobFile = function(req, res, next) {
                     status:"fail",
                     data:{file:err}
             };
-            res.json(answer);                        
+            res.json(answer);
         } else {
             fs.readFile(file.path, function(err, data) {
                 res.header('Content-Type', 'text/plain');
@@ -384,10 +385,10 @@ var getJobGCode = function(req, res, next) {
                     status:"fail",
                     data:{file:err}
             };
-            res.json(answer);                        
+            res.json(answer);
         } else {
             var gcode_filename = 'gcode.nc';
-            machine.getGCodeForFile(file.path, function(err, gcode) {                
+            machine.getGCodeForFile(file.path, function(err, gcode) {
 		      res.setHeader('content-type', 'applications/octet-stream');
               res.setHeader('content-disposition', 'filename="' + gcode_filename + '"');
               res.send(gcode);
@@ -397,17 +398,17 @@ var getJobGCode = function(req, res, next) {
 };
 
 module.exports = function(server) {
-    server.post('/job', submitJob);
+    server.post('/job',passport.authenticate('local'), submitJob);
     server.get('/jobs', getAllJobs);
     server.get('/job/:id', getJobById);
-    server.del('/job/:id', cancelJob);
-    server.post('/job/:id', resubmitJob);
+    server.del('/job/:id',passport.authenticate('local'), cancelJob);
+    server.post('/job/:id',passport.authenticate('local'), resubmitJob);
     server.get('/job/:id/file', getJobFile);
-    server.get('/job/:id/gcode', getJobGCode);
+    server.get('/job/:id/gcode',getJobGCode);
 
     server.get('/jobs/queue', getQueue);
-    server.del('/jobs/queue', clearQueue);
-    server.post('/jobs/queue/run', runNextJob);
+    server.del('/jobs/queue',passport.authenticate('local'), clearQueue);
+    server.post('/jobs/queue/run',passport.authenticate('local'), runNextJob);
     server.get('/jobs/history', getJobHistory);
 
 };
