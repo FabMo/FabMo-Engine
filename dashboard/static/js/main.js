@@ -260,16 +260,17 @@ function showModal(options) {
 		$('.modalCancel').css('width', '0%');
 	}
     
-    // if(!modalAlreadyUp) {
-	// 	var modalTry = function() {
-	// 		try {
-	// 			$('#modalDialog').foundation('reveal', 'open');				
-	// 		} catch(e) {
-	// 			setTimeout(modalTry, 10);
-	// 		}
-	// 	}
-	// 	modalTry();
-	// }
+    if(!modalAlreadyUp) {
+		var modalTry = function() {
+			try {
+				    $('.modalDim').show();
+                    $('.newModal').show();			
+			} catch(e) {
+				setTimeout(modalTry, 10);
+			}
+		}
+		modalTry();
+	}
     
 
 
@@ -411,7 +412,9 @@ engine.on('status', function(status) {
     }
 
     if(status['info']) {
+        console.log('info');
 		if(status.info['message']) {
+            console.log('message');
 			showModal({
 				title : 'Message',
 				message : status.info.message,
@@ -425,6 +428,7 @@ engine.on('status', function(status) {
 				}
  			});
 		} else if(status.info['error']) {
+            console.log('error');
 			if(dashboard.engine.status.job) {
 				var detailHTML = '<p>' + 
 					  '<b>Job Name:  </b>' + dashboard.engine.status.job.name + '<br />' + 
