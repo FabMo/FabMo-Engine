@@ -745,8 +745,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	border-radius: 0.5rem;
 	border: dashed 3px #bbb;
 	color: #bbb;
-	font-size: 60px;
-	font-weight: 900;
+	font-size: 35px;
 }
 
 .app-icon:hover .add {

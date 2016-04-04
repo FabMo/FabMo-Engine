@@ -26,19 +26,24 @@ define(function(require) {
 		tagName : 'li',
 		className : 'app-icon',
 		template : _.template(require('text!templates/app-icon-add.html')),
+		busy : false,
 		initialize : function() {
 			_.bindAll(this, 'render');
 		},
 		render : function() {
 			this.$el.html(this.template({}));
 			this.$el.on('click', function(evt) {
+				if(this.busy) { return; }
 				var dashboard = require('dashboard');
 				dashboard.browseForFiles(function(evt) {
 					var files = [];
 					for(var i=0; i<evt.target.files.length; i++) {
 						files.push({file:evt.target.files[i]});
 					}
+					this.busy = true;
+					$('.add-icon').removeClass('fa-plus').addClass('fa-cog fa-spin');
 					dashboard.submitApps(files, {}, function(err, data) {
+						$('.add-icon').removeClass('fa-cog fa-spin').addClass('fa-plus');
 						if(err) {
 							dashboard.notification('error', err.message);
 						} else {
@@ -46,9 +51,9 @@ define(function(require) {
 						}
 						var context = require('context');
 						context.apps.fetch();
-					});
-				});
-			});
+					}.bind(this));
+				}.bind(this));
+			}.bind(this));
 			return this;
 		}
 	});
