@@ -355,11 +355,8 @@ exports.VR = function(args, callback) {
 		this.maxjerk_c = args[4];
 		this.machine.driver.command({'cjm':this.maxjerk_c});
 	}
-
     vs_change = 1;
-
     callback();
-
 };	
 
 // exports.VS = function(args,callback) {
@@ -387,7 +384,7 @@ exports.VS = function(args) {
 	//Set C jog speed
 	if (args[9] !== undefined) { this.jogspeed_c = args[9]; }
 
-    vs_change = 1;
+    this.vs_change = 1;
 
 };
 

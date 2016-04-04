@@ -594,7 +594,7 @@ define(function(require) {
 		context.apps.fetch();
 	}
 
-	Dashboard.prototype.submitApp = function(data, options, callback) {
+	Dashboard.prototype.submitApps = function(data, options, callback) {
 		this.engine.submitApp(data, data.options, function(err, result) {
 			context = require('context');
 			context.apps.fetch();

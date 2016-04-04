@@ -56,7 +56,7 @@ var FabMoAPI = function(base_url) {
 	};
 	var url = window.location.origin;
 	this.base_url = url.replace(/\/$/,'');
-
+	this.commandCounter = 0;
 	this.status = {};
 	this.config = {};
 	this._initializeWebsocket();
@@ -144,6 +144,13 @@ FabMoAPI.prototype.ping = function(callback) {
 		});
 		this.socket.emit('ping');
 	}
+}
+
+FabMoAPI.prototype.sendTime = function(callback) {
+	var d = new Date();
+	var t = d.getTime();
+	var data = {'ms' : t };
+	this._post('/time/date', data, callback, callback);
 }
 
 // Configuration
@@ -355,7 +362,8 @@ FabMoAPI.prototype.submitJob = function(job, options, callback) {
 FabMoAPI.prototype.submitJobs = FabMoAPI.prototype.submitJob;
 
 FabMoAPI.prototype.command = function(name, args) {
-	this.socket.emit('cmd', {'name':name, 'args':args||{} } );
+	this.socket.emit('cmd', {'name':name, 'args':args||{} , count : this.commandCounter} );
+	this.commandCounter += 1;
 }
 
 FabMoAPI.prototype._url = function(path) { return this.base_url + '/' + path.replace(/^\//,''); }

@@ -32,8 +32,6 @@ define(function(require) {
 	
 	var supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
     
-    //Give editor focus 
-    
     engine.getNetworkIdentity(function(err, id) {
     	if(!id) { return; }
     	var name = id.name || "";
@@ -41,6 +39,7 @@ define(function(require) {
     	document.title = name || "FabMo Dashboard";
     });
 
+    //Give editor focus 
     $('#icon_editor').on('click', function(){
         $('iframe').focus();
 
@@ -416,9 +415,8 @@ engine.on('status', function(status) {
 		if(status.info['message']) {
             console.log('message');
 			showModal({
-				title : 'Message',
 				message : status.info.message,
-				okText : 'Continue',
+				okText : 'Resume',
 				cancelText : 'Quit',
 				ok : function() {
 					dashboard.engine.resume();
@@ -549,11 +547,15 @@ if ($(window).width() < 620) {
 	$('.currentContainer').css('width', '100px');
 	$('.currentJobTitle').css('width', '50%');
 	$('.currentJobTitle').css('padding-left', '100px');
-}
+    
+    if ($(window).width() < 400) {
+        $('.currentContainer').css('width', '50px');
+	$('.currentJobTitle').css('width', '50%');
+	$('.currentJobTitle').css('padding-left', '50px');
+    }
+} 
 })();
-$.post('/time', {
-	'utc' : new Date().toUTCString()
-});
+engine.sendTime();
 function touchScreen () {
 	if (supportsTouch && window.innerWidth < 800) {
 		$('#app-client-container').css({'-webkit-overflow-scrolling':'touch','overflow-y':'scroll'});
