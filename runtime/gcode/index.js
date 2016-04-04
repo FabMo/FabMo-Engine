@@ -18,11 +18,13 @@ GCodeRuntime.prototype.connect = function(machine) {
 	this.status_handler =  this._onDriverStatus.bind(this);
 	this.status_report = {};
 	this.driver.on('status',this.status_handler);
+	log.info("Connected G-Code Runtime");
 };
 
 GCodeRuntime.prototype.disconnect = function() {
 	if(this.ok_to_disconnect) {
 		this.driver.removeListener('status', this.status_handler);
+		log.info("Disconnected G-Code Runtime");
 	} else {
 		throw new Error("Cannot disconnect GCode Runtime")
 	}
