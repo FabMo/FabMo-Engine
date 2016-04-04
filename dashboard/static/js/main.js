@@ -186,91 +186,103 @@ function hideDaisy(callback) {
 }
 
 function showModal(options) {
-
+    console.log('show');
 	hideDaisy(function() {
 
 	var modalAlreadyUp = modalIsShown;
 
 	modalIsShown = true;
+    
+     $('.modalDim').show();
+    $('.newModal').show();
 
 	if(options['title']) {
-		$('#modalDialogTitle').html(options.title).show();		
+		$('.modalTitle').html(options.title).show();		
 	} else {		
-		$('#modalDialogTitle').hide();
+		$('.modalTitle').hide();
 	}
 
-	if(options['lead']) {
-		$('#modalDialogLead').html(options.lead).show();		
-	} else {		
-		$('#modalDialogLead').hide();
-	}
+	// if(options['lead']) {
+	// 	$('#modalDialogLead').html(options.lead).show();		
+	// } else {		
+	// 	$('#modalDialogLead').hide();
+	// }
 
 	if(options['message']) {
-		$('#modalDialogMessage').html(options.message).show();		
+		$('.modalDialogue').html(options.message).show();		
 	} else {		
-		$('#modalDialogMessage').hide();
+		$('.modalDialogue').hide();
 	}
 
-	if(options['detail']) {
-		$('#modalDialogDetail').html(options.detail).show();		
-	} else {		
-		$('#modalDialogDetail').hide();
-	}
-
-	$('#modalDialogButtons').hide();
+	
+    if(options['image']) {
+       $('.modalImage img').attr('src', options.image);
+        $('.modalImage').show();
+       $('.modalImage').css('width', '25%');
+       $('.modalDialogue').css('width', '65%');
+    } else {
+        $('.modalImage').hide();
+        
+        $('.modalDialogue').css('width', '100%');
+    }
+    
 	if(options['okText']) {
-		$('#modalDialogButtons').show();
-		$('#modalDialogOKButton').text(options.okText).show().one('click', function() {
-			$('#modalDialogCancelButton').off('click');
-			(options['ok'] || function() {})();
-		});
+		$('.modalOkay').css('width', '40%');
+        $('.modalOkay').text(options.okText);
+        
 	} else {
-		$('#modalDialogOKButton').hide();
+		$('.modalOkay').css('width', '0%');
 	}
-
+    
+    if(options['ok']){
+        $('.modalOkay').on('click', options.ok);
+    } else {
+        $('.modalOkay').on('click', function (){
+            $('.newModal').hide();
+            $('.newDim').hide();
+        });
+    }
+    
+     if(options['cancel']){
+        $('.modalCancel').on('click', options.cancel);
+    } else {
+        $('.modalCancel').on('click', function (){
+            $('.newModal').hide();
+            $('.newDim').hide();
+        });
+    }
+    
+   
 	if(options['cancelText']) {
-		$('#modalDialogButtons').show();
-		$('#modalDialogCancelButton').text(options.cancelText).show().one('click', function() {
-			$('#modalDialogOKButton').off('click');
-			(options['cancel'] || function() {})();
-		});
+		$('.modalCancel').css('width', '40%');
+        $('.modalCancel').text(options.cancelText);
 	} else {
-		$('#modalDialogClose').hide();
-		$('#modalDialogCancelButton').hide();
+		$('.modalCancel').css('width', '0%');
 	}
+    
+    // if(!modalAlreadyUp) {
+	// 	var modalTry = function() {
+	// 		try {
+	// 			$('#modalDialog').foundation('reveal', 'open');				
+	// 		} catch(e) {
+	// 			setTimeout(modalTry, 10);
+	// 		}
+	// 	}
+	// 	modalTry();
+	// }
+    
 
-	if(options['cancel']) {
-		$('#modalDialogClose').show().one('click', function() {
-			options.cancel();
-		});
-	} else {
-		$('#modalDialogClose').hide();
-	}
 
-	if(!modalAlreadyUp) {
-		var modalTry = function() {
-			try {
-				$('#modalDialog').foundation('reveal', 'open');				
-			} catch(e) {
-				setTimeout(modalTry, 10);
-			}
-		}
-		modalTry();
-	}
 });
 }
 
 function hideModal(callback) {
+    console.log('hide');
 	var callback = callback || function() {};
 	if(!modalIsShown) { callback(); }
 	modalIsShown = false;
-	$(document).one('closed.fndtn.reveal', '[data-reveal]', function () {
- 		var modal = $(this);
- 		if(modal.attr('id') === 'modalDialog') {
- 			callback();
- 		}
-	});
-	$('#modalDialog').foundation('reveal', 'close');	
+    $('.modalDim').hide();
+    $('.newModal').hide();		
 }
 
 // listen for escape key press to quit the engine
@@ -402,7 +414,7 @@ engine.on('status', function(status) {
 		if(status.info['message']) {
 			showModal({
 				title : 'Message',
-				lead : status.info.message,
+				message : status.info.message,
 				okText : 'Continue',
 				cancelText : 'Quit',
 				ok : function() {
@@ -424,7 +436,6 @@ engine.on('status', function(status) {
 
 			showModal({
 				title : 'Message',
-				lead : '<div style="color:#91331E; font-weight: bolder;">An Error Has Occurred!</div>',
 				message: status.info.error,
 				detail : detailHTML,
 				cancelText : status.state === 'dead' ? undefined : 'Quit',
@@ -439,9 +450,8 @@ engine.on('status', function(status) {
 		authorizeDialog = true;
 		showModal({
 			title : 'Authorization Required!',
-			lead : '<div style="color:#7F5323; font-weight: bolder;">Press Green Button to Continue</div>',
 			message: 'To authorize your tool, press and hold the green button for one second.',
-			cancelText : 'Quit',
+            cancelText : 'Quit',
 			cancel : function() {
 				authorizeDialog=false;
 				dashboard.engine.quit();
