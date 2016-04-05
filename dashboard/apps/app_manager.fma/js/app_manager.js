@@ -67,9 +67,8 @@ fabmo.on('change', function(topic) {
 });
 
 $(document).ready(function() {
+  $(document).foundation();
   refreshApps();
-
-
   $('.app-install-button').click(function(evt) {
     jQuery('#file').trigger('click');
   });
@@ -82,7 +81,6 @@ $(document).ready(function() {
         fabmo.notify('success', data.length + " app" + ((data.length > 1) ? 's' : '') + " installed successfully.");
       }
       refreshApps();
-
     });
   });
 
