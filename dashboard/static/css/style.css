@@ -745,8 +745,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	border-radius: 0.5rem;
 	border: dashed 3px #bbb;
 	color: #bbb;
-	font-size: 60px;
-	font-weight: 900;
+	font-size: 35px;
 }
 
 .app-icon:hover .add {
@@ -916,7 +915,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     }
     .fabmo-resume-stop {
         margin-top: 10px;
-        width: 40%;
+        width: 70%;
     }
     
 }
@@ -924,14 +923,14 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .stopJob {
    background: #f20000;
    border: solid #ff0000 1px;
-   width: 50%;
+   width: 30%;
    margin-left: -2.5px;
    border-radius: 0 5px 5px 0;
 }
 .resumeJob {
     background: #32B433;
 	border: solid #00A600 1px;
-    width: 50%;  
+    width: 30%;  
     margin-right: -2.5px;
     border-radius: 5px 0 0 5px;
 }

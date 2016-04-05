@@ -26,6 +26,7 @@ var PERSISTENTVAR_RE = /\$([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
 function SBPRuntime() {
 	// Handle Inheritance
 	events.EventEmitter.call(this);
+	this.connected = false;
 	this.ok_to_disconnect = true;
 	this.program = [];
 	this.pc = 0;
@@ -52,6 +53,16 @@ function SBPRuntime() {
 	this.movespeed_a = 0;
 	this.movespeed_b = 0;
 	this.movespeed_c = 0;
+	this.jogspeed_xy = 0;
+	this.jogspeed_z = 0;
+	this.jogspeed_a = 0;
+	this.jogspeed_b = 0;
+	this.jogspeed_c = 0;
+	this.maxjerk_xy = 100;
+	this.maxjerk_z = 50;
+	this.maxjerk_a = 20;
+	this.maxjerk_b = 20;
+	this.maxjerk_c = 20;
 	this.cmd_StartX = 0; 
 	this.cmd_StartY = 0; 
 	this.cmd_StartZ = 0; 
@@ -61,6 +72,7 @@ function SBPRuntime() {
 	this.paused = false;
 	this.lastNoZPullup = 0; 
 	this.continue_callback = null;
+	this.vs_change = 0;
 
 	// Physical machine state
 	this.machine = null;
@@ -99,6 +111,7 @@ SBPRuntime.prototype.connect = function(machine) {
 	this.cmd_posc = this.posc;
 	this.status_handler = this._onG2Status.bind(this);
 	this.driver.on('status', this.status_handler);
+	this.connected = true;
 	log.info('Connected OpenSBP runtime.');
 };
 
@@ -114,6 +127,7 @@ SBPRuntime.prototype.disconnect = function() {
 		this.driver.removeListener('status', this.status_handler);
 		this.machine = null;	
 		this.driver = null;
+		this.connected = false;
 		log.info('Disconnected OpenSBP runtime.');
 	} else {
 		throw new Error("Cannot disconnect OpenSBP runtime.")
@@ -148,11 +162,24 @@ SBPRuntime.prototype.runString = function(s, callback) {
 					    'moveb_speed',
 				    	'movec_speed' ];
 	    var getSBP_speed = config.opensbp.getMany(SBP_2get);
+	    var G2_2get = ['xvm','yvm','zvm','avm','bvm','cvm',
+	                   'xjm','yjm','zjm','ajm','bjm','cjm' ];
+        var getG2_settings = config.driver.getMany(G2_2get);
 		this.movespeed_xy = getSBP_speed.movexy_speed;
 		this.movespeed_z = getSBP_speed.movez_speed;
 		this.movespeed_a = getSBP_speed.movea_speed;
 		this.movespeed_b = getSBP_speed.moveb_speed;
 		this.movespeed_c = getSBP_speed.movec_speed;
+		this.jogspeed_xy = getG2_settings.xvm;
+		this.jogspeed_z = getG2_settings.zvm;
+		this.jogspeed_a = getG2_settings.avm;
+		this.jogspeed_b = getG2_settings.bvm;
+		this.jogspeed_c = getG2_settings.cvm;
+        this.maxjerk_xy = getG2_settings.xjm;
+        this.maxjerk_z = getG2_settings.zjm;
+        this.maxjerk_a = getG2_settings.ajm;
+        this.maxjerk_b = getG2_settings.bjm;
+        this.maxjerk_c = getG2_settings.cjm;
 		log.debug("Transforms configured...")
 		this._analyzeLabels();  // Build a table of labels
 		log.debug("Labels analyzed...")
@@ -206,7 +233,12 @@ SBPRuntime.prototype._limit = function() {
 
 // Handler for G2 statue reports
 SBPRuntime.prototype._onG2Status = function(status) {
-	
+
+	if(!this.connected) {
+		log.warn("OpenSBP runtime got a status report while disconnected.");
+		return;
+	}
+
 	switch(status.stat) {
 		case this.driver.STAT_INTERLOCK:
 		case this.driver.STAT_SHUTDOWN:
@@ -299,11 +331,7 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 
 		// For now, pause translates to "dwell" which is just a G-Code
 		case "pause":
-			if(cmd.expr) {
-				result = false;
-			} else {
-				result =  true;				
-			}
+			return true;
 			break;
 
 		case "cond":
@@ -519,7 +547,6 @@ SBPRuntime.prototype._end = function(error) {
 		}
 
 	} else {
-		console.log("No machine, ending with callback for gcodes.")
 		var callback = this.end_callback;
 		var gcode = this.output;
 		this.init();
@@ -637,8 +664,8 @@ SBPRuntime.prototype._dispatch = function(callback) {
 };
 
 SBPRuntime.prototype._teardownEvents = function(callback) {
-	console.log("Leftover Events:");
-	console.log(this.event_teardown);
+	log.debug("Leftover Events:");
+	log.debug(this.event_teardown);
 }
 
 // To be called when a hold is encountered spontaneously (to handle ON INPUT events)
@@ -735,6 +762,9 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 };
 
 SBPRuntime.prototype.runCustomCut = function(number, callback) {
+	if(!this.machine) {
+		return callback();
+	}
 	var macro = macros.get(number);
 	if(macro) {
 		log.debug("Running macro: " + JSON.stringify(macro))
@@ -873,21 +903,23 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 		case "pause":
 			this.pc += 1;
-			if(command.expr) {
+			var arg = this._eval(command.expr);
+			if(util.isANumber(arg)) {
 				this.emit_gcode('G4 P' + this._eval(command.expr));
-				return false;
+				setImmediate(callback);
+				return true;
 			} else {
-				this.paused = true;
-				this.continue_callback = callback;
-				var message = command.message;
+				var message = arg;
 				if(!message) {
 					var last_command = this.program[this.pc-2];
 					if(last_command && last_command.type === 'comment') {
 						message = last_command.comment.join('').trim();
 					}
 				}
+				this.paused = true;
+				this.continue_callback = this._continue.bind(this);
 				this.machine.setState(this, 'paused', {'message' : message || "Paused." });
-				return true;
+				return true;				
 			}
 			break;
 
@@ -1326,9 +1358,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		var c = pt[key];
 		if(c !== undefined) {
 			if(isNaN(c)) { throw( "Invalid " + key + " argument: " + c ); } 
-			if(key === "X") { this.cmd_posx = c; 
-			  log.debug("   emit_move: this.cmd_posx = " + this.cmd_posx );
-            }
+			if(key === "X") { this.cmd_posx = c; }
 			else if(key === "Y") { this.cmd_posy = c; }
 			else if(key === "Z") { this.cmd_posz = c; }
 			else if(key === "A") { this.cmd_posa = c; }
@@ -1337,7 +1367,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		}
 	}.bind(this));
 
-log.debug("   emit_move: this.cmd_posx = " + this.cmd_posx );
+//log.debug("   emit_move: this.cmd_posx = " + this.cmd_posx );
 
 	// Where to save the start point of an arc that isn't transformed??????????
 	var tPt = this.transformation(pt);
@@ -1372,7 +1402,6 @@ log.debug("   emit_move: this.cmd_posx = " + this.cmd_posx );
 				gcode += (key + v.toFixed(5));
 			}
 		}.bind(this));
-		// }
         log.debug("emit_move: N" + n + JSON.stringify(gcode));
         this.current_chunk.push('N' + n + ' ' + gcode);
 	}.bind(this);

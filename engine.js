@@ -328,7 +328,7 @@ Engine.prototype.start = function(callback) {
             if('debug' in argv) {
                 server.use(
                     function debug(req, res, next) {
-                        log.debug(req.method + ' ' + req.url);
+                        //log.debug(req.method + ' ' + req.url);
                         next();
                     });
             }

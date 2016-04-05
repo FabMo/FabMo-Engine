@@ -402,6 +402,15 @@ var getClientAddress = function (req) {
         || req.connection.remoteAddress;
 };
 
+var isANumber = function(n) {
+    try {
+        var n = Number(n);
+        return n == n;
+    } catch(e) {
+        return false;
+    }
+}
+
 exports.serveStatic = serveStatic;
 exports.Queue = Queue;
 exports.Watchdog = Watchdog;
@@ -414,4 +423,5 @@ exports.fixJSON = fixJSON;
 exports.extend = extend;
 exports.doshell = doshell;
 exports.getClientAddress = getClientAddress;
+exports.isANumber = isANumber;
 

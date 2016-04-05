@@ -170,7 +170,7 @@ Machine.prototype.arm = function(action, timeout) {
 	delete this.status.info
 	this.action = action;
 	log.info("Arming the machine" + (action ? (' for ' + action.type) : '(No action)'));
-	log.error(new Error());
+	//log.error(new Error())
 	if(this._armTimer) { clearTimeout(this._armTimer);}
 	this._armTimer = setTimeout(function() {
 		log.info('Arm timeout (' + timeout + 's) expired.');
@@ -184,12 +184,11 @@ Machine.prototype.arm = function(action, timeout) {
 
 	if(config.machine.get('auth_input') == 0) {
 		log.info("Firing automatically since authorization is disabled.");
-		//this.status.state = 'armed';
 		this.fire(true);
 	} else {
 		this.setState(this, 'armed');	
+		this.emit('status', this.status);
 	}
-//	this.emit('status', this.status);
 }
 
 Machine.prototype.disarm = function() {
@@ -202,7 +201,10 @@ Machine.prototype.disarm = function() {
 }
 
 Machine.prototype.fire = function(force) {
-	if(this.fireButtonDebounce) {return;}
+	if(this.fireButtonDebounce & !force) {
+		log.debug("Fire button debounce reject.");
+		return;
+	}
 
 	this.fireButtonDebounce = true;
 
@@ -213,29 +215,36 @@ Machine.prototype.fire = function(force) {
 		throw new Error("Cannot fire: Not armed.");
 	}
 
+	// If no action, we're just authorizing for the next auth timeout
 	if(!this.action) {
 		this.authorize(config.machine.get('auth_timeout'));
 		this.setState(this, 'idle');
 		return;
 	}
-	this.deauthorize();
 
-	switch(this.action.type) {
+	this.deauthorize();
+	var action = this.action;
+	this.action = null;
+	switch(action.type) {
 		case 'nextJob':
+			log.debug("Firing a nextJob")
 			this._runNextJob(force, function() {});
 			break;
 
 		case 'runtimeCode':
-			var name = this.action.payload.name
-			var code = this.action.payload.code
+			log.debug("Firing a runtimeCode")
+			var name = action.payload.name
+			var code = action.payload.code
 			this._executeRuntimeCode(name, code);
 			break;
 
 		case 'runFile':
-			var filename = this.action.payload.filename
+			log.debug("Firing a runFile")
+			var filename = action.payload.filename
 			this._runFile(filename);
 			break;
 		case 'resume':
+			log.debug("Firing a resume")		
 			this._resume();
 			break;
 	}

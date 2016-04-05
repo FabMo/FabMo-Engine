@@ -1,4 +1,5 @@
 (function (root, factory) {
+   var body = document.getElementsByTagName('body');
     if (typeof define === 'function' && define.amd) {
         // AMD
         define([], factory);
@@ -25,12 +26,12 @@ var FabMoDashboard = function() {
 	};
 	this._setupMessageListener();
     // listen for escape key press to quit the engine
-    $(document).on('keyup', function(e) {
+    document.onkeyup = function (e) {
         if(e.keyCode == 27) {
             console.warn("ESC key pressed - quitting engine.");
             this.stop();
         }
-    }.bind(this));
+    }.bind(this);
 }
 
 FabMoDashboard.prototype.isPresent = function() {
@@ -149,9 +150,13 @@ FabMoDashboard.prototype._call = function(name, data, callback) {
 }
 
 FabMoDashboard.prototype._simulateCall = function(name, data, callback) {
+    toaster();
+    var toast = document.getElementById('alert-toaster');
+    var text = document.getElementById('alert-text');
+    console.log(text);
 	switch(name) {
+        
 		case "submitJob":
-
 			var files = [];
 			data.jobs.forEach(function(job) {
 				var name = job.filename || job.file.name;
@@ -165,52 +170,33 @@ FabMoDashboard.prototype._simulateCall = function(name, data, callback) {
 			} else {
 				var msg = data.jobs.length + " Jobs Submitted: " + files.join(',');
 			}
-			toaster();
-			$('.alert-text').text(msg);
-			$('.alert-toaster').slideDown(null, function (){
-				setTimeout(function(){$('.alert-toaster').remove(); }, 1000);
-			})				
-
+			text.textContent = msg;
+			showToaster(toast);			
 		break;
 
 		case "runGCode":
-			toaster();
-			$('.alert-text').text("GCode sent to tool: " + data);
-			$('.alert-toaster').slideDown(null, function (){
-				setTimeout(function(){$('.alert-toaster').remove(); }, 1000);
-			})
+			text.textContent = "GCode sent to tool: " + data;
+		    showToaster(toast);
 		break;
 
 		case "runSBP":
-			toaster();
-			$('.alert-text').text("OpenSBP sent to tool: " + data)
-			$('.alert-toaster').slideDown(null, function (){
-				setTimeout(function(){$('.alert-toaster').remove(); }, 1000);
-			})
+			text.textContent = "OpenSBP sent to tool: " + data;
+			showToaster(toast);
 		break;
 
 		case "showDRO":
-			toaster();
-			$('.alert-text').text("DRO Shown.");
-			$('.alert-toaster').slideDown(null, function (){
-				setTimeout(function(){$('.alert-toaster').remove()}, 1000);
-			})
+			text.textContent = "DRO Shown.";
+			showToaster(toast);
 		break;
 
 		case "hideDRO":
-			toaster();
-			$('.alert-text').text("DRO Hidden.");
-			$('.alert-toaster').slideDown(null, function (){
-				setTimeout(function(){$('.alert-toaster').remove(); }, 1000);
-			})
+			text.textContent = "DRO Hidden.";
+			showToaster(toaster);
 		break;
 		
 		default:
-			toaster();
-			$('.alert-text').text(name + " called.");
-			$('.alert-toaster').slideDown(null, function (){
-				setTimeout(function(){$('.alert-toaster').remove(); }, 1000);
-			})
+			text.textContent = name + " called.";
+			showToaster(toast);
 		break;
 	}
 }
@@ -571,7 +557,16 @@ FabMoDashboard.prototype.setAppConfig = function(config, callback) {
 }
 
 var toaster = function () {
-	$('body').append("<div class='alert-toaster' style='position:fixed; margin: auto; top: 20px; right: 20px; width: 250px; height: 60px; background-color: #F3F3F3; border-radius: 3px; z-index: 1005; box-shadow: 4px 4px 7px -2px rgba(0,0,0,0.75); display: none'><span class='alert-text' style= 'position:absolute; margin: auto; top: 0; right: 0; bottom: 0; left: 0; height: 20px; width: 250px; text-align: center;'></span><div>");
+	var el = document.createElement('div');
+    el.setAttribute('id', 'alert-toaster');
+    el.style.cssText = 'position:fixed; visibility:hidden; margin: auto; top: 20px; right: 20px; width: 250px; height: 60px; background-color: #F3F3F3; border-radius: 3px; z-index: 1005; box-shadow: 4px 4px 7px -2px rgba(0,0,0,0.75);';
+    el.innerHTML = "<span id='alert-text' style= 'position:absolute; margin: auto; top: 0; right: 0; bottom: 0; left: 0; height: 20px; width: 250px; text-align: center;'></span>";
+	document.body.appendChild(el);
+    console.log(el);
+}
+var showToaster = function (toaster) {
+    toaster.style.visibility = 'visible';
+    setTimeout(function(){document.body.removeChild(toaster)}, 1000);
 }
 
 return FabMoDashboard;

@@ -121,8 +121,6 @@ exports.CC = function(args) {
     endY = centerY + radius * Math.sin(Eradians);
   }
 
-  log.debug("CC:   endX = " + endX + "  endY = " + endY + "  xOffset = " + xOffset + "  yOffset " + yOffset);
-
   this.CG([undefined,endX,endY,xOffset,yOffset,OIT,Dir,Plg,reps,propX,propY,optCC,noPullUp,plgFromZero]);
 
 };

@@ -56,24 +56,23 @@ var onConnect = function(socket) {
 
 	socket.on('cmd', function(data) {
 		try {
+			switch(data.name) {
+				case 'pause':
+					machine.pause();
+					break;
 
-		switch(data.name) {
-			case 'pause':
-				machine.pause();
-				break;
+				case 'quit':
+					machine.quit();
+					break;
 
-			case 'quit':
-				machine.quit();
-				break;
+				case 'resume':
+					machine.resume();
+					break;
 
-			case 'resume':
-				machine.resume();
-				break;
-
-			default:
-				// Meh?
-				break;
-		}
+				default:
+					// Meh?
+					break;
+			}
 		} catch(e) {
 			// pass
 		}
