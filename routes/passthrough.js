@@ -40,6 +40,6 @@ passthrough_app = function(req,res,next) {
 
 module.exports = function(server) {
 
-	server.get("/passthrough",passthrough_app);
-	server.io.of('/passthrough').on('connection', connect);
+//	server.get("/passthrough",passthrough_app);
+//	server.io.of('/passthrough').on('connection', connect);
 };
