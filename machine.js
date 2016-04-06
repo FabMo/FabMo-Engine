@@ -16,7 +16,7 @@ var ManualRuntime = require('./runtime/manual').ManualRuntime;
 var PassthroughRuntime = require('./runtime/passthrough').PassthroughRuntime;
 var IdleRuntime = require('./runtime/idle').IdleRuntime;
 
-AP_COLLAPSE_TIME = 3000;
+AP_COLLAPSE_TIME = 5000;
 
 function connect(callback) {
 
