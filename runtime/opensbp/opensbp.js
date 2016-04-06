@@ -26,6 +26,7 @@ var PERSISTENTVAR_RE = /\$([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
 function SBPRuntime() {
 	// Handle Inheritance
 	events.EventEmitter.call(this);
+	this.connected = false;
 	this.ok_to_disconnect = true;
 	this.program = [];
 	this.pc = 0;
@@ -110,6 +111,7 @@ SBPRuntime.prototype.connect = function(machine) {
 	this.cmd_posc = this.posc;
 	this.status_handler = this._onG2Status.bind(this);
 	this.driver.on('status', this.status_handler);
+	this.connected = true;
 	log.info('Connected OpenSBP runtime.');
 };
 
@@ -125,6 +127,7 @@ SBPRuntime.prototype.disconnect = function() {
 		this.driver.removeListener('status', this.status_handler);
 		this.machine = null;	
 		this.driver = null;
+		this.connected = false;
 		log.info('Disconnected OpenSBP runtime.');
 	} else {
 		throw new Error("Cannot disconnect OpenSBP runtime.")
@@ -230,7 +233,12 @@ SBPRuntime.prototype._limit = function() {
 
 // Handler for G2 statue reports
 SBPRuntime.prototype._onG2Status = function(status) {
-	
+
+	if(!this.connected) {
+		log.warn("OpenSBP runtime got a status report while disconnected.");
+		return;
+	}
+
 	switch(status.stat) {
 		case this.driver.STAT_INTERLOCK:
 		case this.driver.STAT_SHUTDOWN:
