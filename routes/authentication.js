@@ -51,7 +51,7 @@ var serveSignUpPage=function(req,res,next){
 
 var logout = function(req, res, next) {
   req.logout();
-  console.log("login out !");
+  authentication.setCurrentUser(null);
   res.redirect('/authentication/login',next);
 
 };

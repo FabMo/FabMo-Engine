@@ -2,7 +2,8 @@ var fs = require('fs');
 var util = require('../util');
 var machine = require('../machine').machine;
 var log=require('../log').logger("websocket");
-var passport = require('../authentication').passport;
+var authentication = require('../authentication');
+var passport = authentication.passport;
 var sessions = require("client-sessions");
 var parseCookie = require('./util').parseCookie;
 
@@ -84,11 +85,14 @@ var onPublicConnect = function(socket) {
 
 var onPrivateConnect = function(socket) {
 	console.log("connected through private mode !")
+
 	var userId = socket.request.sessionID.content.passport.user;
 	var client_address = util.getClientAddress(socket.client.request)
 	log.info("Client #"+userId+" at "+ client_address + " connected.");
 
 	socket.on('code', function(data) {
+		console.log(authentication.getCurrentUser());
+		if(!authentication.getCurrentUser()){return socket.disconnect('not authenticated');} // make sure that if the user logout, he can't talk through the socket anymore.
 		if('rt' in data) {
 			try {
 				machine.executeRuntimeCode(data.rt, data.data)
@@ -99,6 +103,7 @@ var onPrivateConnect = function(socket) {
 	});
 
 	socket.on('cmd', function(data) {
+		if(!authentication.getCurrentUser()){return socket.disconnect('not authenticated');} // make sure that if the user logout, he can't talk through the socket anymore.
 		try {
 			switch(data.name) {
 				case 'pause':
