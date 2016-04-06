@@ -17,6 +17,7 @@ var network = require('./network');
 var glob = require('glob');
 var argv = require('minimist')(process.argv);
 var fs = require('fs');
+var crypto = require('crypto');
 
 var Engine = function() {
     this.version = null;
@@ -350,16 +351,19 @@ Engine.prototype.start = function(callback) {
             });
 
             // Configure local directory for uploading files
-            log.info("Cofiguring upload directory...");
+            log.info("Configuring upload directory...");
             server.use(restify.bodyParser({'uploadDir':config.engine.get('upload_dir') || '/tmp'}));
             server.pre(restify.pre.sanitizePath());
 
+
+            //configuring authentication
+            server.cookieSecret = crypto.randomBytes(256).toString('hex');
 
             server.use(sessions({
                 // cookie name dictates the key name added to the request object
                 cookieName: 'session',
                 // should be a large unguessable string
-                secret: 'temporarysecretwhilewefindabettersolutiontostoreit', // REQUIRE HTTPS SUPPORT !!!
+                secret: server.cookieSecret, // REQUIRE HTTPS SUPPORT !!!
                 // how long the session will stay valid in ms
                 duration: 1 * 24 * 60 * 60 * 1000, // 1 day
                 cookie: {

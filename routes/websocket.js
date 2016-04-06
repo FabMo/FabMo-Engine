@@ -3,10 +3,35 @@ var util = require('../util');
 var machine = require('../machine').machine;
 var log=require('../log').logger("websocket");
 var passport = require('../authentication').passport;
+var sessions = require("client-sessions");
+var parseCookie = require('./util').parseCookie;
 
 var clients_limit = 5;
 var nb_clients=0;
 
+
+function setupAuthentication(server){
+	server.io.use(function (socket, next) {
+		var handshakeData = socket.request;
+    // Check that the cookie header is present
+    if (!handshakeData.headers.cookie) {
+    	return next(new Error('No cookie transmitted.'));
+    }
+    // Get all the cookie objects
+    var cookie = parseCookie(handshakeData.headers.cookie);
+
+		if(!cookie['session']){
+			return next(new Error('No session provided.'));
+		}
+    // Pull out the user from the cookie by using the decode function
+    handshakeData.sessionID = sessions.util.decode({cookieName: 'session', secret:server.cookieSecret}, cookie['session']);
+
+		if(!handshakeData.sessionID){
+			return next(new Error('Wrong session'));
+		}
+    next();
+	});
+}
 
 function setupStatusBroadcasts(server){
 	var previous_status = {'state':null}
@@ -30,9 +55,9 @@ function setupStatusBroadcasts(server){
 
 
 var onConnect = function(socket) {
-
-	var client = util.getClientAddress(socket.client.request)
-	log.info("Client " + client + " connected.");
+	var userId = socket.request.sessionID.content.passport.user;
+	var client_address = util.getClientAddress(socket.client.request)
+	log.info("Client #"+userId+" at "+ client_address + " connected.");
 
 	socket.on('disconnect', function() {
 		log.debug("Client disconnected");
@@ -82,6 +107,7 @@ var onConnect = function(socket) {
 };
 
 module.exports = function(server) {
+	setupAuthentication(server);
 	server.io.on('connection', onConnect);
 	setupStatusBroadcasts(server);
 };
