@@ -11,7 +11,7 @@ var nb_clients=0;
 
 
 function setupAuthentication(server){
-	server.io.use(function (socket, next) {
+	server.io.of('/private').use(function (socket, next) {
 		var handshakeData = socket.request;
     // Check that the cookie header is present
     if (!handshakeData.headers.cookie) {
@@ -36,6 +36,15 @@ function setupAuthentication(server){
 function setupStatusBroadcasts(server){
 	var previous_status = {'state':null}
 	machine.on('status',function(status){
+
+		server.io.of('/private').sockets.forEach(function (socket) {
+			if(status.state === 'idle' || status.state != previous_status.state) {
+				socket.emit('status',status);
+			} else {
+				socket.volatile.emit('status', status);
+			}
+		});
+
 		server.io.sockets.sockets.forEach(function (socket) {
 			if(status.state === 'idle' || status.state != previous_status.state) {
 				socket.emit('status',status);
@@ -54,10 +63,9 @@ function setupStatusBroadcasts(server){
 }
 
 
-var onConnect = function(socket) {
-	var userId = socket.request.sessionID.content.passport.user;
+var onPublicConnect = function(socket) {
 	var client_address = util.getClientAddress(socket.client.request)
-	log.info("Client #"+userId+" at "+ client_address + " connected.");
+	log.info("Anonymous client at "+ client_address + " connected.");
 
 	socket.on('disconnect', function() {
 		log.debug("Client disconnected");
@@ -67,6 +75,19 @@ var onConnect = function(socket) {
 		socket.emit('status', machine.status);
 	});
 
+	socket.on('ping', function(data) {
+		socket.emit('pong');
+	});
+
+};
+
+
+var onPrivateConnect = function(socket) {
+	console.log("connected through private mode !")
+	var userId = socket.request.sessionID.content.passport.user;
+	var client_address = util.getClientAddress(socket.client.request)
+	log.info("Client #"+userId+" at "+ client_address + " connected.");
+
 	socket.on('code', function(data) {
 		if('rt' in data) {
 			try {
@@ -75,10 +96,6 @@ var onConnect = function(socket) {
 				log.error(e);
 			}
 		}
-	});
-
-	socket.on('ping', function(data) {
-		socket.emit('pong');
 	});
 
 	socket.on('cmd', function(data) {
@@ -104,10 +121,14 @@ var onConnect = function(socket) {
 			// pass
 		}
 	});
+
+	onPublicConnect(socket); // inherit routes from the public function
+
 };
 
 module.exports = function(server) {
 	setupAuthentication(server);
-	server.io.on('connection', onConnect);
+	server.io.on('connection', onPublicConnect);
+	server.io.of('/private').on('connection', onPrivateConnect);
 	setupStatusBroadcasts(server);
 };
