@@ -34,6 +34,8 @@ td.run-control img {
     border: 1px solid #333333;
     box-shadow: .5px .5px .5px #aaaaaa;
     transform: translateX(-5px);
+    height: 40px;
+    width: 40px;
 }
 
 td.edit-control {
@@ -48,6 +50,8 @@ td.edit-control img{
     border: 1px solid #333333;
     border-radius: 5px;
     box-shadow: .5px .5px .5px #aaaaaa;
+    height: 40px;
+    width: 40px;
 }
 
 td.delete-control {
@@ -62,6 +66,8 @@ td.delete-control img {
     border-radius: 5px;
     border: 1px solid #333333;
     box-shadow: .5px .5px .5px #aaaaaa;
+    height: 40px;
+    width: 40px;
 }
 
 tr.shown td.details-control {
