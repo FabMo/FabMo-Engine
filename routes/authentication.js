@@ -24,8 +24,13 @@ var signup = function(req, res, next) {
       if(err){
         res.send(200,err);
       }else{
-        res.setHeader('Content-Type', 'text/html');
-        res.send(200,'User succesfully created ! <a href="/authentication/login">Go to log in page</a>');
+        var body = 'User succesfully created ! <a href="/authentication/login">Go to log in page</a>';
+        res.writeHead(200, {
+          'Content-Length': Buffer.byteLength(body),
+          'Content-Type': 'text/html'
+        });
+        res.write(body);
+        res.end();
       }
 
 
