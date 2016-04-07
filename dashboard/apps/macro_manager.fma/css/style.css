@@ -70,6 +70,14 @@ td.delete-control img {
     width: 40px;
 }
 
+@media screen and (max-width: 480px) {
+    td.delete-control img,  td.edit-control img, td.run-control img {
+        height: 25px;
+        width: 25px;
+        padding: .1em;
+    }
+}
+
 tr.shown td.details-control {
     background: url('images/details_close.png') no-repeat center center;
     width: 40px;
