@@ -7,7 +7,8 @@
 define(function(require) {
 	var events = require ('events');
 	var toastr = require('toastr');
-	
+	var modalIsShown = false;
+    
 	var Dashboard = function(target) {
 		this.engine = null;
 		this.machine = null;
@@ -151,17 +152,27 @@ define(function(require) {
 			this.closeRightMenu() 
 			callback(null)
 		}.bind(this));
+        
+        // Show the DRO
+		this._registerHandler('openModal', function(options, callback) { 
+			this.showModal(options);
+			callback(null);
+		}.bind(this));
+
+		// Hide the DRO
+		this._registerHandler('closeModal', function() { 
+			this.hideModal() 
+			callback(null)
+		}.bind(this));
 		
-				// Show the footer
+	    // Show the footer
 		this._registerHandler('showFooter', function() { 
 			this.openFooter();
-			
 		}.bind(this));
 
 		// Hide the footer
 		this._registerHandler('hideFooter', function() { 
 			this.closeFooter() 
-			
 		}.bind(this));
 
 		// Show a notification
@@ -551,7 +562,81 @@ define(function(require) {
 	Dashboard.prototype.closeFooter = function() {
 		$('.footBar').css('height', '0px');
 	}
+    
+    //Show Modal
+    Dashboard.prototype.showModal = function(options){
+            $('.modalDim').show();
+            $('.newModal').show();
 
+            if (options['title']) {
+                $('.modalTitle').html(options.title).show();
+            } else {
+                $('.modalTitle').hide();
+            }
+
+            // if(options['lead']) {
+            // 	$('#modalDialogLead').html(options.lead).show();		
+            // } else {		
+            // 	$('#modalDialogLead').hide();
+            // }
+
+            if (options['message']) {
+                $('.modalDialogue').html(options.message).show();
+            } else {
+                $('.modalDialogue').hide();
+            }
+
+            if (options['image']) {
+                $('.modalImage img').attr('src', options.image);
+                $('.modalImage').show();
+                $('.modalImage').css('width', '25%');
+                $('.modalDialogue').css('width', '65%');
+            } else {
+                $('.modalImage').hide();
+                $('.modalImage').css('width', '0%');
+                $('.modalDialogue').css('width', '100%');
+            }
+
+            if (options['okText']) {
+                $('.modalOkay').css('width', '40%');
+                $('.modalOkay').text(options.okText);
+
+            } else {
+                $('.modalOkay').css('width', '0%');
+            }
+
+            if (options['ok']) {
+                $('.modalOkay').on('click', options.ok);
+            } else {
+                $('.modalOkay').on('click', function() {
+                    $('.newModal').hide();
+                    $('.modalDim').hide();
+                });
+            }
+
+            if (options['cancel']) {
+                $('.modalCancel').on('click', options.cancel);
+            } else {
+                $('.modalCancel').on('click', function() {
+                    $('.newModal').hide();
+                    $('.modalDim').hide();
+                });
+            }
+
+            if (options['cancelText']) {
+                $('.modalCancel').css('width', '40%');
+                $('.modalCancel').text(options.cancelText);
+            } else {
+                $('.modalCancel').css('width', '0%');
+            }
+    }
+    
+    //Hide Modal
+    Dashboard.prototype.hideModal = function(){
+            $('.modalDim').css('display', 'none');
+            $('.newModal').hide();
+    }
+    
 	// Open and close the right menu
 	Dashboard.prototype.bindRightMenu = function(mouv) {
 		if($("#main").hasClass("offcanvas-overlap-left")){

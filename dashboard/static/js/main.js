@@ -16,7 +16,6 @@ define(function(require) {
     // Our libraries
     var FabMoAPI = require('fabmo');
     var FabMoUI = require('fabmo-ui');
-
     var Keyboard = require('keyboard');
     var Keypad = require('keypad');
 
@@ -43,7 +42,7 @@ define(function(require) {
         document.title = name || "FabMo Dashboard";
     });
 
-    //Give editor focus 
+    //Give editor focus *not working*
     $('#icon_editor').on('click', function() {
         $('iframe').focus();
 
@@ -184,112 +183,13 @@ define(function(require) {
             return callback();
         }
         daisyIsShown = false;
-        $(document).one('closed.fndtn.reveal', '[data-reveal]', function() {
+        $(document).on('closed.fndtn.reveal', '[data-reveal]', function() {
             var modal = $(this);
             if (modal.attr('id') === 'disconnectDialog') {
                 callback();
             }
         });
         $('#disconnectDialog').foundation('reveal', 'close');
-    }
-
-    function showModal(options) {
-        hideDaisy(function() {
-
-            var modalAlreadyUp = modalIsShown;
-
-            modalIsShown = true;
-
-            $('.modalDim').show();
-            $('.newModal').show();
-
-            if (options['title']) {
-                $('.modalTitle').html(options.title).show();
-            } else {
-                $('.modalTitle').hide();
-            }
-
-            // if(options['lead']) {
-            // 	$('#modalDialogLead').html(options.lead).show();		
-            // } else {		
-            // 	$('#modalDialogLead').hide();
-            // }
-
-            if (options['message']) {
-                $('.modalDialogue').html(options.message).show();
-            } else {
-                $('.modalDialogue').hide();
-            }
-
-
-            if (options['image']) {
-                $('.modalImage img').attr('src', options.image);
-                $('.modalImage').show();
-                $('.modalImage').css('width', '25%');
-                $('.modalDialogue').css('width', '65%');
-            } else {
-                $('.modalImage').hide();
-                $('.modalDialogue').css('width', '100%');
-            }
-
-            if (options['okText']) {
-                $('.modalOkay').css('width', '40%');
-                $('.modalOkay').text(options.okText);
-
-            } else {
-                $('.modalOkay').css('width', '0%');
-            }
-
-            if (options['ok']) {
-                $('.modalOkay').on('click', options.ok);
-            } else {
-                $('.modalOkay').on('click', function() {
-                    $('.newModal').hide();
-                    $('.newDim').hide();
-                });
-            }
-
-            if (options['cancel']) {
-                $('.modalCancel').on('click', options.cancel);
-            } else {
-                $('.modalCancel').on('click', function() {
-                    $('.newModal').hide();
-                    $('.newDim').hide();
-                });
-            }
-
-            if (options['cancelText']) {
-                $('.modalCancel').css('width', '40%');
-                $('.modalCancel').text(options.cancelText);
-            } else {
-                $('.modalCancel').css('width', '0%');
-            }
-
-            // if(!modalAlreadyUp) {
-            // 	var modalTry = function() {
-            // 		try {
-            // 			    $('.modalDim').show();
-            //                 $('.newModal').show();			
-            // 		} catch(e) {
-            // 			setTimeout(modalTry, 10);
-            // 		}
-            // 	}
-            // 	modalTry();
-            // }
-
-
-
-        });
-    }
-
-    function hideModal(callback) {
-        var callback = callback || function() {};
-        if (!modalIsShown) {
-            callback();
-        }
-        modalIsShown = false;
-        $('.modalDim').hide();
-        $('.newModal').hide();
     }
 
     // listen for escape key press to quit the engine
@@ -300,8 +200,7 @@ define(function(require) {
         }
     });
 
-    //goto this location 
-
+    //goto this location
     var axisValues = [];
     $('.axi').each(function() {
         var strings = this.getAttribute('class').split(" ")[0];
@@ -375,28 +274,9 @@ define(function(require) {
         dashboard.engine.sbp('ZB');
     });
 
-    $('.play').on('click', function(e) {
-        $("#main").addClass("offcanvas-overlap-left");
-        console.log('is this still a thing?')
-        dashboard.engine.job_run(function() {
-            dashboard.engine.getJobQueue(function(err, data) {
-                if (data.name == 'undefined' || data.length === 0) {
-                    $('.nextJob').text('No Job Pending');
-                    $('.play').hide();
-                    $('.gotoJobManager').show();
-                    $('.nextJob').css('top', '2px');
-                    $('.startnextLabel').css('top', '2px');
-                } else {
-                    $('.nextJob').text(data[0].name);
-                }
-            });
-        });
-    });
-
-
-
+    
     var disconnected = false;
-
+    last_state_seen = null;
     engine.on('disconnect', function() {
         if (!disconnected) {
             disconnected = true;
@@ -413,43 +293,16 @@ define(function(require) {
     });
 
     engine.on('status', function(status) {
-
-        // console.log(status.state);
-        // var state = {a:1};
-        // if (status.state === "idle"){
-        //     var state = {a : status.state};
-        // }
-        // function set_get_state(obj){
-        //         var hash = {};
-        //         for (var i in obj){
-        //             if (obj.hasOwnProperty(i)){
-        //                 var k = i;
-        //                 hash["set_"+i] = function (val) { this[k] = val; };
-        //                 hash["get_"+i] = function ()    { return this[k]; };
-        //             }
-        //         }
-        //         for (var i in hash) {
-        //             if (hash.hasOwnProperty(i)) {
-        //                 obj[i] = hash[i];
-        //             }       
-        //         }
-        //         console.log(hash);    
-        //     }
-
-
-        //     set_get_state(state);
-
-
-        // function listen_to(obj, prop, handler) {
-        //     var current_setter = obj["set_" + prop];
-        //     var old_val = obj["get_" + prop]();
-        //     obj["set_" + prop] = function(val) { current_setter.apply(obj, [old_val, val]); handler(val)};
-        // }
-
-        // listen_to(state, "a", function(oldval, newval) {
-        //     console.log("old : " + oldval + " new : " + newval);
-        // });
-
+        console.log(engine.status.auth);
+        
+     if(last_state_seen === "armed") {
+        if(status.state === "running" && engine.status.auth === true) { 
+            console.log("Was armed, now running like a boss."); }
+     }
+    if (last_state_seen != status.state) {
+        last_state_seen = status.state;
+        console.log(last_state_seen);
+    }
         switch (status.state) {
             case 'running':
             case 'paused':
@@ -459,55 +312,20 @@ define(function(require) {
             default:
                 dashboard.handlers.hideFooter();
                 break;
-        }
-
-        function SetGet(callback) {
-
-            return {
-                getIsAuth: function() {
-                    return isAuth;
-                },
-                setIsAuth: function(p) {
-                    isAuth = p;
-                    callback(isAuth, isRunning);
-                },
-                getIsRunning: function() {
-                    return isRunning;
-                },
-                setIsRunning: function(p) {
-                    isRunning = p;
-                    callback(isAuth, isRunning);
-                }
-            };
-        }
-
-        var authenticate = SetGet(function(isAuth, isRunning) {
-            if (isAuth && isRunning) {
-                countDown();
-            } else {
-                console.log('nope MOFO');
-            }
-        });
-
-        function countDown() {
-            console.log('Yeah MOFO');
-        }
-
-        authenticate.setIsRunning(true);
-        console.log(authorizeDialog);
+        } 
 
         if (status.state != 'idle') {
             $('#position input').attr('disabled', true);
-            authenticate.setIsRunning(true);
+           // authenticate.setIsRunning(true);
         } else {
             $('#position input').attr('disabled', false);
-            authenticate.setIsRunning(false);
+           // authenticate.setIsRunning(false);
         }
 
         if (status['info']) {
             if (status.info['message']) {
                 console.log('message');
-                showModal({
+                dashboard.showModal({
                     message: status.info.message,
                     okText: 'Resume',
                     cancelText: 'Quit',
@@ -527,8 +345,7 @@ define(function(require) {
                 } else {
                     var detailHTML = '<p>Check the <a style="text-decoration: underline;" href="/log">debug log</a> for more information.</p>';
                 }
-
-                showModal({
+                dashboard.showModal({
                     title: 'An Error Occurred!',
                     message: status.info.error,
                     detail: detailHTML,
@@ -538,12 +355,12 @@ define(function(require) {
                     }
                 });
             } else {
-                hideModal();
+                dashboard.hideModal();
             }
         } else if (status.state == 'armed') {
             authorizeDialog = true;
-            authenticate.setIsAuth(true);
-            showModal({
+            //authenticate.setIsAuth(false);
+            dashboard.showModal({
                 title: 'Authorization Required!',
                 message: 'To authorize your tool, press and hold the green button for one second.',
                 cancelText: 'Quit',
@@ -553,8 +370,8 @@ define(function(require) {
                 }
             });
         } else {
-            hideModal();
-            authenticate.setIsAuth(false);
+            dashboard.hideModal();
+            //authenticate.setIsAuth(true);
         }
     });
 

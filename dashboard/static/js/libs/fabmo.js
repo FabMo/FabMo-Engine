@@ -267,6 +267,15 @@ FabMoDashboard.prototype.hideDRO = function(callback) {
 	this._call("hideDRO", null, callback);
 }
 
+//Modal Functions 
+FabMoDashboard.prototype.showModal = function(options, callback) {
+    this._call("openModal", options, callback);
+}
+
+FabMoDashboard.prototype.hideModal = function(options, callback) {
+    this._call("closeModal", null, callback);
+}
+
 // Footer Functions
 FabMoDashboard.prototype.showFooter = function(callback) {
 	this._call("showFooter", null, callback);
