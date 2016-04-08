@@ -167,14 +167,14 @@ define(function(require) {
     }
 
     function showDaisy(callback) {
+
         if (daisyIsShown) {
             return;
-        }
-        hideModal(function() {
+        } else {
+            dashboard.hideModal();
             daisyIsShown = true;
             $('#disconnectDialog').foundation('reveal', 'open');
-        });
-
+        }
     }
 
     function hideDaisy(callback) {

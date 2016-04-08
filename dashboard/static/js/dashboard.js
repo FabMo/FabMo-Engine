@@ -564,7 +564,16 @@ define(function(require) {
 	}
     
     //Show Modal
+    
     Dashboard.prototype.showModal = function(options){
+        // var modal = function (options) {
+            
+            
+ 
+            var modalAlreadyUp = modalIsShown;
+ 
+            modalIsShown = true;
+ 
             $('.modalDim').show();
             $('.newModal').show();
 
@@ -598,11 +607,11 @@ define(function(require) {
             }
 
             if (options['okText']) {
-                $('.modalOkay').css('width', '40%');
+                $('.modalOkay').show();
                 $('.modalOkay').text(options.okText);
 
             } else {
-                $('.modalOkay').css('width', '0%');
+                $('.modalOkay').hide();
             }
 
             if (options['ok']) {
@@ -624,17 +633,40 @@ define(function(require) {
             }
 
             if (options['cancelText']) {
-                $('.modalCancel').css('width', '40%');
+                $('.modalCancel').show();
                 $('.modalCancel').text(options.cancelText);
             } else {
-                $('.modalCancel').css('width', '0%');
+                $('.modalCancel').hide();
             }
+            
+            if (!options['okText'] && !options['cancelText']){
+                console.log(options.okText);
+                $('.modalOkay').show();
+                $('.modalOkay').text('Okay');
+                $('.modalOkay').on('click', function() {
+                    $('.newModal').hide();
+                    $('.modalDim').hide();
+                });
+            }
+        // }
+        // funarr.push(modal);
+        //     while (funarr.length > 0) {
+        //     (funarr.shift())();   
+        // }
+            
+   
+    
     }
     
     //Hide Modal
     Dashboard.prototype.hideModal = function(){
-            $('.modalDim').css('display', 'none');
-            $('.newModal').hide();
+        var callback = callback || function() {};
+        if (!modalIsShown) {
+            callback();
+        }
+        modalIsShown = false;
+        $('.modalDim').hide();
+        $('.newModal').hide();
     }
     
 	// Open and close the right menu
