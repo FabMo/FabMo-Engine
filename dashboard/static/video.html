@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"> <!-- manifest="webcache.manifest" -->
+	<head>
+		<meta charset="utf-8">
+		<title>streamServer</title>
+		<script src="/js/libs/socket.io.js"></script>
+		<script src="/js/libs/jquery.min.js"></script>
+	</head>
+
+	<body>
+		<div id="stream-container">
+
+			<canvas id="videostream"></canvas>
+
+		</div>
+	</body>
+	<script type="text/javascript">
+
+var connect = null;
+
+$(document).ready(function () {
+console.log("streamClient ready!");
+connect = new Connect('127.0.0.1',80);
+connect.initSocket();
+});
+
+//--
+function Connect(serverIP, serverPort) {
+this.socket = null;
+this.serverIP = serverIP;
+this.serverPort = serverPort;
+}
+
+// --
+// open web socket
+Connect.prototype.initSocket = function() {
+
+	this.socket = io.connect('http://'+this.serverIP+":"+this.serverPort+"/video");
+
+// on connection to server
+this.socket.on('connect', function() {
+		console.log("socket connected to http://"+connect.serverIP+":"+connect.serverPort+"/video");
+});
+
+//read video stream
+this.socket.on('video', function(data) {
+	//console.log(data);
+	try {
+		// 1. method: draw on canvas
+		/*var canvas = document.getElementById('videostream');
+		var context = canvas.getContext('2d');
+		var imageObj = new Image();
+		imageObj.src = "data:image/jpeg;base64,"+data;
+		imageObj.onload = function(){
+			context.height = imageObj.height;
+			context.width = imageObj.width;
+			context.drawImage(imageObj,0,0,context.width,context.height);
+		}*/
+		// 2. method: draw as CSS background
+		$('#videostream').css('background', 'transparent url(data:image/jpeg;base64,'+data+') top left / 100% 100% no-repeat');
+	} catch(e){ }
+});
+
+this.socket.on('disconnect', function(exception) {
+	console.log("socket disconnect");
+	//this.disconnect(true);
+	//this.destroy();
+});
+};
+	</script>
+
+</html>
