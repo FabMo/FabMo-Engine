@@ -1,5 +1,6 @@
 var networks = {}
 
+// Get networks from the tool, and add entries to the table
 function refreshWifiTable(callback){
 	callback = callback || function() {};
 	fabmo.getWifiNetworks(function(err, networks) {
@@ -9,6 +10,7 @@ function refreshWifiTable(callback){
 	});
 }
 
+// Add wifi entries (retrieved from the tool) to the HTML table in the UI
 function addWifiEntries(network_entries, callback) {
 	callback = callback || function() {};
 	var table = document.getElementById('wifi_table');
@@ -34,6 +36,7 @@ function addWifiEntries(network_entries, callback) {
 	});
 }
 
+// Show the confirmation dialog
 function confirm(options){
     options.ok = options.ok || function() {};
     options.cancel = options.cancel || function() {};
@@ -59,6 +62,7 @@ function confirm(options){
     $('#confirm-modal').foundation('reveal', 'open');
 }
 
+// Prompt for a password with a modal dialog
 function requestPassword(ssid, callback){
     $('#modal-title').text('Enter the passphrase for ' + ssid);
     $('#passwd-modal').foundation('reveal', 'open');
@@ -74,6 +78,7 @@ function requestPassword(ssid, callback){
     });
 }
 
+// Confirm, then go to AP mode if requested.
 function enterAPMode(callback) {
     confirm({
         title : "Enter AP Mode?",

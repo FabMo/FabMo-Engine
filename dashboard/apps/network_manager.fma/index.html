@@ -82,66 +82,13 @@
 
     //Foundation Init
     $(document).foundation();
-    refreshWifiTable();
-    /*
-    var wifi_table = $('#wifi_table').DataTable( {
-        "filter": false,
-        "paging": false,
-        "processing": false,
-        "bInfo": false,
-        "bLengthChange":false,
-        "ajax": {
-            "url" : "/network/wifi/scan",
-            "dataSrc" : function(json) { 
-                return json.data.wifi; }
-            },
-        "columns": [
-            {
-              className: 'ssid noselect',
-              orderable:      false,
-                data : "ssid", 
-                defaultContent : '', 
-            },
-            { 
-              className: 'security noselect',
-              orderable:      false,
-                data : "security", 
-                defaultContent : '',
-                render : function(data) {
-                    switch(data) {
-                        case 'none':
-                            return 'None';
-                            break;
-                        default:
-                            return data;
-                            break;
-                    }
-                }
-            },
-            {
-                className: 'strength',
-                data :"strength",
-                width : '40px',
-                orderable : false,
-                render : function(data) {
-                    data = parseInt(data)
-                    var classname = 'wifi0';
-                    var data_order=data;
-                    if(data <= 20) { classname = 'wifi0';}
-                    else if(data <= 40) { classname = 'wifi1';}
-                    else if(data <= 60) { classname = 'wifi2';}
-                    else if(data <= 80) { classname = 'wifi3';}
-                    else if(data <= 100) { classname = 'wifi4';}
-                    return '<div class="' + classname + '" data-order="'+data_order+'"></div>'
-                }
-            }
-        ],
-        "order": [[ 0, 'desc' ]],
 
+    // Check for new networks initially, and then every 3 seconds
+    refreshWifiTable(function(err, data) {
+        setInterval(refreshWifiTable, 3000);
     });
-*/
-    var wifi_table_interval = setInterval( refreshWifiTable, 3000 );
-    var save_opened=$('#wifi_table tbody').find('.shown');
+
+    // Action for clicking the SSID
     $('#wifi_table tbody').on('click', 'td.ssid', function () {
         var name = $(this).text();
         requestPassword(name, function(passwd){
@@ -153,6 +100,7 @@
         });
     });
 
+    // Action for clicking the AP mode button
     $('#ap-mode-button').on('click', function(evt) {
         enterAPMode();
         evt.preventDefault();
