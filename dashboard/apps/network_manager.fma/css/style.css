@@ -2,6 +2,12 @@ body {
   background: #eee
 }
 
+h1 {
+  color: black;
+  margin-left: 1em;
+  font-size: 1.5em;
+  font-weight: 900;
+}
 #modal-title {
   font-weight: 700;
   color: #2E3865;

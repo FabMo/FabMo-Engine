@@ -1,10 +1,11 @@
-var networks = {}
+var networks = {};
+var network_history = {};
 
 // Get networks from the tool, and add entries to the table
 function refreshWifiTable(callback){
 	callback = callback || function() {};
 	fabmo.getWifiNetworks(function(err, networks) {
-		if(err) {callback(err);}
+		if(err) {return callback(err);}
 		addWifiEntries(networks);
 		callback(null, networks);
 	});
@@ -36,6 +37,49 @@ function addWifiEntries(network_entries, callback) {
 	});
 }
 
+// Get history from the tool, and add entries to the table
+function refreshHistoryTable(callback){
+    callback = callback || function() {};
+    fabmo.getWifiNetworkHistory(function(err, networks) {
+        if(err) {return callback(err);}
+        if(networks) {
+            addHistoryEntries(networks);            
+            $('#recent').removeClass('hidden');
+        } else {
+            $('#recent').addClass('hidden');
+        }
+        callback(null, networks);
+    });
+}
+
+// Add history entries (retrieved from the tool) to the HTML table in the UI
+function addHistoryEntries(history_entries, callback) {
+    callback = callback || function() {};
+    var table = document.getElementById('history_table');
+    console.log(history_entries);
+    for(ssid in history_entries) {
+        entry = history_entries[ssid];
+        if(entry.ssid in network_history) {
+            return;
+        }
+        network_history[entry.ssid] = entry;
+        var row = table.insertRow(table.rows.length);
+        var ssid = row.insertCell(0);
+        ssid.className = 'ssid noselect'
+        var ipaddress = row.insertCell(1);
+        ipaddress.className = 'ipaddress noselect'
+        var lastseen = row.insertCell(2);
+        //lastseen.className = '';
+
+        var ssidText = entry.ssid || '<Hidden SSID>';
+        var ipAddressText = entry.ipaddress || '';
+        var lastSeenText = moment(entry.lastseen).fromNow();
+
+        ssid.innerHTML = ssidText
+        ipaddress.innerHTML = ipAddressText;
+        lastseen.innerHTML = lastSeenText;
+    };
+}
 // Show the confirmation dialog
 function confirm(options){
     options.ok = options.ok || function() {};

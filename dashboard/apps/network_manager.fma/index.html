@@ -53,6 +53,7 @@
         </nav>
         </section>
     
+        <h1>Wireless Networks</h1>
         <div id="table-outer" style="margin: 1em;">
             <table class="small-12 columns" style="width:100%" id="wifi_table">
             <thead>
@@ -65,6 +66,23 @@
             <tbody><tr></tr></tbody>
             </table>
         </div>
+
+        <div id="recent" class="hidden">
+        <h1>Recently Connected</h1>
+        <div id="table-outer" style="margin: 1em;">
+            <table class="small-12 columns" style="width:100%" id="history_table">
+            <thead>
+                <tr>
+                    <th>SSID</th>
+                    <th>IP Address</th>
+                    <th>Last Connected</th>
+                </tr>
+            </thead>
+            <tbody><tr></tr></tbody>
+            </table>
+        </div>
+        </div>
+
     </section>
 
   <!-- Javascript inclusions -->
@@ -88,8 +106,10 @@
         setInterval(refreshWifiTable, 3000);
     });
 
+    refreshHistoryTable();
+
     // Action for clicking the SSID
-    $('#wifi_table tbody').on('click', 'td.ssid', function () {
+    $('tbody').on('click', 'td.ssid', function () {
         var name = $(this).text();
         requestPassword(name, function(passwd){
             fabmo.connectToWifi(name, passwd,function(err,data){
