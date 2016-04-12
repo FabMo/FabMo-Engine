@@ -356,6 +356,10 @@ FabMoAPI.prototype.getNetworkIdentity = function(callback) {
 	this._get('/network/identity', callback, callback);
 }
 
+FabMoAPI.prototype.getWifiNetworks = function(callback) {
+	this._get('/network/wifi/scan', callback, callback, 'wifi');
+}
+
 FabMoAPI.prototype.submitJob = function(job, options, callback) {
 	this._postUpload('/job', job, {}, callback, callback);
 }

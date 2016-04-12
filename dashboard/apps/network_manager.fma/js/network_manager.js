@@ -1,10 +1,11 @@
+var networks = {}
 
 function refreshWifiTable(callback){
 	callback = callback || function() {};
 	fabmo.getWifiNetworks(function(err, networks) {
 		if(err) {callback(err);}
-		addWifiEntries(network_entries);
-		callback(null, network_entries);
+		addWifiEntries(networks);
+		callback(null, networks);
 	});
 }
 
@@ -12,13 +13,23 @@ function addWifiEntries(network_entries, callback) {
 	callback = callback || function() {};
 	var table = document.getElementById('wifi_table');
 	network_entries.forEach(function(entry) {
+        if(entry.ssid in networks) {
+            return;
+        }
+        networks[entry.ssid] = entry;
 		var row = table.insertRow(table.rows.length);
 		var ssid = row.insertCell(0);
+        ssid.className = 'ssid noselect'
 		var security = row.insertCell(1);
-		var strength = row.insertCell(2);
+		security.className = 'security noselect'
+        var strength = row.insertCell(2);
+        strength.className = 'wifi0';
 
-		ssid.innerHTML = entry.ssid
-		security.innerHTML = entry.security.join(',');
+        var ssidText = entry.ssid || '<Hidden SSID>';
+        var securityText = entry.security ? entry.security.join(',') : '';
+
+		ssid.innerHTML = ssidText
+		security.innerHTML = securityText;
 		strength.innerHTML = '';
 	});
 }
@@ -66,7 +77,7 @@ function requestPassword(ssid, callback){
 function enterAPMode(callback) {
     confirm({
         title : "Enter AP Mode?",
-        description : "You will lose contact with the dashboard and need to reconnect in Access Point Mode",
+        description : "You will lose contact with the dashboard and need to reconnect in Access Point Mode.",
         ok_message : "Yes",
         cancel_message : "No",
         ok : function() {

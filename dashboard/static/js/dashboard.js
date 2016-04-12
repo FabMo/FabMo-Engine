@@ -402,6 +402,13 @@ define(function(require) {
 			}.bind(this));
 		}.bind(this));
 
+		this._registerHandler('getWifiNetworks', function(data, callback) {
+			this.engine.getWifiNetworks(function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+
 
 		///
 		/// MACROS

@@ -3,9 +3,8 @@
     <meta charset="utf-8">
     <title>Network Manager</title>
 
-    <link rel="stylesheet" href="./css/foundation.min.css">
-    <link rel="stylesheet" href="./css/normalize.css">
-    <link rel="stylesheet" href="./css/dataTables.foundation.css">
+    <link rel="stylesheet" href="/css/foundation.min.css">
+    <link rel="stylesheet" href="/css/normalize.css">
     <link rel="stylesheet" href="./css/style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -60,19 +59,20 @@
                 <tr>
                     <th>SSID</th>
                     <th>Security</th>
-                    <th>Strength</th>
+                    <th style="text-align: center;">Strength</th>
                 </tr>
             </thead>
+            <tbody><tr></tr></tbody>
             </table>
         </div>
     </section>
 
   <!-- Javascript inclusions -->
-  <script src="/js/libs/jquery.js"></script>
+  <script src="/js/libs/jquery.min.js"></script>
   <script src="/js/libs/foundation.min.js"></script>
   <script src="/js/libs/fabmo.js"></script>
-  <script src="./js/moment.js"></script>
-  <script src="./js/job_manager.js"></script>
+  <script src="./js/libs/moment.js"></script>
+  <script src="./js/network_manager.js"></script>
 
 
   <script type="text/javascript">
@@ -82,7 +82,7 @@
 
     //Foundation Init
     $(document).foundation();
-    
+    refreshWifiTable();
     /*
     var wifi_table = $('#wifi_table').DataTable( {
         "filter": false,
@@ -140,42 +140,18 @@
 
     });
 */
-    var wifi_table_interval = setInterval( refresh_table, 3000 );
+    var wifi_table_interval = setInterval( refreshWifiTable, 3000 );
     var save_opened=$('#wifi_table tbody').find('.shown');
-/*
-    function refresh_table(){
-            wifi_table.ajax.reload( function(data){
-            $.each(save_opened,function(index,val){
-                    var ssid =$(val).children('.ssid').first().text();
-                    var tr =$('#wifi_table tbody tr :contains('+ssid+')').first().parent();
-                    var row = wifi_table.row(tr);
-                    tr.addClass('shown');
-                    row.child(wifi_child_row(network)).show();
-                ;})
-            }, false ); // user paging is not reset on reload
-    }
-*/
     $('#wifi_table tbody').on('click', 'td.ssid', function () {
-        var name = $(this).text(); // get the ssid
-        var tr = $(this).parent();
-        var row = wifi_table.row( tr );
-        var network = row.data();
-        if(network.favorite){
-            fabmo.connectToWifi(name, null,function(err,data){
-                if(err)fabmo.notification('error',err);
-                else fabmo.notification('success',"You're connected!");
+        var name = $(this).text();
+        requestPassword(name, function(passwd){
+            fabmo.connectToWifi(name, passwd,function(err,data){
+                if(err) {
+                    fabmo.notify('error',err);
+                }
             });
-        }else{
-            requestPassword(name, function(passwd){
-                fabmo.connectToWifi(name, passwd,function(err,data){
-                    if(err)fabmo.notification('error',err);
-                    else fabmo.notification('success',"You're connected!");
-                });
-            });
-        }
+        });
     });
-
-
 
     $('#ap-mode-button').on('click', function(evt) {
         enterAPMode();
