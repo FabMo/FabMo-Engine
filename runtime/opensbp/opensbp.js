@@ -1456,7 +1456,7 @@ SBPRuntime.prototype.transformation = function(TranPt){
             var PtRotX = this.transforms.rotate.x;
             var PtRotY = this.transforms.rotate.y;
             log.debug("transformation: cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy);
-            TranPt = tform.rotate(TranPt,angle,PtRotX,PtRotY, this.cmd_StartX,this.cmd_StartY);
+            TranPt = tform.rotate(TranPt,angle,PtRotX,PtRotY,this.cmd_StartX,this.cmd_StartY);
         }
 	}
 	if (this.transforms.shearx.apply !== false){
