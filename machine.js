@@ -8,12 +8,15 @@ var path = require('path');
 var db = require('./db');
 var log = require('./log').logger('machine');
 var config = require('./config');
+var updater = require('./updater');
 
 var GCodeRuntime = require('./runtime/gcode').GCodeRuntime;
 var SBPRuntime = require('./runtime/opensbp').SBPRuntime;
 var ManualRuntime = require('./runtime/manual').ManualRuntime;
 var PassthroughRuntime = require('./runtime/passthrough').PassthroughRuntime;
 var IdleRuntime = require('./runtime/idle').IdleRuntime;
+
+AP_COLLAPSE_TIME = 5000;
 
 function connect(callback) {
 
@@ -53,6 +56,8 @@ function Machine(control_path, gcode_path, callback) {
 	events.EventEmitter.call(this);
 
 	this.fireButtonDebounce = false;
+	this.APCollapseTimer = null;
+
 	// Instantiate driver and connect to G2
 	this.status = {
 		state : "not_ready",
@@ -134,14 +139,49 @@ function Machine(control_path, gcode_path, callback) {
     }.bind(this));
 
     this.driver.on('status', function(stat) {
-    	var auth_input = 'in' + config.machine.get('auth_input');
-    	if(stat[auth_input] && this.status.state === 'armed') {
-    		log.info("Fire button hit!")
-    		this.fire();
-    	}
+    	this.handleFireButton(stat);
+    	this.handleAPCollapseButton(stat);
     }.bind(this));
 }
 util.inherits(Machine, events.EventEmitter);
+
+Machine.prototype.handleAPCollapseButton = function(stat) {
+	var n =  config.machine.get('auth_input');
+	if(n == 0) { return; }
+	var auth_input = 'in' + n;
+
+	// If the button has been pressed
+	if(stat[auth_input]) {
+
+		// For the first time
+		if(!this.APCollapseTimer) {
+			// Do an AP collapse in 10 seconds, if the button is never released
+			log.debug('Starting a timer for AP mode collapse (auth button was pressed)')
+			this.APCollapseTimer = setTimeout(function APCollapse() {
+				log.info("AP Collapse button held for " + (AP_COLLAPSE_TIME/1000) + " seconds.  Triggering AP collapse.");
+				this.APCollapseTimer = null;
+				updater.APModeCollapse();
+			}.bind(this), AP_COLLAPSE_TIME);
+		}
+	}
+	// Otherwise
+	else {
+		// Cancel an AP collapse that is pending, if there is one.
+		if(this.APCollapseTimer) {
+			log.debug('Cancelling AP collapse (auth button was released)')
+			clearTimeout(this.APCollapseTimer);
+			this.APCollapseTimer = null;
+		}
+	}
+}
+
+Machine.prototype.handleFireButton = function(stat) {
+	var auth_input = 'in' + config.machine.get('auth_input');
+	if(stat[auth_input] && this.status.state === 'armed') {
+		log.info("Fire button hit!")
+		this.fire();
+	}
+}
 
 /*
  * State Functions

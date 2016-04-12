@@ -13,6 +13,8 @@
     <li><a href="#" id="submitArrayOfObjects">Submit an array of Objects</a></li>
     
     <li><a href="#" id="submitMultipleJobs">Submit Multiple Jobs</a></li>
+    <li><a href="#" id="showModal">Show the modal</a></li>
+
   </ul>
 
   <form id="fileForm">
@@ -84,6 +86,13 @@
 	  			name : 'Job 1', 
 	  			description : "Job 1"
 	  		}]);
+	  	});
+
+	  	$('#showModal').click(function(evt) {
+	  		fabmo.showModal({
+	  			title: "Modal Dialog!",
+	  			message: "This is a modal I sure hope it doesn't get interrupted."
+	  		});
 	  	});
 
 	  	$('#fileForm').submit(function(evt){
