@@ -598,16 +598,15 @@ exports.CR = function(args) {
     }
     if ( RotationAngle === 0.0 ) { 
         outStr = "G0X" + nextX + "Y" + nextY;
-      }
-      else {
-        outStr = "G0X" + ((nextX*cosRA)-(nextY*sinRA)+(rotPtX*(1-cosRA))+(rotPtY*sinRA)).toFixed(4)+
-                   "Y" + ((nextX*sinRA)+(nextY*cosRA)+(rotPtX*(1-cosRA))-(rotPtY*sinRA)).toFixed(4); 
-      }
+    }
+    else {
+      outStr = "G0X" + ((nextX*cosRA)-(nextY*sinRA)+(rotPtX*(1-cosRA))+(rotPtY*sinRA)).toFixed(4)+
+                 "Y" + ((nextX*sinRA)+(nextY*cosRA)+(rotPtX*(1-cosRA))-(rotPtY*sinRA)).toFixed(4); 
+    }
     if ( RotationAngle !== 0 ) {
       pckt_startX = ((pckt_startX*cosRA)-(pckt_startY*sinRA)+(rotPtX*(1-cosRA))+(rotPtY*sinRA));
       pckt_startY = ((pckt_startX*sinRA)+(pckt_startY*cosRA)+(rotPtX*(1-cosRA))-(rotPtY*sinRA));
     }   
-    // this.emit_move('G0',{'X':pckt_startX,'Y':pckt_startY});
     this.emit_gcode( outStr);
     if( this.cmd_posz !== currentZ && this.lastNoZPullup !== 1 ){
       this.emit_move('G1',{'Z':currentZ,'F':feedrateZ});
