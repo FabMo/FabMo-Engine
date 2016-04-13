@@ -301,6 +301,7 @@ define(function(require) {
                 dashboard.hideModal();
                 modalIsShown = false;
         }
+     
         
         if (last_state_seen != status.state) {
             last_state_seen = status.state;

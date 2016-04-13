@@ -1509,7 +1509,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 .modalSubContent{
     display: inline-block;
-    
+    width: 100%;
 }
 .modalImage{
     position: relative;
