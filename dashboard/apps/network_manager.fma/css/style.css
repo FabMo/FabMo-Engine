@@ -8,6 +8,11 @@ h1 {
   font-size: 1.5em;
   font-weight: 900;
 }
+
+.table-outer {
+  margin: 1em;
+}
+
 #modal-title {
   font-weight: 700;
   color: #2E3865;
