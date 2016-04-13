@@ -43,10 +43,10 @@ define(function(require) {
     });
 
     //Give editor focus *not working*
-    $('#icon_editor').on('click', function() {
-        $('iframe').focus();
+    // $('#icon_editor').on('click', function() {
+    //     $('iframe').focus();
 
-    });
+    // });
     // Initial read of engine configuration
     engine.getConfig();
     engine.getVersion(function(err, version) {
@@ -294,9 +294,8 @@ define(function(require) {
     });
 
     engine.on('status', function(status) {
-
-        console.log(engine.status.auth);
-
+        console.log("last state "+last_state_seen);
+        console.log("current state "+status.state);
         if (status.state != "armed" && last_state_seen === "armed") {
                 dashboard.hideModal();
                 modalIsShown = false;
@@ -305,7 +304,7 @@ define(function(require) {
         
         if (last_state_seen != status.state) {
             last_state_seen = status.state;
-            console.log(last_state_seen);
+            
         }
         switch (status.state) {
             case 'running':
@@ -327,6 +326,7 @@ define(function(require) {
         }
 
         if (status['info']) {
+            console.log(status);
             if (status.info['message']) {
                 console.log('message');
                 dashboard.showModal({
