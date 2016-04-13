@@ -274,7 +274,7 @@ define(function(require) {
         dashboard.engine.sbp('ZB');
     });
 
-    
+
     var disconnected = false;
     last_state_seen = null;
     engine.on('disconnect', function() {
@@ -290,23 +290,24 @@ define(function(require) {
             disconnected = false;
             setConnectionStrength(5);
         }
+        hideDaisy(null);
     });
 
     engine.on('status', function(status) {
-        
+
         console.log(engine.status.auth);
-        
-     if(last_state_seen === "armed") {
-        if(status.state === "running" && last_state_seen === "armed") { 
-            console.log("Was armed, now running like a boss."); 
-            dashboard.hideModal();
-            modalIsShown = false;
+
+        if (last_state_seen === "armed") {
+            if (status.state === "running" && last_state_seen === "armed") {
+                console.log("Was armed, now running like a boss.");
+                dashboard.hideModal();
+                modalIsShown = false;
+            }
         }
-     }
-    if (last_state_seen != status.state) {
-        last_state_seen = status.state;
-        console.log(last_state_seen);
-    }
+        if (last_state_seen != status.state) {
+            last_state_seen = status.state;
+            console.log(last_state_seen);
+        }
         switch (status.state) {
             case 'running':
             case 'paused':
@@ -316,14 +317,14 @@ define(function(require) {
             default:
                 dashboard.handlers.hideFooter();
                 break;
-        } 
+        }
 
         if (status.state != 'idle') {
             $('#position input').attr('disabled', true);
-           // authenticate.setIsRunning(true);
+            // authenticate.setIsRunning(true);
         } else {
             $('#position input').attr('disabled', false);
-           // authenticate.setIsRunning(false);
+            // authenticate.setIsRunning(false);
         }
 
         if (status['info']) {
@@ -366,7 +367,7 @@ define(function(require) {
             }
         } else if (status.state == 'armed') {
             authorizeDialog = true;
-          
+
             dashboard.showModal({
                 title: 'Authorization Required!',
                 message: 'To authorize your tool, press and hold the green button for one second.',
@@ -376,7 +377,7 @@ define(function(require) {
                     dashboard.engine.quit();
                 }
             });
-        } 
+        }
     });
 
     function setConnectionStrength(level) {
