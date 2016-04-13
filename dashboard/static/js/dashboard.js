@@ -40,6 +40,11 @@ define(function(require) {
 		file_input.click();
 	}
 
+	Dashboard.prototype.setBusyMessage = function(message) {
+		// TODO SET THE BUSY MESSAGE HERE
+		console.info("App is busy loading: " + message);
+	}
+
 	Dashboard.prototype.browseForFiles = function(callback) {
 		document.getElementById("hidden-file-input").multiple=true;
 		browse(callback);		
@@ -140,6 +145,14 @@ define(function(require) {
 
 	Dashboard.prototype._registerHandlers = function() {
 		
+		this._registerHandler('ready', function() {
+			// TODO Ready handler for apps will go here.
+		});
+
+		this._registerHandler('setBusyMessage', function(data) {
+			this.setBusyMessage(data.message || '');
+		});
+
 		// Show the DRO
 		this._registerHandler('showDRO', function(data, callback) { 
 			this.openRightMenu();
@@ -149,7 +162,6 @@ define(function(require) {
 		// Hide the DRO
 		this._registerHandler('hideDRO', function() { 
 			this.closeRightMenu() 
-			callback(null)
 		}.bind(this));
 		
 				// Show the footer

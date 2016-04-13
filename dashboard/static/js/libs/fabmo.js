@@ -20,13 +20,15 @@
  * 
  * @class FabMoDashboard
  */
-var FabMoDashboard = function() {
+var FabMoDashboard = function(options) {
     this.version = '{{FABMO_VERSION}}';
 	this.target = window.parent;
 	this.window = window;
 	this._id = 0;
 	this._handlers = {};
 	this.status = {};
+	this.options = options;
+	this.isReady = false;
 	this._event_listeners = {
 		'status' : [],
 		'job_start' : [],
@@ -41,8 +43,16 @@ var FabMoDashboard = function() {
             this.stop();
         }
     }.bind(this);
+
+    if(!this.options.defer) {
+		this.ready();
+	}
 }
 
+FabMoDashboard._setOptions = function(options) {
+	this.options = {};
+	this.options.defer = options.defer || false;
+}
 /**
  * @method isPresent
  * @return {boolean} True if running in the actual FabMo dashboard.  False otherwise.
@@ -263,6 +273,25 @@ FabMoDashboard.prototype._setupMessageListener = function() {
 				break;
 			}
 	}.bind(this));
+}
+
+/**
+ * Indicate that the app is loaded and ready to go!
+ * @method ready
+ */
+FabMoDashboard.prototype.ready = function() {
+	this._call('ready');
+	this.isReady = true;
+}
+
+/**
+ * Set the message to display while an app is loading.  You can call this any time before
+ * calling the `ready()` function, to indicate loading or setup progress.
+ * @method setBusy
+ * @param {String} The message to display.
+ */
+FabMoDashboard.prototype.setBusyMessage = function(message) {
+	this._call('setBusyMessage', {'message' : message});
 }
 
 /**
