@@ -297,13 +297,11 @@ define(function(require) {
 
         console.log(engine.status.auth);
 
-        if (last_state_seen === "armed") {
-            if (status.state === "running" && last_state_seen === "armed") {
-                console.log("Was armed, now running like a boss.");
+        if (status.state != "armed" && last_state_seen === "armed") {
                 dashboard.hideModal();
                 modalIsShown = false;
-            }
         }
+        
         if (last_state_seen != status.state) {
             last_state_seen = status.state;
             console.log(last_state_seen);
