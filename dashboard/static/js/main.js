@@ -293,11 +293,15 @@ define(function(require) {
     });
 
     engine.on('status', function(status) {
+        
         console.log(engine.status.auth);
         
      if(last_state_seen === "armed") {
-        if(status.state === "running" && engine.status.auth === true) { 
-            console.log("Was armed, now running like a boss."); }
+        if(status.state === "running" && last_state_seen === "armed") { 
+            console.log("Was armed, now running like a boss."); 
+            dashboard.hideModal();
+            modalIsShown = false;
+        }
      }
     if (last_state_seen != status.state) {
         last_state_seen = status.state;
@@ -336,6 +340,7 @@ define(function(require) {
                         dashboard.engine.quit();
                     }
                 });
+                modalIsShown = true;
             } else if (status.info['error']) {
                 if (dashboard.engine.status.job) {
                     var detailHTML = '<p>' +
@@ -354,12 +359,14 @@ define(function(require) {
                         dashboard.engine.quit();
                     }
                 });
+                modalIsShown = true;
             } else {
                 dashboard.hideModal();
+                modalIsShown = false;
             }
         } else if (status.state == 'armed') {
             authorizeDialog = true;
-            //authenticate.setIsAuth(false);
+          
             dashboard.showModal({
                 title: 'Authorization Required!',
                 message: 'To authorize your tool, press and hold the green button for one second.',
@@ -369,10 +376,7 @@ define(function(require) {
                     dashboard.engine.quit();
                 }
             });
-        } else {
-            dashboard.hideModal();
-            //authenticate.setIsAuth(true);
-        }
+        } 
     });
 
     function setConnectionStrength(level) {
