@@ -49,7 +49,7 @@ var FabMoDashboard = function(options) {
 	}
 }
 
-FabMoDashboard._setOptions = function(options) {
+FabMoDashboard.prototype._setOptions = function(options) {
 	this.options = {};
 	this.options.defer = options.defer || false;
 }
