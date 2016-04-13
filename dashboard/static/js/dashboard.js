@@ -616,6 +616,10 @@ define(function(require) {
 
             if (options['ok']) {
                 $('.modalOkay').on('click', options.ok);
+                $('.modalCancel').on('click', function() {
+                    $('.newModal').hide();
+                    $('.modalDim').hide();
+                });
             } else {
                 $('.modalOkay').on('click', function() {
                     $('.newModal').hide();
