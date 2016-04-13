@@ -629,6 +629,10 @@ define(function(require) {
 
             if (options['cancel']) {
                 $('.modalCancel').on('click', options.cancel);
+                $('.modalCancel').on('click', function() {
+                    $('.newModal').hide();
+                    $('.modalDim').hide();
+                });
             } else {
                 $('.modalCancel').on('click', function() {
                     $('.newModal').hide();
