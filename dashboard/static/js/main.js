@@ -296,6 +296,8 @@ define(function(require) {
     engine.on('status', function(status) {
         console.log("last state "+last_state_seen);
         console.log("current state "+status.state);
+        console.log(status);
+
         if (status.state != "armed" && last_state_seen === "armed") {
                 dashboard.hideModal();
                 modalIsShown = false;
@@ -326,7 +328,6 @@ define(function(require) {
         }
 
         if (status['info']) {
-            console.log(status);
             if (status.info['message']) {
                 console.log('message');
                 dashboard.showModal({
@@ -376,6 +377,9 @@ define(function(require) {
                     dashboard.engine.quit();
                 }
             });
+        } else {
+            authorizeDialog = false;
+            dashboard.hideModal();
         }
     });
 
