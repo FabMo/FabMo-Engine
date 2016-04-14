@@ -615,14 +615,14 @@ define(function(require) {
             }
 
             if (options['ok']) {
-                $('.modalOkay').unbind();
+                $('.modalOkay').off();
                 $('.modalOkay').on('click', function() {
                     options.ok();
                     $('.newModal').hide();
                     $('.modalDim').hide();
                 });
             } else {
-                $('.modalOkay').unbind();
+                $('.modalOkay').off();
                 $('.modalOkay').on('click', function() {
                     $('.newModal').hide();
                     $('.modalDim').hide();
@@ -630,14 +630,14 @@ define(function(require) {
             }
 
             if (options['cancel']) {
-                $('.modalCancel').unbind();
+                $('.modalCancel').off();
                 $('.modalCancel').on('click', function() {
                     options.cancel();
                     $('.newModal').hide();
                     $('.modalDim').hide();
                 });
             } else {
-                $('.modalCancel').unbind();
+                $('.modalCancel').off();
                 $('.modalCancel').on('click', function() {
                     $('.newModal').hide();
                     $('.modalDim').hide();
@@ -652,7 +652,7 @@ define(function(require) {
             }
             
             if (!options['okText'] && !options['cancelText']){
-                $('.modalOkay').unbind();
+                $('.modalOkay').off();
                 $('.modalOkay').show();
                 $('.modalOkay').text('Okay');
                 $('.modalOkay').on('click', function() {
@@ -674,6 +674,8 @@ define(function(require) {
     Dashboard.prototype.hideModal = function(){
         $('.modalDim').hide();
         $('.newModal').hide();
+        $('.modalOkay').off();
+        $('.modalCancel').off();
     }
     
 	// Open and close the right menu

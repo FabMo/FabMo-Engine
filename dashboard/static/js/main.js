@@ -298,9 +298,9 @@ define(function(require) {
         console.log("current state "+status.state);
         console.log(status);
 
-        if (status.state != "armed" && last_state_seen === "armed") {
-                dashboard.hideModal();
-                modalIsShown = false;
+        if (status.state != "armed" && last_state_seen === "armed" || status.state != "paused" && last_state_seen === "paused") {
+            dashboard.hideModal();
+            modalIsShown = false;
         }
      
         
@@ -361,10 +361,7 @@ define(function(require) {
                     }
                 });
                 modalIsShown = true;
-            } else {
-                dashboard.hideModal();
-                modalIsShown = false;
-            }
+            } 
         } else if (status.state == 'armed') {
             authorizeDialog = true;
 
@@ -377,10 +374,7 @@ define(function(require) {
                     dashboard.engine.quit();
                 }
             });
-        } else {
-            authorizeDialog = false;
-            dashboard.hideModal();
-        }
+        } 
     });
 
     function setConnectionStrength(level) {
