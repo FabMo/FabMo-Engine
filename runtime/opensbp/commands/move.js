@@ -130,6 +130,7 @@ process_move = function(args) {
 	this.cmd_result = 0;
 	var params = {};
 	var feedrate = this.movespeed_xy * 60;
+	log.debug("    (process_move)movespeed_xy = " + this.movespeed_xy);
 	if( args[0] === 0 || args[0] && typeof args[0] === "number"){  //args[0] === 0 ||
 		params.X = args[0];
 		if ( params.X === this.cmd_posx ) { this.cmd_result += 1; }
@@ -196,9 +197,11 @@ exports.MS = function(args, callback) {
 	var speed_change = 0.0;
 
 	if (args[0] !== undefined) {
+		log.debug("    (1)movespeed_xy = " + this.movespeed_xy);
 		speed_change = args[0];
 		if(isNaN(speed_change)) { throw( "Invalid MS-XY argument: " + speed_change ); }
 		this.movespeed_xy = speed_change;
+		log.debug("    (2)movespeed_xy = " + this.movespeed_xy);
 	}
 	if (args[1] !== undefined) {
 		speed_change = args[1];
