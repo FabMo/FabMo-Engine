@@ -1480,12 +1480,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     left: 0;
     right: 0;
     bottom: 0;
-    background: url("https://media.giphy.com/media/McZdU5M5jpkmk/giphy.gif") no-repeat center center fixed;
-    -webkit-background-size: cover;
-    -moz-background-size: cover;
-    -o-background-size: cover;
-    background-size: cover;
-    opacity: 0.8;
+    background-color: rgba(0,0,0,0.45);
     z-index: 3000;
 }
 
