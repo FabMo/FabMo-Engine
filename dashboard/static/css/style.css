@@ -1394,6 +1394,185 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     animation: chipflythree .5s .4s ease infinite;
 }
 
+.drobuttonOuter{
+    position: relative;
+    margin-top: 4px;
+    margin-left: 4px;
+    width: 36px;
+    height: 36px;
+    border: 1px solid #FEFEFE;
+    border-radius: 50%;
+
+}
+
+.drobuttonInnerL{
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 23px;
+    height: 23px;
+    border: 1px solid #FEFEFE;
+    border-radius: 50%;
+   
+}
+
+.drobuttonInnerS{
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    border: 1px solid #FEFEFE;
+    border-radius: 50%;
+    animation: width .4s linear;
+}
+
+@keyframes pulse {
+    0% {
+        -webkit-box-shadow: 0px 0px 0px 1px #FEFEFE;
+    -moz-box-shadow: 0px 0px 0px 1px #FEFEFE;
+    box-shadow: 0px 0px 0px 1px #FEFEFE;
+    }
+
+    100%{
+         -webkit-box-shadow: 0px 0px 0px 13px #FEFEFE;
+    -moz-box-shadow: 0px 0px 0px 13px #FEFEFE;
+    box-shadow: 0px 0px 0px 13px #FEFEFE;
+    opacity: .2;
+    }
+}
+
+@keyframes width {
+     0% {
+       width: 10px ;
+       height: 10px;
+    }
+
+    50%{
+       width: 36px;
+       height: 36px;
+    }
+    100%{
+       width: 10px;
+       height: 10px;
+    }
+}
+
+.newModal{
+    display: none;
+    width: 50%;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3001;
+    background-color: #eee;
+    padding: 1.5em;
+    border-radius: 5px;
+}
+
+.modalDim{
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0,0,0,0.45);
+    z-index: 3000;
+}
+
+.modalLogo{
+    position: relative;
+    height: 30px;
+    padding-bottom: 30px;
+}
+
+.modalLogo svg{
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.modalTitle{
+    text-align: center;
+     color: #333333;
+    padding: 0;
+    margin: 0;
+   
+}
+.modalSubContent{
+    display: inline-block;
+    width: 100%;
+}
+.modalImage{
+    position: relative;
+    display: inline-block;
+    width: 25%;
+    padding-top:25%;
+    vertical-align: top;
+}
+
+.modalImage img{
+    direction: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+
+
+.modalDialogue{
+    text-align: center;
+    font-size: 20px;
+     color: #333333;
+    display: inline-block;
+    margin-right: 1em;
+    width: 65%;
+    
+    padding: 0;
+}
+
+@media screen and (max-width: 750px) {
+    .newModal{
+        width: 90%;
+    }
+}
+
+.modalButtons {
+    margin-top: 10px;
+    font-size: 20px;
+    text-align: center;
+}
+
+.modalOkay{
+    padding-top: .5em;
+    cursor: pointer;
+    display: inline-block;
+    height: 50px;
+    width: 40%;
+    text-align: center;
+    background-color: #5DAA35;
+    border-radius: 5px;
+}
+
+.modalCancel{
+    padding-top: .5em;
+    cursor: pointer;
+    display: inline-block;
+    height: 50px;
+    width: 40%;
+    text-align: center;
+    background-color: #9C210C;
+    border-radius: 5px;
+}
+
 .toast {
     opacity:0.9 !important;
 }

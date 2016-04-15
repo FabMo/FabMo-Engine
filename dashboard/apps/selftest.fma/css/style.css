@@ -1,0 +1,11 @@
+.go {
+	color: darkgreen;
+	width: 1px;
+	cursor: pointer;
+}
+
+#test_table {
+	width: 100%;
+	padding: 10px;
+}
+

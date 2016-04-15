@@ -1,13 +1,12 @@
 <html> 
 <head>
-	<meta charset="utf-8">
-	<title>Network Manager</title>
+    <meta charset="utf-8">
+    <title>Network Manager</title>
 
-	<link rel="stylesheet" href="./css/foundation.min.css">
-	<link rel="stylesheet" href="./css/normalize.css">
-	<link rel="stylesheet" href="./css/dataTables.foundation.css">
-  <link rel="stylesheet" href="./css/style.css">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/css/foundation.min.css">
+    <link rel="stylesheet" href="/css/normalize.css">
+    <link rel="stylesheet" href="./css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
 
     <div id="passwd-modal" class="reveal-modal medium" data-reveal>
@@ -53,187 +52,77 @@
           </section>
         </nav>
         </section>
-	
-        <div id="table-outer" style="margin: 1em;">
-			<table class="small-12 columns" style="width:100%" id="wifi_table">
-			<thead>
-            	<tr>
-                	<th>SSID</th>
-                	<th>Security</th>
-                    <th>Strength</th>
-            	</tr>
-        	</thead>
-        	</table>
-		</div>
-	</section>
+    
+        <h1>Wireless Networks</h1>
+        <div class="table-outer">
+            <table class="small-12 columns" style="width:100%" id="wifi_table">
+            <thead>
+                <tr>
+                    <th>SSID</th>
+                    <th>Security</th>
+                    <th style="text-align: center;">Strength</th>
+                </tr>
+            </thead>
+            <tbody><tr></tr></tbody>
+            </table>
+        </div>
+
+        <div id="recent" class="hidden">
+        <h1>Recently Connected</h1>
+        <div class="table-outer">
+            <table class="small-12 columns" style="width:100%" id="history_table">
+            <thead>
+                <tr>
+                    <th>SSID</th>
+                    <th>IP Address</th>
+                    <th>Last Connected</th>
+                </tr>
+            </thead>
+            <tbody><tr></tr></tbody>
+            </table>
+        </div>
+        </div>
+
+    </section>
 
   <!-- Javascript inclusions -->
-  <script src="./js/jquery.js"></script>
-  <script src="./js/jquery.dataTables.js"></script>
-  <script src="./js/foundation.min.js"></script>
-  <script src="./js/dataTables.foundation.js"></script>
-  <script src="./js/moment.js"></script>
+  <script src="/js/libs/jquery.min.js"></script>
+  <script src="/js/libs/foundation.min.js"></script>
   <script src="/js/libs/fabmo.js"></script>
+  <script src="./js/libs/moment.js"></script>
+  <script src="./js/network_manager.js"></script>
+
 
   <script type="text/javascript">
   var fabmo = new FabMoDashboard();
   
   $(document).ready(function() {
 
-  	//Foundation Init
-	$(document).foundation();
-	
-    var wifi_table = $('#wifi_table').DataTable( {
-    	"filter": false,
-    	"paging": false,
-        "processing": false,
-        "bInfo": false,
-        "bLengthChange":false,
-        "ajax": {
-        	"url" : "/network/wifi/scan",
-        	"dataSrc" : function(json) { 
-        		return json.data.wifi; }
-        	},
-        "columns": [
-            {
-              className: 'ssid noselect',
-              orderable:      false,
-            	data : "ssid", 
-            	defaultContent : '', 
-            },
-            { 
-              className: 'security noselect',
-              orderable:      false,
-            	data : "security", 
-            	defaultContent : '',
-            	render : function(data) {
-            		switch(data) {
-            			case 'none':
-            				return 'None';
-            				break;
-            			default:
-            				return data;
-            				break;
-            		}
-            	}
-            },
-            {
-                className: 'strength',
-                data :"strength",
-                width : '40px',
-                orderable : false,
-                render : function(data) {
-                    data = parseInt(data)
-                    var classname = 'wifi0';
-                    var data_order=data;
-                    if(data <= 20) { classname = 'wifi0';}
-                    else if(data <= 40) { classname = 'wifi1';}
-                    else if(data <= 60) { classname = 'wifi2';}
-                    else if(data <= 80) { classname = 'wifi3';}
-                    else if(data <= 100) { classname = 'wifi4';}
-                    return '<div class="' + classname + '" data-order="'+data_order+'"></div>'
+    //Foundation Init
+    $(document).foundation();
+
+    // Check for new networks initially, and then every 3 seconds
+    refreshWifiTable(function(err, data) {
+        setInterval(refreshWifiTable, 3000);
+    });
+
+    refreshHistoryTable();
+
+    // Action for clicking the SSID
+    $('tbody').on('click', 'td.ssid', function () {
+        var name = $(this).text();
+        requestPassword(name, function(passwd){
+            fabmo.connectToWifi(name, passwd,function(err,data){
+                if(err) {
+                    fabmo.notify('error',err);
                 }
-            }
-        ],
-        "order": [[ 0, 'desc' ]],
-
+            });
+        });
     });
 
-    var wifi_table_interval = setInterval( refresh_table, 3000 );
-    var save_opened=$('#wifi_table tbody').find('.shown');
-
-    function refresh_table(){
-            wifi_table.ajax.reload( function(data){
-            $.each(save_opened,function(index,val){
-                    var ssid =$(val).children('.ssid').first().text();
-                    var tr =$('#wifi_table tbody tr :contains('+ssid+')').first().parent();
-                    var row = wifi_table.row(tr);
-                    tr.addClass('shown');
-                    row.child(wifi_child_row(network)).show();
-                ;})
-            }, false ); // user paging is not reset on reload
-    }
-
-    $('#wifi_table tbody').on('click', 'td.ssid', function () {
-        var name = $(this).text(); // get the ssid
-        var tr = $(this).parent();
-        var row = wifi_table.row( tr );
-        var network = row.data();
-        if(network.favorite){
-            fabmo.connectToWifi(name, null,function(err,data){
-                if(err)fabmo.notification('error',err);
-                else fabmo.notification('success',"You're connected!");
-            });
-        }else{
-            requestPassword(name, function(passwd){
-                fabmo.connectToWifi(name, passwd,function(err,data){
-                    if(err)fabmo.notification('error',err);
-                    else fabmo.notification('success',"You're connected!");
-                });
-            });
-        }
-    });
-
-    function requestPassword(ssid, callback){
-        $('#modal-title').text('Enter the passphrase for ' + ssid);
-        $('#passwd-modal').foundation('reveal', 'open');
-        $( '#passwd-form' ).one('submit', function( event ) {
-          event.preventDefault();
-          callback($('input:first').val());
-          $('#passwd-modal').foundation('reveal', 'close');
-          $("#passwd-form").trigger('reset'); 
-        });
-
-        $('#passwd-modal').bind('closed.fndtn.reveal', function (event) {
-            $("#passwd-form").off('submit');            
-        });
-    }
-
-    function confirm(options){
-        options.ok = options.ok || function() {};
-        options.cancel = options.cancel || function() {};
-
-        $('#confirm-modal-title').text(options.title || '');
-        $('#confirm-modal-description').text(options.description || '');
-
-        $('#confirm-modal-ok').text(options.ok_message || 'Ok');
-        $('#confirm-modal-cancel').text(options.cancel_message || 'Cancel');
-
-        $('#confirm-modal-ok').one('click', function(evt) {
-            $('#confirm-modal').foundation('reveal', 'close');
-            $('#confirm-modal-cancel').off('click');
-            options.ok();
-        });
-
-        $('#confirm-modal-cancel').one('click', function(evt) {
-            $('#confirm-modal').foundation('reveal', 'close');
-            $('#confirm-modal-ok').off('click');
-            options.cancel();
-        });
-               
-        $('#confirm-modal').foundation('reveal', 'open');
-    }
-
+    // Action for clicking the AP mode button
     $('#ap-mode-button').on('click', function(evt) {
-        confirm({
-            title : "Enter AP Mode?",
-            description : "You will lose contact with the dashboard and need to reconnect in Access Point Mode",
-            ok_message : "Yes",
-            cancel_message : "No",
-            ok : function() {
-                console.info("Going into access point mode...")
-                fabmo.enableWifiHotspot(function(err, data) {
-                    if(err) {
-                        fabmo.notify('error', err);
-                    } else {
-                        fabmo.notify('info', data);
-                    }
-                });
-            }, 
-            cancel : function() {
-
-            }
-        });
+        enterAPMode();
         evt.preventDefault();
     })
 
