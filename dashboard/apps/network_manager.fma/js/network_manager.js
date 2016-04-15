@@ -42,7 +42,7 @@ function refreshHistoryTable(callback){
     callback = callback || function() {};
     fabmo.getWifiNetworkHistory(function(err, networks) {
         if(err) {return callback(err);}
-        if(networks) {
+        if(Object.keys(networks).length > 0) {	
             addHistoryEntries(networks);            
             $('#recent').removeClass('hidden');
         } else {
@@ -56,7 +56,6 @@ function refreshHistoryTable(callback){
 function addHistoryEntries(history_entries, callback) {
     callback = callback || function() {};
     var table = document.getElementById('history_table');
-    console.log(history_entries);
     for(ssid in history_entries) {
         entry = history_entries[ssid];
         if(entry.ssid in network_history) {
