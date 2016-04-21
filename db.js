@@ -377,7 +377,11 @@ User = function(username,password,isAdmin,created_at,_id) {
 };
 
 User.prototype.validPassword= function(password){
-	if(password === this.password){
+	var pass_shasum = crypto.createHash('sha256').update(password).digest('hex');
+
+	if(pass_shasum === this.password){
+		return true;
+	}else if(password === this.password){
 		return true;
 	}else{
 		return false;
@@ -394,11 +398,18 @@ User.prototype.save = function(){
 };
 
 User.add = function(username,password,callback){
+	if(!/^([a-zA-Z0-9]{3,20})$/.test(username) ){ //validate username
+		return callback('Username not valid, it should contain between 3 and 20 characters. Special characters are not authorized.',null);
+	}
+	if(!/^([a-zA-Z0-9@*#]{5,15})$/.test(password) ){ //validatepassword
+		return callback('Password not valid, it should contain between 5 and 15 characters. The only special characters authorized are "@ * #".',null);
+	}
 	users.findOne({username:username},function(err,document) {
 		if(document){
-			return callback('username already taken !',null);
+			return callback('Username already taken !',null);
 		}else{
-			user = new User(username,password);
+			var pass_shasum = crypto.createHash('sha256').update(password).digest('hex'); // save encrypted password
+			user = new User(username,pass_shasum);
 			user.save();
 			return callback(null,user);
 		}
@@ -454,6 +465,17 @@ exports.configureDB = function(callback) {
 	files = db.collection("files");
 	jobs = db.collection("jobs");
 	users = db.collection("users");
+
+	users.find({}).toArray(function(err,result){ //init the user database with an admin account if it's empty
+		if (err){
+			throw err;
+		}
+		if(result.length === 0 ){
+			var pass_shasum = crypto.createHash('sha256').update("go2fabmo").digest('hex');
+			user = new User("admin",pass_shasum,true);
+			user.save();
+		}
+	});
 
 	async.parallel([
 			function(cb) {

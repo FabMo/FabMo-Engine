@@ -84,15 +84,30 @@ var onPublicConnect = function(socket) {
 
 
 var onPrivateConnect = function(socket) {
-	console.log("connected through private mode !")
+	//console.log("connected through private mode !")
+
+
 
 	var userId = socket.request.sessionID.content.passport.user;
+
+	authentication.eventEmitter.on('user_kickout',function(user){
+		authentication.eventEmitter.removeListener('user_kickout',function(){});
+		//console.log("user kickout event");
+		if(user._id == userId){
+			socket.emit('authentication_failed','kicked out');
+			return socket.disconnect();
+		}
+	});
+
 	var client_address = util.getClientAddress(socket.client.request)
 	log.info("Client #"+userId+" at "+ client_address + " connected.");
 
 	socket.on('code', function(data) {
-		console.log(authentication.getCurrentUser());
-		if(!authentication.getCurrentUser()){return socket.disconnect('not authenticated');} // make sure that if the user logout, he can't talk through the socket anymore.
+
+		if(!authentication.getCurrentUser() || authentication.getCurrentUser()._id != userId){
+			socket.emit('authentication_failed','not authenticated');
+			return socket.disconnect();
+		} // make sure that if the user logout, he can't talk through the socket anymore.
 		if('rt' in data) {
 			try {
 				machine.executeRuntimeCode(data.rt, data.data)
@@ -103,7 +118,10 @@ var onPrivateConnect = function(socket) {
 	});
 
 	socket.on('cmd', function(data) {
-		if(!authentication.getCurrentUser()){return socket.disconnect('not authenticated');} // make sure that if the user logout, he can't talk through the socket anymore.
+		if(!authentication.getCurrentUser() || authentication.getCurrentUser()._id != userId){
+			socket.emit('authentication_failed','not authenticated');
+			return socket.disconnect();
+		} // make sure that if the user logout, he can't talk through the socket anymore.
 		try {
 			switch(data.name) {
 				case 'pause':
@@ -126,6 +144,8 @@ var onPrivateConnect = function(socket) {
 			// pass
 		}
 	});
+
+
 
 	onPublicConnect(socket); // inherit routes from the public function
 

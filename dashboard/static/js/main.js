@@ -16,12 +16,12 @@ define(function(require) {
 	// Our libraries
 	var FabMoAPI = require('fabmo');
 	var FabMoUI = require('fabmo-ui');
-	
+
 	var Keyboard = require('keyboard');
 	var Keypad = require('keypad');
 
 	var keypad, keyboard;
-	
+
 	// API object defines our connection to the tool.
 	var engine = new FabMoAPI();
 
@@ -29,9 +29,9 @@ define(function(require) {
 	var daisyIsShown = false;
 	var authorizeDialog = false;
 	// Detect touch screen
-	
+
 	var supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
-    
+
     engine.getNetworkIdentity(function(err, id) {
     	if(!id) { return; }
     	var name = id.name || "";
@@ -39,7 +39,7 @@ define(function(require) {
     	document.title = name || "FabMo Dashboard";
     });
 
-    //Give editor focus 
+    //Give editor focus
     $('#icon_editor').on('click', function(){
         $('iframe').focus();
 
@@ -53,7 +53,7 @@ define(function(require) {
 		// Load the apps from the server
 		context.apps.fetch({
 			success: function() {
-				// Create the menu based on the apps thus retrieved 
+				// Create the menu based on the apps thus retrieved
 				context.appMenuView = new context.views.AppMenuView({collection : context.apps, el : '#app_menu_container'});
 
 				// Create a FabMo object for the dashboard
@@ -72,7 +72,7 @@ define(function(require) {
 
 				// Start backbone routing
 				Backbone.history.start();
-				
+
 				// Request a status update from the tool
 				engine.getStatus();
 
@@ -96,7 +96,7 @@ function getManualMoveSpeed(move) {
 				break;
 			case 'z':
 				speed_ips = engine.config.machine.manual.z_speed;
-				break; 
+				break;
 		}
 	} catch(e) {
 		console.error(e);
@@ -114,7 +114,7 @@ function getManualNudgeIncrement(move) {
 				break;
 			case 'z':
 				increment_inches = engine.config.machine.manual.z_increment;
-				break; 
+				break;
 		}
 	} catch(e) {
 		console.error(e);
@@ -127,7 +127,7 @@ function setupKeyboard() {
 	keyboard.on('go', function(move) {
 		if(move) {
 			dashboard.engine.manualStart(move.axis, move.dir*60.0*(getManualMoveSpeed(move) || 0.1));
-		} 
+		}
 	});
 
 	keyboard.on('stop', function(evt) {
@@ -147,7 +147,7 @@ function setupKeypad() {
 	keypad.on('go', function(move) {
 		if(move) {
 			dashboard.engine.manualStart(move.axis, move.dir*60.0*(getManualMoveSpeed(move) || 0.1));
-		} 
+		}
 	});
 
 	keypad.on('stop', function(evt) {
@@ -181,7 +181,7 @@ function hideDaisy(callback) {
  			callback();
  		}
 	});
-	$('#disconnectDialog').foundation('reveal', 'close');	
+	$('#disconnectDialog').foundation('reveal', 'close');
 }
 
 function showModal(options) {
@@ -193,26 +193,26 @@ function showModal(options) {
 	modalIsShown = true;
 
 	if(options['title']) {
-		$('#modalDialogTitle').html(options.title).show();		
-	} else {		
+		$('#modalDialogTitle').html(options.title).show();
+	} else {
 		$('#modalDialogTitle').hide();
 	}
 
 	if(options['lead']) {
-		$('#modalDialogLead').html(options.lead).show();		
-	} else {		
+		$('#modalDialogLead').html(options.lead).show();
+	} else {
 		$('#modalDialogLead').hide();
 	}
 
 	if(options['message']) {
-		$('#modalDialogMessage').html(options.message).show();		
-	} else {		
+		$('#modalDialogMessage').html(options.message).show();
+	} else {
 		$('#modalDialogMessage').hide();
 	}
 
 	if(options['detail']) {
-		$('#modalDialogDetail').html(options.detail).show();		
-	} else {		
+		$('#modalDialogDetail').html(options.detail).show();
+	} else {
 		$('#modalDialogDetail').hide();
 	}
 
@@ -249,7 +249,7 @@ function showModal(options) {
 	if(!modalAlreadyUp) {
 		var modalTry = function() {
 			try {
-				$('#modalDialog').foundation('reveal', 'open');				
+				$('#modalDialog').foundation('reveal', 'open');
 			} catch(e) {
 				setTimeout(modalTry, 10);
 			}
@@ -269,7 +269,7 @@ function hideModal(callback) {
  			callback();
  		}
 	});
-	$('#modalDialog').foundation('reveal', 'close');	
+	$('#modalDialog').foundation('reveal', 'close');
 }
 
 // listen for escape key press to quit the engine
@@ -280,7 +280,7 @@ $(document).on('keyup', function(e) {
     }
 });
 
-//goto this location 
+//goto this location
 
 var axisValues = [];
 $('.axi').each( function(){
@@ -300,20 +300,20 @@ $('.go-here').on('mousedown', function () {
     }
     dashboard.engine.gcode(gcode);
     $('.go-here').hide();
-    
+
 });
-    
-$('.axi').on('click', function(e) { 
+
+$('.axi').on('click', function(e) {
     e.stopPropagation();
     $('.go-here').show();
 });
 
-$('.axi').on('focus', function(e) { 
+$('.axi').on('focus', function(e) {
     e.stopPropagation();
     $(this).val(parseFloat($(this).val().toString()));
     $(this).select();
 });
-$(document).on('click', function() { 
+$(document).on('click', function() {
     $('.posx').val($('.posx').val());
     $('.posy').val($('.posy').val());
     $('.posz').val($('.posz').val());
@@ -331,13 +331,13 @@ $('.axi').keyup(function(e){
             }
         }
 		dashboard.engine.gcode(gcode);
-		$('.go-here').hide();    
+		$('.go-here').hide();
     }
 });
 
 // Handlers for the home/probe buttons
-$('.button-zerox').click(function(e) {dashboard.engine.sbp('ZX'); });  
-$('.button-zeroy').click(function(e) {dashboard.engine.sbp('ZY'); });  
+$('.button-zerox').click(function(e) {dashboard.engine.sbp('ZX'); });
+$('.button-zeroy').click(function(e) {dashboard.engine.sbp('ZY'); });
 $('.button-zeroz').click(function(e) {dashboard.engine.sbp('ZZ'); });
 $('.button-zeroa').click(function(e) {dashboard.engine.sbp('ZA'); });
 $('.button-zerob').click(function(e) {dashboard.engine.sbp('ZB'); });
@@ -363,6 +363,16 @@ $('.play').on('click', function(e){
 
 
 var disconnected = false;
+
+engine.on('authentication_failed',function(message){
+	console.log('authentication failed');
+	if(message==="not authenticated"){
+		window.location='/authentication?message=not-authenticated';
+	}
+	else if(message==="kicked out"){
+		window.location='/authentication?message=kicked-out';
+	}
+});
 
 engine.on('disconnect', function() {
 	if(!disconnected) {
@@ -413,9 +423,9 @@ engine.on('status', function(status) {
  			});
 		} else if(status.info['error']) {
 			if(dashboard.engine.status.job) {
-				var detailHTML = '<p>' + 
-					  '<b>Job Name:  </b>' + dashboard.engine.status.job.name + '<br />' + 
-					  '<b>Job Description:  </b>' + dashboard.engine.status.job.description + 
+				var detailHTML = '<p>' +
+					  '<b>Job Name:  </b>' + dashboard.engine.status.job.name + '<br />' +
+					  '<b>Job Description:  </b>' + dashboard.engine.status.job.description +
 					'</p>'
 			} else {
 				var detailHTML = '<p>Check the <a style="text-decoration: underline;" href="/log">debug log</a> for more information.</p>';
@@ -482,7 +492,7 @@ function ping() {
 			sum += signal_window[i];
 		}
 		var avg = sum/signal_window.length;
-		
+
 		if(err) {
 			console.error(err);
 		} else {
@@ -509,9 +519,9 @@ if ($(window).width() < 620) {
             step = 3,
             space = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
         var m = document.getElementById('marquee');
-        var t = m.innerHTML; 
+        var t = m.innerHTML;
         m.innerHTML = t + space;
-        m.style.position = 'absolute'; 
+        m.style.position = 'absolute';
         var width = (m.clientWidth + 1);
         m.style.position = '';
         m.innerHTML = t + space + t + space + t + space + t + space + t + space + t + space + t + space;
@@ -530,23 +540,23 @@ if ($(window).width() < 620) {
     } else if (window.attachEvent) { //IE7-8
         window.attachEvent('onload', start_marquee);
     }
-	
+
 	$('.currentContainer').css('width', '100px');
 	$('.currentJobTitle').css('width', '50%');
 	$('.currentJobTitle').css('padding-left', '100px');
-    
+
     if ($(window).width() < 400) {
         $('.currentContainer').css('width', '50px');
 	$('.currentJobTitle').css('width', '50%');
 	$('.currentJobTitle').css('padding-left', '50px');
     }
-} 
+}
 })();
 engine.sendTime();
 function touchScreen () {
 	if (supportsTouch && window.innerWidth < 800) {
 		$('#app-client-container').css({'-webkit-overflow-scrolling':'touch','overflow-y':'scroll'});
-	} 
+	}
 }
 touchScreen();
 
@@ -558,9 +568,3 @@ touchScreen();
 // });
 
 });
-
-
-
-
-
-
