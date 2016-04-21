@@ -518,7 +518,12 @@ define(function(require) {
 
 		this._registerHandler('navigate', function(data, callback) {
 			if(data.url) {
-				window.open(data.url,data.options.target)
+				var pat = /^((https?:\/\/)|\/)/i;
+				if (pat.test(data.url)) {
+					window.open(data.url,data.options.target || '_self')
+				} else {
+					window.open(data.path + data.url,data.options.target || '_self')
+				}
 			} else {
 				callback(new Error("No URL specified"));
 			}
