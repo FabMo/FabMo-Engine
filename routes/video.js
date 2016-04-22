@@ -5,9 +5,8 @@ var ps = require('child_process');
 var ffmpeg = ps.spawn("gst-launch", [
   "v4l2src",
   "device=/dev/video0",
-  "!","video/x-raw-yuv,framerate=30/1",
+  "!","image/jpeg,framerate=15/1",
   "!","queue",
-  "!","jpegenc",
   "!","fdsink"
 ]);
 
