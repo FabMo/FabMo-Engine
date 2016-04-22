@@ -20,7 +20,7 @@ var connect = null;
 
 $(document).ready(function () {
 console.log("streamClient ready!");
-connect = new Connect('127.0.0.1',80);
+connect = new Connect(location.host,80);
 connect.initSocket();
 });
 
