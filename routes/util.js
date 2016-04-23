@@ -33,8 +33,8 @@ function setUploadTimeout(key, timeout) {
     if(UPLOAD_INDEX[key].timeout) {
         clearTimeout(UPLOAD_INDEX[key].timeout);
     }
-    UPLOAD_INDEX[key].timeout = setTimeout(function() {
-        log.warn('Deleting expired upload: ' + key);
+    UPLOAD_INDEX[key].timeout = setTimeout(function() { 
+        log.warn('Deleting expired upload: ' + key); 
         expireUpload(key);
     }, timeout);
 }
@@ -44,7 +44,7 @@ function expireUpload(key) {
     if(upload && upload.timeout) {
         clearTimeout(upload.timeout);
         delete UPLOAD_INDEX[key];
-        return upload;
+        return upload;    
     } else {
         log.warn("Tried to expire upload " + key + " that doesn't exist.");
     }
@@ -67,7 +67,7 @@ function updateUpload(key, index, file) {
         }
         return undefined;
     }
-
+    
     throw new Error('Invalid upload key: ' + key);
 }
 
@@ -102,7 +102,7 @@ function upload(req, res, next, callback) {
                 'data' : {
                     'status' : 'pending'
                 }
-            });
+            });            
         }
 
     } else { /* Metadata type POST */
@@ -112,7 +112,7 @@ function upload(req, res, next, callback) {
         } catch(e) {
             log.error(e);
             return res.json( {
-                'status' : 'error',
+                'status' : 'error', 
                 'message' : e.message
             });
         }
@@ -135,7 +135,7 @@ function updaterRedirect(req, res, next) {
             var host = req.headers.host.split(':')[0].trim('/');
             var path = req.params[0];
             var url = 'http://' + host + ':' + (config.engine.get('server_port') + 1) + '/' + path;
-            res.redirect(302, url, next);
+            res.redirect(302, url, next);   
             break;
 
         case 'POST':
@@ -147,46 +147,5 @@ function updaterRedirect(req, res, next) {
             break;
     }
 }
-
-/// Parse the given cookie header string into an object
-/// The object has the various cookies as keys(names) => values
-/// @param {String} str
-/// @return {Object}
-var parseCookie = function(str, opt) {
-    opt = opt || {};
-    var obj = {}
-    var pairs = str.split(/[;,] */);
-    var dec = opt.decode || decodeURIComponent;
-
-    pairs.forEach(function(pair) {
-        var eq_idx = pair.indexOf('=')
-
-        // skip things that don't look like key=value
-        if (eq_idx < 0) {
-            return;
-        }
-
-        var key = pair.substr(0, eq_idx).trim()
-        var val = pair.substr(++eq_idx, pair.length).trim();
-
-        // quoted values
-        if ('"' == val[0]) {
-            val = val.slice(1, -1);
-        }
-
-        // only assign once
-        if (undefined == obj[key]) {
-            try {
-                obj[key] = dec(val);
-            } catch (e) {
-                obj[key] = val;
-            }
-        }
-    });
-
-    return obj;
-};
-
 module.exports.upload = upload;
 module.exports.updaterRedirect = updaterRedirect;
-module.exports.parseCookie = parseCookie;

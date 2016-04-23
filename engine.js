@@ -15,7 +15,6 @@ var network = require('./network');
 var glob = require('glob');
 var argv = require('minimist')(process.argv);
 var fs = require('fs');
-var crypto = require('crypto');
 
 var Engine = function() {
     this.version = null;
@@ -346,7 +345,7 @@ Engine.prototype.start = function(callback) {
             });
 
             // Configure local directory for uploading files
-            log.info("Configuring upload directory...");
+            log.info("Cofiguring upload directory...");
             server.use(restify.bodyParser({'uploadDir':config.engine.get('upload_dir') || '/tmp'}));
             server.pre(restify.pre.sanitizePath());
 

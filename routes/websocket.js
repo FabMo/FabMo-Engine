@@ -6,29 +6,6 @@ var clients_limit = 5;
 var nb_clients=0;
 
 
-function setupAuthentication(server){
-	server.io.of('/private').use(function (socket, next) {
-		var handshakeData = socket.request;
-    // Check that the cookie header is present
-    if (!handshakeData.headers.cookie) {
-    	return next(new Error('No cookie transmitted.'));
-    }
-    // Get all the cookie objects
-    var cookie = parseCookie(handshakeData.headers.cookie);
-
-		if(!cookie['session']){
-			return next(new Error('No session provided.'));
-		}
-    // Pull out the user from the cookie by using the decode function
-    handshakeData.sessionID = sessions.util.decode({cookieName: 'session', secret:server.cookieSecret}, cookie['session']);
-
-		if(!handshakeData.sessionID){
-			return next(new Error('Wrong session'));
-		}
-    next();
-	});
-}
-
 function setupStatusBroadcasts(server){
 	var previous_status = {'state':null}
 	machine.on('status',function(status){
@@ -50,9 +27,10 @@ function setupStatusBroadcasts(server){
 }
 
 
-var onPublicConnect = function(socket) {
-	var client_address = util.getClientAddress(socket.client.request)
-	log.info("Anonymous client at "+ client_address + " connected.");
+var onConnect = function(socket) {
+
+	var client = util.getClientAddress(socket.client.request)
+	log.info("Client " + client + " connected.");
 
 	socket.on('disconnect', function() {
 		log.debug("Client disconnected");
@@ -62,23 +40,7 @@ var onPublicConnect = function(socket) {
 		socket.emit('status', machine.status);
 	});
 
-	socket.on('ping', function(data) {
-		socket.emit('pong');
-	});
-
-};
-
-
-var onPrivateConnect = function(socket) {
-	console.log("connected through private mode !")
-
-	var userId = socket.request.sessionID.content.passport.user;
-	var client_address = util.getClientAddress(socket.client.request)
-	log.info("Client #"+userId+" at "+ client_address + " connected.");
-
 	socket.on('code', function(data) {
-		console.log(authentication.getCurrentUser());
-		if(!authentication.getCurrentUser()){return socket.disconnect('not authenticated');} // make sure that if the user logout, he can't talk through the socket anymore.
 		if('rt' in data) {
 			try {
 				machine.executeRuntimeCode(data.rt, data.data)
@@ -88,8 +50,11 @@ var onPrivateConnect = function(socket) {
 		}
 	});
 
+	socket.on('ping', function(data) {
+		socket.emit('pong');
+	});
+
 	socket.on('cmd', function(data) {
-		if(!authentication.getCurrentUser()){return socket.disconnect('not authenticated');} // make sure that if the user logout, he can't talk through the socket anymore.
 		try {
 			switch(data.name) {
 				case 'pause':
@@ -112,15 +77,10 @@ var onPrivateConnect = function(socket) {
 			// pass
 		}
 	});
-
-	onPublicConnect(socket); // inherit routes from the public function
-
 };
 
 module.exports = function(server) {
-	setupAuthentication(server);
-	server.io.on('connection', onPublicConnect);
-	server.io.of('/private').on('connection', onPrivateConnect);
+	server.io.on('connection', onConnect);
 	setupStatusBroadcasts(server);
 };
 
