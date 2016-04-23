@@ -1,5 +1,5 @@
 var machine = require('../machine').machine;
-var passport = require('../authentication').passport;
+
 /**
  * @api {post} /code Execute tool runtime code
  * @apiGroup Direct
@@ -35,16 +35,16 @@ var code = function(req, res, next) {
 					default:
 						answer = {
 							status:"error",
-							message: "Runtime '" + rt + "' is unknown."
+							message: "Runtime '" + rt + "' is unknown." 
 						}
 						break;
 				}
 			} else {
 				answer = {
 					status:"error",
-					message: "No runtime specified in request."
+					message: "No runtime specified in request." 
 				}
-			}
+			}	
 		} else {
 			answer = {
 				status:"error",
@@ -61,5 +61,5 @@ var code = function(req, res, next) {
 }
 
 module.exports = function(server) {
-	server.post('/code',passport.authenticate('local'),code);
+	server.post('/code',code);
 };

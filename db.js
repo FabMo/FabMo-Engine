@@ -15,7 +15,6 @@ job_queue = new util.Queue();
 var db;
 var files;
 var jobs;
-var users;
 
 function notifyChange() {
 	var machine = require('./machine').machine;
@@ -90,7 +89,7 @@ Job.prototype.save = function(callback) {
 		notifyChange();
 		callback(null, this);
 	}.bind(this));
-
+	
 };
 
 Job.prototype.delete = function(callback){
@@ -206,7 +205,7 @@ Job.deletePending = function(callback) {
 };
 
 // The File class represents a fabrication file on disk
-// In addition to the filename and path, file statistics such as
+// In addition to the filename and path, file statistics such as 
 // The run count, last time run, etc. are stored in the database.
 function File(filename,path, callback){
 	var that=this;
@@ -313,7 +312,7 @@ File.add = function(friendly_filename, pathname, callback) {
 					}.bind(this)); // unlink
 				}); // move
 			}
-		});
+		});		
 	})
 
 
@@ -367,68 +366,6 @@ var createJob = function(file, options, callback) {
     });
 }
 
-
-User = function(username,password,isAdmin,created_at,_id) {
-		this._id = _id;
-    this.username = username;
-    this.password = password;
-		this.isAdmin = isAdmin || false;
-    this.created_at = created_at || Date.now();
-};
-
-User.prototype.validPassword= function(password){
-	if(password === this.password){
-		return true;
-	}else{
-		return false;
-	}
-};
-
-User.prototype.save = function(){
-	users.save(this, function(err, record) {
-		if(!record) {
-			return;
-		}
-		callback(null, this);
-	}.bind(this));
-};
-
-User.add = function(username,password,callback){
-	users.findOne({username:username},function(err,document) {
-		if(document){
-			return callback('username already taken !',null);
-		}else{
-			user = new User(username,password);
-			user.save();
-			return callback(null,user);
-		}
-	});
-}
-
-User.findOne = function(username,callback){
-	users.findOne({username:username},function(err,doc){
-		if(err){console.log(err);callback(err,null);}
-		if(doc){
-			user = new User(doc.username,doc.password,doc.isAdmin,doc.created_at,doc._id);
-			callback(err,user);
-		}else{
-			callback(err);
-		}
-	});
-}
-
-User.findById = function(id,callback){
-	users.findOne({_id:id},function(err,doc){
-		if(err){console.log(err);callback(err,null);}
-		if(doc){
-			user = new User(doc.username,doc.password,doc.isAdmin,doc.created_at,doc._id);
-			callback(err,user);
-		}else{
-			callback(err);
-		}
-	});
-}
-
 checkCollection = function(collection, callback) {
 	collection.find().toArray(function(err, data) {
 		if(err) {
@@ -453,7 +390,6 @@ exports.configureDB = function(callback) {
 	db = new Engine.Db(config.getDataDir('db'), {});
 	files = db.collection("files");
 	jobs = db.collection("jobs");
-	users = db.collection("users");
 
 	async.parallel([
 			function(cb) {
@@ -461,11 +397,8 @@ exports.configureDB = function(callback) {
 			},
 			function(cb) {
 				checkCollection(jobs, cb);
-			},
-			function(cb) {
-				checkCollection(users, cb);
 			}
-		],
+		], 
 		function(err, results) {
 			if(err) {
 				log.error('There was a database corruption issue!')
@@ -512,5 +445,4 @@ exports.cleanup = function(callback) {
 
 exports.File = File;
 exports.Job = Job;
-exports.User = User;
 exports.createJob = createJob;

@@ -1,6 +1,5 @@
 var ncp = require('ncp').ncp
 var macros = require('../macros');
-var passport = require('../authentication').passport;
 
 var updateMacro = function(req, res, next) {
     var id = req.params.id;
@@ -14,7 +13,7 @@ var updateMacro = function(req, res, next) {
     }
     macros.update(id, updated_macro, function(err, macro) {
         if(err) {
-            response = {'status' : 'error', 'message' : err }
+            response = {'status' : 'error', 'message' : err }       
         } else {
             response = {'status' : 'success', 'data' : macro}
         }
@@ -52,7 +51,7 @@ var getMacro = function(req, res, next) {
         res.json({
             'status' : 'success',
             'data' : {'macro' : macro }
-        });
+        });       
     } else {
         res.json({
             'status' : 'error',
@@ -126,8 +125,9 @@ var deleteMacro = function(req, res, next) {
 module.exports = function(server) {
     server.get('/macros', getMacros);
     server.get('/macros/:id', getMacro);
-    server.del('/macros/:id',passport.authenticate('local'), deleteMacro);
-    server.get('/macros/:id/info', getMacroInfo);
-    server.post('/macros/:id/run',passport.authenticate('local'), runMacro);
-    server.post('/macros/:id',passport.authenticate('local'), updateMacro);
+    server.del('/macros/:id', deleteMacro);
+    server.get('/macros/:id/info', getMacroInfo);     
+    server.post('/macros/:id/run', runMacro);
+    server.post('/macros/:id', updateMacro);
 };
+

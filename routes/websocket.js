@@ -2,11 +2,6 @@ var fs = require('fs');
 var util = require('../util');
 var machine = require('../machine').machine;
 var log=require('../log').logger("websocket");
-var authentication = require('../authentication');
-var passport = authentication.passport;
-var sessions = require("client-sessions");
-var parseCookie = require('./util').parseCookie;
-
 var clients_limit = 5;
 var nb_clients=0;
 
@@ -37,16 +32,7 @@ function setupAuthentication(server){
 function setupStatusBroadcasts(server){
 	var previous_status = {'state':null}
 	machine.on('status',function(status){
-
-		server.io.of('/private').sockets.forEach(function (socket) {
-			if(status.state === 'idle' || status.state != previous_status.state) {
-				socket.emit('status',status);
-			} else {
-				socket.volatile.emit('status', status);
-			}
-		});
-
-		server.io.sockets.sockets.forEach(function (socket) {
+		server.io.sockets.sockets.forEach(function (socket) { 
 			if(status.state === 'idle' || status.state != previous_status.state) {
 				socket.emit('status',status);
 			} else {
@@ -57,7 +43,7 @@ function setupStatusBroadcasts(server){
 	});
 
 	machine.on('change', function(topic) {
-		server.io.sockets.sockets.forEach(function (socket) {
+		server.io.sockets.sockets.forEach(function (socket) { 
 			socket.emit('change',topic);
 		});
 	});
@@ -137,3 +123,5 @@ module.exports = function(server) {
 	server.io.of('/private').on('connection', onPrivateConnect);
 	setupStatusBroadcasts(server);
 };
+
+
