@@ -3,22 +3,87 @@
 	<meta charset="utf-8">
 	<title>Self-Test App</title>
 	<link rel="stylesheet" href="./css/pure-min.css">
+	<link rel="stylesheet" href="./css/font-awesome.min.css" />    
+	<link rel="stylesheet" href="./css/style.css">
+
 </head>
 <body>
-  <ul>
-    <li><a href="#" id="submitSingleString">Submit a Single String</a></li>
-    <li><a href="#" id="submitArrayOfStrings">Submit an array of Strings</a></li>
+	<table class="pure-table" id="test_table">
+	<thead>
+    <tr>
+        <th>&nbsp;</th>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Status</th>
+    </tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td class="go fa fa-play" id="submitSingleString"></td>
+			<td>Submit a Single String</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td class="go fa fa-play" id="submitArrayOfStrings"></td>
+			<td>Submit String Array</td>
+			<td></td>
+			<td></td>
 
-    <li><a href="#" id="submitSingleObject">Submit a Single Object</a></li>
-    <li><a href="#" id="submitArrayOfObjects">Submit an array of Objects</a></li>
-    
-    <li><a href="#" id="submitMultipleJobs">Submit Multiple Jobs</a></li>
-  </ul>
+		</tr>
+		<tr>
+			<td class="go fa fa-play" id="submitSingleObject"></td>
+			<td>Submit Object</td>
+			<td></td>
+			<td></td>
 
+		</tr>
+		<tr>
+			<td class="go fa fa-play" id="submitArrayOfObjects"></td>
+			<td>Submit Object Array</td>
+			<td></td>
+			<td></td>
+
+		</tr>
+		<tr>
+			<td class="go fa fa-play" id="submitMultipleJobs"></td>
+			<td>Submit Multiple Jobs Simultaneously</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td class="go fa fa-play" id="showModal"></td>
+			<td>Show the Modal Dialog</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td class="go fa fa-play" id="navigateRelative"></td>
+			<td>Navigate to an app-relative URL.</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td class="go fa fa-play" id="navigateAbsolute1"></td>
+			<td>Navigate to an absolute URL with protocol.</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td class="go fa fa-play" id="navigateAbsolute2"></td>
+			<td>Navigate to an absolute URL with no protocol.</td>
+			<td></td>
+			<td></td>
+		</tr>
+
+	</tbody>
+	</table>
+<!--
   <form id="fileForm">
   <input type="file" id="fileInput"/>
   <button type="submit" id="fileSubmit">Submit</button>
   </form>
+  -->
     
   <script src="/js/libs/jquery.min.js"></script>
   <script src="/js/libs/fabmo.js"></script> 
@@ -86,9 +151,28 @@
 	  		}]);
 	  	});
 
+	  	$('#showModal').click(function(evt) {
+	  		fabmo.showModal({
+	  			title: "Modal Dialog!",
+	  			message: "This is a modal I sure hope it doesn't get interrupted."
+	  		});
+	  	});
+
 	  	$('#fileForm').submit(function(evt){
 	  		evt.preventDefault();
 	  		fabmo.submitJobs($('#fileForm'));
+	  	});
+
+	  	$("#navigateRelative").click(function(evt) {
+	  		fabmo.navigate('path/sample.pdf');
+	  	});
+
+	  	$("#navigateAbsolute1").click(function(evt) {
+	  		fabmo.navigate('/log');
+	  	});
+
+	  	$("#navigateAbsolute2").click(function(evt) {
+	  		fabmo.navigate('http://www.handibot.com/');
 	  	});
 
 

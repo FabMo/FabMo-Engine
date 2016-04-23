@@ -7,7 +7,8 @@
 define(function(require) {
 	var events = require ('events');
 	var toastr = require('toastr');
-	
+	var modalIsShown = false;
+    
 	var Dashboard = function(target) {
 		this.engine = null;
 		this.machine = null;
@@ -38,6 +39,11 @@ define(function(require) {
 			});
 		});
 		file_input.click();
+	}
+
+	Dashboard.prototype.setBusyMessage = function(message) {
+		// TODO SET THE BUSY MESSAGE HERE
+		console.info("App is busy loading: " + message);
 	}
 
 	Dashboard.prototype.browseForFiles = function(callback) {
@@ -140,6 +146,14 @@ define(function(require) {
 
 	Dashboard.prototype._registerHandlers = function() {
 		
+		this._registerHandler('ready', function() {
+			// TODO Ready handler for apps will go here.
+		});
+
+		this._registerHandler('setBusyMessage', function(data) {
+			this.setBusyMessage(data.message || '');
+		});
+
 		// Show the DRO
 		this._registerHandler('showDRO', function(data, callback) { 
 			this.openRightMenu();
@@ -149,19 +163,28 @@ define(function(require) {
 		// Hide the DRO
 		this._registerHandler('hideDRO', function() { 
 			this.closeRightMenu() 
+		}.bind(this));
+        
+        // Show the DRO
+		this._registerHandler('openModal', function(options, callback) { 
+			this.showModal(options);
+			callback(null);
+		}.bind(this));
+
+		// Hide the DRO
+		this._registerHandler('closeModal', function() { 
+			this.hideModal() 
 			callback(null)
 		}.bind(this));
 		
-				// Show the footer
+	    // Show the footer
 		this._registerHandler('showFooter', function() { 
 			this.openFooter();
-			
 		}.bind(this));
 
 		// Hide the footer
 		this._registerHandler('hideFooter', function() { 
 			this.closeFooter() 
-			
 		}.bind(this));
 
 		// Show a notification
@@ -402,6 +425,20 @@ define(function(require) {
 			}.bind(this));
 		}.bind(this));
 
+		this._registerHandler('getWifiNetworks', function(data, callback) {
+			this.engine.getWifiNetworks(function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+
+		this._registerHandler('getWifiNetworkHistory', function(data, callback) {
+			this.engine.getWifiNetworkHistory(function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+
 
 		///
 		/// MACROS
@@ -481,7 +518,12 @@ define(function(require) {
 
 		this._registerHandler('navigate', function(data, callback) {
 			if(data.url) {
-				window.open(data.url,data.options.target)
+				var pat = /^((https?:\/\/)|\/)/i;
+				if (pat.test(data.url)) {
+					window.open(data.url,data.options.target || '_self')
+				} else {
+					window.open(data.path + data.url,data.options.target || '_self')
+				}
 			} else {
 				callback(new Error("No URL specified"));
 			}
@@ -551,7 +593,122 @@ define(function(require) {
 	Dashboard.prototype.closeFooter = function() {
 		$('.footBar').css('height', '0px');
 	}
+    
+    //Show Modal
+    
+    Dashboard.prototype.showModal = function(options){
+        // var modal = function (options) {
+            
+            
+ 
+            var modalAlreadyUp = modalIsShown;
+ 
+            modalIsShown = true;
+ 
+            $('.modalDim').show();
+            $('.newModal').show();
 
+            if (options['title']) {
+                $('.modalTitle').html(options.title).show();
+            } else {
+                $('.modalTitle').hide();
+            }
+
+            // if(options['lead']) {
+            // 	$('#modalDialogLead').html(options.lead).show();		
+            // } else {		
+            // 	$('#modalDialogLead').hide();
+            // }
+
+            if (options['message']) {
+                $('.modalDialogue').html(options.message).show();
+            } else {
+                $('.modalDialogue').hide();
+            }
+
+            if (options['image']) {
+                $('.modalImage img').attr('src', options.image);
+                $('.modalImage').show();
+                $('.modalImage').css('width', '25%');
+                $('.modalDialogue').css('width', '65%');
+            } else {
+                $('.modalImage').hide();
+                $('.modalImage').css('width', '0%');
+                $('.modalDialogue').css('width', '100%');
+            }
+
+            if (options['okText']) {
+                $('.modalOkay').show();
+                $('.modalOkay').text(options.okText);
+
+            } else {
+                $('.modalOkay').hide();
+            }
+
+            if (options['ok']) {
+                $('.modalOkay').off();
+                $('.modalOkay').on('click', function() {
+                    options.ok();
+                    $('.newModal').hide();
+                    $('.modalDim').hide();
+                });
+            } else {
+                $('.modalOkay').off();
+                $('.modalOkay').on('click', function() {
+                    $('.newModal').hide();
+                    $('.modalDim').hide();
+                });
+            }
+
+            if (options['cancel']) {
+                $('.modalCancel').off();
+                $('.modalCancel').on('click', function() {
+                    options.cancel();
+                    $('.newModal').hide();
+                    $('.modalDim').hide();
+                });
+            } else {
+                $('.modalCancel').off();
+                $('.modalCancel').on('click', function() {
+                    $('.newModal').hide();
+                    $('.modalDim').hide();
+                });
+            }
+
+            if (options['cancelText']) {
+                $('.modalCancel').show();
+                $('.modalCancel').text(options.cancelText);
+            } else {
+                $('.modalCancel').hide();
+            }
+            
+            if (!options['okText'] && !options['cancelText']){
+                $('.modalOkay').off();
+                $('.modalOkay').show();
+                $('.modalOkay').text('Okay');
+                $('.modalOkay').on('click', function() {
+                    $('.newModal').hide();
+                    $('.modalDim').hide();
+                });
+            }
+        // }
+        // funarr.push(modal);
+        //     while (funarr.length > 0) {
+        //     (funarr.shift())();   
+        // }
+            
+   
+    
+    }
+    
+    //Hide Modal
+    Dashboard.prototype.hideModal = function(){
+        $('.modalDim').hide();
+        $('.newModal').hide();
+        $('.modalOkay').off();
+        $('.modalCancel').off();
+    }
+    
 	// Open and close the right menu
 	Dashboard.prototype.bindRightMenu = function(mouv) {
 		if($("#main").hasClass("offcanvas-overlap-left")){

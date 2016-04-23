@@ -170,11 +170,11 @@ SBPRuntime.prototype.runString = function(s, callback) {
 		this.movespeed_a = getSBP_speed.movea_speed;
 		this.movespeed_b = getSBP_speed.moveb_speed;
 		this.movespeed_c = getSBP_speed.movec_speed;
-		this.jogspeed_xy = getG2_settings.xvm;
-		this.jogspeed_z = getG2_settings.zvm;
-		this.jogspeed_a = getG2_settings.avm;
-		this.jogspeed_b = getG2_settings.bvm;
-		this.jogspeed_c = getG2_settings.cvm;
+		this.jogspeed_xy = getG2_settings.xvm/60;
+		this.jogspeed_z = getG2_settings.zvm/60;
+		this.jogspeed_a = getG2_settings.avm/60;
+		this.jogspeed_b = getG2_settings.bvm/60;
+		this.jogspeed_c = getG2_settings.cvm/60;
         this.maxjerk_xy = getG2_settings.xjm;
         this.maxjerk_z = getG2_settings.zjm;
         this.maxjerk_a = getG2_settings.ajm;
@@ -1456,7 +1456,7 @@ SBPRuntime.prototype.transformation = function(TranPt){
             var PtRotX = this.transforms.rotate.x;
             var PtRotY = this.transforms.rotate.y;
             log.debug("transformation: cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy);
-            TranPt = tform.rotate(TranPt,angle,PtRotX,PtRotY, this.cmd_StartX,this.cmd_StartY);
+            TranPt = tform.rotate(TranPt,angle,PtRotX,PtRotY,this.cmd_StartX,this.cmd_StartY);
         }
 	}
 	if (this.transforms.shearx.apply !== false){
