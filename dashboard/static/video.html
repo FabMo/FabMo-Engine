@@ -10,7 +10,7 @@
 	<body>
 		<div id="stream-container">
 
-			<canvas id="videostream" height="480" width="640"></canvas>
+			<canvas id="videostream"></canvas>
 
 		</div>
 	</body>
@@ -56,6 +56,8 @@ this.socket.on('video', function(data) {
 		imageObj.onload = function(){
 			context.height = imageObj.height;
 			context.width = imageObj.width;
+			canvas.width  = imageObj.width;
+			canvas.height = imageObj.height;
 			context.drawImage(imageObj,0,0,context.width,context.height);
 		}
 		// 2. method: draw as CSS background
