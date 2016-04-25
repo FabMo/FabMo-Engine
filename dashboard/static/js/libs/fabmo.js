@@ -878,7 +878,8 @@ FabMoDashboard.prototype.getVersion = function(callback) {
  * @param {String} options.target The link target (same as the target argument of `window.open`)
  */
 FabMoDashboard.prototype.navigate = function(url, options, callback) {
-	this._call("navigate", {'url' : url, 'options' : options || {}}, callback);
+	var loc = window.location.href;
+	this._call("navigate", {'path' : loc.substr(0, loc.lastIndexOf('/')) + '/', 'url' : url, 'options' : options || {}}, callback);
 }
 
 var toaster = function () {
