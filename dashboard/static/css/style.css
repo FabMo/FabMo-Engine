@@ -512,6 +512,12 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     color: #eee;
 }
 
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+
 .go-here{
 	width: 90%;
 	margin-left: 0.5rem;
@@ -945,7 +951,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	margin-top: 12px;
 	margin-left: 1em;
 	float: left;
-	overflow: hidden;
+	overflow: scroll;
+    max-width: 250px;
 }
 
 .currentJobTitle {
@@ -953,6 +960,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	font-family: 'source_sans_proextralight';
     white-space: nowrap;
 	text-align: center;
+    
 }
 
 .radial_progress {

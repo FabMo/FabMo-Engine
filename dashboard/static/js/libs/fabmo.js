@@ -365,9 +365,9 @@ FabMoDashboard.prototype.hideModal = function(options, callback) {
 }
 
 // Footer Functions
-FabMoDashboard.prototype.showFooter = function(callback) {
-	this._call("showFooter", null, callback);
-}
+// FabMoDashboard.prototype.showFooter = function(callback) {
+// 	this._call("showFooter", null, callback);
+// }
 
 /**
  * Show a notification on the dashboard.  Notifications typically show up as toaster message somewhere on the dashboard, 
