@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="/css/foundation.min.css">
   <link rel="stylesheet" href="/css/normalize.css"> 
   <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/codemirror.css">
+  <link rel="stylesheet" href="./css/eclipse.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <div id="jobsubmit-modal" class="reveal-modal medium" data-reveal>
@@ -83,10 +85,13 @@
   <script src="/js/libs/fabmo.js" type="text/javascript"></script>
   <script src="/js/libs/foundation.min.js" type="text/javascript"></script>
   <script src="js/ace/ace.js" type="text/javascript"></script>
+  <script src="js/codemirror.js" type="text/javascript"></script>
+  <script src="js/simple.js" type="text/javascript"></script>
+  <script src="js/cm-gcode-mode.js" type="text/javascript"></script>
 
   <script>
+    var EDITOR="CODEMIRROR"
     var fabmo = new FabMoDashboard();
-
     var editor;
     var lang="gcode";
     var source=null;
@@ -125,15 +130,32 @@
           $("#lang-gcode").parent().removeClass("active");
           $("#lang-opensbp").parent().addClass("active");
           lang='opensbp';
-          editor.getSession().setMode("ace/mode/text"); 
+          switch(EDITOR) {
+            case "ACE":
+              editor.getSession().setMode("ace/mode/text"); 
+            break;
+
+            case "CODEMIRROR":
+              editor.setOption("mode", "opensbp");
+            break;
+          }
           break;
+        break;
 
         case 'gcode':
           $("#app-header").text("Editor (G-Code)");
           $("#lang-opensbp").parent().removeClass("active");
           $("#lang-gcode").parent().addClass("active");
           lang = 'gcode';
-          editor.getSession().setMode("ace/mode/gcode"); 
+          switch(EDITOR) {
+            case "ACE":
+              editor.getSession().setMode("ace/mode/gcode"); 
+            break;
+
+            case "CODEMIRROR":
+              editor.setOption("mode", "gcode");
+            break;
+          }
           break;
       }
       if(supports_html5_storage()) {
@@ -158,8 +180,15 @@
           console.warn("Couldn't set position: " + e)
           pos = {row:0,col:0};
         }
-        editor.clearSelection();
-        editor.moveCursorToPosition(pos);
+        switch(EDITOR) {
+          case "ACE":
+            editor.clearSelection();
+            editor.moveCursorToPosition(pos);
+          break;
+
+          case "CODEMIRROR":
+          break;
+        }
       }
     }
 
@@ -224,8 +253,8 @@
         case undefined:
         case null:
           if(supports_html5_storage()) {
-            localStorage.fabmo_editor_content = editor.getSession().getValue();
-            pos = editor.getCursorPosition();
+            localStorage.fabmo_editor_content = editor.getValue();
+            pos = editor.getCursor();
             localStorage.fabmo_editor_position = JSON.stringify(pos);
           }
           callback();
@@ -247,28 +276,60 @@
     $(document).ready(function() {
       $(document).foundation();
 
-      editor = ace.edit("editor");
-      editor.setTheme("ace/theme/eclipse");
-      editor.setShowPrintMargin(false);
-      editor.$blockScrolling = Infinity;
-      editor.on("change", function() {
-        editor.clearSelection();
-      });
-      editor.commands.addCommand({
-        name: "run_immediate",
-        bindKey: {win: "Ctrl-Enter", mac: "Command-Enter"},
-        exec: function(editor) {
-          execute();    
-        }
-      });
+      switch(EDITOR) {
+        case "ACE":
+          editor = ace.edit("editor");
+          editor.setTheme("ace/theme/eclipse");
+          editor.setShowPrintMargin(false);
+          editor.$blockScrolling = Infinity;
+          editor.on("change", function() {
+            editor.clearSelection();
+          });
+          editor.commands.addCommand({
+            name: "run_immediate",
+            bindKey: {win: "Ctrl-Enter", mac: "Command-Enter"},
+            exec: function(editor) {
+              execute();    
+            }
+          });
 
-      editor.commands.addCommand({
-        name: "save",
-        bindKey: {win: "Ctrl-S", mac: "Command-S"},
-        exec: function(editor) {
-          save();  
-        }
-      });
+          editor.commands.addCommand({
+            name: "save",
+            bindKey: {win: "Ctrl-S", mac: "Command-S"},
+            exec: function(editor) {
+              save();  
+            }
+          });
+        break;
+
+        case "CODEMIRROR":
+          editor = CodeMirror(function(elt) {
+            var div = document.getElementById('editor');
+            elt.id = 'editor'
+            div.parentNode.replaceChild(elt, div);
+          }, {
+            lineNumbers : true,
+            viewportMargin : Infinity,
+            theme: 'eclipse'
+          });
+
+          editor.addKeyMap({
+              "Cmd-Enter": function(cm) {
+                execute();
+              },
+              "Cmd-s": function(cm) {
+                save();
+              }
+            })
+
+          editor.on('blur', function(cm) {
+              if(!source) {
+                save();          
+              }
+            });
+        break;
+
+      }
 
       setup();
 
@@ -283,6 +344,7 @@
       function resize() {
         var h = window.innerHeight;
         var h2 = $('#topbar').height();
+        console.log("Resizing: " + (h-h2));
         $("#editor").css('height',h-h2);      
         $(document).foundation('reflow');
       }
@@ -359,7 +421,15 @@
 
           //$("#execute-menu").hide();
           
-          var text = editor.getValue();
+          switch(EDITOR) {
+            case "ACE":
+              var text = editor.getValue();
+            break;
+
+            case "CODEMIRROR":
+              var text = editor.getValue();            
+            break;
+          }
           fabmo.submitJob({
               file : text,
               filename: filename, 
