@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/css/normalize.css"> 
   <link rel="stylesheet" href="./css/style.css">
   <link rel="stylesheet" href="./css/codemirror.css">
-  <link rel="stylesheet" href="./css/eclipse.css">
+  <link rel="stylesheet" href="./css/syntax.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <div id="jobsubmit-modal" class="reveal-modal medium" data-reveal>
@@ -84,10 +84,9 @@
   <script src="/js/libs/jquery.min.js" type="text/javascript"></script>
   <script src="/js/libs/fabmo.js" type="text/javascript"></script>
   <script src="/js/libs/foundation.min.js" type="text/javascript"></script>
-  <script src="js/ace/ace.js" type="text/javascript"></script>
   <script src="js/codemirror.js" type="text/javascript"></script>
   <script src="js/simple.js" type="text/javascript"></script>
-  <script src="js/cm-gcode-mode.js" type="text/javascript"></script>
+  <script src="js/cm-fabmo-modes.js" type="text/javascript"></script>
 
   <script>
     var EDITOR="CODEMIRROR"
@@ -130,16 +129,7 @@
           $("#lang-gcode").parent().removeClass("active");
           $("#lang-opensbp").parent().addClass("active");
           lang='opensbp';
-          switch(EDITOR) {
-            case "ACE":
-              editor.getSession().setMode("ace/mode/text"); 
-            break;
-
-            case "CODEMIRROR":
-              editor.setOption("mode", "opensbp");
-            break;
-          }
-          break;
+          editor.setOption("mode", "opensbp");
         break;
 
         case 'gcode':
@@ -147,15 +137,7 @@
           $("#lang-opensbp").parent().removeClass("active");
           $("#lang-gcode").parent().addClass("active");
           lang = 'gcode';
-          switch(EDITOR) {
-            case "ACE":
-              editor.getSession().setMode("ace/mode/gcode"); 
-            break;
-
-            case "CODEMIRROR":
-              editor.setOption("mode", "gcode");
-            break;
-          }
+          editor.setOption("mode", "gcode");
           break;
       }
       if(supports_html5_storage()) {
@@ -180,15 +162,7 @@
           console.warn("Couldn't set position: " + e)
           pos = {row:0,col:0};
         }
-        switch(EDITOR) {
-          case "ACE":
-            editor.clearSelection();
-            editor.moveCursorToPosition(pos);
-          break;
-
-          case "CODEMIRROR":
-          break;
-        }
+        // TODO load the cursor and scroll positions here
       }
     }
 
@@ -276,75 +250,36 @@
     $(document).ready(function() {
       $(document).foundation();
 
-      switch(EDITOR) {
-        case "ACE":
-          editor = ace.edit("editor");
-          editor.setTheme("ace/theme/eclipse");
-          editor.setShowPrintMargin(false);
-          editor.$blockScrolling = Infinity;
-          editor.on("change", function() {
-            editor.clearSelection();
-          });
-          editor.commands.addCommand({
-            name: "run_immediate",
-            bindKey: {win: "Ctrl-Enter", mac: "Command-Enter"},
-            exec: function(editor) {
-              execute();    
-            }
-          });
+      editor = CodeMirror(function(elt) {
+        var div = document.getElementById('editor');
+        elt.id = 'editor'
+        div.parentNode.replaceChild(elt, div);
+      }, {
+        lineNumbers : true,
+        viewportMargin : Infinity,
+        theme: 'fabmo'
+      });
 
-          editor.commands.addCommand({
-            name: "save",
-            bindKey: {win: "Ctrl-S", mac: "Command-S"},
-            exec: function(editor) {
-              save();  
-            }
-          });
-        break;
+      editor.addKeyMap({
+          "Cmd-Enter": function(cm) {
+            execute();
+          },
+          "Cmd-s": function(cm) {
+            save();
+          }
+        })
 
-        case "CODEMIRROR":
-          editor = CodeMirror(function(elt) {
-            var div = document.getElementById('editor');
-            elt.id = 'editor'
-            div.parentNode.replaceChild(elt, div);
-          }, {
-            lineNumbers : true,
-            viewportMargin : Infinity,
-            theme: 'eclipse'
-          });
-
-          editor.addKeyMap({
-              "Cmd-Enter": function(cm) {
-                execute();
-              },
-              "Cmd-s": function(cm) {
-                save();
-              }
-            })
-
-          editor.on('blur', function(cm) {
-              if(!source) {
-                save();          
-              }
-            });
-        break;
-
-      }
+      editor.on('blur', function(cm) {
+          if(!source) {
+            save();          
+          }
+        });
 
       setup();
-
-    //   editor.on('blur', function(evt) {
-    //     if(!source) {
-    //       save();          
-    //     }
-    //             console.log($('.ace_scroller')[0]);
-    //     $('.ace_scroller')[0].focus();
-    //   });
 
       function resize() {
         var h = window.innerHeight;
         var h2 = $('#topbar').height();
-        console.log("Resizing: " + (h-h2));
         $("#editor").css('height',h-h2);      
         $(document).foundation('reflow');
       }
@@ -419,17 +354,8 @@
           var description = $('#jobsubmit-description').val();
           var filename = $('#jobsubmit-filename').val();
 
-          //$("#execute-menu").hide();
-          
-          switch(EDITOR) {
-            case "ACE":
-              var text = editor.getValue();
-            break;
+          var text = editor.getValue();
 
-            case "CODEMIRROR":
-              var text = editor.getValue();            
-            break;
-          }
           fabmo.submitJob({
               file : text,
               filename: filename, 
