@@ -173,7 +173,12 @@ define(function(require) {
         } else {
             dashboard.hideModal();
             daisyIsShown = true;
-            $('#disconnectDialog').foundation('reveal', 'open');
+             dashboard.showModal({
+                    title: 'Waiting for FabMo...',
+                    message: '<i class="fa fa-cog fa-spin" aria-hidden="true" style="font-size:40px;color:#313366" ></i>',
+                    noButton: true,
+                    noLogo: true
+                });
         }
     }
 
@@ -183,13 +188,7 @@ define(function(require) {
             return callback();
         }
         daisyIsShown = false;
-        $(document).on('closed.fndtn.reveal', '[data-reveal]', function() {
-            var modal = $(this);
-            if (modal.attr('id') === 'disconnectDialog') {
-                callback();
-            }
-        });
-        $('#disconnectDialog').foundation('reveal', 'close');
+        dashboard.hideModal();
     }
 
     // listen for escape key press to quit the engine
