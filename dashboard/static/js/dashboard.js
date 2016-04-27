@@ -8,7 +8,6 @@ define(function(require) {
 	var events = require ('events');
 	var toastr = require('toastr');
 	var modalIsShown = false;
-    
 	var Dashboard = function(target) {
 		this.engine = null;
 		this.machine = null;
