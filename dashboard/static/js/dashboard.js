@@ -606,7 +606,7 @@ define(function(require) {
  
             $('.modalDim').show();
             $('.newModal').show();
-
+            $('.modalLogo').show();
             if (options['title']) {
                 $('.modalTitle').html(options.title).show();
             } else {
@@ -696,9 +696,7 @@ define(function(require) {
              } 
              if (options['noLogo'] === true) {
                  $('.modalLogo').hide();
-             } else {
-                 $('.modalLogo').show();
-             }
+             } 
             }
         // }
         // funarr.push(modal);
