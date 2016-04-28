@@ -66,7 +66,7 @@ var FabMoAPI = function(base_url) {
 FabMoAPI.prototype._initializeWebsocket = function() {
 	localStorage.debug = false
 	try {
-		this.socket = io('/private');
+		this.socket = io(location.hostname+':'+location.port+'/private');
 	} catch(e) {
 		this.socket = null;
 		console.error('connection to the engine via websocket failed : '+ e.message);
