@@ -18,6 +18,7 @@ define(function(require) {
 		show_menu: function() {
 			$('#waiting_container').hide();
 			this.context.appClientView.hide();
+			this.context.closeApp();
 			this.context.appMenuView.show();
 			this.context.hideModalContainer();
 			this.context.menuShown = true;

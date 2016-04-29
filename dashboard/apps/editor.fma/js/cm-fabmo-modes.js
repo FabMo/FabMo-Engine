@@ -28,21 +28,15 @@ var LABEL_REGEX = /^[A-Z_][A-Z0-9_]*\:/i
 var WORD_REGEX = /^[A-Z_][A-Z0-9_]*/i
 var STRING_REGEX = /^"(?:[^\\]|\\.)*?"/
 var NUMBER_REGEX = /^0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i
-var SYS_VAR_REGEX = /^\%\([0-9+]\)/i
+var SYS_VAR_REGEX = /^\%\([ \t]*[0-9]+[ \t]*\)/i
 var USR_VAR_REGEX = /^\&[A-Z_][A-Z0-9_]*/i
 var PERSIST_VAR_REGEX = /^\$[A-Z_][A-Z0-9_]*/i
 
 var BARE_REGEX = /^[IOT]/i
 var COMMENT_REGEX = /^'.*/i
-var OPERATOR_REGEX = /^[\+\-\*\/\^\!\(\)\=\>\<]/i
+var OPERATOR_REGEX = /^[\+\-\*\/\^\!\(\)\=\>\<|\=\:]/i
 
 function matchExpression(stream) {
-  if(stream.match(NUMBER_REGEX)) {
-    return "number";
-  }
-  if(stream.match(STRING_REGEX)) {
-    return "string";
-  }
   if(stream.match(SYS_VAR_REGEX)) {
     return "variable";
   }
@@ -52,6 +46,12 @@ function matchExpression(stream) {
   if(stream.match(PERSIST_VAR_REGEX)) {
     return "variable-3";
   } 
+  if(stream.match(NUMBER_REGEX)) {
+    return "number";
+  }
+  if(stream.match(STRING_REGEX)) {
+    return "string";
+  }
   if(stream.match(OPERATOR_REGEX)) {
     return "operator";
   }
@@ -80,6 +80,10 @@ CodeMirror.defineMode("opensbp", function() {
 
       if(stream.eatSpace()) {
         return null;
+      }
+      if(stream.eat("'")) {
+        stream.skipToEnd();
+        return 'comment';
       }
       switch(state.name) {
         case "sol":
@@ -142,8 +146,17 @@ CodeMirror.defineMode("opensbp", function() {
             return "keyword"
           }
 
+          // Singles
+          if(stream.match(/^RETURN|END/i)) {
+            state.name = "single";
+            return "keyword";
+          }
           //
           stream.skipToEnd();
+        break;
+
+        case "single":
+
         break;
 
         case "args":

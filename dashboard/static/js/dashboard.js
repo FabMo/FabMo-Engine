@@ -8,6 +8,7 @@ define(function(require) {
 	var events = require ('events');
 	var toastr = require('toastr');
 	var modalIsShown = false;
+    
 	var Dashboard = function(target) {
 		this.engine = null;
 		this.machine = null;
@@ -597,7 +598,7 @@ define(function(require) {
     
     Dashboard.prototype.showModal = function(options){
         // var modal = function (options) {
-            
+
             
  
             var modalAlreadyUp = modalIsShown;
@@ -703,9 +704,7 @@ define(function(require) {
         //     while (funarr.length > 0) {
         //     (funarr.shift())();   
         // }
-            
-   
-    
+
     }
     
     //Hide Modal

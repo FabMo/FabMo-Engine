@@ -38,8 +38,17 @@ AppManager.prototype.readAppPackageInfo = function(app_info, callback) {
 	var pkg_info_path = path.join(app_info.app_path, 'package.json');
 	var pathname = path.basename(app_info.app_archive_path);
 	fs.readFile(pkg_info_path, function(err, data) {
+		if(err) {
+			return callback(new Error("Could not read package.json"));
+		}
+
 		try {
 			var package_info = JSON.parse(data);
+		} catch(e) {
+			return callback(new Error("Could not parse package.json"))
+		}
+
+		try {
 			app_info.name = package_info.name;
 			app_info.config_path = path.join(app_info.app_path, '.config.json');
 			app_info.icon_path = app_info.app_path + package_info.icon;
@@ -149,15 +158,15 @@ AppManager.prototype.loadApp = function(pathname, options, callback){
 		if(stat.isDirectory()) {
 			// Copy if it's a directory
 			return this.copyApp(pathname, this.approot_directory, options, callback);
+		} 
+
+		var ext = path.extname(pathname).toLowerCase();
+		if(ext === '.fma' || ext === '.zip') {
+			// Decompress if it's a compressed app file
+			return this.decompressApp(pathname, this.approot_directory, options, callback);
 		} else {
-			var ext = path.extname(pathname).toLowerCase();
-			if(ext === '.fma' || ext === '.zip') {
-				// Decompress if it's a compressed app file
-				return this.decompressApp(pathname, this.approot_directory, options, callback);
-			} else {
-				// Error if it's a file, but the wrong kind
-				return callback(new Error(pathname + ' is not an app.'));
-			}
+			// Error if it's a file, but the wrong kind
+			return callback(new Error(pathname + ' is not an app.'));
 		}
 	}.bind(this));
 };
@@ -227,10 +236,9 @@ AppManager.prototype.copyApp = function(src, dest, options, callback) {
 				this.readAppMetadata(app_info, function(err, app_metadata) {
 					if(err) { 
 						return callback(err); 
-					} else {
-						this._addApp(app_metadata);
-						callback(null, app_metadata);
 					}
+					this._addApp(app_metadata);
+					callback(null, app_metadata);
 				}.bind(this));
 			}
 		}.bind(this));
@@ -276,14 +284,12 @@ AppManager.prototype.decompressApp = function(src, dest, options, callback) {
 		this.readAppMetadata(app_info, function(err, app_metadata) {
 			if(err) { 
 				return callback(err); 
-			} else {
-				this._addApp(app_metadata);
-				callback(null, app_metadata);
-			}
+			} 
+			this._addApp(app_metadata);
+			callback(null, app_metadata);
 		}.bind(this));
 	}
 	catch(e){
-		log.error(e);
 		callback(e);
 	}
 };
@@ -340,7 +346,6 @@ AppManager.prototype.loadApps =  function(callback) {
 					if(err) {
 						// Rather than allowing errors to halt the async.map operation that is loading the apps
 						// we swallow them and simply stick a 'null' in the output array (that we cull out at the end)
-						log.error(err);
 						return callback(null, null);
 					} else {
 						return callback(null, result);

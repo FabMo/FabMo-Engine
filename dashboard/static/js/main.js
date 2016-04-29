@@ -273,6 +273,9 @@ define(function(require) {
         dashboard.engine.sbp('ZB');
     });
 
+    $('#connection-strength-indicator').click(function(evt) {
+        dashboard.launchApp('network-manager');
+    });
 
     var disconnected = false;
     last_state_seen = null;
@@ -293,9 +296,6 @@ define(function(require) {
     });
 
     engine.on('status', function(status) {
-        console.log("last state "+last_state_seen);
-        console.log("current state "+status.state);
-        console.log(status);
 
         if (status.state != "armed" && last_state_seen === "armed" || status.state != "paused" && last_state_seen === "paused") {
             dashboard.hideModal();
@@ -328,7 +328,9 @@ define(function(require) {
 
         if (status['info']) {
             if (status.info['message']) {
-                console.log('message');
+                keypad.setEnabled(false);
+                keyboard.setEnabled(false);
+
                 dashboard.showModal({
                     message: status.info.message,
                     okText: 'Resume',
@@ -363,7 +365,8 @@ define(function(require) {
             } 
         } else if (status.state == 'armed') {
             authorizeDialog = true;
-
+                keypad.setEnabled(false);
+                keyboard.setEnabled(false);
             dashboard.showModal({
                 title: 'Authorization Required!',
                 message: 'To authorize your tool, press and hold the green button for one second.',

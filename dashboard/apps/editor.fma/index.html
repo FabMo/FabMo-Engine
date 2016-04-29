@@ -42,7 +42,7 @@
   <nav id="topbar" class="top-bar" data-topbar role="navigation">
     <ul class="title-area">
       <li class="name">
-        <h1><a id="app-header">Editor</a></h1>
+        <h1><a id="app-header" class="noselect">Editor</a></h1>
       </li>
       <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
     </ul>
@@ -96,6 +96,7 @@
     var source_data=null;
     var job_description=null;
     var job_title=null;
+    var job_filename=null;
 
     function execute() { 
       $("#execute-menu").hide();
@@ -121,7 +122,19 @@
       }
     }
 
-    function set_language(language) {
+    function cycleLanguage(save) {
+      if(lang === 'gcode') {
+        set_language('opensbp', save);
+      } else {
+        set_language('gcode', save);
+      }
+    }
+
+    $('#app-header').click(function(evt) {
+      cycleLanguage(true);
+    });
+
+    function set_language(language, save) {
       switch(language) {
         case 'opensbp':
           $("#app-header").text("Editor (OpenSBP)");
@@ -139,7 +152,7 @@
           editor.setOption("mode", "gcode");
           break;
       }
-      if(supports_html5_storage()) {
+      if(supports_html5_storage() && save) {
         localStorage.fabmo_editor_language = lang;
       }
     }
@@ -171,13 +184,14 @@
           var url = '/job/' + args.job + '/file';
           $.get(url,function(data, status) {
               editor.setValue(data, -1);
-              editor.clearSelection();
+              //editor.clearSelection();
               source = "job";
               fabmo.getJobInfo(args.job, function(err, info) {
                 if(!err) {
-                    job_title = info.name || null;
+                    job_title = info.name || info.file.filename || null;
                     job_description = info.description || null;
-                  if(info.name.endsWith('sbp')) {
+                    job_filename = info.file.filename;
+                  if(info.file.filename.endsWith('sbp')) {
                     set_language('opensbp');
                   } else {
                     set_language('gcode');
@@ -194,11 +208,13 @@
             var macro = response.data.macro;
             $('#app-header').text("Editor - " + macro.name + " (Macro)");
             editor.setValue(macro.content, -1);
-            editor.clearSelection();
+            //editor.clearSelection();
+            console.log(macro);
             source = "macro";
             source_data = macro;
             job_description = macro.description;
             job_title = 'macro_' + macro.index + '.sbp';
+            set_language('opensbp');
             $('#macro-menu').show();
           });      
         } else if('new' in args) {
@@ -255,8 +271,9 @@
         div.parentNode.replaceChild(elt, div);
       }, {
         lineNumbers : true,
-        viewportMargin : Infinity,
-        theme: 'fabmo'
+        //viewportMargin : Infinity,
+        theme: 'fabmo',
+        mode: 'text'
       });
 
       editor.addKeyMap({
@@ -302,12 +319,12 @@
     });
 
     $("#lang-opensbp").click(function(evt) {
-      set_language('opensbp');
+      set_language('opensbp', true);
       evt.preventDefault();
     });
 
     $("#lang-gcode").click(function(evt) {
-      set_language('gcode');
+      set_language('gcode', true);
       evt.preventDefault();
     }); 
 
@@ -331,14 +348,14 @@
         $('#modal-title').text('Submit Job'); 
         switch(lang) {
           case 'gcode':
-            $('#jobsubmit-name').val('G-Code (Editor)');
-            $('#jobsubmit-description').val('A G-Code job from the editor');
-            $('#jobsubmit-filename').val('editor.nc');
+            $('#jobsubmit-name').val(job_title || 'G-Code (Editor)');
+            $('#jobsubmit-description').val(job_description || 'A G-Code job from the editor');
+            $('#jobsubmit-filename').val(job_filename || 'editor.nc');
             break;
           case 'opensbp':
-            $('#jobsubmit-name').val('OpenSBP (Editor)');
-            $('#jobsubmit-description').val('An OpenSBP job from the editor');
-            $('#jobsubmit-filename').val('editor.sbp');
+            $('#jobsubmit-name').val(job_title || 'OpenSBP (Editor)');
+            $('#jobsubmit-description').val(job_description || 'An OpenSBP job from the editor');
+            $('#jobsubmit-filename').val(job_filename || 'editor.sbp');
             break;
           default:
             fabmo.notify('warn', 'Unknown file format in editor?!');
