@@ -296,21 +296,26 @@ var getJobHistory = function(req, res, next) {
  */
 var getJobById = function(req, res, next) {
     var answer;
-    db.Job.getById(req.params.id, function(err, result) {
+    db.Job.getById(req.params.id, function(err, job) {
         if(err) {
-            log.error(err);
             answer = {
                     status:"fail",
                     data:{job:err}
             };
-            res.json(answer);
-        } else {
+            return res.json(answer);
+        }
+        db.File.getByID(job.file_id, function(err, file) {
+            if(err) {
+                job.file = {};
+            } else {
+                job.file = file;
+            }
             answer = {
                 status:"success",
-                data : {job:result}
+                data : {job:job}
             };
             res.json(answer);
-        }
+        });
     });
 };
 
