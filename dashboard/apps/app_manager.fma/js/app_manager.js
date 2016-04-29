@@ -76,7 +76,7 @@ $(document).ready(function() {
   $('#file').change(function(evt) {
     fabmo.submitApp($('#file'), {}, function(err, data) {
       if (err) {
-        fabmo.notify('error', JSON.stringify(err));
+        fabmo.notify('error', "Could not install app:</br>" + (err.message || err));
       } else {
         fabmo.notify('success', data.length + " app" + ((data.length > 1) ? 's' : '') + " installed successfully.");
       }

@@ -293,9 +293,6 @@ define(function(require) {
     });
 
     engine.on('status', function(status) {
-        console.log("last state "+last_state_seen);
-        console.log("current state "+status.state);
-        console.log(status);
 
         if (status.state != "armed" && last_state_seen === "armed" || status.state != "paused" && last_state_seen === "paused") {
             dashboard.hideModal();
