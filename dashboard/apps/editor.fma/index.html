@@ -122,16 +122,16 @@
       }
     }
 
-    function cycleLanguage() {
+    function cycleLanguage(save) {
       if(lang === 'gcode') {
-        set_language('opensbp');
+        set_language('opensbp', save);
       } else {
-        set_language('gcode');
+        set_language('gcode', save);
       }
     }
 
     $('#app-header').click(function(evt) {
-      cycleLanguage();
+      cycleLanguage(true);
     });
 
     function set_language(language, save) {
@@ -271,8 +271,9 @@
         div.parentNode.replaceChild(elt, div);
       }, {
         lineNumbers : true,
-        viewportMargin : Infinity,
-        theme: 'fabmo'
+        //viewportMargin : Infinity,
+        theme: 'fabmo',
+        mode: 'text'
       });
 
       editor.addKeyMap({
