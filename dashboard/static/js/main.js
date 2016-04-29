@@ -273,6 +273,9 @@ define(function(require) {
         dashboard.engine.sbp('ZB');
     });
 
+    $('#connection-strength-indicator').click(function(evt) {
+        dashboard.launchApp('network-manager');
+    });
 
     var disconnected = false;
     last_state_seen = null;
