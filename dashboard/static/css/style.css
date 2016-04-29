@@ -1477,7 +1477,7 @@ input[type=number]::-webkit-outer-spin-button {
     transform: translate(-50%, -50%);
     z-index: 3001;
     background-color: #eee;
-    padding: 1.5em;
+    padding-top: 1.5em;
     border-radius: 5px;
 }
 
@@ -1564,10 +1564,11 @@ input[type=number]::-webkit-outer-spin-button {
     cursor: pointer;
     display: inline-block;
     height: 50px;
-    width: 40%;
+    width: 30%;
     text-align: center;
     background-color: #5DAA35;
     border-radius: 5px;
+    margin-bottom: 1em;
 }
 
 .modalCancel{
@@ -1575,10 +1576,11 @@ input[type=number]::-webkit-outer-spin-button {
     cursor: pointer;
     display: inline-block;
     height: 50px;
-    width: 40%;
+    width: 30%;
     text-align: center;
     background-color: #9C210C;
     border-radius: 5px;
+    margin-bottom: 1em;
 }
 
 .toast {

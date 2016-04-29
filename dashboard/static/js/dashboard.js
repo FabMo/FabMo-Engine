@@ -687,6 +687,16 @@ define(function(require) {
                 $('.newModal').hide();
                 $('.modalDim').hide();
             });
+                
+             if (options['noButton'] === true) {
+                 $('.modalCancel').hide();
+                 $('.modalOkay').hide();
+             } 
+             if (options['noLogo'] === true) {
+                 $('.modalLogo').hide();
+             } else {
+                 $('.modalLogo').show();
+             }
         }
     // }
     // funarr.push(modal);

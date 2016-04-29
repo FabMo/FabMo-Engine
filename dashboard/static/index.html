@@ -298,24 +298,7 @@
       </div>
 
       <!-- The Dialog -->
-      <div id="modalDialog" class="reveal-modal" data-reveal aria-labelledby="modalDialogTitle" aria-hidden="true" role="dialog" data-options="close_on_background_click:false;">
-        <h2 id="modaDialoglTitle" class="hide"></h2>
-        <p id="modalDialogLead" class="lead hide"></p>
-        <p id="modalDialogMessage" class="hide"></p>
-        <div id="modalDialogDetail" class="hide"></div>
-        <div id="modalDialogButtons" class="hide">
-          <a id="modalDialogCancelButton" class="med button alert radius" style="border: 2px solid black;">&nbsp;</a>
-          <a id="modalDialogOKButton" class="med button success radius" style="border: 2px solid black;">&nbsp;</a>
-        </div>        
-        <a class="close-reveal-modal" id="modalDialogClose">&#215;</a>
-      </div>
 
-      <div id="disconnectDialog" class="reveal-modal small" data-reveal aria-labelledby="disconnectDialogTitle" aria-hidden="true" role="dialog" data-options="close_on_background_click:false; close_on_esc:false;">
-          <div id="waiting_spinner" style="width: 75px; height: 75px; position: relative; float: left;"></div>
-          <div style="vertical-align: middle; height: 75px; display: table-cell; padding: 10px;"> 
-          <span style="font-weight: bold;">Waiting for FabMo...</span>
-          </div>
-      </div>
       <div class="modalDim"></div>
       <div class="newModal">
           <div class="modalLogo">
@@ -378,7 +361,6 @@
         }
         var target = document.getElementById('spinner')
         var spinner = new Spinner(opts).spin(target);
-
         var waiting_spinner = new Spinner( {
           color : '#2E3865',
         }).spin(document.getElementById('waiting_spinner'))
