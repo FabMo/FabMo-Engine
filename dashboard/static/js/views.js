@@ -110,11 +110,7 @@ define(function(require) {
 			_.bindAll(this, 'render');
 		},
 		render : function(hard_refresh, callback) {
-			if(this.model) {
-				url = this.model.get('app_url');
-			} else {
-				url = "about:blank";
-			}
+			var url = this.model.get('app_url') || "about.blank";
 			var client_container = jQuery(this.el);
 			var src = '<iframe class="app-iframe" id="app-iframe" sandbox="allow-scripts allow-same-origin" allowfullscreen></iframe>'
 			client_container.html(src);
@@ -149,7 +145,7 @@ define(function(require) {
 				this.hard_refresh = hard_refresh;
 				this.model.set(model.toJSON());
 			} else {
-				this.model.set(null);
+				this.model.clear();
 			}
 			this.render(hard_refresh, callback);
 		}

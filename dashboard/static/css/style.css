@@ -26,14 +26,6 @@ body,html{
  cursor: text;
 }
 
-.success {
-
-}
-
-.error {
-
-}
-
 .main-section, .app-section, .spinner-section { 
 	height: 98%;
 }
