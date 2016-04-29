@@ -329,7 +329,9 @@ define(function(require) {
 
         if (status['info']) {
             if (status.info['message']) {
-                console.log('message');
+                keypad.setEnabled(false);
+                keyboard.setEnabled(false);
+
                 dashboard.showModal({
                     message: status.info.message,
                     okText: 'Resume',
@@ -364,7 +366,8 @@ define(function(require) {
             } 
         } else if (status.state == 'armed') {
             authorizeDialog = true;
-
+                keypad.setEnabled(false);
+                keyboard.setEnabled(false);
             dashboard.showModal({
                 title: 'Authorization Required!',
                 message: 'To authorize your tool, press and hold the green button for one second.',

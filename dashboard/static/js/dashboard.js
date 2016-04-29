@@ -598,104 +598,101 @@ define(function(require) {
     
     Dashboard.prototype.showModal = function(options){
         // var modal = function (options) {
-            
-            
- 
-            var modalAlreadyUp = modalIsShown;
- 
-            modalIsShown = true;
- 
-            $('.modalDim').show();
-            $('.newModal').show();
+        var modalAlreadyUp = modalIsShown;
 
-            if (options['title']) {
-                $('.modalTitle').html(options.title).show();
-            } else {
-                $('.modalTitle').hide();
-            }
+        modalIsShown = true;
 
-            // if(options['lead']) {
-            // 	$('#modalDialogLead').html(options.lead).show();		
-            // } else {		
-            // 	$('#modalDialogLead').hide();
-            // }
+        $('.modalDim').show();
+        $('.newModal').show();
 
-            if (options['message']) {
-                $('.modalDialogue').html(options.message).show();
-            } else {
-                $('.modalDialogue').hide();
-            }
+        if (options['title']) {
+            $('.modalTitle').html(options.title).show();
+        } else {
+            $('.modalTitle').hide();
+        }
 
-            if (options['image']) {
-                $('.modalImage img').attr('src', options.image);
-                $('.modalImage').show();
-                $('.modalImage').css('width', '25%');
-                $('.modalDialogue').css('width', '65%');
-            } else {
-                $('.modalImage').hide();
-                $('.modalImage').css('width', '0%');
-                $('.modalDialogue').css('width', '100%');
-            }
-
-            if (options['okText']) {
-                $('.modalOkay').show();
-                $('.modalOkay').text(options.okText);
-
-            } else {
-                $('.modalOkay').hide();
-            }
-
-            if (options['ok']) {
-                $('.modalOkay').off();
-                $('.modalOkay').on('click', function() {
-                    options.ok();
-                    $('.newModal').hide();
-                    $('.modalDim').hide();
-                });
-            } else {
-                $('.modalOkay').off();
-                $('.modalOkay').on('click', function() {
-                    $('.newModal').hide();
-                    $('.modalDim').hide();
-                });
-            }
-
-            if (options['cancel']) {
-                $('.modalCancel').off();
-                $('.modalCancel').on('click', function() {
-                    options.cancel();
-                    $('.newModal').hide();
-                    $('.modalDim').hide();
-                });
-            } else {
-                $('.modalCancel').off();
-                $('.modalCancel').on('click', function() {
-                    $('.newModal').hide();
-                    $('.modalDim').hide();
-                });
-            }
-
-            if (options['cancelText']) {
-                $('.modalCancel').show();
-                $('.modalCancel').text(options.cancelText);
-            } else {
-                $('.modalCancel').hide();
-            }
-            
-            if (!options['okText'] && !options['cancelText']){
-                $('.modalOkay').off();
-                $('.modalOkay').show();
-                $('.modalOkay').text('Okay');
-                $('.modalOkay').on('click', function() {
-                    $('.newModal').hide();
-                    $('.modalDim').hide();
-                });
-            }
+        // if(options['lead']) {
+        // 	$('#modalDialogLead').html(options.lead).show();		
+        // } else {		
+        // 	$('#modalDialogLead').hide();
         // }
-        // funarr.push(modal);
-        //     while (funarr.length > 0) {
-        //     (funarr.shift())();   
-        // }
+
+        if (options['message']) {
+            $('.modalDialogue').html(options.message).show();
+        } else {
+            $('.modalDialogue').hide();
+        }
+
+        if (options['image']) {
+            $('.modalImage img').attr('src', options.image);
+            $('.modalImage').show();
+            $('.modalImage').css('width', '25%');
+            $('.modalDialogue').css('width', '65%');
+        } else {
+            $('.modalImage').hide();
+            $('.modalImage').css('width', '0%');
+            $('.modalDialogue').css('width', '100%');
+        }
+
+        if (options['okText']) {
+            $('.modalOkay').show();
+            $('.modalOkay').text(options.okText);
+
+        } else {
+            $('.modalOkay').hide();
+        }
+
+        if (options['ok']) {
+            $('.modalOkay').off();
+            $('.modalOkay').on('click', function() {
+                options.ok();
+                $('.newModal').hide();
+                $('.modalDim').hide();
+            });
+        } else {
+            $('.modalOkay').off();
+            $('.modalOkay').on('click', function() {
+                $('.newModal').hide();
+                $('.modalDim').hide();
+            });
+        }
+
+        if (options['cancel']) {
+            $('.modalCancel').off();
+            $('.modalCancel').on('click', function() {
+                options.cancel();
+                $('.newModal').hide();
+                $('.modalDim').hide();
+            });
+        } else {
+            $('.modalCancel').off();
+            $('.modalCancel').on('click', function() {
+                $('.newModal').hide();
+                $('.modalDim').hide();
+            });
+        }
+
+        if (options['cancelText']) {
+            $('.modalCancel').show();
+            $('.modalCancel').text(options.cancelText);
+        } else {
+            $('.modalCancel').hide();
+        }
+        
+        if (!options['okText'] && !options['cancelText']){
+            $('.modalOkay').off();
+            $('.modalOkay').show();
+            $('.modalOkay').text('Okay');
+            $('.modalOkay').on('click', function() {
+                $('.newModal').hide();
+                $('.modalDim').hide();
+            });
+        }
+    // }
+    // funarr.push(modal);
+    //     while (funarr.length > 0) {
+    //     (funarr.shift())();   
+    // }
             
    
     
