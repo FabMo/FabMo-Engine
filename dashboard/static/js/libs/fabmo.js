@@ -251,10 +251,13 @@ FabMoDashboard.prototype._setupMessageListener = function() {
 		var message = evt.data;
 		switch(message.type) {
 			case 'cb':
+				console.info(message);
 				if('id' in message) {
 		 			if(message.id in this._handlers) {
 		 				cb = this._handlers[message.id]
 		 				if(message.status === "success") {
+		 					console.log("success message")
+		 					console.info(message.data);
 		 					cb(null, message.data);
 		 				} else {
 		 					cb(message.message, null);
@@ -357,7 +360,31 @@ FabMoDashboard.prototype.hideDRO = function(callback) {
 
 //Modal Functions 
 FabMoDashboard.prototype.showModal = function(options, callback) {
-    this._call("openModal", options, callback);
+	var callbacks = {
+		"ok" : options.ok,
+		"cancel" : options.cancel
+	}
+	var showModalCallback = function(err, buttonPressed) {
+		if(err) {
+			callback(err);
+		}
+		console.log(callbacks)
+		console.log(buttonPressed)
+		console.log("what")
+		console.log(callbacks[buttonPressed])
+		var f = callbacks[buttonPressed]();
+		if(f) {
+			f();
+		} else {
+			if(callback) {
+				callback();
+			}
+		}
+ 	}
+ 	options.ok = options.ok ? true : false;
+ 	options.cancel = options.cancel ? true : false;
+
+    this._call("openModal", options, showModalCallback);
 }
 
 FabMoDashboard.prototype.hideModal = function(options, callback) {

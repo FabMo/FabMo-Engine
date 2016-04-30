@@ -167,8 +167,25 @@ define(function(require) {
         
         // Show the DRO
 		this._registerHandler('openModal', function(options, callback) { 
-			this.showModal(options);
-			callback(null);
+			if(options.ok) {
+				options.ok = function() {
+					callback(null, 'ok');
+				}
+			}
+			if(options.cancel) {				
+				options.cancel = function() {
+					callback(null, 'cancel');
+				}
+			}
+			try {
+				this.showModal(options);				
+			} catch(e) {
+				callback(e);
+			}
+			
+/*			if(!(options.ok || options.cancel)) {
+				callback(null);
+			}*/
 		}.bind(this));
 
 		// Hide the DRO

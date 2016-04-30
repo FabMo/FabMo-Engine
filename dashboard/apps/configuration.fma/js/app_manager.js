@@ -8,6 +8,15 @@ function refreshApps() {
       return console.error(err);
     }
     $(".app-listing").empty();
+    
+    html = [
+    '<tr><td>',
+    '<div class="app-ghost app-install-button noselect"><span class="fa fa-plus "></span></div>',
+    '</td>',
+    '<td colspan="3" class="app-install-button noselect">Click here to install an app.</td>',
+    '</tr>'].join('');
+     $(".app-listing").append(html);
+
     $.each(apps, function(key, val) {
       var appid = 'app_' + val.id;
       var appiconid = 'appicon_' + val.id;
@@ -33,35 +42,13 @@ function refreshApps() {
 
       console.log("binding")
       $('#delete_' + appid).click(function() {
-        console.log("clickadick")
-        /*
-        //$('#myModal').foundation('reveal', 'open');
-        $('.modal-background').fadeIn(500);
-        $('.modal-content').css('top', '50%');
-        $('.deleteCancel').click(function(){
-             $('.modal-background').fadeOut();
-             $('.modal-content').css('top', '-500%');
-        });
-        $('.deleteOkay').click(function(){
-            fabmo.deleteApp(id, function(err, result) {
-            if (err) {
-                fabmo.notify('error', err);
-            }
-            refreshApps();
-            });
-            $('.modal-background').fadeOut();
-            $('.modal-content').css('top', '-500%');
-        });
-        */
-        console.log("Fanta show modal");
-
         fabmo.showModal({
           title : 'Delete app',
           message : 'Are you sure you want to delete this app?',
           okText : 'Yes',
           cancelText : 'No',
           ok : function() {
-          fabmo.deleteApp(id, function(err, result) {
+            fabmo.deleteApp(id, function(err, result) {
             if (err) {
                 fabmo.notify('error', err);
             }
@@ -79,7 +66,12 @@ function refreshApps() {
         fabmo.launchApp(id);
       });
 
-    });
+
+    }); // each
+      $('.app-install-button').click(function(evt) {
+    jQuery('#file').trigger('click');
+  });
+
   });
 };
 fabmo.on('change', function(topic) {
