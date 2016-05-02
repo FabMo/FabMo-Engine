@@ -110,7 +110,7 @@ define(function(require) {
 			_.bindAll(this, 'render');
 		},
 		render : function(hard_refresh, callback) {
-			var url = this.model.get('app_url') || "about.blank";
+			var url = this.model.get('app_url') || "http://about.blank";
 			var client_container = jQuery(this.el);
 			var src = '<iframe class="app-iframe" id="app-iframe" sandbox="allow-scripts allow-same-origin" allowfullscreen></iframe>'
 			client_container.html(src);

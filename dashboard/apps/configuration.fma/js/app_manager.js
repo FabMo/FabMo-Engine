@@ -110,7 +110,7 @@ function setupAppManager() {
         files = evt.originalEvent.dataTransfer.files;
         fabmo.submitApp(files, {}, function(err, data) {
           if (err) {
-            fabmo.notify('error', JSON.stringify(err));
+            fabmo.notify('error', err.message || err);
           } else {
             fabmo.notify('success', "App installed successfully.");
           }

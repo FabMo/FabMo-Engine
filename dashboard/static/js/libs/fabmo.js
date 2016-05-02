@@ -178,7 +178,6 @@ FabMoDashboard.prototype._simulateCall = function(name, data, callback) {
     toaster();
     var toast = document.getElementById('alert-toaster');
     var text = document.getElementById('alert-text');
-    console.log(text);
 	switch(name) {
         
 		case "submitJob":
@@ -251,13 +250,10 @@ FabMoDashboard.prototype._setupMessageListener = function() {
 		var message = evt.data;
 		switch(message.type) {
 			case 'cb':
-				console.info(message);
 				if('id' in message) {
 		 			if(message.id in this._handlers) {
 		 				cb = this._handlers[message.id]
 		 				if(message.status === "success") {
-		 					console.log("success message")
-		 					console.info(message.data);
 		 					cb(null, message.data);
 		 				} else {
 		 					cb(message.message, null);
@@ -368,10 +364,6 @@ FabMoDashboard.prototype.showModal = function(options, callback) {
 		if(err) {
 			callback(err);
 		}
-		console.log(callbacks)
-		console.log(buttonPressed)
-		console.log("what")
-		console.log(callbacks[buttonPressed])
 		var f = callbacks[buttonPressed]();
 		if(f) {
 			f();
@@ -915,7 +907,6 @@ var toaster = function () {
     el.style.cssText = 'position:fixed; visibility:hidden; margin: auto; top: 20px; right: 20px; width: 250px; height: 60px; background-color: #F3F3F3; border-radius: 3px; z-index: 1005; box-shadow: 4px 4px 7px -2px rgba(0,0,0,0.75);';
     el.innerHTML = "<span id='alert-text' style= 'position:absolute; margin: auto; top: 0; right: 0; bottom: 0; left: 0; height: 20px; width: 250px; text-align: center;'></span>";
 	document.body.appendChild(el);
-    console.log(el);
 }
 var showToaster = function (toaster) {
     toaster.style.visibility = 'visible';
