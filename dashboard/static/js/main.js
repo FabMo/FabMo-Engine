@@ -335,7 +335,6 @@ define(function(require) {
                     message: status.info.message,
                     okText: 'Resume',
                     cancelText: 'Quit',
-                    noLogo: false,
                     ok: function() {
                         dashboard.engine.resume();
                     },
@@ -372,7 +371,6 @@ define(function(require) {
                 title: 'Authorization Required!',
                 message: 'To authorize your tool, press and hold the green button for one second.',
                 cancelText: 'Quit',
-                noLogo: false,
                 cancel: function() {
                     authorizeDialog = false;
                     dashboard.engine.quit();

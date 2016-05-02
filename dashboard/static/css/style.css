@@ -1480,6 +1480,7 @@ input[type=number]::-webkit-outer-spin-button {
     background-color: #eee;
     padding-top: 1.5em;
     border-radius: 5px;
+      -webkit-font-smoothing: antialiased;
 }
 
 .modalDim{
@@ -1517,6 +1518,8 @@ input[type=number]::-webkit-outer-spin-button {
 .modalSubContent{
     display: inline-block;
     width: 100%;
+  
+
 }
 .modalImage{
     position: relative;
