@@ -163,23 +163,9 @@ input[type="file"]:active::before {
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e3e3e3', endColorstr='#f9f9f9',GradientType=0 ); /* IE6-9 */
 }
 
-
-
-
-/* Custom Style */
-
-/*
-*** General ***
-*/
-.hidden, .hide { display:none; }
-
-
-
 /*
 *** Section ***
 */
-
-
 
 section .title {
   border-bottom: 1px solid #ccc;
@@ -252,29 +238,6 @@ section > .row:last-child, section > .content:last-child  > .row {
   padding-bottom: 0;
   border-bottom: none;
 }
-
-
-
-
-/*
-*** Jobs ***
-*/
-
-.jobs-listing { color: #666; }
-.jobs-listing .name { font-size: 1.125rem; }
-.jobs-listing .option {
-  padding-right: 0px;
-  padding-left: 0px;
-  margin-right: 15px;
-  margin-right: 0.9375em;
-  margin-left: -15px;
-  margin-left: -0.9375em;
-  background: #dd8728;
-  text-align: center;
-  color: #eee;
-}
-
-
 
 
 
@@ -515,26 +478,44 @@ td.edit span{
   padding: 5px;
   box-shadow: 1px 1px 1px #aaaaaa;
 }
-/*
-  width: 100px;
-  width: 6.25rem;
-  height: 100px;
-  height: 6.25rem;
-  line-height: 76px;
-  padding: 12px;
-  padding: 0.75rem;
-  border-radius: 8px;
-  border-radius: 0.5rem;
-  border: dashed 3px #bbb;
-  color: #bbb;
-  font-size: 35px;
-*/
+
 .app-ghost {
   width: 50px;
   height: 50px;
   min-width: 50px;
   border-radius: 5px;
   border: dashed 2px #bbb;
+  line-height: 30px;
+  padding: 10px;
+  color: inherit;
+  font-size: 20px;
+  text-align: center;
+}
+
+.app-install-text {
+  color: inherit;
+  font-weight: 500;
+  font-style: italic;
+  font-size: 1em;
+}
+
+.app-install-row td  {
+  color: inherit;
+}
+.app-install-row {
+  color: #bbb;
+}
+
+.app-install-row:hover {
+  color: #666;
+}
+
+.app-install-row:hover .app-ghost {
+  border: dashed 2px #666;
+}
+
+.app-ghost span {
+  color: inherit;
 }
 
 .hidden, .hide { display:none; }

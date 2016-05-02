@@ -453,6 +453,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #icon_editor 		{ background-image: url('../img/icon_editor.png');}
 #icon_handwheel 	{ background-image: url('../img/icon_refresh.png');}
 #icon_log 			{ background-image: url('../img/icon_log.png');	}
+#icon_network 		{ background-image: url('../img/icon_network.png');	}
 
 
 .colapsed #icon_colapse { background-image: url('../img/icon_colapse.png');	}

@@ -10,10 +10,10 @@ function refreshApps() {
     $(".app-listing").empty();
     
     html = [
-    '<tr><td>',
-    '<div class="app-ghost app-install-button noselect"><span class="fa fa-plus "></span></div>',
+    '<tr class="app-install-row"><td>',
+    '<div class="app-ghost noselect"><span class="fa fa-plus"></span></div>',
     '</td>',
-    '<td colspan="3" class="app-install-button noselect">Click here to install an app.</td>',
+    '<td colspan="4" class="app-install-text noselect">Click here to install an app</td>',
     '</tr>'].join('');
      $(".app-listing").append(html);
 
@@ -68,7 +68,7 @@ function refreshApps() {
 
 
     }); // each
-      $('.app-install-button').click(function(evt) {
+      $('.app-install-row').click(function(evt) {
     jQuery('#file').trigger('click');
   });
 
@@ -80,12 +80,8 @@ fabmo.on('change', function(topic) {
   }
 });
 
-$(document).ready(function() {
-  $(document).foundation();
+function setupAppManager() {
   refreshApps();
-  $('.app-install-button').click(function(evt) {
-    jQuery('#file').trigger('click');
-  });
 
   $('#file').change(function(evt) {
     fabmo.submitApp($('#file'), {}, function(err, data) {
@@ -128,4 +124,4 @@ $(document).ready(function() {
       }
     }
   });
-});
+}
