@@ -40,7 +40,6 @@ function refreshApps() {
       ].join('');
       $(".app-listing").append(html);
 
-      console.log("binding")
       $('#delete_' + appid).click(function() {
         fabmo.showModal({
           title : 'Delete app',
