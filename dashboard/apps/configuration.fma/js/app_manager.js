@@ -8,6 +8,15 @@ function refreshApps() {
       return console.error(err);
     }
     $(".app-listing").empty();
+    
+    html = [
+    '<tr class="app-install-row"><td>',
+    '<div class="app-ghost noselect"><span class="fa fa-plus"></span></div>',
+    '</td>',
+    '<td colspan="4" class="app-install-text noselect">Click here to install an app</td>',
+    '</tr>'].join('');
+     $(".app-listing").append(html);
+
     $.each(apps, function(key, val) {
       var appid = 'app_' + val.id;
       var appiconid = 'appicon_' + val.id;
@@ -31,25 +40,25 @@ function refreshApps() {
       ].join('');
       $(".app-listing").append(html);
 
+      console.log("binding")
       $('#delete_' + appid).click(function() {
-        //$('#myModal').foundation('reveal', 'open');
-        $('.modal-background').fadeIn(500);
-        $('.modal-content').css('top', '50%');
-        $('.deleteCancel').click(function(){
-             $('.modal-background').fadeOut();
-             $('.modal-content').css('top', '-500%');
-        });
-        $('.deleteOkay').click(function(){
+        fabmo.showModal({
+          title : 'Delete app',
+          message : 'Are you sure you want to delete this app?',
+          okText : 'Yes',
+          cancelText : 'No',
+          ok : function() {
             fabmo.deleteApp(id, function(err, result) {
             if (err) {
                 fabmo.notify('error', err);
             }
             refreshApps();
             });
-            $('.modal-background').fadeOut();
-            $('.modal-content').css('top', '-500%');
-        });
+          },
+          cancel : function() {}
+        })
       });
+
       $('#' + appid).click(function() {
         fabmo.launchApp(id);
       });
@@ -57,7 +66,12 @@ function refreshApps() {
         fabmo.launchApp(id);
       });
 
-    });
+
+    }); // each
+      $('.app-install-row').click(function(evt) {
+    jQuery('#file').trigger('click');
+  });
+
   });
 };
 fabmo.on('change', function(topic) {
@@ -66,12 +80,8 @@ fabmo.on('change', function(topic) {
   }
 });
 
-$(document).ready(function() {
-  $(document).foundation();
+function setupAppManager() {
   refreshApps();
-  $('.app-install-button').click(function(evt) {
-    jQuery('#file').trigger('click');
-  });
 
   $('#file').change(function(evt) {
     fabmo.submitApp($('#file'), {}, function(err, data) {
@@ -100,7 +110,7 @@ $(document).ready(function() {
         files = evt.originalEvent.dataTransfer.files;
         fabmo.submitApp(files, {}, function(err, data) {
           if (err) {
-            fabmo.notify('error', JSON.stringify(err));
+            fabmo.notify('error', err.message || err);
           } else {
             fabmo.notify('success', "App installed successfully.");
           }
@@ -114,4 +124,4 @@ $(document).ready(function() {
       }
     }
   });
-});
+}
