@@ -28,7 +28,7 @@
 			<td class="go fa fa-play" id="submitArrayOfStrings"></td>
 			<td>Submit String Array</td>
 			<td></td>
-					<td></td>
+			<td></td>
 
 		</tr>
 		<tr>
@@ -55,9 +55,27 @@
 			<td class="go fa fa-play" id="showModal"></td>
 			<td>Show the Modal Dialog</td>
 			<td></td>
-					<td></td>
-
+			<td></td>
 		</tr>
+		<tr>
+			<td class="go fa fa-play" id="navigateRelative"></td>
+			<td>Navigate to an app-relative URL.</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td class="go fa fa-play" id="navigateAbsolute1"></td>
+			<td>Navigate to an absolute URL with protocol.</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td class="go fa fa-play" id="navigateAbsolute2"></td>
+			<td>Navigate to an absolute URL with no protocol.</td>
+			<td></td>
+			<td></td>
+		</tr>
+
 	</tbody>
 	</table>
 <!--
@@ -143,6 +161,18 @@
 	  	$('#fileForm').submit(function(evt){
 	  		evt.preventDefault();
 	  		fabmo.submitJobs($('#fileForm'));
+	  	});
+
+	  	$("#navigateRelative").click(function(evt) {
+	  		fabmo.navigate('path/sample.pdf');
+	  	});
+
+	  	$("#navigateAbsolute1").click(function(evt) {
+	  		fabmo.navigate('/log');
+	  	});
+
+	  	$("#navigateAbsolute2").click(function(evt) {
+	  		fabmo.navigate('http://www.handibot.com/');
 	  	});
 
 

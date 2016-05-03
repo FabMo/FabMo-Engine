@@ -453,6 +453,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #icon_editor 		{ background-image: url('../img/icon_editor.png');}
 #icon_handwheel 	{ background-image: url('../img/icon_refresh.png');}
 #icon_log 			{ background-image: url('../img/icon_log.png');	}
+#icon_network 		{ background-image: url('../img/icon_network.png');	}
 
 
 .colapsed #icon_colapse { background-image: url('../img/icon_colapse.png');	}
@@ -510,6 +511,12 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	border: none;
     box-shadow: none;
     color: #eee;
+}
+
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
 }
 
 .go-here{
@@ -945,7 +952,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	margin-top: 12px;
 	margin-left: 1em;
 	float: left;
-	overflow: hidden;
+	overflow: scroll;
+    max-width: 250px;
 }
 
 .currentJobTitle {
@@ -953,6 +961,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	font-family: 'source_sans_proextralight';
     white-space: nowrap;
 	text-align: center;
+    
 }
 
 .radial_progress {
@@ -1469,8 +1478,9 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     transform: translate(-50%, -50%);
     z-index: 3001;
     background-color: #eee;
-    padding: 1.5em;
+    padding-top: 1.5em;
     border-radius: 5px;
+      -webkit-font-smoothing: antialiased;
 }
 
 .modalDim{
@@ -1508,6 +1518,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .modalSubContent{
     display: inline-block;
     width: 100%;
+  
+
 }
 .modalImage{
     position: relative;
@@ -1556,10 +1568,11 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     cursor: pointer;
     display: inline-block;
     height: 50px;
-    width: 40%;
+    width: 30%;
     text-align: center;
     background-color: #5DAA35;
     border-radius: 5px;
+    margin-bottom: 1em;
 }
 
 .modalCancel{
@@ -1567,10 +1580,11 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     cursor: pointer;
     display: inline-block;
     height: 50px;
-    width: 40%;
+    width: 30%;
     text-align: center;
     background-color: #9C210C;
     border-radius: 5px;
+    margin-bottom: 1em;
 }
 
 .toast {

@@ -117,12 +117,10 @@
               <ul class="off-canvas-list" id="util-menu-small">
                 <li><a href="#/menu" id="icon_home"><span>Home</span></a></li>
                 <li><a href="#/app/job-manager" id="icon_jobs"><span>Job Manager</span></a></li>
-                <li><a href="#/app/editor" id="icon_editor"><span>NC Editor</span></a></li>
-                <li><a href="#/app/app-manager" id="icon_apps" ><span>Apps</span></a></li>
+                <li><a href="#/app/editor" id="icon_editor"><span>Editor</span></a></li>          
                 <li><a href="#/app/config" id="icon_settings"><span>Configuration</span></a></li>
-                <li><a href="#/app/network-manager" id="icon_global"><span>Network</span></a></li>
                 <li><a href="#/app/macros" id="icon_folder"><span>Macros</span></a></li>
-                <li><a href="log" id="icon_log"><span>Log (Debug)</span></a></li>
+                <li><a href="#/app/network-manager" id="icon_network"><span>Network</span></a></li>
                 <li><a href="#" id="icon_colapse"><span>Collapse</span></a></li>
               </ul>
 
@@ -271,7 +269,7 @@
             <div id="navbar_container"></div>
             <div id="modal_container" style="display:none;"></div>
             <div id="waiting_container">
-                <svg width="25%" height="25%" viewBox="0 0 247.8 314.4">
+                <svg width="200px" height="150px" viewBox="0 0 247.8 314.4">
                     <style type="text/css">
                         .st0{fill:#DD8728;}
                     </style>
@@ -300,24 +298,7 @@
       </div>
 
       <!-- The Dialog -->
-      <div id="modalDialog" class="reveal-modal" data-reveal aria-labelledby="modalDialogTitle" aria-hidden="true" role="dialog" data-options="close_on_background_click:false;">
-        <h2 id="modaDialoglTitle" class="hide"></h2>
-        <p id="modalDialogLead" class="lead hide"></p>
-        <p id="modalDialogMessage" class="hide"></p>
-        <div id="modalDialogDetail" class="hide"></div>
-        <div id="modalDialogButtons" class="hide">
-          <a id="modalDialogCancelButton" class="med button alert radius" style="border: 2px solid black;">&nbsp;</a>
-          <a id="modalDialogOKButton" class="med button success radius" style="border: 2px solid black;">&nbsp;</a>
-        </div>
-        <a class="close-reveal-modal" id="modalDialogClose">&#215;</a>
-      </div>
-
-      <div id="disconnectDialog" class="reveal-modal small" data-reveal aria-labelledby="disconnectDialogTitle" aria-hidden="true" role="dialog" data-options="close_on_background_click:false; close_on_esc:false;">
-          <div id="waiting_spinner" style="width: 75px; height: 75px; position: relative; float: left;"></div>
-          <div style="vertical-align: middle; height: 75px; display: table-cell; padding: 10px;">
-          <span style="font-weight: bold;">Waiting for FabMo...</span>
-          </div>
-      </div>
+ 
       <div class="modalDim"></div>
       <div class="newModal">
           <div class="modalLogo">
@@ -380,7 +361,6 @@
         }
         var target = document.getElementById('spinner')
         var spinner = new Spinner(opts).spin(target);
-
         var waiting_spinner = new Spinner( {
           color : '#2E3865',
         }).spin(document.getElementById('waiting_spinner'))

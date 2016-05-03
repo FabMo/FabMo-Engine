@@ -178,7 +178,6 @@ FabMoDashboard.prototype._simulateCall = function(name, data, callback) {
     toaster();
     var toast = document.getElementById('alert-toaster');
     var text = document.getElementById('alert-text');
-    console.log(text);
 	switch(name) {
         
 		case "submitJob":
@@ -357,7 +356,27 @@ FabMoDashboard.prototype.hideDRO = function(callback) {
 
 //Modal Functions 
 FabMoDashboard.prototype.showModal = function(options, callback) {
-    this._call("openModal", options, callback);
+	var callbacks = {
+		"ok" : options.ok,
+		"cancel" : options.cancel
+	}
+	var showModalCallback = function(err, buttonPressed) {
+		if(err) {
+			callback(err);
+		}
+		var f = callbacks[buttonPressed]();
+		if(f) {
+			f();
+		} else {
+			if(callback) {
+				callback();
+			}
+		}
+ 	}
+ 	options.ok = options.ok ? true : false;
+ 	options.cancel = options.cancel ? true : false;
+
+    this._call("openModal", options, showModalCallback);
 }
 
 FabMoDashboard.prototype.hideModal = function(options, callback) {
@@ -365,9 +384,9 @@ FabMoDashboard.prototype.hideModal = function(options, callback) {
 }
 
 // Footer Functions
-FabMoDashboard.prototype.showFooter = function(callback) {
-	this._call("showFooter", null, callback);
-}
+// FabMoDashboard.prototype.showFooter = function(callback) {
+// 	this._call("showFooter", null, callback);
+// }
 
 /**
  * Show a notification on the dashboard.  Notifications typically show up as toaster message somewhere on the dashboard, 
@@ -878,7 +897,8 @@ FabMoDashboard.prototype.getVersion = function(callback) {
  * @param {String} options.target The link target (same as the target argument of `window.open`)
  */
 FabMoDashboard.prototype.navigate = function(url, options, callback) {
-	this._call("navigate", {'url' : url, 'options' : options || {}}, callback);
+	var loc = window.location.href;
+	this._call("navigate", {'path' : loc.substr(0, loc.lastIndexOf('/')) + '/', 'url' : url, 'options' : options || {}}, callback);
 }
 
 var toaster = function () {
@@ -887,7 +907,6 @@ var toaster = function () {
     el.style.cssText = 'position:fixed; visibility:hidden; margin: auto; top: 20px; right: 20px; width: 250px; height: 60px; background-color: #F3F3F3; border-radius: 3px; z-index: 1005; box-shadow: 4px 4px 7px -2px rgba(0,0,0,0.75);';
     el.innerHTML = "<span id='alert-text' style= 'position:absolute; margin: auto; top: 0; right: 0; bottom: 0; left: 0; height: 20px; width: 250px; text-align: center;'></span>";
 	document.body.appendChild(el);
-    console.log(el);
 }
 var showToaster = function (toaster) {
     toaster.style.visibility = 'visible';

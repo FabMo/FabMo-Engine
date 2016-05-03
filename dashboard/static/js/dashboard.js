@@ -167,8 +167,25 @@ define(function(require) {
         
         // Show the DRO
 		this._registerHandler('openModal', function(options, callback) { 
-			this.showModal(options);
-			callback(null);
+			if(options.ok) {
+				options.ok = function() {
+					callback(null, 'ok');
+				}
+			}
+			if(options.cancel) {				
+				options.cancel = function() {
+					callback(null, 'cancel');
+				}
+			}
+			try {
+				this.showModal(options);				
+			} catch(e) {
+				callback(e);
+			}
+			
+/*			if(!(options.ok || options.cancel)) {
+				callback(null);
+			}*/
 		}.bind(this));
 
 		// Hide the DRO
@@ -518,7 +535,12 @@ define(function(require) {
 
 		this._registerHandler('navigate', function(data, callback) {
 			if(data.url) {
-				window.open(data.url,data.options.target)
+				var pat = /^((https?:\/\/)|\/)/i;
+				if (pat.test(data.url)) {
+					window.open(data.url,data.options.target || '_self')
+				} else {
+					window.open(data.path + data.url,data.options.target || '_self')
+				}
 			} else {
 				callback(new Error("No URL specified"));
 			}
@@ -593,7 +615,7 @@ define(function(require) {
     
     Dashboard.prototype.showModal = function(options){
         // var modal = function (options) {
-            
+
             
  
             var modalAlreadyUp = modalIsShown;
@@ -602,7 +624,7 @@ define(function(require) {
  
             $('.modalDim').show();
             $('.newModal').show();
-
+            $('.modalLogo').show();
             if (options['title']) {
                 $('.modalTitle').html(options.title).show();
             } else {
@@ -685,15 +707,21 @@ define(function(require) {
                     $('.newModal').hide();
                     $('.modalDim').hide();
                 });
+                
+             if (options['noButton'] === true) {
+                 $('.modalCancel').hide();
+                 $('.modalOkay').hide();
+             } 
+             if (options['noLogo'] === true) {
+                 $('.modalLogo').hide();
+             } 
             }
         // }
         // funarr.push(modal);
         //     while (funarr.length > 0) {
         //     (funarr.shift())();   
         // }
-            
-   
-    
+
     }
     
     //Hide Modal
