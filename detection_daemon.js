@@ -7,8 +7,6 @@ var config = require('./config');
 var bonjour = require('bonjour')();
   
 
-
-
 // Direct socket messages
 var OK = "YES I M !\0";
 var ERR = "I DNT UNDRSTND !\0";
@@ -19,6 +17,8 @@ var default_port = 24862; // = 7777 without conversion
 // Kick off the "detection daemon" which is the process that listens for incoming scans by the FabMo linker
 // The detection daemon is what we as a FabMo device run so that we can be discovered by the FabMo linker/dashboard
 var start = function(port) {
+	bonjour.publish({ name: 'Fabmo device', type: '_fabmo',protocol:'tcp', port: config.engine.get('server_port'),txt : getMachineInfo()});
+
 	var socket = dgram.createSocket('udp4');
 	var that = this;
 	port = port || default_port;
@@ -40,24 +40,10 @@ var start = function(port) {
 		}
 		else if(data.toString() == HOSTNAME) // Respond properly to continued dialog in the autodetect process
 		{
-			var result = {};
-			result.hostname= os.hostname();
-			result.networks=[];
-			result.server_port = config.engine.get('server_port');
-			Object.keys(os.networkInterfaces()).forEach(function(key,index,arr){ //val = ip adresses , key = name of interface
-				var networks_list = this;
-				networks_list[key].forEach(function(val2,key2,arr2){
-					if (val2.internal === false && val2.family === 'IPv4')
-					{
-						result.networks.push({'interface' : key , 'ip_address' : val2.address});
-					}
-				});
-			},os.networkInterfaces());
+
 			//log.debug(JSON.stringify(result));
-
+			result = getMachineInfo();
 			// advertise an HTTP server on port 80
-			bonjour.publish({ name: 'Fabmo device', type: 'fabmo', port: config.engine.get('server_port'),txt : result});
-
 			socket.send(new Buffer(JSON.stringify(result)), 0, JSON.stringify(result).length, rinfo.port, rinfo.address, function (err) {
 				if (err) log.error(err);
 						//console.log("ask info");
@@ -72,6 +58,24 @@ var start = function(port) {
 
 	//this.on('newListener', function(listener) {});
 };
+
+function getMachineInfo(){
+	var result = {};
+	result.hostname= os.hostname();
+	result.networks=[];
+	result.server_port = config.engine.get('server_port');
+	Object.keys(os.networkInterfaces()).forEach(function(key,index,arr){ //val = ip adresses , key = name of interface
+		var networks_list = this;
+		networks_list[key].forEach(function(val2,key2,arr2){
+			if (val2.internal === false && val2.family === 'IPv4')
+			{
+				result.networks.push({'interface' : key , 'ip_address' : val2.address});
+			}
+		});
+	},os.networkInterfaces());
+	return result;
+}
+
 
 //util.inherits(start , EventEmitter);
 
