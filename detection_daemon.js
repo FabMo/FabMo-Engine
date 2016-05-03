@@ -4,6 +4,10 @@ var EventEmitter = require('events').EventEmitter;
 var dgram = require('dgram');
 var log = require('./log').logger('detection');
 var config = require('./config');
+var bonjour = require('bonjour')();
+  
+
+
 
 // Direct socket messages
 var OK = "YES I M !\0";
@@ -50,6 +54,10 @@ var start = function(port) {
 				});
 			},os.networkInterfaces());
 			//log.debug(JSON.stringify(result));
+
+			// advertise an HTTP server on port 80
+			bonjour.publish({ name: 'Fabmo device', type: 'fabmo', port: config.engine.get('server_port'),txt : result});
+
 			socket.send(new Buffer(JSON.stringify(result)), 0, JSON.stringify(result).length, rinfo.port, rinfo.address, function (err) {
 				if (err) log.error(err);
 						//console.log("ask info");
