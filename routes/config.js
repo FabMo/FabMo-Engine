@@ -1,4 +1,5 @@
 var machine = require('../machine').machine;
+var passport = require('../authentication').passport;
 var config = require('../config');
 var log = require('../log').logger('routes');
 var engine = require('../engine');
@@ -41,7 +42,7 @@ var get_status = function(req, res, next) {
  * @apiSuccess {Object} data Response data
  * @apiSuccess {Object} data.engine Key-value map of all engine settings
  * @apiSuccess {Object} data.driver Key-value map of all G2 driver settings
- * @apiSuccess {Object} data.opensbp Key-value map of all OpenSBP runtime settings 
+ * @apiSuccess {Object} data.opensbp Key-value map of all OpenSBP runtime settings
  */
 var get_config = function(req, res, next) {
   var retval = {};
@@ -49,7 +50,7 @@ var get_config = function(req, res, next) {
   retval.driver = config.driver.getData();
   retval.opensbp = config.opensbp.getData();
   retval.machine = config.machine.getData();
-  var answer = 
+  var answer =
   {
     status : "success",
     data : {'config':retval}
@@ -149,7 +150,7 @@ var post_config = function(req, res, next) {
 
 var get_version = function(req, res, next) {
   var retval = {};
-  var answer = 
+  var answer =
   {
     status : "success",
     data : {'version':engine.version}
@@ -160,6 +161,6 @@ var get_version = function(req, res, next) {
 module.exports = function(server) {
   server.get('/status', get_status);
   server.get('/config',get_config);
-  server.post('/config', post_config);
+  server.post('/config',passport.authenticate('local'), post_config);
   server.get('/version', get_version);
 };

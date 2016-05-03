@@ -56,7 +56,7 @@ define(function(require) {
         // Load the apps from the server
         context.apps.fetch({
             success: function() {
-                // Create the menu based on the apps thus retrieved 
+                // Create the menu based on the apps thus retrieved
                 context.appMenuView = new context.views.AppMenuView({
                     collection: context.apps,
                     el: '#app_menu_container'
@@ -273,9 +273,20 @@ define(function(require) {
         dashboard.engine.sbp('ZB');
     });
 
+
     $('#connection-strength-indicator').click(function(evt) {
         dashboard.launchApp('network-manager');
     });
+
+	engine.on('authentication_failed',function(message){
+	    console.log('authentication failed');
+	    if(message==="not authenticated"){
+	        window.location='/authentication?message=not-authenticated';
+	    }
+	    else if(message==="kicked out"){
+	        window.location='/authentication?message=kicked-out';
+	    }
+	});
 
     var disconnected = false;
     last_state_seen = null;
@@ -301,11 +312,11 @@ define(function(require) {
             dashboard.hideModal();
             modalIsShown = false;
         }
-     
-        
+
+
         if (last_state_seen != status.state) {
             last_state_seen = status.state;
-            
+
         }
         switch (status.state) {
             case 'running':
@@ -362,7 +373,7 @@ define(function(require) {
                     }
                 });
                 modalIsShown = true;
-            } 
+            }
         } else if (status.state == 'armed') {
             authorizeDialog = true;
                 keypad.setEnabled(false);
@@ -376,7 +387,7 @@ define(function(require) {
                     dashboard.engine.quit();
                 }
             });
-        } 
+        }
     });
 
     function setConnectionStrength(level) {
@@ -496,9 +507,3 @@ define(function(require) {
     });
 
 });
-
-
-
-
-
-

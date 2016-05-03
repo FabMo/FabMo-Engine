@@ -1,5 +1,6 @@
 process = require('process');
 log = require('../log').logger('routes');
+var passport = require('../authentication').passport;
 
 /**
  * @api {get} /restart  Kill the engine
@@ -19,5 +20,5 @@ kill = function(req, res, next) {
 };
 
 module.exports = function(server) {
-   server.get('/kill', kill); 
+   server.get('/kill',passport.authenticate('local'), kill);
 };
