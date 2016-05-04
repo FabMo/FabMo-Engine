@@ -253,7 +253,9 @@ var del = function(idx, callback) {
 				callback(null);
 			}
 		});
-	}	
+	} else {
+		callback(new Error('No such macro: ' + idx))
+	}
 }
 
 exports.load = load;

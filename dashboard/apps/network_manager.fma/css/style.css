@@ -13,6 +13,10 @@ h1 {
   margin: 1em;
 }
 
+.description {
+  font-style: italic;
+}
+
 #modal-title {
   font-weight: 700;
   color: #2E3865;

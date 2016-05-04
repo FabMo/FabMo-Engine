@@ -110,7 +110,7 @@ var deleteMacro = function(req, res, next) {
         if(err) {
             res.json({
                 'status' : 'error',
-                'message' : 'No such macro: ' + id
+                'message' : err.message
             });
         } else {
             res.json({
