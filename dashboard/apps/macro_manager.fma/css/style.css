@@ -6,6 +6,13 @@ h1, h2, h3, h4, h5, h6 {
   color: #666;
 }
 
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  -moz-appearance: none;
+  margin: 0; 
+}
+
 .noselect {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -34,7 +41,7 @@ td.run-control img {
     transform: translateX(-5px);
     height: 40px;
     width: 40px;
-    background: white;
+    background: inherit;
 
 }
 
@@ -52,7 +59,7 @@ td.edit-control img{
     box-shadow: .5px .5px .5px #aaaaaa;
     height: 40px;
     width: 40px;
-    background: white;
+    background: inherit
 }
 
 td.delete-control {
@@ -69,7 +76,7 @@ td.delete-control img {
     box-shadow: .5px .5px .5px #aaaaaa;
     height: 40px;
     width: 40px;
-    background: white;
+    background: inherit;
 }
 
 @media screen and (max-width: 480px) {
@@ -106,6 +113,13 @@ input[type=number] {
  border: none;
  background: inherit;
  box-shadow: none;
+}
+
+.number input, .name input, .description input{
+    text-align: center;
+    -webkit-appearance: none; 
+    -moz-appearance: none;
+     margin: 0; 
 }
 
 .hidden, .hide { display:none; }

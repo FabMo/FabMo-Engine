@@ -6,6 +6,7 @@ function getMacroFromClick(elem) {
 }
 
 function clearMacroTable() {
+    console.log('yo im clearing');
     var table = document.getElementById('macro_table');
     var rows = table.rows.length;
     for(var i=0; i<rows; i++) {
@@ -14,6 +15,7 @@ function clearMacroTable() {
 }
 
 function addMacros(macros, callback) {
+    console.log('yo im adding');
     callback = callback || function() {};
     var table = document.getElementById('macro_table');
     macros.forEach(function(macro) {
@@ -102,12 +104,12 @@ function updateMacroIndex(macros) {
 
 function refreshMacros(callback) {
     callback = callback || function() {};
-    clearMacroTable();
     fabmo.getMacros(function(err, macros) {
         if(err) {
             return callback(err);
         }
         updateMacroIndex(macros);
+        clearMacroTable();
         addMacros(macros);
         callback(null);
     });
