@@ -74,7 +74,7 @@ define(function(require) {
                 router.setContext(context);
 
                 // Sort of a hack, but works OK.
-                $('#spinner').hide();
+                $('.loader').hide();
 
                 // Start backbone routing
                 Backbone.history.start();
