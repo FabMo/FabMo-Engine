@@ -85,8 +85,6 @@ function addMacros(macros, callback) {
         var update = {};
         update[fieldName] = newValue;
         fabmo.updateMacro(macro.index, update, function(err, result) {
-            console.log("done")
-            console.log(err)
             if(err) {
                 fabmo.notify('error', err.message || err);
             }
@@ -115,134 +113,28 @@ function refreshMacros(callback) {
     });
 }
 
+$(document).ready(function() {
+
+    $(document).foundation();
+
+    refreshMacros();
 
 
-          $(document).ready(function() {
-
-            //Foundation Init
-            $(document).foundation();
-            
+    $('#macro-new').on('click', function(evt) {
+        var macroCount = Object.keys(macroIndex).length;
+        for(var newIndex=1; newIndex<macroCount+1; newIndex++) {
+            if(!macroIndex[newIndex]) {
+                break;
+            }
+        }
+        fabmo.updateMacro(newIndex, {}, function(err, result) {
+            if(err) {
+                fabmo.notify('error', err.message || err);                        
+            }
             refreshMacros();
-
-            
-            $('#macro-new').on('click', function(evt) {
-                var macroCount = Object.keys(macroIndex).length;
-                for(var newIndex=1; newIndex<macroCount+1; newIndex++) {
-                    if(!macroIndex[newIndex]) {
-                        break;
-                    }
-                }
-                fabmo.updateMacro(newIndex, {}, function(err, result) {
-                    if(err) {
-                        fabmo.notify('error', err.message || err);                        
-                    }
-                    refreshMacros();
-                });
-                evt.preventDefault();
-            }); 
-/*
-        
-            $('#macro-new').on('click', function(evt) {
-                var indices = macro_table.columns(1).data().toArray()[0];
-                var new_idx = indices.length > 0 ? Math.max.apply(null, indices) + 1 : 1;
-                fabmo.updateMacro(new_idx, {}, function(err, result) {
-                    macro_table.ajax.reload();
-                    fabmo.notify('error', err);
-                });
-                evt.preventDefault();
-            }); 
-
-            $('#macro_table tbody').on('click', 'td', function () {
-                var td = $(this);
-                var tr = td.closest('tr');
-                var row = macro_table.row(tr);
-                var cell = macro_table.cell(td);
-                var macro = row.data();
-                var col = cell.index().column;
-                var key = col_idx[col];
-                var ids = macro_table.columns(1).data().toArray()[0];
-                var error_message = null;
-
-                if(td.hasClass('editable')) {
-                    var saved_text = td.text();
-                    td.attr('contenteditable', true);
-                    td.focus();
-                    td.selectText();
-                    
-                    function save() {
-                        var update = {};
-                        var ok_to_update = true;
-                        if(key === 'index') {
-                            try {
-                                v = parseInt(td.text())
-                                update[key] = v;
-                                if(ids.indexOf(v) != -1) {
-                                    ok_to_update = false;
-                                    error_message = "Macro number " + v + " already exists."
-                                }
-                            } catch(e) {
-                                ok_to_update = false;
-                            }
-                        } else {
-                            update[key] = td.text();
-                        }
-                        if(ok_to_update) {
-                            fabmo.updateMacro(parseInt(macro.index), update, function(err, result) {
-                                macro_table.ajax.reload();
-                            });                                    
-                        } else {
-                            td.text(saved_text);                                    
-                            if(error_message) {
-                                fabmo.notify('error', error_message);
-                            }
-                        }
-                    }
-
-                    td.on('keydown', function(evt) {
-                        switch(evt.which) {
-                            case 09:
-                            case 13: // Enter
-                                td.off('keydown'); 
-                                td.blur();
-                                evt.preventDefault();
-                                break;
-                            case 27: // Esc
-                                td.text(saved_text)
-                                td.blur();
-                                break;
-                        }
-                    });
-
-                    td.on('blur', function(evt) {
-                        td.off('blur');
-                        save();
-                    });
-
-                }
-            } );
-
-
-            $('#macro_table tbody').on( 'click', 'td', function () {
-                var tr = $(this).closest('tr');
-                var row = macro_table.row( tr );
-                var cell = macro_table.cell( this );
-                var macro = row.data();
-                switch(cell.index().column) {
-                    case 0:
-                        fabmo.runMacro(macro.index)
-                        break;
-                    case 4:
-                        fabmo.launchApp('editor', {'macro' : macro.index});
-                        break;
-                    case 5:
-                        fabmo.deleteMacro(macro.index, function(err) {
-                            macro_table.ajax.reload();
-                        });
-                        break;
-                    default:
-                        break;
-                }
-            } );
-*/
         });
+        evt.preventDefault();
+    }); 
+
+});
 
