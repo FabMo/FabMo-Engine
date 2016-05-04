@@ -85,6 +85,11 @@ function addMacros(macros, callback) {
         var update = {};
         update[fieldName] = newValue;
         fabmo.updateMacro(macro.index, update, function(err, result) {
+            console.log("done")
+            console.log(err)
+            if(err) {
+                fabmo.notify('error', err.message || err);
+            }
             refreshMacros();
         });   
     });
@@ -129,7 +134,7 @@ function refreshMacros(callback) {
                 }
                 fabmo.updateMacro(newIndex, {}, function(err, result) {
                     if(err) {
-                        fabmo.notify('error', err);                        
+                        fabmo.notify('error', err.message || err);                        
                     }
                     refreshMacros();
                 });
