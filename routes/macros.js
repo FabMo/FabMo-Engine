@@ -6,14 +6,19 @@ var updateMacro = function(req, res, next) {
     macro = macros.get(id);
     var updated_macro = {};
     if(macro) {
-        updated_macro.name = req.params.name || macro.name
-        updated_macro.description = req.params.description || macro.description
-        updated_macro.content = req.params.content || macro.content
-        updated_macro.index = req.params.index || macro.index
+        updated_macro.name = req.params.name || macro.name;
+        updated_macro.description = req.params.description || macro.description;
+        updated_macro.content = req.params.content || macro.content;
+        if(req.params.index != req.params.id) {
+            if(req.params.index < 0) {
+                return res.json({'status' : 'error', 'message' : "Macro number cannot be negative." })
+            }
+            updated_macro.index = req.params.index;
+        }
     }
     macros.update(id, updated_macro, function(err, macro) {
         if(err) {
-            response = {'status' : 'error', 'message' : err }       
+            response = {'status' : 'error', 'message' : err.message }       
         } else {
             response = {'status' : 'success', 'data' : macro}
         }
@@ -110,7 +115,7 @@ var deleteMacro = function(req, res, next) {
         if(err) {
             res.json({
                 'status' : 'error',
-                'message' : 'No such macro: ' + id
+                'message' : err.message
             });
         } else {
             res.json({
