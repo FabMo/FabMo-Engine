@@ -6,8 +6,7 @@ function getMacroFromClick(elem) {
 }
 
 function clearMacroTable() {
-    console.log('yo im clearing');
-    var table = document.getElementById('macro_table');
+    var table = document.getElementById('macro_table_body');
     var rows = table.rows.length;
     for(var i=0; i<rows; i++) {
         table.deleteRow(0);
@@ -15,9 +14,8 @@ function clearMacroTable() {
 }
 
 function addMacros(macros, callback) {
-    console.log('yo im adding');
     callback = callback || function() {};
-    var table = document.getElementById('macro_table');
+    var table = document.getElementById('macro_table_body');
     macros.forEach(function(macro) {
         var row = table.insertRow(table.rows.length);
         var playCell = row.insertCell(0);
@@ -29,9 +27,8 @@ function addMacros(macros, callback) {
 
         row.dataset.macro = macro.index;
 
-
         numberCell.className = 'number';        
-        numberCell.innerHTML = '<input class="field" type="number" data-fieldname="index"></input>';
+        numberCell.innerHTML = '<input class="field" type="number" data-fieldname="index" size="3" maxlen="3"></input>';
         numberCell.firstChild.setAttribute('value', macro.index);
 
         nameCell.className = 'name';

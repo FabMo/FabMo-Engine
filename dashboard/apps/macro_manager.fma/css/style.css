@@ -113,15 +113,23 @@ input[type=number] {
  border: none;
  background: inherit;
  box-shadow: none;
+ -moz-appearance: textfield;
+}
+
+th {
+    text-align: center !important;
 }
 
 .number input, .name input, .description input{
-    text-align: center;
     -webkit-appearance: none; 
     -moz-appearance: none;
      margin: 0; 
+     text-align: center;
 }
 
+.number input {
+    width: 3em;
+}
 .hidden, .hide { display:none; }
 
 
