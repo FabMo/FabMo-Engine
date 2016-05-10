@@ -131,15 +131,8 @@
 
 			<div class="row jobs-row" style="">
 				<!-- JOB LISTING -->
-				<table class="small-12 columns" style="width:100%" id="queue_table">
-				<thead>
-	            <tr>
-	                <th>&nbsp;</th>
-	                <th>Name</th>
-	            </tr>
-	        	</thead>
-	        	<tbody><tr></tr></tbody>
-	        	</table>
+				<ul style="width:100%" id="queue_table">
+                </ul>
 			</div>
 	</section>
   </div>
@@ -170,11 +163,16 @@
   <script src="./js/jquery.dragster.js"></script>
   <script src="./js/moment.js"></script>
   <script src="./js/job_manager.js"></script>
+  <script src="./js/Sortable.js"></script>
 
 
   <script type="text/javascript">
   var fabmo = new FabMoDashboard();
 
+
+  var el = document.getElementById('queue_table');
+  var sortable = Sortable.create(el);  
+  
   var current_job_id = 0;
 
   $(document).ready(function() {

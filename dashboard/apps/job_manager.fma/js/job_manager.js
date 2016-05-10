@@ -71,9 +71,9 @@ function updateQueue(running, callback) {
 
 function clearQueue() {
 	var table = document.getElementById('queue_table');
-	var rows = table.rows.length;
-	for(var i=0; i<rows; i++) {
-		table.deleteRow(0);
+	var items = table.getElementsByTagName('li');
+	for(var i=0; i<items.length; i++) {
+		table.removeChild(table.items[i]);
 	}
 }
 
@@ -85,13 +85,25 @@ function createQueueMenu(id) {
 function addQueueEntries(jobs) {
 	var table = document.getElementById('queue_table');
 	jobs.forEach(function(job) {
-		var row = table.insertRow(table.rows.length);
-		var menu = row.insertCell(0);
-		menu.className += ' actions-control';
-		var name = row.insertCell(1);
+        console.log(job);
+        var listItem = document.createElement("LI");
+        listItem.setAttribute("id", job._id);
+        table.appendChild(listItem);
+        var id = document.getElementById(job._id);
+        id.innerHTML = '<div class="menu"></div><div class="name">'+job.name+'</div>';
+        
+        
+        // var listItem = document.createElement("LI");
+        // var listInner = document.createTextNode('<div class="menu"></div><div class="name">'+job.name+'</div>');
+		// listItem.appendChild(listInner);
+        // table.appendChild(listItem);
+        // var row = table.insertRow(table.rows.length);
+		// var menu = row.insertCell(0);
+		// menu.className += ' actions-control';
+		// var name = row.insertCell(1);
 
-		menu.innerHTML = createQueueMenu(job._id);
-		name.innerHTML = job.name;
+		// menu.innerHTML = createQueueMenu(job._id);
+		// name.innerHTML = job.name;
 	});
 	bindMenuEvents();
 }
