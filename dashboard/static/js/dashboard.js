@@ -11,6 +11,7 @@ define(function(require) {
     
 	var Dashboard = function(target) {
 		this.engine = null;
+		this.router = null;
 		this.machine = null;
 		this.socket = null;
 		this.ui = null;
@@ -64,6 +65,10 @@ define(function(require) {
 		this.engine.on('change', function(topic) {
 			this._fireEvent('change', topic);
 		}.bind(this));
+	}
+
+	Dashboard.prototype.setRouter = function(router) {
+		this.router = router;
 	}
 
 	// Register a handler function for the provided message type
@@ -616,8 +621,6 @@ define(function(require) {
     Dashboard.prototype.showModal = function(options){
         // var modal = function (options) {
 
-            
- 
             var modalAlreadyUp = modalIsShown;
  
             modalIsShown = true;
@@ -765,8 +768,7 @@ define(function(require) {
 	}
 
 	Dashboard.prototype.launchApp = function(id, args, callback) {
-		context = require('context');
-		context.launchApp(id, args, callback);
+		this.router.launchApp(id, args, callback);
 	}
 
 	Dashboard.prototype.refreshApps = function() {

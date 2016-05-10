@@ -73,6 +73,8 @@ define(function(require) {
                 router = new context.Router();
                 router.setContext(context);
 
+                dashboard.setRouter(router);
+                
                 // Sort of a hack, but works OK.
                 $('.loader').hide();
 
