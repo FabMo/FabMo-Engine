@@ -5,6 +5,7 @@
 CodeMirror.defineSimpleMode("gcode", {
   // The start state contains the rules that are intially used
   start: [
+    {regex: /\([^\)]*\)/i, token: "comment"},
     {regex: /[GM]\d+/i, token: "keyword"},
     // You can match multiple tokens at once. Note that the captured
     // groups must span the whole string in this case
