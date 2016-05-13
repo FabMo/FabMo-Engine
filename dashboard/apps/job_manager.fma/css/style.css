@@ -183,17 +183,45 @@ td.actions-control {
 
 }
 
+.job_item{
+    font-size: .9em;
+    padding: 0.5em;
+    color: #666;
+    width: 150px;
+    display: inline-block;
+    margin-top: 0;
+    background-color: #FFFFFF;
+    border-radius: 5px;
+    margin: 0.5em;
+    height: 200px;
+    box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.15);
+    border: 1px solid #ccc;
+    overflow: hidden;
+    padding-bottom: -1em;
+}
+
+.name {
+    font-weight: bold;
+    margin-bottom: 0.5em;
+    line-height: 1.1em;
+    
+}
+
+.description{
+    
+}
+
 .ellipses {
-  font-size: 1.35em;
-  width: 1.7em;
-  height: 1.7em;
-  color: #A6A6A6;
-  vertical-align: text-top;
-  border: 1px solid #A6A6A6;
-  border-radius: 100%;
-  line-height: 1em;
-  float: left;
-  margin-left: 0.7em;
+    font-size: 1.35em;
+    width: 1.7em;
+    height: 1.7em;
+    color: #A6A6A6;
+    border: 1px solid #A6A6A6;
+    border-radius: 100%;
+    line-height: 1.1em;
+    float: left;
+    padding-left: 0.4em;
+    margin-right: 0.3em;
 }
 
 .ellipses:hover {
@@ -720,6 +748,8 @@ table {
     box-shadow: 0 1px 0 rgba(0,0,0,.15);
     transition: all .3s;
 }
+
+
 
 #history_page_prev:hover, #history_page_next:hover{
   background-color: #999;

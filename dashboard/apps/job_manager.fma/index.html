@@ -124,17 +124,9 @@
             </div>
 		</div>
 		</section>
-		<section class="container job-queue hoverdim" style="display:none;">
-				<div class="small-4 columns">
-					<h4 class="pending">Pending</h4>
-				</div>
+		<div style="width:100%" id="queue_table">
+        </div>
 
-			<div class="row jobs-row" style="">
-				<!-- JOB LISTING -->
-				<ul style="width:100%" id="queue_table">
-                </ul>
-			</div>
-	</section>
   </div>
 
   <div class="content" id="tabhistory">
@@ -162,16 +154,17 @@
   <script src="/js/libs/fabmo.js"></script>
   <script src="./js/jquery.dragster.js"></script>
   <script src="./js/moment.js"></script>
-  <script src="./js/job_manager.js"></script>
   <script src="./js/Sortable.js"></script>
+  <script src="./js/job_manager.js"></script>
+  
 
 
   <script type="text/javascript">
   var fabmo = new FabMoDashboard();
-
-
   var el = document.getElementById('queue_table');
-  var sortable = Sortable.create(el);  
+  var sortable = Sortable.create(el);
+
+  
   
   var current_job_id = 0;
 

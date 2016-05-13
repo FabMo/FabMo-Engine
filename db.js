@@ -31,6 +31,7 @@ Job = function(options) {
     this.started_at = null;
     this.finished_at = null;
     this.state = "pending";
+    this.order = null;
 };
 
 Job.prototype.clone = function(callback) {

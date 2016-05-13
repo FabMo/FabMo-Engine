@@ -28,7 +28,7 @@ function setupDropTarget() {
 					if(err){
 						fabmo.notify('error', err);
 					}
-					updateQueue();
+					//updateQueue();
 				});
 			}
 			finally {
@@ -59,22 +59,22 @@ function updateQueue(running, callback) {
 			setNextJob(jobs.pending[0]);
 			if (jobs.pending.length > 1) { // Show the queue table if there's more than one job in the queue.
 				$('.job-queue').show(500);
-				addQueueEntries(jobs.pending.slice(1));
+				addQueueEntries(jobs.pending);
 			} else {
 				$('.job-queue').slideUp(500);
 			}		
 		}
 		callback();
 	});
-
+  
 }
 
 function clearQueue() {
-	var table = document.getElementById('queue_table');
-	var items = table.getElementsByTagName('li');
-	for(var i=0; i<items.length; i++) {
-		table.removeChild(table.items[i]);
-	}
+    
+	 var elements = document.getElementsByClassName('job_item');
+    while(elements.length > 0){
+        elements[0].parentNode.removeChild(elements[0]);
+    }
 }
 
 function createQueueMenu(id) {
@@ -84,33 +84,42 @@ function createQueueMenu(id) {
 
 function addQueueEntries(jobs) {
 	var table = document.getElementById('queue_table');
-	jobs.forEach(function(job) {
-        console.log(job);
-        var listItem = document.createElement("LI");
-        listItem.setAttribute("id", job._id);
+    var temp = [];
+	for(i = 0; i < jobs.length; i++){
+        var listItem = document.createElement("div");
+        listItem.setAttribute("id", jobs[i]._id);
+        if (jobs[i].order === null) {
+            var max = 0;
+           for (var i = 0; i < temp.length; i++) {
+        if (temp[i] > max)
+             max = temp[i];
+        }
+        temp.push(max + 1);
+        jobs[i].order = max +1;
+        } else {
+            temp.push(jobs[i].order);
+        }
+        listItem.setAttribute("class", "job_item");
         table.appendChild(listItem);
-        var id = document.getElementById(job._id);
-        id.innerHTML = '<div class="menu"></div><div class="name">'+job.name+'</div>';
+        var id = document.getElementById(jobs[i]._id);
+        id.innerHTML = '<div id="menu"></div><div class="name">'+jobs[i].name+'</div><div class="description">'+jobs[i].description+'</div>';
+		var menu = id.firstChild;
         
-        
-        // var listItem = document.createElement("LI");
-        // var listInner = document.createTextNode('<div class="menu"></div><div class="name">'+job.name+'</div>');
-		// listItem.appendChild(listInner);
-        // table.appendChild(listItem);
-        // var row = table.insertRow(table.rows.length);
-		// var menu = row.insertCell(0);
 		// menu.className += ' actions-control';
 		// var name = row.insertCell(1);
 
-		// menu.innerHTML = createQueueMenu(job._id);
+		menu.innerHTML = createQueueMenu(jobs[i]._id);
 		// name.innerHTML = job.name;
-	});
+	};
+
+
 	bindMenuEvents();
+    console.log(temp);
 }
 
 /*
  * -----------
- *   HISTORY
+ *   HISTOR
  * -----------
  */
 function updateHistory(callback) {
