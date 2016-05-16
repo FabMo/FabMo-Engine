@@ -59,6 +59,7 @@ function update() {
               }
             }
         });
+        /*
         var unit1 = (360/data.driver['1sa']) * data.driver['1mi'] / data.driver['1tr'];
         $("#opensbp-units1").val(unit1);
         var unit2 = (360/data.driver['2sa']) * data.driver['2mi'] / data.driver['2tr'];
@@ -70,7 +71,7 @@ function update() {
         var unit5 = (360/data.driver['5sa']) * data.driver['5mi'] / data.driver['5tr'];
         $("#opensbp-units5").val(unit5);
         var unit6 = (360/data.driver['6sa']) * data.driver['6mi'] / data.driver['6tr'];
-        $("#opensbp-units6").val(unit6);
+        $("#opensbp-units6").val(unit6);*/
       }
     });
 }
