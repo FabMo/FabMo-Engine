@@ -178,6 +178,7 @@ Job.getById = function(id,callback)
 
 Job.getNext = function(callback) {
 	jobs.find({state:'pending'}).toArray(function(err, result) {
+        log.info('printing' + result[0]);
 		if(err) {
 			callback(err, null);
 		} else {

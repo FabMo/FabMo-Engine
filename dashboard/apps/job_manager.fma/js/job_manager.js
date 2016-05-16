@@ -42,10 +42,16 @@ function setupDropTarget() {
 function updateQueue(running, callback) {
 	callback = callback || function() {};
 	running = currentStatus.job;
+    
 	// Update the queue display.
 	fabmo.getJobsInQueue(function(err, jobs) {
 		if(err) { return callback(err); }
 		clearQueue();
+        console.log(jobs);
+        jobs.toArray.sort(function(a, b){
+            return a.order - b.order;
+        });
+        console.log(jobs);
 		if(jobs.running.length) {
 			runningJob(jobs.running[0]);
 			if(jobs.pending.length > 0) {
@@ -89,17 +95,18 @@ function addQueueEntries(jobs) {
         var listItem = document.createElement("div");
         listItem.setAttribute("id", jobs[i]._id);
         if (jobs[i].order === null) {
-            var max = 0;
-           for (var i = 0; i < temp.length; i++) {
-        if (temp[i] > max)
+          var max = 0;
+          for (var i = 0; i < temp.length; i++) {
+           if (temp[i] > max)
              max = temp[i];
-        }
-        temp.push(max + 1);
-        jobs[i].order = max +1;
+           }
+           temp.push(max + 1);
+           jobs[i].order = max +1;
         } else {
             temp.push(jobs[i].order);
         }
         listItem.setAttribute("class", "job_item");
+        listItem.setAttribute("data-id", jobs[i].order);
         table.appendChild(listItem);
         var id = document.getElementById(jobs[i]._id);
         id.innerHTML = '<div id="menu"></div><div class="name">'+jobs[i].name+'</div><div class="description">'+jobs[i].description+'</div>';
@@ -110,11 +117,12 @@ function addQueueEntries(jobs) {
 
 		menu.innerHTML = createQueueMenu(jobs[i]._id);
 		// name.innerHTML = job.name;
+
 	};
 
 
 	bindMenuEvents();
-    console.log(temp);
+
 }
 
 /*

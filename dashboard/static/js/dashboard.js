@@ -165,7 +165,7 @@ define(function(require) {
 			this.closeRightMenu() 
 		}.bind(this));
         
-        // Show the DRO
+        // Show the Modal
 		this._registerHandler('openModal', function(options, callback) { 
 			if(options.ok) {
 				options.ok = function() {
@@ -183,9 +183,7 @@ define(function(require) {
 				callback(e);
 			}
 			
-/*			if(!(options.ok || options.cancel)) {
-				callback(null);
-			}*/
+
 		}.bind(this));
 
 		// Hide the DRO

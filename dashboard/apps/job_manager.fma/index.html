@@ -162,7 +162,12 @@
   <script type="text/javascript">
   var fabmo = new FabMoDashboard();
   var el = document.getElementById('queue_table');
-  var sortable = Sortable.create(el);
+  var sortable = Sortable.create(el, {
+      onEnd: function (evt) {
+      var newOrder = sortable.toArray();
+      console.log(newOrder);
+    }
+  });
 
   
   
