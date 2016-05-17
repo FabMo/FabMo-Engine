@@ -28,7 +28,7 @@ function setupDropTarget() {
 					if(err){
 						fabmo.notify('error', err);
 					}
-					//updateQueue();
+					updateQueue();
 				});
 			}
 			finally {
@@ -47,11 +47,11 @@ function updateQueue(running, callback) {
 	fabmo.getJobsInQueue(function(err, jobs) {
 		if(err) { return callback(err); }
 		clearQueue();
-        console.log(jobs);
-        jobs.toArray.sort(function(a, b){
+        console.log(jobs.pending);
+        jobs.pending.sort(function(a, b){
             return a.order - b.order;
         });
-        console.log(jobs);
+        console.log(jobs.pending);
 		if(jobs.running.length) {
 			runningJob(jobs.running[0]);
 			if(jobs.pending.length > 0) {
@@ -105,8 +105,9 @@ function addQueueEntries(jobs) {
         } else {
             temp.push(jobs[i].order);
         }
+        console.log(temp);
         listItem.setAttribute("class", "job_item");
-        listItem.setAttribute("data-id", jobs[i].order);
+        listItem.setAttribute("data-id", jobs[i]._id);
         table.appendChild(listItem);
         var id = document.getElementById(jobs[i]._id);
         id.innerHTML = '<div id="menu"></div><div class="name">'+jobs[i].name+'</div><div class="description">'+jobs[i].description+'</div>';

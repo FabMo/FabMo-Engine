@@ -165,7 +165,17 @@
   var sortable = Sortable.create(el, {
       onEnd: function (evt) {
       var newOrder = sortable.toArray();
-      console.log(newOrder);
+      fabmo.getJobsInQueue(function(err, jobs) {
+       for (i=0; i<newOrder.length; i++){
+         var id = jobs.pending.filter(function (id){
+            return id._id == newOrder[i];
+          });
+          id[0].order = i + 1;
+          fabmo.updateOrder(id[0]._id, 'test', function(err, result) {
+              console.log('did I fire');
+          });
+      }
+      });
     }
   });
 

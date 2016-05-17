@@ -360,6 +360,37 @@ var cancelJob = function(req, res, next) {
     });
 };
 
+var updateOrder = function (req, res, next) {
+    var answer;
+    var order = req.params.order;
+    db.Job.getById(req.params.id, function(err, job) {
+        if(err) {
+            answer = {
+                    status:"fail",
+                    data:{job:err}
+            };
+            return res.json(answer);
+        } else {
+            result.update(req.params.id, order, function(err, result){
+                 if(err) {
+                    log.error(err);
+                    answer = {
+                            status:"fail",
+                            data:{job:err}
+                    };
+                    res.json(answer);
+                } else {
+                    answer = {
+                        status:"success",
+                        data : {job:result}
+                    };
+                    res.json(answer);
+                }
+            });
+        }
+    });
+};
+
 var getJobFile = function(req, res, next) {
     db.Job.getFileForJobId(req.params.id, function(err, file) {
         if(err) {
@@ -380,6 +411,8 @@ var getJobFile = function(req, res, next) {
         }
     });
 };
+
+
 
 var getJobGCode = function(req, res, next) {
     db.Job.getFileForJobId(req.params.id, function(err, file) {
@@ -406,6 +439,7 @@ module.exports = function(server) {
     server.get('/jobs', getAllJobs);
     server.get('/job/:id', getJobById);
     server.del('/job/:id', cancelJob);
+    server.patch('/job/:id', updateOrder);
     server.post('/job/:id', resubmitJob);
     server.get('/job/:id/file', getJobFile);
     server.get('/job/:id/gcode', getJobGCode);

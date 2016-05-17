@@ -263,6 +263,18 @@ define(function(require) {
 				}
 			})
 		}.bind(this));
+        
+        this._registerHandler('updateOrder', function(id, order, callback) {
+			this.engine.updateOrder(id, order, function(err, result) {
+                console.log('I made it here');
+				if(err) {
+					callback(err);
+				} else {
+                    
+					callback(null, result);
+				}
+			})
+		}.bind(this));
 
 		this._registerHandler('getJobInfo', function(id, callback) {
 			this.engine.getJobInfo(id, function(err, job) {

@@ -43,6 +43,12 @@ Job.prototype.clone = function(callback) {
 	job.save(callback);
 };
 
+Job.prototype.update = function (id, order, callback){
+    log.info("Upating " + this._id ? this._id : '<volatile job>');
+    this.order = order;
+    this.save(callback);
+};
+
 Job.prototype.start = function(callback) {
 	log.info("Starting job id " + this._id ? this._id : '<volatile job>');
 	this.state = 'running';

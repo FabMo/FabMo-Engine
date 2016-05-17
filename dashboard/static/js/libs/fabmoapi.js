@@ -217,6 +217,10 @@ FabMoAPI.prototype.resubmitJob = function(id, callback) {
 	this._post('/job/' + id, {}, callback, callback);
 }
 
+FabMoAPI.prototype.updateOrder= function(id, order, callback) {
+	this._patch('/job/' + id, order, callback, callback);
+}
+
 FabMoAPI.prototype.runNextJob = function(callback) {
 	this._post('/jobs/queue/run', {}, callback, callback);
 }
