@@ -93,6 +93,7 @@ var clearQueue = function(req, res, next) {
  */
 runNextJob = function(req, res, next) {
     var answer;
+    console.log(req.params)
     log.info('Running the next job in the queue');
     machine.runNextJob(function(err, job) {
         if(err) {
@@ -362,8 +363,9 @@ var cancelJob = function(req, res, next) {
 
 var updateOrder = function (req, res, next) {
     var answer;
-    var order = req.params.order;
-    db.Job.getById(req.params.id, function(err, job) {
+    var order = parseInt(req.params.order);
+    var id = parseInt(req.params.id);
+    db.Job.getById(id, function(err,result) {
         if(err) {
             answer = {
                     status:"fail",
@@ -371,7 +373,7 @@ var updateOrder = function (req, res, next) {
             };
             return res.json(answer);
         } else {
-            result.update(req.params.id, order, function(err, result){
+            result.update_order(order, function(err, result){
                  if(err) {
                     log.error(err);
                     answer = {

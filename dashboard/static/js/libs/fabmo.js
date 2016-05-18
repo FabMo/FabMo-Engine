@@ -501,8 +501,8 @@ FabMoDashboard.prototype.submitJob = function(jobs, options, callback) {
 	this._call("submitJob", args, callback)
 }
 
-FabMoDashboard.prototype.updateOrder = function(id, order, callback) {
-	this._call("updateOrder", id, order, callback);
+FabMoDashboard.prototype.updateOrder = function(data, callback) {
+	this._call("updateOrder", data, callback);
 }
 
 /**

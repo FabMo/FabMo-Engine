@@ -171,9 +171,8 @@
             return id._id == newOrder[i];
           });
           id[0].order = i + 1;
-          fabmo.updateOrder(id[0]._id, 'test', function(err, result) {
-              console.log('did I fire');
-          });
+          console.log(id[0].order);
+          fabmo.updateOrder({id:id[0]._id, order:id[0].order}, function(err, result) {});
       }
       });
     }

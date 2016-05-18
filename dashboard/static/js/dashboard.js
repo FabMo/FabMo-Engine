@@ -264,8 +264,8 @@ define(function(require) {
 			})
 		}.bind(this));
         
-        this._registerHandler('updateOrder', function(id, order, callback) {
-			this.engine.updateOrder(id, order, function(err, result) {
+        this._registerHandler('updateOrder', function(data, callback) {
+			this.engine.updateOrder(data, function(err, result) {
                 console.log('I made it here');
 				if(err) {
 					callback(err);
