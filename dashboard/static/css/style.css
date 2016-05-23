@@ -15,6 +15,7 @@ body,html{
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    cursor: default;
 }
 
 .doselect {
@@ -169,13 +170,11 @@ body,html{
 }
 
 #connection-strength-indicator {
-	height: 100%; 
-	box-sizing: border-box;
+	height: 30px;
 }
 
 .svg-container {
 	height: 100%;
-	padding: 5px;
 }
 
 #connection-strength-indicator .on {
@@ -189,8 +188,6 @@ body,html{
 #connection-strength-indicator .err {
 	fill: #91331E;
 }
-
-
 
 /* ********** Menu Style ********** */
 

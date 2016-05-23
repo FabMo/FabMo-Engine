@@ -783,6 +783,13 @@ FabMoDashboard.prototype.getWifiNetworkHistory = function(callback) {
 	this._call("getWifiNetworkHistory", null, callback);
 }
 
+FabMoDashboard.prototype.getNetworkIdentity = function(callback) {
+	this._call("getNetworkIdentity", null, callback);
+}
+
+FabMoDashboard.prototype.setNetworkIdentity = function(identity, callback) {
+	this._call("setNetworkIdentity", identity, callback);
+}
 
 /**
  * Get a list of all the macros installed on the tool.

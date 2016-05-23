@@ -29,6 +29,7 @@ td.run-control {
     padding: .3em;
     text-align: center;
     margin-left: 1em;
+    min-width: 35px;
 }
 
 
@@ -49,6 +50,7 @@ td.edit-control {
     width: 60px;
     cursor: pointer;
     padding: .3em;
+    min-width: 35px;
     
 }
 
@@ -67,6 +69,7 @@ td.delete-control {
     width: 60px;
     cursor: pointer;
     margin-left: 1em; 
+    min-width: 35px;
 }
 
 td.delete-control img {

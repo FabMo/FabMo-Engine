@@ -7,7 +7,7 @@ requirejs.config({
     /*urlArgs: "ts="+new Date().getTime(),*/
     paths: {
     	'jquery' : 'libs/jquery.min',
-    	'backbone' : 'libs/backbone',
+    	'backbone' : 'libs/backbone.min',
     	'foundation' : 'libs/foundation.min',
         'underscore' : 'libs/underscore',
         'fabmo' : 'libs/fabmoapi',
