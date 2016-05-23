@@ -73,24 +73,11 @@ function update() {
         $("#opensbp-units6").val(unit6);
       }
     });
-}
 
-// function setConfig(id, value) {
-//     var parts = id.split("_");
-//     var type = parts[0];
-//     var key = parts[1];
-//     // Workaround for (restify bug?)
-//     if(key[0].match(/[0-9]/)) {
-//       key = '_' + key;
-//     }
-//     var o = {};
-//     o[key] = value;
-//     cfg = {};
-//     cfg[type] = o;
-//     fabmo.setConfig(cfg, function(err, data) {
-//       update();
-//     });
-// }
+    fabmo.getNetworkIdentity(function(err, data) {
+      $('#input-name').val(data.name);
+    });
+}
 
 function setConfig(id, value) {
 	var parts = id.split("-");

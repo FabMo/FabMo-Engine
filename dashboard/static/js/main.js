@@ -33,20 +33,6 @@ define(function(require) {
 
     var supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
 
-    engine.getNetworkIdentity(function(err, id) {
-        if (!id) {
-            return;
-        }
-        var name = id.name || "";
-        $('#tool-name').text(name);
-        document.title = name || "FabMo Dashboard";
-    });
-
-    //Give editor focus *not working*
-    // $('#icon_editor').on('click', function() {
-    //     $('iframe').focus();
-
-    // });
     // Initial read of engine configuration
     engine.getConfig();
     engine.getVersion(function(err, version) {
@@ -65,6 +51,7 @@ define(function(require) {
                 // Create a FabMo object for the dashboard
                 dashboard.setEngine(engine);
                 dashboard.ui = new FabMoUI(dashboard.engine);
+                dashboard.getNetworkIdentity();
 
                 keyboard = setupKeyboard();
                 keypad = setupKeypad();

@@ -52,6 +52,14 @@
         <legend>General Settings</legend>
         <div class="large-4 columns">
           <div class="row collapse">
+            <label>Machine Name</label>
+            <div class="small-12 columns">
+              <input type="text" id="input-name" class="input"/>
+            </div>
+          </div>
+        </div>
+        <div class="large-4 columns">
+          <div class="row collapse">
             <label>Default Unit System</label>
                 <select id="machine-units" class="machine-input">
                   <option value="mm">mm</option>
@@ -68,6 +76,7 @@
                 </select>
           </div>
         </div>
+
         <div class="large-4 columns">
           <div class="row collapse">
             <label>Chordal Tolerance</label>
@@ -81,12 +90,9 @@
         </div>
         <div class="large-4 columns">
           <div class="row collapse">
-            <label>Junction Acceleration</label>
-            <div class="small-9 columns">
+            <label>Junction Aggression</label>
+            <div class="small-12 columns">
               <input type="text" id="driver-ja" class="driver-input"/>
-            </div>
-            <div class="small-3 columns">
-              <span class="postfix ipm2_mmpm2_label">&nbsp;</span>
             </div>
           </div>
         </div>
@@ -1804,6 +1810,14 @@
           });
         }
       });
+
+      $('#input-name').change( function(evt) {
+        var id = {name: this.value};
+        fabmo.setNetworkIdentity(id, function(err, data) {
+          update();
+        });
+      });
+
 
       setupAppManager();
 

@@ -356,6 +356,10 @@ FabMoAPI.prototype.getNetworkIdentity = function(callback) {
 	this._get('/network/identity', callback, callback);
 }
 
+FabMoAPI.prototype.setNetworkIdentity = function(identity, callback) {
+	this._post('/network/identity', identity, callback, callback);
+}
+
 FabMoAPI.prototype.getWifiNetworks = function(callback) {
 	this._get('/network/wifi/scan', callback, callback, 'wifi');
 }

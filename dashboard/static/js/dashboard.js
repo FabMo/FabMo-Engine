@@ -461,6 +461,18 @@ define(function(require) {
 			}.bind(this));
 		}.bind(this));
 
+		this._registerHandler('getNetworkIdentity', function(data, callback) {
+			this.getNetworkIdentity(function(err, result) {
+				callback(err, result);
+			});
+		}.bind(this));
+
+		this._registerHandler('setNetworkIdentity', function(data, callback) {
+			this.engine.setNetworkIdentity(data, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
 
 		///
 		/// MACROS
@@ -561,6 +573,19 @@ define(function(require) {
 			}
 		}.bind(this));
 	}
+
+	Dashboard.prototype.getNetworkIdentity = function(callback){
+		callback = callback || function() {}
+		this.engine.getNetworkIdentity(function(err, result) {
+			if(err) { callback(err); }
+			else { 
+				var name = result.name || "";
+				$('#tool-name').text(name);
+				document.title = name || "FabMo Dashboard";
+				callback(null, result); 
+			}
+		}.bind(this));
+	};
 
 	Dashboard.prototype.updateStatus = function(status){
 		if(this.status.job && !status.job) {
