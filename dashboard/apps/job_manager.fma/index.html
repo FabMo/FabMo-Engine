@@ -35,8 +35,6 @@
 
 <div class="tabs-content">
   <div class="content active dropzone" id="tabpending">
-  	<div id="droptarget">
-  	</div>
 	<section class="container topjob hoverdim">
 			<div class="row title jobs-title">
 				<div class="small-11 columns">
@@ -124,11 +122,10 @@
             </div>
 		</div>
 		</section>
-		<div style="width:100%" id="queue_table">
-        </div>
+		
 
   </div>
-
+<div style="width:100%" id="queue_table"></div>
   <div class="content" id="tabhistory">
 		<!-- JOB HISTORY LISTING -->
 		<table class="small-12 columns" style="width:100%" id="history_table">
@@ -164,19 +161,31 @@
   var el = document.getElementById('queue_table');
   var sortable = Sortable.create(el, {
       onEnd: function (evt) {
-      var newOrder = sortable.toArray();
-      fabmo.getJobsInQueue(function(err, jobs) {
-       for (i=0; i<newOrder.length; i++){
-         var id = jobs.pending.filter(function (id){
-            return id._id == newOrder[i];
+		  var firstJob = document.getElementById('queue_table').firstChild;
+		  console.log(firstJob);
+		  var cardActions = document.createElement("div");
+    	  cardActions.setAttribute("id", "actions");
+    	  firstJob.appendChild(cardActions);
+    	  var actions = document.getElementById("actions");
+    	  actions.innerHTML = makeActions();
+      	  var newOrder = sortable.toArray();
+          fabmo.getJobsInQueue(function(err, jobs) {
+       		for (i=0; i<newOrder.length; i++){
+         		var id = jobs.pending.filter(function (id){
+            	return id._id == newOrder[i];
           });
-          id[0].order = i + 1;
-          console.log(id[0].order);
-          fabmo.updateOrder({id:id[0]._id, order:id[0].order}, function(err, result) {});
-      }
-      });
+          		id[0].order = i + 1;
+          		console.log(id[0].order);
+          		fabmo.updateOrder({id:id[0]._id, order:id[0].order}, function(err, result) {});
+      		}	
+      	  });
     }
   });
+  
+  function makeActions(){
+    var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="perecent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><span></span></div> </div></div></div></div><div class="small-8 medium-12 icon-row"><div class="medium-1 small-2 columns"><a class="preview" title="Preview Job"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="Edit Job"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="Download Job"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="Cancel Job"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
+    return actions;
+}
 
   
   
@@ -202,7 +211,7 @@
 	updateHistory();
 
 	bindNextJobEvents();
-	setupDropTarget();
+	//setupDropTarget();
 
 	$('#history_page_next').click(function(evt) {
 		evt.preventDefault();
@@ -251,7 +260,7 @@
 				fabmo.notify('error', err);
 			}
 			resetFormElement($('#file'));
-			updateQueue();
+			//updateQueue();
 		});
 	});
 

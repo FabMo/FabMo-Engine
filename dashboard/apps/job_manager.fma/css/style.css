@@ -40,6 +40,10 @@ body {
   transition: all 0.5s;
 }
 
+#tabpending{
+    
+}
+
 .hover .hoverdim { 
   -webkit-transition: opacity .2s ease;
   -moz-transition: opacity .2s ease;
@@ -55,7 +59,6 @@ body {
 .hover #droptarget {
   visibility: visible;
   opacity: 1;
-  z-index: 3;
   position: absolute;
   text-align: center;
   width: 100%;
@@ -183,6 +186,21 @@ td.actions-control {
 
 }
 
+#queue_table{
+  position:absolute;
+  top:0;
+  left:0;
+ 
+}
+
+
+.job_item:first-child {
+  margin-top: 4.8em;
+  width:98%;
+  margin-bottom: 4em;
+  
+}
+
 .job_item{
     font-size: .9em;
     padding: 0.5em;
@@ -197,7 +215,6 @@ td.actions-control {
     box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.15);
     border: 1px solid #ccc;
     overflow: hidden;
-    padding-bottom: -1em;
 }
 
 .name {
@@ -207,9 +224,7 @@ td.actions-control {
     
 }
 
-.description{
-    
-}
+
 
 .ellipses {
     font-size: 1.35em;
@@ -762,6 +777,9 @@ table {
 #history_page_next{
     float: right;
 }
+
+
+
 
 
 .job-lights-container{

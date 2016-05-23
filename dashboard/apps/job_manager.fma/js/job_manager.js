@@ -28,7 +28,7 @@ function setupDropTarget() {
 					if(err){
 						fabmo.notify('error', err);
 					}
-					updateQueue();
+					//updateQueue();
 				});
 			}
 			finally {
@@ -47,7 +47,6 @@ function updateQueue(running, callback) {
 	fabmo.getJobsInQueue(function(err, jobs) {
 		if(err) { return callback(err); }
 		clearQueue();
-        console.log(jobs.pending);
         jobs.pending.sort(function(a, b){
             return a.order - b.order;
         });
@@ -62,13 +61,14 @@ function updateQueue(running, callback) {
 			}	
 		} else {
 			runningJob(null);
-			setNextJob(jobs.pending[0]);
+			
 			if (jobs.pending.length > 1) { // Show the queue table if there's more than one job in the queue.
 				$('.job-queue').show(500);
 				addQueueEntries(jobs.pending);
 			} else {
 				$('.job-queue').slideUp(500);
-			}		
+			}	
+            setNextJob(jobs.pending[0]);	
 		}
 		callback();
 	});
@@ -88,6 +88,8 @@ function createQueueMenu(id) {
 	return menu.replace(/JOBID/g, id);
 }	
 
+
+
 function addQueueEntries(jobs) {
 	var table = document.getElementById('queue_table');
     var temp = [];
@@ -105,7 +107,6 @@ function addQueueEntries(jobs) {
         } else {
             temp.push(jobs[i].order);
         }
-        console.log(temp);
         listItem.setAttribute("class", "job_item");
         listItem.setAttribute("data-id", jobs[i]._id);
         table.appendChild(listItem);
@@ -115,20 +116,34 @@ function addQueueEntries(jobs) {
         
 		// menu.className += ' actions-control';
 		// var name = row.insertCell(1);
-
+        //if (i > 0){
 		menu.innerHTML = createQueueMenu(jobs[i]._id);
 		// name.innerHTML = job.name;
-
+        //}
 	};
 
-
+    //setFirstCard(jobs[0]._id);
 	bindMenuEvents();
 
 }
 
+function setFirstCard(id){
+    var el = document.getElementById(id);
+    el.innerHTML ='';
+    $('#'+id).css({
+        'width': '100%',
+        'height': '0px'
+    });
+    var cardActions = document.createElement("div");
+    cardActions.setAttribute("id", "actions");
+    el.appendChild(cardActions);
+    var actions = document.getElementById("actions");
+    actions.innerHTML = makeActions();
+}
+
 /*
  * -----------
- *   HISTOR
+ *   HISTORY
  * -----------
  */
 function updateHistory(callback) {
@@ -171,6 +186,8 @@ function createHistoryMenu(id) {
 	var menu = "<div class='ellipses' title='More Actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='resubmitJob' data-jobid='JOBID'>Run Again</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job</a></li></ul></div>"
 	return menu.replace(/JOBID/g, id)
 }
+
+
 
 function addHistoryEntries(jobs) {
 	var table = document.getElementById('history_table');
@@ -329,19 +346,19 @@ function runningJob(job) {
 	$('.preview').slideUp(100);
 	$('body').css('background-color', '#898989');
 	$('.topjob').addClass('running');
-    $('.job-lights-container').show();
-    $('.job-status-indicator').css({
-        '-moz-box-shadow': '0 .5px 1px rgba(0, 0, 0, .25), 0 2px 3px rgba(0, 0, 0, .1)',
-        '-webkit-box-shadow':'0 .5px 1px rgba(0, 0, 0, .25), 0 2px 3px rgba(0, 0, 0, .1)',
-        'box-shadow':'0 .5px 1px rgba(0, 0, 0, .25), 0 2px 3px rgba(0, 0, 0, .1)'
-    })
+    // $('.job-lights-container').show();
+    // $('.job-status-indicator').css({
+    //     '-moz-box-shadow': '0 .5px 1px rgba(0, 0, 0, .25), 0 2px 3px rgba(0, 0, 0, .1)',
+    //     '-webkit-box-shadow':'0 .5px 1px rgba(0, 0, 0, .25), 0 2px 3px rgba(0, 0, 0, .1)',
+    //     'box-shadow':'0 .5px 1px rgba(0, 0, 0, .25), 0 2px 3px rgba(0, 0, 0, .1)'
+    // })
 	$('.up-next').css('left', '-2000px');
     $('.no-jobs').css('left', '-2000px');
 	$('.now-running').css('left', '0px');
 	$('.without-job').css('left','-2000px');;
 	$('.with-job').css('left','10px');	
-	$('.play-button').show();
-	$('.play').addClass('active')
+	//$('.play-button').show();
+	//$('.play').addClass('active')
 };
 
 var setNextJob = function (job) {
