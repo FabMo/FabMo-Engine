@@ -787,6 +787,10 @@ FabMoDashboard.prototype.setNetworkIdentity = function(identity, callback) {
 	this._call("setNetworkIdentity", identity, callback);
 }
 
+FabMoDashboard.prototype.isOnline = function(callback) {
+	this._call("isOnline", null, callback);
+}
+
 /**
  * Get a list of all the macros installed on the tool.
  * 

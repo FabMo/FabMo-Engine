@@ -76,6 +76,15 @@ function update() {
 
     fabmo.getNetworkIdentity(function(err, data) {
       $('#input-name').val(data.name);
+      $('#input-machine-id').val(data.id);
+    });
+
+    fabmo.isOnline(function(err, online) {
+      if(online) {
+        $('#btn-update').removeClass('disabled');
+      } else {
+        $('#btn-update').addClass('disabled');
+      }
     });
 }
 

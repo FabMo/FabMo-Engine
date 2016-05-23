@@ -60,6 +60,14 @@
         </div>
         <div class="large-4 columns">
           <div class="row collapse">
+            <label>Machine ID</label>
+            <div class="small-12 columns">
+              <input type="text" id="input-machine-id" disabled/>
+            </div>
+          </div>
+        </div>
+        <div class="large-4 columns">
+          <div class="row collapse">
             <label>Default Unit System</label>
                 <select id="machine-units" class="machine-input">
                   <option value="mm">mm</option>
@@ -141,7 +149,6 @@
             </div>
           </div>
         </div>
-
         <div class="large-4 columns">
           <div class="row collapse">
               <a id="btn-update"  class="button radius small">Update FabMo Software...</a>
@@ -1714,14 +1721,16 @@
     var configData = null;
     var fabmo = new FabMoDashboard();
     $('#btn-update').click(function(evt) {
-      evt.preventDefault();
-      var location = window.location;
-      var protocol = location.protocol;
-      var slashes = protocol.concat("//");
-      var host = slashes.concat(window.location.hostname);
-      var port = ':' + (parseInt((location.port || 80)) + 1);
-      var url = host.concat(port).concat('/do_update')
-      fabmo.navigate(url, {});
+      if(!$(this).hasClass('disabled')) {
+        evt.preventDefault();
+        var location = window.location;
+        var protocol = location.protocol;
+        var slashes = protocol.concat("//");
+        var host = slashes.concat(window.location.hostname);
+        var port = ':' + (parseInt((location.port || 80)) + 1);
+        var url = host.concat(port).concat('/do_update')
+        fabmo.navigate(url, {});
+      }
     });
     $(document).ready(function() {
       $(document).foundation();
