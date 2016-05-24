@@ -64,11 +64,13 @@
 		$('#modal_container').hide();
 	}
 
+	ApplicationContext.prototype.closeApp = function(callback) {
+		this.appClientView.setModel(null, false, callback);		
+	}
+
 	ApplicationContext.prototype.launchApp = function(id, args, callback) {
 		var hard_refresh = false;
-		
 		var hash = this.app_reload_index[id];
-
 
 		try {
 			if(hash && hash != this.engineVersion.hash) {

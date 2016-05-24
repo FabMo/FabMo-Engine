@@ -42,12 +42,18 @@ define(function(require) {
 					}
 					this.busy = true;
 					$('.add-icon').removeClass('fa-plus').addClass('fa-cog fa-spin');
-					dashboard.submitApps(files, {}, function(err, data) {
-						$('.add-icon').removeClass('fa-cog fa-spin').addClass('fa-plus');
+					dashboard.submitApps(files, {}, function(err, data) {		
+						this.busy = false;				
+						function revert_icon() {
+							$('.add-icon').removeClass('fa-cog fa-spin fa-exclamation-triangle').addClass('fa-plus');
+						}
 						if(err) {
-							dashboard.notification('error', err.message);
+							$('.add-icon').removeClass('fa-cog fa-spin').addClass('fa-exclamation-triangle');							
+							dashboard.notification('error', "App could not be installed: <br/>" + (err.message || err));
+							setTimeout(revert_icon, 1500);
 						} else {
 							dashboard.notification('success', data.length + " app" + ((data.length > 1) ? 's' : '') + " installed successfully.");
+							revert_icon();
 						}
 						var context = require('context');
 						context.apps.fetch();
@@ -104,11 +110,7 @@ define(function(require) {
 			_.bindAll(this, 'render');
 		},
 		render : function(hard_refresh, callback) {
-			if(this.model) {
-				url = this.model.get('app_url');
-			} else {
-				url = "about:blank";
-			}
+			var url = this.model.get('app_url') || "http://about.blank";
 			var client_container = jQuery(this.el);
 			var src = '<iframe class="app-iframe" id="app-iframe" sandbox="allow-scripts allow-same-origin" allowfullscreen></iframe>'
 			client_container.html(src);
@@ -143,7 +145,7 @@ define(function(require) {
 				this.hard_refresh = hard_refresh;
 				this.model.set(model.toJSON());
 			} else {
-				this.model.set(null);
+				this.model.clear();
 			}
 			this.render(hard_refresh, callback);
 		}

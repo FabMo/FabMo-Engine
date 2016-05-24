@@ -1,16 +1,15 @@
 <!doctype html>
 <html>
 <head>
-  <title>G-Code Editor</title>
+  <title>Configuration</title>
   <meta charset="utf-8"/>
-  
   <link rel="stylesheet" href="/css/normalize.css">
   <link rel="stylesheet" href="/css/foundation.min.css">
+  <link rel="stylesheet" href="./css/font-awesome.min.css">
   <link rel="stylesheet" href="./css/style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="/js/libs/jquery.min.js"></script>
   <script src="/js/libs/foundation.min.js"></script>
-
 </head>
 <body style="background-color: #ffffff;">
 <div class="sticky">
@@ -28,6 +27,7 @@
     <li class="tab-title" role="presentational" ><a href="#tabpanel3" role="tab" tabindex="0"aria-selected="false" controls="tabpanel3">Inputs</a></li>
     <li class="tab-title" role="presentational" ><a href="#tabpanel4" role="tab" tabindex="0"aria-selected="false" controls="tabpanel4">Channels</a></li>
     <li class="tab-title" role="presentational" ><a href="#tabpanel5" role="tab" tabindex="0"aria-selected="false" controls="tabpanel5">Machine</a></li>
+    <li class="tab-title" role="presentational" ><a href="#tabpanel6" role="tab" tabindex="0"aria-selected="false" controls="tabpanel6">Apps</a></li>
     </ul>
     <ul class="right">
       <li><a id="engine-version" class="engine-version" href=""></a>
@@ -48,6 +48,22 @@
     <div class="row">
       <fieldset>
         <legend>General Settings</legend>
+        <div class="large-4 columns" id="section-machine-name">
+          <div class="row collapse">
+            <label>Machine Name</label>
+            <div class="small-12 columns">
+              <input type="text" id="input-machine-name" class="input"/>
+            </div>
+          </div>
+        </div>
+        <div class="large-4 columns" id="section-machine-id">
+          <div class="row collapse">
+            <label>Machine ID</label>
+            <div class="small-12 columns">
+              <input type="text" id="input-machine-id" disabled/>
+            </div>
+          </div>
+        </div>
         <div class="large-4 columns">
           <div class="row collapse">
             <label>Default Unit System</label>
@@ -66,6 +82,7 @@
                 </select>
           </div>
         </div>
+
         <div class="large-4 columns">
           <div class="row collapse">
             <label>Chordal Tolerance</label>
@@ -79,12 +96,9 @@
         </div>
         <div class="large-4 columns">
           <div class="row collapse">
-            <label>Junction Acceleration</label>
-            <div class="small-9 columns">
+            <label>Junction Aggression</label>
+            <div class="small-12 columns">
               <input type="text" id="driver-ja" class="driver-input"/>
-            </div>
-            <div class="small-3 columns">
-              <span class="postfix ipm2_mmpm2_label">&nbsp;</span>
             </div>
           </div>
         </div>
@@ -133,7 +147,6 @@
             </div>
           </div>
         </div>
-
         <div class="large-4 columns">
           <div class="row collapse">
               <a id="btn-update"  class="button radius small">Update FabMo Software...</a>
@@ -172,7 +185,7 @@
               <input type="number" id="opensbp-transforms-rotate-x" class="opensbp-input"/>
             </div>
             <div class="small-3 columns">
-              <span class="postfix">mm</span>
+              <span class="postfix in_mm_label">&nbsp;</span>
             </div>
           </div> 
         </div>
@@ -183,7 +196,7 @@
               <input type="number" id="opensbp-transforms-rotate-y" class="opensbp-input"/>
             </div>
             <div class="small-3 columns">
-              <span class="postfix">mm</span>
+              <span class="postfix in_mm_label">&nbsp;</span>
             </div>
           </div> 
         </div>       
@@ -292,7 +305,7 @@
               <input type="number" id="opensbp-transforms-move-x" class="opensbp-input"/>
             </div>
             <div class="small-3 columns">
-              <span class="postfix">mm</span>
+              <span class="postfix in_mm_label">&nbsp;</span>
             </div>
           </div> 
         </div>
@@ -303,7 +316,7 @@
               <input type="number" id="opensbp-transforms-move-y" class="opensbp-input"/>
             </div>
             <div class="small-3 columns">
-              <span class="postfix">mm</span>
+              <span class="postfix in_mm_label">&nbsp;</span>
             </div>
           </div> 
         </div>
@@ -314,7 +327,7 @@
               <input type="number" id="opensbp-transforms-move-z" class="opensbp-input"/>
             </div>
             <div class="small-3 columns">
-              <span class="postfix">mm</span>
+              <span class="postfix in_mm_label">&nbsp;</span>
             </div>
           </div> 
         </div>
@@ -1655,24 +1668,67 @@
       </fieldset>
     </div>
   </section>
+
+
+  <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel6" style="padding: 0px;">
+
+<form style="display:none;" id="fileform">
+  <input type="file" id="file" multiple>
+  </form>
+  <div id="table-outer" >
+    <div id="dropzone" class="container">
+      <div class="hovershow message">Drag app here to install...</div>
+      <div class="hoverdim">
+        <table id="appmanager-table">
+          <thead>
+            <tr>
+              <th class="small-2"><!--ICON--></th>
+              <th class="small-3">Name</th>
+              <th class="small-5">Description</th>
+              <th class="small-1"></th>
+              <th class="small-1"></th>
+            </tr>
+          </thead>
+          <tbody class="row app-listing"></tbody>
+        </table>
+      </div>
+      <!--
+            <div class="modal-background"></div>
+            <div class="modal-content">
+                <h5>Are you sure you want to delete app?</h5>
+                <button class="deleteCancel">Cancel</button>
+                <button class="deleteOkay">Yes, Delete</button>
+           </div>-->
+      </div>
+  </div>
+
+</section>
+
+
+
 </div>
 <!--</form>-->
 
 </div>
   <script src="/js/libs/fabmo.js"></script>
+  <script src="./js/app_manager.js"></script>
   <script src="./js/configuration.js"></script>
+  <script src="./js/jquery.dragster.js"></script>
+  
   <script>
     var configData = null;
     var fabmo = new FabMoDashboard();
     $('#btn-update').click(function(evt) {
-      evt.preventDefault();
-      var location = window.location;
-      var protocol = location.protocol;
-      var slashes = protocol.concat("//");
-      var host = slashes.concat(window.location.hostname);
-      var port = ':' + (parseInt((location.port || 80)) + 1);
-      var url = host.concat(port).concat('/do_update')
-      fabmo.navigate(url, {});
+      if(!$(this).hasClass('disabled')) {
+        evt.preventDefault();
+        var location = window.location;
+        var protocol = location.protocol;
+        var slashes = protocol.concat("//");
+        var host = slashes.concat(window.location.hostname);
+        var port = ':' + (parseInt((location.port || 80)) + 1);
+        var url = host.concat(port).concat('/do_update')
+        fabmo.navigate(url, {});
+      }
     });
     $(document).ready(function() {
       $(document).foundation();
@@ -1761,6 +1817,17 @@
           });
         }
       });
+
+      $('#input-name').change( function(evt) {
+        var id = {name: this.value};
+        fabmo.setNetworkIdentity(id, function(err, data) {
+          update();
+        });
+      });
+
+
+      setupAppManager();
+
     });
   </script>
 

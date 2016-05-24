@@ -123,7 +123,6 @@ Keypad.prototype.stop = function() {
 }
 
 Keypad.prototype.end = function() {
-
 	if(this.enabled) {
 		this.setEnabled(false);
 	}

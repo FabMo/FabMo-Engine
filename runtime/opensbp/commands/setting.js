@@ -86,15 +86,10 @@ exports.savePersistVals = function(callback){
     var sbp_values = {};
     // Permanently set move speeds
     sbp_values.movexy_speed = this.movespeed_xy;
-	log.debug("    (save)movespeed_xy = " + this.movespeed_xy);
     sbp_values.movez_speed = this.movespeed_z;
-	log.debug("    (save)movespeed_z = " + this.movespeed_z);
     sbp_values.movea_speed = this.movespeed_a;
-	log.debug("    (save)movespeed_a = " + this.movespeed_a);
     sbp_values.moveb_speed = this.movespeed_b;
-	log.debug("    (save)movespeed_b = " + this.movespeed_b);
     sbp_values.movec_speed = this.movespeed_c;
-	log.debug("    (save)movespeed_c = " + this.movespeed_c);
     // Permanently set jog speeds
     sbp_values.jogxy_speed = this.jogspeed_xy;
     g2_values.xvm = (60 * this.jogspeed_xy);
@@ -122,7 +117,7 @@ exports.savePersistVals = function(callback){
  		    log.error(err);
  	    }
  	    config.driver.setMany(g2_values, function(err, values) {
-//            this.vs_change = 0;
+            // this.vs_change = 0;
             callback(0);    
         }.bind(this));
     }.bind(this));

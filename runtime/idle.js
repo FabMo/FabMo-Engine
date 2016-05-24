@@ -106,9 +106,7 @@ IdleRuntime.prototype._onG2Status = function(status) {
 
 IdleRuntime.prototype.executeCode = function(code) {}
 IdleRuntime.prototype.pause = function() { /*this.driver.feedHold();*/ }
-IdleRuntime.prototype.quit = function() { 
-	console.log("quite");
-	this.driver.quit(); }
+IdleRuntime.prototype.quit = function() { this.driver.quit(); }
 IdleRuntime.prototype.resume = function() { /*this.driver.resume();*/ }
 
 exports.IdleRuntime = IdleRuntime;

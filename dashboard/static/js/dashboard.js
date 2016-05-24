@@ -11,6 +11,7 @@ define(function(require) {
     
 	var Dashboard = function(target) {
 		this.engine = null;
+		this.router = null;
 		this.machine = null;
 		this.socket = null;
 		this.ui = null;
@@ -64,6 +65,10 @@ define(function(require) {
 		this.engine.on('change', function(topic) {
 			this._fireEvent('change', topic);
 		}.bind(this));
+	}
+
+	Dashboard.prototype.setRouter = function(router) {
+		this.router = router;
 	}
 
 	// Register a handler function for the provided message type
@@ -167,8 +172,25 @@ define(function(require) {
         
         // Show the DRO
 		this._registerHandler('openModal', function(options, callback) { 
-			this.showModal(options);
-			callback(null);
+			if(options.ok) {
+				options.ok = function() {
+					callback(null, 'ok');
+				}
+			}
+			if(options.cancel) {				
+				options.cancel = function() {
+					callback(null, 'cancel');
+				}
+			}
+			try {
+				this.showModal(options);				
+			} catch(e) {
+				callback(e);
+			}
+			
+/*			if(!(options.ok || options.cancel)) {
+				callback(null);
+			}*/
 		}.bind(this));
 
 		// Hide the DRO
@@ -439,6 +461,24 @@ define(function(require) {
 			}.bind(this));
 		}.bind(this));
 
+		this._registerHandler('getNetworkIdentity', function(data, callback) {
+			this.getNetworkIdentity(function(err, result) {
+				callback(err, result);
+			});
+		}.bind(this));
+
+		this._registerHandler('isOnline', function(data, callback) {
+			this.engine.isOnline(function(err, result) {
+				callback(err, result);
+			});
+		}.bind(this));
+
+		this._registerHandler('setNetworkIdentity', function(data, callback) {
+			this.engine.setNetworkIdentity(data, function(err, result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
 
 		///
 		/// MACROS
@@ -540,6 +580,19 @@ define(function(require) {
 		}.bind(this));
 	}
 
+	Dashboard.prototype.getNetworkIdentity = function(callback){
+		callback = callback || function() {}
+		this.engine.getNetworkIdentity(function(err, result) {
+			if(err) { callback(err); }
+			else { 
+				var name = result.name || "";
+				$('#tool-name').text(name);
+				document.title = name || "FabMo Dashboard";
+				callback(null, result); 
+			}
+		}.bind(this));
+	};
+
 	Dashboard.prototype.updateStatus = function(status){
 		if(this.status.job && !status.job) {
 			this._fireEvent('job_end', null);
@@ -598,16 +651,14 @@ define(function(require) {
     
     Dashboard.prototype.showModal = function(options){
         // var modal = function (options) {
-            
-            
- 
+
             var modalAlreadyUp = modalIsShown;
  
             modalIsShown = true;
  
             $('.modalDim').show();
             $('.newModal').show();
-
+            $('.modalLogo').show();
             if (options['title']) {
                 $('.modalTitle').html(options.title).show();
             } else {
@@ -690,15 +741,21 @@ define(function(require) {
                     $('.newModal').hide();
                     $('.modalDim').hide();
                 });
+                
+             if (options['noButton'] === true) {
+                 $('.modalCancel').hide();
+                 $('.modalOkay').hide();
+             } 
+             if (options['noLogo'] === true) {
+                 $('.modalLogo').hide();
+             } 
             }
         // }
         // funarr.push(modal);
         //     while (funarr.length > 0) {
         //     (funarr.shift())();   
         // }
-            
-   
-    
+
     }
     
     //Hide Modal
@@ -742,8 +799,7 @@ define(function(require) {
 	}
 
 	Dashboard.prototype.launchApp = function(id, args, callback) {
-		context = require('context');
-		context.launchApp(id, args, callback);
+		this.router.launchApp(id, args, callback);
 	}
 
 	Dashboard.prototype.refreshApps = function() {
