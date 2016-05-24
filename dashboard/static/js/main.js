@@ -476,14 +476,6 @@ define(function(require) {
         }
     }
     touchScreen();
-
-    $('.dro-button').click(function() {
-    	$('.dro-button').removeClass('active');
-    	$(this).addClass('active')
-    	$('.dro-view').hide();
-    	$('#' + this.dataset.view).show();
-    });
-
 });
 
 
