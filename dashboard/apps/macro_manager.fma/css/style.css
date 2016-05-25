@@ -8,9 +8,10 @@ h1, h2, h3, h4, h5, h6 {
 
 input[type=number]::-webkit-inner-spin-button, 
 input[type=number]::-webkit-outer-spin-button { 
-  -webkit-appearance: none; 
-  -moz-appearance: none;
-  margin: 0; 
+   -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    margin: 0; 
 }
 
 .noselect {
@@ -124,8 +125,8 @@ th {
 }
 
 .number input, .name input, .description input{
-    -webkit-appearance: none; 
-    -moz-appearance: none;
+    -webkit-appearance: textfield; 
+    -moz-appearance: textfield;
      margin: 0; 
      text-align: center;
 }
