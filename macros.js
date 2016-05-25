@@ -118,6 +118,9 @@ var update = function(id, macro, callback) {
 
 		if(macro.index) {
 			var new_index = parseInt(macro.index);
+			if(get(new_index)) {
+				return callback(new Error("There is already a macro #" + new_index));
+			}
 			if(new_index != old_macro.index) {
 				macros[new_index] = old_macro;
 				delete macros[old_macro.index];
@@ -253,7 +256,9 @@ var del = function(idx, callback) {
 				callback(null);
 			}
 		});
-	}	
+	} else {
+		callback(new Error('No such macro: ' + idx))
+	}
 }
 
 exports.load = load;

@@ -1,9 +1,8 @@
 <!doctype html>
 <html>
 <head>
-  <title>G-Code Editor</title>
+  <title>Configuration</title>
   <meta charset="utf-8"/>
-  
   <link rel="stylesheet" href="/css/normalize.css">
   <link rel="stylesheet" href="/css/foundation.min.css">
   <link rel="stylesheet" href="./css/font-awesome.min.css">
@@ -11,7 +10,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="/js/libs/jquery.min.js"></script>
   <script src="/js/libs/foundation.min.js"></script>
-
 </head>
 <body style="background-color: #ffffff;">
 <div class="sticky">
@@ -50,6 +48,22 @@
     <div class="row">
       <fieldset>
         <legend>General Settings</legend>
+        <div class="large-4 columns" id="section-machine-name">
+          <div class="row collapse">
+            <label>Machine Name</label>
+            <div class="small-12 columns">
+              <input type="text" id="input-machine-name" class="input"/>
+            </div>
+          </div>
+        </div>
+        <div class="large-4 columns" id="section-machine-id">
+          <div class="row collapse">
+            <label>Machine ID</label>
+            <div class="small-12 columns">
+              <input type="text" id="input-machine-id" disabled/>
+            </div>
+          </div>
+        </div>
         <div class="large-4 columns">
           <div class="row collapse">
             <label>Default Unit System</label>
@@ -68,6 +82,7 @@
                 </select>
           </div>
         </div>
+
         <div class="large-4 columns">
           <div class="row collapse">
             <label>Chordal Tolerance</label>
@@ -81,12 +96,9 @@
         </div>
         <div class="large-4 columns">
           <div class="row collapse">
-            <label>Junction Acceleration</label>
-            <div class="small-9 columns">
+            <label>Junction Aggression</label>
+            <div class="small-12 columns">
               <input type="text" id="driver-ja" class="driver-input"/>
-            </div>
-            <div class="small-3 columns">
-              <span class="postfix ipm2_mmpm2_label">&nbsp;</span>
             </div>
           </div>
         </div>
@@ -135,7 +147,6 @@
             </div>
           </div>
         </div>
-
         <div class="large-4 columns">
           <div class="row collapse">
               <a id="btn-update"  class="button radius small">Update FabMo Software...</a>
@@ -1708,14 +1719,16 @@
     var configData = null;
     var fabmo = new FabMoDashboard();
     $('#btn-update').click(function(evt) {
-      evt.preventDefault();
-      var location = window.location;
-      var protocol = location.protocol;
-      var slashes = protocol.concat("//");
-      var host = slashes.concat(window.location.hostname);
-      var port = ':' + (parseInt((location.port || 80)) + 1);
-      var url = host.concat(port).concat('/do_update')
-      fabmo.navigate(url, {});
+      if(!$(this).hasClass('disabled')) {
+        evt.preventDefault();
+        var location = window.location;
+        var protocol = location.protocol;
+        var slashes = protocol.concat("//");
+        var host = slashes.concat(window.location.hostname);
+        var port = ':' + (parseInt((location.port || 80)) + 1);
+        var url = host.concat(port).concat('/do_update')
+        fabmo.navigate(url, {});
+      }
     });
     $(document).ready(function() {
       $(document).foundation();
@@ -1804,6 +1817,14 @@
           });
         }
       });
+
+      $('#input-name').change( function(evt) {
+        var id = {name: this.value};
+        fabmo.setNetworkIdentity(id, function(err, data) {
+          update();
+        });
+      });
+
 
       setupAppManager();
 

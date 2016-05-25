@@ -70,9 +70,7 @@
 
 	ApplicationContext.prototype.launchApp = function(id, args, callback) {
 		var hard_refresh = false;
-		
 		var hash = this.app_reload_index[id];
-
 
 		try {
 			if(hash && hash != this.engineVersion.hash) {

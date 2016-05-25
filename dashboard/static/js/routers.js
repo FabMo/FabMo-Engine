@@ -5,15 +5,22 @@ define(function(require) {
 
 	var $ = require('jquery');
 	var Backbone = require('backbone');
-
+	console.log(Backbone.VERSION);
 	var Router = Backbone.Router.extend({
 		routes: {
-			"app/:id"     		: "launch_app",
+			"app/:id"     		: "_launchApp",
 			"menu"        		: "show_menu",
 			""					: "show_menu"
 		},
-		launch_app: function(id) {
-			this.context.launchApp(id, {}, function(err, data) {});
+		launchApp: function(id, args, callback) {
+			callback = callback || function() {};
+			this.context.launchApp(id, args || {}, function(err, data) {
+				if(err) { return callback(err); }
+				this.navigate('app/' + id);
+			}.bind(this));
+		},
+		_launchApp: function(id) {
+			this.launchApp(id);
 		},
 		show_menu: function() {
 			$('#waiting_container').hide();
@@ -25,10 +32,11 @@ define(function(require) {
 		},
 		setContext: function(context) {
 			this.context = context;
-		},
+		}
+		/*
 		initialize: function(options) {
 			$('a[href^="#"]').click(function(e) { this.navigate('/'); }.bind(this));
-		}
+		}*/
 	});
 
 	return Router
