@@ -187,18 +187,29 @@ td.actions-control {
 }
 
 #queue_table{
-  position:absolute;
-  top:0;
-  left:0;
  
+ 
+}
+
+.actions {
+  position:
 }
 
 
 .job_item:first-child {
-  margin-top: 4.8em;
   width:98%;
-  margin-bottom: 4em;
+  margin-bottom: .5em;
+  padding: 1em;
   
+}
+
+.job_item:first-child #menu{
+  display: none;
+}
+
+.job_item:first-child .icon-row{
+  position: relative;
+  margin-top: 105px;
 }
 
 .job_item{
@@ -564,8 +575,8 @@ table {
 .play-button {
   display: none;
   position: absolute;
-  top: 60;
-  right: 0;
+  top: 90px;
+  right: -10px;
   cursor: pointer;
 }
 

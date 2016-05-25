@@ -35,7 +35,7 @@
 
 <div class="tabs-content">
   <div class="content active dropzone" id="tabpending">
-	<section class="container topjob hoverdim">
+	<!--<section class="container topjob hoverdim">
 			<div class="row title jobs-title">
 				<div class="small-11 columns">
 					<h4 class="up-next">Up Next</h4>
@@ -65,26 +65,7 @@
 						</div>
 					</div>
 				</div>
-				<div>
-					<div class="small-2 medium-4 columns play-button" style="text-align:right;">
-							<div class="radial_progress">
-								<div class="perecent_circle">
-									<div class="mask full">
-										<div class="fill"></div>
-									</div>
-									<div class="mask half">
-										<div class="fill"></div>
-										<div class="fill fix"></div>
-									</div>
-								<div class="shadow"></div>
-								</div>
-								<div class="inset">
-									<div id="run-next" class="play"><span></span></div>
-								</div>
-							</div>
-					</div>
-				
-			</div>
+
 			<div class="small-8 medium-12 icon-row">
 				<div class="medium-1 small-2 columns">
 					<a class='preview' title='Preview Job'>
@@ -121,7 +102,7 @@
                 </div>
             </div>
 		</div>
-		</section>
+		</section>-->
 		
 
   </div>
@@ -160,14 +141,14 @@
   var fabmo = new FabMoDashboard();
   var el = document.getElementById('queue_table');
   var sortable = Sortable.create(el, {
+	  onStart: function (evt) {
+		  var remove = document.getElementById('actions');
+    	  remove.parentNode.removeChild(remove);
+	  },
       onEnd: function (evt) {
 		  var firstJob = document.getElementById('queue_table').firstChild;
-		  console.log(firstJob);
 		  var cardActions = document.createElement("div");
-    	  cardActions.setAttribute("id", "actions");
-    	  firstJob.appendChild(cardActions);
-    	  var actions = document.getElementById("actions");
-    	  actions.innerHTML = makeActions();
+    	  setFirstCard(firstJob.id);
       	  var newOrder = sortable.toArray();
           fabmo.getJobsInQueue(function(err, jobs) {
        		for (i=0; i<newOrder.length; i++){
@@ -179,6 +160,13 @@
           		fabmo.updateOrder({id:id[0]._id, order:id[0].order}, function(err, result) {});
       		}	
       	  });
+
+		$('.cancel').show(500);
+		$('.download').show(500);
+		$('.edit').show(500);
+		$('.preview').show(500);
+		$('.play-button').show();
+			bindNextJobEvents();
     }
   });
   
@@ -227,7 +215,7 @@
 		$('#job_selector').click();
 	});
 
-	$('.play-button').click(function(e) { 
+	$('#queue_table').on('click', '.play-button', function(e) { 
 		if ($('.play').hasClass('active')){
 			fabmo.pause(function(err, data) {
 		});
