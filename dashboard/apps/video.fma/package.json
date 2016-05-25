@@ -1,0 +1,12 @@
+{
+	"name":"Video App",
+	"main":"./index.html",
+	"icon":"icon.png",
+	"icon_color":"#313366",
+	"icon_display":"none",
+	"version":"0.0.0",
+	"author":"Jimmy Lucidarme",
+	"website":"http://shopbottools.com",
+	"id":"video",
+  "description":"System app for viewing through your machine camera"
+}
