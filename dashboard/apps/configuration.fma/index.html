@@ -618,7 +618,7 @@
                 <input type="text" id="driver-afr" class="driver-input"/>
               </div>
               <div class="small-3 columns">
-                <span class="postfix">in/min</span>
+                <span class="postfix">deg/min</span>
               </div>
             </div>
           </div>
@@ -629,7 +629,7 @@
                 <input type="text" id="driver-avm" class="driver-input" />
               </div>
               <div class="small-3 columns">
-                <span class="postfix">in/min</span>
+                <span class="postfix">deg/min</span>
               </div>
             </div>
           </div>
@@ -640,7 +640,7 @@
                 <input type="text" id="driver-ajm" class="driver-input" />
               </div>
               <div class="small-3 columns">
-                <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
+                <span class="postfix">deg/min<sup>3</sup></span>
               </div>
             </div>
           </div>
@@ -649,7 +649,7 @@
               <label>Axis Mode</label>
               <select id="driver-aam" class="driver-input">
                 <option value="0">Disable</option>
-                <option value="3">Rotary</option>
+                <option value="1">Rotary</option>
               </select>
             </div>
           </div>   
@@ -666,7 +666,7 @@
                 <input type="text" id="driver-bfr" class="driver-input"/>
               </div>
               <div class="small-3 columns">
-                <span class="postfix">in/min</span>
+                <span class="postfix">deg/min</span>
               </div>
             </div>
           </div>
@@ -677,7 +677,7 @@
                 <input type="text" id="driver-bvm" class="driver-input" />
               </div>
               <div class="small-3 columns">
-                <span class="postfix">in/min</span>
+                <span class="postfix">deg/min</span>
               </div>
             </div>
           </div>
@@ -688,7 +688,7 @@
                 <input type="text" id="driver-bjm" class="driver-input" />
               </div>
               <div class="small-3 columns">
-                <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
+                <span class="postfix">deg/min<sup>3</sup></span>
               </div>
             </div>
           </div>
@@ -697,7 +697,7 @@
               <label>Axis Mode</label>
               <select id="driver-bam" class="driver-input">
                 <option value="0">Disable</option>
-                <option value="3">Rotary</option>
+                <option value="1">Rotary</option>
               </select>
             </div>
           </div>   
@@ -714,7 +714,7 @@
                 <input type="text" id="driver-cfr" class="driver-input"/>
               </div>
               <div class="small-3 columns">
-                <span class="postfix">in/min</span>
+                <span class="postfix">mm/min<sup>3</sup></span>
               </div>
             </div>
           </div>
@@ -725,7 +725,7 @@
                 <input type="text" id="driver-cvm" class="driver-input" />
               </div>
               <div class="small-3 columns">
-                <span class="postfix">in/min</span>
+                <span class="postfix">deg/min</span>
               </div>
             </div>
           </div>
@@ -736,7 +736,7 @@
                 <input type="text" id="driver-cjm" class="driver-input" />
               </div>
               <div class="small-3 columns">
-                <span class="postfix">jerk</span>
+                <span class="postfix">deg/min</span>
               </div>
             </div>
         </div>
@@ -745,7 +745,7 @@
             <label>Axis Mode</label>
               <select id="driver-cam" class="driver-input">
                 <option value="0">Disable</option>
-                <option value="3">Rotary</option>
+                <option value="1">Rotary</option>
               </select>
           </div>
         </div>   
@@ -1725,7 +1725,7 @@
       registerUnitLabel('.ipm_mmpm_label', 'in/min', 'mm/min');
       registerUnitLabel('.ipm2_mmpm2_label', 'in/min<sup>2</sup>', 'mm/min<sup>2</sup>');
       registerUnitLabel('.inrev_mmrev_label', 'in/rev', 'mm/rev');
-      registerUnitLabel('.inpm3_mmpm3_label', 'in/min<sup>3', 'mm/min<sup>3');
+      registerUnitLabel('.inpm3_mmpm3_label', 'in/min<sup>3</sup>', 'mm/min<sup>3</sup>');
 
       fabmo.on('status', function(status) {
         updateLabels(status.unit);
