@@ -184,8 +184,9 @@
   	//Foundation Init
 	$(document).foundation();
 
-	fabmo.on('change', function(topic) {
-		if(topic === 'jobs') {
+	fabmo.on('change', function(status) {
+		console.log(status);
+		if(topic === 'jobs' && status.state != 'running') {
 			updateQueue();
 			updateHistory();
 		}
@@ -220,9 +221,13 @@
 			fabmo.pause(function(err, data) {
 		});
 		} else {
+			
 			fabmo.runNext(function(err, data) {
 				if(err) {
 					fabmo.notify(err);
+				} else {
+					$('.play').addClass('active');
+					setProgress({status});
 				}
 			});	
 		}		
