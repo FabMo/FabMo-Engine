@@ -307,3 +307,10 @@ table {
     background-color: #32B433;
 }
 
+#section-machine-name {
+  display: none;
+}
+
+#section-machine-id {
+  display: none;
+}

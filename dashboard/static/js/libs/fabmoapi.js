@@ -364,6 +364,10 @@ FabMoAPI.prototype.setNetworkIdentity = function(identity, callback) {
 	this._post('/network/identity', identity, callback, callback);
 }
 
+FabMoAPI.prototype.isOnline = function(callback) {
+	this._get('/network/online', callback, callback, 'online');
+}
+
 FabMoAPI.prototype.getWifiNetworks = function(callback) {
 	this._get('/network/wifi/scan', callback, callback, 'wifi');
 }

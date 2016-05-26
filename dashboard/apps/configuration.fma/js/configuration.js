@@ -75,7 +75,27 @@ function update() {
     });
 
     fabmo.getNetworkIdentity(function(err, data) {
-      $('#input-name').val(data.name);
+      if(data.id) {
+        $('#input-machine-name').val(data.name);
+        $('#section-machine-name').show();        
+      } else {
+        $('#section-machine-name').hide();
+      }
+
+      if(data.id) {
+        $('#input-machine-id').val(data.id);
+        $('#section-machine-id').show();        
+      } else {
+        $('#section-machine-id').hide();
+      }
+    });
+
+    fabmo.isOnline(function(err, online) {
+      if(online) {
+        $('#btn-update').removeClass('disabled');
+      } else {
+        $('#btn-update').addClass('disabled');
+      }
     });
 }
 

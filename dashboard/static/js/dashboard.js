@@ -477,6 +477,12 @@ define(function(require) {
 			});
 		}.bind(this));
 
+		this._registerHandler('isOnline', function(data, callback) {
+			this.engine.isOnline(function(err, result) {
+				callback(err, result);
+			});
+		}.bind(this));
+
 		this._registerHandler('setNetworkIdentity', function(data, callback) {
 			this.engine.setNetworkIdentity(data, function(err, result) {
 				if(err) { callback(err); }
