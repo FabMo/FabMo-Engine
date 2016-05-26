@@ -81,7 +81,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .jobs-title{
-  overflow: hidden;
+  padding: 0.5em;
 }
  .up-next{
    position: absolute;
@@ -96,6 +96,8 @@ h1, h2, h3, h4, h5, h6 {
    left: -2000px;
    top: 0;
    font-weight: bold;
+   width: 100%;
+   height: 100px;
    transition: all 0.5s;
  }
  .now-running{
@@ -108,13 +110,13 @@ h1, h2, h3, h4, h5, h6 {
  }
 
  .without-job{
-   position: absolute;
-   left: -2000px;
+ 
    top: 0;
    transition: all 0.5s;
    width: 100%;
    border: 3px dashed #666666;
    height: 150px;
+   background-color: #fff;
  }
  
  .without-job img{
@@ -191,9 +193,7 @@ td.actions-control {
  
 }
 
-.actions {
-  position:
-}
+
 
 
 .job_item:first-child {
@@ -208,15 +208,21 @@ td.actions-control {
 }
 
 .job_item:first-child .icon-row{
-  position: relative;
-  margin-top: 105px;
+  position: absolute;
+  bottom: 5px;
 }
 
+@media screen and (max-width: 630px){
+.job_item:first-child .description{
+    width: 60%;
+}
+}
 .job_item{
+    position: relative;
     font-size: .9em;
     padding: 0.5em;
     color: #666;
-    width: 150px;
+    width: 160px;
     display: inline-block;
     margin-top: 0;
     background-color: #FFFFFF;
@@ -328,9 +334,7 @@ td.actions-control {
   transition: all 0.2s;
 }
 
-.icon-row a {
-  display: none;
-}
+
 
 .icon-row {
 
@@ -575,8 +579,8 @@ table {
 .play-button {
   display: none;
   position: absolute;
-  top: 90px;
-  right: -10px;
+  top: 40px;
+  right: -20px;
   cursor: pointer;
 }
 

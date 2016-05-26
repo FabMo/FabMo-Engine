@@ -42,30 +42,22 @@ function setupDropTarget() {
 function updateQueue(running, callback) {
 	callback = callback || function() {};
 	running = currentStatus.job;
-    
 	// Update the queue display.
 	fabmo.getJobsInQueue(function(err, jobs) {
 		var jobElements = document.getElementById("queue_table").childElementCount;
 		if(err) { return callback(err); }
-		if (jobs.pending.length === jobElements ) {
+		if (jobs.pending.length === jobElements &&  jobs.pending.length != 0) {
 			return
 		} else {
-		clearQueue();
         jobs.pending.sort(function(a, b){
             return a.order - b.order;
         });
 		if(jobs.running.length) {
-			runningJob(jobs.running[0]);
-			if(jobs.pending.length > 0) {
-				addQueueEntries(jobs.pending);
-				$('.job-queue').show(500);
-			} else {
-				$('.job-queue').slideUp(500);				
-			}	
+			runningJob(true);
 		} else {
 			runningJob(null);
+			clearQueue();
 			addQueueEntries(jobs.pending);
-            setNextJob(jobs.pending[0]);	
 		}
 		}
 		callback();
@@ -93,6 +85,9 @@ function makeActions(){
 function addQueueEntries(jobs) {
 	var table = document.getElementById('queue_table');
     var temp = [];
+	if(jobs.length){
+		$('.no-jobs').css('left', '-2000px');
+		nextJob();
 	for(i = 0; i < jobs.length; i++){
         var listItem = document.createElement("div");
         listItem.setAttribute("id", jobs[i]._id);
@@ -120,6 +115,9 @@ function addQueueEntries(jobs) {
 		menu.innerHTML = createQueueMenu(jobs[i]._id);
 		// name.innerHTML = job.name;
 	};
+	} else {
+		$('.no-jobs').css('left', '0px');
+	}
 
     setFirstCard(jobs[0]._id);
 	bindMenuEvents();
@@ -287,53 +285,48 @@ function bindNextJobEvents() {
 }
 
 function noJob() {
+		console.log('no job');
          $('.with-job').data('job',false);
-		$('.cancel').slideUp();		
-		$('.download').slideUp();
-		$('.edit').slideUp();
-		$('.preview').slideUp();
-		$('.play-button').slideUp();
-		$('.without-job').css('left', '0px');
-		$('.nextJobTitle').text('');
-		$('.nextJobDesc').text('');
-        $('.no-jobs').css('left', '0px');
+		//$('.without-job').css('left', '0px');
+        //$('.no-jobs').css('left', '0px');
         $('.up-next').css('left', '-2000px');
         $('.with-job').css('left','-2000px');
 };
 
 function nextJob(job) {
+	console.log('next job');
         $('.with-job').data('job',true);
-   		$('.without-job').css('left','-2000px');
+   		//$('.without-job').css('left','-2000px');
 		$('.with-job').css('left','10px');
-		$('.nextJobTitle').text(job.name);
-		$('.nextJobDesc').text(job.description);
+		$('.icon-row a').show(500);
 		$('.cancel').show(500);
 		$('.download').show(500);
 		$('.edit').show(500);
 		$('.preview').show(500);
 		$('.play-button').show();
         $('.up-next').css('left', '0px');
-        $('.no-jobs').css('left', '-2000px');
+       // $('.no-jobs').css('left', '-2000px');
 };
 
 function runningJob(job) {
+	console.log('running job');
 	if(!job) {
 		setProgress({status});
 		$('.play').removeClass('active')
-		$('.topjob').removeClass('running');
-        $('.job-status-indicator').css({
-            '-moz-box-shadow': 'none',
-            '-webkit-box-shadow':'none',
-            'box-shadow':'none'
-        })
-        $('.job-lights-container').delay(1000).hide();
+		// $('.topjob').removeClass('running');
+        // $('.job-status-indicator').css({
+        //     '-moz-box-shadow': 'none',
+        //     '-webkit-box-shadow':'none',
+        //     'box-shadow':'none'
+        // })
+        // $('.job-lights-container').delay(1000).hide();
 		$('body').css('background-color', '#EEEEEE');
 		$('.play').removeClass('active');
 		return
 	}
 
-   	$('.nextJobTitle').text(job.name);
-	$('.nextJobDesc').text(job.description);
+   	// $('.nextJobTitle').text(job.name);
+	// $('.nextJobDesc').text(job.description);
 	$('.cancel').slideUp(100);
 	$('.download').slideUp(100);
 	$('.edit').slideUp(100);
@@ -351,13 +344,10 @@ function runningJob(job) {
 	$('.now-running').css('left', '0px');
 	$('.without-job').css('left','-2000px');;
 	$('.with-job').css('left','10px');	
-	//$('.play-button').show();
-	//$('.play').addClass('active')
+	$('.play-button').show();
+	$('.play').addClass('active')
 };
 
-var setNextJob = function (job) {
-	job ? nextJob(job) : noJob();
-}
 
 var setJobheight = function () {
 	var w = $('.with-job').height();
