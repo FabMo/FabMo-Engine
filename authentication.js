@@ -103,9 +103,65 @@ exports.configure = function(){
   ));
 };
 
-var signup = function(username,password,callback){
+var addUser = function(username,password,callback){
   User.add(username,password,callback);
 };
+
+var getUsers = function(callback){
+  User.getAll(callback);
+};
+
+var getUser = function(user_id,callback){
+  if(!user_id){
+    callback(null,currentUser); return;
+  }
+  User.findById(user_id,function(err,user){
+    if(user){user.password = undefined;} // remove password from user object.
+    callback(err,user);
+  });
+};
+
+var modifyUser = function(user_id,user_fields,callback){
+  User.findById(user_id,function(err,user){
+    if(err)callback(err);
+    else{
+      for(field in user_fields){
+        switch(field){
+          case '_id':
+          case 'created_at':
+          case 'username':
+            callback("your object contains an unchangeable field ! : "+field,null);
+            return;
+            break;
+          case 'password':
+            password = User.verifyAndEncryptPassword(user_fields['password']);
+            if(!password){
+              callback('Password not valid, it should contain between 5 and 15 characters. The only special characters authorized are "@ * #".',null);
+              return;
+            }
+            user[password]=password;
+            break;
+          default:
+            user[field] = user_fields[field];
+        }
+      }
+      user.save(function(err,user){
+        if(user)user.password=undefined; // don't transmit the password back
+        callback(err,user);
+      });
+    }
+  });
+};
+
+var deleteUser = function(user_id,callback){
+  User.findById(user_id,function(err,user){
+    if(err)callback(err);
+    else{
+      user.delete(callback);
+    }
+  });
+};
+
 
 passport.serializeUser(function(user, done) {
     done(null, user._id);
@@ -119,7 +175,11 @@ passport.deserializeUser(function(id, done) {
 
 exports.eventEmitter = eventEmitter;
 
-exports.signup = signup;
+exports.addUser = addUser;
+exports.getUsers = getUsers;
+exports.getUser = getUser;
+exports.modifyUser = modifyUser;
+exports.deleteUser = deleteUser;
 
 exports.passport = passport;
 

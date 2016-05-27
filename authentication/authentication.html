@@ -176,7 +176,7 @@
    function signup_request(username,password){
      $.ajax({
        type: "POST",
-       url: "/authentication/signup",
+       url: "/authentication/user",
        contentType: 'application/json',
        dataType: "json",
        data: JSON.stringify({username:username,password:password}),

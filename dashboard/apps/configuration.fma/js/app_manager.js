@@ -8,7 +8,7 @@ function refreshApps() {
       return console.error(err);
     }
     $(".app-listing").empty();
-    
+
     html = [
     '<tr class="app-install-row"><td>',
     '<div class="app-ghost noselect"><span class="fa fa-plus"></span></div>',

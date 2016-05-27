@@ -27,18 +27,25 @@ var login = function(req, res, next) {
   })(req, res, next);
 };
 
-var signup = function(req, res, next) {
-  if(req.params.username==undefined || req.params.username==undefined)
-    res.send(200,{ success : false, message:'you need to provide a username AND a password'});
-  else{
-    authentication.signup(req.params.username,req.params.password,function(err,user){
-      if(err){
-        res.send(200,{ success : false, message:err});
-      }else{
-        res.send(200,{ success : true, message : 'registration succeeded'});
-      }
-    });
+var addUser = function(req, res, next) {
+
+  currentUser = authentication.getCurrentUser();
+  if(currentUser && currentUser.isAdmin){
+    if(req.params.username==undefined || req.params.username==undefined)
+      res.send(200,{ success : false, message:'you need to provide a username AND a password'});
+    else{
+      authentication.addUser(req.params.username,req.params.password,function(err,user){
+        if(err){
+          res.send(200,{ success : false, message:err});
+        }else{
+          res.send(200,{ success : true, message : 'registration succeeded'});
+        }
+      });
+    }
+  }else {
+    res.send(200,{success:false,message:"you need to be admin to register new users"});
   }
+
 
 };
 
@@ -58,12 +65,96 @@ var logout = function(req, res, next) {
   req.logout();
   authentication.setCurrentUser(null);
   res.redirect('/authentication',next);
+};
 
+var getUsers = function(req,res,next){
+  currentUser = authentication.getCurrentUser();
+  if(currentUser && currentUser.isAdmin){ // if admin
+    authentication.getUsers(function(err,users){
+      if(err){
+        res.send(200,{success:false,message:err});
+        return;
+      }
+      res.send(200,{success:true,data:users});
+    });
+  }else {
+    res.send(200,{success:false,message:"you need to be admin to get users info"});
+  }
+};
+
+var getUser = function(req,res,next){
+  currentUser = authentication.getCurrentUser();
+  if(currentUser &&( (currentUser._id == req.params.id ) || currentUser.isAdmin)){ // if current user or admin
+    authentication.getUser(req.params.id,function(err,user){
+      if(err){
+        res.send(200,{success:false,message:err});
+        return;
+      }
+      res.send(200,{success:true,data:user});
+    });
+  }else {
+    res.send(200,{success:false,message:"you need to be admin or request your own id to get the user info"});
+  }
+};
+
+var getCurrentUser = function(req,res,next){
+  currentUser = authentication.getCurrentUser();
+  if(currentUser){ // if current user
+    authentication.getUser(currentUser._id,function(err,user){
+      if(err){
+        res.send(200,{success:false,message:err});
+        return;
+      }
+      res.send(200,{success:true,data:user});
+    });
+  }else {
+    res.send(200,{success:false,message:"you need to be connected to request your own user info"});
+  }
+};
+
+
+var modifyUser = function(req,res,next){
+  currentUser = authentication.getCurrentUser();
+  if(currentUser &&(currentUser._id == req.params.id || currentUser.isAdmin)){ // if current user or admin
+    if(!req.params.user){
+      res.send(200,{success:false,message:"no user object provided"});
+    }
+    authentication.modifyUser(req.params.id,req.params.user,function(err,user){
+      if(err){
+        res.send(200,{success:false,message:err});
+        return;
+      }
+      res.send(200,{success:true,data:user});
+    });
+  }else {
+    res.send(200,{success:false,message:"you need to be admin or request your own id to modify the user info"});
+  }
+};
+
+var deleteUser = function(req,res,next){ // if admin
+  currentUser = authentication.getCurrentUser();
+  if(currentUser && currentUser.isAdmin){ // if admin
+    authentication.deleteUser(req.params.id,function(err,user){
+      if(err){
+        res.send(200,{success:false,message:err});
+        return;
+      }
+      res.send(200,{success:true});
+    });
+  }else {
+    res.send(200,{success:false,message:"you need to be admin to delete users"});
+  }
 };
 
 module.exports = function(server) {
   server.get('/authentication', serveAuthenticationPage);
   server.post('/authentication/login', login);
   server.get('/authentication/logout',authentication.passport.authenticate('local'), logout);
-  server.post('/authentication/signup', signup);
+  server.get('/authentication/user',authentication.passport.authenticate('local'), getCurrentUser);// return current user info.
+  server.post('/authentication/user',authentication.passport.authenticate('local'), addUser);//only authenticated user can add new users.
+  server.get('/authentication/users',authentication.passport.authenticate('local'), getUsers);
+  server.get('/authentication/user/:id',authentication.passport.authenticate('local'), getUser);
+  server.post('/authentication/user/:id',authentication.passport.authenticate('local'), modifyUser);
+  server.del('/authentication/user/:id',authentication.passport.authenticate('local'), deleteUser);
+
 };

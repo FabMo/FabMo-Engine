@@ -388,6 +388,34 @@ User.prototype.validPassword= function(password){
 	}
 };
 
+// Delete this user from the database
+User.prototype.delete = function(callback){
+	users.remove({_id : this._id},function(err){if(!err)callback();else callback(err);});
+};
+
+// verify user password and encrypt it.
+User.verifyAndEncryptPassword = function(password,callback){
+	if(!/^([a-zA-Z0-9@*#]{5,15})$/.test(password) ){ //validatepassword
+		callback('Password not valid, it should contain between 5 and 15 characters. The only special characters authorized are "@ * #".',null);
+		return null;
+	}
+	var pass_shasum = crypto.createHash('sha256').update(password).digest('hex'); // save encrypted password
+	callback(null,pass_shasum);
+	return pass_shasum;
+};
+
+// Grant user admin status
+User.prototype.grantAdmin = function(callback){
+	this.isAdmin = true;
+	this.save();
+};
+
+// Revoke user admin status
+User.prototype.revokeAdmin = function(callback){
+	this.isAdmin = false;
+	this.save();
+};
+
 User.prototype.save = function(){
 	users.save(this, function(err, record) {
 		if(!record) {
@@ -401,19 +429,18 @@ User.add = function(username,password,callback){
 	if(!/^([a-zA-Z0-9]{3,20})$/.test(username) ){ //validate username
 		return callback('Username not valid, it should contain between 3 and 20 characters. Special characters are not authorized.',null);
 	}
-	if(!/^([a-zA-Z0-9@*#]{5,15})$/.test(password) ){ //validatepassword
-		return callback('Password not valid, it should contain between 5 and 15 characters. The only special characters authorized are "@ * #".',null);
-	}
-	users.findOne({username:username},function(err,document) {
-		if(document){
-			return callback('Username already taken !',null);
-		}else{
-			var pass_shasum = crypto.createHash('sha256').update(password).digest('hex'); // save encrypted password
-			user = new User(username,pass_shasum);
-			user.save();
-			return callback(null,user);
-		}
-	});
+	User.verifyAndEncryptPassword(password,function(err,pass_shasum){
+		if (err){return callback(err,password);}
+		users.findOne({username:username},function(err,document) {
+			if(document){
+				return callback('Username already taken !',null);
+			}else{
+				user = new User(username,pass_shasum);
+				user.save();
+				return callback(null,user);
+			}
+		});
+	})
 }
 
 User.findOne = function(username,callback){
@@ -422,6 +449,23 @@ User.findOne = function(username,callback){
 		if(doc){
 			user = new User(doc.username,doc.password,doc.isAdmin,doc.created_at,doc._id);
 			callback(err,user);
+		}else{
+			callback(err);
+		}
+	});
+}
+
+User.getAll = function(callback){
+	users.find({},{password:0},function(err,cursor){ // do not returns passwords.
+		if(err){console.log(err);callback(err,null);}
+		if(cursor){
+			var user_array = [];
+			cursor.toArray(function(err,users){
+				for(user in users){
+						user_array.push(new User(users[user].username,users[user].password,users[user].isAdmin,users[user].created_at,users[user]._id));
+				}
+				callback(null,user_array);
+			});
 		}else{
 			callback(err);
 		}
@@ -439,6 +483,7 @@ User.findById = function(id,callback){
 		}
 	});
 }
+
 
 checkCollection = function(collection, callback) {
 	collection.find().toArray(function(err, data) {
