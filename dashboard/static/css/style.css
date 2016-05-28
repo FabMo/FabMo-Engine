@@ -1652,3 +1652,13 @@ input[type=number]::-webkit-outer-spin-button {
     box-shadow: 0 -0.8em 0 -0.42em #313366, 0 -0.8em 0 -0.42em #313366, 0 -0.8em 0 -0.42em #313366;
   }
 }
+
+.logout_link_container{
+  bottom: 0;
+  position: inherit;
+  width: inherit;
+  text-align: center;
+  background-color: #666666;
+}
+.logout_link_container a{
+  color: #eeeeee;

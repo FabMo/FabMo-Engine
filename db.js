@@ -396,11 +396,11 @@ User.prototype.delete = function(callback){
 // verify user password and encrypt it.
 User.verifyAndEncryptPassword = function(password,callback){
 	if(!/^([a-zA-Z0-9@*#]{5,15})$/.test(password) ){ //validatepassword
-		callback('Password not valid, it should contain between 5 and 15 characters. The only special characters authorized are "@ * #".',null);
-		return null;
+		if(callback) callback('Password not valid, it should contain between 5 and 15 characters. The only special characters authorized are "@ * #".',null);
+		return undefined;
 	}
 	var pass_shasum = crypto.createHash('sha256').update(password).digest('hex'); // save encrypted password
-	callback(null,pass_shasum);
+	if(callback)callback(null,pass_shasum);
 	return pass_shasum;
 };
 
@@ -416,12 +416,12 @@ User.prototype.revokeAdmin = function(callback){
 	this.save();
 };
 
-User.prototype.save = function(){
+User.prototype.save = function(callback){
 	users.save(this, function(err, record) {
 		if(!record) {
 			return;
 		}
-		callback(null, this);
+		if(callback)callback(null, this);
 	}.bind(this));
 };
 
@@ -474,12 +474,14 @@ User.getAll = function(callback){
 
 User.findById = function(id,callback){
 	users.findOne({_id:id},function(err,doc){
-		if(err){console.log(err);callback(err,null);}
+		if(err){console.log(err);callback(err,null);return;}
 		if(doc){
 			user = new User(doc.username,doc.password,doc.isAdmin,doc.created_at,doc._id);
 			callback(err,user);
+			return;
 		}else{
-			callback(err);
+			callback("user doesn't exist !");
+			return;
 		}
 	});
 }

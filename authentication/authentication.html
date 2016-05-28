@@ -54,31 +54,6 @@
             <input class="button" type="submit" value="Log In"/>
         </div>
       </form>
-      <a class="signup_link" href="#signup">Don't have an account? Sign up !</a>
-    </div>
-    <div class = "signup_panel hide">
-      <div class="signup_panel_header"><h1>Sign Up</h1><hr></div>
-      <form id="signup_form" action="/authentication/signup" method="post">
-        <div>
-            <label>Username
-              <input type="text" name="username"/>
-            </label>
-        </div>
-        <div>
-            <label>Password
-              <input type="password" name="password"/>
-            </label>
-        </div>
-        <div>
-            <label>Password Confirmation
-              <input type="password" name="password_confirm"/>
-            </label>
-        </div>
-        <div>
-            <input  class="button" type="submit" value="Sign up"/>
-        </div>
-      </form>
-      <a class="login_link" href="#login">Already have an account? Sign in !</a>
     </div>
   </div>
 
@@ -104,31 +79,6 @@
        return false;
      });
 
-     $("#signup_form").submit(function(e){
-       e.preventDefault();
-       username=$('#signup_form input[name="username"]').val();
-       password=$('#signup_form input[name="password"]').val();
-       password_confirm = $('#signup_form input[name="password_confirm"]').val();
-       if(password===password_confirm){
-            signup_request(username,password);
-       }else{
-         $("#add_err").css('display', 'inline', 'important');
-         $("#add_err").html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span class="sr-only"> Password confirmation doesn\'t match.</span></div>');
-       }
-
-      return false;
-    });
-
-     $(".signup_link").click(function(){
-       $(".login_panel").addClass("hide");
-       $(".signup_panel").removeClass("hide");
-       $("#add_err").css('display', 'none', 'important');
-     })
-     $(".login_link").click(function(){
-       $(".signup_panel").addClass("hide");
-       $(".login_panel").removeClass("hide");
-       $("#add_err").css('display', 'none', 'important');
-     })
    });
 
 
@@ -141,7 +91,7 @@
        data: JSON.stringify({username:username,password:password,kickout:kickout}),
        success: function(data){
          console.log(data);
-         if(data.success){
+         if(data.status==="success"){
            $("#add_err").css('display', 'inline', 'important');
            $("#add_err").html('<div class="success"> <i class="fa fa-check" aria-hidden="true"></i><span class="sr-only"> Successful Log in !</span></div>');
            window.location="/";
@@ -182,7 +132,7 @@
        data: JSON.stringify({username:username,password:password}),
        success: function(data){
          console.log(data);
-         if(data.success){
+         if(data.status==="success"){
            $("#add_err").css('display', 'inline', 'important');
            $("#add_err").html('<div class="success"> <i class="fa fa-check" aria-hidden="true"></i><span class="sr-only"> User successfully created !</span></div>');
            window.location="/";

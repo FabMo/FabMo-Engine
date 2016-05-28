@@ -8,7 +8,7 @@ define(function(require) {
 	var events = require ('events');
 	var toastr = require('toastr');
 	var modalIsShown = false;
-    
+
 	var Dashboard = function(target) {
 		this.engine = null;
 		this.router = null;
@@ -29,7 +29,7 @@ define(function(require) {
 	};
 
 	function browse(callback) {
-		var file_input = $('#hidden-file-input'); 
+		var file_input = $('#hidden-file-input');
 		callback = callback || function() {};
 
 		file_input.one('click', function() {
@@ -49,12 +49,12 @@ define(function(require) {
 
 	Dashboard.prototype.browseForFiles = function(callback) {
 		document.getElementById("hidden-file-input").multiple=true;
-		browse(callback);		
+		browse(callback);
 	}
 
 	Dashboard.prototype.browseForFile = function(callback) {
 		document.getElementById("hidden-file-input").multiple=false;
-		browse(callback);		
+		browse(callback);
 	}
 
 	Dashboard.prototype.setEngine = function(engine) {
@@ -125,19 +125,19 @@ define(function(require) {
 							if(err) {
 								msg = {"status" : "error", "type" : "cb", "message" : JSON.stringify(err) , "id" : id}
 							} else {
-								msg = {	"status" : "success", 
-										"type" : "cb", 
-										"data" : data, 
+								msg = {	"status" : "success",
+										"type" : "cb",
+										"data" : data,
 										"id" : id }
 							}
 							if(source) {
-								source.postMessage(msg, evt.origin);								
+								source.postMessage(msg, evt.origin);
 							}
 						});
 					} catch(e) {
 						var msg = {"status" : "error", "type" : "cb", "message" : JSON.stringify(e) , "id" : id}
 						if(source) {
-							source.postMessage(JSON.stringify(msg), evt.origin);							
+							source.postMessage(JSON.stringify(msg), evt.origin);
 						}
 					}
 				}
@@ -150,7 +150,7 @@ define(function(require) {
 	}
 
 	Dashboard.prototype._registerHandlers = function() {
-		
+
 		this._registerHandler('ready', function() {
 			// TODO Ready handler for apps will go here.
 		});
@@ -160,58 +160,58 @@ define(function(require) {
 		});
 
 		// Show the DRO
-		this._registerHandler('showDRO', function(data, callback) { 
+		this._registerHandler('showDRO', function(data, callback) {
 			this.openRightMenu();
 			callback(null);
 		}.bind(this));
 
 		// Hide the DRO
-		this._registerHandler('hideDRO', function() { 
-			this.closeRightMenu() 
+		this._registerHandler('hideDRO', function() {
+			this.closeRightMenu()
 		}.bind(this));
-        
+
         // Show the DRO
-		this._registerHandler('openModal', function(options, callback) { 
+		this._registerHandler('openModal', function(options, callback) {
 			if(options.ok) {
 				options.ok = function() {
 					callback(null, 'ok');
 				}
 			}
-			if(options.cancel) {				
+			if(options.cancel) {
 				options.cancel = function() {
 					callback(null, 'cancel');
 				}
 			}
 			try {
-				this.showModal(options);				
+				this.showModal(options);
 			} catch(e) {
 				callback(e);
 			}
-			
+
 /*			if(!(options.ok || options.cancel)) {
 				callback(null);
 			}*/
 		}.bind(this));
 
 		// Hide the DRO
-		this._registerHandler('closeModal', function() { 
-			this.hideModal() 
+		this._registerHandler('closeModal', function() {
+			this.hideModal()
 			callback(null)
 		}.bind(this));
-		
+
 	    // Show the footer
-		this._registerHandler('showFooter', function() { 
+		this._registerHandler('showFooter', function() {
 			this.openFooter();
 		}.bind(this));
 
 		// Hide the footer
-		this._registerHandler('hideFooter', function() { 
-			this.closeFooter() 
+		this._registerHandler('hideFooter', function() {
+			this.closeFooter()
 		}.bind(this));
 
 		// Show a notification
-		this._registerHandler('notification', function(data,callback) { 
-			this.notification(data.type, data.message); 
+		this._registerHandler('notification', function(data,callback) {
+			this.notification(data.type, data.message);
 			callback(null);
 		}.bind(this))
 
@@ -228,7 +228,7 @@ define(function(require) {
 			}.bind(this));
 		}.bind(this));
 
-		this._registerHandler('resubmitJob', function(id, callback) { 
+		this._registerHandler('resubmitJob', function(id, callback) {
 			this.engine.resubmitJob(id, function(err, result) {
 				if(err) {
 					callback(err);
@@ -239,7 +239,7 @@ define(function(require) {
 			}.bind(this));
 		}.bind(this));
 
-		this._registerHandler('cancelJob', function(id, callback) { 
+		this._registerHandler('cancelJob', function(id, callback) {
 			this.engine.cancelJob(id, function(err, result) {
 				if(err) {
 					callback(err);
@@ -355,7 +355,7 @@ define(function(require) {
 		}.bind(this));
 
 		// Submit an app
-		this._registerHandler('submitApp', function(data, callback) { 
+		this._registerHandler('submitApp', function(data, callback) {
 			this.submitApps(data.apps, {}, callback);
 		}.bind(this));
 
@@ -511,6 +511,40 @@ define(function(require) {
 			}.bind(this));
 		}.bind(this));
 
+		///
+		/// USER MANAGEMENT
+		///
+
+		this._registerHandler('getCurrentUser',function(data,callback){
+			this.engine.getCurrentUser(function(err,result){
+				if(err){ callback(err); }
+				else{ callback(null,result);}
+			}.bind(this));
+		}.bind(this));
+		this._registerHandler('addUser',function(data,callback){
+			this.engine.addUser(data,function(err,result){
+				if(err){ callback(err); }
+				else{ callback(null,result);}
+			}.bind(this));
+		}.bind(this));
+		this._registerHandler('modifyUser',function(data,callback){
+			this.engine.modifyUser(data,function(err,result){;
+				if(err){ callback(err); }
+				else{ callback(null,result);}
+			}.bind(this));
+		}.bind(this));
+		this._registerHandler('deleteUser',function(data,callback){
+			this.engine.deleteUser(data,function(err,result){
+				if(err){ callback(err); }
+				else{ callback(null,result);}
+			}.bind(this));
+		}.bind(this));
+		this._registerHandler('getUsers',function(data,callback){
+			this.engine.getUsers(function(err,result){
+				if(err){ callback(err); }
+				else{ callback(null,result);}
+			}.bind(this));
+		}.bind(this));
 
 		///
 		/// DASHBOARD (APP MANAGEMENT)
@@ -584,11 +618,11 @@ define(function(require) {
 		callback = callback || function() {}
 		this.engine.getNetworkIdentity(function(err, result) {
 			if(err) { callback(err); }
-			else { 
+			else {
 				var name = result.name || "";
 				$('#tool-name').text(name);
 				document.title = name || "FabMo Dashboard";
-				callback(null, result); 
+				callback(null, result);
 			}
 		}.bind(this));
 	};
@@ -641,21 +675,21 @@ define(function(require) {
 	Dashboard.prototype.openFooter = function() {
 		$('.footBar').css('height', '50px');
 	}
-	
+
 	//Close Footer
 	Dashboard.prototype.closeFooter = function() {
 		$('.footBar').css('height', '0px');
 	}
-    
+
     //Show Modal
-    
+
     Dashboard.prototype.showModal = function(options){
         // var modal = function (options) {
 
             var modalAlreadyUp = modalIsShown;
- 
+
             modalIsShown = true;
- 
+
             $('.modalDim').show();
             $('.newModal').show();
             $('.modalLogo').show();
@@ -666,8 +700,8 @@ define(function(require) {
             }
 
             // if(options['lead']) {
-            // 	$('#modalDialogLead').html(options.lead).show();		
-            // } else {		
+            // 	$('#modalDialogLead').html(options.lead).show();
+            // } else {
             // 	$('#modalDialogLead').hide();
             // }
 
@@ -732,7 +766,7 @@ define(function(require) {
             } else {
                 $('.modalCancel').hide();
             }
-            
+
             if (!options['okText'] && !options['cancelText']){
                 $('.modalOkay').off();
                 $('.modalOkay').show();
@@ -741,23 +775,23 @@ define(function(require) {
                     $('.newModal').hide();
                     $('.modalDim').hide();
                 });
-                
+
              if (options['noButton'] === true) {
                  $('.modalCancel').hide();
                  $('.modalOkay').hide();
-             } 
+             }
              if (options['noLogo'] === true) {
                  $('.modalLogo').hide();
-             } 
+             }
             }
         // }
         // funarr.push(modal);
         //     while (funarr.length > 0) {
-        //     (funarr.shift())();   
+        //     (funarr.shift())();
         // }
 
     }
-    
+
     //Hide Modal
     Dashboard.prototype.hideModal = function(){
         $('.modalDim').hide();
@@ -765,7 +799,7 @@ define(function(require) {
         $('.modalOkay').off();
         $('.modalCancel').off();
     }
-    
+
 	// Open and close the right menu
 	Dashboard.prototype.bindRightMenu = function(mouv) {
 		if($("#main").hasClass("offcanvas-overlap-left")){
@@ -811,20 +845,20 @@ define(function(require) {
 		this.engine.submitApp(data, data.options, function(err, result) {
 			context = require('context');
 			context.apps.fetch();
-			
+
 			if(err) { callback(err); }
-			else { 
+			else {
 				result.forEach(function(item) {
 					context.markAppForRefresh(item.info.id);
 				});
-				callback(null, result); 
+				callback(null, result);
 			}
 		}.bind(this));
 	}
 
 	// The dashboard is a singleton which we create here and make available as this module's export.
 	var dashboard = new Dashboard();
-	
+
 	return dashboard;
 
 });

@@ -273,6 +273,12 @@ table {
 
 .hidden, .hide { display:none; }
 
+
+#modal-title {
+  font-weight: 700;
+  color: #2E3865;
+}
+
 .modal-background {
     position: fixed;
     top: 0;

@@ -388,6 +388,31 @@ FabMoAPI.prototype.command = function(name, args) {
 	this.commandCounter += 1;
 }
 
+
+FabMoAPI.prototype.getCurrentUser=function(callback){
+  this._get("/authentication/user",callback,callback);
+}
+
+FabMoAPI.prototype.addUser=function(user_info,callback){
+  this._post('/authentication/user',user_info,callback,callback);
+}
+
+FabMoAPI.prototype.modifyUser = function(user_info,callback){
+  var id = user_info.user.id;
+  user_info.user.id=undefined;
+  var user = user_info;
+  this._post('/authentication/user/'+id,user,callback,callback);
+}
+
+FabMoAPI.prototype.deleteUser = function(user_info,callback){
+    var id = user_info.user._id;
+    this._del("/authentication/user/"+id,{},callback,callback)
+}
+
+FabMoAPI.prototype.getUsers = function(callback){
+    this._get("/authentication/users",callback,callback);
+}
+
 FabMoAPI.prototype._url = function(path) { return this.base_url + '/' + path.replace(/^\//,''); }
 
 FabMoAPI.prototype._get = function(url, errback, callback, key) {

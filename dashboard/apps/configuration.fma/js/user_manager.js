@@ -2,7 +2,7 @@ var fabmo = new FabMoDashboard();
 var current_user=null;
 
 function setupUserManager() {
-  getCurrentUser(function(err,user){
+  fabmo.getCurrentUser(function(err,user){
     if(err)fabmo.notify('error',err);
     else{
       current_user = user;
@@ -13,17 +13,25 @@ function setupUserManager() {
     }
   });
 
-  $("#submit-user-password").click(function(e){
+  $("#submit-user-password").one('click',function(e){
     password=$('#input-user-password').val();
     password_confirm = $('#input-user-passwordConfirmation').val();
+    $('#input-user-password').val('');
+    $('#input-user-passwordConfirmation').val('');
     if(password===password_confirm){
       user = current_user;
-      user.password = password;
-      modifyUser(user,function(err){
+      user_info= {
+        user:{
+          id:current_user._id,
+          password:password
+        }
+      };
+      fabmo.modifyUser(user_info,function(err){
         if(err)fabmo.notify('error',err);
         else{
           fabmo.notify('success',"password successfully changed for user "+current_user.username);
         }
+        setupUserManager();
       });
     }
     else{
@@ -32,133 +40,92 @@ function setupUserManager() {
   });
 }
 
-function getCurrentUser(callback){
-  $.ajax({
-    type: "GET",
-    url: "/authentication/user",
-    contentType: 'application/json',
-    success: function(data){
-      if(data.success){
-        callback(null,data.data);
-      }
-      else{
-        callback(data.message);
-      }
-   },
-   error:function(data){
-    callback(data.responseJSON.message);
-   },
-   beforeSend:function(){
-   }
-  });
-}
-
-function addUser(username,password,callback){
-  $.ajax({
-    type: "POST",
-    url: "/authentication/user",
-    contentType: 'application/json',
-    dataType: "json",
-    data: JSON.stringify({username:username,password:password}),
-    success: function(data){
-      if(data.success){
-        callback(null,data.data);
-      }
-      else{
-        callback(data.message);
-      }
-    },
-    error:function(data){
-    callback(data.responseJSON.message);
-    },
-    beforeSend:function(){
-    }
- });
-}
-
-
-
-function modifyUser(user,callback){
-  $.ajax({
-    type: "POST",
-    url: "/authentication/user/"+user._id,
-    contentType: 'application/json',
-    data:user,
-    dataType:"json",
-    success: function(data){
-      if(data.success){
-        callback(null,data.data);
-      }
-      else{
-        callback(data.message);
-      }
-   },
-   error:function(data){
-    callback(data.responseJSON.message);
-   },
-   beforeSend:function(){
-   }
-  });
-}
-
-function deleteUser(user,callback){
-  $.ajax({
-    type: "DELETE",
-    url: "/authentication/user/"+user._id,
-    contentType: 'application/json',
-    data:user,
-    dataType:"json",
-    success: function(data){
-      if(data.success){
-        callback(null,data.data);
-      }
-      else{
-        callback(data.message);
-      }
-   },
-   error:function(data){
-    callback(data.responseJSON.message);
-   },
-   beforeSend:function(){
-   }
-  });
-}
-
-function getUsers(callback){
-  $.ajax({
-    type: "GET",
-    url: "/authentication/users",
-    contentType: 'application/json',
-    success: function(data){
-      if(data.success){
-        callback(null,data.data);
-      }
-      else{
-        callback(data.message);
-      }
-   },
-   error:function(data){
-    callback(data.responseJSON.message);
-   },
-   beforeSend:function(){
-   }
-  });
-}
-
 
 function createAdminPanel(){
-  getUsers(function(err,users) {
+  fabmo.getUsers(function(err,users) {
     if(err){return;} // user is not admin.
     users=users.filter(function(usr){return(usr._id!==current_user._id)}); //remove current user from the list
     refreshUsersListView(users);
   });
+
+  $('#add-user').one('click',function() { //add new user
+    form=[
+      '<div id="adduser-modal" class="reveal-modal medium" data-reveal>',
+        '<div id="modal-title">Add User</div>',
+        '<div id="adduser-form">',
+            '<div class="row">',
+                '<label for="adduser-username">Username :</label>',
+                '<input id="adduser-username" type="text" name="adduser-username" value="" />',
+            '</div>',
+            '<div class="row">',
+                '<label for="adduser-password">New Password :</label>',
+                '<input id="adduser-password" type="password" name="adduser-password" value="" />',
+            '</div>',
+            '<div class="row">',
+                '<label for="adduser-name">Confirm New Password:</label>',
+                '<input id="adduser-passwordConfirmation" type="password" name="adduser-passwordConfirmation" value="" />',
+            '</div>',
+            '<div class="row">',
+                 '<div class="right">',
+                     '<button id="adduser-cancel" class="button radius alert">Cancel</button>',
+                     '<button id="adduser-submit" class="button radius success">Add User</button>',
+                 '</div>',
+             '</div>',
+         '</div>',
+         '<a class="close-reveal-modal" id="close-adduser-modal">&#215;</a>',
+        '</div>',
+    ].join('');
+    $('body').append(form);
+    $('#adduser-modal').foundation('reveal', 'open');
+    $('#adduser-username').focus();
+    $('#adduser-submit').one('click', function( event ) {
+      username = $('#adduser-username').val();
+      password = $('#adduser-password').val();
+      password_confirm = $('#adduser-passwordConfirmation').val();
+      if(password===password_confirm){
+        user_info= {
+          user:{
+            username:username,
+            password:password
+          }
+        };
+        fabmo.addUser(user_info, function(err,user) {
+          if (err) {
+              fabmo.notify('error', err);
+          }else{
+              fabmo.notify('success', 'User '+user.username+' created !');
+          }
+          createAdminPanel();
+        });
+      }else{
+        fabmo.notify('error',"passwords don't match"+event);
+      }
+      $('#adduser-modal').foundation('reveal', 'close');
+      $("#adduser-form").trigger('reset');
+      $("#adduser-submit").off('click');
+      $("#adduser-modal").remove();
+    });
+    $('#adduser-modal').bind('closed.fndtn.reveal', function (event) {
+        $("#adduser-submit").off('click');
+        $("#adduser-modal").remove();
+    });
+    $('#adduser-cancel').on('click',function(evt) {
+      evt.preventDefault();
+      $('#adduser-modal').foundation('reveal', 'close');
+      $("#adduser-submit").off('click');
+      $("#adduser-modal").remove();
+    });
+
+  });
+
+
 }
 
 
 function refreshCurrentUserView(current_user){
   $("#user-username").val(current_user.username);
   $("#user-_id").val(current_user._id);
-  $("#user-isAdmin").val(current_user.isAdmin);
+  $("#user-isAdmin").prop( "checked",current_user.isAdmin);
   $("#user-created_at").val(moment(current_user.created_at).fromNow());
 }
 
@@ -185,7 +152,7 @@ function refreshUsersListView(users){
         '<tr>',
           '<td>'+user._id+'</td>', // _id
           '<td>'+user.username+'</td>', // username
-          '<td><input type="checkbox" value="'+user.isAdmin+'" disabled /></td>', // isAdmin
+          '<td><input type="checkbox" '+(user.isAdmin?'checked':'')+' disabled /></td>', // isAdmin
           '<td>'+moment(user.created_at).fromNow()+'</td>', // created_at
           '<td>'+changepassword_button+'</td>', // change_password_button
           '<td>'+(user.isAdmin?revokeadmin_button:grantadmin_button)+'</td>', // grant/revoke admin button
@@ -194,78 +161,124 @@ function refreshUsersListView(users){
       ].join('');
       $(".user-listing").append(html);
 
-      $('#delete_' + userid).click(function() { //delete button listener
+      $('#delete_' + userid).on('click',function() { //delete button listener
         fabmo.showModal({
-          title : 'Delete app',
-          message : 'Are you sure you want to delete this app?',
+          title : 'Delete user '+ user.username,
+          message : 'Are you sure you want to delete this user?',
           okText : 'Yes',
           cancelText : 'No',
           ok : function() {
-            deleteUser(user, function(err) {
+            fabmo.deleteUser({user:user}, function(err) {
             if (err) {
-                fabmo.notify('error', err);
+              fabmo.notify('error', err);
+            }else{
+              fabmo.notify('success','user '+user.username+' deleted !')
             }
-            refreshUsersListView();
+            createAdminPanel();
             });
           },
           cancel : function() {}
         })
       });
 
-      $('#changepassword_' + userid).click(function() { //change user password
+      $('#grantadmin_' + userid).on('click',function() { //grantadmin button listener
+        user_info = {
+          user :{
+            id:user._id,
+            isAdmin:true
+          }
+        };
+        fabmo.modifyUser(user_info, function(err) {
+        if (err) {
+          fabmo.notify('error', err);
+        }else{
+          fabmo.notify('success','admin permission granted to user '+user.username)
+        }
+        createAdminPanel();
+        });
+      });
+
+      $('#revokeadmin_' + userid).on('click',function() { //revokeadmin button listener
+        user_info = {
+          user :{
+            id:user._id,
+            isAdmin:false
+          }
+        };
+        fabmo.modifyUser(user_info, function(err) {
+        if (err) {
+          fabmo.notify('error', err);
+        }else{
+          fabmo.notify('success','admin permission removed for user '+user.username)
+        }
+        createAdminPanel();
+        });
+      });
+
+      $('#changepassword_' + userid).on('click',function() { //change user password
         form=[
-          '<div class="large-4 columns" id="section-changepassword-password">',
-            '<div class="row collapse">',
-              '<label>New Password :</label>',
-              '<div class="small-12 columns">',
-                '<input type="password" id="changepassword-password" class="input"/>',
-              '</div>',
+          '<div id="changepassword-modal" class="reveal-modal medium" data-reveal>',
+            '<div id="modal-title">Change user '+user.username+'\'s password</div>',
+            '<div id="changepassword-form">',
+                '<div class="row">',
+                    '<label for="changepassword-password">New Password :</label>',
+                    '<input id="changepassword-password" type="password" name="changepassword-password" value="" />',
+                '</div>',
+                '<div class="row">',
+                    '<label for="changepassword-name">Confirm New Password:</label>',
+                    '<input id="changepassword-passwordConfirmation" type="password" name="changepassword-passwordConfirmation" value="" />',
+                '</div>',
+                '<div class="row">',
+                     '<div class="right">',
+                         '<button id="changepassword-cancel" class="button radius alert">Cancel</button>',
+                         '<button id="changepassword-submit" class="button radius success">Change Password</button>',
+                     '</div>',
+                 '</div>',
+             '</div>',
+             '<a class="close-reveal-modal" id="close-changepassword-modal">&#215;</a>',
             '</div>',
-          '</div>',
-          '<div class="large-4 columns" id="section-changepassword-passwordConfirmation">',
-            '<div class="row collapse">',
-              '<label>Confirm Password :</label>',
-              '<div class="small-12 columns">',
-                '<input type="password" id="changepassword-passwordConfirmation"/>',
-              '</div>',
-            '</div>',
-          '</div>',
-          '<script type="text/javascript">',
-          'password=null;',
-          'password_confirm=null;',
-          '$("#changepassword-password").change(function(e){',
-            'password = $(this).val();',
-          '});',
-          '$("#changepassword-passwordConfirmation").change(function(e){',
-            'password_confirm = $(this).val();',
-          '});',
-          '</script>',
         ].join('');
-        fabmo.showModal({
-          title : "Modify user "+user.username+"'s password",
-          message : form,
-          okText : 'Change',
-          cancelText : 'Cancel',
-          ok : function() {
-            console.log(password);
-            /*
-            modifyUser(user, function(err) {
+        $('body').append(form);
+        $('#changepassword-modal').foundation('reveal', 'open');
+        $('#changepassword-password').focus();
+        $('#changepassword-submit').one('click', function( event ) {
+          password = $('#changepassword-password').val();
+          password_confirm = $('#changepassword-passwordConfirmation').val();
+          if(password===password_confirm){
+            user_info= {
+              user : {
+                id : user._id,
+                password:password
+              }
+            };
+            fabmo.modifyUser(user_info, function(err) {
               if (err) {
                   fabmo.notify('error', err);
+              }else{
+                  fabmo.notify('success',"password successfully changed for user "+user.username);
               }
-              refreshUsersListView();
+              createAdminPanel();
             });
-            */
-          },
-          cancel : function() {}
-        },function(err){
-          if(err)fabmo.notify('error',err);
-        })
+          }else{
+            fabmo.notify('error',"passwords don't match"+event);
+          }
+          $('#changepassword-modal').foundation('reveal', 'close');
+          $("#changepassword-form").trigger('reset');
+          $("#changepassword-submit").off('click');
+          $("#changepassword-modal").remove();
+        });
+        $('#changepassword-modal').bind('closed.fndtn.reveal', function (event) {
+            $("#changepassword-submit").off('click');
+            $("#changepassword-modal").remove();
+        });
+        $('#changepassword-cancel').on('click',function(evt) {
+          evt.preventDefault();
+          $('#changepassword-modal').foundation('reveal', 'close');
+          $("#changepassword-submit").off('click');
+          $("#changepassword-modal").remove();
+        });
+
       });
-
-
-
-
     });
   }else{
     $('#user-manager-container').addClass('hidden');

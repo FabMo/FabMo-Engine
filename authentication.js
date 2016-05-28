@@ -104,7 +104,15 @@ exports.configure = function(){
 };
 
 var addUser = function(username,password,callback){
-  User.add(username,password,callback);
+  User.add(username,password,function(err,user){
+    if(err){
+      callback(err);
+      return;
+    } else {
+      user.password = undefined;  // remove password from user object.
+      callback(null,user);
+    }
+  });
 };
 
 var getUsers = function(callback){
@@ -123,8 +131,10 @@ var getUser = function(user_id,callback){
 
 var modifyUser = function(user_id,user_fields,callback){
   User.findById(user_id,function(err,user){
-    if(err)callback(err);
-    else{
+    if(err){
+      callback(err);
+      return;
+    }else{
       for(field in user_fields){
         switch(field){
           case '_id':
@@ -139,15 +149,17 @@ var modifyUser = function(user_id,user_fields,callback){
               callback('Password not valid, it should contain between 5 and 15 characters. The only special characters authorized are "@ * #".',null);
               return;
             }
-            user[password]=password;
+            user['password']=password;
             break;
           default:
             user[field] = user_fields[field];
+            break;
         }
       }
       user.save(function(err,user){
         if(user)user.password=undefined; // don't transmit the password back
         callback(err,user);
+        return;
       });
     }
   });
