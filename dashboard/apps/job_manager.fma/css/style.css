@@ -232,7 +232,8 @@ td.actions-control {
 
 .chosen{
   opacity: .5;
-  background-color: #444;
+  background-color: #888;
+  color: #333;
   width: 160px !important;
   -webkit-transition: ALL .1s;
   -moz-transition: ALL .1s;
