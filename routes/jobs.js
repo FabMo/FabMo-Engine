@@ -93,7 +93,6 @@ var clearQueue = function(req, res, next) {
  */
 runNextJob = function(req, res, next) {
     var answer;
-    console.log(req.params)
     log.info('Running the next job in the queue');
     machine.runNextJob(function(err, job) {
         if(err) {

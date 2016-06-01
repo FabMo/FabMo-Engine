@@ -143,6 +143,9 @@
   var fabmo = new FabMoDashboard();
   var el = document.getElementById('queue_table');
   var sortable = Sortable.create(el, {
+	  delay: 200,
+	  ghostClass: 'ghost',
+	  chosenClass: 'chosen',
 	  onStart: function (evt) {
 		  var remove = document.getElementById('actions');
     	  remove.parentNode.removeChild(remove);
@@ -158,7 +161,6 @@
             	return id._id == newOrder[i];
           });
           		id[0].order = i + 1;
-          		console.log(id[0].order);
           		fabmo.updateOrder({id:id[0]._id, order:id[0].order}, function(err, result) {});
       		}	
       	  });
@@ -184,7 +186,6 @@
 	$(document).foundation();
 
 	fabmo.on('change', function(topic) {
-		console.log(topic);
 		if(topic === 'jobs') {
 			updateQueue();
 			updateHistory();

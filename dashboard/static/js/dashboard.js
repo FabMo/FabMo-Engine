@@ -271,7 +271,6 @@ define(function(require) {
         
         this._registerHandler('updateOrder', function(data, callback) {
 			this.engine.updateOrder(data, function(err, result) {
-                console.log('I made it here');
 				if(err) {
 					callback(err);
 				} else {

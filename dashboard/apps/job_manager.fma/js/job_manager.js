@@ -285,7 +285,6 @@ function bindNextJobEvents() {
 }
 
 function noJob() {
-		console.log('no job');
          $('.with-job').data('job',false);
 		//$('.without-job').css('left', '0px');
         //$('.no-jobs').css('left', '0px');
@@ -294,7 +293,6 @@ function noJob() {
 };
 
 function nextJob(job) {
-	console.log('next job');
         $('.with-job').data('job',true);
    		//$('.without-job').css('left','-2000px');
 		$('.with-job').css('left','10px');
@@ -309,7 +307,6 @@ function nextJob(job) {
 };
 
 function runningJob(job) {
-	console.log('running job');
 	if(!job) {
 		setProgress({status});
 		$('.play').removeClass('active')

@@ -197,19 +197,15 @@ td.actions-control {
 
 
 .job_item:first-child {
+  display: block;
   width:98%;
+  margin-left: auto;
+  margin-right: auto;
   margin-bottom: .5em;
   padding: 1em;
-  
-}
-
-.job_item:first-child #menu{
-  display: none;
-}
-
-.job_item:first-child .icon-row{
-  position: absolute;
-  bottom: 5px;
+  -webkit-transition: ALL .1s;
+  -moz-transition: ALL .1s;
+  transition: ALL .1s;
 }
 
 @media screen and (max-width: 630px){
@@ -233,6 +229,41 @@ td.actions-control {
     border: 1px solid #ccc;
     overflow: hidden;
 }
+
+.chosen{
+  opacity: .5;
+  background-color: #444;
+  width: 160px !important;
+  -webkit-transition: ALL .1s;
+  -moz-transition: ALL .1s;
+  transition: ALL .1s;
+}
+
+.chosen .play-button, .chosen .icon-row {
+  display: none; 
+}
+.chosen .description {
+  width: 100% !important;
+}
+
+.ghost{
+  opacity: .5;
+  background-color: #999999;
+}
+.job_item:first-child #menu{
+  display: none;
+}
+
+.job_item:first-child .icon-row{
+  position: absolute;
+  bottom: 5px;
+}
+
+.chosen #menu{
+  display: block !important;
+}
+
+
 
 .name {
     font-weight: bold;
@@ -573,9 +604,11 @@ table {
     transform: rotate(450deg);
   }
 }
+
 #tabpending{
   position: relative;
 }
+
 .play-button {
   position: absolute;
   top: 40px;
