@@ -232,8 +232,8 @@ td.actions-control {
 
 .chosen{
   opacity: .5;
-  background-color: #888;
-  color: #333;
+  background-color: #333;
+  color: #fff;
   width: 160px !important;
   -webkit-transition: ALL .1s;
   -moz-transition: ALL .1s;
@@ -249,7 +249,7 @@ td.actions-control {
 
 .ghost{
   opacity: .5;
-  background-color: #999999;
+  background-color: #777;
 }
 .job_item:first-child #menu{
   display: none;
@@ -262,6 +262,10 @@ td.actions-control {
 
 .chosen #menu{
   display: block !important;
+}
+
+.chosen .play-button .inset{
+  background-color: red !important;
 }
 
 

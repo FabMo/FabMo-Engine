@@ -39,9 +39,8 @@ function setupDropTarget() {
 	});	
 }
 
-function updateQueue(running, callback) {
+function updateQueue(callback) {
 	callback = callback || function() {};
-	running = currentStatus.job;
 	// Update the queue display.
 	fabmo.getJobsInQueue(function(err, jobs) {
 		var jobElements = document.getElementById("queue_table").childElementCount;
@@ -53,6 +52,10 @@ function updateQueue(running, callback) {
             return a.order - b.order;
         });
 		if(jobs.running.length) {
+			var current = jobs.running[0];
+			jobs.pending.unshift(current);
+			clearQueue();
+			addQueueEntries(jobs.pending);
 			runningJob(true);
 		} else {
 			runningJob(null);
@@ -62,8 +65,9 @@ function updateQueue(running, callback) {
 		}
 		callback();
 	});
-  
 }
+
+
 
 function clearQueue() {
     var elements = document.getElementsByClassName('job_item');
