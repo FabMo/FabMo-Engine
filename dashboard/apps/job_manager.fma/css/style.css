@@ -277,10 +277,27 @@ td.actions-control {
     
 }
 
+.job_item .ellipses{
+    font-size: 1.35em;
+    padding-left: 0.4em;
+}
 
+.job_item .dropDown{
+    left: 2px;
+    width: 153px;
+}
+
+.job_item .jobactions{
+     margin-left: 0.3em;
+     line-height: 1.5em;
+}
+
+.job_item .commentBox{
+  left: 17px;
+}
 
 .ellipses {
-    font-size: 1.35em;
+    font-size: 1.5em;
     width: 1.7em;
     height: 1.7em;
     color: #A6A6A6;
@@ -288,7 +305,7 @@ td.actions-control {
     border-radius: 100%;
     line-height: 1.1em;
     float: left;
-    padding-left: 0.4em;
+    padding-left: 0.1em;
     margin-right: 0.3em;
 }
 
