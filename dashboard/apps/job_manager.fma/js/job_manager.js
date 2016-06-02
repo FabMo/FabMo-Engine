@@ -119,13 +119,11 @@ function addQueueEntries(jobs) {
 		menu.innerHTML = createQueueMenu(jobs[i]._id);
 		// name.innerHTML = job.name;
 	};
+	setFirstCard(jobs[0]._id);
+	bindMenuEvents();
 	} else {
 		$('.no-jobs').css('left', '0px');
 	}
-
-    setFirstCard(jobs[0]._id);
-	bindMenuEvents();
-
 }
 
 function setFirstCard(id){
@@ -289,28 +287,24 @@ function bindNextJobEvents() {
 }
 
 function noJob() {
-         $('.with-job').data('job',false);
-		//$('.without-job').css('left', '0px');
-        //$('.no-jobs').css('left', '0px');
+        $('.with-job').data('job',false);
         $('.up-next').css('left', '-2000px');
-        $('.with-job').css('left','-2000px');
 };
 
 function nextJob(job) {
         $('.with-job').data('job',true);
-   		//$('.without-job').css('left','-2000px');
 		$('.with-job').css('left','10px');
-		$('.icon-row a').show(500);
-		$('.cancel').show(500);
-		$('.download').show(500);
-		$('.edit').show(500);
-		$('.preview').show(500);
-		$('.play-button').show();
+		// $('.icon-row a').show(500);
+		// $('.cancel').show(500);
+		// $('.download').show(500);
+		// $('.edit').show(500);
+		// $('.preview').show(500);
+		// $('.play-button').show();
         $('.up-next').css('left', '0px');
-       // $('.no-jobs').css('left', '-2000px');
 };
 
 function runningJob(job) {
+	console.log(sortable);
 	if(!job) {
 		setProgress({status});
 		$('.play').removeClass('active')
@@ -323,11 +317,14 @@ function runningJob(job) {
         // $('.job-lights-container').delay(1000).hide();
 		$('body').css('background-color', '#EEEEEE');
 		$('.play').removeClass('active');
+		$('.play-button').show();
+		sortable.options.disabled = false;
 		return
 	}
 
    	// $('.nextJobTitle').text(job.name);
 	// $('.nextJobDesc').text(job.description);
+	
 	$('.cancel').slideUp(100);
 	$('.download').slideUp(100);
 	$('.edit').slideUp(100);
@@ -344,9 +341,9 @@ function runningJob(job) {
     $('.no-jobs').css('left', '-2000px');
 	$('.now-running').css('left', '0px');
 	$('.without-job').css('left','-2000px');;
-	$('.with-job').css('left','10px');	
 	$('.play-button').show();
 	$('.play').addClass('active')
+	sortable.options.disabled = true;
 };
 
 
