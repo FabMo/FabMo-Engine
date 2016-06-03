@@ -53,7 +53,8 @@ var FabMoAPI = function(base_url) {
 		'connect' : [],
 		'job_start' : [],
 		'job_end' : [],
-		'change' : []
+		'change' : [],
+    'video_frame': [],
 	};
 	var url = window.location.origin;
 	this.base_url = url.replace(/\/$/,'');
@@ -66,7 +67,7 @@ var FabMoAPI = function(base_url) {
 FabMoAPI.prototype._initializeWebsocket = function() {
 	localStorage.debug = false
 	try {
-		this.socket = io(location.hostname+':'+location.port+'/private');
+		this.socket = io(this.base_url+'/private');
 	} catch(e) {
 		this.socket = null;
 		console.error('connection to the engine via websocket failed : '+ e.message);
@@ -106,6 +107,37 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 		}.bind(this));
 
 	}
+}
+
+FabMoAPI.prototype.startVideoStreaming = function(callback){
+  try {
+    this.videoSocket = io(this.base_url+'/video');
+  } catch(e) {
+  	this.videoSocket = null;
+  	console.info('connection to the video streaming via websocket failed.');
+  }
+
+  if(this.videoSocket) {
+    this.videoSocket.on('frame', function(data) {
+      this.emit('video_frame', data);
+
+    }.bind(this));
+
+    this.videoSocket.on('connect', function() {
+      console.log("Video streaming websocket connected");
+    }.bind(this));
+
+    this.videoSocket.on('message', function(message) {console.info(" Video streaming websocket message: " + JSON.stringify(message))} );
+
+    this.videoSocket.on('disconnect', function() {
+      console.info("Video streaming websocket disconnected");
+    }.bind(this));
+
+    this.videoSocket.on('connect_error', function() {
+      console.info("Video streaming websocket disconnected (connection error)");
+    }.bind(this));
+  }
+  callback();
 }
 
 FabMoAPI.prototype.emit = function(evt, data) {

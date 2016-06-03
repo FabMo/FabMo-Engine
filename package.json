@@ -7,19 +7,15 @@
   "dependencies": {
     "adm-zip": "^0.4.4",
     "async": "1.4.x",
-    "client-sessions": "^0.7.0",
     "colors": "1.1.x",
     "delaunay-triangulate": "^1.1.6",
     "escape-regexp-component": "^1.0.2",
     "fs-extra": "^0.23.1",
     "glob": "^5.0.14",
-    "lockfile": "1.0.x",
     "mime": "^1.2.11",
     "minimist": "^1.1.1",
     "ncp": "^2.0.0",
     "node-uuid": "^1.4.1",
-    "passport-local": "jlucidar/passport-restify-local",
-    "passport-restify": "^1.0.1",
     "path-is-inside": "^1.0.1",
     "process": "0.11.x",
     "q": "^1.0.1",
@@ -30,7 +26,8 @@
     "tingodb": "0.3.x",
     "tough-cookie": "^2.0.0",
     "lockfile":"1.0.x",
-    "bonjour":"jlucidar/bonjour"
+    "bonjour":"jlucidar/bonjour",
+    "udev":"^0.2.0"
   },
   "devDependencies": {
     "chai": "3.2.x",

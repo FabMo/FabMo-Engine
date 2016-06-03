@@ -33,7 +33,9 @@ var FabMoDashboard = function(options) {
 		'status' : [],
 		'job_start' : [],
 		'job_end' : [],
-		'change' : []
+		'change' : [],
+    'video_frame' : [],
+
 	};
 	this._setupMessageListener();
     // listen for escape key press to quit the engine
@@ -852,6 +854,36 @@ FabMoDashboard.prototype.updateMacro = function(id, macro, callback) {
 FabMoDashboard.prototype.requestStatus = function(callback) {
 	this._call("requestStatus", null, callback);
 }
+
+/**
+ * Start a connection to the video streaming service on your fabmo device.
+ * A video_frame event will be triggered each time a new frame is send to the browser.
+ *
+ * @method startVideoStreaming
+ * @param {function} callback
+ * @param {Object} callback.err Error object if there was an error.
+ */
+FabMoDashboard.prototype.startVideoStreaming = function(callback) {
+	this._call("startVideoStreaming", null, callback);
+}
+
+
+/**
+ * Add a listener to the video frame event.
+ * This will return an Image object, ready to be displayed on a canvas
+ * @method startVideoStreaming
+ * @param {function} callback
+ * @param {Object} callback.err Error object if there was an error.
+ */
+FabMoDashboard.prototype.onVideoFrame = function (callback) {
+  this.on('video_frame',function(data){
+    imageObj = new Image();
+    imageObj.src = "data:image/jpeg;base64,"+data;
+    imageObj.onload = function(){
+      callback(imageObj);
+    }
+  })
+};
 
 FabMoDashboard.prototype.deleteMacro = function(id, callback) {
 	this._call("deleteMacro", id, callback);

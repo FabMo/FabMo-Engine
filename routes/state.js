@@ -2,7 +2,6 @@ var fs = require('fs');
 var machine = require('../machine').machine;
 var db = require('../db');
 var File=db.File;
-var passport = require('../authentication').passport;
 
 // These are the only file extensions that are allowed for upload.
 // File extension filtering is not case sensitive
@@ -45,7 +44,7 @@ pause = function(req, res, next) {
 };
 
 /**
- * @api {get} /resume Resume
+ * @api {get} /resume Resume 
  * @apiGroup State
  * @apiDescription Continue running the current job if the system is paused.
  * @apiSuccess {String} status `success`
@@ -64,7 +63,7 @@ resume = function(req, res, next) {
 
 module.exports = function(server) {
 	//server.get('/run/:id',run); //OK
-	server.post('/quit',passport.authenticate('local'),quit); //OK
-	server.post('/pause',pause); //OK
-	server.post('/resume',passport.authenticate('local'),resume); //OK
+	server.post('/quit',quit); //OK
+	server.post('/pause',pause); //OK 
+	server.post('/resume',resume); //OK 
 };

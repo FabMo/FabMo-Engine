@@ -15,7 +15,6 @@ job_queue = new util.Queue();
 var db;
 var files;
 var jobs;
-var users;
 
 function notifyChange() {
 	var machine = require('./machine').machine;
@@ -90,7 +89,7 @@ Job.prototype.save = function(callback) {
 		notifyChange();
 		callback(null, this);
 	}.bind(this));
-
+	
 };
 
 Job.prototype.delete = function(callback){
@@ -206,7 +205,7 @@ Job.deletePending = function(callback) {
 };
 
 // The File class represents a fabrication file on disk
-// In addition to the filename and path, file statistics such as
+// In addition to the filename and path, file statistics such as 
 // The run count, last time run, etc. are stored in the database.
 function File(filename,path, callback){
 	var that=this;
@@ -313,7 +312,7 @@ File.add = function(friendly_filename, pathname, callback) {
 					}.bind(this)); // unlink
 				}); // move
 			}
-		});
+		});		
 	})
 
 
@@ -366,7 +365,6 @@ var createJob = function(file, options, callback) {
         });
     });
 }
-
 
 User = function(username,password,isAdmin,created_at,_id) {
 		this._id = _id;
@@ -511,7 +509,6 @@ exports.configureDB = function(callback) {
 	db = new Engine.Db(config.getDataDir('db'), {});
 	files = db.collection("files");
 	jobs = db.collection("jobs");
-	users = db.collection("users");
 
 	users.find({}).toArray(function(err,result){ //init the user database with an admin account if it's empty
 		if (err){
@@ -530,11 +527,8 @@ exports.configureDB = function(callback) {
 			},
 			function(cb) {
 				checkCollection(jobs, cb);
-			},
-			function(cb) {
-				checkCollection(users, cb);
 			}
-		],
+		], 
 		function(err, results) {
 			if(err) {
 				log.error('There was a database corruption issue!')
@@ -581,5 +575,4 @@ exports.cleanup = function(callback) {
 
 exports.File = File;
 exports.Job = Job;
-exports.User = User;
 exports.createJob = createJob;

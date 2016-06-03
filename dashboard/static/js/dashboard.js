@@ -22,7 +22,8 @@ define(function(require) {
 			'status' : [],
 			'job_start' : [],
 			'job_end' : [],
-			'change' : []
+			'change' : [],
+			'video_frame':[],
 		};
 		this._registerHandlers();
 		this._setupMessageListener();
@@ -65,6 +66,9 @@ define(function(require) {
 		this.engine.on('change', function(topic) {
 			this._fireEvent('change', topic);
 		}.bind(this));
+		this.engine.on('video_frame', function(frame) {
+			this._fireEvent('video_frame', frame);
+		}.bind(this));
 	}
 
 	Dashboard.prototype.setRouter = function(router) {
@@ -104,7 +108,7 @@ define(function(require) {
 			for(var i in listeners) {
 				var source = listeners[i];
 				var msg = {"status" : "success", "type" : "evt", "id" : name, "data" : data};
-				source.postMessage(msg, "*");
+				if(source)source.postMessage(msg, "*");
 			}
 		}
 	}
@@ -545,6 +549,14 @@ define(function(require) {
 				else{ callback(null,result);}
 			}.bind(this));
 		}.bind(this));
+
+		this._registerHandler('startVideoStreaming', function(data, callback) {
+			this.engine.startVideoStreaming(function(err,result) {
+				if(err) { callback(err); }
+				else { callback(null, result); }
+			}.bind(this));
+		}.bind(this));
+
 
 		///
 		/// DASHBOARD (APP MANAGEMENT)

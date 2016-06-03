@@ -10,14 +10,11 @@ var PLATFORM = process.platform;
 var log = require('./log').logger('engine');
 var db = require('./db');
 var macros = require('./macros');
-var sessions = require("client-sessions");
-var authentication = require('./authentication');
 var dashboard = require('./dashboard');
 var network = require('./network');
 var glob = require('glob');
 var argv = require('minimist')(process.argv);
 var fs = require('fs');
-var crypto = require('crypto');
 
 var Engine = function() {
     this.version = null;
@@ -88,7 +85,7 @@ Engine.prototype.getVersion = function(callback) {
             try {
                 data = JSON.parse(data);
                 if(data.number) {
-                    this.version.number = data.number;
+                    this.version.number = data.number;                    
                     this.version.type = 'release';
                 }
             } catch(e) {
@@ -223,7 +220,7 @@ Engine.prototype.start = function(callback) {
                 callback(null);
             });
         }.bind(this),
-
+    
         function set_units(callback) {
             this.machine.driver.setUnits(config.machine.get('units'), callback);
         }.bind(this),
@@ -313,7 +310,7 @@ Engine.prototype.start = function(callback) {
             var server = restify.createServer({name:"FabMo Engine"});
             this.server = server;
 
-            // Allow JSON over Cross-origin resource sharing
+            // Allow JSON over Cross-origin resource sharing 
             log.info("Configuring cross-origin requests...");
             server.use(
                 function crossOrigin(req,res,next){
@@ -342,10 +339,7 @@ Engine.prototype.start = function(callback) {
             }
 
             server.use(restify.queryParser());
-
-            //initialize the authentication module
-            log.info("Configuring Authentication...");
-
+            
             server.on('uncaughtException', function(req, res, route, err) {
                 log.uncaught(err);
                 answer = {
@@ -356,34 +350,9 @@ Engine.prototype.start = function(callback) {
             });
 
             // Configure local directory for uploading files
-            log.info("Configuring upload directory...");
+            log.info("Cofiguring upload directory...");
             server.use(restify.bodyParser({'uploadDir':config.engine.get('upload_dir') || '/tmp'}));
             server.pre(restify.pre.sanitizePath());
-
-
-            //configuring authentication
-            server.cookieSecret = crypto.randomBytes(256).toString('hex');
-
-            server.use(sessions({
-                // cookie name dictates the key name added to the request object
-                cookieName: 'session',
-                // should be a large unguessable string
-                secret: server.cookieSecret, // REQUIRE HTTPS SUPPORT !!!
-                // how long the session will stay valid in ms
-                duration: 1 * 24 * 60 * 60 * 1000, // 1 day
-                cookie: {
-                  //: '/api', // cookie will only be sent to requests under '/api'
-                  //maxAge: 60000, // duration of the cookie in milliseconds, defaults to duration above
-                  ephemeral: true, // when true, cookie expires when the browser closes
-                  httpOnly: false, // when true, cookie is not accessible from javascript
-                  secure: false // when true, cookie will only be sent over SSL. use key 'secureProxy' instead if you handle SSL not in your node process
-                }
-            }));
-
-            server.use(authentication.passport.initialize());
-            server.use(authentication.passport.session());
-
-            authentication.configure();
 
             log.info("Enabling gzip for transport...");
             server.use(restify.gzipResponse());
@@ -391,7 +360,6 @@ Engine.prototype.start = function(callback) {
             log.info("Loading routes...");
             server.io = socketio.listen(server.server);
             var routes = require('./routes')(server);
-
 
             // Kick off the server listening for connections
             server.listen(config.engine.get('server_port'), "0.0.0.0", function() {

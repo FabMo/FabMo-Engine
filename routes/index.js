@@ -3,7 +3,6 @@ var path = require('path');
 var log = require('../log').logger('routes');
 var restify = require('restify');
 var util = require('../util');
-var passport = require('../authentication').passport;
 
 // Load all the files in the 'routes' directory and process them as route-producing modules
 module.exports = function(server) {
@@ -16,7 +15,7 @@ module.exports = function(server) {
 			routes = require(filePath);
 			if(typeof(routes) == 'function') {
 				routes(server);
-				log.debug('  Loaded routes from "' + filePath + '"');
+				log.debug('  Loaded routes from "' + filePath + '"');				
 			} else {
 				log.debug('  (Skipping route load for ' + filePath + ')');
 			}
