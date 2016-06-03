@@ -34,7 +34,7 @@ var makePostData = function(obj, options) {
 		var msg = 'Cannot make post data from ' + JSON.stringify(obj);
 		throw new Error(msg);
 	}
-	
+
 	var job = {}
 	var options = options || {};
 	for(var key in options) {
@@ -49,6 +49,7 @@ var FabMoAPI = function(base_url) {
 	this.events = {
 		'status' : [],
 		'disconnect' : [],
+    'authentication_failed':[],
 		'connect' : [],
 		'job_start' : [],
 		'job_end' : [],
@@ -65,10 +66,10 @@ var FabMoAPI = function(base_url) {
 FabMoAPI.prototype._initializeWebsocket = function() {
 	localStorage.debug = false
 	try {
-		this.socket = io(this.base_url);
+		this.socket = io(location.hostname+':'+location.port+'/private');
 	} catch(e) {
 		this.socket = null;
-		console.error('connection to the engine via websocket failed : '+ e.message);		
+		console.error('connection to the engine via websocket failed : '+ e.message);
 	}
 
 	if(this.socket) {
@@ -93,6 +94,11 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 			this.emit('disconnect');
 			console.info("Websocket disconnected");
 		}.bind(this));
+
+
+    this.socket.on('authentication_failed', function(message) {
+      this.emit('authentication_failed',message);
+    }.bind(this));
 
 		this.socket.on('connect_error', function() {
 			this.emit('disconnect');
@@ -173,7 +179,7 @@ FabMoAPI.prototype.setConfig = function(cfg_data, callback) {
 FabMoAPI.prototype.getVersion = function(callback) {
 	this._get('/version', callback, function(err, version) {
 		if(err) {
-			callback(err);			
+			callback(err);
 		}
 		this.version = version;
 		callback(null, version);
@@ -316,7 +322,7 @@ FabMoAPI.prototype.manualStop = function() {
 }
 
 FabMoAPI.prototype.manualMoveFixed = function(axis, speed, distance) {
-	this.executeRuntimeCode('manual', {'cmd': 'fixed', 'axis' : axis, 'speed' : speed, 'dist' : distance});	
+	this.executeRuntimeCode('manual', {'cmd': 'fixed', 'axis' : axis, 'speed' : speed, 'dist' : distance});
 }
 
 FabMoAPI.prototype.connectToWifi = function(ssid, key, callback) {
@@ -382,6 +388,31 @@ FabMoAPI.prototype.command = function(name, args) {
 	this.commandCounter += 1;
 }
 
+
+FabMoAPI.prototype.getCurrentUser=function(callback){
+  this._get("/authentication/user",callback,callback);
+}
+
+FabMoAPI.prototype.addUser=function(user_info,callback){
+  this._post('/authentication/user',user_info,callback,callback);
+}
+
+FabMoAPI.prototype.modifyUser = function(user_info,callback){
+  var id = user_info.user.id;
+  user_info.user.id=undefined;
+  var user = user_info;
+  this._post('/authentication/user/'+id,user,callback,callback);
+}
+
+FabMoAPI.prototype.deleteUser = function(user_info,callback){
+    var id = user_info.user._id;
+    this._del("/authentication/user/"+id,{},callback,callback)
+}
+
+FabMoAPI.prototype.getUsers = function(callback){
+    this._get("/authentication/users",callback,callback);
+}
+
 FabMoAPI.prototype._url = function(path) { return this.base_url + '/' + path.replace(/^\//,''); }
 
 FabMoAPI.prototype._get = function(url, errback, callback, key) {
@@ -392,13 +423,13 @@ FabMoAPI.prototype._get = function(url, errback, callback, key) {
 	$.ajax({
 		url: url,
 		type: "GET",
-		dataType : 'json', 
+		dataType : 'json',
 		success: function(result){
 			if(result.status === "success") {
 				if(key) {
-					callback(null, result.data[key]);					
+					callback(null, result.data[key]);
 				} else {
-					callback(null, result.data);										
+					callback(null, result.data);
 				}
 			} else if(result.status==="fail") {
 				errback(result.data);
@@ -456,7 +487,7 @@ FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback
 				}
 				if(data.status === 'complete') {
 					if(key) {
-						callback(null, data.data[key]);						
+						callback(null, data.data[key]);
 					} else {
 						callback(null, data.data);
 					}
@@ -471,7 +502,7 @@ FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback
 
 FabMoAPI.prototype._post = function(url, data, errback, callback, key, redirect) {
 	if(!redirect) {
-		var url = this._url(url);		
+		var url = this._url(url);
 	}
 	var callback = callback || function() {};
 	var errback = errback || function() {};
@@ -543,13 +574,13 @@ FabMoAPI.prototype._del = function(url, data, errback, callback, key) {
 		url: url,
 		type: "DELETE",
 		dataType : 'json',
-		'data' : data, 
+		'data' : data,
 		success: function(result){
 			if(data.status === "success") {
 				if(key) {
 					callback(null, result.data.key);
 				} else {
-					callback(null,result.data);					
+					callback(null,result.data);
 				}
 			} else if(data.status==="fail") {
 				errback(result.data);
