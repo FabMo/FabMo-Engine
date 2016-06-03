@@ -366,6 +366,125 @@ var createJob = function(file, options, callback) {
     });
 }
 
+User = function(username,password,isAdmin,created_at,_id) {
+		this._id = _id;
+    this.username = username;
+    this.password = password;
+		this.isAdmin = isAdmin || false;
+    this.created_at = created_at || Date.now();
+};
+
+User.prototype.validPassword= function(password){
+	var pass_shasum = crypto.createHash('sha256').update(password).digest('hex');
+
+	if(pass_shasum === this.password){
+		return true;
+	}else if(password === this.password){
+		return true;
+	}else{
+		return false;
+	}
+};
+
+// Delete this user from the database
+User.prototype.delete = function(callback){
+	users.remove({_id : this._id},function(err){if(!err)callback();else callback(err);});
+};
+
+// verify user password and encrypt it.
+User.verifyAndEncryptPassword = function(password,callback){
+	if(!/^([a-zA-Z0-9@*#]{5,15})$/.test(password) ){ //validatepassword
+		if(callback) callback('Password not valid, it should contain between 5 and 15 characters. The only special characters authorized are "@ * #".',null);
+		return undefined;
+	}
+	var pass_shasum = crypto.createHash('sha256').update(password).digest('hex'); // save encrypted password
+	if(callback)callback(null,pass_shasum);
+	return pass_shasum;
+};
+
+// Grant user admin status
+User.prototype.grantAdmin = function(callback){
+	this.isAdmin = true;
+	this.save();
+};
+
+// Revoke user admin status
+User.prototype.revokeAdmin = function(callback){
+	this.isAdmin = false;
+	this.save();
+};
+
+User.prototype.save = function(callback){
+	users.save(this, function(err, record) {
+		if(!record) {
+			return;
+		}
+		if(callback)callback(null, this);
+	}.bind(this));
+};
+
+User.add = function(username,password,callback){
+	if(!/^([a-zA-Z0-9]{3,20})$/.test(username) ){ //validate username
+		return callback('Username not valid, it should contain between 3 and 20 characters. Special characters are not authorized.',null);
+	}
+	User.verifyAndEncryptPassword(password,function(err,pass_shasum){
+		if (err){return callback(err,password);}
+		users.findOne({username:username},function(err,document) {
+			if(document){
+				return callback('Username already taken !',null);
+			}else{
+				user = new User(username,pass_shasum);
+				user.save();
+				return callback(null,user);
+			}
+		});
+	})
+}
+
+User.findOne = function(username,callback){
+	users.findOne({username:username},function(err,doc){
+		if(err){console.log(err);callback(err,null);}
+		if(doc){
+			user = new User(doc.username,doc.password,doc.isAdmin,doc.created_at,doc._id);
+			callback(err,user);
+		}else{
+			callback(err);
+		}
+	});
+}
+
+User.getAll = function(callback){
+	users.find({},{password:0},function(err,cursor){ // do not returns passwords.
+		if(err){console.log(err);callback(err,null);}
+		if(cursor){
+			var user_array = [];
+			cursor.toArray(function(err,users){
+				for(user in users){
+						user_array.push(new User(users[user].username,users[user].password,users[user].isAdmin,users[user].created_at,users[user]._id));
+				}
+				callback(null,user_array);
+			});
+		}else{
+			callback(err);
+		}
+	});
+}
+
+User.findById = function(id,callback){
+	users.findOne({_id:id},function(err,doc){
+		if(err){console.log(err);callback(err,null);return;}
+		if(doc){
+			user = new User(doc.username,doc.password,doc.isAdmin,doc.created_at,doc._id);
+			callback(err,user);
+			return;
+		}else{
+			callback("user doesn't exist !");
+			return;
+		}
+	});
+}
+
+
 checkCollection = function(collection, callback) {
 	collection.find().toArray(function(err, data) {
 		if(err) {
@@ -390,6 +509,17 @@ exports.configureDB = function(callback) {
 	db = new Engine.Db(config.getDataDir('db'), {});
 	files = db.collection("files");
 	jobs = db.collection("jobs");
+
+	users.find({}).toArray(function(err,result){ //init the user database with an admin account if it's empty
+		if (err){
+			throw err;
+		}
+		if(result.length === 0 ){
+			var pass_shasum = crypto.createHash('sha256').update("go2fabmo").digest('hex');
+			user = new User("admin",pass_shasum,true);
+			user.save();
+		}
+	});
 
 	async.parallel([
 			function(cb) {

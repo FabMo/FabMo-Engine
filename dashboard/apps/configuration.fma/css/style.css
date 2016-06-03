@@ -150,22 +150,56 @@ table {
   box-shadow: .5px .5px .5px #aaaaaa;
 }
 
+.changepassword-button {
+  background-size: 100% 100%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  padding: 0.1em;
+  border: 1px solid #444444;
+  border-radius: 5px;
+  box-shadow: .5px .5px .5px #aaaaaa;
+}
+
+.grantadmin-button {
+  background-size: 100% 100%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  padding: 0.3em;
+  border: 1px solid #444444;
+  border-radius: 5px;
+  box-shadow: .5px .5px .5px #aaaaaa;
+}
+
+.revokeadmin-button {
+  background-size: 100% 100%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  padding: 0.3em;
+  border: 1px solid #444444;
+  border-radius: 5px;
+  box-shadow: .5px .5px .5px #aaaaaa;
+}
+
+
 
 #dropzone .hovershow {
   opacity: 0.0;
-} 
+}
 
 #dropzone .hoverdim {
   opacity: 1.0;
 }
 
-#dropzone.hover { 
+#dropzone.hover {
   width: 99%;
-  border: 5px dashed #ccc; 
+  border: 5px dashed #ccc;
   border-radius: 10px;
- 
+
 }
- 
+
 #dropzone.hover .hovershow {
   opacity: 1.0;
 }
@@ -176,7 +210,7 @@ table {
 
 #dropzone .message {
   z-index: 3;
-  display: block; 
+  display: block;
   position: fixed;
   top: 50%;
   left: 50%;
@@ -238,6 +272,12 @@ table {
 }
 
 .hidden, .hide { display:none; }
+
+
+#modal-title {
+  font-weight: 700;
+  color: #2E3865;
+}
 
 .modal-background {
     position: fixed;

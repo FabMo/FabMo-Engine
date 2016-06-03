@@ -1,0 +1,38 @@
+
+<!DOCTYPE html>
+<html lang="en"> <!-- manifest="webcache.manifest" -->
+	<head>
+		<meta charset="utf-8">
+		<title>streamServer</title>
+		<script src="/js/libs/socket.io.js"></script>
+		<script src="/js/libs/jquery.min.js"></script>
+	</head>
+
+	<body>
+		<div id="stream-container">
+
+			<canvas id="videostream"></canvas>
+
+		</div>
+	</body>
+	<script src="/js/libs/fabmo.js"></script>
+	<script type="text/javascript">
+	fabmo = new FabMoDashboard();
+
+$(document).ready(function () {
+	var canvas = document.getElementById('videostream');
+	var context = canvas.getContext('2d');
+	fabmo.startVideoStreaming(function(){
+		fabmo.onVideoFrame(function(imageObj){
+			context.height = imageObj.height;
+			context.width = imageObj.width;
+			canvas.width  = imageObj.width;
+			canvas.height = imageObj.height;
+			context.drawImage(imageObj,0,0,context.width,context.height);
+		});
+
+	});
+});
+	</script>
+
+</html>

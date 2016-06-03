@@ -4,7 +4,7 @@ var socketio = require('socket.io');
 var async = require('async');
 var process = require('process');
 var machine = require('./machine');
-var detection_daemon = require('./detection_daemon')();
+var detection_daemon = require('./detection_daemon');
 var config = require('./config');
 var PLATFORM = process.platform;
 var log = require('./log').logger('engine');
@@ -205,6 +205,11 @@ Engine.prototype.start = function(callback) {
             });
         }.bind(this),
 
+        function launch_detection_daemon(callback){
+            log.info("Launching detection daemon...");
+            detection_daemon();
+            callback(null);
+        }.bind(this),
         function load_machine_config(callback) {
             this.machine = machine.machine;
             log.info('Loading the machine configuration...')
