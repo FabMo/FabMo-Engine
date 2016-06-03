@@ -28,7 +28,7 @@ function setupDropTarget() {
 					if(err){
 						fabmo.notify('error', err);
 					}
-					//updateQueue();
+					updateQueue();
 				});
 			}
 			finally {
@@ -347,19 +347,19 @@ function runningJob(job) {
 };
 
 
-var setJobheight = function () {
-	var w = $('.with-job').height();
-	var wo = $('.without-job').height();
-	var height = 0;
-	if (w > wo) {
-		height = w;
+// var setJobheight = function () {
+// 	var w = $('.with-job').height();
+// 	var wo = $('.without-job').height();
+// 	var height = 0;
+// 	if (w > wo) {
+// 		height = w;
 		
-	} else {
-		height = wo;
+// 	} else {
+// 		height = wo;
 		
-	}
-	$('.jobs-wrapper').height(height);
-};
+// 	}
+// 	$('.jobs-wrapper').height(height);
+// };
 
 var setProgress = function(status) {
 	var prog = ((status.line/status.nb_lines)*100).toFixed(2);
