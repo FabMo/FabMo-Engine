@@ -35,6 +35,8 @@
 
 <div class="tabs-content">
   <div class="content active dropzone" id="tabpending">
+	  <div id="droptarget">
+  		</div>
 			<div class="row title jobs-title">
 				<div class="small-12 columns">
 					<h4 class="up-next">Up Next</h4>
@@ -195,7 +197,7 @@
 	updateHistory();
 
 	bindNextJobEvents();
-	//setupDropTarget();
+	setupDropTarget();
 
 	$('#history_page_next').click(function(evt) {
 		evt.preventDefault();
