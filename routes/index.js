@@ -3,6 +3,7 @@ var path = require('path');
 var log = require('../log').logger('routes');
 var restify = require('restify');
 var util = require('../util');
+var passport = require('../authentication').passport;
 
 // Load all the files in the 'routes' directory and process them as route-producing modules
 module.exports = function(server) {

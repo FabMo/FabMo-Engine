@@ -15,6 +15,7 @@ job_queue = new util.Queue();
 var db;
 var files;
 var jobs;
+var users;
 
 function notifyChange() {
 	var machine = require('./machine').machine;
@@ -509,6 +510,7 @@ exports.configureDB = function(callback) {
 	db = new Engine.Db(config.getDataDir('db'), {});
 	files = db.collection("files");
 	jobs = db.collection("jobs");
+	users = db.collection("users");
 
 	users.find({}).toArray(function(err,result){ //init the user database with an admin account if it's empty
 		if (err){
@@ -575,4 +577,5 @@ exports.cleanup = function(callback) {
 
 exports.File = File;
 exports.Job = Job;
+exports.User = User
 exports.createJob = createJob;

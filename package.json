@@ -27,6 +27,9 @@
     "tough-cookie": "^2.0.0",
     "lockfile":"1.0.x",
     "bonjour":"jlucidar/bonjour",
+    "passport-local": "jlucidar/passport-restify-local",
+    "passport-restify": "^1.0.1",
+    "client-sessions": "^0.7.0",
     "udev":"^0.2.0"
   },
   "devDependencies": {
