@@ -32,6 +32,7 @@ Job = function(options) {
     this.started_at = null;
     this.finished_at = null;
     this.state = "pending";
+    this.order = null;
 };
 
 Job.prototype.clone = function(callback) {
@@ -41,6 +42,12 @@ Job.prototype.clone = function(callback) {
 		description : this.description
 	});
 	job.save(callback);
+};
+
+Job.prototype.update_order = function (order, callback){
+    log.info("Upating " + this._id ? this._id : '<volatile job>');
+    this.order = order;
+    this.save(callback);
 };
 
 Job.prototype.start = function(callback) {
@@ -178,6 +185,10 @@ Job.getById = function(id,callback)
 
 Job.getNext = function(callback) {
 	jobs.find({state:'pending'}).toArray(function(err, result) {
+        result.sort(function(a, b){
+            return a.order - b.order;
+        });
+        log.info('printing' + result[0]);
 		if(err) {
 			callback(err, null);
 		} else {

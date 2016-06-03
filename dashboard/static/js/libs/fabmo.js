@@ -503,6 +503,10 @@ FabMoDashboard.prototype.submitJob = function(jobs, options, callback) {
 	this._call("submitJob", args, callback)
 }
 
+FabMoDashboard.prototype.updateOrder = function(data, callback) {
+	this._call("updateOrder", data, callback);
+}
+
 /**
  * Resubmit a job by its ID.  Resubmitted jobs come in at the back of the job queue.
  *

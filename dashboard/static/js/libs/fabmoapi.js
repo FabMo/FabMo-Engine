@@ -255,6 +255,10 @@ FabMoAPI.prototype.resubmitJob = function(id, callback) {
 	this._post('/job/' + id, {}, callback, callback);
 }
 
+FabMoAPI.prototype.updateOrder= function(data, callback) {
+	this._patch('/job/' + data.id, data, callback, callback);
+}
+
 FabMoAPI.prototype.runNextJob = function(callback) {
 	this._post('/jobs/queue/run', {}, callback, callback);
 }
@@ -597,6 +601,36 @@ FabMoAPI.prototype._post = function(url, data, errback, callback, key, redirect)
 	xhr.send(data);
 	return xhr;
 }
+
+FabMoAPI.prototype._patch = function(url, data, errback, callback, key) {
+	var url = this._url(url);
+	var callback = callback || function() {};
+	var errback = errback || function() {};
+	$.ajax({
+		url: url,
+		type: "PATCH",
+		'data' : data, 
+		success: function(result){
+			if(data.status === "success") {
+				if(key) {
+					callback(null, result.data.key);
+				} else {
+					callback(null,result.data);					
+				}
+			} else if(data.status==="fail") {
+				errback(result.data);
+			} else {
+				errback(result.message);
+			}
+		},
+		error: function( data, err ){
+			 errback(err);
+		}
+	});
+}
+
+
+
 
 FabMoAPI.prototype._del = function(url, data, errback, callback, key) {
 	var url = this._url(url);
