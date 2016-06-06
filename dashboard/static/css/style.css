@@ -542,6 +542,12 @@ input[type=number]::-webkit-outer-spin-button {
 	vertical-align: baseline;
 }
 
+#position ul .axis .rotunits {
+	font-size: 12px;
+	text-transform: lowercase;
+	vertical-align: baseline;
+}
+
 #position ul .axis .home, #keyboard ul .set {
 	padding: 0;
 	text-align: center;

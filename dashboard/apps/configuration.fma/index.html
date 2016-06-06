@@ -1599,7 +1599,7 @@
               <input type="number" id="machine-manual-xy_speed" class="machine-input"/>
             </div>
             <div class="small-3 columns">
-              <span class="postfix">in</span>
+              <span class="postfix ips_mmps_label">&nbsp;</span>
             </div>
           </div>
 
@@ -1609,7 +1609,7 @@
               <input type="number" id="machine-manual-z_speed" class="machine-input"/>
             </div>
             <div class="small-3 columns">
-              <span class="postfix">in</span>
+              <span class="postfix ips_mmps_label">&nbsp;</span>
             </div>
           </div>
 
@@ -1619,7 +1619,7 @@
               <input type="number" id="machine-manual-xy_increment" class="machine-input"/>
             </div>
             <div class="small-3 columns">
-              <span class="postfix">in</span>
+              <span class="postfix in_mm_label">&nbsp;</span>
             </div>
           </div>
 
@@ -1629,7 +1629,7 @@
               <input type="number" id="machine-manual-z_increment" class="machine-input"/>
             </div>
             <div class="small-3 columns">
-              <span class="postfix">in</span>
+              <span class="postfix in_mm_label">&nbsp;</span>
             </div>
           </div>
 
@@ -1816,6 +1816,7 @@
       // Setup Unit Labels
       registerUnitLabel('.in_mm_label', 'in', 'mm');
       registerUnitLabel('.ipm_mmpm_label', 'in/min', 'mm/min');
+      registerUnitLabel('.ips_mmps_label', 'in/sec', 'mm/sec');
       registerUnitLabel('.ipm2_mmpm2_label', 'in/min<sup>2</sup>', 'mm/min<sup>2</sup>');
       registerUnitLabel('.inrev_mmrev_label', 'in/rev', 'mm/rev');
       registerUnitLabel('.inpm3_mmpm3_label', 'in/min<sup>3</sup>', 'mm/min<sup>3</sup>');

@@ -142,50 +142,52 @@
 
 
   <script type="text/javascript">
-  var fabmo = new FabMoDashboard();
-  var el = document.getElementById('queue_table');
-  var sortable = Sortable.create(el, {
-	  delay: 200,
-	  ghostClass: 'ghost',
-	  chosenClass: 'chosen',
-	  onStart: function (evt) {
-		  var remove = document.getElementById('actions');
-    	  remove.parentNode.removeChild(remove);
-	  },
-      onEnd: function (evt) {
-		  var firstJob = document.getElementById('queue_table').firstChild;
-		  var cardActions = document.createElement("div");
-    	  setFirstCard(firstJob.id);
-      	  var newOrder = sortable.toArray();
-          fabmo.getJobsInQueue(function(err, jobs) {
-       		for (i=0; i<newOrder.length; i++){
-         		var id = jobs.pending.filter(function (id){
-            	return id._id == newOrder[i];
-          });
-          		id[0].order = i + 1;
-          		fabmo.updateOrder({id:id[0]._id, order:id[0].order}, function(err, result) {});
-      		}	
-      	  });
-
+	var fabmo = new FabMoDashboard();
+	var el = document.getElementById('queue_table');
+	var sortable = Sortable.create(el, {
+	delay: 200,
+	ghostClass: 'ghost',
+	chosenClass: 'chosen',
+	onStart: function(evt) {
+		var remove = document.getElementById('actions');
+		remove.parentNode.removeChild(remove);
+	},
+	onEnd: function(evt) {
+		var firstJob = document.getElementById('queue_table').firstChild;
+		var cardActions = document.createElement("div");
+		setFirstCard(firstJob.id);
+		var newOrder = sortable.toArray();
+		fabmo.getJobsInQueue(function(err, jobs) {
+		for (i = 0; i < newOrder.length; i++) {
+			var id = jobs.pending.filter(function(id) {
+			return id._id == newOrder[i];
+			});
+			id[0].order = i + 1;
+			fabmo.updateOrder({
+			id: id[0]._id,
+			order: id[0].order
+			}, function(err, result) {});
+		}
+		});
 		$('.cancel').show(500);
 		$('.download').show(500);
 		$('.edit').show(500);
 		$('.preview').show(500);
 		$('.play-button').show();
-			bindNextJobEvents();
-    }
-  });
-  
-  var current_job_id = 0;
+		bindNextJobEvents();
+	}
+	});
 
-  $(document).ready(function() {
-  	//Foundation Init
+	var current_job_id = 0;
+
+	$(document).ready(function() {
+	//Foundation Init
 	$(document).foundation();
 
 	fabmo.on('change', function(topic) {
-		if(topic === 'jobs') {
-			updateQueue();
-			updateHistory();
+		if (topic === 'jobs') {
+		updateQueue();
+		updateHistory();
 		}
 	});
 
@@ -213,81 +215,79 @@
 		$('#job_selector').click();
 	});
 
-	$('#queue_table').on('click', '.play-button', function(e) { 
-		if ($('.play').hasClass('active')){
-			fabmo.pause(function(err, data) {
-		});
+	$('#queue_table').on('click', '.play-button', function(e) {
+		if ($('.play').hasClass('active')) {
+		fabmo.pause(function(err, data) {});
 		} else {
-			
-			fabmo.runNext(function(err, data) {
-				if(err) {
-					fabmo.notify(err);
-				} else {
-					updateQueue();
-				}
-			});	
-		}		
+
+		fabmo.runNext(function(err, data) {
+			if (err) {
+			fabmo.notify(err);
+			} else {
+			updateQueue();
+			}
+		});
+		}
 	});
 
-	$('#clear-jobs').click(function(e) { 
+	$('#clear-jobs').click(function(e) {
 		fabmo.clearJobQueue(function(err, data) {
-			updateQueue();
+		updateQueue();
 		});
 	});
 
 	$('.submit-button').click(function(evt) {
 		jQuery('#file').trigger('click');
 	});
-    
-    $('.without-job').click(function(evt) {
+
+	$('.without-job').click(function(evt) {
 		jQuery('#file').trigger('click');
 	});
 
 	$('#file').change(function(evt) {
 		fabmo.submitJob($('#fileform'), {}, function(err, data) {
-			if(err){
-				fabmo.notify('error', err);
-			}
-			resetFormElement($('#file'));
-			updateQueue();
-			$('#nav-pending').click();
+		if (err) {
+			fabmo.notify('error', err);
+		}
+		resetFormElement($('#file'));
+		updateQueue();
+		$('#nav-pending').click();
 		});
 	});
 
 	// $( window ).resize(function() {
-  	// 	setJobheight();
+	// 	setJobheight();
 	// }).resize();
-	
+
 	fabmo.on('status', function(status) {
 		console.log();
-        handleStatusReport(status);
-        if (status.job == null && status.state != 'idle') {
-            $('.play-button').hide();
-        } else if (status.state == 'idle' && el.firstChild) {
-           $('.play-button').show();
-        }
-        // if (status.state == 'running') {
-        //     $('.job-status-light.one').css({'animation': 'off 1.5s  infinite', '-moz-animation': 'off 1.5s  infinite', '-webkit-animation': 'off 1.5s  infinite'});
-        //     $('.job-status-light.two').css({'animation': 'off 1.5s 0.5s infinite', '-moz-animation': 'off 1.5s 0.5s infinite', '-webkit-animation': 'off 1.5s 0.5s infinite'});
-        //     $('.job-status-light.three').css({'animation': 'off 1.5s 1s infinite', '-moz-animation': 'off 1.5s 1s infinite', '-webkit-animation': 'off 1.5s 1s infinite'});
-        // } else if ( status.state == 'paused'){
-        //     $('.job-status-light').css({'animation': 'pause 1.5s  infinite', '-moz-animation': 'pause 1.5s  infinite', '-webkit-animation': 'pause 1.5s  infinite'});
-        // } else {
-        //     $('.job-status-light').css({'animation': 'none', '-moz-animation': 'none', '-webkit-animation': 'none'});
-        // }
+		handleStatusReport(status);
+		if (status.job == null && status.state != 'idle') {
+		$('.play-button').hide();
+		} else if (status.state == 'idle' && el.firstChild) {
+		$('.play-button').show();
+		}
+		// if (status.state == 'running') {
+		//     $('.job-status-light.one').css({'animation': 'off 1.5s  infinite', '-moz-animation': 'off 1.5s  infinite', '-webkit-animation': 'off 1.5s  infinite'});
+		//     $('.job-status-light.two').css({'animation': 'off 1.5s 0.5s infinite', '-moz-animation': 'off 1.5s 0.5s infinite', '-webkit-animation': 'off 1.5s 0.5s infinite'});
+		//     $('.job-status-light.three').css({'animation': 'off 1.5s 1s infinite', '-moz-animation': 'off 1.5s 1s infinite', '-webkit-animation': 'off 1.5s 1s infinite'});
+		// } else if ( status.state == 'paused'){
+		//     $('.job-status-light').css({'animation': 'pause 1.5s  infinite', '-moz-animation': 'pause 1.5s  infinite', '-webkit-animation': 'pause 1.5s  infinite'});
+		// } else {
+		//     $('.job-status-light').css({'animation': 'none', '-moz-animation': 'none', '-webkit-animation': 'none'});
+		// }
 	});
- 	
-	function resetFormElement(e) {
-	  e.wrap('<form>').closest('form').get(0).reset();
-	  e.unwrap();
-	}
-    
-//    window.setInterval(function(){
-//    		$('.job-status-light').toggleClass('off');
-// 	}, 1000);
 
-	
-  });
+	function resetFormElement(e) {
+		e.wrap('<form>').closest('form').get(0).reset();
+		e.unwrap();
+	}
+
+	//    window.setInterval(function(){
+	//    		$('.job-status-light').toggleClass('off');
+	// 	}, 1000);
+
+	});
 </script>
 
 </body>
