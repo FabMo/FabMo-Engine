@@ -173,15 +173,10 @@ define(function(require) {
 		this._registerHandler('hideDRO', function() {
 			this.closeRightMenu()
 		}.bind(this));
-<<<<<<< HEAD
 
-        // Show the DRO
-		this._registerHandler('openModal', function(options, callback) {
-=======
         
         // Show the Modal
 		this._registerHandler('openModal', function(options, callback) { 
->>>>>>> sortable_cards
 			if(options.ok) {
 				options.ok = function() {
 					callback(null, 'ok');
@@ -197,15 +192,7 @@ define(function(require) {
 			} catch(e) {
 				callback(e);
 			}
-<<<<<<< HEAD
 
-/*			if(!(options.ok || options.cancel)) {
-				callback(null);
-			}*/
-=======
-			
-
->>>>>>> sortable_cards
 		}.bind(this));
 
 		// Hide the DRO

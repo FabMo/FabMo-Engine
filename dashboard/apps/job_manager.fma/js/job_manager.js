@@ -304,7 +304,6 @@ function nextJob(job) {
 };
 
 function runningJob(job) {
-	console.log(sortable);
 	if(!job) {
 		setProgress({status});
 		$('.play').removeClass('active')
