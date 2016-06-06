@@ -45,10 +45,12 @@ exports.VA = function(args, callback) {
 		}
 		if (args[0] !== undefined) { 	//X location
 			setVA_G2.g55x = Number(((MPO.x * unitConv) - args[0]).toFixed(5));
+			log.debug("    g55X" + JSON.stringify(setVA_G2.g55x) + "  MPO.x = " + MPO.x + " args[0] = " + args[0]);
 			this.cmd_posx = this.posx = args[0];
 		}
 		if (args[1] !== undefined) { 	//Y location
 			setVA_G2.g55y = Number(((MPO.y * unitConv) - args[1]).toFixed(5));
+			log.debug("    g55Y" + JSON.stringify(setVA_G2.g55y) + "  MPO.y = " + MPO.y + " args[1] = " + args[1]);
 			this.cmd_posy = this.posy = args[1];
 		}
 		if (args[2] !== undefined) { 	//Z location
