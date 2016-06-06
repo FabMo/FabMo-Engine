@@ -33,15 +33,15 @@ exports.VA = function(args, callback) {
 		}
 		if (args[9] !== undefined) { 	//A Base Coordinate
 		    this.emit_gcode("G28.3 A" + args[9] );
-		    MPO.a = args[9] / unitConv;
+		    MPO.a = args[9];// / unitConv; // No unit conversion for rotary
 		}
 		if (args[10] !== undefined) { 	//B Base Coordinate
 		    this.emit_gcode("G28.3 B" + args[10] );
-		    MPO.b = args[10] / unitConv;
+		    MPO.b = args[10];// / unitConv; // No unit conversion for rotary
 		}
 		if (args[11] !== undefined) { 	//C Base Coordinate
 		    this.emit_gcode("G28.3 C" + args[11] );
-		    MPO.c = args[11] / unitConv;
+		    MPO.c = args[11];// / unitConv; // No unit conversion for rotary
 		}
 		if (args[0] !== undefined) { 	//X location
 			setVA_G2.g55x = Number(((MPO.x * unitConv) - args[0]).toFixed(5));
@@ -56,15 +56,15 @@ exports.VA = function(args, callback) {
 			this.cmd_posz = this.posz = args[2];
 		}
 		if (args[3] !== undefined) { 	//A location
-			setVA_G2.g55a = Number(((MPO.a * unitConv) - args[3]).toFixed(5));
+			setVA_G2.g55a = Number(((MPO.a * 1.0 /*unitConv*/) - args[3]).toFixed(5));
 			this.cmd_posa = this.posa = args[3];
 		}
 		if (args[4] !== undefined) { 	//B location
-			setVA_G2.g55b = Number(((MPO.b * unitConv) - args[4]).toFixed(5));
+			setVA_G2.g55b = Number(((MPO.b * 1.0 /*unitConv*/) - args[4]).toFixed(5));
 			this.cmd_posb = this.posb = args[4];
 		}
 		if (args[5] !== undefined) { 	//C location
-			setVA_G2.g55c = Number(((MPO.c * unitConv) - args[5]).toFixed(5));
+			setVA_G2.g55c = Number(((MPO.c * 1.0 /*unitConv*/) - args[5]).toFixed(5));
 			this.cmd_posc = this.posc = args[5];
 		}
 
