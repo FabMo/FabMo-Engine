@@ -74,11 +74,11 @@ define(function(require) {
       this._fireEvent('video_frame', frame);
     }.bind(this));
     this.engine.on('connect', function() {
-      this._fireEvent('reconnect', frame);
-    });
+      this._fireEvent('reconnect', null);
+    }.bind(this));
     this.engine.on('disconnect', function() {
-      this._fireEvent('disconnect', frame);
-    });
+      this._fireEvent('disconnect', null);
+    }.bind(this));
 
   }
 

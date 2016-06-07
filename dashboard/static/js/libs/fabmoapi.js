@@ -92,14 +92,13 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 		this.socket.on('message', function(message) {console.info("Websocket message: " + JSON.stringify(message))} );
 
 		this.socket.on('disconnect', function() {
-			this.emit('disconnect');
 			console.info("Websocket disconnected");
+			this.emit('disconnect');
 		}.bind(this));
 
-
-    this.socket.on('authentication_failed', function(message) {
-      this.emit('authentication_failed',message);
-    }.bind(this));
+        this.socket.on('authentication_failed', function(message) {
+          this.emit('authentication_failed',message);
+        }.bind(this));
 
 		this.socket.on('connect_error', function() {
 			this.emit('disconnect');
@@ -609,13 +608,13 @@ FabMoAPI.prototype._patch = function(url, data, errback, callback, key) {
 	$.ajax({
 		url: url,
 		type: "PATCH",
-		'data' : data, 
+		'data' : data,
 		success: function(result){
 			if(data.status === "success") {
 				if(key) {
 					callback(null, result.data.key);
 				} else {
-					callback(null,result.data);					
+					callback(null,result.data);
 				}
 			} else if(data.status==="fail") {
 				errback(result.data);
