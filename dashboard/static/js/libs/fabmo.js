@@ -34,8 +34,9 @@ var FabMoDashboard = function(options) {
 		'job_start' : [],
 		'job_end' : [],
 		'change' : [],
-    'video_frame' : [],
-
+		'disconnect' : [],
+		'reconnect' : [],
+    	'video_frame' : [],
 	};
 	this._setupMessageListener();
     // listen for escape key press to quit the engine

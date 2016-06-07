@@ -49,12 +49,12 @@ var FabMoAPI = function(base_url) {
 	this.events = {
 		'status' : [],
 		'disconnect' : [],
-    'authentication_failed':[],
+    	'authentication_failed':[],
 		'connect' : [],
 		'job_start' : [],
 		'job_end' : [],
 		'change' : [],
-    'video_frame': [],
+    	'video_frame': [],
 	};
 	var url = window.location.origin;
 	this.base_url = url.replace(/\/$/,'');
