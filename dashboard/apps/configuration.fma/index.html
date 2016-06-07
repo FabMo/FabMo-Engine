@@ -1905,11 +1905,12 @@
           update();
         });
       });
-
-
       setupAppManager();
       setupUserManager();
 
+      fabmo.on('reconnect', function() {
+        update();
+      });
     });
   </script>
 

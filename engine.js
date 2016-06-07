@@ -359,7 +359,11 @@ Engine.prototype.start = function(callback) {
             
             //configuring authentication
             log.info("Cofiguring authentication...");
-            server.cookieSecret = crypto.randomBytes(256).toString('hex');
+            if('debug' in argv) {
+                server.cookieSecret = "fabmodebugsecret";
+            } else {
+                server.cookieSecret = crypto.randomBytes(256).toString('hex');                
+            }
 
             server.use(sessions({
                 // cookie name dictates the key name added to the request object

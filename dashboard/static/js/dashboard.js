@@ -25,7 +25,9 @@ define(function(require) {
       'job_start': [],
       'job_end': [],
       'change': [],
-      'video_frame': [],
+      'disconnect' : [],
+      'reconnect' : [],
+      'video_frame': []
     };
     this._registerHandlers();
     this._setupMessageListener();
@@ -71,6 +73,13 @@ define(function(require) {
     this.engine.on('video_frame', function(frame) {
       this._fireEvent('video_frame', frame);
     }.bind(this));
+    this.engine.on('connect', function() {
+      this._fireEvent('reconnect', frame);
+    });
+    this.engine.on('disconnect', function() {
+      this._fireEvent('disconnect', frame);
+    });
+
   }
 
   Dashboard.prototype.setRouter = function(router) {
