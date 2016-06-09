@@ -185,6 +185,7 @@
 	$(document).foundation();
 
 	fabmo.on('change', function(topic) {
+		console.log(topic);
 		if (topic === 'jobs') {
 		updateQueue();
 		updateHistory();
@@ -258,15 +259,20 @@
 	// $( window ).resize(function() {
 	// 	setJobheight();
 	// }).resize();
-
+	var lastSeen = '';
 	fabmo.on('status', function(status) {
-		console.log();
+		
+
+		if (lastSeen != status.state){
+			updateQueue();
+			lastSeen = status.state;
+		}
 		handleStatusReport(status);
 		if (status.job == null && status.state != 'idle') {
 		$('.play-button').hide();
 		} else if (status.state == 'idle' && el.firstChild) {
 		$('.play-button').show();
-		}
+		} 
 		// if (status.state == 'running') {
 		//     $('.job-status-light.one').css({'animation': 'off 1.5s  infinite', '-moz-animation': 'off 1.5s  infinite', '-webkit-animation': 'off 1.5s  infinite'});
 		//     $('.job-status-light.two').css({'animation': 'off 1.5s 0.5s infinite', '-moz-animation': 'off 1.5s 0.5s infinite', '-webkit-animation': 'off 1.5s 0.5s infinite'});
