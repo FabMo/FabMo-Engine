@@ -263,10 +263,10 @@
 	fabmo.on('status', function(status) {
 		
 
-		if (lastSeen != status.state){
-			updateQueue();
-			lastSeen = status.state;
-		}
+		// if (lastSeen != status.state){
+		// 	updateQueue();
+		// 	lastSeen = status.state;
+		// }
 		handleStatusReport(status);
 		if (status.job == null && status.state != 'idle') {
 		$('.play-button').hide();

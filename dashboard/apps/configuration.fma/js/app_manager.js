@@ -76,6 +76,7 @@ function refreshApps() {
         });
     };
     fabmo.on('change', function(topic) {
+        console.log(topic);
         if (topic === 'apps') {
             refreshApps();
         }
