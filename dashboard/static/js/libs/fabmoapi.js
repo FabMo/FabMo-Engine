@@ -75,13 +75,11 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 
 	if(this.socket) {
 		this.socket.on('status', function(status) {
-			console.log('status');
 			this._setStatus(status);
 			this.emit('status', status);
 		}.bind(this));
 
 		this.socket.on('change', function(topic) {
-			console.log('yo I changed');
 			this.emit('change', topic);
 		}.bind(this));
 
@@ -142,7 +140,6 @@ FabMoAPI.prototype.startVideoStreaming = function(callback){
 }
 
 FabMoAPI.prototype.emit = function(evt, data) {
-	console.log(this);
 	var handlers = this.events[evt];
 	if(handlers) {
 		for(var i=0; i<handlers.length; i++) {

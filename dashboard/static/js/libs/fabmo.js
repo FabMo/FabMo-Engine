@@ -245,7 +245,6 @@ FabMoDashboard.prototype._on = function(name, callback) {
  */
 FabMoDashboard.prototype.on = function(name, callback) {
 	this._on(name, callback);
-	console.log('im the other thing getting called');
 }
 
 

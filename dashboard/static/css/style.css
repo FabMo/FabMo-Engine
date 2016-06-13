@@ -1325,7 +1325,27 @@ input[type=number]::-webkit-outer-spin-button {
     position: relative;
 }
 
-@keyframes chipflyone {
+
+
+@-moz-keyframes spin {
+    from { -moz-transform: rotate(0deg); }
+    to { -moz-transform: rotate(360deg); }
+}
+@-webkit-keyframes spin {
+    from { -webkit-transform: rotate(0deg); }
+    to { -webkit-transform: rotate(360deg); }
+}
+@keyframes spin {
+    from {transform:rotate(0deg);}
+    to {transform:rotate(360deg);}
+}
+
+.st0 {
+	animation: spin .5s ease infinite;
+}
+
+ /*Old chipfly animation*/
+/*@keyframes chipflyone {
   0% {
     transform: translate(0px, -10px);
     opacity: 1;
@@ -1404,7 +1424,7 @@ input[type=number]::-webkit-outer-spin-button {
 
 .chip.three {
     animation: chipflythree .5s .4s ease infinite;
-}
+}*/
 
 .drobuttonOuter{
     position: relative;
