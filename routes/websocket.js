@@ -57,6 +57,9 @@ function setupStatusBroadcasts(server){
 	});
 
 	machine.on('change', function(topic) {
+		server.io.of('/private').sockets.forEach(function (socket) {
+			socket.emit('change',topic);
+		});		
 		server.io.sockets.sockets.forEach(function (socket) {
 			socket.emit('change',topic);
 		});
