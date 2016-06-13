@@ -29,7 +29,8 @@
     "bonjour":"jlucidar/bonjour",
     "passport-local": "jlucidar/passport-restify-local",
     "passport-restify": "^1.0.1",
-    "client-sessions": "^0.7.0"
+    "client-sessions": "^0.7.0",
+    "udev":"^0.2.0"
   },
   "devDependencies": {
     "chai": "3.2.x",

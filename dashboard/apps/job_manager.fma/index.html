@@ -185,6 +185,7 @@
 	$(document).foundation();
 
 	fabmo.on('change', function(topic) {
+		console.log(topic);
 		if (topic === 'jobs') {
 		updateQueue();
 		updateHistory();
