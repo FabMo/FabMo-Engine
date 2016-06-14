@@ -259,6 +259,11 @@
 	// $( window ).resize(function() {
 	// 	setJobheight();
 	// }).resize();
+	fabmo.on('reconnect', function() {
+		updateQueue();
+		updateHistory();
+	});
+
 	fabmo.on('status', function(status) {
 		handleStatusReport(status);
 		if (status.job == null && status.state != 'idle') {
