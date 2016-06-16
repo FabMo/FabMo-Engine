@@ -69,7 +69,7 @@ var serveAuthenticationPage=function(req,res,next){
 var logout = function(req, res, next) {
   req.logout();
   authentication.setCurrentUser(null);
-  res.redirect('/authentication',next);
+  res.redirect('',next);
   return;
 };
 

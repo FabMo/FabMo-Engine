@@ -23,14 +23,15 @@
 
 		this.engine = null;
 		// View Instances
+		//this.Menu = new this.views.Menu();
+		this.Athentication = new this.views.Authentication();
 		this.appClientView = new this.views.AppClientView({el : "#app-client-container"});
-
 		this.current_app_id = null;
 		this.reload_on_demand = false;
-		this.app_reload_index = {};
+		this.app_reload_index = {}; 
 		this.menuShown = true;
 	};
-
+	$('#mainContent').hide();
 	ApplicationContext.prototype.markAppForRefresh = function(id) {
 		if(id in this.app_reload_index) {
 			this.app_reload_index[id] = true;
@@ -102,7 +103,6 @@
 				this.current_app_id = id;
 				this.current_app_info = app;
 				this.appMenuView.hide();
-				this.appClientView.hide();
 				$('#waiting_container').show();
 				this.menuShown = false;
 				this.appClientView.setModel(app, hard_refresh, function() {

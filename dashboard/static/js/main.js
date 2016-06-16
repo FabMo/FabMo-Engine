@@ -29,19 +29,29 @@ define(function(require) {
     var authorizeDialog = false;
     var isRunning = false;
     var isAuth = false;
+    
     // Detect touch screen
-
     var supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
-
+    
     // Initial read of engine configuration
+    engine.getCurrentUser(function(err,user){
+        if(err){
+            window.location.href = '#/authentication';
+        } else {
+            console.log(user);
+        }
+    });
+   
     engine.getConfig();
     engine.getVersion(function(err, version) {
+
         context.setEngineVersion(version);
 
         context.apps = new context.models.Apps();
         // Load the apps from the server
         context.apps.fetch({
             success: function() {
+                
                 // Create the menu based on the apps thus retrieved
                 context.appMenuView = new context.views.AppMenuView({
                     collection: context.apps,
@@ -71,9 +81,11 @@ define(function(require) {
                 // Request a status update from the tool
                 engine.getStatus();
 
+                
+
                 dashboard.engine.on('change', function(topic) {
                     if (topic === 'apps') {
-                        context.apps.fetch();
+                        context.apps.fetch();r
                     }
                 });
             }
@@ -487,4 +499,5 @@ define(function(require) {
         }
     }
     touchScreen();
+
 });

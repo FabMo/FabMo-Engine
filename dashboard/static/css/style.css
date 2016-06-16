@@ -63,6 +63,28 @@ body,html{
 	size: 1rem;
 }
 
+#mainContent{
+	position: fixed;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	z-index: 40000;
+	background-color: #444;
+	padding: 4em;
+	display: none;
+}
+
+#mainContent .main{
+	background-color: #fff;
+	padding: 2em;
+	border-radius: 5px;
+}
+
+#mainContent .main  h1{
+	color: #666;
+}
+
 #tools-container {
 	margin-left: 16px;
 	margin-left: 1rem;

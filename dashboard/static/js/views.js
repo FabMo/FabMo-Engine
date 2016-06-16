@@ -1,7 +1,10 @@
 define(function(require) {
 
 	var models = require('models');
+	var Backbone = require('backbone');
+	var _ = require('underscore');
 	var views = {};
+
 
 	views.AppIconView = Backbone.View.extend({
 		tagName : 'li',
@@ -20,6 +23,33 @@ define(function(require) {
 			this.$el.html(this.template(this.model.toJSON()));
 			return this;
 		}
+	});
+
+	views.Menu = Backbone.View.extend({
+		el : '#mainContent',
+		template: _.template(require('text!templates/dashboard.html')),
+		initialize : function (){
+			this.render();
+		},
+		render : function() {
+			console.log('did I make it??????');
+			$(this.el).html(this.template());
+			return this;
+		}
+		
+	});
+
+	views.Authentication = Backbone.View.extend({
+		el : '#mainContent',
+		template: _.template(require('text!templates/authentication.html')),
+		initialize : function (){
+			this.render();
+		},
+		render : function() {
+			$(this.el).html(this.template())
+			return this;
+		}
+		
 	});
 
 	views.AddAppView = Backbone.View.extend({

@@ -76,6 +76,10 @@ function update() {
     });
 
     fabmo.getNetworkIdentity(function(err, data) {
+      if (err) {
+        console.info('Network not reachable');
+        return
+      }
       if(data.id) {
         $('#input-machine-name').val(data.name);
         $('#section-machine-name').show();        
