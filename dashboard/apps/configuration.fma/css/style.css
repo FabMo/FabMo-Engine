@@ -347,10 +347,28 @@ table {
     background-color: #32B433;
 }
 
+
 #section-machine-name {
   display: none;
 }
 
 #section-machine-id {
   display: none;
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    -moz-appearance:none;
+    appearance: none;
+    margin: 0;
+}
+
+input[type=number] {
+  -webkit-appearance: textfield;
+    -moz-appearance:textfield;
+    appearance: textfield;
+}
+
+select {
+   -moz-appearance:none;
 }

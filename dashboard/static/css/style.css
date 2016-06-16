@@ -530,12 +530,16 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	border: none;
     box-shadow: none;
     color: #eee;
+	-webkit-appearance: none;
+    -moz-appearance:textfield;
 }
 
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+    -webkit-appearance: none;
+    -moz-appearance:none;
+    appearance: none;
+    margin: 0;
 }
 
 .go-here{
