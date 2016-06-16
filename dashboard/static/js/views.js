@@ -25,19 +25,7 @@ define(function(require) {
 		}
 	});
 
-	views.Menu = Backbone.View.extend({
-		el : '#mainContent',
-		template: _.template(require('text!templates/dashboard.html')),
-		initialize : function (){
-			this.render();
-		},
-		render : function() {
-			console.log('did I make it??????');
-			$(this.el).html(this.template());
-			return this;
-		}
-		
-	});
+
 
 	views.Authentication = Backbone.View.extend({
 		el : '#mainContent',
