@@ -1,7 +1,10 @@
 define(function(require) {
 
 	var models = require('models');
+	var Backbone = require('backbone');
+	var _ = require('underscore');
 	var views = {};
+
 
 	views.AppIconView = Backbone.View.extend({
 		tagName : 'li',
@@ -20,6 +23,21 @@ define(function(require) {
 			this.$el.html(this.template(this.model.toJSON()));
 			return this;
 		}
+	});
+
+
+
+	views.Authentication = Backbone.View.extend({
+		el : '#mainContent',
+		template: _.template(require('text!templates/authentication.html')),
+		initialize : function (){
+			this.render();
+		},
+		render : function() {
+			$(this.el).html(this.template());
+			return this;
+		}
+		
 	});
 
 	views.AddAppView = Backbone.View.extend({
@@ -42,13 +60,13 @@ define(function(require) {
 					}
 					this.busy = true;
 					$('.add-icon').removeClass('fa-plus').addClass('fa-cog fa-spin');
-					dashboard.submitApps(files, {}, function(err, data) {		
-						this.busy = false;				
+					dashboard.submitApps(files, {}, function(err, data) {
+						this.busy = false;
 						function revert_icon() {
 							$('.add-icon').removeClass('fa-cog fa-spin fa-exclamation-triangle').addClass('fa-plus');
 						}
 						if(err) {
-							$('.add-icon').removeClass('fa-cog fa-spin').addClass('fa-exclamation-triangle');							
+							$('.add-icon').removeClass('fa-cog fa-spin').addClass('fa-exclamation-triangle');
 							dashboard.notification('error', "App could not be installed: <br/>" + (err.message || err));
 							setTimeout(revert_icon, 1500);
 						} else {
@@ -85,8 +103,8 @@ define(function(require) {
 			this.collection.forEach(function(item) {
 				var appIconView = new views.AppIconView({ model: item });
 				element.append(appIconView.render().el);
-			});				
-			element.append(new views.AddAppView().render().el);				
+			});
+			element.append(new views.AddAppView().render().el);
 			return this;
 		},
 		show : function() {

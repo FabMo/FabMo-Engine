@@ -73,9 +73,10 @@ exports.ZA = function(args, callback) {
 		if(err) { return callback(err); }
 		var zaObj = {};
 		var unitConv = 1.0;
+		/*
 		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
-		}
+		}*/
 		zaObj.g55a = Number((MPO * unitConv).toFixed(5));
 		config.driver.setMany(zaObj, function(err, value) {
 			if(err) { return callback(err); }
@@ -90,9 +91,10 @@ exports.ZB = function(args, callback) {
 		if(err) { return callback(err); }
 		var zbObj = {};
 		var unitConv = 1.0;		
-		if ( this.machine.driver.status.unit === 'in' ) {  // inches
+		// No unit conversion for rotary axes
+		/*if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
-		}
+		}*/
 		zbObj.g55b = Number((MPO * unitConv).toFixed(5));
 		config.driver.setMany(zbObj, function(err, value) {
 			if(err) { return callback(err); }
@@ -107,9 +109,11 @@ exports.ZC = function(args, callback) {
 		if(err) { return callback(err); }
 		var zcObj = {};
 		var unitConv = 1.0;		
+		// No unit conversion for rotary axes
+		/*
 		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
-		}
+		}*/
 		zcObj.g55c = Number((MPO * unitConv).toFixed(5));
 		config.driver.setMany(zcObj, function(err, value) {
 			if(err) { return callback(err); }
@@ -169,10 +173,12 @@ exports.Z4 = function(args,callback) {
 		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
 		}
+		// Unit conversion
 		z4Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
 		z4Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
 		z4Obj.g55z = Number((MPO.z * unitConv).toFixed(5));
-		z4Obj.g55a = Number((MPO.a * unitConv).toFixed(5));
+		// No unit conversion (rotary)
+		z4Obj.g55a = Number((MPO.a).toFixed(5));
 		config.driver.setMany(z4Obj, function(err, value) {
 			if(err) { return callback(err); }
 			this.cmd_posx = this.posx = 0.0;
@@ -192,11 +198,13 @@ exports.Z5 = function(args,callback) {
 		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
 		}
+		// Unit conversion
 		z5Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
 		z5Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
 		z5Obj.g55z = Number((MPO.z * unitConv).toFixed(5));
-		z5Obj.g55a = Number((MPO.a * unitConv).toFixed(5));
-		z5Obj.g55b = Number((MPO.b * unitConv).toFixed(5));
+		// No unit conversion (rotary)
+		z5Obj.g55a = Number((MPO.a).toFixed(5));
+		z5Obj.g55b = Number((MPO.b).toFixed(5));
 		config.driver.setMany(z5Obj, function(err, value) {
 			if(err) { return callback(err); }
 			this.cmd_posx = this.posx = 0.0;
@@ -220,9 +228,10 @@ exports.Z6 = function(args,callback) {
 		z6Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
 		z6Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
 		z6Obj.g55z = Number((MPO.z * unitConv).toFixed(5));
-		z6Obj.g55a = Number((MPO.a * unitConv).toFixed(5));
-		z6Obj.g55b = Number((MPO.b * unitConv).toFixed(5));
-		z6Obj.g55c = Number((MPO.c * unitConv).toFixed(5));
+		// No unit conversion
+		z6Obj.g55a = Number((MPO.a).toFixed(5));
+		z6Obj.g55b = Number((MPO.b).toFixed(5));
+		z6Obj.g55c = Number((MPO.c).toFixed(5));
 		config.driver.setMany(z6Obj, function(err, value) {
 			if(err) { return callback(err); }
 			this.cmd_posx = this.posx = 0.0;

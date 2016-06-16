@@ -20,7 +20,7 @@ var AppManager = function(options) {
 	this.apps_index = {};
 	this.app_configs = {};
 	this.apps_list = [];
-	try { 
+	try {
 		this.machine = require('../machine').machine;
 	} catch(e) {
 		log.warn('No machine bound to AppManager');
@@ -57,6 +57,7 @@ AppManager.prototype.readAppPackageInfo = function(app_info, callback) {
 			app_info.app_url = path.join('approot', pathname, package_info.main);
 			app_info.icon_url = path.join('approot', pathname, package_info.icon);
 			app_info.id = package_info.id || uuid.v1();
+			app_info.version = package_info.version || '';
 			app_info.description = package_info.description || "No description";
 			callback(null, app_info);
 		} catch(e) {
@@ -65,7 +66,7 @@ AppManager.prototype.readAppPackageInfo = function(app_info, callback) {
 	}.bind(this));
 };
 
-AppManager.prototype.readAppConfiguration = function(app_info, callback) {	
+AppManager.prototype.readAppConfiguration = function(app_info, callback) {
 	fs.readFile(app_info.config_path, function(err, data) {
 		try {
 			var cfg_data = JSON.parse(data);
@@ -120,7 +121,7 @@ AppManager.prototype.rebuildAppList = function() {
 	}
 }
 AppManager.prototype._addApp = function(app) {
-	if(app.info.id in this.apps_index) { 
+	if(app.info.id in this.apps_index) {
 		var old_app = this.apps_index[app.info.id]
 	    fs.unlink(old_app.app_archive_path, function(err) {
 	        if (err) {
@@ -158,7 +159,7 @@ AppManager.prototype.loadApp = function(pathname, options, callback){
 		if(stat.isDirectory()) {
 			// Copy if it's a directory
 			return this.copyApp(pathname, this.approot_directory, options, callback);
-		} 
+		}
 
 		var ext = path.extname(pathname).toLowerCase();
 		if(ext === '.fma' || ext === '.zip') {
@@ -202,7 +203,7 @@ AppManager.prototype.deleteApp = function(id, callback) {
 	}
 };
 
-/**  
+/**
  * Copies an app from the src directory to the dest approot directory.
  * Callback with app info.
  */
@@ -214,12 +215,12 @@ AppManager.prototype.copyApp = function(src, dest, options, callback) {
 			app_archive_path : src
 		};
 		var exists = fs.existsSync(app_info.app_path);
-		
+
 		if(exists && !options.force) {
 			log.debug('Not copying app "' + src + '" because it already exists.');
 			this.readAppMetadata(app_info, function(err, app_metadata) {
-				if(err) { 
-					return callback(err); 
+				if(err) {
+					return callback(err);
 				} else {
 					this._addApp(app_metadata);
 					callback(null, app_metadata);
@@ -234,8 +235,8 @@ AppManager.prototype.copyApp = function(src, dest, options, callback) {
 				return callback(err);
 			} else {
 				this.readAppMetadata(app_info, function(err, app_metadata) {
-					if(err) { 
-						return callback(err); 
+					if(err) {
+						return callback(err);
 					}
 					this._addApp(app_metadata);
 					callback(null, app_metadata);
@@ -252,7 +253,7 @@ AppManager.prototype.copyApp = function(src, dest, options, callback) {
  * Decompress the app and return app info (via callback)
  */
 AppManager.prototype.decompressApp = function(src, dest, options, callback) {
-	try { 
+	try {
 		var name = path.basename(src);
 		var app_info = {
 			app_path : dest + "/" + name,
@@ -262,8 +263,8 @@ AppManager.prototype.decompressApp = function(src, dest, options, callback) {
 		if(exists && !options.force) {
 			log.debug('Not decompressing app "' + src + '" because it already exists.');
 			this.readAppMetadata(app_info, function(err, app_metadata) {
-				if(err) { 
-					return callback(err); 
+				if(err) {
+					return callback(err);
 				} else {
 					this._addApp(app_metadata);
 					callback(null, app_metadata);
@@ -282,9 +283,9 @@ AppManager.prototype.decompressApp = function(src, dest, options, callback) {
 		}
 
 		this.readAppMetadata(app_info, function(err, app_metadata) {
-			if(err) { 
-				return callback(err); 
-			} 
+			if(err) {
+				return callback(err);
+			}
 			this._addApp(app_metadata);
 			callback(null, app_metadata);
 		}.bind(this));
@@ -340,7 +341,7 @@ AppManager.prototype.getAppPaths = function(callback) {
  */
 AppManager.prototype.loadApps =  function(callback) {
 	this.getAppPaths(function(err,files){
-		async.mapSeries(files, 
+		async.mapSeries(files,
 			function(file, callback) {
 				this.loadApp(file, {}, function(err, result) {
 					if(err) {
@@ -351,7 +352,7 @@ AppManager.prototype.loadApps =  function(callback) {
 						return callback(null, result);
 					}
 				}.bind(this));
-			}.bind(this), 
+			}.bind(this),
 			function(err, results) {
 				callback(err, results);
 			}.bind(this));

@@ -18,7 +18,8 @@ var updateMacro = function(req, res, next) {
     }
     macros.update(id, updated_macro, function(err, macro) {
         if(err) {
-            response = {'status' : 'error', 'message' : err.message }       
+            response = {'status' : 'error', 'message' : err.message }
+
         } else {
             response = {'status' : 'success', 'data' : macro}
         }

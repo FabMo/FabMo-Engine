@@ -40,6 +40,10 @@ body {
   transition: all 0.5s;
 }
 
+#tabpending{
+    
+}
+
 .hover .hoverdim { 
   -webkit-transition: opacity .2s ease;
   -moz-transition: opacity .2s ease;
@@ -55,11 +59,12 @@ body {
 .hover #droptarget {
   visibility: visible;
   opacity: 1;
-  z-index: 3;
-  position: absolute;
+  position: fixed;
   text-align: center;
-  width: 100%;
-  height: 100%;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
   color: #444444;
   background-image: url('../images/droptarget.png');
   background-repeat: no-repeat;
@@ -68,6 +73,7 @@ body {
   -webkit-transition: opacity .2s ease;
   -moz-transition: opacity .2s ease;
   -o-transition: opacity .2s ease;
+  z-index: 10;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -78,7 +84,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .jobs-title{
-  overflow: hidden;
+  padding: 0.5em;
 }
  .up-next{
    position: absolute;
@@ -93,6 +99,8 @@ h1, h2, h3, h4, h5, h6 {
    left: -2000px;
    top: 0;
    font-weight: bold;
+   width: 100%;
+   height: 100px;
    transition: all 0.5s;
  }
  .now-running{
@@ -105,13 +113,13 @@ h1, h2, h3, h4, h5, h6 {
  }
 
  .without-job{
-   position: absolute;
-   left: -2000px;
+ 
    top: 0;
    transition: all 0.5s;
    width: 100%;
    border: 3px dashed #666666;
    height: 150px;
+   background-color: #fff;
  }
  
  .without-job img{
@@ -183,17 +191,126 @@ td.actions-control {
 
 }
 
+#queue_table{
+ 
+ 
+}
+
+
+
+
+.job_item:first-child {
+  display: block;
+  width:98%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: .5em;
+  margin-top: 2em;
+  padding: 1em;
+  -webkit-transition: ALL .1s;
+  -moz-transition: ALL .1s;
+  transition: ALL .1s;
+}
+
+@media screen and (max-width: 630px){
+.job_item:first-child .description{
+    width: 60%;
+}
+}
+.job_item{
+    position: relative;
+    font-size: .9em;
+    padding: 0.5em;
+    color: #666;
+    width: 160px;
+    display: inline-block;
+    margin-top: 0;
+    background-color: #FFFFFF;
+    border-radius: 5px;
+    margin: 0.5em;
+    height: 200px;
+    box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.15);
+    border: 1px solid #ccc;
+    overflow: hidden;
+}
+
+.chosen{
+  opacity: .5;
+  background-color: #333;
+  color: #fff;
+  width: 160px !important;
+  -webkit-transition: ALL .1s;
+  -moz-transition: ALL .1s;
+  transition: ALL .1s;
+}
+
+.chosen .play-button, .chosen .icon-row {
+  display: none; 
+}
+.chosen .description {
+  width: 100% !important;
+}
+
+.ghost{
+  opacity: .5;
+  background-color: #777;
+}
+.job_item:first-child #menu{
+  display: none;
+}
+
+.job_item:first-child .icon-row{
+  position: absolute;
+  bottom: 5px;
+}
+
+.chosen #menu{
+  display: block !important;
+}
+
+.chosen .play-button .inset{
+  background-color: red !important;
+}
+
+
+
+.name {
+    font-weight: bold;
+    margin-bottom: 0.5em;
+    line-height: 1.1em;
+    
+}
+
+.job_item .ellipses{
+    font-size: 1.35em;
+    padding-left: 0.4em;
+}
+
+.job_item .dropDown{
+    left: 2px;
+    width: 153px;
+}
+
+.job_item .jobactions{
+     margin-left: 0.3em;
+     line-height: 1.5em;
+}
+
+.job_item .commentBox{
+  left: 17px;
+}
+
 .ellipses {
-  font-size: 1.35em;
-  width: 1.7em;
-  height: 1.7em;
-  color: #A6A6A6;
-  vertical-align: text-top;
-  border: 1px solid #A6A6A6;
-  border-radius: 100%;
-  line-height: 1em;
-  float: left;
-  margin-left: 0.7em;
+    font-size: 1.5em;
+    width: 1.7em;
+    height: 1.7em;
+    color: #A6A6A6;
+    border: 1px solid #A6A6A6;
+    border-radius: 100%;
+    line-height: 1.1em;
+    float: left;
+    padding-left: 0.1em;
+    margin-right: 0.3em;
 }
 
 .ellipses:hover {
@@ -274,9 +391,7 @@ td.actions-control {
   transition: all 0.2s;
 }
 
-.icon-row a {
-  display: none;
-}
+
 
 .icon-row {
 
@@ -515,14 +630,15 @@ table {
     transform: rotate(450deg);
   }
 }
+
 #tabpending{
   position: relative;
 }
+
 .play-button {
-  display: none;
   position: absolute;
-  top: 60;
-  right: 0;
+  top: 40px;
+  right: -20px;
   cursor: pointer;
 }
 
@@ -721,6 +837,8 @@ table {
     transition: all .3s;
 }
 
+
+
 #history_page_prev:hover, #history_page_next:hover{
   background-color: #999;
 }
@@ -732,6 +850,9 @@ table {
 #history_page_next{
     float: right;
 }
+
+
+
 
 
 .job-lights-container{

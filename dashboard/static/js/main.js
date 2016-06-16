@@ -29,34 +29,30 @@ define(function(require) {
     var authorizeDialog = false;
     var isRunning = false;
     var isAuth = false;
-    // Detect touch screen
 
+    // Detect touch screen
     var supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
 
-    engine.getNetworkIdentity(function(err, id) {
-        if (!id) {
-            return;
+    // Initial read of engine configuration
+    engine.getCurrentUser(function(err,user){
+        if(err){
+            window.location.href = '#/authentication';
+        } else {
+            console.log(user);
         }
-        var name = id.name || "";
-        $('#tool-name').text(name);
-        document.title = name || "FabMo Dashboard";
     });
 
-    //Give editor focus *not working*
-    // $('#icon_editor').on('click', function() {
-    //     $('iframe').focus();
-
-    // });
-    // Initial read of engine configuration
     engine.getConfig();
     engine.getVersion(function(err, version) {
+
         context.setEngineVersion(version);
 
         context.apps = new context.models.Apps();
         // Load the apps from the server
         context.apps.fetch({
             success: function() {
-                // Create the menu based on the apps thus retrieved 
+
+                // Create the menu based on the apps thus retrieved
                 context.appMenuView = new context.views.AppMenuView({
                     collection: context.apps,
                     el: '#app_menu_container'
@@ -65,6 +61,7 @@ define(function(require) {
                 // Create a FabMo object for the dashboard
                 dashboard.setEngine(engine);
                 dashboard.ui = new FabMoUI(dashboard.engine);
+                dashboard.getNetworkIdentity();
 
                 keyboard = setupKeyboard();
                 keypad = setupKeypad();
@@ -72,6 +69,8 @@ define(function(require) {
                 // Start the application
                 router = new context.Router();
                 router.setContext(context);
+
+                dashboard.setRouter(router);
 
                 // Sort of a hack, but works OK.
                 $('.loader').hide();
@@ -82,9 +81,11 @@ define(function(require) {
                 // Request a status update from the tool
                 engine.getStatus();
 
+
+
                 dashboard.engine.on('change', function(topic) {
                     if (topic === 'apps') {
-                        context.apps.fetch();
+                        context.apps.fetch();r
                     }
                 });
             }
@@ -273,9 +274,20 @@ define(function(require) {
         dashboard.engine.sbp('ZB');
     });
 
+
     $('#connection-strength-indicator').click(function(evt) {
         dashboard.launchApp('network-manager');
     });
+
+	engine.on('authentication_failed',function(message){
+	    console.log('authentication failed');
+	    if(message==="not authenticated"){
+	        window.location='#/authentication?message=not-authenticated';
+	    }
+	    else if(message==="kicked out"){
+	        window.location='#/authentication?message=kicked-out';
+	    }
+	});
 
     var disconnected = false;
     last_state_seen = null;
@@ -301,11 +313,11 @@ define(function(require) {
             dashboard.hideModal();
             modalIsShown = false;
         }
-     
-        
+
+
         if (last_state_seen != status.state) {
             last_state_seen = status.state;
-            
+
         }
         switch (status.state) {
             case 'running':
@@ -362,7 +374,7 @@ define(function(require) {
                     }
                 });
                 modalIsShown = true;
-            } 
+            }
         } else if (status.state == 'armed') {
             authorizeDialog = true;
                 keypad.setEnabled(false);
@@ -376,7 +388,7 @@ define(function(require) {
                     dashboard.engine.quit();
                 }
             });
-        } 
+        }
     });
 
     function setConnectionStrength(level) {
@@ -488,17 +500,4 @@ define(function(require) {
     }
     touchScreen();
 
-    $('.dro-button').click(function() {
-    	$('.dro-button').removeClass('active');
-    	$(this).addClass('active')
-    	$('.dro-view').hide();
-    	$('#' + this.dataset.view).show();
-    });
-
 });
-
-
-
-
-
-

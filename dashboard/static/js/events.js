@@ -52,12 +52,13 @@ define(function(require) {
             closeDROPush();
         }
     }
-    $('.DRO-button').on('click', function() {
+    $('.DRO-button').on('click', function(evt) {
         setRightMenuBehavior();
          var el = $(this),  
         newone = el.clone(true);
         el.before(newone);
         $("." + el.attr("class") + ":last").remove();
+        evt.preventDefault();
     });
 
     var resizedoc = function() {

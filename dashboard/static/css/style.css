@@ -15,6 +15,7 @@ body,html{
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    cursor: default;
 }
 
 .doselect {
@@ -26,7 +27,7 @@ body,html{
  cursor: text;
 }
 
-.main-section, .app-section, .spinner-section { 
+.main-section, .app-section, .spinner-section {
 	height: 98%;
 }
 
@@ -38,7 +39,7 @@ body,html{
 
 /* ********** Top Bar Settings ********** */
 
-.tab-bar { 
+.tab-bar {
 	background: #313366;
 	z-index: 1005;
 	position: fixed;
@@ -60,6 +61,28 @@ body,html{
 .top-bar h1  {
 	width: 16px;
 	size: 1rem;
+}
+
+#mainContent{
+	position: fixed;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	z-index: 40000;
+	background-color: #444;
+	padding: 4em;
+	display: none;
+}
+
+#mainContent .main{
+	background-color: #fff;
+	padding: 2em;
+	border-radius: 5px;
+}
+
+#mainContent .main  h1{
+	color: #666;
 }
 
 #tools-container {
@@ -169,13 +192,11 @@ body,html{
 }
 
 #connection-strength-indicator {
-	height: 100%; 
-	box-sizing: border-box;
+	height: 30px;
 }
 
 .svg-container {
 	height: 100%;
-	padding: 5px;
 }
 
 #connection-strength-indicator .on {
@@ -190,11 +211,9 @@ body,html{
 	fill: #91331E;
 }
 
-
-
 /* ********** Menu Style ********** */
 
-.right-off-canvas-menu, .left-off-canvas-menu { 
+.right-off-canvas-menu, .left-off-canvas-menu {
 
 	-moz-box-shadow: 0 0 20px rgba(0,0,0,0.2);
 	-webkit-box-shadow: 0 0 20px rgba(0,0,0,0.2);
@@ -242,7 +261,7 @@ body,html{
 	}
 }
 
-.left-menu.icon-bar > * { 
+.left-menu.icon-bar > * {
 	padding: 6px 12px;
 	padding: 0.375rem 0.75rem;
 }
@@ -308,7 +327,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	display: none;
 }
 
-/* 
+/*
 *** Widgets Styles
 */
 
@@ -371,7 +390,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .widget .tool.err 	{background-image: url('../img/icon_status_red.png');}
 .widget .tool.disc 	{background-image: url('../img/icon_status_grey.png');}
 
-.widget .tools-current .tool { 
+.widget .tools-current .tool {
 	background-color: #999;
 	background-color: rgba(0,0,0,0.2);
 }
@@ -515,12 +534,12 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     -moz-appearance:textfield;
 }
 
-input[type=number]::-webkit-inner-spin-button, 
-input[type=number]::-webkit-outer-spin-button { 
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
     -webkit-appearance: none;
     -moz-appearance:none;
     appearance: none;
-    margin: 0; 
+    margin: 0;
 }
 
 .go-here{
@@ -544,6 +563,12 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 #position ul .axis .units {
+	font-size: 12px;
+	text-transform: lowercase;
+	vertical-align: baseline;
+}
+
+#position ul .axis .rotunits {
 	font-size: 12px;
 	text-transform: lowercase;
 	vertical-align: baseline;
@@ -645,13 +670,13 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .progress-container {
-	border: 2px solid black; 
+	border: 2px solid black;
 	background: gray;
 	border-radius: 5px;
 	height: 20px;
 }
 
-.progress { 
+.progress {
 	border-radius: 1px;
 	border: none;
 	background: repeating-linear-gradient(
@@ -765,7 +790,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .app-icon:hover .add-title {
-	color: #666;	
+	color: #666;
 }
 
 .add-title {
@@ -870,15 +895,15 @@ input[type=number]::-webkit-outer-spin-button {
 	display: block;
 	text-align: center;
 	width: 150px;
-	margin-top: 5px;
+	margin-top: 10px;
 	margin-left: auto;
 	margin-right: auto;
 	border-radius: 10px;
 	font-family: Arial;
 	color: #ffffff;
-	font-size: 17px;
+	font-size: 30px;
 	background: #ff0000;
-	padding: 3.5px 50px 3.5px 50px;
+
 	border: solid #A60000 4px;
 	text-decoration: none;
 	transition: all 1s;
@@ -892,14 +917,9 @@ input[type=number]::-webkit-outer-spin-button {
 
 
 
-.resumeJob.blink{
-	background-color: #00A600;
-	border: solid #00ff00 4px;
-	transition: all 1s;
-}
 
 .fabmo-resume-stop {
-    margin-top: 7px;
+    margin-top: 15px;
     width: 35%;
     display: block;
     text-align: center;
@@ -914,21 +934,23 @@ input[type=number]::-webkit-outer-spin-button {
 	font-family: Arial;
 	color: #ffffff;
 	font-size: 17px;
+	line-height: 2em;
 	padding-top: 3.5px;
 	padding-bottom: 3.5px;
 	text-decoration: none;
 	transition: all 1s;
 }
 
-@media only screen and (max-width: 600px){
+@media only screen and (max-width: 780px){
     .fabmo-resume-stop div {
-        font-size: 13px;
+        font-size: 14px;
+		line-height: 2.5em;
     }
     .fabmo-resume-stop {
-        margin-top: 10px;
+        margin-top: 15px;
         width: 70%;
     }
-    
+
 }
 
 .stopJob {
@@ -941,7 +963,7 @@ input[type=number]::-webkit-outer-spin-button {
 .resumeJob {
     background: #32B433;
 	border: solid #00A600 1px;
-    width: 30%;  
+    width: 30%;
     margin-right: -2.5px;
     border-radius: 5px 0 0 5px;
 }
@@ -953,7 +975,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .currentContainer {
-	margin-top: 12px;
+	margin-top: 25px;
 	margin-left: 1em;
 	float: left;
 	overflow: scroll;
@@ -965,49 +987,49 @@ input[type=number]::-webkit-outer-spin-button {
 	font-family: 'source_sans_proextralight';
     white-space: nowrap;
 	text-align: center;
-    
+
 }
 
 .radial_progress {
-	margin-top: 5px;
-    background-color: #444444;
-    height: 40px;
-    width: 40px;
-    border-radius: 50%;
+	margin-top: 10px;
+	background-color: #444444;
+	height: 50px;
+	width: 50px;
+	border-radius: 50%;
 	float: right;
 	display: none;
-	margin-right: 20px;
+	margin-right: 10px;
 }
 
 .fill {
     background-color: #5DA423;
-    height: 40px;
-    width: 40px;
+    height: 50px;
+    width: 50px;
     transition: -webkit-transform 1s;
     transition: -ms-transform 1s;
     transition: transform 1s;
     position: absolute;
-    clip: rect(0px, 20px, 40px, 0px);
+    clip: rect(0px, 25px, 50px, 0px);
     -webkit-backface-visibility: hidden;
     border-radius: 50%;
 }
 
 .perecent_circle .mask {
-      clip: rect(0px,40px,40px,20px);
-      height: 40px;
-      width: 40px;
+      clip: rect(0px,50px,50px,25px);
+      height: 50px;
+      width: 50px;
       position: absolute;
       transition: -webkit-transform 1s;
         transition: -ms-transform 1s;
             transition: transform 1s;
 }
 .mask .fill {
-    clip: rect(0px, 20px, 40px, 0px);
+    clip: rect(0px, 25px, 50px, 0px);
 }
 .inset {
     background-color: #333333;
-    width: 32px;
-    height: 32px;
+    width: 42px;
+    height: 42px;
     position: absolute;
     margin-left: 4px;
     margin-top: 4px;
@@ -1015,8 +1037,8 @@ input[type=number]::-webkit-outer-spin-button {
     box-shadow: 3px 3px 5px rgba(0,0,0,0.2);
 }
 .shadow {
-      width: 40px;
-      height: 40px;
+      width: 50px;
+      height: 50px;
       position: absolute;
       border-radius: 50%;
       box-shadow: inset 3px 3px 5px rgba(0,0,0,0.2);
@@ -1024,28 +1046,28 @@ input[type=number]::-webkit-outer-spin-button {
 
 .inset .percentage {
      color: #5DA423;
-     font-size: 11px;
-     width: 28px;
+     font-size: 15px;
+     width: 40px;
      position: absolute;
      line-height: 1;
      text-align: center;
-     top: 10.5px;
+     top: 14px;
      left: 2px;
-	 font-family: 'source_sans_proextralight'; 
+	 font-family: 'source_sans_proextralight';
 }
 
 .load_container {
-	margin-top: 12px;
-    width: 190px;
+	margin-top: 20px;
+    width: 200px;
 	float: right;
 	margin-right: 15px;
-	
+
 }
 .load_container .loading_bar {
     float: left;
     background-color: #444444;
     width: 150px;
-    height: 20px;
+    height: 30px;
     border-radius: 5px;
     box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.5) inset,
         0px 0.3px 0px 0px rgba(200, 200, 200, 0.5);
@@ -1054,7 +1076,7 @@ input[type=number]::-webkit-outer-spin-button {
 .loading_bar .horizontal_fill {
     background-color: #5DA423;
     position: relative;
-    height: 18.5px;
+    height: 28.5px;
     width: 100%;
     top: 1px;
     left: 1px;
@@ -1065,10 +1087,32 @@ input[type=number]::-webkit-outer-spin-button {
 }
 .percent_comp {
 	float: right;
-    top: 1.9px;
-	font-size: 15px;
+	margin: 3px;
+	font-size: 17px;
 	color: #F0F0F0;
 	font-family: 'source_sans_proextralight';
+}
+
+.elapsed_time{
+    display: inline-flex;
+    width: 200px;
+    margin-right: auto;
+    margin-left: auto;
+    text-align: center;
+    color:#F0F0F0
+}
+
+.elapsed_time_small{
+    display: block;
+    width: 55px;
+    text-align: center;
+    color:#F0F0F0;
+    margin-top: 45px;
+}
+
+.elapsed_time_label{
+    margin-right: 5px;
+    font-weight: bold;
 }
 
 /* ********** Page (#modal_container) container ********** */
@@ -1219,7 +1263,7 @@ input[type=number]::-webkit-outer-spin-button {
 .keypad-bar.top i {
    position: relative;
    top: -15px;
-    
+
 }
 
 .top.button-border{
@@ -1241,7 +1285,7 @@ input[type=number]::-webkit-outer-spin-button {
 .keypad-bar.bottom i {
    position: relative;
    bottom: -35px;
-    
+
 }
 
 .keypad-bar.bottom {
@@ -1326,7 +1370,28 @@ input[type=number]::-webkit-outer-spin-button {
     position: relative;
 }
 
-@keyframes chipflyone {
+
+
+@-moz-keyframes spin {
+    from { -moz-transform: rotate(0deg); }
+    to { -moz-transform: rotate(360deg); }
+}
+@-webkit-keyframes spin {
+    from { -webkit-transform: rotate(0deg); }
+    to { -webkit-transform: rotate(360deg); }
+}
+@keyframes spin {
+    from {transform:rotate(0deg);}
+    to {transform:rotate(360deg);}
+}
+
+.maingear {
+	transform-origin: 50% 50%;
+	animation: spin 4s linear infinite;
+}
+
+ /*Old chipfly animation*/
+/*@keyframes chipflyone {
   0% {
     transform: translate(0px, -10px);
     opacity: 1;
@@ -1405,7 +1470,7 @@ input[type=number]::-webkit-outer-spin-button {
 
 .chip.three {
     animation: chipflythree .5s .4s ease infinite;
-}
+}*/
 
 .drobuttonOuter{
     position: relative;
@@ -1427,7 +1492,7 @@ input[type=number]::-webkit-outer-spin-button {
     height: 23px;
     border: 1px solid #FEFEFE;
     border-radius: 50%;
-   
+
 }
 
 .drobuttonInnerS{
@@ -1517,12 +1582,12 @@ input[type=number]::-webkit-outer-spin-button {
      color: #333333;
     padding: 0;
     margin: 0;
-   
+
 }
 .modalSubContent{
     display: inline-block;
     width: 100%;
-  
+
 
 }
 .modalImage{
@@ -1551,7 +1616,7 @@ input[type=number]::-webkit-outer-spin-button {
     display: inline-block;
     margin-right: 1em;
     width: 65%;
-    
+
     padding: 0;
 }
 
@@ -1568,6 +1633,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .modalOkay{
+	color: #fff;
     padding-top: .5em;
     cursor: pointer;
     display: inline-block;
@@ -1580,6 +1646,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .modalCancel{
+	color: #fff;
     padding-top: .5em;
     cursor: pointer;
     display: inline-block;
@@ -1595,22 +1662,28 @@ input[type=number]::-webkit-outer-spin-button {
     opacity:0.9 !important;
 }
 
+
 .loader {
-  font-size: 150px;
-  width: 1em;
-  height: 1em;
-  border-radius: 50%;
-  position: relative;
-  top: 40%;
-  margin-left: auto;
-  margin-right: auto;
-  -webkit-animation: spinner 1.7s infinite ease;
-  animation: spinner 1.7s infinite ease;
-  z-index: 3000000000;
+	position: absolute;
+  	width: 100%;
+	height: 100%;
+	margin: auto;
+	text-align: center;
 }
-@-webkit-keyframes spinner {
+
+
+.loader svg {
+	position: relative;
+  	top: 50%;
+  	transform: translateY(-50%);
+}
+
+
+
+/*Old loading spinner*/
+/*@-webkit-keyframes spinner {
   0% {
-    
+
     box-shadow: 0 -.82em 0 -0.43em #313366, 0 -0.82em 0 -0.43em #313366, 0 -0.82em 0 -0.43em #313366;
   }
   5%,
@@ -1658,4 +1731,14 @@ input[type=number]::-webkit-outer-spin-button {
     transform: rotate(360deg);
     box-shadow: 0 -0.8em 0 -0.42em #313366, 0 -0.8em 0 -0.42em #313366, 0 -0.8em 0 -0.42em #313366;
   }
+}*/
+
+.logout_link_container{
+  bottom: 0;
+  position: inherit;
+  width: inherit;
+  text-align: center;
+  background-color: #666666;
 }
+.logout_link_container a{
+  color: #eeeeee;
