@@ -29,10 +29,10 @@ define(function(require) {
     var authorizeDialog = false;
     var isRunning = false;
     var isAuth = false;
-    
+
     // Detect touch screen
     var supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
-    
+
     // Initial read of engine configuration
     engine.getCurrentUser(function(err,user){
         if(err){
@@ -41,7 +41,7 @@ define(function(require) {
             console.log(user);
         }
     });
-   
+
     engine.getConfig();
     engine.getVersion(function(err, version) {
 
@@ -51,7 +51,7 @@ define(function(require) {
         // Load the apps from the server
         context.apps.fetch({
             success: function() {
-                
+
                 // Create the menu based on the apps thus retrieved
                 context.appMenuView = new context.views.AppMenuView({
                     collection: context.apps,
@@ -71,7 +71,7 @@ define(function(require) {
                 router.setContext(context);
 
                 dashboard.setRouter(router);
-                
+
                 // Sort of a hack, but works OK.
                 $('.loader').hide();
 
@@ -81,7 +81,7 @@ define(function(require) {
                 // Request a status update from the tool
                 engine.getStatus();
 
-                
+
 
                 dashboard.engine.on('change', function(topic) {
                     if (topic === 'apps') {
@@ -282,10 +282,10 @@ define(function(require) {
 	engine.on('authentication_failed',function(message){
 	    console.log('authentication failed');
 	    if(message==="not authenticated"){
-	        window.location='/authentication?message=not-authenticated';
+	        window.location='#/authentication?message=not-authenticated';
 	    }
 	    else if(message==="kicked out"){
-	        window.location='/authentication?message=kicked-out';
+	        window.location='#/authentication?message=kicked-out';
 	    }
 	});
 

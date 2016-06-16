@@ -28,7 +28,7 @@ define(function(require) {
 		},
 		show_menu: function() {
 			console.log(this.context);
-			
+
 			$('#waiting_container').hide();
 			$('#mainContent').hide();
 			this.context.appClientView.hide();
@@ -40,8 +40,8 @@ define(function(require) {
 		show_auth: function (){
 			$.ajax({url: "authentication/logout", success: function(result){
         		console.log(result);
-   			}});	
-			$('#mainContent').show();	
+   			}});
+			$('#mainContent').show();
 		},
 		loadView : function(view) {
 		this.view && this.view.remove();

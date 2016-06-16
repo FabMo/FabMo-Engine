@@ -21,34 +21,29 @@
   </div>
   <script type="text/javascript">
 
-    getUrlParameter = function getUrlParameter(sParam) {
-      var sPageURL = decodeURIComponent(window.location.search.substring(1)),
-          sURLVariables = sPageURL.split('&'),
-          sParameterName,
-          i;
+  getUrlParameter = function getUrlParameter(sParam) {
+    var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+        sURLVariables = sPageURL.split('&'),
+        sParameterName,
+        i;
+    for (i = 0; i < sURLVariables.length; i++) {
+        sParameterName = sURLVariables[i].split('=');
+        if (sParameterName[0] === sParam) {
+            return sParameterName[1] === undefined ? true : sParameterName[1];
+        }
+    }
+};
+  $(document).ready(function(){
+    $("#add_err").css('display', 'none', 'important');
+    if(getUrlParameter("message")==="kicked-out"){
+      $("#add_err").css('display', 'inline', 'important');
+      $("#add_err").html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span class="sr-only">You have been kicked out from the tool.</span></div>');
+    }else if (getUrlParameter("message")==="not-authenticated") {
+      $("#add_err").css('display', 'inline', 'important');
+      $("#add_err").html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span class="sr-only"> You need to be authenticated to access this page.</span></div>');
+  }
 
-      for (i = 0; i < sURLVariables.length; i++) {
-          sParameterName = sURLVariables[i].split('=');
-
-          if (sParameterName[0] === sParam) {
-              return sParameterName[1] === undefined ? true : sParameterName[1];
-          }
-      }
-  };
-    $(document).ready(function(){
-      $("#add_err").css('display', 'none', 'important');
-
-      if(getUrlParameter("message")==="kicked-out"){
-        $("#add_err").css('display', 'inline', 'important');
-        $("#add_err").html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span class="sr-only">You have been kicked out from the tool.</span></div>');
-      }else if (getUrlParameter("message")==="not-authenticated") {
-        $("#add_err").css('display', 'inline', 'important');
-        $("#add_err").html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span class="sr-only"> You need to be authenticated to access this page.</span></div>');
-
-      }
-
-
-      $("#login_form").submit(function(e){
+    $("#login_form").submit(function(e){
         e.preventDefault();
         username=$('#login_form input[name="username"]').val();
         password=$('#login_form input[name="password"]').val();
@@ -131,6 +126,4 @@
    }
 
 
-  
-
-  </script>
+    </script>

@@ -1,14 +1,14 @@
 /*
  * This is the application context, which maintains all of the prototypes for all of the models and views
- * as well as instances of some of these which are needed by the application in general.  The context provides 
+ * as well as instances of some of these which are needed by the application in general.  The context provides
  * high-level application functions as well in the form of methods.
- * 
+ *
  * context.js loads the application models, views and routers, and makes them available, so application script
  * files need only `require('context')` in order to communicate with the top-level application.
- * 
+ *
  * This is the sort of application logic that would typically go in an `app.js` - owing to this being the main
  * file of many single page web applications.  Here, we call it the "application context" because the notion of
- * app is already monopolized by the FabMo apps concept. 
+ * app is already monopolized by the FabMo apps concept.
  */
 
  define(function (require) {
@@ -24,11 +24,11 @@
 		this.engine = null;
 		// View Instances
 		//this.Menu = new this.views.Menu();
-		this.Athentication = new this.views.Authentication();
+		this.Authentication = new this.views.Authentication();
 		this.appClientView = new this.views.AppClientView({el : "#app-client-container"});
 		this.current_app_id = null;
 		this.reload_on_demand = false;
-		this.app_reload_index = {}; 
+		this.app_reload_index = {};
 		this.menuShown = true;
 	};
 	$('#mainContent').hide();
@@ -66,7 +66,7 @@
 	}
 
 	ApplicationContext.prototype.closeApp = function(callback) {
-		this.appClientView.setModel(null, false, callback);		
+		this.appClientView.setModel(null, false, callback);
 	}
 
 	ApplicationContext.prototype.launchApp = function(id, args, callback) {
@@ -75,7 +75,7 @@
 
 		try {
 			if(hash && hash != this.engineVersion.hash) {
-				console.info("Hard refresh of app " + id + " becuase hash " + hash + " doesn't match " + this.engineVersion.hash);
+				console.info("Hard refresh of app " + id + " because hash " + hash + " doesn't match " + this.engineVersion.hash);
 				hard_refresh = true;
 			}
 
@@ -87,7 +87,7 @@
 			if(this.engineVersion.debug) {
 				hard_refresh = true;
 				console.info("Hard refresh of app " + id + " because debug mode.");
-			}			
+			}
 		} catch(e) {
 			console.warn(e);
 		}
@@ -109,9 +109,9 @@
 					if(!this.menuShown) {
 						$('#waiting_container').hide();
 						this.hideModalContainer();
-						this.appClientView.show();						
+						this.appClientView.show();
 					}
-					callback(null);					
+					callback(null);
 				}.bind(this));
 			} else {
 				if(this.apps) {
@@ -125,7 +125,7 @@
 			this.appMenuView.hide();
 			$('#waiting_container').hide();
 			this.hideModalContainer();
-			this.appClientView.show();						
+			this.appClientView.show();
 
 		}
 	};
