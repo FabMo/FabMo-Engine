@@ -965,11 +965,11 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .radial_progress {
-	margin-top: 14px;
-    background-color: #444444;
-    height: 50px;
-    width: 50px;
-    border-radius: 50%;
+	margin-top: 10px;
+	background-color: #444444;
+	height: 50px;
+	width: 50px;
+	border-radius: 50%;
 	float: right;
 	display: none;
 	margin-right: 10px;
@@ -1065,6 +1065,28 @@ input[type=number]::-webkit-outer-spin-button {
 	font-size: 17px;
 	color: #F0F0F0;
 	font-family: 'source_sans_proextralight';
+}
+
+.elapsed_time{
+    display: inline-flex;
+    width: 200px;
+    margin-right: auto;
+    margin-left: auto;
+    text-align: center;
+    color:#F0F0F0
+}
+
+.elapsed_time_small{
+    display: block;
+    width: 55px;
+    text-align: center;
+    color:#F0F0F0;
+    margin-top: 45px;
+}
+
+.elapsed_time_label{
+    margin-right: 5px;
+    font-weight: bold;
 }
 
 /* ********** Page (#modal_container) container ********** */
