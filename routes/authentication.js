@@ -1,13 +1,6 @@
 var log = require('../log').logger('authentication');
 var authentication = require('../authentication');
 var passport = authentication.passport;
-var fs = require('fs');
-
-var static_files = {
-  authentication:'./authentication/authentication.html'
-};
-
-
 
 var login = function(req, res, next) {
   authentication.passport.authenticate('local', function(err, user, info) {
@@ -53,18 +46,6 @@ var addUser = function(req, res, next) {
 
 
 };
-
-
-var serveStaticPage = function(file,req,res,next){
-  res.writeHead(200, {'Content-Type': 'text/html'});
-	fs.createReadStream(file).pipe(res);
-};
-
-
-var serveAuthenticationPage=function(req,res,next){
-  serveStaticPage(static_files.authentication,req,res,next);
-};
-
 
 var logout = function(req, res, next) {
   req.logout();
@@ -168,7 +149,6 @@ var deleteUser = function(req,res,next){ // if admin
 };
 
 module.exports = function(server) {
-  server.get('/authentication', serveAuthenticationPage);
   server.post('/authentication/login', login);
   server.get('/authentication/logout',passport.authenticate('local'), logout);
   server.get('/authentication/user',passport.authenticate('local'), getCurrentUser);// return current user info.
