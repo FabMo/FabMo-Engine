@@ -1900,7 +1900,7 @@ $(document).ready(function() {
         }
     });
 
-    $('#input-name').change( function(evt) {
+    $('#input-machine-name').change( function(evt) {
         var id = {name: this.value};
         fabmo.setNetworkIdentity(id, function(err, data) {
             update();

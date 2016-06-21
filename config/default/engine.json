@@ -9,5 +9,11 @@
     "data_port_linux": "/dev/ttyACM1",
     "control_port_windows": "COM4",
     "data_port_windows": "COM3",
-    "upload_dir" : "/tmp"
+    "upload_dir" : "/tmp",
+    "video" :  {
+        "path" : "/dev/video0",
+        "width" : 640,
+        "height" : 360,
+        "framerate" : 15
+    }
 }
