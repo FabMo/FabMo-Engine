@@ -16,8 +16,6 @@ var ManualRuntime = require('./runtime/manual').ManualRuntime;
 var PassthroughRuntime = require('./runtime/passthrough').PassthroughRuntime;
 var IdleRuntime = require('./runtime/idle').IdleRuntime;
 
-AP_COLLAPSE_TIME = 5000;
-
 function connect(callback) {
 
 	switch(PLATFORM) {
@@ -84,7 +82,7 @@ function Machine(control_path, gcode_path, callback) {
 	this.driver.on("error", function(err) {log.error(err);});
 
 	this.driver.connect(control_path, gcode_path, function(err, data) {
-	
+
 	    // Set the initial state based on whether or not we got a valid connection to G2
 	    if(err){
 	    	log.warn("Setting the disconnected state");
@@ -100,7 +98,7 @@ function Machine(control_path, gcode_path, callback) {
 	    this.passthrough_runtime = new PassthroughRuntime();
 	    this.idle_runtime = new IdleRuntime();
 
-	    // Idle 
+	    // Idle
 	    this.setRuntime(null, function() {});
 
 	    if(err) {
@@ -146,29 +144,29 @@ function Machine(control_path, gcode_path, callback) {
 util.inherits(Machine, events.EventEmitter);
 
 Machine.prototype.handleAPCollapseButton = function(stat) {
-	var n =  config.machine.get('auth_input');
+	var n =  config.machine.get('ap_input');
 	if(n == 0) { return; }
-	var auth_input = 'in' + n;
+	var ap_input = 'in' + n;
 
 	// If the button has been pressed
-	if(stat[auth_input]) {
-
+	if(stat[ap_input]) {
+		var ap_collapse_time = config.machine.get('ap_time');
 		// For the first time
 		if(!this.APCollapseTimer) {
 			// Do an AP collapse in 10 seconds, if the button is never released
-			log.debug('Starting a timer for AP mode collapse (auth button was pressed)')
+			log.debug('Starting a timer for AP mode collapse (AP button was pressed)')
 			this.APCollapseTimer = setTimeout(function APCollapse() {
-				log.info("AP Collapse button held for " + (AP_COLLAPSE_TIME/1000) + " seconds.  Triggering AP collapse.");
+				log.info("AP Collapse button held for " + ap_collapse_time + " seconds.  Triggering AP collapse.");
 				this.APCollapseTimer = null;
 				updater.APModeCollapse();
-			}.bind(this), AP_COLLAPSE_TIME);
+			}.bind(this), ap_collapse_time*1000);
 		}
 	}
 	// Otherwise
 	else {
 		// Cancel an AP collapse that is pending, if there is one.
 		if(this.APCollapseTimer) {
-			log.debug('Cancelling AP collapse (auth button was released)')
+			log.debug('Cancelling AP collapse (AP button was released)')
 			clearTimeout(this.APCollapseTimer);
 			this.APCollapseTimer = null;
 		}
@@ -204,8 +202,8 @@ Machine.prototype.arm = function(action, timeout) {
 			break;
 		default:
 		throw new Error("Cannot arm the machine from the " + this.status.state + " state.");
-		break;		
-	}	
+		break;
+	}
 
 	delete this.status.info
 	this.action = action;
@@ -226,7 +224,7 @@ Machine.prototype.arm = function(action, timeout) {
 		log.info("Firing automatically since authorization is disabled.");
 		this.fire(true);
 	} else {
-		this.setState(this, 'armed');	
+		this.setState(this, 'armed');
 		this.emit('status', this.status);
 	}
 }
@@ -284,7 +282,7 @@ Machine.prototype.fire = function(force) {
 			this._runFile(filename);
 			break;
 		case 'resume':
-			log.debug("Firing a resume")		
+			log.debug("Firing a resume")
 			this._resume();
 			break;
 	}
@@ -293,12 +291,12 @@ Machine.prototype.fire = function(force) {
 Machine.prototype.authorize = function(timeout) {
 	var timeout = timeout || config.machine.get('auth_timeout');
 	if(timeout) {
-			log.info("Machine is authorized for the next " + timeout + " seconds.");			
+			log.info("Machine is authorized for the next " + timeout + " seconds.");
 		if(this._authTimer) { clearTimeout(this._authTimer);}
 		this._authTimer = setTimeout(function() {
 			log.info('Authorization timeout (' + timeout + 's) expired.');
 			this.deauthorize();
-		}.bind(this), timeout*1000);		
+		}.bind(this), timeout*1000);
 	} else {
 		if(!this.status.auth) {
 			log.info("Machine is authorized indefinitely.");
@@ -341,13 +339,13 @@ Machine.prototype.runJob = function(job) {
 		} else {
 			log.info("Running file " + file.path);
 			this.status.job = job;
-			this._runFile(file.path);			
+			this._runFile(file.path);
 		}
-	}.bind(this));	
+	}.bind(this));
 };
 
 Machine.prototype.getGCodeForFile = function(filename, callback) {
-	fs.readFile(filename, 'utf8', function (err,data) { 
+	fs.readFile(filename, 'utf8', function (err,data) {
 		if (err) {
 			log.error('Error reading file ' + filename);
 				log.error(err);
@@ -373,7 +371,7 @@ Machine.prototype._runFile = function(filename) {
 	var parts = filename.split(path.sep);
 	var ext = path.extname(filename).toLowerCase();
 
-	// Choose the appropriate runtime based on the file extension	
+	// Choose the appropriate runtime based on the file extension
 	var runtime = this.gcode_runtime;
 	if(ext === '.sbp') {
 		runtime = this.sbp_runtime;
@@ -400,7 +398,7 @@ Machine.prototype.setRuntime = function(runtime, callback) {
 		if(runtime) {
 			if(this.current_runtime != runtime) {
 				if(this.current_runtime) {
-					this.current_runtime.disconnect();					
+					this.current_runtime.disconnect();
 				}
 				runtime.connect(this);
 				this.current_runtime = runtime;
@@ -444,7 +442,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 	if ((source === this) || (source === this.current_runtime)) {
 		log.info("Got a machine state change: " + newstate)
 		this.status.state = newstate;
-		
+
 		if(stateinfo) {
 			this.status.info = stateinfo
 		} else {
@@ -469,7 +467,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 			case 'paused':
 				this.driver.get('mpo', function(err, mpo) {
 					if(config.instance) {
-						config.instance.update({'position' : mpo});						
+						config.instance.update({'position' : mpo});
 					}
 				});
 				break;
@@ -477,7 +475,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				log.error('G2 is dead!');
 				break;
 		}
-	} else {		
+	} else {
 		log.warn("Got a state change from a runtime that's not the current one. (" + source + ")")
 	}
 	this.emit('status',this.status);
@@ -531,8 +529,8 @@ Machine.prototype.runNextJob = function(callback) {
 		if(pendingJobs.length > 0) {
 			this.arm({
 				type : 'nextJob'
-			}, config.machine.get('auth_timeout'));	
-			callback();		
+			}, config.machine.get('auth_timeout'));
+			callback();
 		} else {
 			callback(new Error('No pending jobs.'));
 		}
@@ -544,7 +542,7 @@ Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
 		return this._executeRuntimeCode(runtimeName, code);
 	}
 	if(runtimeName === 'manual') {
-		this.arm(null, config.machine.get('auth_timeout'));		
+		this.arm(null, config.machine.get('auth_timeout'));
 		return;
 	} else {
 		this.arm({
@@ -553,7 +551,7 @@ Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
 				name : runtimeName,
 				code : code
 			}
-		}, config.machine.get('auth_timeout'));		
+		}, config.machine.get('auth_timeout'));
 	}
 }
 
@@ -580,7 +578,7 @@ Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 					this.authorize();
 					var callback = callback || function() {};
 					callback(err, data);
-				}.bind(this));			
+				}.bind(this));
 			}
 		}.bind(this));
 	}
