@@ -823,7 +823,7 @@ define(function(require) {
 
   //Open Footer
   Dashboard.prototype.openFooter = function() {
-    $('.footBar').css('height', '50px');
+    $('.footBar').css('height', '175px');
   }
 
   //Close Footer

@@ -114,7 +114,8 @@ define(function(require) {
 
 
     window.setInterval(function() {
-        $('.pauseJob').toggleClass('blink');
+        $('.pauseJobInner').toggleClass('blink');
+
     }, 1000);
 
     var colapseMenu = function() {
