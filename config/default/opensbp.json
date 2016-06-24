@@ -1,5 +1,5 @@
 {
-  "units":"in",
+    "units":"in",
     "movexy_speed": 1,
     "movez_speed": 0.5,
     "movea_speed": 1,
@@ -14,7 +14,6 @@
     "pocketOverlap": 50,
     "safeZpullUp": 0.25,
     "safeApullUp": 0.25,
-    "units": "in",
     "variables" : {
     },
     "transforms": {

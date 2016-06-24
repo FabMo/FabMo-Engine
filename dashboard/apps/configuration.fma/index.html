@@ -1915,7 +1915,6 @@ $(document).ready(function() {
             else if(v === "units6"){
                 new_config.driver['6tr']=(360/configData.driver["6sa"])*configData.driver["6mi"]/this.value;
             }
-            // console.log("units = " + JSON.stringify(new_config));
             fabmo.setConfig(new_config, function(err, data) {
                 setTimeout(update, 500);
             });

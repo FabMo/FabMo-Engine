@@ -35,7 +35,6 @@ var flattenObject = function(ob) {
 
 function update() {
   fabmo.getVersion(function(err, version) {
-    console.log(version);
     switch(version.type) {
       case 'dev':
         $('.engine-version').text(version.hash.substring(0,12) + '-dev');
@@ -46,7 +45,6 @@ function update() {
     }
   });
     fabmo.getConfig(function(err, data) {
-      console.log(data);
       if(err) {
         console.error(err);
       } else {

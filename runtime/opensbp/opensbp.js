@@ -215,7 +215,6 @@ SBPRuntime.prototype._saveConfig = function(callback) {
 	sbp_values.jogb_speed = this.jogspeed_b;
 	sbp_values.jogc_speed = this.jogspeed_c;
 	sbp_values.units = this.units;
-	log.info("Saving the OpenSBP.json config");
 	config.opensbp.setMany(sbp_values, function(err, result) {
 		callback();
 	});
