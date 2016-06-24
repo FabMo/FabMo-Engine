@@ -17,7 +17,7 @@ var submitJob = function(req, res, next) {
         }
 
         async.map(
-            uploads, 
+            uploads,
             function create_job(item, callback) {
                 var file = item.file;
                 var filename = item.filename || (!file.name || file.name === 'blob') ? item.filename : file.name;
@@ -42,7 +42,7 @@ var submitJob = function(req, res, next) {
                             status:"error",
                             message:err.message
                         });
-                    } 
+                    }
                     return res.json({
                         status:"success",
                         data : {
@@ -174,7 +174,7 @@ var getQueue = function(req, res, next) {
                 status:"error",
                 message:"failed to get pending jobs from DB"
             });
-        }   
+        }
 
         db.Job.getRunning(function(err, running) {
             if(err) {
@@ -283,7 +283,7 @@ var getJobHistory = function(req, res, next) {
  * @apiDescription Get detailed information about a specific job.
  * @apiParam {String} id ID of requested job
  * @apiSuccess {Object} data Response data
- * @apiSuccess {Object} data.job Requested job 
+ * @apiSuccess {Object} data.job Requested job
  * @apiSuccess {Number} data.job._id Unique job ID
  * @apiSuccess {String} data.job.state `pending` | `running` | `finished` | `cancelled`
  * @apiSuccess {String} data.job.name Human readable job name
@@ -340,7 +340,7 @@ var cancelJob = function(req, res, next) {
             };
             res.json(answer);
         } else {
-            result.cancel(function(err, result) {
+            result.cancelOrTrash(function(err, result) {
                 if(err) {
                     log.error(err);
                     answer = {
@@ -400,7 +400,7 @@ var getJobFile = function(req, res, next) {
                     status:"fail",
                     data:{file:err}
             };
-            res.json(answer);                        
+            res.json(answer);
         } else {
             fs.readFile(file.path, function(err, data) {
                 res.header('Content-Type', 'text/plain');
@@ -423,10 +423,10 @@ var getJobGCode = function(req, res, next) {
                     status:"fail",
                     data:{file:err}
             };
-            res.json(answer);                        
+            res.json(answer);
         } else {
             var gcode_filename = 'gcode.nc';
-            machine.getGCodeForFile(file.path, function(err, gcode) {                
+            machine.getGCodeForFile(file.path, function(err, gcode) {
 		      res.setHeader('content-type', 'applications/octet-stream');
               res.setHeader('content-disposition', 'filename="' + gcode_filename + '"');
               res.send(gcode);

@@ -276,7 +276,7 @@ FabMoAPI.prototype.getJobs = function(callback) {
 	this._get('/jobs', callback, callback, 'jobs');
 }
 
-FabMoAPI.prototype.cancelJob = function(id, callback) {
+FabMoAPI.prototype.deleteJob = function(id, callback) {
 	this._del('/job/' + id, {}, callback, callback, 'job');
 }
 

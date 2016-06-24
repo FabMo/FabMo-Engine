@@ -521,16 +521,18 @@ FabMoDashboard.prototype.resubmitJob = function(id, callback) {
 }
 
 /**
- * Cancel a job that is pending.
+ * Delete a job (cancels if running, sends to trash otherwise.)
  *
- * @method cancelJob
- * @param {Number} id The ID of the job to cancel
+ * @method deleteJob
+ * @param {Number} id The ID of the job to delete
  * @param {function} callback
  * @param {Error} callback.err Error object if there was an error.
  */
-FabMoDashboard.prototype.cancelJob = function(id, callback) {
-	this._call("cancelJob", id, callback)
+FabMoDashboard.prototype.deleteJob = function(id, callback) {
+	this._call("deleteJob", id, callback)
 }
+
+FabMoDashboard.prototype.cancelJob = FabMoDashboard.prototype.cancelJob;
 
 /**
  * Get information about a job.  This works for jobs that are pending, currently running, or in the history.
