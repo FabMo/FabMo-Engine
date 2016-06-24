@@ -9,6 +9,8 @@ var db = require('./db');
 var log = require('./log').logger('machine');
 var config = require('./config');
 var updater = require('./updater');
+var u = require('./util');
+var async = require('async');
 
 var GCodeRuntime = require('./runtime/gcode').GCodeRuntime;
 var SBPRuntime = require('./runtime/opensbp').SBPRuntime;
@@ -97,6 +99,14 @@ function Machine(control_path, gcode_path, callback) {
 	    this.manual_runtime = new ManualRuntime();
 	    this.passthrough_runtime = new PassthroughRuntime();
 	    this.idle_runtime = new IdleRuntime();
+
+			this.runtimes = [
+				this.gcode_runtime,
+				this.sbp_runtime,
+				this.manual_runtime,
+				this.passthrough_runtime,
+				this.idle_runtime
+			]
 
 	    // Idle
 	    this.setRuntime(null, function() {});
@@ -187,6 +197,13 @@ Machine.prototype.handleFireButton = function(stat) {
 Machine.prototype.die = function(err_msg) {
 	this.setState(this, 'dead', {error : 'A G2 exception has occurred. You must reboot your tool.'});
 	this.emit('status',this.status);
+}
+
+Machine.prototype.restoreDriverState = function(callback) {
+	callback = callback || function() {};
+	this.driver.setUnits(config.machine.get('units'), function() {
+		config.driver.restore(callback);
+	}.bind(this));
 }
 
 Machine.prototype.arm = function(action, timeout) {
@@ -343,6 +360,57 @@ Machine.prototype.runJob = function(job) {
 		}
 	}.bind(this));
 };
+
+Machine.prototype.setPreferredUnits = function(units, callback) {
+	log.info("SETTING PREFERRED UNITS");
+	try {
+		if(config.driver.changeUnits) {
+			units = u.unitType(units);
+			var uv = null;
+ 			switch(units) {
+				case 'in':
+					log.info("Changing default units to INCH");
+					uv = 0;
+					break;
+
+				case 'mm':
+					log.info("Changing default units to MM");
+					uv = 1;
+				break;
+
+				default:
+					log.warn('Invalid units "' + gc + '"found in machine configuration.');
+				break;
+			}
+			if(uv !== null) {
+
+				// Change units on the driver
+				config.driver.changeUnits(uv, function(err, data) {
+					log.info("Done setting driver units")
+					// Change units on each runtime in turn
+					async.eachSeries(this.runtimes, function runtime_set_units(item, callback) {
+						log.info("Setting preferred units for " + item)
+						if(item.setPreferredUnits) {
+							return item.setPreferredUnits(uv, callback);
+						}
+						callback();
+					}.bind(this), callback);
+				}.bind(this));
+			}
+		} else {
+			return callback(null);
+		}
+	}
+	catch (e) {
+		log.warn("Couldn't access driver configuration...");
+		log.error(e)
+		try {
+			this.driver.setUnits(uv);
+		} catch(e) {
+			callback(e);
+		}
+	}
+}
 
 Machine.prototype.getGCodeForFile = function(filename, callback) {
 	fs.readFile(filename, 'utf8', function (err,data) {

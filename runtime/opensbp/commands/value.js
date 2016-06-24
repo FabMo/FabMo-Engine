@@ -6,7 +6,7 @@ var config = require('../../../config');
 
 exports.VA = function(args, callback) {
 	log.debug("VA Command: " + args);
-	
+
 	this.machine.driver.get('mpo', function(err, MPO) {
 
 		var setVA_G2 = {};
@@ -88,7 +88,7 @@ exports.VC = function(args, callback) {
 	// args[1] = Obsolete
 	// args[2] = Obsolete
 	if (args[3] !== undefined) { 	//Safe Z Pull Up
-		sbp_values.safeZpullUp = args[3];		
+		sbp_values.safeZpullUp = args[3];
 	}
 //	if (args[4] !== undefined) { 	// Plunge Direction
 //	}
@@ -117,15 +117,19 @@ exports.VD = function(args) {
 	// XYZ Unit type
 	if ( args[2] !== undefined ) {
 		var unitType = args[2];
-		if ( unitType === 0 || unitType === 1 ){
-			if ( unitType === 0 ){
+		switch(args[2]) {
+			case 0:
 				this.emit_gcode("G20"); // inches
-				log.debug("Changing units to inch");
-			}
-			else {
-				this.emit_gcode("G21"); // mm
-				log.debug("Changing units to mm");
-			}
+				this._setUnits('in');
+				break;
+
+			case 1:
+				this.emit_gcode("G21");
+				this._setUnits('mm');
+				break;
+			default:
+				throw new Error("Invalid unit setting: " + args[2]);
+				break;
 		}
 	}
 	// A Unit type
@@ -148,7 +152,7 @@ exports.VD = function(args) {
 //		if ( c >= 0 || c < 4 ){
 //			g2_VD.cam = c;
 //		}
-//	}	
+//	}
 	// Show control console
 	// Display File Comments
 	// Keypad fixed distance
@@ -171,7 +175,7 @@ exports.VD = function(args) {
 //	config.driver.setMany(g2_VD, function(err, values) {
 //		callback();
 //	});
-};	
+};
 
 exports.VI = function(args,callback) {
 	var g2_VI = {};
@@ -221,12 +225,12 @@ exports.VI = function(args,callback) {
 	config.driver.setMany(g2_VI, function(err, values) {
 		callback();
 	});
-};	
+};
 
 exports.VL = function(args,callback) {
 
 	var g2_VL = {};
-	
+
 	// X - Low Limit
 	if (args[0] !== undefined){
 		g2_VL.xtn = args[0];
@@ -270,7 +274,7 @@ exports.VL = function(args,callback) {
 		g2_VL.btm = args[10];
 	}
 	// Number of axes limits to check
-	
+
 	// C - Low Limit
 	if (args[12] !== undefined){
 		g2_VL.ctn = args[12];
@@ -279,32 +283,32 @@ exports.VL = function(args,callback) {
 	if (args[13] !== undefined){
 		g2_VL.ctm = args[13];
 	}
-	
+
 	config.driver.setMany(g2_VL, function(err, values) {
 		callback();
 	});
-};	
+};
 
 //exports.VN = function(args) {
 		// Limits 0-OFF, 1-ON
-		// Input #4 Switch mode 0-Nrm Closed Stop, 1-Nrm Open Stop, 2-Not Used 
+		// Input #4 Switch mode 0-Nrm Closed Stop, 1-Nrm Open Stop, 2-Not Used
 		// Enable Torch Height Controller, Laser or Analog Control
 		//		0-Off, 1-Torch, 2-Laser, 3-An1 Control, 4-An2 Control, 5-An1 & An2 Control
-	
+
 	// Input Switch Modes = 0-Standard Switch, 1-Nrm Open Limit, 2-Nrm Closed Limit, 3-Nrm Open Stop, 4-Nrm Closed Stop
 		// Input #1 Switch mode
 		// Input #2 Switch mode
 		// Input #3 Switch mode
 		// Input #5 Switch mode
 		// Input #6 Switch mode
-		// Input #7 Switch mode	
+		// Input #7 Switch mode
 		// Input #8 Switch mode
 		// Input #9 Switch mode
 		// Input #10 Switch mode
 		// Input #11 Switch mode
 		// Input #12 Switch mode
 	// Output Switch Modes = 0-StdON/FileOFF, 1-StdON/NoOFF, 2-StdON/LIStpOFF, 3-AutoON/FileOFF, 4-AutoON/NoOFF, 5-AutoON/FIStpOFF
-		// Output #1 Mode 
+		// Output #1 Mode
 		// Output #2 Mode
 		// Output #3 Mode
 		// Output #5 Mode
@@ -316,7 +320,7 @@ exports.VL = function(args,callback) {
 		// Output #11 Mode
 		// Output #12 Mode
 
-//};	
+//};
 
 exports.VP = function(args) {
 	// Grid
@@ -328,7 +332,7 @@ exports.VP = function(args) {
 	// Start Actual Location
 	// Show Jugs
 
-};	
+};
 
 exports.VR = function(args, callback) {
 	// XY Move Ramp Speed
@@ -338,17 +342,17 @@ exports.VR = function(args, callback) {
 		this.machine.driver.command({'yjm':this.maxjerk_xy});
 	}
 	// Z Move Ramp Speed = args[0];
-	if (args[1] !== undefined) { 
+	if (args[1] !== undefined) {
 		this.maxjerk_z = args[1];
 		this.machine.driver.command({'zjm':this.maxjerk_z});
-	} 
+	}
 	// A Move Ramp Speed
-	if (args[2] !== undefined) { 
+	if (args[2] !== undefined) {
 		this.maxjerk_a = args[2];
 		this.machine.driver.command({'ajm':this.maxjerk_a});
-	} 
+	}
 	// B Move Ramp Speed
-	if (args[3] !== undefined) { 
+	if (args[3] !== undefined) {
 		this.maxjerk_b = args[3];
 		this.machine.driver.command({'bjm':this.maxjerk_b});
 	}
@@ -359,7 +363,7 @@ exports.VR = function(args, callback) {
 	}
     vs_change = 1;
     callback();
-};	
+};
 
 // exports.VS = function(args,callback) {
 exports.VS = function(args) {
@@ -375,7 +379,7 @@ exports.VS = function(args) {
 	if (args[3] !== undefined) { this.movespeed_b = args[3]; }
 	//Set C move speed
 	if (args[4] !== undefined) { this.movespeed_c = args[4]; }
-	//Set XY jog speed 
+	//Set XY jog speed
 	if (args[5] !== undefined) { this.jogspeed_xy = args[5]; }
 	//Set Z jog speed
 	if (args[6] !== undefined) { this.jogspeed_z = args[6]; }
@@ -414,7 +418,7 @@ exports.VS = function(args) {
 
 //	log.debug("getG2_VU: " + JSON.stringify(getG2_VU));
 //	log.debug("getSBP_VU: " + JSON.stringify(getSBP_VU));
-			
+
 	// Channel 1 unit value
 //	if (args[0] !== undefined){
 //		sbp_VU.units1 = args[0];
@@ -432,7 +436,7 @@ exports.VS = function(args) {
 //	}
 	// Channel 4 unit value
 //	if (args[3] !== undefined){
-//		sbp_VU.units4 = args[3];				
+//		sbp_VU.units4 = args[3];
 //		g2_VU['4tr'] = ((360/getG2_VU['4sa']) * getG2_VU['4mi']) / sbp_VU.units4;
 //	}
 	// Channel 5 unit value
@@ -459,7 +463,7 @@ exports.VS = function(args) {
 	// if (args[11] !== undefined){}
 
 	// log.debug(JSON.stringify(sbp_VU));
-	// log.debug(JSON.stringify(g2_VU));	
+	// log.debug(JSON.stringify(g2_VU));
 
 	// We set the g2 config (Which updates the g2 hardware but also our persisted copy of its settings)
 // 	config.opensbp.setMany(sbp_VU, function(err, values) {

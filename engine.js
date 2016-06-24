@@ -88,7 +88,7 @@ Engine.prototype.getVersion = function(callback) {
             try {
                 data = JSON.parse(data);
                 if(data.number) {
-                    this.version.number = data.number;                    
+                    this.version.number = data.number;
                     this.version.type = 'release';
                 }
             } catch(e) {
@@ -223,11 +223,11 @@ Engine.prototype.start = function(callback) {
                 callback(null);
             });
         }.bind(this),
-    
-        function set_units(callback) {
+
+/*        function set_units(callback) {
             this.machine.driver.setUnits(config.machine.get('units'), callback);
         }.bind(this),
-
+*/
         // Configure G2 by loading all its json settings and static configuration parameters
         function load_driver_config(callback) {
             if(this.machine.isConnected()) {
@@ -264,11 +264,6 @@ Engine.prototype.start = function(callback) {
             }
         }.bind(this),
 
-        function apply_machine_config(callback) {
-            log.info("Applying machine configuration...");
-            config.machine.apply(callback);
-        }.bind(this),
-
 
         function load_opensbp_commands(callback) {
             log.info("Loading OpenSBP Commands...");
@@ -279,6 +274,12 @@ Engine.prototype.start = function(callback) {
             log.info("Configuring OpenSBP runtime...");
             config.configureOpenSBP(callback);
         },
+
+        function apply_machine_config(callback) {
+            log.info("Applying machine configuration...");
+            config.machine.apply(callback);
+        }.bind(this),
+
 
         function configure_dashboard(callback) {
             log.info("Configuring dashboard...");
@@ -313,7 +314,7 @@ Engine.prototype.start = function(callback) {
             var server = restify.createServer({name:"FabMo Engine"});
             this.server = server;
 
-            // Allow JSON over Cross-origin resource sharing 
+            // Allow JSON over Cross-origin resource sharing
             log.info("Configuring cross-origin requests...");
             server.use(
                 function crossOrigin(req,res,next){
@@ -342,7 +343,7 @@ Engine.prototype.start = function(callback) {
             }
 
             server.use(restify.queryParser());
-            
+
             server.on('uncaughtException', function(req, res, route, err) {
                 log.uncaught(err);
                 answer = {
@@ -356,13 +357,13 @@ Engine.prototype.start = function(callback) {
             log.info("Cofiguring upload directory...");
             server.use(restify.bodyParser({'uploadDir':config.engine.get('upload_dir') || '/tmp'}));
             server.pre(restify.pre.sanitizePath());
-            
+
             //configuring authentication
             log.info("Cofiguring authentication...");
             if('debug' in argv) {
                 server.cookieSecret = "fabmodebugsecret";
             } else {
-                server.cookieSecret = crypto.randomBytes(256).toString('hex');                
+                server.cookieSecret = crypto.randomBytes(256).toString('hex');
             }
 
             server.use(sessions({
