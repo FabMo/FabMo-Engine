@@ -207,9 +207,7 @@ td.actions-control {
   margin-bottom: .5em;
   margin-top: 2em;
   padding: 1em;
-  -webkit-transition: ALL .1s;
-  -moz-transition: ALL .1s;
-  transition: ALL .1s;
+  
 }
 
 @media screen and (max-width: 630px){
@@ -239,9 +237,7 @@ td.actions-control {
   background-color: #333;
   color: #fff;
   width: 160px !important;
-  -webkit-transition: ALL .1s;
-  -moz-transition: ALL .1s;
-  transition: ALL .1s;
+  
 }
 
 .chosen .play-button, .chosen .icon-row {
@@ -284,6 +280,7 @@ td.actions-control {
 .job_item .ellipses{
     font-size: 1.35em;
     padding-left: 0.4em;
+    cursor: pointer;
 }
 
 .job_item .dropDown{
@@ -300,6 +297,11 @@ td.actions-control {
   left: 17px;
 }
 
+.preview, .edit, .download, .cancel {
+  
+  z-index: 1000;
+}
+
 .ellipses {
     font-size: 1.5em;
     width: 1.7em;
@@ -311,6 +313,7 @@ td.actions-control {
     float: left;
     padding-left: 0.1em;
     margin-right: 0.3em;
+    cursor: pointer;
 }
 
 .ellipses:hover {
@@ -640,6 +643,7 @@ table {
   top: 40px;
   right: -20px;
   cursor: pointer;
+  z-index: 1000;
 }
 
 .radial_progress {

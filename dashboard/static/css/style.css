@@ -938,33 +938,29 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .fabmo-resume-stop div {
-    display: inline-block;
+    display: block;
     cursor: pointer;
 	text-align: center;
 	font-family: Arial;
 	color: #ffffff;
 	font-size: 25px;
 	line-height: 3.3em;
-	padding-top: 10%;
-	padding-bottom: 3.5px;
 	text-decoration: none;
 	transition: all 1s;
-	width: 50%;
-   	height: 100%;
+	width: 100%;
+   	height: 50%;
 }
 
 
 .stopJob {
    background: #f20000;
    border: solid #ff0000 1px;
-   margin-left: -2.5px;
-   border-radius: 0 5px 5px 0;
+   border-radius: 0 0 5px 5px;
 }
 .resumeJob {
     background: #32B433;
 	border: solid #00A600 1px;
-    margin-right: -2.5px;
-    border-radius: 5px 0 0 5px;
+    border-radius: 5px 5px 0 0;
 }
 
 
@@ -1001,7 +997,7 @@ input[type=number]::-webkit-outer-spin-button {
 
 	.fabmo-resume-stop div {
         font-size: 14px;
-		padding-top: 25px;
+		
     }
     .fabmo-resume-stop {
         margin-top: 40px;
@@ -1030,7 +1026,7 @@ input[type=number]::-webkit-outer-spin-button {
 
 	.fabmo-resume-stop div {
         font-size: 14px;
-		padding-top: 25px;
+		
     }
     .fabmo-resume-stop {
         margin-top: 40px;
