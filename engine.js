@@ -213,6 +213,7 @@ Engine.prototype.start = function(callback) {
             detection_daemon();
             callback(null);
         }.bind(this),
+
         function load_machine_config(callback) {
             this.machine = machine.machine;
             log.info('Loading the machine configuration...')
@@ -308,6 +309,28 @@ Engine.prototype.start = function(callback) {
             config.instance.apply(callback);
         },
 
+        function generate_auth_key(callback) {
+          log.info("Configuring secret key...")
+          var secret_file = config.getDataDir() + '/config/auth_secret'
+          fs.readFile(secret_file, 'utf8', function(err, data) {
+
+            // If there's already a secret key from disk, use it
+            if(!err && data && (data.length == 512)) {
+              log.info("Secret key already exists, using that.")
+              this.auth_secret = data;
+              return callback();
+            }
+
+            // If not, generate, save and use a new one
+            log.info("Generating a new secret key.")
+            this.auth_secret = crypto.randomBytes(256).toString('hex');
+            fs.writeFile(secret_file, this.auth_secret, function(err, data) {
+              callback();
+            }.bind(this));
+
+          }.bind(this))
+        }.bind(this),
+
         // Kick off the server if all of the above went OK.
         function start_server(callback) {
             log.info("Setting up the webserver...");
@@ -358,14 +381,9 @@ Engine.prototype.start = function(callback) {
             server.use(restify.bodyParser({'uploadDir':config.engine.get('upload_dir') || '/tmp'}));
             server.pre(restify.pre.sanitizePath());
 
-            //configuring authentication
             log.info("Cofiguring authentication...");
-            if('debug' in argv) {
-                server.cookieSecret = "fabmodebugsecret";
-            } else {
-                server.cookieSecret = crypto.randomBytes(256).toString('hex');
-            }
-
+            log.info("Secret Key: " + this.auth_secret.slice(0,5) + '...' + this.auth_secret.slice(-5));
+            server.cookieSecret = this.auth_secret;
             server.use(sessions({
                 // cookie name dictates the key name added to the request object
                 cookieName: 'session',
@@ -376,7 +394,7 @@ Engine.prototype.start = function(callback) {
                 cookie: {
                   //: '/api', // cookie will only be sent to requests under '/api'
                   //maxAge: 60000, // duration of the cookie in milliseconds, defaults to duration above
-                  ephemeral: true, // when true, cookie expires when the browser closes
+                  ephemeral: false, // when true, cookie expires when the browser closes
                   httpOnly: false, // when true, cookie is not accessible from javascript
                   secure: false // when true, cookie will only be sent over SSL. use key 'secureProxy' instead if you handle SSL not in your node process
                 }
