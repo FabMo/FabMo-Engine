@@ -207,7 +207,18 @@ td.actions-control {
   margin-bottom: .5em;
   margin-top: 2em;
   padding: 1em;
-  
+}
+
+.job_item:first-child:before{
+  content: '';
+  float: left;
+  width: 0.5em;
+}
+
+.job_item:first-child:after{
+  content: '';
+  float: right;
+  width: 0.5em;
 }
 
 @media screen and (max-width: 630px){
@@ -225,7 +236,7 @@ td.actions-control {
     margin-top: 0;
     background-color: #FFFFFF;
     border-radius: 5px;
-    margin: 0.5em;
+    margin: .5em .5em .5em 1%;
     height: 200px;
     box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.15);
     border: 1px solid #ccc;

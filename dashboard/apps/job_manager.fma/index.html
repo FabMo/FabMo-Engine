@@ -147,7 +147,7 @@
 	var sortable = Sortable.create(el, {
 	ghostClass: 'ghost',
 	chosenClass: 'chosen',
-	filter: ".icon-row",  
+	filter: ".icon-row, .play-button",  
 	onStart: function(evt) {
 		var remove = document.getElementById('actions');
 		remove.parentNode.removeChild(remove);
