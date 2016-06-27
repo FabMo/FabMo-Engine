@@ -181,6 +181,12 @@ body,html{
 	vertical-align: middle;
 }
 
+#tool-name {
+  max-width: 16em;
+  overflow: hidden;
+  white-space: nowrap
+}
+
 #right-position-container span, #right-position-container label {
 	color: #fff;
 	font-size: 15px;
@@ -933,7 +939,7 @@ input[type=number]::-webkit-outer-spin-button {
   left: 0;
   top: 50%;
   width: 5px;
-  
+
   height: 60px;
   margin-top: -30px;
   z-index: 1;
@@ -965,7 +971,7 @@ input[type=number]::-webkit-outer-spin-button {
   content: "";
   position: absolute;
   width: 5px;
-  
+
   height: 60px;
   margin-top: -30px;
   z-index: 1;
@@ -1211,7 +1217,7 @@ input[type=number]::-webkit-outer-spin-button {
 	font-size: 10px;
 	margin: 0;
 	display: inline;
-} 
+}
 
 
 
