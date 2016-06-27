@@ -85,6 +85,35 @@ body,html{
 	color: #666;
 }
 
+@media only screen and (max-width: 500px) {
+	#mainContent{
+		padding: 0;
+		background-color: #fcf9f9;
+	}
+	#mainContent .main{
+		width: 100%;
+		padding: 0.5em;
+		border-radius: 0px;
+		-webkit-box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
+-moz-box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
+box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
+	}
+
+	#mainContent h1 {
+		font-size: 25px;
+		margin: 0;
+	}
+
+	#mainContent hr {
+		margin: 0.2em;
+	}
+
+	#mainContent input {
+		width: 98%;
+		margin: 0.4em;
+	}
+}
+
 #tools-container {
 	margin-left: 16px;
 	margin-left: 1rem;
@@ -1877,3 +1906,4 @@ input[type=number]::-webkit-outer-spin-button {
 }
 .logout_link_container a{
   color: #eeeeee;
+}
