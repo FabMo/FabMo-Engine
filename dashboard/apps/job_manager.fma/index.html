@@ -142,16 +142,78 @@
 
 
   <script type="text/javascript">
+
+
+
 	var fabmo = new FabMoDashboard();
 	var el = document.getElementById('queue_table');
 	var sortable = Sortable.create(el, {
 	ghostClass: 'ghost',
-	chosenClass: 'chosen',
-	filter: ".icon-row, .play-button, .dropDown, .ellipses",  
+	chosenClass: 'chosen', 
+	dataIdAttr: 'data-id',
+	filter: ".cancel, .preview, .edit, .download, .play-button, .previewJob, .editJob, .downloadJob, .deleteJob, .ellipses",  
 	onStart: function(evt) {
 		var remove = document.getElementById('actions');
 		remove.parentNode.removeChild(remove);
 	},
+	onFilter: function (evt) {
+        var item = evt.item,
+            ctrl = evt.target;
+			var id = ctrl.getAttribute('data-jobid');
+			if (Sortable.utils.is(ctrl, ".cancel")) {
+				console.log($(this));
+				fabmo.deleteJob( $('.cancel').data('id'), function(err, data) {
+      				updateQueue(false);
+      				updateHistory();
+   				});
+			} else if (Sortable.utils.is(ctrl, ".preview")) {
+				fabmo.launchApp('previewer', {
+					'job': $('.preview').data('id')
+				});
+			} else if (Sortable.utils.is(ctrl, ".edit")) {
+				 fabmo.launchApp('editor', {
+      				'job': $('.edit').data('id')
+   				 });
+			} else if (Sortable.utils.is(ctrl, ".download")) {
+				$('.download').attr({
+     				 'data-href': '/job/' + $('.download').data('id') + '/file'
+    			});
+				document.location = $('.download').data('href');
+			} else if (Sortable.utils.is(ctrl, ".play-button")) {
+				if ($('.play').hasClass('active')) {
+					fabmo.pause(function(err, data) {});
+				} else {
+					fabmo.runNext(function(err, data) {
+						if (err) {
+							fabmo.notify(err);
+						} else {
+							updateQueue();
+						}
+					});
+				}	
+			} else if (Sortable.utils.is(ctrl, ".ellipses")){
+				console.log(ctrl);
+				var dd = ctrl.parentNode.childNodes[2];
+				var cd = ctrl.parentNode.childNodse[1];
+				 $('.dropDownWrapper').show();
+    			dd.style.display = 'block';
+				cd.style.display = 'block';
+			} else if (Sortable.utils.is(ctrl, ".previewJob")){
+				 fabmo.launchApp('previewer', {
+					 'job': id
+				 });
+				hideDropDown();
+			} else if (Sortable.utils.is(ctrl, ".editJob")){
+				fabmo.launchApp('editor', {
+					 'job': id
+				 });
+				hideDropDown();
+			} else if (Sortable.utils.is(ctrl, ".downloadJob")){
+				fabmo.navigate('/job/' + id + '/file');
+			} else if (Sortable.utils.is(ctrl, ".deleteJob")){
+				 fabmo.deleteJob(id);
+			}
+		},
 	onEnd: function(evt) {
 		var firstJob = document.getElementById('queue_table').firstChild;
 		var cardActions = document.createElement("div");
@@ -218,17 +280,16 @@
 
 	$('#queue_table').on('click', '.play-button', function(e) {
 		if ($('.play').hasClass('active')) {
-		fabmo.pause(function(err, data) {});
-		} else {
-
-		fabmo.runNext(function(err, data) {
-			if (err) {
-			fabmo.notify(err);
-			} else {
-			updateQueue();
-			}
-		});
-		}
+					fabmo.pause(function(err, data) {});
+				} else {
+					fabmo.runNext(function(err, data) {
+						if (err) {
+							fabmo.notify(err);
+						} else {
+							updateQueue();
+						}
+					});
+				}	
 	});
 
 	$('#clear-jobs').click(function(e) {

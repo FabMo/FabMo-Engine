@@ -76,7 +76,7 @@ function clearQueue() {
 }
 
 function createQueueMenu(id) {
-  var menu = "<div data-jobid='JOBID' class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='cancelJob' data-jobid='JOBID'>Cancel Job</a></li><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job</a></li><li><a class='deleteJob' data-jobid='JOBID'>Delete Job</a></li></ul></div>";
+  var menu = "<div data-jobid='JOBID' class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job</a></li><li><a class='deleteJob' data-jobid='JOBID'>Delete Job</a></li></ul></div>";
   return menu.replace(/JOBID/g, id);
 }
 
@@ -226,21 +226,11 @@ function bindMenuEvents() {
     hideDropDown();
   });
 
-  $('.cancelJob').off('click');
-  $('.cancelJob').click(function(e) {
-    fabmo.cancelJob(this.dataset.jobid, function(err, data) {
-      if (err) {
-        fabmo.notify(err);
-      } else {
-        updateQueue();
-        updateHistory();
-      }
-    });
-    hideDropDown();
-  });
+
 
   $('.previewJob').off('click');
   $('.previewJob').click(function(e) {
+    e.preventDefault();
     fabmo.launchApp('previewer', {
       'job': this.dataset.jobid
     });
@@ -249,6 +239,7 @@ function bindMenuEvents() {
 
   $('.editJob').off('click');
   $('.editJob').click(function(e) {
+    e.preventDefault();
     fabmo.launchApp('editor', {
       'job': this.dataset.jobid
     });
@@ -280,27 +271,27 @@ function bindMenuEvents() {
 }
 
 function bindNextJobEvents() {
-  $('#queue_table').on('click', '.cancel', function(e) {
-    fabmo.deleteJob($(this).data('id'), function(err, data) {
-      updateQueue(false);
-      updateHistory();
-    });
-  });
-  $('#queue_table').on('click', '.preview', function(e) {
-    fabmo.launchApp('previewer', {
-      'job': $(this).data('id')
-    });
-  });
-  $('#queue_table').on('click', '.edit', function(e) {
-    fabmo.launchApp('editor', {
-      'job': $(this).data('id')
-    });
-  });
-  $('#queue_table').on('click', '.download', function(e) {
-    $('.download').attr({
-      'href': '/job/' + $(this).data('id') + '/file'
-    });
-  });
+  // $('#queue_table').on('click', '.cancel', function(e) {
+  //   fabmo.deleteJob($(this).data('id'), function(err, data) {
+  //     updateQueue(false);
+  //     updateHistory();
+  //   });
+  // });
+  // $('#queue_table').on('click', '.preview', function(e) {
+  //   fabmo.launchApp('previewer', {
+  //     'job': $(this).data('id')
+  //   });
+  // });
+  // $('#queue_table').on('click', '.edit', function(e) {
+  //   fabmo.launchApp('editor', {
+  //     'job': $(this).data('id')
+  //   });
+  // });
+  // $('#queue_table').on('click', '.download', function(e) {
+  //   $('.download').attr({
+  //     'href': '/job/' + $(this).data('id') + '/file'
+  //   });
+  // });
 }
 
 function noJob() {

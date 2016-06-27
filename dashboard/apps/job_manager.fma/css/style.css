@@ -231,7 +231,7 @@ td.actions-control {
     font-size: .9em;
     padding: 0.5em;
     color: #666;
-    width: 160px;
+    width: 145px;
     display: inline-block;
     margin-top: 0;
     background-color: #FFFFFF;
@@ -247,7 +247,7 @@ td.actions-control {
   opacity: .5;
   background-color: #333;
   color: #fff;
-  width: 160px !important;
+  width: 145px !important;
   
 }
 

@@ -85,7 +85,7 @@ define(function(require) {
 
                 dashboard.engine.on('change', function(topic) {
                     if (topic === 'apps') {
-                        context.apps.fetch();r
+                        context.apps.fetch();
                     }
                 });
             }
