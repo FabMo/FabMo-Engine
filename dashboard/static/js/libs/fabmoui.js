@@ -218,7 +218,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		var rotation = Math.round(180*(percent/100));
  		var fill_rotation = rotation;
  		var fix_rotation = rotation * 2;
-		if ($(window).width() < 620) {
+		if ($(window).width() < 700) {
    			$('.radial_progress').show();
 			$('.inset .percentage').css('color', 'rgba('+cc+', 255, '+cc+', 1)');
 			$('.mask .fill').css('background-color', 'rgba('+cc+', 255, '+cc+', 1)');

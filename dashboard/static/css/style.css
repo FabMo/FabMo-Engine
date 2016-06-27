@@ -884,7 +884,7 @@ input[type=number]::-webkit-outer-spin-button {
 
 /* ********** footer stuff********** */
 .footBar {
-	position: fixed;
+	position: absolute;
 	bottom: 0;
 	width: 100%;
 	height: 0px;
@@ -902,36 +902,26 @@ input[type=number]::-webkit-outer-spin-button {
 	font-size: 3em;
 	font-family: Arial;
 	z-index: 10;
-	padding-top: 40px;
+	padding-top: 35px;
 }
-
-
-
-.pauseJob:before,
-
-.pauseJob:after,
-
-.pauseJobInner:before,
-
-.pauseJobInner:after { background: #A60000; }
-.pauseJobInner:after.blink { background-color: #ff0000; }
 
 .pauseJob {
     cursor: pointer;
 	position: relative;
 	margin-left: auto;
 	margin-right: auto;
-	display: block;
 	text-align: center;
-	width: 150px;
+	width: 36%;
 	height: 150px;
-	margin-top: 15px;
-	padding-bottom: 15px;
-	background: #333333;
+	margin-top: 12px;
+	background: #ff0000;
+	border: solid 5px #A60000;
+	border-radius: 5px;
 	text-decoration: none;
-	overflow: hidden;
+	transition: border background-color 2s linear;
 }
 
+/*
 .pauseJob:before,
 .pauseJob:after {
   content: "";
@@ -997,64 +987,55 @@ input[type=number]::-webkit-outer-spin-button {
 	border: 5px solid #ff0000;
 	background-color: #A60000;
 	transition: all 2s linear;
-}
-
-
-
-
-
-
-
-
+  */
 .fabmo-resume-stop {
-    margin-top: 50px;
-    width: 400px;
+    margin-top: 12px;
+	position: relative;
+    width: 36%;
+	height: 150px;
     display: block;
     text-align: center;
     margin-right: auto;
     margin-left: auto;
 }
 
+
+
+
+
+
+.pauseJob.blink{
+	border: 5px solid #ff0000;
+	background-color: #A60000;
+	transition: border background-color 2s linear;
+}
+
 .fabmo-resume-stop div {
-    display: inline-block;
+    display: block;
     cursor: pointer;
 	text-align: center;
 	font-family: Arial;
 	color: #ffffff;
-	font-size: 17px;
+	font-size: 25px;
 	line-height: 3.3em;
-	padding-top: 3.5px;
-	padding-bottom: 3.5px;
 	text-decoration: none;
 	transition: all 1s;
+	width: 100%;
+   	height: 50%;
 }
 
-@media only screen and (max-width: 780px){
-    .fabmo-resume-stop div {
-        font-size: 14px;
-		line-height: 3.5em;
-    }
-    .fabmo-resume-stop {
-        margin-top: 60px;
-        width: 300px;
-    }
-
-}
 
 .stopJob {
    background: #f20000;
    border: solid #ff0000 1px;
-   width: 30%;
-   margin-left: -2.5px;
-   border-radius: 0 5px 5px 0;
+   border-radius: 0 0 5px 5px;
 }
 .resumeJob {
     background: #32B433;
 	border: solid #00A600 1px;
-    width: 30%;
-    margin-right: -2.5px;
-    border-radius: 5px 0 0 5px;
+    border-radius: 5px 5px 0 0;
 }
+
 
 
 
@@ -1076,9 +1057,27 @@ input[type=number]::-webkit-outer-spin-button {
 
 }
 
-@media only screen and (max-width: 450px){
+@media only screen and (max-width: 700px){
+	.pauseJob p {
+		font-size: 2em;
+		padding-top: 20px;
+	}
+
+	.pauseJob{
+		margin-top: 40px;
+		height: 100px;
+	}
+
+	.fabmo-resume-stop div {
+        font-size: 14px;
+
+    }
+    .fabmo-resume-stop {
+        margin-top: 40px;
+		height: 100px;
+    }
 	.currentContainer {
-		max-width: 50px;
+		max-width: 100px;
 		margin-left: 1em;
 	}
 
@@ -1086,6 +1085,36 @@ input[type=number]::-webkit-outer-spin-button {
 		 font-size: 15px;
 	}
 }
+
+@media only screen and (max-width: 400px){
+	.pauseJob p {
+		font-size: 2em;
+		padding-top: 20px;
+	}
+
+	.pauseJob{
+		margin-top: 40px;
+		height: 100px;
+	}
+
+	.fabmo-resume-stop div {
+        font-size: 14px;
+
+    }
+    .fabmo-resume-stop {
+        margin-top: 40px;
+		height: 100px;
+    }
+	.currentContainer {
+		display: none;
+	}
+
+	.currentJobTitle {
+		 font-size: 15px;
+	}
+}
+
+
 
 .radial_progress {
 	margin-top: 55px;
@@ -1206,7 +1235,7 @@ input[type=number]::-webkit-outer-spin-button {
     width: 55px;
     text-align: center;
     color:#F0F0F0;
-	font-size: 10px;
+	font-size: 14px;
     margin-top: 50px;
 }
 .elapsed_time_label{
@@ -1214,7 +1243,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .elapsed_time_small p{
-	font-size: 10px;
+	font-size: 12px;
 	margin: 0;
 	display: inline;
 }
