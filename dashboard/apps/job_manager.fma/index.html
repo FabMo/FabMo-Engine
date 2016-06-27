@@ -145,9 +145,9 @@
 	var fabmo = new FabMoDashboard();
 	var el = document.getElementById('queue_table');
 	var sortable = Sortable.create(el, {
-	delay: 100,
 	ghostClass: 'ghost',
 	chosenClass: 'chosen',
+	filter: ".icon-row",  
 	onStart: function(evt) {
 		var remove = document.getElementById('actions');
 		remove.parentNode.removeChild(remove);
