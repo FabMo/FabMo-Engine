@@ -24,12 +24,14 @@ function setupDropTarget() {
       evt.preventDefault();
       try {
         file = evt.originalEvent.dataTransfer.files;
-        fabmo.submitJob(file, {}, function(err, data) {
-          if (err) {
-            fabmo.notify('error', err);
-          }
-          updateQueue();
-        });
+        if(file.length > 0) {
+          fabmo.submitJob(file, {}, function(err, data) {
+            if (err) {
+              fabmo.notify('error', err);
+            }
+            updateQueue();
+          });
+        }
       } finally {
         $('#tabpending').removeClass('hover');
         return false;
