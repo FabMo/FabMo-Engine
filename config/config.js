@@ -120,7 +120,7 @@ Config.prototype.init = function(callback) {
 				default_count = Object.keys(this._cache).length;
 				callback();
 			}.bind(this),
-			function loadUserConfig(callback) { 
+			function loadUserConfig(callback) {
 				this.load(this.config_file, function(err, data) {
 					if(err) {
 						if(err.code === "ENOENT") {
@@ -139,7 +139,7 @@ Config.prototype.init = function(callback) {
 						user_count = Object.keys(data).length;
 						callback(null, this);
 					}
-				}.bind(this)); 
+				}.bind(this));
 			}.bind(this),
 			function saveIfNeeded(callback) {
 				if(default_count != user_count) {

@@ -333,6 +333,23 @@
             </div>
         </div>
     </fieldset>
+
+    <fieldset>
+        <legend>Backup & Restore</legend>
+        <div class="large-3 columns">
+            <div class="row collapse">
+                <a id="btn-backup"  class="button radius small">Backup the configuration</a>
+            </div>
+        </div>
+        <div class="large-7 columns">
+            <div class="row collapse">
+                <input type="file" id="restore_conf_file" class="hidden">
+                <a id="btn-restore"  class="button radius small">Restore the configuration</a>
+            </div>
+        </div>
+    </fieldset>
+
+
 </div>
 
 <!--     <div class="row">
@@ -1811,6 +1828,64 @@ $('#btn-update').click(function(evt) {
         fabmo.navigate(url, {});
     }
 });
+
+
+$('#btn-backup').click(function(evt) {
+    fabmo.getConfig(function(err,conf){
+        if(err){
+            fabmo.notify('error','cannot backup the config !');
+        }else{
+            fabmo._download(JSON.stringify(conf), 'fabmo_config_backup.fmc','text/json');
+        }
+    });
+});
+
+$('#btn-restore').click(function(evt) {
+    $('#restore_conf_file').trigger('click');
+});
+
+
+$("#restore_conf_file").change(function() {
+        var files = $(this).prop('files');
+        if(files.length===1){
+            var conf_file = files[0];
+            if(!conf_file)return;
+            if(conf_file.name.split('.').pop()!=='fmc'){
+                fabmo.notify('error','the file you submit is not valid');
+                $("#restore_conf_file").attr("value", "");
+                return;
+            }
+
+           var reader = new FileReader();
+           reader.readAsText(conf_file);
+           reader.onload = function(evt)
+           {
+               try{
+                   conf = JSON.parse(evt.target.result);
+               }catch(ex){
+                fabmo.notify("error","Error reading file : "+ex);
+                $("#restore_conf_file").attr("value", "");
+                return;
+               }
+               fabmo.setConfig(conf,function(err){
+                   if(err){
+                       fabmo.notify("error",err);
+                       $("#restore_conf_file").attr("value", "");
+                       return;
+                   }
+                   fabmo.notify("success","the configuration file have been successfully loaded !");
+                   $("#restore_conf_file").attr("value", "");
+               });
+           }
+           reader.onerror = function (evt) {
+               fabmo.notify("error","Error reading file");
+               $("#restore_conf_file").attr("value", "");
+           }
+
+        }
+
+    });
+
 $(document).ready(function() {
     $(document).foundation();
 
