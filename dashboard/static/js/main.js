@@ -85,7 +85,7 @@ define(function(require) {
 
                 dashboard.engine.on('change', function(topic) {
                     if (topic === 'apps') {
-                        context.apps.fetch();r
+                        context.apps.fetch();
                     }
                 });
             }
@@ -502,7 +502,7 @@ define(function(require) {
 //                 width++;
 //                 stop = offset;
 //             } else {
-//                 width--;            
+//                 width--;
 //             }
 //             that.css(marqueeCss);
 //             go();
@@ -510,7 +510,7 @@ define(function(require) {
 //         };
 //         $('.currentJobTitle').marquee();
 //     })(jQuery);
-    
+
     // (function() {
     //     if ($(window).width() < 620) {
     //         function start_marquee() {

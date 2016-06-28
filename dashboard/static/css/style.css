@@ -85,6 +85,35 @@ body,html{
 	color: #666;
 }
 
+@media only screen and (max-width: 500px) {
+	#mainContent{
+		padding: 0;
+		background-color: #fcf9f9;
+	}
+	#mainContent .main{
+		width: 100%;
+		padding: 0.5em;
+		border-radius: 0px;
+		-webkit-box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
+-moz-box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
+box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
+	}
+
+	#mainContent h1 {
+		font-size: 25px;
+		margin: 0;
+	}
+
+	#mainContent hr {
+		margin: 0.2em;
+	}
+
+	#mainContent input {
+		width: 98%;
+		margin: 0.4em;
+	}
+}
+
 #tools-container {
 	margin-left: 16px;
 	margin-left: 1rem;
@@ -179,6 +208,12 @@ body,html{
 	left: 3rem;
 	top: 0;
 	vertical-align: middle;
+}
+
+#tool-name {
+  max-width: 16em;
+  overflow: hidden;
+  white-space: nowrap
 }
 
 #right-position-container span, #right-position-container label {
@@ -878,7 +913,7 @@ input[type=number]::-webkit-outer-spin-button {
 
 /* ********** footer stuff********** */
 .footBar {
-	position: absolute;
+	position: fixed;
 	bottom: 0;
 	width: 100%;
 	height: 0px;
@@ -915,6 +950,73 @@ input[type=number]::-webkit-outer-spin-button {
 	transition: border background-color 2s linear;
 }
 
+/*
+.pauseJob:before,
+.pauseJob:after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 5px;
+
+  height: 60px;
+  margin-top: -30px;
+  z-index: 1;
+}
+.pauseJob:after {
+  left: auto;
+  right: 0;
+  margin-top: -30px;
+  height: 60px;
+
+}
+
+.pauseJobInner {
+  position: absolute;
+  top: 0px;
+  width: 150px;
+  height: 150px;
+  background: #ff0000;
+  border: 5px solid #A60000;
+  -webkit-transform: rotate(45deg);
+  -moz-transform: rotate(45deg);
+  transition: all 2s linear;
+}
+
+.pauseJobInner:before,
+.pauseJobInner:after {
+  -webkit-transform: rotate(45deg);
+  -moz-transform: rotate(45deg);
+  content: "";
+  position: absolute;
+  width: 5px;
+
+  height: 60px;
+  margin-top: -30px;
+  z-index: 1;
+  right: auto;
+  left: 16px;
+  bottom: auto;
+  top: 19px;
+  transition: all 2s linear;
+}
+
+.pauseJobInner:after {
+  height: 60px;
+  right: 16px;
+  left: auto;
+  bottom: -12px;
+  top: auto;
+  transition: all 2s linear;
+}
+
+
+
+.pauseJobInner.blink{
+	border: 5px solid #ff0000;
+	background-color: #A60000;
+	transition: all 2s linear;
+  */
 .fabmo-resume-stop {
     margin-top: 12px;
 	position: relative;
@@ -997,7 +1099,7 @@ input[type=number]::-webkit-outer-spin-button {
 
 	.fabmo-resume-stop div {
         font-size: 14px;
-		
+
     }
     .fabmo-resume-stop {
         margin-top: 40px;
@@ -1026,7 +1128,7 @@ input[type=number]::-webkit-outer-spin-button {
 
 	.fabmo-resume-stop div {
         font-size: 14px;
-		
+
     }
     .fabmo-resume-stop {
         margin-top: 40px;
@@ -1173,7 +1275,7 @@ input[type=number]::-webkit-outer-spin-button {
 	font-size: 12px;
 	margin: 0;
 	display: inline;
-} 
+}
 
 
 
@@ -1804,3 +1906,4 @@ input[type=number]::-webkit-outer-spin-button {
 }
 .logout_link_container a{
   color: #eeeeee;
+}

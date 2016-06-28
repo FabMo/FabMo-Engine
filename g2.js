@@ -36,8 +36,8 @@ var GCODE_BLOCK_SEND_SIZE = 1000;
 var GCODE_MIN_LINE_THRESH = 250;
 
 // Map used by the jog command to turn incoming direction specifiers to g-code
-var JOG_AXES = {'x':'X', 
-				'-x':'X-', 
+var JOG_AXES = {'x':'X',
+				'-x':'X-',
 				'y':'Y',
 				'-y':'Y-',
 				'z':'Z',
@@ -91,7 +91,7 @@ function G2() {
 	this.lines_sent = 0;
 
 	// Event emitter inheritance and behavior setup
-	events.EventEmitter.call(this);	
+	events.EventEmitter.call(this);
 	this.setMaxListeners(50);
 }
 util.inherits(G2, events.EventEmitter);
@@ -164,7 +164,7 @@ G2.prototype.disconnect = function(callback) {
 	this.watchdog.stop();
 	if(this.control_port !== this.gcode_port) {
 		this.control_port.close(function(callback) {
-			this.gcode_port.close(callback);   
+			this.gcode_port.close(callback);
 		}.bind(this));
 	} else {
 		this.control_port.close(callback);
@@ -280,7 +280,7 @@ G2.prototype.jog = function(direction) {
 
 // Start or continue jogging in the direction provided, which is one of x,-x,y,-y,z-z,a,-a,b,-b,c,-c
 G2.prototype.fixed_move = function(direction,step,speed) {
-	if(this.quit_pending){ 
+	if(this.quit_pending){
 		log.warn("WARNING QUIT PENDING WHILE DOING A FIXED MOVE")
 	}
 	var mstep = parseFloat(step ? step : 0.01).toFixed(5);
@@ -303,7 +303,7 @@ G2.prototype.fixed_move = function(direction,step,speed) {
 			move = 'G91 G1 ' + d + mstep + ' F' + speed;
 		}
 		this.gcodeWrite(move);
-	} 
+	}
 };
 
 G2.prototype.jog_keepalive = function() {
@@ -325,27 +325,28 @@ G2.prototype.stopJog = function() {
 
 G2.prototype.setUnits = function(units, callback) {
 	if(units === 0 || units == 'in') {
+		log.info('Setting driver units to INCH');
 		gc = 'G20';
 		units = 0;
 	} else if(units === 1 || units === 'mm') {
+		log.info('Setting driver units to MM');
 		gc = 'G21';
 		units = 1;
 	} else {
-		return callback(new Error('Invalid unit setting: ' + units))
+		return callback(new Error('Invalid unit setting: ' + units));
 	}
 	this.set('gun', units, function() {
-		this.runString(gc, function() {
-			this.requestStatusReport(function(status) {
-				callback(null);
-			}.bind(this));
-		}.bind(this));		
+		this.once('status', function(status) {
+			callback(null);
+		});
+		this.runString(gc);
 	}.bind(this));
 }
 
 G2.prototype.requestStatusReport = function(callback) {
 	// Register the callback to be called when the next status report comes in
 	typeof callback === 'function' && this.once('status', callback);
-	this.command({'sr':null}); 
+	this.command({'sr':null});
 };
 
 G2.prototype.requestQueueReport = function() { this.command({'qr':null}); };
@@ -460,7 +461,7 @@ G2.prototype.handleStatusReport = function(response) {
 		if(this.status.stat === this.STAT_END) {
 			console.log("STAT IS ALREADY 4")
 		}
-		console.log(response);		
+		console.log(response);
 	}*/
 	if(response.sr) {
 
@@ -539,7 +540,7 @@ G2.prototype.onMessage = function(response) {
 	this.handleQueueReport(r);
 
 	// Deal with footer
-	var err = this.handleFooter(response); 
+	var err = this.handleFooter(response);
 
 	// Emitted everytime a message is received, regardless of content
 	this.emit('message', response);
@@ -550,9 +551,9 @@ G2.prototype.onMessage = function(response) {
 				//if(r[key] !== null) {
 					callback = this.readers[key].shift();
 					if(err) {
-						callback(err);						
+						callback(err);
 					} else {
-						callback(null, r[key]);						
+						callback(null, r[key]);
 					}
 				//}
 			}
@@ -570,7 +571,7 @@ G2.prototype.feedHold = function(callback) {
 	typeof callback === 'function' && this.once('state', callback);
 	log.debug("Sending a feedhold");
 	this.controlWriteAndDrain('!\n', function() {
-		log.debug("Drained.");   
+		log.debug("Drained.");
 	});
 };
 
@@ -590,7 +591,7 @@ G2.prototype.resume = function() {
 G2.prototype.quit = function() {
 	this.quit_pending = true;
 	this.gcode_queue.clear();
-	this.gcodeWrite('{clr:n}\n');	
+	this.gcodeWrite('{clr:n}\n');
 	this.controlWrite('\x04');
 }
 
@@ -603,7 +604,7 @@ G2.prototype.get = function(key, callback) {
 		is_array = false;
 		keys = [key];
 	}
-	async.map(keys, 
+	async.map(keys,
 
 		// Function called for each item in the keys array
 		function(k, cb) {
@@ -633,7 +634,7 @@ G2.prototype.get = function(key, callback) {
 
 			this.command(cmd);
 		}.bind(this),
-	
+
 		// Function to call with the list of results
 		function(err, result) {
 			if(err) {
@@ -652,7 +653,7 @@ G2.prototype.get = function(key, callback) {
 
 G2.prototype.setMany = function(obj, callback) {
 	var keys = Object.keys(obj);
-	async.map(keys, 
+	async.map(keys,
 		// Function called for each item in the keys array
 		function(k, cb) {
 			cmd = {};
@@ -782,7 +783,7 @@ G2.prototype.setMachinePosition = function(position, callback) {
 	['x','y','z','a','b','c','u','v','w'].forEach(function(axis) {
 		if(position[axis] != undefined) {
 			gcode += 'G28.3 ' + axis + position[axis].toFixed(5) + '\n';
-		}		
+		}
 	});
 
 	if(this.status.unit === 'in') {
@@ -832,7 +833,7 @@ states = {
 	6 : "holding",
 	7 : "probe",
 	8 : "cycling",
-	9 : "homing", 
+	9 : "homing",
 	11 : "interlock",
 	12 : "shutdown",
 	13 : "panic"
@@ -872,4 +873,3 @@ G2.prototype.STAT_HOMING = STAT_HOMING;
 G2.prototype.STAT_INTERLOCK = STAT_INTERLOCK;
 G2.prototype.STAT_SHUTDOWN = STAT_SHUTDOWN;
 G2.prototype.STAT_PANIC = STAT_PANIC;
-

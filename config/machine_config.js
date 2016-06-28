@@ -1,7 +1,7 @@
 var config = require('../config');
-var Config = require('./config').Config; 
+var Config = require('./config').Config;
 var log = require('../log').logger('machine_config');
-var extend = require('../util').extend;
+var u = require('../util');
 
 // The EngineConfig object keeps track of engine-specific settings
 var MachineConfig = function() {
@@ -16,7 +16,7 @@ MachineConfig.prototype.init = function(machine, callback) {
 
 MachineConfig.prototype.update = function(data, callback, force) {
 	try {
-		extend(this._cache, data, force);
+		u.extend(this._cache, data, force);
 	} catch (e) {
 		return callback(e);
 	}
@@ -35,32 +35,7 @@ MachineConfig.prototype.apply = function(callback) {
 	} else {
 		this.machine.deauthorize();
 	}
-
-	try {
-		if(config.driver.changeUnits) {
-			var units = this.get('units');
-			if(units === 'in' || units === 0) {
-				log.info("Changing default units to INCH");
-				config.driver.changeUnits(0, callback);
-			} else if(units === 'mm' || units === 1) {
-				log.info("Changing default units to MM");
-				config.driver.changeUnits(1, callback);
-			} else {
-				log.warn('Invalid units "' + gc + '"found in machine configuration.');
-				callback(null);
-			}
-		} else {
-			callback(null);
-		}
-	}
-	catch (e) {
-		log.warn("Couldn't access driver configuration...");
-		try {
-			this.driver.setUnits(this.get('units'));
-		} catch(e) {
-			callback(e);
-		}
-	}
+	this.machine.setPreferredUnits(this.get('units'), callback);
 };
 
 exports.MachineConfig = MachineConfig;

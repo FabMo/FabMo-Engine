@@ -71,14 +71,33 @@ Job.prototype.fail = function(callback) {
 	this.save(callback);
 };
 
+Job.prototype.cancelOrTrash = function(callback) {
+		if(this.state === 'running') {
+			this.cancel(callback);
+		} else {
+			this.trash(callback);
+		}
+}
+
 Job.prototype.cancel = function(callback) {
-	if(this.state === 'pending' || this.state === 'running') {
-		log.debug("Cancelling pending job id " + this._id);
+	if(this.state === 'running') {
+		log.debug("Cancelling running job id " + this._id);
 		this.state = 'cancelled';
 		this.finished_at = Date.now();
 		this.save(callback);
 	} else {
 		setImmediate(callback, new Error('Cannot cancel a job that is ' + this.state));
+	}
+};
+
+Job.prototype.trash = function(callback) {
+	if(this.state !== 'running') {
+		log.debug("Trashing job id " + this._id);
+		this.state = 'trash';
+		this.finished_at = Date.now();
+		this.save(callback);
+	} else {
+		setImmediate(callback, new Error('Cannot trash a job that is ' + this.state));
 	}
 };
 

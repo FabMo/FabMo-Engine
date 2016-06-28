@@ -88,7 +88,7 @@ Engine.prototype.getVersion = function(callback) {
             try {
                 data = JSON.parse(data);
                 if(data.number) {
-                    this.version.number = data.number;                    
+                    this.version.number = data.number;
                     this.version.type = 'release';
                 }
             } catch(e) {
@@ -213,6 +213,7 @@ Engine.prototype.start = function(callback) {
             detection_daemon();
             callback(null);
         }.bind(this),
+
         function load_machine_config(callback) {
             this.machine = machine.machine;
             log.info('Loading the machine configuration...')
@@ -223,11 +224,11 @@ Engine.prototype.start = function(callback) {
                 callback(null);
             });
         }.bind(this),
-    
-        function set_units(callback) {
+
+/*        function set_units(callback) {
             this.machine.driver.setUnits(config.machine.get('units'), callback);
         }.bind(this),
-
+*/
         // Configure G2 by loading all its json settings and static configuration parameters
         function load_driver_config(callback) {
             if(this.machine.isConnected()) {
@@ -264,11 +265,6 @@ Engine.prototype.start = function(callback) {
             }
         }.bind(this),
 
-        function apply_machine_config(callback) {
-            log.info("Applying machine configuration...");
-            config.machine.apply(callback);
-        }.bind(this),
-
 
         function load_opensbp_commands(callback) {
             log.info("Loading OpenSBP Commands...");
@@ -279,6 +275,12 @@ Engine.prototype.start = function(callback) {
             log.info("Configuring OpenSBP runtime...");
             config.configureOpenSBP(callback);
         },
+
+        function apply_machine_config(callback) {
+            log.info("Applying machine configuration...");
+            config.machine.apply(callback);
+        }.bind(this),
+
 
         function configure_dashboard(callback) {
             log.info("Configuring dashboard...");
@@ -307,13 +309,35 @@ Engine.prototype.start = function(callback) {
             config.instance.apply(callback);
         },
 
+        function generate_auth_key(callback) {
+          log.info("Configuring secret key...")
+          var secret_file = config.getDataDir() + '/config/auth_secret'
+          fs.readFile(secret_file, 'utf8', function(err, data) {
+
+            // If there's already a secret key from disk, use it
+            if(!err && data && (data.length == 512)) {
+              log.info("Secret key already exists, using that.")
+              this.auth_secret = data;
+              return callback();
+            }
+
+            // If not, generate, save and use a new one
+            log.info("Generating a new secret key.")
+            this.auth_secret = crypto.randomBytes(256).toString('hex');
+            fs.writeFile(secret_file, this.auth_secret, function(err, data) {
+              callback();
+            }.bind(this));
+
+          }.bind(this))
+        }.bind(this),
+
         // Kick off the server if all of the above went OK.
         function start_server(callback) {
             log.info("Setting up the webserver...");
             var server = restify.createServer({name:"FabMo Engine"});
             this.server = server;
 
-            // Allow JSON over Cross-origin resource sharing 
+            // Allow JSON over Cross-origin resource sharing
             log.info("Configuring cross-origin requests...");
             server.use(
                 function crossOrigin(req,res,next){
@@ -342,7 +366,7 @@ Engine.prototype.start = function(callback) {
             }
 
             server.use(restify.queryParser());
-            
+
             server.on('uncaughtException', function(req, res, route, err) {
                 log.uncaught(err);
                 answer = {
@@ -356,15 +380,10 @@ Engine.prototype.start = function(callback) {
             log.info("Cofiguring upload directory...");
             server.use(restify.bodyParser({'uploadDir':config.engine.get('upload_dir') || '/tmp'}));
             server.pre(restify.pre.sanitizePath());
-            
-            //configuring authentication
-            log.info("Cofiguring authentication...");
-            if('debug' in argv) {
-                server.cookieSecret = "fabmodebugsecret";
-            } else {
-                server.cookieSecret = crypto.randomBytes(256).toString('hex');                
-            }
 
+            log.info("Cofiguring authentication...");
+            log.info("Secret Key: " + this.auth_secret.slice(0,5) + '...' + this.auth_secret.slice(-5));
+            server.cookieSecret = this.auth_secret;
             server.use(sessions({
                 // cookie name dictates the key name added to the request object
                 cookieName: 'session',
@@ -375,7 +394,7 @@ Engine.prototype.start = function(callback) {
                 cookie: {
                   //: '/api', // cookie will only be sent to requests under '/api'
                   //maxAge: 60000, // duration of the cookie in milliseconds, defaults to duration above
-                  ephemeral: true, // when true, cookie expires when the browser closes
+                  ephemeral: false, // when true, cookie expires when the browser closes
                   httpOnly: false, // when true, cookie is not accessible from javascript
                   secure: false // when true, cookie will only be sent over SSL. use key 'secureProxy' instead if you handle SSL not in your node process
                 }

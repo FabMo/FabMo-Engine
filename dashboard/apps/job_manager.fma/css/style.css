@@ -3,7 +3,7 @@ body {
   height: 100%;
 }
 
-.running { 
+.running {
   animation: pulse 2s infinite;
 }
 .running .inset {
@@ -41,16 +41,16 @@ body {
 }
 
 #tabpending{
-    
+
 }
 
-.hover .hoverdim { 
+.hover .hoverdim {
   -webkit-transition: opacity .2s ease;
   -moz-transition: opacity .2s ease;
   -o-transition: opacity .2s ease;
   opacity: 0.2;
 }
-  
+
 #droptarget {
   visibility: hidden;
   opacity: 0;
@@ -78,7 +78,7 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   color: #666;
-} 
+}
 .jobs-title:first-child {
   min-height: 40px;
 }
@@ -93,7 +93,7 @@ h1, h2, h3, h4, h5, h6 {
    font-weight: bold;
    transition: all 0.5s;
  }
- 
+
  .no-jobs {
    position: absolute;
    left: -2000px;
@@ -113,7 +113,7 @@ h1, h2, h3, h4, h5, h6 {
  }
 
  .without-job{
- 
+
    top: 0;
    transition: all 0.5s;
    width: 100%;
@@ -121,29 +121,29 @@ h1, h2, h3, h4, h5, h6 {
    height: 150px;
    background-color: #fff;
  }
- 
+
  .without-job img{
      height: 55px;
      width: auto;
  }
- 
+
  .without-job p {
      color: #666666
  }
- 
+
  .submitWrapper{
      position: relative;
      height: 100%;
      width: 100%;
  }
- 
+
  .submitActions{
      text-align: center;
       position: absolute;
       top: 50%; left: 50%;
       transform: translate(-50%,-50%);
  }
- 
+
  .submitActions p {
      margin: 0;
  }
@@ -153,9 +153,9 @@ h1, h2, h3, h4, h5, h6 {
    left: -2000px;
    top: 0;
    transition: all 0.5s;
- 
+
  }
- 
+
  .jobs-wrapper{
    position: relative;
    width: 100%;
@@ -192,8 +192,8 @@ td.actions-control {
 }
 
 #queue_table{
- 
- 
+
+
 }
 
 
@@ -207,7 +207,18 @@ td.actions-control {
   margin-bottom: .5em;
   margin-top: 2em;
   padding: 1em;
-  
+}
+
+.job_item:first-child:before{
+  content: '';
+  float: left;
+  width: 0.5em;
+}
+
+.job_item:first-child:after{
+  content: '';
+  float: right;
+  width: 0.5em;
 }
 
 @media screen and (max-width: 630px){
@@ -220,12 +231,12 @@ td.actions-control {
     font-size: .9em;
     padding: 0.5em;
     color: #666;
-    width: 160px;
+    width: 145px;
     display: inline-block;
     margin-top: 0;
     background-color: #FFFFFF;
     border-radius: 5px;
-    margin: 0.5em;
+    margin: .5em .5em .5em 1%;
     height: 200px;
     box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.15);
     border: 1px solid #ccc;
@@ -236,12 +247,12 @@ td.actions-control {
   opacity: .5;
   background-color: #333;
   color: #fff;
-  width: 160px !important;
+  width: 145px !important;
   
 }
 
 .chosen .play-button, .chosen .icon-row {
-  display: none; 
+  display: none;
 }
 .chosen .description {
   width: 100% !important;
@@ -274,7 +285,7 @@ td.actions-control {
     font-weight: bold;
     margin-bottom: 0.5em;
     line-height: 1.1em;
-    
+
 }
 
 .job_item .ellipses{
@@ -366,6 +377,10 @@ td.actions-control {
 
 .dropDown a:hover{
   color: #32B433;
+}
+
+.deleteJob {
+  color: #9C210C;
 }
 
 .dropDownWrapper{
@@ -680,7 +695,7 @@ table {
     /* rect(<top>, <right>, <bottom>, <left>) */
     clip: rect(0px, 50px, 1000px, 0px);
     -webkit-backface-visibility: hidden;
-    border-radius: 50%;    
+    border-radius: 50%;
 }
 
 .perecent_circle .mask {
@@ -724,7 +739,7 @@ table {
      text-align: center;
      top: 10.5px;
      left: 2px;
-	 font-family: 'source_sans_proextralight'; 
+	 font-family: 'source_sans_proextralight';
 }
 
 
@@ -887,7 +902,7 @@ table {
     border-radius: 50%;
     width: 38px;
     height:38px;
-    
+
 }
 
 @-webkit-keyframes off {
@@ -896,11 +911,11 @@ table {
     -webkit-box-shadow: 0px 0px 6px 2px #B10000;
         -moz-box-shadow: 0px 0px 6px 2px #B10000;
             box-shadow: 0px 0px 6px 2px #B10000;
-   
+
     }
     90%{
      background: none; /* Old browsers */
-  
+
     }
     100% {
     background: #B10000; /* Old browsers */
@@ -914,11 +929,11 @@ table {
     -webkit-box-shadow: 0px 0px 6px 2px #B10000;
         -moz-box-shadow: 0px 0px 6px 2px #B10000;
             box-shadow: 0px 0px 6px 2px #B10000;
-   
+
     }
     90%{
      background: none; /* Old browsers */
-  
+
     }
     100% {
     background: #B10000; /* Old browsers */
@@ -931,11 +946,11 @@ table {
     -webkit-box-shadow: 0px 0px 6px 2px #DD8728;
         -moz-box-shadow: 0px 0px 6px 2px #DD8728;
             box-shadow: 0px 0px 6px 2px #DD8728;
-   
+
     }
     90%{
      background: none; /* Old browsers */
-  
+
     }
     100% {
     background: #DD8728; /* Old browsers */
@@ -949,11 +964,11 @@ table {
     -webkit-box-shadow: 0px 0px 6px 2px #DD8728;
         -moz-box-shadow: 0px 0px 6px 2px #DD8728;
             box-shadow: 0px 0px 6px 2px #DD8728;
-   
+
     }
     90%{
      background: none; /* Old browsers */
-  
+
     }
     100% {
     background: #DD8728; /* Old browsers */
@@ -962,14 +977,14 @@ table {
 }
 
 .job-status-light.one {
-  
+
 }
 
 
 .job-status-light.two {
- 
+
 }
 
 .job-status-light.three {
- 
+
 }

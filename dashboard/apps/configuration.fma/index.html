@@ -1639,10 +1639,10 @@
 
     <div class="row">
         <fieldset>
-            <legend>Authorization</legend>
+            <legend>Authorization Button</legend>
             <div class="large-6 columns">
                 <div class="row collapse">
-                    <label>Authorization Input
+                    <label>Authorization Button Input
                         <select id="machine-auth_input" class="machine-input">
                             <option value="0">No Authorization</option>
                             <option value="1">Input 1</option>
@@ -1667,6 +1667,36 @@
                 </div>
             </div>
         </fieldset>
+        <fieldset>
+            <legend>AP Mode Button</legend>
+            <div class="large-6 columns">
+                <div class="row collapse">
+                    <label>AP Mode Button Input
+                        <select id="machine-ap_input" class="machine-input">
+                            <option value="0">No AP Mode Button</option>
+                            <option value="1">Input 1</option>
+                            <option value="2">Input 2</option>
+                            <option value="3">Input 3</option>
+                            <option value="4">Input 4</option>
+                            <option value="5">Input 5</option>
+                            <option value="6">Input 6</option>
+                            <option value="7">Input 7</option>
+                            <option value="8">Input 8</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="row collapse">
+                    <label>AP Mode Button Duration</label>
+                    <div class="small-9 columns">
+                        <input type="number" id="machine-ap_time" class="machine-input"/>
+                    </div>
+                    <div class="small-3 columns">
+                        <span class="postfix">seconds</span>
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+
     </div>
 </section>
 
@@ -1694,16 +1724,8 @@
                     <tbody class="row app-listing"></tbody>
                 </table>
             </div>
-            <!--
-            <div class="modal-background"></div>
-            <div class="modal-content">
-            <h5>Are you sure you want to delete app?</h5>
-            <button class="deleteCancel">Cancel</button>
-            <button class="deleteOkay">Yes, Delete</button>
-        </div>-->
-    </div>
-</div>
-
+        </div>
+      </div>
 </section>
 
 <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel7" style="padding: 0px;">
@@ -1893,14 +1915,13 @@ $(document).ready(function() {
             else if(v === "units6"){
                 new_config.driver['6tr']=(360/configData.driver["6sa"])*configData.driver["6mi"]/this.value;
             }
-            // console.log("units = " + JSON.stringify(new_config));
             fabmo.setConfig(new_config, function(err, data) {
                 setTimeout(update, 500);
             });
         }
     });
 
-    $('#input-name').change( function(evt) {
+    $('#input-machine-name').change( function(evt) {
         var id = {name: this.value};
         fabmo.setNetworkIdentity(id, function(err, data) {
             update();
