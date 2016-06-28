@@ -426,3 +426,5 @@ function handleStatusReport(status) {
     setProgress(status);
   }
 }
+
+

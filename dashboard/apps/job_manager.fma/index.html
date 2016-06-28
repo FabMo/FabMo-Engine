@@ -151,9 +151,10 @@
 	ghostClass: 'ghost',
 	chosenClass: 'chosen', 
 	dataIdAttr: 'data-id',
+	animation: 150,
 	filter: ".cancel, .preview, .edit, .download, .play-button, .previewJob, .editJob, .downloadJob, .deleteJob, .ellipses",  
 	onStart: function(evt) {
-		var remove = document.getElementById('actions');
+		var remove = document.getElementById('actions');	
 		remove.parentNode.removeChild(remove);
 	},
 	onFilter: function (evt) {
@@ -214,6 +215,11 @@
 				 fabmo.deleteJob(id);
 			}
 		},
+
+	onMove : function(evt){
+		var ctrl =  evt.dragged;
+		ctrl.removeAttribute("style");
+	},
 	onEnd: function(evt) {
 		var firstJob = document.getElementById('queue_table').firstChild;
 		var cardActions = document.createElement("div");
@@ -239,6 +245,7 @@
 		bindNextJobEvents();
 	}
 	});
+	
 
 	var current_job_id = 0;
 
@@ -254,6 +261,7 @@
 		}
 	});
 
+
 	// Request infoes from the tool
 	// The queue will update when the status report comes in
 	// But the history needs to be updated manually
@@ -263,6 +271,28 @@
 
 	bindNextJobEvents();
 	setupDropTarget();
+
+	$('#queue_table').on('mousedown', '.job_item:first-child', function(e) {
+		if ($(window).width() > 630 ){
+			var left = e.pageX - (145/2);
+			var right = $(document).width() - e.pageX - (145/2);
+			$(this).css({
+				"margin-left":left.toString() + "px", 
+				"margin-right":right.toString() + "px"
+			});
+
+			$(this).on('mouseup', function(e) {
+				$(this).css({
+					"margin-left":"", 
+					"margin-right":""
+				});
+			});
+		}
+	});
+
+
+	
+
 
 	$('#history_page_next').click(function(evt) {
 		evt.preventDefault();

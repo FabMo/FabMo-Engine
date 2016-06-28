@@ -207,25 +207,11 @@ td.actions-control {
   margin-bottom: .5em;
   margin-top: 2em;
   padding: 1em;
+  height: 200px;
 }
 
-.job_item:first-child:before{
-  content: '';
-  float: left;
-  width: 0.5em;
-}
 
-.job_item:first-child:after{
-  content: '';
-  float: right;
-  width: 0.5em;
-}
 
-@media screen and (max-width: 630px){
-.job_item:first-child .description{
-    width: 60%;
-}
-}
 .job_item{
     position: relative;
     font-size: .9em;
@@ -240,7 +226,7 @@ td.actions-control {
     height: 200px;
     box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.15);
     border: 1px solid #ccc;
-    overflow: hidden;
+    
 }
 
 .chosen{
@@ -275,17 +261,21 @@ td.actions-control {
   display: block !important;
 }
 
-.chosen .play-button .inset{
-  background-color: red !important;
-}
 
+
+ .job_item:first-child .description{
+      width: 80%;
+      white-space: normal;
+      overflow: visible;
+  }
 
 
 .name {
     font-weight: bold;
     margin-bottom: 0.5em;
     line-height: 1.1em;
-
+    height: 30px;
+    overflow: hidden;
 }
 
 .job_item .ellipses{
@@ -306,6 +296,35 @@ td.actions-control {
 
 .job_item .commentBox{
   left: 17px;
+}
+
+.job_item .description{
+  height: 80%;
+  overflow: hidden;
+}
+
+@media screen and (max-width: 630px){
+  .job_item:first-child .description{
+      width: 55%;
+      height: 50%;
+      white-space: normal;
+      overflow: hidden;
+  }
+  .name {
+    height: 15px;
+  }
+  .job_item, .chosen{
+    width: 98% !important;
+    height: 60px;
+  }
+  .job_item .description{
+    width: 80%;
+    overflow: hidden;
+    white-space: nowrap;
+  } 
+  .chosen .description {
+    width: 80% !important;
+}
 }
 
 .preview, .edit, .download, .cancel {
@@ -658,7 +677,7 @@ table {
   top: 40px;
   right: -20px;
   cursor: pointer;
-  z-index: 1000;
+  z-index: 50;
 }
 
 .radial_progress {
@@ -680,7 +699,7 @@ table {
   }
     .radial_progress{
     position: relative;
-    right: 0;
+    margin-right: 20px;
   }
 }
 
