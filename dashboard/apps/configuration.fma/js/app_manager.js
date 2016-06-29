@@ -11,7 +11,7 @@ function refreshApps() {
 
         html = [
             '<tr class="app-install-row"><td>',
-            '<div class="app-ghost noselect"><span class="fa fa-plus"></span></div>',
+            '<div class="app-ghost noselect"><span class="app-ghost-icon fa fa-plus"></span></div>',
             '</td>',
             '<td colspan="4" class="app-install-text noselect">Click here to install an app</td>',
             '</tr>'].join('');
@@ -85,7 +85,9 @@ function refreshApps() {
         refreshApps();
 
         $('#file').change(function(evt) {
+            startBusy();
             fabmo.submitApp($('#file'), {}, function(err, data) {
+                stopBusy();
                 if (err) {
                     fabmo.notify('error', "Could not install app:</br>" + (err.message || err));
                 } else {
@@ -109,7 +111,9 @@ function refreshApps() {
                 evt.preventDefault();
                 try {
                     files = evt.originalEvent.dataTransfer.files;
+                    startBusy();
                     fabmo.submitApp(files, {}, function(err, data) {
+                      stopBusy();
                         if (err) {
                             fabmo.notify('error', err.message || err);
                         } else {
@@ -126,3 +130,11 @@ function refreshApps() {
             }
         });
     }
+
+function startBusy() {
+  $(".app-ghost-icon").removeClass('fa-plus').addClass('fa-cog fa-spin');
+}
+
+function stopBusy() {
+  $(".app-ghost-icon").removeClass('fa-cog fa-spin').addClass('fa-plus');
+}
