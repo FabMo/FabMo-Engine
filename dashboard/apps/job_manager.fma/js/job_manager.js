@@ -373,6 +373,12 @@ function runningJob(job) {
 
 var setProgress = function(status) {
   var prog = ((status.line / status.nb_lines) * 100).toFixed(2);
+  if (prog > 100){
+			prog = 100;
+	}
+	if (isNaN(prog)){
+			prog = 0;
+	}
   var percent = Math.ceil(prog);
   var rotation = Math.ceil(180 * (percent / 100));
   var fill_rotation = rotation;

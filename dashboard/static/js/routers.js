@@ -38,6 +38,7 @@ define(function(require) {
 			this.context.menuShown = true;
 		},
 		show_auth: function (){
+			
 			$.ajax({url: "authentication/logout", success: function(result){
         		console.log(result);
    			}});
