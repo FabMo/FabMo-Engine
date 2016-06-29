@@ -13,19 +13,6 @@ GCodeViewer.Helpers = function(scene) {
     "use strict";
     var that = this;
 
-    //Axis helper
-    that.addAxisHelper = function() {
-        that.scene.add(that.axisHelpers);
-    };
-
-    that.removeAxisHelper = function() {
-        that.scene.remove(that.axisHelpers);
-    };
-
-    function createAxisHelper() {
-        that.axisHelpers = new THREE.AxisHelper(100);
-    }
-
     //Arrows helpers
     that.addArrows = function() {
         that.scene.add(that.arrowX);
@@ -126,24 +113,9 @@ GCodeViewer.Helpers = function(scene) {
         that.addArrows();
     };
 
-    //General
-    that.addHelpers = function() {
-        that.addAxisHelper();
-        that.addArrows();
-    };
-
-    that.removeHelpers = function() {
-        that.removeAxisHelper();
-        that.removeArrows();
-    };
-
-    function createHelpers() {
-        that.resize();
-        createAxisHelper();
-    }
-
     // initialize
     that.scene = scene;
-    createHelpers();
-    that.addHelpers();
+    that.resize();
+    that.axisHelpers = new THREE.AxisHelper(100);
+    that.scene.add(that.axisHelpers);
 };
