@@ -41,7 +41,7 @@ var get_status = function(req, res, next) {
  * @apiSuccess {Object} data Response data
  * @apiSuccess {Object} data.engine Key-value map of all engine settings
  * @apiSuccess {Object} data.driver Key-value map of all G2 driver settings
- * @apiSuccess {Object} data.opensbp Key-value map of all OpenSBP runtime settings 
+ * @apiSuccess {Object} data.opensbp Key-value map of all OpenSBP runtime settings
  */
 var get_config = function(req, res, next) {
   var retval = {};
@@ -49,7 +49,7 @@ var get_config = function(req, res, next) {
   retval.driver = config.driver.getData();
   retval.opensbp = config.opensbp.getData();
   retval.machine = config.machine.getData();
-  var answer = 
+  var answer =
   {
     status : "success",
     data : {'config':retval}
@@ -69,22 +69,32 @@ var get_config = function(req, res, next) {
 var post_config = function(req, res, next) {
   var new_config = {};
   var answer;
-
+  var final_result={};
+  var setMany_remaining = 4;
   if('engine' in req.params) {
     config.engine.setMany(util.fixJSON(req.params.engine), function(err, result) {
+      if(!setMany_remaining)return;
       config.engine.apply(function(err, result) {
+        if(!setMany_remaining)return;
         if(err) {
           answer = {
             status : "fail",
             data : {'body':"the configuration data you submitted is not valid"}
           };
           res.json(answer);
-        } else {
-          answer = {
-              status : "success",
-              data : result
-           };
-          res.json(answer);
+          setMany_remaining=0;
+          return;
+        }
+        else{
+            final_result.engine = result;
+            setMany_remaining--;
+            if(!setMany_remaining){
+                answer={
+                    status:"success",
+                    data:final_result
+                };
+                res.json(answer);
+            }
         }
       });
     });
@@ -92,42 +102,58 @@ var post_config = function(req, res, next) {
 
   if('driver' in req.params) {
     config.driver.setMany(util.fixJSON(req.params.driver), function(err, result) {
+      if(!setMany_remaining)return;
       if(err) {
         answer = {
           status : "fail",
           data : {'body':"the configuration data you submitted is not valid"}
         };
         res.json(answer);
+        setMany_remaining=0;
+        return;
       } else {
-        answer = {
-            status : "success",
-            data : result
-         };
-        res.json(answer);
+        final_result.driver = result;
+        setMany_remaining--;
+        if(!setMany_remaining){
+            answer={
+                status:"success",
+                data:final_result
+            };
+            res.json(answer);
+        }
       }
     });
   }
 
   if('opensbp' in req.params) {
     config.opensbp.setMany(util.fixJSON(req.params.opensbp), function(err, result) {
+      if(!setMany_remaining)return;
       if(err) {
         answer = {
           status : "fail",
           data : {'body':"the configuration data you submitted is not valid"}
         };
         res.json(answer);
+        setMany_remaining=0;
+        return;
       } else {
-        answer = {
-            status : "success",
-            data : result
-         };
-        res.json(answer);
+        final_result.opensbp = result;
+        setMany_remaining--;
+        if(!setMany_remaining){
+            answer={
+                status:"success",
+                data:final_result
+            };
+            res.json(answer);
+        }
       }
     });
   }
 
   if('machine' in req.params) {
+    if(!setMany_remaining)return;
     config.machine.setMany(util.fixJSON(req.params.machine), function(err, result) {
+      if(!setMany_remaining)return;
       config.machine.apply(function(err, result) {
         if(err) {
           answer = {
@@ -135,21 +161,28 @@ var post_config = function(req, res, next) {
             data : {'body':"the configuration data you submitted is not valid"}
           };
           res.json(answer);
+          setMany_remaining=0;
+          return;
         } else {
-          answer = {
-              status : "success",
-              data : result
-           };
-          res.json(answer);
+          final_result.machine = result;
+          setMany_remaining--;
+          if(!setMany_remaining){
+            answer={
+                status:"success",
+                data:final_result
+            };
+            res.json(answer);
+          }
         }
       });
     });
   }
+
 };
 
 var get_version = function(req, res, next) {
   var retval = {};
-  var answer = 
+  var answer =
   {
     status : "success",
     data : {'version':engine.version}
