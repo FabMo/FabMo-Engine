@@ -23,7 +23,7 @@
 	}
 })(function () {
 	"use strict";
-	
+
 	if (typeof window == "undefined" || typeof window.document == "undefined") {
 		return function() {
 			throw new Error( "Sortable.js requires a window with a document" );
@@ -185,7 +185,6 @@
 		this.el = el; // root element
 		this.options = options = _extend({}, options);
 
-
 		// Export instance
 		el[expando] = this;
 
@@ -213,6 +212,8 @@
 			dragoverBubble: false,
 			dataIdAttr: 'data-id',
 			delay: 0,
+			clickDelay: 0,
+			touchDelay: 0,
 			forceFallback: false,
 			fallbackClass: 'sortable-fallback',
 			fallbackOnBody: false
@@ -222,6 +223,12 @@
 		// Set default options
 		for (var name in defaults) {
 			!(name in options) && (options[name] = defaults[name]);
+		}
+
+		// If delay is specified, it applies to both click and touch
+		if(options.delay) {
+			options.clickDelay = options.delay
+			options.touchDelay = options.delay
 		}
 
 		_prepareGroup(options);
@@ -353,7 +360,15 @@
 				_on(ownerDocument, 'touchend', _this._onDrop);
 				_on(ownerDocument, 'touchcancel', _this._onDrop);
 
-				if (options.delay) {
+				var delay = 0;
+				if(evt.type.indexOf('mouse') != -1) {
+					delay = options.clickDelay;
+				}
+				if(evt.type.indexOf('touch') != -1) {
+					delay = options.touchDelay;
+				}
+
+				if (delay) {
 					// If the user moves the pointer or let go the click or touch
 					// before the delay has been reached:
 					// disable the delayed drag
@@ -363,7 +378,7 @@
 					_on(ownerDocument, 'mousemove', _this._disableDelayedDrag);
 					_on(ownerDocument, 'touchmove', _this._disableDelayedDrag);
 
-					_this._dragStartTimer = setTimeout(dragStartFn, options.delay);
+					_this._dragStartTimer = setTimeout(dragStartFn, delay);
 				} else {
 					dragStartFn();
 				}

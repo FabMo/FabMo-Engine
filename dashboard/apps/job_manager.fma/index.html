@@ -1,8 +1,8 @@
-<html> 
+<html>
 <head>
 	<meta charset="utf-8">
 	<title>Job Manager</title>
-	
+
 	<link rel="stylesheet" href="/css/normalize.css">
 	<link rel="stylesheet" href="/css/foundation.min.css">
 	<link rel="stylesheet" href="./css/style.css">
@@ -18,7 +18,7 @@
     </li>
     <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
   </ul>
-  <section class="top-bar-section">    
+  <section class="top-bar-section">
     <ul class="left" role="tablist" data-tab>
       <li class="active"><a id="nav-pending" href="#tabpending">Pending</a></li>
       <li class=""><a id="nav-history" href="#tabhistory">History</a></li>
@@ -88,7 +88,7 @@
 				<div class="medium-1 small-2 columns">
 					<a class='cancel' title='Cancel Job'>
 						<img  class='svg' src="css/images/recycling10.svg">
-					</a>	
+					</a>
 				</div>
 			  <div class="sm-1 columns"></div>
 			</div>
@@ -105,10 +105,10 @@
                 </div>
             </div>
 		</div>-->
-		
-		
 
- 
+
+
+
 <div style="width:100%" id="queue_table"></div>
  </div>
   <div class="content" id="tabhistory">
@@ -138,7 +138,7 @@
   <script src="./js/moment.js"></script>
   <script src="./js/Sortable.js"></script>
   <script src="./js/job_manager.js"></script>
-  
+
 
 
   <script type="text/javascript">
@@ -149,16 +149,14 @@
 	var el = document.getElementById('queue_table');
 	var sortable = Sortable.create(el, {
 	ghostClass: 'ghost',
-	chosenClass: 'chosen', 
+	chosenClass: 'chosen',
 	dataIdAttr: 'data-id',
-	delay: function (){
-		console.log(1000);
-		return 10000;
-	},
+	clickDelay: 0,
+	touchDelay: 200,
 	animation: 150,
-	filter: ".cancel, .preview, .edit, .download, .play-button, .previewJob, .editJob, .downloadJob, .deleteJob, .ellipses",  
+	filter: ".cancel, .preview, .edit, .download, .play-button, .previewJob, .editJob, .downloadJob, .deleteJob, .ellipses",
 	onStart: function(evt) {
-		var remove = document.getElementById('actions');	
+		var remove = document.getElementById('actions');
 		remove.parentNode.removeChild(remove);
 		var ctrl =  evt.item;
 		ctrl.removeAttribute("style");
@@ -197,7 +195,7 @@
 							updateQueue();
 						}
 					});
-				}	
+				}
 			} else if (Sortable.utils.is(ctrl, ".ellipses")){
 				console.log(ctrl);
 				var dd = ctrl.parentNode.childNodes[2];
@@ -251,7 +249,7 @@
 		bindNextJobEvents();
 	}
 	});
-	
+
 
 	var current_job_id = 0;
 
@@ -286,13 +284,13 @@
 			var left = e.pageX - (145/2);
 			var right = $(document).width() - e.pageX - (145/2);
 			$(this).css({
-				"margin-left":left.toString() + "px", 
+				"margin-left":left.toString() + "px",
 				"margin-right":right.toString() + "px"
 			});
 
 			$(this).on('mouseup', function(e) {
 				$(this).css({
-					"margin-left":"", 
+					"margin-left":"",
 					"margin-right":""
 				});
 			});
@@ -300,7 +298,7 @@
 	});
 
 
-	
+
 
 
 	$('#history_page_next').click(function(evt) {
@@ -328,7 +326,7 @@
 							updateQueue();
 						}
 					});
-				}	
+				}
 	});
 
 	$('#clear-jobs').click(function(e) {
@@ -370,7 +368,7 @@
 		$('.play-button').hide();
 		} else if (status.state == 'idle' && el.firstChild) {
 		$('.play-button').show();
-		} 
+		}
 		// if (status.state == 'running') {
 		//     $('.job-status-light.one').css({'animation': 'off 1.5s  infinite', '-moz-animation': 'off 1.5s  infinite', '-webkit-animation': 'off 1.5s  infinite'});
 		//     $('.job-status-light.two').css({'animation': 'off 1.5s 0.5s infinite', '-moz-animation': 'off 1.5s 0.5s infinite', '-webkit-animation': 'off 1.5s 0.5s infinite'});
@@ -396,5 +394,3 @@
 
 </body>
 </html>
-
-
