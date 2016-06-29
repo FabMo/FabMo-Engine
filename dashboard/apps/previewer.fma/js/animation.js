@@ -19,35 +19,10 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
     var lengthBit = 1;
     var G0Feedrate = 120;
 
-    /**
-     * Shows the bit in the scene.
-     */
-    that.show = function() {
-        that.scene.add(that.bit);
-        that.refreshFunction();
-    };
-
-    /**
-     * Hides the bit from the scene.
-     */
-    that.hide = function() {
-        that.scene.remove(that.bit);
-        that.refreshFunction();
-    };
-
-    //Get the real position of the tip of the bit.
-    function getBitPosition() {
-        return {
-            x : that.bit.position.x,
-            y : that.bit.position.y,
-            z : that.bit.position.z - lengthBit / 2
-        };
-    }
-
     //Get the position of the tip of the bit according to the meshes of
     //the path class.
-    function getBitTipPosition() {
-        var pos = getBitPosition();
+    function getRelativeBitPosition() {
+        var pos = that.bit.position;
         return {
             x : pos.x - that.initialPosition.x,
             y : pos.y - that.initialPosition.y,
@@ -56,15 +31,11 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
     }
 
     function setBitPosition(point) {
-        that.bit.position.set(point.x, point.y, point.z + lengthBit / 2);
+        that.bit.position.set(point.x, point.y, point.z);
     }
 
     function translateBit(vector) {
-        var pos = getBitPosition();
-        pos.x += vector.x;
-        pos.y += vector.y;
-        pos.z += vector.z;
-        setBitPosition(pos);
+        that.bit.position.add(vector);
     }
 
     //Used to have an smooth animation
@@ -81,10 +52,10 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
         if(that.iPath === 0) {
             return true;
         }
-        var currentLine = that.currentPath[that.iPath].lineNumber;
-        var previousLine = that.currentPath[that.iPath-1].lineNumber;
+        var currentCommand = that.currentPath[that.iPath].commandNumber;
+        var previousCommand = that.currentPath[that.iPath-1].commandNumber;
 
-        return (currentLine !== previousLine);
+        return (currentCommand !== previousCommand);
     }
 
     //Check if the animation is ending the animation of a path
@@ -95,10 +66,10 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
         if(that.iPath === that.currentPath.length - 1) {
             return true;
         }
-        var currentLine = that.currentPath[that.iPath].lineNumber;
-        var nextLine = that.currentPath[that.iPath+1].lineNumber;
+        var currentCommand = that.currentPath[that.iPath].commandNumber;
+        var nextCommand = that.currentPath[that.iPath+1].commandNumber;
 
-        return (currentLine !== nextLine);
+        return (currentCommand !== nextCommand);
     }
 
     //Warns the path class of the current position
@@ -106,7 +77,7 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
     function warnPath(changedIndex) {
         var pointPath = that.currentPath[that.iPath];
         if(changedIndex === false) {
-            that.path.isReachingPoint(pointPath, getBitTipPosition());
+            that.path.isReachingPoint(pointPath, getRelativeBitPosition());
         } else {
             if(isStartingPath() === true) {
                 that.path.startPath(pointPath);
@@ -119,6 +90,9 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
     }
 
     function setCurrentSpeed() {
+        if(that.currentPath.length === 0) {
+            return;
+        }
         //We use in/ms here and feedrate is in in/min
         var line = that.currentPath[that.iPath];
         if(line.type === "G0") {
@@ -135,13 +109,13 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
         //start and end points
         while(that.iPath < that.currentPath.length &&
                 GCodeViewer.samePosition(that.currentPath[that.iPath].point,
-                    getBitTipPosition()) === true) {
+                    getRelativeBitPosition()) === true) {
             warnPath(true);
             that.iPath++;
 
             if(that.iPath >= that.currentPath.length) {
-                that.animating = false;
-                that.gui.setStatusAnimation("stop");
+                that.isInPause = true;
+                that.gui.setStatusAnimation("pause");
                 return false;
             }
             that.gui.highlight(that.currentPath[that.iPath].lineNumber);
@@ -152,9 +126,10 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
 
     //deltaDistance : the distance to make
     //returns true if can continue animation
-    function moveBit(deltaDistance) {
+    function animateBit(deltaTime) {
+        var deltaDistance = that.currentSpeed * deltaTime;
         var destination = that.currentPath[that.iPath].point;
-        var position = getBitTipPosition();
+        var position = getRelativeBitPosition();
         var translation = {
             x : destination.x - position.x,
             y : destination.y - position.y,
@@ -163,9 +138,9 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
         var distance2 = translation.x * translation.x;
         distance2 += translation.y * translation.y;
         distance2 += translation.z * translation.z;
+        var length = Math.sqrt(distance2);
 
-        if(distance2 > deltaDistance * deltaDistance) {
-            var length = Math.sqrt(distance2);
+        if(length > deltaDistance) {
             translation.x = translation.x / length * deltaDistance;
             translation.y = translation.y / length * deltaDistance;
             translation.z = translation.z / length * deltaDistance;
@@ -175,82 +150,47 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
         }
 
         setBitPosition(destination);
+        deltaTime -= length / that.currentSpeed;
         if(checkChangeIndexPath() === false) {
             return false;
         }
 
-        return moveBit(deltaDistance - Math.sqrt(distance2));
+        return animateBit(deltaTime);
     }
 
     // Updates the position and do the logical for the animation.
     function update() {
         var deltaTime = calculateDeltaTime(); //Must be here to update each time
-        if(that.isRunning() === false) {
+        if(that.isPaused() === true) {
             return;
         }
 
-        moveBit(that.currentSpeed * deltaTime);
+        animateBit(deltaTime);
 
         that.refreshFunction();
     }
 
     /**
-     * Returns if the animation is paused (ie: started but doing nothing).
+     * Returns if the animation is paused.
      *
      * @return {boolean} True if the animation is paused.
      */
     that.isPaused = function() {
-        return that.isInPause === true && that.animating === true;
+        return that.isInPause === true;
     };
 
     /**
-     * Returns if the animation is stopped (ie: not start).
-     *
-     * @return {boolean} True if the animation is stopped.
-     */
-    that.isStopped = function() {
-        return that.isInPause === false && that.animating === false;
-    };
-
-    /**
-     * Returns if the animation is running (ie: started but animating).
+     * Returns if the animation is running.
      *
      * @return {boolean} True if the animation is running.
      */
     that.isRunning = function() {
-        return that.isInPause === false && that.animating === true;
-    };
-
-    /**
-     * Starts the animation from the beginning of the path.
-     *
-     * @return {boolean} Returns true if start the animation; false if problem.
-     */
-    that.start = function() {
-        that.currentPath = that.path.getPath();
-        that.iPath = 0;
-        if(that.currentPath.length === 0) {
-            return false;
-        }
-
-        that.gui.highlight(that.currentPath[that.iPath].lineNumber);
-        setBitPosition({
-            x : that.initialPosition.x + that.currentPath[0].point.x,
-            y : that.initialPosition.y + that.currentPath[0].point.y,
-            z : that.initialPosition.z + that.currentPath[0].point.z
-        });
-        setCurrentSpeed();
-        that.refreshFunction();
-
-        that.animating = true;  //Must be at the end
-        that.isInPause = false;
-
-        return true;
+        return that.isInPause === false;
     };
 
     //Returns the index of the point in path associated to this lineNumber
     // returns -1 if nothing found
-    function fineIndexPath(lineNumber) {
+    function findIndexPath(lineNumber) {
         var i = 0;
         for(i=0; i < that.currentPath.length; i++) {
             if(that.currentPath[i].lineNumber === lineNumber) {
@@ -267,11 +207,11 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
      * @param {number} lineNumber The line number of the command.
      * @return {boolean} Returns true if start the animation; false if problem.
      */
-    that.goTo = function(lineNumber) {
+    that.goToLine = function(lineNumber) {
         that.path.redoMeshes();
-        that.stop();
+        that.pause();
         that.currentPath = that.path.getPath();
-        var iLine = fineIndexPath(lineNumber);
+        var iLine = findIndexPath(lineNumber);
         var pos = { x : 0, y : 0, z : 0 };
         var pointPath;
 
@@ -291,14 +231,12 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
         }
 
         pos = that.currentPath[that.iPath-1].point;
-        pos.x += that.initialPosition.x;
-        pos.y += that.initialPosition.y;
-        pos.z += that.initialPosition.z;
-        setBitPosition(pos);
+        that.bit.position.setX(pos.x + that.initialPosition.x);
+        that.bit.position.setY(pos.y + that.initialPosition.y);
+        that.bit.position.setZ(pos.z + that.initialPosition.z);
 
         that.gui.highlight(that.currentPath[that.iPath].lineNumber);
         setCurrentSpeed();
-        that.animating = true;
         that.isInPause = true;
         that.refreshFunction();
 
@@ -309,50 +247,60 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
      * Pauses the animation.
      */
     that.pause = function() {
-        if(that.isStopped() === false) {
-            that.isInPause = true;
-            that.gui.setStatusAnimation("pause");
-        }
+        that.isInPause = true;
+        that.gui.setStatusAnimation("pause");
     };
 
     /**
      * Resumes the animation.
      */
     that.resume = function() {
-        if(that.isStopped() === false) {
-            that.isInPause = false;
-            that.gui.setStatusAnimation("running");
+        if(that.currentPath.length === 0) {
+            return;
         }
-    };
 
-    /**
-     * Stops the animation.
-     */
-    that.stop = function() {
+        if(that.iPath === that.currentPath.length) {
+            that.rewind();
+        }
         that.isInPause = false;
-        that.animating = false;
-        that.gui.setStatusAnimation("stop");
+        that.gui.setStatusAnimation("running");
     };
 
     /**
-     * Resets the animation.
+     * Goes back to the beginning of the animation without modifying the path.
      */
-    that.reset = function() {
+    that.rewind = function() {
         setBitPosition(that.initialPosition);
+        that.iPath = 0;
         that.path.redoMeshes();
-        that.stop();
+        setCurrentSpeed();
+        that.pause();
         that.refreshFunction();
     };
 
+    /**
+     * Resets the animation (gets the new path and goes to the beginning).
+     */
+    that.reset = function() {
+        that.rewind();
+        that.currentPath = that.path.getPath();
+        setCurrentSpeed();
+    };
+
     function createBit() {
+        var material = new THREE.MeshLambertMaterial({color: 0xF07530,
+            transparent: true, opacity: 0.5});
         var geometry = new THREE.CylinderGeometry(0, lengthBit / 5, lengthBit, 32);
-        var material = new THREE.MeshLambertMaterial({color: 0xF07530, transparent: true, opacity: 0.5});
+        geometry.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
+        geometry.applyMatrix(new THREE.Matrix4().makeTranslation(0, 0, lengthBit/2));
         that.bit = new THREE.Mesh(geometry, material);
-        that.bit.rotateX(-Math.PI / 2);
         setBitPosition(that.initialPosition);
+        that.scene.add(that.bit);
+        that.refreshFunction();
     }
 
     //initialize
+    that.currentPath = [];
     that.path = path;
     if(initialPosition === undefined) {
         that.initialPosition = { x : 0, y : 0, z : 0};
@@ -364,7 +312,7 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
     that.gui = gui;
     createBit();
 
-    that.stop();
+    that.pause();
     that.lastTime = new Date().getTime();
     setInterval(update, 1000 / fps);
 };
