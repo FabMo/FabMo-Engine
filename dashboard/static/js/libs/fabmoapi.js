@@ -202,7 +202,7 @@ FabMoAPI.prototype.getConfig = function(callback) {
 FabMoAPI.prototype.setConfig = function(cfg_data, callback) {
 	this._post('/config', cfg_data, callback, function(err, data) {
 		callback = callback || function() {};
-		callback(null, data.config);
+		callback(null, cfg_data);
 	});
 }
 
@@ -276,7 +276,7 @@ FabMoAPI.prototype.getJobs = function(callback) {
 	this._get('/jobs', callback, callback, 'jobs');
 }
 
-FabMoAPI.prototype.cancelJob = function(id, callback) {
+FabMoAPI.prototype.deleteJob = function(id, callback) {
 	this._del('/job/' + id, {}, callback, callback, 'job');
 }
 

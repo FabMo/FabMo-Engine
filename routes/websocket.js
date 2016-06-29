@@ -94,8 +94,8 @@ var onPrivateConnect = function(socket) {
 
 	var userId = socket.request.sessionID.content.passport.user;
 
-	authentication.eventEmitter.on('user_kickout',function(user){
-		authentication.eventEmitter.removeListener('user_kickout',function(){});
+	authentication.eventEmitter.on('user_kickout',function user_kickout_listener(user){
+		authentication.eventEmitter.removeListener('user_kickout',user_kickout_listener);
 		//console.log("user kickout event");
 		if(user._id == userId){
 			socket.emit('authentication_failed','kicked out');

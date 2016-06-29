@@ -270,8 +270,8 @@ define(function(require) {
       }.bind(this));
     }.bind(this));
 
-    this._registerHandler('cancelJob', function(id, callback) {
-      this.engine.cancelJob(id, function(err, result) {
+    this._registerHandler('deleteJob', function(id, callback) {
+      this.engine.deleteJob(id, function(err, result) {
         if (err) {
           callback(err);
         } else {

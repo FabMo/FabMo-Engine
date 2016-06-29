@@ -1,4 +1,4 @@
-<html> 
+<html>
 <head>
     <meta charset="utf-8">
     <title>Network Manager</title>
@@ -52,7 +52,7 @@
           </section>
         </nav>
         </section>
-    
+
         <h1>Wireless Networks</h1>
         <div class="table-outer">
             <table class="small-12 columns" style="width:100%" id="wifi_table">
@@ -95,7 +95,7 @@
 
   <script type="text/javascript">
   var fabmo = new FabMoDashboard();
-  
+
   $(document).ready(function() {
 
     //Foundation Init
@@ -103,6 +103,10 @@
 
     // Check for new networks initially, and then every 3 seconds
     refreshWifiTable(function(err, data) {
+        if(err){
+            fabmo.notify('error',"failed to retrieve network information. Network management may not be available on your tool.");
+            return;
+        }
         setInterval(refreshWifiTable, 3000);
     });
 

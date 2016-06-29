@@ -24,12 +24,14 @@ function setupDropTarget() {
       evt.preventDefault();
       try {
         file = evt.originalEvent.dataTransfer.files;
-        fabmo.submitJob(file, {}, function(err, data) {
-          if (err) {
-            fabmo.notify('error', err);
-          }
-          updateQueue();
-        });
+        if(file.length > 0) {
+          fabmo.submitJob(file, {}, function(err, data) {
+            if (err) {
+              fabmo.notify('error', err);
+            }
+            updateQueue();
+          });
+        }
       } finally {
         $('#tabpending').removeClass('hover');
         return false;
@@ -76,12 +78,12 @@ function clearQueue() {
 }
 
 function createQueueMenu(id) {
-  var menu = "<div data-jobid='JOBID' class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='cancelJob' data-jobid='JOBID'>Cancel Job</a></li><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job</a></li></ul></div>";
+  var menu = "<div data-jobid='JOBID' class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job</a></li><li><a class='deleteJob' data-jobid='JOBID'>Delete Job</a></li></ul></div>";
   return menu.replace(/JOBID/g, id);
 }
 
 function makeActions() {
-  var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="perecent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><span></span></div> </div></div></div></div><div class="small-8 medium-12 icon-row"><div class="medium-1 small-2 columns"><a class="preview" title="Preview Job"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="Edit Job"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="Download Job"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="Cancel Job"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
+  var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="perecent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><span></span></div> </div></div></div></div><div class="small-8 medium-12 icon-row" sortable="false"><div class="medium-1 small-2 columns"><a class="preview" title="Preview Job"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="Edit Job"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="Download Job"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="Cancel Job"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
   return actions;
 }
 
@@ -184,7 +186,7 @@ function clearHistory() {
 }
 
 function createHistoryMenu(id) {
-  var menu = "<div class='ellipses' title='More Actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='resubmitJob' data-jobid='JOBID'>Run Again</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job</a></li></ul></div>"
+  var menu = "<div class='ellipses' title='More Actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='resubmitJob' data-jobid='JOBID'>Run Again</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job</a></li><li><a class='deleteJob' data-jobid='JOBID'>Delete Job</a></li></ul></div>"
   return menu.replace(/JOBID/g, id)
 }
 
@@ -226,21 +228,11 @@ function bindMenuEvents() {
     hideDropDown();
   });
 
-  $('.cancelJob').off('click');
-  $('.cancelJob').click(function(e) {
-    fabmo.cancelJob(this.dataset.jobid, function(err, data) {
-      if (err) {
-        fabmo.notify(err);
-      } else {
-        updateQueue();
-        updateHistory();
-      }
-    });
-    hideDropDown();
-  });
+
 
   $('.previewJob').off('click');
   $('.previewJob').click(function(e) {
+    e.preventDefault();
     fabmo.launchApp('previewer', {
       'job': this.dataset.jobid
     });
@@ -249,6 +241,7 @@ function bindMenuEvents() {
 
   $('.editJob').off('click');
   $('.editJob').click(function(e) {
+    e.preventDefault();
     fabmo.launchApp('editor', {
       'job': this.dataset.jobid
     });
@@ -258,6 +251,11 @@ function bindMenuEvents() {
   $('.downloadJob').off('click')
   $('.downloadJob').click(function(e) {
     fabmo.navigate('/job/' + this.dataset.jobid + '/file');
+  });
+
+  $('.deleteJob').off('click')
+  $('.deleteJob').click(function(e) {
+    fabmo.deleteJob(this.dataset.jobid);
   });
 
   $('.dropDownWrapper').off('click')
@@ -275,27 +273,27 @@ function bindMenuEvents() {
 }
 
 function bindNextJobEvents() {
-  $('#queue_table').on('click', '.cancel', function(e) {
-    fabmo.cancelJob($(this).data('id'), function(err, data) {
-      updateQueue(false);
-      updateHistory();
-    });
-  });
-  $('#queue_table').on('click', '.preview', function(e) {
-    fabmo.launchApp('previewer', {
-      'job': $(this).data('id')
-    });
-  });
-  $('#queue_table').on('click', '.edit', function(e) {
-    fabmo.launchApp('editor', {
-      'job': $(this).data('id')
-    });
-  });
-  $('#queue_table').on('click', '.download', function(e) {
-    $('.download').attr({
-      'href': '/job/' + $(this).data('id') + '/file'
-    });
-  });
+  // $('#queue_table').on('click', '.cancel', function(e) {
+  //   fabmo.deleteJob($(this).data('id'), function(err, data) {
+  //     updateQueue(false);
+  //     updateHistory();
+  //   });
+  // });
+  // $('#queue_table').on('click', '.preview', function(e) {
+  //   fabmo.launchApp('previewer', {
+  //     'job': $(this).data('id')
+  //   });
+  // });
+  // $('#queue_table').on('click', '.edit', function(e) {
+  //   fabmo.launchApp('editor', {
+  //     'job': $(this).data('id')
+  //   });
+  // });
+  // $('#queue_table').on('click', '.download', function(e) {
+  //   $('.download').attr({
+  //     'href': '/job/' + $(this).data('id') + '/file'
+  //   });
+  // });
 }
 
 function noJob() {
@@ -411,7 +409,7 @@ var setProgress = function(status) {
 //         return f
 //     }
 // }
-/* 
+/*
  * ---------
  *  STATUS
  * ---------
@@ -428,3 +426,5 @@ function handleStatusReport(status) {
     setProgress(status);
   }
 }
+
+

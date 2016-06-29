@@ -110,6 +110,8 @@ define(function(require) {
             "width",
             $(".main-section").width() - ($(".main-section").width() % 132)
         );
+        rightMenuLoad();
+    
     };
 
 

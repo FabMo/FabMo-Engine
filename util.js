@@ -31,8 +31,8 @@ function listify(x) {
 }
 
 function doshell(command, callback){
-    exec(command, function(error, stdout, stderr) { 
-        callback(stdout); 
+    exec(command, function(error, stdout, stderr) {
+        callback(stdout);
     });
 }
 
@@ -154,7 +154,7 @@ function isOpenSBPFile(pathname) {
  */
 var move = function (src, dest, cb) {
 	var renameDeferred = q.defer();
- 
+
 	fs.rename(src, dest, function (err) {
 		if (err) {
 			renameDeferred.reject(err);
@@ -163,29 +163,29 @@ var move = function (src, dest, cb) {
 			renameDeferred.resolve();
 		}
 	});
- 
+
 	renameDeferred.promise.then(function () {
 		// rename worked
 		return cb(null);
 	}, function (err) {
- 
+
 		log.warn('io.move: standard rename failed, trying stream pipe... (' + err + ')');
- 
+
 		// rename didn't work, try pumping
 		var is = fs.createReadStream(src),
 			os = fs.createWriteStream(dest);
- 
+
 		is.pipe(os);
- 
+
 		is.on('end', function () {
 			fs.unlinkSync(src);
 			cb(null);
 		});
- 
+
 		is.on('error', function (err) {
 			return cb(err);
 		});
- 
+
 		os.on('error', function (err) {
 			return cb(err);
 		});
@@ -351,7 +351,7 @@ function fixJSON(json) {
                 } else if(json[key] === 'false') {
                     value = false;
                 } else {
-                    value = json[key];                    
+                    value = json[key];
                 }
             }
         }
@@ -367,7 +367,7 @@ function Watchdog(timeout,exit_code){
     var watchdog_flag;
     var watchdog_timeout=timeout||1000;
     var watchdog_exit_code=exit_code||20;
-    
+
     watchdog_exit = function(){
         throw new Error("G2 is not responding");
         //process.exit(this.watchdog_exit_code);
@@ -393,12 +393,12 @@ function Watchdog(timeout,exit_code){
         if(this.watchdog_flag){
             clearTimeout(this.watchdog_flag);
             this.watchdog_flag=setTimeout(watchdog_exit,watchdog_timeout);
-        }   
+        }
     };
 }
 
 var getClientAddress = function (req) {
-        return (req.headers['x-forwarded-for'] || '').split(',')[0] 
+        return (req.headers['x-forwarded-for'] || '').split(',')[0]
         || req.connection.remoteAddress;
 };
 
@@ -409,6 +409,31 @@ var isANumber = function(n) {
     } catch(e) {
         return false;
     }
+}
+
+var mm2in = function(mm) {
+  return mm/25.4;
+}
+
+var in2mm = function(inch) {
+  return inch*25.4;
+}
+
+var unitType = function(u) {
+  u = String(u).trim().toLowerCase()
+  switch(u) {
+    case '0':
+    case 'in':
+      return 'in';
+      break;
+    case '1':
+    case 'mm':
+      return 'mm';
+      break;
+    default:
+      throw new Error('Invalid unit type specifier: ' + u);
+      break;
+  }
 }
 
 exports.serveStatic = serveStatic;
@@ -424,4 +449,6 @@ exports.extend = extend;
 exports.doshell = doshell;
 exports.getClientAddress = getClientAddress;
 exports.isANumber = isANumber;
-
+exports.in2mm = in2mm;
+exports.mm2in = mm2in;
+exports.unitType = unitType;

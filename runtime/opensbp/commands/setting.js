@@ -18,12 +18,12 @@ exports.SR = function(args) {
 
 // Set to MOVE mode
 // exports.SM = function(args) {
-	
+
 // };
 
 // Set to PREVIEW mode
 // exports.SP = function(args) {
-	
+
 // };
 
 // Set to table base coordinates
@@ -73,52 +73,13 @@ exports.SO = function(args) {
 };
 
 exports.SV = function(args, callback){
-	if (this.vs_change !== 0){
-        this.savePersistVals(function(return_value){
-    	    this.vs_change = return_value;
-            callback();
-        }.bind(this));
-    }
-};
-
-exports.savePersistVals = function(callback){
-    var g2_values = {};
-    var sbp_values = {};
-    // Permanently set move speeds
-    sbp_values.movexy_speed = this.movespeed_xy;
-    sbp_values.movez_speed = this.movespeed_z;
-    sbp_values.movea_speed = this.movespeed_a;
-    sbp_values.moveb_speed = this.movespeed_b;
-    sbp_values.movec_speed = this.movespeed_c;
-    // Permanently set jog speeds
-    sbp_values.jogxy_speed = this.jogspeed_xy;
-    g2_values.xvm = (60 * this.jogspeed_xy);
-    g2_values.yvm = (60 * this.jogspeed_xy);
-    sbp_values.jogz_speed = this.jogspeed_z;
-    g2_values.zvm = (60 * this.jogspeed_z);
-//    sbp_values.joga_speed = this.jogspeed_a;
-    g2_values.avm = (60 * this.jogspeed_a);
-//    sbp_values.jogb_speed = this.jogspeed_b;
-    g2_values.bvm = (60 * this.jogspeed_b);
-//    sbp_values.jogc_speed = this.jogspeed_c;
-    g2_values.cvm = (60 * this.jogspeed_c);
-    // Permanently set ramp max (jerk)
-    g2_values.xjm = this.maxjerk_xy;
-    g2_values.yjm = this.maxjerk_xy;
-    g2_values.zjm = this.maxjerk_z;
-    g2_values.ajm = this.maxjerk_a;
-    g2_values.bjm = this.maxjerk_b;
-    g2_values.cjm = this.maxjerk_c;
-    log.debug("sbp_values = " + JSON.stringify(sbp_values));
-    log.debug("g2_values = " + JSON.stringify(g2_values));
-
-    config.opensbp.setMany(sbp_values, function(err, values) {
- 	    if(err) {
- 		    log.error(err);
- 	    }
- 	    config.driver.setMany(g2_values, function(err, values) {
-            // this.vs_change = 0;
-            callback(0);    
-        }.bind(this));
-    }.bind(this));
+	this._saveDriverSettings(function(err, values) {
+		if(err) { log.error(err); }
+		this._saveConfig(function(err, values) {
+			if(err) { log.error(err); }
+			config.machine.set('units', this.units, function(err, data) {
+				callback();
+			});
+		}.bind(this));
+	}.bind(this));
 };
