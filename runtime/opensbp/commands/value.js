@@ -129,26 +129,62 @@ exports.VD = function(args) {
 		}
 	}
 	// A Unit type
-//	if ( args[3] !== undefined ){
-//		var a = args[3];
-//		if ( a >= 0 || a < 4 ){
-//			g2_VD.aam = a;
-//		}
-//	}
+// 	if ( args[3] !== undefined ) {
+// 		var unitType = args[3];
+// 		if ( unitType === 0 || unitType === 1 ){
+// 			if ( unitType === 0 ){
+// 				this.emit_gcode("G20"); // inches
+// 				log.debug("Changing units to inch");
+// 			}
+// 			else if ( unitType == 1 ){
+// 				this.emit_gcode=("G21"); // mm
+// 				log.debug("Changing units to mm");
+// 			}
+// 			else if ( unitType === 3 ){
+// // *************** Need output to set to degrees *************
+// 				this.emit_gcode("G21"); // deg
+// 				log.debug("Changing units to mm");
+// 			}
+// 		}
+// 	}
 	// B Unit type
-//	if ( args[4] !== undefined ){
-//		var b = args[4];
-//		if ( b >= 0 || b < 4 ){
-//			g2_VD.bam = b;
-//		}
-//	}
+// 	if ( args[4] !== undefined ) {
+// 		var unitType = args[4];
+// 		if ( unitType === 0 || unitType === 1 ){
+// 			if ( unitType === 0 ){
+// 				this.emit_gcode("G20"); // inches
+// 				log.debug("Changing units to inch");
+// 			}
+// 			else if ( unitType === 1 ){
+// 				this.emit_gcode("G21"); // mm
+// 				log.debug("Changing units to mm");
+// 			}
+// 			else if ( unitType === 3 ){
+// // *************** Need output to set to degrees *************
+// 				this.emit_gcode("G21"); // deg
+// 				log.debug("Changing units to mm");
+// 			}
+// 		}
+// 	}
 	// C Unit type
-//	if ( args[7] !== undefined ){
-//		var c = args[7];
-//		if ( c >= 0 || c < 4 ){
-//			g2_VD.cam = c;
-//		}
-//	}	
+// 	if ( args[5] !== undefined ) {
+// 		var unitType = args[5];
+// 		if ( unitType === 0 || unitType === 1 ){
+// 			if ( unitType === 0 ){
+// 				this.emit_gcode("G20"); // inches
+// 				log.debug("Changing units to inch");
+// 			}
+// 			else if ( unitType === 1 ){
+// 				this.emit_gcode("G21"); // mm
+// 				log.debug("Changing units to mm");
+// 			}
+// 			else if ( unitType === 3 ){
+// // *************** Need output to set to degrees *************
+// 				this.emit_gcode("G21"); // deg
+// 				log.debug("Changing units to mm");
+// 			}
+// 		}
+// 	}
 	// Show control console
 	// Display File Comments
 	// Keypad fixed distance
