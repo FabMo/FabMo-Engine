@@ -2,14 +2,10 @@
 #loadingMessage {
     position: absolute;
     background: #ffffff;
-    color: black;
     border: black solid 1px;
-    border-radius: 10px;
     z-index: 10;
     width = auto;
     height = 100px;
-    margin: 20px;
-    padding: 20px;
 }
 
 .widget {
@@ -19,16 +15,40 @@
 }
 
 /* GCode display */
-#highlighted {
+/*
+ * Structure explanation:
+ * + gcode-displayer
+ * |
+ * |-- toggleGCode
+ * |
+ * |-+ gcode-container
+ * | |
+ * | |-+ gcode-lines
+ * | | |
+ * | | |- gcode-line
+ * | | |
+ * | | |- gcode-line
+ * | | | ..........
+ *
+ * gcode-displayer is the div containing the element toggling the code.
+ * toggleGCode is the p toggling the code.
+ * gcode-container is the div containing the table containing the code. It is
+ * here to allow scrolling the code while letting the toggleGCode element on
+ * top.
+ * gcode-lines is the table containing the code
+ * gcode-line is the class for each line of code
+ */
+
+.highlighted {
     background: #af8700;
     color: #ffffd7;
 }
 
-.preGCode {
-    margin: 0px;
-    padding: 0px;
-    background: #ffffd7;
-}
+/* .preGCode { */
+/*     margin: 0px; */
+/*     padding: 0px; */
+/*     background: #ffffd7; */
+/* } */
 
 .liGCode {
     list-style-type: none;
@@ -36,9 +56,10 @@
     cursor: pointer;
 }
 
-#divGCode {
+#gcode-displayer {
     position: absolute;
     width: 200px;
+    max-height: 200px;
     z-index: 2;
     background: #ff6600;
     color: #ffffff;
@@ -52,7 +73,27 @@
     margin: 0px;
 }
 
-#linesGCode {
+#gcode-lines {
+    width : 100%;
+    margin: 0;
+    border-collapse:collapse;
+    vertical-align: middle;
+}
+
+.gcode-line {
+    cursor : pointer;
+    height : 30px;
+}
+
+#gcode-lines tr:nth-child(2n+1) {
+    background:#fff;
+}
+
+#gcode-lines tr {
+    background:#ddd;
+}
+
+#gcode-container {
     width: 100%;
     background: #ffffd7;
     color: #585858;
