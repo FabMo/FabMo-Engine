@@ -53,18 +53,6 @@ GCodeViewer.copyPoint = function(point) {
 };
 
 /**
- * Checks if two numbers are nearly equal. This function is used to avoid
- * to have too much precision when checking values.
- *
- * @param {number} a Number A.
- * @param {number} b Number B.
- * @return {boolean} True if the two value are nearly equal.
- */
-GCodeViewer.nearlyEqual = function(a, b) {
-    return Math.abs(b - a) <= 0.0001;
-};
-
-/**
  * Checks if two points in 3D are considered as "equal". This function is
  * useful to avoid to be too much precise (JavaScript can not do very precise
  * calculations).
@@ -74,7 +62,7 @@ GCodeViewer.nearlyEqual = function(a, b) {
  * @return {boolean} True if the two points are nearly equal.
  */
 GCodeViewer.samePosition = function(posA, posB) {
-    return (GCodeViewer.nearlyEqual(posA.x, posB.x) &&
-            GCodeViewer.nearlyEqual(posA.y, posB.y) &&
-            GCodeViewer.nearlyEqual(posA.z, posB.z));
+    return (GCodeToGeometry.nearlyEqual(posA.x, posB.x) &&
+            GCodeToGeometry.nearlyEqual(posA.y, posB.y) &&
+            GCodeToGeometry.nearlyEqual(posA.z, posB.z));
 };

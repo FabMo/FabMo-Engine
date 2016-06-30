@@ -84,7 +84,7 @@ GCodeViewer.TotalSize = function(scene) {
         var material = new THREE.LineBasicMaterial({ color : color });
         var geometry = new THREE.Geometry();
         var type = (displayInMm === false) ? "in" : "mm";
-        var d = (displayInMm === false) ? 1 : GCodeToGeometry.inchToMm;
+        var d = (displayInMm === false) ? 1 : GCodeToGeometry.INCH_TO_MILLIMETER;
         var width = Math.abs(totalSize.max.x - totalSize.min.x);
         var length = Math.abs(totalSize.max.y - totalSize.min.y);
         var height = Math.abs(totalSize.max.z - totalSize.min.z);
@@ -144,6 +144,8 @@ GCodeViewer.TotalSize = function(scene) {
             that.textHeight.position.z += initialPosition.z;
             that.lineHeight.position.z += initialPosition.z;
         }
+
+        that.add();
     };
 
     // initialize
@@ -161,22 +163,15 @@ GCodeViewer.Path = function(scene) {
     "use strict";
     var that = this;
 
-    function resetPathsGeo() {
-        that.geoG0Undone = new THREE.Geometry();
-        that.geoG1Undone = new THREE.Geometry();
-        that.geoG2G3Undone = new THREE.Geometry();
-        that.geoG0Done = new THREE.Geometry();
-        that.geoG1Done = new THREE.Geometry();
-        that.geoG2G3Done = new THREE.Geometry();
-    }
-
     function resetPathsMesh() {
+        that.remove();
         that.meshG0Undone = {};
         that.meshG1Undone = {};
         that.meshG2G3Undone = {};
         that.meshG0Done = {};
         that.meshG1Done = {};
         that.meshG2G3Done = {};
+        that.meshDoing = {};
     }
 
     /**
@@ -189,6 +184,7 @@ GCodeViewer.Path = function(scene) {
         that.scene.remove(that.meshG0Done);
         that.scene.remove(that.meshG1Done);
         that.scene.remove(that.meshG2G3Done);
+        that.scene.remove(that.meshDoing);
     };
 
     /**
@@ -225,31 +221,38 @@ GCodeViewer.Path = function(scene) {
             p3 = new THREE.Vector3(bez[i].p3.x, bez[i].p3.y, bez[i].p3.z);
 
             v = new THREE.CubicBezierCurve3(p0, p1, p2, p3).getPoints(32);
-            for(j=0; j < v.length; j++) {
+            for(j=0; j < v.length-1; j++) {
                 geometry.vertices.push(v[j]);
             }
         }
+        //When mutltiple Bézier curves, useless to have the end point and the
+        //next start point in the same place
+        geometry.vertices.push(v[v.length-1]);
         return geometry;
     }
 
+     // Returns the geometries
     function setGeometries(lines) {
         var i = 0, j = 0;
         var geometry = new THREE.Geometry();
-        // var startIndex = 0, endIndex = 0;
-        // var previousTotal = 0;
+        var geometries = {
+            G0 : new THREE.Geometry(),
+            G1 : new THREE.Geometry(),
+            G2G3 : new THREE.Geometry()
+        };
 
         //Store the number of vertices of each command
-        that.commandsUndoneManager = [];  //TODO: find a better name
-        that.commandsDoneManager = [];  //TODO: find a better name
+        that.commandsUndoneManager = [];
+        that.commandsDoneManager = [];
 
         if(lines.length === 0) {
-            return;
+            return geometries;
         }
 
         for(i=0; i < lines.length; i++) {
             if(lines[i].type === "G0") {
                 geometry = getGeometryStraight(lines[i]);
-                that.geoG0Undone.merge(geometry);
+                geometries.G0.merge(geometry);
 
                 that.commandsUndoneManager.push({
                     type : lines[i].type,
@@ -261,7 +264,7 @@ GCodeViewer.Path = function(scene) {
                 });
             } else if(lines[i].type === "G1") {
                 geometry = getGeometryStraight(lines[i]);
-                that.geoG1Undone.merge(geometry);
+                geometries.G1.merge(geometry);
 
                 that.commandsUndoneManager.push({
                     type : lines[i].type,
@@ -273,14 +276,13 @@ GCodeViewer.Path = function(scene) {
                 });
             } else if(lines[i].type === "G2" || lines[i].type === "G3") {
                 geometry = getGeometryCurve(lines[i]);
-                that.geoG2G3Undone.vertices.push(geometry.vertices[0]);
+                geometries.G2G3.vertices.push(geometry.vertices[0]);
+
                 for(j=1; j < geometry.vertices.length-1; j++) {
-                    that.geoG2G3Undone.vertices.push(geometry.vertices[j]);
-                    that.geoG2G3Undone.vertices.push(geometry.vertices[j]);
+                    geometries.G2G3.vertices.push(geometry.vertices[j]);
+                    geometries.G2G3.vertices.push(geometry.vertices[j]);
                 }
-                that.geoG2G3Undone.vertices.push(
-                        geometry.vertices[geometry.vertices.length - 1]
-                        );
+                geometries.G2G3.vertices.push(geometry.vertices[j]);
 
                 that.commandsUndoneManager.push({
                     type : lines[i].type,
@@ -292,34 +294,38 @@ GCodeViewer.Path = function(scene) {
                 });
             }
         }
+
+        return geometries;
     }
 
     /**
-     * Sets the meshes.
+     * Sets the meshes (and remove the old ones).
      *
      * @param {array} lines The array of lines describing the whole path.
      * @param {object} initialPosition The position, in 3D, where thr whole
      * path begins (optional).
      */
     that.setMeshes = function(lines, initialPosition) {
-        resetPathsGeo();
         resetPathsMesh();
-        setGeometries(lines);
+        var geometries = setGeometries(lines);
         that.lines = lines;
         that.initialPosition = { x : 0, y : 0, z : 0};
 
-        that.meshG0Undone = new THREE.Line(that.geoG0Undone,
+        that.meshG0Undone = new THREE.Line(geometries.G0,
                 that.matG0Undone, THREE.LinePieces);
-        that.meshG1Undone = new THREE.Line(that.geoG1Undone,
+        that.meshG1Undone = new THREE.Line(geometries.G1,
                 that.matG1Undone, THREE.LinePieces);
-        that.meshG2G3Undone = new THREE.Line(that.geoG2G3Undone,
+        that.meshG2G3Undone = new THREE.Line(geometries.G2G3,
                 that.matG2G3Undone, THREE.LinePieces);
-        that.meshG0Done = new THREE.Line(that.geoG0Done,
+        that.meshG0Done = new THREE.Line(new THREE.Geometry(),
                 that.matG0Done, THREE.LinePieces);
-        that.meshG1Done = new THREE.Line(that.geoG1Done,
+        that.meshG1Done = new THREE.Line(new THREE.Geometry(),
                 that.matG1Done, THREE.LinePieces);
-        that.meshG2G3Done = new THREE.Line(that.geoG2G3Done,
+        that.meshG2G3Done = new THREE.Line(new THREE.Geometry(),
                 that.matG2G3Done, THREE.LinePieces);
+
+        that.meshDoing = new THREE.Line(new THREE.Geometry(),
+                that.matDoing, THREE.LinePieces);
 
         if(initialPosition !== undefined) {
             that.initialPosition.x = initialPosition.x;
@@ -338,55 +344,22 @@ GCodeViewer.Path = function(scene) {
             that.meshG2G3Done.position.set(initialPosition.x,
                     initialPosition.y, initialPosition.z);
         }
+        that.add();
     };
 
     /**
      * Redoes the meshes as it was
      */
     that.redoMeshes = function() {
-        that.remove();
-        that.setMeshes(that.lines, that.initialPosition);
-        that.add();
-    };
-
-    //Return the new path without the doubloons
-    function removeDoubloons(path) {
-        var iPath = 0, iSP = 0, lineNumber = 0; //iSinglePath
-        var singlePath = [], newPath = [];
-
-        while(iPath < path.length) {
-            lineNumber = path[iPath].lineNumber;
-            singlePath = [];
-
-            //Recuperate a single path
-            while(iPath < path.length && path[iPath].lineNumber === lineNumber) {
-                singlePath.push(path[iPath]);
-                iPath++;
-            }
-
-            //Remove doubloons
-            if(singlePath.length > 2) {
-                iSP = 0;
-                //Never delete the last point
-                while(iSP < singlePath.length-2) {
-                    while(iSP < singlePath.length-2 &&
-                            GCodeViewer.pointsEqual(singlePath[iSP].point,
-                                singlePath[iSP+1].point) === true)
-                    {
-                        singlePath.splice(iSP+1, 1);
-                    }
-                    iSP++;
-                }
-            }
-
-            for(iSP=0; iSP < singlePath.length; iSP++) {
-                newPath.push(singlePath[iSP]);
-            }
-
+        if(that.meshG0Done.geometry.vertices.length > 0 ||
+                that.meshG1Done.geometry.vertices.length > 0 ||
+                that.meshG2G3Done.geometry.vertices.length > 0)
+        {
+            that.remove();
+            that.setMeshes(that.lines, that.initialPosition);
+            that.add();
         }
-
-        return newPath;
-    }
+    };
 
     /**
      * Returns the path the animation has to follow.
@@ -415,54 +388,73 @@ GCodeViewer.Path = function(scene) {
                 iCurrent = iG2G3;
                 vertices = that.meshG2G3Undone.geometry.vertices;
             }
-            iEnd = iCurrent + command.numberVertices;
+            iEnd = iCurrent + command.numberVertices - 1;
 
+            path.push({
+                point : GCodeViewer.copyPoint(vertices[iCurrent]),
+                type : command.type,
+                lineNumber : command.lineNumber,
+                commandNumber : iCommand,
+                feedrate : command.feedrate
+            });
+            iCurrent++;
             while(iCurrent < iEnd) {
                 path.push({
                     point : GCodeViewer.copyPoint(vertices[iCurrent]),
                     type : command.type,
                     lineNumber : command.lineNumber,
+                    commandNumber : iCommand,
                     feedrate : command.feedrate
                 });
-                iCurrent++;
+                iCurrent += 2;
             }
+            path.push({
+                point : GCodeViewer.copyPoint(vertices[iCurrent]),
+                type : command.type,
+                lineNumber : command.lineNumber,
+                commandNumber : iCommand,
+                feedrate : command.feedrate
+            });
+            iCurrent++;
 
             if(command.type === "G0") {
-               iG0 = iCurrent ;
+               iG0 = iCurrent;
             } else if(command.type === "G1") {
-               iG1 = iCurrent ;
+               iG1 = iCurrent;
             } else {
                iG2G3 = iCurrent;
             }
         }
 
-        return removeDoubloons(path);
+        return path;
     };
 
     //This is ridiculous not to manage to update the vertices
     //Change the selectionned mesh
-    function changeMesh(mesh, vertices, type, done) {
+    function changeMesh(vertices, type, done) {
         var mat = {}, pos = {};
         var geo = new THREE.Geometry();
         geo.vertices = vertices;
-        that.scene.remove(mesh);
 
         if(done === true) {
             if(type === "G0") {
                 mat = that.matG0Done;
                 pos = that.meshG0Done.position.clone();
+                that.scene.remove(that.meshG0Done);
                 that.meshG0Done = new THREE.Line(geo, mat, THREE.LinePieces);
                 that.meshG0Done.position.set(pos.x, pos.y, pos.z);
                 that.scene.add(that.meshG0Done);
             } else if(type === "G1") {
                 mat = that.matG1Done;
                 pos = that.meshG1Done.position.clone();
+                that.scene.remove(that.meshG1Done);
                 that.meshG1Done = new THREE.Line(geo, mat, THREE.LinePieces);
                 that.meshG1Done.position.set(pos.x, pos.y, pos.z);
                 that.scene.add(that.meshG1Done);
             } else {
                 mat = that.matG2G3Done;
                 pos = that.meshG2G3Done.position.clone();
+                that.scene.remove(that.meshG2G3Done);
                 that.meshG2G3Done = new THREE.Line(geo, mat, THREE.LinePieces);
                 that.meshG2G3Done.position.set(pos.x, pos.y, pos.z);
                 that.scene.add(that.meshG2G3Done);
@@ -471,18 +463,21 @@ GCodeViewer.Path = function(scene) {
             if(type === "G0") {
                 mat = that.matG0Undone;
                 pos = that.meshG0Undone.position.clone();
+                that.scene.remove(that.meshG0Undone);
                 that.meshG0Undone = new THREE.Line(geo, mat, THREE.LinePieces);
                 that.meshG0Undone.position.set(pos.x, pos.y, pos.z);
                 that.scene.add(that.meshG0Undone);
             } else if(type === "G1") {
                 mat = that.matG1Undone;
                 pos = that.meshG1Undone.position.clone();
+                that.scene.remove(that.meshG1Undone);
                 that.meshG1Undone = new THREE.Line(geo, mat, THREE.LinePieces);
                 that.meshG1Undone.position.set(pos.x, pos.y, pos.z);
                 that.scene.add(that.meshG1Undone);
             } else {
                 mat = that.matG2G3Undone;
                 pos = that.meshG2G3Undone.position.clone();
+                that.scene.remove(that.meshG2G3Undone);
                 that.meshG2G3Undone = new THREE.Line(geo, mat, THREE.LinePieces);
                 that.meshG2G3Undone.position.set(pos.x, pos.y, pos.z);
                 that.scene.add(that.meshG2G3Undone);
@@ -524,8 +519,16 @@ GCodeViewer.Path = function(scene) {
         verticesDone.push(new THREE.Vector3(p.x, p.y, p.z));
         //No need to change vertices of the meshUndone
 
-        changeMesh(meshDone, verticesDone, pointPath.type, true);
-        // changeMesh(meshUndone, verticesUndone, pointPath.type, false);
+        changeMesh(verticesDone, pointPath.type, true);
+
+        that.commandsDoneManager.push({
+            type : that.commandsUndoneManager[0].type,
+            lineNumber : that.commandsUndoneManager[0].lineNumber,
+            feedrate : that.commandsUndoneManager[0].feedrate,
+            start : GCodeViewer.copyPoint(that.commandsUndoneManager[0].start),
+            end : GCodeViewer.copyPoint(that.commandsUndoneManager[0].end),
+            numberVertices : 2
+        });
     };
 
     /**
@@ -549,8 +552,14 @@ GCodeViewer.Path = function(scene) {
         //Remove the vertex following the bit and the one at the end of the path
         verticesUndone.splice(0, 2);
 
-        changeMesh(meshDone, verticesDone, pointPath.type, true);
-        changeMesh(meshUndone, verticesUndone, pointPath.type, false);
+        changeMesh(verticesDone, pointPath.type, true);
+        changeMesh(verticesUndone, pointPath.type, false);
+
+        if(that.commandsUndoneManager[0].numberVertices > 2) {
+            that.commandsUndoneManager[0].numberVertices -= 2;
+        } else {
+            that.commandsUndoneManager.splice(0, 1);
+        }
     };
 
     /**
@@ -585,15 +594,118 @@ GCodeViewer.Path = function(scene) {
         }
         verticesUndone[0].set(p.x, p.y, p.z);
         verticesDone[verticesDone.length -1].set(p.x, p.y, p.z);
-        changeMesh(meshDone, verticesDone, pointPath.type, true);
-        changeMesh(meshUndone, verticesUndone, pointPath.type, false);
+        changeMesh(verticesDone, pointPath.type, true);
+        changeMesh(verticesUndone, pointPath.type, false);
+
+        return true;
+    };
+
+    // //Returns false if error else returns true
+    // that.goToLine = function(lineNumber) {
+    //     //NOTE: commandsUndoneManager and commandsDoneManager were creating
+    //     //to ease and improve the way to generate meshes when the users wants
+    //     //to go directly to a specific line.
+    //     //To sum up the algorithm:
+    //     //* find if need to increment or decrement
+    //     //* extract for the undone (increment) or done (decrement) vertices
+    //     //  according to numberVertices and push them to the other one mesh
+    //     //* update commandsUndoneManager and commandsDoneManager
+    // };
+
+    /**
+     * Sets the currently executed line command.
+     *
+     * @param {number} The line number of the command.
+     * @return {boolean} True if the command is displayed.
+     */
+    that.livePreview = function(lineNumber) {
+        var i = 0;
+        var meshes;
+        var geometry, position;
+        var addingGeometry, removingGeometry, numberVertices, vertices;
+
+        if(lineNumber === that.currentLineNumber) {
+            return true;
+        }
+
+        //Checking if the commands in this line are possibly displayed
+        while(that.commandsUndoneManager[i].lineNumber !== lineNumber) {
+            if(that.commandsUndoneManager[i].lineNumber > lineNumber) {
+                return false;
+            }
+            i++;
+        }
+        that.currentLineNumber = lineNumber;
+
+        //NOTE: At this point, that.commandsUndoneManager[0] corresponds to the
+        //doing mesh
+
+        //Put in done meshes the vertices of the doing mesh
+        while(that.meshDoing.geometry.vertices.length > 0) {
+            meshes = getMeshes(that.commandsUndoneManager[0].type);
+            addingGeometry = meshes.done.geometry;
+            removingGeometry = that.meshDoing.geometry;
+            numberVertices = that.commandsUndoneManager[0].numberVertices;
+
+            vertices = removingGeometry.vertices.splice(0, numberVertices);
+            addingGeometry.vertices = addingGeometry.vertices.concat(vertices);
+        }
+
+        //Put from undone to done all the commands that are passed
+        while(that.commandsUndoneManager[0] !== undefined &&
+                that.commandsUndoneManager[0].lineNumber !== lineNumber) {
+            meshes = getMeshes(that.commandsUndoneManager[0].type);
+            addingGeometry = meshes.done.geometry;
+            removingGeometry = meshes.undone.geometry;
+            numberVertices = that.commandsUndoneManager[0].numberVertices;
+
+            vertices = removingGeometry.vertices.splice(0, numberVertices);
+            addingGeometry.vertices = addingGeometry.vertices.concat(vertices);
+
+            that.commandsUndoneManager.splice(0, 1);
+        }
+
+        //Put the vertices in the doing of the currently executed commands and
+        //remove the vertices in the undone meshes
+        while(that.commandsUndoneManager[0] !== undefined &&
+                that.commandsUndoneManager[0].lineNumber === lineNumber) {
+            meshes = getMeshes(that.commandsUndoneManager[0].type);
+            addingGeometry = that.meshDoing.geometry;
+            removingGeometry = meshes.undone.geometry;
+            numberVertices = that.commandsUndoneManager[0].numberVertices;
+
+            vertices = removingGeometry.vertices.splice(0, numberVertices);
+            addingGeometry.vertices = addingGeometry.vertices.concat(vertices);
+
+            that.commandsUndoneManager.splice(0, 1);
+        }
+
+        //Updating meshes
+        changeMesh(that.meshG0Undone.geometry.vertices, "G0", false);
+        changeMesh(that.meshG1Undone.geometry.vertices, "G1", false);
+        changeMesh(that.meshG2G3Undone.geometry.vertices, "G2G3", false);
+        changeMesh(that.meshG0Done.geometry.vertices, "G0", true);
+        changeMesh(that.meshG1Done.geometry.vertices, "G1", true);
+        changeMesh(that.meshG2G3Done.geometry.vertices, "G2G3", true);
+
+        that.scene.remove(that.meshDoing);
+        geometry = new THREE.Geometry();
+        geometry.vertices = that.meshDoing.geometry.vertices;
+        position = that.meshDoing.position.clone();
+        that.meshDoing = new THREE.Line(geometry, that.matDoing, THREE.LinePieces);
+        that.meshDoing.position.set(position.x, position.y, position.z);
+        that.scene.add(that.meshDoing);
 
         return true;
     };
 
     // initialize
     that.scene = scene;
-    resetPathsGeo();
+    that.commandsUndoneManager = [];
+    that.commandsDoneManager = [];
+
+    that.currentLineNumber = -1;
+
     resetPathsMesh();
     that.matG0Undone = new THREE.LineBasicMaterial({ color : 0xff0000 });
     that.matG1Undone = new THREE.LineBasicMaterial({ color : 0x000ff });
@@ -601,4 +713,6 @@ GCodeViewer.Path = function(scene) {
     that.matG0Done = new THREE.LineBasicMaterial({ color : 0xff00ff });
     that.matG1Done = new THREE.LineBasicMaterial({color : 0xff00ff });
     that.matG2G3Done = new THREE.LineBasicMaterial({ color : 0xff00ff });
+
+    that.matDoing = new THREE.LineBasicMaterial({ color : 0x00ffff });
 };

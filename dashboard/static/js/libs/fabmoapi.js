@@ -49,12 +49,12 @@ var FabMoAPI = function(base_url) {
 	this.events = {
 		'status' : [],
 		'disconnect' : [],
-    'authentication_failed':[],
+    	'authentication_failed':[],
 		'connect' : [],
 		'job_start' : [],
 		'job_end' : [],
 		'change' : [],
-    'video_frame': [],
+    	'video_frame': [],
 	};
 	var url = window.location.origin;
 	this.base_url = url.replace(/\/$/,'');
@@ -92,14 +92,13 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 		this.socket.on('message', function(message) {console.info("Websocket message: " + JSON.stringify(message))} );
 
 		this.socket.on('disconnect', function() {
-			this.emit('disconnect');
 			console.info("Websocket disconnected");
+			this.emit('disconnect');
 		}.bind(this));
 
-
-    this.socket.on('authentication_failed', function(message) {
-      this.emit('authentication_failed',message);
-    }.bind(this));
+        this.socket.on('authentication_failed', function(message) {
+          this.emit('authentication_failed',message);
+        }.bind(this));
 
 		this.socket.on('connect_error', function() {
 			this.emit('disconnect');
@@ -203,7 +202,7 @@ FabMoAPI.prototype.getConfig = function(callback) {
 FabMoAPI.prototype.setConfig = function(cfg_data, callback) {
 	this._post('/config', cfg_data, callback, function(err, data) {
 		callback = callback || function() {};
-		callback(null, data.config);
+		callback(null, cfg_data);
 	});
 }
 
@@ -277,7 +276,7 @@ FabMoAPI.prototype.getJobs = function(callback) {
 	this._get('/jobs', callback, callback, 'jobs');
 }
 
-FabMoAPI.prototype.cancelJob = function(id, callback) {
+FabMoAPI.prototype.deleteJob = function(id, callback) {
 	this._del('/job/' + id, {}, callback, callback, 'job');
 }
 
@@ -609,13 +608,13 @@ FabMoAPI.prototype._patch = function(url, data, errback, callback, key) {
 	$.ajax({
 		url: url,
 		type: "PATCH",
-		'data' : data, 
+		'data' : data,
 		success: function(result){
 			if(data.status === "success") {
 				if(key) {
 					callback(null, result.data.key);
 				} else {
-					callback(null,result.data);					
+					callback(null,result.data);
 				}
 			} else if(data.status==="fail") {
 				errback(result.data);

@@ -110,11 +110,14 @@ define(function(require) {
             "width",
             $(".main-section").width() - ($(".main-section").width() % 132)
         );
+        rightMenuLoad();
+    
     };
 
 
     window.setInterval(function() {
         $('.pauseJob').toggleClass('blink');
+
     }, 1000);
 
     var colapseMenu = function() {

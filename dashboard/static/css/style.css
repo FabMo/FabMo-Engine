@@ -63,6 +63,57 @@ body,html{
 	size: 1rem;
 }
 
+#mainContent{
+	position: fixed;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	z-index: 40000;
+	background-color: #444;
+	padding: 4em;
+	display: none;
+}
+
+#mainContent .main{
+	background-color: #fff;
+	padding: 2em;
+	border-radius: 5px;
+}
+
+#mainContent .main  h1{
+	color: #666;
+}
+
+@media only screen and (max-width: 500px) {
+	#mainContent{
+		padding: 0;
+		background-color: #fcf9f9;
+	}
+	#mainContent .main{
+		width: 100%;
+		padding: 0.5em;
+		border-radius: 0px;
+		-webkit-box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
+-moz-box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
+box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
+	}
+
+	#mainContent h1 {
+		font-size: 25px;
+		margin: 0;
+	}
+
+	#mainContent hr {
+		margin: 0.2em;
+	}
+
+	#mainContent input {
+		width: 98%;
+		margin: 0.4em;
+	}
+}
+
 #tools-container {
 	margin-left: 16px;
 	margin-left: 1rem;
@@ -157,6 +208,12 @@ body,html{
 	left: 3rem;
 	top: 0;
 	vertical-align: middle;
+}
+
+#tool-name {
+  max-width: 16em;
+  overflow: hidden;
+  white-space: nowrap
 }
 
 #right-position-container span, #right-position-container label {
@@ -508,12 +565,16 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	border: none;
     box-shadow: none;
     color: #eee;
+	-webkit-appearance: none;
+    -moz-appearance:textfield;
 }
 
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+    -webkit-appearance: none;
+    -moz-appearance:none;
+    appearance: none;
+    margin: 0;
 }
 
 .go-here{
@@ -537,6 +598,12 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 #position ul .axis .units {
+	font-size: 12px;
+	text-transform: lowercase;
+	vertical-align: baseline;
+}
+
+#position ul .axis .rotunits {
 	font-size: 12px;
 	text-transform: lowercase;
 	vertical-align: baseline;
@@ -857,150 +924,267 @@ input[type=number]::-webkit-outer-spin-button {
 	box-shadow: 0px -2px 15px -6px rgba(0,0,0,0.75);
 }
 
+.pauseJob p {
+	position: relative;
+  	text-align: center;
+	color: #ffffff;
+	font-size: 3em;
+	font-family: Arial;
+	z-index: 10;
+	padding-top: 35px;
+}
+
 .pauseJob {
     cursor: pointer;
 	position: relative;
-	display: block;
-	text-align: center;
-	width: 150px;
-	margin-top: 5px;
 	margin-left: auto;
 	margin-right: auto;
-	border-radius: 10px;
-	font-family: Arial;
-	color: #ffffff;
-	font-size: 17px;
+	text-align: center;
+	width: 36%;
+	height: 150px;
+	margin-top: 12px;
 	background: #ff0000;
-	padding: 3.5px 50px 3.5px 50px;
-	border: solid #A60000 4px;
+	border: solid 5px #A60000;
+	border-radius: 5px;
 	text-decoration: none;
-	transition: all 1s;
+	transition: border background-color 2s linear;
 }
 
-.pauseJob.blink{
+/*
+.pauseJob:before,
+.pauseJob:after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 5px;
+
+  height: 60px;
+  margin-top: -30px;
+  z-index: 1;
+}
+.pauseJob:after {
+  left: auto;
+  right: 0;
+  margin-top: -30px;
+  height: 60px;
+
+}
+
+.pauseJobInner {
+  position: absolute;
+  top: 0px;
+  width: 150px;
+  height: 150px;
+  background: #ff0000;
+  border: 5px solid #A60000;
+  -webkit-transform: rotate(45deg);
+  -moz-transform: rotate(45deg);
+  transition: all 2s linear;
+}
+
+.pauseJobInner:before,
+.pauseJobInner:after {
+  -webkit-transform: rotate(45deg);
+  -moz-transform: rotate(45deg);
+  content: "";
+  position: absolute;
+  width: 5px;
+
+  height: 60px;
+  margin-top: -30px;
+  z-index: 1;
+  right: auto;
+  left: 16px;
+  bottom: auto;
+  top: 19px;
+  transition: all 2s linear;
+}
+
+.pauseJobInner:after {
+  height: 60px;
+  right: 16px;
+  left: auto;
+  bottom: -12px;
+  top: auto;
+  transition: all 2s linear;
+}
+
+
+
+.pauseJobInner.blink{
+	border: 5px solid #ff0000;
 	background-color: #A60000;
-	border: solid #ff0000 4px;
-	transition: all 1s;
-}
-
-
-
-.resumeJob.blink{
-	background-color: #00A600;
-	border: solid #00ff00 4px;
-	transition: all 1s;
-}
-
+	transition: all 2s linear;
+  */
 .fabmo-resume-stop {
-    margin-top: 7px;
-    width: 35%;
+    margin-top: 12px;
+	position: relative;
+    width: 36%;
+	height: 150px;
     display: block;
     text-align: center;
     margin-right: auto;
     margin-left: auto;
 }
 
+
+
+
+
+
+.pauseJob.blink{
+	border: 5px solid #ff0000;
+	background-color: #A60000;
+	transition: border background-color 2s linear;
+}
+
 .fabmo-resume-stop div {
-    display: inline-block;
+    display: block;
     cursor: pointer;
 	text-align: center;
 	font-family: Arial;
 	color: #ffffff;
-	font-size: 17px;
-	padding-top: 3.5px;
-	padding-bottom: 3.5px;
+	font-size: 25px;
+	line-height: 3.3em;
 	text-decoration: none;
 	transition: all 1s;
+	width: 100%;
+   	height: 50%;
 }
 
-@media only screen and (max-width: 600px){
-    .fabmo-resume-stop div {
-        font-size: 13px;
-    }
-    .fabmo-resume-stop {
-        margin-top: 10px;
-        width: 70%;
-    }
-
-}
 
 .stopJob {
    background: #f20000;
    border: solid #ff0000 1px;
-   width: 30%;
-   margin-left: -2.5px;
-   border-radius: 0 5px 5px 0;
+   border-radius: 0 0 5px 5px;
 }
 .resumeJob {
     background: #32B433;
 	border: solid #00A600 1px;
-    width: 30%;
-    margin-right: -2.5px;
-    border-radius: 5px 0 0 5px;
+    border-radius: 5px 5px 0 0;
 }
 
-.quitJob.blink{
-	background-color: #00A600;
-	border: solid #00ff00 4px;
-	transition: all 1s;
-}
+
+
 
 .currentContainer {
-	margin-top: 12px;
-	margin-left: 1em;
+	margin-top: 65px;
+	margin-left: 2em;
 	float: left;
-	overflow: scroll;
-    max-width: 250px;
+	overflow: hidden;
+    max-width: 200px;
+	max-height: 100px;
 }
 
 .currentJobTitle {
 	color: #F0F0F0;
+	font-size: 20px;
 	font-family: 'source_sans_proextralight';
     white-space: nowrap;
 	text-align: center;
 
 }
 
+@media only screen and (max-width: 700px){
+	.pauseJob p {
+		font-size: 2em;
+		padding-top: 20px;
+	}
+
+	.pauseJob{
+		margin-top: 40px;
+		height: 100px;
+	}
+
+	.fabmo-resume-stop div {
+        font-size: 14px;
+
+    }
+    .fabmo-resume-stop {
+        margin-top: 40px;
+		height: 100px;
+    }
+	.currentContainer {
+		max-width: 100px;
+		margin-left: 1em;
+	}
+
+	.currentJobTitle {
+		 font-size: 15px;
+	}
+}
+
+@media only screen and (max-width: 400px){
+	.pauseJob p {
+		font-size: 2em;
+		padding-top: 20px;
+	}
+
+	.pauseJob{
+		margin-top: 40px;
+		height: 100px;
+	}
+
+	.fabmo-resume-stop div {
+        font-size: 14px;
+
+    }
+    .fabmo-resume-stop {
+        margin-top: 40px;
+		height: 100px;
+    }
+	.currentContainer {
+		display: none;
+	}
+
+	.currentJobTitle {
+		 font-size: 15px;
+	}
+}
+
+
+
 .radial_progress {
-	margin-top: 5px;
-    background-color: #444444;
-    height: 40px;
-    width: 40px;
-    border-radius: 50%;
+	margin-top: 55px;
+	background-color: #444444;
+	height: 50px;
+	width: 50px;
+	border-radius: 50%;
 	float: right;
 	display: none;
-	margin-right: 20px;
+	margin-right: 1em;
 }
 
 .fill {
     background-color: #5DA423;
-    height: 40px;
-    width: 40px;
+    height: 50px;
+    width: 50px;
     transition: -webkit-transform 1s;
     transition: -ms-transform 1s;
     transition: transform 1s;
     position: absolute;
-    clip: rect(0px, 20px, 40px, 0px);
+    clip: rect(0px, 25px, 50px, 0px);
     -webkit-backface-visibility: hidden;
     border-radius: 50%;
 }
 
 .perecent_circle .mask {
-      clip: rect(0px,40px,40px,20px);
-      height: 40px;
-      width: 40px;
+      clip: rect(0px,50px,50px,25px);
+      height: 50px;
+      width: 50px;
       position: absolute;
       transition: -webkit-transform 1s;
         transition: -ms-transform 1s;
             transition: transform 1s;
 }
 .mask .fill {
-    clip: rect(0px, 20px, 40px, 0px);
+    clip: rect(0px, 25px, 50px, 0px);
 }
 .inset {
     background-color: #333333;
-    width: 32px;
-    height: 32px;
+    width: 42px;
+    height: 42px;
     position: absolute;
     margin-left: 4px;
     margin-top: 4px;
@@ -1008,8 +1192,8 @@ input[type=number]::-webkit-outer-spin-button {
     box-shadow: 3px 3px 5px rgba(0,0,0,0.2);
 }
 .shadow {
-      width: 40px;
-      height: 40px;
+      width: 50px;
+      height: 50px;
       position: absolute;
       border-radius: 50%;
       box-shadow: inset 3px 3px 5px rgba(0,0,0,0.2);
@@ -1017,19 +1201,19 @@ input[type=number]::-webkit-outer-spin-button {
 
 .inset .percentage {
      color: #5DA423;
-     font-size: 11px;
-     width: 28px;
+     font-size: 15px;
+     width: 40px;
      position: absolute;
      line-height: 1;
      text-align: center;
-     top: 10.5px;
+     top: 14px;
      left: 2px;
 	 font-family: 'source_sans_proextralight';
 }
 
 .load_container {
-	margin-top: 12px;
-    width: 190px;
+	margin-top: 65px;
+    width: 200px;
 	float: right;
 	margin-right: 15px;
 
@@ -1038,7 +1222,7 @@ input[type=number]::-webkit-outer-spin-button {
     float: left;
     background-color: #444444;
     width: 150px;
-    height: 20px;
+    height: 30px;
     border-radius: 5px;
     box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.5) inset,
         0px 0.3px 0px 0px rgba(200, 200, 200, 0.5);
@@ -1047,7 +1231,7 @@ input[type=number]::-webkit-outer-spin-button {
 .loading_bar .horizontal_fill {
     background-color: #5DA423;
     position: relative;
-    height: 18.5px;
+    height: 28.5px;
     width: 100%;
     top: 1px;
     left: 1px;
@@ -1058,11 +1242,42 @@ input[type=number]::-webkit-outer-spin-button {
 }
 .percent_comp {
 	float: right;
-    top: 1.9px;
-	font-size: 15px;
+	margin: 3px;
+	font-size: 17px;
 	color: #F0F0F0;
 	font-family: 'source_sans_proextralight';
 }
+
+.elapsed_time{
+	font-family: 'source_sans_proextralight';
+    display: inline-flex;
+    width: 200px;
+    margin-right: auto;
+    margin-left: auto;
+    text-align: center;
+    color:#F0F0F0
+}
+
+.elapsed_time_small{
+	font-family: 'source_sans_proextralight';
+    display: block;
+    width: 55px;
+    text-align: center;
+    color:#F0F0F0;
+	font-size: 14px;
+    margin-top: 50px;
+}
+.elapsed_time_label{
+	margin-right: 5px;
+}
+
+.elapsed_time_small p{
+	font-size: 12px;
+	margin: 0;
+	display: inline;
+}
+
+
 
 /* ********** Page (#modal_container) container ********** */
 #modal_container {
@@ -1319,7 +1534,28 @@ input[type=number]::-webkit-outer-spin-button {
     position: relative;
 }
 
-@keyframes chipflyone {
+
+
+@-moz-keyframes spin {
+    from { -moz-transform: rotate(0deg); }
+    to { -moz-transform: rotate(360deg); }
+}
+@-webkit-keyframes spin {
+    from { -webkit-transform: rotate(0deg); }
+    to { -webkit-transform: rotate(360deg); }
+}
+@keyframes spin {
+    from {transform:rotate(0deg);}
+    to {transform:rotate(360deg);}
+}
+
+.maingear {
+	transform-origin: 50% 50%;
+	animation: spin 4s linear infinite;
+}
+
+ /*Old chipfly animation*/
+/*@keyframes chipflyone {
   0% {
     transform: translate(0px, -10px);
     opacity: 1;
@@ -1398,7 +1634,7 @@ input[type=number]::-webkit-outer-spin-button {
 
 .chip.three {
     animation: chipflythree .5s .4s ease infinite;
-}
+}*/
 
 .drobuttonOuter{
     position: relative;
@@ -1561,6 +1797,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .modalOkay{
+	color: #fff;
     padding-top: .5em;
     cursor: pointer;
     display: inline-block;
@@ -1573,6 +1810,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .modalCancel{
+	color: #fff;
     padding-top: .5em;
     cursor: pointer;
     display: inline-block;
@@ -1588,20 +1826,26 @@ input[type=number]::-webkit-outer-spin-button {
     opacity:0.9 !important;
 }
 
+
 .loader {
-  font-size: 150px;
-  width: 1em;
-  height: 1em;
-  border-radius: 50%;
-  position: relative;
-  top: 40%;
-  margin-left: auto;
-  margin-right: auto;
-  -webkit-animation: spinner 1.7s infinite ease;
-  animation: spinner 1.7s infinite ease;
-  z-index: 3000000000;
+	position: absolute;
+  	width: 100%;
+	height: 100%;
+	margin: auto;
+	text-align: center;
 }
-@-webkit-keyframes spinner {
+
+
+.loader svg {
+	position: relative;
+  	top: 50%;
+  	transform: translateY(-50%);
+}
+
+
+
+/*Old loading spinner*/
+/*@-webkit-keyframes spinner {
   0% {
 
     box-shadow: 0 -.82em 0 -0.43em #313366, 0 -0.82em 0 -0.43em #313366, 0 -0.82em 0 -0.43em #313366;
@@ -1651,7 +1895,7 @@ input[type=number]::-webkit-outer-spin-button {
     transform: rotate(360deg);
     box-shadow: 0 -0.8em 0 -0.42em #313366, 0 -0.8em 0 -0.42em #313366, 0 -0.8em 0 -0.42em #313366;
   }
-}
+}*/
 
 .logout_link_container{
   bottom: 0;
@@ -1662,3 +1906,4 @@ input[type=number]::-webkit-outer-spin-button {
 }
 .logout_link_container a{
   color: #eeeeee;
+}

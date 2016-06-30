@@ -23,7 +23,7 @@ var flattenObject = function(ob) {
       var flatObject = flattenObject(ob[i]);
       for (var x in flatObject) {
         if (!flatObject.hasOwnProperty(x)) continue;
-    
+
         toReturn[i + '-' + x] = flatObject[x];
       }
     } else {
@@ -76,16 +76,20 @@ function update() {
     });
 
     fabmo.getNetworkIdentity(function(err, data) {
+      if (err) {
+        console.info('Network not reachable');
+        return
+      }
       if(data.id) {
         $('#input-machine-name').val(data.name);
-        $('#section-machine-name').show();        
+        $('#section-machine-name').show();
       } else {
         $('#section-machine-name').hide();
       }
 
       if(data.id) {
         $('#input-machine-id').val(data.id);
-        $('#section-machine-id').show();        
+        $('#section-machine-id').show();
       } else {
         $('#section-machine-id').hide();
       }
@@ -109,7 +113,7 @@ function setConfig(id, value) {
 	do {
 	  co[parts[i]] = {};
 	  if(i < parts.length-1) {
-	    co = co[parts[i]];            
+	    co = co[parts[i]];
 	  }
 	} while(i++ < parts.length-1 );
 

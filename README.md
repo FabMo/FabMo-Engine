@@ -8,7 +8,7 @@ The FabMo engine is host software that connects to a G2 motion control platform 
 * Hosting of the "FabMo Dashboard" a web frontend to the FabMo Engine that provides an app hosting environment
 
 ## Documentation
-[Source Code Documentation](http://fabmo.github.io/FabMo-Engine/) 
+[Source Code Documentation](http://fabmo.github.io/FabMo-Engine/)
 
 [API Documentation](http://fabmo.github.io/FabMo-Engine/api)
 
@@ -20,7 +20,7 @@ The FabMo engine is host software that connects to a G2 motion control platform 
 1. Start the engine with `npm run debug` for development mode or `npm start` for production mode.
 1. On Windows it is unlikely that the default COM port settings are satisfactory.  After running the engine once, edit `C:\fabmo\config\engine.json` and set the two COM ports for your platform with the appropriate values for your system.
 
-** Note that you should not need to run the engine as a priveleged user.  If you have to run your engine using `sudo` check your node installation and the permissions settings for the /opt/fabmo directory **
+** Note that you should not need to run the engine as a privileged user.  If you have to run your engine using `sudo` check your node installation and the permissions settings for the /opt/fabmo directory **
 
 When the engine starts, it will connect to G2 and setup an http server to accept connections on port 80.  Once the engine is running you can visit [http://localhost/](http://localhost/) to use the fabmo dashboard.
 

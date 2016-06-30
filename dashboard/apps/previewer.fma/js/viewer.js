@@ -11,7 +11,7 @@
  */
 
 GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
-        callbackError, configuration) {
+        callbackError, configuration, liveMode) {
     "use strict";
     var that = this;
 
@@ -169,62 +169,6 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     };
 
     /**
-     * Shows the axis helpers (refreshes the display).
-     */
-    that.showAxisHelper = function() {
-        that.helpers.addAxisHelper();
-        that.refreshDisplay();
-    };
-
-    /**
-     * Hides the axis helpers (refreshes the display).
-     */
-    that.hideAxisHelper = function() {
-        that.helpers.removeAxisHelper();
-        that.refreshDisplay();
-    };
-
-    /**
-     * Shows the arrow helpers (refreshes the display).
-     */
-    that.showArrows = function() {
-        that.helper.addArrows();
-        that.refreshDisplay();
-    };
-
-    /**
-     * Hides the arrow helpers (refreshes the display).
-     */
-    that.hideArrows = function() {
-        that.helper.removeArrows();
-        that.refreshDisplay();
-    };
-
-    /**
-     * Shows the arrow and axis helpers (refreshes the display).
-     */
-    that.showHelpers = function() {
-        that.helper.addHelpers();
-        that.refreshDisplay();
-    };
-
-    /**
-     * Hides the arrow and axis helpers (refreshes the display).
-     */
-    that.hideHelpers = function() {
-        that.helper.removeHelpers();
-        that.refreshDisplay();
-    };
-
-    /**
-     * Starts the animation of the path.
-     */
-    that.animatePath = function() {
-        that.animation.show();
-        that.animation.start();
-    };
-
-    /**
      * Shows the ghost of the board (if it was set in the configuration).
      */
     that.showBoard = function() {
@@ -263,22 +207,38 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     // cannot display an HTML element if the function is not over, during a
     // loop or whatever other reason
     function reallySetGCode(string) {
+        var lx = 0, ly = 0, lz = 0;
         var message = "";
         that.gcode = GCodeToGeometry.parse(string);
         if(that.gcode.errorList.length > 0) {
-            console.log(that.gcode.errorList)
             message = "Be careful, some issues appear in this file.";
             message += "\nThe machine may not do as displayed here.";
             displayError(message);
             that.gui.hideLoadingMessage();
         }
 
-        that.path.remove();  //Removing old stuff
         that.path.setMeshes(that.gcode.lines,
                 that.cncConfiguration.initialPosition);
-        that.refreshDisplay();  //To avoid confusion, we remove everything
+        that.totalSize.setMeshes(that.gcode.size,
+                that.gcode.displayInInch === false,
+                that.cncConfiguration.initialPosition);
+
+        that.helpers.resize(that.gcode.size);
         that.gui.setGCode(that.gcode.gcode);
         that.gui.hideLoadingMessage();
+        if(liveMode === false) {
+            that.animation.reset();
+        }
+
+        lx = ((that.gcode.size.max.x - that.gcode.size.min.x) / 2.0 ) || 0.0;
+        ly = ((that.gcode.size.max.y - that.gcode.size.min.y) / 2.0 ) || 0.0;
+        lz = ((that.gcode.size.max.z - that.gcode.size.min.z) / 2.0 ) || 0.0;
+
+        that.light1.position.set(lx,ly,lz-10);
+        that.light2.position.set(lx,ly,lz+10);
+
+        that.showZ();
+        that.refreshDisplay();
     }
 
     /**
@@ -304,45 +264,12 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         setTimeout(cb, 100);
     };
 
-    /**
-     * Hides the path.
-     */
-    that.hidePaths = function() {
-        that.path.remove();
-        that.refreshDisplay();
-    };
-
-    /**
-     * Show the paths that the bit will take.
-     */
-    that.viewPaths = function() {
-        that.path.remove();  //Don't know how to check if already in scene
-        that.path.add();
-        that.totalSize.setMeshes(that.gcode.size,
-                that.gcode.displayInInch === false,
-                that.cncConfiguration.initialPosition);
-
-        var lx = ((that.gcode.size.max.x - that.gcode.size.min.x) / 2.0 ) || 0.0;
-        var ly = ((that.gcode.size.max.y - that.gcode.size.min.y) / 2.0 ) || 0.0;
-        var lz = ((that.gcode.size.max.z - that.gcode.size.min.z) / 2.0 ) || 0.0;
-
-        that.light1.position.set(lx,ly,lz-10);
-        that.light2.position.set(lx,ly,lz+10);
-
-        that.totalSize.add();
-        that.animation.hide();
-        that.animation.reset();
-        that.showZ();
-        that.helpers.resize(that.gcode.size);
-        that.refreshDisplay();
-    };
-
     // Show the size in inch (if false) or millimeter (if true)
     function changeDisplay(inMm) {
         if(that.gcode.size !== undefined) {
             that.totalSize.setMeshes(that.gcode.size, inMm,
                 that.cncConfiguration.initialPosition);
-            that.totalSize.add();
+            // that.totalSize.add();
         }
         that.refreshDisplay();
     }
@@ -359,6 +286,23 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
      */
     that.displayInInch = function() {
         changeDisplay(false);
+    };
+
+    /**
+     * Sets the currently executed line command.
+     *
+     * @param {number} The line number of the command.
+     * @param {string} The G-Code command.
+     * @return {boolean} True if the command is displayed.
+     */
+    that.livePreview = function(lineNumber) {
+        if(liveMode === true && that.path.livePreview(lineNumber) === true) {
+            that.gui.highlight(lineNumber);
+            that.refreshDisplay();
+            return true;
+        }
+
+        return false;
     };
 
     // initialize
@@ -383,6 +327,16 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     if(container === undefined || container === null) {
         displayError("No container set.");
         return;
+    }
+
+    if(liveMode === undefined) {
+        liveMode = false;
+    }
+
+    if(liveMode === true) {
+        console.log("Live mode");
+    } else {
+        console.log("Viewer mode");
     }
 
     that.renderer = new THREE.WebGLRenderer({antialias: true});
@@ -412,19 +366,6 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     that.refreshDisplay();
 
     //Add the UI
-    var resumeButtonFun = function () {
-        if(that.animation.isStopped()) {
-            that.animatePath();
-        } else if(that.animation.isPaused()) {
-            that.animation.resume();
-        }
-    };
-
-    var goToLineFun = function(lineNumber) {
-        that.animation.show();
-        that.animation.goTo(lineNumber);
-    };
-
     var callbacks = {
         showX : that.showX,
         showY : that.showY,
@@ -433,16 +374,19 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         displayInIn : that.displayInInch ,
         perspective : that.setPerspectiveCamera,
         orthographic : that.setOrthographicCamera,
-        resume : resumeButtonFun,
+        resume : function() { that.animation.resume(); },
         pause : function() { that.animation.pause(); },
         reset : function() { that.animation.reset(); },
-        goToLine : goToLineFun
+        goToLine : function(lineNumber) { that.animation.goToLine(lineNumber); }
 
     };
     that.gui = new GCodeViewer.Gui(that.renderer, widthCanvas, heightCanvas,
-            that.cncConfiguration, callbacks);
+            that.cncConfiguration, callbacks, liveMode);
 
     //Add animation
-    that.animation = new GCodeViewer.Animation(that.scene, that.refreshDisplay,
-            that.gui, that.path, 24, that.cncConfiguration.initialPosition);
+    if(liveMode === false) {
+        that.animation = new GCodeViewer.Animation(that.scene,
+                that.refreshDisplay, that.gui, that.path, 24,
+                that.cncConfiguration.initialPosition);
+    }
 };

@@ -38,7 +38,7 @@ function FabMoUI(tool, options){
 	this.file_control= true;
 
 	if (options){
-		this.prefix = options.prefix ? options.prefix + '-' : ''; 
+		this.prefix = options.prefix ? options.prefix + '-' : '';
 		this.refresh = options.refresh || 100;
 		this.keypad = (options.keypad === false ) ? false : true;
 		this.file_control = (options.file_control === false ) ? false : true;
@@ -161,19 +161,19 @@ FabMoUI.prototype.updateStatusContent = function(status){
 			if(status.info) {
 				if(status.info.error) {
 					this.emit('error', status.info.error);
-				}					
+				}
 			}
 		} else if(status.state === 'paused') {
 			if(status.info) {
 				if(status.info.message) {
 					this.emit('message', status.info.message);
-				}	
+				}
 			}
 		}
 	}
 
-	var unit = status.unit || '??';	
-	var digits = unit === 'mm' ? 2 : 3; 
+	var unit = status.unit || '??';
+	var digits = unit === 'mm' ? 2 : 3;
 	['x','y','z','a','b'].forEach(function(axis) {
 		var pos = 'pos' + axis;
 		if(pos in status) {
@@ -181,18 +181,30 @@ FabMoUI.prototype.updateStatusContent = function(status){
 			try {
 				var posText = status[pos].toFixed(digits);
 			} catch(e) {
-				var posText = (pos + '.' + pos + pos + pos).toUpperCase();				
+				var posText = (pos + '.' + pos + pos + pos).toUpperCase();
 			}
 			that.updateText($('.' + pos), posText);
 		} else {
 			$('.' + axis + 'axis').hide();
 		}
 	});
-	
+
 	that.updateText($(that.units_selector), unit)
 
 	//Current File or job
 	if(status.job) {
+	    var time_in_ms = Date.now()-status.job.started_at;
+        var time_elapsed_ms = time_in_ms % 1000;
+        var time_in_s = Math.floor(time_in_ms /1000);
+        var time_elapsed_s = time_in_s % 60;
+        var time_in_m =  Math.floor(time_in_s/60);
+        var time_elapsed_m = time_in_m%60;
+        var time_in_h =  Math.floor(time_in_m/60);
+        var time_elapsed_h = time_in_h;
+        var time_elapsed_text = ((time_elapsed_h)?time_elapsed_h+'h ':'')+
+                            ((time_elapsed_m)?time_elapsed_m+'m ':'')+
+                            ((time_elapsed_s)?time_elapsed_s+'s':'');
+
 		$('.startNextContainer').hide();
 		$(that.file_info_div_selector).removeClass('hide');
 		$('.currentJobTitle').text(status.job.name);
@@ -206,11 +218,12 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		var rotation = Math.round(180*(percent/100));
  		var fill_rotation = rotation;
  		var fix_rotation = rotation * 2;
-		if ($(window).width() < 620) {
+		if ($(window).width() < 700) {
    			$('.radial_progress').show();
 			$('.inset .percentage').css('color', 'rgba('+cc+', 255, '+cc+', 1)');
 			$('.mask .fill').css('background-color', 'rgba('+cc+', 255, '+cc+', 1)');
 			$('.inset .percentage').text(percent + '%');
+            $('.elapsed_time_text').text(time_elapsed_text);
 			for(i in transform_styles) {
 			$('.fill, .mask.full').css(transform_styles[i], 'rotate(' + fill_rotation + 'deg)');
 			$('.fill.fix').css(transform_styles[i], 'rotate(' + fix_rotation + 'deg)');
@@ -221,6 +234,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
    			$('.load_container').show();
 			$('.percent_comp').text(percent + '%');
 			$('.horizontal_fill').css('width', percent + '%');
+            $('.elapsed_time_text').text(time_elapsed_text);
 		}
 		$(that.progress_selector).css("width",prog.toString() + "%");
 	}
@@ -231,7 +245,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$('.radial_progress').hide();
 		$(that.filename_selector).empty();
 		$(that.progress_selector).empty();
-		$('.currentJobTitle').text('');	
+		$('.currentJobTitle').text('');
 	}
 
 	for(var i=1; i<MAX_INPUTS+1; i++) {
@@ -243,7 +257,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 			} else if(status[iname] == 0) {
 				$(selector).removeClass('on').addClass('off');
 			} else {
-				$(selector).removeClass('on off').addClass('disabled');				
+				$(selector).removeClass('on off').addClass('disabled');
 			}
 		} else {
 			break;
@@ -304,7 +318,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 			$(that.pause_button_selector).hide();
 			$(that.resume_button_selector).show();
 		}
-	} 
+	}
 	else if(status.state === 'passthrough') {
 		that.forbidKeypad();
 		$(".tools-current > li a").removeClass('paus disc err').addClass('paus');
@@ -351,7 +365,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 			$(that.pause_button_selector).hide();
 			$(that.resume_button_selector).hide();
 			$(that.stop_button_selector).hide();
-		}		
+		}
 	}
 	else {
 		$(".tools-current > li a").removeClass('paus err').addClass('disc');
@@ -361,7 +375,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	if(status.state === 'idle' || status.state === 'manual') {
 		$(that.manual_controls_selector).removeClass('hide');
 	} else {
-		$(that.manual_controls_selector).addClass('hide');		
+		$(that.manual_controls_selector).addClass('hide');
 	}
 
 	this.emit('status', status);
@@ -400,7 +414,7 @@ FabMoUI.prototype.FileControl = function(){
 	var that = this;
 	$(that.pause_button_selector).click(function(e) {
 		that.tool.pause(function(){});
-		
+
 	});
 	$(that.resume_button_selector).click(function(e) {
 		that.tool.resume(function(){});

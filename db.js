@@ -71,14 +71,33 @@ Job.prototype.fail = function(callback) {
 	this.save(callback);
 };
 
+Job.prototype.cancelOrTrash = function(callback) {
+		if(this.state === 'running') {
+			this.cancel(callback);
+		} else {
+			this.trash(callback);
+		}
+}
+
 Job.prototype.cancel = function(callback) {
-	if(this.state === 'pending' || this.state === 'running') {
-		log.debug("Cancelling pending job id " + this._id);
+	if(this.state === 'running') {
+		log.debug("Cancelling running job id " + this._id);
 		this.state = 'cancelled';
 		this.finished_at = Date.now();
 		this.save(callback);
 	} else {
 		setImmediate(callback, new Error('Cannot cancel a job that is ' + this.state));
+	}
+};
+
+Job.prototype.trash = function(callback) {
+	if(this.state !== 'running') {
+		log.debug("Trashing job id " + this._id);
+		this.state = 'trash';
+		this.finished_at = Date.now();
+		this.save(callback);
+	} else {
+		setImmediate(callback, new Error('Cannot trash a job that is ' + this.state));
 	}
 };
 
@@ -97,7 +116,7 @@ Job.prototype.save = function(callback) {
 		notifyChange();
 		callback(null, this);
 	}.bind(this));
-	
+
 };
 
 Job.prototype.delete = function(callback){
@@ -217,7 +236,7 @@ Job.deletePending = function(callback) {
 };
 
 // The File class represents a fabrication file on disk
-// In addition to the filename and path, file statistics such as 
+// In addition to the filename and path, file statistics such as
 // The run count, last time run, etc. are stored in the database.
 function File(filename,path, callback){
 	var that=this;
@@ -324,7 +343,7 @@ File.add = function(friendly_filename, pathname, callback) {
 					}.bind(this)); // unlink
 				}); // move
 			}
-		});		
+		});
 	})
 
 
@@ -379,10 +398,10 @@ var createJob = function(file, options, callback) {
 }
 
 User = function(username,password,isAdmin,created_at,_id) {
-		this._id = _id;
+	this._id = _id;
     this.username = username;
     this.password = password;
-		this.isAdmin = isAdmin || false;
+	this.isAdmin = isAdmin || false;
     this.created_at = created_at || Date.now();
 };
 
@@ -417,18 +436,25 @@ User.verifyAndEncryptPassword = function(password,callback){
 // Grant user admin status
 User.prototype.grantAdmin = function(callback){
 	this.isAdmin = true;
-	this.save();
+	this.save(callback);
 };
 
 // Revoke user admin status
 User.prototype.revokeAdmin = function(callback){
 	this.isAdmin = false;
-	this.save();
+	this.save(callback);
 };
 
 User.prototype.save = function(callback){
-	users.save(this, function(err, record) {
+	var user = this;
+	users.save(user, function(err, record) {
+		if(err){
+			log.err(err);
+			if(callback)callback(err,null);
+			return;
+		}
 		if(!record) {
+			if(callback)callback(err,null);
 			return;
 		}
 		if(callback)callback(null, this);
@@ -437,17 +463,20 @@ User.prototype.save = function(callback){
 
 User.add = function(username,password,callback){
 	if(!/^([a-zA-Z0-9]{3,20})$/.test(username) ){ //validate username
-		return callback('Username not valid, it should contain between 3 and 20 characters. Special characters are not authorized.',null);
+		callback('Username not valid, it should contain between 3 and 20 characters. Special characters are not authorized.',null);
+		return ;
 	}
 	User.verifyAndEncryptPassword(password,function(err,pass_shasum){
-		if (err){return callback(err,password);}
+		if (err){callback(err,password);return ;}
 		users.findOne({username:username},function(err,document) {
 			if(document){
-				return callback('Username already taken !',null);
+				callback('Username already taken !',null);
+				return ;
 			}else{
 				user = new User(username,pass_shasum);
-				user.save();
-				return callback(null,user);
+				user.save(callback);
+				//callback(null,user);
+				return ;
 			}
 		});
 	})
@@ -541,7 +570,7 @@ exports.configureDB = function(callback) {
 			function(cb) {
 				checkCollection(jobs, cb);
 			}
-		], 
+		],
 		function(err, results) {
 			if(err) {
 				log.error('There was a database corruption issue!')
