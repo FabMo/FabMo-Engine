@@ -44,10 +44,22 @@ Config.prototype.setMany = function(data, callback) {
 			callback(err, result);
 		} else {
 			log.warn("No callback passed to setMany");
-
 		}
 		this.emit('change', data);
 	}.bind(this));
+}
+
+Config.prototype.deleteMany = function(keys, callback) {
+	keys.forEach(function(k) {
+		if(k in this._cache) {
+			delete this._cache[k]
+		}
+		this.save(callback);
+	}.bind(this));
+}
+
+Config.prototype.delete = function(k, callback) {
+	this.deleteMany([k], callback);
 }
 
 Config.prototype.getData = function() {

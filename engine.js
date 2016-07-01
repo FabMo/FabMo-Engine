@@ -265,6 +265,34 @@ Engine.prototype.start = function(callback) {
             }
         }.bind(this),
 
+        function g2_shim(callback) {
+          log.debug("Running G2 Shim...");
+          var entries = [
+            '1sa','1tr','1mi',
+            '2sa','2tr','2mi',
+            '3sa','3tr','3mi',
+            '4sa','4tr','4mi',
+            '5sa','5tr','5mi',
+            '6sa','6tr','6mi'
+          ]
+          var do_shim = false;
+          for(var i=0; i<entries.length; i++) {
+            if(entries[i] in config.driver._cache) {
+              do_shim = true;
+            }
+          }
+          if(do_shim) {
+            log.debug("Deleting obsolete entries in G2 config");
+            config.driver.deleteMany(entries, function(err, data) {
+              config.driver.restore(function() {
+                callback();
+              });
+            });
+          } else {
+            log.debug("No obsolete entries in G2 config.");
+            callback();
+          }
+        }.bind(this),
 
         function load_opensbp_commands(callback) {
             log.info("Loading OpenSBP Commands...");
