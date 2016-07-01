@@ -163,7 +163,6 @@ h1, h2, h3, h4, h5, h6 {
 
 td.actions-control {
     width: 80px;
-    cursor: pointer;
     content: attr('&nbsp;');
     text-align: center;
 

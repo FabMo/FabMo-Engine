@@ -109,8 +109,13 @@ define(function(require) {
         $("#app_menu_container").css(
             "width",
             $(".main-section").width() - ($(".main-section").width() % 132)
-        );
-        rightMenuLoad();
+        )
+        if ($('.axi').is(':focus')){
+            
+        } else {
+            rightMenuLoad();
+        }
+      
     
     };
 

@@ -213,6 +213,12 @@ FabMoUI.prototype.updateStatusContent = function(status){
                         '-ms-transform',
                         'transform'];
 		var prog = ((status.line/status.nb_lines)*100).toFixed(2);
+		if (prog > 100){
+			prog = 100;
+		}
+		if (isNaN(prog)){
+			prog = 0;
+		}
 		var percent = Math.round(prog);
 		var cc = 255 - Math.round(255*(percent/100));
 		var rotation = Math.round(180*(percent/100));
