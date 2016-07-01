@@ -14,7 +14,7 @@ var log = require('../log').logger('config');
 
 // Provide the exported functions for managing application configuration
 
-// Configure the engine by loading the configuration from disk, and performing 
+// Configure the engine by loading the configuration from disk, and performing
 // configuration of the application based on the values loaded.
 //
 // Also, create `exports.engine` which is an EngineConfig object

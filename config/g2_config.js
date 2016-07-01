@@ -63,10 +63,7 @@ G2Config.prototype.update = function(data, callback) {
 		function iterator(key, cb) {
 			if(this.driver) {
 				this.driver.set(key, data[key], function(err, data) {
-					if(err) {
-						log.error(err);
-					}
-					cb(null);
+					cb(null, data);
 				});
 			} else {
 				cb(null);

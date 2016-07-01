@@ -686,6 +686,9 @@ G2.prototype.setMany = function(obj, callback) {
 };
 
 G2.prototype.set = function(key, value, callback) {
+	if(value === undefined) {
+		return callback(new Error("Undefined value passed to G2"));
+	}
 	cmd = {};
 	cmd[key] = value;
 	if (key in this.readers) {

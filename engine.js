@@ -60,7 +60,7 @@ Engine.prototype.setTime = function(obj) {
         var t = d.getUTCFullYear() + '-' + d.getUTCMonth() + '-' + d.getUTCDay() + ' ' + d.getUTCHours() + ':' + d.getUTCMinutes() + ':' + d.getUTCSeconds()
     cmd = 'timedatectl set-time ' + t + '; timedatectl';
         util.doshell(cmd, function(stdout) {
-            console.log(stdout);
+            log.debug(stdout);
         });
     }
 }
@@ -277,8 +277,6 @@ Engine.prototype.start = function(callback) {
           ]
           var do_shim = false;
           for(var i=0; i<entries.length; i++) {
-            console.log(entries[i])
-            console.log(config.driver._cache)
             if(config.driver.has(entries[i])) {
               do_shim = true;
             }

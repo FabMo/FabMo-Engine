@@ -57,8 +57,8 @@ Config.prototype.deleteMany = function(keys, callback) {
 		if(k in this._cache) {
 			delete this._cache[k]
 		}
-		this.save(callback);
 	}.bind(this));
+	this.save(callback);
 }
 
 Config.prototype.delete = function(k, callback) {
