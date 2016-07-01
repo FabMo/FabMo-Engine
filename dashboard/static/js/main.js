@@ -29,6 +29,7 @@ define(function(require) {
     var authorizeDialog = false;
     var isRunning = false;
     var isAuth = false;
+    var lastInfoSeen = null;
 
     // Detect touch screen
     var supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
@@ -38,7 +39,7 @@ define(function(require) {
         if(err){
             window.location.href = '#/authentication';
         } else {
-            console.log(user);
+            /*console.log(user);*/
         }
     });
 
@@ -338,7 +339,8 @@ define(function(require) {
             // authenticate.setIsRunning(false);
         }
 
-        if (status['info']) {
+        if (status['info'] && status['info']['id'] != lastInfoSeen) {
+            lastInfoSeen = status['info']['id'];
             if (status.info['message']) {
                 keypad.setEnabled(false);
                 keyboard.setEnabled(false);

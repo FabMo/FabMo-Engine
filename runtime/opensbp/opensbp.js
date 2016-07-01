@@ -530,7 +530,7 @@ SBPRuntime.prototype._end = function(error) {
 					if(callback) {
 						callback();
 					}
-				});
+				}.bind(this));
 			} else {
 				this.machine.restoreDriverState(function(err, result) {
 					if(this.machine.status.job) {

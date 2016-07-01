@@ -80,6 +80,8 @@ function Machine(control_path, gcode_path, callback) {
 		auth : false
 	};
 
+	this.info_id = 0;
+
 	this.driver = new g2.G2();
 	this.driver.on("error", function(err) {log.error(err);});
 
@@ -513,6 +515,8 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 
 		if(stateinfo) {
 			this.status.info = stateinfo
+			this.info_id += 1;
+			this.status.info.id = this.info_id;
 		} else {
 			delete this.status.info
 		}

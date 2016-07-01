@@ -37,7 +37,6 @@ function setupAuthentication(server){
 function setupStatusBroadcasts(server){
 	var previous_status = {'state':null}
 	machine.on('status',function(status){
-
 		server.io.of('/private').sockets.forEach(function (socket) {
 			if(status.state === 'idle' || status.state != previous_status.state) {
 				socket.emit('status',status);

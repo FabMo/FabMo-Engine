@@ -6,13 +6,11 @@ define(function(require) {
 	var $ = require('jquery');
 	var Backbone = require('backbone');
 
-	console.log(Backbone.VERSION);
-
 	var Router = Backbone.Router.extend({
 		routes: {
 			"app/:id"     		: "_launchApp",
 			"menu"        		: "show_menu",
-			""					: "show_menu",
+			""								: "show_menu",
 			'authentication/*'	: "show_auth"
 
 		},
@@ -27,8 +25,6 @@ define(function(require) {
 			this.launchApp(id);
 		},
 		show_menu: function() {
-			console.log(this.context);
-
 			$('#waiting_container').hide();
 			$('#mainContent').hide();
 			this.context.appClientView.hide();
