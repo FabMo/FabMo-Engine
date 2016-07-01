@@ -18,10 +18,13 @@ var Config = function(config_name) {
 };
 util.inherits(Config,EventEmitter);
 
-
 Config.prototype.get = function(k) {
 	return this._cache[k];
 };
+
+Config.prototype.has = function(k) {
+	return this._cache.hasOwnProperty(k);
+}
 
 Config.prototype.getMany = function(arr) {
 	retval = {};

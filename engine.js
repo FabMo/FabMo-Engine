@@ -277,7 +277,9 @@ Engine.prototype.start = function(callback) {
           ]
           var do_shim = false;
           for(var i=0; i<entries.length; i++) {
-            if(entries[i] in config.driver._cache) {
+            console.log(entries[i])
+            console.log(config.driver._cache)
+            if(config.driver.has(entries[i])) {
               do_shim = true;
             }
           }

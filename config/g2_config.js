@@ -19,16 +19,16 @@ G2Config.prototype.init = function(driver, callback) {
 
 G2Config.prototype.changeUnits = function(units, callback) {
 	this.driver.setUnits(units, function(err, data) {
-		if(err) { 
-			callback(err); 
+		if(err) {
+			callback(err);
 		} else {
 			this.getFromDriver(function(err, g2_values) {
-				if(err) { 
-					callback(err); 
+				if(err) {
+					callback(err);
 				} else  {
 					this.setMany(g2_values, callback);
 				}
-			}.bind(this));			
+			}.bind(this));
 		}
 	}.bind(this));
 }
@@ -58,11 +58,16 @@ G2Config.prototype.update = function(data, callback) {
 	keys = Object.keys(data);
 	// TODO: We can probably replace this with a `setMany()`
 	async.mapSeries(
-		keys, 
+		keys,
 		// Call driver.set() for each item in the collection of data that was passed in.
 		function iterator(key, cb) {
 			if(this.driver) {
-				this.driver.set(key, data[key], cb);
+				this.driver.set(key, data[key], function(err, data) {
+					if(err) {
+						log.error(err);
+					}
+					cb(null);
+				});
 			} else {
 				cb(null);
 			}
@@ -94,20 +99,20 @@ G2Config.prototype.restore = function(callback) {
 }
 
 // Status reports are special, and their format must be whats expected for the machine/runtime environments
-// to work properly.  
+// to work properly.
 // TODO: Move this data out into a configuration file, perhaps.
 G2Config.prototype.configureStatusReports = function(callback) {
 	if(this.driver) {
 	this.driver.command({"sr":{
-						"posx":true, 
-						"posy":true, 
-						"posz":true, 
-						"posa":true, 
-						"posb":true, 
-						"vel":true, 
-						"stat":true, 
-						"hold":true, 
-						"line":true, 
+						"posx":true,
+						"posy":true,
+						"posz":true,
+						"posa":true,
+						"posb":true,
+						"vel":true,
+						"stat":true,
+						"hold":true,
+						"line":true,
 						"coor":true,
 						"unit":true,
 						"in1":true,
