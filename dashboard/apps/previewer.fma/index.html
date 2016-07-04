@@ -3,7 +3,7 @@
 <head>
   <title>G-Code Editor</title>
   <meta charset="utf-8"/>
-  
+
   <link rel="stylesheet" href="/css/foundation.min.css">
   <link rel="stylesheet" href="/css/normalize.css">
   <link rel="stylesheet" href="./css/style.css">
@@ -22,7 +22,7 @@
      <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
     <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
   </ul>
- 
+
   <section class="top-bar-section">
   </section>
 </nav>
@@ -47,9 +47,9 @@
 
   <script>
     var fabmo = new FabMoDashboard();
-    
+
     $(document).ready(function() {
-      
+
       $(document).foundation();
       var viewer = new GCodeViewer.Viewer(
         document.getElementById("preview"),
@@ -65,12 +65,12 @@
         if('job' in args) {
           var url = '/job/' + args.job + '/gcode';
           $.get(url,function(data, status) {
-              viewer.setGCode(data, viewer.viewPaths);
+              viewer.setGCode(data);
           });
         }
       });
- 
-      function resize() { 
+
+      function resize() {
         var w = window.innerWidth;
         var h = window.innerHeight - $("#topbar").height()
         $('#preview').size(w,h);
