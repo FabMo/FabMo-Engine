@@ -10,8 +10,8 @@ define(function(require) {
 		routes: {
 			"app/:id"     		: "_launchApp",
 			"menu"        		: "show_menu",
-			""								: "show_menu",
-			'authentication/*'	: "show_auth"
+			""					: "show_menu",
+			"authentication(?message=:message)"	: "show_auth"
 
 		},
 		launchApp: function(id, args, callback) {
@@ -33,7 +33,16 @@ define(function(require) {
 			this.context.hideModalContainer();
 			this.context.menuShown = true;
 		},
-		show_auth: function (){
+		show_auth: function (message){
+			if (message){
+				console.log(message);
+				message.toString();
+				var par = message.replace(/-/g, ' ');
+				console.log(par);
+				$('#add_err').html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span class="sr-only"> '+par+'</span></div>');
+				$('#add_err').show();
+
+			}
 			
 			$.ajax({url: "authentication/logout", success: function(result){
         		console.log(result);
