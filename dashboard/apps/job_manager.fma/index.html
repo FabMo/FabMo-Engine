@@ -188,18 +188,21 @@
 				if ($('.play').hasClass('active')) {
 					fabmo.pause(function(err, data) {});
 				} else {
+                    console.log("Running job?");
 					fabmo.runNext(function(err, data) {
 						if (err) {
 							fabmo.notify(err);
+                            console.log("Notify error");
 						} else {
 							updateQueue();
+                            console.log("update queue");
 						}
 					});
 				}
 			} else if (Sortable.utils.is(ctrl, ".ellipses")){
 				console.log(ctrl);
 				var dd = ctrl.parentNode.childNodes[2];
-				var cd = ctrl.parentNode.childNodse[1];
+				var cd = ctrl.parentNode.childNodes[1];
 				 $('.dropDownWrapper').show();
     			dd.style.display = 'block';
 				cd.style.display = 'block';
