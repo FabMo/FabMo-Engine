@@ -1642,7 +1642,7 @@ input[type=number]::-webkit-outer-spin-button {
     margin-left: 4px;
     width: 36px;
     height: 36px;
-    border: 1px solid #FEFEFE;
+    border: 2.5px solid #FEFEFE;
     border-radius: 50%;
 
 }
@@ -1654,7 +1654,7 @@ input[type=number]::-webkit-outer-spin-button {
     transform: translate(-50%, -50%);
     width: 23px;
     height: 23px;
-    border: 1px solid #FEFEFE;
+    border: 2.5px solid #FEFEFE;
     border-radius: 50%;
 
 }
@@ -1666,7 +1666,7 @@ input[type=number]::-webkit-outer-spin-button {
     transform: translate(-50%, -50%);
     width: 10px;
     height: 10px;
-    border: 1px solid #FEFEFE;
+    border: 2.5px solid #FEFEFE;
     border-radius: 50%;
     animation: width .4s linear;
 }
