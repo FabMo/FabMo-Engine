@@ -40,6 +40,16 @@ function setupDropTarget() {
   });
 }
 
+//TODO: remove this function and its calls, is used to test live preview
+function launchLiveViewer(job) {
+    console.log("Current job:");
+    console.log(job);
+    fabmo.launchApp('previewer', {
+        'job': job._id,
+        "isLive" : true
+    });
+}
+
 function updateQueue(callback) {
   callback = callback || function() {};
   // Update the queue display.
@@ -60,6 +70,7 @@ function updateQueue(callback) {
         clearQueue();
         addQueueEntries(jobs.pending);
         runningJob(true);
+        launchLiveViewer(current);
       } else {
         runningJob(null);
         clearQueue();

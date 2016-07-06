@@ -78,9 +78,15 @@
         if('job' in args) {
           var url = '/job/' + args.job + '/gcode';
           $.get(url,function(data, status) {
-            var isLive = ('live' in args) ? args.live : false;
+            var isLive = ('isLive' in args) ? args.isLive : false;
             initializeViewer(data, isLive);
           });
+
+          fabmo.getJobInfo(args.job, function(err, job) {
+              console.log("Viewer job:");
+              console.log(job);
+          });
+
         } else {
           initializeViewer("", false);
         }
