@@ -256,6 +256,7 @@ function bindMenuEvents() {
   $('.deleteJob').off('click')
   $('.deleteJob').click(function(e) {
     fabmo.deleteJob(this.dataset.jobid);
+    updateHistory(callback);
   });
 
   $('.dropDownWrapper').off('click')
@@ -272,29 +273,6 @@ function bindMenuEvents() {
   });
 }
 
-function bindNextJobEvents() {
-  // $('#queue_table').on('click', '.cancel', function(e) {
-  //   fabmo.deleteJob($(this).data('id'), function(err, data) {
-  //     updateQueue(false);
-  //     updateHistory();
-  //   });
-  // });
-  // $('#queue_table').on('click', '.preview', function(e) {
-  //   fabmo.launchApp('previewer', {
-  //     'job': $(this).data('id')
-  //   });
-  // });
-  // $('#queue_table').on('click', '.edit', function(e) {
-  //   fabmo.launchApp('editor', {
-  //     'job': $(this).data('id')
-  //   });
-  // });
-  // $('#queue_table').on('click', '.download', function(e) {
-  //   $('.download').attr({
-  //     'href': '/job/' + $(this).data('id') + '/file'
-  //   });
-  // });
-}
 
 function noJob() {
   $('.with-job').data('job', false);

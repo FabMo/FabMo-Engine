@@ -249,7 +249,6 @@
 		$('.edit').show(500);
 		$('.preview').show(500);
 		$('.play-button').show();
-		bindNextJobEvents();
 	}
 	});
 
@@ -276,7 +275,6 @@
 	updateQueue();
 	updateHistory();
 
-	bindNextJobEvents();
 	setupDropTarget();
 
 	$('#queue_table').on('mousedown', '.job_item:first-child', function(e) {
