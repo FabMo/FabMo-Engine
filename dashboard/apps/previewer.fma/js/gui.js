@@ -334,11 +334,13 @@ GCodeViewer.Gui = function(renderer, width, height, configuration, callbacks,
         placeWidget("perspective", x, y);
         placeWidget("orthographic", x, y);
 
-        x = (width / 2) - s - m / 2;
-        y = height - m - s;
-        placeWidget("resume", x, y);
-        placeWidget("pause", x, y);
-        placeWidget("reset", (width / 2) + m / 2, y);
+        if(liveMode === false) {
+            x = (width / 2) - s - m / 2;
+            y = height - m - s;
+            placeWidget("resume", x, y);
+            placeWidget("pause", x, y);
+            placeWidget("reset", (width / 2) + m / 2, y);
+        }
 
         x = (width - displayerWidthInPx) / 2;
         y = m;

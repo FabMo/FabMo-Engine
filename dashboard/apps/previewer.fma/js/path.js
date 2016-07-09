@@ -613,12 +613,12 @@ GCodeViewer.Path = function(scene) {
     // };
 
     /**
-     * Sets the currently executed line command.
+     * Highlights the currently executed line command.
      *
      * @param {number} The line number of the command.
      * @return {boolean} True if the command is displayed.
      */
-    that.livePreview = function(lineNumber) {
+    that.highlightCommand = function(lineNumber) {
         var i = 0;
         var meshes;
         var geometry, position;

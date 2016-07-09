@@ -59,7 +59,7 @@
             return;
         }
         if(stat.job && stat.job._id === jobId) {
-          viewer.livePreview(stat.line);
+          viewer.updateLiveViewer(stat.line);
         }
       });
     }
