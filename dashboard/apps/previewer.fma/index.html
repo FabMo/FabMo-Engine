@@ -54,12 +54,12 @@
      * @param {number} jobId The job id.
      */
     function initializeLiveViewerHandler(jobId) {
-      fabmo.on("status", function(stat) {
-        if(stat.state !== "running") {
-            return;
+      fabmo.on("status", function(status) {
+        if(status.state !== "running") {
+          return;
         }
-        if(stat.job && stat.job._id === jobId) {
-          viewer.updateLiveViewer(stat.line);
+        if(status.job && status.job._id === jobId && status.line !== null) {
+          viewer.updateLiveViewer(status.line);
         }
       });
     }
