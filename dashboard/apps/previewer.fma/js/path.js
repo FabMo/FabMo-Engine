@@ -629,8 +629,14 @@ GCodeViewer.Path = function(scene) {
         }
 
         //Checking if the commands in this line are possibly displayed
+        if(that.commandsUndoneManager.length === 0) {
+            return false;
+        }
         while(that.commandsUndoneManager[i].lineNumber !== lineNumber) {
             if(that.commandsUndoneManager[i].lineNumber > lineNumber) {
+                return false;
+            }
+            if(i === that.commandsUndoneManager.length - 1) {
                 return false;
             }
             i++;
