@@ -4,8 +4,10 @@
     background: #ffffff;
     border: black solid 1px;
     z-index: 10;
-    width = auto;
-    height = 100px;
+    width: auto;
+    margin: 20px;
+    padding: 20px;
+    color: black
 }
 
 .widget {
