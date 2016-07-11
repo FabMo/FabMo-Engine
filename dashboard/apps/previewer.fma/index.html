@@ -48,6 +48,7 @@
   <script>
     var fabmo = new FabMoDashboard();
     var viewer;
+    var FOOTBAR_HEIGHT = 175;  // Should find a way to access the element
 
     /**
      * Initializes the handler for updating the live viewer.
@@ -72,7 +73,7 @@
      */
     function initializeViewer(gcode, isLive, jobId) {
       var width = window.innerWidth;
-      var height = window.innerHeight - $("#topbar").height()
+      var height = window.innerHeight - $("#topbar").height();
       $('#preview').size(width, height);
       viewer = new GCodeViewer.Viewer(
         document.getElementById("preview"),
@@ -89,7 +90,53 @@
       if(isLive) {
           initializeLiveViewerHandler(jobId);
       }
+
+      resize();
     }
+
+// Start fixing issue with footbar display
+
+    /**
+     * Resizes the viewer according to the running job footer height. The
+     * height should be equal to zero if no job is running.
+     *
+     * @param {number} footerHeight The footer height.
+     */
+    function resizeAccordingFooter(footerHeight) {
+      var width = window.innerWidth;
+      var height = window.innerHeight - $("#topbar").height() - footerHeight;
+      $('#preview').size(width, height);
+      viewer.resize(width, height);
+    }
+
+    /**
+     * Resizes the viewer. Function to call when the window has been resized.
+     */
+    function resize() {
+        fabmo.requestStatus(function(err, status) {
+          if(err) {
+            resizeAccordingFooter(0);
+            return;
+          }
+          if(status.state !== "running") {
+            resizeAccordingFooter(0);
+            return;
+          }
+          resizeAccordingFooter(FOOTBAR_HEIGHT);  //Should access to the element
+        });
+    }
+
+// End fixing issue with footbar display
+
+// Old code to use when the issue with the footbar is fixed
+/*
+    function resize() {
+      var width = window.innerWidth;
+      var height = window.innerHeight - $("#topbar").height() - footerHeight;
+      $('#preview').size(width, height);
+      viewer.resize(width, height);
+    }
+*/
 
     $(document).ready(function() {
       $(document).foundation();
@@ -105,13 +152,6 @@
           initializeViewer("", false, -1);
         }
       });
-
-      function resize() {
-        var width = window.innerWidth;
-        var height = window.innerHeight - $("#topbar").height()
-        $('#preview').size(width, height);
-        viewer.resize(width, height);
-      }
 
       $(window).resize(function(){
         console.info('resizing')
