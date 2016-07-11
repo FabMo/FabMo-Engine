@@ -7,6 +7,7 @@ var Queue = require('./util').Queue;
 var Watchdog = require('./util').Watchdog;
 var log = require('./log').logger('g2');
 var process = require('process');
+var jsesc = require('jsesc');
 
 // Values of the **stat** field that is returned from G2 status reports
 var STAT_INIT = 0;
@@ -388,7 +389,7 @@ G2.prototype.onData = function(data) {
 				if(json_string.trim() === '######## LOADER - SEGMENT NOT READY') {
 					this.emit('error', [-1, 'LOADER_SEGMENT_NOT_READY', 'Asynchronous error: Segment not ready.']);
 				} else {
-					this.emit('error', [-1, 'JSON_PARSE_ERROR', "Could not parse response: '" + json_string + "' (" + e.toString() + ")"]);
+					this.emit('error', [-1, 'JSON_PARSE_ERROR', "Could not parse response: '" + jsesc(json_string) + "' (" + e.toString() + ")"]);
 				}
 			} finally {
 				if(obj) {
