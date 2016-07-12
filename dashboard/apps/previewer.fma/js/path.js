@@ -613,12 +613,12 @@ GCodeViewer.Path = function(scene) {
     // };
 
     /**
-     * Sets the currently executed line command.
+     * Highlights the currently executed line command.
      *
      * @param {number} The line number of the command.
      * @return {boolean} True if the command is displayed.
      */
-    that.livePreview = function(lineNumber) {
+    that.highlightCommand = function(lineNumber) {
         var i = 0;
         var meshes;
         var geometry, position;
@@ -629,8 +629,14 @@ GCodeViewer.Path = function(scene) {
         }
 
         //Checking if the commands in this line are possibly displayed
+        if(that.commandsUndoneManager.length === 0) {
+            return false;
+        }
         while(that.commandsUndoneManager[i].lineNumber !== lineNumber) {
             if(that.commandsUndoneManager[i].lineNumber > lineNumber) {
+                return false;
+            }
+            if(i === that.commandsUndoneManager.length - 1) {
                 return false;
             }
             i++;
