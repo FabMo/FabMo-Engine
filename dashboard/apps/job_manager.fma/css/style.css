@@ -211,7 +211,7 @@ td.actions-control {
 
 
 
-.job_item{
+.job_item, .recent_item{
     position: relative;
     font-size: .9em;
     padding: 0.5em;
@@ -227,6 +227,8 @@ td.actions-control {
     border: 1px solid #ccc;
     
 }
+
+
 
 .chosen{
   opacity: .5;
@@ -270,11 +272,13 @@ td.actions-control {
 
 
 .name {
+
     font-weight: bold;
     margin-bottom: 0.5em;
     line-height: 1.1em;
     height: 30px;
     overflow: hidden;
+
 }
 
 .job_item .ellipses{
@@ -282,6 +286,20 @@ td.actions-control {
     padding-left: 0.4em;
     cursor: pointer;
 }
+
+.recent_item .ellipses{
+  border: none;
+}
+
+.add {
+  font-size: 2em !important;
+  cursor: pointer;
+  width: 30px;
+  -ms-transform: translate(-3px, -3px); /* IE 9 */
+   	-webkit-transform: translate(-3px, -3px); /* Safari */
+    transform: translate(-3px, -3px);
+}
+
 
 .job_item .dropDown{
     left: 2px;
@@ -297,7 +315,7 @@ td.actions-control {
   left: 17px;
 }
 
-.job_item .description{
+.job_item .description, .recent_item .description{
   height: 80%;
   overflow: hidden;
 }
@@ -312,11 +330,11 @@ td.actions-control {
   .name {
     height: 15px;
   }
-  .job_item, .chosen{
+  .job_item, .chosen, .recent_item{
     width: 98% !important;
     height: 60px;
   }
-  .job_item .description{
+  .job_item .description, .recent_item .description{
     width: 80%;
     overflow: hidden;
     white-space: nowrap;
@@ -343,6 +361,10 @@ td.actions-control {
     padding-left: 0.1em;
     margin-right: 0.3em;
     cursor: pointer;
+    -webkit-user-select: none;  /* Chrome all / Safari all */
+      -moz-user-select: none;     /* Firefox all */
+        -ms-user-select: none;      /* IE 10+ */
+          user-select: none;    
 }
 
 .ellipses:hover {
