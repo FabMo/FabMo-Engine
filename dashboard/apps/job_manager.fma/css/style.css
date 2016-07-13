@@ -190,14 +190,6 @@ td.actions-control {
 
 }
 
-#queue_table{
-
-
-}
-
-
-
-
 .job_item:first-child {
   display: block;
   width:98%;
@@ -225,7 +217,10 @@ td.actions-control {
     height: 200px;
     box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.15);
     border: 1px solid #ccc;
-    
+    -webkit-user-select: none;  /* Chrome all / Safari all */
+      -moz-user-select: none;     /* Firefox all */
+        -ms-user-select: none;      /* IE 10+ */
+          user-select: none;    
 }
 
 
@@ -320,7 +315,7 @@ td.actions-control {
   overflow: hidden;
 }
 
-@media screen and (max-width: 630px){
+@media screen and (max-width: 600px){
   .job_item:first-child .description{
       width: 55%;
       height: 50%;

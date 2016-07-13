@@ -57,12 +57,10 @@ function updateQueue(callback) {
       if (jobs.running.length) {
         var current = jobs.running[0];
         jobs.pending.unshift(current);
-        clearQueue();
         addQueueEntries(jobs.pending);
         runningJob(current);
       } else {
         runningJob(null);
-        clearQueue();
         addQueueEntries(jobs.pending);
       }
     }
@@ -100,6 +98,7 @@ function makeActions() {
 }
 
 function addQueueEntries(jobs) {
+  clearQueue();
   var table = document.getElementById('queue_table');
   var temp = [];
   var recent = [];

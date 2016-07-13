@@ -157,7 +157,7 @@
 	chosenClass: 'chosen',
 	dataIdAttr: 'data-id',
 	clickDelay: 0,
-	touchDelay: 200,
+	touchDelay: 100,
 	animation: 150,
 	filter: ".cancel, .preview, .edit, .download, .play-button, .previewJob, .editJob, .downloadJob, .deleteJob, .ellipses",
 	onStart: function(evt) {
@@ -198,9 +198,6 @@
 						if (err) {
 							fabmo.notify(err);
                             console.log("Notify error");
-						} else {
-							updateQueue();
-                            console.log("update queue");
 						}
 					});
 				}
@@ -295,6 +292,27 @@
 			});
 
 			$(this).on('mouseup', function(e) {
+				$(this).css({
+					"margin-left":"",
+					"margin-right":""
+				});
+			});
+		}
+	});
+
+	$('#queue_table').on('touchstart', '.job_item:first-child', function(e) {
+		$('#queue_table').on('touchstart', '#actions', function(e){
+			e.stopPropagation();
+		});
+		if ($(window).width() > 630 ){
+			var left = e.originalEvent.touches[0].pageX; - (145/2);
+			var right = e.originalEvent.touches[0].pageX; - (145/2);
+			$(this).css({
+				"margin-left":left.toString() + "px",
+				"margin-right":right.toString() + "px"
+			});
+
+			$(this).on('touchend', function(e) {
 				$(this).css({
 					"margin-left":"",
 					"margin-right":""
