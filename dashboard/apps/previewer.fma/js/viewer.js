@@ -295,8 +295,11 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
      * @param {string} The G-Code command.
      * @return {boolean} True if the command is displayed.
      */
-    that.livePreview = function(lineNumber) {
-        if(liveMode === true && that.path.livePreview(lineNumber) === true) {
+    that.updateLiveViewer = function(lineNumber) {
+        if(
+            liveMode === true &&
+            that.path.highlightCommand(lineNumber) === true
+        ) {
             that.gui.highlight(lineNumber);
             that.refreshDisplay();
             return true;

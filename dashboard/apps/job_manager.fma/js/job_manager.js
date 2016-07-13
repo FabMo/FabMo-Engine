@@ -59,7 +59,7 @@ function updateQueue(callback) {
         jobs.pending.unshift(current);
         clearQueue();
         addQueueEntries(jobs.pending);
-        runningJob(true);
+        runningJob(current);
       } else {
         runningJob(null);
         clearQueue();
@@ -291,6 +291,7 @@ function nextJob(job) {
   $('.up-next').css('left', '0px');
 };
 
+// Job should be the running job or null
 function runningJob(job) {
   if (!job) {
     setProgress({
@@ -317,7 +318,18 @@ function runningJob(job) {
   $('.cancel').slideUp(100);
   $('.download').slideUp(100);
   $('.edit').slideUp(100);
-  $('.preview').slideUp(100);
+
+  // $('.preview').slideUp(100); // Here if the live viewer button moves
+  $('.preview').off('click');
+  $('.preview').click(function(e) {
+    e.preventDefault();
+    fabmo.launchApp('previewer', {
+      'job': job._id,
+      "isLive" : true
+    });
+    hideDropDown();
+  });
+
   $('body').css('background-color', '#898989');
   $('.topjob').addClass('running');
   // $('.job-lights-container').show();
