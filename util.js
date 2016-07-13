@@ -76,6 +76,11 @@ function Queue(){
   this.getContents = function() { return queue; };
   this.isEmpty = function(){ return (queue.length === 0); };
   this.enqueue = function(item){ queue.push(item); };
+  this.multiEnqueue = function(iterable) {
+    iterable.forEach(function(item) {
+      queue.push(item);
+    });
+  }
   this.dequeue = function(){
 
     // if the queue is empty, return immediately
