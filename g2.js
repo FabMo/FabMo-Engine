@@ -195,7 +195,7 @@ G2.prototype.onSerialClose = function(data) {
 G2.prototype.controlWrite = function(s) {
 	this.watchdog.start();
 	t = new Date().getTime();
-	log.g2('--C-' + t + '----> ' + s.trim());
+	log.g2('--C-' + t + '----> ' + jsesc(s.trim()));
 	this.control_port.write(s);
 };
 
@@ -203,7 +203,7 @@ G2.prototype.controlWrite = function(s) {
 G2.prototype.gcodeWrite = function(s) {
 	this.watchdog.start();
 	t = new Date().getTime();
-	log.g2('--G-' + t + '----> ' + s.trim());
+	log.g2('--G-' + t + '----> ' + jsesc(s.trim()));
 	this.gcode_port.write(s);
 };
 
@@ -489,7 +489,7 @@ G2.prototype.onMessage = function(response) {
 	// TODO more elegant way of dealing with "response" data.
 	if(response.r) {
 		this.response_count -= 1;
-		log.debug(this.response_count)
+		//log.debug(this.response_count)
 		this.emit('response', false, response.r);
 		r = response.r;
 		this.sendMore();
@@ -558,8 +558,9 @@ G2.prototype.resume = function() {
 G2.prototype.quit = function() {
 	this.quit_pending = true;
 	this.gcode_queue.clear();
+	this.command_queue.clear();
 	this.command('{clr:n}');
-	this.controlWrite('\x04');
+	this.controlWriteAndDrain('\x04');
 }
 
 G2.prototype.get = function(key, callback) {
@@ -684,7 +685,6 @@ G2.prototype.set = function(key, value, callback) {
 // Send a command to G2 (can be string or JSON)
 G2.prototype.command = function(obj) {
 	var cmd;
-	console.log("Command", obj)
 	if((typeof obj) == 'string') {
 		cmd = obj.trim();
 		//this.controlWrite('{"gc":"'+cmd+'"}\n');
@@ -726,12 +726,14 @@ G2.prototype.runSegment = function(data, callback) {
 
 	// Cleanup the lines and enqueue
 	for(var i=0; i<lines.length; i++) {
-		line_count += 1;
 		line = lines[i].trim().toUpperCase();
-		if(callback) {
-			callback.line = line_count;
+		if(line) {
+			line_count += 1;
+			if(callback) {
+				callback.line = line_count;
+			}
+			this.gcode_queue.enqueue(line);
 		}
-		this.gcode_queue.enqueue(line);
 	}
 
 	this.lines_sent = 0;
@@ -750,7 +752,11 @@ G2.prototype.runGCodes = function(codes, callback) {
 	if(codes.length > 0) {
 		this.pause_flag = false;
 	}
-	this.gcode_queue.multiEnqueue(codes);
+	codes.forEach(function(code) {
+		if(code.trim()) {
+			this.gcode_queue.enqueue(code);
+		}
+	}.bind(this));
 	this.sendMore();
 	typeof callback === "function" && callback(null);
 }
@@ -763,7 +769,6 @@ G2.prototype.sendMore = function() {
 			codes.forEach(function(code) {
 				this.controlWrite(code + '\n');
 				this.response_count += 1;
-				log.debug(this.response_count);
 			}.bind(this));
 		}
 	}
@@ -775,7 +780,6 @@ G2.prototype.sendMore = function() {
 			codes.forEach(function(code) {
 				this.gcodeWrite(code + '\n');
 				this.response_count += 1;
-				log.debug(this.response_count);
 			}.bind(this));
 		}
 	}

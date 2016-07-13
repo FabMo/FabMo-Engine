@@ -1,8 +1,8 @@
 var log = require('../../log').logger('manual');
 
 var T_RENEW = 500;
-var SAFETY_FACTOR = 1.5;
-var RENEW_SEGMENTS = 15;
+var SAFETY_FACTOR = 5;
+var RENEW_SEGMENTS = 4;
 
 function ManualRuntime() {
 	this.machine = null;
