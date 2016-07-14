@@ -168,6 +168,10 @@ td.actions-control {
 
 }
 
+#queue_table{
+  position: absolute;
+}
+
 .columns {
   padding: 0.1em;
 }
@@ -210,13 +214,13 @@ td.actions-control {
     color: #666;
     width: 145px;
     display: inline-block;
-    margin-top: 0;
     background-color: #FFFFFF;
     border-radius: 5px;
-    margin: .5em .5em .5em 1%;
+    margin: 0 .5em .5em 1%;
     height: 200px;
     box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.15);
     border: 1px solid #ccc;
+    overflow:auto;
     -webkit-user-select: none;  /* Chrome all / Safari all */
       -moz-user-select: none;     /* Firefox all */
         -ms-user-select: none;      /* IE 10+ */
@@ -267,7 +271,7 @@ td.actions-control {
 
 
 .name {
-
+    padding: 1px;
     font-weight: bold;
     margin-bottom: 0.5em;
     line-height: 1.1em;
@@ -311,11 +315,12 @@ td.actions-control {
 }
 
 .job_item .description, .recent_item .description{
+  position: absolute;
   height: 80%;
   overflow: hidden;
 }
 
-@media screen and (max-width: 600px){
+@media screen and (max-width: 750px){
   .job_item:first-child .description{
       width: 55%;
       height: 50%;
@@ -333,6 +338,7 @@ td.actions-control {
     width: 80%;
     overflow: hidden;
     white-space: nowrap;
+    margin-left: 2.5em;
   } 
   .chosen .description {
     width: 80% !important;
