@@ -15,7 +15,7 @@
         M2, 6, 0
     
     '(... next lines displays; feature of OpenSBP)
-    'Attach Aligator Clip to Cutter and Swing-Out Target (-Continue- when Ready)
+    'Attach Aligator Clip to Cutter Shank and Swing-Out Target (-Continue- when Ready)
         PAUSE
 
     'Make sure we're not accidentally in electrical contact with target 
