@@ -13,3 +13,4 @@ config/data/*.json
 .DS_Store
 *.sublime*
 *.orig
+build

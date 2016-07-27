@@ -43,7 +43,7 @@ module.exports = function(server) {
 	// This has to be defined after all the other routes, or it plays havoc with things
 	server.get(/.*/, restify.serveStatic({
 		//directory: './static'
-		directory: './dashboard/static',
+		directory: './dashboard/build',
 		default: 'index.html'
 	}));
 
