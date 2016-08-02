@@ -254,17 +254,18 @@ exports.Z6 = function(args,callback) {
 
 exports.ZT = function(args, callback) {
 	ztObj = {};
-	ztObj.g55x = 0;
-	ztObj.g55y = 0;
-	ztObj.g55z = 0;
+	ztObj.g55x = 0.0;
+	ztObj.g55y = 0.0;
+	ztObj.g55z = 0.0;
     this.emit_gcode("G28.3 X0 Y0 Z0");
+    log.debug("  G55 = " + JSON.stringify(ztObj));
 	config.driver.setMany(ztObj, function(err, value) {
 		if(err) { return callback(err); }
-		this.cmd_posx = this.posx = 0;
-		this.cmd_posy = this.posy = 0;
-		this.cmd_posz = this.posz = 0;
+		this.cmd_posx = this.posx = 0.0;
+		this.cmd_posy = this.posy = 0.0;
+		this.cmd_posz = this.posz = 0.0;
 		this.driver.requestStatusReport(function(report) {
-//			log.debug("report = " + JSON.stringify(report));
+			log.debug("report = " + JSON.stringify(report));
 			callback();
 		});
 	}.bind(this));
