@@ -18,8 +18,9 @@ var gstreamer=null;
 var args=[
   "v4l2src",
   "device="+video_settings.path,
-  "!","video/x-raw,width="+video_settings.width+",heigth="+video_settings.height+",framerate="+video_settings.framerate+"/1",
-  "!","jpegenc",
+//  "!","video/x-raw,width="+video_settings.width+",heigth="+video_settings.height+",framerate="+video_settings.framerate+"/1",
+//  "!","jpegenc",
+  "!","image/jpeg,width="+video_settings.width+",heigth="+video_settings.height+",framerate="+video_settings.framerate+"/1",
   "!","queue",
   "!","fdsink"
 ];
@@ -36,19 +37,19 @@ if(udev) {
 
   var monitor = udev.monitor();
   monitor.on('add', function (device) {
-    if(device.DEVNAME===webcam){
+    if(device.DEVNAME===video_settings.path){
       //console.log("webcam plugged");
       gstreamer = ps.spawn("gst-launch",args);
       configure_listener(gstreamer);
     }
   });
   monitor.on('remove', function (device) {
-    if(device.DEVNAME===webcam){
+    if(device.DEVNAME===video_settings.path){
       //console.log("webcam unplugged");
     }
   });
   monitor.on('change', function (device) {
-    if(device.DEVNAME===webcam){
+    if(device.DEVNAME===video_settings.path){
       //console.log("webcam changed");
     }
   });

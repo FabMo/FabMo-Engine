@@ -1,5 +1,6 @@
 '!FABMO!name:Tool Change
 '!FABMO!description:Use ATC or manual tool change
-' Tool Change
+' Tool Change (temporary, simplified)
 
-Pause 0.1
+'Manual Tool Change
+Pause

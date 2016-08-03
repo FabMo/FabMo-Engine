@@ -57,12 +57,10 @@ function updateQueue(callback) {
       if (jobs.running.length) {
         var current = jobs.running[0];
         jobs.pending.unshift(current);
-        clearQueue();
         addQueueEntries(jobs.pending);
         runningJob(current);
       } else {
         runningJob(null);
-        clearQueue();
         addQueueEntries(jobs.pending);
       }
     }
@@ -77,8 +75,20 @@ function clearQueue() {
   }
 }
 
+function clearRecent() {
+  var elements = document.getElementsByClassName('recent_item');
+  while (elements.length > 0) {
+    elements[0].parentNode.removeChild(elements[0]);
+  }
+}
+
 function createQueueMenu(id) {
   var menu = "<div data-jobid='JOBID' class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job</a></li><li><a class='deleteJob' data-jobid='JOBID'>Delete Job</a></li></ul></div>";
+  return menu.replace(/JOBID/g, id);
+}
+
+function createRecentMenu(id) {
+  var menu = "<div  class='ellipses' title='Run Again'><i data-jobid='JOBID'class='fa fa-arrow-circle-up add resubmitJob' aria-hidden='true'></i></div>";
   return menu.replace(/JOBID/g, id);
 }
 
@@ -88,8 +98,10 @@ function makeActions() {
 }
 
 function addQueueEntries(jobs) {
+  clearQueue();
   var table = document.getElementById('queue_table');
   var temp = [];
+  var recent = [];
   if (jobs.length) {
     $('.no-jobs').css('left', '-2000px');
     nextJob();
@@ -124,6 +136,52 @@ function addQueueEntries(jobs) {
     bindMenuEvents();
   } else {
     $('.no-jobs').css('left', '0px');
+    fabmo.getJobHistory({
+      start: 0,
+      count: 0
+    }, function(err, jobs) {
+      var arr = jobs.data;
+      var i = 0;
+      for (var a = 0; a < arr.length; a++){
+        if (i === 4 ){
+          break;
+        } else {
+         var result = recent.filter(function(e){ return e.file_id == arr[a].file_id; });
+         if (result.length === 0) {
+           recent.push(arr[a]);
+           i++;
+         }
+        }
+      } 
+    var recentJobs = document.getElementById('recent');
+    console.log(recent);
+    clearRecent(); 
+    for (i = 0; i < recent.length; i++) {
+      var recentItem = document.createElement("div");
+      recentItem.setAttribute("id", recent[i]._id);
+      recentItem.setAttribute("class", "recent_item");
+      recentItem.setAttribute("data-id", recent[i]._id);
+      recentJobs.appendChild(recentItem);
+      var id = document.getElementById(recent[i]._id);
+      id.innerHTML = '<div id="menu"></div><div class="name">' + recent[i].name + '</div><div class="description">' + recent[i].description + '</div>';
+      var menu = id.firstChild;
+
+      // menu.className += ' actions-control';
+      // var name = row.insertCell(1);
+
+      menu.innerHTML = createRecentMenu(recent[i]._id);
+
+    };
+     bindMenuEvents();
+      // for(var i = 0; i< arr.length; i++) {
+      // var num = arr[i].file_id;
+      //   counts[num] = counts[num] ? counts[num]+1 : 1;
+      // }
+      // console.log(counts);
+      if (err) {
+        return callback(err);
+      }
+    });
   }
 }
 
@@ -186,7 +244,7 @@ function clearHistory() {
 }
 
 function createHistoryMenu(id) {
-  var menu = "<div class='ellipses' title='More Actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='resubmitJob' data-jobid='JOBID'>Run Again</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job</a></li><li><a class='deleteJob' data-jobid='JOBID'>Delete Job</a></li></ul></div>"
+  var menu = "<div class='ellipses' title='More Actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='resubmitJob' data-jobid='JOBID'>Add To Queue</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job</a></li><li><a class='deleteJob' data-jobid='JOBID'>Delete Job</a></li></ul></div>"
   return menu.replace(/JOBID/g, id)
 }
 
@@ -227,6 +285,7 @@ function bindMenuEvents() {
     });
     hideDropDown();
   });
+
 
 
 
@@ -298,13 +357,6 @@ function runningJob(job) {
       status
     });
     $('.play').removeClass('active')
-      // $('.topjob').removeClass('running');
-      // $('.job-status-indicator').css({
-      //     '-moz-box-shadow': 'none',
-      //     '-webkit-box-shadow':'none',
-      //     'box-shadow':'none'
-      // })
-      // $('.job-lights-container').delay(1000).hide();
     $('body').css('background-color', '#EEEEEE');
     $('.play').removeClass('active');
     $('.play-button').show();
@@ -312,8 +364,6 @@ function runningJob(job) {
     return
   }
 
-  // $('.nextJobTitle').text(job.name);
-  // $('.nextJobDesc').text(job.description);
 
   $('.cancel').slideUp(100);
   $('.download').slideUp(100);
@@ -346,20 +396,6 @@ function runningJob(job) {
   $('.play').addClass('active')
   sortable.options.disabled = true;
 };
-
-// var setJobheight = function () {
-// 	var w = $('.with-job').height();
-// 	var wo = $('.without-job').height();
-// 	var height = 0;
-// 	if (w > wo) {
-// 		height = w;
-
-// 	} else {
-// 		height = wo;
-
-// 	}
-// 	$('.jobs-wrapper').height(height);
-// };
 
 var setProgress = function(status) {
   var prog = ((status.line / status.nb_lines) * 100).toFixed(2);

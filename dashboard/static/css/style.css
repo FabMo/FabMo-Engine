@@ -948,6 +948,10 @@ input[type=number]::-webkit-outer-spin-button {
 	border-radius: 5px;
 	text-decoration: none;
 	transition: border background-color 2s linear;
+	-webkit-user-select: none;  /* Chrome all / Safari all */
+      -moz-user-select: none;     /* Firefox all */
+        -ms-user-select: none;      /* IE 10+ */
+          user-select: none;  
 }
 
 /*
@@ -1026,6 +1030,10 @@ input[type=number]::-webkit-outer-spin-button {
     text-align: center;
     margin-right: auto;
     margin-left: auto;
+	-webkit-user-select: none;  /* Chrome all / Safari all */
+      -moz-user-select: none;     /* Firefox all */
+        -ms-user-select: none;      /* IE 10+ */
+          user-select: none;  
 }
 
 

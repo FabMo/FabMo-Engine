@@ -168,6 +168,10 @@ td.actions-control {
 
 }
 
+#queue_table{
+  position: absolute;
+}
+
 .columns {
   padding: 0.1em;
 }
@@ -190,14 +194,6 @@ td.actions-control {
 
 }
 
-#queue_table{
-
-
-}
-
-
-
-
 .job_item:first-child {
   display: block;
   width:98%;
@@ -211,22 +207,27 @@ td.actions-control {
 
 
 
-.job_item{
+.job_item, .recent_item{
     position: relative;
     font-size: .9em;
     padding: 0.5em;
     color: #666;
     width: 145px;
     display: inline-block;
-    margin-top: 0;
     background-color: #FFFFFF;
     border-radius: 5px;
-    margin: .5em .5em .5em 1%;
+    margin: 0 .5em .5em 1%;
     height: 200px;
     box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.15);
     border: 1px solid #ccc;
-    
+    overflow:auto;
+    -webkit-user-select: none;  /* Chrome all / Safari all */
+      -moz-user-select: none;     /* Firefox all */
+        -ms-user-select: none;      /* IE 10+ */
+          user-select: none;    
 }
+
+
 
 .chosen{
   opacity: .5;
@@ -270,11 +271,13 @@ td.actions-control {
 
 
 .name {
+    padding: 1px;
     font-weight: bold;
     margin-bottom: 0.5em;
     line-height: 1.1em;
     height: 30px;
     overflow: hidden;
+
 }
 
 .job_item .ellipses{
@@ -282,6 +285,20 @@ td.actions-control {
     padding-left: 0.4em;
     cursor: pointer;
 }
+
+.recent_item .ellipses{
+  border: none;
+}
+
+.add {
+  font-size: 2em !important;
+  cursor: pointer;
+  width: 30px;
+  -ms-transform: translate(-3px, -3px); /* IE 9 */
+   	-webkit-transform: translate(-3px, -3px); /* Safari */
+    transform: translate(-3px, -3px);
+}
+
 
 .job_item .dropDown{
     left: 2px;
@@ -297,12 +314,13 @@ td.actions-control {
   left: 17px;
 }
 
-.job_item .description{
+.job_item .description, .recent_item .description{
+  position: absolute;
   height: 80%;
   overflow: hidden;
 }
 
-@media screen and (max-width: 630px){
+@media screen and (max-width: 750px){
   .job_item:first-child .description{
       width: 55%;
       height: 50%;
@@ -312,14 +330,15 @@ td.actions-control {
   .name {
     height: 15px;
   }
-  .job_item, .chosen{
+  .job_item, .chosen, .recent_item{
     width: 98% !important;
     height: 60px;
   }
-  .job_item .description{
+  .job_item .description, .recent_item .description{
     width: 80%;
     overflow: hidden;
     white-space: nowrap;
+    margin-left: 2.5em;
   } 
   .chosen .description {
     width: 80% !important;
@@ -343,6 +362,10 @@ td.actions-control {
     padding-left: 0.1em;
     margin-right: 0.3em;
     cursor: pointer;
+    -webkit-user-select: none;  /* Chrome all / Safari all */
+      -moz-user-select: none;     /* Firefox all */
+        -ms-user-select: none;      /* IE 10+ */
+          user-select: none;    
 }
 
 .ellipses:hover {
