@@ -1,37 +1,18 @@
-var log = require('../../../log').logger('sbp');
-var g2 = require('../../../g2');
-//var sb3_commands = require('../sb3_commands');
-//var config = require('../../../config');
-//var fs = require('fs');
-
-//function readPtData(PtData, callback) {
-//  var data = fs.readFileSync(this.transforms.level.ptDataFile);
-//  return JSON.parse(data);
-//}
-
-//exports.leveler = function(PtNew){
-//    log.debug("leveler_HB data = " + JSON.stringify(data));
-//      log.debug("PtData = " + JSON.stringify(data));
-//      log.debug("PtFilename = " + PtFilename);
-//      var zA = data.Z1 + ((data.Z2-data.Z1)*((PtNew.X-data.X1)/(data.X2-data.X1)));
-//      var zB = data.Z4 + ((data.Z3-data.Z4)*((PtNew.X-data.X4)/(data.X3-data.X4)));
-//      var zP = zA - ((zB-zA)*((PtY-data.Y1)/(data.Y4-data.Y1)));
-//      log.debug("zP = " + zP);
-//      zP += PtZ;
-//      log.debug("zA = " + zA + "   zB = " + zB);
-//      log.debug("zP = " + zP + "   PtZ = " + PtZ);
-//      return zP;
-//};
-
 /*jslint todo: true, browser: true, continue: true, white: true*/
 /*global define*/
+
+var log = require('../../../log').logger('sbp');
+var fs = require('fs');
 var triangulate = require("delaunay-triangulate");
-var fs = require("fs");
 
 /**
  * The leveler calculates the position of points according to the given point
  * cloud. This is used to have better height precision when working on a slope
  * or curved surface.
+ *
+ * If the given file does not exists or a problem occurs with the triangulation,
+ * the triangulation is not done. Therefore before using the methods for
+ * finding relative heights, triangulationFailed should be called and check.
  *
  * @param {string} file The file path of the point cloud (in XYZ format).
  * @param {function} callback (optional) Callback function to call when the
@@ -64,10 +45,13 @@ var Leveler = function(file, callback) {
 
         //Algorithm from http://www.blackpawn.com/texts/pointinpoly/
 
-        // 0 is A, 1 is B, 2 is C
-        var vAC = [triangle[2][0] - triangle[0][0], triangle[2][1] - triangle[0][1]];
-        var vAB = [triangle[1][0] - triangle[0][0], triangle[1][1] - triangle[0][1]];
-        var vAP = [point[0] - triangle[0][0], point[1] - triangle[0][1]];
+        var a = triangle[0];
+        var b = triangle[1];
+        var c = triangle[2];
+
+        var vAC = [c[0] - a[0], c[1] - a[1]];
+        var vAB = [b[0] - a[0], b[1] - a[1]];
+        var vAP = [point[0] - a[0], point[1] - a[1]];
 
         var dotACAC = dotProduct(vAC, vAC), dotACAB = dotProduct(vAC, vAB);
         var dotACAP = dotProduct(vAC, vAP), dotABAB = dotProduct(vAB, vAB);
