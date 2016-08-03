@@ -58,9 +58,17 @@ var Leveler = function(file, callback) {
         var dotABAP = dotProduct(vAB, vAP);
 
         //Find barycenter coefficients
-        var invDenominator = 1 / (dotACAC * dotABAB - dotACAB * dotACAB);
-        var coeffAC = (dotABAB * dotACAP - dotACAB * dotABAP) * invDenominator;
-        var coeffAB = (dotACAC * dotABAP - dotACAB * dotACAP) * invDenominator;
+        var denominator = dotACAC * dotABAB - dotACAB * dotACAB;
+
+        //Sometimes, the triangulation algorithm considers three aligned points
+        //as a triangle which should not be possible and gives the denominator
+        //the value of zero
+        if(denominator === 0) {
+            return false;
+        }
+
+        var coeffAC = (dotABAB * dotACAP - dotACAB * dotABAP) / denominator;
+        var coeffAB = (dotACAC * dotABAP - dotACAB * dotACAP) / denominator;
 
         if(coeffAC < 0 || coeffAB < 0 || (coeffAC + coeffAB > 1)) {
             return false;
@@ -122,6 +130,7 @@ var Leveler = function(file, callback) {
         var a = that.points[tr[0]],  b = that.points[tr[1]];
         var c = that.points[tr[2]];
         var height = a[2] + coeffAC * (c[2] - a[2]) + coeffAB * (b[2] - a[2]);
+
         that.foundHeight = height;
         return height;
     };
@@ -151,6 +160,9 @@ var Leveler = function(file, callback) {
      *     12.05 5.4 1.0
      *     10.5 1.6 22.1
      *     0 0 5
+     *
+     * @param {string} The data.
+     * @return {array} Array of points (defined as three dimensionnal arrays)
      */
     function parseData(data) {
         var i = 0;
