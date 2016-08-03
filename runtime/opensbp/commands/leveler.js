@@ -28,7 +28,15 @@ var g2 = require('../../../g2');
 var triangulate = require("delaunay-triangulate");
 var fs = require("fs");
 
-//callback will be called when the triangulation is done (optional argument)
+/**
+ * The leveler calculates the position of points according to the given point
+ * cloud. This is used to have better height precision when working on a slope
+ * or curved surface.
+ *
+ * @param {string} file The file path of the point cloud (in XYZ format).
+ * @param {function} callback (optional) Callback function to call when the
+ * triangulation is done.
+ */
 var Leveler = function(file, callback) {
     "use strict";
     var that = this;
@@ -104,11 +112,24 @@ var Leveler = function(file, callback) {
         return false;
     };
 
-    //Changes foundHeight by the found height.
-    //Returns false if cannot find the height, else returns the height
-    that.findHeight = function(x, y, z) {
-        var triangle = that.findTriangleAndCoefficients([x, y, z]);
+    /**
+     * Finds the relative height of the point according to the given point
+     * cloud. If the point is outside of the point cloud on the XY plane, the
+     * function returns false.
+     * Also, foundHeight is updated each time the function is executed. When a
+     * height is returned, foundHeight is equal to the returned height else to
+     * 0.
+     *
+     * @param {number} x The x coordinate of the point.
+     * @param {number} y The y coordinate of the point.
+     * @return {number|boolean} Returns false if the point is outside of the
+     * point cloud boundaries, else the relative height according to the
+     * surface of the point cloud.
+     */
+    that.findHeight = function(x, y) {
+        var triangle = that.findTriangleAndCoefficients([x, y, 0]);
         if(triangle === false) {
+            that.foundHeight = 0;
             return false;
         }
         //Recuperate the true points and calculate the height
@@ -139,6 +160,14 @@ var Leveler = function(file, callback) {
         return (a[0] === b[0] && a[1] === b[1]);
     }
 
+    /**
+     * The date must be in the format of an XYZ file.  Which means each line
+     * contains the x, y, z coordinates of a point separated by spaces.
+     * Example:
+     *     12.05 5.4 1.0
+     *     10.5 1.6 22.1
+     *     0 0 5
+     */
     function parseData(data) {
         var i = 0;
         var arr = data.split("\n"), point = [], points = [];
@@ -158,10 +187,20 @@ var Leveler = function(file, callback) {
         return points;
     }
 
+    /**
+     * Returns if the triangulation failed or not.
+     *
+     * @return {boolean} True if failed.
+     */
+    that.triangulationFailed = function() {
+        return (that.triangles.length === 0);
+    };
+
 
     function parseFile(error, data) {
         if(error) {
-            console.error(error);
+            log.error(error);
+            return;
         }
 
         var i = 0, hightest = 0;
@@ -185,9 +224,10 @@ var Leveler = function(file, callback) {
         }
 
         points2D = convertPointsForTriangulation(that.points);
+
         that.triangles = triangulate(points2D);
 
-        if(that.triangles === undefined) {
+        if(that.triangulationFailed() === true) {
             //Should stop the job
             log.error(new Error("Impossible to triangulate the point cloud."));
         }
@@ -201,7 +241,11 @@ var Leveler = function(file, callback) {
     that.triangles = [];
     that.foundHeight = 0;  //Useful for comparing with the previous found height
 
-    fs.readFile(file, "utf8", parseFile);
+    var stats = fs.statSync(file);
+    if(stats.isFile() === false) {
+        return;
+    }
+    parseFile(null, fs.readFileSync(file, "utf8"));
 };
 
 exports.Leveler = Leveler;

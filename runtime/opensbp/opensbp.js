@@ -1482,30 +1482,37 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
         this.current_chunk.push('N' + n + ' ' + gcode);
 	}.bind(this);
 
-	if(this.transforms.level.apply === true  && code !== "G0") {
+	if(this.transforms.level.apply === true) {
+		if(leveler.triangulationFailed() === true) {
+			log.error("Point cloud not triangulated, impossible to do levelling.");
+			return;
+		}
+        log.info("Applying leveler transformation.");  //TODO: delete log
 		var previousHeight = leveler.foundHeight;
 		var X = (tPt.X === undefined) ? this.cmd_posx : tPt.X;
 		var Y = (tPt.Y === undefined) ? this.cmd_posy : tPt.Y;
-		var Z = 0;
+		var theoriticalZ = 0;  //The Z position if leveling was not needed
 		// cmd_posz stores the last Z position. But when using the leveler,
 		// the stored Z is the real Z of the bit, not the wanted Z relative
-		// to the board. Therefore, we delete the previousely found height
+		// to the board. Therefore, we substract the previousely found height
 		// when using cmd_posz but not when using pt.Z
 		if(tPt.Z === undefined) {
-		    Z = this.cmd_posz - previousHeight;
+		    theoriticalZ = this.cmd_posz - previousHeight;
 		} else {
-		    Z =  tPt.Z;
+		    theoriticalZ =  tPt.Z;
 		}
-		var height = leveler.findHeight(X, Y, Z);
-		if(height === false) {
-			log.error("Impossible to find the point height with the leveler.");
-			return;
+		var relativeHeight = leveler.findHeight(X, Y);
+		if(relativeHeight === false) {
+			log.info("[Leveler] Point outside of point cloud boundaries.");
+			relativeHeight = 0;
 		}
-		tPt.Z = Z + height;
+		tPt.Z = theoriticalZ + relativeHeight;
 		opFunction(tPt);
 		log.debug("emit_move:level");
 	}
 	else {
+        // TODO: delete those logs
+        log.error("NOT applying leveler transformation.");
 		opFunction(tPt);
 	}
 
