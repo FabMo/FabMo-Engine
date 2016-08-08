@@ -77,13 +77,9 @@ exports.ZA = function(args, callback) {
 		              How is unit conversion handled
 		              if the A is a linear axis?
 		????????????????????????????????????????????????????????????*/
-		/*
-		if ( this.machine.driver.status.unit === 'in' ) {  // inches
-			unitConv = 0.039370079;
-		}
-		else if ( this.machine.driver.status.unit === 'mm' ) {  // inches
-			unitConv = 25.4;
-		}*/
+		// if ( this.machine.driver.status.unit === 'in' ) {  // inches
+		// 	unitConv = 0.039370079;
+		// }
 		zaObj.g55a = Number((MPO * unitConv).toFixed(5));
 		config.driver.setMany(zaObj, function(err, value) {
 			if(err) { return callback(err); }
@@ -97,12 +93,7 @@ exports.ZB = function(args, callback) {
 	this.machine.driver.get('mpob', function(err, MPO) {
 		if(err) { return callback(err); }
 		var zbObj = {};
-		var unitConv = 1.0;		
-		// No unit conversion for rotary axes
-		/*if ( this.machine.driver.status.unit === 'in' ) {  // inches
-			unitConv = 0.039370079;
-		}*/
-		zbObj.g55b = Number((MPO * unitConv).toFixed(5));
+		zbObj.g55b = Number((MPO).toFixed(5));
 		config.driver.setMany(zbObj, function(err, value) {
 			if(err) { return callback(err); }
 			this.cmd_posb = this.posb = 0;
@@ -115,13 +106,7 @@ exports.ZC = function(args, callback) {
 	this.machine.driver.get('mpoc', function(err, MPO) {
 		if(err) { return callback(err); }
 		var zcObj = {};
-		var unitConv = 1.0;		
-		// No unit conversion for rotary axes
-		/*
-		if ( this.machine.driver.status.unit === 'in' ) {  // inches
-			unitConv = 0.039370079;
-		}*/
-		zcObj.g55c = Number((MPO * unitConv).toFixed(5));
+		zcObj.g55c = Number((MPO).toFixed(5));
 		config.driver.setMany(zcObj, function(err, value) {
 			if(err) { return callback(err); }
 			this.cmd_posc = this.posc = 0;
