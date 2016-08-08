@@ -1,7 +1,7 @@
 '!FABMO!name:Z-Zero
 '!FABMO!description: Zero to Z-Zero Plate
 ' Z-ZEROING ROUTINE
-' WRITTEN FOR FABMO PLATFORM FOR A HANDIBOT
+' WRITTEN FOR FABMO PLATFORM
 ' *... needs to add in use of Z prox switch
 
 &approach_speed_fast = 1.0
