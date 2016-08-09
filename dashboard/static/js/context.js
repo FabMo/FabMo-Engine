@@ -11,15 +11,15 @@
  * app is already monopolized by the FabMo apps concept.
  */
 
- define(function (require) {
+define(function(require) {
 
- 	var Lockr = require('lockr');
+ 	var Lockr = require('./libs/lockr.min.js');
 
 	ApplicationContext = function() {
 		// Model/View/Router Prototypes
-		this.models = require('models');
-		this.views = require('views');
-		this.Router = require('routers');
+		this.models = require('./models.js');
+		this.views = require('./views.js');
+		this.Router = require('./routers.js');
 
 		this.engine = null;
 		// View Instances
@@ -42,18 +42,6 @@
 	ApplicationContext.prototype.setEngineVersion = function(version) {
 		this.engineVersion = version;
 		this.app_reload_index = Lockr.get('fabmo_app_reload_index') || {};
-	}
-
-	ApplicationContext.prototype.openDROPanel = function(){
-		$('.off-canvas-wrap').foundation('offcanvas', 'show', 'offcanvas-overlap-left');
-	}
-
-	ApplicationContext.prototype.closeSettingsPanel = function(){
-		$('.off-canvas-wrap').foundation('offcanvas', 'hide', 'offcanvas-overlap-right');
-	}
-
-	ApplicationContext.prototype.closeDROPanel = function() {
-		$('.off-canvas-wrap').foundation('offcanvas', 'hide', 'offcanvas-overlap-left');
 	}
 
 	ApplicationContext.prototype.showModalContainer = function(name){
@@ -135,4 +123,5 @@
 	};
 
 	return new ApplicationContext();
+
 });

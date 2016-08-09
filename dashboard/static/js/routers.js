@@ -5,7 +5,7 @@ define(function(require) {
 
 	var $ = require('jquery');
 	var Backbone = require('backbone');
-
+	var auth = require('./auth.js');
 	var Router = Backbone.Router.extend({
 		routes: {
 			"app/:id"     		: "_launchApp",
@@ -41,6 +41,7 @@ define(function(require) {
 				console.log(par);
 				$('#add_err').html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span class="sr-only"> '+par+'</span></div>');
 				$('#add_err').show();
+				runAuth();
 
 			}
 			

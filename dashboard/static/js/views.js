@@ -1,7 +1,8 @@
 define(function(require) {
 
-	var models = require('models');
+	var models = require('./models.js');
 	var Backbone = require('backbone');
+	var auth = require('./auth.js');
 	var _ = require('underscore');
 	var views = {};
 
@@ -14,7 +15,7 @@ define(function(require) {
 				display : this.model.get('icon_display')
 			};
 		},
-		template : _.template(require('text!templates/app-icon.html')),
+		template : _.template(require('text!./templates/app-icon.html')),
 		initialize : function() {
 			_.bindAll(this, 'render');
 			this.model.bind('change', this.render);
@@ -29,7 +30,7 @@ define(function(require) {
 
 	views.Authentication = Backbone.View.extend({
 		el : '#mainContent',
-		template: _.template(require('text!templates/authentication.html')),
+		template: _.template(require('text!./templates/authentication.html')),
 		initialize : function (){
 			this.render();
 		},
@@ -43,7 +44,7 @@ define(function(require) {
 	views.AddAppView = Backbone.View.extend({
 		tagName : 'li',
 		className : 'app-icon',
-		template : _.template(require('text!templates/app-icon-add.html')),
+		template : _.template(require('text!./templates/app-icon-add.html')),
 		busy : false,
 		initialize : function() {
 			_.bindAll(this, 'render');
@@ -52,7 +53,7 @@ define(function(require) {
 			this.$el.html(this.template({}));
 			this.$el.on('click', function(evt) {
 				if(this.busy) { return; }
-				var dashboard = require('dashboard');
+				var dashboard = require('./dashboard.js');
 				dashboard.browseForFiles(function(evt) {
 					var files = [];
 					for(var i=0; i<evt.target.files.length; i++) {
@@ -73,7 +74,7 @@ define(function(require) {
 							dashboard.notification('success', data.length + " app" + ((data.length > 1) ? 's' : '') + " installed successfully.");
 							revert_icon();
 						}
-						var context = require('context');
+						var context = require('./context.js');
 						context.apps.fetch();
 					}.bind(this));
 				}.bind(this));
