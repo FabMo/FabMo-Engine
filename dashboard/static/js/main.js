@@ -3,11 +3,11 @@
  */
 
 
-require("../css/normalize.css");
-require("font-awesome-webpack");
-require("../css/foundation.min.css");
-require("../css/style.css");
-require("../css/toastr.min.css");
+// require("../css/normalize.css");
+ require("../../../node_modules/font-awesome/css/font-awesome.css");
+// require("../css/foundation.min.css");
+// require("../css/style.css");
+// require("../css/toastr.min.css");
 
     // context is the application context
     // dashboard is the bridge between the application context and the apps

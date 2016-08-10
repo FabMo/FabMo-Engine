@@ -3,10 +3,11 @@ var js = 'dashboard/static/js';
 var webpack = require("webpack");
 var ProvidePlugin = require('webpack').ProvidePlugin;
 var path = require('path');
+var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var config = {
   entry: {
     app:'./dashboard/static/js/main.js',
-    vendor:['jquery', 'backbone', '../dashboard/static/js/libs/fabmo.js'],
+    vendor:['jquery', 'backbone', 'font-awesome-webpack'],
   }, 
   output: {
     path: './dashboard/build',
@@ -20,7 +21,8 @@ var config = {
             "window.jQuery": 'jquery',
             "windows.jQuery": 'jquery'
         }),
-        new webpack.optimize.CommonsChunkPlugin(/* chunkName= */"vendor", /* filename= */"vendor.bundle.js")
+        new webpack.optimize.CommonsChunkPlugin(/* chunkName= */"vendor", /* filename= */"vendor.bundle.js"),
+        new ExtractTextPlugin('bundle.css')
     ],
   resolve: {
   // modulesDirectories: [lib],
@@ -29,7 +31,10 @@ var config = {
  },
   module: {
     loaders: [
-      { test: /\.css$/, loader: 'style-loader!css-loader' },
+      {
+        test: /\.css$/,
+        loader: ExtractTextPlugin.extract('style', 'css')
+      },
       { test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: "url-loader?limit=10000&minetype=application/font-woff" },
       { test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: "file-loader" },
       { test: /\.(png|eot|svg|ttf|woff|woff2)$/, loader: 'url-loader?limit=100000' }
