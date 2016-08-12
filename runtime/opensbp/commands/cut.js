@@ -4,7 +4,14 @@ var sb3_commands = require('../sb3_commands');
 var config = require('../../../config');
 
 /* CUTS */
-
+//  The CA command will cut an arc as defined by its cord length, height and angle from start
+//      to end.
+//    
+//  Usage: CA,Cord Length,Height off Cord,<I-O-T>,<Direction>,
+//            <Alignment Angle>,<Plunge Depth>,<Repetitions>,
+//            <X Proportion>,<Y Proportion>,<Skip>,<No Pull Up after cut>,
+//            <Plunge from Z zero>
+//
 exports.CA = function(args) {
   var startX = this.cmd_posx;
   var startY = this.cmd_posy;
@@ -52,6 +59,13 @@ exports.CA = function(args) {
 
 };
 
+//  The CC command will cut a circle/arc as defined by its diameter.
+//    
+//  Usage: CC,<Dia>,<I-O-T>,<Direction>,<Begin Angle>,<End Angle>,<Plunge Depth>,
+//            <Repetitions>,<X Prop>,<Y Prop>,<Options-2=Pocket,3=Spiral Plunge,
+//             4=Spiral Plunge with Bottom pass>,<No Pull Up after cut>,
+//            <Plunge from Z zero>
+//
 exports.CC = function(args) {
   var CCstartX = this.cmd_posx;
   var CCstartY = this.cmd_posy;
@@ -126,16 +140,10 @@ exports.CC = function(args) {
 };
 
 //  The CP command will cut a circle as defined by its center point.
-//  This command closely resembles a G-code circle (G02 or G03)
-//  Though, this command has several added features that its G-code counterparts don't:
-//    - Spiral plunge with multiple passes
-//    - Pocketing
-//    - Pocketing with multiple passes
-//  Can also be used for Arcs and Arcs with multiple passes
 //    
 //  Usage: CP,<Dia>,<X Center>,<Y Center>,<I-O-T>,<Direction>,
 //            <Begin Angle>,<End Angle>,<Plunge Depth>,
-//            <Repetitions>,<X Prop>,<Y Prop>,<Options-
+//            <Repetitions>,<X-Proportion>,<Y-Proportion>,<Options-
 //             2=Pocket,3=Spiral Plunge,4=Spiral Plunge with
 //             Bottom pass>,<No Pull Up after cut>,
 //            <Plunge from Z zero>
@@ -220,10 +228,10 @@ exports.CP = function(args) {
 //		- Pocketing with multiple passes
 //	Can also be used for Arcs and Arcs with multiple passes
 //		
-//	Usage: CG,<no used>,<X End>,<Y End>,<X Center>,<Y Center>,<I-O-T>,
-//            <Direction>,<Plunge Depth>,<Repetitions>,<>,<>,
+//	Usage: CG,<Dia - not used>,X-End,Y-End,X-Center,Y-Center,<I-O-T>,
+//            <Direction>,<Plunge Depth>,<Repetitions>,<Proportion X>,<Proportion Y>,
 //            <Options-2=Pocket,3=Spiral Plunge,4=Spiral Plunge with 
-//             Bottom pass>,<No Pull Up after cut>,<Plunge from Z zero>
+//             Bottom pass>,<No Pull Up at end>,<Plunge depth from Z zero>
 //	
 exports.CG = function(args) {
   var CGstartX = this.cmd_StartX = this.cmd_posx;
