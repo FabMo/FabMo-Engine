@@ -345,7 +345,6 @@ Machine.prototype.deauthorize = function() {
 }
 
 Machine.prototype.isConnected = function() {
-	console.log(this.status.state)
 	return this.status.state !== 'not_ready' && this.status.state !== 'dead';
 };
 
