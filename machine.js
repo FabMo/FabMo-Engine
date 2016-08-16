@@ -90,7 +90,12 @@ function Machine(control_path, gcode_path, callback) {
 	    // Set the initial state based on whether or not we got a valid connection to G2
 	    if(err){
 	    	log.warn("Setting the disconnected state");
-		    this.status.state = 'not_ready';
+	    	this.die("A real bad error has occurred.")
+		    if(typeof callback === "function") {
+		    	return callback(new Error('No connection to G2'));
+		    } else {
+		    	return;
+		    }
 	    } else {
 		    this.status.state = 'idle';
 	    }
@@ -197,7 +202,7 @@ Machine.prototype.handleFireButton = function(stat) {
  * State Functions
  */
 Machine.prototype.die = function(err_msg) {
-	this.setState(this, 'dead', {error : 'A G2 exception has occurred. You must reboot your tool.'});
+	this.setState(this, 'dead', {error : err_msg || 'A G2 exception has occurred. You must reboot your tool.'});
 	this.emit('status',this.status);
 }
 
@@ -340,7 +345,8 @@ Machine.prototype.deauthorize = function() {
 }
 
 Machine.prototype.isConnected = function() {
-	return this.status.state !== 'not_ready';
+	console.log(this.status.state)
+	return this.status.state !== 'not_ready' && this.status.state !== 'dead';
 };
 
 Machine.prototype.disconnect = function(callback) {
