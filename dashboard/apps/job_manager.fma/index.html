@@ -2,11 +2,9 @@
 <head>
 	<meta charset="utf-8">
 	<title>Job Manager</title>
-
-	<!--<link rel="stylesheet" href="/css/normalize.css">
-	<link rel="stylesheet" href="/css/foundation.min.css">-->
+	<link rel="stylesheet" href="../../css/dashboard.css">
 	<link rel="stylesheet" href="./css/style.css">
-	<!--<link rel="stylesheet" href="/css/font-awesome.min.css">-->
+
 
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -136,20 +134,19 @@
 </div>
 
   <!-- Javascript inclusions -->
-  <script src="/bundle.js"></script>
-  <!--<script src="/js/libs/foundation.min.js"></script>-->
-  <script src="/js/libs/fabmo.js"></script>
-  <!--<script src="/js/jquery.dragster.js"></script>
-  <script src="/js/moment.js"></script>
-  <script src="/js/Sortable.js"></script>-->
+  <script src="../../vendor.bundle.js"></script>
+  <script src="../../app.js"></script>
+  <script src="./js/jquery.dragster.js"></script>
+  <script src="./js/moment.js"></script>
+  <script src="./js/Sortable.js"></script>
   <script src="./js/job_manager.js"></script>
 
 
 
   <script type="text/javascript">
+  var object = {};
 
-
-
+  		var Books = Backbone.Collection.extend({});
 	var fabmo = new FabMoDashboard();
 	var el = document.getElementById('queue_table');
 	var sortable = Sortable.create(el, {
