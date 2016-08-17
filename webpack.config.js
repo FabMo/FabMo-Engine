@@ -7,7 +7,7 @@ var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var config = {
   entry: {
     dashboard:'./dashboard/static/js/main.js',
-    app:'./dashboard/static/js/app.js',
+    app:'./dashboard/apps/job_manager.fma/js/job_manager.js',
     vendor:['jquery', 'backbone', 'font-awesome-webpack'],
   }, 
   output: {
