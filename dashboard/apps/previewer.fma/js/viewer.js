@@ -11,7 +11,7 @@
  */
 
 GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
-        callbackError, configuration, liveMode) {
+        callbackError, configuration, liveMode, inInch) {
     "use strict";
     var that = this;
 
@@ -45,7 +45,7 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
      * To call when the canvas or container has resized
      *
      * @param {number} width The width of the dom element renderer in px.
-     * @param {number} The height of the dom element renderer in px.
+     * @param {number} height The height of the dom element renderer in px.
      */
     that.resize = function(width, height) {
         that.renderer.setSize(width, height);
@@ -239,6 +239,12 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
 
         that.showZ();
         that.refreshDisplay();
+
+        if(inInch === true) {
+            that.displayInInch();
+        } else if(inInch === false) {
+            that.displayInMm();
+        }
     }
 
     /**
@@ -318,8 +324,8 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     that.cncConfiguration = configuration || {};
     that.gcode = {};
 
-    that.inMm = false;
-    that.inchToVector = 1; //Convert an inch to the value to put in vectors
+    // that.inMm = false;
+    // that.inchToVector = 1; //Convert an inch to the value to put in vectors
     that.callbackError = callbackError;
 
     if(GCodeViewer.webGLEnabled() === false) {

@@ -116,7 +116,6 @@ function setConfig(id, value) {
 	    co = co[parts[i]];
 	  }
 	} while(i++ < parts.length-1 );
-
 	co[parts[parts.length-1]] = value;
 	fabmo.setConfig(o, function(err, data) {
 	  update();

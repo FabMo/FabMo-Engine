@@ -89,6 +89,99 @@ define(function(require) {
                         context.apps.fetch();
                     }
                 });
+
+                dashboard.engine.on('status', function(status) {
+                    if(status.state == 'dead') {
+                        dashboard.showModal({
+                            title: 'An Error Occurred!',
+                            message: status.info.error,
+                            noButton : true
+                        });
+                        return;
+                    }
+
+                    if (status.state != "armed" && last_state_seen === "armed" || status.state != "paused" && last_state_seen === "paused") {
+                        dashboard.hideModal();
+                        modalIsShown = false;
+                    }
+
+
+                    if (last_state_seen != status.state) {
+                        last_state_seen = status.state;
+
+                    }
+                    switch (status.state) {
+                        case 'running':
+                        case 'paused':
+                        case 'stopped':
+                            dashboard.handlers.showFooter();
+                            break;
+                        default:
+                            dashboard.handlers.hideFooter();
+                            break;
+                    }
+
+                    if (status.state != 'idle') {
+                        $('#position input').attr('disabled', true);
+                        // authenticate.setIsRunning(true);
+                    } else {
+                        $('#position input').attr('disabled', false);
+                        // authenticate.setIsRunning(false);
+                    }
+
+                    if (status['info'] && status['info']['id'] != lastInfoSeen) {
+                        lastInfoSeen = status['info']['id'];
+                        if (status.info['message']) {
+                            keypad.setEnabled(false);
+                            keyboard.setEnabled(false);
+
+                            dashboard.showModal({
+                                message: status.info.message,
+                                okText: 'Resume',
+                                cancelText: 'Quit',
+                                ok: function() {
+                                    dashboard.engine.resume();
+                                },
+                                cancel: function() {
+                                    dashboard.engine.quit();
+                                }
+                            });
+                            modalIsShown = true;
+                        } else if (status.info['error']) {
+                            if (dashboard.engine.status.job) {
+                                var detailHTML = '<p>' +
+                                    '<b>Job Name:  </b>' + dashboard.engine.status.job.name + '<br />' +
+                                    '<b>Job Description:  </b>' + dashboard.engine.status.job.description +
+                                    '</p>'
+                            } else {
+                                var detailHTML = '<p>Check the <a style="text-decoration: underline;" href="/log">debug log</a> for more information.</p>';
+                            }
+                            dashboard.showModal({
+                                title: 'An Error Occurred!',
+                                message: status.info.error,
+                                detail: detailHTML,
+                                cancelText: status.state === 'dead' ? undefined : 'Quit',
+                                cancel: status.state === 'dead' ? undefined : function() {
+                                    dashboard.engine.quit();
+                                }
+                            });
+                            modalIsShown = true;
+                        }
+                    } else if (status.state == 'armed') {
+                        authorizeDialog = true;
+                            keypad.setEnabled(false);
+                            keyboard.setEnabled(false);
+                        dashboard.showModal({
+                            title: 'Authorization Required!',
+                            message: 'To authorize your tool, press and hold the green button for one second.',
+                            cancelText: 'Quit',
+                            cancel: function() {
+                                authorizeDialog = false;
+                                dashboard.engine.quit();
+                            }
+                        });
+                    }
+                });
             }
         });
     });
@@ -308,90 +401,7 @@ define(function(require) {
         hideDaisy(null);
     });
 
-    engine.on('status', function(status) {
-
-        if (status.state != "armed" && last_state_seen === "armed" || status.state != "paused" && last_state_seen === "paused") {
-            dashboard.hideModal();
-            modalIsShown = false;
-        }
-
-
-        if (last_state_seen != status.state) {
-            last_state_seen = status.state;
-
-        }
-        switch (status.state) {
-            case 'running':
-            case 'paused':
-            case 'stopped':
-                dashboard.handlers.showFooter();
-                break;
-            default:
-                dashboard.handlers.hideFooter();
-                break;
-        }
-
-        if (status.state != 'idle') {
-            $('#position input').attr('disabled', true);
-            // authenticate.setIsRunning(true);
-        } else {
-            $('#position input').attr('disabled', false);
-            // authenticate.setIsRunning(false);
-        }
-
-        if (status['info'] && status['info']['id'] != lastInfoSeen) {
-            lastInfoSeen = status['info']['id'];
-            if (status.info['message']) {
-                keypad.setEnabled(false);
-                keyboard.setEnabled(false);
-
-                dashboard.showModal({
-                    message: status.info.message,
-                    okText: 'Resume',
-                    cancelText: 'Quit',
-                    ok: function() {
-                        dashboard.engine.resume();
-                    },
-                    cancel: function() {
-                        dashboard.engine.quit();
-                    }
-                });
-                modalIsShown = true;
-            } else if (status.info['error']) {
-                if (dashboard.engine.status.job) {
-                    var detailHTML = '<p>' +
-                        '<b>Job Name:  </b>' + dashboard.engine.status.job.name + '<br />' +
-                        '<b>Job Description:  </b>' + dashboard.engine.status.job.description +
-                        '</p>'
-                } else {
-                    var detailHTML = '<p>Check the <a style="text-decoration: underline;" href="/log">debug log</a> for more information.</p>';
-                }
-                dashboard.showModal({
-                    title: 'An Error Occurred!',
-                    message: status.info.error,
-                    detail: detailHTML,
-                    cancelText: status.state === 'dead' ? undefined : 'Quit',
-                    cancel: status.state === 'dead' ? undefined : function() {
-                        dashboard.engine.quit();
-                    }
-                });
-                modalIsShown = true;
-            }
-        } else if (status.state == 'armed') {
-            authorizeDialog = true;
-                keypad.setEnabled(false);
-                keyboard.setEnabled(false);
-            dashboard.showModal({
-                title: 'Authorization Required!',
-                message: 'To authorize your tool, press and hold the green button for one second.',
-                cancelText: 'Quit',
-                cancel: function() {
-                    authorizeDialog = false;
-                    dashboard.engine.quit();
-                }
-            });
-        }
-    });
+    
 
     function setConnectionStrength(level) {
         var onclass = 'on';
