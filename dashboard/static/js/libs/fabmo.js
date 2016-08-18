@@ -732,6 +732,10 @@ FabMoDashboard.prototype.submitApp = function(apps, options, callback) {
 	this._call("submitApp", args, callback)
 }
 
+FabMoDashboard.prototype.getInfo = function(callback) {
+	this._call("getInfo", null, callback);
+}
+
 FabMoDashboard.prototype.getConfig = function(callback) {
 	this._call("getConfig", null, callback);
 }

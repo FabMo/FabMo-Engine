@@ -22,6 +22,11 @@ var crypto = require('crypto');
 var Engine = function() {
     this.version = null;
     this.time_synced = false;
+    this.firmware = {
+        build : null,
+        config : null,
+        version : null
+    }
 };
 
 function EngineConfigFirstTime(callback) {
@@ -98,6 +103,13 @@ Engine.prototype.getVersion = function(callback) {
                 callback(null, this.version);
             }
         }.bind(this))
+    });
+}
+
+Engine.prototype.getInfo = function(callback) {
+    callback(null, {
+        firmware : this.firmware,
+        version : this.version
     });
 }
 
@@ -251,14 +263,17 @@ Engine.prototype.start = function(callback) {
         function get_g2_version(callback) {
             if(this.machine.isConnected()) {
                 log.info("Getting G2 firmware version...");
-                this.machine.driver.get('fb', function(err, value) {
+                this.machine.driver.get(['fb','fbs','fbc'], function(err, value) {
                     if(err) {
                         log.error('Could not get the G2 firmware build. (' + err + ')');
                     } else {
-                        log.info('G2 Firmware Build: ' + value);
+                        log.info('G2 Firmware Information: ' + value);
+                        this.firmware.build = value[0];
+                        this.firmware.version = value[1];
+                        this.firmware.config = value[2];
                     }
                     callback(null);
-                });
+                }.bind(this));
             } else {
                 log.warn("Skipping G2 firmware version check due to no connection.")
                 callback(null);

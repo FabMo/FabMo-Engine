@@ -206,7 +206,7 @@ FabMoAPI.prototype.setConfig = function(cfg_data, callback) {
 	});
 }
 
-// Status
+// Version/Info
 FabMoAPI.prototype.getVersion = function(callback) {
 	this._get('/version', callback, function(err, version) {
 		if(err) {
@@ -216,6 +216,11 @@ FabMoAPI.prototype.getVersion = function(callback) {
 		callback(null, version);
 	}.bind(this), 'version');
 }
+FabMoAPI.prototype.getInfo = function(callback) {
+	var callback = callback || function() {};
+	this._get('/info', callback, callback, 'info');
+}
+
 
 // Status
 FabMoAPI.prototype.getStatus = function(callback) {
