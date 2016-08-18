@@ -7,8 +7,7 @@ var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var config = {
   entry: {
     dashboard:'./dashboard/static/js/main.js',
-    app:'./dashboard/apps/job_manager.fma/js/job_manager.js',
-    vendor:['jquery', 'backbone', 'font-awesome-webpack'],
+    app:'./dashboard/apps/job_manager.fma/js/job_manager.js'
   }, 
   output: {
     path: './dashboard/build',
@@ -35,7 +34,7 @@ var config = {
             "window.jQuery": 'jquery',
             "windows.jQuery": 'jquery'
         }),
-        new webpack.optimize.CommonsChunkPlugin(/* chunkName= */"vendor", /* filename= */"vendor.bundle.js"),
+        new webpack.optimize.CommonsChunkPlugin("common.js"),
         new ExtractTextPlugin('css/[name].css', {
             allChunks: true
         })

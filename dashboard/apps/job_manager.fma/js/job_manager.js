@@ -1,8 +1,11 @@
 require('./jquery.dragster.js');
-require('./moment.js');
+require('jQuery');
+var Foundation = require('../../../static/js/libs/foundation.min.js');
+var moment = require('./moment.js');
 var Sortable = require('./Sortable.js');
-var fabmo = require('../../../static/js/libs/fabmo.js');
-console.log(fabmo);
+var Fabmo = require('../../../static/js/libs/fabmo.js');
+var fabmo = new Fabmo;
+console.log(Fabmo);
 // Current position in the history browser
 var historyStart = 0;
 var historyCount = 10;
@@ -467,7 +470,7 @@ function handleStatusReport(status) {
 
 
 	var el = document.getElementById('queue_table');
-	Sortable.create(el, {
+	var sortable = Sortable.create(el, {
 	ghostClass: 'ghost',
 	chosenClass: 'chosen',
 	dataIdAttr: 'data-id',
@@ -574,8 +577,8 @@ function handleStatusReport(status) {
 
 	$(document).ready(function() {
 	//Foundation Init
-	// $(document).foundation();
-  console.log(fabmo);
+  $(document).foundation();
+
 	fabmo.on('change', function(topic) {
     
 		if (topic === 'jobs') {
