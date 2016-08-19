@@ -7,7 +7,8 @@ var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var config = {
   entry: {
     dashboard:'./dashboard/static/js/main.js',
-    app:'./dashboard/apps/job_manager.fma/js/job_manager.js'
+    job_manager:'./dashboard/apps/job_manager.fma/js/job_manager.js',
+    editor: './dashboard/apps/editor.fma/js/editor.js'
   }, 
   output: {
     path: './dashboard/build',

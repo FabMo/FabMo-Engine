@@ -1,6 +1,7 @@
 /* Example definition of a simple mode that understands a subset of
  * JavaScript:
  */
+var CodeMirror = require('./codemirror.js');
 
 CodeMirror.defineSimpleMode("gcode", {
   // The start state contains the rules that are intially used

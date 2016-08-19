@@ -5,7 +5,7 @@ var moment = require('./moment.js');
 var Sortable = require('./Sortable.js');
 var Fabmo = require('../../../static/js/libs/fabmo.js');
 var fabmo = new Fabmo;
-console.log(Fabmo);
+
 // Current position in the history browser
 var historyStart = 0;
 var historyCount = 10;

@@ -1159,7 +1159,6 @@ input[type=number]::-webkit-outer-spin-button {
 	width: 50px;
 	border-radius: 50%;
 	float: right;
-	display: none;
 	margin-right: 1em;
 }
 
