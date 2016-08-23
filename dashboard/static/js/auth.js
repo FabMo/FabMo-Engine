@@ -1,5 +1,6 @@
-define(function(require) {
- getUrlParameter = function getUrlParameter(sParam) {
+ module.exports = function auth(){
+  runAuth();
+  function getUrlParameter(sParam) {
     var sPageURL = decodeURIComponent(window.location.search.substring(1)),
         sURLVariables = sPageURL.split('&'),
         sParameterName,
@@ -103,6 +104,6 @@ define(function(require) {
     });
    }
 
-   return runAuth;
+
    
-   });
+   };

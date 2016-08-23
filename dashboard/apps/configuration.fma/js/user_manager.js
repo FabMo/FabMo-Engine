@@ -1,4 +1,3 @@
-var fabmo = new FabMoDashboard();
 var current_user=null;
 
 function setupUserManager() {

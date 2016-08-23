@@ -1,4 +1,5 @@
-var fabmo = new FabMoDashboard();
+var Fabmo = require('../../../static/js/libs/fabmo.js');
+var fabmo = new Fabmo;
 
 function refreshApps() {
     // Load the list of apps available on the tool
@@ -138,3 +139,4 @@ function startBusy() {
 function stopBusy() {
   $(".app-ghost-icon").removeClass('fa-cog fa-spin').addClass('fa-plus');
 }
+

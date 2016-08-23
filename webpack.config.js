@@ -8,7 +8,11 @@ var config = {
   entry: {
     dashboard:'./dashboard/static/js/main.js',
     job_manager:'./dashboard/apps/job_manager.fma/js/job_manager.js',
-    editor: './dashboard/apps/editor.fma/js/editor.js'
+    editor: './dashboard/apps/editor.fma/js/editor.js',
+    configuration: './dashboard/apps/configuration.fma/js/configuration.js',
+    macro_manager: './dashboard/apps/macro_manager.fma/js/macro_manager.js',
+    network_manager: './dashboard/apps/network_manager.fma/js/network_manager.js',
+    preview: './dashboard/apps/previewer.fma/js/viewer.js'
   }, 
   output: {
     path: './dashboard/build',
@@ -33,7 +37,8 @@ var config = {
             $: 'jquery',
             jQuery: 'jquery',
             "window.jQuery": 'jquery',
-            "windows.jQuery": 'jquery'
+            "windows.jQuery": 'jquery',
+            'THREE': 'three'
         }),
         new webpack.optimize.CommonsChunkPlugin("common.js"),
         new ExtractTextPlugin('css/[name].css', {

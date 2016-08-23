@@ -9,6 +9,9 @@
  * This file contains the class managing the UI helpers (arrows, axis, etc).
  */
 
+var GCodeViewer = require('./path.js');
+var typeface = require('./helvetiker_regular.typeface.js');
+THREE.typeface_js.loadFace(typeface);
 GCodeViewer.Helpers = function(scene) {
     "use strict";
     var that = this;
@@ -37,7 +40,7 @@ GCodeViewer.Helpers = function(scene) {
     //size is a struct { length, head, font }
     function createArrowsHelper(headSize) {
         var length = 3, fontSize = headSize * 2;
-        var options = {'font' : 'helvetiker','weight' : 'normal',
+        var options = {'font' : 'helvetiker' ,'weight' : 'normal',
             'style' : 'normal','size' : fontSize,'curveSegments' : 300};
         var margin = headSize + headSize / 2;
 
@@ -50,6 +53,7 @@ GCodeViewer.Helpers = function(scene) {
 
         var material = new THREE.MeshBasicMaterial({ color: hex,
             side: THREE.DoubleSide });
+        console.log(THREE.FontUtils.faces);
         var textShapes = THREE.FontUtils.generateShapes("X", options);
         var geo = new THREE.ShapeGeometry(textShapes);
         that.textX = new THREE.Mesh(geo, material);
@@ -119,3 +123,5 @@ GCodeViewer.Helpers = function(scene) {
     that.axisHelpers = new THREE.AxisHelper(100);
     that.scene.add(that.axisHelpers);
 };
+
+module.exports = GCodeViewer;

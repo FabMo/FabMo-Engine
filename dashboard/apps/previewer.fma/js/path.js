@@ -10,7 +10,6 @@
  */
 
 var GCodeViewer = {};
-
 //Class to create the meshes showing the measure of the path
 GCodeViewer.TotalSize = function(scene) {
     "use strict";
@@ -722,3 +721,5 @@ GCodeViewer.Path = function(scene) {
 
     that.matDoing = new THREE.LineBasicMaterial({ color : 0x00ffff });
 };
+
+module.exports = GCodeViewer;

@@ -41,7 +41,6 @@ define(function(require) {
 				console.log(par);
 				$('#add_err').html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span class="sr-only"> '+par+'</span></div>');
 				$('#add_err').show();
-				runAuth();
 
 			}
 			
@@ -49,6 +48,7 @@ define(function(require) {
         		console.log(result);
    			}});
 			$('#mainContent').show();
+			auth();
 		},
 		loadView : function(view) {
 		this.view && this.view.remove();

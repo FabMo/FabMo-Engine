@@ -1,3 +1,9 @@
+require('jQuery');
+var Foundation = require('../../../static/js/libs/foundation.min.js');
+var moment = require('../../../static/js/libs/moment.js');
+var Fabmo = require('../../../static/js/libs/fabmo.js');
+var fabmo = new Fabmo;
+
 var networks = {};
 var network_history = {};
 
@@ -143,3 +149,40 @@ function enterAPMode(callback) {
         }
     });
 }
+
+  $(document).ready(function() {
+
+    //Foundation Init
+    $(document).foundation();
+
+    // Check for new networks initially, and then every 3 seconds
+    refreshWifiTable(function(err, data) {
+        if(err){
+            fabmo.notify('error',"failed to retrieve network information. Network management may not be available on your tool.");
+            return;
+        }
+        setInterval(refreshWifiTable, 3000);
+    });
+
+    refreshHistoryTable();
+
+    // Action for clicking the SSID
+    $('tbody').on('click', 'td.ssid', function () {
+        var name = $(this).text();
+        requestPassword(name, function(passwd){
+            fabmo.connectToWifi(name, passwd,function(err,data){
+                if(err) {
+                    fabmo.notify('error',err);
+                }
+            });
+        });
+    });
+
+    // Action for clicking the AP mode button
+    $('#ap-mode-button').on('click', function(evt) {
+        enterAPMode();
+        evt.preventDefault();
+    })
+
+
+});

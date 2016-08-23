@@ -9,6 +9,8 @@
  * Checks if WebGL is enabled or not.
  * @return {boolean} True is enabled
  */
+var GCodeViewer = require('./animation.js');
+
 GCodeViewer.webGLEnabled = function() {
     // From http://www.browserleaks.com/webgl#howto-detect-webgl
     if(!!window.WebGLRenderingContext) {
@@ -66,3 +68,5 @@ GCodeViewer.samePosition = function(posA, posB) {
             GCodeToGeometry.nearlyEqual(posA.y, posB.y) &&
             GCodeToGeometry.nearlyEqual(posA.z, posB.z));
 };
+
+module.exports = GCodeViewer;
