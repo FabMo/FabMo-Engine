@@ -1,3 +1,8 @@
+var Fabmo = require('../../../static/js/libs/fabmo.js');
+var fabmo = new Fabmo;
+var moment = require('../../../static/js/libs/moment.js');
+module.exports = function users() {
+setupUserManager();
 var current_user=null;
 
 function setupUserManager() {
@@ -283,3 +288,4 @@ function refreshUsersListView(users){
     $('#user-manager-container').addClass('hidden');
   }
 }
+};

@@ -1,10 +1,10 @@
 var Fabmo = require('../../../static/js/libs/fabmo.js');
 var fabmo = new Fabmo;
-
+module.exports = function apps() {
+setupAppManager();
 function refreshApps() {
     // Load the list of apps available on the tool
     fabmo.getApps(function(err, apps) {
-        apps.reverse();
         if (err) {
             return console.error(err);
         }
@@ -139,4 +139,5 @@ function startBusy() {
 function stopBusy() {
   $(".app-ghost-icon").removeClass('fa-cog fa-spin').addClass('fa-plus');
 }
+};
 
