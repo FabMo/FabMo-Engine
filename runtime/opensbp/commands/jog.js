@@ -70,10 +70,7 @@ exports.JC = function(args) {
 // Jog (rapid) 2 axes (XY).This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.J2 = function(args) {
-	log.debug(" J2");
     var params = process_jog.bind(this)(args);
-    log.debug( "  J2 params = " + JSON.stringify(params) );
-    log.debug( "     result = " + this.cmd_result );
 	if ( this.cmd_result < 2 ){
 		this.emit_move('G0',params);
 	}
@@ -116,7 +113,7 @@ exports.J6 = function(args) {
 };
 
 process_jog = function(args) {
-    log.debug(" process_jog: " + JSON.stringify(args));
+//    log.debug(" process_jog: " + JSON.stringify(args));
 	var params = {};
 	this.cmd_result = 0;
 	if( args[0] === 0 || args[0] && typeof args[0] === "number"){  //args[0] === 0 ||
@@ -148,31 +145,24 @@ process_jog = function(args) {
 };
 
 // Jog (rapid) XY to the Home position (0,0) 
-exports.JH = function(args,callback) {
+exports.JH = function(args) {
 	var x = 0;
 	var y = 0;
+ 	var z = this.cmd_posz;
 	var safeZ = config.opensbp.get('safeZpullUp');
 
-	this.machine.driver.get('posz', function(err, MPO) {
-		var unitConv = 1;
-		log.debug( "JH" );
-	 	if ( this.machine.driver.status.unit === 'in' ) {  // inches
-	 		unitConv = 0.039370079;
-	 	}
-	 	var z = MPO;
-		log.debug("z = " + z);
-	 	if ( z < safeZ ){
-			this.emit_move('G0',{"Z":safeZ});
-			this.emit_move('G0',{"X":x,"Y":y});
- 		}
- 		else{
- 			this.emit_move('G0',{"X":x,"Y":y});
- 		}
-		this.cmd_posx = 0;
-		this.cmd_posy = 0;
-		this.cmd_posz = safeZ;
-		callback();
-	}.bind(this));
+	log.debug( "JH" );
+	log.debug( "  z = " + z);
+ 	if ( z < safeZ ){
+		this.emit_move('G0',{"Z":safeZ});
+		this.emit_move('G0',{"X":x,"Y":y});
+	}
+	else{
+		this.emit_move('G0',{"X":x,"Y":y});
+	}
+	this.cmd_posx = 0;
+	this.cmd_posy = 0;
+	this.cmd_posz = safeZ;
 };
 
 // Set the Jog (Rapid) speed for any of the 6 axes

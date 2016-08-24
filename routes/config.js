@@ -70,7 +70,14 @@ var post_config = function(req, res, next) {
   var new_config = {};
   var answer;
   var final_result={};
-  var setMany_remaining = 4;
+
+  setMany_remaining = 0;
+  ['engine', 'driver', 'opensbp', 'machine'].forEach(function(each) {
+    if(each in req.params) {
+      setMany_remaining += 1;
+    }
+  });
+
   if('engine' in req.params) {
     config.engine.setMany(util.fixJSON(req.params.engine), function(err, result) {
       if(!setMany_remaining)return;
@@ -177,7 +184,6 @@ var post_config = function(req, res, next) {
       });
     });
   }
-
 };
 
 var get_version = function(req, res, next) {
