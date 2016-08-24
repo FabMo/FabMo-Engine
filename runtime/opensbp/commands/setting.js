@@ -58,16 +58,11 @@ exports.ST = function(args, callback) {
 exports.SO = function(args) {
 	outnum = parseInt(args[0]);
 	state = parseInt(args[1]);
-	if(outnum === 1) {
-		switch(state) {
-			case 1:
-				this.emit_gcode("M4");
-				this.emit_gcode("M8");
-				break;
-			case 0:
-				this.emit_gcode("M5");
-				this.emit_gcode("M9");
-				break;
+	if(outnum > 0 && outnum < 16) {
+		if(state == 1 || state == 0) {
+			this.emit_gcode('M100 ({out' + outnum + ':' + state + '}');
+		} else {
+			log.warn("Value passed to SO that's not a 1 or 0");
 		}
 	}
 };
@@ -83,3 +78,11 @@ exports.SV = function(args, callback){
 		}.bind(this));
 	}.bind(this));
 };
+
+exports.SP = function(args, callback) {
+	outnum = parseInt(args[0]);
+	state = parseFloat(args[1]);
+	if(outnum > 0) {
+		
+	}
+}
