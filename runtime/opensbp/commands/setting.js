@@ -58,9 +58,9 @@ exports.ST = function(args, callback) {
 exports.SO = function(args) {
 	outnum = parseInt(args[0]);
 	state = parseInt(args[1]);
-	if(outnum > 0 && outnum < 16) {
+	if(outnum >= 1 && outnum <= 12) {
 		if(state == 1 || state == 0) {
-			this.emit_gcode('M100 ({out' + outnum + ':' + state + '}');
+			this.emit_gcode('M100 ({out' + outnum + ':' + state + '})');
 		} else {
 			log.warn("Value passed to SO that's not a 1 or 0");
 		}

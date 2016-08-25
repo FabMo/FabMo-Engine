@@ -287,6 +287,7 @@ Machine.prototype.fire = function(force) {
 	this.deauthorize();
 	var action = this.action;
 	this.action = null;
+	this.driver.command("{out4:1}");
 	switch(action.type) {
 		case 'nextJob':
 			log.debug("Firing a nextJob")
@@ -528,6 +529,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 
 		switch(this.status.state) {
 			case 'idle':
+				this.driver.command("{out4:0}");
 				this.status.nb_lines = null;
 				this.status.line = null;
 				if(this.action) {
