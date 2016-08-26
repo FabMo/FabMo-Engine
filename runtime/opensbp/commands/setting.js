@@ -67,6 +67,22 @@ exports.SO = function(args) {
 	}
 };
 
+exports.SP = function(args) {
+	outnum = parseInt(args[0]);
+	state = parseFloat(args[1]);
+	if(outnum >= 0 && outnum <= 1) {
+		outnum += 11
+		if(state >= 0.0 && state <= 1.0) {
+			this.emit_gcode('M100 ({out' + outnum + ':' + state + '})');
+		} else {
+			log.warn("Value passed to SP that's not between 0 and 1");
+		}
+	} else {
+		log.warn("PWM number passed to SP thats not 0 or 1");
+	}
+};
+
+
 exports.SV = function(args, callback){
 	this._saveDriverSettings(function(err, values) {
 		if(err) { log.error(err); }
@@ -78,11 +94,3 @@ exports.SV = function(args, callback){
 		}.bind(this));
 	}.bind(this));
 };
-
-exports.SP = function(args, callback) {
-	outnum = parseInt(args[0]);
-	state = parseFloat(args[1]);
-	if(outnum > 0) {
-		
-	}
-}
