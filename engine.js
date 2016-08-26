@@ -288,7 +288,13 @@ Engine.prototype.start = function(callback) {
             '3sa','3tr','3mi',
             '4sa','4tr','4mi',
             '5sa','5tr','5mi',
-            '6sa','6tr','6mi'
+            '6sa','6tr','6mi',
+            'ja',
+            '5ma','6ma',
+            '5po','6po',
+            '5su','6su',
+            '5pm','6pm',
+            '5pl','6pl'
           ]
           var do_shim = false;
           for(var i=0; i<entries.length; i++) {
