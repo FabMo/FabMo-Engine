@@ -693,6 +693,9 @@ G2.prototype.command = function(obj) {
 		//this.gcodeWrite(cmd + '\n');
 	} else {
 		cmd = JSON.stringify(obj);
+		cmd = cmd.replace(/(:\s*)(true)(\s*[},])/g, "$1t$3")
+		cmd = cmd.replace(/(:\s*)(false)(\s*[},])/g, "$1f$3")
+		cmd = cmd.replace(/"/g, '');
 		this.command_queue.enqueue(cmd);
 	}
 	if(this.response_count < RESPONSE_LIMIT) {
