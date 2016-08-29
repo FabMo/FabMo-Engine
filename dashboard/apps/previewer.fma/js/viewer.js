@@ -217,7 +217,6 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     function reallySetGCode(string) {
         var lx = 0, ly = 0, lz = 0;
         var message = "";
-        console.log(string);
         that.gcode = GCodeToGeometry.parse(string);
         if(that.gcode.errorList.length > 0) {
             message = "Be careful, some issues appear in this file.";
