@@ -311,20 +311,20 @@ GCodeViewer.Path = function(scene) {
         that.initialPosition = { x : 0, y : 0, z : 0};
 
         that.meshG0Undone = new THREE.Line(geometries.G0,
-                that.matG0Undone, THREE.LinePieces);
+                that.matG0Undone, THREE.LineSegments);
         that.meshG1Undone = new THREE.Line(geometries.G1,
-                that.matG1Undone, THREE.LinePieces);
+                that.matG1Undone, THREE.LineSegments);
         that.meshG2G3Undone = new THREE.Line(geometries.G2G3,
-                that.matG2G3Undone, THREE.LinePieces);
+                that.matG2G3Undone, THREE.LineSegments);
         that.meshG0Done = new THREE.Line(new THREE.Geometry(),
-                that.matG0Done, THREE.LinePieces);
+                that.matG0Done, THREE.LineSegments);
         that.meshG1Done = new THREE.Line(new THREE.Geometry(),
-                that.matG1Done, THREE.LinePieces);
+                that.matG1Done, THREE.LineSegments);
         that.meshG2G3Done = new THREE.Line(new THREE.Geometry(),
-                that.matG2G3Done, THREE.LinePieces);
+                that.matG2G3Done, THREE.LineSegments);
 
         that.meshDoing = new THREE.Line(new THREE.Geometry(),
-                that.matDoing, THREE.LinePieces);
+                that.matDoing, THREE.LineSegments);
 
         if(initialPosition !== undefined) {
             that.initialPosition.x = initialPosition.x;
@@ -440,21 +440,21 @@ GCodeViewer.Path = function(scene) {
                 mat = that.matG0Done;
                 pos = that.meshG0Done.position.clone();
                 that.scene.remove(that.meshG0Done);
-                that.meshG0Done = new THREE.Line(geo, mat, THREE.LinePieces);
+                that.meshG0Done = new THREE.Line(geo, mat, THREE.LineSegments);
                 that.meshG0Done.position.set(pos.x, pos.y, pos.z);
                 that.scene.add(that.meshG0Done);
             } else if(type === "G1") {
                 mat = that.matG1Done;
                 pos = that.meshG1Done.position.clone();
                 that.scene.remove(that.meshG1Done);
-                that.meshG1Done = new THREE.Line(geo, mat, THREE.LinePieces);
+                that.meshG1Done = new THREE.Line(geo, mat, THREE.LineSegments);
                 that.meshG1Done.position.set(pos.x, pos.y, pos.z);
                 that.scene.add(that.meshG1Done);
             } else {
                 mat = that.matG2G3Done;
                 pos = that.meshG2G3Done.position.clone();
                 that.scene.remove(that.meshG2G3Done);
-                that.meshG2G3Done = new THREE.Line(geo, mat, THREE.LinePieces);
+                that.meshG2G3Done = new THREE.Line(geo, mat, THREE.LineSegments);
                 that.meshG2G3Done.position.set(pos.x, pos.y, pos.z);
                 that.scene.add(that.meshG2G3Done);
             }
@@ -463,21 +463,21 @@ GCodeViewer.Path = function(scene) {
                 mat = that.matG0Undone;
                 pos = that.meshG0Undone.position.clone();
                 that.scene.remove(that.meshG0Undone);
-                that.meshG0Undone = new THREE.Line(geo, mat, THREE.LinePieces);
+                that.meshG0Undone = new THREE.Line(geo, mat, THREE.LineSegments);
                 that.meshG0Undone.position.set(pos.x, pos.y, pos.z);
                 that.scene.add(that.meshG0Undone);
             } else if(type === "G1") {
                 mat = that.matG1Undone;
                 pos = that.meshG1Undone.position.clone();
                 that.scene.remove(that.meshG1Undone);
-                that.meshG1Undone = new THREE.Line(geo, mat, THREE.LinePieces);
+                that.meshG1Undone = new THREE.Line(geo, mat, THREE.LineSegments);
                 that.meshG1Undone.position.set(pos.x, pos.y, pos.z);
                 that.scene.add(that.meshG1Undone);
             } else {
                 mat = that.matG2G3Undone;
                 pos = that.meshG2G3Undone.position.clone();
                 that.scene.remove(that.meshG2G3Undone);
-                that.meshG2G3Undone = new THREE.Line(geo, mat, THREE.LinePieces);
+                that.meshG2G3Undone = new THREE.Line(geo, mat, THREE.LineSegments);
                 that.meshG2G3Undone.position.set(pos.x, pos.y, pos.z);
                 that.scene.add(that.meshG2G3Undone);
             }
@@ -697,7 +697,7 @@ GCodeViewer.Path = function(scene) {
         geometry = new THREE.Geometry();
         geometry.vertices = that.meshDoing.geometry.vertices;
         position = that.meshDoing.position.clone();
-        that.meshDoing = new THREE.Line(geometry, that.matDoing, THREE.LinePieces);
+        that.meshDoing = new THREE.Line(geometry, that.matDoing, THREE.LineSegments);
         that.meshDoing.position.set(position.x, position.y, position.z);
         that.scene.add(that.meshDoing);
 
