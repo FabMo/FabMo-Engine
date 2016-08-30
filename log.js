@@ -4,6 +4,8 @@
  */
 var process = require('process');
 try { var colors = require('colors'); } catch(e) {var colors = false;}
+var fs = require('fs');
+var path = require('path');
 var _suppress = false;
 var log_buffer = [];
 var LOG_BUFFER_SIZE = 5000;
@@ -146,7 +148,37 @@ var logger = function(name) {
 	}
 };
 
-process.on('uncaughtException', function(err) { Logger.prototype.uncaught(err); });
+// Logging internal to the logging module - the logger log logger log
+//
+// .... log log logger log.
+var _log = logger('log');
+
+function exitHandler(options, err) {
+	options = options || {};
+    if (err) {
+    	_log.uncaught(err);
+    }
+    var dir = require('./config').getDataDir('log')
+    var fn = 'fabmo-' + Date.now() + '-log.txt'
+    filename = path.join(dir, fn)
+    if(options.savelog) {
+    	_log.info("Saving log...")
+    	try {
+	    	saveLogBuffer(filename);
+	    	_log.info("Log saved to " + filename);
+    	} catch(e) {
+	    	_log.error("Could not save log to " + filename);
+	    	_log.error(e);
+    	}
+	    if (options.exit) {
+	    	process.exit();
+	    }
+	}
+}
+
+process.on('exit', exitHandler.bind(null));
+process.on('SIGINT', exitHandler.bind(null, {savelog:true, exit:true}));
+process.on('uncaughtException', exitHandler.bind(null, {savelog:true, exit:true}));
 
 var suppress = function(v) {_suppress = true;};
 var unsuppress = function(v) {_suppress = false;};
@@ -157,6 +189,10 @@ var getLogBuffer = function() {
 
 var clearLogBuffer = function() {
 	log_buffer = [];
+}
+
+var saveLogBuffer = function(filename) {
+	fs.writeFileSync(filename, getLogBuffer());
 }
 
 exports.suppress = suppress;
