@@ -22,7 +22,6 @@ PassthroughRuntime.prototype.connect = function(machine) {
 	this.driver.on('status',this.status_handler);
 
 	this.machine.setState(this, "passthrough");
-
 };
 
 PassthroughRuntime.prototype.disconnect = function() {
@@ -54,6 +53,5 @@ PassthroughRuntime.prototype._onDriverRawData = function(raw_data) {
 PassthroughRuntime.prototype.sendRawData = function(data) {
 	this.driver.write(data);
 };
-
 
 exports.PassthroughRuntime = PassthroughRuntime;
