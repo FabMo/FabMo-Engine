@@ -5,6 +5,10 @@ function PassthroughRuntime() {
 	this.driver = null;
 }
 
+PassthroughRuntime.prototype.toString = function() {
+	return "[PassthroughRuntime]";
+}
+
 PassthroughRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;
@@ -18,7 +22,6 @@ PassthroughRuntime.prototype.connect = function(machine) {
 	this.driver.on('status',this.status_handler);
 
 	this.machine.setState(this, "passthrough");
-
 };
 
 PassthroughRuntime.prototype.disconnect = function() {

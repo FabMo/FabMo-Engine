@@ -73,10 +73,13 @@ exports.ZA = function(args, callback) {
 		if(err) { return callback(err); }
 		var zaObj = {};
 		var unitConv = 1.0;
-		/*
-		if ( this.machine.driver.status.unit === 'in' ) {  // inches
-			unitConv = 0.039370079;
-		}*/
+		/*??????????????????????????????????????????????????????????
+		              How is unit conversion handled
+		              if the A is a linear axis?
+		????????????????????????????????????????????????????????????*/
+		// if ( this.machine.driver.status.unit === 'in' ) {  // inches
+		// 	unitConv = 0.039370079;
+		// }
 		zaObj.g55a = Number((MPO * unitConv).toFixed(5));
 		config.driver.setMany(zaObj, function(err, value) {
 			if(err) { return callback(err); }
@@ -90,12 +93,7 @@ exports.ZB = function(args, callback) {
 	this.machine.driver.get('mpob', function(err, MPO) {
 		if(err) { return callback(err); }
 		var zbObj = {};
-		var unitConv = 1.0;		
-		// No unit conversion for rotary axes
-		/*if ( this.machine.driver.status.unit === 'in' ) {  // inches
-			unitConv = 0.039370079;
-		}*/
-		zbObj.g55b = Number((MPO * unitConv).toFixed(5));
+		zbObj.g55b = Number((MPO).toFixed(5));
 		config.driver.setMany(zbObj, function(err, value) {
 			if(err) { return callback(err); }
 			this.cmd_posb = this.posb = 0;
@@ -108,13 +106,7 @@ exports.ZC = function(args, callback) {
 	this.machine.driver.get('mpoc', function(err, MPO) {
 		if(err) { return callback(err); }
 		var zcObj = {};
-		var unitConv = 1.0;		
-		// No unit conversion for rotary axes
-		/*
-		if ( this.machine.driver.status.unit === 'in' ) {  // inches
-			unitConv = 0.039370079;
-		}*/
-		zcObj.g55c = Number((MPO * unitConv).toFixed(5));
+		zcObj.g55c = Number((MPO).toFixed(5));
 		config.driver.setMany(zcObj, function(err, value) {
 			if(err) { return callback(err); }
 			this.cmd_posc = this.posc = 0;
@@ -247,17 +239,17 @@ exports.Z6 = function(args,callback) {
 
 exports.ZT = function(args, callback) {
 	ztObj = {};
-	ztObj.g55x = 0;
-	ztObj.g55y = 0;
-	ztObj.g55z = 0;
+	ztObj.g55x = 0.0;
+	ztObj.g55y = 0.0;
+	ztObj.g55z = 0.0;
     this.emit_gcode("G28.3 X0 Y0 Z0");
 	config.driver.setMany(ztObj, function(err, value) {
 		if(err) { return callback(err); }
-		this.cmd_posx = this.posx = 0;
-		this.cmd_posy = this.posy = 0;
-		this.cmd_posz = this.posz = 0;
+		this.cmd_posx = this.posx = 0.0;
+		this.cmd_posy = this.posy = 0.0;
+		this.cmd_posz = this.posz = 0.0;
 		this.driver.requestStatusReport(function(report) {
-//			log.debug("report = " + JSON.stringify(report));
+			log.debug("report = " + JSON.stringify(report));
 			callback();
 		});
 	}.bind(this));

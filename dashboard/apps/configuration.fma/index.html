@@ -1,206 +1,217 @@
 <!doctype html>
 <html>
+
 <head>
-    <title>Configuration</title>
-    <meta charset="utf-8"/>
-    <link rel="stylesheet" href="../../css/dashboard.css">
-	<link rel="stylesheet" href="./css/style.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Configuration</title>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="../../css/dashboard.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
+
 <body style="background-color: #ffffff;">
-    <div class="sticky">
-        <nav class="top-bar" data-topbar role="navigation">
-            <ul class="title-area">
-                <li class="name">
-                    <h1><a id="app-header">Configuration</a></h1>
-                </li>
-                <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
-            </ul>
-            <section class="top-bar-section">
-                <ul class="left" role="tablist" data-tab>
-                    <li class="tab-title active" role="presentational" ><a href="#tabpanel1" role="tab" tabindex="0" aria-selected="true" controls="tabpanel1">General</a></li>
-                    <li class="tab-title" role="presentational" ><a href="#tabpanel2" role="tab" tabindex="0"aria-selected="false" controls="tabpanel2">Axis</a></li>
-                    <li class="tab-title" role="presentational" ><a href="#tabpanel3" role="tab" tabindex="0"aria-selected="false" controls="tabpanel3">Inputs</a></li>
-                    <li class="tab-title" role="presentational" ><a href="#tabpanel4" role="tab" tabindex="0"aria-selected="false" controls="tabpanel4">Channels</a></li>
-                    <li class="tab-title" role="presentational" ><a href="#tabpanel5" role="tab" tabindex="0"aria-selected="false" controls="tabpanel5">Machine</a></li>
-                    <li class="tab-title" role="presentational" ><a href="#tabpanel6" role="tab" tabindex="0"aria-selected="false" controls="tabpanel6">Apps</a></li>
-                    <li class="tab-title" role="presentational" ><a href="#tabpanel7" role="tab" tabindex="0"aria-selected="false" controls="tabpanel7">User</a></li>
-                </ul>
-                <ul class="right">
-                    <li><a id="engine-version" class="engine-version" href=""></a>
-                    </li>
-                </ul>
-            </section>
-        </nav>
-    </div>
-
-    <div class="row">
-        <!--  <form> -->
-
-        <ul class="tabs" data-tab role="tablist">
-
+  <div class="sticky">
+    <nav class="top-bar" data-topbar role="navigation">
+      <ul class="title-area">
+        <li class="name">
+          <h1><a id="app-header">Configuration</a></h1>
+        </li>
+        <li class="toggle-topbar"><a href="#"><span>Menu</span></a>
+        </li>
+      </ul>
+      <section class="top-bar-section">
+        <ul class="left" role="tablist" data-tab>
+          <li class="tab-title active" role="presentational"><a href="#tabpanel1" role="tab" tabindex="0" aria-selected="true" controls="tabpanel1">General</a>
+          </li>
+          <li class="tab-title" role="presentational"><a href="#tabpanel2" role="tab" tabindex="0" aria-selected="false" controls="tabpanel2">Axis</a>
+          </li>
+          <li class="tab-title" role="presentational"><a href="#tabpanel3" role="tab" tabindex="0" aria-selected="false" controls="tabpanel3">Inputs</a>
+          </li>
+          <li class="tab-title" role="presentational"><a href="#tabpanel4" role="tab" tabindex="0" aria-selected="false" controls="tabpanel4">Channels</a>
+          </li>
+          <li class="tab-title" role="presentational"><a href="#tabpanel5" role="tab" tabindex="0" aria-selected="false" controls="tabpanel5">Machine</a>
+          </li>
+          <li class="tab-title" role="presentational"><a href="#tabpanel6" role="tab" tabindex="0" aria-selected="false" controls="tabpanel6">Apps</a>
+          </li>
+          <li class="tab-title" role="presentational"><a href="#tabpanel7" role="tab" tabindex="0" aria-selected="false" controls="tabpanel7">User</a>
+          </li>
         </ul>
-        <div class="tabs-content">
-            <section role="tabpanel" aria-hidden="false" class="content active" id="tabpanel1">
-                <div class="row">
-                    <fieldset>
-                        <legend>General Settings</legend>
-                        <div class="large-4 columns" id="section-machine-name">
-                            <div class="row collapse">
-                                <label>Machine Name</label>
-                                <div class="small-12 columns">
-                                    <input type="text" id="input-machine-name" class="input"/>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="large-4 columns" id="section-machine-id">
-                            <div class="row collapse">
-                                <label>Machine ID</label>
-                                <div class="small-12 columns">
-                                    <input type="text" id="input-machine-id" disabled/>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="large-4 columns">
-                            <div class="row collapse">
-                                <label>Default Unit System</label>
-                                <select id="machine-units" class="machine-input">
-                                    <option value="mm">mm</option>
-                                    <option value="in">in</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="large-4 columns">
-                            <div class="row collapse">
-                                <label>Distance Mode</label>
-                                <select id="driver-gdi" class="driver-input">
-                                    <option value="0">Absolute</option>
-                                    <option value="1">Incremental</option>
-                                </select>
-                            </div>
-                        </div>
+        <ul class="right">
+          <li>
+            <a id="engine-version" class="engine-version" href=""></a>
+          </li>
+        </ul>
+      </section>
+    </nav>
+  </div>
 
-                        <div class="large-4 columns">
-                            <div class="row collapse">
-                                <label>Chordal Tolerance</label>
-                                <div class="small-9 columns">
-                                    <input type="text" id="driver-ct" class="driver-input"/>
-                                </div>
-                                <div class="small-3 columns">
-                                    <span class="postfix in_mm_label">&nbsp;</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="large-4 columns">
-                            <div class="row collapse">
-                                <label>Junction Aggression</label>
-                                <div class="small-12 columns">
-                                    <input type="text" id="driver-ja" class="driver-input"/>
-                                </div>
-                            </div>
-                        </div>
-                    </fieldset>
+  <div class="row">
+    <!--  <form> -->
+
+    <ul class="tabs" data-tab role="tablist">
+
+    </ul>
+    <div class="tabs-content">
+      <section role="tabpanel" aria-hidden="false" class="content active" id="tabpanel1">
+        <div class="row">
+          <fieldset>
+            <legend>General Settings</legend>
+            <div class="large-4 columns" id="section-machine-name">
+              <div class="row collapse">
+                <label>Machine Name</label>
+                <div class="small-12 columns">
+                  <input type="text" id="input-machine-name" class="input" />
                 </div>
-
-                <div class="row">
-                    <fieldset>
-                        <legend>Logging</legend>
-                        <div class="large-4 columns">
-                            <div class="row collapse">
-                                <label>Log Level
-                                    <select id="engine-log_level" class="engine-input">
-                                        <option value="g2">G2</option>
-                                        <option value="debug">Debug</option>
-                                        <option value="info">Informational</option>
-                                        <option value="warning">Warnings</option>
-                                        <option value="error">Error</option>
-                                    </select>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="large-4 columns">
-                            <div class="row collapse">
-                                <label>Status Report Interval</label>
-                                <div class="small-9 columns">
-                                    <input type="text" id="driver-si" class="driver-input"/>
-                                </div>
-                                <div class="small-3 columns">
-                                    <span class="postfix">ms</span>
-                                </div>
-                            </div>
-                        </div>
-                    </fieldset>
+              </div>
+            </div>
+            <div class="large-4 columns" id="section-machine-id">
+              <div class="row collapse">
+                <label>Machine ID</label>
+                <div class="small-12 columns">
+                  <input type="text" id="input-machine-id" disabled/>
                 </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Default Unit System</label>
+                <select id="machine-units" class="machine-input">
+                  <option value="mm">mm</option>
+                  <option value="in">in</option>
+                </select>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Distance Mode</label>
+                <select id="driver-gdi" class="driver-input">
+                  <option value="0">Absolute</option>
+                  <option value="1">Incremental</option>
+                </select>
+              </div>
+            </div>
 
-                <div class="row">
-                    <fieldset>
-                        <legend>Updates</legend>
-
-                        <div class="large-4 columns">
-                            <div class="row collapse">
-                                <label>Software Version</label>
-                                <div class="columns">
-                                    <span class="engine-version"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="large-4 columns">
-                            <div class="row collapse">
-                                <a id="btn-update"  class="button radius small">Update FabMo Software...</a>
-                            </div>
-                        </div>
-                    </fieldset>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Chordal Tolerance</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-ct" class="driver-input" />
                 </div>
-                <div class="row">
-                    <fieldset>
-                        <legend>Rotation</legend>
-                        <div class="large-4 columns">
-                            <div class="row collapse">
-                                <label>Rotate
-                                    <select id="opensbp-transforms-rotate-apply" class="opensbp-input">
-                                        <option value="false">Disabled</option>
-                                        <option value="true">Enabled</option>
-                                    </select>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="large-4 columns">
-                            <div class="row collapse">
-                                <label>Rotation Angle</label>
-                                <div class="small-9 columns">
-                                    <input type="number" id="opensbp-transforms-rotate-angle" class="opensbp-input"/>
-                                </div>
-                                <div class="small-3 columns">
-                                    <span class="postfix">degrees</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="large-4 columns">
-                            <div class="row collapse">
-                                <label>X Rotation Point</label>
-                                <div class="small-9 columns">
-                                    <input type="number" id="opensbp-transforms-rotate-x" class="opensbp-input"/>
-                                </div>
-                                <div class="small-3 columns">
-                                    <span class="postfix in_mm_label">&nbsp;</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="large-4 columns">
-                            <div class="row collapse">
-                                <label>Y Rotation Point</label>
-                                <div class="small-9 columns">
-                                    <input type="number" id="opensbp-transforms-rotate-y" class="opensbp-input"/>
-                                </div>
-                                <div class="small-3 columns">
-                                    <span class="postfix in_mm_label">&nbsp;</span>
-                                </div>
-                            </div>
-                        </div>
-                    </fieldset>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
                 </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Junction Aggression</label>
+                <div class="small-12 columns">
+                  <input type="text" id="driver-ja" class="driver-input" />
+                </div>
+              </div>
+            </div>
+          </fieldset>
+        </div>
 
-                <!--
+        <div class="row">
+          <fieldset>
+            <legend>Logging</legend>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Log Level
+                  <select id="engine-log_level" class="engine-input">
+                    <option value="g2">G2</option>
+                    <option value="debug">Debug</option>
+                    <option value="info">Informational</option>
+                    <option value="warning">Warnings</option>
+                    <option value="error">Error</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Status Report Interval</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-si" class="driver-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix">ms</span>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="row">
+          <fieldset>
+            <legend>Updates</legend>
+
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Software Version</label>
+                <div class="columns">
+                  <span class="engine-version"></span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <a id="btn-update" class="button radius small">Update FabMo Software...</a>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+        <div class="row">
+          <fieldset>
+            <legend>Rotation</legend>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Rotate
+                  <select id="opensbp-transforms-rotate-apply" class="opensbp-input">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Rotation Angle</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-rotate-angle" class="opensbp-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix">degrees</span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>X Rotation Point</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-rotate-x" class="opensbp-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Y Rotation Point</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-rotate-y" class="opensbp-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
+        <!--
                 <div class="row">
                 <fieldset>
                 <legend>Scale</legend>
@@ -282,63 +293,63 @@
 </fieldset>
 </div> -->
 
-<div class="row">
-    <fieldset>
-        <legend>Offset</legend>
-        <div class="large-4 columns">
-            <div class="row collapse">
+        <div class="row">
+          <fieldset>
+            <legend>Offset</legend>
+            <div class="large-4 columns">
+              <div class="row collapse">
                 <label>Offset
-                    <select id="opensbp-transforms-move-apply" class="opensbp-input">
-                        <option value="false">Disabled</option>
-                        <option value="true">Enabled</option>
-                    </select>
+                  <select id="opensbp-transforms-move-apply" class="opensbp-input">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
                 </label>
+              </div>
             </div>
-        </div>
-        <div class="large-4 columns">
-            <div class="row collapse">
+            <div class="large-4 columns">
+              <div class="row collapse">
                 <label>Offset X</label>
                 <div class="small-9 columns">
-                    <input type="number" id="opensbp-transforms-move-x" class="opensbp-input"/>
+                  <input type="number" id="opensbp-transforms-move-x" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
-                    <span class="postfix in_mm_label">&nbsp;</span>
+                  <span class="postfix in_mm_label">&nbsp;</span>
                 </div>
+              </div>
             </div>
-        </div>
-        <div class="large-4 columns">
-            <div class="row collapse">
+            <div class="large-4 columns">
+              <div class="row collapse">
                 <label>Offset Y</label>
                 <div class="small-9 columns">
-                    <input type="number" id="opensbp-transforms-move-y" class="opensbp-input"/>
+                  <input type="number" id="opensbp-transforms-move-y" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
-                    <span class="postfix in_mm_label">&nbsp;</span>
+                  <span class="postfix in_mm_label">&nbsp;</span>
                 </div>
+              </div>
             </div>
-        </div>
-        <div class="large-4 columns">
-            <div class="row collapse">
+            <div class="large-4 columns">
+              <div class="row collapse">
                 <label>Offset Z</label>
                 <div class="small-9 columns">
-                    <input type="number" id="opensbp-transforms-move-z" class="opensbp-input"/>
+                  <input type="number" id="opensbp-transforms-move-z" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
-                    <span class="postfix in_mm_label">&nbsp;</span>
+                  <span class="postfix in_mm_label">&nbsp;</span>
                 </div>
+              </div>
             </div>
-        </div>
-    </fieldset>
+          </fieldset>
 
-    <fieldset>
-        <!--<legend>Backup & Restore</legend>-->
-        <legend>Backup</legend>
-        <div class="large-3 columns">
-            <div class="row collapse">
-                <a id="btn-backup"  class="button radius small">Backup the configuration</a>
+          <fieldset>
+            <!--<legend>Backup & Restore</legend>-->
+            <legend>Backup</legend>
+            <div class="large-3 columns">
+              <div class="row collapse">
+                <a id="btn-backup" class="button radius small">Backup the configuration</a>
+              </div>
             </div>
-        </div>
-        <!--
+            <!--
         <div class="large-7 columns">
             <div class="row collapse">
                 <input type="file" id="restore_conf_file" class="hidden">
@@ -346,12 +357,12 @@
             </div>
         </div>
         -->
-    </fieldset>
+          </fieldset>
 
 
-</div>
+        </div>
 
-<!--     <div class="row">
+        <!--     <div class="row">
 <fieldset>
 <legend>Shear X</legend>
 <div class="large-4 columns">
@@ -378,7 +389,7 @@
 </fieldset>
 </div> -->
 
-<!--     <div class="row">
+        <!--     <div class="row">
 <fieldset>
 <legend>Shear Y</legend>
 <div class="large-4 columns">
@@ -392,7 +403,7 @@
 </div>
 </div> -->
 
-<!--         <div class="large-4 columns">
+        <!--         <div class="large-4 columns">
 <div class="row collapse">
 <label>Shear Angle Y</label>
 <div class="small-9 columns">
@@ -422,7 +433,7 @@
 </fieldset>
 </div> -->
 
-<!--     <div class="row">
+        <!--     <div class="row">
 <fieldset>
 <legend>Leveling</legend>
 <div class="large-4 columns">
@@ -448,1387 +459,1390 @@
 </div>
 </fieldset>
 </div> -->
-</section>
+      </section>
 
-<section role="tabpanel" aria-hidden="true" class="content" id="tabpanel2">
-    <div class="row">
-        <fieldset>
+      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel2">
+        <div class="row">
+          <fieldset>
             <legend>X-Axis</legend>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Feedrate Maximum</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-xfr" class="driver-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix ipm_mmpm_label">&nbsp;</span>
-                    </div>
+              <div class="row collapse">
+                <label>Feedrate Maximum</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-xfr" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix ipm_mmpm_label">&nbsp;</span>
+                </div>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Velocity Maximum</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-xvm" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix ipm_mmpm_label" >&nbsp;</span>
-                    </div>
+              <div class="row collapse">
+                <label>Velocity Maximum</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-xvm" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix ipm_mmpm_label">&nbsp;</span>
+                </div>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Maximum Jerk</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-xjm" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
-                    </div>
+              <div class="row collapse">
+                <label>Maximum Jerk</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-xjm" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
+                </div>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>High Speed Jerk</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-xjh" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
-                    </div>
+              <div class="row collapse">
+                <label>High Speed Jerk</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-xjh" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
+                </div>
+              </div>
             </div>
 
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Axis Mode</label>
-                    <select id="driver-xam" class="driver-input">
-                        <option value="0">Disable</option>
-                        <option value="1">Linear</option>
-                    </select>
-                </div>
+              <div class="row collapse">
+                <label>Axis Mode</label>
+                <select id="driver-xam" class="driver-input">
+                  <option value="0">Disable</option>
+                  <option value="1">Linear</option>
+                </select>
+              </div>
             </div>
-        </fieldset>
-    </div>
+          </fieldset>
+        </div>
 
-    <div class="row">
-        <fieldset>
+        <div class="row">
+          <fieldset>
             <legend>Y-Axis</legend>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Feedrate Maximum</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-yfr" class="driver-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix ipm_mmpm_label">&nbsp;</span>
-                    </div>
+              <div class="row collapse">
+                <label>Feedrate Maximum</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-yfr" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix ipm_mmpm_label">&nbsp;</span>
+                </div>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Velocity Maximum</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-yvm" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix ipm_mmpm_label">&nbsp;</span>
-                    </div>
+              <div class="row collapse">
+                <label>Velocity Maximum</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-yvm" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix ipm_mmpm_label">&nbsp;</span>
+                </div>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Maximum Jerk</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-yjm" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
-                    </div>
+              <div class="row collapse">
+                <label>Maximum Jerk</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-yjm" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
+                </div>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>High Speed Jerk</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-yjh" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
-                    </div>
+              <div class="row collapse">
+                <label>High Speed Jerk</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-yjh" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
+                </div>
+              </div>
             </div>
 
 
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Axis Mode</label>
-                    <select id="driver-yam" class="driver-input">
-                        <option value="0">Disable</option>
-                        <option value="1">Linear</option>
-                    </select>
-                </div>
+              <div class="row collapse">
+                <label>Axis Mode</label>
+                <select id="driver-yam" class="driver-input">
+                  <option value="0">Disable</option>
+                  <option value="1">Linear</option>
+                </select>
+              </div>
             </div>
-        </fieldset>
-    </div>
+          </fieldset>
+        </div>
 
-    <div class="row">
-        <fieldset>
+        <div class="row">
+          <fieldset>
             <legend>Z-Axis</legend>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Feedrate Maximum</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-zfr" class="driver-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix ipm_mmpm_label">&nbsp;</span>
-                    </div>
+              <div class="row collapse">
+                <label>Feedrate Maximum</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-zfr" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix ipm_mmpm_label">&nbsp;</span>
+                </div>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Velocity Maximum</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-zvm" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix ipm_mmpm_label">&nbsp;</span>
-                    </div>
+              <div class="row collapse">
+                <label>Velocity Maximum</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-zvm" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix ipm_mmpm_label">&nbsp;</span>
+                </div>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Maximum Jerk</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-zjm" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
-                    </div>
+              <div class="row collapse">
+                <label>Maximum Jerk</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-zjm" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
+                </div>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>High Speed Jerk</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-zjh" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
-                    </div>
+              <div class="row collapse">
+                <label>High Speed Jerk</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-zjh" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
+                </div>
+              </div>
             </div>
 
 
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Axis Mode</label>
-                    <select id="driver-zam" class="driver-input">
-                        <option value="0">Disable</option>
-                        <option value="1">Linear</option>
-                    </select>
-                </div>
+              <div class="row collapse">
+                <label>Axis Mode</label>
+                <select id="driver-zam" class="driver-input">
+                  <option value="0">Disable</option>
+                  <option value="1">Linear</option>
+                </select>
+              </div>
             </div>
-        </fieldset>
-    </div>
+          </fieldset>
+        </div>
 
-    <div class="row">
-        <fieldset>
+        <div class="row">
+          <fieldset>
             <legend>A-Axis</legend>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Feedrate Maximum</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-afr" class="driver-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">deg/min</span>
-                    </div>
+              <div class="row collapse">
+                <label>Feedrate Maximum</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-afr" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">deg/min</span>
+                </div>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Velocity Maximum</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-avm" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">deg/min</span>
-                    </div>
+              <div class="row collapse">
+                <label>Velocity Maximum</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-avm" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">deg/min</span>
+                </div>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Maximum Jerk</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-ajm" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">deg/min<sup>3</sup></span>
-                    </div>
+              <div class="row collapse">
+                <label>Maximum Jerk</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-ajm" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">deg/min<sup>3</sup></span>
+                </div>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Axis Mode</label>
-                    <select id="driver-aam" class="driver-input">
-                        <option value="0">Disable</option>
-                        <option value="1">Rotary</option>
-                    </select>
-                </div>
+              <div class="row collapse">
+                <label>Axis Mode</label>
+                <select id="driver-aam" class="driver-input">
+                  <option value="0">Disable</option>
+                  <option value="1">Rotary</option>
+                </select>
+              </div>
             </div>
-        </fieldset>
-    </div>
+          </fieldset>
+        </div>
 
-    <div class="row">
-        <fieldset>
+        <div class="row">
+          <fieldset>
             <legend>B-Axis</legend>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Feedrate Maximum</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-bfr" class="driver-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">deg/min</span>
-                    </div>
+              <div class="row collapse">
+                <label>Feedrate Maximum</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-bfr" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">deg/min</span>
+                </div>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Velocity Maximum</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-bvm" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">deg/min</span>
-                    </div>
+              <div class="row collapse">
+                <label>Velocity Maximum</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-bvm" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">deg/min</span>
+                </div>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Maximum Jerk</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-bjm" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">deg/min<sup>3</sup></span>
-                    </div>
+              <div class="row collapse">
+                <label>Maximum Jerk</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-bjm" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">deg/min<sup>3</sup></span>
+                </div>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Axis Mode</label>
-                    <select id="driver-bam" class="driver-input">
-                        <option value="0">Disable</option>
-                        <option value="1">Rotary</option>
-                    </select>
-                </div>
+              <div class="row collapse">
+                <label>Axis Mode</label>
+                <select id="driver-bam" class="driver-input">
+                  <option value="0">Disable</option>
+                  <option value="1">Rotary</option>
+                </select>
+              </div>
             </div>
-        </fieldset>
-    </div>
+          </fieldset>
+        </div>
 
-    <div class="row">
-        <fieldset>
+        <div class="row">
+          <fieldset>
             <legend>C-Axis</legend>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Feedrate Maximum</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-cfr" class="driver-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">mm/min<sup>3</sup></span>
-                    </div>
+              <div class="row collapse">
+                <label>Feedrate Maximum</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-cfr" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">mm/min<sup>3</sup></span>
+                </div>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Velocity Maximum</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-cvm" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">deg/min</span>
-                    </div>
+              <div class="row collapse">
+                <label>Velocity Maximum</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-cvm" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">deg/min</span>
+                </div>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Maximum Jerk</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-cjm" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">deg/min</span>
-                    </div>
+              <div class="row collapse">
+                <label>Maximum Jerk</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-cjm" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">deg/min</span>
+                </div>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Axis Mode</label>
-                    <select id="driver-cam" class="driver-input">
-                        <option value="0">Disable</option>
-                        <option value="1">Rotary</option>
-                    </select>
-                </div>
+              <div class="row collapse">
+                <label>Axis Mode</label>
+                <select id="driver-cam" class="driver-input">
+                  <option value="0">Disable</option>
+                  <option value="1">Rotary</option>
+                </select>
+              </div>
             </div>
-        </fieldset>
-    </div>
-</section>
+          </fieldset>
+        </div>
+      </section>
 
-<section role="tabpanel" aria-hidden="true" class="content" id="tabpanel3">
-    <div class="row">
-        <fieldset>
+      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel3">
+        <div class="row">
+          <fieldset>
             <legend>Input 1</legend>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Mode
-                        <select id="driver-di1mo" class="driver-input">
-                            <option value="-1">Disabled</option>
-                            <option value="0">Active Low</option>
-                            <option value="1">Active High</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Mode
+                  <select id="driver-di1mo" class="driver-input">
+                    <option value="-1">Disabled</option>
+                    <option value="0">Active Low</option>
+                    <option value="1">Active High</option>
+                  </select>
+                </label>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Action
-                        <select id="driver-di1ac" class="driver-input">
-                            <option value="0">None</option>
-                            <option value="1">Stop</option>
-                            <option value="2">Fast Stop</option>
-                            <option value="3">Halt</option>
-                            <option value="4">Reset</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Action
+                  <select id="driver-di1ac" class="driver-input">
+                    <option value="0">None</option>
+                    <option value="1">Stop</option>
+                    <option value="2">Fast Stop</option>
+                    <option value="3">Halt</option>
+                    <option value="4">Reset</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Function
-                        <select id="driver-di1fn" class="driver-input">
-                            <option value="0">None</option>
-                            <option value="1">Limit</option>
-                            <option value="2">Interlock</option>
-                            <option value="3">Shutdown</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Function
+                  <select id="driver-di1fn" class="driver-input">
+                    <option value="0">None</option>
+                    <option value="1">Limit</option>
+                    <option value="2">Interlock</option>
+                    <option value="3">Shutdown</option>
+                  </select>
+                </label>
+              </div>
             </div>
-        </fieldset>
-    </div>
+          </fieldset>
+        </div>
 
-    <div class="row">
-        <fieldset>
+        <div class="row">
+          <fieldset>
             <legend>Input 2</legend>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Mode
-                        <select id="driver-di2mo" class="driver-input">
-                            <option value="-1">Disabled</option>
-                            <option value="0">Active Low</option>
-                            <option value="1">Active High</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Mode
+                  <select id="driver-di2mo" class="driver-input">
+                    <option value="-1">Disabled</option>
+                    <option value="0">Active Low</option>
+                    <option value="1">Active High</option>
+                  </select>
+                </label>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Action
-                        <select id="driver-di2ac" class="driver-input">
-                            <option value="0">None</option>
-                            <option value="1">Stop</option>
-                            <option value="2">Fast Stop</option>
-                            <option value="3">Halt</option>
-                            <option value="4">Reset</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Action
+                  <select id="driver-di2ac" class="driver-input">
+                    <option value="0">None</option>
+                    <option value="1">Stop</option>
+                    <option value="2">Fast Stop</option>
+                    <option value="3">Halt</option>
+                    <option value="4">Reset</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Function
-                        <select id="driver-di2fn" class="driver-input">
-                            <option value="0">None</option>
-                            <option value="1">Limit</option>
-                            <option value="2">Interlock</option>
-                            <option value="3">Shutdown</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Function
+                  <select id="driver-di2fn" class="driver-input">
+                    <option value="0">None</option>
+                    <option value="1">Limit</option>
+                    <option value="2">Interlock</option>
+                    <option value="3">Shutdown</option>
+                  </select>
+                </label>
+              </div>
             </div>
-        </fieldset>
-    </div>
+          </fieldset>
+        </div>
 
-    <div class="row">
-        <fieldset>
+        <div class="row">
+          <fieldset>
             <legend>Input 3</legend>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Mode
-                        <select id="driver-di3mo" class="driver-input">
-                            <option value="-1">Disabled</option>
-                            <option value="0">Active Low</option>
-                            <option value="1">Active High</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Mode
+                  <select id="driver-di3mo" class="driver-input">
+                    <option value="-1">Disabled</option>
+                    <option value="0">Active Low</option>
+                    <option value="1">Active High</option>
+                  </select>
+                </label>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Action
-                        <select id="driver-di3ac" class="driver-input">
-                            <option value="0">None</option>
-                            <option value="1">Stop</option>
-                            <option value="2">Fast Stop</option>
-                            <option value="3">Halt</option>
-                            <option value="4">Reset</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Action
+                  <select id="driver-di3ac" class="driver-input">
+                    <option value="0">None</option>
+                    <option value="1">Stop</option>
+                    <option value="2">Fast Stop</option>
+                    <option value="3">Halt</option>
+                    <option value="4">Reset</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Function
-                        <select id="driver-di3fn" class="driver-input">
-                            <option value="0">None</option>
-                            <option value="1">Limit</option>
-                            <option value="2">Interlock</option>
-                            <option value="3">Shutdown</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Function
+                  <select id="driver-di3fn" class="driver-input">
+                    <option value="0">None</option>
+                    <option value="1">Limit</option>
+                    <option value="2">Interlock</option>
+                    <option value="3">Shutdown</option>
+                  </select>
+                </label>
+              </div>
             </div>
-        </fieldset>
-    </div>
+          </fieldset>
+        </div>
 
-    <div class="row">
-        <fieldset>
+        <div class="row">
+          <fieldset>
             <legend>Input 4</legend>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Mode
-                        <select id="driver-di4mo" class="driver-input">
-                            <option value="-1">Disabled</option>
-                            <option value="0">Active Low</option>
-                            <option value="1">Active High</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Mode
+                  <select id="driver-di4mo" class="driver-input">
+                    <option value="-1">Disabled</option>
+                    <option value="0">Active Low</option>
+                    <option value="1">Active High</option>
+                  </select>
+                </label>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Action
-                        <select id="driver-di4ac" class="driver-input">
-                            <option value="0">None</option>
-                            <option value="1">Stop</option>
-                            <option value="2">Fast Stop</option>
-                            <option value="3">Halt</option>
-                            <option value="4">Reset</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Action
+                  <select id="driver-di4ac" class="driver-input">
+                    <option value="0">None</option>
+                    <option value="1">Stop</option>
+                    <option value="2">Fast Stop</option>
+                    <option value="3">Halt</option>
+                    <option value="4">Reset</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Function
-                        <select id="driver-di4fn" class="driver-input">
-                            <option value="0">None</option>
-                            <option value="1">Limit</option>
-                            <option value="2">Interlock</option>
-                            <option value="3">Shutdown</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Function
+                  <select id="driver-di4fn" class="driver-input">
+                    <option value="0">None</option>
+                    <option value="1">Limit</option>
+                    <option value="2">Interlock</option>
+                    <option value="3">Shutdown</option>
+                  </select>
+                </label>
+              </div>
             </div>
-        </fieldset>
-    </div>
+          </fieldset>
+        </div>
 
-    <div class="row">
-        <fieldset>
+        <div class="row">
+          <fieldset>
             <legend>Input 5</legend>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Mode
-                        <select id="driver-di5mo" class="driver-input">
-                            <option value="-1">Disabled</option>
-                            <option value="0">Active Low</option>
-                            <option value="1">Active High</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Mode
+                  <select id="driver-di5mo" class="driver-input">
+                    <option value="-1">Disabled</option>
+                    <option value="0">Active Low</option>
+                    <option value="1">Active High</option>
+                  </select>
+                </label>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Action
-                        <select id="driver-di5ac" class="driver-input">
-                            <option value="0">None</option>
-                            <option value="1">Stop</option>
-                            <option value="2">Fast Stop</option>
-                            <option value="3">Halt</option>
-                            <option value="4">Reset</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Action
+                  <select id="driver-di5ac" class="driver-input">
+                    <option value="0">None</option>
+                    <option value="1">Stop</option>
+                    <option value="2">Fast Stop</option>
+                    <option value="3">Halt</option>
+                    <option value="4">Reset</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Function
-                        <select id="driver-di5n" class="driver-input">
-                            <option value="0">None</option>
-                            <option value="1">Limit</option>
-                            <option value="2">Interlock</option>
-                            <option value="3">Shutdown</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Function
+                  <select id="driver-di5n" class="driver-input">
+                    <option value="0">None</option>
+                    <option value="1">Limit</option>
+                    <option value="2">Interlock</option>
+                    <option value="3">Shutdown</option>
+                  </select>
+                </label>
+              </div>
             </div>
-        </fieldset>
-    </div>
+          </fieldset>
+        </div>
 
-    <div class="row">
-        <fieldset>
+        <div class="row">
+          <fieldset>
             <legend>Input 6</legend>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Mode
-                        <select id="driver-di6mo" class="driver-input">
-                            <option value="-1">Disabled</option>
-                            <option value="0">Active Low</option>
-                            <option value="1">Active High</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Mode
+                  <select id="driver-di6mo" class="driver-input">
+                    <option value="-1">Disabled</option>
+                    <option value="0">Active Low</option>
+                    <option value="1">Active High</option>
+                  </select>
+                </label>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Action
-                        <select id="driver-di6ac" class="driver-input">
-                            <option value="0">None</option>
-                            <option value="1">Stop</option>
-                            <option value="2">Fast Stop</option>
-                            <option value="3">Halt</option>
-                            <option value="4">Reset</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Action
+                  <select id="driver-di6ac" class="driver-input">
+                    <option value="0">None</option>
+                    <option value="1">Stop</option>
+                    <option value="2">Fast Stop</option>
+                    <option value="3">Halt</option>
+                    <option value="4">Reset</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Function
-                        <select id="driver-di6fn" class="driver-input">
-                            <option value="0">None</option>
-                            <option value="1">Limit</option>
-                            <option value="2">Interlock</option>
-                            <option value="3">Shutdown</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Function
+                  <select id="driver-di6fn" class="driver-input">
+                    <option value="0">None</option>
+                    <option value="1">Limit</option>
+                    <option value="2">Interlock</option>
+                    <option value="3">Shutdown</option>
+                  </select>
+                </label>
+              </div>
             </div>
-        </fieldset>
-    </div>
+          </fieldset>
+        </div>
 
-    <div class="row">
-        <fieldset>
+        <div class="row">
+          <fieldset>
             <legend>Input 7</legend>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Mode
-                        <select id="driver-di7mo" class="driver-input">
-                            <option value="-1">Disabled</option>
-                            <option value="0">Active Low</option>
-                            <option value="1">Active High</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Mode
+                  <select id="driver-di7mo" class="driver-input">
+                    <option value="-1">Disabled</option>
+                    <option value="0">Active Low</option>
+                    <option value="1">Active High</option>
+                  </select>
+                </label>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Action
-                        <select id="driver-di7ac" class="driver-input">
-                            <option value="0">None</option>
-                            <option value="1">Stop</option>
-                            <option value="2">Fast Stop</option>
-                            <option value="3">Halt</option>
-                            <option value="4">Reset</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Action
+                  <select id="driver-di7ac" class="driver-input">
+                    <option value="0">None</option>
+                    <option value="1">Stop</option>
+                    <option value="2">Fast Stop</option>
+                    <option value="3">Halt</option>
+                    <option value="4">Reset</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Function
-                        <select id="driver-di7fn" class="driver-input">
-                            <option value="0">None</option>
-                            <option value="1">Limit</option>
-                            <option value="2">Interlock</option>
-                            <option value="3">Shutdown</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Function
+                  <select id="driver-di7fn" class="driver-input">
+                    <option value="0">None</option>
+                    <option value="1">Limit</option>
+                    <option value="2">Interlock</option>
+                    <option value="3">Shutdown</option>
+                  </select>
+                </label>
+              </div>
             </div>
-        </fieldset>
-    </div>
+          </fieldset>
+        </div>
 
-    <div class="row">
-        <fieldset>
+        <div class="row">
+          <fieldset>
             <legend>Input 8</legend>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Mode
-                        <select id="driver-di8mo" class="driver-input">
-                            <option value="-1">Disabled</option>
-                            <option value="0">Active Low</option>
-                            <option value="1">Active High</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Mode
+                  <select id="driver-di8mo" class="driver-input">
+                    <option value="-1">Disabled</option>
+                    <option value="0">Active Low</option>
+                    <option value="1">Active High</option>
+                  </select>
+                </label>
+              </div>
             </div>
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Action
-                        <select id="driver-di8ac" class="driver-input">
-                            <option value="0">None</option>
-                            <option value="1">Stop</option>
-                            <option value="2">Fast Stop</option>
-                            <option value="3">Halt</option>
-                            <option value="4">Reset</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Action
+                  <select id="driver-di8ac" class="driver-input">
+                    <option value="0">None</option>
+                    <option value="1">Stop</option>
+                    <option value="2">Fast Stop</option>
+                    <option value="3">Halt</option>
+                    <option value="4">Reset</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Function
-                        <select id="driver-di8fn" class="driver-input">
-                            <option value="0">None</option>
-                            <option value="1">Limit</option>
-                            <option value="2">Interlock</option>
-                            <option value="3">Shutdown</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Function
+                  <select id="driver-di8fn" class="driver-input">
+                    <option value="0">None</option>
+                    <option value="1">Limit</option>
+                    <option value="2">Interlock</option>
+                    <option value="3">Shutdown</option>
+                  </select>
+                </label>
+              </div>
             </div>
-        </fieldset>
-    </div>
-</section>
+          </fieldset>
+        </div>
+      </section>
 
-<section role="tabpanel" aria-hidden="true" class="content" id="tabpanel4">
-    <div class="row">
-        <fieldset>
+      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel4">
+        <div class="row">
+          <fieldset>
             <legend>Channel 1</legend>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Unit Value</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-1su" class="driver-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">steps/units</span>
-                    </div>
+              <div class="row collapse">
+                <label>Unit Value</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-1su" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">steps/units</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Power Management Mode
-                        <select id="driver-1pm" class="driver-input">
-                            <option value="0">Disabled</option>
-                            <option value="1">Always on</option>
-                            <option value="2">On only when in cycle</option>
-                            <option value="3">On only when moving</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Power Management Mode
+                  <select id="driver-1pm" class="driver-input">
+                    <option value="0">Disabled</option>
+                    <option value="1">Always on</option>
+                    <option value="2">On only when in cycle</option>
+                    <option value="3">On only when moving</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Power Level</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-1pl" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">0-1.0</span>
-                    </div>
+              <div class="row collapse">
+                <label>Power Level</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-1pl" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">0-1.0</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Direction</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-1po" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">(0-CW, 1-CCW)</span>
-                    </div>
+              <div class="row collapse">
+                <label>Direction</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-1po" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">(0-CW, 1-CCW)</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Axis
-                        <select id="driver-1ma" class="driver-input">
-                            <option value="0">X</option>
-                            <option value="1">Y</option>
-                            <option value="2">Z</option>
-                            <option value="3">A</option>
-                            <option value="4">B</option>
-                            <option value="5">C</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Axis
+                  <select id="driver-1ma" class="driver-input">
+                    <option value="0">X</option>
+                    <option value="1">Y</option>
+                    <option value="2">Z</option>
+                    <option value="3">A</option>
+                    <option value="4">B</option>
+                    <option value="5">C</option>
+                  </select>
+                </label>
+              </div>
             </div>
-        </fieldset>
-    </div>
+          </fieldset>
+        </div>
 
-    <div class="row">
-        <fieldset>
+        <div class="row">
+          <fieldset>
             <legend>Channel 2</legend>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Unit Value</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-2su" class="driver-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">steps/units</span>
-                    </div>
+              <div class="row collapse">
+                <label>Unit Value</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-2su" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">steps/units</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Power Management Mode
-                        <select id="driver-2pm" class="driver-input">
-                            <option value="0">Disabled</option>
-                            <option value="1">Always on</option>
-                            <option value="2">On only when in cycle</option>
-                            <option value="3">On only when moving</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Power Management Mode
+                  <select id="driver-2pm" class="driver-input">
+                    <option value="0">Disabled</option>
+                    <option value="1">Always on</option>
+                    <option value="2">On only when in cycle</option>
+                    <option value="3">On only when moving</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Power Level</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-2pl" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">0-1.0</span>
-                    </div>
+              <div class="row collapse">
+                <label>Power Level</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-2pl" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">0-1.0</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Direction</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-2po" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">(0-CW, 1-CCW)</span>
-                    </div>
+              <div class="row collapse">
+                <label>Direction</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-2po" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">(0-CW, 1-CCW)</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Axis
-                        <select id="driver-2ma" class="driver-input">
-                            <option value="0">X</option>
-                            <option value="1">Y</option>
-                            <option value="2">Z</option>
-                            <option value="3">A</option>
-                            <option value="4">B</option>
-                            <option value="5">C</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Axis
+                  <select id="driver-2ma" class="driver-input">
+                    <option value="0">X</option>
+                    <option value="1">Y</option>
+                    <option value="2">Z</option>
+                    <option value="3">A</option>
+                    <option value="4">B</option>
+                    <option value="5">C</option>
+                  </select>
+                </label>
+              </div>
             </div>
-        </fieldset>
-    </div>
+          </fieldset>
+        </div>
 
-    <div class="row">
-        <fieldset>
+        <div class="row">
+          <fieldset>
             <legend>Channel 3</legend>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Unit Value</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-3su" class="driver-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">steps/units</span>
-                    </div>
+              <div class="row collapse">
+                <label>Unit Value</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-3su" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">steps/units</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Power Management Mode
-                        <select id="driver-3pm" class="driver-input">
-                            <option value="0">Disabled</option>
-                            <option value="1">Always on</option>
-                            <option value="2">On only when in cycle</option>
-                            <option value="3">On only when moving</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Power Management Mode
+                  <select id="driver-3pm" class="driver-input">
+                    <option value="0">Disabled</option>
+                    <option value="1">Always on</option>
+                    <option value="2">On only when in cycle</option>
+                    <option value="3">On only when moving</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Power Level</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-3pl" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">0-1.0</span>
-                    </div>
+              <div class="row collapse">
+                <label>Power Level</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-3pl" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">0-1.0</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Direction</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-3po" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">(0-CW, 1-CCW)</span>
-                    </div>
+              <div class="row collapse">
+                <label>Direction</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-3po" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">(0-CW, 1-CCW)</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Axis
-                        <select id="driver-3ma" class="driver-input">
-                            <option value="0">X</option>
-                            <option value="1">Y</option>
-                            <option value="2">Z</option>
-                            <option value="3">A</option>
-                            <option value="4">B</option>
-                            <option value="5">C</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Axis
+                  <select id="driver-3ma" class="driver-input">
+                    <option value="0">X</option>
+                    <option value="1">Y</option>
+                    <option value="2">Z</option>
+                    <option value="3">A</option>
+                    <option value="4">B</option>
+                    <option value="5">C</option>
+                  </select>
+                </label>
+              </div>
             </div>
-        </fieldset>
-    </div>
+          </fieldset>
+        </div>
 
-    <div class="row">
-        <fieldset>
+        <div class="row">
+          <fieldset>
             <legend>Channel 4</legend>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Unit Value</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-4su" class="driver-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">steps/units</span>
-                    </div>
+              <div class="row collapse">
+                <label>Unit Value</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-4su" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">steps/units</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Power Management Mode
-                        <select id="driver-4pm" class="driver-input">
-                            <option value="0">Disabled</option>
-                            <option value="1">Always on</option>
-                            <option value="2">On only when in cycle</option>
-                            <option value="3">On only when moving</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Power Management Mode
+                  <select id="driver-4pm" class="driver-input">
+                    <option value="0">Disabled</option>
+                    <option value="1">Always on</option>
+                    <option value="2">On only when in cycle</option>
+                    <option value="3">On only when moving</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Power Level</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-4pl" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">0-1.0</span>
-                    </div>
+              <div class="row collapse">
+                <label>Power Level</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-4pl" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">0-1.0</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Direction</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-4po" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">(0-CW, 1-CCW)</span>
-                    </div>
+              <div class="row collapse">
+                <label>Direction</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-4po" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">(0-CW, 1-CCW)</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Axis
-                        <select id="driver-4ma" class="driver-input">
-                            <option value="0">X</option>
-                            <option value="1">Y</option>
-                            <option value="2">Z</option>
-                            <option value="3">A</option>
-                            <option value="4">B</option>
-                            <option value="5">C</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Axis
+                  <select id="driver-4ma" class="driver-input">
+                    <option value="0">X</option>
+                    <option value="1">Y</option>
+                    <option value="2">Z</option>
+                    <option value="3">A</option>
+                    <option value="4">B</option>
+                    <option value="5">C</option>
+                  </select>
+                </label>
+              </div>
             </div>
-        </fieldset>
-    </div>
+          </fieldset>
+        </div>
 
-    <div class="row">
-        <fieldset>
+        <div class="row">
+          <fieldset>
             <legend>Channel 5</legend>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Unit Value</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-5su" class="driver-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">steps/units</span>
-                    </div>
+              <div class="row collapse">
+                <label>Unit Value</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-5su" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">steps/units</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Power Management Mode
-                        <select id="driver-5pm" class="driver-input">
-                            <option value="0">Disabled</option>
-                            <option value="1">Always on</option>
-                            <option value="2">On only when in cycle</option>
-                            <option value="3">On only when moving</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Power Management Mode
+                  <select id="driver-5pm" class="driver-input">
+                    <option value="0">Disabled</option>
+                    <option value="1">Always on</option>
+                    <option value="2">On only when in cycle</option>
+                    <option value="3">On only when moving</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Power Level</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-5pl" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">0-1.0</span>
-                    </div>
+              <div class="row collapse">
+                <label>Power Level</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-5pl" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">0-1.0</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Direction</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-5po" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">(0-CW, 1-CCW)</span>
-                    </div>
+              <div class="row collapse">
+                <label>Direction</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-5po" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">(0-CW, 1-CCW)</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Axis
-                        <select id="driver-5ma" class="driver-input">
-                            <option value="0">X</option>
-                            <option value="1">Y</option>
-                            <option value="2">Z</option>
-                            <option value="3">A</option>
-                            <option value="4">B</option>
-                            <option value="5">C</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Axis
+                  <select id="driver-5ma" class="driver-input">
+                    <option value="0">X</option>
+                    <option value="1">Y</option>
+                    <option value="2">Z</option>
+                    <option value="3">A</option>
+                    <option value="4">B</option>
+                    <option value="5">C</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
-        </fieldset>
-    </div>
+          </fieldset>
+        </div>
 
-    <div class="row">
-        <fieldset>
+        <div class="row">
+          <fieldset>
             <legend>Channel 6</legend>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Unit Value</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-6su" class="driver-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">steps/units</span>
-                    </div>
+              <div class="row collapse">
+                <label>Unit Value</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-6su" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">steps/units</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Power Management Mode
-                        <select id="driver-6pm" class="driver-input">
-                            <option value="0">Disabled</option>
-                            <option value="1">Always on</option>
-                            <option value="2">On only when in cycle</option>
-                            <option value="3">On only when moving</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Power Management Mode
+                  <select id="driver-6pm" class="driver-input">
+                    <option value="0">Disabled</option>
+                    <option value="1">Always on</option>
+                    <option value="2">On only when in cycle</option>
+                    <option value="3">On only when moving</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Power Level</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-6pl" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">0-1.0</span>
-                    </div>
+              <div class="row collapse">
+                <label>Power Level</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-6pl" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">0-1.0</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Direction</label>
-                    <div class="small-9 columns">
-                        <input type="text" id="driver-6po" class="driver-input" />
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">(0-CW, 1-CCW)</span>
-                    </div>
+              <div class="row collapse">
+                <label>Direction</label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-6po" class="driver-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">(0-CW, 1-CCW)</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-4 columns">
-                <div class="row collapse">
-                    <label>Axis
-                        <select id="driver-6ma" class="driver-input">
-                            <option value="0">X</option>
-                            <option value="1">Y</option>
-                            <option value="2">Z</option>
-                            <option value="3">A</option>
-                            <option value="4">B</option>
-                            <option value="5">C</option>
-                        </select>
-                    </label>
-                </div>
+              <div class="row collapse">
+                <label>Axis
+                  <select id="driver-6ma" class="driver-input">
+                    <option value="0">X</option>
+                    <option value="1">Y</option>
+                    <option value="2">Z</option>
+                    <option value="3">A</option>
+                    <option value="4">B</option>
+                    <option value="5">C</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
-        </fieldset>
-    </div>
-</section>
+          </fieldset>
+        </div>
+      </section>
 
-<section role="tabpanel" aria-hidden="true" class="content" id="tabpanel5">
-    <div class="row">
-        <fieldset>
+      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel5">
+        <div class="row">
+          <fieldset>
             <legend>Machine Envelope</legend>
             <div class="large-6 columns">
-                <div class="row collapse">
-                    <label>X Min</label>
-                    <div class="small-9 columns">
-                        <input type="number" id="machine-envelope-xmin" class="machine-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">in</span>
-                    </div>
+              <div class="row collapse">
+                <label>X Min</label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-envelope-xmin" class="machine-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">in</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-6 columns">
-                <div class="row collapse">
-                    <label>X Max</label>
-                    <div class="small-9 columns">
-                        <input type="number" id="machine-envelope-xmax" class="machine-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">in</span>
-                    </div>
+              <div class="row collapse">
+                <label>X Max</label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-envelope-xmax" class="machine-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">in</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-6 columns">
-                <div class="row collapse">
-                    <label>Y Min</label>
-                    <div class="small-9 columns">
-                        <input type="number" id="machine-envelope-ymin" class="machine-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">in</span>
-                    </div>
+              <div class="row collapse">
+                <label>Y Min</label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-envelope-ymin" class="machine-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">in</span>
+                </div>
+              </div>
             </div>
 
             <div class="large-6 columns">
-                <div class="row collapse">
-                    <label>Y Max</label>
-                    <div class="small-9 columns">
-                        <input type="number" id="machine-envelope-ymax" class="machine-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">in</span>
-                    </div>
+              <div class="row collapse">
+                <label>Y Max</label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-envelope-ymax" class="machine-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix">in</span>
+                </div>
+              </div>
             </div>
-        </fieldset>
-    </div>
+          </fieldset>
+        </div>
 
-    <div class="row">
-        <fieldset>
+        <div class="row">
+          <fieldset>
             <legend>Manual Control</legend>
             <div class="large-6 columns">
-                <div class="row collapse">
-                    <label>XY Speed</label>
-                    <div class="small-9 columns">
-                        <input type="number" id="machine-manual-xy_speed" class="machine-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix ips_mmps_label">&nbsp;</span>
-                    </div>
+              <div class="row collapse">
+                <label>XY Speed</label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-xy_speed" class="machine-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix ips_mmps_label">&nbsp;</span>
+                </div>
+              </div>
 
-                <div class="row collapse">
-                    <label>Z Speed</label>
-                    <div class="small-9 columns">
-                        <input type="number" id="machine-manual-z_speed" class="machine-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix ips_mmps_label">&nbsp;</span>
-                    </div>
+              <div class="row collapse">
+                <label>Z Speed</label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-z_speed" class="machine-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix ips_mmps_label">&nbsp;</span>
+                </div>
+              </div>
 
-                <div class="row collapse">
-                    <label>XY Increment</label>
-                    <div class="small-9 columns">
-                        <input type="number" id="machine-manual-xy_increment" class="machine-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix in_mm_label">&nbsp;</span>
-                    </div>
+              <div class="row collapse">
+                <label>XY Increment</label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-xy_increment" class="machine-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
 
-                <div class="row collapse">
-                    <label>Z Increment</label>
-                    <div class="small-9 columns">
-                        <input type="number" id="machine-manual-z_increment" class="machine-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix in_mm_label">&nbsp;</span>
-                    </div>
+              <div class="row collapse">
+                <label>Z Increment</label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-z_increment" class="machine-input" />
                 </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
 
             </div>
-        </fieldset>
-    </div>
+          </fieldset>
+        </div>
 
-    <div class="row">
-        <fieldset>
+        <div class="row">
+          <fieldset>
             <legend>Authorization Button</legend>
             <div class="large-6 columns">
-                <div class="row collapse">
-                    <label>Authorization Button Input
-                        <select id="machine-auth_input" class="machine-input">
-                            <option value="0">No Authorization</option>
-                            <option value="1">Input 1</option>
-                            <option value="2">Input 2</option>
-                            <option value="3">Input 3</option>
-                            <option value="4">Input 4</option>
-                            <option value="5">Input 5</option>
-                            <option value="6">Input 6</option>
-                            <option value="7">Input 7</option>
-                            <option value="8">Input 8</option>
-                        </select>
-                    </label>
+              <div class="row collapse">
+                <label>Authorization Button Input
+                  <select id="machine-auth_input" class="machine-input">
+                    <option value="0">No Authorization</option>
+                    <option value="1">Input 1</option>
+                    <option value="2">Input 2</option>
+                    <option value="3">Input 3</option>
+                    <option value="4">Input 4</option>
+                    <option value="5">Input 5</option>
+                    <option value="6">Input 6</option>
+                    <option value="7">Input 7</option>
+                    <option value="8">Input 8</option>
+                  </select>
+                </label>
+              </div>
+              <div class="row collapse">
+                <label>Authorization Timeout</label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-auth_timeout" class="machine-input" />
                 </div>
-                <div class="row collapse">
-                    <label>Authorization Timeout</label>
-                    <div class="small-9 columns">
-                        <input type="number" id="machine-auth_timeout" class="machine-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">seconds</span>
-                    </div>
+                <div class="small-3 columns">
+                  <span class="postfix">seconds</span>
                 </div>
+              </div>
             </div>
-        </fieldset>
-        <fieldset>
+          </fieldset>
+          <fieldset>
             <legend>AP Mode Button</legend>
             <div class="large-6 columns">
-                <div class="row collapse">
-                    <label>AP Mode Button Input
-                        <select id="machine-ap_input" class="machine-input">
-                            <option value="0">No AP Mode Button</option>
-                            <option value="1">Input 1</option>
-                            <option value="2">Input 2</option>
-                            <option value="3">Input 3</option>
-                            <option value="4">Input 4</option>
-                            <option value="5">Input 5</option>
-                            <option value="6">Input 6</option>
-                            <option value="7">Input 7</option>
-                            <option value="8">Input 8</option>
-                        </select>
-                    </label>
+              <div class="row collapse">
+                <label>AP Mode Button Input
+                  <select id="machine-ap_input" class="machine-input">
+                    <option value="0">No AP Mode Button</option>
+                    <option value="1">Input 1</option>
+                    <option value="2">Input 2</option>
+                    <option value="3">Input 3</option>
+                    <option value="4">Input 4</option>
+                    <option value="5">Input 5</option>
+                    <option value="6">Input 6</option>
+                    <option value="7">Input 7</option>
+                    <option value="8">Input 8</option>
+                  </select>
+                </label>
+              </div>
+              <div class="row collapse">
+                <label>AP Mode Button Duration</label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-ap_time" class="machine-input" />
                 </div>
-                <div class="row collapse">
-                    <label>AP Mode Button Duration</label>
-                    <div class="small-9 columns">
-                        <input type="number" id="machine-ap_time" class="machine-input"/>
-                    </div>
-                    <div class="small-3 columns">
-                        <span class="postfix">seconds</span>
-                    </div>
+                <div class="small-3 columns">
+                  <span class="postfix">seconds</span>
                 </div>
+              </div>
             </div>
-        </fieldset>
+          </fieldset>
 
-    </div>
-</section>
+        </div>
+      </section>
 
 
-<section role="tabpanel" aria-hidden="true" class="content" id="tabpanel6" style="padding: 0px;">
+      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel6" style="padding: 0px;">
 
-    <form style="display:none;" id="fileform">
-        <input type="file" id="file" multiple>
-    </form>
-    <div id="table-outer" >
-        <div id="dropzone" class="container">
+        <form style="display:none;" id="fileform">
+          <input type="file" id="file" multiple>
+        </form>
+        <div id="table-outer">
+          <div id="dropzone" class="container">
             <div class="hovershow message">Drag app here to install...</div>
             <div class="hoverdim">
-                <table id="appmanager-table">
-                    <thead>
-                        <tr>
-                            <th class="small-2"><!--ICON--></th>
-                            <th class="small-3">Name</th>
-                            <th class="small-1">Version</th>
-                            <th class="small-5">Description</th>
-                            <th class="small-1"></th>
-                            <th class="small-1"></th>
-                        </tr>
-                    </thead>
-                    <tbody class="row app-listing"></tbody>
-                </table>
+              <table id="appmanager-table">
+                <thead>
+                  <tr>
+                    <th class="small-2">
+                      <!--ICON-->
+                    </th>
+                    <th class="small-3">Name</th>
+                    <th class="small-1">Version</th>
+                    <th class="small-5">Description</th>
+                    <th class="small-1"></th>
+                    <th class="small-1"></th>
+                  </tr>
+                </thead>
+                <tbody class="row app-listing"></tbody>
+              </table>
             </div>
+          </div>
         </div>
-      </div>
-</section>
+      </section>
 
-<section role="tabpanel" aria-hidden="true" class="content" id="tabpanel7" style="padding: 0px;">
-    <div class="row">
-        <fieldset>
+      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel7" style="padding: 0px;">
+        <div class="row">
+          <fieldset>
             <legend>Current User Information</legend>
             <div class="large-4 columns" id="section-user-name">
-                <div class="row collapse">
-                    <label>User name</label>
-                    <div class="small-12 columns">
-                        <input type="text" id="user-username" class="input" disabled/>
-                    </div>
+              <div class="row collapse">
+                <label>User name</label>
+                <div class="small-12 columns">
+                  <input type="text" id="user-username" class="input" disabled/>
                 </div>
+              </div>
             </div>
             <div class="large-4 columns" id="section-user-id">
-                <div class="row collapse">
-                    <label>User ID</label>
-                    <div class="small-12 columns">
-                        <input type="text" id="user-_id" disabled/>
-                    </div>
+              <div class="row collapse">
+                <label>User ID</label>
+                <div class="small-12 columns">
+                  <input type="text" id="user-_id" disabled/>
                 </div>
+              </div>
             </div>
             <div class="large-4 columns" id="section-user-isAdmin">
-                <div class="row collapse">
-                    <label>Admin permission</label>
-                    <div class="small-1 columns">
-                        <input type="checkbox" id="user-isAdmin" disabled/>
-                    </div>
+              <div class="row collapse">
+                <label>Admin permission</label>
+                <div class="small-1 columns">
+                  <input type="checkbox" id="user-isAdmin" disabled/>
                 </div>
+              </div>
             </div>
             <div class="large-4 columns" id="section-user-isAdmin">
-                <div class="row collapse">
-                    <label>User Created</label>
-                    <div class="small-12 columns">
-                        <input type="text" id="user-created_at" disabled/>
-                    </div>
+              <div class="row collapse">
+                <label>User Created</label>
+                <div class="small-12 columns">
+                  <input type="text" id="user-created_at" disabled/>
                 </div>
+              </div>
             </div>
-        </fieldset>
-        <fieldset>
+          </fieldset>
+          <fieldset>
             <legend>Change Password</legend>
             <div class="large-4 columns" id="section-user-password">
-                <div class="row collapse">
-                    <label>New Password</label>
-                    <div class="small-12 columns">
-                        <input type="password" id="input-user-password" class="input"/>
-                    </div>
+              <div class="row collapse">
+                <label>New Password</label>
+                <div class="small-12 columns">
+                  <input type="password" id="input-user-password" class="input" />
                 </div>
-                <div class="row collapse">
-                    <label>Confirm Password</label>
-                    <div class="small-12 columns">
-                        <input type="password" id="input-user-passwordConfirmation" class="input"/>
-                    </div>
+              </div>
+              <div class="row collapse">
+                <label>Confirm Password</label>
+                <div class="small-12 columns">
+                  <input type="password" id="input-user-passwordConfirmation" class="input" />
                 </div>
-                <button id="submit-user-password" class="button radius small">Submit</button>
+              </div>
+              <button id="submit-user-password" class="button radius small">Submit</button>
             </div>
-        </fieldset>
-    </div>
-    <div class="row hidden" id="user-manager-container">
-        <fieldset>
+          </fieldset>
+        </div>
+        <div class="row hidden" id="user-manager-container">
+          <fieldset>
             <legend>User Management</legend>
             <div class="large-4 columns" id="section-user-manager">
-                <table id="usermanager-table">
-                    <thead>
-                        <tr>
-                            <th class="small-1">Id</th>
-                            <th class="small-2">Username</th>
-                            <th class="small-1">Admin</th>
-                            <th class="small-2">Created</th>
-                            <th class="small-1"></th>
-                            <th class="small-1"></th>
-                            <th class="small-1"></th>
-                        </tr>
-                    </thead>
-                    <tbody class="row user-listing"></tbody>
-                </table>
-                <button id="add-user"class="button radius small">Add new user</button>
+              <table id="usermanager-table">
+                <thead>
+                  <tr>
+                    <th class="small-1">Id</th>
+                    <th class="small-2">Username</th>
+                    <th class="small-1">Admin</th>
+                    <th class="small-2">Created</th>
+                    <th class="small-1"></th>
+                    <th class="small-1"></th>
+                    <th class="small-1"></th>
+                  </tr>
+                </thead>
+                <tbody class="row user-listing"></tbody>
+              </table>
+              <button id="add-user" class="button radius small">Add new user</button>
             </div>
-        </fieldset>
-    </section>
+          </fieldset>
+      </section>
 
-</div>
-<!--</form>-->
+      </div>
+      <!--</form>-->
 
-</div>
-<script src="../../common.js"></script>
-<script src="../../configuration.js"></script>
+    </div>
+    <script src="../../common.js"></script>
+    <script src="../../configuration.js"></script>
 
 </body>
+
 </html>

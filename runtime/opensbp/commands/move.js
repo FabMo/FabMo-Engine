@@ -130,7 +130,7 @@ process_move = function(args) {
 	this.cmd_result = 0;
 	var params = {};
 	var feedrate = this.movespeed_xy * 60;
-	log.debug("    (process_move)movespeed_xy = " + this.movespeed_xy);
+//	log.debug("    (process_move)movespeed_xy = " + this.movespeed_xy);
 	if( args[0] === 0 || args[0] && typeof args[0] === "number"){  //args[0] === 0 ||
 		params.X = args[0];
 		if ( params.X === this.cmd_posx ) { this.cmd_result += 1; }
@@ -161,33 +161,25 @@ process_move = function(args) {
 };
 
 // Move to the XY home position (0,0)
-exports.MH = function(args,callback) {
+exports.MH = function(args) {
 	var x = 0;
 	var y = 0;
+ 	var z = this.cmd_posz;
 	var safeZ = config.opensbp.get('safeZpullUp');
 	var feedrateXY = this.movespeed_xy * 60;
 	var feedrateZ = this.movespeed_z * 60;
 
-	this.machine.driver.get('posz', function(err, MPO) {
-		var unitConv = 1;
-		log.debug( "MH" );
-	 	if ( this.machine.driver.status.unit === 'in' ) {  // inches
-	 		unitConv = 0.039370079;
-	 	}
-	 	var z = MPO;
-		log.debug("z = " + z);
-	 	if ( z < safeZ ){
-			this.emit_move('G1',{"Z":safeZ,'F':feedrateZ});
-			this.emit_move('G1',{"X":x,"Y":y,'F':feedrateXY});
- 		}
- 		else{
- 			this.emit_move('G1',{"X":x,"Y":y,'F':feedrateXY});
- 		}
-		this.cmd_posx = 0;
-		this.cmd_posy = 0;
-		this.cmd_posz = safeZ;
-		callback();
-	}.bind(this));
+	log.debug( "MH" );
+	if ( z < safeZ ){
+		this.emit_move('G1',{"Z":safeZ,'F':feedrateZ});
+		this.emit_move('G1',{"X":x,"Y":y,'F':feedrateXY});
+ 	}
+ 	else{
+ 		this.emit_move('G1',{"X":x,"Y":y,'F':feedrateXY});
+ 	}
+	this.cmd_posx = 0;
+	this.cmd_posy = 0;
+	this.cmd_posz = safeZ;
 };
 
 // Set the Move (cut) speed for any of the 6 axes
@@ -197,11 +189,9 @@ exports.MS = function(args, callback) {
 	var speed_change = 0.0;
 
 	if (args[0] !== undefined) {
-		log.debug("    (1)movespeed_xy = " + this.movespeed_xy);
 		speed_change = args[0];
 		if(isNaN(speed_change)) { throw( "Invalid MS-XY argument: " + speed_change ); }
 		this.movespeed_xy = speed_change;
-		log.debug("    (2)movespeed_xy = " + this.movespeed_xy);
 	}
 	if (args[1] !== undefined) {
 		speed_change = args[1];
@@ -225,13 +215,9 @@ exports.MS = function(args, callback) {
 	}
 
     this.vs_change = 1;
-    log.debug("  MS: vs_change = " + this.vs_change);
+//    log.debug("  MS: vs_change = " + this.vs_change);
     callback();
 
-};
-
-exports.MI = function(args) {
-	//?????????????????????????????????????????????
 };
 
 exports.MO = function(args) {

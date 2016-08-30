@@ -15,7 +15,7 @@
         M2, 6, 0
     
     '(... next lines displays; feature of OpenSBP)
-    'Attach Aligator Clip to Cutter and Swing-Out Target (-Continue- when Ready)
+    'Attach Aligator Clip to Cutter Shank and Swing-Out Target (-Continue- when Ready)
         PAUSE
 
     'Make sure we're not accidentally in electrical contact with target 
@@ -67,7 +67,7 @@
         VR, , &startZ_ramp 
         MZ, &Z_final        
 
-    'Measurement Complete. REMOVE Aligator Clip and PARK Target !! (-Continue- when Done)
+    'Measurement Complete. REMOVE Alligator Clip and PARK Target !! (-Continue- when Done)
         PAUSE
 
     '{{Eventually we'd like a choice here to move home or to park}}

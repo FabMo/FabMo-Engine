@@ -225,10 +225,10 @@ Engine.prototype.start = function(callback) {
             });
         }.bind(this),
 
-/*        function set_units(callback) {
+        function set_units(callback) {
             this.machine.driver.setUnits(config.machine.get('units'), callback);
         }.bind(this),
-*/
+
         // Configure G2 by loading all its json settings and static configuration parameters
         function load_driver_config(callback) {
             if(this.machine.isConnected()) {
@@ -295,14 +295,22 @@ Engine.prototype.start = function(callback) {
         }.bind(this),
 
         function load_opensbp_commands(callback) {
+            if(!this.machine.isConnected()) {
+                log.warn('Not loading SBP Commands due to no connection to motion system.')
+                return callback(null);
+            }
             log.info("Loading OpenSBP Commands...");
             this.machine.sbp_runtime.loadCommands(callback);
         }.bind(this),
 
         function load_opensbp_config(callback) {
+            if(!this.machine.isConnected()) {
+                log.warn('Not configuring SBP due to no connection to motion system.')
+                return callback(null);
+            }
             log.info("Configuring OpenSBP runtime...");
             config.configureOpenSBP(callback);
-        },
+        }.bind(this),
 
         function apply_machine_config(callback) {
             log.info("Applying machine configuration...");

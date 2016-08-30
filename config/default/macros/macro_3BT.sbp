@@ -1,7 +1,7 @@
 '!FABMO!name:Home
 '!FABMO!description:Home to prox switches
 ' HOMING ROUTINE
-' WRITTEN FOR FABMO PLATFORM FOR A HANDIBOT
+' WRITTEN FOR FABMO PLATFORM
 
 &approach_speed_fast = 1.0
 &approach_speed_slow = 0.25
@@ -42,13 +42,13 @@ END
 ' SUBROUTINES BELOW HERE
 
 approach_x:
-   ON INPUT(3,0) RETURN
+   ON INPUT(3,1) RETURN
    MX,&search_distance_x
    ' FAIL if we got here
    END
    
 approach_y:
-   ON INPUT(3,0) RETURN
+   ON INPUT(3,1) RETURN
    MY,&search_distance_y
    'FAIL if we got here also
    END

@@ -719,7 +719,9 @@ GCodeViewer.Path = function(scene) {
     that.matG1Done = new THREE.LineBasicMaterial({color : 0xff00ff });
     that.matG2G3Done = new THREE.LineBasicMaterial({ color : 0xff00ff });
 
-    that.matDoing = new THREE.LineBasicMaterial({ color : 0x00ffff });
+    that.matDoing = new THREE.LineBasicMaterial({
+        color : 0x00ffff, linewidth : 7
+    });
 };
 
 module.exports = GCodeViewer;
