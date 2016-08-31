@@ -220,7 +220,7 @@ td.actions-control {
     height: 200px;
     box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.15);
     border: 1px solid #ccc;
-    overflow:auto;
+    overflow: visible;
     -webkit-user-select: none;  /* Chrome all / Safari all */
       -moz-user-select: none;     /* Firefox all */
         -ms-user-select: none;      /* IE 10+ */
@@ -316,7 +316,7 @@ td.actions-control {
 
 .job_item .description, .recent_item .description{
   position: absolute;
-  height: 80%;
+  height: 75%;
   overflow: hidden;
 }
 
