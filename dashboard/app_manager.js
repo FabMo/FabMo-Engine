@@ -12,7 +12,6 @@ var config = require('../config');
 
 // Maximum depth of a deep copy operation
 ncp.limit = 16;
-
 var AppManager = function(options) {
 	this.app_directory = options.app_directory;
 	this.approot_directory = options.approot_directory;
@@ -340,6 +339,7 @@ AppManager.prototype.getAppPaths = function(callback) {
  * Load all of the apps in the provided apps directory
  */
 AppManager.prototype.loadApps =  function(callback) {
+	console.log(this);
 	this.getAppPaths(function(err,files){
 		async.mapSeries(files,
 			function(file, callback) {

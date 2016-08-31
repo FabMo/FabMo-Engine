@@ -163,6 +163,7 @@ FabMoDashboard.prototype._download = function(data, strFileName, strMimeType) {
 } // _download
 
 FabMoDashboard.prototype._call = function(name, data, callback) {
+	// console.log(this)
 	if(this.isPresent()) {
 		//console.debug("Calling " + name + " with " + JSON.stringify(data));
 		message = {"call":name, "data":data}
@@ -229,6 +230,7 @@ FabMoDashboard.prototype._simulateCall = function(name, data, callback) {
 }
 
 FabMoDashboard.prototype._on = function(name, callback) {
+
 	var message = {"on":name}
 	if(callback) {
 		this._event_listeners[name].push(callback);
@@ -979,7 +981,7 @@ var showToaster = function (toaster) {
     toaster.style.visibility = 'visible';
     setTimeout(function(){document.body.removeChild(toaster)}, 1000);
 }
-
+console.log(FabMoDashboard);
 return FabMoDashboard;
 
 }));

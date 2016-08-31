@@ -1,11 +1,16 @@
 @import "fonts.css";
 
-body,html{
+html{
+    color: black;
+    font-family: 'source_sans_proregular';
+}
+
+body {
+    color: black;
+    font-family: 'source_sans_proregular';
     height: 100%;
     width: 100%;
     background-color: #eee;
-    color: black;
-    font-family: 'source_sans_proregular';
 }
 
 .noselect {
@@ -29,6 +34,7 @@ body,html{
 
 .main-section, .app-section, .spinner-section {
 	height: 98%;
+	background-color: #eee;
 }
 
 .off-canvas-wrap, .inner-wrap {
@@ -59,7 +65,7 @@ body,html{
 .left-small {position: inherit;}
 
 .top-bar h1  {
-	width: 16px;
+	width: 150px;
 	size: 1rem;
 }
 
@@ -501,7 +507,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #icon_search 		{ background-image: url('../img/icon_search.png');}
 #icon_folder 		{ background-image: url('../img/icon_folder.png');}
 #icon_settings 		{ background-image: url('../img/icon_settings.png');}
-#icon_status 		{ background-image: url('../img/icon_status.png');}
 #icon_colapse 		{ background-image: url('../img/icon_colapse_r.png');}
 #icon_edit 			{ background-image: url('../img/icon_folder.png');}
 #icon_editor 		{ background-image: url('../img/icon_editor.png');}
@@ -1160,7 +1165,6 @@ input[type=number]::-webkit-outer-spin-button {
 	width: 50px;
 	border-radius: 50%;
 	float: right;
-	display: none;
 	margin-right: 1em;
 }
 
@@ -1841,6 +1845,7 @@ input[type=number]::-webkit-outer-spin-button {
 	height: 100%;
 	margin: auto;
 	text-align: center;
+	will-change: transform;
 }
 
 

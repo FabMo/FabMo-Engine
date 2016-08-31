@@ -1,18 +1,20 @@
 ;(function (root, factory) {
 
+
   /* CommonJS */
   if (typeof module == 'object' && module.exports) module.exports = factory()
 
   /* AMD module */
-  else if (typeof define == 'function' && define.amd) define(['socket.io'], factory)
+  else if (typeof define == 'function' && define.amd) define([], factory)
 
   /* Browser global */
   else root.FabMoAPI = factory()
+
 }(this, function (io) {
   "use strict"
 
 var PING_TIMEOUT = 3000;
-
+console.log(io)
 var makePostData = function(obj, options) {
 	var file = null;
 	if(obj instanceof jQuery) {
@@ -37,7 +39,7 @@ var makePostData = function(obj, options) {
 
 	var job = {}
 	var options = options || {};
-	for(var key in options) {
+	for(var key in options) {0
 		job[key] = options[key];
 	}
 	job.file = file;
@@ -65,9 +67,10 @@ var FabMoAPI = function(base_url) {
 }
 
 FabMoAPI.prototype._initializeWebsocket = function() {
+	var io = require("socket.io/node_modules/socket.io-client/socket.io.js");
 	localStorage.debug = false
 	try {
-		this.socket = io(this.base_url+'/private');
+		this.socket = io.connect(this.base_url+'/private');
 	} catch(e) {
 		this.socket = null;
 		console.error('connection to the engine via websocket failed : '+ e.message);

@@ -6,8 +6,9 @@
  * the parts that we want the app to see.
  */
 define(function(require) {
-  var events = require('events');
-  var toastr = require('toastr');
+  var events = require('./events.js');
+  var toastr = require('./libs/toastr.min.js');
+  var context = require('./context.js');
   var modalIsShown = false;
 
   var Dashboard = function(target) {
@@ -706,22 +707,22 @@ define(function(require) {
     }.bind(this));
 
     this._registerHandler('getAppArgs', function(data, callback) {
-      context = require('context');
+
       callback(null, context.current_app_args || {});
     }.bind(this));
 
     this._registerHandler('getAppInfo', function(data, callback) {
-      context = require('context');
+
       callback(null, context.current_app_info || {});
     }.bind(this));
 
     this._registerHandler('getAppConfig', function(data, callback) {
-      context = require('context');
+
       this.engine.getAppConfig(context.current_app_id, callback);
     }.bind(this));
 
     this._registerHandler('setAppConfig', function(data, callback) {
-      context = require('context');
+
       this.engine.setAppConfig(context.current_app_id, data, callback);
     }.bind(this));
 
@@ -992,13 +993,13 @@ define(function(require) {
   }
 
   Dashboard.prototype.refreshApps = function() {
-    context = require('context');
+
     context.apps.fetch();
   }
 
   Dashboard.prototype.submitApps = function(data, options, callback) {
     this.engine.submitApp(data, data.options, function(err, result) {
-      context = require('context');
+
       context.apps.fetch();
 
       if (err) {

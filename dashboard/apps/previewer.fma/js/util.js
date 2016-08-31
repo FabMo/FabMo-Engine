@@ -9,6 +9,10 @@
  * Checks if WebGL is enabled or not.
  * @return {boolean} True is enabled
  */
+var GCodeViewer = require('./animation.js');
+var GCodeToGeometry = require('./gcodetogeometry.min.js');
+console.log(GCodeToGeometry);
+
 GCodeViewer.webGLEnabled = function() {
     // From http://www.browserleaks.com/webgl#howto-detect-webgl
     if(!!window.WebGLRenderingContext) {
@@ -60,9 +64,19 @@ GCodeViewer.copyPoint = function(point) {
  * @param {object} a Point A.
  * @param {object} b Point B.
  * @return {boolean} True if the two points are nearly equal.
+ * 
+ * 
  */
+
+function nearlyEqual(a, b) {
+    return Math.abs(b - a) <= 0.001;
+}
+
+
 GCodeViewer.samePosition = function(posA, posB) {
-    return (GCodeToGeometry.nearlyEqual(posA.x, posB.x) &&
-            GCodeToGeometry.nearlyEqual(posA.y, posB.y) &&
-            GCodeToGeometry.nearlyEqual(posA.z, posB.z));
+    return (nearlyEqual(posA.x, posB.x) &&
+            nearlyEqual(posA.y, posB.y) &&
+            nearlyEqual(posA.z, posB.z));
 };
+
+module.exports = GCodeViewer;

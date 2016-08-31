@@ -248,6 +248,7 @@ td.actions-control {
   opacity: .5;
   background-color: #777;
 }
+
 .job_item:first-child #menu{
   display: none;
 }

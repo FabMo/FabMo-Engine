@@ -11,6 +11,8 @@
 
 //refreshFunction is the function to refresh the display/render the scene
 //path is the instance of the class Path
+var GCodeViewer = require('./gui.js');
+
 GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
         initialPosition) {
     "use strict";
@@ -316,3 +318,5 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
     that.lastTime = new Date().getTime();
     setInterval(update, 1000 / fps);
 };
+ 
+ module.exports = GCodeViewer;

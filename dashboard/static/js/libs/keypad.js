@@ -4,8 +4,7 @@
   if (typeof module == 'object' && module.exports) module.exports = factory()
 
   /* AMD module */
-  else if (typeof define == 'function' && define.amd) define(['hammer', 'jquery'],factory)
-
+  
   /* Browser global */
   else root.WheelControl = factory(Hammer, $)
 
@@ -34,6 +33,7 @@ Keypad.prototype.init = function() {
 
 	var drive_buttons = e.find('.drive-button');
 	drive_buttons.each(function(index, element) {
+		var Hammer = require('./hammer.min.js');
 		var hammer = new Hammer.Manager(element);
 		hammer.add(new Hammer.Tap({time: this.pressTime-1, interval: this.tapInterval, threshold: this.pressThreshold}));
 		hammer.add(new Hammer.Press({time: this.pressTime, threshold: this.pressThreshold}));

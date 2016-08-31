@@ -5,7 +5,7 @@ define(function(require) {
 
 	var $ = require('jquery');
 	var Backbone = require('backbone');
-
+	var auth = require('./auth.js');
 	var Router = Backbone.Router.extend({
 		routes: {
 			"app/:id"     		: "_launchApp",
@@ -48,6 +48,7 @@ define(function(require) {
         		console.log(result);
    			}});
 			$('#mainContent').show();
+			auth();
 		},
 		loadView : function(view) {
 		this.view && this.view.remove();

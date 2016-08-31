@@ -1,171 +1,34 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-  <title>G-Code Editor</title>
-  <meta charset="utf-8"/>
-
-  <link rel="stylesheet" href="/css/foundation.min.css">
-  <link rel="stylesheet" href="/css/normalize.css">
-  <link rel="stylesheet" href="./css/style.css">
+  <title>Preview</title>
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <script src="bower_components/jquery/dist/jquery.min.js"></script>
-  <script src="js/foundation.min.js"></script>
+  <link rel="stylesheet" href="../../css/dashboard.css">
+  <link rel="stylesheet" href="./css/style.css">
 </head>
+
 <body>
 
   <nav class="top-bar" data-topbar role="navigation" id="topbar">
-  <ul class="title-area">
-    <li class="name">
-      <h1><a id="app-header">Preview</a></h1>
-    </li>
-     <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
-    <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
-  </ul>
+    <ul class="title-area">
+      <li class="name">
+        <h1><a id="app-header">Preview</a></h1>
+      </li>
+      <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
+      <li class="toggle-topbar"><a href="#"><span>Menu</span></a>
+      </li>
+    </ul>
+    <section class="top-bar-section">
+    </section>
+  </nav>
 
-  <section class="top-bar-section">
-  </section>
-</nav>
+  <div id="preview" style="display: inline-block;">
+  </div>
 
-    <div id="preview" style="display: inline-block;">
-    </div>
-
-  <script src="/js/libs/fabmo.js"></script>
-  <script src="js/gcodetogeometry.min.js"></script>
-
-  <script src="js/three.min.js"></script>
-  <script src="js/CombinedCamera.js"></script>
-  <script src="js/helvetiker_regular.typeface.js"></script>
-  <script src="js/OrbitControls.js"></script>
-
-  <script src="js/path.js"></script>
-  <script src="js/helper.js"></script>
-  <script src="js/gui.js"></script>
-  <script src="js/animation.js"></script>
-  <script src="js/util.js"></script>
-  <script src="js/viewer.js"></script>
-
-  <script>
-    var fabmo = new FabMoDashboard();
-    var viewer;
-    var FOOTBAR_HEIGHT = 175;  // Should find a way to access the element
-
-    /**
-     * Initializes the handler for updating the live viewer.
-     * @param {number} jobId The job id.
-     */
-    function initializeLiveViewerHandler(jobId) {
-      fabmo.on("status", function(status) {
-        if(status.state !== "running") {
-          return;
-        }
-        if(status.job && status.job._id === jobId && status.line !== null) {
-          viewer.updateLiveViewer(status.line);
-        }
-      });
-    }
-
-    /**
-     * Initializes the viewer object.
-     * @param {string} gcode The G-Code to display.
-     * @param {boolean} isLive Sets if the G-Code should be displayed live.
-     * @param {number} jobId The job id.
-     * @param {boolean} inInch If the units are displayed in inches.
-     */
-    function initializeViewer(gcode, isLive, jobId, inInch) {
-      var width = window.innerWidth;
-      var height = window.innerHeight - $("#topbar").height();
-      $('#preview').size(width, height);
-      viewer = new GCodeViewer.Viewer(
-        document.getElementById("preview"),
-        width,
-        height,
-        function(msg) { fabmo.notify('warning', msg); },
-        { hideGCode : true },
-        isLive,
-        inInch
-      );
-      if(gcode !== "") {
-        viewer.setGCode(gcode);
-      }
-
-      if(isLive) {
-          initializeLiveViewerHandler(jobId);
-      }
-
-      resize();
-    }
-
-    function getUnitChoiceAndInitializeViewer(data, isLive, jobId) {
-      fabmo.requestStatus(function(err, status) {
-        initializeViewer(data, isLive, jobId, status.unit == "in");
-      });
-    }
-
-// Start fixing issue with footbar display
-
-    /**
-     * Resizes the viewer according to the running job footer height. The
-     * height should be equal to zero if no job is running.
-     *
-     * @param {number} footerHeight The footer height.
-     */
-    function resizeAccordingFooter(footerHeight) {
-      var width = window.innerWidth;
-      var height = window.innerHeight - $("#topbar").height() - footerHeight;
-      $('#preview').size(width, height);
-      viewer.resize(width, height);
-    }
-
-    /**
-     * Resizes the viewer. Function to call when the window has been resized.
-     */
-    function resize() {
-        fabmo.requestStatus(function(err, status) {
-          if(err) {
-            resizeAccordingFooter(0);
-            return;
-          }
-          if(status.state !== "running") {
-            resizeAccordingFooter(0);
-            return;
-          }
-          resizeAccordingFooter(FOOTBAR_HEIGHT);  //Should access to the element
-        });
-    }
-
-// End fixing issue with footbar display
-
-// Old code to use when the issue with the footbar is fixed
-/*
-    function resize() {
-      var width = window.innerWidth;
-      var height = window.innerHeight - $("#topbar").height() - footerHeight;
-      $('#preview').size(width, height);
-      viewer.resize(width, height);
-    }
-*/
-
-    $(document).ready(function() {
-      $(document).foundation();
-
-      fabmo.getAppArgs(function(err, args) {
-        if('job' in args) {
-          var url = '/job/' + args.job + '/gcode';
-          $.get(url,function(data, status) {
-            var isLive = ('isLive' in args) ? args.isLive : false;
-            getUnitChoiceAndInitializeViewer(data, isLive, args.job);
-          });
-        } else {
-          getUnitChoiceAndInitializeViewer("", false, -1);
-        }
-      });
-
-      $(window).resize(function(){
-        resize();
-      });
-    });
-  </script>
-
+  <script src="../../common.js"></script>
+  <script src="../../preview.js"></script>
 </body>
+
 </html>

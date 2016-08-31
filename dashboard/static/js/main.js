@@ -1,12 +1,19 @@
 /*
  * main.js is the entry point for the application.
  */
-define(function(require) {
+
+require('font-awesome/css/font-awesome.css');
+require("../css/normalize.css");
+require("../css/foundation.min.css");
+require("../css/style.css");
+require("../css/toastr.min.css");
+require('jQuery');
+require('backbone');
 
     // context is the application context
     // dashboard is the bridge between the application context and the apps
-    var context = require('context');
-    var dashboard = require('dashboard');
+    var context = require('./context.js');
+    var dashboard = require('./dashboard.js');
 
     // Vendor libraries
     var $ = require('jquery');
@@ -14,10 +21,10 @@ define(function(require) {
     var underscore = require('underscore');
 
     // Our libraries
-    var FabMoAPI = require('fabmo');
-    var FabMoUI = require('fabmo-ui');
-    var Keyboard = require('keyboard');
-    var Keypad = require('keypad');
+    var FabMoAPI = require('./libs/fabmoapi.js');
+    var FabMoUI = require('./libs/fabmoui.js');
+    var Keyboard = require('./libs/keyboard.js');
+    var Keypad = require('./libs/keypad.js');
 
     var keypad, keyboard;
 
@@ -33,6 +40,8 @@ define(function(require) {
 
     // Detect touch screen
     var supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
+    console.log(engine);
+    console.log(dashboard);
 
     // Initial read of engine configuration
     engine.getCurrentUser(function(err,user){
@@ -579,4 +588,3 @@ define(function(require) {
     }
     touchScreen();
 
-});

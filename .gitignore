@@ -13,4 +13,6 @@ config/data/*.json
 .DS_Store
 *.sublime*
 *.orig
-dashboard/build
+dashboard/build/*
+!dashboard/build/index.html
+

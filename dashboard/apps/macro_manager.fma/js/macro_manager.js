@@ -1,3 +1,8 @@
+require('jQuery');
+var Foundation = require('../../../static/js/libs/foundation.min.js');;
+var Fabmo = require('../../../static/js/libs/fabmo.js');
+var fabmo = new Fabmo;
+
 var macroIndex = {};
 
 function getMacroFromClick(elem) {

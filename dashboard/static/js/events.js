@@ -1,7 +1,6 @@
 define(function(require) {
     var $ = require('jquery');
-    var foundation = require('foundation');
-    var toastr = require('toastr');
+    var toastr = require('./libs/toastr.min');
 
     // Events and keypress handlers in the FabMo-Dashboard
 
@@ -218,13 +217,6 @@ define(function(require) {
 
     /********** Document Ready Init **********/
     $(document).ready(function() {
-        //Call fundation for the document, and define a way to open the menus
-        $(document).foundation({
-            offcanvas: {
-                open_method: 'overlap_single',
-            }
-
-        });
         rightMenuLoad();
         resizedoc();
         //If size of the screen change, we resize the main & app container
