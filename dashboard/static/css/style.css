@@ -1,11 +1,16 @@
 @import "fonts.css";
 
-body,html{
+html{
+    color: black;
+    font-family: 'source_sans_proregular';
+}
+
+body {
+    color: black;
+    font-family: 'source_sans_proregular';
     height: 100%;
     width: 100%;
     background-color: #eee;
-    color: black;
-    font-family: 'source_sans_proregular';
 }
 
 .noselect {
@@ -29,6 +34,7 @@ body,html{
 
 .main-section, .app-section, .spinner-section {
 	height: 98%;
+	background-color: #eee;
 }
 
 .off-canvas-wrap, .inner-wrap {
@@ -1839,6 +1845,7 @@ input[type=number]::-webkit-outer-spin-button {
 	height: 100%;
 	margin: auto;
 	text-align: center;
+	will-change: transform;
 }
 
 
