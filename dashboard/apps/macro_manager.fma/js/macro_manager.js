@@ -112,25 +112,14 @@ function refreshMacros(callback) {
     });
 }
 
-function dropDescription (){
-    if ($(window).width() < 500){
-        $('td:nth-child(4)').hide();
-    } else {
-        $('td:nth-child(4)').show();
-    }
-}
-
-$(window).resize(function() {
-    dropDescription();
-});
 
 $(document).ready(function() {
 
     $(document).foundation();
 
     refreshMacros();
-    dropDescription();
-
+   
+    console.log('wtf');
     $('#macro-new').on('click', function(evt) {
         var macroCount = Object.keys(macroIndex).length;
         for(var newIndex=1; newIndex<macroCount+1; newIndex++) {
@@ -146,6 +135,5 @@ $(document).ready(function() {
         });
         evt.preventDefault();
     }); 
-
 });
 

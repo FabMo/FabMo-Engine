@@ -89,6 +89,14 @@ td.delete-control img {
         width: 25px;
         padding: .1em;
     }
+
+    td.edit-control, td.delete-control, td.number {
+        width: 40px;
+    }
+
+    td:nth-child(4){
+        display: none;
+    }
 }
 
 .table-outer {
@@ -137,4 +145,12 @@ th {
 .hidden, .hide { display:none; }
 
 
+/*.edit-control, .delete-control, .number{
+    width: 20px;
 
+}
+
+.edit-control :first-child, .delete-control :first-child, .number :first-child{
+    width: 25px;
+
+}*/
