@@ -112,12 +112,24 @@ function refreshMacros(callback) {
     });
 }
 
+function dropDescription (){
+    if ($(window).width() < 500){
+        $('td:nth-child(4)').hide();
+    } else {
+        $('td:nth-child(4)').show();
+    }
+}
+
+$(window).resize(function() {
+    dropDescription();
+});
+
 $(document).ready(function() {
 
     $(document).foundation();
 
     refreshMacros();
-
+    dropDescription();
 
     $('#macro-new').on('click', function(evt) {
         var macroCount = Object.keys(macroIndex).length;
