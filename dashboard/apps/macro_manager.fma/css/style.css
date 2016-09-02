@@ -24,6 +24,8 @@ input[type=number]::-webkit-outer-spin-button {
     cursor: pointer;
 }
 
+
+
 td.run-control {
     width: 60px;
     cursor: pointer;
@@ -84,14 +86,16 @@ td.delete-control img {
 }
 
 @media screen and (max-width: 480px) {
-    td.delete-control img,  td.edit-control img, td.run-control img {
+
+    td.delete-control img,  td.edit-control img, td.run-control img, td.number input  {
         height: 25px;
         width: 25px;
         padding: .1em;
     }
 
     td.edit-control, td.delete-control, td.number {
-        width: 40px;
+        padding: 0em;
+        width:25px;
     }
 
     td:nth-child(4){
