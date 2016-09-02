@@ -316,7 +316,9 @@ define(function(require) {
         }
         dashboard.engine.gcode(gcode);
         $('.go-here').hide();
-
+        if ( $(window).width() < 900) {
+            $('#right-menu').css('right', '0');
+        }
     });
 
     $('.axi').on('click', function(e) {
