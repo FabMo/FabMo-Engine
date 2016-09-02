@@ -5,6 +5,9 @@
   "repository": "https://github.com/ShopBotTools/FabMo-Engine.git",
   "license": "MIT",
   "main": "dashboard/static/test.js",
+  "config": {
+    "unsafe-perm":true
+  },
   "dependencies": {
     "adm-zip": "^0.4.4",
     "async": "1.4.x",
@@ -45,7 +48,9 @@
     "url-loader": "^0.5.7",
     "webpack": "^1.13.2"
   },
-  "optionalDependencies": {},
+  "optionalDependencies": {
+    "udev": "^0.2.0"
+  },
   "devDependencies": {
     "chai": "3.2.x",
     "chokidar": "^1.0.3",
