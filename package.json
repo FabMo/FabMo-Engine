@@ -44,9 +44,6 @@
     "underscore": "^1.8.3",
     "url-loader": "^0.5.7"
   },
-  "optionalDependencies": {
-    "udev": "^0.2.0"
-  },
   "optionalDependencies": {},
   "devDependencies": {
     "chai": "3.2.x",
@@ -63,7 +60,8 @@
     "mocha": "2.2.x",
     "sinon": "1.16.x",
     "svgmin": "^0.1.0",
-    "text-loader": "0.0.1"
+    "text-loader": "0.0.1",
+    "webpack": "^1.13.2"
   },
   "engine": "node 0.10.x",
   "apidoc": {
@@ -73,9 +71,9 @@
     "title": "FabMo-Engine API Documentation"
   },
   "scripts": {
-    "start": "npm run dist && node server.js",
-    "debug": "npm run dev && node server.js --debug ",
-    "dist": "webpack -p",
+    "start": "node server.js",
+    "debug": "node server.js --debug ",
+    "postinstall": "webpack -p",
     "dev": "webpack"
   }
 }
