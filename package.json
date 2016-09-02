@@ -42,7 +42,8 @@
     "tingodb": "0.3.x",
     "tough-cookie": "^2.3.1",
     "underscore": "^1.8.3",
-    "url-loader": "^0.5.7"
+    "url-loader": "^0.5.7",
+    "webpack": "^1.13.2"
   },
   "optionalDependencies": {},
   "devDependencies": {
@@ -61,7 +62,6 @@
     "sinon": "1.16.x",
     "svgmin": "^0.1.0",
     "text-loader": "0.0.1",
-    "webpack": "^1.13.2"
   },
   "engine": "node 0.10.x",
   "apidoc": {
