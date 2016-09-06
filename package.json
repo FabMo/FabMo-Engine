@@ -65,8 +65,7 @@
     "grunt-svgstore": "^0.5.0",
     "mocha": "2.2.x",
     "sinon": "1.16.x",
-    "svgmin": "^0.1.0",
-    "text-loader": "0.0.1"
+    "svgmin": "^0.1.0"
   },
   "engine": "node 0.12.7",
   "apidoc": {
