@@ -4,7 +4,7 @@ var EventEmitter = require('events').EventEmitter;
 var dgram = require('dgram');
 var log = require('./log').logger('detection');
 var config = require('./config');
-var bonjour = require('bonjour')();
+//var bonjour = require('bonjour')();
 
 
 // Direct socket messages
@@ -17,8 +17,8 @@ var default_port = 24862; // = 7777 without conversion
 // Kick off the "detection daemon" which is the process that listens for incoming scans by the FabMo linker
 // The detection daemon is what we as a FabMo device run so that we can be discovered by the FabMo linker/dashboard
 var start = function(port) {
-	bonjour.unpublishAll();
-	bonjour.publish({ name: os.hostname()+" - FabMo Tool Minder daemon", host:os.hostname()+'.local', type: 'fabmo',protocol:'tcp', port: config.engine.get('server_port'),txt : {fabmo:JSON.stringify(getMachineInfo())}});
+//	bonjour.unpublishAll();
+//	bonjour.publish({ name: os.hostname()+" - FabMo Tool Minder daemon", host:os.hostname()+'.local', type: 'fabmo',protocol:'tcp', port: config.engine.get('server_port'),txt : {fabmo:JSON.stringify(getMachineInfo())}});
 
 	var socket = dgram.createSocket('udp4');
 	var that = this;
