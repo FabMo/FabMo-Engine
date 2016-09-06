@@ -489,7 +489,7 @@ exports.interpolate_circle = function(ICstartX,ICstartY,ICstartZ,endX,endY,plung
 //			- Rotation around the starting point
 //      - Define by center start point
 //		
-//	Usage: CR,<X Length>,<Y Length>,<I-O-T>,<Direction>,<Start Corner - 0-4>,
+//	Usage: CR,X Length,<Y Length>,<I-O-T>,<Direction>,<Start Corner>,
 //            <Plunge Depth>,<Repetitions>,<Options-2=Pocket OUT-IN,
 //             3=Pocket IN-OUT>,<Plunge from Z zero>,<Angle of Rotation>,
 //            <Sprial Plunge>,<X Center>,<Y Center>
@@ -502,7 +502,7 @@ exports.CR = function(args) {
   var CRstartY = this.cmd_posy;
   var CRstartZ = this.cmd_posz;
   var pckt_startX = CRstartX;
-  var pckt_startY = CRstartY;
+  var pckt_startY = CRstartY; 
   var currentZ = CRstartZ;
   var xDir = 1;
   var yDir = 1;

@@ -30,8 +30,7 @@
     "serialport": "^2.0.5",
     "socket.io": "1.3.7",
     "tingodb": "0.3.x",
-    "tough-cookie": "^2.0.0",
-    "lockfile": "1.0.x",
+    "tough-cookie": "^2.0.0"
   },
   "optionalDependencies": {
     "udev": "^0.2.0"
