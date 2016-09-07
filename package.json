@@ -79,7 +79,8 @@
   "scripts": {
     "start": "node server.js",
     "debug": "node server.js --debug ",
-    "postinstall": "webpack",
+    "postinstall": "webpack -p",
+    "prod": "webpack -p",
     "dev": "webpack"
   }
 }
