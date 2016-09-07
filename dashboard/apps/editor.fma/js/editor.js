@@ -1,5 +1,5 @@
 
-require('jQuery');
+require('jquery');
 var Foundation = require('../../../static/js/libs/foundation.min.js');
 var Fabmo = require('../../../static/js/libs/fabmo.js');
 var fabmo = new Fabmo;

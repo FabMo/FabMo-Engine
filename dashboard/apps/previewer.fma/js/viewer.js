@@ -9,7 +9,7 @@
  * This file contains the class managing the viewer. This is the class that the
  * user will instantiate. This is the main class.
  */
-require('jQuery');
+require('jquery');
 var GCodeToGeometry = require('./gcodetogeometry.min.js');
 require('./CombinedCamera');
 require('./OrbitControls.js');

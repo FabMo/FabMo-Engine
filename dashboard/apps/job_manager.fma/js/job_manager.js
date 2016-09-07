@@ -1,5 +1,5 @@
 require('./jquery.dragster.js');
-require('jQuery');
+require('jquery');
 var Foundation = require('../../../static/js/libs/foundation.min.js');
 var moment = require('../../../static/js/libs/moment.js');
 var Sortable = require('./Sortable.js');

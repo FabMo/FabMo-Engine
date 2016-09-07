@@ -7,7 +7,7 @@ require("../css/normalize.css");
 require("../css/foundation.min.css");
 require("../css/style.css");
 require("../css/toastr.min.css");
-require('jQuery');
+require('jquery');
 require('backbone');
 
     // context is the application context

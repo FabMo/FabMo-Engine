@@ -1,5 +1,5 @@
 require('./jquery.dragster.js');
-require('jQuery');
+require('jquery');
 var setApps = require('./app_manager.js');
 var setUsers = require('./user_manager');
 var Foundation = require('../../../static/js/libs/foundation.min.js');
