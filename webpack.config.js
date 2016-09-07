@@ -4,6 +4,8 @@ var webpack = require("webpack");
 var ProvidePlugin = require('webpack').ProvidePlugin;
 var path = require('path');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
+var Promise = require('es6-promise').Promise;
+require('es6-promise').polyfill();
 var config = {
   entry: {
     dashboard:'./dashboard/static/js/main.js',
