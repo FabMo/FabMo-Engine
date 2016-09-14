@@ -1,8 +1,8 @@
 var log = require('../../log').logger('manual');
 
 var T_RENEW = 500;
-var SAFETY_FACTOR = 1.25;
-var RENEW_SEGMENTS = 15;
+var SAFETY_FACTOR = 5;
+var RENEW_SEGMENTS = 4;
 
 function ManualRuntime() {
 	this.machine = null;
@@ -30,7 +30,7 @@ ManualRuntime.prototype.connect = function(machine) {
 ManualRuntime.prototype.disconnect = function() {
 	if(this.ok_to_disconnect) {
 		this.driver.removeListener('status', this.status_handler);
-		this._changeState("idle");	
+		this._changeState("idle");
 	} else {
 		throw new Error("Cannot disconnect while manually driving the tool.");
 	}
@@ -113,7 +113,7 @@ ManualRuntime.prototype._onG2Status = function(status) {
 
 		case "stopped":
 			switch(status.stat) {
-				case this.driver.STAT_STOP:			
+				case this.driver.STAT_STOP:
 				case this.driver.STAT_END:
 					this._changeState("idle");
 					break;
@@ -128,7 +128,7 @@ ManualRuntime.prototype._onG2Status = function(status) {
 ManualRuntime.prototype.executeCode = function(code, callback) {
 	this.completeCallback = callback;
 	log.debug("Recieved manual command: " + JSON.stringify(code));
-	
+
 	// Don't honor commands if we're not in a position to do so
 	switch(this.machine.status.state) {
 		case "stopped":
@@ -190,15 +190,15 @@ ManualRuntime.prototype.renewMoves = function() {
 	if(this.keep_moving) {
 		this.keep_moving = false;
 		var segment = this.currentDirection*(this.renewDistance / RENEW_SEGMENTS);
-		var move = 'G91 F' + this.currentSpeed.toFixed(3) + '\n';
+		var moves = ['G91 F' + this.currentSpeed.toFixed(3)]
 		for(var i=0; i<RENEW_SEGMENTS; i++) {
-			move += ('G1 ' + this.currentAxis + segment.toFixed(5) + '\n');
+			moves.push('G1 ' + this.currentAxis + segment.toFixed(5) + '\n');
 		}
-		this.driver.gcodeWrite(move);
-		setTimeout(this.renewMoves.bind(this), T_RENEW)		
+		this.driver.runGCodes(moves);
+		setTimeout(this.renewMoves.bind(this), T_RENEW)
 	} else {
 		if(this.machine.status.state != "stopped") {
-			this.stopMotion();	
+			this.stopMotion();
 		}
 	}
 }
@@ -217,11 +217,11 @@ ManualRuntime.prototype.fixedMove = function(axis, speed, distance) {
 		var axis = axis.toUpperCase();
 		if('XYZABCUVW'.indexOf(axis) >= 0) {
 			if(speed) {
-				var move = 'G91\nG1 ' + axis + distance.toFixed(5) + ' F' + speed.toFixed(3) + '\n';
+				var moves = ['G91','G1 ' + axis + distance.toFixed(5) + ' F' + speed.toFixed(3)];
 			} else {
-				var move = 'G91\nG0 ' + axis + distance.toFixed(5) + '\n';				
+				var moves = ['G91', 'G0 ' + axis + distance.toFixed(5)];
 			}
-			this.driver.gcodeWrite(move);
+			this.driver.runGCodes(moves);
 		}
 	}
 }
