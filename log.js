@@ -135,6 +135,8 @@ Logger.prototype.uncaught = function(err) {
 		console.log("UNCAUGHT EXCEPTION");
 		console.log(err.stack);
 	}
+	log_buffer.push("UNCAUGHT EXCEPTION");
+	log_buffer.push(err.stack);
 }
 
 // Factory function for producing a new, named logger object
@@ -154,7 +156,7 @@ var logger = function(name) {
 var _log = logger('log');
 
 function exitHandler(options, err) {
-	options = options || {};
+    options = options || {};
     if (err) {
     	_log.uncaught(err);
     }
@@ -178,7 +180,7 @@ function exitHandler(options, err) {
 
 process.on('exit', exitHandler.bind(null));
 process.on('SIGINT', exitHandler.bind(null, {savelog:true, exit:true}));
-process.on('uncaughtException', exitHandler.bind(null, {savelog:true, exit:true}));
+process.on('uncaughtException', exitHandler.bind(null, {savelog:true, exit:false}));
 
 var suppress = function(v) {_suppress = true;};
 var unsuppress = function(v) {_suppress = false;};

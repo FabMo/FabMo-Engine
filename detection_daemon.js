@@ -4,7 +4,7 @@ var EventEmitter = require('events').EventEmitter;
 var dgram = require('dgram');
 var log = require('./log').logger('detection');
 var config = require('./config');
-//var bonjour = require('bonjour')();
+var bonjour = require('bonjour')();
 
 
 // Direct socket messages
