@@ -20,7 +20,7 @@ var start = function(port) {
 //	bonjour.unpublishAll();
 //	bonjour.publish({ name: os.hostname()+" - FabMo Tool Minder daemon", host:os.hostname()+'.local', type: 'fabmo',protocol:'tcp', port: config.engine.get('server_port'),txt : {fabmo:JSON.stringify(getMachineInfo())}});
 
-	var socket = dgram.createSocket('udp4');
+	var socket = dgram.createSocket({type:'udp4',reuseAddr:true});
 	var that = this;
 	port = port || default_port;
 
