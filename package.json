@@ -69,7 +69,7 @@
     "sinon": "1.16.x",
     "svgmin": "^0.1.0"
   },
-  "engine": "node 0.12.7",
+  "engine": "node 0.10.44",
   "apidoc": {
     "name": "FabMo Engine",
     "version": "0.0.0",
