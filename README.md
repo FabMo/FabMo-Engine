@@ -39,8 +39,16 @@ To install the engine in the "standard" location on the Intel Edison, perform th
 7. Start the new service immediately `systemctl start fabmo`
 8. After the engine has had time to start, check its status: `systemctl status fabmo`
 
+### On the Raspberry Pi 3
+To install the engine in the "standard" location on the Raspberry Pi 3, perform the following steps.
+
+1. Checkout the source into `/fabmo` with `git checkout https://github.com/FabMo/FabMo-Engine /fabmo`
+2. Checkout the appropriate branch of the source tree.  The `release` branch is the most recent stable release.  (`git checkout release`)
+3. Install dependencies using npm: `cd /fabmo; npm install`
+4. Run the engine using the instructions below
+
 ## Running the Engine
 For debugging the engine, you can run it directly from the command prompt with `npm start` or `node server.js`  Running with `npm run debug` puts the engine in debug mode, in which it does more agressive app reloading.  `npm debug slow` introduces deliberate network latency on GET/POST requests, for testing.  This latency can be adjusted in `engine.js`
 
 ## Development
-A number of grunt tasks have been set up to facilitate engine development.  To see them, run `grunt` with no arguments in the source directory, and a list will be produced with explanations.  Currently, tasks exist for testing and generating/publishing documentation.,
+A number of grunt tasks have been set up to facilitate engine development.  To see them, run `grunt` with no arguments in the source directory, and a list will be produced with explanations.
