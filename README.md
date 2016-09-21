@@ -28,6 +28,9 @@ When the engine starts, it will connect to G2 and setup an http server to accept
 The engine is run from source, and only needs to be checked out and stored in a local directory.  Run `npm install` from the source directory to install the needed dependencies.
 
 ### On the Intel Edison
+
+![Intel Edison](/doc/intel_edison.jpg)
+
 To install the engine in the "standard" location on the Intel Edison, perform the following steps.
 
 1. Checkout the source into `/fabmo` with `git checkout https://github.com/FabMo/FabMo-Engine /fabmo`
@@ -40,6 +43,9 @@ To install the engine in the "standard" location on the Intel Edison, perform th
 8. After the engine has had time to start, check its status: `systemctl status fabmo`
 
 ### On the Raspberry Pi 3
+
+![Raspberry Pi](/doc/raspi.png)
+
 To install the engine in the "standard" location on the Raspberry Pi 3, perform the following steps.
 
 1. Checkout the source into `/fabmo` with `git checkout https://github.com/FabMo/FabMo-Engine /fabmo`
