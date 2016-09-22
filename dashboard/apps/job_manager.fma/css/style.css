@@ -323,10 +323,11 @@ td.actions-control {
 
 @media screen and (max-width: 750px){
   .job_item:first-child .description{
-      width: 55%;
-      height: 50%;
-      white-space: normal;
-      overflow: hidden;
+    width: 50%;
+    height: 50%;
+    white-space: normal;
+    overflow: hidden;
+    margin-left: 0.5em;
   }
   .name {
     height: 15px;

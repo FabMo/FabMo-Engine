@@ -7,6 +7,9 @@ var moment = require('../../../static/js/libs/moment.js');
 var Fabmo = require('../../../static/js/libs/fabmo.js');
 var fabmo = new Fabmo;
 
+$('body').bind('focusin focus', function(e){
+  e.preventDefault();
+})
 var unit_label_index = {}
 
 var registerUnitLabel = function(label, in_label, mm_label) {
