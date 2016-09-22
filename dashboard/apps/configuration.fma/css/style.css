@@ -6,6 +6,12 @@ h1, h2, h3, h4, h5, h6 {
   color: #666;
 }
 
+html, body {
+    height: 100%;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 .noselect {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
