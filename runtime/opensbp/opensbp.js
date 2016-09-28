@@ -385,7 +385,7 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 			//TODO , we should check the expression for a stack break, as well as the .stmt
 			//return _breaksStack(cmd.stmt);
 			break;
-
+        case "weak_assign":
 		case "assign":
 			result = true;
 			break;
@@ -906,7 +906,6 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			break;
 
 		case "weak_assign":
-			//TODO FIX THIS THIS DOESN'T DO SYSTEM VARS PROPERLY
 			this.pc += 1;
 			if(!this._varExists(command.var)) {
 				var value = this._eval(command.expr);
