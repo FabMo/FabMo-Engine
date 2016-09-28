@@ -1,6 +1,4 @@
-var Fabmo = require('../../../static/js/libs/fabmo.js');
-var fabmo = new Fabmo;
-module.exports = function apps() {
+module.exports = function apps(fabmo) {
 setupAppManager();
 function refreshApps() {
     // Load the list of apps available on the tool
@@ -19,6 +17,7 @@ function refreshApps() {
             $(".app-listing").append(html);
 
             $.each(apps, function(key, val) {
+            
                 var appid = 'app_' + val.id;
                 var appiconid = 'appicon_' + val.id;
                 var id = val.id;
@@ -84,7 +83,6 @@ function refreshApps() {
 
     function setupAppManager() {
         refreshApps();
-
         $('#file').change(function(evt) {
             startBusy();
             fabmo.submitApp($('#file'), {}, function(err, data) {

@@ -81,6 +81,6 @@
     "debug": "node server.js --debug ",
     "postinstall": "webpack -p",
     "prod": "webpack -p",
-    "dev": "webpack"
+    "dev": "webpack && node server.js --debug "
   }
 }

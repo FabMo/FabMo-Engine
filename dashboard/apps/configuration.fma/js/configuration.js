@@ -206,13 +206,14 @@ $("#restore_conf_file").change(function() {
     });
 
 $(document).ready(function() {
+
     $(document).foundation();
 
     // Setup Unit Labels
     registerUnitLabel('.in_mm_label', 'in', 'mm');
     registerUnitLabel('.ipm_mmpm_label', 'in/min', 'mm/min');
     registerUnitLabel('.ips_mmps_label', 'in/sec', 'mm/sec');
-    registerUnitLabel('.ipm2_mmpm2_label', 'in/min<sup>2</sup>', 'mm/min<sup>2</sup>');
+    registerUnitLabel('.i pm2_mmpm2_label', 'in/min<sup>2</sup>', 'mm/min<sup>2</sup>');
     registerUnitLabel('.inrev_mmrev_label', 'in/rev', 'mm/rev');
     registerUnitLabel('.inpm3_mmpm3_label', 'in/min<sup>3</sup>', 'mm/min<sup>3</sup>');
 
@@ -300,11 +301,13 @@ $(document).ready(function() {
         });
 
     });
-    setApps();
-    setUsers();
+
     // setupUserManager();
 
     fabmo.on('reconnect', function() {
         update();
     });
+
+    setApps(fabmo);
+    setUsers(fabmo);
 });
