@@ -1,6 +1,7 @@
 '!FABMO!name:Zero Plate Height
 '!FABMO!description:HANDIBOT: Remeasure Height of Z-Zero Plate
 'This routine allows you to determine the height of Z-Zero touch-off plate compared to material surface
+' Handibot Version 2
 
 $zero_plate_adder := .75
 &temp_top = $current_cutter_Zoffset - 0.5

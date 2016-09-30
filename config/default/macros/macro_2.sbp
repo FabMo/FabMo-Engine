@@ -1,6 +1,6 @@
 '!FABMO!name:Reset Cutter Length
-'!FABMO!description:... defines offset for Z-Zero location for #3, and sets Axis Zero for Z (use after changing cutter
-'Reset Cutter Length (sometimes called Z-Zero) -- MACRO #2 -- [C2] in OpenSBP Language // HANDIBOT VERSION
+'!FABMO!description:Defines offset for Z-Zero location for #3, and sets Axis Zero for Z (use after changing cutter
+'Reset Cutter Length (sometimes called Z-Zero) -- MACRO #2 -- [C2] in OpenSBP Language // HANDIBOT VERSION 2
 ' ... written in OpenSBP; 3/1/2016 th
 
 '==> Determines the cutter length offset for automated setting of Z-Axis Zero in Macro #3
