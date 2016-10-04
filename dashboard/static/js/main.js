@@ -40,15 +40,14 @@ require('backbone');
 
     // Detect touch screen
     var supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
-    console.log(engine);
-    console.log(dashboard);
+
 
     // Initial read of engine configuration
     engine.getCurrentUser(function(err,user){
-        if(err){
+        if(user === undefined){
             window.location.href = '#/authentication';
         } else {
-            /*console.log(user);*/
+            console.log(user);
         }
     });
 

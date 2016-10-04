@@ -513,6 +513,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #icon_handwheel 	{ background-image: url('../img/icon_refresh.png');}
 #icon_log 			{ background-image: url('../img/icon_log.png');	}
 #icon_network 		{ background-image: url('../img/icon_network.png');	}
+#icon_sign_out 		{ background-image: url('../img/icon_sign_out.png');	}
 
 
 .colapsed #icon_colapse { background-image: url('../img/icon_colapse.png');	}
