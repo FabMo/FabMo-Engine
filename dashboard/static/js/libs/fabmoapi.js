@@ -14,7 +14,6 @@
   "use strict"
 
 var PING_TIMEOUT = 3000;
-console.log(io)
 var makePostData = function(obj, options) {
 	var file = null;
 	if(obj instanceof jQuery) {
@@ -262,6 +261,7 @@ FabMoAPI.prototype.updateOrder= function(data, callback) {
 }
 
 FabMoAPI.prototype.runNextJob = function(callback) {
+	console.log("I got called");
 	this._post('/jobs/queue/run', {}, callback, callback);
 }
 
@@ -331,6 +331,7 @@ FabMoAPI.prototype.deleteMacro = function(id, callback) {
 }
 
 FabMoAPI.prototype.runCode = function(runtime, code, callback) {
+	console.log('this is some shit');
 	var data = {'cmd' : code, 'runtime':runtime}
 	this._post('/code', data, callback, callback);
 }

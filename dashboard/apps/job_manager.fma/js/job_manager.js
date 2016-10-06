@@ -505,18 +505,7 @@ function handleStatusReport(status) {
      				 'data-href': '/job/' + $('.download').data('id') + '/file'
     			});
 				document.location = $('.download').data('href');
-			} else if (Sortable.utils.is(ctrl, ".play-button")) {
-				if ($('.play').hasClass('active')) {
-					fabmo.pause(function(err, data) {});
-				} else {
-                    console.log("Running job?");
-					fabmo.runNext(function(err, data) {
-						if (err) {
-							fabmo.notify(err);
-                            console.log("Notify error");
-						}
-					});
-				}
+
 			} else if (Sortable.utils.is(ctrl, ".ellipses")){
 				console.log(ctrl);
 				var dd = ctrl.parentNode.childNodes[2];
@@ -578,7 +567,7 @@ function handleStatusReport(status) {
   $(document).foundation();
 
 	fabmo.on('change', function(topic) {
-    
+    console.log(topic);
 		if (topic === 'jobs') {
 		updateQueue();
 		updateHistory();
@@ -656,6 +645,8 @@ function handleStatusReport(status) {
 	});
 
 	$('#queue_table').on('click', '.play-button', function(e) {
+    e.preventDefault;
+    e.stopPropagation;
 		if ($('.play').hasClass('active')) {
 					fabmo.pause(function(err, data) {});
 				} else {
