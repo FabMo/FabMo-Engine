@@ -43,6 +43,8 @@ require('backbone');
 
 
     // Initial read of engine configuration
+
+    //check user 
     engine.getCurrentUser(function(err,user){
         if(user === undefined){
             window.location.href = '#/authentication';
@@ -50,6 +52,7 @@ require('backbone');
             console.log(user);
         }
     });
+
 
     engine.getConfig();
     engine.getVersion(function(err, version) {
@@ -302,6 +305,8 @@ require('backbone');
         }
     });
 
+    
+
     //goto this location
     var axisValues = [];
     $('.axi').each(function() {
@@ -466,117 +471,6 @@ require('backbone');
 
     ping();
 
-
-// (function($) {
-//         $.fn.textWidth = function(){
-//              var calc = '<span style="display:none">' + $(this).text() + '</span>';
-//              $('body').append(calc);
-//              var width = $('body').find('span:last').width();
-//              $('body').find('span:last').remove();
-//             return width;
-//         };
-
-//         $.fn.marquee = function(args) {
-//             var that = $(this);
-//             console.log(that);
-//             var textWidth = that.textWidth(),
-//                 offset = that.width(),
-//                 width = offset,
-//                 css = {
-//                     'text-indent' : that.css('text-indent'),
-//                     'overflow' : that.css('overflow'),
-//                     'white-space' : that.css('white-space')
-//                 },
-//                 marqueeCss = {
-//                     'text-indent' : width,
-//                     'overflow' : 'hidden',
-//                     'white-space' : 'nowrap'
-//                 },
-//                 args = $.extend(true, { count: -1, speed: 1e1, leftToRight: false }, args),
-//                 i = 0,
-//                 stop = textWidth*1,
-//                 dfd = $.Deferred();
-
-//             function go() {
-//                 if(!that.length) return dfd.reject();
-//                 if(width == stop) {
-//                     i++;
-//                     if(i == args.count) {
-//                         that.css(css);
-//                         return dfd.resolve();
-//                     }
-//                     if(args.leftToRight) {
-//                         width = textWidth*-1;
-//                     } else {
-//                         width = offset;
-//                     }
-//                 }
-//                 that.css('text-indent', width + 'px');
-//                 if(args.leftToRight) {
-//                     width++;
-//                 } else {
-//                     width--;
-//                 }
-//                 setTimeout(go, args.speed);
-//             };
-//             if(args.leftToRight) {
-//                 width = textWidth*-1;
-//                 width++;
-//                 stop = offset;
-//             } else {
-//                 width--;
-//             }
-//             that.css(marqueeCss);
-//             go();
-//             return dfd.promise();
-//         };
-//         $('.currentJobTitle').marquee();
-//     })(jQuery);
-
-    // (function() {
-    //     if ($(window).width() < 620) {
-    //         function start_marquee() {
-    //             function go() {
-    //                 i = i < width ? i + step : 1;
-    //                 m.style.marginLeft = -i + 'px';
-    //             }
-    //             var i = 0,
-    //                 step = 3,
-    //                 space = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-    //             var m = document.getElementById('marquee');
-    //             var t = m.innerHTML;
-    //             m.innerHTML = t + space;
-    //             m.style.position = 'absolute';
-    //             var width = (m.clientWidth + 1);
-    //             m.style.position = '';
-    //             m.innerHTML = t + space + t + space + t + space + t + space + t + space + t + space + t + space;
-    //             if (m.addEventListener) {
-    //                 m.addEventListener('mouseenter', function() {
-    //                     step = 0;
-    //                 }, false);
-    //                 m.addEventListener('mouseleave', function() {
-    //                     step = 3;
-    //                 }, false);
-    //             }
-    //             var x = setInterval(go, 50);
-    //         }
-    //         if (window.addEventListener) {
-    //             window.addEventListener('load', start_marquee, false);
-    //         } else if (window.attachEvent) { //IE7-8
-    //             window.attachEvent('onload', start_marquee);
-    //         }
-
-    //         $('.currentContainer').css('width', '100px');
-    //         $('.currentJobTitle').css('width', '50%');
-    //         $('.currentJobTitle').css('padding-left', '100px');
-
-    //         if ($(window).width() < 400) {
-    //             $('.currentContainer').css('width', '50px');
-    //             $('.currentJobTitle').css('width', '50%');
-    //             $('.currentJobTitle').css('padding-left', '50px');
-    //         }
-    //     }
-    // })();
     engine.sendTime();
 
     function touchScreen() {
@@ -588,4 +482,18 @@ require('backbone');
         }
     }
     touchScreen();
+
+        $('#icon_sign_out').on('click', function(e){
+            e.preventDefault();
+            dashboard.showModal({
+                title : 'Log Out?',
+                message : 'Are you sure you want sign out of this machine?',
+                okText : 'Yes',
+                cancelText : 'No',
+                ok : function() {
+                    window.location.href = '#/authentication';
+                },
+                cancel : function() {}
+            });
+        });
 

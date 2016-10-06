@@ -487,7 +487,6 @@ function handleStatusReport(status) {
             ctrl = evt.target;
 			var id = ctrl.getAttribute('data-jobid');
 			if (Sortable.utils.is(ctrl, ".cancel")) {
-				console.log($(this));
 				fabmo.deleteJob( $('.cancel').data('id'), function(err, data) {
       				updateQueue(false);
       				updateHistory();
@@ -507,7 +506,6 @@ function handleStatusReport(status) {
 				document.location = $('.download').data('href');
 
 			} else if (Sortable.utils.is(ctrl, ".ellipses")){
-				console.log(ctrl);
 				var dd = ctrl.parentNode.childNodes[2];
 				var cd = ctrl.parentNode.childNodes[1];
 				 $('.dropDownWrapper').show();

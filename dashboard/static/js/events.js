@@ -244,6 +244,10 @@ define(function(require) {
         $("button[type='submit']").click(function() {
             return false; //Override the action of the button, so the user is not redirected to another page (no data lost)
         });
+
+
+    //handle log out
+
     });
 
 
