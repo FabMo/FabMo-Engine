@@ -14,3 +14,5 @@ config/data/*.json
 *.sublime*
 *.orig
 dashboard/build
+install_token
+
