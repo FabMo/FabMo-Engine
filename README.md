@@ -33,7 +33,7 @@ The engine is run from source, and only needs to be checked out and stored in a 
 
 To install the engine in the "standard" location on the Intel Edison, perform the following steps.
 
-1. Checkout the source into `/fabmo` with `git checkout https://github.com/FabMo/FabMo-Engine /fabmo`
+1. Checkout the source into `/fabmo` with `git clone https://github.com/FabMo/FabMo-Engine /fabmo`
 2. Install dependencies using npm: `cd /fabmo; npm install`
 3. Install the systemd service file `cp /fabmo/conf/fabmo.service /etc/systemd/system`
 4. Set the appropriate permissions on the service file `chmod 0775 /etc/systemd/system/fabmo.service`
