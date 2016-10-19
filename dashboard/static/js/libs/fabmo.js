@@ -967,6 +967,10 @@ FabMoDashboard.prototype.getUsers = function(callback){
   this._call("getUsers",null,callback);
 }
 
+FabMoDashboard.prototype.getUpdaterStatus = function(callback){
+  this._call("getUpdaterStatus",null,callback);
+}
+
 
 var toaster = function () {
 	var el = document.createElement('div');
