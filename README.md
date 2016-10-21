@@ -48,13 +48,28 @@ To install the engine in the "standard" location on the Intel Edison, perform th
 
 To install the engine in the "standard" location on the Raspberry Pi 3, perform the following steps.
 
-1. Checkout the source into `/fabmo` with `git checkout https://github.com/FabMo/FabMo-Engine /fabmo`
+1. Checkout the source into `/fabmo` with `git clone https://github.com/FabMo/FabMo-Engine /fabmo`
 2. Checkout the appropriate branch of the source tree.  The `release` branch is the most recent stable release.  (`git checkout release`)
 3. Install dependencies using npm: `cd /fabmo; npm install`
 4. Run the engine using the instructions below
 
-## Running the Engine
-For debugging the engine, you can run it directly from the command prompt with `npm start` or `node server.js`  Running with `npm run debug` puts the engine in debug mode, in which it does more agressive app reloading.  `npm debug slow` introduces deliberate network latency on GET/POST requests, for testing.  This latency can be adjusted in `engine.js`
+### On Mac OS X
 
-## Development
+![Apple Logo](/doc/apple_logo.gif)
+
+To install the engine in the standard location on a Mac, follow the steps below.  This method is used by the FabMo team for development in the OSX environment.
+
+1. Install Node.js - You'll need an older version: 0.12.7 to be compatible with FabMo.  To install an older version through homebrew (homebrew is highly recommended) do this: http://apple.stackexchange.com/a/207883/67692
+2. Install npm - you can also do this with homebrew
+3. Create the fabmo directory: `mkdir -p /fabmo`
+4. Create the fabmo data directory: `mkdir -p /opt/fabmo`
+2. Clone the engine source `/fabmo/engine` with `git clone https://github.com/FabMo/FabMo-Engine /fabmo/engine`
+2. Checkout the appropriate branch of the source tree.  The `release` branch is the most recent stable release.  (`git checkout release` from the `/fabmo/engine` directory)
+3. Install dependencies using npm: `cd /fabmo/engine; npm install`
+4. Run the engine using the instructions below.  Make sure that the G2 motion control board is connected the first time you run the engine.  The engine auto-detects the USB port and saves this setting on first run, and if the motion controller is absent, it won't be properly detected.  If you need to change ports later on, the port settings are located in `/opt/fabmo/config/engine.json`
+
+## Running the Engine
+For debugging the engine, you can run it directly from the command prompt with `npm start` or `node server.js`  Running with `npm run debug` puts the engine in debug mode, in which it does more agressive app reloading.  (This is recommended for app development, particularly for system apps)  `npm debug slow` introduces deliberate network latency on GET/POST requests, for testing.  This latency can be adjusted in `engine.js`
+
+## Development Automation
 A number of grunt tasks have been set up to facilitate engine development.  To see them, run `grunt` with no arguments in the source directory, and a list will be produced with explanations.
