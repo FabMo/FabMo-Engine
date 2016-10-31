@@ -35,6 +35,15 @@ fieldset {
 
 }
 
+.update-available {
+  background-color: #4CBF42;
+}
+
+.update-available:hover {
+  background-color: #2F5C19;
+}
+
+
 button.small, .button.small {
   padding-top: 13px;
   padding-top: 0.8125rem;

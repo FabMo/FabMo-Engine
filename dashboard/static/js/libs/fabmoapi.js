@@ -452,6 +452,10 @@ FabMoAPI.prototype.getUsers = function(callback){
     this._get("/authentication/users",callback,callback);
 }
 
+FabMoAPI.prototype.getUpdaterStatus = function(callback){
+    this._get("/updater/status",callback,callback, 'status');
+}
+
 FabMoAPI.prototype._url = function(path) { return this.base_url + '/' + path.replace(/^\//,''); }
 
 FabMoAPI.prototype._get = function(url, errback, callback, key) {

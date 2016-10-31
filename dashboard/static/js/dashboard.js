@@ -687,6 +687,16 @@ define(function(require) {
       }.bind(this));
     }.bind(this));
 
+    this._registerHandler('getUpdaterStatus', function(data, callback) {
+      this.engine.getUpdaterStatus(function(err, result) {
+        if (err) {
+          callback(err);
+        } else {
+          callback(null, result);
+        }
+      }.bind(this));
+    }.bind(this));
+
     this._registerHandler('startVideoStreaming', function(data, callback) {
       this.engine.startVideoStreaming(function(err, result) {
         if (err) {
