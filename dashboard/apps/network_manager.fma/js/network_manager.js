@@ -109,15 +109,26 @@ function confirm(options){
 function requestPassword(ssid, callback){
     $('#modal-title').text('Enter the passphrase for ' + ssid);
     $('#passwd-modal').foundation('reveal', 'open');
-    $( '#passwd-form' ).one('submit', function( event ) {
-      event.preventDefault();
-      callback($('input:first').val());
+
+    function teardown() {
+
+      $('#btn-connect').off('click');
+      $('#txt-password').off('change');
+      $('#txt-password').val('');
+    }
+
+    function submit() {
+      callback($('#txt-password').val());
+      teardown();
       $('#passwd-modal').foundation('reveal', 'close');
-      $("#passwd-form").trigger('reset'); 
-    });
+      $("#passwd-form").trigger('reset');         
+    }
+
+    $('#btn-connect').one('click', submit);
+    $('#txt-password').one('change', submit);
 
     $('#passwd-modal').bind('closed.fndtn.reveal', function (event) {
-        $("#passwd-form").off('submit');            
+      teardown();
     });
 }
 
@@ -129,7 +140,6 @@ function enterAPMode(callback) {
         ok_message : "Yes",
         cancel_message : "No",
         ok : function() {
-            console.info("Going into access point mode...")
             fabmo.enableWifiHotspot(function(err, data) {
                 if(err) {
                     fabmo.notify('error', err);
