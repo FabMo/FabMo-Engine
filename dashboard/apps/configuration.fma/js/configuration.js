@@ -95,11 +95,26 @@ function update() {
       }
     });
 
-    fabmo.isOnline(function(err, online) {
-      if(online) {
-        $('#btn-update').removeClass('disabled');
+    fabmo.getUpdaterStatus(function(err, status) {
+      if(err) { 
+        return console.error(err);
+        fabmo.isOnline(function(err, online) {
+          if(online) {
+            $('#btn-update').removeClass('disabled');    
+            $('#btn-update').text('Update Software');        
+          } else {
+            $('#btn-update').addClass('disabled');
+            $('#btn-update').text('No Updates Available');        
+          }
+        });
+
+      }
+      if(status.updates) {
+        $('#btn-update').removeClass('disabled').addClass('update-available');
+        $('#btn-update').text('Update Software');
       } else {
-        $('#btn-update').addClass('disabled');
+        $('#btn-update').addClass('disabled').removeClass('update-available');
+        $('#btn-update').text('No Updates Available');        
       }
     });
 }
