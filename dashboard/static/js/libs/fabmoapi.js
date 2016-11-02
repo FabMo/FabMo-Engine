@@ -190,6 +190,17 @@ FabMoAPI.prototype.sendTime = function(callback) {
 	this._post('/time/date', data, callback, callback);
 }
 
+// Updater Configuration 
+
+FabMoAPI.prototype.getUpdaterConfig = function(callback) {
+	var callback = callback || function() {};
+	this._get('updater/config', callback, function(err, data) {
+		this.updater_config = data;
+		callback(err, data);
+	}.bind(this), 'config');
+}
+
+
 // Configuration
 FabMoAPI.prototype.getConfig = function(callback) {
 	var callback = callback || function() {};

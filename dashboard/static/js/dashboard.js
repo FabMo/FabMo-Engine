@@ -458,6 +458,16 @@ define(function(require) {
       }.bind(this));
     }.bind(this));
 
+    this._registerHandler('getUpdaterConfig', function(data, callback) {
+      this.engine.getUpdaterConfig(function(err, result) {
+        if (err) {
+          callback(err);
+        } else {
+          callback(null, result);
+        }
+      }.bind(this));
+    }.bind(this));
+
     this._registerHandler('getConfig', function(data, callback) {
       this.engine.getConfig(function(err, result) {
         if (err) {

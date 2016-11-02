@@ -43,6 +43,9 @@ define(function(require) {
         }
     });
 
+    engine.getUpdaterConfig(function(err, data){
+        console.log(data);
+    });    
     engine.getConfig();
     engine.getVersion(function(err, version) {
 
