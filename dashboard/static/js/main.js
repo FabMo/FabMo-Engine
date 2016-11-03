@@ -43,8 +43,59 @@ define(function(require) {
         }
     });
 
+    // var conf = {
+    //                             consent_for_beacon: "none"
+    //                         }
+    //                         console.log(dashboard);
+    //                         engine.setUpdaterConfig(conf,function(err){
+    //                             if(err){
+    //                                 dashboard.notify("error",err);
+    //                                 $("#restore_conf_file").attr("value", "");
+    //                                 return;
+    //                             }
+    //                             dashboard.notify("success","the configuration file have been successfully loaded !");
+                   
+    //                         });
+
     engine.getUpdaterConfig(function(err, data){
         console.log(data);
+       var consent =  data.consent_for_beacon;
+       if (consent === "none") {
+           dashboard.showModal({
+                        title : 'Consent to Beacon',
+                        message : 'do you want to be spied on?',
+                        okText : 'Yes',
+                        cancelText : 'No',
+                        ok : function() {
+                            var conf = {
+                                consent_for_beacon: "true"
+                            }
+                            console.log(dashboard);
+                            dashboard.engine.setUpdaterConfig(conf,function(err){
+                                if(err){
+                                    console.log(err);
+                                    return;
+                                }
+                                console.log("success");
+                   
+                            });
+                        },
+                        cancel : function() {
+                             var conf = {
+                                consent_for_beacon: "false"
+                            }
+                            console.log(dashboard);
+                            dashboard.engine.setUpdaterConfig(conf,function(err){
+                                if(err){
+                                    console.log(err);
+                                    return;
+                                }
+                                console.log("success");
+                   
+                            });
+                        }
+                    });
+       }
     });    
     engine.getConfig();
     engine.getVersion(function(err, version) {

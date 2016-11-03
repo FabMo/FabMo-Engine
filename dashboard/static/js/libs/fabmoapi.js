@@ -200,6 +200,12 @@ FabMoAPI.prototype.getUpdaterConfig = function(callback) {
 	}.bind(this), 'config');
 }
 
+FabMoAPI.prototype.setUpdaterConfig = function(cfg_data, callback) {
+	this._post('updater/config', cfg_data, callback, function(err, data) {
+		callback = callback || function() {};
+		callback(null, cfg_data);
+	});
+}
 
 // Configuration
 FabMoAPI.prototype.getConfig = function(callback) {
