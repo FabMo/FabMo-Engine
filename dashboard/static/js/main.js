@@ -60,41 +60,34 @@ define(function(require) {
     engine.getUpdaterConfig(function(err, data){
         console.log(data);
        var consent =  data.consent_for_beacon;
+       var conf = ""
        if (consent === "none") {
-           dashboard.showModal({
-                        title : 'Consent to Beacon',
-                        message : 'do you want to be spied on?',
-                        okText : 'Yes',
-                        cancelText : 'No',
-                        ok : function() {
-                            var conf = {
-                                consent_for_beacon: "true"
-                            }
-                            console.log(dashboard);
-                            dashboard.engine.setUpdaterConfig(conf,function(err){
-                                if(err){
-                                    console.log(err);
-                                    return;
-                                }
-                                console.log("success");
-                   
-                            });
-                        },
-                        cancel : function() {
-                             var conf = {
-                                consent_for_beacon: "false"
-                            }
-                            console.log(dashboard);
-                            dashboard.engine.setUpdaterConfig(conf,function(err){
-                                if(err){
-                                    console.log(err);
-                                    return;
-                                }
-                                console.log("success");
-                   
-                            });
-                        }
+           $('.modalDim').show();
+           $('#beacon_consent_container').show();
+           $('#beacon_consent_button').on('click', function(conf){
+               if ($('#beacon_checkbox').attr('checked')) {
+                   console.log(dashboard);
+                   conf = "true";
+                    dashboard.engine.setUpdaterConfig(conf,function(err){
+                    if(err){
+                        console.log(err);
+                        return;
+                    }
+                        console.log("success");
                     });
+               } else {
+                   conf = "false"
+                    dashboard.engine.setUpdaterConfig(conf,function(err){
+                        if(err){
+                            console.log(err);
+                            return;
+                        }
+                            console.log("success");
+                        });
+               }
+              $('.modalDim').hide();
+              $('#beacon_consent_container').hide();
+           });
        }
     });    
     engine.getConfig();

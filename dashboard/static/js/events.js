@@ -225,6 +225,7 @@ define(function(require) {
             }
 
         });
+
         rightMenuLoad();
         resizedoc();
         //If size of the screen change, we resize the main & app container
