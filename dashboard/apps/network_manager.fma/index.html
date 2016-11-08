@@ -10,18 +10,16 @@
 
     <div id="passwd-modal" class="reveal-modal medium" data-reveal>
     <div id="modal-title"></div>
-    <form id="passwd-form">
-        <div class="row">
-            <label for="password">Passphrase</label>
-            <input type="text" name="password" />
-        </div>
-        <div class="row">
-             <div class="right">
-                 <button type="submit" class="button radius success">Connect</button>
-             </div>
-         </div>
-     </form>
-     <a class="close-reveal-modal" id="close-password-modal">&#215;</a>
+      <div class="row">
+          <label for="password">Passphrase</label>
+          <input type="password" name="password" id="txt-password"/>
+      </div>
+      <div class="row">
+           <div class="right">
+               <button class="button radius success" id="btn-connect">Connect</button>
+           </div>
+       </div>
+       <a class="close-reveal-modal" id="close-password-modal">&#215;</a>
     </div>
 
     <div id="confirm-modal" class="reveal-modal medium" data-reveal>
@@ -87,7 +85,5 @@
   <!-- Javascript inclusions -->
     <script src="../../common.js"></script>
     <script src="../../network_manager.js"></script>  
-
-
 </body>
 </html>
