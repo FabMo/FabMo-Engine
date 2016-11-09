@@ -53,6 +53,39 @@ require('backbone');
         }
     });
 
+    engine.getUpdaterConfig(function(err, data){
+        console.log(data);
+       var consent =  data.consent_for_beacon;
+       var conf = {};
+       if (consent === "none") {
+           $('.modalDim').show();
+           $('#beacon_consent_container').show();
+           $('#beacon_consent_button').on('click', function(conf){
+               if ($('#beacon_checkbox')[0].checked === true) {
+                   console.log(dashboard);
+                   conf = {consent_for_beacon : "true"};
+                    dashboard.engine.setUpdaterConfig(conf,function(err){
+                    if(err){
+                        console.log(err);
+                        return;
+                    }
+                        console.log("success, true");
+                    });
+               } else {
+                   conf = {consent_for_beacon : "false"};
+                    dashboard.engine.setUpdaterConfig(conf,function(err){
+                        if(err){
+                            console.log(err);
+                            return;
+                        }
+                            console.log("success, false");
+                        });
+               }
+              $('.modalDim').hide();
+              $('#beacon_consent_container').hide();
+           });
+       }
+    });    
 
     engine.getConfig();
     engine.getVersion(function(err, version) {

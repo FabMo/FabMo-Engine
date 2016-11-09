@@ -217,6 +217,15 @@ define(function(require) {
 
     /********** Document Ready Init **********/
     $(document).ready(function() {
+
+        //Call fundation for the document, and define a way to open the menus
+        $(document).foundation({
+            offcanvas: {
+                open_method: 'overlap_single',
+            }
+
+        });
+
         rightMenuLoad();
         resizedoc();
         //If size of the screen change, we resize the main & app container

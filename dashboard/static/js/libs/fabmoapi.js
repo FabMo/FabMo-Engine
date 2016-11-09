@@ -192,6 +192,23 @@ FabMoAPI.prototype.sendTime = function(callback) {
 	this._post('/time/date', data, callback, callback);
 }
 
+// Updater Configuration 
+
+FabMoAPI.prototype.getUpdaterConfig = function(callback) {
+	var callback = callback || function() {};
+	this._get('updater/config', callback, function(err, data) {
+		this.updater_config = data;
+		callback(err, data);
+	}.bind(this), 'config');
+}
+
+FabMoAPI.prototype.setUpdaterConfig = function(cfg_data, callback) {
+	this._post('updater/config', cfg_data, callback, function(err, data) {
+		callback = callback || function() {};
+		callback(null, cfg_data);
+	});
+}
+
 // Configuration
 FabMoAPI.prototype.getConfig = function(callback) {
 	var callback = callback || function() {};
