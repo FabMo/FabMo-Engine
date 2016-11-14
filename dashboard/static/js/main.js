@@ -30,6 +30,7 @@ define(function(require) {
     var isRunning = false;
     var isAuth = false;
     var lastInfoSeen = null;
+    var consent = '';
 
     // Detect touch screen
     var supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
@@ -59,36 +60,12 @@ define(function(require) {
 
     engine.getUpdaterConfig(function(err, data){
         console.log(data);
-       var consent =  data.consent_for_beacon;
-       var conf = {};
+       consent =  data.consent_for_beacon;
+
        if (consent === "none") {
-           $('.modalDim').show();
-           $('#beacon_consent_container').show();
-           $('#beacon_consent_button').on('click', function(conf){
-               if ($('#beacon_checkbox')[0].checked === true) {
-                   console.log(dashboard);
-                   conf = {consent_for_beacon : "true"};
-                    dashboard.engine.setUpdaterConfig(conf,function(err){
-                    if(err){
-                        console.log(err);
-                        return;
-                    }
-                        console.log("success, true");
-                    });
-               } else {
-                   conf = {consent_for_beacon : "false"};
-                    dashboard.engine.setUpdaterConfig(conf,function(err){
-                        if(err){
-                            console.log(err);
-                            return;
-                        }
-                            console.log("success, false");
-                        });
-               }
-              $('.modalDim').hide();
-              $('#beacon_consent_container').hide();
-           });
+            showConsent(); 
        }
+       return consent;
     });    
     engine.getConfig();
     engine.getVersion(function(err, version) {
@@ -308,6 +285,44 @@ define(function(require) {
         return keypad;
     }
 
+
+    function showConsent () {
+           $('.modalDim').show();
+           $('#beacon_consent_container').show();
+         
+    }
+    function hideConsent (){
+        $('.modalDim').hide();
+        $('#beacon_consent_container').hide();
+    }
+
+    $('#beacon_consent_button').on('click', function(conf){
+            if ($('#beacon_checkbox')[0].checked === true) {
+                console.log(dashboard);
+                conf = {consent_for_beacon : "true"};
+                dashboard.engine.setUpdaterConfig(conf,function(err){
+                if(err){
+                    console.log(err);
+                    return;
+                }
+                    console.log("success, true");
+                });
+                consent = "true";
+            } else {
+                conf = {consent_for_beacon : "false"};
+                dashboard.engine.setUpdaterConfig(conf,function(err){
+                    if(err){
+                        console.log(err);
+                        return;
+                    }
+                        console.log("success, false");
+                    });
+                    consent = "false";
+            }
+            $('.modalDim').hide();
+            $('#beacon_consent_container').hide();
+    });
+
     function showDaisy(callback) {
 
         if (daisyIsShown) {
@@ -438,16 +453,22 @@ define(function(require) {
         if (!disconnected) {
             disconnected = true;
             setConnectionStrength(null);
+            hideConsent();
             showDaisy();
+            
         }
     });
 
     engine.on('connect', function() {
+        console.log(consent);
         if (disconnected) {
             disconnected = false;
             setConnectionStrength(5);
         }
         hideDaisy(null);
+        if (consent === "none") {
+            showConsent();
+        }
     });
 
     
