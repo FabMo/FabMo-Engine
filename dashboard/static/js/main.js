@@ -2,13 +2,8 @@
  * main.js is the entry point for the application.
  */
 
-require('font-awesome/css/font-awesome.css');
-require("../css/normalize.css");
-require("../css/foundation.min.css");
-require("../css/style.css");
-require("../css/toastr.min.css");
-require('jquery');
-require('backbone');
+
+
 
     // context is the application context
     // dashboard is the bridge between the application context and the apps
@@ -16,6 +11,8 @@ require('backbone');
     var dashboard = require('./dashboard.js');
 
     // Vendor libraries
+    require('jquery');
+    require('backbone');
     var $ = require('jquery');
     var Backbone = require('backbone');
     var underscore = require('underscore');
@@ -530,3 +527,10 @@ require('backbone');
             });
         });
 
+
+
+require('../css/font-awesome.css');
+require("../css/normalize.css");
+require("../css/foundation.min.css");
+require("../css/style.css");
+require("../css/toastr.min.css");
