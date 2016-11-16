@@ -1,6 +1,11 @@
 /*
  * main.js is the entry point for the application.
  */
+require('../css/font-awesome.css');
+require("../css/normalize.css");
+require("../css/foundation.min.css");
+require("../css/style.css");
+require("../css/toastr.min.css");
 
 
 
@@ -529,8 +534,3 @@
 
 
 
-require('../css/font-awesome.css');
-require("../css/normalize.css");
-require("../css/foundation.min.css");
-require("../css/style.css");
-require("../css/toastr.min.css");
