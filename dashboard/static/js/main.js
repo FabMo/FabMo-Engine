@@ -522,7 +522,7 @@ require("../css/toastr.min.css");
             e.preventDefault();
             dashboard.showModal({
                 title : 'Log Out?',
-                message : 'Are you sure you want sign out of this machine?',
+                message : 'Are you sure you want to sign out of this machine?',
                 okText : 'Yes',
                 cancelText : 'No',
                 ok : function() {

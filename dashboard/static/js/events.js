@@ -151,7 +151,6 @@ define(function(require) {
         }
         //Handle collapse of left
         $('.collapseLeft').click(function(evt) {
-          console.log("collapse")
             evt.preventDefault();
             $('.collapseLeft').hide();
             $('#left-menu').addClass("colapsed");

@@ -125,7 +125,6 @@ require('./cm-fabmo-modes.js');
             $('#app-header').text("Editor - " + macro.name + " (Macro)");
             editor.setValue(macro.content, -1);
             //editor.clearSelection();
-            console.log(macro);
             source = "macro";
             source_data = macro;
             job_description = macro.description;
@@ -286,7 +285,7 @@ require('./cm-fabmo-modes.js');
         $('#jobsubmit-modal').foundation('reveal', 'open');
         $('#jobsubmit-name').focus();           
 
-        $('#jobsubmit-form').one('submit', function( event ) {
+        $('#jobsubmit-submit').on('click', function( event ) {
           event.preventDefault();
           var name = $('#jobsubmit-name').val();
           var description = $('#jobsubmit-description').val();

@@ -339,7 +339,6 @@ AppManager.prototype.getAppPaths = function(callback) {
  * Load all of the apps in the provided apps directory
  */
 AppManager.prototype.loadApps =  function(callback) {
-	console.log(this);
 	this.getAppPaths(function(err,files){
 		async.mapSeries(files,
 			function(file, callback) {

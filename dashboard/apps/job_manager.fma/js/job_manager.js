@@ -162,7 +162,6 @@ function addQueueEntries(jobs) {
         }
       } 
     var recentJobs = document.getElementById('recent');
-    console.log(recent);
     clearRecent(); 
     for (i = 0; i < recent.length; i++) {
       var recentItem = document.createElement("div");
@@ -185,7 +184,6 @@ function addQueueEntries(jobs) {
       // var num = arr[i].file_id;
       //   counts[num] = counts[num] ? counts[num]+1 : 1;
       // }
-      // console.log(counts);
       if (err) {
         return callback(err);
       }
@@ -525,6 +523,19 @@ function handleStatusReport(status) {
 				fabmo.navigate('/job/' + id + '/file');
 			} else if (Sortable.utils.is(ctrl, ".deleteJob")){
 				 fabmo.deleteJob(id);
+			} else if (Sortable.utils.is(ctrl, ".play-button")){
+          if ($('.play').hasClass('active')) {
+            fabmo.pause(function(err, data) {});
+          } 
+          else {
+          fabmo.runNext(function(err, data) {
+              if (err) {
+                fabmo.notify(err);
+              } else {
+                updateQueue();
+              }
+            });
+        }
 			}
 		},
 
@@ -565,7 +576,7 @@ function handleStatusReport(status) {
   $(document).foundation();
 
 	fabmo.on('change', function(topic) {
-    console.log(topic);
+
 		if (topic === 'jobs') {
 		updateQueue();
 		updateHistory();
@@ -643,19 +654,7 @@ function handleStatusReport(status) {
 	});
 
 	$('#queue_table').on('click', '.play-button', function(e) {
-    e.preventDefault;
-    e.stopPropagation;
-		if ($('.play').hasClass('active')) {
-					fabmo.pause(function(err, data) {});
-				} else {
-					fabmo.runNext(function(err, data) {
-						if (err) {
-							fabmo.notify(err);
-						} else {
-							updateQueue();
-						}
-					});
-				}
+    
 	});
 
 	$('#clear-jobs').click(function(e) {

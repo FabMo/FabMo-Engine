@@ -348,7 +348,6 @@ FabMoAPI.prototype.deleteMacro = function(id, callback) {
 }
 
 FabMoAPI.prototype.runCode = function(runtime, code, callback) {
-	console.log('this is some shit');
 	var data = {'cmd' : code, 'runtime':runtime}
 	this._post('/code', data, callback, callback);
 }
