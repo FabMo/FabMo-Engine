@@ -28,9 +28,8 @@ var config = {
  },
   module: {
     loaders: [
-    {
-      test: /\.css$/,
-      loader: 'style!css?sourceMap'
+    { test: /\.css$/, 
+      loader: ExtractTextPlugin.extract("style-loader", "css-loader")
     }, {
       test: /\.woff(\?v=\d+\.\d+\.\d+)?$/,
       loader: "url?limit=10000&mimetype=application/font-woff"
