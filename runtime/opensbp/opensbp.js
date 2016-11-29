@@ -385,7 +385,7 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 			//TODO , we should check the expression for a stack break, as well as the .stmt
 			//return _breaksStack(cmd.stmt);
 			break;
-        case "weak_assign":
+        	case "weak_assign":
 		case "assign":
 			result = true;
 			break;
