@@ -1,6 +1,7 @@
 # The FabMo Engine
 The FabMo engine is host software that connects to a G2 motion control platform and manages it, exposing a web interface.  The engine serves the following major functions:
 
+
 * Streaming of G-Code files to G2
 * Monitoring of G2 motion state and cycle progress
 * Storage and management of files (that currently cannot be stored on G2)
