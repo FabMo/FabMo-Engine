@@ -1837,7 +1837,7 @@ input[type=number]::-webkit-outer-spin-button {
 
 
 #beacon_consent_container {
-	display: none;
+    display: none;
     width: 40%;
 	max-width: 500px;
 	min-width: 330px;
@@ -1856,8 +1856,8 @@ input[type=number]::-webkit-outer-spin-button {
 	padding: 1.5em 1.5em 1.5em 1.5em;
 	background-color: #fff;
 	border-radius: 5px;
-	line-height: 1em;
-	font-weight: 100;
+	line-height: 1.3em;
+	font-size: 1em;
 }
 
 #beacon_sub_container{
