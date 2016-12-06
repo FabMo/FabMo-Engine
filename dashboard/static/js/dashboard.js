@@ -128,7 +128,12 @@ define(function(require) {
           "id": name,
           "data": data
         };
-        if (source) source.postMessage(msg, "*");
+        try {
+          if (source) source.postMessage(msg, "*")
+        }
+        catch (e) {
+          console.log(source);
+          }
       }
     }
   }
