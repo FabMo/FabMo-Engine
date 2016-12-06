@@ -373,6 +373,9 @@ FabMoUI.prototype.updateStatusContent = function(status){
 			$(that.stop_button_selector).hide();
 		}
 	}
+	else if (status.state === 'armed'){
+		
+	}
 	else {
 		$(".tools-current > li a").removeClass('paus err').addClass('disc');
 		console.warn('Unknown status' + JSON.stringify(status));

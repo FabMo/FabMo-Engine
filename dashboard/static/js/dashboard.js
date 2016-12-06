@@ -132,7 +132,7 @@ define(function(require) {
           if (source) source.postMessage(msg, "*")
         }
         catch (e) {
-          console.log(source);
+          //Fix this
           }
       }
     }
