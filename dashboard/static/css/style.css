@@ -1847,12 +1847,12 @@ input[type=number]::-webkit-outer-spin-button {
     transform: translate(-50%, -50%);
     z-index: 3001;
     background-color: #eee;
-    padding-top: 1em;
+  
       -webkit-font-smoothing: antialiased;
 }
 
 #beacon_consent_inner{
-	margin: 1em;
+	margin: 1.5em;
 	padding: 1.5em 1.5em 1.5em 1.5em;
 	background-color: #fff;
 	border-radius: 5px;
