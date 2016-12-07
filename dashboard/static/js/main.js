@@ -61,7 +61,13 @@ require("../css/toastr.min.css");
        consent =  data.consent_for_beacon;
 
        if (consent === "none") {
-            showConsent(); 
+            showConsent();
+            $(document).keyup(function(e) {
+                if (e.keyCode == 27) {
+                    hideConsent();
+                }
+            });
+       
        }
        return consent;
     });    
