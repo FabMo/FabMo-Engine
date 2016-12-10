@@ -1487,6 +1487,12 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		var previousHeight = leveler.foundHeight;
 		var X = (tPt.X === undefined) ? this.cmd_posx : tPt.X;
 		var Y = (tPt.Y === undefined) ? this.cmd_posy : tPt.Y;
+		if(X === undefined) {
+			X = 0;
+		}
+		if(Y === undefined) {
+			Y = 0;
+		}
 		var theoriticalZ = (tPt.Z === undefined) ? this.cmd_posz : tPt.Z;
 		if(theoriticalZ === undefined) {
 			theoriticalZ = 0;
