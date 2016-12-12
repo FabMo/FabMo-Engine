@@ -7,6 +7,9 @@ var moment = require('../../../static/js/libs/moment.js');
 var Fabmo = require('../../../static/js/libs/fabmo.js');
 var fabmo = new Fabmo;
 
+$('body').bind('focusin focus', function(e){
+  e.preventDefault();
+})
 var unit_label_index = {}
 
 var registerUnitLabel = function(label, in_label, mm_label) {
@@ -104,11 +107,26 @@ function update() {
       }
     });
 
-    fabmo.isOnline(function(err, online) {
-      if(online) {
-        $('#btn-update').removeClass('disabled');
+    fabmo.getUpdaterStatus(function(err, status) {
+      if(err) { 
+        return console.error(err);
+        fabmo.isOnline(function(err, online) {
+          if(online) {
+            $('#btn-update').removeClass('disabled');    
+            $('#btn-update').text('Update Software');        
+          } else {
+            $('#btn-update').addClass('disabled');
+            $('#btn-update').text('No Updates Available');        
+          }
+        });
+
+      }
+      if(status.updates) {
+        $('#btn-update').removeClass('disabled').addClass('update-available');
+        $('#btn-update').text('Update Software');
       } else {
-        $('#btn-update').addClass('disabled');
+        $('#btn-update').addClass('disabled').removeClass('update-available');
+        $('#btn-update').text('No Updates Available');        
       }
     });
 }
@@ -203,13 +221,14 @@ $("#restore_conf_file").change(function() {
     });
 
 $(document).ready(function() {
+
     $(document).foundation();
 
     // Setup Unit Labels
     registerUnitLabel('.in_mm_label', 'in', 'mm');
     registerUnitLabel('.ipm_mmpm_label', 'in/min', 'mm/min');
     registerUnitLabel('.ips_mmps_label', 'in/sec', 'mm/sec');
-    registerUnitLabel('.ipm2_mmpm2_label', 'in/min<sup>2</sup>', 'mm/min<sup>2</sup>');
+    registerUnitLabel('.i pm2_mmpm2_label', 'in/min<sup>2</sup>', 'mm/min<sup>2</sup>');
     registerUnitLabel('.inrev_mmrev_label', 'in/rev', 'mm/rev');
     registerUnitLabel('.inpm3_mmpm3_label', 'in/min<sup>3</sup>', 'mm/min<sup>3</sup>');
 
@@ -297,11 +316,13 @@ $(document).ready(function() {
         });
 
     });
-    setApps();
-    setUsers();
+
     // setupUserManager();
 
     fabmo.on('reconnect', function() {
         update();
     });
+
+    setApps(fabmo);
+    setUsers(fabmo);
 });

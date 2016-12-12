@@ -13,13 +13,13 @@
     }
 };
   function runAuth(){
-    $("#add_err").css('display', 'none', 'important');
+    
     if(getUrlParameter("message")==="kicked-out"){
       $("#add_err").css('display', 'inline', 'important');
-      $("#add_err").html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span class="sr-only">You have been kicked out from the tool.</span></div>');
+      $("#add_err").html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span>You have been kicked out from the tool.</span></div>');
     }else if (getUrlParameter("message")==="not-authenticated") {
       $("#add_err").css('display', 'inline', 'important');
-      $("#add_err").html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span class="sr-only"> You need to be authenticated to access this page.</span></div>');
+      $("#add_err").html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span> You need to be authenticated to access this page.</span></div>');
   }
 
     $("#login_form").submit(function(e){
@@ -44,13 +44,13 @@
          console.log(data);
          if(data.status==="success"){
            $("#add_err").css('display', 'inline', 'important');
-           $("#add_err").html('<div class="success"> <i class="fa fa-check" aria-hidden="true"></i><span class="sr-only"> Successful Log in !</span></div>');
+           $("#add_err").html('<div class="success"> <i class="fa fa-check" aria-hidden="true"></i><span> Successful Log in!</span></div>');
            window.location="/";
 
          }
          else{
            $("#add_err").css('display', 'inline', 'important');
-           $("#add_err").html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span class="sr-only"> Wrong username or password</span></div>');
+           $("#add_err").html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span> Wrong username or password</span></div>');
          }
       },
       error:function(data){
@@ -60,16 +60,16 @@
             login_request(username,password,true); // kick the user out
           }else{
             $("#add_err").css('display', 'inline', 'important');
-            $("#add_err").html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span class="sr-only"> '+data.responseJSON.message+'</span></div>');
+            $("#add_err").html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span> '+data.responseJSON.message+'</span></div>');
           }
         }else{
           $("#add_err").css('display', 'inline', 'important');
-          $("#add_err").html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span class="sr-only"> '+data.responseJSON.message+'</span></div>');
+          $("#add_err").html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span> '+data.responseJSON.message+'</span></div>');
         }
       },
       beforeSend:function(){
         $("#add_err").css('display', 'inline', 'important');
-        $("#add_err").html('<div class="loading"><i class="fa fa-circle-o-notch fa-spin fa-fw margin-bottom"></i><span class="sr-only"> Loading...</span></div>');
+        $("#add_err").html('<div class="loading"><i class="fa fa-circle-o-notch fa-spin fa-fw margin-bottom"></i><span"> Loading...</span></div>');
       }
     });
    }
@@ -85,21 +85,21 @@
          console.log(data);
          if(data.status==="success"){
            $("#add_err").css('display', 'inline', 'important');
-           $("#add_err").html('<div class="success"> <i class="fa fa-check" aria-hidden="true"></i><span class="sr-only"> User successfully created !</span></div>');
+           $("#add_err").html('<div class="success"> <i class="fa fa-check" aria-hidden="true"></i><span> User successfully created !</span></div>');
            window.location="/";
          }
          else{
            $("#add_err").css('display', 'inline', 'important');
-           $("#add_err").html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span class="sr-only"> '+data.message+'</span></div>');
+           $("#add_err").html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span> '+data.message+'</span></div>');
          }
       },
       error:function(data){
         $("#add_err").css('display', 'inline', 'important');
-        $("#add_err").html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span class="sr-only"> '+data.responseJSON.message+'</span></div>');
+        $("#add_err").html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span> '+data.responseJSON.message+'</span></div>');
       },
       beforeSend:function(){
         $("#add_err").css('display', 'inline', 'important');
-        $("#add_err").html('<div class="loading"><i class="fa fa-circle-o-notch fa-spin fa-fw margin-bottom"></i><span class="sr-only"> Loading...</span></div>');
+        $("#add_err").html('<div class="loading"><i class="fa fa-circle-o-notch fa-spin fa-fw margin-bottom"></i><span"> Loading...</span></div>');
       }
     });
    }

@@ -268,6 +268,7 @@ td.actions-control {
       width: 80%;
       white-space: normal;
       overflow: visible;
+      margin-top: 0.5em;
   }
 
 
@@ -323,24 +324,29 @@ td.actions-control {
 
 @media screen and (max-width: 750px){
   .job_item:first-child .description{
-      width: 55%;
-      height: 50%;
-      white-space: normal;
-      overflow: hidden;
+    width: 50%;
+    height: 50%;
+    white-space: normal;
+    overflow: hidden;
+    margin-left: 0.5em;
   }
+
   .name {
     height: 15px;
   }
+
   .job_item, .chosen, .recent_item{
     width: 98% !important;
     height: 60px;
   }
+
   .job_item .description, .recent_item .description{
     width: 80%;
     overflow: hidden;
     white-space: nowrap;
     margin-left: 2.5em;
   } 
+  
   .chosen .description {
     width: 80% !important;
 }

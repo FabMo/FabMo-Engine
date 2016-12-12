@@ -34,13 +34,14 @@ define(function(require) {
 			this.context.menuShown = true;
 		},
 		show_auth: function (message){
+			console.log(message);
 			if (message){
 				console.log(message);
 				message.toString();
 				var par = message.replace(/-/g, ' ');
 				console.log(par);
-				$('#add_err').html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span class="sr-only"> '+par+'</span></div>');
-				$('#add_err').show();
+				$('#add_err').html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span> '+par+'</span></div>');
+				$('#add_err').removeAttr('style');
 
 			}
 			

@@ -385,7 +385,7 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 			//TODO , we should check the expression for a stack break, as well as the .stmt
 			//return _breaksStack(cmd.stmt);
 			break;
-
+        	case "weak_assign":
 		case "assign":
 			result = true;
 			break;
@@ -906,7 +906,6 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			break;
 
 		case "weak_assign":
-			//TODO FIX THIS THIS DOESN'T DO SYSTEM VARS PROPERLY
 			this.pc += 1;
 			if(!this._varExists(command.var)) {
 				var value = this._eval(command.expr);
@@ -1145,10 +1144,8 @@ SBPRuntime.prototype.setPreferredUnits = function(units, callback) {
 SBPRuntime.prototype._setUnits = function(units) {
 	units = u.unitType(units);
 	log.info("Setting SBP runtime units to " + units);
-	log.stack();
 	if(units === this.units) { return; }
 	var convert = units === 'in' ? u.mm2in : u.in2mm;
-	log.info("PERFORMING UNIT CONVERSION");
 	this.movespeed_xy = convert(this.movespeed_xy);
 	this.movespeed_z = convert(this.movespeed_z);
 	this.movespeed_a = convert(this.movespeed_a);
@@ -1490,6 +1487,12 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		var previousHeight = leveler.foundHeight;
 		var X = (tPt.X === undefined) ? this.cmd_posx : tPt.X;
 		var Y = (tPt.Y === undefined) ? this.cmd_posy : tPt.Y;
+		if(X === undefined) {
+			X = 0;
+		}
+		if(Y === undefined) {
+			Y = 0;
+		}
 		var theoriticalZ = (tPt.Z === undefined) ? this.cmd_posz : tPt.Z;
 		if(theoriticalZ === undefined) {
 			theoriticalZ = 0;

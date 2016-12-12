@@ -53,7 +53,6 @@ GCodeViewer.Helpers = function(scene) {
 
         var material = new THREE.MeshBasicMaterial({ color: hex,
             side: THREE.DoubleSide });
-        console.log(THREE.FontUtils.faces);
         var textShapes = THREE.FontUtils.generateShapes("X", options);
         var geo = new THREE.ShapeGeometry(textShapes);
         that.textX = new THREE.Mesh(geo, material);

@@ -128,7 +128,12 @@ define(function(require) {
           "id": name,
           "data": data
         };
-        if (source) source.postMessage(msg, "*");
+        try {
+          if (source) source.postMessage(msg, "*")
+        }
+        catch (e) {
+          //Fix this
+          }
       }
     }
   }
@@ -459,6 +464,26 @@ define(function(require) {
       }.bind(this));
     }.bind(this));
 
+    this._registerHandler('getUpdaterConfig', function(data, callback) {
+      this.engine.getUpdaterConfig(function(err, result) {
+        if (err) {
+          callback(err);
+        } else {
+          callback(null, result);
+        }
+      }.bind(this));
+    }.bind(this));
+
+    this._registerHandler('setUpdatertConfig', function(data, callback) {
+      this.engine.setUpdaterConfig(data, function(err, result) {
+        if (err) {
+          callback(err);
+        } else {
+          callback(null, result);
+        }
+      }.bind(this));
+    }.bind(this));
+
     this._registerHandler('getConfig', function(data, callback) {
       this.engine.getConfig(function(err, result) {
         if (err) {
@@ -679,6 +704,16 @@ define(function(require) {
     }.bind(this));
     this._registerHandler('getUsers', function(data, callback) {
       this.engine.getUsers(function(err, result) {
+        if (err) {
+          callback(err);
+        } else {
+          callback(null, result);
+        }
+      }.bind(this));
+    }.bind(this));
+
+    this._registerHandler('getUpdaterStatus', function(data, callback) {
+      this.engine.getUpdaterStatus(function(err, result) {
         if (err) {
           callback(err);
         } else {

@@ -513,6 +513,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #icon_handwheel 	{ background-image: url('../img/icon_refresh.png');}
 #icon_log 			{ background-image: url('../img/icon_log.png');	}
 #icon_network 		{ background-image: url('../img/icon_network.png');	}
+#icon_sign_out 		{ background-image: url('../img/icon_sign_out.png');	}
 
 
 .colapsed #icon_colapse { background-image: url('../img/icon_colapse.png');	}
@@ -1729,7 +1730,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .modalDim{
-    display: none;
+	display:none;
     position: fixed;
     top: 0;
     left: 0;
@@ -1833,6 +1834,58 @@ input[type=number]::-webkit-outer-spin-button {
     border-radius: 5px;
     margin-bottom: 1em;
 }
+
+
+#beacon_consent_container {
+    display: none;
+    width: 40%;
+	max-width: 500px;
+	min-width: 330px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3001;
+    background-color: #eee;
+  
+      -webkit-font-smoothing: antialiased;
+}
+
+#beacon_consent_inner{
+	margin: 1.5em;
+	padding: 1.5em 1.5em 1.5em 1.5em;
+	background-color: #fff;
+	border-radius: 5px;
+	line-height: 1.3em;
+	font-size: 1em;
+}
+
+#beacon_sub_container{
+	padding: 1em;
+	width: 100%;
+}
+
+#beacon_checkbox_label, #beacon_checkbox, #beacon_consent_button{
+	display: inline-block;
+}
+
+
+#beacon_consent_button {
+	background-color: #5DAA35;
+	color: #fff;
+	border-radius: 5px;
+	cursor: pointer;
+	float: right;
+	padding: 0.5em 0.6em 0.5em 0.6em;
+	margin-right: 0.5em;
+	transform: translateY(-8px)
+}
+
+#beacon_checkbox {
+	transform: translateY(1px);
+	margin-left: 5px;
+}
+
 
 .toast {
     opacity:0.9 !important;

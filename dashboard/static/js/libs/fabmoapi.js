@@ -14,7 +14,6 @@
   "use strict"
 
 var PING_TIMEOUT = 3000;
-console.log(io)
 var makePostData = function(obj, options) {
 	var file = null;
 	if(obj instanceof jQuery) {
@@ -193,6 +192,23 @@ FabMoAPI.prototype.sendTime = function(callback) {
 	this._post('/time/date', data, callback, callback);
 }
 
+// Updater Configuration 
+
+FabMoAPI.prototype.getUpdaterConfig = function(callback) {
+	var callback = callback || function() {};
+	this._get('updater/config', callback, function(err, data) {
+		this.updater_config = data;
+		callback(err, data);
+	}.bind(this), 'config');
+}
+
+FabMoAPI.prototype.setUpdaterConfig = function(cfg_data, callback) {
+	this._post('updater/config', cfg_data, callback, function(err, data) {
+		callback = callback || function() {};
+		callback(null, cfg_data);
+	});
+}
+
 // Configuration
 FabMoAPI.prototype.getConfig = function(callback) {
 	var callback = callback || function() {};
@@ -267,6 +283,7 @@ FabMoAPI.prototype.updateOrder= function(data, callback) {
 }
 
 FabMoAPI.prototype.runNextJob = function(callback) {
+	console.log("I got called");
 	this._post('/jobs/queue/run', {}, callback, callback);
 }
 
@@ -454,6 +471,10 @@ FabMoAPI.prototype.deleteUser = function(user_info,callback){
 
 FabMoAPI.prototype.getUsers = function(callback){
     this._get("/authentication/users",callback,callback);
+}
+
+FabMoAPI.prototype.getUpdaterStatus = function(callback){
+    this._get("/updater/status",callback,callback, 'status');
 }
 
 FabMoAPI.prototype._url = function(path) { return this.base_url + '/' + path.replace(/^\//,''); }

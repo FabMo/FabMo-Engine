@@ -69,7 +69,7 @@
     "sinon": "1.16.x",
     "svgmin": "0.1.0"
   },
-  "engine": "node 0.12.7",
+  "engine": "node 0.10.44",
   "apidoc": {
     "name": "FabMo Engine",
     "version": "0.0.0",
@@ -79,8 +79,9 @@
   "scripts": {
     "start": "node server.js",
     "debug": "node server.js --debug ",
-    "postinstall": "webpack -p",
-    "prod": "webpack -p",
-    "dev": "webpack"
+    "webpack" : "node_modules/.bin/webpack",
+    "postinstall": "node_modules/.bin/webpack -p",
+    "prod": "node_modules/.bin/webpack -p",
+    "dev": "node_modules/.bin/webpack && node server.js --debug "
   }
 }

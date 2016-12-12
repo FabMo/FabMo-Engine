@@ -123,8 +123,7 @@ $(document).ready(function() {
     $(document).foundation();
 
     refreshMacros();
-   
-    console.log('wtf');
+    
     $('#macro-new').on('click', function(evt) {
         var macroCount = Object.keys(macroIndex).length;
         for(var newIndex=1; newIndex<macroCount+1; newIndex++) {

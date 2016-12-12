@@ -1,7 +1,5 @@
-var Fabmo = require('../../../static/js/libs/fabmo.js');
-var fabmo = new Fabmo;
 var moment = require('../../../static/js/libs/moment.js');
-module.exports = function users() {
+module.exports = function users(fabmo) {
 setupUserManager();
 var current_user=null;
 

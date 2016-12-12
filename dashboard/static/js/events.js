@@ -151,7 +151,6 @@ define(function(require) {
         }
         //Handle collapse of left
         $('.collapseLeft').click(function(evt) {
-          console.log("collapse")
             evt.preventDefault();
             $('.collapseLeft').hide();
             $('#left-menu').addClass("colapsed");
@@ -217,6 +216,8 @@ define(function(require) {
 
     /********** Document Ready Init **********/
     $(document).ready(function() {
+
+
         rightMenuLoad();
         resizedoc();
         //If size of the screen change, we resize the main & app container
@@ -244,6 +245,10 @@ define(function(require) {
         $("button[type='submit']").click(function() {
             return false; //Override the action of the button, so the user is not redirected to another page (no data lost)
         });
+
+
+    //handle log out
+
     });
 
 

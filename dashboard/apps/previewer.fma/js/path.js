@@ -83,7 +83,7 @@ GCodeViewer.TotalSize = function(scene) {
         var material = new THREE.LineBasicMaterial({ color : color });
         var geometry = new THREE.Geometry();
         var type = (displayInMm === false) ? "in" : "mm";
-        var d = (displayInMm === false) ? 1 : GCodeToGeometry.INCH_TO_MILLIMETER;
+        var d = (displayInMm === false) ? 1 : 25.4;
         var width = Math.abs(totalSize.max.x - totalSize.min.x);
         var length = Math.abs(totalSize.max.y - totalSize.min.y);
         var height = Math.abs(totalSize.max.z - totalSize.min.z);
