@@ -483,7 +483,6 @@ FabMoAPI.prototype._get = function(url, errback, callback, key) {
 		url: url,
 		type: "GET",
     cache: false,
-    contentType:"application/json; charset=utf-8",
 		dataType : 'json',
 		success: function(result){
 			if(result.status === "success") {
@@ -576,7 +575,7 @@ FabMoAPI.prototype._post = function(url, data, errback, callback, key, redirect)
   xhr.open('POST', url);
 
 	if(!(data instanceof FormData)) {
-		xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+		xhr.setRequestHeader('Content-Type', 'application/json;');
 		if(typeof data != 'string') {
 			data = JSON.stringify(data);
 		}
@@ -639,7 +638,6 @@ FabMoAPI.prototype._patch = function(url, data, errback, callback, key) {
 		url: url,
 		type: "PATCH",
     cache: false,
-    contentType:"application/json; charset=utf-8",
 		'data' : data,
 		success: function(result){
 			if(data.status === "success") {
@@ -672,7 +670,6 @@ FabMoAPI.prototype._del = function(url, data, errback, callback, key) {
 		type: "DELETE",
 		dataType : 'json',
     cache: false,
-    contentType:"application/json; charset=utf-8",
 		'data' : data,
 		success: function(result){
 			if(data.status === "success") {
