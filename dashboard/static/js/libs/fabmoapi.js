@@ -192,7 +192,7 @@ FabMoAPI.prototype.sendTime = function(callback) {
 	this._post('/time/date', data, callback, callback);
 }
 
-// Updater Configuration 
+// Updater Configuration
 
 FabMoAPI.prototype.getUpdaterConfig = function(callback) {
 	var callback = callback || function() {};
@@ -482,6 +482,7 @@ FabMoAPI.prototype._get = function(url, errback, callback, key) {
 	$.ajax({
 		url: url,
 		type: "GET",
+    cache: false,
 		dataType : 'json',
 		success: function(result){
 			if(result.status === "success") {
@@ -567,10 +568,14 @@ FabMoAPI.prototype._post = function(url, data, errback, callback, key, redirect)
 	var errback = errback || function() {};
 
 	var xhr = new XMLHttpRequest();
-	xhr.open('POST', url);
+
+  // fix NO-CACHE
+  url += ( (url.indexOf("?")==-1)? "?_=" : "& _=" ) + new Date().getTime();
+
+  xhr.open('POST', url);
 
 	if(!(data instanceof FormData)) {
-		xhr.setRequestHeader('Content-Type', 'application/json');
+		xhr.setRequestHeader('Content-Type', 'application/json;');
 		if(typeof data != 'string') {
 			data = JSON.stringify(data);
 		}
@@ -632,6 +637,7 @@ FabMoAPI.prototype._patch = function(url, data, errback, callback, key) {
 	$.ajax({
 		url: url,
 		type: "PATCH",
+    cache: false,
 		'data' : data,
 		success: function(result){
 			if(data.status === "success") {
@@ -663,6 +669,7 @@ FabMoAPI.prototype._del = function(url, data, errback, callback, key) {
 		url: url,
 		type: "DELETE",
 		dataType : 'json',
+    cache: false,
 		'data' : data,
 		success: function(result){
 			if(data.status === "success") {

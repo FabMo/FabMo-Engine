@@ -234,6 +234,7 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 
 #connection-strength-indicator {
 	height: 30px;
+   max-width:30px;
 }
 
 .svg-container {
@@ -957,7 +958,7 @@ input[type=number]::-webkit-outer-spin-button {
 	-webkit-user-select: none;  /* Chrome all / Safari all */
       -moz-user-select: none;     /* Firefox all */
         -ms-user-select: none;      /* IE 10+ */
-          user-select: none;  
+          user-select: none;
 }
 
 /*
@@ -1039,7 +1040,7 @@ input[type=number]::-webkit-outer-spin-button {
 	-webkit-user-select: none;  /* Chrome all / Safari all */
       -moz-user-select: none;     /* Firefox all */
         -ms-user-select: none;      /* IE 10+ */
-          user-select: none;  
+          user-select: none;
 }
 
 
@@ -1567,6 +1568,16 @@ input[type=number]::-webkit-outer-spin-button {
 	animation: spin 4s linear infinite;
 }
 
+/* Edge specific */
+@supports (-ms-ime-align:auto) {
+    #waiting_container > svg {
+      position: absolute;
+      top: 0;
+      transform-origin: 50% 50%;
+    	animation: spin 4s linear infinite;
+    }
+}
+
  /*Old chipfly animation*/
 /*@keyframes chipflyone {
   0% {
@@ -1847,7 +1858,7 @@ input[type=number]::-webkit-outer-spin-button {
     transform: translate(-50%, -50%);
     z-index: 3001;
     background-color: #eee;
-  
+
       -webkit-font-smoothing: antialiased;
 }
 
@@ -1908,7 +1919,15 @@ input[type=number]::-webkit-outer-spin-button {
   	transform: translateY(-50%);
 }
 
-
+/*Edge specific*/
+@supports (-ms-ime-align:auto) {
+  .loader > svg {
+    position: absolute;
+    top: 0;
+    transform-origin: 50% 50%;
+    animation: spin 4s linear infinite;
+  }
+}
 
 /*Old loading spinner*/
 /*@-webkit-keyframes spinner {
