@@ -66,7 +66,7 @@ var FabMoAPI = function(base_url) {
 }
 
 FabMoAPI.prototype._initializeWebsocket = function() {
-	var io = require("socket.io-client");
+	var io = require("socket.io/node_modules/socket.io-client/socket.io.js");
 	localStorage.debug = false
 	try {
 		this.socket = io.connect(this.base_url+'/private');
