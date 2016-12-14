@@ -160,9 +160,9 @@ function addQueueEntries(jobs) {
            i++;
          }
         }
-      } 
+      }
     var recentJobs = document.getElementById('recent');
-    clearRecent(); 
+    clearRecent();
     for (i = 0; i < recent.length; i++) {
       var recentItem = document.createElement("div");
       recentItem.setAttribute("id", recent[i]._id);
@@ -501,8 +501,7 @@ function handleStatusReport(status) {
 				$('.download').attr({
      				 'data-href': '/job/' + $('.download').data('id') + '/file'
     			});
-				document.location = $('.download').data('href');
-
+        fabmo.navigate($('.download').data('href'));
 			} else if (Sortable.utils.is(ctrl, ".ellipses")){
 				var dd = ctrl.parentNode.childNodes[2];
 				var cd = ctrl.parentNode.childNodes[1];
@@ -526,7 +525,7 @@ function handleStatusReport(status) {
 			} else if (Sortable.utils.is(ctrl, ".play-button")){
           if ($('.play').hasClass('active')) {
             fabmo.pause(function(err, data) {});
-          } 
+          }
           else {
           fabmo.runNext(function(err, data) {
               if (err) {
@@ -654,7 +653,7 @@ function handleStatusReport(status) {
 	});
 
 	$('#queue_table').on('click', '.play-button', function(e) {
-    
+
 	});
 
 	$('#clear-jobs').click(function(e) {
