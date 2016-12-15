@@ -315,7 +315,7 @@ Machine.prototype.fire = function(force) {
 Machine.prototype.authorize = function(timeout) {
 	var timeout = timeout || config.machine.get('auth_timeout');
 	if(timeout) {
-			log.info("Machine is authorized for the next " + timeout + " seconds.");
+		log.info("Machine is authorized for the next " + timeout + " seconds.");
 		if(this._authTimer) { clearTimeout(this._authTimer);}
 		this._authTimer = setTimeout(function() {
 			log.info('Authorization timeout (' + timeout + 's) expired.');
@@ -369,7 +369,6 @@ Machine.prototype.runJob = function(job) {
 };
 
 Machine.prototype.setPreferredUnits = function(units, callback) {
-	log.info("SETTING PREFERRED UNITS");
 	try {
 		if(config.driver.changeUnits) {
 			units = u.unitType(units);
@@ -516,7 +515,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 	this.fireButtonDebounce = false ;
 	if ((source === this) || (source === this.current_runtime)) {
 		log.info("Got a machine state change: " + newstate)
-		this.status.state = newstate;
 
 		if(stateinfo) {
 			this.status.info = stateinfo
@@ -526,8 +524,11 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 			delete this.status.info
 		}
 
-		switch(this.status.state) {
+		switch(newstate) {
 			case 'idle':
+				if(this.status.state != 'idle') {
+					this.driver.command({"out4":0});
+				}
 				this.status.nb_lines = null;
 				this.status.line = null;
 				if(this.action) {
@@ -552,6 +553,8 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				log.error('G2 is dead!');
 				break;
 		}
+
+		this.status.state = newstate;
 	} else {
 		log.warn("Got a state change from a runtime that's not the current one. (" + source + ")")
 	}
@@ -645,6 +648,7 @@ Machine.prototype.gcode = function(string) {
  * Don't call them unless the tool is authorized!
  */
 Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
+	this.driver.command({"out4":1});
 	runtime = this.getRuntime(runtimeName);
 	if(runtime) {
 		this.setRuntime(runtime, function(err, runtime) {
@@ -671,6 +675,7 @@ Machine.prototype._runNextJob = function(force, callback) {
 	if(this.isConnected()) {
 		if(this.status.state === 'armed' || force) {
 			log.info("Running next job");
+			this.driver.command({"out4":1});
 			db.Job.dequeue(function(err, result) {
 				log.info(result);
 				if(err) {

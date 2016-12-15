@@ -741,6 +741,10 @@ FabMoDashboard.prototype.setUpdaterConfig = function(data, callback) {
 	this._call("setUpdaterConfig", data, callback);
 }
 
+FabMoDashboard.prototype.getInfo = function(callback) {
+	this._call("getInfo", null, callback);
+}
+
 FabMoDashboard.prototype.getConfig = function(callback) {
 	this._call("getConfig", null, callback);
 }

@@ -7,6 +7,7 @@ var Queue = require('./util').Queue;
 var Watchdog = require('./util').Watchdog;
 var log = require('./log').logger('g2');
 var process = require('process');
+var jsesc = require('jsesc');
 
 // Values of the **stat** field that is returned from G2 status reports
 var STAT_INIT = 0;
@@ -32,7 +33,7 @@ var EXPECT_TIMEOUT = 300000;
 // the machine has more time to run away before stopping.
 var JOG_TIMEOUT = 500;
 
-var GCODE_BLOCK_SEND_SIZE = 1000;
+var GCODE_BLOCK_SEND_SIZE = 4;
 var GCODE_MIN_LINE_THRESH = 250;
 
 // Map used by the jog command to turn incoming direction specifiers to g-code
@@ -49,6 +50,7 @@ var JOG_AXES = {'x':'X',
 				'c':'C',
 				'-c':'C-'};
 
+var RESPONSE_LIMIT = 4;
 // Error codes defined by G2
 // See https://github.com/synthetos/g2/blob/edge/TinyG2/tinyg2.h for the latest error codes and messages
 try {
@@ -65,6 +67,8 @@ function G2() {
 	this.status = {'stat':'idle', 'posx':0, 'posy':0, 'posz':0};
 
 	this.gcode_queue = new Queue();
+	this.command_queue = new Queue();
+
 	this.watchdog = new Watchdog(10000,14); //time, exit code
 	this.pause_flag = false;
 	this.connected = false;
@@ -89,6 +93,8 @@ function G2() {
 	this.flooded = false;
 	this.send_rate = 1;
 	this.lines_sent = 0;
+
+	this.response_count = 1;
 
 	// Event emitter inheritance and behavior setup
 	events.EventEmitter.call(this);
@@ -133,7 +139,7 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
 
 	var onOpen = function(callback) {
 		this.controlWrite("\x04")
-		this.gcodeWrite("{clr:n}\n");
+		this.command("{clr:n}");
 		this.command("M30");
 		this.requestStatusReport();
 		this.connected = true;
@@ -189,7 +195,7 @@ G2.prototype.onSerialClose = function(data) {
 G2.prototype.controlWrite = function(s) {
 	this.watchdog.start();
 	t = new Date().getTime();
-	log.g2('--C-' + t + '----> ' + s.trim());
+	log.g2('--C-' + t + '----> ' + jsesc(s.trim()));
 	this.control_port.write(s);
 };
 
@@ -197,7 +203,7 @@ G2.prototype.controlWrite = function(s) {
 G2.prototype.gcodeWrite = function(s) {
 	this.watchdog.start();
 	t = new Date().getTime();
-	log.g2('--G-' + t + '----> ' + s.trim());
+	log.g2('--G-' + t + '----> ' + jsesc(s.trim()));
 	this.gcode_port.write(s);
 };
 
@@ -263,7 +269,7 @@ G2.prototype.jog = function(direction) {
 
 		// Build serial string and send
 		try {
-			this.gcodeWrite(codes.join('\n'));
+			this.runGCodes(codes);
 		} finally {
 			// Timeout jogging if we don't get a keepalive from the client
 			this.jog_heartbeat = setTimeout(function() {
@@ -278,50 +284,6 @@ G2.prototype.jog = function(direction) {
 	}
 };
 
-// Start or continue jogging in the direction provided, which is one of x,-x,y,-y,z-z,a,-a,b,-b,c,-c
-G2.prototype.fixed_move = function(direction,step,speed) {
-	if(this.quit_pending){
-		log.warn("WARNING QUIT PENDING WHILE DOING A FIXED MOVE")
-	}
-	var mstep = parseFloat(step ? step : 0.01).toFixed(5);
-	var speed = parseFloat(speed || 60.0).toFixed(2);
-
-	// Normalize the direction provided by the user
-	direction = String(direction).trim().toLowerCase().replace(/\+/g,"");
-
-	if ( !(direction in JOG_AXES)) {
-		return;
-	}
-	else {
-		var d = JOG_AXES[direction];
-		var move;
-		if(mstep > 0.005) {
-			mstep -= 0.005;
-			mstep = mstep.toFixed(5)
-			var move = 'G91 G1 ' + d + 0.005 + ' F' + speed + '\n' +'G1' + d + mstep + 'F' + speed + '\n';
-		} else {
-			move = 'G91 G1 ' + d + mstep + ' F' + speed;
-		}
-		this.gcodeWrite(move);
-	}
-};
-
-G2.prototype.jog_keepalive = function() {
-	log.info('Keeping jog alive.');
-	clearTimeout(this.jog_heartbeat);
-	this.jog_heartbeat = setTimeout(this.stopJog.bind(this), JOG_TIMEOUT);
-};
-
-G2.prototype.stopJog = function() {
-	if(this.jog_direction && !this.jog_stop_pending) {
-		log.debug('stopJog()');
-		this.jog_stop_pending = true;
-		clearTimeout(this.jog_heartbeat);
-		if(this.status.stat === STAT_RUNNING) {
-			this.quit();
-		}
-	}
-};
 
 G2.prototype.setUnits = function(units, callback) {
 	if(units === 0 || units == 'in') {
@@ -388,7 +350,7 @@ G2.prototype.onData = function(data) {
 				if(json_string.trim() === '######## LOADER - SEGMENT NOT READY') {
 					this.emit('error', [-1, 'LOADER_SEGMENT_NOT_READY', 'Asynchronous error: Segment not ready.']);
 				} else {
-					this.emit('error', [-1, 'JSON_PARSE_ERROR', "Could not parse response: '" + json_string + "' (" + e.toString() + ")"]);
+					this.emit('error', [-1, 'JSON_PARSE_ERROR', "Could not parse response: '" + jsesc(json_string) + "' (" + e.toString() + ")"]);
 				}
 			} finally {
 				if(obj) {
@@ -406,7 +368,7 @@ G2.prototype.handleQueueReport = function(r) {
 	// Deal with jog mode
 	var qo = r.qo || 0;
 	if(this.jog_command && (qo > 0)) {
-		this.gcodeWrite(this.jog_command + '\n');
+		this.runGCodes(this.jog_command);
 		return;
 	}
 };
@@ -429,7 +391,8 @@ G2.prototype.handleExceptionReport = function(response) {
 		this._lastExceptionReport = response.er;
 		var stat = response.er.st;
 		if(((stat === 204) || (stat === 207)) && this.quit_pending) {
-			this.gcodeWrite("{clr:n}\nM30\n");
+			this.command("{clr:n}");
+			this.command("M30");
 			this.quit_pending = false;
 		}
 	}
@@ -479,14 +442,15 @@ G2.prototype.handleStatusReport = function(response) {
 		if('line' in response.sr) {
 			line = response.sr.line;
 			lines_left = this.lines_sent - line;
-
+/*
 			if(lines_left < GCODE_MIN_LINE_THRESH) {
 				this.last_line_seen = line;
 				if(this.gcode_queue.getLength() > 0) {
 					log.warn("Lines left has fallen to " + lines_left + " sending more...");
-					this.sendMoreGCodes();
+					this.sendMore();
 				}
 			}
+			*/
 		}
 
 		if('stat' in response.sr) {
@@ -524,8 +488,11 @@ G2.prototype.onMessage = function(response) {
 	this.watchdog.stop();
 	// TODO more elegant way of dealing with "response" data.
 	if(response.r) {
+		this.response_count -= 1;
+		//log.debug(this.response_count)
 		this.emit('response', false, response.r);
 		r = response.r;
+		this.sendMore();
 	} else {
 		r = response;
 	}
@@ -570,7 +537,7 @@ G2.prototype.feedHold = function(callback) {
 	this.flooded = false;
 	typeof callback === 'function' && this.once('state', callback);
 	log.debug("Sending a feedhold");
-	this.controlWriteAndDrain('!\n', function() {
+	this.controlWriteAndDrain('!', function() {
 		log.debug("Drained.");
 	});
 };
@@ -578,12 +545,12 @@ G2.prototype.feedHold = function(callback) {
 G2.prototype.queueFlush = function(callback) {
 	log.debug('Clearing the queue.');
 	this.flushcallback = callback;
-	this.gcodeWrite('{clr:n}\n');
-	this.controlWrite('\%\n');
+	this.command('{clr:n}');
+	this.controlWrite('\%');
 };
 
 G2.prototype.resume = function() {
-	this.controlWrite('~\n'); //cycle start command character
+	this.controlWrite('~'); //cycle start command character
 	this.pause_flag = false;
 };
 
@@ -591,8 +558,9 @@ G2.prototype.resume = function() {
 G2.prototype.quit = function() {
 	this.quit_pending = true;
 	this.gcode_queue.clear();
-	this.gcodeWrite('{clr:n}\n');
-	this.controlWrite('\x04');
+	this.command_queue.clear();
+	this.command('{clr:n}');
+	this.controlWriteAndDrain('\x04');
 }
 
 G2.prototype.get = function(key, callback) {
@@ -720,10 +688,18 @@ G2.prototype.command = function(obj) {
 	if((typeof obj) == 'string') {
 		cmd = obj.trim();
 		//this.controlWrite('{"gc":"'+cmd+'"}\n');
-		this.gcodeWrite(cmd + '\n');
+		//this.command_queue.enqueue(cmd)
+		this.gcode_queue.enqueue(cmd);
+		//this.gcodeWrite(cmd + '\n');
 	} else {
 		cmd = JSON.stringify(obj);
-		this.controlWrite(cmd + '\n');
+		cmd = cmd.replace(/(:\s*)(true)(\s*[},])/g, "$1t$3")
+		cmd = cmd.replace(/(:\s*)(false)(\s*[},])/g, "$1f$3")
+		cmd = cmd.replace(/"/g, '');
+		this.command_queue.enqueue(cmd);
+	}
+	if(this.response_count < RESPONSE_LIMIT) {
+		this.sendMore();
 	}
 };
 
@@ -753,16 +729,18 @@ G2.prototype.runSegment = function(data, callback) {
 
 	// Cleanup the lines and enqueue
 	for(var i=0; i<lines.length; i++) {
-		line_count += 1;
 		line = lines[i].trim().toUpperCase();
-		if(callback) {
-			callback.line = line_count;
+		if(line) {
+			line_count += 1;
+			if(callback) {
+				callback.line = line_count;
+			}
+			this.gcode_queue.enqueue(line);
 		}
-		this.gcode_queue.enqueue(line);
 	}
 
 	this.lines_sent = 0;
-	this.sendMoreGCodes();
+	this.sendMore();
 
 	// Kick off the run if any lines were queued
 	if(line_count > 0) {
@@ -773,26 +751,55 @@ G2.prototype.runSegment = function(data, callback) {
 	}
 };
 
-G2.prototype.sendMoreGCodes = function() {
-	codes = this.gcode_queue.multiDequeue(GCODE_BLOCK_SEND_SIZE);
+G2.prototype.runGCodes = function(codes, callback) {
 	if(codes.length > 0) {
-		this.lines_sent += codes.length;
-		this.gcodeWrite(codes.join('\n') + '\n');
+		this.pause_flag = false;
+	}
+	codes.forEach(function(code) {
+		if(code.trim()) {
+			this.gcode_queue.enqueue(code);
+		}
+	}.bind(this));
+	this.sendMore();
+	typeof callback === "function" && callback(null);
+}
+
+G2.prototype.sendMore = function() {
+	if(this.response_count < RESPONSE_LIMIT) {
+		var count = (RESPONSE_LIMIT - this.response_count);
+		if(this.command_queue.getLength() > 0) {
+			codes = this.command_queue.multiDequeue(count);
+			codes.forEach(function(code) {
+				this.controlWrite(code + '\n');
+				this.response_count += 1;
+			}.bind(this));
+		}
+	}
+
+	if(this.response_count < RESPONSE_LIMIT) {
+		var count = (RESPONSE_LIMIT - this.response_count);
+		if(this.gcode_queue.getLength() > 0) {
+			codes = this.gcode_queue.multiDequeue(count);
+			codes.forEach(function(code) {
+				this.gcodeWrite(code + '\n');
+				this.response_count += 1;
+			}.bind(this));
+		}
 	}
 };
 
 G2.prototype.setMachinePosition = function(position, callback) {
-	var gcode = "G21\n";
+	var gcode = ["G21"];
 	['x','y','z','a','b','c','u','v','w'].forEach(function(axis) {
 		if(position[axis] != undefined) {
-			gcode += 'G28.3 ' + axis + position[axis].toFixed(5) + '\n';
+			gcode.push('G28.3 ' + axis + position[axis].toFixed(5));
 		}
 	});
 
 	if(this.status.unit === 'in') {
-		gcode += 'G20\n';
+		gcode.push('G20');
 	}
-	this.runString(gcode, callback);
+	this.runGCodes(gcode, callback);
 }
 
 // Function works like "once()" for a state change

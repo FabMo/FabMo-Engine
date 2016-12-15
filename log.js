@@ -9,6 +9,7 @@ var path = require('path');
 var _suppress = false;
 var log_buffer = [];
 var LOG_BUFFER_SIZE = 5000;
+var PERSISTENT_LOG_COUNT = 20;
 
 // String versions of the allowable log levels
 LEVELS = {
@@ -135,6 +136,8 @@ Logger.prototype.uncaught = function(err) {
 		console.log("UNCAUGHT EXCEPTION");
 		console.log(err.stack);
 	}
+	log_buffer.push("UNCAUGHT EXCEPTION");
+	log_buffer.push(err.stack);
 }
 
 // Factory function for producing a new, named logger object
@@ -154,7 +157,7 @@ var logger = function(name) {
 var _log = logger('log');
 
 function exitHandler(options, err) {
-	options = options || {};
+    options = options || {};
     if (err) {
     	_log.uncaught(err);
     }
@@ -166,6 +169,12 @@ function exitHandler(options, err) {
     	try {
 	    	saveLogBuffer(filename);
 	    	_log.info("Log saved to " + filename);
+	    	rotateLogs(PERSISTENT_LOG_COUNT, function() {
+	    		if(options.exit) {
+	    			process.exit();
+	    		}
+	    	});
+	    	return;
     	} catch(e) {
 	    	_log.error("Could not save log to " + filename);
 	    	_log.error(e);
@@ -178,7 +187,7 @@ function exitHandler(options, err) {
 
 process.on('exit', exitHandler.bind(null));
 process.on('SIGINT', exitHandler.bind(null, {savelog:true, exit:true}));
-process.on('uncaughtException', exitHandler.bind(null, {savelog:true, exit:true}));
+process.on('uncaughtException', exitHandler.bind(null, {savelog:true, exit:false}));
 
 var suppress = function(v) {_suppress = true;};
 var unsuppress = function(v) {_suppress = false;};
@@ -195,8 +204,39 @@ var saveLogBuffer = function(filename) {
 	fs.writeFileSync(filename, getLogBuffer());
 }
 
+var rotateLogs = function(count,callback) {
+	var logdir = require('./config').getDataDir('log');
+	callback = callback || function() {};
+	try {
+		fs.readdir(logdir, function(err, files) {
+			files.sort();
+			if(files.length <= count) {
+				return callback();
+			}
+			var filesToDelete = files.slice(0, files.length-count);
+			async.each(
+				filesToDelete, 
+				function(file, callback) {
+					fs.unlink(path.join(logdir, file), callback)
+				}, 
+				function(err) {
+					if(err) {
+						_log.error(err);
+					} else {
+			    		_log.info(filesToDelete.length + " old logfile removed.");						
+					}
+					callback(null)
+				});
+			});
+	} catch(e) {
+		_log.error(e);
+		callback(e);
+	}
+}
+
 exports.suppress = suppress;
 exports.logger = logger;
 exports.setGlobalLevel = setGlobalLevel;
 exports.getLogBuffer = getLogBuffer;
-exports.clearLogBuffer = clearLogBuffer();
+exports.clearLogBuffer = clearLogBuffer;
+exports.rotateLogs = rotateLogs;

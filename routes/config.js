@@ -196,9 +196,19 @@ var get_version = function(req, res, next) {
   res.json(answer);
 };
 
+var get_info = function(req, res, next) {
+  engine.getInfo(function(err, info) {
+    res.json(  {
+      status : "success",
+      data : {"info":info}
+    });
+  });
+};
+
 module.exports = function(server) {
   server.get('/status', get_status);
   server.get('/config',get_config);
   server.post('/config', post_config);
   server.get('/version', get_version);
+  server.get('/info', get_info);
 };
