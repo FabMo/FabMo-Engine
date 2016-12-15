@@ -94,6 +94,7 @@ return new Promise (function(resolve, reject){
 }
 
 function makeListItem (menu, obj) {
+    console.log(obj);
      var listItem = document.createElement("li");
         listItem.setAttribute("id", obj.id);
         listItem.setAttribute("class", "app_item");
@@ -101,7 +102,7 @@ function makeListItem (menu, obj) {
         menu.appendChild(listItem);
         var id = document.getElementById(obj.id);
         var path = obj.icon_url;
-        id.innerHTML = '<img src=/'+path+'><div class="deleteApp"><div>x</div></div>';
+        id.innerHTML = '<img src=/'+path+'><div class="deleteApp"><div>x</div></div><div class="appname">'+obj.name+'</div>';
         $('#'+obj.id).click(launch(obj.id));
         $('#'+obj.id).css('background-color',obj.icon_background_color);
 }
