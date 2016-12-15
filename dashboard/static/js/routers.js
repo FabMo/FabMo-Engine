@@ -6,6 +6,12 @@ define(function(require) {
 	var $ = require('jquery');
 	var Backbone = require('backbone');
 	var auth = require('./auth.js');
+	var FabMoAPI = require('./libs/fabmoapi.js');
+	var engine = new FabMoAPI();
+	var defaultApp = '';
+	engine.getConfig(function(err,data){
+		return defaultApp = data.machine.default_app;
+	});
 	var Router = Backbone.Router.extend({
 		routes: {
 			"app/:id"     		: "_launchApp",
@@ -16,7 +22,9 @@ define(function(require) {
 		},
 		launchApp: function(id, args, callback) {
 			callback = callback || function() {};
+			console.log(this.context.launchApp);
 			this.context.launchApp(id, args || {}, function(err, data) {
+				
 				if(err) { return callback(err); }
 				this.navigate('app/' + id);
 			}.bind(this));
@@ -25,13 +33,7 @@ define(function(require) {
 			this.launchApp(id);
 		},
 		show_menu: function() {
-			$('#waiting_container').hide();
-			$('#mainContent').hide();
-			this.context.appClientView.hide();
-			this.context.closeApp();
-			this.context.appMenuView.show();
-			this.context.hideModalContainer();
-			this.context.menuShown = true;
+			this.launchApp(defaultApp);
 		},
 		show_auth: function (message){
 			console.log(message);

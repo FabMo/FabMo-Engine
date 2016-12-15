@@ -90,7 +90,6 @@ define(function(require) {
 				this.current_app_args = args || {};
 				this.current_app_id = id;
 				this.current_app_info = app;
-				this.appMenuView.hide();
 				$('#waiting_container').show();
 				this.menuShown = false;
 				this.appClientView.setModel(app, hard_refresh, function() {
@@ -110,7 +109,6 @@ define(function(require) {
 			}
 		} else {
 			this.menuShown = false;
-			this.appMenuView.hide();
 			$('#waiting_container').hide();
 			this.hideModalContainer();
 			this.appClientView.show();

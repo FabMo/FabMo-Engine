@@ -64,10 +64,14 @@ button.small, .button.small {
   }
 }
 
-td input, td select {margin:0 !important;}
+td input, td select {margin-left: 50%;}
 
 td.switch {
   text-align: center;
+}
+
+input[type="radio"]{
+  margin: 50% 50% 50% 50%;
 }
 
 td .button {
@@ -81,6 +85,8 @@ a:focus {
 }
 
 header { padding: 0 3rem;}
+
+
 
 /*
 *** Section ***

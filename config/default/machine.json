@@ -5,6 +5,7 @@
 	"auth_input" : 2,
 	"ap_input" : 2,
 	"ap_time" : 8,
+	"default_app" : "home",
 	"envelope" : {
 		"xmin" : 0.0,
 		"xmax" : 6.0,

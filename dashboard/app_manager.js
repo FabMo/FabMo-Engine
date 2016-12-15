@@ -35,7 +35,9 @@ AppManager.prototype.notifyChange = function() {
 
 AppManager.prototype.readAppPackageInfo = function(app_info, callback) {
 	var pkg_info_path = path.join(app_info.app_path, 'package.json');
+	
 	var pathname = path.basename(app_info.app_archive_path);
+	var id = pathname.match(/^([^.]*)/g)[0];
 	fs.readFile(pkg_info_path, function(err, data) {
 		if(err) {
 			return callback(new Error("Could not read package.json"));
@@ -55,7 +57,7 @@ AppManager.prototype.readAppPackageInfo = function(app_info, callback) {
 			app_info.icon_display = package_info.icon_display;
 			app_info.app_url = path.join('approot', pathname, package_info.main);
 			app_info.icon_url = path.join('approot', pathname, package_info.icon);
-			app_info.id = package_info.id || uuid.v1();
+			app_info.id = package_info.id || id;
 			app_info.version = package_info.version || '';
 			app_info.description = package_info.description || "No description";
 			callback(null, app_info);

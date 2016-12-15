@@ -57,6 +57,7 @@ function update() {
     }
   });
     fabmo.getConfig(function(err, data) {
+
       if(err) {
         console.error(err);
       } else {
