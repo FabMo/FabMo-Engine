@@ -182,6 +182,7 @@ function enterAPMode(callback) {
     $('tbody').on('click', 'td.ssid', function () {
         var name = $(this).text();
         requestPassword(name, function(passwd){
+        fabmo.showModal({message:"you're tool is now away, please use the Tool Minder to find it on the new network called "+name+" ."});
             fabmo.connectToWifi(name, passwd,function(err,data){
                 if(err) {
                     fabmo.notify('error',err);
@@ -194,6 +195,7 @@ function enterAPMode(callback) {
     $('#ap-mode-button').on('click', function(evt) {
         enterAPMode();
         evt.preventDefault();
+        fabmo.showModal({message:"you're tool is now back in AP mode."});
     })
 
 
