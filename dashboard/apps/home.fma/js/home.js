@@ -76,11 +76,11 @@ return new Promise (function(resolve, reject){
         $('#file').trigger('click');
     });
     var timeoutId = 0;
-    $('.app_item').on('mousedown', function(e) {
+    $('.app_item').on('mousedown touchstart',  function(e) {
         timeoutId = setTimeout(function(){
             holdfunction(e);
         }, 1500);
-    }).on('mouseup mouseleave', function(e) {
+    }).on('mouseup mouseleave touchend', function(e) {
         clearTimeout(timeoutId);
     });
     
