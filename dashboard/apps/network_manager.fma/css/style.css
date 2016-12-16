@@ -48,39 +48,21 @@ h1 {
 
 .wifi4 {
     background: url('../images/signal_4.png') no-repeat center center;
-    background-size: contain;
-    width: 32px;
-    height: 32px;
 }
 
 .wifi3 {
     background: url('../images/signal_3.png') no-repeat center center;
-    background-size: contain;
-    width: 32px;
-    height: 32px;
 }
 .wifi2 {
     background: url('../images/signal_2.png') no-repeat center center;
-    background-size: contain;
-    width: 32px;
-    height: 32px;
 }
 .wifi1 {
     background: url('../images/signal_1.png') no-repeat center center;
-    background-size: contain;
-    width: 32px;
-    height: 32px;
 }
 .wifi0 {
     background: url('../images/signal_0.png') no-repeat center center;
-    background-size: contain;
-    width: 32px;
-    height: 32px;
 }
 
 .connected {
     background: url('../images/status_connected.png') no-repeat center center;
-    background-size: contain;
-    width: 32px;
-    height: 32px;
 }
