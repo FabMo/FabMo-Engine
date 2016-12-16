@@ -37,8 +37,8 @@
     margin-right: -50%;
     transform: translate(-50%, -50%);
     user-select: none;
-    -webkit-user-select:none;
-    -webkit-touch-callout:none;
+    -webkit-user-select : none;
+    -webkit-touch-callout : none;
 }
 .app_add {
     float: left;
@@ -127,15 +127,18 @@ filter: blur(3px);
     .app_item, .app_add{
         width: 50px;
         height: 50px;
-       
+        margin: 1rem 1rem 2.2rem 1rem; 
     }
     .app_add {
         font-size: 12px;
     }
     .appname {
-        width: 50px;    
-        line-height: 10px;
-        height: 20px;
-        font-size: 8px;
+        margin-top: 130%;
+        width: 80px;
+        line-height: 12px;
+        height: 24px;
+        font-size: 12px;
+        text-align: center;
+        margin-left: -15px;
     }
 }
