@@ -4,6 +4,8 @@ var Fabmo = require('../../../static/js/libs/fabmo.js');
 var Sortable = require('./Sortable.js');
 var fabmo = new Fabmo;
 var order = [];
+var notApp = [];
+var newOrder = [];
 
 setupAppManager();
 
@@ -35,28 +37,44 @@ return new Promise (function(resolve, reject){
     file.value = "";
    console.log(order);
    
-   if(order.length === (apps.length - 9)){
        
        console.log(order.length);
        for (i = 0; i < order.length; i++) {
            var obj = findById(apps, order[i]);
-           console.log(obj);
-           makeListItem(menu, obj);
+           newOrder.push(obj.id);
+           
        };
     
-   } else {
-       order = [];
-       for (i = 0; i < apps.length; i++) {
+
+        for (i = 0; i < apps.length; i++) {
         
-      if (apps[i].icon_display !== "none") {
-         order.push(apps[i].id);
-         makeListItem(menu, apps[i]);
-        
+            if (apps[i].icon_display !== "none") {
+                if ( $.inArray(apps[i].id, newOrder) > -1 ) {
+
+                } else {
+                    newOrder.push(apps[i].id);
+                }
+            }
+        }
+
+        for (i = 0; i < notApp.length; i++) {
+            if ( $.inArray(notApp[i], order) > -1 ) {
+                 var ind = order.indexOf(notApp[i]);
+                 order.splice(ind,1);
+            }
+        }
+
+        for (i = 0; i < newOrder.length; i++) {
+            var obj = findById(apps, newOrder[i]);
+            makeListItem(menu, obj);
+        }
 
       }
     };
+
+    
     fabmo.getAppConfig(function(err, data){
-        data.appOrder = order;
+        data.appOrder = newOrder;
         fabmo.setAppConfig(data, function(err, data){
 
         }) 
@@ -111,6 +129,8 @@ function findById(source, id) {
   for (var i = 0; i < source.length; i++) {
     if (source[i].id == id) {
       return source[i];
+    } else {
+        notApp.push(id);
     }
   }
 }
