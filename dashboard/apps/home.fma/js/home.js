@@ -69,8 +69,9 @@ return new Promise (function(resolve, reject){
             makeListItem(menu, obj);
         }
 
-      }
-    };
+      
+    
+
 
     
     fabmo.getAppConfig(function(err, data){
@@ -81,9 +82,8 @@ return new Promise (function(resolve, reject){
     });
     console.log(order);
        
-   }
+   
 
-    
     var listItem = document.createElement("ul");
     listItem.setAttribute("id", "add");
     listItem.setAttribute("class", "app_add");
