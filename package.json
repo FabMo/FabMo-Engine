@@ -26,6 +26,7 @@
     "font-awesome": "4.6.3",
     "fs-extra": "0.23.1",
     "glob": "5.0.15",
+    "jsesc": "1.0.0",
     "jquery": "2.2.4",
     "lockfile": "1.0.x",
     "mime": "1.2.11",
@@ -64,7 +65,6 @@
     "grunt-open": "0.2.3",
     "grunt-svgmin": "2.0.1",
     "grunt-svgstore": "0.5.0",
-    "jsesc": "1.0.0",
     "sinon": "1.16.x",
     "svgmin": "0.1.0"
   },
