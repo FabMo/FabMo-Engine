@@ -115,6 +115,7 @@ require("../css/toastr.min.css");
                 });
 
                 dashboard.engine.on('status', function(status) {
+                    console.log(status);
                     if(status.state == 'dead') {
                         dashboard.showModal({
                             title: 'An Error Occurred!',
@@ -203,6 +204,7 @@ require("../css/toastr.min.css");
                                 authorizeDialog = false;
                                 dashboard.engine.quit();
                             }
+          
                         });
                     }
                 });

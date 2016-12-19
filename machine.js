@@ -156,6 +156,8 @@ function Machine(control_path, gcode_path, callback) {
     this.driver.on('status', function(stat) {
     	this.handleFireButton(stat);
     	this.handleAPCollapseButton(stat);
+		this.handleOkayButton(stat);
+		this.handleCancelButton(stat);
     }.bind(this));
 }
 util.inherits(Machine, events.EventEmitter);
@@ -196,6 +198,23 @@ Machine.prototype.handleFireButton = function(stat) {
 		log.info("Fire button hit!")
 		this.fire();
 	}
+}
+
+Machine.prototype.handleOkayButton = function(stat){
+	var auth_input = 'in' + config.machine.get('auth_input');
+	if(stat[auth_input] && this.status.state === 'paused') {
+		log.info("Okay hit!")
+		this.fire();
+	}
+}
+
+Machine.prototype.handleCancelButton = function(stat){
+	var quit_input = 'in' + config.machine.get('quit_input');
+	if(stat[quit_input] && this.status.state === 'paused') {
+		log.info("Cancel hit!")
+		this.fire();
+	}
+
 }
 
 /*
