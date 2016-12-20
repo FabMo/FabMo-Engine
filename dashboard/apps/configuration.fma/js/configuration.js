@@ -57,7 +57,6 @@ function update() {
     }
   });
     fabmo.getConfig(function(err, data) {
-
       if(err) {
         console.error(err);
       } else {
@@ -109,15 +108,15 @@ function update() {
     });
 
     fabmo.getUpdaterStatus(function(err, status) {
-      if(err) { 
+      if(err) {
         return console.error(err);
         fabmo.isOnline(function(err, online) {
           if(online) {
-            $('#btn-update').removeClass('disabled');    
-            $('#btn-update').text('Update Software');        
+            $('#btn-update').removeClass('disabled');
+            $('#btn-update').text('Update Software');
           } else {
             $('#btn-update').addClass('disabled');
-            $('#btn-update').text('No Updates Available');        
+            $('#btn-update').text('No Updates Available');
           }
         });
 
@@ -127,7 +126,7 @@ function update() {
         $('#btn-update').text('Update Software');
       } else {
         $('#btn-update').addClass('disabled').removeClass('update-available');
-        $('#btn-update').text('No Updates Available');        
+        $('#btn-update').text('No Updates Available');
       }
     });
 }
@@ -146,9 +145,19 @@ function setConfig(id, value) {
 	} while(i++ < parts.length-1 );
 	co[parts[parts.length-1]] = value;
 	fabmo.setConfig(o, function(err, data) {
-	  update();
+    notifyChange(err,id);
+    update();
 	});
 }
+
+var notifyChange = function(err,id){
+  if(err){
+    $('#'+id).addClass("flash-red");
+  }else{
+    $('#'+id).addClass("flash-green");
+  }
+  setTimeout(function(){$('#'+id).removeClass("flash-red flash-green")},500);
+};
 
 var configData = null;
 $('#btn-update').click(function(evt) {
@@ -252,6 +261,7 @@ $(document).ready(function() {
             if (this.value == 0) { fabmo.runGCode("G90"); }
             else { fabmo.runGCode("G91"); }
             fabmo.setConfig(new_config, function(err, data) {
+                notifyChange(err,id);
                 setTimeout(update, 500);
             });
         }
@@ -305,6 +315,7 @@ $(document).ready(function() {
                 new_config.driver['6tr']=(360/configData.driver["6sa"])*configData.driver["6mi"]/this.value;
             }
             fabmo.setConfig(new_config, function(err, data) {
+                notifyChange(err,id);
                 setTimeout(update, 500);
             });
         }
@@ -313,6 +324,7 @@ $(document).ready(function() {
     $('#input-machine-name').change( function(evt) {
         var id = {name: this.value};
         fabmo.setNetworkIdentity(id, function(err, data) {
+            notifyChange(err,'input-machine-name');
             update();
         });
 

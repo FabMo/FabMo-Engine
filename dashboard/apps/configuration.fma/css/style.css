@@ -12,6 +12,7 @@ html, body {
     -webkit-overflow-scrolling: touch;
 }
 
+
 .noselect {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -32,7 +33,6 @@ fieldset {
   margin-top: 0px;
   margin-bottom: 0px;
   font-size: 1.5em;
-
 }
 
 .update-available {
@@ -64,14 +64,10 @@ button.small, .button.small {
   }
 }
 
-td input, td select {margin-left: 50%;}
+td input, td select {margin:0 !important;}
 
 td.switch {
   text-align: center;
-}
-
-input[type="radio"]{
-  margin: 50% 50% 50% 50%;
 }
 
 td .button {
@@ -85,8 +81,6 @@ a:focus {
 }
 
 header { padding: 0 3rem;}
-
-
 
 /*
 *** Section ***
@@ -204,6 +198,67 @@ table {
   box-shadow: .5px .5px .5px #aaaaaa;
 }
 
+.flash-green{
+
+  -moz-animation: flash-green .5s ease-out;
+  -moz-animation-iteration-count: 1;
+
+  -webkit-animation: flash-green .5s ease-out;
+  -webkit-animation-iteration-count: 1;
+
+  -ms-animation: flash-green .5s ease-out;
+  -ms-animation-iteration-count: 1;
+
+}
+
+@-webkit-keyframes flash-green {
+    0% { background-color:none;}
+    50% { background-color:#4CBF42;}
+    100% {background-color:none;}
+}
+
+@-moz-keyframes flash-green {
+    0% { background-color:none;}
+    50% { background-color:#4CBF42;}
+    100% {background-color:none;}
+}
+
+@-ms-keyframes flash-green {
+    0% { background-color:none;}
+    50% { background-color:#4CBF42;}
+    100% {background-color:none;}
+}
+
+.flash-red{
+
+  -moz-animation: flash-red .5s ease-out;
+  -moz-animation-iteration-count: 1;
+
+  -webkit-animation: flash-red .5s ease-out;
+  -webkit-animation-iteration-count: 1;
+
+  -ms-animation: flash-red .5s ease-out;
+  -ms-animation-iteration-count: 1;
+
+}
+
+@-webkit-keyframes flash-red {
+    0% { background-color:none;}
+    50% { background-color:#9C210C;}
+    100% {background-color:none;}
+}
+
+@-moz-keyframes flash-red {
+    0% { background-color:none;}
+    50% { background-color:#9C210C;}
+    100% {background-color:none;}
+}
+
+@-ms-keyframes flash-red {
+    0% { background-color:none;}
+    50% { background-color:#9C210C;}
+    100% {background-color:none;}
+}
 
 
 #dropzone .hovershow {
