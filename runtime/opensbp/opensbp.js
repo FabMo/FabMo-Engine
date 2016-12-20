@@ -1564,7 +1564,7 @@ SBPRuntime.prototype.transformation = function(TranPt){
 
 		TranPt = tform.scale(TranPt,ScaleX,ScaleY,PtX,PtY);
 	}
-	if (this.transforms.move.apply !== false){
+	if (this.transforms.move.apply != false){
 		log.debug("Move: " + JSON.stringify(this.transforms.move));
 		TranPt = tform.translate(TranPt,
 								 this.transforms.move.x,
