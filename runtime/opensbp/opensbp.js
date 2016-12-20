@@ -1546,15 +1546,16 @@ SBPRuntime.prototype.transformation = function(TranPt){
             TranPt = tform.rotate(TranPt,angle,PtRotX,PtRotY,this.cmd_StartX,this.cmd_StartY);
         }
 	}
-	if (this.transforms.shearx.apply !== false){
+	////No angle being passed to shear functions so they return null 
+	if (this.transforms.shearx.apply != false){
 		log.debug("ShearX: " + JSON.stringify(this.transforms.shearx));
 		TranPt = tform.shearX(TranPt);
 	}
-	if (this.transforms.sheary.apply !== false){
+	if (this.transforms.sheary.apply != false){
 		log.debug("ShearY: " + JSON.stringify(this.transforms.sheary));
 		TranPt = tform.shearY(TranPt);
 	}
-	if (this.transforms.scale.apply !== false){
+	if (this.transforms.scale.apply != false){
 		log.debug("Scale: " + JSON.stringify(this.transforms.scale));
 		var ScaleX = this.transforms.scale.scalex;
 		var ScaleY = this.transforms.scale.scaley;
