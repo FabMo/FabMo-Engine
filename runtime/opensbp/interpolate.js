@@ -70,7 +70,11 @@ log.debug("lineLen = " + lineLen);
         var v = nextPt[key];
         log.debug(" lineInterpolate v = " + v);
         if(v !== undefined) {
-          if(isNaN(v)) { throw( "Invalid " + key + " argument: " + v ); } 
+          if(isNaN(v)) { 
+            var err = new Error("Invalid " + key + " argument: " + v );
+				    log.error(err);
+            throw(err); 
+          } 
           gcode += (key + v.toFixed(5));
           if(key === "X") { runtime.cmd_posx = v; }
           else if(key === "Y") { runtime.cmd_posy = v; }

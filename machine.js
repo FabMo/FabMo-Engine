@@ -204,7 +204,7 @@ Machine.prototype.handleOkayButton = function(stat){
 	var auth_input = 'in' + config.machine.get('auth_input');
 	if(stat[auth_input] && this.status.state === 'paused') {
 		log.info("Okay hit!")
-		this.fire();
+
 	}
 }
 
@@ -212,7 +212,7 @@ Machine.prototype.handleCancelButton = function(stat){
 	var quit_input = 'in' + config.machine.get('quit_input');
 	if(stat[quit_input] && this.status.state === 'paused') {
 		log.info("Cancel hit!")
-		this.fire();
+
 	}
 
 }

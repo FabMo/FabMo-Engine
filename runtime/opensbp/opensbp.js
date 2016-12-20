@@ -1430,7 +1430,12 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 	['X','Y','Z','A','B','C','I','J','K','F'].forEach(function(key){
 		var c = pt[key];
 		if(c !== undefined) {
-			if(isNaN(c)) { throw( "Invalid " + key + " argument: " + c ); }
+			
+			if(isNaN(c)) { 
+				var err = new Error("Invalid " + key + " argument: " + c );
+				log.error(err);
+				throw err;
+			}
 			if(key === "X") { this.cmd_posx = c; }
 			else if(key === "Y") { this.cmd_posy = c; }
 			else if(key === "Z") { this.cmd_posz = c; }
@@ -1471,7 +1476,11 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		['X','Y','Z','A','B','C','I','J','K','F'].forEach(function(key){
 			var v = Pt[key];
 			if(v !== undefined) {
-				if(isNaN(v)) { throw( "Invalid " + key + " argument: " + v ); }
+				if(isNaN(v)) { 
+					var err = new Error("Invalid " + key + " argument: " + v);
+					log.error(err);
+					throw(err); 
+				}
 				gcode += (key + v.toFixed(5));
 			}
 		}.bind(this));
