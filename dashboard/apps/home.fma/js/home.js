@@ -140,7 +140,9 @@ function findById(source, id) {
         refreshApps().then(function(apps){
             setUpSort();
         });
+        $('#file').unbind();
         $('#file').change(function(evt) {
+            console.log("fired");
             startBusy();
             fabmo.submitApp($('#file'), {}, function(err, data) {
                 stopBusy();
