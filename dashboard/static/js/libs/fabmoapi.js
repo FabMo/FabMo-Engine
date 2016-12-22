@@ -541,25 +541,33 @@ FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback
 			var fd = new FormData();
 			fd.append('key', k);
 			fd.append('index', index);
-			fd.append('file', file);
-			var onFileUploadComplete = function(err, data) {
-				if(err) {
-					// Bail out here too - fail on any one file upload failure
-					requests.forEach(function(req) {
-						req.abort();
-					});
-					return errback(err);
-				}
-				if(data.status === 'complete') {
-					if(key) {
-						callback(null, data.data[key]);
-					} else {
-						callback(null, data.data);
-					}
-				}
-			}.bind(this);
-			var request = this._post(url, fd, onFileUploadComplete, onFileUploadComplete);
-			requests.push(request);
+      var pako = require('./pako.min.js');
+      var fr = new FileReader();
+      fr.readAsArrayBuffer(file);
+      fr.onload = function(evt){
+        console.log(file);
+        file = new File([pako.deflate(fr.result)],file.name,file);
+        console.log(file);
+        fd.append('file', file);
+        var onFileUploadComplete = function(err, data) {
+          if(err) {
+            // Bail out here too - fail on any one file upload failure
+            requests.forEach(function(req) {
+              req.abort();
+            });
+            return errback(err);
+          }
+          if(data.status === 'complete') {
+            if(key) {
+              callback(null, data.data[key]);
+            } else {
+              callback(null, data.data);
+            }
+          }
+        }.bind(this);
+        var request = this._post(url, fd, onFileUploadComplete, onFileUploadComplete);
+        requests.push(request);
+      }.bind(this);
 		}.bind(this));
 	}.bind(this);
 	this._post(url, meta, onMetaDataUploadComplete, onMetaDataUploadComplete, 'key');

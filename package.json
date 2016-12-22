@@ -33,6 +33,7 @@
     "minimist": "1.1.1",
     "ncp": "2.0.0",
     "node-uuid": "1.4.1",
+    "pako": "1.0.4",
     "passport-local": "jlucidar/passport-restify-local",
     "passport-restify": "1.0.1",
     "path-is-inside": "1.0.1",
