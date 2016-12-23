@@ -138,11 +138,10 @@ function findById(source, id) {
 
     function setupAppManager() {
         refreshApps().then(function(apps){
-            setUpSort();
+                setUpSort();
         });
-        $('#file').unbind();
+
         $('#file').change(function(evt) {
-            console.log("fired");
             startBusy();
             fabmo.submitApp($('#file'), {}, function(err, data) {
                 stopBusy();
@@ -158,7 +157,9 @@ function findById(source, id) {
                             if (err) {
                                 console.log(err);
                             }else {
-                                setupAppManager();
+                                refreshApps().then(function(apps){
+                                    setUpSort();
+                                });
                             }
                         }) 
                      });
