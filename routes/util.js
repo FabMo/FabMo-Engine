@@ -75,44 +75,76 @@ function updateUpload(key, index, file) {
 function upload(req, res, next, callback) {
     if(req.files) { // File upload type post
         var file = req.files.file;
+        if(req.body.compressed){
+          var start_decompress = Date.now();
+          fs.readFile(file.path,function(err,data){
+            if(err)log.err(err);
+            fs.writeFile(file.path,pako.inflate(data,{to:"string"}),function(){
+              log.info("decompression time : "+(Date.now()-start_decompress)+"ms");
+              var index = req.body.index;
+              var key = req.body.key;
+              var upload_data = null;
 
-        fs.readFile(file.path,function(err,data){
-          if(err)log.err(err);
-          fs.writeFile(file.path,pako.inflate(data,{to:"string"}),function(){
+              try {
+                  upload_data = updateUpload(key, index, file);
+              } catch(e) {
+                  log.error(e);
+                  return res.json({
+                      'status' : 'error',
+                      'message' : e.message
+                  });
+              }
 
-            var index = req.body.index;
-            var key = req.body.key;
-            var upload_data = null;
-
-            try {
-                upload_data = updateUpload(key, index, file);
-            } catch(e) {
-                log.error(e);
+              if(upload_data) {
+                  if(callback) {
+                      //var cb = upload_data.callback;
+                      delete upload_data.callback;
+                      delete upload_data.file_count;
+                      delete upload_data.timeout;
+                      callback(null, upload_data);
+                  }
+              }else{
                 return res.json({
-                    'status' : 'error',
-                    'message' : e.message
+                  'status' : 'success',
+                  'data' : {
+                    'status' : 'pending'
+                  }
                 });
-            }
+              }
+            });
+          });
+        }else{
+          var index = req.body.index;
+          var key = req.body.key;
+          var upload_data = null;
 
-            if(upload_data) {
-                if(callback) {
-                    //var cb = upload_data.callback;
-                    delete upload_data.callback;
-                    delete upload_data.file_count;
-                    delete upload_data.timeout;
-                    callback(null, upload_data);
-                }
-            } else {
-                return res.json({
-                    'status' : 'success',
-                    'data' : {
-                        'status' : 'pending'
-                    }
-                });
-            }
+          try {
+              upload_data = updateUpload(key, index, file);
+          } catch(e) {
+              log.error(e);
+              return res.json({
+                'status' : 'error',
+                'message' : e.message
+              });
+          }
 
-          })
-        });
+          if(upload_data) {
+              if(callback) {
+                  //var cb = upload_data.callback;
+                  delete upload_data.callback;
+                  delete upload_data.file_count;
+                  delete upload_data.timeout;
+                  callback(null, upload_data);
+              }
+          } else {
+              return res.json({
+                  'status' : 'success',
+                  'data' : {
+                      'status' : 'pending'
+                  }
+              });
+          }
+        }
 
     } else { /* Metadata type POST */
 

@@ -33,7 +33,7 @@ function setupDropTarget() {
       try {
         file = evt.originalEvent.dataTransfer.files;
         if(file.length > 0) {
-          fabmo.submitJob(file, {}, function(err, data) {
+          fabmo.submitJob(file, {compressed:true}, function(err, data) {
             if (err) {
               fabmo.notify('error', err);
             }
@@ -671,7 +671,7 @@ function handleStatusReport(status) {
 	});
 
 	$('#file').change(function(evt) {
-		fabmo.submitJob($('#fileform'), {}, function(err, data) {
+		fabmo.submitJob($('#fileform'), {compressed:true}, function(err, data) {
 		if (err) {
 			fabmo.notify('error', err);
 		}
