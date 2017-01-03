@@ -130,7 +130,6 @@ function findById(source, id) {
     } else {
         if ( $.inArray(id, notApp) === -1){
             notApp.push(id);
-            console.log('rejected ' + id)
         } 
     }
   }
