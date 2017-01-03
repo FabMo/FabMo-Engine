@@ -571,6 +571,9 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 			case 'dead':
 				log.error('G2 is dead!');
 				break;
+			default: 
+				this.driver.command({"out4":1});
+				break;
 		}
 
 		this.status.state = newstate;
@@ -667,7 +670,6 @@ Machine.prototype.gcode = function(string) {
  * Don't call them unless the tool is authorized!
  */
 Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
-	this.driver.command({"out4":1});
 	runtime = this.getRuntime(runtimeName);
 	if(runtime) {
 		this.setRuntime(runtime, function(err, runtime) {
