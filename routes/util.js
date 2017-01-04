@@ -76,11 +76,11 @@ function upload(req, res, next, callback) {
     if(req.files) { // File upload type post
         var file = req.files.file;
         if(req.body.compressed){
-          var start_decompress = Date.now();
+          //var start_decompress = Date.now();
           fs.readFile(file.path,function(err,data){
             if(err)log.err(err);
             fs.writeFile(file.path,pako.inflate(data,{to:"string"}),function(){
-              log.info("decompression time : "+(Date.now()-start_decompress)+"ms");
+              //log.info("decompression time : "+(Date.now()-start_decompress)+"ms");
               var index = req.body.index;
               var key = req.body.key;
               var upload_data = null;

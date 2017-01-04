@@ -548,12 +548,12 @@ FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback
         var fr = new FileReader();
         fr.readAsArrayBuffer(file);
         fr.onload = function(evt){
-          var size_bf_compression = file.size;
+          //var size_bf_compression = file.size;
           file = new File([pako.deflate(fr.result)],file.name,file);
-          var compression_time=Date.now()-compress_start_time
-          var stats = "Size before compression : "+size_bf_compression+" after : "+file.size+" ratio : "+((file.size/size_bf_compression)*100)+"% compression time : "+compression_time+"ms";
+          //var compression_time=Date.now()-compress_start_time
+          //var stats = "Size before compression : "+size_bf_compression+" after : "+file.size+" ratio : "+((file.size/size_bf_compression)*100)+"% compression time : "+compression_time+"ms";
           fd.append('file', file);
-          var time_before_send = Date.now();
+          //var time_before_send = Date.now();
           var onFileUploadComplete = function(err, data) {
             if(err) {
               // Bail out here too - fail on any one file upload failure
@@ -563,8 +563,8 @@ FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback
               return errback(err);
             }
             if(data.status === 'complete') {
-              var transport_time = Date.now()-time_before_send;
-              console.log(stats+" transport time : "+transport_time+"ms total: "+(compression_time+transport_time)+"ms");
+              //var transport_time = Date.now()-time_before_send;
+              //console.log(stats+" transport time + decompression : "+transport_time+"ms total: "+(compression_time+transport_time)+"ms");
               if(key) {
                 callback(null, data.data[key]);
               } else {
@@ -587,8 +587,8 @@ FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback
             return errback(err);
           }
           if(data.status === 'complete') {
-            var transport_time = Date.now()-time_before_send;
-              console.log("transport time : "+transport_time+"ms ");
+            //var transport_time = Date.now()-time_before_send;
+              //console.log("transport time : "+transport_time+"ms ");
             if(key) {
               callback(null, data.data[key]);
             } else {
