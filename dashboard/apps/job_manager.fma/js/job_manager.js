@@ -33,7 +33,8 @@ function setupDropTarget() {
       try {
         file = evt.originalEvent.dataTransfer.files;
         if(file.length > 0) {
-          fabmo.submitJob(file, {compressed:true}, function(err, data) {
+          var file_size  = file[0].size;
+          fabmo.submitJob(file, {compressed:file_size>2000000?true:false}, function(err, data) {
             if (err) {
               fabmo.notify('error', err);
             }
@@ -671,7 +672,8 @@ function handleStatusReport(status) {
 	});
 
 	$('#file').change(function(evt) {
-		fabmo.submitJob($('#fileform'), {compressed:true}, function(err, data) {
+    var file_size = $('#fileform').find('input:file')[0].files[0].size;
+		fabmo.submitJob($('#fileform'), {compressed:file_size>2000000?true:false}, function(err, data) {
 		if (err) {
 			fabmo.notify('error', err);
 		}
