@@ -1,0 +1,69 @@
+.tour-container{
+    position: relative;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+.tour-card {
+    position: relative;
+    height: 100%;
+    width: 0;
+    transition: all 0.5s;
+}
+
+.image-container{
+    position: relative;
+    height: 50%;
+    width: 100%;
+    background-color: #FFFFFF;
+}
+
+.image-container img {
+    max-width:100%;
+    max-height:100%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-right: -50%;
+    transform: translate(-50%, -50%) 
+}
+
+.bottom-nav {
+    position: fixed;
+    width: 100%;
+    bottom: 0;
+    background-color: #111;
+    color: #fff;
+    height: 40px;
+    font-family: source_sans_proextralight;
+} 
+
+h4 {
+    color: #111;
+}
+
+.content {
+    overflow: hidden;
+    margin: 1rem;
+    font-family: source_sans_proregular;
+}
+
+.prev {
+    cursor: pointer;
+    margin-top: 10px;
+    margin-left: 15px;
+    float: left;
+} 
+
+.next {
+    cursor: pointer;
+    margin-top: 10px;
+    margin-right: 15px;
+    float: right;
+}  
+
+
+
+
+
