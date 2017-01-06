@@ -156,6 +156,8 @@ function Machine(control_path, gcode_path, callback) {
     this.driver.on('status', function(stat) {
     	this.handleFireButton(stat);
     	this.handleAPCollapseButton(stat);
+		this.handleOkayButton(stat);
+		this.handleCancelButton(stat);
     }.bind(this));
 }
 util.inherits(Machine, events.EventEmitter);
@@ -196,6 +198,23 @@ Machine.prototype.handleFireButton = function(stat) {
 		log.info("Fire button hit!")
 		this.fire();
 	}
+}
+
+Machine.prototype.handleOkayButton = function(stat){
+	var auth_input = 'in' + config.machine.get('auth_input');
+	if(stat[auth_input] && this.status.state === 'paused') {
+		log.info("Okay hit!")
+		this.resume();
+	}
+}
+
+Machine.prototype.handleCancelButton = function(stat){
+	var quit_input = 'in' + config.machine.get('quit_input');
+	if(stat[quit_input] && this.status.state === 'paused') {
+		log.info("Cancel hit!")
+		this.quit();
+	}
+
 }
 
 /*
@@ -552,6 +571,9 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 			case 'dead':
 				log.error('G2 is dead!');
 				break;
+			default: 
+				this.driver.command({"out4":1});
+				break;
 		}
 
 		this.status.state = newstate;
@@ -648,7 +670,6 @@ Machine.prototype.gcode = function(string) {
  * Don't call them unless the tool is authorized!
  */
 Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
-	this.driver.command({"out4":1});
 	runtime = this.getRuntime(runtimeName);
 	if(runtime) {
 		this.setRuntime(runtime, function(err, runtime) {

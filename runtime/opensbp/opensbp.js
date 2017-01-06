@@ -1430,7 +1430,12 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 	['X','Y','Z','A','B','C','I','J','K','F'].forEach(function(key){
 		var c = pt[key];
 		if(c !== undefined) {
-			if(isNaN(c)) { throw( "Invalid " + key + " argument: " + c ); }
+			
+			if(isNaN(c)) { 
+				var err = new Error("Invalid " + key + " argument: " + c );
+				log.error(err);
+				throw err;
+			}
 			if(key === "X") { this.cmd_posx = c; }
 			else if(key === "Y") { this.cmd_posy = c; }
 			else if(key === "Z") { this.cmd_posz = c; }
@@ -1471,7 +1476,11 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		['X','Y','Z','A','B','C','I','J','K','F'].forEach(function(key){
 			var v = Pt[key];
 			if(v !== undefined) {
-				if(isNaN(v)) { throw( "Invalid " + key + " argument: " + v ); }
+				if(isNaN(v)) { 
+					var err = new Error("Invalid " + key + " argument: " + v);
+					log.error(err);
+					throw(err); 
+				}
 				gcode += (key + v.toFixed(5));
 			}
 		}.bind(this));
@@ -1537,15 +1546,16 @@ SBPRuntime.prototype.transformation = function(TranPt){
             TranPt = tform.rotate(TranPt,angle,PtRotX,PtRotY,this.cmd_StartX,this.cmd_StartY);
         }
 	}
-	if (this.transforms.shearx.apply !== false){
+	////No angle being passed to shear functions so they return null 
+	if (this.transforms.shearx.apply != false){
 		log.debug("ShearX: " + JSON.stringify(this.transforms.shearx));
 		TranPt = tform.shearX(TranPt);
 	}
-	if (this.transforms.sheary.apply !== false){
+	if (this.transforms.sheary.apply != false){
 		log.debug("ShearY: " + JSON.stringify(this.transforms.sheary));
 		TranPt = tform.shearY(TranPt);
 	}
-	if (this.transforms.scale.apply !== false){
+	if (this.transforms.scale.apply != false){
 		log.debug("Scale: " + JSON.stringify(this.transforms.scale));
 		var ScaleX = this.transforms.scale.scalex;
 		var ScaleY = this.transforms.scale.scaley;
@@ -1554,7 +1564,7 @@ SBPRuntime.prototype.transformation = function(TranPt){
 
 		TranPt = tform.scale(TranPt,ScaleX,ScaleY,PtX,PtY);
 	}
-	if (this.transforms.move.apply !== false){
+	if (this.transforms.move.apply != false){
 		log.debug("Move: " + JSON.stringify(this.transforms.move));
 		TranPt = tform.translate(TranPt,
 								 this.transforms.move.x,

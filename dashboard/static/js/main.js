@@ -203,6 +203,7 @@ require("../css/toastr.min.css");
                                 authorizeDialog = false;
                                 dashboard.engine.quit();
                             }
+          
                         });
                     }
                 });

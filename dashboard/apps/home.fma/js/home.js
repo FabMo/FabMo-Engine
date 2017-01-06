@@ -30,26 +30,22 @@ return new Promise (function(resolve, reject){
     });
     fabmo.getApps(function(err,apps){
     if (apps) {
-        console.log(apps);
     var menu = document.getElementById('app_menu_container');
     menu.innerHTML = "";
     var file = document.getElementById('file');
     file.value = "";
-   console.log(order);
-   
-       
-       console.log(order.length);
        for (i = 0; i < order.length; i++) {
            var obj = findById(apps, order[i]);
-           newOrder.push(obj.id);
-           
+           if (typeof obj != "undefined") {
+               newOrder.push(obj.id);
+            }
        };
     
 
         for (i = 0; i < apps.length; i++) {
         
             if (apps[i].icon_display !== "none") {
-                if ( $.inArray(apps[i].id, newOrder) > -1 ) {
+                if ( ($.inArray(apps[i].id, newOrder)) > -1 ) {
 
                 } else {
                     newOrder.push(apps[i].id);
@@ -80,7 +76,7 @@ return new Promise (function(resolve, reject){
 
         }) 
     });
-    console.log(order);
+
        
    
 
@@ -112,7 +108,7 @@ return new Promise (function(resolve, reject){
 }
 
 function makeListItem (menu, obj) {
-    console.log(obj);
+
      var listItem = document.createElement("li");
         listItem.setAttribute("id", obj.id);
         listItem.setAttribute("class", "app_item");
@@ -126,19 +122,24 @@ function makeListItem (menu, obj) {
 }
 
 function findById(source, id) {
+
   for (var i = 0; i < source.length; i++) {
-    if (source[i].id == id) {
+    if (source[i].id === id) {
+
       return source[i];
     } else {
-        notApp.push(id);
+        if ( $.inArray(id, notApp) === -1){
+            notApp.push(id);
+        } 
     }
   }
 }
 
     function setupAppManager() {
         refreshApps().then(function(apps){
-            setUpSort();
+                setUpSort();
         });
+
         $('#file').change(function(evt) {
             startBusy();
             fabmo.submitApp($('#file'), {}, function(err, data) {
@@ -146,7 +147,7 @@ function findById(source, id) {
                 if (err) {
                     fabmo.notify('error', "Could not install app:</br>" + (err.message || err));
                 } else {
-                    console.log(data);
+
                     fabmo.notify('success', data.length + " app" + ((data.length > 1) ? 's' : '') + " installed successfully.");
                     order.push(data[0].info.id);
                     fabmo.getAppConfig(function(err, data){
@@ -155,7 +156,9 @@ function findById(source, id) {
                             if (err) {
                                 console.log(err);
                             }else {
-                                setupAppManager();
+                                refreshApps().then(function(apps){
+                                    setUpSort();
+                                });
                             }
                         }) 
                      });

@@ -284,7 +284,6 @@ FabMoAPI.prototype.updateOrder= function(data, callback) {
 }
 
 FabMoAPI.prototype.runNextJob = function(callback) {
-	console.log("I got called");
 	this._post('/jobs/queue/run', {}, callback, callback);
 }
 
