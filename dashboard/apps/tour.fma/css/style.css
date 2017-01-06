@@ -1,15 +1,21 @@
-.tour-container{
-    position: relative;
+#tour-container {
     height: 100%;
     width: 100%;
-    overflow: hidden;
+    white-space: nowrap;
+    position: fixed;
+    transition: left 0.5s;
+    margin: 0;
+    padding: 0;
+    font-size: 0;
 }
 
 .tour-card {
-    position: relative;
     height: 100%;
+    display: inline-block;
     width: 0;
-    transition: all 0.5s;
+    margin: 0;
+    padding: 0;
+    font-size: 0;
 }
 
 .image-container{
@@ -41,9 +47,15 @@
 
 h4 {
     color: #111;
+    font-size: 1.5rem;
+}
+
+span {
+    white-space: normal;
 }
 
 .content {
+    font-size: 1rem;
     overflow: hidden;
     margin: 1rem;
     font-family: source_sans_proregular;
