@@ -56,6 +56,7 @@ var FabMoAPI = function(base_url) {
 		'job_end' : [],
 		'change' : [],
     	'video_frame': [],
+      'upload_progress':[],
 	};
 	var url = window.location.origin;
 	this.base_url = url.replace(/\/$/,'');
@@ -572,7 +573,7 @@ FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback
               }
             }
           }.bind(this);
-          var request = this._post(url, fd, onFileUploadComplete, onFileUploadComplete);
+          var request = this._post(url, fd, onFileUploadComplete, onFileUploadComplete,null,null,true);
           requests.push(request);
         }.bind(this);
       }else{
@@ -596,7 +597,7 @@ FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback
             }
           }
         }.bind(this);
-        var request = this._post(url, fd, onFileUploadComplete, onFileUploadComplete);
+        var request = this._post(url, fd, onFileUploadComplete, onFileUploadComplete,null,null,true);
         requests.push(request);
       }
 
@@ -605,7 +606,7 @@ FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback
 	this._post(url, meta, onMetaDataUploadComplete, onMetaDataUploadComplete, 'key');
 }
 
-FabMoAPI.prototype._post = function(url, data, errback, callback, key, redirect) {
+FabMoAPI.prototype._post = function(url, data, errback, callback, key, redirect,doProgress) {
 	if(!redirect) {
 		var url = this._url(url);
 	}
@@ -618,6 +619,11 @@ FabMoAPI.prototype._post = function(url, data, errback, callback, key, redirect)
   url += ( (url.indexOf("?")==-1)? "?_=" : "& _=" ) + new Date().getTime();
 
   xhr.open('POST', url);
+  if(doProgress){
+    xhr.upload.addEventListener('progress', function(evt) {
+  		this.emit('upload_progress',{filename:data.get('file').name,value:evt.loaded/evt.total});
+  	}.bind(this));
+  }
 
 	if(!(data instanceof FormData)) {
 		xhr.setRequestHeader('Content-Type', 'application/json;');

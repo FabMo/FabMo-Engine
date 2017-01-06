@@ -224,7 +224,7 @@ td.actions-control {
     -webkit-user-select: none;  /* Chrome all / Safari all */
       -moz-user-select: none;     /* Firefox all */
         -ms-user-select: none;      /* IE 10+ */
-          user-select: none;    
+          user-select: none;
 }
 
 
@@ -234,7 +234,7 @@ td.actions-control {
   background-color: #333;
   color: #fff;
   width: 145px !important;
-  
+
 }
 
 .chosen .play-button, .chosen .icon-row {
@@ -345,15 +345,15 @@ td.actions-control {
     overflow: hidden;
     white-space: nowrap;
     margin-left: 2.5em;
-  } 
-  
+  }
+
   .chosen .description {
     width: 80% !important;
 }
 }
 
 .preview, .edit, .download, .cancel {
-  
+
   z-index: 1000;
 }
 
@@ -372,7 +372,7 @@ td.actions-control {
     -webkit-user-select: none;  /* Chrome all / Safari all */
       -moz-user-select: none;     /* Firefox all */
         -ms-user-select: none;      /* IE 10+ */
-          user-select: none;    
+          user-select: none;
 }
 
 .ellipses:hover {
@@ -512,7 +512,6 @@ td input, td select {margin:0 !important;}
 
 header { padding: 0 3rem;}
 
-.hidden, .hide { display:none; }
 
 header h2 {
   color:#fff;
@@ -1036,3 +1035,33 @@ table {
 .job-status-light.three {
 
 }
+
+.progressbar {
+    /*font-size: 14px;
+	background-color: #444;*/
+    color: white;
+    background-color: #aaaaaa;
+   /* padding: 0.5em 1em;*/
+    text-align: left;
+    text-decoration: none;
+    display: inline-block;
+    cursor: pointer;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    width: 100%;
+    height: 1em;
+}
+
+.progressbar .fill {
+	background-color: #2E3865;
+	width: 0%;
+	height: 100%;
+	position: relative;
+	transition: width 0.3s ease 0s;
+  border-radius:0;
+}
+
+.hidden, .hide { display:none; }

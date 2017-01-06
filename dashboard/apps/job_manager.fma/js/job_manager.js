@@ -17,6 +17,18 @@ var blinkTimer = null;
 var currentJobId = -1;
 var currentStatus = {};
 
+function fileUploadProgress(progress) {
+  var pg = (progress*100).toFixed(0) + '%';
+  $('.progressbar .fill').width(pg);
+  if(progress===1){
+    setTimeout(function(){
+      $('.progressbar').addClass('hide');
+      $('.progressbar .fill').width(0);
+    },200);
+  }
+}
+
+
 function setupDropTarget() {
   $('#tabpending').dragster({
     enter: function(devt, evt) {
@@ -34,6 +46,10 @@ function setupDropTarget() {
         file = evt.originalEvent.dataTransfer.files;
         if(file.length > 0) {
           var file_size  = file[0].size;
+          $('.progressbar').removeClass('hide');
+          fabmo.on('upload_progress',function(progress){
+            fileUploadProgress(progress.value);
+          });
           fabmo.submitJob(file, {compressed:file_size>2000000?true:false}, function(err, data) {
             if (err) {
               fabmo.notify('error', err);
@@ -673,6 +689,10 @@ function handleStatusReport(status) {
 
 	$('#file').change(function(evt) {
     var file_size = $('#fileform').find('input:file')[0].files[0].size;
+    $('.progressbar').removeClass('hide');
+    fabmo.on('upload_progress',function(progress){
+        fileUploadProgress(progress.value);
+    });
 		fabmo.submitJob($('#fileform'), {compressed:file_size>2000000?true:false}, function(err, data) {
 		if (err) {
 			fabmo.notify('error', err);
