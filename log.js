@@ -6,6 +6,7 @@ var process = require('process');
 try { var colors = require('colors'); } catch(e) {var colors = false;}
 var fs = require('fs');
 var path = require('path');
+var jsesc = require('jsesc');
 var _suppress = false;
 var log_buffer = [];
 var LOG_BUFFER_SIZE = 5000;
@@ -33,6 +34,51 @@ LOG_LEVELS = {
 	'settings' : 'debug',
 	'log':'debug'
 };
+
+
+var FlightRecorder = function() {
+  this.records = []
+  this.firstTime = 0
+}
+
+FlightRecorder.prototype.record = function(channel, dir, data) {
+  // Get the current time
+  var t = new Date().getTime();
+
+  // Add the current message to the record
+  this.records.push({
+    'time' : t,
+    'data' : data,
+		'dir' : dir,
+    'channel' : channel
+  })
+}
+
+FlightRecorder.prototype.getLatest = function() {
+	if(this.records.length === 0) { return null; }
+	return this.records[this.records.length-1];
+}
+
+FlightRecorder.prototype.save = function(filename, callback) {
+	var newRecords = []
+	if(this.records.length > 0) {
+		var startTime = this.records[0].time;
+		this.records.forEach(function(record) {
+			newRecords.push({
+				't' : record.time-startTime,
+				'ch' : record.channel,
+				'dir' : record.dir,
+				'data' : new Buffer(record.data).toString('base64')
+			});
+		}.bind(this));
+	}
+	var flight = {
+		records : newRecords
+	}
+  fs.writeFile(filename, JSON.stringify(flight, null, 2), callback);
+}
+
+var flightRecorder = new FlightRecorder();
 
 function setGlobalLevel(lvl){
 	if (lvl)
@@ -127,7 +173,19 @@ Logger.prototype.error = function(msg) {
 };
 
 
-Logger.prototype.g2 = function(msg) {this.write('g2', msg);};
+Logger.prototype.g2 = function(channel, dir, msg) {
+	flightRecorder.record(channel, dir, msg);
+	msg = flightRecorder.getLatest();
+	switch(dir) {
+		case 'out':
+			this.write('g2', '--' + msg.channel + '-' + msg.time + '----> ' + jsesc(msg.data.trim()));
+			break;
+		case 'in':
+			this.write('g2', '<-' + msg.channel + '-' + msg.time + '----- ' + jsesc(msg.data.trim()));
+			break;
+	}
+};
+
 Logger.prototype.uncaught = function(err) {
 	if(colors) {
 		console.log("UNCAUGHT EXCEPTION".red.underline);
@@ -163,17 +221,21 @@ function exitHandler(options, err) {
     }
     var dir = require('./config').getDataDir('log')
     var fn = 'fabmo-' + Date.now() + '-log.txt'
+		var flight_fn = path.join(dir, 'g2-flight-log.json');
+
     filename = path.join(dir, fn)
     if(options.savelog) {
     	_log.info("Saving log...")
     	try {
 	    	saveLogBuffer(filename);
 	    	_log.info("Log saved to " + filename);
-	    	rotateLogs(PERSISTENT_LOG_COUNT, function() {
-	    		if(options.exit) {
-	    			process.exit();
-	    		}
-	    	});
+				flightRecorder.save(flight_fn, function(err, data) {
+					rotateLogs(PERSISTENT_LOG_COUNT, function() {
+		    		if(options.exit) {
+		    			process.exit();
+		    		}
+		    	});
+				});
 	    	return;
     	} catch(e) {
 	    	_log.error("Could not save log to " + filename);
@@ -215,15 +277,15 @@ var rotateLogs = function(count,callback) {
 			}
 			var filesToDelete = files.slice(0, files.length-count);
 			async.each(
-				filesToDelete, 
+				filesToDelete,
 				function(file, callback) {
 					fs.unlink(path.join(logdir, file), callback)
-				}, 
+				},
 				function(err) {
 					if(err) {
 						_log.error(err);
 					} else {
-			    		_log.info(filesToDelete.length + " old logfile removed.");						
+			    		_log.info(filesToDelete.length + " old logfile removed.");
 					}
 					callback(null)
 				});
@@ -234,6 +296,8 @@ var rotateLogs = function(count,callback) {
 	}
 }
 
+
+exports.FlightRecorder = FlightRecorder;
 exports.suppress = suppress;
 exports.logger = logger;
 exports.setGlobalLevel = setGlobalLevel;

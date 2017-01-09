@@ -194,16 +194,14 @@ G2.prototype.onSerialClose = function(data) {
 // Write data to the control port.  Log to the system logger.
 G2.prototype.controlWrite = function(s) {
 	this.watchdog.start();
-	t = new Date().getTime();
-	log.g2('--C-' + t + '----> ' + jsesc(s.trim()));
+	log.g2('C','out',s);
 	this.control_port.write(s);
 };
 
 // Write data to the gcode port.  Log to the system logger.
 G2.prototype.gcodeWrite = function(s) {
 	this.watchdog.start();
-	t = new Date().getTime();
-	log.g2('--G-' + t + '----> ' + jsesc(s.trim()));
+	log.g2('D','out',s);
 	this.gcode_port.write(s);
 };
 
@@ -211,7 +209,7 @@ G2.prototype.gcodeWrite = function(s) {
 G2.prototype.controlWriteAndDrain = function(s, callback) {
 	this.watchdog.start();
 	t = new Date().getTime();
-	log.g2('--C-' + t + '----> ' + s);
+	log.g2('C','out',s);
 	this.control_port.write(s, function () {
 		this.control_port.drain(callback);
 	}.bind(this));
@@ -220,7 +218,7 @@ G2.prototype.controlWriteAndDrain = function(s, callback) {
 G2.prototype.gcodeWriteAndDrain = function(s, callback) {
 	this.watchdog.start();
 	t = new Date().getTime();
-	log.g2('--G-' + t + '----> ' + s);
+	log.g2('D','out',s);
 	this.gcode_port.write(s, function () {
 		this.gcode_port.drain(callback);
 	}.bind(this));
@@ -321,7 +319,8 @@ G2.prototype.onWAT = function(data) {
 		if(c === '\n') {
 			string = this.current_gcode_data.join('');
 			t = new Date().getTime();
-			log.g2('<-G--' + t + '---- ' + string);
+			log.g2('D','in',string);
+			//log.g2('<-G--' + t + '---- ' + string);
 			this.current_gcode_data = [];
 		} else {
 			this.current_gcode_data.push(c);
@@ -341,7 +340,8 @@ G2.prototype.onData = function(data) {
 		if(c === '\n') {
 			var json_string = this.current_data.join('');
 			t = new Date().getTime();
-			log.g2('<-C--' + t + '---- ' + json_string);
+			log.g2('C','in',json_string);
+			//log.g2('<-C--' + t + '---- ' + json_string);
 			obj = null;
 			try {
 				obj = JSON.parse(json_string);
