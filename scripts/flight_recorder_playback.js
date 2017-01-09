@@ -69,7 +69,7 @@ function replay(records, callback) {
         records.shift()
 
         // Decode the data payload
-        var data = new Buffer(record.data, 'base64').toString('utf8');
+        var data = record.data; /*new Buffer(record.data, 'base64').toString('utf8');*/
 
         // Write it to the appropriate channel
         switch(record.ch) {

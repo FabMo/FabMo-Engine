@@ -68,7 +68,7 @@ FlightRecorder.prototype.save = function(filename, callback) {
 				't' : record.time-startTime,
 				'ch' : record.channel,
 				'dir' : record.dir,
-				'data' : new Buffer(record.data).toString('base64')
+				'data' : record.data, /*new Buffer(record.data).toString('base64')*/
 			});
 		}.bind(this));
 	}
