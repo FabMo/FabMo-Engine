@@ -14,10 +14,10 @@ function loadFlightRecord(filename, callback) {
   });
 }
 
-control_port = new serialport.SerialPort(CONTROL_PATH, {rtscts:true}, false);
 control_buffer = [];
-data_port = new serialport.SerialPort(DATA_PATH, {rtscts:true}, false);
 data_buffer = [];
+control_port = new serialport.SerialPort(CONTROL_PATH, {rtscts:true}, false);
+data_port = new serialport.SerialPort(DATA_PATH, {rtscts:true}, false);
 
 var onControlData = function(data) {
 	var s = data.toString('utf8');
