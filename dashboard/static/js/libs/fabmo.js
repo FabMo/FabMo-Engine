@@ -37,6 +37,7 @@ var FabMoDashboard = function(options) {
 		'disconnect' : [],
 		'reconnect' : [],
     	'video_frame' : [],
+      'upload_progress':[]
 	};
 	this._setupMessageListener();
     // listen for escape key press to quit the engine
