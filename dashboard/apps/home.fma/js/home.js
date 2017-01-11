@@ -7,104 +7,126 @@ var order = [];
 var notApp = [];
 var newOrder = [];
 
+
+
+
 setupAppManager();
 
-
-
-  function launch( id ){
-        return function(){
-          fabmo.launchApp(id);
-        }
-  }
-function refreshApps() {
-
-
-return new Promise (function(resolve, reject){
-
-   
-
-    fabmo.getAppConfig( function(err, data){
-        if (data.appOrder) {
-            return order = data.appOrder;
-        } 
-    });
-    fabmo.getApps(function(err,apps){
-    if (apps) {
-    var menu = document.getElementById('app_menu_container');
-    menu.innerHTML = "";
-    var file = document.getElementById('file');
-    file.value = "";
-       for (i = 0; i < order.length; i++) {
-           var obj = findById(apps, order[i]);
-           if (typeof obj != "undefined") {
-               newOrder.push(obj.id);
-            }
-       };
-    
-
-        for (i = 0; i < apps.length; i++) {
-        
-            if (apps[i].icon_display !== "none") {
-                if ( ($.inArray(apps[i].id, newOrder)) > -1 ) {
-
-                } else {
-                    newOrder.push(apps[i].id);
-                }
-            }
-        }
-
-        for (i = 0; i < notApp.length; i++) {
-            if ( $.inArray(notApp[i], order) > -1 ) {
-                 var ind = order.indexOf(notApp[i]);
-                 order.splice(ind,1);
-            }
-        }
-
-        for (i = 0; i < newOrder.length; i++) {
-            var obj = findById(apps, newOrder[i]);
-            makeListItem(menu, obj);
-        }
-
-      
     
 
 
-    
-    fabmo.getAppConfig(function(err, data){
-        data.appOrder = newOrder;
-        fabmo.setAppConfig(data, function(err, data){
 
-        }) 
-    });
-
-       
-   
-
-    var listItem = document.createElement("ul");
-    listItem.setAttribute("id", "add");
-    listItem.setAttribute("class", "app_add");
-    menu.appendChild(listItem);
-    var id = document.getElementById("add");
-    id.innerHTML = "<div class='font-container'><span class='fa fa-plus'></span></div>";
-    $('#add').click(function(evt) {
-        $('#file').trigger('click');
-    });
-    var timeoutId = 0;
-    $('.app_item').on('mousedown touchstart',  function(e) {
-        timeoutId = setTimeout(function(){
-            holdfunction(e);
-        }, 1500);
-    }).on('mouseup mouseleave touchend', function(e) {
-        clearTimeout(timeoutId);
-    });
-    
-    
-    resolve(apps);
-    } else {
-        reject(Error(err));
+function launch( id ){
+    return function(){
+        fabmo.launchApp(id);
     }
-});
-});
+}
+
+function getOrder () {
+    return new Promise (function(resolve, reject){
+        fabmo.getAppConfig(function(err, data){
+            if (data){
+                if (data.appOrder) {
+                    order = data.appOrder;
+                    console.log(order);
+                } 
+                resolve(data);
+            } else {
+                reject(Error(err));
+            }
+        });
+    })
+
+}
+
+
+
+function refreshApps() {
+    newOrder = [];
+    return new Promise (function(resolve, reject){
+
+
+        getOrder().then(function(){
+                    fabmo.getApps(function(err,apps){
+        if (apps) {
+            var menu = document.getElementById('app_menu_container');
+            menu.innerHTML = "";
+            var file = document.getElementById('file');
+            file.value = "";
+            for (i = 0; i < order.length; i++) {
+                var obj = findById(apps, order[i]);
+                if (typeof obj != "undefined") {
+                    console.log(obj.id);
+                    newOrder.push(obj.id);
+                }
+            };
+
+                console.log(newOrder);
+                
+                for (i = 0; i < apps.length; i++) {
+                    if (apps[i].icon_display !== "none") {
+                        if ( ($.inArray(apps[i].id, order)) > -1 ) {
+                            
+                        } else {
+                            newOrder.push(apps[i].id);
+                        }
+                    }
+                }
+                console.log(newOrder);
+                console.log(notApp);
+
+
+                for (i = 0; i < notApp.length; i++) {
+                    if ( $.inArray(notApp[i], newOrder) > -1 ) {
+                        var ind = newOrder.indexOf(notApp[i]);
+                        newOrder.splice(ind,1);
+                    }
+                }
+
+                for (i = 0; i < newOrder.length; i++) {
+                    var obj = findById(apps, newOrder[i]);
+                    makeListItem(menu, obj);
+                }
+
+            
+            fabmo.getAppConfig(function(err, data){
+                data.appOrder = newOrder;
+                fabmo.setAppConfig(data, function(err, data){
+
+                }) 
+            });
+
+
+            var listItem = document.createElement("ul");
+            listItem.setAttribute("id", "add");
+            listItem.setAttribute("class", "app_add");
+            menu.appendChild(listItem);
+            var id = document.getElementById("add");
+            id.innerHTML = "<div class='font-container'><span class='fa fa-plus'></span></div>";
+            $('#add').click(function(evt) {
+                $('#file').trigger('click');
+            });
+            var timeoutId = 0;
+            $('.app_item').on('mousedown touchstart',  function(e) {
+                timeoutId = setTimeout(function(){
+                    holdfunction(e);
+                }, 1500);
+            }).on('mouseup mouseleave touchend', function(e) {
+                clearTimeout(timeoutId);
+            });
+            
+            
+            resolve(apps);
+        } else {
+            reject(Error(err));
+        }
+        return order;
+    });
+
+        });
+
+    });
+
 }
 
 function makeListItem (menu, obj) {
@@ -127,11 +149,8 @@ function findById(source, id) {
     if (source[i].id === id) {
 
       return source[i];
-    } else {
-        if ( $.inArray(id, notApp) === -1){
-            notApp.push(id);
-        } 
-    }
+    } else if ( i === (source.length - 1) )
+        notApp.push(id);
   }
 }
 
@@ -139,7 +158,7 @@ function findById(source, id) {
         refreshApps().then(function(apps){
                 setUpSort();
         });
-
+        
         $('#file').change(function(evt) {
             startBusy();
             fabmo.submitApp($('#file'), {}, function(err, data) {
@@ -149,9 +168,9 @@ function findById(source, id) {
                 } else {
 
                     fabmo.notify('success', data.length + " app" + ((data.length > 1) ? 's' : '') + " installed successfully.");
-                    order.push(data[0].info.id);
+                    newOrder.push(data[0].info.id);
                     fabmo.getAppConfig(function(err, data){
-                        data.appOrder = order;
+                        data.appOrder = newOrder;
                         fabmo.setAppConfig(data, function(err, data){
                             if (err) {
                                 console.log(err);
@@ -166,7 +185,7 @@ function findById(source, id) {
                 }
                 
             });
-            startBusy();
+
         });
 
         // $('#dropzone').dragster({
@@ -247,15 +266,18 @@ function holdfunction (e) {
        $('.app_item').removeClass('blur');
    });
    $('.deleteApp').click(function(){
+       console.log(newOrder);
+       var ind = newOrder.indexOf(id);
+               console.log(newOrder);
+               newOrder.splice(ind,1);
+               console.log(newOrder);
        fabmo.deleteApp(id, function(err, data){
            if (err){
                console.log(err);
            } else {
-               var ind = order.indexOf(id);
-
-               order.splice(ind,1);
+               
                fabmo.getAppConfig(function(err, data){
-                   data.appOrder = order;
+                   data.appOrder = newOrder;
                    fabmo.setAppConfig(data, function(err, data){
                        if (err){
                            console.log(err)
@@ -316,4 +338,3 @@ function setupDropTarget() {
     }
   });
 }
-
