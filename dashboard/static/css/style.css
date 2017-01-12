@@ -1571,8 +1571,7 @@ input[type=number]::-webkit-outer-spin-button {
 /* Edge specific */
 @supports (-ms-ime-align:auto) {
     #waiting_container > svg {
-      position: absolute;
-      top: 0;
+      top: 40%;
       transform-origin: 50% 50%;
     	animation: spin 4s linear infinite;
     }
@@ -1922,8 +1921,6 @@ input[type=number]::-webkit-outer-spin-button {
 /*Edge specific*/
 @supports (-ms-ime-align:auto) {
   .loader > svg {
-    position: absolute;
-    top: 0;
     transform-origin: 50% 50%;
     animation: spin 4s linear infinite;
   }
