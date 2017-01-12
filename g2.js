@@ -391,8 +391,8 @@ G2.prototype.handleExceptionReport = function(response) {
 		this._lastExceptionReport = response.er;
 		var stat = response.er.st;
 		if(((stat === 204) || (stat === 207)) && this.quit_pending) {
-			this.command("{clr:n}");
-			this.command("M30");
+			//this.command("{clr:n}");
+			//this.command("M30");
 			this.quit_pending = false;
 		}
 	}
@@ -556,11 +556,14 @@ G2.prototype.resume = function() {
 
 
 G2.prototype.quit = function() {
-	this.quit_pending = true;
-	this.gcode_queue.clear();
-	this.command_queue.clear();
-	this.command('{clr:n}');
-	this.controlWriteAndDrain('\x04');
+	if(!this.quit_pending) {
+        this.quit_pending = true;
+	    this.gcode_queue.clear();
+	    this.command_queue.clear();
+	    this.gcodeWrite('\x04{clr:n}\n');
+    }
+    //this.command('{clr:n}');
+	//this.controlWriteAndDrain('\x04');
 }
 
 G2.prototype.get = function(key, callback) {
