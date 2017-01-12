@@ -59,9 +59,9 @@ var cardWidth = $(window).width();
 
 $( document ).ready(function() {
     checkCounter();
-    counter++;
-    setNext(content[counter]);
-
+    if ( counter < content.length -1) {
+    setNext(content[counter + 1]);
+}
 
 $('.tour-card').css('width', cardWidth);
 
@@ -103,6 +103,7 @@ function setNext(obj){
     tourItem.setAttribute("id", "");
     tourItem.setAttribute("class", "tour-card");
     tourItem.innerHTML = '<div class="image-container"><img  src='+obj.image+'></div><div class="content"><h4>'+obj.header+'</h4><span>'+obj.text+'</span></div>'
+
     tour.appendChild(tourItem);
     $('.tour-card').css('width', cardWidth);
 };
@@ -134,7 +135,7 @@ function checkCounter() {
         $('.prev').hide();
     } else if (counter == content.length ) {
          $('.next').hide();
-         counter--;
+
     } else {
         $('.prev').show();
         $('.next').show();

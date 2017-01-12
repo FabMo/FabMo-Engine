@@ -3,7 +3,7 @@
     width: 100%;
     white-space: nowrap;
     position: fixed;
-    transition: left 0.5s;
+    transition: left 0.3s;
     margin: 0;
     padding: 0;
     font-size: 0;
@@ -59,6 +59,8 @@ span {
     overflow: hidden;
     margin: 1rem;
     font-family: source_sans_proregular;
+    position: absolute;
+    width: 95%;
 }
 
 .prev {
