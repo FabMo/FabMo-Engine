@@ -3,7 +3,7 @@
     width: 100%;
     white-space: nowrap;
     position: fixed;
-    transition: left 0.3s;
+    transition: left 0.5s;
     margin: 0;
     padding: 0;
     font-size: 0;
@@ -16,6 +16,7 @@
     margin: 0;
     padding: 0;
     font-size: 0;
+    
 }
 
 .image-container{
@@ -23,6 +24,7 @@
     height: 50%;
     width: 100%;
     background-color: #FFFFFF;
+    z-index: -1;
 }
 
 .image-container img {
@@ -76,6 +78,18 @@ span {
     margin-right: 15px;
     float: right;
 }  
+
+.slide-next{
+    width:0px;
+    height: 100%;
+    transition: all 1s;
+    float: right;
+    -webkit-box-shadow: 0px 0px 20px 2px #000;
+-moz-box-shadow: 0px 0px 20px 2px #000;
+box-shadow: 0px 0px 20px 2px #000;
+z-index: 20;
+display: none;
+}
 
 
 

@@ -85,6 +85,8 @@ $('.next').click(function(){
     console.log(currentLeft);
     $('#tour-container').css('left', currentLeft + "px");
     checkCounter();
+    $('.slide-next').show(0).delay(400).hide(0);
+
 });
 
 $('.prev').click(function(){
@@ -93,7 +95,8 @@ $('.prev').click(function(){
     }
     currentLeft = currentLeft + cardWidth;
     $('#tour-container').css('left', currentLeft + "px");
-    checkCounter()
+    checkCounter();
+    $('.slide-next').show(0).delay(400).hide(0);
 });
 
 
@@ -102,10 +105,11 @@ function setNext(obj){
     var tourItem = document.createElement("li");
     tourItem.setAttribute("id", "");
     tourItem.setAttribute("class", "tour-card");
-    tourItem.innerHTML = '<div class="image-container"><img  src='+obj.image+'></div><div class="content"><h4>'+obj.header+'</h4><span>'+obj.text+'</span></div>'
+    tourItem.innerHTML = '<div class="slide-next"></div><div class="image-container"><img  src='+obj.image+'></div><div class="content"><h4>'+obj.header+'</h4><span>'+obj.text+'</span></div>'
 
     tour.appendChild(tourItem);
     $('.tour-card').css('width', cardWidth);
+    
 };
 
 function DoJobFile () {
