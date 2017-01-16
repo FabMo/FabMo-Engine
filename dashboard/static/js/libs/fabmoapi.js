@@ -512,7 +512,7 @@ FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback
 	//var url = this._url(url);
 	var callback = callback || function() {};
 	var errback = errback || function() {};
-
+  var options = options || {};
 	// The POST Upload is done in two pieces.  First is a metadata post which transmits
 	// an array of json objects that describe the files in question.
 	// Following the metadata is a multipart request for each uploaded file.
@@ -542,7 +542,7 @@ FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback
 			fd.append('key', k);
 			fd.append('index', index);
       if(options.compressed){
-        var compress_start_time = Date.now();
+        //var compress_start_time = Date.now();
         fd.append('compressed',true);
         var pako = require('./pako.min.js');
         var fr = new FileReader();
