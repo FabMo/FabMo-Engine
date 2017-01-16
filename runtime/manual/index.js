@@ -153,7 +153,8 @@ ManualRuntime.prototype.executeCode = function(code, callback) {
 			break;
 
 		default:
-			log.error("Don't know what to do with '" + code.cmd + "' in manual command.")
+			log.error("Don't know what to do with '" + code.cmd + "' in manual command.");
+			break;
 	}
 }
 
@@ -197,17 +198,26 @@ ManualRuntime.prototype.renewMoves = function() {
 		this.driver.runGCodes(moves);
 		setTimeout(this.renewMoves.bind(this), T_RENEW)
 	} else {
-		if(this.machine.status.state != "stopped") {
+		if(this.moving) {
 			this.stopMotion();
 		}
+//		if(this.machine.status.state != "stopped") {
+//			this.stopMotion();
+//		}
 	}
 }
 
 ManualRuntime.prototype.stopMotion = function() {
 	if(this._limit()) { return; }
-	this.keep_moving = false;
-	this.moving = false;
-	this.driver.quit();
+	if(this.moving) {
+		log.debug("Runtime stopMotion()");
+		log.stack();
+
+		this.keep_moving = false;
+		this.moving = false;
+
+		this.driver.quit();
+	}
 }
 
 ManualRuntime.prototype.fixedMove = function(axis, speed, distance) {
@@ -231,6 +241,7 @@ ManualRuntime.prototype.pause = function() {
 }
 
 ManualRuntime.prototype.quit = function() {
+	log.debug("Runtime quit()");
 	this.driver.quit();
 }
 

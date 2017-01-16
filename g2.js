@@ -51,6 +51,9 @@ var JOG_AXES = {'x':'X',
 				'-c':'C-'};
 
 var RESPONSE_LIMIT = 4;
+
+var SINGLE_PORT_OVERRIDE = true;
+
 // Error codes defined by G2
 // See https://github.com/synthetos/g2/blob/edge/TinyG2/tinyg2.h for the latest error codes and messages
 try {
@@ -70,6 +73,7 @@ function G2() {
 	this.command_queue = new Queue();
 
 	this.watchdog = new Watchdog(10000,14); //time, exit code
+
 	this.pause_flag = false;
 	this.connected = false;
 
@@ -115,12 +119,15 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
 	// Open both ports
 	log.info('Opening control port ' + control_path);
 	this.control_port = new serialport.SerialPort(control_path, {rtscts:true}, false);
-	if(control_path !== gcode_path) {
+	if(control_path !== gcode_path && !SINGLE_PORT_OVERRIDE) {
 		log.info("Dual USB since control port and gcode port are different. (" + this.control_path + "," + this.gcode_path + ")");
 		this.gcode_port = new serialport.SerialPort(gcode_path, {rtscts:true}, false);
+		this.control_token = 'C';
+		this.gcode_token = 'D';
 	} else {
 		log.info("Single USB since control port and gcode port are the same. (" + this.control_path + ")");
 		this.gcode_port = this.control_port;
+		this.control_token = this.gcode_token = 'S';
 	}
 
 	// Handle errors
@@ -180,7 +187,10 @@ G2.prototype.disconnect = function(callback) {
 
 // Log serial errors.  Most of these are exit-able offenses, though.
 G2.prototype.onSerialError = function(data) {
-	//if(this.connect_callback) {
+	log.error(new Error('There was a serial error'))
+    log.error(data)
+
+    //if(this.connect_callback) {
 	//	this.connect_callback(data);
 	//}
 };
@@ -194,14 +204,14 @@ G2.prototype.onSerialClose = function(data) {
 // Write data to the control port.  Log to the system logger.
 G2.prototype.controlWrite = function(s) {
 	this.watchdog.start();
-	log.g2('C','out',s);
+	log.g2(this.control_token,'out',s);
 	this.control_port.write(s);
 };
 
 // Write data to the gcode port.  Log to the system logger.
 G2.prototype.gcodeWrite = function(s) {
 	this.watchdog.start();
-	log.g2('D','out',s);
+	log.g2(this.gcode_token,'out',s);
 	this.gcode_port.write(s);
 };
 
@@ -209,7 +219,7 @@ G2.prototype.gcodeWrite = function(s) {
 G2.prototype.controlWriteAndDrain = function(s, callback) {
 	this.watchdog.start();
 	t = new Date().getTime();
-	log.g2('C','out',s);
+	log.g2(this.control_token,'out',s);
 	this.control_port.write(s, function () {
 		this.control_port.drain(callback);
 	}.bind(this));
@@ -218,7 +228,7 @@ G2.prototype.controlWriteAndDrain = function(s, callback) {
 G2.prototype.gcodeWriteAndDrain = function(s, callback) {
 	this.watchdog.start();
 	t = new Date().getTime();
-	log.g2('D','out',s);
+	log.g2(this.gcode_token,'out',s);
 	this.gcode_port.write(s, function () {
 		this.gcode_port.drain(callback);
 	}.bind(this));
@@ -340,7 +350,7 @@ G2.prototype.onData = function(data) {
 		if(c === '\n') {
 			var json_string = this.current_data.join('');
 			t = new Date().getTime();
-			log.g2('C','in',json_string);
+			log.g2('S','in',json_string);
 			//log.g2('<-C--' + t + '---- ' + json_string);
 			obj = null;
 			try {

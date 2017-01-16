@@ -571,7 +571,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 			case 'dead':
 				log.error('G2 is dead!');
 				break;
-			default: 
+			default:
 				this.driver.command({"out4":1});
 				break;
 		}
