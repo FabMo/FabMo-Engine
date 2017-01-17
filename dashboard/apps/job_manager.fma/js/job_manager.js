@@ -642,7 +642,7 @@ function handleStatusReport(status) {
 
 
 
- $('#queue_table').on('click', '.play', function(e){
+ $('#queue_table').on('click touchstart', '.play', function(e){
      if ($('.play').hasClass('active')) {
             fabmo.pause(function(err, data) {});
           }
