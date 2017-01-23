@@ -104,6 +104,9 @@ define(function(require) {
         $(".main-section, .app-section").css("margin-left", l + "px");
         $(".main-section").css("height", $("#left-menu").height() + "px");
 
+        //Set size of app container (so footer does not hide content)
+        $('.main-section').css('padding-bottom',$('.footBar').css('height'));
+
         //Resize app-icon container, so the icon are centered
         $("#app_menu_container").css(
             "width",
