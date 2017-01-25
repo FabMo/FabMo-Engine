@@ -6,6 +6,8 @@ var Sortable = require('./Sortable.js');
 var Fabmo = require('../../../static/js/libs/fabmo.js');
 var fabmo = new Fabmo;
 
+var firstRun = true;
+
 // Current position in the history browser
 var historyStart = 0;
 var historyCount = 10;
@@ -91,6 +93,7 @@ function updateQueue(callback) {
     }
     callback();
   });
+
 }
 
 function clearQueue() {
@@ -364,12 +367,6 @@ function noJob() {
 function nextJob(job) {
   $('.with-job').data('job', true);
   $('.with-job').css('left', '10px');
-  // $('.icon-row a').show(500);
-  // $('.cancel').show(500);
-  // $('.download').show(500);
-  // $('.edit').show(500);
-  // $('.preview').show(500);
-  // $('.play-button').show();
   $('.up-next').css('left', '0px');
 };
 
@@ -402,12 +399,6 @@ function runningJob(job) {
 
   $('body').css('background-color', '#898989');
   $('.topjob').addClass('running');
-  // $('.job-lights-container').show();
-  // $('.job-status-indicator').css({
-  //     '-moz-box-shadow': '0 .5px 1px rgba(0, 0, 0, .25), 0 2px 3px rgba(0, 0, 0, .1)',
-  //     '-webkit-box-shadow':'0 .5px 1px rgba(0, 0, 0, .25), 0 2px 3px rgba(0, 0, 0, .1)',
-  //     'box-shadow':'0 .5px 1px rgba(0, 0, 0, .25), 0 2px 3px rgba(0, 0, 0, .1)'
-  // })
   $('.up-next').css('left', '-2000px');
   $('.no-jobs').css('left', '-2000px');
   $('.now-running').css('left', '0px');
@@ -446,21 +437,6 @@ var setProgress = function(status) {
   }
 }
 
-// var lightsOn = function (param) {
-//     if (param === "on"){
-//     var arr = ['one','two','three'];
-//     var i = 0;
-//     setInterval(
-//        function (){
-//             $('.job-status-light.' + arr[i]).toggleClass('off', 500);
-//             i++;
-//             if(i >= arr.length) i = 0;
-//         },500);
-//     } else if (param === "off") {
-
-//         return f
-//     }
-// }
 /*
  * ---------
  *  STATUS
@@ -575,8 +551,81 @@ function handleStatusReport(status) {
 
 	var current_job_id = 0;
 
+  function tour() {
+    
+    $('.filter').show();
+    $('.tour-dialogue').show();
+    $('.tour-text').text('Welcome to the Job Manager. This is where you will manage jobs. Jobs can exist in multiple states. The first we will talk about is a job that is queued.');
+    $('.next').click(function(){
+      $('.tour-text').text('A queued job is a job that is ready to run. If you have a job queued the job manager will tell you so by displaying "Up Next" in the top left of the screen.');
+      $('.up-next').css({'z-index' : 2001, 'color': '#fff'});
+      $('.next').off();
+        $('.next').click(function(){
+          sortable.options.disabled = true;
+          $('.up-next').css({'z-index' : 'inherit', 'color': 'inherit'});
+          $('.tour-text').text('This card represents the job and allows you to interact with it...');
+          $('.next').hide();
+          $('.job_item:first-child').css({'z-index' : 2001});
+          $('#queue_table').unbind();
+          $('.tour-dialogue').css({'width' : '95%', 'padding': '1rem', 'top': '50px'});
+          var p = $('.preview').offset();
+          var e = $('.edit').offset();
+          var d =  $('.download').offset();
+          var c = $('.cancel').offset();
+          setTimeout(function(){
+            $('.tour-pointer').show();
+            $('.tour-pointer').css({'top' : (p.top - 50), 'left': p.left});
+            setTimeout(function(){
+              $('.tour-pointer').css({'top' : (e.top - 50), 'left': e.left});
+              $('.tour-pointer span').text('You can edit the job');
+              setTimeout(function(){
+                $('.tour-pointer').css({'top' : (d.top - 50), 'left': d.left});
+                $('.tour-pointer span').text('You can download the job');
+                setTimeout(function(){
+                  $('.tour-pointer').css({'top' : (c.top - 50), 'left': c.left});
+                  $('.tour-pointer span').text('You can cancel the job');
+                  setTimeout(function(){
+                    $('.job_item:first-child').css({'z-index' : 'inherit'});
+                    $('.tour-pointer').hide();
+                    $('.tour-text').text('Finally we can run a job by clicking the green "play" button. If you are ready go ahead and push it now to run your first job.');
+                    $('.play-button').css({'z-index' : 2001});
+                    runNext();
+                      setTimeout(function(){
+                      $('.job_item:first-child').css({'z-index' : 'inherit'});
+                      $('.tour-pointer').hide();
+                      $('.tour-text').text('Finally we can run a job by clicking the green "play" button. If you are ready go ahead and push it now to run your first job.');
+                      $('.play-button').css({'z-index' : 2001});
+                      runNext();
+                    }, 2000);
+                  }, 2000);
+                }, 2000);
+              }, 2000);
+            }, 2000);
+          }, 2000);
+        });
+    });
+  }
+
+function runNext() {
+ $('#queue_table').on('click touchstart', '.play', function(e){
+     if ($('.play').hasClass('active')) {
+            fabmo.pause(function(err, data) {});
+          }
+          else {
+          fabmo.runNext(function(err, data) {
+              if (err) {
+                fabmo.notify(err);
+              } else {
+                updateQueue();
+              }
+            });
+        }
+ });
+}
+
 	$(document).ready(function() {
 	//Foundation Init
+  
   $(document).foundation();
 
 	fabmo.on('change', function(topic) {
@@ -585,6 +634,7 @@ function handleStatusReport(status) {
 		updateQueue();
 		updateHistory();
 		}
+  
 	});
 
 
@@ -641,22 +691,7 @@ function handleStatusReport(status) {
 	});
 
 
-
- $('#queue_table').on('click touchstart', '.play', function(e){
-     if ($('.play').hasClass('active')) {
-            fabmo.pause(function(err, data) {});
-          }
-          else {
-          fabmo.runNext(function(err, data) {
-              if (err) {
-                fabmo.notify(err);
-              } else {
-                updateQueue();
-              }
-            });
-        }
- });
-
+runNext();
 
 	$('#history_page_next').click(function(evt) {
 		evt.preventDefault();
@@ -738,5 +773,5 @@ function handleStatusReport(status) {
 	//    window.setInterval(function(){
 	//    		$('.job-status-light').toggleClass('off');
 	// 	}, 1000);
-
+  // tour();
 	});

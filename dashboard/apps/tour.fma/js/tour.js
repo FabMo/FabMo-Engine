@@ -61,7 +61,7 @@ var content = [
 
 ]
 
-console.log(content.length);
+
 var cardWidth = $(window).width();
 
 $( document ).ready(function() {
@@ -80,7 +80,15 @@ $('.tour-card').css('width', cardWidth);
 
 $( window ).resize(function() {
     var cardWidth = $(window).width();
+    var numItems = $('.tour-card').length;
+    console.log(numItems);
+    var newContainer = numItems*cardWidth;
+    console.log(newContainer);
+    console.log(cardWidth);
     $('.tour-card').css('width', cardWidth);
+    $('#tour-container').css('width', newContainer);
+
+
 });
 
 $('.next').click(function(){
@@ -95,7 +103,7 @@ $('.next').click(function(){
 }
     
     currentLeft = currentLeft - cardWidth;
-    console.log(currentLeft);
+
     $('#tour-container').css('left', currentLeft + "px");
     checkCounter();
     $('.slide-next').show(0).delay(400).hide(0);
@@ -114,19 +122,17 @@ $('.prev').click(function(){
 
 
 function setNext(obj, counter){
-    console.log(obj)
     var id = obj.id;
     var tourItem = document.createElement("li");
     tourItem.setAttribute("id", "");
     tourItem.setAttribute("class", "tour-card");
     if (obj.action) {
-        tourItem.innerHTML = '<div class="slide-next"></div><div class="image-container"><img  src='+obj.image+'></div><div class="content"><h4>'+obj.header+'</h4><span>'+obj.text+'</span><div class="card-action" id='+id+'>'+obj.actionText+'</div></div>'
-        $('#'+id).click(function(){
-            console.log(obj.action);
+        tourItem.innerHTML = '<div class="slide-next"></div><div class="image-container"><img  src='+obj.image+'></div><div class="content"><h4>'+obj.header+'</h4><span>'+obj.text+'</span><div class="card-action" id='+id+'>'+obj.actionText+'</div></div>';
+       $(document).on('click', '#'+id , function() {
             obj.action();
         });
     } else {
-        tourItem.innerHTML = '<div class="slide-next"></div><div class="image-container"><img  src='+obj.image+'></div><div class="content"><h4>'+obj.header+'</h4><span>'+obj.text+'</span></div>'
+        tourItem.innerHTML = '<div class="slide-next"></div><div class="image-container"><img  src='+obj.image+'></div><div class="content"><h4>'+obj.header+'</h4><span>'+obj.text+'</span></div>';
     }
 
     
@@ -147,7 +153,6 @@ function DoJobFile () {
       jobPath = jobPath.replace('.sbp', '');
     // sbp += 'end\n';
     // sbp += "'a FabMo load\n";
-      console.log("job submitted");
       fabmo.submitJob({
         file: sbp,
         filename: 'test_carve' + '.sbp',
@@ -158,7 +163,6 @@ function DoJobFile () {
 }
 
 function checkCounter() {
-    console.log(counter);
     if (counter == 1) {
         $('.prev').hide();
     } else if (counter == content.length ) {
