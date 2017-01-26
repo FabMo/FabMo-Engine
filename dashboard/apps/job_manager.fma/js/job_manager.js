@@ -151,7 +151,7 @@ function addQueueEntries(jobs) {
       listItem.setAttribute("data-id", jobs[i]._id);
       table.appendChild(listItem);
       var id = document.getElementById(jobs[i]._id);
-      id.innerHTML = '<div id="menu"></div><div class="name">' + jobs[i].name + '</div><div class="description">' + jobs[i].description + '</div>';
+      id.innerHTML = '<div id="menu"></div><div id="name">' + jobs[i].name + '</div><div class="description">' + jobs[i].description + '</div>';
       var menu = id.firstChild;
 
       // menu.className += ' actions-control';
@@ -190,7 +190,7 @@ function addQueueEntries(jobs) {
       recentItem.setAttribute("data-id", recent[i]._id);
       recentJobs.appendChild(recentItem);
       var id = document.getElementById(recent[i]._id);
-      id.innerHTML = '<div id="menu"></div><div class="name">' + recent[i].name + '</div><div class="description">' + recent[i].description + '</div>';
+      id.innerHTML = '<div id="menu"></div><div id="name">' + recent[i].name + '</div><div class="description">' + recent[i].description + '</div>';
       var menu = id.firstChild;
 
       // menu.className += ' actions-control';
@@ -572,36 +572,52 @@ function handleStatusReport(status) {
           var e = $('.edit').offset();
           var d =  $('.download').offset();
           var c = $('.cancel').offset();
-          setTimeout(function(){
+        $('body').click(function(){
             $('.tour-pointer').show();
             $('.tour-pointer').css({'top' : (p.top - 50), 'left': p.left});
-            setTimeout(function(){
+            $('body').click(function(){
               $('.tour-pointer').css({'top' : (e.top - 50), 'left': e.left});
               $('.tour-pointer span').text('You can edit the job');
-              setTimeout(function(){
+              $('body').click(function(){
                 $('.tour-pointer').css({'top' : (d.top - 50), 'left': d.left});
                 $('.tour-pointer span').text('You can download the job');
-                setTimeout(function(){
+                $('body').click(function(){
                   $('.tour-pointer').css({'top' : (c.top - 50), 'left': c.left});
                   $('.tour-pointer span').text('You can cancel the job');
-                  setTimeout(function(){
-                    $('.job_item:first-child').css({'z-index' : 'inherit'});
-                    $('.tour-pointer').hide();
-                    $('.tour-text').text('Finally we can run a job by clicking the green "play" button. If you are ready go ahead and push it now to run your first job.');
-                    $('.play-button').css({'z-index' : 2001});
-                    runNext();
-                      setTimeout(function(){
+                  $('body').click(function(){
                       $('.job_item:first-child').css({'z-index' : 'inherit'});
                       $('.tour-pointer').hide();
-                      $('.tour-text').text('Finally we can run a job by clicking the green "play" button. If you are ready go ahead and push it now to run your first job.');
-                      $('.play-button').css({'z-index' : 2001});
-                      runNext();
-                    }, 2000);
-                  }, 2000);
-                }, 2000);
-              }, 2000);
-            }, 2000);
-          }, 2000);
+                      $('.tour-text').text('Here we can tell the job by name');
+                      $('#name').css({'z-index' : 2001, 'color': '#fff'});
+                    $('body').click(function(){
+                      $('#name').css({'z-index' : 'inherit', 'color': 'inherit'});
+                      $('.description').css({'z-index' : 2001, 'color': '#fff'});
+                      $('.tour-text').text('and get a short descriotion of the job.');
+                          $('body').click(function(){
+                            $('.description').css({'z-index' : 'inherit', 'color': 'inherit'});
+                            $('.tour-pointer').hide();
+                            $('.tour-text').text('Finally we can run a job by clicking the green "play" button. If you are ready go ahead and push it now to run your first job.');
+                            $('.play-button').css({'z-index' : 2001});
+                            runNext();
+                            var finished = false;
+                            fabmo.on('status', function(status) {
+                            console.log(status.state);
+                              
+                              if (status.state === "running") {
+                                $('.tour-text').text('Congrats! You are running your first job.');
+                                finished = true;
+                              } else if (status.state === "idle" && finished === true)  {
+                                $('.filter').hide();
+                                $('.tour-dialogue').hide();
+                              }
+                            });
+                        });
+                    });
+                  });
+                });
+              });
+            });
+          });
         });
     });
   }
@@ -754,24 +770,12 @@ runNext();
 		} else if (status.state == 'idle' && el.firstChild) {
 		$('.play-button').show();
 		}
-		// if (status.state == 'running') {
-		//     $('.job-status-light.one').css({'animation': 'off 1.5s  infinite', '-moz-animation': 'off 1.5s  infinite', '-webkit-animation': 'off 1.5s  infinite'});
-		//     $('.job-status-light.two').css({'animation': 'off 1.5s 0.5s infinite', '-moz-animation': 'off 1.5s 0.5s infinite', '-webkit-animation': 'off 1.5s 0.5s infinite'});
-		//     $('.job-status-light.three').css({'animation': 'off 1.5s 1s infinite', '-moz-animation': 'off 1.5s 1s infinite', '-webkit-animation': 'off 1.5s 1s infinite'});
-		// } else if ( status.state == 'paused'){
-		//     $('.job-status-light').css({'animation': 'pause 1.5s  infinite', '-moz-animation': 'pause 1.5s  infinite', '-webkit-animation': 'pause 1.5s  infinite'});
-		// } else {
-		//     $('.job-status-light').css({'animation': 'none', '-moz-animation': 'none', '-webkit-animation': 'none'});
-		// }
+
 	});
 
 	function resetFormElement(e) {
 		e.wrap('<form>').closest('form').get(0).reset();
 		e.unwrap();
 	}
-
-	//    window.setInterval(function(){
-	//    		$('.job-status-light').toggleClass('off');
-	// 	}, 1000);
-  // tour();
+   tour();
 	});

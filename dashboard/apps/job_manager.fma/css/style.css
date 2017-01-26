@@ -347,13 +347,14 @@ td.actions-control {
   }
 
 
-.name {
+#name {
     padding: 1px;
     font-weight: bold;
     margin-bottom: 0.5em;
     line-height: 1.1em;
     height: 30px;
     overflow: hidden;
+    position: relative;
 
 }
 
