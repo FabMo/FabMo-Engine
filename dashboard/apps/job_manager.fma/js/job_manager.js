@@ -552,7 +552,7 @@ function handleStatusReport(status) {
 	var current_job_id = 0;
 
   function tour() {
-    
+    $('.no').hide();
     $('.filter').show();
     $('.tour-dialogue').show();
     $('.tour-text').text('Welcome to the Job Manager. This is where you will manage jobs. Jobs can exist in multiple states. The first we will talk about is a job that is queued.');
@@ -562,7 +562,7 @@ function handleStatusReport(status) {
       $('.next').off();
         $('.next').click(function(){
           sortable.options.disabled = true;
-          $('.up-next').css({'z-index' : 'inherit', 'color': 'inherit'});
+          $('.up-next').css({'z-index' : 'inherit', 'color': '#666'});
           $('.tour-text').text('This card represents the job and allows you to interact with it...');
           $('.next').hide();
           $('.job_item:first-child').css({'z-index' : 2001});
@@ -594,6 +594,7 @@ function handleStatusReport(status) {
                       $('.description').css({'z-index' : 2001, 'color': '#fff'});
                       $('.tour-text').text('and get a short descriotion of the job.');
                           $('body').click(function(){
+                            $('body').off();
                             $('.description').css({'z-index' : 'inherit', 'color': 'inherit'});
                             $('.tour-pointer').hide();
                             $('.tour-text').text('Finally we can run a job by clicking the green "play" button. If you are ready go ahead and push it now to run your first job.');
@@ -607,9 +608,42 @@ function handleStatusReport(status) {
                                 $('.tour-text').text('Congrats! You are running your first job.');
                                 finished = true;
                               } else if (status.state === "idle" && finished === true)  {
-                                $('.filter').hide();
-                                $('.tour-dialogue').hide();
+                                 $('.tour-dialogue').css({'width' : '', 'padding': '', 'top': ''});
+                                 $('.tour-text').text('You ran your first Job! Would you like to continue to the tour of the Job Manager or explore on your own?');
+                                 $('.next').show();
+                                 $('.next').text('Continue')
+                                 $('.no').show();
                               }
+                            });
+                            $('.next').off();
+                            $('.no').click(function(){
+                              $('.filter').hide();
+                              $('.tour-dialogue').hide();
+                            });
+                            $('.next').click(function(){
+                              $('.no').hide();
+                              $('.next').text('Next>');
+                              $('.tour-text').text('Great now lets look what happens to a job after you run it.');
+                              $('.next').off();
+                              $('.next').click(function(){
+                                $('.tour-text').text('Bellow you will see text for recent jobs. This will always show the most recent jobs you have run');
+                                $('.no-job').css({'z-index' : 2001, 'color': '#fff', 'position': 'relative'});
+                                $('.next').off();
+                                $('.next').click(function(){
+                                  $('.tour-text').text('This is the job you just ran');
+                                  $('.no-job').css({ 'z-index' : 'inherit', 'color': '#666' });
+                                  $('.recent_item:first-child').css({'z-index' : 2001});
+                                  $('.next').off();
+                                  $('.next').click(function(){
+                                       $('.tour-text').text('By click the up arrow you can re-run a job. This is useful when you are making a bunch of copies. (The arrow is disabled until you leave the tour.)');
+                                       $('.next').off();
+                                       $('.next').click(function(){
+                                          $('.tour-text').text('All jobs will go into your job history. From there you can re-run, edit, permenently delete, or preview all old jobs');
+                                          $('#nav-history').css({'z-index' : 2001});
+                                       });
+                                  });
+                                });
+                              });
                             });
                         });
                     });
