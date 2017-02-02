@@ -41,7 +41,6 @@
        dataType: "json",
        data: JSON.stringify({username:username,password:password,kickout:kickout}),
        success: function(data){
-         console.log(data);
          if(data.status==="success"){
            $("#add_err").css('display', 'inline', 'important');
            $("#add_err").html('<div class="success"> <i class="fa fa-check" aria-hidden="true"></i><span> Successful Log in!</span></div>');
@@ -82,7 +81,6 @@
        dataType: "json",
        data: JSON.stringify({username:username,password:password}),
        success: function(data){
-         console.log(data);
          if(data.status==="success"){
            $("#add_err").css('display', 'inline', 'important');
            $("#add_err").html('<div class="success"> <i class="fa fa-check" aria-hidden="true"></i><span> User successfully created !</span></div>');

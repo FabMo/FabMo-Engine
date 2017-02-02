@@ -11,7 +11,7 @@
  */
 var GCodeViewer = require('./animation.js');
 var GCodeToGeometry = require('./gcodetogeometry.min.js');
-console.log(GCodeToGeometry);
+
 
 GCodeViewer.webGLEnabled = function() {
     // From http://www.browserleaks.com/webgl#howto-detect-webgl

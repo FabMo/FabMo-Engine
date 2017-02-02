@@ -81,10 +81,7 @@ $('.tour-card').css('width', cardWidth);
 $( window ).resize(function() {
     var cardWidth = $(window).width();
     var numItems = $('.tour-card').length;
-    console.log(numItems);
     var newContainer = numItems*cardWidth;
-    console.log(newContainer);
-    console.log(cardWidth);
     $('.tour-card').css('width', cardWidth);
     $('#tour-container').css('width', newContainer);
 

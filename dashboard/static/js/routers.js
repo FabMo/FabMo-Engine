@@ -22,7 +22,6 @@ define(function(require) {
 		},
 		launchApp: function(id, args, callback) {
 			callback = callback || function() {};
-			console.log(this.context.launchApp);
 			this.context.launchApp(id, args || {}, function(err, data) {
 				
 				if(err) { return callback(err); }

@@ -57,7 +57,6 @@ require("../css/toastr.min.css");
     });
 
     engine.getUpdaterConfig(function(err, data){
-        console.log(data);
        consent =  data.consent_for_beacon;
 
        if (consent === "none") {

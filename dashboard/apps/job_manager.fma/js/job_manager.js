@@ -5,8 +5,12 @@ var moment = require('../../../static/js/libs/moment.js');
 var Sortable = require('./Sortable.js');
 var Fabmo = require('../../../static/js/libs/fabmo.js');
 var fabmo = new Fabmo;
+var step;
 
 var firstRun = true;
+
+
+var tourComplete = false;
 
 // Current position in the history browser
 var historyStart = 0;
@@ -222,6 +226,7 @@ function setFirstCard(id) {
   $('.preview').data('id', id);
   $('.download').data('id', id);
   $('.edit').data('id', id);
+  setStep(tour);
 }
 
 /*
@@ -402,7 +407,6 @@ function runningJob(job) {
   $('.up-next').css('left', '-2000px');
   $('.no-jobs').css('left', '-2000px');
   $('.now-running').css('left', '0px');
-  $('.without-job').css('left', '-2000px');;
   $('.play-button').show();
   $('.play').addClass('active')
   sortable.options.disabled = true;
@@ -551,109 +555,271 @@ function handleStatusReport(status) {
 
 	var current_job_id = 0;
 
-  function tour() {
+
+////TOUR LOGIC //////
+
+
+ function setStep (callback){
+   fabmo.getAppConfig(function(err, data){
+            if (data){
+                callback(data);
+            } else {
+              console.log('no data')
+            }
+        });
+ }
+
+
+ function countStep(step) {
+        fabmo.getAppConfig(function(err, data){
+            if (data){
+                if (data.step > -1) {
+                    data.step = step;
+                    fabmo.setAppConfig(data, function(err, data){
+                      if (err){
+                        console.log(err);
+                      } else {
+                        console.log('sucsess');
+                      }
+                    }); 
+                    console.log(step);
+                    return step;
+                } else {
+                  console.log(data);
+                }
+            } else {
+              console.log('no data')
+            }
+        });
+  }
+
+  function stepOne(step){
+    
+    console.log(step);
+    if (step === 0){
     $('.no').hide();
     $('.filter').show();
     $('.tour-dialogue').show();
     $('.tour-text').text('Welcome to the Job Manager. This is where you will manage jobs. Jobs can exist in multiple states. The first we will talk about is a job that is queued.');
-    $('.next').click(function(){
+
+    } else {
+      $('.no').hide();
+      $('.filter').show();
+      $('.tour-dialogue').show();
+      $('.tour-text').text('Welcome to the Job Manager. This is where you will manage jobs. Jobs can exist in multiple states. The first we will talk about is a job that is queued.');
+      $('.next').trigger( "click" );
+      console.log('I went this way');
+      stepTwo(step);
+    }
+  }
+
+  function stepTwo(step){
+    if(step  === 1 ){
+    $('.tour-text').text('A queued job is a job that is ready to run. If you have a job queued the job manager will tell you so by displaying "Up Next" in the top left of the screen.');
+    $('.up-next').css({'z-index' : 2001, 'color': '#fff'});
+    } else if (step > 1) {
       $('.tour-text').text('A queued job is a job that is ready to run. If you have a job queued the job manager will tell you so by displaying "Up Next" in the top left of the screen.');
       $('.up-next').css({'z-index' : 2001, 'color': '#fff'});
-      $('.next').off();
+      stepThree(step);
+    }
+  }
+
+  function stepThree(){
+    if(step  === 2 ){
+      sortable.options.disabled = true;
+      $('.up-next').css({'z-index' : 'inherit', 'color': '#666'});
+      $('.tour-text').text('This card represents the job and allows you to interact with it...');
+      $('.job_item:first-child').css({'z-index' : 2001});
+      $('#queue_table').unbind();
+      $('.tour-dialogue').css({'top': '70%'});
+    } else if (step > 2) {
+      sortable.options.disabled = true;
+      $('.up-next').css({'z-index' : 'inherit', 'color': '#666'});
+      $('.tour-text').text('This card represents the job and allows you to interact with it...');
+      $('.job_item:first-child').css({'z-index' : 2001});
+      $('#queue_table').unbind();
+      $('.tour-dialogue').css({'top': '60%'});
+      stepFour(step);
+    }
+
+  }
+
+  function stepFour(step){
+    var p = $('.preview').offset();
+    if(step  === 3 ){
+    $('.tour-pointer').show();
+    $('.tour-pointer').css({'top' : (p.top - 50), 'left': p.left});
+    } else if ( step > 3) {
+    $('.tour-pointer').show();
+    $('.tour-pointer').css({'top' : (p.top - 50), 'left': p.left});
+    stepFive(step);
+    }
+  }
+   
+  function stepFive(step){
+    var e = $('.edit').offset();
+    if (step === 4) {
+      $('.tour-pointer').css({'top' : (e.top - 50), 'left': e.left});
+      $('.tour-pointer span').text('You can edit the job');
+    } else if (step > 4) {
+      $('.tour-pointer').css({'top' : (e.top - 50), 'left': e.left});
+      $('.tour-pointer span').text('You can edit the job');
+    }
+  }
+
+  function tour(data) {
+   
+      if (data.step > -1) {
+      step = data.step;
+      
+
+  } else {
+      step = 0;
+      console.log(step);
+      data.step = step;
+      fabmo.setAppConfig(data, function(err, data){}); 
+      
+  }
+    if (tourComplete === false ){
+      stepOne(step);
+       
+       
+       var d =  $('.download').offset();
+       var c = $('.cancel').offset();
+      $('.next').click(function(){
+        step++;
+        countStep(step);
+        stepTwo(step);
+        $('.next').off();
         $('.next').click(function(){
-          sortable.options.disabled = true;
-          $('.up-next').css({'z-index' : 'inherit', 'color': '#666'});
-          $('.tour-text').text('This card represents the job and allows you to interact with it...');
-          $('.next').hide();
-          $('.job_item:first-child').css({'z-index' : 2001});
-          $('#queue_table').unbind();
-          $('.tour-dialogue').css({'width' : '95%', 'padding': '1rem', 'top': '50px'});
-          var p = $('.preview').offset();
-          var e = $('.edit').offset();
-          var d =  $('.download').offset();
-          var c = $('.cancel').offset();
-        $('body').click(function(){
-            $('.tour-pointer').show();
-            $('.tour-pointer').css({'top' : (p.top - 50), 'left': p.left});
-            $('body').click(function(){
-              $('.tour-pointer').css({'top' : (e.top - 50), 'left': e.left});
-              $('.tour-pointer span').text('You can edit the job');
-              $('body').click(function(){
+          step++;
+          countStep(step);
+          stepThree();
+         
+          $('.next').off();
+        $('.next').click(function(){
+            step++;
+            countStep(step);
+            stepFour(step);
+            $('.next').off();
+            $('.next').click(function(){
+              step++;
+              countStep(step);
+              stepFive(step);
+              $('.next').off();
+              $('.next').click(function(){
                 $('.tour-pointer').css({'top' : (d.top - 50), 'left': d.left});
                 $('.tour-pointer span').text('You can download the job');
-                $('body').click(function(){
+                $('.next').off();
+                $('.next').click(function(){
                   $('.tour-pointer').css({'top' : (c.top - 50), 'left': c.left});
                   $('.tour-pointer span').text('You can cancel the job');
-                  $('body').click(function(){
+                  $('.next').off();
+                  $('.next').click(function(){
                       $('.job_item:first-child').css({'z-index' : 'inherit'});
                       $('.tour-pointer').hide();
                       $('.tour-text').text('Here we can tell the job by name');
                       $('#name').css({'z-index' : 2001, 'color': '#fff'});
-                    $('body').click(function(){
+                    $('.next').off();
+                    $('.next').click(function(){
                       $('#name').css({'z-index' : 'inherit', 'color': 'inherit'});
                       $('.description').css({'z-index' : 2001, 'color': '#fff'});
                       $('.tour-text').text('and get a short descriotion of the job.');
-                          $('body').click(function(){
-                            $('body').off();
-                            $('.description').css({'z-index' : 'inherit', 'color': 'inherit'});
-                            $('.tour-pointer').hide();
-                            $('.tour-text').text('Finally we can run a job by clicking the green "play" button. If you are ready go ahead and push it now to run your first job.');
-                            $('.play-button').css({'z-index' : 2001});
-                            runNext();
-                            var finished = false;
-                            fabmo.on('status', function(status) {
-                            console.log(status.state);
-                              
-                              if (status.state === "running") {
-                                $('.tour-text').text('Congrats! You are running your first job.');
-                                finished = true;
-                              } else if (status.state === "idle" && finished === true)  {
-                                 $('.tour-dialogue').css({'width' : '', 'padding': '', 'top': ''});
-                                 $('.tour-text').text('You ran your first Job! Would you like to continue to the tour of the Job Manager or explore on your own?');
-                                 $('.next').show();
-                                 $('.next').text('Continue')
-                                 $('.no').show();
-                              }
-                            });
+                      $('.next').off();
+                      $('.next').click(function(){
+                        $('.description').css({'z-index' : 'inherit', 'color': 'inherit'});
+                        $('.tour-pointer').hide();
+                        $('.tour-text').text('Finally we can run a job by clicking the green "play" button. If you are ready go ahead and push it now to run your first job.');
+                        $('.play-button').css({'z-index' : 2001});
+                        runNext();
+                        var finished = false;
+                        fabmo.on('status', function(status) {
+                          if (status.state === "running") {
+                            $('.tour-text').text('Congrats! You are running your first job.');
+                            finished = true;
+                          } else if (status.state === "idle" && finished === true)  {
+                              $('.tour-dialogue').css({'width' : '', 'padding': '', 'top': ''});
+                              $('.tour-text').text('You ran your first Job! Would you like to continue to the tour of the Job Manager or explore on your own?');
+                              $('.next').show();
+                              $('.next').text('Continue')
+                              $('.no').show();
+                          }
+                        });
+                        $('.next').off();
+                        $('.no').click(function(){
+                          $('.filter').hide();
+                          $('.tour-dialogue').hide();
+                        });
+                        $('.next').click(function(){
+                          $('.no').hide();
+                          $('.next').text('Next');
+                          $('.tour-text').text('Great now lets look what happens to a job after you run it.');
+                          $('.next').off();
+                          $('.next').click(function(){
+                            $('.tour-text').text('Bellow you will see text for recent jobs. This will always show the most recent jobs you have run');
+                            $('.no-job').css({'z-index' : 2001, 'color': '#fff', 'position': 'relative'});
                             $('.next').off();
-                            $('.no').click(function(){
-                              $('.filter').hide();
-                              $('.tour-dialogue').hide();
-                            });
                             $('.next').click(function(){
-                              $('.no').hide();
-                              $('.next').text('Next>');
-                              $('.tour-text').text('Great now lets look what happens to a job after you run it.');
+                              $('.tour-text').text('This is the job you just ran');
+                              $('.no-job').css({ 'z-index' : 'inherit', 'color': '#666' });
+                              $('.recent_item:first-child').css({'z-index' : 2001});
                               $('.next').off();
                               $('.next').click(function(){
-                                $('.tour-text').text('Bellow you will see text for recent jobs. This will always show the most recent jobs you have run');
-                                $('.no-job').css({'z-index' : 2001, 'color': '#fff', 'position': 'relative'});
-                                $('.next').off();
-                                $('.next').click(function(){
-                                  $('.tour-text').text('This is the job you just ran');
-                                  $('.no-job').css({ 'z-index' : 'inherit', 'color': '#666' });
-                                  $('.recent_item:first-child').css({'z-index' : 2001});
-                                  $('.next').off();
-                                  $('.next').click(function(){
-                                       $('.tour-text').text('By click the up arrow you can re-run a job. This is useful when you are making a bunch of copies. (The arrow is disabled until you leave the tour.)');
-                                       $('.next').off();
-                                       $('.next').click(function(){
-                                          $('.tour-text').text('All jobs will go into your job history. From there you can re-run, edit, permenently delete, or preview all old jobs');
-                                          $('#nav-history').css({'z-index' : 2001});
-                                       });
-                                  });
-                                });
+                                    $('.tour-text').text('By clicking the up arrow you can re-run a job. This is useful when you are making a bunch of copies of the same job. (The arrow is disabled until you leave the tour.)');
+                                    $('.next').off();
+                                    $('.next').click(function(){
+                                      $('.recent_item:first-child').css({'z-index' : 'inherit'});
+                                      $('.tour-text').text('All jobs will go into your job history. From there you can re-run, edit, permenently delete, or preview all old jobs');
+                                      $('#nav-history').css({'z-index' : 2001, 'position': 'relative'});
+                                      $('.next').off();
+                                      $('.next').click(function(){
+                                        $('#nav-history').css({'z-index' : 'inherit', 'position': 'inherit'});
+                                        $('.tour-text').text('There are two ways to submit a new job, first you can click the "Submit Jobs..." tab and search through your files.');
+                                        $('#nav-submit').css({'z-index' : 2001, 'position': 'relative'});
+                                        $('.next').off();
+                                        $('.next').click(function(){
+                                          $('#nav-submit').css({'z-index' : 'inherit', 'position': 'inherit'});
+                                          $('.without-job').css({'z-index' : 2001, 'position': 'relative'});
+                                          $('.tour-dialogue').css({'top': '60%'});
+                                          $('.tour-text').text('Second if you have your job handy you can just drag and drop it here');
+                                          $('.next').off();
+                                          $('.next').click(function(){
+                                            sortable.options.disabled = false;
+                                            $('.tour-dialogue').css({'top': ''});
+                                            $('.without-job').css({'z-index' : 'inherit'});
+                                            $('.tour-text').text('Congratulations! Those are the basic functions of the Job Manager. Would you now like help getting your tool on your network?');
+                                            $('.no').show();
+                                            $('.next').text('Yes');
+                                            $('.next').off();
+                                              $('.next').click(function(){
+                                                fabmo.launchApp('network-manager');
+                                                $('.filter').hide();
+                                                $('.tour-dialogue').hide();
+                                              });
+                                              $('.no').off();
+                                              $('.no').click(function(){
+                                                $('.filter').hide();
+                                                $('.tour-dialogue').hide();
+                                              });
+                                          });
+                                        });
+                                      });
+                                    });
                               });
                             });
+                          });
                         });
+                      });
                     });
                   });
                 });
               });
             });
+            //
           });
         });
-    });
+      });
+    }
   }
 
 function runNext() {
@@ -677,6 +843,7 @@ function runNext() {
 	//Foundation Init
   
   $(document).foundation();
+
 
 	fabmo.on('change', function(topic) {
 
@@ -811,5 +978,5 @@ runNext();
 		e.wrap('<form>').closest('form').get(0).reset();
 		e.unwrap();
 	}
-   tour();
+   
 	});
