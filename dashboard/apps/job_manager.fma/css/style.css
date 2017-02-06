@@ -371,7 +371,7 @@ td.actions-control {
   }
 
 
-#name {
+.job_name {
     padding: 1px;
     font-weight: bold;
     line-height: 1.1rem;
