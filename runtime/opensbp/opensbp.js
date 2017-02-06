@@ -1161,6 +1161,9 @@ SBPRuntime.prototype._setUnits = function(units) {
 	this.maxjerk_a = convert(this.jogspeed_a);
 	this.maxjerk_b = convert(this.jogspeed_b);
 	this.maxjerk_c = convert(this.jogspeed_c);
+	this.cmd_posx = convert(this.cmd_posx);
+	this.cmd_posy = convert(this.cmd_posy); 
+	this.cmd_posz = convert(this.cmd_posz);
 	this.units = units
 }
 
