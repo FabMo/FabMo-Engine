@@ -19,45 +19,36 @@ var content = [
     },
      {
         "id": "2",
-        "image": "images/obama.gif",
+        "video": "images/foam.mp4",
         "header": "First Raise Height of the Z-axis",
-        "text": "Your Handibot will hit it's Z-Max and make a loud noise. This is normal.",
+        "text": "Your Handibot will hit it's Z-Max and make a loud noise. This is normal. Remove the protective foam circle.",
         "actionText" : "Raise Z",
         "action": function() {fabmo.runSBP('ZZ\nMZ,4')}
     },
-     {
-        "id": "3",
-        "image": "images/giphy.gif",
-        "header": "Remove Protective Foam",
-        "text": "There is a cylindrical  piece of foam around the router bit. Please remove this",
-        "actionText" : "",
-        "action": ""
-    },
     {
-        "id": "4",
-        "image": "images/obama.gif",
-        "header": "Home Your Tool",
-        "text": "Next we will set your X, Y, & Z Zero locations. Make sure your area is clear because the tool will start to move.",
-        "actionText" : "Set Zeros",
-        "action": function() {fabmo.runSBP('C#,3')}
-    },
-    {
-         "id": "5",
-        "image": "images/giphy.gif",
+         "id": "3",
+        "video": "images/cutterlength.mp4",
         "header": "Remeasure Cutting Length",
-        "text": "Next we remeasure your cutting bit length. We did this at the factory, but things can move in shipping and it's good to learn how to do. This will ensure that your Z-Zero is correct.",
+        "text": "Next we remeasure your cutting bit length. We did this at the factory, but things can move in shipping and it's good to learn how to do. This will ensure that your Z-Zero is correct. You will also want to do this everytime you change bits.",
         "actionText" : "Measure Cutting Length",
         "action": function() {fabmo.runSBP('C#,2')}
     },
     {
-        "id": "6",
-        "image": "images/obama.gif",
+        "id": "4",
+        "video": "images/home.mp4",
+        "header": "Home Your Tool",
+        "text": "Your X, Y, & Z are already zeroed from the last step, but lest's say you accidentally crashed your tool into your X, Y, or Z. This will cause your tool to loose position. If you haven't changed your bit you can just home it to re-zero your axes. Lets show you what that looks like.",
+        "actionText" : "Set Zeros",
+        "action": function() {fabmo.runSBP('C#,3')}
+    },
+    {
+        "id": "5",
+        "video": "images/home.mp4",
         "header": "Run Test File",
-        "text": "Finally we are going to run a test cut. We did this cut at the factory so you can compare your cut with our cut. Clicking the button will submit a job and take you to the Job Manager, where you can continue the tour",
+        "text": "Finally we are going to run a test cut. We did this cut at the factory so you can compare your cut with our cut too make sure that . Clicking the button will submit a job and take you to the Job Manager, where you can continue the tour",
         "actionText" : "Submit Test Cut",
         "action": function() {DoJobFile()}
     },
-
 
 ]
 
@@ -89,6 +80,7 @@ $( window ).resize(function() {
 });
 
 $('.next').click(function(){
+    startVideo();
     if (counter != (content.length - 1)){
 
      
@@ -108,6 +100,7 @@ $('.next').click(function(){
 });
 
 $('.prev').click(function(){
+    startVideo();
     if (counter !=  1){
         counter--;
     }
@@ -123,8 +116,8 @@ function setNext(obj, counter){
     var tourItem = document.createElement("li");
     tourItem.setAttribute("id", "");
     tourItem.setAttribute("class", "tour-card");
-    if (obj.action) {
-        tourItem.innerHTML = '<div class="slide-next"></div><div class="image-container"><img  src='+obj.image+'></div><div class="content"><h4>'+obj.header+'</h4><span>'+obj.text+'</span><div class="card-action" id='+id+'>'+obj.actionText+'</div></div>';
+    if (obj.action && obj.video) {
+        tourItem.innerHTML = '<div class="slide-next"></div><div class="image-container"><video loop><source src='+obj.video+' type="video/mp4"></video></div><div class="content"><h4>'+obj.header+'</h4><span>'+obj.text+'</span><div class="card-action" id='+id+'>'+obj.actionText+'</div></div>';
        $(document).on('click', '#'+id , function() {
             obj.action();
         });
@@ -170,3 +163,42 @@ function checkCounter() {
         $('.next').show();
     }
 }
+
+var visible;
+function myFunction(el){
+    setTimeout(function(){
+       if (isElementInViewport (el)){
+           console.log(el);
+           el[0].play();
+       } else {
+           el[0].pause();
+           el[0].currentTime = 0;
+       }
+    }, 600);
+}
+function startVideo () {
+    $('.image-container video').each(function(){
+        myFunction($(this));
+    });
+}
+
+
+function isElementInViewport (el) {
+
+    //special bonus for those using jQuery
+    if (typeof jQuery === "function" && el instanceof jQuery) {
+        el = el[0];
+    }
+
+    var rect = el.getBoundingClientRect();
+
+    return (
+        rect.top >= 0 &&
+        rect.left >= 0 &&
+        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) && /*or $(window).height() */
+        rect.right <= (window.innerWidth || document.documentElement.clientWidth) /*or $(window).width() */
+    );
+}
+
+
+

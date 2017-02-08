@@ -3,7 +3,7 @@
     width: 100%;
     white-space: nowrap;
     position: fixed;
-    transition: left 0.5s linear;
+    transition: left 0 linear;
     margin: 0;
     padding: 0;
     font-size: 0;
@@ -28,7 +28,7 @@
     z-index: -1;
 }
 
-.image-container img {
+.image-container video, .image-container img{
     max-width:100%;
     max-height:100%;
     position: absolute;
@@ -37,6 +37,8 @@
     margin-right: -50%;
     transform: translate(-50%, -50%) 
 }
+
+
 
 .bottom-nav {
     position: fixed;
