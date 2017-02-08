@@ -28,27 +28,9 @@ var STAT_PANIC = 13;
 var CMD_TIMEOUT = 10000;
 var EXPECT_TIMEOUT = 300000;
 
-// When jogging, "keepalive" jog commands must arrive faster than this interval (ms)
-// This can be slowed down if necessary for spotty connections, but a slow timeout means
-// the machine has more time to run away before stopping.
-var JOG_TIMEOUT = 500;
 
 var GCODE_BLOCK_SEND_SIZE = 4;
 var GCODE_MIN_LINE_THRESH = 250;
-
-// Map used by the jog command to turn incoming direction specifiers to g-code
-var JOG_AXES = {'x':'X',
-				'-x':'X-',
-				'y':'Y',
-				'-y':'Y-',
-				'z':'Z',
-				'-z':'Z-',
-				'a':'A',
-				'-a':'A-',
-				'b':'B',
-				'-b':'B-',
-				'c':'C',
-				'-c':'C-'};
 
 var RESPONSE_LIMIT = 4;
 
@@ -76,12 +58,6 @@ function G2() {
 
 	this.pause_flag = false;
 	this.connected = false;
-
-	// Jogging state
-	this.jog_stop_pending = false;
-	this.jog_direction = null;
-	this.jog_command = null;
-	this.jog_heartbeat = null;
 
 	// Feedhold/flush
 	this.quit_pending = false;
@@ -239,60 +215,6 @@ G2.prototype.clearAlarm = function() {
 	this.command({"clear":null});
 };
 
-// Start or continue jogging in the direction provided, which is one of x,-x,y,-y,z-z,a,-a,b,-b,c,-c
-G2.prototype.jog = function(direction) {
-
-	var MOVES = 10;
-	var FEED_RATE = 60.0;			// in/min
-	var MOVE_DISTANCE = 0.05;		// in
-	var START_DISTANCE = 0.001; 	// sec
-	var START_RATE = 10.0;
-
-	// Normalize the direction provided by the user
-	direction = String(direction).trim().toLowerCase().replace(/\+/g,"");
-
-	if ( !(direction in JOG_AXES) && !jog_stop_pending ) {
-		this.stopJog();
-	}
-	else if(this.jog_direction === null) {
-		this.jog_stop_pending = false;
-
-		// Build a block of short moves to start jogging
-		// Starter move (plans down to zero no matter what so we make it short)
-		var d = JOG_AXES[direction];
-
-		// Continued burst of short moves
-		var starting_cmd = 'G91 G1 ' + d + START_DISTANCE + ' F' + START_RATE;
-		var move = 'G91 G1 ' + d + MOVE_DISTANCE + ' F' + FEED_RATE;
-
-		// Compile moves into a list
-		var codes = [starting_cmd];
-
-		// Create string buffer of moves from list
-		for(var i=0; i<MOVES; i++) {codes.push(move);}
-
-		// The queue report handler will keep up the jog if these are set
-		this.jog_command = move;
-		this.jog_direction = direction;
-
-		// Build serial string and send
-		try {
-			this.runGCodes(codes);
-		} finally {
-			// Timeout jogging if we don't get a keepalive from the client
-			this.jog_heartbeat = setTimeout(function() {
-				log.warn("Jog abandoned!  Stopping due to timeout.");
-				this.stopJog();
-			}.bind(this), JOG_TIMEOUT);
-		}
-	} else {
-		if(direction == this.jog_direction) {
-			this.jog_keepalive();
-		}
-	}
-};
-
-
 G2.prototype.setUnits = function(units, callback) {
 	if(units === 0 || units == 'in') {
 		log.info('Setting driver units to INCH');
@@ -376,12 +298,8 @@ G2.prototype.onData = function(data) {
 };
 
 G2.prototype.handleQueueReport = function(r) {
-	// Deal with jog mode
 	var qo = r.qo || 0;
-	if(this.jog_command && (qo > 0)) {
-		this.runGCodes(this.jog_command);
-		return;
-	}
+	// Pass
 };
 
 G2.prototype.handleFooter = function(response) {
