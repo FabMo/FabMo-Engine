@@ -39,6 +39,11 @@ LOG_LEVELS = {
 var FlightRecorder = function() {
   this.records = []
   this.firstTime = 0
+  this.info = {
+    'startTime' : new Date().toISOString()
+    'arch' : process.arch,
+    'platform' : process.platform
+  }
 }
 
 FlightRecorder.prototype.record = function(channel, dir, data) {
@@ -72,9 +77,12 @@ FlightRecorder.prototype.save = function(filename, callback) {
 			});
 		}.bind(this));
 	}
+    this.info.endTime = new Date().toISOString();
 	var flight = {
 		records : newRecords
-	}
+	    info : this.info
+    }
+    flight.info.time :
   fs.writeFile(filename, JSON.stringify(flight, null, 2), callback);
 }
 

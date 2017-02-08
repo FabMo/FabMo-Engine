@@ -310,7 +310,8 @@ G2.prototype.setUnits = function(units, callback) {
 			callback(null);
 		});
 		this.runString(gc);
-	}.bind(this));
+	    this.runString("G55");
+    }.bind(this));
 }
 
 G2.prototype.requestStatusReport = function(callback) {
@@ -470,6 +471,11 @@ G2.prototype.handleStatusReport = function(response) {
 					this.flushcallback = null;
 				}
 			}
+
+			if(response.sr.stat === STAT_STOP || response.sr.stat === STAT_END) {
+				log.info("Clearing the quit pending state.")
+				this.quit_pending = false;
+			}
 			if(this.expectations.length > 0) {
 				var expectation = this.expectations.pop();
 				var stat = states[this.status.stat];
@@ -570,8 +576,11 @@ G2.prototype.quit = function() {
         this.quit_pending = true;
 	    this.gcode_queue.clear();
 	    this.command_queue.clear();
-	    this.gcodeWrite('\x04{clr:n}\n');
-    }
+	    //this.gcodeWrite('\x04{clr:n}\n');
+			this.gcodeWriteAndDrain('!%\n');
+		} else {
+			log.warn("Not quitting because one is pending already");
+		}
     //this.command('{clr:n}');
 	//this.controlWriteAndDrain('\x04');
 }
@@ -719,7 +728,7 @@ G2.prototype.command = function(obj) {
 // Send a (possibly multi-line) string
 // An M30 will be placed at the end to put the machine back in the "idle" state
 G2.prototype.runString = function(data, callback) {
-	this.runSegment(data + "\nM30\n", callback);
+	this.runSegment(data +"\n" /*+ "+ "\nM30\n"*/, callback);
 };
 
 G2.prototype.runImmediate = function(data, callback) {

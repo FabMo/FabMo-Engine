@@ -1,4 +1,5 @@
 var log = require('../../log').logger('manual');
+var config = require('../../config');
 
 var T_RENEW = 500;
 var SAFETY_FACTOR = 5;
@@ -29,6 +30,7 @@ ManualRuntime.prototype.connect = function(machine) {
 
 ManualRuntime.prototype.disconnect = function() {
 	if(this.ok_to_disconnect) {
+		log.info("Disconnecting manual runtime");
 		this.driver.removeListener('status', this.status_handler);
 		this._changeState("idle");
 	} else {
@@ -41,7 +43,7 @@ ManualRuntime.prototype._changeState = function(newstate, message) {
 		this.ok_to_disconnect = true;
 		var callback = this.completeCallback || function() {};
 		this.completeCallback = null;
-		callback();
+		config.driver.restoreSome(['zl'], callback)
 	} else {
 		this.ok_to_disconnect = false;
 	}
@@ -183,7 +185,9 @@ ManualRuntime.prototype.startMotion = function(axis, speed) {
 		this.currentDirection = dir;
 		this.renewDistance = speed*(T_RENEW/60000)*SAFETY_FACTOR;
 		this.moving = this.keep_moving = true;
-		this.renewMoves();
+		this.driver.set('zl',0,function() {
+			this.renewMoves();
+		}.bind(this));
 	}
 };
 
