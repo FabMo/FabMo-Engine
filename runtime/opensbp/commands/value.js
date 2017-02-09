@@ -117,20 +117,28 @@ exports.VD = function(args) {
 	// XYZ Unit type
 	if ( args[2] !== undefined ) {
 		var unitType = args[2];
+		log.debug("VD:Current X = " + this.cmd_posx );
+		log.debug("VD:Current Y = " + this.cmd_posy );
+		log.debug("VD:Current Z = " + this.cmd_posz );
 		switch(args[2]) {
 			case 0:
 				this.emit_gcode("G20"); // inches
 				this._setUnits('in');
+				log.debug("VD: returned from setting units to in");
 				break;
 
 			case 1:
 				this.emit_gcode("G21");
 				this._setUnits('mm');
+				log.debug("VD: returned from setting units to mm");
 				break;
 			default:
 				throw new Error("Invalid unit setting: " + args[2]);
 				break;
 		}
+		log.debug("VD:Converted X = " + this.cmd_posx );
+		log.debug("VD:Converted Y = " + this.cmd_posy );
+		log.debug("VD:Converted Z = " + this.cmd_posz );
 	}
 	// A Unit type
 // 	if ( args[3] !== undefined ) {
@@ -397,6 +405,16 @@ exports.VR = function(args, callback) {
 	if (args[4] !== undefined) {
 		this.maxjerk_c = args[4];
 		this.machine.driver.command({'cjm':this.maxjerk_c});
+	}
+	// [JT] Junction Integration Time
+	if (args[5] !== undefined) {
+		this.jt = args[5];
+		this.machine.driver.command({'jt':this.jt});
+	}
+	// [CT] Chordal Tolerance
+	if (args[6] !== undefined) {
+		this.chordalTol = args[6];
+		this.machine.driver.command({'ct':this.chordalTol});
 	}
     vs_change = 1;
     callback();

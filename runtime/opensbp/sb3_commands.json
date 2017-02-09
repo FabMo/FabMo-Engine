@@ -3178,8 +3178,8 @@
       "name": "Ramp values",
       "params": [
          {
-            "name": "XY Move Ramp Speed",
-            "desc": "Ramp Starting Speed in Current Units for XY Moves ",
+            "name": "XY Max Jerk",
+            "desc": "Maximum Jerk Value for Ramps in XY",
             "abrev": "mrXY",
             "typeext": 0,
             "default": ".4",
@@ -3191,8 +3191,8 @@
             "type": "distm"
          },
          {
-            "name": "Z Move Ramp Speed",
-            "desc": "Ramp Starting Speed in Current Units for Z Moves ",
+            "name": "Z Max Jerk",
+            "desc": "Maximum Jerk Value for Ramps in Z",
             "abrev": "mrZ",
             "typeext": 0,
             "default": ".4",
@@ -3204,8 +3204,8 @@
             "type": "distma"
          },
          {
-            "name": "A Move Ramp Speed",
-            "desc": "Ramp Starting Speed in Current Units for A Moves ",
+            "name": "A Max Jerk",
+            "desc": "Maximum Jerk Value for Ramps in A",
             "abrev": "mrA",
             "typeext": 0,
             "default": ".4",
@@ -3217,8 +3217,8 @@
             "type": "distmb"
          },
          {
-            "name": "B Move Ramp Speed",
-            "desc": "Ramp Starting Speed in Current Units for B Moves ",
+            "name": "B Max Jerk",
+            "desc": "Maximum Jerk Value for Ramps in B",
             "abrev": "mrB",
             "typeext": 0,
             "default": ".4",
@@ -3230,8 +3230,8 @@
             "type": "distm"
          },
          {
-            "name": "XY Jog Ramp Speed",
-            "desc": "Ramp Starting Speed in Current Units for XY Jogs ",
+            "name": "C Max Jerk",
+            "desc": "Maximum Jerk Value for Ramps in C",
             "abrev": "jrXY",
             "typeext": 0,
             "default": ".4",
@@ -3243,8 +3243,8 @@
             "type": "distm"
          },
          {
-            "name": "Z Jog Ramp Speed",
-            "desc": "Ramp Starting Speed in Current Units for Z Jogs ",
+            "name": "Junction Integration Time",
+            "desc": "Junction Integration Time",
             "abrev": "jrZ",
             "typeext": 0,
             "default": ".4",
@@ -3256,8 +3256,8 @@
             "type": "distma"
          },
          {
-            "name": "A Jog Ramp Speed",
-            "desc": "Ramp Starting Speed in Current Units for A Jogs ",
+            "name": "Chordal Tolerance",
+            "desc": "Sets precision of arc moves",
             "abrev": "jrA",
             "typeext": 0,
             "default": ".4",
@@ -3267,123 +3267,6 @@
                "100"
             ],
             "type": "distmb"
-         },
-         {
-            "name": "B Jog Ramp Speed",
-            "desc": "Ramp Starting Speed in Current Units for B Jogs ",
-            "abrev": "jrB",
-            "typeext": 0,
-            "default": ".4",
-            "sysvar": 90,
-            "range": [
-               ".05",
-               "100"
-            ],
-            "type": "distm"
-         },
-         {
-            "name": "Move Ramp Rate",
-            "desc": "(Acceleration/Deceleration) Distance over which Speed Increases/Decreases by 2 Units, for Move Ramps",
-            "abrev": "rateM",
-            "typeext": 0,
-            "default": ".2",
-            "sysvar": 0,
-            "range": [
-               ".025",
-               "10"
-            ],
-            "type": "distm"
-         },
-         {
-            "name": "Jog Ramp Rate",
-            "desc": "(Acceleration/Deceleration) Distance over which Speed Increases/Decreases by 2 Units, for Jog Ramps",
-            "abrev": "rateJ",
-            "typeext": 0,
-            "default": ".2",
-            "sysvar": 0,
-            "range": [
-               ".025",
-               "10"
-            ],
-            "type": "sng"
-         },
-         {
-            "name": "3D Ramp Threshold",
-            "desc": "Sensitize (by decreasing) or desensitize 3D (vertical) ramping",
-            "abrev": "3dT",
-            "typeext": 0,
-            "default": "100",
-            "sysvar": 0,
-            "range": [
-               "1",
-               "1000"
-            ],
-            "type": "distm"
-         },
-         {
-            "name": "Minimum Dist to Check",
-            "desc": "Segment size required to test for ramp (should not need changing)",
-            "abrev": "minD",
-            "typeext": 0,
-            "default": ".10",
-            "sysvar": 0,
-            "range": [
-               ".001",
-               "1"
-            ],
-            "type": "sng"
-         },
-         {
-            "name": "Slow Corner Speed",
-            "desc": "Percentage to slow from full speed on gentle corners",
-            "abrev": "crnr",
-            "typeext": 0,
-            "default": "65",
-            "sysvar": 0,
-            "range": [
-               "20",
-               "99"
-            ],
-            "type": "obs"
-         },
-         {
-            "name": "Fast Stop Threshold",
-            "desc": "",
-            "abrev": "fStop",
-            "typeext": 0,
-            "default": "0",
-            "sysvar": 0,
-            "range": [
-               null,
-               null
-            ],
-            "type": "obs"
-         },
-         {
-            "name": "KeyPad Stop Threshold",
-            "desc": "",
-            "abrev": "thStop",
-            "typeext": 0,
-            "default": "0",
-            "sysvar": 0,
-            "range": [
-               null,
-               null
-            ],
-            "type": "distm"
-         },
-         {
-            "name": "KeyPad Ramp Rate",
-            "desc": "(Acceleration/Deceleration) Distance over which Speed Increases/Decreases by 2 Units, for Move Ramps",
-            "abrev": "rateK",
-            "typeext": 0,
-            "default": ".2",
-            "sysvar": 0,
-            "range": [
-               ".1",
-               "2"
-            ],
-            "type": "distm"
          }
       ]
    },
