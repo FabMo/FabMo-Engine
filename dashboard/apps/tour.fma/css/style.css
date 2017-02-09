@@ -3,7 +3,7 @@
     width: 100%;
     white-space: nowrap;
     position: fixed;
-    transition: left 0 linear;
+    transition: left 0.4s linear;
     margin: 0;
     padding: 0;
     font-size: 0;
@@ -56,17 +56,20 @@ h4 {
     width: 90%;
 }
 
-span {
+p {
     white-space: normal;
 }
+
+
 
 .content {
     font-size: 1rem;
     overflow: hidden;
     margin: 1rem;
     font-family: source_sans_proregular;
-    position: absolute;
+    position: relative;
     width: 95%;
+   height: 50%;
 }
 
 .prev {
@@ -109,6 +112,28 @@ display: none;
     border-radius: 5px;
     cursor: pointer;
 }
+
+.marker {
+    position: relative;
+    height: 1px;
+    width: 1px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@media screen and (max-width: 480px) { 
+    h4 {
+        font-size: 1rem;
+    }
+    p{
+        font-size: 12px;
+        line-height: 1rem;
+    }
+    .card-action{
+        margin-top: 0.2 rem;
+    }
+}
+
 
 
 

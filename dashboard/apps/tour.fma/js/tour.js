@@ -6,6 +6,7 @@ var tour = document.getElementById('tour-container');
 
 var currentLeft = 0;
 var counter = 0;
+var cardWidth = $(window).width();
 
 var content = [
     {
@@ -19,7 +20,7 @@ var content = [
     },
      {
         "id": "2",
-        "video": "images/foam.mp4",
+        "video": "images/foam1.mp4",
         "header": "First Raise Height of the Z-axis",
         "text": "Your Handibot will hit it's Z-Max and make a loud noise. This is normal. Remove the protective foam circle.",
         "actionText" : "Raise Z",
@@ -27,7 +28,7 @@ var content = [
     },
     {
          "id": "3",
-        "video": "images/cutterlength.mp4",
+        "video": "images/cutterlength2.mp4",
         "header": "Remeasure Cutting Length",
         "text": "Next we remeasure your cutting bit length. We did this at the factory, but things can move in shipping and it's good to learn how to do. This will ensure that your Z-Zero is correct. You will also want to do this everytime you change bits.",
         "actionText" : "Measure Cutting Length",
@@ -35,7 +36,7 @@ var content = [
     },
     {
         "id": "4",
-        "video": "images/home.mp4",
+        "video": "images/home1.mp4",
         "header": "Home Your Tool",
         "text": "Your X, Y, & Z are already zeroed from the last step, but lest's say you accidentally crashed your tool into your X, Y, or Z. This will cause your tool to loose position. If you haven't changed your bit you can just home it to re-zero your axes. Lets show you what that looks like.",
         "actionText" : "Set Zeros",
@@ -43,7 +44,7 @@ var content = [
     },
     {
         "id": "5",
-        "video": "images/home.mp4",
+        "video": "images/testcut.mp4",
         "header": "Run Test File",
         "text": "Finally we are going to run a test cut. We did this cut at the factory so you can compare your cut with our cut too make sure that . Clicking the button will submit a job and take you to the Job Manager, where you can continue the tour",
         "actionText" : "Submit Test Cut",
@@ -53,7 +54,7 @@ var content = [
 ]
 
 
-var cardWidth = $(window).width();
+
 
 $( document ).ready(function() {
     
@@ -61,22 +62,32 @@ $( document ).ready(function() {
     setNext(content[counter + 1], counter + 1);
     counter++
     checkCounter();
+    $('.tour-card').css('width', cardWidth);
 }
 
-$('.tour-card').css('width', cardWidth);
+
 
 
 
 });
 
 $( window ).resize(function() {
-    var cardWidth = $(window).width();
+    var currentItem;
+    cardWidth = $(window).width();
     var numItems = $('.tour-card').length;
     var newContainer = numItems*cardWidth;
     $('.tour-card').css('width', cardWidth);
-    $('#tour-container').css('width', newContainer);
+    
+    // $('.marker').each(function(){
+    //     if (isElementInViewport ($(this))) {
+    //         currentItem = parseInt($(this).parent().attr('id'));
+    //         console.log(currentItem);
+    //     } 
+        
+    // });
 
-
+    currentLeft = -((counter-1)*cardWidth);
+$('#tour-container').css({'width': newContainer,  'left': currentLeft + 'px'});
 });
 
 $('.next').click(function(){
@@ -90,7 +101,7 @@ $('.next').click(function(){
 } else if(counter === content.length -1 ){
     counter++;    
 }
-    
+    console.log(cardWidth);
     currentLeft = currentLeft - cardWidth;
 
     $('#tour-container').css('left', currentLeft + "px");
@@ -112,23 +123,31 @@ $('.prev').click(function(){
 
 
 function setNext(obj, counter){
+    var set = [];
+    
     var id = obj.id;
+    $('.tour-card').each(function(){
+        set.push($(this).attr('id'));
+    });
+    console.log(set);
+    console.log(id);
+    if (set.includes(id)){}else{
     var tourItem = document.createElement("li");
-    tourItem.setAttribute("id", "");
+    tourItem.setAttribute("id", obj.id);
     tourItem.setAttribute("class", "tour-card");
     if (obj.action && obj.video) {
-        tourItem.innerHTML = '<div class="slide-next"></div><div class="image-container"><video loop><source src='+obj.video+' type="video/mp4"></video></div><div class="content"><h4>'+obj.header+'</h4><span>'+obj.text+'</span><div class="card-action" id='+id+'>'+obj.actionText+'</div></div>';
+        tourItem.innerHTML = '<div class="marker"></div><div class="slide-next"></div><div class="image-container"><video loop><source src='+obj.video+' type="video/mp4"></video></div><div class="content"><h4>'+obj.header+'</h4><p>'+obj.text+'</p><div class="card-action" id='+id+'>'+obj.actionText+'</div></div>';
        $(document).on('click', '#'+id , function() {
             obj.action();
         });
     } else {
-        tourItem.innerHTML = '<div class="slide-next"></div><div class="image-container"><img  src='+obj.image+'></div><div class="content"><h4>'+obj.header+'</h4><span>'+obj.text+'</span></div>';
+        tourItem.innerHTML = '<div class="marker"></div><div class="slide-next"></div><div class="image-container"><img  src='+obj.image+'></div><div class="content"><h4>'+obj.header+'</h4><p>'+obj.text+'</p></div>';
     }
 
     
     tour.appendChild(tourItem);
     $('.tour-card').css('width', cardWidth);
-    
+}
 };
 
 function DoJobFile () {
