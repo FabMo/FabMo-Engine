@@ -306,7 +306,7 @@ FabMoAPI.prototype.deleteJob = function(id, callback) {
 }
 
 
-FabMoAPI.prototype.clearJobQueue = function(id, callback) {
+FabMoAPI.prototype.clearJobQueue = function(callback) {
 	this._del('/jobs/queue', callback, callback);
 }
 
