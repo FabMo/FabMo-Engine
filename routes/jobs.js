@@ -129,8 +129,8 @@ var resubmitJob = function(req, res, next) {
         if(err) {
             log.error(JSON.stringify(err));
             answer = {
-                status:"failed",
-                data:{job:err}
+                status:"error",
+                message:err
             };
             return res.json(answer);
         }

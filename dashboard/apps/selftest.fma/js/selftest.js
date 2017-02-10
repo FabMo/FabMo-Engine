@@ -67,6 +67,14 @@ $(document).ready(function() {
 		}});
 	});
 
+	$('#resubmitJobFail').click(function(evt){
+		evt.preventDefault();
+		fabmo.resubmitJob("invalid", function(err, result) { {
+			if(err) { return console.error(err); }
+			console.info("Got resubmitJob Callback")
+		}});
+	});
+
 	$('#runNext').click(function(evt){
 		evt.preventDefault();
 		fabmo.runNext(function(err, result) { {
