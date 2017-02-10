@@ -12,7 +12,6 @@
 
 }(this, function (io) {
   "use strict"
-
 var PING_TIMEOUT = 3000;
 var makePostData = function(obj, options) {
 	var file = null;
@@ -125,7 +124,7 @@ FabMoAPI.prototype.startVideoStreaming = function(callback){
     }.bind(this));
 
     this.videoSocket.on('connect', function() {
-      console.log("Video streaming websocket connected");
+      console.info("Video streaming websocket connected");
     }.bind(this));
 
     this.videoSocket.on('message', function(message) {console.info(" Video streaming websocket message: " + JSON.stringify(message))} );
@@ -192,7 +191,7 @@ FabMoAPI.prototype.sendTime = function(callback) {
 	this._post('/time/date', data, callback, callback);
 }
 
-// Updater Configuration 
+// Updater Configuration
 
 FabMoAPI.prototype.getUpdaterConfig = function(callback) {
 	var callback = callback || function() {};
@@ -278,7 +277,6 @@ FabMoAPI.prototype.updateOrder= function(data, callback) {
 }
 
 FabMoAPI.prototype.runNextJob = function(callback) {
-	console.log("I got called");
 	this._post('/jobs/queue/run', {}, callback, callback);
 }
 

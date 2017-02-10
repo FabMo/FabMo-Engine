@@ -14,8 +14,9 @@ var config = {
     configuration: './dashboard/apps/configuration.fma/js/configuration.js',
     macro_manager: './dashboard/apps/macro_manager.fma/js/macro_manager.js',
     network_manager: './dashboard/apps/network_manager.fma/js/network_manager.js',
-    preview: './dashboard/apps/previewer.fma/js/viewer.js'
-  }, 
+    preview: './dashboard/apps/previewer.fma/js/viewer.js',
+    selftest: './dashboard/apps/selftest.fma/js/selftest.js'
+  },
   output: {
     path: './dashboard/build',
     publicPath: "../",
@@ -28,7 +29,7 @@ var config = {
  },
   module: {
     loaders: [
-      { test: /\.css$/, loader: ExtractTextPlugin.extract("style-loader", "css-loader")},   
+      { test: /\.css$/, loader: ExtractTextPlugin.extract("style-loader", "css-loader")},
       { test: /\.(ttf|eot|svg|woff|woff2)(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'file-loader?limit=100000' },
       { test: /\.(png|jpg)$/, loader: 'url-loader?name=img/[name].[ext]&limit=100000' },
     ]
@@ -46,7 +47,7 @@ var config = {
             allChunks: true
         })
     ],
- 
+
 };
 
 module.exports = config;

@@ -160,9 +160,9 @@ function addQueueEntries(jobs) {
            i++;
          }
         }
-      } 
+      }
     var recentJobs = document.getElementById('recent');
-    clearRecent(); 
+    clearRecent();
     for (i = 0; i < recent.length; i++) {
       var recentItem = document.createElement("div");
       recentItem.setAttribute("id", recent[i]._id);
@@ -473,7 +473,7 @@ function handleStatusReport(status) {
 	clickDelay: 0,
 	touchDelay: 100,
 	animation: 150,
-	filter: ".cancel, .preview, .edit, .download, .play-button, .previewJob, .editJob, .downloadJob, .deleteJob, .ellipses",
+	filter: ".cancel, .preview, .edit, .download, .play, .previewJob, .editJob, .downloadJob, .deleteJob, .ellipses",
 	onStart: function(evt) {
 		var remove = document.getElementById('actions');
 		remove.parentNode.removeChild(remove);
@@ -526,7 +526,7 @@ function handleStatusReport(status) {
 			} else if (Sortable.utils.is(ctrl, ".play-button")){
           if ($('.play').hasClass('active')) {
             fabmo.pause(function(err, data) {});
-          } 
+          }
           else {
           fabmo.runNext(function(err, data) {
               if (err) {
@@ -654,7 +654,7 @@ function handleStatusReport(status) {
 	});
 
 	$('#queue_table').on('click', '.play-button', function(e) {
-    
+
 	});
 
 	$('#clear-jobs').click(function(e) {

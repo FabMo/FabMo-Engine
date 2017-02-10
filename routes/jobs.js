@@ -128,6 +128,11 @@ var resubmitJob = function(req, res, next) {
     db.Job.getById(req.params.id, function(err, result) {
         if(err) {
             log.error(JSON.stringify(err));
+            answer = {
+                status:"failed",
+                data:{job:err}
+            };
+            return res.json(answer);
         }
         result.clone(function(err, result) {
             log.debug("Cloned!");
