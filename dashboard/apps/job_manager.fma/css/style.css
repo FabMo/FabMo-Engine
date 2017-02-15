@@ -371,7 +371,7 @@ td.actions-control {
   }
 
 
-.job_name {
+.job_name,  #name {
     padding: 1px;
     font-weight: bold;
     line-height: 1.1rem;
@@ -430,7 +430,7 @@ td.actions-control {
     margin-left: 0.5em;
   }
 
-  .name {
+  .job_name {
     height: 15px;
   }
 
