@@ -60,7 +60,15 @@ exports.SO = function(args) {
 	state = parseInt(args[1]);
 	if(outnum >= 1 && outnum <= 12) {
 		if(state == 1 || state == 0) {
-			this.emit_gcode('M100 ({out' + outnum + ':' + state + '})');
+			if(outnum === 1) {
+				if(state === 1) {
+					this.emit_gcode('M3');
+				} else {
+					this.emit_gcode('M5');
+				}
+			} else {
+				this.emit_gcode('M100 ({out' + outnum + ':' + state + '})');
+			}
 		} else {
 			log.warn("Value passed to SO that's not a 1 or 0");
 		}
