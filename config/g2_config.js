@@ -95,6 +95,14 @@ G2Config.prototype.restore = function(callback) {
 	this.update(this._cache, callback);
 }
 
+G2Config.prototype.restoreSome = function(keys, callback) {
+  cache = {};
+	keys.forEach(function(key) {
+		cache[key] = this._cache[key];
+	}.bind(this));
+	this.update(cache, callback);
+}
+
 // Status reports are special, and their format must be whats expected for the machine/runtime environments
 // to work properly.
 // TODO: Move this data out into a configuration file, perhaps.

@@ -374,7 +374,7 @@ function Watchdog(timeout,exit_code){
     var watchdog_exit_code=exit_code||20;
 
     watchdog_exit = function(){
-        throw new Error("G2 is not responding");
+        //throw new Error("G2 is not responding");
         //process.exit(this.watchdog_exit_code);
     };
 
