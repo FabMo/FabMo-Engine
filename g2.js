@@ -390,10 +390,15 @@ G2.prototype.handleStatusReport = function(response) {
 				}
 			}
 
-			if(response.sr.stat === STAT_STOP || response.sr.stat === STAT_END) {
-				log.info("Clearing the quit pending state.")
-				this.quit_pending = false;
-			}
+      if(this.quit_pending) {
+        if(response.sr.stat === STAT_STOP || response.sr.stat === STAT_END) {
+  				log.info("!!! Clearing the quit pending state.")
+  				this.quit_pending = false;
+  			} else {
+          log.info("!!! NOT clearing the quit pending state ")
+        }
+      }
+
 			if(this.expectations.length > 0) {
 				var expectation = this.expectations.pop();
 				var stat = states[this.status.stat];
@@ -646,7 +651,7 @@ G2.prototype.command = function(obj) {
 // Send a (possibly multi-line) string
 // An M30 will be placed at the end to put the machine back in the "idle" state
 G2.prototype.runString = function(data, callback) {
-	this.runSegment(data +"\n" /*+ "+ "\nM30\n"*/, callback);
+	this.runSegment(data +"\nM30\n", callback);
 };
 
 G2.prototype.runImmediate = function(data, callback) {
@@ -705,9 +710,12 @@ G2.prototype.runGCodes = function(codes, callback) {
 }
 
 G2.prototype.sendMore = function() {
+  if(this.pause_flag) {
+    return;
+  }
 	if(this.response_count < RESPONSE_LIMIT) {
 		var count = (RESPONSE_LIMIT - this.response_count);
-		if(this.command_queue.getLength() > 0) {
+		if(this.command_queue.getLength() > 0 && !this.pause_flag) {
 			codes = this.command_queue.multiDequeue(count);
 			codes.forEach(function(code) {
 				this.controlWrite(code + '\n');

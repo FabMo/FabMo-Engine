@@ -3,7 +3,7 @@ var config = require('../../config');
 
 var T_RENEW = 500;
 var SAFETY_FACTOR = 5;
-var RENEW_SEGMENTS = 4;
+var RENEW_SEGMENTS = 2;
 
 function ManualRuntime() {
 	this.machine = null;
@@ -94,6 +94,7 @@ ManualRuntime.prototype._onG2Status = function(status) {
 			}
 
 			if((status.stat === this.driver.STAT_STOP || status.stat === this.driver.STAT_END) && status.hold === 0) {
+				this.moving = false;
 				this._changeState("idle");
 				break;
 			}
@@ -218,7 +219,7 @@ ManualRuntime.prototype.stopMotion = function() {
 		log.stack();
 
 		this.keep_moving = false;
-		this.moving = false;
+		//this.moving = false;
 
 		this.driver.quit();
 	}
