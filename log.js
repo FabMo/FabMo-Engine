@@ -11,6 +11,7 @@ var _suppress = false;
 var log_buffer = [];
 var LOG_BUFFER_SIZE = 5000;
 var PERSISTENT_LOG_COUNT = 20;
+var flightRecorder = null;
 
 // String versions of the allowable log levels
 LEVELS = {
@@ -85,20 +86,16 @@ FlightRecorder.prototype.save = function(filename, callback) {
   fs.writeFile(filename, JSON.stringify(flight, null, 2), callback);
 }
 
-var flightRecorder = new FlightRecorder();
 
 function setGlobalLevel(lvl){
-	if (lvl)
-	{
-		if (lvl >= 0 && lvl <= 3)
-		{
+	if (lvl) {
+		if (lvl >= 0 && lvl <= 3) {
 			// assign the log level to the string equivalent of the integer
 			Object.keys(LOG_LEVELS).forEach(function(key) {
 	  			LOG_LEVELS[key] = Object.keys(LEVELS).filter(function(key) {return (LEVELS[key] === lvl);})[0];
 	  		});
 		}
-		else if (Object.keys(LEVELS).indexOf(lvl) >= 0) // if a string
-		{
+		else if (Object.keys(LEVELS).indexOf(lvl) >= 0) {
 			//  assign the log level to the string that is given
 			Object.keys(LOG_LEVELS).forEach(function(key) {
 	  			LOG_LEVELS[key] = lvl;
@@ -111,6 +108,15 @@ function setGlobalLevel(lvl){
 		else
 		{
 			logger('log').warn('Invalid log level: ' + lvl);
+		}
+		if(lvl === "g2") {
+			_log.info("Creating flight recorder...")
+			flightRecorder = new FlightRecorder();
+		} else {
+			if(flightRecorder) {
+				_log.info("Destroying flight recorder...")				
+			}
+			flightRecorder = null;
 		}
 	}
 }
@@ -180,9 +186,16 @@ Logger.prototype.error = function(msg) {
 };
 
 
-Logger.prototype.g2 = function(channel, dir, msg) {
-	flightRecorder.record(channel, dir, msg);
-	msg = flightRecorder.getLatest();
+Logger.prototype.g2 = function(channel, dir, o) {
+  var msg = {}
+	if(flightRecorder) {
+		flightRecorder.record(channel, dir, o);
+		msg = flightRecorder.getLatest();
+	} else {
+		msg.channel = channel;
+		msg.data = o;
+		msg.time = new Date().getTime();
+	}
 	switch(dir) {
 		case 'out':
 			this.write('g2', '--' + msg.channel + '-' + msg.time + '----> ' + jsesc(msg.data.trim()));
@@ -236,13 +249,15 @@ function exitHandler(options, err) {
     	try {
 	    	saveLogBuffer(filename);
 	    	_log.info("Log saved to " + filename);
-				flightRecorder.save(flight_fn, function(err, data) {
-					rotateLogs(PERSISTENT_LOG_COUNT, function() {
-		    		if(options.exit) {
-		    			process.exit();
-		    		}
-		    	});
-				});
+				if(flightRecorder) {
+					flightRecorder.save(flight_fn, function(err, data) {
+						rotateLogs(PERSISTENT_LOG_COUNT, function() {
+			    		if(options.exit) {
+			    			process.exit();
+			    		}
+			    	});
+					});
+				}
 	    	return;
     	} catch(e) {
 	    	_log.error("Could not save log to " + filename);
