@@ -202,5 +202,8 @@ exports.getUserById = function(id,cb){
 }
 
 exports.getCurrentUser = function(u){return currentUser;}
-exports.setCurrentUser = function(u){currentUser = u;}
+exports.setCurrentUser = function(u){
+  currentUser = u;
+  eventEmitter.emit('user_change', currentUser);
+};
 exports.setUserAsActive = function(){resetUserTimer();}

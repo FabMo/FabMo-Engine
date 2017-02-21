@@ -51,6 +51,7 @@ var FabMoAPI = function(base_url) {
 		'status' : [],
 		'disconnect' : [],
     	'authentication_failed':[],
+		'user_change' : [],
 		'connect' : [],
 		'job_start' : [],
 		'job_end' : [],
@@ -107,6 +108,10 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 			this.emit('disconnect');
 			console.info("Websocket disconnected (connection error)");
 		}.bind(this));
+
+		this.socket.on('user_change', function(user){
+			this.emit('user_change', user);
+		});
 
 	}
 }

@@ -82,6 +82,7 @@ var onPublicConnect = function(socket) {
 		socket.emit('pong');
 	});
 
+
 };
 
 
@@ -92,6 +93,10 @@ var onPrivateConnect = function(socket) {
 		return socket.disconnect();
 
 	var userId = socket.request.sessionID.content.passport.user;
+
+	authentication.eventEmitter.on('user_change', function(data){
+		socket.emit('user_change', data);
+	});
 
 	authentication.eventEmitter.on('user_kickout',function user_kickout_listener(user){
 		authentication.eventEmitter.removeListener('user_kickout',user_kickout_listener);
@@ -107,10 +112,10 @@ var onPrivateConnect = function(socket) {
 
 	socket.on('code', function(data) {
 
-		if(!authentication.getCurrentUser() || authentication.getCurrentUser()._id != userId){
-			socket.emit('authentication_failed','not authenticated');
-			return socket.disconnect();
-		} // make sure that if the user logout, he can't talk through the socket anymore.
+		// if(!authentication.getCurrentUser() || authentication.getCurrentUser()._id != userId){
+		// 	socket.emit('authentication_failed','not authenticated');
+		// 	return socket.disconnect();
+		// } // make sure that if the user logout, he can't talk through the socket anymore.
 		if('rt' in data) {
 			try {
 				machine.executeRuntimeCode(data.rt, data.data)
@@ -121,10 +126,10 @@ var onPrivateConnect = function(socket) {
 	});
 
 	socket.on('cmd', function(data) {
-		if(!authentication.getCurrentUser() || authentication.getCurrentUser()._id != userId){
-			socket.emit('authentication_failed','not authenticated');
-			return socket.disconnect();
-		} // make sure that if the user logout, he can't talk through the socket anymore.
+		// if(!authentication.getCurrentUser() || authentication.getCurrentUser()._id != userId){
+		// 	socket.emit('authentication_failed','not authenticated');
+		// 	return socket.disconnect();
+		// } // make sure that if the user logout, he can't talk through the socket anymore.
 		try {
 			switch(data.name) {
 				case 'pause':
@@ -146,6 +151,10 @@ var onPrivateConnect = function(socket) {
 		} catch(e) {
 			// pass
 		}
+	});
+
+	socket.on('user_kickout', function(data){
+		console.error(data);
 	});
 
 

@@ -16,6 +16,7 @@ var login = function(req, res, next) {
       if(err){
         return next(err);
       }
+      authentication.setCurrentUser(user);
       return res.send({ status:'success', message : 'authentication succeeded' });
     });
   })(req, res, next);
@@ -48,6 +49,7 @@ var addUser = function(req, res, next) {
 };
 
 var logout = function(req, res, next) {
+  log.error(req);
   req.logout();
   authentication.setCurrentUser(null);
   res.redirect('',next);
