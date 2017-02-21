@@ -523,7 +523,7 @@ function handleStatusReport(status) {
 				fabmo.navigate('/job/' + id + '/file');
 			} else if (Sortable.utils.is(ctrl, ".deleteJob")){
 				 fabmo.deleteJob(id);
-			} else if (Sortable.utils.is(ctrl, ".play-button")){
+			} else if (Sortable.utils.is(ctrl, ".play")){
           if ($('.play').hasClass('active')) {
             fabmo.pause(function(err, data) {});
           }
