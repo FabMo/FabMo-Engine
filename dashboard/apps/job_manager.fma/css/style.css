@@ -430,8 +430,8 @@ td.actions-control {
     margin-left: 0.5em;
   }
 
-  .job_name {
-    height: 15px;
+  .job_name, #name {
+    height: 20px;
   }
 
   .job_item, .chosen, .recent_item{

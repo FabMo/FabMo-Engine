@@ -19,6 +19,7 @@ var sessions = require("client-sessions");
 var authentication = require('./authentication');
 var crypto = require('crypto');
 
+
 var Engine = function() {
     this.version = null;
     this.time_synced = false;
@@ -464,7 +465,7 @@ Engine.prototype.start = function(callback) {
             server.use(authentication.passport.initialize());
             server.use(authentication.passport.session());
 
-            authentication.configure();
+            
             log.info("Enabling gzip for transport...");
             server.use(restify.gzipResponse());
             // Import the routes module and apply the routes to the server
@@ -478,6 +479,8 @@ Engine.prototype.start = function(callback) {
                 callback(null, server);
             });
 
+            authentication.configure();
+            
         }.bind(this),
         ],
 

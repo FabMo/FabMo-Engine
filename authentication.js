@@ -41,6 +41,7 @@ if (this._passport && this._passport.session) {
 exports.configure = function(){
   passport.use(new LocalStrategy({passReqToCallback: true},
     function(req, username, password, done) {
+      // console.log(util.inspect(req));
       User.findOne(username, function(err, user) {
         if (err) { return done(err); }
         if (!user) {
@@ -88,7 +89,7 @@ exports.configure = function(){
           isCurrentUserKickeable = false;
           startUserTimer();
           return done(null, user);
-          /******************************************************************************************************/
+          /*****************************r*************************************************************************/
         }
 
         if(!currentUser){ // first authentication
@@ -180,6 +181,7 @@ passport.serializeUser(function(user, done) {
 });
 
 passport.deserializeUser(function(id, done) {
+ 
   User.findById(id, function(err, user) {
     done(err, user);
   });

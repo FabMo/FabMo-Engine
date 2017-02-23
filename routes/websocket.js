@@ -3,6 +3,7 @@ var util = require('../util');
 var machine = require('../machine').machine;
 var log=require('../log').logger("websocket");
 var authentication = require('../authentication');
+var User = require('../db').User;
 var passport = authentication.passport;
 var sessions = require("client-sessions");
 var parseCookie = require('./util').parseCookie;
@@ -26,7 +27,15 @@ function setupAuthentication(server){
 		}
     // Pull out the user from the cookie by using the decode function
     handshakeData.sessionID = sessions.util.decode({cookieName: 'session', secret:server.cookieSecret}, cookie['session']);
-
+		var user = handshakeData.sessionID.content.passport.user;
+		authentication.getUserById(user, function (err, data){
+			if (err){
+				log.error(err);
+			} else {
+				authentication.setCurrentUser(data);
+			}
+		});
+		// authentication.configure();
 		if(!handshakeData.sessionID){
 			return next(new Error('Wrong session'));
 		}
@@ -112,10 +121,12 @@ var onPrivateConnect = function(socket) {
 
 	socket.on('code', function(data) {
 
-		// if(!authentication.getCurrentUser() || authentication.getCurrentUser()._id != userId){
-		// 	socket.emit('authentication_failed','not authenticated');
-		// 	return socket.disconnect();
-		// } // make sure that if the user logout, he can't talk through the socket anymore.
+		if(!authentication.getCurrentUser() || authentication.getCurrentUser()._id != userId){
+			log.error(userId);
+			log.error(authentication.getCurrentUser());
+			socket.emit('authentication_failed','not authenticated');
+			return socket.disconnect();
+		} // make sure that if the user logout, he can't talk through the socket anymore.
 		if('rt' in data) {
 			try {
 				machine.executeRuntimeCode(data.rt, data.data)
@@ -126,10 +137,12 @@ var onPrivateConnect = function(socket) {
 	});
 
 	socket.on('cmd', function(data) {
-		// if(!authentication.getCurrentUser() || authentication.getCurrentUser()._id != userId){
-		// 	socket.emit('authentication_failed','not authenticated');
-		// 	return socket.disconnect();
-		// } // make sure that if the user logout, he can't talk through the socket anymore.
+		if(!authentication.getCurrentUser() || authentication.getCurrentUser()._id != userId){
+			log.error(userId);
+			log.error(authentication.getCurrentUser());
+			socket.emit('authentication_failed','not authenticated');
+			return socket.disconnect();
+		} // make sure that if the user logout, he can't talk through the socket anymore.
 		try {
 			switch(data.name) {
 				case 'pause':
