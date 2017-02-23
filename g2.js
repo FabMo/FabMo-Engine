@@ -8,6 +8,8 @@ var Watchdog = require('./util').Watchdog;
 var log = require('./log').logger('g2');
 var process = require('process');
 var jsesc = require('jsesc');
+var stream = require('stream');
+var Q = require('Q');
 
 // Values of the **stat** field that is returned from G2 status reports
 var STAT_INIT = 0;
@@ -36,6 +38,7 @@ var RESPONSE_LIMIT = 4;
 
 var SINGLE_PORT_OVERRIDE = true;
 
+var _promiseCounter = 1;
 // Error codes defined by G2
 // See https://github.com/synthetos/g2/blob/edge/TinyG2/tinyg2.h for the latest error codes and messages
 try {
@@ -82,6 +85,38 @@ function G2() {
 }
 util.inherits(G2, events.EventEmitter);
 
+G2.prototype._createStream = function() {
+	if(this.stream) {
+		throw new Error("Attempt to create new stream over existing stream.");
+	}
+	this.stream = new stream.PassThrough();
+	this.stream.on('data', function(chunk) {
+		var line = [];
+		chunk = chunk.toString();
+		for(var i=0; i<chunk.length; i++) {
+			ch = chunk[i];
+			line.push(ch);
+			if(ch === '\n') {
+					var s = line.join('');
+					log.debug("Q: '" + s.trim() + "'")
+					this.gcode_queue.enqueue(s);
+					this.sendMore();
+					var putback = chunk.slice(i++);
+					if(putback) {
+						this.stream.unshift(chunk.slice(i++));
+					}
+					return;
+			}
+		}
+	}.bind(this));
+	this.stream.on('end', function() {
+		log.debug("Stream END event.")
+		this.stream = null;
+	}.bind(this));
+	this.stream.on('pipe', function() {
+		log.debug("Stream PIPE event");
+	})
+}
 // Actually open the serial port and configure G2 based on stored settings
 G2.prototype.connect = function(control_path, gcode_path, callback) {
 
@@ -123,7 +158,7 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
 	var onOpen = function(callback) {
 		this.controlWrite("\x04")
 		this.command("{clr:n}");
-		this.command("M30");
+		//this.command("M30");
 		this.requestStatusReport();
 		this.connected = true;
 		callback(null, this);
@@ -177,38 +212,19 @@ G2.prototype.onSerialClose = function(data) {
 	process.exit(14);
 };
 
-// Write data to the control port.  Log to the system logger.
-G2.prototype.controlWrite = function(s) {
+G2.prototype._write = function(port, s, callback) {
 	this.watchdog.start();
 	log.g2(this.control_token,'out',s);
-	this.control_port.write(s);
-};
-
-// Write data to the gcode port.  Log to the system logger.
-G2.prototype.gcodeWrite = function(s) {
-	this.watchdog.start();
-	log.g2(this.gcode_token,'out',s);
-	this.gcode_port.write(s);
-};
+	port.write(s, function () {
+		if(callback) {
+			port.drain(callback);
+		}
+	}.bind(this));
+}
 
 // Write data to the serial port.  Log to the system logger.  Execute **callback** when transfer is complete.
-G2.prototype.controlWriteAndDrain = function(s, callback) {
-	this.watchdog.start();
-	t = new Date().getTime();
-	log.g2(this.control_token,'out',s);
-	this.control_port.write(s, function () {
-		this.control_port.drain(callback);
-	}.bind(this));
-};
-
-G2.prototype.gcodeWriteAndDrain = function(s, callback) {
-	this.watchdog.start();
-	t = new Date().getTime();
-	log.g2(this.gcode_token,'out',s);
-	this.gcode_port.write(s, function () {
-		this.gcode_port.drain(callback);
-	}.bind(this));
-};
+G2.prototype.controlWrite = function(s, callback) { this._write(this.control_port, s, callback); }
+G2.prototype.gcodeWrite = function(s, callback) { this._write(this.gcode_port, s, callback); }
 
 G2.prototype.clearAlarm = function() {
 	this.watchdog.start();
@@ -231,8 +247,6 @@ G2.prototype.setUnits = function(units, callback) {
 		this.once('status', function(status) {
 			callback(null);
 		});
-		this.runString(gc);
-	    this.runString("G55");
     }.bind(this));
 }
 
@@ -363,7 +377,6 @@ G2.prototype.handleStatusReport = function(response) {
 			if(key === 'unit') {
 				value = value === 0 ? 'in' : 'mm';
 			}
-
 			this.status[key] = value;
 		}
 
@@ -406,6 +419,9 @@ G2.prototype.handleStatusReport = function(response) {
 					if(expectation[stat] === null) {
 						this.expectations.push(expectation);
 					} else {
+						//console.log(expectation)
+						//console.log(stat)
+						//console.log(expectation[stat].toString())
 						expectation[stat](this);
 					}
 				} else if(null in expectation) {
@@ -418,6 +434,9 @@ G2.prototype.handleStatusReport = function(response) {
 		this.hold = this.status.hold !== undefined ? this.status.hold : this.hold;
 
 		// Emit status no matter what
+		if('stat' in response.sr) {
+			this.emit('stat', response.sr.stat)
+		}
 		this.emit('status', this.status);
 	}
 };
@@ -476,7 +495,10 @@ G2.prototype.feedHold = function(callback) {
 	this.flooded = false;
 	typeof callback === 'function' && this.once('state', callback);
 	log.debug("Sending a feedhold");
-	this.controlWriteAndDrain('!', function() {
+	if(this.stream) {
+		this.stream.pause();
+	}
+	this.controlWrite('!', function() {
 		log.debug("Drained.");
 	});
 };
@@ -489,23 +511,63 @@ G2.prototype.queueFlush = function(callback) {
 };
 
 G2.prototype.resume = function() {
+	var thisPromise = _promiseCounter;
+	log.info("Creating promise " + thisPromise);
+	_promiseCounter += 1;
+	var deferred = Q.defer();
+	var that = this;
+	var onStat = function(stat) {
+		if(stat !== STAT_RUNNING) {
+			if(this.quit_pending && stat === STAT_HOLDING) {
+				return;
+			}
+			that.removeListener('stat', onStat);
+			log.info("Resolving promise (resume): " + thisPromise)
+			deferred.resolve(stat);
+		}
+	}
+
+	this.on('stat', onStat);
 	this.controlWrite('~'); //cycle start command character
+
 	this.pause_flag = false;
+	if(this.stream) {
+		this.stream.resume();
+	}
+	return deferred.promise;
 };
 
 
 G2.prototype.quit = function() {
 	if(!this.quit_pending) {
-        this.quit_pending = true;
+      this.quit_pending = true;
+			this.pause_flag = false;
 	    this.gcode_queue.clear();
 	    this.command_queue.clear();
 	    //this.gcodeWrite('\x04{clr:n}\n');
-			this.gcodeWriteAndDrain('!%\n');
+
+			var thisPromise = _promiseCounter;
+			log.info("Creating promise " + thisPromise);
+			_promiseCounter += 1;
+			var deferred = Q.defer();
+			var that = this;
+			var onStat = function(stat) {
+				if(stat !== STAT_RUNNING) {
+					if(this.quit_pending && stat === STAT_HOLDING) {
+						return;
+					}
+					that.removeListener('stat', onStat);
+					log.info("Resolving promise (quit): " + thisPromise)
+					deferred.resolve(stat);
+				}
+			}
+
+			this.on('stat', onStat);
+			this.gcodeWrite('!%\n', function() { log.debug('Drained.'); });
+			return deferred.promise;
 		} else {
 			log.warn("Not quitting because one is pending already");
 		}
-    //this.command('{clr:n}');
-	//this.controlWriteAndDrain('\x04');
 }
 
 G2.prototype.get = function(key, callback) {
@@ -643,70 +705,80 @@ G2.prototype.command = function(obj) {
 		cmd = cmd.replace(/"/g, '');
 		this.command_queue.enqueue(cmd);
 	}
-	if(this.response_count < RESPONSE_LIMIT) {
+	//if(this.response_count < RESPONSE_LIMIT) {
 		this.sendMore();
-	}
+	//} else {
+//		console.warn("Not sending more on command");
+//	}
 };
 
 // Send a (possibly multi-line) string
 // An M30 will be placed at the end to put the machine back in the "idle" state
 G2.prototype.runString = function(data, callback) {
-	this.runSegment(data +"\nM30\n", callback);
+	//this.runSegment(data +"\nM30\n", callback);
+	log.debug("CALLING runString with '" + data + "'")
+	var stringStream = new stream.Readable();
+	stringStream.push(data + "\n");
+	stringStream.push("M30\n");
+	stringStream.push(null);
+	return this.runStream(stringStream);
 };
 
-G2.prototype.runImmediate = function(data, callback) {
-	this.expectStateChange( {
-		'end':callback,
-		'stop':callback,
-		'timeout':function() {
-			callback(new Error("Timeout while running immediate gcode"));
-		}
-	});
-	this.runString(data);
+G2.prototype.runList = function(l, callback) {
+	if(callback) {
+			this.expectStateChange( {
+			'end':function() { callback(); },
+			'stop':function() { callback(); },
+			'timeout':function() {
+				callback(new Error("Timeout while runList()"));
+			}
+		});
+	}
+	var stringStream = new stream.Readable();
+	for(var i=0; i<l.length; i++) {
+		stringStream.push(l[i] + "\n");
+	}
+	stringStream.push(null);
+	return this.runStream(stringStream);
 }
 
-// Send a (possibly multi-line) string
-G2.prototype.runSegment = function(data, callback) {
-	line_count = 0;
+G2.prototype.runStream = function(s) {
+	// Track the promise created (debug)
+	var thisPromise = _promiseCounter;
+	log.info("Creating promise " + thisPromise);
+	_promiseCounter += 1;
 
-	// Divide string into a list of lines
-	lines = data.split('\n');
-
-	// Cleanup the lines and enqueue
-	for(var i=0; i<lines.length; i++) {
-		line = lines[i].trim().toUpperCase();
-		if(line) {
-			line_count += 1;
-			if(callback) {
-				callback.line = line_count;
+	// Create a promise to be fulfilled when this run stops (for any reason)
+	var deferred = Q.defer();
+	try {
+		this._createStream();
+		var that = this;
+		var onStat = function(stat) {
+			if(stat !== STAT_RUNNING) {
+				if(this.quit_pending && stat === STAT_HOLDING) {
+					return;
+				}
+				that.removeListener('stat', onStat);
+				log.info("Resolving promise " + thisPromise)
+				deferred.resolve(stat);
 			}
-			this.gcode_queue.enqueue(line);
 		}
+		this.on('stat', onStat);
+		s.pipe(this.stream);
+	} catch(e) {
+		log.info("Rejecting promise " + thisPromise)
+		deferred.reject(e);
 	}
+	return deferred.promise;
+}
 
-	this.lines_sent = 0;
-	this.sendMore();
+G2.prototype.runFile = function(filename, callback) {
+	var stream = fs.createReadStream(filename);
+	return this.runStream(stream, callback);
+}
 
-	// Kick off the run if any lines were queued
-	if(line_count > 0) {
-		this.pause_flag = false;
-		typeof callback === "function" && callback(null);
-	} else {
-		typeof callback === "function" && callback(new Error("No G-codes were present in the provided string"));
-	}
-};
-
-G2.prototype.runGCodes = function(codes, callback) {
-	if(codes.length > 0) {
-		this.pause_flag = false;
-	}
-	codes.forEach(function(code) {
-		if(code.trim()) {
-			this.gcode_queue.enqueue(code);
-		}
-	}.bind(this));
-	this.sendMore();
-	typeof callback === "function" && callback(null);
+G2.prototype.runImmediate = function(data, callback) {
+	return this.runString(data);
 }
 
 G2.prototype.sendMore = function() {
@@ -718,9 +790,14 @@ G2.prototype.sendMore = function() {
 		if(this.command_queue.getLength() > 0 && !this.pause_flag) {
 			codes = this.command_queue.multiDequeue(count);
 			codes.forEach(function(code) {
-				this.controlWrite(code + '\n');
-				this.response_count += 1;
+				if(code.trim()) {
+					this.controlWrite(code + '\n');
+					this.response_count += 1;
+					console.log(this.response_count);
+				}
 			}.bind(this));
+		} else {
+			//log.error("Not writing to control due to lapse in responses")
 		}
 	}
 
@@ -729,14 +806,21 @@ G2.prototype.sendMore = function() {
 		if(this.gcode_queue.getLength() > 0) {
 			codes = this.gcode_queue.multiDequeue(count);
 			codes.forEach(function(code) {
-				this.gcodeWrite(code + '\n');
-				this.response_count += 1;
+				if(code.trim()) {
+					this.gcodeWrite(code + '\n');
+					this.response_count += 1;
+					console.log(this.response_count);
+				}
 			}.bind(this));
 		}
+	}
+	else {
+		//log.error("Not writing to gcode due to lapse in responses")
 	}
 };
 
 G2.prototype.setMachinePosition = function(position, callback) {
+	console.log("SETTING MACHINE POSITION")
 	var gcode = ["G21"];
 	['x','y','z','a','b','c','u','v','w'].forEach(function(axis) {
 		if(position[axis] != undefined) {
@@ -747,7 +831,7 @@ G2.prototype.setMachinePosition = function(position, callback) {
 	if(this.status.unit === 'in') {
 		gcode.push('G20');
 	}
-	this.runGCodes(gcode, callback);
+	this.runList(gcode, callback);
 }
 
 // Function works like "once()" for a state change

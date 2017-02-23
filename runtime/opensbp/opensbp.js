@@ -615,7 +615,7 @@ SBPRuntime.prototype._dispatch = function(callback) {
 		if(this.machine) {
 			// Dispatch the g-codes and look for the tool to start running them
 			//log.info("dispatching a chunk: " + this.current_chunk);
-
+/*
 			var hold_function = function(driver) {
 				log.info("Expected hold and got one.")
 				// On hold, handle event that caused the hold
@@ -689,8 +689,25 @@ SBPRuntime.prototype._dispatch = function(callback) {
 			}.bind(this);
 
 			stopped_function(this.driver);
-			var segment = this.current_chunk.join('\n') + '\n';
-			this.driver.runSegment(segment);
+//			var segment = this.current_chunk.join('\n') + '\n';
+*/
+			this.driver.runList(this.current_chunk).then(function(stat) {
+				switch(stat) {
+					case this.driver.STAT_HOLDING:
+					break;
+
+					case this.driver.STAT_END:
+					break;
+
+					case this.driver.STAT_ALARM:
+					break;
+
+					default:
+						log.error("Unhandled stat: " + stat);
+						break;
+				}
+			});
+			//this.driver.runSegment(segment);
 			this.current_chunk = [];
 			return true;
 		} else { // Not connected to a real tool
@@ -1162,7 +1179,7 @@ SBPRuntime.prototype._setUnits = function(units) {
 	this.maxjerk_b = convert(this.jogspeed_b);
 	this.maxjerk_c = convert(this.jogspeed_c);
 	this.cmd_posx = convert(this.cmd_posx);
-	this.cmd_posy = convert(this.cmd_posy); 
+	this.cmd_posy = convert(this.cmd_posy);
 	this.cmd_posz = convert(this.cmd_posz);
 	this.units = units
 }
@@ -1433,8 +1450,8 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 	['X','Y','Z','A','B','C','I','J','K','F'].forEach(function(key){
 		var c = pt[key];
 		if(c !== undefined) {
-			
-			if(isNaN(c)) { 
+
+			if(isNaN(c)) {
 				var err = new Error("Invalid " + key + " argument: " + c );
 				log.error(err);
 				throw err;
@@ -1479,10 +1496,10 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 		['X','Y','Z','A','B','C','I','J','K','F'].forEach(function(key){
 			var v = Pt[key];
 			if(v !== undefined) {
-				if(isNaN(v)) { 
+				if(isNaN(v)) {
 					var err = new Error("Invalid " + key + " argument: " + v);
 					log.error(err);
-					throw(err); 
+					throw(err);
 				}
 				gcode += (key + v.toFixed(5));
 			}
@@ -1549,7 +1566,7 @@ SBPRuntime.prototype.transformation = function(TranPt){
             TranPt = tform.rotate(TranPt,angle,PtRotX,PtRotY,this.cmd_StartX,this.cmd_StartY);
         }
 	}
-	////No angle being passed to shear functions so they return null 
+	////No angle being passed to shear functions so they return null
 	if (this.transforms.shearx.apply != false){
 		log.debug("ShearX: " + JSON.stringify(this.transforms.shearx));
 		TranPt = tform.shearX(TranPt);

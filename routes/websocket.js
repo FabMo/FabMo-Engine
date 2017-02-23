@@ -22,13 +22,20 @@ function setupAuthentication(server){
     var cookie = parseCookie(handshakeData.headers.cookie);
 
 		if(!cookie['session']){
-			return next(new Error('No session provided.'));
+			var err = new Error('No session provided.');
+			log.error(err);
+			console.dir(cookie);
+			return next(err);
 		}
     // Pull out the user from the cookie by using the decode function
     handshakeData.sessionID = sessions.util.decode({cookieName: 'session', secret:server.cookieSecret}, cookie['session']);
 
 		if(!handshakeData.sessionID){
-			return next(new Error('Wrong session'));
+			var err = new Error('Wrong session.');
+			log.error(err);
+			console.dir(handshakeData)
+			console.dir(cookie)
+			return next(err);
 		}
     next();
 	});
@@ -98,6 +105,8 @@ var onPrivateConnect = function(socket) {
 		//console.log("user kickout event");
 		if(user._id == userId){
 			socket.emit('authentication_failed','kicked out');
+			console.dir(authentication.getCurrentUser());
+			console.dir(userId);
 			return socket.disconnect();
 		}
 	});
@@ -109,6 +118,8 @@ var onPrivateConnect = function(socket) {
 
 		if(!authentication.getCurrentUser() || authentication.getCurrentUser()._id != userId){
 			socket.emit('authentication_failed','not authenticated');
+			console.dir(authentication.getCurrentUser());
+			console.dir(userId);
 			return socket.disconnect();
 		} // make sure that if the user logout, he can't talk through the socket anymore.
 		if('rt' in data) {

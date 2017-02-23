@@ -475,14 +475,7 @@ Machine.prototype._runFile = function(filename) {
 		if(err) {
 			return log.error(err);
 		}
-		fs.readFile(filename, 'utf8', function (err,data) {
-			if (err) {
-				log.error(err);
-				return;
-			} else {
-				runtime.runString(data, function() {});
-			}
-		}.bind(this));
+		runtime.runFile(filename);
 	});
 };
 
@@ -684,11 +677,11 @@ Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 			if(err) {
 				log.error(err);
 			} else {
-				runtime.executeCode(code, function(err, data) {
+				runtime.executeCode(code); /*, function(err, data) {
 					this.authorize();
-					var callback = callback || function() {};
-					callback(err, data);
-				}.bind(this));
+					//var callback = callback || function() {};
+					//callback(err, data);
+				}.bind(this));*/
 			}
 		}.bind(this));
 	}
