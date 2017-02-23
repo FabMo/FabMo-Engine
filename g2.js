@@ -28,29 +28,14 @@ var STAT_PANIC = 13;
 var CMD_TIMEOUT = 10000;
 var EXPECT_TIMEOUT = 300000;
 
-// When jogging, "keepalive" jog commands must arrive faster than this interval (ms)
-// This can be slowed down if necessary for spotty connections, but a slow timeout means
-// the machine has more time to run away before stopping.
-var JOG_TIMEOUT = 500;
 
 var GCODE_BLOCK_SEND_SIZE = 4;
 var GCODE_MIN_LINE_THRESH = 250;
 
-// Map used by the jog command to turn incoming direction specifiers to g-code
-var JOG_AXES = {'x':'X',
-				'-x':'X-',
-				'y':'Y',
-				'-y':'Y-',
-				'z':'Z',
-				'-z':'Z-',
-				'a':'A',
-				'-a':'A-',
-				'b':'B',
-				'-b':'B-',
-				'c':'C',
-				'-c':'C-'};
-
 var RESPONSE_LIMIT = 4;
+
+var SINGLE_PORT_OVERRIDE = true;
+
 // Error codes defined by G2
 // See https://github.com/synthetos/g2/blob/edge/TinyG2/tinyg2.h for the latest error codes and messages
 try {
@@ -70,14 +55,9 @@ function G2() {
 	this.command_queue = new Queue();
 
 	this.watchdog = new Watchdog(10000,14); //time, exit code
+
 	this.pause_flag = false;
 	this.connected = false;
-
-	// Jogging state
-	this.jog_stop_pending = false;
-	this.jog_direction = null;
-	this.jog_command = null;
-	this.jog_heartbeat = null;
 
 	// Feedhold/flush
 	this.quit_pending = false;
@@ -115,12 +95,15 @@ G2.prototype.connect = function(control_path, gcode_path, callback) {
 	// Open both ports
 	log.info('Opening control port ' + control_path);
 	this.control_port = new serialport.SerialPort(control_path, {rtscts:true}, false);
-	if(control_path !== gcode_path) {
+	if(control_path !== gcode_path && !SINGLE_PORT_OVERRIDE) {
 		log.info("Dual USB since control port and gcode port are different. (" + this.control_path + "," + this.gcode_path + ")");
 		this.gcode_port = new serialport.SerialPort(gcode_path, {rtscts:true}, false);
+		this.control_token = 'C';
+		this.gcode_token = 'D';
 	} else {
 		log.info("Single USB since control port and gcode port are the same. (" + this.control_path + ")");
 		this.gcode_port = this.control_port;
+		this.control_token = this.gcode_token = 'S';
 	}
 
 	// Handle errors
@@ -180,7 +163,10 @@ G2.prototype.disconnect = function(callback) {
 
 // Log serial errors.  Most of these are exit-able offenses, though.
 G2.prototype.onSerialError = function(data) {
-	//if(this.connect_callback) {
+	log.error(new Error('There was a serial error'))
+    log.error(data)
+
+    //if(this.connect_callback) {
 	//	this.connect_callback(data);
 	//}
 };
@@ -194,16 +180,14 @@ G2.prototype.onSerialClose = function(data) {
 // Write data to the control port.  Log to the system logger.
 G2.prototype.controlWrite = function(s) {
 	this.watchdog.start();
-	t = new Date().getTime();
-	log.g2('--C-' + t + '----> ' + jsesc(s.trim()));
+	log.g2(this.control_token,'out',s);
 	this.control_port.write(s);
 };
 
 // Write data to the gcode port.  Log to the system logger.
 G2.prototype.gcodeWrite = function(s) {
 	this.watchdog.start();
-	t = new Date().getTime();
-	log.g2('--G-' + t + '----> ' + jsesc(s.trim()));
+	log.g2(this.gcode_token,'out',s);
 	this.gcode_port.write(s);
 };
 
@@ -211,7 +195,7 @@ G2.prototype.gcodeWrite = function(s) {
 G2.prototype.controlWriteAndDrain = function(s, callback) {
 	this.watchdog.start();
 	t = new Date().getTime();
-	log.g2('--C-' + t + '----> ' + s);
+	log.g2(this.control_token,'out',s);
 	this.control_port.write(s, function () {
 		this.control_port.drain(callback);
 	}.bind(this));
@@ -220,7 +204,7 @@ G2.prototype.controlWriteAndDrain = function(s, callback) {
 G2.prototype.gcodeWriteAndDrain = function(s, callback) {
 	this.watchdog.start();
 	t = new Date().getTime();
-	log.g2('--G-' + t + '----> ' + s);
+	log.g2(this.gcode_token,'out',s);
 	this.gcode_port.write(s, function () {
 		this.gcode_port.drain(callback);
 	}.bind(this));
@@ -230,60 +214,6 @@ G2.prototype.clearAlarm = function() {
 	this.watchdog.start();
 	this.command({"clear":null});
 };
-
-// Start or continue jogging in the direction provided, which is one of x,-x,y,-y,z-z,a,-a,b,-b,c,-c
-G2.prototype.jog = function(direction) {
-
-	var MOVES = 10;
-	var FEED_RATE = 60.0;			// in/min
-	var MOVE_DISTANCE = 0.05;		// in
-	var START_DISTANCE = 0.001; 	// sec
-	var START_RATE = 10.0;
-
-	// Normalize the direction provided by the user
-	direction = String(direction).trim().toLowerCase().replace(/\+/g,"");
-
-	if ( !(direction in JOG_AXES) && !jog_stop_pending ) {
-		this.stopJog();
-	}
-	else if(this.jog_direction === null) {
-		this.jog_stop_pending = false;
-
-		// Build a block of short moves to start jogging
-		// Starter move (plans down to zero no matter what so we make it short)
-		var d = JOG_AXES[direction];
-
-		// Continued burst of short moves
-		var starting_cmd = 'G91 G1 ' + d + START_DISTANCE + ' F' + START_RATE;
-		var move = 'G91 G1 ' + d + MOVE_DISTANCE + ' F' + FEED_RATE;
-
-		// Compile moves into a list
-		var codes = [starting_cmd];
-
-		// Create string buffer of moves from list
-		for(var i=0; i<MOVES; i++) {codes.push(move);}
-
-		// The queue report handler will keep up the jog if these are set
-		this.jog_command = move;
-		this.jog_direction = direction;
-
-		// Build serial string and send
-		try {
-			this.runGCodes(codes);
-		} finally {
-			// Timeout jogging if we don't get a keepalive from the client
-			this.jog_heartbeat = setTimeout(function() {
-				log.warn("Jog abandoned!  Stopping due to timeout.");
-				this.stopJog();
-			}.bind(this), JOG_TIMEOUT);
-		}
-	} else {
-		if(direction == this.jog_direction) {
-			this.jog_keepalive();
-		}
-	}
-};
-
 
 G2.prototype.setUnits = function(units, callback) {
 	if(units === 0 || units == 'in') {
@@ -302,7 +232,8 @@ G2.prototype.setUnits = function(units, callback) {
 			callback(null);
 		});
 		this.runString(gc);
-	}.bind(this));
+	    this.runString("G55");
+    }.bind(this));
 }
 
 G2.prototype.requestStatusReport = function(callback) {
@@ -321,7 +252,8 @@ G2.prototype.onWAT = function(data) {
 		if(c === '\n') {
 			string = this.current_gcode_data.join('');
 			t = new Date().getTime();
-			log.g2('<-G--' + t + '---- ' + string);
+			log.g2('D','in',string);
+			//log.g2('<-G--' + t + '---- ' + string);
 			this.current_gcode_data = [];
 		} else {
 			this.current_gcode_data.push(c);
@@ -341,7 +273,8 @@ G2.prototype.onData = function(data) {
 		if(c === '\n') {
 			var json_string = this.current_data.join('');
 			t = new Date().getTime();
-			log.g2('<-C--' + t + '---- ' + json_string);
+			log.g2('S','in',json_string);
+			//log.g2('<-C--' + t + '---- ' + json_string);
 			obj = null;
 			try {
 				obj = JSON.parse(json_string);
@@ -365,12 +298,8 @@ G2.prototype.onData = function(data) {
 };
 
 G2.prototype.handleQueueReport = function(r) {
-	// Deal with jog mode
 	var qo = r.qo || 0;
-	if(this.jog_command && (qo > 0)) {
-		this.runGCodes(this.jog_command);
-		return;
-	}
+	// Pass
 };
 
 G2.prototype.handleFooter = function(response) {
@@ -391,8 +320,8 @@ G2.prototype.handleExceptionReport = function(response) {
 		this._lastExceptionReport = response.er;
 		var stat = response.er.st;
 		if(((stat === 204) || (stat === 207)) && this.quit_pending) {
-			this.command("{clr:n}");
-			this.command("M30");
+			//this.command("{clr:n}");
+			//this.command("M30");
 			this.quit_pending = false;
 		}
 	}
@@ -460,6 +389,16 @@ G2.prototype.handleStatusReport = function(response) {
 					this.flushcallback = null;
 				}
 			}
+
+      if(this.quit_pending) {
+        if(response.sr.stat === STAT_STOP || response.sr.stat === STAT_END) {
+  				log.info("!!! Clearing the quit pending state.")
+  				this.quit_pending = false;
+  			} else {
+          log.info("!!! NOT clearing the quit pending state ")
+        }
+      }
+
 			if(this.expectations.length > 0) {
 				var expectation = this.expectations.pop();
 				var stat = states[this.status.stat];
@@ -556,11 +495,17 @@ G2.prototype.resume = function() {
 
 
 G2.prototype.quit = function() {
-	this.quit_pending = true;
-	this.gcode_queue.clear();
-	this.command_queue.clear();
-	this.command('{clr:n}');
-	this.controlWriteAndDrain('\x04');
+	if(!this.quit_pending) {
+        this.quit_pending = true;
+	    this.gcode_queue.clear();
+	    this.command_queue.clear();
+	    //this.gcodeWrite('\x04{clr:n}\n');
+			this.gcodeWriteAndDrain('!%\n');
+		} else {
+			log.warn("Not quitting because one is pending already");
+		}
+    //this.command('{clr:n}');
+	//this.controlWriteAndDrain('\x04');
 }
 
 G2.prototype.get = function(key, callback) {
@@ -706,7 +651,7 @@ G2.prototype.command = function(obj) {
 // Send a (possibly multi-line) string
 // An M30 will be placed at the end to put the machine back in the "idle" state
 G2.prototype.runString = function(data, callback) {
-	this.runSegment(data + "\nM30\n", callback);
+	this.runSegment(data +"\nM30\n", callback);
 };
 
 G2.prototype.runImmediate = function(data, callback) {
@@ -765,9 +710,12 @@ G2.prototype.runGCodes = function(codes, callback) {
 }
 
 G2.prototype.sendMore = function() {
+  if(this.pause_flag) {
+    return;
+  }
 	if(this.response_count < RESPONSE_LIMIT) {
 		var count = (RESPONSE_LIMIT - this.response_count);
-		if(this.command_queue.getLength() > 0) {
+		if(this.command_queue.getLength() > 0 && !this.pause_flag) {
 			codes = this.command_queue.multiDequeue(count);
 			codes.forEach(function(code) {
 				this.controlWrite(code + '\n');

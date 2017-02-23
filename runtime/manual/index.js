@@ -1,8 +1,9 @@
 var log = require('../../log').logger('manual');
+var config = require('../../config');
 
 var T_RENEW = 500;
 var SAFETY_FACTOR = 5;
-var RENEW_SEGMENTS = 4;
+var RENEW_SEGMENTS = 2;
 
 function ManualRuntime() {
 	this.machine = null;
@@ -29,6 +30,7 @@ ManualRuntime.prototype.connect = function(machine) {
 
 ManualRuntime.prototype.disconnect = function() {
 	if(this.ok_to_disconnect) {
+		log.info("Disconnecting manual runtime");
 		this.driver.removeListener('status', this.status_handler);
 		this._changeState("idle");
 	} else {
@@ -41,7 +43,7 @@ ManualRuntime.prototype._changeState = function(newstate, message) {
 		this.ok_to_disconnect = true;
 		var callback = this.completeCallback || function() {};
 		this.completeCallback = null;
-		callback();
+		config.driver.restoreSome(['zl'], callback)
 	} else {
 		this.ok_to_disconnect = false;
 	}
@@ -92,6 +94,7 @@ ManualRuntime.prototype._onG2Status = function(status) {
 			}
 
 			if((status.stat === this.driver.STAT_STOP || status.stat === this.driver.STAT_END) && status.hold === 0) {
+				this.moving = false;
 				this._changeState("idle");
 				break;
 			}
@@ -153,7 +156,8 @@ ManualRuntime.prototype.executeCode = function(code, callback) {
 			break;
 
 		default:
-			log.error("Don't know what to do with '" + code.cmd + "' in manual command.")
+			log.error("Don't know what to do with '" + code.cmd + "' in manual command.");
+			break;
 	}
 }
 
@@ -182,7 +186,9 @@ ManualRuntime.prototype.startMotion = function(axis, speed) {
 		this.currentDirection = dir;
 		this.renewDistance = speed*(T_RENEW/60000)*SAFETY_FACTOR;
 		this.moving = this.keep_moving = true;
-		this.renewMoves();
+		this.driver.set('zl',0,function() {
+			this.renewMoves();
+		}.bind(this));
 	}
 };
 
@@ -197,17 +203,26 @@ ManualRuntime.prototype.renewMoves = function() {
 		this.driver.runGCodes(moves);
 		setTimeout(this.renewMoves.bind(this), T_RENEW)
 	} else {
-		if(this.machine.status.state != "stopped") {
+		if(this.moving) {
 			this.stopMotion();
 		}
+//		if(this.machine.status.state != "stopped") {
+//			this.stopMotion();
+//		}
 	}
 }
 
 ManualRuntime.prototype.stopMotion = function() {
 	if(this._limit()) { return; }
-	this.keep_moving = false;
-	this.moving = false;
-	this.driver.quit();
+	if(this.moving) {
+		log.debug("Runtime stopMotion()");
+		log.stack();
+
+		this.keep_moving = false;
+		//this.moving = false;
+
+		this.driver.quit();
+	}
 }
 
 ManualRuntime.prototype.fixedMove = function(axis, speed, distance) {
@@ -231,6 +246,7 @@ ManualRuntime.prototype.pause = function() {
 }
 
 ManualRuntime.prototype.quit = function() {
+	log.debug("Runtime quit()");
 	this.driver.quit();
 }
 
