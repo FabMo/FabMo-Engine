@@ -544,7 +544,6 @@ G2.prototype.quit = function() {
 			this.pause_flag = false;
 	    this.gcode_queue.clear();
 	    this.command_queue.clear();
-	    //this.gcodeWrite('\x04{clr:n}\n');
 
 			var thisPromise = _promiseCounter;
 			log.info("Creating promise " + thisPromise);
@@ -563,7 +562,7 @@ G2.prototype.quit = function() {
 			}
 
 			this.on('stat', onStat);
-			this.gcodeWrite('!%\n', function() { log.debug('Drained.'); });
+			this.gcodeWrite('!%\x04{clr:n}\n', function() { log.debug('Drained.'); });
 			return deferred.promise;
 		} else {
 			log.warn("Not quitting because one is pending already");
@@ -738,38 +737,37 @@ G2.prototype.runList = function(l, callback) {
 	for(var i=0; i<l.length; i++) {
 		stringStream.push(l[i] + "\n");
 	}
+	stringStream.push("M30\n");
 	stringStream.push(null);
 	return this.runStream(stringStream);
 }
 
-G2.prototype.runStream = function(s) {
+G2.prototype._createStatePromise = function(states) {
 	// Track the promise created (debug)
 	var thisPromise = _promiseCounter;
 	log.info("Creating promise " + thisPromise);
 	_promiseCounter += 1;
-
-	// Create a promise to be fulfilled when this run stops (for any reason)
 	var deferred = Q.defer();
-	try {
-		this._createStream();
-		var that = this;
-		var onStat = function(stat) {
-			if(stat !== STAT_RUNNING) {
-				if(this.quit_pending && stat === STAT_HOLDING) {
-					return;
-				}
+	var that = this;
+	var onStat = function(stat) {
+		for(var i=0; i<states.length; i++) {
+			if(stat === states[i]) {
 				that.removeListener('stat', onStat);
-				log.info("Resolving promise " + thisPromise)
+				log.info("Resolving promise " + thisPromise + " because of state " + stat + " which is one of " + states)
 				deferred.resolve(stat);
 			}
 		}
-		this.on('stat', onStat);
-		s.pipe(this.stream);
-	} catch(e) {
-		log.info("Rejecting promise " + thisPromise)
-		deferred.reject(e);
 	}
+	this.on('stat', onStat);
 	return deferred.promise;
+}
+
+G2.prototype.runStream = function(s) {
+		// Create a promise to be fulfilled when this run stops (for any reason)
+		this._createStream();
+		var promise = this._createStatePromise([STAT_STOP, STAT_END])
+		s.pipe(this.stream);
+		return promise;
 }
 
 G2.prototype.runFile = function(filename, callback) {

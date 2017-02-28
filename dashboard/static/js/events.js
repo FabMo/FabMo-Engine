@@ -2,6 +2,9 @@ define(function(require) {
     var $ = require('jquery');
     var toastr = require('./libs/toastr.min');
 
+
+
+
     // Events and keypress handlers in the FabMo-Dashboard
 
     /********** Layout Resize Functions **********/
@@ -216,6 +219,28 @@ define(function(require) {
         });
     };
 
+    
+    /********** Disable Menus if in Tour **********/
+    
+   
+    $(window).on('hashchange', function(e){
+         checkifTour();
+    });
+
+    function checkifTour(){
+         var url = window.location.href; 
+         var final = url.substr(url.lastIndexOf('/') + 1);
+         console.log(final); 
+         if (final === 'tour'){
+             $('.off-canvas-list, .widget').addClass('blur');
+             $('.tour-filter').css('height', '100%');
+
+         } else {
+             $('.off-canvas-list, .widget').removeClass('blur');
+             $('.tour-filter').css('height', '0');
+         }
+    }
+
 
     /********** Document Ready Init **********/
     $(document).ready(function() {
@@ -224,6 +249,7 @@ define(function(require) {
         rightMenuLoad();
         resizedoc();
         //If size of the screen change, we resize the main & app container
+        checkifTour();
         $(window).resize(function() {
             resizedoc();
         });

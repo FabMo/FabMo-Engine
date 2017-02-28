@@ -6,7 +6,6 @@ var login = function(req, res, next) {
   authentication.passport.authenticate('local', function(err, user, info) {
 
     if (err) {
-      log.error(err);
       return next(err); // will generate a 500 error
     }
     // Generate a JSON response reflecting authentication status
@@ -17,6 +16,7 @@ var login = function(req, res, next) {
       if(err){
         return next(err);
       }
+      authentication.setCurrentUser(user);
       return res.send({ status:'success', message : 'authentication succeeded' });
     });
   })(req, res, next);
@@ -49,13 +49,10 @@ var addUser = function(req, res, next) {
 };
 
 var logout = function(req, res, next) {
-  try {
-    req.logout();
-    authentication.setCurrentUser(null);
-    res.redirect('',next);
-  } catch(e) {
-    log.error(e);
-  }
+  log.error(req);
+  req.logout();
+  authentication.setCurrentUser(null);
+  res.redirect('',next);
   return;
 };
 

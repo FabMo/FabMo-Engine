@@ -519,7 +519,7 @@ User.findById = function(id,callback){
 			callback(err,user);
 			return;
 		}else{
-			callback("user doesn't exist !");
+			callback("user doesn't exist!");
 			return;
 		}
 	});

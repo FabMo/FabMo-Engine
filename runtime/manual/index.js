@@ -50,7 +50,6 @@ ManualRuntime.prototype._changeState = function(newstate, message) {
 		if(this.stream) {
 			this.stream.end();
 		}
-		config.driver.restoreSome(['zl'], callback)
 	} else {
 		this.ok_to_disconnect = false;
 	}
@@ -208,6 +207,7 @@ ManualRuntime.prototype.startMotion = function(axis, speed) {
 					this.moving = false;
 					this.stream = null;
 					this._changeState("idle");
+					config.driver.restoreSome(['zl'], callback)
 				}.bind(this));
 			} else {
 				throw new Error("Trying to create a new motion stream when one already exists!");

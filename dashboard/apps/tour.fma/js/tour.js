@@ -63,6 +63,9 @@ $( document ).ready(function() {
     counter++
     checkCounter();
     $('.tour-card').css('width', cardWidth);
+    $('.tour-decloration').click(function(){
+        fabmo.launchApp('home');
+    });
 }
 
 

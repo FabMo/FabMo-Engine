@@ -35,12 +35,11 @@ GCodeRuntime.prototype.pause = function() {
 }
 
 GCodeRuntime.prototype.quit = function() {
-	this.driver.quit().then(this._handleStop.bind(this));
+	this.driver.quit();
 }
 
 GCodeRuntime.prototype.resume = function() {
-	this._changeState("running");
-	this.driver.resume().then(this._handleStop.bind(this));
+	this.driver.resume();
 }
 
 GCodeRuntime.prototype._changeState = function(newstate) {
@@ -63,83 +62,18 @@ GCodeRuntime.prototype._limit = function() {
 }
 
 GCodeRuntime.prototype._onDriverStatus = function(status) {
-
 	// Update the machine copy of g2 status variables
 	for (var key in this.machine.status) {
 		if(key in status) {
 			this.machine.status[key] = status[key];
 		}
 	}
-
 	// Update the machine copy of g2 status variables
 	for (key in status) {
 		this.status_report[key] = status[key];
 	}
-	/*
-	switch(this.status_report.stat) {
-		case this.driver.STAT_INTERLOCK:
-		case this.driver.STAT_SHUTDOWN:
-		case this.driver.STAT_PANIC:
-			return this._die();
-			break;
-		case this.driver.STAT_ALARM:
-			if(this._limit()) { return; }
-			break;
-	}
 
-
-	switch(this.machine.status.state) {
-		case "not_ready":
-			// This shouldn't happen.
-			log.error("WAT.");
-			break;
-
-		case "running":
-			switch(this.status_report.stat) {
-				case this.driver.STAT_HOLDING:
-					this._changeState("paused");
-					this.machine.emit('job_pause', this);
-					break;
-				case this.driver.STAT_STOP:
-				case this.driver.STAT_END:
-					this._idle();
-					this.machine.emit('job_complete', this);
-					break;
-			}
-			break;
-
-		case "paused":
-			if(this.status_report.stat === this.driver.STAT_RUNNING) {
-				this._changeState("running");
-				this.machine.emit('job_resume', this);
-				break;
-			}
-			if(this.status_report.stat === this.driver.STAT_STOP || this.status_report.stat === this.driver.STAT_END) {
-				log.debug("MOVING TO THE END STATE")
-				this._idle();
-			}
-			break;
-
-		case "armed":
-		case "idle":
-			if(this.status_report.stat === this.driver.STAT_RUNNING) {
-				this._changeState("running");
-				this.machine.emit('job_resume', this);
-				break;
-			}
-			break;
-
-		case "stopped":
-			switch(this.status_report.stat) {
-				case this.driver.STAT_STOP:
-				case this.driver.STAT_END:
-					this._idle();
-					this.machine.emit('job_complete', this);
-					break;
-			}
-	}*/
 	this.machine.emit('status',this.machine.status);
-
 };
 
 
@@ -218,8 +152,6 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 			}
 		}
 		lines.unshift(mode);
-		//lines.push('M30\n');
-		// TODO no need to stitch this string back together, it's just going to be split again in the driver
 		this.completeCallback = callback;
 		this._changeState("running");
 		return this.driver.runList(lines); //this.machine.status);
@@ -233,24 +165,42 @@ GCodeRuntime.prototype._handleStop = function(stat) {
 		case this.driver.STAT_STOP:
 			this._idle();
 			break;
-		case this.driver.STAT_PAUSE:
-		case this.driver.STAT_HOLDING:
-			this._changeState('paused');
-			break;
 		default:
 			log.error("Unhandled stop state: " + stat);
 			break;
 	}
 }
 
+GCodeRuntime.prototype._handleStateChange = function(stat) {
+	log.info("Handling state change: " + stat)
+	switch(stat) {
+		case this.driver.STAT_HOLDING:
+			this._changeState('paused');
+			break;
+		case this.driver.STAT_RUNNING:
+			this._changeState('running');
+			break;
+		default:
+			break;
+	}
+}
+
 // Run a file given the filename
 GCodeRuntime.prototype.runFile = function(filename, callback) {
+	this.driver.on('stat', this._handleStateChange.bind(this));
 	return this.driver.runFile(filename, callback).then(this._handleStop.bind(this));
 }
 
 // Run the given string as gcode
 GCodeRuntime.prototype.executeCode = function(string, callback) {
-	return this.runString(string).then(this._handleStop.bind(this));
+	var f = this._handleStateChange.bind(this)
+	this.driver.on('stat', f);
+	return this.runString(string)
+		.then(this._handleStop.bind(this))
+		.then(function() {
+			log.info("Unloading state change handler");
+			this.driver.removeListener('stat', f);
+		}.bind(this));
 }
 
 exports.GCodeRuntime = GCodeRuntime;

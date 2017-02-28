@@ -26,8 +26,8 @@
     "font-awesome": "4.6.3",
     "fs-extra": "0.23.1",
     "glob": "5.0.15",
-    "jsesc": "1.0.0",
     "jquery": "2.2.4",
+    "jsesc": "1.0.0",
     "lockfile": "1.0.x",
     "mime": "1.2.11",
     "minimist": "1.1.1",
@@ -79,7 +79,7 @@
   "scripts": {
     "start": "node server.js",
     "debug": "node server.js --debug ",
-    "webpack" : "node_modules/.bin/webpack",
+    "webpack": "node_modules/.bin/webpack",
     "postinstall": "node_modules/.bin/webpack -p",
     "prod": "node_modules/.bin/webpack -p",
     "dev": "node_modules/.bin/webpack && node server.js --debug "
