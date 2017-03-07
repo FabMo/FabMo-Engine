@@ -154,25 +154,21 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 		lines.unshift(mode);
 		this.completeCallback = callback;
 		this._changeState("running");
-		return this.driver.runList(lines); //this.machine.status);
+		return this.driver.runList(lines)
+		.on('stat', this._handleStateChange.bind(this))
+		.then(this._handleStop.bind(this));
+
 	}
 };
 
-GCodeRuntime.prototype._handleStop = function(stat) {
-	log.debug("Handling stop state: " + stat)
-	switch(stat) {
-		case this.driver.STAT_END:
-		case this.driver.STAT_STOP:
-			this._idle();
-			break;
-		default:
-			log.error("Unhandled stop state: " + stat);
-			break;
-	}
+GCodeRuntime.prototype._handleStop = function() {
+	console.log("Handling stop");
+	this._idle();
 }
 
 GCodeRuntime.prototype._handleStateChange = function(stat) {
 	log.info("Handling state change: " + stat)
+	log.stack()
 	switch(stat) {
 		case this.driver.STAT_HOLDING:
 			this._changeState('paused');
@@ -187,20 +183,16 @@ GCodeRuntime.prototype._handleStateChange = function(stat) {
 
 // Run a file given the filename
 GCodeRuntime.prototype.runFile = function(filename, callback) {
-	this.driver.on('stat', this._handleStateChange.bind(this));
-	return this.driver.runFile(filename, callback).then(this._handleStop.bind(this));
+	return this.driver.runFile(filename, callback)
+		.on('stat', this._handleStateChange.bind(this))
+		.then(this._handleStop.bind(this));
 }
 
 // Run the given string as gcode
 GCodeRuntime.prototype.executeCode = function(string, callback) {
-	var f = this._handleStateChange.bind(this)
-	this.driver.on('stat', f);
-	return this.runString(string)
-		.then(this._handleStop.bind(this))
-		.then(function() {
-			log.info("Unloading state change handler");
-			this.driver.removeListener('stat', f);
-		}.bind(this));
+		return this.runString(string)
+		.on('stat', this._handleStateChange.bind(this))
+		.then(this._handleStop.bind(this));
 }
 
 exports.GCodeRuntime = GCodeRuntime;

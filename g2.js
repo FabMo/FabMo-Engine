@@ -47,6 +47,80 @@ try {
 	var G2_ERRORS = {};
 }
 
+// A cycle context is created when you run a stream, and is a way to access driver events in the context of the current run
+function CycleContext(driver, st, promise) {
+		this.done = false;
+		this._firmed = false;
+		this._driver = driver;
+		this._stream = st;
+		this._promise = promise.then(function(value) {
+			console.log("PROMISE COMPLETE")
+			this.firm(); // Firm the tool
+			this.finish();
+		}.bind(this));
+		this.eventHandlers = {}; // eventname -> [listener]
+		this.eventQueue = {}; // eventname -> {f : listener, data : data to pass to listener}
+}
+
+// A cycle context is "firmed" when it has turned over itself as a promise through the then() call, or when the
+// run finishes, whichever comes first.
+CycleContext.prototype.firm = function() {
+		if(this.firmed) { return; }
+		log.debug("Firming the cycle context.")
+		try {
+			for(var event in this.eventQueue) {
+				var handlers = this.eventQueue[event];
+				for(var i=0; i<handlers.length; i++) {
+					handlers[i].f(handlers[i].data);
+				}
+			}
+		} catch(e) {
+			delete this.eventQueue;
+			throw e;
+		}
+		delete this.eventQueue;
+}
+
+// Bind the listener to the provided event name.
+// Events bound in this way are queued, so if any have occurred between the beginning of the run and when
+// the binding occurs, they will be triggered when the cycle is firmed
+CycleContext.prototype.on = function(event, f) {
+	log.debug("Binding to the " + event + " event in the cycle context: " + f);
+	if(event in this.eventHandlers) {
+		this.eventHandlers[event].push(f);
+	} else {
+		this.eventHandlers[event] = [f];
+	}
+	return this;
+}
+
+// Return a promise that resolves when the cycle is complete (Q Promises)
+CycleContext.prototype.then = function(f) {
+	this.firm();
+	return this._promise.then(function() {
+		console.log("Resolving contexts promise");
+		console.log(f);
+		return f();
+	});
+}
+
+CycleContext.prototype.finish = function() {
+	log.debug("Finishing up the cycle context.")
+		// dunno
+}
+
+// Emit the provided data to all the listeners to the subscribed event
+CycleContext.prototype.emit = function(event, data) {
+		var handlers = this.eventHandlers[event];
+		//console.log(this.eventHandlers)
+
+		if(handlers) {
+			for(var i=0; i<handlers.length; i++) {
+				handlers[i](data);
+			}
+		}
+}
+
 // G2 Constructor
 function G2() {
 	this.current_data = [];
@@ -78,6 +152,7 @@ function G2() {
 	this.lines_sent = 0;
 
 	this.response_count = 1;
+	this.context = null;
 
 	// Event emitter inheritance and behavior setup
 	events.EventEmitter.call(this);
@@ -85,12 +160,13 @@ function G2() {
 }
 util.inherits(G2, events.EventEmitter);
 
-G2.prototype._createStream = function() {
-	if(this.stream) {
-		throw new Error("Attempt to create new stream over existing stream.");
+G2.prototype._createCycleContext = function() {
+	log.debug("Creating a cycle context.")
+	if(this.context) {
+		throw new Error("Cannot create a new cycle context.  One already exists.");
 	}
-	this.stream = new stream.PassThrough();
-	this.stream.on('data', function(chunk) {
+	var st = new stream.PassThrough();
+	st.on('data', function(chunk) {
 		var line = [];
 		chunk = chunk.toString();
 		for(var i=0; i<chunk.length; i++) {
@@ -103,19 +179,24 @@ G2.prototype._createStream = function() {
 					this.sendMore();
 					var putback = chunk.slice(i++);
 					if(putback) {
-						this.stream.unshift(chunk.slice(i++));
+						this.context._stream.unshift(chunk.slice(i++));
 					}
 					return;
 			}
 		}
 	}.bind(this));
-	this.stream.on('end', function() {
+	st.on('end', function() {
 		log.debug("Stream END event.")
-		this.stream = null;
 	}.bind(this));
-	this.stream.on('pipe', function() {
+	st.on('pipe', function() {
 		log.debug("Stream PIPE event");
 	})
+	var promise = this._createStatePromise([STAT_END]).then(function() {
+		console.log("clearing driver context")
+		this.context = null;
+		return this;
+	}.bind(this))
+	this.context = new CycleContext(this, st, promise);
 }
 // Actually open the serial port and configure G2 based on stored settings
 G2.prototype.connect = function(control_path, gcode_path, callback) {
@@ -244,9 +325,10 @@ G2.prototype.setUnits = function(units, callback) {
 		return callback(new Error('Invalid unit setting: ' + units));
 	}
 	this.set('gun', units, function() {
-		this.once('status', function(status) {
+		/*this.once('status', function(status) {
 			callback(null);
-		});
+		});*/
+		callback(null);
     }.bind(this));
 }
 
@@ -404,9 +486,10 @@ G2.prototype.handleStatusReport = function(response) {
 			}
 
       if(this.quit_pending) {
-        if(response.sr.stat === STAT_STOP || response.sr.stat === STAT_END) {
+        if(response.sr.stat === STAT_STOP || response.sr.stat === STAT_END || response.sr.stat === STAT_HOLDING) {
   				log.info("!!! Clearing the quit pending state.")
   				this.quit_pending = false;
+					this.gcodeWrite('M30\n');
   			} else {
           log.info("!!! NOT clearing the quit pending state ")
         }
@@ -436,8 +519,15 @@ G2.prototype.handleStatusReport = function(response) {
 		// Emit status no matter what
 		if('stat' in response.sr) {
 			this.emit('stat', response.sr.stat)
+			if(this.context) {
+				console.log("Emitting stat for context")
+				this.context.emit('stat', response.sr.stat);
+			}
 		}
 		this.emit('status', this.status);
+		if(this.context) {
+			this.context.emit('status', this.status);
+		}
 	}
 };
 
@@ -495,8 +585,8 @@ G2.prototype.feedHold = function(callback) {
 	this.flooded = false;
 	typeof callback === 'function' && this.once('state', callback);
 	log.debug("Sending a feedhold");
-	if(this.stream) {
-		this.stream.pause();
+	if(this.context) {
+		this.context.stream.pause();
 	}
 	this.controlWrite('!', function() {
 		log.debug("Drained.");
@@ -531,8 +621,8 @@ G2.prototype.resume = function() {
 	this.controlWrite('~'); //cycle start command character
 
 	this.pause_flag = false;
-	if(this.stream) {
-		this.stream.resume();
+	if(this.context.stream) {
+		this.context._stream.resume();
 	}
 	return deferred.promise;
 };
@@ -562,7 +652,7 @@ G2.prototype.quit = function() {
 			}
 
 			this.on('stat', onStat);
-			this.gcodeWrite('!%\x04{clr:n}\n', function() { log.debug('Drained.'); });
+			this.gcodeWrite('!%\n', function() { log.debug('Drained.'); });
 			return deferred.promise;
 		} else {
 			log.warn("Not quitting because one is pending already");
@@ -763,19 +853,17 @@ G2.prototype._createStatePromise = function(states) {
 }
 
 G2.prototype.runStream = function(s) {
-		// Create a promise to be fulfilled when this run stops (for any reason)
-		this._createStream();
-		var promise = this._createStatePromise([STAT_STOP, STAT_END])
-		s.pipe(this.stream);
-		return promise;
+		this._createCycleContext();
+		s.pipe(this.context._stream);
+		return this.context;
 }
 
-G2.prototype.runFile = function(filename, callback) {
-	var stream = fs.createReadStream(filename);
-	return this.runStream(stream, callback);
+G2.prototype.runFile = function(filename) {
+	var st = fs.createReadStream(filename);
+	return this.runStream(st);
 }
 
-G2.prototype.runImmediate = function(data, callback) {
+G2.prototype.runImmediate = function(data) {
 	return this.runString(data);
 }
 
@@ -791,7 +879,7 @@ G2.prototype.sendMore = function() {
 				if(code.trim()) {
 					this.controlWrite(code + '\n');
 					this.response_count += 1;
-					console.log(this.response_count);
+					//console.log(this.response_count);
 				}
 			}.bind(this));
 		} else {

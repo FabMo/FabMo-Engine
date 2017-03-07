@@ -10,6 +10,8 @@ var interp = require('./interpolate');
 var Leveler = require('./commands/leveler').Leveler;
 var u = require('../../util');
 var config = require('../../config');
+var stream = require('stream');
+
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
 var PERSISTENTVAR_RE = /\$([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
@@ -159,7 +161,6 @@ SBPRuntime.prototype.runString = function(s, callback) {
 		log.debug("Labels analyzed...")
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table
 		log.debug("GOTOs analyzed...")
-		this.emit_gcode(config.driver.get('gdi') ? 'G91' : 'G90');
 		log.debug("Rainbows organized...")
 		this._run();
 		log.debug("Returning from run...");
@@ -299,6 +300,7 @@ SBPRuntime.prototype._onG2Status = function(status) {
 			this.machine.status[key] = status[key];
 		}
 	}
+
 	this.machine.emit('status',this.machine.status);
 };
 
@@ -429,16 +431,43 @@ SBPRuntime.prototype._exprBreaksStack = function(expr) {
 // Start the stored program running
 SBPRuntime.prototype._run = function() {
 	log.info("Starting OpenSBP program")
-	this.started = true;
 	if(this.machine) {
 		this.machine.setState(this, "running");
 	}
+
+	// DO IT
+	this.started = true;
+	this.waitingForStackBreak = false;
+	this.gcodesPending = false;
+
+	var that = this;
+	var onStat = function(stat) {
+		console.log("OnStat: " + stat);
+		switch(stat) {
+			case that.driver.STAT_STOP:
+				that._continue();
+			break;
+		}
+	}
+
+	this.stream = new stream.PassThrough();
+	this.driver.runStream(this.stream)
+		.on('stat', onStat)
+		.then(function() {
+			console.info("openSBP: All done.");
+			this._end();
+		}.bind(this));
+
+	this.emit_gcode(config.driver.get('gdi') ? 'G91' : 'G90');
+	this.emit_gcode('G4 P0.1');
+
 	this._continue();
 };
 
 // Continue running the current program (until the end of the next chunk)
 // _continue() will dispatch the next chunk if appropriate, once the current chunk is finished
 SBPRuntime.prototype._continue = function() {
+	log.info("CONTINUE")
 	this._update();
 
 	// Continue is only for resuming an already running program.  It's not a substitute for _run()
@@ -447,70 +476,39 @@ SBPRuntime.prototype._continue = function() {
 		return;
 	}
 
-	// Do forever:  Will break out in the event that the program ends
-	while(true) {
-		// If we've run off the end of the program, we're done!
-		if(this.pc >= this.program.length) {
-			log.info("End of program reached. (pc = " + this.pc + ")");
-			// We may yet have g-codes that are pending.  Run those.
-			if(this.current_chunk.length > 0) {
-				log.info("Dispatching final g-codes")
-				return this._dispatch(this._continue.bind(this));
-			} else {
-				log.info("No g-codes remain to dispatch.")
-				return this._end(this.end_message);
-			}
-		}
+	if(this.pc >= this.program.length) {
+		log.info("End of program reached. (pc = " + this.pc + ")");
+		this.emit_gcode('M30');
+		return;
+	}
 
-		if(this.quit_pending) {
-			return this._end();
-		}
+	// Pull the current line of the program from the list
+	var line = this.program[this.pc];
+	var breaksTheStack = this._breaksStack(line);
 
-		// Pull the current line of the program from the list
-		line = this.program[this.pc];
-		if(this._breaksStack(line)) {
-			// If it's a stack breaker go ahead and distpatch the current g-code list to the tool
-			log.debug("Stack break: " + JSON.stringify(line));
-			dispatched = this._dispatch(this._continue.bind(this));
-
-			// If we dispatched anything
-			if(!dispatched) {
-				log.debug('Nothing to execute in the queue: continuing.');
-				if(!this.machine) {
-					log.warn('Attempting to execute a stack-breaking command without G2, which may cause issues.')
-					try {
-						this._execute(line, this._continue.bind(this));
-					} catch(e) {
-						log.error('There was a problem: ' + e);
-						setImmediate(this._continue.bind(this));
-					}
-				} else {
-					try {
-						log.debug("executing + " + JSON.stringify(line))
-						this._execute(line, this._continue.bind(this));
-					} catch(e) {
-						return this._end(e.message);
-					}
-				}
-				break;
-			} else {
-
-				if(this.machine) {
-					log.debug('Dispatched g-codes to tool.')
-					break;
-				} else {
-					setImmediate(this._continue.bind(this));
-				}
-			}
+	if(breaksTheStack) {
+		log.debug("Stack break: " + JSON.stringify(line));
+		if(this.driver.status.stat != this.driver.STAT_STOP) {
 			return;
 		} else {
-				log.debug("Non-Stack break: " + JSON.stringify(line));
-
 			try {
-				this._execute(line);
+				log.debug("executing: " + JSON.stringify(line))
+				this._execute(line, this._continue.bind(this));
+				return;
 			} catch(e) {
-				return this._end(e);
+				return this._end(e.message);
 			}
+		}
+		return
+	} else {
+		log.debug("Non-Stack break: " + JSON.stringify(line));
+		try {
+			log.debug("executing: " + JSON.stringify(line))
+			this._execute(line);
+			setImmediate(this._continue.bind(this));
+		} catch(e) {
+			log.error(e)
+			return this._end(e);
 		}
 	}
 };
@@ -606,6 +604,7 @@ SBPRuntime.prototype._end = function(error) {
 // Pack up the current chunk (if it is nonempty) and send it to G2
 // Returns true if there was data to send to G2, false otherwise.
 SBPRuntime.prototype._dispatch = function(callback) {
+/*
 	var runtime = this;
 
 	// If there's g-codes to be dispatched to the tool
@@ -615,7 +614,7 @@ SBPRuntime.prototype._dispatch = function(callback) {
 		if(this.machine) {
 			// Dispatch the g-codes and look for the tool to start running them
 			//log.info("dispatching a chunk: " + this.current_chunk);
-/*
+
 			var hold_function = function(driver) {
 				log.info("Expected hold and got one.")
 				// On hold, handle event that caused the hold
@@ -690,7 +689,7 @@ SBPRuntime.prototype._dispatch = function(callback) {
 
 			stopped_function(this.driver);
 //			var segment = this.current_chunk.join('\n') + '\n';
-*/
+
 			this.driver.runList(this.current_chunk).then(function(stat) {
 				switch(stat) {
 					case this.driver.STAT_HOLDING:
@@ -720,6 +719,7 @@ SBPRuntime.prototype._dispatch = function(callback) {
 		log.debug("Empty dispatch")
 		return false;
 	}
+	*/
 };
 
 SBPRuntime.prototype._teardownEvents = function(callback) {
@@ -1439,13 +1439,15 @@ SBPRuntime.prototype.emit_gcode = function(s) {
 	} else {
 		var n = this.pc;
 	}
-	this.current_chunk.push('N' + n + ' ' + s);
+	//this.current_chunk.push('N' + n + ' ' + s);
+	this.gcodesPending = true;
+	this.stream.write('N' + n + ' ' + s + '\n');
 };
 
 SBPRuntime.prototype.emit_move = function(code, pt) {
 	var gcode = code;
 	var i;
-    log.debug("Emit_move: " + code + " " + JSON.stringify(pt));
+  log.debug("Emit_move: " + code + " " + JSON.stringify(pt));
 
 	['X','Y','Z','A','B','C','I','J','K','F'].forEach(function(key){
 		var c = pt[key];
@@ -1505,7 +1507,9 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 			}
 		}.bind(this));
         log.debug("emit_move: N" + n + JSON.stringify(gcode));
-        this.current_chunk.push('N' + n + ' ' + gcode);
+        //this.current_chunk.push('N' + n + ' ' + gcode);
+				this.stream.write('N' + n + ' ' + gcode + '\n');
+
 	}.bind(this);
 
 	if(this.transforms.level.apply === true) {
