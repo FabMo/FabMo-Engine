@@ -9,7 +9,7 @@ var log = require('./log').logger('g2');
 var process = require('process');
 var jsesc = require('jsesc');
 var stream = require('stream');
-var Q = require('Q');
+var Q = require('q');
 
 // Values of the **stat** field that is returned from G2 status reports
 var STAT_INIT = 0;
