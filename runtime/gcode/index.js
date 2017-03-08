@@ -108,7 +108,6 @@ GCodeRuntime.prototype._idle = function() {
 	this.machine.status.line=null;
 	this.machine.status.nb_lines=null;
 	var job = this.machine.status.job;
-	console.log("_idle");
 	// Set the machine state to idle and return the units to their default configuration
 	var finishUp = function() {
 		this.driver.setUnits(config.machine.get('units'), function() {
@@ -162,13 +161,10 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 };
 
 GCodeRuntime.prototype._handleStop = function() {
-	console.log("Handling stop");
 	this._idle();
 }
 
 GCodeRuntime.prototype._handleStateChange = function(stat) {
-	log.info("Handling state change: " + stat)
-	log.stack()
 	switch(stat) {
 		case this.driver.STAT_HOLDING:
 			this._changeState('paused');

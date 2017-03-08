@@ -54,7 +54,6 @@ function CycleContext(driver, st, promise) {
 		this._driver = driver;
 		this._stream = st;
 		this._promise = promise.then(function(value) {
-			console.log("PROMISE COMPLETE")
 			this.firm(); // Firm the tool
 			this.finish();
 		}.bind(this));
@@ -98,8 +97,6 @@ CycleContext.prototype.on = function(event, f) {
 CycleContext.prototype.then = function(f) {
 	this.firm();
 	return this._promise.then(function() {
-		console.log("Resolving contexts promise");
-		console.log(f);
 		return f();
 	});
 }
@@ -112,13 +109,20 @@ CycleContext.prototype.finish = function() {
 // Emit the provided data to all the listeners to the subscribed event
 CycleContext.prototype.emit = function(event, data) {
 		var handlers = this.eventHandlers[event];
-		//console.log(this.eventHandlers)
 
 		if(handlers) {
 			for(var i=0; i<handlers.length; i++) {
 				handlers[i](data);
 			}
 		}
+}
+
+CycleContext.prototype.pause = function() {
+	this._stream.pause();
+}
+
+CycleContext.prototype.resume = function() {
+	this._stream.resume();
 }
 
 // G2 Constructor
@@ -192,7 +196,6 @@ G2.prototype._createCycleContext = function() {
 		log.debug("Stream PIPE event");
 	})
 	var promise = this._createStatePromise([STAT_END]).then(function() {
-		console.log("clearing driver context")
 		this.context = null;
 		return this;
 	}.bind(this))
@@ -444,15 +447,9 @@ G2.prototype.clearLastException = function() {
 9	machine is homing
 */
 G2.prototype.handleStatusReport = function(response) {
-	/* RAS: Keeping this around for debugging a bit longer - 2016/03/11
-	if(response.sr && ((response.sr.stat === this.STAT_END) || (response.sr.stat === this.STAT_RUNNING))) {
-		if(this.status.stat === this.STAT_END) {
-			console.log("STAT IS ALREADY 4")
-		}
-		console.log(response);
-	}*/
-	if(response.sr) {
 
+	if(response.sr) {
+		
 		// Update our copy of the system status
 		for (var key in response.sr) {
 			value = response.sr[key];
@@ -520,7 +517,6 @@ G2.prototype.handleStatusReport = function(response) {
 		if('stat' in response.sr) {
 			this.emit('stat', response.sr.stat)
 			if(this.context) {
-				console.log("Emitting stat for context")
 				this.context.emit('stat', response.sr.stat);
 			}
 		}
@@ -586,7 +582,7 @@ G2.prototype.feedHold = function(callback) {
 	typeof callback === 'function' && this.once('state', callback);
 	log.debug("Sending a feedhold");
 	if(this.context) {
-		this.context.stream.pause();
+		this.context.pause();
 	}
 	this.controlWrite('!', function() {
 		log.debug("Drained.");
@@ -621,8 +617,8 @@ G2.prototype.resume = function() {
 	this.controlWrite('~'); //cycle start command character
 
 	this.pause_flag = false;
-	if(this.context.stream) {
-		this.context._stream.resume();
+	if(this.context) {
+		this.context.resume();
 	}
 	return deferred.promise;
 };
@@ -906,7 +902,6 @@ G2.prototype.sendMore = function() {
 };
 
 G2.prototype.setMachinePosition = function(position, callback) {
-	console.log("SETTING MACHINE POSITION")
 	var gcode = ["G21"];
 	['x','y','z','a','b','c','u','v','w'].forEach(function(axis) {
 		if(position[axis] != undefined) {
