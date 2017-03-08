@@ -449,7 +449,7 @@ G2.prototype.clearLastException = function() {
 G2.prototype.handleStatusReport = function(response) {
 
 	if(response.sr) {
-		
+
 		// Update our copy of the system status
 		for (var key in response.sr) {
 			value = response.sr[key];
@@ -463,15 +463,6 @@ G2.prototype.handleStatusReport = function(response) {
 		if('line' in response.sr) {
 			line = response.sr.line;
 			lines_left = this.lines_sent - line;
-/*
-			if(lines_left < GCODE_MIN_LINE_THRESH) {
-				this.last_line_seen = line;
-				if(this.gcode_queue.getLength() > 0) {
-					log.warn("Lines left has fallen to " + lines_left + " sending more...");
-					this.sendMore();
-				}
-			}
-			*/
 		}
 
 		if('stat' in response.sr) {
@@ -499,9 +490,6 @@ G2.prototype.handleStatusReport = function(response) {
 					if(expectation[stat] === null) {
 						this.expectations.push(expectation);
 					} else {
-						//console.log(expectation)
-						//console.log(stat)
-						//console.log(expectation[stat].toString())
 						expectation[stat](this);
 					}
 				} else if(null in expectation) {
@@ -810,15 +798,6 @@ G2.prototype.runString = function(data, callback) {
 };
 
 G2.prototype.runList = function(l, callback) {
-	if(callback) {
-			this.expectStateChange( {
-			'end':function() { callback(); },
-			'stop':function() { callback(); },
-			'timeout':function() {
-				callback(new Error("Timeout while runList()"));
-			}
-		});
-	}
 	var stringStream = new stream.Readable();
 	for(var i=0; i<l.length; i++) {
 		stringStream.push(l[i] + "\n");
@@ -912,7 +891,9 @@ G2.prototype.setMachinePosition = function(position, callback) {
 	if(this.status.unit === 'in') {
 		gcode.push('G20');
 	}
-	this.runList(gcode, callback);
+	this.runList(gcode).then(function() {
+		callback();
+	});
 }
 
 // Function works like "once()" for a state change
