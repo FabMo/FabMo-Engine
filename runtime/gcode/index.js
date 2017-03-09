@@ -156,7 +156,6 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 		return this.driver.runList(lines)
 		.on('stat', this._handleStateChange.bind(this))
 		.then(this._handleStop.bind(this));
-
 	}
 };
 
@@ -186,9 +185,7 @@ GCodeRuntime.prototype.runFile = function(filename, callback) {
 
 // Run the given string as gcode
 GCodeRuntime.prototype.executeCode = function(string, callback) {
-		return this.runString(string)
-		.on('stat', this._handleStateChange.bind(this))
-		.then(this._handleStop.bind(this));
+		return this.runString(string);
 }
 
 exports.GCodeRuntime = GCodeRuntime;

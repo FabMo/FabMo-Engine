@@ -460,6 +460,7 @@ SBPRuntime.prototype._run = function() {
 
 	if(this.file_stack.length) {
 		log.info("Running subprogram")
+		log.debug(JSON.stringify(this.file_stack))
 		this._executeNext();
 	} else {
 		this.stream = new stream.PassThrough();
