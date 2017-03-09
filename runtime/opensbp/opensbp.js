@@ -434,6 +434,7 @@ SBPRuntime.prototype._run = function() {
 	if(this.machine) {
 		this.machine.setState(this, "running");
 	}
+	setTimeout(function() {
 
 	// DO IT
 	this.started = true;
@@ -460,7 +461,7 @@ SBPRuntime.prototype._run = function() {
 
 	if(this.file_stack.length) {
 		log.info("Running subprogram")
-		log.debug(JSON.stringify(this.file_stack))
+		log.debug(this.file_stack)
 		this._executeNext();
 	} else {
 		this.stream = new stream.PassThrough();
@@ -475,6 +476,7 @@ SBPRuntime.prototype._run = function() {
 
 		this._executeNext();
 	}
+	}.bind(this), 250);
 };
 
 SBPRuntime.prototype.isInSubProgram = function() {
