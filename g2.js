@@ -199,7 +199,9 @@ G2.prototype._createCycleContext = function() {
 		this.context = null;
 		return this;
 	}.bind(this))
-	this.context = new CycleContext(this, st, promise);
+	var ctx  = new CycleContext(this, st, promise);
+	console.log("Creating cycle context");
+	this.context = ctx;
 }
 // Actually open the serial port and configure G2 based on stored settings
 G2.prototype.connect = function(control_path, gcode_path, callback) {
@@ -798,6 +800,7 @@ G2.prototype.runString = function(data, callback) {
 };
 
 G2.prototype.runList = function(l, callback) {
+	console.log("Running List");
 	var stringStream = new stream.Readable();
 	for(var i=0; i<l.length; i++) {
 		stringStream.push(l[i] + "\n");
@@ -870,7 +873,6 @@ G2.prototype.sendMore = function() {
 				if(code.trim()) {
 					this.gcodeWrite(code + '\n');
 					this.response_count += 1;
-					console.log(this.response_count);
 				}
 			}.bind(this));
 		}

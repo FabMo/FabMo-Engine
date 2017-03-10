@@ -241,7 +241,7 @@ function exitHandler(options, err) {
     }
     var dir = require('./config').getDataDir('log')
     var fn = 'fabmo-' + Date.now() + '-log.txt'
-		var flight_fn = path.join(dir, 'g2-flight-log.json');
+    var flight_fn = path.join(dir, 'g2-flight-log.json');
 
     filename = path.join(dir, fn)
     if(options.savelog) {
@@ -249,21 +249,28 @@ function exitHandler(options, err) {
     	try {
 	    	saveLogBuffer(filename);
 	    	_log.info("Log saved to " + filename);
-				if(flightRecorder) {
-					flightRecorder.save(flight_fn, function(err, data) {
-						rotateLogs(PERSISTENT_LOG_COUNT, function() {
-			    		if(options.exit) {
-			    			process.exit();
-			    		}
-			    	});
-					});
+		if(flightRecorder) {
+			flightRecorder.save(flight_fn, function(err, data) {
+			rotateLogs(PERSISTENT_LOG_COUNT, function() {
+				if(options.exit) {
+					_log.info("Exiting via process.exit()...");
+					process.exit();
 				}
+			});
+			});
+		} else {
+			if(options.exit) {
+				_log.info("Exiting via process.exit()...");
+				process.exit();
+			}
+		}
 	    	return;
     	} catch(e) {
 	    	_log.error("Could not save log to " + filename);
 	    	_log.error(e);
     	}
 	    if (options.exit) {
+		_log.info("Exiting via process.exit()...");
 	    	process.exit();
 	    }
 	}
