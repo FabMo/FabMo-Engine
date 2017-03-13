@@ -43,14 +43,14 @@ function connect(callback) {
 			gcode_path = null;
 			break;
 	}
-	if(control_path && gcode_path) {
-		exports.machine = new Machine(control_path, gcode_path, callback);
+	if(control_path) {
+		exports.machine = new Machine(control_path, callback);
 	} else {
 		typeof callback === "function" && callback('No supported serial path for platform "' + PLATFORM + '"');
 	}
 }
 
-function Machine(control_path, gcode_path, callback) {
+function Machine(control_path, callback) {
 
 	// Handle Inheritance
 	events.EventEmitter.call(this);
@@ -85,10 +85,10 @@ function Machine(control_path, gcode_path, callback) {
 	this.driver = new g2.G2();
 	this.driver.on("error", function(err) {log.error(err);});
 
-	this.driver.connect(control_path, gcode_path, function(err, data) {
-
+	this.driver.connect(control_path, function(err, data) {
 	    // Set the initial state based on whether or not we got a valid connection to G2
 	    if(err){
+				log.error(JSON.stringify(err));
 	    	log.warn("Setting the disconnected state");
 	    	this.die("A real bad error has occurred.")
 		    if(typeof callback === "function") {
@@ -539,7 +539,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 		switch(newstate) {
 			case 'idle':
 				if(this.status.state != 'idle') {
-					this.driver.command({"out4":0});
+					//this.driver.command({"out4":0});
 					//if(this.runtime != this.idle_runtime) {
 					//	this.setRuntime(null, function() {});
 					//}
@@ -568,7 +568,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				log.error('G2 is dead!');
 				break;
 			default:
-				this.driver.command({"out4":1});
+				//this.driver.command({"out4":1});
 				break;
 		}
 
@@ -588,8 +588,6 @@ Machine.prototype.pause = function() {
 };
 
 Machine.prototype.quit = function() {
-  console.log('Quit hit');
-	log.stack();
 	this.disarm();
 	// Quitting from the idle state dismisses the 'info' data
 	if(this.status.state === "idle") {
@@ -697,7 +695,7 @@ Machine.prototype._runNextJob = function(force, callback) {
 	if(this.isConnected()) {
 		if(this.status.state === 'armed' || force) {
 			log.info("Running next job");
-			this.driver.command({"out4":1});
+			//this.driver.command({"out4":1});
 			db.Job.dequeue(function(err, result) {
 				log.info(result);
 				if(err) {
