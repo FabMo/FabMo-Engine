@@ -158,9 +158,12 @@ function G2() {
 	// Event emitter inheritance and behavior setup
 	events.EventEmitter.call(this);
 	this.setMaxListeners(50);
-	this.lines_to_send = 4;
+	this.lines_to_send = 5;
 	this._ignored_responses = 0;
+	this._primed = false;
+	this._streamDone = false;
 }
+
 util.inherits(G2, events.EventEmitter);
 
 G2.prototype._createCycleContext = function() {
@@ -169,6 +172,7 @@ G2.prototype._createCycleContext = function() {
 		throw new Error("Cannot create a new cycle context.  One already exists.");
 	}
 	var st = new stream.PassThrough();
+	this._streamDone = false;
 	st.on('data', function(chunk) {
 		var line = [];
 		chunk = chunk.toString();
@@ -176,9 +180,12 @@ G2.prototype._createCycleContext = function() {
 			ch = chunk[i];
 			line.push(ch);
 			if(ch === '\n') {
-					var s = line.join('');
-					log.debug("Q: '" + s.trim() + "'")
+					var s = line.join('').trim();
+					//log.debug("Q: '" + s + "'")
 					this.gcode_queue.enqueue(s);
+					if(this.gcode_queue.getLength() >= 10) {
+						this._primed = true;
+					}
 					this.sendMore();
 					var putback = chunk.slice(i++);
 					if(putback) {
@@ -189,6 +196,9 @@ G2.prototype._createCycleContext = function() {
 		}
 	}.bind(this));
 	st.on('end', function() {
+		this._primed = true;
+		this._streamDone = true;
+		this.sendMore();
 		log.debug("Stream END event.")
 	}.bind(this));
 	st.on('pipe', function() {
@@ -196,6 +206,7 @@ G2.prototype._createCycleContext = function() {
 	})
 	var promise = this._createStatePromise([STAT_END]).then(function() {
 		this.context = null;
+		this._primed = false;
 		return this;
 	}.bind(this))
 	var ctx  = new CycleContext(this, st, promise);
@@ -795,6 +806,10 @@ G2.prototype.runImmediate = function(data) {
 	return this.runString(data);
 }
 
+G2.prototype.prime = function() {
+	this._primed = true;
+	this.sendMore();
+}
 G2.prototype.sendMore = function() {
 	//log.info("sendMore:   Lines to send: " + this.lines_to_send);
 	//log.info("           Lines in queue: " + this.gcode_queue.getLength());
@@ -812,16 +827,29 @@ G2.prototype.sendMore = function() {
 
 	}
 
-	var count = this.gcode_queue.getLength();
-	if(this.lines_to_send > 0 && count > 0) {
-			var to_send = Math.min(this.lines_to_send, count);
-			var codes = this.gcode_queue.multiDequeue(to_send);
-			codes.push("");
-			this.lines_to_send -= to_send;
-			this._write(codes.join('\n'), function() { });
-	}
-	else {
-		//log.error("Not writing to gcode due to lapse in responses")
+	if(this._primed) {
+		var count = this.gcode_queue.getLength();
+		var THRESH = 1;
+		if(this.lines_to_send >= THRESH) {
+		       	if(count >= THRESH || this._streamDone) {
+				var to_send = Math.min(this.lines_to_send, count);
+				var codes = this.gcode_queue.multiDequeue(to_send);
+				codes.push("");
+				if(to_send > 1) {
+					log.warn("!!!!!!!! Sending " + to_send + " lines!");
+					console.log(codes);
+				}
+				this.lines_to_send -= to_send;
+				this._write(codes.join('\n'), function() { });
+			}
+		}
+		else {
+			//log.error("Not writing to gcode due to lapse in responses")
+		}
+	} else {
+		if(this.gcode_queue.getLength() > 0) {
+			log.warn("!!! Not sending because not primed.");
+		}
 	}
 };
 

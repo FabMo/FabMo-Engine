@@ -195,6 +195,7 @@ ManualRuntime.prototype.renewMoves = function() {
 			console.log(move)
 			this.stream.write(move);
 		}
+		this.driver.prime();
 		setTimeout(this.renewMoves.bind(this), T_RENEW)
 	} else {
 			this.stopMotion();
