@@ -810,6 +810,7 @@ G2.prototype.prime = function() {
 	this._primed = true;
 	this.sendMore();
 }
+
 G2.prototype.sendMore = function() {
 	//log.info("sendMore:   Lines to send: " + this.lines_to_send);
 	//log.info("           Lines in queue: " + this.gcode_queue.getLength());
