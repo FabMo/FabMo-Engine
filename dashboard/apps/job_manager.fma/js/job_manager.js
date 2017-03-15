@@ -130,6 +130,17 @@ function makeActions() {
   return actions;
 }
 
+// Returns an img string DOM element for holding the job preview thumbnail.
+function createPreviewThumbnail(job, width, height) {
+  var img = document.createElement("img");
+  img.style.marginRight = "4px";
+  img.width = width;
+  img.height = height;
+  img.alt = "[No possible preview]";
+  img.src = "/job/" + job._id + "/thumbnail";
+  return img.outerHTML;
+}
+
 function addQueueEntries(jobs) {
   clearQueue();
   var table = document.getElementById('queue_table');
@@ -156,7 +167,7 @@ function addQueueEntries(jobs) {
       listItem.setAttribute("data-id", jobs[i]._id);
       table.appendChild(listItem);
       var id = document.getElementById(jobs[i]._id);
-      id.innerHTML = '<div id="menu"></div><div class="job_name">' + jobs[i].name + '</div><div class="description">' + jobs[i].description + '</div>';
+      id.innerHTML = '<div id="menu"></div><div class="job_name">' + jobs[i].name + '</div><div class="description">' + createPreviewThumbnail(jobs[i], 100, 100) + jobs[i].description + '</div>';
       var menu = id.firstChild;
 
       // menu.className += ' actions-control';
@@ -196,7 +207,7 @@ function addQueueEntries(jobs) {
       recentItem.setAttribute("data-id", recent[i]._id);
       recentJobs.appendChild(recentItem);
       var id = document.getElementById(recent[i]._id);
-      id.innerHTML = '<div id="menu"></div><div id="name">' + recent[i].name + '</div><div class="description">' + recent[i].description + '</div>';
+      id.innerHTML = '<div id="menu"></div><div id="name">' + recent[i].name + '</div><div class="description">' + createPreviewThumbnail(recent[i], 100, 100) + recent[i].description + '</div>';
       var menu = id.firstChild;
 
       // menu.className += ' actions-control';
@@ -293,7 +304,7 @@ function addHistoryEntries(jobs) {
     var time = row.insertCell(3);
 
     menu.innerHTML = createHistoryMenu(job._id);
-    name.innerHTML = '<div class="job-' + job.state + '">' + job.name + '</div>';
+    name.innerHTML = '<div class="job-' + job.state + '">' + createPreviewThumbnail(job, 50, 50) + job.name + '</div>';
     done.innerHTML = moment(job.finished_at).fromNow();
     time.innerHTML = moment.utc(job.finished_at - job.started_at).format('HH:mm:ss');
   });
