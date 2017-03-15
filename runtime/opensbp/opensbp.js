@@ -524,8 +524,9 @@ SBPRuntime.prototype._executeNext = function() {
 	if(breaksTheStack) {
 		log.debug("Stack break: " + JSON.stringify(line));
 		this.driver.prime();
-		if(this.driver.status.stat != this.driver.STAT_STOP) {
+		if(this.driver.status.stat != this.driver.STAT_STOP && this.driver.status.stat != this.driver.STAT_END) {
 			log.debug("Deferring because g2 is still running.");
+			log.debug("Current stat: " + this.driver.status.stat);
 			return; // G2 is running, we'll get called when it's done
 		} else {
 			// G2 is stopped, execute stack breaking command now
