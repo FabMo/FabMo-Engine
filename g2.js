@@ -1,4 +1,4 @@
-var serialport = require("serialport");
+var SerialPort = require("serialport");
 var fs = require("fs");
 var events = require('events');
 var async = require('async');
@@ -30,15 +30,8 @@ var STAT_PANIC = 13;
 var CMD_TIMEOUT = 10000;
 var EXPECT_TIMEOUT = 300000;
 
-
-var GCODE_BLOCK_SEND_SIZE = 4;
-var GCODE_MIN_LINE_THRESH = 250;
-
-var RESPONSE_LIMIT = 4;
-
-var SINGLE_PORT_OVERRIDE = true;
-
 var _promiseCounter = 1;
+var THRESH = 1
 // Error codes defined by G2
 // See https://github.com/synthetos/g2/blob/edge/TinyG2/tinyg2.h for the latest error codes and messages
 try {
@@ -158,7 +151,7 @@ function G2() {
 	// Event emitter inheritance and behavior setup
 	events.EventEmitter.call(this);
 	this.setMaxListeners(50);
-	this.lines_to_send = 5;
+	this.lines_to_send = 6;
 	this._ignored_responses = 0;
 	this._primed = false;
 	this._streamDone = false;
@@ -220,7 +213,7 @@ G2.prototype.connect = function(path, callback) {
 
 	// Open both ports
 	log.info('Opening G2 port: ' + this._serialPath);
-	this._serialPort = new serialport.SerialPort(this._serialPath, {rtscts:true}, false);
+	this._serialPort = new SerialPort(this._serialPath, {flowcontrol: ['RTSCTS'], autoOpen:false});
 	this._serialToken = 'S';
 
 	// Handle errors
@@ -504,7 +497,7 @@ G2.prototype.onMessage = function(response) {
 	this.handleExceptionReport(r);
 
 	// Deal with streaming (if response contains a queue report)
-	this.handleQueueReport(r);
+	// this.handleQueueReport(r);
 
 	// Deal with footer
 	var err = this.handleFooter(response);
@@ -830,7 +823,6 @@ G2.prototype.sendMore = function() {
 
 	if(this._primed) {
 		var count = this.gcode_queue.getLength();
-		var THRESH = 1;
 		if(this.lines_to_send >= THRESH) {
 		       	if(count >= THRESH || this._streamDone) {
 				var to_send = Math.min(this.lines_to_send, count);
