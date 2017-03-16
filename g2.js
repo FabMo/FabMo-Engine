@@ -164,19 +164,12 @@ util.inherits(G2, events.EventEmitter);
 G2.prototype._createCycleContext = function() {
 	log.debug("Creating a cycle context.")
 	if(this.context) {
-		throw new Error("Cannot create a new cycle context.  One already exists.");
+		throw new Error("Cannot create a nnew cycle context.  One already exists.");
 	}
 	var st = new stream.PassThrough();
-	st.setDefaultEncoding('utf8');
+	st.setEncoding('utf8');
 	this._streamDone = false;
 	st.on('data', function(chunk) {
-		if(chunk instanceof String) {
-			console.log("Chunk is a string")
-		} else if(chunk instanceof Buffer) {
-			console.log("Chunk is a buffer")
-		} else {
-			console.log("Chunk is ???")
-		}
 		chunk = chunk.toString();
 		for(var i=0; i<chunk.length; i++) {
 			ch = chunk[i];

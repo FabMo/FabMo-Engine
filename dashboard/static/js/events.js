@@ -105,7 +105,7 @@ define(function(require) {
         //Set size attribute on div "Main Section"
         $(".main-section, .app-section").css("width", $("body").width() - r + "px");
         $(".main-section, .app-section").css("margin-left", l + "px");
-        $(".main-section").css("height", $("#left-menu").height() + "px");
+        $(".main-section").css("height", $("#left-menu").height() + 1 + "px");
 
         //Set size of app container (so footer does not hide content)
         $('.main-section').css('padding-bottom',$('.footBar').css('height'));

@@ -467,7 +467,7 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
      */
     function resizeAccordingFooter(footerHeight) {
       var width = window.innerWidth;
-      var height = window.innerHeight - $("#topbar").height() - footerHeight;
+      var height = window.innerHeight - $("#topbar").height();
       $('#preview').size(width, height);
       viewer.resize(width, height);
     }

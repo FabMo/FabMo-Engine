@@ -803,7 +803,7 @@ table {
   position: absolute;
   top: 40px;
   right: -20px;
-  cursor: pointer;
+
   z-index: 50;
 }
 
@@ -915,6 +915,7 @@ table {
   top: 50%;
   margin:-40px 0 0 -40px;
   display: Block;
+  cursor: pointer;
 }
 .play span {
   margin: 0;
