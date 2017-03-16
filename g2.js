@@ -155,6 +155,8 @@ function G2() {
 	this._ignored_responses = 0;
 	this._primed = false;
 	this._streamDone = false;
+
+	this.lineBuffer = [];
 }
 
 util.inherits(G2, events.EventEmitter);
@@ -165,26 +167,28 @@ G2.prototype._createCycleContext = function() {
 		throw new Error("Cannot create a new cycle context.  One already exists.");
 	}
 	var st = new stream.PassThrough();
+	st.setDefaultEncoding('utf8');
 	this._streamDone = false;
 	st.on('data', function(chunk) {
-		var line = [];
+		if(chunk instanceof String) {
+			console.log("Chunk is a string")
+		} else if(chunk instanceof Buffer) {
+			console.log("Chunk is a buffer")
+		} else {
+			console.log("Chunk is ???")
+		}
 		chunk = chunk.toString();
 		for(var i=0; i<chunk.length; i++) {
 			ch = chunk[i];
-			line.push(ch);
+			this.lineBuffer.push(ch);
 			if(ch === '\n') {
-					var s = line.join('').trim();
-					//log.debug("Q: '" + s + "'")
-					this.gcode_queue.enqueue(s);
-					if(this.gcode_queue.getLength() >= 10) {
-						this._primed = true;
-					}
-					this.sendMore();
-					var putback = chunk.slice(i++);
-					if(putback) {
-						this.context._stream.unshift(chunk.slice(i++));
-					}
-					return;
+				var s = this.lineBuffer.join('').trim();
+				this.gcode_queue.enqueue(s);
+				if(this.gcode_queue.getLength() >= 10) {
+					this._primed = true;
+				}
+				this.sendMore();
+				this.lineBuffer = [];
 			}
 		}
 	}.bind(this));
