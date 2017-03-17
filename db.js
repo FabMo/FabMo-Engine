@@ -557,9 +557,23 @@ Thumbnail.generate = function(fileId, callback) {
     callback(true, null);  //TODO: do the function
 }
 
+// Get the thumbnail, if no thumbnail in database: try to make one and return it
 // callback(err, thumbnail): if err is true, thumbnail is null else found one
 Thumbnail.getFromFileId = function(fileId, callback) {
-    callback(true, null);  //TODO: do the function
+    thumbnails.findOne({ "file_id" : fileId }, function(err, thumbnail) {
+        if(err) {
+            Thumbnail.generate(fileId, callback);
+        } else {
+            thumbnail = new Thumbnail(thumbnail);
+            if(thumbnail.needUpdate()) {
+                thumbnail.update(function(err, thumbnail) {
+                    callback(null, thumbnail);
+                });
+            } else {
+                callback(null, thumbnail);
+            }
+        }
+    });
 }
 
 
@@ -658,5 +672,6 @@ exports.cleanup = function(callback) {
 
 exports.File = File;
 exports.Job = Job;
-exports.User = User
+exports.User = User;
+exports.Thumbnail = Thumbnail;
 exports.createJob = createJob;
