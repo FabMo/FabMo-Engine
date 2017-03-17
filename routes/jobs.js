@@ -436,10 +436,15 @@ var getJobGCode = function(req, res, next) {
 };
 
 var getThumbnailImage = function(req, res, next) {
-    res.setHeader('content-type', 'image/svg+xml');
-    // Testing SVG:
-    res.write('<?xml version="1.0" encoding="UTF-8" standalone="no"?> <svg xmlns="http://www.w3.org/2000/svg" width="250px" height="200px"><path style="fill:none;stroke:#000000;stroke-width:2px;" d="M0,0 L200,200" /></svg>');
-    res.end();
+    db.Thumbnail.getFromFileId(req.params.id, function(err, thumbnail) {
+        if(err) {
+            res.send(404);
+        } else {
+            res.setHeader('content-type', 'image/svg+xml');
+            res.write(thumbnail.image);
+            res.end();
+        }
+    });
 }
 
 module.exports = function(server) {
@@ -451,8 +456,8 @@ module.exports = function(server) {
     server.post('/job/:id', resubmitJob);
     server.get('/job/:id/file', getJobFile);
     server.get('/job/:id/gcode', getJobGCode);
-    // server.get('/job/:id/thumbnail', getThumbnail);
-    server.get('/job/:id/thumbnail/img', getThumbnailImage);
+    // server.get('/file/:id/thumbnail', getThumbnail);
+    server.get('/file/:id/thumbnail/image', getThumbnailImage);
 
     server.get('/jobs/queue', getQueue);
     server.del('/jobs/queue', clearQueue);
