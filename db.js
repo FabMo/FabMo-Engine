@@ -16,6 +16,7 @@ var db;
 var files;
 var jobs;
 var users;
+var thumbnails;
 
 function notifyChange() {
 	var machine = require('./machine').machine;
@@ -551,6 +552,7 @@ exports.configureDB = function(callback) {
 	files = db.collection("files");
 	jobs = db.collection("jobs");
 	users = db.collection("users");
+	thumbnails = db.collection("thumbnails");
 
 	users.find({}).toArray(function(err,result){ //init the user database with an admin account if it's empty
 		if (err){
@@ -569,6 +571,9 @@ exports.configureDB = function(callback) {
 			},
 			function(cb) {
 				checkCollection(jobs, cb);
+			},
+			function(cb) {
+				checkCollection(thumbnails, cb);
 			}
 		],
 		function(err, results) {
