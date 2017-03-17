@@ -6,6 +6,7 @@ var config = require('./config');
 var util = require('./util');
 var ncp = require('ncp').ncp;
 var process = require('process');
+var cnctosvg = require("cnctosvg");
 
 // Connect to TingoDB database that stores the files
 var Engine = require('tingodb')();
@@ -524,6 +525,41 @@ User.findById = function(id,callback){
 			return;
 		}
 	});
+}
+
+// thumbnailDocument (optional) is the thumbnail document from the collection
+Thumbnail = function(thumbnailDocument) {
+    if(thumbnailDocument) {
+        this.file_id = thumbnailDocument.file_id;
+        this.version = thumbnailDocument.version;
+        this.image = thumbnailDocument.image;
+    } else {
+        this.file_id = "";
+        this.version = 0;
+        this.image = "";
+    }
+}
+
+Thumbnail.prototype.needUpdate = function() {
+    return this.version < cnctosvg.VERSION;
+};
+
+// callback(err, thumbnail): if err is true, thumbnail is old one else new one
+Thumbnail.prototype.update = function(callback) {
+    // TODO: do function
+    var thumbnail = new Thumbnail();
+    thumbnail.image = '<?xml version="1.0" encoding="UTF-8" standalone="no"?> <svg xmlns="http://www.w3.org/2000/svg" width="250px" height="200px"><path style="fill:none;stroke:#000000;stroke-width:2px;" d="M0,0 L200,200" /></svg>';
+    callback(true, thumbnail);
+}
+
+// callback(err, thumbnail): if err is true, thumbnail is null else new one
+Thumbnail.generate = function(fileId, callback) {
+    callback(true, null);  //TODO: do the function
+}
+
+// callback(err, thumbnail): if err is true, thumbnail is null else found one
+Thumbnail.getFromFileId = function(fileId, callback) {
+    callback(true, null);  //TODO: do the function
 }
 
 
