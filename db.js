@@ -552,20 +552,20 @@ Thumbnail.prototype.needUpdate = function() {
 };
 
 // Updates the thumbnail in the database.
-// @param {function} callback({boolean} err, {Thumbnail} thumbnail): if err is
-//   true, thumbnail is old one else new one
+// @param {function} callback({Error} err, {Thumbnail} thumbnail): if err is
+//   not null, thumbnail is old one else new one
 Thumbnail.prototype.update = function(callback) {
     var that = this;
 
     File.getByID(that.file_id, function(err, file) {
         if(err) {
-            callback(true, that);
+            callback(new Error("Cannot find file with id = " + that.file_id), that);
             return;
         }
         var machine = require('./machine').machine;
         machine.getGCodeForFile(file.path, function(err, gcode) {
             if(err) {
-                callback(true, that);
+                callback(new Error("Cannot find G-Code for file with id = " + fileId), that);
                 return;
             }
             var gcodeString = gcode.toString("utf8");
@@ -576,12 +576,12 @@ Thumbnail.prototype.update = function(callback) {
             var query = { "file_id" : that.file_id };
             thumbnails.update(query, modifications, function(err, thumbnail) {
                 if(err) {
-                    callback(true, that);
+                    callback(new Error("Cannot update thumbnail with file_id = " + that.file_id), that);
                     return;
                 }
                 that.image = modifications.image;
                 that.version = modifications.version;
-                callback(false, that);
+                callback(null, that);
             });
         });
     });
@@ -615,8 +615,8 @@ Thumbnail.createImage = function(gcode, title) {
 };
 
 // Generates the thumbnail and insert it in the database
-// @param {function} callback({boolean} err, {Thumbnail} thumbnail): if err is
-//   true, thumbnail is null else new one
+// @param {function} callback({Error} err, {Thumbnail} thumbnail): if err is
+//   not null, thumbnail is undefined else new one
 Thumbnail.generate = function(fileId, callback) {
     thumbnails.findOne({ "file_id" : fileId }, function(err, thumbnail) {
         if(!err && thumbnail) {
@@ -625,13 +625,13 @@ Thumbnail.generate = function(fileId, callback) {
         }
         File.getByID(fileId, function(err, file) {
             if(err) {
-                callback(true, null);
+                callback(new Error("Cannot find file with id = " + fileId));
                 return;
             }
             var machine = require('./machine').machine;
             machine.getGCodeForFile(file.path, function(err, gcode) {
                 if(err) {
-                    callback(true, null);
+                    callback(new Error("Cannot find G-Code for file with id = " + fileId));
                     return;
                 }
                 var gcodeString = gcode.toString("utf8");
@@ -641,9 +641,9 @@ Thumbnail.generate = function(fileId, callback) {
                 newThumbnail.image = Thumbnail.createImage(gcodeString, file.filename);
                 thumbnails.insert(newThumbnail, function(err, records) {
                     if(err) {
-                        callback(true, null);
+                        callback(new Error("Cannot insert thumbnail in database"));
                     } else {
-                        callback(false, newThumbnail);
+                        callback(null, newThumbnail);
                     }
                 });
             });
@@ -652,12 +652,12 @@ Thumbnail.generate = function(fileId, callback) {
 };
 
 // Get the thumbnail, if no thumbnail in database: try to make one and return it
-// @param {function} callback({boolean} err, {Thumbnail} thumbnail): if err is
-//   true, thumbnail is null else the found one
+// @param {function} callback({Error} err, {Thumbnail} thumbnail): if err is
+//   not null, thumbnail is undefined else the found one
 Thumbnail.getFromFileId = function(fileId, callback) {
     thumbnails.findOne({ "file_id" : fileId }, function(err, thumbnail) {
         if(err) {
-            callback(true, null);
+            callback(new Error("Cannot find thumbnail with file_id = " + fileId));
             return;
         }
         if(!thumbnail) {
