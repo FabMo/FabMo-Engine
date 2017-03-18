@@ -540,30 +540,59 @@ Thumbnail = function(thumbnailDocument) {
     }
 }
 
+// Checks if needs update
 Thumbnail.prototype.needUpdate = function() {
     return this.version < cnctosvg.VERSION;
 };
 
+// Updates the thumbnail in the database
 // callback(err, thumbnail): if err is true, thumbnail is old one else new one
 Thumbnail.prototype.update = function(callback) {
-    // TODO: do function
-    var thumbnail = new Thumbnail();
-    thumbnail.image = '<?xml version="1.0" encoding="UTF-8" standalone="no"?> <svg xmlns="http://www.w3.org/2000/svg" width="250px" height="200px"><path style="fill:none;stroke:#000000;stroke-width:2px;" d="M0,0 L200,200" /></svg>';
-    callback(true, thumbnail);
-}
+    var that = this;
+
+    File.getByID(that.file_id, function(err, file) {
+        if(err) {
+            callback(true, that);
+            return;
+        }
+        var machine = require('./machine').machine;
+        machine.getGCodeForFile(file.path, function(err, gcode) {
+            if(err) {
+                callback(true, that);
+                return;
+            }
+            var gcodeString = gcode.toString("utf8");
+            var modifications = {
+                "image" : Thumbnail.createImage(gcodeString, file.filename),
+                "version" : cnctosvg.VERSION
+            };
+            var query = { "file_id" : that.file_id };
+            thumbnails.update(query, modifications, function(err, thumbnail) {
+                if(err) {
+                    callback(true, that);
+                    return;
+                }
+                that.image = modifications.image;
+                that.version = modifications.version;
+                callback(false, that);
+            });
+        });
+    });
+};
 
 // Checks if needs update and returns himself to callback (the new or old
 // version)
 // callback(err, thumbnail): if err is always null, thumbnail is new or old one
 Thumbnail.prototype.checkUpdateAndReturn = function(callback) {
-    if(this.needUpdate()) {
-        this.update(function(err, thumbnail) {
+    var that = this;
+    if(that.needUpdate()) {
+        that.update(function(err, thumbnail) {
             callback(null, thumbnail);
         });
     } else {
-        callback(null, this);
+        callback(null, that);
     }
-}
+};
 
 // Creates image but does not add a thumbnail into the database
 // Returns the image
@@ -573,8 +602,9 @@ Thumbnail.createImage = function(gcode, title) {
     var height = 100;
     var lineThickness = 2;
     return cnctosvg.createSVG(gcode, colors, title, width, height, lineThickness);
-}
+};
 
+// Generates the thumbnail and insert it in the database
 // callback(err, thumbnail): if err is true, thumbnail is null else new one
 Thumbnail.generate = function(fileId, callback) {
     thumbnails.findOne({ "file_id" : fileId }, function(err, thumbnail) {
@@ -593,10 +623,11 @@ Thumbnail.generate = function(fileId, callback) {
                     callback(true, null);
                     return;
                 }
+                var gcodeString = gcode.toString("utf8");
                 var newThumbnail = new Thumbnail();
                 newThumbnail.file_id = fileId;
                 newThumbnail.version = cnctosvg.VERSION;
-                newThumbnail.image = Thumbnail.createImage(gcode, file.filename);
+                newThumbnail.image = Thumbnail.createImage(gcodeString, file.filename);
                 thumbnails.insert(newThumbnail, function(err, records) {
                     if(err) {
                         callback(true, null);
@@ -607,19 +638,23 @@ Thumbnail.generate = function(fileId, callback) {
             });
         });
     });
-}
+};
 
 // Get the thumbnail, if no thumbnail in database: try to make one and return it
 // callback(err, thumbnail): if err is true, thumbnail is null else the found one
 Thumbnail.getFromFileId = function(fileId, callback) {
     thumbnails.findOne({ "file_id" : fileId }, function(err, thumbnail) {
-        if(err || !thumbnail) {
+        if(err) {
+            callback(true, null);
+            return;
+        }
+        if(!thumbnail) {
             Thumbnail.generate(fileId, callback);
         } else {
             new Thumbnail(thumbnail).checkUpdateAndReturn(callback);
         }
     });
-}
+};
 
 
 checkCollection = function(collection, callback) {
