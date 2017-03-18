@@ -527,7 +527,12 @@ User.findById = function(id,callback){
 	});
 }
 
-// thumbnailDocument (optional) is the thumbnail document from the collection
+
+// Creates a new Thumbnail which represents the thumbnails stored in the
+// database. Thumbnails are 2D representation of the path a file is describing
+// (in G-Code or OpenSBP).
+//
+// @param {Document} [thumbnailDocument] - The thumbnail stored in the database.
 Thumbnail = function(thumbnailDocument) {
     if(thumbnailDocument) {
         this.file_id = thumbnailDocument.file_id;
@@ -540,13 +545,15 @@ Thumbnail = function(thumbnailDocument) {
     }
 }
 
-// Checks if needs update
+// Checks if needs update.
+// @return {boolean} If needs update.
 Thumbnail.prototype.needUpdate = function() {
     return this.version < cnctosvg.VERSION;
 };
 
-// Updates the thumbnail in the database
-// callback(err, thumbnail): if err is true, thumbnail is old one else new one
+// Updates the thumbnail in the database.
+// @param {function} callback({boolean} err, {Thumbnail} thumbnail): if err is
+//   true, thumbnail is old one else new one
 Thumbnail.prototype.update = function(callback) {
     var that = this;
 
@@ -582,20 +589,23 @@ Thumbnail.prototype.update = function(callback) {
 
 // Checks if needs update and returns himself to callback (the new or old
 // version)
-// callback(err, thumbnail): if err is always null, thumbnail is new or old one
+// @param {function} callback({boolean} err, {Thumbnail} thumbnail): err is
+//   always false, thumbnail is old one or news one
 Thumbnail.prototype.checkUpdateAndReturn = function(callback) {
     var that = this;
     if(that.needUpdate()) {
         that.update(function(err, thumbnail) {
-            callback(null, thumbnail);
+            callback(false, thumbnail);
         });
     } else {
-        callback(null, that);
+        callback(false, that);
     }
 };
 
 // Creates image but does not add a thumbnail into the database
-// Returns the image
+// @param {string} gcode
+// @param {string} title
+// @return {string} the image
 Thumbnail.createImage = function(gcode, title) {
     var colors = { G1 : "#000000", G2G3 : "#000000" };
     var width = 100;
@@ -605,7 +615,8 @@ Thumbnail.createImage = function(gcode, title) {
 };
 
 // Generates the thumbnail and insert it in the database
-// callback(err, thumbnail): if err is true, thumbnail is null else new one
+// @param {function} callback({boolean} err, {Thumbnail} thumbnail): if err is
+//   true, thumbnail is null else new one
 Thumbnail.generate = function(fileId, callback) {
     thumbnails.findOne({ "file_id" : fileId }, function(err, thumbnail) {
         if(!err && thumbnail) {
@@ -641,7 +652,8 @@ Thumbnail.generate = function(fileId, callback) {
 };
 
 // Get the thumbnail, if no thumbnail in database: try to make one and return it
-// callback(err, thumbnail): if err is true, thumbnail is null else the found one
+// @param {function} callback({boolean} err, {Thumbnail} thumbnail): if err is
+//   true, thumbnail is null else the found one
 Thumbnail.getFromFileId = function(fileId, callback) {
     thumbnails.findOne({ "file_id" : fileId }, function(err, thumbnail) {
         if(err) {
