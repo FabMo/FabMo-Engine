@@ -137,7 +137,7 @@ function createPreviewThumbnail(job, width, height) {
   img.width = width;
   img.height = height;
   img.alt = "[No possible preview]";
-  img.src = "/file/" + job.file_id + "/thumbnail/image";
+  img.src = "/job/" + job._id + "/thumbnail";
   return img.outerHTML;
 }
 

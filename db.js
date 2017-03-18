@@ -668,6 +668,19 @@ Thumbnail.getFromFileId = function(fileId, callback) {
     });
 };
 
+// Get the thumbnail, if no thumbnail in database: try to make one and return it
+// @param {function} callback({Error} err, {Thumbnail} thumbnail): if err is
+//   not null, thumbnail is undefined else the found one
+Thumbnail.getFromJobId = function(jobId, callback) {
+    Job.getById(jobId, function(err, job) {
+        if(err || !job) {
+            callback(new Error("Cannot find job with id = " + jobId));
+        } else {
+            Thumbnail.getFromFileId(job.file_id, callback);
+        }
+    });
+}
+
 
 checkCollection = function(collection, callback) {
 	collection.find().toArray(function(err, data) {
