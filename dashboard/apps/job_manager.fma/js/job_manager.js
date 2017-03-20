@@ -299,12 +299,15 @@ function addHistoryEntries(jobs) {
     var row = table.insertRow(table.rows.length);
     var menu = row.insertCell(0);
     menu.className += ' actions-control';
-    var name = row.insertCell(1);
-    var done = row.insertCell(2);
-    var time = row.insertCell(3);
+    var thumbnail = row.insertCell(1);
+    thumbnail.style.width = "60px";
+    var name = row.insertCell(2);
+    var done = row.insertCell(3);
+    var time = row.insertCell(4);
 
     menu.innerHTML = createHistoryMenu(job._id);
-    name.innerHTML = '<div class="job-' + job.state + '">' + createPreviewThumbnail(job, 50, 50) + job.name + '</div>';
+    thumbnail.innerHTML = createPreviewThumbnail(job, 50, 50);
+    name.innerHTML = '<div class="job-' + job.state + '">' + job.name + '</div>';
     done.innerHTML = moment(job.finished_at).fromNow();
     time.innerHTML = moment.utc(job.finished_at - job.started_at).format('HH:mm:ss');
   });
