@@ -1,24 +1,56 @@
 /*jslint todo: true, browser: true, continue: true, white: true*/
-/*global THREE, GCodeViewer, GCodeToGeometry*/
 
 /**
  * Written by Alex Canales for ShopBotTools, Inc.
  */
 
-/**
- * This file contains the class managing the viewer. This is the class that the
- * user will instantiate. This is the main class.
- */
-require('jquery');
-var GCodeToGeometry = require('./gcodetogeometry.min.js');
-require('./CombinedCamera');
-require('./OrbitControls.js');
-var GCodeViewer = require('./util.js');
-var Foundation = require('../../../static/js/libs/foundation.min.js');
-var Fabmo = require('../../../static/js/libs/fabmo.js');
-var fabmo = new Fabmo;
+var THREE = require("three");
+require("./helvetiker_regular.typeface");  // It has to modify THREE
+var gcodetogeometry = require("gcodetogeometry");
+var util = require("./util");
+var Path = require("./path").Path;
+var TotalSize = require("./path").TotalSize;
+var Helpers = require("./helpers").Helpers;
+var Gui = require("./gui").Gui;
+var Animation = require("./animation").Animation;
+var CombinedCamera = require("./CombinedCamera").CombinedCamera;
+var OrbitControls = require("./OrbitControls").OrbitControls;
 
-GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
+/**
+ * Defines the viewer class. This is the class that the user will instantiate.
+ * This is the main class.
+ *
+ * @class
+ * @param {DomElement} container - The container of the viewer.  Warning: style
+ *   of the container: the position must be set as `absolute` or `relative`,
+ *   else the position is automatically set to relative (this is needed for the
+ *   GUI).
+ * @param {number} widthCanvas - The width of the viewer.
+ * @param {number} heightCanvas - The height of the viewer.
+ * @param {function} [callbackError] - The callback function if an error
+ *   occurs, should have one parameter: a string which will contain the error
+ *   message.
+ * @param {object} [configuration] - The configuration of the machine. If the
+ *   board is set, a box representing the board will be displayed, the
+ *   dimensions of the board are in inches.
+ * @param {object} [configuration.board] - The dimension of the cut board.
+ * @param {number} configuration.board.width - The width in inches.
+ * @param {number} configuration.board.height - The height in inches.
+ * @param {number} configuration.board.length - The length in inches.
+ * @param {object} [configuration.initialPosition] - The initial position of
+ *   the job. If not set, it will be consider as (0; 0; 0).
+ * @param {number} configuration.initialPosition.x - The x position in inches.
+ * @param {number} configuration.initialPosition.y - The y position in inches.
+ * @param {number} configuration.initialPosition.z - The z position in inches.
+ * @param {boolean} [liveMode=false] - The viewer mode. If set true, the viewer
+ *   will be in live mode (this mode is explain below), else it is in normal
+ *   mode.
+ * @param {boolean} [inInch] - How the unit is displayed. If set true, the unit
+ *   will be displayed in inch. If set false, the unit will be displayed in
+ *   millimeters. If not set (undefined), the unit will automatically be
+ *   displayed according to the G-Code commands.
+ */
+exports.Viewer = function(container, widthCanvas, heightCanvas,
         callbackError, configuration, liveMode, inInch) {
     "use strict";
     var that = this;
@@ -37,6 +69,10 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     /**
      * Refreshes the screen. To call each time something is change and should be
      * displayed.
+     *
+     * @function refreshDisplay
+     * @memberof GCodeViewer.Viewer
+     * @instance
      */
     that.refreshDisplay = function() {
         render();
@@ -50,10 +86,14 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     }
 
     /**
-     * To call when the canvas or container has resized
+     * To call when the canvas or container has resized.
      *
-     * @param {number} width The width of the dom element renderer in px.
-     * @param {number} height The height of the dom element renderer in px.
+     * @param {number} width - The width of the dom element renderer in px.
+     * @param {number} height - The height of the dom element renderer in px.
+     *
+     * @function resize
+     * @memberof GCodeViewer.Viewer
+     * @instance
      */
     that.resize = function(width, height) {
         that.renderer.setSize(width, height);
@@ -66,6 +106,10 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
 
     /**
      * Changes the type of camera to a perspective camera.
+     *
+     * @function setPerspectiveCamera
+     * @memberof GCodeViewer.Viewer
+     * @instance
      */
     that.setPerspectiveCamera = function() {
         that.camera.toPerspective();
@@ -74,6 +118,10 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
 
     /**
      * Changes the type of camera to an orthographic camera.
+     *
+     * @function setOrthographicCamera
+     * @memberof GCodeViewer.Viewer
+     * @instance
      */
     that.setOrthographicCamera = function() {
         that.camera.toOrthographic();
@@ -88,11 +136,11 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         var far = 1000; // Camera frustum far plane in perspective view.
         var orthoNear = -100; // Camera frustum near plane in orthographic view.
         var orthoFar = 100; // Camera frustum far plane in orthographic view.
-        that.camera = new THREE.CombinedCamera(width, height, fov, near,
+        that.camera = new CombinedCamera(width, height, fov, near,
                 far, orthoNear, orthoFar);
         that.camera.up.set(0, 0, 1);
 
-        that.controls = new THREE.OrbitControls(that.camera,
+        that.controls = new OrbitControls(that.camera,
                 that.renderer.domElement);
         that.controls.damping = 0.2;
         that.controls.addEventListener('change', render);
@@ -157,6 +205,10 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
 
     /**
      * Shows the plan YZ from the axe X perspective.
+     *
+     * @function showX
+     * @memberof GCodeViewer.Viewer
+     * @instance
      */
     that.showX = function() {
         showPlane("x");
@@ -164,6 +216,10 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
 
     /**
      * Shows the plan XZ from the axe Y perspective.
+     *
+     * @function showY
+     * @memberof GCodeViewer.Viewer
+     * @instance
      */
     that.showY = function() {
         showPlane("y");
@@ -171,6 +227,10 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
 
     /**
      * Shows the plan XY from the axe Z perspective.
+     *
+     * @function showZ
+     * @memberof GCodeViewer.Viewer
+     * @instance
      */
     that.showZ = function() {
         showPlane("z");
@@ -178,6 +238,10 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
 
     /**
      * Shows the ghost of the board (if it was set in the configuration).
+     *
+     * @function showBoard
+     * @memberof GCodeViewer.Viewer
+     * @instance
      */
     that.showBoard = function() {
         if(that.cncConfiguration.board === undefined) {
@@ -205,6 +269,10 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
 
     /**
      * Hides the ghost of the board.
+     *
+     * @function hideBoard
+     * @memberof GCodeViewer.Viewer
+     * @instance
      */
     that.hideBoard = function() {
         that.scene.remove(that.boardObject);
@@ -217,7 +285,7 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     function reallySetGCode(string) {
         var lx = 0, ly = 0, lz = 0;
         var message = "";
-        that.gcode = GCodeToGeometry.parse(string);
+        that.gcode = gcodetogeometry.parse(string);
         if(that.gcode.errorList.length > 0) {
             message = "Be careful, some issues appear in this file.";
             message += "\nThe machine may not do as displayed here.";
@@ -258,12 +326,14 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     /**
      * Sets the GCode and displays the result.
      *
+     * @function setGCode
+     * @memberof GCodeViewer.Viewer
+     * @instance
      * @param {string} The GCode.
-     * @param {function} Callback function called when the meshes are created
-     *                   (in case want to do something fancy).
+     * @param {function} [callback] Callback function called when the meshes
+     * are created (in case want to do something fancy).
      */
     that.setGCode = function(string, callback) {
-       
         that.gui.displayLoadingMessage();
         var cb;
         if(callback === undefined) {
@@ -284,20 +354,27 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         if(that.gcode.size !== undefined) {
             that.totalSize.setMeshes(that.gcode.size, inMm,
                 that.cncConfiguration.initialPosition);
-            // that.totalSize.add();
         }
         that.refreshDisplay();
     }
 
     /**
-     * Show the size in millimiter.
+     * Shows the size in millimiters.
+     *
+     * @function displayInMm
+     * @memberof GCodeViewer.Viewer
+     * @instance
      */
     that.displayInMm = function() {
         changeDisplay(true);
     };
 
     /**
-     * Show the size in inch.
+     * Shows the size in inches.
+     *
+     * @function displayInInch
+     * @memberof GCodeViewer.Viewer
+     * @instance
      */
     that.displayInInch = function() {
         changeDisplay(false);
@@ -306,8 +383,10 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     /**
      * Sets the currently executed line command.
      *
-     * @param {number} The line number of the command.
-     * @param {string} The G-Code command.
+     * @function updateLiveViewer
+     * @memberof GCodeViewer.Viewer
+     * @instance
+     * @param {number} lineNumber - The line number of the command.
      * @return {boolean} True if the command is displayed.
      */
     that.updateLiveViewer = function(lineNumber) {
@@ -333,11 +412,9 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     that.cncConfiguration = configuration || {};
     that.gcode = {};
 
-    // that.inMm = false;
-    // that.inchToVector = 1; //Convert an inch to the value to put in vectors
     that.callbackError = callbackError;
 
-    if(GCodeViewer.webGLEnabled() === false) {
+    if(util.webGLEnabled() === false) {
         displayError("WebGL is not enable. Impossible to preview.");
         return;
     }
@@ -377,9 +454,9 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
     that.light2.position.set( 0, 0, 10 );
     that.scene.add( that.light2 );
 
-    that.path = new GCodeViewer.Path(that.scene);
-    that.totalSize = new GCodeViewer.TotalSize(that.scene);
-    that.helpers = new GCodeViewer.Helpers(that.scene);
+    that.path = new Path(that.scene);
+    that.totalSize = new TotalSize(that.scene);
+    that.helpers = new Helpers(that.scene);
     that.showBoard();
     that.refreshDisplay();
 
@@ -398,126 +475,13 @@ GCodeViewer.Viewer = function(container, widthCanvas, heightCanvas,
         goToLine : function(lineNumber) { that.animation.goToLine(lineNumber); }
 
     };
-    that.gui = new GCodeViewer.Gui(that.renderer, widthCanvas, heightCanvas,
+    that.gui = new Gui(that.renderer, widthCanvas, heightCanvas,
             that.cncConfiguration, callbacks, liveMode);
 
     //Add animation
     if(liveMode === false) {
-        that.animation = new GCodeViewer.Animation(that.scene,
+        that.animation = new Animation(that.scene,
                 that.refreshDisplay, that.gui, that.path, 24,
                 that.cncConfiguration.initialPosition);
     }
 };
-
-
-    var viewer;
-    var FOOTBAR_HEIGHT = 175;  // Should find a way to access the element
-
-    /**
-     * Initializes the handler for updating the live viewer.
-     * @param {number} jobId The job id.
-     */
-    function initializeLiveViewerHandler(jobId) {
-      fabmo.on("status", function(status) {
-        if(status.state !== "running") {
-          return;
-        }
-        if(status.job && status.job._id === jobId && status.line !== null) {
-          viewer.updateLiveViewer(status.line);
-        }
-      });
-    }
-
-    /**
-     * Initializes the viewer object.
-     * @param {string} gcode The G-Code to display.
-     * @param {boolean} isLive Sets if the G-Code should be displayed live.
-     * @param {number} jobId The job id.
-     */
-    function initializeViewer(gcode, isLive, jobId) {
-      var width = window.innerWidth;
-      var height = window.innerHeight - $("#topbar").height();
-      $('#preview').size(width, height);
-      viewer = new GCodeViewer.Viewer(
-        document.getElementById("preview"),
-        width,
-        height,
-        function(msg) { fabmo.notify('warning', msg); },
-        { hideGCode : true },
-        isLive
-      );
-      if(gcode !== "") {
-        viewer.setGCode(gcode);
-      }
-
-      if(isLive) {
-          initializeLiveViewerHandler(jobId);
-      }
-
-      resize();
-    }
-
-// Start fixing issue with footbar display
-
-    /**
-     * Resizes the viewer according to the running job footer height. The
-     * height should be equal to zero if no job is running.
-     *
-     * @param {number} footerHeight The footer height.
-     */
-    function resizeAccordingFooter(footerHeight) {
-      var width = window.innerWidth;
-      var height = window.innerHeight - $("#topbar").height() - footerHeight;
-      $('#preview').size(width, height);
-      viewer.resize(width, height);
-    }
-
-    /**
-     * Resizes the viewer. Function to call when the window has been resized.
-     */
-    function resize() {
-        fabmo.requestStatus(function(err, status) {
-          if(err) {
-            resizeAccordingFooter(0);
-            return;
-          }
-          if(status.state !== "running") {
-            resizeAccordingFooter(0);
-            return;
-          }
-          resizeAccordingFooter(FOOTBAR_HEIGHT);  //Should access to the element
-        });
-    }
-
-// End fixing issue with footbar display
-
-// Old code to use when the issue with the footbar is fixed
-/*
-    function resize() {
-      var width = window.innerWidth;
-      var height = window.innerHeight - $("#topbar").height() - footerHeight;
-      $('#preview').size(width, height);
-      viewer.resize(width, height);
-    }
-*/
-
-    $(document).ready(function() {
-      $(document).foundation();
-
-      fabmo.getAppArgs(function(err, args) {
-        if('job' in args) {
-          var url = '/job/' + args.job + '/gcode';
-          $.get(url,function(data, status) {
-            var isLive = ('isLive' in args) ? args.isLive : false;
-            initializeViewer(data, isLive, args.job);
-          });
-        } else {
-          initializeViewer("", false, -1);
-        }
-      });
-
-      $(window).resize(function(){
-        console.info('resizing')
-        resize();
-      });
-    });
