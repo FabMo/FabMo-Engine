@@ -1143,7 +1143,6 @@ SBPRuntime.prototype.setPreferredUnits = function(units, callback) {
 
 SBPRuntime.prototype._setUnits = function(units) {
 	units = u.unitType(units);
-	log.info("Setting SBP runtime units to " + units);
 	if(units === this.units) { return; }
 	var convert = units === 'in' ? u.mm2in : u.in2mm;
 	this.movespeed_xy = convert(this.movespeed_xy);
