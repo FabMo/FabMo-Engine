@@ -207,7 +207,7 @@ function addQueueEntries(jobs) {
       recentItem.setAttribute("data-id", recent[i]._id);
       recentJobs.appendChild(recentItem);
       var id = document.getElementById(recent[i]._id);
-      id.innerHTML = '<div id="menu"></div><div id="name">' + recent[i].name + '</div><div class="description">' + createPreviewThumbnail(recent[i], 100, 100) + recent[i].description + '</div>';
+      id.innerHTML = '<div id="menu"></div><div id="name">' + recent[i].name + '</div><div class="description">' + createPreviewThumbnail(recent[i], 100, 100) + '<br/>' + recent[i].description + '</div>';
       var menu = id.firstChild;
 
       // menu.className += ' actions-control';
