@@ -295,9 +295,10 @@ File.prototype.save = function(callback) {
 	});
 };
 
-// Delete this file from the database
+// Delete this file (and associated thumbnail) from the database
 File.prototype.delete = function(callback){
 	files.remove({_id : this._id},function(err){if(!err)callback();else callback(err);});
+	thumbnails.remove({file_id : this._id},function(err){if(!err)callback();else callback(err);});
 };
 
 // Update the "last run" time (use the current time)
@@ -611,7 +612,7 @@ Thumbnail.createImage = function(gcode, title) {
     var width = 100;
     var height = 100;
     var lineThickness = 2;
-    return cnctosvg.createSVG(gcode, colors, title, width, height, lineThickness);
+    return cnctosvg.createSVG(gcode, colors, title, width, height, lineThickness, true);
 };
 
 // Generates the thumbnail and insert it in the database
