@@ -12,6 +12,10 @@ html, body {
     -webkit-overflow-scrolling: touch;
 }
 
+label {
+  margin-bottom: 2px;
+}
+
 
 .noselect {
     -webkit-touch-callout: none;
@@ -62,6 +66,40 @@ button.small, .button.small {
     padding-left: 18px;
     padding-left: 1.125rem;
   }
+}
+
+
+.tip-output {
+  position: fixed;
+  right: 90px;
+  min-width: 200px;
+  max-width: 350px;
+  width: 70%;
+  text-align: left;
+  background-color: #ffffff;
+  padding: 1em;
+  border: 1px solid #dddddd;
+  box-shadow: 0px 2px 5px -1px rgba(0,0,0,0.75);
+  z-index: 9;
+  border-radius: 5px;
+  font-family: source_sans_proextralight;
+  display: none;
+}
+
+.commentBox{
+  position: absolute;
+  top: 10px;
+  right: -0.5em;
+  width: 1em;
+  height: 1em;
+
+  background-color: #ffffff;
+  -ms-transform: rotate(45deg); /* IE 9 */
+    -webkit-transform: rotate(45deg); /* Chrome, Safari, Opera */
+    transform: rotate(45deg);
+  border-top:    1px solid  #dddddd;
+  border-right:   1px solid  #dddddd;
+  z-index: 10;
 }
 
 td input, td select {margin:0 !important;}
@@ -196,6 +234,22 @@ table {
   border: 1px solid #444444;
   border-radius: 5px;
   box-shadow: .5px .5px .5px #aaaaaa;
+}
+
+.tool-tip {
+  background-color: #313366;
+  float: right;
+  border-radius: 50%;
+  height: 20px;
+  width: 20px;
+  line-height: 130%;
+  color: #eee;
+  text-align: center;
+  font-size: 1rem;
+  font-family: serif;
+  -webkit-box-shadow: 1px 1px 1px 0px #aaaaaa;
+  -moz-box-shadow:    1px 1px 1px 0px #aaaaaa;
+  box-shadow:         1px 1px 1px 0px #aaaaaa;
 }
 
 .flash-green{

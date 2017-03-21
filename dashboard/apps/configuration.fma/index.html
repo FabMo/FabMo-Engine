@@ -10,6 +10,7 @@
 </head>
 
 <body>
+  <div class="tip-output"><span class="tip-text"></span><div class='commentBox'></div></div>
   <div class="sticky">
     <nav class="top-bar" data-topbar role="navigation">
       <ul class="title-area">
@@ -58,7 +59,8 @@
             <legend>General Settings</legend>
             <div class="large-4 columns" id="section-machine-name">
               <div class="row collapse">
-                <label>Machine Name</label>
+                <label data-tip="The name of your tool.  The tool name will be displayed on the dashboard, and is used as the network name for wireless and wired networking.">Machine Name<div class="tool-tip">i</div></label>
+                <div class="tool-tip">i</div>
                 <div class="small-12 columns">
                   <input type="text" id="input-machine-name" class="input" />
                 </div>
@@ -66,7 +68,7 @@
             </div>
             <div class="large-4 columns" id="section-machine-id">
               <div class="row collapse">
-                <label>Machine ID</label>
+                <label data-tip="The unique factory ID of your tool.  This ID can be helpful for tech support.  This value cannot be changed.">Machine ID<div class="tool-tip">i</div></label>
                 <div class="small-12 columns">
                   <input type="text" id="input-machine-id" disabled/>
                 </div>
@@ -74,7 +76,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Default Unit System</label>
+                <label data-tip="The distance units that will be used by default for the DRO display and in supported apps.">Default Unit System<div class="tool-tip">i</div></label>
                 <select id="machine-units" class="machine-input">
                   <option value="mm">mm</option>
                   <option value="in">in</option>
@@ -83,7 +85,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Distance Mode</label>
+                <label data-tip="">Distance Mode</label>
                 <select id="driver-gdi" class="driver-input">
                   <option value="0">Absolute</option>
                   <option value="1">Incremental</option>
@@ -93,7 +95,7 @@
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Chordal Tolerance</label>
+                <label data-tip='Maximum deviation that an arc segment may take from its "ideal" trajectory.  A smaller number here means higher resolution (but possibly slower) arcs.'>Chordal Tolerance<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-ct" class="driver-input" />
                 </div>
@@ -104,7 +106,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Junction Integration Time</label>
+                <label data-tip="Determines how aggressively the machine takes corners.  Sensible values are between 0.5 and 2.0.  Higher values mean more aggressive corners.">Junction Integration Time<div class="tool-tip">i</div></label>
                 <div class="small-12 columns">
                   <input type="text" id="driver-jt" class="driver-input" />
                 </div>
@@ -118,7 +120,7 @@
             <legend>Logging</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Log Level
+                <label data-tip="Determines how aggressively the tool records diagnostic information in its log.  This should be set to 'Informational' except in certain exceptional tech support situations.  Setting this value to something other than 'Informational' may negatively impact tool performance.">Log Level<div class="tool-tip">i</div></label>
                   <select id="engine-log_level" class="engine-input">
                     <option value="g2">G2</option>
                     <option value="debug">Debug</option>
@@ -126,12 +128,11 @@
                     <option value="warning">Warnings</option>
                     <option value="error">Error</option>
                   </select>
-                </label>
               </div>
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Status Report Interval</label>
+                <label data-tip="The minimum interval between tool status reports.  A larger number here means position and status displays that do not update as frequently.">Status Report Interval<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-si" class="driver-input" />
                 </div>
@@ -149,7 +150,7 @@
 
 		<div class="large-4 columns">
 		    <div class="row collapse">
-			<label>Software Version</label>
+			<label data-tip="The version of FabMo that is currently running on this tool.">Software Version<div class="tool-tip">i</div></label>
 			<div class="columns">
 			    <span class="engine-version"></span>
 			</div>
@@ -468,7 +469,7 @@
             <legend>X-Axis</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Feedrate Maximum</label>
+                <label data-tip="The maximum allowable feedrate for this machine in a feed command (G1 in g-code, or Movement commands in OpenSBP) - This acts like a speed limit, essentially capping the feed rate of any movement command to the specified value.">Feedrate Maximum<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-xfr" class="driver-input" />
                 </div>
@@ -479,7 +480,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Velocity Maximum</label>
+                <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-xvm" class="driver-input" />
                 </div>
@@ -490,7 +491,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Maximum Jerk</label>
+                <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.'>Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-xjm" class="driver-input" />
                 </div>
@@ -501,8 +502,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>High Speed Jerk</label>
-                <div class="small-9 columns">
+                  <label data-tip="">High Speed Jerk</label>                <div class="small-9 columns">
                   <input type="text" id="driver-xjh" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
@@ -514,7 +514,7 @@
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Axis Mode</label>
+                <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.  Rotary axes are controlled in degrees.">Axis Mode<div class="tool-tip">i</div></label>
                 <select id="driver-xam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Linear</option>
@@ -529,7 +529,7 @@
             <legend>Y-Axis</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Feedrate Maximum</label>
+                <label data-tip="The maximum allowable feedrate for this machine in a feed command (G1 in g-code, or Movement commands in OpenSBP) - This acts like a speed limit, essentially capping the feed rate of any movement command to the specified value.">Feedrate Maximum<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-yfr" class="driver-input" />
                 </div>
@@ -540,7 +540,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Velocity Maximum</label>
+                <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-yvm" class="driver-input" />
                 </div>
@@ -551,7 +551,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Maximum Jerk</label>
+                <label data-tip="The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.">Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-yjm" class="driver-input" />
                 </div>
@@ -562,7 +562,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>High Speed Jerk</label>
+                <label data-tip="">High Speed Jerk</label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-yjh" class="driver-input" />
                 </div>
@@ -576,7 +576,7 @@
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Axis Mode</label>
+                <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.  Rotary axes are controlled in degrees.">Axis Mode<div class="tool-tip">i</div></label>
                 <select id="driver-yam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Linear</option>
@@ -591,7 +591,7 @@
             <legend>Z-Axis</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Feedrate Maximum</label>
+                <label data-tip="The maximum allowable feedrate for this machine in a feed command (G1 in g-code, or Movement commands in OpenSBP) - This acts like a speed limit, essentially capping the feed rate of any movement command to the specified value.">Feedrate Maximum<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-zfr" class="driver-input" />
                 </div>
@@ -602,7 +602,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Velocity Maximum</label>
+                <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-zvm" class="driver-input" />
                 </div>
@@ -613,7 +613,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Maximum Jerk</label>
+                <label data-tip="The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.">Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-zjm" class="driver-input" />
                 </div>
@@ -624,7 +624,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>High Speed Jerk</label>
+                <label data-tip="">High Speed Jerk</label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-zjh" class="driver-input" />
                 </div>
@@ -638,7 +638,7 @@
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Axis Mode</label>
+                <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.  Rotary axes are controlled in degrees.">Axis Mode<div class="tool-tip">i</div></label>
                 <select id="driver-zam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Linear</option>
@@ -653,7 +653,7 @@
             <legend>A-Axis</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Feedrate Maximum</label>
+                <label data-tip="The maximum allowable feedrate for this machine in a feed command (G1 in g-code, or Movement commands in OpenSBP) - This acts like a speed limit, essentially capping the feed rate of any movement command to the specified value.">Feedrate Maximum<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-afr" class="driver-input" />
                 </div>
@@ -664,7 +664,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Velocity Maximum</label>
+                <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-avm" class="driver-input" />
                 </div>
@@ -675,7 +675,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Maximum Jerk</label>
+                <label data-tip="The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.">Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-ajm" class="driver-input" />
                 </div>
@@ -686,7 +686,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Axis Mode</label>
+                <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.  Rotary axes are controlled in degrees.">Axis Mode<div class="tool-tip">i</div></label>
                 <select id="driver-aam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Rotary</option>
@@ -701,7 +701,7 @@
             <legend>B-Axis</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Feedrate Maximum</label>
+                <label data-tip="The maximum allowable feedrate for this machine in a feed command (G1 in g-code, or Movement commands in OpenSBP) - This acts like a speed limit, essentially capping the feed rate of any movement command to the specified value.">Feedrate Maximum<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-bfr" class="driver-input" />
                 </div>
@@ -712,7 +712,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Velocity Maximum</label>
+                <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-bvm" class="driver-input" />
                 </div>
@@ -723,7 +723,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Maximum Jerk</label>
+                <label data-tip="The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.">Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-bjm" class="driver-input" />
                 </div>
@@ -734,7 +734,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Axis Mode</label>
+                <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.  Rotary axes are controlled in degrees.">Axis Mode<div class="tool-tip">i</div></label>
                 <select id="driver-bam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Rotary</option>
@@ -749,7 +749,7 @@
             <legend>C-Axis</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Feedrate Maximum</label>
+                <label data-tip="The maximum allowable feedrate for this machine in a feed command (G1 in g-code, or Movement commands in OpenSBP) - This acts like a speed limit, essentially capping the feed rate of any movement command to the specified value.">Feedrate Maximum</label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-cfr" class="driver-input" />
                 </div>
@@ -760,7 +760,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Velocity Maximum</label>
+                <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-cvm" class="driver-input" />
                 </div>
@@ -771,7 +771,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Maximum Jerk</label>
+               <label data-tip="The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.">Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-cjm" class="driver-input" />
                 </div>
@@ -782,7 +782,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Axis Mode</label>
+                <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.  Rotary axes are controlled in degrees.">Axis Mode<div class="tool-tip">i</div></label>
                 <select id="driver-cam" class="driver-input">
                   <option value="0">Disable</option>
                   <option value="1">Rotary</option>
@@ -1146,7 +1146,7 @@
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Unit Value</label>
+                <label data-tip="The number of steps taken per unit for this channel.  This value determines how far each channels motor is driven for a requested distance.  These values determined by the mechanical and electrical configuration of the tool.  If the tool appears not to travel the specified distance when moving, this value is probably incorrect.">Unit Value<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-1su" class="driver-input" />
                 </div>
@@ -1156,9 +1156,9 @@
               </div>
             </div>
 
-            <div class="large-4 columns">
+            <!--<div class="large-4 columns">
               <div class="row collapse">
-                <label>Power Management Mode
+                <label data-tip="">Power Management Mode
                   <select id="driver-1pm" class="driver-input">
                     <option value="0">Disabled</option>
                     <option value="1">Always on</option>
@@ -1171,7 +1171,7 @@
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Power Level</label>
+                <label data-tip="">Power Level</label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-1pl" class="driver-input" />
                 </div>
@@ -1179,23 +1179,23 @@
                   <span class="postfix">0-1.0</span>
                 </div>
               </div>
-            </div>
+            </div>-->
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Direction</label>
-                <div class="small-9 columns">
-                  <input type="text" id="driver-1po" class="driver-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix">(0-CW, 1-CCW)</span>
+                <label data-tip="">Direction</label>
+                <div>
+                  <select id="driver-1po" class="driver-input">
+                    <option value="0">Normal</option>
+                    <option value="1">Reversed</option>
+                  </select>
                 </div>
               </div>
             </div>
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Axis
+                <label data-tip="">Axis
                   <select id="driver-1ma" class="driver-input">
                     <option value="0">X</option>
                     <option value="1">Y</option>
@@ -1216,7 +1216,7 @@
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Unit Value</label>
+                <label data-tip="The number of steps taken per unit for this channel.  This value determines how far each channels motor is driven for a requested distance.  These values determined by the mechanical and electrical configuration of the tool.  If the tool appears not to travel the specified distance when moving, this value is probably incorrect.">Unit Value<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-2su" class="driver-input" />
                 </div>
@@ -1226,9 +1226,9 @@
               </div>
             </div>
 
-            <div class="large-4 columns">
+            <!--<div class="large-4 columns">
               <div class="row collapse">
-                <label>Power Management Mode
+                <label data-tip="">Power Management Mode
                   <select id="driver-2pm" class="driver-input">
                     <option value="0">Disabled</option>
                     <option value="1">Always on</option>
@@ -1241,7 +1241,7 @@
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Power Level</label>
+                <label data-tip="">Power Level</label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-2pl" class="driver-input" />
                 </div>
@@ -1249,23 +1249,23 @@
                   <span class="postfix">0-1.0</span>
                 </div>
               </div>
-            </div>
+            </div>-->
 
-            <div class="large-4 columns">
+           <div class="large-4 columns">
               <div class="row collapse">
-                <label>Direction</label>
-                <div class="small-9 columns">
-                  <input type="text" id="driver-2po" class="driver-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix">(0-CW, 1-CCW)</span>
+                <label data-tip="">Direction</label>
+                <div>
+                  <select id="driver-2po" class="driver-input">
+                    <option value="0">Normal</option>
+                    <option value="1">Reversed</option>
+                  </select>
                 </div>
               </div>
             </div>
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Axis
+                <label data-tip="">Axis
                   <select id="driver-2ma" class="driver-input">
                     <option value="0">X</option>
                     <option value="1">Y</option>
@@ -1286,7 +1286,7 @@
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Unit Value</label>
+                <label data-tip="The number of steps taken per unit for this channel.  This value determines how far each channels motor is driven for a requested distance.  These values determined by the mechanical and electrical configuration of the tool.  If the tool appears not to travel the specified distance when moving, this value is probably incorrect.">Unit Value<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-3su" class="driver-input" />
                 </div>
@@ -1296,9 +1296,9 @@
               </div>
             </div>
 
-            <div class="large-4 columns">
+            <!--<div class="large-4 columns">
               <div class="row collapse">
-                <label>Power Management Mode
+                <label data-tip="">Power Management Mode
                   <select id="driver-3pm" class="driver-input">
                     <option value="0">Disabled</option>
                     <option value="1">Always on</option>
@@ -1311,7 +1311,7 @@
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Power Level</label>
+                <label data-tip="">Power Level</label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-3pl" class="driver-input" />
                 </div>
@@ -1319,23 +1319,23 @@
                   <span class="postfix">0-1.0</span>
                 </div>
               </div>
-            </div>
+            </div>-->
 
-            <div class="large-4 columns">
+           <div class="large-4 columns">
               <div class="row collapse">
-                <label>Direction</label>
-                <div class="small-9 columns">
-                  <input type="text" id="driver-3po" class="driver-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix">(0-CW, 1-CCW)</span>
+                <label data-tip="">Direction</label>
+                <div>
+                  <select id="driver-3po" class="driver-input">
+                    <option value="0">Normal</option>
+                    <option value="1">Reversed</option>
+                  </select>
                 </div>
               </div>
             </div>
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Axis
+                <label data-tip="">Axis
                   <select id="driver-3ma" class="driver-input">
                     <option value="0">X</option>
                     <option value="1">Y</option>
@@ -1356,7 +1356,7 @@
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Unit Value</label>
+                <label data-tip="The number of steps taken per unit for this channel.  This value determines how far each channels motor is driven for a requested distance.  These values determined by the mechanical and electrical configuration of the tool.  If the tool appears not to travel the specified distance when moving, this value is probably incorrect.">Unit Value<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-4su" class="driver-input" />
                 </div>
@@ -1366,9 +1366,9 @@
               </div>
             </div>
 
-            <div class="large-4 columns">
+            <!--<div class="large-4 columns">
               <div class="row collapse">
-                <label>Power Management Mode
+                <label data-tip="">Power Management Mode
                   <select id="driver-4pm" class="driver-input">
                     <option value="0">Disabled</option>
                     <option value="1">Always on</option>
@@ -1381,7 +1381,7 @@
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Power Level</label>
+                <label data-tip="">Power Level</label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-4pl" class="driver-input" />
                 </div>
@@ -1389,23 +1389,23 @@
                   <span class="postfix">0-1.0</span>
                 </div>
               </div>
-            </div>
+            </div>-->
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Direction</label>
-                <div class="small-9 columns">
-                  <input type="text" id="driver-4po" class="driver-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix">(0-CW, 1-CCW)</span>
+                <label data-tip="">Direction</label>
+                <div>
+                  <select id="driver-4po" class="driver-input">
+                    <option value="0">Normal</option>
+                    <option value="1">Reversed</option>
+                  </select>
                 </div>
               </div>
             </div>
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Axis
+                <label data-tip="">Axis
                   <select id="driver-4ma" class="driver-input">
                     <option value="0">X</option>
                     <option value="1">Y</option>
@@ -1426,7 +1426,7 @@
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Unit Value</label>
+                <label data-tip="The number of steps taken per unit for this channel.  This value determines how far each channels motor is driven for a requested distance.  These values determined by the mechanical and electrical configuration of the tool.  If the tool appears not to travel the specified distance when moving, this value is probably incorrect.">Unit Value<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-5su" class="driver-input" />
                 </div>
@@ -1436,9 +1436,9 @@
               </div>
             </div>
 
-            <div class="large-4 columns">
+            <!--<div class="large-4 columns">
               <div class="row collapse">
-                <label>Power Management Mode
+                <label data-tip="">Power Management Mode
                   <select id="driver-5pm" class="driver-input">
                     <option value="0">Disabled</option>
                     <option value="1">Always on</option>
@@ -1459,23 +1459,23 @@
                   <span class="postfix">0-1.0</span>
                 </div>
               </div>
-            </div>
+            </div>-->
 
-            <div class="large-4 columns">
+           <div class="large-4 columns">
               <div class="row collapse">
-                <label>Direction</label>
-                <div class="small-9 columns">
-                  <input type="text" id="driver-5po" class="driver-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix">(0-CW, 1-CCW)</span>
+                <label data-tip="">Direction</label>
+                <div>
+                  <select id="driver-5po" class="driver-input">
+                    <option value="0">Normal</option>
+                    <option value="1">Reversed</option>
+                  </select>
                 </div>
               </div>
             </div>
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Axis
+                <label data-tip="">Axis
                   <select id="driver-5ma" class="driver-input">
                     <option value="0">X</option>
                     <option value="1">Y</option>
@@ -1497,7 +1497,7 @@
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Unit Value</label>
+                <label data-tip="The number of steps taken per unit for this channel.  This value determines how far each channels motor is driven for a requested distance.  These values determined by the mechanical and electrical configuration of the tool.  If the tool appears not to travel the specified distance when moving, this value is probably incorrect.">Unit Value<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-6su" class="driver-input" />
                 </div>
@@ -1507,9 +1507,9 @@
               </div>
             </div>
 
-            <div class="large-4 columns">
+            <!--<div class="large-4 columns">
               <div class="row collapse">
-                <label>Power Management Mode
+                <label data-tip="">Power Management Mode
                   <select id="driver-6pm" class="driver-input">
                     <option value="0">Disabled</option>
                     <option value="1">Always on</option>
@@ -1522,7 +1522,7 @@
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Power Level</label>
+                <label data-tip="">Power Level</label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-6pl" class="driver-input" />
                 </div>
@@ -1530,23 +1530,23 @@
                   <span class="postfix">0-1.0</span>
                 </div>
               </div>
-            </div>
+            </div>-->
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Direction</label>
-                <div class="small-9 columns">
-                  <input type="text" id="driver-6po" class="driver-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix">(0-CW, 1-CCW)</span>
+                <label data-tip="">Direction</label>
+                <div>
+                  <select id="driver-6po" class="driver-input">
+                    <option value="0">Normal</option>
+                    <option value="1">Reversed</option>
+                  </select>
                 </div>
               </div>
             </div>
 
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Axis
+                <label data-tip="">Axis
                   <select id="driver-6ma" class="driver-input">
                     <option value="0">X</option>
                     <option value="1">Y</option>
@@ -1569,7 +1569,7 @@
             <legend>Machine Envelope</legend>
             <div class="large-6 columns">
               <div class="row collapse">
-                <label>X Min</label>
+                <label data-tip="The minimum position on the X axis that is still inside the physical envelope of the tool.  This number should probably be a zero.">X Min <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="number" id="machine-envelope-xmin" class="machine-input" />
                 </div>
@@ -1581,7 +1581,7 @@
 
             <div class="large-6 columns">
               <div class="row collapse">
-                <label>X Max</label>
+                <label data-tip="The maximum position on the X axis that is still inside the physical envelope of the tool.  If your tool has 36 inches of travel in the X-Axis, for example, this number should probably be 36.">X Max <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="number" id="machine-envelope-xmax" class="machine-input" />
                 </div>
@@ -1593,7 +1593,7 @@
 
             <div class="large-6 columns">
               <div class="row collapse">
-                <label>Y Min</label>
+                <label data-tip="The minimum position on the Y axis that is still inside the physical envelope of the tool.  This number should probably be a zero.">Y Min <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="number" id="machine-envelope-ymin" class="machine-input" />
                 </div>
@@ -1605,7 +1605,7 @@
 
             <div class="large-6 columns">
               <div class="row collapse">
-                <label>Y Max</label>
+                <label data-tip="The maximum position on the Y axis that is still inside the physical envelope of the tool.">Y Max <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="number" id="machine-envelope-ymax" class="machine-input" />
                 </div>
@@ -1622,7 +1622,7 @@
             <legend>Manual Control</legend>
             <div class="large-6 columns">
               <div class="row collapse">
-                <label>XY Speed</label>
+                <label data-tip="XY speed when driving the tool with the DRO display or keyboard. ">XY Speed <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="number" id="machine-manual-xy_speed" class="machine-input" />
                 </div>
@@ -1632,7 +1632,7 @@
               </div>
 
               <div class="row collapse">
-                <label>Z Speed</label>
+                <labe data-tip="Z speed when driving the tool with the DRO display or keyboard."l>Z Speed <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="number" id="machine-manual-z_speed" class="machine-input" />
                 </div>
@@ -1642,7 +1642,7 @@
               </div>
 
               <div class="row collapse">
-                <label>XY Increment</label>
+                <label data-tip='Amount to move in the X or Y axis for each "nudge" or incremental move issued from the keyboard or DRO.'>XY Increment <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="number" id="machine-manual-xy_increment" class="machine-input" />
                 </div>
@@ -1652,7 +1652,7 @@
               </div>
 
               <div class="row collapse">
-                <label>Z Increment</label>
+                <label data-tip='Amount to move in the Z axis for each "nudge" or incremental move issued from the keyboard or DRO'>Z Increment <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="number" id="machine-manual-z_increment" class="machine-input" />
                 </div>
@@ -1670,7 +1670,8 @@
             <legend>Authorization Button</legend>
             <div class="large-6 columns">
               <div class="row collapse">
-                <label>Authorization Button Input
+                <label data-tip="The input to which the authorization button is connected.">Authorization Button Input
+                  <div class="tool-tip">i</div>
                   <select id="machine-auth_input" class="machine-input">
                     <option value="0">No Authorization</option>
                     <option value="1">Input 1</option>
@@ -1685,7 +1686,7 @@
                 </label>
               </div>
               <div class="row collapse">
-                <label>Authorization Timeout</label>
+                <label data-tip="The amount of time the tool remains authorized for use after authorization has been issued with the authorization button.  Tool authorization is used to confirm that you are physically present and working at the tool before executing a motion command that comes in over the wireless or wired network.">Authorization Timeout<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="number" id="machine-auth_timeout" class="machine-input" />
                 </div>
@@ -1699,7 +1700,7 @@
             <legend>AP Mode Button</legend>
             <div class="large-6 columns">
               <div class="row collapse">
-                <label>AP Mode Button Input
+                <label data-tip='The input which is interpreted as an "AP Mode Button" - For tools with wireless networking support, holding down the AP mode button for ten seconds or more provokes the tool to enter AP mode, where it presents itself as a wireless access point that can be connected to directly.'>AP Mode Button Input<div class="tool-tip">i</div>
                   <select id="machine-ap_input" class="machine-input">
                     <option value="0">No AP Mode Button</option>
                     <option value="1">Input 1</option>
@@ -1714,7 +1715,7 @@
                 </label>
               </div>
               <div class="row collapse">
-                <label>AP Mode Button Duration</label>
+                <label data-tip="">AP Mode Button Duration</label>
                 <div class="small-9 columns">
                   <input type="number" id="machine-ap_time" class="machine-input" />
                 </div>
@@ -1728,7 +1729,7 @@
             <legend>Quit Button</legend>
             <div class="large-6 columns">
               <div class="row collapse">
-                <label>Quit Button Input
+                <label data-tip="The input to which the quit button is connected.">Quit Button Input<div class="tool-tip">i</div>
                   <select id="machine-quit_input" class="machine-input">
                     <option value="1">Input 1</option>
                     <option value="2">Input 2</option>

@@ -184,6 +184,8 @@ $('#btn-backup').click(function(evt) {
     });
 });
 
+
+
 $('#btn-restore').click(function(evt) {
     $('#restore_conf_file').trigger('click');
 });
@@ -250,6 +252,33 @@ $(document).ready(function() {
     // Populate Settings
     update();
 
+    ///tool tip logiv
+
+    $('.tool-tip').click(function(){
+     var tip =$(this).parent().data('tip');
+     var eTop = $(this).offset().top;
+     $('.tip-output').show();
+     $('.tip-text').text(tip);
+     var realTop = eTop - 10;
+     console.log(eTop);
+     console.log(realTop);
+     
+    $('.tip-output').css('top', realTop + 'px');
+     
+});
+
+$('body').scroll(function(){
+    console.log('fired');
+    $('.tip-output').hide();
+});
+
+$('body').click(function(event){   
+       if($(event.target).attr('class') == "tool-tip"){
+          return
+       } else {
+           $('.tip-output').hide();
+       }
+});
     // Update settings on change
     $('.driver-input').change( function() {
         var parts = this.id.split("-");
