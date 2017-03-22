@@ -749,7 +749,7 @@
             <legend>C-Axis</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The maximum allowable feedrate for this machine in a feed command (G1 in g-code, or Movement commands in OpenSBP) - This acts like a speed limit, essentially capping the feed rate of any movement command to the specified value.">Feedrate Maximum</label>
+                <label data-tip="The maximum allowable feedrate for this machine in a feed command (G1 in g-code, or Movement commands in OpenSBP) - This acts like a speed limit, essentially capping the feed rate of any movement command to the specified value.">Feedrate Maximum<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-cfr" class="driver-input" />
                 </div>
@@ -1632,7 +1632,7 @@
               </div>
 
               <div class="row collapse">
-                <labe data-tip="Z speed when driving the tool with the DRO display or keyboard."l>Z Speed <div class="tool-tip">i</div></label>
+                <label data-tip="Z speed when driving the tool with the DRO display or keyboard.">Z Speed <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="number" id="machine-manual-z_speed" class="machine-input" />
                 </div>
@@ -1672,6 +1672,7 @@
               <div class="row collapse">
                 <label data-tip="The input to which the authorization button is connected.">Authorization Button Input
                   <div class="tool-tip">i</div>
+                </label>
                   <select id="machine-auth_input" class="machine-input">
                     <option value="0">No Authorization</option>
                     <option value="1">Input 1</option>
@@ -1683,7 +1684,7 @@
                     <option value="7">Input 7</option>
                     <option value="8">Input 8</option>
                   </select>
-                </label>
+
               </div>
               <div class="row collapse">
                 <label data-tip="The amount of time the tool remains authorized for use after authorization has been issued with the authorization button.  Tool authorization is used to confirm that you are physically present and working at the tool before executing a motion command that comes in over the wireless or wired network.">Authorization Timeout<div class="tool-tip">i</div></label>
@@ -1701,6 +1702,7 @@
             <div class="large-6 columns">
               <div class="row collapse">
                 <label data-tip='The input which is interpreted as an "AP Mode Button" - For tools with wireless networking support, holding down the AP mode button for ten seconds or more provokes the tool to enter AP mode, where it presents itself as a wireless access point that can be connected to directly.'>AP Mode Button Input<div class="tool-tip">i</div>
+                </label>
                   <select id="machine-ap_input" class="machine-input">
                     <option value="0">No AP Mode Button</option>
                     <option value="1">Input 1</option>
@@ -1712,7 +1714,7 @@
                     <option value="7">Input 7</option>
                     <option value="8">Input 8</option>
                   </select>
-                </label>
+
               </div>
               <div class="row collapse">
                 <label data-tip="">AP Mode Button Duration</label>
@@ -1730,6 +1732,7 @@
             <div class="large-6 columns">
               <div class="row collapse">
                 <label data-tip="The input to which the quit button is connected.">Quit Button Input<div class="tool-tip">i</div>
+                </label>
                   <select id="machine-quit_input" class="machine-input">
                     <option value="1">Input 1</option>
                     <option value="2">Input 2</option>
@@ -1740,7 +1743,7 @@
                     <option value="7">Input 7</option>
                     <option value="8">Input 8</option>
                   </select>
-                </label>
+
               </div>
    
             </div>
