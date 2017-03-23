@@ -143,8 +143,11 @@ FabMoAPI.prototype.startVideoStreaming = function(callback){
     this.videoSocket.on('connect_error', function() {
       console.info("Video streaming websocket disconnected (connection error)");
     }.bind(this));
+    callback();
+  }else{
+    callback("connection to the video streaming via websocket failed.");
   }
-  callback();
+
 }
 
 FabMoAPI.prototype.emit = function(evt, data) {
