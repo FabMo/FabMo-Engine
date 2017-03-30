@@ -1670,11 +1670,16 @@
             <legend>Authorization Button</legend>
             <div class="large-6 columns">
               <div class="row collapse">
+                <label data-tip="Do you want to have to physically authorize the tool when the tool wants to move">Authorization Required
+                  <div class="tool-tip">i</div>
+                </label>
+                <input id="machine-auth_required" class="machine-input" type="checkbox" checked>
+              </div>
+                <div class="row collapse">
                 <label data-tip="The input to which the authorization button is connected.">Authorization Button Input
                   <div class="tool-tip">i</div>
                 </label>
                   <select id="machine-auth_input" class="machine-input">
-                    <option value="0">No Authorization</option>
                     <option value="1">Input 1</option>
                     <option value="2">Input 2</option>
                     <option value="3">Input 3</option>

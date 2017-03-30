@@ -136,6 +136,22 @@ SBPRuntime.prototype.executeCode = function(s, callback) {
 	this.runString(s, callback);
 }
 
+//Check whether the code needs auth
+SBPRuntime.prototype.needsAuth = function(s) {
+	var lines =  s.split('\n');
+	console.log(lines);
+	lines = lines.filter(Boolean);
+	for (var i = 0, x = lines.length; i < x; i++) {
+		if ( lines[i].toUpperCase().charAt( 0 ) !=='Z') {
+			return true;
+		} 
+	};
+	return false;
+}
+
+
+
+
 // Run the provided string in OpenSBP format
 SBPRuntime.prototype.runString = function(s, callback) {
 	try {

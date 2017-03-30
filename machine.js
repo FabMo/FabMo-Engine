@@ -261,9 +261,10 @@ Machine.prototype.arm = function(action, timeout) {
 	this.preArmedState = this.status.state;
 	this.preArmedInfo = this.status.info;
 
+	var requireAuth = config.machine.get('auth_required');
+	console.log(requireAuth);
 
-
-	if(config.machine.get('auth_input') == 0) {
+	if(!requireAuth) {
 		log.info("Firing automatically since authorization is disabled.");
 		this.fire(true);
 	} else {
@@ -639,25 +640,32 @@ Machine.prototype.runNextJob = function(callback) {
 }
 
 Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
-	if(this.status.auth) {
-		return this._executeRuntimeCode(runtimeName, code);
-	}
-	if(runtimeName === 'manual') {
-		this.arm(null, config.machine.get('auth_timeout'));
-		return;
+	runtime = this.getRuntime(runtimeName);
+	var needsAuth = runtime.needsAuth(code);
+	if (needsAuth){
+		if(this.status.auth) {
+			return this._executeRuntimeCode(runtimeName, code);
+		}
+		if(runtimeName === 'manual') {
+			this.arm(null, config.machine.get('auth_timeout'));
+			return;
+		} else {
+			this.arm({
+				type : 'runtimeCode',
+				payload : {
+					name : runtimeName,
+					code : code
+				}
+			}, config.machine.get('auth_timeout'));
+		}
 	} else {
-		this.arm({
-			type : 'runtimeCode',
-			payload : {
-				name : runtimeName,
-				code : code
-			}
-		}, config.machine.get('auth_timeout'));
+		this._executeRuntimeCode(runtimeName, code);
 	}
 }
 
 Machine.prototype.sbp = function(string) {
 	this.executeRuntimeCode('sbp', string);
+
 }
 
 Machine.prototype.gcode = function(string) {

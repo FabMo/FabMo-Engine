@@ -12,6 +12,11 @@ function GCodeRuntime() {
 GCodeRuntime.prototype.toString = function() {
 	return "[GCodeRuntime]";
 }
+//Check if move requires auth
+GCodeRuntime.prototype.needsAuth = function(s) {
+	//all needs auth (check) so just return true
+	return true;
+}
 GCodeRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;

@@ -67,7 +67,16 @@ function update() {
               v = branch[key];
               input = $('#' + branchname + '-' + key);
               if(input.length) {
-                input.val(String(v));
+                  if (input.is(':checkbox')){
+                      console.log
+                    if (v){
+                        input.prop( "checked", true );
+                    } else {
+                        input.prop( "checked", false );
+                    }
+                  } else {
+                    input.val(String(v));
+                  }
               }
             }
         });
@@ -268,7 +277,6 @@ $(document).ready(function() {
 });
 
 $('body').scroll(function(){
-    console.log('fired');
     $('.tip-output').hide();
 });
 
@@ -307,6 +315,14 @@ $('body').click(function(event){
 
     $('.engine-input').change( function() {
         setConfig(this.id, this.value);
+    });
+
+    $("#machine-auth_required").on('change', function() {
+        if ($(this).is(':checked')) {
+            $(this).attr('value', 'true');
+        } else {
+            $(this).attr('value', 'false');
+        }
     });
 
     $('.machine-input').change( function() {

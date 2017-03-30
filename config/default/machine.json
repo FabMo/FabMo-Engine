@@ -3,6 +3,7 @@
 	"time_units" : "s",
 	"quit_input": 4,
 	"auth_timeout" : 30,
+	"auth_required": true,
 	"auth_input" : 2,
 	"ap_input" : 2,
 	"ap_time" : 8,
