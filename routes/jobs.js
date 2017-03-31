@@ -435,6 +435,18 @@ var getJobGCode = function(req, res, next) {
     });
 };
 
+var getThumbnailImage = function(req, res, next) {
+    db.Thumbnail.getFromJobId(req.params.id, function(err, thumbnail) {
+        if(err) {
+            res.send(404);
+        } else {
+            res.setHeader('content-type', 'image/svg+xml');
+            res.write(thumbnail.image);
+            res.end();
+        }
+    });
+}
+
 module.exports = function(server) {
     server.post('/job', submitJob);
     server.get('/jobs', getAllJobs);
@@ -444,6 +456,7 @@ module.exports = function(server) {
     server.post('/job/:id', resubmitJob);
     server.get('/job/:id/file', getJobFile);
     server.get('/job/:id/gcode', getJobGCode);
+    //server.get('/job/:id/thumbnail', getThumbnailImage);
 
     server.get('/jobs/queue', getQueue);
     server.del('/jobs/queue', clearQueue);

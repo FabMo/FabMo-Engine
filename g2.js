@@ -32,6 +32,9 @@ var EXPECT_TIMEOUT = 300000;
 
 var _promiseCounter = 1;
 var THRESH = 1
+
+var pat = /s*(G(28|38)\.\d|G2(0|1))/g
+
 // Error codes defined by G2
 // See https://github.com/synthetos/g2/blob/edge/TinyG2/tinyg2.h for the latest error codes and messages
 try {
@@ -151,7 +154,7 @@ function G2() {
 	// Event emitter inheritance and behavior setup
 	events.EventEmitter.call(this);
 	this.setMaxListeners(50);
-	this.lines_to_send = 6;
+	this.lines_to_send = 4;
 	this._ignored_responses = 0;
 	this._primed = false;
 	this._streamDone = false;
@@ -222,7 +225,9 @@ G2.prototype.connect = function(path, callback) {
 
 	this.once('ready', function() {
 		this.connected = true;
-		callback(null, this);
+		this._write('\x04\n', function() {
+		callback(null, this);			
+		}.bind(this));
 	}.bind(this));
 
 	this._serialPort.open(function(error) {
@@ -276,12 +281,16 @@ G2.prototype.setUnits = function(units, callback) {
 	} else {
 		return callback(new Error('Invalid unit setting: ' + units));
 	}
+	callback(null);
+	/*
 	this.set('gun', units, function() {
-		/*this.once('status', function(status) {
+		console.log("gun callback")
+		this.once('status', function(status) {
 			callback(null);
-		});*/
+		});
 		callback(null);
     }.bind(this));
+	*/
 }
 
 G2.prototype.requestStatusReport = function(callback) {
@@ -322,20 +331,11 @@ G2.prototype.onData = function(data) {
 			var json_string = this._currentData.join('');
 			t = new Date().getTime();
 			log.g2('S','in',json_string);
-			obj = null;
 			try {
-				obj = JSON.parse(json_string);
+				var obj = JSON.parse(json_string);
+				this.onMessage(obj);
 			}catch(e){
-				// A JSON parse error usually means the asynchronous LOADER SEGMENT NOT READY MESSAGE
-				if(json_string.trim() === '######## LOADER - SEGMENT NOT READY') {
-					this.emit('error', [-1, 'LOADER_SEGMENT_NOT_READY', 'Asynchronous error: Segment not ready.']);
-				} else {
-					this.emit('error', [-1, 'JSON_PARSE_ERROR', "Could not parse response: '" + jsesc(json_string) + "' (" + e.toString() + ")"]);
-				}
-			} finally {
-				if(obj) {
-					this.onMessage(obj);
-				}
+				this.emit('error', [-1, 'JSON_PARSE_ERROR', "Could not parse response: '" + jsesc(json_string) + "' (" + e.toString() + ")"]);
 			}
 			this._currentData = [];
 		} else {
@@ -366,10 +366,10 @@ G2.prototype.handleExceptionReport = function(response) {
 	if(response.er) {
 		this._lastExceptionReport = response.er;
 		var stat = response.er.st;
-		if(((stat === 204) || (stat === 207)) && this.quit_pending) {
-			//this.command("{clr:n}");
+		if((stat === 207) && this.quit_pending) {
+		//	this.quit_pending = false;
+			//this._write("{clr:n}\n");
 			//this.command("M30");
-			this.quit_pending = false;
 		}
 	}
 };
@@ -422,13 +422,17 @@ G2.prototype.handleStatusReport = function(response) {
 			}
 
       if(this.quit_pending) {
-        if(response.sr.stat === STAT_STOP || response.sr.stat === STAT_END || response.sr.stat === STAT_HOLDING) {
+      	switch(response.sr.stat) {
+      		case STAT_STOP:
+      		case STAT_HOLDING:
   				log.info("!!! Clearing the quit pending state.")
-  				this.quit_pending = false;
-					this._write('M30\n');
-  			} else {
-          log.info("!!! NOT clearing the quit pending state ")
-        }
+				this._write('\x04\n', function() {});
+				break;
+      		case STAT_END:
+      			this.quit_pending = false;
+      			this.pause_flag = false;
+      			break;
+      	}
       }
 
 			if(this.expectations.length > 0) {
@@ -568,34 +572,33 @@ G2.prototype.resume = function() {
 
 
 G2.prototype.quit = function() {
-	if(!this.quit_pending) {
-      this.quit_pending = true;
-			this.pause_flag = false;
-	    this.gcode_queue.clear();
-	    this.command_queue.clear();
-
-			var thisPromise = _promiseCounter;
-			log.info("Creating promise " + thisPromise);
-			_promiseCounter += 1;
-			var deferred = Q.defer();
-			var that = this;
-			var onStat = function(stat) {
-				if(stat !== STAT_RUNNING) {
-					if(this.quit_pending && stat === STAT_HOLDING) {
-						return;
-					}
-					that.removeListener('stat', onStat);
-					log.info("Resolving promise (quit): " + thisPromise)
-					deferred.resolve(stat);
-				}
+	if(this.status.stat === STAT_END) {
+		return;
+	}
+	
+	if(this.quit_pending) {
+		log.warn("Not quitting because a quit is already pending.");
+		//this.requestStatusReport();
+		return;
+	}
+	this.quit_pending = true
+	
+	switch(this.status.stat) {
+		/*case STAT_RUNNING:
+		case STAT_PROBE:
+		case STAT_STOP:
+			this._write('!', function() { log.debug('Drained.'); });
+			break;*/
+		default:
+			this.feedHold();
+			if(this.stream) {
+				this.stream.end()				
 			}
-
-			this.on('stat', onStat);
-			this._write('!%\n', function() { log.debug('Drained.'); });
-			return deferred.promise;
-		} else {
-			log.warn("Not quitting because one is pending already");
-		}
+			this.gcode_queue.clear()
+			//this._write('\x04');
+			
+			break;
+	}
 }
 
 G2.prototype.get = function(key, callback) {
@@ -725,6 +728,7 @@ G2.prototype.command = function(obj) {
 		cmd = obj.trim();
 		//this._write('{"gc":"'+cmd+'"}\n');
 		//this.command_queue.enqueue(cmd)
+		console.log("enqueuing gcmd")
 		this.gcode_queue.enqueue(cmd);
 		//this._write(cmd + '\n');
 	} else {
@@ -732,6 +736,8 @@ G2.prototype.command = function(obj) {
 		cmd = cmd.replace(/(:\s*)(true)(\s*[},])/g, "$1t$3")
 		cmd = cmd.replace(/(:\s*)(false)(\s*[},])/g, "$1f$3")
 		cmd = cmd.replace(/"/g, '');
+		console.log("enqueuing ccmd")
+
 		this.command_queue.enqueue(cmd);
 	}
 	//if(this.response_count < RESPONSE_LIMIT) {
@@ -747,7 +753,7 @@ G2.prototype.runString = function(data, callback) {
 	var stringStream = new stream.Readable();
 	stringStream.push(data + "\n");
 	stringStream.push("M30\n");
-	stringStream.push(null);
+	stringStream.end()
 	return this.runStream(stringStream);
 };
 
@@ -806,16 +812,16 @@ G2.prototype.sendMore = function() {
 	//log.info("           Lines in queue: " + this.gcode_queue.getLength());
 
   if(this.pause_flag) {
+  	console.log("nope pause flag")
     return;
   }
 	var count = this.command_queue.getLength();
 	if(count) {
-		var to_send = Math.min(this.lines_to_send, count);
+		var to_send = count;
 		var codes = this.command_queue.multiDequeue(count)
 		codes.push("");
 		this._ignored_responses+=to_send;
 		this._write(codes.join('\n'), function() {});
-
 	}
 
 	if(this._primed) {
@@ -829,7 +835,15 @@ G2.prototype.sendMore = function() {
 					log.warn("!!!!!!!! Sending " + to_send + " lines!");
 					console.log(codes);
 				}
-				this.lines_to_send -= to_send;
+				/*
+				var offset = 0;
+				codes.forEach(function(code) {
+					if(code.search(pat)) {
+						offset += 1;
+					}
+				});
+				*/
+				this.lines_to_send -= to_send/*-offset*/;
 				this._write(codes.join('\n'), function() { });
 			}
 		}
@@ -844,19 +858,31 @@ G2.prototype.sendMore = function() {
 };
 
 G2.prototype.setMachinePosition = function(position, callback) {
-	var gcode = ["G21"];
-	['x','y','z','a','b','c','u','v','w'].forEach(function(axis) {
+	var gcodes = ["G21"];
+	var commands = [{"gc":"g21"}]
+	var axes = ['x','y','z','a','b','c','u','v','w']
+	axes.forEach(function(axis) {
 		if(position[axis] != undefined) {
-			gcode.push('G28.3 ' + axis + position[axis].toFixed(5));
+			gcodes.push('G28.3 ' + axis + position[axis].toFixed(5));
+			commands.push({'gc':'g28.3 ' + axis + position[axis].toFixed(5)})
 		}
 	});
 
 	if(this.status.unit === 'in') {
-		gcode.push('G20');
+		gcodes.push('G20\n');
+		commands.push({'gc':'G20'});
 	}
-	this.runList(gcode).then(function() {
-		callback();
-	});
+	
+	console.log("SETTING MACHINE POSITION")
+	//console.log(gcode)
+	//console.log(commands)
+	/*commands.forEach(function(cmd) {
+		this.command(cmd);
+	}.bind(this))
+	callback && callback();
+*/
+	this.runList(gcodes).then(function() {callback && callback()})
+	//this._write(gcodes.join('\n'), function() { callback()});
 }
 
 // Function works like "once()" for a state change

@@ -5,7 +5,13 @@
  * @author WestLangley / http://github.com/WestLangley
  * @author erich666 / http://erichaines.com
  */
-/*global THREE, console */
+
+/**
+ * Modified by Alex Canales.
+ */
+
+var THREE = require("three");
+var CombinedCamera = require("./CombinedCamera").CombinedCamera;
 
 // This set of controls performs orbiting, dollying (zooming), and panning. It maintains
 // the "up" direction as +Y, unlike the TrackballControls. Touch on tablet and phones is
@@ -15,9 +21,7 @@
 //    Zoom - middle mouse, or mousewheel / touch: two finger spread or squish
 //    Pan - right mouse, or arrow keys / touch: three finter swipe
 
-
-
-THREE.OrbitControls = function ( object, domElement ) {
+var OrbitControls = function ( object, domElement ) {
 
     this.object = object;
     this.domElement = ( domElement !== undefined ) ? domElement : document;
@@ -190,7 +194,7 @@ THREE.OrbitControls = function ( object, domElement ) {
         var element = scope.domElement === document ? scope.domElement.body : scope.domElement;
 
         if ( scope.object instanceof THREE.PerspectiveCamera ||
-           (scope.object instanceof THREE.CombinedCamera &&
+           (scope.object instanceof CombinedCamera &&
            scope.object.inPerspectiveMode === true ) ) {
 
             // perspective
@@ -208,7 +212,7 @@ THREE.OrbitControls = function ( object, domElement ) {
             scope.panUp( 2 * deltaY * targetDistance / element.clientHeight );
 
         } else if ( scope.object instanceof THREE.OrthographicCamera ||
-           (scope.object instanceof THREE.CombinedCamera &&
+           (scope.object instanceof CombinedCamera &&
            scope.object.inOrthographicMode === true ) ) {
 
             // orthographic
@@ -236,13 +240,13 @@ THREE.OrbitControls = function ( object, domElement ) {
         }
 
         if ( scope.object instanceof THREE.PerspectiveCamera ||
-           (scope.object instanceof THREE.CombinedCamera &&
+           (scope.object instanceof CombinedCamera &&
            scope.object.inPerspectiveMode === true ) ) {
 
             scale /= dollyScale;
 
         } else if ( scope.object instanceof THREE.OrthographicCamera ||
-           (scope.object instanceof THREE.CombinedCamera &&
+           (scope.object instanceof CombinedCamera &&
            scope.object.inOrthographicMode === true ) ) {
 
             scope.object.zoom = Math.max( this.minZoom, Math.min( this.maxZoom, this.object.zoom * dollyScale ) );
@@ -266,13 +270,13 @@ THREE.OrbitControls = function ( object, domElement ) {
         }
 
         if ( scope.object instanceof THREE.PerspectiveCamera ||
-           (scope.object instanceof THREE.CombinedCamera &&
+           (scope.object instanceof CombinedCamera &&
            scope.object.inPerspectiveMode === true ) ) {
 
             scale *= dollyScale;
 
         } else if ( scope.object instanceof THREE.OrthographicCamera ||
-           (scope.object instanceof THREE.CombinedCamera &&
+           (scope.object instanceof CombinedCamera &&
            scope.object.inOrthographicMode === true ) ) {
 
             scope.object.zoom = Math.max( this.minZoom, Math.min( this.maxZoom, this.object.zoom / dollyScale ) );
@@ -745,5 +749,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 };
 
-THREE.OrbitControls.prototype = Object.create( THREE.EventDispatcher.prototype );
-THREE.OrbitControls.prototype.constructor = THREE.OrbitControls;
+OrbitControls.prototype = Object.create( THREE.EventDispatcher.prototype );
+OrbitControls.prototype.constructor = OrbitControls;
+
+exports.OrbitControls = OrbitControls;

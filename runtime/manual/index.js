@@ -24,8 +24,10 @@ ManualRuntime.prototype.connect = function(machine) {
 
 	// True while the tool is known to be in motion
 	this.moving = false;
+
 	// True while the user intends (as far as we know) for the tool to continue moving
 	this.keep_moving = false;
+
 	// Current trajectory
 	this.current_axis = null;
 	this.current_speed = null;
@@ -45,6 +47,7 @@ ManualRuntime.prototype.disconnect = function() {
 };
 
 ManualRuntime.prototype._changeState = function(newstate, message) {
+	log.debug("Changing to " + newstate)
 	if(newstate === "idle") {
 		this.ok_to_disconnect = true;
 		var callback = this.completeCallback || function() {};
@@ -169,6 +172,7 @@ ManualRuntime.prototype.startMotion = function(axis, speed) {
 					//stream.close()
 					log.info("Finished running stream: " + stat);
 					this.moving = false;
+					this.keep_moving = false;
 					this.stream = null;
 					this._changeState("idle");
 					config.driver.restoreSome(['zl'], function() {
@@ -192,7 +196,6 @@ ManualRuntime.prototype.renewMoves = function() {
 		this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
 		for(var i=0; i<RENEW_SEGMENTS; i++) {
 			var move = 'G1 ' + this.currentAxis + segment.toFixed(5) + '\n'
-			console.log(move)
 			this.stream.write(move);
 		}
 		this.driver.prime();

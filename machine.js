@@ -588,7 +588,8 @@ Machine.prototype.pause = function() {
 };
 
 Machine.prototype.quit = function() {
-	this.disarm();
+	console.log("QUITTING AT THE MACHINE LEVEL")
+    this.disarm();
 	// Quitting from the idle state dismisses the 'info' data
 	if(this.status.state === "idle") {
 		delete this.status.info;

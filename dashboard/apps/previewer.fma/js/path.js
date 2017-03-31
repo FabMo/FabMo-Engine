@@ -1,5 +1,4 @@
 /*jslint todo: true, browser: true, continue: true, white: true*/
-/*global THREE, GCodeToGeometry*/
 
 /**
  * Written by Alex Canales for ShopBotTools, Inc.
@@ -9,9 +8,11 @@
  * This file contains the class managing the path view.
  */
 
-var GCodeViewer = {};
+var THREE = require("three");
+var util = require("./util");
+
 //Class to create the meshes showing the measure of the path
-GCodeViewer.TotalSize = function(scene) {
+exports.TotalSize = function(scene) {
     "use strict";
     var that = this;
 
@@ -75,6 +76,7 @@ GCodeViewer.TotalSize = function(scene) {
      * path begins (optional).
      */
     that.setMeshes = function(totalSize, displayInMm, initialPosition) {
+        var INCH_TO_MILLIMETER = 25.4;
         if(totalSize === undefined) {
             return;
         }
@@ -83,7 +85,7 @@ GCodeViewer.TotalSize = function(scene) {
         var material = new THREE.LineBasicMaterial({ color : color });
         var geometry = new THREE.Geometry();
         var type = (displayInMm === false) ? "in" : "mm";
-        var d = (displayInMm === false) ? 1 : 25.4;
+        var d = (displayInMm === false) ? 1 : INCH_TO_MILLIMETER;
         var width = Math.abs(totalSize.max.x - totalSize.min.x);
         var length = Math.abs(totalSize.max.y - totalSize.min.y);
         var height = Math.abs(totalSize.max.z - totalSize.min.z);
@@ -158,7 +160,7 @@ GCodeViewer.TotalSize = function(scene) {
 };
 
 
-GCodeViewer.Path = function(scene) {
+exports.Path = function(scene) {
     "use strict";
     var that = this;
 
@@ -257,8 +259,8 @@ GCodeViewer.Path = function(scene) {
                     type : lines[i].type,
                     lineNumber : lines[i].lineNumber,
                     feedrate : lines[i].feedrate,
-                    start : GCodeViewer.copyPoint(geometry.vertices[0]),
-                    end : GCodeViewer.copyPoint(geometry.vertices[geometry.vertices.length - 1]),
+                    start : util.copyPoint(geometry.vertices[0]),
+                    end : util.copyPoint(geometry.vertices[geometry.vertices.length - 1]),
                     numberVertices : geometry.vertices.length
                 });
             } else if(lines[i].type === "G1") {
@@ -269,8 +271,8 @@ GCodeViewer.Path = function(scene) {
                     type : lines[i].type,
                     lineNumber : lines[i].lineNumber,
                     feedrate : lines[i].feedrate,
-                    start : GCodeViewer.copyPoint(geometry.vertices[0]),
-                    end : GCodeViewer.copyPoint(geometry.vertices[geometry.vertices.length - 1]),
+                    start : util.copyPoint(geometry.vertices[0]),
+                    end : util.copyPoint(geometry.vertices[geometry.vertices.length - 1]),
                     numberVertices : geometry.vertices.length
                 });
             } else if(lines[i].type === "G2" || lines[i].type === "G3") {
@@ -287,8 +289,8 @@ GCodeViewer.Path = function(scene) {
                     type : lines[i].type,
                     lineNumber : lines[i].lineNumber,
                     feedrate : lines[i].feedrate,
-                    start : GCodeViewer.copyPoint(geometry.vertices[0]),
-                    end : GCodeViewer.copyPoint(geometry.vertices[geometry.vertices.length - 1]),
+                    start : util.copyPoint(geometry.vertices[0]),
+                    end : util.copyPoint(geometry.vertices[geometry.vertices.length - 1]),
                     numberVertices : (geometry.vertices.length - 1) * 2
                 });
             }
@@ -311,20 +313,20 @@ GCodeViewer.Path = function(scene) {
         that.initialPosition = { x : 0, y : 0, z : 0};
 
         that.meshG0Undone = new THREE.Line(geometries.G0,
-                that.matG0Undone, THREE.LineSegments);
+                that.matG0Undone, THREE.LinePieces);
         that.meshG1Undone = new THREE.Line(geometries.G1,
-                that.matG1Undone, THREE.LineSegments);
+                that.matG1Undone, THREE.LinePieces);
         that.meshG2G3Undone = new THREE.Line(geometries.G2G3,
-                that.matG2G3Undone, THREE.LineSegments);
+                that.matG2G3Undone, THREE.LinePieces);
         that.meshG0Done = new THREE.Line(new THREE.Geometry(),
-                that.matG0Done, THREE.LineSegments);
+                that.matG0Done, THREE.LinePieces);
         that.meshG1Done = new THREE.Line(new THREE.Geometry(),
-                that.matG1Done, THREE.LineSegments);
+                that.matG1Done, THREE.LinePieces);
         that.meshG2G3Done = new THREE.Line(new THREE.Geometry(),
-                that.matG2G3Done, THREE.LineSegments);
+                that.matG2G3Done, THREE.LinePieces);
 
         that.meshDoing = new THREE.Line(new THREE.Geometry(),
-                that.matDoing, THREE.LineSegments);
+                that.matDoing, THREE.LinePieces);
 
         if(initialPosition !== undefined) {
             that.initialPosition.x = initialPosition.x;
@@ -390,7 +392,7 @@ GCodeViewer.Path = function(scene) {
             iEnd = iCurrent + command.numberVertices - 1;
 
             path.push({
-                point : GCodeViewer.copyPoint(vertices[iCurrent]),
+                point : util.copyPoint(vertices[iCurrent]),
                 type : command.type,
                 lineNumber : command.lineNumber,
                 commandNumber : iCommand,
@@ -399,7 +401,7 @@ GCodeViewer.Path = function(scene) {
             iCurrent++;
             while(iCurrent < iEnd) {
                 path.push({
-                    point : GCodeViewer.copyPoint(vertices[iCurrent]),
+                    point : util.copyPoint(vertices[iCurrent]),
                     type : command.type,
                     lineNumber : command.lineNumber,
                     commandNumber : iCommand,
@@ -408,7 +410,7 @@ GCodeViewer.Path = function(scene) {
                 iCurrent += 2;
             }
             path.push({
-                point : GCodeViewer.copyPoint(vertices[iCurrent]),
+                point : util.copyPoint(vertices[iCurrent]),
                 type : command.type,
                 lineNumber : command.lineNumber,
                 commandNumber : iCommand,
@@ -440,21 +442,21 @@ GCodeViewer.Path = function(scene) {
                 mat = that.matG0Done;
                 pos = that.meshG0Done.position.clone();
                 that.scene.remove(that.meshG0Done);
-                that.meshG0Done = new THREE.Line(geo, mat, THREE.LineSegments);
+                that.meshG0Done = new THREE.Line(geo, mat, THREE.LinePieces);
                 that.meshG0Done.position.set(pos.x, pos.y, pos.z);
                 that.scene.add(that.meshG0Done);
             } else if(type === "G1") {
                 mat = that.matG1Done;
                 pos = that.meshG1Done.position.clone();
                 that.scene.remove(that.meshG1Done);
-                that.meshG1Done = new THREE.Line(geo, mat, THREE.LineSegments);
+                that.meshG1Done = new THREE.Line(geo, mat, THREE.LinePieces);
                 that.meshG1Done.position.set(pos.x, pos.y, pos.z);
                 that.scene.add(that.meshG1Done);
             } else {
                 mat = that.matG2G3Done;
                 pos = that.meshG2G3Done.position.clone();
                 that.scene.remove(that.meshG2G3Done);
-                that.meshG2G3Done = new THREE.Line(geo, mat, THREE.LineSegments);
+                that.meshG2G3Done = new THREE.Line(geo, mat, THREE.LinePieces);
                 that.meshG2G3Done.position.set(pos.x, pos.y, pos.z);
                 that.scene.add(that.meshG2G3Done);
             }
@@ -463,21 +465,21 @@ GCodeViewer.Path = function(scene) {
                 mat = that.matG0Undone;
                 pos = that.meshG0Undone.position.clone();
                 that.scene.remove(that.meshG0Undone);
-                that.meshG0Undone = new THREE.Line(geo, mat, THREE.LineSegments);
+                that.meshG0Undone = new THREE.Line(geo, mat, THREE.LinePieces);
                 that.meshG0Undone.position.set(pos.x, pos.y, pos.z);
                 that.scene.add(that.meshG0Undone);
             } else if(type === "G1") {
                 mat = that.matG1Undone;
                 pos = that.meshG1Undone.position.clone();
                 that.scene.remove(that.meshG1Undone);
-                that.meshG1Undone = new THREE.Line(geo, mat, THREE.LineSegments);
+                that.meshG1Undone = new THREE.Line(geo, mat, THREE.LinePieces);
                 that.meshG1Undone.position.set(pos.x, pos.y, pos.z);
                 that.scene.add(that.meshG1Undone);
             } else {
                 mat = that.matG2G3Undone;
                 pos = that.meshG2G3Undone.position.clone();
                 that.scene.remove(that.meshG2G3Undone);
-                that.meshG2G3Undone = new THREE.Line(geo, mat, THREE.LineSegments);
+                that.meshG2G3Undone = new THREE.Line(geo, mat, THREE.LinePieces);
                 that.meshG2G3Undone.position.set(pos.x, pos.y, pos.z);
                 that.scene.add(that.meshG2G3Undone);
             }
@@ -524,8 +526,8 @@ GCodeViewer.Path = function(scene) {
             type : that.commandsUndoneManager[0].type,
             lineNumber : that.commandsUndoneManager[0].lineNumber,
             feedrate : that.commandsUndoneManager[0].feedrate,
-            start : GCodeViewer.copyPoint(that.commandsUndoneManager[0].start),
-            end : GCodeViewer.copyPoint(that.commandsUndoneManager[0].end),
+            start : util.copyPoint(that.commandsUndoneManager[0].start),
+            end : util.copyPoint(that.commandsUndoneManager[0].end),
             numberVertices : 2
         });
     };
@@ -697,7 +699,7 @@ GCodeViewer.Path = function(scene) {
         geometry = new THREE.Geometry();
         geometry.vertices = that.meshDoing.geometry.vertices;
         position = that.meshDoing.position.clone();
-        that.meshDoing = new THREE.Line(geometry, that.matDoing, THREE.LineSegments);
+        that.meshDoing = new THREE.Line(geometry, that.matDoing, THREE.LinePieces);
         that.meshDoing.position.set(position.x, position.y, position.z);
         that.scene.add(that.meshDoing);
 
@@ -723,5 +725,3 @@ GCodeViewer.Path = function(scene) {
         color : 0x00ffff, linewidth : 7
     });
 };
-
-module.exports = GCodeViewer;
