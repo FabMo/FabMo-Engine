@@ -262,7 +262,6 @@ Machine.prototype.arm = function(action, timeout) {
 	this.preArmedInfo = this.status.info;
 
 	var requireAuth = config.machine.get('auth_required');
-	console.log(requireAuth);
 
 	if(!requireAuth) {
 		log.info("Firing automatically since authorization is disabled.");
@@ -677,7 +676,6 @@ Machine.prototype.gcode = function(string) {
  * Don't call them unless the tool is authorized!
  */
 Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
-	console.log(code);
 	runtime = this.getRuntime(runtimeName);
 	if(runtime) {
 		this.setRuntime(runtime, function(err, runtime) {
