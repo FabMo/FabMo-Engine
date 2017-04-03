@@ -11,7 +11,6 @@ var jsesc = require('jsesc');
 var stream = require('stream');
 var Q = require('q');
 var LineNumberer = require('./util').LineNumberer
-var countLineNumbers = require('./util').countLineNumbers
 
 // Values of the **stat** field that is returned from G2 status reports
 var STAT_INIT = 0;
@@ -475,7 +474,6 @@ G2.prototype.onMessage = function(response) {
 	// TODO more elegant way of dealing with "response" data.
 
 	if(response.r) {
-		console.log("lines to send: " + this.lines_to_send)
 		if(!this._seen_ready) {
 			// Special message type for initial system ready message
 			if(response.r.msg && (response.r.msg === "SYSTEM READY")) {
@@ -736,7 +734,6 @@ G2.prototype.command = function(obj) {
 		cmd = obj.trim();
 		//this._write('{"gc":"'+cmd+'"}\n');
 		//this.command_queue.enqueue(cmd)
-		console.log("enqueuing gcmd")
 		this.gcode_queue.enqueue(cmd);
 		//this._write(cmd + '\n');
 	} else {
@@ -744,7 +741,6 @@ G2.prototype.command = function(obj) {
 		cmd = cmd.replace(/(:\s*)(true)(\s*[},])/g, "$1t$3")
 		cmd = cmd.replace(/(:\s*)(false)(\s*[},])/g, "$1f$3")
 		cmd = cmd.replace(/"/g, '');
-		console.log("enqueuing ccmd")
 
 		this.command_queue.enqueue(cmd);
 	}
@@ -804,7 +800,6 @@ G2.prototype.runStream = function(s) {
 G2.prototype.runFile = function(filename) {
 	var st = fs.createReadStream(filename);
 	var ln = LineNumberer
-	this.status.nb_lines = lines
 	return this.runStream(st.pipe(ln));
 }
 
@@ -814,7 +809,6 @@ G2.prototype.runImmediate = function(data) {
 
 G2.prototype.prime = function() {
 	log.info("Priming driver");
-	console.log(this.gcode_queue)
 	this._primed = true;
 	this.sendMore();
 }
@@ -824,7 +818,6 @@ G2.prototype.sendMore = function() {
 	//log.info("           Lines in queue: " + this.gcode_queue.getLength());
 
   if(this.pause_flag) {
-  	console.log("nope pause flag")
     return;
   }
 	var count = this.command_queue.getLength();
@@ -837,34 +830,18 @@ G2.prototype.sendMore = function() {
 	}
 
 	if(this._primed) {
-		console.log("we are primed")
 		var count = this.gcode_queue.getLength();
-		console.log("there are " + count + " gcodes")
 		if(this.lines_to_send >= THRESH) {
 		       	if(count >= THRESH || this._streamDone) {
 				var to_send = Math.min(this.lines_to_send, count);
 				var codes = this.gcode_queue.multiDequeue(to_send);
 				codes.push("");
-				if(to_send > 1) {
-					log.warn("!!!!!!!! Sending " + to_send + " lines!");
-					console.log(codes);
-				}
-				/*
-				var offset = 0;
-				codes.forEach(function(code) {
-					if(code.search(pat)) {
-						offset += 1;
-					}
-				});
-				*/
 				this.lines_to_send -= to_send/*-offset*/;
 				this._write(codes.join('\n'), function() { });
 			}
 		}
 		else {
-			log.error("Not writing to gcode due to lapse in responses")
-			console.log(this.lines_to_send)
-			console.log(THRESH)
+			//log.error("Not writing to gcode due to lapse in responses")
 		}
 	} else {
 		if(this.gcode_queue.getLength() > 0) {
@@ -882,7 +859,6 @@ G2.prototype.setMachinePosition = function(position, callback) {
 			gcodes.push('G28.3 ' + axis + position[axis].toFixed(5));
 			commands.push({'gc':'g28.3 ' + axis + position[axis].toFixed(5)})
 		}
-		console.log(gcodes)
 	});
 
 	if(this.status.unit === 'in') {

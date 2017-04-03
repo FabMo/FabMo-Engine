@@ -1,6 +1,8 @@
 var fs = require('fs');
 var log = require('../../log').logger('gcode');
 var config = require('../../config');
+var countLineNumbers = require('../../util').countLineNumbers
+
 
 function GCodeRuntime() {
 	this.machine = null;
@@ -183,9 +185,12 @@ GCodeRuntime.prototype._handleStateChange = function(stat) {
 
 // Run a file given the filename
 GCodeRuntime.prototype.runFile = function(filename, callback) {
-	return this.driver.runFile(filename, callback)
-		.on('stat', this._handleStateChange.bind(this))
-		.then(this._handleStop.bind(this));
+	countLineNumbers(filename, function(err, lines) {
+		this.machine.status.nb_lines = lines;
+		this.driver.runFile(filename, callback)
+			.on('stat', this._handleStateChange.bind(this))
+			.then(this._handleStop.bind(this));
+	}.bind(this));
 }
 
 // Run the given string as gcode

@@ -474,7 +474,7 @@ var countLineNumbers = function(filename, callback) {
           if (chunk[i] == 10) lines++;
       })
       .on('end', function() {
-        callback(null, count)
+        callback(null, lines)
       });
 }
 
