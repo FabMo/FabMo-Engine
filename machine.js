@@ -157,7 +157,7 @@ function Machine(control_path, callback) {
     	this.handleFireButton(stat);
     	this.handleAPCollapseButton(stat);
 			this.handleOkayButton(stat);
-			this.handleCancelButton(stat);
+		this.handleCancelButton(stat);
     }.bind(this));
 }
 util.inherits(Machine, events.EventEmitter);
@@ -215,7 +215,7 @@ Machine.prototype.handleCancelButton = function(stat){
 		this.quit();
 	}
 
-}
+ }
 
 /*
  * State Functions
@@ -677,6 +677,7 @@ Machine.prototype.gcode = function(string) {
  * Don't call them unless the tool is authorized!
  */
 Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
+	console.log(code);
 	runtime = this.getRuntime(runtimeName);
 	if(runtime) {
 		this.setRuntime(runtime, function(err, runtime) {

@@ -68,7 +68,6 @@ function update() {
               input = $('#' + branchname + '-' + key);
               if(input.length) {
                   if (input.is(':checkbox')){
-                      console.log
                     if (v){
                         input.prop( "checked", true );
                     } else {
@@ -263,17 +262,13 @@ $(document).ready(function() {
 
     ///tool tip logiv
 
-    $('.tool-tip').click(function(){
+$('.tool-tip').click(function(){
      var tip =$(this).parent().data('tip');
      var eTop = $(this).offset().top;
+     var realTop = eTop - 10;
      $('.tip-output').show();
      $('.tip-text').text(tip);
-     var realTop = eTop - 10;
-     console.log(eTop);
-     console.log(realTop);
-     
-    $('.tip-output').css('top', realTop + 'px');
-     
+     $('.tip-output').css('top', realTop + 'px');
 });
 
 $('body').scroll(function(){

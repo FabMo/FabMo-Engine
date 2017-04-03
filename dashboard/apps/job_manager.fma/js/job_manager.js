@@ -1098,6 +1098,15 @@ function runNext() {
  });
 }
 
+function findUpTag(el, id) {
+    while (el.parentNode) {
+        el = el.parentNode;
+        if (el.id === id)
+            return el;
+    }
+    return null;
+}
+
 	$(document).ready(function() {
 	//Foundation Init
   
@@ -1122,52 +1131,7 @@ function runNext() {
 	updateHistory();
 
 	setupDropTarget();
-
-
-	$('#queue_table').on('mousedown', '.job_item:first-child', function(e) {
-		$('#queue_table').on('mousedown', '#actions', function(e){
-			e.stopPropagation();
-		});
-		if ($(window).width() > 750 ){
-			var left = e.pageX - (145/2);
-			var right = $(document).width() - e.pageX - (145/2);
-			$(this).css({
-				"margin-left":left.toString() + "px",
-				"margin-right":right.toString() + "px"
-			});
-
-			$(this).on('mouseup', function(e) {
-				$(this).css({
-					"margin-left":"",
-					"margin-right":""
-				});
-			});
-		}
-	});
-
-	$('#queue_table').on('touchstart', '.job_item:first-child', function(e) {
-		$('#queue_table').on('touchstart', '#actions', function(e){
-			e.stopPropagation();
-		});
-		if ($(window).width() > 750 ){
-			var left = e.originalEvent.touches[0].pageX; - (145/2);
-			var right = e.originalEvent.touches[0].pageX; - (145/2);
-			$(this).css({
-				"margin-left":left.toString() + "px",
-				"margin-right":right.toString() + "px"
-			});
-
-			$(this).on('touchend', function(e) {
-				$(this).css({
-					"margin-left":"",
-					"margin-right":""
-				});
-			});
-		}
-	});
-
-
-runNext();
+  runNext();
 
 	$('#history_page_next').click(function(evt) {
 		evt.preventDefault();
@@ -1237,5 +1201,29 @@ runNext();
 		e.wrap('<form>').closest('form').get(0).reset();
 		e.unwrap();
 	}
+
+
+	$('#queue_table').on('touchstart, mousedown', '.job_item:first-child', function(e) {
+    var el = e.target;
+    var a = findUpTag(el, "actions");   // search <a ...>
+    if (a) {
+      e.stopPropagation
+    }
+		if ($(window).width() > 750 ){
+			var left = e.pageX - (145/2);
+			var right = $(document).width() - e.pageX - (145/2);
+			$(this).css({
+				"margin-left":left.toString() + "px",
+				"margin-right":right.toString() + "px"
+			});
+
+			$(this).on('touchend, mouseup', function(e) {
+				$(this).css({
+					"margin-left":"",
+					"margin-right":""
+				});
+			});
+		}
+	});
    
 	});
