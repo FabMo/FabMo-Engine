@@ -16,6 +16,12 @@ ManualRuntime.prototype.toString = function() {
 	return "[ManualRuntime]";
 }
 
+//Check if auth is neeeded to execute code
+ManualRuntime.prototype.needsAuth = function(s) {
+	//all manual needs auth (check) so just return true
+	return true;
+}
+
 ManualRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;

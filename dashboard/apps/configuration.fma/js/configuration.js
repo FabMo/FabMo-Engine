@@ -67,7 +67,15 @@ function update() {
               v = branch[key];
               input = $('#' + branchname + '-' + key);
               if(input.length) {
-                input.val(String(v));
+                  if (input.is(':checkbox')){
+                    if (v){
+                        input.prop( "checked", true );
+                    } else {
+                        input.prop( "checked", false );
+                    }
+                  } else {
+                    input.val(String(v));
+                  }
               }
             }
         });
@@ -184,6 +192,8 @@ $('#btn-backup').click(function(evt) {
     });
 });
 
+
+
 $('#btn-restore').click(function(evt) {
     $('#restore_conf_file').trigger('click');
 });
@@ -250,6 +260,28 @@ $(document).ready(function() {
     // Populate Settings
     update();
 
+    ///tool tip logiv
+
+$('.tool-tip').click(function(){
+     var tip =$(this).parent().data('tip');
+     var eTop = $(this).offset().top;
+     var realTop = eTop - 10;
+     $('.tip-output').show();
+     $('.tip-text').text(tip);
+     $('.tip-output').css('top', realTop + 'px');
+});
+
+$('body').scroll(function(){
+    $('.tip-output').hide();
+});
+
+$('body').click(function(event){   
+       if($(event.target).attr('class') == "tool-tip"){
+          return
+       } else {
+           $('.tip-output').hide();
+       }
+});
     // Update settings on change
     $('.driver-input').change( function() {
         var parts = this.id.split("-");
@@ -278,6 +310,14 @@ $(document).ready(function() {
 
     $('.engine-input').change( function() {
         setConfig(this.id, this.value);
+    });
+
+    $("#machine-auth_required").on('change', function() {
+        if ($(this).is(':checked')) {
+            $(this).attr('value', 'true');
+        } else {
+            $(this).attr('value', 'false');
+        }
     });
 
     $('.machine-input').change( function() {
