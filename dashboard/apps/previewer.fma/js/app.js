@@ -12,7 +12,7 @@ var Fabmo = require('../../../static/js/libs/fabmo.js');
 
 var fabmo = new Fabmo();
 var viewer;
-var FOOTBAR_HEIGHT = 175;  // Should find a way to access the element
+var FOOTBAR_HEIGHT = 0;  // Should find a way to access the element
 
 
 // Start fixing issue with footbar display
@@ -104,7 +104,7 @@ function initializeViewer(gcode, isLive, jobId) {
 }
 
 $(document).ready(function() {
-    $(document).foundation();
+    
 
     fabmo.getAppArgs(function(err, args) {
         if(err) {

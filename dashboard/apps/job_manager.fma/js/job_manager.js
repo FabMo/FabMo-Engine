@@ -1221,7 +1221,6 @@ function findUpTag(el, id) {
     var el = e.target;
     var a = findUpTag(el, "actions");   // search <a ...>
     if (a) {
-      console.log('this is the tits');
       return
     }
 		if ($(window).width() > 750 ){
