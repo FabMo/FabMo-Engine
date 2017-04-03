@@ -442,9 +442,22 @@ var unitType = function(u) {
   }
 }
 
-var LineNumberer = new stream.Transform();
-var count = 0;
-LineNumberer._transform = function(chunk, enc, next) {
+
+
+function LineNumberer(options) {
+  // allow use without new
+  if (!(this instanceof LineNumberer)) {
+    return new LineNumberer(options);
+  }
+  this.count = 0;
+  // init Transform
+  stream.Transform.call(this, options);
+}
+util.inherits(LineNumberer, stream.Transform);
+
+
+
+LineNumberer.prototype._transform = function(chunk, enc, next) {
   var data = chunk.toString();
   if (this._lastLineData) { data = this._lastLineData + data; }
 
@@ -452,14 +465,14 @@ LineNumberer._transform = function(chunk, enc, next) {
   this._lastLineData = lines.splice(lines.length-1,1)[0];
   
   lines.forEach( function(line) {
-    count += 1;
-    LineNumberer.push("N" + count + " " + line + '\n');
-  });
+    this.count += 1;
+    this.push("N" + this.count + " " + line + '\n');
+  }.bind(this));
 
   next();
 };
 
-LineNumberer._flush = function(done) {
+LineNumberer.prototype._flush = function(done) {
   if (this._lastLineData) { this.push(this._lastLineData); }
   this._lastLineData = null;
   done();

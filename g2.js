@@ -799,7 +799,7 @@ G2.prototype.runStream = function(s) {
 
 G2.prototype.runFile = function(filename) {
 	var st = fs.createReadStream(filename);
-	var ln = LineNumberer
+	var ln = new LineNumberer();
 	return this.runStream(st.pipe(ln));
 }
 
