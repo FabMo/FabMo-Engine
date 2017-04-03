@@ -3,8 +3,8 @@ var config = require('../../config');
 var stream = require('stream');
 
 var T_RENEW = 250;
-var SAFETY_FACTOR = 5;
-var RENEW_SEGMENTS = 8;
+var SAFETY_FACTOR = 2;
+var RENEW_SEGMENTS = 3;
 
 function ManualRuntime() {
 	this.machine = null;
@@ -182,6 +182,7 @@ ManualRuntime.prototype.startMotion = function(axis, speed) {
 			} else {
 				throw new Error("Trying to create a new motion stream when one already exists!");
 			}
+			this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
 			this.renewMoves();
 		}.bind(this));
 	}
@@ -193,7 +194,8 @@ ManualRuntime.prototype.renewMoves = function() {
 		log.debug("KEEP MOVING REQUESTED")
 		this.keep_moving = false;
 		var segment = this.currentDirection*(this.renewDistance / RENEW_SEGMENTS);
-		this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
+		//console.log(this.stream)
+		//this.stream.write('M100 ({zl:0})\n')
 		for(var i=0; i<RENEW_SEGMENTS; i++) {
 			var move = 'G1 ' + this.currentAxis + segment.toFixed(5) + '\n'
 			this.stream.write(move);

@@ -472,7 +472,8 @@ SBPRuntime.prototype._run = function() {
 				this._end();
 			}.bind(this));
 
-		this.emit_gcode(config.driver.get('gdi') ? 'G91' : 'G90');
+		//this.emit_gcode(config.driver.get('gdi') ? 'G91' : 'G90');
+		//this.emit_gcode('M0'); // TEMPORARY FOR STATE SAKE
 
 		this._executeNext();
 	}
@@ -501,7 +502,7 @@ SBPRuntime.prototype._executeNext = function() {
 
 	if(this.pc >= this.program.length) {
 		log.info("End of program reached. (pc = " + this.pc + ")");
-
+		this.driver.prime();
 		if(this.gcodesPending) { return; }
 
 		if(this.isInSubProgram()) {

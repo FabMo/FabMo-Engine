@@ -10,6 +10,8 @@ var process = require('process');
 var jsesc = require('jsesc');
 var stream = require('stream');
 var Q = require('q');
+var LineNumberer = require('./util').LineNumberer
+var countLineNumbers = require('./util').countLineNumbers
 
 // Values of the **stat** field that is returned from G2 status reports
 var STAT_INIT = 0;
@@ -99,7 +101,7 @@ CycleContext.prototype.then = function(f) {
 
 CycleContext.prototype.finish = function() {
 	log.debug("Finishing up the cycle context.")
-		// dunno
+	// dunno
 }
 
 // Emit the provided data to all the listeners to the subscribed event
@@ -167,7 +169,7 @@ util.inherits(G2, events.EventEmitter);
 G2.prototype._createCycleContext = function() {
 	log.debug("Creating a cycle context.")
 	if(this.context) {
-		throw new Error("Cannot create a nnew cycle context.  One already exists.");
+		throw new Error("Cannot create a new cycle context.  One already exists.");
 	}
 	var st = new stream.PassThrough();
 	st.setEncoding('utf8');
@@ -191,6 +193,7 @@ G2.prototype._createCycleContext = function() {
 	st.on('end', function() {
 		this._primed = true;
 		this._streamDone = true;
+		this.gcode_queue.enqueue('M30');
 		this.sendMore();
 		log.debug("Stream END event.")
 	}.bind(this));
@@ -472,6 +475,7 @@ G2.prototype.onMessage = function(response) {
 	// TODO more elegant way of dealing with "response" data.
 
 	if(response.r) {
+		console.log("lines to send: " + this.lines_to_send)
 		if(!this._seen_ready) {
 			// Special message type for initial system ready message
 			if(response.r.msg && (response.r.msg === "SYSTEM READY")) {
@@ -589,13 +593,17 @@ G2.prototype.quit = function() {
 		case STAT_STOP:
 			this._write('!', function() { log.debug('Drained.'); });
 			break;*/
+		case STAT_HOLDING:
+			this.gcode_queue.clear();
+			this._write('\x04');
+			this.lines_to_send = 4;
+			break;
 		default:
 			this.feedHold();
 			if(this.stream) {
 				this.stream.end()				
 			}
 			this.gcode_queue.clear()
-			//this._write('\x04');
 			
 			break;
 	}
@@ -795,7 +803,9 @@ G2.prototype.runStream = function(s) {
 
 G2.prototype.runFile = function(filename) {
 	var st = fs.createReadStream(filename);
-	return this.runStream(st);
+	var ln = LineNumberer
+	this.status.nb_lines = lines
+	return this.runStream(st.pipe(ln));
 }
 
 G2.prototype.runImmediate = function(data) {
@@ -803,6 +813,8 @@ G2.prototype.runImmediate = function(data) {
 }
 
 G2.prototype.prime = function() {
+	log.info("Priming driver");
+	console.log(this.gcode_queue)
 	this._primed = true;
 	this.sendMore();
 }
@@ -825,7 +837,9 @@ G2.prototype.sendMore = function() {
 	}
 
 	if(this._primed) {
+		console.log("we are primed")
 		var count = this.gcode_queue.getLength();
+		console.log("there are " + count + " gcodes")
 		if(this.lines_to_send >= THRESH) {
 		       	if(count >= THRESH || this._streamDone) {
 				var to_send = Math.min(this.lines_to_send, count);
@@ -848,7 +862,9 @@ G2.prototype.sendMore = function() {
 			}
 		}
 		else {
-			//log.error("Not writing to gcode due to lapse in responses")
+			log.error("Not writing to gcode due to lapse in responses")
+			console.log(this.lines_to_send)
+			console.log(THRESH)
 		}
 	} else {
 		if(this.gcode_queue.getLength() > 0) {
@@ -866,6 +882,7 @@ G2.prototype.setMachinePosition = function(position, callback) {
 			gcodes.push('G28.3 ' + axis + position[axis].toFixed(5));
 			commands.push({'gc':'g28.3 ' + axis + position[axis].toFixed(5)})
 		}
+		console.log(gcodes)
 	});
 
 	if(this.status.unit === 'in') {
@@ -873,7 +890,7 @@ G2.prototype.setMachinePosition = function(position, callback) {
 		commands.push({'gc':'G20'});
 	}
 	
-	console.log("SETTING MACHINE POSITION")
+	//console.log("SETTING MACHINE POSITION")
 	//console.log(gcode)
 	//console.log(commands)
 	/*commands.forEach(function(cmd) {

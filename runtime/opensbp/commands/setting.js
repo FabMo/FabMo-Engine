@@ -9,11 +9,14 @@ var openSBP = require('../opensbp.js');
 // Set to Absolute coordinates
 exports.SA = function(args) {
 	this.emit_gcode("G90");
+	this.emit_gcode("M0");
+
 };
 
 //  Set to Relative coordinates
 exports.SR = function(args) {
 	this.emit_gcode("G91");
+	this.emit_gcode("M0");
 };
 
 // Set to MOVE mode

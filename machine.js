@@ -11,6 +11,7 @@ var config = require('./config');
 var updater = require('./updater');
 var u = require('./util');
 var async = require('async');
+var countLineNumbers = require('./util').countLineNumbers;
 
 var GCodeRuntime = require('./runtime/gcode').GCodeRuntime;
 var SBPRuntime = require('./runtime/opensbp').SBPRuntime;
@@ -382,7 +383,19 @@ Machine.prototype.runJob = function(job) {
 		} else {
 			log.info("Running file " + file.path);
 			this.status.job = job;
-			this._runFile(file.path);
+			if(job.nb_lines) {
+				this.status.nb_lines = job.nb_lines;
+				this._runFile(file.path);
+			} else {
+				log.info("Counting line numbers...");
+				log.info(file.path);
+				countLineNumbers(file.path, function(err, lines) {
+					log.info(lines + " lines.")
+					job.nb_lines = lines;
+					this.status.nb_lines = lines;
+					this._runFile(file.path);
+				}.bind(this));
+			}
 		}
 	}.bind(this));
 };
