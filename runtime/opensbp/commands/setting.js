@@ -63,7 +63,7 @@ exports.SO = function(args) {
 	state = parseInt(args[1]);
 	if(outnum >= 1 && outnum <= 12) {
 		if(state == 1 || state == 0) {
-			if(outnum === 1) {
+			if(outnum === -1) {
 				if(state === 1) {
 					this.emit_gcode('M3');
 				} else {

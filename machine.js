@@ -545,8 +545,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 					//	this.setRuntime(null, function() {});
 					//}
 				}
-				log.error("IDLE")
-				log.stack()
 				this.status.nb_lines = null;
 				this.status.line = null;
 				if(this.action) {

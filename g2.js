@@ -173,6 +173,9 @@ G2.prototype._createCycleContext = function() {
 	var st = new stream.PassThrough();
 	st.setEncoding('utf8');
 	this._streamDone = false;
+	// TODO factor this out
+	st.write('G90\n')
+	st.write('M100 ({out4:1})\n')
 	st.on('data', function(chunk) {
 		chunk = chunk.toString();
 		for(var i=0; i<chunk.length; i++) {
@@ -192,6 +195,8 @@ G2.prototype._createCycleContext = function() {
 	st.on('end', function() {
 		this._primed = true;
 		this._streamDone = true;
+		// TODO factor this out
+		this.gcode_queue.enqueue('M100 ({out4:0})');
 		this.gcode_queue.enqueue('M30');
 		this.sendMore();
 		log.debug("Stream END event.")
@@ -756,7 +761,7 @@ G2.prototype.command = function(obj) {
 G2.prototype.runString = function(data, callback) {
 	var stringStream = new stream.Readable();
 	stringStream.push(data + "\n");
-	stringStream.push("M30\n");
+	//stringStream.push("M30\n"); 
 	stringStream.end()
 	return this.runStream(stringStream);
 };
@@ -766,8 +771,9 @@ G2.prototype.runList = function(l, callback) {
 	for(var i=0; i<l.length; i++) {
 		stringStream.push(l[i] + "\n");
 	}
-	stringStream.push("M30\n");
+	//stringStream.push("M30\n");
 	stringStream.push(null);
+	//stringStream.end()
 	return this.runStream(stringStream);
 }
 
