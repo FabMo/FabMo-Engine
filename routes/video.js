@@ -18,9 +18,9 @@ var gstreamer=null;
 var args=[
   "v4l2src",
   "device="+video_settings.path,
-//  "!","video/x-raw,width="+video_settings.width+",heigth="+video_settings.height+",framerate="+video_settings.framerate+"/1",
-//  "!","jpegenc",
-  "!","image/jpeg,width="+video_settings.width+",heigth="+video_settings.height+",framerate="+video_settings.framerate+"/1",
+  "!","video/x-raw-yuv,width="+video_settings.width+",heigth="+video_settings.height+",framerate="+video_settings.framerate+"/1",
+  "!","jpegenc",
+//  "!","image/jpeg,width="+video_settings.width+",heigth="+video_settings.height+",framerate="+video_settings.framerate+"/1",
   "!","queue",
   "!","fdsink"
 ];
