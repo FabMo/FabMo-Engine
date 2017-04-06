@@ -215,13 +215,11 @@ ManualRuntime.prototype.renewMoves = function() {
 
 ManualRuntime.prototype.stopMotion = function() {
 	if(this._limit()) { return; }
-	if(this.moving) {
-		this.keep_moving = false;
-		if(this.stream) {
-			this.stream.end();
-		}
-		this.driver.quit();
+	this.keep_moving = false;
+	if(this.stream) {
+		this.stream.end();
 	}
+	this.driver.quit();
 }
 
 ManualRuntime.prototype.fixedMove = function(axis, speed, distance) {

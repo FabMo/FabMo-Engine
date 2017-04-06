@@ -836,6 +836,7 @@ G2.prototype.sendMore = function() {
 	}
 
 	if(this._primed) {
+		log.warn('!!! Primed!  Sending now.')
 		var count = this.gcode_queue.getLength();
 		if(this.lines_to_send >= THRESH) {
 		       	if(count >= THRESH || this._streamDone) {
@@ -857,31 +858,16 @@ G2.prototype.sendMore = function() {
 };
 
 G2.prototype.setMachinePosition = function(position, callback) {
-	var gcodes = ["G21"];
-	var commands = [{"gc":"g21"}]
 	var axes = ['x','y','z','a','b','c','u','v','w']
+	var gcodes = []
 	axes.forEach(function(axis) {
 		if(position[axis] != undefined) {
 			gcodes.push('G28.3 ' + axis + position[axis].toFixed(5));
-			commands.push({'gc':'g28.3 ' + axis + position[axis].toFixed(5)})
 		}
 	});
 
-	if(this.status.unit === 'in') {
-		gcodes.push('G20\n');
-		commands.push({'gc':'G20'});
-	}
-	
-	//console.log("SETTING MACHINE POSITION")
-	//console.log(gcode)
-	//console.log(commands)
-	/*commands.forEach(function(cmd) {
-		this.command(cmd);
-	}.bind(this))
-	callback && callback();
-*/
+	gcodes.push(this.status.unit === 'in' ? 'G20' : 'G21');
 	this.runList(gcodes).then(function() {callback && callback()})
-	//this._write(gcodes.join('\n'), function() { callback()});
 }
 
 // Function works like "once()" for a state change
