@@ -596,11 +596,17 @@ G2.prototype.quit = function() {
 		case STAT_STOP:
 			this._write('!', function() { log.debug('Drained.'); });
 			break;*/
-		case STAT_HOLDING:
+		//case STAT_HOLDING:
+		default:
 			this.gcode_queue.clear();
 			this._write('\x04');
+			if(this.stream) {
+				this.stream.end()				
+			}
+			this.gcode_queue.clear()
 			this.lines_to_send = 4;
 			break;
+		/*
 		default:
 			this.feedHold();
 			if(this.stream) {
@@ -609,6 +615,7 @@ G2.prototype.quit = function() {
 			this.gcode_queue.clear()
 			
 			break;
+			*/
 	}
 }
 
@@ -859,7 +866,7 @@ G2.prototype.sendMore = function() {
 
 G2.prototype.setMachinePosition = function(position, callback) {
 	var axes = ['x','y','z','a','b','c','u','v','w']
-	var gcodes = []
+	var gcodes = ['G21']
 	axes.forEach(function(axis) {
 		if(position[axis] != undefined) {
 			gcodes.push('G28.3 ' + axis + position[axis].toFixed(5));
