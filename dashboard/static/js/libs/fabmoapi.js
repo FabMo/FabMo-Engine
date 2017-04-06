@@ -12,7 +12,8 @@
 
 }(this, function (io) {
   "use strict"
-
+var io = require("./socket.io.js");
+	
 var PING_TIMEOUT = 3000;
 var makePostData = function(obj, options) {
 	var file = null;
@@ -68,7 +69,6 @@ var FabMoAPI = function(base_url) {
 }
 
 FabMoAPI.prototype._initializeWebsocket = function() {
-	var io = require("./socket.io.js");
 	localStorage.debug = false
 	try {
 		this.socket = io.connect(this.base_url+'/private');
