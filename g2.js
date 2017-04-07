@@ -198,19 +198,27 @@ G2.prototype._createCycleContext = function() {
 		this._streamDone = true;
 		// TODO factor this out
 		if(!this.quit_pending) {
-		this.gcode_queue.enqueue('M30');
+			this.gcode_queue.enqueue('M30');
+			this.sendMore();
 		}
-		this.gcode_queue.enqueue('M100 ({out4:0})');
-		this.sendMore();
+		//this.gcode_queue.enqueue('M100 ({out4:0})');
 		log.debug("Stream END event.")
 	}.bind(this));
 	st.on('pipe', function() {
 		log.debug("Stream PIPE event");
 	})
-	var promise = this._createStatePromise([STAT_END]).then(function() {
-		this.context = null;
-		this._primed = false;
-		return this;
+	var promise = this._createStatePromise([STAT_END]).then(function alldone() {
+		if(this.lines_to_send == 4) {
+			//console.log("Got an end and there's nothing pending.");
+			this.context = null;
+			this._primed = false;
+			this._write('{out4:0}');
+			return this;
+		} else {
+			//console.log("Got an END but there's junk in the trunk.");
+			//console.log(this.lines_to_send);
+			return this._createStatePromise([STAT_END]).then(alldone.bind(this))
+		}
 	}.bind(this))
 	var ctx  = new CycleContext(this, st, promise);
 	this.context = ctx;
@@ -496,7 +504,7 @@ G2.prototype.onMessage = function(response) {
 		if(this._ignored_responses > 0) {
 			this._ignored_responses--;
 		} else {
-			console.log("Incrementing lines_to_send: " + 1)
+			//console.log("Incrementing lines_to_send: " + 1 + "/" + this.lines_to_send)
 			this.lines_to_send += 1;
 			this.sendMore();
 		}
@@ -858,7 +866,7 @@ G2.prototype.sendMore = function() {
 				var codes = this.gcode_queue.multiDequeue(to_send);
 				codes.push("");
 				if(codes.length > 1) {
-					console.log("Decrementing lines_to_send: " + to_send)
+					//console.log("Decrementing lines_to_send: " + to_send + "/" + this.lines_to_send)
 					this.lines_to_send -= to_send/*-offset*/;
 					this._write(codes.join('\n'), function() { });					
 				}

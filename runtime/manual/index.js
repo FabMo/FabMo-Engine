@@ -167,8 +167,8 @@ ManualRuntime.prototype.startMotion = function(axis, speed) {
 
 		// Compute the
 		this.renewDistance = speed*(T_RENEW/60000)*SAFETY_FACTOR;
-		this.driver.set('zl',0,function() {
-			console.log('zl set callback');
+		//this.driver.set('zl',0,function() {
+		//	console.log('zl set callback');
 			if(!this.stream) {
 				this.stream = new stream.PassThrough();
 				this._changeState("manual");
@@ -180,21 +180,22 @@ ManualRuntime.prototype.startMotion = function(axis, speed) {
 					this.keep_moving = false;
 					this.stream = null;
 					this._changeState("idle");
-					config.driver.restoreSome(['zl'], function() {
-						log.debug("Restored Z lift value.")
-					});
+					//config.driver.restoreSome(['zl'], function() {
+					//	log.debug("Restored Z lift value.")
+					//});
 				}.bind(this));
 			} else {
 				throw new Error("Trying to create a new motion stream when one already exists!");
 			}
 			this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
 			this.renewMoves();
-		}.bind(this));
+		//}.bind(this));
 	}
 };
 
 ManualRuntime.prototype.renewMoves = function() {
 	log.debug("RENEW MOTION")
+	log.stack()
 	if(this.moving && this.keep_moving) {
 		log.debug("KEEP MOVING REQUESTED")
 		this.keep_moving = false;
@@ -206,7 +207,10 @@ ManualRuntime.prototype.renewMoves = function() {
 			this.stream.write(move);
 		}
 		this.driver.prime();
-		setTimeout(this.renewMoves.bind(this), T_RENEW)
+		setTimeout(function() {
+			//console.log("CALLING A TIMED RENEW MOVES");
+			this.renewMoves()	
+		}.bind(this), T_RENEW)
 	} else {
 			this.stopMotion();
 	}
@@ -237,7 +241,7 @@ ManualRuntime.prototype.fixedMove = function(axis, speed, distance) {
 				this.moving = false;
 				if(this.fixedQueue.length > 0) {
 					var move = this.fixedQueue.shift();
-					console.log("Dequeueing move: ", move)
+					//console.log("Dequeueing move: ", move)
 					setImmediate(this.fixedMove.bind(this), move.axis, move.speed, move.distance)
 				}
 			}.bind(this));
@@ -250,11 +254,11 @@ ManualRuntime.prototype.pause = function() {
 }
 
 ManualRuntime.prototype.quit = function() {
-	if(this.stream) {
-		this.stream.end();
-	}
 	if(this.moving) {
 		this.driver.quit();		
+	}
+	if(this.stream) {
+		this.stream.end();
 	}
 }
 
