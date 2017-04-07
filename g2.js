@@ -175,7 +175,7 @@ G2.prototype._createCycleContext = function() {
 	this._streamDone = false;
 	// TODO factor this out
 	st.write('G90\n')
-	//st.write('M100 ({out4:1})\n')
+	st.write('M100 ({out4:1})\n')
 	st.on('data', function(chunk) {
 		chunk = chunk.toString();
 		for(var i=0; i<chunk.length; i++) {
@@ -199,10 +199,9 @@ G2.prototype._createCycleContext = function() {
 		// TODO factor this out
 		if(!this.quit_pending) {
 		this.gcode_queue.enqueue('M30');
-		//this.gcode_queue.enqueue('M100 ({out4:0})');
-		this.sendMore();
-
 		}
+		this.gcode_queue.enqueue('M100 ({out4:0})');
+		this.sendMore();
 		log.debug("Stream END event.")
 	}.bind(this));
 	st.on('pipe', function() {
