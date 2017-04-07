@@ -175,7 +175,7 @@ G2.prototype._createCycleContext = function() {
 	this._streamDone = false;
 	// TODO factor this out
 	st.write('G90\n')
-	st.write('M100 ({out4:1})\n')
+	//st.write('M100 ({out4:1})\n')
 	st.on('data', function(chunk) {
 		chunk = chunk.toString();
 		for(var i=0; i<chunk.length; i++) {
@@ -185,6 +185,7 @@ G2.prototype._createCycleContext = function() {
 				var s = this.lineBuffer.join('').trim();
 				this.gcode_queue.enqueue(s);
 				if(this.gcode_queue.getLength() >= 10) {
+					log.info("Driver is primed (>= 10 moves)")
 					this._primed = true;
 				}
 				this.sendMore();
@@ -196,9 +197,12 @@ G2.prototype._createCycleContext = function() {
 		this._primed = true;
 		this._streamDone = true;
 		// TODO factor this out
-		this.gcode_queue.enqueue('M100 ({out4:0})');
+		if(!this.quit_pending) {
 		this.gcode_queue.enqueue('M30');
+		//this.gcode_queue.enqueue('M100 ({out4:0})');
 		this.sendMore();
+
+		}
 		log.debug("Stream END event.")
 	}.bind(this));
 	st.on('pipe', function() {
@@ -296,7 +300,7 @@ G2.prototype.setUnits = function(units, callback) {
 			callback(null);
 		});
 		callback(null);
-    }.bind(this));
+	}.bind(this));
 	*/
 }
 
@@ -428,19 +432,23 @@ G2.prototype.handleStatusReport = function(response) {
 				}
 			}
 
-      if(this.quit_pending) {
-      	switch(response.sr.stat) {
-      		case STAT_STOP:
-      		case STAT_HOLDING:
-  				log.info("!!! Clearing the quit pending state.")
-				this._write('\x04\n', function() {});
-				break;
-      		case STAT_END:
-      			this.quit_pending = false;
-      			this.pause_flag = false;
-      			break;
-      	}
-      }
+			if(this.quit_pending) {
+				switch(response.sr.stat) {
+					case STAT_STOP:
+					case STAT_HOLDING:
+						log.info("!!! Issuing the job kill command.")
+						setTimeout(function() {
+							this._write('\x04\n', function() {});
+						}.bind(this), 50)
+						break;
+					case STAT_END:
+						log.info("!!! Clearing the quit pending state.")
+						this.lines_to_send = 4
+						this.quit_pending = false;
+						this.pause_flag = false;
+						break;
+				}
+			}
 
 			if(this.expectations.length > 0) {
 				var expectation = this.expectations.pop();
@@ -489,6 +497,7 @@ G2.prototype.onMessage = function(response) {
 		if(this._ignored_responses > 0) {
 			this._ignored_responses--;
 		} else {
+			console.log("Incrementing lines_to_send: " + 1)
 			this.lines_to_send += 1;
 			this.sendMore();
 		}
@@ -538,7 +547,7 @@ G2.prototype.feedHold = function(callback) {
 	if(this.context) {
 		this.context.pause();
 	}
-	this._write('!', function() {
+	this._write('!\n', function() {
 		log.debug("Drained.");
 	});
 };
@@ -579,6 +588,7 @@ G2.prototype.resume = function() {
 
 
 G2.prototype.quit = function() {
+
 	if(this.status.stat === STAT_END) {
 		return;
 	}
@@ -588,7 +598,7 @@ G2.prototype.quit = function() {
 		//this.requestStatusReport();
 		return;
 	}
-	this.quit_pending = true
+	//this.quit_pending = true
 	
 	switch(this.status.stat) {
 		/*case STAT_RUNNING:
@@ -598,13 +608,12 @@ G2.prototype.quit = function() {
 			break;*/
 		//case STAT_HOLDING:
 		default:
-			this.gcode_queue.clear();
-			this._write('\x04');
 			if(this.stream) {
 				this.stream.end()				
 			}
-			this.gcode_queue.clear()
-			this.lines_to_send = 4;
+			this.gcode_queue.clear();
+			this.quit_pending = true;
+			this._write('!\n');
 			break;
 		/*
 		default:
@@ -821,7 +830,7 @@ G2.prototype.runImmediate = function(data) {
 }
 
 G2.prototype.prime = function() {
-	log.info("Priming driver");
+	log.info("Priming driver (manually)");
 	this._primed = true;
 	this.sendMore();
 }
@@ -831,7 +840,7 @@ G2.prototype.sendMore = function() {
 	//log.info("           Lines in queue: " + this.gcode_queue.getLength());
 
   if(this.pause_flag) {
-    return;
+	return;
   }
 	var count = this.command_queue.getLength();
 	if(count) {
@@ -843,23 +852,25 @@ G2.prototype.sendMore = function() {
 	}
 
 	if(this._primed) {
-		log.warn('!!! Primed!  Sending now.')
 		var count = this.gcode_queue.getLength();
 		if(this.lines_to_send >= THRESH) {
-		       	if(count >= THRESH || this._streamDone) {
+				if(count >= THRESH || this._streamDone) {
 				var to_send = Math.min(this.lines_to_send, count);
 				var codes = this.gcode_queue.multiDequeue(to_send);
 				codes.push("");
-				this.lines_to_send -= to_send/*-offset*/;
-				this._write(codes.join('\n'), function() { });
+				if(codes.length > 1) {
+					console.log("Decrementing lines_to_send: " + to_send)
+					this.lines_to_send -= to_send/*-offset*/;
+					this._write(codes.join('\n'), function() { });					
+				}
 			}
 		}
 		else {
-			//log.error("Not writing to gcode due to lapse in responses")
+			log.error("Not writing to gcode due to lapse in responses")
 		}
 	} else {
 		if(this.gcode_queue.getLength() > 0) {
-			log.warn("!!! Not sending because not primed.");
+			//log.warn("!!! Not sending because not primed.");
 		}
 	}
 };

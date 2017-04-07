@@ -65,8 +65,8 @@ FlightRecorder.prototype.getLatest = function() {
 	return this.records[this.records.length-1];
 }
 
-FlightRecorder.prototype.save = function(filename, callback) {
-	var newRecords = []
+FlightRecorder.prototype.getFlightLog = function() {
+var newRecords = []
 	if(this.records.length > 0) {
 		var startTime = this.records[0].time;
 		this.records.forEach(function(record) {
@@ -83,7 +83,12 @@ FlightRecorder.prototype.save = function(filename, callback) {
 		records : newRecords,
 	    info : this.info
     }
-  fs.writeFile(filename, JSON.stringify(flight, null, 2), callback);
+    return flight;
+}
+
+FlightRecorder.prototype.save = function(filename, callback) {
+	
+  fs.writeFile(filename, JSON.stringify(this.getFlightLog(), null, 2), callback);
 }
 
 
@@ -295,6 +300,14 @@ var saveLogBuffer = function(filename) {
 	fs.writeFileSync(filename, getLogBuffer());
 }
 
+var getFlightLog = function() {
+	if(flightRecorder) {
+		return flightRecorder.getFlightLog();
+	} else {
+		throw new Error("No available flight recording.")
+	}
+}
+
 var rotateLogs = function(count,callback) {
 	var logdir = require('./config').getDataDir('log');
 	callback = callback || function() {};
@@ -325,7 +338,7 @@ var rotateLogs = function(count,callback) {
 	}
 }
 
-
+exports.getFlightLog = getFlightLog;
 exports.FlightRecorder = FlightRecorder;
 exports.suppress = suppress;
 exports.logger = logger;
