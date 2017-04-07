@@ -58,9 +58,6 @@ ManualRuntime.prototype._changeState = function(newstate, message) {
 		this.ok_to_disconnect = true;
 		var callback = this.completeCallback || function() {};
 		this.completeCallback = null;
-		if(this.stream) {
-			this.stream.end();
-		}
 	} else {
 		this.ok_to_disconnect = false;
 	}
@@ -140,7 +137,9 @@ ManualRuntime.prototype.executeCode = function(code, callback) {
 
 ManualRuntime.prototype.maintainMotion = function() {
 	log.debug("MAINTAIN")
-	this.keep_moving = true;
+	if(this.moving) {
+		this.keep_moving = true;		
+	}
 }
 
 /*
@@ -196,7 +195,7 @@ ManualRuntime.prototype.startMotion = function(axis, speed) {
 
 ManualRuntime.prototype.renewMoves = function() {
 	log.debug("RENEW MOTION")
-	if(this.keep_moving) {
+	if(this.moving && this.keep_moving) {
 		log.debug("KEEP MOVING REQUESTED")
 		this.keep_moving = false;
 		var segment = this.currentDirection*(this.renewDistance / RENEW_SEGMENTS);
@@ -216,10 +215,7 @@ ManualRuntime.prototype.renewMoves = function() {
 ManualRuntime.prototype.stopMotion = function() {
 	if(this._limit()) { return; }
 	this.keep_moving = false;
-	if(this.stream) {
-		this.stream.end();
-	}
-	this.driver.quit();
+	this.quit();
 }
 
 ManualRuntime.prototype.fixedMove = function(axis, speed, distance) {
@@ -254,7 +250,12 @@ ManualRuntime.prototype.pause = function() {
 }
 
 ManualRuntime.prototype.quit = function() {
-	this.driver.quit();
+	if(this.stream) {
+		this.stream.end();
+	}
+	if(this.moving) {
+		this.driver.quit();		
+	}
 }
 
 ManualRuntime.prototype.resume = function() {
