@@ -35,7 +35,7 @@ exports.ZX = function(args, callback) {
 	}.bind(this));
 
 	//this.emit_gcode("G10 L20 P2 X0");
-	callback()
+	//callback()
 };
 
 exports.ZY = function(args, callback) {
@@ -56,7 +56,7 @@ exports.ZY = function(args, callback) {
 		}.bind(this));
 	}.bind(this));
 	//this.emit_gcode("G10 L20 P2 Y0");
-	callback()
+	//callback()
 
 };
 
@@ -75,7 +75,7 @@ exports.ZZ = function(args, callback) {
 	}.bind(this));
 
 	//this.emit_gcode("G10 L20 P2 Z0");
-	callback()
+	//callback()
 };
 
 exports.ZA = function(args, callback) {
