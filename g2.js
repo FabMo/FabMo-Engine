@@ -550,6 +550,10 @@ G2.prototype.onMessage = function(response) {
 G2.prototype.feedHold = function(callback) {
 	this.pause_flag = true;
 	this.flooded = false;
+	if(this.quit_pending) {
+		log.warn("Not issuing a feedhold becasue quit pending...");
+		return;
+	}
 	typeof callback === 'function' && this.once('state', callback);
 	log.debug("Sending a feedhold");
 	if(this.context) {
@@ -621,7 +625,7 @@ G2.prototype.quit = function() {
 				this.stream.end()				
 			}
 			this._write('\x04\n');
-
+			break;
 		default:
 			this.gcode_queue.clear();
 			this.quit_pending = true;
