@@ -618,7 +618,7 @@ G2.prototype.quit = function() {
 		case STAT_STOP:
 			this._write('!', function() { log.debug('Drained.'); });
 			break;*/
-		case STAT_HOLDING:
+		default:
 			this.gcode_queue.clear();
 			this.quit_pending = true;
 			if(this.stream) {
@@ -626,7 +626,7 @@ G2.prototype.quit = function() {
 			}
 			this._write('\x04\n');
 			break;
-		default:
+	/*	default:
 			this.gcode_queue.clear();
 			this.quit_pending = true;
 			if(this.stream) {
@@ -634,7 +634,8 @@ G2.prototype.quit = function() {
 			}
 			this._write('!\n');
 			break;
-		/*
+	*/
+			/*
 		default:
 			this.feedHold();
 			if(this.stream) {

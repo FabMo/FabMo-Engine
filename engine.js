@@ -396,7 +396,13 @@ Engine.prototype.start = function(callback) {
         // Kick off the server if all of the above went OK.
         function start_server(callback) {
             log.info("Setting up the webserver...");
-            var server = restify.createServer({name:"FabMo Engine"});
+	    var fmt = {
+		            'application/json': function(req, res, body, cb) {
+				                return cb(null, JSON.stringify(body, null, '\t'));
+						        }
+			        }
+
+            var server = restify.createServer({name:"FabMo Engine", formatters : fmt});
             this.server = server;
 
             // Allow JSON over Cross-origin resource sharing
