@@ -505,7 +505,7 @@ G2.prototype.onMessage = function(response) {
 		if(this._ignored_responses > 0) {
 			this._ignored_responses--;
 		} else {
-			console.log("Incrementing lines_to_send: " + 1 + "/" + this.lines_to_send)
+			//console.log("Incrementing lines_to_send: " + 1 + "/" + this.lines_to_send)
 			this.lines_to_send += 1;
 			this.sendMore();
 		}
@@ -867,7 +867,7 @@ G2.prototype.sendMore = function() {
 		var to_send = count;
 		var codes = this.command_queue.multiDequeue(count)
 		codes.push("");
-		console.log("Decrementing lines_to_send: " + to_send + "/" + this.lines_to_send)
+		//console.log("Decrementing lines_to_send: " + to_send + "/" + this.lines_to_send)
 		this.lines_to_send -= count;
 		this._write(codes.join('\n'), function() {});
 	}
