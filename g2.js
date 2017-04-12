@@ -880,7 +880,7 @@ G2.prototype.sendMore = function() {
 				var codes = this.gcode_queue.multiDequeue(to_send);
 				codes.push("");
 				if(codes.length > 1) {
-					console.log("Decrementing lines_to_send: " + to_send + "/" + this.lines_to_send)
+					//console.log("Decrementing lines_to_send: " + to_send + "/" + this.lines_to_send)
 					this.lines_to_send -= to_send/*-offset*/;
 					this._write(codes.join('\n'), function() { });					
 				}
