@@ -465,7 +465,7 @@ SBPRuntime.prototype._run = function() {
 				that._executeNext();
 			break;
 			case that.driver.STAT_HOLDING:
-				that.paused = true;
+				//that.paused = true;
 				that.machine.setState(that, 'paused');
 			break;
 			case that.driver.STAT_RUNNING:
@@ -514,6 +514,10 @@ SBPRuntime.prototype._executeNext = function() {
 
 	if(this.pending_error) {
 		return this._end(e);
+	}
+
+	if(this.paused) {
+		return;
 	}
 
 	if(this.pc >= this.program.length) {
@@ -779,6 +783,9 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			break;
 
 		case "pause":
+			if(this.driver.status.stat != this.driver.STAT_STOP) {
+				return;
+			}
 			this.pc += 1;
 			var arg = this._eval(command.expr);
 			if(util.isANumber(arg)) {
@@ -786,6 +793,7 @@ SBPRuntime.prototype._execute = function(command, callback) {
 				setImmediate(callback);
 				return true;
 			} else {
+				log.info("Pausing due to OpenSBP PAUSE command.")
 				var message = arg;
 				if(!message) {
 					var last_command = this.program[this.pc-2];
@@ -794,7 +802,8 @@ SBPRuntime.prototype._execute = function(command, callback) {
 					}
 				}
 				this.paused = true;
-				this.continue_callback = this._executeNext.bind(this);
+				log.info("Pause message: " + message)
+				//this.continue_callback = this._executeNext.bind(this);
 				this.machine.setState(this, 'paused', {'message' : message || "Paused." });
 				return true;
 			}
@@ -1416,8 +1425,12 @@ SBPRuntime.prototype.quit = function() {
 }
 
 SBPRuntime.prototype.resume = function() {
-		this.paused = false;
-		this.driver.resume();
+		if(this.paused) {
+			this.paused = false;
+			this._executeNext();
+		} else {
+			this.driver.resume();
+		}
 }
 
 exports.SBPRuntime = SBPRuntime;
