@@ -44,7 +44,6 @@ ManualRuntime.prototype.connect = function(machine) {
 
 ManualRuntime.prototype.disconnect = function() {
 	if(this.ok_to_disconnect && !this.stream) {
-		log.info("DISCONNECTING MANUAL RUNTIME")
 		this.driver.removeListener('status', this.status_handler);
 		this._changeState("idle");
 	} else {
@@ -53,7 +52,6 @@ ManualRuntime.prototype.disconnect = function() {
 };
 
 ManualRuntime.prototype._changeState = function(newstate, message) {
-	log.debug("Changing to " + newstate)
 	if(newstate === "idle") {
 		this.ok_to_disconnect = true;
 		var callback = this.completeCallback || function() {};
@@ -136,7 +134,6 @@ ManualRuntime.prototype.executeCode = function(code, callback) {
 }
 
 ManualRuntime.prototype.maintainMotion = function() {
-	log.debug("MAINTAIN")
 	if(this.moving) {
 		this.keep_moving = true;		
 	}
@@ -147,18 +144,15 @@ ManualRuntime.prototype.maintainMotion = function() {
  * If the tool is already moving, the flag is set to maintain that motion
  */
 ManualRuntime.prototype.startMotion = function(axis, speed) {
-	log.debug("START MOTION")
 	var dir = speed < 0 ? -1.0 : 1.0;
 	speed = Math.abs(speed);
 	if(this.moving) {
-		log.debug("startMotion(): Already moving");
 		if(axis === this.currentAxis && speed === this.currentSpeed) {
 			this.maintainMotion();
 		} else {
 			// Deal with direction changes here
 		}
 	} else {
-		log.debug("startMotion(): Not moving yet.")
 
 		// Set Heading
 		this.currentAxis = axis;
@@ -167,48 +161,36 @@ ManualRuntime.prototype.startMotion = function(axis, speed) {
 
 		// Compute the
 		this.renewDistance = speed*(T_RENEW/60000)*SAFETY_FACTOR;
-		//this.driver.set('zl',0,function() {
-		//	console.log('zl set callback');
-			if(!this.stream) {
-				this.stream = new stream.PassThrough();
-				this._changeState("manual");
-				this.moving = this.keep_moving = true;
-				this.driver.runStream(this.stream).then(function(stat) {
-					//stream.close()
-					log.info("Finished running stream: " + stat);
-					this.moving = false;
-					this.keep_moving = false;
-					this.stream = null;
-					this._changeState("idle");
-					//config.driver.restoreSome(['zl'], function() {
-					//	log.debug("Restored Z lift value.")
-					//});
-				}.bind(this));
-			} else {
-				throw new Error("Trying to create a new motion stream when one already exists!");
-			}
-			this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
-			this.renewMoves();
-		//}.bind(this));
+
+		if(!this.stream) {
+			this.stream = new stream.PassThrough();
+			this._changeState("manual");
+			this.moving = this.keep_moving = true;
+			this.driver.runStream(this.stream).then(function(stat) {
+				log.info("Finished running stream: " + stat);
+				this.moving = false;
+				this.keep_moving = false;
+				this.stream = null;
+				this._changeState("idle");
+			}.bind(this));
+		} else {
+			throw new Error("Trying to create a new motion stream when one already exists!");
+		}
+		this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
+		this.renewMoves();
 	}
 };
 
 ManualRuntime.prototype.renewMoves = function() {
-	log.debug("RENEW MOTION")
-	log.stack()
 	if(this.moving && this.keep_moving) {
-		log.debug("KEEP MOVING REQUESTED")
 		this.keep_moving = false;
 		var segment = this.currentDirection*(this.renewDistance / RENEW_SEGMENTS);
-		//console.log(this.stream)
-		//this.stream.write('M100 ({zl:0})\n')
 		for(var i=0; i<RENEW_SEGMENTS; i++) {
 			var move = 'G1 ' + this.currentAxis + segment.toFixed(5) + '\n'
 			this.stream.write(move);
 		}
 		this.driver.prime();
 		setTimeout(function() {
-			//console.log("CALLING A TIMED RENEW MOVES");
 			this.renewMoves()	
 		}.bind(this), T_RENEW)
 	} else {
@@ -237,7 +219,6 @@ ManualRuntime.prototype.fixedMove = function(axis, speed, distance) {
 				moves.push('G0 ' + axis + distance.toFixed(5) + ' F' + speed.toFixed(3))
 			}
 			this.driver.runList(moves).then(function(stat) {
-				log.debug("Done moving.")
 				this.moving = false;
 				if(this.fixedQueue.length > 0) {
 					var move = this.fixedQueue.shift();

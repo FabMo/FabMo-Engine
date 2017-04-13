@@ -233,6 +233,7 @@ Machine.prototype.restoreDriverState = function(callback) {
 }
 
 Machine.prototype.arm = function(action, timeout) {
+	console.log(action)
 	switch(this.status.state) {
 		case 'idle':
 		break;
@@ -696,8 +697,10 @@ Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 
 Machine.prototype._resume = function() {
 	if(this.current_runtime) {
+		console.log("TRYING TO RESUME AT THE MACHINE LEVEL")
 		this.current_runtime.resume();
 	}
+	console.log("COULDN'T RESUME AT THE MACHINE LEVEL")
 };
 
 Machine.prototype._runNextJob = function(force, callback) {
