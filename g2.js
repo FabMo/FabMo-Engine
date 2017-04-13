@@ -611,7 +611,7 @@ G2.prototype.quit = function() {
 				this.stream.end()				
 			}
 			this.gcode_queue.clear();
-			this._write('!\n');
+			this._write('\x04\n');
 			break;
 		/*
 		default:
