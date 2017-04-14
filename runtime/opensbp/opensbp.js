@@ -313,6 +313,13 @@ SBPRuntime.prototype._onG2Status = function(status) {
 		}
 	}
 
+	if(this.driver.status.stat == this.driver.STAT_PROBE) {
+		var keys = ['posx','posy','posz','posa','posb','posc'];
+		keys.forEach(function(key) {
+			console.log(key);
+		});
+	}
+
 	this.machine.emit('status',this.machine.status);
 };
 
@@ -1232,7 +1239,7 @@ SBPRuntime.prototype.emit_gcode = function(s) {
 SBPRuntime.prototype.emit_move = function(code, pt) {
 	var gcode = code;
 	var i;
-  log.debug("Emit_move: " + code + " " + JSON.stringify(pt));
+  	log.debug("Emit_move: " + code + " " + JSON.stringify(pt));
 
 	['X','Y','Z','A','B','C','I','J','K','F'].forEach(function(key){
 		var c = pt[key];
