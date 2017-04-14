@@ -685,11 +685,7 @@ Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 			if(err) {
 				log.error(err);
 			} else {
-				runtime.executeCode(code); /*, function(err, data) {
-					this.authorize();
-					//var callback = callback || function() {};
-					//callback(err, data);
-				}.bind(this));*/
+				runtime.executeCode(code); 
 			}
 		}.bind(this));
 	}
@@ -697,17 +693,14 @@ Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 
 Machine.prototype._resume = function() {
 	if(this.current_runtime) {
-		console.log("TRYING TO RESUME AT THE MACHINE LEVEL")
 		this.current_runtime.resume();
 	}
-	console.log("COULDN'T RESUME AT THE MACHINE LEVEL")
 };
 
 Machine.prototype._runNextJob = function(force, callback) {
 	if(this.isConnected()) {
 		if(this.status.state === 'armed' || force) {
 			log.info("Running next job");
-			//this.driver.command({"out4":1});
 			db.Job.dequeue(function(err, result) {
 				log.info(result);
 				if(err) {

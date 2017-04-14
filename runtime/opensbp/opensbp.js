@@ -38,7 +38,7 @@ function SBPRuntime() {
 	this.label_index = {};
 	this.stack = [];
 	this.file_stack = [];
-	//this.current_chunk = [];
+
 	this.output = [];
 	this.running = false;
 	this.quit_pending = false;
@@ -49,7 +49,7 @@ function SBPRuntime() {
 	this.cmd_posa = undefined;
 	this.cmd_posb = undefined;
 	this.cmd_posc = undefined;
-	//this._loadConfig(); // Create the Speed Values
+
 	this.jogspeed_xy = 0;
 	this.jogspeed_z = 0;
 	this.jogspeed_a = 0;
@@ -147,9 +147,6 @@ SBPRuntime.prototype.needsAuth = function(s) {
 	};
 	return false;
 }
-
-
-
 
 // Run the provided string in OpenSBP format
 SBPRuntime.prototype.runString = function(s, callback) {
@@ -940,9 +937,9 @@ SBPRuntime.prototype.init = function() {
 };
 SBPRuntime.prototype.setPreferredUnits = function(units, callback) {
 	log.info("SBP runtime is setting the preferred units to " + units)
-		this._loadConfig();
-		this._setUnits(units);
-		this._saveConfig(callback);
+	this._loadConfig();
+	this._setUnits(units);
+	this._saveConfig(callback);
 }
 
 SBPRuntime.prototype._setUnits = function(units) {
