@@ -28,9 +28,7 @@ exports.ZX = function(args, callback) {
 		config.driver.setMany(zxObj, function(err, value) {
 			if(err) { return callback(err); }
 			this.cmd_posx = this.posx = 0;
-			this.driver.requestStatusReport(function(report) {
-				callback();
-			});
+			callback();
 		}.bind(this));
 	}.bind(this));
 
@@ -50,9 +48,7 @@ exports.ZY = function(args, callback) {
 		config.driver.setMany(zyObj, function(err, value) {
 			if(err) { return callback(err); }
 			this.cmd_posy = this.posy = 0;
-			this.driver.requestStatusReport(function(report) {
 				callback();
-			});
 		}.bind(this));
 	}.bind(this));
 	//this.emit_gcode("G10 L20 P2 Y0");
