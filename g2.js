@@ -585,25 +585,17 @@ G2.prototype.resume = function() {
 
 
 G2.prototype.quit = function() {
-
-	if(this.status.stat === STAT_END) {
-		return;
-	}
 	
 	if(this.quit_pending) {
 		log.warn("Not quitting because a quit is already pending.");
-		//this.requestStatusReport();
 		return;
 	}
-	//this.quit_pending = true
 	
 	switch(this.status.stat) {
-		/*case STAT_RUNNING:
-		case STAT_PROBE:
-		case STAT_STOP:
-			this._write('!', function() { log.debug('Drained.'); });
-			break;*/
-		//case STAT_HOLDING:
+		case STAT_END:
+			return;
+			break;
+
 		default:
 			this.quit_pending = true;
 
@@ -613,16 +605,6 @@ G2.prototype.quit = function() {
 			this.gcode_queue.clear();
 			this._write('\x04\n');
 			break;
-		/*
-		default:
-			this.feedHold();
-			if(this.stream) {
-				this.stream.end()				
-			}
-			this.gcode_queue.clear()
-			
-			break;
-			*/
 	}
 }
 
@@ -800,6 +782,12 @@ G2.prototype._createStatePromise = function(states) {
 	}
 	this.on('stat', onStat);
 	return deferred.promise;
+}
+G2.prototype.waitForState = function(states) {
+	if(!states.length) {
+		states = [states]
+	}
+	return this._createStatePromise(states);
 }
 
 G2.prototype.runStream = function(s) {

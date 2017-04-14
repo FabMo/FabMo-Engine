@@ -2700,6 +2700,48 @@
          }
       ]
    },
+"PX": {
+      "cmd": "PX",
+      "name": "Probe X",
+      "params": [
+         {
+            "name": "Input",
+            "desc": "Input channel to use as the probe.",
+            "abrev": "pxI",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               "1",
+               "16"
+            ],
+            "type": "ck"
+         },
+         {
+            "name": "Search Distance",
+            "desc": "Distance to search while probing",
+            "abrev": "pxDist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Search Speed",
+            "desc": "Travel Speed for Probe Search ",
+            "abrev": "pxSpd",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         }
+      ]
+   },
    "VC": {
       "cmd": "VC",
       "name": "Cutter values",
