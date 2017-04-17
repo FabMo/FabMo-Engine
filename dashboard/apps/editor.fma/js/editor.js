@@ -14,7 +14,7 @@ require('./cm-fabmo-modes.js');
     var job_title=null;
     var job_filename=null;
 
-    function execute() { 
+    function execute() {
       $("#execute-menu").hide();
       var text = editor.getValue();
       switch(lang) {
@@ -26,7 +26,7 @@ require('./cm-fabmo-modes.js');
           fabmo.notify('info', 'Executing OpenSBP program.');
           fabmo.runSBP(text);
         break;
-      } 
+      }
     }
 
     function supports_html5_storage() {
@@ -81,7 +81,7 @@ require('./cm-fabmo-modes.js');
         if((content !== content) || (content === undefined)) {
           console.warn("No saved content to load.");
         } else {
-          editor.setValue(content);          
+          editor.setValue(content);
         }
         var pos;
         try {
@@ -131,7 +131,7 @@ require('./cm-fabmo-modes.js');
             job_title = 'macro_' + macro.index + '.sbp';
             set_language('opensbp');
             $('#macro-menu').show();
-          });      
+          });
         } else if('new' in args) {
           editor.setValue(args.content || '', -1);
           editor.clearSelection();
@@ -140,7 +140,7 @@ require('./cm-fabmo-modes.js');
             case 'sbp':
             case 'opensbp':
               set_language('opensbp');
-              break;                  
+              break;
             default:
               set_language('gcode');
               break;
@@ -150,7 +150,7 @@ require('./cm-fabmo-modes.js');
         }
       });
     }
- 
+
     function save(callback) {
       var callback = callback || function() {};
       switch(source) {
@@ -208,7 +208,7 @@ require('./cm-fabmo-modes.js');
 
       editor.on('blur', function(cm) {
           if(!source) {
-            save();          
+            save();
           }
         });
 
@@ -217,7 +217,7 @@ require('./cm-fabmo-modes.js');
       function resize() {
         var h = window.innerHeight;
         var h2 = $('#topbar').height();
-        $("#editor").css('height',h-h2);      
+        $("#editor").css('height',h-h2);
         $(document).foundation('reflow');
       }
 
@@ -247,7 +247,7 @@ require('./cm-fabmo-modes.js');
     $("#lang-gcode").click(function(evt) {
       set_language('gcode', true);
       evt.preventDefault();
-    }); 
+    });
 
     $("#macro-save").click(function(evt) {
       save();
@@ -266,7 +266,7 @@ require('./cm-fabmo-modes.js');
     });
 
     function submitJob(){
-        $('#modal-title').text('Submit Job'); 
+        $('#modal-title').text('Submit Job');
         switch(lang) {
           case 'gcode':
             $('#jobsubmit-name').val(job_title || 'G-Code (Editor)');
@@ -283,7 +283,7 @@ require('./cm-fabmo-modes.js');
             break;
         }
         $('#jobsubmit-modal').foundation('reveal', 'open');
-        $('#jobsubmit-name').focus();           
+        $('#jobsubmit-name').focus();
 
         $('#jobsubmit-submit').on('click', function( event ) {
           event.preventDefault();
@@ -295,10 +295,10 @@ require('./cm-fabmo-modes.js');
 
           fabmo.submitJob({
               file : text,
-              filename: filename, 
+              filename: filename,
               name : name,
               description: description
-            }, 
+            },
             function(err, result) {
               if(err) {
                 if(err.message) {
@@ -310,16 +310,16 @@ require('./cm-fabmo-modes.js');
                 }
               } else {
                 fabmo.launchApp('job-manager');
-              }   
+              }
             }
           );
-          
+
           $('#jobsubmit-modal').foundation('reveal', 'close');
-          $("#jobsubmit-form").trigger('reset'); 
+          $("#jobsubmit-form").trigger('reset');
         });
 
         $('#jobsubmit-modal').bind('closed.fndtn.reveal', function (event) {
-            $("#jobsubmit-form").off('submit');            
+            $("#jobsubmit-form").off('submit');
         });
     }
 

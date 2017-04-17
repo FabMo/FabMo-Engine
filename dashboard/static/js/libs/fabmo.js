@@ -164,9 +164,7 @@ FabMoDashboard.prototype._download = function(data, strFileName, strMimeType) {
 } // _download
 
 FabMoDashboard.prototype._call = function(name, data, callback) {
-	// console.log(this)
 	if(this.isPresent()) {
-		//console.debug("Calling " + name + " with " + JSON.stringify(data));
 		message = {"call":name, "data":data}
 		if(callback) {
 			message.id = this._id++;
@@ -174,7 +172,6 @@ FabMoDashboard.prototype._call = function(name, data, callback) {
 		}
 		this.target.postMessage(message, '*');
 	} else {
-		//console.debug("Simulating " + name + " with " + JSON.stringify(data));
 		this._simulateCall(name, data, callback);
 	}
 }
@@ -506,6 +503,7 @@ FabMoDashboard.prototype.submitJob = function(jobs, options, callback) {
 	args.options = options || {};
 	this._call("submitJob", args, callback)
 }
+FabMoDashboard.prototype.submitJobs = FabMoDashboard.prototype.submitJob;
 
 FabMoDashboard.prototype.updateOrder = function(data, callback) {
 	this._call("updateOrder", data, callback);
@@ -516,11 +514,21 @@ FabMoDashboard.prototype.updateOrder = function(data, callback) {
  *
  * @method resubmitJob
  * @param {Number} id The ID of the job to resubmit
+ * @param {Object} options Job submission options
+ * @param {Object} options Job submission options
  * @param {function} callback
  * @param {Error} callback.err Error object if there was an error.
  */
-FabMoDashboard.prototype.resubmitJob = function(id, callback) {
-	this._call("resubmitJob", id, callback)
+FabMoDashboard.prototype.resubmitJob = function(id, options, callback) {
+  if(typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
+  var args = {
+    id : id,
+    options : options || {}
+  }
+	this._call("resubmitJob", args, callback)
 }
 
 /**

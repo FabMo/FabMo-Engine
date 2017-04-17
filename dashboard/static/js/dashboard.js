@@ -10,7 +10,6 @@ define(function(require) {
   var toastr = require('./libs/toastr.min.js');
   var context = require('./context.js');
   var modalIsShown = false;
-
   var Dashboard = function(target) {
     this.engine = null;
     this.router = null;
@@ -258,24 +257,30 @@ define(function(require) {
 
     // Submit a job
     this._registerHandler('submitJob', function(data, callback) {
-      // TODO deal with options here, don't just pass them through
+      var options = data.options || {};
       this.engine.submitJob(data.jobs, data.options, function(err, result) {
         if (err) {
           callback(err);
         } else {
           callback(err, result);
-          this.launchApp('job-manager', {}, callback);
+          if(!options.stayHere) {
+            this.launchApp('job-manager', {}, callback);
+          }
         }
       }.bind(this));
     }.bind(this));
 
-    this._registerHandler('resubmitJob', function(id, callback) {
+    this._registerHandler('resubmitJob', function(data, callback) {
+      var options = data.options || {};
+      var id = data.id;
       this.engine.resubmitJob(id, function(err, result) {
         if (err) {
           callback(err);
         } else {
           callback(err, result);
-          this.launchApp('job-manager', {}, callback);
+          if(!options.stayHere) {
+            this.launchApp('job-manager', {}, callback);
+          }
         }
       }.bind(this));
     }.bind(this));
@@ -1035,7 +1040,6 @@ define(function(require) {
   }
 
   Dashboard.prototype.refreshApps = function() {
-
     context.apps.fetch();
   }
 
@@ -1057,7 +1061,6 @@ define(function(require) {
 
   // The dashboard is a singleton which we create here and make available as this module's export.
   var dashboard = new Dashboard();
-
   return dashboard;
 
 });

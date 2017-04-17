@@ -1,9 +1,9 @@
-<html> 
+<html>
 <head>
 	<meta charset="utf-8">
 	<title>Self-Test App</title>
 	<link rel="stylesheet" href="./css/pure-min.css">
-	<link rel="stylesheet" href="./css/font-awesome.min.css" />    
+	<link rel="stylesheet" href="./css/font-awesome.min.css" />
 	<link rel="stylesheet" href="./css/style.css">
 
 </head>
@@ -75,107 +75,40 @@
 			<td></td>
 			<td></td>
 		</tr>
-
+		<tr>
+			<td class="go fa fa-play" id="submitJobStayHere"></td>
+			<td>Submit a job but stay here</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td class="go fa fa-play" id="resubmitJobStayHere"></td>
+			<td>Resubmit a job but stay here</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td class="go fa fa-play" id="resubmitJob"></td>
+			<td>Resubmit a job</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td class="go fa fa-play" id="resubmitJobFail"></td>
+			<td>Resubmit an invalid job</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td class="go fa fa-play" id="runNext"></td>
+			<td>Run next job</td>
+			<td></td>
+			<td></td>
+		</tr>
 	</tbody>
 	</table>
-<!--
-  <form id="fileForm">
-  <input type="file" id="fileInput"/>
-  <button type="submit" id="fileSubmit">Submit</button>
-  </form>
-  -->
-    
-  <script src="/js/libs/jquery.min.js"></script>
-  <script src="/js/libs/fabmo.js"></script> 
 
-  <script type="text/javascript">
-  	var fabmo = new FabMoDashboard();
+	<script src="../../common.js"></script>
+	<script src="../../selftest.js"></script>
 
-  	$(document).ready(function() {
-	  	$('#submitSingleString').click(function(evt){
-	  		evt.preventDefault();
-	  		console.info("Submitting a single string")
-	  		fabmo.submitJob({file : "G0 X1", filename : 'myfile.nc'}, function(err, result) {
-	  			if(err) { 
-	  				fabmo.notify('error', err); 
-	  			}
-	  			else {
-	  				fabmo.notify('Success');	  				
-	  			}
-	  		});
-	  	});
-
-	  	$('#submitArrayOfStrings').click(function(evt){
-	  		evt.preventDefault();
-	  		console.info("Submitting an array of strings")
-	  		fabmo.submitJob([
-	  			{file : "G0 X1", filename : "ex_one.nc"},
-	  			{file : "G0 Y1", filename : "wye_one.nc"},
-	  			{file : "G0 Z1", filename : "zee_one.nc"}
-	  			], function(err, result) {
-
-	  		});
-	  	});
-
-	  	$('#submitSingleObject').click(function(evt){
-	  		evt.preventDefault();
-	  		fabmo.submitJobs({
-	  			filename : 'job1.nc', 
-	  			data : 'G0 X1', 
-	  			name : 'Job 1', 
-	  			description : "Job 1"
-	  		});
-	  	});
-
-	  	$('#submitArrayOfObjects').click(function(evt){
-	  		evt.preventDefault();
-	  		fabmo.submitJobs([{
-	  			filename : 'job1.nc', 
-	  			data : 'G0 X1', 
-	  			name : 'Job 1', 
-	  			description : "Job 1"
-	  		},
-
-	  		{
-	  			filename : 'job1.nc', 
-	  			data : 'G0 X1', 
-	  			name : 'Job 1', 
-	  			description : "Job 1"
-	  		},
-
-	  		{
-	  			filename : 'job1.nc', 
-	  			data : 'G0 X1', 
-	  			name : 'Job 1', 
-	  			description : "Job 1"
-	  		}]);
-	  	});
-
-	  	$('#showModal').click(function(evt) {
-	  		fabmo.showModal({
-	  			title: "Modal Dialog!",
-	  			message: "This is a modal I sure hope it doesn't get interrupted."
-	  		});
-	  	});
-
-	  	$('#fileForm').submit(function(evt){
-	  		evt.preventDefault();
-	  		fabmo.submitJobs($('#fileForm'));
-	  	});
-
-	  	$("#navigateRelative").click(function(evt) {
-	  		fabmo.navigate('path/sample.pdf');
-	  	});
-
-	  	$("#navigateAbsolute1").click(function(evt) {
-	  		fabmo.navigate('/log');
-	  	});
-
-	  	$("#navigateAbsolute2").click(function(evt) {
-	  		fabmo.navigate('http://www.handibot.com/');
-	  	});
-
-
-  	});
-  </script>
 </body>

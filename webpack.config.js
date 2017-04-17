@@ -16,8 +16,8 @@ var config = {
     configuration: './dashboard/apps/configuration.fma/js/configuration.js',
     macro_manager: './dashboard/apps/macro_manager.fma/js/macro_manager.js',
     network_manager: './dashboard/apps/network_manager.fma/js/network_manager.js',
-    preview: './dashboard/apps/previewer.fma/js/app.js',
-    video: './dashboard/apps/video.fma/js/video.js'
+    preview: './dashboard/apps/previewer.fma/js/viewer.js',
+    selftest: './dashboard/apps/selftest.fma/js/selftest.js'
   },
   output: {
     path: './dashboard/build',
