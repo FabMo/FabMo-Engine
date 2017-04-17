@@ -537,24 +537,10 @@ function handleStatusReport(status) {
 				fabmo.navigate('/job/' + id + '/file');
 			} else if (Sortable.utils.is(ctrl, ".deleteJob")){
 				 fabmo.deleteJob(id);
-<<<<<<< HEAD
+
 			} 
-=======
-			} else if (Sortable.utils.is(ctrl, ".play")){
-          if ($('.play').hasClass('active')) {
-            fabmo.pause(function(err, data) {});
-          }
-          else {
-          fabmo.runNext(function(err, data) {
-              if (err) {
-                fabmo.notify(err);
-              } else {
-                updateQueue();
-              }
-            });
-        }
-			}
->>>>>>> release
+
+
 		},
 
 	onMove : function(evt){
@@ -1177,14 +1163,6 @@ function findUpTag(el, id) {
 	$('.no-jobs-item').click(function(e) {
 		$('#job_selector').click();
 	});
-
-<<<<<<< HEAD
-
-=======
-	$('#queue_table').on('click', '.play-button', function(e) {
-
-	});
->>>>>>> release
 
 	$('#clear-jobs').click(function(e) {
 		fabmo.clearJobQueue(function(err, data) {

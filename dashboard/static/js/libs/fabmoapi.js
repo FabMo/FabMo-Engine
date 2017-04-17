@@ -12,11 +12,9 @@
 
 }(this, function (io) {
   "use strict"
-<<<<<<< HEAD
+
 var io = require("./socket.io.js");
-	
-=======
->>>>>>> release
+
 var PING_TIMEOUT = 3000;
 var makePostData = function(obj, options) {
 	var file = null;
