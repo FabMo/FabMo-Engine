@@ -290,7 +290,10 @@ G2.prototype.setUnits = function(units, callback) {
 	} else {
 		return callback(new Error('Invalid unit setting: ' + units));
 	}
+	this.runString(gc).then(function() {
+
 	callback(null);
+	});
 	/*
 	this.set('gun', units, function() {
 		console.log("gun callback")
@@ -749,7 +752,8 @@ G2.prototype.runString = function(data, callback) {
 	var stringStream = new stream.Readable();
 	stringStream.push(data + "\n");
 	//stringStream.push("M30\n"); 
-	stringStream.end()
+	//stringStream.end()
+	stringStream.push(null);
 	return this.runStream(stringStream);
 };
 
