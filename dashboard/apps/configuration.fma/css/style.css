@@ -71,7 +71,6 @@ button.small, .button.small {
 
 .tip-output {
   position: fixed;
-  right: 90px;
   min-width: 200px;
   max-width: 350px;
   width: 70%;

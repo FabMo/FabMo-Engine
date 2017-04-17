@@ -265,10 +265,15 @@ $(document).ready(function() {
 $('.tool-tip').click(function(){
      var tip =$(this).parent().data('tip');
      var eTop = $(this).offset().top;
+     var eLeft = $(this).offset().left;
+     
      var realTop = eTop - 10;
      $('.tip-output').show();
+     var eWidth = $('.tip-output').width();
+     var realLeft = eLeft - eWidth - 40;
      $('.tip-text').text(tip);
      $('.tip-output').css('top', realTop + 'px');
+     $('.tip-output').css('left', realLeft + 'px');
 });
 
 $('body').scroll(function(){
