@@ -314,12 +314,14 @@ function addHistoryEntries(jobs) {
   bindMenuEvents();
 }
 
-function bindMenuEvents() {
-  function hideDropDown() {
+function hideDropDown() {
     $('.dropDownWrapper').hide();
     $('.dropDown').hide();
     $('.commentBox').hide();
   }
+
+
+function bindMenuEvents() {
 
   $('.resubmitJob').off('click');
   $('.resubmitJob').click(function(e) {
