@@ -818,8 +818,8 @@ G2.prototype.runStream = function(s) {
 G2.prototype.runFile = function(filename) {
 	var st = fs.createReadStream(filename);
 	var ln = new LineNumberer();
-	return this.runStream(st);
-	//return this.runStream(st.pipe(ln));
+	//return this.runStream(st);
+	return this.runStream(st.pipe(ln));
 }
 
 G2.prototype.runImmediate = function(data) {

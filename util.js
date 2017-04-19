@@ -276,8 +276,6 @@ function serveStatic(opts) {
 
     function serve(req, res, next) {
         var uricomp = decodeURIComponent(req.path());
-        console.log("URI COMPONENT: " + uricomp);
-        console.log("DIR: " + opts.directory);
         var file = path.join(opts.directory, uricomp);
 
         if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -463,12 +461,14 @@ LineNumberer.prototype._transform = function(chunk, enc, next) {
 
   var lines = data.split('\n');
   this._lastLineData = lines.splice(lines.length-1,1)[0];
-  
-  lines.forEach( function(line) {
+  block = []
+  for(var i=0; i<lines.length; i++) {
     this.count += 1;
-    this.push("N" + this.count + " " + line + '\n');
-  }.bind(this));
+    //this.push("N" + this.count + " " + lines[i] + '\n');
+    block.push("N" + this.count + " " + lines[i]);
+  }
 
+  this.push(block.join('\n'))
   next();
 };
 
