@@ -180,19 +180,23 @@ G2.prototype._createCycleContext = function() {
 	st.write('M100 ({out4:1})\n')
 	st.on('data', function(chunk) {
 		chunk = chunk.toString();
+		var newLines = false;
 		for(var i=0; i<chunk.length; i++) {
 			ch = chunk[i];
 			this.lineBuffer.push(ch);
 			if(ch === '\n') {
+				newLines = true;
 				var s = this.lineBuffer.join('').trim();
 				this.gcode_queue.enqueue(s);
 				if(this.gcode_queue.getLength() >= 10) {
-					log.info("Driver is primed (>= 10 moves)")
+//log.info("Driver is primed (>= 10 moves)")
 					this._primed = true;
 				}
-				this.sendMore();
 				this.lineBuffer = [];
 			}
+		}
+		if(newLines) {
+			this.sendMore();
 		}
 	}.bind(this));
 	st.on('end', function() {
@@ -814,7 +818,8 @@ G2.prototype.runStream = function(s) {
 G2.prototype.runFile = function(filename) {
 	var st = fs.createReadStream(filename);
 	var ln = new LineNumberer();
-	return this.runStream(st.pipe(ln));
+	return this.runStream(st);
+	//return this.runStream(st.pipe(ln));
 }
 
 G2.prototype.runImmediate = function(data) {

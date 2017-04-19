@@ -186,6 +186,7 @@ GCodeRuntime.prototype._handleStateChange = function(stat) {
 // Run a file given the filename
 GCodeRuntime.prototype.runFile = function(filename, callback) {
 	countLineNumbers(filename, function(err, lines) {
+		console.log("Line numbers counted: " + lines)
 		this.machine.status.nb_lines = lines;
 		this.driver.runFile(filename, callback)
 			.on('stat', this._handleStateChange.bind(this))
