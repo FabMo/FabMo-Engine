@@ -173,6 +173,8 @@ G2.prototype._createCycleContext = function() {
 	var st = new stream.PassThrough();
 	st.setEncoding('utf8');
 	this._streamDone = false;
+	this.lineBuffer = []
+	
 	// TODO factor this out
 	st.write('G90\n')
 	st.write('M100 ({out4:1})\n')
@@ -447,6 +449,15 @@ G2.prototype.handleStatusReport = function(response) {
 						this.lines_to_send = 4
 						this.quit_pending = false;
 						this.pause_flag = false;
+						break;
+				}
+			} else {
+				switch(response.sr.stat) {
+					case STAT_HOLDING:
+						this.pause_flag = true;
+						if(this.context) {
+							this.context.pause()
+						}
 						break;
 				}
 			}
