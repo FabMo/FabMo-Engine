@@ -112,9 +112,18 @@ $(document).ready(function() {
         }
         if('job' in args) {
             var url = '/job/' + args.job + '/gcode';
-            $.get(url,function(data, status) {
-                var isLive = ('isLive' in args) ? args.isLive : false;
-                initializeViewer(data, isLive, args.job);
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function(data){ 
+                    var isLive = ('isLive' in args) ? args.isLive : false;
+                    initializeViewer(data, isLive, args.job);
+                },
+                error: function(data) {
+                   if(data && data.responseJSON) {
+                       fabmo.notify('error', data.responseJSON);
+                   }
+                }
             });
         } else {
             initializeViewer("", false, -1);

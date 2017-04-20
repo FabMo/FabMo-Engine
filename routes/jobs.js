@@ -432,6 +432,9 @@ var getJobGCode = function(req, res, next) {
         } else {
             var gcode_filename = 'gcode.nc';
             machine.getGCodeForFile(file.path, function(err, gcode) {
+              if(err) {
+                return res.send(403, err.message)
+              }
 		      res.setHeader('content-type', 'applications/octet-stream');
               res.setHeader('content-disposition', 'filename="' + gcode_filename + '"');
               res.send(gcode);

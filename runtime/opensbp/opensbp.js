@@ -174,8 +174,9 @@ SBPRuntime.prototype.runString = function(s, callback) {
 		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table
 		log.debug("GOTOs analyzed...")
 		log.debug("Rainbows organized...")
-		this._run();
+		var st = this._run();
 		log.debug("Returning from run...");
+		return st;
 	} catch(e) {
 		log.error(e);
 		return this._end(e.message + " (Line " + e.line + ")");
@@ -270,9 +271,14 @@ SBPRuntime.prototype.simulateString = function(s, callback) {
 	if(this.ok_to_disconnect) {
 		var saved_machine = this.machine;
 		this.disconnect();
-		this.runString(s, function(err, data) {
-			this.machine = saved_machine;
-			callback(err, data);
+		var st = this.runString(s);
+		var chunks = []
+		st.on('data', function(chunk) {
+			chunks.push(chunk);
+		});
+		st.on('end', function() {
+			console.log("got end of program");
+			callback(null, chunks.join(''));
 		});
 	} else {
 		callback(new Error("Cannot simulate while OpenSBP runtime is busy."));
@@ -449,49 +455,46 @@ SBPRuntime.prototype._run = function() {
 	if(this.machine) {
 		this.machine.setState(this, "running");
 	}
-	setTimeout(function() {
 
-	// DO IT
-	this.started = true;
-	this.waitingForStackBreak = false;
-	this.gcodesPending = false;
+		// DO IT
+		this.started = true;
+		this.waitingForStackBreak = false;
+		this.gcodesPending = false;
 
-	var that = this;
-	var onStat = function(stat) {
-		switch(stat) {
-			case that.driver.STAT_STOP:
-				that.gcodesPending = false;
-				that._executeNext();
-			break;
-			case that.driver.STAT_HOLDING:
-				//that.paused = true;
-				that.machine.setState(that, 'paused');
-			break;
-			case that.driver.STAT_RUNNING:
-				that.machine.setState(that, 'running');
-			break;
+		var that = this;
+		var onStat = function(stat) {
+			switch(stat) {
+				case that.driver.STAT_STOP:
+					that.gcodesPending = false;
+					that._executeNext();
+				break;
+				case that.driver.STAT_HOLDING:
+					//that.paused = true;
+					that.machine.setState(that, 'paused');
+				break;
+				case that.driver.STAT_RUNNING:
+					that.machine.setState(that, 'running');
+				break;
 
+			}
 		}
-	}
 
-	if(this.file_stack.length) {
-		log.debug("Running Subprogram")
-		this._executeNext();
-	} else {
-		this.stream = new stream.PassThrough();
-		this.driver.runStream(this.stream)
-			.on('stat', onStat)
-			.then(function() {
-				log.info("openSBP: All done.");
-				this._end();
-			}.bind(this));
+		if(this.file_stack.length) {
+			log.debug("Running Subprogram")
+			this._executeNext();
+		} else {
+			this.stream = new stream.PassThrough();
+			if(this.driver) {
+				this.driver.runStream(this.stream)
+				.on('stat', onStat)
+				.then(function() {
+					this._end();
+				}.bind(this));		
+			}
 
-		//this.emit_gcode(config.driver.get('gdi') ? 'G91' : 'G90');
-		//this.emit_gcode('M0'); // TEMPORARY FOR STATE SAKE
-
-		this._executeNext();
-	}
-	}.bind(this), 250);
+			this._executeNext();
+		}
+	return this.stream;
 };
 
 SBPRuntime.prototype.isInSubProgram = function() {
@@ -519,8 +522,8 @@ SBPRuntime.prototype._executeNext = function() {
 
 	if(this.pc >= this.program.length) {
 		log.info("End of program reached. (pc = " + this.pc + ")");
-		this.driver.prime();
-		if(this.gcodesPending) { return; }
+		this.prime();
+		if(this.gcodesPending && this.driver) { return; }
 
 		if(this.isInSubProgram()) {
 			log.debug("This is a nested end.  Popping the file stack.");
@@ -531,6 +534,9 @@ SBPRuntime.prototype._executeNext = function() {
 		} else {
 			log.debug("This is not a nested end.  No stack.")
 			this.emit_gcode('M30');
+			if(!this.driver) {
+				this._end();
+			}
 			return;
 		}
 	}
@@ -541,9 +547,9 @@ SBPRuntime.prototype._executeNext = function() {
 
 	if(breaksTheStack) {
 		log.debug("Stack break: " + JSON.stringify(line));
-		this.driver.prime();
+		this.prime();
 		
-		if(this.gcodesPending) {
+		if(this.gcodesPending && this.driver) {
 			log.debug("Deferring because g-codes pending.");
 			return; // G2 is running, we'll get called when it's done
 		} else {
@@ -575,37 +581,53 @@ SBPRuntime.prototype._executeNext = function() {
 	}
 };
 
+SBPRuntime.prototype.prime = function() {
+	if(this.driver) {
+		this.driver.prime();
+	}
+}
+
 SBPRuntime.prototype._end = function(error) {
+
 	error = error ? error.message || error : null;
 	log.debug("Calling the non-nested (toplevel) end");
+
+	var cleanup = function(error) {
+		if(this.machine && error) {
+			this.machine.setState(this, 'stopped', {'error' : error });
+		}
+		this.ok_to_disconnect = true;
+		this.emit('end', this);
+		if(this.end_callback) {
+			this.end_callback();
+		}
+		this.stream.end();
+	}.bind(this);
+
 	this.init();
 
 	if(error) {
 		this.machine.restoreDriverState(function(err, result) {
-			this.machine.setState(this, 'stopped', {'error' : error });
-			this.emit('end', this);
-			if(this.end_callback) {
-				this.end_callback();
-			}
+			cleanup();
 		}.bind(this));
 	} else {
-		this.machine.restoreDriverState(function(err, result) {
-			if(this.machine.status.job) {
-				this.machine.status.job.finish(function(err, job) {
-					this.machine.status.job=null;
-					this.machine.setState(this, 'idle');
-				}.bind(this));
-			} else {
-				this.driver.setUnits(config.machine.get('units'), function() {
-					this.machine.setState(this, 'idle');
-				}.bind(this));
-			}
-			this.ok_to_disconnect = true;
-			this.emit('end', this);
-			if(this.end_callback) {
-				this.end_callback();
-			}
-		}.bind(this));
+		if(this.machine) {
+			this.machine.restoreDriverState(function(err, result) {
+				if(this.machine.status.job) {
+					this.machine.status.job.finish(function(err, job) {
+						this.machine.status.job=null;
+						this.machine.setState(this, 'idle');
+					}.bind(this));
+				} else {
+					this.driver.setUnits(config.machine.get('units'), function() {
+						this.machine.setState(this, 'idle');
+					}.bind(this));
+				}
+				cleanup();
+			}.bind(this));
+		} else {
+			cleanup();
+		}
 	}
 };
 
