@@ -5,6 +5,7 @@ var stream = require('stream');
 var T_RENEW = 250;
 var SAFETY_FACTOR = 2;
 var RENEW_SEGMENTS = 3;
+var FIXED_MOVES_QUEUE_SIZE = 3;
 
 function ManualRuntime() {
 	this.machine = null;
@@ -135,7 +136,7 @@ ManualRuntime.prototype.executeCode = function(code, callback) {
 
 ManualRuntime.prototype.maintainMotion = function() {
 	if(this.moving) {
-		this.keep_moving = true;		
+		this.keep_moving = true;
 	}
 }
 
@@ -191,7 +192,7 @@ ManualRuntime.prototype.renewMoves = function() {
 		}
 		this.driver.prime();
 		setTimeout(function() {
-			this.renewMoves()	
+			this.renewMoves()
 		}.bind(this), T_RENEW)
 	} else {
 			this.stopMotion();
@@ -205,7 +206,10 @@ ManualRuntime.prototype.stopMotion = function() {
 }
 
 ManualRuntime.prototype.fixedMove = function(axis, speed, distance) {
-	if(this.moving) {
+	if(this.fixedQueue.length >= FIXED_MOVES_QUEUE_SIZE) {
+        return;
+    }
+    if(this.moving) {
 		this.fixedQueue.push({axis: axis, speed: speed, distance: distance});
 		log.warn("fixedMove(): Not moving, due to already moving.");
 	} else {
@@ -236,7 +240,7 @@ ManualRuntime.prototype.pause = function() {
 
 ManualRuntime.prototype.quit = function() {
 	if(this.moving) {
-		this.driver.quit();		
+		this.driver.quit();
 	}
 	if(this.stream) {
 		this.stream.end();

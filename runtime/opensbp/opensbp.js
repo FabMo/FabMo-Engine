@@ -143,7 +143,7 @@ SBPRuntime.prototype.needsAuth = function(s) {
 	for (var i = 0, x = lines.length; i < x; i++) {
 		if ( lines[i].toUpperCase().charAt( 0 ) !=='Z') {
 			return true;
-		} 
+		}
 	};
 	return false;
 }
@@ -489,7 +489,7 @@ SBPRuntime.prototype._run = function() {
 				.on('stat', onStat)
 				.then(function() {
 					this._end();
-				}.bind(this));		
+				}.bind(this));
 			}
 
 			this._executeNext();
@@ -548,7 +548,7 @@ SBPRuntime.prototype._executeNext = function() {
 	if(breaksTheStack) {
 		log.debug("Stack break: " + JSON.stringify(line));
 		this.prime();
-		
+
 		if(this.gcodesPending && this.driver) {
 			log.debug("Deferring because g-codes pending.");
 			return; // G2 is running, we'll get called when it's done
@@ -591,7 +591,7 @@ SBPRuntime.prototype._end = function(error) {
 
 	error = error ? error.message || error : null;
 	log.debug("Calling the non-nested (toplevel) end");
-
+    log.debug(error)
 	var cleanup = function(error) {
 		if(this.machine && error) {
 			this.machine.setState(this, 'stopped', {'error' : error });
@@ -607,9 +607,13 @@ SBPRuntime.prototype._end = function(error) {
 	this.init();
 
 	if(error) {
+        if(this.machine) {
 		this.machine.restoreDriverState(function(err, result) {
 			cleanup();
 		}.bind(this));
+        } else {
+            cleanup(error);
+        }
 	} else {
 		if(this.machine) {
 			this.machine.restoreDriverState(function(err, result) {
@@ -809,6 +813,10 @@ SBPRuntime.prototype._execute = function(command, callback) {
 				setImmediate(callback);
 				return true;
 			} else {
+                if(!this.machine) {
+                    setImmediate(callback);
+                    return true;
+                }
 				var message = arg;
 				if(!message) {
 					var last_command = this.program[this.pc-2];

@@ -166,15 +166,15 @@ function G2() {
 util.inherits(G2, events.EventEmitter);
 
 G2.prototype._createCycleContext = function() {
-	log.debug("Creating a cycle context.")
+	console.log("Creating a cycle context.")
 	if(this.context) {
-		throw new Error("Cannot create a new cycle context.  One already exists.");
+        throw new Error("Cannot create a new cycle context.  One already exists.");
 	}
 	var st = new stream.PassThrough();
 	st.setEncoding('utf8');
 	this._streamDone = false;
 	this.lineBuffer = []
-	
+
 	// TODO factor this out
 	st.write('G90\n')
 	st.write('M100 ({out4:1})\n')
@@ -241,7 +241,7 @@ G2.prototype.connect = function(path, callback) {
 	this.once('ready', function() {
 		this.connected = true;
 		this._write('\x04\n', function() {
-		callback(null, this);			
+		callback(null, this);
 		}.bind(this));
 	}.bind(this));
 
@@ -603,12 +603,12 @@ G2.prototype.resume = function() {
 
 
 G2.prototype.quit = function() {
-	
+
 	if(this.quit_pending) {
 		log.warn("Not quitting because a quit is already pending.");
 		return;
 	}
-	
+
 	switch(this.status.stat) {
 		case STAT_END:
 			return;
@@ -618,7 +618,7 @@ G2.prototype.quit = function() {
 			this.quit_pending = true;
 
 			if(this.stream) {
-				this.stream.end()				
+				this.stream.end()
 			}
 			this.gcode_queue.clear();
 			this._write('\x04\n');
@@ -857,7 +857,7 @@ G2.prototype.sendMore = function() {
 				codes.push("");
 				if(codes.length > 1) {
 					this.lines_to_send -= to_send/*-offset*/;
-					this._write(codes.join('\n'), function() { });					
+					this._write(codes.join('\n'), function() { });
 				}
 			}
 		}
