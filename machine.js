@@ -116,25 +116,24 @@ function Machine(control_path, callback) {
 			]
 
 	    // Idle
-	    this.setRuntime(null, function() {});
-
-	    if(err) {
-		    typeof callback === "function" && callback(err);
-	    } else {
-		    this.driver.requestStatusReport(function(result) {
-		    	if('stat' in result) {
-		    		switch(result.stat) {
-		    			case g2.STAT_INTERLOCK:
-		    			case g2.STAT_SHUTDOWN:
-		    			case g2.STAT_PANIC:
-		    				this.die('A G2 exception has occurred. You must reboot your tool.');
-		    				break;
-		    		}
-		    	}
-			    typeof callback === "function" && callback(null, this);
-		    }.bind(this));
-	    }
-
+	    this.setRuntime(null, function() {
+            if(err) {
+                typeof callback === "function" && callback(err);
+            } else {
+                this.driver.requestStatusReport(function(result) {
+                    if('stat' in result) {
+                        switch(result.stat) {
+                            case g2.STAT_INTERLOCK:
+                            case g2.STAT_SHUTDOWN:
+                            case g2.STAT_PANIC:
+                                this.die('A G2 exception has occurred. You must reboot your tool.');
+                                break;
+                        }
+                    }
+                    typeof callback === "function" && callback(null, this);
+                }.bind(this));
+            }
+        }.bind(this));
     }.bind(this));
 
     config.driver.on('change', function(update) {
@@ -560,17 +559,19 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				this.action = null;
 				// Deliberately fall through
 			case 'paused':
-				this.driver.get('mpo', function(err, mpo) {
-					if(config.instance) {
-						config.instance.update({'position' : mpo});
-					}
-				});
+                if(this.status.state != newstate) {
+                    this.driver.get('mpo', function(err, mpo) {
+					    if(config.instance) {
+						    config.instance.update({'position' : mpo});
+					    }
+				    });
+                }
 				break;
 			case 'dead':
 				log.error('G2 is dead!');
 				break;
 			default:
-				//this.driver.command({"out4":1});
+                //this.driver.command({"out4":1});
 				break;
 		}
 
@@ -685,7 +686,7 @@ Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 			if(err) {
 				log.error(err);
 			} else {
-				runtime.executeCode(code); 
+				runtime.executeCode(code);
 			}
 		}.bind(this));
 	}

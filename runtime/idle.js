@@ -10,7 +10,7 @@ IdleRuntime.prototype.toString = function() {
 }
 
 IdleRuntime.prototype.connect = function(machine) {
-	this.machine = machine;
+    this.machine = machine;
 	this.driver = machine.driver;
 	this.ok_to_disconnect = true;
 	this.status_report = {};
@@ -21,7 +21,7 @@ IdleRuntime.prototype.connect = function(machine) {
 
 IdleRuntime.prototype.disconnect = function() {
 	this.driver.removeListener('status', this.status_handler);
-	this._changeState("idle");	
+	this._changeState("idle");
 };
 
 IdleRuntime.prototype._changeState = function(newstate) {
