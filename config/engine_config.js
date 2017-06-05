@@ -1,5 +1,6 @@
 var path = require('path');
 var util = require('util');
+var fs = require('fs-extra');
 var PLATFORM = require('process').platform;
 var exec = require('child_process').exec;
 Config = require('./config').Config;
@@ -18,21 +19,41 @@ EngineConfig.prototype.update = function(data, callback) {
 	var profile_changed = false;
 	try {
 		for(var key in data) {
-			if(
-				(key === 'profile') && 
-				(key in this._cache) && 
-				(data[key] != this._cache[key]) &&
-				(this.userConfigLoaded)) {
-				
-				profile_changed = true;
+			if((key === 'profile')) {
+				var newProfile = data[key];
+				console.log("new profile: " + newProfile)
+				if(newProfile && newProfile != 'default') {
+					console.log("new profile isn't default")
+					try {
+						var profileDir = __dirname + '/../profiles/' + newProfile;
+						var stat = fs.statSync(profileDir);								
+						if(!stat.isDirectory()) {
+							console.log("not a directory")
+							throw new Error('Not a directory: ' + profileDir)
+						} else {
+							console.log("New profile directory exists")
+						}
+						console.log("fuckin made it")
+					} catch(e) {
+						console.log("meeeeyyyyyyah")
+						logger.warn(e);
+						data[key] = 'default';
+					}
+				}
+
+				if((key in this._cache) && (data[key] != this._cache[key]) && (this.userConfigLoaded)) {
+					console.log("profile changed")
+					profile_changed = true;
+				}
 			}
-			this._cache[key] = data[key];
+			this._cache[key] = data[key];				
 		}
 	} catch (e) {
 		if(callback) {
 			return setImmediate(callback, e);
 		}
 	}
+
 	var that = this;
 	function save(callback) {
 		that.save(function(err, result) {

@@ -122,10 +122,12 @@ Config.prototype.init = function(callback) {
 		var default_count;
         var user_count;
         var default_config_file = this.getDefaultConfigFile();
+        var profile_config_file = this.getProfileConfigFile();
         var config_file = this.getConfigFile();
         async.series(
 		[
 			function loadDefault(callback) { this.load(default_config_file, callback); }.bind(this),
+			function loadProfile(callback) { this.load(profile_config_file, callback); }.bind(this),
 			function saveDefaultCount(callback) {
 				default_count = Object.keys(this._cache).length;
 				callback();
@@ -167,6 +169,10 @@ Config.prototype.init = function(callback) {
 };
 
 Config.prototype.getDefaultConfigFile = function() {
+	return Config.getDefaultProfileDir('config') + this.config_name + '.json';
+}
+
+Config.prototype.getProfileConfigFile = function() {
 	return Config.getProfileDir('config') + this.config_name + '.json';
 }
 
@@ -178,7 +184,11 @@ Config.prototype.getConfigFile = function() {
 
 Config.getProfileDir = function(d) {
 	var profile = Config.getCurrentProfile() || 'default';
-	return __dirname + '/../profiles/' + profile + '/' + d + '/';
+	return __dirname + '/../profiles/' + profile + '/' + (d ? (d + '/') : '');
+}
+
+Config.getDefaultProfileDir = function(d) {
+	return __dirname + '/../profiles/default/' + (d ? (d + '/') : '');
 }
 
 Config.getDataDir = function(name) {
