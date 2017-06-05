@@ -1,0 +1,4 @@
+'!FABMO!name:Start Spindle
+'!FABMO!description:Start the spindle and pause for spin up
+'Start the spindle
+SO,1,1

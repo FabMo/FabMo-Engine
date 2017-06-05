@@ -1,0 +1,7 @@
+'!FABMO!name:Change Unit type
+'!FABMO!description:Change Units
+'Custom_91.SBC -- Change the unit to the type required for the file being run
+
+'Deal with Metric file in Inch Mode ------------------------ 
+'The file you are running is written for use in metric mode.  Currently your control software is set up for inches.  CHanging the unit type to inches.
+    VD,,,0

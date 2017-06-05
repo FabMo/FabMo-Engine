@@ -64,7 +64,7 @@ Engine.prototype.setTime = function(obj) {
         var d = new Date(obj.utc);
         log.debug("Setting the time to " + d.toUTCString());
         var t = d.getUTCFullYear() + '-' + d.getUTCMonth() + '-' + d.getUTCDay() + ' ' + d.getUTCHours() + ':' + d.getUTCMinutes() + ':' + d.getUTCSeconds()
-    cmd = 'timedatectl set-time ' + t + '; timedatectl';
+        cmd = 'timedatectl set-time ' + t + '; timedatectl';
         util.doshell(cmd, function(stdout) {
             log.debug(stdout);
         });
@@ -131,6 +131,7 @@ Engine.prototype.start = function(callback) {
         },
 
         function check_engine_config(callback) {
+            console.log(config.engine._cache)
             if(!config.engine.userConfigLoaded) {
                 EngineConfigFirstTime(callback);
             } else {
@@ -354,6 +355,10 @@ Engine.prototype.start = function(callback) {
             dashboard.loadApps(function(err, result) {
                 callback(null, result);
             });
+        },
+        function load_profile_macros(callback) {
+            log.info('Loading profile macros...');
+            macros.loadProfile(callback);
         },
 
         function load_macros(callback) {

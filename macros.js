@@ -1,5 +1,8 @@
-var fs = require('fs')
+var fs = require('fs-extra')
+var path = require('path')
+var async = require('async')
 var config = require('./config')
+var log = require('./log').logger('macro');
 var MARKER = '!FABMO!'
 
 var macros = {}
@@ -261,6 +264,31 @@ var del = function(idx, callback) {
 	}
 }
 
+var loadProfileMacros = function(callback) {
+	var installedMacrosDir = config.getDataDir('macros');
+	var profileMacrosDir = config.getProfileDir('macros');
+	var copyIfNotExists = function(fn, callback) {
+		var a = path.join(profileMacrosDir, fn);
+		var b = path.join(installedMacrosDir, fn);
+		fs.stat(b, function(err, stats) {
+			if(!err && stats.isFile()) {
+				log.debug('Not Copying ' + a + ' -> ' + b + ' because it already exists.');					
+				callback();
+			} else {
+				log.debug('Copying ' + a + ' -> ' + b + ' because it doesnt already exist.');
+				fs.copy(a,b, function(err, data) {
+					callback(err);
+				});
+			}
+		});
+	}
+
+	fs.readdir(profileMacrosDir, function(err, files) {
+		if(err) { return callback(err); }
+		async.map(files, copyIfNotExists, callback);
+	})
+}
+
 exports.load = load;
 exports.list = list;
 exports.get = get;
@@ -269,3 +297,4 @@ exports.run = run;
 exports.getInfo = getInfo;
 exports.update = update;
 exports.save = save;
+exports.loadProfile = loadProfileMacros;

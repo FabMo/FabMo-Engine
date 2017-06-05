@@ -15,8 +15,17 @@ util.inherits(EngineConfig, Config);
 // The engine update function is pretty basic for now, 
 // but if new values provoke a reconfiguration of the application, this is where it will be done.
 EngineConfig.prototype.update = function(data, callback) {
+	var profile_changed = false;
 	try {
 		for(var key in data) {
+			if(
+				(key === 'profile') && 
+				(key in this._cache) && 
+				(data[key] != this._cache[key]) &&
+				(this.userConfigLoaded)) {
+				
+				profile_changed = true;
+			}
 			this._cache[key] = data[key];
 		}
 	} catch (e) {
@@ -24,13 +33,28 @@ EngineConfig.prototype.update = function(data, callback) {
 			return setImmediate(callback, e);
 		}
 	}
-	this.save(function(err, result) {
-		if(err) {
-			typeof callback === 'function' && callback(e);
-		} else {
-			typeof callback === 'function' && callback(null, data);
-		}
-	});
+	var that = this;
+	function save(callback) {
+		that.save(function(err, result) {
+			if(err) {
+				typeof callback === 'function' && callback(e);
+			} else {
+				typeof callback === 'function' && callback(null, data);
+			}
+		});
+	};
+	if(profile_changed) {
+		logger.warn('Engine profile changed - engine should be restarted.')
+		Config.deleteProfileData(function(err) {
+			save(function(err) {
+				if(err) { return callback(err); }
+				process.exit(1);
+				//callback();
+			})
+		});
+	} else {
+		save(callback);
+	}
 };
 
 EngineConfig.prototype.apply = function(callback) {

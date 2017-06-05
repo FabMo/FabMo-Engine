@@ -1,0 +1,4 @@
+'!FABMO!name:TEST MOVE
+'!FABMO!description:Just Move X Some
+MX,1
+MX,0
