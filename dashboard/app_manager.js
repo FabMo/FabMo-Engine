@@ -330,9 +330,13 @@ AppManager.prototype.installAppArchive = function(pathname, name, callback) {
 AppManager.prototype.getAppPaths = function(callback) {
 	var app_pattern = this.app_directory + '/@(*.zip|*.fma)'
 	var sys_pattern = this.system_app_directory + '/@(*.zip|*.fma)'
+	var profile_pattern = config.getProfileDir('apps') + '/@(*.zip|*.fma)'
+
 	glob(app_pattern, function(err, user_files) {
 		glob(sys_pattern, function(err, system_files) {
-			callback(null, system_files.concat(user_files));
+			glob(profile_pattern, function(err, profile_files) {
+				callback(null, system_files.concat(user_files).concat(profile_files));
+			}.bind(this));
 		}.bind(this));
 	}.bind(this));
 };

@@ -1,4 +1,3 @@
-!profiles/default
 sandbox
 build
 *.swp
@@ -18,4 +17,6 @@ config/data/*.json
 *.orig
 dashboard/build/*
 !dashboard/build/index.html
+profiles/*
+!profiles/default
 install_token
