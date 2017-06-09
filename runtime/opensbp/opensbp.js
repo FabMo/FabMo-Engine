@@ -277,7 +277,6 @@ SBPRuntime.prototype.simulateString = function(s, callback) {
 			chunks.push(chunk);
 		});
 		st.on('end', function() {
-			console.log("got end of program");
 			callback(null, chunks.join(''));
 		});
 	} else {
@@ -321,9 +320,6 @@ SBPRuntime.prototype._onG2Status = function(status) {
 
 	if(this.driver.status.stat == this.driver.STAT_PROBE) {
 		var keys = ['posx','posy','posz','posa','posb','posc'];
-		keys.forEach(function(key) {
-			console.log(key);
-		});
 	}
 
 	this.machine.emit('status',this.machine.status);
@@ -488,6 +484,7 @@ SBPRuntime.prototype._run = function() {
 				this.driver.runStream(this.stream)
 				.on('stat', onStat)
 				.then(function() {
+					this.file_stack = []
 					this._end();
 				}.bind(this));
 			}
@@ -513,7 +510,7 @@ SBPRuntime.prototype._executeNext = function() {
 	}
 
 	if(this.pending_error) {
-		return this._end(e);
+		return this._end(this.pending_error);
 	}
 
 	if(this.paused) {
