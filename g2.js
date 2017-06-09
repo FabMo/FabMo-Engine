@@ -558,7 +558,10 @@ G2.prototype.feedHold = function(callback) {
 	this.pause_flag = true;
 	this.flooded = false;
 	typeof callback === 'function' && this.once('state', callback);
-	log.debug("Sending a feedhold");
+	if(this.status.stat === this.STAT_PROBE) {
+        return this.quit()
+    }
+    log.debug("Sending a feedhold");
 	if(this.context) {
 		this.context.pause();
 	}
