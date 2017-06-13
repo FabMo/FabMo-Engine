@@ -189,7 +189,6 @@ G2.prototype._createCycleContext = function() {
 				var s = this.lineBuffer.join('').trim();
 				this.gcode_queue.enqueue(s);
 				if(this.gcode_queue.getLength() >= 10) {
-//log.info("Driver is primed (>= 10 moves)")
 					this._primed = true;
 				}
 				this.lineBuffer = [];
@@ -420,11 +419,16 @@ G2.prototype.handleStatusReport = function(response) {
 		}
 
 		if('stat' in response.sr) {
-			if(response.sr.stat === STAT_STOP) {
-				if(this.flushcallback) {
-					this.flushcallback(null);
-					this.flushcallback = null;
-				}
+			switch(response.sr.stat) {
+				case STAT_STOP:
+					if(this.flushcallback) {
+						this.flushcallback(null);
+						this.flushcallback = null;
+					}
+					break;
+				case STAT_END:
+					this.status.line = null;
+					break;
 			}
 
 			if(this.quit_pending) {

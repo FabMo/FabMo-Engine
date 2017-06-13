@@ -240,7 +240,6 @@ Machine.prototype.restoreDriverState = function(callback) {
 }
 
 Machine.prototype.arm = function(action, timeout) {
-	console.log(action)
 	switch(this.status.state) {
 		case 'idle':
 		break;
@@ -599,7 +598,6 @@ Machine.prototype.pause = function() {
 };
 
 Machine.prototype.quit = function() {
-	console.log("QUITTING AT THE MACHINE LEVEL")
     this.disarm();
 	// Quitting from the idle state dismisses the 'info' data
 	if(this.status.state === "idle") {

@@ -14,6 +14,8 @@
 var MAX_INPUTS = 16;
 
 function FabMoUI(tool, options){
+	this.progress = 0;
+
 	this.event_handlers = {
 		'error' : [],
 		'message' : [],
@@ -153,7 +155,6 @@ FabMoUI.prototype.updateText = function(control, txt) {
 FabMoUI.prototype.updateStatusContent = function(status){
 	var that = this;
 	var prev_state = that.tool.state;
-
 	that.tool.state=status.state;
 
 	if(prev_state !== status.state) {
@@ -220,6 +221,13 @@ FabMoUI.prototype.updateStatusContent = function(status){
 			prog = 0;
 		}
 		var percent = Math.round(prog);
+
+		// Enforce monotonicity of progress
+		if(percent <= this.progress) {
+			percent = this.progress
+		}
+		this.progress = percent;
+
 		var cc = 255 - Math.round(255*(percent/100));
 		var rotation = Math.round(180*(percent/100));
  		var fill_rotation = rotation;
@@ -252,6 +260,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.filename_selector).empty();
 		$(that.progress_selector).empty();
 		$('.currentJobTitle').text('');
+		$('.horizontal_fill').css('width', '0%');
+		this.progress = 0;
 	}
 
 	for(var i=1; i<MAX_INPUTS+1; i++) {
