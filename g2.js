@@ -476,6 +476,10 @@ G2.prototype.handleStatusReport = function(response) {
 		this.stat = this.status.stat !== undefined ? this.status.stat : this.stat;
 		this.hold = this.status.hold !== undefined ? this.status.hold : this.hold;
 
+		if(this.context) {
+			this.context.emit('status', this.status);
+		}
+
 		// Emit status no matter what
 		if('stat' in response.sr) {
 			this.emit('stat', response.sr.stat)
@@ -484,9 +488,6 @@ G2.prototype.handleStatusReport = function(response) {
 			}
 		}
 		this.emit('status', this.status);
-		if(this.context) {
-			this.context.emit('status', this.status);
-		}
 	}
 };
 
