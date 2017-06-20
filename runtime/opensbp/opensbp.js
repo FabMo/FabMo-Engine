@@ -380,7 +380,16 @@ SBPRuntime.prototype._evaluateArguments = function(command, args) {
 // Returns true if the provided command breaks the stack
 SBPRuntime.prototype._breaksStack = function(cmd) {
 	var result;
-	switch(cmd.type) {
+	if(cmd.args) {
+        cmd.args.forEach(function(arg) {
+            if(this._exprBreaksStack(arg)) {
+                log.warn("STACK BREAK for an expression: " + arg)
+                    return true;
+            }
+        }.bind(this));
+    }
+
+    switch(cmd.type) {
 		// Commands (MX, VA, C3, etc) break the stack only if they must ask the tool for data
 		// TODO: Commands that have sysvar evaluation in them also break stack
 		case "cmd":
