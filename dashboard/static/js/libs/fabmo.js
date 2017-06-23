@@ -198,6 +198,7 @@ FabMoDashboard.prototype._simulateCall = function(name, data, callback) {
 			}
 			text.textContent = msg;
 			showToaster(toast);
+			callback(null, {})
 		break;
 
 		case "runGCode":
@@ -247,6 +248,17 @@ FabMoDashboard.prototype.on = function(name, callback) {
 	this._on(name, callback);
 }
 
+FabMoDashboard.prototype.off = function(name, callback) {
+	var listeners = this._event_listeners[name] || [];
+	if(!callback) {
+		this._event_listeners[name] = [];
+	} else {
+ 		var idx = listeners.indexOf(5);
+		if (idx > -1) {
+    		this._event_listeners[name].splice(index, 1);
+		}
+	}
+}
 
 FabMoDashboard.prototype._setupMessageListener = function() {
 	this.window.addEventListener('message', function (evt) {
@@ -416,7 +428,7 @@ FabMoDashboard.prototype.notification = function(type,message,callback) {
 FabMoDashboard.prototype.notify = FabMoDashboard.prototype.notification;
 
 function _makeFile(obj) {
-	if(obj instanceof jQuery) {
+	if(window.jQuery && obj instanceof jQuery) {
 		if(obj.is('input:file')) {
 			obj = obj[0];
 		} else {
@@ -472,7 +484,7 @@ function _makeJob(obj) {
 FabMoDashboard.prototype.submitJob = function(jobs, options, callback) {
 	var args = {jobs : []};
 
-	if(jobs instanceof jQuery) {
+	if(window.jQuery && jobs instanceof jQuery) {
 		if(jobs.is('input:file')) {
 			jobs = obj[0];
 		} else {
@@ -711,7 +723,7 @@ FabMoDashboard.prototype.getApps = function(callback) {
 FabMoDashboard.prototype.submitApp = function(apps, options, callback) {
 	var args = {apps : []};
 
-	if(apps instanceof jQuery) {
+	if(window.jQuery && apps instanceof jQuery) {
 		if(apps.is('input:file')) {
 			apps = apps[0];
 		} else {
