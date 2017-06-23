@@ -86,10 +86,10 @@ Engine.prototype.getVersion = function(callback) {
         this.version.hash = (data || "").trim();
         this.version.number = "";
         this.version.debug = ('debug' in argv);
-        fs.readFile('version.json', 'utf8', function(err, data) {
+	fs.readFile('version.json', 'utf8', function(err, data) {
             if(err) {
                 this.version.type = 'dev';
-                return callback(null, this.version);
+		        return callback(null, this.version);
             }
             try {
                 data = JSON.parse(data);
@@ -100,10 +100,10 @@ Engine.prototype.getVersion = function(callback) {
             } catch(e) {
                 this.version.type = 'dev';
             } finally {
-                callback(null, this.version);
+		        callback(null, this.version);
             }
         }.bind(this))
-    });
+    }.bind(this));
 }
 
 Engine.prototype.getInfo = function(callback) {
@@ -130,7 +130,6 @@ Engine.prototype.start = function(callback) {
         },
 
         function check_engine_config(callback) {
-            console.log(config.engine._cache)
             if(!config.engine.userConfigLoaded) {
                 EngineConfigFirstTime(callback);
             } else {
@@ -146,7 +145,7 @@ Engine.prototype.start = function(callback) {
                     this.version = "";
                     return callback();
                 }
-                log.info("Got engine version: " + this.version);
+                log.info("Got engine version: " + JSON.stringify(this.version));
                 this.version = data;
                 callback();
             }.bind(this));
@@ -164,7 +163,7 @@ Engine.prototype.start = function(callback) {
                 });
             } else {
                 var last_time_version = config.engine.get('version').trim();
-                var this_time_version = this.version.hash.trim();
+                var this_time_version = (this.version.hash || this.version.number || "").trim();
                 log.debug("Previous engine version: " + last_time_version);
                 log.debug(" Current engine version: " + this_time_version);
 
