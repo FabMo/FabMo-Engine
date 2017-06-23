@@ -4,7 +4,7 @@ var sb3_commands = require('../sb3_commands');
 var config = require('../../../config');
 
 // Generic probe function
-// opts: 
+// opts:
 //  inp : input number (int)
 //  dist : map of axis word (X,Y,Z,A,B,C) to search distance
 //  feed : feedrate in units/sec
@@ -26,7 +26,8 @@ function probe(runtime, opts) {
 }
 
 exports.PX = function(args) {
-	probe(this, {
+	this.cmd_posx = undefined
+    probe(this, {
 		inp : args[2],
 		feed : args[1],
 		dist : {
@@ -36,6 +37,7 @@ exports.PX = function(args) {
 };
 
 exports.PY = function(args) {
+	this.cmd_posy = undefined
 	probe(this, {
 		inp : args[2],
 		feed : args[1],
@@ -46,6 +48,7 @@ exports.PY = function(args) {
 };
 
 exports.PZ = function(args) {
+	this.cmd_posz = undefined
 	probe(this, {
 		inp : args[2],
 		feed : args[1],
@@ -56,6 +59,8 @@ exports.PZ = function(args) {
 };
 
 exports.P2 = function(args) {
+	this.cmd_posx = undefined
+	this.cmd_posy = undefined
 	probe(this, {
 		inp : args[3],
 		feed : args[2],

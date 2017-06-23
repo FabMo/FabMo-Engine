@@ -107,8 +107,8 @@ SBPRuntime.prototype.connect = function(machine) {
 	this.cmd_posa = this.posa;
 	this.cmd_posb = this.posb;
 	this.cmd_posc = this.posc;
-	this.status_handler = this._onG2Status.bind(this);
-	this.driver.on('status', this.status_handler);
+	//this.status_handler = this._onG2Status.bind(this);
+	//this.driver.on('status', this.status_handler);
 	this.connected = true;
 	log.info('Connected OpenSBP runtime.');
 };
@@ -122,7 +122,7 @@ SBPRuntime.prototype.disconnect = function() {
 	}
 
 	if(this.ok_to_disconnect) {
-		this.driver.removeListener('status', this.status_handler);
+		//this.driver.removeListener('status', this.status_handler);
 		this.machine = null;
 		this.driver = null;
 		this.connected = false;
@@ -312,7 +312,7 @@ SBPRuntime.prototype._onG2Status = function(status) {
 	}
 
 	// Update our copy of the system status
-	for (var key in this.machine.status) {
+    for (var key in this.machine.status) {
 		if(key in status) {
 			this.machine.status[key] = status[key];
 		}
@@ -380,7 +380,16 @@ SBPRuntime.prototype._evaluateArguments = function(command, args) {
 // Returns true if the provided command breaks the stack
 SBPRuntime.prototype._breaksStack = function(cmd) {
 	var result;
-	switch(cmd.type) {
+	if(cmd.args) {
+        for(var i=0; i<cmd.args.length; i++) {
+            if(this._exprBreaksStack(cmd.args[i])) {
+                log.warn("STACK BREAK for an expression: " + JSON.stringify(cmd.args[i]))
+                return true;
+            }
+        }
+    }
+
+    switch(cmd.type) {
 		// Commands (MX, VA, C3, etc) break the stack only if they must ask the tool for data
 		// TODO: Commands that have sysvar evaluation in them also break stack
 		case "cmd":
@@ -462,7 +471,7 @@ SBPRuntime.prototype._run = function() {
 			switch(stat) {
 				case that.driver.STAT_STOP:
 					that.gcodesPending = false;
-					that._executeNext();
+                    that._executeNext();
 				break;
 				case that.driver.STAT_HOLDING:
 					//that.paused = true;
@@ -483,7 +492,8 @@ SBPRuntime.prototype._run = function() {
 			if(this.driver) {
 				this.driver.runStream(this.stream)
 				.on('stat', onStat)
-				.then(function() {
+				.on('status', this._onG2Status.bind(this))
+                .then(function() {
 					this.file_stack = []
 					this._end();
 				}.bind(this));
@@ -639,7 +649,6 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 	if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
 		// Evaluate the command arguments
 		args = this._evaluateArguments(command.cmd, command.args);
-
 		// Get the handler for this command
 		f = this[command.cmd].bind(this);
 
