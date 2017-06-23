@@ -447,7 +447,8 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 // Returns true if this expression breaks the stack.
 // System variable evaluation breaks the stack.  No other expressions do.
 SBPRuntime.prototype._exprBreaksStack = function(expr) {
-	if(expr.op === undefined) {
+	if(!expr) { return false; }
+    if(expr.op === undefined) {
 		return expr[0] == '%'; // For now, all system variable evaluations are stack-breaking
 	} else {
 		return this._exprBreaksStack(expr.left) || this._exprBreaksStack(expr.right);
