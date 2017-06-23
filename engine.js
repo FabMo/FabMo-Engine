@@ -99,7 +99,6 @@ Engine.prototype.getVersion = function(callback) {
                 }
             } catch(e) {
                 this.version.type = 'dev';
-                this.version.number
             } finally {
                 callback(null, this.version);
             }
@@ -147,6 +146,7 @@ Engine.prototype.start = function(callback) {
                     this.version = "";
                     return callback();
                 }
+                log.info("Got engine version: " + this.version);
                 this.version = data;
                 callback();
             }.bind(this));
@@ -476,7 +476,7 @@ Engine.prototype.start = function(callback) {
             server.use(authentication.passport.initialize());
             server.use(authentication.passport.session());
 
-            
+
             log.info("Enabling gzip for transport...");
             server.use(restify.gzipResponse());
             // Import the routes module and apply the routes to the server
@@ -491,7 +491,7 @@ Engine.prototype.start = function(callback) {
             });
 
             authentication.configure();
-            
+
         }.bind(this),
         ],
 
