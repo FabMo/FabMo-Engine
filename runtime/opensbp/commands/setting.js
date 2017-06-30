@@ -13,6 +13,21 @@ exports.SA = function(args) {
 
 };
 
+exports.SC = function(args) {
+	switch(args[0]) {
+		case 0:
+			cs = "G54";
+			break;
+		case 1:
+			cs = "G55";
+			break;
+		default:
+			throw new Error("Invalid coordinate system specified: " + args[0])
+			break;
+	}
+	this.emit_gcode(cs)
+	this.coordinateSystem = cs;
+}
 //  Set to Relative coordinates
 exports.SR = function(args) {
 	this.emit_gcode("G91");

@@ -963,6 +963,7 @@ SBPRuntime.prototype._eval = function(expr) {
 
 SBPRuntime.prototype.init = function() {
 	this.pc = 0;
+	this.coordinateSystem = "G55"
 	this.start_of_the_chunk = 0;
 	this.stack = [];
 	this.label_index = {};
@@ -1240,6 +1241,7 @@ SBPRuntime.prototype._unhandledCommand = function(command) {
 
 SBPRuntime.prototype._pushFileStack = function() {
 	frame =  {}
+	frame.coordinateSystem = this.coordinateSystem
 	frame.pc = this.pc
 	frame.program = this.program
 	frame.stack = this.stack;
@@ -1254,6 +1256,8 @@ SBPRuntime.prototype._pushFileStack = function() {
 SBPRuntime.prototype._popFileStack = function() {
 	frame = this.file_stack.pop()
 	this.pc = frame.pc
+	this.coordinateSystem = frame.coordinateSystem
+	this.emit_gcode(this.coordinateSystem)	
 	this.program = frame.program
 	this.stack = frame.stack
 	//this.user_vars = frame.user_vars
