@@ -28,21 +28,15 @@ EngineConfig.prototype.update = function(data, callback) {
 						var profileDir = __dirname + '/../profiles/' + newProfile;
 						var stat = fs.statSync(profileDir);								
 						if(!stat.isDirectory()) {
-							console.log("not a directory")
 							throw new Error('Not a directory: ' + profileDir)
-						} else {
-							console.log("New profile directory exists")
-						}
-						console.log("fuckin made it")
+						} 
 					} catch(e) {
-						console.log("meeeeyyyyyyah")
 						logger.warn(e);
 						data[key] = 'default';
 					}
 				}
 
 				if((key in this._cache) && (data[key] != this._cache[key]) && (this.userConfigLoaded)) {
-					console.log("profile changed")
 					profile_changed = true;
 				}
 			}
