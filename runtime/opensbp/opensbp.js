@@ -1242,7 +1242,10 @@ SBPRuntime.prototype._unhandledCommand = function(command) {
 SBPRuntime.prototype._pushFileStack = function() {
 	frame =  {}
 	frame.coordinateSystem = this.coordinateSystem
+	frame.movespeed_xy = this.movespeed_xy
+	frame.movespeed_z = this.movespeed_z
 	frame.pc = this.pc
+	frame.movexy
 	frame.program = this.program
 	frame.stack = this.stack;
 	//frame.user_vars = this.user_vars
@@ -1255,6 +1258,8 @@ SBPRuntime.prototype._pushFileStack = function() {
 
 SBPRuntime.prototype._popFileStack = function() {
 	frame = this.file_stack.pop()
+	this.movespeed_xy = frame.movespeed_xy
+	this.movespeed_z = frame.movespeed_z
 	this.pc = frame.pc
 	this.coordinateSystem = frame.coordinateSystem
 	this.emit_gcode(this.coordinateSystem)	
