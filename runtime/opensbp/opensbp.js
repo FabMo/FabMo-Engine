@@ -1092,23 +1092,23 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 		break;
 
 		case 6: // X Table Base
-			return config.driver.get('g55x');
+			return config.driver.get('g54x');
 		break;
 
 		case 7: // Y Table Base
-			return config.driver.get('g55y');
+			return config.driver.get('g54y');
 		break;
 
 		case 8: // Z Table Base
-			return config.driver.get('g55z');
+			return config.driver.get('g54z');
 		break;
 
 		case 9: // A Table Base
-			return config.driver.get('g55a');
+			return config.driver.get('g54a');
 		break;
 
 		case 10: // B Table Base
-			return config.driver.get('g55b');
+			return config.driver.get('g54b');
 		break;
 
 		case 25:

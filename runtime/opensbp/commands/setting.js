@@ -13,7 +13,8 @@ exports.SA = function(args) {
 
 };
 
-exports.SC = function(args) {
+exports.SC = function(args, callback) {
+	try {
 	switch(args[0]) {
 		case 0:
 			cs = "G54";
@@ -27,7 +28,19 @@ exports.SC = function(args) {
 	}
 	this.emit_gcode(cs)
 	this.coordinateSystem = cs;
+	} catch(e) {
+		return callback(e)
+	}
+	this.cmd_posx = null;
+	this.cmd_posy = null;
+	this.cmd_posz = null;
+	this.cmd_posa = null;
+	this.cmd_posb = null;
+	this.cmd_posc = null;
+
+	callback();
 }
+
 //  Set to Relative coordinates
 exports.SR = function(args) {
 	this.emit_gcode("G91");
