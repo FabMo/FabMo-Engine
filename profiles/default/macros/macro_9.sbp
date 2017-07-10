@@ -1,5 +1,4 @@
 '!FABMO!name:Tool Change
 '!FABMO!description:Use ATC or manual tool change
-' Tool Change (temporary, simplified)
-'Manual Tool Change
-Pause
+' Macro #9 is typically used to execute a tool change.
+' Commonly, a tool number is specified with a variable (usually &Tool) before this macro is executed.

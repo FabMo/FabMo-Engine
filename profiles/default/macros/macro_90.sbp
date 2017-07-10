@@ -1,37 +1,5 @@
-'!FABMO!name:MY_Variables
-'!FABMO!description:Load variables (with variable information
+'!FABMO!name:Setttings
+'!FABMO!description:Load default variable settings
 
-'SYSTEM / PERSISTENT VARIABLES with DEFAULTS ( ":=" syntax serves to set to default if not a value)
-'Handibot Version 2
-
-'For Zeroing Handibot V2.0
-	$current_cutter_Zoffset := .25	'| These two variables added = distance from 0 (tip touching surface)
-	$zero_plate_adder := .75		'|	... to the Z top Hard-Stop
-	$x_backoff := .075
-	$y_backoff := .075
-
-'For Parking
-	$x_park := 3
-	$y_park := 7
-	$z_park := 1.5
-
-
-
-'THESE ARE OLD METHOD FOR SYSTEM VAR AND MACROS ... in process of re-implementing
-'=========================================================
-'MY_VARIABLES.SBC -- File Containing Common User Defined Variables -- Call at the beginning of any file needing to use them
-'Tracks whether Shopbot Setup has run
-&my_hasrunsetup=0
-
-'Personal info that might help tech support at some point
-'&my_name="Typeyournamehere"
-'&my_email="Typeyouremailaddress"
-'&my_phone="Typeyourphonenumber"
-'&my_purchasedate="Purchasedate"
-'&my_sbtype="Which:PRSalpha;PRSstandard;PRTalpha;PRTstandard;Buddyalpha;Buddystandard"
-
-'These values are used in the ZZero routine
-&my_hasZzero=1
-&my_ZzeroThickness=0.121
-&my_ZzeroInput=1
-&my_ZzeroSafeZ=1.0
+' Typically, macro #90 is used to load default variable settings
+' Set anything here that you want set at the beginning of a file.
