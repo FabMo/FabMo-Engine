@@ -2,7 +2,7 @@ var log = require('../../log').logger('manual');
 var config = require('../../config');
 var stream = require('stream');
 
-var T_RENEW = 300;
+var T_RENEW = 200;
 var SAFETY_FACTOR = 4;
 var RENEW_SEGMENTS = 6;
 var FIXED_MOVES_QUEUE_SIZE = 3;
