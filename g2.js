@@ -240,7 +240,9 @@ G2.prototype.connect = function(path, callback) {
 	this.once('ready', function() {
 		this.connected = true;
 		this._write('\x04\n', function() {
-		callback(null, this);
+			this.requestStatusReport(function() {
+				callback(null, this);
+			}.bind(this));
 		}.bind(this));
 	}.bind(this));
 
@@ -250,6 +252,11 @@ G2.prototype.connect = function(path, callback) {
 			return callback(error);
 		} else {
 			log.info("G2 Port Opened.")
+			setTimeout(function checkConnected() {
+				if(!this.connected) {
+					return callback(new Error('Never got the SYSTEM READY from g2.'));
+				}
+			}.bind(this), 3000);
 		}
 	}.bind(this));
 };
@@ -605,9 +612,9 @@ G2.prototype.quit = function() {
 	}
 
 	switch(this.status.stat) {
-		case STAT_END:
-			return;
-			break;
+		//case STAT_END:
+		//	return;
+		//	break;
 
 		default:
 			this.quit_pending = true;

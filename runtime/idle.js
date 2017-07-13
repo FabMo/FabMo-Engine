@@ -98,7 +98,11 @@ IdleRuntime.prototype._onG2Status = function(status) {
 			}
 			break;
 
-
+		case "running":
+			if(status.stat === this.driver.STAT_END) {
+				this._changeState("idle");
+			}		
+			break;
 	}
 	this.machine.emit('status',this.machine.status);
 };

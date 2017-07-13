@@ -2,9 +2,9 @@ var log = require('../../log').logger('manual');
 var config = require('../../config');
 var stream = require('stream');
 
-var T_RENEW = 250;
-var SAFETY_FACTOR = 2;
-var RENEW_SEGMENTS = 3;
+var T_RENEW = 300;
+var SAFETY_FACTOR = 4;
+var RENEW_SEGMENTS = 6;
 var FIXED_MOVES_QUEUE_SIZE = 3;
 
 function ManualRuntime() {
@@ -240,6 +240,7 @@ ManualRuntime.prototype.pause = function() {
 
 ManualRuntime.prototype.quit = function() {
 	if(this.moving) {
+		console.log("    !!!! QUITTTING!!!!    ")
 		this.driver.quit();
 	}
 	if(this.stream) {

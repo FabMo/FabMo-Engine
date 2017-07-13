@@ -69,6 +69,7 @@ GCodeRuntime.prototype._limit = function() {
 }
 
 GCodeRuntime.prototype._onDriverStatus = function(status) {
+	console.log("Got a status change: " + status)
 	// Update the machine copy of g2 status variables
 	for (var key in this.machine.status) {
 		if(key in status) {

@@ -93,6 +93,29 @@ exports.SP = function(args) {
 	}
 };
 
+exports.SU = function(args) {
+	var units = ((args[0] || 'in') + '').toLowerCase();
+
+	switch(units) {
+		case 'in':
+		case 'inch':
+		case 'inches':
+		case '0':
+				this.emit_gcode('G20');
+				this.emit_gcode('G4 P0.001');
+			break;
+		case 'mm':
+		case 'millimeter':
+		case 'millimeters:':
+		case '1':
+				this.emit_gcode('G21');
+				this.emit_gcode('G4 P0.001');
+			break;
+		default:
+			log.warn('Unknown unit specified: ' + units);
+			break;
+	}
+}
 
 exports.SV = function(args, callback){
 	this._saveDriverSettings(function(err, values) {
