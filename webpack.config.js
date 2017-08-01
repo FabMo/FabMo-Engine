@@ -9,7 +9,6 @@ require('es6-promise').polyfill();
 var config = {
   entry: {
     home:'./dashboard/apps/home.fma/js/home.js',
-    tour:'./dashboard/apps/tour.fma/js/tour.js',
     dashboard:'./dashboard/static/js/main.js',
     job_manager:'./dashboard/apps/job_manager.fma/js/job_manager.js',
     editor: './dashboard/apps/editor.fma/js/editor.js',
