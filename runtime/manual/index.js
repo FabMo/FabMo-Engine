@@ -3,8 +3,8 @@ var config = require('../../config');
 var stream = require('stream');
 
 var T_RENEW = 200;
-var SAFETY_FACTOR = 4;
-var RENEW_SEGMENTS = 6;
+var SAFETY_FACTOR = 2.0;
+var RENEW_SEGMENTS = 10;
 var FIXED_MOVES_QUEUE_SIZE = 3;
 
 function ManualRuntime() {
@@ -168,15 +168,20 @@ ManualRuntime.prototype.startMotion = function(axis, speed) {
 			this._changeState("manual");
 			this.moving = this.keep_moving = true;
 			this.driver.runStream(this.stream).then(function(stat) {
-				log.info("Finished running stream: " + stat);
-				this.moving = false;
-				this.keep_moving = false;
-				this.stream = null;
-				this._changeState("idle");
+                config.driver.restoreSome(['xjm','yjm','zjm'], function() {
+				    log.info("Finished running stream: " + stat);
+				    this.moving = false;
+				    this.keep_moving = false;
+				    this.stream = null;
+				    this._changeState("idle");
+                }.bind(this));
 			}.bind(this));
 		} else {
 			throw new Error("Trying to create a new motion stream when one already exists!");
 		}
+        this.stream.write('M100.1 ({xjm:250})\n');
+        this.stream.write('M100.1 ({yjm:250})\n');
+        this.stream.write('M100.1 ({zjm:250})\n');
 		this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
 		this.renewMoves();
 	}
@@ -226,7 +231,6 @@ ManualRuntime.prototype.fixedMove = function(axis, speed, distance) {
 				this.moving = false;
 				if(this.fixedQueue.length > 0) {
 					var move = this.fixedQueue.shift();
-					//console.log("Dequeueing move: ", move)
 					setImmediate(this.fixedMove.bind(this), move.axis, move.speed, move.distance)
 				}
 			}.bind(this));
@@ -240,7 +244,6 @@ ManualRuntime.prototype.pause = function() {
 
 ManualRuntime.prototype.quit = function() {
 	if(this.moving) {
-		console.log("    !!!! QUITTTING!!!!    ")
 		this.driver.quit();
 	}
 	if(this.stream) {
