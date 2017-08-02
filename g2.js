@@ -864,7 +864,7 @@ G2.prototype.sendMore = function() {
 			}
 		}
 		else {
-			log.warn("Not writing to gcode due to lapse in responses")
+            //log.warn("Not writing to gcode due to lapse in responses")
 		}
 	} else {
 		if(this.gcode_queue.getLength() > 0) {
