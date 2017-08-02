@@ -7,6 +7,7 @@ var Fabmo = require('../../../static/js/libs/fabmo.js');
 var fabmo = new Fabmo;
 var step;
 var testFileSubmitted = "false";
+var cameFromTour = false;
 var firstRun = true;
 var isTestJob = '';
 var tourComplete = false;
@@ -1061,11 +1062,13 @@ function handleStatusReport(status) {
     } else if (step > 18){
        $('.filter').hide();
        $('.tour-dialogue').hide();
+       
     }
   }
 
   function tourDone(step) {
     tourComplete = true;
+    cameFromTour = false;
   }
 
   function tour(data) {
@@ -1076,21 +1079,9 @@ function handleStatusReport(status) {
       data.step = step;
       fabmo.setAppConfig(data, function(err, data) {});
     }
+    
 
-    if (data.testFileSubmitted  > -1 && data.testFileSubmitted === "true") {
-      testFileSubmitted = data.testFileSubmitted ;
-    } else {
-      if (isTestJob.name === "test_01" ){
-        testFileSubmitted = "true";
-      } else {
-        testFileSubmitted = "false"; 
-      }
-
-      data.testFileSubmitted  = testFileSubmitted;
-      fabmo.setAppConfig(data, function(err, data) {});
-    }
-
-    if (tourComplete === false && testFileSubmitted === "true" && numberJobs === 1) {
+    if (tourComplete === false && cameFromTour === true && numberJobs === 1) {
       $('.no').off();
       $('.no').click(function() {
         $('.filter').hide();
@@ -1126,8 +1117,22 @@ function findUpTag(el, id) {
     return null;
 }
 
+//function determining  arguments submitted from other apps
+function setup(){
+  fabmo.getAppArgs(function(err, args) {
+    console.log(args);
+    if('from_tour' in args) {
+      console.log('yay ayaya ')
+      cameFromTour = true;
+    };
+
+  });
+}
+
 	$(document).ready(function() {
-	//Foundation Init
+  //Foundation Init
+  
+  setup();
   
   $(document).foundation();
 
