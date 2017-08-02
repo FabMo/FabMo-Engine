@@ -844,6 +844,7 @@ function handleStatusReport(status) {
       $('.next').click(function(){
         step++;
         countStep(step, stepTwelve);
+        fabmo.clearJobQueue(function(err,data){});
       })
     } else if (step > 10 ){
       $('.tour-dialogue').css({
@@ -1067,6 +1068,7 @@ function handleStatusReport(status) {
   }
 
   function tourDone(step) {
+    sortable.options.disabled = false;
     tourComplete = true;
     cameFromTour = false;
   }
@@ -1086,6 +1088,8 @@ function handleStatusReport(status) {
       $('.no').click(function() {
         $('.filter').hide();
         $('.tour-dialogue').hide();
+         sortable.options.disabled = false;
+         tourDone(); 
       });
       stepOne(step);
     }
@@ -1124,6 +1128,7 @@ function setup(){
     if('from_tour' in args) {
       console.log('yay ayaya ')
       cameFromTour = true;
+      tourComplete = false;
     };
 
   });
