@@ -46,7 +46,7 @@ ManualRuntime.prototype.connect = function(machine) {
 ManualRuntime.prototype.disconnect = function() {
 	if(this.ok_to_disconnect && !this.stream) {
 		this.driver.removeListener('status', this.status_handler);
-		this._changeState("idle");
+		//this._changeState("idle");
 	} else {
 		throw new Error("Cannot disconnect while manually driving the tool.");
 	}
@@ -216,7 +216,7 @@ ManualRuntime.prototype.fixedMove = function(axis, speed, distance) {
     }
     if(this.moving) {
 		this.fixedQueue.push({axis: axis, speed: speed, distance: distance});
-		log.warn("fixedMove(): Not moving, due to already moving.");
+		log.warn("fixedMove(): Queueing move, due to already moving.");
 	} else {
 		this.moving = true;
 		var axis = axis.toUpperCase();
@@ -232,6 +232,11 @@ ManualRuntime.prototype.fixedMove = function(axis, speed, distance) {
 				if(this.fixedQueue.length > 0) {
 					var move = this.fixedQueue.shift();
 					setImmediate(this.fixedMove.bind(this), move.axis, move.speed, move.distance)
+				} else {
+				    this.moving = false;
+				    this.keep_moving = false;
+				    this.stream = null;
+				    this._changeState("idle");
 				}
 			}.bind(this));
 		}

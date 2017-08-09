@@ -69,7 +69,6 @@ GCodeRuntime.prototype._limit = function() {
 }
 
 GCodeRuntime.prototype._onDriverStatus = function(status) {
-	console.log("Got a status change: " + status)
 	// Update the machine copy of g2 status variables
 	for (var key in this.machine.status) {
 		if(key in status) {
@@ -120,9 +119,9 @@ GCodeRuntime.prototype._idle = function() {
 	var finishUp = function() {
 		this.driver.setUnits(config.machine.get('units'), function() {
 			var callback = this.completeCallback || function() {};
-			this.machine.setState(this, 'idle');
 			this.ok_to_disconnect = true;
 			this.completeCallback = null;
+			this.machine.setState(this, 'idle');
 			callback();
 		}.bind(this))
 	}.bind(this);
@@ -187,7 +186,6 @@ GCodeRuntime.prototype._handleStateChange = function(stat) {
 // Run a file given the filename
 GCodeRuntime.prototype.runFile = function(filename, callback) {
 	countLineNumbers(filename, function(err, lines) {
-		console.log("Line numbers counted: " + lines)
 		this.machine.status.nb_lines = lines;
 		this.driver.runFile(filename, callback)
 			.on('stat', this._handleStateChange.bind(this))

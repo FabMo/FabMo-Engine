@@ -125,7 +125,7 @@ function Machine(control_path, callback) {
 
 	    // Idle
 	    this.setRuntime(null, function() {
-            if(err) {
+	    if(err) {
                 typeof callback === "function" && callback(err);
             } else {
                 this.driver.requestStatusReport(function(result) {
@@ -497,15 +497,15 @@ Machine.prototype._runFile = function(filename) {
 };
 
 Machine.prototype.setRuntime = function(runtime, callback) {
+	runtime = runtime || this.idle_runtime;
 	try {
 		if(runtime) {
-
 			if(this.current_runtime != runtime) {
 				if(this.current_runtime) {
 					this.current_runtime.disconnect();
 				}
-				runtime.connect(this);
 				this.current_runtime = runtime;
+				runtime.connect(this);
 			}
 		} else {
 			this.current_runtime = this.idle_runtime;
@@ -557,10 +557,10 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 		switch(newstate) {
 			case 'idle':
 				if(this.status.state != 'idle') {
-					//this.driver.command({"out4":0});
-					//if(this.runtime != this.idle_runtime) {
-					//	this.setRuntime(null, function() {});
-					//}
+					this.driver.command({"out4":0});
+					if(this.current_runtime != this.idle_runtime) {
+						this.setRuntime(null, function() {});
+					}	
 				}
 				this.status.nb_lines = null;
 				this.status.line = null;

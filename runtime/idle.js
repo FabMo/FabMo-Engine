@@ -14,14 +14,12 @@ IdleRuntime.prototype.connect = function(machine) {
 	this.driver = machine.driver;
 	this.ok_to_disconnect = true;
 	this.status_report = {};
-	this.machine.setState(this, "idle");
 	this.status_handler =  this._onG2Status.bind(this);
 	this.driver.on('status',this.status_handler);
 };
 
 IdleRuntime.prototype.disconnect = function() {
 	this.driver.removeListener('status', this.status_handler);
-	this._changeState("idle");
 };
 
 IdleRuntime.prototype._changeState = function(newstate) {
