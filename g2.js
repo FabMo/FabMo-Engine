@@ -203,6 +203,7 @@ G2.prototype._createCycleContext = function() {
 		this._streamDone = true;
 		// TODO factor this out
 		if(!this.quit_pending) {
+			this.gcode_queue.enqueue('M100 ({out4:0})')
 			this.gcode_queue.enqueue('M30');
 		}
 		this.sendMore();
