@@ -51,7 +51,9 @@ define(function(require) {
         if ($(window).width() > 900) {
             openDROPush();
         } else if ($(window).width() < 900) {
-            closeDROPush();
+            $('#app-client-container').css('padding-right', '0px');
+            $('#app_menu_container').css('padding-right', '0px');
+            $('#waiting_container').css('padding-right', '0px');
         }
     }
     $('.DRO-button').on('click', function(evt) {
