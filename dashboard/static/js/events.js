@@ -1,7 +1,7 @@
 define(function(require) {
     var $ = require('jquery');
     var toastr = require('./libs/toastr.min');
-
+    var colapsed;
 
 
 
@@ -71,13 +71,17 @@ define(function(require) {
         var r = 0;
 
         //Screen displays based on size
-
-        if ($("body").width() / parseFloat($("body").css("font-size")) > 40.063) {
+        colapsed = localStorage.getItem('colapsed');
+        console.log(colapsed);
+        if ($(window).width() > 640) {
             $("#main").addClass("offcanvas-overlap-right"); //Show Left Menu
-            $("#widget-links-general").removeClass("colapsed"); //Show fulll left hand menu on full screen
-            $("#left-menu").removeClass("colapsed"); //Show fulll left hand menu on full screen
             l = parseInt($("#left-menu").css("width")) + 1; //Save left menu size
-        } else if ($("body").width() / parseFloat($("body").css("font-size")) <= 40.063) {
+            if (colapsed === "false" || undefined){
+                $("#widget-links-general").removeClass("colapsed"); //Show fulll left hand menu on full screen
+                $("#left-menu").removeClass("colapsed"); //Show fulll left hand menu on full screen
+                
+            }
+        } else if ($(window).width()  <= 640) {
             $("#main").addClass("offcanvas-overlap-right"); //Show Left Menu
             $("#widget-links-general").addClass("colapsed"); //Show fulll left hand menu on full screen
             $("#left-menu").addClass("colapsed"); //Show fulll left hand menu on full screen
@@ -133,7 +137,16 @@ define(function(require) {
     }, 1000);
 
     var colapseMenu = function() {
+        if ($(window).width() > 640){
+            colapsed = localStorage.getItem('colapsed');
 
+          if (colapsed  === "true") {
+              localStorage.setItem('colapsed', false);
+          } else {
+              localStorage.setItem('colapsed', true);
+             
+          }
+        }
         //L & R = width of left & right menus
         var l = 0;
         var r = 0;
