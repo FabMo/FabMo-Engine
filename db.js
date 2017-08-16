@@ -289,6 +289,7 @@ File.prototype.save = function(callback) {
 			}
 			else {
 				callback(err);
+				backupDB(callback);
 			}
 		});
 	}
@@ -694,12 +695,88 @@ checkCollection = function(collection, callback) {
 	});
 }
 
+reConfig = function(callback){
+	db = new Engine.Db(config.getDataDir('db'), {});
+	files = db.collection("files");
+	jobs = db.collection("jobs");
+	users = db.collection("users");
+	thumbnails = db.collection("thumbnails");
+
+	users.find({}).toArray(function(err,result){ //init the user database with an admin account if it's empty
+		if (err){
+			throw err;
+		}
+		if(result.length === 0 ){
+			var pass_shasum = crypto.createHash('sha256').update("go2fabmo").digest('hex');
+			user = new User("admin",pass_shasum,true);
+			user.save();
+		}
+	});
+
+	async.parallel([
+			function(cb) {
+				checkCollection(files, cb);
+			},
+			function(cb) {
+				checkCollection(jobs, cb);
+			},
+			function(cb) {
+				checkCollection(thumbnails, cb);
+			}
+		],
+		function(err, results) {
+			if(err) {
+				log.error('There was a database corruption issue!')
+				var src = config.getDataDir('db')
+				var dest = config.getDataDir('debug') + '/bad-db-' + (new Date().getTime())
+				ncp(src, dest, function (err) {
+					if(err) {
+						log.error('The database could not be successfully backed up: ' + err);
+						callback(null);
+					} else {
+						log.debug('The database has been successfully copied to the debug directory for inspection.');
+						fs.remove(src, function (err) {
+							if(err) {
+								log.error('Could not delete the corrupted database:' + err);
+								callback(null);
+							} else {
+								log.debug('Everythign is terrible shutting down');
+								process.exit(1);
+
+							}
+						});
+					}
+				});
+			} else {
+				log.info("Databases are clean. Reconfig Success");
+				callback(null);
+
+			}
+	});
+
+}
 backupDB = function(callback) {
 	src = config.getDataDir('db');
 	dest = config.getDataDir('backup') + '/db'
+	var toClean = config.getDataDir('backup/*');
+	
+	// Remove old copy of the backup if it exists
+	
+	fs.remove(toClean, function (err) {
+		if(err) {
+			log.error('Could not remove backup because '+err);
+		} else {
+			log.info('Removed old copy of backup');
+		}
+	});
+	console.log('******/'+toClean);
+	console.log('******/'+dest);
 	ncp(src, dest, function(err) {
-		log.info('Backed up database to '+dest)
-		callback(err);
+		if (err){
+			log.error('Could not remove backup because '+err);
+		} else {
+			log.info('Backed up to '+dest);
+		}
 	});
 }
 
@@ -748,8 +825,20 @@ exports.configureDB = function(callback) {
 								log.error('Could not delete the corrupted database:' + err);
 								callback(null);
 							} else {
-								log.debug('The corrupted database has been deleted.  Shutting down the engine...');
-								process.exit(1);
+								log.debug('The corrupted database has been deleted.  Inserting Backup and re-config');
+								//process.exit(1);
+								src = config.getDataDir('backup/db');
+								dest = config.getDataDir('db');
+								ncp(src, dest, function (err) {
+									if(err) {
+										log.error('The backup could not be copied engine shutting down' + err);
+										process.exit(1);
+									} else {
+										log.debug('Backup copied over re-trying config');
+										reConfig(callback);
+									}		
+								})
+
 							}
 						});
 					}
@@ -757,8 +846,10 @@ exports.configureDB = function(callback) {
 			} else {
 				log.info("Databases are clean.");
 				callback(null);
+				backupDB(callback);
 			}
 		});
+		
 };
 
 exports.cleanup = function(callback) {
