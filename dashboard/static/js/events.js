@@ -80,6 +80,7 @@ define(function(require) {
                 $("#widget-links-general").removeClass("colapsed"); //Show fulll left hand menu on full screen
                 $("#left-menu").removeClass("colapsed"); //Show fulll left hand menu on full screen
                 
+                
             }
         } else if ($(window).width()  <= 640) {
             $("#main").addClass("offcanvas-overlap-right"); //Show Left Menu
@@ -95,7 +96,7 @@ define(function(require) {
             $("#main").removeClass("offcanvas-overlap-left");
             l = 0;
         }
-
+        
 
         //If wide screen and Right menu
         if (($("#main").hasClass("offcanvas-overlap-left")) && ($("body").width() / parseFloat($("body").css("font-size"))) > 60.063) {
@@ -127,7 +128,7 @@ define(function(require) {
             rightMenuLoad();
         }
 
-
+        calcLeftPadding();
     };
 
 
@@ -147,14 +148,11 @@ define(function(require) {
              
           }
         }
-        //L & R = width of left & right menus
-        var l = 0;
-        var r = 0;
         //If menu is colapsed, we remove this property
         if ($("#widget-links-general").hasClass("colapsed")) {
             $("#widget-links-general").removeClass("colapsed");
             $("#left-menu").removeClass("colapsed");
-            l = parseInt($("#left-menu").css("width")) + 1; //Save left menu size
+
             if ($("body").width() < 640) {
                 $('.collapseLeft').show(); // show tinted screen to close menu
             }
@@ -168,7 +166,7 @@ define(function(require) {
                 $(".main-section").width() - ($(".main-section").width() % 132)
             );
             $('.collapseLeft').hide();
-            l = parseInt($("#left-menu").css("width")) + 1; //Save left menu size
+
         }
         //Handle collapse of left
         $('.collapseLeft').click(function(evt) {
@@ -181,9 +179,16 @@ define(function(require) {
         //As the size of document change, we call this function to ajust main div & app container size
         //resizedoc();
         //If wide screen and Right menu
+        calcLeftPadding();
+    };
+
+    var calcLeftPadding = function (){///Calculate the width of the left hand menu and adjust main section accordingly
+       var l = parseInt($("#left-menu").css("width")); //Save left menu size
+        var  r;
+        console.log(l+  ' ' +r);
         if ($("body").width() / parseFloat($("body").css("font-size")) > 40.063) {
             if (($("#main").hasClass("offcanvas-overlap-left")) && ($("body").width() / parseFloat($("body").css("font-size"))) > 60.063) {
-                r = parseInt($("#right-menu").css("width") + 1);
+                r = parseInt($("#right-menu").css("width"));
             } else {
                 r = 0;
             }
@@ -196,7 +201,7 @@ define(function(require) {
             $(".main-section, .app-section").css("margin-left", l + "px");
             $(".main-section").css("height", $("#left-menu").height() + "px");
         }
-    };
+    }
 
     var resizedocclick = function() {
         //Same function that resizedoc(), but inverse the class on ".main-section", because it has not changed yet after the click on "#left-menu" or #right-menu
