@@ -462,7 +462,10 @@ User.prototype.save = function(callback){
 			if(callback)callback(err,null);
 			return;
 		}
-		if(callback)callback(null, this);
+		if(callback){
+			backupDB(callback);
+			callback(null, this);
+		}
 	}.bind(this));
 };
 
@@ -684,6 +687,13 @@ Thumbnail.getFromJobId = function(jobId, callback) {
     });
 }
 
+function isDirectory(path, callback){
+	fs.stat(path,function(err,stats){
+		if(err) callback(undefined);
+		else callback(stats.isDirectory());
+	});
+}
+
 
 checkCollection = function(collection, callback) {
 	collection.find().toArray(function(err, data) {
@@ -699,27 +709,39 @@ checkCollection = function(collection, callback) {
 
 backupDB = function(callback) {
 	src = config.getDataDir('db');
-	dest = config.getDataDir('backup') + '/db'
-	var toClean = config.getDataDir('backup/*');
-	
-	// Remove old copy of the backup if it exists
-	
-	fs.remove(toClean, function (err) {
-		if(err) {
-			log.error('Could not remove backup because '+err);
-		} else {
-			log.info('Removed old copy of backup');
-		}
+	dest = config.getDataDir('backup') + '/db/'
+	isDirectory(dest, function(isdir) {
+			if(!isdir) {
+				//Replace with new copy of DB
+				log.info('No existing backup. Making one now');
+				ncp(src, dest, function(err) {
+					if (err){
+						log.error('Could not remove backup because '+err);
+					} else {
+						log.info('Backed up to '+dest);
+					}
+				});
+			} else {
+				// Remove old copy of the backup if it exists
+				fs.remove(dest, function (err) {
+					if(err) {
+						log.error('Could not remove backup because '+err);
+					} else {
+						log.info('Removed old copy of backup');
+						//Replace with new copy of DB
+						ncp(src, dest, function(err) {
+							if (err){
+								log.error('Could not remove backup because '+err);
+							} else {
+								log.info('Backed up to '+dest);
+							}
+						});
+					}
+				});
+			}
 	});
-	console.log('******/'+toClean);
-	console.log('******/'+dest);
-	ncp(src, dest, function(err) {
-		if (err){
-			log.error('Could not remove backup because '+err);
-		} else {
-			log.info('Backed up to '+dest);
-		}
-	});
+	
+	
 }
 
 checkUsers = function(users){
@@ -742,9 +764,12 @@ reConfig = function(callback){
 	users = db.collection("users");
 	thumbnails = db.collection("thumbnails");
 
-	checkUsers(users);
+	
 
 	async.parallel([
+			function(cb) {
+				checkCollection(users, cb);
+			},
 			function(cb) {
 				checkCollection(files, cb);
 			},
@@ -779,10 +804,12 @@ reConfig = function(callback){
 					}
 				});
 			} else {
+				checkUsers(users);
 				log.info("Databases are clean. Reconfig Success");
 				callback(null);
-
+				
 			}
+			
 	});
 
 }
@@ -794,9 +821,12 @@ exports.configureDB = function(callback) {
 	users = db.collection("users");
 	thumbnails = db.collection("thumbnails");
 
-	checkUsers(users);
+	
 
 	async.parallel([
+			function(cb) {
+				checkCollection(users, cb);
+			},
 			function(cb) {
 				checkCollection(files, cb);
 			},
@@ -827,9 +857,10 @@ exports.configureDB = function(callback) {
 								//process.exit(1);
 								src = config.getDataDir('backup/db');
 								dest = config.getDataDir('db');
+								
 								ncp(src, dest, function (err) {
 									if(err) {
-										log.error('The backup could not be copied engine shutting down' + err);
+										log.error('The backup could not be copied engine shutting down because ' + err);
 										process.exit(1);
 									} else {
 										log.debug('Backup copied over re-trying config');
@@ -843,8 +874,10 @@ exports.configureDB = function(callback) {
 				});
 			} else {
 				log.info("Databases are clean.");
+				checkUsers(users);
 				callback(null);
 				backupDB(callback);
+				
 			}
 		});
 		
