@@ -286,10 +286,10 @@ File.prototype.save = function(callback) {
 		files.insert(that, function(err,records){
 			if(!err) {
 				callback(null, records[0]);
+				backupDB(callback);
 			}
 			else {
 				callback(err);
-				backupDB(callback);
 			}
 		});
 	}
@@ -342,6 +342,7 @@ File.add = function(friendly_filename, pathname, callback) {
 								return callback(err);
 							}
 							log.info('Saved a file: ' + file.filename + ' (' + file.path + ')');
+			
 							callback(null, file)
 						}.bind(this)); // save
 					}.bind(this)); // unlink
@@ -695,13 +696,33 @@ checkCollection = function(collection, callback) {
 	});
 }
 
-reConfig = function(callback){
-	db = new Engine.Db(config.getDataDir('db'), {});
-	files = db.collection("files");
-	jobs = db.collection("jobs");
-	users = db.collection("users");
-	thumbnails = db.collection("thumbnails");
 
+backupDB = function(callback) {
+	src = config.getDataDir('db');
+	dest = config.getDataDir('backup') + '/db'
+	var toClean = config.getDataDir('backup/*');
+	
+	// Remove old copy of the backup if it exists
+	
+	fs.remove(toClean, function (err) {
+		if(err) {
+			log.error('Could not remove backup because '+err);
+		} else {
+			log.info('Removed old copy of backup');
+		}
+	});
+	console.log('******/'+toClean);
+	console.log('******/'+dest);
+	ncp(src, dest, function(err) {
+		if (err){
+			log.error('Could not remove backup because '+err);
+		} else {
+			log.info('Backed up to '+dest);
+		}
+	});
+}
+
+checkUsers = function(users){
 	users.find({}).toArray(function(err,result){ //init the user database with an admin account if it's empty
 		if (err){
 			throw err;
@@ -712,6 +733,16 @@ reConfig = function(callback){
 			user.save();
 		}
 	});
+}
+
+reConfig = function(callback){
+	db = new Engine.Db(config.getDataDir('db'), {});
+	files = db.collection("files");
+	jobs = db.collection("jobs");
+	users = db.collection("users");
+	thumbnails = db.collection("thumbnails");
+
+	checkUsers(users);
 
 	async.parallel([
 			function(cb) {
@@ -755,30 +786,6 @@ reConfig = function(callback){
 	});
 
 }
-backupDB = function(callback) {
-	src = config.getDataDir('db');
-	dest = config.getDataDir('backup') + '/db'
-	var toClean = config.getDataDir('backup/*');
-	
-	// Remove old copy of the backup if it exists
-	
-	fs.remove(toClean, function (err) {
-		if(err) {
-			log.error('Could not remove backup because '+err);
-		} else {
-			log.info('Removed old copy of backup');
-		}
-	});
-	console.log('******/'+toClean);
-	console.log('******/'+dest);
-	ncp(src, dest, function(err) {
-		if (err){
-			log.error('Could not remove backup because '+err);
-		} else {
-			log.info('Backed up to '+dest);
-		}
-	});
-}
 
 exports.configureDB = function(callback) {
 	db = new Engine.Db(config.getDataDir('db'), {});
@@ -787,16 +794,7 @@ exports.configureDB = function(callback) {
 	users = db.collection("users");
 	thumbnails = db.collection("thumbnails");
 
-	users.find({}).toArray(function(err,result){ //init the user database with an admin account if it's empty
-		if (err){
-			throw err;
-		}
-		if(result.length === 0 ){
-			var pass_shasum = crypto.createHash('sha256').update("go2fabmo").digest('hex');
-			user = new User("admin",pass_shasum,true);
-			user.save();
-		}
-	});
+	checkUsers(users);
 
 	async.parallel([
 			function(cb) {
