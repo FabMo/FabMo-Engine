@@ -1,4 +1,3 @@
-'!FABMO!name:Stop Spindle
-'!FABMO!description:Stop the spindle
-' Stop the spindle
-SO,1,0
+'!FABMO!name:Stop Toolhead
+'!FABMO!description:Stop the toolhead
+' Macro #7 is typically used to stop the toolhead (router, spindle, etc)

@@ -203,6 +203,7 @@ G2.prototype._createCycleContext = function() {
 		this._streamDone = true;
 		// TODO factor this out
 		if(!this.quit_pending) {
+			this.gcode_queue.enqueue('M100 ({out4:0})')
 			this.gcode_queue.enqueue('M30');
 		}
 		this.sendMore();
@@ -240,7 +241,9 @@ G2.prototype.connect = function(path, callback) {
 	this.once('ready', function() {
 		this.connected = true;
 		this._write('\x04\n', function() {
-		callback(null, this);
+			this.requestStatusReport(function() {
+				callback(null, this);
+			}.bind(this));
 		}.bind(this));
 	}.bind(this));
 
@@ -250,6 +253,11 @@ G2.prototype.connect = function(path, callback) {
 			return callback(error);
 		} else {
 			log.info("G2 Port Opened.")
+			setTimeout(function checkConnected() {
+				if(!this.connected) {
+					return callback(new Error('Never got the SYSTEM READY from g2.'));
+				}
+			}.bind(this), 3000);
 		}
 	}.bind(this));
 };
@@ -605,9 +613,9 @@ G2.prototype.quit = function() {
 	}
 
 	switch(this.status.stat) {
-		case STAT_END:
-			return;
-			break;
+		//case STAT_END:
+		//	return;
+		//	break;
 
 		default:
 			this.quit_pending = true;
@@ -857,7 +865,7 @@ G2.prototype.sendMore = function() {
 			}
 		}
 		else {
-			log.warn("Not writing to gcode due to lapse in responses")
+            //log.warn("Not writing to gcode due to lapse in responses")
 		}
 	} else {
 		if(this.gcode_queue.getLength() > 0) {

@@ -13,23 +13,21 @@ EngineConfig = function() {
 };
 util.inherits(EngineConfig, Config);
 
-// The engine update function is pretty basic for now, 
-// but if new values provoke a reconfiguration of the application, this is where it will be done.
 EngineConfig.prototype.update = function(data, callback) {
 	var profile_changed = false;
 	try {
 		for(var key in data) {
 			if((key === 'profile')) {
 				var newProfile = data[key];
-				console.log("new profile: " + newProfile)
 				if(newProfile && newProfile != 'default') {
-					console.log("new profile isn't default")
 					try {
 						var profileDir = __dirname + '/../profiles/' + newProfile;
 						var stat = fs.statSync(profileDir);								
 						if(!stat.isDirectory()) {
 							throw new Error('Not a directory: ' + profileDir)
-						} 
+						} else {
+							// New profile directory exists
+						}
 					} catch(e) {
 						logger.warn(e);
 						data[key] = 'default';
@@ -37,6 +35,8 @@ EngineConfig.prototype.update = function(data, callback) {
 				}
 
 				if((key in this._cache) && (data[key] != this._cache[key]) && (this.userConfigLoaded)) {
+					try { log.info("Profile changed"); }
+					catch(err) {}
 					profile_changed = true;
 				}
 			}

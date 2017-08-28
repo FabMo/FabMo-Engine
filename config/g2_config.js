@@ -96,7 +96,7 @@ G2Config.prototype.restore = function(callback) {
 }
 
 G2Config.prototype.restoreSome = function(keys, callback) {
-  cache = {};
+    cache = {};
 	keys.forEach(function(key) {
 		cache[key] = this._cache[key];
 	}.bind(this));

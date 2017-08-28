@@ -2,9 +2,9 @@ var log = require('../../log').logger('manual');
 var config = require('../../config');
 var stream = require('stream');
 
-var T_RENEW = 250;
-var SAFETY_FACTOR = 2;
-var RENEW_SEGMENTS = 3;
+var T_RENEW = 200;
+var SAFETY_FACTOR = 2.0;
+var RENEW_SEGMENTS = 10;
 var FIXED_MOVES_QUEUE_SIZE = 3;
 
 function ManualRuntime() {
@@ -46,7 +46,7 @@ ManualRuntime.prototype.connect = function(machine) {
 ManualRuntime.prototype.disconnect = function() {
 	if(this.ok_to_disconnect && !this.stream) {
 		this.driver.removeListener('status', this.status_handler);
-		this._changeState("idle");
+		//this._changeState("idle");
 	} else {
 		throw new Error("Cannot disconnect while manually driving the tool.");
 	}
@@ -168,15 +168,20 @@ ManualRuntime.prototype.startMotion = function(axis, speed) {
 			this._changeState("manual");
 			this.moving = this.keep_moving = true;
 			this.driver.runStream(this.stream).then(function(stat) {
-				log.info("Finished running stream: " + stat);
-				this.moving = false;
-				this.keep_moving = false;
-				this.stream = null;
-				this._changeState("idle");
+                config.driver.restoreSome(['xjm','yjm','zjm'], function() {
+				    log.info("Finished running stream: " + stat);
+				    this.moving = false;
+				    this.keep_moving = false;
+				    this.stream = null;
+				    this._changeState("idle");
+                }.bind(this));
 			}.bind(this));
 		} else {
 			throw new Error("Trying to create a new motion stream when one already exists!");
 		}
+        this.stream.write('M100.1 ({xjm:250})\n');
+        this.stream.write('M100.1 ({yjm:250})\n');
+        this.stream.write('M100.1 ({zjm:250})\n');
 		this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
 		this.renewMoves();
 	}
@@ -211,7 +216,7 @@ ManualRuntime.prototype.fixedMove = function(axis, speed, distance) {
     }
     if(this.moving) {
 		this.fixedQueue.push({axis: axis, speed: speed, distance: distance});
-		log.warn("fixedMove(): Not moving, due to already moving.");
+		log.warn("fixedMove(): Queueing move, due to already moving.");
 	} else {
 		this.moving = true;
 		var axis = axis.toUpperCase();
@@ -226,8 +231,12 @@ ManualRuntime.prototype.fixedMove = function(axis, speed, distance) {
 				this.moving = false;
 				if(this.fixedQueue.length > 0) {
 					var move = this.fixedQueue.shift();
-					//console.log("Dequeueing move: ", move)
 					setImmediate(this.fixedMove.bind(this), move.axis, move.speed, move.distance)
+				} else {
+				    this.moving = false;
+				    this.keep_moving = false;
+				    this.stream = null;
+				    this._changeState("idle");
 				}
 			}.bind(this));
 		}

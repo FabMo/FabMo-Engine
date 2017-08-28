@@ -220,7 +220,6 @@ Config.deleteUserMacros = function(callback) {
 	  	try {  		
 		  	files.forEach(function(file) {
 		  		var to_delete = path.join(installedMacrosDir, file);
-		  		console.log("Deleting " + to_delete)
 		  		fs.removeSync(to_delete);
 		  	});
 	  		callback();
@@ -252,7 +251,7 @@ Config.deleteUserConfig = function(callback) {
 
 Config.deleteProfileData = function(callback) {
 	Config.deleteUserConfig(function(err, data) {
-		console.log(err)
+		if(err) { log.error(err); }
 		Config.deleteUserMacros(callback);
 	});
 }
@@ -274,7 +273,7 @@ Config.createDataDirectories = function(callback) {
 			}
 		});
 	}.bind(this);
-	dirs = [null, 'debug', 'db', 'log', 'files', 'config', 'apps', 'macros', 'approot', path.join('approot','approot')];
+	dirs = [null, 'debug', 'backup', 'db', 'log', 'files', 'config', 'apps', 'macros', 'approot', path.join('approot','approot')];
 	async.eachSeries(dirs, create_directory, callback);
 };
 

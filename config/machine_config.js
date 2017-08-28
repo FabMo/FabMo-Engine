@@ -57,7 +57,7 @@ MachineConfig.prototype.apply = function(callback) {
 	} else {
 		this.machine.deauthorize();
 	}
-	this.machine.setPreferredUnits(this.get('units'), function() {console.log("called back"); callback(); });
+	this.machine.setPreferredUnits(this.get('units'), function() {callback(); });
 };
 
 exports.MachineConfig = MachineConfig;

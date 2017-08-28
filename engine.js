@@ -137,6 +137,12 @@ Engine.prototype.start = function(callback) {
             }
         },
 
+        function profile_shim(callback) {
+            var profile = config.engine.get('profile');
+            if(profile) { return callback(); }
+            config.engine.set('profile', 'handibot', callback);
+        }.bind(this), 
+
         function get_fabmo_version(callback) {
             log.info("Getting engine version...");
             this.getVersion(function(err, data) {
@@ -366,14 +372,22 @@ Engine.prototype.start = function(callback) {
         },
 
         function load_instance_config(callback) {
+            if(!this.machine.isConnected()) {
+                log.warn('Not configuring instance due to no connection to motion system.')
+                return callback(null);
+            }
             log.info("Loading instance info...");
             config.configureInstance(this.machine.driver, callback);
         }.bind(this),
 
         function apply_instance_config(callback) {
+            if(!this.machine.isConnected()) {
+                log.warn('Not applying instance config due to no connection to motion system.')
+                return callback(null);
+            }
             log.info("Applying instance configuration...");
             config.instance.apply(callback);
-        },
+        }.bind(this),
 
         function generate_auth_key(callback) {
           log.info("Configuring secret key...")

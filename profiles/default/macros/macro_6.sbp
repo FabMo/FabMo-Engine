@@ -1,5 +1,3 @@
-'!FABMO!name:Start Spindle
-'!FABMO!description:Start the spindle and pause for spin up
-'Start the spindle
-SO,1,1
-PAUSE 2.0
+'!FABMO!name:Start Toolhead
+'!FABMO!description:Start the toolhead
+' Macro #6 is typically used to stop the toolhead (router, spindle, etc)
