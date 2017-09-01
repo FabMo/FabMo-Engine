@@ -229,6 +229,24 @@ require("../css/toastr.min.css");
         return speed_ips;
     }
 
+    function getManualMoveJerk(move){
+        var jerk = null;
+        try {
+            switch (move.axis) {
+                case 'x':
+                case 'y':
+                    jerk = engine.config.machine.manual.xy_jerk;
+                    break;
+                case 'z':
+                    jerk = engine.config.machine.manual.z_jerk;
+                    break;
+            }
+        } catch (e) {
+            console.error(e);
+        }
+        return jerk;
+    }
+
     function getManualNudgeIncrement(move) {
         var increment_inches = null;
         try {
@@ -280,7 +298,7 @@ require("../css/toastr.min.css");
         });
 
         keypad.on('nudge', function(nudge) {
-            dashboard.engine.manualMoveFixed(nudge.axis, 60 * getManualMoveSpeed(nudge), nudge.dir * getManualNudgeIncrement(nudge))
+            dashboard.engine.manualMoveFixed(nudge.axis, 60 * getManualMoveSpeed(nudge), nudge.dir * getManualNudgeIncrement(nudge), getManualMoveJerk(nudge));
         });
         return keypad;
     }
