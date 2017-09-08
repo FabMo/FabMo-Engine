@@ -248,7 +248,7 @@ $(document).ready(function() {
     registerUnitLabel('.in_mm_label', 'in', 'mm');
     registerUnitLabel('.ipm_mmpm_label', 'in/min', 'mm/min');
     registerUnitLabel('.ips_mmps_label', 'in/sec', 'mm/sec');
-    registerUnitLabel('.i pm2_mmpm2_label', 'in/min<sup>2</sup>', 'mm/min<sup>2</sup>');
+    registerUnitLabel('.inpm2_mmpm2_label', 'in/min<sup>2</sup>', 'mm/min<sup>2</sup>');
     registerUnitLabel('.inrev_mmrev_label', 'in/rev', 'mm/rev');
     registerUnitLabel('.inpm3_mmpm3_label', 'in/min<sup>3</sup>', 'mm/min<sup>3</sup>');
 
