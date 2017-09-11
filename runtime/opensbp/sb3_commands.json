@@ -2852,6 +2852,144 @@
          }
       ]
    },
+
+   "PA": {
+      "cmd": "PA",
+      "name": "Probe A",
+      "params": [
+         {
+            "name": "Search Distance",
+            "desc": "Distance to search while probing",
+            "abrev": "pxDist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Search Speed",
+            "desc": "Travel Speed for Probe Search ",
+            "abrev": "pxSpd",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Input",
+            "desc": "Input channel to use as the probe.",
+            "abrev": "pxI",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               "1",
+               "16"
+            ],
+            "type": "ck"
+         }
+      ]
+   },
+ 
+
+
+
+   "PB": {
+      "cmd": "PB",
+      "name": "Probe B",
+      "params": [
+         {
+            "name": "Search Distance",
+            "desc": "Distance to search while probing",
+            "abrev": "pxDist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Search Speed",
+            "desc": "Travel Speed for Probe Search ",
+            "abrev": "pxSpd",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Input",
+            "desc": "Input channel to use as the probe.",
+            "abrev": "pxI",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               "1",
+               "16"
+            ],
+            "type": "ck"
+         }
+      ]
+   },
+ 
+
+
+      "PC": {
+      "cmd": "PC",
+      "name": "Probe C",
+      "params": [
+         {
+            "name": "Search Distance",
+            "desc": "Distance to search while probing",
+            "abrev": "pxDist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Search Speed",
+            "desc": "Travel Speed for Probe Search ",
+            "abrev": "pxSpd",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Input",
+            "desc": "Input channel to use as the probe.",
+            "abrev": "pxI",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               "1",
+               "16"
+            ],
+            "type": "ck"
+         }
+      ]
+   },
+ 
+   
+   
+   
    "VC": {
       "cmd": "VC",
       "name": "Cutter values",
