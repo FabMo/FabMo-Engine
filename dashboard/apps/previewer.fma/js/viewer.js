@@ -317,14 +317,14 @@ exports.Viewer = function(container, widthCanvas, heightCanvas,
           console.log(that.gcode);
         if (lx !== 0 ){
             if (lx > ly){
-                    gridSize = Math.ceil(lx) + 3;
+                    gridSize = Math.ceil(lx*3);
             } else {
-                gridSize = Math.ceil(ly) + 3;
+                gridSize = Math.ceil(ly*3);
             }
         } else {
             gridSize = 10;
         }
-        that.helper = new THREE.GridHelper( gridSize, 1, 0x0000ff, 0x808080 );
+        that.helper = new THREE.GridHelper( gridSize, 1, 0xf2f2f2, white );
         that.helper.rotation.x = Math.PI / 2;
         that.scene.add(that.helper);
 
