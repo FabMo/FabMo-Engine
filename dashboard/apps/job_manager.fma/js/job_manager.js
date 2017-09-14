@@ -12,6 +12,7 @@ var firstRun = true;
 var isTestJob = '';
 var tourComplete = false;
 var numberJobs = 0;
+var x = 0;
 
 // Current position in the history browser
 var historyStart = 0;
@@ -57,18 +58,36 @@ function setupDropTarget() {
           fabmo.on('upload_progress',function(progress){
             fileUploadProgress(progress.value);
           });
-          fabmo.submitJob(file, {compressed:file_size>2000000?true:false}, function(err, data) {
-            if (err) {
-              fabmo.notify('error', err);
-            }
-            updateQueue();
-          });
+          synchJobSubmit(file);
         }
+      } catch (e){
+        console.log(e);
       } finally {
         $('#tabpending').removeClass('hover');
         return false;
       }
     }
+  });
+}
+
+function synchJobSubmit (files){
+  fabmo.submitJob(files[x], {compressed:files[x].size>2000000?true:false}, function(err, data) {
+    if (err) {
+        console.log(err);
+        fabmo.notify('error', err);
+
+        return
+    } else {
+      x++;
+      if(x < files.length) {
+        synchJobSubmit(files); 
+      } else {
+        console.log('job submit');
+        updateQueue();
+        x=0;
+      }
+    }
+    
   });
 }
 
@@ -84,6 +103,7 @@ function updateQueue(callback) {
     if (jobs.pending.length === jobElements && jobs.pending.length != 0) {
       return
     } else {
+      console.log(jobs.pending);
       jobs.pending.sort(function(a, b) {
         return a.order - b.order;
       });
@@ -1124,9 +1144,7 @@ function findUpTag(el, id) {
 //function determining  arguments submitted from other apps
 function setup(){
   fabmo.getAppArgs(function(err, args) {
-    console.log(args);
     if('from_tour' in args) {
-      console.log('yay ayaya ')
       cameFromTour = true;
       tourComplete = false;
     };
@@ -1143,7 +1161,7 @@ function setup(){
 
 
 	fabmo.on('change', function(topic) {
-
+    console.log('change');
 		if (topic === 'jobs') {
 		updateQueue();
 		updateHistory();
@@ -1200,7 +1218,8 @@ function setup(){
 		if (err) {
 			fabmo.notify('error', err);
 		}
-		resetFormElement($('#file'));
+    resetFormElement($('#file'));
+    console.log('file change');
 		updateQueue();
 		$('#nav-pending').click();
 		});
