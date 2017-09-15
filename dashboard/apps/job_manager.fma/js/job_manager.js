@@ -163,44 +163,66 @@ function makeActions() {
 // }
 
 function addQueueEntries(jobs) {
-  clearQueue();
+  var elements = document.getElementsByClassName('job_item');
+  console.log(jobs);
   var table = document.getElementById('queue_table');
   var temp = [];
   var recent = [];
+  var current = [];
+
+  for(var j = 0; j<elements.length; j++){
+      current.push(elements[j].id);
+  }
+
+
   if (jobs.length) {
     $('.no-jobs').css('left', '-2000px');
     nextJob();
-    for (i = 0; i < jobs.length; i++) {
-      var listItem = document.createElement("div");
-      listItem.setAttribute("id", jobs[i]._id);
-      if (jobs[i].order === null) {
-        var max = 0;
-        for (var i = 0; i < temp.length; i++) {
-          if (temp[i] > max)
-            max = temp[i];
-        }
-        temp.push(max + 1);
-        jobs[i].order = max + 1;
-      } else {
-        temp.push(jobs[i].order);
+    for (var i = 0; i < jobs.length; i++) {
+      if(current.indexOf(jobs[i]._id) > -1) {
+        current.splice(indexOf(jobs[i]._id), 1)
       }
-      listItem.setAttribute("class", "job_item");
-      listItem.setAttribute("data-id", jobs[i]._id);
-      table.appendChild(listItem);
-      var id = document.getElementById(jobs[i]._id);
-      id.innerHTML = '<div id="menu"></div><div class="job_name">' + jobs[i].name + '</div><div class="description">' + jobs[i].description + '</div>';
-      var menu = id.firstChild;
+      if($('#'+jobs[i]._id).length < 1 ){
+        var listItem = document.createElement("div");
+        listItem.setAttribute("id", jobs[i]._id);
+        if (!jobs[i].order) {
+          console.log(temp);
+          var max = 0;
+          for (var j = 0; j < temp.length; j++) {
+            if (temp[j] > max)
+              max = temp[j];
+          }
+          temp.push(max + 1);
+          //jobs[i].order = max + 1;
+        } else {
+          temp.push(jobs[i].order);
+        }
+        listItem.setAttribute("class", "job_item");
+        listItem.setAttribute("data-id", jobs[i]._id);
+        table.appendChild(listItem);
+        var id = document.getElementById(jobs[i]._id);
+        id.innerHTML = '<div id="menu"></div><div class="job_name">' + jobs[i].name + '</div><div class="description">' + jobs[i].description + '</div>';
+        console.log(i);
+        console.log(id);
+        var menu = id.firstChild;
 
-      // menu.className += ' actions-control';
-      // var name = row.insertCell(1);
+        // menu.className += ' actions-control';
+        // var name = row.insertCell(1);
 
-      menu.innerHTML = createQueueMenu(jobs[i]._id);
-      // name.innerHTML = job.name;
+        menu.innerHTML = createQueueMenu(jobs[i]._id);
+        // name.innerHTML = job.name;
+      } 
     };
-    setFirstCard(jobs[0]._id);
+    for(var i = 0; i < current.length; i++){
+      $('#'+current[i]).remove();
+    }
+    var firstId = $('.job_item').first().attr('id');
+    console.log(firstId);
+    setFirstCard(firstId);
     isTestJob = jobs[0];
     bindMenuEvents();
   } else {
+    clearQueue();
     $('.no-jobs').css('left', '0px');
     fabmo.getJobHistory({
       start: 0,
