@@ -82,7 +82,6 @@ function synchJobSubmit (files){
       if(x < files.length) {
         synchJobSubmit(files); 
       } else {
-        console.log('job submit');
         updateQueue();
         x=0;
       }
@@ -100,10 +99,10 @@ function updateQueue(callback) {
     if (err) {
       return callback(err);
     }
+
     if (jobs.pending.length === jobElements && jobs.pending.length != 0) {
       return
     } else {
-      console.log(jobs.pending);
       jobs.pending.sort(function(a, b) {
         return a.order - b.order;
       });
@@ -162,17 +161,31 @@ function makeActions() {
 //   return img.outerHTML;
 // }
 
+function search(nameKey,  arr){
+    for (var i=0; i < arr.length; i++) {
+        if (arr[i]._id.toString() === nameKey) {
+            return true;
+        } 
+    }
+}
+
 function addQueueEntries(jobs) {
   var elements = document.getElementsByClassName('job_item');
-  console.log(jobs);
   var table = document.getElementById('queue_table');
   var temp = [];
   var recent = [];
   var current = [];
 
-  for(var j = 0; j<elements.length; j++){
-      current.push(elements[j].id);
-  }
+
+    for(var j = 0; j<elements.length; j++){
+      var found = search(elements[j].id, jobs);
+      if(found) {
+
+      } else {
+        $('#'+elements[j].id).remove();
+      }
+    }
+
 
 
   if (jobs.length) {
@@ -186,7 +199,6 @@ function addQueueEntries(jobs) {
         var listItem = document.createElement("div");
         listItem.setAttribute("id", jobs[i]._id);
         if (!jobs[i].order) {
-          console.log(temp);
           var max = 0;
           for (var j = 0; j < temp.length; j++) {
             if (temp[j] > max)
@@ -202,8 +214,6 @@ function addQueueEntries(jobs) {
         table.appendChild(listItem);
         var id = document.getElementById(jobs[i]._id);
         id.innerHTML = '<div id="menu"></div><div class="job_name">' + jobs[i].name + '</div><div class="description">' + jobs[i].description + '</div>';
-        console.log(i);
-        console.log(id);
         var menu = id.firstChild;
 
         // menu.className += ' actions-control';
@@ -214,11 +224,9 @@ function addQueueEntries(jobs) {
       } 
     };
     for(var i = 0; i < current.length; i++){
-      $('#'+current[i]).remove();
+      //$('#'+current[i]).remove();
     }
-    var firstId = $('.job_item').first().attr('id');
-    console.log(firstId);
-    setFirstCard(firstId);
+    setFirstCard();
     isTestJob = jobs[0];
     bindMenuEvents();
   } else {
@@ -272,17 +280,18 @@ function addQueueEntries(jobs) {
   setStep(tour);
 }
 
-function setFirstCard(id) {
-  var el = document.getElementById(id);
+function setFirstCard() {
+  var firstId = $('.job_item').first().attr('id');
+  var el = document.getElementById(firstId);
   var cardActions = document.createElement("div");
   cardActions.setAttribute("id", "actions");
   el.appendChild(cardActions);
   var actions = document.getElementById("actions");
   actions.innerHTML = makeActions();
-  $('.cancel').data('id', id);
-  $('.preview').data('id', id);
-  $('.download').data('id', id);
-  $('.edit').data('id', id);
+  $('.cancel').data('id', firstId);
+  $('.preview').data('id', firstId);
+  $('.download').data('id', firstId);
+  $('.edit').data('id', firstId );
   
 }
 
@@ -407,8 +416,9 @@ function bindMenuEvents() {
 
   $('.deleteJob').off('click')
   $('.deleteJob').click(function(e) {
+    updateQueue();
     fabmo.deleteJob(this.dataset.jobid);
-    updateHistory(callback);
+    updateHistory();
   });
 
   $('.dropDownWrapper').off('click')
@@ -546,8 +556,9 @@ function handleStatusReport(status) {
 			var id = ctrl.getAttribute('data-jobid');
 			if (Sortable.utils.is(ctrl, ".cancel")) {
 				fabmo.deleteJob( $('.cancel').data('id'), function(err, data) {
-      				updateQueue(false);
-      				updateHistory();
+      				updateQueue();
+              updateHistory();
+
    				});
 			} else if (Sortable.utils.is(ctrl, ".preview")) {
 				fabmo.launchApp('previewer', {
@@ -595,7 +606,7 @@ function handleStatusReport(status) {
 	onEnd: function(evt) {
 		var firstJob = document.getElementById('queue_table').firstChild;
 		var cardActions = document.createElement("div");
-		setFirstCard(firstJob.id);
+		setFirstCard();
 		var newOrder = sortable.toArray();
 		fabmo.getJobsInQueue(function(err, jobs) {
 		for (i = 0; i < newOrder.length; i++) {
@@ -1183,7 +1194,6 @@ function setup(){
 
 
 	fabmo.on('change', function(topic) {
-    console.log('change');
 		if (topic === 'jobs') {
 		updateQueue();
 		updateHistory();
@@ -1241,7 +1251,6 @@ function setup(){
 			fabmo.notify('error', err);
 		}
     resetFormElement($('#file'));
-    console.log('file change');
 		updateQueue();
 		$('#nav-pending').click();
 		});

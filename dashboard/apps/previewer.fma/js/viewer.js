@@ -324,7 +324,7 @@ exports.Viewer = function(container, widthCanvas, heightCanvas,
         } else {
             gridSize = 10;
         }
-        that.helper = new THREE.GridHelper( gridSize, 1, 0xf2f2f2, white );
+        that.helper = new THREE.GridHelper( gridSize, 1, 0xf2f2f2, 0xffffff );
         that.helper.rotation.x = Math.PI / 2;
         that.scene.add(that.helper);
 

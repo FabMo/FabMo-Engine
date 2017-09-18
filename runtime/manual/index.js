@@ -145,8 +145,8 @@ ManualRuntime.prototype.maintainMotion = function() {
  * If the tool is already moving, the flag is set to maintain that motion
  */
 ManualRuntime.prototype.startMotion = function(axis, speed) {
-	var jerkXY = config.machine._cache.manual.xy_jerk;
-	var jerkZ = config.machine._cache.manual.Z_jerk;
+	var jerkXY = config.machine._cache.manual.xy_jerk || 250;
+	var jerkZ = config.machine._cache.manual.z_jerk || 250;
 	var dir = speed < 0 ? -1.0 : 1.0;
 	speed = Math.abs(speed);
 	if(this.moving) {
