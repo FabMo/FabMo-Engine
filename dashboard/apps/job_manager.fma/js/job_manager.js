@@ -111,7 +111,6 @@ function updateQueue(callback) {
       if (jobs.running.length) {
         var current = jobs.running[0];
         jobs.pending.unshift(current);
-        addQueueEntries(jobs.pending);
         runningJob(current);
       } else {
         runningJob(null);
