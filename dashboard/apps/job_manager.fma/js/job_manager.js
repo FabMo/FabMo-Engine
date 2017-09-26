@@ -111,6 +111,7 @@ function updateQueue(callback) {
       if (jobs.running.length) {
         var current = jobs.running[0];
         jobs.pending.unshift(current);
+        addQueueEntries(jobs.pending);
         runningJob(current);
       } else {
         runningJob(null);
@@ -434,6 +435,7 @@ function nextJob(job) {
 
 // Job should be the running job or null
 function runningJob(job) {
+  console.log(job);
   if (!job) {
     setProgress(status);
     $('.play').removeClass('active')
@@ -1207,12 +1209,14 @@ $(document).ready(function() {
   $(document).foundation();
 
 
-  fabmo.on('change', function(topic) {
-    if (topic === 'jobs') {
-      updateQueue();
-      updateHistory();
-    }
+  fabmo.on('job_end',function (cmd) {
+    updateQueue();
+    updateHistory();
+  });
 
+   fabmo.on('job_start',function (cmd) {
+    updateQueue();
+    updateHistory();
   });
 
 
@@ -1279,6 +1283,8 @@ $(document).ready(function() {
     updateQueue();
     updateHistory();
   });
+
+
 
   fabmo.on('status', function(status) {
     handleStatusReport(status);
