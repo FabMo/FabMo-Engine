@@ -435,7 +435,6 @@ function nextJob(job) {
 
 // Job should be the running job or null
 function runningJob(job) {
-  console.log(job);
   if (!job) {
     setProgress(status);
     $('.play').removeClass('active')
