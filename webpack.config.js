@@ -4,7 +4,6 @@ var webpack = require("webpack");
 var ProvidePlugin = require('webpack').ProvidePlugin;
 var path = require('path');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
-var HtmlWebpackPlugin = require('html-webpack-plugin');
 var CleanWebpackPlugin = require('clean-webpack-plugin');
 var Promise = require('es6-promise').Promise;
 require('es6-promise').polyfill();
