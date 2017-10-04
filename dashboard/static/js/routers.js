@@ -9,30 +9,57 @@ define(function(require) {
 	var FabMoAPI = require('./libs/fabmoapi.js');
 	var engine = new FabMoAPI();
 	var defaultApp = '';
+	var hash = '';
 	engine.getConfig(function(err,data){
-		return defaultApp = data.machine.default_app;
+		defaultApp = data.machine.default_app;
+		hash = data.engine.version.substring(0,5);
+		console.log(hash);
+		return [defaultApp, hash];
 	});
+	console.log(hash);
 	var Router = Backbone.Router.extend({
 		routes: {
-			"app/:id"     		: "_launchApp",
-			"menu"        		: "show_menu",
-			""					: "show_menu",
-			"authentication(?message=:message)"	: "show_auth"
+			"app/:id"     		: "redirect_app",
+			":version/app/:id"     		: "_launchApp",
+			":version"					: "show_menu",
+			""					: "redirect",
+			"authentication(?message=:message)"	: "show_auth",
+			'*notFound': 'redirect'
 
 		},
 		launchApp: function(id, args, callback) {
 			callback = callback || function() {};
+			
 			this.context.launchApp(id, args || {}, function(err, data) {
 				
 				if(err) { return callback(err); }
-				this.navigate('app/' + id);
+				this.navigate('/'+hash+'/app/'+ id);
 			}.bind(this));
 		},
-		_launchApp: function(id) {
-			this.launchApp(id);
+		_launchApp: function(version, id) {
+			if (version === hash) {
+				this.launchApp(id);
+			}else {
+				this.navigate('/'+hash+'/app/'+ id, {trigger: true});
+			}
+			
 		},
-		show_menu: function() {
-			this.launchApp(defaultApp);
+		show_menu: function(version) {
+			console.log(version);
+			console.log(hash);
+			if (version === hash) {
+				this.launchApp(defaultApp);
+			}
+			else {
+				this.navigate(hash, {trigger: true});
+			}
+		},
+		redirect: function(){
+			this.navigate('/'+hash, {trigger: true});
+		},
+		redirect_app: function(id){
+			console.log(id);
+			this.navigate('/'+hash+'/app/'+ id, {trigger: true});
 		},
 		show_auth: function (message){
 			console.log(message);
