@@ -51,9 +51,7 @@ require("../css/toastr.min.css");
     engine.getCurrentUser(function(err,user){
         if(user === undefined){
             window.location.href = '#/authentication';
-        } else {
-            console.log(user);
-        }
+        } 
     });
 
     engine.getUpdaterConfig(function(err, data){
@@ -316,14 +314,12 @@ require("../css/toastr.min.css");
 
     $('#beacon_consent_button').on('click', function(conf){
             if ($('#beacon_checkbox')[0].checked === true) {
-                console.log(dashboard);
                 conf = {consent_for_beacon : "true"};
                 dashboard.engine.setUpdaterConfig(conf,function(err){
                 if(err){
                     console.log(err);
                     return;
                 }
-                    console.log("success, true");
                 });
                 consent = "true";
             } else {
@@ -333,7 +329,6 @@ require("../css/toastr.min.css");
                         console.log(err);
                         return;
                     }
-                        console.log("success, false");
                     });
                     consent = "false";
             }
@@ -480,7 +475,6 @@ require("../css/toastr.min.css");
     });
 
     engine.on('connect', function() {
-        console.log(consent);
         if (disconnected) {
             disconnected = false;
             setConnectionStrength(5);

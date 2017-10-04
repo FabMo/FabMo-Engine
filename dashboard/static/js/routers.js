@@ -45,8 +45,6 @@ define(function(require) {
 			
 		},
 		show_menu: function(version) {
-			console.log(version);
-			console.log(hash);
 			if (version === hash) {
 				this.launchApp(defaultApp);
 			}
@@ -58,23 +56,18 @@ define(function(require) {
 			this.navigate('/'+hash, {trigger: true});
 		},
 		redirect_app: function(id){
-			console.log(id);
 			this.navigate('/'+hash+'/app/'+ id, {trigger: true});
 		},
 		show_auth: function (message){
-			console.log(message);
 			if (message){
-				console.log(message);
 				message.toString();
 				var par = message.replace(/-/g, ' ');
-				console.log(par);
 				$('#add_err').html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span> '+par+'</span></div>');
 				$('#add_err').removeAttr('style');
 
 			}
 			
 			$.ajax({url: "authentication/logout", success: function(result){
-        		console.log(result);
    			}});
 			$('#mainContent').show();
 			auth();
