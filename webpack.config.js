@@ -3,7 +3,6 @@ var js = 'dashboard/static/js';
 var webpack = require("webpack");
 var ProvidePlugin = require('webpack').ProvidePlugin;
 var path = require('path');
-var _ = require('lodash');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var CleanWebpackPlugin = require('clean-webpack-plugin');
