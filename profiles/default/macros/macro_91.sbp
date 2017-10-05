@@ -1,4 +1,0 @@
-'!FABMO!name:Change Unit type
-'!FABMO!description:Change Units
-' Macro 91 is a legacy unit change that is sometimes needed for older files
-SU,

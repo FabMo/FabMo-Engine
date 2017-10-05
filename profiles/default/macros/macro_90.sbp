@@ -1,5 +1,0 @@
-'!FABMO!name:Setttings
-'!FABMO!description:Load default variable settings
-
-' Typically, macro #90 is used to load default variable settings
-' Set anything here that you want set at the beginning of a file.
