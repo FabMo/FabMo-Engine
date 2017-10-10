@@ -7,7 +7,7 @@ var passport = require('../authentication').passport;
 var config = require('../config');
 var current_hash = config.engine._cache.version.toString();
 var static = require('../static');
-console.log(current_hash);
+
 // Load all the files in the 'routes' directory and process them as route-producing modules
 module.exports = function(server) {
 	var routeDir = __dirname;

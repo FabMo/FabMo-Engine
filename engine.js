@@ -168,7 +168,7 @@ Engine.prototype.start = function(callback) {
                     else {
                         log.debug(stdout);
                     }
-                    config.engine.set('version', random);
+                    config.engine.set('version', random.toString());
                     callback();
                 });
                 
