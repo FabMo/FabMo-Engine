@@ -168,6 +168,7 @@ Engine.prototype.start = function(callback) {
                     else {
                         log.debug(stdout);
                     }
+                    config.engine.set('version', random);
                     callback();
                 });
                 
@@ -188,9 +189,10 @@ Engine.prototype.start = function(callback) {
                     });
                 } else {
                     log.info("Engine version is unchanged since last run.");
+                    config.engine.set('version', this_time_version);
                     callback();
                 }
-                config.engine.set('version', this_time_version);
+                
             }
             
         }.bind(this),
@@ -420,12 +422,12 @@ Engine.prototype.start = function(callback) {
         function start_server(callback) {
             log.info("Setting up the webserver...");
 	    var fmt = {
-		            'application/json': function(req, res, body, cb) {
+		            'application/json': function(req, res, body) {
 				                return cb(null, JSON.stringify(body, null, '\t'));
 						        }
 			        }
 
-            var server = restify.createServer({name:"FabMo Engine", formatters : fmt});
+            var server = restify.createServer({name:"FabMo Engine"});
             this.server = server;
 
             // Allow JSON over Cross-origin resource sharing
@@ -456,7 +458,9 @@ Engine.prototype.start = function(callback) {
                     });
             }
 
-            server.use(restify.queryParser());
+            server.use(restify.plugins.queryParser({
+                mapParams : true
+            }));
 
             server.on('uncaughtException', function(req, res, route, err) {
                 log.uncaught(err);
@@ -469,7 +473,10 @@ Engine.prototype.start = function(callback) {
 
             // Configure local directory for uploading files
             log.info("Cofiguring upload directory...");
-            server.use(restify.bodyParser({'uploadDir':config.engine.get('upload_dir') || '/tmp'}));
+            server.use(restify.plugins.bodyParser({
+                'uploadDir':config.engine.get('upload_dir') || '/tmp',
+                mapParams: true
+            }));
             server.pre(restify.pre.sanitizePath());
 
             log.info("Cofiguring authentication...");
@@ -496,7 +503,7 @@ Engine.prototype.start = function(callback) {
 
 
             log.info("Enabling gzip for transport...");
-            server.use(restify.gzipResponse());
+            server.use(restify.plugins.gzipResponse());
             // Import the routes module and apply the routes to the server
             log.info("Loading routes...");
             server.io = socketio.listen(server.server);

@@ -4,7 +4,10 @@ var log = require('../log').logger('routes');
 var restify = require('restify');
 var util = require('../util');
 var passport = require('../authentication').passport;
-
+var config = require('../config');
+var current_hash = config.engine._cache.version.toString();
+var static = require('../static');
+console.log(current_hash);
 // Load all the files in the 'routes' directory and process them as route-producing modules
 module.exports = function(server) {
 	var routeDir = __dirname;
@@ -41,11 +44,29 @@ module.exports = function(server) {
 
 	// Define a route for serving static files
 	// This has to be defined after all the other routes, or it plays havoc with things
-	server.get(/.*/, restify.serveStatic({
-		//directory: './static'
-		directory: './dashboard/build',
-		default: 'index.html'
-	}));
+
+	server.get(/.*/, 
+		function(req, res, next) {
+			 var url_arr = req.url.split('/');
+			 if(url_arr[1] !== current_hash){
+				url_arr.splice(1,0, current_hash);
+				var newPath = url_arr.join('/');
+				res.redirect(newPath , next);
+			 } else {
+				next();
+			 }
+		},
+		static({
+			//directory: './static'
+			current_hash: current_hash,
+			directory: './dashboard/build',
+			default: 'index.html'
+		})
+	);
+
+	server.on('NotFound', function (req, res, err, next) {
+		res.redirect('/', next);
+	});     
 
 
 

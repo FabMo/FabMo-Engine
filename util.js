@@ -11,7 +11,7 @@ var stream = require('stream');
 
 var mime = require('mime');
 var restify = require('restify');
-var errors = restify.errors;
+var errors = require('restify');
 
 ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
 ALLOWED_APP_EXTENSIONS = ['.zip', '.fma'];

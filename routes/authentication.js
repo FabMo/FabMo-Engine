@@ -3,8 +3,11 @@ var authentication = require('../authentication');
 var passport = authentication.passport;
 
 var login = function(req, res, next) {
+  console.log(req);
   authentication.passport.authenticate('local', function(err, user, info) {
-
+    console.log(user);
+    console.log(info);
+    console.log(err);
     if (err) {
       return next(err); // will generate a 500 error
     }

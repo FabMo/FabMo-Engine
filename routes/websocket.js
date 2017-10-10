@@ -21,7 +21,6 @@ function setupAuthentication(server){
     }
     // Get all the cookie objects
     var cookie = parseCookie(handshakeData.headers.cookie);
-
 		if(!cookie['session']){
 			var err = new Error('No session provided.');
 			log.error(err);
@@ -29,7 +28,8 @@ function setupAuthentication(server){
 			return next(err);
 		}
     // Pull out the user from the cookie by using the decode function
-    handshakeData.sessionID = sessions.util.decode({cookieName: 'session', secret:server.cookieSecret}, cookie['session']);
+	handshakeData.sessionID = sessions.util.decode({cookieName: 'session', secret:server.cookieSecret}, cookie['session']);
+	//console.log(handshakeData);
 		var user = handshakeData.sessionID.content.passport.user;
 		authentication.getUserById(user, function (err, data){
 			if (err){
