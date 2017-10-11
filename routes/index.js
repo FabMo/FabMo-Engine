@@ -64,9 +64,7 @@ module.exports = function(server) {
 		})
 	);
 
-	server.on('NotFound', function (req, res, err, next) {
-		res.redirect('/', next);
-	});     
+
 
 
 
