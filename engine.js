@@ -160,6 +160,9 @@ Engine.prototype.start = function(callback) {
         function clear_approot(callback) {
             if('debug' in argv) {
                 log.info("Running in debug mode - clearing the approot.");
+                var random = Math.floor(Math.random() * (99999 - 10000)) + 10000;
+                log.info("Setting engine version to random");
+                config.engine.set('version', random.toString());
                 config.clearAppRoot(function(err, stdout) {
                     if(err) { log.error(err); }
                     else {
@@ -167,6 +170,7 @@ Engine.prototype.start = function(callback) {
                     }
                     callback();
                 });
+                
             } else {
                 var last_time_version = config.engine.get('version').trim();
                 var this_time_version = (this.version.hash || this.version.number || "").trim();
@@ -186,8 +190,9 @@ Engine.prototype.start = function(callback) {
                     log.info("Engine version is unchanged since last run.");
                     callback();
                 }
+                config.engine.set('version', this_time_version);
             }
-            config.engine.set('version', this_time_version);
+            
         }.bind(this),
 
         function create_data_directories(callback) {

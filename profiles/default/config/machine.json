@@ -18,6 +18,8 @@
 		"xy_speed" : 3.0,
 		"z_speed" : 1.0,
 		"xy_increment" : 0.025,
-		"z_increment" : 0.005
+		"z_increment" : 0.005,
+		"xy_jerk" : 250,
+		"z_jerk" : 250
 	}
 }

@@ -185,7 +185,6 @@ define(function(require) {
     var calcLeftPadding = function (){///Calculate the width of the left hand menu and adjust main section accordingly
        var l = parseInt($("#left-menu").css("width")); //Save left menu size
         var  r;
-        console.log(l+  ' ' +r);
         if ($("body").width() / parseFloat($("body").css("font-size")) > 40.063) {
             if (($("#main").hasClass("offcanvas-overlap-left")) && ($("body").width() / parseFloat($("body").css("font-size"))) > 60.063) {
                 r = parseInt($("#right-menu").css("width"));

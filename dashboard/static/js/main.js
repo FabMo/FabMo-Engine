@@ -51,9 +51,7 @@ require("../css/toastr.min.css");
     engine.getCurrentUser(function(err,user){
         if(user === undefined){
             window.location.href = '#/authentication';
-        } else {
-            console.log(user);
-        }
+        } 
     });
 
     engine.getUpdaterConfig(function(err, data){
@@ -229,6 +227,24 @@ require("../css/toastr.min.css");
         return speed_ips;
     }
 
+    function getManualMoveJerk(move){
+        var jerk = null;
+        try {
+            switch (move.axis) {
+                case 'x':
+                case 'y':
+                    jerk = engine.config.machine.manual.xy_jerk;
+                    break;
+                case 'z':
+                    jerk = engine.config.machine.manual.z_jerk;
+                    break;
+            }
+        } catch (e) {
+            console.error(e);
+        }
+        return jerk;
+    }
+
     function getManualNudgeIncrement(move) {
         var increment_inches = null;
         try {
@@ -280,7 +296,7 @@ require("../css/toastr.min.css");
         });
 
         keypad.on('nudge', function(nudge) {
-            dashboard.engine.manualMoveFixed(nudge.axis, 60 * getManualMoveSpeed(nudge), nudge.dir * getManualNudgeIncrement(nudge))
+            dashboard.engine.manualMoveFixed(nudge.axis, 60 * getManualMoveSpeed(nudge), nudge.dir * getManualNudgeIncrement(nudge), getManualMoveJerk(nudge));
         });
         return keypad;
     }
@@ -298,14 +314,12 @@ require("../css/toastr.min.css");
 
     $('#beacon_consent_button').on('click', function(conf){
             if ($('#beacon_checkbox')[0].checked === true) {
-                console.log(dashboard);
                 conf = {consent_for_beacon : "true"};
                 dashboard.engine.setUpdaterConfig(conf,function(err){
                 if(err){
                     console.log(err);
                     return;
                 }
-                    console.log("success, true");
                 });
                 consent = "true";
             } else {
@@ -315,7 +329,6 @@ require("../css/toastr.min.css");
                         console.log(err);
                         return;
                     }
-                        console.log("success, false");
                     });
                     consent = "false";
             }
@@ -462,7 +475,6 @@ require("../css/toastr.min.css");
     });
 
     engine.on('connect', function() {
-        console.log(consent);
         if (disconnected) {
             disconnected = false;
             setConnectionStrength(5);

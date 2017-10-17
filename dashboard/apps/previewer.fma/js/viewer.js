@@ -265,6 +265,7 @@ exports.Viewer = function(container, widthCanvas, heightCanvas,
         that.scene.add(box);
         that.boardObject = object;
         that.boardHelper = box;
+      
     };
 
     /**
@@ -285,6 +286,7 @@ exports.Viewer = function(container, widthCanvas, heightCanvas,
     function reallySetGCode(string) {
         var lx = 0, ly = 0, lz = 0;
         var message = "";
+        var gridSize;
         that.gcode = gcodetogeometry.parse(string);
         if(that.gcode.errorList.length > 0) {
             message = "Be careful, some issues appear in this file.";
@@ -312,6 +314,19 @@ exports.Viewer = function(container, widthCanvas, heightCanvas,
 
         that.light1.position.set(lx,ly,lz-10);
         that.light2.position.set(lx,ly,lz+10);
+          console.log(that.gcode);
+        if (lx !== 0 ){
+            if (lx > ly){
+                    gridSize = Math.ceil(lx*3);
+            } else {
+                gridSize = Math.ceil(ly*3);
+            }
+        } else {
+            gridSize = 10;
+        }
+        that.helper = new THREE.GridHelper( gridSize, 1, 0xf2f2f2, 0xffffff );
+        that.helper.rotation.x = Math.PI / 2;
+        that.scene.add(that.helper);
 
         that.showZ();
         that.refreshDisplay();
@@ -452,12 +467,16 @@ exports.Viewer = function(container, widthCanvas, heightCanvas,
 
     that.light2 = new THREE.PointLight( 0xffffff, 1, 100 );
     that.light2.position.set( 0, 0, 10 );
+   
+    
+   
     that.scene.add( that.light2 );
 
     that.path = new Path(that.scene);
     that.totalSize = new TotalSize(that.scene);
     that.helpers = new Helpers(that.scene);
     that.showBoard();
+ 
     that.refreshDisplay();
 
     //Add the UI

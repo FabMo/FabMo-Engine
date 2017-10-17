@@ -164,6 +164,7 @@ FabMoDashboard.prototype._download = function(data, strFileName, strMimeType) {
 } // _download
 
 FabMoDashboard.prototype._call = function(name, data, callback) {
+
 	if(this.isPresent()) {
 		message = {"call":name, "data":data}
 		if(callback) {

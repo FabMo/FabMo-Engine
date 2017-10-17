@@ -26,6 +26,7 @@ var FOOTBAR_HEIGHT = 0;  // Should find a way to access the element
 function resizeAccordingFooter(footerHeight) {
     var width = window.innerWidth;
     var height = window.innerHeight - $("#topbar").height() - footerHeight;
+    
     $('#preview').size(width, height);
     viewer.resize(width, height);
 }

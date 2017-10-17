@@ -145,6 +145,8 @@ ManualRuntime.prototype.maintainMotion = function() {
  * If the tool is already moving, the flag is set to maintain that motion
  */
 ManualRuntime.prototype.startMotion = function(axis, speed) {
+	var jerkXY = config.machine._cache.manual.xy_jerk || 250;
+	var jerkZ = config.machine._cache.manual.z_jerk || 250;
 	var dir = speed < 0 ? -1.0 : 1.0;
 	speed = Math.abs(speed);
 	if(this.moving) {
@@ -154,7 +156,7 @@ ManualRuntime.prototype.startMotion = function(axis, speed) {
 			// Deal with direction changes here
 		}
 	} else {
-
+		
 		// Set Heading
 		this.currentAxis = axis;
 		this.currentSpeed = speed;
@@ -179,9 +181,9 @@ ManualRuntime.prototype.startMotion = function(axis, speed) {
 		} else {
 			throw new Error("Trying to create a new motion stream when one already exists!");
 		}
-        this.stream.write('M100.1 ({xjm:250})\n');
-        this.stream.write('M100.1 ({yjm:250})\n');
-        this.stream.write('M100.1 ({zjm:250})\n');
+        this.stream.write('M100.1 ({xjm:'+jerkXY+'})\n');
+        this.stream.write('M100.1 ({yjm:'+jerkXY+'})\n');
+        this.stream.write('M100.1 ({zjm:'+jerkZ+'})\n');
 		this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
 		this.renewMoves();
 	}

@@ -622,6 +622,9 @@ SBPRuntime.prototype._end = function(error) {
 		if(this.machine && error) {
 			this.machine.setState(this, 'stopped', {'error' : error });
 		}
+		if(!this.machine){
+			this.stream.end();
+		}
 		this.ok_to_disconnect = true;
 		this.emit('end', this);
 		if(this.end_callback) {
