@@ -1480,12 +1480,6 @@
         }
       }
     },
-    "fsevents": {
-      "version": "0.3.8",
-      "from": "fsevents@>=0.3.1 <0.4.0",
-      "resolved": "https://registry.npmjs.org/fsevents/-/fsevents-0.3.8.tgz",
-      "optional": true
-    },
     "gcodetogeometry": {
       "version": "1.0.0",
       "from": "gcodetogeometry@>=1.0.0 <1.1.0",

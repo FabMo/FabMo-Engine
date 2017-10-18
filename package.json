@@ -55,7 +55,8 @@
     "webpack": "1.13.2"
   },
   "optionalDependencies": {
-    "udev": "0.2.0"
+    "udev": "0.2.0",
+    "fsevents": "0.3.8"
   },
   "devDependencies": {
     "chai": "3.2.x",
