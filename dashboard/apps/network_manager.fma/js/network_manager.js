@@ -35,7 +35,6 @@ function addWifiEntries(network_entries, callback) {
         strength.className = 'wifi0';
 
     var ssidText = entry.ssid || '<Hidden SSID>';
-    console.log(network_entries);
 	var securityText = entry.flags ? entry.flags : '';
     var rawStrength = entry.signalLevel;
     var strengthNumber;
