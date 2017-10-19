@@ -21,7 +21,7 @@ function refreshWifiTable(callback){
 function addWifiEntries(network_entries, callback) {
 	callback = callback || function() {};
 	var table = document.getElementById('wifi_table');
-	network_entries.forEach(function(entry) {
+	network_entries.forEach(function(entry) {""
         if(entry.ssid in networks) {
             return;
         }
@@ -36,7 +36,7 @@ function addWifiEntries(network_entries, callback) {
 
     var ssidText = entry.ssid || '<Hidden SSID>';
     console.log(network_entries);
-	var securityText = entry.flags ? entry.flags.join(',') : '';
+	var securityText = entry.flags ? entry.flags : '';
     var rawStrength = entry.signalLevel;
     var strengthNumber;
     if(rawStrength > -65) {
