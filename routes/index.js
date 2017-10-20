@@ -5,7 +5,6 @@ var restify = require('restify');
 var util = require('../util');
 var passport = require('../authentication').passport;
 var config = require('../config');
-var current_hash = config.engine._cache.version.toString();
 var static = require('../static');
 
 // Load all the files in the 'routes' directory and process them as route-producing modules
@@ -47,6 +46,7 @@ module.exports = function(server) {
 
 	server.get(/.*/, 
 		function(req, res, next) {
+			var current_hash = config.engine.get('version');
 			 var url_arr = req.url.split('/');
 			 if(url_arr[1] !== current_hash){
 				url_arr.splice(1,0, current_hash);
@@ -58,7 +58,6 @@ module.exports = function(server) {
 		},
 		static({
 			//directory: './static'
-			current_hash: current_hash,
 			directory: './dashboard/build',
 			default: 'index.html'
 		})

@@ -10,7 +10,7 @@ var assert = require('assert-plus');
 var mime = require('mime');
 var errors = require('restify-errors');
 var config = require('./config');
-var current_hash = config.engine._cache.version;
+
 
 
 ///--- Globals
@@ -132,7 +132,7 @@ function serveStatic(options) {
         var path_arr = req.path().split('/')
 
         for(var i = 0; i < path_arr.length; i++){
-            if(path_arr[i] === opts.current_hash) {
+            if(path_arr[i] === config.engine.get('version')) {
                 path_arr.splice(i, 1);
             }
         }

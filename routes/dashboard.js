@@ -207,7 +207,6 @@ module.exports = function(server) {
     server.del('/apps/:id', deleteApp);
     server.get('/apps/:id/files', listAppFiles);
     server.get(/\/approot\/?.*/, static({
-        current_hash : config.engine._cache.version.toString(),
         directory: config.getDataDir('approot'),
     }));
     server.get('/updater', updater);

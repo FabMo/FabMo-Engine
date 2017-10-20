@@ -181,6 +181,7 @@ Engine.prototype.start = function(callback) {
                 if(last_time_version != this_time_version) {
                     log.info("Engine version has changed - clearing the approot.");
                     config.clearAppRoot(function(err, stdout) {
+                        config.engine.set('version', this_time_version);
                         if(err) { log.error(err); }
                         else {
                             log.debug(stdout);
@@ -189,7 +190,6 @@ Engine.prototype.start = function(callback) {
                     });
                 } else {
                     log.info("Engine version is unchanged since last run.");
-                    config.engine.set('version', this_time_version);
                     callback();
                 }
                 
