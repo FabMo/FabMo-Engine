@@ -313,7 +313,6 @@ require("../css/toastr.min.css");
     }
 
     $('#beacon_consent_button').on('click', function(conf){
-            if ($('#beacon_checkbox')[0].checked === true) {
                 conf = {consent_for_beacon : "true"};
                 dashboard.engine.setUpdaterConfig(conf,function(err){
                 if(err){
@@ -322,16 +321,6 @@ require("../css/toastr.min.css");
                 }
                 });
                 consent = "true";
-            } else {
-                conf = {consent_for_beacon : "false"};
-                dashboard.engine.setUpdaterConfig(conf,function(err){
-                    if(err){
-                        console.log(err);
-                        return;
-                    }
-                    });
-                    consent = "false";
-            }
             $('.modalDim').hide();
             $('#beacon_consent_container').hide();
     });
