@@ -2,6 +2,7 @@ var path = require('path');
 var util = require('util');
 var fs = require('fs-extra');
 var PLATFORM = require('process').platform;
+var G2 = require('../g2.js');
 var exec = require('child_process').exec;
 Config = require('./config').Config;
 var log = require('../log');
@@ -34,7 +35,7 @@ EngineConfig.prototype.update = function(data, callback) {
 					}
 				}
 
-				if((key in this._cache) && (data[key] != this._cache[key]) && (this.userConfigLoaded)) {
+				if((key in this._cache) && (data[key] != this._cache[key]) && (this.userConfigLoaded) && (this._cache[key])) {
 					try { log.info("Profile changed"); }
 					catch(err) {}
 					profile_changed = true;

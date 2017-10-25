@@ -3,7 +3,6 @@
     "driver": "g2",
     "log_level": "info",
     "version":"",
-    "profile":null,
     "control_port_osx": "/dev/cu.usbmodem001",
     "data_port_osx": "/dev/cu.usbmodem001",
     "control_port_linux": "/dev/ttyACM0",

@@ -139,8 +139,20 @@ Engine.prototype.start = function(callback) {
 
         function profile_shim(callback) {
             var profile = config.engine.get('profile');
-            if(profile) { return callback(); }
-            config.engine.set('profile', 'handibot', callback);
+            var def = '';
+            if(profile) { 
+                return callback(); 
+            } else {
+                fs.readFile('./profiles/.default','utf8', function (err, content) {
+                    if(err){
+                        def = 'default';
+                    } else {
+                        def = content;
+                        console.log(def);
+                    }
+                    config.engine.set('profile', def, callback);
+                })
+            }
         }.bind(this), 
 
         function get_fabmo_version(callback) {
