@@ -143,7 +143,7 @@ Engine.prototype.start = function(callback) {
             if(profile) { 
                 return callback(); 
             } else {
-                fs.readFile('./profiles/.default','utf8', function (err, content) {
+                fs.readFile('../site/.default','utf8', function (err, content) {
                     if(err){
                         def = 'default';
                     } else {
