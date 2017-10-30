@@ -190,7 +190,7 @@ var save = function(id, callback) {
 					}
 					fs.closeSync(fd);
 					log.debug('fsync()ed ' + file_path);
-					callback(err);
+					callback(err, macro);
 				});
 			});
 		});

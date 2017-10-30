@@ -148,7 +148,7 @@ Engine.prototype.start = function(callback) {
                         def = 'default';
                     } else {
                         def = content;
-                        console.log(def);
+                        //console.log(def);
                     }
                     config.engine.set('profile', def, callback);
                 })
