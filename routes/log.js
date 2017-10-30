@@ -16,6 +16,19 @@ var getLog = function(req, res, next) {
 
 /**
  * @apiGroup Log
+ * @api {get} /flight Get log
+ * @apiDescription Get the contents of the debug log
+ */
+var getFlightLog = function(req, res, next) {
+  try {
+    res.json(log.getFlightLog());
+  } catch(e) {
+    res.send(503, e.message);
+  }
+};
+
+/**
+ * @apiGroup Log
  * @api {delete} /log Clear log
  * @apiDescription Clear the debug log.
  * @apiSuccess {String} status `success`
@@ -33,4 +46,5 @@ var clearLog = function(req, res, next) {
 module.exports = function(server) {
   server.get('/log', getLog);
   server.del('/log', clearLog)
+  server.get('/flight', getFlightLog)
 };

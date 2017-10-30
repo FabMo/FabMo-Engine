@@ -6,6 +6,7 @@ var config = require('./config');
 var util = require('./util');
 var ncp = require('ncp').ncp;
 var process = require('process');
+var cnctosvg = require("cnctosvg");
 
 // Connect to TingoDB database that stores the files
 var Engine = require('tingodb')();
@@ -16,6 +17,7 @@ var db;
 var files;
 var jobs;
 var users;
+var thumbnails;
 
 function notifyChange() {
 	var machine = require('./machine').machine;
@@ -284,6 +286,7 @@ File.prototype.save = function(callback) {
 		files.insert(that, function(err,records){
 			if(!err) {
 				callback(null, records[0]);
+				backupDB(callback);
 			}
 			else {
 				callback(err);
@@ -293,9 +296,10 @@ File.prototype.save = function(callback) {
 	});
 };
 
-// Delete this file from the database
+// Delete this file (and associated thumbnail) from the database
 File.prototype.delete = function(callback){
 	files.remove({_id : this._id},function(err){if(!err)callback();else callback(err);});
+	thumbnails.remove({file_id : this._id},function(err){if(!err)callback();else callback(err);});
 };
 
 // Update the "last run" time (use the current time)
@@ -338,6 +342,7 @@ File.add = function(friendly_filename, pathname, callback) {
 								return callback(err);
 							}
 							log.info('Saved a file: ' + file.filename + ' (' + file.path + ')');
+			
 							callback(null, file)
 						}.bind(this)); // save
 					}.bind(this)); // unlink
@@ -457,7 +462,10 @@ User.prototype.save = function(callback){
 			if(callback)callback(err,null);
 			return;
 		}
-		if(callback)callback(null, this);
+		if(callback){
+			backupDB(callback);
+			callback(null, this);
+		}
 	}.bind(this));
 };
 
@@ -519,9 +527,170 @@ User.findById = function(id,callback){
 			callback(err,user);
 			return;
 		}else{
-			callback("user doesn't exist !");
+			callback("user doesn't exist!");
 			return;
 		}
+	});
+}
+
+
+// Creates a new Thumbnail which represents the thumbnails stored in the
+// database. Thumbnails are 2D representation of the path a file is describing
+// (in G-Code or OpenSBP).
+//
+// @param {Document} [thumbnailDocument] - The thumbnail stored in the database.
+Thumbnail = function(thumbnailDocument) {
+    if(thumbnailDocument) {
+        this.file_id = thumbnailDocument.file_id;
+        this.version = thumbnailDocument.version;
+        this.image = thumbnailDocument.image;
+    } else {
+        this.file_id = "";
+        this.version = 0;
+        this.image = "";
+    }
+}
+
+// Checks if needs update.
+// @return {boolean} If needs update.
+Thumbnail.prototype.needUpdate = function() {
+    return this.version < cnctosvg.VERSION;
+};
+
+// Updates the thumbnail in the database.
+// @param {function} callback({Error} err, {Thumbnail} thumbnail): if err is
+//   not null, thumbnail is old one else new one
+Thumbnail.prototype.update = function(callback) {
+    var that = this;
+
+    File.getByID(that.file_id, function(err, file) {
+        if(err) {
+            callback(new Error("Cannot find file with id = " + that.file_id), that);
+            return;
+        }
+        var machine = require('./machine').machine;
+        machine.getGCodeForFile(file.path, function(err, gcode) {
+            if(err) {
+                callback(new Error("Cannot find G-Code for file with id = " + fileId), that);
+                return;
+            }
+            var gcodeString = gcode.toString("utf8");
+            var modifications = {
+                "image" : Thumbnail.createImage(gcodeString, file.filename),
+                "version" : cnctosvg.VERSION
+            };
+            var query = { "file_id" : that.file_id };
+            thumbnails.update(query, modifications, function(err, thumbnail) {
+                if(err) {
+                    callback(new Error("Cannot update thumbnail with file_id = " + that.file_id), that);
+                    return;
+                }
+                that.image = modifications.image;
+                that.version = modifications.version;
+                callback(null, that);
+            });
+        });
+    });
+};
+
+// Checks if needs update and returns himself to callback (the new or old
+// version)
+// @param {function} callback({boolean} err, {Thumbnail} thumbnail): err is
+//   always false, thumbnail is old one or news one
+Thumbnail.prototype.checkUpdateAndReturn = function(callback) {
+    var that = this;
+    if(that.needUpdate()) {
+        that.update(function(err, thumbnail) {
+            callback(false, thumbnail);
+        });
+    } else {
+        callback(false, that);
+    }
+};
+
+// Creates image but does not add a thumbnail into the database
+// @param {string} gcode
+// @param {string} title
+// @return {string} the image
+Thumbnail.createImage = function(gcode, title) {
+    var colors = { G1 : "#000000", G2G3 : "#000000" };
+    var width = 100;
+    var height = 100;
+    var lineThickness = 2;
+    return cnctosvg.createSVG(gcode, colors, title, width, height, lineThickness, true);
+};
+
+// Generates the thumbnail and insert it in the database
+// @param {function} callback({Error} err, {Thumbnail} thumbnail): if err is
+//   not null, thumbnail is undefined else new one
+Thumbnail.generate = function(fileId, callback) {
+    thumbnails.findOne({ "file_id" : fileId }, function(err, thumbnail) {
+        if(!err && thumbnail) {
+            new Thumbnail(thumbnail).checkUpdateAndReturn(callback);
+            return;
+        }
+        File.getByID(fileId, function(err, file) {
+            if(err) {
+                callback(new Error("Cannot find file with id = " + fileId));
+                return;
+            }
+            var machine = require('./machine').machine;
+            machine.getGCodeForFile(file.path, function(err, gcode) {
+                if(err) {
+                    callback(new Error("Cannot find G-Code for file with id = " + fileId));
+                    return;
+                }
+                var gcodeString = gcode.toString("utf8");
+                var newThumbnail = new Thumbnail();
+                newThumbnail.file_id = fileId;
+                newThumbnail.version = cnctosvg.VERSION;
+                newThumbnail.image = Thumbnail.createImage(gcodeString, file.filename);
+                thumbnails.insert(newThumbnail, function(err, records) {
+                    if(err) {
+                        callback(new Error("Cannot insert thumbnail in database"));
+                    } else {
+                        callback(null, newThumbnail);
+                    }
+                });
+            });
+        });
+    });
+};
+
+// Get the thumbnail, if no thumbnail in database: try to make one and return it
+// @param {function} callback({Error} err, {Thumbnail} thumbnail): if err is
+//   not null, thumbnail is undefined else the found one
+Thumbnail.getFromFileId = function(fileId, callback) {
+    thumbnails.findOne({ "file_id" : fileId }, function(err, thumbnail) {
+        if(err) {
+            callback(new Error("Cannot find thumbnail with file_id = " + fileId));
+            return;
+        }
+        if(!thumbnail) {
+            Thumbnail.generate(fileId, callback);
+        } else {
+            new Thumbnail(thumbnail).checkUpdateAndReturn(callback);
+        }
+    });
+};
+
+// Get the thumbnail, if no thumbnail in database: try to make one and return it
+// @param {function} callback({Error} err, {Thumbnail} thumbnail): if err is
+//   not null, thumbnail is undefined else the found one
+Thumbnail.getFromJobId = function(jobId, callback) {
+    Job.getById(jobId, function(err, job) {
+        if(err || !job) {
+            callback(new Error("Cannot find job with id = " + jobId));
+        } else {
+            Thumbnail.getFromFileId(job.file_id, callback);
+        }
+    });
+}
+
+function isDirectory(path, callback){
+	fs.stat(path,function(err,stats){
+		if(err) callback(undefined);
+		else callback(stats.isDirectory());
 	});
 }
 
@@ -537,21 +706,45 @@ checkCollection = function(collection, callback) {
 	});
 }
 
+
 backupDB = function(callback) {
 	src = config.getDataDir('db');
-	dest = config.getDataDir('backup') + '/db'
-	ncp(src, dest, function(err) {
-		log.info('Backed up database to '+dest)
-		callback(err);
+	dest = config.getDataDir('backup') + '/db/'
+	isDirectory(dest, function(isdir) {
+			if(!isdir) {
+				//Replace with new copy of DB
+				log.info('No existing backup. Making one now');
+				ncp(src, dest, function(err) {
+					if (err){
+						log.error('Could not remove backup because '+err);
+					} else {
+						log.info('Backed up to '+dest);
+					}
+				});
+			} else {
+				// Remove old copy of the backup if it exists
+				fs.remove(dest, function (err) {
+					if(err) {
+						log.error('Could not remove backup because '+err);
+					} else {
+						log.info('Removed old copy of backup');
+						//Replace with new copy of DB
+						ncp(src, dest, function(err) {
+							if (err){
+								log.error('Could not remove backup because '+err);
+							} else {
+								log.info('Backed up to '+dest);
+							}
+						});
+					}
+				});
+			}
 	});
+	
+	
 }
 
-exports.configureDB = function(callback) {
-	db = new Engine.Db(config.getDataDir('db'), {});
-	files = db.collection("files");
-	jobs = db.collection("jobs");
-	users = db.collection("users");
-
+checkUsers = function(users){
 	users.find({}).toArray(function(err,result){ //init the user database with an admin account if it's empty
 		if (err){
 			throw err;
@@ -562,13 +755,29 @@ exports.configureDB = function(callback) {
 			user.save();
 		}
 	});
+}
+
+reConfig = function(callback){
+	db = new Engine.Db(config.getDataDir('db'), {});
+	files = db.collection("files");
+	jobs = db.collection("jobs");
+	users = db.collection("users");
+	thumbnails = db.collection("thumbnails");
+
+	
 
 	async.parallel([
+			function(cb) {
+				checkCollection(users, cb);
+			},
 			function(cb) {
 				checkCollection(files, cb);
 			},
 			function(cb) {
 				checkCollection(jobs, cb);
+			},
+			function(cb) {
+				checkCollection(thumbnails, cb);
 			}
 		],
 		function(err, results) {
@@ -587,17 +796,91 @@ exports.configureDB = function(callback) {
 								log.error('Could not delete the corrupted database:' + err);
 								callback(null);
 							} else {
-								log.debug('The corrupted database has been deleted.  Shutting down the engine...');
+								log.debug('Everythign is terrible shutting down');
 								process.exit(1);
+
+							}
+						});
+					}
+				});
+			} else {
+				checkUsers(users);
+				log.info("Databases are clean. Reconfig Success");
+				callback(null);
+				
+			}
+			
+	});
+
+}
+
+exports.configureDB = function(callback) {
+	db = new Engine.Db(config.getDataDir('db'), {});
+	files = db.collection("files");
+	jobs = db.collection("jobs");
+	users = db.collection("users");
+	thumbnails = db.collection("thumbnails");
+
+	
+
+	async.parallel([
+			function(cb) {
+				checkCollection(users, cb);
+			},
+			function(cb) {
+				checkCollection(files, cb);
+			},
+			function(cb) {
+				checkCollection(jobs, cb);
+			},
+			function(cb) {
+				checkCollection(thumbnails, cb);
+			}
+		],
+		function(err, results) {
+			if(err) {
+				log.error('There was a database corruption issue!')
+				var src = config.getDataDir('db')
+				var dest = config.getDataDir('debug') + '/bad-db-' + (new Date().getTime())
+				ncp(src, dest, function (err) {
+					if(err) {
+						log.error('The database could not be successfully backed up: ' + err);
+						callback(null);
+					} else {
+						log.debug('The database has been successfully copied to the debug directory for inspection.');
+						fs.remove(src, function (err) {
+							if(err) {
+								log.error('Could not delete the corrupted database:' + err);
+								callback(null);
+							} else {
+								log.debug('The corrupted database has been deleted.  Inserting Backup and re-config');
+								//process.exit(1);
+								src = config.getDataDir('backup/db');
+								dest = config.getDataDir('db');
+								
+								ncp(src, dest, function (err) {
+									if(err) {
+										log.error('The backup could not be copied engine shutting down because ' + err);
+										process.exit(1);
+									} else {
+										log.debug('Backup copied over re-trying config');
+										reConfig(callback);
+									}		
+								})
+
 							}
 						});
 					}
 				});
 			} else {
 				log.info("Databases are clean.");
+				checkUsers(users);
 				callback(null);
+				backupDB(callback);
+				
 			}
 		});
+		
 };
 
 exports.cleanup = function(callback) {
@@ -617,5 +900,6 @@ exports.cleanup = function(callback) {
 
 exports.File = File;
 exports.Job = Job;
-exports.User = User
+exports.User = User;
+exports.Thumbnail = Thumbnail;
 exports.createJob = createJob;

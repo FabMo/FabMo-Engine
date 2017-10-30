@@ -1,6 +1,7 @@
 var log = require('../log').logger('routes');
 var fs = require('fs');
 var uuid = require('node-uuid');
+var pako = require('pako');
 
 UPLOAD_INDEX = {};
 UPLOAD_TIMEOUT = 3600000;
@@ -33,8 +34,8 @@ function setUploadTimeout(key, timeout) {
     if(UPLOAD_INDEX[key].timeout) {
         clearTimeout(UPLOAD_INDEX[key].timeout);
     }
-    UPLOAD_INDEX[key].timeout = setTimeout(function() { 
-        log.warn('Deleting expired upload: ' + key); 
+    UPLOAD_INDEX[key].timeout = setTimeout(function() {
+        log.warn('Deleting expired upload: ' + key);
         expireUpload(key);
     }, timeout);
 }
@@ -44,7 +45,7 @@ function expireUpload(key) {
     if(upload && upload.timeout) {
         clearTimeout(upload.timeout);
         delete UPLOAD_INDEX[key];
-        return upload;    
+        return upload;
     } else {
         log.warn("Tried to expire upload " + key + " that doesn't exist.");
     }
@@ -67,42 +68,82 @@ function updateUpload(key, index, file) {
         }
         return undefined;
     }
-    
+
     throw new Error('Invalid upload key: ' + key);
 }
 
 function upload(req, res, next, callback) {
     if(req.files) { // File upload type post
         var file = req.files.file;
-        var index = req.body.index;
-        var key = req.body.key;
-        var upload_data = null;
+        if(req.body.compressed){
+          //var start_decompress = Date.now();
+          fs.readFile(file.path,function(err,data){
+            if(err)log.err(err);
+            fs.writeFile(file.path,pako.inflate(data,{to:"string"}),function(){
+              //log.info("decompression time : "+(Date.now()-start_decompress)+"ms");
+              var index = req.body.index;
+              var key = req.body.key;
+              var upload_data = null;
 
-        try {
-            upload_data = updateUpload(key, index, file);
-        } catch(e) {
-            log.error(e);
-            return res.json({
+              try {
+                  upload_data = updateUpload(key, index, file);
+              } catch(e) {
+                  log.error(e);
+                  return res.json({
+                      'status' : 'error',
+                      'message' : e.message
+                  });
+              }
+
+              if(upload_data) {
+                  if(callback) {
+                      //var cb = upload_data.callback;
+                      delete upload_data.callback;
+                      delete upload_data.file_count;
+                      delete upload_data.timeout;
+                      callback(null, upload_data);
+                  }
+              }else{
+                return res.json({
+                  'status' : 'success',
+                  'data' : {
+                    'status' : 'pending'
+                  }
+                });
+              }
+            });
+          });
+        }else{
+          var index = req.body.index;
+          var key = req.body.key;
+          var upload_data = null;
+
+          try {
+              upload_data = updateUpload(key, index, file);
+          } catch(e) {
+              log.error(e);
+              return res.json({
                 'status' : 'error',
                 'message' : e.message
-            });
-        }
+              });
+          }
 
-        if(upload_data) {
-            if(callback) {
-                //var cb = upload_data.callback;
-                delete upload_data.callback;
-                delete upload_data.file_count;
-                delete upload_data.timeout;
-                callback(null, upload_data);
-            }
-        } else {
-            return res.json({
-                'status' : 'success',
-                'data' : {
-                    'status' : 'pending'
-                }
-            });            
+          if(upload_data) {
+              if(callback) {
+                  //var cb = upload_data.callback;
+                  delete upload_data.callback;
+                  delete upload_data.file_count;
+                  delete upload_data.timeout;
+                  callback(null, upload_data);
+              }
+          } else {
+              return res.json({
+                  'status' : 'success',
+                  'data' : {
+                      'status' : 'pending'
+                  }
+              });
+          }
         }
 
     } else { /* Metadata type POST */
@@ -112,7 +153,7 @@ function upload(req, res, next, callback) {
         } catch(e) {
             log.error(e);
             return res.json( {
-                'status' : 'error', 
+                'status' : 'error',
                 'message' : e.message
             });
         }
@@ -135,7 +176,7 @@ function updaterRedirect(req, res, next) {
             var host = req.headers.host.split(':')[0].trim('/');
             var path = req.params[0];
             var url = 'http://' + host + ':' + (config.engine.get('server_port') + 1) + '/' + path;
-            res.redirect(302, url, next);   
+            res.redirect(302, url, next);
             break;
 
         case 'POST':

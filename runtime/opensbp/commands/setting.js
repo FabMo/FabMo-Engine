@@ -9,11 +9,14 @@ var openSBP = require('../opensbp.js');
 // Set to Absolute coordinates
 exports.SA = function(args) {
 	this.emit_gcode("G90");
+	this.emit_gcode("M0");
+
 };
 
 //  Set to Relative coordinates
 exports.SR = function(args) {
 	this.emit_gcode("G91");
+	this.emit_gcode("M0");
 };
 
 // Set to MOVE mode
@@ -58,19 +61,61 @@ exports.ST = function(args, callback) {
 exports.SO = function(args) {
 	outnum = parseInt(args[0]);
 	state = parseInt(args[1]);
-	if(outnum === 1) {
-		switch(state) {
-			case 1:
-				this.emit_gcode("M4");
-				this.emit_gcode("M8");
-				break;
-			case 0:
-				this.emit_gcode("M5");
-				this.emit_gcode("M9");
-				break;
+	if(outnum >= 1 && outnum <= 12) {
+		if(state == 1 || state == 0) {
+			if(outnum === 1) {
+				if(state === 1) {
+					this.emit_gcode('M3');
+				} else {
+					this.emit_gcode('M5');
+				}
+			} else {
+				this.emit_gcode('M100 ({out' + outnum + ':' + state + '})');
+			}
+		} else {
+			log.warn("Value passed to SO that's not a 1 or 0");
 		}
 	}
 };
+
+exports.SP = function(args) {
+	outnum = parseInt(args[0]);
+	state = parseFloat(args[1]);
+	if(outnum >= 0 && outnum <= 1) {
+		outnum += 11
+		if(state >= 0.0 && state <= 1.0) {
+			this.emit_gcode('M100 ({out' + outnum + ':' + state + '})');
+		} else {
+			log.warn("Value passed to SP that's not between 0 and 1");
+		}
+	} else {
+		log.warn("PWM number passed to SP thats not 0 or 1");
+	}
+};
+
+exports.SU = function(args) {
+	var units = ((args[0] || 'in') + '').toLowerCase();
+
+	switch(units) {
+		case 'in':
+		case 'inch':
+		case 'inches':
+		case '0':
+				this.emit_gcode('G20');
+				this.emit_gcode('G4 P0.001');
+			break;
+		case 'mm':
+		case 'millimeter':
+		case 'millimeters:':
+		case '1':
+				this.emit_gcode('G21');
+				this.emit_gcode('G4 P0.001');
+			break;
+		default:
+			log.warn('Unknown unit specified: ' + units);
+			break;
+	}
+}
 
 exports.SV = function(args, callback){
 	this._saveDriverSettings(function(err, values) {

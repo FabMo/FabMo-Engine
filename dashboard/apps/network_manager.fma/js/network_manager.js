@@ -21,7 +21,7 @@ function refreshWifiTable(callback){
 function addWifiEntries(network_entries, callback) {
 	callback = callback || function() {};
 	var table = document.getElementById('wifi_table');
-	network_entries.forEach(function(entry) {
+	network_entries.forEach(function(entry) {""
         if(entry.ssid in networks) {
             return;
         }
@@ -34,13 +34,25 @@ function addWifiEntries(network_entries, callback) {
         var strength = row.insertCell(2);
         strength.className = 'wifi0';
 
-        var ssidText = entry.ssid || '<Hidden SSID>';
-        var securityText = entry.security ? entry.security.join(',') : '';
-
-		ssid.innerHTML = ssidText
-		security.innerHTML = securityText;
-		strength.innerHTML = '';
-	});
+    var ssidText = entry.ssid || '<Hidden SSID>';
+	var securityText = entry.flags ? entry.flags : '';
+    var rawStrength = entry.signalLevel;
+    var strengthNumber;
+    if(rawStrength > -65) {
+        strengthNumber = 4;
+    } else if(-70 < rawStrength < -65) {
+        strengthNumber = 3;
+    } else if(-80 < rawStrength < -70) {
+        strengthNumber = 2;
+    } else if(-90 < rawStrength < -80) {
+        strengthNumber =  1;
+    } else {
+        strengthNumber =  0;
+    }
+	ssid.innerHTML = ssidText;
+	security.innerHTML = securityText;
+	strength.className = 'wifi'+(strengthNumber);
+   });
 }
 
 // Get history from the tool, and add entries to the table
@@ -180,6 +192,7 @@ function enterAPMode(callback) {
     $('tbody').on('click', 'td.ssid', function () {
         var name = $(this).text();
         requestPassword(name, function(passwd){
+        fabmo.showModal({message:"Your tool is connecting to the network, please use the Tool Minder to find me on the new network called "+name+" ."});
             fabmo.connectToWifi(name, passwd,function(err,data){
                 if(err) {
                     fabmo.notify('error',err);
@@ -192,6 +205,7 @@ function enterAPMode(callback) {
     $('#ap-mode-button').on('click', function(evt) {
         enterAPMode();
         evt.preventDefault();
+        fabmo.showModal({message:"Your tool is now back in AP mode."});
     })
 
 

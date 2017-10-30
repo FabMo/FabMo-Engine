@@ -12,6 +12,9 @@
 
 }(this, function (io) {
   "use strict"
+
+var io = require("./socket.io.js");
+
 var PING_TIMEOUT = 3000;
 var makePostData = function(obj, options) {
 	var file = null;
@@ -50,11 +53,13 @@ var FabMoAPI = function(base_url) {
 		'status' : [],
 		'disconnect' : [],
     	'authentication_failed':[],
+		'user_change' : [],
 		'connect' : [],
 		'job_start' : [],
 		'job_end' : [],
 		'change' : [],
     	'video_frame': [],
+      'upload_progress':[],
 	};
 	var url = window.location.origin;
 	this.base_url = url.replace(/\/$/,'');
@@ -65,7 +70,6 @@ var FabMoAPI = function(base_url) {
 }
 
 FabMoAPI.prototype._initializeWebsocket = function() {
-	var io = require("socket.io/node_modules/socket.io-client/socket.io.js");
 	localStorage.debug = false
 	try {
 		this.socket = io.connect(this.base_url+'/private');
@@ -106,6 +110,10 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 			console.info("Websocket disconnected (connection error)");
 		}.bind(this));
 
+		this.socket.on('user_change', function(user){
+			this.emit('user_change', user);
+		});
+
 	}
 }
 
@@ -136,8 +144,11 @@ FabMoAPI.prototype.startVideoStreaming = function(callback){
     this.videoSocket.on('connect_error', function() {
       console.info("Video streaming websocket disconnected (connection error)");
     }.bind(this));
+    callback();
+  }else{
+    callback("connection to the video streaming via websocket failed.");
   }
-  callback();
+
 }
 
 FabMoAPI.prototype.emit = function(evt, data) {
@@ -224,7 +235,7 @@ FabMoAPI.prototype.setConfig = function(cfg_data, callback) {
 	});
 }
 
-// Status
+// Version/Info
 FabMoAPI.prototype.getVersion = function(callback) {
 	this._get('/version', callback, function(err, version) {
 		if(err) {
@@ -234,6 +245,11 @@ FabMoAPI.prototype.getVersion = function(callback) {
 		callback(null, version);
 	}.bind(this), 'version');
 }
+FabMoAPI.prototype.getInfo = function(callback) {
+	var callback = callback || function() {};
+	this._get('/info', callback, callback, 'info');
+}
+
 
 // Status
 FabMoAPI.prototype.getStatus = function(callback) {
@@ -432,7 +448,7 @@ FabMoAPI.prototype.getWifiNetworkHistory = function(callback) {
 }
 
 FabMoAPI.prototype.submitJob = function(job, options, callback) {
-	this._postUpload('/job', job, {}, callback, callback);
+	this._postUpload('/job', job, {}, callback, callback, null, options);
 }
 FabMoAPI.prototype.submitJobs = FabMoAPI.prototype.submitJob;
 
@@ -480,6 +496,7 @@ FabMoAPI.prototype._get = function(url, errback, callback, key) {
 	$.ajax({
 		url: url,
 		type: "GET",
+    cache: false,
 		dataType : 'json',
 		success: function(result){
 			if(result.status === "success") {
@@ -500,11 +517,11 @@ FabMoAPI.prototype._get = function(url, errback, callback, key) {
 	});
 }
 
-FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback, key) {
+FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback, key, options) {
 	//var url = this._url(url);
 	var callback = callback || function() {};
 	var errback = errback || function() {};
-
+  var options = options || {};
 	// The POST Upload is done in two pieces.  First is a metadata post which transmits
 	// an array of json objects that describe the files in question.
 	// Following the metadata is a multipart request for each uploaded file.
@@ -533,31 +550,71 @@ FabMoAPI.prototype._postUpload = function(url, data, metadata, errback, callback
 			var fd = new FormData();
 			fd.append('key', k);
 			fd.append('index', index);
-			fd.append('file', file);
-			var onFileUploadComplete = function(err, data) {
-				if(err) {
-					// Bail out here too - fail on any one file upload failure
-					requests.forEach(function(req) {
-						req.abort();
-					});
-					return errback(err);
-				}
-				if(data.status === 'complete') {
-					if(key) {
-						callback(null, data.data[key]);
-					} else {
-						callback(null, data.data);
-					}
-				}
-			}.bind(this);
-			var request = this._post(url, fd, onFileUploadComplete, onFileUploadComplete);
-			requests.push(request);
+      if(options.compressed){
+        //var compress_start_time = Date.now();
+        fd.append('compressed',true);
+        var pako = require('./pako.min.js');
+        var fr = new FileReader();
+        fr.readAsArrayBuffer(file);
+        fr.onload = function(evt){
+          //var size_bf_compression = file.size;
+          file = new File([pako.deflate(fr.result)],file.name,file);
+          //var compression_time=Date.now()-compress_start_time
+          //var stats = "Size before compression : "+size_bf_compression+" after : "+file.size+" ratio : "+((file.size/size_bf_compression)*100)+"% compression time : "+compression_time+"ms";
+          fd.append('file', file);
+          //var time_before_send = Date.now();
+          var onFileUploadComplete = function(err, data) {
+            if(err) {
+              // Bail out here too - fail on any one file upload failure
+              requests.forEach(function(req) {
+                req.abort();
+              });
+              return errback(err);
+            }
+            if(data.status === 'complete') {
+              //var transport_time = Date.now()-time_before_send;
+              //console.log(stats+" transport time + decompression : "+transport_time+"ms total: "+(compression_time+transport_time)+"ms");
+              if(key) {
+                callback(null, data.data[key]);
+              } else {
+                callback(null, data.data);
+              }
+            }
+          }.bind(this);
+          var request = this._post(url, fd, onFileUploadComplete, onFileUploadComplete,null,null,true);
+          requests.push(request);
+        }.bind(this);
+      }else{
+        fd.append('file', file);
+        var time_before_send = Date.now();
+        var onFileUploadComplete = function(err, data) {
+          if(err) {
+            // Bail out here too - fail on any one file upload failure
+            requests.forEach(function(req) {
+              req.abort();
+            });
+            return errback(err);
+          }
+          if(data.status === 'complete') {
+            //var transport_time = Date.now()-time_before_send;
+              //console.log("transport time : "+transport_time+"ms ");
+            if(key) {
+              callback(null, data.data[key]);
+            } else {
+              callback(null, data.data);
+            }
+          }
+        }.bind(this);
+        var request = this._post(url, fd, onFileUploadComplete, onFileUploadComplete,null,null,true);
+        requests.push(request);
+      }
+
 		}.bind(this));
 	}.bind(this);
 	this._post(url, meta, onMetaDataUploadComplete, onMetaDataUploadComplete, 'key');
 }
 
-FabMoAPI.prototype._post = function(url, data, errback, callback, key, redirect) {
+FabMoAPI.prototype._post = function(url, data, errback, callback, key, redirect,doProgress) {
 	if(!redirect) {
 		var url = this._url(url);
 	}
@@ -565,10 +622,19 @@ FabMoAPI.prototype._post = function(url, data, errback, callback, key, redirect)
 	var errback = errback || function() {};
 
 	var xhr = new XMLHttpRequest();
-	xhr.open('POST', url);
+
+  // fix NO-CACHE
+  url += ( (url.indexOf("?")==-1)? "?_=" : "& _=" ) + new Date().getTime();
+
+  xhr.open('POST', url);
+  if(doProgress){
+    xhr.upload.addEventListener('progress', function(evt) {
+  		this.emit('upload_progress',{filename:data.get('file').name,value:evt.loaded/evt.total});
+  	}.bind(this));
+  }
 
 	if(!(data instanceof FormData)) {
-		xhr.setRequestHeader('Content-Type', 'application/json');
+		xhr.setRequestHeader('Content-Type', 'application/json;');
 		if(typeof data != 'string') {
 			data = JSON.stringify(data);
 		}
@@ -630,6 +696,7 @@ FabMoAPI.prototype._patch = function(url, data, errback, callback, key) {
 	$.ajax({
 		url: url,
 		type: "PATCH",
+    cache: false,
 		'data' : data,
 		success: function(result){
 			if(data.status === "success") {
@@ -661,6 +728,7 @@ FabMoAPI.prototype._del = function(url, data, errback, callback, key) {
 		url: url,
 		type: "DELETE",
 		dataType : 'json',
+    cache: false,
 		'data' : data,
 		success: function(result){
 			if(data.status === "success") {

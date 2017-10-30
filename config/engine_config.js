@@ -1,6 +1,8 @@
 var path = require('path');
 var util = require('util');
+var fs = require('fs-extra');
 var PLATFORM = require('process').platform;
+var G2 = require('../g2.js');
 var exec = require('child_process').exec;
 Config = require('./config').Config;
 var log = require('../log');
@@ -12,25 +14,63 @@ EngineConfig = function() {
 };
 util.inherits(EngineConfig, Config);
 
-// The engine update function is pretty basic for now, 
-// but if new values provoke a reconfiguration of the application, this is where it will be done.
 EngineConfig.prototype.update = function(data, callback) {
+	var profile_changed = false;
 	try {
 		for(var key in data) {
-			this._cache[key] = data[key];
+			if((key === 'profile')) {
+				var newProfile = data[key];
+				if(newProfile && newProfile != 'default') {
+					try {
+						var profileDir = __dirname + '/../profiles/' + newProfile;
+						var stat = fs.statSync(profileDir);								
+						if(!stat.isDirectory()) {
+							throw new Error('Not a directory: ' + profileDir)
+						} else {
+							// New profile directory exists
+						}
+					} catch(e) {
+						logger.warn(e);
+						data[key] = 'default';
+					}
+				}
+
+				if((key in this._cache) && (data[key] != this._cache[key]) && (this.userConfigLoaded) && (this._cache[key])) {
+					try { log.info("Profile changed"); }
+					catch(err) {}
+					profile_changed = true;
+				}
+			}
+			this._cache[key] = data[key];				
 		}
 	} catch (e) {
 		if(callback) {
 			return setImmediate(callback, e);
 		}
 	}
-	this.save(function(err, result) {
-		if(err) {
-			typeof callback === 'function' && callback(e);
-		} else {
-			typeof callback === 'function' && callback(null, data);
-		}
-	});
+
+	var that = this;
+	function save(callback) {
+		that.save(function(err, result) {
+			if(err) {
+				typeof callback === 'function' && callback(e);
+			} else {
+				typeof callback === 'function' && callback(null, data);
+			}
+		});
+	};
+	if(profile_changed) {
+		logger.warn('Engine profile changed - engine should be restarted.')
+		Config.deleteProfileData(function(err) {
+			save(function(err) {
+				if(err) { return callback(err); }
+				process.exit(1);
+				//callback();
+			})
+		});
+	} else {
+		save(callback);
+	}
 };
 
 EngineConfig.prototype.apply = function(callback) {

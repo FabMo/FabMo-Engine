@@ -19,9 +19,15 @@ var sessions = require("client-sessions");
 var authentication = require('./authentication');
 var crypto = require('crypto');
 
+
 var Engine = function() {
     this.version = null;
     this.time_synced = false;
+    this.firmware = {
+        build : null,
+        config : null,
+        version : null
+    }
 };
 
 function EngineConfigFirstTime(callback) {
@@ -58,7 +64,7 @@ Engine.prototype.setTime = function(obj) {
         var d = new Date(obj.utc);
         log.debug("Setting the time to " + d.toUTCString());
         var t = d.getUTCFullYear() + '-' + d.getUTCMonth() + '-' + d.getUTCDay() + ' ' + d.getUTCHours() + ':' + d.getUTCMinutes() + ':' + d.getUTCSeconds()
-    cmd = 'timedatectl set-time ' + t + '; timedatectl';
+        cmd = 'timedatectl set-time ' + t + '; timedatectl';
         util.doshell(cmd, function(stdout) {
             log.debug(stdout);
         });
@@ -80,10 +86,10 @@ Engine.prototype.getVersion = function(callback) {
         this.version.hash = (data || "").trim();
         this.version.number = "";
         this.version.debug = ('debug' in argv);
-        fs.readFile('version.json', 'utf8', function(err, data) {
+	fs.readFile('version.json', 'utf8', function(err, data) {
             if(err) {
                 this.version.type = 'dev';
-                return callback(null, this.version);
+		        return callback(null, this.version);
             }
             try {
                 data = JSON.parse(data);
@@ -93,11 +99,17 @@ Engine.prototype.getVersion = function(callback) {
                 }
             } catch(e) {
                 this.version.type = 'dev';
-                this.version.number
             } finally {
-                callback(null, this.version);
+		        callback(null, this.version);
             }
         }.bind(this))
+    }.bind(this));
+}
+
+Engine.prototype.getInfo = function(callback) {
+    callback(null, {
+        firmware : this.firmware,
+        version : this.version
     });
 }
 
@@ -125,6 +137,24 @@ Engine.prototype.start = function(callback) {
             }
         },
 
+        function profile_shim(callback) {
+            var profile = config.engine.get('profile');
+            var def = '';
+            if(profile) { 
+                return callback(); 
+            } else {
+                fs.readFile('../site/.default','utf8', function (err, content) {
+                    if(err){
+                        def = 'default';
+                    } else {
+                        def = content;
+                        //console.log(def);
+                    }
+                    config.engine.set('profile', def, callback);
+                })
+            }
+        }.bind(this), 
+
         function get_fabmo_version(callback) {
             log.info("Getting engine version...");
             this.getVersion(function(err, data) {
@@ -133,6 +163,7 @@ Engine.prototype.start = function(callback) {
                     this.version = "";
                     return callback();
                 }
+                log.info("Got engine version: " + JSON.stringify(this.version));
                 this.version = data;
                 callback();
             }.bind(this));
@@ -141,22 +172,28 @@ Engine.prototype.start = function(callback) {
         function clear_approot(callback) {
             if('debug' in argv) {
                 log.info("Running in debug mode - clearing the approot.");
+                var random = Math.floor(Math.random() * (99999 - 10000)) + 10000;
+                log.info("Setting engine version to random");
+                config.engine.set('version', random.toString());
                 config.clearAppRoot(function(err, stdout) {
                     if(err) { log.error(err); }
                     else {
                         log.debug(stdout);
                     }
+                    config.engine.set('version', random.toString());
                     callback();
                 });
+                
             } else {
                 var last_time_version = config.engine.get('version').trim();
-                var this_time_version = this.version.hash.trim();
+                var this_time_version = (this.version.hash || this.version.number || "").trim();
                 log.debug("Previous engine version: " + last_time_version);
                 log.debug(" Current engine version: " + this_time_version);
 
                 if(last_time_version != this_time_version) {
                     log.info("Engine version has changed - clearing the approot.");
                     config.clearAppRoot(function(err, stdout) {
+                        config.engine.set('version', this_time_version);
                         if(err) { log.error(err); }
                         else {
                             log.debug(stdout);
@@ -167,8 +204,9 @@ Engine.prototype.start = function(callback) {
                     log.info("Engine version is unchanged since last run.");
                     callback();
                 }
+                
             }
-            config.engine.set('version', this_time_version);
+            
         }.bind(this),
 
         function create_data_directories(callback) {
@@ -226,7 +264,11 @@ Engine.prototype.start = function(callback) {
         }.bind(this),
 
         function set_units(callback) {
-            this.machine.driver.setUnits(config.machine.get('units'), callback);
+            if(this.machine.isConnected()) {
+                this.machine.driver.setUnits(config.machine.get('units'), callback);
+            } else {
+                callback(null);
+            }
         }.bind(this),
 
         // Configure G2 by loading all its json settings and static configuration parameters
@@ -251,14 +293,17 @@ Engine.prototype.start = function(callback) {
         function get_g2_version(callback) {
             if(this.machine.isConnected()) {
                 log.info("Getting G2 firmware version...");
-                this.machine.driver.get('fb', function(err, value) {
+                this.machine.driver.get(['fb','fbs','fbc'], function(err, value) {
                     if(err) {
                         log.error('Could not get the G2 firmware build. (' + err + ')');
                     } else {
-                        log.info('G2 Firmware Build: ' + value);
+                        log.info('G2 Firmware Information: ' + value);
+                        this.firmware.build = value[0];
+                        this.firmware.version = value[1];
+                        this.firmware.config = value[2];
                     }
                     callback(null);
-                });
+                }.bind(this));
             } else {
                 log.warn("Skipping G2 firmware version check due to no connection.")
                 callback(null);
@@ -273,7 +318,13 @@ Engine.prototype.start = function(callback) {
             '3sa','3tr','3mi',
             '4sa','4tr','4mi',
             '5sa','5tr','5mi',
-            '6sa','6tr','6mi'
+            '6sa','6tr','6mi',
+            'ja',
+            '5ma','6ma',
+            '5po','6po',
+            '5su','6su',
+            '5pm','6pm',
+            '5pl','6pl'
           ]
           var do_shim = false;
           for(var i=0; i<entries.length; i++) {
@@ -329,6 +380,10 @@ Engine.prototype.start = function(callback) {
                 callback(null, result);
             });
         },
+        function load_profile_macros(callback) {
+            log.info('Loading profile macros...');
+            macros.loadProfile(callback);
+        },
 
         function load_macros(callback) {
             log.info("Loading macros...")
@@ -336,14 +391,22 @@ Engine.prototype.start = function(callback) {
         },
 
         function load_instance_config(callback) {
+            if(!this.machine.isConnected()) {
+                log.warn('Not configuring instance due to no connection to motion system.')
+                return callback(null);
+            }
             log.info("Loading instance info...");
             config.configureInstance(this.machine.driver, callback);
         }.bind(this),
 
         function apply_instance_config(callback) {
+            if(!this.machine.isConnected()) {
+                log.warn('Not applying instance config due to no connection to motion system.')
+                return callback(null);
+            }
             log.info("Applying instance configuration...");
             config.instance.apply(callback);
-        },
+        }.bind(this),
 
         function generate_auth_key(callback) {
           log.info("Configuring secret key...")
@@ -370,6 +433,12 @@ Engine.prototype.start = function(callback) {
         // Kick off the server if all of the above went OK.
         function start_server(callback) {
             log.info("Setting up the webserver...");
+	    var fmt = {
+		            'application/json': function(req, res, body) {
+				                return cb(null, JSON.stringify(body, null, '\t'));
+						        }
+			        }
+
             var server = restify.createServer({name:"FabMo Engine"});
             this.server = server;
 
@@ -401,7 +470,9 @@ Engine.prototype.start = function(callback) {
                     });
             }
 
-            server.use(restify.queryParser());
+            server.use(restify.plugins.queryParser({
+                mapParams : true
+            }));
 
             server.on('uncaughtException', function(req, res, route, err) {
                 log.uncaught(err);
@@ -414,7 +485,10 @@ Engine.prototype.start = function(callback) {
 
             // Configure local directory for uploading files
             log.info("Cofiguring upload directory...");
-            server.use(restify.bodyParser({'uploadDir':config.engine.get('upload_dir') || '/tmp'}));
+            server.use(restify.plugins.bodyParser({
+                'uploadDir':config.engine.get('upload_dir') || '/tmp',
+                mapParams: true
+            }));
             server.pre(restify.pre.sanitizePath());
 
             log.info("Cofiguring authentication...");
@@ -439,9 +513,9 @@ Engine.prototype.start = function(callback) {
             server.use(authentication.passport.initialize());
             server.use(authentication.passport.session());
 
-            authentication.configure();
+
             log.info("Enabling gzip for transport...");
-            server.use(restify.gzipResponse());
+            server.use(restify.plugins.gzipResponse());
             // Import the routes module and apply the routes to the server
             log.info("Loading routes...");
             server.io = socketio.listen(server.server);
@@ -453,11 +527,14 @@ Engine.prototype.start = function(callback) {
                 callback(null, server);
             });
 
+            authentication.configure();
+
         }.bind(this),
         ],
 
         function(err, results) {
             if(err) {
+                log.stack();
                 log.error(err);
                 typeof callback === 'function' && callback(err);
             } else {

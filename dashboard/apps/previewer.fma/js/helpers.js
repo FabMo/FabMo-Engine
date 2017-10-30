@@ -1,5 +1,4 @@
 /*jslint todo: true, browser: true, continue: true, white: true*/
-/*global THREE, GParser, GCodeViewer */
 
 /**
  * Written by Alex Canales for ShopBotTools, Inc.
@@ -9,10 +8,9 @@
  * This file contains the class managing the UI helpers (arrows, axis, etc).
  */
 
-var GCodeViewer = require('./path.js');
-var typeface = require('./helvetiker_regular.typeface.js');
-THREE.typeface_js.loadFace(typeface);
-GCodeViewer.Helpers = function(scene) {
+var THREE = require("three");
+
+var Helpers = function(scene) {
     "use strict";
     var that = this;
 
@@ -40,7 +38,7 @@ GCodeViewer.Helpers = function(scene) {
     //size is a struct { length, head, font }
     function createArrowsHelper(headSize) {
         var length = 3, fontSize = headSize * 2;
-        var options = {'font' : 'helvetiker' ,'weight' : 'normal',
+        var options = {'font' : 'helvetiker','weight' : 'normal',
             'style' : 'normal','size' : fontSize,'curveSegments' : 300};
         var margin = headSize + headSize / 2;
 
@@ -123,4 +121,4 @@ GCodeViewer.Helpers = function(scene) {
     that.scene.add(that.axisHelpers);
 };
 
-module.exports = GCodeViewer;
+exports.Helpers = Helpers;

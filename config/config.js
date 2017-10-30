@@ -1,5 +1,5 @@
 var async = require('async');
-var fs = require('fs');
+var fs = require('fs-extra');
 var path = require('path');
 var PLATFORM = require('process').platform;
 var log = require('../log').logger('config');
@@ -10,8 +10,6 @@ var util = require('util');
 var Config = function(config_name) {
 	this._cache = {};
 	this.config_name = config_name;
-	this.default_config_file = __dirname + '/default/' + config_name + '.json';
-	this.config_file = Config.getDataDir('config') + '/' + config_name + '.json';
 	this._loaded = false;
 	this.userConfigLoaded = false;
 	EventEmitter.call(this);
@@ -87,9 +85,10 @@ Config.prototype.load = function(filename, callback) {
 };
 
 Config.prototype.save = function(callback) {
-	if(this._loaded && this.config_file) {
-		log.debug("Saving config to " + this.config_file);
-		fs.open(this.config_file, 'w', function(err, fd) {
+	var config_file = this.getConfigFile();
+	if(this._loaded && config_file) {
+		log.debug("Saving config to " + config_file);
+		fs.open(config_file, 'w', function(err, fd) {
 			if(err) {
 				log.error(err);
 				callback(err);
@@ -105,19 +104,13 @@ Config.prototype.save = function(callback) {
 								log.error(err);
 							}
 							fs.closeSync(fd);
-							log.debug('fsync()ed ' + this.config_file);
+							log.debug('fsync()ed ' + config_file);
 							callback(err);
 						}.bind(this));
 					}
 				}.bind(this));
 			}
 		}.bind(this));
-		/*
-		fs.writeFile(this.config_file, JSON.stringify(this._cache, null, 4), function(err, data) {
-			log.debug("Config file saved.");
-			callback(err, data);
-		});
-		*/
 	} else {
 		setImmediate(callback);
 	}
@@ -128,22 +121,26 @@ Config.prototype.save = function(callback) {
 Config.prototype.init = function(callback) {
 		var default_count;
         var user_count;
+        var default_config_file = this.getDefaultConfigFile();
+        var profile_config_file = this.getProfileConfigFile();
+        var config_file = this.getConfigFile();
         async.series(
 		[
-			function loadDefault(callback) { this.load(this.default_config_file, callback); }.bind(this),
+			function loadDefault(callback) { this.load(default_config_file, callback); }.bind(this),
+			function loadProfile(callback) { this.load(profile_config_file, callback); }.bind(this),
 			function saveDefaultCount(callback) {
 				default_count = Object.keys(this._cache).length;
 				callback();
 			}.bind(this),
 			function loadUserConfig(callback) {
-				this.load(this.config_file, function(err, data) {
+				this.load(config_file, function(err, data) {
 					if(err) {
 						if(err.code === "ENOENT") {
-							log.warn('Configuration file ' + this.config_file + ' not found.');
+							log.warn('Configuration file ' + config_file + ' not found.');
                             this._loaded = true;
 							this.save(callback, true);
 						} else {
-							log.warn('Problem loading the user configuration file "' + this.config_file + '": ' + err.message);
+							log.warn('Problem loading the user configuration file "' + config_file + '": ' + err.message);
 							this._loaded = true;
 							this.userConfigLoaded = true;
 							this.save(callback);
@@ -171,7 +168,28 @@ Config.prototype.init = function(callback) {
 	);
 };
 
+Config.prototype.getDefaultConfigFile = function() {
+	return Config.getDefaultProfileDir('config') + this.config_name + '.json';
+}
+
+Config.prototype.getProfileConfigFile = function() {
+	return Config.getProfileDir('config') + this.config_name + '.json';
+}
+
+Config.prototype.getConfigFile = function() {
+	return Config.getDataDir('config') + '/' + this.config_name + '.json';
+}
+
 // "Static Methods"
+
+Config.getProfileDir = function(d) {
+	var profile = Config.getCurrentProfile() || 'default';
+	return __dirname + '/../profiles/' + profile + '/' + (d ? (d + '/') : '');
+}
+
+Config.getDefaultProfileDir = function(d) {
+	return __dirname + '/../profiles/default/' + (d ? (d + '/') : '');
+}
 
 Config.getDataDir = function(name) {
 	switch(PLATFORM) {
@@ -190,6 +208,53 @@ Config.getDataDir = function(name) {
 	return dir;
 };
 
+Config.getCurrentProfile = function() {
+	var cfg = require('./index');
+	return cfg.engine.get('profile');
+}
+
+Config.deleteUserMacros = function(callback) {
+	var installedMacrosDir = Config.getDataDir('macros');
+	fs.readdir(installedMacrosDir, function(err, files) {
+		if(err) { return callback(err); }
+	  	try {  		
+		  	files.forEach(function(file) {
+		  		var to_delete = path.join(installedMacrosDir, file);
+		  		fs.removeSync(to_delete);
+		  	});
+	  		callback();
+	  	} catch(e) {
+	  		log.error(e);
+	  		callback(e);
+	  	}
+	})
+}
+
+Config.deleteUserConfig = function(callback) {
+	var config_dir = Config.getDataDir('config');
+	fs.readdir(config_dir, function(err, files) {
+		if(err) { return callback(err); }
+	  	try {  		
+		  	files.forEach(function(file) {
+		  		if(file.search(/auth_secret|engine\.json|updater\.json$/i) === -1) { 
+					var p = path.join(config_dir, file);
+			  		fs.removeSync(p);
+		  		}
+		  	});
+	  		callback();
+	  	} catch(e) {
+	  		log.error(e);
+	  		callback(e);
+	  	}
+	})
+}
+
+Config.deleteProfileData = function(callback) {
+	Config.deleteUserConfig(function(err, data) {
+		if(err) { log.error(err); }
+		Config.deleteUserMacros(callback);
+	});
+}
 // Creates the data directory if it does not already exist
 Config.createDataDirectories = function(callback) {
 	var create_directory = function(dir, callback) {
@@ -208,7 +273,7 @@ Config.createDataDirectories = function(callback) {
 			}
 		});
 	}.bind(this);
-	dirs = [null, 'debug', 'db', 'log', 'files', 'config', 'apps', 'macros', 'approot', path.join('approot','approot')];
+	dirs = [null, 'debug', 'backup', 'db', 'log', 'files', 'config', 'apps', 'macros', 'approot', path.join('approot','approot')];
 	async.eachSeries(dirs, create_directory, callback);
 };
 

@@ -43,14 +43,14 @@ function connect(callback) {
 			gcode_path = null;
 			break;
 	}
-	if(control_path && gcode_path) {
-		exports.machine = new Machine(control_path, gcode_path, callback);
+	if(control_path) {
+		exports.machine = new Machine(control_path, callback);
 	} else {
 		typeof callback === "function" && callback('No supported serial path for platform "' + PLATFORM + '"');
 	}
 }
 
-function Machine(control_path, gcode_path, callback) {
+function Machine(control_path, callback) {
 
 	// Handle Inheritance
 	events.EventEmitter.call(this);
@@ -72,6 +72,14 @@ function Machine(control_path, gcode_path, callback) {
 		in6 : 1,
 		in7 : 1,
 		in8 : 1,
+		out1 :0,
+		out2 :0,
+		out3 :0,
+		out4 :0,
+		out5 :0,
+		out6 :0,
+		out7 :0,
+		out8 :0,
 		job : null,
 		info : null,
 		unit : 'mm',
@@ -85,10 +93,10 @@ function Machine(control_path, gcode_path, callback) {
 	this.driver = new g2.G2();
 	this.driver.on("error", function(err) {log.error(err);});
 
-	this.driver.connect(control_path, gcode_path, function(err, data) {
-
+	this.driver.connect(control_path, function(err, data) {
 	    // Set the initial state based on whether or not we got a valid connection to G2
 	    if(err){
+				log.error(JSON.stringify(err));
 	    	log.warn("Setting the disconnected state");
 	    	this.die("A real bad error has occurred.")
 		    if(typeof callback === "function") {
@@ -116,25 +124,24 @@ function Machine(control_path, gcode_path, callback) {
 			]
 
 	    // Idle
-	    this.setRuntime(null, function() {});
-
+	    this.setRuntime(null, function() {
 	    if(err) {
-		    typeof callback === "function" && callback(err);
-	    } else {
-		    this.driver.requestStatusReport(function(result) {
-		    	if('stat' in result) {
-		    		switch(result.stat) {
-		    			case g2.STAT_INTERLOCK:
-		    			case g2.STAT_SHUTDOWN:
-		    			case g2.STAT_PANIC:
-		    				this.die('A G2 exception has occurred. You must reboot your tool.');
-		    				break;
-		    		}
-		    	}
-			    typeof callback === "function" && callback(null, this);
-		    }.bind(this));
-	    }
-
+                typeof callback === "function" && callback(err);
+            } else {
+                this.driver.requestStatusReport(function(result) {
+                    if('stat' in result) {
+                        switch(result.stat) {
+                            case g2.STAT_INTERLOCK:
+                            case g2.STAT_SHUTDOWN:
+                            case g2.STAT_PANIC:
+                                this.die('A G2 exception has occurred. You must reboot your tool.');
+                                break;
+                        }
+                    }
+                    typeof callback === "function" && callback(null, this);
+                }.bind(this));
+            }
+        }.bind(this));
     }.bind(this));
 
     config.driver.on('change', function(update) {
@@ -156,6 +163,8 @@ function Machine(control_path, gcode_path, callback) {
     this.driver.on('status', function(stat) {
     	this.handleFireButton(stat);
     	this.handleAPCollapseButton(stat);
+		this.handleOkayButton(stat);
+		this.handleCancelButton(stat);
     }.bind(this));
 }
 util.inherits(Machine, events.EventEmitter);
@@ -198,6 +207,23 @@ Machine.prototype.handleFireButton = function(stat) {
 	}
 }
 
+Machine.prototype.handleOkayButton = function(stat){
+	var auth_input = 'in' + config.machine.get('auth_input');
+	if(stat[auth_input] && this.status.state === 'paused') {
+		log.info("Okay hit!")
+		this.resume();
+	}
+}
+
+Machine.prototype.handleCancelButton = function(stat){
+	var quit_input = 'in' + config.machine.get('quit_input');
+	if(stat[quit_input] && this.status.state === 'paused') {
+		log.info("Cancel hit!")
+		this.quit();
+	}
+
+ }
+
 /*
  * State Functions
  */
@@ -209,7 +235,16 @@ Machine.prototype.die = function(err_msg) {
 Machine.prototype.restoreDriverState = function(callback) {
 	callback = callback || function() {};
 	this.driver.setUnits(config.machine.get('units'), function() {
-		config.driver.restore(callback);
+		this.driver.requestStatusReport(function(status) {
+			for (var key in this.status) {
+				if(key in status) {
+					this.status[key] = status[key];
+				}
+			}			
+			config.driver.restore(function() {
+				callback();
+			});			
+		}.bind(this));
 	}.bind(this));
 }
 
@@ -242,9 +277,9 @@ Machine.prototype.arm = function(action, timeout) {
 	this.preArmedState = this.status.state;
 	this.preArmedInfo = this.status.info;
 
+	var requireAuth = config.machine.get('auth_required');
 
-
-	if(config.machine.get('auth_input') == 0) {
+	if(!requireAuth) {
 		log.info("Firing automatically since authorization is disabled.");
 		this.fire(true);
 	} else {
@@ -314,8 +349,8 @@ Machine.prototype.fire = function(force) {
 
 Machine.prototype.authorize = function(timeout) {
 	var timeout = timeout || config.machine.get('auth_timeout');
-	if(timeout) {
-			log.info("Machine is authorized for the next " + timeout + " seconds.");
+	if(config.machine.get('auth_required') && timeout) {
+		log.info("Machine is authorized for the next " + timeout + " seconds.");
 		if(this._authTimer) { clearTimeout(this._authTimer);}
 		this._authTimer = setTimeout(function() {
 			log.info('Authorization timeout (' + timeout + 's) expired.');
@@ -368,8 +403,8 @@ Machine.prototype.runJob = function(job) {
 	}.bind(this));
 };
 
+
 Machine.prototype.setPreferredUnits = function(units, callback) {
-	log.info("SETTING PREFERRED UNITS");
 	try {
 		if(config.driver.changeUnits) {
 			units = u.unitType(units);
@@ -457,26 +492,20 @@ Machine.prototype._runFile = function(filename) {
 		if(err) {
 			return log.error(err);
 		}
-		fs.readFile(filename, 'utf8', function (err,data) {
-			if (err) {
-				log.error(err);
-				return;
-			} else {
-				runtime.runString(data, function() {});
-			}
-		}.bind(this));
+		runtime.runFile(filename);
 	});
 };
 
 Machine.prototype.setRuntime = function(runtime, callback) {
+	runtime = runtime || this.idle_runtime;
 	try {
 		if(runtime) {
 			if(this.current_runtime != runtime) {
 				if(this.current_runtime) {
 					this.current_runtime.disconnect();
 				}
-				runtime.connect(this);
 				this.current_runtime = runtime;
+				runtime.connect(this);
 			}
 		} else {
 			this.current_runtime = this.idle_runtime;
@@ -516,8 +545,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 	this.fireButtonDebounce = false ;
 	if ((source === this) || (source === this.current_runtime)) {
 		log.info("Got a machine state change: " + newstate)
-		this.status.state = newstate;
-
 		if(stateinfo) {
 			this.status.info = stateinfo
 			this.info_id += 1;
@@ -526,8 +553,14 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 			delete this.status.info
 		}
 
-		switch(this.status.state) {
+		switch(newstate) {
 			case 'idle':
+				if(this.status.state != 'idle') {
+					this.driver.command({"out4":0});
+					if(this.current_runtime != this.idle_runtime) {
+						this.setRuntime(null, function() {});
+					}	
+				}
 				this.status.nb_lines = null;
 				this.status.line = null;
 				if(this.action) {
@@ -542,16 +575,23 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				this.action = null;
 				// Deliberately fall through
 			case 'paused':
-				this.driver.get('mpo', function(err, mpo) {
-					if(config.instance) {
-						config.instance.update({'position' : mpo});
-					}
-				});
+                if(this.status.state != newstate) {
+                    this.driver.get('mpo', function(err, mpo) {
+					    if(config.instance) {
+						    config.instance.update({'position' : mpo});
+					    }
+				    });
+                }
 				break;
 			case 'dead':
 				log.error('G2 is dead!');
 				break;
+			default:
+                //this.driver.command({"out4":1});
+				break;
 		}
+
+		this.status.state = newstate;
 	} else {
 		log.warn("Got a state change from a runtime that's not the current one. (" + source + ")")
 	}
@@ -567,7 +607,7 @@ Machine.prototype.pause = function() {
 };
 
 Machine.prototype.quit = function() {
-	this.disarm();
+    this.disarm();
 	// Quitting from the idle state dismisses the 'info' data
 	if(this.status.state === "idle") {
 		delete this.status.info;
@@ -579,7 +619,10 @@ Machine.prototype.quit = function() {
 		this.status.job.pending_cancel = true;
 	}
 	if(this.current_runtime) {
+		log.info("Quitting the current runtime...")
 		this.current_runtime.quit();
+	} else {
+		log.warn("No current runtime!")
 	}
 };
 
@@ -615,25 +658,32 @@ Machine.prototype.runNextJob = function(callback) {
 }
 
 Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
-	if(this.status.auth) {
-		return this._executeRuntimeCode(runtimeName, code);
-	}
-	if(runtimeName === 'manual') {
-		this.arm(null, config.machine.get('auth_timeout'));
-		return;
+	runtime = this.getRuntime(runtimeName);
+	var needsAuth = runtime.needsAuth(code);
+	if (needsAuth){
+		if(this.status.auth) {
+			return this._executeRuntimeCode(runtimeName, code);
+		}
+		if(runtimeName === 'manual') {
+			this.arm(null, config.machine.get('auth_timeout'));
+			return;
+		} else {
+			this.arm({
+				type : 'runtimeCode',
+				payload : {
+					name : runtimeName,
+					code : code
+				}
+			}, config.machine.get('auth_timeout'));
+		}
 	} else {
-		this.arm({
-			type : 'runtimeCode',
-			payload : {
-				name : runtimeName,
-				code : code
-			}
-		}, config.machine.get('auth_timeout'));
+		this._executeRuntimeCode(runtimeName, code);
 	}
 }
 
 Machine.prototype.sbp = function(string) {
 	this.executeRuntimeCode('sbp', string);
+
 }
 
 Machine.prototype.gcode = function(string) {
@@ -651,11 +701,7 @@ Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 			if(err) {
 				log.error(err);
 			} else {
-				runtime.executeCode(code, function(err, data) {
-					this.authorize();
-					var callback = callback || function() {};
-					callback(err, data);
-				}.bind(this));
+				runtime.executeCode(code);
 			}
 		}.bind(this));
 	}

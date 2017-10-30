@@ -13,7 +13,7 @@
     "video" :  {
         "path" : "/dev/video0",
         "width" : 640,
-        "height" : 360,
+        "height" : 480,
         "framerate" : 15
     }
 }

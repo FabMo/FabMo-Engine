@@ -1,32 +1,44 @@
 module.exports = function apps(fabmo) {
 setupAppManager();
+var defaultApp = '';
 function refreshApps() {
     // Load the list of apps available on the tool
     fabmo.getApps(function(err, apps) {
         if (err) {
             return console.error(err);
         }
-        $(".app-listing").empty();
-
+        fabmo.getConfig(function(err, data) {
+            if (err){
+                console.log(err);
+            } else {
+                defaultApp = data.machine.default_app;
+                        $(".app-listing").empty();
+        console.log(defaultApp);
         html = [
             '<tr class="app-install-row"><td>',
             '<div class="app-ghost noselect"><span class="app-ghost-icon fa fa-plus"></span></div>',
             '</td>',
             '<td colspan="4" class="app-install-text noselect">Click here to install an app</td>',
             '</tr>'].join('');
-            $(".app-listing").append(html);
+            $(".app-listing").prepend(html);
 
             $.each(apps, function(key, val) {
             
                 var appid = 'app_' + val.id;
                 var appiconid = 'appicon_' + val.id;
+                var checked = "";
                 var id = val.id;
                 var delete_button = '';
                 if (val.icon_display !== 'none') {
                     delete_button = '<div class="delete-button" id="delete_' + appid + '"><img class="svg" src="images/recycling10.svg"></div>';
                 }
+                if (id === defaultApp){
+                    checked = 'checked';
+                }
                 html = [
                     '<tr><td>',
+                    '<input class="defaultRadio" type="radio" name="app" value="'+id+'"'+checked+'>',
+                    '</td><td>',
                     '<a id="' + appiconid + '" class="app-icon-link">',
                     '<img src="' + location.origin + '/' + val.icon_url + '" class="app-icon" style="background-color: ' + val.icon_background_color + '" />',
                     '</a>',
@@ -69,9 +81,21 @@ function refreshApps() {
 
 
             }); // each
+            $('.defaultRadio').on('change', function(){
+                newDefault = $(this).val();
+                data.machine.default_app = newDefault;
+                fabmo.setConfig(data, function(err, data){
+                    if (err){
+                        console.log(err);
+                    }
+                });
+            });
             $('.app-install-row').click(function(evt) {
                 jQuery('#file').trigger('click');
             });
+            }
+        });
+
 
         });
     };

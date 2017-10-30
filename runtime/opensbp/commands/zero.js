@@ -5,10 +5,10 @@ var config = require('../../../config');
 
 /* ZERO */
 
-// {"mpo":""}  return absolute machine positions fox XYZABC axes. 
+// {"mpo":""}  return absolute machine positions fox XYZABC axes.
 // !!!!!!!!!!!! Always in mm, regardless of G20/G21 setting
 
-// {"pos":""}  return work coordinate positions fox XYZABC axes. 
+// {"pos":""}  return work coordinate positions fox XYZABC axes.
 //              In mm or inches depending on G20 or G21
 
 // {"g55":""}  returns the current offset to the UCS origin
@@ -16,6 +16,7 @@ var config = require('../../../config');
 
 
 exports.ZX = function(args, callback) {
+	console.log("DOING THE ZX")
 	this.machine.driver.get('mpox', function(err, MPO) {
 		if(err) { return callback(err); }
 		var zxObj = {};
@@ -27,11 +28,12 @@ exports.ZX = function(args, callback) {
 		config.driver.setMany(zxObj, function(err, value) {
 			if(err) { return callback(err); }
 			this.cmd_posx = this.posx = 0;
-			this.driver.requestStatusReport(function(report) {
-				callback();
-			});
+			callback();
 		}.bind(this));
 	}.bind(this));
+
+	//this.emit_gcode("G10 L20 P2 X0");
+	//callback()
 };
 
 exports.ZY = function(args, callback) {
@@ -46,17 +48,18 @@ exports.ZY = function(args, callback) {
 		config.driver.setMany(zyObj, function(err, value) {
 			if(err) { return callback(err); }
 			this.cmd_posy = this.posy = 0;
-			this.driver.requestStatusReport(function(report) {
 				callback();
-			});
 		}.bind(this));
 	}.bind(this));
+	//this.emit_gcode("G10 L20 P2 Y0");
+	//callback()
+
 };
 
 exports.ZZ = function(args, callback) {
 	this.machine.driver.get('mpoz', function(err, MPO) {
 		var zzObj = {};
-		var unitConv = 1.0;		
+		var unitConv = 1.0;
 		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
 		}
@@ -66,6 +69,9 @@ exports.ZZ = function(args, callback) {
 			callback();
 		}.bind(this));
 	}.bind(this));
+
+	//this.emit_gcode("G10 L20 P2 Z0");
+	//callback()
 };
 
 exports.ZA = function(args, callback) {

@@ -20,7 +20,10 @@ var log = require('../log').logger('config');
 // Also, create `exports.engine` which is an EngineConfig object
 function configureEngine(callback) {
 	exports.engine = new EngineConfig();
-	exports.engine.init(callback);
+	exports.engine.init(function() {
+		console.log(Config.getCurrentProfile());
+		callback();
+	});
 }
 
 // Configure the driver by loading the configuration from disk and synchronizing
@@ -111,6 +114,7 @@ exports.configureInstance = configureInstance;
 
 exports.createDataDirectories = Config.createDataDirectories;
 exports.getDataDir = Config.getDataDir;
+exports.getProfileDir = Config.getProfileDir;
 exports.getLockFile = getLockFile;
 
 exports.clearAppRoot = clearAppRoot

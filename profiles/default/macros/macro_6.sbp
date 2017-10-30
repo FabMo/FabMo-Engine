@@ -1,0 +1,3 @@
+'!FABMO!name:Start Toolhead
+'!FABMO!description:Start the toolhead
+' Macro #6 is typically used to start the toolhead (router, spindle, etc)

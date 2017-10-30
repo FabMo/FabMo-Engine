@@ -7,10 +7,11 @@ var uuid = require('node-uuid');
 var fs = require('fs');
 var escapeRE = require('escape-regexp-component');
 var exec = require('child_process').exec;
-
+var stream = require('stream');
+var util = require('util');
 var mime = require('mime');
 var restify = require('restify');
-var errors = restify.errors;
+var errors = require('restify');
 
 ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
 ALLOWED_APP_EXTENSIONS = ['.zip', '.fma'];
@@ -76,6 +77,11 @@ function Queue(){
   this.getContents = function() { return queue; };
   this.isEmpty = function(){ return (queue.length === 0); };
   this.enqueue = function(item){ queue.push(item); };
+  this.multiEnqueue = function(iterable) {
+    iterable.forEach(function(item) {
+      queue.push(item);
+    });
+  }
   this.dequeue = function(){
 
     // if the queue is empty, return immediately
@@ -270,8 +276,6 @@ function serveStatic(opts) {
 
     function serve(req, res, next) {
         var uricomp = decodeURIComponent(req.path());
-        console.log("URI COMPONENT: " + uricomp);
-        console.log("DIR: " + opts.directory);
         var file = path.join(opts.directory, uricomp);
 
         if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -369,7 +373,7 @@ function Watchdog(timeout,exit_code){
     var watchdog_exit_code=exit_code||20;
 
     watchdog_exit = function(){
-        throw new Error("G2 is not responding");
+        //throw new Error("G2 is not responding");
         //process.exit(this.watchdog_exit_code);
     };
 
@@ -435,6 +439,61 @@ var unitType = function(u) {
       break;
   }
 }
+
+
+
+function LineNumberer(options) {
+  // allow use without new
+  if (!(this instanceof LineNumberer)) {
+    return new LineNumberer(options);
+  }
+  this.count = 0;
+  // init Transform
+  stream.Transform.call(this, options);
+}
+util.inherits(LineNumberer, stream.Transform);
+
+
+
+LineNumberer.prototype._transform = function(chunk, enc, next) {
+  var data = chunk.toString();
+  if (this._lastLineData) { data = this._lastLineData + data; }
+
+  var lines = data.split('\n');
+  this._lastLineData = lines.splice(lines.length-1,1)[0];
+  block = []
+  for(var i=0; i<lines.length; i++) {
+    this.count += 1;
+    //this.push("N" + this.count + " " + lines[i] + '\n');
+    block.push("N" + this.count + " " + lines[i]);
+  }
+
+  this.push(block.join('\n'))
+  next();
+};
+
+LineNumberer.prototype._flush = function(done) {
+  if (this._lastLineData) { this.push(this._lastLineData); }
+  this._lastLineData = null;
+  done();
+};
+
+var countLineNumbers = function(filename, callback) {
+    var i;
+    var lines = 0;
+    require('fs').createReadStream(filename)
+      .on('data', function(chunk) {
+        for (i=0; i < chunk.length; ++i)
+          if (chunk[i] == 10) lines++;
+      })
+      .on('end', function() {
+        callback(null, lines)
+      });
+}
+
+exports.countLineNumbers = countLineNumbers;
+exports.LineNumberer = LineNumberer;
+
 
 exports.serveStatic = serveStatic;
 exports.Queue = Queue;

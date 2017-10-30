@@ -4,7 +4,7 @@ var dashboard = require('../dashboard');
 var util = require('../util');
 var fs = require('fs');
 var upload = require('./util').upload;
-
+var static = require('../static');
 
 
 /**
@@ -206,7 +206,7 @@ module.exports = function(server) {
     server.post('/apps/:id/config', postAppConfig);
     server.del('/apps/:id', deleteApp);
     server.get('/apps/:id/files', listAppFiles);
-    server.get(/\/approot\/?.*/, restify.serveStatic({
+    server.get(/\/approot\/?.*/, static({
         directory: config.getDataDir('approot'),
     }));
     server.get('/updater', updater);

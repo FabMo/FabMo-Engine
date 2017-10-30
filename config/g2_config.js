@@ -95,6 +95,14 @@ G2Config.prototype.restore = function(callback) {
 	this.update(this._cache, callback);
 }
 
+G2Config.prototype.restoreSome = function(keys, callback) {
+    cache = {};
+	keys.forEach(function(key) {
+		cache[key] = this._cache[key];
+	}.bind(this));
+	this.update(cache, callback);
+}
+
 // Status reports are special, and their format must be whats expected for the machine/runtime environments
 // to work properly.
 // TODO: Move this data out into a configuration file, perhaps.
@@ -119,7 +127,15 @@ G2Config.prototype.configureStatusReports = function(callback) {
 						"in5":true,
 						"in6":true,
 						"in7":true,
-						"in8":true
+						"in8":true,
+						"out1":true,
+						"out2":true,
+						"out3":true,
+						"out4":true,
+						"out5":true,
+						"out6":true,
+						"out7":true,
+						"out8":true
 					}});
 		this.driver.command({"qv":0});
 		this.driver.command({"jv":4});

@@ -1,10 +1,13 @@
 {
 	"units" : "in",
 	"time_units" : "s",
+	"quit_input": 4,
 	"auth_timeout" : 30,
+	"auth_required": true,
 	"auth_input" : 2,
 	"ap_input" : 2,
 	"ap_time" : 8,
+	"default_app" : "home",
 	"envelope" : {
 		"xmin" : 0.0,
 		"xmax" : 6.0,
@@ -15,6 +18,8 @@
 		"xy_speed" : 3.0,
 		"z_speed" : 1.0,
 		"xy_increment" : 0.025,
-		"z_increment" : 0.005
+		"z_increment" : 0.005,
+		"xy_jerk" : 250,
+		"z_jerk" : 250
 	}
 }

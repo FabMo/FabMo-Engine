@@ -17,4 +17,7 @@ config/data/*.json
 *.orig
 dashboard/build/*
 !dashboard/build/index.html
+profiles/*
+profiles/.*
+!profiles/default
 install_token

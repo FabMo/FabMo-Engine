@@ -3,6 +3,105 @@ body {
   height: 100%;
 }
 
+.filter {
+    display: none;
+     position: fixed;
+     top: 0;
+     left: 0;
+     bottom: 0;
+     right: 0;
+     z-index: 2000;
+     background: #000;
+     opacity: 0.8;
+
+}
+
+.tour-dialogue{
+  width: 50%;
+  max-width: 500px;
+  min-width: 300px;
+  padding: 2rem;
+  position: absolute;
+  z-index: 2001;
+  background-color: #eee;
+  color: #222;
+  display: none;
+  top: 30%;
+  left: 50%;
+  margin-right: -50%;
+  transform: translate(-50%, -50%) 
+}
+
+.tour-text {
+  margin-bottom: 0;
+}
+
+.next{
+  width: 100px;
+  padding: 1rem;
+  text-align: center;
+  color: #fff;
+  border-radius: 5px;
+  background-color: #32B433;
+  cursor: pointer;
+  margin-left: auto;
+  margin-right: auto;
+  display: inline-block;
+}
+
+.no{
+  width: 100px;
+  padding: 1rem;
+  text-align: center;
+  color: #fff;
+  border-radius: 5px;
+  background-color: #9C210C;
+  cursor: pointer;
+  margin-left: auto;
+  margin-right: auto;
+  display: inline-block;
+  margin-left: 1rem;
+}
+
+.tour-buttons {
+  margin-top: 1rem;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+
+.tour-pointer {
+  position: absolute;
+    left: 7px;
+    max-width: 250px;
+    text-align: left;
+    background-color: #ffffff;
+    border: 1px solid #dddddd;
+    box-shadow: 0px 2px 5px -1px rgba(0,0,0,0.75);
+    z-index: 2002;
+    padding: 0.5rem;
+    display: none;
+    border-radius: 2px;
+}
+
+.pointer{
+  position: absolute;
+    left: 5px;
+    width: 1rem;
+    height: 1rem;
+    margin-top: 1px;
+    transform: translatex(2.1em);
+    background-color: #ffffff;
+    -ms-transform: rotate(45deg);
+    -webkit-transform: rotate(45deg);
+    transform: rotate(45deg);
+    border-bottom: 1px solid #dddddd;
+    border-right: 1px solid #dddddd;
+    box-shadow: 2.5px 2.5px 5px -2.5px rgba(0,0,0,0.75);
+}
+
 .running {
   animation: pulse 2s infinite;
 }
@@ -224,7 +323,7 @@ td.actions-control {
     -webkit-user-select: none;  /* Chrome all / Safari all */
       -moz-user-select: none;     /* Firefox all */
         -ms-user-select: none;      /* IE 10+ */
-          user-select: none;    
+          user-select: none;
 }
 
 
@@ -234,7 +333,7 @@ td.actions-control {
   background-color: #333;
   color: #fff;
   width: 145px !important;
-  
+
 }
 
 .chosen .play-button, .chosen .icon-row {
@@ -272,13 +371,13 @@ td.actions-control {
   }
 
 
-.name {
+.job_name,  #name {
     padding: 1px;
     font-weight: bold;
-    margin-bottom: 0.5em;
-    line-height: 1.1em;
-    height: 30px;
+    line-height: 1.1rem;
+    height: 40px;
     overflow: hidden;
+    position: relative;
 
 }
 
@@ -331,8 +430,8 @@ td.actions-control {
     margin-left: 0.5em;
   }
 
-  .name {
-    height: 15px;
+  .job_name, #name {
+    height: 20px;
   }
 
   .job_item, .chosen, .recent_item{
@@ -345,15 +444,15 @@ td.actions-control {
     overflow: hidden;
     white-space: nowrap;
     margin-left: 2.5em;
-  } 
-  
+  }
+
   .chosen .description {
     width: 80% !important;
 }
 }
 
 .preview, .edit, .download, .cancel {
-  
+
   z-index: 1000;
 }
 
@@ -372,7 +471,7 @@ td.actions-control {
     -webkit-user-select: none;  /* Chrome all / Safari all */
       -moz-user-select: none;     /* Firefox all */
         -ms-user-select: none;      /* IE 10+ */
-          user-select: none;    
+          user-select: none;
 }
 
 .ellipses:hover {
@@ -512,7 +611,6 @@ td input, td select {margin:0 !important;}
 
 header { padding: 0 3rem;}
 
-.hidden, .hide { display:none; }
 
 header h2 {
   color:#fff;
@@ -705,7 +803,7 @@ table {
   position: absolute;
   top: 40px;
   right: -20px;
-  cursor: pointer;
+
   z-index: 50;
 }
 
@@ -817,6 +915,7 @@ table {
   top: 50%;
   margin:-40px 0 0 -40px;
   display: Block;
+  cursor: pointer;
 }
 .play span {
   margin: 0;
@@ -1036,3 +1135,33 @@ table {
 .job-status-light.three {
 
 }
+
+.progressbar {
+    /*font-size: 14px;
+	background-color: #444;*/
+    color: white;
+    background-color: #aaaaaa;
+   /* padding: 0.5em 1em;*/
+    text-align: left;
+    text-decoration: none;
+    display: inline-block;
+    cursor: pointer;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    width: 100%;
+    height: 1em;
+}
+
+.progressbar .fill {
+	background-color: #2E3865;
+	width: 0%;
+	height: 100%;
+	position: relative;
+	transition: width 0.3s ease 0s;
+  border-radius:0;
+}
+
+.hidden, .hide { display:none; }

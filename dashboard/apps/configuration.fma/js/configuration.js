@@ -67,7 +67,15 @@ function update() {
               v = branch[key];
               input = $('#' + branchname + '-' + key);
               if(input.length) {
-                input.val(String(v));
+                  if (input.is(':checkbox')){
+                    if (v){
+                        input.prop( "checked", true );
+                    } else {
+                        input.prop( "checked", false );
+                    }
+                  } else {
+                    input.val(String(v));
+                  }
               }
             }
         });
@@ -108,15 +116,15 @@ function update() {
     });
 
     fabmo.getUpdaterStatus(function(err, status) {
-      if(err) { 
+      if(err) {
         return console.error(err);
         fabmo.isOnline(function(err, online) {
           if(online) {
-            $('#btn-update').removeClass('disabled');    
-            $('#btn-update').text('Update Software');        
+            $('#btn-update').removeClass('disabled');
+            $('#btn-update').text('Update Software');
           } else {
             $('#btn-update').addClass('disabled');
-            $('#btn-update').text('No Updates Available');        
+            $('#btn-update').text('No Updates Available');
           }
         });
 
@@ -126,7 +134,7 @@ function update() {
         $('#btn-update').text('Update Software');
       } else {
         $('#btn-update').addClass('disabled').removeClass('update-available');
-        $('#btn-update').text('No Updates Available');        
+        $('#btn-update').text('No Updates Available');
       }
     });
 }
@@ -145,9 +153,19 @@ function setConfig(id, value) {
 	} while(i++ < parts.length-1 );
 	co[parts[parts.length-1]] = value;
 	fabmo.setConfig(o, function(err, data) {
-	  update();
+    notifyChange(err,id);
+    update();
 	});
 }
+
+var notifyChange = function(err,id){
+  if(err){
+    $('#'+id).addClass("flash-red");
+  }else{
+    $('#'+id).addClass("flash-green");
+  }
+  setTimeout(function(){$('#'+id).removeClass("flash-red flash-green")},500);
+};
 
 var configData = null;
 $('#btn-update').click(function(evt) {
@@ -173,6 +191,8 @@ $('#btn-backup').click(function(evt) {
         }
     });
 });
+
+
 
 $('#btn-restore').click(function(evt) {
     $('#restore_conf_file').trigger('click');
@@ -228,7 +248,7 @@ $(document).ready(function() {
     registerUnitLabel('.in_mm_label', 'in', 'mm');
     registerUnitLabel('.ipm_mmpm_label', 'in/min', 'mm/min');
     registerUnitLabel('.ips_mmps_label', 'in/sec', 'mm/sec');
-    registerUnitLabel('.i pm2_mmpm2_label', 'in/min<sup>2</sup>', 'mm/min<sup>2</sup>');
+    registerUnitLabel('.inpm2_mmpm2_label', 'in/min<sup>2</sup>', 'mm/min<sup>2</sup>');
     registerUnitLabel('.inrev_mmrev_label', 'in/rev', 'mm/rev');
     registerUnitLabel('.inpm3_mmpm3_label', 'in/min<sup>3</sup>', 'mm/min<sup>3</sup>');
 
@@ -240,6 +260,33 @@ $(document).ready(function() {
     // Populate Settings
     update();
 
+    ///tool tip logiv
+
+$('.tool-tip').click(function(){
+     var tip =$(this).parent().data('tip');
+     var eTop = $(this).offset().top;
+     var eLeft = $(this).offset().left;
+     
+     var realTop = eTop - 10;
+     $('.tip-output').show();
+     var eWidth = $('.tip-output').width();
+     var realLeft = eLeft - eWidth - 40;
+     $('.tip-text').text(tip);
+     $('.tip-output').css('top', realTop + 'px');
+     $('.tip-output').css('left', realLeft + 'px');
+});
+
+$('body').scroll(function(){
+    $('.tip-output').hide();
+});
+
+$('body').click(function(event){   
+       if($(event.target).attr('class') == "tool-tip"){
+          return
+       } else {
+           $('.tip-output').hide();
+       }
+});
     // Update settings on change
     $('.driver-input').change( function() {
         var parts = this.id.split("-");
@@ -251,6 +298,7 @@ $(document).ready(function() {
             if (this.value == 0) { fabmo.runGCode("G90"); }
             else { fabmo.runGCode("G91"); }
             fabmo.setConfig(new_config, function(err, data) {
+                notifyChange(err,id);
                 setTimeout(update, 500);
             });
         }
@@ -267,6 +315,14 @@ $(document).ready(function() {
 
     $('.engine-input').change( function() {
         setConfig(this.id, this.value);
+    });
+
+    $("#machine-auth_required").on('change', function() {
+        if ($(this).is(':checked')) {
+            $(this).attr('value', 'true');
+        } else {
+            $(this).attr('value', 'false');
+        }
     });
 
     $('.machine-input').change( function() {
@@ -304,6 +360,7 @@ $(document).ready(function() {
                 new_config.driver['6tr']=(360/configData.driver["6sa"])*configData.driver["6mi"]/this.value;
             }
             fabmo.setConfig(new_config, function(err, data) {
+                notifyChange(err,id);
                 setTimeout(update, 500);
             });
         }
@@ -312,6 +369,7 @@ $(document).ready(function() {
     $('#input-machine-name').change( function(evt) {
         var id = {name: this.value};
         fabmo.setNetworkIdentity(id, function(err, data) {
+            notifyChange(err,'input-machine-name');
             update();
         });
 

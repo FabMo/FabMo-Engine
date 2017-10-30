@@ -1,6 +1,8 @@
 var fs = require('fs');
 var log = require('../../log').logger('gcode');
 var config = require('../../config');
+var countLineNumbers = require('../../util').countLineNumbers
+
 
 function GCodeRuntime() {
 	this.machine = null;
@@ -11,6 +13,11 @@ function GCodeRuntime() {
 
 GCodeRuntime.prototype.toString = function() {
 	return "[GCodeRuntime]";
+}
+//Check if move requires auth
+GCodeRuntime.prototype.needsAuth = function(s) {
+	//all needs auth (check) so just return true
+	return true;
 }
 GCodeRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
@@ -43,6 +50,7 @@ GCodeRuntime.prototype.resume = function() {
 }
 
 GCodeRuntime.prototype._changeState = function(newstate) {
+	log.debug("Changing state to " + newstate)
 	if(newstate != "idle") {
 		this.ok_to_disconnect = false;
 	}
@@ -61,83 +69,20 @@ GCodeRuntime.prototype._limit = function() {
 }
 
 GCodeRuntime.prototype._onDriverStatus = function(status) {
-
 	// Update the machine copy of g2 status variables
 	for (var key in this.machine.status) {
 		if(key in status) {
 			this.machine.status[key] = status[key];
 		}
 	}
-
 	// Update the machine copy of g2 status variables
 	for (key in status) {
 		this.status_report[key] = status[key];
 	}
 
-	switch(this.status_report.stat) {
-		case this.driver.STAT_INTERLOCK:
-		case this.driver.STAT_SHUTDOWN:
-		case this.driver.STAT_PANIC:
-			return this._die();
-			break;
-		case this.driver.STAT_ALARM:
-			if(this._limit()) { return; }
-			break;
-	}
-
-
-	switch(this.machine.status.state) {
-		case "not_ready":
-			// This shouldn't happen.
-			log.error("WAT.");
-			break;
-
-		case "running":
-			switch(this.status_report.stat) {
-				case this.driver.STAT_HOLDING:
-					this._changeState("paused");
-					this.machine.emit('job_pause', this);
-					break;
-				case this.driver.STAT_STOP:			
-				case this.driver.STAT_END:
-					this._idle();
-					this.machine.emit('job_complete', this);
-					break;
-			}
-			break;
-
-		case "paused":
-			if(this.status_report.stat === this.driver.STAT_RUNNING) {
-				this._changeState("running");
-				this.machine.emit('job_resume', this);
-				break;
-			}
-			if(this.status_report.stat === this.driver.STAT_STOP || this.status_report.stat === this.driver.STAT_END) {
-				this._idle();
-			}
-			break;
-
-		case "armed":
-		case "idle":
-			if(this.status_report.stat === this.driver.STAT_RUNNING) {
-				this._changeState("running");
-				this.machine.emit('job_resume', this);
-				break;
-			}
-			break;
-
-		case "stopped":
-			switch(this.status_report.stat) {
-				case this.driver.STAT_STOP:			
-				case this.driver.STAT_END:
-					this._idle();
-					this.machine.emit('job_complete', this);
-					break;
-			}
-	}
 	this.machine.emit('status',this.machine.status);
-
 };
+
 
 GCodeRuntime.prototype._die = function() {
 	this.machine.status.current_file = null;
@@ -162,7 +107,7 @@ GCodeRuntime.prototype._fail = function(message) {
  	finally {
 		this.machine.status.job=null;
  		this.machine.setState(this, 'stopped', {error : message});
- 	}	
+ 	}
 }
 
 GCodeRuntime.prototype._idle = function() {
@@ -170,14 +115,13 @@ GCodeRuntime.prototype._idle = function() {
 	this.machine.status.line=null;
 	this.machine.status.nb_lines=null;
 	var job = this.machine.status.job;
-	
 	// Set the machine state to idle and return the units to their default configuration
 	var finishUp = function() {
 		this.driver.setUnits(config.machine.get('units'), function() {
 			var callback = this.completeCallback || function() {};
-			this.machine.setState(this, 'idle');
 			this.ok_to_disconnect = true;
 			this.completeCallback = null;
+			this.machine.setState(this, 'idle');
 			callback();
 		}.bind(this))
 	}.bind(this);
@@ -202,6 +146,8 @@ GCodeRuntime.prototype._idle = function() {
 // Run the provided string
 // callback runs only when execution is complete.
 GCodeRuntime.prototype.runString = function(string, callback) {
+	if(callback) { log.error("CALLBACK PASSED TO RUNSTRING")}
+
 	if(this.machine.status.state === 'idle' || this.machine.status.state === 'armed') {
 		var lines =  string.split('\n');
 		var mode = config.driver.get('gdi') ? 'G91': 'G90';
@@ -212,17 +158,44 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 			}
 		}
 		lines.unshift(mode);
-		lines.push('M30\n');
-		// TODO no need to stitch this string back together, it's just going to be split again in the driver
-		string = lines.join("\n");
 		this.completeCallback = callback;
-		this.driver.runString(string);//this.machine.status);
+		this._changeState("running");
+		return this.driver.runList(lines)
+		.on('stat', this._handleStateChange.bind(this))
+		.then(this._handleStop.bind(this));
 	}
-
 };
 
+GCodeRuntime.prototype._handleStop = function() {
+	this._idle();
+}
+
+GCodeRuntime.prototype._handleStateChange = function(stat) {
+	switch(stat) {
+		case this.driver.STAT_HOLDING:
+			this._changeState('paused');
+			break;
+		case this.driver.STAT_RUNNING:
+			this._changeState('running');
+			break;
+		default:
+			break;
+	}
+}
+
+// Run a file given the filename
+GCodeRuntime.prototype.runFile = function(filename, callback) {
+	countLineNumbers(filename, function(err, lines) {
+		this.machine.status.nb_lines = lines;
+		this.driver.runFile(filename, callback)
+			.on('stat', this._handleStateChange.bind(this))
+			.then(this._handleStop.bind(this));
+	}.bind(this));
+}
+
+// Run the given string as gcode
 GCodeRuntime.prototype.executeCode = function(string, callback) {
-	this.runString(string, callback);
+		return this.runString(string);
 }
 
 exports.GCodeRuntime = GCodeRuntime;

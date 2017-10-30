@@ -33,7 +33,7 @@ body {
 }
 
 .main-section, .app-section, .spinner-section {
-	height: 98%;
+	height: 1003%;
 	background-color: #eee;
 }
 
@@ -65,7 +65,7 @@ body {
 .left-small {position: inherit;}
 
 .top-bar h1  {
-	width: 150px;
+	width: 170px;
 	size: 1rem;
 }
 
@@ -234,6 +234,7 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 
 #connection-strength-indicator {
 	height: 30px;
+   max-width:30px;
 }
 
 .svg-container {
@@ -957,7 +958,7 @@ input[type=number]::-webkit-outer-spin-button {
 	-webkit-user-select: none;  /* Chrome all / Safari all */
       -moz-user-select: none;     /* Firefox all */
         -ms-user-select: none;      /* IE 10+ */
-          user-select: none;  
+          user-select: none;
 }
 
 /*
@@ -1039,7 +1040,7 @@ input[type=number]::-webkit-outer-spin-button {
 	-webkit-user-select: none;  /* Chrome all / Safari all */
       -moz-user-select: none;     /* Firefox all */
         -ms-user-select: none;      /* IE 10+ */
-          user-select: none;  
+          user-select: none;
 }
 
 
@@ -1567,6 +1568,15 @@ input[type=number]::-webkit-outer-spin-button {
 	animation: spin 4s linear infinite;
 }
 
+/* Edge specific */
+@supports (-ms-ime-align:auto) {
+    #waiting_container > svg {
+      top: 40%;
+      transform-origin: 50% 50%;
+    	animation: spin 4s linear infinite;
+    }
+}
+
  /*Old chipfly animation*/
 /*@keyframes chipflyone {
   0% {
@@ -1846,18 +1856,17 @@ input[type=number]::-webkit-outer-spin-button {
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 3001;
-    background-color: #eee;
-  
+    background-color: #fcfcfc;
       -webkit-font-smoothing: antialiased;
 }
 
 #beacon_consent_inner{
-	margin: 1.5em;
-	padding: 1.5em 1.5em 1.5em 1.5em;
+	margin: 1.5em 1.5em 0 1.5em;
+	padding: 1em;
 	background-color: #fff;
-	border-radius: 5px;
-	line-height: 1.3em;
-	font-size: 1em;
+	line-height: 1.2em;
+	font-size: 1.2em;
+	font-family: source_sans_proextralight;
 }
 
 #beacon_sub_container{
@@ -1908,7 +1917,13 @@ input[type=number]::-webkit-outer-spin-button {
   	transform: translateY(-50%);
 }
 
-
+/*Edge specific*/
+@supports (-ms-ime-align:auto) {
+  .loader > svg {
+    transform-origin: 50% 50%;
+    animation: spin 4s linear infinite;
+  }
+}
 
 /*Old loading spinner*/
 /*@-webkit-keyframes spinner {
@@ -1972,4 +1987,19 @@ input[type=number]::-webkit-outer-spin-button {
 }
 .logout_link_container a{
   color: #eeeeee;
+}
+
+.blur {
+-webkit-filter: blur(2px);
+-moz-filter: blur(2px);
+-o-filter: blur(2px);
+-ms-filter: blur(2px);
+filter: blur(2px);
+}
+
+.tour-filter{
+	position: absolute;
+    width: 100%;
+    height: 0;
+    z-index: 1;
 }

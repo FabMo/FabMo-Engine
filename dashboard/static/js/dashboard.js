@@ -28,7 +28,8 @@ define(function(require) {
       'change': [],
       'disconnect' : [],
       'reconnect' : [],
-      'video_frame': []
+      'video_frame': [],
+      'upload_progress': []
     };
     this._registerHandlers();
     this._setupMessageListener();
@@ -73,6 +74,9 @@ define(function(require) {
     }.bind(this));
     this.engine.on('video_frame', function(frame) {
       this._fireEvent('video_frame', frame);
+    }.bind(this));
+    this.engine.on('upload_progress', function(frame) {
+      this._fireEvent('upload_progress', frame);
     }.bind(this));
     this.engine.on('connect', function() {
       this._fireEvent('reconnect', null);
@@ -865,11 +869,14 @@ define(function(require) {
   //Open Footer
   Dashboard.prototype.openFooter = function() {
     $('.footBar').css('height', '175px');
+    //Set size of app container (so footer does not hide content)
+    $('.main-section').css('padding-bottom','175px');
   }
 
   //Close Footer
   Dashboard.prototype.closeFooter = function() {
     $('.footBar').css('height', '0px');
+    $('.main-section').css('padding-bottom','0px');
   }
 
   //Show Modal

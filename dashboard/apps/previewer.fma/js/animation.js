@@ -1,5 +1,4 @@
 /*jslint todo: true, browser: true, continue: true, white: true*/
-/*global THREE, GCodeViewer, GCodeToGeometry*/
 
 /**
  * Written by Alex Canales for ShopBotTools, Inc.
@@ -9,11 +8,12 @@
  * This file contains the class managing the animation of the bit.
  */
 
+var THREE = require("three");
+var util = require("./util");
+
 //refreshFunction is the function to refresh the display/render the scene
 //path is the instance of the class Path
-var GCodeViewer = require('./gui.js');
-
-GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
+var Animation = function(scene, refreshFunction, gui, path, fps,
         initialPosition) {
     "use strict";
     var that = this;
@@ -110,7 +110,7 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
         //While instead of if because we can have commands that have same
         //start and end points
         while(that.iPath < that.currentPath.length &&
-                GCodeViewer.samePosition(that.currentPath[that.iPath].point,
+                util.samePosition(that.currentPath[that.iPath].point,
                     getRelativeBitPosition()) === true) {
             warnPath(true);
             that.iPath++;
@@ -318,5 +318,5 @@ GCodeViewer.Animation = function(scene, refreshFunction, gui, path, fps,
     that.lastTime = new Date().getTime();
     setInterval(update, 1000 / fps);
 };
- 
- module.exports = GCodeViewer;
+
+exports.Animation = Animation;
