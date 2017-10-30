@@ -54,6 +54,7 @@ ManualRuntime.prototype.disconnect = function() {
 
 ManualRuntime.prototype._changeState = function(newstate, message) {
 	if(newstate === "idle") {
+		this.fixedQueue = [];
 		this.ok_to_disconnect = true;
 		var callback = this.completeCallback || function() {};
 		this.completeCallback = null;
@@ -213,8 +214,9 @@ ManualRuntime.prototype.stopMotion = function() {
 }
 
 ManualRuntime.prototype.fixedMove = function(axis, speed, distance) {
-	if(this.fixedQueue.length >= FIXED_MOVES_QUEUE_SIZE) {
-        return;
+    if(this.fixedQueue.length >= FIXED_MOVES_QUEUE_SIZE) {
+	log.warn('fixedMove(): Move queue is already full!');
+    	    return;
     }
     if(this.moving) {
 		this.fixedQueue.push({axis: axis, speed: speed, distance: distance});

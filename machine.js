@@ -349,7 +349,7 @@ Machine.prototype.fire = function(force) {
 
 Machine.prototype.authorize = function(timeout) {
 	var timeout = timeout || config.machine.get('auth_timeout');
-	if(timeout) {
+	if(config.machine.get('auth_required') && timeout) {
 		log.info("Machine is authorized for the next " + timeout + " seconds.");
 		if(this._authTimer) { clearTimeout(this._authTimer);}
 		this._authTimer = setTimeout(function() {
@@ -545,7 +545,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 	this.fireButtonDebounce = false ;
 	if ((source === this) || (source === this.current_runtime)) {
 		log.info("Got a machine state change: " + newstate)
-
 		if(stateinfo) {
 			this.status.info = stateinfo
 			this.info_id += 1;
