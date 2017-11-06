@@ -266,7 +266,8 @@ FabMoAPI.prototype.quit = function(callback) {
 }
 
 FabMoAPI.prototype.pause = function(callback) {
-	this.command('pause');
+	console.log(callback);
+	this.command('pause', {}, callback);
 }
 
 FabMoAPI.prototype.resume = function(callback) {
@@ -452,8 +453,14 @@ FabMoAPI.prototype.submitJob = function(job, options, callback) {
 }
 FabMoAPI.prototype.submitJobs = FabMoAPI.prototype.submitJob;
 
-FabMoAPI.prototype.command = function(name, args) {
-	this.socket.emit('cmd', {'name':name, 'args':args||{} , count : this.commandCounter} );
+FabMoAPI.prototype.command = function(name, args, callback) {
+	this.socket.emit('cmd', {'name':name, 'args':args||{} , count : this.commandCounter}, function(err, data){
+		if(err){
+			callback(err)
+		} else {
+			callback(null, data);
+		}
+	});
 	this.commandCounter += 1;
 }
 

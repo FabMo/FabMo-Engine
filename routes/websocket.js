@@ -147,7 +147,7 @@ var onPrivateConnect = function(socket) {
 		}
 	});
 
-	socket.on('cmd', function(data) {
+	socket.on('cmd', function(data, callback) {
 		if(!authentication.getCurrentUser() || authentication.getCurrentUser()._id != userId){
 			log.error(userId);
 			log.error(authentication.getCurrentUser());
@@ -157,19 +157,28 @@ var onPrivateConnect = function(socket) {
 		try {
 			switch(data.name) {
 				case 'pause':
-					machine.pause();
+					machine.pause(function(err,data){
+						if (err) {
+							callback(err);
+						} else {
+							callback(null, data);
+						}
+					});
 					break;
 
 				case 'quit':
 					machine.quit();
+					callback('pause');
 					break;
 
 				case 'resume':
 					machine.resume();
+					callback('error', 'message');
 					break;
 
 				default:
 					// Meh?
+					callback('error', 'message');
 					break;
 			}
 		} catch(e) {

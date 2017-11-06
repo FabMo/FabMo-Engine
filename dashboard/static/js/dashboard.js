@@ -358,10 +358,14 @@ define(function(require) {
     }.bind(this));
 
     this._registerHandler('pause', function(data, callback) {
+      console.log('pause');
       this.engine.pause(function(err, result) {
+        console.log('pause');
         if (err) {
+          console.log(err);
           callback(err);
         } else {
+          console.log(result);
           callback(null);
         }
       });

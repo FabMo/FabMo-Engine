@@ -598,11 +598,16 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 	this.emit('status',this.status);
 };
 
-Machine.prototype.pause = function() {
+Machine.prototype.pause = function(callback) {
 	if(this.status.state === "running") {
 		if(this.current_runtime) {
 			this.current_runtime.pause();
+			callback(null, 'paused');
+		} else {
+			calback("Not pausing because no runtime provided");
 		}
+	} else {
+		calback("Not pausing because machine is not running")
 	}
 };
 

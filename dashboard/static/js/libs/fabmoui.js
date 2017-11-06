@@ -401,6 +401,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 };
 
 
+
+
 FabMoUI.prototype.updateStatus = function(){
 	var that=this;
 	that.tool.getStatus(function(err, status){
@@ -429,19 +431,49 @@ FabMoUI.prototype.updateStatus = function(){
 
 };
 
-FabMoUI.prototype.FileControl = function(){
-	var that = this;
-	$(that.pause_button_selector).click(function(e) {
-		that.tool.pause(function(){});
+var bindOff = function(el){
+	$(el).off();
+};
 
-	});
-	$(that.resume_button_selector).click(function(e) {
-		that.tool.resume(function(){});
-	});
-	$(that.stop_button_selector).click(function(e) {
-		that.tool.quit(function(){});
+var bindOnPause = function(el ,that){
+	$(el).click(function(e) {
+		bindOff(that.pause_button_selector);
+		that.tool.pause(function(err, data){
+			console.log('bha');
+			if (err) {
+				console.log(err)
+			} else {
+				console.log(data);
+			}
+		});
 	});
 };
 
+
+FabMoUI.prototype.FileControl = function(){
+	var that = this;
+	$(that.pause_button_selector).click(function(e) {
+		console.log('here');
+		that.tool.pause(function(err, data){
+			if (err) {
+				console.log(err)
+			} else {
+				console.log(data);
+				bindOff(that.pause_button_selector);
+			}
+		});
+	});
+	$(that.resume_button_selector).click(function(e) {
+		that.tool.resume(function(){});
+		bindOnPause(that.pause_button_selector, that);
+	});
+	$(that.stop_button_selector).click(function(e) {
+		that.tool.quit(function(){});
+		bindOnPause(that.pause_button_selector, that);
+	});
+}
+
 return FabMoUI;
+
+
 }));
