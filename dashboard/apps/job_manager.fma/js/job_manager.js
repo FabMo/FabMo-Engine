@@ -93,27 +93,32 @@ function synchJobSubmit(files) {
 }
 
 function updateQueue(callback) {
+  console.log('in update')
   callback = callback || function() {};
   // Update the queue display.
   fabmo.getJobsInQueue(function(err, jobs) {
+    console.log(jobs);
     numberJobs = jobs.pending.length;
     var jobElements = document.getElementById("queue_table").childElementCount;
     if (err) {
       return callback(err);
     }
 
-    if (jobs.pending.length === jobElements && jobs.pending.length != 0) {
+    if (jobs.pending.length === jobElements && jobs.pending.length != 0 && jobs.running.length === 0) {
+      console.log('about to return')
       return
     } else {
       jobs.pending.sort(function(a, b) {
         return a.order - b.order;
       });
       if (jobs.running.length) {
+        console.log('job running');
         var current = jobs.running[0];
         jobs.pending.unshift(current);
         addQueueEntries(jobs.pending);
         runningJob(current);
       } else {
+        console.log('no job');
         runningJob(null);
         addQueueEntries(jobs.pending);
       }
@@ -1169,6 +1174,8 @@ function runNext() {
     if ($('.play').hasClass('active')) {
       fabmo.pause(function(err, data) {});
     } else {
+      console.log('blue');
+      $('.play').addClass('loading');
       fabmo.runNext(function(err, data) {
         if (err) {
           fabmo.notify(err);

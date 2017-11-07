@@ -611,7 +611,7 @@ Machine.prototype.pause = function(callback) {
 	}
 };
 
-Machine.prototype.quit = function() {
+Machine.prototype.quit = function(callback) {
     this.disarm();
 	// Quitting from the idle state dismisses the 'info' data
 	if(this.status.state === "idle") {
@@ -626,15 +626,18 @@ Machine.prototype.quit = function() {
 	if(this.current_runtime) {
 		log.info("Quitting the current runtime...")
 		this.current_runtime.quit();
+		callback(null, 'quit');
 	} else {
 		log.warn("No current runtime!")
+		calback("Not quiting because no current runtime")
 	}
 };
 
-Machine.prototype.resume = function() {
+Machine.prototype.resume = function(callback) {
 	this.arm({
 		type : 'resume'
 	}, config.machine.get('auth_timeout'));
+	callback(null, 'resumed');
 }
 
 Machine.prototype.runFile = function(filename) {

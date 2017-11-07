@@ -157,28 +157,19 @@ var onPrivateConnect = function(socket) {
 		try {
 			switch(data.name) {
 				case 'pause':
-					machine.pause(function(err,data){
-						if (err) {
-							callback(err);
-						} else {
-							callback(null, data);
-						}
-					});
+					machine.pause(callback);
 					break;
 
 				case 'quit':
-					machine.quit();
-					callback('pause');
+					machine.quit(callback);
 					break;
 
 				case 'resume':
-					machine.resume();
-					callback('error', 'message');
+					machine.resume(callback);
 					break;
 
 				default:
 					// Meh?
-					callback('error', 'message');
 					break;
 			}
 		} catch(e) {

@@ -437,23 +437,6 @@ var bindOff = function(el){
 
 var bindOnPause = function(el ,that){
 	$(el).click(function(e) {
-		bindOff(that.pause_button_selector);
-		that.tool.pause(function(err, data){
-			console.log('bha');
-			if (err) {
-				console.log(err)
-			} else {
-				console.log(data);
-			}
-		});
-	});
-};
-
-
-FabMoUI.prototype.FileControl = function(){
-	var that = this;
-	$(that.pause_button_selector).click(function(e) {
-		console.log('here');
 		that.tool.pause(function(err, data){
 			if (err) {
 				console.log(err)
@@ -463,13 +446,42 @@ FabMoUI.prototype.FileControl = function(){
 			}
 		});
 	});
-	$(that.resume_button_selector).click(function(e) {
-		that.tool.resume(function(){});
-		bindOnPause(that.pause_button_selector, that);
+};
+
+
+FabMoUI.prototype.FileControl = function(){
+	var that = this;
+	$(that.pause_button_selector).click(function(e) {
+		that.tool.pause(function(err, data){
+			if (err) {
+				console.log(err)
+			} else {
+				console.log(data);
+				bindOff(that.pause_button_selector);
+			}
+		});
 	});
+
+	$(that.resume_button_selector).click(function(e) {
+		that.tool.resume(function(err, data){
+			if (err) {
+				console.log(err)
+			} else {
+				console.log(data);
+				bindOnPause(that.pause_button_selector, that);
+			}
+		});
+	});
+
 	$(that.stop_button_selector).click(function(e) {
-		that.tool.quit(function(){});
-		bindOnPause(that.pause_button_selector, that);
+		that.tool.quit(function(err, data){
+			if (err) {
+				console.log(err)
+			} else {
+				console.log(data);
+				bindOnPause(that.pause_button_selector, that);
+			}
+		});
 	});
 }
 
