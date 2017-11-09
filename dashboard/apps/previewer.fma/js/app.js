@@ -82,6 +82,15 @@ function initializeLiveViewerHandler(jobId) {
  * @param {number} jobId The job id.
  */
 function initializeViewer(gcode, isLive, jobId) {
+    fabmo.getJobsInQueue(function(err, jobs) {
+        console.log(jobs.pending);
+        console.log(jobId);
+        if (jobs){
+            if(jobs.pending[0]._id.toString() === jobId) {
+                $('.run-now').show();
+            }
+        }
+    });
     var width = window.innerWidth;
     var height = window.innerHeight - $("#topbar").height();
     $('#preview').size(width, height);
@@ -105,7 +114,16 @@ function initializeViewer(gcode, isLive, jobId) {
 }
 
 $(document).ready(function() {
-    
+
+    $('.run-now').click(function(){
+        fabmo.runNext(function(err, data) {
+            if (err) {
+            fabmo.notify(err);
+            } else {
+                fabmo.launchApp('job-manager');
+            }
+        });
+    });
 
     fabmo.getAppArgs(function(err, args) {
         if(err) {

@@ -17,6 +17,19 @@
     z-index: 2;
 }
 
+.run-now{
+    position: absolute;
+    margin: 1rem;
+    right: 0;
+    background-color: #32B433;
+    padding: 0.7rem;
+    border-radius: 10px;
+    color: #eee;
+    cursor: pointer;
+    display: none;
+}
+
+
 /* GCode display */
 /*
  * Structure explanation:

@@ -837,10 +837,10 @@ table {
 
 .play span:before,
 .play span:after {
-  -webkit-transition: all 0.7s;
-  -moz-transition: all 0.7s;
-  -o-transition: all 0.7s;
-  transition: all 0.7s;
+  -webkit-transition: all 0.5s;
+  -moz-transition: all 0.5s;
+  -o-transition: all 0.5s;
+  transition: all 0.5s;
 }
 .play {
   width: 80px;
@@ -925,6 +925,7 @@ table {
   border: 20px #9C210C solid;
   border-top-width: 40px;
   border-bottom-width: 0px;
+  border-left-color: transparent;
   top: 50%;
   left: 45%;
   -webkit-transform: rotate(-90deg);
@@ -937,6 +938,7 @@ table {
   content: '';
   border: 20px #9C210C solid;
   border-bottom-width: 0;
+  border-left-color: transparent;
   border-top-width: 40px;
   border-radius: 0%;
   top: 50%;

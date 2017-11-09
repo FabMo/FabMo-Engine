@@ -93,11 +93,9 @@ function synchJobSubmit(files) {
 }
 
 function updateQueue(callback) {
-  console.log('in update')
   callback = callback || function() {};
   // Update the queue display.
   fabmo.getJobsInQueue(function(err, jobs) {
-    console.log(jobs);
     numberJobs = jobs.pending.length;
     var jobElements = document.getElementById("queue_table").childElementCount;
     if (err) {
@@ -105,20 +103,17 @@ function updateQueue(callback) {
     }
 
     if (jobs.pending.length === jobElements && jobs.pending.length != 0 && jobs.running.length === 0) {
-      console.log('about to return')
       return
     } else {
       jobs.pending.sort(function(a, b) {
         return a.order - b.order;
       });
       if (jobs.running.length) {
-        console.log('job running');
         var current = jobs.running[0];
         jobs.pending.unshift(current);
         addQueueEntries(jobs.pending);
         runningJob(current);
       } else {
-        console.log('no job');
         runningJob(null);
         addQueueEntries(jobs.pending);
       }
@@ -407,9 +402,15 @@ function bindMenuEvents() {
 
   $('.deleteJob').off('click')
   $('.deleteJob').click(function(e) {
-    updateQueue();
-    fabmo.deleteJob(this.dataset.jobid);
-    updateHistory();
+    fabmo.deleteJob(this.dataset.jobid, function(err,data){
+      if(err){
+        console.log(err);
+      } else {
+        updateQueue();
+        updateHistory();
+      }
+    });
+
   });
 
   $('.dropDownWrapper').off('click')
@@ -441,6 +442,7 @@ function nextJob(job) {
 // Job should be the running job or null
 function runningJob(job) {
   if (!job) {
+    console.log('no job');
     setProgress(status);
     $('.play').removeClass('active')
     $('body').css('background-color', '#EEEEEE');
@@ -449,7 +451,7 @@ function runningJob(job) {
     return
   }
 
-
+  console.log('job');
   $('.cancel').slideUp(100);
   $('.download').slideUp(100);
   $('.edit').slideUp(100);
@@ -471,7 +473,10 @@ function runningJob(job) {
   $('.no-jobs').css('left', '-2000px');
   $('.now-running').css('left', '0px');
   $('.play-button').show();
-  $('.play').addClass('active')
+  if (!$('.play').hasClass('active')){
+    console.log('adding active');
+    $('.play').addClass('active');
+  }
   sortable.options.disabled = true;
 };
 
@@ -1174,13 +1179,11 @@ function runNext() {
     if ($('.play').hasClass('active')) {
       fabmo.pause(function(err, data) {});
     } else {
-      console.log('blue');
       $('.play').addClass('loading');
       fabmo.runNext(function(err, data) {
         if (err) {
           fabmo.notify(err);
         } else {
-          updateQueue();
         }
       });
     }
@@ -1220,7 +1223,7 @@ $(document).ready(function() {
     updateHistory();
   });
 
-   fabmo.on('job_start',function (cmd) {
+   fabmo.on('job_start',function (cmd, data) {
     updateQueue();
     updateHistory();
   });
