@@ -76,8 +76,20 @@ function refreshApps() {
                     }
                 }
 
-                for (var i = 0; i < newOrder.length; i++) {
-                    var obj = findById(apps, newOrder[i]);
+                var noDupesArr = (function(arr){
+                    var m = {}, noDupesArr = []
+                    for (var i=0; i<arr.length; i++) {
+                      var v = arr[i];
+                      if (!m[v]) {
+                        noDupesArr.push(v);
+                        m[v]=true;
+                      }
+                    }
+                    return noDupesArr;
+                })(newOrder);
+
+                for (var i = 0; i < noDupesArr.length; i++) {
+                    var obj = findById(apps, noDupesArr[i]);
                     makeListItem(menu, obj);
                 }
 
