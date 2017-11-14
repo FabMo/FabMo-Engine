@@ -28,7 +28,6 @@ function getOrder () {
             if (data){
                 if (data.appOrder) {
                     order = data.appOrder;
-                    console.log(order);
                 } 
                 resolve(data);
             } else {
@@ -53,17 +52,14 @@ function refreshApps() {
             menu.innerHTML = "";
             var file = document.getElementById('file');
             file.value = "";
-            for (i = 0; i < order.length; i++) {
+            for (var i = 0; i < order.length; i++) {
                 var obj = findById(apps, order[i]);
                 if (typeof obj != "undefined") {
-                    console.log(obj.id);
                     newOrder.push(obj.id);
                 }
             };
 
-                console.log(newOrder);
-                
-                for (i = 0; i < apps.length; i++) {
+                for (var i = 0; i < apps.length; i++) {
                     if (apps[i].icon_display !== "none") {
                         if ( ($.inArray(apps[i].id, order)) > -1 ) {
                             
@@ -72,18 +68,15 @@ function refreshApps() {
                         }
                     }
                 }
-                console.log(newOrder);
-                console.log(notApp);
 
-
-                for (i = 0; i < notApp.length; i++) {
+                for (var i = 0; i < notApp.length; i++) {
                     if ( $.inArray(notApp[i], newOrder) > -1 ) {
                         var ind = newOrder.indexOf(notApp[i]);
                         newOrder.splice(ind,1);
                     }
                 }
 
-                for (i = 0; i < newOrder.length; i++) {
+                for (var i = 0; i < newOrder.length; i++) {
                     var obj = findById(apps, newOrder[i]);
                     makeListItem(menu, obj);
                 }
@@ -188,38 +181,6 @@ function findById(source, id) {
 
         });
 
-        // $('#dropzone').dragster({
-        //     enter: function(devt, evt) {
-        //         $('#dropzone').addClass('hover');
-        //         return false;
-        //     },
-
-        //     leave: function(devt, evt) {
-        //         $('#dropzone').removeClass('hover');
-        //         return false;
-        //     },
-        //     drop: function(devt, evt) {
-        //         evt.preventDefault();
-        //         try {
-        //             files = evt.originalEvent.dataTransfer.files;
-        //             startBusy();
-        //             fabmo.submitApp(files, {}, function(err, data) {
-        //               stopBusy();
-        //                 if (err) {
-        //                     fabmo.notify('error', err.message || err);
-        //                 } else {
-        //                     fabmo.notify('success', "App installed successfully.");
-        //                 }
-        //                 refreshApps();
-        //             });
-        //         } catch (e) {
-        //             console.error(e);
-        //         } finally {
-        //             $('#dropzone').removeClass('hover');
-        //             return false;
-        //         }
-        //     }
-        // });
     }
 function setUpSort(){
 
@@ -266,11 +227,8 @@ function holdfunction (e) {
        $('.app_item').removeClass('blur');
    });
    $('.deleteApp').click(function(){
-       console.log(newOrder);
        var ind = newOrder.indexOf(id);
-               console.log(newOrder);
                newOrder.splice(ind,1);
-               console.log(newOrder);
        fabmo.deleteApp(id, function(err, data){
            if (err){
                console.log(err);

@@ -125,7 +125,7 @@ function Machine(control_path, callback) {
 
 	    // Idle
 	    this.setRuntime(null, function() {
-            if(err) {
+	    if(err) {
                 typeof callback === "function" && callback(err);
             } else {
                 this.driver.requestStatusReport(function(result) {
@@ -163,7 +163,7 @@ function Machine(control_path, callback) {
     this.driver.on('status', function(stat) {
     	this.handleFireButton(stat);
     	this.handleAPCollapseButton(stat);
-			this.handleOkayButton(stat);
+		this.handleOkayButton(stat);
 		this.handleCancelButton(stat);
     }.bind(this));
 }
@@ -235,7 +235,16 @@ Machine.prototype.die = function(err_msg) {
 Machine.prototype.restoreDriverState = function(callback) {
 	callback = callback || function() {};
 	this.driver.setUnits(config.machine.get('units'), function() {
-		config.driver.restore(callback);
+		this.driver.requestStatusReport(function(status) {
+			for (var key in this.status) {
+				if(key in status) {
+					this.status[key] = status[key];
+				}
+			}			
+			config.driver.restore(function() {
+				callback();
+			});			
+		}.bind(this));
 	}.bind(this));
 }
 
@@ -340,7 +349,7 @@ Machine.prototype.fire = function(force) {
 
 Machine.prototype.authorize = function(timeout) {
 	var timeout = timeout || config.machine.get('auth_timeout');
-	if(timeout) {
+	if(config.machine.get('auth_required') && timeout) {
 		log.info("Machine is authorized for the next " + timeout + " seconds.");
 		if(this._authTimer) { clearTimeout(this._authTimer);}
 		this._authTimer = setTimeout(function() {
@@ -488,14 +497,15 @@ Machine.prototype._runFile = function(filename) {
 };
 
 Machine.prototype.setRuntime = function(runtime, callback) {
+	runtime = runtime || this.idle_runtime;
 	try {
 		if(runtime) {
 			if(this.current_runtime != runtime) {
 				if(this.current_runtime) {
 					this.current_runtime.disconnect();
 				}
-				runtime.connect(this);
 				this.current_runtime = runtime;
+				runtime.connect(this);
 			}
 		} else {
 			this.current_runtime = this.idle_runtime;
@@ -535,7 +545,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 	this.fireButtonDebounce = false ;
 	if ((source === this) || (source === this.current_runtime)) {
 		log.info("Got a machine state change: " + newstate)
-
 		if(stateinfo) {
 			this.status.info = stateinfo
 			this.info_id += 1;
@@ -547,10 +556,10 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 		switch(newstate) {
 			case 'idle':
 				if(this.status.state != 'idle') {
-					//this.driver.command({"out4":0});
-					//if(this.runtime != this.idle_runtime) {
-					//	this.setRuntime(null, function() {});
-					//}
+					this.driver.command({"out4":0});
+					if(this.current_runtime != this.idle_runtime) {
+						this.setRuntime(null, function() {});
+					}	
 				}
 				this.status.nb_lines = null;
 				this.status.line = null;

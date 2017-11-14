@@ -289,7 +289,7 @@ SBPRuntime.prototype._limit = function() {
 	if(er && er.st == 203) {
 		var msg = er.msg.replace(/\[[^\[\]]*\]/,'');
 		this.driver.clearLastException();
-		this._end(msg);
+		this._abort(msg);
 		return true;
 	}
 	return false;
@@ -478,9 +478,14 @@ SBPRuntime.prototype._run = function() {
 					//that.paused = true;
 					that.machine.setState(that, 'paused');
 				break;
+                case that.driver.STAT_PROBE:
 				case that.driver.STAT_RUNNING:
 					that.machine.setState(that, 'running');
-				break;
+				    if(that.pendingFeedhold) {
+                        that.pendingFeedhold = false;
+                        that.driver.feedHold();
+                    }
+                break;
 
 			}
 		}
@@ -496,7 +501,7 @@ SBPRuntime.prototype._run = function() {
 				.on('status', this._onG2Status.bind(this))
                 .then(function() {
 					this.file_stack = []
-					this._end();
+					this._end(this.pending_error);
 				}.bind(this));
 			}
 
@@ -513,25 +518,30 @@ SBPRuntime.prototype.isInSubProgram = function() {
 // _executeNext() will dispatch the next chunk if appropriate, once the current chunk is finished
 SBPRuntime.prototype._executeNext = function() {
 	this._update();
-
+    log.debug('_executeNext called.');
 	// Continue is only for resuming an already running program.  It's not a substitute for _run()
 	if(!this.started) {
 		log.warn('Got a _executeNext() but not started');
-		return;
+		log.stack();
+        return;
 	}
 
 	if(this.pending_error) {
-		return this._end(this.pending_error);
+		return this._abort(this.pending_error);
 	}
 
 	if(this.paused) {
-		return;
+		log.info('Program is paused.');
+        return;
 	}
 
 	if(this.pc >= this.program.length) {
 		log.info("End of program reached. (pc = " + this.pc + ")");
 		this.prime();
-		if(this.gcodesPending && this.driver) { return; }
+		if(this.gcodesPending && this.driver) {
+            log.debug('GCodes are still pending...')
+            return;
+        }
 
 		if(this.isInSubProgram()) {
 			log.debug("This is a nested end.  Popping the file stack.");
@@ -544,7 +554,9 @@ SBPRuntime.prototype._executeNext = function() {
 			this.emit_gcode('M30');
 			if(!this.driver) {
 				this._end();
-			}
+			} else {
+                this.prime();
+            }
 			return;
 		}
 	}
@@ -567,7 +579,7 @@ SBPRuntime.prototype._executeNext = function() {
 				this._execute(line, this._executeNext.bind(this));
 				return;
 			} catch(e) {
-				return this._end(e);
+				return this._abort(e);
 			}
 		}
 		return;
@@ -580,7 +592,7 @@ SBPRuntime.prototype._executeNext = function() {
 		} catch(e) {
 			log.error(e)
 			if(this.driver.status.stat != this.driver.STAT_STOP) {
-				this.pending_error = e;
+				this._abort(e);
 				setImmediate(this._executeNext.bind(this));
 			} else {
 				return this._end(e);
@@ -594,7 +606,10 @@ SBPRuntime.prototype.prime = function() {
 		this.driver.prime();
 	}
 }
-
+SBPRuntime.prototype._abort = function(error) {
+    this.pending_error = error;
+    this.stream.end();
+}
 SBPRuntime.prototype._end = function(error) {
 
 	error = error ? error.message || error : null;
@@ -607,12 +622,14 @@ SBPRuntime.prototype._end = function(error) {
 		if(this.machine && error) {
 			this.machine.setState(this, 'stopped', {'error' : error });
 		}
+		if(!this.machine){
+			this.stream.end();
+		}
 		this.ok_to_disconnect = true;
 		this.emit('end', this);
 		if(this.end_callback) {
 			this.end_callback();
 		}
-		this.stream.end();
 	}.bind(this);
 
 	this.init();
@@ -977,6 +994,7 @@ SBPRuntime.prototype.init = function() {
 	this.paused = false;
 	this.units = config.machine.get('units');
 	this.pending_error = null;
+    this.pendingFeedhold = false;
 
 	if(this.transforms != null && this.transforms.level.apply === true) {
 		leveler = new Leveler(this.transforms.level.ptDataFile);
@@ -1265,7 +1283,7 @@ SBPRuntime.prototype._popFileStack = function() {
 
 // Add GCode to the current chunk, which is dispatched on a break or end of program
 SBPRuntime.prototype.emit_gcode = function(s) {
-	log.debug("emit_gcode = " + s);
+	log.debug("emit_gcode: " + s);
 	if(this.file_stack.length > 0) {
 		var n = this.file_stack[0].pc;
 	} else {
@@ -1275,6 +1293,7 @@ SBPRuntime.prototype.emit_gcode = function(s) {
 	var gcode = 'N' + n + ' ' + s + '\n'
 
 	this.gcodesPending = true;
+    log.debug('Writing to stream: ' + gcode)
 	this.stream.write(gcode);
 };
 
@@ -1433,7 +1452,12 @@ SBPRuntime.prototype.transformation = function(TranPt){
 };
 
 SBPRuntime.prototype.pause = function() {
-	this.machine.driver.feedHold();
+    if(this.machine.driver.status.stat == this.machine.driver.STAT_END ||
+       this.machine.driver.status.stat == this.machine.driver.STAT_STOP) {
+        this.pendingFeedhold = true;
+    } else {
+	    this.machine.driver.feedHold();
+    }
 }
 
 SBPRuntime.prototype.quit = function() {

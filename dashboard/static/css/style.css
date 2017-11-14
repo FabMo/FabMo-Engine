@@ -1856,18 +1856,17 @@ input[type=number]::-webkit-outer-spin-button {
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 3001;
-    background-color: #eee;
-
+    background-color: #fcfcfc;
       -webkit-font-smoothing: antialiased;
 }
 
 #beacon_consent_inner{
-	margin: 1.5em;
-	padding: 1.5em 1.5em 1.5em 1.5em;
+	margin: 1.5em 1.5em 0 1.5em;
+	padding: 1em;
 	background-color: #fff;
-	border-radius: 5px;
-	line-height: 1.3em;
-	font-size: 1em;
+	line-height: 1.2em;
+	font-size: 1.2em;
+	font-family: source_sans_proextralight;
 }
 
 #beacon_sub_container{

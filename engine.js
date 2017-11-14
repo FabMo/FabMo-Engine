@@ -137,6 +137,24 @@ Engine.prototype.start = function(callback) {
             }
         },
 
+        function profile_shim(callback) {
+            var profile = config.engine.get('profile');
+            var def = '';
+            if(profile) { 
+                return callback(); 
+            } else {
+                fs.readFile('../site/.default','utf8', function (err, content) {
+                    if(err){
+                        def = 'default';
+                    } else {
+                        def = content;
+                        //console.log(def);
+                    }
+                    config.engine.set('profile', def, callback);
+                })
+            }
+        }.bind(this), 
+
         function get_fabmo_version(callback) {
             log.info("Getting engine version...");
             this.getVersion(function(err, data) {
@@ -154,13 +172,18 @@ Engine.prototype.start = function(callback) {
         function clear_approot(callback) {
             if('debug' in argv) {
                 log.info("Running in debug mode - clearing the approot.");
+                var random = Math.floor(Math.random() * (99999 - 10000)) + 10000;
+                log.info("Setting engine version to random");
+                config.engine.set('version', random.toString());
                 config.clearAppRoot(function(err, stdout) {
                     if(err) { log.error(err); }
                     else {
                         log.debug(stdout);
                     }
+                    config.engine.set('version', random.toString());
                     callback();
                 });
+                
             } else {
                 var last_time_version = config.engine.get('version').trim();
                 var this_time_version = (this.version.hash || this.version.number || "").trim();
@@ -170,6 +193,7 @@ Engine.prototype.start = function(callback) {
                 if(last_time_version != this_time_version) {
                     log.info("Engine version has changed - clearing the approot.");
                     config.clearAppRoot(function(err, stdout) {
+                        config.engine.set('version', this_time_version);
                         if(err) { log.error(err); }
                         else {
                             log.debug(stdout);
@@ -180,8 +204,9 @@ Engine.prototype.start = function(callback) {
                     log.info("Engine version is unchanged since last run.");
                     callback();
                 }
+                
             }
-            config.engine.set('version', this_time_version);
+            
         }.bind(this),
 
         function create_data_directories(callback) {
@@ -366,14 +391,22 @@ Engine.prototype.start = function(callback) {
         },
 
         function load_instance_config(callback) {
+            if(!this.machine.isConnected()) {
+                log.warn('Not configuring instance due to no connection to motion system.')
+                return callback(null);
+            }
             log.info("Loading instance info...");
             config.configureInstance(this.machine.driver, callback);
         }.bind(this),
 
         function apply_instance_config(callback) {
+            if(!this.machine.isConnected()) {
+                log.warn('Not applying instance config due to no connection to motion system.')
+                return callback(null);
+            }
             log.info("Applying instance configuration...");
             config.instance.apply(callback);
-        },
+        }.bind(this),
 
         function generate_auth_key(callback) {
           log.info("Configuring secret key...")
@@ -401,12 +434,12 @@ Engine.prototype.start = function(callback) {
         function start_server(callback) {
             log.info("Setting up the webserver...");
 	    var fmt = {
-		            'application/json': function(req, res, body, cb) {
+		            'application/json': function(req, res, body) {
 				                return cb(null, JSON.stringify(body, null, '\t'));
 						        }
 			        }
 
-            var server = restify.createServer({name:"FabMo Engine", formatters : fmt});
+            var server = restify.createServer({name:"FabMo Engine"});
             this.server = server;
 
             // Allow JSON over Cross-origin resource sharing
@@ -437,7 +470,9 @@ Engine.prototype.start = function(callback) {
                     });
             }
 
-            server.use(restify.queryParser());
+            server.use(restify.plugins.queryParser({
+                mapParams : true
+            }));
 
             server.on('uncaughtException', function(req, res, route, err) {
                 log.uncaught(err);
@@ -450,7 +485,10 @@ Engine.prototype.start = function(callback) {
 
             // Configure local directory for uploading files
             log.info("Cofiguring upload directory...");
-            server.use(restify.bodyParser({'uploadDir':config.engine.get('upload_dir') || '/tmp'}));
+            server.use(restify.plugins.bodyParser({
+                'uploadDir':config.engine.get('upload_dir') || '/tmp',
+                mapParams: true
+            }));
             server.pre(restify.pre.sanitizePath());
 
             log.info("Cofiguring authentication...");
@@ -477,7 +515,7 @@ Engine.prototype.start = function(callback) {
 
 
             log.info("Enabling gzip for transport...");
-            server.use(restify.gzipResponse());
+            server.use(restify.plugins.gzipResponse());
             // Import the routes module and apply the routes to the server
             log.info("Loading routes...");
             server.io = socketio.listen(server.server);

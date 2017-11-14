@@ -20,10 +20,16 @@ function probe(runtime, opts) {
 	for(word in opts.dist) {
 		cmd2.push(word + opts.dist[word].toFixed(5))
 	}
-	cmd2.push('F' + (opts.feed*60.0).toFixed(3))
+
+    var cmd3 = {}
+    cmd3[name] = 0
+
+    cmd2.push('F' + (opts.feed*60.0).toFixed(3))
 	runtime.emit_gcode('M100.1(' + JSON.stringify(cmd1) + ')');
 	runtime.emit_gcode(cmd2.join(' '));
-}
+	runtime.emit_gcode('M100.1(' + JSON.stringify(cmd3) + ')');
+    runtime.emit_gcode('G4 P0');
+    }
 
 exports.PX = function(args) {
 	this.cmd_posx = undefined

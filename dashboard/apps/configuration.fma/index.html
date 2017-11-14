@@ -60,7 +60,6 @@
             <div class="large-4 columns" id="section-machine-name">
               <div class="row collapse">
                 <label data-tip="The name of your tool.  The tool name will be displayed on the dashboard, and is used as the network name for wireless and wired networking.">Machine Name<div class="tool-tip">i</div></label>
-                <div class="tool-tip">i</div>
                 <div class="small-12 columns">
                   <input type="text" id="input-machine-name" class="input" />
                 </div>
@@ -79,8 +78,10 @@
                 <label data-tip="The machine profile sets the default values, apps and macros for your tool.  Changing this setting will require you to reboot your tool.">Machine Profile<div class="tool-tip">i</div></label>
                 <select id="engine-profile" class="engine-input">
                   <option value="default">Default</option>
-                  <option value="desktop_max">Desktop MAX</option>
                   <option value="handibot">Handibot</option>
+                  <option value="handibot2">Handibot 2</option>
+                  <option value="dtmax">Desktop MAX</option>
+                  <option value="buddy">Buddy</option>
                 </select>
               </div>
             </div>
@@ -1695,6 +1696,26 @@
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
+
+              <div class="row collapse">
+                <label data-tip='How quickly the tool will accelerate and decelerate in the X and Y axes'>XY Jerk <div class="tool-tip">i</div></label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-xy_jerk" class="machine-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix inpm3_mmpm3_label">mm/min<sup>3</sup></span>
+                </div>
+              </div>
+
+              <div class="row collapse">
+                <label data-tip='How quickly the tool will accelerate and decelerate in the Z axi'>Z Jerk <div class="tool-tip">i</div></label>
+                <div class="small-9 columns">
+                  <input type="number" id="machine-manual-z_jerk" class="machine-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix inpm3_mmpm3_label">mm/min<sup>3</sup></span>
                 </div>
               </div>
 

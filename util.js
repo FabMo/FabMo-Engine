@@ -8,10 +8,10 @@ var fs = require('fs');
 var escapeRE = require('escape-regexp-component');
 var exec = require('child_process').exec;
 var stream = require('stream');
-
+var util = require('util');
 var mime = require('mime');
 var restify = require('restify');
-var errors = restify.errors;
+var errors = require('restify');
 
 ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
 ALLOWED_APP_EXTENSIONS = ['.zip', '.fma'];

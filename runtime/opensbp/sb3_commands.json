@@ -2651,6 +2651,32 @@
       "cmd": "ST",
       "name": "set to Table base coordinates"
    },
+   "SU": {
+      "cmd": "SU",
+      "name": "Set Units",
+      "params": [
+         {
+            "name": "Units",
+            "desc": "Set the units for the current file (inch/mm)",
+            "abrev": "in/mm",
+            "typeext": 0,
+            "default": "in",
+            "default_desc": "inch",
+            "opts": [
+               {
+                  "value": "in",
+                  "desc": "Inches"
+               },
+               {
+                  "value": "mm",
+                  "desc": "Millimeters"
+               }
+            ],
+            "sysvar": "0",
+            "type": "opt"
+         }
+      ]
+   },
    "SV": {
       "cmd": "SV",
       "name": "set Values"
