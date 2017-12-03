@@ -1465,6 +1465,9 @@ function peg$parse(input, options) {
     }
     if (s2 !== peg$FAILED) {
       s3 = peg$parsedecimal();
+      if (s3 === peg$FAILED) {
+        s3 = null;
+      }
       if (s3 !== peg$FAILED) {
         if (input.charCodeAt(peg$currPos) === 46) {
           s4 = peg$c78;

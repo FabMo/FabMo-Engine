@@ -77,7 +77,7 @@ integer "integer"
   = dec:('-'? decimal) { return parseInt(dec.join(""), 10); }
 
 float "float"
-  = f:('-'? decimal '\.' decimal) { return parseFloat(f.join(""));}
+  = f:('-'? decimal? '\.' decimal) { return parseFloat(f.join(""));}
 
 barestring
   = s:[^,\n"]+ { return s.join("").trim() || undefined; }
