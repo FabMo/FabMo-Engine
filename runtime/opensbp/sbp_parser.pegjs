@@ -42,7 +42,7 @@ end
   = name:("END"i) __ message:quotedstring? {return {"type" : "end", "message": message}}
 
 pause
-   = name:("PAUSE"i) (__ / __ "," __ ) arg:(e:expression {return {expr: e}})? {
+   = name:("PAUSE"i)  __ ","? __  arg:(e:expression {return {expr: e}})? {
     var arg = arg || {};
     if(arg['expr']) { return {'type' : 'pause', 'expr' : arg.expr}}
     else {return {'type':'pause'}};
