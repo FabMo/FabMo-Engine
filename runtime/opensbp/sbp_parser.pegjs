@@ -22,7 +22,7 @@ custom_cut
    { return {"type":"custom", "index":index};}
 
 event
-   = "ON"i ___ "INPUT"i __ "(" __ sw:integer __ "," __ state:integer __ ")" ___ stmt:(assignment / jump / pause / single / command)
+   = "ON"i ___ "INP"i("UT"i)? __ "(" __ sw:integer __ "," __ state:integer __ ")" ___ stmt:(assignment / jump / pause / single / command)
       {return {"type":"event", "sw":sw, "state":state, "stmt":stmt};} 
 
 command 
@@ -42,7 +42,7 @@ end
   = name:("END"i) __ message:quotedstring? {return {"type" : "end", "message": message}}
 
 pause
-   = name:("PAUSE"i) __ arg:(e:expression {return {expr: e}})? {
+   = name:("PAUSE"i)  __ ","? __  arg:(e:expression {return {expr: e}})? {
     var arg = arg || {};
     if(arg['expr']) { return {'type' : 'pause', 'expr' : arg.expr}}
     else {return {'type':'pause'}};
@@ -77,7 +77,7 @@ integer "integer"
   = dec:('-'? decimal) { return parseInt(dec.join(""), 10); }
 
 float "float"
-  = f:('-'? decimal '\.' decimal) { return parseFloat(f.join(""));}
+  = f:('-'? decimal? '\.' decimal) { return parseFloat(f.join(""));}
 
 barestring
   = s:[^,\n"]+ { return s.join("").trim() || undefined; }
