@@ -1,14 +1,17 @@
 {
-   function buildTree(first, rest) {
-      if(rest[0]) {
-          var l = first;
-          var r = buildTree(rest[0][3], rest.slice(1));
-          return {left : l, right : r, op : rest[0][1]};
-          //return {left: l, right: rest[0][3], op: rest[0][1]};
-      } else {
-          return first;
-      }
+
+   function buildLeftAssocTree(l, r) {
+   	if(!l.length) { return r; }
+	var last = l.pop();
+	return {left:buildLeftAssocTree(l, last[0]), right:r, op : last[1][1]}
    }
+
+   function buildRightAssocTree(l, r) {
+      if(!r.length) { return l; }
+      	var first = r.shift()	      
+      return {left : l, op : first[1], right : buildRightAssocTree(first[3], r)};
+   }
+
 }
 
 start
@@ -110,13 +113,16 @@ comparison
   = ("(" __ cmp:comparison __ ")" {return cmp;} / compare)
 
 expression
-  = first:term rest:(__ add_op __ term)* {
-      return buildTree(first, rest);
+  = e1
+
+e1
+  = l:(e2 (__ add_op __ ))* r:e2 {
+      return buildLeftAssocTree(l, r);
     }
 
-term
-  = first:factor rest:(__ mul_op __ factor)* {
-      return buildTree(first, rest);
+e2
+  = l:factor r:(__ mul_op __ factor)* {
+      return buildRightAssocTree(l, r);
     }
 
 factor

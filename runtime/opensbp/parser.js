@@ -106,7 +106,7 @@ var main = function(){
             var end = new Date().getTime();
             var time = end - start;
 
-            console.log(obj);
+            console.log(JSON.stringify(obj, null, ' '));
             console.log('Parse time: ' + time);
 
         });
