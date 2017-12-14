@@ -11,6 +11,7 @@ var config = require('./config');
 var updater = require('./updater');
 var u = require('./util');
 var async = require('async');
+var canQuit = false;
 
 var GCodeRuntime = require('./runtime/gcode').GCodeRuntime;
 var SBPRuntime = require('./runtime/opensbp').SBPRuntime;
@@ -161,6 +162,14 @@ function Machine(control_path, callback) {
     }.bind(this));
 
     this.driver.on('status', function(stat) {
+		if(this.status.state === "paused"){
+			setTimeout(function(){
+				 canQuit = true;
+
+			}, 1000);
+		} else {
+			canQuit = false;
+		}
     	this.handleFireButton(stat);
     	this.handleAPCollapseButton(stat);
 		this.handleOkayButton(stat);
@@ -211,15 +220,27 @@ Machine.prototype.handleOkayButton = function(stat){
 	var auth_input = 'in' + config.machine.get('auth_input');
 	if(stat[auth_input] && this.status.state === 'paused') {
 		log.info("Okay hit!")
-		this.resume();
+		this.resume(function(err, msg){
+			if(err){
+				log.error(err);
+			} else {
+				log.info(msg);
+			}
+		});
 	}
 }
 
 Machine.prototype.handleCancelButton = function(stat){
 	var quit_input = 'in' + config.machine.get('quit_input');
-	if(stat[quit_input] && this.status.state === 'paused') {
+	if(stat[quit_input] && this.status.state === 'paused' && canQuit) {
 		log.info("Cancel hit!")
-		this.quit();
+		this.quit(function(err, msg){
+			if(err){
+				log.error(err);
+			} else {
+				log.info(msg);
+			}
+		});
 	}
 
  }
