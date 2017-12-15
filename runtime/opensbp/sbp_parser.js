@@ -158,7 +158,7 @@ function peg$parse(input, options) {
       peg$c14 = ")",
       peg$c15 = peg$literalExpectation(")", false),
       peg$c16 = function(sw, state, stmt) {return {"type":"event", "sw":sw, "state":state, "stmt":stmt};},
-      peg$c17 = function(m, arg1) {return arg;},
+      peg$c17 = function(m, arg1) {return arg1;},
       peg$c18 = function(m, arg1, args) {
             if(arg1) {
               args.unshift(arg1[2]);

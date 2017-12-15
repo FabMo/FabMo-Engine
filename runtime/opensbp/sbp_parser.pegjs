@@ -30,7 +30,7 @@ event
 
 command 
    = m:mnemonic arg1:((","/whitespace?) __ argument)?
-     args:(("," __ (arg:argument) __ ){return arg;})* 
+     args:(("," __ (arg:argument) __ ){return arg1;})* 
      {
       if(arg1) {
         args.unshift(arg1[2]);
