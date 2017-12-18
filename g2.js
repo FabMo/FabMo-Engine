@@ -384,6 +384,8 @@ G2.prototype.handleExceptionReport = function(response) {
 			//this._write("{clr:n}\n");
 			//this.command("M30");
 		}
+		log.error("Response with an exception report:")
+		log.error(JSON.stringify(response))
 	}
 };
 
@@ -437,6 +439,10 @@ G2.prototype.handleStatusReport = function(response) {
 				case STAT_END:
 					this.status.line = null;
 					break;
+				case STAT_PANIC:
+					log.error('Panicked Response:')
+					log.error(JSON.stringify(response))
+					break
 			}
 
 			if(this.quit_pending) {

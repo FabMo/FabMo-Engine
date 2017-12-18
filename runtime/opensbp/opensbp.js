@@ -980,6 +980,7 @@ SBPRuntime.prototype._eval = function(expr) {
 
 SBPRuntime.prototype.init = function() {
 	this.pc = 0;
+	this.coordinateSystem = "G55"
 	this.start_of_the_chunk = 0;
 	this.stack = [];
 	this.label_index = {};
@@ -1109,23 +1110,23 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 		break;
 
 		case 6: // X Table Base
-			return config.driver.get('g55x');
+			return config.driver.get('g54x');
 		break;
 
 		case 7: // Y Table Base
-			return config.driver.get('g55y');
+			return config.driver.get('g54y');
 		break;
 
 		case 8: // Z Table Base
-			return config.driver.get('g55z');
+			return config.driver.get('g54z');
 		break;
 
 		case 9: // A Table Base
-			return config.driver.get('g55a');
+			return config.driver.get('g54a');
 		break;
 
 		case 10: // B Table Base
-			return config.driver.get('g55b');
+			return config.driver.get('g54b');
 		break;
 
 		case 25:
@@ -1258,7 +1259,11 @@ SBPRuntime.prototype._unhandledCommand = function(command) {
 
 SBPRuntime.prototype._pushFileStack = function() {
 	frame =  {}
+	frame.coordinateSystem = this.coordinateSystem
+	frame.movespeed_xy = this.movespeed_xy
+	frame.movespeed_z = this.movespeed_z
 	frame.pc = this.pc
+	frame.movexy
 	frame.program = this.program
 	frame.stack = this.stack;
 	//frame.user_vars = this.user_vars
@@ -1271,7 +1276,11 @@ SBPRuntime.prototype._pushFileStack = function() {
 
 SBPRuntime.prototype._popFileStack = function() {
 	frame = this.file_stack.pop()
+	this.movespeed_xy = frame.movespeed_xy
+	this.movespeed_z = frame.movespeed_z
 	this.pc = frame.pc
+	this.coordinateSystem = frame.coordinateSystem
+	this.emit_gcode(this.coordinateSystem)	
 	this.program = frame.program
 	this.stack = frame.stack
 	//this.user_vars = frame.user_vars
