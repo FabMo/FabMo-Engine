@@ -65,7 +65,7 @@ function FabMoUI(tool, options){
 
 	this.stop_button_selector = this.file_control_selector + ' .stopJob';
 	this.resume_button_selector = this.file_control_selector + ' .resumeJob';
-	this.pause_button_selector = this.file_control_selector + ' .fabmo-pause-button';
+	this.pause_button_selector = this.file_control_selector + ' .pauseJob-wrapper';
 
 	this.units_selector = this.status_div_selector + ' .units';
 
@@ -308,6 +308,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 			$(that.stop_button_selector).hide();
 			$(that.pause_button_selector).show();
 			$(that.resume_button_selector).hide();
+			$(that.resume_button_selector+" div:first-child").removeClass('spinner green');
+			$(that.stop_button_selector+" div:first-child").removeClass('spinner red');
 		}
 	}
 	else if(status.state === 'manual') {
@@ -333,6 +335,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 			$(that.stop_button_selector).show();
 			$(that.pause_button_selector).hide();
 			$(that.resume_button_selector).show();
+			$(that.pause_button_selector+" div div:first-child").removeClass('spinner red');
+
 		}
 	}
 	else if(status.state === 'passthrough') {
@@ -431,55 +435,40 @@ FabMoUI.prototype.updateStatus = function(){
 
 };
 
-var bindOff = function(el){
-	$(el).off();
-};
 
-var bindOnPause = function(el ,that){
-	$(el).click(function(e) {
-		that.tool.pause(function(err, data){
-			if (err) {
-				console.log(err)
-			} else {
-				console.log(data);
-				bindOff(that.pause_button_selector);
-			}
-		});
-	});
-};
 
 
 FabMoUI.prototype.FileControl = function(){
 	var that = this;
 	$(that.pause_button_selector).click(function(e) {
+		$(that.pause_button_selector+" div div:first-child").addClass('spinner red');
 		that.tool.pause(function(err, data){
 			if (err) {
 				console.log(err)
 			} else {
 				console.log(data);
-				bindOff(that.pause_button_selector);
 			}
 		});
 	});
 
 	$(that.resume_button_selector).click(function(e) {
+		$(that.resume_button_selector+" div:first-child").addClass('spinner green');
 		that.tool.resume(function(err, data){
 			if (err) {
 				console.log(err)
 			} else {
 				console.log(data);
-				bindOnPause(that.pause_button_selector, that);
 			}
 		});
 	});
 
 	$(that.stop_button_selector).click(function(e) {
+		$(that.stop_button_selector+" div:first-child").addClass('spinner red');
 		that.tool.quit(function(err, data){
 			if (err) {
 				console.log(err)
 			} else {
 				console.log(data);
-				bindOnPause(that.pause_button_selector, that);
 			}
 		});
 	});

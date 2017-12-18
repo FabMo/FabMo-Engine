@@ -13,6 +13,7 @@ var u = require('./util');
 var async = require('async');
 var canQuit = false;
 
+
 var GCodeRuntime = require('./runtime/gcode').GCodeRuntime;
 var SBPRuntime = require('./runtime/opensbp').SBPRuntime;
 var ManualRuntime = require('./runtime/manual').ManualRuntime;
@@ -620,38 +621,39 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 };
 
 Machine.prototype.pause = function(callback) {
-	if(this.status.state === "running") {
-		if(this.current_runtime) {
-			this.current_runtime.pause();
-			callback(null, 'paused');
+		if(this.status.state === "running") {
+			if(this.current_runtime) {
+				this.current_runtime.pause();
+				callback(null, 'paused');
+			} else {
+				calback("Not pausing because no runtime provided");
+			}
 		} else {
-			calback("Not pausing because no runtime provided");
+			calback("Not pausing because machine is not running");
 		}
-	} else {
-		calback("Not pausing because machine is not running")
-	}
 };
 
 Machine.prototype.quit = function(callback) {
-    this.disarm();
-	// Quitting from the idle state dismisses the 'info' data
-	if(this.status.state === "idle") {
-		delete this.status.info;
-		this.emit('status', this.status);
-	}
-
-	// Cancel the currently running job, if there is one
-	if(this.status.job) {
-		this.status.job.pending_cancel = true;
-	}
-	if(this.current_runtime) {
-		log.info("Quitting the current runtime...")
-		this.current_runtime.quit();
-		callback(null, 'quit');
-	} else {
-		log.warn("No current runtime!")
-		calback("Not quiting because no current runtime")
-	}
+		this.disarm();
+		// Quitting from the idle state dismisses the 'info' data
+		if(this.status.state === "idle") {
+			delete this.status.info;
+			this.emit('status', this.status);
+		}
+	
+		// Cancel the currently running job, if there is one
+		if(this.status.job) {
+			this.status.job.pending_cancel = true;
+		}
+		if(this.current_runtime) {
+			log.info("Quitting the current runtime...")
+			this.current_runtime.quit();
+			callback(null, 'quit');
+			alreadyQuiting = false;
+		} else {
+			log.warn("No current runtime!")
+			calback("Not quiting because no current runtime")
+		}    
 };
 
 Machine.prototype.resume = function(callback) {

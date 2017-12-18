@@ -132,10 +132,10 @@ define(function(require) {
     };
 
 
-    window.setInterval(function() {
-        $('.pauseJob').toggleClass('blink');
+    // window.setInterval(function() {
+    //     $('.pauseJob').toggleClass('blink');
 
-    }, 1000);
+    // }, 1000);
 
     var colapseMenu = function() {
         if ($(window).width() > 640){
