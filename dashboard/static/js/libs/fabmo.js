@@ -691,6 +691,15 @@ FabMoDashboard.prototype.manualStart = function(axis, speed) {
 	this._call("manualStart",{"axis":axis, "speed":speed}, callback);
 }
 
+
+FabMoDashboard.prototype.manualEnter = function(axis, speed) {
+	this._call("manualEnter", callback);
+}
+
+FabMoDashboard.prototype.manualExit = function(axis, speed) {
+	this._call("manualExit", callback);
+}
+
 /**
  * Send a "heartbeat" to the system, authorizing continued manual movement.  Manual moves must be continually
  * refreshed with this heartbeat function, or the tool will stop moving.

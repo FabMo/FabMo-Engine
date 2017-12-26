@@ -411,6 +411,26 @@ define(function(require) {
       });
     }.bind(this));
 
+        this._registerHandler('manualEnter', function(data, callback) {
+      this.engine.manualEnter(function(err, result) {
+        if (err) {
+          callback(err);
+        } else {
+          callback(null);
+        }
+      });
+    }.bind(this));
+
+    this._registerHandler('manualExit', function(data, callback) {
+      this.engine.manualExit(function(err, result) {
+        if (err) {
+          callback(err);
+        } else {
+          callback(null);
+        }
+      });
+    }.bind(this));
+
     this._registerHandler('manualHeartbeat', function(data, callback) {
       this.engine.manualHeartbeat(function(err, result) {
         if (err) {

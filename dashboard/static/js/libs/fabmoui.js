@@ -290,6 +290,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.status_div_selector).removeClass('fabmo-status-idle');
 		$(".tools-current > li a").removeClass('paus err disc');
 		$(that.state_selector).html(statename);
+		$(".exit-button").hide();
+
 		if(that.file_control)
 		{
 			$(that.stop_button_selector).hide();
@@ -318,6 +320,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.status_div_selector).removeClass('fabmo-status-running');
 		$(".tools-current > li a").removeClass('disc err').addClass('paus');
 		$(that.state_selector).html(statename);
+		$(".exit-button").show();
 		if(that.file_control)
 		{
 			$(that.stop_button_selector).hide();
@@ -330,6 +333,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.status_div_selector).removeClass('fabmo-status-paused');
 		$(".tools-current > li a").removeClass('paus disc err').addClass('paus');
 		$(that.state_selector).html(statename);
+				$(".exit-button").hide();
+
 		if(that.file_control)
 		{
 			$(that.stop_button_selector).show();
@@ -348,6 +353,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.stop_button_selector).hide();
 		$(that.pause_button_selector).hide();
 		$(that.resume_button_selector).hide();
+		$(".exit-button").hide();
+
 	}
 	else if(status.state == 'limit') {
 		that.forbidKeypad();
@@ -355,6 +362,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.status_div_selector).removeClass('fabmo-status-error');
 		$(".tools-current > li a").removeClass('paus err').addClass('disc');
 		$(that.state_selector).html(status.state);
+				$(".exit-button").hide();
+
 		if(that.file_control)
 		{
 			$(that.pause_button_selector).hide();
@@ -368,6 +377,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
 		$(that.status_div_selector).addClass('fabmo-status-error');
 		$(that.state_selector).html(statename);
+		$(".exit-button").hide();
+
 		if(that.file_control)
 		{
 			$(that.pause_button_selector).hide();
@@ -377,6 +388,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	}
 	else if(status.state == 'stopped') {
 		that.forbidKeypad();
+		$(".exit-button").hide();
+
 		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
 		$(that.status_div_selector).addClass('fabmo-status-paused');
 		$(that.state_selector).html(statename);

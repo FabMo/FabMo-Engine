@@ -21,7 +21,7 @@ var Keypad = function(id, options) {
 	this.going = false;
 	this.interval = null;
 	this.enabled = false;
-	this.listeners = {'go' : [], 'stop': [], 'nudge':[]}
+	this.listeners = {'go' : [], 'stop': [], 'nudge':[], 'exit':[]}
 	this.pressThreshold = 50;
 	this.pressTime = 150;
 	this.tapInterval = 150;
@@ -30,10 +30,10 @@ var Keypad = function(id, options) {
 
 Keypad.prototype.init = function() {
 	var e = this.elem;
+	var Hammer = require('./hammer.min.js');
 
 	var drive_buttons = e.find('.drive-button');
 	drive_buttons.each(function(index, element) {
-		var Hammer = require('./hammer.min.js');
 		var hammer = new Hammer.Manager(element);
 		hammer.add(new Hammer.Tap({time: this.pressTime-1, interval: this.tapInterval, threshold: this.pressThreshold}));
 		hammer.add(new Hammer.Press({time: this.pressTime, threshold: this.pressThreshold}));
@@ -53,6 +53,13 @@ Keypad.prototype.init = function() {
 		$(document).on('scroll', this.end.bind(this));
 		element.addEventListener("contextmenu", function(evt) {evt.preventDefault()});
 	}.bind(this));
+
+	var exit_button = e.find('.exit-button');
+	if(exit_button) {
+		var hammer = new Hammer.Manager(exit_button[0]);
+		hammer.add(new Hammer.Tap({time: this.pressTime-1, interval: this.tapInterval, threshold: this.pressThreshold}));
+		hammer.on('tap', this.onExitTap.bind(this));
+	}
 }
 
 Keypad.prototype.setOptions = function(options) {
@@ -131,6 +138,10 @@ Keypad.prototype.end = function() {
 	}
 }
 
+Keypad.prototype.exit = function() {
+	this.emit('exit');
+}
+
 Keypad.prototype.onDrivePress = function(evt) {
 	this.target = evt.target;
 	this.setEnabled(true);
@@ -193,6 +204,11 @@ Keypad.prototype.onDriveTap = function(evt) {
 			}
 		}.bind(this), 25);
 	}
+}
+
+Keypad.prototype.onExitTap = function(evt) {
+	console.log("Manual exit tapped");
+	this.exit();
 }
 
 Keypad.prototype.onDriveMouseleave = function(evt) {

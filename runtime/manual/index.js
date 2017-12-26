@@ -35,6 +35,9 @@ ManualRuntime.prototype.connect = function(machine) {
 	// True while the user intends (as far as we know) for the tool to continue moving
 	this.keep_moving = false;
 
+	// Set to true to exit the manual state once the current operation is completed
+	this.exit_pending = false;
+
 	// Current trajectory
 	this.current_axis = null;
 	this.current_speed = null;
@@ -113,6 +116,20 @@ ManualRuntime.prototype.executeCode = function(code, callback) {
 	}
 
 	switch(code.cmd) {
+		case 'enter':
+			break;
+		case 'exit':
+			log.debug('---- MANUAL DRIVE EXIT ----')
+			this.exit_pending = true;
+			if(this.moving) {
+				return this.quit();
+			}
+			if(this.stream) {
+				return this.stream.end();
+			}
+			this._done();
+			break;
+
 		case 'start':
 			this.startMotion(code.axis, code.speed);
 			break;
@@ -173,10 +190,7 @@ ManualRuntime.prototype.startMotion = function(axis, speed) {
 			this.driver.runStream(this.stream).then(function(stat) {
                 config.driver.restoreSome(['xjm','yjm','zjm'], function() {
 				    log.info("Finished running stream: " + stat);
-				    this.moving = false;
-				    this.keep_moving = false;
-				    this.stream = null;
-				    this._changeState("idle");
+				    this._done();
                 }.bind(this));
 			}.bind(this));
 		} else {
@@ -190,6 +204,14 @@ ManualRuntime.prototype.startMotion = function(axis, speed) {
 	}
 };
 
+ManualRuntime.prototype._done = function() {
+	this.moving = false;
+    this.keep_moving = false;
+    this.stream = null;
+    if(this.exit_pending) {
+	    this._changeState("idle");
+    }
+}
 ManualRuntime.prototype.renewMoves = function() {
 	if(this.moving && this.keep_moving) {
 		this.keep_moving = false;
@@ -240,7 +262,9 @@ ManualRuntime.prototype.fixedMove = function(axis, speed, distance) {
 				    this.moving = false;
 				    this.keep_moving = false;
 				    this.stream = null;
-				    this._changeState("idle");
+				    if(this.exit_pending) {
+					    this._changeState("idle");
+				    }
 				}
 			}.bind(this));
 		}
@@ -258,6 +282,7 @@ ManualRuntime.prototype.quit = function() {
 	if(this.stream) {
 		this.stream.end();
 	}
+
 }
 
 ManualRuntime.prototype.resume = function() {

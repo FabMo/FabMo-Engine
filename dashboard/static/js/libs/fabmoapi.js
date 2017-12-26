@@ -390,6 +390,14 @@ FabMoAPI.prototype.manualStop = function() {
 	this.executeRuntimeCode('manual', {'cmd': 'stop'});
 }
 
+FabMoAPI.prototype.manualEnter = function() {
+	this.executeRuntimeCode('manual', {'cmd': 'enter'});
+}
+
+FabMoAPI.prototype.manualExit = function() {
+	this.executeRuntimeCode('manual', {'cmd': 'exit'});
+}
+
 FabMoAPI.prototype.manualMoveFixed = function(axis, speed, distance) {
 	this.executeRuntimeCode('manual', {'cmd': 'fixed', 'axis' : axis, 'speed' : speed, 'dist' : distance});
 }

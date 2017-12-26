@@ -298,6 +298,10 @@ require("../css/toastr.min.css");
         keypad.on('nudge', function(nudge) {
             dashboard.engine.manualMoveFixed(nudge.axis, 60 * getManualMoveSpeed(nudge), nudge.dir * getManualNudgeIncrement(nudge), getManualMoveJerk(nudge));
         });
+
+        keypad.on('exit', function() {
+            dashboard.engine.manualExit();
+        });
         return keypad;
     }
 
