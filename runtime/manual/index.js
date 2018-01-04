@@ -50,7 +50,7 @@ ManualRuntime.prototype.connect = function(machine) {
 ManualRuntime.prototype.disconnect = function() {
 	if(this.ok_to_disconnect && !this.stream) {
 		this.driver.removeListener('status', this.status_handler);
-		//this._changeState("idle");
+		//this.machine.setState(this, 'idle');
 	} else {
 		throw new Error("Cannot disconnect while manually driving the tool.");
 	}
@@ -58,14 +58,22 @@ ManualRuntime.prototype.disconnect = function() {
 
 ManualRuntime.prototype.enter = function() {
 	this.stream = new stream.PassThrough();
-	this.driver.runStream(this.stream);
+	this.driver.runStream(this.stream).then(function() {
+		delete this.stream;
+		delete this.helper;
+		this.machine.setState(this, 'idle');
+	}.bind(this));
+
 	this.helper = new ManualDriver(this.driver, this.stream);
+	this.helper.enter().then(function() {
+		this.driver.quit();
+	}.bind(this));
 }
 
 ManualRuntime.prototype.executeCode = function(code, callback) {
 	this.completeCallback = callback;
-	//log.debug("Recieved manual command: " + JSON.stringify(code));
 
+	console.log("COMMAND: ", code)
 	// Don't honor commands if we're not in a position to do so
 	switch(this.machine.status.state) {
 		case "stopped":
@@ -78,14 +86,15 @@ ManualRuntime.prototype.executeCode = function(code, callback) {
 			break;
 		case 'exit':
 			log.debug('---- MANUAL DRIVE EXIT ----')
-			this.exit_pending = true;
+			/*this.exit_pending = true;
 			if(this.helper.isMoving()) {
 				return this.helper.stopMotion();
 			}
 			if(this.stream) {
 				return this.stream.end();
-			}
-			this._done();
+			}*/
+			this.helper.exit();
+			//this._done();
 			break;
 
 		case 'start':
@@ -121,6 +130,7 @@ ManualRuntime.prototype.quit = function() {}
 ManualRuntime.prototype.resume = function() {}
 
 ManualRuntime.prototype._onG2Status = function(status) {
+
 
 	// Update our copy of the system status
 	for (var key in this.machine.status) {

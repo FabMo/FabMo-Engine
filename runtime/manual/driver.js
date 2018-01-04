@@ -3,6 +3,7 @@ var config = require('../../config');
 var stream = require('stream');
 var util = require('util');
 var events = require('events')
+var Q = require('q');
 
 var T_RENEW = 200;
 var SAFETY_FACTOR = 2.0;
@@ -27,13 +28,15 @@ function ManualDriver(drv, st) {
 	// Set to true to exit the manual state once the current operation is completed
 	this.exit_pending = false;
 
+	this.stop_pending = false;
+
 	// Current trajectory
 	this.current_axis = null;
 	this.current_speed = null;
 	this.completeCallback = null;
 	this.status_handler = this._onG2Status.bind(this);
 	this.driver.on('status',this.status_handler);
-	this.enter();
+//	var this.deferred = this.enter();
 }
 util.inherits(ManualDriver, events.EventEmitter);
 
@@ -43,20 +46,25 @@ ManualDriver.prototype.enter = function() {
     this.stream.write('M100.1 ({xjm:'+jerkXY+'})\n');
     this.stream.write('M100.1 ({yjm:'+jerkXY+'})\n');
     this.stream.write('M100.1 ({zjm:'+jerkZ+'})\n');	
+	this.deferred = Q.defer();
+	return this.deferred.promise;
+
 }
 
 ManualDriver.prototype.exit = function() {
 	if(this.isMoving()) {
+		// Don't exit yet - just pend.
 		this.exit_pending = true;
 		this.stopMotion();
 
 	} else {
 		config.driver.restoreSome(['xjm','yjm','zjm'], function() {
-				    log.info("Finished running stream: " + stat);
-				    this._done();
-                }.bind(this));
+		    //log.info("Finished running stream: " + stat);
+		    this._done();
+        }.bind(this));
 		this.driver.removeListener('status', this.status_handler);
 		this.exited = true;
+		this.deferred.resolve();
 	}
 }
 
@@ -69,6 +77,7 @@ ManualDriver.prototype.startMotion = function(axis, speed) {
 		if(axis === this.currentAxis && speed === this.currentSpeed) {
 			this.maintainMotion();
 		} else {
+			this.stopMotion();
 			// Deal with direction changes here
 		}
 	} else {
@@ -91,12 +100,18 @@ ManualDriver.prototype.maintainMotion = function() {
 }
 
 ManualDriver.prototype.stopMotion = function() {
-	log.debug("stopMotion called") 
-	log.stack()
+	console.log("stopMotion called")
 	if(this._limit()) { return; }
 	this.keep_moving = false;
-	this.driver.feedHold();
-	this.driver.queueFlush();
+	if(this.moving) {
+		this.stop_pending = true;
+		this.driver.feedHold();
+		this.driver.queueFlush(function() {
+			this.driver.resume();		
+		}.bind(this));
+	} else {
+		this.stop_pending = false;
+	}
 }
 
 ManualDriver.prototype.goto = function(pos) {
@@ -104,34 +119,33 @@ ManualDriver.prototype.goto = function(pos) {
 }
 
 ManualDriver.prototype._handleNudges = function() {
-	console.log("Handlin nudgies")
-		if(this.fixedQueue.length > 0) {
-			while(this.fixedQueue.length > 0) {
-				var move = this.fixedQueue.shift();
-				this.moving = true;
-				this.keep_moving = false;
-				var axis = move.axis.toUpperCase();
-				if('XYZABCUVW'.indexOf(axis) >= 0) {
-					var moves = ['G91'];
-					if(move.speed) {
-						moves.push('G1 ' + axis + move.distance.toFixed(5) + ' F' + move.speed.toFixed(3))
-					} else {
-						moves.push('G0 ' + axis + move.distance.toFixed(5) + ' F' + move.speed.toFixed(3))
-					}
+	var count = this.fixedQueue.length;
 
-					moves.forEach(function(move) {
-						console.log(move)
-						this.stream.write(move + '\n');
-						//this.stream.write('G4 P0.050\n');
-					}.bind(this));
+	if(this.fixedQueue.length > 0) {
+		while(this.fixedQueue.length > 0) {
+			var move = this.fixedQueue.shift();
+			this.moving = true;
+			this.keep_moving = false;
+			var axis = move.axis.toUpperCase();
+			if('XYZABCUVW'.indexOf(axis) >= 0) {
+				var moves = ['G91'];
+				if(move.speed) {
+					moves.push('G1 ' + axis + move.distance.toFixed(5) + ' F' + move.speed.toFixed(3))
+				} else {
+					moves.push('G0 ' + axis + move.distance.toFixed(5) + ' F' + move.speed.toFixed(3))
 				}
-			}
-					this.driver.prime();
-					this.driver.resume();
 
+				moves.forEach(function(move) {
+					this.stream.write(move + '\n');
+					//this.stream.write('G4 P0.050\n');
+				}.bind(this));
+			}
+		}
+		this.driver.prime();
 	} else {
-		this.moving = this.keep_moving = false
+		this.moving = this.keep_moving = false;
 	}
+	return count;
 }
 
 ManualDriver.prototype.nudge = function(axis, speed, distance) {
@@ -158,9 +172,13 @@ ManualDriver.prototype._renewMoves = function() {
 		log.debug('Renewing moves because of reasons')
 		this.keep_moving = false;
 		var segment = this.currentDirection*(this.renewDistance / RENEW_SEGMENTS);
-		this.driver.resume();
+		console.log("Paused? ", this.driver.context._paused);
+		console.log("Flooded? ", this.driver.flooded);
+		console.log(this.driver.getInfo())
+		//this.driver.resume();
 		for(var i=0; i<RENEW_SEGMENTS; i++) {
 			var move = 'G1 ' + this.currentAxis + segment.toFixed(5) + '\n'
+			console.log(move);
 			this.stream.write(move);
 		}
 		this.driver.prime();
@@ -168,9 +186,7 @@ ManualDriver.prototype._renewMoves = function() {
 			this._renewMoves()
 		}.bind(this), T_RENEW)
 	} else {
-		log.debug('NOT Renewing moves because of reasons')
-
-			this.stopMotion();
+		this.stopMotion();
 	}
 }
 
@@ -188,9 +204,15 @@ ManualDriver.prototype._onG2Status = function(status) {
 		case this.driver.STAT_STOP:
 		case this.driver.STAT_END:
 		case this.driver.STAT_HOLDING:
-			log.debug("NO longer moving.")
-			log.debug("Stat: " + status.stat)
-			this._handleNudges();
+			if(this._handleNudges()) {
+				// Nudges got handled
+			} else {
+				// No nudges
+				if(this.exit_pending) {
+					this.exit();
+				}
+				this.stop_pending = false;
+			}
 			break;
 	}
 };
