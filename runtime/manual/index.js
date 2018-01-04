@@ -73,7 +73,6 @@ ManualRuntime.prototype.enter = function() {
 ManualRuntime.prototype.executeCode = function(code, callback) {
 	this.completeCallback = callback;
 
-	console.log("COMMAND: ", code)
 	// Don't honor commands if we're not in a position to do so
 	switch(this.machine.status.state) {
 		case "stopped":
@@ -84,44 +83,41 @@ ManualRuntime.prototype.executeCode = function(code, callback) {
 		case 'enter':
 			this.enter();
 			break;
-		case 'exit':
-			log.debug('---- MANUAL DRIVE EXIT ----')
-			/*this.exit_pending = true;
-			if(this.helper.isMoving()) {
-				return this.helper.stopMotion();
-			}
-			if(this.stream) {
-				return this.stream.end();
-			}*/
-			this.helper.exit();
-			//this._done();
-			break;
-
-		case 'start':
-			if(!this.helper) {
-				this.enter();
-			}
-			this.helper.startMotion(code.axis, code.speed);
-			break;
-
-		case 'stop':
-			this.helper.stopMotion();
-			break;
-
-		case 'maint':
-			this.helper.maintainMotion();
-			break;
-
-		case 'fixed':
-			if(!this.helper) {
-				this.enter();
-			}
-			this.helper.nudge(code.axis, code.speed, code.dist);
-			break;
-
 		default:
-			log.error("Don't know what to do with '" + code.cmd + "' in manual command.");
-			break;
+			if(!this.helper) {
+				log.warn("Can't accept command '" + code.cmd + "' - not entered.");
+				return;
+			}
+			switch(code.cmd) {
+				case 'exit':
+					log.debug('---- MANUAL DRIVE EXIT ----')
+					this.helper.exit();
+					break;
+
+				case 'start':
+					this.helper.startMotion(code.axis, code.speed);
+					break;
+
+				case 'stop':
+					this.helper.stopMotion();
+					break;
+
+				case 'maint':
+					this.helper.maintainMotion();
+					break;
+
+				case 'fixed':
+					if(!this.helper) {
+						this.enter();
+					}
+					this.helper.nudge(code.axis, code.speed, code.dist);
+					break;
+
+				default:
+					log.error("Don't know what to do with '" + code.cmd + "' in manual command.");
+					break;
+
+			}
 	}
 }
 

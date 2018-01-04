@@ -264,7 +264,7 @@ require("../css/toastr.min.css");
     }
 
     function setupKeyboard() {
-        var keyboard = new Keyboard('#keyboard');
+        var keyboard = new Keyboard();
         keyboard.on('go', function(move) {
             if (move) {
                 dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
@@ -283,7 +283,6 @@ require("../css/toastr.min.css");
     }
 
     function setupKeypad() {
-
         var keypad = new Keypad('#keypad');
         keypad.on('go', function(move) {
             if (move) {
@@ -297,6 +296,16 @@ require("../css/toastr.min.css");
 
         keypad.on('nudge', function(nudge) {
             dashboard.engine.manualMoveFixed(nudge.axis, 60 * getManualMoveSpeed(nudge), nudge.dir * getManualNudgeIncrement(nudge), getManualMoveJerk(nudge));
+        });
+
+        keypad.on('enter', function() {
+            if(dashboard.engine.status.state == 'manual') {
+                dashboard.engine.manualExit();
+                keyboard.setEnabled(false);
+            } else {                
+                dashboard.engine.manualEnter();
+                keyboard.setEnabled(true);
+            }
         });
 
         keypad.on('exit', function() {
@@ -320,7 +329,6 @@ require("../css/toastr.min.css");
                 conf = {consent_for_beacon : "true"};
                 dashboard.engine.setUpdaterConfig(conf,function(err){
                 if(err){
-                    console.log(err);
                     return;
                 }
                 });

@@ -156,7 +156,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	var that = this;
 	var prev_state = that.tool.state;
 	that.tool.state=status.state;
-
+	console.log(status.state)
 	if(prev_state !== status.state) {
 		if(status.state === 'stopped') {
 			if(status.info) {
@@ -291,6 +291,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(".tools-current > li a").removeClass('paus err disc');
 		$(that.state_selector).html(statename);
 		$(".exit-button").hide();
+		$(".enter-button").removeClass('drive-button-active').addClass('drive-button-inactive');
 
 		if(that.file_control)
 		{
@@ -321,6 +322,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(".tools-current > li a").removeClass('disc err').addClass('paus');
 		$(that.state_selector).html(statename);
 		$(".exit-button").show();
+		$(".enter-button").removeClass('drive-button-inactive').addClass('drive-button-active');
+
 		if(that.file_control)
 		{
 			$(that.stop_button_selector).hide();
@@ -457,9 +460,8 @@ FabMoUI.prototype.FileControl = function(){
 		$(that.pause_button_selector+" div div:first-child").addClass('spinner red');
 		that.tool.pause(function(err, data){
 			if (err) {
-				console.log(err)
+				console.error(err)
 			} else {
-				console.log(data);
 			}
 		});
 	});
@@ -468,9 +470,8 @@ FabMoUI.prototype.FileControl = function(){
 		$(that.resume_button_selector+" div:first-child").addClass('spinner green');
 		that.tool.resume(function(err, data){
 			if (err) {
-				console.log(err)
+				console.error(err)
 			} else {
-				console.log(data);
 			}
 		});
 	});
@@ -479,9 +480,8 @@ FabMoUI.prototype.FileControl = function(){
 		$(that.stop_button_selector+" div:first-child").addClass('spinner red');
 		that.tool.quit(function(err, data){
 			if (err) {
-				console.log(err)
+				console.error(err)
 			} else {
-				console.log(data);
 			}
 		});
 	});

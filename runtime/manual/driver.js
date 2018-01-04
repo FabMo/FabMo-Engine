@@ -46,6 +46,8 @@ ManualDriver.prototype.enter = function() {
     this.stream.write('M100.1 ({xjm:'+jerkXY+'})\n');
     this.stream.write('M100.1 ({yjm:'+jerkXY+'})\n');
     this.stream.write('M100.1 ({zjm:'+jerkZ+'})\n');	
+    this.stream.write('M100.1 ({zl:0})\n');	
+
 	this.deferred = Q.defer();
 	return this.deferred.promise;
 
@@ -58,7 +60,7 @@ ManualDriver.prototype.exit = function() {
 		this.stopMotion();
 
 	} else {
-		config.driver.restoreSome(['xjm','yjm','zjm'], function() {
+		config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
 		    //log.info("Finished running stream: " + stat);
 		    this._done();
         }.bind(this));
@@ -100,7 +102,6 @@ ManualDriver.prototype.maintainMotion = function() {
 }
 
 ManualDriver.prototype.stopMotion = function() {
-	console.log("stopMotion called")
 	if(this._limit()) { return; }
 	this.keep_moving = false;
 	if(this.moving) {
@@ -172,13 +173,12 @@ ManualDriver.prototype._renewMoves = function() {
 		log.debug('Renewing moves because of reasons')
 		this.keep_moving = false;
 		var segment = this.currentDirection*(this.renewDistance / RENEW_SEGMENTS);
-		console.log("Paused? ", this.driver.context._paused);
-		console.log("Flooded? ", this.driver.flooded);
-		console.log(this.driver.getInfo())
+		//console.log("Paused? ", this.driver.context._paused);
+		//console.log("Flooded? ", this.driver.flooded);
+		//console.log(this.driver.getInfo())
 		//this.driver.resume();
 		for(var i=0; i<RENEW_SEGMENTS; i++) {
 			var move = 'G1 ' + this.currentAxis + segment.toFixed(5) + '\n'
-			console.log(move);
 			this.stream.write(move);
 		}
 		this.driver.prime();

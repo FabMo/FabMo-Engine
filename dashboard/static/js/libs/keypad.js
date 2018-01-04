@@ -21,7 +21,7 @@ var Keypad = function(id, options) {
 	this.going = false;
 	this.interval = null;
 	this.enabled = false;
-	this.listeners = {'go' : [], 'stop': [], 'nudge':[], 'exit':[]}
+	this.listeners = {'go' : [], 'stop': [], 'nudge':[], 'exit':[], 'enter' : []}
 	this.pressThreshold = 50;
 	this.pressTime = 150;
 	this.tapInterval = 150;
@@ -54,12 +54,26 @@ Keypad.prototype.init = function() {
 		element.addEventListener("contextmenu", function(evt) {evt.preventDefault()});
 	}.bind(this));
 
+	/*
 	var exit_button = e.find('.exit-button');
 	if(exit_button) {
 		var hammer = new Hammer.Manager(exit_button[0]);
 		hammer.add(new Hammer.Tap({time: this.pressTime-1, interval: this.tapInterval, threshold: this.pressThreshold}));
 		hammer.on('tap', this.onExitTap.bind(this));
+	} else {
+		console.warn('no exit button')
+	} */
+
+
+	var enter_button = e.find('.enter-button');
+	if(enter_button) {
+		var hammer = new Hammer.Manager(enter_button[0]);
+		hammer.add(new Hammer.Tap({time: this.pressTime-1, interval: this.tapInterval, threshold: this.pressThreshold}));
+		hammer.on('tap', this.onEnterTap.bind(this));
+	}else {
+		console.warn('no enter button')
 	}
+
 }
 
 Keypad.prototype.setOptions = function(options) {
@@ -97,6 +111,9 @@ Keypad.prototype.setEnabled = function(enabled) {
 	}
 }
 
+Keypad.prototype.enter = function() {
+	this.emit('enter', null)
+}
 
 Keypad.prototype.refresh = function() {
 	if(!this.enabled || !this.going) {
@@ -207,8 +224,11 @@ Keypad.prototype.onDriveTap = function(evt) {
 }
 
 Keypad.prototype.onExitTap = function(evt) {
-	console.log("Manual exit tapped");
 	this.exit();
+}
+
+Keypad.prototype.onEnterTap = function(evt) {
+	this.enter();
 }
 
 Keypad.prototype.onDriveMouseleave = function(evt) {

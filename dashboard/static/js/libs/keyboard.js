@@ -24,8 +24,10 @@
 
 var Keyboard = function(id, options) {
 	this.id = id;
-	this.elem = $(id);
-	this.elem.attr('tabindex', 0)
+	this.elem = this.id ? $(id) : null;
+	if(this.elem) {
+		this.elem.attr('tabindex', 0)		
+	}
 	this.moves = 0;
 	this.init();
 	this.move = null;
@@ -37,14 +39,23 @@ var Keyboard = function(id, options) {
 }
 
 Keyboard.prototype.init = function() {
-	this.elem.click(this.onClick.bind(this));
-	this.elem.on('focus', this.onFocus.bind(this));
-	this.elem.on('mouseenter', this.onMouseEnter.bind(this));
-	this.elem.on('blur', this.onBlur.bind(this));
-	this.elem.on('mousemove', this.onMouseMove.bind(this));
-	this.elem.on('keydown', this.onKeyDown.bind(this));
-	this.elem.on('mouseleave', this.onMouseLeave.bind(this))
-	this.elem.on('keyup', this.onKeyUp.bind(this));
+	if(this.elem) {
+		console.log("element = ") 
+		console.log(this.elem)
+		this.elem.click(this.onClick.bind(this));
+		this.elem.on('focus', this.onFocus.bind(this));
+		this.elem.on('mouseenter', this.onMouseEnter.bind(this));
+		this.elem.on('blur', this.onBlur.bind(this));
+		this.elem.on('mousemove', this.onMouseMove.bind(this));
+		this.elem.on('keydown', this.onKeyDown.bind(this));
+		this.elem.on('mouseleave', this.onMouseLeave.bind(this))
+		this.elem.on('keyup', this.onKeyUp.bind(this));		
+	} else {
+		console.log("Binding that keydown event")
+		$(document).on('keydown', this.onKeyDown.bind(this));
+		$(document).on('keyup', this.onKeyUp.bind(this));		
+
+	}
 }
 
 Keyboard.prototype.setOptions = function(options) {
@@ -74,20 +85,29 @@ Keyboard.prototype.on = function(evt, func) {
 Keyboard.prototype.setEnabled = function(enabled) {
 	this.enabled = enabled;
 	if(enabled) {
+	console.log("keyboard enabled")
 		this.moves = MOVE_THRESH;
-		this.elem.removeClass('keyboard-button-inactive').addClass('keyboard-button-active');				
+		if(this.elem) {			
+			this.elem.removeClass('keyboard-button-inactive').addClass('keyboard-button-active');				
+		}
 	} else {
+			console.log("keyboard disabled")
+		this.going = false;
 		this.moves = 0;
-		this.elem.removeClass('keyboard-button-active').addClass('keyboard-button-inactive');				
+		if(this.elem) {			
+			this.elem.removeClass('keyboard-button-active').addClass('keyboard-button-inactive');				
+		}
+
 	}
 }
-
 
 Keyboard.prototype.refresh = function() {
 	if(!this.enabled || !this.going) {
 		this.emit('stop', null);
 	} else {
-		this.emit('go', this.move);
+		if(this.enabled) {
+			this.emit('go', this.move);
+		}
 		this.interval = setTimeout(this.refresh.bind(this), this.refreshInterval);
 	}
 }
@@ -128,7 +148,8 @@ Keyboard.prototype.onMouseMove = function(evt) {
 }
 
 Keyboard.prototype.onKeyDown = function(evt) {
-	if(this.going) {return}
+	if(this.going || !this.enabled) {return}
+	console.log("keydown")
 	this.nudgeTimer = setTimeout(function() {
 		this.nudgeTimer = null;
 		if(!this.going) {
@@ -170,10 +191,14 @@ Keyboard.prototype.onMouseLeave = function(evt) {
 }
 
 Keyboard.prototype.onKeyUp = function(evt) {
-	if(this.going) { this.stop(); }
+	console.log("keyup")
+	if(this.going ) {  this.stop(); }
 	if(this.nudgeTimer) {
+		
 		clearTimeout(this.nudgeTimer);
 		this.nudgeTimer = null;
+		if(!this.enabled) { return;}
+
 		switch(evt.keyCode) {
 				case KEY_UP:
 					this.nudge('y', 1);
@@ -200,14 +225,18 @@ Keyboard.prototype.onKeyUp = function(evt) {
 					break;
 			}	
 	} else {
-		this.stop();		
+		if(this.enabled) {
+			this.stop();
+		}
 	}
 }
 
 Keyboard.prototype.nudge = function(axis, direction) {
 	if(this.going) { return this.stop(); }
 	var nudge = {'axis' : axis, 'dir' : direction};
-	this.emit('nudge', nudge);
+	if(this.enabled) {
+		this.emit('nudge', nudge);
+	}
 }
 
 return Keyboard;
