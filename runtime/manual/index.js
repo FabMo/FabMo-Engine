@@ -28,7 +28,6 @@ ManualRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;
 	this.ok_to_disconnect = true;
-	this.machine.setState(this, "manual");
 
 	// True while the tool is known to be in motion
 	this.moving = false;
@@ -68,6 +67,7 @@ ManualRuntime.prototype.enter = function() {
 	this.helper.enter().then(function() {
 		this.driver.quit();
 	}.bind(this));
+	this.machine.setState(this, "manual");
 }
 
 ManualRuntime.prototype.executeCode = function(code, callback) {
@@ -86,6 +86,7 @@ ManualRuntime.prototype.executeCode = function(code, callback) {
 		default:
 			if(!this.helper) {
 				log.warn("Can't accept command '" + code.cmd + "' - not entered.");
+				this.machine.setState(this, 'idle');
 				return;
 			}
 			switch(code.cmd) {
