@@ -121,6 +121,16 @@ require("../css/toastr.min.css");
                         return;
                     }
 
+                    if(status.state === "manual") {
+                        $('.modalDim').show();
+                        $('.manual-drive-modal').show();
+                    }
+
+                    if(status.state !== "manual") {
+                        $('.modalDim').hide();
+                        $('.manual-drive-modal').hide();
+                    }
+
                     if (status.state != "armed" && last_state_seen === "armed" || status.state != "paused" && last_state_seen === "paused") {
                         dashboard.hideModal();
                         modalIsShown = false;
@@ -298,21 +308,29 @@ require("../css/toastr.min.css");
             dashboard.engine.manualMoveFixed(nudge.axis, 60 * getManualMoveSpeed(nudge), nudge.dir * getManualNudgeIncrement(nudge), getManualMoveJerk(nudge));
         });
 
-        keypad.on('enter', function() {
-            if(dashboard.engine.status.state == 'manual') {
-                dashboard.engine.manualExit();
-                keyboard.setEnabled(false);
-            } else {                
-                dashboard.engine.manualEnter();
-                keyboard.setEnabled(true);
-            }
-        });
+        // keypad.on('enter', function() {
+        //     if(dashboard.engine.status.state == 'manual') {
+        //         dashboard.engine.manualExit();
+        //         keyboard.setEnabled(false);
+        //     } else {                
+        //         dashboard.engine.manualEnter();
+        //         keyboard.setEnabled(true);
+        //     }
+        // });
 
-        keypad.on('exit', function() {
-            dashboard.engine.manualExit();
-        });
+        // keypad.on('exit', function() {
+        //     dashboard.engine.manualExit();
+        // });
         return keypad;
     }
+
+    $('.manual-drive-exit').click(function(){
+        dashboard.engine.manualExit();
+    })
+
+    $('.manual-drive-enter').click(function(){
+        dashboard.engine.manualEnter();
+    })
 
 
     function showConsent () {

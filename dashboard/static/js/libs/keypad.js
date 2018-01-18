@@ -65,7 +65,7 @@ Keypad.prototype.init = function() {
 	} */
 
 
-	var enter_button = e.find('.enter-button');
+	var enter_button = $('.enter-button');
 	if(enter_button) {
 		var hammer = new Hammer.Manager(enter_button[0]);
 		hammer.add(new Hammer.Tap({time: this.pressTime-1, interval: this.tapInterval, threshold: this.pressThreshold}));
