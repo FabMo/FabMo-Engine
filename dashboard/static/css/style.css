@@ -1263,10 +1263,21 @@ input[type=number]::-webkit-outer-spin-button {
 .fabmo-status-idle { color: blue; }
 .fabmo-status-disconnected { color: gray; }
 
-.keyboard {
-	text-align: center;
-}
 
+.manual-drive-exit {
+	position: absolute;
+    top: 5px;
+    right: 5px;
+    border-radius: 50%;
+    border: 1px solid #eee;
+    height: 20px;
+    width: 20px;
+    font-size: 10px;
+    color: #eee;
+	line-height: 20px;
+	text-align: center;
+	cursor: pointer;
+}
 
 .keypad-button {
 	border : 2px solid #333333;
@@ -1297,11 +1308,9 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .drive-button.square {
-	width  : 50px;
-	height : 50px;
-	line-height: 45px;
-    position: relative;
-    z-index: 10;
+	position: relative;
+	width: 100%;
+	height: 100%;
 }
 
 .drive-button.bar {
@@ -1309,23 +1318,14 @@ input[type=number]::-webkit-outer-spin-button {
 	padding: 4px;
 	color: white;
 	font-weight: bolder;
-	width  : 60px;
-    height: 82px;
+	width  : 100%;
+    height: 100%;
     position: relative;
-    right: 10px;
+
 }
 
 
-.keyboard-button {
-	color: white;
-	line-height: 50px;
-	border-radius: 32px;
-	font-weight: bolder;
-	font-size: 24px;
-	text-align: center;
-	width  : 50px;
-	height : 50px;
-}
+
 
 .enter-button {
 	color: white;
@@ -1362,18 +1362,27 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .keypad-table {
-	display: table;
+	display: inline-block;
+	width: 74%;
+	height: 100%;
 }
 
-.keypad-row {
-	display: table-row;
+.z-pad {
+	display: inline-block;
+	width: 24%;
+	height: 100%;
 }
+
 
 .keypad-cell {
-	display: table-cell;
-	padding: 4px;
-
+	margin: 0;
+	padding: 0;
+	width: 32%;
+	height: 32%;
+	display: inline-block;
 }
+
+
 
 .button-border{
     position: relative;
@@ -1383,23 +1392,32 @@ input[type=number]::-webkit-outer-spin-button {
     border-right: 2px solid #333333;
 }
 .keypad-bar {
-	 position: absolute;
-     right: 5px;
+	width: 100%;
+	height: 50%
 }
 
 .keypad-bar.top {
-    top: 4px;
+  
 
 }
 
 .keypad-bar.top i {
-   position: relative;
-   top: -15px;
+ 
 
 }
 
+.keypad-bar.bottom i {
+
+ 
+ }
+ 
+ .keypad-bar.bottom {
+	
+ }
+ 
+
 .top.button-border{
-    background-color: #9C210C;
+    background-color: #333333;
     position: absolute;
     top: 56px;
     border-top: 2px solid #333333;
@@ -1407,21 +1425,33 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .bottom.button-border{
-    background-color: #9C210C;
+    background-color: #333333;
     position: absolute;
     top: 93px;
     border-bottom: 2px solid #333333;
 
 }
 
-.keypad-bar.bottom i {
-   position: relative;
-   bottom: -35px;
 
+
+
+.fa-keypad {
+	line-height: inherit;
+	text-shadow: 1px 1px 4px black;
+	display: block;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	margin-right: -50%;
+	transform: translate(-50%, -50%);
+	pointer-events: none;
 }
 
-.keypad-bar.bottom {
-    top: 93px;
+#keypad {
+	margin-left: auto;
+	margin-right: auto;
+	width:250px;
+	height: 200px;
 }
 
 #modalDialogButtons {
@@ -1485,21 +1515,6 @@ input[type=number]::-webkit-outer-spin-button {
 	text-align: center;
 	border-bottom: none;
 	color: white;
-	/*border-bottom: 1px solid white;
-	margin-left: 1em;
-	margin-right: 1em;*/
-}
-
-.fa-keypad {
-	line-height: inherit;
-	text-shadow: 1px 1px 4px black;
-	display: block;
-	pointer-events: none;
-}
-
-#keypad {
-	margin-left: 4px;
-    position: relative;
 }
 
 
@@ -1679,6 +1694,20 @@ input[type=number]::-webkit-outer-spin-button {
     }
 }
 
+.manual-drive-modal {
+	display: none;
+	width: 50%;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+	transform: translate(-50%, -50%);
+	padding: 2rem;
+    z-index: 3001;
+    background-color: #333333;
+    border-radius: 5px;
+      -webkit-font-smoothing: antialiased;
+}
+
 .newModal{
     display: none;
     width: 50%;
@@ -1694,7 +1723,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .modalDim{
-	display:none;
+	display: none;
     position: fixed;
     top: 0;
     left: 0;

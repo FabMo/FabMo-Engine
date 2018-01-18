@@ -35,9 +35,9 @@
   <body>
       <div id='mainContent'>
       </div>
-  <form>
-      <input type="file" id="hidden-file-input" style="position: fixed; top:-1000" />
-  </form>
+    <form>
+        <input type="file" id="hidden-file-input" style="position: fixed; top:-1000" />
+    </form>
    <div class="loader">
       <svg width="15%" height="15%" viewBox="0 0 550 550">
       <style type="text/css">
@@ -236,41 +236,10 @@
                   </div>
                 </li>
               </ul>
+              <div id="manual-enter" class="keypad-button noselect enter-button"><i class="fa fa-keypad fa-lg fa-gamepad"></i></div>
             </div>
 
-            <div id="keypad" class="widget fabmo-manual-control keypad dro-view" style="text-align: center;">
-               <div class="keypad-bar top">
-                  <div class="z_pos keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-up"></i></div>
-                </div>
-                <div class='button-border top'></div>
-                <div class="keypad-bar bottom">
-                  <div class="z_neg keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-down"></i></div>
-                </div>
-                <div class='button-border bottom'></div>
-              <div class="keypad-table">
-                <div class="keypad-row">
-                  <div class="keypad-cell"></div>
-                  <div class="keypad-cell"><div class="y_pos keypad-button drive-button square"><i class="fa fa-keypad fa-lg fa-arrow-up"></i></div></div>
-                  <div class="keypad-cell"></div>
-                </div>
 
-                <div class="keypad-row">
-                  <div class="keypad-cell">
-                    <div class="x_neg keypad-button drive-button square">
-                      <i class="fa fa-keypad fa-lg fa-arrow-left"></i>
-                      </div>
-                    </div>
-                  <div class="keypad-cell"><div id="manual-enter" class="keypad-button noselect enter-button"><i class="fa fa-keypad fa-lg fa-gamepad"></i></div></div>
-                  <div class="keypad-cell"><div class="x_pos keypad-button drive-button square"><i class="fa fa-keypad fa-lg fa-arrow-right"></i></div></div>
-                </div>
-                <div class="keypad-row">
-                  <!--<div class="keypad-cell"><div class="keypad-button drive-button exit-button square"><i class="fa fa-keypad fa-lg fa-close"></i></div></div>-->
-                  <div class="keypad-cell"></div>
-                  <div class="keypad-cell"><div class="y_neg keypad-button drive-button square"><i class="fa fa-keypad fa-lg fa-arrow-down"></i></div></div>
-                  <div class="keypad-cell"></div>
-                </div>
-              </div>
-            </div>
           </aside>
 
           <!-- App Menu -->
@@ -312,16 +281,62 @@
       <!-- The Dialog -->
 
       <div class="modalDim"></div>
-            <div id="beacon_consent_container">
-              <div id="beacon_consent_inner">
-                <span id="consent_dialogue">
-                  FabMo reports anonymised device information. You can disable this in the configuration.
-                </span>
+        <div class="manual-drive-modal">
+          <div class="manual-drive-exit">X</div>
+          <div id="keypad" class="widget fabmo-manual-control keypad " style="text-align: center;">
+        
+             <!-- <div class='button-border bottom'></div> -->
+           <div class="keypad-table">
+               <div class="keypad-cell"></div>
+               <div class="keypad-cell">
+                 <div class="y_pos keypad-button drive-button square">
+                   <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
+                  </div>
+                </div>
+               <div class="keypad-cell"></div>
+               <div class="keypad-cell">
+                 <div class="x_neg keypad-button drive-button square">
+                   <i class="fa fa-keypad fa-lg fa-arrow-left"></i>
+                   </div>
+                 </div>
+               <div class="keypad-cell"></div>
+               <div class="keypad-cell">
+                 <div class="x_pos keypad-button drive-button square">
+                   <i class="fa fa-keypad fa-lg fa-arrow-right"></i>
+                  </div>
+                </div>
+            
+
+               <!--<div class="keypad-cell"><div class="keypad-button drive-button exit-button square"><i class="fa fa-keypad fa-lg fa-close"></i></div></div>-->
+               <div class="keypad-cell"></div>
+               <div class="keypad-cell">
+                 <div class="y_neg keypad-button drive-button square">
+                   <i class="fa fa-keypad fa-lg fa-arrow-down"></i>
+                  </div>
+                </div>
+               <div class="keypad-cell"></div>
+           </div>
+           <div class="z-pad">
+              <div class="keypad-bar top">
+                <div class="z_pos keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-up"></i></div>
               </div>
-              <div id="beacon_sub_container">
-                <div id="beacon_consent_button">Proceed</div>
+              <!-- <div class='button-border top'></div> -->
+              <div class="keypad-bar bottom">
+                <div class="z_neg keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-down"></i></div>
               </div>
             </div>
+         </div>
+        </div>
+        <div id="beacon_consent_container">
+          <div id="beacon_consent_inner">
+            <span id="consent_dialogue">
+              FabMo reports anonymised device information. You can disable this in the configuration.
+            </span>
+          </div>
+          <div id="beacon_sub_container">
+            <div id="beacon_consent_button">Proceed</div>
+          </div>
+        </div>
       <div class="newModal">
 
 
