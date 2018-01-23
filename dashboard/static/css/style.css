@@ -1450,10 +1450,36 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 #keypad {
-	margin-left: auto;
-	margin-right: auto;
-	width:250px;
+	display: inline-block;
+    transform: translateY(-25%);
+	width : 250px;
 	height: 200px;
+}
+
+.read-out-container {
+	width : 40%;
+	height: auto;
+	display: inline-block;
+}
+
+.read-out-container input {
+	font-family: 'source_sans_proextralight';
+	padding: 15px 0 15px 12px;
+    background: rgba(0,0,0,0.3);
+    border: none;
+    outline: none;
+    color: #fff;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
+    border: 1px solid rgba(0,0,0,0.3);
+	border-radius: 4px;
+    box-shadow: inset 0 -5px 45px rgba(100,100,100,0.2), 0 1px  1px rgba(255,255,255,0.2);
+}
+
+.read-out-container input:focus {
+	background: rgba(0,0,0,0.3);
+	border: 0.5px solid rgba(0,0,0,0.3);
+	box-shadow: inset 0 -5px 45px rgba(95,169,61,0.2), 0 1px  1px rgba(95,169,61,0.2);
+    /* box-shadow: inset 0 0px 1px #5FA93D, 0 0px 1px #5FA93D; */
 }
 
 #modalDialogButtons {
