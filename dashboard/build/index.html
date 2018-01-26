@@ -285,66 +285,58 @@
 
           <div class="manual-drive-exit">X</div>
           <div class="read-out-container">
-          <ul class="off-canvas-list fabmo-status noselect">
-              <li>
-                  <div class="row axis xaxis">
-                      <div class="small-10 columns">
-                         <label  class="noselect">
-                          X
-                          <span class="units">&nbsp;</span>
-                          <input class="posx pos doselect axi" maxlength="6" type="number">
-                        </label>
-                      </div>
-                      <div class="small-2 columns home"><span class="button-zerox">0</span></div>
-                  </div>
-                  <div class="row axis yaxis">
-                    <div class="small-10 columns">
-                      <label class="noselect">
-                      Y
-                      <span class="units">&nbsp;</span>
-                      <input class="posy pos doselect axi"  maxlength="6" type="number">
-                      </label>
+            <div class=" fabmo-status noselect">
+                    <div class="row axis xaxis">
+                        <div class="small-10 columns">
+                          <label  class="noselect">
+                            X
+                            <span class="units">&nbsp;</span>
+                            <input class="posx pos doselect axi" maxlength="6" type="number">
+                          </label>
+                        </div>
                     </div>
-                    <div class="small-2 columns home"><span class="button-zeroy">0</span></div>
-                  </div>
-                  <div class="row axis zaxis">
-                    <div class="small-10 columns">
-                      <label class="noselect">
-                      Z
-                      <span class="units">&nbsp;</span>
-                      <input class="posz pos doselect axi" maxlength="6" type="number">
-                      </label>
-                    </div>
-                    <div class="small-2 columns home"><span class="button-zeroz">0</span></div>
-                  </div>
-                  <div class="row axis aaxis">
+                    <div class="row axis yaxis">
                       <div class="small-10 columns">
                         <label class="noselect">
-                          A
-                          <span class="rotunits">o&nbsp;</span>
-                          <input class="posa pos doselect axi" maxlength="6" type="number">
+                        Y
+                        <span class="units">&nbsp;</span>
+                        <input class="posy pos doselect axi"  maxlength="6" type="number">
                         </label>
                       </div>
-                      <div class="small-2 columns home"><span class="button-zeroa">0</span></div>
-                  </div>
-                  <div class="row axis baxis">
+                    </div>
+                    <div class="row axis zaxis">
                       <div class="small-10 columns">
                         <label class="noselect">
-                          B
-                          <span class="rotunits">o&nbsp;</span>
-                          <input class="posb pos doselect axi" maxlength="6" type="number">
+                        Z
+                        <span class="units">&nbsp;</span>
+                        <input class="posz pos doselect axi" maxlength="6" type="number">
                         </label>
                       </div>
-                      <div class="small-2 columns home"><span class="button-zerob">0</span></div>
-                  </div>
-              </li>
-              <li>
-                 <button class="go-here" id="go-here" style="display:none">Go</button>
-              </li>
-              </ul>
+                    </div>
+                    <div class="row axis aaxis">
+                        <div class="small-10 columns">
+                          <label class="noselect">
+                            A
+                            <span class="rotunits">o&nbsp;</span>
+                            <input class="posa pos doselect axi" maxlength="6" type="number">
+                          </label>
+                        </div>
+                    </div>
+                    <div class="row axis baxis">
+                        <div class="small-10 columns">
+                          <label class="noselect">
+                            B
+                            <span class="rotunits">o&nbsp;</span>
+                            <input class="posb pos doselect axi" maxlength="6" type="number">
+                          </label>
+                        </div>
+                    </div>
+            </div>
           </div>
           <div id="keypad" class="widget fabmo-manual-control keypad " style="text-align: center;">
-        
+              <div class="slidecontainer">
+                  <input type="range" min="1" max="100" value="50" class="slider" id="myRange">
+                </div>
              <!-- <div class='button-border bottom'></div> -->
            <div class="keypad-table">
                <div class="keypad-cell"></div>
