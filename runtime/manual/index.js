@@ -140,3 +140,4 @@ ManualRuntime.prototype._onG2Status = function(status) {
 };
 
 exports.ManualRuntime = ManualRuntime;
+exports.ManualDriver = ManualDriver

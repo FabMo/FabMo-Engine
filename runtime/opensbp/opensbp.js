@@ -11,6 +11,7 @@ var Leveler = require('./commands/leveler').Leveler;
 var u = require('../../util');
 var config = require('../../config');
 var stream = require('stream');
+var ManualDriver = require('../manual').ManualDriver;
 
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
@@ -76,6 +77,8 @@ function SBPRuntime() {
 	this.machine = null;
 	this.driver = null;
 
+	this.inManualMode = false;
+
 }
 util.inherits(SBPRuntime, events.EventEmitter);
 
@@ -133,7 +136,55 @@ SBPRuntime.prototype.disconnect = function() {
 };
 
 SBPRuntime.prototype.executeCode = function(s, callback) {
-	this.runString(s, callback);
+	if(typeof s === "string" || s instanceof String) {
+		this.runString(s, callback);		
+	} else {
+		if(this.inManualMode) {
+			switch(code.cmd) {
+			case 'enter':
+				//	this.enter();
+				break;
+			default:
+				if(!this.helper) {
+					log.warn("Can't accept command '" + code.cmd + "' - not entered.");
+					this.machine.setState(this, 'idle');
+					return;
+				}
+				switch(code.cmd) {
+					case 'exit':
+						log.debug('---- MANUAL DRIVE EXIT ----')
+						this.helper.exit();
+						// RESUME KIDS
+						break;
+
+					case 'start':
+						this.helper.startMotion(code.axis, code.speed);
+						break;
+
+					case 'stop':
+						this.helper.stopMotion();
+						break;
+
+					case 'maint':
+						this.helper.maintainMotion();
+						break;
+
+					case 'fixed':
+						if(!this.helper) {
+							this.enter();
+						}
+						this.helper.nudge(code.axis, code.speed, code.dist);
+						break;
+
+					default:
+						log.error("Don't know what to do with '" + code.cmd + "' in manual command.");
+						break;
+
+				}
+			}
+
+		}
+	}
 }
 
 //Check whether the code needs auth
@@ -480,11 +531,13 @@ SBPRuntime.prototype._run = function() {
 				break;
                 case that.driver.STAT_PROBE:
 				case that.driver.STAT_RUNNING:
-					that.machine.setState(that, 'running');
-				    if(that.pendingFeedhold) {
-                        that.pendingFeedhold = false;
-                        that.driver.feedHold();
-                    }
+					if(!that.inManualMode) {
+						that.machine.setState(that, 'running');
+					    if(that.pendingFeedhold) {
+	                        that.pendingFeedhold = false;
+	                        that.driver.feedHold();
+	                    }
+                	}
                 break;
 
 			}
@@ -1497,6 +1550,17 @@ SBPRuntime.prototype.resume = function() {
 		} else {
 			this.driver.resume();
 		}
+}
+
+SBPRuntime.prototype.manualEnter = function(callback) {
+	console.log("entering manual mode in sbp runtime")
+	this.inManualMode = true;
+	if(this.machine) {
+		this.machine.setState(this, "manual");
+		this.machine.authorize();
+	}
+	this.helper = new ManualDriver(this.driver, this.stream);
+	this.helper.enter();
 }
 
 exports.SBPRuntime = SBPRuntime;
