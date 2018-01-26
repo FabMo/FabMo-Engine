@@ -1450,31 +1450,47 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 #keypad {
-	display: inline-block;
-    transform: translateY(-25%);
-	width : 250px;
+	position: absolute;
+	top: 50%;
+	transform: translateY(-60%);
+	width: 250px;
 	height: 200px;
+	right: 5px;
 }
 
 .read-out-container {
 	width : 40%;
-	height: auto;
 	display: inline-block;
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
 }
 
 .read-out-container label {
+	width: 100%;
+	font-size: 1.65rem;
+	float: left;
 	background-color: #333;
 	border: none;
 	color: #eee;
 }
 
+.read-out-container .units, .rotunits {
+	margin-left: 5px;
+	font-size: 12px;
+	text-transform: lowercase;
+	vertical-align: baseline;
+	float: right;
+}
+
 .read-out-container input {
+	float: right;
 	font-family: 'Droid_Sans_Mono';
-	width: 8rem;
+	width: 80%;
 	text-align: center;
 	height: auto;
     font-size: 23px;
-	padding: 15px 15px 15px 15px;
+	padding: 5px;
     background: rgba(0,0,0,0.3);
     border: none;
     outline: none;
@@ -1734,17 +1750,63 @@ input[type=number]::-webkit-outer-spin-button {
 
 .manual-drive-modal {
 	display: none;
-	width: 50%;
+    width: 50%;
+	height: 50%;
+	min-height: 400px;
+	max-height: 500px;
     position: fixed;
     top: 50%;
     left: 50%;
-	transform: translate(-50%, -50%);
-	padding: 2rem;
+    transform: translate(-50%, -50%);
+    padding: 2rem;
     z-index: 3001;
     background-color: #333333;
     border-radius: 5px;
-      -webkit-font-smoothing: antialiased;
+    -webkit-font-smoothing: antialiased;
+    overflow: scroll;
 }
+
+.manual-drive-container {
+	position: relative;
+	width: 100%;
+	height: 100%;
+}
+
+@media screen and (max-width: 1000px) {
+	.manual-drive-modal {
+		width: 80%; 
+	}
+}
+
+@media screen and (max-width: 650px) {
+	.manual-drive-modal {
+		width: 100%; 
+		height: 100%;
+		max-height: none;
+	}
+
+	.read-out-container{
+		width: 70%;
+		display: block;
+		position: relative;
+		top: 0%;
+		transform: translateY(0%);
+		margin-left: auto;
+		margin-right: auto;
+	}
+
+	#keypad {
+		position: relative;
+		transform: translateY(0%);
+		width: 250px;
+		height: 200px;
+		margin-top: 3rem;
+		margin-left: auto;
+		margin-right: auto;
+		top: 0;
+	}
+}
+
 
 .newModal{
     display: none;
