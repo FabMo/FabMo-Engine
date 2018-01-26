@@ -41,6 +41,10 @@ exports.SC = function(args, callback) {
 	callback();
 }
 
+exports.SK = function(args, callback) {
+	this.manualEnter(callback);
+}
+
 //  Set to Relative coordinates
 exports.SR = function(args) {
 	this.emit_gcode("G91");

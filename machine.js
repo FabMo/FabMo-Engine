@@ -728,13 +728,17 @@ Machine.prototype.gcode = function(string) {
 Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 	runtime = this.getRuntime(runtimeName);
 	if(runtime) {
-		this.setRuntime(runtime, function(err, runtime) {
-			if(err) {
-				log.error(err);
-			} else {
-				runtime.executeCode(code);
-			}
-		}.bind(this));
+		if(this.current_runtime == this.idle_runtime) {
+			this.setRuntime(runtime, function(err, runtime) {
+				if(err) {
+					log.error(err);
+				} else {
+					runtime.executeCode(code);
+				}
+			}.bind(this));
+		} else {
+			this.current_runtime.executeCode(code);
+		}
 	}
 }
 
