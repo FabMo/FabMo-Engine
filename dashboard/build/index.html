@@ -336,17 +336,26 @@
           </div>
           <div id="keypad" class="widget fabmo-manual-control keypad " style="text-align: center;">
               <div class="slidecontainer">
-                  <input type="range" min="1" max="100" value="50" class="slider" id="myRange">
+                  <input type="range" min="0.1" step="0.1" max="6" value="3" class="slider" id="manual-move-speed">
+                  <label >Move Speed</label>
                 </div>
              <!-- <div class='button-border bottom'></div> -->
            <div class="keypad-table">
-               <div class="keypad-cell"></div>
+               <div class="keypad-cell">
+                  <div class="x_neg y_pos keypad-button drive-button square">
+                      <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
+                  </div>
+               </div>
                <div class="keypad-cell">
                  <div class="y_pos keypad-button drive-button square">
                    <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
                   </div>
                 </div>
-               <div class="keypad-cell"></div>
+               <div class="keypad-cell">
+                  <div class="x_pos y_pos keypad-button drive-button square">
+                      <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
+                  </div>
+               </div>
                <div class="keypad-cell">
                  <div class="x_neg keypad-button drive-button square">
                    <i class="fa fa-keypad fa-lg fa-arrow-left"></i>
@@ -361,13 +370,21 @@
             
 
                <!--<div class="keypad-cell"><div class="keypad-button drive-button exit-button square"><i class="fa fa-keypad fa-lg fa-close"></i></div></div>-->
-               <div class="keypad-cell"></div>
+               <div class="keypad-cell">
+                  <div class="x_neg y_neg keypad-button drive-button square">
+                      <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
+                  </div>
+               </div>
                <div class="keypad-cell">
                  <div class="y_neg keypad-button drive-button square">
                    <i class="fa fa-keypad fa-lg fa-arrow-down"></i>
                   </div>
                 </div>
-               <div class="keypad-cell"></div>
+               <div class="keypad-cell">
+                  <div class=" keypad-button drive-button square">
+                      <i class="x_pos y_neg fa fa-keypad fa-lg fa-arrow-up"></i>
+                  </div>
+               </div>
            </div>
            <div class="z-pad">
               <div class="keypad-bar top">

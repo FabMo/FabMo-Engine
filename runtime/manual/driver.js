@@ -70,9 +70,10 @@ ManualDriver.prototype.exit = function() {
 	}
 }
 
-ManualDriver.prototype.startMotion = function(axis, speed) {
+ManualDriver.prototype.startMotion = function(axis,  speed, second_axis, second_speed) {
 	log.debug("startMotion called")
 	var dir = speed < 0 ? -1.0 : 1.0;
+	var second_dir = second_speed < 0 ? -1.0 : 1.0;
 	speed = Math.abs(speed);
 	if(this.moving) {
 		log.debug("Already moving")
@@ -83,11 +84,19 @@ ManualDriver.prototype.startMotion = function(axis, speed) {
 			// Deal with direction changes here
 		}
 	} else {
+		if (second_axis){
+			this.second_axis = second_axis;
+			this.second_currentDirection = second_dir;
+		} else {
+			this.second_axis = null;
+			this.second_currentDirection = null;
+		}
 		log.debug("Not moving")
 		// Set Heading
 		this.currentAxis = axis;
 		this.currentSpeed = speed;
 		this.currentDirection = dir;
+
 		this.moving = this.keep_moving = true;
 		this.renewDistance = speed*(T_RENEW/60000)*SAFETY_FACTOR;                
 		this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
@@ -173,14 +182,24 @@ ManualDriver.prototype._renewMoves = function() {
 		log.debug('Renewing moves because of reasons')
 		this.keep_moving = false;
 		var segment = this.currentDirection*(this.renewDistance / RENEW_SEGMENTS);
+		var second_segment = this.second_currentDirection*(this.renewDistance / RENEW_SEGMENTS);
 		//console.log("Paused? ", this.driver.context._paused);
 		//console.log("Flooded? ", this.driver.flooded);
 		//console.log(this.driver.getInfo())
 		//this.driver.resume();
-		for(var i=0; i<RENEW_SEGMENTS; i++) {
-			var move = 'G1 ' + this.currentAxis + segment.toFixed(5) + '\n'
-			this.stream.write(move);
+		if (this.second_axis){
+			for(var i=0; i<RENEW_SEGMENTS; i++) {
+				var move = 'G1 ' + this.currentAxis + segment.toFixed(5) +' '+ this.second_axis + second_segment.toFixed(5) +'\n'
+				this.stream.write(move);
+			}
+
+		} else {
+			for(var i=0; i<RENEW_SEGMENTS; i++) {
+				var move = 'G1 ' + this.currentAxis + segment.toFixed(5) + '\n'
+				this.stream.write(move);
+			}
 		}
+	
 		this.driver.prime();
 		setTimeout(function() {
 			this._renewMoves()

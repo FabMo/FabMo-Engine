@@ -378,8 +378,8 @@ FabMoAPI.prototype.executeRuntimeCode = function(runtime, code, callback) {
 	this.socket.emit('code', {'rt' : runtime, 'data' : code})
 }
 
-FabMoAPI.prototype.manualStart = function(axis, speed) {
-	this.executeRuntimeCode('manual', {'cmd': 'start', 'axis' : axis, 'speed' : speed});
+FabMoAPI.prototype.manualStart = function(axis, speed, second_axis, second_speed) {
+	this.executeRuntimeCode('manual', {'cmd': 'start', "axis":axis, "speed":speed, "second_axis":second_axis, "second_speed":second_speed });
 }
 
 FabMoAPI.prototype.manualHeartbeat = function() {

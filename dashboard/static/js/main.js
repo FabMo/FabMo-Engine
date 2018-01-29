@@ -221,19 +221,22 @@ require("../css/toastr.min.css");
 
     function getManualMoveSpeed(move) {
         var speed_ips = null;
-        try {
-            switch (move.axis) {
-                case 'x':
-                case 'y':
-                    speed_ips = engine.config.machine.manual.xy_speed;
-                    break;
-                case 'z':
-                    speed_ips = engine.config.machine.manual.z_speed;
-                    break;
-            }
-        } catch (e) {
-            console.error(e);
+        if ($('#manual-move-speed').val()){
+            speed_ips = $('#manual-move-speed').val();
         }
+        // try {
+        //     switch (move.axis) {
+        //         case 'x':
+        //         case 'y':
+        //             speed_ips = engine.config.machine.manual.xy_speed;
+        //             break;
+        //         case 'z':
+        //             speed_ips = engine.config.machine.manual.z_speed;
+        //             break;
+        //     }
+        // } catch (e) {
+        //     console.error(e);
+        // }
         return speed_ips;
     }
 
@@ -277,7 +280,7 @@ require("../css/toastr.min.css");
         var keyboard = new Keyboard();
         keyboard.on('go', function(move) {
             if (move) {
-                dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
+                dashboard.engine(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
             }
         });
 
@@ -295,7 +298,9 @@ require("../css/toastr.min.css");
     function setupKeypad() {
         var keypad = new Keypad('#keypad');
         keypad.on('go', function(move) {
-            if (move) {
+            if (move.second_axis) {
+                dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1), move.second_axis, move.second_dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
+            } else {
                 dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
             }
         });
