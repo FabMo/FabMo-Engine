@@ -135,6 +135,7 @@
                 <li><a href="#/app/config" id="icon_settings"><span>Configuration</span></a></li>
                 <li><a href="#/app/macros" id="icon_folder"><span>Macros</span></a></li>
                 <li><a href="#/app/network-manager" id="icon_network"><span>Network</span></a></li>
+                <li><a class="manual-drive-enter"  id="icon_drive"><span>Drive</span></a></li>
                 <li><a id="icon_sign_out"><span>Sign Out</span></a></li>
                 <li><a href="#" id="icon_colapse"><span>Collapse</span></a></li>
               </ul>
@@ -236,7 +237,6 @@
                   </div>
                 </li>
               </ul>
-              <div class="manual-drive-enter enter-button">Drive</div>
             </div>
 
 
@@ -282,18 +282,81 @@
 
       <div class="modalDim"></div>
         <div class="manual-drive-modal">
+
           <div class="manual-drive-exit">X</div>
+          <div class="manual-drive-message">This is where a message will go</div>
+          <div class="manual-drive-container">
+          <div class="read-out-container">
+            <div class=" fabmo-status noselect">
+                    <div class="row axis xaxis">
+                        <div class="small-12 columns">
+                          <label  class="noselect">
+                            X
+                            <span class="units">&nbsp;</span>
+                            <input class="posx pos doselect axi" maxlength="6" type="number">
+                          </label>
+                        </div>
+                    </div>
+                    <div class="row axis yaxis">
+                      <div class="small-12 columns">
+                        <label class="noselect">
+                        Y
+                        <span class="units">&nbsp;</span>
+                        <input class="posy pos doselect axi"  maxlength="6" type="number">
+                        </label>
+                      </div>
+                    </div>
+                    <div class="row axis zaxis">
+                      <div class="small-12 columns">
+                        <label class="noselect">
+                        Z
+                        <span class="units">&nbsp;</span>
+                        <input class="posz pos doselect axi" maxlength="6" type="number">
+                        </label>
+                      </div>
+                    </div>
+                    <div class="row axis aaxis">
+                        <div class="small-12 columns">
+                          <label class="noselect">
+                            A
+                            <span class="rotunits">o&nbsp;</span>
+                            <input class="posa pos doselect axi" maxlength="6" type="number">
+                          </label>
+                        </div>
+                    </div>
+                    <div class="row axis baxis">
+                        <div class="small-12 columns">
+                          <label class="noselect">
+                            B
+                            <span class="rotunits">o&nbsp;</span>
+                            <input class="posb pos doselect axi" maxlength="6" type="number">
+                          </label>
+                        </div>
+                    </div>
+            </div>
+          </div>
           <div id="keypad" class="widget fabmo-manual-control keypad " style="text-align: center;">
-        
+              <div class="slidecontainer">
+                  <input type="range" min="0.1" step="0.1" max="6" value="3" class="slider" id="manual-move-speed">
+                  <label >Move Speed</label>
+                </div>
              <!-- <div class='button-border bottom'></div> -->
            <div class="keypad-table">
-               <div class="keypad-cell"></div>
+               <div class="keypad-cell">
+                  <div class="x_neg y_pos keypad-button drive-button square">
+                      <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
+                  </div>
+               </div>
                <div class="keypad-cell">
                  <div class="y_pos keypad-button drive-button square">
                    <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
                   </div>
                 </div>
-               <div class="keypad-cell"></div>
+               <div class="keypad-cell">
+                  <div class="x_pos y_pos keypad-button drive-button square">
+                      <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
+                  </div>
+               </div>
                <div class="keypad-cell">
                  <div class="x_neg keypad-button drive-button square">
                    <i class="fa fa-keypad fa-lg fa-arrow-left"></i>
@@ -308,13 +371,21 @@
             
 
                <!--<div class="keypad-cell"><div class="keypad-button drive-button exit-button square"><i class="fa fa-keypad fa-lg fa-close"></i></div></div>-->
-               <div class="keypad-cell"></div>
+               <div class="keypad-cell">
+                  <div class="x_neg y_neg keypad-button drive-button square">
+                      <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
+                  </div>
+               </div>
                <div class="keypad-cell">
                  <div class="y_neg keypad-button drive-button square">
                    <i class="fa fa-keypad fa-lg fa-arrow-down"></i>
                   </div>
                 </div>
-               <div class="keypad-cell"></div>
+               <div class="keypad-cell">
+                  <div class="x_pos y_neg keypad-button drive-button square">
+                      <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
+                  </div>
+               </div>
            </div>
            <div class="z-pad">
               <div class="keypad-bar top">
@@ -326,6 +397,7 @@
               </div>
             </div>
          </div>
+        </div>
         </div>
         <div id="beacon_consent_container">
           <div id="beacon_consent_inner">

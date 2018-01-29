@@ -687,8 +687,8 @@ FabMoDashboard.prototype.manualMoveFixed = function(axis, speed, distance, callb
  * @param {Number} axis One of `x`,`y`,`z`,`a`,`b`,`c`
  * @param {Number} speed Speed in current tool units.  Negative to move in the negative direction.
  */
-FabMoDashboard.prototype.manualStart = function(axis, speed) {
-	this._call("manualStart",{"axis":axis, "speed":speed}, callback);
+FabMoDashboard.prototype.manualStart = function(axis, speed, second_axis, second_speed) {
+	this._call("manualStart",{"axis":axis, "speed":speed, "second_axis":second_axis, "second_speed":second_speed }, callback);
 }
 
 

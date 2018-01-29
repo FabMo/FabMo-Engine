@@ -515,6 +515,19 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #icon_log 			{ background-image: url('../img/icon_log.png');	}
 #icon_network 		{ background-image: url('../img/icon_network.png');	}
 #icon_sign_out 		{ background-image: url('../img/icon_sign_out.png');	}
+#icon_drive {
+	position: relative;
+}
+
+#icon_drive:before {
+	position: absolute;
+    font-family: 'FontAwesome';
+    font-size: 22px;
+    top: 5px;
+    left: 10px;
+    content: "\F11B";
+}
+
 
 
 .colapsed #icon_colapse { background-image: url('../img/icon_colapse.png');	}
@@ -1279,6 +1292,15 @@ input[type=number]::-webkit-outer-spin-button {
 	cursor: pointer;
 }
 
+.manual-drive-message {
+	color: #eee;
+	width: 100%;
+	height: auto;
+	text-align: center;
+	margin-bottom: 10px;
+	padding: 0.5rem;
+	border-bottom: 1px solid #eee;
+}
 .keypad-button {
 	border : 2px solid #333333;
 	border-radius: 10px;
@@ -1434,6 +1456,18 @@ input[type=number]::-webkit-outer-spin-button {
 
 }
 
+.slidecontainer {
+	margin-bottom: 10px;
+}
+
+.slidecontainer label {
+	color:#BCBCBC;
+}
+
+
+#manual-move-speed {
+	width: 100%;
+}
 
 
 
@@ -1449,11 +1483,79 @@ input[type=number]::-webkit-outer-spin-button {
 	pointer-events: none;
 }
 
+.keypad-cell:first-child .fa-keypad{
+	transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.keypad-cell:nth-child(3) .fa-keypad{
+	transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.keypad-cell:nth-child(7) .fa-keypad{
+	transform: translate(-50%, -50%) rotate(-135deg);
+}
+
+.keypad-cell:nth-child(9) .fa-keypad{
+	transform: translate(-50%, -50%) rotate(135deg);
+}
+
 #keypad {
-	margin-left: auto;
-	margin-right: auto;
-	width:250px;
+	position: absolute;
+	top: 50%;
+	transform: translateY(-60%);
+	width: 250px;
 	height: 200px;
+	right: 5px;
+}
+
+.read-out-container {
+	width : 40%;
+	display: inline-block;
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+}
+
+.read-out-container label {
+	width: 100%;
+	font-size: 1.65rem;
+	float: left;
+	background-color: #333;
+	border: none;
+	color: #eee;
+}
+
+.read-out-container .units, .read-out-container .rotunits {
+	font-size: 12px;
+    text-transform: lowercase;
+    vertical-align: baseline;
+    position: absolute;
+    right: 20px;
+}
+
+.read-out-container input {
+	float: right;
+	font-family: 'Droid_Sans_Mono';
+	width: 80%;
+	text-align: center;
+	height: auto;
+    font-size: 23px;
+	padding: 5px;
+    background: rgba(0,0,0,0.3);
+    border: none;
+    outline: none;
+    color: #fff;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
+    border: 1px solid rgba(0,0,0,0.3);
+	border-radius: 4px;
+    box-shadow: inset 0 -5px 45px rgba(100,100,100,0.2), 0 1px  1px rgba(255,255,255,0.2);
+}
+
+.read-out-container input:focus {
+	background: rgba(0,0,0,0.3);
+	border: 0.5px solid rgba(95,169,61,0.8);
+	box-shadow: inset 0 -1px 10px rgba(95,169,61,0.3), 0 1px  1px rgba(95,169,61,0.2);
+    /* box-shadow: inset 0 0px 1px #5FA93D, 0 0px 1px #5FA93D; */
 }
 
 #modalDialogButtons {
@@ -1698,17 +1800,65 @@ input[type=number]::-webkit-outer-spin-button {
 
 .manual-drive-modal {
 	display: none;
-	width: 50%;
+    width: 50%;
+	height: 50%;
+	min-height: 400px;
+	max-height: 500px;
     position: fixed;
     top: 50%;
     left: 50%;
-	transform: translate(-50%, -50%);
-	padding: 2rem;
+    transform: translate(-50%, -50%);
+    padding: 1rem 2rem 2rem 2rem;
     z-index: 3001;
     background-color: #333333;
     border-radius: 5px;
-      -webkit-font-smoothing: antialiased;
+    -webkit-font-smoothing: antialiased;
+    overflow: scroll;
 }
+
+.manual-drive-container {
+	position: relative;
+	width: 100%;
+	height: 100%;
+}
+
+
+
+@media screen and (max-width: 1000px) {
+	.manual-drive-modal {
+		width: 80%; 
+	}
+}
+
+@media screen and (max-width: 650px) {
+	.manual-drive-modal {
+		width: 100%; 
+		height: 100%;
+		max-height: none;
+	}
+
+	.read-out-container{
+		width: 70%;
+		display: block;
+		position: relative;
+		top: 0%;
+		transform: translateY(0%);
+		margin-left: auto;
+		margin-right: auto;
+	}
+
+	#keypad {
+		position: relative;
+		transform: translateY(0%);
+		width: 250px;
+		height: 200px;
+		margin-top: 1.2rem;
+		margin-left: auto;
+		margin-right: auto;
+		top: 0;
+	}
+}
+
 
 .newModal{
     display: none;

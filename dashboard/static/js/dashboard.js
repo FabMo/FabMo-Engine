@@ -398,7 +398,8 @@ define(function(require) {
     }.bind(this));
 
     this._registerHandler('manualStart', function(data, callback) {
-      this.engine.manualStart(data.axis, data.speed, function(err, result) {
+      console.log(data);
+      this.engine.manualStart(data.axis, data.speed, data.second_axis, data.second_speed, function(err, result) {
         if (err) {
           callback(err);
         } else {

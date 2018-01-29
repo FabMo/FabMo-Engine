@@ -65,14 +65,14 @@ Keypad.prototype.init = function() {
 	} */
 
 
-	var enter_button = $('.enter-button');
-	if(enter_button) {
-		var hammer = new Hammer.Manager(enter_button[0]);
-		hammer.add(new Hammer.Tap({time: this.pressTime-1, interval: this.tapInterval, threshold: this.pressThreshold}));
-		hammer.on('tap', this.onEnterTap.bind(this));
-	}else {
-		console.warn('no enter button')
-	}
+	// var enter_button = $('.enter-button');
+	// if(enter_button) {
+	// 	var hammer = new Hammer.Manager(enter_button[0]);
+	// 	hammer.add(new Hammer.Tap({time: this.pressTime-1, interval: this.tapInterval, threshold: this.pressThreshold}));
+	// 	hammer.on('tap', this.onEnterTap.bind(this));
+	// }else {
+	// 	console.warn('no enter button')
+	// }
 
 }
 
@@ -124,9 +124,13 @@ Keypad.prototype.refresh = function() {
 	}
 }
 
-Keypad.prototype.start = function(axis, direction) {
+Keypad.prototype.start = function(axis, direction, second_axis, second_direction) {
 	if(this.going) { return; }
-	this.move = {'axis' : axis, 'dir' : direction};
+	if (second_axis) {
+		this.move = {'axis' : axis, 'dir' : direction, 'second_axis' : second_axis, 'second_dir' : second_direction};
+	} else {
+		this.move = {'axis' : axis, 'dir' : direction};
+	}
 	this.going = true;
 	this.refresh();
 }
@@ -160,13 +164,29 @@ Keypad.prototype.exit = function() {
 }
 
 Keypad.prototype.onDrivePress = function(evt) {
+	console.log('drive press');
 	this.target = evt.target;
 	this.setEnabled(true);
 	var e = $(evt.target);
 	e.focus();
 	if(!this.going) {
-		if(e.hasClass('x_pos')) {
+
+		if(e.hasClass('x_pos') && e.hasClass('y_pos')) {
+			this.start('x', 1, 'y', 1);
+		}
+		else if(e.hasClass('x_neg') && e.hasClass('y_pos')) {
+			this.start('x', -1, 'y', 1);
+		}
+		else if(e.hasClass('x_neg') && e.hasClass('y_neg')) {
+			this.start('x', -1, 'y', -1);
+		}
+		else if(e.hasClass('x_pos') && e.hasClass('y_neg')) {
+			this.start('x', 1, 'y', -1);
+		}
+		else if(e.hasClass('x_pos')) {
+			console.log('x_pos');
 			this.start('x', 1);
+
 		}
 		else if(e.hasClass('x_neg')) {
 			this.start('x', -1);
