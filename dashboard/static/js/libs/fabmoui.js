@@ -291,7 +291,6 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(".tools-current > li a").removeClass('paus err disc');
 		$(that.state_selector).html(statename);
 		$(".exit-button").hide();
-		$(".enter-button").removeClass('drive-button-active').addClass('drive-button-inactive');
 
 		if(that.file_control)
 		{
@@ -321,8 +320,6 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.status_div_selector).removeClass('fabmo-status-running');
 		$(".tools-current > li a").removeClass('disc err').addClass('paus');
 		$(that.state_selector).html(statename);
-		$(".exit-button").show();
-		$(".enter-button").removeClass('drive-button-inactive').addClass('drive-button-active');
 
 		if(that.file_control)
 		{
