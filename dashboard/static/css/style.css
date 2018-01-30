@@ -1500,6 +1500,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 #keypad {
+
 	position: absolute;
 	top: 50%;
 	transform: translateY(-60%);
@@ -1507,6 +1508,40 @@ input[type=number]::-webkit-outer-spin-button {
 	height: 200px;
 	right: 5px;
 }
+
+.go-to-container {
+	display: none;
+	position: absolute;
+	top: 50%;
+	transform: translateY(-60%);
+	width: 250px;
+	height: 200px;
+	right: 5px;
+}
+
+.go-to-container div {
+	cursor: pointer;
+	position: relative;
+	width: 100%;
+	margin: 0.5rem;
+	border-radius: 5px;
+	background-color: #5FA93D;
+	color: #eee;
+	height: 30%;
+
+}
+
+.go-to-container span {
+	position: absolute;
+    text-align: center;
+    width: 90%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+
+
 
 .read-out-container {
 	width : 40%;
@@ -1813,7 +1848,7 @@ input[type=number]::-webkit-outer-spin-button {
     background-color: #333333;
     border-radius: 5px;
     -webkit-font-smoothing: antialiased;
-    overflow: scroll;
+    overflow: hidden;
 }
 
 .manual-drive-container {
@@ -1847,7 +1882,7 @@ input[type=number]::-webkit-outer-spin-button {
 		margin-right: auto;
 	}
 
-	#keypad {
+	#keypad, .go-to-container {
 		position: relative;
 		transform: translateY(0%);
 		width: 250px;
