@@ -72,6 +72,7 @@ function SBPRuntime() {
 	this.continue_callback = null;
 	this.vs_change = 0;
 	this.units = null;
+	this.absoluteMode = true;
 
 	// Physical machine state
 	this.machine = null;
@@ -1569,6 +1570,9 @@ SBPRuntime.prototype.manualEnter = function(callback) {
 		this.inManualMode = false;
 		this.machine.setState(this, "running");
 		this._update();
+		if(this.absoluteMode) {
+			this.emit_gcode('G90');
+		}
 		callback();
 	}.bind(this));
 }
