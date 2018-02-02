@@ -8,6 +8,7 @@ var openSBP = require('../opensbp.js');
 
 // Set to Absolute coordinates
 exports.SA = function(args) {
+	this.absoluteMode = true;
 	this.emit_gcode("G90");
 	//this.emit_gcode("M0");
 
@@ -47,6 +48,7 @@ exports.SK = function(args, callback) {
 
 //  Set to Relative coordinates
 exports.SR = function(args) {
+	this.absoluteMode = false;
 	this.emit_gcode("G91");
 	//this.emit_gcode("M0");
 };

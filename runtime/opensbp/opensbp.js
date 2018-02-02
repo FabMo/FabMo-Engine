@@ -72,6 +72,7 @@ function SBPRuntime() {
 	this.continue_callback = null;
 	this.vs_change = 0;
 	this.units = null;
+	this.absoluteMode = true;
 
 	// Physical machine state
 	this.machine = null;
@@ -140,17 +141,17 @@ SBPRuntime.prototype.executeCode = function(s, callback) {
 		this.runString(s, callback);		
 	} else {
 		if(this.inManualMode) {
-			switch(code.cmd) {
+			switch(s.cmd) {
 			case 'enter':
 				//	this.enter();
 				break;
 			default:
 				if(!this.helper) {
-					log.warn("Can't accept command '" + code.cmd + "' - not entered.");
+					log.warn("Can't accept command '" + s.cmd + "' - not entered.");
 					this.machine.setState(this, 'idle');
 					return;
 				}
-				switch(code.cmd) {
+				switch(s.cmd) {
 					case 'exit':
 						log.debug('---- MANUAL DRIVE EXIT ----')
 						this.helper.exit();
@@ -158,7 +159,7 @@ SBPRuntime.prototype.executeCode = function(s, callback) {
 						break;
 
 					case 'start':
-						this.helper.startMotion(code.axis, code.speed);
+						this.helper.startMotion(s.axis, s.speed);
 						break;
 
 					case 'stop':
@@ -173,11 +174,11 @@ SBPRuntime.prototype.executeCode = function(s, callback) {
 						if(!this.helper) {
 							this.enter();
 						}
-						this.helper.nudge(code.axis, code.speed, code.dist);
+						this.helper.nudge(s.axis, s.speed, s.dist);
 						break;
 
 					default:
-						log.error("Don't know what to do with '" + code.cmd + "' in manual command.");
+						log.error("Don't know what to do with '" + s.cmd + "' in manual command.");
 						break;
 
 				}
@@ -520,6 +521,9 @@ SBPRuntime.prototype._run = function() {
 
 		var that = this;
 		var onStat = function(stat) {
+			if(that.inManualMode) {
+				return;
+			}
 			switch(stat) {
 				case that.driver.STAT_STOP:
 					that.gcodesPending = false;
@@ -1555,12 +1559,22 @@ SBPRuntime.prototype.resume = function() {
 SBPRuntime.prototype.manualEnter = function(callback) {
 	console.log("entering manual mode in sbp runtime")
 	this.inManualMode = true;
+	this._update();
 	if(this.machine) {
 		this.machine.setState(this, "manual");
 		this.machine.authorize();
 	}
 	this.helper = new ManualDriver(this.driver, this.stream);
-	this.helper.enter();
+	this.helper.enter().then(function() {
+		console.log("Done with manual drive");
+		this.inManualMode = false;
+		this.machine.setState(this, "running");
+		this._update();
+		if(this.absoluteMode) {
+			this.emit_gcode('G90');
+		}
+		callback();
+	}.bind(this));
 }
 
 exports.SBPRuntime = SBPRuntime;

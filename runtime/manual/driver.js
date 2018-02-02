@@ -66,7 +66,6 @@ ManualDriver.prototype.exit = function() {
         }.bind(this));
 		this.driver.removeListener('status', this.status_handler);
 		this.exited = true;
-		this.deferred.resolve();
 	}
 }
 
@@ -253,6 +252,7 @@ ManualDriver.prototype._done = function() {
 	this.moving = false;
     this.keep_moving = false;
     this.stream = null;
+	this.deferred.resolve();
 }
 
 
