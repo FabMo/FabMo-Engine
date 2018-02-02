@@ -423,8 +423,29 @@ require("../css/toastr.min.css");
     });
 
     $('.axi').on('click', function(e) {
+        var goString = 'Go to ';
+        $('.modal-axi').each(function(item){
+            var newStr = $(this).attr('id') + ':'+ $(this).val() + ' ';
+           goString += newStr;
+           console.log(goString);
+        });
         e.stopPropagation();
         $('.go-here').show();
+        $('#keypad').hide();
+        $('.go-to-container').show();
+
+        $('.go-to span').html(goString);
+        
+    });
+
+    $('.axi').on('change', function(e) {
+        var goString = 'Go to ';
+        $('.modal-axi').each(function(item){
+            var newStr = $(this).attr('id') + ':'+ $(this).val() + ' ';
+           goString += newStr;
+           console.log(goString);
+        });
+        $('.go-to span').html(goString);
     });
 
     $('.axi').on('focus', function(e) {
@@ -437,6 +458,8 @@ require("../css/toastr.min.css");
         $('.posy').val($('.posy').val());
         $('.posz').val($('.posz').val());
         $('.go-here').hide();
+        $('#keypad').show();
+        $('.go-to-container').hide();
     });
 
     $('.axi').keyup(function(e) {
