@@ -1,14 +1,17 @@
 {
-   function buildTree(first, rest) {
-      if(rest[0]) {
-          var l = first;
-          var r = buildTree(rest[0][3], rest.slice(1));
-          return {left : l, right : r, op : rest[0][1]};
-          //return {left: l, right: rest[0][3], op: rest[0][1]};
-      } else {
-          return first;
-      }
+
+   function buildLeftAssocTree(l, r) {
+   	if(!l.length) { return r; }
+	var last = l.pop();
+	return {left:buildLeftAssocTree(l, last[0]), right:r, op : last[1][1]}
    }
+
+   function buildRightAssocTree(l, r) {
+      if(!r.length) { return l; }
+      	var first = r.shift()	      
+      return {left : l, op : first[1], right : buildRightAssocTree(first[3], r)};
+   }
+
 }
 
 start
@@ -22,7 +25,7 @@ custom_cut
    { return {"type":"custom", "index":index};}
 
 event
-   = "ON"i ___ "INPUT"i __ "(" __ sw:integer __ "," __ state:integer __ ")" ___ stmt:(assignment / jump / pause / single / command)
+   = "ON"i ___ "INP"i("UT"i)? __ "(" __ sw:integer __ "," __ state:integer __ ")" ___ stmt:(assignment / jump / pause / single / command)
       {return {"type":"event", "sw":sw, "state":state, "stmt":stmt};} 
 
 command 
@@ -42,7 +45,7 @@ end
   = name:("END"i) __ message:quotedstring? {return {"type" : "end", "message": message}}
 
 pause
-   = name:("PAUSE"i) __ arg:(e:expression {return {expr: e}})? {
+   = name:("PAUSE"i)  __ ","? __  arg:(e:expression {return {expr: e}})? {
     var arg = arg || {};
     if(arg['expr']) { return {'type' : 'pause', 'expr' : arg.expr}}
     else {return {'type':'pause'}};
@@ -77,7 +80,7 @@ integer "integer"
   = dec:('-'? decimal) { return parseInt(dec.join(""), 10); }
 
 float "float"
-  = f:('-'? decimal '\.' decimal) { return parseFloat(f.join(""));}
+  = f:('-'? decimal? '\.' decimal) { return parseFloat(f.join(""));}
 
 barestring
   = s:[^,\n"]+ { return s.join("").trim() || undefined; }
@@ -110,13 +113,16 @@ comparison
   = ("(" __ cmp:comparison __ ")" {return cmp;} / compare)
 
 expression
-  = first:term rest:(__ add_op __ term)* {
-      return buildTree(first, rest);
+  = e1
+
+e1
+  = l:(e2 (__ add_op __ ))* r:e2 {
+      return buildLeftAssocTree(l, r);
     }
 
-term
-  = first:factor rest:(__ mul_op __ factor)* {
-      return buildTree(first, rest);
+e2
+  = l:factor r:(__ mul_op __ factor)* {
+      return buildRightAssocTree(l, r);
     }
 
 factor

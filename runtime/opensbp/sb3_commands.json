@@ -11,24 +11,31 @@
          }
       ]
    },
-   "EP": {
-      "cmd": "EP",
-      "name": "G2 Probe",
-      "params": [
-         {
-            "name": "Max Distance",
-            "desc": "Maximum Distance to Search",
-            "abrev": "mDst",
+   "SC": {
+	"cmd": "SC",
+	"name":"Set Coordinate System",
+	"params":[
+	{
+            "name": "Coordinate System",
+            "desc": "The coordinate system to set as the current coordinate system.",
+            "abrev": "coord",
             "typeext": 0,
-            "default": "-4.0",
-            "sysvar": 0,
-            "range": [
-               null,
-               null
+            "default": "1",
+            "default_desc": "User Coordinates",
+            "opts": [
+               {
+                  "value": 0,
+                  "desc": "Table Base Coordinates"
+               },
+               {
+                  "value": 1,
+                  "desc": "User Coordinates"
+               }
             ],
-            "type": "dist"
+            "sysvar": "0",
+            "type": "opt"
          }
-      ]
+	]
    },
    "FP": {
       "cmd": "FP",
@@ -2852,6 +2859,144 @@
          }
       ]
    },
+
+   "PA": {
+      "cmd": "PA",
+      "name": "Probe A",
+      "params": [
+         {
+            "name": "Search Distance",
+            "desc": "Distance to search while probing",
+            "abrev": "pxDist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Search Speed",
+            "desc": "Travel Speed for Probe Search ",
+            "abrev": "pxSpd",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Input",
+            "desc": "Input channel to use as the probe.",
+            "abrev": "pxI",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               "1",
+               "16"
+            ],
+            "type": "ck"
+         }
+      ]
+   },
+ 
+
+
+
+   "PB": {
+      "cmd": "PB",
+      "name": "Probe B",
+      "params": [
+         {
+            "name": "Search Distance",
+            "desc": "Distance to search while probing",
+            "abrev": "pxDist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Search Speed",
+            "desc": "Travel Speed for Probe Search ",
+            "abrev": "pxSpd",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Input",
+            "desc": "Input channel to use as the probe.",
+            "abrev": "pxI",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               "1",
+               "16"
+            ],
+            "type": "ck"
+         }
+      ]
+   },
+ 
+
+
+      "PC": {
+      "cmd": "PC",
+      "name": "Probe C",
+      "params": [
+         {
+            "name": "Search Distance",
+            "desc": "Distance to search while probing",
+            "abrev": "pxDist",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Search Speed",
+            "desc": "Travel Speed for Probe Search ",
+            "abrev": "pxSpd",
+            "typeext": 0,
+            "default": "",
+            "range": [
+               null,
+               null
+            ],
+            "type": "distm"
+         },
+         {
+            "name": "Input",
+            "desc": "Input channel to use as the probe.",
+            "abrev": "pxI",
+            "typeext": 0,
+            "default": "1",
+            "range": [
+               "1",
+               "16"
+            ],
+            "type": "ck"
+         }
+      ]
+   },
+ 
+   
+   
+   
    "VC": {
       "cmd": "VC",
       "name": "Cutter values",

@@ -65,7 +65,7 @@ function FabMoUI(tool, options){
 
 	this.stop_button_selector = this.file_control_selector + ' .stopJob';
 	this.resume_button_selector = this.file_control_selector + ' .resumeJob';
-	this.pause_button_selector = this.file_control_selector + ' .fabmo-pause-button';
+	this.pause_button_selector = this.file_control_selector + ' .pauseJob-wrapper';
 
 	this.units_selector = this.status_div_selector + ' .units';
 
@@ -156,7 +156,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	var that = this;
 	var prev_state = that.tool.state;
 	that.tool.state=status.state;
-
+	console.log(status.state)
 	if(prev_state !== status.state) {
 		if(status.state === 'stopped') {
 			if(status.info) {
@@ -290,6 +290,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.status_div_selector).removeClass('fabmo-status-idle');
 		$(".tools-current > li a").removeClass('paus err disc');
 		$(that.state_selector).html(statename);
+		$(".exit-button").hide();
+
 		if(that.file_control)
 		{
 			$(that.stop_button_selector).hide();
@@ -308,6 +310,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 			$(that.stop_button_selector).hide();
 			$(that.pause_button_selector).show();
 			$(that.resume_button_selector).hide();
+			$(that.resume_button_selector+" div:first-child").removeClass('spinner green');
+			$(that.stop_button_selector+" div:first-child").removeClass('spinner red');
 		}
 	}
 	else if(status.state === 'manual') {
@@ -316,6 +320,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.status_div_selector).removeClass('fabmo-status-running');
 		$(".tools-current > li a").removeClass('disc err').addClass('paus');
 		$(that.state_selector).html(statename);
+
 		if(that.file_control)
 		{
 			$(that.stop_button_selector).hide();
@@ -328,11 +333,15 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.status_div_selector).removeClass('fabmo-status-paused');
 		$(".tools-current > li a").removeClass('paus disc err').addClass('paus');
 		$(that.state_selector).html(statename);
+				$(".exit-button").hide();
+
 		if(that.file_control)
 		{
 			$(that.stop_button_selector).show();
 			$(that.pause_button_selector).hide();
 			$(that.resume_button_selector).show();
+			$(that.pause_button_selector+" div div:first-child").removeClass('spinner red');
+
 		}
 	}
 	else if(status.state === 'passthrough') {
@@ -344,6 +353,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.stop_button_selector).hide();
 		$(that.pause_button_selector).hide();
 		$(that.resume_button_selector).hide();
+		$(".exit-button").hide();
+
 	}
 	else if(status.state == 'limit') {
 		that.forbidKeypad();
@@ -351,6 +362,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.status_div_selector).removeClass('fabmo-status-error');
 		$(".tools-current > li a").removeClass('paus err').addClass('disc');
 		$(that.state_selector).html(status.state);
+				$(".exit-button").hide();
+
 		if(that.file_control)
 		{
 			$(that.pause_button_selector).hide();
@@ -364,6 +377,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
 		$(that.status_div_selector).addClass('fabmo-status-error');
 		$(that.state_selector).html(statename);
+		$(".exit-button").hide();
+
 		if(that.file_control)
 		{
 			$(that.pause_button_selector).hide();
@@ -373,6 +388,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	}
 	else if(status.state == 'stopped') {
 		that.forbidKeypad();
+		$(".exit-button").hide();
+
 		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
 		$(that.status_div_selector).addClass('fabmo-status-paused');
 		$(that.state_selector).html(statename);
@@ -431,55 +448,37 @@ FabMoUI.prototype.updateStatus = function(){
 
 };
 
-var bindOff = function(el){
-	$(el).off();
-};
 
-var bindOnPause = function(el ,that){
-	$(el).click(function(e) {
-		that.tool.pause(function(err, data){
-			if (err) {
-				console.log(err)
-			} else {
-				console.log(data);
-				bindOff(that.pause_button_selector);
-			}
-		});
-	});
-};
 
 
 FabMoUI.prototype.FileControl = function(){
 	var that = this;
 	$(that.pause_button_selector).click(function(e) {
+		$(that.pause_button_selector+" div div:first-child").addClass('spinner red');
 		that.tool.pause(function(err, data){
 			if (err) {
-				console.log(err)
+				console.error(err)
 			} else {
-				console.log(data);
-				bindOff(that.pause_button_selector);
 			}
 		});
 	});
 
 	$(that.resume_button_selector).click(function(e) {
+		$(that.resume_button_selector+" div:first-child").addClass('spinner green');
 		that.tool.resume(function(err, data){
 			if (err) {
-				console.log(err)
+				console.error(err)
 			} else {
-				console.log(data);
-				bindOnPause(that.pause_button_selector, that);
 			}
 		});
 	});
 
 	$(that.stop_button_selector).click(function(e) {
+		$(that.stop_button_selector+" div:first-child").addClass('spinner red');
 		that.tool.quit(function(err, data){
 			if (err) {
-				console.log(err)
+				console.error(err)
 			} else {
-				console.log(data);
-				bindOnPause(that.pause_button_selector, that);
 			}
 		});
 	});

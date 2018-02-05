@@ -374,12 +374,21 @@ FabMoAPI.prototype.sbp = function(code, callback) {
 	this.runCode('sbp', code, callback);
 }
 
+
+FabMoAPI.prototype.goto = function(move, callback){
+	this.executeRuntimeCode('manual', {'cmd': 'goto', "move":move});
+}
+
+FabMoAPI.prototype.set = function(move, callback){
+	this.executeRuntimeCode('manual', {'cmd': 'set', "move":move});
+}
+
 FabMoAPI.prototype.executeRuntimeCode = function(runtime, code, callback) {
 	this.socket.emit('code', {'rt' : runtime, 'data' : code})
 }
 
-FabMoAPI.prototype.manualStart = function(axis, speed) {
-	this.executeRuntimeCode('manual', {'cmd': 'start', 'axis' : axis, 'speed' : speed});
+FabMoAPI.prototype.manualStart = function(axis, speed, second_axis, second_speed) {
+	this.executeRuntimeCode('manual', {'cmd': 'start', "axis":axis, "speed":speed, "second_axis":second_axis, "second_speed":second_speed });
 }
 
 FabMoAPI.prototype.manualHeartbeat = function() {
@@ -388,6 +397,14 @@ FabMoAPI.prototype.manualHeartbeat = function() {
 
 FabMoAPI.prototype.manualStop = function() {
 	this.executeRuntimeCode('manual', {'cmd': 'stop'});
+}
+
+FabMoAPI.prototype.manualEnter = function() {
+	this.executeRuntimeCode('manual', {'cmd': 'enter'});
+}
+
+FabMoAPI.prototype.manualExit = function() {
+	this.executeRuntimeCode('manual', {'cmd': 'exit'});
 }
 
 FabMoAPI.prototype.manualMoveFixed = function(axis, speed, distance) {

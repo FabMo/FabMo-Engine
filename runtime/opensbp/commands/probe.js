@@ -64,6 +64,42 @@ exports.PZ = function(args) {
 	})
 };
 
+exports.PA = function(args) {
+	this.cmd_posa = undefined
+	probe(this, {
+		inp : args[2],
+		feed : args[1],
+		dist : {
+			A : args[0]
+		}
+	})
+};
+
+
+exports.PB = function(args) {
+	this.cmd_posb = undefined
+	probe(this, {
+		inp : args[2],
+		feed : args[1],
+		dist : {
+			B : args[0]
+		}
+	})
+};
+
+
+exports.PC = function(args) {
+	this.cmd_pos
+	probe(this, {
+		inp : args[2],
+		feed : args[1],
+		dist : {
+			C : args[0]
+		}
+	})
+};
+
+
 exports.P2 = function(args) {
 	this.cmd_posx = undefined
 	this.cmd_posy = undefined

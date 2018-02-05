@@ -11,6 +11,7 @@ var Leveler = require('./commands/leveler').Leveler;
 var u = require('../../util');
 var config = require('../../config');
 var stream = require('stream');
+var ManualDriver = require('../manual').ManualDriver;
 
 var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
@@ -71,10 +72,13 @@ function SBPRuntime() {
 	this.continue_callback = null;
 	this.vs_change = 0;
 	this.units = null;
+	this.absoluteMode = true;
 
 	// Physical machine state
 	this.machine = null;
 	this.driver = null;
+
+	this.inManualMode = false;
 
 }
 util.inherits(SBPRuntime, events.EventEmitter);
@@ -133,7 +137,55 @@ SBPRuntime.prototype.disconnect = function() {
 };
 
 SBPRuntime.prototype.executeCode = function(s, callback) {
-	this.runString(s, callback);
+	if(typeof s === "string" || s instanceof String) {
+		this.runString(s, callback);		
+	} else {
+		if(this.inManualMode) {
+			switch(s.cmd) {
+			case 'enter':
+				//	this.enter();
+				break;
+			default:
+				if(!this.helper) {
+					log.warn("Can't accept command '" + s.cmd + "' - not entered.");
+					this.machine.setState(this, 'idle');
+					return;
+				}
+				switch(s.cmd) {
+					case 'exit':
+						log.debug('---- MANUAL DRIVE EXIT ----')
+						this.helper.exit();
+						// RESUME KIDS
+						break;
+
+					case 'start':
+						this.helper.startMotion(s.axis, s.speed);
+						break;
+
+					case 'stop':
+						this.helper.stopMotion();
+						break;
+
+					case 'maint':
+						this.helper.maintainMotion();
+						break;
+
+					case 'fixed':
+						if(!this.helper) {
+							this.enter();
+						}
+						this.helper.nudge(s.axis, s.speed, s.dist);
+						break;
+
+					default:
+						log.error("Don't know what to do with '" + s.cmd + "' in manual command.");
+						break;
+
+				}
+			}
+
+		}
+	}
 }
 
 //Check whether the code needs auth
@@ -469,6 +521,9 @@ SBPRuntime.prototype._run = function() {
 
 		var that = this;
 		var onStat = function(stat) {
+			if(that.inManualMode) {
+				return;
+			}
 			switch(stat) {
 				case that.driver.STAT_STOP:
 					that.gcodesPending = false;
@@ -480,11 +535,13 @@ SBPRuntime.prototype._run = function() {
 				break;
                 case that.driver.STAT_PROBE:
 				case that.driver.STAT_RUNNING:
-					that.machine.setState(that, 'running');
-				    if(that.pendingFeedhold) {
-                        that.pendingFeedhold = false;
-                        that.driver.feedHold();
-                    }
+					if(!that.inManualMode) {
+						that.machine.setState(that, 'running');
+					    if(that.pendingFeedhold) {
+	                        that.pendingFeedhold = false;
+	                        that.driver.feedHold();
+	                    }
+                	}
                 break;
 
 			}
@@ -980,6 +1037,7 @@ SBPRuntime.prototype._eval = function(expr) {
 
 SBPRuntime.prototype.init = function() {
 	this.pc = 0;
+	this.coordinateSystem = "G55"
 	this.start_of_the_chunk = 0;
 	this.stack = [];
 	this.label_index = {};
@@ -1109,23 +1167,23 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 		break;
 
 		case 6: // X Table Base
-			return config.driver.get('g55x');
+			return config.driver.get('g54x');
 		break;
 
 		case 7: // Y Table Base
-			return config.driver.get('g55y');
+			return config.driver.get('g54y');
 		break;
 
 		case 8: // Z Table Base
-			return config.driver.get('g55z');
+			return config.driver.get('g54z');
 		break;
 
 		case 9: // A Table Base
-			return config.driver.get('g55a');
+			return config.driver.get('g54a');
 		break;
 
 		case 10: // B Table Base
-			return config.driver.get('g55b');
+			return config.driver.get('g54b');
 		break;
 
 		case 25:
@@ -1258,7 +1316,11 @@ SBPRuntime.prototype._unhandledCommand = function(command) {
 
 SBPRuntime.prototype._pushFileStack = function() {
 	frame =  {}
+	frame.coordinateSystem = this.coordinateSystem
+	frame.movespeed_xy = this.movespeed_xy
+	frame.movespeed_z = this.movespeed_z
 	frame.pc = this.pc
+	frame.movexy
 	frame.program = this.program
 	frame.stack = this.stack;
 	//frame.user_vars = this.user_vars
@@ -1271,7 +1333,11 @@ SBPRuntime.prototype._pushFileStack = function() {
 
 SBPRuntime.prototype._popFileStack = function() {
 	frame = this.file_stack.pop()
+	this.movespeed_xy = frame.movespeed_xy
+	this.movespeed_z = frame.movespeed_z
 	this.pc = frame.pc
+	this.coordinateSystem = frame.coordinateSystem
+	this.emit_gcode(this.coordinateSystem)	
 	this.program = frame.program
 	this.stack = frame.stack
 	//this.user_vars = frame.user_vars
@@ -1488,6 +1554,27 @@ SBPRuntime.prototype.resume = function() {
 		} else {
 			this.driver.resume();
 		}
+}
+
+SBPRuntime.prototype.manualEnter = function(callback) {
+	console.log("entering manual mode in sbp runtime")
+	this.inManualMode = true;
+	this._update();
+	if(this.machine) {
+		this.machine.setState(this, "manual");
+		this.machine.authorize();
+	}
+	this.helper = new ManualDriver(this.driver, this.stream);
+	this.helper.enter().then(function() {
+		console.log("Done with manual drive");
+		this.inManualMode = false;
+		this.machine.setState(this, "running");
+		this._update();
+		if(this.absoluteMode) {
+			this.emit_gcode('G90');
+		}
+		callback();
+	}.bind(this));
 }
 
 exports.SBPRuntime = SBPRuntime;

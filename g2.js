@@ -50,6 +50,7 @@ function CycleContext(driver, st, promise) {
 		this._firmed = false;
 		this._driver = driver;
 		this._stream = st;
+		this._paused = false;
 		this._promise = promise.then(function(value) {
 			this.firm(); // Firm the tool
 			this.finish();
@@ -116,10 +117,12 @@ CycleContext.prototype.emit = function(event, data) {
 }
 
 CycleContext.prototype.pause = function() {
+	this._paused = true;
 	this._stream.pause();
 }
 
 CycleContext.prototype.resume = function() {
+	this._paused = false;
 	this._stream.resume();
 }
 
@@ -384,6 +387,8 @@ G2.prototype.handleExceptionReport = function(response) {
 			//this._write("{clr:n}\n");
 			//this.command("M30");
 		}
+		log.error("Response with an exception report:")
+		log.error(JSON.stringify(response))
 	}
 };
 
@@ -437,6 +442,10 @@ G2.prototype.handleStatusReport = function(response) {
 				case STAT_END:
 					this.status.line = null;
 					break;
+				case STAT_PANIC:
+					log.error('Panicked Response:')
+					log.error(JSON.stringify(response))
+					break
 			}
 
 			if(this.quit_pending) {
@@ -574,6 +583,8 @@ G2.prototype.feedHold = function(callback) {
 G2.prototype.queueFlush = function(callback) {
 	log.debug('Clearing the queue.');
 	this.flushcallback = callback;
+	this.lines_to_send = 4;
+	this.gcode_queue.clear();
 	this.command({'clr':null});
 	this._write('\%');
 };
@@ -602,6 +613,7 @@ G2.prototype.resume = function() {
 	if(this.context) {
 		this.context.resume();
 	}
+	this.requestStatusReport();
 	return deferred.promise;
 };
 
@@ -835,6 +847,13 @@ G2.prototype.prime = function() {
 	this.sendMore();
 }
 
+G2.prototype.getInfo = function() {
+	return "G2: primed:" + 
+			(this._primed ? '1' : '0') +
+			" l2s:" + 
+			this.lines_to_send + 
+			" gcq:" + this.gcode_queue.getLength()
+}
 G2.prototype.sendMore = function() {
 	//log.info("sendMore:   Lines to send: " + this.lines_to_send);
 	//log.info("           Lines in queue: " + this.gcode_queue.getLength());

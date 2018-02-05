@@ -21,7 +21,7 @@ var Keypad = function(id, options) {
 	this.going = false;
 	this.interval = null;
 	this.enabled = false;
-	this.listeners = {'go' : [], 'stop': [], 'nudge':[]}
+	this.listeners = {'go' : [], 'stop': [], 'nudge':[], 'exit':[], 'enter' : []}
 	this.pressThreshold = 50;
 	this.pressTime = 150;
 	this.tapInterval = 150;
@@ -30,10 +30,10 @@ var Keypad = function(id, options) {
 
 Keypad.prototype.init = function() {
 	var e = this.elem;
+	var Hammer = require('./hammer.min.js');
 
 	var drive_buttons = e.find('.drive-button');
 	drive_buttons.each(function(index, element) {
-		var Hammer = require('./hammer.min.js');
 		var hammer = new Hammer.Manager(element);
 		hammer.add(new Hammer.Tap({time: this.pressTime-1, interval: this.tapInterval, threshold: this.pressThreshold}));
 		hammer.add(new Hammer.Press({time: this.pressTime, threshold: this.pressThreshold}));
@@ -53,6 +53,27 @@ Keypad.prototype.init = function() {
 		$(document).on('scroll', this.end.bind(this));
 		element.addEventListener("contextmenu", function(evt) {evt.preventDefault()});
 	}.bind(this));
+
+	/*
+	var exit_button = e.find('.exit-button');
+	if(exit_button) {
+		var hammer = new Hammer.Manager(exit_button[0]);
+		hammer.add(new Hammer.Tap({time: this.pressTime-1, interval: this.tapInterval, threshold: this.pressThreshold}));
+		hammer.on('tap', this.onExitTap.bind(this));
+	} else {
+		console.warn('no exit button')
+	} */
+
+
+	// var enter_button = $('.enter-button');
+	// if(enter_button) {
+	// 	var hammer = new Hammer.Manager(enter_button[0]);
+	// 	hammer.add(new Hammer.Tap({time: this.pressTime-1, interval: this.tapInterval, threshold: this.pressThreshold}));
+	// 	hammer.on('tap', this.onEnterTap.bind(this));
+	// }else {
+	// 	console.warn('no enter button')
+	// }
+
 }
 
 Keypad.prototype.setOptions = function(options) {
@@ -90,6 +111,9 @@ Keypad.prototype.setEnabled = function(enabled) {
 	}
 }
 
+Keypad.prototype.enter = function() {
+	this.emit('enter', null)
+}
 
 Keypad.prototype.refresh = function() {
 	if(!this.enabled || !this.going) {
@@ -100,9 +124,13 @@ Keypad.prototype.refresh = function() {
 	}
 }
 
-Keypad.prototype.start = function(axis, direction) {
+Keypad.prototype.start = function(axis, direction, second_axis, second_direction) {
 	if(this.going) { return; }
-	this.move = {'axis' : axis, 'dir' : direction};
+	if (second_axis) {
+		this.move = {'axis' : axis, 'dir' : direction, 'second_axis' : second_axis, 'second_dir' : second_direction};
+	} else {
+		this.move = {'axis' : axis, 'dir' : direction};
+	}
 	this.going = true;
 	this.refresh();
 }
@@ -131,14 +159,34 @@ Keypad.prototype.end = function() {
 	}
 }
 
+Keypad.prototype.exit = function() {
+	this.emit('exit');
+}
+
 Keypad.prototype.onDrivePress = function(evt) {
+	console.log('drive press');
 	this.target = evt.target;
 	this.setEnabled(true);
 	var e = $(evt.target);
 	e.focus();
 	if(!this.going) {
-		if(e.hasClass('x_pos')) {
+
+		if(e.hasClass('x_pos') && e.hasClass('y_pos')) {
+			this.start('x', 1, 'y', 1);
+		}
+		else if(e.hasClass('x_neg') && e.hasClass('y_pos')) {
+			this.start('x', -1, 'y', 1);
+		}
+		else if(e.hasClass('x_neg') && e.hasClass('y_neg')) {
+			this.start('x', -1, 'y', -1);
+		}
+		else if(e.hasClass('x_pos') && e.hasClass('y_neg')) {
+			this.start('x', 1, 'y', -1);
+		}
+		else if(e.hasClass('x_pos')) {
+			console.log('x_pos');
 			this.start('x', 1);
+
 		}
 		else if(e.hasClass('x_neg')) {
 			this.start('x', -1);
@@ -193,6 +241,14 @@ Keypad.prototype.onDriveTap = function(evt) {
 			}
 		}.bind(this), 25);
 	}
+}
+
+Keypad.prototype.onExitTap = function(evt) {
+	this.exit();
+}
+
+Keypad.prototype.onEnterTap = function(evt) {
+	this.enter();
 }
 
 Keypad.prototype.onDriveMouseleave = function(evt) {

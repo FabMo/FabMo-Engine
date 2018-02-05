@@ -6,28 +6,6 @@ define(function(require) {
 	var _ = require('underscore');
 	var views = {};
 
-
-	views.AppIconView = Backbone.View.extend({
-		tagName : 'li',
-		className : 'app-icon',
-		attributes : function () {
-			return {
-				display : this.model.get('icon_display')
-			};
-		},
-		template : _.template(require('text!./templates/app-icon.html')),
-		initialize : function() {
-			_.bindAll(this, 'render');
-			this.model.bind('change', this.render);
-		},
-		render : function() {
-			this.$el.html(this.template(this.model.toJSON()));
-			return this;
-		}
-	});
-
-
-
 	views.Authentication = Backbone.View.extend({
 		el : '#mainContent',
 		template: _.template(require('text!./templates/authentication.html')),
@@ -39,83 +17,6 @@ define(function(require) {
 			return this;
 		}
 		
-	});
-
-	views.AddAppView = Backbone.View.extend({
-		tagName : 'li',
-		className : 'app-icon',
-		template : _.template(require('text!./templates/app-icon-add.html')),
-		busy : false,
-		initialize : function() {
-			_.bindAll(this, 'render');
-		},
-		render : function() {
-			this.$el.html(this.template({}));
-			this.$el.on('click', function(evt) {
-				if(this.busy) { return; }
-				var dashboard = require('./dashboard.js');
-				dashboard.browseForFiles(function(evt) {
-					var files = [];
-					for(var i=0; i<evt.target.files.length; i++) {
-						files.push({file:evt.target.files[i]});
-					}
-					this.busy = true;
-					$('.add-icon').removeClass('fa-plus').addClass('fa-cog fa-spin');
-					dashboard.submitApps(files, {}, function(err, data) {
-						this.busy = false;
-						function revert_icon() {
-							$('.add-icon').removeClass('fa-cog fa-spin fa-exclamation-triangle').addClass('fa-plus');
-						}
-						if(err) {
-							$('.add-icon').removeClass('fa-cog fa-spin').addClass('fa-exclamation-triangle');
-							dashboard.notification('error', "App could not be installed: <br/>" + (err.message || err));
-							setTimeout(revert_icon, 1500);
-						} else {
-							dashboard.notification('success', data.length + " app" + ((data.length > 1) ? 's' : '') + " installed successfully.");
-							revert_icon();
-						}
-						var context = require('./context.js');
-						context.apps.fetch();
-					}.bind(this));
-				}.bind(this));
-			}.bind(this));
-			return this;
-		}
-	});
-
-
-	views.AppMenuView = Backbone.View.extend({
-		tagName : 'div',
-		className : 'app-menu',
-		collection : null,
-		initialize : function(options) {
-			_.bindAll(this, 'render');
-			this.collection = options.collection;
-			this.collection.bind('reset', this.render);
-			this.collection.bind('add', this.render);
-			this.collection.bind('remove', this.render);
-			this.is_visible = true;
-			this.render();
-		},
-		render : function() {
-			var element = jQuery(this.el);
-			var count = 0;
-			element.empty();
-			this.collection.forEach(function(item) {
-				var appIconView = new views.AppIconView({ model: item });
-				element.append(appIconView.render().el);
-			});
-			element.append(new views.AddAppView().render().el);
-			return this;
-		},
-		show : function() {
-			this.is_visible = true
-			$(this.el).show();
-		},
-		hide : function() {
-			this.is_visible = false
-			$(this.el).hide();
-		}
 	});
 
 	views.AppClientView = Backbone.View.extend({

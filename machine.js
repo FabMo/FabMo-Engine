@@ -11,6 +11,8 @@ var config = require('./config');
 var updater = require('./updater');
 var u = require('./util');
 var async = require('async');
+var canQuit = false;
+
 
 var GCodeRuntime = require('./runtime/gcode').GCodeRuntime;
 var SBPRuntime = require('./runtime/opensbp').SBPRuntime;
@@ -161,6 +163,14 @@ function Machine(control_path, callback) {
     }.bind(this));
 
     this.driver.on('status', function(stat) {
+		if(this.status.state === "paused"){
+			setTimeout(function(){
+				 canQuit = true;
+
+			}, 1000);
+		} else {
+			canQuit = false;
+		}
     	this.handleFireButton(stat);
     	this.handleAPCollapseButton(stat);
 		this.handleOkayButton(stat);
@@ -211,15 +221,27 @@ Machine.prototype.handleOkayButton = function(stat){
 	var auth_input = 'in' + config.machine.get('auth_input');
 	if(stat[auth_input] && this.status.state === 'paused') {
 		log.info("Okay hit!")
-		this.resume();
+		this.resume(function(err, msg){
+			if(err){
+				log.error(err);
+			} else {
+				log.info(msg);
+			}
+		});
 	}
 }
 
 Machine.prototype.handleCancelButton = function(stat){
 	var quit_input = 'in' + config.machine.get('quit_input');
-	if(stat[quit_input] && this.status.state === 'paused') {
+	if(stat[quit_input] && this.status.state === 'paused' && canQuit) {
 		log.info("Cancel hit!")
-		this.quit();
+		this.quit(function(err, msg){
+			if(err){
+				log.error(err);
+			} else {
+				log.info(msg);
+			}
+		});
 	}
 
  }
@@ -599,38 +621,39 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 };
 
 Machine.prototype.pause = function(callback) {
-	if(this.status.state === "running") {
-		if(this.current_runtime) {
-			this.current_runtime.pause();
-			callback(null, 'paused');
+		if(this.status.state === "running") {
+			if(this.current_runtime) {
+				this.current_runtime.pause();
+				callback(null, 'paused');
+			} else {
+				calback("Not pausing because no runtime provided");
+			}
 		} else {
-			calback("Not pausing because no runtime provided");
+			calback("Not pausing because machine is not running");
 		}
-	} else {
-		calback("Not pausing because machine is not running")
-	}
 };
 
 Machine.prototype.quit = function(callback) {
-    this.disarm();
-	// Quitting from the idle state dismisses the 'info' data
-	if(this.status.state === "idle") {
-		delete this.status.info;
-		this.emit('status', this.status);
-	}
-
-	// Cancel the currently running job, if there is one
-	if(this.status.job) {
-		this.status.job.pending_cancel = true;
-	}
-	if(this.current_runtime) {
-		log.info("Quitting the current runtime...")
-		this.current_runtime.quit();
-		callback(null, 'quit');
-	} else {
-		log.warn("No current runtime!")
-		calback("Not quiting because no current runtime")
-	}
+		this.disarm();
+		// Quitting from the idle state dismisses the 'info' data
+		if(this.status.state === "idle") {
+			delete this.status.info;
+			this.emit('status', this.status);
+		}
+	
+		// Cancel the currently running job, if there is one
+		if(this.status.job) {
+			this.status.job.pending_cancel = true;
+		}
+		if(this.current_runtime) {
+			log.info("Quitting the current runtime...")
+			this.current_runtime.quit();
+			callback(null, 'quit');
+			alreadyQuiting = false;
+		} else {
+			log.warn("No current runtime!")
+			calback("Not quiting because no current runtime")
+		}    
 };
 
 Machine.prototype.resume = function(callback) {
@@ -705,13 +728,17 @@ Machine.prototype.gcode = function(string) {
 Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 	runtime = this.getRuntime(runtimeName);
 	if(runtime) {
-		this.setRuntime(runtime, function(err, runtime) {
-			if(err) {
-				log.error(err);
-			} else {
-				runtime.executeCode(code);
-			}
-		}.bind(this));
+		if(this.current_runtime == this.idle_runtime) {
+			this.setRuntime(runtime, function(err, runtime) {
+				if(err) {
+					log.error(err);
+				} else {
+					runtime.executeCode(code);
+				}
+			}.bind(this));
+		} else {
+			this.current_runtime.executeCode(code);
+		}
 	}
 }
 

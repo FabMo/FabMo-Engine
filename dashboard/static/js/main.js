@@ -121,6 +121,16 @@ require("../css/toastr.min.css");
                         return;
                     }
 
+                    if(status.state === "manual") {
+                        $('.modalDim').show();
+                        $('.manual-drive-modal').show();
+                    }
+
+                    if(status.state !== "manual") {
+                        $('.modalDim').hide();
+                        $('.manual-drive-modal').hide();
+                    }
+
                     if (status.state != "armed" && last_state_seen === "armed" || status.state != "paused" && last_state_seen === "paused") {
                         dashboard.hideModal();
                         modalIsShown = false;
@@ -211,19 +221,22 @@ require("../css/toastr.min.css");
 
     function getManualMoveSpeed(move) {
         var speed_ips = null;
-        try {
-            switch (move.axis) {
-                case 'x':
-                case 'y':
-                    speed_ips = engine.config.machine.manual.xy_speed;
-                    break;
-                case 'z':
-                    speed_ips = engine.config.machine.manual.z_speed;
-                    break;
-            }
-        } catch (e) {
-            console.error(e);
+        if ($('#manual-move-speed').val()){
+            speed_ips = $('#manual-move-speed').val();
         }
+        // try {
+        //     switch (move.axis) {
+        //         case 'x':
+        //         case 'y':
+        //             speed_ips = engine.config.machine.manual.xy_speed;
+        //             break;
+        //         case 'z':
+        //             speed_ips = engine.config.machine.manual.z_speed;
+        //             break;
+        //     }
+        // } catch (e) {
+        //     console.error(e);
+        // }
         return speed_ips;
     }
 
@@ -264,10 +277,10 @@ require("../css/toastr.min.css");
     }
 
     function setupKeyboard() {
-        var keyboard = new Keyboard('#keyboard');
+        var keyboard = new Keyboard();
         keyboard.on('go', function(move) {
             if (move) {
-                dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
+                dashboard.engine(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
             }
         });
 
@@ -283,10 +296,11 @@ require("../css/toastr.min.css");
     }
 
     function setupKeypad() {
-
         var keypad = new Keypad('#keypad');
         keypad.on('go', function(move) {
-            if (move) {
+            if (move.second_axis) {
+                dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1), move.second_axis, move.second_dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
+            } else {
                 dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
             }
         });
@@ -298,8 +312,30 @@ require("../css/toastr.min.css");
         keypad.on('nudge', function(nudge) {
             dashboard.engine.manualMoveFixed(nudge.axis, 60 * getManualMoveSpeed(nudge), nudge.dir * getManualNudgeIncrement(nudge), getManualMoveJerk(nudge));
         });
+
+        // keypad.on('enter', function() {
+        //     if(dashboard.engine.status.state == 'manual') {
+        //         dashboard.engine.manualExit();
+        //         keyboard.setEnabled(false);
+        //     } else {                
+        //         dashboard.engine.manualEnter();
+        //         keyboard.setEnabled(true);
+        //     }
+        // });
+
+        // keypad.on('exit', function() {
+        //     dashboard.engine.manualExit();
+        // });
         return keypad;
     }
+
+    $('.manual-drive-exit').click(function(){
+        dashboard.engine.manualExit();
+    })
+
+    $('.manual-drive-enter').click(function(){
+        dashboard.engine.manualEnter();
+    })
 
 
     function showConsent () {
@@ -316,7 +352,6 @@ require("../css/toastr.min.css");
                 conf = {consent_for_beacon : "true"};
                 dashboard.engine.setUpdaterConfig(conf,function(err){
                 if(err){
-                    console.log(err);
                     return;
                 }
                 });
@@ -371,6 +406,24 @@ require("../css/toastr.min.css");
         });
     });
 
+    $('.go-to').on('mousedown', function() {
+        var move = {}
+        $('.modal-axi:visible').each(function(){
+            move[$(this).attr('id')] = $(this).val();
+        });
+        console.log(move);
+        dashboard.engine.goto(move);
+    });
+
+    $('.set-coordinates').on('mousedown', function() {
+        var move = {}
+        $('.modal-axi:visible').each(function(){
+            move[$(this).attr('id')] = $(this).val();
+        });
+        console.log(move);
+        dashboard.engine.set(move);
+    });
+
     $('.go-here').on('mousedown', function() {
         var gcode = "G0 ";
         for (var i = 0; i < axisValues.length; i++) {
@@ -388,8 +441,12 @@ require("../css/toastr.min.css");
     });
 
     $('.axi').on('click', function(e) {
+        var goString = 'Go to ';
         e.stopPropagation();
         $('.go-here').show();
+        $('#keypad').hide();
+        $('.go-to-container').show();
+        
     });
 
     $('.axi').on('focus', function(e) {
@@ -402,6 +459,8 @@ require("../css/toastr.min.css");
         $('.posy').val($('.posy').val());
         $('.posz').val($('.posz').val());
         $('.go-here').hide();
+        $('#keypad').show();
+        $('.go-to-container').hide();
     });
 
     $('.axi').keyup(function(e) {
@@ -421,7 +480,7 @@ require("../css/toastr.min.css");
 
     // Handlers for the home/probe buttons
     $('.button-zerox').click(function(e) {
-        dashboard.engine.sbp('ZX');
+        ddashboard.engine.sbp('ZX');
     });
     $('.button-zeroy').click(function(e) {
         dashboard.engine.sbp('ZY');
@@ -434,6 +493,13 @@ require("../css/toastr.min.css");
     });
     $('.button-zerob').click(function(e) {
         dashboard.engine.sbp('ZB');
+    });
+
+    $('.zero-button').click(function(e) {
+        var axi = $(this).prev('label').find('input').attr('id');
+        var obj = {};
+        obj[axi] = 0;
+        dashboard.engine.set(obj)
     });
 
 
