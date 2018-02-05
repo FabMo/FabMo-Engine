@@ -70,6 +70,7 @@ ManualRuntime.prototype.enter = function() {
 	this.machine.setState(this, "manual");
 }
 
+
 ManualRuntime.prototype.executeCode = function(code, callback) {
 	this.completeCallback = callback;
 
@@ -105,6 +106,14 @@ ManualRuntime.prototype.executeCode = function(code, callback) {
 
 				case 'maint':
 					this.helper.maintainMotion();
+					break;
+					
+				case 'goto':
+					this.helper.goto(code.move)
+					break;
+
+				case 'set':
+					this.helper.set(code.move)
 					break;
 
 				case 'fixed':

@@ -374,6 +374,15 @@ FabMoAPI.prototype.sbp = function(code, callback) {
 	this.runCode('sbp', code, callback);
 }
 
+
+FabMoAPI.prototype.goto = function(move, callback){
+	this.executeRuntimeCode('manual', {'cmd': 'goto', "move":move});
+}
+
+FabMoAPI.prototype.set = function(move, callback){
+	this.executeRuntimeCode('manual', {'cmd': 'set', "move":move});
+}
+
 FabMoAPI.prototype.executeRuntimeCode = function(runtime, code, callback) {
 	this.socket.emit('code', {'rt' : runtime, 'data' : code})
 }

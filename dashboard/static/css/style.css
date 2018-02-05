@@ -1524,10 +1524,19 @@ input[type=number]::-webkit-outer-spin-button {
 	width: 100%;
 	margin: 0.5rem;
 	border-radius: 5px;
-	background-color: #5FA93D;
 	color: #eee;
-	height: 30%;
 
+
+}
+
+.go-to {
+	background-color: #61A844;
+	height: 50%;
+}
+
+.set-coordinates {
+	height: 25%;
+	background-color: #D8843E;
 }
 
 .go-to-container span {

@@ -398,7 +398,7 @@ define(function(require) {
     }.bind(this));
 
     this._registerHandler('manualStart', function(data, callback) {
-      console.log(data);
+
       this.engine.manualStart(data.axis, data.speed, data.second_axis, data.second_speed, function(err, result) {
         if (err) {
           callback(err);
@@ -407,6 +407,7 @@ define(function(require) {
         }
       });
     }.bind(this));
+
 
         this._registerHandler('manualEnter', function(data, callback) {
       this.engine.manualEnter(function(err, result) {
@@ -440,6 +441,16 @@ define(function(require) {
 
     this._registerHandler('manualStop', function(data, callback) {
       this.engine.manualStop(function(err, result) {
+        if (err) {
+          callback(err);
+        } else {
+          callback(null);
+        }
+      });
+    }.bind(this));
+
+    this._registerHandler('zero', function(text, callback) {
+      this.engine.zero(text, function(err, result) {
         if (err) {
           callback(err);
         } else {

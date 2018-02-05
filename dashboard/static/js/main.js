@@ -406,6 +406,24 @@ require("../css/toastr.min.css");
         });
     });
 
+    $('.go-to').on('mousedown', function() {
+        var move = {}
+        $('.modal-axi:visible').each(function(){
+            move[$(this).attr('id')] = $(this).val();
+        });
+        console.log(move);
+        dashboard.engine.goto(move);
+    });
+
+    $('.set-coordinates').on('mousedown', function() {
+        var move = {}
+        $('.modal-axi:visible').each(function(){
+            move[$(this).attr('id')] = $(this).val();
+        });
+        console.log(move);
+        dashboard.engine.set(move);
+    });
+
     $('.go-here').on('mousedown', function() {
         var gcode = "G0 ";
         for (var i = 0; i < axisValues.length; i++) {
@@ -424,28 +442,11 @@ require("../css/toastr.min.css");
 
     $('.axi').on('click', function(e) {
         var goString = 'Go to ';
-        $('.modal-axi').each(function(item){
-            var newStr = $(this).attr('id') + ':'+ $(this).val() + ' ';
-           goString += newStr;
-           console.log(goString);
-        });
         e.stopPropagation();
         $('.go-here').show();
         $('#keypad').hide();
         $('.go-to-container').show();
-
-        $('.go-to span').html(goString);
         
-    });
-
-    $('.axi').on('change', function(e) {
-        var goString = 'Go to ';
-        $('.modal-axi').each(function(item){
-            var newStr = $(this).attr('id') + ':'+ $(this).val() + ' ';
-           goString += newStr;
-           console.log(goString);
-        });
-        $('.go-to span').html(goString);
     });
 
     $('.axi').on('focus', function(e) {
@@ -479,7 +480,7 @@ require("../css/toastr.min.css");
 
     // Handlers for the home/probe buttons
     $('.button-zerox').click(function(e) {
-        dashboard.engine.sbp('ZX');
+        ddashboard.engine.sbp('ZX');
     });
     $('.button-zeroy').click(function(e) {
         dashboard.engine.sbp('ZY');
@@ -492,6 +493,13 @@ require("../css/toastr.min.css");
     });
     $('.button-zerob').click(function(e) {
         dashboard.engine.sbp('ZB');
+    });
+
+    $('.zero-button').click(function(e) {
+        var axi = $(this).prev('label').find('input').attr('id');
+        var obj = {};
+        obj[axi] = 0;
+        dashboard.engine.set(obj)
     });
 
 

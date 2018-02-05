@@ -103,6 +103,8 @@ ManualDriver.prototype.startMotion = function(axis,  speed, second_axis, second_
 	}
 }
 
+
+
 ManualDriver.prototype.maintainMotion = function() {
 	if(this.moving) {
 		this.keep_moving = true;
@@ -124,6 +126,44 @@ ManualDriver.prototype.stopMotion = function() {
 }
 
 ManualDriver.prototype.goto = function(pos) {
+
+	var move = "G1 ";
+
+	for (var key in pos) {
+		if (pos.hasOwnProperty(key)) {
+			move += key + pos[key] + " ";
+		}
+	}
+
+	move += "\n";
+	this.driver.prime();
+	this.stream.write(move);
+	
+}
+
+ManualDriver.prototype.set = function(pos) {
+	
+
+	Object.keys(pos).forEach(function(key) {
+
+		this.driver.get('mpo'+key.toLowerCase(), function(err, MPO) {
+
+			var zObj = {};
+			var unitConv = 1.0;
+			if ( this.driver.status.unit === 'in' ) {  // inches
+				unitConv = 0.039370079;
+			}
+
+			zObj['g55'+key.toLocaleLowerCase()] = Number((MPO * unitConv) - (parseFloat(pos[key]))).toFixed(5);
+
+			config.driver.setMany(zObj, function(err, value) {
+				this.stream.write('G10 L20 P2 \n');
+				this.driver.prime();
+			}.bind(this));
+		}.bind(this));
+
+	}.bind(this));
+	
 
 }
 
