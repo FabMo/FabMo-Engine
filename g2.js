@@ -308,8 +308,12 @@ G2.prototype.setUnits = function(units, callback) {
 		callback(null);
 	});*/
 	// TODO REVISE THIS TO CONFIRM THE CHANGE HAS HAPPENED ONCE COMPLETE
-	this.command(gc);
-	setImmediate(callback);
+	this.command({gc:gc});
+	if(this.status.stat < 2 || this.status.stat == 4) {
+		this.command({gc:"M30"});		
+	}
+	this.requestStatusReport(function(stat) { callback()});
+	//setImmediate(callback);
 }
 
 G2.prototype.requestStatusReport = function(callback) {
@@ -773,7 +777,7 @@ G2.prototype.command = function(obj) {
 		cmd = JSON.stringify(obj);
 		cmd = cmd.replace(/(:\s*)(true)(\s*[},])/g, "$1t$3")
 		cmd = cmd.replace(/(:\s*)(false)(\s*[},])/g, "$1f$3")
-		cmd = cmd.replace(/"/g, '');
+		//cmd = cmd.replace(/"/g, '');
 		this.command_queue.enqueue(cmd);
 	}
 	this.sendMore();
