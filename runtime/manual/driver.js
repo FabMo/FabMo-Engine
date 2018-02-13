@@ -127,7 +127,7 @@ ManualDriver.prototype.stopMotion = function() {
 
 ManualDriver.prototype.goto = function(pos) {
 
-	var move = "G1 ";
+	var move = "G90\nG1 ";
 
 	for (var key in pos) {
 		if (pos.hasOwnProperty(key)) {
@@ -135,7 +135,7 @@ ManualDriver.prototype.goto = function(pos) {
 		}
 	}
 
-	move += "\n";
+	move += "\nG91\n";
 	this.driver.prime();
 	this.stream.write(move);
 	

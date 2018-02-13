@@ -303,10 +303,13 @@ G2.prototype.setUnits = function(units, callback) {
 		units = 1;
 	} else {
 		return callback(new Error('Invalid unit setting: ' + units));
-	}
+	}/*
 	this.runString(gc).then(function() {
 		callback(null);
-	});
+	});*/
+	// TODO REVISE THIS TO CONFIRM THE CHANGE HAS HAPPENED ONCE COMPLETE
+	this.command(gc);
+	setImmediate(callback);
 }
 
 G2.prototype.requestStatusReport = function(callback) {
@@ -777,7 +780,6 @@ G2.prototype.command = function(obj) {
 };
 
 // Send a (possibly multi-line) string
-// An M30 will be placed at the end to put the machine back in the "idle" state
 G2.prototype.runString = function(data, callback) {
 	var stringStream = new stream.Readable();
 	stringStream.push(data + "\n");
