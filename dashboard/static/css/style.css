@@ -1490,7 +1490,7 @@ input[type=number]::-webkit-outer-spin-button {
 	margin: 0; 
 	display: inline-block;
 	font-family: 'Droid_Sans_Mono';
-	width: 80px;
+	width: 50px;
 	text-align: center;
 	height: auto;
     font-size: 14px;

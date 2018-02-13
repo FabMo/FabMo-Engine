@@ -198,6 +198,7 @@ ManualDriver.prototype._handleNudges = function() {
 }
 
 ManualDriver.prototype.nudge = function(axis, speed, distance) {
+	console.log(axis +' '+ speed)
     if(this.fixedQueue.length >= FIXED_MOVES_QUEUE_SIZE) {
 	log.warn('fixedMove(): Move queue is already full!');
     	    return;

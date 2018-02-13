@@ -73,7 +73,8 @@ require("../css/toastr.min.css");
         if(err){
             console.log(err);
         } else {
-            $('.fixed-step-value').val(config.machine.manual.xy_increment);
+            $('.xy-fixed').val(config.machine.manual.xy_increment);
+            $('.z-fixed').val(config.machine.manual.z_increment);
         }
     });
     engine.getVersion(function(err, version) {
@@ -444,25 +445,33 @@ require("../css/toastr.min.css");
         }
     });
 
-    $('.fixed-step-value').on('keyup', function(){
-        engine.getConfig(function(err, config){
-            if(err){
-                console.log(err);
-            } else {
-                newDefault = $('.fixed-step-value').val();
+    $('.xy-fixed').on('change', function(){
+        newDefault = $('.xy-fixed').val();
                 console.log(newDefault);
-                config.machine.manual.xy_increment = newDefault;
                 
                 dashboard.engine.setConfig({machine:{manual:{xy_increment:newDefault}}}, function(err, data){
                     if(err){
                         console.log(err);
                     }else {
-                        console.log(data)
+                        console.log(data);
+                        dashboard.engine.getConfig();
                     }
                 });
-            }
-        });   
-    });
+        });
+    $('.z-fixed').on('change', function(){
+        newDefault = $('.z-fixed').val();
+        console.log(newDefault);
+                
+                dashboard.engine.setConfig({machine:{manual:{z_increment:newDefault}}}, function(err, data){
+                    if(err){
+                        console.log(err);
+                    }else {
+                        dashboard.engine.getConfig();
+                    }
+                });
+            
+    });   
+    
 
     $('.go-here').on('mousedown', function() {
         var gcode = "G0 ";
@@ -539,6 +548,7 @@ require("../css/toastr.min.css");
         var axi = $(this).prev('label').find('input').attr('id');
         var obj = {};
         obj[axi] = 0;
+        console.log(obj);
         dashboard.engine.set(obj)
     });
 
