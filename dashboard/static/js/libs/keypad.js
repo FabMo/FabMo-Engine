@@ -164,10 +164,13 @@ Keypad.prototype.exit = function() {
 }
 
 Keypad.prototype.onDrivePress = function(evt) {
-	console.log('drive press');
+
 	this.target = evt.target;
 	this.setEnabled(true);
 	var e = $(evt.target);
+	console.log(e);
+		console.log('drive press');
+		console.log(e.hasClass('drive-button-inactive'));
 	e.focus();
 	if(!this.going) {
 
@@ -206,6 +209,9 @@ Keypad.prototype.onDrivePress = function(evt) {
 			return;
 		}
 		e.addClass('drive-button-active').removeClass('drive-button-inactive');
+		console.log(e.hasClass('drive-button-inactive'));
+		console.log(e.hasClass('drive-button-active'));
+
 	}
 }
 

@@ -69,7 +69,13 @@ require("../css/toastr.min.css");
        return consent;
     });    
 
-    engine.getConfig();
+    engine.getConfig(function(err, config){
+        if(err){
+            console.log(err);
+        } else {
+            $('.fixed-step-value').val(config.machine.manual.xy_increment);
+        }
+    });
     engine.getVersion(function(err, version) {
 
         context.setEngineVersion(version);
@@ -422,6 +428,39 @@ require("../css/toastr.min.css");
         });
         console.log(move);
         dashboard.engine.set(move);
+    });
+
+    $('.fixed-switch input').on('change', function(){
+
+        if  ($('.fixed-switch input').is(':checked')) {
+            console.log("here");
+            $('.drive-button').addClass('drive-button-fixed');
+            $('.slidecontainer').hide();
+            $('.fixed-input-container').show();
+        } else {
+            $('.drive-button').removeClass('drive-button-fixed');
+            $('.slidecontainer').show();
+            $('.fixed-input-container').hide();
+        }
+    });
+
+    $('.fixed-step-value').on('keyup', function(){
+        engine.getConfig(function(err, config){
+            if(err){
+                console.log(err);
+            } else {
+                newDefault = $('.fixed-step-value').val();
+                console.log(newDefault);
+                config.machine.manual.xy_increment = newDefault;
+                dashboard.engine.setConfig(config, function(err, data){
+                    if(err){
+                        console.log(err);
+                    }else {
+                        console.log(data)
+                    }
+                });
+            }
+        });   
     });
 
     $('.go-here').on('mousedown', function() {
