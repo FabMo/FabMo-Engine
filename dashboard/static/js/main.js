@@ -416,7 +416,7 @@ require("../css/toastr.min.css");
     $('.go-to').on('mousedown', function() {
         var move = {}
         $('.modal-axi:visible').each(function(){
-            move[$(this).attr('id')] = $(this).val();
+            move[$(this).attr('id')] = parseFloat($(this).val());
         });
         console.log(move);
         dashboard.engine.goto(move);
@@ -425,7 +425,7 @@ require("../css/toastr.min.css");
     $('.set-coordinates').on('mousedown', function() {
         var move = {}
         $('.modal-axi:visible').each(function(){
-            move[$(this).attr('id')] = $(this).val();
+            move[$(this).attr('id')] = parseFloat($(this).val());
         });
         console.log(move);
         dashboard.engine.set(move);

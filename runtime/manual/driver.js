@@ -143,9 +143,10 @@ ManualDriver.prototype.goto = function(pos) {
 
 ManualDriver.prototype.set = function(pos) {
 	
+	var gc = 'G10 L20 P2 ';
 
 	Object.keys(pos).forEach(function(key) {
-
+/*
 		this.driver.get('mpo'+key.toLowerCase(), function(err, MPO) {
 
 			var zObj = {};
@@ -161,9 +162,12 @@ ManualDriver.prototype.set = function(pos) {
 				this.driver.prime();
 			}.bind(this));
 		}.bind(this));
-
+*/
+		gc += key + pos[key].toFixed(5);
 	}.bind(this));
 	
+	this.stream.write(gc + '\n');
+	this.driver.prime();
 
 }
 
