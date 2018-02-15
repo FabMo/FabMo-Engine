@@ -1371,19 +1371,26 @@ input[type=number]::-webkit-outer-spin-button {
 	width  : 100%;
 	height : 48px;
 }
-
-.drive-button-active {
-	background: #5DAA35;
-}
-
-.drive-button-active-transient {
-	background: #D48B3A;
-}
-
 .drive-button-inactive {
 	background-color: #444444;
 	color: white;
 }
+
+.drive-button-fixed {
+	background-color: #D48B3A;
+}
+
+
+.drive-button-active {
+	background-color: #5DAA35;
+}
+
+.drive-button-active-transient {
+	background-color: #D48B3A;
+}
+
+
+
 
 .keypad-table {
 	display: inline-block;
@@ -1464,10 +1471,116 @@ input[type=number]::-webkit-outer-spin-button {
 	color:#BCBCBC;
 }
 
+.fixed-input-container{
+	display: none;
+	margin-bottom: 10px;
+	text-align: left;
+}
+
+.fixed-input-container label {
+	color: #BCBCBC;
+    display: inline-block;
+    width: auto;
+	text-align: left;
+	margin-right: 5px;
+}
+
+.fixed-step-value{
+	-webkit-appearance: none; 
+	margin: 0; 
+	display: inline-block;
+	font-family: 'Droid_Sans_Mono';
+	width: 50px;
+	text-align: center;
+	height: auto;
+    font-size: 12px;
+	padding: 5px;
+    background: rgba(0,0,0,0.3);
+    border: none;
+    outline: none;
+    color: #fff;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
+    border: 1px solid rgba(0,0,0,0.3);
+	border-radius: 4px;
+    box-shadow: inset 0 -5px 45px rgba(100,100,100,0.2), 0 1px  1px rgba(255,255,255,0.2);
+	
+}
 
 #manual-move-speed {
 	width: 100%;
 }
+
+
+/* The switch - the box around the slider */
+.switch-container {
+	text-align: left;
+}
+
+.fixed-label{
+    position: relative;
+    color: #eee;
+    top: -5px;
+}
+
+.fixed-switch {
+	margin-top: 5px;
+	position: relative;
+    display: inline-block;
+    width: 49px;
+    height: 22px;
+
+  }
+  
+  /* Hide default HTML checkbox */
+  .fixed-switch input {display:none;}
+  
+  /* The slider */
+  .slider-toggle {
+	position: absolute;
+	cursor: pointer;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #ccc;
+	-webkit-transition: .4s;
+	transition: .4s;
+  }
+  
+  .slider-toggle:before {
+	position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    -webkit-transition: .4s;
+    transition: .4s;
+  }
+  
+  input:checked + .slider-toggle{
+	background-color: #63A749;
+  }
+  
+  input:focus + .slider-toggle{
+	box-shadow: 0 0 1px #63A749;
+  }
+  
+  input:checked + .slider-toggle:before {
+	-webkit-transform: translateX(26px);
+	-ms-transform: translateX(26px);
+	transform: translateX(26px);
+  }
+  
+  /* Rounded sliders */
+  .slider-toggle.round {
+	border-radius: 34px;
+  }
+  
+  .slider-toggle.round:before {
+	border-radius: 50%;
+  }
 
 
 
@@ -1867,6 +1980,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .manual-drive-modal {
+	user-select: none;
 	display: none;
     width: 50%;
 	height: 50%;
@@ -1905,7 +2019,7 @@ input[type=number]::-webkit-outer-spin-button {
 		max-height: none;
 	}
 
-	.read-out-container{
+	.read-out-container {
 		width: 70%;
 		display: block;
 		position: relative;
@@ -1924,6 +2038,37 @@ input[type=number]::-webkit-outer-spin-button {
 		margin-left: auto;
 		margin-right: auto;
 		top: 0;
+		text-align: center;
+	}
+
+	.go-to-container {
+		margin-top: 0;
+		position: absolute;
+		top: 170px;
+	}
+
+	.read-out-container input, .zero-button{
+		font-size: 20px;
+	}
+
+	.zero-button{
+		right: -29px;
+	}
+
+	.go-to-container div {
+		display: inline-block !important;
+		margin: 0px  !important;
+		width: auto;
+	}
+
+	.go-to{
+		width: 60% !important;
+	}
+	
+
+	.set-coordinates {
+		width: 25% !important;
+		height: 50%;
 	}
 }
 

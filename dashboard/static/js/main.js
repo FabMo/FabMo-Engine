@@ -69,7 +69,14 @@ require("../css/toastr.min.css");
        return consent;
     });    
 
-    engine.getConfig();
+    engine.getConfig(function(err, config){
+        if(err){
+            console.log(err);
+        } else {
+            $('.xy-fixed').val(config.machine.manual.xy_increment);
+            $('.z-fixed').val(config.machine.manual.z_increment);
+        }
+    });
     engine.getVersion(function(err, version) {
 
         context.setEngineVersion(version);
@@ -409,7 +416,7 @@ require("../css/toastr.min.css");
     $('.go-to').on('mousedown', function() {
         var move = {}
         $('.modal-axi:visible').each(function(){
-            move[$(this).attr('id')] = $(this).val();
+            move[$(this).attr('id')] = parseFloat($(this).val());
         });
         console.log(move);
         dashboard.engine.goto(move);
@@ -418,11 +425,53 @@ require("../css/toastr.min.css");
     $('.set-coordinates').on('mousedown', function() {
         var move = {}
         $('.modal-axi:visible').each(function(){
-            move[$(this).attr('id')] = $(this).val();
+            move[$(this).attr('id')] = parseFloat($(this).val());
         });
         console.log(move);
         dashboard.engine.set(move);
     });
+
+    $('.fixed-switch input').on('change', function(){
+
+        if  ($('.fixed-switch input').is(':checked')) {
+            console.log("here");
+            $('.drive-button').addClass('drive-button-fixed');
+            $('.slidecontainer').hide();
+            $('.fixed-input-container').show();
+        } else {
+            $('.drive-button').removeClass('drive-button-fixed');
+            $('.slidecontainer').show();
+            $('.fixed-input-container').hide();
+        }
+    });
+
+    $('.xy-fixed').on('change', function(){
+        newDefault = $('.xy-fixed').val();
+                console.log(newDefault);
+                
+                dashboard.engine.setConfig({machine:{manual:{xy_increment:newDefault}}}, function(err, data){
+                    if(err){
+                        console.log(err);
+                    }else {
+                        console.log(data);
+                        dashboard.engine.getConfig();
+                    }
+                });
+        });
+    $('.z-fixed').on('change', function(){
+        newDefault = $('.z-fixed').val();
+        console.log(newDefault);
+                
+                dashboard.engine.setConfig({machine:{manual:{z_increment:newDefault}}}, function(err, data){
+                    if(err){
+                        console.log(err);
+                    }else {
+                        dashboard.engine.getConfig();
+                    }
+                });
+            
+    });   
+    
 
     $('.go-here').on('mousedown', function() {
         var gcode = "G0 ";
@@ -499,6 +548,7 @@ require("../css/toastr.min.css");
         var axi = $(this).prev('label').find('input').attr('id');
         var obj = {};
         obj[axi] = 0;
+        console.log(obj);
         dashboard.engine.set(obj)
     });
 

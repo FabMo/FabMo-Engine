@@ -275,6 +275,12 @@ Machine.prototype.arm = function(action, timeout) {
 		case 'idle':
 		break;
 
+		case 'manual':
+			if(action == null || (action.type == 'runtimeCode' && action.payload.name == 'manual')) {
+				break;
+			}
+			throw new Error('Cannot arm machine for ' + action.type + 'from the manual state')
+			break;
 		case 'paused':
 		case 'stopped':
 			if(action.type != 'resume') {
@@ -695,10 +701,10 @@ Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
 		if(this.status.auth) {
 			return this._executeRuntimeCode(runtimeName, code);
 		}
-		if(runtimeName === 'manual') {
-			this.arm(null, config.machine.get('auth_timeout'));
+		/*if(runtimeName === 'manual') {
+			this.arm(code, config.machine.get('auth_timeout'));
 			return;
-		} else {
+		}*/ else {
 			this.arm({
 				type : 'runtimeCode',
 				payload : {

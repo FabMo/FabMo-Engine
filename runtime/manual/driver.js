@@ -127,7 +127,7 @@ ManualDriver.prototype.stopMotion = function() {
 
 ManualDriver.prototype.goto = function(pos) {
 
-	var move = "G1 ";
+	var move = "G90\nG1 ";
 
 	for (var key in pos) {
 		if (pos.hasOwnProperty(key)) {
@@ -135,7 +135,7 @@ ManualDriver.prototype.goto = function(pos) {
 		}
 	}
 
-	move += "\n";
+	move += "\nG91\n";
 	this.driver.prime();
 	this.stream.write(move);
 	
@@ -143,9 +143,10 @@ ManualDriver.prototype.goto = function(pos) {
 
 ManualDriver.prototype.set = function(pos) {
 	
+	var gc = 'G10 L20 P2 ';
 
 	Object.keys(pos).forEach(function(key) {
-
+/*
 		this.driver.get('mpo'+key.toLowerCase(), function(err, MPO) {
 
 			var zObj = {};
@@ -161,9 +162,12 @@ ManualDriver.prototype.set = function(pos) {
 				this.driver.prime();
 			}.bind(this));
 		}.bind(this));
-
+*/
+		gc += key + pos[key].toFixed(5);
 	}.bind(this));
 	
+	this.stream.write(gc + '\n');
+	this.driver.prime();
 
 }
 
@@ -198,6 +202,7 @@ ManualDriver.prototype._handleNudges = function() {
 }
 
 ManualDriver.prototype.nudge = function(axis, speed, distance) {
+	console.log(axis +' '+ speed)
     if(this.fixedQueue.length >= FIXED_MOVES_QUEUE_SIZE) {
 	log.warn('fixedMove(): Move queue is already full!');
     	    return;
