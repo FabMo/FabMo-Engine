@@ -1493,7 +1493,7 @@ input[type=number]::-webkit-outer-spin-button {
 	width: 50px;
 	text-align: center;
 	height: auto;
-    font-size: 14px;
+    font-size: 12px;
 	padding: 5px;
     background: rgba(0,0,0,0.3);
     border: none;
@@ -1980,6 +1980,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .manual-drive-modal {
+	user-select: none;
 	display: none;
     width: 50%;
 	height: 50%;
@@ -2018,7 +2019,7 @@ input[type=number]::-webkit-outer-spin-button {
 		max-height: none;
 	}
 
-	.read-out-container{
+	.read-out-container {
 		width: 70%;
 		display: block;
 		position: relative;
@@ -2037,6 +2038,37 @@ input[type=number]::-webkit-outer-spin-button {
 		margin-left: auto;
 		margin-right: auto;
 		top: 0;
+		text-align: center;
+	}
+
+	.go-to-container {
+		margin-top: 0;
+		position: absolute;
+		top: 170px;
+	}
+
+	.read-out-container input, .zero-button{
+		font-size: 20px;
+	}
+
+	.zero-button{
+		right: -29px;
+	}
+
+	.go-to-container div {
+		display: inline-block !important;
+		margin: 0px  !important;
+		width: auto;
+	}
+
+	.go-to{
+		width: 60% !important;
+	}
+	
+
+	.set-coordinates {
+		width: 25% !important;
+		height: 50%;
 	}
 }
 
