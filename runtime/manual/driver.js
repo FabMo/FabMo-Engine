@@ -166,9 +166,11 @@ ManualDriver.prototype.set = function(pos) {
 		gc += key + pos[key].toFixed(5);
 	}.bind(this));
 	
-	this.stream.write(gc + '\n');
-	this.driver.prime();
-
+		this.stream.write(gc + '\n');
+		this.driver.prime();
+		setTimeout(function() {
+			config.driver.reverseUpdate(['g55x','g55y','g55z'], function(err, data) {		console.log(data);});
+		}.bind(this), 500);
 }
 
 ManualDriver.prototype._handleNudges = function() {
