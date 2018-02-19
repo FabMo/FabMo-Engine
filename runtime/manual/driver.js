@@ -182,13 +182,26 @@ ManualDriver.prototype._handleNudges = function() {
 			this.moving = true;
 			this.keep_moving = false;
 			var axis = move.axis.toUpperCase();
+
 			if('XYZABCUVW'.indexOf(axis) >= 0) {
 				var moves = ['G91'];
-				if(move.speed) {
-					moves.push('G1 ' + axis + move.distance.toFixed(5) + ' F' + move.speed.toFixed(3))
+				console.log(move);
+				if(move.second_axis) {
+					var second_axis = move.second_axis.toUpperCase();
+					if(move.speed) {
+						console.log('G1 ' + axis + move.distance.toFixed(5) +' '+ second_axis + move.second_distance.toFixed(5) + ' F' + move.speed.toFixed(3));
+						moves.push('G1 ' + axis + move.distance.toFixed(5) +' '+ second_axis + move.second_distance.toFixed(5) + ' F' + move.speed.toFixed(3))
+					} else {
+						moves.push('G0 ' + axis + move.distance.toFixed(5)  +' '+ move.second_axis.toUpperCase + move.second_distance.toFixed(5) + ' F' + move.speed.toFixed(3))
+					}
 				} else {
-					moves.push('G0 ' + axis + move.distance.toFixed(5) + ' F' + move.speed.toFixed(3))
+					if(move.speed) {
+						moves.push('G1 ' + axis + move.distance.toFixed(5) + ' F' + move.speed.toFixed(3))
+					} else {
+						moves.push('G0 ' + axis + move.distance.toFixed(5) + ' F' + move.speed.toFixed(3))
+					}
 				}
+				
 
 				moves.forEach(function(move) {
 					this.stream.write(move + '\n');
@@ -203,13 +216,18 @@ ManualDriver.prototype._handleNudges = function() {
 	return count;
 }
 
-ManualDriver.prototype.nudge = function(axis, speed, distance) {
+ManualDriver.prototype.nudge = function(axis, speed, distance, second_axis, second_distance) {
 	console.log(axis +' '+ speed)
     if(this.fixedQueue.length >= FIXED_MOVES_QUEUE_SIZE) {
 	log.warn('fixedMove(): Move queue is already full!');
     	    return;
-    }
-	this.fixedQueue.push({axis: axis, speed: speed, distance: distance});
+	}
+	if(second_axis) {
+		this.fixedQueue.push({axis: axis, speed: speed, distance: distance, second_axis : second_axis, second_distance: second_distance});
+	} else {
+		this.fixedQueue.push({axis: axis, speed: speed, distance: distance});
+	}
+
     if(this.moving) {
 	//	this.fixedQueue.push({axis: axis, speed: speed, distance: distance});
 		log.warn("fixedMove(): Queueing move, due to already moving.");

@@ -407,8 +407,8 @@ FabMoAPI.prototype.manualExit = function() {
 	this.executeRuntimeCode('manual', {'cmd': 'exit'});
 }
 
-FabMoAPI.prototype.manualMoveFixed = function(axis, speed, distance) {
-	this.executeRuntimeCode('manual', {'cmd': 'fixed', 'axis' : axis, 'speed' : speed, 'dist' : distance});
+FabMoAPI.prototype.manualMoveFixed = function(axis, speed, distance, second_axis, second_distance) {
+	this.executeRuntimeCode('manual', {'cmd': 'fixed', 'axis' : axis, 'speed' : speed, 'dist' : distance, 'second_axis':second_axis, 'second_dist' : second_distance});
 }
 
 FabMoAPI.prototype.connectToWifi = function(ssid, key, callback) {

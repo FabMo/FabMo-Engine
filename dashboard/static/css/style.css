@@ -1377,7 +1377,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .drive-button-fixed {
-	background-color: #D48B3A;
+	background-color: #ce6402;
 }
 
 
@@ -2042,7 +2042,7 @@ input[type=number]::-webkit-outer-spin-button {
 	}
 
 	.go-to-container {
-		margin-top: 0;
+		margin-top: 0d;
 		position: absolute;
 		top: 170px;
 	}
