@@ -135,9 +135,14 @@ Keypad.prototype.start = function(axis, direction, second_axis, second_direction
 	this.refresh();
 }
 
-Keypad.prototype.nudge = function(axis, direction) {
+Keypad.prototype.nudge = function(axis, direction, second_axis, second_direction) {
 	if(this.going) { return; }
-	var nudge = {'axis' : axis, 'dir' : direction};
+	if (second_axis) {
+		var nudge = {'axis' : axis, 'dir' : direction, 'second_axis' : second_axis, 'second_dir' : second_direction};
+	} else {
+		var nudge = {'axis' : axis, 'dir' : direction};
+	}
+
 	this.emit('nudge', nudge);
 }
 
@@ -165,61 +170,72 @@ Keypad.prototype.exit = function() {
 
 Keypad.prototype.onDrivePress = function(evt) {
 
+
 	this.target = evt.target;
 	this.setEnabled(true);
 	var e = $(evt.target);
-	console.log(e);
-		console.log('drive press');
-		console.log(e.hasClass('drive-button-inactive'));
 	e.focus();
-	if(!this.going) {
-
-		if(e.hasClass('x_pos') && e.hasClass('y_pos')) {
-			this.start('x', 1, 'y', 1);
+	if(e.hasClass('drive-button-fixed')) {
+		this.onDriveTap(evt);
+		
+	} else {
+		if(!this.going) {
+			if(e.hasClass('x_pos') && e.hasClass('y_pos')) {
+				this.start('x', 1, 'y', 1);
+			}
+			else if(e.hasClass('x_neg') && e.hasClass('y_pos')) {
+				this.start('x', -1, 'y', 1);
+			}
+			else if(e.hasClass('x_neg') && e.hasClass('y_neg')) {
+				this.start('x', -1, 'y', -1);
+			}
+			else if(e.hasClass('x_pos') && e.hasClass('y_neg')) {
+				this.start('x', 1, 'y', -1);
+			}
+			else if(e.hasClass('x_pos')) {
+				this.start('x', 1);
+			}
+			else if(e.hasClass('x_neg')) {
+				this.start('x', -1);
+			}
+			else if(e.hasClass('y_pos')) {
+				this.start('y', 1);
+			}
+			else if(e.hasClass('y_neg')) {
+				this.start('y', -1);
+			}
+			else if(e.hasClass('z_pos')) {
+				this.start('z', 1);
+			}
+			else if(e.hasClass('z_neg')) {
+				this.start('z', -1);
+			} else {
+				return;
+			}
+			e.addClass('drive-button-active').removeClass('drive-button-inactive');
 		}
-		else if(e.hasClass('x_neg') && e.hasClass('y_pos')) {
-			this.start('x', -1, 'y', 1);
-		}
-		else if(e.hasClass('x_neg') && e.hasClass('y_neg')) {
-			this.start('x', -1, 'y', -1);
-		}
-		else if(e.hasClass('x_pos') && e.hasClass('y_neg')) {
-			this.start('x', 1, 'y', -1);
-		}
-		else if(e.hasClass('x_pos')) {
-			console.log('x_pos');
-			this.start('x', 1);
-
-		}
-		else if(e.hasClass('x_neg')) {
-			this.start('x', -1);
-		}
-		else if(e.hasClass('y_pos')) {
-			this.start('y', 1);
-		}
-		else if(e.hasClass('y_neg')) {
-			this.start('y', -1);
-		}
-		else if(e.hasClass('z_pos')) {
-			this.start('z', 1);
-		}
-		else if(e.hasClass('z_neg')) {
-			this.start('z', -1);
-		} else {
-			return;
-		}
-		e.addClass('drive-button-active').removeClass('drive-button-inactive');
-		console.log(e.hasClass('drive-button-inactive'));
-		console.log(e.hasClass('drive-button-active'));
-
 	}
+
 }
 
 Keypad.prototype.onDriveTap = function(evt) {
+	
 	var e = $(evt.target);
 	if(this.going) {
 		this.end();
 	} else {
+		if(e.hasClass('x_pos') && e.hasClass('y_pos')) {
+			this.nudge('x', 1, 'y', 1);
+		}
+		else if(e.hasClass('x_neg') && e.hasClass('y_pos')) {
+			this.nudge('x', -1, 'y', 1);
+		}
+		else if(e.hasClass('x_neg') && e.hasClass('y_neg')) {
+			this.nudge('x', -1, 'y', -1);
+		}
+		else if(e.hasClass('x_pos') && e.hasClass('y_neg')) {
+			this.nudge('x', 1, 'y', -1);
+		}
 		if(e.hasClass('x_pos')) {
 			this.nudge('x', 1);
 		}

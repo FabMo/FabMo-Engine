@@ -317,7 +317,16 @@ require("../css/toastr.min.css");
         });
 
         keypad.on('nudge', function(nudge) {
-            dashboard.engine.manualMoveFixed(nudge.axis, 60 * getManualMoveSpeed(nudge), nudge.dir * getManualNudgeIncrement(nudge), getManualMoveJerk(nudge));
+            var speed = getManualMoveSpeed(nudge);
+            var increment = getManualNudgeIncrement(nudge);
+            // var jerk = getManualMoveJerk(nudge);
+            console.log(nudge);
+            if( nudge.second_axis){
+                dashboard.engine.manualMoveFixed(nudge.axis, 60 * speed, nudge.dir * increment, nudge.second_axis, nudge.second_dir * increment);
+                
+            } else {
+                dashboard.engine.manualMoveFixed(nudge.axis, 60 * getManualMoveSpeed(nudge), nudge.dir * getManualNudgeIncrement(nudge));
+            }
         });
 
         // keypad.on('enter', function() {
@@ -418,7 +427,6 @@ require("../css/toastr.min.css");
         $('.modal-axi:visible').each(function(){
             move[$(this).attr('id')] = parseFloat($(this).val());
         });
-        console.log(move);
         dashboard.engine.goto(move);
     });
 
@@ -427,7 +435,6 @@ require("../css/toastr.min.css");
         $('.modal-axi:visible').each(function(){
             move[$(this).attr('id')] = parseFloat($(this).val());
         });
-        console.log(move);
         dashboard.engine.set(move);
     });
 
@@ -503,6 +510,7 @@ require("../css/toastr.min.css");
         $(this).val(parseFloat($(this).val().toString()));
         $(this).select();
     });
+
     $(document).on('click', function() {
         $('.posx').val($('.posx').val());
         $('.posy').val($('.posy').val());
