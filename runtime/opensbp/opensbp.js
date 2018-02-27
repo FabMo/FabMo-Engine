@@ -519,27 +519,27 @@ SBPRuntime.prototype._run = function() {
 		this.waitingForStackBreak = false;
 		this.gcodesPending = false;
 
-		var that = this;
+		//var this = this;
 		var onStat = function(stat) {
-			if(that.inManualMode) {
+			if(this.inManualMode) {
 				return;
 			}
 			switch(stat) {
-				case that.driver.STAT_STOP:
-					that.gcodesPending = false;
-                    that._executeNext();
+				case this.driver.STAT_STOP:
+					this.gcodesPending = false;
+                    this._executeNext();
 				break;
-				case that.driver.STAT_HOLDING:
-					//that.paused = true;
-					that.machine.setState(that, 'paused');
+				case this.driver.STAT_HOLDING:
+					//this.paused = true;
+					this.machine.setState(this, 'paused');
 				break;
-                case that.driver.STAT_PROBE:
-				case that.driver.STAT_RUNNING:
-					if(!that.inManualMode) {
-						that.machine.setState(that, 'running');
-					    if(that.pendingFeedhold) {
-	                        that.pendingFeedhold = false;
-	                        that.driver.feedHold();
+                case this.driver.STAT_PROBE:
+				case this.driver.STAT_RUNNING:
+					if(!this.inManualMode) {
+						this.machine.setState(this, 'running');
+					    if(this.pendingFeedhold) {
+	                        this.pendingFeedhold = false;
+	                        this.driver.feedHold();
 	                    }
                 	}
                 break;
@@ -554,7 +554,7 @@ SBPRuntime.prototype._run = function() {
 			this.stream = new stream.PassThrough();
 			if(this.driver) {
 				this.driver.runStream(this.stream)
-				.on('stat', onStat)
+				.on('stat', onStat.bind(this))
 				.on('status', this._onG2Status.bind(this))
                 .then(function() {
 					this.file_stack = []
@@ -607,12 +607,13 @@ SBPRuntime.prototype._executeNext = function() {
 			setImmediate(this._executeNext.bind(this));
 			return;
 		} else {
-			log.debug("This is not a nested end.  No stack.")
+			log.debug("This is not a nested end.  No stack.");
 			this.emit_gcode('M30');
 			if(!this.driver) {
 				this._end();
 			} else {
                 this.prime();
+                //setTimeout(function() {this.prime();}.bind(this), 3000)
             }
 			return;
 		}
@@ -1347,7 +1348,6 @@ SBPRuntime.prototype._popFileStack = function() {
 	this.end_message = frame.end_message
 }
 
-// Add GCode to the current chunk, which is dispatched on a break or end of program
 SBPRuntime.prototype.emit_gcode = function(s) {
 	log.debug("emit_gcode: " + s);
 	if(this.file_stack.length > 0) {
@@ -1557,7 +1557,6 @@ SBPRuntime.prototype.resume = function() {
 }
 
 SBPRuntime.prototype.manualEnter = function(callback) {
-	console.log("entering manual mode in sbp runtime")
 	this.inManualMode = true;
 	this._update();
 	if(this.machine) {
@@ -1566,7 +1565,6 @@ SBPRuntime.prototype.manualEnter = function(callback) {
 	}
 	this.helper = new ManualDriver(this.driver, this.stream);
 	this.helper.enter().then(function() {
-		console.log("Done with manual drive");
 		this.inManualMode = false;
 		this.machine.setState(this, "running");
 		this._update();
