@@ -2,6 +2,7 @@ var machine = require('../machine').machine;
 var config = require('../config');
 var log = require('../log').logger('routes');
 var engine = require('../engine');
+var profiles = require('../profiles')
 
 /**
  * @api {get} /status Engine status
@@ -205,10 +206,30 @@ var get_info = function(req, res, next) {
   });
 };
 
+
+var profile = function(req, res, next) {
+  profiles.apply('ShopBot Desktop', function(err, data) {
+    res.json({
+      status : "success",
+      data : {}
+    })
+  })
+};
+
+var getProfiles = function(req, res, next) {
+    res.json(  {
+      status : "success",
+      data : {"profiles":profiles.getProfiles()}
+    });
+}
+
 module.exports = function(server) {
   server.get('/status', get_status);
   server.get('/config',get_config);
   server.post('/config', post_config);
   server.get('/version', get_version);
   server.get('/info', get_info);
+  server.get('/profile', profile);
+  server.get('/profiles', getProfiles);
+
 };
