@@ -1529,19 +1529,20 @@ SBPRuntime.prototype.pause = function() {
 SBPRuntime.prototype.quit = function() {
 	if(this.machine.status.state == 'stopped' || this.machine.status.state == 'paused') {
 		this.machine.driver.quit();
-		if(this.machine.status.job) {
+		/*if(this.machine.status.job) {
 			this.machine.status.job.fail(function(err, job) {
 				this.machine.status.job=null;
-				this.driver.setUnits(config.machine.get('units'), function() {
+				//this.driver.setUnits(config.machine.get('units'), function() {
 					this.machine.setState(this, 'idle');
-				}.bind(this));
+				//}.bind(this));
 			}.bind(this));
 		} else {
-			this.driver.setUnits(config.machine.get('units'), function() {
+			//this.driver.setUnits(config.machine.get('units'), function() {
 				this.machine.setState(this, 'idle');
-			}.bind(this));
-		}
+			//}.bind(this));
+		}*/
 	} else {
+		//console.log("KICKING A QUIT")
 		this.quit_pending = true;
 		this.driver.quit();
 	}

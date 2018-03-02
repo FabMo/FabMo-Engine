@@ -309,9 +309,9 @@ G2.prototype.setUnits = function(units, callback) {
 	});*/
 	// TODO REVISE THIS TO CONFIRM THE CHANGE HAS HAPPENED ONCE COMPLETE
 	this.command({gc:gc});
-	if(this.status.stat < 2 || this.status.stat == 4) {
+	//if(this.status.stat < 2 || this.status.stat == 4) {
 		this.command({gc:"M30"});		
-	}
+	//}
 	this.requestStatusReport(function(stat) { callback()});
 	//setImmediate(callback);
 }
