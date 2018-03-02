@@ -573,7 +573,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 	this.fireButtonDebounce = false ;
 	if ((source === this) || (source === this.current_runtime)) {
 		log.info("Got a machine state change: " + newstate)
-		log.stack();
 		if(stateinfo) {
 			this.status.info = stateinfo
 			this.info_id += 1;

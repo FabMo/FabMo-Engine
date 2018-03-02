@@ -153,7 +153,6 @@ SBPRuntime.prototype.executeCode = function(s, callback) {
 				}
 				switch(s.cmd) {
 					case 'exit':
-						log.debug('---- MANUAL DRIVE EXIT ----')
 						this.helper.exit();
 						// RESUME KIDS
 						break;
@@ -579,7 +578,6 @@ SBPRuntime.prototype._executeNext = function() {
 	// Continue is only for resuming an already running program.  It's not a substitute for _run()
 	if(!this.started) {
 		log.warn('Got a _executeNext() but not started');
-		log.stack();
         return;
 	}
 
@@ -1529,20 +1527,7 @@ SBPRuntime.prototype.pause = function() {
 SBPRuntime.prototype.quit = function() {
 	if(this.machine.status.state == 'stopped' || this.machine.status.state == 'paused') {
 		this.machine.driver.quit();
-		/*if(this.machine.status.job) {
-			this.machine.status.job.fail(function(err, job) {
-				this.machine.status.job=null;
-				//this.driver.setUnits(config.machine.get('units'), function() {
-					this.machine.setState(this, 'idle');
-				//}.bind(this));
-			}.bind(this));
-		} else {
-			//this.driver.setUnits(config.machine.get('units'), function() {
-				this.machine.setState(this, 'idle');
-			//}.bind(this));
-		}*/
 	} else {
-		//console.log("KICKING A QUIT")
 		this.quit_pending = true;
 		this.driver.quit();
 	}
@@ -1558,7 +1543,6 @@ SBPRuntime.prototype.resume = function() {
 }
 
 SBPRuntime.prototype.manualEnter = function(callback) {
-	console.log("entering manual mode in sbp runtime")
 	this.inManualMode = true;
 	this._update();
 	if(this.machine) {
@@ -1567,7 +1551,6 @@ SBPRuntime.prototype.manualEnter = function(callback) {
 	}
 	this.helper = new ManualDriver(this.driver, this.stream);
 	this.helper.enter().then(function() {
-		console.log("Done with manual drive");
 		this.inManualMode = false;
 		this.machine.setState(this, "running");
 		this._update();
