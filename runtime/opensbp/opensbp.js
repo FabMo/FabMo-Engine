@@ -153,7 +153,6 @@ SBPRuntime.prototype.executeCode = function(s, callback) {
 				}
 				switch(s.cmd) {
 					case 'exit':
-						log.debug('---- MANUAL DRIVE EXIT ----')
 						this.helper.exit();
 						// RESUME KIDS
 						break;
@@ -579,7 +578,6 @@ SBPRuntime.prototype._executeNext = function() {
 	// Continue is only for resuming an already running program.  It's not a substitute for _run()
 	if(!this.started) {
 		log.warn('Got a _executeNext() but not started');
-		log.stack();
         return;
 	}
 
@@ -1529,18 +1527,6 @@ SBPRuntime.prototype.pause = function() {
 SBPRuntime.prototype.quit = function() {
 	if(this.machine.status.state == 'stopped' || this.machine.status.state == 'paused') {
 		this.machine.driver.quit();
-		if(this.machine.status.job) {
-			this.machine.status.job.fail(function(err, job) {
-				this.machine.status.job=null;
-				this.driver.setUnits(config.machine.get('units'), function() {
-					this.machine.setState(this, 'idle');
-				}.bind(this));
-			}.bind(this));
-		} else {
-			this.driver.setUnits(config.machine.get('units'), function() {
-				this.machine.setState(this, 'idle');
-			}.bind(this));
-		}
 	} else {
 		this.quit_pending = true;
 		this.driver.quit();
