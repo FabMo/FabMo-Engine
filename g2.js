@@ -296,25 +296,8 @@ G2.prototype.clearAlarm = function() {
 };
 
 G2.prototype.setUnits = function(units, callback) {
-	if(units === 0 || units == 'in') {
-		gc = 'G20';
-		units = 0;
-	} else if(units === 1 || units === 'mm') {
-		gc = 'G21';
-		units = 1;
-	} else {
-		return callback(new Error('Invalid unit setting: ' + units));
-	}/*
-	this.runString(gc).then(function() {
-		callback(null);
-	});*/
-	// TODO REVISE THIS TO CONFIRM THE CHANGE HAS HAPPENED ONCE COMPLETE
-	this.command({gc:gc});
-	//if(this.status.stat < 2 || this.status.stat == 4) {
-		this.command({gc:"M30"});		
-	//}
+	this.command({gun:(units === 0 || units == 'in') ? 0 : 1});
 	this.requestStatusReport(function(stat) { callback()});
-	//setImmediate(callback);
 }
 
 G2.prototype.requestStatusReport = function(callback) {
@@ -423,7 +406,6 @@ G2.prototype.clearLastException = function() {
 G2.prototype.handleStatusReport = function(response) {
 
 	if(response.sr) {
-
 		// Update our copy of the system status
 		for (var key in response.sr) {
 			value = response.sr[key];
@@ -623,11 +605,13 @@ G2.prototype.resume = function() {
 	this.on('stat', onStat);
 	this._write('~'); //cycle start command character
 
-	this.pause_flag = false;
 	if(this.context) {
 		this.context.resume();
 	}
-	this.requestStatusReport();
+	this.requestStatusReport(function(sr) {
+		this.pause_flag = false;
+
+	}.bind(this));
 	return deferred.promise;
 };
 
