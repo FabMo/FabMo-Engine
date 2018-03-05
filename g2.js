@@ -214,6 +214,7 @@ G2.prototype._createCycleContext = function() {
 	}.bind(this));
 	st.on('pipe', function() {
 		log.debug("Stream PIPE event");
+
 	})
 	var promise = this._createStatePromise([STAT_END]).then(function() {
 		this.context = null;
@@ -309,9 +310,9 @@ G2.prototype.setUnits = function(units, callback) {
 	});*/
 	// TODO REVISE THIS TO CONFIRM THE CHANGE HAS HAPPENED ONCE COMPLETE
 	this.command({gc:gc});
-	if(this.status.stat < 2 || this.status.stat == 4) {
+	//if(this.status.stat < 2 || this.status.stat == 4) {
 		this.command({gc:"M30"});		
-	}
+	//}
 	this.requestStatusReport(function(stat) { callback()});
 	//setImmediate(callback);
 }
@@ -477,6 +478,12 @@ G2.prototype.handleStatusReport = function(response) {
 						this.pause_flag = true;
 						if(this.context) {
 							this.context.pause()
+						}
+						break;
+					default:
+						this.pause_flag = false;
+						if(this.context) {
+							this.context.resume();
 						}
 						break;
 				}
@@ -874,6 +881,7 @@ G2.prototype.sendMore = function() {
 		codes.push("");
 		this._ignored_responses+=to_send;
 		this._write(codes.join('\n'), function() {});
+	} else {
 	}
 
 	if(this._primed) {
@@ -886,15 +894,17 @@ G2.prototype.sendMore = function() {
 				if(codes.length > 1) {
 					this.lines_to_send -= to_send/*-offset*/;
 					this._write(codes.join('\n'), function() { });
+				} else {
 				}
+			} else {
 			}
 		}
 		else {
-            //log.warn("Not writing to gcode due to lapse in responses")
+            log.warn("Not writing to gcode due to lapse in responses")
 		}
 	} else {
 		if(this.gcode_queue.getLength() > 0) {
-			//log.warn("!!! Not sending because not primed.");
+			log.warn("!!! Not sending because not primed.");
 		}
 	}
 };
