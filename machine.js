@@ -307,16 +307,26 @@ Machine.prototype.arm = function(action, timeout) {
 
 	var requireAuth = config.machine.get('auth_required');
 
-	if(action.payload.name === "manual"){
-		var cmd = action.payload.code.cmd;
-		console.log(cmd);
-		switch(cmd) {
-			case 'enter':
-			case 'set':
-			case 'exit':
-			this.fire(true);
-			log.info('Firing because these manual cmds do not require auth');
+
+	console.log(action);
+	if(action.payload)  {
+		if(action.payload.name === "manual"){
+			var cmd = action.payload.code.cmd;
+			console.log(cmd);
+			switch(cmd) {
+				case 'set':
+				case 'exit':
+				case 'start':
+				case 'fixed':
+				case 'stop':
+				case 'goto':
+					this.fire(true);
+					log.info('Firing because these manual cmds do not require auth');
+					return;
+					break;
+			}
 		}
+
 	}
 
 
@@ -360,7 +370,7 @@ Machine.prototype.fire = function(force) {
 		this.setState(this, 'idle');
 		return;
 	}
-	log.warn("I bet we arent getting here");
+
 	this.deauthorize();
 	var action = this.action;
 	console.log(action);
