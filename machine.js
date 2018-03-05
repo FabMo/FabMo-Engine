@@ -307,6 +307,19 @@ Machine.prototype.arm = function(action, timeout) {
 
 	var requireAuth = config.machine.get('auth_required');
 
+	if(action.payload.name === "manual"){
+		var cmd = action.payload.code.cmd;
+		console.log(cmd);
+		switch(cmd) {
+			case 'enter':
+			case 'set':
+			case 'exit':
+			this.fire(true);
+			log.info('Firing because these manual cmds do not require auth');
+		}
+	}
+
+
 	if(!requireAuth) {
 		log.info("Firing automatically since authorization is disabled.");
 		this.fire(true);
@@ -342,13 +355,15 @@ Machine.prototype.fire = function(force) {
 
 	// If no action, we're just authorizing for the next auth timeout
 	if(!this.action) {
+		log.warn("Is this what is happenning!!!");
 		this.authorize(config.machine.get('auth_timeout'));
 		this.setState(this, 'idle');
 		return;
 	}
-
+	log.warn("I bet we arent getting here");
 	this.deauthorize();
 	var action = this.action;
+	console.log(action);
 	this.action = null;
 	switch(action.type) {
 		case 'nextJob':
