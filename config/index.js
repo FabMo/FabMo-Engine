@@ -21,7 +21,6 @@ var log = require('../log').logger('config');
 function configureEngine(callback) {
 	exports.engine = new EngineConfig();
 	exports.engine.init(function() {
-		console.log(Config.getCurrentProfile());
 		callback();
 	});
 }

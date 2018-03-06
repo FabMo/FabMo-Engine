@@ -156,7 +156,6 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	var that = this;
 	var prev_state = that.tool.state;
 	that.tool.state=status.state;
-	console.log(status.state)
 	if(prev_state !== status.state) {
 		if(status.state === 'stopped') {
 			if(status.info) {

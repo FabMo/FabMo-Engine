@@ -61,7 +61,6 @@ function setupDropTarget() {
           synchJobSubmit(file);
         }
       } catch (e) {
-        console.log(e);
       } finally {
         $('#tabpending').removeClass('hover');
         return false;
@@ -442,7 +441,6 @@ function nextJob(job) {
 // Job should be the running job or null
 function runningJob(job) {
   if (!job) {
-    console.log('no job');
     setProgress(status);
     $('.play').removeClass('active')
     $('body').css('background-color', '#EEEEEE');
@@ -451,7 +449,6 @@ function runningJob(job) {
     return
   }
 
-  console.log('job');
   $('.cancel').slideUp(100);
   $('.download').slideUp(100);
   $('.edit').slideUp(100);
@@ -474,7 +471,6 @@ function runningJob(job) {
   $('.now-running').css('left', '0px');
   $('.play-button').show();
   if (!$('.play').hasClass('active')){
-    console.log('adding active');
     $('.play').addClass('active');
   }
   sortable.options.disabled = true;

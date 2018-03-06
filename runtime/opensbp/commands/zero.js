@@ -16,7 +16,6 @@ var config = require('../../../config');
 
 
 exports.ZX = function(args, callback) {
-	console.log("DOING THE ZX")
 	this.machine.driver.get('mpox', function(err, MPO) {
 		if(err) { return callback(err); }
 		var zxObj = {};

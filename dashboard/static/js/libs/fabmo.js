@@ -638,7 +638,6 @@ FabMoDashboard.prototype.runNext = function(callback) {
  * @param {Error} callback.err Error object if there was an error.
  */
 FabMoDashboard.prototype.pause = function(callback) {
-	console.log('pause fabmo');
 	this._call("pause",null, callback);
 }
 

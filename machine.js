@@ -12,6 +12,9 @@ var updater = require('./updater');
 var u = require('./util');
 var async = require('async');
 var canQuit = false;
+var canResume = false;
+var clickDisabled = false;
+
 
 
 var GCodeRuntime = require('./runtime/gcode').GCodeRuntime;
@@ -163,13 +166,15 @@ function Machine(control_path, callback) {
     }.bind(this));
 
     this.driver.on('status', function(stat) {
+
 		if(this.status.state === "paused"){
 			setTimeout(function(){
 				 canQuit = true;
-
+				 canResume = true;
 			}, 1000);
 		} else {
 			canQuit = false;
+			canResume = false;
 		}
     	this.handleFireButton(stat);
     	this.handleAPCollapseButton(stat);
@@ -219,15 +224,26 @@ Machine.prototype.handleFireButton = function(stat) {
 
 Machine.prototype.handleOkayButton = function(stat){
 	var auth_input = 'in' + config.machine.get('auth_input');
-	if(stat[auth_input] && this.status.state === 'paused') {
-		log.info("Okay hit!")
-		this.resume(function(err, msg){
-			if(err){
-				log.error(err);
-			} else {
-				log.info(msg);
-			}
-		});
+	if(stat[auth_input]){
+		
+		if (clickDisabled){
+			log.info("Can't hit okay now");
+			return
+		}
+
+		if(this.status.state === 'paused' && canResume) {
+			log.info("Okay hit!")
+			this.resume(function(err, msg){
+				if(err){
+					log.error(err);
+				} else {
+					log.info(msg);
+				}
+			});
+			clickDisabled = true;
+			setTimeout(function(){clickDisabled = false;}, 2000);
+		}
+
 	}
 }
 
@@ -271,6 +287,7 @@ Machine.prototype.restoreDriverState = function(callback) {
 }
 
 Machine.prototype.arm = function(action, timeout) {
+	console.log(action);
 	switch(this.status.state) {
 		case 'idle':
 		break;
@@ -308,11 +325,10 @@ Machine.prototype.arm = function(action, timeout) {
 	var requireAuth = config.machine.get('auth_required');
 
 
-	console.log(action);
+
 	if(action.payload)  {
 		if(action.payload.name === "manual"){
 			var cmd = action.payload.code.cmd;
-			console.log(cmd);
 			switch(cmd) {
 				case 'set':
 				case 'exit':
@@ -373,7 +389,6 @@ Machine.prototype.fire = function(force) {
 
 	this.deauthorize();
 	var action = this.action;
-	console.log(action);
 	this.action = null;
 	switch(action.type) {
 		case 'nextJob':
