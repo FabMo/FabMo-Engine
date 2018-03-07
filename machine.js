@@ -166,7 +166,9 @@ function Machine(control_path, callback) {
     }.bind(this));
 
     this.driver.on('status', function(stat) {
-
+		var auth_input = 'in' + config.machine.get('auth_input');
+		var quit_input = 'in' + config.machine.get('quit_input');
+		var ap_input = 'in' + config.machine.get('ap_input');
 		if(this.status.state === "paused"){
 			setTimeout(function(){
 				 canQuit = true;
@@ -176,18 +178,22 @@ function Machine(control_path, callback) {
 			canQuit = false;
 			canResume = false;
 		}
-    	this.handleFireButton(stat);
-    	this.handleAPCollapseButton(stat);
-		this.handleOkayButton(stat);
-		this.handleCancelButton(stat);
+		if(auth_input === quit_input){
+			this.handleOkayCancelDual(stat, auth_input)
+		}else {
+			this.handleOkayButton(stat, auth_input);
+			this.handleCancelButton(stat, quit_input);
+			
+		}
+		this.handleFireButton(stat, auth_input);
+    	this.handleAPCollapseButton(stat, ap_input);
+
+
     }.bind(this));
 }
 util.inherits(Machine, events.EventEmitter);
 
-Machine.prototype.handleAPCollapseButton = function(stat) {
-	var n =  config.machine.get('ap_input');
-	if(n == 0) { return; }
-	var ap_input = 'in' + n;
+Machine.prototype.handleAPCollapseButton = function(stat, ap_input) {
 
 	// If the button has been pressed
 	if(stat[ap_input]) {
@@ -214,16 +220,30 @@ Machine.prototype.handleAPCollapseButton = function(stat) {
 	}
 }
 
-Machine.prototype.handleFireButton = function(stat) {
-	var auth_input = 'in' + config.machine.get('auth_input');
+Machine.prototype.handleOkayCancelDual = function(stat, quit_input) {
+	//this may be changed to user select wether to continue or to cancel
+	if(stat[quit_input] && this.status.state === 'paused' && canQuit) {
+		log.info("Cancel hit!")
+		this.quit(function(err, msg){
+			if(err){
+				log.error(err);
+			} else {
+				log.info(msg);
+			}
+		});
+	}
+}
+
+Machine.prototype.handleFireButton = function(stat, auth_input) {
+
 	if(stat[auth_input] && this.status.state === 'armed') {
 		log.info("Fire button hit!")
 		this.fire();
 	}
 }
 
-Machine.prototype.handleOkayButton = function(stat){
-	var auth_input = 'in' + config.machine.get('auth_input');
+Machine.prototype.handleOkayButton = function(stat, auth_input){
+	
 	if(stat[auth_input]){
 		
 		if (clickDisabled){
@@ -247,8 +267,8 @@ Machine.prototype.handleOkayButton = function(stat){
 	}
 }
 
-Machine.prototype.handleCancelButton = function(stat){
-	var quit_input = 'in' + config.machine.get('quit_input');
+Machine.prototype.handleCancelButton = function(stat, quit_input){
+
 	if(stat[quit_input] && this.status.state === 'paused' && canQuit) {
 		log.info("Cancel hit!")
 		this.quit(function(err, msg){
