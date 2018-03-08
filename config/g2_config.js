@@ -53,6 +53,20 @@ G2Config.prototype.getFromDriver = function(callback) {
 	});
 }
 
+// Set in the cache and on disk, without sending the values down to G2
+G2Config.prototype.reverseUpdate = function(keys, callback) {
+	this.driver.get(keys, function(err, data) {
+		if (err) {
+			callback(err)
+		} else {
+			keys.forEach(function(key,i) {
+				this._cache[key] = data[i];
+			}.bind(this))
+			this.save(callback);
+		}
+	}.bind(this));
+}
+
 // Update the configuration with the data provided (data is just an object with configuration keys/values)
 G2Config.prototype.update = function(data, callback) {
 	keys = Object.keys(data);

@@ -120,7 +120,7 @@ ManualRuntime.prototype.executeCode = function(code, callback) {
 					if(!this.helper) {
 						this.enter();
 					}
-					this.helper.nudge(code.axis, code.speed, code.dist);
+					this.helper.nudge(code.axis, code.speed, code.dist, code.second_axis, code.second_dist);
 					break;
 
 				default:

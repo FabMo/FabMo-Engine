@@ -214,6 +214,7 @@ G2.prototype._createCycleContext = function() {
 	}.bind(this));
 	st.on('pipe', function() {
 		log.debug("Stream PIPE event");
+
 	})
 	var promise = this._createStatePromise([STAT_END]).then(function() {
 		this.context = null;
@@ -295,18 +296,8 @@ G2.prototype.clearAlarm = function() {
 };
 
 G2.prototype.setUnits = function(units, callback) {
-	if(units === 0 || units == 'in') {
-		gc = 'G20';
-		units = 0;
-	} else if(units === 1 || units === 'mm') {
-		gc = 'G21';
-		units = 1;
-	} else {
-		return callback(new Error('Invalid unit setting: ' + units));
-	}
-	this.runString(gc).then(function() {
-		callback(null);
-	});
+	this.command({gun:(units === 0 || units == 'in') ? 0 : 1});
+	this.requestStatusReport(function(stat) { callback()});
 }
 
 G2.prototype.requestStatusReport = function(callback) {
@@ -415,7 +406,6 @@ G2.prototype.clearLastException = function() {
 G2.prototype.handleStatusReport = function(response) {
 
 	if(response.sr) {
-
 		// Update our copy of the system status
 		for (var key in response.sr) {
 			value = response.sr[key];
@@ -470,6 +460,12 @@ G2.prototype.handleStatusReport = function(response) {
 						this.pause_flag = true;
 						if(this.context) {
 							this.context.pause()
+						}
+						break;
+					default:
+						this.pause_flag = false;
+						if(this.context) {
+							this.context.resume();
 						}
 						break;
 				}
@@ -609,11 +605,13 @@ G2.prototype.resume = function() {
 	this.on('stat', onStat);
 	this._write('~'); //cycle start command character
 
-	this.pause_flag = false;
 	if(this.context) {
 		this.context.resume();
 	}
-	this.requestStatusReport();
+	this.requestStatusReport(function(sr) {
+		this.pause_flag = false;
+
+	}.bind(this));
 	return deferred.promise;
 };
 
@@ -770,14 +768,13 @@ G2.prototype.command = function(obj) {
 		cmd = JSON.stringify(obj);
 		cmd = cmd.replace(/(:\s*)(true)(\s*[},])/g, "$1t$3")
 		cmd = cmd.replace(/(:\s*)(false)(\s*[},])/g, "$1f$3")
-		cmd = cmd.replace(/"/g, '');
+		//cmd = cmd.replace(/"/g, '');
 		this.command_queue.enqueue(cmd);
 	}
 	this.sendMore();
 };
 
 // Send a (possibly multi-line) string
-// An M30 will be placed at the end to put the machine back in the "idle" state
 G2.prototype.runString = function(data, callback) {
 	var stringStream = new stream.Readable();
 	stringStream.push(data + "\n");
@@ -868,6 +865,7 @@ G2.prototype.sendMore = function() {
 		codes.push("");
 		this._ignored_responses+=to_send;
 		this._write(codes.join('\n'), function() {});
+	} else {
 	}
 
 	if(this._primed) {
@@ -880,15 +878,17 @@ G2.prototype.sendMore = function() {
 				if(codes.length > 1) {
 					this.lines_to_send -= to_send/*-offset*/;
 					this._write(codes.join('\n'), function() { });
+				} else {
 				}
+			} else {
 			}
 		}
 		else {
-            //log.warn("Not writing to gcode due to lapse in responses")
+            log.warn("Not writing to gcode due to lapse in responses")
 		}
 	} else {
 		if(this.gcode_queue.getLength() > 0) {
-			//log.warn("!!! Not sending because not primed.");
+			log.warn("!!! Not sending because not primed.");
 		}
 	}
 };

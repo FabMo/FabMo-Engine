@@ -127,7 +127,7 @@ ManualDriver.prototype.stopMotion = function() {
 
 ManualDriver.prototype.goto = function(pos) {
 
-	var move = "G1 ";
+	var move = "G90\nG1 ";
 
 	for (var key in pos) {
 		if (pos.hasOwnProperty(key)) {
@@ -135,7 +135,7 @@ ManualDriver.prototype.goto = function(pos) {
 		}
 	}
 
-	move += "\n";
+	move += "\nG91\n";
 	this.driver.prime();
 	this.stream.write(move);
 	
@@ -143,9 +143,10 @@ ManualDriver.prototype.goto = function(pos) {
 
 ManualDriver.prototype.set = function(pos) {
 	
+	var gc = 'G10 L20 P2 ';
 
 	Object.keys(pos).forEach(function(key) {
-
+/*
 		this.driver.get('mpo'+key.toLowerCase(), function(err, MPO) {
 
 			var zObj = {};
@@ -161,10 +162,15 @@ ManualDriver.prototype.set = function(pos) {
 				this.driver.prime();
 			}.bind(this));
 		}.bind(this));
-
+*/
+		gc += key + pos[key].toFixed(5);
 	}.bind(this));
 	
-
+		this.stream.write(gc + '\n');
+		this.driver.prime();
+		setTimeout(function() {
+			config.driver.reverseUpdate(['g55x','g55y','g55z'], function(err, data) {		console.log(data);});
+		}.bind(this), 500);
 }
 
 ManualDriver.prototype._handleNudges = function() {
@@ -176,13 +182,26 @@ ManualDriver.prototype._handleNudges = function() {
 			this.moving = true;
 			this.keep_moving = false;
 			var axis = move.axis.toUpperCase();
+
 			if('XYZABCUVW'.indexOf(axis) >= 0) {
 				var moves = ['G91'];
-				if(move.speed) {
-					moves.push('G1 ' + axis + move.distance.toFixed(5) + ' F' + move.speed.toFixed(3))
+				console.log(move);
+				if(move.second_axis) {
+					var second_axis = move.second_axis.toUpperCase();
+					if(move.speed) {
+						console.log('G1 ' + axis + move.distance.toFixed(5) +' '+ second_axis + move.second_distance.toFixed(5) + ' F' + move.speed.toFixed(3));
+						moves.push('G1 ' + axis + move.distance.toFixed(5) +' '+ second_axis + move.second_distance.toFixed(5) + ' F' + move.speed.toFixed(3))
+					} else {
+						moves.push('G0 ' + axis + move.distance.toFixed(5)  +' '+ move.second_axis.toUpperCase + move.second_distance.toFixed(5) + ' F' + move.speed.toFixed(3))
+					}
 				} else {
-					moves.push('G0 ' + axis + move.distance.toFixed(5) + ' F' + move.speed.toFixed(3))
+					if(move.speed) {
+						moves.push('G1 ' + axis + move.distance.toFixed(5) + ' F' + move.speed.toFixed(3))
+					} else {
+						moves.push('G0 ' + axis + move.distance.toFixed(5) + ' F' + move.speed.toFixed(3))
+					}
 				}
+				
 
 				moves.forEach(function(move) {
 					this.stream.write(move + '\n');
@@ -197,12 +216,18 @@ ManualDriver.prototype._handleNudges = function() {
 	return count;
 }
 
-ManualDriver.prototype.nudge = function(axis, speed, distance) {
+ManualDriver.prototype.nudge = function(axis, speed, distance, second_axis, second_distance) {
+	console.log(axis +' '+ speed)
     if(this.fixedQueue.length >= FIXED_MOVES_QUEUE_SIZE) {
 	log.warn('fixedMove(): Move queue is already full!');
     	    return;
-    }
-	this.fixedQueue.push({axis: axis, speed: speed, distance: distance});
+	}
+	if(second_axis) {
+		this.fixedQueue.push({axis: axis, speed: speed, distance: distance, second_axis : second_axis, second_distance: second_distance});
+	} else {
+		this.fixedQueue.push({axis: axis, speed: speed, distance: distance});
+	}
+
     if(this.moving) {
 	//	this.fixedQueue.push({axis: axis, speed: speed, distance: distance});
 		log.warn("fixedMove(): Queueing move, due to already moving.");
