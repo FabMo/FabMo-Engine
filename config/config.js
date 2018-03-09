@@ -127,7 +127,7 @@ Config.prototype.init = function(callback) {
         async.series(
 		[
 			function loadDefault(callback) { this.load(default_config_file, callback); }.bind(this),
-			function loadProfile(callback) { this.load(profile_config_file, callback); }.bind(this),
+			//function loadProfile(callback) { this.load(profile_config_file, callback); }.bind(this),
 			function saveDefaultCount(callback) {
 				default_count = Object.keys(this._cache).length;
 				callback();

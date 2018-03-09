@@ -50,6 +50,7 @@ var get_config = function(req, res, next) {
   retval.driver = config.driver.getData();
   retval.opensbp = config.opensbp.getData();
   retval.machine = config.machine.getData();
+  retval.profiles = config.profiles.getData();
   var answer =
   {
     status : "success",

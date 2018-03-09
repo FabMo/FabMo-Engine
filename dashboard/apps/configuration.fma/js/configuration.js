@@ -79,19 +79,24 @@ function update() {
               }
             }
         });
-        /*
-        var unit1 = (360/data.driver['1sa']) * data.driver['1mi'] / data.driver['1tr'];
-        $("#opensbp-units1").val(unit1);
-        var unit2 = (360/data.driver['2sa']) * data.driver['2mi'] / data.driver['2tr'];
-        $("#opensbp-units2").val(unit2);
-        var unit3 = (360/data.driver['3sa']) * data.driver['3mi'] / data.driver['3tr'];
-        $("#opensbp-units3").val(unit3);
-        var unit4 = (360/data.driver['4sa']) * data.driver['4mi'] / data.driver['4tr'];
-        $("#opensbp-units4").val(unit4);
-        var unit5 = (360/data.driver['5sa']) * data.driver['5mi'] / data.driver['5tr'];
-        $("#opensbp-units5").val(unit5);
-        var unit6 = (360/data.driver['6sa']) * data.driver['6mi'] / data.driver['6tr'];
-        $("#opensbp-units6").val(unit6);*/
+
+        var profiles = data['profiles'] || {}
+        var profilesList = $('#profile-listbox');
+        //profilesList.empty();
+        if(profiles) {
+          for(var name in profiles) {
+            profilesList.append(
+                $('<option></option>').val(name).html(name)
+            );
+          }
+          profilesList.append(
+                $('<option></option>').val(null).html("Default")
+          );
+
+        } else {
+
+        }
+        profilesList.val(data.engine.profile);
       }
     });
 
@@ -379,6 +384,19 @@ $('body').click(function(event){
 
     fabmo.on('reconnect', function() {
         update();
+    });
+
+    $('#profile-listbox').on('change', function(evt) {
+      fabmo.showModal({
+        title : 'Change Profiles?',
+        message : 'Changing your machine profile will reset all of your apps and settings. Are you sure you want to change profiles?',
+        okText : 'Yes',
+        cancelText : 'No',
+        ok : function() {
+          fabmo.setConfig({engine : {profile : $("#profile-listbox option:checked").val()}});
+        },
+        cancel : function() {console.log("naw.")}
+      });
     });
 
     setApps(fabmo);

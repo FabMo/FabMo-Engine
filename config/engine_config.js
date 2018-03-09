@@ -62,16 +62,21 @@ EngineConfig.prototype.update = function(data, callback) {
 	};
 	if(profile_changed) {
 		logger.warn('Engine profile changed - engine will be restarted.')
-		profiles.applyProfile(xyz, function(err, data) {
-			process.exit(1);
+		profiles.apply(newProfile, function(err, data) {
+			if(err) {
+				callback(err);
+			} else {
+				process.exit(1);
+			}
 		});
-
+/*
 		Config.deleteProfileData(function(err) {
 			save(function(err) {
 				if(err) { return callback(err); }
 				//callback();
 			})
 		});
+		*/
 	} else {
 		save(callback);
 	}

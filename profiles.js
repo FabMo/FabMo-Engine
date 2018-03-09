@@ -8,6 +8,7 @@ var PROFILE_DIRS = ['config','macros','apps']
 var profiles = {}
 
 var load = function(callback) {
+	log.debug('Loading profiles...')
 	var profileDir = config.getDataDir('profiles')
 	fs.readdir( profileDir, function( err, files ) {
         if(err) {
@@ -22,6 +23,7 @@ var load = function(callback) {
 						if(err) {
 							log.error(err);
 						} else {
+							log.debug('Read profile ' + profile.name);
 							profiles[profile.name] = profile;
 						}
 						callback(null);
@@ -52,18 +54,49 @@ var readProfileInfo = function(profileDir, callback) {
 	});
 }
 
-var apply = function(profile, callback) {
-	async.each(PROFILE_DIRS, function(dir, callback) {
-		fs.remove(config.getDataDir(dir), function(err) {
-			callback();
-		});
-	},
-	function allDone(err) {
-		config.createDataDirectories(function(err, data) {
-			console.log("Done applying profile")
-			callback(err)
-		});
-	});
+var apply = function(profileName, callback) {
+	// Make sure this is a profile that actually occurs in the list
+	if(profileName in profiles) {
+		log.debug('Switching profiles to ' + profileName)
+		// Get the profile data
+		profile = profiles[profileName];
+		async.each(PROFILE_DIRS, function(dir, callback) {
+			var configDir = config.getDataDir(dir)
+			var profileConfigDir = path.join(profile.dir, dir)
+			log.debug('Removing config directory ' + configDir);
+			fs.remove(configDir, function(err) {
+				if(err) {
+					return callback(err);
+				}
+	
+				// And replace with the configuration provided by the profile
+				log.debug('Copying profile configuration directory ' + profileConfigDir);
+				ncp(profileConfigDir, config.getDataDir(dir), function (err) {
+					if (err) {
+						return callback(err);
+					} else {
+						log.debug('...done copying.')
+						callback();
+					}
+				});
+			});
+		},
+		function allDone(err) {
+			config.clearAppRoot(function(err) {
+				appsDir = config.getDataDir('apps')
+				console.log('Shuffling up filenames in ' + appsDir)
+				fs.readdir(appsDir, function(err, files) {
+					console.log(files);
+					files.forEach(function(file) {
+						fs.renameSync(path.join(appsDir, file), path.join(appsDir, util.createUniqueFilename(file)));
+					})
+					callback(err);
+				});
+			});
+		});		
+	} else {
+		callback(new Error(profiles + ' is not a valid profile.'))
+	}
 }
 
 module.exports.load = load
