@@ -12,6 +12,9 @@ var updater = require('./updater');
 var u = require('./util');
 var async = require('async');
 var canQuit = false;
+var canResume = false;
+var clickDisabled = false;
+
 
 
 var GCodeRuntime = require('./runtime/gcode').GCodeRuntime;
@@ -163,26 +166,34 @@ function Machine(control_path, callback) {
     }.bind(this));
 
     this.driver.on('status', function(stat) {
+		var auth_input = 'in' + config.machine.get('auth_input');
+		var quit_input = 'in' + config.machine.get('quit_input');
+		var ap_input = 'in' + config.machine.get('ap_input');
 		if(this.status.state === "paused"){
 			setTimeout(function(){
 				 canQuit = true;
-
+				 canResume = true;
 			}, 1000);
 		} else {
 			canQuit = false;
+			canResume = false;
 		}
-    	this.handleFireButton(stat);
-    	this.handleAPCollapseButton(stat);
-		this.handleOkayButton(stat);
-		this.handleCancelButton(stat);
+		if(auth_input === quit_input){
+			this.handleOkayCancelDual(stat, auth_input)
+		}else {
+			this.handleOkayButton(stat, auth_input);
+			this.handleCancelButton(stat, quit_input);
+			
+		}
+		this.handleFireButton(stat, auth_input);
+    	this.handleAPCollapseButton(stat, ap_input);
+
+
     }.bind(this));
 }
 util.inherits(Machine, events.EventEmitter);
 
-Machine.prototype.handleAPCollapseButton = function(stat) {
-	var n =  config.machine.get('ap_input');
-	if(n == 0) { return; }
-	var ap_input = 'in' + n;
+Machine.prototype.handleAPCollapseButton = function(stat, ap_input) {
 
 	// If the button has been pressed
 	if(stat[ap_input]) {
@@ -209,19 +220,11 @@ Machine.prototype.handleAPCollapseButton = function(stat) {
 	}
 }
 
-Machine.prototype.handleFireButton = function(stat) {
-	var auth_input = 'in' + config.machine.get('auth_input');
-	if(stat[auth_input] && this.status.state === 'armed') {
-		log.info("Fire button hit!")
-		this.fire();
-	}
-}
-
-Machine.prototype.handleOkayButton = function(stat){
-	var auth_input = 'in' + config.machine.get('auth_input');
-	if(stat[auth_input] && this.status.state === 'paused') {
-		log.info("Okay hit!")
-		this.resume(function(err, msg){
+Machine.prototype.handleOkayCancelDual = function(stat, quit_input) {
+	//this may be changed to user select wether to continue or to cancel
+	if(stat[quit_input] && this.status.state === 'paused' && canQuit) {
+		log.info("Cancel hit!")
+		this.quit(function(err, msg){
 			if(err){
 				log.error(err);
 			} else {
@@ -231,8 +234,41 @@ Machine.prototype.handleOkayButton = function(stat){
 	}
 }
 
-Machine.prototype.handleCancelButton = function(stat){
-	var quit_input = 'in' + config.machine.get('quit_input');
+Machine.prototype.handleFireButton = function(stat, auth_input) {
+
+	if(stat[auth_input] && this.status.state === 'armed') {
+		log.info("Fire button hit!")
+		this.fire();
+	}
+}
+
+Machine.prototype.handleOkayButton = function(stat, auth_input){
+	
+	if(stat[auth_input]){
+		
+		if (clickDisabled){
+			log.info("Can't hit okay now");
+			return
+		}
+
+		if(this.status.state === 'paused' && canResume) {
+			log.info("Okay hit!")
+			this.resume(function(err, msg){
+				if(err){
+					log.error(err);
+				} else {
+					log.info(msg);
+				}
+			});
+			clickDisabled = true;
+			setTimeout(function(){clickDisabled = false;}, 2000);
+		}
+
+	}
+}
+
+Machine.prototype.handleCancelButton = function(stat, quit_input){
+
 	if(stat[quit_input] && this.status.state === 'paused' && canQuit) {
 		log.info("Cancel hit!")
 		this.quit(function(err, msg){
@@ -271,6 +307,7 @@ Machine.prototype.restoreDriverState = function(callback) {
 }
 
 Machine.prototype.arm = function(action, timeout) {
+	console.log(action);
 	switch(this.status.state) {
 		case 'idle':
 		break;
@@ -307,6 +344,28 @@ Machine.prototype.arm = function(action, timeout) {
 
 	var requireAuth = config.machine.get('auth_required');
 
+
+
+	if(action.payload)  {
+		if(action.payload.name === "manual"){
+			var cmd = action.payload.code.cmd;
+			switch(cmd) {
+				case 'set':
+				case 'exit':
+				case 'start':
+				case 'fixed':
+				case 'stop':
+				case 'goto':
+					this.fire(true);
+					log.info('Firing because these manual cmds do not require auth');
+					return;
+					break;
+			}
+		}
+
+	}
+
+
 	if(!requireAuth) {
 		log.info("Firing automatically since authorization is disabled.");
 		this.fire(true);
@@ -342,6 +401,7 @@ Machine.prototype.fire = function(force) {
 
 	// If no action, we're just authorizing for the next auth timeout
 	if(!this.action) {
+		log.warn("Is this what is happenning!!!");
 		this.authorize(config.machine.get('auth_timeout'));
 		this.setState(this, 'idle');
 		return;

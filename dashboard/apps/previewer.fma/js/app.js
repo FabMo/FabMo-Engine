@@ -83,8 +83,6 @@ function initializeLiveViewerHandler(jobId) {
  */
 function initializeViewer(gcode, isLive, jobId) {
     fabmo.getJobsInQueue(function(err, jobs) {
-        console.log(jobs.pending);
-        console.log(jobId);
         if (jobs){
             if(jobs.pending[0]._id.toString() === jobId) {
                 $('.run-now').show();

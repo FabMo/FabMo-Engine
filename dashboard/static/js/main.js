@@ -211,7 +211,7 @@ require("../css/toastr.min.css");
                             keyboard.setEnabled(false);
                         dashboard.showModal({
                             title: 'Authorization Required!',
-                            message: 'To authorize your tool, press and hold the green button for one second.',
+                            message: 'To authorize your tool, press and hold the start button for one second.',
                             cancelText: 'Quit',
                             cancel: function() {
                                 authorizeDialog = false;

@@ -13,7 +13,6 @@ function refreshApps() {
             } else {
                 defaultApp = data.machine.default_app;
                         $(".app-listing").empty();
-        console.log(defaultApp);
         html = [
             '<tr class="app-install-row"><td>',
             '<div class="app-ghost noselect"><span class="app-ghost-icon fa fa-plus"></span></div>',

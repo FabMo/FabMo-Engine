@@ -72,7 +72,6 @@ define(function(require) {
 
         //Screen displays based on size
         colapsed = localStorage.getItem('colapsed');
-        console.log(colapsed);
         if ($(window).width() > 640) {
             $("#main").addClass("offcanvas-overlap-right"); //Show Left Menu
             l = parseInt($("#left-menu").css("width")) + 1; //Save left menu size
@@ -249,7 +248,6 @@ define(function(require) {
     function checkifTour(){
          var url = window.location.href; 
          var final = url.substr(url.lastIndexOf('/') + 1);
-         console.log(final); 
          if (final === 'tour'){
              $('.off-canvas-list, .widget').addClass('blur');
              $('.tour-filter').css('height', '100%');
