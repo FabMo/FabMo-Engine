@@ -2,7 +2,6 @@ var path = require('path');
 var log = require('./log').logger('util');
 var fs = require('fs');
 var q = require('q');
-var fs = require('fs');
 var uuid = require('node-uuid');
 var fs = require('fs');
 var escapeRE = require('escape-regexp-component');
@@ -341,6 +340,16 @@ function walkDir(filename) {
     return info;
 }
 
+function getSize (path, cb) {
+    fs.stat(path, function (err, stats) {
+        if(err) {
+            cb(err);
+        } else {
+            cb(null, stats.size);
+        }
+    });
+}
+
 function fixJSON(json) {
     var retval = {};
 
@@ -496,6 +505,7 @@ exports.LineNumberer = LineNumberer;
 
 
 exports.serveStatic = serveStatic;
+exports.getSize = getSize;
 exports.Queue = Queue;
 exports.Watchdog = Watchdog;
 exports.allowed_file = allowed_file;
