@@ -1525,6 +1525,10 @@ SBPRuntime.prototype.pause = function() {
 }
 
 SBPRuntime.prototype.quit = function() {
+	if(this.ok_to_disconnect) {
+		return this._end();
+	}
+
 	if(this.machine.status.state == 'stopped' || this.machine.status.state == 'paused') {
 		this.machine.driver.quit();
 	} else {
