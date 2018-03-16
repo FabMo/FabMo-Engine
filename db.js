@@ -1,4 +1,5 @@
 var assert = require('assert');
+var async = require('async');
 var fs = require('fs-extra');
 var crypto = require('crypto');
 var log = require('./log').logger('db');
@@ -20,7 +21,7 @@ var jobs;
 var users;
 var thumbnails;
 
-var maxStorage = 5013924;
+var maxStorage = 5125185;
 var totalSize = 0;
 
 function notifyChange() {
@@ -45,7 +46,7 @@ Job.prototype.clone = function(callback) {
 	var job = new Job({
 		file_id : this.file_id,
 		name : this.name,
-		description : this.description
+		description : this.description 
 	});
 	job.save(callback);
 };
@@ -320,40 +321,75 @@ File.obliterate = function(file, callback){
 	var id = file._id
 	fs.remove(file.path, function(err){
 		if (err){
-			log.warn(err);
+			callback(err);
+		} else {
+			files.remove({_id : id},function(err){
+				if(err) {
+					callback(err);
+				} else {
+					jobs.remove({file_id : id},function(err) {
+						if(err){
+							callback(err);
+						} else {
+							callback(null, 'Obliterated' + file.filename);
+						}
+					});
+				}
+			});
 		}
 	});
-	files.remove({_id : id},function(err){if(!err)callback();else callback(err);});
-	thumbnails.remove({file_id : id},function(err){if(!err)callback();else callback(err);});
-	jobs.remove({file_id : id},function(err){if(!err)callback();else callback(err);});
+	
+	//thumbnails.remove({file_id : id},function(err){if(!err)callback();else callback(err);});
+
 }
 
 File.clearTrash = function(callback){
+	var toTrash = [];
 	files.find().toArray(function(err, files){
 		Job.getAll (function(jobs){
-		for (file in files) {
-			var keepFile = false;
-			for(var i = 0; i < jobs.length; i++) {
-				if(jobs[i].state !== 'trash' && parseInt(files[file]._id) === parseInt(jobs[i].file_id))  {
-					keepFile = true;
-					break
+			for (var j = 0; j < files.length -1; j++) {
+				var keepFile = false;
+				for(var i = 0; i < jobs.length -1; i++) {
+					if(jobs[i].state !== 'trash' && parseInt(files[j]._id) === parseInt(jobs[i].file_id))  {
+						keepFile = true;
+						break
+					}
+				}
+				if (!keepFile){
+					console.log(j);
+					toTrash.push(files[j]);
+
+					// File.obliterate(thisFile, function(err){
+					// 	console.log(thisFile);
+					// 	if(err){
+					// 		throw err;
+					// 	} else {
+					// 		totalSize -= thisFile.size;
+					// 		log.info('deleted ' + thisFile.filename);
+					// 		console.log(totalSize);
+					// 	}
+					// })
 				}
 			}
-			if (!keepFile){
-				
-				File.obliterate(files[file], function(err){
+			console.log(toTrash);
+			async.each(toTrash, function(_file, callback){
+				File.obliterate(_file, function(err, msg){
+					console.log(_file);
 					if(err){
-						callback(err);
+						throw err;
 					} else {
-						totalSize -= files[file].size;
-						log.info('deleted ' + files[file].filename)
+						totalSize -= _file.size;
+						console.log(msg);
 						console.log(totalSize);
+						callback();
 					}
 				})
-			}
-		}
+			
 
-		});
+			});
+
+			});
+	
 		
 	});
 	callback(null);

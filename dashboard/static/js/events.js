@@ -9,61 +9,7 @@ define(function(require) {
 
     /********** Layout Resize Functions **********/
 
-    var openDROPush = function() {
-        $('#right-menu').css('right', '0');
-        $('#app-client-container').css('padding-right', '218px');
-        $('#app_menu_container').css('padding-right', '220px');
-        $('#waiting_container').css('padding-right', '220px');
-
-    }
-
-    var closeDROPush = function() {
-        $('#right-menu').css('right', '-222px');
-        $('#app-client-container').css('padding-right', '0px');
-        $('#app_menu_container').css('padding-right', '0px');
-        $('#waiting_container').css('padding-right', '0px');
-    }
-
-    var openDROover = function() {
-        $('#right-menu').css('right', '0');
-    }
-
-    var closeDROover = function() {
-        $('#right-menu').css('right', '-222px');
-    }
-
-    var setRightMenuBehavior = function() {
-        if ($('#right-menu').css('right') === '0px') {
-            if ($(window).width() < 900) {
-                closeDROover();
-            } else {
-                closeDROPush();
-            }
-        } else {
-            if ($(window).width() < 900) {
-                openDROover();
-            } else {
-                openDROPush();
-            }
-        }
-    }
-    var rightMenuLoad = function() {
-        if ($(window).width() > 900) {
-            openDROPush();
-        } else if ($(window).width() < 900) {
-            $('#app-client-container').css('padding-right', '0px');
-            $('#app_menu_container').css('padding-right', '0px');
-            $('#waiting_container').css('padding-right', '0px');
-        }
-    }
-    $('.DRO-button').on('click', function(evt) {
-        setRightMenuBehavior();
-         var el = $(this),
-        newone = el.clone(true);
-        el.before(newone);
-        $("." + el.attr("class") + ":last").remove();
-        evt.preventDefault();
-    });
+   
 
     var resizedoc = function() {
         //L & R = width of left & right menus
@@ -71,6 +17,8 @@ define(function(require) {
         var r = 0;
 
         //Screen displays based on size
+        $("#left-menu").css({'height' :$(window).height() - 56, 'top' : 56 } );
+
         colapsed = localStorage.getItem('colapsed');
         if ($(window).width() > 640) {
             $("#main").addClass("offcanvas-overlap-right"); //Show Left Menu
@@ -92,7 +40,6 @@ define(function(require) {
             $("#widget-links-general").removeClass("colapsed");
             $("#left-menu").removeClass("colapsed");
             $("#main").removeClass("offcanvas-overlap-right");
-            $("#main").removeClass("offcanvas-overlap-left");
             l = 0;
         }
         
@@ -111,7 +58,7 @@ define(function(require) {
         //Set size attribute on div "Main Section"
         $(".main-section, .app-section").css("width", $("body").width() - r + "px");
         $(".main-section, .app-section").css("margin-left", l + "px");
-        $(".main-section").css("height", $("#left-menu").height() + 1 + "px");
+        $(".main-section").css("height", $("#left-menu").height()+ "px");
 
         //Set size of app container (so footer does not hide content)
         $('.main-section').css('padding-bottom',$('.footBar').css('height'));
@@ -121,11 +68,7 @@ define(function(require) {
             "width",
             $(".main-section").width() - ($(".main-section").width() % 132)
         )
-        if ($('.axi').is(':focus')){
 
-        } else {
-            rightMenuLoad();
-        }
 
         calcLeftPadding();
     };
@@ -212,12 +155,6 @@ define(function(require) {
             l = 0;
         }
 
-        if (!($("#main").hasClass("offcanvas-overlap-left")) && ($("body").width() / parseFloat($("body").css("font-size"))) > 60.063) {
-            r = parseInt($("#right-menu").css("width") + 1);
-        } else {
-            r = 0;
-        }
-
         r = r + l;
         $(".main-section, .app-section").css("width", $("body").width() - r + "px");
 
@@ -262,8 +199,6 @@ define(function(require) {
     /********** Document Ready Init **********/
     $(document).ready(function() {
 
-
-        rightMenuLoad();
         resizedoc();
         //If size of the screen change, we resize the main & app container
         checkifTour();
@@ -302,10 +237,5 @@ define(function(require) {
     return {
         'resizedocclick': resizedocclick,
         'resizedoc': resizedoc,
-        'colapseMenu': colapseMenu,
-        'openDROover': openDROover,
-        'closeDROover': closeDROover,
-        'openDROPush': openDROPush,
-        'closeDROPush': closeDROPush
     }
 })
