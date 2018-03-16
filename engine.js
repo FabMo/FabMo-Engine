@@ -17,6 +17,7 @@ var argv = require('minimist')(process.argv);
 var fs = require('fs');
 var sessions = require("client-sessions");
 var authentication = require('./authentication');
+var profiles = require('./profiles');
 var crypto = require('crypto');
 
 
@@ -135,6 +136,13 @@ Engine.prototype.start = function(callback) {
             } else {
                 callback();
             }
+        },
+
+        function load_profiles(callback) {
+            profiles.load(function(err, profiles) {
+                if(err) {log.error(err);}
+                callback()
+            });
         },
 
         function profile_shim(callback) {
@@ -380,10 +388,11 @@ Engine.prototype.start = function(callback) {
                 callback(null, result);
             });
         },
+        /*
         function load_profile_macros(callback) {
             log.info('Loading profile macros...');
             macros.loadProfile(callback);
-        },
+        },*/
 
         function load_macros(callback) {
             log.info("Loading macros...")

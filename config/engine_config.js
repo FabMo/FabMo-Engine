@@ -7,6 +7,7 @@ var exec = require('child_process').exec;
 Config = require('./config').Config;
 var log = require('../log');
 var logger = log.logger('config');
+var profiles = require('../profiles');
 
 // The EngineConfig object keeps track of engine-specific settings
 EngineConfig = function() {
@@ -20,7 +21,7 @@ EngineConfig.prototype.update = function(data, callback) {
 		for(var key in data) {
 			if((key === 'profile')) {
 				var newProfile = data[key];
-				if(newProfile && newProfile != 'default') {
+/*				if(newProfile && newProfile != 'default') {
 					try {
 						var profileDir = __dirname + '/../profiles/' + newProfile;
 						var stat = fs.statSync(profileDir);								
@@ -34,7 +35,7 @@ EngineConfig.prototype.update = function(data, callback) {
 						data[key] = 'default';
 					}
 				}
-
+*/
 				if((key in this._cache) && (data[key] != this._cache[key]) && (this.userConfigLoaded) && (this._cache[key])) {
 					try { log.info("Profile changed"); }
 					catch(err) {}
@@ -60,14 +61,22 @@ EngineConfig.prototype.update = function(data, callback) {
 		});
 	};
 	if(profile_changed) {
-		logger.warn('Engine profile changed - engine should be restarted.')
+		logger.warn('Engine profile changed - engine will be restarted.')
+		profiles.apply(newProfile, function(err, data) {
+			if(err) {
+				callback(err);
+			} else {
+				process.exit(1);
+			}
+		});
+/*
 		Config.deleteProfileData(function(err) {
 			save(function(err) {
 				if(err) { return callback(err); }
-				process.exit(1);
 				//callback();
 			})
 		});
+		*/
 	} else {
 		save(callback);
 	}
