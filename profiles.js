@@ -12,7 +12,7 @@ var load = function(callback) {
 	var profileDir = config.getDataDir('profiles')
 	fs.readdir( profileDir, function( err, files ) {
         if(err) {
-        	callback(err);
+        	return callback(err);
         }
         async.each(files, function(file, callback) {
         	var profilePath = path.join(profileDir, file);
