@@ -2602,7 +2602,22 @@
    },
    "SK": {
       "cmd": "SK",
-      "name": "set to KeyPad control w/ arrow keys { K }"
+      "name": "set to KeyPad control w/ arrow keys { K }",
+      "params": [
+         {
+            "name": "1- Message",
+            "desc": "A message to display in the manual control display",
+            "abrev": "msg",
+            "typeext": 0,
+            "default": "",
+            "sysvar": 0,
+            "range": [
+               null,
+               null
+            ],
+            "type": "str"
+         }
+      ]
    },
    "SL": {
       "cmd": "SL",

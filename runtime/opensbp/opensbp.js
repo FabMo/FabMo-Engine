@@ -627,6 +627,7 @@ SBPRuntime.prototype._executeNext = function() {
 
 		if(this.gcodesPending && this.driver) {
 			log.debug("Deferring because g-codes pending.");
+			this.driver.requestStatusReport();
 			return; // G2 is running, we'll get called when it's done
 		} else {
 			// G2 is stopped, execute stack breaking command now
@@ -1546,13 +1547,15 @@ SBPRuntime.prototype.resume = function() {
 		}
 }
 
-SBPRuntime.prototype.manualEnter = function(callback) {
+SBPRuntime.prototype.manualEnter = function(message, callback) {
 	this.inManualMode = true;
 	this._update();
+	
 	if(this.machine) {
-		this.machine.setState(this, "manual");
+		this.machine.setState(this, 'manual', message ? {'message' : message } : undefined);
 		this.machine.authorize();
 	}
+
 	this.helper = new ManualDriver(this.driver, this.stream);
 	this.helper.enter().then(function() {
 		this.inManualMode = false;
@@ -1561,6 +1564,7 @@ SBPRuntime.prototype.manualEnter = function(callback) {
 		if(this.absoluteMode) {
 			this.emit_gcode('G90');
 		}
+		this.emit_gcode('G4 P0.1');
 		callback();
 	}.bind(this));
 }
