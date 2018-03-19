@@ -43,7 +43,7 @@ exports.SC = function(args, callback) {
 }
 
 exports.SK = function(args, callback) {
-	this.manualEnter(callback);
+	this.manualEnter(args[0], callback);
 }
 
 //  Set to Relative coordinates
