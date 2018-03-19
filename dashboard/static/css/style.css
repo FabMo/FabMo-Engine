@@ -1131,6 +1131,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .manual-drive-message {
+	display: none;
 	color: #eee;
 	width: 100%;
 	height: auto;
@@ -1743,6 +1744,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     }
 }
 
+
 .manual-drive-modal {
 	user-select: none;
 	display: none;
@@ -1770,7 +1772,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 
 
-@media screen and (max-width: 1000px) {
+@media screen and (max-width: 1160px) {
 	.manual-drive-modal {
 		width: 80%; 
 	}

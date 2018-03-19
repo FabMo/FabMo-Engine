@@ -169,22 +169,30 @@ require("../css/toastr.min.css");
 
                     if (status['info'] && status['info']['id'] != lastInfoSeen) {
                         lastInfoSeen = status['info']['id'];
+                        console.log(status);
                         if (status.info['message']) {
-                            keypad.setEnabled(false);
-                            keyboard.setEnabled(false);
+                            if(status.state ==="manual"){
+                                $('.manual-drive-message').show();
+                                $('.manual-drive-message').html(status.info.message);
 
-                            dashboard.showModal({
-                                message: status.info.message,
-                                okText: 'Resume',
-                                cancelText: 'Quit',
-                                ok: function() {
-                                    dashboard.engine.resume();
-                                },
-                                cancel: function() {
-                                    dashboard.engine.quit();
-                                }
-                            });
-                            modalIsShown = true;
+                            } else {
+                                keypad.setEnabled(false);
+                                keyboard.setEnabled(false);
+                                dashboard.showModal({
+                                    message: status.info.message,
+                                    okText: 'Resume',
+                                    cancelText: 'Quit',
+                                    ok: function() {
+                                        dashboard.engine.resume();
+                                    },
+                                    cancel: function() {
+                                        dashboard.engine.quit();
+                                    }
+                                });
+                                modalIsShown = true;
+
+                            }
+
                         } else if (status.info['error']) {
                             if (dashboard.engine.status.job) {
                                 var detailHTML = '<p>' +
@@ -346,6 +354,8 @@ require("../css/toastr.min.css");
     }
 
     $('.manual-drive-exit').click(function(){
+        $('.manual-drive-message').html('');
+        $('.manual-drive-message').hide();
         dashboard.engine.manualExit();
     })
 

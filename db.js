@@ -297,7 +297,6 @@ File.prototype.save = function(callback) {
 						callback(null, records[0]);
 						backupDB(callback);
 						totalSize += records[0].size;
-						console.log(totalSize);
 					}
 					else {
 						callback(err);
@@ -356,31 +355,15 @@ File.clearTrash = function(callback){
 					}
 				}
 				if (!keepFile){
-					console.log(j);
 					toTrash.push(files[j]);
-
-					// File.obliterate(thisFile, function(err){
-					// 	console.log(thisFile);
-					// 	if(err){
-					// 		throw err;
-					// 	} else {
-					// 		totalSize -= thisFile.size;
-					// 		log.info('deleted ' + thisFile.filename);
-					// 		console.log(totalSize);
-					// 	}
-					// })
 				}
 			}
-			console.log(toTrash);
 			async.each(toTrash, function(_file, callback){
 				File.obliterate(_file, function(err, msg){
-					console.log(_file);
 					if(err){
 						throw err;
 					} else {
 						totalSize -= _file.size;
-						console.log(msg);
-						console.log(totalSize);
 						callback();
 					}
 				})
@@ -404,35 +387,21 @@ File.getTotalFileSize = function(callback){
 			log.warn(err);
 		} else {
 			result.forEach(function(file){
-				// File.obliterate(file, function(err){
-				// 	console.log('obliterate!!!!!');
-				// 	if (err){
-				// 		log.error(err);
-				// 	}
-				// });
 				if(file.size === undefined){
 					var size2b =  new Promise( function(resolve, reject) {
-						console.log('Am I here?');
 						util.getSize(file.path, function(err, fileSize){
-							console.log(fileSize);
 							resolve(fileSize);
-							
-		
-					});
+						});
 					});
 					size2b.then(function(val){
-						console.log(val + "this is from the promise");
 						files.update({_id : file._id}, {$set : {size : val}});	
 						totalSize += val;
 					});
 				} else {
-					console.log("I got a file sizaze")
 					totalSize += file.size;
 				}
 
 			});
-
-			console.log(totalSize);
 		}
 	});
 
@@ -477,7 +446,7 @@ File.add = function(friendly_filename, pathname, callback) {
 									} else {
 										File.add(friendly_filename, pathname, function(err){
 											if(err){
-												console.log('error!!!!')
+												throw err;
 											}
 										})
 									}
