@@ -451,10 +451,11 @@ require("../css/toastr.min.css");
     $('.fixed-switch input').on('change', function(){
 
         if  ($('.fixed-switch input').is(':checked')) {
-            console.log("here");
             $('.drive-button').addClass('drive-button-fixed');
             $('.slidecontainer').hide();
             $('.fixed-input-container').show();
+            $('.fixed-input-container').css('display', 'flex');
+
         } else {
             $('.drive-button').removeClass('drive-button-fixed');
             $('.slidecontainer').show();
@@ -512,6 +513,8 @@ require("../css/toastr.min.css");
         $('.go-here').show();
         $('#keypad').hide();
         $('.go-to-container').show();
+        $('.go-to-container').css('display', 'flex');
+
         
     });
 
@@ -563,7 +566,8 @@ require("../css/toastr.min.css");
     });
 
     $('.zero-button').click(function(e) {
-        var axi = $(this).prev('label').find('input').attr('id');
+        console.log($(this).parent('div').find('input').attr('id'));
+        var axi = $(this).parent('div').find('input').attr('id');
         var obj = {};
         obj[axi] = 0;
         console.log(obj);

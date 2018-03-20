@@ -67,7 +67,7 @@ function FabMoUI(tool, options){
 	this.resume_button_selector = this.file_control_selector + ' .resumeJob';
 	this.pause_button_selector = this.file_control_selector + ' .pauseJob-wrapper';
 
-	this.units_selector = this.status_div_selector + ' .units';
+	this.units_selector = '.units';
 
 	if(this.keypad){
 		this.my_keypad = this.Keypad;
