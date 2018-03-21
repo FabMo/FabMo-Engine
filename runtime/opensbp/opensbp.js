@@ -114,6 +114,7 @@ SBPRuntime.prototype.connect = function(machine) {
 	//this.status_handler = this._onG2Status.bind(this);
 	//this.driver.on('status', this.status_handler);
 	this.connected = true;
+	this.ok_to_disconnect = false;
 	log.info('Connected OpenSBP runtime.');
 };
 
