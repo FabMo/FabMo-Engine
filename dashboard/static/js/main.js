@@ -548,29 +548,10 @@ require("../css/toastr.min.css");
         }
     });
 
-    // Handlers for the home/probe buttons
-    $('.button-zerox').click(function(e) {
-        ddashboard.engine.sbp('ZX');
-    });
-    $('.button-zeroy').click(function(e) {
-        dashboard.engine.sbp('ZY');
-    });
-    $('.button-zeroz').click(function(e) {
-        dashboard.engine.sbp('ZZ');
-    });
-    $('.button-zeroa').click(function(e) {
-        dashboard.engine.sbp('ZA');
-    });
-    $('.button-zerob').click(function(e) {
-        dashboard.engine.sbp('ZB');
-    });
-
-    $('.zero-button').click(function(e) {
-        console.log($(this).parent('div').find('input').attr('id'));
+    $('.zero-button').click(function() {
         var axi = $(this).parent('div').find('input').attr('id');
         var obj = {};
         obj[axi] = 0;
-        console.log(obj);
         dashboard.engine.set(obj)
     });
 

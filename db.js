@@ -21,7 +21,7 @@ var jobs;
 var users;
 var thumbnails;
 
-var maxStorage = 5125185;
+var maxStorage = 500000000;
 var totalSize = 0;
 
 function notifyChange() {
@@ -415,6 +415,33 @@ File.prototype.saverun = function(){
 	files.update({_id : this._id}, {$set : {last_run : Date.now()}, $inc : {run_count:1}});
 };
 
+File.writeToDisk = function(pathname, full_path, friendly_filename, hash, callback){
+	util.move(pathname, full_path, function(err) {
+		if(err) {
+			return callback(err);
+		}
+		// delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
+		fs.unlink(pathname, function(err) {
+			if (err) {
+				// Failure to delete the temporary file is bad, but non-fatal
+				log.warn("failed to remove the job from temporary folder: " + err);
+			}
+
+			var file = new File(friendly_filename, full_path);
+			file.hash = hash;
+			file.save(function(err, file){
+				if(err) {
+					return callback(err);
+				}
+				log.info('Saved a file: ' + file.filename + ' (' + file.path + ')');
+
+				callback(null, file)
+			}.bind(this)); // save
+			//set off async file size update
+		}.bind(this)); // unlink
+	}); // move
+};
+
 File.add = function(friendly_filename, pathname, callback) {
 	// Create a unique name for actual storage
 	var filename = util.createUniqueFilename(friendly_filename);
@@ -441,45 +468,25 @@ File.add = function(friendly_filename, pathname, callback) {
 								if(err){
 									throw err
 								} else {
-									if(size + totalSize > maxStorage ) {
+									log.info('done with trash');
+									File.writeToDisk(pathname, full_path, friendly_filename, hash, function(err, file){
 
-									} else {
-										File.add(friendly_filename, pathname, function(err){
-											if(err){
-												throw err;
-											}
-										})
-									}
+										if(err){
+											throw err;
+										} else {
+											callback(null, file);
+										}
+									})
 								}
 							})
-							
-
-
 						} else {
-							util.move(pathname, full_path, function(err) {
-								if(err) {
-									return callback(err);
+							File.writeToDisk(pathname, full_path, friendly_filename, hash, function(err, file){
+								if(err){
+									throw err;
+								} else {
+									callback(null, file);
 								}
-								// delete the temporary file, so that the temporary upload dir does not get filled with unwanted files
-								fs.unlink(pathname, function(err) {
-									if (err) {
-										// Failure to delete the temporary file is bad, but non-fatal
-										log.warn("failed to remove the job from temporary folder: " + err);
-									}
-
-									var file = new File(friendly_filename, full_path);
-									file.hash = hash;
-									file.save(function(err, file){
-										if(err) {
-											return callback(err);
-										}
-										log.info('Saved a file: ' + file.filename + ' (' + file.path + ')');
-						
-										callback(null, file)
-									}.bind(this)); // save
-									//set off async file size update
-								}.bind(this)); // unlink
-							}); // move
+							})
 						}
 					}
 				}.bind(this));//check size 
