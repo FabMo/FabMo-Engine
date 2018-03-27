@@ -1188,6 +1188,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 
 
+
+
 .enter-button {
 	color: white;
 	line-height: 45px;
@@ -1267,6 +1269,11 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .keypad-bar {
 	width: 100%;
 	height: 50%
+}
+
+.rot_button{
+	font-size : 40px;
+	 line-height : 65px;
 }
  
 

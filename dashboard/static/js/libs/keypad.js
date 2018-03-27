@@ -33,6 +33,7 @@ Keypad.prototype.init = function() {
 	var Hammer = require('./hammer.min.js');
 
 	var drive_buttons = e.find('.drive-button');
+	console.log(drive_buttons);
 	drive_buttons.each(function(index, element) {
 		var hammer = new Hammer.Manager(element);
 		hammer.add(new Hammer.Tap({time: this.pressTime-1, interval: this.tapInterval, threshold: this.pressThreshold}));
@@ -209,6 +210,14 @@ Keypad.prototype.onDrivePress = function(evt) {
 			}
 			else if(e.hasClass('z_neg')) {
 				this.start('z', -1);
+			} else if(e.hasClass('a_pos')){
+				this.start('a', 1)
+			} else if(e.hasClass('a_neg')){
+				this.start('a', -1)
+			} else if(e.hasClass('b_pos')){
+				this.start('b', 1)
+			} else if(e.hasClass('b_neg')){
+				this.start('b', -1)
 			} else {
 				return;
 			}
@@ -253,6 +262,14 @@ Keypad.prototype.onDriveTap = function(evt) {
 		}
 		else if(e.hasClass('z_neg')) {
 			this.nudge('z', -1);
+		} else if(e.hasClass('a_pos')){
+			this.nudge('a', 1)
+		} else if(e.hasClass('a_neg')){
+			this.nudge('a', -1)
+		} else if(e.hasClass('b_pos')){
+			this.nudge('b', 1)
+		} else if(e.hasClass('b_neg')){
+			this.nudge('b', -1)
 		} else {
 			return;
 		}

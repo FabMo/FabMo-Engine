@@ -169,7 +169,7 @@ ManualDriver.prototype.set = function(pos) {
 		this.stream.write(gc + '\n');
 		this.driver.prime();
 		setTimeout(function() {
-			config.driver.reverseUpdate(['g55x','g55y','g55z'], function(err, data) {		console.log(data);});
+			config.driver.reverseUpdate(['g55x','g55y','g55z'], function(err, data) {console.log(data);});
 		}.bind(this), 500);
 }
 
@@ -185,11 +185,9 @@ ManualDriver.prototype._handleNudges = function() {
 
 			if('XYZABCUVW'.indexOf(axis) >= 0) {
 				var moves = ['G91'];
-				console.log(move);
 				if(move.second_axis) {
 					var second_axis = move.second_axis.toUpperCase();
 					if(move.speed) {
-						console.log('G1 ' + axis + move.distance.toFixed(5) +' '+ second_axis + move.second_distance.toFixed(5) + ' F' + move.speed.toFixed(3));
 						moves.push('G1 ' + axis + move.distance.toFixed(5) +' '+ second_axis + move.second_distance.toFixed(5) + ' F' + move.speed.toFixed(3))
 					} else {
 						moves.push('G0 ' + axis + move.distance.toFixed(5)  +' '+ move.second_axis.toUpperCase + move.second_distance.toFixed(5) + ' F' + move.speed.toFixed(3))
@@ -217,7 +215,6 @@ ManualDriver.prototype._handleNudges = function() {
 }
 
 ManualDriver.prototype.nudge = function(axis, speed, distance, second_axis, second_distance) {
-	console.log(axis +' '+ speed)
     if(this.fixedQueue.length >= FIXED_MOVES_QUEUE_SIZE) {
 	log.warn('fixedMove(): Move queue is already full!');
     	    return;

@@ -177,6 +177,27 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	['x','y','z','a','b'].forEach(function(axis) {
 		var pos = 'pos' + axis;
 		if(pos in status) {
+			if(axis === "b") {
+				$('.x_pos.y_pos').hide();
+				$('.b_pos').show();
+				$('.x_pos.y_neg').hide();
+				$('.b_neg').show();
+
+			} else if(axis === "a"){
+				$('.x_neg.y_pos').hide();
+				$('.a_pos').show();
+				$('.x_neg.y_neg').hide();
+				$('.a_neg').show();
+			}else {
+				$('.x_neg.y_pos').show();
+				$('.x_neg.y_neg').show();
+				$('.x_pos.y_pos').show();
+				$('.a_pos').hide();
+				$('b_pos').hide();
+				$('.x_pos.y_neg').show();
+				$('.b_neg').hide();
+				$('.a_neg').hide();
+			}
 			$('.' + axis + 'axis').show();
 			try {
 				var posText = status[pos].toFixed(digits);

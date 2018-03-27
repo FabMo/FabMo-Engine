@@ -64,7 +64,7 @@ require("../css/toastr.min.css");
                     hideConsent();
                 }
             });
-       
+            
        }
        return consent;
     });    
@@ -169,7 +169,6 @@ require("../css/toastr.min.css");
 
                     if (status['info'] && status['info']['id'] != lastInfoSeen) {
                         lastInfoSeen = status['info']['id'];
-                        console.log(status);
                         if (status.info['message']) {
                             if(status.state ==="manual"){
                                 $('.manual-drive-message').show();
@@ -190,9 +189,7 @@ require("../css/toastr.min.css");
                                     }
                                 });
                                 modalIsShown = true;
-
                             }
-
                         } else if (status.info['error']) {
                             if (dashboard.engine.status.job) {
                                 var detailHTML = '<p>' +
@@ -284,6 +281,10 @@ require("../css/toastr.min.css");
                 case 'z':
                     increment_inches = engine.config.machine.manual.z_increment;
                     break;
+                case 'a':
+                case 'b':
+                    increment_inches = engine.config.machine.manual.ab_increment;
+                    break;
             }
         } catch (e) {
             console.error(e);
@@ -328,7 +329,6 @@ require("../css/toastr.min.css");
             var speed = getManualMoveSpeed(nudge);
             var increment = getManualNudgeIncrement(nudge);
             // var jerk = getManualMoveJerk(nudge);
-            console.log(nudge);
             if( nudge.second_axis){
                 dashboard.engine.manualMoveFixed(nudge.axis, 60 * speed, nudge.dir * increment, nudge.second_axis, nudge.second_dir * increment);
                 
@@ -465,21 +465,16 @@ require("../css/toastr.min.css");
 
     $('.xy-fixed').on('change', function(){
         newDefault = $('.xy-fixed').val();
-                console.log(newDefault);
-                
                 dashboard.engine.setConfig({machine:{manual:{xy_increment:newDefault}}}, function(err, data){
                     if(err){
                         console.log(err);
                     }else {
-                        console.log(data);
                         dashboard.engine.getConfig();
                     }
                 });
         });
     $('.z-fixed').on('change', function(){
         newDefault = $('.z-fixed').val();
-        console.log(newDefault);
-                
                 dashboard.engine.setConfig({machine:{manual:{z_increment:newDefault}}}, function(err, data){
                     if(err){
                         console.log(err);
@@ -528,6 +523,8 @@ require("../css/toastr.min.css");
         $('.posx').val($('.posx').val());
         $('.posy').val($('.posy').val());
         $('.posz').val($('.posz').val());
+        $('.posa').val($('.posa').val());
+        $('.posb').val($('.posb').val());
         $('.go-here').hide();
         $('#keypad').show();
         $('.go-to-container').hide();
