@@ -265,7 +265,7 @@ $(document).ready(function() {
     // Populate Settings
     update();
 
-    ///tool tip logiv
+    ///tool tip logic
 
 $('.tool-tip').click(function(){
      var tip =$(this).parent().data('tip');
@@ -303,7 +303,7 @@ $('body').click(function(event){
             if (this.value == 0) { fabmo.runGCode("G90"); }
             else { fabmo.runGCode("G91"); }
             fabmo.setConfig(new_config, function(err, data) {
-                notifyChange(err,id);
+                notifyChange(err, data.driver.gid);
                 setTimeout(update, 500);
             });
         }
@@ -395,7 +395,7 @@ $('body').click(function(event){
         ok : function() {
           fabmo.setConfig({engine : {profile : $("#profile-listbox option:checked").val()}});
         },
-        cancel : function() {console.log("naw.")}
+        cancel : function() {}
       });
     });
 

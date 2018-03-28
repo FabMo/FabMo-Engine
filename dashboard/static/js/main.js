@@ -40,6 +40,8 @@ require("../css/toastr.min.css");
     var isAuth = false;
     var lastInfoSeen = null;
     var consent = '';
+    var disconnected = false;
+    var last_state_seen = null;
 
     // Detect touch screen
     var supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
@@ -69,14 +71,7 @@ require("../css/toastr.min.css");
        return consent;
     });    
 
-    engine.getConfig(function(err, config){
-        if(err){
-            console.log(err);
-        } else {
-            $('.xy-fixed').val(config.machine.manual.xy_increment);
-            $('.z-fixed').val(config.machine.manual.z_increment);
-        }
-    });
+
     engine.getVersion(function(err, version) {
 
         context.setEngineVersion(version);
@@ -110,8 +105,6 @@ require("../css/toastr.min.css");
                 // Request a status update from the tool
                 engine.getStatus();
 
-
-
                 dashboard.engine.on('change', function(topic) {
                     if (topic === 'apps') {
                         context.apps.fetch();
@@ -136,6 +129,21 @@ require("../css/toastr.min.css");
                     if(status.state !== "manual") {
                         $('.modalDim').hide();
                         $('.manual-drive-modal').hide();
+                    }
+
+                    if(status.state === "idle") {
+                        engine.getConfig(function(err, config){
+                            if(err){
+                                console.log(err);
+                            } else {
+                                var manual_config = config.machine.manual;
+                                $('.xy-fixed').val(manual_config.xy_increment);
+                                $('.z-fixed').val(manual_config.z_increment);
+                                $('#manual-move-speed').val(manual_config.xy_speed);
+                                $('#manual-move-speed').attr('min', manual_config.xy_min);
+                                $('#manual-move-speed').attr('max', manual_config.xy_max);
+                            }
+                        });
                     }
 
                     if (status.state != "armed" && last_state_seen === "armed" || status.state != "paused" && last_state_seen === "paused") {
@@ -463,6 +471,7 @@ require("../css/toastr.min.css");
         }
     });
 
+
     $('.xy-fixed').on('change', function(){
         newDefault = $('.xy-fixed').val();
                 dashboard.engine.setConfig({machine:{manual:{xy_increment:newDefault}}}, function(err, data){
@@ -567,8 +576,7 @@ require("../css/toastr.min.css");
 	    }
 	});
 
-    var disconnected = false;
-    last_state_seen = null;
+
     engine.on('disconnect', function() {
         if (!disconnected) {
             disconnected = true;

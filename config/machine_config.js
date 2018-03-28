@@ -37,7 +37,7 @@ MachineConfig.prototype.update = function(data, callback, force) {
 				this._cache.envelope[key] = round(this._cache.envelope[key]*conv, new_units);
 			}.bind(this));
 
-			['xy_speed','z_speed','xy_increment','z_increment'].forEach(function(key) {
+			['xy_speed','z_speed','xy_increment','z_increment', 'xy_min', 'xy_max', 'xy_jerk', 'z_jerk'].forEach(function(key) {
 				this._cache.manual[key] = round(this._cache.manual[key]*conv, new_units);
 			}.bind(this));
 		}

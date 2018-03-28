@@ -12,6 +12,7 @@
   "use strict"
 
 var MAX_INPUTS = 16;
+var currentUnits = null;
 
 function FabMoUI(tool, options){
 	this.progress = 0;
@@ -153,6 +154,7 @@ FabMoUI.prototype.updateText = function(control, txt) {
 };
 
 FabMoUI.prototype.updateStatusContent = function(status){
+
 	var that = this;
 	var prev_state = that.tool.state;
 	that.tool.state=status.state;
@@ -173,7 +175,14 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	}
 
 	var unit = status.unit || '??';
+
 	var digits = unit === 'mm' ? 2 : 3;
+
+	if (unit !== currentUnits){
+		currentUnits = unit;
+		that.updateText($(that.units_selector), unit)
+	}
+
 	['x','y','z','a','b'].forEach(function(axis) {
 		var pos = 'pos' + axis;
 		if(pos in status) {
@@ -210,7 +219,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		}
 	});
 
-	that.updateText($(that.units_selector), unit)
+
 
 	//Current File or job
 	if(status.job) {
