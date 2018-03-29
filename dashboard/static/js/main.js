@@ -651,6 +651,51 @@ require("../css/toastr.min.css");
         });
     };
 
+// var range_el = document.querySelector('input[type=range]'), style_el, sel, pref, comps, a, b;
+
+// if(range_el) {
+//   style_el = document.createElement('style');
+//   sel = '.js[class*="webkit"] input[type=range]';
+//   pref = '-webkit-slider-';
+//   comps = ['runnable-track', 'thumb'];
+//   a = ':after'; b = ':before';
+  
+//   document.body.appendChild(style_el);
+  
+//   range_el.addEventListener('input', function() {
+//     var str = '', 
+//         curr_val = this.value, 
+//         min = this.min || 0, 
+//         max = this.max || 100, 
+//         perc = 100*(curr_val - min)/(max - min), 
+//         fill_val = ((perc <= 5)?'30px':((~~perc) + '%')) + ' 100%', 
+//         s_total = 60*curr_val, 
+//         ss = ~~(s_total%60), 
+//         m = Math.floor(s_total/60), 
+//         speaker_rules;
+
+//     if(ss < 10) { ss = '0' + ss; }
+    
+//    console.log($(sel + '::' + pref + comps[0]).css('background-size', fill_val ));
+    
+    
+//     str += sel + '::' + pref + comps[0] + '{background-size:' + fill_val + '}';
+//     str += sel + '::' + pref + comps[1] + a + ', ' + 
+//       sel + ' /deep/ #' + comps[1] + a + '{content:"' + m + ':' + ss + '"}';
+    
+//     speaker_rules = 'opacity:' + Math.min(1, perc/50).toFixed(2) + ';' + 
+//       'color:rgba(38,38,38,' + 
+//       ((perc <= 50) ? 0 : (((perc - 50)/50).toFixed(2))) + ')';
+    
+//     str += sel + '::' + pref + comps[0] + b + ',' + 
+//       sel + ' /deep/ #' + comps[0] + b + '{' + speaker_rules + '}';
+        
+//     style_el.textContent = str;
+//     console.log(style_el);
+//   }, false);
+
+// }
+
     ping();
 
     engine.sendTime();

@@ -13,6 +13,13 @@
 
 var MAX_INPUTS = 16;
 var currentUnits = null;
+var mouseX;
+var mouseY;
+$(document).on("mousemove touchmove", function(e) {
+   mouseX = e.pageX; 
+   mouseY = e.pageY;
+});  
+
 
 function FabMoUI(tool, options){
 	this.progress = 0;
@@ -308,6 +315,19 @@ FabMoUI.prototype.updateStatusContent = function(status){
 			break;
 		}
 	}
+
+	$('#manual-move-speed').on('input', function(e){
+		console.log($('#manual-move-speed').offset());
+		$('.speed_read_out').show();
+		$('.speed_read_out').html($('#manual-move-speed').val());
+		$('.speed_read_out').css({'top':$('#manual-move-speed').offset().top-30, 'left': mouseX })
+		
+	});
+
+	$('#manual-move-speed').on('mouseup touchend', function(){
+		$('.speed_read_out').hide();
+	})
+	
 
 	$(that.status_div_selector).trigger('statechange',status.state);
 
