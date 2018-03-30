@@ -1116,18 +1116,17 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 
 .manual-drive-exit {
-	position: absolute;
-    top: 5px;
-    right: 5px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
     border-radius: 50%;
-    border: 1px solid #eee;
-    height: 20px;
-    width: 20px;
-    font-size: 10px;
+    height: 30px;
+    width: 30px;
+    font-size: 30px;
     color: #eee;
-	line-height: 20px;
-	text-align: center;
-	cursor: pointer;
+    line-height: 20px;
+    text-align: center;
+    cursor: pointer;
 }
 
 .manual-drive-message {
@@ -1947,6 +1946,7 @@ input[type='range']:focus {
 
 	.speed_read_out {
 		padding-top: 35px;
+		padding-left: 10px;
 	}
 
 	/* .read-out-container {

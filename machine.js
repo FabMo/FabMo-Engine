@@ -92,7 +92,8 @@ function Machine(control_path, callback) {
 		nb_lines : null,
 		auth : false
 	};
-
+	this.quit_pressed = 0;
+	this.fireButtonPressed =0; 
 	this.info_id = 0;
 
 	this.driver = new g2.G2();
@@ -129,7 +130,9 @@ function Machine(control_path, callback) {
 			]
 
 	    // Idle
-	    this.setRuntime(null, function() {
+	    this.setRuntime(null, function(err) {
+		    console.log("runtime has been set");
+		    console.log(err)
 	    if(err) {
                 typeof callback === "function" && callback(err);
             } else {
@@ -222,7 +225,7 @@ Machine.prototype.handleAPCollapseButton = function(stat, ap_input) {
 
 Machine.prototype.handleOkayCancelDual = function(stat, quit_input) {
 	//this may be changed to user select wether to continue or to cancel
-	if(stat[quit_input] && this.status.state === 'paused' && canQuit) {
+	if(!stat[quit_input] && this.status.state === 'paused' && canQuit && this.quit_pressed) {
 		log.info("Cancel hit!")
 		this.quit(function(err, msg){
 			if(err){
@@ -232,14 +235,15 @@ Machine.prototype.handleOkayCancelDual = function(stat, quit_input) {
 			}
 		});
 	}
+	this.quit_pressed = stat[quit_input];
 }
 
 Machine.prototype.handleFireButton = function(stat, auth_input) {
-
-	if(stat[auth_input] && this.status.state === 'armed') {
+	if(this.fireButtonPressed && !stat[auth_input] && this.status.state === 'armed') {
 		log.info("Fire button hit!")
 		this.fire();
 	}
+	this.fireButtonPressed = stat[auth_input]
 }
 
 Machine.prototype.handleOkayButton = function(stat, auth_input){
