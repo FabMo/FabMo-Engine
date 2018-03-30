@@ -131,7 +131,6 @@ function Machine(control_path, callback) {
 
 	    // Idle
 	    this.setRuntime(null, function(err) {
-		    console.log("runtime has been set");
 		    console.log(err)
 	    if(err) {
                 typeof callback === "function" && callback(err);
@@ -311,7 +310,6 @@ Machine.prototype.restoreDriverState = function(callback) {
 }
 
 Machine.prototype.arm = function(action, timeout) {
-	console.log(action);
 	switch(this.status.state) {
 		case 'idle':
 		break;
