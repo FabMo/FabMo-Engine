@@ -156,7 +156,7 @@ var post_config = function(req, res, next) {
             res.json(answer);
         }
       }
-    });
+    }, true);
   }
 
   if('machine' in req.params) {
