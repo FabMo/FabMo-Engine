@@ -231,7 +231,11 @@ FabMoAPI.prototype.getConfig = function(callback) {
 FabMoAPI.prototype.setConfig = function(cfg_data, callback) {
 	this._post('/config', cfg_data, callback, function(err, data) {
 		callback = callback || function() {};
-		callback(null, cfg_data);
+		if(err){
+			callback(err);
+		} else {
+			callback(null, data);
+		}
 	});
 }
 

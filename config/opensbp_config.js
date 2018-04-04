@@ -13,7 +13,8 @@ util.inherits(OpenSBPConfig, Config);
 
 OpenSBPConfig.prototype.update = function(data, callback, force) {
 	try {
-		extend(this._cache, data, force);
+		// extend(this._cache, data, force);
+		this._cache = Object.assign(this._cache, data);
 	} catch (e) {
 		return callback(e);
 	}
@@ -26,7 +27,7 @@ OpenSBPConfig.prototype.update = function(data, callback, force) {
 	});
 };
 
-OpenSBPConfig.prototype.setMany = OpenSBPConfig.prototype.update;
+// OpenSBPConfig.prototype.setMany = OpenSBPConfig.prototype.update;
 
 OpenSBPConfig.prototype.apply = function(callback) {
 	setImmediate(callback, null);
