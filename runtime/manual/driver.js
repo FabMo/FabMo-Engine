@@ -127,7 +127,7 @@ ManualDriver.prototype.stopMotion = function() {
 
 ManualDriver.prototype.goto = function(pos) {
 
-	var move = "G90\nG1 ";
+	var move = "G90\nG0 ";
 
 	for (var key in pos) {
 		if (pos.hasOwnProperty(key)) {
