@@ -3,11 +3,7 @@ var authentication = require('../authentication');
 var passport = authentication.passport;
 
 var login = function(req, res, next) {
-  console.log(req);
   authentication.passport.authenticate('local', function(err, user, info) {
-    console.log(user);
-    console.log(info);
-    console.log(err);
     if (err) {
       return next(err); // will generate a 500 error
     }
@@ -78,7 +74,7 @@ var getUsers = function(req,res,next){
 
 var getUser = function(req,res,next){
   currentUser = authentication.getCurrentUser();
-  if(currentUser &&( (currentUser._id == req.params.id ) || currentUser.isAdmin)){ // if current user or admin
+  if(currentUser &&( (currentUser.username == req.params.id ) || currentUser.isAdmin)){ // if current user or admin
     authentication.getUser(req.params.id,function(err,user){
       if(err){
         res.send(200,{status:'error',message:err});
@@ -96,7 +92,7 @@ var getUser = function(req,res,next){
 var getCurrentUser = function(req,res,next){
   currentUser = authentication.getCurrentUser();
   if(currentUser){ // if current user
-    authentication.getUser(currentUser._id,function(err,user){
+    authentication.getUser(currentUser.username,function(err,user){
       if(err){
         res.send(200,{status:'error',message:err});
         return;
@@ -113,11 +109,12 @@ var getCurrentUser = function(req,res,next){
 
 var modifyUser = function(req,res,next){
   currentUser = authentication.getCurrentUser();
+  console.log(req.params);
   if(!req.params.id){
-    res.send(200,{status:'error',message:"no id provided"});
+    res.send(200,{status:'error',message:"no username provided"});
     return;
   }
-  if(currentUser &&(currentUser._id == req.params.id || currentUser.isAdmin)){ // if current user or admin
+  if(currentUser &&(currentUser.username == req.params.username || currentUser.isAdmin)){ // if current user or admin
     if(!req.params.user){
       res.send(200,{status:'error',message:"no user object provided"});
       return;

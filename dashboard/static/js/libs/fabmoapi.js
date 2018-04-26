@@ -488,14 +488,14 @@ FabMoAPI.prototype.addUser=function(user_info,callback){
 }
 
 FabMoAPI.prototype.modifyUser = function(user_info,callback){
-  var id = user_info.user.id;
-  user_info.user.id=undefined;
+  var username = user_info.user.username;
+
   var user = user_info;
-  this._post('/authentication/user/'+id,user,callback,callback);
+  this._post('/authentication/user/'+username,user,callback,callback);
 }
 
 FabMoAPI.prototype.deleteUser = function(user_info,callback){
-    var id = user_info.user._id;
+    var id = user_info.user.username;
     this._del("/authentication/user/"+id,{},callback,callback)
 }
 

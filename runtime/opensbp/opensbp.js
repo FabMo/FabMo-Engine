@@ -620,6 +620,7 @@ SBPRuntime.prototype._executeNext = function() {
 
 	// Pull the current line of the program from the list
 	var line = this.program[this.pc];
+	// console.log(line);
 	var breaksTheStack = this._breaksStack(line);
 
 	if(breaksTheStack) {
@@ -800,7 +801,8 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			break;
 
 		case "return":
-			if(this.stack) {
+			console.log(this.stack);
+			if(this.stack.length) {
 				this.pc = this.stack.pop();
 				setImmediate(callback);
 				return true;

@@ -31,6 +31,7 @@ function setupAuthentication(server){
 	handshakeData.sessionID = sessions.util.decode({cookieName: 'session', secret:server.cookieSecret}, cookie['session']);
 	//console.log(handshakeData);
 		var user = handshakeData.sessionID.content.passport.user;
+
 		authentication.getUserById(user, function (err, data){
 			if (err){
 				log.error(err);
@@ -109,7 +110,7 @@ var onPrivateConnect = function(socket) {
 		return socket.disconnect();
 
 	var userId = socket.request.sessionID.content.passport.user;
-
+	
 	authentication.eventEmitter.on('user_change', function(data){
 		socket.emit('user_change', data);
 	});
@@ -117,7 +118,7 @@ var onPrivateConnect = function(socket) {
 	authentication.eventEmitter.on('user_kickout',function user_kickout_listener(user){
 		authentication.eventEmitter.removeListener('user_kickout',user_kickout_listener);
 		//console.log("user kickout event");
-		if(user._id == userId){
+		if(user.username == userId){
 			socket.emit('authentication_failed','kicked out');
 			console.dir(authentication.getCurrentUser());
 			console.dir(userId);
@@ -130,7 +131,7 @@ var onPrivateConnect = function(socket) {
 
 	socket.on('code', function(data) {
 
-		if(!authentication.getCurrentUser() || authentication.getCurrentUser()._id != userId){
+		if(!authentication.getCurrentUser() || authentication.getCurrentUser().username != userId){
 			log.error(userId);
 			log.error(authentication.getCurrentUser());
 			socket.emit('authentication_failed','not authenticated');
@@ -148,7 +149,7 @@ var onPrivateConnect = function(socket) {
 	});
 
 	socket.on('cmd', function(data, callback) {
-		if(!authentication.getCurrentUser() || authentication.getCurrentUser()._id != userId){
+		if(!authentication.getCurrentUser() || authentication.getCurrentUser().username != userId){
 			log.error(userId);
 			log.error(authentication.getCurrentUser());
 			socket.emit('authentication_failed','not authenticated');

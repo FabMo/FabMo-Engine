@@ -145,6 +145,13 @@ Engine.prototype.start = function(callback) {
             });
         },
 
+        function load_users(callback) {
+            log.info('Loading users....')
+            config.configureUser(function(){
+                callback();
+            });
+        },
+
         function profile_shim(callback) {
             var profile = config.engine.get('profile');
             var def = '';
