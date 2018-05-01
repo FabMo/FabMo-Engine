@@ -939,7 +939,11 @@ SBPRuntime.prototype._execute = function(command, callback) {
 SBPRuntime.prototype._varExists = function(identifier) {
 	result = identifier.match(USERVAR_RE);
 	if(result) {
-		return (identifier in this.user_vars);
+		if(identifier in this.user_vars) { return true; }
+		for(key in this.user_vars) {
+			if(key.toLowerCase() === identifier.toLowerCase()) { return true;}
+		}
+		return false;
 	}
 
 	result = identifier.match(PERSISTENTVAR_RE);
@@ -1299,6 +1303,11 @@ SBPRuntime.prototype.evaluateUserVariable = function(v) {
 	if(v in this.user_vars) {
 		return this.user_vars[v];
 	} else {
+		for(key in this.user_vars) {
+			if(key.toLowerCase() === v.toLowerCase()) {
+				return this.user_vars[key];
+			}
+		}
 		throw new Error('Variable ' + v + ' was used but not defined.');
 	}
 };
