@@ -109,7 +109,6 @@ var getCurrentUser = function(req,res,next){
 
 var modifyUser = function(req,res,next){
   currentUser = authentication.getCurrentUser();
-  console.log(req.params);
   if(!req.params.id){
     res.send(200,{status:'error',message:"no username provided"});
     return;

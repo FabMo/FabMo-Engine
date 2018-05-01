@@ -35,9 +35,7 @@ define(function(require) {
 				this.launchApp(defaultApp);
 			},
 			show_auth: function (message){
-				console.log(message);
 				if (message){
-					console.log(message);
 					message.toString();
 					var par = message.replace(/-/g, ' ');
 					console.log(par);
@@ -50,7 +48,7 @@ define(function(require) {
 					console.log(result);
 				   }});
 				$('#mainContent').show();
-				auth();
+				auth();			
 			},
 			loadView : function(view) {
 			this.view && this.view.remove();

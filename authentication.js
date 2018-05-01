@@ -180,11 +180,9 @@ var modifyUser = function(username, user_fields,callback){
       callback(err);
       return;
     }else{
-      console.log(user_fields.username);
       if(user_fields.username !== undefined) {
         delete user_fields.username;
       }
-      console.log(user_fields.username);
       for(field in user_fields){
         switch(field){
           case '_id':
@@ -217,11 +215,7 @@ var modifyUser = function(username, user_fields,callback){
             break;
         }
       }
-      console.log('new');
-      console.log(newData);
       config.user.update(newData, function(err,user){
-        console.log(err);
-        console.log(user);
         if(user)user.password=undefined; // don't transmit the password back
         callback(err,user);
         return;
@@ -231,7 +225,6 @@ var modifyUser = function(username, user_fields,callback){
 };
 
 var deleteUser = function(username,callback){
-  console.log('deleteuser');
   config.user.delete(username, function(err, data) {
     if(err)callback(err);
     else{
@@ -246,7 +239,6 @@ passport.serializeUser(function(user, done) {
 });
 
 passport.deserializeUser(function(username, done) {
-  console.log(username);
   config.user.findOne(username, function(err, data) {
     var user = {
       'username': username,
