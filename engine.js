@@ -328,11 +328,11 @@ Engine.prototype.start = function(callback) {
             '5sa','5tr','5mi',
             '6sa','6tr','6mi',
             'ja',
-            '5ma','6ma',
-            '5po','6po',
-            '5su','6su',
-            '5pm','6pm',
-            '5pl','6pl'
+            '6ma',
+            '6po',
+            '6su',
+            '6pm',
+            '6pl'
           ]
           var do_shim = false;
           for(var i=0; i<entries.length; i++) {
