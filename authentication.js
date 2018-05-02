@@ -1,6 +1,7 @@
 var passport = require('passport-restify');
 var LocalStrategy   = require('passport-local').Strategy;
-var User = require('./db').User;
+//var User = require('./db').User;
+var config = require('./config');
 var machine = require('./machine');
 var util = require('util');
 var events = require('events');
@@ -41,14 +42,20 @@ if (this._passport && this._passport.session) {
 exports.configure = function(){
   passport.use(new LocalStrategy({passReqToCallback: true},
     function(req, username, password, done) {
-      // console.log(util.inspect(req));
-      User.findOne(username, function(err, user) {
+      config.user.findOne(username, function(err, data) {
         if (err) { return done(err); }
-        if (!user) {
+        if (!data) {
           return done(null, false, { message: 'Incorrect username.' });
         }
-        if (!user.validPassword(password)) {
+        if (!config.user.validPassword(username, password)) {
           return done(null, false, { message: 'Incorrect password.' });
+        }
+
+        var user = {
+          'username': username,
+          'password': data.password,
+          'isAdmin' : data.isAdmin,
+          'created_at': data.created_at
         }
         // success ! the usert that did the request is registered in the database.
 
@@ -71,7 +78,6 @@ exports.configure = function(){
           /****************************** Check the kickoutability of the user already connected ****************/
           if(!user.isAdmin){ // the user that wants to connect is not admin
             if(currentUser.isAdmin){ //you can't kick out an admin if your a simple user
-              //console.log("current user is admin");
               return done(null, false, { message: 'The user '+currentUser.username+' is an admin.'});
             }
             if(!isCurrentUserKickeable){ //you can't kick out a user that is actively using the tool.
@@ -88,6 +94,7 @@ exports.configure = function(){
           currentUser = user;
           isCurrentUserKickeable = false;
           startUserTimer();
+
           return done(null, user);
           /*****************************r*************************************************************************/
         }
@@ -98,6 +105,7 @@ exports.configure = function(){
         isCurrentUserKickeable = false;
         startUserTimer();
         }
+        console.log(user);
         return done(null, user);
       });
     }
@@ -105,11 +113,18 @@ exports.configure = function(){
 };
 
 var addUser = function(username,password,callback){
-  User.add(username,password,function(err,user){
+  config.user.add(username,password,function(err,user){
     if(err){
       callback(err);
       return;
     } else {
+      console.log('added');
+      var user = {
+        'username': username,
+        'password': user.password,
+        'isAdmin' : user.isAdmin,
+        'created_at': user.created_at
+      }
       user.password = undefined;  // remove password from user object.
       callback(null,user);
     }
@@ -117,25 +132,57 @@ var addUser = function(username,password,callback){
 };
 
 var getUsers = function(callback){
-  User.getAll(callback);
+  console.log('getUsers');
+  var users = [];
+  config.user.getAll(function(data){
+    for(key in data){
+      var user = {
+        'username': key,
+        'password': undefined,
+        'isAdmin' : data[key].isAdmin,
+        'created_at': data[key].created_at
+      }
+      users.push(user);
+    }
+    callback(null,users)
+  })
 };
 
-var getUser = function(user_id,callback){
-  if(!user_id){
+var getUser = function(username,callback){
+  if(!username){
     callback(null,currentUser); return;
   }
-  User.findById(user_id,function(err,user){
-    if(user){user.password = undefined;} // remove password from user object.
-    callback(err,user);
+  config.user.findOne(username, function(err, data) {
+    if(data){
+      var user = {
+        'username': username,
+        'password': undefined,
+        'isAdmin' : data.isAdmin,
+        'created_at': data.created_at
+      }// remove password from user object.
+      callback(null,user);
+    } else{
+      callback(err);
+    }
   });
 };
 
-var modifyUser = function(user_id,user_fields,callback){
-  User.findById(user_id,function(err,user){
+var modifyUser = function(username, user_fields,callback){
+  console.log('modify')
+  config.user.findOne(username, function(err, data) {
+    var user = {
+      'username': username,
+      'password': data.password,
+      'isAdmin' : data.isAdmin,
+      'created_at': data.created_at
+    }
     if(err){
       callback(err);
       return;
     }else{
+      if(user_fields.username !== undefined) {
+        delete user_fields.username;
+      }
       for(field in user_fields){
         switch(field){
           case '_id':
@@ -145,7 +192,7 @@ var modifyUser = function(user_id,user_fields,callback){
             return;
             break;
           case 'password':
-            password = User.verifyAndEncryptPassword(user_fields['password']);
+            password = config.user.verifyAndEncryptPassword(user_fields['password']);
             if(!password){
               callback('Password not valid, it should contain between 5 and 15 characters. The only special characters authorized are "@ * #".',null);
               return;
@@ -157,7 +204,18 @@ var modifyUser = function(user_id,user_fields,callback){
             break;
         }
       }
-      user.save(function(err,user){
+      var newData = {};
+      newData[username] = {};
+      for (field in user) {
+        switch(field){
+          case 'username':
+            break;
+          default:
+            newData[username][field] = user[field];
+            break;
+        }
+      }
+      config.user.update(newData, function(err,user){
         if(user)user.password=undefined; // don't transmit the password back
         callback(err,user);
         return;
@@ -166,23 +224,28 @@ var modifyUser = function(user_id,user_fields,callback){
   });
 };
 
-var deleteUser = function(user_id,callback){
-  User.findById(user_id,function(err,user){
+var deleteUser = function(username,callback){
+  config.user.delete(username, function(err, data) {
     if(err)callback(err);
     else{
-      user.delete(callback);
+      callback(null, data);
     }
   });
 };
 
 
 passport.serializeUser(function(user, done) {
-    done(null, user._id);
+  done(null, user.username);
 });
 
-passport.deserializeUser(function(id, done) {
- 
-  User.findById(id, function(err, user) {
+passport.deserializeUser(function(username, done) {
+  config.user.findOne(username, function(err, data) {
+    var user = {
+      'username': username,
+      'password': data.password,
+      'isAdmin' : data.isAdmin,
+      'created_at': data.created_at
+    }
     done(err, user);
   });
 });
@@ -197,13 +260,21 @@ exports.deleteUser = deleteUser;
 
 exports.passport = passport;
 
-exports.getUserById = function(id,cb){
-  User.findById(id, function(err, user) {
+exports.getUserById = function(username,cb){
+  config.user.findOne(username, function(err, data) {
+    var user = {
+      'username': username,
+      'password': data.password,
+      'isAdmin' : data.isAdmin,
+      'created_at': data.created_at
+    }
     cb(err, user);
   });
 }
 
-exports.getCurrentUser = function(u){return currentUser;}
+exports.getCurrentUser = function(u){
+  return currentUser;
+}
 exports.setCurrentUser = function(u){
   currentUser = u;
   eventEmitter.emit('user_change', currentUser);

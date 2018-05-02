@@ -3,7 +3,7 @@ var path = require('path');
 var log = require('../log').logger('routes');
 var restify = require('restify');
 var util = require('../util');
-var passport = require('../authentication').passport;
+var authentication = require('../authentication');
 var config = require('../config');
 var static = require('../static');
 
@@ -28,6 +28,8 @@ module.exports = function(server) {
 	}
 	});
 
+	
+
 	// var authentication_handler = function(req,res,next){
 	// 	res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
 	// 	passport.authenticate('local', {
@@ -44,17 +46,16 @@ module.exports = function(server) {
 	// Define a route for serving static files
 	// This has to be defined after all the other routes, or it plays havoc with things
 
-	server.get(/.*/, 
-		function(req, res, next) {
+	server.get(/.*/, function(req, res, next) {
 			var current_hash = config.engine.get('version');
-			 var url_arr = req.url.split('/');
-			 if(url_arr[1] !== current_hash){
+			var url_arr = req.url.split('/');
+			if(url_arr[1] !== current_hash){
 				url_arr.splice(1,0, current_hash);
 				var newPath = url_arr.join('/');
 				res.redirect(newPath , next);
-			 } else {
+			} else {
 				next();
-			 }
+			}
 		},
 		static({
 			//directory: './static'

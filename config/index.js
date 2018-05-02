@@ -1,6 +1,7 @@
 var Config = require('./config').Config;
 var async = require('async');
 var EngineConfig = require('./engine_config').EngineConfig;
+var UserConfig = require('./user_config').UserConfig;
 var G2Config = require('./g2_config').G2Config;
 var OpenSBPConfig = require('./opensbp_config').OpenSBPConfig;
 var MachineConfig = require('./machine_config').MachineConfig;
@@ -69,6 +70,44 @@ function configureInstance(driver, callback) {
 	exports.instance.init(callback);
 }
 
+function configureUser(callback){
+	exports.user = new UserConfig();
+	console.log('gonna get config');
+	var userFile = exports.user.getConfigFile();
+	exports.user.load(userFile, function(err, data) {
+		if(err) {
+			if(err.code === "ENOENT") {
+				log.warn('Configuration file ' + userFile + ' not found. Setting up first user');
+				exports.user.setUpFile(function(err){
+					if(err) {
+						console.log(err);
+					} else {
+						configureUser(callback);
+					}
+				});
+			} else {
+				log.warn('Problem loading the user configuration file "' + userFile + '": ' + err.message);
+			}
+		} else {
+			exports.user.initUsers(data, function(msg){
+				log.info(msg);
+				callback();
+			});	
+		}
+	});
+
+	// exports.user.getConfigFile(function(err, data){
+	// 	console.log(err);
+	// 	console.log(data);
+	// 	if (!err) {
+
+	// 	} else {
+	// 		console.log('oh man I still have an error');
+	// 		
+	// 	}
+	// });
+}
+
 function canWriteTo(dirname) {
 	try {
 		test_path = path.join(dirname,'/.fabmoenginetest')
@@ -111,6 +150,7 @@ exports.configureDriver = configureDriver;
 exports.configureOpenSBP = configureOpenSBP;
 exports.configureMachine = configureMachine;
 exports.configureInstance = configureInstance;
+exports.configureUser = configureUser;
 
 exports.createDataDirectories = Config.createDataDirectories;
 exports.getDataDir = Config.getDataDir;

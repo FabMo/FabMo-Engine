@@ -24,7 +24,7 @@ function setupUserManager() {
       user = current_user;
       user_info= {
         user:{
-          id:current_user._id,
+          id:current_user.username,
           password:password
         }
       };
@@ -45,8 +45,9 @@ function setupUserManager() {
 
 function createAdminPanel(){
   fabmo.getUsers(function(err,users) {
+    console.log(users);
     if(err){return;} // user is not admin.
-    users=users.filter(function(usr){return(usr._id!==current_user._id)}); //remove current user from the list
+    users=users.filter(function(usr){return(usr.username!==current_user.username)}); //remove current user from the list
     refreshUsersListView(users);
   });
 
@@ -137,7 +138,7 @@ function refreshUsersListView(users){
     $('#user-manager-container').removeClass('hidden');
     $.each(users, function(key, user) {
 
-      userid = "user_"+user._id;
+      userid = "user_"+user.username;
 
       var delete_button = '';
       var changepassword_button = '';
@@ -152,7 +153,6 @@ function refreshUsersListView(users){
 
       html = [
         '<tr>',
-          '<td>'+user._id+'</td>', // _id
           '<td>'+user.username+'</td>', // username
           '<td><input type="checkbox" '+(user.isAdmin?'checked':'')+' disabled /></td>', // isAdmin
           '<td>'+moment(user.created_at).fromNow()+'</td>', // created_at
@@ -164,6 +164,7 @@ function refreshUsersListView(users){
       $(".user-listing").append(html);
 
       $('#delete_' + userid).on('click',function() { //delete button listener
+        console.log(user);
         fabmo.showModal({
           title : 'Delete user '+ user.username,
           message : 'Are you sure you want to delete this user?',
@@ -184,9 +185,10 @@ function refreshUsersListView(users){
       });
 
       $('#grantadmin_' + userid).on('click',function() { //grantadmin button listener
+        console.log(user);
         user_info = {
           user :{
-            id:user._id,
+            username:user.username,
             isAdmin:true
           }
         };
@@ -203,7 +205,7 @@ function refreshUsersListView(users){
       $('#revokeadmin_' + userid).on('click',function() { //revokeadmin button listener
         user_info = {
           user :{
-            id:user._id,
+            username: user.username,
             isAdmin:false
           }
         };

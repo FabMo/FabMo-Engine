@@ -9,7 +9,6 @@ require("../css/toastr.min.css");
 
 
 
-
     // context is the application context
     // dashboard is the bridge between the application context and the apps
     var context = require('./context.js');
@@ -49,7 +48,7 @@ require("../css/toastr.min.css");
 
     // Initial read of engine configuration
 
-    //check user 
+    // check user 
     engine.getCurrentUser(function(err,user){
         if(user === undefined){
             window.location.href = '#/authentication';
