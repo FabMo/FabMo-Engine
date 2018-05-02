@@ -73,14 +73,14 @@ module.exports = (function() {
             if(arg['expr']) { return {'type' : 'pause', 'expr' : arg.expr}}
             else {return {'type':'pause'}};
            },
-        peg$c29 = "IF",
+        peg$c29 = "if",
         peg$c30 = { type: "literal", value: "IF", description: "\"IF\"" },
-        peg$c31 = "THEN",
+        peg$c31 = "then",
         peg$c32 = { type: "literal", value: "THEN", description: "\"THEN\"" },
         peg$c33 = function(cmp, stmt) { return {"type":"cond", "cmp":cmp, "stmt":stmt};},
         peg$c34 = "open",
         peg$c35 = { type: "literal", value: "OPEN", description: "\"OPEN\"" },
-        peg$c36 = "FOR",
+        peg$c36 = "for",
         peg$c37 = { type: "literal", value: "FOR", description: "\"FOR\"" },
         peg$c38 = "input",
         peg$c39 = { type: "literal", value: "INPUT", description: "\"INPUT\"" },
@@ -88,7 +88,7 @@ module.exports = (function() {
         peg$c41 = { type: "literal", value: "OUTPUT", description: "\"OUTPUT\"" },
         peg$c42 = "append",
         peg$c43 = { type: "literal", value: "APPEND", description: "\"APPEND\"" },
-        peg$c44 = "AS",
+        peg$c44 = "as",
         peg$c45 = { type: "literal", value: "AS", description: "\"AS\"" },
         peg$c46 = "#",
         peg$c47 = { type: "literal", value: "#", description: "\"#\"" },
@@ -906,8 +906,8 @@ module.exports = (function() {
       var s0, s1, s2, s3, s4, s5, s6, s7;
 
       s0 = peg$currPos;
-      if (input.substr(peg$currPos, 2) === peg$c29) {
-        s1 = peg$c29;
+      if (input.substr(peg$currPos, 2).toLowerCase() === peg$c29) {
+        s1 = input.substr(peg$currPos, 2);
         peg$currPos += 2;
       } else {
         s1 = peg$FAILED;
@@ -920,8 +920,8 @@ module.exports = (function() {
           if (s3 !== peg$FAILED) {
             s4 = peg$parse___();
             if (s4 !== peg$FAILED) {
-              if (input.substr(peg$currPos, 4) === peg$c31) {
-                s5 = peg$c31;
+              if (input.substr(peg$currPos, 4).toLowerCase() === peg$c31) {
+                s5 = input.substr(peg$currPos, 4);
                 peg$currPos += 4;
               } else {
                 s5 = peg$FAILED;
@@ -985,8 +985,8 @@ module.exports = (function() {
           if (s3 !== peg$FAILED) {
             s4 = peg$parse___();
             if (s4 !== peg$FAILED) {
-              if (input.substr(peg$currPos, 3) === peg$c36) {
-                s5 = peg$c36;
+              if (input.substr(peg$currPos, 3).toLowerCase() === peg$c36) {
+                s5 = input.substr(peg$currPos, 3);
                 peg$currPos += 3;
               } else {
                 s5 = peg$FAILED;
@@ -1023,8 +1023,8 @@ module.exports = (function() {
                   if (s7 !== peg$FAILED) {
                     s8 = peg$parse___();
                     if (s8 !== peg$FAILED) {
-                      if (input.substr(peg$currPos, 2) === peg$c44) {
-                        s9 = peg$c44;
+                      if (input.substr(peg$currPos, 2).toLowerCase() === peg$c44) {
+                        s9 = input.substr(peg$currPos, 2);
                         peg$currPos += 2;
                       } else {
                         s9 = peg$FAILED;

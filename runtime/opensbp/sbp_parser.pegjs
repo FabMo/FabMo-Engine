@@ -52,10 +52,10 @@ pause
    }
 
 conditional
-   = "IF" ___ cmp:comparison ___ "THEN" ___ stmt:(jump) { return {"type":"cond", "cmp":cmp, "stmt":stmt};}
+   = "IF"i ___ cmp:comparison ___ "THEN"i ___ stmt:(jump) { return {"type":"cond", "cmp":cmp, "stmt":stmt};}
 
 open
-   = "OPEN"i ___ pth:quotedstring ___ "FOR" ___ mode:("INPUT"i / "OUTPUT"i / "APPEND"i) ___ "AS" ___ "#"num:[1-9] 
+   = "OPEN"i ___ pth:quotedstring ___ "FOR"i ___ mode:("INPUT"i / "OUTPUT"i / "APPEND"i) ___ "AS"i ___ "#"num:[1-9] 
        { return {"type":"open", "path":pth, "mode":mode, "num":num} }
 
 jump
