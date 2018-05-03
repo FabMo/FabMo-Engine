@@ -25,9 +25,9 @@ UserConfig.prototype.setUpFile = function(callback){
         if(err){
             callback(err);
         } else {
-            log.info('User File Created...');
-            callback('woooo');
-        }
+			log.info('User File Created...');	
+				callback(null);
+			}
     });
     
 };

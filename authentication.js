@@ -262,13 +262,18 @@ exports.passport = passport;
 
 exports.getUserById = function(username,cb){
   config.user.findOne(username, function(err, data) {
-    var user = {
-      'username': username,
-      'password': data.password,
-      'isAdmin' : data.isAdmin,
-      'created_at': data.created_at
+    if(data){
+      var user = {
+        'username': username,
+        'password': data.password,
+        'isAdmin' : data.isAdmin,
+        'created_at': data.created_at
+      }
+      cb(null, user);
+    } else {
+      callback("no user");
     }
-    cb(err, user);
+
   });
 }
 

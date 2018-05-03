@@ -3,7 +3,6 @@ var util = require('../util');
 var machine = require('../machine').machine;
 var log=require('../log').logger("websocket");
 var authentication = require('../authentication');
-var User = require('../db').User;
 var passport = authentication.passport;
 var sessions = require("client-sessions");
 var parseCookie = require('./util').parseCookie;
@@ -35,6 +34,8 @@ function setupAuthentication(server){
 		authentication.getUserById(user, function (err, data){
 			if (err){
 				log.error(err);
+				authentication.setCurrentUser(null);
+
 			} else {
 				authentication.setCurrentUser(data);
 			}
