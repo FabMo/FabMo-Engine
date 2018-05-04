@@ -311,12 +311,12 @@ td.actions-control {
     font-size: .9em;
     padding: 0.5em;
     color: #666;
-    width: 145px;
+    width: 98%;
+    height: 60px;
     display: inline-block;
     background-color: #FFFFFF;
     border-radius: 5px;
     margin: 0 .5em .5em 1%;
-    height: 200px;
     box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.15);
     border: 1px solid #ccc;
     overflow: visible;
@@ -332,16 +332,13 @@ td.actions-control {
   opacity: .5;
   background-color: #333;
   color: #fff;
-  width: 145px !important;
 
 }
 
 .chosen .play-button, .chosen .icon-row {
   display: none;
 }
-.chosen .description {
-  width: 100% !important;
-}
+
 
 .ghost{
   opacity: .5;
@@ -375,7 +372,7 @@ td.actions-control {
     padding: 1px;
     font-weight: bold;
     line-height: 1.1rem;
-    height: 40px;
+    height: 20px;
     overflow: hidden;
     position: relative;
 
@@ -400,6 +397,12 @@ td.actions-control {
     transform: translate(-3px, -3px);
 }
 
+.created-date {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+}
+
 
 .job_item .dropDown{
     left: 2px;
@@ -415,40 +418,11 @@ td.actions-control {
   left: 17px;
 }
 
-.job_item .description, .recent_item .description{
-  position: absolute;
-  height: 75%;
+.job_item .description, .recent_item .description, .chosen .description{
+  width: 80%;
   overflow: hidden;
-}
-
-@media screen and (max-width: 750px){
-  .job_item:first-child .description{
-    width: 50%;
-    height: 50%;
-    white-space: normal;
-    overflow: hidden;
-    margin-left: 0.5em;
-  }
-
-  .job_name, #name {
-    height: 20px;
-  }
-
-  .job_item, .chosen, .recent_item{
-    width: 98% !important;
-    height: 60px;
-  }
-
-  .job_item .description, .recent_item .description{
-    width: 80%;
-    overflow: hidden;
-    white-space: nowrap;
-    margin-left: 2.5em;
-  }
-
-  .chosen .description {
-    width: 80% !important;
-}
+  white-space: nowrap;
+  margin-left: 2.5em;
 }
 
 .preview, .edit, .download, .cancel {

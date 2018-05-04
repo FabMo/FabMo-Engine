@@ -190,6 +190,7 @@ function addQueueEntries(jobs) {
     $('.no-jobs').css('left', '-2000px'); /// Remove no jobs menu
     nextJob();
     for (var i = 0; i < jobs.length; i++) {
+      console.log(jobs[i]);
       if ($('#' + jobs[i]._id).length < 1) { // If a job already has a card do nothing else make a card for job
         var listItem = document.createElement("div");
         listItem.setAttribute("id", jobs[i]._id);
@@ -197,7 +198,7 @@ function addQueueEntries(jobs) {
         listItem.setAttribute("data-id", jobs[i]._id);
         table.appendChild(listItem);
         var id = document.getElementById(jobs[i]._id);
-        id.innerHTML = '<div id="menu"></div><div class="job_name">' + jobs[i].name + '</div><div class="description">' + jobs[i].description + '</div>';
+        id.innerHTML = '<div id="menu"></div><div class="job_name">' + jobs[i].name + '</div><div class="description">' + jobs[i].description + '</div><div class="created-date">'+ moment(jobs[i].created_at).fromNow(); +'</div>';
         var menu = id.firstChild;
         menu.innerHTML = createQueueMenu(jobs[i]._id);
       }
@@ -241,14 +242,15 @@ function addQueueEntries(jobs) {
       }
       var recentJobs = document.getElementById('recent');
       clearRecent();
-      for (i = 0; i < recent.length; i++) {
+      for (var i = 0; i < recent.length; i++) {
+        console.log(recent[i]);
         var recentItem = document.createElement("div");
         recentItem.setAttribute("id", recent[i]._id);
         recentItem.setAttribute("class", "recent_item");
         recentItem.setAttribute("data-id", recent[i]._id);
         recentJobs.appendChild(recentItem);
         var id = document.getElementById(recent[i]._id);
-        id.innerHTML = '<div id="menu"></div><div id="name">' + recent[i].name + '</div><div class="description">' + recent[i].description + '</div>';
+        id.innerHTML = '<div id="menu"></div><div id="name">' + recent[i].name + '</div><div class="description">' + recent[i].description + '</div><div class="created-date">'+ moment(recent[i].created_at).fromNow(); +'</div>';
         var menu = id.firstChild;
 
 
@@ -1308,28 +1310,6 @@ $(document).ready(function() {
 
 
 
-  $('#queue_table').on('touchstart, mousedown', '.job_item:first-child', function(e) {
-    var el = e.target;
-    var a = findUpTag(el, "actions"); // search <a ...>
-    if (a) {
-      return
-    }
-    if ($(window).width() > 750) {
-      var left = e.pageX - (145 / 2);
-      var right = $(document).width() - e.pageX - (145 / 2);
-      $(this).css({
-        "margin-left": left.toString() + "px",
-        "margin-right": right.toString() + "px"
-      });
-
-      $(this).on('touchend, mouseup', function(e) {
-        $(this).css({
-          "margin-left": "",
-          "margin-right": ""
-        });
-      });
-    }
-  });
 
 
 });
