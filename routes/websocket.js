@@ -28,10 +28,11 @@ function setupAuthentication(server){
 		}
     // Pull out the user from the cookie by using the decode function
 	handshakeData.sessionID = sessions.util.decode({cookieName: 'session', secret:server.cookieSecret}, cookie['session']);
-	//console.log(handshakeData);
+	console.log(handshakeData.sessionID);
 		var user = handshakeData.sessionID.content.passport.user;
-
+		console.log(user);
 		authentication.getUserById(user, function (err, data){
+			console.log(data);
 			if (err){
 				log.error(err);
 				authentication.setCurrentUser(null);
@@ -43,7 +44,7 @@ function setupAuthentication(server){
 		// authentication.configure();
 		if(!handshakeData.sessionID){
 			var err = new Error('Wrong session.');
-			log.error(err);
+			console.log(err);
 			console.dir(handshakeData)
 			console.dir(cookie)
 			return next(err);
