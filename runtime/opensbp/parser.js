@@ -2,6 +2,7 @@ sbp_parser = require('./sbp_parser')
 var log = require('../../log').logger('sbp');
 var CMD_SPACE_RE = /(\w\w)([ \t]+)([^\s\t,].*)/i
 var CMD_RE = /^\s*(\w\w)(((\s*,\s*)([+-]?[0-9]+(\.[0-9]+)?)?)+)\s*$/i
+var STUPID_STRING_RE = /(\&[A-Za-z]\w*)\s*=([^\n]*)/i
 
 fastParse = function(statement) {
     var match = statement.match(CMD_SPACE_RE);
@@ -34,6 +35,7 @@ fastParse = function(statement) {
         });
         return retval;
     }
+
     return null;
 }
 
@@ -44,9 +46,18 @@ parseLine = function(line) {
     comment = parts.slice(1,parts.length)
     
     
-    // Use parse optimization
-    var obj = fastParse(statement) ||  sbp_parser.parse(statement);
-    //var obj = sbp_parser.parse(statement);
+    try {
+        // Use parse optimization
+        var obj = fastParse(statement) ||  sbp_parser.parse(statement);
+        console.log(obj)
+        //var obj = sbp_parser.parse(statement);        
+    } catch(e) {
+        var match = statement.match(STUPID_STRING_RE)
+        if(match) {
+            log.debug("Got a stupid string: " + match[2]);            
+            obj = {type:"assign",var:match[1], expr:match[2]}
+        }
+    }
 
     if(Array.isArray(obj)) {
     	obj = {"type":"comment", "comment":comment};
