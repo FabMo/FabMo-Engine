@@ -175,7 +175,7 @@ UserConfig.prototype.add = function(username,password,callback){
 
 //Maybe move this to the routes or whatever 
 UserConfig.prototype.findOne = function(username,callback){
-	username in this._cache ? callback(null, this._cache[username]) : callback(null, null);
+	username in this._cache ? callback(null, this._cache[username]) : callback('No known user', null);
 }
 
 UserConfig.prototype.getAll = function(callback){

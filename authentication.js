@@ -240,13 +240,17 @@ passport.serializeUser(function(user, done) {
 
 passport.deserializeUser(function(username, done) {
   config.user.findOne(username, function(err, data) {
-    var user = {
-      'username': username,
-      'password': data.password,
-      'isAdmin' : data.isAdmin,
-      'created_at': data.created_at
+    if(err) {
+      done(null, null, { message: 'User does not exist' });
+    }else {
+      var user = {
+        'username': username,
+        'password': data.password,
+        'isAdmin' : data.isAdmin,
+        'created_at': data.created_at
+      }
+      done(null, user);
     }
-    done(err, user);
   });
 });
 
@@ -262,6 +266,8 @@ exports.passport = passport;
 
 exports.getUserById = function(username,cb){
   config.user.findOne(username, function(err, data) {
+    console.log(err);
+    console.log(data);
     if(data){
       var user = {
         'username': username,
@@ -271,7 +277,7 @@ exports.getUserById = function(username,cb){
       }
       cb(null, user);
     } else {
-      callback("no user");
+      cb("no user");
     }
 
   });
