@@ -177,6 +177,10 @@ SBPRuntime.prototype.executeCode = function(s, callback) {
 						this.helper.nudge(s.axis, s.speed, s.dist);
 						break;
 
+					case 'set':
+						this.helper.set(s.move)
+					break;
+
 					default:
 						log.error("Don't know what to do with '" + s.cmd + "' in manual command.");
 						break;

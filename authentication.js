@@ -105,7 +105,6 @@ exports.configure = function(){
         isCurrentUserKickeable = false;
         startUserTimer();
         }
-        console.log(user);
         return done(null, user);
       });
     }
@@ -118,7 +117,6 @@ var addUser = function(username,password,callback){
       callback(err);
       return;
     } else {
-      console.log('added');
       var user = {
         'username': username,
         'password': user.password,
@@ -132,7 +130,6 @@ var addUser = function(username,password,callback){
 };
 
 var getUsers = function(callback){
-  console.log('getUsers');
   var users = [];
   config.user.getAll(function(data){
     for(key in data){
@@ -168,7 +165,6 @@ var getUser = function(username,callback){
 };
 
 var modifyUser = function(username, user_fields,callback){
-  console.log('modify')
   config.user.findOne(username, function(err, data) {
     var user = {
       'username': username,
@@ -241,7 +237,7 @@ passport.serializeUser(function(user, done) {
 passport.deserializeUser(function(username, done) {
   config.user.findOne(username, function(err, data) {
     if(err) {
-      done(null, null, { message: 'User does not exist' });
+      done(null, false, { message: 'User does not exist' });
     }else {
       var user = {
         'username': username,
@@ -249,7 +245,7 @@ passport.deserializeUser(function(username, done) {
         'isAdmin' : data.isAdmin,
         'created_at': data.created_at
       }
-      done(null, user);
+      done(err, user);
     }
   });
 });
@@ -266,8 +262,6 @@ exports.passport = passport;
 
 exports.getUserById = function(username,cb){
   config.user.findOne(username, function(err, data) {
-    console.log(err);
-    console.log(data);
     if(data){
       var user = {
         'username': username,

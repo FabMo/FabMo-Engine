@@ -28,8 +28,8 @@ function setupAuthentication(server) {
         // Pull out the user from the cookie by using the decode function
         handshakeData.sessionID = sessions.util.decode({
             cookieName: 'session',
-            secret: server.cookieSecret
-        }, cookie['session']);
+			secret: server.cookieSecret
+		}, cookie['session']);
         if (handshakeData.sessionID.content.passport !== undefined) {
                 var user = handshakeData.sessionID.content.passport.user;
                 authentication.getUserById(user, function(err, data) {
@@ -108,17 +108,13 @@ var onPublicConnect = function(socket) {
 };
 
 
-var onPrivateConnect = function(socket) {
-	var currentUser = authentication.getCurrentUser();
-	if(!currentUser) {
-		socket.emit('authentication_failed');
+var onPrivateConnect = function(socket) {	if(!socket.request.sessionID.content.passport)
+	if(!socket.request.sessionID.content.passport) {
 		return socket.disconnect();
 	}
-	if(!socket.request.sessionID.content.passport)
-		return socket.disconnect();
-
+		
 	var userId = socket.request.sessionID.content.passport.user;
-	
+
 	authentication.eventEmitter.on('user_change', function(data){
 		socket.emit('user_change', data);
 	});
@@ -136,7 +132,15 @@ var onPrivateConnect = function(socket) {
 	log.info("Client #"+userId+" at "+ client_address + " connected.");
 
 	socket.on('code', function(data) {
+		var handshakeData = socket.request;
+		var cookie = parseCookie(handshakeData.headers.cookie);
+		handshakeData.sessionID = sessions.util.decode({
+            cookieName: 'session',
+			secret: server.cookieSecret
+		}, cookie['session']);
+		var user = handshakeData.sessionID;
 
+		console.log(user);
 		if(!authentication.getCurrentUser() || authentication.getCurrentUser().username != userId){
 			log.error(userId);
 			log.error(authentication.getCurrentUser());
@@ -153,6 +157,7 @@ var onPrivateConnect = function(socket) {
 	});
 
 	socket.on('cmd', function(data, callback) {
+		console.log("I got a cmd");
 		if(!authentication.getCurrentUser() || authentication.getCurrentUser().username != userId){
 			log.error(userId);
 			log.error(authentication.getCurrentUser());
