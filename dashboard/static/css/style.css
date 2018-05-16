@@ -198,7 +198,22 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	background-size: 1.25rem;
 }
 
+#dro-tab {
+	cursor: pointer;
+	position: absolute;
+    top: 3px;
+	right: 100%;
+    height: 50px;
+    width: 0.5em;
+    background-color: #E2B42A;
+	border-radius: 2px 0 0 2px;
+	box-shadow: inset -1px 0px 1px 0px rgba(0,0,0,0.75), -2px 0px 3px 0px rgba(0,0,0,0.75);
+	transition: all 0.2s;
+}
+
+
 #right-position-container {
+	background-color: #931B14;
 	height: 100%;
     position: absolute;
     color: #eee;
@@ -208,6 +223,17 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	font-family: 'source_sans_proextralight';
 	font-size: 14px;
 	line-height: 15px;
+	padding-left: 0.5rem;
+
+}
+
+#right-position-container.dropped{
+	box-shadow: 0px 1px 0.5px 0px rgba(0,0,0,0.75);
+}
+
+#right-position-container span, #right-position-container label {
+	color: #fff;
+	cursor: text;
 }
 
 .machine-pos {
@@ -215,6 +241,43 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	text-align: center;
 	padding-right: 10px;
 
+}
+
+.machine-pos-large {
+	text-align: left;
+	display: block;
+	background-color: #323564;
+	padding: 0.25rem 1rem;
+	margin: 0.25em;
+	border-radius: 2px;
+	box-shadow: 0px 0.5px 0.25px 0px rgba(0,0,0,0.75);
+}
+
+.machine-pos-large label {
+	font-size: 2.3rem;
+	font-family: 'Droid_Sans_Mono';
+}
+.machine-pos-large span {
+	float: right;
+}
+
+.dro-dropdown {
+	transition: all 0.4s;
+	top: -1000px;
+	padding: 0.5em;
+    background: #931B14;
+    display: flex;
+    position: absolute;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+	left: 0;
+	z-index: -1;
+
+}
+
+.dro-dropdown.dropped{
+	top: 56px;
 }
 
 .input, .output, .inoutLabel, .inOutSwitch {
@@ -247,11 +310,6 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
   max-width: 16em;
   overflow: hidden;
   white-space: nowrap
-}
-
-#right-position-container span, #right-position-container label {
-	color: #fff;
-	cursor: text;
 }
 
 #left-position-container {
@@ -1778,89 +1836,6 @@ input[type='range']:focus {
     	animation: spin 4s linear infinite;
     }
 }
-
- /*Old chipfly animation*/
-/*@keyframes chipflyone {
-  0% {
-    transform: translate(0px, -10px);
-    opacity: 1;
-  }
-  25% {
-    transform: translate(-20px, -20px);
-    opacity: 1;
-  }
-  50% {
-    transform: translate(-50px, -30px);
-    opacity: .5;
-  }
-  75% {
-    transform: translate(-50px, -30px);
-    opacity: 0;
-  }
-  100% {
-    transform: translate(-50px, -30px);
-    opacity: 0;
-  }
-}
-
-@keyframes chipflytwo {
-  0% {
-    transform: translate(0px, -10px);
-    opacity: 1;
-  }
-  25% {
-    transform: translate(25px, -30px);
-    opacity: 1;
-  }
-  50% {
-    transform: translate(50px, -50px);
-    opacity: .5;
-  }
-  75% {
-    transform: translate(50px, -50px);
-    opacity: 0;
-  }
-  100% {
-    transform: translate(50px, -50px);
-    opacity: 0;
-  }
-}
-
-@keyframes chipflythree {
-  0% {
-    transform: translate(0px, -10px);
-    opacity: 1;
-  }
-  25% {
-    transform: translate(-25px, -20px);
-    opacity: 1;
-  }
-  50% {
-    transform: translate(-55px, -20px);
-    opacity: .5;
-  }
-  75% {
-    transform: translate(-55px, -20px);
-    opacity: 0;
-  }
-  100% {
-    transform: translate(-55px, -20px);
-    opacity: 0;
-  }
-}
-
-.chip.one {
-    animation: chipflyone .5s ease infinite;
-}
-
-.chip.two {
-    animation: chipflytwo .5s .2s ease infinite;
-}
-
-.chip.three {
-    animation: chipflythree .5s .4s ease infinite;
-}*/
-
 
 
 

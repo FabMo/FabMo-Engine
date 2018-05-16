@@ -60,6 +60,22 @@ function FabMoUI(tool, options){
 		$('.speed_read_out').hide();
 	})
 
+	$('#dro-tab').click(function(){
+		$('#dro-tab').css('width', '1em');
+		setTimeout(function(){
+			$('#dro-tab').css('width', '0.5em'); 
+		}, 200);
+		if($('.dro-dropdown').hasClass('dropped')){
+			$('.dro-dropdown').removeClass('dropped');
+			setTimeout(function(){
+				$('#right-position-container').removeClass('dropped');
+			}, 200);
+		} else {
+			$('.dro-dropdown').addClass('dropped');
+			$('#right-position-container').addClass('dropped');
+		}
+	})
+
 	if (options){
 		this.prefix = options.prefix ? options.prefix + '-' : '';
 		this.refresh = options.refresh || 100;
