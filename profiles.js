@@ -13,27 +13,47 @@ var load = function(callback) {
 	fs.readdir( profileDir, function( err, files ) {
         if(err) {
         	return callback(err);
-        }
-        async.each(files, function(file, callback) {
-        	var profilePath = path.join(profileDir, file);
-        	fs.stat(profilePath,function(err,stats){
-				if(err) callback();
-				if(stats.isDirectory()) {
-					readProfileInfo(profilePath, function(err, profile) {
-						if(err) {
-							log.error(err);
-						} else {
-							log.debug('Read profile ' + profile.name);
-							profiles[profile.name] = profile;
-						}
-						callback(null);
-					});
+		}
+		fs.readdir('./profiles', function(err, localfiles){
+			if(err) {
+				log.error(err);
+			} else {
+				localfiles = localfiles.filter(function(item){
+					return !(/(^|\/)\.[^\/\.]/g).test(item)
+				});
+				for(var i =  0; i < localfiles.length; i++){
+					if(files.indexOf(localfiles[i]) === -1){
+							try {
+							fs.copySync('./profiles/'+localfiles[i] , profileDir+'/'+localfiles[i]);
+							files.push(localfiles[i]);
+							log.info('Copied ' + localfiles[i]+ 'into opt');
+							} catch(err){
+								log.error(err);
+							}
+					}
 				}
+			}
+			async.each(files, function(file, callback) {
+				var profilePath = path.join(profileDir, file);
+				fs.stat(profilePath,function(err,stats){
+					if(err) callback();
+					if(stats.isDirectory()) {
+						readProfileInfo(profilePath, function(err, profile) {
+							if(err) {
+								log.error(err);
+							} else {
+								log.debug('Read profile ' + profile.name);
+								profiles[profile.name] = profile;
+							}
+							callback(null);
+						});
+					}
+				});
+			}, 
+			function allDone() {
+				callback(null, profiles);
 			});
-        }, 
-        function allDone() {
-        	callback(null, profiles);
-        });
+		});
     });
 }
 
@@ -86,11 +106,14 @@ var apply = function(profileName, callback) {
 				appsDir = config.getDataDir('apps')
 				console.log('Shuffling up filenames in ' + appsDir)
 				fs.readdir(appsDir, function(err, files) {
-					console.log(files);
-					files.forEach(function(file) {
-						fs.renameSync(path.join(appsDir, file), path.join(appsDir, util.createUniqueFilename(file)));
-					})
-					callback(err);
+					if(files ) {
+						files.forEach(function(file) {
+							fs.renameSync(path.join(appsDir, file), path.join(appsDir, util.createUniqueFilename(file)));
+						});
+						callback(null);
+					} else {
+						callback(null, 'no apps');
+					}
 				});
 			});
 		});		

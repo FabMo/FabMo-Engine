@@ -89,10 +89,6 @@ function update() {
                 $('<option></option>').val(name).html(name)
             );
           }
-          profilesList.append(
-                $('<option></option>').val(null).html("Default")
-          );
-
         } else {
 
         }
