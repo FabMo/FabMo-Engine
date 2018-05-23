@@ -40,8 +40,6 @@ var Keyboard = function(id, options) {
 
 Keyboard.prototype.init = function() {
 	if(this.elem) {
-		console.log("element = ") 
-		console.log(this.elem)
 		this.elem.click(this.onClick.bind(this));
 		this.elem.on('focus', this.onFocus.bind(this));
 		this.elem.on('mouseenter', this.onMouseEnter.bind(this));
@@ -68,6 +66,7 @@ Keyboard.prototype.emit = function(evt, data) {
 		var listeners = this.listeners[evt];
 		for(var i=0; i<listeners.length; i++) {
 			try {
+				
 				listeners[i](data);
 			} catch(e) {
 				console.error("Error calling listener: " + e);
@@ -85,13 +84,13 @@ Keyboard.prototype.on = function(evt, func) {
 Keyboard.prototype.setEnabled = function(enabled) {
 	this.enabled = enabled;
 	if(enabled) {
-	console.log("keyboard enabled")
+		console.log("keyboard enabled")
 		this.moves = MOVE_THRESH;
 		if(this.elem) {			
 			this.elem.removeClass('keyboard-button-inactive').addClass('keyboard-button-active');				
 		}
 	} else {
-			console.log("keyboard disabled")
+		console.log("keyboard disabled")
 		this.going = false;
 		this.moves = 0;
 		if(this.elem) {			

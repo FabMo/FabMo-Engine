@@ -70,6 +70,19 @@ require("../css/toastr.min.css");
        return consent;
     });    
 
+    engine.getConfig(function(err, config){
+        if(err){
+            console.log(err);
+        } else {
+            var manual_config = config.machine.manual;
+            $('.xy-fixed').val(manual_config.xy_increment);
+            $('.z-fixed').val(manual_config.z_increment);
+            $('#manual-move-speed').val(manual_config.xy_speed);
+            $('#manual-move-speed').attr('min', manual_config.xy_min);
+            $('#manual-move-speed').attr('max', manual_config.xy_max);
+        }
+    });
+
 
     engine.getVersion(function(err, version) {
 
@@ -117,32 +130,19 @@ require("../css/toastr.min.css");
                             message: status.info.error,
                             noButton : true
                         });
+
                         return;
                     }
 
                     if(status.state === "manual") {
                         $('.modalDim').show();
                         $('.manual-drive-modal').show();
+       
                     }
 
-                    if(status.state !== "manual") {
+                    if(status.state !== "manual" && last_state_seen === "manual") {
                         $('.modalDim').hide();
                         $('.manual-drive-modal').hide();
-                    }
-
-                    if(status.state === "idle") {
-                        engine.getConfig(function(err, config){
-                            if(err){
-                                console.log(err);
-                            } else {
-                                var manual_config = config.machine.manual;
-                                $('.xy-fixed').val(manual_config.xy_increment);
-                                $('.z-fixed').val(manual_config.z_increment);
-                                $('#manual-move-speed').val(manual_config.xy_speed);
-                                $('#manual-move-speed').attr('min', manual_config.xy_min);
-                                $('#manual-move-speed').attr('max', manual_config.xy_max);
-                            }
-                        });
                     }
 
                     if (status.state != "armed" && last_state_seen === "armed" || status.state != "paused" && last_state_seen === "paused") {
@@ -233,6 +233,7 @@ require("../css/toastr.min.css");
                         });
                     }
                 });
+
             }
         });
     });
@@ -300,10 +301,10 @@ require("../css/toastr.min.css");
     }
 
     function setupKeyboard() {
-        var keyboard = new Keyboard();
+        var keyboard = new Keyboard('#keyboard');
         keyboard.on('go', function(move) {
             if (move) {
-                dashboard.engine(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
+                dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
             }
         });
 
@@ -709,19 +710,19 @@ require("../css/toastr.min.css");
     }
     touchScreen();
 
-        $('#icon_sign_out').on('click', function(e){
-            e.preventDefault();
-            dashboard.showModal({
-                title : 'Log Out?',
-                message : 'Are you sure you want to sign out of this machine?',
-                okText : 'Yes',
-                cancelText : 'No',
-                ok : function() {
-                    window.location.href = '#/authentication';
-                },
-                cancel : function() {}
-            });
-        });
+$('#icon_sign_out').on('click', function(e){
+    e.preventDefault();
+    dashboard.showModal({
+        title : 'Log Out?',
+        message : 'Are you sure you want to sign out of this machine?',
+        okText : 'Yes',
+        cancelText : 'No',
+        ok : function() {
+            window.location.href = '#/authentication';
+        },
+        cancel : function() {}
+    });
+});
 
 
 
