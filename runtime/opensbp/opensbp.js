@@ -215,6 +215,7 @@ SBPRuntime.prototype.runString = function(s, callback) {
 		}
 		try {
 			this.program = parser.parse(s);
+			log.tock('Parse file')
 		} catch(e) {
 			return this._end(e.message + " (Line " + e.line + ")");
 		}
@@ -238,6 +239,59 @@ SBPRuntime.prototype.runString = function(s, callback) {
 		return this._end(e.message + " (Line " + e.line + ")");
 	}
 };
+
+SBPRuntime.prototype.runStream = function(text_stream, callback) {
+	try {
+
+		//var lines =  s.split('\n');
+		try {
+			this.program = []
+			var st = parser.parseStream(text_stream)
+			st.on('data', function(data) {
+				this.program.push(data);
+				//cb();
+			}.bind(this));
+
+			st.on('end', function() {
+
+				log.tock('Parse file')
+		 		lines = this.program.length;
+
+				if(this.machine) {
+					if(this.file_stack.length === 0) {
+						this.machine.status.nb_lines = lines - 1;
+					}
+				}
+
+				this._setupTransforms();
+				this.init();
+				this.end_callback = callback;
+				this._loadConfig();
+				this._loadDriverSettings();
+				log.debug("Transforms configured...")
+				log.tick();
+				this._analyzeLabels();  // Build a table of labels
+				log.tock('Analyzed labels')
+				this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table
+				log.debug("GOTOs analyzed...")
+				log.tock('Analyzed gotos')
+
+				log.debug("Rainbows organized...")
+				var st = this._run();
+				log.debug("Returning from run...");
+			}.bind(this));
+//			this.program = parser.parse(s);
+			return undefined;
+		} catch(e) {
+			log.error(e)
+			return this._end(e.message + " (Line " + e.line + ")");
+		}
+		return st;
+	} catch(e) {
+		log.error(e);
+		return this._end(e.message + " (Line " + e.line + ")");
+	}
+}
 
 SBPRuntime.prototype._loadConfig = function() {
 	var settings = config.opensbp.getMany([
@@ -312,16 +366,23 @@ SBPRuntime.prototype._saveDriverSettings = function(callback) {
 	}.bind(this));
 }
 // Run the provided file on disk
-SBPRuntime.prototype.runFile = function(filename, callback) {
+/*SBPRuntime.prototype.runFile = function(filename, callback) {
+	log.tick();
+
 	fs.readFile(filename, 'utf8', function(err, data) {
+		log.tock('File loaded');
 		if(err) {
 			callback(err);
 		} else {
-			this.runString(data, callback);
+			this.runString(data,callback); 
 		}
 	}.bind(this));
-};
+};*/
 
+SBPRuntime.prototype.runFile = function(filename, callback) {
+	var st = fs.createReadStream(filename)
+	this.runStream(st, callback);
+}
 // Simulate the provided file, returning the result as g-code
 SBPRuntime.prototype.simulateString = function(s, callback) {
 	if(this.ok_to_disconnect) {
