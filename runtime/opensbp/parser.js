@@ -47,10 +47,12 @@ fastParse = function(statement) {
 
 parseLine = function(line) {
     //line = line.replace(/\r/g,'');
+
+    // Extract comment
     parts = line.split("'");
     statement = parts[0]
     comment = parts.slice(1,parts.length)
-    console.log('Parsing line: ', line)
+
     try {
         // Use parse optimization
         var obj = fastParse(statement)
@@ -62,11 +64,10 @@ parseLine = function(line) {
     } catch(e) {
         var match = statement.match(STUPID_STRING_RE)
         if(match) {
-            log.debug("Got a stupid string: " + match[2]);            
             obj = {type:"assign",var:match[1], expr:match[2]}
         }
     }
-
+    
     if(Array.isArray(obj)) {
         obj = {"type":"comment", "comment":comment};
     } else {
@@ -76,7 +77,7 @@ parseLine = function(line) {
         obj.cmd = obj.cmd.toUpperCase();
     }
 
-    console.log(obj)
+//    console.log(obj)
     return obj
 }
 
@@ -91,7 +92,6 @@ parse = function(data) {
         lines = data.split('\n');
     }
 
-    log.tock('split lines');
 
     for(i=0; i<lines.length; i++) {
         try {            
@@ -108,54 +108,51 @@ parse = function(data) {
             throw err
         }
     }
-    log.tock('parse lines')
-    throw new Error('FAIL');
     return output
 }
 
 function Parser(options) {
     var options = options || {};
-    delete options['objectMode']
-    options['readableObjectMode'] = true;
-    options['writableObjectMode'] = false;
+    options.objectMode = true;
 
   // allow use without new
   if (!(this instanceof Parser)) {
     return new Parser(options);
   }
-  this.lineBuffer = [];
-
+  this.scrap = ""
   // init Transform
   stream.Transform.call(this, options);
 }
 util.inherits(Parser, stream.Transform);
 
 Parser.prototype._transform = function(chunk, enc, cb) {
-    var str = chunk.toString()
+    var str = this.scrap + chunk.toString()
+    this.pause();
     try {  
+      var start = 0;
       for(var i=0; i<str.length; i++) {
-            ch = str[i];
-            this.lineBuffer.push(ch);
-            if(ch === '\n') {
-                var s = this.lineBuffer.join('').trim();
-                this.push(parseLine(s));
-                this.lineBuffer = [];
+            if(str[i] === '\n') {
+                var substr = str.substring(start, i)
+                //console.log(substr)
+                this.push(parseLine(substr));
+                start = i+1;
             }
         }
+        this.scrap = str.substring(start)
     } catch(e) {
         log.error(e)
     }
-    console.log("JUMPING OUT")
-    return cb();
+    this.resume();
+    cb();
+
 }
 
-/*
 Parser.prototype._flush = function(done) {
-  if (this.lineBuffer.length) { this.push(parseLine(this.lineBuffer.join('').trim())); }
-  this.lineBuffer = [];
+  if (this.scrap) { this.push(parseLine(scrap)); }
+  this.scrap = '';
   done();
 };
-*/
+
 
 
 parseStream = function(s, options) {
@@ -169,19 +166,15 @@ var main = function(){
     var filename = argv['_'][2]
 
     if(filename) {
+        log.tick();
         fs.readFile(filename, 'utf8', function(err, data) {
             if(err) {
                 return console.log(err);
             } 
             
-            var start = new Date().getTime();
             var obj = parse(data);
-            var end = new Date().getTime();
-            var time = end - start;
-
-            console.log(JSON.stringify(obj, null, ' '));
-            console.log('Parse time: ' + time);
-
+            console.log("Lines: " + obj.length)
+            log.tock('parse');
         });
     } else {
         console.log("Usage: node parser.js filename.sbp");
@@ -193,17 +186,24 @@ var main2 = function() {
     var fs = require('fs');
     var filename = argv['_'][2]
     if(filename) {
-        var fileStream = fs.createReadStream(filename);
         log.tick();
-        parseStream(fileStream).on('finish', function() {
-          log.tock('parse');
-        });
-        setTimeout(function() {}, 5000);
+        var fileStream = fs.createReadStream(filename);
+        var obj = []
+        parseStream(fileStream)
+            .on('data', function(data) {
+            // console.log(data);
+                obj.push(data)
+            })
+            .on('end', function() {
+                console.log(obj[1],obj[2],obj[3])
+                log.tock("parse");
+            });
     }
 }
 
 if (require.main === module) {
-    main2();
+    main();
+//    main2();
 }
 
 exports.parse = parse
