@@ -357,7 +357,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(".tools-current > li a").removeClass('paus err disc');
 		$(that.state_selector).html(statename);
 		$(".exit-button").hide();
-
+		$(that.pause_button_selector+" div div:first-child").removeClass('spinner red');
+		
 		if(that.file_control)
 		{
 			$(that.stop_button_selector).hide();

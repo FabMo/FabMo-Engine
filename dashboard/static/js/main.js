@@ -137,12 +137,14 @@ require("../css/toastr.min.css");
                     if(status.state === "manual") {
                         $('.modalDim').show();
                         $('.manual-drive-modal').show();
-       
+                        keyboard.setEnabled(true);
+
                     }
 
                     if(status.state !== "manual" && last_state_seen === "manual") {
                         $('.modalDim').hide();
                         $('.manual-drive-modal').hide();
+                        keyboard.setEnabled(false);
                     }
 
                     if (status.state != "armed" && last_state_seen === "armed" || status.state != "paused" && last_state_seen === "paused") {
@@ -301,7 +303,7 @@ require("../css/toastr.min.css");
     }
 
     function setupKeyboard() {
-        var keyboard = new Keyboard('#keyboard');
+        var keyboard = new Keyboard();
         keyboard.on('go', function(move) {
             if (move) {
                 dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
@@ -420,12 +422,16 @@ require("../css/toastr.min.css");
     }
 
     // listen for escape key press to quit the engine
-    $(document).on('keyup', function(e) {
-        if (e.keyCode == 27) {
+    $(document).on('keydown', function(e) {
+        if(e.keyCode === 27) {
             console.warn("ESC key pressed - quitting engine.");
-            dashboard.engine.quit();
-        }
+            this.stop();
+        } else if (e.keyCode === 75 && e.ctrlKey ) {
+			dashboard.engine.manualEnter()
+		}
     });
+
+
 
     
 

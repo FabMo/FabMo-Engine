@@ -41,11 +41,13 @@ var FabMoDashboard = function(options) {
 	};
 	this._setupMessageListener();
     // listen for escape key press to quit the engine
-    document.onkeyup = function (e) {
-        if(e.keyCode == 27) {
+    document.onkeydown = function (e) {
+        if(e.keyCode === 27) {
             console.warn("ESC key pressed - quitting engine.");
             this.stop();
-        }
+        } else if (e.keyCode === 75 && e.ctrlKey ) {
+			this.manualEnter()
+		}
     }.bind(this);
 
     if(!this.options.defer) {
@@ -660,11 +662,11 @@ FabMoDashboard.prototype.manualStart = function(axis, speed, second_axis, second
 }
 
 
-FabMoDashboard.prototype.manualEnter = function(axis, speed) {
+FabMoDashboard.prototype.manualEnter = function(axis, speed, callback) {
 	this._call("manualEnter", callback);
 }
 
-FabMoDashboard.prototype.manualExit = function(axis, speed) {
+FabMoDashboard.prototype.manualExit = function(axis, speed, callback) {
 	this._call("manualExit", callback);
 }
 
