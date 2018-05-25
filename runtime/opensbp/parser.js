@@ -144,7 +144,7 @@ Parser.prototype._transform = function(chunk, enc, cb) {
 }
 
 Parser.prototype._flush = function(done) {
-  if (this.scrap) { this.push(parseLine(scrap)); }
+  if (this.scrap) { this.push(parseLine(this.scrap)); }
   this.scrap = '';
   done();
 };
