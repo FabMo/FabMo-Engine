@@ -40,8 +40,6 @@ fastParse = function(statement) {
             });
         }
     }
-
-
     return null;
 }
 
@@ -57,7 +55,6 @@ parseLine = function(line) {
         // Use parse optimization
         var obj = fastParse(statement)
     if(!obj) {
-        log.warn('Cant fastparse ' + statement)
         obj = sbp_parser.parse(statement);
     }
         //var obj = sbp_parser.parse(statement);        
@@ -68,7 +65,7 @@ parseLine = function(line) {
         }
     }
     
-    if(Array.isArray(obj)) {
+    if(Array.isArray(obj) || obj === null) {
         obj = {"type":"comment", "comment":comment};
     } else {
         if(comment != '') {obj.comment = comment}
@@ -133,7 +130,6 @@ Parser.prototype._transform = function(chunk, enc, cb) {
       for(var i=0; i<str.length; i++) {
             if(str[i] === '\n') {
                 var substr = str.substring(start, i)
-                //console.log(substr)
                 this.push(parseLine(substr));
                 start = i+1;
             }
