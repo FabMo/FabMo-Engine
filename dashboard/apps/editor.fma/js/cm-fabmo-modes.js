@@ -173,6 +173,9 @@ CodeMirror.defineMode("opensbp", function() {
         case "assign":
           var match = matchExpression(stream);
           if(match) { return match;}
+          stream.skipToEnd();
+          return 'string';
+
         break;
 
         case "test":

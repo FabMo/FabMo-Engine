@@ -916,7 +916,7 @@ define(function(require) {
   Dashboard.prototype.showModal = function(options) {
     // var modal = function (options) {
 
-    var modalAlreadyUp = modalIsShown;
+ 
 
     modalIsShown = true;
 
