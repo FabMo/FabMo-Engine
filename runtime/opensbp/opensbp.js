@@ -255,6 +255,7 @@ SBPRuntime.prototype.runStream = function(text_stream, callback) {
 			st.on('end', function() {
 
 				log.tock('Parse file')
+				console.log(this.program)
 		 		lines = this.program.length;
 
 				if(this.machine) {
@@ -270,6 +271,7 @@ SBPRuntime.prototype.runStream = function(text_stream, callback) {
 				this._loadDriverSettings();
 				log.debug("Transforms configured...")
 				log.tick();
+				log.info('analyzing labels...');
 				this._analyzeLabels();  // Build a table of labels
 				log.tock('Analyzed labels')
 				this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table

@@ -44,7 +44,7 @@ fastParse = function(statement) {
 }
 
 parseLine = function(line) {
-    //line = line.replace(/\r/g,'');
+    line = line.replace(/\r/g,'');
 
     // Extract comment
     parts = line.split("'");
@@ -55,11 +55,13 @@ parseLine = function(line) {
         // Use parse optimization
         var obj = fastParse(statement)
     if(!obj) {
-        obj = sbp_parser.parse(statement);
+	//log.warn('Cant fastparse ' + statement)
+    	obj = sbp_parser.parse(statement);
     }
         //var obj = sbp_parser.parse(statement);        
     } catch(e) {
-        var match = statement.match(STUPID_STRING_RE)
+        log.error(e)
+	var match = statement.match(STUPID_STRING_RE)
         if(match) {
             obj = {type:"assign",var:match[1], expr:match[2]}
         }
@@ -156,6 +158,21 @@ parseStream = function(s, options) {
     return s.pipe(parser)
 }
 
+parseFile = function(filename, callback) {
+	var st = fs.createReadStream(filename);
+	var obj = []
+        return parseStream(st)
+            .on('data', function(data) {
+                obj.push(data)
+            })
+            .on('end', function() {
+            	callback(null, obj);
+	    })
+	    .on('error', function(err) {
+		callback(err);
+	    });
+}
+
 var main = function(){
     var argv = require('minimist')(process.argv);
     var fs = require('fs');
@@ -169,7 +186,6 @@ var main = function(){
             } 
             
             var obj = parse(data);
-            console.log("Lines: " + obj.length)
             log.tock('parse');
         });
     } else {
@@ -187,20 +203,20 @@ var main2 = function() {
         var obj = []
         parseStream(fileStream)
             .on('data', function(data) {
-            // console.log(data);
                 obj.push(data)
             })
             .on('end', function() {
-                console.log(obj[1],obj[2],obj[3])
-                log.tock("parse");
+		console.log(obj.length + ' lines processed.')
+		log.tock("parse");
             });
     }
 }
 
 if (require.main === module) {
-    main();
-//    main2();
+//    main();
+    main2();
 }
 
 exports.parse = parse
+exports.parseFile = parseFile
 exports.parseStream = parseStream
