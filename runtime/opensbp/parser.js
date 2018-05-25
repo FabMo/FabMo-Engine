@@ -49,8 +49,6 @@ parseLine = function(line) {
     try {
         // Use parse optimization
         var obj = fastParse(statement) ||  sbp_parser.parse(statement);
-        console.log(obj)
-        //var obj = sbp_parser.parse(statement);        
     } catch(e) {
         var match = statement.match(STUPID_STRING_RE)
         if(match) {
