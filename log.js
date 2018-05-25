@@ -12,6 +12,7 @@ var log_buffer = [];
 var LOG_BUFFER_SIZE = 5000;
 var PERSISTENT_LOG_COUNT = 20;
 var flightRecorder = null;
+var tickTime = null;
 
 // String versions of the allowable log levels
 LEVELS = {
@@ -35,7 +36,6 @@ LOG_LEVELS = {
 	'settings' : 'debug',
 	'log':'debug'
 };
-
 
 var FlightRecorder = function() {
   this.records = []
@@ -134,6 +134,17 @@ var Logger = function(name) {
 // Index of all the Logger objects that have been created.
 var logs = {};
 
+Logger.prototype.tick = function() { 
+	tickTime = new Date().getTime()
+	this.debug('TICK');
+}
+Logger.prototype.tock = function(name) { 
+	var d = tickTime ? new Date().getTime() - tickTime  + 'ms' : 'no tick!';
+	var name = name ? ' (' + name + ') ' : '';
+	this.debug('TOCK' + name + d)
+	tickTime = new Date().getTime()
+}
+
 // Output the provided message with colorized output (if available) and the logger name
 Logger.prototype.write = function(level, msg) {
 	if(_suppress) {
@@ -223,6 +234,7 @@ Logger.prototype.uncaught = function(err) {
 	log_buffer.push(err.stack);
 }
 
+Logger.prototype.startProfile
 // Factory function for producing a new, named logger object
 var logger = function(name) {
 	if(name in logs) {
@@ -346,3 +358,4 @@ exports.setGlobalLevel = setGlobalLevel;
 exports.getLogBuffer = getLogBuffer;
 exports.clearLogBuffer = clearLogBuffer;
 exports.rotateLogs = rotateLogs;
+
