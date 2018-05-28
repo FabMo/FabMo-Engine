@@ -431,7 +431,59 @@ require("../css/toastr.min.css");
 		}
     });
 
+	function detectswipe(func) {
+        swipe_det = new Object();
+        swipe_det.sX = 0; swipe_det.sY = 0; swipe_det.eX = 0; swipe_det.eY = 0;
+        var max_x = 80;  //max x difference for vertical swipe
+        var min_y = 100;  //min y swipe for vertical swipe
+		var swipe = true;
+		var maxSwipeTime = 300;
+		var direc = "";
+		var swipeTime;
+		ele = window.document;
+		function startSwipeTime() {
+			swipeTime = setTimeout(function(){
+				swipe = false;
+			}, maxSwipeTime);
+		};
+		
+        ele.addEventListener('touchstart',function(e){
+			startSwipeTime();
+			var t = e.touches[0];
+			swipe_det.sX = t.screenX; 
+			swipe_det.sY = t.screenY;
+        },false);
+        ele.addEventListener('touchmove',function(e){
+          var t = e.touches[0];
+          swipe_det.eX = t.screenX; 
+          swipe_det.eY = t.screenY;    
+        },false);
+        ele.addEventListener('touchend',function(e){
+		  //vertical detection
 
+          if ((((swipe_det.eY - min_y > swipe_det.sY) || (swipe_det.eY + min_y < swipe_det.sY)) && ((swipe_det.eX < swipe_det.sX + max_x) && (swipe_det.sX > swipe_det.eX - max_x) && (swipe_det.eY > 0) && swipe))) {
+			clearTimeout(swipeTime);
+			if(swipe_det.eY < swipe_det.sY) direc = "u";
+			else direc = "d";
+
+          }
+      
+          if (direc != "") {
+            if(typeof func == 'function') func(direc);
+          }
+          direc = "";
+		  swipe_det.sX = 0; swipe_det.sY = 0; swipe_det.eX = 0; swipe_det.eY = 0; swipe = true;
+
+        },false);  
+      }
+      
+	  myfunction = function (d) {
+        if(d === "u") {
+            dashboard.engine.manualEnter();
+        }
+      }.bind(this);
+
+      detectswipe(myfunction);
 
     
 

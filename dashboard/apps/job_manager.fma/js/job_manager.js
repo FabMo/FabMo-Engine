@@ -1294,7 +1294,6 @@ $(document).ready(function() {
 
 
   fabmo.on('status', function(status) {
-    console.log(status);
     handleStatusReport(status);
     if (status.job == null && status.state != 'idle') {
       $('.play-button').hide();
