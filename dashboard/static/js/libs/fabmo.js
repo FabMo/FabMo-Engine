@@ -41,12 +41,68 @@ var FabMoDashboard = function(options) {
 	};
 	this._setupMessageListener();
     // listen for escape key press to quit the engine
-    document.onkeyup = function (e) {
-        if(e.keyCode == 27) {
+    document.onkeydown = function (e) {
+        if(e.keyCode === 27) {
             console.warn("ESC key pressed - quitting engine.");
             this.stop();
+        } else if (e.keyCode === 75 && e.ctrlKey ) {
+			this.manualEnter()
+		}
+	}.bind(this);
+	
+	function detectswipe(func) {
+        swipe_det = new Object();
+        swipe_det.sX = 0; swipe_det.sY = 0; swipe_det.eX = 0; swipe_det.eY = 0;
+        var max_x = 80;  //max x difference for vertical swipe
+        var min_y = 100;  //min y swipe for vertical swipe
+		var swipe = true;
+		var maxSwipeTime = 300;
+		var direc = "";
+		var swipeTime;
+		ele = window.document;
+		function startSwipeTime() {
+			swipeTime = setTimeout(function(){
+				swipe = false;
+			}, maxSwipeTime);
+		};
+		
+        ele.addEventListener('touchstart',function(e){
+			startSwipeTime();
+			var t = e.touches[0];
+			swipe_det.sX = t.screenX; 
+			swipe_det.sY = t.screenY;
+        },false);
+        ele.addEventListener('touchmove',function(e){
+          var t = e.touches[0];
+          swipe_det.eX = t.screenX; 
+          swipe_det.eY = t.screenY;    
+        },false);
+        ele.addEventListener('touchend',function(e){
+		  //vertical detection
+		  console.log(swipe);
+          if ((((swipe_det.eY - min_y > swipe_det.sY) || (swipe_det.eY + min_y < swipe_det.sY)) && ((swipe_det.eX < swipe_det.sX + max_x) && (swipe_det.sX > swipe_det.eX - max_x) && (swipe_det.eY > 0) && swipe))) {
+			clearTimeout(swipeTime);
+			if(swipe_det.eY < swipe_det.sY) direc = "u";
+			else direc = "d";
+			console.log(direc);
+          }
+      
+          if (direc != "") {
+            if(typeof func == 'function') func(direc);
+          }
+          direc = "";
+		  swipe_det.sX = 0; swipe_det.sY = 0; swipe_det.eX = 0; swipe_det.eY = 0; swipe = true;
+
+        },false);  
+      }
+      
+	  myfunction = function (d) {
+        if(d === "u") {
+            this.manualEnter();
         }
-    }.bind(this);
+      }.bind(this);
+
+      detectswipe(myfunction);
 
     if(!this.options.defer) {
 		this.ready();
@@ -660,11 +716,11 @@ FabMoDashboard.prototype.manualStart = function(axis, speed, second_axis, second
 }
 
 
-FabMoDashboard.prototype.manualEnter = function(axis, speed) {
+FabMoDashboard.prototype.manualEnter = function(axis, speed, callback) {
 	this._call("manualEnter", callback);
 }
 
-FabMoDashboard.prototype.manualExit = function(axis, speed) {
+FabMoDashboard.prototype.manualExit = function(axis, speed, callback) {
 	this._call("manualExit", callback);
 }
 

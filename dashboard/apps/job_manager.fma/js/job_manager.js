@@ -9,6 +9,7 @@ var step;
 var testFileSubmitted = "false";
 var cameFromTour = false;
 var firstRun = true;
+var jobLoading = false; 
 var isTestJob = '';
 var tourComplete = false;
 var numberJobs = 0;
@@ -190,7 +191,6 @@ function addQueueEntries(jobs) {
     $('.no-jobs').css('left', '-2000px'); /// Remove no jobs menu
     nextJob();
     for (var i = 0; i < jobs.length; i++) {
-      console.log(jobs[i]);
       if ($('#' + jobs[i]._id).length < 1) { // If a job already has a card do nothing else make a card for job
         var listItem = document.createElement("div");
         listItem.setAttribute("id", jobs[i]._id);
@@ -243,7 +243,6 @@ function addQueueEntries(jobs) {
       var recentJobs = document.getElementById('recent');
       clearRecent();
       for (var i = 0; i < recent.length; i++) {
-        console.log(recent[i]);
         var recentItem = document.createElement("div");
         recentItem.setAttribute("id", recent[i]._id);
         recentItem.setAttribute("class", "recent_item");
@@ -1177,6 +1176,7 @@ function runNext() {
     if ($('.play').hasClass('active')) {
       fabmo.pause(function(err, data) {});
     } else {
+      jobLoading = true; 
       $('.play').addClass('loading');
       fabmo.runNext(function(err, data) {
         if (err) {
@@ -1297,9 +1297,10 @@ $(document).ready(function() {
     handleStatusReport(status);
     if (status.job == null && status.state != 'idle') {
       $('.play-button').hide();
+      $('.play').removeClass('loading');
     } else if (status.state == 'idle' && el.firstChild) {
       $('.play-button').show();
-    }
+    } 
 
   });
 
