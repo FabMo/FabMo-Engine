@@ -301,7 +301,7 @@ td.actions-control {
   margin-bottom: .5em;
   margin-top: 2em;
   padding: 1em;
-  height: 200px;
+  min-height: 160px;
 }
 
 
@@ -312,7 +312,6 @@ td.actions-control {
     padding: 0.5em;
     color: #666;
     width: 98%;
-    height: 60px;
     display: inline-block;
     background-color: #FFFFFF;
     border-radius: 5px;
@@ -335,7 +334,7 @@ td.actions-control {
 
 }
 
-.chosen .play-button, .chosen .icon-row {
+.chosen .play-button, .chosen .icon-row, .chosen .ellipses {
   display: none;
 }
 
@@ -343,6 +342,9 @@ td.actions-control {
 .ghost{
   opacity: .5;
   background-color: #777;
+}
+#menu {
+  margin-top: 15px;
 }
 
 .job_item:first-child #menu{
@@ -361,27 +363,36 @@ td.actions-control {
 
 
  .job_item:first-child .description{
-      width: 80%;
-      white-space: normal;
-      overflow: visible;
-      margin-top: 0.5em;
+    width: 75%;
+    white-space: normal;
+    overflow: visible;
+    margin: 0.5rem 0 1.5rem 0;
   }
 
 
+
 .job_name,  #name {
-    padding: 1px;
-    font-weight: bold;
-    line-height: 1.1rem;
-    height: 20px;
-    overflow: hidden;
-    position: relative;
+  padding: 1px;
+  font-size: 1.1rem;
+  line-height: 1.1rem;
+  margin: 0 0 0.5rem 2.5rem;
 
 }
+
+
+
+.job_item:first-child .job_name,  .job_item:first-child #name{
+  width: 75%;
+  margin: 0;
+}
+
 
 .job_item .ellipses{
     font-size: 1.35em;
     padding-left: 0.4em;
     cursor: pointer;
+    position: absolute;
+    top: 5px;
 }
 
 .recent_item .ellipses{
@@ -420,9 +431,8 @@ td.actions-control {
 
 .job_item .description, .recent_item .description, .chosen .description{
   width: 80%;
-  overflow: hidden;
-  white-space: nowrap;
-  margin-left: 2.5em;
+  margin: 0 0 1em 2.5rem;
+
 }
 
 .preview, .edit, .download, .cancel {
@@ -459,7 +469,7 @@ td.actions-control {
   top: inherit;
   left: 7px;
   width: 175px;
-  margin-top: 3.1em;
+  margin-top: 1.5em;
   text-align: left;
   background-color: #ffffff;
   padding-top: 1.5em;
@@ -484,7 +494,7 @@ td.actions-control {
   left: 33px;
   width: 1em;
   height: 1em;
-  margin-top: 2.6em;
+  margin-top: 1em;
   transform: translatex(2.1em);
   background-color: #ffffff;
   -ms-transform: rotate(45deg); /* IE 9 */
@@ -528,12 +538,6 @@ td.actions-control {
   max-height: 20px;
   margin-right: 1em;
   transition: all 0.2s;
-}
-
-
-
-.icon-row {
-
 }
 
 tr.shown td.details-control {
@@ -710,8 +714,10 @@ table {
 
 .play-button {
   position: absolute;
-  top: 40px;
-  right: -20px;
+  right: 0px;
+  width: 5%;
+  top: 50%;
+  transform: translateY(-50%);
 
   z-index: 50;
 }
@@ -728,14 +734,16 @@ table {
 
 
 @media screen and (max-width: 630px){
-  .play-button{
-    position: absolute;
-    right: 0px;
-    width: 5%;
-  }
+
     .radial_progress{
     position: relative;
     margin-right: 20px;
+  }
+  .job_item:first-child .description{
+    width: 55%;
+  }
+  .job_item:first-child .job_name,  .job_item:first-child #name{
+    width: 55%;
   }
 }
 
@@ -969,151 +977,5 @@ table {
     float: right;
 }
 
-
-
-
-
-.job-lights-container{
-    display: none;
-    bottom: 7px;
-    width: 70%;
-    height: 36px;
-    text-align: center;
-    margin-right: auto;
-    margin-left: auto;
-}
-.job-status-indicator{
-    position: relative;
-    background-color: #FFFFFF;
-    top: 50%; left: 50%;
-    transform: translate(-49.5%,-49.5%);
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    transition: all 1s;
-}
-
-.job-status-light{
-    display: inline-block;
-    margin-right: 3%;
-    margin-left: 3%;
-    position: relative;
-    border-radius: 50%;
-    width: 38px;
-    height:38px;
-
-}
-
-@-webkit-keyframes off {
-    0% {
-    background: #B10000; /* Old browsers */
-    -webkit-box-shadow: 0px 0px 6px 2px #B10000;
-        -moz-box-shadow: 0px 0px 6px 2px #B10000;
-            box-shadow: 0px 0px 6px 2px #B10000;
-
-    }
-    90%{
-     background: none; /* Old browsers */
-
-    }
-    100% {
-    background: #B10000; /* Old browsers */
-
-    }
-}
-
-@-moz-keyframes off {
-    0% {
-    background: #B10000; /* Old browsers */
-    -webkit-box-shadow: 0px 0px 6px 2px #B10000;
-        -moz-box-shadow: 0px 0px 6px 2px #B10000;
-            box-shadow: 0px 0px 6px 2px #B10000;
-
-    }
-    90%{
-     background: none; /* Old browsers */
-
-    }
-    100% {
-    background: #B10000; /* Old browsers */
-
-    }
-}
-@-webkit-keyframes pause {
-    0% {
-    background: #DD8728; /* Old browsers */
-    -webkit-box-shadow: 0px 0px 6px 2px #DD8728;
-        -moz-box-shadow: 0px 0px 6px 2px #DD8728;
-            box-shadow: 0px 0px 6px 2px #DD8728;
-
-    }
-    90%{
-     background: none; /* Old browsers */
-
-    }
-    100% {
-    background: #DD8728; /* Old browsers */
-
-    }
-}
-
-@-moz-keyframes pause {
-    0% {
-    background: #DD8728; /* Old browsers */
-    -webkit-box-shadow: 0px 0px 6px 2px #DD8728;
-        -moz-box-shadow: 0px 0px 6px 2px #DD8728;
-            box-shadow: 0px 0px 6px 2px #DD8728;
-
-    }
-    90%{
-     background: none; /* Old browsers */
-
-    }
-    100% {
-    background: #DD8728; /* Old browsers */
-
-    }
-}
-
-.job-status-light.one {
-
-}
-
-
-.job-status-light.two {
-
-}
-
-.job-status-light.three {
-
-}
-
-.progressbar {
-    /*font-size: 14px;
-	background-color: #444;*/
-    color: white;
-    background-color: #aaaaaa;
-   /* padding: 0.5em 1em;*/
-    text-align: left;
-    text-decoration: none;
-    display: inline-block;
-    cursor: pointer;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    width: 100%;
-    height: 1em;
-}
-
-.progressbar .fill {
-	background-color: #2E3865;
-	width: 0%;
-	height: 100%;
-	position: relative;
-	transition: width 0.3s ease 0s;
-  border-radius:0;
-}
 
 .hidden, .hide { display:none; }
