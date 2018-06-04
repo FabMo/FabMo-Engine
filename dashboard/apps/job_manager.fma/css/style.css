@@ -388,15 +388,25 @@ td.actions-control {
 
 
 .job_item .ellipses{
-    font-size: 1.35em;
+
     padding-left: 0.4em;
     cursor: pointer;
     position: absolute;
-    top: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+}
+
+.job_item .ellipses span{
+  font-size: 1.4em;
 }
 
 .recent_item .ellipses{
-  border: none;
+    cursor: pointer;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
 }
 
 .add {
@@ -416,8 +426,12 @@ td.actions-control {
 
 
 .job_item .dropDown{
+    position: absolute;
     left: 2px;
     width: 153px;
+    margin-top: 0.7em;
+    top: 50%;
+
 }
 
 .job_item .jobactions{
@@ -426,7 +440,13 @@ td.actions-control {
 }
 
 .job_item .commentBox{
+  position: absolute;
   left: 17px;
+  margin-top: 0.7em;
+  top: 50%;
+  transform: rotate(45deg) translateY(-50%);
+
+
 }
 
 .job_item .description, .recent_item .description, .chosen .description{
@@ -469,7 +489,7 @@ td.actions-control {
   top: inherit;
   left: 7px;
   width: 175px;
-  margin-top: 1.5em;
+  margin-top: 3.1em;
   text-align: left;
   background-color: #ffffff;
   padding-top: 1.5em;
@@ -494,8 +514,7 @@ td.actions-control {
   left: 33px;
   width: 1em;
   height: 1em;
-  margin-top: 1em;
-  transform: translatex(2.1em);
+  margin-top: 2.6em;
   background-color: #ffffff;
   -ms-transform: rotate(45deg); /* IE 9 */
     -webkit-transform: rotate(45deg); /* Chrome, Safari, Opera */

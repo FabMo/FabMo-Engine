@@ -225,6 +225,7 @@ function holdfunction (e) {
    var id = e.delegateTarget.id;
    $('.filter').show();
    $( "#"+id).unbind( "click" );
+   $('.deleteApp, .filter',  "#"+id).unbind("click");
    $('.app_item:not("#'+id+'")').addClass('blur');
 
    $('.app_add').addClass('blur');
@@ -245,13 +246,14 @@ function holdfunction (e) {
            if (err){
                console.log(err);
            } else {
-               
+               console.log(data);
                fabmo.getAppConfig(function(err, data){
                    data.appOrder = newOrder;
                    fabmo.setAppConfig(data, function(err, data){
                        if (err){
                            console.log(err)
                        } else {
+                            console.log(data);
                             $('#'+id).remove();
                             $('.filter').hide();
                             $('.app_add').removeClass('blur');

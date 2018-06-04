@@ -249,7 +249,7 @@ function addQueueEntries(jobs) {
         recentItem.setAttribute("data-id", recent[i]._id);
         recentJobs.appendChild(recentItem);
         var id = document.getElementById(recent[i]._id);
-        id.innerHTML = '<div id="menu"></div><div id="name">' + recent[i].name + '</div><div class="description">' + recent[i].description + '</div><div class="created-date">'+ moment(recent[i].created_at).fromNow(); +'</div>';
+        id.innerHTML = '<div id="menu"></div><div id="name">' + recent[i].name + '</div><div class="description">' + recent[i].description + '</div><div class="created-date">Last Run: '+ moment(recent[i].created_at).fromNow(); +'</div>';
         var menu = id.firstChild;
 
 
@@ -588,8 +588,6 @@ var sortable = Sortable.create(el, {
       fabmo.deleteJob(id);
 
     }
-
-
   },
 
   onMove: function(evt) {

@@ -63,11 +63,6 @@ define(function(require) {
         //Set size of app container (so footer does not hide content)
         $('.main-section').css('padding-bottom',$('.footBar').css('height'));
 
-        //Resize app-icon container, so the icon are centered
-        $("#app_menu_container").css(
-            "width",
-            $(".main-section").width() - ($(".main-section").width() % 132)
-        )
 
 
         calcLeftPadding();
@@ -104,9 +99,6 @@ define(function(require) {
         else {
             $("#widget-links-general").addClass("colapsed");
             $("#left-menu").addClass("colapsed");
-            $("#app_menu_container").css("width",
-                $(".main-section").width() - ($(".main-section").width() % 132)
-            );
             $('.collapseLeft').hide();
 
         }
@@ -159,10 +151,6 @@ define(function(require) {
         $(".main-section, .app-section").css("width", $("body").width() - r + "px");
 
         //Resize app-icon container, so the icon are centered
-        $("#app_menu_container").css(
-            "width",
-            $(".main-section").width() - ($(".main-section").width() % 132)
-        );
     };
 
     var slideMenu = function() {

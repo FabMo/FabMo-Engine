@@ -33,7 +33,7 @@ body {
 }
 
 .main-section, .app-section, .spinner-section {
-	height: 1003%;
+	height: 100%;
 	background-color: #eee;
 }
 
@@ -824,7 +824,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 #app_menu_container {
 	list-style: none;
-	height :100%;
 	/*margin-left: auto;
 	margin-right: auto;*/
 	/* auto margins center the apps, but make them jump when the DRO is displayed (ick) */
@@ -1188,14 +1187,13 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .manual-drive-message {
+	font-size: 1.2rem;
 	display: none;
 	color: #eee;
 	width: 100%;
 	height: auto;
 	text-align: center;
 	margin-bottom: 10px;
-	padding: 0.5rem;
-	border-bottom: 1px solid #eee;
 }
 .keypad-button {
 	border : 2px solid #333333;
@@ -1916,7 +1914,7 @@ input[type='range']:focus {
 	.manual-drive-message {
 		font-size: 15px;
 		line-height: 16px;
-		padding-top: 0;
+		padding: 0.5em;
 	}
 
 	.speed_read_out {
