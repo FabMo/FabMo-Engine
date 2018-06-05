@@ -743,7 +743,15 @@ SBPRuntime.prototype._end = function(error) {
 		error = this.end_message || null;
 	}
 	log.debug("Calling the non-nested (toplevel) end");
-    if(error) {log.error(error)}
+
+  	for(var key in this.user_vars) {
+		console.log("Checking " + key)
+		if(key[1] === '_') {
+			console.log("Deleting " + key)
+			delete this.user_vars[key]
+		}
+	}  
+	if(error) {log.error(error)}
 	var cleanup = function(error) {
 		if(this.machine && error) {
 			this.machine.setState(this, 'stopped', {'error' : error });
