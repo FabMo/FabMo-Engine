@@ -11,8 +11,9 @@ function refreshApps() {
             if (err){
                 console.log(err);
             } else {
+                console.log(data);
                 defaultApp = data.machine.default_app;
-                        $(".app-listing").empty();
+                $(".app-listing").empty();
         html = [
             '<tr class="app-install-row"><td>',
             '<div class="app-ghost noselect"><span class="app-ghost-icon fa fa-plus"></span></div>',
@@ -81,12 +82,17 @@ function refreshApps() {
 
             }); // each
             $('.defaultRadio').on('change', function(){
+                console.log($(this).val());
                 newDefault = $(this).val();
-                data.machine.default_app = newDefault;
-                fabmo.setConfig(data, function(err, data){
-                    if (err){
-                        console.log(err);
-                    }
+                fabmo.getConfig(function(err,data){
+                    data.machine.default_app = newDefault;
+                    fabmo.setConfig(data, function(err, data){
+                        if (err){
+                            console.log(err);
+                        } else {
+                            console.log(data);
+                        }
+                    });
                 });
             });
             $('.app-install-row').click(function(evt) {

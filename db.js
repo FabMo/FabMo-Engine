@@ -889,19 +889,6 @@ backupDB = function(callback) {
 	
 }
 
-checkUsers = function(users){
-	users.find({}).toArray(function(err,result){ //init the user database with an admin account if it's empty
-		if (err){
-			throw err;
-		}
-		if(result.length === 0 ){
-			var pass_shasum = crypto.createHash('sha256').update("go2fabmo").digest('hex');
-			user = new User("admin",pass_shasum,true);
-			user.save();
-		}
-	});
-}
-
 reConfig = function(callback){
 	db = new Engine.Db(config.getDataDir('db'), {});
 	files = db.collection("files");
@@ -949,7 +936,6 @@ reConfig = function(callback){
 					}
 				});
 			} else {
-				checkUsers(users);
 				log.info("Databases are clean. Reconfig Success");
 				callback(null);
 				
@@ -1019,7 +1005,6 @@ exports.configureDB = function(callback) {
 				});
 			} else {
 				log.info("Databases are clean.");
-				checkUsers(users);
 				callback(null);
 				backupDB(callback);
 				

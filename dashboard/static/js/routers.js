@@ -9,9 +9,7 @@ define(function(require) {
 		var FabMoAPI = require('./libs/fabmoapi.js');
 		var engine = new FabMoAPI();
 		var defaultApp = '';
-		engine.getConfig(function(err,data){
-			return defaultApp = data.machine.default_app;
-		});
+
 		var Router = Backbone.Router.extend({
 			routes: {
 				"app/:id"     		: "_launchApp",
@@ -32,7 +30,13 @@ define(function(require) {
 				this.launchApp(id);
 			},
 			show_menu: function() {
-				this.launchApp(defaultApp);
+				
+				engine.getConfig(function(err,data){
+					defaultApp = data.machine.default_app;
+					console.log(defaultApp);
+					this.launchApp(defaultApp);
+				}.bind(this));
+
 			},
 			show_auth: function (message){
 				if (message){

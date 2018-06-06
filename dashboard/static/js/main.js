@@ -421,11 +421,11 @@ require("../css/toastr.min.css");
         dashboard.hideModal();
     }
 
-    // listen for escape key press to quit the engine
+    // listen for escape key press to quit the engine ctrl and k enters manual
     $(document).on('keydown', function(e) {
         if(e.keyCode === 27) {
             console.warn("ESC key pressed - quitting engine.");
-            this.stop();
+            dashboard.engine.quit();
         } else if (e.keyCode === 75 && e.ctrlKey ) {
 			dashboard.engine.manualEnter()
 		}
@@ -489,14 +489,18 @@ require("../css/toastr.min.css");
 
     //goto this location
     var axisValues = [];
-    $('.axi').each(function() {
-        var strings = this.getAttribute('class').split(" ")[0];
-        var axis = strings.slice(-1).toUpperCase();
-        axisValues.push({
-            "className": ("." + strings),
-            "axis": axis
+    getAxis = function () {
+        $('.axi').each(function() {
+            console.log('when do I get called');
+            var strings = this.getAttribute('class').split(" ")[0];
+            var axis = strings.slice(-1).toUpperCase();
+            axisValues.push({
+                "className": ("." + strings),
+                "axis": axis
+            });
         });
-    });
+    }
+
 
     $('.go-to').on('mousedown', function() {
         var move = {}
@@ -551,23 +555,6 @@ require("../css/toastr.min.css");
                 });
             
     });   
-    
-
-    $('.go-here').on('mousedown', function() {
-        var gcode = "G0 ";
-        for (var i = 0; i < axisValues.length; i++) {
-            if ($(axisValues[i].className).attr('value', '')[1].value.length > 0) {
-                if ($(axisValues[i].className).attr('value', '')[1].value != $(axisValues[i].className).val()) {
-                    gcode += axisValues[i].axis + $(axisValues[i].className).attr('value', '')[1].value + " ";
-                }
-            }
-        }
-        dashboard.engine.gcode(gcode);
-        $('.go-here').hide();
-        if ( $(window).width() < 900) {
-            $('#right-menu').css('right', '0');
-        }
-    });
 
     $('.axi').on('click', function(e) {
         var goString = 'Go to ';
@@ -576,7 +563,7 @@ require("../css/toastr.min.css");
         $('#keypad').hide();
         $('.go-to-container').show();
         $('.go-to-container').css('display', 'flex');
-
+        keyboard.setEnabled(false);
         
     });
 
@@ -595,20 +582,18 @@ require("../css/toastr.min.css");
         $('.go-here').hide();
         $('#keypad').show();
         $('.go-to-container').hide();
+        keyboard.setEnabled(true);
     });
 
     $('.axi').keyup(function(e) {
         if (e.keyCode == 13) {
-            var gcode = "G0 ";
-            for (var i = 0; i < axisValues.length; i++) {
-                if ($(axisValues[i].className).attr('value', '')[1].value.length > 0) {
-                    if ($(axisValues[i].className).attr('value', '')[1].value != $(axisValues[i].className).val()) {
-                        gcode += axisValues[i].axis + $(axisValues[i].className).attr('value', '')[1].value + " ";
-                    }
-                }
-            }
-            dashboard.engine.gcode(gcode);
-            $('.go-here').hide();
+            var move = {}
+            $('.modal-axi:visible').each(function(){
+                move[$(this).attr('id')] = parseFloat($(this).val());
+            });
+            dashboard.engine.goto(move);
+            $('.go-to-container').hide();
+            $('#keypad').show();
         }
     });
 
