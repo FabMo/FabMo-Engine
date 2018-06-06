@@ -255,7 +255,6 @@ SBPRuntime.prototype.runStream = function(text_stream, callback) {
 			st.on('end', function() {
 
 				log.tock('Parse file')
-				console.log(this.program)
 		 		lines = this.program.length;
 
 				if(this.machine) {
@@ -687,7 +686,6 @@ SBPRuntime.prototype._executeNext = function() {
 
 	// Pull the current line of the program from the list
 	var line = this.program[this.pc];
-	// console.log(line);
 	var breaksTheStack = this._breaksStack(line);
 
 	if(breaksTheStack) {
@@ -743,7 +741,13 @@ SBPRuntime.prototype._end = function(error) {
 		error = this.end_message || null;
 	}
 	log.debug("Calling the non-nested (toplevel) end");
-    if(error) {log.error(error)}
+
+  	for(var key in this.user_vars) {
+		if(key[1] === '_') {
+			delete this.user_vars[key]
+		}
+	}  
+	if(error) {log.error(error)}
 	var cleanup = function(error) {
 		if(this.machine && error) {
 			this.machine.setState(this, 'stopped', {'error' : error });
@@ -868,7 +872,6 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			break;
 
 		case "return":
-			console.log(this.stack);
 			if(this.stack.length) {
 				this.pc = this.stack.pop();
 				setImmediate(callback);
@@ -1008,6 +1011,9 @@ SBPRuntime.prototype._execute = function(command, callback) {
 SBPRuntime.prototype._varExists = function(identifier) {
 	result = identifier.match(USERVAR_RE);
 	if(result) {
+		if(identifier.toUpperCase() === '&TOOL') {
+			identifier = '&TOOL'
+		}
 		if(identifier in this.user_vars) { return true; }
 		for(key in this.user_vars) {
 			if(key.toLowerCase() === identifier.toLowerCase()) { return true;}
@@ -1025,6 +1031,9 @@ SBPRuntime.prototype._varExists = function(identifier) {
 SBPRuntime.prototype._assign = function(identifier, value, callback) {
 	result = identifier.match(USERVAR_RE);
 	if(result) {
+		if(identifier.toUpperCase() === '&TOOL') {
+			identifier = '&TOOL'
+		}
 		this.user_vars[identifier] = value;
 		setImmediate(callback);
 		return
@@ -1093,7 +1102,7 @@ SBPRuntime.prototype._eval = function(expr) {
 				break;
 			case '<=':
 				return this._eval(expr.left) <= this._eval(expr.right);
-				break;
+			break;
 			case '==':
 			case '=':
 				return this._eval(expr.left) == this._eval(expr.right);
@@ -1369,6 +1378,9 @@ SBPRuntime.prototype.evaluateUserVariable = function(v) {
 	if(v === undefined) { return undefined;}
 	result = v.match(USERVAR_RE);
 	if(result === null) {return undefined;}
+	if(v.toUpperCase() === '&TOOL') {
+		v = '&TOOL';
+	}
 	if(v in this.user_vars) {
 		return this.user_vars[v];
 	} else {
