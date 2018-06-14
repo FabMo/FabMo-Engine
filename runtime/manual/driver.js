@@ -164,14 +164,17 @@ ManualDriver.prototype.set = function(pos) {
 	var gc = 'G10 L20 P2 ';
 
 	Object.keys(pos).forEach(function(key) {
+		console.log(pos);
 		gc += key + pos[key].toFixed(5);
 	}.bind(this));
 	
 		this.stream.write(gc + '\n');
 		this.driver.prime();
 		setTimeout(function() {
-			config.driver.reverseUpdate(['g55x','g55y','g55z'], function(err, data) {console.log(data);});
+			config.driver.reverseUpdate(['g55x','g55y','g55z','g55a','g55b'], function(err, data) {console.log(data)});
+			this.moving = false;
 		}.bind(this), 500);
+
 }
 
 ManualDriver.prototype._handleNudges = function() {

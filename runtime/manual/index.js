@@ -154,7 +154,7 @@ ManualRuntime.prototype._onG2Status = function(status) {
 	} else {
 		this.machine.status.moving = false;
 	}
-
+	console.log(this.machine.status);
 	this.machine.emit('status',this.machine.status);
 };
 
