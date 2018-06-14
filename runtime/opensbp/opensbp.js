@@ -886,6 +886,7 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			this.pc = this.program.length;
 			if(command.message) {
 				this.end_message = command.message;
+				throw new Error(command.message)
 			}
 			return false;
 			break;

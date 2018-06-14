@@ -82,14 +82,13 @@ function refreshApps() {
             }); // each
             $('.defaultRadio').on('change', function(){
                 newDefault = $(this).val();
-                fabmo.getConfig(function(err,data){
-                    data.machine.default_app = newDefault;
-                    fabmo.setConfig(data, function(err, data){
-                        if (err){
-                            console.log(err);
-                        } else {
-                        }
-                    });
+                data.machine.default_app = newDefault;
+                fabmo.setConfig({"machine":{"default_app":newDefault}}, function(err, data){
+                    if (err){
+                        console.log(err);
+                    } else {
+                        console.log(data);
+                    }
                 });
             });
             $('.app-install-row').click(function(evt) {
