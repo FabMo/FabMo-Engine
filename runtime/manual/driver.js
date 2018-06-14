@@ -164,7 +164,6 @@ ManualDriver.prototype.set = function(pos) {
 	var gc = 'G10 L20 P2 ';
 
 	Object.keys(pos).forEach(function(key) {
-		console.log(pos);
 		gc += key + pos[key].toFixed(5);
 	}.bind(this));
 	
