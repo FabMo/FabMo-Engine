@@ -45,7 +45,6 @@ function setupUserManager() {
 
 function createAdminPanel(){
   fabmo.getUsers(function(err,users) {
-    console.log(users);
     if(err){return;} // user is not admin.
     users=users.filter(function(usr){return(usr.username!==current_user.username)}); //remove current user from the list
     refreshUsersListView(users);
@@ -164,7 +163,6 @@ function refreshUsersListView(users){
       $(".user-listing").append(html);
 
       $('#delete_' + userid).on('click',function() { //delete button listener
-        console.log(user);
         fabmo.showModal({
           title : 'Delete user '+ user.username,
           message : 'Are you sure you want to delete this user?',
@@ -185,7 +183,6 @@ function refreshUsersListView(users){
       });
 
       $('#grantadmin_' + userid).on('click',function() { //grantadmin button listener
-        console.log(user);
         user_info = {
           user :{
             username:user.username,

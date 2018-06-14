@@ -160,6 +160,7 @@ var post_config = function(req, res, next) {
   }
 
   if('machine' in req.params) {
+
     if(!setMany_remaining)return;
     config.machine.setMany(util.fixJSON(req.params.machine), function(err, result) {
       if(!setMany_remaining)return;

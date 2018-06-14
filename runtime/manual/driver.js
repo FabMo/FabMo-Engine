@@ -7,8 +7,10 @@ var Q = require('q');
 
 var T_RENEW = 200;
 var SAFETY_FACTOR = 2.0;
+var count;
 var RENEW_SEGMENTS = 10;
 var FIXED_MOVES_QUEUE_SIZE = 3;
+var count = 0;
 
 
 function ManualDriver(drv, st) {
@@ -125,8 +127,23 @@ ManualDriver.prototype.stopMotion = function() {
 	}
 }
 
-ManualDriver.prototype.goto = function(pos) {
+ManualDriver.prototype.quitMove = function(){
+	
+	if(this._limit()) { return; }
+	this.keep_moving = false;
+	if(this.moving) {
+		this.stop_pending = true;
+		this.driver.quit();
+		this.driver.queueFlush(function() {
+			this.driver.resume();		
+		}.bind(this));
+	} else {
+		this.stop_pending = false;
+	}
 
+}
+
+ManualDriver.prototype.goto = function(pos) {
 	var move = "G90\nG0 ";
 
 	for (var key in pos) {
@@ -138,6 +155,7 @@ ManualDriver.prototype.goto = function(pos) {
 	move += "\nG91\n";
 	this.driver.prime();
 	this.stream.write(move);
+	this.moving = true;
 	
 }
 
@@ -146,23 +164,6 @@ ManualDriver.prototype.set = function(pos) {
 	var gc = 'G10 L20 P2 ';
 
 	Object.keys(pos).forEach(function(key) {
-/*
-		this.driver.get('mpo'+key.toLowerCase(), function(err, MPO) {
-
-			var zObj = {};
-			var unitConv = 1.0;
-			if ( this.driver.status.unit === 'in' ) {  // inches
-				unitConv = 0.039370079;
-			}
-
-			zObj['g55'+key.toLocaleLowerCase()] = Number((MPO * unitConv) - (parseFloat(pos[key]))).toFixed(5);
-
-			config.driver.setMany(zObj, function(err, value) {
-				this.stream.write('G10 L20 P2 \n');
-				this.driver.prime();
-			}.bind(this));
-		}.bind(this));
-*/
 		gc += key + pos[key].toFixed(5);
 	}.bind(this));
 	
@@ -174,7 +175,7 @@ ManualDriver.prototype.set = function(pos) {
 }
 
 ManualDriver.prototype._handleNudges = function() {
-	var count = this.fixedQueue.length;
+	count = this.fixedQueue.length;
 
 	if(this.fixedQueue.length > 0) {
 		while(this.fixedQueue.length > 0) {
@@ -244,10 +245,6 @@ ManualDriver.prototype._renewMoves = function() {
 		this.keep_moving = false;
 		var segment = this.currentDirection*(this.renewDistance / RENEW_SEGMENTS);
 		var second_segment = this.second_currentDirection*(this.renewDistance / RENEW_SEGMENTS);
-		//console.log("Paused? ", this.driver.context._paused);
-		//console.log("Flooded? ", this.driver.flooded);
-		//console.log(this.driver.getInfo())
-		//this.driver.resume();
 		if (this.second_axis){
 			for(var i=0; i<RENEW_SEGMENTS; i++) {
 				var move = 'G1 ' + this.currentAxis + segment.toFixed(5) +' '+ this.second_axis + second_segment.toFixed(5) +'\n'
@@ -271,7 +268,6 @@ ManualDriver.prototype._renewMoves = function() {
 }
 
 ManualDriver.prototype._onG2Status = function(status) {
-
 	switch(status.stat) {
 		case this.driver.STAT_INTERLOCK:
 		case this.driver.STAT_SHUTDOWN:
@@ -280,6 +276,9 @@ ManualDriver.prototype._onG2Status = function(status) {
 			break;
 		case this.driver.STAT_ALARM:
 			if(this._limit()) { return; }
+			break;
+		case this.driver.STAT_RUNNING:
+			this.moving = true;
 			break;
 		case this.driver.STAT_STOP:
 		case this.driver.STAT_END:

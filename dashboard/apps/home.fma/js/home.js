@@ -43,90 +43,88 @@ function getOrder () {
 function refreshApps() {
     newOrder = [];
     return new Promise (function(resolve, reject){
-
-
         getOrder().then(function(){
-                    fabmo.getApps(function(err,apps){
-        if (apps) {
-            var menu = document.getElementById('app_menu_container');
-            menu.innerHTML = "";
-            var file = document.getElementById('file');
-            file.value = "";
-            for (var i = 0; i < order.length; i++) {
-                var obj = findById(apps, order[i]);
-                if (typeof obj != "undefined") {
-                    newOrder.push(obj.id);
-                }
-            };
-
-                for (var i = 0; i < apps.length; i++) {
-                    if (apps[i].icon_display !== "none") {
-                        if ( ($.inArray(apps[i].id, order)) > -1 ) {
-                            
-                        } else {
-                            newOrder.push(apps[i].id);
+            fabmo.getApps(function(err,apps){
+                if (apps) {
+                    var menu = document.getElementById('app_menu_container');
+                    menu.innerHTML = "";
+                    var file = document.getElementById('file');
+                    file.value = "";
+                    for (var i = 0; i < order.length; i++) {
+                        var obj = findById(apps, order[i]);
+                        if (typeof obj != "undefined") {
+                            newOrder.push(obj.id);
                         }
-                    }
+                    };
+
+                        for (var i = 0; i < apps.length; i++) {
+                            if (apps[i].icon_display !== "none") {
+                                if ( ($.inArray(apps[i].id, order)) > -1 ) {
+                                    
+                                } else {
+                                    newOrder.push(apps[i].id);
+                                }
+                            }
+                        }
+
+                        for (var i = 0; i < notApp.length; i++) {
+                            if ( $.inArray(notApp[i], newOrder) > -1 ) {
+                                var ind = newOrder.indexOf(notApp[i]);
+                                newOrder.splice(ind,1);
+                            }
+                        }
+
+                        var noDupesArr = (function(arr){
+                            var m = {}, noDupesArr = []
+                            for (var i=0; i<arr.length; i++) {
+                            var v = arr[i];
+                            if (!m[v]) {
+                                noDupesArr.push(v);
+                                m[v]=true;
+                            }
+                            }
+                            return noDupesArr;
+                        })(newOrder);
+
+                        for (var i = 0; i < noDupesArr.length; i++) {
+                            var obj = findById(apps, noDupesArr[i]);
+                            makeListItem(menu, obj);
+                        }
+
+                    
+                    fabmo.getAppConfig(function(err, data){
+                        data.appOrder = newOrder;
+                        fabmo.setAppConfig(data, function(err, data){
+
+                        }) 
+                    });
+
+
+                    var listItem = document.createElement("ul");
+                    listItem.setAttribute("id", "add");
+                    listItem.setAttribute("class", "app_add");
+                    menu.appendChild(listItem);
+                    var id = document.getElementById("add");
+                    id.innerHTML = "<div class='font-container'><span class='fa fa-plus'></span></div>";
+                    $('#add').click(function(evt) {
+                        $('#file').trigger('click');
+                    });
+                    var timeoutId = 0;
+                    $('.app_item').on('mousedown touchstart',  function(e) {
+                        timeoutId = setTimeout(function(){
+                            holdfunction(e);
+                        }, 1500);
+                    }).on('mouseup mouseleave touchend', function(e) {
+                        clearTimeout(timeoutId);
+                    });
+                    
+                    
+                    resolve(apps);
+                } else {
+                    reject(Error(err));
                 }
-
-                for (var i = 0; i < notApp.length; i++) {
-                    if ( $.inArray(notApp[i], newOrder) > -1 ) {
-                        var ind = newOrder.indexOf(notApp[i]);
-                        newOrder.splice(ind,1);
-                    }
-                }
-
-                var noDupesArr = (function(arr){
-                    var m = {}, noDupesArr = []
-                    for (var i=0; i<arr.length; i++) {
-                      var v = arr[i];
-                      if (!m[v]) {
-                        noDupesArr.push(v);
-                        m[v]=true;
-                      }
-                    }
-                    return noDupesArr;
-                })(newOrder);
-
-                for (var i = 0; i < noDupesArr.length; i++) {
-                    var obj = findById(apps, noDupesArr[i]);
-                    makeListItem(menu, obj);
-                }
-
-            
-            fabmo.getAppConfig(function(err, data){
-                data.appOrder = newOrder;
-                fabmo.setAppConfig(data, function(err, data){
-
-                }) 
+                return order;
             });
-
-
-            var listItem = document.createElement("ul");
-            listItem.setAttribute("id", "add");
-            listItem.setAttribute("class", "app_add");
-            menu.appendChild(listItem);
-            var id = document.getElementById("add");
-            id.innerHTML = "<div class='font-container'><span class='fa fa-plus'></span></div>";
-            $('#add').click(function(evt) {
-                $('#file').trigger('click');
-            });
-            var timeoutId = 0;
-            $('.app_item').on('mousedown touchstart',  function(e) {
-                timeoutId = setTimeout(function(){
-                    holdfunction(e);
-                }, 1500);
-            }).on('mouseup mouseleave touchend', function(e) {
-                clearTimeout(timeoutId);
-            });
-            
-            
-            resolve(apps);
-        } else {
-            reject(Error(err));
-        }
-        return order;
-    });
 
         });
 
@@ -246,14 +244,12 @@ function holdfunction (e) {
            if (err){
                console.log(err);
            } else {
-               console.log(data);
                fabmo.getAppConfig(function(err, data){
                    data.appOrder = newOrder;
                    fabmo.setAppConfig(data, function(err, data){
                        if (err){
                            console.log(err)
                        } else {
-                            console.log(data);
                             $('#'+id).remove();
                             $('.filter').hide();
                             $('.app_add').removeClass('blur');

@@ -21,21 +21,21 @@ var appReloader = function(event, pth, details) {
   for(var app_id in app_index) {
     app_path = app_index[app_id].app_archive_path;
     app_path = path.normalize(app_path);
-    if(pathIsInside(app_path, pth) || pathIsInside(pth, app_path)) {
-      log.info(app_id + ' was changed. Reloading...');
-      watch_semaphore+=1;
-      var timeout = setTimeout(function() {
-        log.warn('Timeout waiting for reload of ' + app_id);
-        watch_semaphore-=1;
-        watch_semaphore = watch_semaphore < 0 ? 0 : watch_semaphore;
-      }, NCP_TIMEOUT);
-      return dashboard.reloadApp(app_id, function(err, result) {
-        clearTimeout(timeout);
-        log.info(app_id + ' updated.');
-        watch_semaphore-=1;  
-        watch_semaphore = watch_semaphore < 0 ? 0 : watch_semaphore;
-      });        
-    }
+    // if(pathIsInside(app_path, pth) || pathIsInside(pth, app_path)) {
+    //   log.info(app_id + ' was changed. Reloading...');
+    //   watch_semaphore+=1;
+    //   var timeout = setTimeout(function() {
+    //     log.warn('Timeout waiting for reload of ' + app_id);
+    //     watch_semaphore-=1;
+    //     watch_semaphore = watch_semaphore < 0 ? 0 : watch_semaphore;
+    //   }, NCP_TIMEOUT);
+    //   return dashboard.reloadApp(app_id, function(err, result) {
+    //     clearTimeout(timeout);
+    //     log.info(app_id + ' updated.');
+    //     watch_semaphore-=1;  
+    //     watch_semaphore = watch_semaphore < 0 ? 0 : watch_semaphore;
+    //   });        
+    // }
   } 
 }; 
 

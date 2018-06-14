@@ -33,7 +33,6 @@ define(function(require) {
 				
 				engine.getConfig(function(err,data){
 					defaultApp = data.machine.default_app;
-					console.log(defaultApp);
 					this.launchApp(defaultApp);
 				}.bind(this));
 
@@ -42,14 +41,12 @@ define(function(require) {
 				if (message){
 					message.toString();
 					var par = message.replace(/-/g, ' ');
-					console.log(par);
 					$('#add_err').html('<div class="error"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i><span> '+par+'</span></div>');
 					$('#add_err').removeAttr('style');
 	
 				}
 				
 				$.ajax({url: "authentication/logout", success: function(result){
-					console.log(result);
 				   }});
 				$('#mainContent').show();
 				auth();			

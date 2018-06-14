@@ -104,11 +104,16 @@ ManualRuntime.prototype.executeCode = function(code, callback) {
 					this.helper.stopMotion();
 					break;
 
+				case 'quit':
+					this.helper.quitMove();
+					break;
+
 				case 'maint':
 					this.helper.maintainMotion();
 					break;
 					
 				case 'goto':
+					this.machine.status.moving = true;
 					this.helper.goto(code.move)
 					break;
 
@@ -143,6 +148,11 @@ ManualRuntime.prototype._onG2Status = function(status) {
 		if(key in status) {
 			this.machine.status[key] = status[key];
 		}
+	}
+	if( status.stat === 5){
+		this.machine.status.moving = true;
+	} else {
+		this.machine.status.moving = false;
 	}
 
 	this.machine.emit('status',this.machine.status);

@@ -79,12 +79,10 @@ var FabMoDashboard = function(options) {
         },false);
         ele.addEventListener('touchend',function(e){
 		  //vertical detection
-		  console.log(swipe);
           if ((((swipe_det.eY - min_y > swipe_det.sY) || (swipe_det.eY + min_y < swipe_det.sY)) && ((swipe_det.eX < swipe_det.sX + max_x) && (swipe_det.sX > swipe_det.eX - max_x) && (swipe_det.eY > 0) && swipe))) {
 			clearTimeout(swipeTime);
 			if(swipe_det.eY < swipe_det.sY) direc = "u";
 			else direc = "d";
-			console.log(direc);
           }
       
           if (direc != "") {

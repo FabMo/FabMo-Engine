@@ -61,8 +61,6 @@ csv().from.string(cmd).on('record', function(record, idx) {
 
 		if(record[0] !== ''){
 			if(current_cmd !== null) {
-				console.log(current_cmd);
-				console.log(param_list);
 				commands[current_cmd].params = param_list;
 			}
 			current_cmd = record[1];

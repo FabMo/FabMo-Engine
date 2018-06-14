@@ -140,7 +140,6 @@ var onPrivateConnect = function(socket) {	if(!socket.request.sessionID.content.p
 		}, cookie['session']);
 		var user = handshakeData.sessionID;
 
-		console.log(user);
 		if(!authentication.getCurrentUser() || authentication.getCurrentUser().username != userId){
 			log.error(userId);
 			log.error(authentication.getCurrentUser());
@@ -157,7 +156,6 @@ var onPrivateConnect = function(socket) {	if(!socket.request.sessionID.content.p
 	});
 
 	socket.on('cmd', function(data, callback) {
-		console.log("I got a cmd");
 		if(!authentication.getCurrentUser() || authentication.getCurrentUser().username != userId){
 			log.error(userId);
 			log.error(authentication.getCurrentUser());

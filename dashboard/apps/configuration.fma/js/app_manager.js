@@ -11,7 +11,6 @@ function refreshApps() {
             if (err){
                 console.log(err);
             } else {
-                console.log(data);
                 defaultApp = data.machine.default_app;
                 $(".app-listing").empty();
         html = [
@@ -82,7 +81,6 @@ function refreshApps() {
 
             }); // each
             $('.defaultRadio').on('change', function(){
-                console.log($(this).val());
                 newDefault = $(this).val();
                 fabmo.getConfig(function(err,data){
                     data.machine.default_app = newDefault;
@@ -90,7 +88,6 @@ function refreshApps() {
                         if (err){
                             console.log(err);
                         } else {
-                            console.log(data);
                         }
                     });
                 });

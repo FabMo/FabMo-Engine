@@ -155,7 +155,7 @@ UserConfig.prototype.add = function(username,password,callback){
 	this.verifyAndEncryptPassword(password,function(err,pass_shasum){
 		if (err){callback(err,password);return ;}
 			if(this._cache.hasOwnProperty(username)){
-				console.log('User already exists!!!!')
+				log.info('User already exists!!!!')
 				callback('Username already taken !',null);
 				return ;
 			}else{

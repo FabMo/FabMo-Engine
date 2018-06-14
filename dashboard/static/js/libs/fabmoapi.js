@@ -403,6 +403,10 @@ FabMoAPI.prototype.manualStop = function() {
 	this.executeRuntimeCode('manual', {'cmd': 'stop'});
 }
 
+FabMoAPI.prototype.manualQuit= function() {
+	this.executeRuntimeCode('manual', {'cmd': 'quit'});
+}
+
 FabMoAPI.prototype.manualEnter = function() {
 	this.executeRuntimeCode('manual', {'cmd': 'enter'});
 }

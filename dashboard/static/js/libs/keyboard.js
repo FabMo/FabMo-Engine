@@ -49,7 +49,6 @@ Keyboard.prototype.init = function() {
 		this.elem.on('mouseleave', this.onMouseLeave.bind(this))
 		this.elem.on('keyup', this.onKeyUp.bind(this));		
 	} else {
-		console.log("Binding that keydown event")
 		$(document).on('keydown', this.onKeyDown.bind(this));
 		$(document).on('keyup', this.onKeyUp.bind(this));		
 
@@ -84,13 +83,11 @@ Keyboard.prototype.on = function(evt, func) {
 Keyboard.prototype.setEnabled = function(enabled) {
 	this.enabled = enabled;
 	if(enabled) {
-		console.log("keyboard enabled")
 		this.moves = MOVE_THRESH;
 		if(this.elem) {			
 			this.elem.removeClass('keyboard-button-inactive').addClass('keyboard-button-active');				
 		}
 	} else {
-		console.log("keyboard disabled")
 		this.going = false;
 		this.moves = 0;
 		if(this.elem) {			
@@ -148,7 +145,6 @@ Keyboard.prototype.onMouseMove = function(evt) {
 
 Keyboard.prototype.onKeyDown = function(evt) {
 	if(this.going || !this.enabled) {return}
-	console.log("keydown")
 	this.nudgeTimer = setTimeout(function() {
 		this.nudgeTimer = null;
 		if(!this.going) {
@@ -190,7 +186,6 @@ Keyboard.prototype.onMouseLeave = function(evt) {
 }
 
 Keyboard.prototype.onKeyUp = function(evt) {
-	console.log("keyup")
 	if(this.going ) {  this.stop(); }
 	if(this.nudgeTimer) {
 		
@@ -222,6 +217,8 @@ Keyboard.prototype.onKeyUp = function(evt) {
 				case KEY_PGDOWN:
 					this.nudge('z', -1);
 					break;
+				default:
+					return;
 			}	
 	} else {
 		if(this.enabled) {

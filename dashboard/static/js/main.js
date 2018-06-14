@@ -36,6 +36,7 @@ require("../css/toastr.min.css");
     var daisyIsShown = false;
     var authorizeDialog = false;
     var isRunning = false;
+    var keyPressed = false;
     var isAuth = false;
     var lastInfoSeen = null;
     var consent = '';
@@ -135,9 +136,17 @@ require("../css/toastr.min.css");
                     }
 
                     if(status.state === "manual") {
+                        
                         $('.modalDim').show();
                         $('.manual-drive-modal').show();
-                        keyboard.setEnabled(true);
+                        if(!status.moving && $(".axi").is(":focus") ) {
+                            keyboard.setEnabled(false);
+                        } else if(status.moving && !keyPressed){
+                            keyboard.setEnabled(false);
+                        } else {
+                            keyboard.setEnabled(true);
+                        }
+
 
                     }
 
@@ -315,6 +324,7 @@ require("../css/toastr.min.css");
         });
 
         keyboard.on('nudge', function(nudge) {
+            console.log('is this a nudge from keyboard');
             dashboard.engine.manualMoveFixed(nudge.axis, 60 * getManualMoveSpeed(nudge), nudge.dir * getManualNudgeIncrement(nudge))
         });
 
@@ -324,6 +334,7 @@ require("../css/toastr.min.css");
     function setupKeypad() {
         var keypad = new Keypad('#keypad');
         keypad.on('go', function(move) {
+            keyPressed = true;
             if (move.second_axis) {
                 dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1), move.second_axis, move.second_dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
             } else {
@@ -332,6 +343,7 @@ require("../css/toastr.min.css");
         });
 
         keypad.on('stop', function(evt) {
+            keyPressed = false;
             dashboard.engine.manualStop();
         });
 
@@ -340,9 +352,11 @@ require("../css/toastr.min.css");
             var increment = getManualNudgeIncrement(nudge);
             // var jerk = getManualMoveJerk(nudge);
             if( nudge.second_axis){
+                console.log('is this a nudge from keypad');
                 dashboard.engine.manualMoveFixed(nudge.axis, 60 * speed, nudge.dir * increment, nudge.second_axis, nudge.second_dir * increment);
                 
             } else {
+                console.log('is this a nudge from keypad with one axis ');
                 dashboard.engine.manualMoveFixed(nudge.axis, 60 * getManualMoveSpeed(nudge), nudge.dir * getManualNudgeIncrement(nudge));
             }
         });
@@ -425,7 +439,7 @@ require("../css/toastr.min.css");
     $(document).on('keydown', function(e) {
         if(e.keyCode === 27) {
             console.warn("ESC key pressed - quitting engine.");
-            dashboard.engine.quit();
+            dashboard.engine.manualStop();
         } else if (e.keyCode === 75 && e.ctrlKey ) {
 			dashboard.engine.manualEnter()
 		}
@@ -573,7 +587,7 @@ require("../css/toastr.min.css");
         $(this).select();
     });
 
-    $(document).on('click', function() {
+    $(document).on('click', function(e) {
         $('.posx').val($('.posx').val());
         $('.posy').val($('.posy').val());
         $('.posz').val($('.posz').val());
@@ -592,8 +606,6 @@ require("../css/toastr.min.css");
                 move[$(this).attr('id')] = parseFloat($(this).val());
             });
             dashboard.engine.goto(move);
-            $('.go-to-container').hide();
-            $('#keypad').show();
         }
     });
 
