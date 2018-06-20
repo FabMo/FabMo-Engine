@@ -151,12 +151,10 @@ ManualDriver.prototype.goto = function(pos) {
 			move += key + pos[key] + " ";
 		}
 	}
-
-	move += "\nG91\n";
+	move += "\nM0\nG91\n";
 	this.driver.prime();
 	this.stream.write(move);
 	this.moving = true;
-	
 }
 
 ManualDriver.prototype.set = function(pos) {
@@ -167,7 +165,7 @@ ManualDriver.prototype.set = function(pos) {
 		gc += key + pos[key].toFixed(5);
 	}.bind(this));
 	
-		this.stream.write(gc + '\n');
+		this.stream.write(gc + "\nM0\nG91\n");
 		this.driver.prime();
 		setTimeout(function() {
 			config.driver.reverseUpdate(['g55x','g55y','g55z','g55a','g55b'], function(err, data) {console.log(data)});

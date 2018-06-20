@@ -1693,6 +1693,16 @@ input[type='range']:focus {
 	height: 50%;
 }
 
+
+.manual-stop {
+	display: none;
+	font-size: 35px;
+	background: #ff0000;
+	border: solid 5px #A60000;
+	height: 50%;
+}
+
+
 .set-coordinates {
 	height: 25%;
 	background-color: #D8843E;

@@ -136,17 +136,22 @@ require("../css/toastr.min.css");
                     }
 
                     if(status.state === "manual") {
-                        
                         $('.modalDim').show();
                         $('.manual-drive-modal').show();
-                        if(!status.moving && $(".axi").is(":focus") ) {
-                            keyboard.setEnabled(false);
-                        } else if(status.moving && !keyPressed){
-                            keyboard.setEnabled(false);
+                        if(status.stat === 5 &&  status.currentCmd === "goto"){
+                                $('.manual-stop').show();
+                                $('.go-to, .set-coordinates').hide();
+                                keyboard.setEnabled(false);
+                                $('#keypad').hide();
+                                $('.go-to-container').show();
+                                $('.go-to-container').css('display', 'flex');
                         } else {
+                            $('.manual-stop').hide();
+                            $('.go-to, .set-coordinates').show();
                             keyboard.setEnabled(true);
+                            $('#keypad').show();
+                            $('.go-to-container').hide();
                         }
-
 
                     }
 
@@ -255,19 +260,6 @@ require("../css/toastr.min.css");
         if ($('#manual-move-speed').val()){
             speed_ips = $('#manual-move-speed').val();
         }
-        // try {
-        //     switch (move.axis) {
-        //         case 'x':
-        //         case 'y':
-        //             speed_ips = engine.config.machine.manual.xy_speed;
-        //             break;
-        //         case 'z':
-        //             speed_ips = engine.config.machine.manual.z_speed;
-        //             break;
-        //     }
-        // } catch (e) {
-        //     console.error(e);
-        // }
         return speed_ips;
     }
 
@@ -352,28 +344,13 @@ require("../css/toastr.min.css");
             var increment = getManualNudgeIncrement(nudge);
             // var jerk = getManualMoveJerk(nudge);
             if( nudge.second_axis){
-                console.log('is this a nudge from keypad');
                 dashboard.engine.manualMoveFixed(nudge.axis, 60 * speed, nudge.dir * increment, nudge.second_axis, nudge.second_dir * increment);
                 
             } else {
-                console.log('is this a nudge from keypad with one axis ');
                 dashboard.engine.manualMoveFixed(nudge.axis, 60 * getManualMoveSpeed(nudge), nudge.dir * getManualNudgeIncrement(nudge));
             }
         });
 
-        // keypad.on('enter', function() {
-        //     if(dashboard.engine.status.state == 'manual') {
-        //         dashboard.engine.manualExit();
-        //         keyboard.setEnabled(false);
-        //     } else {                
-        //         dashboard.engine.manualEnter();
-        //         keyboard.setEnabled(true);
-        //     }
-        // });
-
-        // keypad.on('exit', function() {
-        //     dashboard.engine.manualExit();
-        // });
         return keypad;
     }
 
@@ -440,6 +417,7 @@ require("../css/toastr.min.css");
         if(e.keyCode === 27) {
             console.warn("ESC key pressed - quitting engine.");
             dashboard.engine.manualStop();
+            keyboard.setEnabled(true);
         } else if (e.keyCode === 75 && e.ctrlKey ) {
 			dashboard.engine.manualEnter()
 		}
@@ -505,7 +483,6 @@ require("../css/toastr.min.css");
     var axisValues = [];
     getAxis = function () {
         $('.axi').each(function() {
-            console.log('when do I get called');
             var strings = this.getAttribute('class').split(" ")[0];
             var axis = strings.slice(-1).toUpperCase();
             axisValues.push({
@@ -522,6 +499,10 @@ require("../css/toastr.min.css");
             move[$(this).attr('id')] = parseFloat($(this).val());
         });
         dashboard.engine.goto(move);
+    });
+
+    $('.manual-stop').on('mousedown', function() {
+        dashboard.engine.manualStop(); 
     });
 
     $('.set-coordinates').on('mousedown', function() {
@@ -571,35 +552,32 @@ require("../css/toastr.min.css");
     });   
 
     $('.axi').on('click', function(e) {
-        var goString = 'Go to ';
         e.stopPropagation();
-        $('.go-here').show();
         $('#keypad').hide();
         $('.go-to-container').show();
         $('.go-to-container').css('display', 'flex');
-        keyboard.setEnabled(false);
-        
     });
 
     $('.axi').on('focus', function(e) {
         e.stopPropagation();
         $(this).val(parseFloat($(this).val().toString()));
         $(this).select();
+        keyboard.setEnabled(false);
     });
 
-    $(document).on('click', function(e) {
-        $('.posx').val($('.posx').val());
-        $('.posy').val($('.posy').val());
-        $('.posz').val($('.posz').val());
-        $('.posa').val($('.posa').val());
-        $('.posb').val($('.posb').val());
-        $('.go-here').hide();
-        $('#keypad').show();
-        $('.go-to-container').hide();
-        keyboard.setEnabled(true);
+    $('.manual-drive-modal').on('click', function(e) {
+            $('.posx').val($('.posx').val());
+            $('.posy').val($('.posy').val());
+            $('.posz').val($('.posz').val());
+            $('.posa').val($('.posa').val());
+            $('.posb').val($('.posb').val());
+            $('#keypad').show();
+            $('.go-to-container').hide();
+            keyboard.setEnabled(true);
     });
 
     $('.axi').keyup(function(e) {
+        keyboard.setEnabled(false);
         if (e.keyCode == 13) {
             var move = {}
             $('.modal-axi:visible').each(function(){
@@ -706,50 +684,6 @@ require("../css/toastr.min.css");
         });
     };
 
-// var range_el = document.querySelector('input[type=range]'), style_el, sel, pref, comps, a, b;
-
-// if(range_el) {
-//   style_el = document.createElement('style');
-//   sel = '.js[class*="webkit"] input[type=range]';
-//   pref = '-webkit-slider-';
-//   comps = ['runnable-track', 'thumb'];
-//   a = ':after'; b = ':before';
-  
-//   document.body.appendChild(style_el);
-  
-//   range_el.addEventListener('input', function() {
-//     var str = '', 
-//         curr_val = this.value, 
-//         min = this.min || 0, 
-//         max = this.max || 100, 
-//         perc = 100*(curr_val - min)/(max - min), 
-//         fill_val = ((perc <= 5)?'30px':((~~perc) + '%')) + ' 100%', 
-//         s_total = 60*curr_val, 
-//         ss = ~~(s_total%60), 
-//         m = Math.floor(s_total/60), 
-//         speaker_rules;
-
-//     if(ss < 10) { ss = '0' + ss; }
-    
-//    console.log($(sel + '::' + pref + comps[0]).css('background-size', fill_val ));
-    
-    
-//     str += sel + '::' + pref + comps[0] + '{background-size:' + fill_val + '}';
-//     str += sel + '::' + pref + comps[1] + a + ', ' + 
-//       sel + ' /deep/ #' + comps[1] + a + '{content:"' + m + ':' + ss + '"}';
-    
-//     speaker_rules = 'opacity:' + Math.min(1, perc/50).toFixed(2) + ';' + 
-//       'color:rgba(38,38,38,' + 
-//       ((perc <= 50) ? 0 : (((perc - 50)/50).toFixed(2))) + ')';
-    
-//     str += sel + '::' + pref + comps[0] + b + ',' + 
-//       sel + ' /deep/ #' + comps[0] + b + '{' + speaker_rules + '}';
-        
-//     style_el.textContent = str;
-//     console.log(style_el);
-//   }, false);
-
-// }
 
     ping();
 

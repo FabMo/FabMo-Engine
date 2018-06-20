@@ -7,6 +7,7 @@ var T_RENEW = 200;
 var SAFETY_FACTOR = 2.0;
 var RENEW_SEGMENTS = 10;
 var FIXED_MOVES_QUEUE_SIZE = 3;
+var currentCmd;
 
 function ManualRuntime() {
 	this.machine = null;
@@ -72,6 +73,7 @@ ManualRuntime.prototype.enter = function() {
 
 
 ManualRuntime.prototype.executeCode = function(code, callback) {
+	currentCmd = code.cmd;
 	this.completeCallback = callback;
 
 	// Don't honor commands if we're not in a position to do so
@@ -113,7 +115,6 @@ ManualRuntime.prototype.executeCode = function(code, callback) {
 					break;
 					
 				case 'goto':
-					this.machine.status.moving = true;
 					this.helper.goto(code.move)
 					break;
 
@@ -142,19 +143,15 @@ ManualRuntime.prototype.resume = function() {}
 
 ManualRuntime.prototype._onG2Status = function(status) {
 
-
 	// Update our copy of the system status
+
 	for (var key in this.machine.status) {
 		if(key in status) {
 			this.machine.status[key] = status[key];
 		}
 	}
-	if( status.stat === 5){
-		this.machine.status.moving = true;
-	} else {
-		this.machine.status.moving = false;
-	}
-	console.log(this.machine.status);
+	this.machine.status.currentCmd = currentCmd;
+	this.machine.status.stat = status.stat;
 	this.machine.emit('status',this.machine.status);
 };
 
