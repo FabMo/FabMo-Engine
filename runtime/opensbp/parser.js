@@ -62,7 +62,9 @@ parseLine = function(line) {
 	var match = statement.match(STUPID_STRING_RE)
         if(match) {
             obj = {type:"assign",var:match[1], expr:match[2]}
-        }
+        } else {
+		throw e
+	}
     }
     
     if(Array.isArray(obj) || obj === null) {

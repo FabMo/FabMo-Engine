@@ -68,6 +68,7 @@ function SBPRuntime() {
 	this.cmd_StartB = 0;
 	this.cmd_StartC = 0;
 	this.paused = false;
+	this.resumeAllowed = true;
 	this.lastNoZPullup = 0;
 	this.continue_callback = null;
 	this.vs_change = 0;
@@ -215,9 +216,12 @@ SBPRuntime.prototype.runString = function(s, callback) {
 		}
 		try {
 			this.program = parser.parse(s);
-			log.tock('Parse file')
+			console.log("MADE IT THROUGH SYNTAX");
 		} catch(e) {
+			console.log("!!!!!!! Syntax error hit");
 			return this._end(e.message + " (Line " + e.line + ")");
+		} finally {
+			log.tock('Parse file')
 		}
  		lines = this.program.length;
 		this._setupTransforms();
@@ -236,7 +240,7 @@ SBPRuntime.prototype.runString = function(s, callback) {
 		return st;
 	} catch(e) {
 		log.error(e);
-		return this._end(e.message + " (Line " + e.line + ")");
+		return this._end(e.message);
 	}
 };
 
@@ -554,6 +558,9 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 		case "event":
 			result = true; // TODO: DEPRECATE
 			break;
+		case "end":
+			result = true;
+			break;
 
 		default:
 			result = false;
@@ -593,13 +600,13 @@ SBPRuntime.prototype._run = function() {
 			switch(stat) {
 				case this.driver.STAT_STOP:
 					this.gcodesPending = false;
-                    this._executeNext();
+                    			this._executeNext();
 				break;
 				case this.driver.STAT_HOLDING:
 					//this.paused = true;
 					this.machine.setState(this, 'paused');
 				break;
-                case this.driver.STAT_PROBE:
+                		case this.driver.STAT_PROBE:
 				case this.driver.STAT_RUNNING:
 					if(!this.inManualMode) {
 						this.machine.setState(this, 'running');
@@ -623,6 +630,7 @@ SBPRuntime.prototype._run = function() {
 				.on('stat', onStat.bind(this))
 				.on('status', this._onG2Status.bind(this))
                 .then(function() {
+					console.log("THE HUMANS ARE DEAD");
 					this.file_stack = []
 					this._end(this.pending_error);
 				}.bind(this));
@@ -716,7 +724,7 @@ SBPRuntime.prototype._executeNext = function() {
 		} catch(e) {
 			log.error(e)
 			if(this.driver.status.stat != this.driver.STAT_STOP) {
-				this._abort(e);
+				return this._abort(e);
 				setImmediate(this._executeNext.bind(this));
 			} else {
 				return this._end(e);
@@ -735,21 +743,29 @@ SBPRuntime.prototype._abort = function(error) {
     this.stream.end();
 }
 SBPRuntime.prototype._end = function(error) {
-
+	log.stack();
 	error = error ? error.message || error : null;
 	if(!error) {
 		error = this.end_message || null;
 	}
 	log.debug("Calling the non-nested (toplevel) end");
 
+	// Delete the user variables that don't stick around across runs
   	for(var key in this.user_vars) {
 		if(key[1] === '_') {
 			delete this.user_vars[key]
 		}
 	}  
+
+	// Log the error for posterity
 	if(error) {log.error(error)}
+
 	var cleanup = function(error) {
+		console.log("CALLING CLEANUP");
+		console.log(error);
+		log.stack()
 		if(this.machine && error) {
+			console.log("Setting state to stopped")
 			this.machine.setState(this, 'stopped', {'error' : error });
 		}
 		if(!this.machine){
@@ -765,16 +781,20 @@ SBPRuntime.prototype._end = function(error) {
 	this.init();
 
 	if(error) {
-        if(this.machine) {
+        	if(this.machine) {
+			this.resumeAllowed = false;
 			this.machine.restoreDriverState(function(err, result) {
+				this.resumeAllowed = true;
 				cleanup(error);
 			}.bind(this));
-        } else {
-            cleanup(error);
-        }
+        	} else {
+            	cleanup(error);
+        	}
 	} else {
 		if(this.machine) {
+			this.resumeAllowed=false
 			this.machine.restoreDriverState(function(err, result) {
+				this.resumeAllowed = true;
 				if(this.machine.status.job) {
 					this.machine.status.job.finish(function(err, job) {
 						this.machine.status.job=null;
@@ -877,7 +897,7 @@ SBPRuntime.prototype._execute = function(command, callback) {
 				setImmediate(callback);
 				return true;
 			} else {
-				throw "Runtime Error: Return with no GOSUB at " + this.pc;
+				throw "Runtime Error: Return with no GOSUB at " + (this.pc+1);
 			}
 			return true;
 			break;
@@ -900,19 +920,19 @@ SBPRuntime.prototype._execute = function(command, callback) {
 				return true;
 			} else {
 
-				throw new Error("Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc);
+				throw new Error("Runtime Error: Unknown Label '" + command.label + "' at line " + (this.pc+1));
 			}
 			break;
 
 		case "gosub":
 			if(command.label in this.label_index) {
 				this.stack.push(this.pc + 1);
-				log.debug("Pushing the current PC onto the stack (" +(this.pc + 1) + ")")
+				log.debug("Pushing the current PC onto the stack (" +(this.pc+1) + ")")
 				this.pc = this.label_index[command.label];
 				setImmediate(callback);
 				return true;
 			} else {
-				throw new Error("Runtime Error: Unknown Label '" + command.label + "' at line " + this.pc);
+				throw new Error("Runtime Error: Unknown Label '" + command.label + "' at line " + (this.pc+1));
 			}
 			break;
 
@@ -1631,11 +1651,13 @@ SBPRuntime.prototype.quit = function() {
 }
 
 SBPRuntime.prototype.resume = function() {
+		if(this.resumeAllowed) {
 		if(this.paused) {
 			this.paused = false;
 			this._executeNext();
 		} else {
 			this.driver.resume();
+		}
 		}
 }
 
