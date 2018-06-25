@@ -154,7 +154,6 @@ ManualDriver.prototype.goto = function(pos) {
 	move += "\nM0\nG91\n";
 	this.driver.prime();
 	this.stream.write(move);
-	this.moving = true;
 }
 
 ManualDriver.prototype.set = function(pos) {
@@ -169,7 +168,6 @@ ManualDriver.prototype.set = function(pos) {
 		this.driver.prime();
 		setTimeout(function() {
 			config.driver.reverseUpdate(['g55x','g55y','g55z','g55a','g55b'], function(err, data) {console.log(data)});
-			this.moving = false;
 		}.bind(this), 500);
 
 }
