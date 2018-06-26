@@ -905,9 +905,8 @@ SBPRuntime.prototype._execute = function(command, callback) {
 				setImmediate(callback);
 				return true;
 			} else {
-				throw "Runtime Error: Return with no GOSUB at " + (this.pc+1);
+				throw new Error("Runtime Error: Return with no GOSUB at " + (this.pc+1));
 			}
-			return true;
 			break;
 
 		case "end":
@@ -916,7 +915,8 @@ SBPRuntime.prototype._execute = function(command, callback) {
 				this.end_message = command.message;
 				throw new Error(command.message)
 			}
-			return false;
+			setImmediate(callback);
+			return true;
 			break;
 
 		case "goto":
