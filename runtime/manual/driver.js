@@ -48,7 +48,7 @@ ManualDriver.prototype.enter = function() {
     this.stream.write('M100.1 ({xjm:'+jerkXY+'})\n');
     this.stream.write('M100.1 ({yjm:'+jerkXY+'})\n');
     this.stream.write('M100.1 ({zjm:'+jerkZ+'})\n');	
-    this.stream.write('M100.1 ({zl:0})\n');	
+	this.stream.write('M100.1 ({zl:0})\nM0\n');	
 	this.driver.prime();
 	this.deferred = Q.defer();
 	return this.deferred.promise;
@@ -266,6 +266,7 @@ ManualDriver.prototype._renewMoves = function() {
 }
 
 ManualDriver.prototype._onG2Status = function(status) {
+	console.log(status.stat);
 	switch(status.stat) {
 		case this.driver.STAT_INTERLOCK:
 		case this.driver.STAT_SHUTDOWN:

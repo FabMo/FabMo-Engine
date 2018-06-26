@@ -142,7 +142,6 @@ ManualRuntime.prototype.quit = function() {}
 ManualRuntime.prototype.resume = function() {}
 
 ManualRuntime.prototype._onG2Status = function(status) {
-
 	// Update our copy of the system status
 
 	for (var key in this.machine.status) {

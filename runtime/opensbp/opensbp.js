@@ -144,49 +144,57 @@ SBPRuntime.prototype.executeCode = function(s, callback) {
 	} else {
 		if(this.inManualMode) {
 			switch(s.cmd) {
-			case 'enter':
-				//	this.enter();
-				break;
-			default:
-				if(!this.helper) {
-					log.warn("Can't accept command '" + s.cmd + "' - not entered.");
-					this.machine.setState(this, 'idle');
-					return;
-				}
-				switch(s.cmd) {
-					case 'exit':
-						this.helper.exit();
-						// RESUME KIDS
-						break;
-
-					case 'start':
-						this.helper.startMotion(s.axis, s.speed);
-						break;
-
-					case 'stop':
-						this.helper.stopMotion();
-						break;
-
-					case 'maint':
-						this.helper.maintainMotion();
-						break;
-
-					case 'fixed':
-						if(!this.helper) {
-							this.enter();
-						}
-						this.helper.nudge(s.axis, s.speed, s.dist);
-						break;
-
-					case 'set':
-						this.helper.set(s.move)
+				case 'enter':
+					this.enter();
 					break;
-
-					default:
-						log.error("Don't know what to do with '" + s.cmd + "' in manual command.");
-						break;
-
-				}
+				default:
+					if(!this.helper) {
+						log.warn("Can't accept command '" + s.cmd + "' - not entered.");
+						this.machine.setState(this, 'idle');
+						return;
+					}
+					switch(s.cmd) {
+						case 'exit':
+							log.debug('---- MANUAL DRIVE EXIT ----')
+							this.helper.exit();
+							break;
+		
+						case 'start':
+							this.helper.startMotion(s.axis, s.speed, s.second_axis, s.second_speed);
+							break;
+		
+						case 'stop':
+							this.helper.stopMotion();
+							break;
+		
+						case 'quit':
+							this.helper.quitMove();
+							break;
+		
+						case 'maint':
+							this.helper.maintainMotion();
+							break;
+							
+						case 'goto':
+							this.helper.goto(s.move)
+							break;
+		
+						case 'set':
+							this.helper.set(s.move)
+							break;
+		
+						case 'fixed':
+							if(!this.helper) {
+								this.enter();
+							}
+							this.helper.nudge(s.axis, s.speed, s.dist, s.second_axis, s.second_dist);
+							break;
+		
+						default:
+							log.error("Don't know what to do with '" + s.cmd + "' in manual command.");
+							break;
+		
+					}
 			}
 
 		}
