@@ -108,7 +108,7 @@ var onPublicConnect = function(socket) {
 };
 
 
-var onPrivateConnect = function(socket) {	if(!socket.request.sessionID.content.passport)
+var onPrivateConnect = function(socket) {	
 	if(!socket.request.sessionID.content.passport) {
 		return socket.disconnect();
 	}

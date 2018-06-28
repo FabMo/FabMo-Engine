@@ -83,7 +83,16 @@ var apply = function(profileName, callback) {
 		async.each(PROFILE_DIRS, function(dir, callback) {
 			var configDir = config.getDataDir(dir)
 			var profileConfigDir = path.join(profile.dir, dir)
+			var authSecretExists = false;
+			var authPath = configDir+'/auth_secret';
+
 			log.debug('Removing config directory ' + configDir);
+			//if auth_secret file exists lets copy it to a tmp directory
+			if (fs.existsSync(authPath)) {
+				authSecretExists = true;
+				fs.mkdirSync('/opt/fabmo/tmp');
+				fs.copySync(authPath, '/opt/fabmo/tmp/auth_secret');
+			}
 			fs.remove(configDir, function(err) {
 				if(err) {
 					return callback(err);
@@ -96,6 +105,18 @@ var apply = function(profileName, callback) {
 						return callback(err);
 					} else {
 						log.debug('...done copying.')
+						///check to see if we copied an auth_secret
+						if(authSecretExists) {
+							fs.copySync('/opt/fabmo/tmp/auth_secret', authPath);
+							fs.remove('/opt/fabmo/tmp' , function(err) {
+								if(err){
+									log.error(err);
+								} else {
+									log.debug('copied auth_secret and removed tmp dir')
+								}
+
+							})
+						}
 						callback();
 					}
 				});
