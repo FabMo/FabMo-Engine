@@ -1012,10 +1012,7 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 		case "event":
 			this.pc += 1;
-			//this._setupEvent(command, callback);
-			log.warn("Event handling (ON INPUTs) are disabled.")
-			setImmediate(callback);
-			return true;
+			throw new Error("ON INPUT is no longer a supported command.  Make sure the program you are using is up to date.");
 			break;
 
 		default:
