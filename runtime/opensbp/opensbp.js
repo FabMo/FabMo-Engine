@@ -531,7 +531,6 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 			result = false;
 			break;
 
-		// For now, pause translates to "dwell" which is just a G-Code
 		case "pause":
 			return true;
 			break;
@@ -564,6 +563,11 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 		case "event":
 			result = true; // TODO: DEPRECATE
 			break;
+
+		case "fail":
+			result = true;
+			break;
+
 		case "end":
 			result = true;
 			break;
@@ -904,6 +908,16 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			break;
 
 		case "end":
+			this.pc = this.program.length;
+			/* if(command.message) {
+				this.end_message = command.message;
+				throw new Error(command.message)
+			}*/
+			setImmediate(callback);
+			return true;
+			break;
+
+		case "fail":
 			this.pc = this.program.length;
 			if(command.message) {
 				this.end_message = command.message;

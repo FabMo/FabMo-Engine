@@ -18,7 +18,7 @@ start
    = __ stmt:statement __ {return stmt}
 
 statement
-   = (label / single / end / jump / pause / conditional / assignment / weak_assignment / event / open / custom_cut / command / __)
+   = (label / single / fail / jump / pause / conditional / assignment / weak_assignment / event / open / custom_cut / command / __)
 
 custom_cut
    = [Cc] index:integer __ ","?
@@ -38,11 +38,11 @@ command
       return {type:"cmd","cmd":m,"args":args};}
 
 single
-   = name:("RETURN"i) 
+   = name:("RETURN"i / "END"i) 
      {return {type:name.toLowerCase()}}
 
-end
-  = name:("END"i) __ message:quotedstring? {return {"type" : "end", "message": message}}
+fail
+  = name:("FAIL"i) __ message:quotedstring? {return {"type" : "fail", "message": message}}
 
 pause
    = name:("PAUSE"i)  __ ","? __  arg:(e:expression {return {expr: e}})? {

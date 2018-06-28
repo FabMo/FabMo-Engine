@@ -137,8 +137,14 @@ CodeMirror.defineMode("opensbp", function() {
           } 
 
           // Pause command
-          if(stream.match(/^PAUSE/i)) {
+          if(stream.match(/^PAUSE\s*,?\s*/i)) {
             state.name = "pause";
+            return "keyword"
+          }
+
+          // Pause command
+          if(stream.match(/^FAIL/i)) {
+            state.name = "fail";
             return "keyword"
           }
 
@@ -220,6 +226,16 @@ CodeMirror.defineMode("opensbp", function() {
           break;
 
         case "pause":
+          if(stream.eatSpace()) {
+            return null;
+          }
+
+          var match = matchExpression(stream);
+          if(match) { return match; }
+          
+          break;
+
+        case "fail":
           if(stream.eatSpace()) {
             return null;
           }
