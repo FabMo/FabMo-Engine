@@ -348,6 +348,9 @@ Machine.prototype.arm = function(action, timeout) {
 	this.action = action;
 	var interlockRequired = config.machine.get('interlock_required');
 	var interlockInput = 'in' + config.machine.get('interlock_input');
+	if(this.action && this.action.payload.name === 'manual') {
+		interlockRequired = false;
+	}
 	if(this.action) {
 		if(interlockRequired && this.driver.status[interlockInput]) {
 			this.setState(this, 'interlock')
