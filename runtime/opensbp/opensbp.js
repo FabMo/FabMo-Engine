@@ -224,9 +224,7 @@ SBPRuntime.prototype.runString = function(s, callback) {
 		}
 		try {
 			this.program = parser.parse(s);
-			console.log("MADE IT THROUGH SYNTAX");
 		} catch(e) {
-			console.log("!!!!!!! Syntax error hit");
 			return this._end(e.message + " (Line " + e.line + ")");
 		} finally {
 			log.tock('Parse file')
@@ -638,7 +636,6 @@ SBPRuntime.prototype._run = function() {
 				.on('stat', onStat.bind(this))
 				.on('status', this._onG2Status.bind(this))
                 .then(function() {
-					console.log("THE HUMANS ARE DEAD");
 					this.file_stack = []
 					this._end(this.pending_error);
 				}.bind(this));
@@ -769,11 +766,8 @@ SBPRuntime.prototype._end = function(error) {
 	if(error) {log.error(error)}
 
 	var cleanup = function(error) {
-		console.log("CALLING CLEANUP");
-		console.log(error);
 		log.stack()
 		if(this.machine && error) {
-			console.log("Setting state to stopped")
 			this.machine.setState(this, 'stopped', {'error' : error });
 		}
 		if(!this.machine){

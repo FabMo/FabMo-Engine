@@ -326,6 +326,14 @@ $('body').click(function(event){
         }
     });
 
+    $("#machine-interlock_required").on('change', function() {
+        if ($(this).is(':checked')) {
+            $(this).attr('value', 'true');
+        } else {
+            $(this).attr('value', 'false');
+        }
+    });
+
     $('.machine-input').change( function() {
         setConfig(this.id, this.value);
     });

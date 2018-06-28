@@ -1750,15 +1750,16 @@
 
         <div class="row">
           <fieldset>
-            <legend>Authorization Button</legend>
+            <legend>Safety</legend>
             <div class="large-6 columns">
               <div class="row collapse">
-                <label data-tip="Do you want to have to physically authorize the tool when the tool wants to move">Authorization Required
+                <label data-tip="Do you want to have to physically authorize the tool when the tool wants to move">
+                	Use Authorization Button
                   <div class="tool-tip">i</div>
                 </label>
                 <input id="machine-auth_required" class="machine-input" type="checkbox" checked>
               </div>
-                <div class="row collapse">
+              <div class="row collapse">
                 <label data-tip="The input to which the authorization button is connected.">Authorization Button Input
                   <div class="tool-tip">i</div>
                 </label>
@@ -1772,7 +1773,6 @@
                     <option value="7">Input 7</option>
                     <option value="8">Input 8</option>
                   </select>
-
               </div>
               <div class="row collapse">
                 <label data-tip="The amount of time the tool remains authorized for use after authorization has been issued with the authorization button.  Tool authorization is used to confirm that you are physically present and working at the tool before executing a motion command that comes in over the wireless or wired network.">Authorization Timeout<div class="tool-tip">i</div></label>
@@ -1782,6 +1782,28 @@
                 <div class="small-3 columns">
                   <span class="postfix">seconds</span>
                 </div>
+              </div>
+              <div class="row collapse">
+                <label data-tip="Whether or not the machine can be locked out with an input.">
+                	Use Interlock
+                  <div class="tool-tip">i</div>
+                </label>
+                <input id="machine-interlock_required" class="machine-input" type="checkbox" checked>
+              </div>
+                <div class="row collapse">
+                <label data-tip="The input to which the authorization button is connected.">Interlock Input
+                  <div class="tool-tip">i</div>
+                </label>
+                  <select id="machine-interlock_input" class="machine-input">
+                    <option value="1">Input 1</option>
+                    <option value="2">Input 2</option>
+                    <option value="3">Input 3</option>
+                    <option value="4">Input 4</option>
+                    <option value="5">Input 5</option>
+                    <option value="6">Input 6</option>
+                    <option value="7">Input 7</option>
+                    <option value="8">Input 8</option>
+                  </select>
               </div>
             </div>
           </fieldset>

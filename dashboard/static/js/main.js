@@ -35,6 +35,7 @@ require("../css/toastr.min.css");
     var modalIsShown = false;
     var daisyIsShown = false;
     var authorizeDialog = false;
+    var interlockDialog = false;
     var isRunning = false;
     var keyPressed = false;
     var isAuth = false;
@@ -161,16 +162,17 @@ require("../css/toastr.min.css");
                         keyboard.setEnabled(false);
                     }
 
-                    if (status.state != "armed" && last_state_seen === "armed" || status.state != "paused" && last_state_seen === "paused") {
+                    if ((status.state != "armed" && last_state_seen === "armed") || 
+                        (status.state != "paused" && last_state_seen === "paused") ||
+                        (status.state != "interlock" && last_state_seen === "interlock")) {
                         dashboard.hideModal();
                         modalIsShown = false;
                     }
 
-
                     if (last_state_seen != status.state) {
                         last_state_seen = status.state;
-
                     }
+
                     switch (status.state) {
                         case 'running':
                         case 'paused':
@@ -233,7 +235,7 @@ require("../css/toastr.min.css");
                             });
                             modalIsShown = true;
                         }
-                    } else if (status.state == 'armed') {
+                    } else if (status.state === 'armed') {
                         authorizeDialog = true;
                             keypad.setEnabled(false);
                             keyboard.setEnabled(false);
@@ -247,7 +249,27 @@ require("../css/toastr.min.css");
                             }
           
                         });
+                    } else if (status.state === 'interlock') {
+                        interlockDialog = true;
+                            keypad.setEnabled(false);
+                            keyboard.setEnabled(false);
+                        dashboard.showModal({
+                            title: 'Interlock Active!',
+                            message: 'You cannot perform the specified action while the interlock is active.  Please clear the interlock to continue.',
+                            cancelText: 'Quit',
+                            cancel: function() {
+                                interlockDialog = false;
+                                dashboard.engine.quit();
+                            },
+
+                            okText: 'Resume',
+                            ok: function() {
+                                dashboard.engine.resume();
+                            }
+          
+                        });
                     }
+
                 });
 
             }
