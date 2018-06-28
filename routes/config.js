@@ -72,7 +72,7 @@ var post_config = function(req, res, next) {
   var new_config = {};
   var answer;
   var final_result={};
-  
+  console.log(req.params)
   setMany_remaining = 0;
   ['engine', 'driver', 'opensbp', 'machine'].forEach(function(each) {
     if(each in req.params) {

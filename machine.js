@@ -95,7 +95,9 @@ function Machine(control_path, callback) {
 	this.quit_pressed = 0;
 	this.fireButtonPressed =0; 
 	this.info_id = 0;
-
+	this.action = null;
+	this.interlock_action = null;
+	
 	this.driver = new g2.G2();
 	this.driver.on("error", function(err) {log.error(err);});
 
@@ -131,7 +133,6 @@ function Machine(control_path, callback) {
 
 	    // Idle
 	    this.setRuntime(null, function(err) {
-		    console.log(err)
 	    if(err) {
                 typeof callback === "function" && callback(err);
             } else {
@@ -171,6 +172,7 @@ function Machine(control_path, callback) {
 		var auth_input = 'in' + config.machine.get('auth_input');
 		var quit_input = 'in' + config.machine.get('quit_input');
 		var ap_input = 'in' + config.machine.get('ap_input');
+		var interlock_input = 'in' + config.machine.get('interlock_input');
 		if(this.status.state === "paused"){
 			setTimeout(function(){
 				 canQuit = true;
@@ -189,7 +191,7 @@ function Machine(control_path, callback) {
 		}
 		this.handleFireButton(stat, auth_input);
     	this.handleAPCollapseButton(stat, ap_input);
-
+    	this.handleInterlockInput(stat, interlock_input)
 
     }.bind(this));
 }
@@ -235,6 +237,14 @@ Machine.prototype.handleOkayCancelDual = function(stat, quit_input) {
 		});
 	}
 	this.quit_pressed = stat[quit_input];
+}
+
+Machine.prototype.handleInterlockInput = function(stat, interlock_input) {
+	/*if(!stat[interlock_input]) {
+		if(this.status.state == 'interlock') {
+			this.resume(function() {});
+		}
+	}*/
 }
 
 Machine.prototype.handleFireButton = function(stat, auth_input) {
@@ -309,11 +319,14 @@ Machine.prototype.restoreDriverState = function(callback) {
 	}.bind(this));
 }
 
-Machine.prototype.arm = function(action, timeout) {
+Machine.prototype.arm = function(action, timeout) {	
 	switch(this.status.state) {
 		case 'idle':
+			this.interlock_action = action;
 		break;
-
+		case 'interlock':
+			action = this.interlock_action || action;
+		break;
 		case 'manual':
 			if(action == null || (action.type == 'runtimeCode' && action.payload.name == 'manual')) {
 				break;
@@ -333,6 +346,16 @@ Machine.prototype.arm = function(action, timeout) {
 
 	delete this.status.info
 	this.action = action;
+	var interlockRequired = config.machine.get('interlock_required');
+	var interlockInput = 'in' + config.machine.get('interlock_input');
+	if(this.action) {
+		if(interlockRequired && this.driver.status[interlockInput]) {
+			this.setState(this, 'interlock')
+			return;			
+		}
+	} else {
+	}
+
 	log.info("Arming the machine" + (action ? (' for ' + action.type) : '(No action)'));
 	//log.error(new Error())
 	if(this._armTimer) { clearTimeout(this._armTimer);}
@@ -378,6 +401,7 @@ Machine.prototype.arm = function(action, timeout) {
 }
 
 Machine.prototype.disarm = function() {
+	log.stack();
 	if(this._armTimer) { clearTimeout(this._armTimer);}
 	this.action = null;
 	this.fireButtonDebounce = false;
@@ -389,6 +413,7 @@ Machine.prototype.disarm = function() {
 Machine.prototype.fire = function(force) {
 	if(this.fireButtonDebounce & !force) {
 		log.debug("Fire button debounce reject.");
+		log.debug("debounce: " + this.fireButtonDebounce + " force: " + force);
 		return;
 	}
 
@@ -663,7 +688,14 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 					}
 				}
 				this.action = null;
-				// Deliberately fall through
+				if(this.status.state != newstate) {
+                    this.driver.get('mpo', function(err, mpo) {
+					    if(config.instance) {
+						    config.instance.update({'position' : mpo});
+					    }
+				    });
+                }
+				break;
 			case 'paused':
                 if(this.status.state != newstate) {
                     this.driver.get('mpo', function(err, mpo) {
@@ -671,7 +703,15 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 						    config.instance.update({'position' : mpo});
 					    }
 				    });
-                }
+				    var interlockRequired = config.machine.get('interlock_required');
+					var interlockInput = 'in' + config.machine.get('interlock_input');
+				    if(interlockRequired && this.driver.status[interlockInput]) {
+						log.stack();
+						this.interlock_action = null;
+						this.setState(this, 'interlock')		
+						return
+					}
+                } 
 				break;
 			case 'dead':
 				log.error('G2 is dead!');
@@ -703,10 +743,19 @@ Machine.prototype.pause = function(callback) {
 
 Machine.prototype.quit = function(callback) {
 		this.disarm();
+
 		// Quitting from the idle state dismisses the 'info' data
-		if(this.status.state === "idle") {
-			delete this.status.info;
-			this.emit('status', this.status);
+		switch(this.status.state) {
+
+			case "idle":
+				delete this.status.info;
+				this.emit('status', this.status);
+				break;
+
+			case "interlock":
+				this.action = null;
+				this.setState(this, 'idle');
+				break;
 		}
 	
 		// Cancel the currently running job, if there is one
@@ -811,8 +860,17 @@ Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 }
 
 Machine.prototype._resume = function() {
+	switch(this.status.state) {
+		case 'interlock':
+			if(this.interlock_action) {
+				this.arm(this.interlock_action);
+				this.interlock_action = null;
+				return;
+			}
+		break;
+	}
 	if(this.current_runtime) {
-		this.current_runtime.resume();
+		this.current_runtime.resume()
 	}
 };
 
