@@ -5,10 +5,10 @@ var util = require('util');
 var events = require('events')
 var Q = require('q');
 
-var T_RENEW = 200;
-var SAFETY_FACTOR = 2.0;
+var T_RENEW = 250;
+var SAFETY_FACTOR = 1.5;
 var count;
-var RENEW_SEGMENTS = 10;
+var RENEW_SEGMENTS = 5;
 var FIXED_MOVES_QUEUE_SIZE = 3;
 var count = 0;
 
@@ -31,6 +31,8 @@ function ManualDriver(drv, st) {
 	this.exit_pending = false;
 
 	this.stop_pending = false;
+
+	this.omg_stop = false;
 
 	// Current trajectory
 	this.current_axis = null;
@@ -72,12 +74,10 @@ ManualDriver.prototype.exit = function() {
 }
 
 ManualDriver.prototype.startMotion = function(axis,  speed, second_axis, second_speed) {
-	log.debug("startMotion called")
 	var dir = speed < 0 ? -1.0 : 1.0;
 	var second_dir = second_speed < 0 ? -1.0 : 1.0;
 	speed = Math.abs(speed);
 	if(this.moving) {
-		log.debug("Already moving")
 		if(axis === this.currentAxis && speed === this.currentSpeed) {
 			this.maintainMotion();
 		} else {
@@ -92,7 +92,6 @@ ManualDriver.prototype.startMotion = function(axis,  speed, second_axis, second_
 			this.second_axis = null;
 			this.second_currentDirection = null;
 		}
-		log.debug("Not moving")
 		// Set Heading
 		this.currentAxis = axis;
 		this.currentSpeed = speed;
@@ -101,7 +100,7 @@ ManualDriver.prototype.startMotion = function(axis,  speed, second_axis, second_
 		this.moving = this.keep_moving = true;
 		this.renewDistance = speed*(T_RENEW/60000)*SAFETY_FACTOR;                
 		this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
-		this._renewMoves();
+		this._renewMoves("start");
 	}
 }
 
@@ -116,7 +115,8 @@ ManualDriver.prototype.maintainMotion = function() {
 ManualDriver.prototype.stopMotion = function() {
 	if(this._limit()) { return; }
 	this.keep_moving = false;
-	if(this.moving) {
+	if(1/*this.moving*/) {
+		this.omg_stop = true
 		this.stop_pending = true;
 		this.driver.feedHold();
 		this.driver.queueFlush(function() {
@@ -124,6 +124,7 @@ ManualDriver.prototype.stopMotion = function() {
 		}.bind(this));
 	} else {
 		this.stop_pending = false;
+		this.omg_stop = true;
 	}
 }
 
@@ -167,7 +168,7 @@ ManualDriver.prototype.set = function(pos) {
 		this.stream.write(gc + "\nM0\nG91\n");
 		this.driver.prime();
 		setTimeout(function() {
-			config.driver.reverseUpdate(['g55x','g55y','g55z','g55a','g55b'], function(err, data) {console.log(data)});
+			config.driver.reverseUpdate(['g55x','g55y','g55z','g55a','g55b'], function(err, data) {});
 		}.bind(this), 500);
 
 }
@@ -237,9 +238,8 @@ ManualDriver.prototype.isMoving = function() {
 }
 
 
-ManualDriver.prototype._renewMoves = function() {
+ManualDriver.prototype._renewMoves = function(reason) {
 	if(this.moving && this.keep_moving) {
-		log.debug('Renewing moves because of reasons')
 		this.keep_moving = false;
 		var segment = this.currentDirection*(this.renewDistance / RENEW_SEGMENTS);
 		var second_segment = this.second_currentDirection*(this.renewDistance / RENEW_SEGMENTS);
@@ -258,7 +258,7 @@ ManualDriver.prototype._renewMoves = function() {
 	
 		this.driver.prime();
 		setTimeout(function() {
-			this._renewMoves()
+			this._renewMoves("timeout")
 		}.bind(this), T_RENEW)
 	} else {
 		this.stopMotion();
@@ -266,7 +266,6 @@ ManualDriver.prototype._renewMoves = function() {
 }
 
 ManualDriver.prototype._onG2Status = function(status) {
-	console.log(status.stat);
 	switch(status.stat) {
 		case this.driver.STAT_INTERLOCK:
 		case this.driver.STAT_SHUTDOWN:
@@ -278,6 +277,13 @@ ManualDriver.prototype._onG2Status = function(status) {
 			break;
 		case this.driver.STAT_RUNNING:
 			this.moving = true;
+			if(this.omg_stop) {
+				this.stop_pending = true;
+				this.driver.feedHold();
+				this.driver.queueFlush(function() {
+					this.driver.resume();		
+				}.bind(this));
+			}
 			break;
 		case this.driver.STAT_STOP:
 		case this.driver.STAT_END:
@@ -289,6 +295,7 @@ ManualDriver.prototype._onG2Status = function(status) {
 				if(this.exit_pending) {
 					this.exit();
 				}
+				this.omg_stop = false
 				this.stop_pending = false;
 			}
 			break;

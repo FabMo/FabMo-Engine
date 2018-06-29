@@ -78,7 +78,7 @@ Keypad.prototype.init = function() {
 
 Keypad.prototype.setOptions = function(options) {
 	options = options || {}
-	this.refreshInterval = options.refreshInterval || this.refreshInterval || 100;
+	this.refreshInterval = options.refreshInterval || this.refreshInterval || 50;
 	this.pressTime = options.pressTime || this.pressTime || 250;
 	this.pressThreshold = options.pressThreshold || this.pressThreshold || 10;
 	this.tapInterval = options.tapInterval || this.tapInterval || 250;
