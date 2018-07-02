@@ -16,7 +16,7 @@ var count = 0;
 function ManualDriver(drv, st) {
 	this.stream = st;
 	this.driver = drv;
-
+	this.renew_timer = null;
 	this.fixedQueue = [];
 
 	this.exited = false;
@@ -77,6 +77,9 @@ ManualDriver.prototype.startMotion = function(axis,  speed, second_axis, second_
 	var dir = speed < 0 ? -1.0 : 1.0;
 	var second_dir = second_speed < 0 ? -1.0 : 1.0;
 	speed = Math.abs(speed);
+	if(this.stop_pending || this.omg_stop) {
+		return;
+	}
 	if(this.moving) {
 		if(axis === this.currentAxis && speed === this.currentSpeed) {
 			this.maintainMotion();
@@ -115,6 +118,9 @@ ManualDriver.prototype.maintainMotion = function() {
 ManualDriver.prototype.stopMotion = function() {
 	if(this._limit()) { return; }
 	this.keep_moving = false;
+		if(this.renew_timer) {
+			clearTimeout(this.renew_timer);
+		}
 	if(1/*this.moving*/) {
 		this.omg_stop = true
 		this.stop_pending = true;
@@ -257,7 +263,7 @@ ManualDriver.prototype._renewMoves = function(reason) {
 		}
 	
 		this.driver.prime();
-		setTimeout(function() {
+		this.renew_timer = setTimeout(function() {
 			this._renewMoves("timeout")
 		}.bind(this), T_RENEW)
 	} else {

@@ -385,7 +385,6 @@ Machine.prototype.arm = function(action, timeout) {
 				case 'stop':
 				case 'goto':
 					this.fire(true);
-					log.info('Firing because these manual cmds do not require auth');
 					return;
 					break;
 			}
@@ -442,24 +441,20 @@ Machine.prototype.fire = function(force) {
 	this.action = null;
 	switch(action.type) {
 		case 'nextJob':
-			log.debug("Firing a nextJob")
 			this._runNextJob(force, function() {});
 			break;
 
 		case 'runtimeCode':
-			log.debug("Firing a runtimeCode")
 			var name = action.payload.name
 			var code = action.payload.code
 			this._executeRuntimeCode(name, code);
 			break;
 
 		case 'runFile':
-			log.debug("Firing a runFile")
 			var filename = action.payload.filename
 			this._runFile(filename);
 			break;
 		case 'resume':
-			log.debug("Firing a resume")
 			this._resume();
 			break;
 	}
