@@ -72,18 +72,21 @@ require("../css/toastr.min.css");
        return consent;
     });    
 
-    engine.getConfig(function(err, config){
-        if(err){
-            console.log(err);
-        } else {
-            var manual_config = config.machine.manual;
-            $('.xy-fixed').val(manual_config.xy_increment);
-            $('.z-fixed').val(manual_config.z_increment);
-            $('#manual-move-speed').val(manual_config.xy_speed);
-            $('#manual-move-speed').attr('min', manual_config.xy_min);
-            $('#manual-move-speed').attr('max', manual_config.xy_max);
-        }
-    });
+    setUpManual = function(){
+        engine.getConfig(function(err, config){
+            if(err){
+                console.log(err);
+            } else {
+                var manual_config = config.machine.manual;
+                $('.xy-fixed').val(manual_config.xy_increment);
+                $('.z-fixed').val(manual_config.z_increment);
+                $('#manual-move-speed').val(manual_config.xy_speed);
+                $('#manual-move-speed').attr('min', manual_config.xy_min);
+                $('#manual-move-speed').attr('max', manual_config.xy_max);
+            }
+        });
+    }
+
 
 
     engine.getVersion(function(err, version) {
@@ -383,6 +386,7 @@ require("../css/toastr.min.css");
     })
 
     $('.manual-drive-enter').click(function(){
+        setUpManual();
         dashboard.engine.manualEnter();
     })
 
