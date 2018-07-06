@@ -792,7 +792,7 @@ table {
         transition: -ms-transform 1s;
             transition: transform 1s;
 }
-.mask {
+.mask .fill {
     clip: rect(0px, 50px, 100px, 0px);
 }
 .inset {
