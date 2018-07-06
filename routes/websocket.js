@@ -30,7 +30,7 @@ function setupAuthentication(server) {
             cookieName: 'session',
 			secret: server.cookieSecret
 		}, cookie['session']);
-        if (handshakeData.sessionID.content.passport !== undefined) {
+        if (handshakeData.sessionID && handshakeData.sessionID.content.passport !== undefined) {
                 var user = handshakeData.sessionID.content.passport.user;
                 authentication.getUserById(user, function(err, data) {
 

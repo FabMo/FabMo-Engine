@@ -60,7 +60,6 @@ function serveStatic(options) {
         }
 
         if (err) {
-            console.log(err);
             next(new ResourceNotFoundError(err, '%s', req.path()));
             return;
         } else if (!stats.isFile()) {

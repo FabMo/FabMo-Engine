@@ -106,7 +106,7 @@ function Machine(control_path, callback) {
 	    if(err){
 				log.error(JSON.stringify(err));
 	    	log.warn("Setting the disconnected state");
-	    	this.die("A real bad error has occurred.")
+	    	this.die("An internal error has occurred. You must reboot your tool.")
 		    if(typeof callback === "function") {
 		    	return callback(new Error('No connection to G2'));
 		    } else {

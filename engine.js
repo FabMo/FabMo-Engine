@@ -34,15 +34,21 @@ var Engine = function() {
 function EngineConfigFirstTime(callback) {
     switch(PLATFORM) {
         case 'linux':
-            callback();
+                    var ports = {
+                        'control_port_linux' : '/dev/ttyACM0',
+                        'data_port_linux' : '/dev/ttyACM0'
+                    }
+                    config.engine.update(ports, function() {
+                        callback();
+                    });
             break;
         case 'darwin':
             config.engine.set('server_port', 9876);
             glob.glob('/dev/cu.usbmodem*', function(err, files) {
-                if(files.length >= 2) {
+                if(files.length >= 1) {
                     var ports = {
                         'control_port_osx' : files[0],
-                        'data_port_osx' : files[1]
+                        'data_port_osx' : files[1] || files[0]
                     }
                     config.engine.update(ports, function() {
                         callback();
@@ -131,8 +137,12 @@ Engine.prototype.start = function(callback) {
         },
 
         function check_engine_config(callback) {
-            if(!config.engine.userConfigLoaded) {
-                EngineConfigFirstTime(callback);
+            if(!config.engine.get('init')) {
+                log.info('!!!!!!!!!!!! Configuring the engine for the first time');
+                EngineConfigFirstTime(function() {
+                    config.engine.set('init', true);
+                    callback();
+                });
             } else {
                 callback();
             }
@@ -160,10 +170,9 @@ Engine.prototype.start = function(callback) {
             } else {
                 fs.readFile('../site/.default','utf8', function (err, content) {
                     if(err){
-                        def = 'default';
+                        def = 'Default';
                     } else {
                         def = content;
-                        //console.log(def);
                     }
                     config.engine.set('profile', def, callback);
                 })
@@ -200,7 +209,7 @@ Engine.prototype.start = function(callback) {
                 });
                 
             } else {
-                var last_time_version = config.engine.get('version').trim();
+                var last_time_version = (config.engine.get('version') || '').trim();
                 var this_time_version = (this.version.hash || this.version.number || "").trim();
                 log.debug("Previous engine version: " + last_time_version);
                 log.debug(" Current engine version: " + this_time_version);

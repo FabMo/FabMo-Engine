@@ -3,17 +3,6 @@
     "driver": "g2",
     "log_level": "info",
     "version":"",
-    "control_port_osx": "/dev/cu.usbmodem001",
-    "data_port_osx": "/dev/cu.usbmodem001",
-    "control_port_linux": "/dev/ttyACM0",
-    "data_port_linux": "/dev/ttyACM1",
-    "control_port_windows": "COM4",
-    "data_port_windows": "COM3",
     "upload_dir" : "/tmp",
-    "video" :  {
-        "path" : "/dev/video0",
-        "width" : 640,
-        "height" : 480,
-        "framerate" : 15
-    }
+    "profile" : "Default"
 }

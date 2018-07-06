@@ -253,32 +253,32 @@ table {
 
 .flash-green{
 
-  -moz-animation: flash-green .5s ease-out;
+  -moz-animation: flash-green .3s ease-out;
   -moz-animation-iteration-count: 1;
 
-  -webkit-animation: flash-green .5s ease-out;
+  -webkit-animation: flash-green .3s ease-out;
   -webkit-animation-iteration-count: 1;
 
-  -ms-animation: flash-green .5s ease-out;
+  -ms-animation: flash-green .3s ease-out;
   -ms-animation-iteration-count: 1;
 
 }
 
 @-webkit-keyframes flash-green {
     0% { background-color:none;}
-    50% { background-color:#4CBF42;}
+    50% { background-color:#ccffcc;}
     100% {background-color:none;}
 }
 
 @-moz-keyframes flash-green {
     0% { background-color:none;}
-    50% { background-color:#4CBF42;}
+    50% { background-color:#ccffcc;}
     100% {background-color:none;}
 }
 
 @-ms-keyframes flash-green {
     0% { background-color:none;}
-    50% { background-color:#4CBF42;}
+    50% { background-color:#ccffcc;}
     100% {background-color:none;}
 }
 

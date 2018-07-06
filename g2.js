@@ -442,13 +442,13 @@ G2.prototype.handleStatusReport = function(response) {
 				switch(response.sr.stat) {
 					case STAT_STOP:
 					case STAT_HOLDING:
-						log.info("!!! Issuing the job kill command.")
+						log.info("Issuing the job kill command.")
 						setTimeout(function() {
 							this._write('\x04\n', function() {});
 						}.bind(this), 50)
 						break;
 					case STAT_END:
-						log.info("!!! Clearing the quit pending state.")
+						log.info("Clearing the quit pending state.")
 						this.lines_to_send = 4
 						this.quit_pending = false;
 						this.pause_flag = false;
@@ -884,11 +884,11 @@ G2.prototype.sendMore = function() {
 			}
 		}
 		else {
-            log.warn("Not writing to gcode due to lapse in responses")
+            		//log.debug("Not writing to gcode due to lapse in responses")
 		}
 	} else {
 		if(this.gcode_queue.getLength() > 0) {
-			log.warn("!!! Not sending because not primed.");
+			//log.debug("Not sending because not primed.");
 		}
 	}
 };

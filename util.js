@@ -36,6 +36,9 @@ function doshell(command, callback){
     });
 }
 
+function diskSync(callback) {
+    doshell('sync',callback);
+}
 function extend(a,b, force) {
     for(k in b) {
         if(a.hasOwnProperty(k) || force) {
@@ -521,3 +524,4 @@ exports.isANumber = isANumber;
 exports.in2mm = in2mm;
 exports.mm2in = mm2in;
 exports.unitType = unitType;
+exports.diskSync = diskSync;

@@ -82,6 +82,7 @@ function update() {
 
         var profiles = data['profiles'] || {}
         var profilesList = $('#profile-listbox');
+        profilesList.empty();
         //profilesList.empty();
         if(profiles) {
           for(var name in profiles) {
@@ -90,7 +91,11 @@ function update() {
             );
           }
         } else {
-
+          console.error("No profiles!")
+        }
+        // Shim
+        if(data.engine.profile === 'default') {
+          data.engine.profile = 'Default';
         }
         profilesList.val(data.engine.profile);
       }
@@ -117,9 +122,8 @@ function update() {
     });
 
     fabmo.getUpdaterStatus(function(err, status) {
-      if(err) {
-        return console.error(err);
-        fabmo.isOnline(function(err, online) {
+      if(err) { return; }
+/*        fabmo.isOnline(function(err, online) {
           if(online) {
             $('#btn-update').removeClass('disabled');
             $('#btn-update').text('Update Software');
@@ -128,11 +132,11 @@ function update() {
             $('#btn-update').text('No Updates Available');
           }
         });
-
-      }
+  */
       if(status.updates) {
         $('#btn-update').removeClass('disabled').addClass('update-available');
         $('#btn-update').text('Update Software');
+        console.info(status.updates);
       } else {
         $('#btn-update').addClass('disabled').removeClass('update-available');
         $('#btn-update').text('No Updates Available');
@@ -391,6 +395,7 @@ $('body').click(function(event){
     });
 
     $('#profile-listbox').on('change', function(evt) {
+      evt.preventDefault();
       fabmo.showModal({
         title : 'Change Profiles?',
         message : 'Changing your machine profile will reset all of your apps and settings. Are you sure you want to change profiles?',

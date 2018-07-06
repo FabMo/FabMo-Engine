@@ -3,6 +3,7 @@ var async = require('async')
 var fs = require('fs-extra')
 var log = require('./log').logger('profiles')
 var ncp = require('ncp').ncp
+var util = require('./util')
 
 var PROFILE_DIRS = ['config','macros','apps']
 var profiles = {}
@@ -29,29 +30,41 @@ var load = function(callback) {
 							log.info('Copied ' + localfiles[i]+ 'into opt');
 							} catch(err){
 								log.error(err);
-							}
+							} 
+							
 					}
 				}
 			}
-			async.each(files, function(file, callback) {
-				var profilePath = path.join(profileDir, file);
-				fs.stat(profilePath,function(err,stats){
-					if(err) callback();
-					if(stats.isDirectory()) {
-						readProfileInfo(profilePath, function(err, profile) {
-							if(err) {
-								log.error(err);
-							} else {
-								log.debug('Read profile ' + profile.name);
-								profiles[profile.name] = profile;
-							}
+			util.diskSync(function() {
+				async.each(files, function(file, callback) {
+					try {
+					var profilePath = path.join(profileDir, file);
+					fs.stat(profilePath,function(err,stats){
+						if(err) callback(err);
+						if(stats.isDirectory()) {
+							readProfileInfo(profilePath, function(err, profile) {
+								try {
+								if(err) {
+									log.error(err);
+								} else {
+									log.debug('Read profile ' + profile.name);
+									profiles[profile.name] = profile;
+								}} catch(e) {
+									log.error(e)
+								}
+								callback(null);
+							});
+						} else {
 							callback(null);
-						});
-					}
+						}
+					});
+				} catch(e) {
+					log.error(e);
+				}
+				}, 
+				function allDone() {
+					callback(null, profiles);
 				});
-			}, 
-			function allDone() {
-				callback(null, profiles);
 			});
 		});
     });
@@ -90,8 +103,14 @@ var apply = function(profileName, callback) {
 			//if auth_secret file exists lets copy it to a tmp directory
 			if (fs.existsSync(authPath)) {
 				authSecretExists = true;
-				fs.mkdirSync('/opt/fabmo/tmp');
-				fs.copySync(authPath, '/opt/fabmo/tmp/auth_secret');
+				try {
+					fs.ensureDirSync('/opt/fabmo/tmp');
+					fs.copySync(authPath, '/opt/fabmo/tmp/auth_secret');
+				} catch(e) {
+					log.warn(e);
+				}
+			} else {
+				log.debug('Auth secret doesnt already exist');
 			}
 			fs.remove(configDir, function(err) {
 				if(err) {
@@ -125,15 +144,18 @@ var apply = function(profileName, callback) {
 		function allDone(err) {
 			config.clearAppRoot(function(err) {
 				appsDir = config.getDataDir('apps')
-				console.log('Shuffling up filenames in ' + appsDir)
 				fs.readdir(appsDir, function(err, files) {
 					if(files ) {
 						files.forEach(function(file) {
 							fs.renameSync(path.join(appsDir, file), path.join(appsDir, util.createUniqueFilename(file)));
 						});
-						callback(null);
+						util.diskSync(function() {
+							callback(null);
+						});
 					} else {
-						callback(null, 'no apps');
+						util.diskSync(function() {
+							callback(null, 'no apps');
+						});
 					}
 				});
 			});

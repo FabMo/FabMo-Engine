@@ -37,9 +37,14 @@ EngineConfig.prototype.update = function(data, callback) {
 				}
 */
 				if((key in this._cache) && (data[key] != this._cache[key]) && (this.userConfigLoaded) && (this._cache[key])) {
-					try { log.info("Profile changed"); }
+					try { logger.info("Profile changed from " + this._cache[key] + ' to ' + data[key]); }
 					catch(err) {}
 					profile_changed = true;
+				} else {
+					logger.info('Profile is unchanged.');
+					console.log(this._cache[key])
+					console.log(data[key])
+					console.log(this._cache)
 				}
 			}
 			this._cache[key] = data[key];				
