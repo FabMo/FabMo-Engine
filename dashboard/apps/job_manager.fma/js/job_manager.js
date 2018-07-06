@@ -28,11 +28,11 @@ var currentStatus = {};
 
 function fileUploadProgress(progress) {
   var pg = (progress * 100).toFixed(0) + '%';
-  $('.progressbar .fill').width(pg);
+  $('.progressbar .bar-fill').width(pg);
   if (progress === 1) {
     setTimeout(function() {
       $('.progressbar').addClass('hide');
-      $('.progressbar .fill').width(0);
+      $('.progressbar .bar-fill').width(0);
     }, 200);
   }
 }

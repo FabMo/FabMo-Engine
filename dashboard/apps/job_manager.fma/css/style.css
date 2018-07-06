@@ -139,9 +139,6 @@ body {
   transition: all 0.5s;
 }
 
-#tabpending{
-
-}
 
 .hover .hoverdim {
   -webkit-transition: opacity .2s ease;
@@ -209,6 +206,11 @@ h1, h2, h3, h4, h5, h6 {
    font-weight: bold;
    transition: all 0.5s;
    color: #91331E;
+ }
+
+ .bar-fill {
+  height: 10px;
+  background-color: #91331E;
  }
 
  .without-job{
@@ -790,7 +792,7 @@ table {
         transition: -ms-transform 1s;
             transition: transform 1s;
 }
-.mask .fill {
+.mask {
     clip: rect(0px, 50px, 100px, 0px);
 }
 .inset {
