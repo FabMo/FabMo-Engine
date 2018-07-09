@@ -102,9 +102,9 @@ function updateQueue(callback) {
       return callback(err);
     }
 
-    if (jobs.pending.length === jobElements && jobs.pending.length != 0 && jobs.running.length === 0) {
-      return
-    } else {
+    // if (jobs.pending.length === jobElements && jobs.pending.length != 0 && jobs.running.length === 0) {
+    //   return
+    // } else {
       jobs.pending.sort(function(a, b) {
         return a.order - b.order;
       });
@@ -117,7 +117,7 @@ function updateQueue(callback) {
         runningJob(null);
         addQueueEntries(jobs.pending);
       }
-    }
+    // }
     callback();
   });
 
@@ -128,6 +128,7 @@ function clearQueue() {
   while (elements.length > 0) {
     elements[0].parentNode.removeChild(elements[0]);
   }
+  updateOrder();
 }
 
 function clearRecent() {
@@ -190,8 +191,10 @@ function addQueueEntries(jobs) {
   if (jobs.length) {
     $('.no-jobs').css('left', '-2000px'); /// Remove no jobs menu
     nextJob();
+    /// add logic to check if these exist in right order
+    clearQueue();
     for (var i = 0; i < jobs.length; i++) {
-      if ($('#' + jobs[i]._id).length < 1) { // If a job already has a card do nothing else make a card for job
+      // if ($('#' + jobs[i]._id).length < 1) { // If a job already has a card do nothing else make a card for job
         var listItem = document.createElement("div");
         listItem.setAttribute("id", jobs[i]._id);
         listItem.setAttribute("class", "job_item");
@@ -201,23 +204,11 @@ function addQueueEntries(jobs) {
         id.innerHTML = '<div id="menu"></div><div class="job_name">' + jobs[i].name + '</div><div class="description">' + jobs[i].description + '</div><div class="created-date">'+ moment(jobs[i].created_at).fromNow(); +'</div>';
         var menu = id.firstChild;
         menu.innerHTML = createQueueMenu(jobs[i]._id);
-      }
+      // }
     };
     setFirstCard(); //Add play button and css style for first card
     isTestJob = jobs[0];
     bindMenuEvents();
-    var newOrder = sortable.toArray(); ///Update order to DB
-    for (var i = 0; i < newOrder.length; i++) {
-      var id = jobs.filter(function(id) {
-        return id._id == newOrder[i];
-      });
-      id[0].order = i + 1;
-      fabmo.updateOrder({
-        id: id[0]._id,
-        order: id[0].order
-      }, function(err, result) {});
-    }
-
   } else {
     clearQueue();
     $('.no-jobs').css('left', '0px');
@@ -365,6 +356,7 @@ function bindMenuEvents() {
   $('.resubmitJob').click(function(e) {
     fabmo.resubmitJob(this.dataset.jobid, function(err, result) {
       //refresh_jobs_list();
+      updateOrder();
       fabmo.getJobsInQueue(function(err, data) {
         $('.toggle-topbar').click();
         $('#nav-pending').click();
@@ -408,6 +400,7 @@ function bindMenuEvents() {
       } else {
         updateQueue();
         updateHistory();
+        updateOrder();
       }
     });
 
@@ -526,6 +519,28 @@ function handleStatusReport(status) {
   }
 }
 
+function updateOrder(){
+  var newOrder = sortable.toArray();
+  fabmo.getJobsInQueue(function(err, jobs) {
+    for (i = 0; i < newOrder.length; i++) {
+      var id = jobs.pending.filter(function(id) {
+        return id._id == newOrder[i];
+      });
+      id[0].order = i + 1;
+      fabmo.updateOrder({
+        id: id[0]._id,
+        order: id[0].order
+      }, function(err, result) {
+        if (err) {
+          console.log(err);
+        } else {
+          updateQueue();
+        }
+      });
+    }
+  });
+}
+
 
 
 var el = document.getElementById('queue_table');
@@ -598,19 +613,7 @@ var sortable = Sortable.create(el, {
     var firstJob = document.getElementById('queue_table').firstChild;
     var cardActions = document.createElement("div");
     setFirstCard();
-    var newOrder = sortable.toArray();
-    fabmo.getJobsInQueue(function(err, jobs) {
-      for (i = 0; i < newOrder.length; i++) {
-        var id = jobs.pending.filter(function(id) {
-          return id._id == newOrder[i];
-        });
-        id[0].order = i + 1;
-        fabmo.updateOrder({
-          id: id[0]._id,
-          order: id[0].order
-        }, function(err, result) {});
-      }
-    });
+    updateOrder();
     $('.cancel').show(500);
     $('.download').show(500);
     $('.edit').show(500);
@@ -1224,8 +1227,16 @@ $(document).ready(function() {
     updateHistory();
   });
 
+  fabmo.on('change',function (change) {
+    if(change === "jobs") {
+      updateQueue();
+      updateHistory();
+    }
+  });
+
 
   // Request infoes from the tool
+
   // The queue will update when the status report comes in
   // But the history needs to be updated manually
   fabmo.requestStatus();
@@ -1277,6 +1288,7 @@ $(document).ready(function() {
       }
       resetFormElement($('#file'));
       updateQueue();
+      updateOrder();
       $('#nav-pending').click();
     });
   });
@@ -1286,6 +1298,7 @@ $(document).ready(function() {
   // }).resize();
   fabmo.on('reconnect', function() {
     updateQueue();
+    updateOrder();
     updateHistory();
   });
 
