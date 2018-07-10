@@ -6,12 +6,12 @@ var authentication = require('../authentication');
 var passport = authentication.passport;
 var sessions = require("client-sessions");
 var parseCookie = require('./util').parseCookie;
-
+var server = null;
 var clients_limit = 5;
 var nb_clients=0;
 
-function setupAuthentication(server) {
-    server.io.of('/private').use(function(socket, next) {
+function setupAuthentication(svr) {
+	server.io.of('/private').use(function(socket, next) {
 		var handshakeData = socket.request;
         // Check that the cookie header is present
         if (!handshakeData.headers.cookie) {
@@ -30,7 +30,7 @@ function setupAuthentication(server) {
             cookieName: 'session',
 			secret: server.cookieSecret
 		}, cookie['session']);
-        if (handshakeData.sessionID && handshakeData.sessionID.content.passport !== undefined) {
+        if (handshakeData.sessionID.content.passport !== undefined) {
                 var user = handshakeData.sessionID.content.passport.user;
                 authentication.getUserById(user, function(err, data) {
 
@@ -195,7 +195,8 @@ var onPrivateConnect = function(socket) {
 
 };
 
-module.exports = function(server) {
+module.exports = function(svr) {
+	server = svr
 	setupAuthentication(server);
 	server.io.on('connection', onPublicConnect);
 	server.io.of('/private').on('connection', onPrivateConnect);
