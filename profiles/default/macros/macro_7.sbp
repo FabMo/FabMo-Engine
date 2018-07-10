@@ -1,3 +1,5 @@
 '!FABMO!name:Stop Toolhead
 '!FABMO!description:Stop the toolhead
 ' Macro #7 is typically used to stop the toolhead (router, spindle, etc)
+
+FAIL "Macro 7 is not defined.  Please select a machine profile in the configuration before running this file."

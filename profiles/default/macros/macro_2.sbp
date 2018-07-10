@@ -1,4 +1,6 @@
 '!FABMO!name:Z-Zero
 '!FABMO!description:Defines Z-Zero position
-
 ' Macro #2 is typically used to set the Z-Zero location for the tool.
+
+FAIL "Macro 2 is not defined.  Please select a machine profile in the configuration before running this file."
+

@@ -2,3 +2,5 @@
 '!FABMO!description:Use ATC or manual tool change
 ' Macro #9 is typically used to execute a tool change.
 ' Commonly, a tool number is specified with a variable (usually &Tool) before this macro is executed.
+
+FAIL "Macro 9 is not defined.  Please select a machine profile in the configuration before running this file."

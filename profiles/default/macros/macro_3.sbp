@@ -2,3 +2,4 @@
 '!FABMO!description:Find the machine home position
 
 ' Macro #3 is typically used to find the machine's home position
+FAIL "Macro #3 is not defined.  Please select a machine profile in the configuration before running this file."

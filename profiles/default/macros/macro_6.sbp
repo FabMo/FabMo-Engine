@@ -1,3 +1,5 @@
 '!FABMO!name:Start Toolhead
 '!FABMO!description:Start the toolhead
 ' Macro #6 is typically used to start the toolhead (router, spindle, etc)
+
+FAIL "Macro 6 is not defined.  Please select a machine profile in the configuration before running this file."
