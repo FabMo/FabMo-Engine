@@ -498,7 +498,11 @@ Engine.prototype.start = function(callback) {
             server.use(restify.plugins.queryParser({
                 mapParams : true
             }));
-
+            server.on('NotFound', function (req, res, cb) {
+                res.redirect('/', function(){
+                    return;
+                });
+            }); 
             server.on('uncaughtException', function(req, res, route, err) {
                 log.uncaught(err);
                 answer = {
