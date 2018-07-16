@@ -341,7 +341,6 @@ require("../css/toastr.min.css");
         });
 
         keyboard.on('nudge', function(nudge) {
-            console.log('is this a nudge from keyboard');
             dashboard.engine.manualMoveFixed(nudge.axis, 60 * getManualMoveSpeed(nudge), nudge.dir * getManualNudgeIncrement(nudge))
         });
 
@@ -443,7 +442,7 @@ require("../css/toastr.min.css");
         if(e.keyCode === 27) {
             console.warn("ESC key pressed - quitting engine.");
             dashboard.engine.manualStop();
-            keyboard.setEnabled(true);
+            // keyboard.setEnabled(true);
         } else if (e.keyCode === 75 && e.ctrlKey ) {
 			dashboard.engine.manualEnter()
 		}
@@ -556,22 +555,20 @@ require("../css/toastr.min.css");
 
 
     $('.xy-fixed').on('change', function(){
+        keyboard.setEnabled(false);
         newDefault = $('.xy-fixed').val();
                 dashboard.engine.setConfig({machine:{manual:{xy_increment:newDefault}}}, function(err, data){
                     if(err){
                         console.log(err);
-                    }else {
-                        dashboard.engine.getConfig();
                     }
                 });
         });
     $('.z-fixed').on('change', function(){
+        keyboard.setEnabled(false);
         newDefault = $('.z-fixed').val();
                 dashboard.engine.setConfig({machine:{manual:{z_increment:newDefault}}}, function(err, data){
                     if(err){
                         console.log(err);
-                    }else {
-                        dashboard.engine.getConfig();
                     }
                 });
             
@@ -591,7 +588,16 @@ require("../css/toastr.min.css");
         keyboard.setEnabled(false);
     });
 
-    $('.manual-drive-modal').on('click', function(e) {
+    $('.fixed-step-value').on('focus', function(e){
+        e.stopPropagation();
+        $(this).select();
+        keyboard.setEnabled(false);
+    });
+
+
+
+    $('.manual-drive-modal').not('.fixed-step-value').on('click', function(e) {
+            
             $('.posx').val($('.posx').val());
             $('.posy').val($('.posy').val());
             $('.posz').val($('.posz').val());
@@ -599,8 +605,17 @@ require("../css/toastr.min.css");
             $('.posb').val($('.posb').val());
             $('#keypad').show();
             $('.go-to-container').hide();
-            keyboard.setEnabled(true);
+            if($(event.target).hasClass('fixed-step-value')){
+                keyboard.setEnabled(false);
+            } else {
+                keyboard.setEnabled(true);
+            }
+
+
     });
+
+
+
 
     $('.axi').keyup(function(e) {
         keyboard.setEnabled(false);
@@ -626,7 +641,6 @@ require("../css/toastr.min.css");
     });
 
 	engine.on('authentication_failed',function(message){
-	    console.log('authentication failed');
 	    if(message==="not authenticated"){
 	        window.location='#/authentication?message=not-authenticated';
 	    }

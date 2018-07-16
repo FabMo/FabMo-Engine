@@ -21,8 +21,8 @@
 		"xy_min" : 0.1,
 		"xy_max" : 6,
 		"z_speed" : 1.0,
-		"xy_increment" : 0.025,
-		"z_increment" : 0.005,
+		"xy_increment" : 0.1,
+		"z_increment" : 0.01,
 		"ab_increment" : 1,
 		"xy_jerk" : 250,
 		"z_jerk" : 250
