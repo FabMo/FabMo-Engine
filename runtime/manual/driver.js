@@ -50,7 +50,7 @@ ManualDriver.prototype.enter = function() {
     this.stream.write('M100.1 ({xjm:'+jerkXY+'})\n');
     this.stream.write('M100.1 ({yjm:'+jerkXY+'})\n');
     this.stream.write('M100.1 ({zjm:'+jerkZ+'})\n');	
-	this.stream.write('M100.1 ({zl:0})\nM0\n');	
+	this.stream.write('M100.1 ({zl:0})\nM0\n G4 P0.1\n');	
 	this.driver.prime();
 	this.deferred = Q.defer();
 	return this.deferred.promise;

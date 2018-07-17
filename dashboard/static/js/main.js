@@ -78,8 +78,13 @@ require("../css/toastr.min.css");
                 console.log(err);
             } else {
                 var manual_config = config.machine.manual;
-                $('.xy-fixed').val(manual_config.xy_increment);
-                $('.z-fixed').val(manual_config.z_increment);
+                if(manual_config.xy_increment) {
+                    $('.xy-fixed').val(manual_config.xy_increment);
+                    $('.z-fixed').val(manual_config.z_increment);
+                } else {
+                    $('.xy-fixed').val(0.1);
+                    $('.z-fixed').val(0.01);
+                }
                 $('#manual-move-speed').val(manual_config.xy_speed);
                 $('#manual-move-speed').attr('min', manual_config.xy_min);
                 $('#manual-move-speed').attr('max', manual_config.xy_max);
@@ -560,6 +565,8 @@ require("../css/toastr.min.css");
                 dashboard.engine.setConfig({machine:{manual:{xy_increment:newDefault}}}, function(err, data){
                     if(err){
                         console.log(err);
+                    } else {
+                        dashboard.engine.getConfig();
                     }
                 });
         });
@@ -569,6 +576,8 @@ require("../css/toastr.min.css");
                 dashboard.engine.setConfig({machine:{manual:{z_increment:newDefault}}}, function(err, data){
                     if(err){
                         console.log(err);
+                    } else {
+                        dashboard.engine.getConfig();
                     }
                 });
             
