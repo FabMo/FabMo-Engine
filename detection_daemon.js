@@ -70,7 +70,7 @@ function getMachineInfo(){
 	result.hostname= os.hostname();
 	result.networks=[];
 	result.server_port = config.engine.get('server_port');
-	Object.keys(os.networkInterfaces()).forEach(function(key,index,arr){ //val = ip adresses , key = name of interface
+	Object.keys(os.networkInterfaces() || {}).forEach(function(key,index,arr){ //val = ip adresses , key = name of interface
 		var networks_list = this;
 		networks_list[key].forEach(function(val2,key2,arr2){
 			if (val2.internal === false && val2.family === 'IPv4')
