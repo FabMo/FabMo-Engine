@@ -6,9 +6,9 @@ var events = require('events')
 var Q = require('q');
 
 var T_RENEW = 250;
-var SAFETY_FACTOR = 1.5;
+var SAFETY_FACTOR = 1.75;
 var count;
-var RENEW_SEGMENTS = 5;
+var RENEW_SEGMENTS = 10;
 var FIXED_MOVES_QUEUE_SIZE = 3;
 var count = 0;
 
@@ -40,7 +40,6 @@ function ManualDriver(drv, st) {
 	this.completeCallback = null;
 	this.status_handler = this._onG2Status.bind(this);
 	this.driver.on('status',this.status_handler);
-//	var this.deferred = this.enter();
 }
 util.inherits(ManualDriver, events.EventEmitter);
 
@@ -118,20 +117,15 @@ ManualDriver.prototype.maintainMotion = function() {
 ManualDriver.prototype.stopMotion = function() {
 	if(this._limit()) { return; }
 	this.keep_moving = false;
-		if(this.renew_timer) {
-			clearTimeout(this.renew_timer);
-		}
-	if(1/*this.moving*/) {
-		this.omg_stop = true
-		this.stop_pending = true;
-		this.driver.feedHold();
-		this.driver.queueFlush(function() {
-			this.driver.resume();		
-		}.bind(this));
-	} else {
-		this.stop_pending = false;
-		this.omg_stop = true;
+	if(this.renew_timer) {
+		clearTimeout(this.renew_timer);
 	}
+	this.omg_stop = true
+	this.stop_pending = true;
+	this.driver.feedHold();
+	this.driver.queueFlush(function() {
+		this.driver.resume();		
+	}.bind(this));
 }
 
 ManualDriver.prototype.quitMove = function(){
@@ -206,10 +200,10 @@ ManualDriver.prototype._handleNudges = function() {
 					}
 				}
 				
-
+				// You can't put an M0 or a G4 in here to break up the nudges.
+				// Don't do it. Doooon't do it.
 				moves.forEach(function(move) {
 					this.stream.write(move + '\n');
-					//this.stream.write('G4 P0.050\n');
 				}.bind(this));
 			}
 		}
@@ -249,19 +243,20 @@ ManualDriver.prototype._renewMoves = function(reason) {
 		this.keep_moving = false;
 		var segment = this.currentDirection*(this.renewDistance / RENEW_SEGMENTS);
 		var second_segment = this.second_currentDirection*(this.renewDistance / RENEW_SEGMENTS);
+		var moves = []
 		if (this.second_axis){
 			for(var i=0; i<RENEW_SEGMENTS; i++) {
 				var move = 'G1 ' + this.currentAxis + segment.toFixed(5) +' '+ this.second_axis + second_segment.toFixed(5) +'\n'
-				this.stream.write(move);
+				moves.push(move);
 			}
 
 		} else {
 			for(var i=0; i<RENEW_SEGMENTS; i++) {
 				var move = 'G1 ' + this.currentAxis + segment.toFixed(5) + '\n'
-				this.stream.write(move);
+				moves.push(move);
 			}
 		}
-	
+		this.stream.write(moves.join('\n'));	
 		this.driver.prime();
 		this.renew_timer = setTimeout(function() {
 			this._renewMoves("timeout")
