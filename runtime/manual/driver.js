@@ -5,8 +5,9 @@ var util = require('util');
 var events = require('events')
 var Q = require('q');
 
-var T_RENEW = 250;
-var SAFETY_FACTOR = 1.75;
+//var T_RENEW = 300;
+var T_RENEW = 300;
+var SAFETY_FACTOR = 4.0;
 var count;
 var RENEW_SEGMENTS = 10;
 var FIXED_MOVES_QUEUE_SIZE = 3;
@@ -49,7 +50,8 @@ ManualDriver.prototype.enter = function() {
     this.stream.write('M100.1 ({xjm:'+jerkXY+'})\n');
     this.stream.write('M100.1 ({yjm:'+jerkXY+'})\n');
     this.stream.write('M100.1 ({zjm:'+jerkZ+'})\n');	
-	this.stream.write('M100.1 ({zl:0})\nM0\n G4 P0.1\n');	
+	//this.stream.write('M100.1 ({zl:0})\nM0\n G4 P0.1\n');	
+	this.stream.write('M100.1 ({zl:0})\nM0\n G91\n G0 X0 Y0 Z0\n');	
 	this.driver.prime();
 	this.deferred = Q.defer();
 	return this.deferred.promise;
@@ -122,10 +124,10 @@ ManualDriver.prototype.stopMotion = function() {
 	}
 	this.omg_stop = true
 	this.stop_pending = true;
-	this.driver.feedHold();
-	this.driver.queueFlush(function() {
-		this.driver.resume();		
-	}.bind(this));
+	//this.driver.feedHold();
+	//this.driver.queueFlush(function() {
+	//	this.driver.resume();		
+	//}.bind(this));
 }
 
 ManualDriver.prototype.quitMove = function(){
@@ -246,17 +248,17 @@ ManualDriver.prototype._renewMoves = function(reason) {
 		var moves = []
 		if (this.second_axis){
 			for(var i=0; i<RENEW_SEGMENTS; i++) {
-				var move = 'G1 ' + this.currentAxis + segment.toFixed(5) +' '+ this.second_axis + second_segment.toFixed(5) +'\n'
+				var move = 'G1' + this.currentAxis + segment.toFixed(4) + this.second_axis + second_segment.toFixed(4) + '\n'
 				moves.push(move);
 			}
 
 		} else {
 			for(var i=0; i<RENEW_SEGMENTS; i++) {
-				var move = 'G1 ' + this.currentAxis + segment.toFixed(5) + '\n'
+				var move = 'G1' + this.currentAxis + segment.toFixed(4)+'\n'
 				moves.push(move);
 			}
 		}
-		this.stream.write(moves.join('\n'));	
+		this.stream.write(moves.join(''));	
 		this.driver.prime();
 		this.renew_timer = setTimeout(function() {
 			this._renewMoves("timeout")
