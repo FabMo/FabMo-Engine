@@ -504,12 +504,11 @@ Engine.prototype.start = function(callback) {
                 if(url_arr[1] !== current_hash){
                     url_arr.splice(1,1, current_hash);
                     var newPath = url_arr.join('/');
-                    console.log(newPath);
                     res.redirect(newPath , function(){
                         return;
                     });
                 } else {
-                    res.redirect(newPath , function(){
+                    res.redirect('/' , function(){
                         return;
                     });
                 }

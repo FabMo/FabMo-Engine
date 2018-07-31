@@ -17,20 +17,32 @@ G2Config.prototype.init = function(driver, callback) {
 	Config.prototype.init.call(this, callback);
 }
 
-G2Config.prototype.changeUnits = function(units, callback) {
-	this.driver.setUnits(units, function(err, data) {
-		if(err) {
+G2Config.prototype.changeUnits = function(newUnits, callback) {
+	this.driver.get('unit', function(err, currentUnits){
+		if(err){
 			callback(err);
 		} else {
-			this.getFromDriver(function(err, g2_values) {
-				if(err) {
-					callback(err);
-				} else  {
-					this.setMany(g2_values, callback);
-				}
-			}.bind(this));
+			if(parseInt(newUnits) === parseInt(currentUnits)){
+				callback('no unit change needed');
+			} else {
+				this.driver.setUnits(newUnits, function(err, data) {
+					if(err) {
+						callback(err);
+					} else {
+						this.getFromDriver(function(err, g2_values) {
+							if(err) {
+								callback(err);
+							} else  {
+								this.setMany(g2_values, callback);
+							}
+						}.bind(this));
+					}
+				}.bind(this));
+			}
 		}
-	}.bind(this));
+	});
+
+
 }
 
 G2Config.prototype.getFromDriver = function(callback) {

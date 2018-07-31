@@ -562,25 +562,25 @@ require("../css/toastr.min.css");
     $('.xy-fixed').on('change', function(){
         keyboard.setEnabled(false);
         newDefault = $('.xy-fixed').val();
-                dashboard.engine.setConfig({machine:{manual:{xy_increment:newDefault}}}, function(err, data){
-                    if(err){
-                        console.log(err);
-                    } else {
-                        dashboard.engine.getConfig();
-                    }
-                });
+        dashboard.engine.setConfig({machine:{manual:{xy_increment:newDefault}}}, function(err, data){
+            if(err){
+                console.log(err);
+            } else {
+                dashboard.engine.getConfig();
+            }
         });
+    });
+
     $('.z-fixed').on('change', function(){
         keyboard.setEnabled(false);
         newDefault = $('.z-fixed').val();
-                dashboard.engine.setConfig({machine:{manual:{z_increment:newDefault}}}, function(err, data){
-                    if(err){
-                        console.log(err);
-                    } else {
-                        dashboard.engine.getConfig();
-                    }
-                });
-            
+        dashboard.engine.setConfig({machine:{manual:{z_increment:newDefault}}}, function(err, data){
+            if(err){
+                console.log(err);
+            } else {
+                dashboard.engine.getConfig();
+            }
+        });   
     });   
 
     $('.axi').on('click', function(e) {
