@@ -859,14 +859,19 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 	}
 };
 
-SBPRuntime.prototype.runCustomCut = function(number) {
-	var macro = macros.get(number);
-	if(macro) {
-		log.debug("Running macro: " + JSON.stringify(macro))
-		this._pushFileStack();
-		this.runFile(macro.filename);
+SBPRuntime.prototype.runCustomCut = function(number, callback) {
+	if(this.machine) {
+		var macro = macros.get(number);
+		if(macro) {
+			log.debug("Running macro: " + JSON.stringify(macro))
+			this._pushFileStack();
+			this.runFile(macro.filename);
+		} else {
+			throw new Error("Can't run custom cut (macro) C" + number + ": Macro not found.")
+		}
 	} else {
-		throw new Error("Can't run custom cut (macro) C" + number + ": Macro not found.")
+		this.pc +=1;
+		callback();
 	}
 	return true;
 }
@@ -893,7 +898,7 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 		// A C# command (custom cut)
 		case "custom":
-			this.runCustomCut(command.index);
+			this.runCustomCut(command.index, callback);
 			return true;
 			break;
 
@@ -1215,7 +1220,7 @@ SBPRuntime.prototype._analyzeLabels = function() {
 	this.label_index = {};
 	for(i=0; i<this.program.length; i++) {
 		line = this.program[i];
-		if(line) {
+		if(line && line.type) {
 			switch(line.type) {
 				case "label":
 					if (line.value in this.label_index) {
@@ -1261,6 +1266,7 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 	if(v === undefined) { return undefined;}
 	result = v.match(SYSVAR_RE);
 	if(result === null) {return undefined;}
+	if(!this.machine) {return 0;}
 	n = parseInt(result[1]);
 	switch(n) {
 		case 1: // X Location

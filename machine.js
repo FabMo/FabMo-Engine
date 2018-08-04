@@ -578,11 +578,14 @@ Machine.prototype.getGCodeForFile = function(filename, callback) {
 			ext = path.extname(filename).toLowerCase();
 
 			if(ext == '.sbp') {
+				/*
 				if(this.status.state != 'idle') {
 					return callback(new Error('Cannot generate G-Code from OpenSBP while machine is running.'));
-				}
-				this.setRuntime(null, function() {});
-				this.sbp_runtime.simulateString(data, callback);
+				}*/
+
+				//this.setRuntime(null, function() {});
+
+				(new SBPRuntime()).simulateString(data, callback);
 			} else {
 				fs.readFile(filename, callback);
 			}
