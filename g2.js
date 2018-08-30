@@ -32,6 +32,7 @@ var CMD_TIMEOUT = 10000;
 var EXPECT_TIMEOUT = 300000;
 
 var _promiseCounter = 1;
+var resumePending = false;
 var THRESH = 1
 
 var pat = /s*(G(28|38)\.\d|G2(0|1))/g
@@ -587,8 +588,12 @@ G2.prototype.queueFlush = function(callback) {
 
 G2.prototype.resume = function() {
 	var thisPromise = _promiseCounter;
+	if(resumePending){
+		return;
+	}
 	log.info("Creating promise " + thisPromise);
 	_promiseCounter += 1;
+	resumePending = true;
 	var deferred = Q.defer();
 	var that = this;
 	var onStat = function(stat) {
@@ -597,7 +602,8 @@ G2.prototype.resume = function() {
 				return;
 			}
 			that.removeListener('stat', onStat);
-			log.info("Resolving promise (resume): " + thisPromise)
+			log.info("Resolving promise (resume): " + thisPromise);
+			resumePending = false;
 			deferred.resolve(stat);
 		}
 	}

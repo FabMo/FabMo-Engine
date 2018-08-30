@@ -430,7 +430,6 @@ Machine.prototype.fire = function(force) {
 
 	// If no action, we're just authorizing for the next auth timeout
 	if(!this.action) {
-		log.warn("Is this what is happenning!!!");
 		this.authorize(config.machine.get('auth_timeout'));
 		this.setState(this, 'idle');
 		return;

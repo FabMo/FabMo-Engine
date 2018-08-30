@@ -541,8 +541,8 @@ Engine.prototype.start = function(callback) {
                 // how long the session will stay valid in ms
                 cookie: {
                   //: '/api', // cookie will only be sent to requests under '/api'
-                  //maxAge: 60000, // duration of the cookie in milliseconds, defaults to duration above
-                  ephemeral: false, // when true, cookie expires when the browser closes
+                  maxAge: (31 * 24 * 60 * 60 * 1000),  // duration of the cookie in milliseconds, defaults to duration above
+                  ephemeral: false, 
                   httpOnly: false, // when true, cookie is not accessible from javascript
                   secure: false // when true, cookie will only be sent over SSL. use key 'secureProxy' instead if you handle SSL not in your node process
                 }

@@ -1658,7 +1658,15 @@ input[type='range']:focus {
 
 .manual-right-side-container {
 	width: 50%;
-	height: 289px;
+	height: 300px;
+}
+
+#keypad{
+	display: flex;
+}
+
+#keypad > div {
+	-ms-flex: 1 1 auto;
 }
 
 .go-to-container, #keypad{
@@ -1674,9 +1682,7 @@ input[type='range']:focus {
 	display: none;
 }
 
-#keypad{
-	display: flex;
-}
+
 
 .go-to-container div {
 	cursor: pointer;
@@ -1732,6 +1738,10 @@ input[type='range']:focus {
 	font-size: 0;
 	position: relative;
 	text-align: center;
+	box-sizing: border-box;
+	height: 42px;
+	max-height: 33%;
+	-ms-flex: 1;
 }
 
 .read-out-container label {
