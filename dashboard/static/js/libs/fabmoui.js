@@ -60,7 +60,8 @@ function FabMoUI(tool, options){
 		$('.speed_read_out').hide();
 	})
 
-	$('#dro-tab').click(function(){
+	$('#right-position-container').on('click', function(){
+		console.log('hey');
 		$('#dro-tab').css('width', '1em');
 		setTimeout(function(){
 			$('#dro-tab').css('width', '0.5em'); 
