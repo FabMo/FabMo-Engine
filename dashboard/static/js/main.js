@@ -262,8 +262,8 @@ require("../css/toastr.min.css");
                             keypad.setEnabled(false);
                             keyboard.setEnabled(false);
                         dashboard.showModal({
-                            title: 'Interlock Active!',
-                            message: 'You cannot perform the specified action while the interlock is active.  Please clear the interlock to continue.',
+                            title: 'Safety Interlock Active!',
+                            message: 'You cannot perform the specified action with the safety interlock open.  Please close the safety interlock to continue.',
                             cancelText: 'Quit',
                             cancel: function() {
                                 interlockDialog = false;

@@ -235,6 +235,15 @@ Machine.prototype.handleOkayCancelDual = function(stat, quit_input) {
 				log.info(msg);
 			}
 		});
+	} else if(this.status.state === 'interlock' && this.quit_pressed) {
+		log.info("Okay hit, resuming from interlock")
+		this.resume(function(err, msg){
+			if(err){
+				log.error(err);
+			} else {
+				log.info(msg);
+			}
+		});
 	}
 	this.quit_pressed = stat[quit_input];
 }
@@ -265,7 +274,7 @@ Machine.prototype.handleOkayButton = function(stat, auth_input){
 		}
 
 		if(this.status.state === 'paused' && canResume) {
-			log.info("Okay hit!")
+			log.info("Okay hit, resuming from pause")
 			this.resume(function(err, msg){
 				if(err){
 					log.error(err);
@@ -275,6 +284,15 @@ Machine.prototype.handleOkayButton = function(stat, auth_input){
 			});
 			clickDisabled = true;
 			setTimeout(function(){clickDisabled = false;}, 2000);
+		} else if(this.status.state === 'interlock') {
+			log.info("Okay hit, resuming from interlock")
+			this.resume(function(err, msg){
+				if(err){
+					log.error(err);
+				} else {
+					log.info(msg);
+				}
+			});
 		}
 
 	}
@@ -320,11 +338,13 @@ Machine.prototype.restoreDriverState = function(callback) {
 }
 
 Machine.prototype.arm = function(action, timeout) {	
+	var requireAuth = config.machine.get('auth_required');
 	switch(this.status.state) {
 		case 'idle':
 			this.interlock_action = action;
 		break;
 		case 'interlock':
+			requireAuth = false;
 			action = this.interlock_action || action;
 		break;
 		case 'manual':
@@ -370,7 +390,7 @@ Machine.prototype.arm = function(action, timeout) {
 	this.preArmedState = this.status.state;
 	this.preArmedInfo = this.status.info;
 
-	var requireAuth = config.machine.get('auth_required');
+
 
 
 

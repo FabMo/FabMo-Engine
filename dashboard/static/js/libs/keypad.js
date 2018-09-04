@@ -244,7 +244,7 @@ Keypad.prototype.onDriveTap = function(evt) {
 		else if(e.hasClass('x_pos') && e.hasClass('y_neg')) {
 			this.nudge('x', 1, 'y', -1);
 		}
-		if(e.hasClass('x_pos')) {
+		else if(e.hasClass('x_pos')) {
 			this.nudge('x', 1);
 		}
 		else if(e.hasClass('x_neg')) {
