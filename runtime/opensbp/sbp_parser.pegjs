@@ -18,11 +18,15 @@ start
    = __ stmt:statement __ {return stmt}
 
 statement
-   = (label / single / fail / jump / pause / conditional / assignment / weak_assignment / event / open / custom_cut / command / __)
+   = (label / single / fail / jump / pause / conditional / assignment / weak_assignment / event / open / custom_cut / gcode_line / command / __)
 
 custom_cut
    = [Cc] index:integer __ ","?
    { return {"type":"custom", "index":index};}
+
+gcode_line
+   = [N] line:integer gcode:.*
+   { return {"type":"gcode", "line":gcode.join('').trim()}; }
 
 event
    = "ON"i ___ "INP"i("UT"i)? __ "(" __ sw:integer __ "," __ state:integer __ ")" ___ stmt:(assignment / jump / pause / single / command)
