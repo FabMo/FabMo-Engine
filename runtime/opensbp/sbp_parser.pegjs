@@ -26,7 +26,7 @@ custom_cut
 
 gcode_line
    = [N] line:integer gcode:.*
-   { return {"type":"gcode", "line":gcode.join('').trim()}; }
+   { return {"type":"gcode", "gcode":gcode.join('').trim()}; }
 
 event
    = "ON"i ___ "INP"i("UT"i)? __ "(" __ sw:integer __ "," __ state:integer __ ")" ___ stmt:(assignment / jump / pause / single / command)

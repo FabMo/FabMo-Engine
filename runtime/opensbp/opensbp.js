@@ -902,6 +902,15 @@ SBPRuntime.prototype._execute = function(command, callback) {
 			return true;
 			break;
 
+		// A line of raw g-code
+		case "gcode":
+			log.debug('Running raw gcode in opensbp context.');
+			log.debug(command.gcode);	
+			this.emit_gcode(command.gcode);
+			this.pc += 1;
+			return false;
+			break;
+
 		case "return":
 			if(this.stack.length) {
 				this.pc = this.stack.pop();
