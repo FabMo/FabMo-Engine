@@ -37,8 +37,13 @@ function doshell(command, callback){
 }
 
 function diskSync(callback) {
-    doshell('sync',callback);
+    doshell('sync',function() {
+	setTimeout(function() {
+		callback();
+	}, 1000);		
+    });
 }
+
 function extend(a,b, force) {
     for(k in b) {
         if(a.hasOwnProperty(k) || force) {
