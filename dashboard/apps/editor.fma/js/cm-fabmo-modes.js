@@ -26,6 +26,7 @@ CodeMirror.defineSimpleMode("gcode", {
 });
 
 var CMD_REGEX = /^[A-Z](?:[A-Z]|[0-9]+|C\#)\b/i
+var LINENO_REGEX = /^N[0-9]+\b/i
 var LABEL_REGEX = /^[A-Z_][A-Z0-9_]*\:/i
 var WORD_REGEX = /^[A-Z_][A-Z0-9_]*/i
 var STRING_REGEX = /^"(?:[^\\]|\\.)*?"/
@@ -130,6 +131,10 @@ CodeMirror.defineMode("opensbp", function() {
             return "keyword"
           }
 
+          if(stream.match(LINENO_REGEX)) {
+          	state.name = "gcode";
+          	return "property";
+          }
           // Command mnemonic
           if(stream.match(CMD_REGEX)) {
             state.name = "args";
@@ -247,6 +252,11 @@ CodeMirror.defineMode("opensbp", function() {
 
         default:
           console.error("Unknown state: ", state)
+        break;
+
+        case "gcode":
+        	stream.skipToEnd();
+        	return null;
         break;
       }
 
