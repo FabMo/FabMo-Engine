@@ -841,6 +841,7 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 			return true;
 		} else {
 			// This is NOT a stack breaker, run immediately, increment PC, proceed.
+			console.log("Non stack breaker: ", command);
 			try {
 				f(args);
 			} catch(e) {
@@ -849,6 +850,7 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 				throw e;
 			}
 			this.pc +=1;
+			setImmediate(callback)
 			return false;
 		}
 	} else {
@@ -893,7 +895,11 @@ SBPRuntime.prototype._execute = function(command, callback) {
 
 		// A ShopBot Comand (M2, ZZ, etc...)
 		case "cmd":
-			return this._executeCommand(command, callback);
+			var broke = this._executeCommand(command, callback);
+			if(!broke) {
+				setImmediate(callback);
+			}
+			return broke;
 			break;
 
 		// A C# command (custom cut)
@@ -1299,23 +1305,23 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
 		break;
 
 		case 6: // X Table Base
-			return config.driver.get('g54x');
+			return config.driver.get('g55x');
 		break;
 
 		case 7: // Y Table Base
-			return config.driver.get('g54y');
+			return config.driver.get('g55y');
 		break;
 
 		case 8: // Z Table Base
-			return config.driver.get('g54z');
+			return config.driver.get('g55z');
 		break;
 
 		case 9: // A Table Base
-			return config.driver.get('g54a');
+			return config.driver.get('g55a');
 		break;
 
 		case 10: // B Table Base
-			return config.driver.get('g54b');
+			return config.driver.get('g55b');
 		break;
 
 		case 25:
