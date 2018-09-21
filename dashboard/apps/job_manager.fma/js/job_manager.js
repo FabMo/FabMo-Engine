@@ -59,7 +59,17 @@ function setupDropTarget() {
           fabmo.on('upload_progress', function(progress) {
             fileUploadProgress(progress.value);
           });
-          synchJobSubmit(file);
+          fabmo.submitJob(file, {
+            compressed: file.size > 2000000 ? true : false
+          }, function(err, data) {
+            if (err) {
+              console.log(err);
+              fabmo.notify('error', err);
+              return
+            } else {
+              updateQueue()
+            }
+          });
         }
       } catch (e) {
       } finally {
@@ -70,27 +80,27 @@ function setupDropTarget() {
   });
 }
 
-function synchJobSubmit(files) {
-  fabmo.submitJob(files[x], {
-    compressed: files[x].size > 2000000 ? true : false
-  }, function(err, data) {
-    if (err) {
-      console.log(err);
-      fabmo.notify('error', err);
+// function synchJobSubmit(files) {
+//   fabmo.submitJob(files[x], {
+//     compressed: files[x].size > 2000000 ? true : false
+//   }, function(err, data) {
+//     if (err) {
+//       console.log(err);
+//       fabmo.notify('error', err);
 
-      return
-    } else {
-      x++;
-      if (x < files.length) {
-        synchJobSubmit(files);
-      } else {
-        updateQueue();
-        x = 0;
-      }
-    }
+//       return
+//     } else {
+//       x++;
+//       if (x < files.length) {
+//         synchJobSubmit(files);
+//       } else {
+//         updateQueue();
+//         x = 0;
+//       }
+//     }
 
-  });
-}
+//   });
+// }
 
 function updateQueue(callback) {
   callback = callback || function() {};
@@ -1227,12 +1237,14 @@ $(document).ready(function() {
     updateHistory();
   });
 
-  fabmo.on('change',function (change) {
-    if(change === "jobs") {
-      updateQueue();
-      updateHistory();
-    }
-  });
+
+  //May need to put back in 
+  // fabmo.on('change',function (change) {
+  //   if(change === "jobs") {
+  //     updateQueue();
+  //     updateHistory();
+  //   }
+  // });
 
 
   // Request infoes from the tool

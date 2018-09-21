@@ -16,13 +16,14 @@ var submitJob = function(req, res, next) {
             log.warn("Got an upload of " + uploads.length + ' files for a submitted job when only one is allowed.')
         }
 
-        async.map(
+        async.eachOf(
             uploads,
-            function create_job(item, callback) {
+            function create_job(item, index, callback) {
                 var file = item.file;
                 var filename = item.filename || (!file.name || file.name === 'blob') ? item.filename : file.name;
                 item.filename = filename;
                 item.name = item.name || filename;
+                item.index = index;
 
                 // Reject disallowed files
                 if(!util.allowed_file(filename)) {
