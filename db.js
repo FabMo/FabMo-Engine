@@ -39,7 +39,7 @@ Job = function(options) {
     this.started_at = null;
     this.finished_at = null;
     this.state = "pending";
-    this.order = null;
+    this.order = options.order || null;
 };
 
 Job.prototype.clone = function(callback) {
@@ -527,22 +527,29 @@ File.getByID = function(id,callback)
 var createJob = function(file, options, callback) {
 	File.add(options.filename || file.name, file.path, function(err, dbfile) {
 
-	    if (err) { return callback(err); }
-
-        try {
-            var job = new Job({
-                file_id : dbfile._id,
-                name : options.name || file.name,
-                description : options.description
-            });
-        } catch(e) {
-        	log.error(e);
-            return callback(e);
-        }
-        job.save(function(err, job) {
-        	if(err) { return callback(err); }
-        	callback(null, job);
-        });
+		if (err) { return callback(err); }
+		Job.getPending(function(err, data){
+			if(err){
+				log.info(err);
+			} else {
+				var order = (data.length + options.index);
+				try {
+					var job = new Job({
+						file_id : dbfile._id,
+						name : options.name || file.name,
+						description : options.description,
+						order : order
+					});
+				} catch(e) {
+					log.error(e);
+					return callback(e);
+				}
+				job.save(function(err, job) {
+					if(err) { return callback(err); }
+					callback(null, job);
+				});
+			}
+		})
     });
 }
 
