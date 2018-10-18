@@ -1,3 +1,12 @@
+/*
+ * db.js
+ * 
+ * Manages the Engine's internal database.  The database is implemented with tingodb
+ * which is sort of a lightweight mongodb clone.  The database stores the following things:
+ *   - file metadata (actual files contents are stored on disk)
+ *   - job data
+ *   - file thumbnails (currently unused)
+ */
 var assert = require('assert');
 var async = require('async');
 var fs = require('fs-extra');
@@ -11,19 +20,24 @@ var cnctosvg = require("cnctosvg");
 
 
 // Connect to TingoDB database that stores the files
+// Confusingly called "Engine" but not to be confused with the FabMo engine
 var Engine = require('tingodb')();
 
-job_queue = new util.Queue();
-
-var db;
+/*
+ * Collections (each of these is like a table in the database)
+ *      files: Files refer to individual files on disk, which are created when Jobs are submitted.
+ *       jobs: A job represents a single "run" - many jobs can refer to the same file (repeat runs or submittals of the same actual file data)
+ * thumbnails: Preview thumbnails are generated when files are uploaded and can be previewed in the frontend.  This feature needs work, and is not currently exposed.
+ */
 var files;
 var jobs;
-var users;
 var thumbnails;
 
+// maxStorage defines how much space all of the files can take up on disk before we start to prune the oldest ones.
 var maxStorage = 500000000;
 var totalSize = 0;
 
+// This function sends an event over the websocket to inform the dashboard that something in the job queue or history has changed.
 function notifyChange() {
 	var machine = require('./machine').machine;
 	if(machine) {
@@ -31,6 +45,16 @@ function notifyChange() {
 	}
 }
 
+/* Job object has all of the features described.
+ *   file_id refers to objects in the File collection.  Each job has a file, which is the CNC data that is run for that job.
+ *   states for jobs:
+ *     'pending' - Job is in the queue
+ *     'running' - Job is currently active (There are only one of these at a time)
+ *     'finished' - Job completed with no errors
+ *     'cancelled' - Job was cancelled by user intervention
+ *     'failed' - Job failed due to error
+ *     'trash' - Job is marked for deletion from the history
+ */
 Job = function(options) {
     this.file_id = options.file_id || null;
     this.name = options.name || "Untitled Job";
@@ -42,6 +66,7 @@ Job = function(options) {
     this.order = options.order || null;
 };
 
+// Clone a job.  Used for re-running files, usually.
 Job.prototype.clone = function(callback) {
 	var job = new Job({
 		file_id : this.file_id,
@@ -51,11 +76,15 @@ Job.prototype.clone = function(callback) {
 	job.save(callback);
 };
 
+// TODO @brendan
 Job.prototype.update_order = function (order, callback){
     log.info("Upating " + this._id ? this._id : '<volatile job>');
     this.order = order;
     this.save(callback);
 };
+
+// The functions below update the state of the job object in the database.
+// Note that they don't *do* anything other than manage state.
 
 Job.prototype.start = function(callback) {
 	log.info("Starting job id " + this._id ? this._id : '<volatile job>');
@@ -77,14 +106,6 @@ Job.prototype.fail = function(callback) {
 	this.finished_at = Date.now();
 	this.save(callback);
 };
-
-Job.prototype.cancelOrTrash = function(callback) {
-		if(this.state === 'running') {
-			this.cancel(callback);
-		} else {
-			this.trash(callback);
-		}
-}
 
 Job.prototype.cancel = function(callback) {
 	if(this.state === 'running') {
@@ -108,6 +129,15 @@ Job.prototype.trash = function(callback) {
 	}
 };
 
+Job.prototype.cancelOrTrash = function(callback) {
+	if(this.state === 'running') {
+		this.cancel(callback);
+	} else {
+		this.trash(callback);
+	}
+}
+
+// Write this job to the database
 Job.prototype.save = function(callback) {
 	if(!this.file_id) {
 		log.info('Not saving this job because no file_id')
@@ -123,9 +153,9 @@ Job.prototype.save = function(callback) {
 		notifyChange();
 		callback(null, this);
 	}.bind(this));
-
 };
 
+// Remove this job from the database entirely (careful!)
 Job.prototype.delete = function(callback){
 	jobs.remove({_id : this._id},function(err){
 		if(err) {
@@ -137,6 +167,9 @@ Job.prototype.delete = function(callback){
 	});
 };
 
+// The functions below are for retrieving jobs from the database.
+// They do not modify any information in the database
+
 Job.getPending = function(callback) {
 	jobs.find({state:'pending'}).toArray(callback);
 };
@@ -145,7 +178,16 @@ Job.getRunning = function(callback) {
 	jobs.find({state:'running'}).toArray(callback);
 };
 
-
+/*
+ * Retrieve the "history" which includes jobs that are in one of the completed states; finished, cancelled, or failed
+ * options:
+ *   - start : The starting index for retrieval.
+ *   - count : The number of files to retrieve from the history (sorted by creation date)
+ * 
+ * example: 
+ *    getHistory({count : 10})  will retrieve the 10 most recent jobs in the history. (Ordered by creation date)
+ *    getHistory({start : 10, count : 5}) will retrieve 5 jobs from the history, starting with the tenth one. 
+ */
 Job.getHistory = function(options, callback) {
 	var total = jobs.count({
 		state: {$in : ['finished', 'cancelled', 'failed']}
@@ -166,6 +208,10 @@ Job.getHistory = function(options, callback) {
 
 };
 
+/*
+ * Get every single job regardless of state, etc.
+ * (careful, this might be a big list)
+ */
 Job.getAll = function(callback) {
 	jobs.find().toArray(function(err, array) {
 		if(err){
@@ -177,6 +223,10 @@ Job.getAll = function(callback) {
 	});
 };
 
+/*
+ * Given a job ID, retrieve the file object.
+ * This returns file metadata only.  It is does not return the actual file on disk
+ */
 Job.getFileForJobId = function(id, callback) {
 	Job.getById(id, function(err, document) {
 		if(err) {
@@ -200,7 +250,7 @@ Job.getFileForJobId = function(id, callback) {
 		}
 	});
 }
-// Return a file object for the provided id
+
 Job.getById = function(id,callback) {
 	jobs.findOne({_id: id},function(err,document){
 		if (!document){
@@ -213,6 +263,7 @@ Job.getById = function(id,callback) {
 	});
 };
 
+// Return the next job in the queue (the one that will run next if a start job command is recieved)
 Job.getNext = function(callback) {
 	jobs.find({state:'pending'}).toArray(function(err, result) {
         result.sort(function(a, b){
@@ -232,6 +283,7 @@ Job.getNext = function(callback) {
 	});
 };
 
+// Dequeue the next job to run it (mark it as started, taking it out of the queue)
 Job.dequeue = function(callback) {
 	Job.getNext(function(err, job) {
 		if(err) {
@@ -242,6 +294,7 @@ Job.dequeue = function(callback) {
 	});
 };
 
+// Remove all jobs in the queue
 Job.deletePending = function(callback) {
 	jobs.remove({state:'pending'},callback);
 };
@@ -316,6 +369,7 @@ File.prototype.delete = function(callback){
 	thumbnails.remove({file_id : this._id},function(err){if(!err)callback();else callback(err);});
 };
 
+// Delete this file, and every job in the history that refers to it.
 File.obliterate = function(file, callback){
 	var id = file._id
 	fs.remove(file.path, function(err){
@@ -338,10 +392,12 @@ File.obliterate = function(file, callback){
 		}
 	});
 	
+	// TODO figure out why this is commented out - if we obliterate a file, we should probably trash its thumbnail, yeah?
 	//thumbnails.remove({file_id : id},function(err){if(!err)callback();else callback(err);});
 
 }
 
+// TODO Update docs 
 File.clearTrash = function(callback){
 	var toTrash = [];
 	files.find().toArray(function(err, files){
@@ -378,9 +434,7 @@ File.clearTrash = function(callback){
 	callback(null);
 }
 
-
-
-
+// Retrieve the total size of all files on disk (used to determine how much to prune if we hit max file size)
 File.getTotalFileSize = function(callback){
 	files.find().toArray(function(err,result){
 		if(err) {
@@ -407,13 +461,11 @@ File.getTotalFileSize = function(callback){
 
 };
 
-
-
-
 // Update the "last run" time (use the current time)
 File.prototype.saverun = function(){
 	files.update({_id : this._id}, {$set : {last_run : Date.now()}, $inc : {run_count:1}});
 };
+
 
 File.writeToDisk = function(pathname, full_path, friendly_filename, hash, callback){
 	util.move(pathname, full_path, function(err) {
@@ -552,139 +604,6 @@ var createJob = function(file, options, callback) {
 		})
     });
 }
-
-// User = function(username,password,isAdmin,created_at,_id) {
-// 	this._id = _id;
-//     this.username = username;
-//     this.password = password;
-// 	this.isAdmin = isAdmin || false;
-//     this.created_at = created_at || Date.now();
-// };
-
-// User.prototype.validPassword= function(password){
-// 	var pass_shasum = crypto.createHash('sha256').update(password).digest('hex');
-
-// 	if(pass_shasum === this.password){
-// 		return true;
-// 	}else if(password === this.password){
-// 		return true;
-// 	}else{
-// 		return false;
-// 	}
-// };
-
-// // Delete this user from the database
-// User.prototype.delete = function(callback){
-// 	users.remove({_id : this._id},function(err){if(!err)callback();else callback(err);});
-// };
-
-// // verify user password and encrypt it.
-// User.verifyAndEncryptPassword = function(password,callback){
-// 	if(!/^([a-zA-Z0-9@*#]{5,15})$/.test(password) ){ //validatepassword
-// 		if(callback) callback('Password not valid, it should contain between 5 and 15 characters. The only special characters authorized are "@ * #".',null);
-// 		return undefined;
-// 	}
-// 	var pass_shasum = crypto.createHash('sha256').update(password).digest('hex'); // save encrypted password
-// 	if(callback)callback(null,pass_shasum);
-// 	return pass_shasum;
-// };
-
-// // Grant user admin status
-// User.prototype.grantAdmin = function(callback){
-// 	this.isAdmin = true;
-// 	this.save(callback);
-// };
-
-// // Revoke user admin status
-// User.prototype.revokeAdmin = function(callback){
-// 	this.isAdmin = false;
-// 	this.save(callback);
-// };
-
-// User.prototype.save = function(callback){
-// 	var user = this;
-// 	users.save(user, function(err, record) {
-// 		if(err){
-// 			log.err(err);
-// 			if(callback)callback(err,null);
-// 			return;
-// 		}
-// 		if(!record) {
-// 			if(callback)callback(err,null);
-// 			return;
-// 		}
-// 		if(callback){
-// 			backupDB(callback);
-// 			callback(null, this);
-// 		}
-// 	}.bind(this));
-// };
-
-// User.add = function(username,password,callback){
-// 	if(!/^([a-zA-Z0-9]{3,20})$/.test(username) ){ //validate username
-// 		callback('Username not valid, it should contain between 3 and 20 characters. Special characters are not authorized.',null);
-// 		return ;
-// 	}
-// 	User.verifyAndEncryptPassword(password,function(err,pass_shasum){
-// 		if (err){callback(err,password);return ;}
-// 		users.findOne({username:username},function(err,document) {
-// 			if(document){
-// 				callback('Username already taken !',null);
-// 				return ;
-// 			}else{
-// 				user = new User(username,pass_shasum);
-// 				user.save(callback);
-// 				//callback(null,user);
-// 				return ;
-// 			}
-// 		});
-// 	})
-// }
-
-// User.findOne = function(username,callback){
-// 	users.findOne({username:username},function(err,doc){
-// 		if(err){console.log(err);callback(err,null);}
-// 		if(doc){
-// 			user = new User(doc.username,doc.password,doc.isAdmin,doc.created_at,doc._id);
-// 			callback(err,user);
-// 		}else{
-// 			callback(err);
-// 		}
-// 	});
-// }
-
-// User.getAll = function(callback){
-// 	users.find({},{password:0},function(err,cursor){ // do not returns passwords.
-// 		if(err){console.log(err);callback(err,null);}
-// 		if(cursor){
-// 			var user_array = [];
-// 			cursor.toArray(function(err,users){
-// 				for(user in users){
-// 						user_array.push(new User(users[user].username,users[user].password,users[user].isAdmin,users[user].created_at,users[user]._id));
-// 				}
-// 				callback(null,user_array);
-// 			});
-// 		}else{
-// 			callback(err);
-// 		}
-// 	});
-// }
-
-// User.findById = function(id,callback){
-// 	users.findOne({_id:id},function(err,doc){
-// 		if(err){console.log(err);callback(err,null);return;}
-// 		if(doc){
-// 			user = new User(doc.username,doc.password,doc.isAdmin,doc.created_at,doc._id);
-// 			callback(err,user);
-// 			return;
-// 		}else{
-// 			console.log('db');
-// 			callback("user doesn't exist!");
-// 			return;
-// 		}
-// 	});
-// }
-
 
 // Creates a new Thumbnail which represents the thumbnails stored in the
 // database. Thumbnails are 2D representation of the path a file is describing
@@ -900,10 +819,7 @@ reConfig = function(callback){
 	db = new Engine.Db(config.getDataDir('db'), {});
 	files = db.collection("files");
 	jobs = db.collection("jobs");
-	users = db.collection("users");
 	thumbnails = db.collection("thumbnails");
-
-	
 
 	async.parallel([
 			function(cb) {
@@ -956,15 +872,11 @@ exports.configureDB = function(callback) {
 	db = new Engine.Db(config.getDataDir('db'), {});
 	files = db.collection("files");
 	jobs = db.collection("jobs");
-	users = db.collection("users");
 	thumbnails = db.collection("thumbnails");
 
 	
 
 	async.parallel([
-			function(cb) {
-				checkCollection(users, cb);
-			},
 			function(cb) {
 				checkCollection(files, cb);
 			},
@@ -1037,6 +949,5 @@ exports.cleanup = function(callback) {
 
 exports.File = File;
 exports.Job = Job;
-// exports.User = User;
 exports.Thumbnail = Thumbnail;
 exports.createJob = createJob;
