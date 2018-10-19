@@ -46,6 +46,8 @@ try {
 }
 
 // A cycle context is created when you run a stream, and is a way to access driver events in the context of the current run
+// It is a sort of token that you can recieve events from while the machining cycle is active, 
+// and that will resolve like a promise when the machining cycle is done.
 function CycleContext(driver, st, promise) {
 		this.done = false;
 		this._firmed = false;
@@ -101,9 +103,9 @@ CycleContext.prototype.then = function(f) {
 	});
 }
 
+// Sort of a do-nothing, for now
 CycleContext.prototype.finish = function() {
 	log.debug("Finishing up the cycle context.")
-	// dunno
 }
 
 // Emit the provided data to all the listeners to the subscribed event
@@ -117,17 +119,19 @@ CycleContext.prototype.emit = function(event, data) {
 		}
 }
 
+// Pause the run by pausing the stream that is piping data into this context
 CycleContext.prototype.pause = function() {
 	this._paused = true;
 	this._stream.pause();
 }
 
+// Resume the run by resuming the stream that is piping data into this context
 CycleContext.prototype.resume = function() {
 	this._paused = false;
 	this._stream.resume();
 }
 
-// G2 Constructor
+// The G2 object represents the connection to the driver, which happens as serial over USB
 function G2() {
 	this._currentData = [];
 	this._currentGCodeData = [];
@@ -170,39 +174,57 @@ function G2() {
 
 util.inherits(G2, events.EventEmitter);
 
+// Creates a cycle context, which has a pass-through stream into which data can be piped
 G2.prototype._createCycleContext = function() {
 	if(this.context) {
         throw new Error("Cannot create a new cycle context.  One already exists.");
 	}
+	// Create and setup the pass-through stream
 	var st = new stream.PassThrough();
 	st.setEncoding('utf8');
 	this._streamDone = false;
 	this.lineBuffer = []
 
 	// TODO factor this out
+	// Inject a couple of G-Codes which are needed for everyone to play nice
 	st.write('G90\n')
-	st.write('M100 ({out4:1})\n')
+	st.write('M100 ({out4:1})\n') // hack to get the "permissive relay" behavior while in-cycle
+	
+	// Handle data coming in on the stream
 	st.on('data', function(chunk) {
+		// Stream data comes in "chunks" which are often multiple lines
 		chunk = chunk.toString();
 		var newLines = false;
+		// Repartition incoming "chunked" data as lines
 		for(var i=0; i<chunk.length; i++) {
 			ch = chunk[i];
 			this.lineBuffer.push(ch);
 			if(ch === '\n') {
 				newLines = true;
 				var s = this.lineBuffer.join('').trim();
+
+				// Enqueue individual lines in the g-code queue
 				this.gcode_queue.enqueue(s);
+
+				// The G2 sender doesn't actually start sending until it is "primed"
+				// Priming happens either when the number of lines to send reaches a certain threshold
+				// or the prime() function is called manually.
+				// TODO:  Factor out 10 (magic number) and put it at the top of the file so it can be changed easily.
 				if(this.gcode_queue.getLength() >= 10) {
 					this._primed = true;
 				}
 				this.lineBuffer = [];
 			}
 		}
+		// If new lines were enqueued as a part of the re-chunkification process, send them.
 		if(newLines) {
 			this.sendMore();
 		}
 	}.bind(this));
+
+	// Handle a stream finishing or disconnecting.
 	st.on('end', function() {
+		// Send whatever is left in the queue.  (There may be stuff unsent even after the stream is over)
 		this._primed = true;
 		this._streamDone = true;
 		// TODO factor this out
@@ -213,25 +235,33 @@ G2.prototype._createCycleContext = function() {
 		this.sendMore();
 		log.debug("Stream END event.")
 	}.bind(this));
+
+	// Handle a stream being piped into this context (currently do nothing)
 	st.on('pipe', function() {
 		log.debug("Stream PIPE event");
-
 	})
+
+	// Create the promise that resolves when the machining cycle ends.
 	var promise = this._createStatePromise([STAT_END]).then(function() {
 		this.context = null;
 		this._primed = false;
 		return this;
 	}.bind(this))
+
+	// Actually create and return the context built from these configured entities 
 	var ctx  = new CycleContext(this, st, promise);
-	this.context = ctx;
+
+	// The G2 instance keeps track of its current (singleton) cycle context.
+ 	this.context = ctx;
 }
+
 // Actually open the serial port and configure G2 based on stored settings
 G2.prototype.connect = function(path, callback) {
 
 	// Store paths for safe keeping
 	this._serialPath = path;
 
-	// Open both ports
+	// Open the serial port.  This used to be two ports, but now is only the one.
 	log.info('Opening G2 port: ' + this._serialPath);
 	this._serialPort = new SerialPort(this._serialPath, {flowcontrol: ['RTSCTS'], autoOpen:false});
 	this._serialToken = 'S';
@@ -243,6 +273,9 @@ G2.prototype.connect = function(path, callback) {
 	// The control port is the only one to truly handle incoming data
 	this._serialPort.on('data', this.onData.bind(this));
 
+	// Flush and get status once the "ready" message has been received from the controller.
+	// G2 reports a "SYSTEM READY" message on connect that indicates that the system is prepared to
+	// recieve g-codes and JSON commands.  We don't want to do anything until we get that.
 	this.once('ready', function() {
 		this.connected = true;
 		this._write('\x04\n', function() {
@@ -252,6 +285,9 @@ G2.prototype.connect = function(path, callback) {
 		}.bind(this));
 	}.bind(this));
 
+	// Actually perform the connect, and wait for the 'ready' event. 
+	// We give 3 seconds for the ready event to materialize, which is plenty of time.  Typical
+	// times to ready the system are on the order of tens or hundreds of milliseconds.
 	this._serialPort.open(function(error) {
 		if(error) {
 			log.error("ERROR OPENING CONTROL PORT " + error );
@@ -267,6 +303,7 @@ G2.prototype.connect = function(path, callback) {
 	}.bind(this));
 };
 
+// Close the serial port - important for shutting down the application and not letting resources "dangle"
 G2.prototype.disconnect = function(callback) {
 		this._serialPort.close(callback);
 };

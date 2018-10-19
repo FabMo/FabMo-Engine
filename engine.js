@@ -1,3 +1,11 @@
+/*
+ * engine.js
+ *
+ * Defines the Engine object, which is the top level application singleton that represents this running engine instance.
+ * 
+ * The engine object is primarily defined by its start() method, which defines most of the startup configuration
+ * activities for the engine.
+ */
 var restify = require('restify');
 var util = require('./util');
 var socketio = require('socket.io');
@@ -20,7 +28,8 @@ var authentication = require('./authentication');
 var profiles = require('./profiles');
 var crypto = require('crypto');
 
-
+// The engine object has a few high level properties and some key methods that define the application lifecycle
+// Most of the important stuff is in the start() method.
 var Engine = function() {
     this.version = null;
     this.time_synced = false;
@@ -31,6 +40,13 @@ var Engine = function() {
     }
 };
 
+/*
+ * Configure the engine for the first time.
+ * This function is typically called when an engine configuration does not exist.
+ * It sets some defaults in the engine config (by way of the config module) based on system platform.
+ * Mainly this amounts to configuring appropriate serial port paths and http hosting ports 
+ * for different types of machines.
+ */
 function EngineConfigFirstTime(callback) {
     switch(PLATFORM) {
         case 'linux':
@@ -65,6 +81,10 @@ function EngineConfigFirstTime(callback) {
     }
 };
 
+/*
+ * Set the current system time to the provided value.
+ * obj - an object with a 'utc' property that coresponds to the current UTC time
+ */
 Engine.prototype.setTime = function(obj) {
     if(!this.time_synced) {
         this.time_synced = true;
@@ -78,25 +98,37 @@ Engine.prototype.setTime = function(obj) {
     }
 }
 
+/*
+ * Stop this engine instance.
+ * Basically does cleanup activities before shutting the engine down.
+ */
 Engine.prototype.stop = function(callback) {
     this.machine.disconnect();
     this.machine.setState(this.machine, 'stopped');
-
-    //this.server.close();
-    //this.server.io.server.close();
     callback(null);
 };
 
+/*
+ * Get the version of this engine.
+ * 
+ * For production builds, the version is provided by a version.json that defines a version object that includes:
+ * hash - A hash for the build, typically a commit SHA (may not exist in a release type build)
+ * number - The semver version number
+ * type - The type of release, either 'dev', 'rc', or 'release'
+ * 
+ * If that file exists and can be parsed, return a version object that reflects its contents.
+ * If it does not exist, use git (if available on the system) to read out some version information instead
+ */
 Engine.prototype.getVersion = function(callback) {
     util.doshell('git rev-parse --verify HEAD', function(data) {
         this.version = {};
         this.version.hash = (data || "").trim();
         this.version.number = "";
         this.version.debug = ('debug' in argv);
-	fs.readFile('version.json', 'utf8', function(err, data) {
+    fs.readFile('version.json', 'utf8', function(err, data) {
             if(err) {
                 this.version.type = 'dev';
-		        return callback(null, this.version);
+                return callback(null, this.version);
             }
             try {
                 data = JSON.parse(data);
@@ -107,12 +139,15 @@ Engine.prototype.getVersion = function(callback) {
             } catch(e) {
                 this.version.type = 'dev';
             } finally {
-		        callback(null, this.version);
+                callback(null, this.version);
             }
         }.bind(this))
     }.bind(this));
 }
 
+/*
+ * Return "info" about this engine, which currently is just version data for the engine and the firmware
+ */
 Engine.prototype.getInfo = function(callback) {
     callback(null, {
         firmware : this.firmware,
@@ -120,25 +155,35 @@ Engine.prototype.getInfo = function(callback) {
     });
 }
 
+/*
+ * This function is the primary content of the Engine object.  It is called on application launch, and is
+ * sort of the "main thread" of execution.  It executes a bunch of startup/configuration functions, and 
+ * then sets up the http server to listen on the appropriate port.  Setup happens first so the user doesn't
+ * connect to the engine before it is ready to accept connections.
+ */
 Engine.prototype.start = function(callback) {
 
     async.series([
 
         // Configure the engine data directories
+        // Create the folder structure (typically) in /opt/fabmo
+        // eg: /opt/fabmo/config, /opt/fabmo/macros, etc...
        function setup_application(callback) {
             log.info('Checking engine data directory tree...');
             config.createDataDirectories(callback);
         },
 
-        // Load the engine configuration from disk
+        // Load the engine configuration from disk.
         function load_engine_config(callback) {
             log.info("Loading engine configuration...");
             config.configureEngine(callback);
         },
 
+        // Determine if we're configuring the engine for the first time ever.
+        // If so, populate the engine configuration with defaults that are sensible for this platform.
         function check_engine_config(callback) {
             if(!config.engine.get('init')) {
-                log.info('!!!!!!!!!!!! Configuring the engine for the first time');
+                log.info('Configuring the engine for the first time...');
                 EngineConfigFirstTime(function() {
                     config.engine.set('init', true);
                     callback();
@@ -148,6 +193,7 @@ Engine.prototype.start = function(callback) {
             }
         },
 
+        // Load profiles.  See the profiles module for what this entails.
         function load_profiles(callback) {
             profiles.load(function(err, profiles) {
                 if(err) {log.error(err);}
@@ -155,6 +201,7 @@ Engine.prototype.start = function(callback) {
             });
         },
 
+        // Load users.  See config/user_config.js for what this entails.
         function load_users(callback) {
             log.info('Loading users....')
             config.configureUser(function(){
@@ -162,6 +209,10 @@ Engine.prototype.start = function(callback) {
             });
         },
 
+        // Read the selected profile from the engine config.
+        // If the engine config doesn't specify a profile, look in /fabmo/site/.default
+        // If /fabmo/site/.default exists and has content, interpret its content as the selected profile.
+        // If neither of these strategies yields a profile, just choose the 'Default' profile.
         function profile_shim(callback) {
             var profile = config.engine.get('profile');
             var def = '';
@@ -179,6 +230,7 @@ Engine.prototype.start = function(callback) {
             }
         }.bind(this), 
 
+        // Read the engine version and hang onto it
         function get_fabmo_version(callback) {
             log.info("Getting engine version...");
             this.getVersion(function(err, data) {
@@ -193,17 +245,30 @@ Engine.prototype.start = function(callback) {
             }.bind(this));
         }.bind(this),
 
+        // The approot should be cleared if:
+        //   - We're running in 'debug' mode (and might be making changes to system apps)
+        //   - The version of the engine has changed since the last time we run it.
+        // So, we check those things, and clear the approot accordingly.
+        //
+        // See dashboard/app_manager.js for more about the approot.
         function clear_approot(callback) {
             if('debug' in argv) {
                 log.info("Running in debug mode - clearing the approot.");
+                
+                // If in debug mode, we also set our version to a random number, which provides effective
+                // cache-busting on the client side when debugging.
+                // TODO: This probably isn't the place for this, it should go up where the other version stuff is.
                 var random = Math.floor(Math.random() * (99999 - 10000)) + 10000;
                 log.info("Setting engine version to random");
                 config.engine.set('version', random.toString());
+                
+                // Clear the actual approot
                 config.clearAppRoot(function(err, stdout) {
                     if(err) { log.error(err); }
                     else {
                         log.debug(stdout);
                     }
+                    // TODO - seems like we don't need to do this twice
                     config.engine.set('version', random.toString());
                     callback();
                 });
@@ -216,6 +281,7 @@ Engine.prototype.start = function(callback) {
 
                 if(last_time_version != this_time_version) {
                     log.info("Engine version has changed - clearing the approot.");
+                    // TODO - reduce code by moving this clearAppRoot out of the if else in its own test (Just set a shouldClearApproot flag or something in the if-else)
                     config.clearAppRoot(function(err, stdout) {
                         config.engine.set('version', this_time_version);
                         if(err) { log.error(err); }
@@ -233,30 +299,32 @@ Engine.prototype.start = function(callback) {
             
         }.bind(this),
 
+        // TODO - this seems like a duplication of the same step above (see the beginning of this startup sequence)
         function create_data_directories(callback) {
             config.createDataDirectories(callback);
         }.bind(this),
 
         // "Apply" the engine configuration, that is, take the configuration values loaded and actually
-        // set up the application based on them.
+        // set up the application based on them. See config/engine_config.js to see what this entails.
         function apply_engine_config(callback) {
             log.info("Applying engine configuration...");
             config.engine.apply(callback);
         },
 
-        // Configure the DB
+        // Configure the DB see db.js to see what this entails.
         function setup_database(callback) {
             log.info("Configuring database...");
             db.configureDB(callback);
         },
 
-        // Cleanup the DB
+        // Cleanup the DB.  This is to clear jobs that may be "dangling" after a crash, or other inconsistencies.
+        // See db.js for more details.
         function clean_database(callback) {
             log.info("Cleaning up database...");
             db.cleanup(callback);
         },
 
-        // Connect to G2 and initialize machine runtimes
+        // Connect to G2 and initialize machine runtimes.  See machine.js for what this entails.
         function connect(callback) {
             log.info("Connecting to G2...");
             machine.connect(function(err, machine) {
@@ -276,6 +344,7 @@ Engine.prototype.start = function(callback) {
             callback(null);
         }.bind(this),
 
+        // Apply the "machine" configuration - see config/machine_config.js for details
         function load_machine_config(callback) {
             this.machine = machine.machine;
             log.info('Loading the machine configuration...')
@@ -287,6 +356,8 @@ Engine.prototype.start = function(callback) {
             });
         }.bind(this),
 
+        // The default unit system is specified in the machine configuration.  It requires
+        // special care to apply - see g2.js for details.
         function set_units(callback) {
             if(this.machine.isConnected()) {
                 this.machine.driver.setUnits(config.machine.get('units'), callback);
@@ -314,6 +385,8 @@ Engine.prototype.start = function(callback) {
             }
         }.bind(this),
 
+        // Retrieve the firmware version from G2.  This is done only once, and the value
+        // is cached as a property of the Engine object.
         function get_g2_version(callback) {
             if(this.machine.isConnected()) {
                 log.info("Getting G2 firmware version...");
@@ -334,6 +407,10 @@ Engine.prototype.start = function(callback) {
             }
         }.bind(this),
 
+        // This is a shim that clears some obsolete entries from the configuration that have been
+        // known to cause errors with modern versions of G2.
+        // TODO - this is the sort of thing that might be better done by the updater as part of the 
+        //        installation process.  It is typical for such processes to "migrate" config files to latest version.
         function g2_shim(callback) {
           log.debug("Running G2 Shim...");
           var entries = [
@@ -369,6 +446,8 @@ Engine.prototype.start = function(callback) {
           }
         }.bind(this),
 
+        // Load commands which are populated dynamically from the contents of a folder
+        // in the openSBP runtime.  See runtime/opensbp/opensbp.js for what this entails.
         function load_opensbp_commands(callback) {
             if(!this.machine.isConnected()) {
                 log.warn('Not loading SBP Commands due to no connection to motion system.')
@@ -378,6 +457,7 @@ Engine.prototype.start = function(callback) {
             this.machine.sbp_runtime.loadCommands(callback);
         }.bind(this),
 
+        // Apply the OpenSBP runtime config.  See config/opensbp_config.js for what this entails.
         function load_opensbp_config(callback) {
             if(!this.machine.isConnected()) {
                 log.warn('Not configuring SBP due to no connection to motion system.')
@@ -387,34 +467,36 @@ Engine.prototype.start = function(callback) {
             config.configureOpenSBP(callback);
         }.bind(this),
 
+        // Apply the machine config.  See config/machine_config.js for what this entails
         function apply_machine_config(callback) {
             log.info("Applying machine configuration...");
             config.machine.apply(callback);
         }.bind(this),
 
-
+        // Setup the dashboard.  See dashboard/index.js and dashboard/app_manager.js for what this entails.
         function configure_dashboard(callback) {
             log.info("Configuring dashboard...");
             dashboard.configure(callback);
         },
 
+        // Load the apps, see dashboard/app_manager.js for what this entails.
+        // TODO: Would this be better to just be included in the dashboard configuration function?
         function load_apps(callback) {
             log.info("Loading dashboard apps...");
             dashboard.loadApps(function(err, result) {
                 callback(null, result);
             });
         },
-        /*
-        function load_profile_macros(callback) {
-            log.info('Loading profile macros...');
-            macros.loadProfile(callback);
-        },*/
 
+        // Load macros from disk.  See macros.js
         function load_macros(callback) {
             log.info("Loading macros...")
             macros.load(callback);
         },
 
+        // Load and apply the 'instance' configuration.  This is the dynamic machine state, like the current position,
+        // which is saved periodically in order to preserve state if the tool is power cycled.
+        // See config/instance_config.js for more details.
         function load_instance_config(callback) {
             if(!this.machine.isConnected()) {
                 log.warn('Not configuring instance due to no connection to motion system.')
@@ -433,6 +515,7 @@ Engine.prototype.start = function(callback) {
             config.instance.apply(callback);
         }.bind(this),
 
+        // The secret key is used for authentication.  It is persistent, stored with other config files.
         function generate_auth_key(callback) {
           log.info("Configuring secret key...")
           var secret_file = config.getDataDir() + '/config/auth_secret'
@@ -458,12 +541,15 @@ Engine.prototype.start = function(callback) {
         // Kick off the server if all of the above went OK.
         function start_server(callback) {
             log.info("Setting up the webserver...");
-	    var fmt = {
-		            'application/json': function(req, res, body) {
-				                return cb(null, JSON.stringify(body, null, '\t'));
-						        }
-			        }
 
+            // TODO: Is this used any longer?  Maybe remove it.
+            var fmt = {
+                'application/json': function(req, res, body) {
+                    return cb(null, JSON.stringify(body, null, '\t'));
+                }
+            }
+
+            // Initialize a server and attach it to the application
             var server = restify.createServer({name:"FabMo Engine"});
             this.server = server;
 
@@ -477,8 +563,9 @@ Engine.prototype.start = function(callback) {
                 }
             );
 
+            // Introduce deliberate latency for testing.  You can activate this by
+            // passing the --slow switch when running server.js (must include --debug too)
             if('debug' in argv && argv.debug === 'slow') {
-                // Introduce deliberate latency for testing
                 log.warn("Configuring deliberate latency for testing...")
                 server.use(
                     function latency(req, res, next) {
@@ -487,6 +574,7 @@ Engine.prototype.start = function(callback) {
                 );
             }
 
+            // If in 'debug' mode, do some extra logging of HTTP requests
             if('debug' in argv) {
                 server.use(
                     function debug(req, res, next) {
@@ -495,12 +583,22 @@ Engine.prototype.start = function(callback) {
                     });
             }
 
+            // The query parser does just that - map query params to an object for convenience
             server.use(restify.plugins.queryParser({
                 mapParams : true
             }));
+
+            /*
+             * The engine URL scheme includes a software version number that performs a 
+             * cache-busting function:  When the engine is updated, the version number in the
+             * URL is revised, and the cache is thus busted.
+             * 404 errors are handled in two different ways depending on their content:
+             */
             server.on('NotFound', function (req, res, cb) {
                 var current_hash = config.engine.get('version');
                 var url_arr = req.url.split('/');
+                // If a URL contains a hash that doesn't match the current version hash:
+                // Replace the URL's hash with the current one, and redirect.
                 if(url_arr[1] !== current_hash){
                     url_arr.splice(1,1, current_hash);
                     var newPath = url_arr.join('/');
@@ -508,11 +606,15 @@ Engine.prototype.start = function(callback) {
                         return;
                     });
                 } else {
+                    // If the URL contains a current hash, and simply points to a bogus resource,
+                    // just redirect to the root.
                     res.redirect('/' , function(){
                         return;
                     });
                 }
             }); 
+
+            // Catch-all handler that responds gracefully when an internal server error occurs.
             server.on('uncaughtException', function(req, res, route, err) {
                 log.uncaught(err);
                 answer = {
@@ -528,8 +630,11 @@ Engine.prototype.start = function(callback) {
                 'uploadDir':config.engine.get('upload_dir') || '/tmp',
                 mapParams: true
             }));
+
+            // TODO: What is this path sanitizer doing?
             server.pre(restify.pre.sanitizePath());
 
+            // Configure authentication
             log.info("Cofiguring authentication...");
             log.info("Secret Key: " + this.auth_secret.slice(0,5) + '...' + this.auth_secret.slice(-5));
             server.cookieSecret = this.auth_secret;
@@ -547,30 +652,35 @@ Engine.prototype.start = function(callback) {
                   secure: false // when true, cookie will only be sent over SSL. use key 'secureProxy' instead if you handle SSL not in your node process
                 }
             }));
-
             server.use(authentication.passport.initialize());
             server.use(authentication.passport.session());
 
 
+            // gzipping is a typical way to speed up network operations
+            // We enable it on the server, so that supporting clients can use it
             log.info("Enabling gzip for transport...");
             server.use(restify.plugins.gzipResponse());
+
+
             // Import the routes module and apply the routes to the server
+            // Routes are loaded dynamically. See routes/routes.js for details.
             log.info("Loading routes...");
             server.io = socketio.listen(server.server);
-            
             var routes = require('./routes')(server);
 
             // Kick off the server listening for connections
+            // 0.0.0.0 causes us to listen on ALL interfaces (so the engine can be seen over ethernet, wifi, etc.)
             server.listen(config.engine.get('server_port'), "0.0.0.0", function() {
                 log.info(server.name+ ' listening at '+ server.url);
                 callback(null, server);
             });
 
+            // TODO - should this be done after server.listen, or before? (or does it matter?)
             authentication.configure();
 
         }.bind(this),
         ],
-
+        // Print some kind of sane debugging information if anything above fails
         function(err, results) {
             if(err) {
                 log.stack();
@@ -583,4 +693,6 @@ Engine.prototype.start = function(callback) {
     );
 };
 
+// This module IS the engine object, but instantiating the object does virtually nothing:
+// It is the call to start() that kicks off all the real work of running the application.
 module.exports = new Engine();

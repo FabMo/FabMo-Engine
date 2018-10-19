@@ -1,3 +1,10 @@
+/*
+ * debug.js
+ *
+ * This module provides some functions that are used when the engine is run in "debug" mode.
+ * (Debug mode is enacted by passing the --debug switch to server.js)
+ * 
+ */
 var dashboard = require('./dashboard');
 var log = require('./log').logger('debug');
 var config = require('./config');
@@ -7,6 +14,7 @@ var pathIsInside = require('path-is-inside');
 var watch_semaphore = 0;
 var NCP_TIMEOUT = 4000;
 
+// App reloader
 var appReloader = function(event, pth, details) {
   var pth = path.normalize(details.watchedPath || details.path);
 
@@ -39,6 +47,11 @@ var appReloader = function(event, pth, details) {
   } 
 }; 
 
+// This function is called (if enabled) at application startup.
+// Nominally, it sets up a "watcher" that live-reloads system apps if they are edited while the system is running.
+// The code the actually performs the copy operation is commented out above, however, so it really does nothing.
+//
+// TODO : Figure out why the code above is commented out - do we still need this module?
 function startDebug() {
   log.info("Starting debug watcher...");
   var chokidar = require('chokidar');
