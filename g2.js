@@ -310,7 +310,7 @@ G2.prototype.disconnect = function(callback) {
 
 // Log serial errors.  Most of these are exit-able offenses, though.
 G2.prototype.onSerialError = function(data) {
-	log.error(new Error('There was a serial error'))
+log.error(new Error('There was a serial error'))
   log.error(data)
 };
 
@@ -346,6 +346,7 @@ G2.prototype.requestStatusReport = function(callback) {
 
 G2.prototype.requestQueueReport = function() { this.command({'qr':null}); };
 
+//TODO This function should no longer be needed - it is a relic of the days when there were 2 USB channels
 G2.prototype.onWAT = function(data) {
 	var s = data.toString('ascii');
 	var len = s.length;
@@ -361,7 +362,6 @@ G2.prototype.onWAT = function(data) {
 			this._currentGCodeData.push(c);
 		}
 	}
-
 };
 // Called for every chunk of data returned from G2
 G2.prototype.onData = function(data) {
