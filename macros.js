@@ -171,12 +171,20 @@ var update = function(id, macro, callback) {
 			save(id, callback);
 		}
 
-		// 
+		// This function takes an id, and the macro can carry an index as well
+		// If the incoming macros index is different than the id that was passed,
+		// we interpret that as an intent to move that macro to a new index.
 		if(macro.index) {
 			var new_index = parseInt(macro.index);
+			// If there's already a macro at the index that we're moving to, that's an error.
+			// we're not going to write it.
 			if(get(new_index)) {
 				return callback(new Error("There is already a macro #" + new_index));
 			}
+
+			// If the new index is different we actually want to move the macro,
+			// so we assign it to the new index, trash the macro at the old index
+			// trash the file at the old index, and finally save the file at the new index
 			if(new_index != old_macro.index) {
 				macros[new_index] = old_macro;
 				delete macros[old_macro.index];
@@ -184,13 +192,17 @@ var update = function(id, macro, callback) {
 					savemacro(new_index, callback);
 				});
 			} else {
+				// Provided an index with the macro, but it's the the same, so no move needed
 				savemacro(id, callback);
 			}
 		} else {
+			// Not moving the macro (didn't provide an index) so just save it
 			savemacro(id, callback);
 		}
 
 	} else {
+		// In this case, we're "updating" a macro that doesn't exist, so create a new one
+		// (filling in any attributes that were not provided by the update)
 		new_macro = {
 			name : macro.name || 'Untitled Macro',
 			description : macro.description || 'Macro Description',
@@ -205,6 +217,8 @@ var update = function(id, macro, callback) {
 	}
 }
 
+// Commit the provided macro id to disk.
+// callback is called with the macro object that was saved (or error)
 var save = function(id, callback) {
 	macro = get(id);
 	if(macro) {
@@ -247,6 +261,7 @@ var save = function(id, callback) {
 	}
 }
 
+// Load all macros from disk
 var load = function(callback) {
 	var macro_path = config.getDataDir('macros');
 	var re = /macro_([0-9]+)\.(nc|sbp)/
@@ -277,6 +292,7 @@ var load = function(callback) {
 	})
 }
 
+// Return the full list of macros (scrubbed)
 var list = function() {
 	retval = [];
 	for(key in macros) {
@@ -285,6 +301,7 @@ var list = function() {
 	return retval;
 }
 
+// Get the metadata for a macro by index (null if no macro with that index)
 var getInfo = function(idx) {
 	var macro = get(idx);
 	if(macro) {
@@ -300,10 +317,12 @@ var getInfo = function(idx) {
 	}
 }
 
+// Retrieve a macro by index
 var get = function(idx) {
 	return macros[idx] || null;
 }
 
+// Run a macro by index.
 var run = function(idx) {
 	var machine = require('./machine').machine;
 
@@ -315,6 +334,8 @@ var run = function(idx) {
 	}
 }
 
+// Delete a macro by index
+// callback returns an error only
 var del = function(idx, callback) {
 	info = macros[idx];
 	if(info) {
@@ -331,6 +352,8 @@ var del = function(idx, callback) {
 	}
 }
 
+// Copy macros from the current profile to the macros directory.
+// Only copies macros if they do not exist.
 var loadProfileMacros = function(callback) {
 	var installedMacrosDir = config.getDataDir('macros');
 	var profileMacrosDir = config.getProfileDir('macros');
