@@ -1,3 +1,9 @@
+/*
+ * dashboard_config.js
+ * 
+ * This configuration object is for storing configuration related to the dashboard.
+ * There really isn't anything special about it.
+ */
 var Config = require('./config').Config;
 var log = require('../log').logger('dashboard_config');
 

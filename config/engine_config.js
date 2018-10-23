@@ -1,10 +1,18 @@
+/*
+ * engine_config.js
+ * 
+ * This file defines the configuration for the engine.
+ *
+ * When the profile is changed, the new profile is applied as needed.
+ * When the log level changes, apply that change immediately to the logging system.
+ */
 var path = require('path');
 var util = require('util');
 var fs = require('fs-extra');
 var PLATFORM = require('process').platform;
 var G2 = require('../g2.js');
 var exec = require('child_process').exec;
-Config = require('./config').Config;
+var Config = require('./config').Config;
 var log = require('../log');
 var logger = log.logger('config');
 var profiles = require('../profiles');
@@ -21,21 +29,8 @@ EngineConfig.prototype.update = function(data, callback) {
 		for(var key in data) {
 			if((key === 'profile')) {
 				var newProfile = data[key];
-/*				if(newProfile && newProfile != 'default') {
-					try {
-						var profileDir = __dirname + '/../profiles/' + newProfile;
-						var stat = fs.statSync(profileDir);								
-						if(!stat.isDirectory()) {
-							throw new Error('Not a directory: ' + profileDir)
-						} else {
-							// New profile directory exists
-						}
-					} catch(e) {
-						logger.warn(e);
-						data[key] = 'default';
-					}
-				}
-*/
+				// Make note if the profile changed.  If so, we want to apply the new profile
+				// (Which will probably make a bunch of sweeping configuration changes)
 				if((key in this._cache) && (data[key] != this._cache[key])) {
 					try { logger.info("Profile changed from " + this._cache[key] + ' to ' + data[key]); }
 					catch(err) {}
@@ -52,6 +47,7 @@ EngineConfig.prototype.update = function(data, callback) {
 		}
 	}
 
+	// TODO - fix the that=this pattern - it's obnoxious.  Bind, or eventually arrow function
 	var that = this;
 	function save(callback) {
 		that.save(function(err, result) {
@@ -62,6 +58,7 @@ EngineConfig.prototype.update = function(data, callback) {
 			}
 		});
 	};
+	// If the profile changed above, we apply it, and if that was successful, we abort the process.
 	if(profile_changed) {
 		logger.warn('Engine profile changed - engine will be restarted.')
 		profiles.apply(newProfile, function(err, data) {
@@ -73,14 +70,6 @@ EngineConfig.prototype.update = function(data, callback) {
 				process.exit(1);
 			}
 		});
-/*
-		Config.deleteProfileData(function(err) {
-			save(function(err) {
-				if(err) { return callback(err); }
-				//callback();
-			})
-		});
-		*/
 	} else {
 		save(callback);
 	}

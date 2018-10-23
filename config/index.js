@@ -1,5 +1,14 @@
-var Config = require('./config').Config;
+/*
+ * config/index.js
+ * 
+ * Configuration module definitions.  This file defines the main API of the FabMo configuration module.
+ *
+ */
 var async = require('async');
+var fs = require('fs');
+var path = require('path');
+
+var Config = require('./config').Config;
 var EngineConfig = require('./engine_config').EngineConfig;
 var UserConfig = require('./user_config').UserConfig;
 var G2Config = require('./g2_config').G2Config;
@@ -8,9 +17,6 @@ var MachineConfig = require('./machine_config').MachineConfig;
 var DashboardCofnig = require('./dashboard_config').DashboardConfig;
 var InstanceConfig = require('./instance_config').InstanceConfig;
 var ProfileConfig = require('./profile_config').ProfileConfig;
-
-var fs = require('fs');
-var path = require('path');
 
 var log = require('../log').logger('config');
 
