@@ -483,7 +483,7 @@ function _makeJob(obj) {
 	} catch(e) {}
 
 	if(file) {
-		return {file : file};
+		return {file : file};:
 	} else {
 		var job = {};
 		for (var key in obj) {
@@ -502,8 +502,8 @@ function _makeJob(obj) {
 /**
  * Submit one or more jobs to the dashboard.
  * @param {Array|Object|jQuery} jobs A single job object, an array containing multiple job objects, or a jQuery object that points to a file type form input, or a form containing a file type input.
- * @param {Object} [options] Options for job submission
- * @todo Finish documenting this function
+ * @param {Object} [options] Options for job submission. Currently only accepts one option: `stayHere` which if true, will prevent the dashboard from jumping to the job manager when the job has been submitted.
+ *
  */
 FabMoDashboard.prototype.submitJob = function(jobs, options, callback) {
 	var args = {jobs : []};
