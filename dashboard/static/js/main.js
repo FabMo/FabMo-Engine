@@ -43,7 +43,6 @@ require("../css/toastr.min.css");
     var consent = '';
     var disconnected = false;
     var last_state_seen = null;
-    var engineConfig;
 
     // Detect touch screen
     var supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
@@ -79,7 +78,6 @@ require("../css/toastr.min.css");
                 console.log(err);
             } else {
                 var manual_config = config.machine.manual;
-                console.log(manual_config);
                 if(manual_config.xy_increment) {
                     $('.xy-fixed').val(manual_config.xy_increment);
                     $('.z-fixed').val(manual_config.z_increment);
@@ -90,7 +88,6 @@ require("../css/toastr.min.css");
                 $('#manual-move-speed').val(manual_config.xy_speed);
                 $('#manual-move-speed').attr('min', manual_config.xy_min);
                 $('#manual-move-speed').attr('max', manual_config.xy_max);
-                engineConfig = config;
             }
         });
     }
@@ -571,9 +568,7 @@ require("../css/toastr.min.css");
         dashboard.engine.setConfig({machine:{manual:{xy_speed:newDefault}}}, function(err, data){
             if(err){
                 console.log(err);
-            } else {
-                console.log(data);
-            }
+            } 
         });
     });
 
