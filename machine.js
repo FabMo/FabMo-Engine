@@ -14,6 +14,7 @@ var async = require('async');
 var canQuit = false;
 var canResume = false;
 var clickDisabled = false;
+var interlockBypass = false;
 
 
 
@@ -190,9 +191,8 @@ function Machine(control_path, callback) {
 			
 		}
 		this.handleFireButton(stat, auth_input);
-    	this.handleAPCollapseButton(stat, ap_input);
-    	this.handleInterlockInput(stat, interlock_input)
-
+		this.handleAPCollapseButton(stat, ap_input);
+		
     }.bind(this));
 }
 util.inherits(Machine, events.EventEmitter);
@@ -248,13 +248,7 @@ Machine.prototype.handleOkayCancelDual = function(stat, quit_input) {
 	this.quit_pressed = stat[quit_input];
 }
 
-Machine.prototype.handleInterlockInput = function(stat, interlock_input) {
-	/*if(!stat[interlock_input]) {
-		if(this.status.state == 'interlock') {
-			this.resume(function() {});
-		}
-	}*/
-}
+
 
 Machine.prototype.handleFireButton = function(stat, auth_input) {
 	if(this.fireButtonPressed && !stat[auth_input] && this.status.state === 'armed') {
@@ -368,11 +362,12 @@ Machine.prototype.arm = function(action, timeout) {
 	this.action = action;
 	var interlockRequired = config.machine.get('interlock_required');
 	var interlockInput = 'in' + config.machine.get('interlock_input');
-	if(this.action && this.action.payload && this.action.payload.name === 'manual') {
+	if(this.action && this.action.payload && this.action.payload.name === 'manual' || interlockBypass) {
 		interlockRequired = false;
 	}
 	if(this.action) {
 		if(interlockRequired && this.driver.status[interlockInput]) {
+			console.log('am i happening!!!!!!!!!!@!!!!!@!');
 			this.setState(this, 'interlock')
 			return;			
 		}
@@ -600,7 +595,7 @@ Machine.prototype.getGCodeForFile = function(filename, callback) {
 				/*
 				if(this.status.state != 'idle') {
 					return callback(new Error('Cannot generate G-Code from OpenSBP while machine is running.'));
-				}*/
+				}*/ 
 
 				//this.setRuntime(null, function() {});
 
@@ -717,6 +712,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
                 }
 				break;
 			case 'paused':
+
                 if(this.status.state != newstate) {
                     this.driver.get('mpo', function(err, mpo) {
 					    if(config.instance) {
@@ -725,7 +721,10 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				    });
 				    var interlockRequired = config.machine.get('interlock_required');
 					var interlockInput = 'in' + config.machine.get('interlock_input');
-				    if(interlockRequired && this.driver.status[interlockInput]) {
+				
+
+					
+				    if(interlockRequired && this.driver.status[interlockInput] && !interlockBypass) {
 						log.stack();
 						this.interlock_action = null;
 						this.setState(this, 'interlock')		
@@ -800,7 +799,12 @@ Machine.prototype.resume = function(callback) {
 	callback(null, 'resumed');
 }
 
-Machine.prototype.runFile = function(filename) {
+Machine.prototype.runFile = function(filename, bypassInterlock) {
+	interlockBypass = bypassInterlock;
+	console.log(bypassInterlock);
+	if(!bypassInterlock){
+		interlockBypass = false;		
+	}
 	this.arm({
 		type : 'runFile',
 		payload : {
@@ -810,6 +814,7 @@ Machine.prototype.runFile = function(filename) {
 }
 
 Machine.prototype.runNextJob = function(callback) {
+	interlockBypass = false;
 	db.Job.getPending(function(err, pendingJobs) {
 		if(err) {
 			return callback(err);
@@ -826,6 +831,7 @@ Machine.prototype.runNextJob = function(callback) {
 }
 
 Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
+	interlockBypass = false;
 	runtime = this.getRuntime(runtimeName);
 	var needsAuth = runtime.needsAuth(code);
 	if (needsAuth){
