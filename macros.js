@@ -258,10 +258,15 @@ var get = function(idx) {
 
 var run = function(idx) {
 	var machine = require('./machine').machine;
-
+	var bypassInterlock = false;
 	info = macros[idx];
+	console.log(idx);
+	console.log(info);
+	if(parseInt(idx) === 2 ){
+		bypassInterlock = true;
+	}
 	if(info) {
-			machine.runFile(info.filename);
+			machine.runFile(info.filename, bypassInterlock);
 	} else {
 		throw new Error("No such macro.")
 	}
