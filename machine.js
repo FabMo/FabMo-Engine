@@ -367,7 +367,6 @@ Machine.prototype.arm = function(action, timeout) {
 	}
 	if(this.action) {
 		if(interlockRequired && this.driver.status[interlockInput]) {
-			console.log('am i happening!!!!!!!!!!@!!!!!@!');
 			this.setState(this, 'interlock')
 			return;			
 		}
@@ -801,7 +800,6 @@ Machine.prototype.resume = function(callback) {
 
 Machine.prototype.runFile = function(filename, bypassInterlock) {
 	interlockBypass = bypassInterlock;
-	console.log(bypassInterlock);
 	if(!bypassInterlock){
 		interlockBypass = false;		
 	}
