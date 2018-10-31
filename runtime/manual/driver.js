@@ -1,3 +1,11 @@
+/*
+ * runtime/manual/driver.js
+ * 
+ * This module defines ManualDriver, which is a helper object that manages
+ * manual control of the machine.  It is the real implementation for the ManualRuntime
+ * but exists as a helper so that it can be used inside of other runtimes that need to use the
+ * manual state, and want to do it in the same way that the manual runtime does.
+ */
 var log = require('../../log').logger('manual');
 var config = require('../../config');
 var stream = require('stream');
@@ -5,15 +13,22 @@ var util = require('util');
 var events = require('events')
 var Q = require('q');
 
-//var T_RENEW = 300;
+// Parameters related to filling the queue, motion, etc.
+// These are fussy.
 var T_RENEW = 300;
 var SAFETY_FACTOR = 4.0;
+// TODO should be in the ManualDriver instance?!
 var count;
 var RENEW_SEGMENTS = 10;
 var FIXED_MOVES_QUEUE_SIZE = 3;
 var count = 0;
 
 
+// ManualDriver constructor
+// The manual driver provides functions for managing the state of the G2 driver while "manually"
+// streaming commands to it, as is done when in "pendant" mode or similar
+//   drv - The driver instance to manage
+//    st - An open stream feeding into an active machining cycle on that driver
 function ManualDriver(drv, st) {
 	this.stream = st;
 	this.driver = drv;
@@ -44,6 +59,10 @@ function ManualDriver(drv, st) {
 }
 util.inherits(ManualDriver, events.EventEmitter);
 
+// Enter the machining cycle
+// This does a little setup too (sets manual state jerk values, etc)
+// TODO: Pass the setup stuff in?  (In case runtimes want to do things differently?)
+// Returns a promise that resolves on exit
 ManualDriver.prototype.enter = function() {
 	var jerkXY = config.machine._cache.manual.xy_jerk || 250;
 	var jerkZ = config.machine._cache.manual.z_jerk || 250;
@@ -55,9 +74,10 @@ ManualDriver.prototype.enter = function() {
 	this.driver.prime();
 	this.deferred = Q.defer();
 	return this.deferred.promise;
-
 }
 
+// Exit the machining cycle
+// This stops motion if it is in progress, and restores the settings changed in enter()
 ManualDriver.prototype.exit = function() {
 	if(this.isMoving()) {
 		// Don't exit yet - just pend.
@@ -74,21 +94,32 @@ ManualDriver.prototype.exit = function() {
 	}
 }
 
+// Start motion on the specified axis (and optional second axis) at the specified speed
+// TODO - This function should really just take an arbitrary vector
+//           axis - The first axis to move (eg "X")
+//          speed - The speed in current units
+//    second_axis - The second axis to move
+//   second_speed - The second axis speed
 ManualDriver.prototype.startMotion = function(axis,  speed, second_axis, second_speed) {
 	var dir = speed < 0 ? -1.0 : 1.0;
 	var second_dir = second_speed < 0 ? -1.0 : 1.0;
 	speed = Math.abs(speed);
+
+	// Don't start motion if we're in the middle of stopping (can do it from stopped, though)
 	if(this.stop_pending || this.omg_stop) {
 		return;
 	}
+
+	// If we're moving already, maintain motion
 	if(this.moving) {
 		if(axis === this.currentAxis && speed === this.currentSpeed) {
 			this.maintainMotion();
 		} else {
 			this.stopMotion();
-			// Deal with direction changes here
+			// TODO Deal with direction changes here
 		}
 	} else {
+		// Deal with one axis vs 2 (See TODO above)
 		if (second_axis){
 			this.second_axis = second_axis;
 			this.second_currentDirection = second_dir;
@@ -101,21 +132,29 @@ ManualDriver.prototype.startMotion = function(axis,  speed, second_axis, second_
 		this.currentSpeed = speed;
 		this.currentDirection = dir;
 
+		// Flag that we're kicking off a move
 		this.moving = this.keep_moving = true;
+
+		// Length of the moves we pump the queue with, based on speed vector
 		this.renewDistance = speed*(T_RENEW/60000)*SAFETY_FACTOR;                
+		
+		// Make sure we're in relative moves and the speed is set
 		this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
+
+		// Start pumping moves
 		this._renewMoves("start");
 	}
 }
 
-
-
+// Set the flag that indicates to this driver that motion is still requested along the current heading
+// This function only has any effect if the machine is already moving
 ManualDriver.prototype.maintainMotion = function() {
 	if(this.moving) {
 		this.keep_moving = true;
 	}
 }
 
+// Stop all movement 
 ManualDriver.prototype.stopMotion = function() {
 	if(this._limit()) { return; }
 	this.keep_moving = false;
@@ -130,6 +169,7 @@ ManualDriver.prototype.stopMotion = function() {
 	//}.bind(this));
 }
 
+// Stop all movement (also? TODO: What's this all about?)
 ManualDriver.prototype.quitMove = function(){
 	
 	if(this._limit()) { return; }
@@ -146,6 +186,8 @@ ManualDriver.prototype.quitMove = function(){
 
 }
 
+// Go to a specified absolute position
+//   pos - Position vector as an object, eg: {"X":10, "Y":5}
 ManualDriver.prototype.goto = function(pos) {
 	var move = "G90\nG0 ";
 
@@ -159,6 +201,8 @@ ManualDriver.prototype.goto = function(pos) {
 	this.stream.write(move);
 }
 
+// Set the machine position to the specified vector
+//   pos - New position vector as an object,  eg: {"X":10, "Y":5}
 ManualDriver.prototype.set = function(pos) {
 	
 	var gc = 'G10 L20 P2 ';
@@ -175,6 +219,13 @@ ManualDriver.prototype.set = function(pos) {
 
 }
 
+// Internal function for handling nudges.
+// Nudges are little fixed incremental moves that are usually initiated by a short tap on one of the
+// direction keys on a pendant display, or by pressing the direction keys in a specified "fixed" mode
+// If the machine is currently in the middle of a nudge or is moving in a long move, the nudge is queued,
+// and executed at the end of the current move.  This is the function that dequeues and executes them.
+// TODO: Like start above, nudges should be arbritrary vectors rather than axis, second_axis
+// Returns the number of nudges
 ManualDriver.prototype._handleNudges = function() {
 	count = this.fixedQueue.length;
 
@@ -216,6 +267,15 @@ ManualDriver.prototype._handleNudges = function() {
 	return count;
 }
 
+// Issue a nudge (small fixed move)  If the machine is already moving, queue up the nudge.
+// Don't queue more than FIXED_MOVES_QUEUE_SIZE, though, to keep the machines behavior from running away.
+// ie: You shoudln't be allowed to queue 50 nudges during a long slow move, and see them execute at the end.
+//              axis - The first axis to move (eg "X")
+//             speed - The speed in current units
+//          distance - The length of the nudge
+//       second_axis - The second axis to move
+//   second_distance - The second axis speed
+
 ManualDriver.prototype.nudge = function(axis, speed, distance, second_axis, second_distance) {
     if(this.fixedQueue.length >= FIXED_MOVES_QUEUE_SIZE) {
 	log.warn('fixedMove(): Move queue is already full!');
@@ -235,11 +295,14 @@ ManualDriver.prototype.nudge = function(axis, speed, distance, second_axis, seco
 	}
 }
 
+// Return true if the machine is moving
 ManualDriver.prototype.isMoving = function() {
 	return this.moving;
 }
 
-
+// Internal function called to "pump" moves into the queue
+// This function is called periodically until a stop is requested, or the users intent to continue moving evaporates.
+// The idea behind this function is that it is called at an interval that outpaces the 
 ManualDriver.prototype._renewMoves = function(reason) {
 	if(this.moving && this.keep_moving) {
 		this.keep_moving = false;
@@ -268,6 +331,7 @@ ManualDriver.prototype._renewMoves = function(reason) {
 	}
 }
 
+// Status handler
 ManualDriver.prototype._onG2Status = function(status) {
 	switch(status.stat) {
 		case this.driver.STAT_INTERLOCK:
@@ -291,6 +355,7 @@ ManualDriver.prototype._onG2Status = function(status) {
 		case this.driver.STAT_STOP:
 		case this.driver.STAT_END:
 		case this.driver.STAT_HOLDING:
+			// Handle nudges once we've come to a stop
 			if(this._handleNudges()) {
 				// Nudges got handled
 			} else {
@@ -305,6 +370,8 @@ ManualDriver.prototype._onG2Status = function(status) {
 	}
 };
 
+// Boilerplate limit handler
+// TODO needs work
 ManualDriver.prototype._limit = function() {
 	var er = this.driver.getLastException();
 	if(er && er.st == 203) {
@@ -318,6 +385,8 @@ ManualDriver.prototype._limit = function() {
 	return false;
 }
 
+// Internal call that is issued when manual mode is done
+// Resolves the promise created by the enter() function and resets internal state
 ManualDriver.prototype._done = function() {
 	this.moving = false;
     this.keep_moving = false;

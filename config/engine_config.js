@@ -23,6 +23,11 @@ EngineConfig = function() {
 };
 util.inherits(EngineConfig, Config);
 
+// The update function
+// Nothing special here EXCEPT:
+// If the value passed in for the profile is different than the current profile, we write
+// the configuration to disk and exit the engine altogether.  It is assumed that systemd (or whoever launched the engine)
+// will pick up and restart the engine after the abort.
 EngineConfig.prototype.update = function(data, callback) {
 	var profile_changed = false;
 	try {
@@ -75,6 +80,8 @@ EngineConfig.prototype.update = function(data, callback) {
 	}
 };
 
+// Apply the engine settings
+//   callback - Called when settings have been applied or with error if error
 EngineConfig.prototype.apply = function(callback) {
 	try {
 		log.setGlobalLevel(this.get('log_level'));

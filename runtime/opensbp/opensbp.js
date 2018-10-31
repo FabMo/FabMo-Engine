@@ -17,15 +17,13 @@ var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
 var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
 var PERSISTENTVAR_RE = /\$([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
 
-/**
- * The SBPRuntime object is responsible for running OpenSBP code.
- *
- * For more info and command reference: http://www.opensbp.com/
- * Note that not ALL of the OpenSBP standard listed at the above URL is supported.
- *
- * FabMo supports a limited subset of the original standard, as not all commands make sense
- * to use in the FabMo universe.
- */
+
+// Constructor for the OpenSBP runtime
+// The SBPRuntime object is responsible for running OpenSBP code.
+// For more info and command reference: http://www.opensbp.com/
+// Note that not ALL of the OpenSBP standard listed at the above URL is supported.
+// FabMo supports a limited subset of the original standard, as not all commands make sense
+// to use in the FabMo universe.
 function SBPRuntime() {
 	// Handle Inheritance
 	events.EventEmitter.call(this);
@@ -89,7 +87,7 @@ SBPRuntime.prototype.toString = function() {
 }
 
 // This must be called at least once before instantiating an SBPRuntime object
-// TODO: Make this a "class method" rather than an instance method
+// TODO Make this a "class method" rather than an instance method
 SBPRuntime.prototype.loadCommands = function(callback) {
 	commands=require('./commands').load();
 	proto = Object.getPrototypeOf(this);
@@ -99,7 +97,8 @@ SBPRuntime.prototype.loadCommands = function(callback) {
 	callback(null, this)
 }
 
-// Connect this runtime to the machine model.
+// Connect this runtime to the machine model
+//    machine - The machine model to connect
 SBPRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;

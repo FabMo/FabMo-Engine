@@ -14,6 +14,7 @@ var DashboardConfig = function(driver) {
 };
 util.inherits(DashboardConfig, Config);
 
+// Typical update function for a config object
 DashboardConfig.prototype.update = function(data, callback) {
 	try {
 		for(var key in data) {

@@ -93,7 +93,6 @@ G2Config.prototype.reverseUpdate = function(keys, callback) {
 }
 
 // Update the configuration with the data provided.  Values set are synced with G2
-// 
 //       data - Object mapping keys to update to values
 //   callback - Called with an object mapping keys to all values updated (after sync with G2)
 G2Config.prototype.update = function(data, callback) {
@@ -150,9 +149,11 @@ G2Config.prototype.restoreSome = function(keys, callback) {
 	this.update(cache, callback);
 }
 
-// Status reports are special, and their format must be whats expected for the machine/runtime environments
-// to work properly.
+// Status reports are special, and their format must be whats expected for the 
+// machine/runtime environments to work properly.
 // TODO: Move this data out into a configuration file, perhaps.
+// Configure the status reports (indicating to G2 what is to be reported)
+//   callback - Called as soon as the command is issued (Does not wait for a response)
 G2Config.prototype.configureStatusReports = function(callback) {
 	if(this.driver) {
 	this.driver.command({"sr":{
