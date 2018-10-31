@@ -127,7 +127,6 @@ SBPRuntime.prototype.disconnect = function() {
 	}
 
 	if(this.ok_to_disconnect) {
-		//this.driver.removeListener('status', this.status_handler);
 		this.machine = null;
 		this.driver = null;
 		this.connected = false;
@@ -137,16 +136,27 @@ SBPRuntime.prototype.disconnect = function() {
 	}
 };
 
+// Execute the provided code
+// If the code is a string, interpret it as OpenSBP code
+// If it is an object, interpret it as a manual drive command
+//          s - The command to execute (string or object)
+//   callback - Called once the command is issued (or with error if error) - NOT when the command is done executing   
 SBPRuntime.prototype.executeCode = function(s, callback) {
 	if(typeof s === "string" || s instanceof String) {
+		// Plain old string interprets as OpenSBP code segment
 		this.runString(s, callback);		
 	} else {
+		// If we're in manual mode, interpret an object as a command for that mode
+		// The OpenSBP runtime can enter manual mode with the 'SK' command so we have this code here to mimick that mode
 		if(this.inManualMode) {
+			// The code here is essentially taken from the manual runtime, and uses the same underlying helper class,
+			// ManualDriver (/runtime/manual/driver.js) to actually manage the machine state
 			switch(s.cmd) {
 				case 'enter':
 					this.enter();
 					break;
 				default:
+					// 
 					if(!this.helper) {
 						log.warn("Can't accept command '" + s.cmd + "' - not entered.");
 						this.machine.setState(this, 'idle');
@@ -200,7 +210,9 @@ SBPRuntime.prototype.executeCode = function(s, callback) {
 	}
 }
 
-//Check whether the code needs auth
+// Check whether the code needs auth
+// There are lots of SBP commands that do not require authorization to run, 
+// but we've kept it simple here and only green-lit Zeroing (Z) commands
 SBPRuntime.prototype.needsAuth = function(s) {
 	var lines =  s.split('\n');
 	lines = lines.filter(Boolean);
@@ -212,15 +224,39 @@ SBPRuntime.prototype.needsAuth = function(s) {
 	return false;
 }
 
-// Run the provided string in OpenSBP format
+// Run the provided string in OpenSBP format.
+// Unfortunately, because of operations that require the WHOLE file to be analyzed (analyzing labels, mainly)
+// the entire file has to be read into memory and processed before motion can start.  This causes substantial slowdown
+// for big files that really isn't necessary.
+// Returns
+// TODO The "load the whole file" thing can be fixed, or at least worked around.  It's been suggested that subroutines
+//      are typically at the beginning and end of a file, so prefetching the last N lines of code from a file to fish labels out of it
+//      might provide a way for *most* files to work properly, falling back to slower behavior only on truly weird files, which are rare
+//      enough not to count at all.
+// TODO At the very least, this function should simply take the string provided and stream it into runStream - they do the same thing.
+//          s - The string to run
+//   callback - Called when the program has ended 
 SBPRuntime.prototype.runString = function(s, callback) {
 	try {
+		// Remember the callback - we'll call it at the end of the file
+		this.end_callback = callback;
+
+		// Break the string into lines
 		var lines =  s.split('\n');
+		
+		// The machine status `nb_lines` indicates the total number of lines in the currently running file
+		// If this is a "top level" file (that is, the file being directly run and not a macro being called) set that value
+		// TODO I've never liked nb_lines as a name
 		if(this.machine) {
 			if(this.file_stack.length === 0) {
 				this.machine.status.nb_lines = lines.length - 1;
 			}
 		}
+
+		// Parse the program.  Bail with a useful error message if parsing fails.
+		// "Useful" is relative.  The PegJS errors are pretty arcane... TODO - we could probably do better.
+		// We catch parse errors separately from other errors because the parser reports line numbers differently than 
+		// they will be accessed once the program has been parsed (and we want to report the line number always when we have an error)
 		try {
 			this.program = parser.parse(s);
 		} catch(e) {
@@ -228,69 +264,110 @@ SBPRuntime.prototype.runString = function(s, callback) {
 		} finally {
 			log.tock('Parse file')
 		}
+
+		// TODO Bad bad bad - re-using lines above (the list of lines in the file) as the number of lines here.
+ 		//      It looks like we can just remove this.  It doesn't seem to be used.
  		lines = this.program.length;
+		
+		// Configure affine transformations on the file
 		this._setupTransforms();
+		log.debug("Transforms configured...")
+
+		// Initialize the runtime state
 		this.init();
-		this.end_callback = callback;
+
+		// Copy the general config and driver settings into runtime memory
 		this._loadConfig();
 		this._loadDriverSettings();
-		log.debug("Transforms configured...")
-		this._analyzeLabels();  // Build a table of labels
+
+		// Build a map of labels to line numbers
+		// This step unfortunately requires the whole file
+		this._analyzeLabels();  
 		log.debug("Labels analyzed...")
-		this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table
+
+		// Check all the GOTO/GOSUBs against the label table
+		this._analyzeGOTOs();   
 		log.debug("GOTOs analyzed...")
+		
+		// Get silly
 		log.debug("Rainbows organized...")
-		var st = this._run();
-		log.debug("Returning from run...");
-		return st;
+		
+		// Start running the actual code, now that everything is prepped
+		return this._run();
 	} catch(e) {
+		// A failure at any stage (except parsing) will land us here 
 		log.error(e);
 		return this._end(e.message);
 	}
 };
 
+// Run the provided stream of text in OpenSBP
+// See documentation above for runString - this works the same way.
+//   callback - Called when run is complete or with error if there was an error.
 SBPRuntime.prototype.runStream = function(text_stream, callback) {
 	try {
-
-		//var lines =  s.split('\n');
 		try {
+			// Remember the callback so we can call it at the end
+			this.end_callback = callback;
+
+			// Initialize the program
 			this.program = []
+
+			// Even though we're "streaming" in this function, we still have to parse
+			// the entire body of data before we can continue processing the file.
+			// That's why the business end of this function occurs in the 'end' handler
 			var st = parser.parseStream(text_stream)
+
+			// The stream produced by parser.parseStream produces fully parsed program lines,
+			// which can just be added to the program as they come in.
 			st.on('data', function(data) {
 				this.program.push(data);
-				//cb();
 			}.bind(this));
 
+			// Stream is fully processed
 			st.on('end', function() {
 
 				log.tock('Parse file')
-		 		lines = this.program.length;
 
+				// The machine status `nb_lines` indicates the total number of lines in the currently running file
+				// If this is a "top level" file (that is, the file being directly run and not a macro being called) set that value
+				// TODO I've never liked nb_lines as a name
+		 		var lines = this.program.length;
 				if(this.machine) {
 					if(this.file_stack.length === 0) {
 						this.machine.status.nb_lines = lines - 1;
 					}
 				}
-
+				
+				// Configure affine transformations on the file
 				this._setupTransforms();
+				log.debug("Transforms configured...")
+				
+				// Initialize the runtime state
 				this.init();
-				this.end_callback = callback;
+
+				// Copy the general config and driver settings into runtime memory
 				this._loadConfig();
 				this._loadDriverSettings();
-				log.debug("Transforms configured...")
-				log.tick();
-				log.info('analyzing labels...');
-				this._analyzeLabels();  // Build a table of labels
-				log.tock('Analyzed labels')
-				this._analyzeGOTOs();   // Check all the GOTO/GOSUBs against the label table
-				log.debug("GOTOs analyzed...")
-				log.tock('Analyzed gotos')
+				
 
+				log.tick();
+				// Build a map of labels to line numbers
+				// This step unfortunately requires the whole file
+				this._analyzeLabels(); 
+				log.tock('Labels analyzed...')
+
+				// Check all the GOTO/GOSUBs against the label table
+				this._analyzeGOTOs();   
+				log.debug("GOTOs analyzed...")
+				log.tock('Analyzed GOTOs')
+
+				// Get silly
 				log.debug("Rainbows organized...")
-				var st = this._run();
-				log.debug("Returning from run...");
+
+				// Start running the actual code, now that everything is prepped
+				return this._run();
 			}.bind(this));
-//			this.program = parser.parse(s);
 			return undefined;
 		} catch(e) {
 			log.error(e)
@@ -303,6 +380,9 @@ SBPRuntime.prototype.runStream = function(text_stream, callback) {
 	}
 }
 
+// Internal function to copy config settings to local fields of this runtime
+// We consult/update local fields rather than manipulating the configuration directly
+// This prevents changes made to critical settings in files from being permanent (unless we want them to be)
 SBPRuntime.prototype._loadConfig = function() {
 	var settings = config.opensbp.getMany([
 		'units',
@@ -320,6 +400,9 @@ SBPRuntime.prototype._loadConfig = function() {
 	this.movespeed_c = settings.movec_speed;
 }
 
+// Internal function to copy driver settings to local fields of this runtime
+// We consult/update local fields rather than manipulating the configuration directly
+// This prevents changes made to critical settings in files from being permanent (unless we want them to be)
 SBPRuntime.prototype._loadDriverSettings = function() {
 	var settings = config.driver.getMany([
 		'xvm','yvm','zvm','avm','bvm','cvm',
@@ -336,6 +419,8 @@ SBPRuntime.prototype._loadDriverSettings = function() {
 	this.maxjerk_c = settings.cjm;
 }
 
+// Save runtime configuration settings to the opensbp settings file
+//   callback - Called when config has been written
 SBPRuntime.prototype._saveConfig = function(callback) {
 	var sbp_values = {};
 	sbp_values.movexy_speed = this.movespeed_xy;
@@ -353,6 +438,9 @@ SBPRuntime.prototype._saveConfig = function(callback) {
 		callback();
 	});
 }
+
+// Save runtime driver settings to the opensbp settings file
+//   callback - Called when config has been written
 SBPRuntime.prototype._saveDriverSettings = function(callback) {
 	var g2_values = {};
 
@@ -375,25 +463,19 @@ SBPRuntime.prototype._saveDriverSettings = function(callback) {
 				callback();
 	}.bind(this));
 }
-// Run the provided file on disk
-/*SBPRuntime.prototype.runFile = function(filename, callback) {
-	log.tick();
 
-	fs.readFile(filename, 'utf8', function(err, data) {
-		log.tock('File loaded');
-		if(err) {
-			callback(err);
-		} else {
-			this.runString(data,callback); 
-		}
-	}.bind(this));
-};*/
-
+// Run a file on disk.
+//   filename - Full path to file on disk
+//   callback - Called when file is done running or with error if error
 SBPRuntime.prototype.runFile = function(filename, callback) {
 	var st = fs.createReadStream(filename)
 	this.runStream(st, callback);
 }
-// Simulate the provided file, returning the result as g-code
+
+// Simulate the provided file, returning the result as g-code string
+// TODO - this function could return a stream, and you could stream this back to the client to speed up simulation
+//          s - OpenSBP string to run
+//   callback - Called with the g-code output or with error if error 
 SBPRuntime.prototype.simulateString = function(s, callback) {
 	if(this.ok_to_disconnect) {
 		var saved_machine = this.machine;
@@ -411,6 +493,8 @@ SBPRuntime.prototype.simulateString = function(s, callback) {
 	}
 }
 
+// Doofy limit call
+// TODO - work on this
 SBPRuntime.prototype._limit = function() {
 	var er = this.driver.getLastException();
 	if(er && er.st == 203) {
@@ -422,14 +506,18 @@ SBPRuntime.prototype._limit = function() {
 	return false;
 }
 
-// Handler for G2 statue reports
+// Handler for G2 status reports
+//   status - The status report as sent by G2 to the host
 SBPRuntime.prototype._onG2Status = function(status) {
 
+	// This was happening at some point, so this was mostly for debug - keep an eye out.
 	if(!this.connected) {
 		log.warn("OpenSBP runtime got a status report while disconnected.");
 		return;
 	}
 
+	// If we die then we are dead.
+	// The first rule of tautology club is the first rule of tautology club.
 	switch(status.stat) {
 		case this.driver.STAT_INTERLOCK:
 		case this.driver.STAT_SHUTDOWN:
@@ -438,13 +526,17 @@ SBPRuntime.prototype._onG2Status = function(status) {
 			break;
 	}
 
-	// Update our copy of the system status
+	// Update the machine of the driver status
     for (var key in this.machine.status) {
 		if(key in status) {
 			this.machine.status[key] = status[key];
 		}
 	}
 
+	// TODO - this seems not to be used.
+	//        It was probably an attempt to smooth over the fact that probing operations are *always* in metric, regardless of machine units
+	//        That would actually be easy to clean up, and is probably worth pursuing - customers have been confused by the behavior.
+	//        (The better solution is to fix it in the firmware, though)
 	if(this.driver.status.stat == this.driver.STAT_PROBE) {
 		var keys = ['posx','posy','posz','posa','posb','posc'];
 	}
@@ -470,33 +562,36 @@ SBPRuntime.prototype._update = function() {
 // Evaluate a list of arguments provided (for commands)
 // Returns a scrubbed list of evaluated arguments to be passed to command handlers
 SBPRuntime.prototype._evaluateArguments = function(command, args) {
-	// log.debug("Evaluating arguments: " + command + "," + JSON.stringify(args));
-	// Scrub the argument list:  extend to the correct length, sub in defaults where necessary.
+	// Scrub the argument list:  extend to the correct length, mark undefined values as undefined
+	// Previously, the "prm" file (sb3_commands.json) was used to substitute default values for commands, but now, that is mostly done by
+	// the command handlers themselves.  Still, this is a good place to throw an exception if an argument doesn't pass a sanity check.
 	scrubbed_args = [];
 	if(command in sb3_commands) {
 		params = sb3_commands[command].params || [];
+
+		// This is a possibly helpful warning, but is spuriously issued in some cases where commands take no arguments (depending on whitespace, etc.)
+		// TODO - probably fix that
 		if(args.length > params.length) {
 			log.warn('More parameters passed into ' + command + ' (' + args.length + ') than are supported by the command. (' + params.length + ')');
 		}
 		for(i=0; i<params.length; i++) {
-			prm_param = params[i];
-			user_param = args[i];
+			prm_param = params[i]; // prm_param is the parameter description object from the "prm" file (sb3_commands.json) (unused, currently)
+			user_param = args[i];  // user_param is the actual parameter from args
+
 			if((args[i] !== undefined) && (args[i] !== "")) {
-				// log.debug('Taking the users argument: ' + args[i]);
+				// Arguments that have meat to them are added into the scrubbed list
 				scrubbed_args.push(args[i]);
 			} else {
-				//log.debug("Taking the default argument: " + args[i] + " (PRN file)");
-				//scrubbed_args.push(prm_param.default || undefined);
-				// log.debug('No user specified argument.  Using undefined.');
+				// Arguments that aren't are added as 'undefined'
 				scrubbed_args.push(undefined);
 			}
 		}
 	} else {
+		// TODO - is this really the right behavior here?
 		scrubbed_args = [];
 	}
-	// log.debug("Scrubbed arguments: " + JSON.stringify(scrubbed_args));
 
-	// Create the list of evaluated arguments to be returned
+	// Actually evaluate the arguments and return the list
 	retval = [];
 	for(i=0; i<scrubbed_args.length; i++) {
 		retval.push(this._eval(scrubbed_args[i]));
@@ -505,8 +600,21 @@ SBPRuntime.prototype._evaluateArguments = function(command, args) {
 };
 
 // Returns true if the provided command breaks the stack
+// A stack-breaking command is the shopbot term for a command that must wait for any running commands to complete execution before
+// they are able to execute.  It is similar to the difference in g-code between M100 and M101.  Any command, expression evaluation, or 
+// comparison that needs to read the position of the tool breaks the stack.  Certain control flow statements break the stack.
+// Macro calls break the stack.  Currently conditional evaluations break the stack (IF statements) even though they should really only
+// break the stack if the expression being evaluated breaks the stack.  (TODO - fix that.)
+// TODO - System variable evaluations should break the stack
+// TODO - we should probably distinguish between the two meanings of "command" here - the cmd argument to this function is the object
+//        that represents a single line of the program but isn't necessarily one of the two-character OpenSBP commands. (Could be an IF
+//        statement or GOTO or whatever)  The command type "cmd" refers specifically to the two-character OpenSBP commands.
+// Returns true if the command breaks the stack, false otherwise
+//   cmd - Command object to evaluate
 SBPRuntime.prototype._breaksStack = function(cmd) {
 	var result;
+
+	// Any command that has an expression in one of its arguments that breaks the stack, breaks the stack.
 	if(cmd.args) {
         for(var i=0; i<cmd.args.length; i++) {
             if(this._exprBreaksStack(cmd.args[i])) {
@@ -517,9 +625,9 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
     }
 
     switch(cmd.type) {
-		// Commands (MX, VA, C3, etc) break the stack only if they must ask the tool for data
-		// TODO: Commands that have sysvar evaluation in them also break stack
 		case "cmd":
+			// Commands have a means of automatically specifying whether or not they break the stack.  If their command handler
+			// accepts a second argument (presumed to be a callback) in addition to their argument list, they are stack breaking.
 			var name = cmd.cmd;
 			if((name in this) && (typeof this[name] == 'function')) {
 				f = this[name];
@@ -531,27 +639,31 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 			break;
 
 		case "pause":
+			// TODO - pauses that just create a delay really shouldn't be stack breakers.  Pauses that bring up the message box should.
+			//        (you don't want to bring up the message box until the machine has executed everything up to that point)
 			return true;
 			break;
 
 		case "cond":
-			return true;
 			//TODO , we should check the expression for a stack break, as well as the .stmt
-			//return _breaksStack(cmd.stmt);
+			return true;
 			break;
-        	case "weak_assign":
+        case "weak_assign":
 		case "assign":
+			// TODO: These should only break the stack if they assign to or read from expressions that break the stack
 			result = true;
 			break;
 			//return this._exprBreaksStack(cmd.var) || this._exprBreaksStack(cmd.expr)
 
 		case "custom":
+			// Macro calls should break the stack
 			result = true;
 			break;
 
 		case "return":
 		case "goto":
 		case "gosub":
+			// TODO - Control flow needn't necessarily break the stack
 			result = true;
 			break;
 
@@ -560,14 +672,12 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
 			break;
 
 		case "event":
-			result = true; // TODO: DEPRECATE
+			result = true; // TODO DEPRECATE
 			break;
 
 		case "fail":
-			result = true;
-			break;
-
 		case "end":
+			// These statements update the system state and need to wait for the machine to stop to execute
 			result = true;
 			break;
 
@@ -590,6 +700,7 @@ SBPRuntime.prototype._exprBreaksStack = function(expr) {
 };
 
 // Start the stored program running
+// Return the stream of g-codes that are being run.
 SBPRuntime.prototype._run = function() {
 	log.info("Starting OpenSBP program")
 	if(this.machine) {

@@ -13,6 +13,7 @@
  * systems they manage.  One example of this is g2_config.js, which keeps its config values synchronized with
  * the G2 motion systems, updating them when they change.
  */
+
 var async = require('async');
 var fs = require('fs-extra');
 var path = require('path');
@@ -22,7 +23,8 @@ var EventEmitter = require('events').EventEmitter;
 var util = require('util');
 
 // Config is the superclass from which all configuration objects descend
-//   config_name - Configuration objects have names used for display and for naming files.
+//   config_name - All configuration objects have a name, which among other things,
+//                 determines the filename for the stored configuration.
 var Config = function(config_name) {
 	this._cache = {};
 	this.config_name = config_name;
@@ -44,7 +46,8 @@ Config.prototype.has = function(k) {
 	return this._cache.hasOwnProperty(k);
 }
 
-// Retrieve values for the array of keys provided
+// Get the values for the provided array of keys.
+// Returns an object mapping keys to values.
 //   arr - list of keys
 Config.prototype.getMany = function(arr) {
 	retval = {};
@@ -55,19 +58,22 @@ Config.prototype.getMany = function(arr) {
 	return retval;
 };
 
-// Set the provided key to the provided value
-//   k - Key to modify
-//   v - New value
-//   callback - Called when set or with error
+// Set the configuration value for the provided key.
+// This causes the configuration to be saved to disk
+// This function calls `update()` internally, which is provided by subclasses
+//          k - The key value
+//          v - The new values
+//   callback - Called once the config is updated (which might take some time)
 Config.prototype.set = function(k,v, callback) {
 	var u = {}
 	u[k] = v;
 	this.setMany(u, callback);
 };
 
-// Set the provided keys to the provided values 
-//   data - Object mapping keys to values
-//   callback - Called with result, or error
+// Set the key value pairs supplied by `data` on this config object
+// This causes the configuration to be saved to disk.
+//       data - Object containing the keys/values to update
+//   callback - Called with updated values on success or with error if error
 Config.prototype.setMany = function(data, callback) {
 	this.update(data, function(err, result) {
 		if(callback && typeof callback === 'function') {
@@ -79,7 +85,8 @@ Config.prototype.setMany = function(data, callback) {
 	}.bind(this));
 }
 
-// Delete the specified keys from the configuration
+// Delete all of the provided keys from this configuration object
+//   keys - List of keys to remove
 Config.prototype.deleteMany = function(keys, callback) {
 	keys.forEach(function(k) {
 		if(k in this._cache) {
@@ -89,7 +96,8 @@ Config.prototype.deleteMany = function(keys, callback) {
 	this.save(callback);
 }
 
-// Delete the specified single key from the configuration
+// Delete the provided key from this configuration object
+//   key - The key to delete
 Config.prototype.delete = function(k, callback) {
 	this.deleteMany([k], callback);
 }
@@ -120,7 +128,7 @@ Config.prototype.load = function(filename, callback) {
 };
 
 // Write this configuration object to disk
-//   callback - error if there is a problem saving
+//   callback - Called with null once the configuration is saved (or with error if error)
 Config.prototype.save = function(callback) {
 	var config_file = this.getConfigFile();
 	if(this._loaded && config_file) {
