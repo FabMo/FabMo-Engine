@@ -1,3 +1,13 @@
+/*
+ * runtime/passthrough/index.js
+ *
+ * This module defines the PassthroughRuntime which is a short-lived
+ * attempt to pass G2 commands directly through the machine model to G2, to allow for things
+ * like chilipeppr, etc to speak with the motion controller directly.  It plays havoc with FabMo's 
+ * internal sense of state, though, and thus has been deprecated.
+ *
+ * TODO - remove this module
+ */
 var log = require('../../log').logger('passthrough');
 
 function PassthroughRuntime() {

@@ -1,3 +1,5 @@
+// TODO - Gordon, documentation here?
+
 var log = require('../../log').logger('sbp');
 
 // Point X, Point Y, Point Z, Angle(in radians), Rotation Point X, Rotation Point Y

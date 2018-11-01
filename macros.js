@@ -1,11 +1,42 @@
+/*
+ * macros.js
+ *
+ * Functions and data relating to macros.
+ *
+ * Macros are sort of "canned routines" that are analagous to the "custom cuts" in SB3.
+ * They are in fact, invoked in the same way in the OpenSBP runtime as they were in SB3,
+ * by using the C# command (C3 to home the tool, C2 for Z-zero, etc.)
+ * 
+ * Macros are stored on disk at (for example) /opt/fabmo/macros - anything in this directory is scanned
+ * at startup and files containing an appropriate header are loaded into memory.  Ideally macros can be
+ * in any file format, but the OpenSBP format is the only one that is actually implemented right now.
+ * When macros are modified by the user they are saved back to the files that they were loaded from. The
+ * header in each macro file contains metadata that identifies the macro, its custom-cut number, and description
+ *
+ * The macro headers are part of the files, but they are not displayed to the user when editing.  The user
+ * is able to edit those fields, but only as exposed through the UI in the macro manager.  This prevents
+ * users from corrupting the headers and creating a bunch of edge cases when editing macros.
+ */
 var fs = require('fs-extra')
 var path = require('path')
 var async = require('async')
 var config = require('./config')
 var log = require('./log').logger('macro');
+
+// The marker in the header that signifies a macro.
+// TODO - This is used to create files, but not in the regexs used to parse them (see below)
 var MARKER = '!FABMO!'
 
+// All the loaded macros will be stored here
 var macros = {}
+
+
+// These functions create macro headers from the specified options
+// options:
+//         name - The macro display name
+//  description - The macro description
+//      enabled - Whether or not the macro is enabled (TODO: Is this used?)
+
 
 var _createGCodeHeader = function(options) {
 	name = options.name || "Untitled Macro"
@@ -37,6 +68,7 @@ var _deleteMacroFile = function(index, callback) {
 	});
 }
 
+// Given a number and a type, construct a path to the corresponding macro file
 var _createMacroFilename = function(id, type) {
 	var macro_path = config.getDataDir('macros');
 	switch(type) {
@@ -54,6 +86,8 @@ var _createMacroFilename = function(id, type) {
 	}
 }
 
+// Create default macro content for the specified macro.
+// (Use if you want "new" macros to be non-empty)
 var _createMacroDefaultContent = function(macro) {
 	switch(macro.type) {
 		case 'nc':
@@ -72,6 +106,10 @@ var _createMacroDefaultContent = function(macro) {
 	}
 }
 
+// Iterate over the lines in the macro file, and parse out lines that appear to be part of the header
+// filename - The filename of the macro to parse out
+// callback - called with the parsed contents of the macro file, eg:
+//            {name : 'My Macro', description:'Move to X=10',content : 'MZ,0.5\nMX,10'}
 var _parseMacroFile = function(filename, callback) {
 	var re = /[\(']!FABMO!(\w+):([^\)]*)\)?/
 	var obj = {}
@@ -111,9 +149,18 @@ var _parseMacroFile = function(filename, callback) {
 	});
 }
 
+// Update an existing macro with new content
+//       id - The macro to update
+//    macro - The macro object that contains the new content
+// callback - called on completion, with an error if appropriate
 var update = function(id, macro, callback) {
+	// Get the old macro data
 	var old_macro = get(id);
+
 	if(old_macro) {
+		// Here, we're updating an existing macro
+		// We only update fields that were provided in the macro passed in
+		// Other fields, we leave alone.
 		function savemacro(id, callback) {
 			old_macro.name = macro.name || old_macro.name;
 			old_macro.description = macro.description || old_macro.description;
@@ -124,11 +171,20 @@ var update = function(id, macro, callback) {
 			save(id, callback);
 		}
 
+		// This function takes an id, and the macro can carry an index as well
+		// If the incoming macros index is different than the id that was passed,
+		// we interpret that as an intent to move that macro to a new index.
 		if(macro.index) {
 			var new_index = parseInt(macro.index);
+			// If there's already a macro at the index that we're moving to, that's an error.
+			// we're not going to write it.
 			if(get(new_index)) {
 				return callback(new Error("There is already a macro #" + new_index));
 			}
+
+			// If the new index is different we actually want to move the macro,
+			// so we assign it to the new index, trash the macro at the old index
+			// trash the file at the old index, and finally save the file at the new index
 			if(new_index != old_macro.index) {
 				macros[new_index] = old_macro;
 				delete macros[old_macro.index];
@@ -136,13 +192,17 @@ var update = function(id, macro, callback) {
 					savemacro(new_index, callback);
 				});
 			} else {
+				// Provided an index with the macro, but it's the the same, so no move needed
 				savemacro(id, callback);
 			}
 		} else {
+			// Not moving the macro (didn't provide an index) so just save it
 			savemacro(id, callback);
 		}
 
 	} else {
+		// In this case, we're "updating" a macro that doesn't exist, so create a new one
+		// (filling in any attributes that were not provided by the update)
 		new_macro = {
 			name : macro.name || 'Untitled Macro',
 			description : macro.description || 'Macro Description',
@@ -157,6 +217,8 @@ var update = function(id, macro, callback) {
 	}
 }
 
+// Commit the provided macro id to disk.
+// callback is called with the macro object that was saved (or error)
 var save = function(id, callback) {
 	macro = get(id);
 	if(macro) {
@@ -199,6 +261,7 @@ var save = function(id, callback) {
 	}
 }
 
+// Load all macros from disk
 var load = function(callback) {
 	var macro_path = config.getDataDir('macros');
 	var re = /macro_([0-9]+)\.(nc|sbp)/
@@ -229,6 +292,7 @@ var load = function(callback) {
 	})
 }
 
+// Return the full list of macros (scrubbed)
 var list = function() {
 	retval = [];
 	for(key in macros) {
@@ -237,6 +301,7 @@ var list = function() {
 	return retval;
 }
 
+// Get the metadata for a macro by index (null if no macro with that index)
 var getInfo = function(idx) {
 	var macro = get(idx);
 	if(macro) {
@@ -252,10 +317,12 @@ var getInfo = function(idx) {
 	}
 }
 
+// Retrieve a macro by index
 var get = function(idx) {
 	return macros[idx] || null;
 }
 
+// Run a macro by index.
 var run = function(idx) {
 	var machine = require('./machine').machine;
 	var bypassInterlock = false;
@@ -272,6 +339,8 @@ var run = function(idx) {
 	}
 }
 
+// Delete a macro by index
+// callback returns an error only
 var del = function(idx, callback) {
 	info = macros[idx];
 	if(info) {
@@ -288,6 +357,8 @@ var del = function(idx, callback) {
 	}
 }
 
+// Copy macros from the current profile to the macros directory.
+// Only copies macros if they do not exist.
 var loadProfileMacros = function(callback) {
 	var installedMacrosDir = config.getDataDir('macros');
 	var profileMacrosDir = config.getProfileDir('macros');

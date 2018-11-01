@@ -1,6 +1,9 @@
-/**
- * log.js is a "Poor man's" logging module.  It provides basic colorized logging using named
- * loggers with selectable log levels.
+/*
+ * log.js
+ * 
+ * Logging module. It provides basic colorized logging using named loggers with selectable log levels.  
+ * Written basically to provide only the logging functionality needed without needing to buy
+ * into an elaborate logging system.
  */
 var process = require('process');
 try { var colors = require('colors'); } catch(e) {var colors = false;}
@@ -37,6 +40,17 @@ LOG_LEVELS = {
 	'log':'debug'
 };
 
+/*
+ * The flight recorder records the timestamp and content of every message sent to 
+ * or recieved from G2.  It is memory intensive and degrades system performance.
+ * The advantage of using is that you can take the JSON file it produces and
+ * "replay" a session into a G2 instance later.  This is invaluable for catching bugs
+ * that depend on timing to reproduce.  The replayer honors the timestamp values stored in
+ * the flight recording, so that the actual times of all messages are reproduced as closely as possible.
+ *
+ * The flight replayer can be found here, and has documentation of its own:
+ * https://github.com/FabMo/g2-flight-replayer
+ */
 var FlightRecorder = function() {
   this.records = []
   this.firstTime = 0
@@ -47,6 +61,10 @@ var FlightRecorder = function() {
   }
 }
 
+// Record the provided data at the current time
+// channel - Just a name - mainly for older systems with multiple serial channels.
+// dir - 'out' (host->g2) or 'in' (g2->host)
+// data - The actual data sent or received
 FlightRecorder.prototype.record = function(channel, dir, data) {
   // Get the current time
   var t = new Date().getTime();
@@ -60,11 +78,13 @@ FlightRecorder.prototype.record = function(channel, dir, data) {
   })
 }
 
+// Return the most recently recorded record.
 FlightRecorder.prototype.getLatest = function() {
 	if(this.records.length === 0) { return null; }
 	return this.records[this.records.length-1];
 }
 
+// Return a flight log which includes the list of recorded messages, plus some summary information.
 FlightRecorder.prototype.getFlightLog = function() {
 var newRecords = []
 	if(this.records.length > 0) {
@@ -86,12 +106,13 @@ var newRecords = []
     return flight;
 }
 
+// Save this flight recording to a JSON file
 FlightRecorder.prototype.save = function(filename, callback) {
-	
   fs.writeFile(filename, JSON.stringify(this.getFlightLog(), null, 2), callback);
 }
 
-
+// Set the global logging level to the provided value.  This supersedes the default log level for individual loggers.
+// lvl - can be a name such as g2,debug,etc or can be a numeric level
 function setGlobalLevel(lvl){
 	if (lvl) {
 		if (lvl >= 0 && lvl <= 3) {
@@ -106,12 +127,10 @@ function setGlobalLevel(lvl){
 	  			LOG_LEVELS[key] = lvl;
 	  		});
 		}
-		else if (lvl === "none")
-		{
+		else if (lvl === "none") {
 			return;
 		}
-		else
-		{
+		else {
 			logger('log').warn('Invalid log level: ' + lvl);
 		}
 		if(lvl === "g2") {
@@ -134,6 +153,10 @@ var Logger = function(name) {
 // Index of all the Logger objects that have been created.
 var logs = {};
 
+// These are convenience methods for timing operations.
+// Call tick() before starting a task and then tock() after finishing. 
+// The elapsed time will be printed to the console.
+// You can call tock repeatedly, and it will tell you the time since the last tock.
 Logger.prototype.tick = function() { 
 	tickTime = new Date().getTime()
 	this.debug('TICK');
@@ -147,10 +170,11 @@ Logger.prototype.tock = function(name) {
 
 // Output the provided message with colorized output (if available) and the logger name
 Logger.prototype.write = function(level, msg) {
-	if(_suppress) {
-		return;
-	}
+	if(_suppress) { return; }
 
+	// TODO - I've read that the modules that overload the builtin string object to provide functionality
+	//        (as seen below) are falling out of favor because of weirdo side effects they have.  Might want
+	//        to re-think how colorization is done here.
 	my_level = LOG_LEVELS[this.name] || 'debug';
 	if((LEVELS[level] || 0) >= (LEVELS[my_level] || 0)) {
 		buffer_msg = level + ': ' + msg + ' ['+this.name+']';
@@ -175,6 +199,8 @@ Logger.prototype.write = function(level, msg) {
 		} else {
 			console.log(level + ': ' + msg+' ['+this.name+']');
 		}
+
+		// Circular log buffer that maintains the last LOG_BUFFER_SIZE messages
 		log_buffer.push(buffer_msg);
 		while(log_buffer.length > LOG_BUFFER_SIZE) {
 			log_buffer.shift();
@@ -184,15 +210,11 @@ Logger.prototype.write = function(level, msg) {
 
 // These functions provide a shorthand alternative to specifying the log level every time
 Logger.prototype.debug = function(msg) { this.write('debug', msg);};
-Logger.prototype.stack = function(msg) {
-	var stackTrace = new Error().stack;
-	stackTrace = stackTrace.split('\n');
-	stackTrace = stackTrace.slice(2).join('\n');
-	this.write('debug', 'Stack Trace:\n' + stackTrace);
-}
-
 Logger.prototype.info = function(msg) { this.write('info', msg);};
 Logger.prototype.warn = function(msg) { this.write('warn', msg);};
+
+// error() is a little special - if you call it with an actual error object that has a stack
+// it will print out the stack as well, for debugging.
 Logger.prototype.error = function(msg) {
 	if(msg && msg.stack) {
 		this.write('error', msg.stack);
@@ -201,7 +223,17 @@ Logger.prototype.error = function(msg) {
 	}
 };
 
+// stack() prints out a backtrace wherever it is called. It prints at the 'debug' log level
+Logger.prototype.stack = function(msg) {
+	var stackTrace = new Error().stack;
+	stackTrace = stackTrace.split('\n');
+	stackTrace = stackTrace.slice(2).join('\n');
+	this.write('debug', 'Stack Trace:\n' + stackTrace);
+}
 
+// This function is for data sent to and from the serial channel ONLY.  Calling it with any other
+// input can lead to trouble if you're trying to debug.  This log level prints special output that
+// includes timestamps and escaped special characters so it's easy to diagnose communication issues
 Logger.prototype.g2 = function(channel, dir, o) {
   var msg = {}
 	if(flightRecorder) {
@@ -222,6 +254,9 @@ Logger.prototype.g2 = function(channel, dir, o) {
 	}
 };
 
+// Printout for uncaught exceptions.
+// This is nice for debugging, but in production, handling an otherwise uncaught exception and allowing the
+// program to continue execution is almost always a bad idea.
 Logger.prototype.uncaught = function(err) {
 	if(colors) {
 		console.log("UNCAUGHT EXCEPTION".red.underline);
@@ -234,6 +269,7 @@ Logger.prototype.uncaught = function(err) {
 	log_buffer.push(err.stack);
 }
 
+// TODO - Not sure what this is, probably should be removed
 Logger.prototype.startProfile
 // Factory function for producing a new, named logger object
 var logger = function(name) {
@@ -251,6 +287,15 @@ var logger = function(name) {
 // .... log log logger log.
 var _log = logger('log');
 
+// Cleanup operations that happen on program exit.
+// Mainly:
+//  - Write to the current log file so we don't miss anything if the engine crashed
+//  - Write out the contents of the current flight recording
+//  - Rotate the logs
+// 
+// options:
+//    exit - If true: exit, instead of simply intercepting the handler
+// savelog - If true: save and rotate logs/flight data.  Don't if false or unspecified.
 function exitHandler(options, err) {
     options = options || {};
     if (err) {
@@ -293,13 +338,17 @@ function exitHandler(options, err) {
 	}
 }
 
+// Bind handlers for the badtimes (tm)
+// See documentation on the process module (nodejs docs) for information about these events
 process.on('exit', exitHandler.bind(null));
 process.on('SIGINT', exitHandler.bind(null, {savelog:true, exit:true}));
 process.on('uncaughtException', exitHandler.bind(null, {savelog:true, exit:false}));
 
+// TODO - why do these have an argument?  They don't use it.
 var suppress = function(v) {_suppress = true;};
 var unsuppress = function(v) {_suppress = false;};
 
+// Return the circular log buffer as a big string
 var getLogBuffer = function() {
 	return log_buffer.join('\n');
 };
@@ -308,6 +357,8 @@ var clearLogBuffer = function() {
 	log_buffer = [];
 }
 
+// Save the current contents of the log buffer to a file. SYNCHRONOUS.
+// filename - The filename to write to
 var saveLogBuffer = function(filename) {
 	fs.writeFileSync(filename, getLogBuffer());
 }
@@ -320,6 +371,10 @@ var getFlightLog = function() {
 	}
 }
 
+// Rotate the log files
+// count - The number of log files to keep.  If there are 10 logfiles in the log directory, and 
+//         this function is called with count=5, the 5 oldest ones are deleted.
+// 
 var rotateLogs = function(count,callback) {
 	var logdir = require('./config').getDataDir('log');
 	callback = callback || function() {};

@@ -1,3 +1,9 @@
+/*
+ * dashboard_config.js
+ * 
+ * This configuration object is for storing configuration related to the dashboard.
+ * There really isn't anything special about it.
+ */
 var Config = require('./config').Config;
 var log = require('../log').logger('dashboard_config');
 
@@ -8,6 +14,7 @@ var DashboardConfig = function(driver) {
 };
 util.inherits(DashboardConfig, Config);
 
+// Typical update function for a config object
 DashboardConfig.prototype.update = function(data, callback) {
 	try {
 		for(var key in data) {
