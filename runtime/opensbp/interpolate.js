@@ -1,3 +1,5 @@
+// TODO - Gordon provide documentation here?
+
 var fs = require('fs');
 var log = require('../../log').logger('sbp');
 var g2 = require('../../g2');

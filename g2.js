@@ -1,3 +1,10 @@
+/*
+ * g2.js
+ * 
+ * This module defines the G2 driver, which is responsible for managing communication
+ * between the host and a tinyg2 motion conroller.  Other objects and functions are
+ * defined here as well to support this capability.
+ */
 var SerialPort = require("serialport");
 var fs = require("fs");
 var events = require('events');
@@ -979,17 +986,15 @@ G2.prototype.runImmediate = function(data) {
 	return this.runString(data);
 }
 
-/*
- * G2 begins running G-Codes as soon as it recieves them, and in certain cases, it is possible for
- * G2 to "plan to a stop" when this is not the desired behavior.  This typically happens at the start of
- * of a run, when the host has only sent a few moves down, and G2's planner outpaces the moves coming in.
- * To resolve this, this module provides a "priming" behavior that will prevent it from sending any g-codes
- * to G2 until it is "primed" with enough of them so that it's not going to starve the planner after it starts
- * sending.  The difficulty with this is, if the prime threshold is 10 g-codes, and the host wants to send a
- * file that is only 5 g-codes long, the system will never be primed, and no g-codes are sent.  The prime() 
- * function then, is provided for cases where we know we're not sending anymore g-codes, and we expect G2
- * to just run whatever we've sent so far.
- */
+// G2 begins running G-Codes as soon as it recieves them, and in certain cases, it is possible for
+// G2 to "plan to a stop" when this is not the desired behavior.  This typically happens at the start of
+// of a run, when the host has only sent a few moves down, and G2's planner outpaces the moves coming in.
+// To resolve this, this module provides a "priming" behavior that will prevent it from sending any g-codes
+// to G2 until it is "primed" with enough of them so that it's not going to starve the planner after it starts
+// sending.  The difficulty with this is, if the prime threshold is 10 g-codes, and the host wants to send a
+// file that is only 5 g-codes long, the system will never be primed, and no g-codes are sent.  The prime() 
+// function then, is provided for cases where we know we're not sending anymore g-codes, and we want G2
+// to just run whatever we've sent so far.
 G2.prototype.prime = function() {
 	log.info("Priming driver (manually)");
 	this._primed = true;
