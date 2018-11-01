@@ -26,7 +26,7 @@ The FabMo engine is host software that connects to a G2 motion control platform 
 When the engine starts, it will connect to G2 and setup an http server to accept connections on port 80.  Once the engine is running you can visit [http://localhost/](http://localhost/) to use the fabmo dashboard.
 
 ## Installing the Engine
-The engine is run from source, and only needs to be checked out and stored in a local directory.  Run `npm install` from the source directory to install the needed dependencies.
+The engine is run from source, and only needs to be checked out and stored in a local directory.  Run `npm install` from the source directory to install the needed dependencies and perform the webpack step that builds the frontend.
 
 ### On the Intel Edison
 
@@ -61,16 +61,23 @@ To install the engine in the "standard" location on the Raspberry Pi 3, perform 
 To install the engine in the standard location on a Mac, follow the steps below.  This method is used by the FabMo team for development in the OSX environment.
 
 1. Install Node.js - You'll need an older version: 0.12.7 to be compatible with FabMo.  To install an older version through homebrew (homebrew is highly recommended) do this: http://apple.stackexchange.com/a/207883/67692
-2. Install npm - you can also do this with homebrew
-3. Create the fabmo directory: `mkdir -p /fabmo`
-4. Create the fabmo data directory: `mkdir -p /opt/fabmo`
-2. Clone the engine source `/fabmo/engine` with `git clone https://github.com/FabMo/FabMo-Engine /fabmo/engine`
-2. Checkout the appropriate branch of the source tree.  The `release` branch is the most recent stable release.  (`git checkout release` from the `/fabmo/engine` directory)
-3. Install dependencies using npm: `cd /fabmo/engine; npm install`
-4. Run the engine using the instructions below.  Make sure that the G2 motion control board is connected the first time you run the engine.  The engine auto-detects the USB port and saves this setting on first run, and if the motion controller is absent, it won't be properly detected.  If you need to change ports later on, the port settings are located in `/opt/fabmo/config/engine.json`
+1. Install npm - you can also do this with homebrew
+1. Create the fabmo directory: `mkdir -p /fabmo`
+1. Create the fabmo data directory: `mkdir -p /opt/fabmo`
+1. Clone the engine source `/fabmo/engine` with `git clone https://github.com/FabMo/FabMo-Engine /fabmo/engine`
+1. Checkout the appropriate branch of the source tree.  The `release` branch is the most recent stable release.  (`git checkout release` from the `/fabmo/engine` directory)
+1. Install dependencies using npm: `cd /fabmo/engine; npm install`
+1. Run the engine using the instructions below.  Make sure that the G2 motion control board is connected the first time you run the engine.  The engine auto-detects the USB port and saves this setting on first run, and if the motion controller is absent, it won't be properly detected.  If you need to change ports later on, the port settings are located in `/opt/fabmo/config/engine.json`
 
 ## Running the Engine
-For debugging the engine, you can run it directly from the command prompt with `npm start` or `node server.js`  Running with `npm run debug` puts the engine in debug mode, in which it does more agressive app reloading.  (This is recommended for app development, particularly for system apps)  `npm debug slow` introduces deliberate network latency on GET/POST requests, for testing.  This latency can be adjusted in `engine.js`
+For debugging the engine, you can run it directly from the command prompt with `npm start` or `node server.js` - make sure you have built the dashboard with `npm run webpack` - alternatively, you can run `npm run dev` which will run the system in debug mode (which adds some logging and more aggressively reloads apps) as well as run the webpack first.  If you want to run in debug mode, but skip the webpack step, run `npm run debug`
 
 ## Development Automation
 A number of grunt tasks have been set up to facilitate engine development.  To see them, run `grunt` with no arguments in the source directory, and a list will be produced with explanations.
+
+## Building the Documentation
+Source code documentation is generated with groc, and API documentation for the engine's REST API is generated with apidoc.  To generate documentation: `grunt doc` - to generate documentation and push it to Github Pages, linked at the top of this readme: `grunt doc-dist`
+
+## Getting Started with Development
+The entry point for the application is `server.js` but for an overview of how the engine starts, begin with `engine.js` - particularly the `start` method.  This is the function that initializes the system and starts all the processes (including the webserver) that make the application work.
+

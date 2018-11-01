@@ -44,11 +44,6 @@ grunt.initConfig({
                 }
             }
         },
-        'mochaTest' : {
-            test:{
-                src: ["test/*.js"]
-            }
-        },
         'apidoc' : {
             myapp: {
                 src: "routes",
