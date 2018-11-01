@@ -2,10 +2,22 @@ module.exports = function(grunt) {
 grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
         'groc': {
-            javascript: ["*.js","*.md"],
+            javascript: ["*.js","*.md","**/*.js","**/*.md"],
             options: {
                 "out": "docs-dist/",
-                "except":["Gruntfile.js","dashboard/static","node_modules", "node_modules/**","dashboard/static/**"]
+                "except":[
+                    "Gruntfile.js",
+                    "dashboard/apps",
+                    "dashboard/apps/**",
+                    "dashboard/build",
+                    "dashboard/build/**",
+                    "node_modules",
+                    "node_modules/**",
+                    "dashboard/static",
+                    "dashboard/static/**",
+                    "docs-dist",
+                    "docs-dist/**"
+                ]
             },
         },
         'gh-pages': {
