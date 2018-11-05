@@ -408,9 +408,11 @@ FabMoAPI.prototype.manualQuit= function() {
 	this.executeRuntimeCode('manual', {'cmd': 'quit'});
 }
 
-FabMoAPI.prototype.manualEnter = function() {
-	this.executeRuntimeCode('manual', {'cmd': 'enter'});
+FabMoAPI.prototype.manualEnter = function(options) {
+	options = options || {};
+	this.executeRuntimeCode('manual', {'cmd': 'enter', mode : options['mode'], hideKeypad : options['hideKeypad']});
 }
+
 
 FabMoAPI.prototype.manualExit = function() {
 	this.executeRuntimeCode('manual', {'cmd': 'exit'});
@@ -418,6 +420,10 @@ FabMoAPI.prototype.manualExit = function() {
 
 FabMoAPI.prototype.manualMoveFixed = function(axis, speed, distance, second_axis, second_distance) {
 	this.executeRuntimeCode('manual', {'cmd': 'fixed', 'axis' : axis, 'speed' : speed, 'dist' : distance, 'second_axis':second_axis, 'second_dist' : second_distance});
+}
+
+FabMoAPI.prototype.manualRunGCode = function(code) {
+	this.executeRuntimeCode('manual', {'cmd': 'raw', 'code' : code});
 }
 
 FabMoAPI.prototype.connectToWifi = function(ssid, key, callback) {

@@ -115,7 +115,8 @@ function Machine(control_path, callback) {
 		unit : 'mm',
 		line : null,
 		nb_lines : null,
-		auth : false
+		auth : false,
+		hideKeypad : false
 	};
 
 	this.fireButtonDebounce = false;

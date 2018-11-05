@@ -69,7 +69,7 @@ ManualRuntime.prototype.disconnect = function() {
 };
 
 // Enter the manual drive state (and thus, the machining cycle)
-ManualRuntime.prototype.enter = function() {
+ManualRuntime.prototype.enter = function(mode, hideKeypad) {
 	this.stream = new stream.PassThrough();
 
 	// At a high level, this opens a stream to the driver, that subsequent commands
@@ -82,10 +82,12 @@ ManualRuntime.prototype.enter = function() {
 	}.bind(this));
 
 	// Create a helper that is used to do the pumping of commands.
-	this.helper = new ManualDriver(this.driver, this.stream);
+	this.helper = new ManualDriver(this.driver, this.stream, mode);
 	this.helper.enter().then(function() {
+		log.debug('** Resolving enter promise **')
 		this.driver.quit();
 	}.bind(this));
+	this.machine.status.hideKeypad = hideKeypad;
 	this.machine.setState(this, "manual");
 }
 
@@ -110,9 +112,11 @@ ManualRuntime.prototype.executeCode = function(code, callback) {
 			return;
 	}
 
+	log.info('CODE!!');
+	log.info(JSON.stringify(code));
 	switch(code.cmd) {
 		case 'enter':
-			this.enter();
+			this.enter(code.mode, code.hideKeypad || false);
 			break;
 		default:
 			if(!this.helper) {
@@ -155,6 +159,10 @@ ManualRuntime.prototype.executeCode = function(code, callback) {
 						this.enter();
 					}
 					this.helper.nudge(code.axis, code.speed, code.dist, code.second_axis, code.second_dist);
+					break;
+
+				case 'raw':
+					this.helper.runGCode(code.code)
 					break;
 
 				default:

@@ -145,23 +145,24 @@ require("../css/toastr.min.css");
                     }
 
                     if(status.state === "manual") {
-                        $('.modalDim').show();
-                        $('.manual-drive-modal').show();
-                        if(status.stat === 5 &&  status.currentCmd === "goto"){
-                                $('.manual-stop').show();
-                                $('.go-to, .set-coordinates').hide();
-                                keyboard.setEnabled(false);
-                                $('#keypad').hide();
-                                $('.go-to-container').show();
-                                $('.go-to-container').css('display', 'flex');
-                        } else {
-                            $('.manual-stop').hide();
-                            $('.go-to, .set-coordinates').show();
-                            keyboard.setEnabled(true);
-                            $('#keypad').show();
-                            $('.go-to-container').hide();
+                        if(!status['hideKeypad']) {
+                            $('.modalDim').show();
+                            $('.manual-drive-modal').show();
+                            if(status.stat === 5 &&  status.currentCmd === "goto"){
+                                    $('.manual-stop').show();
+                                    $('.go-to, .set-coordinates').hide();
+                                    keyboard.setEnabled(false);
+                                    $('#keypad').hide();
+                                    $('.go-to-container').show();
+                                    $('.go-to-container').css('display', 'flex');
+                            } else {
+                                $('.manual-stop').hide();
+                                $('.go-to, .set-coordinates').show();
+                                keyboard.setEnabled(true);
+                                $('#keypad').show();
+                                $('.go-to-container').hide();
+                            }
                         }
-
                     }
 
                     if(status.state !== "manual" && last_state_seen === "manual") {

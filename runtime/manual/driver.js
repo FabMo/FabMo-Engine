@@ -29,14 +29,14 @@ var count = 0;
 // streaming commands to it, as is done when in "pendant" mode or similar
 //   drv - The driver instance to manage
 //    st - An open stream feeding into an active machining cycle on that driver
-function ManualDriver(drv, st) {
+function ManualDriver(drv, st, mode) {
 	this.stream = st;
 	this.driver = drv;
 	this.renew_timer = null;
+	this.movement_timer = null;
 	this.fixedQueue = [];
-
+	this.entered = false;
 	this.exited = false;
-
 	// True while the tool is known to be in motion
 	this.moving = false;
 
@@ -45,10 +45,14 @@ function ManualDriver(drv, st) {
 
 	// Set to true to exit the manual state once the current operation is completed
 	this.exit_pending = false;
-
 	this.stop_pending = false;
-
 	this.omg_stop = false;
+
+	if(mode === 'raw') {
+		this.mode = 'raw';
+	} else {
+		this.mode = 'normal';
+	}
 
 	// Current trajectory
 	this.current_axis = null;
@@ -64,15 +68,20 @@ util.inherits(ManualDriver, events.EventEmitter);
 // TODO: Pass the setup stuff in?  (In case runtimes want to do things differently?)
 // Returns a promise that resolves on exit
 ManualDriver.prototype.enter = function() {
-	var jerkXY = config.machine._cache.manual.xy_jerk || 250;
-	var jerkZ = config.machine._cache.manual.z_jerk || 250;
-    this.stream.write('M100.1 ({xjm:'+jerkXY+'})\n');
-    this.stream.write('M100.1 ({yjm:'+jerkXY+'})\n');
-    this.stream.write('M100.1 ({zjm:'+jerkZ+'})\n');	
-	//this.stream.write('M100.1 ({zl:0})\nM0\n G4 P0.1\n');	
-	this.stream.write('M100.1 ({zl:0})\nM0\n G91\n G0 X0 Y0 Z0\n');	
-	this.driver.prime();
+	if(this.entered) { return; }
+	if(this.mode === 'normal') {
+		var jerkXY = config.machine._cache.manual.xy_jerk || 250;
+		var jerkZ = config.machine._cache.manual.z_jerk || 250;
+	    this.stream.write('M100.1 ({xjm:'+jerkXY+'})\n');
+	    this.stream.write('M100.1 ({yjm:'+jerkXY+'})\n');
+	    this.stream.write('M100.1 ({zjm:'+jerkZ+'})\n');	
+		//this.stream.write('M100.1 ({zl:0})\nM0\n G4 P0.1\n');	
+		this.stream.write('M100.1 ({zl:0})\nM0\nG91\n G0 X0 Y0 Z0\n');	
+		this.driver.prime();		
+	}
+	this.entered = true;
 	this.deferred = Q.defer();
+
 	return this.deferred.promise;
 }
 
@@ -81,16 +90,20 @@ ManualDriver.prototype.enter = function() {
 ManualDriver.prototype.exit = function() {
 	if(this.isMoving()) {
 		// Don't exit yet - just pend.
+		log.debug('Pending the exit');
 		this.exit_pending = true;
 		this.stopMotion();
-
 	} else {
-		config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
-		    //log.info("Finished running stream: " + stat);
-		    this._done();
-        }.bind(this));
+		log.debug('Executing immediate exit')
+		if(this.mode === 'normal') {
+			config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
+			    //log.info("Finished running stream: " + stat);
+			    this._done();
+	        }.bind(this));			
+		}
 		this.driver.removeListener('status', this.status_handler);
 		this.exited = true;
+		this._done();
 	}
 }
 
@@ -110,40 +123,44 @@ ManualDriver.prototype.startMotion = function(axis,  speed, second_axis, second_
 		return;
 	}
 
-	// If we're moving already, maintain motion
-	if(this.moving) {
-		if(axis === this.currentAxis && speed === this.currentSpeed) {
-			this.maintainMotion();
+	if(this.mode === 'normal') {
+		// If we're moving already, maintain motion
+		if(this.moving) {
+			if(axis === this.currentAxis && speed === this.currentSpeed) {
+				this.maintainMotion();
+			} else {
+				this.stopMotion();
+				// TODO Deal with direction changes here
+			}
 		} else {
-			this.stopMotion();
-			// TODO Deal with direction changes here
+			// Deal with one axis vs 2 (See TODO above)
+			if (second_axis){
+				this.second_axis = second_axis;
+				this.second_currentDirection = second_dir;
+			} else {
+				this.second_axis = null;
+				this.second_currentDirection = null;
+			}
+			// Set Heading
+			this.currentAxis = axis;
+			this.currentSpeed = speed;
+			this.currentDirection = dir;
+
+			// Flag that we're kicking off a move
+			this.moving = this.keep_moving = true;
+
+			// Length of the moves we pump the queue with, based on speed vector
+			this.renewDistance = speed*(T_RENEW/60000)*SAFETY_FACTOR;                
+			
+			// Make sure we're in relative moves and the speed is set
+			this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
+
+			// Start pumping moves
+			this._renewMoves("start");
 		}
 	} else {
-		// Deal with one axis vs 2 (See TODO above)
-		if (second_axis){
-			this.second_axis = second_axis;
-			this.second_currentDirection = second_dir;
-		} else {
-			this.second_axis = null;
-			this.second_currentDirection = null;
-		}
-		// Set Heading
-		this.currentAxis = axis;
-		this.currentSpeed = speed;
-		this.currentDirection = dir;
-
-		// Flag that we're kicking off a move
-		this.moving = this.keep_moving = true;
-
-		// Length of the moves we pump the queue with, based on speed vector
-		this.renewDistance = speed*(T_RENEW/60000)*SAFETY_FACTOR;                
-		
-		// Make sure we're in relative moves and the speed is set
-		this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
-
-		// Start pumping moves
-		this._renewMoves("start");
-	}
+		throw new Error('Cannot start movement in ' + this.mode + ' mode.');
+	}// if(this.mode === 'normal')
 }
 
 // Set the flag that indicates to this driver that motion is still requested along the current heading
@@ -186,6 +203,24 @@ ManualDriver.prototype.quitMove = function(){
 
 }
 
+ManualDriver.prototype.runGCode = function(code) {
+	if(this.mode == 'raw') {
+		if(this.moving) {
+			log.debug('writing gcode while moving')
+			this.stream.write(code.trim() + '\n');
+			this.maintainMotion()			
+		} else {
+			log.debug('writing gcode while static')
+			this.moving = true;
+			this.stream.write(code.trim() + '\n');
+			this.maintainMotion();		
+			this._renewMoves('start')
+		}
+	} else {
+		throw new Error('Cannot run gcode when in ' + this.mode + ' mode.');
+	}
+}
+
 // Go to a specified absolute position
 //   pos - Position vector as an object, eg: {"X":10, "Y":5}
 ManualDriver.prototype.goto = function(pos) {
@@ -205,17 +240,22 @@ ManualDriver.prototype.goto = function(pos) {
 //   pos - New position vector as an object,  eg: {"X":10, "Y":5}
 ManualDriver.prototype.set = function(pos) {
 	
-	var gc = 'G10 L20 P2 ';
+	if(this.mode === 'normal') {
+		var gc = 'G10 L20 P2 ';
 
-	Object.keys(pos).forEach(function(key) {
-		gc += key + pos[key].toFixed(5);
-	}.bind(this));
-	
+		Object.keys(pos).forEach(function(key) {
+			gc += key + pos[key].toFixed(5);
+		}.bind(this));
+
 		this.stream.write(gc + "\nM0\nG91\n");
 		this.driver.prime();
+
 		setTimeout(function() {
 			config.driver.reverseUpdate(['g55x','g55y','g55z','g55a','g55b'], function(err, data) {});
 		}.bind(this), 500);
+	} else {
+		throw new Error("Can't set from " + this.mode + ' mode.');
+	}
 
 }
 
@@ -304,35 +344,53 @@ ManualDriver.prototype.isMoving = function() {
 // This function is called periodically until a stop is requested, or the users intent to continue moving evaporates.
 // The idea behind this function is that it is called at an interval that outpaces the 
 ManualDriver.prototype._renewMoves = function(reason) {
-	if(this.moving && this.keep_moving) {
-		this.keep_moving = false;
-		var segment = this.currentDirection*(this.renewDistance / RENEW_SEGMENTS);
-		var second_segment = this.second_currentDirection*(this.renewDistance / RENEW_SEGMENTS);
-		var moves = []
-		if (this.second_axis){
-			for(var i=0; i<RENEW_SEGMENTS; i++) {
-				var move = 'G1' + this.currentAxis + segment.toFixed(4) + this.second_axis + second_segment.toFixed(4) + '\n'
-				moves.push(move);
-			}
+	if(this.mode === 'normal') {	
+		if(this.moving && this.keep_moving) {
+			this.keep_moving = false;
+			var segment = this.currentDirection*(this.renewDistance / RENEW_SEGMENTS);
+			var second_segment = this.second_currentDirection*(this.renewDistance / RENEW_SEGMENTS);
+			var moves = []
+			if (this.second_axis){
+				for(var i=0; i<RENEW_SEGMENTS; i++) {
+					var move = 'G1' + this.currentAxis + segment.toFixed(4) + this.second_axis + second_segment.toFixed(4) + '\n'
+					moves.push(move);
+				}
 
-		} else {
-			for(var i=0; i<RENEW_SEGMENTS; i++) {
-				var move = 'G1' + this.currentAxis + segment.toFixed(4)+'\n'
-				moves.push(move);
+			} else {
+				for(var i=0; i<RENEW_SEGMENTS; i++) {
+					var move = 'G1' + this.currentAxis + segment.toFixed(4)+'\n'
+					moves.push(move);
+				}
 			}
+			this.stream.write(moves.join(''));	
+			this.driver.prime();
+			this.renew_timer = setTimeout(function() {
+				this._renewMoves("timeout")
+			}.bind(this), T_RENEW)
+		} else {
+			this.stopMotion();
 		}
-		this.stream.write(moves.join(''));	
-		this.driver.prime();
-		this.renew_timer = setTimeout(function() {
-			this._renewMoves("timeout")
-		}.bind(this), T_RENEW)
 	} else {
-		this.stopMotion();
-	}
+		if(!(this.moving && this.keep_moving)) {
+			//this.stopMotion();
+		} else {
+			this.renew_timer = setTimeout(function() {
+				this._renewMoves("timeout")
+			}.bind(this), T_RENEW)			
+		}
+	} 
 }
 
 // Status handler
 ManualDriver.prototype._onG2Status = function(status) {
+	if(this.movement_timer) {
+		clearTimeout(this.movement_timer);
+	}
+
+	this.movement_timer = setTimeout(function() {
+		this.moving = false;
+	}, 2000);
+
 	switch(status.stat) {
 		case this.driver.STAT_INTERLOCK:
 		case this.driver.STAT_SHUTDOWN:
@@ -391,6 +449,7 @@ ManualDriver.prototype._done = function() {
 	this.moving = false;
     this.keep_moving = false;
     this.stream = null;
+    this.entered = false;
 	this.deferred.resolve();
 }
 

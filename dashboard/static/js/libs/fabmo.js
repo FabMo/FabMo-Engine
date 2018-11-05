@@ -483,7 +483,7 @@ function _makeJob(obj) {
 	} catch(e) {}
 
 	if(file) {
-		return {file : file};:
+		return {file : file};
 	} else {
 		var job = {};
 		for (var key in obj) {
@@ -703,6 +703,14 @@ FabMoDashboard.prototype.manualMoveFixed = function(axis, speed, distance, callb
 }
 
 /**
+ * Stream a raw gcode
+ * Tool must be in 'raw' manual mode for this to work.
+ */
+FabMoDashboard.prototype.manualRunGCode = function(code, callback) {
+	this._call("manualRunGCode",{"code": code}, callback);
+}
+
+/**
  * Start performing a manual move of the specified axis at the specified speed.
  *
  * @method manualStart
@@ -714,8 +722,8 @@ FabMoDashboard.prototype.manualStart = function(axis, speed, second_axis, second
 }
 
 
-FabMoDashboard.prototype.manualEnter = function(axis, speed, callback) {
-	this._call("manualEnter", callback);
+FabMoDashboard.prototype.manualEnter = function(options, callback) {
+	this._call("manualEnter",options, callback);
 }
 
 FabMoDashboard.prototype.manualExit = function(axis, speed, callback) {
