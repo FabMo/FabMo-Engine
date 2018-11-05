@@ -436,13 +436,7 @@ Machine.prototype.arm = function(action, timeout) {
 	// Check to see if interlock is required
 	var interlockRequired = config.machine.get('interlock_required');
 	var interlockInput = 'in' + config.machine.get('interlock_input');
-<<<<<<< HEAD
 	if(this.action && this.action.payload && this.action.payload.name === 'manual' || interlockBypass) {
-=======
-
-	// Ignore the interlock for pulling up the manual drive panel
-	if(this.action && this.action.payload && this.action.payload.name === 'manual') {
->>>>>>> documentation
 		interlockRequired = false;
 	}
 
@@ -851,15 +845,9 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				    // Check the interlock and switch to the interlock state if it's engaged
 				    var interlockRequired = config.machine.get('interlock_required');
 					var interlockInput = 'in' + config.machine.get('interlock_input');
-<<<<<<< HEAD
-				
-
 					
 				    if(interlockRequired && this.driver.status[interlockInput] && !interlockBypass) {
 						log.stack();
-=======
-				    if(interlockRequired && this.driver.status[interlockInput]) {
->>>>>>> documentation
 						this.interlock_action = null;
 						this.setState(this, 'interlock')		
 						return
@@ -938,17 +926,13 @@ Machine.prototype.resume = function(callback) {
 	callback(null, 'resumed');
 }
 
-<<<<<<< HEAD
+// Run a file from disk
+// filename - full path to the file to run
 Machine.prototype.runFile = function(filename, bypassInterlock) {
 	interlockBypass = bypassInterlock;
 	if(!bypassInterlock){
 		interlockBypass = false;		
 	}
-=======
-// Run a file from disk
-// filename - full path to the file to run
-Machine.prototype.runFile = function(filename) {
->>>>>>> documentation
 	this.arm({
 		type : 'runFile',
 		payload : {
