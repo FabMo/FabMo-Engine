@@ -54,6 +54,11 @@ body {
 	height: 56px;
 }
 
+.tab-bar.manual {
+	background: #444 !important;
+	box-shadow: inset 0 -7px 9px -7px rgba(0,0,0,0.4);
+}
+
 .tab-bar a { color : #fff;}
 .tab-bar .middle {
 	margin-right: auto;

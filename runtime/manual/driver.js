@@ -37,6 +37,7 @@ function ManualDriver(drv, st, mode) {
 	this.fixedQueue = [];
 	this.entered = false;
 	this.exited = false;
+
 	// True while the tool is known to be in motion
 	this.moving = false;
 
@@ -48,6 +49,7 @@ function ManualDriver(drv, st, mode) {
 	this.stop_pending = false;
 	this.omg_stop = false;
 
+	// The default mode is "normal" (feed the queue with constant movement along a vector)
 	if(mode === 'raw') {
 		this.mode = 'raw';
 	} else {
@@ -59,6 +61,8 @@ function ManualDriver(drv, st, mode) {
 	this.current_speed = null;
 	this.completeCallback = null;
 	this.status_handler = this._onG2Status.bind(this);
+
+	// Setup to process status reports from G2
 	this.driver.on('status',this.status_handler);
 }
 util.inherits(ManualDriver, events.EventEmitter);
@@ -68,16 +72,30 @@ util.inherits(ManualDriver, events.EventEmitter);
 // TODO: Pass the setup stuff in?  (In case runtimes want to do things differently?)
 // Returns a promise that resolves on exit
 ManualDriver.prototype.enter = function() {
+
 	if(this.entered) { return; }
-	if(this.mode === 'normal') {
-		var jerkXY = config.machine._cache.manual.xy_jerk || 250;
-		var jerkZ = config.machine._cache.manual.z_jerk || 250;
-	    this.stream.write('M100.1 ({xjm:'+jerkXY+'})\n');
-	    this.stream.write('M100.1 ({yjm:'+jerkXY+'})\n');
-	    this.stream.write('M100.1 ({zjm:'+jerkZ+'})\n');	
-		//this.stream.write('M100.1 ({zl:0})\nM0\n G4 P0.1\n');	
-		this.stream.write('M100.1 ({zl:0})\nM0\nG91\n G0 X0 Y0 Z0\n');	
-		this.driver.prime();		
+
+
+	switch(this.mode) {
+		case 'normal':
+			// Retrieve the manual-mode-specific jerk settings and apply them (temporarily) for this manual session
+			var jerkXY = config.machine._cache.manual.xy_jerk || 250;
+			var jerkZ = config.machine._cache.manual.z_jerk || 250;
+		    this.stream.write('M100.1 ({xjm:'+jerkXY+'})\n');
+		    this.stream.write('M100.1 ({yjm:'+jerkXY+'})\n');
+		    this.stream.write('M100.1 ({zjm:'+jerkZ+'})\n');	
+			// Turn off z-lift, set incremental mode, and send a 
+			// "dummy" move to prod the machine into issuing a status report
+			this.stream.write('M100.1 ({zl:0})\nM0\nG91\n G0 X0 Y0 Z0\n');	
+			this.driver.prime();		
+			break;
+		case 'raw':
+			this.stream.write('M100.1 ({zl:0})\nM0\n');
+			this.driver.prime();		
+		break;
+		default:
+			log.warn('Unknown manual drive mode on enter: ' + this.mode);
+		break;
 	}
 	this.entered = true;
 	this.deferred = Q.defer();
@@ -95,11 +113,20 @@ ManualDriver.prototype.exit = function() {
 		this.stopMotion();
 	} else {
 		log.debug('Executing immediate exit')
-		if(this.mode === 'normal') {
-			config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
-			    //log.info("Finished running stream: " + stat);
-			    this._done();
-	        }.bind(this));			
+		switch(this.mode) {
+			case 'normal':
+				config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
+				    this._done();
+		        }.bind(this));			
+		        break;
+			case 'raw':
+				config.driver.restoreSome(['zl'], function() {
+				    this._done();
+		        }.bind(this));			
+				break;
+			default:
+				log.warn('Unknown manual drive mode on exit: ' + this.mode);
+				break;
 		}
 		this.driver.removeListener('status', this.status_handler);
 		this.exited = true;
@@ -118,49 +145,51 @@ ManualDriver.prototype.startMotion = function(axis,  speed, second_axis, second_
 	var second_dir = second_speed < 0 ? -1.0 : 1.0;
 	speed = Math.abs(speed);
 
+	// Raw mode doesn't accept start motion command
+	if(this.mode != 'normal') {
+		throw new Error('Cannot start movement in ' + this.mode + ' mode.');
+	}
+
 	// Don't start motion if we're in the middle of stopping (can do it from stopped, though)
 	if(this.stop_pending || this.omg_stop) {
 		return;
 	}
-
-	if(this.mode === 'normal') {
-		// If we're moving already, maintain motion
-		if(this.moving) {
-			if(axis === this.currentAxis && speed === this.currentSpeed) {
-				this.maintainMotion();
-			} else {
-				this.stopMotion();
-				// TODO Deal with direction changes here
-			}
+	
+	// If we're moving already, maintain motion
+	if(this.moving) {
+		if(axis === this.currentAxis && speed === this.currentSpeed) {
+			this.maintainMotion();
 		} else {
-			// Deal with one axis vs 2 (See TODO above)
-			if (second_axis){
-				this.second_axis = second_axis;
-				this.second_currentDirection = second_dir;
-			} else {
-				this.second_axis = null;
-				this.second_currentDirection = null;
-			}
-			// Set Heading
-			this.currentAxis = axis;
-			this.currentSpeed = speed;
-			this.currentDirection = dir;
-
-			// Flag that we're kicking off a move
-			this.moving = this.keep_moving = true;
-
-			// Length of the moves we pump the queue with, based on speed vector
-			this.renewDistance = speed*(T_RENEW/60000)*SAFETY_FACTOR;                
-			
-			// Make sure we're in relative moves and the speed is set
-			this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
-
-			// Start pumping moves
-			this._renewMoves("start");
+			this.stopMotion();
+			// TODO Deal with direction changes here
 		}
 	} else {
-		throw new Error('Cannot start movement in ' + this.mode + ' mode.');
-	}// if(this.mode === 'normal')
+		// Deal with one axis vs 2 (See TODO above)
+		if (second_axis){
+			this.second_axis = second_axis;
+			this.second_currentDirection = second_dir;
+		} else {
+			this.second_axis = null;
+			this.second_currentDirection = null;
+		}
+		// Set Heading
+		this.currentAxis = axis;
+		this.currentSpeed = speed;
+		this.currentDirection = dir;
+
+		// Flag that we're kicking off a move
+		this.moving = this.keep_moving = true;
+
+		// Length of the moves we pump the queue with, based on speed vector
+		this.renewDistance = speed*(T_RENEW/60000)*SAFETY_FACTOR;                
+		
+		// Make sure we're in relative moves and the speed is set
+		this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
+
+		// Start pumping moves
+		this._renewMoves("start");
+	}
+
 }
 
 // Set the flag that indicates to this driver that motion is still requested along the current heading
@@ -343,6 +372,7 @@ ManualDriver.prototype.isMoving = function() {
 // Internal function called to "pump" moves into the queue
 // This function is called periodically until a stop is requested, or the users intent to continue moving evaporates.
 // The idea behind this function is that it is called at an interval that outpaces the 
+//   reason - The reason this functon is being called (used for debug purposes)
 ManualDriver.prototype._renewMoves = function(reason) {
 	if(this.mode === 'normal') {	
 		if(this.moving && this.keep_moving) {
