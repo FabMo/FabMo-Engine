@@ -9,6 +9,61 @@ define(function(require) {
 
     /********** Layout Resize Functions **********/
 
+    var openDROPush = function() {
+        $('#right-menu').css('right', '0');
+        $('#app-client-container').css('padding-right', '218px');
+        $('#app_menu_container').css('padding-right', '220px');
+        $('#waiting_container').css('padding-right', '220px');
+        $('#right-position-container').addClass('dropped');
+     }
+     var closeDROPush = function() {
+        $('#right-menu').css('right', '-222px');
+        $('#app-client-container').css('padding-right', '0px');
+        $('#app_menu_container').css('padding-right', '0px');
+        $('#waiting_container').css('padding-right', '0px');
+        $('#right-position-container').removeClass('dropped');
+    }
+     var openDROover = function() {
+        $('#right-menu').css('right', '0');
+        $('#right-position-container').addClass('dropped');
+    }
+     var closeDROover = function() {
+        $('#right-menu').css('right', '-222px');
+        $('#right-position-container').removeClass('dropped');
+    }
+     var setRightMenuBehavior = function() {
+        if ($('#right-menu').css('right') === '0px') {
+            if ($(window).width() < 900) {
+                closeDROover();
+            } else {
+                closeDROPush();
+            }
+        } else {
+            if ($(window).width() < 900) {
+                openDROover();
+            } else {
+                openDROPush();
+            }
+        }
+    }
+    var rightMenuLoad = function() {
+        if ($(window).width() > 900) {
+            openDROPush();
+        } else if ($(window).width() < 900) {
+            $('#app-client-container').css('padding-right', '0px');
+            $('#app_menu_container').css('padding-right', '0px');
+            $('#waiting_container').css('padding-right', '0px');
+        }
+    }
+    $('.DRO-button').on('click', function(evt) {
+        setRightMenuBehavior();
+        evt.preventDefault();
+    });
+
+    
+    
+    
+
    
 
     var resizedoc = function() {
@@ -63,6 +118,11 @@ define(function(require) {
         //Set size of app container (so footer does not hide content)
         $('.main-section').css('padding-bottom',$('.footBar').css('height'));
 
+        if ($('.axi').is(':focus')){
+        } else {
+           rightMenuLoad();
+       }
+
 
 
         calcLeftPadding();
@@ -91,7 +151,7 @@ define(function(require) {
             $("#left-menu").removeClass("colapsed");
 
             if ($("body").width() < 640) {
-                $('.collapseLeft').show(); // show tinted screen to close menu
+                $('.colapseLeft').show(); // show tinted screen to close menu
             }
         }
 
@@ -99,13 +159,13 @@ define(function(require) {
         else {
             $("#widget-links-general").addClass("colapsed");
             $("#left-menu").addClass("colapsed");
-            $('.collapseLeft').hide();
+            $('.colapseLeft').hide();
 
         }
         //Handle collapse of left
-        $('.collapseLeft').click(function(evt) {
+        $('.colapseLeft').click(function(evt) {
             evt.preventDefault();
-            $('.collapseLeft').hide();
+            $('.colapseLeft').hide();
             $('#left-menu').addClass("colapsed");
             $('#widget-links-general').addClass("colapsed");
         });
@@ -186,7 +246,7 @@ define(function(require) {
 
     /********** Document Ready Init **********/
     $(document).ready(function() {
-
+        rightMenuLoad();
         resizedoc();
         //If size of the screen change, we resize the main & app container
         checkifTour();
@@ -225,5 +285,10 @@ define(function(require) {
     return {
         'resizedocclick': resizedocclick,
         'resizedoc': resizedoc,
+        'colapseMenu': colapseMenu,
+        'openDROover': openDROover,
+        'closeDROover': closeDROover,
+        'openDROPush': openDROPush,
+        'closeDROPush': closeDROPush
     }
 })

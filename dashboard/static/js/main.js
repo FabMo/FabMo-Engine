@@ -153,7 +153,6 @@ require("../css/toastr.min.css");
                                 keyboard.setEnabled(false);
                                 $('#keypad').hide();
                                 $('.go-to-container').show();
-                                $('.go-to-container').css('display', 'flex');
                         } else {
                             $('.manual-stop').hide();
                             $('.go-to, .set-coordinates').show();
@@ -357,12 +356,12 @@ require("../css/toastr.min.css");
     function setupKeypad() {
         var keypad = new Keypad('#keypad');
         keypad.on('go', function(move) {
-            keyPressed = true;
-            if (move.second_axis) {
-                dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1), move.second_axis, move.second_dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
-            } else if(move.axis === 'z') {
-                dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) / 2 || 0.1));
-            }   else {
+            console.log(move.axis);
+            if(move.axis === 'z_fast'){
+                dashboard.engine.manualStart('z', move.dir * 60.0 * (1));
+            } else if(move.axis === 'z_slow'){
+                dashboard.engine.manualStart('z', move.dir * 60.0 * (0.1));
+            } else if (move) {
                 dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
             }
         });
@@ -596,7 +595,6 @@ require("../css/toastr.min.css");
         e.stopPropagation();
         $('#keypad').hide();
         $('.go-to-container').show();
-        $('.go-to-container').css('display', 'flex');
     });
 
     $('.axi').on('focus', function(e) {

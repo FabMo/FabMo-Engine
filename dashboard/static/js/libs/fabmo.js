@@ -256,6 +256,16 @@ FabMoDashboard.prototype._simulateCall = function(name, data, callback) {
 			callback(null, {})
 		break;
 
+		case "showDRO":
+			text.textContent = "DRO Shown.";
+			showToaster(toast);
+		break;
+
+		case "hideDRO":
+			text.textContent = "DRO Hidden.";
+			showToaster(toaster);
+		break;
+
 		case "runGCode":
 			text.textContent = "GCode sent to tool: " + data;
 		    showToaster(toast);
@@ -390,6 +400,27 @@ FabMoDashboard.prototype.getAppInfo = function(callback) {
  */
 FabMoDashboard.prototype.launchApp = function(id, args, callback) {
 	this._call("launchApp", {'id': id, 'args':args}, callback);
+}
+
+/**
+ * Show the DRO (Digital ReadOut) in the dashboard if it is not already shown.
+ *
+ * @method showDRO
+ * @param {function} callback Called once the DRO has been displayed.
+ * @param {Error} callback.err Error object if there was an error.
+ */
+FabMoDashboard.prototype.showDRO = function(callback) {
+	this._call("showDRO", null, callback);
+}
+ /**
+ * Hide the DRO (Digital ReadOut) in the dashboard if it is not already hidden.
+ *
+ * @method hideDRO
+ * @param {function} callback Called once the DRO has been hidden.
+ * @param {Error} callback.err Error object if there was an error.
+ */
+FabMoDashboard.prototype.hideDRO = function(callback) {
+	this._call("hideDRO", null, callback);
 }
 
 

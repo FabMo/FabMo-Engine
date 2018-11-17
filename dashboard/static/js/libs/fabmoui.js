@@ -61,12 +61,12 @@ function FabMoUI(tool, options){
 	})
 
 	$('#right-position-container').on('click', function(){
-		console.log('hey');
 		$('#dro-tab').css('width', '1em');
 		setTimeout(function(){
 			$('#dro-tab').css('width', '0.5em'); 
 		}, 200);
-		if($('.dro-dropdown').hasClass('dropped')){
+		if(!$('#right-position-container').hasClass('dropped')){
+			console.log('Ishould be removing')
 			$('.dro-dropdown').removeClass('dropped');
 			setTimeout(function(){
 				$('#right-position-container').removeClass('dropped');
@@ -239,7 +239,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 				$('.x_neg.y_neg').show();
 				$('.x_pos.y_pos').show();
 				$('.a_pos').hide();
-				$('b_pos').hide();
+				$('.b_pos').hide();
 				$('.x_pos.y_neg').show();
 				$('.b_neg').hide();
 				$('.a_neg').hide();
