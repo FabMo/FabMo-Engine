@@ -174,6 +174,7 @@ Keypad.prototype.onDrivePress = function(evt) {
 	this.target = evt.target;
 	this.setEnabled(true);
 	var e = $(evt.target);
+	console.log(e);
 	e.focus();
 	if(e.hasClass('drive-button-fixed')) {
 		this.onDriveTap(evt);
@@ -204,11 +205,18 @@ Keypad.prototype.onDrivePress = function(evt) {
 			else if(e.hasClass('y_neg')) {
 				this.start('y', -1);
 			}
-			else if(e.hasClass('z_pos')) {
-				this.start('z', 1);
+			else if(e.hasClass('z_pos_fast')) {
+				this.start('z_fast', 1);
 			}
-			else if(e.hasClass('z_neg')) {
-				this.start('z', -1);
+			else if(e.hasClass('z_pos_slow')) {
+				this.start('z_slow', 1);
+			}
+			else if(e.hasClass('z_neg_fast')) {
+				this.start('z_fast', -1);
+			}
+			else if(e.hasClass('z_neg_slow')) {
+				this.start('z_slow', -1);
+			}
 			} else if(e.hasClass('a_pos')){
 				this.start('a', 1)
 			} else if(e.hasClass('a_neg')){
@@ -224,7 +232,7 @@ Keypad.prototype.onDrivePress = function(evt) {
 		}
 	}
 
-}
+
 
 Keypad.prototype.onDriveTap = function(evt) {
 	

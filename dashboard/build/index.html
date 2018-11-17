@@ -60,7 +60,7 @@
           C301.2,364.8,322.7,356.4,340.5,338.6z"/>
       </svg>
     </div>
-    <div class="collapseLeft"></div>
+    <div class="colapseLeft"></div>
     <div id="main" class="off-canvas-wrap" data-offcanvas>
       <div class="inner-wrap">
         <!-- Nav-Bar & Buttons for sliding menus -->
@@ -93,7 +93,7 @@
           </section>
           <!-- ***** Tool Position Section ***** -->
           
-          <section class="right show-for-small-up fabmo-status" id="right-position-container">
+          <section class="right DRO-button show-for-small-up fabmo-status" id="right-position-container">
             <div id="dro-tab"></div>
             <div >
               <div class="xaxis machine-pos" ><label>X : <span class="posx">X.XXX</span></label></div>
@@ -125,13 +125,7 @@
               <div class="out7 output off"> 7 </div>
               <div class="out8 output off"> 8 </div>
             </div>
-            <div class="dro-dropdown">
-              <div class="xaxis machine-pos-large" ><label>X : <span class="posx">X.XXX</span></label></div>
-              <div class="yaxis machine-pos-large" ><label>Y : <span class="posy">Y.YYY</span></label></div>
-              <div class="zaxis machine-pos-large" ><label>Z : <span class="posz">Z.ZZZ</span></label></div>
-              <div class="aaxis machine-pos-large" ><label>A : <span class="posa">A.AAA</span></label></div>
-              <div class="baxis machine-pos-large" ><label>B : <span class="posb">B.BBB</span></label></div>
-            </div>
+
 
           </section>
 
@@ -150,12 +144,25 @@
             <li><a href="#/app/config" id="icon_settings"><span>Configuration</span></a></li>
             <li><a href="#/app/macros" id="icon_folder"><span>Macros</span></a></li>
             <li><a href="#/app/network-manager" id="icon_network"><span>Network</span></a></li>
-            <li><a class="manual-drive-enter"  id="icon_drive"><span>Drive</span></a></li>
             <li><a id="icon_sign_out"><span>Sign Out</span></a></li>
             <li><a href="#" id="icon_colapse"><span>Collapse</span></a></li>
           </ul>
         </div>
+        <div class="drive-enter manual-drive-enter" ><div id="icon_joystick"></div></div>
       </aside>
+
+      <aside class="DRO" id="right-menu">
+          <div class="dro-dropdown">
+              <div class="xaxis machine-pos-large" ><label>X : <span class="posx">X.XXX</span></label></div>
+              <div class="yaxis machine-pos-large" ><label>Y : <span class="posy">Y.YYY</span></label></div>
+              <div class="zaxis machine-pos-large" ><label>Z : <span class="posz">Z.ZZZ</span></label></div>
+              <div class="aaxis machine-pos-large" ><label>A : <span class="posa">A.AAA</span></label></div>
+              <div class="baxis machine-pos-large" ><label>B : <span class="posb">B.BBB</span></label></div>
+            </div>
+        <!-- ********** Tool Position Widget ********** -->
+
+      </aside>
+
       <!-- App Menu -->
       <section class="main-section">
         <div id="modal_container" style="display:none;"></div>
@@ -197,45 +204,47 @@
       <div class="manual-drive-message">This is where a message will go</div>
       <div class="manual-drive-container">
         <div class="read-out-container">
-          <div class="axis xaxis">
-            <label>
-            X
-            </label>
-            <input id="X" class="posx pos doselect modal-axi axi" maxlength="6" type="number">
-            <span class="units">&nbsp;</span>
-            <div class="zero-button zero-x">zero</div>
-          </div>
-          <div class="axis yaxis">
+          <div class="read-out-wrapper">
+            <div class="axis xaxis">
               <label>
-              Y
+              X
               </label>
-              <input id="Y" class="posy pos doselect modal-axi axi"  maxlength="6" type="number">
+              <input id="X" class="posx pos doselect modal-axi axi" maxlength="6" type="number">
               <span class="units">&nbsp;</span>
-              <div class="zero-button zero-y">zero</div>
-          </div>
-          <div class="axis zaxis">
-              <label class="noselect">
-              Z
-              </label>
-              <input id="Z" class="posz pos doselect modal-axi axi" maxlength="6" type="number">
-              <span class="units">&nbsp;</span>
-              <div class="zero-button zero-z">zero</div>
-          </div>
-          <div class="axis aaxis">
-              <label class="noselect">
-              A
-              </label>
-              <input id="A" class="posa pos doselect modal-axi axi" maxlength="6" type="number">
-              <span class="rotunits">o&nbsp;</span>
-              <div class="zero-button zero-a">zero</div>
-          </div>
-          <div class="axis baxis">
-              <label class="noselect">
-              B
-              </label>
-              <input id="B" class="posb pos doselect modal-axi axi" maxlength="6" type="number">
-              <span class="rotunits">o&nbsp;</span>
-              <div class="zero-button zero-b">zero</div>
+              <div class="zero-button zero-x">zero</div>
+            </div>
+            <div class="axis yaxis">
+                <label>
+                Y
+                </label>
+                <input id="Y" class="posy pos doselect modal-axi axi"  maxlength="6" type="number">
+                <span class="units">&nbsp;</span>
+                <div class="zero-button zero-y">zero</div>
+            </div>
+            <div class="axis zaxis">
+                <label class="noselect">
+                Z
+                </label>
+                <input id="Z" class="posz pos doselect modal-axi axi" maxlength="6" type="number">
+                <span class="units">&nbsp;</span>
+                <div class="zero-button zero-z">zero</div>
+            </div>
+            <div class="axis aaxis">
+                <label class="noselect">
+                A
+                </label>
+                <input id="A" class="posa pos doselect modal-axi axi" maxlength="6" type="number">
+                <span class="rotunits">o&nbsp;</span>
+                <div class="zero-button zero-a">zero</div>
+            </div>
+            <div class="axis baxis">
+                <label class="noselect">
+                B
+                </label>
+                <input id="B" class="posb pos doselect modal-axi axi" maxlength="6" type="number">
+                <span class="rotunits">o&nbsp;</span>
+                <div class="zero-button zero-b">zero</div>
+            </div>
           </div>
         </div>
         <div class="manual-right-side-container">
@@ -263,7 +272,7 @@
                     <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
                   </div>
                   <div class="rot_button a_pos keypad-button drive-button square">
-                    +A
+                    <span>+A</span>
                   </div>
                 </div>
                 <div class="keypad-cell">
@@ -276,7 +285,7 @@
                     <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
                   </div>
                   <div class="rot_button b_pos keypad-button drive-button square">
-                    +B
+                    <span>+B</span>
                   </div>
                 </div>
                 <div class="keypad-cell">
@@ -298,7 +307,7 @@
                     <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
                   </div>
                   <div class="rot_button a_neg keypad-button drive-button square">
-                    -A
+                    <span>-A</span>
                   </div>
                 </div>
                 <div class="keypad-cell">
@@ -311,17 +320,23 @@
                     <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
                   </div>
                   <div class="rot_button b_neg keypad-button drive-button square">
-                    -B
+                    <span>-B</span>
                   </div>
                 </div>
               </div>
               <div class="z-pad">
+                <div class="keypad-bar-small top">
+                  <div class="z_pos_fast keypad-button drive-button bar"><i class="fa fa-caret-up z-fa-double"></i><i class="fa fa-caret-up z-fa-double"></i></div>
+                </div>
                 <div class="keypad-bar top">
-                  <div class="z_pos keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-up"></i></div>
+                  <div class="z_pos_slow keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-up"></i></div>
                 </div>
                 <!-- <div class='button-border top'></div> -->
                 <div class="keypad-bar bottom">
-                  <div class="z_neg keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-down"></i></div>
+                  <div class="z_neg_slow keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-down"></i></div>
+                </div>
+                <div class="keypad-bar-small bottom">
+                  <div class="z_neg_fast keypad-button drive-button bar"><i class="fa fa-caret-down z-fa-double"></i><i class="fa  fa-caret-down z-fa-double"></i></div>
                 </div>
               </div>
             </div>
