@@ -356,11 +356,12 @@ require("../css/toastr.min.css");
     function setupKeypad() {
         var keypad = new Keypad('#keypad');
         keypad.on('go', function(move) {
-            console.log(move.axis);
-            if(move.axis === 'z_fast'){
-                dashboard.engine.manualStart('z', move.dir * 60.0 * (1));
+            if (move.second_axis) {
+                dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1), move.second_axis, move.second_dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
+            } else if(move.axis === 'z_fast'){
+                dashboard.engine.manualStart('z', move.dir * 60.0 * (engine.config.machine.manual.z_fast_speed));
             } else if(move.axis === 'z_slow'){
-                dashboard.engine.manualStart('z', move.dir * 60.0 * (0.1));
+                dashboard.engine.manualStart('z', move.dir * 60.0 * (engine.config.machine.manual.z_slow_speed));
             } else if (move) {
                 dashboard.engine.manualStart(move.axis, move.dir * 60.0 * (getManualMoveSpeed(move) || 0.1));
             }

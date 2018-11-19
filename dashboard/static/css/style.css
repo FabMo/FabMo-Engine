@@ -1285,6 +1285,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	left: 50%;
 	margin-right: -50%;
 	transform: translate(-50%, -47%);
+	pointer-events: none;
 }
 
 
@@ -1736,7 +1737,8 @@ input[type='range']:focus {
     display: block;
     padding: 0;
     margin: 0;
-    height: 5px;
+	height: 5px;
+	pointer-events: none;
 }
 
 .manual-right-side-container {

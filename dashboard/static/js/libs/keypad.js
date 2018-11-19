@@ -216,7 +216,6 @@ Keypad.prototype.onDrivePress = function(evt) {
 			}
 			else if(e.hasClass('z_neg_slow')) {
 				this.start('z_slow', -1);
-			}
 			} else if(e.hasClass('a_pos')){
 				this.start('a', 1)
 			} else if(e.hasClass('a_neg')){
@@ -231,6 +230,7 @@ Keypad.prototype.onDrivePress = function(evt) {
 			e.addClass('drive-button-active').removeClass('drive-button-inactive');
 		}
 	}
+}
 
 
 
