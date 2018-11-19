@@ -1,8 +1,16 @@
+/*
+ * dashboard/index.js
+ *
+ * This module defines the functions and data for managing dashboard apps
+ */
 app_manager = require('./app_manager');
 config = require('../config');
 util = require('../util');
 path = require('path');
 
+// Instantiate the app manager
+// Call only once at startup
+// TODO - callback really doesn't do anything here.  Look at callback behavior
 exports.configure = function(callback) {
 	manager = new app_manager.AppManager({
 		app_directory : config.getDataDir('apps'),
@@ -11,6 +19,9 @@ exports.configure = function(callback) {
 	exports.appManager = manager;
 	setImmediate(callback, null);
 };
+
+// The rest of these functions just define the singleton app manager interface
+// TODO - this could be simplified
 
 exports.loadApps = function(callback) {
 	exports.appManager.loadApps(callback);

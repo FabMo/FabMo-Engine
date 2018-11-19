@@ -1,3 +1,8 @@
+/*
+ * g2_config.js
+ *
+ * This module defines the configuration object that manages the settings in G2.
+ */
 async = require('async');
 util = require('util');
 Config = require('./config').Config;
@@ -17,6 +22,9 @@ G2Config.prototype.init = function(driver, callback) {
 	Config.prototype.init.call(this, callback);
 }
 
+// Change the current unit system to the provided value.
+//  newUnits - The new unit system (0=mm, 1=in)
+// Note that the units are set by setting the 'unit' parameter, which is unique to the FabMo variant of G2
 G2Config.prototype.changeUnits = function(newUnits, callback) {
 	this.driver.get('unit', function(err, currentUnits){
 		if(err){
@@ -45,6 +53,9 @@ G2Config.prototype.changeUnits = function(newUnits, callback) {
 
 }
 
+// Retrieve all of the configuration parameters from G2.
+// Keys to retrieve are taken from the cache
+//   callback - Called with an object containing all values retrieved
 G2Config.prototype.getFromDriver = function(callback) {
 	var keys = Object.keys(this._cache)
 	this.driver.get(Object.keys(this._cache), function(err, values) {
@@ -65,7 +76,9 @@ G2Config.prototype.getFromDriver = function(callback) {
 	});
 }
 
-// Set in the cache and on disk, without sending the values down to G2
+// Get values from G2, set in the cache and on disk.
+//       keys - List of keys to retrieve
+//   callback - Called with updated data, or error
 G2Config.prototype.reverseUpdate = function(keys, callback) {
 	this.driver.get(keys, function(err, data) {
 		if (err) {
@@ -79,7 +92,9 @@ G2Config.prototype.reverseUpdate = function(keys, callback) {
 	}.bind(this));
 }
 
-// Update the configuration with the data provided (data is just an object with configuration keys/values)
+// Update the configuration with the data provided.  Values set are synced with G2
+//       data - Object mapping keys to update to values
+//   callback - Called with an object mapping keys to all values updated (after sync with G2)
 G2Config.prototype.update = function(data, callback) {
 	keys = Object.keys(data);
 	// TODO: We can probably replace this with a `setMany()`
@@ -117,10 +132,15 @@ G2Config.prototype.update = function(data, callback) {
 	);
 };
 
+// Write all cached values to G2
+//   callback - Called with the updated cache, or error
 G2Config.prototype.restore = function(callback) {
 	this.update(this._cache, callback);
 }
 
+// Write only the list of provided values to G2
+//       keys - list of keys to restore
+//   callback - Called with an object containing the values updated
 G2Config.prototype.restoreSome = function(keys, callback) {
     cache = {};
 	keys.forEach(function(key) {
@@ -129,9 +149,11 @@ G2Config.prototype.restoreSome = function(keys, callback) {
 	this.update(cache, callback);
 }
 
-// Status reports are special, and their format must be whats expected for the machine/runtime environments
-// to work properly.
+// Status reports are special, and their format must be whats expected for the 
+// machine/runtime environments to work properly.
 // TODO: Move this data out into a configuration file, perhaps.
+// Configure the status reports (indicating to G2 what is to be reported)
+//   callback - Called as soon as the command is issued (Does not wait for a response)
 G2Config.prototype.configureStatusReports = function(callback) {
 	if(this.driver) {
 	this.driver.command({"sr":{

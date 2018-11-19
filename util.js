@@ -1,3 +1,11 @@
+/*
+ * util.js
+ * 
+ * This module is full of functions that are of general interest.
+ *
+ * Note that this function bears the same name as node's built-in util module.
+ * This one is require()d with require('./util') while the built-in one with require('util')
+ */
 var path = require('path');
 var log = require('./log').logger('util');
 var fs = require('fs');
@@ -12,6 +20,7 @@ var mime = require('mime');
 var restify = require('restify');
 var errors = require('restify');
 
+// These are consulted by various upload functions
 ALLOWED_EXTENSIONS = ['.nc','.g','.sbp','.gc','.gcode'];
 ALLOWED_APP_EXTENSIONS = ['.zip', '.fma'];
 
@@ -30,12 +39,16 @@ function listify(x) {
     }
 }
 
+// Execute a command in the shell
+//   callback - gets the output of the command (stdout)
 function doshell(command, callback){
     exec(command, function(error, stdout, stderr) {
         callback(stdout);
     });
 }
 
+// Call the 'sync' function (linux)
+// Careful - this function waits for a second before returning
 function diskSync(callback) {
     doshell('sync',function() {
 	setTimeout(function() {
@@ -44,6 +57,10 @@ function diskSync(callback) {
     });
 }
 
+// Extend an object with the properties of another object.
+// force - If true, create new keys in a if they do not already exist.  Otherwise, don't.
+// Example:
+//   extend( {a:1,b:2,c:{d:3}}, {a:2,c:{d:4}}) = {a:2,b:2,c:{d:4}}
 function extend(a,b, force) {
     for(k in b) {
         if(a.hasOwnProperty(k) || force) {
@@ -64,17 +81,33 @@ function extend(a,b, force) {
     }
 }
 
+// Return the filename given a full path
+// TODO - this seems senseless - can't we just use the path module where needed?
 exports.filename = function(pathname) {
     parts = pathname.split(path.sep);
     return parts[parts.legnth-1];
 };
 
+// Create and return a unique filename with the same extension as the provided filename
+//   filename - an existing filename whose extension will be copied for the new filename
+//    Example: 
+//      createUniqueFilename('/opt/fabmo/example.sbp') -> '12345.sbp'
+//
 var createUniqueFilename = function (filename) {
     var extension = (/[.]/.exec(filename)) ? /[^.]+$/.exec(filename) : undefined;
     return uuid.v1() + (extension ? ('.' + extension) : '');
 };
 
 // Simple queue, faster than using array.shift
+// Example: 
+//    var q = new Queue()
+//    q.enqueue('a')
+//    q.enqueue('b')
+//    q.enqueue('c')
+//
+//    q.dequeue() -> 'a'
+//    q.multiDequeue(2) -> ['b','c']
+//
 function Queue(){
 
   var queue  = [];
@@ -107,6 +140,11 @@ function Queue(){
     return item;
 
   };
+
+  // Return up to count items from the queue (in the order they would be retrieved if dequeued)
+  //   count - The number of items to return
+  //           Note: If there are fewer than the number of requested items in the queue
+  //                 all items in the queue will be returned.
   this.multiDequeue = function(count) {
 
     // If asking for more items than are in the queue, return everything
@@ -136,17 +174,11 @@ function Queue(){
 	};
 }
 
+// Return true if this is an allowable NC file
+// TODO - this sort of functionality should really be moved to the runtimes
+// TODO - function name should be camel case in keeping with coding conventions
 function allowed_file(filename){
     return isGCodeFile(filename) || isOpenSBPFile(filename);
-}
-
-function allowedAppFile(filename) {
-  if (ALLOWED_APP_EXTENSIONS.indexOf(path.extname(filename).toLowerCase()) !== -1) {
-    return true;
-  }
-  else {
-    return false;
-  }
 }
 
 function isGCodeFile(pathname) {
@@ -157,10 +189,21 @@ function isOpenSBPFile(pathname) {
     return (OPENSBP_EXTENSIONS.indexOf(path.extname(pathname).toLowerCase()) !== -1)
 }
 
+// Return true if this is an allowable file to contain an app.
+// TODO - This check should live in the app manager, really.
+function allowedAppFile(filename) {
+  if (ALLOWED_APP_EXTENSIONS.indexOf(path.extname(filename).toLowerCase()) !== -1) {
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
 /**
  * Move a file from src to dest, avoiding cross-device rename failures.
  * This method will first try fs.rename and call the supplied callback if it succeeds. Otherwise
- * it will pump the conent of src into dest and unlink src upon completion.
+ * it will pipe the conent of src into dest and unlink src upon completion.
  *
  * This might take a little more time than a single fs.rename, but it avoids error when
  * trying to rename files from one device to the other.
@@ -325,6 +368,15 @@ function serveStatic(opts) {
 }
 
 // TODO better error handling here
+// TODO bad argument name
+// Return a tree structure that represents a walk of the specified directory
+//   filename - The name of the directory to walk ()
+// Each node in the returned object has the following properties:
+//     path : The path of the object
+//     text : The filename only
+//     name : The filename (again?  TODO: Why?)
+//     type : 'file' for files, 'dir' for directories
+// children : A list of child nodes, if this is a directory
 function walkDir(filename) {
     var stats = fs.lstatSync(filename),
         info = {
@@ -348,6 +400,10 @@ function walkDir(filename) {
     return info;
 }
 
+// Get the size of this file
+//   path - Path to check
+//     cb - Callback gets the size as an integer number of bytes, or error
+// TODO - is this really needed?
 function getSize (path, cb) {
     fs.stat(path, function (err, stats) {
         if(err) {
@@ -358,6 +414,8 @@ function getSize (path, cb) {
     });
 }
 
+// TODO: I am pretty sure this function is terrible.
+// Look at where it's used, and re-evaluate the need for it.  I think it should be factored out.
 function fixJSON(json) {
     var retval = {};
 
@@ -384,6 +442,14 @@ function fixJSON(json) {
     return retval;
 }
 
+// Watchdog object
+// Simple object that keeps a recurring timer that, if it expires, 
+// will exit the application.  Timer can be refreshed by the reset() method.
+// Works like a watchdog in an embedded system that resets the CPU if a process runs away.
+
+// TODO:  Not sure that this is currently used, but it doesn't do anything. (exit stuff commented out)
+//        I think a more useful watchdog would accept a callback in its constructor, and simply call that
+//        in the case that it expires. 
 function Watchdog(timeout,exit_code){
     var watchdog_flag;
     var watchdog_timeout=timeout||1000;
@@ -418,11 +484,13 @@ function Watchdog(timeout,exit_code){
     };
 }
 
+// Convenience function for getting the client IP address from a restify request.
 var getClientAddress = function (req) {
         return (req.headers['x-forwarded-for'] || '').split(',')[0]
         || req.connection.remoteAddress;
 };
 
+// Check to see if something is a number (strings that parse to numbers, for example)
 var isANumber = function(n) {
     try {
         var n = Number(n);
@@ -432,14 +500,17 @@ var isANumber = function(n) {
     }
 }
 
+// Unit conversion
 var mm2in = function(mm) {
   return mm/25.4;
 }
 
+// Unit conversion
 var in2mm = function(inch) {
   return inch*25.4;
 }
 
+// Unit type normalizer
 var unitType = function(u) {
   u = String(u).trim().toLowerCase()
   switch(u) {

@@ -1,3 +1,24 @@
+/*
+ * machine.js
+ *
+ * Defines the "machine model" which is an abstraction of the physical machine that lives
+ * sort of one layer up from the G2 driver.  It maintains a "machine state" that is similar to, but
+ * not the same as G2s internal state, and provides functions for high level machine operations.
+ *
+ * The machine model includes the important concept of runtimes, which are individual software components
+ * that get control of the machine for performing certain actions.  Runtimes are important for compartmentalizing
+ * different ways of controlling the machine.  Manually driving the machine with a pendant, for example is
+ * a very different sort of activity from running a g-code file, so those two activities are implemented 
+ * by two separate runtimes that each get a chance to take control of the machine when it is time to perform
+ * their respective tasks.
+ * 
+ * This module also sort of "meta manages" the motion systems state.  An example
+ * of this is that G2 has digital inputs defined, and can specify their input mode and basic function, but the 
+ * machine model might layer some additional function on top of them, such as their higher-level application
+ * - perhaps acting as a door interlock, a tool release button, etc.
+ *
+ * The machine model is a singleton.  There is only ever one of them, which is instantiated by the connect() method.
+ */
 var g2 = require('./g2');
 var util = require('util');
 var events = require('events');
@@ -16,16 +37,21 @@ var canResume = false;
 var clickDisabled = false;
 var interlockBypass = false;
 
-
-
+// Load up all the runtimes that are currently defined
+// TODO - One day, a folder-scan and auto-registration process might be nice here, this is all sort of hand-rolled.
 var GCodeRuntime = require('./runtime/gcode').GCodeRuntime;
 var SBPRuntime = require('./runtime/opensbp').SBPRuntime;
 var ManualRuntime = require('./runtime/manual').ManualRuntime;
 var PassthroughRuntime = require('./runtime/passthrough').PassthroughRuntime;
 var IdleRuntime = require('./runtime/idle').IdleRuntime;
 
+// Instantiate a machine, connecting to the serial port specified in the engine configuration.
+// TODO: We probably don't need special keys in the config for each platform anymore.  Since the engine
+//       does its first-time config platform-detecting magic (See engine.js) these ports are likely to
+//       be filled with sensible defaults
 function connect(callback) {
 
+	// TODO: These are hardwired for a time when there were two USB channels - there is only one, now.
 	switch(PLATFORM) {
 
 		case 'linux':
@@ -50,6 +76,7 @@ function connect(callback) {
 			break;
 	}
 	if(control_path) {
+		// TODO - I dunno, this is sort of a weird pattern
 		exports.machine = new Machine(control_path, callback);
 	} else {
 		typeof callback === "function" && callback('No supported serial path for platform "' + PLATFORM + '"');
@@ -60,9 +87,6 @@ function Machine(control_path, callback) {
 
 	// Handle Inheritance
 	events.EventEmitter.call(this);
-
-	this.fireButtonDebounce = false;
-	this.APCollapseTimer = null;
 
 	// Instantiate driver and connect to G2
 	this.status = {
@@ -91,23 +115,28 @@ function Machine(control_path, callback) {
 		unit : 'mm',
 		line : null,
 		nb_lines : null,
-		auth : false
+		auth : false,
+		hideKeypad : false
 	};
+
+	this.fireButtonDebounce = false;
+	this.APCollapseTimer = null;
 	this.quit_pressed = 0;
 	this.fireButtonPressed =0; 
 	this.info_id = 0;
 	this.action = null;
 	this.interlock_action = null;
 	
+	// Instantiate and connect to the G2 driver using the port specified in the constructor
 	this.driver = new g2.G2();
 	this.driver.on("error", function(err) {log.error(err);});
 
 	this.driver.connect(control_path, function(err, data) {
-	    // Set the initial state based on whether or not we got a valid connection to G2
+		// Most of the setup of the machine happens here, AFTER we've successfully connected to G2
 	    if(err){
-				log.error(JSON.stringify(err));
+			log.error(JSON.stringify(err));
 	    	log.warn("Setting the disconnected state");
-	    	this.die("An internal error has occurred. You must reboot your tool.")
+	    	this.die("An internal error has occurred. You must reboot your tool.")  // RealBad (tm) Error
 		    if(typeof callback === "function") {
 		    	return callback(new Error('No connection to G2'));
 		    } else {
@@ -124,17 +153,18 @@ function Machine(control_path, callback) {
 	    this.passthrough_runtime = new PassthroughRuntime();
 	    this.idle_runtime = new IdleRuntime();
 
-			this.runtimes = [
-				this.gcode_runtime,
-				this.sbp_runtime,
-				this.manual_runtime,
-				this.passthrough_runtime,
-				this.idle_runtime
-			]
+		this.runtimes = [
+			this.gcode_runtime,
+			this.sbp_runtime,
+			this.manual_runtime,
+			this.passthrough_runtime,
+			this.idle_runtime
+		]
 
-	    // Idle
+	    // The machine only has one "active" runtime at a time.  When it's not doing anything else
+	    // the active runtime is the IdleRuntime (setRuntime(null) sets the IdleRuntime)
 	    this.setRuntime(null, function(err) {
-	    if(err) {
+	    	if(err) {
                 typeof callback === "function" && callback(err);
             } else {
                 this.driver.requestStatusReport(function(result) {
@@ -153,6 +183,10 @@ function Machine(control_path, callback) {
         }.bind(this));
     }.bind(this));
 
+	// If any of the axes in G2s configuration become enabled or disabled, we want to show or hide
+	// them accordingly.  These change events happen even during the initial configuration load, so
+	// right from the beginning, we will be displaying the correct axes.
+	// TODO - I think it's good to used named callbacks, to make the code more self-documenting
     config.driver.on('change', function(update) {
     	['x','y','z','a','b'].forEach(function(axis) {
     		var mode = axis + 'am';
@@ -169,11 +203,15 @@ function Machine(control_path, callback) {
     	}.bind(this));
     }.bind(this));
 
+    // This handler deals with inputs that are selected for special functions (authorize, ok, quit, etc)
     this.driver.on('status', function(stat) {
 		var auth_input = 'in' + config.machine.get('auth_input');
 		var quit_input = 'in' + config.machine.get('quit_input');
 		var ap_input = 'in' + config.machine.get('ap_input');
 		var interlock_input = 'in' + config.machine.get('interlock_input');
+		
+		// If you press a button to pause, you're not allowed to resume or quit for at least a second
+		// (To eliminate the chance of a double-tap doing something you didn't intend.)
 		if(this.status.state === "paused"){
 			setTimeout(function(){
 				 canQuit = true;
@@ -183,6 +221,11 @@ function Machine(control_path, callback) {
 			canQuit = false;
 			canResume = false;
 		}
+
+		// Handle okay and cancel buttons.
+		// Auth = OK
+		// Quit = Cancel
+		// If okay/cancel 
 		if(auth_input === quit_input){
 			this.handleOkayCancelDual(stat, auth_input)
 		}else {
@@ -190,6 +233,8 @@ function Machine(control_path, callback) {
 			this.handleCancelButton(stat, quit_input);
 			
 		}
+
+		// Other functions
 		this.handleFireButton(stat, auth_input);
 		this.handleAPCollapseButton(stat, ap_input);
 		
@@ -197,6 +242,10 @@ function Machine(control_path, callback) {
 }
 util.inherits(Machine, events.EventEmitter);
 
+// Given the status report provided and the specified input, perform the AP Mode Collapse behavior if necessary
+// The AP mode collapse is a network failsafe.  In the case that a tool gets "lost" on a network, it can be 
+// provoked back into AP mode by holding down a specific button for some time.  Both the input to use for the
+// button and the hold-down duration are specified in the machine settings
 Machine.prototype.handleAPCollapseButton = function(stat, ap_input) {
 
 	// If the button has been pressed
@@ -204,7 +253,7 @@ Machine.prototype.handleAPCollapseButton = function(stat, ap_input) {
 		var ap_collapse_time = config.machine.get('ap_time');
 		// For the first time
 		if(!this.APCollapseTimer) {
-			// Do an AP collapse in 10 seconds, if the button is never released
+			// Do an AP collapse in ap_collapse_time seconds, if the button is never released
 			log.debug('Starting a timer for AP mode collapse (AP button was pressed)')
 			this.APCollapseTimer = setTimeout(function APCollapse() {
 				log.info("AP Collapse button held for " + ap_collapse_time + " seconds.  Triggering AP collapse.");
@@ -224,7 +273,12 @@ Machine.prototype.handleAPCollapseButton = function(stat, ap_input) {
 	}
 }
 
+// Given the status report and specified input, process the okay/cancel behavior
+// This function is called only when the ok button (authorize) and cancel button (quit)
+// are assigned to the same input.  The behavior in that case is slightly 
+// different than if they were separate. (see below)
 Machine.prototype.handleOkayCancelDual = function(stat, quit_input) {
+
 	//this may be changed to user select wether to continue or to cancel
 	if(!stat[quit_input] && this.status.state === 'paused' && canQuit && this.quit_pressed) {
 		log.info("Cancel hit!")
@@ -248,8 +302,10 @@ Machine.prototype.handleOkayCancelDual = function(stat, quit_input) {
 	this.quit_pressed = stat[quit_input];
 }
 
-
-
+// Given the status report and specified input, process the "fire" behavior
+// The machine has a state of being "armed" - either with an action, or when preparing to 
+// go into an authorized state.  Pressing "fire" while armed either executes the action, or
+// puts the system in an authorized state for the authorization period.
 Machine.prototype.handleFireButton = function(stat, auth_input) {
 	if(this.fireButtonPressed && !stat[auth_input] && this.status.state === 'armed') {
 		log.info("Fire button hit!")
@@ -258,6 +314,10 @@ Machine.prototype.handleFireButton = function(stat, auth_input) {
 	this.fireButtonPressed = stat[auth_input]
 }
 
+// Given the status report and specified input process the "okay" behavior
+// Hitting the "okay" button on the machine essentially causes it to behave as if you had
+// hit the okay/resume in the dashboard UI.  It is a convenience that prevents you from 
+// having to return to the dashboard just to confirm an action at the tool.
 Machine.prototype.handleOkayButton = function(stat, auth_input){
 	
 	if(stat[auth_input]){
@@ -315,6 +375,9 @@ Machine.prototype.die = function(err_msg) {
 	this.emit('status',this.status);
 }
 
+// This function restores the driver configuration to what is stored in the g2 configuration on disk
+// It is typically used after, for instance, a running file has altered the configuration in memory.
+// This is used to ensure that when the machine returns to idle the driver is in a "known" configuration
 Machine.prototype.restoreDriverState = function(callback) {
 	callback = callback || function() {};
 	this.driver.setUnits(config.machine.get('units'), function() {
@@ -331,7 +394,14 @@ Machine.prototype.restoreDriverState = function(callback) {
 	}.bind(this));
 }
 
-Machine.prototype.arm = function(action, timeout) {	
+// "Arm" the machine with the specified action. The armed state is abandoned after the timeout expires.  
+//   action - The action to execute when fire() is called.  Can be null. 
+//            If null, the action will be to "authorize" the tool for subsequent actions for the authorization
+//            period which is specified in the settings.
+//   timeout - The number of seconds that the system should remain armed
+Machine.prototype.arm = function(action, timeout) {
+
+	// It's a real finesse job to get authorize to play nice with interlock, etc.
 	var requireAuth = config.machine.get('auth_required');
 	switch(this.status.state) {
 		case 'idle':
@@ -358,21 +428,28 @@ Machine.prototype.arm = function(action, timeout) {
 		break;
 	}
 
+	// The info object contains any dialogs that are displayed in the dash.
 	delete this.status.info
+
+	// Set the action to be executed when fire() is called
 	this.action = action;
+
+	// Check to see if interlock is required
 	var interlockRequired = config.machine.get('interlock_required');
 	var interlockInput = 'in' + config.machine.get('interlock_input');
 	if(this.action && this.action.payload && this.action.payload.name === 'manual' || interlockBypass) {
 		interlockRequired = false;
 	}
+
+	// Refuse the action if the interlock is required and tripped
 	if(this.action) {
 		if(interlockRequired && this.driver.status[interlockInput]) {
 			this.setState(this, 'interlock')
 			return;			
 		}
-	} else {
-	}
+	} 
 
+	// Otherwise, arm the machine and set the timer to the provided value
 	log.info("Arming the machine" + (action ? (' for ' + action.type) : '(No action)'));
 	//log.error(new Error())
 	if(this._armTimer) { clearTimeout(this._armTimer);}
@@ -381,13 +458,12 @@ Machine.prototype.arm = function(action, timeout) {
 		this.disarm();
 	}.bind(this), timeout*1000);
 
+	// Record the state we were in before arming, so we can fall back to it if the timer runs out
 	this.preArmedState = this.status.state;
+	// TODO - we trashed this info above - worth looking at why this is here
 	this.preArmedInfo = this.status.info;
 
-
-
-
-
+	// Actions related to the manual state get fired immediately
 	if(action.payload)  {
 		if(action.payload.name === "manual"){
 			var cmd = action.payload.code.cmd;
@@ -403,9 +479,7 @@ Machine.prototype.arm = function(action, timeout) {
 					break;
 			}
 		}
-
 	}
-
 
 	if(!requireAuth) {
 		log.info("Firing automatically since authorization is disabled.");
@@ -416,6 +490,7 @@ Machine.prototype.arm = function(action, timeout) {
 	}
 }
 
+// Collapse out of the armed state.  Happens when the user hits cancel in the authorize dialog.
 Machine.prototype.disarm = function() {
 	log.stack();
 	if(this._armTimer) { clearTimeout(this._armTimer);}
@@ -426,15 +501,18 @@ Machine.prototype.disarm = function() {
 	}
 }
 
+// Execute the action in the chamber (the one passed to the arm() method)
 Machine.prototype.fire = function(force) {
+
 	if(this.fireButtonDebounce & !force) {
 		log.debug("Fire button debounce reject.");
 		log.debug("debounce: " + this.fireButtonDebounce + " force: " + force);
 		return;
 	}
-
 	this.fireButtonDebounce = true;
 
+	// Clear the timers related to authorization 
+	// (since we're either going to execute this thing or bounce, those will need to be reset)
 	if(this._armTimer) { clearTimeout(this._armTimer);}
 	if(this._authTimer) { clearTimeout(this._authTimer);}
 
@@ -449,9 +527,18 @@ Machine.prototype.fire = function(force) {
 		return;
 	}
 
+	// We deauthorize the machine as soon as we're executing an action
+	// that way, when the action is concluded, the user has to reauthorize again.
+	// TODO - re-evaluate this decision.  The idea here is that once an action is kicked off, once it's 
+	//        completed there's a good chance that the user might not be close to the machine anymore.
+	//        many actions take less than the authorization timeout, though, so in those cases, this causes
+	//        incessant authorization prompts.
 	this.deauthorize();
+	
 	var action = this.action;
 	this.action = null;
+
+	// Actually execute the action (finally!)
 	switch(action.type) {
 		case 'nextJob':
 			this._runNextJob(force, function() {});
@@ -473,8 +560,11 @@ Machine.prototype.fire = function(force) {
 	}
 }
 
+// Authorize the machine for the specified period of time (or the default time if unspecified)
 Machine.prototype.authorize = function(timeout) {
 	var timeout = timeout || config.machine.get('auth_timeout');
+
+	// 
 	if(config.machine.get('auth_required') && timeout) {
 		log.info("Machine is authorized for the next " + timeout + " seconds.");
 		if(this._authTimer) { clearTimeout(this._authTimer);}
@@ -488,13 +578,17 @@ Machine.prototype.authorize = function(timeout) {
 		}
 	}
 	this.status.auth = true;
-	//this.setState(this, 'idle');
+
+	// Once authorized, clear info (which contains the auth message)
 	if(this.status.info && this.status.info.auth) {
 		delete this.status.info;
 	}
+
+	// Report status back to the host (since the auth state has changed)
 	this.emit('status', this.status);
 }
 
+// Clear the authorized state (forbid action without a reauthorize)
 Machine.prototype.deauthorize = function() {
 	if(!config.machine.get('auth_timeout')) { return; }
 	if(this._authTimer) {
@@ -517,6 +611,7 @@ Machine.prototype.toString = function() {
 	return "[Machine Model on '" + this.driver.path + "']";
 };
 
+// Run the provided Job object (see db.js)
 Machine.prototype.runJob = function(job) {
 	db.File.getByID(job.file_id,function(err, file){
 		if(err) {
@@ -529,11 +624,12 @@ Machine.prototype.runJob = function(job) {
 	}.bind(this));
 };
 
-
+// Set the preferred units to the provided value ('in' or 'mm')
+// Changing the preferred units is a heavy duty operation. See below.
 Machine.prototype.setPreferredUnits = function(units, callback) {
 	try {
 		if(config.driver.changeUnits) {
-			units = u.unitType(units);
+			units = u.unitType(units); // Normalize units
 			var uv = null;
  			switch(units) {
 				case 'in':
@@ -580,6 +676,9 @@ Machine.prototype.setPreferredUnits = function(units, callback) {
 	}
 }
 
+// Retrieve the G-Code output for a specific file ID.
+// If the file is a g-code file, just return its contents.
+// If the file is a shopbot file, instantiate a SBPRuntime, run it in simulation, and return the result
 Machine.prototype.getGCodeForFile = function(filename, callback) {
 	fs.readFile(filename, 'utf8', function (err,data) {
 		if (err) {
@@ -606,6 +705,7 @@ Machine.prototype.getGCodeForFile = function(filename, callback) {
 	}.bind(this));
 }
 
+// Run a file given a filename on disk.  Choose the runtime that is appropriate for that file.
 Machine.prototype._runFile = function(filename) {
 	var parts = filename.split(path.sep);
 	var ext = path.extname(filename).toLowerCase();
@@ -625,6 +725,9 @@ Machine.prototype._runFile = function(filename) {
 	});
 };
 
+// Set the active runtime
+// If the selected runtime is different than the current one,
+// disconnect the current one, and connect the new one.
 Machine.prototype.setRuntime = function(runtime, callback) {
 	runtime = runtime || this.idle_runtime;
 	try {
@@ -648,6 +751,9 @@ Machine.prototype.setRuntime = function(runtime, callback) {
 	setImmediate(callback,null, runtime);
 };
 
+// Return a runtime object given a name
+// TODO - these names should be properties of the runtimes themselves, and we should look-up that way
+//        (cleaner and better compartmentalized)
 Machine.prototype.getRuntime = function(name) {
 	switch(name) {
 		case 'gcode':
@@ -670,28 +776,41 @@ Machine.prototype.getRuntime = function(name) {
 	}
 }
 
+// Change the overall machine state
+// source - The runtime requesting the change
+// newstate - The state to transition to
+// stateinfo - The contents of the 'info' field of the status report, if needed.
 Machine.prototype.setState = function(source, newstate, stateinfo) {
 	this.fireButtonDebounce = false ;
+	
 	if ((source === this) || (source === this.current_runtime)) {
 		log.info("Got a machine state change: " + newstate)
+	
+		// Set the info field
+		// status.info.id is the info field id - it helps the dash with display of dialogs
 		if(stateinfo) {
 			this.status.info = stateinfo
 			this.info_id += 1;
 			this.status.info.id = this.info_id;
 		} else {
+			// If the info field is unspecified, we clear the one that's currently in place
 			delete this.status.info
 		}
 
 		switch(newstate) {
 			case 'idle':
 				if(this.status.state != 'idle') {
-					this.driver.command({"out4":0});
+					this.driver.command({"out4":0}); // Permissive relay
+					// A switch to the 'idle' state means we change to the idle runtime
 					if(this.current_runtime != this.idle_runtime) {
 						this.setRuntime(null, function() {});
 					}	
 				}
+				// Clear the fields that describe a running job
 				this.status.nb_lines = null;
 				this.status.line = null;
+
+				// TODO - What's going on here?
 				if(this.action) {
 					switch(this.action.type) {
 						case 'nextJob':
@@ -702,6 +821,10 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 					}
 				}
 				this.action = null;
+
+				// If we're changing from a non-idle state to the idle state
+				// Go ahead and request the current machine position and write it to disk.  This 
+				// is done regularly, so that if the machine is powered down it retains the current position
 				if(this.status.state != newstate) {
                     this.driver.get('mpo', function(err, mpo) {
 					    if(config.instance) {
@@ -713,15 +836,16 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 			case 'paused':
 
                 if(this.status.state != newstate) {
+
+                	// Save the position to the instance configuration.  See note above.
                     this.driver.get('mpo', function(err, mpo) {
 					    if(config.instance) {
 						    config.instance.update({'position' : mpo});
 					    }
 				    });
+				    // Check the interlock and switch to the interlock state if it's engaged
 				    var interlockRequired = config.machine.get('interlock_required');
 					var interlockInput = 'in' + config.machine.get('interlock_input');
-				
-
 					
 				    if(interlockRequired && this.driver.status[interlockInput] && !interlockBypass) {
 						log.stack();
@@ -732,6 +856,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
                 } 
 				break;
 			case 'dead':
+				// Sadness
 				log.error('G2 is dead!');
 				break;
 			default:
@@ -746,6 +871,8 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 	this.emit('status',this.status);
 };
 
+// Pause the machine
+// This is pretty much passed through to whatever runtime is currently in control
 Machine.prototype.pause = function(callback) {
 		if(this.status.state === "running") {
 			if(this.current_runtime) {
@@ -759,6 +886,7 @@ Machine.prototype.pause = function(callback) {
 		}
 };
 
+// Quit 
 Machine.prototype.quit = function(callback) {
 		this.disarm();
 
@@ -791,6 +919,7 @@ Machine.prototype.quit = function(callback) {
 		}    
 };
 
+// Resume from the paused state.
 Machine.prototype.resume = function(callback) {
 	this.arm({
 		type : 'resume'
@@ -798,6 +927,8 @@ Machine.prototype.resume = function(callback) {
 	callback(null, 'resumed');
 }
 
+// Run a file from disk
+// filename - full path to the file to run
 Machine.prototype.runFile = function(filename, bypassInterlock) {
 	interlockBypass = bypassInterlock;
 	if(!bypassInterlock){
@@ -811,6 +942,8 @@ Machine.prototype.runFile = function(filename, bypassInterlock) {
 	}, config.machine.get('auth_timeout'));
 }
 
+// Run the next job in the queue
+// callback is called when the tool is armed for the run, NOT when the job is complete.
 Machine.prototype.runNextJob = function(callback) {
 	interlockBypass = false;
 	db.Job.getPending(function(err, pendingJobs) {
@@ -828,6 +961,10 @@ Machine.prototype.runNextJob = function(callback) {
 	}.bind(this));
 }
 
+// Executes a "code" on a specific runtime.
+// runtimeName - the name of a valid runtime
+//        code - can be anything, it is runtime specific.
+//               example: if you pass gcode to the gcode runtime, it runs g-code.
 Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
 	interlockBypass = false;
 	runtime = this.getRuntime(runtimeName);
@@ -835,11 +972,7 @@ Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
 	if (needsAuth){
 		if(this.status.auth) {
 			return this._executeRuntimeCode(runtimeName, code);
-		}
-		/*if(runtimeName === 'manual') {
-			this.arm(code, config.machine.get('auth_timeout'));
-			return;
-		}*/ else {
+		} else {
 			this.arm({
 				type : 'runtimeCode',
 				payload : {
@@ -853,19 +986,28 @@ Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
 	}
 }
 
+// Just run this SBP code immediately
+// string - the code to run
 Machine.prototype.sbp = function(string) {
 	this.executeRuntimeCode('sbp', string);
 
 }
 
+// Just run this gcode immediately
+// string - the gcode to run
 Machine.prototype.gcode = function(string) {
 	this.executeRuntimeCode('gcode', string);
 }
 
 /*
+ * ----------------------------------------------
  * Functions below require authorization to run
  * Don't call them unless the tool is authorized!
+ * ----------------------------------------------
+ *
+ * For documentation of these functions, see their corresponding "public" methods above.
  */
+
 Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 	runtime = this.getRuntime(runtimeName);
 	if(runtime) {
@@ -883,6 +1025,7 @@ Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 	}
 }
 
+// e
 Machine.prototype._resume = function() {
 	switch(this.status.state) {
 		case 'interlock':

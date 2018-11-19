@@ -409,8 +409,18 @@ define(function(require) {
     }.bind(this));
 
 
-        this._registerHandler('manualEnter', function(data, callback) {
-      this.engine.manualEnter(function(err, result) {
+    this._registerHandler('manualEnter', function(data, callback) {
+      this.engine.manualEnter({mode : data['mode'], hideKeypad : data['hideKeypad']}, function(err, result) {
+        if (err) {
+          callback(err);
+        } else {
+          callback(null);
+        }
+      });
+    }.bind(this));
+
+    this._registerHandler('manualRunGCode', function(data, callback) {
+      this.engine.manualRunGCode(data.code, function(err, result) {
         if (err) {
           callback(err);
         } else {

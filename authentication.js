@@ -1,13 +1,18 @@
+/*
+ * authentication.js
+ * 
+ * Manages user authentication to access the FabMo dashboard
+ */
 var passport = require('passport-restify');
 var LocalStrategy   = require('passport-local').Strategy;
-//var User = require('./db').User;
 var config = require('./config');
 var machine = require('./machine');
 var util = require('util');
 var events = require('events');
 var eventEmitter = new events.EventEmitter();
 
-var currentUser = null; // keep track of the current registered user
+// FabMo is a single-user system, and this variable keeps track of the current one.
+var currentUser = null;
 var userTimer = 5*60*1000; // 5 minutes
 var currentUserTimer = null;
 var isCurrentUserKickeable = false;
@@ -21,6 +26,7 @@ function resetUserTimer(){
   clearTimeout(currentUserTimer);
   currentUserTimer = startUserTimer();
 }
+
 function userTimeout(){
   isCurrentUserKickeable = true;
 }

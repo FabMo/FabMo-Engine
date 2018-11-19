@@ -1,3 +1,10 @@
+/*
+ * server.js
+ * 
+ * Engine server module. 
+ * 
+ * This is the entry point for the fabmo engine.  It just starts the engine.
+ */
 var config = require('./config');
 var log = require('./log').logger('server');
 var engine = require('./engine');

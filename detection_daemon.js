@@ -1,3 +1,18 @@
+/* 
+ * detection_daemon.js
+ * 
+ * The detection daemon is responsible for making the FabMo engine discoverable on local networks.
+ *
+ * There are three ways that the FabMo engine accomplishes this.
+ * Two of them are implented in this file.
+ *
+ * - bonjour
+ * - A hand-rolled UDP broadcast strategy
+ * - A cloud-based discovery service called beacon (not implemented here, but in the updater)
+ * 
+ * Of the three strategies above, the beacon service is the most likely to work, as UDP broadcasting is
+ * often blocked on networks, particularly in schools and businesses.
+ */
 var os=require('os');
 var util=require('util');
 var EventEmitter = require('events').EventEmitter;
@@ -12,31 +27,35 @@ var OK = "YES I M !\0";
 var ERR = "I DNT UNDRSTND !\0";
 var HOSTNAME = "U NAME ?\0";
 var REQ = "R U A SBT ?\0";
-var default_port = 24862; // = 7777 without conversion
 
-// Kick off the "detection daemon" which is the process that listens for incoming scans by the FabMo linker
-// The detection daemon is what we as a FabMo device run so that we can be discovered by the FabMo linker/dashboard
+// This is the broadcast port
+var DEFAULT_PORT = 24862; 
+
+// Kick off the "detection daemon" which is the process that listens for broadcast messages coming from the tool minder
+// The detection daemon is what we as a FabMo device run so that we can be discovered by the FabMo Minder
 var start = function(port) {
+	
+	// Bonjour is easy, we just use the included module to publish our availability
 	bonjour.unpublishAll();
 	bonjour.publish({ name: os.hostname()+" - FabMo Tool Minder daemon", host:os.hostname()+'.local', type: 'fabmo',protocol:'tcp', port: config.engine.get('server_port'),txt : {fabmo:JSON.stringify(getMachineInfo())}});
 	
+	// Setup UDP socket, keeping in mind API changes that are needed for older versions of node
 	var socketOpts = {'type':'udp4','reuseAddr':true};
 	if (process.version.match(/v0\.10\.\d*/i)) {
 		socketOpts = 'udp4';
 	}
-	
-	var socket = dgram.createSocket(socketOpts);
-	var that = this;
-	port = port || default_port;
 
-	// Listen on the specified port
+	// Create a socket and listen on the specified port	
+	// The minder will send broadcast messages on this port that (network permitting) we will recieve and respond to.
+	var socket = dgram.createSocket(socketOpts);
+	port = port || DEFAULT_PORT;
 	socket.bind(port);
 
+	// Bind to message event
 	socket.on("message", function ( data, rinfo ) {
-		if(data.toString() == REQ) // Respond properly to queries asking if we are a FabMo device
+		// Respond properly to queries asking if we are a FabMo device
+		if(data.toString() == REQ) 
 		{
-			//log.debug('scan in progress by '+ rinfo.address);
-
 			// Respond indicating that we are a FabMo system
 			socket.send(new Buffer(OK), 0, OK.length, rinfo.port, rinfo.address, function (err) {
 				if (err) {
@@ -44,27 +63,29 @@ var start = function(port) {
 				}
 			});
 		}
-		else if(data.toString() == HOSTNAME) // Respond properly to continued dialog in the autodetect process
+		// Respond properly to continued dialog in the autodetect process
+		else if(data.toString() == HOSTNAME) 
 		{
 
-			//log.debug(JSON.stringify(result));
 			result = getMachineInfo();
 			// advertise an HTTP server on port 80
 			socket.send(new Buffer(JSON.stringify(result)), 0, JSON.stringify(result).length, rinfo.port, rinfo.address, function (err) {
 				if (err) log.error(err);
-						//console.log("ask info");
 				});
-			//that.emit('client_scan',rinfo.address);
 		}
 		else
 		{
-			log.error("received from "+rinfo.address+" : unknown message : '"+ data.toString() +"'");
+			log.error("Received from "+rinfo.address+" : unknown message : '"+ data.toString() +"'");
 		}
 	});
-
-	//this.on('newListener', function(listener) {});
 };
 
+/*
+ * Helper function that returns information about this machine:
+ * hostname - The hostname of this machine
+ * networks - a list of networks to which this machine is attached (as reported by the os)
+ * server_port - the HTTP port on which this Engine instance hosts its interface
+ */
 function getMachineInfo(){
 	var result = {};
 	result.hostname= os.hostname();
@@ -86,8 +107,5 @@ function getMachineInfo(){
 	return result;
 }
 
-
-//util.inherits(start , EventEmitter);
-
-// detection_daemon.start kicks off the listening process
+// calling this module as a function kicks off the listening process
 module.exports = start;

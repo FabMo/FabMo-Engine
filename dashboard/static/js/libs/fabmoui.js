@@ -351,6 +351,9 @@ FabMoUI.prototype.updateStatusContent = function(status){
 
 	var statename = status.state.charAt(0).toUpperCase() + status.state.slice(1);
 
+	if(status.state != 'manual') {
+		$('.tab-bar').removeClass('manual')
+	}
 	if(status.state === 'idle') {
 		that.allowKeypad();
 		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
@@ -384,6 +387,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	}
 	else if(status.state === 'manual') {
 		that.allowKeypad();
+		$('.tab-bar').addClass('manual')
 		$(that.status_div_selector).removeClass('fabmo-status-running fabmo-status-paused fabmo-status-error fabmo-status-disconnected fabmo-status-idle fabmo-status-passthrough');
 		$(that.status_div_selector).removeClass('fabmo-status-running');
 		$(".tools-current > li a").removeClass('disc err').addClass('paus');

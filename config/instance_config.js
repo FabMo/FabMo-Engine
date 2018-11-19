@@ -1,3 +1,10 @@
+/*
+ * instance_config.js
+ * 
+ * This module defines the instance config, which might be better called the "runtime state"
+ * Currently, it is used to save the machine position/offsets when the tool stops. 
+ * (and restore it when the engine is restarted)
+ */
 Config = require('./config').Config;
 var log = require('../log');
 var logger = log.logger('config');
@@ -30,6 +37,8 @@ InstanceConfig.prototype.update = function(data, callback) {
 	});
 };
 
+// Apply this configuration - set the machine position to the saved value
+//   callback - called once the values have been restored (or error)
 InstanceConfig.prototype.apply = function(callback) {
 	try {
 		var position = this.get('position');

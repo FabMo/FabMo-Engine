@@ -533,8 +533,8 @@ function _makeJob(obj) {
 /**
  * Submit one or more jobs to the dashboard.
  * @param {Array|Object|jQuery} jobs A single job object, an array containing multiple job objects, or a jQuery object that points to a file type form input, or a form containing a file type input.
- * @param {Object} [options] Options for job submission
- * @todo Finish documenting this function
+ * @param {Object} [options] Options for job submission. Currently only accepts one option: `stayHere` which if true, will prevent the dashboard from jumping to the job manager when the job has been submitted.
+ *
  */
 FabMoDashboard.prototype.submitJob = function(jobs, options, callback) {
 	var args = {jobs : []};
@@ -734,6 +734,14 @@ FabMoDashboard.prototype.manualMoveFixed = function(axis, speed, distance, callb
 }
 
 /**
+ * Stream a raw gcode
+ * Tool must be in 'raw' manual mode for this to work.
+ */
+FabMoDashboard.prototype.manualRunGCode = function(code, callback) {
+	this._call("manualRunGCode",{"code": code}, callback);
+}
+
+/**
  * Start performing a manual move of the specified axis at the specified speed.
  *
  * @method manualStart
@@ -745,8 +753,8 @@ FabMoDashboard.prototype.manualStart = function(axis, speed, second_axis, second
 }
 
 
-FabMoDashboard.prototype.manualEnter = function(axis, speed, callback) {
-	this._call("manualEnter", callback);
+FabMoDashboard.prototype.manualEnter = function(options, callback) {
+	this._call("manualEnter",options, callback);
 }
 
 FabMoDashboard.prototype.manualExit = function(axis, speed, callback) {

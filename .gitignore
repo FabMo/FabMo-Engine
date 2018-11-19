@@ -21,5 +21,6 @@ dashboard/build/*
 profiles/*
 profiles/.*
 !profiles/default
+!profiles/README.md
 install_token
 runtime/opensbp/test.sbp
