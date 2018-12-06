@@ -33,13 +33,13 @@ define(function(require) {
     }
      var setRightMenuBehavior = function() {
         if ($('#right-menu').css('right') === '0px') {
-            if ($(window).width() < 900) {
+            if ($(window).width() < 800) {
                 closeDROover();
             } else {
                 closeDROPush();
             }
         } else {
-            if ($(window).width() < 900) {
+            if ($(window).width() < 800) {
                 openDROover();
             } else {
                 openDROPush();
@@ -47,9 +47,9 @@ define(function(require) {
         }
     }
     var rightMenuLoad = function() {
-        if ($(window).width() > 900) {
+        if ($(window).width() > 800) {
             openDROPush();
-        } else if ($(window).width() < 900) {
+        } else if ($(window).width() < 800) {
             $('#app-client-container').css('padding-right', '0px');
             $('#app_menu_container').css('padding-right', '0px');
             $('#waiting_container').css('padding-right', '0px');
@@ -258,6 +258,17 @@ define(function(require) {
         $("#icon_colapse").click(function(evt) {
           evt.preventDefault();
             colapseMenu();
+        });
+
+        $('#left-slide-button').click(function(evt){
+            evt.preventDefault();
+            if($('#left-slide-button').hasClass('open')){
+                $('#left-slide-button').removeClass('open');
+                $('.left-slide-menu').css('width', "46px");
+            } else {
+                $('#left-slide-button').addClass('open');
+                $('.left-slide-menu').css('width', "400px");
+            }
         });
 
         //Define the positions of the dashboard notifications
