@@ -165,7 +165,7 @@ var apply = function(profileName, callback) {
 	
 				// ...and replace it with the configuration provided by the profile
 				log.debug('Copying profile configuration directory ' + profileConfigDir);
-				ncp(profileConfigDir, onfig.getDataDir(dir), function (err) {
+				ncp(profileConfigDir, config.getDataDir(dir), function (err) {
 					if (err) {
 						return callback(err);
 					} else {

@@ -48,7 +48,7 @@ G2Config.prototype.changeUnits = function(newUnits, callback) {
 				}.bind(this));
 			}
 		}
-	});
+	}.bind(this));
 
 
 }

@@ -264,10 +264,16 @@ Keypad.prototype.onDriveTap = function(evt) {
 		else if(e.hasClass('y_neg')) {
 			this.nudge('y', -1);
 		}
-		else if(e.hasClass('z_pos')) {
+		else if(e.hasClass('z_pos_fast')) {
 			this.nudge('z', 1);
 		}
-		else if(e.hasClass('z_neg')) {
+		else if(e.hasClass('z_pos_slow')) {
+			this.nudge('z', 1);
+		}
+		else if(e.hasClass('z_neg_fast')) {
+			this.nudge('z', -1);
+		}
+		else if(e.hasClass('z_neg_slow')) {
 			this.nudge('z', -1);
 		} else if(e.hasClass('a_pos')){
 			this.nudge('a', 1)

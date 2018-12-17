@@ -521,18 +521,33 @@ FabMoUI.prototype.updateStatus = function(){
 };
 
 
+FabMoUI.prototype.pause = function(){
+	var that = this;
+	that.tool.pause(function(err, data){
+		if (err) {
+			console.error(err)
+		} else {
+			that.tool.getStatus(function(err, data){
+				if (err) {
+					console.log(err);
+				} else {
+					if(data.state === "running") {
+						that.pause();
+					}
+				}
+			})
+		}
+	});
+}
+
+
 
 
 FabMoUI.prototype.FileControl = function(){
 	var that = this;
 	$(that.pause_button_selector).click(function(e) {
 		$(that.pause_button_selector+" div div:first-child").addClass('spinner red');
-		that.tool.pause(function(err, data){
-			if (err) {
-				console.error(err)
-			} else {
-			}
-		});
+		that.pause();
 	});
 
 	$(that.resume_button_selector).click(function(e) {
