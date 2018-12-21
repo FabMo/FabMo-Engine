@@ -66,7 +66,6 @@ function FabMoUI(tool, options){
 			$('#dro-tab').css('width', '0.5em'); 
 		}, 200);
 		if(!$('#right-position-container').hasClass('dropped')){
-			console.log('Ishould be removing')
 			$('.dro-dropdown').removeClass('dropped');
 			setTimeout(function(){
 				$('#right-position-container').removeClass('dropped');

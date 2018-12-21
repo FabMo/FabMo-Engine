@@ -54,7 +54,9 @@ MachineConfig.prototype.update = function(data, callback, force) {
 			 'xy_min', 
 			 'xy_max', 
 			 'xy_jerk', 
-			 'z_jerk'].forEach(function(key) {
+			 'z_jerk',
+			 'z_fast_speed',
+			 'z_slow_speed'].forEach(function(key) {
 				this._cache.manual[key] = round(this._cache.manual[key]*conv, new_units);
 			}.bind(this));
 		}
