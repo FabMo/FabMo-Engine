@@ -1013,6 +1013,7 @@ SBPRuntime.prototype._end = function(error) {
 //    command - The command object to execute
 //   callback - Called when execution is complete or with error if error
 SBPRuntime.prototype._executeCommand = function(command, callback) {
+    console.log(callback)
     if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
         // Command is valid and has a registered handler
         
@@ -1052,7 +1053,9 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
             }
             this.pc +=1;
             // We use the callback, stack breaker or not
-            setImmediate(callback) 
+            if(callback != undefined) {
+                setImmediate(callback) 
+            }
             return false;
         }
     } else {
@@ -1103,7 +1106,9 @@ SBPRuntime.prototype._execute = function(command, callback) {
         case "cmd":
             var broke = this._executeCommand(command, callback);
             if(!broke) {
-                setImmediate(callback);
+                if (callback != undefined) {
+                    setImmediate(callback);
+                }
             }
             return broke;
             break;
