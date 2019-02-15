@@ -72,6 +72,7 @@ EngineConfig.prototype.update = function(data, callback) {
 				callback(err);
 			} else {
 				console.log('shutting down');
+				console.log(process.exit());
 				process.exit(1);
 			}
 		});
