@@ -711,6 +711,16 @@
         }
       }
     },
+    "child-process-promise": {
+      "version": "2.2.1",
+      "resolved": "https://registry.npmjs.org/child-process-promise/-/child-process-promise-2.2.1.tgz",
+      "integrity": "sha1-RzChHvYQ+tRQuPIjx50x172tgHQ=",
+      "requires": {
+        "cross-spawn": "^4.0.2",
+        "node-version": "^1.0.0",
+        "promise-polyfill": "^6.0.1"
+      }
+    },
     "chokidar": {
       "version": "1.0.3",
       "resolved": "https://registry.npmjs.org/chokidar/-/chokidar-1.0.3.tgz",
@@ -898,6 +908,34 @@
       "version": "1.0.2",
       "resolved": "https://registry.npmjs.org/core-util-is/-/core-util-is-1.0.2.tgz",
       "integrity": "sha1-tf1UIgqivFq1eqtxQMlAdUUDwac="
+    },
+    "cross-spawn": {
+      "version": "4.0.2",
+      "resolved": "https://registry.npmjs.org/cross-spawn/-/cross-spawn-4.0.2.tgz",
+      "integrity": "sha1-e5JHYhwjrf3ThWAEqCPL45dCTUE=",
+      "requires": {
+        "lru-cache": "^4.0.1",
+        "which": "^1.2.9"
+      },
+      "dependencies": {
+        "lru-cache": {
+          "version": "4.1.5",
+          "resolved": "https://registry.npmjs.org/lru-cache/-/lru-cache-4.1.5.tgz",
+          "integrity": "sha512-sWZlbEP2OsHNkXrMl5GYk/jKk70MBng6UU4YI/qGDYbgf6YbP4EvmqISbXCoJiRKs+1bSpFHVgQxvJ17F2li5g==",
+          "requires": {
+            "pseudomap": "^1.0.2",
+            "yallist": "^2.1.2"
+          }
+        },
+        "which": {
+          "version": "1.3.1",
+          "resolved": "https://registry.npmjs.org/which/-/which-1.3.1.tgz",
+          "integrity": "sha512-HxJdYWq1MTIQbJ3nw0cqssHoTNU267KlrDuGZ1WYlxDStUtKUhOaJmh112/TZmHxxUfuJqPXSOm7tDyas0OSIQ==",
+          "requires": {
+            "isexe": "^2.0.0"
+          }
+        }
+      }
     },
     "css": {
       "version": "1.0.8",
@@ -3835,6 +3873,11 @@
       "resolved": "https://registry.npmjs.org/isarray/-/isarray-1.0.0.tgz",
       "integrity": "sha1-u5NdSFgsuhaMBoNJV6VKPgcSTxE="
     },
+    "isexe": {
+      "version": "2.0.0",
+      "resolved": "https://registry.npmjs.org/isexe/-/isexe-2.0.0.tgz",
+      "integrity": "sha1-6PvzdNxVb/iUehDcsFctYz8s+hA="
+    },
     "isobject": {
       "version": "2.1.0",
       "resolved": "https://registry.npmjs.org/isobject/-/isobject-2.1.0.tgz",
@@ -4351,6 +4394,11 @@
       "resolved": "https://registry.npmjs.org/node-uuid/-/node-uuid-1.4.1.tgz",
       "integrity": "sha1-Oa71EOWImj3KnIlbUGxzquG6wEg="
     },
+    "node-version": {
+      "version": "1.2.0",
+      "resolved": "https://registry.npmjs.org/node-version/-/node-version-1.2.0.tgz",
+      "integrity": "sha512-ma6oU4Sk0qOoKEAymVoTvk8EdXEobdS7m/mAGhDJ8Rouugho48crHBORAmy5BoOcv8wraPM6xumapQp5hl4iIQ=="
+    },
     "nomnom": {
       "version": "1.8.1",
       "resolved": "https://registry.npmjs.org/nomnom/-/nomnom-1.8.1.tgz",
@@ -4689,6 +4737,11 @@
       "requires": {
         "is-promise": "~1"
       }
+    },
+    "promise-polyfill": {
+      "version": "6.1.0",
+      "resolved": "https://registry.npmjs.org/promise-polyfill/-/promise-polyfill-6.1.0.tgz",
+      "integrity": "sha1-36lpQ+qcEh/KTem1hoyznTRy4Fc="
     },
     "proto-list": {
       "version": "1.2.4",
@@ -5495,8 +5548,7 @@
     "sax": {
       "version": "1.1.6",
       "resolved": "https://registry.npmjs.org/sax/-/sax-1.1.6.tgz",
-      "integrity": "sha1-XWFr6KXmB9VOEUr65Vt+ry/MMkA=",
-      "dev": true
+      "integrity": "sha1-XWFr6KXmB9VOEUr65Vt+ry/MMkA="
     },
     "select-hose": {
       "version": "2.0.0",
@@ -7772,6 +7824,35 @@
         }
       }
     },
+    "wireless-tools": {
+      "version": "github:jlucidar/nodejs-network-tools#c702036d914ec0e47ca83623acfe3d9250a72487",
+      "from": "github:jlucidar/nodejs-network-tools"
+    },
+    "wirelesser": {
+      "version": "2.2.0",
+      "resolved": "https://registry.npmjs.org/wirelesser/-/wirelesser-2.2.0.tgz",
+      "integrity": "sha512-scDIYYT1L7D0bsoo9b+fUdepeKsOZx0isKiXae8kEkaGeMNuvQnolwZFsZcARQUoHC2izwu3/y3oHDjx/EPNoA==",
+      "requires": {
+        "child-process-promise": "^2.2.1",
+        "debug": "^3.1.0",
+        "wireless-tools": "^0.19.0"
+      },
+      "dependencies": {
+        "debug": {
+          "version": "3.2.6",
+          "resolved": "https://registry.npmjs.org/debug/-/debug-3.2.6.tgz",
+          "integrity": "sha512-mel+jf7nrtEl5Pn1Qx46zARXKDpBbvzezse7p7LqINmdoIk8PYP5SySaxEmYv6TZ0JyEKA1hsCId6DIhgITtWQ==",
+          "requires": {
+            "ms": "^2.1.1"
+          }
+        },
+        "ms": {
+          "version": "2.1.1",
+          "resolved": "https://registry.npmjs.org/ms/-/ms-2.1.1.tgz",
+          "integrity": "sha512-tgp+dl5cGk28utYktBsrFqA7HKgrhgPsg6Z/EfhWI4gl1Hwq8B/GmY/0oXZ6nF8hDVesS/FpnYaD/kOWhYQvyg=="
+        }
+      }
+    },
     "with": {
       "version": "1.1.1",
       "resolved": "https://registry.npmjs.org/with/-/with-1.1.1.tgz",
@@ -7826,6 +7907,30 @@
       "resolved": "https://registry.npmjs.org/wrench/-/wrench-1.5.1.tgz",
       "integrity": "sha1-P3pRmw5AkzhyO7A5sgmlQRdrqkI=",
       "dev": true
+    },
+    "xml2js": {
+      "version": "0.4.17",
+      "resolved": "https://registry.npmjs.org/xml2js/-/xml2js-0.4.17.tgz",
+      "integrity": "sha1-F76T6q4/O3eTWceVtBlwWogX6Gg=",
+      "requires": {
+        "sax": ">=0.6.0",
+        "xmlbuilder": "^4.1.0"
+      }
+    },
+    "xmlbuilder": {
+      "version": "4.2.1",
+      "resolved": "https://registry.npmjs.org/xmlbuilder/-/xmlbuilder-4.2.1.tgz",
+      "integrity": "sha1-qlijBBoGb5DqoWwvU4n/GfP0YaU=",
+      "requires": {
+        "lodash": "^4.0.0"
+      },
+      "dependencies": {
+        "lodash": {
+          "version": "4.17.11",
+          "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.17.11.tgz",
+          "integrity": "sha512-cQKh8igo5QUhZ7lg38DYWAxMvjSAKG0A8wGSVimP07SIUEK2UO+arSRKbRZWtelMtN5V0Hkwh5ryOto/SshYIg=="
+        }
+      }
     },
     "xtend": {
       "version": "4.0.1",

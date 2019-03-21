@@ -8,13 +8,15 @@
  */
 var restify = require('restify');
 var util = require('./util');
+var events = require('events');
 var socketio = require('socket.io');
 var async = require('async');
 var process = require('process');
 var machine = require('./machine');
 var detection_daemon = require('./detection_daemon');
 var config = require('./config');
-var PLATFORM = process.platform;
+var OS = process.platform;
+var PLATFORM = process.env.PLATFORM;
 var log = require('./log').logger('engine');
 var db = require('./db');
 var macros = require('./macros');
@@ -27,6 +29,18 @@ var sessions = require("client-sessions");
 var authentication = require('./authentication');
 var profiles = require('./profiles');
 var crypto = require('crypto');
+//other util
+var Util = require('util');
+
+
+
+var GenericNetworkManager = require('./network_manager').NetworkManager;
+var Beacon = require('./beacon');
+
+var BEACON_INTERVAL = 1*60*60*1000 // 1 Hour (in milliseconds)
+var TASK_TIMEOUT = 10800000;    // 3 hours (in milliseconds)
+var PACKAGE_CHECK_DELAY = 30;   // Seconds
+
 
 // The engine object has a few high level properties and some key methods that define the application lifecycle
 // Most of the important stuff is in the start() method.
@@ -37,8 +51,21 @@ var Engine = function() {
         build : null,
         config : null,
         version : null
-    }
+    };
+    // is istavailable to the client via HTTP endpoint and websocket
+    this.status = {
+        'online' : false
+    };
+
+    // The default network manager is the generic one (until the network module has been asked to load one specific to this platform)
+    this.networkManager = network.Generic;
+    //TO-DO file should not be emiting (bring these into seperate modules)
+    events.EventEmitter.call(this);
 };
+
+Util.inherits(Engine, events.EventEmitter);
+
+
 
 /*
  * Configure the engine for the first time.
@@ -48,7 +75,14 @@ var Engine = function() {
  * for different types of machines.
  */
 function EngineConfigFirstTime(callback) {
-    switch(PLATFORM) {
+    console.log("this is the platform");
+    console.log(PLATFORM);
+    if(PLATFORM) {
+        log.info('Setting platform to ' + PLATFORM)
+        config.engine.set('platform', PLATFORM);
+    }
+
+    switch(OS) {
         case 'linux':
                     var ports = {
                         'control_port_linux' : '/dev/ttyACM0',
@@ -128,6 +162,7 @@ Engine.prototype.getVersion = function(callback) {
     fs.readFile('version.json', 'utf8', function(err, data) {
             if(err) {
                 this.version.type = 'dev';
+                this.version.number = 'test';
                 return callback(null, this.version);
             }
             try {
@@ -137,6 +172,7 @@ Engine.prototype.getVersion = function(callback) {
                     this.version.type = 'release';
                 }
             } catch(e) {
+                this.version.number = 'test';
                 this.version.type = 'dev';
             } finally {
                 callback(null, this.version);
@@ -153,6 +189,14 @@ Engine.prototype.getInfo = function(callback) {
         firmware : this.firmware,
         version : this.version
     });
+}
+
+
+// Set the online flag (indicates whether the engine is online) to the provided value
+//   online - true to indicate that the engine can see the network.  False otherwise.
+Engine.prototype.setOnline = function(online) {
+    this.status.online = online;
+    this.emit('status', this.status);
 }
 
 /*
@@ -538,6 +582,79 @@ Engine.prototype.start = function(callback) {
           }.bind(this))
         }.bind(this),
 
+        // Initialize the network module
+        function setup_network(callback) {
+
+            var OS = config.platform;
+
+            try {
+                this.networkManager = network.createNetworkManager();
+            } catch(e) {
+                log.warn(e);
+                this.networkManager = new GenericNetworkManager(OS, PLATFORM);
+            }
+
+            // Listen to the network manager's "network" event (which is emitted each time a new network is joined)
+            // and when the event is encountered, initiate beacon reporting and update package checks
+            this.networkManager.on('network', function(evt) {
+                if(evt.mode === 'station' || evt.mode === 'ethernet') {
+                    // 30 Second delay is used here to make sure timesyncd has enough time to update network time
+                    // before trying to pull an update (https requests will fail with an inaccurate system time)
+                    log.info('Network is possibly available:  Going to check for packages in ' + PACKAGE_CHECK_DELAY + ' seconds.')
+                    setTimeout(function() {
+                        log.info('Doing beacon report due to network change');
+                        this.beacon.setLocalAddresses(this.networkManager.getLocalAddresses());
+                        this.beacon.once('network');
+                        //TODO re-imlpement for dashboard only updates
+                        // log.info('Running package check due to network change');
+                        // this.runAllPackageChecks();
+                    }.bind(this), PACKAGE_CHECK_DELAY*1000);
+                }
+            }.bind(this));
+
+            // Call the network manager init function, which actually starts looking for networks, etc.
+            log.info('Setting up the network...');
+            try {
+                this.networkManager.init();
+                log.info('Network manager started.')
+            } catch(e) {
+                log.error(e);
+                log.error('Problem starting network manager:' + e);
+            }
+
+            // Setup a recurring function that checks to see that the updater is online
+            var onlineCheck = function() {
+                this.networkManager.isOnline(function(err, online) {
+                    if(online != this.status.online) {
+                        this.setOnline(online);
+                    }
+                }.bind(this));
+            }.bind(this);
+            onlineCheck();
+            setInterval(onlineCheck,3000); // TODO - magic number, should factor out
+            return callback(null);
+        }.bind(this),
+
+        function setup_config_events(callback) {
+            config.engine.on('change', function(evt) {
+                if(evt.beacon_url) {
+                    this.beacon.set('url', config.updater.get('beacon_url'));
+                }
+    
+                // If the tool name changes, report the change to beacon
+                if(evt.name) {
+                    this.beacon.once('config');
+                }
+    
+                // If beacon consent changes, let the beacon daemon know (possibly do a report)
+                if (evt.consent_for_beacon) {
+                    this.beacon.set("consent_for_beacon", evt.consent_for_beacon);
+                    log.info("Consent for beacon is " + evt.consent_for_beacon);
+                }
+            }.bind(this));
+            callback();
+        }.bind(this),
+
         // Kick off the server if all of the above went OK.
         function start_server(callback) {
             log.info("Setting up the webserver...");
@@ -679,6 +796,37 @@ Engine.prototype.start = function(callback) {
             authentication.configure();
 
         }.bind(this),
+        // Start the beacon service
+        function start_beacon(callback) {
+            var url = config.engine.get('beacon_url');
+            var consent = config.engine.get('consent_for_beacon');
+
+            log.info("Starting beacon service");
+            this.beacon = new Beacon({
+                url : url,
+                interval : BEACON_INTERVAL
+            });
+            switch(consent) {
+                case "true":
+                case true:
+                            log.info("Beacon is enabled");
+                            this.beacon.set("consent_for_beacon", "true");
+                    break;
+
+                case "false":
+                case false:
+                    log.info("Beacon is disabled");
+                            this.beacon.set("consent_for_beacon", "false");
+                    break;
+                default:
+                    log.info("Beacon consent is unspecified");
+                            this.beacon.set("consent_for_beacon", "true");
+                    break;
+            }
+
+            this.beacon.start();
+
+        }.bind(this)
         ],
         // Print some kind of sane debugging information if anything above fails
         function(err, results) {

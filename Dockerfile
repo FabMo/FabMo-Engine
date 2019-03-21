@@ -8,9 +8,13 @@ WORKDIR /usr/src/app
 # where available (npm@5+)
 COPY package*.json ./
 
+RUN apt-get update --fix-missing && apt-get install -y hostapd dnsmasq haveged
+
 RUN npm install
 # If you are building your code for production
 # RUN npm install --only=production
+
+
 
 # Bundle app source
 COPY . .
