@@ -376,7 +376,7 @@ RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
   var network_config = config.updater.get('network');
   network_config.wifi.mode = 'ap';
   config.updater.set('network', network_config);
-  ap.
+
   // jedison('join ap', function(err, result) {
   //   if(!err) {
   //     log.info("Entered AP mode.");

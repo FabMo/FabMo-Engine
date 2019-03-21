@@ -336,7 +336,8 @@ exports.createNetworkManager = function() {
 	// The platform is defined in the updater configuration - it's something like 'edison' or 'westinghouse' or 'generic'
 	var OS = config.platform;	
 	var PLATFORM = config.engine.get('platform');
-	
+	console.log(OS); 
+	console.log(PLATFORM);
 	try {
 		var NetworkManager = require('./network/' + OS + '/' + PLATFORM).NetworkManager;
 		var nm = new NetworkManager();
