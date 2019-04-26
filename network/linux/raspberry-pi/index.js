@@ -3,24 +3,37 @@ var os = require('os');
 var config = require('../../../config')
 var async = require('async');
 var fs = require('fs');
-var doshell = require('../../../util').doshell;
+var child_process = require('child_process');
+var exec = child_process.exec;
 var util = require('util');
-var NetworkManager = require('../../manager').NetworkManager;
-
-const {Wireless, AP} = require(wirelesser);
-const wireless = new Wireless();
+var NetworkManager = require('../../../network_manager').NetworkManager;
+var tmp = require('tmp');
 
 
-var events = require('events');
+var ifconfig = require('wireless-tools/ifconfig');
+var iwconfig = require('wireless-tools/iwconfig');
+var iwlist = require('wireless-tools/iwlist');
+var wpa_cli = require('wireless-tools/wpa_cli');
+var udhcpc = require('wireless-tools/udhcpc');
+var udhcpd = require('wireless-tools/udhcpd');
+
+//const APExecs = require('./apexecs.js');
+const hostInterface = 'wlan0';  // The WiFi Access Device.
+
+
+const EventEmitter = require('events');
+class MyEmitter extends EventEmitter {}
+const myEmitter = new MyEmitter();
 
 var wifi;
 var WIFI_SCAN_INTERVAL = 5000;
 var WIFI_SCAN_RETRIES = 3;
 
 var wifiInterface = 'wlan0';
-var ethernetInterface = "enp0s17u1u1";
+var ethernetInterface = "eth0";
 var apModeGateway= '192.168.42.1';
 var tmpPath = os.tmpdir() + '/';
+
 
 var DEFAULT_NETMASK = "255.255.255.0";
 var DEFAULT_BROADCAST = "192.168.1.255"
@@ -29,40 +42,6 @@ var DHCP_MAGIC_TTL = 5000;
 var ETHERNET_SCAN_INTERVAL = 2000;
 var NETWORK_HEALTH_RETRIES = 8;
 var NETWORK_HEALTH_RETRY_INTERVAL = 1500;
-
-// This function calls an external network management script called `jedison` which is a 
-// fork of the management script provided by intel for the edison that accepts all of its commands
-// and prints all of its outputs in JSON format.  It is located in the /scripts directory.
-// TODO : Thanks to `wpa_cli` - this function (and the script it calls) might be obsolete?  Good riddance if so.
-
-(async () => {
-  const mode = await wireless.mode();
-  if (mode === 'station') {
-    await wireless.disconnect();
-  }
-
-  const ap = AP.create('WIRELESSER');
-
-  ap.on('stdout', data => output(data, console.log));
-  ap.on('stderr', data => output(data, console.error));
-
-  ap.on('started', () => console.log('>>>> started'));
-  ap.on('close', () => console.log('>>>> closed'));
-
-  function cleanup(sig) {
-    console.log(sig);
-    ap.close().then(() => {
-      console.log('>>>> exit');
-    });
-  }
-
-  process.on('SIGINT', () => cleanup('SIGINT'));
-  process.on('SIGTERM', () => cleanup('SIGTERM'));
-})();
-
-function output(data, log) {
-  data.trim().split(/[\n\r]/).forEach(line => log(`[ap] ${line}`));
-}
 
 
 var RaspberryPiNetworkManager = function() {
@@ -83,24 +62,14 @@ util.inherits(RaspberryPiNetworkManager, NetworkManager);
 // return an object containing {ipaddress:'',mode:''}
 //   interface - Interface name to get the info for
 //    callback - Called back with the info or error if there was an error
-RaspberryPiNetworkManager.prototype.getInfo = function(callback) {
-  wireless.status().then(function(data){
-    
-    console.log('this is the get info data');
-    console.log(data);
-    callback(null,{ssid : (data.ssid || '<Unknown>'), ipaddress:data.ip_address,mode:data.mode})
-  }, function(err) {
-    console.log('get info failed');
-    console.log(err);
-    callback(err)
-  });
-  // ifconfig.status(interface,function(err,ifstatus){
-  //     if(err)return callback(err);
-  //     iwconfig.status(interface,function(err,iwstatus){
-  //       if(err)return callback(err);
-  //       callback(null,{ssid : (iwstatus.ssid || '<Unknown>'), ipaddress:ifstatus.ipv4_address,mode:iwstatus.mode})
-  //     })
-  // })
+RaspberryPiNetworkManager.prototype.getInfo = function(interface, callback) {
+  ifconfig.status(interface,function(err,ifstatus){
+    if(err)return callback(err);
+    iwconfig.status(interface,function(err,iwstatus){
+      if(err)return callback(err);
+      callback(null,{ssid : (iwstatus.ssid || '<Unknown>'), ipaddress:ifstatus.ipv4_address,mode:iwstatus.mode})
+    })
+  })
 }
 
 // Return a list of IP addresses (the local IP for all interfaces)
@@ -124,36 +93,21 @@ RaspberryPiNetworkManager.prototype.getLocalAddresses = function() {
 // (A list of wifi networks that are visible to this client)
 //   callback - Called with the network list or with an error if error
 RaspberryPiNetworkManager.prototype.getNetworks = function(callback) {
-  //jedison('get networks', callback);
- // wpa_cli.scan_results(wifiInterface, callback);
-  wireless.listNetworks().then(function(data){
-    console.log('This is the get networks data');
-    console.log(data)
-    callback(null, data);
-  }, function(err){
-    console.log('Get networks failed');
-    console.log(data)
-    callback(err);
-  });
+ 
+ wpa_cli.scan_results(wifiInterface, callback);
 }
 
 // Intiate a wifi network scan (site survey)
 //   callback - Called when scan is complete (may take a while) or with error if error
 RaspberryPiNetworkManager.prototype.scan = function(callback) {
-  wireless.scan().then(function(data){
-    console.log('This is the scan data');
-    console.log(data)
-    callback(null, data);
-  }, function(err){
-    console.log('scan failed');
-    console.log(data)
-    callback(err);
-  });
-  //wpa_cli.scan(wifiInterface, callback);
+  wpa_cli.scan(wifiInterface, callback);
 }
 
 // This function defines a state machine that runs as long as wifi is in managed mode
 RaspberryPiNetworkManager.prototype.runWifi = function() {
+
+  console.log('running wifi');
+  console.log(this.command);
   if(this.command) {
     switch(this.command.cmd) {
       case 'join':
@@ -208,6 +162,8 @@ RaspberryPiNetworkManager.prototype.runWifi = function() {
     } //switch(this.command)
     return;
   } // if(this.command)
+  console.log('no command');
+  console.log(this.mode);
   switch(this.mode) {
     case 'ap':
       this.runWifiAP();
@@ -223,7 +179,7 @@ RaspberryPiNetworkManager.prototype.runWifi = function() {
 
     default:
       this.wifiState = 'idle';
-      this.getInfo(function(err, data) {
+      this.getInfo(wifiInterface, function(err, data) {
         if(!err) {
           var old_mode = this.mode;
           log.info("Wireless mode is '" + data.mode + "'");
@@ -250,6 +206,8 @@ RaspberryPiNetworkManager.prototype.runWifi = function() {
 
 // This function defines a state machine that runs as long as wifi is in station (AP) mode
 RaspberryPiNetworkManager.prototype.runWifiStation = function() {
+  console.log('running wifistation');
+  console.log(this.wifiState);
   switch(this.wifiState) {
     case 'idle':
       this.scan_retries = WIFI_SCAN_RETRIES;
@@ -298,7 +256,7 @@ RaspberryPiNetworkManager.prototype.runWifiStation = function() {
       break;
 
     case 'check_network':
-      this.getInfo(function(err, data) {
+      this.getInfo(wifiInterface, function(err, data) {
           var networkOK = true;
           if(!err) {
             if(data.ipaddress === '?' || data.ipaddress === undefined) {
@@ -345,9 +303,11 @@ RaspberryPiNetworkManager.prototype.runWifiStation = function() {
 // Periodic network check for wifi mode
 // TODO - probably should be _runWifiAP
 RaspberryPiNetworkManager.prototype.runWifiAP = function() {
+  console.log('runWifiAP');
+  console.log(this.wifiState);
   switch(this.wifiState) {
     default:
-      this.getInfo(function(err, data) {
+      this.getInfo(wifiInterface, function(err, data) {
         if(!err) {
           if(data.mode === 'managed') { this.mode = 'station'; }
           else if(data.mode === 'master') { this.mode = 'ap'; }
@@ -363,6 +323,7 @@ RaspberryPiNetworkManager.prototype.runWifiAP = function() {
 // Issue the command to join AP mode
 // Function returns immediately
 RaspberryPiNetworkManager.prototype.joinAP = function() {
+  console.log('sending the AP command');
   this.command = {
     'cmd' : 'ap',
   }
@@ -372,17 +333,41 @@ RaspberryPiNetworkManager.prototype.joinAP = function() {
 // Uses jedison to switch modes
 //   callback - Called once in AP mode, or with error if error
 RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
-  log.info("Entering AP mode...");
-  var network_config = config.updater.get('network');
-  network_config.wifi.mode = 'ap';
-  config.updater.set('network', network_config);
-
-  // jedison('join ap', function(err, result) {
-  //   if(!err) {
-  //     log.info("Entered AP mode.");
-  //   }
-  //   callback(err, result);
+  // log.info("Entering AP mode...");
+  // var network_config = config.engine.get('network');
+  // network_config.wifi.mode = 'ap';
+  // config.engine.set('network', network_config);
+  // APExecs.takeDown(wifiInterface, (err) => {
+  //   console.log("Trying to bring down " + wifiInterface + ".  Err?", err);
+  //   myEmitter.emit('down');
   // });
+
+  // myEmitter.on('down', () => {
+  //   APExecs.ifconfig(wifiInterface, 'inet', '192.168.42.1', (err) => {
+  //     console.log("Err setting the ip address?", err);
+  //     APExecs.ifconfig(wifiInterface, 'broadcast', '192.168.42.255', (err) => {
+  //       console.log("Err setting the broadcast address?", err);
+  //       APExecs.ifconfig(wifiInterface, 'netmask', '255.255.255.0', (err) => {
+  //         console.log("Err setting the mask address?", err);
+  //         myEmitter.emit('ipconfigured');
+  //       });
+  //     });
+  //   });
+  // });
+
+  // myEmitter.on('ipconfigured', () => {
+  //   APExecs.hostapd({
+  //       ssid: 'fabmo',
+  //       password: 'go2fabmo'
+  //     }, () => {
+  //     console.log("Done setting up hostap.");
+  //     APExecs.dnsmasq({interface:wifiInterface}, (err, result) => {
+  //       console.log("Done setting up dnsmasq.");
+  //       callback(err, result);
+  //     });
+  //   });
+  // });
+
 }
 
 // Issue the command to turn on wifi
@@ -405,10 +390,10 @@ RaspberryPiNetworkManager.prototype.disableWifi = function(){
 //   callback - called once wifi is disabled, or with error if error
 RaspberryPiNetworkManager.prototype._disableWifi = function(callback){
   log.info("Disabling wifi...");
-  //var network_config = config.updater.get('network');
+  //var network_config = config.engine.get('network');
   //network_config.mode = 'off';
-  //config.updater.set('network', network_config);
-  doshell("systemctl stop hostapd wpa_supplicant",function(err,result){
+  //config.engine.set('network', network_config);
+  exec("systemctl stop hostapd wpa_supplicant",function(err,result){
     if(err)log.warn(err);
     ifconfig.down(wifiInterface,function(err, result){
       if(!err) {
@@ -424,6 +409,7 @@ RaspberryPiNetworkManager.prototype._disableWifi = function(callback){
 //       ssid - The network to join
 //   password - The network key
 RaspberryPiNetworkManager.prototype.joinWifi = function(ssid, password) {
+  console.log('about to join')
   this.command = {
     'cmd' : 'join',
     'ssid' : ssid,
@@ -438,19 +424,84 @@ RaspberryPiNetworkManager.prototype.joinWifi = function(ssid, password) {
 RaspberryPiNetworkManager.prototype._joinWifi = function(ssid, password, callback) {
   var self = this;
   log.info("Attempting to join wifi network: " + ssid + " with password: " + password);
-  var network_config = config.updater.get('network');
+  var network_config = config.engine.get('network');
   network_config.wifi.mode = 'station';
   network_config.wifi.wifi_networks = [{'ssid' : ssid, 'password' : password}];
-  config.updater.set('network', network_config);
-  jedison('join wifi --ssid="' + ssid + '" --password="' + password.replace('$','\\$') + '"', function(err, result) {
-    if(err) {
-        log.error(err);
+  config.engine.set('network', network_config);
+  var PSK = password;
+  var SSID = ssid;
+  exec('wpa_cli add_network', function(error, stdout, stderr) {
+    if(error !== null) {
+        console.log('error: ' + error);
     }
-    self.setGateway(apModeGateway,function(err,result) {
-        this.emit('network', {'mode' : 'station'});
-        callback(err, result);
-    }.bind(this));
-  }.bind(this));
+    else {
+        let net_id = stdout.substr((stdout.indexOf('wlan') + 7)).trim();
+
+        async.series([
+            function(callback) {
+                exec('wpa_cli set_network ' + net_id + ' ssid \'\"' + SSID + '\"\'', function(error, stdout) 
+                {
+                    if(error) {
+                        console.error(error);                       
+                    }
+                    else {                      
+                        console.log('SSID result: ' + stdout);
+                        callback();
+                    }                   
+                });
+            },
+            function(callback) {
+                exec('wpa_cli set_network ' + net_id + ' psk \'\"' + PSK + '\"\'', function(error, stdout) 
+                {
+                    if(error) {
+                        console.error(error);                       
+                    }
+                    else {                      
+                        console.log('PSK result: ' + stdout);
+                        callback();
+                    }                   
+                });
+            },
+            function(callback) {
+              exec('wpa_cli enable_network ' + net_id, function(error, stdout) 
+              {
+                  if(error) {
+                      console.error(error);                       
+                  }
+                  else {                      
+                      console.log('enable_network result: ' + stdout);
+                      callback();
+                  }                   
+              });
+          },
+            function(callback) {
+                exec('wpa_cli save_config', function(error, stdout) 
+                {
+                    if(error) {
+                        console.error(error);                       
+                    }
+                    else {                      
+                        console.log('save_config result: ' + stdout);
+                        callback();
+                    }                   
+                });
+            }
+        ], function(errs, results) {
+            if(errs) throw errs;    // errs = [err1, err2, err3]
+    
+            console.log('results: ' + results);   // results = [result1, result2, result3]
+        });
+    }
+  });
+  // jedison('join wifi --ssid="' + ssid + '" --password="' + password.replace('$','\\$') + '"', function(err, result) {
+  //   if(err) {
+  //       log.error(err);
+  //   }
+  //   self.setGateway(apModeGateway,function(err,result) {
+  //       this.emit('network', {'mode' : 'station'});
+  //       callback(err, result);
+  //   }.bind(this));
+  // }.bind(this));
 }
 
 // Issue the command to drop out of AP (and implicitly join the last remembered network)
@@ -464,19 +515,22 @@ RaspberryPiNetworkManager.prototype.unjoinAP = function() {
 // Do the actual work of dropping out of AP mode
 //   callback - Callback called when AP mode has been exited or with error if error
 RaspberryPiNetworkManager.prototype._unjoinAP = function(callback) {
-  jedison('unjoin', function(err, result) {
-    if(err) {
-      log.error(err);
+  log.info("Turning off AP mode...");
+  exec('systemctl stop hostapd', (err,data) => {
+    if(err){
+      console.log(err)
+    }else {
+      console.log(data);
     }
-    callback(err, result);
-  });
+
+  })
 }
 
 // Apply the wifi configuration.  If in AP, drop out of AP (and wifi config will be applied automatically)
 // If in station mode, join the wifi network specified in the network configuration.
 // Function returns immediately
 RaspberryPiNetworkManager.prototype.applyWifiConfig = function() {
-  var network_config = config.updater.get('network');
+  var network_config = config.engine.get('network');
   switch(network_config.wifi.mode) {
     case 'ap':
       this.unjoinAP();
@@ -503,15 +557,48 @@ RaspberryPiNetworkManager.prototype.applyWifiConfig = function() {
 
 // Initialize the network manager.  This kicks off the state machines that process commands from here on out
 RaspberryPiNetworkManager.prototype.init = function() {
-  log.info('Initializing network manager...');
-  jedison("init --name='" + config.updater.get('name') + "' --password='" + config.updater.get('password').replace('$','\\$') + "'", function(err, data) {
-    log.info('Applying network configuration...');
-    this.applyNetworkConfig();
-    log.info('Running wifi...');
-    this.runWifi();
-    this.runEthernet();
-  }.bind(this));
+  
+
+  let defaultConfig = 'ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev \n'+
+  'update_config=1 \n' +
+  'network={\n'+
+      'ssid="fabmo"\n'+
+      'proto=RSN\n'+
+      'key_mgmt=WPA-PSK\n'+
+      'pairwise=CCMP TKIP\n'+
+      'group=CCMP TKIP\n'+
+      'psk="go2fabmo"\n'+
+  '}'
+  console.log(defaultConfig);
+  exec('apt-get update', (err)  => {
+    if(err){
+      console.log(err)
+    } else{
+      exec('apt-get upgrade', (err) => {
+        if(err)console.log(err);
+        fs.writeFile('/etc/wpa_supplicant/wpa_supplicant.conf', defaultConfig, (err) => {
+          console.log('hopefully wrote the file');
+          if(err){
+            log.error(err);
+          } else {
+            exec(' wpa_supplicant -i wlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf -B',(err) =>{
+              if (err){
+                log.error(err)
+              }
+              
+             // this.runWifi();
+            });
+      
+          }
+        });
+      })
+    }
+  })
 }
+
+// RaspberryPiNetworkManager.prototype.writeHostapd {
+  
+// }
 
 // Get a list of the available wifi networks.  (The "scan results")
 //   callback - Called with list of wifi networks or error if error
@@ -525,6 +612,7 @@ RaspberryPiNetworkManager.prototype.getAvailableWifiNetworks = function(callback
 //    key - The network key
 RaspberryPiNetworkManager.prototype.connectToAWifiNetwork= function(ssid,key,callback) {
   // TODO a callback is passed here, but is not used.  If this function must have a callback, we should setImmediate after issuing the wifi command
+  console.log('gonna try and join the wifi ' + ssid +'with '+ key );
   this.joinWifi(ssid, key, callback);
 }
 
@@ -561,7 +649,7 @@ RaspberryPiNetworkManager.prototype.getWifiHistory=function(callback){
 // Enter AP mode
 //   callback - Called once the command has been issued (but does not wait for the system to enter AP)
 RaspberryPiNetworkManager.prototype.turnWifiHotspotOn=function(callback){
-  log.info("Entering AP mode...")
+  log.info("Going to turn wifi hotspot")
   this.joinAP();
   callback(null);
 }
@@ -591,7 +679,7 @@ RaspberryPiNetworkManager.prototype.setIdentity = function(identity, callback) {
 
     function set_name_config(callback) {
       if(identity.name) {
-        config.updater.set('name', identity.name, callback);
+        config.engine.set('name', identity.name, callback);
       } else {
         callback(null);
       }
@@ -608,7 +696,7 @@ RaspberryPiNetworkManager.prototype.setIdentity = function(identity, callback) {
 
     function set_password_config(callback) {
       if(identity.password) {
-        config.updater.set('password', identity.password, callback);
+        config.engine.set('password', identity.password, callback);
       } else {
         callback(null);
       }
@@ -665,7 +753,7 @@ log.debug('Disabling DHCP on ' + interface);
 //   interface - The interface on which to start the DHCP server
 //    callback - Called when the DHCP server has been started, or with error if error
 RaspberryPiNetworkManager.prototype.startDHCPServer=function(interface, callback) {
-  var ethernet_config = config.updater.get('network').ethernet;
+  var ethernet_config = config.engine.get('network').ethernet;
   var options = {
     interface: interface,
     tmpPath: tmpPath,
@@ -728,7 +816,7 @@ RaspberryPiNetworkManager.prototype.setNetmask=function(interface, netmask, call
 //     gateway - The gateway, eg: '255.255.255.0'
 //    callback - Called when the gateway has been set or with error if error
 RaspberryPiNetworkManager.prototype.setGateway=function(gateway, callback) {
-  doshell('route add default gw '+ gateway, function(s) {
+  exec('route add default gw '+ gateway, function(s) {
     callback(null);
   });
 }
@@ -835,7 +923,7 @@ RaspberryPiNetworkManager.prototype.runEthernet = function(){
                 log.warn('Could not save ethernet address in network history.')
             }
             this.ethernetState = "plugged";
-            var network_config = config.updater.get('network')
+            var network_config = config.engine.get('network')
             try {
                 if(!network_config.wifi.enabled) {
                     if(this.wifiStatus != 'disabled') {

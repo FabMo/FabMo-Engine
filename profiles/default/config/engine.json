@@ -5,6 +5,8 @@
     "version":"",
     "upload_dir" : "/tmp",
     "profile" : "Default",
+    "name" : "FabMo",
+	"password" : "go2fabmo",
     "platform" : "generic",
     "consent_for_beacon" : "true",
     "beacon_url" : "http://beacon.shopbottools.com/beacon",

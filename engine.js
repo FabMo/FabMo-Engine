@@ -824,7 +824,7 @@ Engine.prototype.start = function(callback) {
                     break;
             }
 
-            this.beacon.start();
+            //this.beacon.start();
 
         }.bind(this)
         ],

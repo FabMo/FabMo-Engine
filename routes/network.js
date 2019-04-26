@@ -24,6 +24,7 @@ var scan = function(req, res, next) {
 
 // Connect to the wifi network specified in the request body
 connectWifi = function(req, res, next) {
+  console.log('connecting to wifi in the routes!');
   ssid = req.params.ssid
   key = req.params.key
   var network = require('../engine').networkManager;

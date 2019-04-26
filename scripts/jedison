@@ -1,0 +1,412 @@
+#!/usr/bin/python
+
+import os
+import sys
+import subprocess
+import argparse
+import json
+import re
+import json
+import time
+
+WSREGEX = re.compile(r"\s+")
+DESTINATION_PATH = "/tmp/"
+STATE_DIR = '/var/lib/edison_config_tools'
+HOST_AP_MODE_FILE = "/update/.start-in-host-ap-mode"
+CURR_PACKAGE_PATH = ""
+IFNAME = 'wlan0'
+WPAPSK_REGEX=re.compile(r'WPA[2]?-PSK-.+')
+WPAEAP_REGEX=re.compile(r'WPA[2]?-EAP-.+')
+WEP_REGEX=re.compile(r'\[WEP.*\]')
+HOSTAPD_PASSWORD = 'go2fabmo'
+
+WPA_SUPPLICANT_CONF_TEMPLATE = '''
+ctrl_interface=/var/run/wpa_supplicant
+ctrl_interface_group=0
+config_methods=virtual_push_button virtual_display push_button keypad
+update_config=1
+fast_reauth=1
+device_name=Edison
+manufacturer=Intel
+model_name=Edison
+'''
+
+class wpa_templates:
+  START = '''
+ctrl_interface=/var/run/wpa_supplicant
+ctrl_interface_group=0
+update_config=1
+ap_scan=1
+'''
+  OPEN =  '''
+network={
+  ssid="%s"
+  %s
+  key_mgmt=NONE
+}'''
+  WEP =  '''
+network={
+  ssid="%s"
+  %s
+  key_mgmt=NONE
+  group=WEP104 WEP40
+  wep_key0="%s"
+}
+'''
+  WPAPSK =  '''
+network={
+  ssid="%s"
+  %s
+  key_mgmt=WPA-PSK
+  pairwise=CCMP TKIP
+  group=CCMP TKIP WEP104 WEP40
+  eap=TTLS PEAP TLS
+  psk="%s"
+}
+'''
+  WPAEAP =  '''
+network={
+  ssid="%s"
+  %s
+  key_mgmt=WPA-EAP
+  pairwise=CCMP TKIP
+  group=CCMP TKIP WEP104 WEP40
+  eap=TTLS PEAP TLS
+  identity="%s"
+  password="%s"
+  phase1="peaplabel=0"
+}
+'''
+  #worst case, break this out.
+  MAX = '''
+network={
+  ssid="%s"
+  %s
+  key_mgmt=WPA-EAP WPA-PSK IEEE8021X NONE
+  pairwise=CCMP TKIP
+  group=CCMP TKIP WEP104 WEP40
+  psk="%s"
+  eap=TTLS PEAP TLS
+  identity="%s"
+  password="%s"
+  phase1="peaplabel=0"
+}
+'''
+
+def set_hostname(hostname):
+    subprocess.call("hostnamectl set-hostname '%s'" % hostname, shell=True)
+
+def get_hostname():
+    hostname = subprocess.check_output('hostname', shell=True)
+    return {'hostname' : hostname.strip()}
+
+def set_hostapd_ssid(name):
+  subprocess.call(["sed", "-i", "s/^ssid=.*/ssid=" + name + "/", "/etc/hostapd/hostapd.conf"])
+
+def set_hostapd_password(password):
+  subprocess.call(["sed", "-i", "s/^wpa_passphrase=.*/wpa_passphrase=" + password + "/", "/etc/hostapd/hostapd.conf"])
+
+def set_root_password(password):
+  echoSub = subprocess.Popen(["echo", "root:" + password], stdout=subprocess.PIPE)
+  chpasswdSub = subprocess.Popen(["chpasswd"], stdin=echoSub.stdout, stdout=subprocess.PIPE)
+  echoSub.stdout.close()  # Allow echoSub to receive a SIGPIPE if chpasswdSub exits.
+  chpasswdSub.communicate()[0]
+
+def get_wifi_info():
+    iwconfig = ''
+    ifconfig = ''
+    try:
+        iwconfig = subprocess.check_output('iwconfig %s' % IFNAME, shell=True)
+        ifconfig = subprocess.check_output('ifconfig %s' % IFNAME, shell=True)
+    except Exception, e:
+        raise e
+
+    try:
+        mode = re.compile('Mode:(\w+)').search(iwconfig).group(1).lower()
+    except Exception, e:
+        raise ValueError('Could not get wifi mode')
+
+    retval = {'mode' : mode}
+
+    if mode == 'managed':
+        try: 
+            a,b = re.compile('Link Quality=(\d+)\/(\d+)').search(iwconfig).groups()
+            retval['strength'] = int(100*float(a)/float(b))
+        except:
+            retval['strength'] = 0 
+        
+        try:
+            ssid = re.compile('SSID:\s*"?((?: |\w|\d|\-|\_|\/)+)"?').search(iwconfig).group(1).strip()
+            retval['ssid'] = ssid
+        except:
+            retval['ssid'] = 'none/any' 
+   
+    try: 
+        ipaddress = re.compile('inet addr:\s*(\d+\.\d+\.\d+\.\d+)').search(ifconfig).group(1)
+    except:
+        ipaddress = '?'
+ 
+    retval['ipaddress'] = ipaddress
+
+    return retval
+
+def get_wifi_networks():
+    try:
+        results = subprocess.check_output('wpa_cli scan_results', shell=True)
+    except Exception, e:
+        return []
+ 
+    seen = set()
+    networks = []
+    line_regex = re.compile('(?P<bssid>(?:[a-fA-F0-9][a-fA-F0-9]:?)+)\s+(?P<frequency>\d+)\s+(?P<signal>-?\d+)\s+(?P<security>(?:\[(?:\w|\-|\+)+\])+)\s+(?P<ssid>\w(?:\w|\s|\-|\_)*)')
+    security_regex = re.compile('\[((?:\w|\d|\s|\-|\+)+)\]')
+    for line in results.split('\n'):
+        match = line_regex.match(line)
+        if match:
+            network = {}
+            network['bssid'] = match.group('bssid')
+            network['frequency'] = int(match.group('frequency'))
+            network['signal'] = int(match.group('signal'))
+            network['ssid'] = match.group('ssid')
+            security_string = match.group('security');
+            network['security'] = security_regex.findall(security_string);
+            network['favorite'] = False
+            if network['ssid'] not in seen:
+                seen.add(network['ssid'])
+                networks.append(network)
+
+    return networks
+
+def make_network_configuration(network, password):
+    ssid = network['ssid']
+    security = network['security']
+
+    for s in security:
+        if WPAPSK_REGEX.search(s):
+           security_type = "WPA-PSK"
+           break;
+        elif WEP_REGEX.search(s):
+            security_type = "WEP"
+            break;
+        elif WPAEAP_REGEX.search(s):
+            security_type = "WPA-EAP"
+            break;
+        else:
+            security_type = "OPEN"
+
+    if security_type == "WPA-PSK":
+        if len(password) < 8 or len(password) > 63:
+            raise Exception("Password must be between 8 and 63 characters.")
+        return wpa_templates.WPAPSK % (ssid, "", password)
+    elif security_type ==  "WEP":
+        if len(password) != 5 and len(password) != 13:
+            raise Exception("Password must be either 5 or 13 characters.")
+        return wpa_templates.WEP % (ssid, "", password)
+    elif security_type == "WPA-EAP":
+        raise Exception("Don't know how to deal with WPA-EAP.")
+    else:
+        return wpa_templates.OPEN % (ssid, "")
+
+def join_wifi_network(ssid, password, attempts=5):
+    info = get_wifi_info()
+    wifi_mode = info['mode']
+
+    if wifi_mode != 'managed':
+        timeout = 10
+        subprocess.call("systemctl stop hostapd &> /dev/null", shell=True)
+        subprocess.call("systemctl start wpa_supplicant &> /dev/null", shell=True)
+        while True:
+            time.sleep(0.25)
+            wifi_mode = get_wifi_info()['mode']
+            if wifi_mode == 'managed' or timeout == 0:
+                break
+            timeout -= 1
+
+    if wifi_mode == 'managed':
+        while(attempts > 0):
+            timeout = 10
+            while timeout > 0:
+                try:
+                    scan_wifi()
+                    break
+                except Exception, e:
+                    pass
+                timeout-=1
+                time.sleep(0.25)
+
+            timeout = 10 
+            while timeout>0:
+                try:
+                    networks = get_wifi_networks()
+                    selected_network = None
+                    for network in networks:
+                        if network['ssid'] == ssid:
+                            selected_network = network
+                    if selected_network:
+                        break
+                except:
+                    pass
+                time.sleep(0.25)
+                timeout -= 1
+
+            if selected_network:
+                break
+            attempts -= 1
+ 
+        if selected_network: 
+            network_conf = make_network_configuration(selected_network, password)
+            set_network(network_conf)
+        else:
+            raise Exception("No such SSID in the site survey: %s" % ssid)
+   
+def scan_wifi():
+    result = subprocess.check_output("wpa_cli scan", shell=True);
+    if result.split('\n')[1].strip() != 'OK':
+        raise Exception('Unexpected response from wpa_cli: %s' % result)
+
+
+def set_ap_boot_flag():
+    retval = subprocess.call("mkdir -p /update", shell=True)
+    if retval != 0:
+        raise Exception("Could not create mountpoint for AP mode boot flag.")
+
+    retval = subprocess.call("losetup -o 8192 /dev/loop0 /dev/disk/by-partlabel/update", shell=True)
+    if retval != 0:
+        raise Exception("Could not setup loopback device for AP mode boot flag.")
+
+    retval = subprocess.call("mount /dev/loop0 /update", shell=True)
+    if retval != 0:
+        raise Exception("Could not mount partition for AP mode boot flag.")
+
+    with open(HOST_AP_MODE_FILE, 'w') as fp:
+        fp.write('Indicates that the edison will start in host AP mode next boot\n')
+
+    retval = subprocess.call("umount /update", shell=True)
+    if retval != 0:
+        raise Exception("Could not unmount the partition for AP mode boot flag.");
+
+def join_ap_mode():
+    info = get_wifi_info()
+    if info['mode'] == 'master':
+        raise Exception("System already in AP mode")
+    os.popen("systemctl stop wpa_supplicant && sleep 2 && systemctl restart hostapd && sleep 2")
+    clear_network()
+    set_ap_boot_flag();
+
+def unjoin_ap_mode():
+    info = get_wifi_info()
+    if info['mode'] != 'master':
+        raise Exception("System not in AP mode")
+    os.popen("systemctl stop hostapd && sleep 2 && systemctl start wpa_supplicant && sleep 2")
+
+def clear_network():
+    with open('/etc/wpa_supplicant/wpa_supplicant.conf', 'w') as fp:
+        fp.write(WPA_SUPPLICANT_CONF_TEMPLATE)
+	fp.flush()
+	os.fsync(fp.fileno())
+
+def set_network(network_conf):
+    with open('/etc/wpa_supplicant/wpa_supplicant.conf', 'w') as fp:
+        fp.write(WPA_SUPPLICANT_CONF_TEMPLATE)
+        if(network_conf): 
+            fp.write(network_conf)
+	fp.flush()
+	os.fsync(fp.fileno())
+    subprocess.call("wpa_cli reconfigure &> /dev/null && sleep 2", shell=True)
+
+    network_count = int(subprocess.check_output('wpa_cli list_networks | wc -l', shell=True))
+    subprocess.call("wpa_cli select_network " + str(network_count - 2 - 1) + " &> /dev/null", shell=True)
+    time.sleep(5)
+
+    ifarray = subprocess.check_output("wpa_cli ifname", shell=True).split()
+    subprocess.call("udhcpc -q -i " + ifarray[len(ifarray)-1] + " -n &> /dev/null", shell=True)
+
+def init(name=None, password=None):
+    from collections import namedtuple
+    SetNamespace = namedtuple('SetNamespace', ['target', 'value'])
+    if(name):
+        set_handler(SetNamespace('name', name))
+    if(password):
+        set_handler(SetNamespace('password', password))
+
+    subprocess.call("sed -i 's/^BindToDevice=/# BindToDevice=/g' /lib/systemd/system/sshd.socket ; sync ; systemctl daemon-reload; systemctl restart sshd.socket", shell=True)
+    os.popen("systemctl stop hostapd && systemctl stop wpa_supplicant && sleep 1 && systemctl start wpa_supplicant && sleep 2")
+
+def init_handler(args):
+    init(args.name, args.password)
+
+def get_handler(args):
+    if args.target == 'networks':
+        return get_wifi_networks()
+    if args.target == 'wifi-info':
+        return get_wifi_info()
+    if args.target == 'hostname':
+        return get_hostname()
+
+def set_handler(args):
+    if args.target == 'hostname':
+        set_hostname(args.value)
+    elif args.target == 'name':
+        set_hostname(args.value)
+        set_hostapd_ssid(args.value)
+    elif args.target == 'password':
+        set_root_password(args.value)
+        set_hostapd_password(args.value)
+
+def join_handler(args):
+    if args.target == 'wifi':
+        join_wifi_network(args.ssid, args.password)
+    elif args.target == 'ap':
+        join_ap_mode()
+
+def unjoin_handler(args):
+    unjoin_ap_mode()
+
+def scan_handler(args):
+    scan_wifi()
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Manage the Intel Edison')
+    subparsers = parser.add_subparsers()
+
+    # GET command
+    get_parser = subparsers.add_parser('get')
+    get_parser.set_defaults(func=get_handler)
+    get_parser.add_argument('target', action='store', help='Configuration property to retrieve')
+
+    # SET command
+    set_parser = subparsers.add_parser('set')
+    set_parser.set_defaults(func=set_handler)
+    set_parser.add_argument('target', action='store')
+    set_parser.add_argument('value', action='store')
+
+    # JOIN command
+    join_parser = subparsers.add_parser('join')
+    join_parser.set_defaults(func=join_handler)
+    join_parser.add_argument('target', action='store')
+    join_parser.add_argument('--ssid', action='store')
+    join_parser.add_argument('--password', action='store')
+
+    scan_parser = subparsers.add_parser('scan')
+    scan_parser.set_defaults(func=scan_handler)
+
+    init_parser = subparsers.add_parser('init')
+    init_parser.set_defaults(func=init_handler)
+    init_parser.add_argument('--name', action='store')
+    init_parser.add_argument('--password', action='store')
+    
+    unjoin_parser = subparsers.add_parser('unjoin')
+    unjoin_parser.set_defaults(func=unjoin_handler)
+    try:
+        args = parser.parse_args()
+        data = args.func(args)
+        retval = {"status":"success"}
+        if data != None:
+            retval['data'] = data
+        print json.dumps(retval)
+    except Exception, e:
+       	#raise e 
+	retval = {"status":"error", "message":str(e)}
+        print json.dumps(retval)
