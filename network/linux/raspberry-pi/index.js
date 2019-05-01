@@ -520,7 +520,13 @@ RaspberryPiNetworkManager.prototype._unjoinAP = function(callback) {
     if(err){
       console.log(err)
     }else {
-      console.log(data);
+      console.log('hostapd stopped');
+      exec('systemctl stop dnsmasq', (err,data) => {
+        if(err){
+          console.log(err)
+        }  
+        console.log('dnsmasq stopped');
+      });
     }
 
   })
@@ -569,13 +575,6 @@ RaspberryPiNetworkManager.prototype.init = function() {
       'group=CCMP TKIP\n'+
       'psk="go2fabmo"\n'+
   '}'
-  console.log(defaultConfig);
-  exec('apt-get update', (err)  => {
-    if(err){
-      console.log(err)
-    } else{
-      exec('apt-get upgrade', (err) => {
-        if(err)console.log(err);
         fs.writeFile('/etc/wpa_supplicant/wpa_supplicant.conf', defaultConfig, (err) => {
           console.log('hopefully wrote the file');
           if(err){
@@ -585,15 +584,13 @@ RaspberryPiNetworkManager.prototype.init = function() {
               if (err){
                 log.error(err)
               }
-              
-             // this.runWifi();
+               this.runWifi();
             });
       
           }
         });
-      })
-    }
-  })
+
+
 }
 
 // RaspberryPiNetworkManager.prototype.writeHostapd {

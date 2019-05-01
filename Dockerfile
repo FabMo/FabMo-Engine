@@ -32,6 +32,20 @@ COPY --from=node /usr/src/app/node_modules ./node_modules
 # Bundle app source
 COPY . .
 
+RUN touch /lib/systemd/system/fabmo.service
+RUN echo "[Unit] \n" \
+"Description=FabMo Engine \n" \
+"\n"\
+"[Service] \n" \
+"Environment=PLATFORM=raspberry-pi \n" \
+"Type=simple \n" \
+"ExecStart=/usr/bin/node /usr/src/app/server.js \n" \
+"Restart=on-failure \n" \
+"WorkingDirectory = /usr/src/app/ \n" \
+"\n"\
+"[Install] \n" \
+"WantedBy=multi-user.target \n" > /lib/systemd/system/fabmo.service
+
 
 ENV container docker
 ENV LC_ALL C
@@ -47,20 +61,14 @@ rm -f /lib/systemd/system/anaconda.target.wants/*; \
 rm -f /lib/systemd/system/plymouth*; \
 rm -f /lib/systemd/system/systemd-update-utmp*;
 RUN systemctl set-default multi-user.target 
-RUN ln -fs /etc/systemd/system/autologin@.service /etc/systemd/system/getty.target.wants/getty@tty1.service
+
+RUN systemctl enable fabmo 
 
 ENV init /lib/systemd/systemd
 
+
 VOLUME [ "/sys/fs/cgroup" ]
 
-
-
-# Create app directory
-
-# Install app dependencies
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
-# where available (npm@5+)
-
-
 EXPOSE 80
-CMD ["/lib/systemd/systemd"] && [ "npm", "start" ] 
+CMD ["/lib/systemd/systemd"]
+

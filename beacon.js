@@ -108,7 +108,7 @@ Beacon.prototype.createMessage = function(reason) {
 		name : 'brendan-pi',
 		os : config.platform,
 		platform : config.engine.get('platform'),
-		os_version :'dont matter',
+		os_version :'test',
 		reason : reason || 'interval',
 		local_ips : [],
 		updater_version: {

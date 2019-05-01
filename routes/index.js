@@ -49,14 +49,17 @@ module.exports = function(server) {
 	server.get(/.*/, function(req, res, next) {
 		var current_hash = config.engine.get('version');
 		var url_arr = req.url.split('/');
-
-		if(url_arr[1] !== current_hash){
+		console.log(current_hash);
+		console.log(url_arr[1])
+		if(url_arr[1] != current_hash){
+			console.log('but do I go here');
 			url_arr.splice(1,0, current_hash);
 			var newPath = url_arr.join('/');
 			res.redirect(newPath , next);
 		} else {
+			console.log(next());
 			next();
-		}
+		} 
 	},
 		static({
 			//directory: './static'
