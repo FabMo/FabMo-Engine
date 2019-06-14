@@ -162,7 +162,7 @@ Engine.prototype.getVersion = function(callback) {
     fs.readFile('version.json', 'utf8', function(err, data) {
             if(err) {
                 this.version.type = 'dev';
-                this.version.number = 'test';
+                this.version.number = '2.0-dev';
                 return callback(null, this.version);
             }
             try {
@@ -172,7 +172,7 @@ Engine.prototype.getVersion = function(callback) {
                     this.version.type = 'release';
                 }
             } catch(e) {
-                this.version.number = 'test';
+                this.version.number = '2.0-dev';
                 this.version.type = 'dev';
             } finally {
                 callback(null, this.version);

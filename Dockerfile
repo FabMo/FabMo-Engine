@@ -10,7 +10,7 @@ RUN npm install
 FROM raspbian/stretch
 
 
-RUN apt-get update --fix-missing && apt-get install -y curl hostapd dnsmasq iptables net-tools wireless-tools wpasupplicant iw 
+RUN apt-get update --fix-missing && apt-get install -y curl hostapd dnsmasq  wireless-tools wpasupplicant iw net-tools
 
 
 WORKDIR /usr/src/app
@@ -22,9 +22,6 @@ COPY package*.json ./
 
 RUN curl -sL https://deb.nodesource.com/setup_10.x | bash -
 RUN apt-get install -y nodejs
-
-RUN node -v 
-RUN npm -v 
 
 RUN mkdir node_modules
 COPY --from=node /usr/src/app/node_modules ./node_modules
@@ -45,6 +42,10 @@ RUN echo "[Unit] \n" \
 "\n"\
 "[Install] \n" \
 "WantedBy=multi-user.target \n" > /lib/systemd/system/fabmo.service
+
+RUN mkdir -p /etc/wpa_supplicant/
+COPY ./dockerconfigs/wpa_supplicant.conf /etc/wpa_supplicant/wpa_supplicant.conf
+
 
 
 ENV container docker

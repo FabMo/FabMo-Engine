@@ -2,7 +2,7 @@
     "server_port": 80,
     "driver": "g2",
     "log_level": "info",
-    "version":"test",
+    "version":"2.0-dev",
     "upload_dir" : "/tmp",
     "profile" : "Default",
     "name" : "FabMo",

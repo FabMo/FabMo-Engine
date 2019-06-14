@@ -70,9 +70,14 @@ define(function(require) {
         //L & R = width of left & right menus
         var l = 0;
         var r = 0;
-
+        var nav = document.getElementsByClassName('tab-bar')[0];
         //Screen displays based on size
-        $("#left-menu").css({'height' :$(window).height() - 56, 'top' : 56 } );
+        if(nav.style.display === 'none') {
+            $("#left-menu").css({'height' :$(window).height(), 'top' : 0 } );
+        } else {
+            $("#left-menu").css({'height' :$(window).height() - 56, 'top' : 56 } );
+        }
+        
 
         colapsed = localStorage.getItem('colapsed');
         if ($(window).width() > 640) {

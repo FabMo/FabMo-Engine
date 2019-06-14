@@ -17,7 +17,7 @@ var wpa_cli = require('wireless-tools/wpa_cli');
 var udhcpc = require('wireless-tools/udhcpc');
 var udhcpd = require('wireless-tools/udhcpd');
 
-//const APExecs = require('./apexecs.js');
+const commands = require('./commands.js');
 const hostInterface = 'wlan0';  // The WiFi Access Device.
 
 
@@ -30,7 +30,8 @@ var WIFI_SCAN_INTERVAL = 5000;
 var WIFI_SCAN_RETRIES = 3;
 
 var wifiInterface = 'wlan0';
-var ethernetInterface = "eth0";
+var apInterface = 'uap0';
+var ethernetInterface = "enp0s17u1u1";
 var apModeGateway= '192.168.42.1';
 var tmpPath = os.tmpdir() + '/';
 
@@ -93,8 +94,7 @@ RaspberryPiNetworkManager.prototype.getLocalAddresses = function() {
 // (A list of wifi networks that are visible to this client)
 //   callback - Called with the network list or with an error if error
 RaspberryPiNetworkManager.prototype.getNetworks = function(callback) {
- 
- wpa_cli.scan_results(wifiInterface, callback);
+  wpa_cli.scan_results(wifiInterface, callback);
 }
 
 // Intiate a wifi network scan (site survey)
@@ -179,24 +179,18 @@ RaspberryPiNetworkManager.prototype.runWifi = function() {
 
     default:
       this.wifiState = 'idle';
-      this.getInfo(wifiInterface, function(err, data) {
+      this.getInfo(apInterface, function(err, data) {
         if(!err) {
           var old_mode = this.mode;
-          log.info("Wireless mode is '" + data.mode + "'");
-          if(data.mode == 'managed') {
-            this.mode = 'station';
-          } else if(data.mode == 'master') { 
-            this.mode = 'ap';
-          } else { 
-            log.warn('Unknown network mode: ' + data.mode)
-          }
-
+          log.info("AP mode is '" + data.mode + "'");
+          this.mode = 'ap';
           if(this.mode != old_mode) {
             setImmediate(this.runWifi.bind(this));
           } else{
             setTimeout(this.runWifi.bind(this), 5000);
           }
         } else { 
+          this.mode = 'station';
           setTimeout(this.runWifi.bind(this), 5000);
         } // if(!err)
       }.bind(this));
@@ -262,13 +256,15 @@ RaspberryPiNetworkManager.prototype.runWifiStation = function() {
             if(data.ipaddress === '?' || data.ipaddress === undefined) {
               networkOK = false;
             }
-            if(data.mode === 'master') {
-              log.info("In master mode...");
-              this.mode = 'ap';
-              this.wifiState = 'idle';
-              this.emit('network', {'mode' : 'ap'})
-              setImmediate(this.runWifi.bind(this));
-            }
+            this.getInfo(apInterface, function(err, data){
+                if(!err) {
+                  this.mode = 'ap';
+                  this.wifiState = 'idle';
+                  this.emit('network', {'mode' : 'ap'})
+                  setImmediate(this.runWifi.bind(this));
+                  return;
+                } 
+            }.bind(this));
           } else {
             networkOK = false;
           }
@@ -307,13 +303,20 @@ RaspberryPiNetworkManager.prototype.runWifiAP = function() {
   console.log(this.wifiState);
   switch(this.wifiState) {
     default:
-      this.getInfo(wifiInterface, function(err, data) {
+
+      this.getInfo(apInterface, function(err, data) {
         if(!err) {
-          if(data.mode === 'managed') { this.mode = 'station'; }
-          else if(data.mode === 'master') { this.mode = 'ap'; }
-          else { log.warn('Unknown network mode: ' + data.mode)}
+          this.mode = 'ap';
+ 
+          setTimeout(this.runWifi.bind(this), 5000);
+        } else {
+          this.mode = 'station';
+          this._joinAP(function(err, data) {
+            setTimeout(this.runWifi.bind(this), 5000);
+          }.bind(this));
+          
         }
-        setTimeout(this.runWifi.bind(this), 5000);
+        
       }.bind(this));
       break;
   }
@@ -323,7 +326,6 @@ RaspberryPiNetworkManager.prototype.runWifiAP = function() {
 // Issue the command to join AP mode
 // Function returns immediately
 RaspberryPiNetworkManager.prototype.joinAP = function() {
-  console.log('sending the AP command');
   this.command = {
     'cmd' : 'ap',
   }
@@ -333,40 +335,41 @@ RaspberryPiNetworkManager.prototype.joinAP = function() {
 // Uses jedison to switch modes
 //   callback - Called once in AP mode, or with error if error
 RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
-  // log.info("Entering AP mode...");
-  // var network_config = config.engine.get('network');
-  // network_config.wifi.mode = 'ap';
-  // config.engine.set('network', network_config);
-  // APExecs.takeDown(wifiInterface, (err) => {
-  //   console.log("Trying to bring down " + wifiInterface + ".  Err?", err);
-  //   myEmitter.emit('down');
-  // });
+  log.info("Entering AP mode...");
+  var network_config = config.engine.get('network');
+  network_config.wifi.mode = 'ap';
+  config.engine.set('network', network_config);
+  commands.takeDown("uap0",(err, result)=>{
+    console.log('taken down AP')
+    console.log(err);
+    console.log(result);
+    commands.addApInterface((err, result) => {
+      console.log('Adding AP int')
+      console.log(err);
+      console.log(result);
+      commands.bringUp('uap0', (err, result)=> {
+        console.log('bringing up');
+        console.log(err);
+        console.log(result);
+        commands.configureApIp('192.168.42.1', (err, result) =>{
+          console.log('configure')
+          console.log(err);
+          console.log(result);
+          commands.hostapd({
+            ssid: 'fabmo-net'
+          }, () => {
+            console.log('hostAPD up');
+            commands.dnsmasq({interface: 'uap0'}, () => {
+              console.log('should be up and running AP')
+              callback(err, result);
+            })
+          })
+        })
+      })
+    })
+  })
 
-  // myEmitter.on('down', () => {
-  //   APExecs.ifconfig(wifiInterface, 'inet', '192.168.42.1', (err) => {
-  //     console.log("Err setting the ip address?", err);
-  //     APExecs.ifconfig(wifiInterface, 'broadcast', '192.168.42.255', (err) => {
-  //       console.log("Err setting the broadcast address?", err);
-  //       APExecs.ifconfig(wifiInterface, 'netmask', '255.255.255.0', (err) => {
-  //         console.log("Err setting the mask address?", err);
-  //         myEmitter.emit('ipconfigured');
-  //       });
-  //     });
-  //   });
-  // });
 
-  // myEmitter.on('ipconfigured', () => {
-  //   APExecs.hostapd({
-  //       ssid: 'fabmo',
-  //       password: 'go2fabmo'
-  //     }, () => {
-  //     console.log("Done setting up hostap.");
-  //     APExecs.dnsmasq({interface:wifiInterface}, (err, result) => {
-  //       console.log("Done setting up dnsmasq.");
-  //       callback(err, result);
-  //     });
-  //   });
-  // });
 
 }
 
@@ -401,7 +404,7 @@ RaspberryPiNetworkManager.prototype._disableWifi = function(callback){
       }
       callback(err, result);
     });
-    });
+  });
 }
 
 // Issue the command to join wifi with the provided key and password
@@ -446,7 +449,7 @@ RaspberryPiNetworkManager.prototype._joinWifi = function(ssid, password, callbac
                     }
                     else {                      
                         console.log('SSID result: ' + stdout);
-                        callback();
+                        callback(null, stdout);
                     }                   
                 });
             },
@@ -458,7 +461,7 @@ RaspberryPiNetworkManager.prototype._joinWifi = function(ssid, password, callbac
                     }
                     else {                      
                         console.log('PSK result: ' + stdout);
-                        callback();
+                        callback(null, stdout);
                     }                   
                 });
             },
@@ -470,7 +473,7 @@ RaspberryPiNetworkManager.prototype._joinWifi = function(ssid, password, callbac
                   }
                   else {                      
                       console.log('enable_network result: ' + stdout);
-                      callback();
+                      callback(null, stdout);
                   }                   
               });
           },
@@ -482,15 +485,22 @@ RaspberryPiNetworkManager.prototype._joinWifi = function(ssid, password, callbac
                     }
                     else {                      
                         console.log('save_config result: ' + stdout);
-                        callback();
+                        callback(null, stdout);
                     }                   
                 });
             }
         ], function(errs, results) {
             if(errs) throw errs;    // errs = [err1, err2, err3]
-    
-            console.log('results: ' + results);   // results = [result1, result2, result3]
-        });
+            exec('wpa_cli -i wlan0 reconfigure',  function(error, stdout) {
+              if(error){
+                console.log(error)
+              } else {
+                console.log('results: ' + results);   // results = [result1, result2, result3]
+                callback(error, "Joined?");
+              }
+            })   
+           
+          });
     }
   });
   // jedison('join wifi --ssid="' + ssid + '" --password="' + password.replace('$','\\$') + '"', function(err, result) {
@@ -516,19 +526,14 @@ RaspberryPiNetworkManager.prototype.unjoinAP = function() {
 //   callback - Callback called when AP mode has been exited or with error if error
 RaspberryPiNetworkManager.prototype._unjoinAP = function(callback) {
   log.info("Turning off AP mode...");
-  exec('systemctl stop hostapd', (err,data) => {
+  commands.stopAP((err, result) => {
     if(err){
-      console.log(err)
+      callback(err);
     }else {
-      console.log('hostapd stopped');
-      exec('systemctl stop dnsmasq', (err,data) => {
-        if(err){
-          console.log(err)
-        }  
-        console.log('dnsmasq stopped');
-      });
+      commands.takeDown('uap0', (err, result) => {
+        callback(err, result);
+      })
     }
-
   })
 }
 
@@ -563,39 +568,28 @@ RaspberryPiNetworkManager.prototype.applyWifiConfig = function() {
 
 // Initialize the network manager.  This kicks off the state machines that process commands from here on out
 RaspberryPiNetworkManager.prototype.init = function() {
-  
-
-  let defaultConfig = 'ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev \n'+
-  'update_config=1 \n' +
-  'network={\n'+
-      'ssid="fabmo"\n'+
-      'proto=RSN\n'+
-      'key_mgmt=WPA-PSK\n'+
-      'pairwise=CCMP TKIP\n'+
-      'group=CCMP TKIP\n'+
-      'psk="go2fabmo"\n'+
-  '}'
-        fs.writeFile('/etc/wpa_supplicant/wpa_supplicant.conf', defaultConfig, (err) => {
-          console.log('hopefully wrote the file');
-          if(err){
-            log.error(err);
-          } else {
-            exec(' wpa_supplicant -i wlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf -B',(err) =>{
-              if (err){
-                log.error(err)
-              }
-               this.runWifi();
-            });
-      
-          }
-        });
-
-
+  commands.startWpaSupplicant((err, result) => {
+    this._joinAP();
+    if(err) {
+      log.error('WPA not started!!!!!!! ')
+    } else {
+      log.info('Applying network configuration...');
+      this.applyNetworkConfig();
+      log.info('Running wifi...');
+      this.runWifi();
+      this.runEthernet();
+      commands.takeDown('uap0', (err, data)=>{
+        if(err){
+          console.log('uap0 error ' + err)
+        } else {
+          console.log('uap0 data ' + data)
+        }
+      });
+    }
+  })
 }
 
-// RaspberryPiNetworkManager.prototype.writeHostapd {
-  
-// }
+
 
 // Get a list of the available wifi networks.  (The "scan results")
 //   callback - Called with list of wifi networks or error if error
@@ -609,7 +603,6 @@ RaspberryPiNetworkManager.prototype.getAvailableWifiNetworks = function(callback
 //    key - The network key
 RaspberryPiNetworkManager.prototype.connectToAWifiNetwork= function(ssid,key,callback) {
   // TODO a callback is passed here, but is not used.  If this function must have a callback, we should setImmediate after issuing the wifi command
-  console.log('gonna try and join the wifi ' + ssid +'with '+ key );
   this.joinWifi(ssid, key, callback);
 }
 

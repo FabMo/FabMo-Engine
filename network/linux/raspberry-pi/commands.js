@@ -5,15 +5,32 @@ var tmp = require('tmp');
 
 // Collection of functions for easy access to network manipulation tools on
 // a Reaspberry PI.
-class APExecs {
+class commands {
 
   // Simple function for using the command line for taking down an interface.
   static takeDown(iface, callback) {
-    exec('ifconfig ' + iface + ' down', callback);
+    exec('iw dev '+iface+' del', callback);
+  }
+  
+  static bringUp(iface, callback){
+    exec('ifconfig ' + iface + ' up', callback)
+  }
+
+  static configureApIp(ip,callback){
+    exec('ifconfig uap0 ' + ip, callback)
+  }
+
+  static addApInterface(callback) {
+    exec('iw phy phy0 interface add uap0 type __ap', callback)
+  }
+
+  static startWpaSupplicant(callback) {
+    console.log('should be starting the wpa thing')
+    exec('wpa_supplicant -B -Dnl80211 -iwlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf', callback)
   }
 
   static stopAP(callback) {
-    exec('systemctl stop hostapd', callback)
+    exec('pkill hostapd dnsmasq', callback)
   }
 
   // Simplified function for making use of ifconfig command line tool.
@@ -37,13 +54,13 @@ class APExecs {
     // Known good options for the Raspberry PI 3.  If you are using the 
     // Raspberry PI Zero the driver value might need to be different.
     var defaultOptions = {
-      driver:'nl80211', // <--- Make sure this is right for your hardware.
+      driver:'nl80211',
       channel:6,
       hw_mode:'g',
-      interface:'wlan0',
-      ssid:'fabmo', // <--- This is going to be the name of the AP
+      interface:'uap0',
+      ssid:'fabmo_test_testy', 
       wpa:'2',
-      wpa_passphrase:'go2fabmo' // <--- This is going to be the AP's password.
+      wpa_passphrase:'go2fabmo' 
     }
 
     var finalOptions = Object.assign(defaultOptions, options);
@@ -96,7 +113,7 @@ class APExecs {
   static dnsmasq(options, callback) {
     var commands = [];
     var defaultOptions = {
-      'interface':'wlan0',
+      'interface':'uap0',
       'listen-address':'192.168.42.1',
       'bind-interfaces':'',
       'server': '8.8.8.8', // <--- Google's DNS servers.  Very handy.
@@ -115,11 +132,10 @@ class APExecs {
       }
     });
 
-    exec('/etc/init.d/dnsmasq stop', () => {
+    exec('systemctl stop dnsmasq', () => {
       tmp.file((err, path, fd) => {
-        if (err) throw err;
-
-        console.log('File: ', path);
+        if (err) console.log(err)
+        console.log('writing dnsmasq file')
         fs.write(fd, commands.join('\n'), function(err, result){
             if(err){
                 console.log(err);
@@ -138,4 +154,4 @@ class APExecs {
   }
 }
 
-module.exports = APExecs;
+module.exports = commands;

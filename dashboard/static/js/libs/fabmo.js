@@ -423,6 +423,27 @@ FabMoDashboard.prototype.hideDRO = function(callback) {
 	this._call("hideDRO", null, callback);
 }
 
+/**
+ * Show the top nav bar
+ *
+ * @method showNav
+ * @param {function} callback Called once the nav has been displayed.
+ * @param {Error} callback.err Error object if there was an error.
+ */
+FabMoDashboard.prototype.showNav = function(callback) {
+	this._call("showNav", null, callback);
+}
+ /**
+ * Hide the top nav bar
+ *
+ * @method hideNav
+ * @param {function} callback Called once the nav has been hidden.
+ * @param {Error} callback.err Error object if there was an error.
+ */
+FabMoDashboard.prototype.hideNav = function(callback) {
+	this._call("hideNav", null, callback);
+}
+
 
 //Modal Functions
 FabMoDashboard.prototype.showModal = function(options, callback) {

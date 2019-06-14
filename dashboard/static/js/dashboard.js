@@ -214,6 +214,18 @@ define(function(require) {
       this.closeRightMenu()
     }.bind(this));
 
+    //Show nav
+    this._registerHandler('showNav', function(callback) {
+      this.showNav();
+      callback(null);
+    }.bind(this));
+
+    // Hide the nav
+    this._registerHandler('hideNav', function(callback) {
+      this.hideNav()
+      callback(null);
+    }.bind(this));
+
     // Show the Modal
 
     this._registerHandler('openModal', function(options, callback) {
@@ -907,6 +919,38 @@ define(function(require) {
       events.closeDROPush();
     }
   }
+
+  Dashboard.prototype.showNav = function(callback){
+    console.log('when do I');
+    var nav = document.getElementsByClassName('tab-bar')[0];
+    var DRO = document.getElementById('right-menu');
+    var leftMenu = document.getElementById('left-menu');
+    var main = document.getElementById('main');  
+    console.log(main);  
+    DRO.style.marginTop = '45px';
+    nav.style.display = 'block';
+    leftMenu.style.top = '56px';
+    main.style.paddingTop = '3.5rem'
+    events.resizedoc();
+  }
+
+
+  Dashboard.prototype.hideNav = function(callback){
+    console.log('do I get called')
+    var nav = document.getElementsByClassName('tab-bar')[0];
+    var DRO = document.getElementById('right-menu');
+    var leftMenu = document.getElementById('left-menu');
+    var main = document.getElementById('main');  
+    //var height = document
+    console.log(main); 
+    nav.style.display = 'none';
+    DRO.style.marginTop = '0px';
+    leftMenu.style.top = '0px';
+    leftMenu.style.height= 'auto';
+    main.style.paddingTop = 0
+    events.resizedoc();
+  }
+
 
   //Open Footer
   Dashboard.prototype.openFooter = function() {
