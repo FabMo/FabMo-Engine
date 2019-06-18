@@ -7,6 +7,8 @@ COPY package*.json ./
 RUN npm install
 
 
+
+
 FROM raspbian/stretch
 
 
@@ -27,7 +29,10 @@ RUN mkdir node_modules
 COPY --from=node /usr/src/app/node_modules ./node_modules
 
 # Bundle app source
+
 COPY . .
+
+RUN npm run prod
 
 RUN touch /lib/systemd/system/fabmo.service
 RUN echo "[Unit] \n" \
