@@ -177,6 +177,7 @@ require('./cm-fabmo-modes.js');
       }
     }
 
+    $(document).ready(function() {
       $(document).foundation();
 
       editor = CodeMirror(function(elt) {
