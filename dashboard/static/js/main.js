@@ -57,20 +57,22 @@ require("../css/toastr.min.css");
         } 
     });
 
-    engine.getUpdaterConfig(function(err, data){
-       consent =  data.consent_for_beacon;
+    // engine.getUpdaterConfig(function(err, data){
+    //    consent =  data.consent_for_beacon;
 
-       if (consent === "none") {
-            showConsent();
-            $(document).keyup(function(e) {
-                if (e.keyCode == 27) {
-                    hideConsent();
-                }
-            });
+    //    if (consent === "none") {
+    //         showConsent();
+    //         $(document).keyup(function(e) {
+    //             if (e.keyCode == 27) {
+    //                 hideConsent();
+    //             }
+    //         });
             
-       }
-       return consent;
-    });    
+    //    }
+    //    return consent;
+    // }); 
+    
+
 
     setUpManual = function(){
         engine.getConfig(function(err, config){
@@ -88,6 +90,9 @@ require("../css/toastr.min.css");
                 $('#manual-move-speed').val(manual_config.xy_speed);
                 $('#manual-move-speed').attr('min', manual_config.xy_min);
                 $('#manual-move-speed').attr('max', manual_config.xy_max);
+                ///hack to get extra axes to shop up
+                var justDriver = config.driver;
+                engine.setConfig({driver:justDriver}, function(err, data) {});
             }
         });
     }

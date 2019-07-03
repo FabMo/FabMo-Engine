@@ -120,7 +120,7 @@ function FabMoUI(tool, options){
 		this.updateStatusContent(status_report);
 	}.bind(this));
 
-	this.tool.requestStatus();
+	
 }
 
 FabMoUI.prototype.on = function(evt, handler) {
@@ -244,6 +244,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 				$('.a_neg').hide();
 			}
 			$('.' + axis + 'axis').show();
+			console.log(axis);
 			try {
 				var posText = status[pos].toFixed(digits);
 			} catch(e) {
