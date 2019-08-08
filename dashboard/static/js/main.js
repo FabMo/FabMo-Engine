@@ -90,9 +90,14 @@ require("../css/toastr.min.css");
                 $('#manual-move-speed').val(manual_config.xy_speed);
                 $('#manual-move-speed').attr('min', manual_config.xy_min);
                 $('#manual-move-speed').attr('max', manual_config.xy_max);
-                ///hack to get extra axes to shop up
-                var justDriver = config.driver;
-                engine.setConfig({driver:justDriver}, function(err, data) {});
+                ///hack to get extra axes to show up
+                var enabledAxes = {}
+                var checkEnabled = ['xam','yam', 'zam', 'aam', 'bam', 'cam'];
+                checkEnabled.forEach(function(axi){
+                    enabledAxes[axi] = config.driver[axi];
+                });
+                engine.setConfig({"driver":enabledAxes}, function(err, data) {
+                });
             }
         });
     }

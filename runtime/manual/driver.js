@@ -268,7 +268,6 @@ ManualDriver.prototype.goto = function(pos) {
 // Set the machine position to the specified vector
 //   pos - New position vector as an object,  eg: {"X":10, "Y":5}
 ManualDriver.prototype.set = function(pos) {
-	
 	if(this.mode === 'normal') {
 		var gc = 'G10 L20 P2 ';
 

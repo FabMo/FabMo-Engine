@@ -244,7 +244,6 @@ FabMoUI.prototype.updateStatusContent = function(status){
 				$('.a_neg').hide();
 			}
 			$('.' + axis + 'axis').show();
-			console.log(axis);
 			try {
 				var posText = status[pos].toFixed(digits);
 			} catch(e) {

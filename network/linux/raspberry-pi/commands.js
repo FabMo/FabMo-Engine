@@ -29,6 +29,10 @@ class commands {
     exec('wpa_supplicant -B -Dnl80211 -iwlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf', callback)
   }
 
+  static listNetworks(callback){
+    exec('wpa_cli -i wlan0 list_networks', callback)
+  }
+
   static stopAP(callback) {
     exec('pkill hostapd dnsmasq', callback)
   }

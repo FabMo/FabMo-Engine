@@ -26,7 +26,6 @@ module.exports = function(server) {
 	server.post(/(updater\/.*)/, redirect);
 	server.del(/(updater\/.*)/, redirect);
 	server.put(/(updater\/.*)/, redirect);
-
 	server.get(/(network\/.*)/, redirect);
 	server.post(/(network\/.*)/, redirect);
 	server.del(/(network\/.*)/, redirect);

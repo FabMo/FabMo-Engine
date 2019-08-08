@@ -272,6 +272,15 @@ exports.VI = function(args,callback) {
 	});
 };
 
+exports.VU = function(args,callback) {
+	var g2_VU = {}
+	g2_VU[args[0]] = args[1];
+	config.driver.setMany(g2_VU, function(err, values) {
+		callback();
+	});
+}
+
+
 exports.VL = function(args,callback) {
 
 	var g2_VL = {};
