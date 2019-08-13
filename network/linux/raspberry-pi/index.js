@@ -135,8 +135,6 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function() {
   var interfaces = os.networkInterfaces();
   var wlan0Int =interfaces.wlan0;
   var apInt = interfaces.uap0;
-  console.log(wlan0Int);
-  console.log(apInt);
   if(!wlan0Int){
     if(!apInt){
       log.warn('wifi health in question trying again');
@@ -159,233 +157,31 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function() {
   }
 }
 
-// This function defines a state machine that runs as long as wifi is in managed mode
-// RaspberryPiNetworkManager.prototype.runWifi = function() {
-
-//   console.log('running wifi');
-//   console.log(this.command);
-//   if(this.command) {
-//     switch(this.command.cmd) {
-//       case 'join':
-//         var ssid = this.command.ssid;
-//         var pw = this.command.password;
-//         this.command = null;
-//         this.wifiState = 'idle';
-//         this.mode = 'unknown';
-//         this._joinWifi(ssid,pw,function(err, data) {
-//           this.runWifi();
-//         }.bind(this));
-//         break;
-
-//       case 'ap':
-//         this.command=null;
-//         this.wifiState = 'idle'
-//         this.mode = 'unknown'
-//         this._joinAP(function(err, data) {
-//           this.runWifi();
-//         }.bind(this));
-//         break;
-//       case 'noap':
-//         this.command = null;
-//         this.wifiState = 'idle'
-//         this.mode = 'unknown'
-//         this._unjoinAP(function(err, data) {
-//           this.runWifi();
-//         }.bind(this));
-//         break;
-//       case 'off':
-//         this.command = null;
-//         this.wifiState = 'off'
-//         this.mode = 'off'
-//         if(this.wifiStatus != 'disabled') {
-//           this._disableWifi(function(err, data) {
-//               if(err) { log.error(err); }
-//               this.wifiStatus = 'disabled';
-//               this.runWifi();
-//           }.bind(this));
-//         } else {
-//           setTimeout(this.runWifi.bind(this), 1000);
-//         }
-//         break;
-//      case 'on':
-//         this.command = null;
-//         this.wifiState = 'idle'
-//         this.mode = 'idle'
-//         this.turnWifiOn(function() {
-//            this.runWifi();
-//         }.bind(this));
-//         break;
-//     } //switch(this.command)
-//     return;
-//   } // if(this.command)
-//   console.log('no command');
-//   console.log(this.mode);
-//   switch(this.mode) {
-//     case 'ap':
-//       this.runWifiAP();
-//       break;
-
-//     case 'station':
-//       this.runWifiStation();
-//       break;
-
-//     case 'off':
-//       setTimeout(this.runWifi.bind(this), 2000);
-//       break;
-
-//     default:
-//       this.wifiState = 'idle';
-//       this.getInfo(apInterface, function(err, data) {
-//         if(!err) {
-//           var old_mode = this.mode;
-//           log.info("AP mode is '" + data.mode + "'");
-//           this.mode = 'ap';
-//           if(this.mode != old_mode) {
-//             setImmediate(this.runWifi.bind(this));
-//           } else{
-//             setTimeout(this.runWifi.bind(this), 5000);
-//           }
-//         } else { 
-//           this.mode = 'station';
-//           setTimeout(this.runWifi.bind(this), 5000);
-//         } // if(!err)
-//       }.bind(this));
-//       break;
-//   }
-// }
-
-// This function defines a state machine that runs as long as wifi is in station (AP) mode
-// RaspberryPiNetworkManager.prototype.runWifiStation = function() {
-//   console.log('running wifistation');
-//   console.log(this.wifiState);
-//   switch(this.wifiState) {
-//     case 'idle':
-//       this.scan_retries = WIFI_SCAN_RETRIES;
-//       // Fall through
-//     case 'scan':
-//       this.scan(function(err, data) {
-//         this.wifiState = 'done_scanning';
-//         setTimeout(this.runWifi.bind(this), WIFI_SCAN_INTERVAL);
-//       }.bind(this));
-//       break;
-
-//     case 'done_scanning':
-//       this.getNetworks(function(err, data) {
-//         if(!err) {
-//           var new_networks = 0;
-//           var new_network_names = [];
-//           for(var i in data) {
-//             var ssid = data[i].ssid;
-//             var found = false;
-//             for(var j in this.networks) {
-//                 if(this.networks[j].ssid === ssid) {
-//                     found = true;
-//                     break;
-//                 }
-//             }
-//             if(!found) {
-//               new_networks += 1;
-//               new_network_names.push(ssid);
-//               this.networks.push(data[i]);
-//              }
-//           }
-//           if(new_networks > 0) {
-//               log.info('Found ' + new_networks + ' new networks. (' + new_network_names.join(',') + ')')
-//           }
-//         }
-//         if((err || data.length === 0) && (this.scan_retries > 0)) {
-//           log.warn("No networks?!  Retrying...");
-//           this.wifiState = 'scan'
-//           this.scan_retries--;
-//         } else {
-//           this.wifiState = 'check_network';
-//           this.network_health_retries = NETWORK_HEALTH_RETRIES;
-//         }
-//         setImmediate(this.runWifi.bind(this));
-//       }.bind(this));
-//       break;
-
-//     case 'check_network':
-//       this.getInfo(wifiInterface, function(err, data) {
-//           var networkOK = true;
-//           if(!err) {
-//             if(data.ipaddress === '?' || data.ipaddress === undefined) {
-//               networkOK = false;
-//             }
-//             this.getInfo(apInterface, function(err, data){
-//                 if(!err) {
-//                   this.mode = 'ap';
-//                   this.wifiState = 'idle';
-//                   this.emit('network', {'mode' : 'ap'})
-//                   setImmediate(this.runWifi.bind(this));
-//                   return;
-//                 } 
-//             }.bind(this));
-//           } else {
-//             networkOK = false;
-//           }
-//           if(networkOK) {
-//             this.wifiState = 'idle';
-//             this.wifiStatus = 'enabled';
-//             this.networkInfo.wireless = data.ipaddress;
-//             this.network_history[data.ssid] = {
-//               ssid : data.ssid,
-//               ipaddress : data.ipaddress,
-//               last_seen : Date.now()
-//             }
-//             setImmediate(this.runWifi.bind(this));
-//           } else {
-//             log.warn("Network health in question...");
-//             log.warn(JSON.stringify(data));
-//             if(this.network_health_retries == 0) {
-//                 log.error("Network is down.  Going to AP mode.");
-//                 this.network_health_retries = NETWORK_HEALTH_RETRIES;
-//                 this.joinAP();
-//                 setImmediate(this.runWifi.bind(this));
-//             } else {
-//                this.network_health_retries--;
-//                setTimeout(this.runWifi.bind(this),NETWORK_HEALTH_RETRY_INTERVAL);
-//             }
-//         }
-//       }.bind(this)); // this.getInfo()
-//       break;
-//   }
-// }
-
-// Periodic network check for wifi mode
-// TODO - probably should be _runWifiAP
-// RaspberryPiNetworkManager.prototype.runWifiAP = function() {
-//   console.log('runWifiAP');
-//   console.log(this.wifiState);
-//   switch(this.wifiState) {
-//     default:
-
-//       this.getInfo(apInterface, function(err, data) {
-//         if(!err) {
-//           this.mode = 'ap';
- 
-//           setTimeout(this.runWifi.bind(this), 5000);
-//         } else {
-//           this.mode = 'station';
-//           this._joinAP(function(err, data) {
-//             setTimeout(this.runWifi.bind(this), 5000);
-//           }.bind(this));
-          
-//         }
-        
-//       }.bind(this));
-//       break;
-//   }
-// }
-
-
-// Issue the command to join AP mode
-// Function returns immediately
-// RaspberryPiNetworkManager.prototype.joinAP = function() {
-//   this.command = {
-//     'cmd' : 'ap',
-//   }
-// }
+RaspberryPiNetworkManager.prototype.confirmIP = function(callback) {
+  var wlan0Int;
+  var attempts = 60;
+  var counter = 0;
+  var interval = setInterval(function() { 
+    var interfaces = os.networkInterfaces();
+    wlan0Int  = interfaces.wlan0;
+    if (counter == attempts || wlan0Int) { 
+      if(counter == attempts) {
+        var error = "Error connecting, please try again";
+        clearInterval(interval);
+        callback(error);
+      } else {
+        if(wlan0Int[0].family === "IPv6") {
+          counter++;
+        } else {
+          clearInterval(interval);
+          callback(null, wlan0Int[0].address);
+        }
+      }
+    } else { 
+       counter++;
+    }
+ }, 1000);
+}
 
 // Actually do the work of joining AP mode
 // Uses jedison to switch modes
@@ -548,16 +344,25 @@ RaspberryPiNetworkManager.prototype._joinWifi = function(ssid, password, callbac
             if(errs) throw errs;    // errs = [err1, err2, err3]
             exec('wpa_cli -i wlan0 reconfigure',  function(error, stdout) {
               if(error){
-                console.log(error)
+                log.error(error);
               } else {
-                console.log('results: ' + results);   // results = [result1, result2, result3]
-                callback(error, "Joined?");
+                this.confirmIP((err, ipaddress)=>{
+                  if(err){
+                    callback(err);
+                  } else {
+                    var wifiInfo = {
+                      ssid : SSID,
+                      ip : ipaddress
+                    }
+                    callback(null, wifiInfo);
+                  }
+                })
               }
-            })   
+            }.bind(this));   
            
-          });
+          }.bind(this));
     }
-  });
+  }.bind(this));
 }
 
 
@@ -620,17 +425,18 @@ RaspberryPiNetworkManager.prototype.init = function() {
     if(err){
       console.log(err)
     } else {
-      this.returnWifiNetworks.bind(this)
-      setInterval(()=>{
-        this.returnWifiNetworks.bind(this);
-        this.checkWifiHealth.bind(this);
+      this.returnWifiNetworks();
+      setInterval(() => {
+        this.returnWifiNetworks();
+        this.checkWifiHealth();
       }, 30000);
       setTimeout(
         commands.startWpaSupplicant((err, result) => {
         if(err){
           log.error('wpa errored with: ' + err)
+        } else {
+          log.info('wpa started with: '+ res);
         }
-        log.info('wpa started with: '+ res);
       }), 10000);
     }
   });

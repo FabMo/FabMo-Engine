@@ -428,7 +428,7 @@ FabMoAPI.prototype.manualRunGCode = function(code) {
 
 FabMoAPI.prototype.connectToWifi = function(ssid, key, callback) {
 	var data = {'ssid' : ssid, 'key' : key};
-	this._post('/network/wifi/connect', data, callback, callback);
+	this._post('/network/wifi/connect', data, callback, callback, 'wifi');
 }
 
 FabMoAPI.prototype.disconnectFromWifi = function(callback) {

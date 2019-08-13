@@ -192,10 +192,14 @@ function enterAPMode(callback) {
     $('tbody').on('click', 'td.ssid', function () {
         var name = $(this).text();
         requestPassword(name, function(passwd){
-        fabmo.showModal({message:"Your tool is connecting to the network, please use the Tool Minder to find me on the new network called "+name+" ."});
+
             fabmo.connectToWifi(name, passwd,function(err,data){
                 if(err) {
-                    fabmo.notify('error',err);
+                    console.log(err);
+                    fabmo.showModal({message:err});
+                } else {
+                    console.log(data);
+                    fabmo.showModal({message:"Successfully connected please go find me on network: " + data.ssid+ " at " + data.ip});
                 }
             });
         });

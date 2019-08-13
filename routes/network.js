@@ -24,16 +24,17 @@ var scan = function(req, res, next) {
 
 // Connect to the wifi network specified in the request body
 connectWifi = function(req, res, next) {
-  console.log('connecting to wifi in the routes!');
+  
   ssid = req.params.ssid
   key = req.params.key
   var network = require('../engine').networkManager;
   if(ssid) {
     network.connectToAWifiNetwork(ssid,key,function(err, data){
-      if(err) {
-        res.json({'status':'error', 'message' : err.message});
+      if (err) {
+        log.error(err);
+        res.json({'status':'error', 'message':err});
       } else {
-        res.json({'status':'success'})
+        res.json({'status':'success','data':{'wifi':data}});
       }
     });
   } else {
