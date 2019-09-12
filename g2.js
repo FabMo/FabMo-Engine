@@ -40,6 +40,7 @@ var EXPECT_TIMEOUT = 300000;
 
 var _promiseCounter = 1;
 var resumePending = false;
+var intendedClose = false;
 var THRESH = 1
 
 var pat = /s*(G(28|38)\.\d|G2(0|1))/g
@@ -311,8 +312,11 @@ G2.prototype.connect = function(path, callback) {
 };
 
 // Close the serial port - important for shutting down the application and not letting resources "dangle"
-G2.prototype.disconnect = function(callback) {
-		this._serialPort.close(callback);
+G2.prototype.disconnect = function(reason, callback) {
+	if(reason === "firmware") {
+		intendedClose = true;
+	}
+	this._serialPort.close(callback);
 };
 
 // Log serial errors.  Most of these are exit-able offenses, though.
@@ -327,7 +331,9 @@ log.error(new Error('There was a serial error'))
 G2.prototype.onSerialClose = function(data) {
 	this.connected= false;
 	log.error('G2 Core serial link was lost.')
-	process.exit(14);
+	if(!intended) {
+		process.exit(14);
+	}
 };
 
 // Write to the serial port (and log it)

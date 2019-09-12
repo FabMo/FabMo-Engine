@@ -101,26 +101,6 @@ function update() {
       }
     });
 
-    fabmo.getNetworkIdentity(function(err, data) {
-      if (err) {
-        console.info('Network not reachable');
-        return
-      }
-      if(data.id) {
-        $('#input-machine-name').val(data.name);
-        $('#section-machine-name').show();
-      } else {
-        $('#section-machine-name').hide();
-      }
-
-      if(data.id) {
-        $('#input-machine-id').val(data.id);
-        $('#section-machine-id').show();
-      } else {
-        $('#section-machine-id').hide();
-      }
-    });
-
     fabmo.getUpdaterStatus(function(err, status) {
       if(err) { return; }
 /*        fabmo.isOnline(function(err, online) {
@@ -244,6 +224,28 @@ $("#restore_conf_file").change(function() {
         }
 
     });
+
+    $('#btn-flash-firm').click(function() {
+        $('#firmware-input').trigger('click');
+      });
+    
+      // Upload a package file manually
+      $('#firmware-input').change(function(evt) {
+        var files = [];
+        for(var i=0; i<evt.target.files.length; i++) {
+          files.push({file:evt.target.files[i]});
+        }
+        fabmo.submitFirmwareUpdate(files, {}, function(err, data) {
+            if(err){
+                console.log(err)
+            }else {
+                console.log(data);
+            }
+         
+        }, function(progress) {
+          console.log(progress);
+        });
+      });
 
 $(document).ready(function() {
 
@@ -379,14 +381,7 @@ $('body').click(function(event){
         }
     });
 
-    $('#input-machine-name').change( function(evt) {
-        var id = {name: this.value};
-        fabmo.setNetworkIdentity(id, function(err, data) {
-            notifyChange(err,'input-machine-name');
-            update();
-        });
 
-    });
 
     // setupUserManager();
 

@@ -188,6 +188,7 @@ RaspberryPiNetworkManager.prototype.confirmIP = function(callback) {
 //   callback - Called once in AP mode, or with error if error
 RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
   log.info("Entering AP mode...");
+  var name = config.engine.get('name');
   var network_config = config.engine.get('network');
   network_config.wifi.mode = 'ap';
   config.engine.set('network', network_config);
@@ -208,7 +209,7 @@ RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
           console.log(err);
           console.log(result);
           commands.hostapd({
-            ssid: 'fabmo-net'
+            ssid: name
           }, () => {
             console.log('hostAPD up');
             commands.dnsmasq({interface: 'uap0'}, () => {

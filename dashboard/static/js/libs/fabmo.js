@@ -591,7 +591,16 @@ FabMoDashboard.prototype.submitJob = function(jobs, options, callback) {
 	args.options = options || {};
 	this._call("submitJob", args, callback)
 }
+
+
 FabMoDashboard.prototype.submitJobs = FabMoDashboard.prototype.submitJob;
+
+FabMoDashboard.prototype.submitFirmwareUpdate = function (file, options, callback, progress) {
+	console.log('in fabmo');
+	this._call("submitFirmwareUpdate", file, callback)
+}
+
+
 
 FabMoDashboard.prototype.updateOrder = function(data, callback) {
 	this._call("updateOrder", data, callback);

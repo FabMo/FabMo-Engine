@@ -267,6 +267,12 @@ define(function(require) {
       callback(null);
     }.bind(this))
 
+    //Submit firmware 
+    this._registerHandler('submitFirmwareUpdate', function(file, options, callback, progress){
+      console.log('in dashboard');
+      this.engine.submitFirmwareUpdate(file, options, callback, progress);
+    }.bind(this));
+
     // Submit a job
     this._registerHandler('submitJob', function(data, callback) {
       var options = data.options || {};
@@ -296,6 +302,7 @@ define(function(require) {
         }
       }.bind(this));
     }.bind(this));
+
 
     this._registerHandler('deleteJob', function(id, callback) {
       this.engine.deleteJob(id, function(err, result) {

@@ -28,6 +28,34 @@ RUN apt-get install -y nodejs
 RUN mkdir node_modules
 COPY --from=node /usr/src/app/node_modules ./node_modules
 
+
+####Set up BOSSA 
+
+COPY ./BOSSA /workspace
+
+
+## Install and Build Clean up in one step
+## Minimize image size despite in-situ build
+RUN apt-get update            && \
+    apt-get install -y           \
+    	    build-essential      \
+	    openocd              \
+	    libwxgtk3.0-dev      \
+	    libreadline-dev      \
+	    usbutils             \
+	                      && \
+    make -C /workspace        && \
+    cp /workspace/bin/*          \
+       /usr/local/bin/        && \
+    rm -rf workspace          && \
+    apt-get purge -y             \
+            build-essential      \
+	    libreadline-dev      \
+	    libwxgtk3.0-dev   && \
+    apt-get autoremove -y     && \
+    rm -rf                       \
+       /var/lib/apt/lists/*
+
 # Bundle app source
 
 COPY . .

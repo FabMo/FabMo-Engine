@@ -192,14 +192,18 @@ function enterAPMode(callback) {
     $('tbody').on('click', 'td.ssid', function () {
         var name = $(this).text();
         requestPassword(name, function(passwd){
-
+            fabmo.showModal({
+                title: 'Trying to connect to network ' + name,
+                message: '<i class="fa fa-circle-o-notch fa-spin" style="font-size:40px;color:#313366" aria-hidden="true"></i>',
+                noButton : true
+            });
             fabmo.connectToWifi(name, passwd,function(err,data){
                 if(err) {
                     console.log(err);
                     fabmo.showModal({message:err});
                 } else {
                     console.log(data);
-                    fabmo.showModal({message:"Successfully connected please go find me on network: " + data.ssid+ " at " + data.ip});
+                    fabmo.showModal({message:"Successfully connected! Please go find me on network: " + data.ssid+ " at " + data.ip});
                 }
             });
         });

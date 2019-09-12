@@ -136,8 +136,8 @@ Engine.prototype.setTime = function(obj) {
  * Stop this engine instance.
  * Basically does cleanup activities before shutting the engine down.
  */
-Engine.prototype.stop = function(callback) {
-    this.machine.disconnect();
+Engine.prototype.stop = function(reason, callback) {
+    this.machine.disconnect(reason);
     this.machine.setState(this.machine, 'stopped');
     callback(null);
 };
@@ -602,9 +602,9 @@ Engine.prototype.start = function(callback) {
                     // before trying to pull an update (https requests will fail with an inaccurate system time)
                     log.info('Network is possibly available:  Going to check for packages in ' + PACKAGE_CHECK_DELAY + ' seconds.')
                     setTimeout(function() {
-                        log.info('Doing beacon report due to network change');
-                        this.beacon.setLocalAddresses(this.networkManager.getLocalAddresses());
-                        this.beacon.once('network');
+                        //log.info('Doing beacon report due to network change');
+                        //this.beacon.setLocalAddresses(this.networkManager.getLocalAddresses());
+                        //this.beacon.once('network');
                         //TODO re-imlpement for dashboard only updates
                         // log.info('Running package check due to network change');
                         // this.runAllPackageChecks();
