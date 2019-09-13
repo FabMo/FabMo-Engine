@@ -59,6 +59,7 @@ function addWifiEntries(network_entries, callback) {
 function refreshHistoryTable(callback){
     callback = callback || function() {};
     fabmo.getWifiNetworkHistory(function(err, networks) {
+        console.log(networks);
         if(err) {return callback(err);}
         if(Object.keys(networks).length > 0) {	
             addHistoryEntries(networks);            
@@ -74,28 +75,18 @@ function refreshHistoryTable(callback){
 function addHistoryEntries(history_entries, callback) {
     callback = callback || function() {};
     var table = document.getElementById('history_table');
-    for(ssid in history_entries) {
-        entry = history_entries[ssid];
-        if(entry.ssid in network_history) {
-            return;
-        }
-        network_history[entry.ssid] = entry;
+    Object.keys(history_entries).forEach(function (entry) {
         var row = table.insertRow(table.rows.length);
-        var ssid = row.insertCell(0);
-        ssid.className = 'ssid noselect'
+        var interface = row.insertCell(0);
+        interface.className = 'interface noselect'
         var ipaddress = row.insertCell(1);
         ipaddress.className = 'ipaddress noselect'
-        var lastseen = row.insertCell(2);
-        //lastseen.className = '';
 
-        var ssidText = entry.ssid || '<Hidden SSID>';
-        var ipAddressText = entry.ipaddress || '';
-        var lastSeenText = moment(entry.lastseen).fromNow();
-
-        ssid.innerHTML = ssidText
+        var interfaceText = entry || '';
+        var ipAddressText = history_entries[entry] || '';
+        interface.innerHTML = interfaceText;
         ipaddress.innerHTML = ipAddressText;
-        lastseen.innerHTML = lastSeenText;
-    };
+    });
 }
 // Show the confirmation dialog
 function confirm(options){

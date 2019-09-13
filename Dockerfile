@@ -12,7 +12,7 @@ RUN npm install
 FROM raspbian/stretch
 
 
-RUN apt-get update --fix-missing && apt-get install -y curl hostapd dnsmasq  wireless-tools wpasupplicant iw net-tools
+RUN apt-get update --fix-missing && apt-get install -y curl hostapd dnsmasq  wireless-tools wpasupplicant iw net-tools isc-dhcp-server
 
 
 WORKDIR /usr/src/app

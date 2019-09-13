@@ -32,7 +32,7 @@ var WIFI_SCAN_COUNT = 0;
 
 var wifiInterface = 'wlan0';
 var apInterface = 'uap0';
-var ethernetInterface = "enp0s17u1u1";
+var ethernetInterface = "eth0";
 var apModeGateway= '192.168.42.1';
 var tmpPath = os.tmpdir() + '/';
 
@@ -135,6 +135,14 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function() {
   var interfaces = os.networkInterfaces();
   var wlan0Int =interfaces.wlan0;
   var apInt = interfaces.uap0;
+  this.network_history = {};
+  Object.keys(interfaces).forEach(function (interface) {
+     if(interface !== "lo") {
+       if(interfaces[interface]) {
+        this.network_history[interface] = interfaces[interface][0].address
+       }
+     }
+  }.bind(this));
   if(!wlan0Int){
     if(!apInt){
       log.warn('wifi health in question trying again');
@@ -156,6 +164,22 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function() {
     }
   }
 }
+
+
+RaspberryPiNetworkManager.prototype.checkEthernetHealth = function(){
+  var interfaces = os.networkInterfaces();
+  console.log(interfaces);
+  console.log('now ')
+  ifconfig.status(ethernetInterface,function(err,status){
+    if(err){
+      console.log(err);
+    } else {
+      console.log(status);
+    }
+  })
+}
+
+
 
 RaspberryPiNetworkManager.prototype.confirmIP = function(callback) {
   var wlan0Int;
@@ -430,7 +454,9 @@ RaspberryPiNetworkManager.prototype.init = function() {
       setInterval(() => {
         this.returnWifiNetworks();
         this.checkWifiHealth();
-      }, 30000);
+        // this.checkEthernetHealth();
+        // this.runEthernet();
+      }, 10000);
       setTimeout(
         commands.startWpaSupplicant((err, result) => {
         if(err){
@@ -441,27 +467,6 @@ RaspberryPiNetworkManager.prototype.init = function() {
       }), 10000);
     }
   });
-  //TODO take down if wlan0
-  
-
-  
-    // this._joinAP();
-    // if(err) {
-    //   log.error('WPA not started!!!!!!! ')
-    // } else {
-    //   log.info('Applying network configuration...');
-    //   this.applyNetworkConfig();
-    //   log.info('Running wifi...');
-    //   this.runWifi();
-    //   this.runEthernet();
-    //   commands.takeDown('uap0', (err, data)=>{
-    //     if(err){
-    //       console.log('uap0 error ' + err)
-    //     } else {
-    //       console.log('uap0 data ' + data)
-    //     }
-    //   });
-    // }
 }
 
 
