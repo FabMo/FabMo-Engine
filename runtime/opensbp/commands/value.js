@@ -69,7 +69,7 @@ exports.VA = function(args, callback) {
 			setVA_G2.g55c = Number(((MPO.c * 1.0 /*unitConv*/) - args[5]).toFixed(5));
 			this.cmd_posc = this.posc = args[5];
 		}
-
+		
 		config.driver.setMany(setVA_G2, function(err, value) {
 			callback();
 		}.bind(this));

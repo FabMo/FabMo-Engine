@@ -268,19 +268,49 @@ ManualDriver.prototype.goto = function(pos) {
 // Set the machine position to the specified vector
 //   pos - New position vector as an object,  eg: {"X":10, "Y":5}
 ManualDriver.prototype.set = function(pos) {
+	var toSet = {};
+	if ( this.driver.status.unit === "in" ) {  // inches
+		unitConv = 0.039370079;
+	}
 	if(this.mode === 'normal') {
-		var gc = 'G10 L20 P2 ';
 
-		Object.keys(pos).forEach(function(key) {
-			gc += key + pos[key].toFixed(5);
+		// var gc = 'G10 L20 P2 ';
+		this.driver.get('mpo', function(err, MPO) {
+			Object.keys(pos).forEach(function(key) {
+				console.log(key);
+				switch(key) {
+					case "X":
+						toSet.g55x = Number(((MPO.x * unitConv) - pos[key]).toFixed(5));
+						break;
+					case "Y":
+						toSet.g55y = Number(((MPO.y * unitConv) - pos[key]).toFixed(5));
+						break;
+					case "Z": 
+						toSet.g55z = Number(((MPO.z * unitConv) - pos[key]).toFixed(5));
+						break;
+					case "A":
+						toSet.g55a = Number(((MPO.a* 1) - pos[key]).toFixed(5));
+						break;
+					case "B": 
+						toSet.g55b = Number(((MPO.b* 1) - pos[key]).toFixed(5));
+						break;
+					default:
+						log.error("don't understand axi");
+				}
+			}.bind(this));
+			config.driver.setMany(toSet, function(err, value) {
+				
+				//total hack to update the positions
+				this.stream.write("G91\nG0\nX0\nG91");
+				this.driver.prime();
+				config.driver.reverseUpdate(['g55x','g55y','g55z','g55a','g55b'], function(err, data) {});
+			}.bind(this));
 		}.bind(this));
 
-		this.stream.write(gc + "\nM0\nG91\n");
-		this.driver.prime();
 
-		setTimeout(function() {
-			config.driver.reverseUpdate(['g55x','g55y','g55z','g55a','g55b'], function(err, data) {});
-		}.bind(this), 500);
+		
+
+
 	} else {
 		throw new Error("Can't set from " + this.mode + ' mode.');
 	}
@@ -432,6 +462,7 @@ ManualDriver.prototype._onG2Status = function(status) {
 		case this.driver.STAT_RUNNING:
 			this.moving = true;
 			if(this.omg_stop) {
+				console.log('this is my hunch')
 				this.stop_pending = true;
 				this.driver.feedHold();
 				this.driver.queueFlush(function() {
