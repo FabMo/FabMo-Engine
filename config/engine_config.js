@@ -16,6 +16,7 @@ var Config = require('./config').Config;
 var log = require('../log');
 var logger = log.logger('config');
 var profiles = require('../profiles');
+var process = require('process');
 
 // The EngineConfig object keeps track of engine-specific settings
 EngineConfig = function() {
@@ -72,7 +73,6 @@ EngineConfig.prototype.update = function(data, callback) {
 				callback(err);
 			} else {
 				console.log('shutting down');
-				console.log(process.exit());
 				process.exit(1);
 			}
 		});
