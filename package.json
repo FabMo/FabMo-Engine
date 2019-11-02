@@ -28,7 +28,7 @@
     "fs-extra": "0.23.1",
     "gcodetogeometry": "1.0.x",
     "glob": "5.0.15",
-    "jquery": "2.2.4",
+    "jquery": "3.4.0",
     "jsesc": "1.0.0",
     "lockfile": "1.0.x",
     "mime": "1.2.11",
