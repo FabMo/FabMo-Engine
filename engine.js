@@ -29,6 +29,8 @@ var sessions = require("client-sessions");
 var authentication = require('./authentication');
 var profiles = require('./profiles');
 var crypto = require('crypto');
+var child_process = require('child_process');
+var exec = child_process.exec;
 //other util
 var Util = require('util');
 
@@ -75,8 +77,6 @@ Util.inherits(Engine, events.EventEmitter);
  * for different types of machines.
  */
 function EngineConfigFirstTime(callback) {
-    console.log("this is the platform");
-    console.log(PLATFORM);
     if(PLATFORM) {
         log.info('Setting platform to ' + PLATFORM)
         config.engine.set('platform', PLATFORM);
@@ -586,53 +586,61 @@ Engine.prototype.start = function(callback) {
         function setup_network(callback) {
 
             var OS = config.platform;
+    
 
-            try {
-                this.networkManager = network.createNetworkManager();
-            } catch(e) {
-                log.warn(e);
-                this.networkManager = new GenericNetworkManager(OS, PLATFORM);
-            }
-
-            // Listen to the network manager's "network" event (which is emitted each time a new network is joined)
-            // and when the event is encountered, initiate beacon reporting and update package checks
-            this.networkManager.on('network', function(evt) {
-                if(evt.mode === 'station' || evt.mode === 'ethernet') {
-                    // 30 Second delay is used here to make sure timesyncd has enough time to update network time
-                    // before trying to pull an update (https requests will fail with an inaccurate system time)
-                    log.info('Network is possibly available:  Going to check for packages in ' + PACKAGE_CHECK_DELAY + ' seconds.')
-                    setTimeout(function() {
-                        //log.info('Doing beacon report due to network change');
-                        //this.beacon.setLocalAddresses(this.networkManager.getLocalAddresses());
-                        //this.beacon.once('network');
-                        //TODO re-imlpement for dashboard only updates
-                        // log.info('Running package check due to network change');
-                        // this.runAllPackageChecks();
-                    }.bind(this), PACKAGE_CHECK_DELAY*1000);
+            network.createNetworkManager(function(err, nm){
+                if(err) {
+                    log.error(err);
+                    this.networkManager = new GenericNetworkManager(OS, PLATFORM);
+                } else {
+                    this.networkManager = nm
                 }
-            }.bind(this));
+   
+                // Listen to the network manager's "network" event (which is emitted each time a new network is joined)
+                // and when the event is encountered, initiate beacon reporting and update package checks
 
-            // Call the network manager init function, which actually starts looking for networks, etc.
-            log.info('Setting up the network...');
-            try {
-                this.networkManager.init();
-                log.info('Network manager started.')
-            } catch(e) {
-                log.error(e);
-                log.error('Problem starting network manager:' + e);
-            }
-
-            // Setup a recurring function that checks to see that the updater is online
-            var onlineCheck = function() {
-                this.networkManager.isOnline(function(err, online) {
-                    if(online != this.status.online) {
-                        this.setOnline(online);
+                this.networkManager.on('network', function(evt) {
+                    if(evt.mode === 'station' || evt.mode === 'ethernet') {
+                        // 30 Second delay is used here to make sure timesyncd has enough time to update network time
+                        // before trying to pull an update (https requests will fail with an inaccurate system time)
+                        log.info('Network is possibly available:  Going to check for packages in ' + PACKAGE_CHECK_DELAY + ' seconds.')
+                        setTimeout(function() {
+                            //log.info('Doing beacon report due to network change');
+                            //this.beacon.setLocalAddresses(this.networkManager.getLocalAddresses());
+                            //this.beacon.once('network');
+                            //TODO re-imlpement for dashboard only updates
+                            // log.info('Running package check due to network change');
+                            // this.runAllPackageChecks();
+                        }.bind(this), PACKAGE_CHECK_DELAY*1000);
                     }
                 }.bind(this));
-            }.bind(this);
-            onlineCheck();
-            setInterval(onlineCheck,3000); // TODO - magic number, should factor out
-            return callback(null);
+    
+                // Call the network manager init function, which actually starts looking for networks, etc.
+                log.info('Setting up the network...');
+                try {
+                    this.networkManager.init();
+                    log.info('Network manager started.')
+                } catch(e) {
+                    log.error(e);
+                    log.error('Problem starting network manager:' + e);
+                }
+    
+                // Setup a recurring function that checks to see that the updater is online
+                var onlineCheck = function() {
+                    console.log('update check');
+                    this.networkManager.isOnline(function(err, online) {
+                        if(online != this.status.online) {
+                            this.setOnline(online);
+                        }
+                    }.bind(this));
+                }.bind(this);
+                onlineCheck();
+                setInterval(onlineCheck,3000); // TODO - magic number, should factor out
+                return callback(null);
+            }.bind(this));
+
+
+
         }.bind(this),
 
         function setup_config_events(callback) {
@@ -795,38 +803,38 @@ Engine.prototype.start = function(callback) {
             // TODO - should this be done after server.listen, or before? (or does it matter?)
             authentication.configure();
 
-        }.bind(this),
-        // Start the beacon service
-        function start_beacon(callback) {
-            var url = config.engine.get('beacon_url');
-            var consent = config.engine.get('consent_for_beacon');
-
-            log.info("Starting beacon service");
-            this.beacon = new Beacon({
-                url : url,
-                interval : BEACON_INTERVAL
-            });
-            switch(consent) {
-                case "true":
-                case true:
-                            log.info("Beacon is enabled");
-                            this.beacon.set("consent_for_beacon", "true");
-                    break;
-
-                case "false":
-                case false:
-                    log.info("Beacon is disabled");
-                            this.beacon.set("consent_for_beacon", "false");
-                    break;
-                default:
-                    log.info("Beacon consent is unspecified");
-                            this.beacon.set("consent_for_beacon", "true");
-                    break;
-            }
-
-            //this.beacon.start();
-
         }.bind(this)
+        // Start the beacon service
+        // function start_beacon(callback) {
+        //     var url = config.engine.get('beacon_url');
+        //     var consent = config.engine.get('consent_for_beacon');
+
+        //     log.info("Starting beacon service");
+        //     this.beacon = new Beacon({
+        //         url : url,
+        //         interval : BEACON_INTERVAL
+        //     });
+        //     switch(consent) {
+        //         case "true":
+        //         case true:
+        //                     log.info("Beacon is enabled");
+        //                     this.beacon.set("consent_for_beacon", "true");
+        //             break;
+
+        //         case "false":
+        //         case false:
+        //             log.info("Beacon is disabled");
+        //                     this.beacon.set("consent_for_beacon", "false");
+        //             break;
+        //         default:
+        //             log.info("Beacon consent is unspecified");
+        //                     this.beacon.set("consent_for_beacon", "true");
+        //             break;
+        //     }
+
+        //     //this.beacon.start();
+
+        // }.bind(this)
         ],
         // Print some kind of sane debugging information if anything above fails
         function(err, results) {

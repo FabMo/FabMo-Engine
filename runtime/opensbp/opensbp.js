@@ -1577,6 +1577,30 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
             return config.driver.get('g55b');
         break;
 
+        case 11: //Min Table limit X
+            var envelope = config.machine.get('envelope');
+            return envelope.xmin;
+        break
+
+        case 12: //Max Table limit X
+            var envelope = config.machine.get('envelope');
+            return envelope.xmax;
+        break
+
+        case 13: //Min Table limit Y
+            var envelope = config.machine.get('envelope');
+            return envelope.ymin;
+        break
+
+        case 14: //Max Table limit Y
+            var envelope = config.machine.get('envelope');
+            return envelope.ymax;
+        break
+
+        case 28:
+            return config.opensbp.get('safeZpullUp');
+        break
+
         case 25:
             units = config.machine.get('units');
             if(units === 'in') {
@@ -1587,6 +1611,10 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
                 return -1;
             }
             break;
+        
+        case 28:
+            return
+        break
 
         case 51:
         case 52:

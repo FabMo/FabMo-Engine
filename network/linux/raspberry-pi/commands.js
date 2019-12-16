@@ -62,9 +62,7 @@ class commands {
       channel:6,
       hw_mode:'g',
       interface:'uap0',
-      ssid:'fabmo_test_testy', 
-      wpa:'2',
-      wpa_passphrase:'go2fabmo' 
+      ssid:'fabmo'
     }
 
     var finalOptions = Object.assign(defaultOptions, options);

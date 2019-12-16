@@ -5,7 +5,7 @@
     "version":"2.0-dev",
     "upload_dir" : "/tmp",
     "profile" : "Default",
-    "name" : "fabmo",
+    "name" : null,
 	"password" : "go2fabmo",
     "platform" : "generic",
     "consent_for_beacon" : "true",

@@ -61,6 +61,23 @@ var RaspberryPiNetworkManager = function() {
 }
 util.inherits(RaspberryPiNetworkManager, NetworkManager);
 
+RaspberryPiNetworkManager.prototype.set_uuid = function(callback) {
+  var uuid = ""
+  exec("cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2",function(err,result){
+    if (err) {
+      var name = {'name' : "fabmo"}
+      config.engine.update(name, function() {
+        callback(name);
+      })
+    } else {
+      var name = {'name' : "fabmo-" + result }
+      config.engine.update(name, function() {
+        callback(name);
+      })
+    }
+  })
+}
+
 // return an object containing {ipaddress:'',mode:''}
 //   interface - Interface name to get the info for
 //    callback - Called back with the info or error if there was an error
@@ -145,22 +162,29 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function() {
   }.bind(this));
   if(!wlan0Int){
     if(!apInt){
-      log.warn('wifi health in question trying again');
-      WIFI_SCAN_COUNT++
-      if(WIFI_SCAN_COUNT > WIFI_SCAN_RETRIES) {
-        this._joinAP(function(err, res){
-          WIFI_SCAN_COUNT = 0;
-        });
-      }
+      log.warn('No wifi or AP trying to bring up AP');
+      this._joinAP(function(err, res){
+        if(err){
+          log.warn("Could not bring back up AP");
+        } else {
+          log.info("AP back up")
+        }
+      });
     } else {
-      log.info('wifi is in AP mode');
+      log.info('No wifi, currently in AP mode');
     }
   } else {
     if(!apInt){
-      log.info('wifi is on at : ' + wlan0Int[0].address);
+      log.info('wifi is on at : ' + wlan0Int[0].address +' AP is down, rejoin AP');
+      this._joinAP(function(err, res){
+        if(err){
+          log.warn("Could not bring back up AP");
+        } else {
+          log.info("AP back up")
+        }
+      });
     } else {
-      log.info('wifi is connected shutting down AP');
-      this._unjoinAP;
+      log.info('wifi is on at : ' + wlan0Int[0].address +' and AP is healthy');
     }
   }
 }
@@ -208,8 +232,6 @@ RaspberryPiNetworkManager.prototype.confirmIP = function(callback) {
 }
 
 // Actually do the work of joining AP mode
-// Uses jedison to switch modes
-//   callback - Called once in AP mode, or with error if error
 RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
   log.info("Entering AP mode...");
   var name = config.engine.get('name');
@@ -245,29 +267,8 @@ RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
       })
     })
   })
-
-
-
 }
 
-// // Issue the command to turn on wifi
-// // Function returns immediately
-// RaspberryPiNetworkManager.prototype.enableWifi = function(){
-//   this.command = {
-//     'cmd' : 'on'
-//   }
-// }
-
-// // Issue the command to turn off wifi
-// // Function returns immediately
-// RaspberryPiNetworkManager.prototype.disableWifi = function(){
-//   this.command = {
-//     'cmd' : 'off'
-//   }
-// }
-
-// Actually do the work to turn off wifi
-//   callback - called once wifi is disabled, or with error if error
 RaspberryPiNetworkManager.prototype._disableWifi = function(callback){
   log.info("Disabling wifi...");
   //var network_config = config.engine.get('network');
@@ -284,23 +285,9 @@ RaspberryPiNetworkManager.prototype._disableWifi = function(callback){
   });
 }
 
-// Issue the command to join wifi with the provided key and password
-// Function returns immediately
-//       ssid - The network to join
-//   password - The network key
-// RaspberryPiNetworkManager.prototype.joinWifi = function(ssid, password) {
-//   console.log('about to join')
-//   this.command = {
-//     'cmd' : 'join',
-//     'ssid' : ssid,
-//     'password' : password
-//   }
-// }
 
-// Do the actual work of joining a wifi network
-//       ssid - The network to join
-//   password - The network key
-//   callback - Called when wifi is joined, or with error if error
+
+
 RaspberryPiNetworkManager.prototype._joinWifi = function(ssid, password, callback) {
   var self = this;
   log.info("Attempting to join wifi network: " + ssid + " with password: " + password);

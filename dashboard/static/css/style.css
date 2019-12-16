@@ -47,6 +47,7 @@ body {
 
 .tab-bar {
 	background: #313366;
+	/* background: red; */
 	z-index: 1005;
 	position: fixed;
 	width: 100%;
@@ -212,7 +213,7 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
     width: 0.5em;
     background-color: #E2B42A;
 	border-radius: 2px 0 0 2px;
-	box-shadow: inset -1px 0px 1px 0px rgba(0,0,0,0.75), -2px 0px 3px 0px rgba(0,0,0,0.75);
+	/* box-shadow: inset -1px 0px 1px 0px rgba(0,0,0,0.75), -2px 0px 3px 0px rgba(0,0,0,0.75); */
 	transition: all 0.2s;
 }
 
@@ -234,7 +235,7 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 }
 
 #right-position-container.dropped{
-	box-shadow: 0px 1px 0.5px 0px rgba(0,0,0,0.75);
+	/* box-shadow: 0px 1px 0.5px 0px rgba(0,0,0,0.75); */
 }
 
 #right-position-container span, #right-position-container label {
