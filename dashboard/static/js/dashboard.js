@@ -269,8 +269,14 @@ define(function(require) {
 
     //Submit firmware 
     this._registerHandler('submitFirmwareUpdate', function(file, options, callback, progress){
-      console.log('in dashboard');
       this.engine.submitFirmwareUpdate(file, options, callback, progress);
+    }.bind(this));
+
+    //Submit update 
+
+    this._registerHandler('submitUpdate', function(file, options, callback, progress){
+      console.log('in dashboard');
+      this.engine.submitUpdate(file, options, callback, progress);
     }.bind(this));
 
     // Submit a job

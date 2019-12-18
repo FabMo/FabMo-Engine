@@ -494,6 +494,11 @@ FabMoAPI.prototype.submitFirmwareUpdate = function(file, options, callback, prog
 	this._postUpload('/firmware/update', file, {}, callback, callback, null, progress);
 }
 
+FabMoAPI.prototype.submitUpdate = function(file, options, callback, progress) {
+	console.log('in api')
+	this._postUpload('/update', file, {}, callback, callback, null, progress);
+}
+
 
 FabMoAPI.prototype.getCurrentUser=function(callback){
   this._get("/authentication/user",callback,callback);

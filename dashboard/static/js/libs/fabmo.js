@@ -600,6 +600,11 @@ FabMoDashboard.prototype.submitFirmwareUpdate = function (file, options, callbac
 	this._call("submitFirmwareUpdate", file, callback)
 }
 
+FabMoDashboard.prototype.submitUpdate = function (file, options, callback, progress) {
+	console.log('in fabmo');
+	this._call("submitUpdate", file, callback)
+}
+
 
 
 FabMoDashboard.prototype.updateOrder = function(data, callback) {
