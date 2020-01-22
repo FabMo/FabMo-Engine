@@ -330,7 +330,7 @@ var config = require('./config');
 // Create and return the network manager.  You should only call this function once.
 // It consults the os and plaform and fishes the appropriate network manager object out of the network/ directory
 // If no such manager is defined or there's a problem creating it, an exception is thrown.
-exports.createNetworkManager = function(callback) {
+exports.createNetworkManager = function(name,callback) {
 
 	// The OS comes from node, and is something like 'linux' or 'darwin' 
 	// The platform is defined in the updater configuration - it's something like 'edison' or 'westinghouse' or 'generic'
@@ -343,9 +343,8 @@ exports.createNetworkManager = function(callback) {
 		var nm = new NetworkManager();
 		nm.os = OS;
 		nm.platform = PLATFORM;
-		if(nm.platform === "raspberry-pi") {
+		if(!name && nm.platform === "raspberry-pi") {
 			nm.set_uuid(function(name){
-				console.log(name);
 				callback(null, nm)
 			})
 		} else {

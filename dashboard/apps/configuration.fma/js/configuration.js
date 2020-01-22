@@ -100,28 +100,6 @@ function update() {
         profilesList.val(data.engine.profile);
       }
     });
-
-//     fabmo.getUpdaterStatus(function(err, status) {
-//       if(err) { return; }
-// /*        fabmo.isOnline(function(err, online) {
-//           if(online) {
-//             $('#btn-update').removeClass('disabled');
-//             $('#btn-update').text('Update Software');
-//           } else {
-//             $('#btn-update').addClass('disabled');
-//             $('#btn-update').text('No Updates Available');
-//           }
-//         });
-//   */
-//       if(status.updates) {
-//         $('#btn-update').removeClass('disabled').addClass('update-available');
-//         $('#btn-update').text('Update Software');
-//         console.info(status.updates);
-//       } else {
-//         $('#btn-update').addClass('disabled').removeClass('update-available');
-//         $('#btn-update').text('No Updates Available');
-//       }
-    // });
 }
 
 function setConfig(id, value) {
@@ -153,19 +131,6 @@ var notifyChange = function(err,id){
 };
 
 var configData = null;
-// $('#btn-update').click(function(evt) {
-//     if(!$(this).hasClass('disabled')) {
-//         evt.preventDefault();
-//         var location = window.location;
-//         var protocol = location.protocol;
-//         var slashes = protocol.concat("//");
-//         var host = slashes.concat(window.location.hostname);
-//         var port = ':' + (parseInt((location.port || 80)) + 1);
-//         var url = host.concat(port).concat('/do_update')
-//         fabmo.navigate(url, {});
-//     }
-// });
-
 
 $('#btn-backup').click(function(evt) {
     fabmo.getConfig(function(err,conf){
@@ -269,7 +234,7 @@ $("#restore_conf_file").change(function() {
       });
 
 $(document).ready(function() {
-
+    console.log('test test test');
     $(document).foundation();
 
     // Setup Unit Labels

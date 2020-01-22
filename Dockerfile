@@ -61,7 +61,6 @@ RUN apt-get update        && \
 
 COPY . .
 
-RUN npm run prod
 
 RUN mkdir -p /etc/wpa_supplicant/
 COPY ./dockerconfigs/wpa_supplicant.conf /etc/wpa_supplicant/wpa_supplicant.conf

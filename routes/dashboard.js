@@ -90,7 +90,7 @@ var postAppConfig = function(req, res, next) {
         if(err) {
             var answer = {
                 status:"error",
-                message : String(e)
+                message : String(err)
             };
         }
         else {
