@@ -30,9 +30,12 @@ var authentication = require('./authentication');
 var profiles = require('./profiles');
 var crypto = require('crypto');
 var child_process = require('child_process');
+var moment = require('moment');
 var exec = child_process.exec;
 //other util
 var Util = require('util');
+
+
 
 
 
@@ -119,17 +122,23 @@ function EngineConfigFirstTime(callback) {
  * Set the current system time to the provided value.
  * obj - an object with a 'utc' property that coresponds to the current UTC time
  */
-Engine.prototype.setTime = function(obj) {
-    if(!this.time_synced) {
-        this.time_synced = true;
-        var d = new Date(obj.utc);
-        log.debug("Setting the time to " + d.toUTCString());
-        var t = d.getUTCFullYear() + '-' + d.getUTCMonth() + '-' + d.getUTCDay() + ' ' + d.getUTCHours() + ':' + d.getUTCMinutes() + ':' + d.getUTCSeconds()
+
+Engine.prototype.setTime = function(time) {
+    if(this.time_synced) {
+        log.warn('Not accepting an externally provided time.  Local time is trusted.');
+        return;
+    } else {
+        var m = moment.unix(time/1000.0);
+        t = m.utc().format('YYYY-MM-DD HH:mm:ss');
         cmd = 'timedatectl set-time ' + t + '; timedatectl';
         util.doshell(cmd, function(stdout) {
+            console.log('time thing');
             log.debug(stdout);
+            this.time_synced = true;
         });
+
     }
+
 }
 
 /*

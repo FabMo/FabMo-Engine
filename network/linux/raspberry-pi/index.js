@@ -433,7 +433,7 @@ RaspberryPiNetworkManager.prototype.applyWifiConfig = function() {
 
 // Initialize the network manager.  This kicks off the state machines that process commands from here on out
 RaspberryPiNetworkManager.prototype.init = function() {
-  this._joinAP((err, res)=> {
+  this._joinAP(function(err, res){
     if(err){
       console.log(err)
     } else {
@@ -453,7 +453,7 @@ RaspberryPiNetworkManager.prototype.init = function() {
         }
       }), 10000);
     }
-  });
+  }.bind(this));
 }
 
 

@@ -704,7 +704,7 @@ require("../css/toastr.min.css");
 
 
     ping();
-
+    
     engine.sendTime();
 
     function touchScreen() {

@@ -199,7 +199,7 @@ FabMoAPI.prototype.sendTime = function(callback) {
 	var d = new Date();
 	var t = d.getTime();
 	var data = {'ms' : t };
-	this._post('/time/date', data, callback, callback);
+	this._post('/time', data, callback, callback);
 }
 
 // Updater Configuration
@@ -496,7 +496,7 @@ FabMoAPI.prototype.submitFirmwareUpdate = function(file, options, callback, prog
 
 FabMoAPI.prototype.submitUpdate = function(file, options, callback, progress) {
 	console.log('in api')
-	this._postUpload('/update', file, {}, callback, callback, null, progress);
+	this._postUpload('/update/fabmo', file, {}, callback, callback, null, progress);
 }
 
 
