@@ -1,37 +1,189 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Previewer</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="../../css/dashboard.css">
+    <link rel="stylesheet" href="./css/style.css">
+  </head>
 
-<head>
-  <title>Preview</title>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="../../css/dashboard.css">
-  <link rel="stylesheet" href="./css/gcodeviewer.css">
-</head>
+  <body>
+    <nav class="top-bar" data-topbar role="navigation" id="topbar">
+      <ul class="title-area">
+        <li class="name">
+          <h1><a id="app-header">Tool Path Preview</a></h1>
+        </li>
+        <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
+      </ul>
+      <section class="top-bar-section"></section>
+    </nav>
 
-<body>
+    <div id="preview" style="display: inline-block;">
+      <div class="code-line" title="Current GCode line."></div>
 
-  <nav class="top-bar" data-topbar role="navigation" id="topbar">
-    <ul class="title-area">
-      <li class="name">
-        <h1><a id="app-header">Preview</a></h1>
-      </li>
-      <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
-      <li class="toggle-topbar"><a href="#"><span>Menu</span></a>
-      </li>
-    </ul>
-    <section class="top-bar-section">
-    </section>
-  </nav>
+      <div class="actions">
+        <div class="run-now">Run This Job</div>
 
-  <div id="preview" style="display: inline-block;">
-    <div class="run-now">
-      <span>Run This Job</span>
+        <img id="button-pause"  src="images/pause.png"
+             title="Pause path simulation."/>
+        <img id="button-reset"  src="images/reset.png"
+             title="Restart path simulation."/>
+        <img id="button-play"   src="images/play.png"
+             title="Start or continue path simulation."/>
+        <img id="button-x"      src="images/x.png"
+             title="Snap to view down the X axis."/>
+        <img id="button-y"      src="images/y.png"
+             title="Snap to view down the Y axis."/>
+        <img id="button-z"      src="images/z.png"
+             title="Snap to view down the Z axis."/>
+        <img id="button-help"   src="images/help.png"
+             title="Show help."/>
+        <img id="button-settings" src="images/settings.png"
+             title="Open previewer settings."/>
+      </div>
+
+      <div class="loading dialog"></div>
+
+      <div class="errors dialog">
+        <div class="header">Errors</div>
+        <div class="content">
+          <p>Be careful.  Errors were detected in this file.  The machine may
+            not operate as displayed here.</p>
+          <table>
+            <thead>
+              <tr><th>Line</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+        <div class="footer"><button class="close">Ok</button></div>
+      </div>
+
+      <div class="settings dialog">
+        <div class="header">Settings</div>
+        <div class="content">
+          <label>Simulation Speed</label>
+          <select name="speed">
+            <option value="0.0625">1/16x</option>
+            <option value="0.125">1/8x</option>
+            <option value="0.25">1/4x</option>
+            <option value="0.5">1/2x</option>
+            <option value="1">1x</option>
+            <option value="2">2x</option>
+            <option value="4">4x</option>
+            <option value="8">8x</option>
+            <option value="16">16x</option>
+          </select>
+
+          <label>Units</label>
+          <select name="units">
+            <option value="auto">auto</option>
+            <option value="mm">millimeters</option>
+            <option value="in">inches</option>
+          </select>
+
+          <label>Grid Step</label>
+          <input name="grid-step" type="number" min="0" max="1000000"
+                 step="1" value="1"/>
+
+          <label>
+            <input name="show-grid" type="checkbox" checked="true"/>
+            Show Grid
+          </label>
+
+          <label>
+            <input name="show-dims" type="checkbox" checked="true"/>
+            Show Dimensions
+          </label>
+
+          <label>
+            <input name="show-axes" type="checkbox" checked="true"/>
+            Show Axes
+          </label>
+
+          <label>
+            <input name="show-tool" type="checkbox" checked="true"/>
+            Show Tool
+          </label>
+        </div>
+        <div class="footer"><button class="close">Ok</button></div>
+      </div>
+
+      <div class="help dialog">
+        <div class="header">Help</div>
+        <div class="content">
+          <h3>Mouse Controls</h3>
+          <table>
+            <tr><th>Left Mouse</th><td>Hold and drag to rotate</td></tr>
+            <tr><th>Middle Mouse</th><td>Hold and drag to zoom</td></tr>
+            <tr><th>Right Mouse</th><td>Hold and drag to pan</td></tr>
+            <tr><th>Mouse Wheel</th><td>Zoom in and out</td></tr>
+          </table>
+          <h3>Buttons</h3>
+          <table>
+            <tr>
+              <th><img src="images/pause.png"/></th>
+              <td>Pause path simulation.</td>
+            </tr>
+            <tr>
+              <th><img src="images/reset.png"/></th>
+              <td>Restart path simulation.</td>
+            </tr>
+            <tr>
+              <th><img src="images/play.png"/></th>
+              <td>Start or continue path simulation.</td>
+            </tr>
+            <tr>
+              <th><img src="images/x.png"/></th>
+              <td>Snap to view down the X axis.</td>
+            </tr>
+            <tr>
+              <th><img src="images/y.png"/></th>
+              <td>Snap to view down the Y axis.</td>
+            </tr>
+            <tr>
+              <th><img src="images/z.png"/></th>
+              <td>Snap to view down the Z axis.</td>
+            </tr>
+            <tr>
+              <th><img src="images/settings.png"/></th>
+              <td>Open previewer settings.</td>
+            </tr>
+            <tr>
+              <th><img src="images/help.png"/></th>
+              <td>Show this help screen.</td>
+            </tr>
+          </table>
+          <h3>Settings</h3>
+          <table>
+            <tr>
+              <th>Simulation Speed</th>
+              <td>Sets the simulation play back speed relative to real time.
+              </td>
+            </tr>
+            <tr>
+              <th>Units</th>
+              <td>Selects the display units. "auto" mode uses the machine units
+                as set by the selected program.</td>
+            </tr>
+            <tr>
+              <th>Grid Step</th>
+              <td>Sets the grid step size in the currently selected units.</td>
+            </tr>
+            <tr>
+              <th>Checkboxes</th>
+              <td>The check boxes show or hide the grid, dimensions, axes and
+                tool</td>
+            </tr>
+          </table>
+        </div>
+        <div class="footer"><button class="close">Ok</button></div>
+      </div>
     </div>
-  </div>
 
-  <script src="../../common.js"></script>
-  <script src="../../preview.js"></script>
-</body>
-
+    <script src="../../common.js"></script>
+    <script src="../../preview.js"></script>
+  </body>
 </html>

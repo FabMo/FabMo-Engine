@@ -1,154 +1,124 @@
-/*jslint todo: true, browser: true, continue: true, white: true*/
-/*global $*/
-
 /**
- * This file is the main file for the FabMo previewer app. It controls the
- * viewer module initialization.
+ * FabMo previewer app.
+ *
+ * @author Joseph Coffland <joseph@cauldrondevelopment.com>
+ *
+ * Adapted from code written by Alex Canales.
  */
+
+'use strict';
+
+
+// THREE.js
+window.THREE = require('./three');
+require('./OrbitControls');
+
+var font = require('./helvetiker_regular.typeface.js');
+THREE.__font__ = (new THREE.FontLoader()).parse(font);
 
 require('jquery');
-var Viewer = require("./viewer").Viewer;
-var Fabmo = require('../../../static/js/libs/fabmo.js');
 
+var Viewer = require('./viewer');
+var util   = require('./util');
+var cookie = require('./cookie');
+var Fabmo  = require('../../../static/js/libs/fabmo.js');
+
+var preview = $('#preview');
 var fabmo = new Fabmo();
 var viewer;
-var FOOTBAR_HEIGHT = 0;  // Should find a way to access the element
 
 
-// Start fixing issue with footbar display
-
-/**
- * Resizes the viewer according to the running job footer height. The
- * height should be equal to zero if no job is running.
- *
- * @param {number} footerHeight The footer height.
- */
-function resizeAccordingFooter(footerHeight) {
-    var width = window.innerWidth;
-    var height = window.innerHeight - $("#topbar").height() - footerHeight;
-    
-    $('#preview').size(width, height);
-    viewer.resize(width, height);
-}
-
-/**
- * Resizes the viewer. Function to call when the window has been resized.
- */
 function resize() {
-    fabmo.requestStatus(function(err, status) {
-        if(err) {
-            resizeAccordingFooter(0);
-            return;
-        }
-        if(status.state !== "running") {
-            resizeAccordingFooter(0);
-            return;
-        }
-        resizeAccordingFooter(FOOTBAR_HEIGHT);  //Should access to the element
-    });
+  var width = window.innerWidth - 4;
+  var height = window.innerHeight - $('#topbar').height() - 3;
+  preview.size(width, height);
+  viewer.resize(width, height);
 }
 
-// End fixing issue with footbar display
 
-// Old code to use when the issue with the footbar is fixed
-/*
-   function resize() {
-   var width = window.innerWidth;
-   var height = window.innerHeight - $("#topbar").height() - footerHeight;
-   $('#preview').size(width, height);
-   viewer.resize(width, height);
-   }
-*/
+$(function () {
+  if (!util.webGLEnabled()) {
+    fabmo.notify('error', 'WebGL is not enable. Impossible to preview.');
+    return;
+  }
 
-/**
- * Initializes the handler for updating the live viewer.
- * @param {number} jobId The job id.
- */
-function initializeLiveViewerHandler(jobId) {
-    fabmo.on("status", function(status) {
-        if(status.state !== "running") {
-            return;
-        }
-        if(status.job && status.job._id === jobId && status.line !== null) {
-            viewer.updateLiveViewer(status.line);
-        }
-    });
-}
+  fabmo.getAppArgs(function(err, args) {
+    if (err) console.log(err);
 
-/**
- * Initializes the viewer object.
- * @param {string} gcode The G-Code to display.
- * @param {boolean} isLive Sets if the G-Code should be displayed live.
- * @param {number} jobId The job id.
- */
-function initializeViewer(gcode, isLive, jobId) {
+    // Args
+    var jobID = args.job || -1;
+    if (jobID && jobID != -1) cookie.set('job-id', jobID);
+    else jobID = cookie.get('job-id');
+
+    // Run now button
     fabmo.getJobsInQueue(function(err, jobs) {
-        if (jobs){
-            if(jobs.pending[0]._id.toString() === jobId) {
-                $('.run-now').show();
-            }
-        }
+      if (jobs && jobs.pending.length &&
+          jobs.pending[0]._id.toString() === jobID)
+        $('.run-now').show();
     });
-    var width = window.innerWidth;
-    var height = window.innerHeight - $("#topbar").height();
-    $('#preview').size(width, height);
-    viewer = new Viewer(
-        document.getElementById("preview"),
-        width,
-        height,
-        function(msg) { fabmo.notify('warning', msg); },
-        { hideGCode : true },
-        isLive
-    );
-    if(gcode !== "") {
-        viewer.setGCode(gcode);
-    }
 
-    if(isLive) {
-        initializeLiveViewerHandler(jobId);
-    }
+    $('.run-now').click(function() {
+      fabmo.runNext(function(err, data) {
+        if (err) fabmo.notify(err);
+        else fabmo.launchApp('job-manager');
+      });
+    });
 
+    // Viewer
+    viewer = new Viewer(preview);
+
+    // Resize
     resize();
-}
+    $(window).resize(resize);
 
-$(document).ready(function() {
+    // Fabmo callbacks
+    var job_started = false;
+    fabmo.on('status', function(status) {
+      if (status.state == 'running' && status.job && status.job._id == jobID &&
+          status.line !== null) {
+        var p = [status.posx, status.posy, status.posz];
+        viewer.updateStatus(status.line, p);
 
-    $('.run-now').click(function(){
-        fabmo.runNext(function(err, data) {
-            if (err) {
-            fabmo.notify(err);
-            } else {
-                fabmo.launchApp('job-manager');
-            }
-        });
-    });
-
-    fabmo.getAppArgs(function(err, args) {
-        if(err) {
-            console.log(err);
+        if (!job_started) {
+          job_started = true;
+          viewer.jobStarted();
         }
-        if('job' in args) {
-            var url = '/job/' + args.job + '/gcode';
-            $.ajax({
-                url: url,
-                type: 'GET',
-                success: function(data){ 
-                    var isLive = ('isLive' in args) ? args.isLive : false;
-                    initializeViewer(data, isLive, args.job);
-                },
-                error: function(data) {
-                   if(data && data.responseJSON) {
-                       fabmo.notify('error', data.responseJSON);
-                   }
-                }
-            });
-        } else {
-            initializeViewer("", false, -1);
-        }
+      }
     });
 
-    $(window).resize(function(){
-        console.info('resizing');
-        resize();
+    fabmo.on('job_end', function() {
+      job_started = false;
+      viewer.jobEnded()
     });
-});
+
+    // Load GCode
+    if (jobID != -1) {
+      viewer.gui.showLoading();
+
+      $.ajax({
+        type: 'GET',
+        url: '/job/' + jobID + '/gcode',
+
+        xhr: function () {
+          var xhr = $.ajaxSettings.xhr();
+          xhr.onprogress = function (e) {
+            viewer.gui.showLoadingSize(e.loaded);
+          }
+
+          return xhr;
+        },
+
+
+        success: function (gcode) {
+          viewer.gui.showLoadingSize(gcode.length);
+          viewer.setGCode(gcode)
+        },
+
+        error: function(data) {
+          if (data && data.responseJSON)
+            fabmo.notify('error', data.responseJSON);
+        }
+      });
+    }
+  });
+})
