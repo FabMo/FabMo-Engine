@@ -1,0 +1,109 @@
+body {
+  overflow: hidden;
+}
+
+#preview {
+  position: relative;
+}
+
+#preview .code-line {
+  position: absolute;
+  left: 50%;
+  width: 150px;
+  margin-left: -75px;
+  font-size: 150%;
+}
+
+#preview .actions .run-now {
+  right: 0;
+  margin: 5px;
+  padding: 0.7rem;
+  border-radius: 10px;
+  color: #eee;
+  background-color: #32B433;
+}
+
+#preview .actions > * {
+  cursor: pointer;
+  position: absolute;
+  z-index: 2;
+}
+
+#preview .actions > :hover {
+  opacity: 0.7;
+}
+
+#preview .run-now,
+#preview #button-pause,
+#preview #button-play,
+#preview #button-reset {
+  display: none;
+}
+
+#preview.live .actions .run-now,
+#preview.running .actions #button-pause,
+#preview:not(.live):not(.running) .actions #button-play,
+#preview:not(.live) .actions #button-reset {
+  display: block;
+}
+
+#preview .dialog {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: #fff;
+  z-index: 10;
+  padding: 0;
+  overflow: hidden;
+  width: 450px;
+  height: 510px;
+  margin-left: -225px;
+  margin-top: -250px;
+  border: 1px solid #ddd;
+}
+
+#preview .dialog .header {
+  height: 60px;
+  font-size: 2rem;
+  padding: 10px 40px;
+  border-bottom: 1px solid #ddd;
+}
+
+#preview .dialog .content {
+  padding: 10px 40px;
+  overflow-y: auto;
+  height: 368px;
+}
+
+#preview .dialog h2, #preview .dialog h3 {
+  color: #444;
+}
+
+#preview .dialog table {
+  width: 100%;
+}
+
+#preview .dialog .footer {
+  text-align: center;
+  height: 80px;
+  padding: 10px 40px;
+  border-top: 1px solid #ddd;
+}
+
+#preview .dialog button:hover {
+  opacity: 0.9;
+}
+
+#preview .loading {
+  width: 300px;
+  height: 120px;
+  margin-left: -150px;
+  margin-top: -60px;
+  padding: 2em;
+}
+
+#preview .loading progress {
+  display: block;
+  width: 100%;
+}

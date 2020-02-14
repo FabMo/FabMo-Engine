@@ -71,8 +71,7 @@ var config = {
             $: 'jquery',
             jQuery: 'jquery',
             "window.jQuery": 'jquery',
-            "windows.jQuery": 'jquery',
-            'THREE': 'three'
+            "windows.jQuery": 'jquery'
         }),
        
         
