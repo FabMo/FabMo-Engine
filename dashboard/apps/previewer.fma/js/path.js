@@ -32,10 +32,10 @@ function clean_gcode(s) {
   var result = [];
 
   for (var i = 0; i < s.length; i++) {
-    var c = s[i];
+    var c = s[i].toUpperCase();
 
     switch (c) {
-    case ' ': case '\t': case '%': break;
+    case ' ': case '\t': case '\r': case '%': break;
     case '(': in_comment = true; break;
     case ')': in_comment = false; break;
     default: if (!in_comment) result.push(c); break;
@@ -269,10 +269,10 @@ module.exports = function(scene, callbacks) {
     var endAngle =
         Math.atan2(end2D[1] - center2D[1], end2D[0] - center2D[0]);
 
-    if (startAngle == endAngle) endAngle += Math.PI * 2;
-
     var angle = endAngle - startAngle;
-    if (clockwise) angle = -angle;
+    if (0 <= angle) angle -= 2 * Math.PI;
+    if (!clockwise) angle += 2 * Math.PI;
+    if (!angle) angle = 2 * Math.PI;
 
     if (typeof p != 'undefined')
       angle += Math.PI * 2 * (p - 1) * (angle < 0 ? -1 : 1);
@@ -508,11 +508,10 @@ module.exports = function(scene, callbacks) {
 
   self.setMoveTime = function(time) {
     if (!self.loaded || !self.moves.length) return;
-    self.pause();
 
     var nextMove = findMoveAtTime(time);
     var move     = self.moves[nextMove];
-    var start    = move.getStart();
+    var start    = move.start;
     var p        = move.getPositionAt(time);
 
     // Mark lines done
@@ -529,7 +528,7 @@ module.exports = function(scene, callbacks) {
     move.setStart(p);
     if (self.lastMove != nextMove) {
       var last = self.moves[self.lastMove];
-      last.setStart(last.getStart())
+      last.setStart(last.start)
     }
 
     callbacks.position(p);
@@ -542,6 +541,7 @@ module.exports = function(scene, callbacks) {
 
   self.setMoveLinePosition = function(line, position) {
     if (!self.loaded) return;
+    self.pause();
 
     var move = findMoveAtLine(line);
 
@@ -574,6 +574,7 @@ module.exports = function(scene, callbacks) {
 
   self.setMoveToEnd = function () {
     if (!self.loaded) return;
+    self.pause();
     self.setMoveTime(self.duration);
     setCurrentLine(self.lines);
   }
