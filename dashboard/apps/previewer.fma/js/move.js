@@ -15,116 +15,120 @@ var green   = [0, 1, 0];
 var magenta = [1, 0, 1];
 
 
-module.exports = function(buffers, index, line, rapid, feed, startTime) {
-  var self = this;
+function getVector(move, buffer, offset) {
+  var v = [];
+
+  for (var i = 0; i < 3; i++)
+    v.push(move.buffers[buffer].array[move.index + offset + i]);
+
+  return v;
+}
 
 
-  function getVector(buffer, offset) {
-    var v = [];
+function Move (buffers, index, line, rapid, feed, startTime) {
+  this.buffers   = buffers;
+  this.index     = index;
+  this.line      = line;
+  this.rapid     = rapid;
+  this.feed      = feed;
+  this.startTime = startTime;
 
-    for (var i = 0; i < 3; i++)
-      v.push(buffers[buffer].array[index + offset + i]);
+  this.start  = getVector(this, 0, 0);
+  this.end    = getVector(this, 0, 3);
+  this.length = util.distance(this.start, this.end);
 
-    return v;
-  }
-
-
-  function setVector(buffer, offset, v) {
-    for (var i = 0; i < 3; i++)
-      buffers[buffer].array[index + offset + i] = v[i];
-
-    buffers[buffer].needsUpdate = true;
-  }
+};
 
 
-  self.getLine      = function () {return line}
-  self.getFeed      = function () {return feed}
-  self.getStartTime = function () {return startTime}
-  self.getEndTime   = function () {return startTime + self.getDuration()}
+Move.prototype.setVector = function(buffer, offset, v) {
+  for (var i = 0; i < 3; i++)
+    this.buffers[buffer].array[this.index + offset + i] = v[i];
+
+  this.buffers[buffer].needsUpdate = true;
+}
 
 
-  self.compareTime = function (t) {
-    if (t < startTime) return -1;
-    if (self.getEndTime() <= t) return 1;
-    return 0;
-  }
+Move.prototype.getLine      = function () {return this.line}
+Move.prototype.getFeed      = function () {return this.feed}
+Move.prototype.getStartTime = function () {return this.startTime}
 
 
-  self.getStart     = function () {return self.start}
-  self.getEnd       = function () {return self.end}
-  self.getLength    = function () {return self.length}
-  self.getDuration  = function () {return self.length / feed * 60}
-  self.getColor     = function () {return getVector(1, 0)}
+Move.prototype.getEndTime   = function () {
+  return this.startTime + this.getDuration()
+}
 
 
-  self.setColor = function (color) {
-    setVector(1, 0, color)
-    setVector(1, 3, color)
-  }
+Move.prototype.compareTime = function (t) {
+  if (t < this.startTime) return -1;
+  if (this.getEndTime() <= t) return 1;
+  return 0;
+}
 
 
-  self.setDone = function (done) {
-    self.setColor(done ? magenta : (rapid ? red : green));
-  }
+Move.prototype.getLength    = function () {return this.length}
+Move.prototype.getDuration  = function () {return this.length / this.feed * 60}
+Move.prototype.getColor     = function () {return getVector(this, 1, 0)}
 
 
-  self.setStart = function (start) {setVector(0, 0, start)}
+Move.prototype.setColor = function (color) {
+  this.setVector(1, 0, color)
+  this.setVector(1, 3, color)
+}
 
 
-  self.getUnitVector = function () {
-    var start  = self.getStart();
-    var end    = self.getEnd();
+Move.prototype.setDone = function (done) {
+  this.setColor(done ? magenta : (this.rapid ? red : green));
+}
+
+
+Move.prototype.setStart = function (start) {this.setVector(0, 0, start)}
+
+
+Move.prototype.getUnitVector = function () {
     var unit   = [];
 
     for (var i = 0; i < 3; i++)
-      unit.push((end[i] - start[i]) / self.length);
+      unit.push((this.end[i] - this.start[i]) / this.length);
 
     return unit;
   }
 
 
-  self.getPositionAt = function (time) {
-    var dist  = (time - startTime) / 60 * feed;
-    var start = self.getStart();
-    var unit  = self.getUnitVector();
-    var p     = [];
+Move.prototype.getPositionAt = function (time) {
+  var dist  = (time - this.startTime) / 60 * this.feed;
+  var unit  = this.getUnitVector();
+  var p     = [];
 
-    for (var i = 0; i < 3; i++)
-      p.push(start[i] + unit[i] * dist);
+  for (var i = 0; i < 3; i++)
+    p.push(this.start[i] + unit[i] * dist);
 
-    return p;
-  }
-
-
-  self.nearest = function (p) {
-    if (!self.length) return self.getEnd();
-
-    var start = util.threeVec(self.getStart());
-    var end   = util.threeVec(self.getEnd());
-
-    var line = new THREE.Line3(start, end);
-    p = util.threeVec(p);
-    line.closestPointToPoint(p, true, p);
-
-    return [p.x, p.y, p.z];
-  }
-
-
-  self.distanceTo = function (p) {return util.distance(p, self.nearest(p))}
-
-
-  self.timeNearest = function (p) {
-    var dist = util.distance(self.getStart(), self.nearest(p));
-    return startTime + dist / feed * 60;
-  }
-
-
-  function computeLength() {
-    return util.distance(self.getStart(), self.getEnd());
-  }
-
-
-  self.start = getVector(0, 0);
-  self.end = getVector(0, 3);
-  self.length = computeLength();
+  return p;
 }
+
+
+Move.prototype.nearest = function (p) {
+  if (!this.length) return this.end;
+
+  var start = util.threeVec(this.start);
+  var end   = util.threeVec(this.end);
+
+  var line = new THREE.Line3(start, end);
+  p = util.threeVec(p);
+  line.closestPointToPoint(p, true, p);
+
+  return [p.x, p.y, p.z];
+}
+
+
+Move.prototype.distanceTo = function (p) {
+  return util.distance(p, this.nearest(p))
+}
+
+
+Move.prototype.timeNearest = function (p) {
+  var dist = util.distance(this.start, this.nearest(p));
+  return this.startTime + dist / this.feed * 60;
+}
+
+
+module.exports = Move;
