@@ -462,7 +462,6 @@ ManualDriver.prototype._onG2Status = function(status) {
 		case this.driver.STAT_RUNNING:
 			this.moving = true;
 			if(this.omg_stop) {
-				console.log('this is my hunch')
 				this.stop_pending = true;
 				this.driver.feedHold();
 				this.driver.queueFlush(function() {
@@ -471,7 +470,7 @@ ManualDriver.prototype._onG2Status = function(status) {
 			}
 			break;
 		case this.driver.STAT_STOP:
-		case this.driver.STAT_END:
+//		case this.driver.STAT_END:
 		case this.driver.STAT_HOLDING:
 			// Handle nudges once we've come to a stop
 			if(this._handleNudges()) {

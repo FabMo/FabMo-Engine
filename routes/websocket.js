@@ -162,6 +162,8 @@ var onPrivateConnect = function(socket) {
 			socket.emit('authentication_failed','not authenticated');
 			return socket.disconnect();
 		} // make sure that if the user logout, he can't talk through the socket anymore.
+		console.log('the command');
+		console.log(data.name);
 		try {
 			switch(data.name) {
 				case 'pause':

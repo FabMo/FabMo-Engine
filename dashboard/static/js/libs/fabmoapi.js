@@ -1,6 +1,5 @@
 ;(function (root, factory) {
 
-
   /* CommonJS */
   if (typeof module == 'object' && module.exports) module.exports = factory()
 

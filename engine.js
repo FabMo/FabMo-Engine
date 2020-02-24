@@ -37,8 +37,6 @@ var Util = require('util');
 
 
 
-
-
 var GenericNetworkManager = require('./network_manager').NetworkManager;
 var Beacon = require('./beacon');
 
@@ -778,6 +776,7 @@ Engine.prototype.start = function(callback) {
                 // should be a large unguessable string
                 secret: server.cookieSecret, // REQUIRE HTTPS SUPPORT !!!
                 // how long the session will stay valid in ms
+                duration: (31 * 24 * 60 * 60 * 1000),
                 cookie: {
                   //: '/api', // cookie will only be sent to requests under '/api'
                   maxAge: (31 * 24 * 60 * 60 * 1000),  // duration of the cookie in milliseconds, defaults to duration above
