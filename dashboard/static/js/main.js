@@ -15,8 +15,7 @@ require("../css/toastr.min.css");
     var dashboard = require('./dashboard.js');
 
     // Vendor libraries
-    require('jquery');
-    require('backbone');
+
     var $ = require('jquery');
     var Backbone = require('backbone');
     var underscore = require('underscore');
