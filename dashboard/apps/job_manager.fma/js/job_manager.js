@@ -226,6 +226,7 @@ function addQueueEntries(jobs) {
       start: 0,
       count: 0
     }, function(err, jobs) {
+      console.log(jobs);
       var arr = jobs.data;
       var i = 0;
       for (var a = 0; a < arr.length; a++) {

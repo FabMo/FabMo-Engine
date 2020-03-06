@@ -9,7 +9,7 @@
     "unsafe-perm": true
   },
   "dependencies": {
-    "adm-zip": "0.4.4",
+    "adm-zip": "^0.4.14",
     "async": "1.4.x",
     "backbone": "1.3.3",
     "bonjour": "jlucidar/bonjour",
@@ -41,7 +41,8 @@
     "serialport": "^7.1.5",
     "socket.io": "1.3.7",
     "style-loader": "0.13.1",
-    "tingodb": "0.3.x",
+    "text-loader": "0.0.1",
+    "tingodb": "^0.6.1",
     "tmp": "0.0.31",
     "underscore": "1.8.3",
     "url-loader": "0.5.7",
@@ -58,10 +59,10 @@
     "clean-webpack-plugin": "^0.1.17",
     "grunt": "0.4.5",
     "grunt-apidoc": "0.10.0",
-    "grunt-available-tasks": "0.6.0",
+    "grunt-available-tasks": "^0.6.3",
     "grunt-gh-pages": "0.10.0",
     "grunt-groc": "0.6.0",
-    "grunt-open": "0.2.3"
+    "grunt-open": "^0.2.4"
   },
   "engine": "node 0.10.44",
   "apidoc": {

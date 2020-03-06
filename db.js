@@ -195,7 +195,7 @@ Job.getHistory = function(options, callback) {
 		if(err) { return callback(err); }
 		jobs.find({
 			state: {$in : ['finished', 'cancelled', 'failed']}
-		}).skip(options.start || 0).limit(options.count || 0).sort({'created_at' : -1 }).toArray(function(err, data) {
+		}).skip(parseInt(options.start) || 0).limit(parseInt(options.count) || 0).sort({'created_at' : -1 }).toArray(function(err, data) {
 			if(err) {
 				callback(err);
 			}
