@@ -2,7 +2,7 @@ define(function(require) {
     var $ = require('jquery');
     var toastr = require('./libs/toastr.min');
     var colapsed;
-
+    var pinRight;
 
 
     // Events and keypress handlers in the FabMo-Dashboard
@@ -32,14 +32,17 @@ define(function(require) {
         $('#right-position-container').removeClass('dropped');
     }
      var setRightMenuBehavior = function() {
+
         if ($('#right-menu').css('right') === '0px') {
-            if ($(window).width() < 800) {
+            localStorage.setItem('pinRight', true);
+            if ($(window).width() < 900) {
                 closeDROover();
             } else {
                 closeDROPush();
             }
         } else {
-            if ($(window).width() < 800) {
+            localStorage.setItem('pinRight', false);
+            if ($(window).width() < 900) {
                 openDROover();
             } else {
                 openDROPush();
@@ -47,21 +50,22 @@ define(function(require) {
         }
     }
     var rightMenuLoad = function() {
-        if ($(window).width() > 800) {
+        pinRight = localStorage.getItem('pinRight');
+        if ($(window).width() > 900 && pinRight == "false") {
             openDROPush();
-        } else if ($(window).width() < 800) {
+        } else if ($(window).width() < 900) {
             $('#app-client-container').css('padding-right', '0px');
             $('#app_menu_container').css('padding-right', '0px');
             $('#waiting_container').css('padding-right', '0px');
         }
     }
     $('.DRO-button').on('click', function(evt) {
+    
         setRightMenuBehavior();
         evt.preventDefault();
     });
 
-    
-    
+
     
 
    
@@ -80,6 +84,7 @@ define(function(require) {
         
 
         colapsed = localStorage.getItem('colapsed');
+
         if ($(window).width() > 640) {
             $("#main").addClass("offcanvas-overlap-right"); //Show Left Menu
             l = parseInt($("#left-menu").css("width")) + 1; //Save left menu size
@@ -125,7 +130,6 @@ define(function(require) {
 
         if ($('.axi').is(':focus')){
         } else {
-           rightMenuLoad();
        }
 
 
