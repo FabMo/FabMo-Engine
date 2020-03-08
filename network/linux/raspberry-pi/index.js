@@ -63,6 +63,7 @@ util.inherits(RaspberryPiNetworkManager, NetworkManager);
 
 RaspberryPiNetworkManager.prototype.set_uuid = function(callback) {
   var uuid = ""
+  log.info('SETTING UUID');
   exec("cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2",function(err,result){
     if (err) {
       var name = {'name' : "fabmo"}
@@ -234,7 +235,21 @@ RaspberryPiNetworkManager.prototype.confirmIP = function(callback) {
 // Actually do the work of joining AP mode
 RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
   log.info("Entering AP mode...");
-  var name = config.engine.get('name');
+  var interfaces = os.networkInterfaces();
+  var wlan0Int =interfaces.wlan0;
+  var eth0Int = interfaces.eth0;
+  var name = config.engine.get('name').split('0').join('').split('\n').join('').trim();
+  var ext;
+  if(eth0Int){
+    ext = ": " + eth0Int[0].address;
+  } else if(wlan0Int){
+    ext = ": " + wlan0Int[0].address;
+  } else {
+    ext = "";
+  }
+  name = name + ext;
+  console.log("this better be in there"); 
+  console.log(name);
   var network_config = config.engine.get('network');
   network_config.wifi.mode = 'ap';
   config.engine.set('network', network_config);
@@ -255,7 +270,7 @@ RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
           console.log(err);
           console.log(result);
           commands.hostapd({
-            ssid: name
+            ssid: name 
           }, () => {
             console.log('hostAPD up');
             commands.dnsmasq({interface: 'uap0'}, () => {
