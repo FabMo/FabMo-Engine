@@ -29,7 +29,7 @@
     "mime": "1.2.11",
     "minimist": "1.1.1",
     "ncp": "2.0.0",
-    "node-uuid": "1.4.1",
+    "node-uuid": "1.4.8",
     "pako": "1.0.4",
     "passport-local": "jlucidar/passport-restify-local",
     "passport-restify": "1.0.1",
