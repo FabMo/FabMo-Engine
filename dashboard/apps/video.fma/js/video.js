@@ -1,25 +1,26 @@
-require('jquery');
-var Fabmo = require('../../../static/js/libs/fabmo.js');
-var fabmo = new Fabmo();
+window.onload = function() {
+  var img = document.getElementById('video');
 
-$(document).ready(function () {
-var canvas = document.getElementById('videostream');
-var context = canvas.getContext('2d');
-fabmo.startVideoStreaming(function(err){
-  if (err){
-    context.font = "30px Arial";
-    context.fillStyle = "grey";
-    context.textAlign = "center";
-    context.fillText("No video input.", canvas.width/2, canvas.height/2);
-    return;
+
+  function resize() {
+    var width = window.innerWidth;
+    var height = window.innerHeight;
+    var aspect = img.naturalHeight / img.naturalWidth;
+
+    if (!width) return;
+
+    img.width = Math.min(width, height / aspect);
+    img.height = Math.min(height, width * aspect);
   }
-  fabmo.onVideoFrame(function(imageObj){
-    context.height = imageObj.height;
-    context.width = imageObj.width;
-    canvas.width  = imageObj.width;
-    canvas.height = imageObj.height;
-    context.drawImage(imageObj,0,0,context.width,context.height);
-  });
 
-});
-});
+
+  function reload() {
+    img.onload = resize;
+    img.src = 'http://' + location.hostname + ':3141?' + Math.random()
+  }
+
+
+  window.addEventListener('resize', resize, false);
+  img.onclick = reload;
+  reload();
+}

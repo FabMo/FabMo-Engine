@@ -1,17 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Camera</title>
 
-<!DOCTYPE html>
-<html lang="en"> <!-- manifest="webcache.manifest" -->
-	<head>
-		<meta charset="utf-8">
-		<title>streamServer</title>
-    <link rel="stylesheet" href="../../css/dashboard.css">
-	</head>
-	<body>
-		<div id="stream-container">
-
-			<canvas id="videostream"></canvas>
-		</div>
-	</body>
-  <script src="../../common.js"></script>
-  <script src="../../video.js"></script>
+    <style>
+      body {
+        margin: 0;
+        line-height: 0;
+        background: #000;
+        overflow: hidden;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <img id="video"/>
+  </body>
+  <script src="js/video.js"></script>
 </html>
