@@ -117,6 +117,7 @@ ManualRuntime.prototype.executeCode = function(code, callback) {
 	switch(code.cmd) {
 		case 'enter':
 			this.enter(code.mode, code.hideKeypad || false);
+			log.debug("fail on case enter, mode= " + code.mode)
 			break;
 		default:
 			if(!this.helper) {
