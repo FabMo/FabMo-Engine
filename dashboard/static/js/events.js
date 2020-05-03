@@ -284,7 +284,7 @@ define(function(require) {
         toastr.options["positionClass"] = "toast-top-center";
         toastr.options.showMethod = 'slideDown';
         toastr.options.hideMethod = 'slideUp';
-        toastr.options.preventDuplicates = true;
+        toastr.options.preventDuplicates = false;
 
 
         //Click & Swipe listener

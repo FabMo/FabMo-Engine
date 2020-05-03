@@ -456,6 +456,8 @@ define(function(require) {
 
     this._registerHandler('manualExit', function(data, callback) {
       this.engine.manualExit(function(err, result) {
+
+console.log('manualexit in dash.js') //*th
         if (err) {
           callback(err);
         } else {

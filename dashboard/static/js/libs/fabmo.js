@@ -794,6 +794,7 @@ FabMoDashboard.prototype.manualEnter = function(options, callback) {
 
 FabMoDashboard.prototype.manualExit = function(axis, speed, callback) {
 	this._call("manualExit", callback);
+	console.log('manual exit at fabmo.js') //*TH
 }
 
 /**

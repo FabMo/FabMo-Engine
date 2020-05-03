@@ -415,6 +415,7 @@ FabMoAPI.prototype.manualEnter = function(options) {
 
 FabMoAPI.prototype.manualExit = function() {
 	this.executeRuntimeCode('manual', {'cmd': 'exit'});
+	console.log('manual exit in fabmoapi'); //*TH
 }
 
 FabMoAPI.prototype.manualMoveFixed = function(axis, speed, distance, second_axis, second_distance) {
