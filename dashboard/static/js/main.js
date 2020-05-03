@@ -403,7 +403,6 @@ require("../css/toastr.min.css");
         $('.manual-drive-message').html('');
         $('.manual-drive-message').hide();
         dashboard.engine.manualExit();
-console.log('manual exit requrested')  //*TH        
     })
 
     $('.manual-drive-enter').click(function(){
