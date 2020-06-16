@@ -293,7 +293,11 @@ require("../css/toastr.min.css");
 
             }
         });
+
+
     });
+
+
 
 
     function getManualMoveSpeed(move) {
@@ -449,6 +453,8 @@ require("../css/toastr.min.css");
         }
     }
 
+
+
     function hideDaisy(callback) {
         var callback = callback || function() {};
         if (!daisyIsShown) {
@@ -468,6 +474,8 @@ require("../css/toastr.min.css");
 			dashboard.engine.manualEnter()
 		}
     });
+
+
 
 
 

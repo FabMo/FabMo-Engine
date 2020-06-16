@@ -331,9 +331,7 @@ log.error(new Error('There was a serial error'))
 G2.prototype.onSerialClose = function(data) {
 	this.connected= false;
 	log.error('G2 Core serial link was lost.')
-	if(!intended) {
-		process.exit(14);
-	}
+	process.exit(14);
 };
 
 // Write to the serial port (and log it)
@@ -358,7 +356,7 @@ G2.prototype.clearAlarm = function() {
 // Units are sort of weird, and our fork of the g2 firmware hijacks the "gun" command
 // to set the system units.  (Conventionally, you have to use a G-code to do this)
 G2.prototype.setUnits = function(units, callback) {
-	this.command({gun:(units === 0 || units == 'in') ? 0 : 1});
+	this.command({gun:(units === 1 || units == 'mm') ? 1 : 0});
 	this.requestStatusReport(function(stat) { callback()});
 }
 
@@ -493,7 +491,7 @@ G2.prototype.handleStatusReport = function(response) {
 		for (var key in response.sr) {
 			value = response.sr[key];
 			if(key === 'unit') {
-				value = value === 0 ? 'in' : 'mm';
+				value = value === 1 ? 'mm' : 'in';
 			}
 			this.status[key] = value;
 		}
@@ -666,6 +664,17 @@ G2.prototype.onMessage = function(response) {
 // "pause" the current machining cycle by issuing a feedhold.
 // callback is called when the next state change takes place.
 // 
+G2.prototype.manualFeedHold = function(callback) {
+
+	this.pause_flag = true;
+	this.flooded = false;
+	// Issue the actual Job Kill
+	this._write('\x04\n', function() {
+		callback();
+	});
+
+}
+
 G2.prototype.feedHold = function(callback) {
 	this.pause_flag = true;
 	this.flooded = false;
@@ -740,7 +749,6 @@ G2.prototype.quit = function() {
 		log.warn("Not quitting because a quit is already pending.");
 		return;
 	}
-
 	switch(this.status.stat) {
 		//case STAT_END:
 		//	return;
