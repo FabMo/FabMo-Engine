@@ -1,5 +1,5 @@
 {
-	"units" : "mm",
+	"units" : "in",
 	"time_units" : "s",
 	"quit_input": 4,
 	"auth_timeout" : 30,
@@ -12,20 +12,20 @@
 	"default_app" : "home",
 	"envelope" : {
 		"xmin" : 0.0,
-		"xmax" : 152.4,
+		"xmax" : 24.0,
 		"ymin" : 0.0,
-		"ymax" : 203.2
+		"ymax" : 18.0
 	},
 	"manual" : {
-		"xy_speed" : 76.2,
-		"xy_min" : 2.54,
-		"xy_max" : 152.4,
-		"z_fast_speed" : 25.4,
-		"z_slow_speed": 2.54,
-		"xy_increment" : 2.54,
-		"z_increment" : 0.254,
+		"xy_speed" : 3.0,
+		"xy_min" : 0.1,
+		"xy_max" : 6.0,
+		"z_fast_speed" : 1.0,
+		"z_slow_speed": 0.1,
+		"xy_increment" : 0.1,
+		"z_increment" : 0.01,
 		"ab_increment" : 1,
-		"xy_jerk" : 6350,
-		"z_jerk" : 6350
+		"xy_jerk" : 250,
+		"z_jerk" : 250
 	}
 }
