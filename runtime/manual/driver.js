@@ -468,7 +468,6 @@ ManualDriver.prototype._onG2Status = function(status) {
 						this.driver.resume();		
 					}.bind(this));
 				}.bind(this));
-
 			}
 			break;
 		case this.driver.STAT_STOP:

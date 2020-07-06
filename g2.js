@@ -356,7 +356,7 @@ G2.prototype.clearAlarm = function() {
 // Units are sort of weird, and our fork of the g2 firmware hijacks the "gun" command
 // to set the system units.  (Conventionally, you have to use a G-code to do this)
 G2.prototype.setUnits = function(units, callback) {
-	this.command({gun:(units === 1 || units == 'mm') ? 1 : 0});
+	this.command({gun:(units === 0 || units == 'in') ? 0 : 1});   ////## just testing original inch variant
 	this.requestStatusReport(function(stat) { callback()});
 }
 
@@ -491,7 +491,7 @@ G2.prototype.handleStatusReport = function(response) {
 		for (var key in response.sr) {
 			value = response.sr[key];
 			if(key === 'unit') {
-				value = value === 1 ? 'mm' : 'in';
+				value = value === 0 ? 'in' : 'mm';   ////## just testing original inch variant
 			}
 			this.status[key] = value;
 		}
