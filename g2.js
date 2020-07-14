@@ -331,9 +331,7 @@ log.error(new Error('There was a serial error'))
 G2.prototype.onSerialClose = function(data) {
 	this.connected= false;
 	log.error('G2 Core serial link was lost.')
-	if(!intended) {
-		process.exit(14);
-	}
+	process.exit(14);
 };
 
 // Write to the serial port (and log it)
@@ -662,6 +660,18 @@ G2.prototype.onMessage = function(response) {
 	}
 
 };
+
+G2.prototype.manualFeedHold = function(callback) {
+
+	this.pause_flag = true;
+	this.flooded = false;
+	// Issue the actual Job Kill
+	this.gcode_queue.clear();
+	this._write('\x04\n', function() {
+		callback();
+	});
+
+}
 
 // "pause" the current machining cycle by issuing a feedhold.
 // callback is called when the next state change takes place.
