@@ -465,7 +465,7 @@ ManualDriver.prototype._onG2Status = function(status) {
 				this.stop_pending = true;
 				this.driver.manualFeedHold(function(){
 					//#### this.driver.queueFlush(function() {
-						this.driver.resume();		
+			//####			this.driver.resume();		
 					//####}.bind(this));
 				}.bind(this));
 			}
