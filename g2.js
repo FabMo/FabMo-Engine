@@ -156,6 +156,7 @@ function G2() {
 	this.quit_pending = false;
 	this.stat = null;
 	this.hold = null;
+	this.manaul_hold = false;
 
 	// Readers and callbacks
 	this.expectations = [];
@@ -662,14 +663,14 @@ G2.prototype.onMessage = function(response) {
 };
 
 G2.prototype.manualFeedHold = function(callback) {
-
-	this.pause_flag = true;
-	this.flooded = false;
-	// Issue the actual Job Kill
-	this.gcode_queue.clear();
+	this.manaul_hold = true;
 	this._write('\x04\n', function() {
-		callback();
-	});
+		this.once('status', function() {
+			this._write('M100.1 ({zl:0})\nM0\nG91\n G0 X0 Y0 Z0\n');	
+			this.prime();
+			callback();	
+		}.bind(this))
+	}.bind(this));
 
 }
 
@@ -958,7 +959,7 @@ G2.prototype._createStatePromise = function(states) {
 	var that = this;
 	var onStat = function(stat) {
 		for(var i=0; i<states.length; i++) {
-			if(stat === states[i]) {
+			if(stat === states[i] && !this.manaul_hold) {
 				that.removeListener('stat', onStat);
 				log.info("Resolving promise " + thisPromise + " because of state " + stat + " which is one of " + states)
 				deferred.resolve(stat);

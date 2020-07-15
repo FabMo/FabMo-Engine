@@ -72,7 +72,6 @@ util.inherits(ManualDriver, events.EventEmitter);
 // TODO: Pass the setup stuff in?  (In case runtimes want to do things differently?)
 // Returns a promise that resolves on exit
 ManualDriver.prototype.enter = function() {
-
 	if(this.entered) { return; }
 
 
@@ -464,7 +463,9 @@ ManualDriver.prototype._onG2Status = function(status) {
 			if(this.omg_stop) {
 				this.stop_pending = true;
 				this.driver.manualFeedHold(function(){
-					this.enter();
+					this.driver.queueFlush(function() {
+						this.driver.manaul_hold = false;	
+					}.bind(this));
 				}.bind(this));
 			}
 			break;
