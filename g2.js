@@ -156,7 +156,7 @@ function G2() {
 	this.quit_pending = false;
 	this.stat = null;
 	this.hold = null;
-	this.manaul_hold = false;  ////## added from Brendan JobKill
+	this.manual_hold = false;  ////## added from Brendan JobKill
 
 	// Readers and callbacks
 	this.expectations = [];
@@ -672,14 +672,17 @@ G2.prototype.onMessage = function(response) {
 // 	});
 // }
 G2.prototype.manualFeedHold = function(callback) {
-	this.manaul_hold = true;
-	this._write('\x04\n', function() {
-		this.once('status', function() {
-			this._write('M100.1 ({zl:0})\nM0\nG91\n G0 X0 Y0 Z0\n');	
-			this.prime();
-			callback();	
-		}.bind(this))
-	}.bind(this));
+    log.debug(" ... call to MANUAL FEEDHOLD while- " + this.manual_hold)
+	if (!this.manual_hold) {
+//####		this.manual_hold = true; 
+		this._write('\x04\n', function() {
+			this.once('status', function() {
+				this._write('M100.1 ({zl:0})\nM0\nG91\n G0 X0 Y0 Z0\n');	
+				this.prime();
+				callback();	
+			}.bind(this))
+		}.bind(this));
+	}
 
 }
 

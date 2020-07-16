@@ -207,7 +207,7 @@ ManualDriver.prototype.stopMotion = function() {
 		clearTimeout(this.renew_timer);
 	}
 	this.omg_stop = true
-	this.stop_pending = true;
+////##	this.stop_pending = true;
 	//this.driver.feedHold();
 	//this.driver.queueFlush(function() {
 	//	this.driver.resume();		
@@ -461,15 +461,20 @@ ManualDriver.prototype._onG2Status = function(status) {
 		case this.driver.STAT_RUNNING:
 			this.moving = true;
 			if(this.omg_stop) {
-				this.stop_pending = true;
-				this.driver.manualFeedHold(function(){
-					//#### this.driver.queueFlush(function() {
-			        //####		this.driver.resume();		
-					//####}.bind(this));
-				}.bind(this));
+log.debug("====> GOT OMG_STOP while stop_pending= " + this.stop_pending)
+				if(!this.stop_pending) {
+					this.stop_pending = true;
+					this.driver.manualFeedHold(function(){
+						//#### this.driver.queueFlush(function() {
+				        //####		this.driver.resume();		
+						//####}.bind(this));
+					}.bind(this));
+				}	
 			}
 			break;
 		case this.driver.STAT_STOP:
+log.debug("=====> CLEARING stop_pending")
+			this.stop_pending = false;
 //		case this.driver.STAT_END:
 		case this.driver.STAT_HOLDING:
 			// Handle nudges once we've come to a stop
