@@ -75,7 +75,6 @@ ManualDriver.prototype.enter = function() {
 
 	if(this.entered) { return; }
 
-
 	switch(this.mode) {
 		case 'normal':
 			// Retrieve the manual-mode-specific jerk settings and apply them (temporarily) for this manual session
