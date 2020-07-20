@@ -471,12 +471,12 @@ Engine.prototype.start = function(callback) {
             '4sa','4tr','4mi',
             '5sa','5tr','5mi',
             '6sa','6tr','6mi',
-            'ja',
-            '6ma',
-            '6po',
-            '6su',
-            '6pm',
-            '6pl'
+            'ja'        ////## ,
+                        ////## '6ma',
+                        ////## '6po',
+                        ////## '6su',
+                        ////## '6pm',
+                        ////## '6pl'
           ]
           var do_shim = false;
           for(var i=0; i<entries.length; i++) {
