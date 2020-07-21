@@ -275,7 +275,6 @@ define(function(require) {
     //Submit update 
 
     this._registerHandler('submitUpdate', function(file, options, callback, progress){
-      console.log('in dashboard');
       this.engine.submitUpdate(file, options, callback, progress);
     }.bind(this));
 
@@ -934,12 +933,10 @@ define(function(require) {
   }
 
   Dashboard.prototype.showNav = function(callback){
-    console.log('when do I');
     var nav = document.getElementsByClassName('tab-bar')[0];
     var DRO = document.getElementById('right-menu');
     var leftMenu = document.getElementById('left-menu');
     var main = document.getElementById('main');  
-    console.log(main);  
     DRO.style.marginTop = '45px';
     nav.style.display = 'block';
     leftMenu.style.top = '56px';
@@ -949,13 +946,11 @@ define(function(require) {
 
 
   Dashboard.prototype.hideNav = function(callback){
-    console.log('do I get called')
     var nav = document.getElementsByClassName('tab-bar')[0];
     var DRO = document.getElementById('right-menu');
     var leftMenu = document.getElementById('left-menu');
     var main = document.getElementById('main');  
     //var height = document
-    console.log(main); 
     nav.style.display = 'none';
     DRO.style.marginTop = '0px';
     leftMenu.style.top = '0px';

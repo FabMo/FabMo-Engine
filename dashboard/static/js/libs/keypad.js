@@ -174,7 +174,6 @@ Keypad.prototype.onDrivePress = function(evt) {
 	this.target = evt.target;
 	this.setEnabled(true);
 	var e = $(evt.target);
-	console.log(e);
 	e.focus();
 	if(e.hasClass('drive-button-fixed')) {
 		this.onDriveTap(evt);

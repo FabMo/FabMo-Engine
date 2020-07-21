@@ -156,7 +156,7 @@ function G2() {
 	this.quit_pending = false;
 	this.stat = null;
 	this.hold = null;
-	this.manual_hold = false;  ////## added from Brendan JobKill
+	this.manaul_hold = false;
 
 	// Readers and callbacks
 	this.expectations = [];
@@ -314,6 +314,7 @@ G2.prototype.connect = function(path, callback) {
 
 // Close the serial port - important for shutting down the application and not letting resources "dangle"
 G2.prototype.disconnect = function(reason, callback) {
+	log.ingo(reason)
 	if(reason === "firmware") {
 		intendedClose = true;
 	}
@@ -332,7 +333,9 @@ log.error(new Error('There was a serial error'))
 G2.prototype.onSerialClose = function(data) {
 	this.connected= false;
 	log.error('G2 Core serial link was lost.')
-	process.exit(14);
+	if(!intendedClose) {
+		process.exit(14);
+	}
 };
 
 // Write to the serial port (and log it)
@@ -662,28 +665,17 @@ G2.prototype.onMessage = function(response) {
 
 };
 
-////## ... an early shot at kill?
-// G2.prototype.manualFeedHold = function(callback) {
-// 	this.pause_flag = true;
-// 	this.flooded = false;
-// 	// Issue the actual Job Kill
-// 	this._write('\x04\n', function() {
-// 		callback();
-// 	});
-// }
+
 G2.prototype.manualFeedHold = function(callback) {
     log.debug(" ... call to MANUAL FEEDHOLD while- " + this.manual_hold)
-	if (!this.manual_hold) {
-//####		this.manual_hold = true; 
-		this._write('\x04\n', function() {
-			this.once('status', function() {
-				this._write('M100.1 ({zl:0})\nM0\nG91\n G0 X0 Y0 Z0\n');	
-				this.prime();
-				callback();	
-			}.bind(this))
-		}.bind(this));
-	}
-
+	this.manaul_hold = true;
+	this._write('\x04\n', function() {
+		this.once('status', function() {
+			this._write('M100.1 ({zl:0})\nM0\nG91\n G0 X0 Y0 Z0\n');	
+			this.prime();
+			callback();	
+		}.bind(this))
+	}.bind(this));
 }
 
 // "pause" the current machining cycle by issuing a feedhold.
@@ -971,7 +963,7 @@ G2.prototype._createStatePromise = function(states) {
 	var that = this;
 	var onStat = function(stat) {
 		for(var i=0; i<states.length; i++) {
-			if(stat === states[i]) {
+			if(stat === states[i] && !this.manaul_hold) {
 				that.removeListener('stat', onStat);
 				log.info("Resolving promise " + thisPromise + " because of state " + stat + " which is one of " + states)
 				deferred.resolve(stat);
