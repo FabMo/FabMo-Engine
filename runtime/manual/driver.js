@@ -263,7 +263,7 @@ ManualDriver.prototype.goto = function(pos) {
 	this.stream.write(move);
 }
 
-// Set the machine position to the specified vector
+// Set the machine position to the specified vector ////## meaning location here not move vector?
 //   pos - New position vector as an object,  eg: {"X":10, "Y":5}
 ManualDriver.prototype.set = function(pos) {
 	var toSet = {};
@@ -293,7 +293,7 @@ ManualDriver.prototype.set = function(pos) {
 						toSet.g55b = Number(((MPO.b* 1) - pos[key]).toFixed(5));
 						break;
 					default:
-						log.error("don't understand axi");
+						log.error("don't understand axis");
 				}
 			}.bind(this));
 			config.driver.setMany(toSet, function(err, value) {
