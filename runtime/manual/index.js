@@ -82,7 +82,7 @@ ManualRuntime.prototype.enter = function(mode, hideKeypad) {
 	}.bind(this));
 
 	// Create a helper that is used to do the pumping of commands.
-debug.log("1==> creating new helper for ManDriver:  ",this.driver, this.stream, mode) ////##
+log.debug("1==> creating new helper for ManDriver:  ",this.driver, this.stream, mode) ////##
 	this.helper = new ManualDriver(this.driver, this.stream, mode);
 	this.helper.enter().then(function() {
 		log.debug('** Resolving enter promise **')
@@ -113,7 +113,7 @@ ManualRuntime.prototype.executeCode = function(code, callback) {
 			return;
 	}
 
-debug.log("2==> ready to execute code:  ",currentCmd, code, callback, this.machine.status.state) ////##
+log.debug("2==> ready to execute code:  ",currentCmd, code, callback, this.machine.status.state) ////##
 	log.info('CODE!!');
 	log.info(JSON.stringify(code));
 	switch(code.cmd) {
