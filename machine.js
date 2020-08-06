@@ -420,6 +420,7 @@ Machine.prototype.arm = function(action, timeout) {
 		case 'paused':
 		case 'stopped':
 			if(action.type != 'resume') {
+log.debug("===>In machine at cased stopped, over-ride here???")
 				throw new Error('Cannot arm the machine for ' + action.type + ' when ' + this.status.state);
 			}
 			break;

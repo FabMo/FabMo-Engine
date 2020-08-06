@@ -156,7 +156,7 @@ function G2() {
 	this.quit_pending = false;
 	this.stat = null;
 	this.hold = null;
-	this.manaul_hold = false;
+	this.manual_hold = false;
 
 	// Readers and callbacks
 	this.expectations = [];
@@ -456,9 +456,10 @@ G2.prototype.handleExceptionReport = function(response) {
 		this._lastExceptionReport = response.er;
 		var stat = response.er.st;
 		if((stat === 207) && this.quit_pending) {
-			//this.quit_pending = false;
+			this.quit_pending = false;
 			//this._write("{clr:n}\n");
 			//this.command("M30");
+			//this._write("m0\n");
 		}
 		log.error("Response with an exception report:")
 		log.error(JSON.stringify(response))
@@ -506,7 +507,7 @@ G2.prototype.handleStatusReport = function(response) {
 			lines_left = this.lines_sent - line;
 		}
 
-		// stat is the system state (detailed in the list above)
+		// stat is the system state (detailed in the list above) 
 		if('stat' in response.sr) {
 			switch(response.sr.stat) {
 				// If we stopped and flushed, we might have provided a callback
@@ -518,8 +519,9 @@ G2.prototype.handleStatusReport = function(response) {
 					}
 					break;
 				case STAT_END:
-					this.status.line = null;
+//log.debug("===> READ a stat-4 in an sr; mode - " + response.sr.stat); ////##				
 					break;
+
 				// A really bad error in the firmware causes a "panic" - these are rare, but they do
 				// happen.  A panic is not resolvable without resetting the micrcontroller hosting G2
 				// TODO: We might want to actually kill the engine here, or issue some kind of reset.
@@ -665,22 +667,40 @@ G2.prototype.onMessage = function(response) {
 
 };
 
-
+// Interrupt motion in manual run-time; now using "kill" rather than G2-hold
+// Cleanup required ...???
+////## modified for allowing KILL in raw mode
 G2.prototype.manualFeedHold = function(callback) {
-    log.debug(" ... call to MANUAL FEEDHOLD while- " + this.manual_hold)
-	this.manaul_hold = true;
-	this._write('\x04\n', function() {
-		this.once('status', function() {
-			this._write('M100.1 ({zl:0})\nM0\nG91\n G0 X0 Y0 Z0\n');	
-			this.prime();
-			callback();	
-		}.bind(this))
-	}.bind(this));
+	this.manual_hold = true;
+    if (this.mode ==='raw') {
+log.debug("===> MANUAL FEEDHOLD in RAW while- " + this.manual_hold + " mode= " + this.mode)  ////##
+
+            // Clear
+			this.gcode_queue.clear();
+			// Issue the actual Job Kill
+			this._write('\x04\n' );
+
+    } else {
+
+log.debug("===> MANUAL FEEDHOLD in Normal while- " + this.manual_hold + " mode= " + this.mode)  ////##
+
+            // Clear
+			this.gcode_queue.clear();
+			// Issue the actual Job Kill
+			this._write('\x04\n');
+
+		// this._write('\x04\n', function() {
+		// 	this.once('status', function() {
+		// 		this._write('M100.1 ({zl:0})\nM0\nG91\n G0 X0 Y0 Z0\n');	
+		// 		this.prime();
+		// 		callback();	
+		// 	}.bind(this))
+		// }.bind(this));
+	}
 }
 
 // "pause" the current machining cycle by issuing a feedhold.
 // callback is called when the next state change takes place.
-// 
 G2.prototype.feedHold = function(callback) {
 	this.pause_flag = true;
 	this.flooded = false;
@@ -963,8 +983,9 @@ G2.prototype._createStatePromise = function(states) {
 	var that = this;
 	var onStat = function(stat) {
 		for(var i=0; i<states.length; i++) {
-			if(stat === states[i] && !this.manaul_hold) {
+			if(stat === states[i] && !this.manual_hold) {
 				that.removeListener('stat', onStat);
+				log.debug("Hold now - " + this.manual_hold + " in " + this.mode);
 				log.info("Resolving promise " + thisPromise + " because of state " + stat + " which is one of " + states)
 				deferred.resolve(stat);
 			}

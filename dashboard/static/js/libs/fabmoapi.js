@@ -399,7 +399,7 @@ FabMoAPI.prototype.manualHeartbeat = function() {
 	this.executeRuntimeCode('manual', {'cmd': 'maint'});
 }
 
-FabMoAPI.prototype.manualStop = function() {
+FabMoAPI.prototype.manualStop = function(callback) {
 	this.executeRuntimeCode('manual', {'cmd': 'stop'});
 }
 

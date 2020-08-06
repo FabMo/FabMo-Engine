@@ -73,7 +73,6 @@ util.inherits(ManualDriver, events.EventEmitter);
 // Returns a promise that resolves on exit
 ManualDriver.prototype.enter = function() {
 	if(this.entered) { return; }
-
 	switch(this.mode) {
 		case 'normal':
 			// Retrieve the manual-mode-specific jerk settings and apply them (temporarily) for this manual session
@@ -88,6 +87,7 @@ ManualDriver.prototype.enter = function() {
 			this.driver.prime();		
 			break;
 		case 'raw':
+log.debug("===> entering RAW START")  ////##
 			this.stream.write('M100.1 ({zl:0})\nM0\n');
 			this.driver.prime();		
 		break;
@@ -113,14 +113,20 @@ ManualDriver.prototype.exit = function() {
 		log.debug('Executing immediate exit')
 		switch(this.mode) {
 			case 'normal':
+log.debug("===>Exiting with normal")
+				this.driver.manual_hold = false;
 				config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
 				    this._done();
 		        }.bind(this));			
+				this.stream.write('M30\n');
 		        break;
 			case 'raw':
-				config.driver.restoreSome(['zl'], function() {
+log.debug("===>Exiting with RAW")
+				this.driver.manual_hold = false;
+				config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
 				    this._done();
 		        }.bind(this));			
+				this.stream.write('M30\n');
 				break;
 			default:
 				log.warn('Unknown manual drive mode on exit: ' + this.mode);
@@ -232,6 +238,7 @@ ManualDriver.prototype.quitMove = function(){
 
 ManualDriver.prototype.runGCode = function(code) {
 	if(this.mode == 'raw') {
+		this.driver.mode = 'raw';
 		if(this.moving) {
 			log.debug('writing gcode while moving')
 			this.stream.write(code.trim() + '\n');
@@ -264,6 +271,10 @@ ManualDriver.prototype.goto = function(pos) {
 }
 
 // Set the machine position to the specified vector ////## meaning location here not move vector?
+
+// ////## Is it possible that timing could produce an inaccurate position update here???
+//         ** pretty scary to reset location after zeroing and not do it by offset???
+
 //   pos - New position vector as an object,  eg: {"X":10, "Y":5}
 ManualDriver.prototype.set = function(pos) {
 	var toSet = {};
@@ -304,10 +315,6 @@ ManualDriver.prototype.set = function(pos) {
 				config.driver.reverseUpdate(['g55x','g55y','g55z','g55a','g55b'], function(err, data) {});
 			}.bind(this));
 		}.bind(this));
-
-
-		
-
 
 	} else {
 		throw new Error("Can't set from " + this.mode + ' mode.');
@@ -458,20 +465,22 @@ ManualDriver.prototype._onG2Status = function(status) {
 			if(this._limit()) { return; }
 			break;
 		case this.driver.STAT_RUNNING:
+log.debug("====> at stat RUNNING in [driver]")   ////##
 			this.moving = true;
 			if(this.omg_stop) {
 				this.stop_pending = true;
 				this.driver.manualFeedHold(function(){
 					this.driver.queueFlush(function() {
-						this.driver.manaul_hold = false;	
+						this.driver.manual_hold = false;	
 					}.bind(this));
 				}.bind(this));
 			}
 			break;
 		case this.driver.STAT_STOP:
-log.debug("=====> CLEARING stop_pending")
 			this.stop_pending = false;
-//		case this.driver.STAT_END:
+
+		case this.driver.STAT_END:
+          
 		case this.driver.STAT_HOLDING:
 			// Handle nudges once we've come to a stop
 			if(this._handleNudges()) {
