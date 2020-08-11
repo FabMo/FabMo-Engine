@@ -72,9 +72,11 @@ util.inherits(ManualDriver, events.EventEmitter);
 // TODO: Pass the setup stuff in?  (In case runtimes want to do things differently?)
 // Returns a promise that resolves on exit
 ManualDriver.prototype.enter = function() {
+log.debug("===> ... trying to enter Keypad START second part")  ////##
 	if(this.entered) { return; }
 	switch(this.mode) {
 		case 'normal':
+log.debug("===> ... entering Keypad START second part")  ////##
 			// Retrieve the manual-mode-specific jerk settings and apply them (temporarily) for this manual session
 			var jerkXY = config.machine._cache.manual.xy_jerk || 250;
 			var jerkZ = config.machine._cache.manual.z_jerk || 250;
@@ -103,6 +105,7 @@ log.debug("===> entering RAW START")  ////##
 
 // Exit the machining cycle
 // This stops motion if it is in progress, and restores the settings changed in enter()
+////## Exiting from normal and raw now the same; but left stubbed separately for potential divergence
 ManualDriver.prototype.exit = function() {
 	if(this.isMoving()) {
 		// Don't exit yet - just pend.
@@ -113,20 +116,26 @@ ManualDriver.prototype.exit = function() {
 		log.debug('Executing immediate exit')
 		switch(this.mode) {
 			case 'normal':
-log.debug("===>Exiting with normal")
 				this.driver.manual_hold = false;
 				config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
 				    this._done();
 		        }.bind(this));			
 				this.stream.write('M30\n');
+				////## added to maintain line number priming in all scenarios ...
+				this.driver.queueFlush(function() {
+					this.driver.resume();		
+				}.bind(this));
 		        break;
 			case 'raw':
-log.debug("===>Exiting with RAW")
 				this.driver.manual_hold = false;
 				config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
 				    this._done();
 		        }.bind(this));			
 				this.stream.write('M30\n');
+				////## added to maintain line number priming in all scenarios ...
+				this.driver.queueFlush(function() {
+					this.driver.resume();		
+				}.bind(this));
 				break;
 			default:
 				log.warn('Unknown manual drive mode on exit: ' + this.mode);
@@ -214,9 +223,10 @@ ManualDriver.prototype.stopMotion = function() {
 	this.omg_stop = true
 ////##	this.stop_pending = true;
 	//this.driver.feedHold();
-	//this.driver.queueFlush(function() {
-	//	this.driver.resume();		
-	//}.bind(this));
+////##
+	this.driver.queueFlush(function() {
+		this.driver.resume();		
+	}.bind(this));
 }
 
 // Stop all movement (also? TODO: What's this all about?)
@@ -469,6 +479,7 @@ log.debug("====> at stat RUNNING in [driver]")   ////##
 			this.moving = true;
 			if(this.omg_stop) {
 				this.stop_pending = true;
+log.debug("----> withFlush in [driver]")   ////##
 				this.driver.manualFeedHold(function(){
 					this.driver.queueFlush(function() {
 						this.driver.manual_hold = false;	
@@ -477,7 +488,17 @@ log.debug("====> at stat RUNNING in [driver]")   ////##
 			}
 			break;
 		case this.driver.STAT_STOP:
+log.debug("====> at stat STOP in [driver]")   ////##
 			this.stop_pending = false;
+			if(this.omg_stop) {
+				this.stop_pending = true;
+log.debug("----> withFlush in [driver]")   ////##
+				this.driver.manualFeedHold(function(){
+					this.driver.queueFlush(function() {
+						this.driver.manual_hold = false;	
+					}.bind(this));
+				}.bind(this));
+			}
 
 		case this.driver.STAT_END:
           

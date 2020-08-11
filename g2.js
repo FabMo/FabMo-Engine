@@ -196,6 +196,10 @@ G2.prototype._createCycleContext = function() {
 
 	// TODO factor this out
 	// Inject a couple of G-Codes which are needed to start the machining cycle
+log.debug("===> ...trying to start machining") ////##
+    //this._write('G90\n') ////##
+	//this._write('M100 ({out4:1})\n') ////## // hack to get the "permissive relay" behavior while in-cycle
+////##
 	st.write('G90\n')
 	st.write('M100 ({out4:1})\n') // hack to get the "permissive relay" behavior while in-cycle
 	
@@ -242,7 +246,7 @@ G2.prototype._createCycleContext = function() {
 			this.gcode_queue.enqueue('M30');
 		}
 		this.sendMore();
-		log.debug("Stream END event.")
+		log.debug("***Stream END event.")
 	}.bind(this));
 
 	// Handle a stream being piped into this context (currently do nothing)
@@ -372,26 +376,27 @@ G2.prototype.requestStatusReport = function(callback) {
 	this.command({'sr':null});
 };
 
-// TODO This function should no longer be needed (stream is managed differently now)
-G2.prototype.requestQueueReport = function() { this.command({'qr':null}); };
+////##
+// // TODO This function should no longer be needed (stream is managed differently now)
+// G2.prototype.requestQueueReport = function() { this.command({'qr':null}); };
 
-//TODO This function should no longer be needed - it is a relic of the days when there were 2 USB channels
-G2.prototype.onWAT = function(data) {
-	var s = data.toString('ascii');
-	var len = s.length;
-	for(var i=0; i<len; i++) {
-		c = s[i];
-		if(c === '\n') {
-			string = this._currentGCodeData.join('');
-			t = new Date().getTime();
-			log.g2('D','in',string);
-			//log.g2('<-G--' + t + '---- ' + string);
-			this._currentGCodeData = [];
-		} else {
-			this._currentGCodeData.push(c);
-		}
-	}
-};
+// //TODO This function should no longer be needed - it is a relic of the days when there were 2 USB channels
+// G2.prototype.onWAT = function(data) {
+// 	var s = data.toString('ascii');
+// 	var len = s.length;
+// 	for(var i=0; i<len; i++) {
+// 		c = s[i];
+// 		if(c === '\n') {
+// 			string = this._currentGCodeData.join('');
+// 			t = new Date().getTime();
+// 			log.g2('D','in',string);
+// 			//log.g2('<-G--' + t + '---- ' + string);
+// 			this._currentGCodeData = [];
+// 		} else {
+// 			this._currentGCodeData.push(c);
+// 		}
+// 	}
+// };
 
 // Called for every chunk of data returned from G2
 G2.prototype.onData = function(data) {
@@ -425,11 +430,12 @@ G2.prototype.onData = function(data) {
 	}
 };
 
-// TODO not really needed anymore
-G2.prototype.handleQueueReport = function(r) {
-	var qo = r.qo || 0;
-	// Pass
-};
+////##
+// // TODO not really needed anymore
+// G2.prototype.handleQueueReport = function(r) {
+// 	var qo = r.qo || 0;
+// 	// Pass
+// };
 
 // The footer is the part of the JSON response message that contains error information
 // If the footer indicates an error code, we do a lookup on the error message and emit an error event
@@ -641,6 +647,7 @@ G2.prototype.onMessage = function(response) {
 	// Deal with exceptions
 	this.handleExceptionReport(r);
 
+	////##
 	// Deal with streaming (if response contains a queue report)
 	// this.handleQueueReport(r);
 
@@ -669,22 +676,16 @@ G2.prototype.onMessage = function(response) {
 
 // Interrupt motion in manual run-time; now using "kill" rather than G2-hold
 // Cleanup required ...???
-////## modified for allowing KILL in raw mode
+////## Handling normal and raw now the same; but left stubbed separately for potential divergence
 G2.prototype.manualFeedHold = function(callback) {
 	this.manual_hold = true;
     if (this.mode ==='raw') {
-log.debug("===> MANUAL FEEDHOLD in RAW while- " + this.manual_hold + " mode= " + this.mode)  ////##
-
-            // Clear
-			this.gcode_queue.clear();
+//log.debug("===> MANUAL FEEDHOLD in RAW while- " + this.manual_hold + " mode= " + this.mode)  ////##
+			this.gcode_queue.clear();    
 			// Issue the actual Job Kill
 			this._write('\x04\n' );
-
     } else {
-
-log.debug("===> MANUAL FEEDHOLD in Normal while- " + this.manual_hold + " mode= " + this.mode)  ////##
-
-            // Clear
+//log.debug("===> MANUAL FEEDHOLD in Normal while- " + this.manual_hold + " mode= " + this.mode)  ////##
 			this.gcode_queue.clear();
 			// Issue the actual Job Kill
 			this._write('\x04\n');
@@ -699,24 +700,25 @@ log.debug("===> MANUAL FEEDHOLD in Normal while- " + this.manual_hold + " mode= 
 	}
 }
 
-// "pause" the current machining cycle by issuing a feedhold.
-// callback is called when the next state change takes place.
-G2.prototype.feedHold = function(callback) {
-	this.pause_flag = true;
-	this.flooded = false;
-	typeof callback === 'function' && this.once('state', callback);
-	if(this.status.stat === this.STAT_PROBE) {
-        return this.quit()
-    }
-    log.debug("Sending a feedhold");
-	if(this.context) {
-		this.context.pause();
-	}
-	// TODO this "drained" printout is an old debug thing that can be removed
-	this._write('!\n', function() {
-		log.debug("Drained.");
-	});
-};
+////## Replaced with manualFeedHold
+// // "pause" the current machining cycle by issuing a feedhold.
+// // callback is called when the next state change takes place.
+// G2.prototype.feedHold = function(callback) {
+// 	this.pause_flag = true;
+// 	this.flooded = false;
+// 	typeof callback === 'function' && this.once('state', callback);
+// 	if(this.status.stat === this.STAT_PROBE) {
+//         return this.quit()
+//     }
+//     log.debug("Sending a feedhold");
+// 	if(this.context) {
+// 		this.context.pause();
+// 	}
+// 	// TODO this "drained" printout is an old debug thing that can be removed
+// 	this._write('!\n', function() {
+// 		log.debug("Drained.");
+// 	});
+// };
 
 // Clears the queue, this means both the queue of g-codes in the engine to send,
 // and whatever gcodes have been received but not yet executed in the g2 firmware context
@@ -1010,6 +1012,7 @@ G2.prototype.waitForState = function(states) {
 // a stream processor that is streaming from one of those sources without
 // having to load the entire file into memory.
 G2.prototype.runStream = function(s) {
+log.debug("===>call from run stream to _createCycle")
 		this._createCycleContext();
 		s.pipe(this.context._stream);
 		return this.context;
@@ -1056,6 +1059,7 @@ G2.prototype.getInfo = function() {
 // This implements the so-called "linemode" protocol (see G2 source documentation for more info)
 // https://github.com/synthetos/g2/wiki/g2core-Communications
 G2.prototype.sendMore = function() {
+log.debug("===>At sendMore " + "PAUSE:" + this.pause_flag + " COUNT:" + this.command_queue.getLength() + " PRIME:" +this._primed); ////##
 
   // Don't ever send anything if we're paused
 	if(this.pause_flag) {
@@ -1075,6 +1079,7 @@ G2.prototype.sendMore = function() {
 	// If we're primed, go ahead and send more g-codes
 	if(this._primed) {
 		var count = this.gcode_queue.getLength();
+log.debug("===> ... to primed in sendMore LENGTH:" + count + " LINES:" + this.lines_to_send + " OF:" + THRESH)
 		if(this.lines_to_send >= THRESH) {
 				if(count >= THRESH || this._streamDone) {
 				// Send some lines, but no more than we are allowed per linemode protocol
@@ -1089,8 +1094,9 @@ G2.prototype.sendMore = function() {
 			}
 		}
 	} else {
+log.debug("===> ... to primed in sendMore")
 		if(this.gcode_queue.getLength() > 0) {
-			//log.debug("Not sending because not primed.");
+			log.debug("Not sending because not primed.");  ////## turned on
 		}
 	}
 };
