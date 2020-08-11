@@ -70,7 +70,6 @@ ManualRuntime.prototype.disconnect = function() {
 
 // Enter the manual drive state (and thus, the machining cycle)
 ManualRuntime.prototype.enter = function(mode, hideKeypad) {
-log.debug("===>First Enter mode- " + mode + "  hideKP- " + hideKeypad); ////##
 	this.stream = new stream.PassThrough();
 
 	// At a high level, this opens a stream to the driver, that subsequent commands
@@ -90,7 +89,6 @@ log.debug("===>First Enter mode- " + mode + "  hideKP- " + hideKeypad); ////##
 	}.bind(this));
 	this.machine.status.hideKeypad = hideKeypad;
 	this.machine.setState(this, "manual");
-log.debug("   --->finished set up with-  " + this.machine.hideKeypad); ////##
 
 }
 

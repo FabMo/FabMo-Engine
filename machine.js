@@ -785,8 +785,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 	this.fireButtonDebounce = false ;
 	
 	if ((source === this) || (source === this.current_runtime)) {
-//		log.info("Got a machine state change: " + newstate)
-		log.info("Got a machine state change: " + newstate + "  with: " + stateinfo) ////##
+		log.info("Got a machine state change: " + newstate)
 	
 		// Set the info field
 		// status.info.id is the info field id - it helps the dash with display of dialogs
@@ -871,9 +870,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 		log.warn("Got a state change from a runtime that's not the current one. (" + source + ")")
 	}
 	this.emit('status',this.status);
-
-var test_temp = JSON.stringify(this.status); ////##
-log.debug("===>Leaving setState call with status: " + test_temp); ////##	
 
 };
 

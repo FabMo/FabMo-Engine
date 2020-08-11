@@ -72,12 +72,10 @@ util.inherits(ManualDriver, events.EventEmitter);
 // TODO: Pass the setup stuff in?  (In case runtimes want to do things differently?)
 // Returns a promise that resolves on exit
 ManualDriver.prototype.enter = function() {
-log.debug("===> ... trying to enter Keypad START second part")  ////##
 	if(this.entered) { return; }
 	this.driver.manual_hold = true;
 	switch(this.mode) {
 		case 'normal':
-log.debug("===> ... entering Keypad START second part")  ////##
 			// Retrieve the manual-mode-specific jerk settings and apply them (temporarily) for this manual session
 			var jerkXY = config.machine._cache.manual.xy_jerk || 250;
 			var jerkZ = config.machine._cache.manual.z_jerk || 250;
@@ -90,7 +88,6 @@ log.debug("===> ... entering Keypad START second part")  ////##
 			this.driver.prime();		
 			break;
 		case 'raw':
-log.debug("===> entering RAW START")  ////##
 			this.stream.write('M100.1 ({zl:0})\nM0\n');
 			this.driver.prime();		
 		break;
@@ -106,7 +103,7 @@ log.debug("===> entering RAW START")  ////##
 
 // Exit the machining cycle
 // This stops motion if it is in progress, and restores the settings changed in enter()
-////## Exiting from normal and raw now the same; but left stubbed separately for potential divergence
+////## Exiting from normal and raw now done the same; but left stubbed separately for potential divergence
 ManualDriver.prototype.exit = function() {
 	if(this.isMoving()) {
 		// Don't exit yet - just pend.
@@ -157,7 +154,6 @@ ManualDriver.prototype.startMotion = function(axis,  speed, second_axis, second_
 	var dir = speed < 0 ? -1.0 : 1.0;
 	var second_dir = second_speed < 0 ? -1.0 : 1.0;
 	speed = Math.abs(speed);
-
 	// Raw mode doesn't accept start motion command
 	if(this.mode != 'normal') {
 		throw new Error('Cannot start movement in ' + this.mode + ' mode.');
@@ -165,6 +161,7 @@ ManualDriver.prototype.startMotion = function(axis,  speed, second_axis, second_
 
 	// Don't start motion if we're in the middle of stopping (can do it from stopped, though)
 	if(this.stop_pending || this.omg_stop) {
+			this.stopMotion(); // call here to prevent getting stuck on multiple arrow keystrokes in manual ////##
 		return;
 	}
 	
@@ -222,8 +219,7 @@ ManualDriver.prototype.stopMotion = function() {
 	}
 	this.omg_stop = true
 ////##	this.stop_pending = true;
-	//this.driver.feedHold();
-////##
+////##  this.driver.feedHold();
 	this.driver.queueFlush(function() {
 		this.driver.resume();		
 	}.bind(this));
@@ -231,7 +227,6 @@ ManualDriver.prototype.stopMotion = function() {
 
 // Stop all movement (also? TODO: What's this all about?)
 ManualDriver.prototype.quitMove = function(){
-	
 	if(this._limit()) { return; }
 	this.keep_moving = false;
 	if(this.moving) {
@@ -243,7 +238,6 @@ ManualDriver.prototype.quitMove = function(){
 	} else {
 		this.stop_pending = false;
 	}
-
 }
 
 ManualDriver.prototype.runGCode = function(code) {
@@ -280,11 +274,9 @@ ManualDriver.prototype.goto = function(pos) {
 	this.stream.write(move);
 }
 
-// Set the machine position to the specified vector ////## meaning location here not move vector?
-
+// Set the machine position to the specified vector ////## meaning "location" here not move vector?
 // ////## Is it possible that timing could produce an inaccurate position update here???
-//         ** pretty scary to reset location after zeroing and not do it by offset???
-
+// ////##        ** pretty scary to reset location after zeroing and not do it by offset???
 //   pos - New position vector as an object,  eg: {"X":10, "Y":5}
 ManualDriver.prototype.set = function(pos) {
 	var toSet = {};
@@ -475,22 +467,18 @@ ManualDriver.prototype._onG2Status = function(status) {
 			if(this._limit()) { return; }
 			break;
 		case this.driver.STAT_RUNNING:
-log.debug("====> at stat RUNNING in [driver]")   ////##
 			this.moving = true;
 			if(this.omg_stop) {
 				this.stop_pending = true;
-log.debug("----> withFlush in [driver]")   ////##
 				this.driver.manualFeedHold(function(){
 
 				}.bind(this));
 			}
 			break;
 		case this.driver.STAT_STOP:
-log.debug("====> at stat STOP in [driver]")   ////##
 			this.stop_pending = false;
 			if(this.omg_stop) {
 				this.stop_pending = true;
-log.debug("----> withFlush in [driver]")   ////##
 				this.driver.manualFeedHold(function(){
 					this.driver.queueFlush(function() {
 						this.driver.manual_hold = false;	

@@ -196,10 +196,6 @@ G2.prototype._createCycleContext = function() {
 
 	// TODO factor this out
 	// Inject a couple of G-Codes which are needed to start the machining cycle
-log.debug("===> ...trying to start machining") ////##
-    //this._write('G90\n') ////##
-	//this._write('M100 ({out4:1})\n') ////## // hack to get the "permissive relay" behavior while in-cycle
-////##
 	st.write('G90\n')
 	st.write('M100 ({out4:1})\n') // hack to get the "permissive relay" behavior while in-cycle
 	
@@ -525,7 +521,6 @@ G2.prototype.handleStatusReport = function(response) {
 					}
 					break;
 				case STAT_END:
-//log.debug("===> READ a stat-4 in an sr; mode - " + response.sr.stat); ////##				
 					break;
 
 				// A really bad error in the firmware causes a "panic" - these are rare, but they do
@@ -675,18 +670,13 @@ G2.prototype.onMessage = function(response) {
 };
 
 // Interrupt motion in manual run-time; now using "kill" rather than G2-hold
-// Cleanup required ...???
-////## Handling normal and raw now the same; but left stubbed separately for potential divergence
+////## Handling normal and raw now the same
 G2.prototype.manualFeedHold = function(callback) {
 //     if (this.mode ==='raw') {
-// //log.debug("===> MANUAL FEEDHOLD in RAW while- " + this.manual_hold + " mode= " + this.mode)  ////##
-			  
 // 			// Issue the actual Job Kill
 // 			this._write('\x04\n' );
 // 			this.gcode_queue.clear();  
 //     } else {
-// //log.debug("===> MANUAL FEEDHOLD in Normal while- " + this.manual_hold + " mode= " + this.mode)  ////##
-			
 // 			// Issue the actual Job Kill
 // 			this._write('\x04\n');
 // 			this.gcode_queue.clear();
@@ -699,14 +689,14 @@ G2.prototype.manualFeedHold = function(callback) {
 // 		// 	}.bind(this))
 // 		// }.bind(this));
 	// 	}
+
 	this.gcode_queue.clear();
 	this._write('\x04\n');
 
 }
 
-////## Replaced with manualFeedHold
-// // "pause" the current machining cycle by issuing a feedhold.
-// // callback is called when the next state change takes place.
+// "pause" the current machining cycle by issuing a feedhold. Used in Files (not Manual)!
+// callback is called when the next state change takes place.
 G2.prototype.feedHold = function(callback) {
 	this.pause_flag = true;
 	this.flooded = false;
@@ -1063,7 +1053,6 @@ G2.prototype.getInfo = function() {
 // This implements the so-called "linemode" protocol (see G2 source documentation for more info)
 // https://github.com/synthetos/g2/wiki/g2core-Communications
 G2.prototype.sendMore = function() {
-log.debug("===>At sendMore " + "PAUSE:" + this.pause_flag + " COUNT:" + this.command_queue.getLength() + " PRIME:" +this._primed); ////##
 
   // Don't ever send anything if we're paused
 	if(this.pause_flag) {
@@ -1083,7 +1072,6 @@ log.debug("===>At sendMore " + "PAUSE:" + this.pause_flag + " COUNT:" + this.com
 	// If we're primed, go ahead and send more g-codes
 	if(this._primed) {
 		var count = this.gcode_queue.getLength();
-log.debug("===> ... to primed in sendMore LENGTH:" + count + " LINES:" + this.lines_to_send + " OF:" + THRESH)
 		if(this.lines_to_send >= THRESH) {
 				if(count >= THRESH || this._streamDone) {
 				// Send some lines, but no more than we are allowed per linemode protocol
@@ -1098,7 +1086,6 @@ log.debug("===> ... to primed in sendMore LENGTH:" + count + " LINES:" + this.li
 			}
 		}
 	} else {
-log.debug("===> ... to primed in sendMore")
 		if(this.gcode_queue.getLength() > 0) {
 			log.debug("Not sending because not primed.");  ////## turned on
 		}
