@@ -223,7 +223,7 @@ log.debug("===> ...trying to start machining") ////##
 				// Priming happens either when the number of lines to send reaches a certain threshold
 				// or the prime() function is called manually.
 				// TODO:  Factor out 10 (magic number) and put it at the top of the file so it can be changed easily.
-				if(this.gcode_queue.getLength() >= 10) {
+				if(this.gcode_queue.getLength() >= 5) {
 					this._primed = true;
 				}
 				this.lineBuffer = [];
@@ -678,47 +678,51 @@ G2.prototype.onMessage = function(response) {
 // Cleanup required ...???
 ////## Handling normal and raw now the same; but left stubbed separately for potential divergence
 G2.prototype.manualFeedHold = function(callback) {
-	this.manual_hold = true;
-    if (this.mode ==='raw') {
-//log.debug("===> MANUAL FEEDHOLD in RAW while- " + this.manual_hold + " mode= " + this.mode)  ////##
-			this.gcode_queue.clear();    
-			// Issue the actual Job Kill
-			this._write('\x04\n' );
-    } else {
-//log.debug("===> MANUAL FEEDHOLD in Normal while- " + this.manual_hold + " mode= " + this.mode)  ////##
-			this.gcode_queue.clear();
-			// Issue the actual Job Kill
-			this._write('\x04\n');
+//     if (this.mode ==='raw') {
+// //log.debug("===> MANUAL FEEDHOLD in RAW while- " + this.manual_hold + " mode= " + this.mode)  ////##
+			  
+// 			// Issue the actual Job Kill
+// 			this._write('\x04\n' );
+// 			this.gcode_queue.clear();  
+//     } else {
+// //log.debug("===> MANUAL FEEDHOLD in Normal while- " + this.manual_hold + " mode= " + this.mode)  ////##
+			
+// 			// Issue the actual Job Kill
+// 			this._write('\x04\n');
+// 			this.gcode_queue.clear();
 
-		// this._write('\x04\n', function() {
-		// 	this.once('status', function() {
-		// 		this._write('M100.1 ({zl:0})\nM0\nG91\n G0 X0 Y0 Z0\n');	
-		// 		this.prime();
-		// 		callback();	
-		// 	}.bind(this))
-		// }.bind(this));
-	}
+// 		// this._write('\x04\n', function() {
+// 		// 	this.once('status', function() {
+// 		// 		this._write('M100.1 ({zl:0})\nM0\nG91\n G0 X0 Y0 Z0\n');	
+// 		// 		this.prime();
+// 		// 		callback();	
+// 		// 	}.bind(this))
+// 		// }.bind(this));
+	// 	}
+	this.gcode_queue.clear();
+	this._write('\x04\n');
+
 }
 
 ////## Replaced with manualFeedHold
 // // "pause" the current machining cycle by issuing a feedhold.
 // // callback is called when the next state change takes place.
-// G2.prototype.feedHold = function(callback) {
-// 	this.pause_flag = true;
-// 	this.flooded = false;
-// 	typeof callback === 'function' && this.once('state', callback);
-// 	if(this.status.stat === this.STAT_PROBE) {
-//         return this.quit()
-//     }
-//     log.debug("Sending a feedhold");
-// 	if(this.context) {
-// 		this.context.pause();
-// 	}
-// 	// TODO this "drained" printout is an old debug thing that can be removed
-// 	this._write('!\n', function() {
-// 		log.debug("Drained.");
-// 	});
-// };
+G2.prototype.feedHold = function(callback) {
+	this.pause_flag = true;
+	this.flooded = false;
+	typeof callback === 'function' && this.once('state', callback);
+	if(this.status.stat === this.STAT_PROBE) {
+        return this.quit()
+    }
+    log.debug("Sending a feedhold");
+	if(this.context) {
+		this.context.pause();
+	}
+	// TODO this "drained" printout is an old debug thing that can be removed
+	this._write('!\n', function() {
+		log.debug("Drained.");
+	});
+};
 
 // Clears the queue, this means both the queue of g-codes in the engine to send,
 // and whatever gcodes have been received but not yet executed in the g2 firmware context

@@ -74,6 +74,7 @@ util.inherits(ManualDriver, events.EventEmitter);
 ManualDriver.prototype.enter = function() {
 log.debug("===> ... trying to enter Keypad START second part")  ////##
 	if(this.entered) { return; }
+	this.driver.manual_hold = true;
 	switch(this.mode) {
 		case 'normal':
 log.debug("===> ... entering Keypad START second part")  ////##
@@ -114,9 +115,9 @@ ManualDriver.prototype.exit = function() {
 		this.stopMotion();
 	} else {
 		log.debug('Executing immediate exit')
+		this.driver.manual_hold = false;
 		switch(this.mode) {
 			case 'normal':
-				this.driver.manual_hold = false;
 				config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
 				    this._done();
 		        }.bind(this));			
@@ -127,7 +128,6 @@ ManualDriver.prototype.exit = function() {
 				}.bind(this));
 		        break;
 			case 'raw':
-				this.driver.manual_hold = false;
 				config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
 				    this._done();
 		        }.bind(this));			
@@ -481,9 +481,7 @@ log.debug("====> at stat RUNNING in [driver]")   ////##
 				this.stop_pending = true;
 log.debug("----> withFlush in [driver]")   ////##
 				this.driver.manualFeedHold(function(){
-					this.driver.queueFlush(function() {
-						this.driver.manual_hold = false;	
-					}.bind(this));
+
 				}.bind(this));
 			}
 			break;
