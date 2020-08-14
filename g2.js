@@ -690,8 +690,8 @@ G2.prototype.manualFeedHold = function(callback) {
 // 		// }.bind(this));
 	// 	}
 
-	this.gcode_queue.clear();
 	this._write('\x04\n');
+	this.gcode_queue.clear();
 
 }
 
@@ -786,6 +786,7 @@ G2.prototype.quit = function() {
 			// Clear the gcodes we have queued up
 			this.gcode_queue.clear();
 			// Issue the actual Job Kill
+log.debug("===>Is this an EXTRA KILL?"); ////##
 			this._write('\x04\n');
 			break;
 	}

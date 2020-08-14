@@ -217,16 +217,15 @@ ManualDriver.prototype.stopMotion = function() {
 	if(this.renew_timer) {
 		clearTimeout(this.renew_timer);
 	}
-	this.omg_stop = true
-////##	this.stop_pending = true;
-////##  this.driver.feedHold();
+	this.omg_stop = true;
+    this.driver.manualFeedHold();
 	this.driver.queueFlush(function() {
 		this.driver.resume();		
 	}.bind(this));
 }
 
 // Stop all movement (also? TODO: What's this all about?)
-ManualDriver.prototype.quitMove = function(){
+ManualDriver.prototype.quitMove = function() {
 	if(this._limit()) { return; }
 	this.keep_moving = false;
 	if(this.moving) {
@@ -471,7 +470,6 @@ ManualDriver.prototype._onG2Status = function(status) {
 			if(this.omg_stop) {
 				this.stop_pending = true;
 				this.driver.manualFeedHold(function(){
-
 				}.bind(this));
 			}
 			break;
@@ -485,9 +483,7 @@ ManualDriver.prototype._onG2Status = function(status) {
 					}.bind(this));
 				}.bind(this));
 			}
-
 		case this.driver.STAT_END:
-          
 		case this.driver.STAT_HOLDING:
 			// Handle nudges once we've come to a stop
 			if(this._handleNudges()) {
