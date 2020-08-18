@@ -187,10 +187,10 @@ Keyboard.prototype.onMouseLeave = function(evt) {
 
 Keyboard.prototype.onKeyUp = function(evt) {
 	if(this.going ) { 
-log.debug("===> KeyUp:STOP") ////##
+console.log("===> KeyUp:STOP") ////##
 	    this.stop(); }
 	if(this.nudgeTimer) {
-log.debug("===> KeyUp:Nudge!") ////##
+console.log("===> KeyUp:Nudge!") ////##
 		
 		clearTimeout(this.nudgeTimer);
 		this.nudgeTimer = null;
@@ -225,7 +225,7 @@ log.debug("===> KeyUp:Nudge!") ////##
 			}	
 	} else {
 		if(this.enabled) {
-log.debug("===> KeyUp:the other STOP; needed???") ////##
+console.log("===> KeyUp:the other STOP; needed???") ////##
 			this.stop();
 		}
 	}
