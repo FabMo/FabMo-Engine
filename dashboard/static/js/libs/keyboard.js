@@ -191,7 +191,7 @@ Keyboard.prototype.onKeyUp = function(evt) {
 //console.log("===> KeyUp:STOP") ////##
 //	    this.stop(); }
 	if(this.nudgeTimer) {
-console.log("===> KeyUp:Nudge!") ////##
+//console.log("===> KeyUp:Nudge!") ////##
 		
 		clearTimeout(this.nudgeTimer);
 		this.nudgeTimer = null;
@@ -227,7 +227,7 @@ console.log("===> KeyUp:Nudge!") ////##
 	} else {
 //		if(this.enabled) {                             ////##
 		if(this.going || this.enabled) {
-console.log("===> KeyUp: STOP; from going or enabled") ////##
+//console.log("===> KeyUp: STOP; from going or enabled") ////##
 			this.stop();
 		}
 	}
