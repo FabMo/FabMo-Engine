@@ -13,7 +13,7 @@
 
   var NUDGE_TIMEOUT = 100;
   var MOVE_THRESH = 10;
-  var Keyboard_enabled = false;
+  var Keyboard_enabled = false;   ////## not used ???
   var KEY_RIGHT = 39;
   var KEY_LEFT = 37;
   var KEY_UP = 38;
@@ -186,9 +186,9 @@ Keyboard.prototype.onMouseLeave = function(evt) {
 }
 
 Keyboard.prototype.onKeyUp = function(evt) {
-	if(this.going || this.enabled ) {  this.stop(); }
+////## trying alternate postion	for stop ... first just get lifts working, then nudge and fixed
+
 	if(this.nudgeTimer) {
-		
 		clearTimeout(this.nudgeTimer);
 		this.nudgeTimer = null;
 		if(!this.enabled) { return;}
@@ -220,7 +220,10 @@ Keyboard.prototype.onKeyUp = function(evt) {
 				default:
 					return;
 			}	
+	} else {
+		if(this.going || this.enabled ) { this.stop(); }
 	} 
+
 }
 
 Keyboard.prototype.nudge = function(axis, direction) {
