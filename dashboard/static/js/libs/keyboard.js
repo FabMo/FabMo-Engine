@@ -145,9 +145,8 @@ Keyboard.prototype.onMouseMove = function(evt) {
 
 Keyboard.prototype.onKeyDown = function(evt) {
 console.log("===>onKeyDOWN, enabled=" + this.enabled + "  going=" + this.going + "  nudgeT=" + this.nudgeTimer)  ////##
-	if(!this.enabled) {return}
-////##	if(this.going || !this.enabled) {return}
-	this.nudgeTimer = setTimeout(function() {
+	if(this.going || !this.enabled) {return}
+	////## this.nudgeTimer = setTimeout(function() {
 		this.nudgeTimer = null;
 		if(!this.going) {
 			switch(evt.keyCode) {
@@ -177,7 +176,7 @@ console.log("===>onKeyDOWN, enabled=" + this.enabled + "  going=" + this.going +
 
 			}	
 		}
-	}.bind(this), NUDGE_TIMEOUT);
+	////## }.bind(this), NUDGE_TIMEOUT);
 }
 
 Keyboard.prototype.onMouseLeave = function(evt) {
@@ -191,42 +190,42 @@ Keyboard.prototype.onKeyUp = function(evt) {
 ////## trying alternate postion	for stop ... first just get lifts working, then nudge and fixed
 console.log("===>onKeyUP, enabled=" + this.enabled + "  going=" + this.going + "  nudgeT=" + this.nudgeTimer)  ////##
 
-	if(this.nudgeTimer) {
-console.log("===>got trigger NUDGE, enabled=" + this.enabled + "  going=" + this.going)  ////##
-		clearTimeout(this.nudgeTimer);
-		this.nudgeTimer = null;
-		if(!this.enabled) { return;}
+////##	if(this.nudgeTimer) {
+// console.log("===>got trigger NUDGE, enabled=" + this.enabled + "  going=" + this.going)  ////##
+// 		clearTimeout(this.nudgeTimer);
+// 		this.nudgeTimer = null;
+// 		if(!this.enabled) { return;}
 
-		switch(evt.keyCode) {
-				case KEY_UP:
-					this.nudge('y', 1);
-					break;
+// 		switch(evt.keyCode) {
+// 				case KEY_UP:
+// 					this.nudge('y', 1);
+// 					break;
 
-				case KEY_DOWN:
-					this.nudge('y', -1);
-					break;
+// 				case KEY_DOWN:
+// 					this.nudge('y', -1);
+// 					break;
 
-				case KEY_LEFT:
-					this.nudge('x', -1);
-					break;
+// 				case KEY_LEFT:
+// 					this.nudge('x', -1);
+// 					break;
 
-				case KEY_RIGHT:
-					this.nudge('x', 1);
-					break;
+// 				case KEY_RIGHT:
+// 					this.nudge('x', 1);
+// 					break;
 
-				case KEY_PGUP:
-					this.nudge('z', 1);
-					break;
+// 				case KEY_PGUP:
+// 					this.nudge('z', 1);
+// 					break;
 
-				case KEY_PGDOWN:
-					this.nudge('z', -1);
-					break;
-				default:
-					return;
-			}	
-	} else {
+// 				case KEY_PGDOWN:
+// 					this.nudge('z', -1);
+// 					break;
+// 				default:
+// 					return;
+// 			}	
+////##	} else {
 		if(this.going || this.enabled ) { this.stop(); }
-	} 
+//	} 
 
 }
 
