@@ -189,7 +189,7 @@ Keyboard.prototype.onKeyUp = function(evt) {
 ////## trying alternate postion	for stop ... first just get lifts working, then nudge and fixed
 
 	if(this.nudgeTimer) {
-log.debug("===>got trigger NUDGE, enabled=" + this.enabled + "  going=" + this.going)  ////##
+console.log("===>got trigger NUDGE, enabled=" + this.enabled + "  going=" + this.going)  ////##
 		clearTimeout(this.nudgeTimer);
 		this.nudgeTimer = null;
 		if(!this.enabled) { return;}
@@ -228,7 +228,7 @@ log.debug("===>got trigger NUDGE, enabled=" + this.enabled + "  going=" + this.g
 }
 
 Keyboard.prototype.nudge = function(axis, direction) {
-log.debug("===>got CALL NUDGE, enabled=" + this.enabled + "  going=" + this.going)  ////##
+console.log("===>got CALL NUDGE, enabled=" + this.enabled + "  going=" + this.going)  ////##
 	if(this.going) { return this.stop(); }
 	var nudge = {'axis' : axis, 'dir' : direction};
 	if(this.enabled) {
