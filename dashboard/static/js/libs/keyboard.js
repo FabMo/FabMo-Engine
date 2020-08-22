@@ -145,7 +145,8 @@ Keyboard.prototype.onMouseMove = function(evt) {
 
 Keyboard.prototype.onKeyDown = function(evt) {
 console.log("===>onKeyDOWN, enabled=" + this.enabled + "  going=" + this.going + "  nudgeT=" + this.nudgeTimer)  ////##
-	if(this.going || !this.enabled) {return}
+	if(!this.enabled) {return}
+////##	if(this.going || !this.enabled) {return}
 	this.nudgeTimer = setTimeout(function() {
 		this.nudgeTimer = null;
 		if(!this.going) {
