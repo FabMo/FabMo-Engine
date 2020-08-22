@@ -144,6 +144,7 @@ Keyboard.prototype.onMouseMove = function(evt) {
 }
 
 Keyboard.prototype.onKeyDown = function(evt) {
+console.log("===>onKeyDOWN, enabled=" + this.enabled + "  going=" + this.going + "  nudgeT=" + this.nudgeTimer)  ////##
 	if(this.going || !this.enabled) {return}
 	this.nudgeTimer = setTimeout(function() {
 		this.nudgeTimer = null;
@@ -187,6 +188,7 @@ Keyboard.prototype.onMouseLeave = function(evt) {
 
 Keyboard.prototype.onKeyUp = function(evt) {
 ////## trying alternate postion	for stop ... first just get lifts working, then nudge and fixed
+console.log("===>onKeyUP, enabled=" + this.enabled + "  going=" + this.going + "  nudgeT=" + this.nudgeTimer)  ////##
 
 	if(this.nudgeTimer) {
 console.log("===>got trigger NUDGE, enabled=" + this.enabled + "  going=" + this.going)  ////##
