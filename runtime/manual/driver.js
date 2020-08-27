@@ -161,7 +161,7 @@ ManualDriver.prototype.startMotion = function(axis,  speed, second_axis, second_
 
 	// Don't start motion if we're in the middle of stopping (can do it from stopped, though)
 	if(this.stop_pending || this.omg_stop) {
-			this.stopMotion(); // call here to prevent getting stuck on multiple arrow keystrokes in manual ////##
+////			this.stopMotion(); // call here to prevent getting stuck on multiple arrow keystrokes in manual ////##
 		return;
 	}
 	
@@ -192,7 +192,6 @@ ManualDriver.prototype.startMotion = function(axis,  speed, second_axis, second_
 
 		// Length of the moves we pump the queue with, based on speed vector
 		this.renewDistance = speed*(T_RENEW/60000)*SAFETY_FACTOR;                
-		
 		// Make sure we're in relative moves and the speed is set
 		this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
 
@@ -213,6 +212,7 @@ ManualDriver.prototype.maintainMotion = function() {
 // Stop all movement 
 ManualDriver.prototype.stopMotion = function() {
 	if(this._limit()) { return; }
+  this.stop_pending = true;       ////## queue not clearing right ... testing
 	this.keep_moving = false;
 	if(this.renew_timer) {
 		clearTimeout(this.renew_timer);
@@ -469,6 +469,7 @@ ManualDriver.prototype._onG2Status = function(status) {
 			this.moving = true;
 			if(this.omg_stop) {
 				this.stop_pending = true;
+log.debug("===> Redundant KILL (STAT_RUNNING) ?");
 				this.driver.manualFeedHold(function(){
 				}.bind(this));
 			}
@@ -476,6 +477,7 @@ ManualDriver.prototype._onG2Status = function(status) {
 		case this.driver.STAT_STOP:
 			this.stop_pending = false;
 			if(this.omg_stop) {
+log.debug("===> Redundant KILL (STAT_STOP)?");
 				this.stop_pending = true;
 				this.driver.manualFeedHold(function(){
 					this.driver.queueFlush(function() {

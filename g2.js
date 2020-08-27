@@ -690,8 +690,12 @@ G2.prototype.manualFeedHold = function(callback) {
 // 		// }.bind(this));
 	// 	}
 
+	////## needs flag that says stopping
+
+	this.pause_flag = true;
+
 	this._write('\x04\n');
-	this.gcode_queue.clear();
+	// this.gcode_queue.clear();  ////## seems redundant
 
 }
 
