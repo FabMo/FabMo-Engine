@@ -12,7 +12,7 @@
   "use strict"
 
   var NUDGE_TIMEOUT = 100;
-  var MOVE_THRESH = 10;
+  var MOVE_THRESH = 10;           // for mouse to disrupt ?
   var Keyboard_enabled = false;   ////## not used ???
   var KEY_RIGHT = 39;
   var KEY_LEFT = 37;
@@ -97,6 +97,7 @@ Keyboard.prototype.setEnabled = function(enabled) {
 	}
 }
 
+// a sort of watchdog stopper
 Keyboard.prototype.refresh = function() {
 	if(!this.enabled || !this.going) {
 		this.emit('stop', null);
@@ -189,41 +190,41 @@ Keyboard.prototype.onMouseLeave = function(evt) {
 Keyboard.prototype.onKeyUp = function(evt) {
 console.log("===>      onKeyUP, enabled=" + this.enabled + "  going=" + this.going + "  nudgeT=" + this.nudgeTimer)  ////##
 
-////##	if(this.nudgeTimer) {
-// 		clearTimeout(this.nudgeTimer);
-// 		this.nudgeTimer = null;
-// 		if(!this.enabled) { return;}
+	if(this.nudgeTimer) {
+ 		clearTimeout(this.nudgeTimer);
+ 		this.nudgeTimer = null;
+ 		if(!this.enabled) { return;}
 
-// 		switch(evt.keyCode) {
-// 				case KEY_UP:
-// 					this.nudge('y', 1);
-// 					break;
+ 		switch(evt.keyCode) {
+ 				case KEY_UP:
+ 					this.nudge('y', 1);
+ 					break;
 
-// 				case KEY_DOWN:
-// 					this.nudge('y', -1);
-// 					break;
+ 				case KEY_DOWN:
+ 					this.nudge('y', -1);
+ 					break;
 
-// 				case KEY_LEFT:
-// 					this.nudge('x', -1);
-// 					break;
+ 				case KEY_LEFT:
+ 					this.nudge('x', -1);
+ 					break;
 
-// 				case KEY_RIGHT:
-// 					this.nudge('x', 1);
-// 					break;
+ 				case KEY_RIGHT:
+ 					this.nudge('x', 1);
+ 					break;
 
-// 				case KEY_PGUP:
-// 					this.nudge('z', 1);
-// 					break;
+ 				case KEY_PGUP:
+ 					this.nudge('z', 1);
+ 					break;
 
-// 				case KEY_PGDOWN:
-// 					this.nudge('z', -1);
-// 					break;
-// 				default:
-// 					return;
-// 			}	
-////##	} else {
+ 				case KEY_PGDOWN:
+ 					this.nudge('z', -1);
+ 					break;
+ 				default:
+ 					return;
+ 			}	
+	} else {
 		if(this.going || this.enabled ) { this.stop(); }
-//	} 
+	} 
 
 }
 
