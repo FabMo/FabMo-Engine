@@ -11,7 +11,7 @@
 }(this, function () {
   "use strict"
 
-  var NUDGE_TIMEOUT = 100;
+  var NUDGE_TIMEOUT = 250;
   var MOVE_THRESH = 10;           // for mouse to disrupt ?
   var Keyboard_enabled = false;   ////## not used ???
   var KEY_RIGHT = 39;
@@ -148,7 +148,7 @@ Keyboard.prototype.onKeyDown = function(evt) {
 console.log("===>onKeyDOWN, enabled=" + this.enabled + "  going=" + this.going)  ////##
 	if(this.going || !this.enabled) {return}
 	this.nudgeTimer = setTimeout(function() {
-//		this.nudgeTimer = null;
+		//this.nudgeTimer = null;
 		if(!this.going) {
 			switch(evt.keyCode) {
 				case KEY_UP:
@@ -194,7 +194,7 @@ console.log("===>      onKeyUP, enabled=" + this.enabled + "  going=" + this.goi
  		clearTimeout(this.nudgeTimer);
  		this.nudgeTimer = null;
  		if(!this.enabled) { return;}
-
+console.log("===>     ... sending key nudge- " + evt.keyCode );
  		switch(evt.keyCode) {
  				case KEY_UP:
  					this.nudge('y', 1);
