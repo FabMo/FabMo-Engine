@@ -146,7 +146,12 @@ Keyboard.prototype.onMouseMove = function(evt) {
 
 Keyboard.prototype.onKeyDown = function(evt) {
 console.log("===>onKeyDOWN, enabled=" + this.enabled + "  going=" + this.going)  ////##
-if ($('.fixed-switch input').is(':checked')) { console.log("fixed-DOWN")} else { console.log("fixed-UP")}; ////##
+////##	if ($('.fixed-switch input').is(':checked')) { console.log("fixed-DOWN")} else { console.log("fixed-UP")}; ////##
+	if ($('.fixed-switch input').is(':checked')) { 
+	    console.log("fixed-DOWN");
+	    this.nudgeTimer = 1;
+	    this.onKeyUp(evt);
+	};
 	if(this.going || !this.enabled) {return}
 	this.nudgeTimer = setTimeout(function() {
 		//this.nudgeTimer = null;
