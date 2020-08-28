@@ -146,7 +146,7 @@ Keyboard.prototype.onMouseMove = function(evt) {
 
 Keyboard.prototype.onKeyDown = function(evt) {
 console.log("===>onKeyDOWN, enabled=" + this.enabled + "  going=" + this.going)  ////##
-if(e.hasClass('drive-button-fixed')) { console.log("fixed-DOWN")} else { console.log("fixed-UP")}; ////##
+if(evt.hasClass('drive-button-fixed')) { console.log("fixed-DOWN")} else { console.log("fixed-UP")}; ////##
 	if(this.going || !this.enabled) {return}
 	this.nudgeTimer = setTimeout(function() {
 		//this.nudgeTimer = null;
