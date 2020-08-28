@@ -57,7 +57,7 @@ Keyboard.prototype.init = function() {
 
 Keyboard.prototype.setOptions = function(options) {
 	options = options || {}
-	this.refreshInterval = options.refreshInterval || this.refreshInterval || 100;
+	this.refreshInterval = options.refreshInterval || this.refreshInterval || 50;   ////## from 100 to make more responsive like pad
 }
 
 Keyboard.prototype.emit = function(evt, data) {
@@ -97,7 +97,7 @@ Keyboard.prototype.setEnabled = function(enabled) {
 	}
 }
 
-// a sort of watchdog stopper
+// A sort of watchdog for stopping or keeping a down-key continuing
 Keyboard.prototype.refresh = function() {
 	if(!this.enabled || !this.going) {
 		this.emit('stop', null);
@@ -146,6 +146,7 @@ Keyboard.prototype.onMouseMove = function(evt) {
 
 Keyboard.prototype.onKeyDown = function(evt) {
 console.log("===>onKeyDOWN, enabled=" + this.enabled + "  going=" + this.going)  ////##
+if(e.hasClass('drive-button-fixed')) { console.log("fixed-DOWN")} else { console.log("fixed-UP")}; ////##
 	if(this.going || !this.enabled) {return}
 	this.nudgeTimer = setTimeout(function() {
 		//this.nudgeTimer = null;
@@ -186,6 +187,14 @@ Keyboard.prototype.onMouseLeave = function(evt) {
 		this.stop();
 	}
 }
+
+////##
+	// if(e.hasClass('drive-button-fixed')) {
+	// 	this.onDriveTap(evt);
+		
+	// } else {
+
+
 
 Keyboard.prototype.onKeyUp = function(evt) {
 console.log("===>      onKeyUP, enabled=" + this.enabled + "  going=" + this.going + "  nudgeT=" + this.nudgeTimer)  ////##
