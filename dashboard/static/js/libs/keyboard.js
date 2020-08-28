@@ -150,7 +150,9 @@ console.log("===>onKeyDOWN, enabled=" + this.enabled + "  going=" + this.going) 
 	if ($('.fixed-switch input').is(':checked')) { 
 	    console.log("fixed-DOWN");
 	    this.nudgeTimer = 1;
+	    this.going = true;
 	    this.onKeyUp(evt);
+	    return;
 	};
 	if(this.going || !this.enabled) {return}
 	this.nudgeTimer = setTimeout(function() {
