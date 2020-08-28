@@ -152,7 +152,7 @@ console.log("===>onKeyDOWN, enabled=" + this.enabled + "  going=" + this.going) 
 	    this.nudgeTimer = 1;
 	    this.going = true;
 	    this.onKeyUp(evt);
-	} elseif if(this.going || !this.enabled) {return}
+	} elseif (this.going || !this.enabled) {return}
 	this.nudgeTimer = setTimeout(function() {
 		//this.nudgeTimer = null;
 		if(!this.going) {
