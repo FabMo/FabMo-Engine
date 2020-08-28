@@ -152,9 +152,7 @@ console.log("===>onKeyDOWN, enabled=" + this.enabled + "  going=" + this.going) 
 	    this.nudgeTimer = 1;
 	    this.going = true;
 	    this.onKeyUp(evt);
-	    return;
-	};
-	if(this.going || !this.enabled) {return}
+	} elseif if(this.going || !this.enabled) {return}
 	this.nudgeTimer = setTimeout(function() {
 		//this.nudgeTimer = null;
 		if(!this.going) {
@@ -194,14 +192,6 @@ Keyboard.prototype.onMouseLeave = function(evt) {
 		this.stop();
 	}
 }
-
-////##
-	// if(e.hasClass('drive-button-fixed')) {
-	// 	this.onDriveTap(evt);
-		
-	// } else {
-
-
 
 Keyboard.prototype.onKeyUp = function(evt) {
 console.log("===>      onKeyUP, enabled=" + this.enabled + "  going=" + this.going + "  nudgeT=" + this.nudgeTimer)  ////##
