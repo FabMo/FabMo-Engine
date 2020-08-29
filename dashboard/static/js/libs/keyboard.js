@@ -106,6 +106,15 @@ Keyboard.prototype.setEnabled = function(enabled) {
 Keyboard.prototype.refresh = function() {
 	if(!this.enabled || !this.going) {
 		this.emit('stop', null);
+
+////##
+	} else if ($('.fixed-switch input').is(':checked')) { 
+	    console.log("fixed-DOWN");
+	    this.nudgeTimer = 1;
+	    this.going = true;
+	    this.onKeyUp(evt);
+
+
 	} else {
 		if(this.enabled) {
 			this.emit('go', this.move);
@@ -148,12 +157,15 @@ Keyboard.prototype.onMouseMove = function(evt) {
 }
 
 Keyboard.prototype.onKeyDown = function(evt) {
-	if ($('.fixed-switch input').is(':checked')) { 
-	    console.log("fixed-DOWN");
-	    this.nudgeTimer = 1;
-	    this.going = true;
-	    this.onKeyUp(evt);
-	} else if (this.going || !this.enabled) {return}
+////##
+	// if ($('.fixed-switch input').is(':checked')) { 
+	//     console.log("fixed-DOWN");
+	//     this.nudgeTimer = 1;
+	//     this.going = true;
+	//     this.onKeyUp(evt);
+	// } else if (this.going || !this.enabled) {return}
+
+	if (this.going || !this.enabled) {return}
 		this.nudgeTimer = setTimeout(function() {
 ////##		//this.nudgeTimer = null;
 		if(!this.going) {
