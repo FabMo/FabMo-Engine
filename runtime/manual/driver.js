@@ -118,6 +118,8 @@ ManualDriver.prototype.exit = function() {
 				config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
 				    this._done();
 		        }.bind(this));			
+log.debug("===> setting to exact path")
+		        this.stream.write('G61\n'); ////## making sure not left in exact stop mode
 				this.stream.write('M30\n');
 				////## added to maintain line number priming in all scenarios ...
 				this.driver.queueFlush(function() {
@@ -128,6 +130,8 @@ ManualDriver.prototype.exit = function() {
 				config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
 				    this._done();
 		        }.bind(this));			
+log.debug("===> setting to exact path; raw stop?")
+		        this.stream.write('G61\n'); ////## making sure not left in exact stop mode
 				this.stream.write('M30\n');
 				////## added to maintain line number priming in all scenarios ...
 				this.driver.queueFlush(function() {
@@ -193,7 +197,9 @@ ManualDriver.prototype.startMotion = function(axis,  speed, second_axis, second_
 		// Length of the moves we pump the queue with, based on speed vector
 		this.renewDistance = speed*(T_RENEW/60000)*SAFETY_FACTOR;                
 		// Make sure we're in relative moves and the speed is set
-		this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
+////##		this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
+log.debug("===> setting to exact path")
+		this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n' + 'G61' + '\n');
 
 		// Start pumping moves
 		this._renewMoves("start");
@@ -341,7 +347,9 @@ ManualDriver.prototype._handleNudges = function() {
 			var axis = move.axis.toUpperCase();
 
 			if('XYZABCUVW'.indexOf(axis) >= 0) {
-				var moves = ['G91'];
+////##				var moves = ['G91'];
+log.debug("===> setting to exact distance")
+				var moves = ['G91 G61.1'];  ////## setting exact distance for fixed-moves/nudges so g2 does not build longer vector
 				if(move.second_axis) {
 					var second_axis = move.second_axis.toUpperCase();
 					if(move.speed) {

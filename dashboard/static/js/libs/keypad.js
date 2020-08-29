@@ -53,27 +53,6 @@ Keypad.prototype.init = function() {
 		$(document).on('scroll', this.end.bind(this));
 		element.addEventListener("contextmenu", function(evt) {evt.preventDefault()});
 	}.bind(this));
-
-	/*
-	var exit_button = e.find('.exit-button');
-	if(exit_button) {
-		var hammer = new Hammer.Manager(exit_button[0]);
-		hammer.add(new Hammer.Tap({time: this.pressTime-1, interval: this.tapInterval, threshold: this.pressThreshold}));
-		hammer.on('tap', this.onExitTap.bind(this));
-	} else {
-		console.warn('no exit button')
-	} */
-
-
-	// var enter_button = $('.enter-button');
-	// if(enter_button) {
-	// 	var hammer = new Hammer.Manager(enter_button[0]);
-	// 	hammer.add(new Hammer.Tap({time: this.pressTime-1, interval: this.tapInterval, threshold: this.pressThreshold}));
-	// 	hammer.on('tap', this.onEnterTap.bind(this));
-	// }else {
-	// 	console.warn('no enter button')
-	// }
-
 }
 
 Keypad.prototype.setOptions = function(options) {
@@ -81,8 +60,7 @@ Keypad.prototype.setOptions = function(options) {
 	this.refreshInterval = options.refreshInterval || this.refreshInterval || 50;
 	this.pressTime = options.pressTime || this.pressTime || 250;
 	this.pressThreshold = options.pressThreshold || this.pressThreshold || 10;
-	this.tapInterval = options.tapInterval || this.tapInterval || 250;
-
+	this.tapInterval = options.tapInterval || this.tapInterval || 250; 
 }
 
 Keypad.prototype.emit = function(evt, data) {
@@ -103,6 +81,11 @@ Keypad.prototype.on = function(evt, func) {
 		this.listeners[evt].push(func);
 	}
 }
+
+/* Keyboard keys and mouse-keypad keys work similarly, but not identically. Idea is that presses up to a threshold
+     length will trigger a "fixed move" (via nudge process) as will any presses with "fixed" button on. Presses longer
+     will trigger longer moves, with refresh pumping new moves to engine/g2. Stop now triggers stop via g2 "kill" from
+     engine. */
 
 Keypad.prototype.setEnabled = function(enabled) {
 	this.enabled = enabled;
@@ -169,12 +152,11 @@ Keypad.prototype.exit = function() {
 }
 
 Keypad.prototype.onDrivePress = function(evt) {
-
-
 	this.target = evt.target;
 	this.setEnabled(true);
 	var e = $(evt.target);
 	e.focus();
+
 	if(e.hasClass('drive-button-fixed')) {
 		this.onDriveTap(evt);
 		
@@ -231,11 +213,9 @@ Keypad.prototype.onDrivePress = function(evt) {
 	}
 }
 
-
-
 Keypad.prototype.onDriveTap = function(evt) {
-	
 	var e = $(evt.target);
+
 	if(this.going) {
 		this.end();
 	} else {
@@ -274,15 +254,20 @@ Keypad.prototype.onDriveTap = function(evt) {
 		}
 		else if(e.hasClass('z_neg_slow')) {
 			this.nudge('z', -1);
-		} else if(e.hasClass('a_pos')){
+		} 
+		else if(e.hasClass('a_pos')){
 			this.nudge('a', 1)
-		} else if(e.hasClass('a_neg')){
+		}
+		else if(e.hasClass('a_neg')){
 			this.nudge('a', -1)
-		} else if(e.hasClass('b_pos')){
+		}
+		else if(e.hasClass('b_pos')){
 			this.nudge('b', 1)
-		} else if(e.hasClass('b_neg')){
+		}
+		else if(e.hasClass('b_neg')){
 			this.nudge('b', -1)
-		} else {
+		}
+		else {
 			return;
 		}
 		e.addClass('drive-button-active-transient').removeClass('drive-button-inactive');
