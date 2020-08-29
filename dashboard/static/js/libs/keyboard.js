@@ -93,19 +93,6 @@ Keyboard.prototype.setEnabled = function(enabled) {
 		if(this.elem) {			
 			this.elem.removeClass('keyboard-button-active').addClass('keyboard-button-inactive');				
 		}
-
-	}
-}
-
-// A sort of watchdog for stopping or keeping a down-key continuing
-Keyboard.prototype.refresh = function() {
-	if(!this.enabled || !this.going) {
-		this.emit('stop', null);
-	} else {
-		if(this.enabled) {
-			this.emit('go', this.move);
-		}
-		this.interval = setTimeout(this.refresh.bind(this), this.refreshInterval);
 	}
 }
 
@@ -125,34 +112,27 @@ Keyboard.prototype.stop = function() {
 	this.emit('stop', null);
 }
 
-
-Keyboard.prototype.onClick = function(evt) {
-	this.setEnabled(!this.enabled);
-}
-
-
-Keyboard.prototype.onFocus = function(evt) {}
-Keyboard.prototype.onMouseEnter = function(evt) {}
-
-Keyboard.prototype.onBlur = function(evt) {
-	this.setEnabled(false);
-}
-
-Keyboard.prototype.onMouseMove = function(evt) {
-	if(this.moves-- <= 0) {
-		this.setEnabled(false);
+// A sort of watchdog for stopping or keeping a down-key continuing
+Keyboard.prototype.refresh = function() {
+	if(!this.enabled || !this.going) {
+		this.emit('stop', null);
+	} else if ($('.fixed-switch input').is(':checked')) { 
+	    console.log("fixed-DOWN");
+	    this.nudgeTimer = 1;
+	    this.going = true;
+	    this.onKeyUp(evt);
+	} else {
+		if(this.enabled) {
+			this.emit('go', this.move);
+		}
+		this.interval = setTimeout(this.refresh.bind(this), this.refreshInterval);
 	}
 }
 
 Keyboard.prototype.onKeyDown = function(evt) {
 console.log("===>onKeyDOWN, enabled=" + this.enabled + "  going=" + this.going)  ////##
 ////##	if ($('.fixed-switch input').is(':checked')) { console.log("fixed-DOWN")} else { console.log("fixed-UP")}; ////##
-	if ($('.fixed-switch input').is(':checked')) { 
-	    console.log("fixed-DOWN");
-	    this.nudgeTimer = 1;
-	    this.going = true;
-	    this.onKeyUp(evt);
-	} else if (this.going || !this.enabled) {return}
+	if (this.going || !this.enabled) {return};
 	this.nudgeTimer = setTimeout(function() {
 		//this.nudgeTimer = null;
 		if(!this.going) {
@@ -184,13 +164,6 @@ console.log("===>onKeyDOWN, enabled=" + this.enabled + "  going=" + this.going) 
 			}	
 		}
 	}.bind(this), NUDGE_TIMEOUT);
-}
-
-Keyboard.prototype.onMouseLeave = function(evt) {
-	this.setEnabled(false);
-	if(this.going) {
-		this.stop();
-	}
 }
 
 Keyboard.prototype.onKeyUp = function(evt) {
@@ -231,7 +204,6 @@ console.log("===>     ... sending key nudge- " + evt.keyCode );
 	} else {
 		if(this.going || this.enabled ) { this.stop(); }
 	} 
-
 }
 
 Keyboard.prototype.nudge = function(axis, direction) {
@@ -246,3 +218,27 @@ console.log("===>got CALL NUDGE, enabled=" + this.enabled + "  going=" + this.go
 return Keyboard;
 }));
 
+Keyboard.prototype.onClick = function(evt) {
+	this.setEnabled(!this.enabled);
+}
+
+Keyboard.prototype.onFocus = function(evt) {}
+
+Keyboard.prototype.onMouseEnter = function(evt) {}
+
+Keyboard.prototype.onBlur = function(evt) {
+	this.setEnabled(false);
+}
+
+Keyboard.prototype.onMouseMove = function(evt) {
+	if(this.moves-- <= 0) {
+		this.setEnabled(false);
+	}
+}
+
+Keyboard.prototype.onMouseLeave = function(evt) {
+	this.setEnabled(false);
+	if(this.going) {
+		this.stop();
+	}
+}
