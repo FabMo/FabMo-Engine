@@ -112,7 +112,9 @@ Keyboard.prototype.refresh = function() {
 	    console.log("fixed-DOWN");
 	    this.nudgeTimer = 1;
 	    this.going = true;
-	    this.onKeyUp(evt);
+		if(this.enabled) {
+			this.emit('nudge', this.move);
+		}
 
 
 	} else {
