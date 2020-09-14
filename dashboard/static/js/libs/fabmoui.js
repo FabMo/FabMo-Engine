@@ -58,6 +58,7 @@ function FabMoUI(tool, options){
 
 	$('#manual-move-speed').on('mouseup touchend', function(){
 		$('.speed_read_out').hide();
+		$(this).blur();
 	})
 
 	$('#right-position-container').on('click', function(){

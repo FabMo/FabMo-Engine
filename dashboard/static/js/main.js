@@ -546,7 +546,9 @@ require("../css/toastr.min.css");
         dashboard.engine.setConfig({machine:{manual:{xy_increment:newDefault}}}, function(err, data){
             if(err){
                 console.log(err);
-            } 
+            } else  {
+                engine.config.machine.manual.xy_increment = newDefault;
+            }
         });
     });
 
@@ -556,6 +558,8 @@ require("../css/toastr.min.css");
         dashboard.engine.setConfig({machine:{manual:{z_increment:newDefault}}}, function(err, data){
             if(err){
                 console.log(err);
+            } else {
+                engine.config.machine.manual.z_increment = newDefault;
             }
         });   
     });   
