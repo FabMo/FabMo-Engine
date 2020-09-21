@@ -315,7 +315,7 @@ G2.prototype.connect = function(path, callback) {
 
 // Close the serial port - important for shutting down the application and not letting resources "dangle"
 G2.prototype.disconnect = function(reason, callback) {
-	log.ingo(reason)
+	log.info(reason)
 	if(reason === "firmware") {
 		intendedClose = true;
 	}
@@ -337,6 +337,7 @@ G2.prototype.onSerialClose = function(data) {
 	if(!intendedClose) {
 		process.exit(14);
 	}
+
 };
 
 // Write to the serial port (and log it)
