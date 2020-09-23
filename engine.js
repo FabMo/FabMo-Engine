@@ -144,6 +144,7 @@ Engine.prototype.setTime = function(time) {
  * Basically does cleanup activities before shutting the engine down.
  */
 Engine.prototype.stop = function(reason, callback) {
+    console.log("in stop");
     this.machine.disconnect(reason);
     this.machine.setState(this.machine, 'stopped');
     callback(null);

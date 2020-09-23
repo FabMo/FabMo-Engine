@@ -468,7 +468,7 @@ require("../css/toastr.min.css");
     $(document).on('keydown', function(e) {
         if(e.keyCode === 27) {
             console.warn("ESC key pressed - quitting engine.");
-            dashboard.engine.manualStop();
+            dashboard.engine.manualExit();
             // keyboard.setEnabled(true);
         } else if (e.keyCode === 75 && e.ctrlKey ) {
 			dashboard.engine.manualEnter()
