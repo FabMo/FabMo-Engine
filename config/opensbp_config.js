@@ -77,4 +77,34 @@ OpenSBPConfig.prototype.hasVariable = function(name) {
 	return name in this._cache.variables;
 }
 
+// Return the value of the temp variable with the specified name
+//   name - The temp variable name to retrieve the value for, with or without the ampersand.
+OpenSBPConfig.prototype.getTempVariable = function(name) {
+	var scrubbedName = name.replace('&','');
+	var tempVariables = this._cache['tempVariables'];
+	if(tempVariables && (scrubbedName in tempVariables)) {
+		return tempVariables[scrubbedName];
+	} else {
+		throw new Error("Temp Variable " + name + " was used but not defined.");
+	}
+}
+
+// Set the temp variable named to the provided value.
+// TODO - Sanitize the temp variable name (you could set super illegal dumb stuff here)
+//       name - The name of the variable to set, with or without a ampersand
+//      value - The value to assign
+//   callback - Called with an object mapping key to value, or error if error.
+OpenSBPConfig.prototype.setTempVariable = function(name, value, callback) {
+	var name = name.replace('&','');
+	var u = {'tempVariables' : {}}
+	u.variables[name] = value;
+	this.update(u, callback, true);
+}
+
+// Return true if the provided temp variable has been defined (with or without ampersand)
+OpenSBPConfig.prototype.hasTempVariable = function(name) {
+	var name = name.replace('&','');
+	return name in this._cache.tempVariables;
+}
+
 exports.OpenSBPConfig = OpenSBPConfig;
