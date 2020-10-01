@@ -97,7 +97,7 @@ OpenSBPConfig.prototype.getTempVariable = function(name) {
 OpenSBPConfig.prototype.setTempVariable = function(name, value, callback) {
 	var name = name.replace('&','');
 	var u = {'tempVariables' : {}}
-	u.variables[name] = value;
+	u.tempVariables[name] = value;
 	this.update(u, callback, true);
 }
 
