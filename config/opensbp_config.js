@@ -24,6 +24,11 @@ OpenSBPConfig = function() {
 };
 util.inherits(OpenSBPConfig, Config);
 
+OpenSBPConfig.prototype.load = function(filename, callback) {
+	Config.prototype.load.call(this, filename, callback);
+	delete this._cache.tempVariables;
+}
+
 // Update the tree with the provided data.  Nothing special here.
 OpenSBPConfig.prototype.update = function(data, callback, force) {
 	try {
