@@ -30,7 +30,6 @@ OpenSBPConfig.prototype.load = function(filename, callback) {
 		delete data.tempVariables;
 		callback(err, data);
 	});
-	
 }
 
 // Update the tree with the provided data.  Nothing special here.
