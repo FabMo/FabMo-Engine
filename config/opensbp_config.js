@@ -11,6 +11,7 @@ var path = require('path');
 var util = require('util');
 var extend = require('../util').extend;
 var PLATFORM = require('process').platform;
+var log = require('../log').logger('config');
 
 var Config = require('./config').Config;
 
@@ -24,12 +25,25 @@ OpenSBPConfig = function() {
 };
 util.inherits(OpenSBPConfig, Config);
 
+// Overide config load to purge temp varaiables on load
 OpenSBPConfig.prototype.load = function(filename, callback) {
 	Config.prototype.load.call(this, filename, function(err, data) {
-		delete this._cache.tempVariables;
-		delete data.tempVariables;
+		log.info('sbp callback')
+		OpenSBPConfig.purgeTemp();
+		if(data.hasOwnProperty('tempVariables')) {
+			delete data['tempVariables'];
+		}
+		log.info('sbp purged:  ' + JSON.strigify(data));
 		callback(err, data);
 	});
+}
+
+OpenSBPConfig.prototype.purgeTemp = function() {
+	log.info('sbp purgeTemp');
+	if(this._cache.hasOwnProperty('tempVariables')) {
+		log.info('Purging tempVariables');
+		delete this._cache['tempVariables'];
+	}
 }
 
 // Update the tree with the provided data.  Nothing special here.
