@@ -29,17 +29,18 @@ util.inherits(OpenSBPConfig, Config);
 OpenSBPConfig.prototype.load = function(filename, callback) {
 	Config.prototype.load.call(this, filename, function(err, data) {
 		log.info('sbp callback')
-		OpenSBPConfig.purgeTemp();
+		this.purgeTemp();
 		if(data.hasOwnProperty('tempVariables')) {
 			delete data['tempVariables'];
 		}
-		log.info('sbp purged:  ' + JSON.strigify(data));
+		log.info('sbp purged:  ' + JSON.stringify(data));
 		callback(err, data);
 	});
 }
 
 OpenSBPConfig.prototype.purgeTemp = function() {
 	log.info('sbp purgeTemp');
+	log.infor(JSON.stringify(this._cache))
 	if(this._cache.hasOwnProperty('tempVariables')) {
 		log.info('Purging tempVariables');
 		delete this._cache['tempVariables'];
