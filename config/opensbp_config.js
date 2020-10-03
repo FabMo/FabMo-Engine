@@ -25,28 +25,27 @@ OpenSBPConfig = function() {
 };
 util.inherits(OpenSBPConfig, Config);
 
-
-
-OpenSBPConfig.prototype.purgeTemp = function() {
-	log.info('sbp purgeTemp');
-	log.infor(JSON.stringify(this._cache))
-	if(this._cache.hasOwnProperty('tempVariables')) {
-		log.info('Purging tempVariables');
-		delete this._cache['tempVariables'];
-	}
-}
-
 // Overide config load to purge temp varaiables on load
 OpenSBPConfig.prototype.load = function(filename, callback) {
 	Config.prototype.load.call(this, filename, function(err, data) {
-		log.info('sbp callback')
-		this.purgeTemp();
+		log.debug('sbp callback')
+		OpenSBPConfig.prototype.purgeTemp.call(this);
 		if(data.hasOwnProperty('tempVariables')) {
 			delete data['tempVariables'];
 		}
-		log.info('sbp purged:  ' + JSON.stringify(data));
+		log.debug('sbp purged:  ' + JSON.stringify(data));
 		callback(err, data);
 	});
+}
+
+// Purge TempVariables from config on load to halt persistence.
+OpenSBPConfig.prototype.purgeTemp = function() {
+	log.debug('sbp purgeTemp');
+	log.debug(JSON.stringify(this._cache))
+	if(this._cache.hasOwnProperty('tempVariables')) {
+		log.debug('Purging tempVariables');
+		delete this._cache['tempVariables'];
+	}
 }
 
 // Update the tree with the provided data.  Nothing special here.
