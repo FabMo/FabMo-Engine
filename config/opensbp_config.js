@@ -25,28 +25,60 @@ OpenSBPConfig = function() {
 };
 util.inherits(OpenSBPConfig, Config);
 
-// Overide config load to purge temp varaiables on load
+// // Overide config load to purge temp varaiables on load
+// // TODO:  this._cache unavailable inside Config Load callback.  We may need to restructure the write to this._cache to happen outside the load function to independantly override.
+// OpenSBPConfig.prototype.load = function(filename, callback) {
+// 	Config.prototype.load.call(this, filename, function(err, data) {
+// 		log.debug('sbp callback')
+// 		OpenSBPConfig.prototype.purgeTemp.call(this);
+// 		if(data.hasOwnProperty('tempVariables')) {
+// 			delete data['tempVariables'];
+// 		}
+// 		log.debug('sbp purged:  ' + JSON.stringify(data));
+// 		callback(err, data);
+// 	});
+// }
+
+// // Purge TempVariables from config on load to halt persistence.
+// // TODO:  this._cache unavailable inside Config Load callback.  We may need to restructure the write to this._cache to happen outside the load function to independantly override.
+// OpenSBPConfig.prototype.purgeTemp = function() {
+// 	log.debug('sbp purgeTemp');
+// 	log.debug(JSON.stringify(this._cache))
+// 	if(this._cache.hasOwnProperty('tempVariables')) {
+// 		log.debug('Purging tempVariables');
+// 		delete this._cache['tempVariables'];
+// 	}
+// }
+
+// Overide of Config.prototype.load removing tempVariables on load.
+// TODO:  This is duplicated code from config.js as a work around for the cache not being accesible in callbacks.
 OpenSBPConfig.prototype.load = function(filename, callback) {
-	Config.prototype.load.call(this, filename, function(err, data) {
-		log.debug('sbp callback')
-		OpenSBPConfig.prototype.purgeTemp.call(this);
+	log.debug('OpenSBPConfig Load');
+	this._filename = filename;
+	fs.readFile(filename, 'utf8', function (err, data) {
+		if (err) { return callback(err); }
+		try {
+			data = JSON.parse(data);
+		} catch (e) {
+			log.error(e);
+			return callback(e);
+		}
+		log.debug('sbp data unpurged:  ' +JSON.stringify(data));
+		log.debug('sbp cache unpurged:  ' +JSON.stringify(this._cache));
+		if(this._cache.hasOwnProperty('tempVariables')) {
+			log.debug('Purging tempVariables');
+			delete this._cache['tempVariables'];
+		}
 		if(data.hasOwnProperty('tempVariables')) {
 			delete data['tempVariables'];
 		}
-		log.debug('sbp purged:  ' + JSON.stringify(data));
-		callback(err, data);
-	});
-}
-
-// Purge TempVariables from config on load to halt persistence.
-OpenSBPConfig.prototype.purgeTemp = function() {
-	log.debug('sbp purgeTemp');
-	log.debug(JSON.stringify(this._cache))
-	if(this._cache.hasOwnProperty('tempVariables')) {
-		log.debug('Purging tempVariables');
-		delete this._cache['tempVariables'];
-	}
-}
+		log.debug('sbp data purged:  ' + JSON.stringify(data));
+		log.debug('sbp cache purged:  ' + JSON.stringify(this._cache));
+		this.update(data, function(err, d) {
+			callback(err, data);
+		}, true);
+	}.bind(this));
+};
 
 // Update the tree with the provided data.  Nothing special here.
 OpenSBPConfig.prototype.update = function(data, callback, force) {
