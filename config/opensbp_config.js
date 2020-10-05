@@ -54,7 +54,6 @@ util.inherits(OpenSBPConfig, Config);
 // Overide of Config.prototype.load removing tempVariables on load.
 // TODO:  This is duplicated code from config.js as a work around for the cache not being accesible in callbacks.
 OpenSBPConfig.prototype.load = function(filename, callback) {
-	log.debug('OpenSBPConfig Load');
 	this._filename = filename;
 	fs.readFile(filename, 'utf8', function (err, data) {
 		if (err) { return callback(err); }
@@ -64,17 +63,9 @@ OpenSBPConfig.prototype.load = function(filename, callback) {
 			log.error(e);
 			return callback(e);
 		}
-		log.debug('sbp data unpurged:  ' +JSON.stringify(data));
-		log.debug('sbp cache unpurged:  ' +JSON.stringify(this._cache));
-		if(this._cache.hasOwnProperty('tempVariables')) {
-			log.debug('Purging tempVariables');
-			delete this._cache['tempVariables'];
-		}
 		if(data.hasOwnProperty('tempVariables')) {
 			delete data['tempVariables'];
 		}
-		log.debug('sbp data purged:  ' + JSON.stringify(data));
-		log.debug('sbp cache purged:  ' + JSON.stringify(this._cache));
 		this.update(data, function(err, d) {
 			callback(err, data);
 		}, true);
