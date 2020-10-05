@@ -7,6 +7,7 @@
  *        is basically a part of the OpenSBP runtime, but lives in the configuration tree - 
  *        it is poor separation of concerns.
  */
+var fs = require('fs-extra');
 var path = require('path');
 var util = require('util');
 var extend = require('../util').extend;
