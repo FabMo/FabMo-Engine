@@ -46,7 +46,7 @@ function SBPRuntime() {
     this.program = [];
     this.pc = 0;
     this.start_of_the_chunk = 0;
-    this.user_vars = {};
+    // this.user_vars = {};
     this.label_index = {};
     this.stack = [];
     this.file_stack = [];
@@ -943,12 +943,13 @@ SBPRuntime.prototype._end = function(error) {
     }
     log.debug("Calling the non-nested (toplevel) end");
 
-    // Delete the user variables that don't stick around across runs
-    for(var key in this.user_vars) {
-        if(key[1] === '_') {
-            delete this.user_vars[key]
-        }
-    }  
+    // TODO:  User Vars now stored on config and persistent is this functionality still needed?
+    // // Delete the user variables that don't stick around across runs
+    // for(var key in this.user_vars) {
+    //     if(key[1] === '_') {
+    //         delete this.user_vars[key]
+    //     }
+    // }  
 
     // Log the error for posterity
     if(error) {log.error(error)}
@@ -1291,14 +1292,7 @@ SBPRuntime.prototype._varExists = function(identifier) {
             identifier = '&TOOL'
         }
 
-        if(identifier in this.user_vars) { return true; }
-
-        // So weird.  TODO - what?  what even.
-        for(key in this.user_vars) {
-            if(key.toLowerCase() === identifier.toLowerCase()) { return true;}
-        }
-
-        return false;
+        return config.opensbp.hasTempVariable(identifier)
     }
 
     if(identifier.match(PERSISTENTVAR_RE)) {
@@ -1322,9 +1316,8 @@ SBPRuntime.prototype._assign = function(identifier, value, callback) {
             identifier = '&TOOL'
         }
 
-        // Make assignment and call back
-        this.user_vars[identifier] = value;
-        setImmediate(callback);
+        // Assign with persistence using the configuration module
+        config.opensbp.setTempVariable(identifier, value, callback)
         return
     }
     log.debug(identifier + ' is not a user variable');
@@ -1728,16 +1721,7 @@ SBPRuntime.prototype.evaluateUserVariable = function(v) {
     if(v.toUpperCase() === '&TOOL') {
         v = '&TOOL';
     }
-    if(v in this.user_vars) {
-        return this.user_vars[v];
-    } else {
-        for(key in this.user_vars) {
-            if(key.toLowerCase() === v.toLowerCase()) {
-                return this.user_vars[key];
-            }
-        }
-        throw new Error('Variable ' + v + ' was used but not defined.');
-    }
+    return config.opensbp.getTempVariable(v);
 };
 
 // Return the value for the provided persistent variable
