@@ -716,7 +716,7 @@ require("../css/toastr.min.css");
     }
     touchScreen();
 
-$('#icon_sign_out').on('click', function(e){
+$('.icon_sign_out').on('click', function(e){
     e.preventDefault();
     dashboard.showModal({
         title : 'Log Out?',
