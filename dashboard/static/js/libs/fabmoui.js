@@ -12,6 +12,7 @@
   "use strict"
 
 var MAX_INPUTS = 16;
+var MAX_OUTPUTS = 16;
 var currentUnits = null;
 var mouseX;
 var mouseY;
@@ -329,6 +330,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		this.progress = 0;
 	}
 
+
+	///update inputs
 	for(var i=1; i<MAX_INPUTS+1; i++) {
 		var iname = 'in' + i;
 		if(iname in status) {
@@ -336,6 +339,23 @@ FabMoUI.prototype.updateStatusContent = function(status){
 			if(status[iname] == 1) {
 				$(selector).removeClass('off').addClass('on');
 			} else if(status[iname] == 0) {
+				$(selector).removeClass('on').addClass('off');
+			} else {
+				$(selector).removeClass('on off').addClass('disabled');
+			}
+		} else {
+			break;
+		}
+	}
+
+	///update outputs
+	for(var i=1; i<MAX_OUTPUTS+1; i++) {
+		var outname = 'out' + i;
+		if(outname in status) {
+			var selector = that.status_div_selector + ' .out' + i;
+			if(status[outname] == 1) {
+				$(selector).removeClass('off').addClass('on');
+			} else if(status[outname] == 0) {
 				$(selector).removeClass('on').addClass('off');
 			} else {
 				$(selector).removeClass('on off').addClass('disabled');
