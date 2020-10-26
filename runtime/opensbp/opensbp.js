@@ -654,6 +654,7 @@ SBPRuntime.prototype._breaksStack = function(cmd) {
             break;
 
         case "pause":
+            ////## Not sure about following TODO; pauses end up being inserted as a redundant guarantee of a stack bre
             // TODO - pauses that just create a delay really shouldn't be stack breakers.  Pauses that bring up the message box should.
             //        (you don't want to bring up the message box until the machine has executed everything up to that point)
             return true;
