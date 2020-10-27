@@ -233,6 +233,7 @@ require("../css/toastr.min.css");
                                     }
                                 });
                                 modalIsShown = true;
+                                dashboard.handlers.hideFooter();
                             }
                         } else if (status.info['error']) {
                             if (dashboard.engine.status.job) {
@@ -253,6 +254,7 @@ require("../css/toastr.min.css");
                                 }
                             });
                             modalIsShown = true;
+                            dashboard.handlers.hideFooter();
                         }
                     } else if (status.state === 'armed') {
                         authorizeDialog = true;
