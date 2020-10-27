@@ -399,7 +399,7 @@ FabMoAPI.prototype.manualHeartbeat = function() {
 	this.executeRuntimeCode('manual', {'cmd': 'maint'});
 }
 
-FabMoAPI.prototype.manualStop = function() {
+FabMoAPI.prototype.manualStop = function(callback) {
 	this.executeRuntimeCode('manual', {'cmd': 'stop'});
 }
 
@@ -489,7 +489,6 @@ FabMoAPI.prototype.command = function(name, args, callback) {
 }
 
 FabMoAPI.prototype.submitFirmwareUpdate = function(file, options, callback, progress) {
-	console.log('in api')
 	this._postUpload('/firmware/update', file, {}, callback, callback, null, progress);
 }
 

@@ -1014,7 +1014,7 @@ SBPRuntime.prototype._end = function(error) {
 //    command - The command object to execute
 //   callback - Called when execution is complete or with error if error
 SBPRuntime.prototype._executeCommand = function(command, callback) {
-    console.log(callback)
+
     if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
         // Command is valid and has a registered handler
         

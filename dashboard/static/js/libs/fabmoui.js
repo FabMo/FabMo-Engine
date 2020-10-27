@@ -59,6 +59,7 @@ function FabMoUI(tool, options){
 
 	$('#manual-move-speed').on('mouseup touchend', function(){
 		$('.speed_read_out').hide();
+		$(this).blur();
 	})
 
 	$('#right-position-container').on('click', function(){
@@ -329,8 +330,11 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$('.horizontal_fill').css('width', '0%');
 		this.progress = 0;
 	}
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> t-dev-motion-1
 	///update inputs
 	for(var i=1; i<MAX_INPUTS+1; i++) {
 		var iname = 'in' + i;
