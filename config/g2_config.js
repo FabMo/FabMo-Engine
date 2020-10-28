@@ -155,6 +155,10 @@ G2Config.prototype.restoreSome = function(keys, callback) {
 // Configure the status reports (indicating to G2 what is to be reported)
 //   callback - Called as soon as the command is issued (Does not wait for a response)
 G2Config.prototype.configureStatusReports = function(callback) {
+	////## Added spc for spindle state, might also want sps for speed ???
+	////## spc=0 [OFF]; =1 or =2 [ON]; =3 [PAUSED-OFF in hold]; =4 [RESUMING] 
+	////## see g2 spindle.h (no other documentation)
+	////## RE: g2 101.03 may change later with DIO
 	if(this.driver) {
 	this.driver.command({"sr":{
 						"posx":true,
@@ -176,6 +180,7 @@ G2Config.prototype.configureStatusReports = function(callback) {
 						"in6":true,
 						"in7":true,
 						"in8":true,
+                        "spc":true,
 						"out1":true,
 						"out2":true,
 						"out3":true,
