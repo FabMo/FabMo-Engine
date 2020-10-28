@@ -63,7 +63,7 @@
               <div class="row collapse">
                 <label data-tip="The name of your tool.  The tool name will be displayed on the dashboard, and is used as the network name for wireless and wired networking.">Machine Name<div class="tool-tip">i</div></label>
                 <div class="small-12 columns">
-                  <input type="text"  id="engine-name" class="engine-input"/>
+                  <input autocomplete="off" type="text"  id="engine-name" class="engine-input"/>
                 </div>
               </div>
             </div>
@@ -71,7 +71,7 @@
               <div class="row collapse">
                 <label data-tip="The unique factory ID of your tool.  This ID can be helpful for tech support.  This value cannot be changed.">Machine ID<div class="tool-tip">i</div></label>
                 <div class="small-12 columns">
-                  <input type="text" id="input-machine-id" disabled/>
+                  <input autocomplete="off" type="text" id="input-machine-id" disabled/>
                 </div>
               </div>
             </div>
@@ -105,7 +105,7 @@
               <div class="row collapse">
                 <label data-tip='Maximum deviation that an arc segment may take from its "ideal" trajectory.  A smaller number here means higher resolution (but possibly slower) arcs.'>Chordal Tolerance<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-ct" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-ct" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix in_mm_label">&nbsp;</span>
@@ -116,7 +116,7 @@
               <div class="row collapse">
                 <label data-tip="Determines how aggressively the machine takes corners.  Sensible values are between 0.5 and 2.0.  Higher values mean more aggressive corners.">Junction Integration Time<div class="tool-tip">i</div></label>
                 <div class="small-12 columns">
-                  <input type="text" id="driver-jt" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-jt" class="driver-input" />
                 </div>
               </div>
             </div>
@@ -142,7 +142,7 @@
               <div class="row collapse">
                 <label data-tip="The minimum interval between tool status reports.  A larger number here means position and status displays that do not update as frequently.">Status Report Interval<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-si" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-si" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">ms</span>
@@ -483,7 +483,7 @@
               <div class="row collapse">
                 <label data-tip="The maximum allowable feedrate for this machine in a feed command (G1 in g-code, or Movement commands in OpenSBP) - This acts like a speed limit, essentially capping the feed rate of any movement command to the specified value.">Feedrate Maximum<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-xfr" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-xfr" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix ipm_mmpm_label">&nbsp;</span>
@@ -494,7 +494,7 @@
               <div class="row collapse">
                 <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-xvm" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-xvm" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix ipm_mmpm_label">&nbsp;</span>
@@ -505,7 +505,7 @@
               <div class="row collapse">
                 <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.'>Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-xjm" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-xjm" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
@@ -515,7 +515,7 @@
             <div class="large-4 columns">
               <div class="row collapse">
                   <label data-tip="">High Speed Jerk</label>                <div class="small-9 columns">
-                  <input type="text" id="driver-xjh" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-xjh" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
@@ -543,7 +543,7 @@
               <div class="row collapse">
                 <label data-tip="The maximum allowable feedrate for this machine in a feed command (G1 in g-code, or Movement commands in OpenSBP) - This acts like a speed limit, essentially capping the feed rate of any movement command to the specified value.">Feedrate Maximum<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-yfr" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-yfr" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix ipm_mmpm_label">&nbsp;</span>
@@ -554,7 +554,7 @@
               <div class="row collapse">
                 <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-yvm" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-yvm" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix ipm_mmpm_label">&nbsp;</span>
@@ -565,7 +565,7 @@
               <div class="row collapse">
                 <label data-tip="The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.">Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-yjm" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-yjm" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
@@ -576,7 +576,7 @@
               <div class="row collapse">
                 <label data-tip="">High Speed Jerk</label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-yjh" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-yjh" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
@@ -605,7 +605,7 @@
               <div class="row collapse">
                 <label data-tip="The maximum allowable feedrate for this machine in a feed command (G1 in g-code, or Movement commands in OpenSBP) - This acts like a speed limit, essentially capping the feed rate of any movement command to the specified value.">Feedrate Maximum<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-zfr" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-zfr" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix ipm_mmpm_label">&nbsp;</span>
@@ -616,7 +616,7 @@
               <div class="row collapse">
                 <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-zvm" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-zvm" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix ipm_mmpm_label">&nbsp;</span>
@@ -627,7 +627,7 @@
               <div class="row collapse">
                 <label data-tip="The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.">Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-zjm" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-zjm" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
@@ -638,7 +638,7 @@
               <div class="row collapse">
                 <label data-tip="">High Speed Jerk</label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-zjh" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-zjh" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
@@ -667,7 +667,7 @@
               <div class="row collapse">
                 <label data-tip="The maximum allowable feedrate for this machine in a feed command (G1 in g-code, or Movement commands in OpenSBP) - This acts like a speed limit, essentially capping the feed rate of any movement command to the specified value.">Feedrate Maximum<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-afr" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-afr" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg/min</span>
@@ -678,7 +678,7 @@
               <div class="row collapse">
                 <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-avm" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-avm" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg/min</span>
@@ -689,7 +689,7 @@
               <div class="row collapse">
                 <label data-tip="The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.">Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-ajm" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-ajm" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg/min<sup>3</sup></span>
@@ -715,7 +715,7 @@
               <div class="row collapse">
                 <label data-tip="The maximum allowable feedrate for this machine in a feed command (G1 in g-code, or Movement commands in OpenSBP) - This acts like a speed limit, essentially capping the feed rate of any movement command to the specified value.">Feedrate Maximum<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-bfr" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-bfr" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg/min</span>
@@ -726,7 +726,7 @@
               <div class="row collapse">
                 <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-bvm" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-bvm" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg/min</span>
@@ -737,7 +737,7 @@
               <div class="row collapse">
                 <label data-tip="The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.">Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-bjm" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-bjm" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg/min<sup>3</sup></span>
@@ -763,7 +763,7 @@
               <div class="row collapse">
                 <label data-tip="The maximum allowable feedrate for this machine in a feed command (G1 in g-code, or Movement commands in OpenSBP) - This acts like a speed limit, essentially capping the feed rate of any movement command to the specified value.">Feedrate Maximum<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-cfr" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-cfr" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">mm/min<sup>3</sup></span>
@@ -774,7 +774,7 @@
               <div class="row collapse">
                 <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-cvm" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-cvm" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg/min</span>
@@ -785,7 +785,7 @@
               <div class="row collapse">
                <label data-tip="The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.">Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-cjm" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-cjm" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg/min</span>
@@ -1160,7 +1160,7 @@
               <div class="row collapse">
                 <label data-tip="The number of steps taken per unit for this channel.  This value determines how far each channels motor is driven for a requested distance.  These values determined by the mechanical and electrical configuration of the tool.  If the tool appears not to travel the specified distance when moving, this value is probably incorrect.">Unit Value<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-1su" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-1su" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">steps/units</span>
@@ -1230,7 +1230,7 @@
               <div class="row collapse">
                 <label data-tip="The number of steps taken per unit for this channel.  This value determines how far each channels motor is driven for a requested distance.  These values determined by the mechanical and electrical configuration of the tool.  If the tool appears not to travel the specified distance when moving, this value is probably incorrect.">Unit Value<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-2su" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-2su" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">steps/units</span>
@@ -1300,7 +1300,7 @@
               <div class="row collapse">
                 <label data-tip="The number of steps taken per unit for this channel.  This value determines how far each channels motor is driven for a requested distance.  These values determined by the mechanical and electrical configuration of the tool.  If the tool appears not to travel the specified distance when moving, this value is probably incorrect.">Unit Value<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-3su" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-3su" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">steps/units</span>
@@ -1370,7 +1370,7 @@
               <div class="row collapse">
                 <label data-tip="The number of steps taken per unit for this channel.  This value determines how far each channels motor is driven for a requested distance.  These values determined by the mechanical and electrical configuration of the tool.  If the tool appears not to travel the specified distance when moving, this value is probably incorrect.">Unit Value<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-4su" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-4su" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">steps/units</span>
@@ -1440,7 +1440,7 @@
               <div class="row collapse">
                 <label data-tip="The number of steps taken per unit for this channel.  This value determines how far each channels motor is driven for a requested distance.  These values determined by the mechanical and electrical configuration of the tool.  If the tool appears not to travel the specified distance when moving, this value is probably incorrect.">Unit Value<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-5su" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-5su" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">steps/units</span>
@@ -1465,7 +1465,7 @@
               <div class="row collapse">
                 <label>Power Level</label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-5pl" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-5pl" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">0-1.0</span>
@@ -1511,7 +1511,7 @@
               <div class="row collapse">
                 <label data-tip="The number of steps taken per unit for this channel.  This value determines how far each channels motor is driven for a requested distance.  These values determined by the mechanical and electrical configuration of the tool.  If the tool appears not to travel the specified distance when moving, this value is probably incorrect.">Unit Value<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-6su" class="driver-input" />
+                  <input autocomplete="off" type="text" id="driver-6su" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">steps/units</span>
@@ -1583,7 +1583,7 @@
               <div class="row collapse">
                 <label data-tip="The minimum position on the X axis that is still inside the physical envelope of the tool.  This number should probably be a zero.">X Min <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="number" id="machine-envelope-xmin" class="machine-input" />
+                  <input autocomplete="off" type="number" id="machine-envelope-xmin" class="machine-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix in_mm_label"></span>
@@ -1595,7 +1595,7 @@
               <div class="row collapse">
                 <label data-tip="The maximum position on the X axis that is still inside the physical envelope of the tool.  If your tool has 36 inches of travel in the X-Axis, for example, this number should probably be 36.">X Max <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="number" id="machine-envelope-xmax" class="machine-input" />
+                  <input autocomplete="off" type="number" id="machine-envelope-xmax" class="machine-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix in_mm_label"></span>
@@ -1607,7 +1607,7 @@
               <div class="row collapse">
                 <label data-tip="The minimum position on the Y axis that is still inside the physical envelope of the tool.  This number should probably be a zero.">Y Min <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="number" id="machine-envelope-ymin" class="machine-input" />
+                  <input autocomplete="off" type="number" id="machine-envelope-ymin" class="machine-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix in_mm_label"></span>
@@ -1619,7 +1619,7 @@
               <div class="row collapse">
                 <label data-tip="The maximum position on the Y axis that is still inside the physical envelope of the tool.">Y Max <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="number" id="machine-envelope-ymax" class="machine-input" />
+                  <input autocomplete="off" type="number" id="machine-envelope-ymax" class="machine-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix in_mm_label"></span>
@@ -1636,7 +1636,7 @@
               <div class="row collapse">
                 <label>Height</label>
                 <div class="small-9 columns">
-                  <input type="number" id="driver-zl" class="driver-input" />
+                  <input autocomplete="off" type="number" id="driver-zl" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix in_mm_label">&nbsp;</span>
@@ -1646,7 +1646,7 @@
               <div class="row collapse">
                 <label>Spindle Delay</label>
                 <div class="small-9 columns">
-                  <input type="number" id="driver-spde" class="driver-input" />
+                  <input autocomplete="off" type="number" id="driver-spde" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">sec</span>
@@ -1663,7 +1663,7 @@
               <div class="row collapse">
                 <label data-tip="XY speed when driving the tool with the DRO display or keyboard. ">XY Speed <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="number" id="machine-manual-xy_speed" class="machine-input" />
+                  <input autocomplete="off" type="number" id="machine-manual-xy_speed" class="machine-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix ips_mmps_label">&nbsp;</span>
@@ -1673,7 +1673,7 @@
               <div class="row collapse">
                 <label data-tip="Minimum adjustable speed for driving the tool with the keypad. ">Min XY Speed <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="number" id="machine-manual-xy_min" class="machine-input" />
+                  <input autocomplete="off" type="number" id="machine-manual-xy_min" class="machine-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix ips_mmps_label">&nbsp;</span>
@@ -1683,7 +1683,7 @@
               <div class="row collapse">
                 <label data-tip="Maximum adjustable speed for driving the tool with the keypad. "> Max XY Speed <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="number" id="machine-manual-xy_max" class="machine-input" />
+                  <input autocomplete="off" type="number" id="machine-manual-xy_max" class="machine-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix ips_mmps_label">&nbsp;</span>
@@ -1693,7 +1693,7 @@
               <div class="row collapse">
                 <label data-tip="The faster Z move speed controlled by the manual keypad.">Z Speed Fast <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="number" id="machine-manual-z_fast_speed" class="machine-input" />
+                  <input autocomplete="off" type="number" id="machine-manual-z_fast_speed" class="machine-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix ips_mmps_label">&nbsp;</span>
@@ -1702,7 +1702,7 @@
               <div class="row collapse">
                 <label data-tip="The slower Z move speed controlled by the manual keypad.">Z Speed Slow <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="number" id="machine-manual-z_slow_speed" class="machine-input" />
+                  <input autocomplete="off" type="number" id="machine-manual-z_slow_speed" class="machine-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix ips_mmps_label">&nbsp;</span>
@@ -1712,7 +1712,7 @@
               <div class="row collapse">
                 <label data-tip='Amount to move in the X or Y axis for each "nudge" or incremental move issued from the keyboard or DRO.'>XY Increment <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="number" id="machine-manual-xy_increment" class="machine-input" />
+                  <input autocomplete="off" type="number" id="machine-manual-xy_increment" class="machine-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix in_mm_label">&nbsp;</span>
@@ -1723,7 +1723,7 @@
               <div class="row collapse">
                 <label data-tip='Amount to move in the Z axis for each "nudge" or incremental move issued from the keyboard or DRO'>Z Increment <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="number" id="machine-manual-z_increment" class="machine-input" />
+                  <input autocomplete="off" type="number" id="machine-manual-z_increment" class="machine-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix in_mm_label">&nbsp;</span>
@@ -1732,7 +1732,7 @@
               <div class="row collapse">
                 <label data-tip='Amount to move in the a and b axis for each "nudge" or incremental move issued from the keyboard or DRO'>AB Increment <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="number" id="machine-manual-ab_increment" class="machine-input" />
+                  <input autocomplete="off" type="number" id="machine-manual-ab_increment" class="machine-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg</span>
@@ -1742,7 +1742,7 @@
               <div class="row collapse">
                 <label data-tip='How quickly the tool will accelerate and decelerate in the X and Y axes'>XY Jerk <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="number" id="machine-manual-xy_jerk" class="machine-input" />
+                  <input autocomplete="off" type="number" id="machine-manual-xy_jerk" class="machine-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix inpm3_mmpm3_label">mm/min<sup>3</sup></span>
@@ -1752,7 +1752,7 @@
               <div class="row collapse">
                 <label data-tip='How quickly the tool will accelerate and decelerate in the Z axi'>Z Jerk <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="number" id="machine-manual-z_jerk" class="machine-input" />
+                  <input autocomplete="off" type="number" id="machine-manual-z_jerk" class="machine-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix inpm3_mmpm3_label">mm/min<sup>3</sup></span>
@@ -1772,7 +1772,7 @@
                 	Use Authorization Button
                   <div class="tool-tip">i</div>
                 </label>
-                <input id="machine-auth_required" class="machine-input" type="checkbox" checked>
+                <input autocomplete="off" id="machine-auth_required" class="machine-input" type="checkbox" checked>
               </div>
               <div class="row collapse">
                 <label data-tip="The input to which the authorization button is connected.">Authorization Button Input
@@ -1792,7 +1792,7 @@
               <div class="row collapse">
                 <label data-tip="The amount of time the tool remains authorized for use after authorization has been issued with the authorization button.  Tool authorization is used to confirm that you are physically present and working at the tool before executing a motion command that comes in over the wireless or wired network.">Authorization Timeout<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="number" id="machine-auth_timeout" class="machine-input" />
+                  <input autocomplete="off" type="number" id="machine-auth_timeout" class="machine-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">seconds</span>
@@ -1803,7 +1803,7 @@
                 	Use Interlock
                   <div class="tool-tip">i</div>
                 </label>
-                <input id="machine-interlock_required" class="machine-input" type="checkbox" checked>
+                <input autocomplete="off" id="machine-interlock_required" class="machine-input" type="checkbox" checked>
               </div>
                 <div class="row collapse">
                 <label data-tip="The input to which the authorization button is connected.">Interlock Input
@@ -1844,7 +1844,7 @@
               <div class="row collapse">
                 <label data-tip="">AP Mode Button Duration</label>
                 <div class="small-9 columns">
-                  <input type="number" id="machine-ap_time" class="machine-input" />
+                  <input autocomplete="off" type="number" id="machine-ap_time" class="machine-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">seconds</span>
@@ -1881,7 +1881,7 @@
       <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel6" style="padding: 0px;">
 
         <form style="display:none;" id="fileform">
-          <input type="file" id="file" multiple>
+          <input autocomplete="off" type="file" id="file" multiple>
         </form>
         <div id="table-outer">
           <div id="dropzone" class="container">
@@ -1916,7 +1916,7 @@
               <div class="row collapse">
                 <label>User name</label>
                 <div class="small-12 columns">
-                  <input type="text" id="user-username" class="input" disabled/>
+                  <input autocomplete="off" type="text" id="user-username" class="input" disabled/>
                 </div>
               </div>
             </div>
@@ -1932,7 +1932,7 @@
               <div class="row collapse">
                 <label>User Created</label>
                 <div class="small-12 columns">
-                  <input type="text" id="user-created_at" disabled/>
+                  <input autocomplete="off" type="text" id="user-created_at" disabled/>
                 </div>
               </div>
             </div>
