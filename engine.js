@@ -655,7 +655,8 @@ Engine.prototype.start = function(callback) {
                 if(evt.beacon_url) {
                     this.beacon.set('url', config.updater.get('beacon_url'));
                 }
-    
+        //TODO ... as part of dealing with beacon
+        ////## this 'once' generating can't read prop error on first config changes    
                 // If the tool name changes, report the change to beacon
                 if(evt.name) {
                     this.beacon.once('config');
