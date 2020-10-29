@@ -75,6 +75,7 @@ Config.prototype.set = function(k,v, callback) {
 //       data - Object containing the keys/values to update
 //   callback - Called with updated values on success or with error if error
 Config.prototype.setMany = function(data, callback) {
+	log.debug("==> call Set Many with:  ", data, callback)  ////##
 	this.update(data, function(err, result) {
 		if(callback && typeof callback === 'function') {
 			callback(err, result);
@@ -150,6 +151,7 @@ Config.prototype.save = function(callback) {
 							}
 							fs.closeSync(fd);
 							log.debug('fsync()ed ' + config_file);
+							log.debug("===> state the error for save function") ////##
 							callback(err);
 						}.bind(this));
 					}

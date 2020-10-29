@@ -156,6 +156,7 @@ function G2() {
 	this.quit_pending = false;
 	this.stat = null;
 	this.hold = null;
+	this.manual_hold = false;
 
 	// Readers and callbacks
 	this.expectations = [];
@@ -193,9 +194,10 @@ G2.prototype._createCycleContext = function() {
 	this._streamDone = false;
 	this.lineBuffer = []
 
-	// TODO factor this out
+	// TODO factor this out; ////## really???
 	// Inject a couple of G-Codes which are needed to start the machining cycle
-	st.write('G90\n')
+	st.write('G90\n' + 'G61\n')  ////## to make sure we are not in exact stop mode left from fixed moves
+//	st.write('G90\n')
 	st.write('M100 ({out4:1})\n') // hack to get the "permissive relay" behavior while in-cycle
 	
 	// Handle data coming in on the stream
@@ -241,7 +243,7 @@ G2.prototype._createCycleContext = function() {
 			this.gcode_queue.enqueue('M30');
 		}
 		this.sendMore();
-		log.debug("Stream END event.")
+		log.debug("***Stream END event.")
 	}.bind(this));
 
 	// Handle a stream being piped into this context (currently do nothing)
@@ -313,6 +315,7 @@ G2.prototype.connect = function(path, callback) {
 
 // Close the serial port - important for shutting down the application and not letting resources "dangle"
 G2.prototype.disconnect = function(reason, callback) {
+	log.info(reason)
 	if(reason === "firmware") {
 		intendedClose = true;
 	}
@@ -331,9 +334,10 @@ log.error(new Error('There was a serial error'))
 G2.prototype.onSerialClose = function(data) {
 	this.connected= false;
 	log.error('G2 Core serial link was lost.')
-	if(!intended) {
+	if(!intendedClose) {
 		process.exit(14);
 	}
+
 };
 
 // Write to the serial port (and log it)
@@ -370,26 +374,27 @@ G2.prototype.requestStatusReport = function(callback) {
 	this.command({'sr':null});
 };
 
-// TODO This function should no longer be needed (stream is managed differently now)
-G2.prototype.requestQueueReport = function() { this.command({'qr':null}); };
+////##
+// // TODO This function should no longer be needed (stream is managed differently now)
+// G2.prototype.requestQueueReport = function() { this.command({'qr':null}); };
 
-//TODO This function should no longer be needed - it is a relic of the days when there were 2 USB channels
-G2.prototype.onWAT = function(data) {
-	var s = data.toString('ascii');
-	var len = s.length;
-	for(var i=0; i<len; i++) {
-		c = s[i];
-		if(c === '\n') {
-			string = this._currentGCodeData.join('');
-			t = new Date().getTime();
-			log.g2('D','in',string);
-			//log.g2('<-G--' + t + '---- ' + string);
-			this._currentGCodeData = [];
-		} else {
-			this._currentGCodeData.push(c);
-		}
-	}
-};
+// //TODO This function should no longer be needed - it is a relic of the days when there were 2 USB channels
+// G2.prototype.onWAT = function(data) {
+// 	var s = data.toString('ascii');
+// 	var len = s.length;
+// 	for(var i=0; i<len; i++) {
+// 		c = s[i];
+// 		if(c === '\n') {
+// 			string = this._currentGCodeData.join('');
+// 			t = new Date().getTime();
+// 			log.g2('D','in',string);
+// 			//log.g2('<-G--' + t + '---- ' + string);
+// 			this._currentGCodeData = [];
+// 		} else {
+// 			this._currentGCodeData.push(c);
+// 		}
+// 	}
+// };
 
 // Called for every chunk of data returned from G2
 G2.prototype.onData = function(data) {
@@ -423,11 +428,12 @@ G2.prototype.onData = function(data) {
 	}
 };
 
-// TODO not really needed anymore
-G2.prototype.handleQueueReport = function(r) {
-	var qo = r.qo || 0;
-	// Pass
-};
+////##
+// // TODO not really needed anymore
+// G2.prototype.handleQueueReport = function(r) {
+// 	var qo = r.qo || 0;
+// 	// Pass
+// };
 
 // The footer is the part of the JSON response message that contains error information
 // If the footer indicates an error code, we do a lookup on the error message and emit an error event
@@ -454,9 +460,10 @@ G2.prototype.handleExceptionReport = function(response) {
 		this._lastExceptionReport = response.er;
 		var stat = response.er.st;
 		if((stat === 207) && this.quit_pending) {
-			//this.quit_pending = false;
+			this.quit_pending = false;
 			//this._write("{clr:n}\n");
 			//this.command("M30");
+			//this._write("m0\n");
 		}
 		log.error("Response with an exception report:")
 		log.error(JSON.stringify(response))
@@ -504,7 +511,7 @@ G2.prototype.handleStatusReport = function(response) {
 			lines_left = this.lines_sent - line;
 		}
 
-		// stat is the system state (detailed in the list above)
+		// stat is the system state (detailed in the list above) 
 		if('stat' in response.sr) {
 			switch(response.sr.stat) {
 				// If we stopped and flushed, we might have provided a callback
@@ -516,6 +523,7 @@ G2.prototype.handleStatusReport = function(response) {
 					}
 					break;
 				case STAT_END:
+					//##Lput back in 
 					this.status.line = null;
 					break;
 				// A really bad error in the firmware causes a "panic" - these are rare, but they do
@@ -637,6 +645,7 @@ G2.prototype.onMessage = function(response) {
 	// Deal with exceptions
 	this.handleExceptionReport(r);
 
+	////##
 	// Deal with streaming (if response contains a queue report)
 	// this.handleQueueReport(r);
 
@@ -663,9 +672,21 @@ G2.prototype.onMessage = function(response) {
 
 };
 
-// "pause" the current machining cycle by issuing a feedhold.
+// Interrupt motion in manual run-time; now using "kill" rather than G2-hold
+////## Handling normal and raw now the same
+G2.prototype.manualFeedHold = function(callback) {
+
+	////## needs flag that says stopping
+
+	this.pause_flag = true;
+
+	this._write('\x04\n');
+	// this.gcode_queue.clear();  ////## seems redundant
+
+}
+
+// "pause" the current machining cycle by issuing a feedhold. Used in Files (not Manual)!
 // callback is called when the next state change takes place.
-// 
 G2.prototype.feedHold = function(callback) {
 	this.pause_flag = true;
 	this.flooded = false;
@@ -755,6 +776,7 @@ G2.prototype.quit = function() {
 			// Clear the gcodes we have queued up
 			this.gcode_queue.clear();
 			// Issue the actual Job Kill
+            log.debug("Sending Cleanup KILL"); ////##
 			this._write('\x04\n');
 			break;
 	}
@@ -948,8 +970,9 @@ G2.prototype._createStatePromise = function(states) {
 	var that = this;
 	var onStat = function(stat) {
 		for(var i=0; i<states.length; i++) {
-			if(stat === states[i]) {
+			if(stat === states[i] && !this.manual_hold) {
 				that.removeListener('stat', onStat);
+				log.debug("Hold now - " + this.manual_hold + " in " + this.mode);
 				log.info("Resolving promise " + thisPromise + " because of state " + stat + " which is one of " + states)
 				deferred.resolve(stat);
 			}
@@ -974,9 +997,10 @@ G2.prototype.waitForState = function(states) {
 // a stream processor that is streaming from one of those sources without
 // having to load the entire file into memory.
 G2.prototype.runStream = function(s) {
-		this._createCycleContext();
-		s.pipe(this.context._stream);
-		return this.context;
+	log.info("from run stream to _createCycle")
+	this._createCycleContext();
+	s.pipe(this.context._stream);
+	return this.context;
 }
 
 // Run data from a file.  This is done with streams, which enjoy the benefits described in runStream above.
@@ -1054,7 +1078,7 @@ G2.prototype.sendMore = function() {
 		}
 	} else {
 		if(this.gcode_queue.getLength() > 0) {
-			//log.debug("Not sending because not primed.");
+			log.info("Not sending because not primed.");  ////## turned on
 		}
 	}
 };

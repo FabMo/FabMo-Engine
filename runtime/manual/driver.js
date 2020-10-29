@@ -72,10 +72,8 @@ util.inherits(ManualDriver, events.EventEmitter);
 // TODO: Pass the setup stuff in?  (In case runtimes want to do things differently?)
 // Returns a promise that resolves on exit
 ManualDriver.prototype.enter = function() {
-
 	if(this.entered) { return; }
-
-
+	this.driver.manual_hold = true;
 	switch(this.mode) {
 		case 'normal':
 			// Retrieve the manual-mode-specific jerk settings and apply them (temporarily) for this manual session
@@ -105,6 +103,7 @@ ManualDriver.prototype.enter = function() {
 
 // Exit the machining cycle
 // This stops motion if it is in progress, and restores the settings changed in enter()
+////## Exiting from normal and raw now done the same; but left stubbed separately for potential divergence
 ManualDriver.prototype.exit = function() {
 	if(this.isMoving()) {
 		// Don't exit yet - just pend.
@@ -113,16 +112,31 @@ ManualDriver.prototype.exit = function() {
 		this.stopMotion();
 	} else {
 		log.debug('Executing immediate exit')
+		this.driver.manual_hold = false;
 		switch(this.mode) {
 			case 'normal':
 				config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
 				    this._done();
 		        }.bind(this));			
+				log.debug("===> setting to exact path")
+		        this.stream.write('G61\n'); ////## making sure not left in exact stop mode
+				this.stream.write('M30\n');
+				////## added to maintain line number priming in all scenarios ...
+				this.driver.queueFlush(function() {
+					this.driver.resume();		
+				}.bind(this));
 		        break;
 			case 'raw':
-				config.driver.restoreSome(['zl'], function() {
+				config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
 				    this._done();
 		        }.bind(this));			
+				log.debug("===> setting to exact path; raw stop?")
+		        this.stream.write('G61\n'); ////## making sure not left in exact stop mode
+				this.stream.write('M30\n');
+				////## added to maintain line number priming in all scenarios ...
+				this.driver.queueFlush(function() {
+					this.driver.resume();		
+				}.bind(this));
 				break;
 			default:
 				log.warn('Unknown manual drive mode on exit: ' + this.mode);
@@ -144,7 +158,6 @@ ManualDriver.prototype.startMotion = function(axis,  speed, second_axis, second_
 	var dir = speed < 0 ? -1.0 : 1.0;
 	var second_dir = second_speed < 0 ? -1.0 : 1.0;
 	speed = Math.abs(speed);
-
 	// Raw mode doesn't accept start motion command
 	if(this.mode != 'normal') {
 		throw new Error('Cannot start movement in ' + this.mode + ' mode.');
@@ -182,9 +195,10 @@ ManualDriver.prototype.startMotion = function(axis,  speed, second_axis, second_
 
 		// Length of the moves we pump the queue with, based on speed vector
 		this.renewDistance = speed*(T_RENEW/60000)*SAFETY_FACTOR;                
-		
 		// Make sure we're in relative moves and the speed is set
-		this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
+////##		this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
+		log.debug("===> setting to exact path")
+		this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n' + 'G61' + '\n');
 
 		// Start pumping moves
 		this._renewMoves("start");
@@ -203,21 +217,20 @@ ManualDriver.prototype.maintainMotion = function() {
 // Stop all movement 
 ManualDriver.prototype.stopMotion = function() {
 	if(this._limit()) { return; }
+ 	this.stop_pending = true;       ////## queue not clearing right ... testing
 	this.keep_moving = false;
 	if(this.renew_timer) {
 		clearTimeout(this.renew_timer);
 	}
-	this.omg_stop = true
-	this.stop_pending = true;
-	//this.driver.feedHold();
-	//this.driver.queueFlush(function() {
-	//	this.driver.resume();		
-	//}.bind(this));
+	this.omg_stop = true;
+    this.driver.manualFeedHold();
+	this.driver.queueFlush(function() {
+		this.driver.resume();		
+	}.bind(this));
 }
 
 // Stop all movement (also? TODO: What's this all about?)
-ManualDriver.prototype.quitMove = function(){
-	
+ManualDriver.prototype.quitMove = function() {
 	if(this._limit()) { return; }
 	this.keep_moving = false;
 	if(this.moving) {
@@ -229,11 +242,11 @@ ManualDriver.prototype.quitMove = function(){
 	} else {
 		this.stop_pending = false;
 	}
-
 }
 
 ManualDriver.prototype.runGCode = function(code) {
 	if(this.mode == 'raw') {
+		this.driver.mode = 'raw';
 		if(this.moving) {
 			log.debug('writing gcode while moving')
 			this.stream.write(code.trim() + '\n');
@@ -265,7 +278,9 @@ ManualDriver.prototype.goto = function(pos) {
 	this.stream.write(move);
 }
 
-// Set the machine position to the specified vector
+// Set the machine position to the specified vector ////## meaning "location" here not move vector?
+// ////## Is it possible that timing could produce an inaccurate position update here???
+// ////##        ** pretty scary to reset location after zeroing and not do it by offset???
 //   pos - New position vector as an object,  eg: {"X":10, "Y":5}
 ManualDriver.prototype.set = function(pos) {
 	var toSet = {};
@@ -295,7 +310,7 @@ ManualDriver.prototype.set = function(pos) {
 						toSet.g55b = Number(((MPO.b* 1) - pos[key]).toFixed(5));
 						break;
 					default:
-						log.error("don't understand axi");
+						log.error("don't understand axis");
 				}
 			}.bind(this));
 			config.driver.setMany(toSet, function(err, value) {
@@ -306,10 +321,6 @@ ManualDriver.prototype.set = function(pos) {
 				config.driver.reverseUpdate(['g55x','g55y','g55z','g55a','g55b'], function(err, data) {});
 			}.bind(this));
 		}.bind(this));
-
-
-		
-
 
 	} else {
 		throw new Error("Can't set from " + this.mode + ' mode.');
@@ -335,7 +346,9 @@ ManualDriver.prototype._handleNudges = function() {
 			var axis = move.axis.toUpperCase();
 
 			if('XYZABCUVW'.indexOf(axis) >= 0) {
-				var moves = ['G91'];
+////##				var moves = ['G91'];
+				log.debug("===> setting to exact distance")
+				var moves = ['G91 G61.1'];  ////## setting exact distance for fixed-moves/nudges so g2 does not build longer vector
 				if(move.second_axis) {
 					var second_axis = move.second_axis.toUpperCase();
 					if(move.speed) {
@@ -463,14 +476,23 @@ ManualDriver.prototype._onG2Status = function(status) {
 			this.moving = true;
 			if(this.omg_stop) {
 				this.stop_pending = true;
-				this.driver.feedHold();
-				this.driver.queueFlush(function() {
-					this.driver.resume();		
+				log.debug("===> Redundant KILL (STAT_RUNNING) ?");
+				this.driver.manualFeedHold(function(){
 				}.bind(this));
 			}
 			break;
 		case this.driver.STAT_STOP:
-//		case this.driver.STAT_END:
+			this.stop_pending = false;
+			if(this.omg_stop) {
+				log.debug("===> Redundant KILL (STAT_STOP)?");
+				this.stop_pending = true;
+				this.driver.manualFeedHold(function(){
+					this.driver.queueFlush(function() {
+						this.driver.manual_hold = false;	
+					}.bind(this));
+				}.bind(this));
+			}
+		case this.driver.STAT_END:
 		case this.driver.STAT_HOLDING:
 			// Handle nudges once we've come to a stop
 			if(this._handleNudges()) {

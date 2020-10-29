@@ -12,14 +12,14 @@
 	"default_app" : "home",
 	"envelope" : {
 		"xmin" : 0.0,
-		"xmax" : 6.0,
+		"xmax" : 24.0,
 		"ymin" : 0.0,
-		"ymax" : 8.0
+		"ymax" : 18.0
 	},
 	"manual" : {
 		"xy_speed" : 3.0,
 		"xy_min" : 0.1,
-		"xy_max" : 6,
+		"xy_max" : 6.0,
 		"z_fast_speed" : 1.0,
 		"z_slow_speed": 0.1,
 		"xy_increment" : 0.1,
