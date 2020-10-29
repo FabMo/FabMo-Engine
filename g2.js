@@ -35,7 +35,7 @@ var STAT_SHUTDOWN = 12;
 var STAT_PANIC = 13;
 
 // Should take no longer than CMD_TIMEOUT to do a get or a set operation
-var CMD_TIMEOUT = 10000;
+var CMD_TIMEOUT = 100000;
 var EXPECT_TIMEOUT = 300000;
 
 var _promiseCounter = 1;
