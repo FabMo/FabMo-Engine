@@ -451,6 +451,8 @@ require("../css/toastr.min.css");
         }
     }
 
+
+
     function hideDaisy(callback) {
         var callback = callback || function() {};
         if (!daisyIsShown) {
@@ -464,7 +466,7 @@ require("../css/toastr.min.css");
     $(document).on('keydown', function(e) {
         if(e.keyCode === 27) {
             console.warn("ESC key pressed - quitting engine.");
-            dashboard.engine.manualStop();
+            dashboard.engine.manualExit();
             // keyboard.setEnabled(true);
         } else if (e.keyCode === 75 && e.ctrlKey ) {
 			dashboard.engine.manualEnter()
@@ -473,7 +475,7 @@ require("../css/toastr.min.css");
 
 
 
-    
+
 
     //goto this location
     var axisValues = [];
@@ -540,7 +542,9 @@ require("../css/toastr.min.css");
         dashboard.engine.setConfig({machine:{manual:{xy_increment:newDefault}}}, function(err, data){
             if(err){
                 console.log(err);
-            } 
+            } else  {
+                engine.config.machine.manual.xy_increment = newDefault;
+            }
         });
     });
 
@@ -550,6 +554,8 @@ require("../css/toastr.min.css");
         dashboard.engine.setConfig({machine:{manual:{z_increment:newDefault}}}, function(err, data){
             if(err){
                 console.log(err);
+            } else {
+                engine.config.machine.manual.z_increment = newDefault;
             }
         });   
     });   

@@ -596,12 +596,10 @@ FabMoDashboard.prototype.submitJob = function(jobs, options, callback) {
 FabMoDashboard.prototype.submitJobs = FabMoDashboard.prototype.submitJob;
 
 FabMoDashboard.prototype.submitFirmwareUpdate = function (file, options, callback, progress) {
-	console.log('in fabmo');
 	this._call("submitFirmwareUpdate", file, callback)
 }
 
 FabMoDashboard.prototype.submitUpdate = function (file, options, callback, progress) {
-	console.log('in fabmo');
 	this._call("submitUpdate", file, callback)
 }
 
@@ -985,13 +983,21 @@ FabMoDashboard.prototype.updateMacro = function(id, macro, callback) {
  * @param {Number} callback.status.posb The current b-axis position
  * @param {Number} callback.status.posc The current c-axis position
  * @param {Number} callback.status.in1 The current state of input 1 (`0` or `1`)
- * @param {Number} callback.status.in1 The current state of input 2 (`0` or `1`)
- * @param {Number} callback.status.in1 The current state of input 3 (`0` or `1`)
- * @param {Number} callback.status.in1 The current state of input 4 (`0` or `1`)
- * @param {Number} callback.status.in1 The current state of input 5 (`0` or `1`)
- * @param {Number} callback.status.in1 The current state of input 6 (`0` or `1`)
- * @param {Number} callback.status.in1 The current state of input 7 (`0` or `1`)
- * @param {Number} callback.status.in1 The current state of input 8 (`0` or `1`)
+ * @param {Number} callback.status.in2 The current state of input 2 (`0` or `1`)
+ * @param {Number} callback.status.in3 The current state of input 3 (`0` or `1`)
+ * @param {Number} callback.status.in4 The current state of input 4 (`0` or `1`)
+ * @param {Number} callback.status.in5 The current state of input 5 (`0` or `1`)
+ * @param {Number} callback.status.in6 The current state of input 6 (`0` or `1`)
+ * @param {Number} callback.status.in7 The current state of input 7 (`0` or `1`)
+ * @param {Number} callback.status.in8 The current state of input 8 (`0` or `1`)
+ * @param {Number} callback.status.out1 The current state of output 1 (`0` or `1`)
+ * @param {Number} callback.status.out2 The current state of output 2 (`0` or `1`)
+ * @param {Number} callback.status.out3 The current state of output 3 (`0` or `1`)
+ * @param {Number} callback.status.out4 The current state of output 4 (`0` or `1`)
+ * @param {Number} callback.status.out5 The current state of output 5 (`0` or `1`)
+ * @param {Number} callback.status.out6 The current state of output 6 (`0` or `1`)
+ * @param {Number} callback.status.out7 The current state of output 7 (`0` or `1`)
+ * @param {Number} callback.status.out8 The current state of output 8 (`0` or `1`)
  * @param {String} callback.status.unit The current tool units (either `in` or `mm`)
  * @param {Number} callback.status.line The line number in the currently running file (if a file is running)
  * @param {Number} callback.status.nb_lines The total number of lines in the currently running file (if a file is running)

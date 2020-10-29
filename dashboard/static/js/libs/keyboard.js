@@ -11,16 +11,15 @@
 }(this, function () {
   "use strict"
 
-  var NUDGE_TIMEOUT = 100;
-  var MOVE_THRESH = 10;
-  var Keyboard_enabled = false;
+  var NUDGE_TIMEOUT = 200;
+  var MOVE_THRESH = 10;           // for mouse to disrupt ?
+  ////## var Keyboard_enabled = false;   ////## not used ???
   var KEY_RIGHT = 39;
   var KEY_LEFT = 37;
   var KEY_UP = 38;
   var KEY_DOWN = 40;
   var KEY_PGUP = 33;
   var KEY_PGDOWN = 34;
-
 
 var Keyboard = function(id, options) {
 	this.id = id;
@@ -37,6 +36,11 @@ var Keyboard = function(id, options) {
 	this.setOptions(options);
 	this.nudgeTimer = null;
 }
+
+/* Keyboard keys and mouse-keypad keys work similarly, but not identically. Idea is that presses up to a threshold
+     length will trigger a "fixed move" (via nudge process) as will any presses with "fixed" button on. Presses longer
+     will trigger longer moves, with refresh pumping new moves to engine/g2. Stop now triggers stop via g2 "kill" from
+     engine. */
 
 Keyboard.prototype.init = function() {
 	if(this.elem) {
@@ -57,7 +61,9 @@ Keyboard.prototype.init = function() {
 
 Keyboard.prototype.setOptions = function(options) {
 	options = options || {}
-	this.refreshInterval = options.refreshInterval || this.refreshInterval || 100;
+	this.refreshInterval = options.refreshInterval || this.refreshInterval || 50; // from 100 to make more responsive like pad
+
+console.log("refreshInterval now=" + this.refreshInterval);
 }
 
 Keyboard.prototype.emit = function(evt, data) {
@@ -93,13 +99,19 @@ Keyboard.prototype.setEnabled = function(enabled) {
 		if(this.elem) {			
 			this.elem.removeClass('keyboard-button-active').addClass('keyboard-button-inactive');				
 		}
-
 	}
 }
 
-Keyboard.prototype.refresh = function() {
+Keyboard.prototype.refresh = function() {  // Keep pumping moves unless we should STOP
 	if(!this.enabled || !this.going) {
 		this.emit('stop', null);
+	} else if ($('.fixed-switch input').is(':checked')) { 
+	    console.log("fixed-DOWN");
+	    this.nudgeTimer = 1;
+	    this.going = true;
+		if(this.enabled) {
+			this.emit('nudge', this.move);
+		}
 	} else {
 		if(this.enabled) {
 			this.emit('go', this.move);
@@ -124,11 +136,9 @@ Keyboard.prototype.stop = function() {
 	this.emit('stop', null);
 }
 
-
 Keyboard.prototype.onClick = function(evt) {
 	this.setEnabled(!this.enabled);
 }
-
 
 Keyboard.prototype.onFocus = function(evt) {}
 Keyboard.prototype.onMouseEnter = function(evt) {}
@@ -144,10 +154,10 @@ Keyboard.prototype.onMouseMove = function(evt) {
 }
 
 Keyboard.prototype.onKeyDown = function(evt) {
-	if(this.going || !this.enabled) {return}
-	this.nudgeTimer = setTimeout(function() {
-		this.nudgeTimer = null;
+	if (this.going || !this.enabled) {return}
+		this.nudgeTimer = setTimeout(function() {
 		if(!this.going) {
+
 			switch(evt.keyCode) {
 				case KEY_UP:
 					this.start('y', 1);
@@ -186,45 +196,42 @@ Keyboard.prototype.onMouseLeave = function(evt) {
 }
 
 Keyboard.prototype.onKeyUp = function(evt) {
-	if(this.going ) {  this.stop(); }
 	if(this.nudgeTimer) {
-		
-		clearTimeout(this.nudgeTimer);
-		this.nudgeTimer = null;
-		if(!this.enabled) { return;}
+ 		clearTimeout(this.nudgeTimer);
+ 		this.nudgeTimer = null;
+ 		if(!this.enabled) { return;}
 
-		switch(evt.keyCode) {
-				case KEY_UP:
-					this.nudge('y', 1);
-					break;
+ 		switch(evt.keyCode) {
+ 				case KEY_UP:
+ 					this.nudge('y', 1);
+ 					break;
 
-				case KEY_DOWN:
-					this.nudge('y', -1);
-					break;
+ 				case KEY_DOWN:
+ 					this.nudge('y', -1);
+ 					break;
 
-				case KEY_LEFT:
-					this.nudge('x', -1);
-					break;
+ 				case KEY_LEFT:
+ 					this.nudge('x', -1);
+ 					break;
 
-				case KEY_RIGHT:
-					this.nudge('x', 1);
-					break;
+ 				case KEY_RIGHT:
+ 					this.nudge('x', 1);
+ 					break;
 
-				case KEY_PGUP:
-					this.nudge('z', 1);
-					break;
+ 				case KEY_PGUP:
+ 					this.nudge('z', 1);
+ 					break;
 
-				case KEY_PGDOWN:
-					this.nudge('z', -1);
-					break;
-				default:
-					return;
-			}	
+ 				case KEY_PGDOWN:
+ 					this.nudge('z', -1);
+ 					break;
+ 				default:
+ 					return;
+ 			}	
+
 	} else {
-		if(this.enabled) {
-			this.stop();
-		}
-	}
+		if(this.going || this.enabled ) { this.stop(); }
+	} 
 }
 
 Keyboard.prototype.nudge = function(axis, direction) {

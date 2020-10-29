@@ -234,7 +234,6 @@ $("#restore_conf_file").change(function() {
       });
 
 $(document).ready(function() {
-    console.log('test test test');
     $(document).foundation();
 
     // Setup Unit Labels
