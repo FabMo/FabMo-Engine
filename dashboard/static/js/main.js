@@ -196,7 +196,9 @@ require("../css/toastr.min.css");
                         case 'running':
                         case 'paused':
                         case 'stopped':
-                            dashboard.handlers.showFooter();
+                            if(modalIsShown === false) {
+                                dashboard.handlers.showFooter();
+                            }
                             break;
                         default:
                             dashboard.handlers.hideFooter();
