@@ -584,11 +584,17 @@ SBPRuntime.prototype._evaluateArguments = function(command, args) {
     if(command in sb3_commands) {
         params = sb3_commands[command].params || [];
 
+////## Improved spurious errors; decide if and further action should be taken on this?
         // This is a possibly helpful warning, but is spuriously issued in some cases where commands take no arguments (depending on whitespace, etc.)
         // TODO - fix that
         if(args.length > params.length) {
-            log.warn('More parameters passed into ' + command + ' (' + args.length + ') than are supported by the command. (' + params.length + ')');
+            if (params.length === 0 && args.length === 1 && args[0] === "") {
+                log.debug (' -- a no-parameter command');
+            } else {
+                log.warn('More parameters passed into ' + command + ' (' + args.length + ')' + '(' + params + ')' + ' than are supported by the command. (' + params.length + ')');
+            }
         }
+
         for(i=0; i<params.length; i++) {
             prm_param = params[i]; // prm_param is the parameter description object from the "prm" file (sb3_commands.json) (unused, currently)
             user_param = args[i];  // user_param is the actual parameter from args
