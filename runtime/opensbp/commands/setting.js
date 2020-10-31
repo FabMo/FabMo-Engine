@@ -6,11 +6,13 @@ var openSBP = require('../opensbp.js');
 
 /* SETTINGS */
 
+////## testing making SA and SR be stack-breaking as they should be
 // Set to Absolute coordinates
-exports.SA = function(args) {
+exports.SA = function(args, callback) {
 	this.absoluteMode = true;
 	this.emit_gcode("G90");
-	this.emit_gcode("M0");
+	////## this.emit_gcode("M0"); //not sure needed, has been removed from SR
+	callback();
 };
 
 exports.SC = function(args, callback) {
@@ -46,10 +48,11 @@ exports.SK = function(args, callback) {
 }
 
 //  Set to Relative coordinates
-exports.SR = function(args) {
+exports.SR = function(args, callback) {
 	this.absoluteMode = false;
 	this.emit_gcode("G91");
 	//this.emit_gcode("M0");
+	callback();
 };
 
 // Set to MOVE mode
