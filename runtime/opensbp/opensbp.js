@@ -1785,7 +1785,7 @@ SBPRuntime.prototype._popFileStack = function() {
 // Emit a g-code into the stream of running codes
 //   s - Can be any g-code but should not contain the N-word
 SBPRuntime.prototype.emit_gcode = function(s) {
-    log.debug("emit_gcode: " + s);
+    ////## redundant log.debug("emit_gcode: " + s);
 
     // An N-Word is added to this code to indicate the line number in the original OpenSBP file
     // that generated these codes.  We only track line numbers for the top level program.  
@@ -1794,10 +1794,11 @@ SBPRuntime.prototype.emit_gcode = function(s) {
     } else {
         var n = this.pc;
     }
-    var gcode = 'N' + n + ' ' + s + '\n'
-
+////## ... making display consistent   var gcode = 'N' + n + ' ' + s + '\n'
     this.gcodesPending = true;
+    var gcode = 'N' + n + ' ' + s; ////## no line feed to display
     log.debug('Writing to stream: ' + gcode)
+    gcode = gcode + '\n '; ////## add for stream
     this.stream.write(gcode);
 };
 
@@ -1866,7 +1867,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
                 gcode += (key + v.toFixed(5));
             }
         }.bind(this));
-        log.debug("emit_move: N" + n + JSON.stringify(gcode));
+        ////## redundant log.debug("emit_move: N" + n + JSON.stringify(gcode));
         this.emit_gcode(gcode);
     }.bind(this);
 
