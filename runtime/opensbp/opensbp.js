@@ -881,7 +881,7 @@ SBPRuntime.prototype._executeNext = function() {
         // has stopped executing stuff.  Of course we only do that if there's a driver (we're not simulating) 
         if(this.gcodesPending && this.driver) {
             log.debug("Deferring because g-codes pending.");
-            this.driver.requestStatusReport();
+////##            this.driver.requestStatusReport();         ////## creating start problem ???
             return; // We can return knowing that we'll be called again when the system enters STAT_STOP
         } else {
             // G2 is stopped, execute stack breaking command now

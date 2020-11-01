@@ -11,7 +11,7 @@ var openSBP = require('../opensbp.js');
 exports.SA = function(args, callback) {
 	this.absoluteMode = true;
 	this.emit_gcode("G90");
-	////## this.emit_gcode("M0"); //not sure needed, has been removed from SR
+//	this.emit_gcode("M0"); ////## not needed; maybe previously used to trick g2 
 	callback();
 };
 
@@ -47,11 +47,11 @@ exports.SK = function(args, callback) {
 	this.manualEnter(args[0], callback);
 }
 
-//  Set to Relative coordinates
+//  Set to Relative coordinates  ////## made stack-breaking, see SA above
 exports.SR = function(args, callback) {
 	this.absoluteMode = false;
 	this.emit_gcode("G91");
-	//this.emit_gcode("M0");
+//	this.emit_gcode("M0"); ////## not needed; maybe previously used to trick g2 
 	callback();
 };
 
