@@ -1232,9 +1232,18 @@ SBPRuntime.prototype._execute = function(command, callback) {
             var arg = this._eval(command.expr);
             if(util.isANumber(arg)) {
                 // If the argument to pause is a number, we issue a g-code telling the system to pause
-                this.emit_gcode('G4 P' + this._eval(command.expr));
-                setImmediate(callback);
-                return true; // TODO - this doesn't *need* to be a stack break
+                // this.emit_gcode('G4 P' + this._eval(command.expr));
+                // setImmediate(callback);
+                // return true; // TODO - this doesn't *need* to be a stack break
+                // If argument is a number set pause with timer.
+                // In simulation, just don't do anything
+                if(!this.machine) {
+                    setImmediate(callback);
+                    return true;
+                }
+                this.paused = true;
+                this.machine.setState(this, 'paused', {'message': "Pause " + arg + " Seconds.", 'timer': arg});
+                return true;
             } else {
                 // In simulation, just don't do anything
                 if(!this.machine) {

@@ -233,6 +233,13 @@ require("../css/toastr.min.css");
                                     }
                                 });
                                 modalIsShown = true;
+                                if (status.info['timer']) {
+                                    setTimeout(function() {
+                                        dashboard.hideModal();
+                                        modalIsShown = false;
+                                        dashboard.engine.resume();
+                                    }, status.info['timer'] * 1000);
+                                }
                             }
                         } else if (status.info['error']) {
                             if (dashboard.engine.status.job) {
