@@ -219,8 +219,6 @@ require("../css/toastr.min.css");
                                 $('.manual-drive-message').html(status.info.message);
 
                             } else {
-                                console.log('In info modal loop')
-                                console.log(status.info);
                                 keypad.setEnabled(false);
                                 keyboard.setEnabled(false);
                                 dashboard.showModal({
@@ -236,9 +234,7 @@ require("../css/toastr.min.css");
                                 });
                                 modalIsShown = true;
                                 if (status.info['timer']) {
-                                    console.log('in timer statment');
                                     setTimeout(function() {
-                                        console.log('timeout expired');
                                         dashboard.hideModal();
                                         modalIsShown = false;
                                         dashboard.engine.resume();
