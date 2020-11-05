@@ -428,6 +428,7 @@ function bindMenuEvents() {
     $('.dropDownWrapper').show();
     var dd = $(this).nextAll();
     dd.show();
+    hideDropDown();
   });
 }
 
