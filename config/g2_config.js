@@ -180,7 +180,11 @@ G2Config.prototype.configureStatusReports = function(callback) {
 						"in6":true,
 						"in7":true,
 						"in8":true,
-                        "spc":true,
+						"in9":true,
+						"in10":true,
+						"in11":true,
+						"in12":true,
+            "spc":true,
 						"out1":true,
 						"out2":true,
 						"out3":true,
@@ -188,7 +192,11 @@ G2Config.prototype.configureStatusReports = function(callback) {
 						"out5":true,
 						"out6":true,
 						"out7":true,
-						"out8":true
+						"out8":true,
+						"out9":true,
+						"out10":true,
+						"out11":true,
+						"out12":true
 					}});
 		this.driver.command({"qv":0});
 		this.driver.command({"jv":4});
