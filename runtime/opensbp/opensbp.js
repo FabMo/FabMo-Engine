@@ -1230,11 +1230,18 @@ SBPRuntime.prototype._execute = function(command, callback) {
             // PAUSE is kooky
             this.pc += 1;
             var arg = this._eval(command.expr);
+            console.log('in pause');
+            console.log(arg);
             if(util.isANumber(arg)) {
-                // If the argument to pause is a number, we issue a g-code telling the system to pause
-                this.emit_gcode('G4 P' + this._eval(command.expr));
-                setImmediate(callback);
-                return true; // TODO - this doesn't *need* to be a stack break
+                // If argument is a number set pause with timer and default message.
+                // In simulation, just don't do anything
+                if(!this.machine) {
+                    setImmediate(callback);
+                    return true;
+                }
+                this.paused = true;
+                this.machine.setState(this, 'paused', {'message': "Pause " + arg + " Seconds.", 'timer': arg});
+                return true;
             } else {
                 // In simulation, just don't do anything
                 if(!this.machine) {
@@ -1982,11 +1989,24 @@ SBPRuntime.prototype.quit = function() {
 
 // Resume a program from the paused state
 //   TODO - make some indication that this action was successfil (resume is not always allowed, and sometimes it fails)
-SBPRuntime.prototype.resume = function() {
+SBPRuntime.prototype.resume = function(input=false) {
         if(this.resumeAllowed) {
             if(this.paused) {
-                this.paused = false;
-                this._executeNext();
+                if (input) {
+                    console.log("input reached");
+                    console.log(input);
+                    this._assign(input.identifier, input.value, function(err, data) {
+                        if (err) {
+                            console.log(err)
+                        } else {
+                            this.paused = false;
+                            this._executeNext();
+                        }
+                    });
+                } else {
+                    this.paused = false;
+                    this._executeNext();
+                }
             } else {
                 this.driver.resume();
             }

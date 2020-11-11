@@ -564,7 +564,7 @@ Machine.prototype.fire = function(force) {
 			this._runFile(filename);
 			break;
 		case 'resume':
-			this._resume();
+			this._resume(action.input);
 			break;
 	}
 }
@@ -929,9 +929,10 @@ Machine.prototype.quit = function(callback) {
 };
 
 // Resume from the paused state.
-Machine.prototype.resume = function(callback) {
+Machine.prototype.resume = function(callback, input=false) {
 	this.arm({
-		type : 'resume'
+		'type' : 'resume',
+		'input' : input
 	}, config.machine.get('auth_timeout'));
 	callback(null, 'resumed');
 }
@@ -1035,7 +1036,7 @@ Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 }
 
 // e
-Machine.prototype._resume = function() {
+Machine.prototype._resume = function(input) {
 	switch(this.status.state) {
 		case 'interlock':
 			if(this.interlock_action) {
@@ -1046,7 +1047,7 @@ Machine.prototype._resume = function() {
 		break;
 	}
 	if(this.current_runtime) {
-		this.current_runtime.resume()
+		this.current_runtime.resume(input)
 	}
 };
 

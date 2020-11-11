@@ -272,8 +272,8 @@ FabMoAPI.prototype.pause = function(callback) {
 	this.command('pause', {}, callback);
 }
 
-FabMoAPI.prototype.resume = function(callback) {
-	this.command('resume', {}, callback);
+FabMoAPI.prototype.resume = function(input=false, callback) {
+	this.command('resume', {'input': input}, callback);
 }
 
 // Jobs
