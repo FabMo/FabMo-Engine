@@ -1230,8 +1230,10 @@ SBPRuntime.prototype._execute = function(command, callback) {
             // PAUSE is kooky
             this.pc += 1;
             var arg = this._eval(command.expr);
+            var variable = this._eval(command.var);
             console.log('in pause');
-            console.log(arg);
+            console.log('arg = ' + arg);
+            console.log('var = ' + variable);
             if(util.isANumber(arg)) {
                 // If argument is a number set pause with timer and default message.
                 // In simulation, just don't do anything
