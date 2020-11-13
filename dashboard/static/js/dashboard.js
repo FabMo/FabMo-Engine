@@ -978,8 +978,6 @@ define(function(require) {
   Dashboard.prototype.showModal = function(options) {
     // var modal = function (options) {
 
- 
-
     modalIsShown = true;
 
     $('.modalDim').show();
@@ -1057,6 +1055,13 @@ define(function(require) {
       $('.modalCancel').text(options.cancelText);
     } else {
       $('.modalCancel').hide();
+    }
+
+    if (options['input']) {
+        $('#inputVar').val(options['input']);
+        $('.modalInput').show();
+    } else {
+        $('.modalInput').hide();
     }
 
     if (!options['okText'] && !options['cancelText']) {

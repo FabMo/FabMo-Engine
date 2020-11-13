@@ -223,7 +223,7 @@ require("../css/toastr.min.css");
                             } else {
                                 keypad.setEnabled(false);
                                 keyboard.setEnabled(false);
-                                dashboard.showModal({
+                                modalOptions = {
                                     message: status.info.message,
                                     okText: 'Resume',
                                     cancelText: 'Quit',
@@ -233,7 +233,21 @@ require("../css/toastr.min.css");
                                     cancel: function() {
                                         dashboard.engine.quit();
                                     }
-                                });
+                                }
+                                if(status['info']['input']) {
+                                    modalOptions['input'] = status['info']['input'];
+                                    modalOptions['ok'] = function() {
+                                        var inputVar = $('#inputVar').val();
+                                        var inputVal = $('#inputVal').val();
+                                        if(inputVar && inputVal) {
+                                            $('.inputError').hide();
+                                            dashboard.engine.resume({'var': inputVar, 'val': inputVal});
+                                        } else {
+                                            $('.inputError').show();
+                                        }
+                                    }
+                                }
+                                dashboard.showModal(modalOptions);
                                 modalIsShown = true;
                                 dashboard.handlers.hideFooter();
                                 if (status.info['timer']) {

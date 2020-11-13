@@ -1230,10 +1230,7 @@ SBPRuntime.prototype._execute = function(command, callback) {
             // PAUSE is kooky
             this.pc += 1;
             var arg = this._eval(command.expr);
-            var variable = this._eval(command.var);
-            console.log('in pause');
-            console.log('arg = ' + arg);
-            console.log('var = ' + variable);
+            var var_name = command.var;
             if(util.isANumber(arg)) {
                 // If argument is a number set pause with timer and default message.
                 // In simulation, just don't do anything
@@ -1259,8 +1256,12 @@ SBPRuntime.prototype._execute = function(command, callback) {
                         message = last_command.comment.join('').trim();
                     }
                 }
+                var params = {'message' : message || "Paused." };
+                if(var_name) {
+                    params['input'] = var_name;
+                }
                 this.paused = true;
-                this.machine.setState(this, 'paused', {'message' : message || "Paused." });
+                this.machine.setState(this, 'paused', params);
                 return true;
             }
             break;
@@ -1995,16 +1996,15 @@ SBPRuntime.prototype.resume = function(input=false) {
         if(this.resumeAllowed) {
             if(this.paused) {
                 if (input) {
-                    console.log("input reached");
-                    console.log(input);
-                    this._assign(input.identifier, input.value, function(err, data) {
+                    var callback = (function(err, data) {
                         if (err) {
                             console.log(err)
                         } else {
                             this.paused = false;
                             this._executeNext();
                         }
-                    });
+                    }).bind(this);
+                    this._assign(input.var, input.val, callback);
                 } else {
                     this.paused = false;
                     this._executeNext();
