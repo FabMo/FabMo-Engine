@@ -238,13 +238,15 @@ require("../css/toastr.min.css");
                                     modalOptions['input'] = status['info']['input'];
                                     modalOptions['ok'] = function() {
                                         var inputVar = $('#inputVar').val();
-                                        var inputVal = $('#inputVal').val();
-                                        if(inputVar && inputVal) {
-                                            $('.inputError').hide();
-                                            dashboard.engine.resume({'var': inputVar, 'val': inputVal});
-                                        } else {
-                                            $('.inputError').show();
-                                        }
+                                        var inputVal = $.trim($('#inputVal').val());
+                                        dashboard.engine.resume({'var': inputVar, 'val': inputVal});
+                                        //  TODO: stop modal from closing on click so we can validate.
+                                        // if(inputVal != '') {
+                                        //     $('.inputError').hide();
+                                        //     dashboard.engine.resume({'var': inputVar, 'val': inputVal});
+                                        // } else {
+                                        //     $('.inputError').show();
+                                        // }
                                     }
                                 }
                                 dashboard.showModal(modalOptions);

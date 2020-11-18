@@ -2243,7 +2243,16 @@ input[type='range']:focus {
     bottom: 0;
 }
 
+.modalInput{
+	width: 50%;
+	padding-left: 25%;
+}
 
+.inputError {
+	display:none;
+	font-size: small;
+	color: #dc3545;
+}
 
 .modalDialogue{
     text-align: center;
