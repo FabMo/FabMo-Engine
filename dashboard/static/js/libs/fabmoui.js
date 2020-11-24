@@ -363,7 +363,17 @@ FabMoUI.prototype.updateStatusContent = function(status){
 			break;
 		}
 	}
-	
+	///update spc on output1
+	if ('spc' in status) {
+		var selector = that.status_div_selector + ' .out1';
+		if(status['spc'] == 1) {
+			$(selector).removeClass('off').addClass('on');
+		} else if(status['spc'] == 0) {
+			$(selector).removeClass('on').addClass('off');
+		} else {
+			$(selector).removeClass('on off').addClass('disabled');
+		}
+	}
 
 	$(that.status_div_selector).trigger('statechange',status.state);
 
