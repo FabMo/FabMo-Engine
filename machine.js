@@ -106,7 +106,7 @@ function Machine(control_path, callback) {
 		in10 : 1,
 		in11 : 1,
 		in12 : 1,
-		spc : 1,
+		spc : 0,
 		out1 :0,
 		out2 :0,
 		out3 :0,
