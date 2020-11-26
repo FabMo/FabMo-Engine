@@ -1230,11 +1230,17 @@ SBPRuntime.prototype._execute = function(command, callback) {
             // PAUSE is kooky
             this.pc += 1;
             var arg = this._eval(command.expr);
+            var var_name = command.var;
             if(util.isANumber(arg)) {
-                // If the argument to pause is a number, we issue a g-code telling the system to pause
-                this.emit_gcode('G4 P' + this._eval(command.expr));
-                setImmediate(callback);
-                return true; // TODO - this doesn't *need* to be a stack break
+                // If argument is a number set pause with timer and default message.
+                // In simulation, just don't do anything
+                if(!this.machine) {
+                    setImmediate(callback);
+                    return true;
+                }
+                this.paused = true;
+                this.machine.setState(this, 'paused', {'message': "Pause " + arg + " Seconds.", 'timer': arg});
+                return true;
             } else {
                 // In simulation, just don't do anything
                 if(!this.machine) {
@@ -1250,8 +1256,12 @@ SBPRuntime.prototype._execute = function(command, callback) {
                         message = last_command.comment.join('').trim();
                     }
                 }
+                var params = {'message' : message || "Paused." };
+                if(var_name) {
+                    params['input'] = var_name;
+                }
                 this.paused = true;
-                this.machine.setState(this, 'paused', {'message' : message || "Paused." });
+                this.machine.setState(this, 'paused', params);
                 return true;
             }
             break;
@@ -1982,11 +1992,23 @@ SBPRuntime.prototype.quit = function() {
 
 // Resume a program from the paused state
 //   TODO - make some indication that this action was successfil (resume is not always allowed, and sometimes it fails)
-SBPRuntime.prototype.resume = function() {
+SBPRuntime.prototype.resume = function(input=false) {
         if(this.resumeAllowed) {
             if(this.paused) {
-                this.paused = false;
-                this._executeNext();
+                if (input) {
+                    var callback = (function(err, data) {
+                        if (err) {
+                            console.log(err)
+                        } else {
+                            this.paused = false;
+                            this._executeNext();
+                        }
+                    }).bind(this);
+                    this._assign(input.var, input.val, callback);
+                } else {
+                    this.paused = false;
+                    this._executeNext();
+                }
             } else {
                 this.driver.resume();
             }
