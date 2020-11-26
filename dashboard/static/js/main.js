@@ -143,6 +143,8 @@ require("../css/toastr.min.css");
                 });
 
                 dashboard.engine.on('status', function(status) {
+                    // console.log('Status Object');
+                    // console.log(status);
                     if(status.state == 'dead') {
                         dashboard.showModal({
                             title: 'An Error Occurred!',
@@ -223,7 +225,7 @@ require("../css/toastr.min.css");
                             } else {
                                 keypad.setEnabled(false);
                                 keyboard.setEnabled(false);
-                                dashboard.showModal({
+                                modalOptions = {
                                     message: status.info.message,
                                     okText: 'Resume',
                                     cancelText: 'Quit',
@@ -233,9 +235,32 @@ require("../css/toastr.min.css");
                                     cancel: function() {
                                         dashboard.engine.quit();
                                     }
-                                });
+                                }
+                                if(status['info']['input']) {
+                                    modalOptions['input'] = status['info']['input'];
+                                    modalOptions['ok'] = function() {
+                                        var inputVar = $('#inputVar').val();
+                                        var inputVal = $.trim($('#inputVal').val());
+                                        dashboard.engine.resume({'var': inputVar, 'val': inputVal});
+                                        //  TODO: stop modal from closing on click so we can validate.
+                                        // if(inputVal != '') {
+                                        //     $('.inputError').hide();
+                                        //     dashboard.engine.resume({'var': inputVar, 'val': inputVal});
+                                        // } else {
+                                        //     $('.inputError').show();
+                                        // }
+                                    }
+                                }
+                                dashboard.showModal(modalOptions);
                                 modalIsShown = true;
                                 dashboard.handlers.hideFooter();
+                                if (status.info['timer']) {
+                                    setTimeout(function() {
+                                        dashboard.hideModal();
+                                        modalIsShown = false;
+                                        dashboard.engine.resume();
+                                    }, status.info['timer'] * 1000);
+                                }
                             }
                         } else if (status.info['error']) {
                             if (dashboard.engine.status.job) {

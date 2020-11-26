@@ -272,8 +272,12 @@ FabMoAPI.prototype.pause = function(callback) {
 	this.command('pause', {}, callback);
 }
 
-FabMoAPI.prototype.resume = function(callback) {
-	this.command('resume', {}, callback);
+FabMoAPI.prototype.resume = function(input=false, callback) {
+	var args = {};
+	if (input){
+		args = input;
+	}
+	this.command('resume', args, callback);
 }
 
 // Jobs
@@ -493,7 +497,6 @@ FabMoAPI.prototype.submitFirmwareUpdate = function(file, options, callback, prog
 }
 
 FabMoAPI.prototype.submitUpdate = function(file, options, callback, progress) {
-	console.log('in api')
 	this._postUpload('/update/fabmo', file, {}, callback, callback, null, progress);
 }
 

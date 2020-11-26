@@ -59,6 +59,8 @@ function setupAuthentication(svr) {
 function setupStatusBroadcasts(server){
 	var previous_status = {'state':null}
 	machine.on('status',function(status){
+		console.log('Status broadcast');
+		console.log(JSON.stringify(status));
 		server.io.of('/private').sockets.forEach(function (socket) {
 			if(status.state === 'idle' || status.state != previous_status.state) {
 				socket.emit('status',status);
@@ -162,8 +164,8 @@ var onPrivateConnect = function(socket) {
 			socket.emit('authentication_failed','not authenticated');
 			return socket.disconnect();
 		} // make sure that if the user logout, he can't talk through the socket anymore.
-		console.log('the command');
-		console.log(data.name);
+		log.debug('the command');
+		log.debug(data.name);
 		try {
 			switch(data.name) {
 				case 'pause':
@@ -175,6 +177,9 @@ var onPrivateConnect = function(socket) {
 					break;
 
 				case 'resume':
+					if (data.args.var && data.args.val) {
+						machine.resume(callback, {'var':data.args.var, 'val':data.args.val});
+					}
 					machine.resume(callback);
 					break;
 

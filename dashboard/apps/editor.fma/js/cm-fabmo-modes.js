@@ -142,8 +142,8 @@ CodeMirror.defineMode("opensbp", function() {
           } 
 
           // Pause command
-          if(stream.match(/^PAUSE\s*,?\s*/i)) {
-            state.name = "pause";
+          if(stream.match(/^PAUSE\s*/i)) {
+            state.name = "args";
             return "keyword"
           }
 
