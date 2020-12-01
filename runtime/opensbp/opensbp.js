@@ -584,11 +584,17 @@ SBPRuntime.prototype._evaluateArguments = function(command, args) {
     if(command in sb3_commands) {
         params = sb3_commands[command].params || [];
 
+////## Improved spurious errors; decide if and further action should be taken on this?
         // This is a possibly helpful warning, but is spuriously issued in some cases where commands take no arguments (depending on whitespace, etc.)
         // TODO - fix that
         if(args.length > params.length) {
-            log.warn('More parameters passed into ' + command + ' (' + args.length + ') than are supported by the command. (' + params.length + ')');
+            if (params.length === 0 && args.length === 1 && args[0] === "") {
+                log.debug (' -- a no-parameter command');
+            } else {
+                log.warn('More parameters passed into ' + command + ' (' + args.length + ')' + '(' + params + ')' + ' than are supported by the command. (' + params.length + ')');
+            }
         }
+
         for(i=0; i<params.length; i++) {
             prm_param = params[i]; // prm_param is the parameter description object from the "prm" file (sb3_commands.json) (unused, currently)
             user_param = args[i];  // user_param is the actual parameter from args
@@ -875,7 +881,7 @@ SBPRuntime.prototype._executeNext = function() {
         // has stopped executing stuff.  Of course we only do that if there's a driver (we're not simulating) 
         if(this.gcodesPending && this.driver) {
             log.debug("Deferring because g-codes pending.");
-            this.driver.requestStatusReport();
+////##            this.driver.requestStatusReport();         ////## creating start problem ???
             return; // We can return knowing that we'll be called again when the system enters STAT_STOP
         } else {
             // G2 is stopped, execute stack breaking command now
@@ -1789,7 +1795,7 @@ SBPRuntime.prototype._popFileStack = function() {
 // Emit a g-code into the stream of running codes
 //   s - Can be any g-code but should not contain the N-word
 SBPRuntime.prototype.emit_gcode = function(s) {
-    log.debug("emit_gcode: " + s);
+    ////## redundant log.debug("emit_gcode: " + s);
 
     // An N-Word is added to this code to indicate the line number in the original OpenSBP file
     // that generated these codes.  We only track line numbers for the top level program.  
@@ -1798,10 +1804,11 @@ SBPRuntime.prototype.emit_gcode = function(s) {
     } else {
         var n = this.pc;
     }
-    var gcode = 'N' + n + ' ' + s + '\n'
-
+////## ... making display consistent   var gcode = 'N' + n + ' ' + s + '\n'
     this.gcodesPending = true;
+    var gcode = 'N' + n + ' ' + s; ////## no line feed to display
     log.debug('Writing to stream: ' + gcode)
+    gcode = gcode + '\n '; ////## add for stream
     this.stream.write(gcode);
 };
 
@@ -1870,7 +1877,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
                 gcode += (key + v.toFixed(5));
             }
         }.bind(this));
-        log.debug("emit_move: N" + n + JSON.stringify(gcode));
+        ////## redundant log.debug("emit_move: N" + n + JSON.stringify(gcode));
         this.emit_gcode(gcode);
     }.bind(this);
 

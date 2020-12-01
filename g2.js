@@ -194,11 +194,12 @@ G2.prototype._createCycleContext = function() {
 	this._streamDone = false;
 	this.lineBuffer = []
 
+	////## added spaces after '\n's to make debug display easier to read
 	// TODO factor this out; ////## really???
 	// Inject a couple of G-Codes which are needed to start the machining cycle
-	st.write('G90\n' + 'G61\n')  ////## to make sure we are not in exact stop mode left from fixed moves
+	st.write('G90\n ' + 'G61\n ')  ////## to make sure we are not in exact stop mode left from fixed moves
 //	st.write('G90\n')
-	st.write('M100 ({out4:1})\n') // hack to get the "permissive relay" behavior while in-cycle
+	st.write('M100 ({out4:1})\n ') // hack to get the "permissive relay" behavior while in-cycle
 	
 	// Handle data coming in on the stream
 	st.on('data', function(chunk) {
@@ -942,7 +943,7 @@ G2.prototype.command = function(obj) {
 //        Either implement it or drop it from the arguments list
 G2.prototype.runString = function(data, callback) {
 	var stringStream = new stream.Readable();
-	stringStream.push(data + "\n");
+	stringStream.push(data + "\n ");    ////## added space for reading
 	stringStream.push(null);
 	return this.runStream(stringStream);
 };
@@ -1057,7 +1058,7 @@ G2.prototype.sendMore = function() {
 		var codes = this.command_queue.multiDequeue(count)
 		codes.push("");
 		this._ignored_responses+=to_send;
-		this._write(codes.join('\n'), function() {});
+		this._write(codes.join('\n '), function() {});   ////## added space for reading
 	}
 
 	// If we're primed, go ahead and send more g-codes
@@ -1072,7 +1073,7 @@ G2.prototype.sendMore = function() {
 				codes.push(""); 
 				if(codes.length > 1) {
 					this.lines_to_send -= to_send/*-offset*/;
-					this._write(codes.join('\n'), function() { });
+					this._write(codes.join('\n '), function() { });  ////## added space for reading
 				}
 			}
 		}
