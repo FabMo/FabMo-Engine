@@ -160,6 +160,7 @@ G2Config.prototype.configureStatusReports = function(callback) {
 	////## see g2 spindle.h (no other documentation)
 	////## RE: g2 101.03 may change later with DIO
 	////## also see DIO defs in g2core >gpio.h (for setting number and analog, PWM?)
+	////## testing w/o out1 in case the null return may be causing read problem
 	if(this.driver) {
 	this.driver.command({"sr":{
 						"posx":true,
@@ -173,7 +174,7 @@ G2Config.prototype.configureStatusReports = function(callback) {
 						"line":true,
 						"coor":true,
 						"unit":true,
-            			"spc":true,
+						"spc":true,
 						"in1":true,
 						"in2":true,
 						"in3":true,
@@ -186,7 +187,6 @@ G2Config.prototype.configureStatusReports = function(callback) {
 						"in10":true,
 						"in11":true,
 						"in12":true,
-						"out1":true,
 						"out2":true,
 						"out3":true,
 						"out4":true,
