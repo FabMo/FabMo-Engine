@@ -314,11 +314,12 @@ ManualDriver.prototype.set = function(pos) {
 				}
 			}.bind(this));
 			config.driver.setMany(toSet, function(err, value) {
-				
 				//total hack to update the positions
-				this.stream.write("G91\nG0\nX0\nG91");
+				////## this.stream.write("G91\nG0\nX0\nG91");
+				////## removed because using feedhold hack below to update more systematically
 				this.driver.prime();
 				config.driver.reverseUpdate(['g55x','g55y','g55z','g55a','g55b'], function(err, data) {});
+                this.driver.manualFeedHold(); ////## added to handle update after zeroing
 			}.bind(this));
 		}.bind(this));
 
