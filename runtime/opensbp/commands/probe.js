@@ -9,18 +9,26 @@ var config = require('../../../config');
 //  dist : map of axis word (X,Y,Z,A,B,C) to search distance
 //  feed : feedrate in units/sec
 //
+////## modifying to work with v3-G2
+////##  - input for probe now defined with {prbin:#}; so probing with input2 would be {prbin:2}
+//          and {prbin:0} would turn it off
+
 function probe(runtime, opts) {
 
-	var name = 'di' + opts.inp + 'fn';
+	var name = 'prbin';
+////##	var name = 'di' + opts.inp + 'fn';
 
 	var cmd1 = {};
-	cmd1[name] = 4
+	cmd1[name] = opts.inp
+////##	cmd1[name] = 4
 
-	var cmd2 = ['G38.2']
+	var cmd2 = ['G38.3']   // no fault on miss for testing
+////##	var cmd2 = ['G38.2']
 	for(word in opts.dist) {
 		cmd2.push(word + opts.dist[word].toFixed(5))
 	}
 
+////## restore back to no input number
     var cmd3 = {}
     cmd3[name] = 0
 
@@ -28,7 +36,7 @@ function probe(runtime, opts) {
 	runtime.emit_gcode('M100.1(' + JSON.stringify(cmd1) + ')');
 	runtime.emit_gcode(cmd2.join(' '));
 	runtime.emit_gcode('M100.1(' + JSON.stringify(cmd3) + ')');
-    runtime.emit_gcode('G4 P0');
+    ////## runtime.emit_gcode('G4 P0');
     }
 
 exports.PX = function(args) {
