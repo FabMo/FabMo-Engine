@@ -353,7 +353,7 @@ Engine.prototype.start = function(callback) {
         }.bind(this),
 
         function create_data_directories(callback) {
-log.debug('... second create_data_directories call')
+log.debug('Create_data_directories ...')
             config.createDataDirectories(callback);
         }.bind(this),
 
@@ -391,11 +391,12 @@ log.debug('... second create_data_directories call')
             });
         }.bind(this),
 
-        function launch_detection_daemon(callback){
-            log.info("Launching detection daemon...");
-            detection_daemon();
-            callback(null);
-        }.bind(this),
+        ////## obsolete
+        // function launch_detection_daemon(callback){
+        //     log.info("Launching detection daemon...");
+        //     detection_daemon();
+        //     callback(null);
+        // }.bind(this),
 
         // Apply the "machine" configuration - see config/machine_config.js for details
         function load_machine_config(callback) {
