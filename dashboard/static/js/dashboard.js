@@ -840,6 +840,11 @@ define(function(require) {
       this.engine.getVersion(callback);
     }.bind(this));
 
+////## added to support retrieval of firmware ver for config manager page 1/2/21
+    this._registerHandler('getInfo', function(data, callback) {
+      this.engine.getInfo(callback);
+    }.bind(this));
+
     this._registerHandler('requestStatus', function(data, callback) {
       this.engine.getStatus(function(err, status) {
         if (err) {
