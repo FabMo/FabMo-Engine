@@ -69,7 +69,6 @@ var Engine = function() {
 Util.inherits(Engine, events.EventEmitter);
 
 
-
 /*
  * Configure the engine for the first time.
  * This function is typically called when an engine configuration does not exist.
@@ -120,7 +119,6 @@ function EngineConfigFirstTime(callback) {
  * Set the current system time to the provided value.
  * obj - an object with a 'utc' property that coresponds to the current UTC time
  */
-
 Engine.prototype.setTime = function(time) {
     if(this.time_synced) {
         log.warn('Not accepting an externally provided time.  Local time is trusted.');
@@ -134,9 +132,7 @@ Engine.prototype.setTime = function(time) {
             log.debug(stdout);
             this.time_synced = true;
         });
-
     }
-
 }
 
 /*
@@ -151,40 +147,58 @@ Engine.prototype.stop = function(reason, callback) {
 
 /*
  * Get the version of this engine.
- * 
- * For production builds, the version is provided by a version.json that defines a version object that includes:
- * hash - A hash for the build, typically a commit SHA (may not exist in a release type build)
- * number - The semver version number
- * type - The type of release, either 'dev', 'rc', or 'release'
+ * Honor semver numbering:
+ * For working dev version tag in branch from most recent; use ODD numbers just for redundancy
+ * For production builds, tag with the next EVEN number in MASTER. 
+ * The Release Version is codified by a version.json that defines a version object that includes:
+ *     hash - A hash for the build, typically a commit SHA (may not exist in a release type build)
+ *     number - The semver version number
+ *     type - The type of release, either 'dev', 'rc', or 'release'
  * 
  * If that file exists and can be parsed, return a version object that reflects its contents.
- * If it does not exist, use git (if available on the system) to read out some version information instead
+ * If it does not exist, use git (if available on the system) to read out working version information instead
+ * (See: example-version.json)
  */
 Engine.prototype.getVersion = function(callback) {
-    util.doshell('git rev-parse --verify HEAD', function(data) {
+    ////## grab the version and abbreviated SHA (if one)
+    util.doshell('git describe', function(data) {
+        // util.doshell('git rev-parse --verify HEAD', function(data) {
         this.version = {};
-        this.version.hash = (data || "").trim();
-        this.version.number = "";
+        this.version.number = (data || "").trim();
+        // this.version.hash = (data || "").trim();
         this.version.debug = ('debug' in argv);
+    ////## then see if we have an official release version# in json file
+    // see: version-example.json
     fs.readFile('version.json', 'utf8', function(err, data) {
             if(err) {
+                log.debug(" ... no version file ... using git and dev info")
                 this.version.type = 'dev';
-                this.version.number = '2.0-dev';
+                this.version.number = this.version.number + "-dev";
                 return callback(null, this.version);
             }
             try {
+                log.debug(" ... found json version file ... this is a RELEASE VERSION")
                 data = JSON.parse(data);
                 if(data.number) {
                     this.version.number = data.number;
                     this.version.type = 'release';
                 }
             } catch(e) {
-                this.version.number = '2.0-dev';
+                log.debug(" ... can't parse version file!")
+                this.version.number = this.version.number +"-dev-fault";
                 this.version.type = 'dev';
             } finally {
                 callback(null, this.version);
             }
         }.bind(this))
+        ////## after we've got this all figured out ...
+        // If in debug mode, we also prefix our version with a random number
+        // to provide cache-busting on the client side when debugging.
+        if('debug' in argv) {
+           var random = Math.floor(Math.random() * (99999 - 10000)) + 10000;
+           log.info("Setting engine version to random");
+           this.version.number = random.toString() + "-" + this.version.number
+        }
     }.bind(this));
 }
 
@@ -198,7 +212,6 @@ Engine.prototype.getInfo = function(callback) {
     });
 }
 
-
 // Set the online flag (indicates whether the engine is online) to the provided value
 //   online - true to indicate that the engine can see the network.  False otherwise.
 Engine.prototype.setOnline = function(online) {
@@ -206,6 +219,8 @@ Engine.prototype.setOnline = function(online) {
     this.emit('status', this.status);
 }
 
+
+// ##############################################################################
 /*
  * This function is the primary content of the Engine object.  It is called on application launch, and is
  * sort of the "main thread" of execution.  It executes a bunch of startup/configuration functions, and 
@@ -216,13 +231,18 @@ Engine.prototype.start = function(callback) {
 
     async.series([
 
-        // Configure the engine data directories
-        // Create the folder structure (typically) in /opt/fabmo
-        // eg: /opt/fabmo/config, /opt/fabmo/macros, etc...
-       function setup_application(callback) {
-            log.info('Checking engine data directory tree...');
-            config.createDataDirectories(callback);
-        },
+        // AFTER LOADING SOME Config data and info
+        // We will:
+        //    Configure the engine data directories
+        //    Create the folder structure (typically) in /opt/fabmo
+        //    ... eg: /opt/fabmo/config, /opt/fabmo/macros, etc...
+
+// TODO - this seems like a duplication of the same step below
+////## Testing shows it seems necessary later, but not here 1/2/21
+//        function setup_application(callback) {
+//             log.info('Checking engine data directory tree...');
+//             config.createDataDirectories(callback);
+//         },
 
         // Load the engine configuration from disk.
         function load_engine_config(callback) {
@@ -300,58 +320,40 @@ Engine.prototype.start = function(callback) {
         //   - We're running in 'debug' mode (and might be making changes to system apps)
         //   - The version of the engine has changed since the last time we run it.
         // So, we check those things, and clear the approot accordingly.
-        //
         // See dashboard/app_manager.js for more about the approot.
         function clear_approot(callback) {
+            var flg_clr_approot = false;
+            var last_time_version = (config.engine.get('version') || '').trim();
+            var this_time_version = (this.version.hash || this.version.number || "").trim();
+            log.debug("Previous engine version: " + last_time_version);
+            log.debug(" Current engine version: " + this_time_version);
+            if(last_time_version != this_time_version) {
+                log.info("Engine version has changed - flag to clear the approot.");
+                flg_clr_approot = true;
+            } else {
+                log.info("Engine version is unchanged since last run.");
+                //callback();
+            }
             if('debug' in argv) {
-                log.info("Running in debug mode - clearing the approot.");
-                
-                // If in debug mode, we also set our version to a random number, which provides effective
-                // cache-busting on the client side when debugging.
-                // TODO: This probably isn't the place for this, it should go up where the other version stuff is.
-                var random = Math.floor(Math.random() * (99999 - 10000)) + 10000;
-                log.info("Setting engine version to random");
-                config.engine.set('version', random.toString());
-                
-                // Clear the actual approot
+                log.info("Running in debug mode - flag to clear the approot.");
+                flg_clr_approot = true;
+            }
+            if(flg_clr_approot) {           
                 config.clearAppRoot(function(err, stdout) {
+                    log.info("Clearing the approot ...");
+                    config.engine.set('version', this_time_version);
                     if(err) { log.error(err); }
                     else {
-                        log.debug(stdout);
+                        //log.debug(stdout);  ////## don't understand stdout here; does not get a value
                     }
-                    // TODO - seems like we don't need to do this twice
-                    config.engine.set('version', random.toString());
                     callback();
                 });
-                
-            } else {
-                var last_time_version = (config.engine.get('version') || '').trim();
-                var this_time_version = (this.version.hash || this.version.number || "").trim();
-                log.debug("Previous engine version: " + last_time_version);
-                log.debug(" Current engine version: " + this_time_version);
-
-                if(last_time_version != this_time_version) {
-                    log.info("Engine version has changed - clearing the approot.");
-                    // TODO - reduce code by moving this clearAppRoot out of the if else in its own test (Just set a shouldClearApproot flag or something in the if-else)
-                    config.clearAppRoot(function(err, stdout) {
-                        config.engine.set('version', this_time_version);
-                        if(err) { log.error(err); }
-                        else {
-                            log.debug(stdout);
-                        }
-                        callback();
-                    });
-                } else {
-                    log.info("Engine version is unchanged since last run.");
-                    callback();
-                }
-                
             }
             
         }.bind(this),
 
-        // TODO - this seems like a duplication of the same step above (see the beginning of this startup sequence)
         function create_data_directories(callback) {
+log.debug('... second create_data_directories call')
             config.createDataDirectories(callback);
         }.bind(this),
 
