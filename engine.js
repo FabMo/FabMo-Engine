@@ -237,12 +237,13 @@ Engine.prototype.start = function(callback) {
         //    Create the folder structure (typically) in /opt/fabmo
         //    ... eg: /opt/fabmo/config, /opt/fabmo/macros, etc...
 
-// TODO - this seems like a duplication of the same step below
-////## Testing shows it seems necessary later, but not here 1/2/21
-//        function setup_application(callback) {
-//             log.info('Checking engine data directory tree...');
-//             config.createDataDirectories(callback);
-//         },
+// TODO - This seems like a duplication of the same step below
+////## BUT testing shows that for some start scenarios,
+//     ... both versions seem necessary 1/2/21
+       function setup_application(callback) {
+            log.info('Checking engine data directory tree...');
+            config.createDataDirectories(callback);
+        },
 
         // Load the engine configuration from disk.
         function load_engine_config(callback) {
