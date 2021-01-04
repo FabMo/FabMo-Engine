@@ -47,7 +47,7 @@ body {
 
 .tab-bar {
 	background: #313366;
-	/* background: red; */
+	/* background: red*/
 	z-index: 1005;
 	position: fixed;
 	width: 100%;
@@ -217,20 +217,21 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	transition: all 0.2s;
 }
 
-
 #right-position-container {
 	cursor: pointer;
 	background-color: #931B14;
 	height: 100%;
     position: absolute;
-    color: #eee;
+    /* color: #eee; */
+    color: #ccc;
     right: 0;
     top: 0;
     text-align: right;
 	font-family: 'source_sans_proextralight';
 	font-size: 14px;
 	line-height: 15px;
-	padding-left: 0.5rem;
+	/* padding-left: 0.5rem; */
+	padding-left: 5.0rem;
 
 }
 
@@ -241,6 +242,12 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 #right-position-container span, #right-position-container label {
 	color: #fff;
 	cursor: text;
+}
+
+.sm-axes label {
+    font-weight: bold;
+	font-size: 17px;
+	line-height: 20px;
 }
 
 .machine-pos {
@@ -304,18 +311,30 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 } */
 
 .input, .output, .inoutLabel, .inOutSwitch {
-	width: 1rem;
+	/* width: 1rem; */
 	display: inline-block;
-	margin-right: 10px;
+	margin-right: 2px;
+	/* margin-right: 10px;  */
 	text-align: center;
 	/* border: 0.5px solid transparent; */
 }
 
-.input.on, .output.on {
-	
+
+.input.off, .output.off {
+	color: #999;
+}
+
+.input.on {
 	/* border: 0.5px solid #32B433; */
-	background-color: #eee;
-	color: #313366;
+	/* background-color: #eee; */
+	color: #ffe217;
+	font-weight: bold;
+}
+
+.output.on {
+	/* border: 0.5px solid #32B433; */
+	/* background-color: #eee; */
+	color: #affb1b;
 	font-weight: bold;
 }
 

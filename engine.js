@@ -464,6 +464,21 @@ Engine.prototype.start = function(callback) {
         //        installation process.  It is typical for such processes to "migrate" config files to latest version.
         function g2_shim(callback) {
           log.debug("Running G2 Shim...");
+////##
+          // var entries = [
+          //   '1sa','1tr','1mi',
+          //   '2sa','2tr','2mi',
+          //   '3sa','3tr','3mi',
+          //   '4sa','4tr','4mi',
+          //   '5sa','5tr','5mi',
+          //   '6sa','6tr','6mi',
+          //   'ja',
+          //   '6ma',
+          //   '6po',
+          //   '6su',
+          //   '6pm',
+          //   '6pl'
+          // ]
           var entries = [
             '1sa','1tr','1mi',
             '2sa','2tr','2mi',
@@ -471,12 +486,7 @@ Engine.prototype.start = function(callback) {
             '4sa','4tr','4mi',
             '5sa','5tr','5mi',
             '6sa','6tr','6mi',
-            'ja',
-            '6ma',
-            '6po',
-            '6su',
-            '6pm',
-            '6pl'
+            'ja'
           ]
           var do_shim = false;
           for(var i=0; i<entries.length; i++) {

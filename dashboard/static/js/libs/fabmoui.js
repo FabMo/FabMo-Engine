@@ -94,6 +94,7 @@ function FabMoUI(tool, options){
 	this.posZ_selector = this.status_div_selector + ' .posz';
 	this.posA_selector = this.status_div_selector + ' .posa';
 	this.posB_selector = this.status_div_selector + ' .posb';
+	this.posC_selector = this.status_div_selector + ' .posc';
 
 	this.state_selector = this.status_div_selector + ' .state';
 	this.file_info_div_selector = this.status_div_selector + ' .file-info';
