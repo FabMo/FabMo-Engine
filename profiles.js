@@ -59,7 +59,7 @@ var load = function(callback) {
 							try {
 								fs.copySync('./profiles/'+localfiles[i] , profileDir+'/'+localfiles[i]);
 								files.push(localfiles[i]);
-								log.info('Copied ' + localfiles[i]+ 'into opt');
+								log.info('Copied ' + localfiles[i]+ ' into opt');
 							} catch(err){
 								log.error(err);
 							} 

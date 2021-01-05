@@ -196,7 +196,7 @@ Engine.prototype.getVersion = function(callback) {
         // to provide cache-busting on the client side when debugging.
         if('debug' in argv) {
            var random = Math.floor(Math.random() * (99999 - 10000)) + 10000;
-           log.info("Setting engine version to random");
+           log.info("Adding random prefix to engine version");
            this.version.number = random.toString() + "-" + this.version.number
         }
     }.bind(this));
