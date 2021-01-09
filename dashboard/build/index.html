@@ -97,13 +97,14 @@
           <section class="right DRO-button show-for-small-up fabmo-status" id="right-position-container">
             <div id="dro-tab" title="Click to toggle large Location Display"></div>
             <div  class="sm-axes"><strong>
-              <div class="xaxis machine-pos" ><label>X : <span class="posx">X.XXX</span></label></div>
-              <div class="yaxis machine-pos" ><label>Y : <span class="posy">Y.YYY</span></label></div>
-              <div class="zaxis machine-pos" ><label>Z : <span class="posz">Z.ZZZ</span></label></div>
+              <div class="xaxis machine-pos" ><label>X : &nbsp;<span class="posx">X.XXX</span></label></div>
+              <div class="yaxis machine-pos" ><label>Y : &nbsp;<span class="posy">Y.YYY</span></label></div>
+              <div class="zaxis machine-pos" ><label>Z : &nbsp;<span class="posz">Z.ZZZ</span></label></div>
               <div class="aaxis machine-pos" ><label>A : <span class="posa">A.AAA</span></label></div>
               <div class="baxis machine-pos" ><label>B : <span class="posb">B.BBB</span></label></div>
-              <div class="caxis machine-pos" style="display:none" ><label>C : <span class="posc">C.CCC</span></label></div>
+              <!--<div class="caxis machine-pos" style="display:none" ><label>C : <span class="posc">C.CCC</span></label></div> -->
               <!-- ////## could not figure how C display controlled -->
+              
               <!-- <div class="fabmo-status machine-pos" ><label><span class="state"></label></div> -->
             </strong></div>
             <div >
@@ -187,7 +188,12 @@
             <li><a href="#" id="icon_colapse" title="Expand/Collapse"><span>Collapse</span></a></li>
           </ul>
         </div>
-        <div class="drive-enter manual-drive-enter" ><div id="icon_joystick" title="Motion Keypad"></div></div>
+
+        <div id="man-start" class="drive-enter manual-drive-enter" >
+          <div id="man-tab" title="Click to use Motion Keypad"></div>
+          <div id="icon_joystick" title="Click to use Motion Keypad"></div>
+        </div>
+
       </aside>
 
       <aside class="DRO" id="right-menu">
@@ -197,7 +203,7 @@
               <div class="zaxis machine-pos-large" ><label>Z : <span class="posz">Z.ZZZ</span></label></div>
               <div class="aaxis machine-pos-large" ><label>A : <span class="posa">A.AAA</span></label></div>
               <div class="baxis machine-pos-large" ><label>B : <span class="posb">B.BBB</span></label></div>
-              <div class="caxis machine-pos-large" ><label>C : <span class="posc">C.CCC</span></label></div>
+            <!--  <div class="caxis machine-pos-large" ><label>C : <span class="posc">C.CCC</span></label></div> -->
             </div>
         <!-- ********** Tool Position Widget ********** -->
 
@@ -285,6 +291,7 @@
                 <span class="rotunits">o&nbsp;</span>
                 <div class="zero-button zero-b">zero</div>
             </div>
+<!--
             <div class="axis caxis">
                 <label class="noselect">
                 C
@@ -293,6 +300,7 @@
                 <span class="rotunits">o&nbsp;</span>
                 <div class="zero-button zero-c">zero</div>
             </div>
+-->
           </div>
         </div>
         <div class="manual-right-side-container">
