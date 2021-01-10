@@ -1537,6 +1537,7 @@ SBPRuntime.prototype._analyzeGOTOs = function() {
         }
 };
 
+////## Needs to be fixed for C-AXIS
 // Return the value of the provided system variable.
 //   v - System variable as a string, eg: "%(1)"
 SBPRuntime.prototype.evaluateSystemVariable = function(v) {

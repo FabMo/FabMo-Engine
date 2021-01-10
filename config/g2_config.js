@@ -168,6 +168,7 @@ G2Config.prototype.configureStatusReports = function(callback) {
 						"posz":true,
 						"posa":true,
 						"posb":true,
+						"posc":true,
 						"vel":true,
 						"stat":true,
 						"hold":true,

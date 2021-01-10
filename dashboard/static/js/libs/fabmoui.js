@@ -78,6 +78,15 @@ function FabMoUI(tool, options){
 		}
 	})
 
+	$('#man-start').on('click', function() {
+		$('#man-tab').css('top', '-1em');
+		$('#man-tab').css('height', '1em');
+		setTimeout(function(){
+			$('#man-tab').css('top', '-0.5em');
+			$('#man-tab').css('height', '0.5em'); 
+		}, 200);
+	})
+
 	if (options){
 		this.prefix = options.prefix ? options.prefix + '-' : '';
 		this.refresh = options.refresh || 100;
@@ -94,6 +103,7 @@ function FabMoUI(tool, options){
 	this.posZ_selector = this.status_div_selector + ' .posz';
 	this.posA_selector = this.status_div_selector + ' .posa';
 	this.posB_selector = this.status_div_selector + ' .posb';
+	this.posC_selector = this.status_div_selector + ' .posc';
 
 	this.state_selector = this.status_div_selector + ' .state';
 	this.file_info_div_selector = this.status_div_selector + ' .file-info';

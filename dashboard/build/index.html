@@ -91,47 +91,65 @@
               </div>
             </div>
           </section>
+
           <!-- ***** Tool Position Section ***** -->
           
           <section class="right DRO-button show-for-small-up fabmo-status" id="right-position-container">
-            <div id="dro-tab"></div>
-            <div >
-              <div class="xaxis machine-pos" ><label>X : <span class="posx">X.XXX</span></label></div>
-              <div class="yaxis machine-pos" ><label>Y : <span class="posy">Y.YYY</span></label></div>
-              <div class="zaxis machine-pos" ><label>Z : <span class="posz">Z.ZZZ</span></label></div>
+            <div id="dro-tab" title="Click to toggle large Location Display"></div>
+            <div  class="sm-axes"><strong>
+              <div class="xaxis machine-pos" ><label>X : &nbsp;<span class="posx">X.XXX</span></label></div>
+              <div class="yaxis machine-pos" ><label>Y : &nbsp;<span class="posy">Y.YYY</span></label></div>
+              <div class="zaxis machine-pos" ><label>Z : &nbsp;<span class="posz">Z.ZZZ</span></label></div>
               <div class="aaxis machine-pos" ><label>A : <span class="posa">A.AAA</span></label></div>
               <div class="baxis machine-pos" ><label>B : <span class="posb">B.BBB</span></label></div>
+              <!--<div class="caxis machine-pos" style="display:none" ><label>C : <span class="posc">C.CCC</span></label></div> -->
+              <!-- ////## could not figure how C display controlled -->
+              
               <!-- <div class="fabmo-status machine-pos" ><label><span class="state"></label></div> -->
-            </div>
+            </strong></div>
             <div >
               <div class="inoutLabel ">In:</div>
+              <div class="space input"> </div>
+              <div class="space input"> </div>
               <div class="in1 input"> 1 </div>
               <div class="in2 input"> 2 </div>
               <div class="in3 input"> 3 </div>
               <div class="in4 input"> 4 </div>
+              <div class="space input"> </div>
+              <div class="space input"> </div>
               <div class="in5 input"> 5 </div>
               <div class="in6 input"> 6 </div>
               <div class="in7 input"> 7 </div>
               <div class="in8 input"> 8 </div>
+              <div class="space input"> </div>
+              <div class="space input"> </div>
               <div class="in9 input"> 9 </div>
               <div class="in10 input"> 10 </div>
               <div class="in11 input"> 11 </div>
               <div class="in12 input"> 12 </div>
+              <div class="space input"> </div>
             </div>
             <div>
               <div class="inoutLabel ">Out:</div>
+              <div class="space input"> </div>
+              <div class="space input"> </div>
               <div class="out1 output off"> 1 </div>
               <div class="out2 output off"> 2 </div>
               <div class="out3 output off"> 3 </div>
               <div class="out4 output off"> 4 </div>
+              <div class="space input"> </div>
+              <div class="space input"> </div>
               <div class="out5 output off"> 5 </div>
               <div class="out6 output off"> 6 </div>
               <div class="out7 output off"> 7 </div>
               <div class="out8 output off"> 8 </div>
+              <div class="space input"> </div>
+              <div class="space input"> </div>
               <div class="out9 output off"> 9 </div>
               <div class="out10 output off"> 10 </div>
               <div class="out11 output off"> 11 </div>
               <div class="out12 output off"> 12 </div>
+              <div class="space input"> </div>
             </div>
 
 
@@ -170,7 +188,12 @@
             <li><a href="#" id="icon_colapse" title="Expand/Collapse"><span>Collapse</span></a></li>
           </ul>
         </div>
-        <div class="drive-enter manual-drive-enter" ><div id="icon_joystick" title="Motion Keypad"></div></div>
+
+        <div id="man-start" class="drive-enter manual-drive-enter" >
+          <div id="man-tab" title="Click to use Motion Keypad"></div>
+          <div id="icon_joystick" title="Click to use Motion Keypad"></div>
+        </div>
+
       </aside>
 
       <aside class="DRO" id="right-menu">
@@ -180,6 +203,7 @@
               <div class="zaxis machine-pos-large" ><label>Z : <span class="posz">Z.ZZZ</span></label></div>
               <div class="aaxis machine-pos-large" ><label>A : <span class="posa">A.AAA</span></label></div>
               <div class="baxis machine-pos-large" ><label>B : <span class="posb">B.BBB</span></label></div>
+            <!--  <div class="caxis machine-pos-large" ><label>C : <span class="posc">C.CCC</span></label></div> -->
             </div>
         <!-- ********** Tool Position Widget ********** -->
 
@@ -267,6 +291,16 @@
                 <span class="rotunits">o&nbsp;</span>
                 <div class="zero-button zero-b">zero</div>
             </div>
+<!--
+            <div class="axis caxis">
+                <label class="noselect">
+                C
+                </label>
+                <input id="C" class="posc pos doselect modal-axi axi" maxlength="6" type="number">
+                <span class="rotunits">o&nbsp;</span>
+                <div class="zero-button zero-c">zero</div>
+            </div>
+-->
           </div>
         </div>
         <div class="manual-right-side-container">
