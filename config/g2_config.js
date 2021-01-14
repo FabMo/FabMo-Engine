@@ -188,6 +188,7 @@ G2Config.prototype.configureStatusReports = function(callback) {
 						"in10":true,
 						"in11":true,
 						"in12":true,
+						"out1":true,
 						"out2":true,
 						"out3":true,
 						"out4":true,
