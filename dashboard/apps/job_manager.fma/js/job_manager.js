@@ -272,6 +272,7 @@ function setFirstCard() {
   var firstId = $('.job_item').first().attr('id');
   var el = document.getElementById(firstId);
   var cardActions = document.createElement("div");
+  hideDropDown();  ////## trying here to prevent clickability issue after choosing from 'recent'; update to #48395 
   cardActions.setAttribute("id", "actions");
   el.appendChild(cardActions);
   var actions = document.getElementById("actions");
@@ -414,7 +415,6 @@ function bindMenuEvents() {
         updateOrder();
       }
     });
-
   });
 
   $('.dropDownWrapper').off('click')
@@ -428,7 +428,7 @@ function bindMenuEvents() {
     $('.dropDownWrapper').show();
     var dd = $(this).nextAll();
     dd.show();
-    hideDropDown();
+    //  hideDropDown(); ////## removed this from #48395 moved above
   });
 }
 
