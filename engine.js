@@ -174,6 +174,9 @@ Engine.prototype.getVersion = function(callback) {
                 log.debug(" ... no version file ... using git and dev info")
                 this.version.type = 'dev';
                 this.version.number = this.version.number + "-dev";
+                var random = Math.floor(Math.random() * (99999 - 10000)) + 10000;
+                log.info("Adding random prefix to dev engine version");
+                this.version.number = random.toString() + "-" + this.version.number
                 return callback(null, this.version);
             }
             try {
@@ -187,20 +190,16 @@ Engine.prototype.getVersion = function(callback) {
                 log.debug(" ... can't parse version file!")
                 this.version.number = this.version.number +"-dev-fault";
                 this.version.type = 'dev';
+                var random = Math.floor(Math.random() * (99999 - 10000)) + 10000;
+                log.info("Adding random prefix to dev engine version");
+                this.version.number = random.toString() + "-" + this.version.number
             } finally {
                 callback(null, this.version);
             }
         }.bind(this))
-        ////## after we've got this all figured out ...
-        // If in debug mode, we also prefix our version with a random number
-        // to provide cache-busting on the client side when debugging.
-        if('debug' in argv) {
-           var random = Math.floor(Math.random() * (99999 - 10000)) + 10000;
-           log.info("Adding random prefix to engine version");
-           this.version.number = random.toString() + "-" + this.version.number
-        }
     }.bind(this));
 }
+
 
 /*
  * Return "info" about this engine, which currently is just version data for the engine and the firmware
@@ -218,7 +217,6 @@ Engine.prototype.setOnline = function(online) {
     this.status.online = online;
     this.emit('status', this.status);
 }
-
 
 // ##############################################################################
 /*
@@ -345,12 +343,13 @@ Engine.prototype.start = function(callback) {
                     config.engine.set('version', this_time_version);
                     if(err) { log.error(err); }
                     else {
-                        //log.debug(stdout);  ////## don't understand stdout here; does not get a value
+                        log.debug(stdout);  
                     }
-                    callback();
+                callback();
                 });
-            }
-            
+            } else {        ////##
+                callback(); ////##
+            }               ////##
         }.bind(this),
 
         function create_data_directories(callback) {
