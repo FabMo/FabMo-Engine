@@ -879,6 +879,8 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 		log.warn("Got a state change from a runtime that's not the current one. (" + source + ")")
 	}
 	this.emit('status',this.status);
+	console.log('status is:  ' + this.status);
+	console.log('info is: ' + this.status.info);
 	if (this.status.info['timer']){
 		setTimeout(function() {
 	        this.resume();
