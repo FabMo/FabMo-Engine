@@ -881,7 +881,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 	this.emit('status',this.status);
 	console.log('status is:  ' + this.status);
 	console.log('info is: ' + this.status.info);
-	if (this.status.info['timer']){
+	if (this.status.info && this.status.info['timer']){
 		setTimeout(function() {
 	        this.resume();
 	    }, this.status.info['timer'] * 1000);
