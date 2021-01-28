@@ -885,28 +885,14 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 			// 	'type' : 'resume',
 			// 	'input' : input
 			// }, config.machine.get('auth_timeout'));
-	        if(this.status.state === 'paused' && canResume) {
-				log.info("Okay hit, resuming from pause")
-				this.resume(function(err, msg){
-					if(err){
-						log.error(err);
-					} else {
-						log.info(msg);
-					}
-				});
-				clickDisabled = true;
-				setTimeout(function(){clickDisabled = false;}, 2000);
-			} else if(this.status.state === 'interlock') {
-				log.info("Okay hit, resuming from interlock")
-				this.resume(function(err, msg){
-					if(err){
-						log.error(err);
-					} else {
-						log.info(msg);
-					}
-				});
-			}
-	    }, this.status.info['timer'] * 1000);
+	        this.resume(function(err, msg){
+				if(err){
+					log.error(err);
+				} else {
+					log.info(msg);
+				}
+			});
+	    }.bind(this), this.status.info['timer'] * 1000);
 	};
 };
 
