@@ -604,7 +604,8 @@ log.debug('Create_data_directories ...')
 
         // Initialize the network module
         function setup_network(callback) {
-
+////##
+log.debug("### Getting this far in START-ENGINE ###  <======================")
             var OS = config.platform;
             var name = config.engine.get('name');
             log.info( 'name is ' + name);
