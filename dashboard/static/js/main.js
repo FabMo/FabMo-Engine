@@ -145,6 +145,7 @@ require("../css/toastr.min.css");
                 dashboard.engine.on('status', function(status) {
                     // console.log('Status Object');
                     console.log("status state:  "+status.state);
+                    consol.log(status);
                     if(status.state == 'dead') {
                         dashboard.showModal({
                             title: 'An Error Occurred!',
@@ -217,7 +218,8 @@ require("../css/toastr.min.css");
 
                     if (status['info'] && status['info']['id'] != lastInfoSeen) {
                         lastInfoSeen = status['info']['id'];
-                        console.log("Info:  "+status.info);
+                        console.log("Info id:  "+lastInfoSeen);
+                        console.log(status.info);
                         if (status.info['message']) {
                             if(status.state ==="manual"){
                                 $('.manual-drive-message').show();
