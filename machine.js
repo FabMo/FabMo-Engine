@@ -844,6 +844,8 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
                 }
 				break;
 			case 'paused':
+				log.info('old:  '+this.status.state);
+				log.info('new:  '+newstate);
 
                 if(this.status.state != newstate) {
 
