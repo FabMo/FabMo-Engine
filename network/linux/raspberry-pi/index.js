@@ -460,13 +460,15 @@ RaspberryPiNetworkManager.prototype.init = function() {
         // this.runEthernet();
       }, 10000);
       setTimeout(
-        commands.startWpaSupplicant((err, result) => {
-        if(err){
-          log.error('wpa errored with: ' + err)
-        } else {
-          log.info('wpa started with: '+ res);
-        }
-      }), 10000);
+        function () {
+          commands.startWpaSupplicant((err, result) => {
+            if(err){
+              log.error('wpa errored with: ' + err)
+            } else {
+              log.info('wpa started with: '+ res);
+            }
+          })
+        }, 10000);
     }
   }.bind(this));
 }
