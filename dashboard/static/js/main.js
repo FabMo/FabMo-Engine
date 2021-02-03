@@ -218,8 +218,6 @@ require("../css/toastr.min.css");
 
                     if (status['info'] && status['info']['id'] != lastInfoSeen) {
                         lastInfoSeen = status['info']['id'];
-                        console.log("Info id:  "+lastInfoSeen);
-                        console.log(status.info);
                         if (status.info['message']) {
                             if(status.state ==="manual"){
                                 $('.manual-drive-message').show();
@@ -228,9 +226,6 @@ require("../css/toastr.min.css");
                             } else if (status.info['timer'] && status.info['timer'] <= 10) {
                                 keypad.setEnabled(false);
                                 keyboard.setEnabled(false);
-                                // setTimeout(function() {
-                                //     dashboard.engine.resume();
-                                // }, status.info['timer'] * 1000);
                             } else {
                                 keypad.setEnabled(false);
                                 keyboard.setEnabled(false);
@@ -263,13 +258,6 @@ require("../css/toastr.min.css");
                                 dashboard.showModal(modalOptions);
                                 modalIsShown = true;
                                 dashboard.handlers.hideFooter();
-                                // if (status.info['timer']) {
-                                //     setTimeout(function() {
-                                //         dashboard.hideModal();
-                                //         modalIsShown = false;
-                                //         dashboard.engine.resume();
-                                //     }, status.info['timer'] * 1000);
-                                // }
                             }
                         } else if (status.info['error']) {
                             if (dashboard.engine.status.job) {

@@ -606,6 +606,7 @@ Machine.prototype.deauthorize = function() {
 	}
 	log.info('Machine is deauthorized.');
 	this.status.auth = false;
+	// Not needed and causes back to back pauses to behave irregularly.
 	// this.emit('status', this.status);
 }
 
@@ -844,9 +845,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
                 }
 				break;
 			case 'paused':
-				log.info('old:  '+this.status.state);
-				log.info('new:  '+newstate);
-
                 if(this.status.state != newstate) {
 
                 	// Save the position to the instance configuration.  See note above.
