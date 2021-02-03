@@ -879,6 +879,21 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 		log.warn("Got a state change from a runtime that's not the current one. (" + source + ")")
 	}
 	this.emit('status',this.status);
+	if (this.status.info && this.status.info['timer']){
+		setTimeout(function() {
+			// this.arm({
+			// 	'type' : 'resume',
+			// 	'input' : input
+			// }, config.machine.get('auth_timeout'));
+	        this.resume(function(err, msg){
+				if(err){
+					log.error(err);
+				} else {
+					log.info(msg);
+				}
+			});
+	    }.bind(this), this.status.info['timer'] * 1000);
+	};
 };
 
 // Pause the machine

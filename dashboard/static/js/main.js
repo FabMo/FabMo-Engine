@@ -225,9 +225,9 @@ require("../css/toastr.min.css");
                             } else if (status.info['timer'] && status.info['timer'] <= 10) {
                                 keypad.setEnabled(false);
                                 keyboard.setEnabled(false);
-                                setTimeout(function() {
-                                    dashboard.engine.resume();
-                                }, status.info['timer'] * 1000);
+                                // setTimeout(function() {
+                                //     dashboard.engine.resume();
+                                // }, status.info['timer'] * 1000);
                             } else {
                                 keypad.setEnabled(false);
                                 keyboard.setEnabled(false);
