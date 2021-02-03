@@ -606,7 +606,7 @@ Machine.prototype.deauthorize = function() {
 	}
 	log.info('Machine is deauthorized.');
 	this.status.auth = false;
-	this.emit('status', this.status);
+	// this.emit('status', this.status);
 }
 
 Machine.prototype.isConnected = function() {
