@@ -1,3 +1,4 @@
+var log = require('../../../log').logger('network');
 var child_process = require('child_process');
 var exec = child_process.exec;
 var fs = require('fs');
@@ -25,7 +26,7 @@ class commands {
   }
 
   static startWpaSupplicant(callback) {
-    console.log('should be starting the wpa thing')
+    log.debug('##### should be starting the wpa thing')
     exec('wpa_supplicant -B -Dnl80211 -iwlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf', callback)
   }
 
