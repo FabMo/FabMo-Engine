@@ -144,7 +144,8 @@ require("../css/toastr.min.css");
 
                 dashboard.engine.on('status', function(status) {
                     // console.log('Status Object');
-                    // console.log(status);
+                    console.log("status state:  "+status.state);
+                    console.log(status);
                     if(status.state == 'dead') {
                         dashboard.showModal({
                             title: 'An Error Occurred!',
@@ -225,9 +226,6 @@ require("../css/toastr.min.css");
                             } else if (status.info['timer'] && status.info['timer'] <= 10) {
                                 keypad.setEnabled(false);
                                 keyboard.setEnabled(false);
-                                setTimeout(function() {
-                                    dashboard.engine.resume();
-                                }, status.info['timer'] * 1000);
                             } else {
                                 keypad.setEnabled(false);
                                 keyboard.setEnabled(false);
@@ -260,13 +258,6 @@ require("../css/toastr.min.css");
                                 dashboard.showModal(modalOptions);
                                 modalIsShown = true;
                                 dashboard.handlers.hideFooter();
-                                if (status.info['timer']) {
-                                    setTimeout(function() {
-                                        dashboard.hideModal();
-                                        modalIsShown = false;
-                                        dashboard.engine.resume();
-                                    }, status.info['timer'] * 1000);
-                                }
                             }
                         } else if (status.info['error']) {
                             if (dashboard.engine.status.job) {
