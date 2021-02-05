@@ -2021,6 +2021,7 @@ SBPRuntime.prototype.resume = function(input=false) {
                 }
             } else {
                 this.driver.resume();
+                this.inFeedHold = false;
             }
         }
 }
