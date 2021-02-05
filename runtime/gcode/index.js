@@ -9,6 +9,7 @@ function GCodeRuntime() {
 	this.driver = null;
 	this.ok_to_disconnect = true;
 	this.completeCallback = null;
+    this.inFeedHold = false;
 }
 
 GCodeRuntime.prototype.toString = function() {
