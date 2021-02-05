@@ -40,6 +40,7 @@ GCodeRuntime.prototype.disconnect = function() {
 
 GCodeRuntime.prototype.pause = function() {
 	this.driver.feedHold();
+    this.inFeedHold = true;
 }
 
 GCodeRuntime.prototype.quit = function() {
@@ -48,6 +49,7 @@ GCodeRuntime.prototype.quit = function() {
 
 GCodeRuntime.prototype.resume = function() {
 	this.driver.resume();
+    this.inFeedHold = false;
 }
 
 GCodeRuntime.prototype._changeState = function(newstate) {
