@@ -602,6 +602,7 @@ log.debug('Create_data_directories ...')
           }.bind(this))
         }.bind(this),
 
+////##
         // Initialize the network module
         function setup_network(callback) {
 ////##
@@ -610,12 +611,13 @@ log.debug("### Getting this far in START-ENGINE ###  <======================")
             var name = config.engine.get('name');
             log.info( 'name is ' + name);
             network.createNetworkManager(name, function(err, nm){
-                if(err) {
-                    log.error(err);
-                    this.networkManager = new GenericNetworkManager(OS, PLATFORM);
-                } else {
-                    this.networkManager = nm
-                }
+////##
+                // if(err) {
+                //     log.error(err);
+                //     this.networkManager = new GenericNetworkManager(OS, PLATFORM);
+                // } else {
+                     this.networkManager = nm
+                // }
    
                 // Listen to the network manager's "network" event (which is emitted each time a new network is joined)
                 // and when the event is encountered, initiate beacon reporting and update package checks
@@ -638,6 +640,7 @@ log.debug("### Getting this far in START-ENGINE ###  <======================")
     
                 // Call the network manager init function, which actually starts looking for networks, etc.
                 log.info('Setting up the network...');
+////##
                 try {
                     this.networkManager.init();
                     log.info('Network manager started.')
@@ -646,23 +649,25 @@ log.debug("### Getting this far in START-ENGINE ###  <======================")
                     log.error('Problem starting network manager:' + e);
                 }
     
-                // Setup a recurring function that checks to see that the updater is online
-                var onlineCheck = function() {
-                    console.log('update check');
-                    this.networkManager.isOnline(function(err, online) {
-                        if(online != this.status.online) {
-                            this.setOnline(online);
-                        }
-                    }.bind(this));
-                }.bind(this);
-                onlineCheck();
-                setInterval(onlineCheck,3000); // TODO - magic number, should factor out
-                return callback(null);
+                // // Setup a recurring function that checks to see that the updater is online
+                // var onlineCheck = function() {
+                //     console.log('update check');
+                //     this.networkManager.isOnline(function(err, online) {
+                //         if(online != this.status.online) {
+                //             this.setOnline(online);
+                //         }
+                //     }.bind(this));
+                // }.bind(this);
+                // onlineCheck();
+                // setInterval(onlineCheck,3000); // TODO - magic number, should factor out
+                 return callback(null);
             }.bind(this));
 
 
 
-        }.bind(this),
+         }.bind(this),
+////##
+
 
         function setup_config_events(callback) {
             config.engine.on('change', function(evt) {
