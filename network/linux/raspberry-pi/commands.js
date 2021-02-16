@@ -26,8 +26,9 @@ class commands {
   }
 
   static startWpaSupplicant(callback) {
-    log.debug('##### should be starting the wpa thing')
-    exec('wpa_supplicant -B -Dnl80211 -iwlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf', callback)
+    log.debug('##### Could be starting WPA: ##NOT!!')
+////##
+//    exec('wpa_supplicant -B -Dnl80211 -iwlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf', callback)
   }
 
   static listNetworks(callback){

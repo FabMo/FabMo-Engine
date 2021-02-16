@@ -622,6 +622,7 @@ log.debug("### Getting this far in START-ENGINE ###  <======================")
                 // Listen to the network manager's "network" event (which is emitted each time a new network is joined)
                 // and when the event is encountered, initiate beacon reporting and update package checks
 
+////## REMOVE???
                 this.networkManager.on('network', function(evt) {
                     if(evt.mode === 'station' || evt.mode === 'ethernet') {
                         // 30 Second delay is used here to make sure timesyncd has enough time to update network time

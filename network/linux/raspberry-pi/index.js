@@ -161,7 +161,7 @@ RaspberryPiNetworkManager.prototype.returnWifiNetworks= function() {
   }.bind(this));
 }
 
-////## REPORTING
+////## REPORTING AND SETTING IP in AP-name
 RaspberryPiNetworkManager.prototype.checkWifiHealth = function() {
   var interfaces = os.networkInterfaces();
   var wlan0Int =interfaces.wlan0;
@@ -200,7 +200,16 @@ log.debug("n#### GETTING HEALTH")
         }
       });
     } else {
-      log.info('wifi is on at : ' + wlan0Int[0].address +' and AP is healthy');
+////##
+      log.info('wifi is on at : ' + wlan0Int[0].address +' and RENAMING AP');
+      this._joinAP(function(err, res){
+        if(err){
+          log.warn("Could not bring back up AP");
+        } else {
+          log.info("AP back up")
+        }
+      });
+////##
     }
   }
 }
@@ -251,19 +260,23 @@ log.debug("n#### GETTING IP", wlan0Int)
  }, 1000);
 }
 
-// Actually do the work of joining AP mode
+// Actually do the work of joining AP mode AND updating AP name
 RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
-  log.info("Entering AP mode...");
+  log.info("n#### PROCESSING AP mode...");
   var interfaces = os.networkInterfaces();
   var wlan0Int =interfaces.wlan0;
   var eth0Int = interfaces.eth0;
   var name = config.engine.get('name').split('0').join('').split('\n').join('').trim();
   var ext;
+////##  
+  ext =":"
   if(eth0Int){
-    ext = ": " + eth0Int[0].address;
-  } else if(wlan0Int){
-    ext = ": " + wlan0Int[0].address;
-  } else {
+    ext = ext + " " + eth0Int[0].address;
+  } 
+  if(wlan0Int){
+//    ext = ext + " " + wlan0Int[0].address;
+  }
+  if(!eth0Int && !wlan0Int) {
     ext = "";
   }
 ////##
@@ -275,24 +288,24 @@ RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
   config.engine.set('network', network_config);
   commands.takeDown("uap0",(err, result)=>{
     log.debug('taken down AP')
-    log.debug(err);
-    log.debug(result);
+    console.log(err);
+    console.log(result);
     commands.addApInterface((err, result) => {
       log.debug('Adding AP int')
-      log.debug(err);
-      log.debug(result);
+      console.log(err);
+      console.log(result);
       commands.bringUp('uap0', (err, result)=> {
         log.debug('bringing up');
-        log.debug(err);
-        log.debug(result);
+        console.log(err);
+        console.log(result);
         commands.configureApIp('192.168.42.1', (err, result) =>{
-          console.log('configure')
+          log.debug('configure')
           console.log(err);
           console.log(result);
           commands.hostapd({
             ssid: name 
           }, () => {
-            console.log('hostAPD up');
+            log.debug('hostAPD up');
             commands.dnsmasq({interface: 'uap0'}, () => {
               console.log('should be up and running AP')
               callback(err, result);
