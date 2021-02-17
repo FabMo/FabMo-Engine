@@ -177,7 +177,7 @@ var onPrivateConnect = function(socket) {
 					break;
 
 				case 'resume':
-					if (data.args.var && data.args.val) {
+					if (data.args && data.args.var && data.args.val) {
 						machine.resume(callback, {'var':data.args.var, 'val':data.args.val});
 					}
 					log.debug("triggering machine resume");
@@ -186,9 +186,11 @@ var onPrivateConnect = function(socket) {
 
 				default:
 					// Meh?
+					log.debug("command switch hit default");
 					break;
 			}
 		} catch(e) {
+			log.error(e);
 			// pass
 		}
 	});
