@@ -942,10 +942,12 @@ Machine.prototype.quit = function(callback) {
 
 // Resume from the paused state.
 Machine.prototype.resume = function(callback, input=false) {
+	log.debug("Machine Resume Reached")
 	if (this.current_runtime && this.current_runtime.inFeedHold){
-		log.info("Machine detects in feedhold");
+		log.debug("Machine detects in feedhold");
 		this._resume();
 	} else {
+		log.debug("feedhold not detected.")
 		this.arm({
 			'type' : 'resume',
 			'input' : input
@@ -1054,8 +1056,10 @@ Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 
 // e
 Machine.prototype._resume = function(input) {
+	log.debug("machine _resume reached");
 	switch(this.status.state) {
 		case 'interlock':
+			log.debug("interlock case");
 			if(this.interlock_action) {
 				this.arm(this.interlock_action);
 				this.interlock_action = null;
@@ -1064,7 +1068,7 @@ Machine.prototype._resume = function(input) {
 		break;
 	}
 	if(this.current_runtime) {
-		log.info("trigger current runtime resume")
+		log.debug("trigger current runtime resume")
 		this.current_runtime.resume(input)
 	}
 };

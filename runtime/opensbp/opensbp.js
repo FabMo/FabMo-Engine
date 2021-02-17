@@ -2003,11 +2003,11 @@ SBPRuntime.prototype.quit = function() {
 // Resume a program from the paused state
 //   TODO - make some indication that this action was successfil (resume is not always allowed, and sometimes it fails)
 SBPRuntime.prototype.resume = function(input=false) {
-        log.info("opensbp resume");
+        log.debug("opensbp resume");
         if(this.resumeAllowed) {
-            log.info("resume allowed");
+            log.debug("resume allowed");
             if(this.paused) {
-                log.info("paused");
+                log.debug("paused");
                 if (input) {
                     var callback = (function(err, data) {
                         if (err) {
@@ -2023,10 +2023,10 @@ SBPRuntime.prototype.resume = function(input=false) {
                     this._executeNext();
                 }
             } else {
-                log.info("Not paused trigger driver resume");
+                log.debug("Not paused trigger driver resume");
                 this.driver.resume();
                 this.inFeedHold = false;
-                log.info("driver resume triggered");
+                log.debug("driver resume triggered");
             }
         }
 }

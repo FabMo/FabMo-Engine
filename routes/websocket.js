@@ -180,6 +180,7 @@ var onPrivateConnect = function(socket) {
 					if (data.args.var && data.args.val) {
 						machine.resume(callback, {'var':data.args.var, 'val':data.args.val});
 					}
+					log.debug("triggering machine resume");
 					machine.resume(callback);
 					break;
 
