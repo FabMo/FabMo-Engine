@@ -91,6 +91,7 @@ function SBPRuntime() {
     this.driver = null;
 
     this.inManualMode = false;
+    this.inFeedHold = false;
 
 }
 util.inherits(SBPRuntime, events.EventEmitter);
@@ -1980,6 +1981,7 @@ SBPRuntime.prototype.pause = function() {
         this.pendingFeedhold = true;
     } else {
         this.machine.driver.feedHold();
+        this.inFeedHold = true;
     }
 }
 
@@ -2019,6 +2021,7 @@ SBPRuntime.prototype.resume = function(input=false) {
                 }
             } else {
                 this.driver.resume();
+                this.inFeedHold = false;
             }
         }
 }
