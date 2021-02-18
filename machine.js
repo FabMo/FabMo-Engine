@@ -944,12 +944,9 @@ Machine.prototype.quit = function(callback) {
 
 // Resume from the paused state.
 Machine.prototype.resume = function(callback, input=false) {
-	log.debug("Machine Resume Reached")
 	if (this.current_runtime && this.current_runtime.inFeedHold){
-		log.debug("Machine detects in feedhold");
 		this._resume();
 	} else {
-		log.debug("feedhold not detected.")
 		if (this.pauseTimer) {
 			clearTimeout(this.pauseTimer);
 			this.pauseTimer = false;
