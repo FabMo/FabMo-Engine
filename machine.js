@@ -881,10 +881,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 	this.emit('status',this.status);
 	if (this.status.info && this.status.info['timer']){
 		setTimeout(function() {
-			// this.arm({
-			// 	'type' : 'resume',
-			// 	'input' : input
-			// }, config.machine.get('auth_timeout'));
 	        this.resume(function(err, msg){
 				if(err){
 					log.error(err);
@@ -946,11 +942,18 @@ Machine.prototype.quit = function(callback) {
 
 // Resume from the paused state.
 Machine.prototype.resume = function(callback, input=false) {
-	this.arm({
-		'type' : 'resume',
-		'input' : input
-	}, config.machine.get('auth_timeout'));
-	callback(null, 'resumed');
+	log.debug("Machine Resume Reached")
+	if (this.current_runtime && this.current_runtime.inFeedHold){
+		log.debug("Machine detects in feedhold");
+		this._resume();
+	} else {
+		log.debug("feedhold not detected.")
+		this.arm({
+			'type' : 'resume',
+			'input' : input
+		}, config.machine.get('auth_timeout'));
+		callback(null, 'resumed');
+	}
 }
 
 // Run a file from disk
