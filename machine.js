@@ -135,6 +135,7 @@ function Machine(control_path, callback) {
 	this.info_id = 0;
 	this.action = null;
 	this.interlock_action = null;
+	this.pauseTimer = false;
 	
 	// Instantiate and connect to the G2 driver using the port specified in the constructor
 	this.driver = new g2.G2();
@@ -880,7 +881,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 	}
 	this.emit('status',this.status);
 	if (this.status.info && this.status.info['timer']){
-		setTimeout(function() {
+		this.pauseTimer = setTimeout(function() {
 	        this.resume(function(err, msg){
 				if(err){
 					log.error(err);
@@ -888,6 +889,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 					log.info(msg);
 				}
 			});
+			this.pauseTimer = false;
 	    }.bind(this), this.status.info['timer'] * 1000);
 	};
 };
@@ -948,6 +950,10 @@ Machine.prototype.resume = function(callback, input=false) {
 		this._resume();
 	} else {
 		log.debug("feedhold not detected.")
+		if (this.pauseTimer) {
+			clearTimeout(this.pauseTimer);
+			this.pauseTimer = false;
+		}
 		this.arm({
 			'type' : 'resume',
 			'input' : input
