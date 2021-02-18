@@ -36,6 +36,8 @@ var ethernetInterface = "eth0";
 var apModeGateway= '192.168.42.1';
 var tmpPath = os.tmpdir() + '/';
 
+var last_name ="";
+
 
 var DEFAULT_NETMASK = "255.255.255.0";
 var DEFAULT_BROADCAST = "192.168.1.255"
@@ -260,6 +262,7 @@ log.debug("n#### GETTING IP", wlan0Int)
  }, 1000);
 }
 
+////##
 // Actually do the work of joining AP mode AND updating AP name
 RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
   log.info("n#### PROCESSING AP mode...");
@@ -267,54 +270,66 @@ RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
   var wlan0Int =interfaces.wlan0;
   var eth0Int = interfaces.eth0;
   var name = config.engine.get('name').split('0').join('').split('\n').join('').trim();
+  var full_name;
   var ext;
-////##  
-  ext =":"
-  if(eth0Int){
-    ext = ext + " " + eth0Int[0].address;
-  } 
-  if(wlan0Int){
-//    ext = ext + " " + wlan0Int[0].address;
-  }
-  if(!eth0Int && !wlan0Int) {
-    ext = "";
-  }
-////##
-  name = name + ext;
-  log.debug("this better be in there"); 
-  log.debug(name);
-  var network_config = config.engine.get('network');
-  network_config.wifi.mode = 'ap';
-  config.engine.set('network', network_config);
-  commands.takeDown("uap0",(err, result)=>{
-    log.debug('taken down AP')
-    console.log(err);
-    console.log(result);
-    commands.addApInterface((err, result) => {
-      log.debug('Adding AP int')
+
+////## 
+  log.debug("n#### NAME-TEST")
+  log.debug(name, last_name) 
+  // Updating AP-Name and restarting AP if we get name change; thiswill drop AP!
+  // TODO: should also do this if only wifi and we get wifi change; this will drop AP!
+  if (name !== last_name) {
+    // SSID is limited to 32 char; so makes this challenging, as in:
+    // 'ted-dev:169.254.225.224:192.168.1.109'
+    // So best to prioritize display; if you have ethernet, you have rest
+    // TODO: chop tool names that are too long
+    ext =":"
+    if(eth0Int) {
+      ext = ext + eth0Int[0].address;
+    } else if (wlan0Int) {
+      ext = ext + wlan0Int[0].address;
+    } else {
+      ext = "";
+    }
+  ////##
+    full_name = name + ext;
+    log.debug("n#### Full_Name"); 
+    log.debug(full_name);
+    var network_config = config.engine.get('network');
+    network_config.wifi.mode = 'ap';
+    config.engine.set('network', network_config);
+    commands.takeDown("uap0",(err, result)=>{
+      log.debug('taken down AP')
       console.log(err);
       console.log(result);
-      commands.bringUp('uap0', (err, result)=> {
-        log.debug('bringing up');
+      commands.addApInterface((err, result) => {
+        log.debug('Adding AP int')
         console.log(err);
         console.log(result);
-        commands.configureApIp('192.168.42.1', (err, result) =>{
-          log.debug('configure')
+        commands.bringUp('uap0', (err, result)=> {
+          log.debug('bringing up');
           console.log(err);
           console.log(result);
-          commands.hostapd({
-            ssid: name 
-          }, () => {
-            log.debug('hostAPD up');
-            commands.dnsmasq({interface: 'uap0'}, () => {
-              console.log('should be up and running AP')
-              callback(err, result);
+          commands.configureApIp('192.168.42.1', (err, result) =>{
+            log.debug('configure')
+            console.log(err);
+            console.log(result);
+            commands.hostapd({
+              ssid: full_name 
+            }, () => {
+              log.debug('hostAPD up');
+              commands.dnsmasq({interface: 'uap0'}, () => {
+                console.log('should be up and running AP')
+                callback(err, result);
+              })
             })
           })
         })
       })
     })
-  })
+  }
+  last_name = name;
+
 }
 
 RaspberryPiNetworkManager.prototype._disableWifi = function(callback){
