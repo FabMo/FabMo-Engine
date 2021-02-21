@@ -119,7 +119,7 @@ log.debug("n#### GETTING ADDRESS")
 //   callback - Called with the network list or with an error if error
 RaspberryPiNetworkManager.prototype.getNetworks = function(callback) {
 ////##
-log.debug("n#### GETTING RESULTS")
+log.debug("n#### GETTING RESULTS OF SCAN")
   wpa_cli.scan_results(wifiInterface, callback);
 }
 
@@ -203,7 +203,7 @@ log.debug("n#### GETTING HEALTH")
       });
     } else {
 ////##
-      log.info('wifi is on at : ' + wlan0Int[0].address +' and RENAMING AP');
+      log.info('wifi is on at : ' + wlan0Int[0].address +' and Checking AP NAME');
       this._joinAP(function(err, res){
         if(err){
           log.warn("Could not bring back up AP");
@@ -273,16 +273,8 @@ RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
   var full_name;
   var ext;
 
-////## 
-  log.debug("n#### NAME-TEST")
-  log.debug(name, last_name) 
-  // Updating AP-Name and restarting AP if we get name change; thiswill drop AP!
-  // TODO: should also do this if only wifi and we get wifi change; this will drop AP!
-  if (name !== last_name) {
-    // SSID is limited to 32 char; so makes this challenging, as in:
-    // 'ted-dev:169.254.225.224:192.168.1.109'
-    // So best to prioritize display; if you have ethernet, you have rest
-    // TODO: chop tool names that are too long
+  // Updating AP-Name
+  // Then, restarting AP if we get name change; this should drop AP momentarily!
     ext =":"
     if(eth0Int) {
       ext = ext + eth0Int[0].address;
@@ -291,10 +283,14 @@ RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
     } else {
       ext = "";
     }
-  ////##
     full_name = name + ext;
-    log.debug("n#### Full_Name"); 
-    log.debug(full_name);
+  log.debug("n#### NAME-TEST " + full_name + " vs " + last_name) 
+  if (full_name !== last_name) {
+    // SSID is limited to 32 char; so makes long names challenging, as in:
+    // 'ted-dev:169.254.225.224:192.168.1.109'
+    // So best to prioritize display for ethernet, until a better idea ...
+    //     TODO: chop tool names that are too long
+    log.debug("n#### NEW full_name " + full_name); 
     var network_config = config.engine.get('network');
     network_config.wifi.mode = 'ap';
     config.engine.set('network', network_config);
@@ -328,7 +324,7 @@ RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
       })
     })
   }
-  last_name = name;
+  last_name = full_name;
 
 }
 
