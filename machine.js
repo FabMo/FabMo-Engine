@@ -1000,6 +1000,8 @@ Machine.prototype.runNextJob = function(callback) {
 Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
 	interlockBypass = false;
 	runtime = this.getRuntime(runtimeName);
+	debug.log(runtimeName);
+	debug.log(code);
 	var needsAuth = runtime.needsAuth(code);
 	if (needsAuth){
 		if(this.status.auth) {
