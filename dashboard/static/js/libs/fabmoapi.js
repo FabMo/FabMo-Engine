@@ -392,7 +392,6 @@ FabMoAPI.prototype.set = function(move, callback){
 }
 
 FabMoAPI.prototype.executeRuntimeCode = function(runtime, code, callback) {
-	console.log(runtime, code);
 	this.socket.emit('code', {'rt' : runtime, 'data' : code})
 }
 

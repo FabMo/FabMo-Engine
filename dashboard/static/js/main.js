@@ -641,7 +641,6 @@ require("../css/toastr.min.css");
         var axi = $(this).parent('div').find('input').attr('id');
         var obj = {};
         obj[axi] = 0;
-        console.log(obj);
         dashboard.engine.set(obj)
     });
 
