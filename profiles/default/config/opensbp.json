@@ -1,6 +1,6 @@
 {
     "units":"in",
-    "movexy_speed": 1.0,
+    "movexy_speed": 3.0,
     "movez_speed": 0.5,
     "movea_speed": 1,
     "moveb_speed": 1,

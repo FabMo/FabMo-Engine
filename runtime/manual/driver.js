@@ -286,6 +286,8 @@ ManualDriver.prototype.set = function(pos) {
 	var toSet = {};
 	if ( this.driver.status.unit === "in" ) {  // inches
 		unitConv = 0.039370079;
+	} else {
+		unitConv = 1;
 	}
 	if(this.mode === 'normal') {
 
