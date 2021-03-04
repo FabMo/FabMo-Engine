@@ -1527,6 +1527,7 @@ SBPRuntime.prototype._analyzeGOTOs = function() {
                             // pass
                         } else {
                             // Add one to the line number so they start at 1
+                            ////## right now, in a macro, you need to add 3; FIX and show all lines
                             throw new Error("Undefined label " + line.label + " on line " + (i+1));
                         }
                         break;
