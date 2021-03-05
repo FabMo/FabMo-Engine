@@ -847,8 +847,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				break;
 			case 'paused':
                 if(this.status.state != newstate) {
-                	//Set driver in paused state
-                	this.driver.pause_hold = true;
 
                 	// Save the position to the instance configuration.  See note above.
                     this.driver.get('mpo', function(err, mpo) {
