@@ -900,10 +900,6 @@ Machine.prototype.pause = function(callback) {
 		if(this.status.state === "running") {
 			if(this.current_runtime) {
 				this.current_runtime.pause();
-				if (this.pauseTimer) {
-					clearTimeout(this.pauseTimer);
-					this.pauseTimer = false;
-				}
 				callback(null, 'paused');
 			} else {
 				calback("Not pausing because no runtime provided");
