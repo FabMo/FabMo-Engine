@@ -5,7 +5,7 @@
  * running OpenSBP files.  The SBPRuntime interprets OpenSBP code, generating
  * g-code and streaming it to the motion controller when appropriate.
  *
- * OpenSBP is a more feature-rich language in many ways than "strict" g-code.
+ * OpenSBP is a more feature-rich language than "strict" g-code.
  * It is essentially an answer to the "vendor extensions" to g-code that other
  * systems apply to allow for complex constructs like expression parsing, program control flow, 
  * and control of systems not conventionally accessible to the g-code canonical machine.
@@ -160,6 +160,7 @@ SBPRuntime.prototype.executeCode = function(s, callback) {
         // Plain old string interprets as OpenSBP code segment
         this.runString(s, callback);        
     } else {
+        ////## Is this up-to-date and does it work with new variations on manual 2020 on ?
         // If we're in manual mode, interpret an object as a command for that mode
         // The OpenSBP runtime can enter manual mode with the 'SK' command so we have this code here to mimick that mode
         if(this.inManualMode) {
@@ -279,10 +280,10 @@ SBPRuntime.prototype.runString = function(s, callback) {
             log.tock('Parse file')
         }
 
+        ////##
         // TODO Bad bad bad - re-using lines above (the list of lines in the file) as the number of lines here.
         //      It looks like we can just remove this.  It doesn't seem to be used.
         lines = this.program.length;
-        
         // Configure affine transformations on the file
         this._setupTransforms();
         log.debug("Transforms configured...")
@@ -1494,6 +1495,8 @@ SBPRuntime.prototype._setUnits = function(units) {
 // An error is thrown on duplicate labels
 SBPRuntime.prototype._analyzeLabels = function() {
     this.label_index = {};
+////##
+log.debug('AT the labels, length = ' + this.program.length)
     for(i=0; i<this.program.length; i++) {
         line = this.program[i];
         if(line && line.type) {
@@ -1523,6 +1526,9 @@ SBPRuntime.prototype._analyzeGOTOs = function() {
                         // No break: fall through to next state(s)
                     case "goto":
                     case "gosub":
+////##
+log.debug("AT the gosub test: " + line.label + ", " + line + ", length " + this.program.length)
+log.debug(JSON.stringify(this.label_index))
                         if (line.label in this.label_index) {
                             // pass
                         } else {

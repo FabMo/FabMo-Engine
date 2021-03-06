@@ -2516,6 +2516,9 @@ module.exports = (function(){
   result.SyntaxError = function(expected, found, offset, line, column) {
     function buildMessage(expected, found) {
       var expectedHumanized, foundHumanized;
+
+////##
+log.debug(expected + "," + found + "," + offset + "," + line + "," + column);
       
       switch (expected.length) {
         case 0:
