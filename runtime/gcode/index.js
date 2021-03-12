@@ -10,6 +10,7 @@ function GCodeRuntime() {
 	this.ok_to_disconnect = true;
 	this.completeCallback = null;
     this.inFeedHold = false;
+    this._file_or_stream_in_progress = false;
 }
 
 GCodeRuntime.prototype.toString = function() {
@@ -181,6 +182,12 @@ GCodeRuntime.prototype._handleStateChange = function(stat) {
 		case this.driver.STAT_RUNNING:
 			this._changeState('running');
 			break;
+        // rmackie drivel:
+        case this.driver.STAT_STOP:
+            if (this._file_or_stream_in_progress) {
+                this.driver.sendM30();
+                this._file_or_stream_in_progress = false;
+            }
 		default:
 			break;
 	}
@@ -188,6 +195,8 @@ GCodeRuntime.prototype._handleStateChange = function(stat) {
 
 // Run a file given the filename
 GCodeRuntime.prototype.runFile = function(filename, callback) {
+    // rmackie drivel 
+    this._file_or_stream_in_progress = true;
 	countLineNumbers(filename, function(err, lines) {
 		this.machine.status.nb_lines = lines;
 		this.driver.runFile(filename, callback)
@@ -198,7 +207,9 @@ GCodeRuntime.prototype.runFile = function(filename, callback) {
 
 // Run the given string as gcode
 GCodeRuntime.prototype.executeCode = function(string, callback) {
-		return this.runString(string);
+    // rmackie drivel 
+    this._file_or_stream_in_progress = true;
+	return this.runString(string);
 }
 
 exports.GCodeRuntime = GCodeRuntime;
