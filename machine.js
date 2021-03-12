@@ -430,7 +430,7 @@ Machine.prototype.arm = function(action, timeout) {
 		case 'paused':
 		case 'stopped':
 			if(action.type != 'resume') {
-				log.debug("===>In machine at cased stopped, over-ride here???")
+				log.debug("===>In machine at case stopped, over-ride here???")
 				throw new Error('Cannot arm the machine for ' + action.type + ' when ' + this.status.state);
 			}
 			break;
@@ -552,20 +552,29 @@ Machine.prototype.fire = function(force) {
 	// Actually execute the action (finally!)
 	switch(action.type) {
 		case 'nextJob':
+////##
+log.debug("fire: about to _runNextJob ..........");
 			this._runNextJob(force, function() {});
 			break;
 
 		case 'runtimeCode':
 			var name = action.payload.name
 			var code = action.payload.code
+////##
+log.debug("fire: about to _executeRuntimeCode ..........");
 			this._executeRuntimeCode(name, code);
 			break;
 
 		case 'runFile':
 			var filename = action.payload.filename
+////##
+log.debug("fire: about to _runFile ..........");
 			this._runFile(filename);
 			break;
+
 		case 'resume':
+////##
+log.debug("fire: about to _resume from fire ..........");
 			this._resume(action.input);
 			break;
 	}
@@ -733,6 +742,8 @@ Machine.prototype._runFile = function(filename) {
 		if(err) {
 			return log.error(err);
 		}
+////##
+log.debug("After fire: CALL the file and runtime from machine > " + filename)
 		runtime.runFile(filename);
 	});
 };
@@ -902,10 +913,10 @@ Machine.prototype.pause = function(callback) {
 				this.current_runtime.pause();
 				callback(null, 'paused');
 			} else {
-				calback("Not pausing because no runtime provided");
+				callback("Not pausing because no runtime provided");
 			}
 		} else {
-			calback("Not pausing because machine is not running");
+			callback("Not pausing because machine is not running");
 		}
 };
 
@@ -934,11 +945,12 @@ Machine.prototype.quit = function(callback) {
 		if(this.current_runtime) {
 			log.info("Quitting the current runtime...")
 			this.current_runtime.quit();
-			callback(null, 'quit');
+////##			callback(null, 'quit');
+			callback('quit');
 			alreadyQuiting = false;
 		} else {
 			log.warn("No current runtime!")
-			calback("Not quiting because no current runtime")
+			callback("Not quiting because no current runtime")
 		}    
 };
 
@@ -955,7 +967,8 @@ Machine.prototype.resume = function(callback, input=false) {
 			'type' : 'resume',
 			'input' : input
 		}, config.machine.get('auth_timeout'));
-		callback(null, 'resumed');
+////##    	callback(null, 'resumed');
+    	callback('resumed');
 	}
 }
 

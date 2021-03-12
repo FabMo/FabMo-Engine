@@ -24,6 +24,7 @@ var config = require('./config')
 var log = require('./log').logger('macro');
 
 // The marker in the header that signifies a macro.
+////## the following is creating a error handling problem because of lost line count
 // TODO - This is used to create files, but not in the regexs used to parse them (see below)
 var MARKER = '!FABMO!'
 
