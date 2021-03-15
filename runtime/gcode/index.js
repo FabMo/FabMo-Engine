@@ -181,6 +181,17 @@ GCodeRuntime.prototype._handleStateChange = function(stat) {
 		case this.driver.STAT_RUNNING:
 			this._changeState('running');
 			break;
+        case this.driver.STAT_STOP:
+            // This that the g2core is in stat:3, meaning it has processed all available gcode
+            // so we need to tell it to move to stat:4 by sending an end of job "M30"
+            // There may have been an M30 in the file but the g2core will have ignored it, this
+            // may change someday in the future on the g2core end, so we may end up revisiting this. 
+            // OTOH, an extra M30 should not cause a problem.
+            if (this._file_or_stream_in_progress) {
+                this.driver.sendM30();
+                this._file_or_stream_in_progress = false;
+            }
+
 		default:
 			break;
 	}
