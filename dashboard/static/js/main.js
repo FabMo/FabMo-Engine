@@ -152,7 +152,6 @@ require("../css/toastr.min.css");
                             message: status.info.error,
                             noButton : true
                         });
-
                         return;
                     }
 

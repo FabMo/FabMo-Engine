@@ -5,7 +5,7 @@
  * running OpenSBP files.  The SBPRuntime interprets OpenSBP code, generating
  * g-code and streaming it to the motion controller when appropriate.
  *
- * OpenSBP is a more feature-rich language in many ways than "strict" g-code.
+ * OpenSBP is a more feature-rich language than "strict" g-code.
  * It is essentially an answer to the "vendor extensions" to g-code that other
  * systems apply to allow for complex constructs like expression parsing, program control flow, 
  * and control of systems not conventionally accessible to the g-code canonical machine.
@@ -160,6 +160,7 @@ SBPRuntime.prototype.executeCode = function(s, callback) {
         // Plain old string interprets as OpenSBP code segment
         this.runString(s, callback);        
     } else {
+        ////## Is this up-to-date and does it work with new variations on manual 2020 on ?
         // If we're in manual mode, interpret an object as a command for that mode
         // The OpenSBP runtime can enter manual mode with the 'SK' command so we have this code here to mimick that mode
         if(this.inManualMode) {
@@ -279,10 +280,10 @@ SBPRuntime.prototype.runString = function(s, callback) {
             log.tock('Parse file')
         }
 
+        ////##
         // TODO Bad bad bad - re-using lines above (the list of lines in the file) as the number of lines here.
         //      It looks like we can just remove this.  It doesn't seem to be used.
         lines = this.program.length;
-        
         // Configure affine transformations on the file
         this._setupTransforms();
         log.debug("Transforms configured...")
@@ -1527,6 +1528,7 @@ SBPRuntime.prototype._analyzeGOTOs = function() {
                             // pass
                         } else {
                             // Add one to the line number so they start at 1
+                            ////## right now, in a macro, you need to add 3; FIX and show all lines
                             throw new Error("Undefined label " + line.label + " on line " + (i+1));
                         }
                         break;

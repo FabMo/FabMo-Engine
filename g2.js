@@ -2,7 +2,7 @@
  * g2.js
  * 
  * This module defines the G2 driver, which is responsible for managing communication
- * between the host and a tinyg2 motion conroller.  Other objects and functions are
+ * between the host and a g2 motion conroller.  Other objects and functions are
  * defined here as well to support this capability.
  */
 var SerialPort = require("serialport");

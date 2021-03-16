@@ -430,7 +430,7 @@ Machine.prototype.arm = function(action, timeout) {
 		case 'paused':
 		case 'stopped':
 			if(action.type != 'resume') {
-				log.debug("===>In machine at cased stopped, over-ride here???")
+				log.debug("===>In machine at case stopped, over-ride here???")
 				throw new Error('Cannot arm the machine for ' + action.type + ' when ' + this.status.state);
 			}
 			break;
@@ -514,7 +514,6 @@ Machine.prototype.disarm = function() {
 
 // Execute the action in the chamber (the one passed to the arm() method)
 Machine.prototype.fire = function(force) {
-
 	if(this.fireButtonDebounce & !force) {
 		log.debug("Fire button debounce reject.");
 		log.debug("debounce: " + this.fireButtonDebounce + " force: " + force);
@@ -565,6 +564,7 @@ Machine.prototype.fire = function(force) {
 			var filename = action.payload.filename
 			this._runFile(filename);
 			break;
+
 		case 'resume':
 			this._resume(action.input);
 			break;
@@ -902,10 +902,10 @@ Machine.prototype.pause = function(callback) {
 				this.current_runtime.pause();
 				callback(null, 'paused');
 			} else {
-				calback("Not pausing because no runtime provided");
+				callback("Not pausing because no runtime provided");
 			}
 		} else {
-			calback("Not pausing because machine is not running");
+			callback("Not pausing because machine is not running");
 		}
 };
 
@@ -938,7 +938,7 @@ Machine.prototype.quit = function(callback) {
 			alreadyQuiting = false;
 		} else {
 			log.warn("No current runtime!")
-			calback("Not quiting because no current runtime")
+			callback("Not quiting because no current runtime")
 		}    
 };
 
@@ -955,7 +955,7 @@ Machine.prototype.resume = function(callback, input=false) {
 			'type' : 'resume',
 			'input' : input
 		}, config.machine.get('auth_timeout'));
-		callback(null, 'resumed');
+    	callback(null, 'resumed');
 	}
 }
 
@@ -1057,7 +1057,6 @@ Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 	}
 }
 
-// e
 Machine.prototype._resume = function(input) {
 	switch(this.status.state) {
 		case 'interlock':

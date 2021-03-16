@@ -3,6 +3,7 @@
  *
  * This module defines the IdleRuntime which is the default runtime for the machine model.
  * It essentially does nothing, and is just a placeholder, there to be a runtime when the machine isn't doing anything else.
+ * ////## "idle" is a state and runtime ???
  */
 var log = require('../log').logger('idle');
 
@@ -41,6 +42,7 @@ IdleRuntime.prototype._changeState = function(newstate) {
 };
 
 // This function is called internally when G2 hits a software limit.
+////##
 // TODO - There is work to be done here.  I wouldn't trust anything here.
 IdleRuntime.prototype._limit = function() {
 	var er = this.driver.getLastException();

@@ -2516,7 +2516,6 @@ module.exports = (function(){
   result.SyntaxError = function(expected, found, offset, line, column) {
     function buildMessage(expected, found) {
       var expectedHumanized, foundHumanized;
-      
       switch (expected.length) {
         case 0:
           expectedHumanized = "end of input";
