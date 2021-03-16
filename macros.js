@@ -13,6 +13,8 @@
  * When macros are modified by the user they are saved back to the files that they were loaded from. The
  * header in each macro file contains metadata that identifies the macro, its custom-cut number, and description
  *
+ * TODO - (th) Is this right? At moment messes up error handling, but why not let user see header?
+ *      - Note that _runFile is used to run macro's; why different
  * The macro headers are part of the files, but they are not displayed to the user when editing.  The user
  * is able to edit those fields, but only as exposed through the UI in the macro manager.  This prevents
  * users from corrupting the headers and creating a bunch of edge cases when editing macros.

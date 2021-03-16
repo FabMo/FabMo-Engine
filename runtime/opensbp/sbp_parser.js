@@ -2516,10 +2516,10 @@ module.exports = (function(){
   result.SyntaxError = function(expected, found, offset, line, column) {
     function buildMessage(expected, found) {
       var expectedHumanized, foundHumanized;
-
 ////##
-log.debug(expected + "," + found + "," + offset + "," + line + "," + column);
-      
+log.stack();
+log.debug("==>SYNTAX_error: " + expected + "," + found + "," + offset + "," + line + "," + column);
+log.debug("case- " + expected.length)      
       switch (expected.length) {
         case 0:
           expectedHumanized = "end of input";

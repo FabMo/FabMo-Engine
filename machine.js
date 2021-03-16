@@ -514,7 +514,7 @@ Machine.prototype.disarm = function() {
 
 // Execute the action in the chamber (the one passed to the arm() method)
 Machine.prototype.fire = function(force) {
-
+log.debug("===> NOW handling FIRE!");
 	if(this.fireButtonDebounce & !force) {
 		log.debug("Fire button debounce reject.");
 		log.debug("debounce: " + this.fireButtonDebounce + " force: " + force);
@@ -1070,7 +1070,7 @@ Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 	}
 }
 
-// e
+// 
 Machine.prototype._resume = function(input) {
 	switch(this.status.state) {
 		case 'interlock':

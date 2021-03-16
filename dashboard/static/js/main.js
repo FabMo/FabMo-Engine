@@ -152,6 +152,8 @@ require("../css/toastr.min.css");
                             message: status.info.error,
                             noButton : true
                         });
+////##
+console.log("==> AT ERROR dead");
 
                         return;
                     }
@@ -277,6 +279,8 @@ require("../css/toastr.min.css");
                                     dashboard.engine.quit();
                                 }
                             });
+////##
+console.log("==> AT ERROR error");
                             modalIsShown = true;
                             dashboard.handlers.hideFooter();
                         }

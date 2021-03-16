@@ -120,6 +120,8 @@ parse = function(data) {
     }
 
     // Iterate over lines and parse one by one.  Throw an error if any don't parse.
+////##
+log.debug("... about to start iterating lines in parser.js");
     for(i=0; i<lines.length; i++) {
         try {            
             output.push(parseLine(lines[i]))
