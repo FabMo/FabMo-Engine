@@ -514,7 +514,6 @@ Machine.prototype.disarm = function() {
 
 // Execute the action in the chamber (the one passed to the arm() method)
 Machine.prototype.fire = function(force) {
-log.debug("===> NOW handling FIRE!");
 	if(this.fireButtonDebounce & !force) {
 		log.debug("Fire button debounce reject.");
 		log.debug("debounce: " + this.fireButtonDebounce + " force: " + force);
@@ -552,29 +551,21 @@ log.debug("===> NOW handling FIRE!");
 	// Actually execute the action (finally!)
 	switch(action.type) {
 		case 'nextJob':
-////##
-log.debug("fire: about to _runNextJob ..........");
 			this._runNextJob(force, function() {});
 			break;
 
 		case 'runtimeCode':
 			var name = action.payload.name
 			var code = action.payload.code
-////##
-log.debug("fire: about to _executeRuntimeCode ..........");
 			this._executeRuntimeCode(name, code);
 			break;
 
 		case 'runFile':
 			var filename = action.payload.filename
-////##
-log.debug("fire: about to _runFile ..........");
 			this._runFile(filename);
 			break;
 
 		case 'resume':
-////##
-log.debug("fire: about to _resume from fire ..........");
 			this._resume(action.input);
 			break;
 	}
@@ -742,8 +733,6 @@ Machine.prototype._runFile = function(filename) {
 		if(err) {
 			return log.error(err);
 		}
-////##
-log.debug("After fire: CALL the file and runtime from machine > " + filename)
 		runtime.runFile(filename);
 	});
 };
@@ -945,8 +934,7 @@ Machine.prototype.quit = function(callback) {
 		if(this.current_runtime) {
 			log.info("Quitting the current runtime...")
 			this.current_runtime.quit();
-////##			callback(null, 'quit');
-			callback('quit');
+			callback(null, 'quit');
 			alreadyQuiting = false;
 		} else {
 			log.warn("No current runtime!")
@@ -967,8 +955,7 @@ Machine.prototype.resume = function(callback, input=false) {
 			'type' : 'resume',
 			'input' : input
 		}, config.machine.get('auth_timeout'));
-////##    	callback(null, 'resumed');
-    	callback('resumed');
+    	callback(null, 'resumed');
 	}
 }
 
@@ -1070,7 +1057,6 @@ Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 	}
 }
 
-// 
 Machine.prototype._resume = function(input) {
 	switch(this.status.state) {
 		case 'interlock':

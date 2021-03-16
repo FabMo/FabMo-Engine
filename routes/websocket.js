@@ -165,7 +165,6 @@ var onPrivateConnect = function(socket) {
 			return socket.disconnect();
 		} // make sure that if the user logouts, he can't talk through the socket anymore.
 		log.debug('This Command = ' + data.name);
-////##		log.debug(data.name);
 		try {
 			switch(data.name) {
 				case 'pause':

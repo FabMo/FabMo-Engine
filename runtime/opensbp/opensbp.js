@@ -1495,8 +1495,6 @@ SBPRuntime.prototype._setUnits = function(units) {
 // An error is thrown on duplicate labels
 SBPRuntime.prototype._analyzeLabels = function() {
     this.label_index = {};
-////##
-log.debug('AT the labels, length = ' + this.program.length)
     for(i=0; i<this.program.length; i++) {
         line = this.program[i];
         if(line && line.type) {
@@ -1526,9 +1524,6 @@ SBPRuntime.prototype._analyzeGOTOs = function() {
                         // No break: fall through to next state(s)
                     case "goto":
                     case "gosub":
-////##
-log.debug("AT the gosub test: " + line.label + ", " + line + ", length " + this.program.length)
-log.debug(JSON.stringify(this.label_index))
                         if (line.label in this.label_index) {
                             // pass
                         } else {
