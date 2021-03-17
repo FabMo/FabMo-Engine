@@ -1269,6 +1269,8 @@ SBPRuntime.prototype._execute = function(command, callback) {
                     params['input'] = var_name;
                 }
                 this.paused = true;
+                //Set driver in paused state
+                this.machine.driver.pause_hold = true;
                 this.machine.setState(this, 'paused', params);
                 return true;
             }

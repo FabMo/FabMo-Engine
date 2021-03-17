@@ -152,6 +152,9 @@ function G2() {
 	this.pause_flag = false;
 	this.connected = false;
 
+	// OpenSBP Pause
+	this.pause_hold = false;
+
 	// Feedhold/flush
 	this.quit_pending = false;
 	this.stat = null;
@@ -971,8 +974,9 @@ G2.prototype._createStatePromise = function(states) {
 	var that = this;
 	var onStat = function(stat) {
 		for(var i=0; i<states.length; i++) {
-			if(stat === states[i] && !this.manual_hold) {
+			if(stat === states[i] && !this.manual_hold && !this.pause_hold) {
 				that.removeListener('stat', onStat);
+				log.debug("Pause Now - " + this.pause_hold + " in " + this.mode);
 				log.debug("Hold now - " + this.manual_hold + " in " + this.mode);
 				log.info("Resolving promise " + thisPromise + " because of state " + stat + " which is one of " + states)
 				deferred.resolve(stat);

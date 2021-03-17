@@ -847,6 +847,10 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				break;
 			case 'paused':
                 if(this.status.state != newstate) {
+                	//set driver in paused state
+                	// log.debug('paused state: pause_hold is:  ' + this.driver.pause_hold);
+                	this.driver.pause_hold = true;
+                	// log.debug('paused state: pause_hold set to:  ' + this.driver.pause_hold);
 
                 	// Save the position to the instance configuration.  See note above.
                     this.driver.get('mpo', function(err, mpo) {
@@ -911,6 +915,8 @@ Machine.prototype.pause = function(callback) {
 
 // Quit 
 Machine.prototype.quit = function(callback) {
+		// Release Pause hold if present
+		this.driver.pause_hold = false;
 		this.disarm();
 
 		// Quitting from the idle state dismisses the 'info' data
@@ -947,6 +953,11 @@ Machine.prototype.resume = function(callback, input=false) {
 	if (this.current_runtime && this.current_runtime.inFeedHold){
 		this._resume();
 	} else {
+		//Release driver pause hold
+		// log.debug("Resume from pause: pause_hold is:  " + this.driver.pause_hold);
+		this.driver.pause_hold = false;
+		// log.debug("Resume from pause: pause_hold set to:  " + this.driver.pause_hold);
+		//clear any timed pause
 		if (this.pauseTimer) {
 			clearTimeout(this.pauseTimer);
 			this.pauseTimer = false;
