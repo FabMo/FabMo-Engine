@@ -200,9 +200,9 @@ G2.prototype._createCycleContext = function() {
 	////## added spaces after '\n's to make debug display easier to read
 	// TODO factor this out; ////## really???
 	// Inject a couple of G-Codes which are needed to start the machining cycle
-	st.write('G90\n ' + 'G61\n ')  ////## to make sure we are not in exact stop mode left from fixed moves
-//	st.write('G90\n')
-	st.write('M100 ({out4:1})\n ') // hack to get the "permissive relay" behavior while in-cycle
+	st.write('N99100 G90\n')  ////## to make sure we are not in exact stop mode left from fixed moves
+	st.write('N99101 G61\n')  ////## to make sure we are not in exact stop mode left from fixed moves
+	st.write('N99102 M100 ({out4:1})\n') // hack to get the "permissive relay" behavior while in-cycle
 	
 	// Handle data coming in on the stream
 	st.on('data', function(chunk) {
@@ -217,6 +217,7 @@ G2.prototype._createCycleContext = function() {
 				newLines = true;
 				var s = this.lineBuffer.join('').trim();
 
+				log.g2(this._serialToken,'out',"ENQ: " + s);
 				// Enqueue individual lines in the g-code queue
 				this.gcode_queue.enqueue(s);
 
@@ -243,8 +244,9 @@ G2.prototype._createCycleContext = function() {
 		this._streamDone = true;
 		// TODO factor this out, see above
 		if(!this.quit_pending) {
-			this.gcode_queue.enqueue('M100 ({out4:0})')
-			this.gcode_queue.enqueue('M30');
+			log.debug("*********SENDING TAIL END OF STREAM.")
+			this.gcode_queue.enqueue('N99200 M100 ({out4:0})')
+			//this.gcode_queue.enqueue('N99201 M30'); // rmackie
 		}
 		this.sendMore();
 		log.debug("***Stream END event.")
@@ -257,6 +259,11 @@ G2.prototype._createCycleContext = function() {
 
 	// Create the promise that resolves when the machining cycle ends.
 	var promise = this._createStatePromise([STAT_END]).then(function() {
+		log.debug("*********SENDING PROMISED END OF STREAM.")
+		this.gcode_queue.enqueue('N99300 M100 ({out4:0})')
+		//this.gcode_queue.enqueue('N99301 M30'); // rmackie
+		this.sendMore();
+		log.debug("***PROMISED Stream END event.")
 		this.context = null;
 		this._primed = false;
 		return this;
@@ -346,7 +353,7 @@ G2.prototype.onSerialClose = function(data) {
 
 // Write to the serial port (and log it)
 G2.prototype._write = function(s, callback) {
-	log.g2(this._serialToken,'out',s);
+	log.g2(this._serialToken,'out',"XMIT:"+s);
 	this._serialPort.write(s, function () {
 		if(callback) {
 			this._serialPort.drain(callback);
@@ -498,7 +505,7 @@ G2.prototype.clearLastException = function() {
  * 9	machine is homing
 */
 G2.prototype.handleStatusReport = function(response) {
-
+    log.debug('in handleStatusReport');
 	if(response.sr) {
 		// Update our copy of the system status
 		for (var key in response.sr) {
@@ -521,12 +528,14 @@ G2.prototype.handleStatusReport = function(response) {
 				// If we stopped and flushed, we might have provided a callback
 				// We call it once we get the confirmation that the tool has actually stopped and flushed.
 				case STAT_STOP:
+                    log.debug('########### stat=STOP'); // rmackie
 					if(this.flushcallback) {
 						this.flushcallback(null);
 						this.flushcallback = null;
 					}
 					break;
 				case STAT_END:
+                    log.debug('########### stat=END'); // rmackie
 					//##Lput back in 
 					this.status.line = null;
 					break;
@@ -549,6 +558,7 @@ G2.prototype.handleStatusReport = function(response) {
 			// this.
 			// TODO - This state jiggerypokery is because there are issues with state management surrounding
 			//        job kills in the firmware.  Those issues should be resolved so that this is not necessary.
+            log.debug("jiggery pokery time");
 			if(this.quit_pending) {
 				switch(response.sr.stat) {
 					case STAT_STOP:
@@ -785,6 +795,33 @@ G2.prototype.quit = function() {
 			break;
 	}
 }
+
+G2.prototype.sendM30 = function() {
+	if(this.quit_pending) {
+		log.warn("Not quitting because a quit is already pending.");
+		return;
+	}
+
+	switch(this.status.stat) {
+		//case STAT_END:
+		//	return;
+		//	break;
+
+		default:
+			this.quit_pending = true;
+
+			if(this.stream) {
+				this.stream.end()
+			}
+			// Clear the gcodes we have queued up
+			this.gcode_queue.clear();
+			// Issue the actual Job Kill
+            log.debug("Sending Cleanup KILL"); ////##
+			this._write('M30\n');
+			break;
+	}
+}
+
 
 // get the specified configuration value from g2.
 // key can be an array of keys as well, in which case an object will be returned mapping keys to values
@@ -1062,7 +1099,7 @@ G2.prototype.sendMore = function() {
 		var codes = this.command_queue.multiDequeue(count)
 		codes.push("");
 		this._ignored_responses+=to_send;
-		this._write(codes.join('\n '), function() {});   ////## added space for reading
+		this._write(codes.join('\n'), function() {});   ////## added space for reading
 	}
 
 	// If we're primed, go ahead and send more g-codes
@@ -1077,7 +1114,7 @@ G2.prototype.sendMore = function() {
 				codes.push(""); 
 				if(codes.length > 1) {
 					this.lines_to_send -= to_send/*-offset*/;
-					this._write(codes.join('\n '), function() { });  ////## added space for reading
+					this._write(codes.join('\n'), function() { });  ////## added space for reading
 				}
 			}
 		}
