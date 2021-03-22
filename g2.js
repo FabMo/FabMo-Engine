@@ -791,6 +791,34 @@ G2.prototype.quit = function() {
 	}
 }
 
+// When the gcode runtime asks that an M30 be sent, send it. This is pulled out from the
+//  normal queuing and writing path because of a timing issue with the g2core that needs to be
+//  resolved. Right now, when the g2core runs out of gcode in the buffer, it seems like it
+//  goes to stat:3. However, if the last line of gcode was M30, it seems to either ignore it,
+//  or consider it satisfied by stat:3. (maybe there is some time required to get to stat:3 from stat:5?
+//  In any case, by sending the M30 after we receive the stat:3 status change update, we ensure
+//  that the M30 is processed and that the g2core goes to stat:4 so that we end our current CycleContext
+//  and can start a new one.
+G2.prototype.sendM30 = function() {
+	if(this.quit_pending) {
+		log.warn("Not quitting because a quit is already pending.");
+		return;
+	}
+
+	this.quit_pending = true;
+
+	if(this.stream) {
+		this.stream.end()
+	}
+	// Clear the gcodes we have queued up
+    // we should have no gcodes in queue since we only get here when the gcode runtime is notified that we
+    // just transitioned to stat:3. Before we send new gcodes, we should start a new Cycle Context.
+	this.gcode_queue.clear();
+	// Issue the M30
+    log.debug("Sending M30 at end of CycleContext");
+	this._write('M30\n');
+}
+
 // get the specified configuration value from g2.
 // key can be an array of keys as well, in which case an object will be returned mapping keys to values
 // This function is expected to not take too long, even if we're busy running a file, so a timeout is implemented.
