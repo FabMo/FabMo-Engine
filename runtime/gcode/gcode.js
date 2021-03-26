@@ -2,6 +2,7 @@ var fs = require('fs');
 var log = require('../../log').logger('gcode');
 var config = require('../../config');
 var countLineNumbers = require('../../util').countLineNumbers
+var LineNumberer = require('./util').LineNumberer
 
 
 function GCodeRuntime() {
@@ -153,18 +154,26 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 	if(callback) { log.error("CALLBACK PASSED TO RUNSTRING")}
 
 	if(this.machine.status.state === 'idle' || this.machine.status.state === 'armed') {
+		// Add line numbers to Gcode string.
 		var lines =  string.split('\n');
-		var mode = config.driver.get('gdi') ? 'G91': 'G90';
 		this.machine.status.nb_lines = lines.length;
 		for (i=0;i<lines.length;i++){
 			if (lines[i][0]!==undefined && lines[i][0].toUpperCase() !== 'N' ){
 				lines[i]= 'N'+ (i+1) + lines[i];
 			}
 		}
+		// Set absolute or incremental per config.
+		var mode = config.driver.get('gdi') ? 'G91': 'G90';
 		lines.unshift(mode);
 		this.completeCallback = callback;
 		this._changeState("running");
-		return this.driver.runList(lines)
+		var stringStream = new stream.Readable();
+		// Push lines to stream.
+		for(var i=0; i<lines.length; i++) {
+			stringStream.push(lines[i] + "\n");
+		}
+		stringStream.push(null);
+		return this.driver.runStream(stringStream)
 		.on('stat', this._handleStateChange.bind(this))
 		.then(this._handleStop.bind(this));
 	}
@@ -200,10 +209,12 @@ GCodeRuntime.prototype._handleStateChange = function(stat) {
 
 // Run a file given the filename
 GCodeRuntime.prototype.runFile = function(filename, callback) {
-        this._file_or_stream_in_progress = true;
+    this._file_or_stream_in_progress = true;
 	countLineNumbers(filename, function(err, lines) {
 		this.machine.status.nb_lines = lines;
-		this.driver.runFile(filename, callback)
+		var st = fs.createReadStream(filename);
+		var ln = new LineNumberer();
+		return this.driver.runStream(st.pipe(ln))
 			.on('stat', this._handleStateChange.bind(this))
 			.then(this._handleStop.bind(this));
 	}.bind(this));
