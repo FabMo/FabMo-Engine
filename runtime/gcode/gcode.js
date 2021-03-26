@@ -1,4 +1,5 @@
 var fs = require('fs');
+var stream = require('stream');
 var log = require('../../log').logger('gcode');
 var config = require('../../config');
 var countLineNumbers = require('../../util').countLineNumbers
