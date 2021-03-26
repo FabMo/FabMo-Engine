@@ -2,7 +2,7 @@ var fs = require('fs');
 var log = require('../../log').logger('gcode');
 var config = require('../../config');
 var countLineNumbers = require('../../util').countLineNumbers
-var LineNumberer = require('./util').LineNumberer
+var LineNumberer = require('../../util').LineNumberer
 
 
 function GCodeRuntime() {
