@@ -950,13 +950,15 @@ Machine.prototype.quit = function(callback) {
 
 // Resume from the paused state.
 Machine.prototype.resume = function(callback, input=false) {
-	if (this.current_runtime && this.current_runtime.inFeedHold){
-		this._resume();
-	} else {
+	if (this.driver.pause_hold) {
 		//Release driver pause hold
 		// log.debug("Resume from pause: pause_hold is:  " + this.driver.pause_hold);
 		this.driver.pause_hold = false;
 		// log.debug("Resume from pause: pause_hold set to:  " + this.driver.pause_hold);
+	}
+	if (this.current_runtime && this.current_runtime.inFeedHold){
+		this._resume();
+	} else {
 		//clear any timed pause
 		if (this.pauseTimer) {
 			clearTimeout(this.pauseTimer);
