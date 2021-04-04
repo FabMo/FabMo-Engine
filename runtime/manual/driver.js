@@ -254,6 +254,11 @@ ManualDriver.prototype.runGCode = function(code) {
 		} else {
 			log.debug('writing gcode while static')
 			this.moving = true;
+////## To debug G2 action; this kludge allows easy multiple lines with an "n" placed after cmd
+//      in betaINSERT funstion of Sb4
+log.debug("... possibly inserting line feed; for use in multiple inserts of gcode");
+code = code.replace(/n/g,'\n');
+log.debug(code);
 			this.stream.write(code.trim() + '\n');
 			this.maintainMotion();		
 			this._renewMoves('start')

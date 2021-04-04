@@ -731,7 +731,8 @@ log.debug("### Getting this far in START-ENGINE ###  <======================")
             if('debug' in argv) {
                 server.use(
                     function debug(req, res, next) {
-                        log.debug(req.method + ' ' + req.url);
+////## temporarily removed because making hard to read manual mode action                        
+////##                        log.debug(req.method + ' ' + req.url);
                         next();
                     });
             }
