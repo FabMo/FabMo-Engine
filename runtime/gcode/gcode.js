@@ -214,7 +214,10 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 		// }
 		this.completeCallback = callback;
 		this._changeState("running");
-		var stringStream = new stream.Readable.from(string);
+		var stringStream = stream.Readable.from(string);
+		stringStream.on('data', (chunk) => {
+			log.debug(chunk)
+		});
 		// Push lines to stream.
 		// for(var i=0; i<lines.length; i++) {
 		// 	stringStream.push(lines[i] + "\n");
