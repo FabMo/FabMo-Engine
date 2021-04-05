@@ -149,37 +149,6 @@ GCodeRuntime.prototype._idle = function() {
 	}
 };
 
-// Run the provided string
-// callback runs only when execution is complete.
-GCodeRuntime.prototype.runString = function(string, callback) {
-	if(callback) { log.error("CALLBACK PASSED TO RUNSTRING")}
-
-	if(this.machine.status.state === 'idle' || this.machine.status.state === 'armed') {
-		// Add line numbers to Gcode string.
-		var lines =  string.split('\n');
-		this.machine.status.nb_lines = lines.length;
-		for (i=0;i<lines.length;i++){
-			if (lines[i][0]!==undefined && lines[i][0].toUpperCase() !== 'N' ){
-				lines[i]= 'N'+ (i+1) + lines[i];
-			}
-		}
-		// // Set absolute or incremental per config.
-		// var mode = config.driver.get('gdi') ? 'G91': 'G90';
-		// lines.unshift(mode);
-		this.completeCallback = callback;
-		this._changeState("running");
-		var stringStream = new stream.Readable();
-		// Push lines to stream.
-		for(var i=0; i<lines.length; i++) {
-			stringStream.push(lines[i] + "\n");
-		}
-		stringStream.push(null);
-		return this.driver.runStream(stringStream)
-		.on('stat', this._handleStateChange.bind(this))
-		.then(this._handleStop.bind(this));
-	}
-};
-
 GCodeRuntime.prototype._handleStop = function() {
 	this._idle();
 }
@@ -208,18 +177,52 @@ GCodeRuntime.prototype._handleStateChange = function(stat) {
 	}
 }
 
+// Run a given stream input
+GCodeRuntime.prototype.runStream = function(st) {
+	var ln = new LineNumberer();
+	return this.driver.runStream(st.pipe(ln))
+		.on('stat', this._handleStateChange.bind(this))
+		.then(this._handleStop.bind(this));
+}
+
 // Run a file given the filename
 GCodeRuntime.prototype.runFile = function(filename, callback) {
     this._file_or_stream_in_progress = true;
-	countLineNumbers(filename, function(err, lines) {
-		this.machine.status.nb_lines = lines;
-		var st = fs.createReadStream(filename);
-		var ln = new LineNumberer();
-		return this.driver.runStream(st.pipe(ln))
-			.on('stat', this._handleStateChange.bind(this))
-			.then(this._handleStop.bind(this));
-	}.bind(this));
+    if(this.machine.status.state === 'idle' || this.machine.status.state === 'armed') {
+		countLineNumbers(filename, function(err, lines) {
+			this.machine.status.nb_lines = lines;
+			var st = fs.createReadStream(filename);
+			return this.runStream(st);
+		}.bind(this));
+	}
 }
+
+// Run the provided string
+// callback runs only when execution is complete.
+GCodeRuntime.prototype.runString = function(string, callback) {
+	if(callback) { log.error("CALLBACK PASSED TO RUNSTRING")}
+
+	if(this.machine.status.state === 'idle' || this.machine.status.state === 'armed') {
+		// Add line numbers to Gcode string.
+		var lines = (string.match(/\n/g) || '').length + 1
+		// var lines =  string.split('\n');
+		this.machine.status.nb_lines = lines;
+		// for (i=0;i<lines.length;i++){
+		// 	if (lines[i][0]!==undefined && lines[i][0].toUpperCase() !== 'N' ){
+		// 		lines[i]= 'N'+ (i+1) + lines[i];
+		// 	}
+		// }
+		this.completeCallback = callback;
+		this._changeState("running");
+		var stringStream = new stream.Readable.from(string);
+		// Push lines to stream.
+		// for(var i=0; i<lines.length; i++) {
+		// 	stringStream.push(lines[i] + "\n");
+		// }
+		// stringStream.push(null);
+		return this.runStream(stringStream);
+	}
+};
 
 // Run the given string as gcode
 GCodeRuntime.prototype.executeCode = function(string, callback) {
