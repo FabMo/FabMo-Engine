@@ -208,9 +208,7 @@ G2.prototype._createCycleContext = function() {
 //	st.write('G90\n')
 	// st.write('M100 ({out4:1})\n ') // hack to get the "permissive relay" behavior while in-cycle
 ////## v3 version of G2 is not yet "in cycle here"; an increasing problem!
-	
-	// Handle data coming in on the stream
-	st.on('data', function(chunk) {
+	var processChunk = function(chunk) {
 		// Stream data comes in "chunks" which are often multiple lines
 		chunk = chunk.toString();
 		var newLines = false;
@@ -239,7 +237,39 @@ G2.prototype._createCycleContext = function() {
 		if(newLines) {
 			this.sendMore();
 		}
-	}.bind(this));
+	};
+	// Handle data coming in on the stream
+	// st.on('data', function(chunk) {
+	// 	// Stream data comes in "chunks" which are often multiple lines
+	// 	chunk = chunk.toString();
+	// 	var newLines = false;
+	// 	// Repartition incoming "chunked" data as lines
+	// 	for(var i=0; i<chunk.length; i++) {
+	// 		ch = chunk[i];
+	// 		this.lineBuffer.push(ch);
+	// 		if(ch === '\n') {
+	// 			newLines = true;
+	// 			var s = this.lineBuffer.join('').trim();
+
+	// 			// Enqueue individual lines in the g-code queue
+	// 			this.gcode_queue.enqueue(s);
+
+	// 			// The G2 sender doesn't actually start sending until it is "primed"
+	// 			// Priming happens either when the number of lines to send reaches a certain threshold
+	// 			// or the prime() function is called manually.
+	// 			// TODO:  Factor out 10 (magic number) and put it at the top of the file so it can be changed easily.
+	// 			if(this.gcode_queue.getLength() >= 10) {
+	// 				this._primed = true;
+	// 			}
+	// 			this.lineBuffer = [];
+	// 		}
+	// 	}
+	// 	// If new lines were enqueued as a part of the re-chunkification process, send them.
+	// 	if(newLines) {
+	// 		this.sendMore();
+	// 	}
+	// }.bind(this));
+	st.on('data', processChunk(chunk).bind(this));
 
 	// Set absolute, spindle speed default, units, and turn on output 4
 	st.write('G90\n ' + 'S1000\n ' + 'G61\n ' + 'M100 ({out4:1})\n ');
@@ -259,10 +289,10 @@ G2.prototype._createCycleContext = function() {
 	}.bind(this));
 
 	// Handle a stream being piped into this context (currently do nothing)
-	st.on('pipe', function() {
-		log.debug("Stream PIPE event");
-	})
-
+	// st.on('pipe', function() {
+	// 	log.debug("Stream PIPE event");
+	// })
+	st.on('pipe', processChunk(chunk).bind(this))
 	// Create the promise that resolves when the machining cycle ends.
 	var promise = this._createStatePromise([STAT_END]).then(function() {
 		this.context = null;
