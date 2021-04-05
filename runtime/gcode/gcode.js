@@ -204,9 +204,9 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 
 	if(this.machine.status.state === 'idle' || this.machine.status.state === 'armed') {
 		// Add line numbers to Gcode string.
-		var lines = (string.match(/\n/g) || '').length + 1
-		// var lines =  string.split('\n');
-		this.machine.status.nb_lines = lines;
+		// var lines = (string.match(/\n/g) || '')
+		var lines =  string.split('\n');
+		this.machine.status.nb_lines = lines.length;
 		// for (i=0;i<lines.length;i++){
 		// 	if (lines[i][0]!==undefined && lines[i][0].toUpperCase() !== 'N' ){
 		// 		lines[i]= 'N'+ (i+1) + lines[i];
@@ -214,15 +214,15 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 		// }
 		this.completeCallback = callback;
 		this._changeState("running");
-		var stringStream = stream.Readable.from(string);
-		stringStream.on('data', (chunk) => {
-			log.debug(chunk)
-		});
+		// var stringStream = stream.Readable.from(string);
+		// stringStream.on('data', (chunk) => {
+		// 	log.debug(chunk)
+		// });
 		// Push lines to stream.
-		// for(var i=0; i<lines.length; i++) {
-		// 	stringStream.push(lines[i] + "\n");
-		// }
-		// stringStream.push(null);
+		for(var i=0; i<lines.length; i++) {
+			stringStream.push(lines[i] + "\n");
+		}
+		stringStream.push(null);
 		return this.runStream(stringStream);
 	}
 };
