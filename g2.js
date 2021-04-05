@@ -269,7 +269,7 @@ G2.prototype._createCycleContext = function() {
 	// 		this.sendMore();
 	// 	}
 	// }.bind(this));
-	st.on('data', processChunk(chunk).bind(this));
+	st.on('data', function(chunk) {processChunk(chunk).bind(this)}.bind(this));
 
 	// Set absolute, spindle speed default, units, and turn on output 4
 	st.write('G90\n ' + 'S1000\n ' + 'G61\n ' + 'M100 ({out4:1})\n ');
@@ -292,7 +292,7 @@ G2.prototype._createCycleContext = function() {
 	// st.on('pipe', function() {
 	// 	log.debug("Stream PIPE event");
 	// })
-	st.on('pipe', processChunk(chunk).bind(this))
+	st.on('pipe', function(chunk) {processChunk(chunk).bind(this)}.bind(this));
 	// Create the promise that resolves when the machining cycle ends.
 	var promise = this._createStatePromise([STAT_END]).then(function() {
 		this.context = null;
