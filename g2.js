@@ -201,12 +201,12 @@ G2.prototype._createCycleContext = function() {
 	// TODO factor this out; ////## really???
 	// Inject a couple of G-Codes which are needed to start the machining cycle
 ////##
-	st.write('G90\n ' + 'S1000\n ' + 'G61\n ')  ////## AND, make sure we have a default S-value
+	// st.write('G90\n ' + 'S1000\n ' + 'G61\n ')  ////## AND, make sure we have a default S-value
 ////## S-value needed for G2 spinup-delay to work (ugh!not M3 switch)
 ////## TODO create default variable for S-value for VFD spindle control, just a dummy here now
-	st.write('G90\n ' + 'G61\n ')  ////## to make sure we are not in exact stop mode left from fixed moves
+	// st.write('G90\n ' + 'G61\n ')  ////## to make sure we are not in exact stop mode left from fixed moves
 //	st.write('G90\n')
-	st.write('M100 ({out4:1})\n ') // hack to get the "permissive relay" behavior while in-cycle
+	// st.write('M100 ({out4:1})\n ') // hack to get the "permissive relay" behavior while in-cycle
 ////## v3 version of G2 is not yet "in cycle here"; an increasing problem!
 	
 	// Handle data coming in on the stream
@@ -240,6 +240,9 @@ G2.prototype._createCycleContext = function() {
 			this.sendMore();
 		}
 	}.bind(this));
+
+	// Set absolute, spindle speed default, units, and turn on output 4
+	st.write('G90\n ' + 'S1000\n ' + 'G61\n ' + 'M100 ({out4:1})\n ');
 
 	// Handle a stream finishing or disconnecting.
 	st.on('end', function() {

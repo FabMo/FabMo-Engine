@@ -163,9 +163,9 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 				lines[i]= 'N'+ (i+1) + lines[i];
 			}
 		}
-		// Set absolute or incremental per config.
-		var mode = config.driver.get('gdi') ? 'G91': 'G90';
-		lines.unshift(mode);
+		// // Set absolute or incremental per config.
+		// var mode = config.driver.get('gdi') ? 'G91': 'G90';
+		// lines.unshift(mode);
 		this.completeCallback = callback;
 		this._changeState("running");
 		var stringStream = new stream.Readable();
