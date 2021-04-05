@@ -192,7 +192,7 @@ GCodeRuntime.prototype.runFile = function(filename, callback) {
 		countLineNumbers(filename, function(err, lines) {
 			this.machine.status.nb_lines = lines;
 			var st = fs.createReadStream(filename);
-			return this.runStream(st).bind(this);
+			return this.runStream(st);
 		}.bind(this));
 	}
 }
@@ -221,10 +221,11 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 		// }
 		// stringStream.push(null);
 		var stringStream = stream.Readable.from(string);
-		stringStream.on('data', (chunk) => {
-			log.debug(chunk)
-		});
-		return this.runStream(stringStream).bind(this);
+		// stringStream.on('data', (chunk) => {
+		// 	log.debug(chunk)
+		// });
+		this.driver.prime();
+		return this.runStream(stringStream);
 	}
 };
 
