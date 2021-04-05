@@ -192,7 +192,7 @@ GCodeRuntime.prototype.runFile = function(filename, callback) {
 		countLineNumbers(filename, function(err, lines) {
 			this.machine.status.nb_lines = lines;
 			var st = fs.createReadStream(filename);
-			return this.runStream(st);
+			return this.runStream(st).bind(this);
 		}.bind(this));
 	}
 }
@@ -204,8 +204,8 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 
 	if(this.machine.status.state === 'idle' || this.machine.status.state === 'armed') {
 		// Add line numbers to Gcode string.
-		// var lines = (string.match(/\n/g) || '')
-		var lines =  string.split('\n');
+		var lines = (string.match(/\n/g) || '');
+		// var lines =  string.split('\n');
 		this.machine.status.nb_lines = lines.length;
 		// for (i=0;i<lines.length;i++){
 		// 	if (lines[i][0]!==undefined && lines[i][0].toUpperCase() !== 'N' ){
@@ -214,16 +214,17 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 		// }
 		this.completeCallback = callback;
 		this._changeState("running");
-		var stringStream = new stream.Readable();
-		// stringStream.on('data', (chunk) => {
-		// 	log.debug(chunk)
-		// });
+		// var stringStream = new stream.Readable();
 		// Push lines to stream.
-		for(var i=0; i<lines.length; i++) {
-			stringStream.push(lines[i] + "\n");
-		}
-		stringStream.push(null);
-		return this.runStream(stringStream);
+		// for(var i=0; i<lines.length; i++) {
+		// 	stringStream.push(lines[i] + "\n");
+		// }
+		// stringStream.push(null);
+		var stringStream = stream.Readable.from(string);
+		stringStream.on('data', (chunk) => {
+			log.debug(chunk)
+		});
+		return this.runStream(stringStream).bind(this);
 	}
 };
 

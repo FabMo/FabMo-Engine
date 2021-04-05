@@ -555,7 +555,7 @@ LineNumberer.prototype._transform = function(chunk, enc, next) {
     //this.push("N" + this.count + " " + lines[i] + '\n');
     block.push("N" + this.count + " " + lines[i]);
   }
-
+  log.debug('lineNumber block:  ' + block);
   this.push(block.join('\n'))
   next();
 };
