@@ -1041,9 +1041,6 @@ G2.prototype.waitForState = function(states) {
 G2.prototype.runStream = function(s) {
 	log.info("from run stream to _createCycle")
 	this._createCycleContext();
-	s.on('data', (chunk) => {
-		log.debug(chunk)
-	});
 	s.pipe(this.context._stream);
 	return this.context;
 }
