@@ -180,7 +180,8 @@ GCodeRuntime.prototype._handleStateChange = function(stat) {
 // Run a given stream input
 GCodeRuntime.prototype.runStream = function(st) {
 	var ln = new LineNumberer();
-	return this.driver.runStream(st.pipe(ln))
+	// return this.driver.runStream(st.pipe(ln))
+	return this.driver.runStream(st)
 		.on('stat', this._handleStateChange.bind(this))
 		.then(this._handleStop.bind(this));
 }
@@ -224,7 +225,6 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 		// stringStream.on('data', (chunk) => {
 		// 	log.debug(chunk)
 		// });
-		this.driver.prime();
 		return this.runStream(stringStream);
 	}
 };
