@@ -185,7 +185,7 @@ GCodeRuntime.prototype.runStream = function(st) {
 	};
 	var ln = new LineNumberer();
 	// return this.driver.runStream(st.pipe(ln))
-	return this.driver.runStream(st.pipe(ln).pipe(stream.Readable()))
+	return this.driver.runStream(st.pipe(ln))
 		.on('stat', this._handleStateChange.bind(this))
 		.then(this._handleStop.bind(this));
 }
