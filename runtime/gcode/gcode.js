@@ -179,6 +179,10 @@ GCodeRuntime.prototype._handleStateChange = function(stat) {
 
 // Run a given stream input
 GCodeRuntime.prototype.runStream = function(st) {
+	// check lines length and manually prime if below threshold value
+	if (this.machine.status.nb_lines < this.driver.PRIMED_THRESHHOLD){
+		this.driver.prime();
+	};
 	var ln = new LineNumberer();
 	// return this.driver.runStream(st.pipe(ln))
 	return this.driver.runStream(st)

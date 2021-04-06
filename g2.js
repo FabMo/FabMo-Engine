@@ -42,6 +42,7 @@ var _promiseCounter = 1;
 var resumePending = false;
 var intendedClose = false;
 var THRESH = 1
+var PRIMED_THRESHOLD = 10
 
 var pat = /s*(G(28|38)\.\d|G2(0|1))/g
 
@@ -229,7 +230,7 @@ G2.prototype._createCycleContext = function() {
 				// Priming happens either when the number of lines to send reaches a certain threshold
 				// or the prime() function is called manually.
 				// TODO:  Factor out 10 (magic number) and put it at the top of the file so it can be changed easily.
-				if(this.gcode_queue.getLength() >= 10) {
+				if(this.gcode_queue.getLength() >= PRIMED_THRESHOLD) {
 					this._primed = true;
 				}
 				this.lineBuffer = [];
@@ -1109,14 +1110,14 @@ G2.prototype.sendMore = function() {
 		var count = this.gcode_queue.getLength();
 		if(this.lines_to_send >= THRESH) {
 				if(count >= THRESH || this._streamDone) {
-				// Send some lines, but no more than we are allowed per linemode protocol
-				var to_send = Math.min(this.lines_to_send, count);
-				var codes = this.gcode_queue.multiDequeue(to_send);
-				// Ensures that when we join below that we get a \n on the end
-				codes.push(""); 
-				if(codes.length > 1) {
-					this.lines_to_send -= to_send/*-offset*/;
-					this._write(codes.join('\n '), function() { });  ////## added space for reading
+					// Send some lines, but no more than we are allowed per linemode protocol
+					var to_send = Math.min(this.lines_to_send, count);
+					var codes = this.gcode_queue.multiDequeue(to_send);
+					// Ensures that when we join below that we get a \n on the end
+					codes.push(""); 
+					if(codes.length > 1) {
+						this.lines_to_send -= to_send/*-offset*/;
+						this._write(codes.join('\n '), function() { });  ////## added space for reading
 				}
 			}
 		}
