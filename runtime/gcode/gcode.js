@@ -208,27 +208,18 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 	if(callback) { log.error("CALLBACK PASSED TO RUNSTRING")}
 
 	if(this.machine.status.state === 'idle' || this.machine.status.state === 'armed') {
-		// Add line numbers to Gcode string.
+		// Ensure final endline
+		// string = string + "\n";
+		// count lines and set file length
 		var lines = (string.match(/\n/g) || '');
-		// var lines =  string.split('\n');
 		this.machine.status.nb_lines = lines.length;
-		// for (i=0;i<lines.length;i++){
-		// 	if (lines[i][0]!==undefined && lines[i][0].toUpperCase() !== 'N' ){
-		// 		lines[i]= 'N'+ (i+1) + lines[i];
-		// 	}
-		// }
+		
+		string = string + "\n";
+		// complete callback This should not be passed a callback but we complete it in case of legacy use.
 		this.completeCallback = callback;
 		this._changeState("running");
-		// var stringStream = new stream.Readable();
-		// Push lines to stream.
-		// for(var i=0; i<lines.length; i++) {
-		// 	stringStream.push(lines[i] + "\n");
-		// }
-		// stringStream.push(null);
+		//convert string to stream and pass to streamRun
 		var stringStream = stream.Readable.from(string);
-		// stringStream.on('data', (chunk) => {
-		// 	log.debug(chunk)
-		// });
 		return this.runStream(stringStream);
 	}
 };
