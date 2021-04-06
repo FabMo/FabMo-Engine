@@ -561,7 +561,7 @@ LineNumberer.prototype._transform = function(chunk, enc, next) {
 };
 
 LineNumberer.prototype._flush = function(done) {
-  if (this._lastLineData) { this.push(this._lastLineData); }
+  if (this._lastLineData) { this.push("N" + this.count + " " + this._lastLineData + "\n"); }
   this._lastLineData = null;
   done();
 };

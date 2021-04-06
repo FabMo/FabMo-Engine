@@ -185,7 +185,7 @@ GCodeRuntime.prototype.runStream = function(st) {
 	};
 	var ln = new LineNumberer();
 	// return this.driver.runStream(st.pipe(ln))
-	return this.driver.runStream(st)
+	return st.pipe(ln).pipe(this.driver.runStream())
 		.on('stat', this._handleStateChange.bind(this))
 		.then(this._handleStop.bind(this));
 }
@@ -208,13 +208,12 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 	if(callback) { log.error("CALLBACK PASSED TO RUNSTRING")}
 
 	if(this.machine.status.state === 'idle' || this.machine.status.state === 'armed') {
-		// Ensure final endline
-		// string = string + "\n";
+		
 		// count lines and set file length
 		var lines = (string.match(/\n/g) || '');
 		this.machine.status.nb_lines = lines.length;
-		
-		string = string + "\n";
+		// Ensure final endline
+		// string = string + "\n";
 		// complete callback This should not be passed a callback but we complete it in case of legacy use.
 		this.completeCallback = callback;
 		this._changeState("running");
