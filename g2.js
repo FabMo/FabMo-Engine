@@ -260,7 +260,7 @@ G2.prototype._createCycleContext = function() {
 	// Handle a stream being piped into this context (currently do nothing)
 	st.on('pipe', function(chunk) {
 		log.debug("Stream PIPE event");
-		log.debug(chunk);
+		log.debug(chunk.toString());
 	})
 	// Create the promise that resolves when the machining cycle ends.
 	var promise = this._createStatePromise([STAT_END]).then(function() {
