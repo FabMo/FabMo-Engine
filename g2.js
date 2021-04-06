@@ -212,6 +212,7 @@ G2.prototype._createCycleContext = function() {
 	st.on('data', function(chunk) {
 		// Stream data comes in "chunks" which are often multiple lines
 		chunk = chunk.toString();
+		log.debug('Data Chunk:  ' + chunk);
 		var newLines = false;
 		// Repartition incoming "chunked" data as lines
 		for(var i=0; i<chunk.length; i++) {
