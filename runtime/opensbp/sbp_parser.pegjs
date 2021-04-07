@@ -98,13 +98,13 @@ variable
   = (user_variable / system_variable / persistent_variable)
 
 user_variable
-  = v:("&" identifier) {return v.join("")}
+  = v:("&" identifier) {return {"type":"user_variable", "expr":v.join("")}}
 
 persistent_variable
-  = v:("$" identifier ) {return v.join("")}
+  = v:("$" identifier ) {return {"type":"persistent_variable", "expr":v.join("")}}
 
 system_variable
-  = v:("%" "(" __ integer __ ")") {return v.join("")}
+  = "%" "(" __ e:expression __ ")" {return {"type":"system_variable", "expr":e}}
 
 assignment
   = v:variable __ "=" __ e:expression {return {"type": "assign", "var":v, "expr":e}}

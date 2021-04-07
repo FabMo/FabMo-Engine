@@ -26,11 +26,6 @@ var config = require('../../config');
 var stream = require('stream');
 var ManualDriver = require('../manual').ManualDriver;
 
-var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
-var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
-var PERSISTENTVAR_RE = /\$([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
-
-
 // Constructor for the OpenSBP runtime
 // The SBPRuntime object is responsible for running OpenSBP code.
 // For more info and command reference: http://www.opensbp.com/
@@ -1303,21 +1298,21 @@ SBPRuntime.prototype._execute = function(command, callback) {
 //   identifier - The identifier to check
 SBPRuntime.prototype._varExists = function(identifier) {
 
-    if(identifier.match(USERVAR_RE)) {
+    if(identifier.type == "user_variable") {
         // User variable
 
         // Handle weird &Tool Exception case
         // (which exists because of old shopbot case insensitivity)
-        if(identifier.toUpperCase() === '&TOOL') {
-            identifier = '&TOOL'
+        if(identifier.expr.toUpperCase() === '&TOOL') {
+            identifier.expr = '&TOOL'
         }
 
-        return config.opensbp.hasTempVariable(identifier)
+        return config.opensbp.hasTempVariable(identifier.expr)
     }
 
-    if(identifier.match(PERSISTENTVAR_RE)) {
+    if(identifier.type == "persistent_variable") {
         // Persistent variable
-        return config.opensbp.hasVariable(identifier)
+        return config.opensbp.hasVariable(identifier.expr)
     }
     return false;
 }
@@ -1327,29 +1322,28 @@ SBPRuntime.prototype._varExists = function(identifier) {
 //        value - The new value
 //     callback - Called once the assignment has been made
 SBPRuntime.prototype._assign = function(identifier, value, callback) {
-
-    if(identifier.match(USERVAR_RE)) {
+    if(identifier.type == "user_variable") {
         // User Variable
 
         // Handle TOOL exception case
-        if(identifier.toUpperCase() === '&TOOL') {
-            identifier = '&TOOL'
+        if(identifier.expr.toUpperCase() === '&TOOL') {
+            identifier.expr = '&TOOL'
         }
 
         // Assign with persistence using the configuration module
-        config.opensbp.setTempVariable(identifier, value, callback)
+        config.opensbp.setTempVariable(identifier.expr, value, callback)
         return
     }
-    log.debug(identifier + ' is not a user variable');
+    log.debug(identifier.expr + ' is not a user variable');
 
-    if(identifier.match(PERSISTENTVAR_RE)) {
+    if(identifier.type == "persistent_variable") {
         // Persistent variable
 
         // Assign with persistence using the configuration module
-        config.opensbp.setVariable(identifier, value, callback)
+        config.opensbp.setVariable(identifier.expr, value, callback)
         return
     }
-    log.debug(identifier + ' is not a persistent variable');
+    log.debug(identifier.expr + ' is not a persistent variable');
 
     throw new Error("Cannot assign to " + identifier);
 }
@@ -1359,21 +1353,18 @@ SBPRuntime.prototype._assign = function(identifier, value, callback) {
 // variables or constant numeric/string values.
 //   expr - String that represents the leaf of an expression tree
 SBPRuntime.prototype._eval_value = function(expr) {
-    switch(this._variableType(expr)) {
-        case 'user':
-            return this.evaluateUserVariable(expr);
-        break;
-        case 'system':
-            return this.evaluateSystemVariable(expr);
-        break;
-        case 'persistent':
-            return this.evaluatePersistentVariable(expr);
-        break;
-        default:
-            var n = Number(expr);
-            return isNaN(n) ? expr : n;
-        break;
+    if(expr.hasOwnProperty('type')) {
+		switch(expr.type) {
+			case 'user_variable':
+				return this.evaluateUserVariable(expr);
+			case 'system_variable':
+				return this.evaluateSystemVariable(expr);
+			case 'persistent_variable':
+				return this.evaluatePersistentVariable(expr);
+		}
     }
+    var n = Number(String(expr));
+    return isNaN(n) ? expr : n;
 };
 
 // Evaluate an expression.  Return the result.
@@ -1385,7 +1376,7 @@ SBPRuntime.prototype._eval = function(expr) {
 
     if(expr.op === undefined) {
         // Expression is unary - no operation.  Just evaluate the value.
-        return this._eval_value(String(expr));
+        return this._eval_value(expr);
     } else {
         // Do the operation specified in the expression object (recursively evaluating subexpressions)
         switch(expr.op) {
@@ -1547,10 +1538,9 @@ SBPRuntime.prototype._analyzeGOTOs = function() {
 //   v - System variable as a string, eg: "%(1)"
 SBPRuntime.prototype.evaluateSystemVariable = function(v) {
     if(v === undefined) { return undefined;}
-    result = v.match(SYSVAR_RE);
-    if(result === null) {return undefined;}
-    if(!this.machine) {return 0;}
-    n = parseInt(result[1]);
+
+    if(v.type != "system_variable") {return;}
+    var n = this._eval(v.expr);
     switch(n) {
         case 1: // X Location
             return this.machine.status.posx;
@@ -1695,7 +1685,7 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
         break;
 
         default:
-            throw new Error("Unknown System Variable: " + v)
+            throw new Error("Unknown System Variable: " + JSON.stringify(v));
         break;
     }
 };
@@ -1711,19 +1701,28 @@ SBPRuntime.prototype._isVariable = function(v) {
 // Return true if the provided expression is a system variable
 //   v - Value to check
 SBPRuntime.prototype._isSystemVariable = function(v) {
-    return v.match(SYSVAR_RE);
+    if (v.type == "system_variable") {
+        return true;
+    }
+    return false;
 }
 
 // Return true if the provided expression is a user variable
 //   v - Value to check
 SBPRuntime.prototype._isUserVariable = function(v) {
-    return v.match(USERVAR_RE);
+    if(v.type == "user_variable") {
+        return true;
+    }
+    return false;
 }
 
 // Return true if the provided expression is a persistent variable
 //   v - Value to check
 SBPRuntime.prototype._isPersistentVariable = function(v) {
-    return v.match(PERSISTENTVAR_RE);
+    if(v.type == "persistent_variable") {
+        return true;
+    }
+    return false;
 }
 
 // Return a string that indicates the type of the provided variable.  Either user,system, or persistent
@@ -1734,25 +1733,24 @@ SBPRuntime.prototype._variableType = function(v) {
     if(this._isPersistentVariable(v)) {return 'persistent';}
 }
 
+//rmackie
 // Return the value for the provided user variable
 //   v - identifier to check, eg: '&Tool'
 SBPRuntime.prototype.evaluateUserVariable = function(v) {
     if(v === undefined) { return undefined;}
-    result = v.match(USERVAR_RE);
-    if(result === null) {return undefined;}
-    if(v.toUpperCase() === '&TOOL') {
-        v = '&TOOL';
+    if(v.type != "user_variable") { return undefined;}
+    if(v.expr.toUpperCase() === '&TOOL') {
+        v.expr = '&TOOL';
     }
-    return config.opensbp.getTempVariable(v);
+    return config.opensbp.getTempVariable(v.expr);
 };
 
 // Return the value for the provided persistent variable
 //   v - identifier to check, eg: '$Tool'
 SBPRuntime.prototype.evaluatePersistentVariable = function(v) {
     if(v === undefined) { return undefined;}
-    result = v.match(PERSISTENTVAR_RE);
-    if(result === null) {return undefined;}
-    return config.opensbp.getVariable(v);
+    if(v.type != "persistent_variable") { return undefined;}
+    return config.opensbp.getVariable(v.expr);
 };
 
 // Called for any valid shopbot mnemonic that doesn't have a handler registered
