@@ -1615,7 +1615,7 @@ module.exports = (function(){
           pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, v) {return v.join("")})(pos0, result0);
+          result0 = (function(offset, v) {return {"type":"user_variable", "expr":v.join("")}})(pos0, result0);
         }
         if (result0 === null) {
           pos = pos0;
@@ -1651,7 +1651,7 @@ module.exports = (function(){
           pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, v) {return v.join("")})(pos0, result0);
+          result0 = (function(offset, v) {return {"type":"persistent_variable", "expr":v.join("")}})(pos0, result0);
         }
         if (result0 === null) {
           pos = pos0;
@@ -1687,7 +1687,7 @@ module.exports = (function(){
           if (result1 !== null) {
             result2 = parse___();
             if (result2 !== null) {
-              result3 = parse_integer();
+              result3 = parse_e1();
               if (result3 !== null) {
                 result4 = parse___();
                 if (result4 !== null) {
@@ -1727,7 +1727,7 @@ module.exports = (function(){
           pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, v) {return v.join("")})(pos0, result0);
+          result0 = (function(offset, e) {return {"type":"system_variable", "expr":e}})(pos0, result0[3]);
         }
         if (result0 === null) {
           pos = pos0;
@@ -2516,6 +2516,7 @@ module.exports = (function(){
   result.SyntaxError = function(expected, found, offset, line, column) {
     function buildMessage(expected, found) {
       var expectedHumanized, foundHumanized;
+      
       switch (expected.length) {
         case 0:
           expectedHumanized = "end of input";
