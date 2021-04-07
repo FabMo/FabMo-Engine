@@ -183,10 +183,13 @@ GCodeRuntime.prototype.runStream = function(st) {
 	// if (this.machine.status.nb_lines < this.driver.PRIMED_THRESHOLD){
 	// 	this.driver.prime();
 	// };
-	var prime = this.machine.status.nb_lines < this.driver.PRIMED_THRESHOLD
+	var manualPrime = this.machine.status.nb_lines < this.driver.primedThreshold;
+	log.debug(this.machine.status.nb_lines);
+	log.debug(this.driver.primedThreshold);
+	log.debug(manualPrime);
 	var ln = new LineNumberer();
 	// return this.driver.runStream(st.pipe(ln))
-	return this.driver.runStream(st.pipe(ln), prime)
+	return this.driver.runStream(st.pipe(ln), manualPrime)
 		.on('stat', this._handleStateChange.bind(this))
 		.then(this._handleStop.bind(this));
 }

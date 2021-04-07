@@ -171,6 +171,7 @@ function G2() {
 	this.flooded = false;
 	this.send_rate = 1;
 	this.lines_sent = 0;
+	this.primedThreshold = PRIMED_THRESHOLD;
 
 	this.context = null;
 
@@ -1038,10 +1039,11 @@ G2.prototype.waitForState = function(states) {
 // This allows us to run huge files from disk, or say, http, or from 
 // a stream processor that is streaming from one of those sources without
 // having to load the entire file into memory.
-G2.prototype.runStream = function(s, prime=false) {
+G2.prototype.runStream = function(s, manualPrime=false) {
 	log.info("from run stream to _createCycle")
 	this._createCycleContext();
-	if (prime) {
+	log.debug(manualPrime);
+	if (manualPrime) {
 		this.prime();
 	}
 	s.pipe(this.context._stream);
