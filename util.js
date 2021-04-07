@@ -535,36 +535,61 @@ function LineNumberer(options) {
   if (!(this instanceof LineNumberer)) {
     return new LineNumberer(options);
   }
-  this.count = 0;
+  this.count = 1;
+  this.start = true;
+  this.input = "";
+  this.output = "";
   // init Transform
   stream.Transform.call(this, options);
 }
 util.inherits(LineNumberer, stream.Transform);
 
-
-
 LineNumberer.prototype._transform = function(chunk, enc, next) {
-  var data = chunk.toString();
-  if (this._lastLineData) { data = this._lastLineData + data; }
-
-  var lines = data.split('\n');
-  this._lastLineData = lines.splice(lines.length-1,1)[0];
-  block = []
-  for(var i=0; i<lines.length; i++) {
-    this.count += 1;
-    //this.push("N" + this.count + " " + lines[i] + '\n');
-    block.push("N" + this.count + " " + lines[i]);
-  }
-  log.debug('lineNumber block:  ' + block.join('\n'));
-  this.push(block.join('\n') + "\n");
-  next();
-};
+    this.input = chunk.toString();
+    log.debug("input:  " + this.input);
+    if (this.start) {
+        this.output = "N" + this.count + " " + this.input;
+        this.start = false;
+    } else {
+        if (input == "\n") {
+            this.count += 1;
+            this.output = this.input + "N" + this.count + " ";
+        } else {
+            this.output = this.input;
+        }
+    }
+    log.debug("output:  " + this.output);
+    this.push(this.output);
+    next();
+}
 
 LineNumberer.prototype._flush = function(done) {
-  if (this._lastLineData) { this.push("N" + this.count + " " + this._lastLineData + "\n"); }
-  this._lastLineData = null;
-  done();
-};
+    this.push("\n");
+    done()
+}
+
+// LineNumberer.prototype._transform = function(chunk, enc, next) {
+//   var data = chunk.toString();
+//   if (this._lastLineData) { data = this._lastLineData + data; }
+
+//   var lines = data.split('\n');
+//   this._lastLineData = lines.splice(lines.length-1,1)[0];
+//   block = []
+//   for(var i=0; i<lines.length; i++) {
+//     this.count += 1;
+//     //this.push("N" + this.count + " " + lines[i] + '\n');
+//     block.push("N" + this.count + " " + lines[i]);
+//   }
+//   log.debug('lineNumber block:  ' + block.join('\n'));
+//   this.push(block.join('\n'));
+//   next();
+// };
+
+// LineNumberer.prototype._flush = function(done) {
+//   if (this._lastLineData) { this.push("N" + this.count + " " + this._lastLineData + "\n"); }
+//   this._lastLineData = null;
+//   done();
+// };
 
 var countLineNumbers = function(filename, callback) {
     var i;
