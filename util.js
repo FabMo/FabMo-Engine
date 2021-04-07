@@ -539,6 +539,7 @@ function LineNumberer(options) {
   this.start = true;
   this.input = "";
   this.output = "";
+  this.lastChar = "";
   // init Transform
   stream.Transform.call(this, options);
 }
@@ -547,16 +548,21 @@ util.inherits(LineNumberer, stream.Transform);
 LineNumberer.prototype._transform = function(chunk, enc, next) {
     this.input = chunk.toString();
     log.debug("input:  " + this.input);
-    if (this.start) {
-        this.output = "N" + this.count + " " + this.input;
-        this.start = false;
-    } else {
-        if (input == "\n") {
-            this.count += 1;
-            this.output = this.input + "N" + this.count + " ";
+    for (const c of this.input) {
+        if (this.start) {
+            this.output = (c == "N") ? "" : "N1 ";
+            this output += c;
+            this.start = false;
         } else {
-            this.output = this.input;
+            if (this.lastChar == "\n") {
+                this.count += 1;
+                this.output += (c == "N") ? "" : "N" + this.count + " ";
+                this.output += c;
+            } else {
+                this.output += c;
+            }
         }
+        this.lastChar = c
     }
     log.debug("output:  " + this.output);
     this.push(this.output);
