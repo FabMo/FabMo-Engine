@@ -551,7 +551,7 @@ LineNumberer.prototype._transform = function(chunk, enc, next) {
     for (const c of this.input) {
         if (this.start) {
             this.output = (c == "N") ? "" : "N1 ";
-            this output += c;
+            this.output += c;
             this.start = false;
         } else {
             if (this.lastChar == "\n") {
