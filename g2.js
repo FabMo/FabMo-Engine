@@ -1038,9 +1038,12 @@ G2.prototype.waitForState = function(states) {
 // This allows us to run huge files from disk, or say, http, or from 
 // a stream processor that is streaming from one of those sources without
 // having to load the entire file into memory.
-G2.prototype.runStream = function(s) {
+G2.prototype.runStream = function(s, prime=false) {
 	log.info("from run stream to _createCycle")
 	this._createCycleContext();
+	if (prime) {
+		this.prime();
+	}
 	s.pipe(this.context._stream);
 	return this.context;
 }
