@@ -535,11 +535,11 @@ function LineNumberer(options) {
   if (!(this instanceof LineNumberer)) {
     return new LineNumberer(options);
   }
-  this.count = 1;
+  this.count = 0;
   this.start = true;
   this.input = "";
   this.output = "";
-  this.lastChar = "";
+  this.lastChar = "\n";
   // init Transform
   stream.Transform.call(this, options);
 }
@@ -549,18 +549,12 @@ LineNumberer.prototype._transform = function(chunk, enc, next) {
     this.input = chunk.toString();
     log.debug("input:  " + this.input);
     for (const c of this.input) {
-        if (this.start) {
-            this.output = (c == "N") ? "" : "N1 ";
+        if (this.lastChar == "\n") {
+            this.count += 1;
+            this.output += (c == "N") ? "" : "N" + this.count + " ";
             this.output += c;
-            this.start = false;
         } else {
-            if (this.lastChar == "\n") {
-                this.count += 1;
-                this.output += (c == "N") ? "" : "N" + this.count + " ";
-                this.output += c;
-            } else {
-                this.output += c;
-            }
+            this.output += c;
         }
         this.lastChar = c
     }
@@ -571,6 +565,7 @@ LineNumberer.prototype._transform = function(chunk, enc, next) {
 
 LineNumberer.prototype._flush = function(done) {
     this.push("\n");
+    this.push(null)
     done()
 }
 
