@@ -560,6 +560,7 @@ LineNumberer.prototype._transform = function(chunk, enc, next) {
     }
     log.debug("output:  " + this.output);
     this.push(this.output);
+    this.output = "";
     next();
 }
 
