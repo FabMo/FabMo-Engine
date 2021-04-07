@@ -222,6 +222,7 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 		this._changeState("running");
 		//convert string to stream and pass to streamRun
 		var stringStream = stream.Readable.from(string);
+		stringStream.push(null);
 		return this.runStream(stringStream);
 	}
 };
