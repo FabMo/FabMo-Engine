@@ -545,6 +545,8 @@ util.inherits(LineNumberer, stream.Transform);
 
 LineNumberer.prototype._transform = function(chunk, enc, next) {
   var data = chunk.toString();
+  log.debug('transform chunk:  ' + chunk);
+  log.debug('transform string:  ' + data);
   if (this._lastLineData) { data = this._lastLineData + data; }
 
   var lines = data.split('\n');

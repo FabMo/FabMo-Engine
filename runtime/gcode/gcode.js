@@ -208,7 +208,6 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 	if(callback) { log.error("CALLBACK PASSED TO RUNSTRING")}
 
 	if(this.machine.status.state === 'idle' || this.machine.status.state === 'armed') {
-		
 		// count lines and set file length
 		var lines = (string.match(/\n/g) || '');
 		this.machine.status.nb_lines = lines.length;
