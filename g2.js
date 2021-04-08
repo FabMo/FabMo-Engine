@@ -1124,6 +1124,7 @@ G2.prototype.sendMore = function() {
 // position - An object mapping axes to position values. Axes that are not included will not be updated.
 G2.prototype.setMachinePosition = function(position, callback) {
 ////## until uvw enabled	var axes = ['x','y','z','a','b','c','u','v','w']
+	log.debug("### Set Machine Position ###");
 	var axes = ['x','y','z','a','b','c']
 	var gcodes = new stream.Readable();
 	gcodes.push('G21\n');
@@ -1135,7 +1136,8 @@ G2.prototype.setMachinePosition = function(position, callback) {
 
 	gcodes.push(this.status.unit === 'in' ? 'G20\n' : 'G21\n');
 	gcodes.push(null);
-	this.runStream(gcodes).then(function() {callback && callback()})
+	//TODO: Set manualPrime false once uvw enabled
+	this.runStream(gcodes, true).then(function() {callback && callback()})
 }
 
 // OLD VERSION Requires runList()
