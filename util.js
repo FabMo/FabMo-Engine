@@ -549,7 +549,7 @@ util.inherits(LineNumberer, stream.Transform);
 LineNumberer.prototype._transform = function(chunk, enc, next) {
     this.input = chunk.toString();
     // log.debug("input:  " + this.input);
-    // Walk the input chunk and add new line number after each newline
+    // Walk the input chunk and add new line number after each newline if line number is not present
     for (const c of this.input) {
         if (this.lastChar == "\n") {
             this.count += 1;

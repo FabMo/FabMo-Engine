@@ -191,8 +191,10 @@ GCodeRuntime.prototype.runStream = function(st) {
 GCodeRuntime.prototype.runFile = function(filename, callback) {
     this._file_or_stream_in_progress = true;
     if(this.machine.status.state === 'idle' || this.machine.status.state === 'armed') {
+    	//  TODO:  Can we count line numbers before streaming without reading the file twice?
 		countLineNumbers(filename, function(err, lines) {
 			this.machine.status.nb_lines = lines;
+			// TODO:  
 			var st = fs.createReadStream(filename);
 			return this.runStream(st);
 		}.bind(this));
@@ -201,15 +203,13 @@ GCodeRuntime.prototype.runFile = function(filename, callback) {
 
 // Run the provided string
 // callback runs only when execution is complete.
-GCodeRuntime.prototype.runString = function(string, callback) {
-	if(callback) { log.error("CALLBACK PASSED TO RUNSTRING")}
-
+GCodeRuntime.prototype.runString = function(string) {
 	if(this.machine.status.state === 'idle' || this.machine.status.state === 'armed') {
 		// count lines and set file length
 		var lines = (string.match(/\n/g) || '');
 		this.machine.status.nb_lines = lines.length;
 		// complete callback This should not be passed a callback but we complete it in case of legacy use.
-		this.completeCallback = callback;
+		// TODO: IS this needed here?
 		this._changeState("running");
 		//convert string to stream and pass to streamRun
 		var stringStream = stream.Readable.from(string);

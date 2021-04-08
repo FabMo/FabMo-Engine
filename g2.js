@@ -232,7 +232,7 @@ G2.prototype._createCycleContext = function() {
 	}.bind(this));
 
 	// Set absolute, spindle speed default, units, and turn on output 4
-	////## TODO create default variable for S-value for VFD spindle control, just a dummy here now
+	// TODO: create default variable for S-value for VFD spindle control, just a dummy here now
 	st.write('G90\n ' + 'S1000\n ' + 'G61\n ' + 'M100 ({out4:1})\n ');
 
 	// Handle a stream finishing or disconnecting.
@@ -970,16 +970,17 @@ G2.prototype.command = function(obj) {
 // Send a (possibly multi-line) string
 // TODO - this function used to take a callback, but now does not.  
 //        Either implement it or drop it from the arguments list
-G2.prototype.runString = function(data, callback) {
-	var stringStream = new stream.Readable();
-	stringStream.push(data + "\n ");    ////## added space for reading
-	stringStream.push(null);
-	return this.runStream(stringStream);
-};
+//        Does not appear to be in use and can be removed?
+// G2.prototype.runString = function(data, callback) {
+// 	var stringStream = new stream.Readable();
+// 	stringStream.push(data + "\n ");    ////## added space for reading
+// 	stringStream.push(null);
+// 	return this.runStream(stringStream);
+// };
 
 // Works like runString above, but takes a list of lines instead of a string
-// TODO see above about callback
-G2.prototype.runList = function(l, callback) {
+// TODO:  Refactor could remove this.  See G2.prototype.setMachinePosition TODO.
+G2.prototype.runList = function(l) {
 	var stringStream = new stream.Readable();
 	for(var i=0; i<l.length; i++) {
 		stringStream.push(l[i] + "\n");
@@ -1039,17 +1040,18 @@ G2.prototype.runStream = function(s, manualPrime=false) {
 }
 
 // Run data from a file.  This is done with streams, which enjoy the benefits described in runStream above.
-G2.prototype.runFile = function(filename) {
-	var st = fs.createReadStream(filename);
-	var ln = new LineNumberer();
-	//return this.runStream(st);
-	return this.runStream(st.pipe(ln));
-}
+// TODO: Can be removed runtimes funnel direct to runStream
+// G2.prototype.runFile = function(filename) {
+// 	var st = fs.createReadStream(filename);
+// 	var ln = new LineNumberer();
+// 	//return this.runStream(st);
+// 	return this.runStream(st.pipe(ln));
+// }
 
-// TODO - Do we really need this function if we have runString?
-G2.prototype.runImmediate = function(data) {
-	return this.runString(data);
-}
+// TODO - Do we really need this function if we have runString?  Does not appear to be in use.
+// G2.prototype.runImmediate = function(data) {
+// 	return this.runString(data);
+// }
 
 // G2 begins running G-Codes as soon as it recieves them, and in certain cases, it is possible for
 // G2 to "plan to a stop" when this is not the desired behavior.  This typically happens at the start of
@@ -1131,6 +1133,7 @@ G2.prototype.setMachinePosition = function(position, callback) {
 	});
 
 	gcodes.push(this.status.unit === 'in' ? 'G20' : 'G21');
+	// TODO:  Refactor to use runstream directly
 	this.runList(gcodes).then(function() {callback && callback()})
 }
 
