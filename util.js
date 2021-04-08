@@ -572,29 +572,6 @@ LineNumberer.prototype._flush = function(done) {
     done()
 }
 
-// LineNumberer.prototype._transform = function(chunk, enc, next) {
-//   var data = chunk.toString();
-//   if (this._lastLineData) { data = this._lastLineData + data; }
-
-//   var lines = data.split('\n');
-//   this._lastLineData = lines.splice(lines.length-1,1)[0];
-//   block = []
-//   for(var i=0; i<lines.length; i++) {
-//     this.count += 1;
-//     //this.push("N" + this.count + " " + lines[i] + '\n');
-//     block.push("N" + this.count + " " + lines[i]);
-//   }
-//   log.debug('lineNumber block:  ' + block.join('\n'));
-//   this.push(block.join('\n'));
-//   next();
-// };
-
-// LineNumberer.prototype._flush = function(done) {
-//   if (this._lastLineData) { this.push("N" + this.count + " " + this._lastLineData + "\n"); }
-//   this._lastLineData = null;
-//   done();
-// };
-
 var countLineNumbers = function(filename, callback) {
     var i;
     var lines = 0;
