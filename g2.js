@@ -980,14 +980,14 @@ G2.prototype.command = function(obj) {
 
 // Works like runString above, but takes a list of lines instead of a string
 // TODO:  Refactor could remove this.  See G2.prototype.setMachinePosition TODO.
-G2.prototype.runList = function(l) {
-	var stringStream = new stream.Readable();
-	for(var i=0; i<l.length; i++) {
-		stringStream.push(l[i] + "\n");
-	}
-	stringStream.push(null);
-	return this.runStream(stringStream);
-}
+// G2.prototype.runList = function(l) {
+// 	var stringStream = new stream.Readable();
+// 	for(var i=0; i<l.length; i++) {
+// 		stringStream.push(l[i] + "\n");
+// 	}
+// 	stringStream.push(null);
+// 	return this.runStream(stringStream);
+// }
 
 // Return a promise that resolves when one of the provided states is encountered
 // states - a list of states which will cause the promise to resolve
@@ -1121,21 +1121,38 @@ G2.prototype.sendMore = function() {
 };
 
 // Set the position of the motion system using the G28.3 code
-// position - An object mapping axes to position values. Axes that are not included will not be updated. 
+// position - An object mapping axes to position values. Axes that are not included will not be updated.
 G2.prototype.setMachinePosition = function(position, callback) {
 ////## until uvw enabled	var axes = ['x','y','z','a','b','c','u','v','w']
 	var axes = ['x','y','z','a','b','c']
-	var gcodes = ['G21']
+	var gcodes = new stream.Readable();
+	gcodes.push('G21\n');
 	axes.forEach(function(axis) {
 		if(position[axis] != undefined) {
-			gcodes.push('G28.3 ' + axis + position[axis].toFixed(5));
+			gcodes.push('G28.3 ' + axis + position[axis].toFixed(5) + "\n");
 		}
 	});
 
-	gcodes.push(this.status.unit === 'in' ? 'G20' : 'G21');
-	// TODO:  Refactor to use runstream directly
-	this.runList(gcodes).then(function() {callback && callback()})
+	gcodes.push(this.status.unit === 'in' ? 'G20\n' : 'G21\n');
+	gcodes.push(null);
+	this.runStream(gcodes).then(function() {callback && callback()})
 }
+
+// OLD VERSION Requires runList()
+// G2.prototype.setMachinePosition = function(position, callback) {
+// ////## until uvw enabled	var axes = ['x','y','z','a','b','c','u','v','w']
+// 	var axes = ['x','y','z','a','b','c']
+// 	var gcodes = ['G21']
+// 	axes.forEach(function(axis) {
+// 		if(position[axis] != undefined) {
+// 			gcodes.push('G28.3 ' + axis + position[axis].toFixed(5));
+// 		}
+// 	});
+
+// 	gcodes.push(this.status.unit === 'in' ? 'G20' : 'G21');
+// 	// TODO:  Refactor to use runstream directly
+// 	this.runList(gcodes).then(function() {callback && callback()})
+// }
 
 // Function works like "once()" for a state change
 // callbacks is an associative array mapping states to callbacks
