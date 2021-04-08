@@ -199,22 +199,11 @@ G2.prototype._createCycleContext = function() {
 	this._streamDone = false;
 	this.lineBuffer = []
 
-	////## added spaces after '\n's to make debug display easier to read
-	// TODO factor this out; ////## really???
-	// Inject a couple of G-Codes which are needed to start the machining cycle
-////##
-	// st.write('G90\n ' + 'S1000\n ' + 'G61\n ')  ////## AND, make sure we have a default S-value
-////## S-value needed for G2 spinup-delay to work (ugh!not M3 switch)
-////## TODO create default variable for S-value for VFD spindle control, just a dummy here now
-	// st.write('G90\n ' + 'G61\n ')  ////## to make sure we are not in exact stop mode left from fixed moves
-//	st.write('G90\n')
-	// st.write('M100 ({out4:1})\n ') // hack to get the "permissive relay" behavior while in-cycle
-////## v3 version of G2 is not yet "in cycle here"; an increasing problem!
 	// Handle data coming in on the stream
 	st.on('data', function(chunk) {
 		// Stream data comes in "chunks" which are often multiple lines
 		chunk = chunk.toString();
-		log.debug('Data Chunk:  ' + chunk);
+		// log.debug('Context on data Chunk:  ' + chunk);
 		var newLines = false;
 		// Repartition incoming "chunked" data as lines
 		for(var i=0; i<chunk.length; i++) {
@@ -230,7 +219,6 @@ G2.prototype._createCycleContext = function() {
 				// The G2 sender doesn't actually start sending until it is "primed"
 				// Priming happens either when the number of lines to send reaches a certain threshold
 				// or the prime() function is called manually.
-				// TODO:  Factor out 10 (magic number) and put it at the top of the file so it can be changed easily.
 				if(this.gcode_queue.getLength() >= PRIMED_THRESHOLD) {
 					this._primed = true;
 				}
@@ -244,6 +232,7 @@ G2.prototype._createCycleContext = function() {
 	}.bind(this));
 
 	// Set absolute, spindle speed default, units, and turn on output 4
+	////## TODO create default variable for S-value for VFD spindle control, just a dummy here now
 	st.write('G90\n ' + 'S1000\n ' + 'G61\n ' + 'M100 ({out4:1})\n ');
 
 	// Handle a stream finishing or disconnecting.
@@ -263,7 +252,6 @@ G2.prototype._createCycleContext = function() {
 	// Handle a stream being piped into this context (currently do nothing)
 	st.on('pipe', function(chunk) {
 		log.debug("Stream PIPE event");
-		log.debug(chunk.toString());
 	})
 	// Create the promise that resolves when the machining cycle ends.
 	var promise = this._createStatePromise([STAT_END]).then(function() {

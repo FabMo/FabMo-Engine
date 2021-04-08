@@ -179,16 +179,9 @@ GCodeRuntime.prototype._handleStateChange = function(stat) {
 
 // Run a given stream input
 GCodeRuntime.prototype.runStream = function(st) {
-	// check lines length and manually prime if below threshold value
-	// if (this.machine.status.nb_lines < this.driver.PRIMED_THRESHOLD){
-	// 	this.driver.prime();
-	// };
+	//determine if this is a short stream and needs to manually prime
 	var manualPrime = this.machine.status.nb_lines < this.driver.primedThreshold;
-	log.debug(this.machine.status.nb_lines);
-	log.debug(this.driver.primedThreshold);
-	log.debug(manualPrime);
 	var ln = new LineNumberer();
-	// return this.driver.runStream(st.pipe(ln))
 	return this.driver.runStream(st.pipe(ln), manualPrime)
 		.on('stat', this._handleStateChange.bind(this))
 		.then(this._handleStop.bind(this));
@@ -215,8 +208,6 @@ GCodeRuntime.prototype.runString = function(string, callback) {
 		// count lines and set file length
 		var lines = (string.match(/\n/g) || '');
 		this.machine.status.nb_lines = lines.length;
-		// Ensure final endline
-		// string = string + "\n";
 		// complete callback This should not be passed a callback but we complete it in case of legacy use.
 		this.completeCallback = callback;
 		this._changeState("running");

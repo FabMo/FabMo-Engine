@@ -539,6 +539,7 @@ function LineNumberer(options) {
   this.start = true;
   this.input = "";
   this.output = "";
+  // We start with lastChar as a newline to start each stream with a line number.
   this.lastChar = "\n";
   // init Transform
   stream.Transform.call(this, options);
@@ -547,7 +548,8 @@ util.inherits(LineNumberer, stream.Transform);
 
 LineNumberer.prototype._transform = function(chunk, enc, next) {
     this.input = chunk.toString();
-    log.debug("input:  " + this.input);
+    // log.debug("input:  " + this.input);
+    // Walk the input chunk and add new line number after each newline
     for (const c of this.input) {
         if (this.lastChar == "\n") {
             this.count += 1;
@@ -558,15 +560,15 @@ LineNumberer.prototype._transform = function(chunk, enc, next) {
         }
         this.lastChar = c
     }
-    log.debug("output:  " + this.output);
+    // log.debug("output:  " + this.output);
     this.push(this.output);
     this.output = "";
     next();
 }
 
 LineNumberer.prototype._flush = function(done) {
+    // Ensure we end with a new line so the final line is sent.
     this.push("\n");
-    this.push(null)
     done()
 }
 
