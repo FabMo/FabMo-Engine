@@ -189,12 +189,12 @@ GCodeRuntime.prototype.runStream = function(st) {
 
 // Run a file given the filename
 GCodeRuntime.prototype.runFile = function(filename, callback) {
+	if(callback) { log.error("CALLBACK PASSED: gCode runFile")};
     this._file_or_stream_in_progress = true;
     if(this.machine.status.state === 'idle' || this.machine.status.state === 'armed') {
     	//  TODO:  Can we count line numbers before streaming without reading the file twice?
 		countLineNumbers(filename, function(err, lines) {
 			this.machine.status.nb_lines = lines;
-			// TODO:  
 			var st = fs.createReadStream(filename);
 			return this.runStream(st);
 		}.bind(this));
@@ -202,15 +202,13 @@ GCodeRuntime.prototype.runFile = function(filename, callback) {
 }
 
 // Run the provided string
-// callback runs only when execution is complete.
+// TODO: Should this all be incorporated with executeCode?
+//		Do we have any need for running gCode strings outside of the editor/job/macro system?
 GCodeRuntime.prototype.runString = function(string) {
 	if(this.machine.status.state === 'idle' || this.machine.status.state === 'armed') {
 		// count lines and set file length
 		var lines = (string.match(/\n/g) || '');
 		this.machine.status.nb_lines = lines.length;
-		// complete callback This should not be passed a callback but we complete it in case of legacy use.
-		// TODO: IS this needed here?
-		this._changeState("running");
 		//convert string to stream and pass to streamRun
 		var stringStream = stream.Readable.from(string);
 		return this.runStream(stringStream);
@@ -219,6 +217,7 @@ GCodeRuntime.prototype.runString = function(string) {
 
 // Run the given string as gcode
 GCodeRuntime.prototype.executeCode = function(string, callback) {
+	if(callback) { log.error("CALLBACK PASSED: gCode executeCode")};
 	this._file_or_stream_in_progress = true;
 	return this.runString(string);
 }

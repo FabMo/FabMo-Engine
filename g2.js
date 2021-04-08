@@ -967,28 +967,6 @@ G2.prototype.command = function(obj) {
 	this.sendMore();
 };
 
-// Send a (possibly multi-line) string
-// TODO - this function used to take a callback, but now does not.  
-//        Either implement it or drop it from the arguments list
-//        Does not appear to be in use and can be removed?
-// G2.prototype.runString = function(data, callback) {
-// 	var stringStream = new stream.Readable();
-// 	stringStream.push(data + "\n ");    ////## added space for reading
-// 	stringStream.push(null);
-// 	return this.runStream(stringStream);
-// };
-
-// Works like runString above, but takes a list of lines instead of a string
-// TODO:  Refactor could remove this.  See G2.prototype.setMachinePosition TODO.
-// G2.prototype.runList = function(l) {
-// 	var stringStream = new stream.Readable();
-// 	for(var i=0; i<l.length; i++) {
-// 		stringStream.push(l[i] + "\n");
-// 	}
-// 	stringStream.push(null);
-// 	return this.runStream(stringStream);
-// }
-
 // Return a promise that resolves when one of the provided states is encountered
 // states - a list of states which will cause the promise to resolve
 // The promise resolves with the state that caused the resolution as an argument
@@ -1038,20 +1016,6 @@ G2.prototype.runStream = function(s, manualPrime=false) {
 	s.pipe(this.context._stream);
 	return this.context;
 }
-
-// Run data from a file.  This is done with streams, which enjoy the benefits described in runStream above.
-// TODO: Can be removed runtimes funnel direct to runStream
-// G2.prototype.runFile = function(filename) {
-// 	var st = fs.createReadStream(filename);
-// 	var ln = new LineNumberer();
-// 	//return this.runStream(st);
-// 	return this.runStream(st.pipe(ln));
-// }
-
-// TODO - Do we really need this function if we have runString?  Does not appear to be in use.
-// G2.prototype.runImmediate = function(data) {
-// 	return this.runString(data);
-// }
 
 // G2 begins running G-Codes as soon as it recieves them, and in certain cases, it is possible for
 // G2 to "plan to a stop" when this is not the desired behavior.  This typically happens at the start of
@@ -1124,7 +1088,6 @@ G2.prototype.sendMore = function() {
 // position - An object mapping axes to position values. Axes that are not included will not be updated.
 G2.prototype.setMachinePosition = function(position, callback) {
 ////## until uvw enabled	var axes = ['x','y','z','a','b','c','u','v','w']
-	log.debug("### Set Machine Position ###");
 	var axes = ['x','y','z','a','b','c']
 	var gcodes = new stream.Readable();
 	gcodes.push('G21\n');
@@ -1139,22 +1102,6 @@ G2.prototype.setMachinePosition = function(position, callback) {
 	//TODO: Set manualPrime false once uvw enabled
 	this.runStream(gcodes, true).then(function() {callback && callback()})
 }
-
-// OLD VERSION Requires runList()
-// G2.prototype.setMachinePosition = function(position, callback) {
-// ////## until uvw enabled	var axes = ['x','y','z','a','b','c','u','v','w']
-// 	var axes = ['x','y','z','a','b','c']
-// 	var gcodes = ['G21']
-// 	axes.forEach(function(axis) {
-// 		if(position[axis] != undefined) {
-// 			gcodes.push('G28.3 ' + axis + position[axis].toFixed(5));
-// 		}
-// 	});
-
-// 	gcodes.push(this.status.unit === 'in' ? 'G20' : 'G21');
-// 	// TODO:  Refactor to use runstream directly
-// 	this.runList(gcodes).then(function() {callback && callback()})
-// }
 
 // Function works like "once()" for a state change
 // callbacks is an associative array mapping states to callbacks
