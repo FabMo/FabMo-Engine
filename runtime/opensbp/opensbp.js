@@ -5,7 +5,7 @@
  * running OpenSBP files.  The SBPRuntime interprets OpenSBP code, generating
  * g-code and streaming it to the motion controller when appropriate.
  *
- * OpenSBP is a more feature-rich language in many ways than "strict" g-code.
+ * OpenSBP is a more feature-rich language than "strict" g-code.
  * It is essentially an answer to the "vendor extensions" to g-code that other
  * systems apply to allow for complex constructs like expression parsing, program control flow, 
  * and control of systems not conventionally accessible to the g-code canonical machine.
@@ -26,11 +26,6 @@ var config = require('../../config');
 var stream = require('stream');
 var ManualDriver = require('../manual').ManualDriver;
 
-var SYSVAR_RE = /\%\(([0-9]+)\)/i ;
-var USERVAR_RE = /\&([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
-var PERSISTENTVAR_RE = /\$([a-zA-Z_]+[A-Za-z0-9_]*)/i ;
-
-
 // Constructor for the OpenSBP runtime
 // The SBPRuntime object is responsible for running OpenSBP code.
 // For more info and command reference: http://www.opensbp.com/
@@ -46,7 +41,7 @@ function SBPRuntime() {
     this.program = [];
     this.pc = 0;
     this.start_of_the_chunk = 0;
-    this.user_vars = {};
+    // this.user_vars = {};
     this.label_index = {};
     this.stack = [];
     this.file_stack = [];
@@ -91,6 +86,7 @@ function SBPRuntime() {
     this.driver = null;
 
     this.inManualMode = false;
+    this.inFeedHold = false;
 
 }
 util.inherits(SBPRuntime, events.EventEmitter);
@@ -159,6 +155,7 @@ SBPRuntime.prototype.executeCode = function(s, callback) {
         // Plain old string interprets as OpenSBP code segment
         this.runString(s, callback);        
     } else {
+        ////## Is this up-to-date and does it work with new variations on manual 2020 on ?
         // If we're in manual mode, interpret an object as a command for that mode
         // The OpenSBP runtime can enter manual mode with the 'SK' command so we have this code here to mimick that mode
         if(this.inManualMode) {
@@ -278,10 +275,10 @@ SBPRuntime.prototype.runString = function(s, callback) {
             log.tock('Parse file')
         }
 
+        ////##
         // TODO Bad bad bad - re-using lines above (the list of lines in the file) as the number of lines here.
         //      It looks like we can just remove this.  It doesn't seem to be used.
         lines = this.program.length;
-        
         // Configure affine transformations on the file
         this._setupTransforms();
         log.debug("Transforms configured...")
@@ -584,11 +581,17 @@ SBPRuntime.prototype._evaluateArguments = function(command, args) {
     if(command in sb3_commands) {
         params = sb3_commands[command].params || [];
 
+////## Improved spurious errors; decide if and further action should be taken on this?
         // This is a possibly helpful warning, but is spuriously issued in some cases where commands take no arguments (depending on whitespace, etc.)
         // TODO - fix that
         if(args.length > params.length) {
-            log.warn('More parameters passed into ' + command + ' (' + args.length + ') than are supported by the command. (' + params.length + ')');
+            if (params.length === 0 && args.length === 1 && args[0] === "") {
+                log.debug (' -- a no-parameter command');
+            } else {
+                log.warn('More parameters passed into ' + command + ' (' + args.length + ')' + '(' + params + ')' + ' than are supported by the command. (' + params.length + ')');
+            }
         }
+
         for(i=0; i<params.length; i++) {
             prm_param = params[i]; // prm_param is the parameter description object from the "prm" file (sb3_commands.json) (unused, currently)
             user_param = args[i];  // user_param is the actual parameter from args
@@ -876,7 +879,7 @@ SBPRuntime.prototype._executeNext = function() {
         // has stopped executing stuff.  Of course we only do that if there's a driver (we're not simulating) 
         if(this.gcodesPending && this.driver) {
             log.debug("Deferring because g-codes pending.");
-            this.driver.requestStatusReport();
+////##            this.driver.requestStatusReport();         ////## creating start problem ???
             return; // We can return knowing that we'll be called again when the system enters STAT_STOP
         } else {
             // G2 is stopped, execute stack breaking command now
@@ -944,12 +947,13 @@ SBPRuntime.prototype._end = function(error) {
     }
     log.debug("Calling the non-nested (toplevel) end");
 
-    // Delete the user variables that don't stick around across runs
-    for(var key in this.user_vars) {
-        if(key[1] === '_') {
-            delete this.user_vars[key]
-        }
-    }  
+    // TODO:  User Vars now stored on config and persistent is this functionality still needed?
+    // // Delete the user variables that don't stick around across runs
+    // for(var key in this.user_vars) {
+    //     if(key[1] === '_') {
+    //         delete this.user_vars[key]
+    //     }
+    // }  
 
     // Log the error for posterity
     if(error) {log.error(error)}
@@ -1230,11 +1234,17 @@ SBPRuntime.prototype._execute = function(command, callback) {
             // PAUSE is kooky
             this.pc += 1;
             var arg = this._eval(command.expr);
+            var var_name = command.var;
             if(util.isANumber(arg)) {
-                // If the argument to pause is a number, we issue a g-code telling the system to pause
-                this.emit_gcode('G4 P' + this._eval(command.expr));
-                setImmediate(callback);
-                return true; // TODO - this doesn't *need* to be a stack break
+                // If argument is a number set pause with timer and default message.
+                // In simulation, just don't do anything
+                if(!this.machine) {
+                    setImmediate(callback);
+                    return true;
+                }
+                this.paused = true;
+                this.machine.setState(this, 'paused', {'message': "Pause " + arg + " Seconds.", 'timer': arg});
+                return true;
             } else {
                 // In simulation, just don't do anything
                 if(!this.machine) {
@@ -1250,8 +1260,14 @@ SBPRuntime.prototype._execute = function(command, callback) {
                         message = last_command.comment.join('').trim();
                     }
                 }
+                var params = {'message' : message || "Paused." };
+                if(var_name) {
+                    params['input'] = var_name;
+                }
                 this.paused = true;
-                this.machine.setState(this, 'paused', {'message' : message || "Paused." });
+                //Set driver in paused state
+                this.machine.driver.pause_hold = true;
+                this.machine.setState(this, 'paused', params);
                 return true;
             }
             break;
@@ -1283,28 +1299,21 @@ SBPRuntime.prototype._execute = function(command, callback) {
 //   identifier - The identifier to check
 SBPRuntime.prototype._varExists = function(identifier) {
 
-    if(identifier.match(USERVAR_RE)) {
+    if(identifier.type == "user_variable") {
         // User variable
 
         // Handle weird &Tool Exception case
         // (which exists because of old shopbot case insensitivity)
-        if(identifier.toUpperCase() === '&TOOL') {
-            identifier = '&TOOL'
+        if(identifier.expr.toUpperCase() === '&TOOL') {
+            identifier.expr = '&TOOL'
         }
 
-        if(identifier in this.user_vars) { return true; }
-
-        // So weird.  TODO - what?  what even.
-        for(key in this.user_vars) {
-            if(key.toLowerCase() === identifier.toLowerCase()) { return true;}
-        }
-
-        return false;
+        return config.opensbp.hasTempVariable(identifier.expr)
     }
 
-    if(identifier.match(PERSISTENTVAR_RE)) {
+    if(identifier.type == "persistent_variable") {
         // Persistent variable
-        return config.opensbp.hasVariable(identifier)
+        return config.opensbp.hasVariable(identifier.expr)
     }
     return false;
 }
@@ -1314,30 +1323,28 @@ SBPRuntime.prototype._varExists = function(identifier) {
 //        value - The new value
 //     callback - Called once the assignment has been made
 SBPRuntime.prototype._assign = function(identifier, value, callback) {
-
-    if(identifier.match(USERVAR_RE)) {
+    if(identifier.type == "user_variable") {
         // User Variable
 
         // Handle TOOL exception case
-        if(identifier.toUpperCase() === '&TOOL') {
-            identifier = '&TOOL'
+        if(identifier.expr.toUpperCase() === '&TOOL') {
+            identifier.expr = '&TOOL'
         }
 
-        // Make assignment and call back
-        this.user_vars[identifier] = value;
-        setImmediate(callback);
+        // Assign with persistence using the configuration module
+        config.opensbp.setTempVariable(identifier.expr, value, callback)
         return
     }
-    log.debug(identifier + ' is not a user variable');
+    log.debug(identifier.expr + ' is not a user variable');
 
-    if(identifier.match(PERSISTENTVAR_RE)) {
+    if(identifier.type == "persistent_variable") {
         // Persistent variable
 
         // Assign with persistence using the configuration module
-        config.opensbp.setVariable(identifier, value, callback)
+        config.opensbp.setVariable(identifier.expr, value, callback)
         return
     }
-    log.debug(identifier + ' is not a persistent variable');
+    log.debug(identifier.expr + ' is not a persistent variable');
 
     throw new Error("Cannot assign to " + identifier);
 }
@@ -1347,21 +1354,18 @@ SBPRuntime.prototype._assign = function(identifier, value, callback) {
 // variables or constant numeric/string values.
 //   expr - String that represents the leaf of an expression tree
 SBPRuntime.prototype._eval_value = function(expr) {
-    switch(this._variableType(expr)) {
-        case 'user':
-            return this.evaluateUserVariable(expr);
-        break;
-        case 'system':
-            return this.evaluateSystemVariable(expr);
-        break;
-        case 'persistent':
-            return this.evaluatePersistentVariable(expr);
-        break;
-        default:
-            var n = Number(expr);
-            return isNaN(n) ? expr : n;
-        break;
+    if(expr.hasOwnProperty('type')) {
+		switch(expr.type) {
+			case 'user_variable':
+				return this.evaluateUserVariable(expr);
+			case 'system_variable':
+				return this.evaluateSystemVariable(expr);
+			case 'persistent_variable':
+				return this.evaluatePersistentVariable(expr);
+		}
     }
+    var n = Number(String(expr));
+    return isNaN(n) ? expr : n;
 };
 
 // Evaluate an expression.  Return the result.
@@ -1373,7 +1377,7 @@ SBPRuntime.prototype._eval = function(expr) {
 
     if(expr.op === undefined) {
         // Expression is unary - no operation.  Just evaluate the value.
-        return this._eval_value(String(expr));
+        return this._eval_value(expr);
     } else {
         // Do the operation specified in the expression object (recursively evaluating subexpressions)
         switch(expr.op) {
@@ -1518,6 +1522,7 @@ SBPRuntime.prototype._analyzeGOTOs = function() {
                             // pass
                         } else {
                             // Add one to the line number so they start at 1
+                            ////## right now, in a macro, you need to add 3; FIX and show all lines
                             throw new Error("Undefined label " + line.label + " on line " + (i+1));
                         }
                         break;
@@ -1529,14 +1534,14 @@ SBPRuntime.prototype._analyzeGOTOs = function() {
         }
 };
 
+////## Needs to be fixed for C-AXIS
 // Return the value of the provided system variable.
 //   v - System variable as a string, eg: "%(1)"
 SBPRuntime.prototype.evaluateSystemVariable = function(v) {
     if(v === undefined) { return undefined;}
-    result = v.match(SYSVAR_RE);
-    if(result === null) {return undefined;}
-    if(!this.machine) {return 0;}
-    n = parseInt(result[1]);
+
+    if(v.type != "system_variable") {return;}
+    var n = this._eval(v.expr);
     switch(n) {
         case 1: // X Location
             return this.machine.status.posx;
@@ -1681,7 +1686,7 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
         break;
 
         default:
-            throw new Error("Unknown System Variable: " + v)
+            throw new Error("Unknown System Variable: " + JSON.stringify(v));
         break;
     }
 };
@@ -1697,19 +1702,28 @@ SBPRuntime.prototype._isVariable = function(v) {
 // Return true if the provided expression is a system variable
 //   v - Value to check
 SBPRuntime.prototype._isSystemVariable = function(v) {
-    return v.match(SYSVAR_RE);
+    if (v.type == "system_variable") {
+        return true;
+    }
+    return false;
 }
 
 // Return true if the provided expression is a user variable
 //   v - Value to check
 SBPRuntime.prototype._isUserVariable = function(v) {
-    return v.match(USERVAR_RE);
+    if(v.type == "user_variable") {
+        return true;
+    }
+    return false;
 }
 
 // Return true if the provided expression is a persistent variable
 //   v - Value to check
 SBPRuntime.prototype._isPersistentVariable = function(v) {
-    return v.match(PERSISTENTVAR_RE);
+    if(v.type == "persistent_variable") {
+        return true;
+    }
+    return false;
 }
 
 // Return a string that indicates the type of the provided variable.  Either user,system, or persistent
@@ -1720,34 +1734,24 @@ SBPRuntime.prototype._variableType = function(v) {
     if(this._isPersistentVariable(v)) {return 'persistent';}
 }
 
+//rmackie
 // Return the value for the provided user variable
 //   v - identifier to check, eg: '&Tool'
 SBPRuntime.prototype.evaluateUserVariable = function(v) {
     if(v === undefined) { return undefined;}
-    result = v.match(USERVAR_RE);
-    if(result === null) {return undefined;}
-    if(v.toUpperCase() === '&TOOL') {
-        v = '&TOOL';
+    if(v.type != "user_variable") { return undefined;}
+    if(v.expr.toUpperCase() === '&TOOL') {
+        v.expr = '&TOOL';
     }
-    if(v in this.user_vars) {
-        return this.user_vars[v];
-    } else {
-        for(key in this.user_vars) {
-            if(key.toLowerCase() === v.toLowerCase()) {
-                return this.user_vars[key];
-            }
-        }
-        throw new Error('Variable ' + v + ' was used but not defined.');
-    }
+    return config.opensbp.getTempVariable(v.expr);
 };
 
 // Return the value for the provided persistent variable
 //   v - identifier to check, eg: '$Tool'
 SBPRuntime.prototype.evaluatePersistentVariable = function(v) {
     if(v === undefined) { return undefined;}
-    result = v.match(PERSISTENTVAR_RE);
-    if(result === null) {return undefined;}
-    return config.opensbp.getVariable(v);
+    if(v.type != "persistent_variable") { return undefined;}
+    return config.opensbp.getVariable(v.expr);
 };
 
 // Called for any valid shopbot mnemonic that doesn't have a handler registered
@@ -1796,7 +1800,7 @@ SBPRuntime.prototype._popFileStack = function() {
 // Emit a g-code into the stream of running codes
 //   s - Can be any g-code but should not contain the N-word
 SBPRuntime.prototype.emit_gcode = function(s) {
-    log.debug("emit_gcode: " + s);
+    ////## redundant log.debug("emit_gcode: " + s);
 
     // An N-Word is added to this code to indicate the line number in the original OpenSBP file
     // that generated these codes.  We only track line numbers for the top level program.  
@@ -1805,10 +1809,11 @@ SBPRuntime.prototype.emit_gcode = function(s) {
     } else {
         var n = this.pc;
     }
-    var gcode = 'N' + n + ' ' + s + '\n'
-
+////## ... making display consistent   var gcode = 'N' + n + ' ' + s + '\n'
     this.gcodesPending = true;
+    var gcode = 'N' + n + ' ' + s; ////## no line feed to display
     log.debug('Writing to stream: ' + gcode)
+    gcode = gcode + '\n '; ////## add for stream
     this.stream.write(gcode);
 };
 
@@ -1877,7 +1882,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
                 gcode += (key + v.toFixed(5));
             }
         }.bind(this));
-        log.debug("emit_move: N" + n + JSON.stringify(gcode));
+        ////## redundant log.debug("emit_move: N" + n + JSON.stringify(gcode));
         this.emit_gcode(gcode);
     }.bind(this);
 
@@ -1979,6 +1984,7 @@ SBPRuntime.prototype.pause = function() {
         this.pendingFeedhold = true;
     } else {
         this.machine.driver.feedHold();
+        this.inFeedHold = true;
     }
 }
 
@@ -1999,13 +2005,26 @@ SBPRuntime.prototype.quit = function() {
 
 // Resume a program from the paused state
 //   TODO - make some indication that this action was successfil (resume is not always allowed, and sometimes it fails)
-SBPRuntime.prototype.resume = function() {
+SBPRuntime.prototype.resume = function(input=false) {
         if(this.resumeAllowed) {
             if(this.paused) {
-                this.paused = false;
-                this._executeNext();
+                if (input) {
+                    var callback = (function(err, data) {
+                        if (err) {
+                            console.log(err)
+                        } else {
+                            this.paused = false;
+                            this._executeNext();
+                        }
+                    }).bind(this);
+                    this._assign(input.var, input.val, callback);
+                } else {
+                    this.paused = false;
+                    this._executeNext();
+                }
             } else {
                 this.driver.resume();
+                this.inFeedHold = false;
             }
         }
 }

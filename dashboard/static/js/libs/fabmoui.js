@@ -12,6 +12,7 @@
   "use strict"
 
 var MAX_INPUTS = 16;
+var MAX_OUTPUTS = 16;
 var currentUnits = null;
 var mouseX;
 var mouseY;
@@ -77,6 +78,15 @@ function FabMoUI(tool, options){
 		}
 	})
 
+	$('#man-start').on('click', function() {
+		$('#man-tab').css('top', '-1em');
+		$('#man-tab').css('height', '1em');
+		setTimeout(function(){
+			$('#man-tab').css('top', '-0.5em');
+			$('#man-tab').css('height', '0.5em'); 
+		}, 200);
+	})
+
 	if (options){
 		this.prefix = options.prefix ? options.prefix + '-' : '';
 		this.refresh = options.refresh || 100;
@@ -93,6 +103,7 @@ function FabMoUI(tool, options){
 	this.posZ_selector = this.status_div_selector + ' .posz';
 	this.posA_selector = this.status_div_selector + ' .posa';
 	this.posB_selector = this.status_div_selector + ' .posb';
+	this.posC_selector = this.status_div_selector + ' .posc';
 
 	this.state_selector = this.status_div_selector + ' .state';
 	this.file_info_div_selector = this.status_div_selector + ' .file-info';
@@ -329,7 +340,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$('.horizontal_fill').css('width', '0%');
 		this.progress = 0;
 	}
-
+	///update inputs
 	for(var i=1; i<MAX_INPUTS+1; i++) {
 		var iname = 'in' + i;
 		if(iname in status) {
@@ -345,7 +356,34 @@ FabMoUI.prototype.updateStatusContent = function(status){
 			break;
 		}
 	}
-	
+
+	///update outputs
+	for(var i=1; i<MAX_OUTPUTS+1; i++) {
+		var outname = 'out' + i;
+		if(outname in status) {
+			var selector = that.status_div_selector + ' .out' + i;
+			if(status[outname] == 1) {
+				$(selector).removeClass('off').addClass('on');
+			} else if(status[outname] == 0) {
+				$(selector).removeClass('on').addClass('off');
+			} else {
+				$(selector).removeClass('on off').addClass('disabled');
+			}
+		} else {
+			break;
+		}
+	}
+	///update spc on output1
+	if ('spc' in status) {
+		var selector = that.status_div_selector + ' .out1';
+		if(status['spc'] == 1) {
+			$(selector).removeClass('off').addClass('on');
+		} else if(status['spc'] == 0) {
+			$(selector).removeClass('on').addClass('off');
+		} else {
+			$(selector).removeClass('on off').addClass('disabled');
+		}
+	}
 
 	$(that.status_div_selector).trigger('statechange',status.state);
 

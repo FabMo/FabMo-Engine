@@ -1,2 +1,2 @@
 # /firmware
-Currently, this directory contains the one and only one firmware file that is qualified to work on FabMo - which is called `g2.bin` - although as the platform expands to more and more boards, there will be a need to have site-specific (perhaps profile specific?) firmware options.
+Currently, this directory contains the previous 'shipping' G2 firmware file for FabMo - which is called `g2.bin` - and it includes the most recent 'development' version of the G2 firmware named with version tag.

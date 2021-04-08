@@ -102,6 +102,11 @@ function Machine(control_path, callback) {
 		in6 : 1,
 		in7 : 1,
 		in8 : 1,
+		in9 : 1,
+		in10 : 1,
+		in11 : 1,
+		in12 : 1,
+		spc : 0,
 		out1 :0,
 		out2 :0,
 		out3 :0,
@@ -110,6 +115,10 @@ function Machine(control_path, callback) {
 		out6 :0,
 		out7 :0,
 		out8 :0,
+		out9 :0,
+		out10 :0,
+		out11 :0,
+		out12 :0,
 		job : null,
 		info : null,
 		unit : 'mm',
@@ -126,6 +135,7 @@ function Machine(control_path, callback) {
 	this.info_id = 0;
 	this.action = null;
 	this.interlock_action = null;
+	this.pauseTimer = false;
 	
 	// Instantiate and connect to the G2 driver using the port specified in the constructor
 	this.driver = new g2.G2();
@@ -420,7 +430,7 @@ Machine.prototype.arm = function(action, timeout) {
 		case 'paused':
 		case 'stopped':
 			if(action.type != 'resume') {
-log.debug("===>In machine at cased stopped, over-ride here???")
+				log.debug("===>In machine at case stopped, over-ride here???")
 				throw new Error('Cannot arm the machine for ' + action.type + ' when ' + this.status.state);
 			}
 			break;
@@ -504,7 +514,6 @@ Machine.prototype.disarm = function() {
 
 // Execute the action in the chamber (the one passed to the arm() method)
 Machine.prototype.fire = function(force) {
-
 	if(this.fireButtonDebounce & !force) {
 		log.debug("Fire button debounce reject.");
 		log.debug("debounce: " + this.fireButtonDebounce + " force: " + force);
@@ -555,8 +564,9 @@ Machine.prototype.fire = function(force) {
 			var filename = action.payload.filename
 			this._runFile(filename);
 			break;
+
 		case 'resume':
-			this._resume();
+			this._resume(action.input);
 			break;
 	}
 }
@@ -597,7 +607,8 @@ Machine.prototype.deauthorize = function() {
 	}
 	log.info('Machine is deauthorized.');
 	this.status.auth = false;
-	this.emit('status', this.status);
+	// Not needed and causes back to back pauses to behave irregularly.
+	// this.emit('status', this.status);
 }
 
 Machine.prototype.isConnected = function() {
@@ -835,8 +846,11 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
                 }
 				break;
 			case 'paused':
-
                 if(this.status.state != newstate) {
+                	//set driver in paused state
+                	// log.debug('paused state: pause_hold is:  ' + this.driver.pause_hold);
+                	this.driver.pause_hold = true;
+                	// log.debug('paused state: pause_hold set to:  ' + this.driver.pause_hold);
 
                 	// Save the position to the instance configuration.  See note above.
                     this.driver.get('mpo', function(err, mpo) {
@@ -871,6 +885,19 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 	}
 	this.emit('status',this.status);
 
+	if (this.status.info && this.status.info['timer']){
+		this.pauseTimer = setTimeout(function() {
+	        this.resume(function(err, msg){
+				if(err){
+					log.error(err);
+				} else {
+					log.info(msg);
+				}
+			});
+			this.pauseTimer = false;
+	    }.bind(this), this.status.info['timer'] * 1000);
+	};
+
 };
 
 // Pause the machine
@@ -881,15 +908,17 @@ Machine.prototype.pause = function(callback) {
 				this.current_runtime.pause();
 				callback(null, 'paused');
 			} else {
-				calback("Not pausing because no runtime provided");
+				callback("Not pausing because no runtime provided");
 			}
 		} else {
-			calback("Not pausing because machine is not running");
+			callback("Not pausing because machine is not running");
 		}
 };
 
 // Quit 
 Machine.prototype.quit = function(callback) {
+		// Release Pause hold if present
+		this.driver.pause_hold = false;
 		this.disarm();
 
 		// Quitting from the idle state dismisses the 'info' data
@@ -917,16 +946,32 @@ Machine.prototype.quit = function(callback) {
 			alreadyQuiting = false;
 		} else {
 			log.warn("No current runtime!")
-			calback("Not quiting because no current runtime")
+			callback("Not quiting because no current runtime")
 		}    
 };
 
 // Resume from the paused state.
-Machine.prototype.resume = function(callback) {
-	this.arm({
-		type : 'resume'
-	}, config.machine.get('auth_timeout'));
-	callback(null, 'resumed');
+Machine.prototype.resume = function(callback, input=false) {
+	if (this.driver.pause_hold) {
+		//Release driver pause hold
+		// log.debug("Resume from pause: pause_hold is:  " + this.driver.pause_hold);
+		this.driver.pause_hold = false;
+		// log.debug("Resume from pause: pause_hold set to:  " + this.driver.pause_hold);
+	}
+	if (this.current_runtime && this.current_runtime.inFeedHold){
+		this._resume();
+	} else {
+		//clear any timed pause
+		if (this.pauseTimer) {
+			clearTimeout(this.pauseTimer);
+			this.pauseTimer = false;
+		}
+		this.arm({
+			'type' : 'resume',
+			'input' : input
+		}, config.machine.get('auth_timeout'));
+    	callback(null, 'resumed');
+	}
 }
 
 // Run a file from disk
@@ -1027,8 +1072,7 @@ Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 	}
 }
 
-// e
-Machine.prototype._resume = function() {
+Machine.prototype._resume = function(input) {
 	switch(this.status.state) {
 		case 'interlock':
 			if(this.interlock_action) {
@@ -1039,7 +1083,7 @@ Machine.prototype._resume = function() {
 		break;
 	}
 	if(this.current_runtime) {
-		this.current_runtime.resume()
+		this.current_runtime.resume(input)
 	}
 };
 

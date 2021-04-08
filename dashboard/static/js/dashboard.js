@@ -840,6 +840,11 @@ define(function(require) {
       this.engine.getVersion(callback);
     }.bind(this));
 
+////## added to support retrieval of firmware ver for config manager page 1/2/21
+    this._registerHandler('getInfo', function(data, callback) {
+      this.engine.getInfo(callback);
+    }.bind(this));
+
     this._registerHandler('requestStatus', function(data, callback) {
       this.engine.getStatus(function(err, status) {
         if (err) {
@@ -978,8 +983,6 @@ define(function(require) {
   Dashboard.prototype.showModal = function(options) {
     // var modal = function (options) {
 
- 
-
     modalIsShown = true;
 
     $('.modalDim').show();
@@ -1057,6 +1060,13 @@ define(function(require) {
       $('.modalCancel').text(options.cancelText);
     } else {
       $('.modalCancel').hide();
+    }
+
+    if (options['input']) {
+        $('#inputVar').val(options['input']);
+        $('.modalInput').show();
+    } else {
+        $('.modalInput').hide();
     }
 
     if (!options['okText'] && !options['cancelText']) {

@@ -49,9 +49,11 @@ fail
   = name:("FAIL"i) __ message:quotedstring? {return {"type" : "fail", "message": message}}
 
 pause
-   = name:("PAUSE"i)  __ ","? __  arg:(e:expression {return {expr: e}})? {
+   = name:("PAUSE"i)  __ ","? __  arg:(e:expression {return {expr: e}})? __ ","? __ arg2:(v:variable {return {var: v}})? {
     var arg = arg || {};
-    if(arg['expr']) { return {'type' : 'pause', 'expr' : arg.expr}}
+    var arg2 = arg2 || {};
+    if(arg['expr'] && arg2['var']) {return {'type' : 'pause', 'expr' : arg.expr, 'var': arg2.var}}
+    else if(arg['expr']) { return {'type' : 'pause', 'expr' : arg.expr}}
     else {return {'type':'pause'}};
    }
 
@@ -96,13 +98,13 @@ variable
   = (user_variable / system_variable / persistent_variable)
 
 user_variable
-  = v:("&" identifier) {return v.join("")}
+  = v:("&" identifier) {return {"type":"user_variable", "expr":v.join("")}}
 
 persistent_variable
-  = v:("$" identifier ) {return v.join("")}
+  = v:("$" identifier ) {return {"type":"persistent_variable", "expr":v.join("")}}
 
 system_variable
-  = v:("%" "(" __ integer __ ")") {return v.join("")}
+  = "%" "(" __ e:expression __ ")" {return {"type":"system_variable", "expr":e}}
 
 assignment
   = v:variable __ "=" __ e:expression {return {"type": "assign", "var":v, "expr":e}}

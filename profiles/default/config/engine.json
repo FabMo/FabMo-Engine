@@ -2,12 +2,11 @@
     "server_port": 80,
     "driver": "g2",
     "log_level": "info",
-    "version":"2.31-dev",
     "upload_dir" : "/tmp",
     "profile" : "Default",
     "name" : null,
 	"password" : "go2fabmo",
-    "platform" : "generic",
+    "platform" : "raspberry-pi",
     "consent_for_beacon" : "true",
     "beacon_url" : "http://beacon.shopbottools.com/beacon",
     "network" : {

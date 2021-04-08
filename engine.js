@@ -69,7 +69,6 @@ var Engine = function() {
 Util.inherits(Engine, events.EventEmitter);
 
 
-
 /*
  * Configure the engine for the first time.
  * This function is typically called when an engine configuration does not exist.
@@ -120,7 +119,6 @@ function EngineConfigFirstTime(callback) {
  * Set the current system time to the provided value.
  * obj - an object with a 'utc' property that coresponds to the current UTC time
  */
-
 Engine.prototype.setTime = function(time) {
     if(this.time_synced) {
         log.warn('Not accepting an externally provided time.  Local time is trusted.');
@@ -134,9 +132,7 @@ Engine.prototype.setTime = function(time) {
             log.debug(stdout);
             this.time_synced = true;
         });
-
     }
-
 }
 
 /*
@@ -152,42 +148,59 @@ Engine.prototype.stop = function(reason, callback) {
 
 /*
  * Get the version of this engine.
- * 
- * For production builds, the version is provided by a version.json that defines a version object that includes:
- * hash - A hash for the build, typically a commit SHA (may not exist in a release type build)
- * number - The semver version number
- * type - The type of release, either 'dev', 'rc', or 'release'
+ * Honor semver numbering:
+ * For working dev version tag in branch from most recent; use ODD numbers just for redundancy
+ * For production builds, tag with the next EVEN number in MASTER. 
+ * The Release Version is codified by a version.json that defines a version object that includes:
+ *     hash - A hash for the build, typically a commit SHA (may not exist in a release type build)
+ *     number - The semver version number
+ *     type - The type of release, either 'dev', 'rc', or 'release'
  * 
  * If that file exists and can be parsed, return a version object that reflects its contents.
- * If it does not exist, use git (if available on the system) to read out some version information instead
+ * If it does not exist, use git (if available on the system) to read out working version information instead
+ * (See: example-version.json)
  */
 Engine.prototype.getVersion = function(callback) {
-    util.doshell('git rev-parse --verify HEAD', function(data) {
+    ////## grab the version and abbreviated SHA (if one)
+    util.doshell('git describe', function(data) {
+        // util.doshell('git rev-parse --verify HEAD', function(data) {
         this.version = {};
-        this.version.hash = (data || "").trim();
-        this.version.number = "";
+        this.version.number = (data || "").trim();
+        // this.version.hash = (data || "").trim();
         this.version.debug = ('debug' in argv);
+    ////## then see if we have an official release version# in json file
+    // see: version-example.json
     fs.readFile('version.json', 'utf8', function(err, data) {
             if(err) {
+                log.debug(" ... no version file ... using git and dev info")
                 this.version.type = 'dev';
-                this.version.number = '2.0-dev';
+                this.version.number = this.version.number + "-dev";
+                var random = Math.floor(Math.random() * (99999 - 10000)) + 10000;
+                log.info("Adding random prefix to dev engine version");
+                this.version.number = random.toString() + "-" + this.version.number
                 return callback(null, this.version);
             }
             try {
+                log.debug(" ... found json version file ... this is a RELEASE VERSION")
                 data = JSON.parse(data);
                 if(data.number) {
                     this.version.number = data.number;
                     this.version.type = 'release';
                 }
             } catch(e) {
-                this.version.number = '2.0-dev';
+                log.debug(" ... can't parse version file!")
+                this.version.number = this.version.number +"-dev-fault";
                 this.version.type = 'dev';
+                var random = Math.floor(Math.random() * (99999 - 10000)) + 10000;
+                log.info("Adding random prefix to dev engine version");
+                this.version.number = random.toString() + "-" + this.version.number
             } finally {
                 callback(null, this.version);
             }
         }.bind(this))
     }.bind(this));
 }
+
 
 /*
  * Return "info" about this engine, which currently is just version data for the engine and the firmware
@@ -199,7 +212,6 @@ Engine.prototype.getInfo = function(callback) {
     });
 }
 
-
 // Set the online flag (indicates whether the engine is online) to the provided value
 //   online - true to indicate that the engine can see the network.  False otherwise.
 Engine.prototype.setOnline = function(online) {
@@ -207,6 +219,7 @@ Engine.prototype.setOnline = function(online) {
     this.emit('status', this.status);
 }
 
+// ##############################################################################
 /*
  * This function is the primary content of the Engine object.  It is called on application launch, and is
  * sort of the "main thread" of execution.  It executes a bunch of startup/configuration functions, and 
@@ -217,9 +230,15 @@ Engine.prototype.start = function(callback) {
 
     async.series([
 
-        // Configure the engine data directories
-        // Create the folder structure (typically) in /opt/fabmo
-        // eg: /opt/fabmo/config, /opt/fabmo/macros, etc...
+        // AFTER LOADING SOME Config data and info
+        // We will:
+        //    Configure the engine data directories
+        //    Create the folder structure (typically) in /opt/fabmo
+        //    ... eg: /opt/fabmo/config, /opt/fabmo/macros, etc...
+
+// TODO - This seems like a duplication of the same step below
+////## BUT testing shows that for some start scenarios,
+//     ... both versions seem necessary 1/2/21
        function setup_application(callback) {
             log.info('Checking engine data directory tree...');
             config.createDataDirectories(callback);
@@ -301,58 +320,41 @@ Engine.prototype.start = function(callback) {
         //   - We're running in 'debug' mode (and might be making changes to system apps)
         //   - The version of the engine has changed since the last time we run it.
         // So, we check those things, and clear the approot accordingly.
-        //
         // See dashboard/app_manager.js for more about the approot.
         function clear_approot(callback) {
+            var flg_clr_approot = false;
+            var last_time_version = (config.engine.get('version') || '').trim();
+            var this_time_version = (this.version.hash || this.version.number || "").trim();
+            log.debug("Previous engine version: " + last_time_version);
+            log.debug(" Current engine version: " + this_time_version);
+            if(last_time_version != this_time_version) {
+                log.info("Engine version has changed - flag to clear the approot.");
+                flg_clr_approot = true;
+            } else {
+                log.info("Engine version is unchanged since last run.");
+                //callback();
+            }
             if('debug' in argv) {
-                log.info("Running in debug mode - clearing the approot.");
-                
-                // If in debug mode, we also set our version to a random number, which provides effective
-                // cache-busting on the client side when debugging.
-                // TODO: This probably isn't the place for this, it should go up where the other version stuff is.
-                var random = Math.floor(Math.random() * (99999 - 10000)) + 10000;
-                log.info("Setting engine version to random");
-                config.engine.set('version', random.toString());
-                
-                // Clear the actual approot
+                log.info("Running in debug mode - flag to clear the approot.");
+                flg_clr_approot = true;
+            }
+            if(flg_clr_approot) {           
                 config.clearAppRoot(function(err, stdout) {
+                    log.info("Clearing the approot ...");
+                    config.engine.set('version', this_time_version);
                     if(err) { log.error(err); }
                     else {
-                        log.debug(stdout);
+                        log.debug(stdout);  
                     }
-                    // TODO - seems like we don't need to do this twice
-                    config.engine.set('version', random.toString());
-                    callback();
+                callback();
                 });
-                
-            } else {
-                var last_time_version = (config.engine.get('version') || '').trim();
-                var this_time_version = (this.version.hash || this.version.number || "").trim();
-                log.debug("Previous engine version: " + last_time_version);
-                log.debug(" Current engine version: " + this_time_version);
-
-                if(last_time_version != this_time_version) {
-                    log.info("Engine version has changed - clearing the approot.");
-                    // TODO - reduce code by moving this clearAppRoot out of the if else in its own test (Just set a shouldClearApproot flag or something in the if-else)
-                    config.clearAppRoot(function(err, stdout) {
-                        config.engine.set('version', this_time_version);
-                        if(err) { log.error(err); }
-                        else {
-                            log.debug(stdout);
-                        }
-                        callback();
-                    });
-                } else {
-                    log.info("Engine version is unchanged since last run.");
-                    callback();
-                }
-                
-            }
-            
+            } else {        ////##
+                callback(); ////##
+            }               ////##
         }.bind(this),
 
-        // TODO - this seems like a duplication of the same step above (see the beginning of this startup sequence)
         function create_data_directories(callback) {
+log.debug('Create_data_directories ...')
             config.createDataDirectories(callback);
         }.bind(this),
 
@@ -390,11 +392,12 @@ Engine.prototype.start = function(callback) {
             });
         }.bind(this),
 
-        function launch_detection_daemon(callback){
-            log.info("Launching detection daemon...");
-            detection_daemon();
-            callback(null);
-        }.bind(this),
+        ////## obsolete
+        // function launch_detection_daemon(callback){
+        //     log.info("Launching detection daemon...");
+        //     detection_daemon();
+        //     callback(null);
+        // }.bind(this),
 
         // Apply the "machine" configuration - see config/machine_config.js for details
         function load_machine_config(callback) {
@@ -465,6 +468,21 @@ Engine.prototype.start = function(callback) {
         //        installation process.  It is typical for such processes to "migrate" config files to latest version.
         function g2_shim(callback) {
           log.debug("Running G2 Shim...");
+////##
+          // var entries = [
+          //   '1sa','1tr','1mi',
+          //   '2sa','2tr','2mi',
+          //   '3sa','3tr','3mi',
+          //   '4sa','4tr','4mi',
+          //   '5sa','5tr','5mi',
+          //   '6sa','6tr','6mi',
+          //   'ja',
+          //   '6ma',
+          //   '6po',
+          //   '6su',
+          //   '6pm',
+          //   '6pl'
+          // ]
           var entries = [
             '1sa','1tr','1mi',
             '2sa','2tr','2mi',
@@ -472,12 +490,7 @@ Engine.prototype.start = function(callback) {
             '4sa','4tr','4mi',
             '5sa','5tr','5mi',
             '6sa','6tr','6mi',
-            'ja'        ////## ,
-                        ////## '6ma',
-                        ////## '6po',
-                        ////## '6su',
-                        ////## '6pm',
-                        ////## '6pl'
+            'ja'
           ]
           var do_shim = false;
           for(var i=0; i<entries.length; i++) {
@@ -590,23 +603,27 @@ Engine.prototype.start = function(callback) {
           }.bind(this))
         }.bind(this),
 
+////##
         // Initialize the network module
         function setup_network(callback) {
-
+////##
+log.debug("### Getting this far in START-ENGINE ###  <======================")
             var OS = config.platform;
             var name = config.engine.get('name');
             log.info( 'name is ' + name);
             network.createNetworkManager(name, function(err, nm){
-                if(err) {
-                    log.error(err);
-                    this.networkManager = new GenericNetworkManager(OS, PLATFORM);
-                } else {
-                    this.networkManager = nm
-                }
+////##
+                // if(err) {
+                //     log.error(err);
+                //     this.networkManager = new GenericNetworkManager(OS, PLATFORM);
+                // } else {
+                     this.networkManager = nm
+                // }
    
                 // Listen to the network manager's "network" event (which is emitted each time a new network is joined)
                 // and when the event is encountered, initiate beacon reporting and update package checks
 
+////## REMOVE???
                 this.networkManager.on('network', function(evt) {
                     if(evt.mode === 'station' || evt.mode === 'ethernet') {
                         // 30 Second delay is used here to make sure timesyncd has enough time to update network time
@@ -625,6 +642,7 @@ Engine.prototype.start = function(callback) {
     
                 // Call the network manager init function, which actually starts looking for networks, etc.
                 log.info('Setting up the network...');
+////##
                 try {
                     this.networkManager.init();
                     log.info('Network manager started.')
@@ -633,30 +651,33 @@ Engine.prototype.start = function(callback) {
                     log.error('Problem starting network manager:' + e);
                 }
     
-                // Setup a recurring function that checks to see that the updater is online
-                var onlineCheck = function() {
-                    console.log('update check');
-                    this.networkManager.isOnline(function(err, online) {
-                        if(online != this.status.online) {
-                            this.setOnline(online);
-                        }
-                    }.bind(this));
-                }.bind(this);
-                onlineCheck();
-                setInterval(onlineCheck,3000); // TODO - magic number, should factor out
-                return callback(null);
+                // // Setup a recurring function that checks to see that the updater is online
+                // var onlineCheck = function() {
+                //     console.log('update check');
+                //     this.networkManager.isOnline(function(err, online) {
+                //         if(online != this.status.online) {
+                //             this.setOnline(online);
+                //         }
+                //     }.bind(this));
+                // }.bind(this);
+                // onlineCheck();
+                // setInterval(onlineCheck,3000); // TODO - magic number, should factor out
+                 return callback(null);
             }.bind(this));
 
 
 
-        }.bind(this),
+         }.bind(this),
+////##
+
 
         function setup_config_events(callback) {
             config.engine.on('change', function(evt) {
                 if(evt.beacon_url) {
                     this.beacon.set('url', config.updater.get('beacon_url'));
                 }
-    
+        //TODO ... as part of dealing with beacon
+        ////## this 'once' generating can't read prop error on first config changes    
                 // If the tool name changes, report the change to beacon
                 if(evt.name) {
                     this.beacon.once('config');
@@ -711,7 +732,8 @@ Engine.prototype.start = function(callback) {
             if('debug' in argv) {
                 server.use(
                     function debug(req, res, next) {
-                        log.debug(req.method + ' ' + req.url);
+////## temporarily removed because making hard to read manual mode action                        
+////##                        log.debug(req.method + ' ' + req.url);
                         next();
                     });
             }

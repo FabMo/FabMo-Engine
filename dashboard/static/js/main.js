@@ -143,13 +143,15 @@ require("../css/toastr.min.css");
                 });
 
                 dashboard.engine.on('status', function(status) {
+                    // console.log('Status Object');
+                    console.log("status state:  "+status.state);
+                    console.log(status);
                     if(status.state == 'dead') {
                         dashboard.showModal({
                             title: 'An Error Occurred!',
                             message: status.info.error,
                             noButton : true
                         });
-
                         return;
                     }
 
@@ -196,7 +198,9 @@ require("../css/toastr.min.css");
                         case 'running':
                         case 'paused':
                         case 'stopped':
-                            dashboard.handlers.showFooter();
+                            if(modalIsShown === false) {
+                                dashboard.handlers.showFooter();
+                            }
                             break;
                         default:
                             dashboard.handlers.hideFooter();
@@ -218,10 +222,13 @@ require("../css/toastr.min.css");
                                 $('.manual-drive-message').show();
                                 $('.manual-drive-message').html(status.info.message);
 
+                            } else if (status.info['timer'] && status.info['timer'] <= 10) {
+                                keypad.setEnabled(false);
+                                keyboard.setEnabled(false);
                             } else {
                                 keypad.setEnabled(false);
                                 keyboard.setEnabled(false);
-                                dashboard.showModal({
+                                modalOptions = {
                                     message: status.info.message,
                                     okText: 'Resume',
                                     cancelText: 'Quit',
@@ -231,8 +238,25 @@ require("../css/toastr.min.css");
                                     cancel: function() {
                                         dashboard.engine.quit();
                                     }
-                                });
+                                }
+                                if(status['info']['input']) {
+                                    modalOptions['input'] = status['info']['input'];
+                                    modalOptions['ok'] = function() {
+                                        var inputVar = $('#inputVar').val();
+                                        var inputVal = $.trim($('#inputVal').val());
+                                        dashboard.engine.resume({'var': inputVar, 'val': inputVal});
+                                        //  TODO: stop modal from closing on click so we can validate.
+                                        // if(inputVal != '') {
+                                        //     $('.inputError').hide();
+                                        //     dashboard.engine.resume({'var': inputVar, 'val': inputVal});
+                                        // } else {
+                                        //     $('.inputError').show();
+                                        // }
+                                    }
+                                }
+                                dashboard.showModal(modalOptions);
                                 modalIsShown = true;
+                                dashboard.handlers.hideFooter();
                             }
                         } else if (status.info['error']) {
                             if (dashboard.engine.status.job) {
@@ -253,6 +277,7 @@ require("../css/toastr.min.css");
                                 }
                             });
                             modalIsShown = true;
+                            dashboard.handlers.hideFooter();
                         }
                     } else if (status.state === 'armed') {
                         authorizeDialog = true;
@@ -478,8 +503,6 @@ require("../css/toastr.min.css");
 
 
 
-
-    
 
     //goto this location
     var axisValues = [];
@@ -728,7 +751,7 @@ require("../css/toastr.min.css");
     }
     touchScreen();
 
-$('#icon_sign_out').on('click', function(e){
+$('.icon_sign_out').on('click', function(e){
     e.preventDefault();
     dashboard.showModal({
         title : 'Log Out?',

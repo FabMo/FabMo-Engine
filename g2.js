@@ -2,7 +2,7 @@
  * g2.js
  * 
  * This module defines the G2 driver, which is responsible for managing communication
- * between the host and a tinyg2 motion conroller.  Other objects and functions are
+ * between the host and a g2 motion conroller.  Other objects and functions are
  * defined here as well to support this capability.
  */
 var SerialPort = require("serialport");
@@ -35,7 +35,7 @@ var STAT_SHUTDOWN = 12;
 var STAT_PANIC = 13;
 
 // Should take no longer than CMD_TIMEOUT to do a get or a set operation
-var CMD_TIMEOUT = 10000;
+var CMD_TIMEOUT = 100000;
 var EXPECT_TIMEOUT = 300000;
 
 var _promiseCounter = 1;
@@ -152,6 +152,9 @@ function G2() {
 	this.pause_flag = false;
 	this.connected = false;
 
+	// OpenSBP Pause
+	this.pause_hold = false;
+
 	// Feedhold/flush
 	this.quit_pending = false;
 	this.stat = null;
@@ -194,11 +197,17 @@ G2.prototype._createCycleContext = function() {
 	this._streamDone = false;
 	this.lineBuffer = []
 
+	////## added spaces after '\n's to make debug display easier to read
 	// TODO factor this out; ////## really???
 	// Inject a couple of G-Codes which are needed to start the machining cycle
-	st.write('G90\n' + 'G61\n')  ////## to make sure we are not in exact stop mode left from fixed moves
+////##
+	st.write('G90\n ' + 'S1000\n ' + 'G61\n ')  ////## AND, make sure we have a default S-value
+////## S-value needed for G2 spinup-delay to work (ugh!not M3 switch)
+////## TODO create default variable for S-value for VFD spindle control, just a dummy here now
+	st.write('G90\n ' + 'G61\n ')  ////## to make sure we are not in exact stop mode left from fixed moves
 //	st.write('G90\n')
-	st.write('M100 ({out4:1})\n') // hack to get the "permissive relay" behavior while in-cycle
+	st.write('M100 ({out4:1})\n ') // hack to get the "permissive relay" behavior while in-cycle
+////## v3 version of G2 is not yet "in cycle here"; an increasing problem!
 	
 	// Handle data coming in on the stream
 	st.on('data', function(chunk) {
@@ -523,6 +532,8 @@ G2.prototype.handleStatusReport = function(response) {
 					}
 					break;
 				case STAT_END:
+					//##Lput back in 
+					this.status.line = null;
 					break;
 
 				// A really bad error in the firmware causes a "panic" - these are rare, but they do
@@ -674,23 +685,6 @@ G2.prototype.onMessage = function(response) {
 // Interrupt motion in manual run-time; now using "kill" rather than G2-hold
 ////## Handling normal and raw now the same
 G2.prototype.manualFeedHold = function(callback) {
-//     if (this.mode ==='raw') {
-// 			// Issue the actual Job Kill
-// 			this._write('\x04\n' );
-// 			this.gcode_queue.clear();  
-//     } else {
-// 			// Issue the actual Job Kill
-// 			this._write('\x04\n');
-// 			this.gcode_queue.clear();
-
-// 		// this._write('\x04\n', function() {
-// 		// 	this.once('status', function() {
-// 		// 		this._write('M100.1 ({zl:0})\nM0\nG91\n G0 X0 Y0 Z0\n');	
-// 		// 		this.prime();
-// 		// 		callback();	
-// 		// 	}.bind(this))
-// 		// }.bind(this));
-	// 	}
 
 	////## needs flag that says stopping
 
@@ -792,10 +786,38 @@ G2.prototype.quit = function() {
 			// Clear the gcodes we have queued up
 			this.gcode_queue.clear();
 			// Issue the actual Job Kill
-            log.debug("===>Sending Cleanup KILL?"); ////##
+            log.debug("Sending Cleanup KILL"); ////##
 			this._write('\x04\n');
 			break;
 	}
+}
+
+// When the gcode runtime asks that an M30 be sent, send it. This is pulled out from the
+//  normal queuing and writing path because of a timing issue with the g2core that needs to be
+//  resolved. Right now, when the g2core runs out of gcode in the buffer, it seems like it
+//  goes to stat:3. However, if the last line of gcode was M30, it seems to either ignore it,
+//  or consider it satisfied by stat:3. (maybe there is some time required to get to stat:3 from stat:5?
+//  In any case, by sending the M30 after we receive the stat:3 status change update, we ensure
+//  that the M30 is processed and that the g2core goes to stat:4 so that we end our current CycleContext
+//  and can start a new one.
+G2.prototype.sendM30 = function() {
+	if(this.quit_pending) {
+		log.warn("Not quitting because a quit is already pending.");
+		return;
+	}
+
+	this.quit_pending = true;
+
+	if(this.stream) {
+		this.stream.end()
+	}
+	// Clear the gcodes we have queued up
+    // we should have no gcodes in queue since we only get here when the gcode runtime is notified that we
+    // just transitioned to stat:3. Before we send new gcodes, we should start a new Cycle Context.
+	this.gcode_queue.clear();
+	// Issue the M30
+    log.debug("Sending M30 at end of CycleContext");
+	this._write('M30\n');
 }
 
 // get the specified configuration value from g2.
@@ -958,7 +980,7 @@ G2.prototype.command = function(obj) {
 //        Either implement it or drop it from the arguments list
 G2.prototype.runString = function(data, callback) {
 	var stringStream = new stream.Readable();
-	stringStream.push(data + "\n");
+	stringStream.push(data + "\n ");    ////## added space for reading
 	stringStream.push(null);
 	return this.runStream(stringStream);
 };
@@ -986,8 +1008,9 @@ G2.prototype._createStatePromise = function(states) {
 	var that = this;
 	var onStat = function(stat) {
 		for(var i=0; i<states.length; i++) {
-			if(stat === states[i] && !this.manual_hold) {
+			if(stat === states[i] && !this.manual_hold && !this.pause_hold) {
 				that.removeListener('stat', onStat);
+				log.debug("Pause Now - " + this.pause_hold + " in " + this.mode);
 				log.debug("Hold now - " + this.manual_hold + " in " + this.mode);
 				log.info("Resolving promise " + thisPromise + " because of state " + stat + " which is one of " + states)
 				deferred.resolve(stat);
@@ -1013,10 +1036,10 @@ G2.prototype.waitForState = function(states) {
 // a stream processor that is streaming from one of those sources without
 // having to load the entire file into memory.
 G2.prototype.runStream = function(s) {
-log.debug("===>call from run stream to _createCycle")
-		this._createCycleContext();
-		s.pipe(this.context._stream);
-		return this.context;
+	log.info("from run stream to _createCycle")
+	this._createCycleContext();
+	s.pipe(this.context._stream);
+	return this.context;
 }
 
 // Run data from a file.  This is done with streams, which enjoy the benefits described in runStream above.
@@ -1073,7 +1096,7 @@ G2.prototype.sendMore = function() {
 		var codes = this.command_queue.multiDequeue(count)
 		codes.push("");
 		this._ignored_responses+=to_send;
-		this._write(codes.join('\n'), function() {});
+		this._write(codes.join('\n '), function() {});   ////## added space for reading
 	}
 
 	// If we're primed, go ahead and send more g-codes
@@ -1088,13 +1111,13 @@ G2.prototype.sendMore = function() {
 				codes.push(""); 
 				if(codes.length > 1) {
 					this.lines_to_send -= to_send/*-offset*/;
-					this._write(codes.join('\n'), function() { });
+					this._write(codes.join('\n '), function() { });  ////## added space for reading
 				}
 			}
 		}
 	} else {
 		if(this.gcode_queue.getLength() > 0) {
-			log.debug("Not sending because not primed.");  ////## turned on
+			log.info("Not sending because not primed.");  ////## turned on
 		}
 	}
 };
@@ -1102,7 +1125,8 @@ G2.prototype.sendMore = function() {
 // Set the position of the motion system using the G28.3 code
 // position - An object mapping axes to position values. Axes that are not included will not be updated. 
 G2.prototype.setMachinePosition = function(position, callback) {
-	var axes = ['x','y','z','a','b','c','u','v','w']
+////## until uvw enabled	var axes = ['x','y','z','a','b','c','u','v','w']
+	var axes = ['x','y','z','a','b','c']
 	var gcodes = ['G21']
 	axes.forEach(function(axis) {
 		if(position[axis] != undefined) {

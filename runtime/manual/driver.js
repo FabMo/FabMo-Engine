@@ -218,7 +218,7 @@ ManualDriver.prototype.maintainMotion = function() {
 // Stop all movement 
 ManualDriver.prototype.stopMotion = function() {
 	if(this._limit()) { return; }
-  this.stop_pending = true;       ////## queue not clearing right ... testing
+ 	this.stop_pending = true;       ////## queue not clearing right ... testing
 	this.keep_moving = false;
 	if(this.renew_timer) {
 		clearTimeout(this.renew_timer);
@@ -255,6 +255,12 @@ ManualDriver.prototype.runGCode = function(code) {
 		} else {
 			log.debug('writing gcode while static')
 			this.moving = true;
+////## To debug G2 action; this kludge allows easy multiple lines with an "n" placed after each cmd
+//      in betaINSERT function of Sb4; try a "k" to kill.
+log.debug("... possibly inserting line feed; for use in multiple inserts of gcode");
+code = code.replace(/n/g,'\n');
+code = code.replace(/k/, '\x04\n');
+log.debug(code);
 			this.stream.write(code.trim() + '\n');
 			this.maintainMotion();		
 			this._renewMoves('start')
@@ -287,6 +293,8 @@ ManualDriver.prototype.set = function(pos) {
 	var toSet = {};
 	if ( this.driver.status.unit === "in" ) {  // inches
 		unitConv = 0.039370079;
+	} else {
+		unitConv = 1;
 	}
 	if(this.mode === 'normal') {
 

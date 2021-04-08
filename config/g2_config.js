@@ -159,6 +159,8 @@ G2Config.prototype.configureStatusReports = function(callback) {
 	////## spc=0 [OFF]; =1 or =2 [ON]; =3 [PAUSED-OFF in hold]; =4 [RESUMING] 
 	////## see g2 spindle.h (no other documentation)
 	////## RE: g2 101.03 may change later with DIO
+	////## also see DIO defs in g2core >gpio.h (for setting number and analog, PWM?)
+	////## testing w/o out1 in case the null return may be causing read problem
 	if(this.driver) {
 	this.driver.command({"sr":{
 						"posx":true,
@@ -166,12 +168,14 @@ G2Config.prototype.configureStatusReports = function(callback) {
 						"posz":true,
 						"posa":true,
 						"posb":true,
+						"posc":true,
 						"vel":true,
 						"stat":true,
 						"hold":true,
 						"line":true,
 						"coor":true,
 						"unit":true,
+						"spc":true,
 						"in1":true,
 						"in2":true,
 						"in3":true,
@@ -181,6 +185,10 @@ G2Config.prototype.configureStatusReports = function(callback) {
 						"in7":true,
 						"in8":true,
                         "spc":true,
+						"in9":true,
+						"in10":true,
+						"in11":true,
+						"in12":true,
 						"out1":true,
 						"out2":true,
 						"out3":true,
@@ -188,7 +196,11 @@ G2Config.prototype.configureStatusReports = function(callback) {
 						"out5":true,
 						"out6":true,
 						"out7":true,
-						"out8":true
+						"out8":true,
+						"out9":true,
+						"out10":true,
+						"out11":true,
+						"out12":true
 					}});
 		this.driver.command({"qv":0});
 		this.driver.command({"jv":4});

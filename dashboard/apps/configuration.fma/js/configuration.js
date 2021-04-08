@@ -49,57 +49,65 @@ function update() {
   fabmo.getVersion(function(err, version) {
     switch(version.type) {
       case 'dev':
-        $('.engine-version').text(version.hash.substring(0,12) + '-dev');
+        ////## updated display of dev verisons
+        $('.engine-version').text(version.number); 
+        //$('.engine-version').text(version.hash.substring(0,9) + '-' + version.number);
         break;
       case 'release':
         $('.engine-version').text(version.number);
         break;
     }
   });
-    fabmo.getConfig(function(err, data) {
-      if(err) {
-        console.error(err);
-      } else {
-        configData = data;
-        ['driver', 'engine', 'opensbp', 'machine'].forEach(function(branchname) {
-            branch = flattenObject(data[branchname]);
-            for(key in branch) {
-              v = branch[key];
-              input = $('#' + branchname + '-' + key);
-              if(input.length) {
-                  if (input.is(':checkbox')){
-                    if (v){
-                        input.prop( "checked", true );
-                    } else {
-                        input.prop( "checked", false );
-                    }
+  fabmo.getInfo(function(err, info) {
+    if(err) {
+      console.error(err);
+    } else {
+      $('.firmware-version').text(info.firmware.version.replace("-dirty","")) 
+    }
+  });
+  fabmo.getConfig(function(err, data) {
+    if(err) {
+      console.error(err);
+    } else {
+      configData = data;
+      ['driver', 'engine', 'opensbp', 'machine'].forEach(function(branchname) {
+          branch = flattenObject(data[branchname]);
+          for(key in branch) {
+            v = branch[key];
+            input = $('#' + branchname + '-' + key);
+            if(input.length) {
+                if (input.is(':checkbox')){
+                  if (v){
+                      input.prop( "checked", true );
                   } else {
-                    input.val(String(v));
+                      input.prop( "checked", false );
                   }
-              }
+                } else {
+                  input.val(String(v));
+                }
             }
-        });
-
-        var profiles = data['profiles'] || {}
-        var profilesList = $('#profile-listbox');
-        profilesList.empty();
-        //profilesList.empty();
-        if(profiles) {
-          for(var name in profiles) {
-            profilesList.append(
-                $('<option></option>').val(name).html(name)
-            );
           }
-        } else {
-          console.error("No profiles!")
+      });
+      var profiles = data['profiles'] || {}
+      var profilesList = $('#profile-listbox');
+      profilesList.empty();
+      //profilesList.empty();
+      if(profiles) {
+        for(var name in profiles) {
+          profilesList.append(
+              $('<option></option>').val(name).html(name)
+          );
         }
-        // Shim
-        if(data.engine.profile === 'default') {
-          data.engine.profile = 'Default';
-        }
-        profilesList.val(data.engine.profile);
+      } else {
+        console.error("No profiles!")
       }
-    });
+      // Shim
+      if(data.engine.profile === 'default') {
+        data.engine.profile = 'Default';
+      }
+      profilesList.val(data.engine.profile);
+    }
+  });
 }
 
 function setConfig(id, value) {
