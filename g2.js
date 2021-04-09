@@ -42,6 +42,7 @@ var _promiseCounter = 1;
 var resumePending = false;
 var intendedClose = false;
 var THRESH = 1
+var PRIMED_THRESHOLD = 10
 
 var pat = /s*(G(28|38)\.\d|G2(0|1))/g
 
@@ -170,6 +171,7 @@ function G2() {
 	this.flooded = false;
 	this.send_rate = 1;
 	this.lines_sent = 0;
+	this.primedThreshold = PRIMED_THRESHOLD;
 
 	this.context = null;
 
@@ -197,22 +199,11 @@ G2.prototype._createCycleContext = function() {
 	this._streamDone = false;
 	this.lineBuffer = []
 
-	////## added spaces after '\n's to make debug display easier to read
-	// TODO factor this out; ////## really???
-	// Inject a couple of G-Codes which are needed to start the machining cycle
-////##
-	st.write('G90\n ' + 'S1000\n ' + 'G61\n ')  ////## AND, make sure we have a default S-value
-////## S-value needed for G2 spinup-delay to work (ugh!not M3 switch)
-////## TODO create default variable for S-value for VFD spindle control, just a dummy here now
-	st.write('G90\n ' + 'G61\n ')  ////## to make sure we are not in exact stop mode left from fixed moves
-//	st.write('G90\n')
-	st.write('M100 ({out4:1})\n ') // hack to get the "permissive relay" behavior while in-cycle
-////## v3 version of G2 is not yet "in cycle here"; an increasing problem!
-	
 	// Handle data coming in on the stream
 	st.on('data', function(chunk) {
 		// Stream data comes in "chunks" which are often multiple lines
 		chunk = chunk.toString();
+		// log.debug('Context on data Chunk:  ' + chunk);
 		var newLines = false;
 		// Repartition incoming "chunked" data as lines
 		for(var i=0; i<chunk.length; i++) {
@@ -228,8 +219,7 @@ G2.prototype._createCycleContext = function() {
 				// The G2 sender doesn't actually start sending until it is "primed"
 				// Priming happens either when the number of lines to send reaches a certain threshold
 				// or the prime() function is called manually.
-				// TODO:  Factor out 10 (magic number) and put it at the top of the file so it can be changed easily.
-				if(this.gcode_queue.getLength() >= 10) {
+				if(this.gcode_queue.getLength() >= PRIMED_THRESHOLD) {
 					this._primed = true;
 				}
 				this.lineBuffer = [];
@@ -240,6 +230,10 @@ G2.prototype._createCycleContext = function() {
 			this.sendMore();
 		}
 	}.bind(this));
+
+	// Set absolute, spindle speed default, units, and turn on output 4
+	// TODO: create default variable for S-value for VFD spindle control, just a dummy here now
+	st.write('G90\n ' + 'S1000\n ' + 'G61\n ' + 'M100 ({out4:1})\n ');
 
 	// Handle a stream finishing or disconnecting.
 	st.on('end', function() {
@@ -256,10 +250,9 @@ G2.prototype._createCycleContext = function() {
 	}.bind(this));
 
 	// Handle a stream being piped into this context (currently do nothing)
-	st.on('pipe', function() {
+	st.on('pipe', function(chunk) {
 		log.debug("Stream PIPE event");
 	})
-
 	// Create the promise that resolves when the machining cycle ends.
 	var promise = this._createStatePromise([STAT_END]).then(function() {
 		this.context = null;
@@ -974,27 +967,6 @@ G2.prototype.command = function(obj) {
 	this.sendMore();
 };
 
-// Send a (possibly multi-line) string
-// TODO - this function used to take a callback, but now does not.  
-//        Either implement it or drop it from the arguments list
-G2.prototype.runString = function(data, callback) {
-	var stringStream = new stream.Readable();
-	stringStream.push(data + "\n ");    ////## added space for reading
-	stringStream.push(null);
-	return this.runStream(stringStream);
-};
-
-// Works like runString above, but takes a list of lines instead of a string
-// TODO see above about callback
-G2.prototype.runList = function(l, callback) {
-	var stringStream = new stream.Readable();
-	for(var i=0; i<l.length; i++) {
-		stringStream.push(l[i] + "\n");
-	}
-	stringStream.push(null);
-	return this.runStream(stringStream);
-}
-
 // Return a promise that resolves when one of the provided states is encountered
 // states - a list of states which will cause the promise to resolve
 // The promise resolves with the state that caused the resolution as an argument
@@ -1034,24 +1006,15 @@ G2.prototype.waitForState = function(states) {
 // This allows us to run huge files from disk, or say, http, or from 
 // a stream processor that is streaming from one of those sources without
 // having to load the entire file into memory.
-G2.prototype.runStream = function(s) {
+G2.prototype.runStream = function(s, manualPrime=false) {
 	log.info("from run stream to _createCycle")
 	this._createCycleContext();
+	log.debug(manualPrime);
+	if (manualPrime) {
+		this.prime();
+	}
 	s.pipe(this.context._stream);
 	return this.context;
-}
-
-// Run data from a file.  This is done with streams, which enjoy the benefits described in runStream above.
-G2.prototype.runFile = function(filename) {
-	var st = fs.createReadStream(filename);
-	var ln = new LineNumberer();
-	//return this.runStream(st);
-	return this.runStream(st.pipe(ln));
-}
-
-// TODO - Do we really need this function if we have runString?
-G2.prototype.runImmediate = function(data) {
-	return this.runString(data);
 }
 
 // G2 begins running G-Codes as soon as it recieves them, and in certain cases, it is possible for
@@ -1103,14 +1066,14 @@ G2.prototype.sendMore = function() {
 		var count = this.gcode_queue.getLength();
 		if(this.lines_to_send >= THRESH) {
 				if(count >= THRESH || this._streamDone) {
-				// Send some lines, but no more than we are allowed per linemode protocol
-				var to_send = Math.min(this.lines_to_send, count);
-				var codes = this.gcode_queue.multiDequeue(to_send);
-				// Ensures that when we join below that we get a \n on the end
-				codes.push(""); 
-				if(codes.length > 1) {
-					this.lines_to_send -= to_send/*-offset*/;
-					this._write(codes.join('\n '), function() { });  ////## added space for reading
+					// Send some lines, but no more than we are allowed per linemode protocol
+					var to_send = Math.min(this.lines_to_send, count);
+					var codes = this.gcode_queue.multiDequeue(to_send);
+					// Ensures that when we join below that we get a \n on the end
+					codes.push(""); 
+					if(codes.length > 1) {
+						this.lines_to_send -= to_send/*-offset*/;
+						this._write(codes.join('\n '), function() { });  ////## added space for reading
 				}
 			}
 		}
@@ -1122,19 +1085,22 @@ G2.prototype.sendMore = function() {
 };
 
 // Set the position of the motion system using the G28.3 code
-// position - An object mapping axes to position values. Axes that are not included will not be updated. 
+// position - An object mapping axes to position values. Axes that are not included will not be updated.
 G2.prototype.setMachinePosition = function(position, callback) {
 ////## until uvw enabled	var axes = ['x','y','z','a','b','c','u','v','w']
 	var axes = ['x','y','z','a','b','c']
-	var gcodes = ['G21']
+	var gcodes = new stream.Readable();
+	gcodes.push('G21\n');
 	axes.forEach(function(axis) {
 		if(position[axis] != undefined) {
-			gcodes.push('G28.3 ' + axis + position[axis].toFixed(5));
+			gcodes.push('G28.3 ' + axis + position[axis].toFixed(5) + "\n");
 		}
 	});
 
-	gcodes.push(this.status.unit === 'in' ? 'G20' : 'G21');
-	this.runList(gcodes).then(function() {callback && callback()})
+	gcodes.push(this.status.unit === 'in' ? 'G20\n' : 'G21\n');
+	gcodes.push(null);
+	//TODO: Set manualPrime false once uvw enabled
+	this.runStream(gcodes, true).then(function() {callback && callback()})
 }
 
 // Function works like "once()" for a state change

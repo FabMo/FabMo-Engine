@@ -536,35 +536,41 @@ function LineNumberer(options) {
     return new LineNumberer(options);
   }
   this.count = 0;
+  this.start = true;
+  this.input = "";
+  this.output = "";
+  // We start with lastChar as a newline to start each stream with a line number.
+  this.lastChar = "\n";
   // init Transform
   stream.Transform.call(this, options);
 }
 util.inherits(LineNumberer, stream.Transform);
 
-
-
 LineNumberer.prototype._transform = function(chunk, enc, next) {
-  var data = chunk.toString();
-  if (this._lastLineData) { data = this._lastLineData + data; }
-
-  var lines = data.split('\n');
-  this._lastLineData = lines.splice(lines.length-1,1)[0];
-  block = []
-  for(var i=0; i<lines.length; i++) {
-    this.count += 1;
-    //this.push("N" + this.count + " " + lines[i] + '\n');
-    block.push("N" + this.count + " " + lines[i]);
-  }
-
-  this.push(block.join('\n'))
-  next();
-};
+    this.input = chunk.toString();
+    // log.debug("input:  " + this.input);
+    // Walk the input chunk and add new line number after each newline if line number is not present
+    for (const c of this.input) {
+        if (this.lastChar == "\n") {
+            this.count += 1;
+            this.output += (c == "N") ? "" : "N" + this.count + " ";
+            this.output += c;
+        } else {
+            this.output += c;
+        }
+        this.lastChar = c
+    }
+    // log.debug("output:  " + this.output);
+    this.push(this.output);
+    this.output = "";
+    next();
+}
 
 LineNumberer.prototype._flush = function(done) {
-  if (this._lastLineData) { this.push(this._lastLineData); }
-  this._lastLineData = null;
-  done();
-};
+    // Ensure we end with a new line so the final line is sent.
+    this.push("\n");
+    done()
+}
 
 var countLineNumbers = function(filename, callback) {
     var i;
