@@ -98,10 +98,10 @@ variable
   = (user_variable / system_variable / persistent_variable)
 
 user_variable
-  = v:("&" identifier) {return {"type":"user_variable", "expr":v.join("")}}
+  = v:("&" identifier) {return {"type":"user_variable", "expr":v.join("").toUpperCase()}}
 
 persistent_variable
-  = v:("$" identifier ) {return {"type":"persistent_variable", "expr":v.join("")}}
+  = v:("$" identifier ) {return {"type":"persistent_variable", "expr":v.join("").toUpperCase()}}
 
 system_variable
   = "%" "(" __ e:expression __ ")" {return {"type":"system_variable", "expr":e}}
