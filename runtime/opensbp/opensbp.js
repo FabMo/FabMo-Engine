@@ -724,6 +724,7 @@ SBPRuntime.prototype._exprBreaksStack = function(expr) {
 SBPRuntime.prototype._run = function() {
     log.info("Starting OpenSBP program")
     if(this.machine) {
+log.debug("setRunning in sbp 2");
         this.machine.setState(this, "running");
     }
 
@@ -751,6 +752,7 @@ SBPRuntime.prototype._run = function() {
             case this.driver.STAT_PROBE:
             case this.driver.STAT_RUNNING:
                 if(!this.inManualMode) {
+log.debug("setting Running here in onStat")
                     this.machine.setState(this, 'running');
                     if(this.pendingFeedhold) {
                         this.pendingFeedhold = false;
@@ -937,7 +939,7 @@ SBPRuntime.prototype._abort = function(error) {
 SBPRuntime.prototype._end = function(error) {
     
     // debug info
-    log.stack();
+    //log.stack();
 
     // Normalize the error and ending state
     error = error ? error.message || error : null;
@@ -959,7 +961,7 @@ SBPRuntime.prototype._end = function(error) {
 
     // Cleanup deals the "final blow" - cleans up streams, sets the machine state and calls the end callback
     var cleanup = function(error) {
-        log.stack()
+        //log.stack()
         if(this.machine && error) {
             this.machine.setState(this, 'stopped', {'error' : error });
         }
@@ -2044,6 +2046,7 @@ SBPRuntime.prototype.manualEnter = function(message, callback) {
     this.helper = new ManualDriver(this.driver, this.stream);
     this.helper.enter().then(function() {
         this.inManualMode = false;
+log.debug("setRunning in sbp 2");
         this.machine.setState(this, "running");
         this._update();
         if(this.absoluteMode) {

@@ -503,7 +503,6 @@ Machine.prototype.arm = function(action, timeout) {
 
 // Collapse out of the armed state.  Happens when the user hits cancel in the authorize dialog.
 Machine.prototype.disarm = function() {
-	log.stack();
 	if(this._armTimer) { clearTimeout(this._armTimer);}
 	this.action = null;
 	this.fireButtonDebounce = false;
@@ -794,10 +793,10 @@ Machine.prototype.getRuntime = function(name) {
 // stateinfo - The contents of the 'info' field of the status report, if needed.
 Machine.prototype.setState = function(source, newstate, stateinfo) {
 	this.fireButtonDebounce = false ;
-	
+log.debug("ppp... at setState");
+log.debug(source);
 	if ((source === this) || (source === this.current_runtime)) {
 		log.info("Got a machine state change: " + newstate)
-	
 		// Set the info field
 		// status.info.id is the info field id - it helps the dash with display of dialogs
 		if(stateinfo) {
@@ -863,7 +862,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 					var interlockInput = 'in' + config.machine.get('interlock_input');
 					
 				    if(interlockRequired && this.driver.status[interlockInput] && !interlockBypass) {
-						log.stack();
 						this.interlock_action = null;
 						this.setState(this, 'interlock')		
 						return
@@ -938,8 +936,10 @@ Machine.prototype.quit = function(callback) {
 			this.status.job.pending_cancel = true;
 		}
 		if(this.current_runtime) {
+log.debug("ppp... job.pending_quit!")			
 			log.info("Quitting the current runtime...")
 			this.current_runtime.quit();
+log.debug("ppp... quit_pending?")
 			callback(null, 'quit');
 			alreadyQuiting = false;
 		} else {
