@@ -70,7 +70,7 @@ jump
      {return {type:cmd.toLowerCase(), label:lbl};}
 
 argument
-   = (float / integer / expression / barestring / quotedstring / "")
+   = (expression / float / integer / barestring / quotedstring / "")
 
 mnemonic = code: ([_A-Za-z][_A-Za-z0-9\#]) {return code.join('').replace('#','_POUND');}
 
