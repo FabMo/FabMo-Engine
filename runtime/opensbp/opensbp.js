@@ -959,12 +959,12 @@ SBPRuntime.prototype._end = function(error) {
         if(!this.machine){
             this.stream.end();
         }
-        // Clear the internal state of the runtime (restore it to its initial state)
-        this.init();
         this.emit('end', this);
         if(this.end_callback) {
             this.end_callback();
         }
+        // Clear the internal state of the runtime (restore it to its initial state)
+        this.init();
     }.bind(this);
 
 
@@ -2046,14 +2046,16 @@ SBPRuntime.prototype.pause = function() {
 // If the machine is currently moving it will be stopped immediately and the program abandoned
 SBPRuntime.prototype.quit = function() {
     log.debug('OpenSBP runtime Quit');
-    //  Send Quit to g2.js driver.
-    log.debug("issueing driver quit");
-    this.driver.quit();
-    log.debug("driver quit issued");
+
     // Teardown runtime.
     log.debug("runtime quit(): begin teardown");
     this._end();
     log.debug("runtime quit(): teardown complete")
+
+    //  Send Quit to g2.js driver.
+    log.debug("issueing driver quit");
+    this.driver.quit();
+    log.debug("driver quit issued");
 }
 // Old Version: TODO: Remove once refactor complete
 // SBPRuntime.prototype.quit = function() {
