@@ -935,7 +935,7 @@ SBPRuntime.prototype._abort = function(error) {
 // This restores the state of both the runtime and the driver, and sets the machine state appropriately
 //   error - (optional) If the program is ending due to an error, this is it.  Can be string or error object.
 SBPRuntime.prototype._end = function(error) {
-    
+    log.debug("runtime _end() called");
     // debug info
     log.stack();
 
@@ -944,21 +944,14 @@ SBPRuntime.prototype._end = function(error) {
     if(!error) {
         error = this.end_message || null;
     }
-    log.debug("Calling the non-nested (toplevel) end");
-
-    // TODO:  User Vars now stored on config and persistent is this functionality still needed?
-    // // Delete the user variables that don't stick around across runs
-    // for(var key in this.user_vars) {
-    //     if(key[1] === '_') {
-    //         delete this.user_vars[key]
-    //     }
-    // }  
-
     // Log the error for posterity
     if(error) {log.error(error)}
 
+    log.debug("Calling the non-nested (toplevel) end");
+
     // Cleanup deals the "final blow" - cleans up streams, sets the machine state and calls the end callback
     var cleanup = function(error) {
+        log.debug("_end Cleanup called");
         log.stack()
         if(this.machine && error) {
             this.machine.setState(this, 'stopped', {'error' : error });
@@ -966,52 +959,114 @@ SBPRuntime.prototype._end = function(error) {
         if(!this.machine){
             this.stream.end();
         }
-        this.ok_to_disconnect = true;
+        // Clear the internal state of the runtime (restore it to its initial state)
+        this.init();
         this.emit('end', this);
         if(this.end_callback) {
             this.end_callback();
         }
     }.bind(this);
 
-    // Clear the internal state of the runtime (restore it to its initial state)
-    this.init();
 
-    // TODO - this big complicated if-else can probably be collapsed to something simpler with some
-    //      rearranging and changing of the cleanup() function above (or maybe it can be eliminated??)
-    if(error) {
-        if(this.machine) {
-            this.resumeAllowed = false;
-            this.machine.restoreDriverState(function(err, result) {
-                this.resumeAllowed = true;
-                cleanup(error);
-            }.bind(this));
-        } else {
+    if(this.machine) {
+        this.resumeAllowed=false
+        this.machine.restoreDriverState(function(err, result) {
+            this.resumeAllowed = true;
+            if(this.machine.status.job) {
+                this.machine.status.job.finish(function(err, job) {
+                    this.machine.status.job=null;
+                    this.machine.setState(this, 'idle');
+                }.bind(this));
+            } else {
+                this.driver.setUnits(config.machine.get('units'), function() {
+                    this.machine.setState(this, 'idle');
+                }.bind(this));
+            }
             cleanup(error);
-        }
-        // TODO - Shouldn't this deal with the currently running job (if it exists)
-        //        as is done below?? this.machine.status.job.fail maybe?
+        }.bind(this));
     } else {
-        if(this.machine) {
-            this.resumeAllowed=false
-            this.machine.restoreDriverState(function(err, result) {
-                this.resumeAllowed = true;
-                if(this.machine.status.job) {
-                    this.machine.status.job.finish(function(err, job) {
-                        this.machine.status.job=null;
-                        this.machine.setState(this, 'idle');
-                    }.bind(this));
-                } else {
-                    this.driver.setUnits(config.machine.get('units'), function() {
-                        this.machine.setState(this, 'idle');
-                    }.bind(this));
-                }
-                cleanup();
-            }.bind(this));
-        } else {
-            cleanup();
-        }
+        cleanup(error);
     }
 };
+// Old Version:  TODO: remove after Refactor
+// SBPRuntime.prototype._end = function(error) {
+
+//     // debug info
+//     log.stack();
+
+//     // Normalize the error and ending state
+//     error = error ? error.message || error : null;
+//     if(!error) {
+//         error = this.end_message || null;
+//     }
+//     log.debug("Calling the non-nested (toplevel) end");
+
+//     // TODO:  User Vars now stored on config and persistent is this functionality still needed?
+//     // // Delete the user variables that don't stick around across runs
+//     // for(var key in this.user_vars) {
+//     //     if(key[1] === '_') {
+//     //         delete this.user_vars[key]
+//     //     }
+//     // }  
+
+//     // Log the error for posterity
+//     if(error) {log.error(error)}
+
+//     // Cleanup deals the "final blow" - cleans up streams, sets the machine state and calls the end callback
+//     var cleanup = function(error) {
+//         log.stack()
+//         if(this.machine && error) {
+//             this.machine.setState(this, 'stopped', {'error' : error });
+//         }
+//         if(!this.machine){
+//             this.stream.end();
+//         }
+//         this.ok_to_disconnect = true;
+//         this.emit('end', this);
+//         if(this.end_callback) {
+//             this.end_callback();
+//         }
+//     }.bind(this);
+
+//     // Clear the internal state of the runtime (restore it to its initial state)
+//     this.init();
+
+//     // TODO - this big complicated if-else can probably be collapsed to something simpler with some
+//     //      rearranging and changing of the cleanup() function above (or maybe it can be eliminated??)
+//     if(error) {
+//         if(this.machine) {
+//             this.resumeAllowed = false;
+//             this.machine.restoreDriverState(function(err, result) {
+//                 this.resumeAllowed = true;
+//                 cleanup(error);
+//             }.bind(this));
+//         } else {
+//             cleanup(error);
+//         }
+//         // TODO - Shouldn't this deal with the currently running job (if it exists)
+//         //        as is done below?? this.machine.status.job.fail maybe?
+//     } else {
+//         if(this.machine) {
+//             this.resumeAllowed=false
+//             this.machine.restoreDriverState(function(err, result) {
+//                 this.resumeAllowed = true;
+//                 if(this.machine.status.job) {
+//                     this.machine.status.job.finish(function(err, job) {
+//                         this.machine.status.job=null;
+//                         this.machine.setState(this, 'idle');
+//                     }.bind(this));
+//                 } else {
+//                     this.driver.setUnits(config.machine.get('units'), function() {
+//                         this.machine.setState(this, 'idle');
+//                     }.bind(this));
+//                 }
+//                 cleanup();
+//             }.bind(this));
+//         } else {
+//             cleanup();
+//         }
+//     }
+// };
 
 // Execute the specified command
 //    command - The command object to execute
@@ -1990,17 +2045,29 @@ SBPRuntime.prototype.pause = function() {
 // Quit the currently running program
 // If the machine is currently moving it will be stopped immediately and the program abandoned
 SBPRuntime.prototype.quit = function() {
-    if(this.ok_to_disconnect) {
-        return this._end();
-    }
-
-    if(this.machine.status.state == 'stopped' || this.machine.status.state == 'paused') {
-        this.machine.driver.quit();
-    } else {
-        this.quit_pending = true;
-        this.driver.quit();
-    }
+    log.debug('OpenSBP runtime Quit');
+    //  Send Quit to g2.js driver.
+    log.debug("issueing driver quit");
+    this.driver.quit();
+    log.debug("driver quit issued");
+    // Teardown runtime.
+    log.debug("runtime quit(): begin teardown");
+    this._end();
+    log.debug("runtime quit(): teardown complete")
 }
+// Old Version: TODO: Remove once refactor complete
+// SBPRuntime.prototype.quit = function() {
+//     if(this.ok_to_disconnect) {
+//         return this._end();
+//     }
+
+//     if(this.machine.status.state == 'stopped' || this.machine.status.state == 'paused') {
+//         this.machine.driver.quit();
+//     } else {
+//         this.quit_pending = true;
+//         this.driver.quit();
+//     }
+// }
 
 // Resume a program from the paused state
 //   TODO - make some indication that this action was successfil (resume is not always allowed, and sometimes it fails)
