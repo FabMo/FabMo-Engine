@@ -764,25 +764,43 @@ G2.prototype.quit = function() {
 		return;
 	}
 
-	switch(this.status.stat) {
-		//case STAT_END:
-		//	return;
-		//	break;
-
-		default:
-			this.quit_pending = true;
-
-			if(this.stream) {
-				this.stream.end()
-			}
-			// Clear the gcodes we have queued up
-			this.gcode_queue.clear();
-			// Issue the actual Job Kill
-            log.debug("Sending Cleanup KILL"); ////##
-			this._write('\x04\n');
-			break;
+	this.quit_pending = true;
+	if(this.stream) {
+		this.stream.end()
 	}
+	// Clear the gcodes we have queued up
+	this.gcode_queue.clear();
+	// Issue the actual Job Kill
+    log.debug("Sending Cleanup KILL"); ////##
+	this._write('\x04\n');
 }
+
+// Old Version:  TODO: Remove after refactor
+// G2.prototype.quit = function() {
+// 	if(this.quit_pending) {
+// 		log.warn("Not quitting because a quit is already pending.");
+// 		return;
+// 	}
+
+// 	switch(this.status.stat) {
+// 		//case STAT_END:
+// 		//	return;
+// 		//	break;
+
+// 		default:
+// 			this.quit_pending = true;
+
+// 			if(this.stream) {
+// 				this.stream.end()
+// 			}
+// 			// Clear the gcodes we have queued up
+// 			this.gcode_queue.clear();
+// 			// Issue the actual Job Kill
+//             log.debug("Sending Cleanup KILL"); ////##
+// 			this._write('\x04\n');
+// 			break;
+// 	}
+// }
 
 // When the gcode runtime asks that an M30 be sent, send it. This is pulled out from the
 //  normal queuing and writing path because of a timing issue with the g2core that needs to be
