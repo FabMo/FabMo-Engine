@@ -930,7 +930,6 @@ Machine.prototype.quit = function(callback) {
 				this.setState(this, 'idle');
 				break;
 		}
-	
 		// Cancel the currently running job, if there is one
 		if(this.status.job) {
 			this.status.job.pending_cancel = true;

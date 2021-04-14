@@ -59,8 +59,8 @@ function setupAuthentication(svr) {
 function setupStatusBroadcasts(server){
 	var previous_status = {'state':null}
 	machine.on('status',function(status){
-		console.log('Status broadcast');
-		console.log(JSON.stringify(status));
+//		console.log('Status broadcast');
+//		console.log(JSON.stringify(status));
 		server.io.of('/private').sockets.forEach(function (socket) {
 			if(status.state === 'idle' || status.state != previous_status.state) {
 				socket.emit('status',status);

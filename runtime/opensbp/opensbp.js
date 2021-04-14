@@ -2046,7 +2046,6 @@ SBPRuntime.prototype.manualEnter = function(message, callback) {
     this.helper = new ManualDriver(this.driver, this.stream);
     this.helper.enter().then(function() {
         this.inManualMode = false;
-log.debug("setRunning in sbp 2");
         this.machine.setState(this, "running");
         this._update();
         if(this.absoluteMode) {

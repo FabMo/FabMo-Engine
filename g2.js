@@ -233,7 +233,9 @@ G2.prototype._createCycleContext = function() {
 
 	// Set absolute, spindle speed default, units, and turn on output 4
 	// TODO: create default variable for S-value for VFD spindle control, just a dummy here now
-	st.write('G90\n ' + 'S1000\n ' + 'G61\n ' + 'M100 ({out4:1})\n ');
+	////## S1000 is default for spindle speed so that m3 (and SO,1,1) will work correctly w/delay w/o speed
+	////## M0 sets G2 to 'File Stop' stat:3; thus avoids accidentally starting in stat:4
+	st.write('G90\n ' + 'S1000\n ' + 'G61\n ' + 'M100 ({out4:1})\n ' + 'M0\n ');
 
 	// Handle a stream finishing or disconnecting.
 	st.on('end', function() {
