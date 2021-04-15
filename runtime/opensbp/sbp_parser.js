@@ -1130,7 +1130,7 @@ module.exports = (function(){
           pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, cmd, lbl) {return {type:cmd.toLowerCase(), label:lbl};})(pos0, result0[0], result0[2]);
+          result0 = (function(offset, cmd, lbl) {return {type:cmd.toLowerCase(), label:lbl.toUpperCase()};})(pos0, result0[0], result0[2]);
         }
         if (result0 === null) {
           pos = pos0;
@@ -1306,7 +1306,7 @@ module.exports = (function(){
           pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, id) {return {type:"label", value:id};})(pos0, result0[0]);
+          result0 = (function(offset, id) {return {type:"label", value:id.toUpperCase()};})(pos0, result0[0]);
         }
         if (result0 === null) {
           pos = pos0;

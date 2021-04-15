@@ -67,7 +67,7 @@ open
 jump
    = cmd:("GOTO"i / "GOSUB"i) ___ 
      lbl:identifier 
-     {return {type:cmd.toLowerCase(), label:lbl};}
+     {return {type:cmd.toLowerCase(), label:lbl.toUpperCase()};}
 
 argument
    = (float / integer / expression / barestring / quotedstring / "")
@@ -78,7 +78,7 @@ identifier
    = id:([a-zA-Z_]+[A-Za-z0-9_]*) {return id[0].join("") + id[1].join(""); }
 
 label
-   = id:identifier ":" {return {type:"label", value:id};}
+   = id:identifier ":" {return {type:"label", value:id.toUpperCase()};}
 
 decimal
   = digits:[0-9]+ { return digits.join(""); }
