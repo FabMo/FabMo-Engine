@@ -246,7 +246,7 @@ SBPRuntime.prototype.needsAuth = function(s) {
 // TODO At the very least, this function should simply take the string provided and stream it into runStream - they do the same thing.
 //          s - The string to run
 //   callback - Called when the program has ended 
-SBPRuntime.prototype.runString = function(sk) {
+SBPRuntime.prototype.runString = function(s) {
     try {
         // Break the string into lines
         var lines =  s.split('\n');
