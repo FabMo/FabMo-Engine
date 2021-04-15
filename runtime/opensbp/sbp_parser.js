@@ -1141,11 +1141,11 @@ module.exports = (function(){
       function parse_argument() {
         var result0;
         
-        result0 = parse_float();
+        result0 = parse_e1();
         if (result0 === null) {
-          result0 = parse_integer();
+          result0 = parse_float();
           if (result0 === null) {
-            result0 = parse_e1();
+            result0 = parse_integer();
             if (result0 === null) {
               result0 = parse_barestring();
               if (result0 === null) {
