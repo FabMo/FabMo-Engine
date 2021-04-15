@@ -768,11 +768,12 @@ G2.prototype.quit = function() {
 	if(this.stream) {
 		this.stream.end()
 	}
-	// Clear the gcodes we have queued up
-	this.gcode_queue.clear();
-	// Issue the actual Job Kill
-    log.debug("Sending Cleanup KILL"); ////##
-	this._write('\x04\n');
+	// Clear queues
+	this.queueFlush(function() {
+		// Issue the actual Job Kill
+	    log.debug("Sending Cleanup KILL"); ////##
+		this._write('\x04\n');
+	});
 }
 
 // Old Version:  TODO: Remove after refactor

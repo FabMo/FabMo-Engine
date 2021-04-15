@@ -2046,16 +2046,15 @@ SBPRuntime.prototype.pause = function() {
 // If the machine is currently moving it will be stopped immediately and the program abandoned
 SBPRuntime.prototype.quit = function() {
     log.debug('OpenSBP runtime Quit');
+    //  Send Quit to g2.js driver.
+    log.debug("issueing driver quit");
+    this.driver.quit();
+    log.debug("driver quit issued");
 
     // Teardown runtime.
     log.debug("runtime quit(): begin teardown");
     this._end();
     log.debug("runtime quit(): teardown complete")
-
-    //  Send Quit to g2.js driver.
-    log.debug("issueing driver quit");
-    this.driver.quit();
-    log.debug("driver quit issued");
 }
 // Old Version: TODO: Remove once refactor complete
 // SBPRuntime.prototype.quit = function() {
