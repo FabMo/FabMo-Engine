@@ -237,6 +237,7 @@ G2.prototype._createCycleContext = function() {
 
 	// Handle a stream finishing or disconnecting.
 	st.on('end', function() {
+		log.debug('cycle context end event')
 		// Send whatever is left in the queue.  (There may be stuff unsent even after the stream is over)
 		this._primed = true;
 		this._streamDone = true;

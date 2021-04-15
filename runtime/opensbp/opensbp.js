@@ -950,9 +950,10 @@ SBPRuntime.prototype._end = function(error) {
         if(this.machine && error) {
             this.machine.setState(this, 'stopped', {'error' : error });
         }
-        if(!this.machine){
-            this.stream.end();
-        }
+        // if(!this.machine){
+        //     this.stream.end();
+        // }
+        this.stream.end();
         this.emit('end', this);
         // Clear the internal state of the runtime (restore it to its initial state)
         this.init();
@@ -967,13 +968,14 @@ SBPRuntime.prototype._end = function(error) {
                 this.machine.status.job.finish(function(err, job) {
                     this.machine.status.job=null;
                     this.machine.setState(this, 'idle');
+                    cleanup(error);
                 }.bind(this));
             } else {
                 this.driver.setUnits(config.machine.get('units'), function() {
                     this.machine.setState(this, 'idle');
+                    cleanup(error);
                 }.bind(this));
             }
-            cleanup(error);
         }.bind(this));
     } else {
         cleanup(error);
