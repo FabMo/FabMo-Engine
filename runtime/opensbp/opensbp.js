@@ -246,11 +246,8 @@ SBPRuntime.prototype.needsAuth = function(s) {
 // TODO At the very least, this function should simply take the string provided and stream it into runStream - they do the same thing.
 //          s - The string to run
 //   callback - Called when the program has ended 
-SBPRuntime.prototype.runString = function(s, callback) {
+SBPRuntime.prototype.runString = function(sk) {
     try {
-        // Remember the callback - we'll call it at the end of the file
-        this.end_callback = callback;
-
         // Break the string into lines
         var lines =  s.split('\n');
         
@@ -314,12 +311,9 @@ SBPRuntime.prototype.runString = function(s, callback) {
 // Run the provided stream of text in OpenSBP
 // See documentation above for runString - this works the same way.
 //   callback - Called when run is complete or with error if there was an error.
-SBPRuntime.prototype.runStream = function(text_stream, callback) {
+SBPRuntime.prototype.runStream = function(text_stream) {
     try {
         try {
-            // Remember the callback so we can call it at the end
-            this.end_callback = callback;
-
             // Initialize the program
             this.program = []
 
@@ -477,9 +471,9 @@ SBPRuntime.prototype._saveDriverSettings = function(callback) {
 // Run a file on disk.
 //   filename - Full path to file on disk
 //   callback - Called when file is done running or with error if error
-SBPRuntime.prototype.runFile = function(filename, callback) {
+SBPRuntime.prototype.runFile = function(filename) {
     var st = fs.createReadStream(filename)
-    this.runStream(st, callback);
+    this.runStream(st);
 }
 
 // Simulate the provided file, returning the result as g-code string
@@ -960,9 +954,6 @@ SBPRuntime.prototype._end = function(error) {
             this.stream.end();
         }
         this.emit('end', this);
-        if(this.end_callback) {
-            this.end_callback();
-        }
         // Clear the internal state of the runtime (restore it to its initial state)
         this.init();
     }.bind(this);
@@ -1023,9 +1014,6 @@ SBPRuntime.prototype._end = function(error) {
 //         }
 //         this.ok_to_disconnect = true;
 //         this.emit('end', this);
-//         if(this.end_callback) {
-//             this.end_callback();
-//         }
 //     }.bind(this);
 
 //     // Clear the internal state of the runtime (restore it to its initial state)
@@ -1484,9 +1472,7 @@ SBPRuntime.prototype.init = function() {
     this.current_chunk = [];
     this.started = false;
     this.sysvar_evaluated = false;
-    this.end_callback = null;
-    this.output = [];               // Used in simulation mode only
-    this.end_callback = null;
+    this.output = [];
     this.quit_pending = false;
     this.end_message = null;
     this.paused = false;
@@ -1827,7 +1813,6 @@ SBPRuntime.prototype._pushFileStack = function() {
     frame.stack = this.stack;
     //frame.user_vars = this.user_vars
     //frame.current_chunk = this.current_chunk
-    frame.end_callback = this.end_callback
     frame.end_message = this.end_message
     frame.label_index = this.label_index
     this.file_stack.push(frame)
@@ -1847,7 +1832,6 @@ SBPRuntime.prototype._popFileStack = function() {
     //this.user_vars = frame.user_vars
     this.label_index = frame.label_index;
     //this.current_chunk = frame.current_chunk
-    this.end_callback = frame.end_callback
     this.end_message = frame.end_message
 }
 
@@ -2046,15 +2030,16 @@ SBPRuntime.prototype.pause = function() {
 // If the machine is currently moving it will be stopped immediately and the program abandoned
 SBPRuntime.prototype.quit = function() {
     log.debug('OpenSBP runtime Quit');
-    //  Send Quit to g2.js driver.
-    log.debug("issueing driver quit");
-    this.driver.quit();
-    log.debug("driver quit issued");
 
     // Teardown runtime.
     log.debug("runtime quit(): begin teardown");
     this._end();
     log.debug("runtime quit(): teardown complete")
+
+    //  Send Quit to g2.js driver.
+    log.debug("issueing driver quit");
+    this.driver.quit();
+    log.debug("driver quit issued");
 }
 // Old Version: TODO: Remove once refactor complete
 // SBPRuntime.prototype.quit = function() {

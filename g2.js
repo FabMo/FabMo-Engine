@@ -768,7 +768,7 @@ G2.prototype.quit = function() {
 	if(this.stream) {
 		this.stream.end()
 	}
-	// Clear queues
+	// Clear queues then issue kill.
 	this.queueFlush(function() {
 		// Issue the actual Job Kill
 	    log.debug("Sending Cleanup KILL"); ////##
