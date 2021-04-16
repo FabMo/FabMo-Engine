@@ -246,11 +246,8 @@ SBPRuntime.prototype.needsAuth = function(s) {
 // TODO At the very least, this function should simply take the string provided and stream it into runStream - they do the same thing.
 //          s - The string to run
 //   callback - Called when the program has ended 
-SBPRuntime.prototype.runString = function(s, callback) {
+SBPRuntime.prototype.runString = function(s) {
     try {
-        // Remember the callback - we'll call it at the end of the file
-        this.end_callback = callback;
-
         // Break the string into lines
         var lines =  s.split('\n');
         
@@ -314,12 +311,9 @@ SBPRuntime.prototype.runString = function(s, callback) {
 // Run the provided stream of text in OpenSBP
 // See documentation above for runString - this works the same way.
 //   callback - Called when run is complete or with error if there was an error.
-SBPRuntime.prototype.runStream = function(text_stream, callback) {
+SBPRuntime.prototype.runStream = function(text_stream) {
     try {
         try {
-            // Remember the callback so we can call it at the end
-            this.end_callback = callback;
-
             // Initialize the program
             this.program = []
 
@@ -477,9 +471,9 @@ SBPRuntime.prototype._saveDriverSettings = function(callback) {
 // Run a file on disk.
 //   filename - Full path to file on disk
 //   callback - Called when file is done running or with error if error
-SBPRuntime.prototype.runFile = function(filename, callback) {
+SBPRuntime.prototype.runFile = function(filename) {
     var st = fs.createReadStream(filename)
-    this.runStream(st, callback);
+    this.runStream(st);
 }
 
 // Simulate the provided file, returning the result as g-code string
@@ -935,8 +929,8 @@ SBPRuntime.prototype._abort = function(error) {
 // This restores the state of both the runtime and the driver, and sets the machine state appropriately
 //   error - (optional) If the program is ending due to an error, this is it.  Can be string or error object.
 SBPRuntime.prototype._end = function(error) {
-    
     // debug info
+    log.debug("opensbp runtime _end stack")
     log.stack();
 
     // Normalize the error and ending state
@@ -944,72 +938,45 @@ SBPRuntime.prototype._end = function(error) {
     if(!error) {
         error = this.end_message || null;
     }
-    log.debug("Calling the non-nested (toplevel) end");
-
-    // TODO:  User Vars now stored on config and persistent is this functionality still needed?
-    // // Delete the user variables that don't stick around across runs
-    // for(var key in this.user_vars) {
-    //     if(key[1] === '_') {
-    //         delete this.user_vars[key]
-    //     }
-    // }  
-
     // Log the error for posterity
     if(error) {log.error(error)}
 
+    log.debug("Calling the non-nested (toplevel) end");
+
     // Cleanup deals the "final blow" - cleans up streams, sets the machine state and calls the end callback
     var cleanup = function(error) {
+        log.debug("_end Cleanup called");
         log.stack()
         if(this.machine && error) {
             this.machine.setState(this, 'stopped', {'error' : error });
         }
-        if(!this.machine){
-            this.stream.end();
-        }
-        this.ok_to_disconnect = true;
+        this.stream.end();
         this.emit('end', this);
-        if(this.end_callback) {
-            this.end_callback();
-        }
+        // Clear the internal state of the runtime (restore it to its initial state)
+        //TODO:  Refactor to new reset function that both init and _end can call?  Break out what needs to be initialized vs. reset.
+        this.init();
     }.bind(this);
 
-    // Clear the internal state of the runtime (restore it to its initial state)
-    this.init();
-
-    // TODO - this big complicated if-else can probably be collapsed to something simpler with some
-    //      rearranging and changing of the cleanup() function above (or maybe it can be eliminated??)
-    if(error) {
-        if(this.machine) {
-            this.resumeAllowed = false;
-            this.machine.restoreDriverState(function(err, result) {
-                this.resumeAllowed = true;
-                cleanup(error);
-            }.bind(this));
-        } else {
-            cleanup(error);
-        }
-        // TODO - Shouldn't this deal with the currently running job (if it exists)
-        //        as is done below?? this.machine.status.job.fail maybe?
+    // TODO:  Is all this needed here?  Do we need to reset state?  Can this be done without nested callbacks?
+    if(this.machine) {
+        this.resumeAllowed=false
+        this.machine.restoreDriverState(function(err, result) {
+            this.resumeAllowed = true;
+            if(this.machine.status.job) {
+                this.machine.status.job.finish(function(err, job) {
+                    this.machine.status.job=null;
+                    this.machine.setState(this, 'idle');
+                    cleanup(error);
+                }.bind(this));
+            } else {
+                this.driver.setUnits(config.machine.get('units'), function() {
+                    this.machine.setState(this, 'idle');
+                    cleanup(error);
+                }.bind(this));
+            }
+        }.bind(this));
     } else {
-        if(this.machine) {
-            this.resumeAllowed=false
-            this.machine.restoreDriverState(function(err, result) {
-                this.resumeAllowed = true;
-                if(this.machine.status.job) {
-                    this.machine.status.job.finish(function(err, job) {
-                        this.machine.status.job=null;
-                        this.machine.setState(this, 'idle');
-                    }.bind(this));
-                } else {
-                    this.driver.setUnits(config.machine.get('units'), function() {
-                        this.machine.setState(this, 'idle');
-                    }.bind(this));
-                }
-                cleanup();
-            }.bind(this));
-        } else {
-            cleanup();
-        }
+        cleanup(error);
     }
 };
 
@@ -1020,7 +987,7 @@ SBPRuntime.prototype._executeCommand = function(command, callback) {
 
     if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
         // Command is valid and has a registered handler
-        
+
         // Evaluate the command arguments and extract the handler
         args = this._evaluateArguments(command.cmd, command.args);
         f = this[command.cmd].bind(this);
@@ -1429,9 +1396,7 @@ SBPRuntime.prototype.init = function() {
     this.current_chunk = [];
     this.started = false;
     this.sysvar_evaluated = false;
-    this.end_callback = null;
-    this.output = [];               // Used in simulation mode only
-    this.end_callback = null;
+    this.output = [];
     this.quit_pending = false;
     this.end_message = null;
     this.paused = false;
@@ -1772,7 +1737,6 @@ SBPRuntime.prototype._pushFileStack = function() {
     frame.stack = this.stack;
     //frame.user_vars = this.user_vars
     //frame.current_chunk = this.current_chunk
-    frame.end_callback = this.end_callback
     frame.end_message = this.end_message
     frame.label_index = this.label_index
     this.file_stack.push(frame)
@@ -1792,7 +1756,6 @@ SBPRuntime.prototype._popFileStack = function() {
     //this.user_vars = frame.user_vars
     this.label_index = frame.label_index;
     //this.current_chunk = frame.current_chunk
-    this.end_callback = frame.end_callback
     this.end_message = frame.end_message
 }
 
@@ -1990,16 +1953,10 @@ SBPRuntime.prototype.pause = function() {
 // Quit the currently running program
 // If the machine is currently moving it will be stopped immediately and the program abandoned
 SBPRuntime.prototype.quit = function() {
-    if(this.ok_to_disconnect) {
-        return this._end();
-    }
-
-    if(this.machine.status.state == 'stopped' || this.machine.status.state == 'paused') {
-        this.machine.driver.quit();
-    } else {
-        this.quit_pending = true;
-        this.driver.quit();
-    }
+    // Teardown runtime.
+    this._end();
+    //  Send Quit to g2.js driver.
+    this.driver.quit();
 }
 
 // Resume a program from the paused state

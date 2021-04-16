@@ -915,37 +915,40 @@ Machine.prototype.pause = function(callback) {
 
 // Quit 
 Machine.prototype.quit = function(callback) {
-		// Release Pause hold if present
-		this.driver.pause_hold = false;
-		this.disarm();
+	// Release Pause hold if present
+	this.driver.pause_hold = false;
+	this.disarm();
 
-		// Quitting from the idle state dismisses the 'info' data
-		switch(this.status.state) {
+	// Quitting from the idle state dismisses the 'info' data
+	switch(this.status.state) {
 
-			case "idle":
-				delete this.status.info;
-				this.emit('status', this.status);
-				break;
+		case "idle":
+			delete this.status.info;
+			this.emit('status', this.status);
+			break;
 
-			case "interlock":
-				this.action = null;
-				this.setState(this, 'idle');
-				break;
-		}
-	
-		// Cancel the currently running job, if there is one
-		if(this.status.job) {
-			this.status.job.pending_cancel = true;
-		}
-		if(this.current_runtime) {
-			log.info("Quitting the current runtime...")
-			this.current_runtime.quit();
+		case "interlock":
+			this.action = null;
+			this.setState(this, 'idle');
+			break;
+	}
+	// Cancel the currently running job, if there is one
+	if(this.status.job) {
+		this.status.job.pending_cancel = true;
+	}
+	if(this.current_runtime) {
+		log.info("Quitting the current runtime...")
+		this.current_runtime.quit();
+		if (callback) {
 			callback(null, 'quit');
-			alreadyQuiting = false;
-		} else {
-			log.warn("No current runtime!")
+		}
+		alreadyQuiting = false;
+	} else {
+		log.warn("No current runtime!")
+		if (callback) {
 			callback("Not quiting because no current runtime")
-		}    
+		}
+	}
 };
 
 // Resume from the paused state.
