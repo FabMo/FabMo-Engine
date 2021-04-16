@@ -67,10 +67,10 @@ open
 jump
    = cmd:("GOTO"i / "GOSUB"i) ___ 
      lbl:identifier 
-     {return {type:cmd.toLowerCase(), label:lbl};}
+     {return {type:cmd.toLowerCase(), label:lbl.toUpperCase()};}
 
 argument
-   = (float / integer / expression / barestring / quotedstring / "")
+   = (expression / float / integer / barestring / quotedstring / "")
 
 mnemonic = code: ([_A-Za-z][_A-Za-z0-9\#]) {return code.join('').replace('#','_POUND');}
 
@@ -78,7 +78,7 @@ identifier
    = id:([a-zA-Z_]+[A-Za-z0-9_]*) {return id[0].join("") + id[1].join(""); }
 
 label
-   = id:identifier ":" {return {type:"label", value:id};}
+   = id:identifier ":" {return {type:"label", value:id.toUpperCase()};}
 
 decimal
   = digits:[0-9]+ { return digits.join(""); }
@@ -98,10 +98,10 @@ variable
   = (user_variable / system_variable / persistent_variable)
 
 user_variable
-  = v:("&" identifier) {return {"type":"user_variable", "expr":v.join("")}}
+  = v:("&" identifier) {return {"type":"user_variable", "expr":v.join("").toUpperCase()}}
 
 persistent_variable
-  = v:("$" identifier ) {return {"type":"persistent_variable", "expr":v.join("")}}
+  = v:("$" identifier ) {return {"type":"persistent_variable", "expr":v.join("").toUpperCase()}}
 
 system_variable
   = "%" "(" __ e:expression __ ")" {return {"type":"system_variable", "expr":e}}

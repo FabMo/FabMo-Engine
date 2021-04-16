@@ -1130,7 +1130,7 @@ module.exports = (function(){
           pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, cmd, lbl) {return {type:cmd.toLowerCase(), label:lbl};})(pos0, result0[0], result0[2]);
+          result0 = (function(offset, cmd, lbl) {return {type:cmd.toLowerCase(), label:lbl.toUpperCase()};})(pos0, result0[0], result0[2]);
         }
         if (result0 === null) {
           pos = pos0;
@@ -1141,11 +1141,11 @@ module.exports = (function(){
       function parse_argument() {
         var result0;
         
-        result0 = parse_float();
+        result0 = parse_e1();
         if (result0 === null) {
-          result0 = parse_integer();
+          result0 = parse_float();
           if (result0 === null) {
-            result0 = parse_e1();
+            result0 = parse_integer();
             if (result0 === null) {
               result0 = parse_barestring();
               if (result0 === null) {
@@ -1306,7 +1306,7 @@ module.exports = (function(){
           pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, id) {return {type:"label", value:id};})(pos0, result0[0]);
+          result0 = (function(offset, id) {return {type:"label", value:id.toUpperCase()};})(pos0, result0[0]);
         }
         if (result0 === null) {
           pos = pos0;
@@ -1615,7 +1615,7 @@ module.exports = (function(){
           pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, v) {return {"type":"user_variable", "expr":v.join("")}})(pos0, result0);
+          result0 = (function(offset, v) {return {"type":"user_variable", "expr":v.join("").toUpperCase()}})(pos0, result0);
         }
         if (result0 === null) {
           pos = pos0;
@@ -1651,7 +1651,7 @@ module.exports = (function(){
           pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, v) {return {"type":"persistent_variable", "expr":v.join("")}})(pos0, result0);
+          result0 = (function(offset, v) {return {"type":"persistent_variable", "expr":v.join("").toUpperCase()}})(pos0, result0);
         }
         if (result0 === null) {
           pos = pos0;
