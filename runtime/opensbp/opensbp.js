@@ -959,7 +959,7 @@ SBPRuntime.prototype._end = function(error) {
         this.init();
     }.bind(this);
 
-
+    // TODO:  Is all this needed here?  Do we need to reset state?  Can this be done without nested callbacks?
     if(this.machine) {
         this.resumeAllowed=false
         this.machine.restoreDriverState(function(err, result) {
@@ -2033,6 +2033,8 @@ SBPRuntime.prototype.pause = function() {
 SBPRuntime.prototype.quit = function() {
     log.debug('OpenSBP runtime Quit');
 
+    //TODO: Not sure order matters but I think we want to teardown the runtime and close the stream first.
+    //      Should driver quit be a callback?
     // Teardown runtime.
     log.debug("runtime quit(): begin teardown");
     this._end();

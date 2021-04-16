@@ -774,6 +774,9 @@ G2.prototype.quit = function() {
 		// Issue the actual Job Kill
 	    log.debug("Sending Cleanup KILL"); ////##
 		this._write('\x04\n');
+		//Finally clear context and _reset primed flag so we're not reliant on getting a stat 4 to clear the context.
+		this.context = null;
+		this._primed = false;
 	});
 }
 
