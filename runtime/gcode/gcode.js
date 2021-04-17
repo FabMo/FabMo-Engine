@@ -188,8 +188,7 @@ GCodeRuntime.prototype.runStream = function(st) {
 }
 
 // Run a file given the filename
-GCodeRuntime.prototype.runFile = function(filename, callback) {
-	if(callback) { log.error("CALLBACK PASSED: gCode runFile")};
+GCodeRuntime.prototype.runFile = function(filename) {
     this._file_or_stream_in_progress = true;
     if(this.machine.status.state === 'idle' || this.machine.status.state === 'armed') {
     	//  TODO:  Can we count line numbers before streaming without reading the file twice?
@@ -216,8 +215,7 @@ GCodeRuntime.prototype.runString = function(string) {
 };
 
 // Run the given string as gcode
-GCodeRuntime.prototype.executeCode = function(string, callback) {
-	if(callback) { log.error("CALLBACK PASSED: gCode executeCode")};
+GCodeRuntime.prototype.executeCode = function(string) {
 	this._file_or_stream_in_progress = true;
 	return this.runString(string);
 }

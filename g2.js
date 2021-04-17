@@ -239,6 +239,7 @@ G2.prototype._createCycleContext = function() {
 
 	// Handle a stream finishing or disconnecting.
 	st.on('end', function() {
+		log.debug('cycle context end event')
 		// Send whatever is left in the queue.  (There may be stuff unsent even after the stream is over)
 		this._primed = true;
 		this._streamDone = true;
@@ -766,28 +767,44 @@ G2.prototype.quit = function() {
 		return;
 	}
 
-	switch(this.status.stat) {
-		//case STAT_END:
-		//	return;
-		//	break;
+// <<<<<<< HEAD   ////## CONFLICT WITH JOSH's REFACTOR ... REMOVE
+// 	switch(this.status.stat) {
+// 		//case STAT_END:
+// 		//	return;
+// 		//	break;
 
-		default:
-			this.quit_pending = true;
+// 		default:
+// 			this.quit_pending = true;
 
-			if(this.stream) {
-				this.stream.end()
-			}
-			// Clear the gcodes we have queued up
-			this.gcode_queue.clear();
-			// Issue the actual Job Kill  ////## was using kill in edge
-            log.debug("Sending G2-queue-FLUSH, now"); ////##
-			this._write('\%\n'); ////## FLUSH; just doing kill not working right in edge-preview
-								 ////## ... thinking this should be in runtime with runtime.queueFlush				
-								 ////## Additionally, this is triggering stat:3 that is being 
-								 ////## ... intercepted with a kill to resolve file 
-////##			this._write('\x04\n');
-			break;
+// 			if(this.stream) {
+// 				this.stream.end()
+// 			}
+// 			// Clear the gcodes we have queued up
+// 			this.gcode_queue.clear();
+// 			// Issue the actual Job Kill  ////## was using kill in edge
+//             log.debug("Sending G2-queue-FLUSH, now"); ////##
+// 			this._write('\%\n'); ////## FLUSH; just doing kill not working right in edge-preview
+// 								 ////## ... thinking this should be in runtime with runtime.queueFlush				
+// 								 ////## Additionally, this is triggering stat:3 that is being 
+// 								 ////## ... intercepted with a kill to resolve file 
+// ////##			this._write('\x04\n');
+// 			break;
+// =======
+	this.quit_pending = true;
+	if(this.stream) {
+		this.stream.end()
+//>>>>>>> master
+
 	}
+	// Clear queues then issue kill.
+	this.queueFlush(function() {
+		// Issue the actual Job Kill
+	    log.debug("Sending Cleanup KILL"); ////##
+		this._write('\x04\n');
+		//Finally clear context and _reset primed flag so we're not reliant on getting a stat 4 to clear the context.
+		this.context = null;
+		this._primed = false;
+	});
 }
 
 // When the gcode runtime asks that an M30 be sent, send it. This is pulled out from the
