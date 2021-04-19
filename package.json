@@ -24,7 +24,7 @@
     "file-loader": "0.8.5",
     "fs-extra": "0.23.1",
     "glob": "5.0.15",
-    "jquery": "2.2.4",
+    "jquery": "3.5.0",
     "jsesc": "1.0.0",
     "mime": "1.2.11",
     "minimist": "1.1.1",
