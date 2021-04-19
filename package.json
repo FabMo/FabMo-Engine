@@ -27,7 +27,7 @@
     "jquery": "2.2.4",
     "jsesc": "1.0.0",
     "mime": "1.2.11",
-    "minimist": "1.1.1",
+    "minimist": "1.2.3",
     "ncp": "2.0.0",
     "node-uuid": "1.4.1",
     "pako": "1.0.4",
