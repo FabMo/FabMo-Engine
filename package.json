@@ -17,7 +17,7 @@
     "cnctosvg": "1.0.x",
     "colors": "1.1.x",
     "css-loader": "0.23.1",
-    "debug": "4.3.1"
+    "debug": "4.3.1",
     "delaunay-triangulate": "1.1.6",
     "es6-promise": "3.2.1",
     "escape-regexp-component": "1.0.2",
