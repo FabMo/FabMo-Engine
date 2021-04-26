@@ -143,6 +143,7 @@ var listAppFiles = function(req, res, next) {
 	// Add URL attributes to all of the leaves of the file tree
 	function add_urls(node) {
 		if(node.type === 'file') {
+			console.log("rmackie 2: " + node.path);
 			node.url = '/approot' + node.path;
 		}
 		if(node.children) {

@@ -1,504 +1,59 @@
-<!doctype html>
-<html class="no-js" lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
-    <title>FabMo Dashboard</title>
-    <!-- Favicon stuff -->
-    <link rel="apple-touch-icon" sizes="57x57" href="/img/favicon/apple-icon-57x57.png">
-    <link rel="apple-touch-icon" sizes="60x60" href="/img/favicon/apple-icon-60x60.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="/img/favicon/apple-icon-72x72.png">
-    <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon/apple-icon-76x76.png">
-    <link rel="apple-touch-icon" sizes="114x114" href="/img/favicon/apple-icon-114x114.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="/img/favicon/apple-icon-120x120.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="/img/favicon/apple-icon-144x144.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="/img/favicon/apple-icon-152x152.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/img/favicon/apple-icon-180x180.png">
-    <link rel="icon" type="image/png" sizes="192x192"  href="/img/favicon/android-icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="/img/favicon/favicon-96x96.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon/favicon-16x16.png">
-    <link rel="manifest" href="/img/favicon/manifest.json">
-    <meta name="msapplication-TileColor" content="#ffffff">
-    <meta name="msapplication-TileImage" content="/img/favicon/ms-icon-144x144.png">
-    <meta name="theme-color" content="#ffffff">
-    <!--<link rel="stylesheet" href="css/normalize.css" />
-      <link rel="stylesheet" href="css/font-awesome.min.css" />
-      <link rel="stylesheet" href="css/foundation.min.css" />
-      <link rel="stylesheet" href="css/style.css" />
-      <link rel="stylesheet" href="css/toastr.min.css" />-->
-    <link rel="stylesheet" href="css/dashboard.css"/>
-  </head>
-  <body id="body">
-    <div id='mainContent'>
-    </div>
-    <div class="speed_read_out">
-      100
-    </div>
-    <form>
-      <input type="file" id="hidden-file-input" style="position: fixed; top:-1000; display: none" />
-    </form>
-    <div class="loader">
-      <svg width="15%" height="15%" viewBox="0 0 550 550">
-        <style type="text/css">
-          .maingear{fill:#666;}
-        </style>
-        <path class='maingear' d="M550,234.8v79.5c0,2.8-0.9,5.6-2.8,8.4s-4.7,3.7-7.5,4.7l-65.5,10.3c-4.7,13.1-9.4,23.4-14,32.7
-          c8.4,12.2,20.6,28.1,38.4,49.6c2.8,2.8,3.7,5.6,3.7,9.4c0,2.8-0.9,5.6-2.8,8.4c-6.5,8.4-17.8,21.5-35.5,38.4
-          c-16.8,16.8-28.1,25.3-33.7,25.3c-2.8,0-5.6-0.9-9.4-2.8l-49.6-38.4c-10.3,5.6-21.5,10.3-32.7,13.1c-3.7,32.7-7.5,54.3-10.3,66.4
-          c-1.9,6.5-5.6,10.3-13.1,10.3h-79.5c-3.7,0-6.5-0.9-8.4-2.8s-3.7-4.7-3.7-7.5l-10.3-65.5c-11.2-3.7-22.4-8.4-31.8-13.1L131,499.5
-          c-2.8,1.9-5.6,2.8-9.4,2.8c-3.7,0-6.5-0.9-9.4-3.7c-29.9-27.1-49.6-46.8-58.9-59.9c-1.9-2.8-2.8-4.7-2.8-8.4c0-2.8,0.9-5.6,2.8-8.4
-          c3.7-4.7,9.4-13.1,17.8-23.4c8.4-11.2,15-19.6,19.6-25.3c-6.5-12.2-11.2-23.4-15-35.5l-65.5-9.4c-2.8-0.9-5.6-1.9-7.5-4.7
-          C0.9,320.8,0,318,0,315.2v-81.4c0-2.8,0.9-5.6,2.8-8.4c1.9-2.8,3.7-3.7,6.5-4.7l66.4-10.3c3.7-11.2,8.4-21.5,14-32.7
-          c-9.4-13.1-22.4-29.9-38.4-49.6c-2.8-2.8-3.7-5.6-3.7-8.4c0-2.8,0.9-4.7,2.8-8.4c6.5-8.4,17.8-21.5,35.5-38.4
-          c16.8-16.8,28.1-25.3,33.7-25.3c2.8,0,6.5,0.9,9.4,3.7l49.6,38.4c10.3-5.6,21.5-10.3,32.7-13.1c3.7-32.7,7.5-54.3,10.3-66.4
-          C223.6,3.7,227.3,0,234.8,0h79.5c3.7,0,6.5,0.9,8.4,2.8c2.8,1.9,3.7,4.7,3.7,7.5l10.3,65.5c11.2,3.7,22.4,8.4,31.8,13.1L419,50.5
-          c1.9-1.9,4.7-2.8,8.4-2.8c2.8,0,5.6,0.9,9.4,3.7c30.9,28.1,50.5,48.6,58.9,60.8c1.9,1.9,2.8,4.7,2.8,7.5s-0.9,5.6-2.8,8.4
-          c-3.7,4.7-9.4,13.1-17.8,23.4c-8.4,11.2-15,19.6-19.6,25.3c6.5,12.2,11.2,23.4,15,34.6l65.5,10.3c2.8,0.9,5.6,1.9,7.5,4.7
-          C549.1,229.2,550,232,550,234.8z M340.5,338.6c17.8-17.8,27.1-39.3,27.1-64.5c0-25.3-9.4-46.8-27.1-64.5
-          c-17.8-17.8-39.3-27.1-64.5-27.1c-25.3,0-46.8,9.4-64.5,27.1s-27.1,39.3-27.1,64.5c0,25.3,9.4,46.8,27.1,64.5s39.3,27.1,64.5,27.1
-          C301.2,364.8,322.7,356.4,340.5,338.6z"/>
-      </svg>
-    </div>
-    <div class="colapseLeft"></div>
-    <div id="main">
-      <div class="inner-wrap">
-        <!-- Nav-Bar & Buttons for sliding menus -->
-        <nav class="tab-bar">
-          <section class="show-for-small-up fabmo-status" id="left-position-container">
-            <div class="svg-container" style="display: table;">
-              <div style="display: table-cell; vertical-align: middle;">
-                <svg style="display: table-cell; vertical-align: middle; padding-left:0.5em;"id="connection-strength-indicator" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve">
-                  <path d="M-612,320v96h96v-96H-612z M-529,403h-70v-70h70V403z"/>
-                  <path id="cs4" class="off" d="M233.503,70.369c93.726-6.75,189.622,28.317,256.515,94.363c8.765,9.023,7.622,24.807-1.625,33.076
-                    c-8.493,10.012-25.501,10.189-34.266,0.436c-57.224-55.091-138.018-84.881-217.35-78.956
-                    c-65.905,4.24-129.749,32.628-177.572,78.096c-4.253,4.347-9.684,7.916-15.938,8.222c-15.666,1.837-30.154-14.536-26.773-29.86
-                    c0.954-5.501,4.487-10.083,8.527-13.747C81.009,108.392,156.172,75.469,233.503,70.369z"/>
-                  <path id="cs3" class="off" d="M231.183,162.282c71.806-7.81,146.369,18.658,197.183,69.968c7.939,9.07,6.95,23.901-1.872,32.052
-                    c-8.046,9.847-24.265,10.953-33.383,2.024c-32.534-32.074-76.518-52.44-122.126-55.774c-55.387-4.594-111.974,16.42-151.411,55.445
-                    c-9.094,9.612-26.033,8.518-34.218-1.708c-8.823-8.327-9.553-23.559-1.084-32.381C123.356,192.802,176.209,167.924,231.183,162.282z
-                    "/>
-                  <path id="cs2" class="off" d="M241.796,252.97c45.314-4.499,92.161,12.852,123.693,45.669c8.634,8.987,7.634,24.454-1.461,32.77
-                    c-8.257,9.966-24.807,10.638-33.782,1.296c-17.774-18.245-42.394-29.778-67.884-31.168c-28.929-2.062-58.201,9.365-78.744,29.695
-                    c-5.053,5.679-12.557,9.165-20.237,8.259c-17.833-1.25-30.213-25.056-17.928-39.344C170.26,273.243,205.492,256.575,241.796,252.97z
-                    "/>
-                  <path id="cs1" class="off" d="M248.781,337.651c29.201-4.9,58.837,19.213,59.78,48.824c2.709,29.036-22.923,56.589-52.063,55.951
-                    c-26.197,0.908-50.475-20.825-52.772-46.88C199.991,368.194,221.382,340.808,248.781,337.651z"/>
-                </svg>
-              </div>
-              <div id="tool-name" style="padding-left: 10px" class="noselect show-for-medium-up">
-                &nbsp;
-              </div>
-            </div>
-          </section>
-
-          <!-- ***** Tool Position Section ***** -->
-          
-          <section class="right DRO-button show-for-small-up fabmo-status" id="right-position-container">
-            <div id="dro-tab" title="Click to toggle large Location Display"></div>
-            <div  class="sm-axes"><strong>
-              <div class="xaxis machine-pos" ><label>X : &nbsp;<span class="posx">X.XXX</span></label></div>
-              <div class="yaxis machine-pos" ><label>Y : &nbsp;<span class="posy">Y.YYY</span></label></div>
-              <div class="zaxis machine-pos" ><label>Z : &nbsp;<span class="posz">Z.ZZZ</span></label></div>
-              <div class="aaxis machine-pos" ><label>A : <span class="posa">A.AAA</span></label></div>
-              <div class="baxis machine-pos" ><label>B : <span class="posb">B.BBB</span></label></div>
-              <!--<div class="caxis machine-pos" style="display:none" ><label>C : <span class="posc">C.CCC</span></label></div> -->
-              <!-- ////## could not figure how C display controlled -->
-              
-              <!-- <div class="fabmo-status machine-pos" ><label><span class="state"></label></div> -->
-            </strong></div>
-            <div >
-              <div class="inoutLabel ">In:</div>
-              <div class="space input"> </div>
-              <div class="space input"> </div>
-              <div class="in1 input"> 1 </div>
-              <div class="in2 input"> 2 </div>
-              <div class="in3 input"> 3 </div>
-              <div class="in4 input"> 4 </div>
-              <div class="space input"> </div>
-              <div class="space input"> </div>
-              <div class="in5 input"> 5 </div>
-              <div class="in6 input"> 6 </div>
-              <div class="in7 input"> 7 </div>
-              <div class="in8 input"> 8 </div>
-              <div class="space input"> </div>
-              <div class="space input"> </div>
-              <div class="in9 input"> 9 </div>
-              <div class="in10 input"> 10 </div>
-              <div class="in11 input"> 11 </div>
-              <div class="in12 input"> 12 </div>
-              <div class="space input"> </div>
-            </div>
-            <div>
-              <div class="inoutLabel ">Out:</div>
-              <div class="space input"> </div>
-              <div class="space input"> </div>
-              <div class="out1 output off"> 1 </div>
-              <div class="out2 output off"> 2 </div>
-              <div class="out3 output off"> 3 </div>
-              <div class="out4 output off"> 4 </div>
-              <div class="space input"> </div>
-              <div class="space input"> </div>
-              <div class="out5 output off"> 5 </div>
-              <div class="out6 output off"> 6 </div>
-              <div class="out7 output off"> 7 </div>
-              <div class="out8 output off"> 8 </div>
-              <div class="space input"> </div>
-              <div class="space input"> </div>
-              <div class="out9 output off"> 9 </div>
-              <div class="out10 output off"> 10 </div>
-              <div class="out11 output off"> 11 </div>
-              <div class="out12 output off"> 12 </div>
-              <div class="space input"> </div>
-            </div>
-
-
-          </section>
-
-      </div>
-      <!-- ***** Right-Menu Button Section ***** -->
-      </nav>
-      <!-- Sliding Wiget Menu (fix for large screen) -->
-      <aside class="left-off-canvas-menu colapsed" id="left-menu">
-        <div class="tour-filter"></div>
-        <!-- ********** Links Widget ********** -->
-        <div>
-          <ul class="left-slide-menu">
-            <li><a href="#"  id="left-slide-button" title="Expand/Collapse"></a></li>
-            <li><a href="#/app/home" id="icon_home" title="Home"></a></li>
-            <li><a href="#/app/job-manager" id="icon_jobs" title="Job Manager"></a></li>
-            <li><a href="#/app/editor" id="icon_editor" title="Editor"></a></li>
-            <li><a href="#/app/video" id="icon_video" title="Video"></a></li>
-            <li><a href="#/app/config" id="icon_settings" title="Configuration"></a></li>
-            <li><a href="#/app/macros" id="icon_folder" title="Macros"></a></li>
-            <li><a href="#/app/network-manager" id="icon_network" title="Network"></a></li>
-            <li><a id="icon_sign_out" class="icon_sign_out" title="Sign Out"></a></li>
-          </ul>
-        </div>
-        <div id="widget-links-general" class="widget colapsed">
-          <ul class="off-canvas-list" id="util-menu-small">
-            <li><a href="#/app/home" id="icon_home" title="Home"><span>Home</span></a></li>
-            <li><a href="#/app/job-manager" id="icon_jobs" title="Job Manager"><span>Job Manager</span></a></li>
-            <li><a href="#/app/editor" id="icon_editor" title="Editor"><span>Editor</span></a></li>
-            <li><a href="#/app/video" id="icon_video" title="Video"><span>Video</span></a></li>
-            <li><a href="#/app/config" id="icon_settings" title="Configuration"><span>Configuration</span></a></li>
-            <li><a href="#/app/macros" id="icon_folder" title="Macros"><span>Macros</span></a></li>
-            <li><a href="#/app/network-manager" id="icon_network" title="Network"><span>Network</span></a></li>
-            <li><a id="icon_sign_out" class="icon_sign_out" title="Sign Out"><span>Sign Out</span></a></li>
-            <li><a href="#" id="icon_colapse" title="Expand/Collapse"><span>Collapse</span></a></li>
-          </ul>
-        </div>
-
-        <div id="man-start" class="drive-enter manual-drive-enter" >
-          <div id="man-tab" title="Click to use Motion Keypad"></div>
-          <div id="icon_joystick" title="Click to use Motion Keypad"></div>
-        </div>
-
-      </aside>
-
-      <aside class="DRO" id="right-menu">
-          <div class="dro-dropdown">
-              <div class="xaxis machine-pos-large" ><label>X : <span class="posx">X.XXX</span></label></div>
-              <div class="yaxis machine-pos-large" ><label>Y : <span class="posy">Y.YYY</span></label></div>
-              <div class="zaxis machine-pos-large" ><label>Z : <span class="posz">Z.ZZZ</span></label></div>
-              <div class="aaxis machine-pos-large" ><label>A : <span class="posa">A.AAA</span></label></div>
-              <div class="baxis machine-pos-large" ><label>B : <span class="posb">B.BBB</span></label></div>
-            <!--  <div class="caxis machine-pos-large" ><label>C : <span class="posc">C.CCC</span></label></div> -->
-            </div>
-        <!-- ********** Tool Position Widget ********** -->
-
-      </aside>
-
-      <!-- App Menu -->
-      <section class="main-section">
-        <div id="modal_container" style="display:none;"></div>
-        <div id="waiting_container">
-          <svg width="20%" height="20%" viewBox="0 0 550 550">
-            <style type="text/css">
-              .maingear{fill:#666;}
-            </style>
-            <path class='maingear' d="M550,234.8v79.5c0,2.8-0.9,5.6-2.8,8.4s-4.7,3.7-7.5,4.7l-65.5,10.3c-4.7,13.1-9.4,23.4-14,32.7
-              c8.4,12.2,20.6,28.1,38.4,49.6c2.8,2.8,3.7,5.6,3.7,9.4c0,2.8-0.9,5.6-2.8,8.4c-6.5,8.4-17.8,21.5-35.5,38.4
-              c-16.8,16.8-28.1,25.3-33.7,25.3c-2.8,0-5.6-0.9-9.4-2.8l-49.6-38.4c-10.3,5.6-21.5,10.3-32.7,13.1c-3.7,32.7-7.5,54.3-10.3,66.4
-              c-1.9,6.5-5.6,10.3-13.1,10.3h-79.5c-3.7,0-6.5-0.9-8.4-2.8s-3.7-4.7-3.7-7.5l-10.3-65.5c-11.2-3.7-22.4-8.4-31.8-13.1L131,499.5
-              c-2.8,1.9-5.6,2.8-9.4,2.8c-3.7,0-6.5-0.9-9.4-3.7c-29.9-27.1-49.6-46.8-58.9-59.9c-1.9-2.8-2.8-4.7-2.8-8.4c0-2.8,0.9-5.6,2.8-8.4
-              c3.7-4.7,9.4-13.1,17.8-23.4c8.4-11.2,15-19.6,19.6-25.3c-6.5-12.2-11.2-23.4-15-35.5l-65.5-9.4c-2.8-0.9-5.6-1.9-7.5-4.7
-              C0.9,320.8,0,318,0,315.2v-81.4c0-2.8,0.9-5.6,2.8-8.4c1.9-2.8,3.7-3.7,6.5-4.7l66.4-10.3c3.7-11.2,8.4-21.5,14-32.7
-              c-9.4-13.1-22.4-29.9-38.4-49.6c-2.8-2.8-3.7-5.6-3.7-8.4c0-2.8,0.9-4.7,2.8-8.4c6.5-8.4,17.8-21.5,35.5-38.4
-              c16.8-16.8,28.1-25.3,33.7-25.3c2.8,0,6.5,0.9,9.4,3.7l49.6,38.4c10.3-5.6,21.5-10.3,32.7-13.1c3.7-32.7,7.5-54.3,10.3-66.4
-              C223.6,3.7,227.3,0,234.8,0h79.5c3.7,0,6.5,0.9,8.4,2.8c2.8,1.9,3.7,4.7,3.7,7.5l10.3,65.5c11.2,3.7,22.4,8.4,31.8,13.1L419,50.5
-              c1.9-1.9,4.7-2.8,8.4-2.8c2.8,0,5.6,0.9,9.4,3.7c30.9,28.1,50.5,48.6,58.9,60.8c1.9,1.9,2.8,4.7,2.8,7.5s-0.9,5.6-2.8,8.4
-              c-3.7,4.7-9.4,13.1-17.8,23.4c-8.4,11.2-15,19.6-19.6,25.3c6.5,12.2,11.2,23.4,15,34.6l65.5,10.3c2.8,0.9,5.6,1.9,7.5,4.7
-              C549.1,229.2,550,232,550,234.8z M340.5,338.6c17.8-17.8,27.1-39.3,27.1-64.5c0-25.3-9.4-46.8-27.1-64.5
-              c-17.8-17.8-39.3-27.1-64.5-27.1c-25.3,0-46.8,9.4-64.5,27.1s-27.1,39.3-27.1,64.5c0,25.3,9.4,46.8,27.1,64.5s39.3,27.1,64.5,27.1
-              C301.2,364.8,322.7,356.4,340.5,338.6z"/>
-          </svg>
-        </div>
-        <div id="app-client-container">
-          <iframe src="about:blank" class="app-iframe" id="app-iframe" sandbox="allow-scripts allow-same-origin" allowfullscreen=""></iframe>
-        </div>
-    </div>
-    <div class="clear"></div>
-    </section>
-    </div>
-    </div>
-    <!-- The Dialog -->
-    <div class="modalDim"></div>
-    <div class="manual-drive-modal" oncontextmenu="return false;">
-      <div class="manual-drive-exit"><i class="fa fa-times"></i></div>
-
-      <div class="manual-drive-message">This is where a message will go</div>
-      <div class="manual-drive-container">
-        <div class="read-out-container">
-          <div class="read-out-wrapper">
-            <div class="axis xaxis">
-              <label>
-              X
-              </label>
-              <input id="X" class="posx pos doselect modal-axi axi" maxlength="6" type="number">
-              <span class="units">&nbsp;</span>
-              <div class="zero-button zero-x">zero</div>
-            </div>
-            <div class="axis yaxis">
-                <label>
-                Y
-                </label>
-                <input id="Y" class="posy pos doselect modal-axi axi"  maxlength="6" type="number">
-                <span class="units">&nbsp;</span>
-                <div class="zero-button zero-y">zero</div>
-            </div>
-            <div class="axis zaxis">
-                <label class="noselect">
-                Z
-                </label>
-                <input id="Z" class="posz pos doselect modal-axi axi" maxlength="6" type="number">
-                <span class="units">&nbsp;</span>
-                <div class="zero-button zero-z">zero</div>
-            </div>
-            <div class="axis aaxis">
-                <label class="noselect">
-                A
-                </label>
-                <input id="A" class="posa pos doselect modal-axi axi" maxlength="6" type="number">
-                <span class="rotunits">o&nbsp;</span>
-                <div class="zero-button zero-a">zero</div>
-            </div>
-            <div class="axis baxis">
-                <label class="noselect">
-                B
-                </label>
-                <input id="B" class="posb pos doselect modal-axi axi" maxlength="6" type="number">
-                <span class="rotunits">o&nbsp;</span>
-                <div class="zero-button zero-b">zero</div>
-            </div>
-<!--
-            <div class="axis caxis">
-                <label class="noselect">
-                C
-                </label>
-                <input id="C" class="posc pos doselect modal-axi axi" maxlength="6" type="number">
-                <span class="rotunits">o&nbsp;</span>
-                <div class="zero-button zero-c">zero</div>
-            </div>
--->
-          </div>
-        </div>
-        <div class="manual-right-side-container">
-          <div id="keypad" class="fabmo-manual-control keypad " style="text-align: center;">
-            <div class="slidecontainer">
-              <input type="range"  step="0.1" class="slider" id="manual-move-speed">
-              <label >Move Speed</label>
-            </div>
-            <div class="fixed-input-container ">
-              <div>
-                <label>XY Distance</label>
-                <input class="fixed-step-value xy-fixed">
-              </div>
-              <div>
-                <label>Z Distance</label>
-                <input class="fixed-step-value z-fixed">
-              </div>
-
-            </div>
-            <!-- <div class='button-border bottom'></div> -->
-            <div class="pad-container">
-              <div class="keypad-table">
-                <div class="keypad-cell">
-                  <div class="x_neg y_pos keypad-button drive-button square">
-                    <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
-                  </div>
-                  <div class="rot_button a_pos keypad-button drive-button square">
-                    <span >+A</span>
-                  </div>
-                </div>
-                <div class="keypad-cell">
-                  <div class="y_pos keypad-button drive-button square">
-                    <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
-                  </div>
-                </div>
-                <div class="keypad-cell">
-                  <div  class="x_pos y_pos keypad-button drive-button square">
-                    <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
-                  </div>
-                  <div class="rot_button b_pos keypad-button drive-button square">
-                    <span>+B</span>
-                  </div>
-                </div>
-                <div class="keypad-cell">
-                  <div class="x_neg keypad-button drive-button square">
-                    <i class="fa fa-keypad fa-lg fa-arrow-left"></i>
-                  </div>
-                </div>
-                <div class="keypad-cell">
-
-                </div>
-                <div class="keypad-cell">
-                  <div class="x_pos keypad-button drive-button square">
-                    <i class="fa fa-keypad fa-lg fa-arrow-right"></i>
-                  </div>
-                </div>
-                <!--<div class="keypad-cell"><div class="keypad-button drive-button exit-button square"><i class="fa fa-keypad fa-lg fa-close"></i></div></div>-->
-                <div class="keypad-cell">
-                  <div class="x_neg y_neg keypad-button drive-button square">
-                    <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
-                  </div>
-                  <div class="rot_button a_neg keypad-button drive-button square">
-                    <span>-A</span>
-                  </div>
-                </div>
-                <div class="keypad-cell">
-                  <div class="y_neg keypad-button drive-button square">
-                    <i class="fa fa-keypad fa-lg fa-arrow-down"></i>
-                  </div>
-                </div>
-                <div class="keypad-cell">
-                  <div class="x_pos y_neg keypad-button drive-button square">
-                    <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
-                  </div>
-                  <div class="rot_button b_neg keypad-button drive-button square">
-                    <span>-B</span>
-                  </div>
-                </div>
-              </div>
-              <div class="z-pad">
-                <div class="keypad-bar-small top">
-                  <div class="z_pos_fast keypad-button drive-button bar"><i class="fa fa-caret-up z-fa-double"></i><i class="fa fa-caret-up z-fa-double"></i></div>
-                </div>
-                <div class="keypad-bar top">
-                  <div class="z_pos_slow keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-up"></i></div>
-                </div>
-                <!-- <div class='button-border top'></div> -->
-                <div class="keypad-bar bottom">
-                  <div class="z_neg_slow keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-down"></i></div>
-                </div>
-                <div class="keypad-bar-small bottom">
-                  <div class="z_neg_fast keypad-button drive-button bar"><i class="fa fa-caret-down z-fa-double"></i><i class="fa  fa-caret-down z-fa-double"></i></div>
-                </div>
-              </div>
-            </div>
-            <div class="switch-container">
-              <span class="fixed-label">Fixed </span>
-              <label class="fixed-switch">
-              <input type="checkbox">
-              <span class="slider-toggle round"></span>
-              </label>
-            </div>
-          </div>
-          <div class="go-to-container">
-            <div class="manual-stop">
-                <span>STOP</span>
-            </div>
-            <div class="go-to">
-              <span>Go To</span>
-            </div>
-            <div class="set-coordinates">
-              <span>Set</span> 
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div id="beacon_consent_container">
-      <div id="beacon_consent_inner">
-        <span id="consent_dialogue">
-        FabMo reports anonymised device information. You can disable this in the configuration.
-        </span>
-      </div>
-      <div id="beacon_sub_container">
-        <div id="beacon_consent_button">Proceed</div>
-      </div>
-    </div>
-    <div class="newModal">
-      <div class="modalContent">
-        <h3 class="modalTitle">Title</h3>
-        <div class="modalSubContent">
-          <h4 class="modalDialogue">&nbsp;</h4>
-          <div class="modalImage">
-            <img src="">
-          </div>
-          <div class="modalInput">
-            <input type="hidden" id="inputVar"/>
-            <input type="text" id="inputVal" class="inputVal" />
-            <p class="inputError">Please Enter a Valid Value.</p>
-          </div>
-        </div>
-        <div class="modalButtons">
-          <div class="modalCancel"><span>Cancel</span></div>
-          <div class="modalOkay"><span>Okay</span></div>
-        </div>
-      </div>
-    </div>
-    <div class="footBar fabmo-file-control">
-      <div class="currentContainer">
-        <p class="currentJobTitle" ></p>
-      </div>
-      <div class="radial_progress">
-        <div class="perecent_circle">
-          <div class="mask full">
-            <div class="fill"></div>
-          </div>
-          <div class="mask half">
-            <div class="fill"></div>
-            <div class="fill fix"></div>
-          </div>
-          <div class="shadow"></div>
-        </div>
-        <div class="inset">
-          <div class="percentage"></div>
-        </div>
-        <div class="elapsed_time_small">
-          <p class="elapsed_time_label"><i class="fa fa-clock-o" aria-hidden="true"></i>:
-          <p class="elapsed_time_text">0s</p>
-          </p>
-        </div>
-      </div>
-      <div class="load_container">
-        <div class="loading_bar">
-          <div class="horizontal_fill">
-          </div>
-        </div>
-        <div class="percent_comp">10%</div>
-        <div class="elapsed_time">
-          <p class="elapsed_time_label"><i class="fa fa-clock-o" aria-hidden="true"></i> :  
-          <p>
-          <p class="elapsed_time_text">0s</p>
-        </div>
-      </div>
-      <div class='pauseJob-wrapper'>
-        <div class='pauseJob fabmo-pause-button '>
-          <div >STOP</div>
-        </div>
-      </div>
-      <span class='fabmo-resume-stop'>
-        <div class='but resumeJob'>
-          <div>RESUME</div>
-        </div>
-        <div class='but stopJob'>
-          <div>QUIT</div>
-        </div>
-      </span>
-    </div>
-    <script src="/common.js"></script>
-    <script src="/dashboard.js"></script>
-  </body>
-</html>
+<head><script defer src="/home.js"></script><script defer src="/dashboard.js"></script><script defer src="/job_manager.js"></script><script defer src="/editor.js"></script><script defer src="/configuration.js"></script><script defer src="/macro_manager.js"></script><script defer src="/network_manager.js"></script><script defer src="/preview.js"></script><script defer src="/selftest.js"></script></head>Html Webpack Plugin:
+<pre>
+  Error: Child compilation failed:
+  Module not found: Error: Can't resolve '/fabmo/index.html' in '/fabmo'
+  ModuleNotFoundError: Module not found: Error: Can't resolve '/fabmo/index.html' in '/fabmo'
+  
+  - Compilation.js:1735 factory.create
+    [fabmo]/[webpack]/lib/Compilation.js:1735:28
+  
+  - NormalModuleFactory.js:726 hooks.factorize.callAsync
+    [fabmo]/[webpack]/lib/NormalModuleFactory.js:726:13
+  
+  
+  - NormalModuleFactory.js:273 hooks.resolve.callAsync
+    [fabmo]/[webpack]/lib/NormalModuleFactory.js:273:22
+  
+  
+  - NormalModuleFactory.js:402 err
+    [fabmo]/[webpack]/lib/NormalModuleFactory.js:402:22
+  
+  - NormalModuleFactory.js:121 err
+    [fabmo]/[webpack]/lib/NormalModuleFactory.js:121:11
+  
+  - NormalModuleFactory.js:642 resolveResource
+    [fabmo]/[webpack]/lib/NormalModuleFactory.js:642:24
+  
+  - NormalModuleFactory.js:796 _resolveResourceErrorHints
+    [fabmo]/[webpack]/lib/NormalModuleFactory.js:796:8
+  
+  - NormalModuleFactory.js:916 asyncLib.parallel
+    [fabmo]/[webpack]/lib/NormalModuleFactory.js:916:5
+  
+  - child-compiler.js:169 childCompiler.runAsChild
+    [fabmo]/[html-webpack-plugin]/lib/child-compiler.js:169:18
+  
+  - Compiler.js:534 compile
+    [fabmo]/[webpack]/lib/Compiler.js:534:11
+  
+  - Compiler.js:1089 hooks.afterCompile.callAsync.err
+    [fabmo]/[webpack]/lib/Compiler.js:1089:17
+  
+  
+  - Hook.js:18 Hook.CALL_ASYNC_DELEGATE [as _callAsync]
+    [fabmo]/[tapable]/lib/Hook.js:18:14
+  
+  - Compiler.js:1085 compilation.seal.err
+    [fabmo]/[webpack]/lib/Compiler.js:1085:33
+  
+  - Compilation.js:2496 hooks.afterSeal.callAsync.err
+    [fabmo]/[webpack]/lib/Compilation.js:2496:11
+  
+  
+  - Hook.js:18 Hook.CALL_ASYNC_DELEGATE [as _callAsync]
+    [fabmo]/[tapable]/lib/Hook.js:18:14
+  
+  - Compilation.js:2489 hooks.processAssets.callAsync.err
+    [fabmo]/[webpack]/lib/Compilation.js:2489:38
+  
+</pre>
