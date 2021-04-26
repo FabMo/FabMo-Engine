@@ -68,7 +68,7 @@
     "html-webpack-plugin": "^5.3.1",
     "mini-css-extract-plugin": "^1.5.0",
     "node-gyp": "^8.0.0",
-    "@mapbox/node-pre-gyp": "^0.17.0",
+    "@mapbox/node-pre-gyp": "^1.0.4",
     "style-loader": "^0.13.1",
     "webpack": "^5.35.0",
     "webpack-cli": "^4.6.0",
