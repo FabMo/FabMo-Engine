@@ -937,9 +937,9 @@ SBPRuntime.prototype._abort = function(error) {
 // This restores the state of both the runtime and the driver, and sets the machine state appropriately
 //   error - (optional) If the program is ending due to an error, this is it.  Can be string or error object.
 SBPRuntime.prototype._end = function(error) {
-    
-    // debug info
-    //log.stack();
+    // debug info ////##
+    log.debug("runtime _end() called");
+    log.stack();
 
     // Normalize the error and ending state
     error = error ? error.message || error : null;
@@ -948,27 +948,21 @@ SBPRuntime.prototype._end = function(error) {
     }
     log.debug("Calling the non-nested (toplevel) end");
 
-    // TODO:  User Vars now stored on config and persistent is this functionality still needed?
-    // // Delete the user variables that don't stick around across runs
-    // for(var key in this.user_vars) {
-    //     if(key[1] === '_') {
-    //         delete this.user_vars[key]
-    //     }
-    // }  
-
     // Log the error for posterity
     if(error) {log.error(error)}
 
     // Cleanup deals the "final blow" - cleans up streams, sets the machine state and calls the end callback
     var cleanup = function(error) {
-        //log.stack()
+        log.debug("_end Cleanup called");
+        log.stack();
         if(this.machine && error) {
             this.machine.setState(this, 'stopped', {'error' : error });
         }
         if(!this.machine){
             this.stream.end();
         }
-        this.ok_to_disconnect = true;
+        this.init(); ////## added here in factor
+    this.ok_to_disconnect = true; ////## removed in disconnect
         this.emit('end', this);
         if(this.end_callback) {
             this.end_callback();
@@ -976,44 +970,68 @@ SBPRuntime.prototype._end = function(error) {
     }.bind(this);
 
     // Clear the internal state of the runtime (restore it to its initial state)
-    this.init();
+    //this.init();////## removed in refactor this.init();
 
-    // TODO - this big complicated if-else can probably be collapsed to something simpler with some
-    //      rearranging and changing of the cleanup() function above (or maybe it can be eliminated??)
-    if(error) {
-        if(this.machine) {
-            this.resumeAllowed = false;
-            this.machine.restoreDriverState(function(err, result) {
-                this.resumeAllowed = true;
-                cleanup(error);
-            }.bind(this));
-        } else {
+    ////## refactored if ... not sure logistical changes ...
+    if(this.machine) {
+        this.resumeAllowed=false
+        this.machine.restoreDriverState(function(err, result) {
+            this.resumeAllowed = true;
+            if(this.machine.status.job) {
+                this.machine.status.job.finish(function(err, job) {
+                    this.machine.status.job=null;
+                    this.machine.setState(this, 'idle');
+                }.bind(this));
+            } else {
+                this.driver.setUnits(config.machine.get('units'), function() {
+                    this.machine.setState(this, 'idle');
+                }.bind(this));
+            }
             cleanup(error);
-        }
-        // TODO - Shouldn't this deal with the currently running job (if it exists)
-        //        as is done below?? this.machine.status.job.fail maybe?
+        }.bind(this));
+
     } else {
-        if(this.machine) {
-            this.resumeAllowed=false
-            this.machine.restoreDriverState(function(err, result) {
-                this.resumeAllowed = true;
-                if(this.machine.status.job) {
-                    this.machine.status.job.finish(function(err, job) {
-                        this.machine.status.job=null;
-                        this.machine.setState(this, 'idle');
-                    }.bind(this));
-                } else {
-                    this.driver.setUnits(config.machine.get('units'), function() {
-                        this.machine.setState(this, 'idle');
-                    }.bind(this));
-                }
-                cleanup();
-            }.bind(this));
-        } else {
-            cleanup();
-        }
+            cleanup(error);
     }
 };
+
+////## Josh's refactor TODO:Remove
+    // // TODO - this big complicated if-else can probably be collapsed to something simpler with some
+    // //      rearranging and changing of the cleanup() function above (or maybe it can be eliminated??)
+    // if(error) {
+    //     if(this.machine) {
+    //         this.resumeAllowed = false;
+    //         this.machine.restoreDriverState(function(err, result) {
+    //             this.resumeAllowed = true;
+    //             cleanup(error);
+    //         }.bind(this));
+    //     } else {
+    //         cleanup(error);
+    //     }
+    //     // TODO - Shouldn't this deal with the currently running job (if it exists)
+    //     //        as is done below?? this.machine.status.job.fail maybe?
+    // } else {
+    //     if(this.machine) {
+    //         this.resumeAllowed=false
+    //         this.machine.restoreDriverState(function(err, result) {
+    //             this.resumeAllowed = true;
+    //             if(this.machine.status.job) {
+    //                 this.machine.status.job.finish(function(err, job) {
+    //                     this.machine.status.job=null;
+    //                     this.machine.setState(this, 'idle');
+    //                 }.bind(this));
+    //             } else {
+    //                 this.driver.setUnits(config.machine.get('units'), function() {
+    //                     this.machine.setState(this, 'idle');
+    //                 }.bind(this));
+    //             }
+    //             cleanup();
+    //         }.bind(this));
+    //     } else {
+    //         cleanup();
+    //     }
+    // }
+//};
 
 // Execute the specified command
 //    command - The command object to execute
