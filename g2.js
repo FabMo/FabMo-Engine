@@ -780,12 +780,13 @@ G2.prototype.quit = function() {
 			// Clear the gcodes we have queued up
 			this.gcode_queue.clear();
 			// Issue the actual Job Kill  ////## was using kill in edge
-            log.debug("Sending G2-queue-FLUSH, now"); ////##
-			this._write('\%\n'); ////## FLUSH; just doing kill not working right in edge-preview
+            log.debug("Sending G2-queue-FLUSH, now!"); ////##
+////##			this._write('\%\n'); ////## FLUSH; just doing kill not working right in edge-preview
 								 ////## ... thinking this should be in runtime with runtime.queueFlush				
 								 ////## Additionally, this is triggering stat:3 that is being 
 								 ////## ... intercepted with a kill to resolve file 
-////##			this._write('\x04\n');
+			this._write('\x04\n');
+			this._write('\x04\n');
 			break;
 	}
 }
