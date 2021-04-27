@@ -254,12 +254,15 @@ ManualDriver.prototype.runGCode = function(code) {
 		} else {
 			log.debug('writing gcode while static')
 			this.moving = true;
-////## To debug G2 action; this kludge allows easy multiple lines with an "n" placed after each cmd
-//      in betaINSERT function of Sb4; try a "k" to kill.
-log.debug("... possibly inserting line feed; for use in multiple inserts of gcode");
-code = code.replace(/n/g,'\n');
-code = code.replace(/k/, '\x04\n');
-log.debug(code);
+
+			////## To debug G2 action; this kludge allows easy multiple lines with an "&" placed after each cmd
+			//      in betaINSERT function of Sb4; try a "^" to kill; and a "#" to restart G2.
+			log.debug("... possibly converting special codes in betaInsert");
+			code = code.replace(/&/g,'\n');
+			code = code.replace(/^/, '\x04\n');
+			code = code.replace(/#/, '\x18\n');
+			log.debug(code);
+
 			this.stream.write(code.trim() + '\n');
 			this.maintainMotion();		
 			this._renewMoves('start')

@@ -62,6 +62,10 @@ ManualRuntime.prototype.connect = function(machine) {
 ManualRuntime.prototype.disconnect = function() {
 	if(this.ok_to_disconnect && !this.stream) {
 		this.driver.removeListener('status', this.status_handler);
+
+		////##
+		log.info('Disconnected MANUAL runtime.')
+
 		//this.machine.setState(this, 'idle');
 	} else {
 		throw new Error("Cannot disconnect while manually driving the tool.");

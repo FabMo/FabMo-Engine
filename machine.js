@@ -873,7 +873,7 @@ log.debug(source);
 				log.error('G2 is dead!');
 				break;
 			default:
-                //this.driver.command({"out4":1});
+                //this.driver.command({"out4":1}); ////## ??Original Location??
 				break;
 		}
 
