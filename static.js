@@ -7,7 +7,7 @@ var path = require('path');
 var escapeRE = require('escape-regexp-component');
 
 var assert = require('assert-plus');
-var mime = require('mime');
+var mime = require('mime-types');
 var errors = require('restify-errors');
 var config = require('./config');
 
