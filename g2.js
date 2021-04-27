@@ -757,39 +757,58 @@ G2.prototype.resume = function() {
 	return deferred.promise;
 };
 
+////## from Josh refactor
 // Quit means to stop the tool and abandon the machining cycle.
-// This used to be a more complex function than it is now, but the firmware is pretty good
-// about taking a job kill command (\x04) just about any time.  It used to be very state-dependent.
 G2.prototype.quit = function() {
 	if(this.quit_pending) {
 		log.warn("Not quitting because a quit is already pending.");
 		return;
 	}
-
-	switch(this.status.stat) {
-		//case STAT_END:
-		//	return;
-		//	break;
-
-		default:
-			this.quit_pending = true;
-
-			if(this.stream) {
-				this.stream.end()
-			}
-			// Clear the gcodes we have queued up
-			this.gcode_queue.clear();
-			// Issue the actual Job Kill  ////## was using kill in edge
-            log.debug("Sending G2-queue-FLUSH, now!"); ////##
-////##			this._write('\%\n'); ////## FLUSH; just doing kill not working right in edge-preview
-								 ////## ... thinking this should be in runtime with runtime.queueFlush				
-								 ////## Additionally, this is triggering stat:3 that is being 
-								 ////## ... intercepted with a kill to resolve file 
-			this._write('\x04\n');
-			this._write('\x04\n');
-			break;
+	this.quit_pending = true;
+	if(this.stream) {
+		this.stream.end()
 	}
+	// Clear the gcodes we have queued up
+	this.gcode_queue.clear();
+    log.debug("Sending G2-Kills, now!"); ////##
+	this._write('\x04\n');
+	this._write('\x04\n');
 }
+
+// ////## from Josh ... TODO: Remove after accepting refactored version
+// // Quit means to stop the tool and abandon the machining cycle.
+// // This used to be a more complex function than it is now, but the firmware is pretty good
+// // about taking a job kill command (\x04) just about any time.  It used to be very state-dependent.
+// G2.prototype.quit = function() {
+// 	if(this.quit_pending) {
+// 		log.warn("Not quitting because a quit is already pending.");
+// 		return;
+// 	}
+
+// 	switch(this.status.stat) {
+// 		//case STAT_END:
+// 		//	return;
+// 		//	break;
+
+// 		default:
+// 			this.quit_pending = true;
+
+// 			if(this.stream) {
+// 				this.stream.end()
+// 			}
+// 			// Clear the gcodes we have queued up
+// 			this.gcode_queue.clear();
+// 			// Issue the actual Job Kill  ////## was using kill in edge
+//             log.debug("Sending G2-Kills, now!"); ////##
+// ////##			this._write('\%\n'); ////## FLUSH; just doing kill not working right in edge-preview
+// 								 ////## ... thinking this should be in runtime with runtime.queueFlush				
+// 								 ////## Additionally, this is triggering stat:3 that is being 
+// 								 ////## ... intercepted with a kill to resolve file 
+// 			this._write('\x04\n');
+// 			this._write('\x04\n');
+// 			break;
+// 	}
+// }
 
 // When the gcode runtime asks that an M30 be sent, send it. This is pulled out from the
 //  normal queuing and writing path because of a timing issue with the g2core that needs to be
