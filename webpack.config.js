@@ -1,8 +1,20 @@
 // Generated using webpack-cli http://github.com/webpack-cli
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const lib = 'dashboard/static/js/libs';
+const js = 'dashboard/static/js';
+const webpack = require("webpack");
+const ProvidePlugin = require('webpack').ProvidePlugin;
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const Promise = require('es6-promise').Promise;
+const es6_promise = require('es6-promise').polyfill();
 
-module.exports = {
+var cleanOptions = {
+  exclude:  ['index.html'],
+}
+
+var config = {
     mode: 'development',
     entry: {
       home:'./dashboard/apps/home.fma/js/home.js',
@@ -23,21 +35,18 @@ module.exports = {
       // filename: "[name].[chunkhash].js"
       //  path: path.resolve(__dirname, 'dist'),
     },
-  
+ 
+    resolve: {
+      // modulesDirectories: [lib],
+      extensions: ['', '.js'],
+
+    }, 
 
     devServer: {
         open: true,
         host: 'localhost',
     },
 
-    plugins: [
-        new HtmlWebpackPlugin({
-            //template: 'index.html',
-        }),
-
-        // Add your plugins here
-        // Learn more obout plugins from https://webpack.js.org/configuration/plugins/
-    ],
     module: {
         rules: [
             {
@@ -46,7 +55,7 @@ module.exports = {
             },
             {
                 test: /\.css$/i,
-                use: ['style-loader','css-loader'],
+                use: [MiniCssExtractPlugin.loader, 'css-loader'],
             },
             {
                 test: /\.(eot|svg|ttf|woff|woff2|png|jpg|gif)$/,
@@ -57,4 +66,34 @@ module.exports = {
             // Learn more about loaders from https://webpack.js.org/loaders/
         ],
     },
+    plugins: [
+	new CleanWebpackPlugin({
+            dry: true,
+            verbose: true,
+            cleanOnceBeforeBuildPatterns: [
+               '**/*',
+               '!index.html',
+           ],
+        }),
+
+        new ProvidePlugin({
+            $: 'jquery',
+            jQuery: 'jquery',
+            "window.jQuery": 'jquery',
+            "windows.jQuery": 'jquery'
+        }),
+
+	new MiniCssExtractPlugin(),
+
+        //new HtmlWebpackPlugin(
+	//{
+            //template: 'index.html',
+        //}
+	//),
+
+        // Add your plugins here
+        // Learn more obout plugins from https://webpack.js.org/configuration/plugins/
+    ],
 };
+
+module.exports = config;
