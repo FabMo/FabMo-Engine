@@ -61,19 +61,21 @@ function setupStatusBroadcasts(server){
 	machine.on('status',function(status){
 		console.log('Status broadcast');
 		console.log(JSON.stringify(status));
-		server.io.of('/private').sockets.forEach(function (socket) {
+//// rmackie: fix this here.
+		Object.keys(server.io.sockets.sockets).forEach(function (socketId) {
 			if(status.state === 'idle' || status.state != previous_status.state) {
-				socket.emit('status',status);
+				server.io.to(socketId).emit('status',status);
 			} else {
-				socket.volatile.emit('status', status);
+				server.io.to(socketId).volatile.emit('status', status);
 			}
 		});
 
 		server.io.sockets.sockets.forEach(function (socket) {
+		Object.keys(server.io.sockets.sockets).forEach(function (socketId) {
 			if(status.state === 'idle' || status.state != previous_status.state) {
-				socket.emit('status',status);
+				server.io.to(socketId).emit('status',status);
 			} else {
-				socket.volatile.emit('status', status);
+				server.io.to(socketId).volatile.emit('status', status);
 			}
 		});
 		previous_status.state = status.state;

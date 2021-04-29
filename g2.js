@@ -421,10 +421,19 @@ G2.prototype.onData = function(data) {
 				var obj = JSON.parse(json_string);
 				this.onMessage(obj);
 			}catch(e){
-				throw e
+				//rmackie: we have never emitted this before. It used to be below the throw. 
+				// risking put it here, because someone thought it was a good idea once upon a time
+				// and it is an error case. Not really sure. I suspect we should discard this next line
+				// and keep the throw.
 				this.emit('error', [-1, 'JSON_PARSE_ERROR', "Could not parse response: '" + jsesc(json_string) + "' (" + e.toString() + ")"]);
+				throw e;
+			} finally {
+				// rmackie: this was not in a finally block. So if we threw an error, we left crud
+				// in the buffer and then parsing failed forever more, worse and worse. this way,
+				// if we hit a linefeed, we try to parse, if we succeed we clear the line and start anew
+				// and if we fail to parse, we still clear the line and start anew.
+				this._currentData = [];
 			}
-			this._currentData = [];
 		} else {
 			this._currentData.push(c);
 		}
