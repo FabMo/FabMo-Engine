@@ -61,7 +61,7 @@ function setupStatusBroadcasts(server){
 	machine.on('status',function(status){
 		console.log('Status broadcast');
 		console.log(JSON.stringify(status));
-//// rmackie: fix this here.
+// rmackie: this is a real fix. remove this comment soon. there was a breaking upgrade and this responds to it.
 		Object.keys(server.io.sockets.sockets).forEach(function (socketId) {
 			if(status.state === 'idle' || status.state != previous_status.state) {
 				server.io.to(socketId).emit('status',status);
@@ -70,7 +70,6 @@ function setupStatusBroadcasts(server){
 			}
 		});
 
-		server.io.sockets.sockets.forEach(function (socket) {
 		Object.keys(server.io.sockets.sockets).forEach(function (socketId) {
 			if(status.state === 'idle' || status.state != previous_status.state) {
 				server.io.to(socketId).emit('status',status);
@@ -89,7 +88,7 @@ function setupStatusBroadcasts(server){
 			socket.emit('change',topic);
 		});
 	});
-}
+} 
 
 
 var onPublicConnect = function(socket) {
@@ -212,3 +211,4 @@ module.exports = function(svr) {
 	server.io.of('/private').on('connection', onPrivateConnect);
 	setupStatusBroadcasts(server);
 };
+

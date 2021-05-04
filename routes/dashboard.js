@@ -148,6 +148,7 @@ var listAppFiles = function(req, res, next) {
 		}
 		if(node.children) {
 			node.children.forEach(function(node) {
+				console.log("rmackie 3: " + node);
 				add_urls(node);
 			});
 		}
@@ -207,9 +208,10 @@ module.exports = function(server) {
     server.post('/apps/:id/config', postAppConfig);
     server.del('/apps/:id', deleteApp);
     server.get('/apps/:id/files', listAppFiles);
-    server.get(/\/approot\/?.*/, static({
-        directory: config.getDataDir('approot'),
-    }));
+// rmackie: this can't stand - must replace it, but for now it allows a step forward
+//    server.get(/\/approot\/?.*/, static({
+//        directory: config.getDataDir('approot'),
+//    }));
     server.get('/updater', updater);
 
 };
