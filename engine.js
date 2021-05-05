@@ -235,10 +235,12 @@ Engine.prototype.start = function(callback) {
         //    Create the folder structure (typically) in /opt/fabmo
         //    ... eg: /opt/fabmo/config, /opt/fabmo/macros, etc...
 
-// TODO - This seems like a duplication of the same step below
-////## BUT testing shows that for some start scenarios,
-//     ... both versions seem necessary 1/2/21
+        // TODO - This seems like a duplication of the same step below
+        ////## BUT testing shows that for some start scenarios,
+        //     ... both versions seem necessary 1/2/21
+
        function setup_application(callback) {
+            log.debug("######## START Debug Test!");
             log.info('Checking engine data directory tree...');
             config.createDataDirectories(callback);
         },
@@ -789,7 +791,7 @@ log.debug("### Getting this far in START-ENGINE ###  <======================")
             server.pre(restify.pre.sanitizePath());
 
             // Configure authentication
-            log.info("Cofiguring authentication...");
+            log.info("Configuring authentication...");
             log.info("Secret Key: " + this.auth_secret.slice(0,5) + '...' + this.auth_secret.slice(-5));
             server.cookieSecret = this.auth_secret;
             server.use(sessions({

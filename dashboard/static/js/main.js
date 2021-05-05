@@ -273,7 +273,12 @@ require("../css/toastr.min.css");
                                 detail: detailHTML,
                                 cancelText: status.state === 'dead' ? undefined : 'Quit',
                                 cancel: status.state === 'dead' ? undefined : function() {
-                                    dashboard.engine.quit();
+                                    dashboard.engine.quit(function(err, result) {
+                                                            if (err) {
+                                                              console.log("ERRROR: " + err);
+                                                            }
+                                                        }
+                                                    );
                                 }
                             });
                             modalIsShown = true;
@@ -289,9 +294,13 @@ require("../css/toastr.min.css");
                             cancelText: 'Quit',
                             cancel: function() {
                                 authorizeDialog = false;
-                                dashboard.engine.quit();
+                                dashboard.engine.quit(function(err, result) {
+                                                            if (err) {
+                                                              console.log("ERRROR: " + err);
+                                                            }
+                                                        }
+                                                    );
                             }
-          
                         });
                     } else if (status.state === 'interlock') {
                         interlockDialog = true;
@@ -303,9 +312,13 @@ require("../css/toastr.min.css");
                             cancelText: 'Quit',
                             cancel: function() {
                                 interlockDialog = false;
-                                dashboard.engine.quit();
+                                dashboard.engine.quit(function(err, result) {
+                                                            if (err) {
+                                                              console.log("ERRROR: " + err);
+                                                            }
+                                                        }
+                                                    );
                             },
-
                             okText: 'Resume',
                             ok: function() {
                                 dashboard.engine.resume();

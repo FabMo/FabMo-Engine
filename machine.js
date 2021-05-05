@@ -793,10 +793,10 @@ Machine.prototype.getRuntime = function(name) {
 // stateinfo - The contents of the 'info' field of the status report, if needed.
 Machine.prototype.setState = function(source, newstate, stateinfo) {
 	this.fireButtonDebounce = false ;
-log.debug("ppp... at setState");
-log.debug(source);
+	log.debug("... {setState} for a runtime");
+	log.debug(source);
 	if ((source === this) || (source === this.current_runtime)) {
-		log.info("Got a machine state change: " + newstate)
+		log.info("... {setState} change to: " + newstate)
 		// Set the info field
 		// status.info.id is the info field id - it helps the dash with display of dialogs
 		if(stateinfo) {
@@ -913,38 +913,42 @@ Machine.prototype.pause = function(callback) {
 
 // Quit 
 Machine.prototype.quit = function(callback) {
-		// Release Pause hold if present
-		this.driver.pause_hold = false;
-		this.disarm();
+	// Release Pause hold if present
+	this.driver.pause_hold = false;
+	this.disarm();
 
-		// Quitting from the idle state dismisses the 'info' data
-		switch(this.status.state) {
+	// Quitting from the idle state dismisses the 'info' data
+	switch(this.status.state) {
 
-			case "idle":
-				delete this.status.info;
-				this.emit('status', this.status);
-				break;
+		case "idle":
+			delete this.status.info;
+			this.emit('status', this.status);
+			break;
 
-			case "interlock":
-				this.action = null;
-				this.setState(this, 'idle');
-				break;
-		}
-		// Cancel the currently running job, if there is one
-		if(this.status.job) {
-			this.status.job.pending_cancel = true;
-		}
-		if(this.current_runtime) {
+		case "interlock":
+			this.action = null;
+			this.setState(this, 'idle');
+			break;
+	}
+	// Cancel the currently running job, if there is one
+	if(this.status.job) {
+		this.status.job.pending_cancel = true;
+	}
+	if(this.current_runtime) {
 log.debug("ppp... job.pending_quit!")			
-			log.info("Quitting the current runtime...")
-			this.current_runtime.quit();
+		log.info("Quitting the current runtime...")
+		this.current_runtime.quit();
 log.debug("ppp... quit_pending?")
+		if (callback) {
 			callback(null, 'quit');
+		}
 			alreadyQuiting = false;
-		} else {
-			log.warn("No current runtime!")
+	} else {
+		log.warn("No current runtime!")
+		if (callback) {	
 			callback("Not quiting because no current runtime")
-		}    
+		}
+	}    
 };
 
 // Resume from the paused state.
@@ -1089,7 +1093,8 @@ Machine.prototype._runNextJob = function(force, callback) {
 		if(this.status.state === 'armed' || force) {
 			log.info("Running next job");
 			db.Job.dequeue(function(err, result) {
-				log.info(result);
+log.debug("@_runNextJob in machine")
+				log.info("result- " + result);
 				if(err) {
 					log.error(err);
 					callback(err, null);

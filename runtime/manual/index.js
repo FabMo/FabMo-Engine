@@ -106,9 +106,10 @@ ManualRuntime.prototype.enter = function(mode, hideKeypad) {
 // {cmd:"goto",move:{X:1,Y:2,Z:3}} - Go to x,y,z = 1,2,3
 // {cmd:"set", move:{X:1,Y:2,Z:3}} - Set current x,y,z to 1,2,3 (No movement)
 // 
-ManualRuntime.prototype.executeCode = function(code, callback) {
+////## ManualRuntime.prototype.executeCode = function(code, callback) {
+ManualRuntime.prototype.executeCode = function(code) {
 	currentCmd = code.cmd;
-	this.completeCallback = callback;
+////##	this.completeCallback = callback;
 
 	// Don't honor commands if we're not in a position to do so
 	switch(this.machine.status.state) {

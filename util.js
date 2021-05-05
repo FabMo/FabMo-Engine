@@ -535,7 +535,7 @@ function LineNumberer(options) {
   if (!(this instanceof LineNumberer)) {
     return new LineNumberer(options);
   }
-  this.count = 0;
+  this.count = 20; ////## lower numbers for prepend/postpend
   this.start = true;
   this.input = "";
   this.output = "";
