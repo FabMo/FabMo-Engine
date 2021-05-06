@@ -44,7 +44,7 @@
     "text-loader": "0.0.1",
     "tingodb": "^0.6.1",
     "tmp": "0.0.31",
-    "underscore": "1.8.3",
+    "underscore": "1.12.1",
     "url-loader": "0.5.7",
     "webpack": "1.13.2",
     "wireless-tools": "jlucidar/nodejs-network-tools",
