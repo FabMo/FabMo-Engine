@@ -715,15 +715,21 @@ SBPRuntime.prototype._exprBreaksStack = function(expr) {
 // This function is called ONCE at the beginning of a program, and is not called again until the program
 // completes, except if a macro (subprogram) is encountered, in which case it is called for that program as well. 
 SBPRuntime.prototype._run = function() {
+////## moved up
+    // Set state variables to kick things off
+    this.started = true;
+    this.waitingForStackBreak = false;
+    this.gcodesPending = false;
+
     log.info("Starting OpenSBP program {SBPRuntime.proto._run}");
     if(this.machine) {
         log.debug("-___ call #1 setState of Machine to RUNNING -file?- {_run}");
         this.machine.setState(this, "running");
     }
-    // Set state variables to kick things off
-    this.started = true;
-    this.waitingForStackBreak = false;
-    this.gcodesPending = false;
+    // // Set state variables to kick things off
+    // this.started = true;
+    // this.waitingForStackBreak = false;
+    // this.gcodesPending = false;
 
     // Create a stat handler that does a few things:
     // 1. Call _executeNext when the motion system is out of moves to feed it more program
@@ -741,7 +747,7 @@ SBPRuntime.prototype._run = function() {
                 this._executeNext();
             break;
             case this.driver.STAT_HOLDING:
-                log.debug("   -call #3setState Machine RUNNING {_run}")
+                log.debug("   -call #3setState Machine PAUSE {_run}")
                 this.machine.setState(this, 'paused');
             break;
             case this.driver.STAT_PROBE:
@@ -1817,7 +1823,6 @@ SBPRuntime.prototype._popFileStack = function() {
 // Emit a g-code into the stream of running codes
 //   s - Can be any g-code but should not contain the N-word
 SBPRuntime.prototype.emit_gcode = function(s) {
-    ////## redundant log.debug("emit_gcode: " + s);
 
     // An N-Word is added to this code to indicate the line number in the original OpenSBP file
     // that generated these codes.  We only track line numbers for the top level program.  
@@ -1829,7 +1834,8 @@ SBPRuntime.prototype.emit_gcode = function(s) {
     this.gcodesPending = true;
     var temp_n = n + 20; ////## save low numbers for prepend/postpend; being done in util for gcode?
     var gcode = 'N' + temp_n + ' ' + s; 
-    log.debug('Writing to stream: ' + gcode)
+    log.debug('Writing to stream in emit_gcode: ' + gcode);
+    log.debug("emit_gcode: " + gcode);
     gcode = gcode + '\n ';
     this.stream.write(gcode);
 };
@@ -1840,7 +1846,6 @@ SBPRuntime.prototype.emit_gcode = function(s) {
 SBPRuntime.prototype.emit_move = function(code, pt) {
     var gcode = code;
     var i;
-    log.debug("Emit_move: " + code + " " + JSON.stringify(pt));
 
     ['X','Y','Z','A','B','C','I','J','K','F'].forEach(function(key){
         var c = pt[key];
@@ -1859,8 +1864,6 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
             else if(key === "C") { this.cmd_posc = c; }
         }
     }.bind(this));
-
-    // log.debug("   emit_move: this.cmd_posx = " + this.cmd_posx );
 
     // Where to save the start point of an arc that isn't transformed??????????
     var tPt = this.transformation(pt);
@@ -1899,7 +1902,6 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
                 gcode += (key + v.toFixed(5));
             }
         }.bind(this));
-        ////## redundant log.debug("emit_move: N" + n + JSON.stringify(gcode));
         this.emit_gcode(gcode);
     }.bind(this);
 
@@ -1929,7 +1931,6 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
         }
         tPt.Z = theoriticalZ + relativeHeight;
         opFunction(tPt);
-        log.debug("emit_move:level");
     }
     else {
         opFunction(tPt);

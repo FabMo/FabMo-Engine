@@ -245,8 +245,8 @@ G2.prototype._createCycleContext = function() {
 		this._streamDone = true;
 		// TODO factor this out, see above
 		if(!this.quit_pending) {
-			this.gcode_queue.enqueue('M100 ({out4:0})')
-			this.gcode_queue.enqueue('M30');
+////##			this.gcode_queue.enqueue('M100 ({out4:0})')
+////##			this.gcode_queue.enqueue('M30');
 		}
 		this.sendMore();
 		log.debug("***Stream END event.")
@@ -616,6 +616,7 @@ G2.prototype.handleStatusReport = function(response) {
 				this.context.emit('stat', response.sr.stat);
 			}
 		}
+        // this is just emitting the full current status report
 		this.emit('status', this.status);
 	}
 };
@@ -719,7 +720,7 @@ G2.prototype.queueFlush = function(callback) {
 	this.command({'clr':null});
 
 	this._write('\x04\n');
-	this._write('\x04\n');
+//	this._write('\x04\n');
 
 	////## this._write('\%');  // this produces a stat:3 which creates z-down after pull-up
 
@@ -843,9 +844,9 @@ G2.prototype.sendM30 = function() {
 	// Clear the gcodes we have queued up
     // we should have no gcodes in queue since we only get here when the gcode runtime is notified that we
     // just transitioned to stat:3. Before we send new gcodes, we should start a new Cycle Context.
-	this.gcode_queue.clear();
+////##	this.gcode_queue.clear();
 	// Issue the M30
-    log.debug("Sending M30 at end of CycleContext");
+    log.debug("Sending extra M30 at end of CycleContext");
 	this._write('M30\n');
 }
 
@@ -1082,7 +1083,6 @@ G2.prototype.getInfo = function() {
 // This implements the so-called "linemode" protocol (see G2 source documentation for more info)
 // https://github.com/synthetos/g2/wiki/g2core-Communications
 G2.prototype.sendMore = function() {
-
   // Don't ever send anything if we're paused
 	if(this.pause_flag) {
 		return;
@@ -1117,6 +1117,7 @@ G2.prototype.sendMore = function() {
 	} else {
 		if(this.gcode_queue.getLength() > 0) {
 			log.debug("Not sending because not primed.");
+//log.stack();
 		}
 	}
 };

@@ -810,9 +810,30 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 
 		switch(newstate) {
 			case 'idle':
+				// If we're changing from a non-idle state to the idle state
+				// Go ahead and request the current machine position and write it to disk.  This 
+				// is done regularly, so that if the machine is powered down it retains the current position
+// 				if(this.status.state != newstate) {
+// log.debug("call MPO from machine");
+//                     this.driver.get('mpo', function(err, mpo) {
+// 					    if(config.instance) {
+// 						    config.instance.update({'position' : mpo});
+// 					    }
+// 				    });
+//                 }
 				if(this.status.state != 'idle') {
-					this.driver.command({"out4":0}); // Permissive relay
+log.debug("call final lines from machine");
+					this.driver.command("M100 ({out4:0})\n M30"); // Permissive relay
+////##					this.driver.command({"out4":0}); // Permissive relay
 					// A switch to the 'idle' state means we change to the idle runtime
+
+log.debug("call MPO from machine");
+                    this.driver.get('mpo', function(err, mpo) {
+					    if(config.instance) {
+						    config.instance.update({'position' : mpo});
+					    }
+				    });
+
 					if(this.current_runtime != this.idle_runtime) {
 						this.setRuntime(null, function() {});
 					}	
@@ -833,16 +854,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				}
 				this.action = null;
 
-				// If we're changing from a non-idle state to the idle state
-				// Go ahead and request the current machine position and write it to disk.  This 
-				// is done regularly, so that if the machine is powered down it retains the current position
-				if(this.status.state != newstate) {
-                    this.driver.get('mpo', function(err, mpo) {
-					    if(config.instance) {
-						    config.instance.update({'position' : mpo});
-					    }
-				    });
-                }
 				break;
 			case 'paused':
                 if(this.status.state != newstate) {
