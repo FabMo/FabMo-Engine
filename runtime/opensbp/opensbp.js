@@ -736,7 +736,7 @@ SBPRuntime.prototype._run = function() {
     // 2. Set the machine state to paused or running based on the state of the motion system
     // 3. Handle a feedhold edge case (feedhold issued while system was not executing motion)
     var onStat = function(stat) {
-        log.debug("onSTAT ...")
+        log.debug("onSTAT ..." + stat)
         if(this.inManualMode) {
             return;
         }
@@ -766,8 +766,11 @@ SBPRuntime.prototype._run = function() {
                     }
                 } 
             break;
+            case this.driver.STAT_END:
+                log.debug("  -got END> ");                
+            break;
             default:
-                log.debug("  -NoChange > " + this.machine.status.state);                
+                log.debug("  -Unrecognized STAT> ");                
         }
     }
 
@@ -991,6 +994,7 @@ SBPRuntime.prototype._end = function(error) {
                     cleanup(error);
                 }.bind(this));
             } else {
+log.debug("CALL from OSBP to reset unit in _end ")
                 this.driver.setUnits(config.machine.get('units'), function() {
                     this.machine.setState(this, 'idle');
                     cleanup(error);                    

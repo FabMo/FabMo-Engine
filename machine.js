@@ -37,6 +37,9 @@ var canResume = false;
 var clickDisabled = false;
 var interlockBypass = false;
 
+////## total temp KLUDGE
+global.CUR_RUNTIME;
+
 // Load up all the runtimes that are currently defined
 // TODO - One day, a folder-scan and auto-registration process might be nice here, this is all sort of hand-rolled.
 var GCodeRuntime = require('./runtime/gcode').GCodeRuntime;
@@ -196,6 +199,7 @@ function Machine(control_path, callback) {
 	// If any of the axes in G2s configuration become enabled or disabled, we want to show or hide
 	// them accordingly.  These change events happen even during the initial configuration load, so
 	// right from the beginning, we will be displaying the correct axes.
+	////## TODO - extra axes
 	// TODO - I think it's good to used named callbacks, to make the code more self-documenting
     config.driver.on('change', function(update) {
     	['x','y','z','a','b'].forEach(function(axis) {
@@ -739,6 +743,7 @@ Machine.prototype._runFile = function(filename) {
 // Set the active runtime
 // If the selected runtime is different than the current one,
 // disconnect the current one, and connect the new one.
+////##
 Machine.prototype.setRuntime = function(runtime, callback) {
 	runtime = runtime || this.idle_runtime;
 	try {
@@ -749,6 +754,8 @@ Machine.prototype.setRuntime = function(runtime, callback) {
 				}
 				this.current_runtime = runtime;
 				runtime.connect(this);
+global.CUR_RUNTIME = runtime;
+
 			}
 		} else {
 			this.current_runtime = this.idle_runtime;
@@ -813,18 +820,12 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				// If we're changing from a non-idle state to the idle state
 				// Go ahead and request the current machine position and write it to disk.  This 
 				// is done regularly, so that if the machine is powered down it retains the current position
-// 				if(this.status.state != newstate) {
-// log.debug("call MPO from machine");
-//                     this.driver.get('mpo', function(err, mpo) {
-// 					    if(config.instance) {
-// 						    config.instance.update({'position' : mpo});
-// 					    }
-// 				    });
-//                 }
 				if(this.status.state != 'idle') {
 log.debug("call final lines from machine");
-					this.driver.command("M100 ({out4:0})\n M30"); // Permissive relay
-////##					this.driver.command({"out4":0}); // Permissive relay
+//log.stack();
+////##					this.driver.command("M100 ({out4:0})\n M30"); // Permissive relay
+					this.driver.command({"out4":0}); // Permissive relay
+					this.driver.command({"gc":"m30"}); // Generate End
 					// A switch to the 'idle' state means we change to the idle runtime
 
 log.debug("call MPO from machine");
@@ -884,7 +885,6 @@ log.debug("call MPO from machine");
 				log.error('G2 is dead!');
 				break;
 			default:
-                //this.driver.command({"out4":1}); ////## ??Original Location??
 				break;
 		}
 

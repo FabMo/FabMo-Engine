@@ -115,6 +115,12 @@ CycleContext.prototype.then = function(f) {
 // Sort of a do-nothing, for now
 CycleContext.prototype.finish = function() {
 	log.debug("Finishing up the cycle context.");
+////## attempt to get finish before updating
+	// if (global.CUR_RUNTIME !=  "[IdleRuntime]") {
+	// 	log.debug("APPEND to cycle - " + global.CUR_RUNTIME)	
+	// 	this.command({"out4":0});   // Permissive relay off
+	// 	this.command({"gc":"m30"}); // Generate End for G2
+	// }
 }
 
 // Emit the provided data to all the listeners to the subscribed event
@@ -231,11 +237,19 @@ G2.prototype._createCycleContext = function() {
 		}
 	}.bind(this));
 
-	// Set absolute, spindle speed default, units, and turn on output 4
-	// TODO: create default variable for S-value for VFD spindle control, just a dummy here now
+	////####
+	// Items that need to be pre-pended for all normal motions cycles.
+	// So, if we are not in IdleRuntime, then ...
+	// Set absolute, spindle speed default, units, and turn on output 4 & ...
+	// M0 sets G2 to 'File Stop' stat:3; thus avoids accidentally starting in stat:4
+	// ... these conditions are exited when in machine as it goes back to idle
 	////## S1000 is default for spindle speed so that m3 (and SO,1,1) will work correctly w/delay w/o speed
-	////## M0 sets G2 to 'File Stop' stat:3; thus avoids accidentally starting in stat:4
-	st.write('N1 G90\n ' + 'N2 S1000\n ' + 'N3 G61\n ' + 'N4 M100 ({out4:1})\n ' + 'N5 M0\n ');
+	////## TODO: create default variable for S-value for VFD spindle control, just a dummy here now
+    ////## TODO: fix this kludge to get the current_runtime !
+	if (global.CUR_RUNTIME !=  "[IdleRuntime]") {
+		log.debug("PREPEND to cycle - " + global.CUR_RUNTIME)	
+		st.write('N1 G90\n ' + 'N2 S1000\n ' + 'N3 G61\n ' + 'N4 M100 ({out4:1})\n ' + 'N5 M0\n ');
+	}
 
 	// Handle a stream finishing or disconnecting.
 	st.on('end', function() {
@@ -243,11 +257,6 @@ G2.prototype._createCycleContext = function() {
 		// Send whatever is left in the queue.  (There may be stuff unsent even after the stream is over)
 		this._primed = true;
 		this._streamDone = true;
-		// TODO factor this out, see above
-		if(!this.quit_pending) {
-////##			this.gcode_queue.enqueue('M100 ({out4:0})')
-////##			this.gcode_queue.enqueue('M30');
-		}
 		this.sendMore();
 		log.debug("***Stream END event.")
 	}.bind(this));
@@ -367,6 +376,7 @@ G2.prototype.clearAlarm = function() {
 // Units are sort of weird, and our fork of the g2 firmware hijacks the "gun" command
 // to set the system units.  (Conventionally, you have to use a G-code to do this)
 G2.prototype.setUnits = function(units, callback) {
+log.debug("SET UNITS req")
 	this.command({gun:(units === 0 || units == 'in') ? 0 : 1});
 	this.requestStatusReport(function(stat) { callback()});
 }
@@ -611,12 +621,12 @@ G2.prototype.handleStatusReport = function(response) {
 
 		// Emit status no matter what
 		if('stat' in response.sr) {
+log.debug("EMITTING new STAT - " + this.stat)
 			this.emit('stat', response.sr.stat)
 			if(this.context) {
 				this.context.emit('stat', response.sr.stat);
 			}
 		}
-        // this is just emitting the full current status report
 		this.emit('status', this.status);
 	}
 };
@@ -720,7 +730,7 @@ G2.prototype.queueFlush = function(callback) {
 	this.command({'clr':null});
 
 	this._write('\x04\n');
-//	this._write('\x04\n');
+	this._write('\x04\n');
 
 	////## this._write('\%');  // this produces a stat:3 which creates z-down after pull-up
 
@@ -844,7 +854,7 @@ G2.prototype.sendM30 = function() {
 	// Clear the gcodes we have queued up
     // we should have no gcodes in queue since we only get here when the gcode runtime is notified that we
     // just transitioned to stat:3. Before we send new gcodes, we should start a new Cycle Context.
-////##	this.gcode_queue.clear();
+	this.gcode_queue.clear();
 	// Issue the M30
     log.debug("Sending extra M30 at end of CycleContext");
 	this._write('M30\n');
@@ -994,12 +1004,14 @@ G2.prototype.command = function(obj) {
 	var cmd;
 	if((typeof obj) == 'string') {
 		cmd = obj.trim();
+//log.debug("GCODE(lowPrior)_enqueue")
 		this.gcode_queue.enqueue(cmd);
 	} else {
 		// G2 supports a "truncated" format that allows for more compact JSON
 		cmd = JSON.stringify(obj);
 		cmd = cmd.replace(/(:\s*)(true)(\s*[},])/g, "$1t$3")
 		cmd = cmd.replace(/(:\s*)(false)(\s*[},])/g, "$1f$3")
+//log.debug("COMMAND_(hiPrior)enqueue")
 		this.command_queue.enqueue(cmd);
 	}
 	this.sendMore();
@@ -1083,6 +1095,7 @@ G2.prototype.getInfo = function() {
 // This implements the so-called "linemode" protocol (see G2 source documentation for more info)
 // https://github.com/synthetos/g2/wiki/g2core-Communications
 G2.prototype.sendMore = function() {
+
   // Don't ever send anything if we're paused
 	if(this.pause_flag) {
 		return;
@@ -1117,7 +1130,7 @@ G2.prototype.sendMore = function() {
 	} else {
 		if(this.gcode_queue.getLength() > 0) {
 			log.debug("Not sending because not primed.");
-//log.stack();
+////##log.stack();
 		}
 	}
 };
