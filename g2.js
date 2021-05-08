@@ -730,7 +730,7 @@ G2.prototype.queueFlush = function(callback) {
 	this.command({'clr':null});
 
 	this._write('\x04\n');
-	this._write('\x04\n');
+////##	this._write('\x04\n');
 
 	////## this._write('\%');  // this produces a stat:3 which creates z-down after pull-up
 
