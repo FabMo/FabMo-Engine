@@ -785,11 +785,12 @@ G2.prototype.quit = function() {
 	if(this.stream) {
 		this.stream.end()
 	}
-	// Clear cues in FabMo and G2
+	// Clear queues in FabMo and G2
 	////##this.gcode_queue.clear();
 	this.queueFlush(function() {
 	    log.debug("Sending additional G2-Kills, now!"); ////##
 		this._write('\x04\n');  ////## needed for case of quit in previous file, UGH! 
+////##		this._write('\%\n'); ////## FLUSH; just doing kill not working right in edge-preview
 ////##		this._write('\x04\n');
 		//Finally clear context and _reset primed flag so we're not reliant on getting a stat 4 to clear the context.
 		this.context = null;
