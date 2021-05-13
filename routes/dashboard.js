@@ -214,7 +214,7 @@ module.exports = function(server) {
 //    server.get(/\/approot\/?.*/, static({
     server.get("/approot/*", static({
         directory: config.getDataDir('approot'),
-    });
+    }));
     server.get("/approot*", static({
         directory: config.getDataDir('approot'),
     }));
