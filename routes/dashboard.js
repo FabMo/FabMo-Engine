@@ -210,8 +210,12 @@ module.exports = function(server) {
     server.get('/apps/:id/files', listAppFiles);
 // rmackie: this can't stand - must replace it, but for now it allows a step forward
 //  here is a first attempt. the comment is the old, the rest is the new.
+// have broken it into 2 globs that replace the one regex.
 //    server.get(/\/approot\/?.*/, static({
-    server.get(/\/approot\/*/, static({
+    server.get("/approot/*", static({
+        directory: config.getDataDir('approot'),
+    });
+    server.get("/approot*", static({
         directory: config.getDataDir('approot'),
     }));
     server.get('/updater', updater);
