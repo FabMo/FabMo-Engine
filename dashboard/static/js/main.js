@@ -301,7 +301,6 @@ require("../css/toastr.min.css");
                                                         }
                                                     );
                             }
-          
                         });
                     } else if (status.state === 'interlock') {
                         interlockDialog = true;
@@ -320,7 +319,6 @@ require("../css/toastr.min.css");
                                                         }
                                                     );
                             },
-
                             okText: 'Resume',
                             ok: function() {
                                 dashboard.engine.resume();

@@ -37,6 +37,9 @@ var canResume = false;
 var clickDisabled = false;
 var interlockBypass = false;
 
+////## total temp KLUDGE
+global.CUR_RUNTIME;
+
 // Load up all the runtimes that are currently defined
 // TODO - One day, a folder-scan and auto-registration process might be nice here, this is all sort of hand-rolled.
 var GCodeRuntime = require('./runtime/gcode').GCodeRuntime;
@@ -196,6 +199,7 @@ function Machine(control_path, callback) {
 	// If any of the axes in G2s configuration become enabled or disabled, we want to show or hide
 	// them accordingly.  These change events happen even during the initial configuration load, so
 	// right from the beginning, we will be displaying the correct axes.
+	////## TODO - extra axes
 	// TODO - I think it's good to used named callbacks, to make the code more self-documenting
     config.driver.on('change', function(update) {
     	['x','y','z','a','b'].forEach(function(axis) {
@@ -503,7 +507,6 @@ Machine.prototype.arm = function(action, timeout) {
 
 // Collapse out of the armed state.  Happens when the user hits cancel in the authorize dialog.
 Machine.prototype.disarm = function() {
-	log.stack();
 	if(this._armTimer) { clearTimeout(this._armTimer);}
 	this.action = null;
 	this.fireButtonDebounce = false;
@@ -740,6 +743,7 @@ Machine.prototype._runFile = function(filename) {
 // Set the active runtime
 // If the selected runtime is different than the current one,
 // disconnect the current one, and connect the new one.
+////##
 Machine.prototype.setRuntime = function(runtime, callback) {
 	runtime = runtime || this.idle_runtime;
 	try {
@@ -750,6 +754,8 @@ Machine.prototype.setRuntime = function(runtime, callback) {
 				}
 				this.current_runtime = runtime;
 				runtime.connect(this);
+global.CUR_RUNTIME = runtime;
+
 			}
 		} else {
 			this.current_runtime = this.idle_runtime;
@@ -794,10 +800,10 @@ Machine.prototype.getRuntime = function(name) {
 // stateinfo - The contents of the 'info' field of the status report, if needed.
 Machine.prototype.setState = function(source, newstate, stateinfo) {
 	this.fireButtonDebounce = false ;
-	
+	log.debug("... {setState} for a runtime");
+	log.debug(source);
 	if ((source === this) || (source === this.current_runtime)) {
-		log.info("Got a machine state change: " + newstate)
-	
+		log.info("... {setState} change to: " + newstate)
 		// Set the info field
 		// status.info.id is the info field id - it helps the dash with display of dialogs
 		if(stateinfo) {
@@ -811,9 +817,24 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 
 		switch(newstate) {
 			case 'idle':
+				// If we're changing from a non-idle state to the idle state
+				// Go ahead and request the current machine position and write it to disk.  This 
+				// is done regularly, so that if the machine is powered down it retains the current position
 				if(this.status.state != 'idle') {
+log.debug("call final lines from machine");
+//log.stack();
+////##					this.driver.command("M100 ({out4:0})\n M30"); // Permissive relay
 					this.driver.command({"out4":0}); // Permissive relay
+					this.driver.command({"gc":"m30"}); // Generate End
 					// A switch to the 'idle' state means we change to the idle runtime
+
+log.debug("call MPO from machine");
+                    this.driver.get('mpo', function(err, mpo) {
+					    if(config.instance) {
+						    config.instance.update({'position' : mpo});
+					    }
+				    });
+
 					if(this.current_runtime != this.idle_runtime) {
 						this.setRuntime(null, function() {});
 					}	
@@ -834,16 +855,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				}
 				this.action = null;
 
-				// If we're changing from a non-idle state to the idle state
-				// Go ahead and request the current machine position and write it to disk.  This 
-				// is done regularly, so that if the machine is powered down it retains the current position
-				if(this.status.state != newstate) {
-                    this.driver.get('mpo', function(err, mpo) {
-					    if(config.instance) {
-						    config.instance.update({'position' : mpo});
-					    }
-				    });
-                }
 				break;
 			case 'paused':
                 if(this.status.state != newstate) {
@@ -863,7 +874,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 					var interlockInput = 'in' + config.machine.get('interlock_input');
 					
 				    if(interlockRequired && this.driver.status[interlockInput] && !interlockBypass) {
-						log.stack();
 						this.interlock_action = null;
 						this.setState(this, 'interlock')		
 						return
@@ -875,7 +885,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				log.error('G2 is dead!');
 				break;
 			default:
-                //this.driver.command({"out4":1});
 				break;
 		}
 
@@ -937,18 +946,20 @@ Machine.prototype.quit = function(callback) {
 		this.status.job.pending_cancel = true;
 	}
 	if(this.current_runtime) {
+log.debug("ppp... job.pending_quit!")			
 		log.info("Quitting the current runtime...")
 		this.current_runtime.quit();
+log.debug("ppp... quit_pending?")
 		if (callback) {
 			callback(null, 'quit');
 		}
-		alreadyQuiting = false;
+			alreadyQuiting = false;
 	} else {
 		log.warn("No current runtime!")
-		if (callback) {
+		if (callback) {	
 			callback("Not quiting because no current runtime")
 		}
-	}
+	}    
 };
 
 // Resume from the paused state.
@@ -1093,7 +1104,8 @@ Machine.prototype._runNextJob = function(force, callback) {
 		if(this.status.state === 'armed' || force) {
 			log.info("Running next job");
 			db.Job.dequeue(function(err, result) {
-				log.info(result);
+log.debug("@_runNextJob in machine")
+				log.info("result- " + result);
 				if(err) {
 					log.error(err);
 					callback(err, null);
