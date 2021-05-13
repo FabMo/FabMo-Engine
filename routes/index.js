@@ -47,7 +47,7 @@ module.exports = function(server) {
 	// This has to be defined after all the other routes, or it plays havoc with things
 
 	//server.get(/.*/, function(req, res, next) {
-	server.get("/*", function(req, res, next) {
+	server.get("*", function(req, res, next) {
 		var current_hash = config.engine.get('version');
 		var url_arr = req.url.split('/');
 		if(url_arr[1] != current_hash){

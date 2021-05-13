@@ -59,7 +59,7 @@ if(udev) {
 function configure_listener(gstreamer){
   if(gstreamer) {
     gstreamer.stdout.on('data', function (data) {
-      var frame = new Buffer(data).toString('base64');
+      var frame = Buffer.alloc(data.length).toString('base64');
       server.io.of('/video').emit('frame',frame);
     });
 

@@ -10,6 +10,8 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const Promise = require('es6-promise').Promise;
 const es6_promise = require('es6-promise').polyfill();
 
+process.traceDeprecation = true;
+
 var cleanOptions = {
   exclude:  ['index.html'],
 }
@@ -68,7 +70,7 @@ var config = {
     },
     plugins: [
 	new CleanWebpackPlugin({
-            dry: true,
+            dry: false,
             verbose: true,
             cleanOnceBeforeBuildPatterns: [
                '**/*',

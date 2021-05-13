@@ -81,7 +81,7 @@
     "webpack": "node_modules/.bin/webpack",
     "postinstall": "node_modules/.bin/webpack --mode=development",
     "prod": "node_modules/.bin/webpack --mode=development",
-    "dev": "node_modules/.bin/webpack && node server.js --debug ",
+    "dev": "node_modules/.bin/webpack && node --trace-deprecation server.js --debug ",
     "build": "webpack --mode=development",
     "build:dev": "webpack --mode=development",
     "build:prod": "webpack --mode=development",
