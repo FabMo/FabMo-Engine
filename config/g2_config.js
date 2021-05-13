@@ -24,7 +24,8 @@ G2Config.prototype.init = function(driver, callback) {
 
 // Change the current unit system to the provided value.
 //  newUnits - The new unit system (0=mm, 1=in)
-// Note that the units are set by setting the 'unit' parameter, which is unique to the FabMo variant of G2
+//  note that the units are set by setting the 'unit' parameter; which was originally a unique FabMo
+//  ... variant of G2; with successive versions was represented in g2; and with edge preview, started misbehaving 
 G2Config.prototype.changeUnits = function(newUnits, callback) {
 	this.driver.get('unit', function(err, currentUnits){
 		if(err){
@@ -49,8 +50,6 @@ G2Config.prototype.changeUnits = function(newUnits, callback) {
 			}
 		}
 	}.bind(this));
-
-
 }
 
 // Retrieve all of the configuration parameters from G2.
@@ -72,7 +71,6 @@ G2Config.prototype.getFromDriver = function(callback) {
 				callback(null, obj);
 			}
 		}
-
 	});
 }
 
@@ -96,6 +94,7 @@ G2Config.prototype.reverseUpdate = function(keys, callback) {
 //       data - Object mapping keys to update to values
 //   callback - Called with an object mapping keys to all values updated (after sync with G2)
 G2Config.prototype.update = function(data, callback) {
+////##log.stack();
 	keys = Object.keys(data);
 	// TODO: We can probably replace this with a `setMany()`
 	async.mapSeries(
@@ -120,7 +119,6 @@ G2Config.prototype.update = function(data, callback) {
 				this._cache[key] = value;
 				retval[key] = value;
 			}
-
 			this.save(function(err, result) {
 				if(err) {
 					callback(err);
