@@ -386,6 +386,8 @@ log.debug("SET UNITS req")
 G2.prototype.requestStatusReport = function(callback) {
 	// Register the callback to be called when the next status report comes in
 	typeof callback === 'function' && this.once('status', callback);
+	//log.debug("***REQUESTING SR");
+	//log.stack();
 	this.command({'sr':null});
 };
 
@@ -694,7 +696,7 @@ G2.prototype.manualFeedHold = function(callback) {
 
 	////## needs flag that says stopping
 
-	this.pause_flag = true;
+	this.pause_flag = true;       ////## ??
 
 	this._write('\x04\n');
 	// this.gcode_queue.clear();  ////## seems redundant
@@ -715,9 +717,9 @@ G2.prototype.feedHold = function(callback) {
 		this.context.pause();
 	}
 	// TODO this "drained" printout is an old debug thing that can be removed
-	this._write('!\n', function() {
-		log.debug("Drained.OLD?");
-	});
+		this._write('!\n', function() {
+			log.debug("Drained.OLD?");
+		});
 };
 
 // Clears the queue, this means both the queue of g-codes in the engine to send,
@@ -768,9 +770,11 @@ G2.prototype.resume = function() {
 	if(this.context) {
 		this.context.resume();
 	}
+
 	this.requestStatusReport(function(sr) {
 		this.pause_flag = false;
 	}.bind(this));
+
 	return deferred.promise;
 };
 

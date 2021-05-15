@@ -862,7 +862,8 @@ log.debug("call MPO from machine");
                 	// log.debug('paused state: pause_hold is:  ' + this.driver.pause_hold);
                 	this.driver.pause_hold = true;
                 	// log.debug('paused state: pause_hold set to:  ' + this.driver.pause_hold);
-
+				////## tested source of extra stat:6 by removing mpo call >> no effect
+				////## ... does seem being applied later than intended
                 	// Save the position to the instance configuration.  See note above.
                     this.driver.get('mpo', function(err, mpo) {
 					    if(config.instance) {
