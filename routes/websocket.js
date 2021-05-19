@@ -11,7 +11,9 @@ var clients_limit = 5;
 var nb_clients=0;
 
 function setupAuthentication(svr) {
+	log.info("setup of /private callback function invoked"); //rmackie
 	server.io.of('/private').use(function(socket, next) {
+		log.info("/private callback function invoked");      //rmackie
 		var handshakeData = socket.request;
         // Check that the cookie header is present
         if (!handshakeData.headers.cookie) {
@@ -112,6 +114,9 @@ var onPublicConnect = function(socket) {
 
 
 var onPrivateConnect = function(socket) {	
+
+	log.info("Private client connected."); //rmackie
+
 	if(!socket.request.sessionID.content.passport) {
 		return socket.disconnect();
 	}
@@ -198,8 +203,6 @@ var onPrivateConnect = function(socket) {
 		console.error(data);
 	});
 
-
-
 	onPublicConnect(socket); // inherit routes from the public function
 
 };
@@ -208,7 +211,9 @@ module.exports = function(svr) {
 	server = svr
 	setupAuthentication(server);
 	server.io.on('connection', onPublicConnect);
-	server.io.of('/private').on('connection', onPrivateConnect);
+	// rmackie we don't follow the callback when this happens
+	local privateNamespace = server.io.of('/private');
+	privateNamespace.on('connection', onPrivateConnect);
 	setupStatusBroadcasts(server);
 };
 
