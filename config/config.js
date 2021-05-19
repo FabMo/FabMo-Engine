@@ -139,7 +139,7 @@ Config.prototype.save = function(callback) {
 				log.error(err);
 				callback(err);
 			} else {
-				var cfg = new Buffer(JSON.stringify(this._cache, null, 4));
+				var cfg = Buffer.from(JSON.stringify(this._cache, null, 4));
 				fs.write(fd, cfg, 0, cfg.length, 0, function(err, written, string) {
 					if(err) {
 						log.error(err);
