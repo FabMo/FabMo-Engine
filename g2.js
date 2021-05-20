@@ -248,7 +248,7 @@ G2.prototype._createCycleContext = function() {
     ////## TODO: fix this kludge to get the current_runtime !
 	if (global.CUR_RUNTIME !=  "[IdleRuntime]") {
 		log.debug("PREPEND to cycle - " + global.CUR_RUNTIME)	
-		st.write('N1 G90\n ' + 'N2 S1000\n ' + 'N3 G61\n ' + 'N4 M100 ({out4:1})\n ' + 'N5 M0\n ');
+		st.write('N1 G90\n' + 'N2 S1000\n' + 'N3 G61\n' + 'N4 M100 ({out4:1})\n' + 'N5 M0\n');
 	}
 
 	// Handle a stream finishing or disconnecting.
@@ -1111,7 +1111,7 @@ G2.prototype.sendMore = function() {
 		var codes = this.command_queue.multiDequeue(count)
 		codes.push("");
 		this._ignored_responses+=to_send;
-		this._write(codes.join('\n '), function() {});
+		this._write(codes.join('\n'), function() {});
 	}
 
 	// If we're primed, go ahead and send more g-codes
@@ -1126,7 +1126,7 @@ G2.prototype.sendMore = function() {
 					codes.push(""); 
 					if(codes.length > 1) {
 						this.lines_to_send -= to_send/*-offset*/;
-						this._write(codes.join('\n '), function() { });
+						this._write(codes.join('\n'), function() { });
 				}
 			}
 		}
