@@ -132,6 +132,7 @@ Config.prototype.load = function(filename, callback) {
 //   callback - Called with null once the configuration is saved (or with error if error)
 Config.prototype.save = function(callback) {
 	var config_file = this.getConfigFile();
+	//log.stack(); ////## maybe use this to get at logic for config reporting after some file runs
 	if(this._loaded && config_file) {
 		log.debug("Saving config to " + config_file);
 		fs.open(config_file, 'w', function(err, fd) {

@@ -56,11 +56,16 @@ GCodeRuntime.prototype.resume = function() {
 }
 
 GCodeRuntime.prototype._changeState = function(newstate) {
-	log.debug("Changing state to " + newstate)
+	//log.debug("Changing state to " + newstate)
 	if(newstate != "idle") {
 		this.ok_to_disconnect = false;
 	}
-	this.machine.setState(this, newstate);
+    if(this.machine.status.state != newstate) {
+    	log.debug("-___changing state to " + newstate)
+        this.machine.setState(this, newstate);
+    } else {
+        log.debug("  -noChange > " + this.machine.status.state); 
+    }
 };
 
 GCodeRuntime.prototype._limit = function() {
@@ -167,11 +172,12 @@ GCodeRuntime.prototype._handleStateChange = function(stat) {
             // There may have been an M30 in the file but the g2core will have ignored it, this
             // may change someday in the future on the g2core end, so we may end up revisiting this.
             // OTOH, an extra M30 should not cause a problem.
+			this._changeState('stopped');
             if (this._file_or_stream_in_progress) {
+            	log.debug("  ... and calling M30 from g2")
                 this.driver.sendM30();
                 this._file_or_stream_in_progress = false;
             }
-
 		default:
 			break;
 	}
@@ -180,6 +186,15 @@ GCodeRuntime.prototype._handleStateChange = function(stat) {
 // Run a given stream input
 GCodeRuntime.prototype.runStream = function(st) {
 	//determine if this is a short stream and needs to manually prime
+
+	////## to parallel opensbp ??
+    if(this.machine) {
+        log.debug("-___ call #1 setState of Machine to RUNNING -file?- {_run}");
+        this.machine.setState(this, "running");
+		//this._changeState('running');
+    }
+
+    log.debug("-___ sending Stream {runStream}");
 	var manualPrime = this.machine.status.nb_lines < this.driver.primedThreshold;
 	var ln = new LineNumberer();
 	return this.driver.runStream(st.pipe(ln), manualPrime)

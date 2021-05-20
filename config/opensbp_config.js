@@ -41,6 +41,7 @@ OpenSBPConfig.prototype.load = function(filename, callback) {
 		if(data.hasOwnProperty('tempVariables')) {
 			delete data['tempVariables'];
 		}
+log.debug("... calling config update")
 		this.update(data, function(err, d) {
 			callback(err, data);
 		}, true);

@@ -61,10 +61,9 @@ function setupAuthentication(svr) {
 function setupStatusBroadcasts(server){
 	var previous_status = {'state':null}
 	machine.on('status',function(status){
-		console.log('Status broadcast');
-		console.log(JSON.stringify(status));
-// rmackie: this is a real fix. remove this comment soon. there was a breaking upgrade and this responds to it.
-		Object.keys(server.io.sockets.sockets).forEach(function (socketId) {
+//		console.log('Status broadcast');
+//		console.log(JSON.stringify(status));
+		Object.keys(server.io.of('/private').sockets).forEach(function (socketId) { // rmackie
 			if(status.state === 'idle' || status.state != previous_status.state) {
 				server.io.to(socketId).emit('status',status);
 			} else {
@@ -72,7 +71,7 @@ function setupStatusBroadcasts(server){
 			}
 		});
 
-		Object.keys(server.io.sockets.sockets).forEach(function (socketId) {
+		Object.keys(server.io.sockets.sockets).forEach(function (socketId) { // rmackie
 			if(status.state === 'idle' || status.state != previous_status.state) {
 				server.io.to(socketId).emit('status',status);
 			} else {
