@@ -820,7 +820,10 @@ log.debug("### Getting this far in START-ENGINE ###  <======================")
             // Import the routes module and apply the routes to the server
             // Routes are loaded dynamically. See routes/routes.js for details.
             log.info("Loading routes...");
+
+            //server.io = require('socket.io')(server.server);
             server.io = socketio.listen(server.server);
+
             var routes = require('./routes')(server);
 
             // Kick off the server listening for connections

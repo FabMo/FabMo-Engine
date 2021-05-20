@@ -118,6 +118,7 @@ var onPrivateConnect = function(socket) {
 	log.info("Private client connected."); //rmackie
 
 	if(!socket.request.sessionID.content.passport) {
+        log.info("disconnect - no passport");
 		return socket.disconnect();
 	}
 		
@@ -132,6 +133,7 @@ var onPrivateConnect = function(socket) {
 		//console.log("user kickout event");
 		if(user.username == userId){
 			socket.emit('authentication_failed','kicked out');
+            log.info("disconnect - kickedout auth");
 			return socket.disconnect();
 		}
 	});
@@ -152,6 +154,7 @@ var onPrivateConnect = function(socket) {
 			log.error(userId);
 			log.error(authentication.getCurrentUser());
 			socket.emit('authentication_failed','not authenticated');
+			log.info('disconnect: authentication_failed, code');
 			return socket.disconnect();
 		} // make sure that if the user logout, he can't talk through the socket anymore.
 		if('rt' in data) {
@@ -168,6 +171,7 @@ var onPrivateConnect = function(socket) {
 			log.error(userId);
 			log.error(authentication.getCurrentUser());
 			socket.emit('authentication_failed','not authenticated');
+			log.info('disconnect: authentication_failed, cmd');
 			return socket.disconnect();
 		} // make sure that if the user logouts, he can't talk through the socket anymore.
 		log.debug('This Command = ' + data.name);
@@ -212,8 +216,8 @@ module.exports = function(svr) {
 	setupAuthentication(server);
 	server.io.on('connection', onPublicConnect);
 	// rmackie we don't follow the callback when this happens
-	local privateNamespace = server.io.of('/private');
-	privateNamespace.on('connection', onPrivateConnect);
+	var namespace = server.io.of('/private');
+    namespace.on('connection', onPrivateConnect);
 	setupStatusBroadcasts(server);
 };
 
