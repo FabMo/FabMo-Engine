@@ -1847,7 +1847,7 @@ SBPRuntime.prototype.emit_gcode = function(s) {
     var gcode = 'N' + temp_n + ' ' + s; 
     log.debug('Writing to stream in emit_gcode: ' + gcode);
     log.debug("emit_gcode: " + gcode);
-    gcode = gcode + '\n ';
+    gcode = gcode + '\n';
     this.stream.write(gcode);
 };
 
