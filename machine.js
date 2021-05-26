@@ -821,14 +821,14 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				// Go ahead and request the current machine position and write it to disk.  This 
 				// is done regularly, so that if the machine is powered down it retains the current position
 				if(this.status.state != 'idle') {
-log.debug("call final lines from machine");
-//log.stack();
-////##					this.driver.command("M100 ({out4:0})\n M30"); // Permissive relay
+					log.debug("call final lines from machine");
+                    //log.stack();
+                    //this.driver.command("M100 ({out4:0})\n M30"); // Permissive relay
 					this.driver.command({"out4":0}); // Permissive relay
 					this.driver.command({"gc":"m30"}); // Generate End
 					// A switch to the 'idle' state means we change to the idle runtime
 
-log.debug("call MPO from machine");
+					log.debug("call MPO from machine");
                     this.driver.get('mpo', function(err, mpo) {
 					    if(config.instance) {
 						    config.instance.update({'position' : mpo});
@@ -862,8 +862,6 @@ log.debug("call MPO from machine");
                 	// log.debug('paused state: pause_hold is:  ' + this.driver.pause_hold);
                 	this.driver.pause_hold = true;
                 	// log.debug('paused state: pause_hold set to:  ' + this.driver.pause_hold);
-				////## tested source of extra stat:6 by removing mpo call >> no effect
-				////## ... does seem being applied later than intended
                 	// Save the position to the instance configuration.  See note above.
                     this.driver.get('mpo', function(err, mpo) {
 					    if(config.instance) {
@@ -873,13 +871,13 @@ log.debug("call MPO from machine");
 				    // Check the interlock and switch to the interlock state if it's engaged
 				    var interlockRequired = config.machine.get('interlock_required');
 					var interlockInput = 'in' + config.machine.get('interlock_input');
-					
+
 				    if(interlockRequired && this.driver.status[interlockInput] && !interlockBypass) {
 						this.interlock_action = null;
-						this.setState(this, 'interlock')		
+						this.setState(this, 'interlock')
 						return
 					}
-                } 
+                }
 				break;
 			case 'dead':
 				// Sadness
