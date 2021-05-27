@@ -9,7 +9,7 @@
 var restify = require('restify');
 var util = require('./util');
 var events = require('events');
-var socketio = require('socket.io');
+//var socketio = require('socket.io');
 var async = require('async');
 var process = require('process');
 var machine = require('./machine');
@@ -823,8 +823,8 @@ log.debug("### Getting this far in START-ENGINE ###  <======================")
             // Routes are loaded dynamically. See routes/routes.js for details.
             log.info("Loading routes...");
 
-            //server.io = require('socket.io')(server.server);
-            server.io = socketio.listen(server.server);
+            server.io = require('socket.io')(server.server);
+            //server.io = socketio.listen(server.server);
 
             var routes = require('./routes')(server);
 
