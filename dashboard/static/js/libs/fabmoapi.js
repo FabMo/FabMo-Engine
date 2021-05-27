@@ -12,7 +12,7 @@
 }(this, function (io) {
   "use strict"
 
-var io = require("./socket.io.js");
+var io = require("./socket.io.min.js");
 
 var PING_TIMEOUT = 3000;
 var makePostData = function(obj, options) {
