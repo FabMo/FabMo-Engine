@@ -129,7 +129,7 @@ Engine.prototype.setTime = function(time) {
         cmd = 'timedatectl set-time ' + t + '; timedatectl';
         util.doshell(cmd, function(stdout) {
             console.log('time thing');
-            log.debug(stdout);
+            log.debug("  @setTime- " + stdout);
             this.time_synced = true;
         });
     }
@@ -240,8 +240,7 @@ Engine.prototype.start = function(callback) {
         //     ... both versions seem necessary 1/2/21
 
        function setup_application(callback) {
-            log.debug("######## START Debug Test!");
-            log.info('Checking engine data directory tree...');
+            log.info('#START# --> Checking engine data directory tree...');
             config.createDataDirectories(callback);
         },
 
@@ -345,7 +344,7 @@ Engine.prototype.start = function(callback) {
                     config.engine.set('version', this_time_version);
                     if(err) { log.error(err); }
                     else {
-                        log.debug(stdout);  
+                        log.debug("   @flg_cr_approot- " + stdout);  
                     }
                 callback();
                 });

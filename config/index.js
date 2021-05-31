@@ -77,11 +77,11 @@ function configureUser(callback){
 					}
 				});
 			} else {
-				log.warn('Problem loading the user configuration file "' + userFile + '": ' + err.message);
+				log.warn('Problem loading the user configuration file INDEX "' + userFile + '": ' + err.message);
 			}
 		} else {
 			exports.user.initUsers(data, function(msg){
-				log.info(msg);
+				log.info(" user message -  " + msg);
 				callback();
 			});	
 		}

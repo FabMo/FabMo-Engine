@@ -42,7 +42,7 @@ EngineConfig.prototype.update = function(data, callback) {
 					catch(err) {}
 					profile_changed = true;
 				} else {
-					logger.info('Profile is unchanged.');
+					logger.info('No initial profile changed.');
 				}
 			}
 			this._cache[key] = data[key];				
