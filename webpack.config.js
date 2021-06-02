@@ -44,11 +44,6 @@ var config = {
 
     }, 
 
-    devServer: {
-        open: true,
-        host: 'localhost',
-    },
-
     module: {
         rules: [
             {

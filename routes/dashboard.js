@@ -22,6 +22,7 @@ var static = require('../static');
  * @apiSuccess {String} data.apps.id Unique ID of this app (used in app URLs)
  */
 var getApps = function(req, res, next) {
+	log.info("rmackie:X getApps");
 	var answer = {
 		status:"success",
 		data : {apps : dashboard.getAppList()}
@@ -45,6 +46,7 @@ var getApps = function(req, res, next) {
  * @apiSuccess {String} data.app.id Unique ID of this app (used in app URLs)
  */
 var getAppInfo = function(req, res, next) {
+	log.info("rmackie:X getAppInfo");
 	log.info("Getting app " + req.params.id);
 	var answer = {
 		status:"success",
@@ -63,6 +65,7 @@ var getAppInfo = function(req, res, next) {
  * @apiSuccess {Object} data.config App configuration data object
  */
 var getAppConfig = function(req, res, next) {
+	log.info("rmackie:X getAppConfig");
     try {
         var answer = {
             status:"success",
@@ -84,6 +87,7 @@ var getAppConfig = function(req, res, next) {
  * @apiParam {Object} config Generic JSON formatted object to store as the apps configuration.
  */
 var postAppConfig = function(req, res, next) {
+	log.info("rmackie:X postAppConfig");
     var new_config = {};
     var answer;
     dashboard.setAppConfig(req.params.id, req.params.config, function(err, result) {
@@ -136,6 +140,7 @@ var deleteApp = function(req, res, next) {
  * @apiSuccess {Object} root Root of directory tree
  */
 var listAppFiles = function(req, res, next) {
+	log.info("rmackie:X listAppFiles");
 	log.info("Listing files");
 	id = req.params.id;
 
@@ -143,12 +148,12 @@ var listAppFiles = function(req, res, next) {
 	// Add URL attributes to all of the leaves of the file tree
 	function add_urls(node) {
 		if(node.type === 'file') {
-			console.log("rmackie 2: " + node.path);
+			log.info("rmackie 2: " + node.path);
 			node.url = '/approot' + node.path;
 		}
 		if(node.children) {
 			node.children.forEach(function(node) {
-				console.log("rmackie 3: " + node);
+				log.info("rmackie 3: " + node);
 				add_urls(node);
 			});
 		}
@@ -156,7 +161,7 @@ var listAppFiles = function(req, res, next) {
 
 	add_urls(files);
 
-		var answer = {
+	var answer = {
 		status:"success",
 		data : {files : files}
 	};
@@ -164,6 +169,7 @@ var listAppFiles = function(req, res, next) {
 };
 
 var submitApp = function(req, res, next) {
+	log.info("rmackie:X submitApp");
     upload(req, res, next, function(err, uploads) {
         // Multiple apps can be submitted at once.  Process each of them in turn.
         async.map(uploads.files, function(upload_data, callback) {
@@ -195,8 +201,10 @@ var submitApp = function(req, res, next) {
 }; // submitApp
 
 var updater = function(req, res, next) {
+	log.info("rmackie:X updater");
     var host = req.headers.host.split(':')[0].trim('/');
     var url = 'http://' + host + ':' + (config.engine.get('server_port') + 1);
+	log.info("rmackie: host=" + host + " url=" + url);
     res.redirect(303, url, next);   
 }
 

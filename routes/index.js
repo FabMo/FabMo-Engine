@@ -45,14 +45,16 @@ module.exports = function(server) {
 
 	// Define a route for serving static files
 	// This has to be defined after all the other routes, or it plays havoc with things
-
-	//server.get(/.*/, function(req, res, next) {
+	log.info("rmackie: 5000 " + server);
+	//server.get(/.*/, function(req, res, next) 
 	server.get("*", function(req, res, next) {
+		log.info("rmackie: get star: "+ req.url);
 		var current_hash = config.engine.get('version');
 		var url_arr = req.url.split('/');
 		if(url_arr[1] != current_hash){
 			url_arr.splice(1,0, current_hash);
-			var newPath = url_arr.join('/');
+			var newPath = url_arr.join('/'); 
+			log.info("rmackie: current hash mismatch, redirect:" + newPath);
 			res.redirect(newPath , next);
 		} else {
 			next();
@@ -64,9 +66,5 @@ module.exports = function(server) {
 			default: 'index.html'
 		})
 	);
-
-
-
-
 
 };

@@ -173,16 +173,20 @@ function upload(req, res, next, callback) {
 function updaterRedirect(req, res, next) {
     switch(req.method) {
         case 'GET':
+			log.info("rmackie: 4000" + req.url);
             var host = req.headers.host.split(':')[0].trim('/');
             var path = req.params[0];
             var url = 'http://' + host + ':' + (config.engine.get('server_port') + 1) + '/' + path;
+			log.info("rmackie: 4001" + url);
             res.redirect(302, url, next);
             break;
 
         case 'POST':
+			log.info("rmackie: 4002" + req.url);
             var host = req.headers.host.split(':')[0].trim('/');
             var path = req.params[0];
             var url = 'http://' + host + ':' + (config.engine.get('server_port') + 1) + '/' + path;
+			log.info("rmackie: 4003" + url);
             var response = {'url' : url};
             res.json(300, response);
             break;

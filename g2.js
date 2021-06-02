@@ -439,7 +439,8 @@ G2.prototype.onData = function(data) {
 				// risking put it here, because someone thought it was a good idea once upon a time
 				// and it is an error case. Not really sure. I suspect we should discard this next line
 				// and keep the throw.
-				this.emit('error', [-1, 'JSON_PARSE_ERROR', "Could not parse response: '" + jsesc(json_string) + "' (" + e.toString() + ")"]);
+				// TODO: RMACKIE rmackie - make a decision (requires testing)
+				//this.emit('error', [-1, 'JSON_PARSE_ERROR', "Could not parse response: '" + jsesc(json_string) + "' (" + e.toString() + ")"]);
 				throw e;
 			} finally {
 				// rmackie: this was not in a finally block. So if we threw an error, we left crud
