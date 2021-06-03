@@ -128,7 +128,8 @@ function Machine(control_path, callback) {
 		line : null,
 		nb_lines : null,
 		auth : false,
-		hideKeypad : false
+		hideKeypad : false,
+		inFeedHold : false
 	};
 
 	this.fireButtonDebounce = false;
@@ -969,7 +970,7 @@ Machine.prototype.resume = function(callback, input=false) {
 		this.driver.pause_hold = false;
 		// log.debug("Resume from pause: pause_hold set to:  " + this.driver.pause_hold);
 	}
-	if (this.current_runtime && this.current_runtime.inFeedHold){
+	if (this.current_runtime && this.status.inFeedHold){
 		this._resume();
 	} else {
 		//clear any timed pause
