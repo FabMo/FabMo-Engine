@@ -445,7 +445,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.state_selector).html(statename);
 				$(".exit-button").hide();
 
-		if(that.file_control)
+		if(that.file_control && status.inFeedhold)
 		{
 			$(that.stop_button_selector).show();
 			$(that.pause_button_selector).hide();
