@@ -444,8 +444,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(".tools-current > li a").removeClass('paus disc err').addClass('paus');
 		$(that.state_selector).html(statename);
 				$(".exit-button").hide();
-		console.log("Feedhold status is:  " + status.inFeedHold)
-		if(that.file_control && status.inFeedHold)
+		if(that.file_control)
 		{
 			$(that.stop_button_selector).show();
 			$(that.pause_button_selector).hide();
