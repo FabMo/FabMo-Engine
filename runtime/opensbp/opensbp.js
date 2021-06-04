@@ -2009,9 +2009,17 @@ SBPRuntime.prototype.transformation = function(TranPt){
 
 // Pause the currently running program
 SBPRuntime.prototype.pause = function() {
-    if(this.machine.driver.status.stat == this.machine.driver.STAT_END ||
-       this.machine.driver.status.stat == this.machine.driver.STAT_STOP) {
-        this.pendingFeedhold = true;
+    // Pending feedholds appear to be broken and may no longer be desired functionality.
+    // if(this.machine.driver.status.stat == this.machine.driver.STAT_END ||
+    //    this.machine.driver.status.stat == this.machine.driver.STAT_STOP) {
+    //     this.pendingFeedhold = true;
+    if (this.paused) {
+        //clear any timed pause
+        if (this.machine.pauseTimer) {
+            clearTimeout(this.machine.pauseTimer);
+            this.machine.pauseTimer = false;
+        }
+        this.machine.setState(this, 'paused', {'message': "Paused by user."});
     } else {
         this.machine.driver.feedHold();
         this.machine.status.inFeedHold = true;
