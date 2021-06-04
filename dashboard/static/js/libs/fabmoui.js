@@ -452,7 +452,6 @@ FabMoUI.prototype.updateStatusContent = function(status){
 				$(that.resume_button_selector).show();
 			}
 			$(that.pause_button_selector+" div div:first-child").removeClass('spinner red');
-
 		}
 	}
 	else if(status.state === 'passthrough') {
