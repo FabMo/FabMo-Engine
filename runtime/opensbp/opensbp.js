@@ -760,6 +760,7 @@ SBPRuntime.prototype._run = function() {
                         if(this.pendingFeedhold) {
                             this.pendingFeedhold = false;
                             this.driver.feedHold();
+                            this.machine.status.inFeedHold = true;
                         }               
                     } else {
                         log.debug("  -NoChange > " + this.machine.status.state); 
