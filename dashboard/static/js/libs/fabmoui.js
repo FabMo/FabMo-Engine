@@ -446,9 +446,11 @@ FabMoUI.prototype.updateStatusContent = function(status){
 				$(".exit-button").hide();
 		if(that.file_control)
 		{
-			$(that.stop_button_selector).show();
-			$(that.pause_button_selector).hide();
-			$(that.resume_button_selector).show();
+			if (status.inFeedHold) {
+				$(that.stop_button_selector).show();
+				$(that.pause_button_selector).hide();
+				$(that.resume_button_selector).show();
+			}
 			$(that.pause_button_selector+" div div:first-child").removeClass('spinner red');
 
 		}
