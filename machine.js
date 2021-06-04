@@ -917,6 +917,14 @@ Machine.prototype.pause = function(callback) {
 			} else {
 				callback("Not pausing because no runtime provided");
 			}
+		} else if (this.status.state === "paused") {
+			//clear any timed pause
+			if (this.pauseTimer) {
+				clearTimeout(this.pauseTimer);
+				this.pauseTimer = false;
+			}
+			this.setState(this, 'paused', {'message': "Paused by user."});
+			callback(null, 'paused');
 		} else {
 			callback("Not pausing because machine is not running");
 		}
