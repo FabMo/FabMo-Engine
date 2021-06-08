@@ -48,7 +48,8 @@ var config = {
 		splitChunks: {
 		  // include all types of chunks
 		  chunks: 'all',
-	},
+		},
+	}
 
     module: {
         rules: [
@@ -70,7 +71,7 @@ var config = {
         ],
     },
     plugins: [
-	new CleanWebpackPlugin({
+		new CleanWebpackPlugin({
             dry: false,
             verbose: true,
             cleanOnceBeforeBuildPatterns: [
@@ -97,6 +98,7 @@ var config = {
         // Learn more obout plugins from https://webpack.js.org/configuration/plugins/
 
 		new MiniCssExtractPlugin(),
+    ];
 
 };
 
