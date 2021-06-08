@@ -44,6 +44,12 @@ var config = {
 
     }, 
 
+	optimization: {
+		splitChunks: {
+		  // include all types of chunks
+		  chunks: 'all',
+	},
+
     module: {
         rules: [
             {
@@ -92,10 +98,6 @@ var config = {
 
 		new MiniCssExtractPlugin(),
 
-		new webpack.optimize.CommonsChunkPlugin({
-			  name: "common"
-		}),
-    ],
 };
 
 module.exports = config;
