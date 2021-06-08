@@ -80,16 +80,21 @@ var config = {
             "windows.jQuery": 'jquery'
         }),
 
-	new MiniCssExtractPlugin(),
 
-        //new HtmlWebpackPlugin(
-	//{
-            //template: 'index.html',
-        //}
-	//),
+		//new HtmlWebpackPlugin(
+			//{
+				//template: 'index.html',
+			//}
+		//),
 
         // Add your plugins here
         // Learn more obout plugins from https://webpack.js.org/configuration/plugins/
+
+		new MiniCssExtractPlugin(),
+
+		new webpack.optimize.CommonsChunkPlugin({
+			  name: "common"
+		}),
     ],
 };
 
