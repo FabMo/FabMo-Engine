@@ -49,7 +49,7 @@ var config = {
 		  // include all types of chunks
 		  chunks: 'all',
 		},
-	}
+	},
 
     module: {
         rules: [
