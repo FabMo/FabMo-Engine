@@ -43,6 +43,8 @@ require("../css/toastr.min.css");
     var disconnected = false;
     var last_state_seen = null;
 
+    // move timer cutoff to var so it can be set in settings later
+    var TIMER_DISPLAY_CUTOFF = 5;
     // Detect touch screen
     var supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
 
@@ -222,7 +224,7 @@ require("../css/toastr.min.css");
                                 $('.manual-drive-message').show();
                                 $('.manual-drive-message').html(status.info.message);
 
-                            } else if (status.info['timer'] && status.info['timer'] <= 10) {
+                            } else if (status.info['timer'] && status.info['timer'] <= TIMER_DISPLAY_CUTOFF) {
                                 keypad.setEnabled(false);
                                 keyboard.setEnabled(false);
                             } else {
