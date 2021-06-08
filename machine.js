@@ -934,6 +934,7 @@ Machine.prototype.pause = function(callback) {
 Machine.prototype.quit = function(callback) {
 	// Release Pause hold if present
 	this.driver.pause_hold = false;
+	this.status.inFeedHold = false;
 	this.disarm();
 
 	// Quitting from the idle state dismisses the 'info' data
