@@ -98,7 +98,7 @@ var config = {
         // Learn more obout plugins from https://webpack.js.org/configuration/plugins/
 
 		new MiniCssExtractPlugin(),
-    ];
+    ]
 
 };
 
