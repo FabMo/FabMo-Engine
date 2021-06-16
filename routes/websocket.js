@@ -214,7 +214,6 @@ module.exports = function(svr) {
 	server = svr
 	setupAuthentication(server);
 	server.io.on('connection', onPublicConnect);
-	// rmackie we don't follow the callback when this happens
 	var namespace = server.io.of('/private');
     namespace.on('connection', onPrivateConnect);
 	setupStatusBroadcasts(server);

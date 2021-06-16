@@ -22,7 +22,7 @@ var static = require('../static');
  * @apiSuccess {String} data.apps.id Unique ID of this app (used in app URLs)
  */
 var getApps = function(req, res, next) {
-	log.info("rmackie:X getApps");
+	log.info("rmackie:XXXXX getApps");
 	var answer = {
 		status:"success",
 		data : {apps : dashboard.getAppList()}
@@ -46,7 +46,7 @@ var getApps = function(req, res, next) {
  * @apiSuccess {String} data.app.id Unique ID of this app (used in app URLs)
  */
 var getAppInfo = function(req, res, next) {
-	log.info("rmackie:X getAppInfo");
+	log.info("rmackie:XXXXX getAppInfo");
 	log.info("Getting app " + req.params.id);
 	var answer = {
 		status:"success",
@@ -65,7 +65,7 @@ var getAppInfo = function(req, res, next) {
  * @apiSuccess {Object} data.config App configuration data object
  */
 var getAppConfig = function(req, res, next) {
-	log.info("rmackie:X getAppConfig");
+	log.info("rmackie:XXXXX getAppConfig");
     try {
         var answer = {
             status:"success",
@@ -87,7 +87,7 @@ var getAppConfig = function(req, res, next) {
  * @apiParam {Object} config Generic JSON formatted object to store as the apps configuration.
  */
 var postAppConfig = function(req, res, next) {
-	log.info("rmackie:X postAppConfig");
+	log.info("rmackie:XXXXX postAppConfig");
     var new_config = {};
     var answer;
     dashboard.setAppConfig(req.params.id, req.params.config, function(err, result) {
@@ -140,7 +140,7 @@ var deleteApp = function(req, res, next) {
  * @apiSuccess {Object} root Root of directory tree
  */
 var listAppFiles = function(req, res, next) {
-	log.info("rmackie:X listAppFiles");
+	log.info("rmackie:XXXXX listAppFiles");
 	log.info("Listing files");
 	id = req.params.id;
 
@@ -169,7 +169,7 @@ var listAppFiles = function(req, res, next) {
 };
 
 var submitApp = function(req, res, next) {
-	log.info("rmackie:X submitApp");
+	log.info("rmackie:XXXXX submitApp");
     upload(req, res, next, function(err, uploads) {
         // Multiple apps can be submitted at once.  Process each of them in turn.
         async.map(uploads.files, function(upload_data, callback) {
@@ -201,7 +201,7 @@ var submitApp = function(req, res, next) {
 }; // submitApp
 
 var updater = function(req, res, next) {
-	log.info("rmackie:X updater");
+	log.info("rmackie:XXXXX updater");
     var host = req.headers.host.split(':')[0].trim('/');
     var url = 'http://' + host + ':' + (config.engine.get('server_port') + 1);
 	log.info("rmackie: host=" + host + " url=" + url);
@@ -213,7 +213,6 @@ module.exports = function(server) {
     server.get('/apps', getApps);
     server.get('/apps/:id', getAppInfo);
     server.get('/apps/:id/config', getAppConfig);
-    server.post('/apps/:id/config', postAppConfig);
     server.del('/apps/:id', deleteApp);
     server.get('/apps/:id/files', listAppFiles);
 // rmackie: this can't stand - must replace it, but for now it allows a step forward

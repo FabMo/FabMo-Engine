@@ -48,7 +48,7 @@ module.exports = function(server) {
 	log.info("rmackie: 5000 " + server);
 	//server.get(/.*/, function(req, res, next) 
 	server.get("*", function(req, res, next) {
-		log.info("rmackie: get star: "+ req.url);
+		log.info("rmackie: GET GLOB(*): "+ req.url);
 		var current_hash = config.engine.get('version');
 		var url_arr = req.url.split('/');
 		if(url_arr[1] != current_hash){
