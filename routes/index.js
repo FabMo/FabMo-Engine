@@ -5,7 +5,7 @@ var restify = require('restify');
 var util = require('../util');
 var authentication = require('../authentication');
 var config = require('../config');
-var static = require('../static');
+var getStaticServeFunction = require('../static');
 
 // Load all the files in the 'routes' directory and process them as route-producing modules
 module.exports = function(server) {
@@ -37,34 +37,35 @@ module.exports = function(server) {
 	//   })(req,res,next);
 	// }
 
-// // protect only the / endpoint (dashboard)
-// 	server.get(/^\/$/,authentication_handler, restify.serveStatic({
-// 		directory: './dashboard/static',
-// 		default: 'index.html'
-// 	}));
-
+/**
+ *  // protect only the / endpoint (dashboard)
+ * 	server.get("/", restify.plugins.serveStatic({
+ * 		directory: './dashboard/static',
+ * 		default: 'index.html'
+ * 	}));
+**/
 	// Define a route for serving static files
 	// This has to be defined after all the other routes, or it plays havoc with things
 	log.info("rmackie: 5000 " + server);
 	//server.get(/.*/, function(req, res, next) 
-	server.get("*", function(req, res, next) {
-		log.info("rmackie: GET GLOB(*): "+ req.url);
-		var current_hash = config.engine.get('version');
-		var url_arr = req.url.split('/');
-		if(url_arr[1] != current_hash){
-			url_arr.splice(1,0, current_hash);
-			var newPath = url_arr.join('/'); 
-			log.info("rmackie: current hash mismatch, redirect:" + newPath);
-			res.redirect(newPath , next);
-		} else {
-			next();
-		} 
-	},
-		static({
+	server.get("*", 
+		function(req, res, next) {
+			log.info("rmackie: GET GLOB(*): "+ req.url);
+			var current_hash = config.engine.get('version');
+			var url_arr = req.url.split('/');
+			if(url_arr[1] != current_hash){
+				url_arr.splice(1,0, current_hash);
+				var newPath = url_arr.join('/');
+				log.info("rmackie: current hash mismatch, redirect:" + newPath);
+				res.redirect(newPath , next);
+			} else {
+				next();
+			}
+		},
+	    getStaticServeFunction ({
 			//directory: './static'
 			directory: './dashboard/build',
 			default: 'index.html'
-		})
+	    })
 	);
-
 };
