@@ -939,7 +939,6 @@ Machine.prototype.quit = function(callback) {
 	this.disarm();
 
 	// Quitting from the idle state dismisses the 'info' data
-	log.debug("#50420 status state = " + this.status.state);
 	switch(this.status.state) {
 
 		case "idle":
