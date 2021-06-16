@@ -992,13 +992,10 @@ SBPRuntime.prototype._end = function(error) {
                     cleanup(error);
                 }.bind(this));
             } else {
-				log.debug("CALL from OSBP to reset unit in _end ")
-                this.driver.setUnits(config.machine.get('units'), function() {
-                    this.machine.setState(this, 'idle');
-                    cleanup(error);                    
-                }.bind(this));
+				log.debug("CALL from OSBP toset machine to idle")
+                this.machine.setState(this, 'idle');
+                cleanup(error);
             }
-            // cleanup(error);
         }.bind(this));
     } else {
         cleanup(error);

@@ -394,17 +394,18 @@ Machine.prototype.die = function(err_msg) {
 // It is typically used after, for instance, a running file has altered the configuration in memory.
 // This is used to ensure that when the machine returns to idle the driver is in a "known" configuration
 Machine.prototype.restoreDriverState = function(callback) {
-	callback = callback || function() {};
 	this.driver.setUnits(config.machine.get('units'), function() {
 		this.driver.requestStatusReport(function(status) {
 			for (var key in this.status) {
 				if(key in status) {
 					this.status[key] = status[key];
 				}
-			}			
+			}
 			config.driver.restore(function() {
-				callback();
-			});			
+				if(callback) {
+					callback();
+				}
+			});
 		}.bind(this));
 	}.bind(this));
 }
