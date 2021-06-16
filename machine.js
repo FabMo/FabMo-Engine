@@ -930,7 +930,7 @@ Machine.prototype.pause = function(callback) {
 		}
 };
 
-// Quit 
+// Quit
 Machine.prototype.quit = function(callback) {
 	// Release Pause hold if present
 	this.driver.pause_hold = false;
@@ -938,6 +938,7 @@ Machine.prototype.quit = function(callback) {
 	this.disarm();
 
 	// Quitting from the idle state dismisses the 'info' data
+	log.debug("#50420 status state = " + this.status.state);
 	switch(this.status.state) {
 
 		case "idle":
@@ -955,20 +956,18 @@ Machine.prototype.quit = function(callback) {
 		this.status.job.pending_cancel = true;
 	}
 	if(this.current_runtime) {
-log.debug("ppp... job.pending_quit!")			
 		log.info("Quitting the current runtime...")
 		this.current_runtime.quit();
-log.debug("ppp... quit_pending?")
 		if (callback) {
 			callback(null, 'quit');
 		}
-			alreadyQuiting = false;
+		alreadyQuiting = false;
 	} else {
 		log.warn("No current runtime!")
-		if (callback) {	
+		if (callback) {
 			callback("Not quiting because no current runtime")
 		}
-	}    
+	}
 };
 
 // Resume from the paused state.
