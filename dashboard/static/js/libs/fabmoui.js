@@ -444,14 +444,14 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(".tools-current > li a").removeClass('paus disc err').addClass('paus');
 		$(that.state_selector).html(statename);
 				$(".exit-button").hide();
-
 		if(that.file_control)
 		{
-			$(that.stop_button_selector).show();
-			$(that.pause_button_selector).hide();
-			$(that.resume_button_selector).show();
+			if (status.inFeedHold) {
+				$(that.stop_button_selector).show();
+				$(that.pause_button_selector).hide();
+				$(that.resume_button_selector).show();
+			}
 			$(that.pause_button_selector+" div div:first-child").removeClass('spinner red');
-
 		}
 	}
 	else if(status.state === 'passthrough') {

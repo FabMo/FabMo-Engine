@@ -86,7 +86,7 @@ function SBPRuntime() {
     this.driver = null;
 
     this.inManualMode = false;
-    this.inFeedHold = false;
+    // this.inFeedHold = false;
 
 }
 util.inherits(SBPRuntime, events.EventEmitter);
@@ -760,6 +760,7 @@ SBPRuntime.prototype._run = function() {
                         if(this.pendingFeedhold) {
                             this.pendingFeedhold = false;
                             this.driver.feedHold();
+                            this.machine.status.inFeedHold = true;
                         }               
                     } else {
                         log.debug("  -NoChange > " + this.machine.status.state); 
@@ -2008,12 +2009,13 @@ SBPRuntime.prototype.transformation = function(TranPt){
 
 // Pause the currently running program
 SBPRuntime.prototype.pause = function() {
+    // Pending feedholds appear to be broken and may no longer be desired functionality.
     if(this.machine.driver.status.stat == this.machine.driver.STAT_END ||
        this.machine.driver.status.stat == this.machine.driver.STAT_STOP) {
         this.pendingFeedhold = true;
     } else {
         this.machine.driver.feedHold();
-        this.inFeedHold = true;
+        this.machine.status.inFeedHold = true;
     }
 }
 
@@ -2074,7 +2076,7 @@ SBPRuntime.prototype.resume = function(input=false) {
                 }
             } else {
                 this.driver.resume();
-                this.inFeedHold = false;
+                this.machine.status.inFeedHold = false;
             }
         }
 }

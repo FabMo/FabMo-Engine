@@ -11,7 +11,7 @@ function GCodeRuntime() {
 	this.driver = null;
 	this.ok_to_disconnect = true;
 	this.completeCallback = null;
-    this.inFeedHold = false;
+    // this.inFeedHold = false;
     this._file_or_stream_in_progress = false;
 }
 
@@ -43,7 +43,7 @@ GCodeRuntime.prototype.disconnect = function() {
 
 GCodeRuntime.prototype.pause = function() {
 	this.driver.feedHold();
-    this.inFeedHold = true;
+    this.machine.status.inFeedHold = true;
 }
 
 GCodeRuntime.prototype.quit = function() {
@@ -52,7 +52,7 @@ GCodeRuntime.prototype.quit = function() {
 
 GCodeRuntime.prototype.resume = function() {
 	this.driver.resume();
-    this.inFeedHold = false;
+    this.machine.status.inFeedHold = false;
 }
 
 GCodeRuntime.prototype._changeState = function(newstate) {
