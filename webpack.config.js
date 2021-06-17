@@ -43,14 +43,14 @@ var config = {
       extensions: ['', '.js'],
 
     }, 
-
+/*
 	optimization: {
 		splitChunks: {
 		  // include all types of chunks
 		  chunks: 'all',
 		},
 	},
-
+*/
     module: {
         rules: [
             {
