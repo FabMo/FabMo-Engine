@@ -33,9 +33,8 @@ var config = {
     output: {
       path: '/fabmo/dashboard/build',
       publicPath: "/",
-      filename: "[name].js"
-      // filename: "[name].[chunkhash].js"
-      //  path: path.resolve(__dirname, 'dist'),
+      filename: "[name].js",
+      assetModuleFilename: '[path][name].[hash][ext][query]'
     },
  
     resolve: {
