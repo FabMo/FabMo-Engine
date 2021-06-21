@@ -95,7 +95,7 @@ quotedstring
   = '"' s:[^\"\n]+ '"' {return s.join("")}
 
 variable
-  = (user_variable / system_variable / persistent_variable)
+  = (user_variable / system_variable / persistent_variable / unary_test)
 
 user_variable
   = v:("&" identifier) {return {"type":"user_variable", "expr":v.join("").toUpperCase()}}
@@ -105,6 +105,9 @@ persistent_variable
 
 system_variable
   = "%" "(" __ e:expression __ ")" {return {"type":"system_variable", "expr":e}}
+
+unary_test
+   = ("isdefined"i) __ "(" __  v:variable __ ")" {return {"type":"isdef", "v":v}}
 
 assignment
   = v:variable __ "=" __ e:expression {return {"type": "assign", "var":v, "expr":e}}

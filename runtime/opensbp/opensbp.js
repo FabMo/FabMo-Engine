@@ -1057,7 +1057,6 @@ SBPRuntime.prototype._end = function(error) {
 //    command - The command object to execute
 //   callback - Called when execution is complete or with error if error
 SBPRuntime.prototype._executeCommand = function(command, callback) {
-
     if((command.cmd in this) && (typeof this[command.cmd] == 'function')) {
         // Command is valid and has a registered handler
 
@@ -1401,6 +1400,14 @@ SBPRuntime.prototype._eval_value = function(expr) {
 				return this.evaluateSystemVariable(expr);
 			case 'persistent_variable':
 				return this.evaluatePersistentVariable(expr);
+			case 'isdef': {
+				try {
+					this._eval_value(expr.v);
+					return 1;
+				} catch (err) {
+					return 0;
+				}
+			}
 		}
     }
     var n = Number(String(expr));
@@ -1411,7 +1418,7 @@ SBPRuntime.prototype._eval_value = function(expr) {
 // TODO - Make this robust to undefined user variables
 //   expr - The expression to evaluate.  This is a *parsed* expression object
 SBPRuntime.prototype._eval = function(expr) {
-    // log.debug("Evaluating expression: " + JSON.stringify(expr));
+    log.debug("Evaluating expression: " + JSON.stringify(expr));
     if(expr === undefined) {return undefined;}
 
     if(expr.op === undefined) {
@@ -1771,7 +1778,6 @@ SBPRuntime.prototype._variableType = function(v) {
     if(this._isPersistentVariable(v)) {return 'persistent';}
 }
 
-//rmackie
 // Return the value for the provided user variable
 //   v - identifier to check, eg: '&Tool'
 SBPRuntime.prototype.evaluateUserVariable = function(v) {

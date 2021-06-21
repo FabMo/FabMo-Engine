@@ -62,6 +62,7 @@ module.exports = (function(){
         "user_variable": parse_user_variable,
         "persistent_variable": parse_persistent_variable,
         "system_variable": parse_system_variable,
+        "unary_test": parse_unary_test,
         "assignment": parse_assignment,
         "weak_assignment": parse_weak_assignment,
         "compare": parse_compare,
@@ -1582,6 +1583,9 @@ module.exports = (function(){
           result0 = parse_system_variable();
           if (result0 === null) {
             result0 = parse_persistent_variable();
+            if (result0 === null) {
+              result0 = parse_unary_test();
+            }
           }
         }
         return result0;
@@ -1728,6 +1732,88 @@ module.exports = (function(){
         }
         if (result0 !== null) {
           result0 = (function(offset, e) {return {"type":"system_variable", "expr":e}})(pos0, result0[3]);
+        }
+        if (result0 === null) {
+          pos = pos0;
+        }
+        return result0;
+      }
+      
+      function parse_unary_test() {
+        var result0, result1, result2, result3, result4, result5, result6;
+        var pos0, pos1;
+        
+        pos0 = pos;
+        pos1 = pos;
+        if (input.substr(pos, 9).toLowerCase() === "isdefined") {
+          result0 = input.substr(pos, 9);
+          pos += 9;
+        } else {
+          result0 = null;
+          if (reportFailures === 0) {
+            matchFailed("\"isdefined\"");
+          }
+        }
+        if (result0 !== null) {
+          result1 = parse___();
+          if (result1 !== null) {
+            if (input.charCodeAt(pos) === 40) {
+              result2 = "(";
+              pos++;
+            } else {
+              result2 = null;
+              if (reportFailures === 0) {
+                matchFailed("\"(\"");
+              }
+            }
+            if (result2 !== null) {
+              result3 = parse___();
+              if (result3 !== null) {
+                result4 = parse_variable();
+                if (result4 !== null) {
+                  result5 = parse___();
+                  if (result5 !== null) {
+                    if (input.charCodeAt(pos) === 41) {
+                      result6 = ")";
+                      pos++;
+                    } else {
+                      result6 = null;
+                      if (reportFailures === 0) {
+                        matchFailed("\")\"");
+                      }
+                    }
+                    if (result6 !== null) {
+                      result0 = [result0, result1, result2, result3, result4, result5, result6];
+                    } else {
+                      result0 = null;
+                      pos = pos1;
+                    }
+                  } else {
+                    result0 = null;
+                    pos = pos1;
+                  }
+                } else {
+                  result0 = null;
+                  pos = pos1;
+                }
+              } else {
+                result0 = null;
+                pos = pos1;
+              }
+            } else {
+              result0 = null;
+              pos = pos1;
+            }
+          } else {
+            result0 = null;
+            pos = pos1;
+          }
+        } else {
+          result0 = null;
+          pos = pos1;
+        }
+        if (result0 !== null) {
+          result0 = (function(offset, v) {return {"type":"isdef", "v":v}})(pos0, result0[4]);
         }
         if (result0 === null) {
           pos = pos0;
