@@ -1418,7 +1418,6 @@ SBPRuntime.prototype._eval_value = function(expr) {
 // TODO - Make this robust to undefined user variables
 //   expr - The expression to evaluate.  This is a *parsed* expression object
 SBPRuntime.prototype._eval = function(expr) {
-    log.debug("Evaluating expression: " + JSON.stringify(expr));
     if(expr === undefined) {return undefined;}
 
     if(expr.op === undefined) {
