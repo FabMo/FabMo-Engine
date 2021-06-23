@@ -394,17 +394,18 @@ Machine.prototype.die = function(err_msg) {
 // It is typically used after, for instance, a running file has altered the configuration in memory.
 // This is used to ensure that when the machine returns to idle the driver is in a "known" configuration
 Machine.prototype.restoreDriverState = function(callback) {
-	callback = callback || function() {};
 	this.driver.setUnits(config.machine.get('units'), function() {
 		this.driver.requestStatusReport(function(status) {
 			for (var key in this.status) {
 				if(key in status) {
 					this.status[key] = status[key];
 				}
-			}			
+			}
 			config.driver.restore(function() {
-				callback();
-			});			
+				if(callback) {
+					callback();
+				}
+			});
 		}.bind(this));
 	}.bind(this));
 }
@@ -930,7 +931,7 @@ Machine.prototype.pause = function(callback) {
 		}
 };
 
-// Quit 
+// Quit
 Machine.prototype.quit = function(callback) {
 	// Release Pause hold if present
 	this.driver.pause_hold = false;
@@ -955,20 +956,18 @@ Machine.prototype.quit = function(callback) {
 		this.status.job.pending_cancel = true;
 	}
 	if(this.current_runtime) {
-log.debug("ppp... job.pending_quit!")			
 		log.info("Quitting the current runtime...")
 		this.current_runtime.quit();
-log.debug("ppp... quit_pending?")
 		if (callback) {
 			callback(null, 'quit');
 		}
-			alreadyQuiting = false;
+		alreadyQuiting = false;
 	} else {
 		log.warn("No current runtime!")
-		if (callback) {	
+		if (callback) {
 			callback("Not quiting because no current runtime")
 		}
-	}    
+	}
 };
 
 // Resume from the paused state.
