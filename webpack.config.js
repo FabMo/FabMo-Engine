@@ -60,10 +60,12 @@ var config = {
                 test: /\.css$/i,
                 use: [MiniCssExtractPlugin.loader, 'css-loader'],
             },
+
             {
                 test: /\.(eot|svg|ttf|woff|woff2|png|jpg|gif)$/,
-                type: 'asset',
+                type: 'asset/resource',
             },
+
 
             // Add your rules for custom modules here
             // Learn more about loaders from https://webpack.js.org/loaders/

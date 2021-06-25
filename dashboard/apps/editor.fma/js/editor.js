@@ -219,7 +219,7 @@ require('./cm-fabmo-modes.js');
         var h2 = $('#topbar').height();
         $("#editor").css('height',h-h2);
         $(document).foundation();
-        Foundation.reInit();
+        // $(document).reflow();
       }
 
       $(window).resize(function(){
