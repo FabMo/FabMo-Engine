@@ -208,11 +208,18 @@ var updater = function(req, res, next) {
     res.redirect(303, url, next);   
 }
 
+function putAppConfig(req, res, next) {
+	log.error("rmackie: putAppConfig called: " + req);
+	log.error("rmackie: BROKEN MUST FIX: " + req);
+	log.error("rmackie: WHAT SHOULD THIS CODE DO? " + req);
+}
+
 module.exports = function(server) {
     server.post('/apps', submitApp);
     server.get('/apps', getApps);
     server.get('/apps/:id', getAppInfo);
     server.get('/apps/:id/config', getAppConfig);
+    server.post('/apps/:id/config', putAppConfig);
     server.del('/apps/:id', deleteApp);
     server.get('/apps/:id/files', listAppFiles);
 // rmackie: this can't stand - must replace it, but for now it allows a step forward
