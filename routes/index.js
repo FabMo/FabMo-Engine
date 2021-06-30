@@ -52,16 +52,10 @@ module.exports = function(server) {
 			log.info("rmackie: GET GLOB(*): "+ req.url);
 			var current_hash = config.engine.get('version');
 			var url_arr = req.url.split('/');
-            const IFDEF_NOT_SPLIT_CHUNKS = 0
-            // when webpack does splitchunks, it changes where home is found.
-            // if we're using webpack split chunks then define this as 1
-            const IFDEF_SPLIT_CHUNKS = 1; 
-			if ( IFDEF_SPLIT_CHUNKS == 0 ) {
             // if the browser requested "/" then we need to add "app/home"
-				if (url_arr[0] == "" && url_arr[1] == "") {
-					url_arr.push("app");
-					url_arr.push("home");
-				}
+			if (url_arr[0] == "" && url_arr[1] == "") {
+				url_arr.push("app");
+				url_arr.push("home");
 			}
             // if this was first access or an old url, then the first entry
             // will not match the current hash which is what makes sure that 
