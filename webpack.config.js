@@ -40,16 +40,15 @@ var config = {
     resolve: {
       // modulesDirectories: [lib],
       extensions: ['', '.js'],
-
     }, 
-/*
+
 	optimization: {
 		splitChunks: {
 		  // include all types of chunks
 		  chunks: 'all',
 		},
 	},
-*/
+
     module: {
         rules: [
             {
