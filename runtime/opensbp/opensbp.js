@@ -123,7 +123,8 @@ SBPRuntime.prototype.connect = function(machine) {
     //this.status_handler = this._onG2Status.bind(this);
     //this.driver.on('status', this.status_handler);
     this.connected = true;
-    this.ok_to_disconnect = false;
+////##    this.ok_to_disconnect = false;    ////## maybe fix for cannot disconnect
+                                            ////## ... in any case does not seem right place; should be state change
     log.info('Connected OpenSBP runtime.');
 };
 
