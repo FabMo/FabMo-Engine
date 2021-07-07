@@ -2,6 +2,7 @@ var child_process = require('child_process');
 var exec = child_process.exec;
 var fs = require('fs');
 var tmp = require('tmp');
+//TODO: implement networking logs and convert console.log with log.network
 
 // Collection of functions for easy access to network manipulation tools on
 // a Reaspberry PI.
@@ -26,8 +27,8 @@ class commands {
 
   static startWpaSupplicant(callback) {
     console.log('should be starting the wpa thing')
-////##
-////    exec('wpa_supplicant -B -Dnl80211 -iwlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf', callback)
+    // TODO: should this be removed?
+    // exec('wpa_supplicant -B -Dnl80211 -iwlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf', callback)
     exec('wpa_cli status', callback)
   }
 

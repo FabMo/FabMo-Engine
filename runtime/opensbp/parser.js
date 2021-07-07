@@ -222,14 +222,14 @@ var main = function(){
         log.tick();
         fs.readFile(filename, 'utf8', function(err, data) {
             if(err) {
-                return console.log(err);
+                return log.error(err);
             } 
             
             var obj = parse(data);
             log.tock('parse');
         });
     } else {
-        console.log("Usage: node parser.js filename.sbp");
+        log.debug("Usage: node parser.js filename.sbp");
     }
 }
 
@@ -246,7 +246,7 @@ var main2 = function() {
                 obj.push(data)
             })
             .on('end', function() {
-        console.log(obj.length + ' lines processed.')
+        log.debug(obj.length + ' lines processed.')
         log.tock("parse");
             });
     }

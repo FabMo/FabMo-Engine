@@ -8,7 +8,7 @@ var exec = child_process.exec;
 var util = require('util');
 var NetworkManager = require('../../../network_manager').NetworkManager;
 var tmp = require('tmp');
-
+// TODO:  Add networking logging instead of useing console.log
 
 var ifconfig = require('wireless-tools/ifconfig');
 var iwconfig = require('wireless-tools/iwconfig');

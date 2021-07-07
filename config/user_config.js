@@ -192,7 +192,7 @@ UserConfig.prototype.add = function(username,password,callback){
 				var newUser = this.User(username ,pass_shasum);
 				this.update(newUser, function(err,data){
 					if (err) {
-						console.log(err);
+						log.error(err);
 					} else {
 						callback(null, newUser);
 					}
