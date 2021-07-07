@@ -71,13 +71,11 @@ exports.configure = function(){
           //no boy. you can't do that anymore.
           req.logout(); // remove his session information.
           userToKickout=undefined;
-          //console.log("current user have been kicked out");
           return done(null, false, { message: 'you have been kicked by user '+currentUser.username+'.'});
         }
 
         if(currentUser && currentUser.username !== username){ // a user is already connected
           if(req.params.kickout!==true){ // there is no request to kick the current user out.
-            //console.log("there is already a user using the tool");
             return done(null, false, { message: 'The user '+currentUser.username+' is already controlling the tool', userAlreadyLogedIn:true});
           }
 
@@ -87,11 +85,9 @@ exports.configure = function(){
               return done(null, false, { message: 'The user '+currentUser.username+' is an admin.'});
             }
             if(!isCurrentUserKickeable){ //you can't kick out a user that is actively using the tool.
-              //console.log("current user is active");
               return done(null, false, { message: 'The user '+currentUser.username+' is still active.'});
             }
             if(machine.machine.status.state === 'running') { //you can't kick a user that is running a file.
-                //console.log("current user is running a file");
                 return done(null, false, { message: 'The user '+currentUser.username+' is running a file.'});
             }
           }

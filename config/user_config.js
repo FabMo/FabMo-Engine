@@ -189,14 +189,14 @@ UserConfig.prototype.add = function(username,password,callback){
 				callback('Username already taken !',null);
 				return ;
 			}else{
-					var newUser = this.User(username ,pass_shasum);
-					this.update(newUser, function(err,data){
-						if (err) {
-							console.log(err);
-						} else {
-							callback(null, newUser);
-						}
-					}, true);
+				var newUser = this.User(username ,pass_shasum);
+				this.update(newUser, function(err,data){
+					if (err) {
+						console.log(err);
+					} else {
+						callback(null, newUser);
+					}
+				}, true);
 				return ;
 			}
 	}.bind(this))

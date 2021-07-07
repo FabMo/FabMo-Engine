@@ -59,8 +59,6 @@ function setupAuthentication(svr) {
 function setupStatusBroadcasts(server){
 	var previous_status = {'state':null}
 	machine.on('status',function(status){
-//		console.log('Status broadcast');
-//		console.log(JSON.stringify(status));
 		//Add Server Timestamp to status updates
 		status.server_ts = Date.now();
 		server.io.of('/private').sockets.forEach(function (socket) {
@@ -125,7 +123,6 @@ var onPrivateConnect = function(socket) {
 
 	authentication.eventEmitter.on('user_kickout',function user_kickout_listener(user){
 		authentication.eventEmitter.removeListener('user_kickout',user_kickout_listener);
-		//console.log("user kickout event");
 		if(user.username == userId){
 			socket.emit('authentication_failed','kicked out');
 			return socket.disconnect();
@@ -185,13 +182,12 @@ var onPrivateConnect = function(socket) {
 					break;
 
 				default:
-					// Meh?
+					// TODO: Logging needed?  Error handling?
 					log.debug("command switch hit default");
 					break;
 			}
 		} catch(e) {
 			log.error(e);
-			// pass
 		}
 	});
 

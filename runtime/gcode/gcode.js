@@ -11,18 +11,18 @@ function GCodeRuntime() {
 	this.driver = null;
 	this.ok_to_disconnect = true;
 	this.completeCallback = null;
-    // this.inFeedHold = false;
     this._file_or_stream_in_progress = false;
 }
 
 GCodeRuntime.prototype.toString = function() {
 	return "[GCodeRuntime]";
 }
-//Check if move requires auth
+
+// pass through function for compatibility with opensbp runtime
 GCodeRuntime.prototype.needsAuth = function(s) {
-	//all needs auth (check) so just return true
 	return true;
 }
+
 GCodeRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;
@@ -56,15 +56,11 @@ GCodeRuntime.prototype.resume = function() {
 }
 
 GCodeRuntime.prototype._changeState = function(newstate) {
-	//log.debug("Changing state to " + newstate)
 	if(newstate != "idle") {
 		this.ok_to_disconnect = false;
 	}
     if(this.machine.status.state != newstate) {
-    	log.debug("-___changing state to " + newstate)
         this.machine.setState(this, newstate);
-    } else {
-        log.debug("  -noChange > " + this.machine.status.state); 
     }
 };
 
@@ -101,8 +97,9 @@ GCodeRuntime.prototype._die = function() {
 	this.machine.status.nb_lines=null;
  	try {
  		this.machine.status.job.fail();
- 	} catch(e) {}
- 	finally {
+ 	} catch(e) {
+ 		log.error(e);
+ 	} finally {
 		this.machine.status.job=null;
  		this.machine.setState(this, 'dead', {error : 'A G2 exception has occurred. You must reboot your tool.'});
  	}
@@ -114,8 +111,9 @@ GCodeRuntime.prototype._fail = function(message) {
 	this.machine.status.nb_lines=null;
  	try {
  		this.machine.status.job.fail();
- 	} catch(e) {}
- 	finally {
+ 	} catch(e) {
+ 		log.error(e);
+ 	} finally {
 		this.machine.status.job=null;
  		this.machine.setState(this, 'stopped', {error : message});
  	}
@@ -174,27 +172,21 @@ GCodeRuntime.prototype._handleStateChange = function(stat) {
             // OTOH, an extra M30 should not cause a problem.
 			this._changeState('stopped');
             if (this._file_or_stream_in_progress) {
-            	log.debug("  ... and calling M30 from g2")
                 this.driver.sendM30();
                 this._file_or_stream_in_progress = false;
             }
 		default:
+			// TODO:  Logging or error handling?
 			break;
 	}
 }
 
 // Run a given stream input
 GCodeRuntime.prototype.runStream = function(st) {
-	//determine if this is a short stream and needs to manually prime
-
-	////## to parallel opensbp ??
     if(this.machine) {
-        log.debug("-___ call #1 setState of Machine to RUNNING -file?- {_run}");
         this.machine.setState(this, "running");
-		//this._changeState('running');
     }
 
-    log.debug("-___ sending Stream {runStream}");
 	var manualPrime = this.machine.status.nb_lines < this.driver.primedThreshold;
 	var ln = new LineNumberer();
 	return this.driver.runStream(st.pipe(ln), manualPrime)

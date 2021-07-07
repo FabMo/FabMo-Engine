@@ -392,7 +392,7 @@ File.obliterate = function(file, callback){
 		}
 	});
 	
-	// TODO figure out why this is commented out - if we obliterate a file, we should probably trash its thumbnail, yeah?
+	// TODO: figure out why this is commented out - if we obliterate a file, we should probably trash its thumbnail, yeah?
 	//thumbnails.remove({file_id : id},function(err){if(!err)callback();else callback(err);});
 
 }
@@ -851,6 +851,7 @@ reConfig = function(callback){
 								log.error('Could not delete the corrupted database:' + err);
 								callback(null);
 							} else {
+								// TODO: More helpful logging
 								log.debug('Everythign is terrible shutting down');
 								process.exit(1);
 

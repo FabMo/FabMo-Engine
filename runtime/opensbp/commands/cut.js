@@ -340,9 +340,11 @@ exports.CG = function(args) {
       this.emit_move('G0',{ 'X':CGstartX, 'Y':CGstartY });
     } 
     else {
-      if ( Math.abs(propX) !== Math.abs(propY) ) {      // calculate out to an interpolated ellipse
-//        this.interpolate_circle(CGstartX,CGstartY,currentZ,endX,endY,Plg,centerX,centerY,propX,propY);
-//        circleInterpolate(runtime, code, CGParams);
+      if ( Math.abs(propX) !== Math.abs(propY) ) {
+        // TODO: Why is this commented out?
+        // calculate out to an interpolated ellipse
+        // this.interpolate_circle(CGstartX,CGstartY,currentZ,endX,endY,Plg,centerX,centerY,propX,propY);
+        // circleInterpolate(runtime, code, CGParams);
       }
     	else {
         var emitObj = {};
@@ -475,7 +477,7 @@ exports.interpolate_circle = function(ICstartX,ICstartY,ICstartZ,endX,endY,plung
     nextX = Xfactor1 * (Math.sin(t + (increment * Dir))) + Xfactor1;
     nextY = Yfactor1 * (Math.cos(t + (increment * Dir))) + Yfactor1;
 
-//  log.debug( " Interpolate - Next Point: " + JSON.stringify(args));
+  // log.debug( " Interpolate - Next Point: " + JSON.stringify(args));
   var feedrate = this.movespeed_xy * 60;
   this.emit_move('G1',{"X":x,"Y":y,"Z":z, 'F':feedrate});
 
@@ -816,20 +818,12 @@ exports.CR = function(args) {
      	}
    	}
   }
-
-  if( noPullUp === 0 && currentZ !== CRstartZ ){    //If No pull-up is set to YES, pull up to the starting Z location
+  //If No pull-up is set to YES, pull up to the starting Z location
+  if( noPullUp === 0 && currentZ !== CRstartZ ){    
     this.emit_gcode( "G0Z" + CRstartZ);
-    // this.cmd_posz = CRstartZ;
   }
-  // else{										//If not, stay at the ending Z height
-  // 	this.cmd_posz = currentZ;
-  // }
 
   if ( optCR === 3 ) {
     this.emit_gcode( "G0X" + CRstartX + "Y" + CRstartY );
   }
-
- //  this.cmd_posx = CRstartX;
-	// this.cmd_posy = CRstartY;
-
 };
