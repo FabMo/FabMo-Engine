@@ -436,7 +436,6 @@ Machine.prototype.arm = function(action, timeout) {
 		case 'paused':
 		case 'stopped':
 			if(action.type != 'resume') {
-				log.debug("===>In machine at case stopped, over-ride here???")
 				throw new Error('Cannot arm the machine for ' + action.type + ' when ' + this.status.state);
 			}
 			break;
@@ -580,7 +579,6 @@ Machine.prototype.fire = function(force) {
 Machine.prototype.authorize = function(timeout) {
 	var timeout = timeout || config.machine.get('auth_timeout');
 
-	// 
 	if(config.machine.get('auth_required') && timeout) {
 		log.info("Machine is authorized for the next " + timeout + " seconds.");
 		if(this._authTimer) { clearTimeout(this._authTimer);}
@@ -612,8 +610,6 @@ Machine.prototype.deauthorize = function() {
 	}
 	log.info('Machine is deauthorized.');
 	this.status.auth = false;
-	// Not needed and causes back to back pauses to behave irregularly.
-	// this.emit('status', this.status);
 }
 
 Machine.prototype.isConnected = function() {
@@ -756,14 +752,12 @@ Machine.prototype.setRuntime = function(runtime, callback) {
 				}
 				this.current_runtime = runtime;
 				runtime.connect(this);
-global.CUR_RUNTIME = runtime;
-
+				global.CUR_RUNTIME = runtime;
 			}
 		} else {
 			this.current_runtime = this.idle_runtime;
 			this.current_runtime.connect(this);
 		}
-
 	} catch(e) {
 		log.error(e)
 		setImmediate(callback, e);
@@ -802,10 +796,7 @@ Machine.prototype.getRuntime = function(name) {
 // stateinfo - The contents of the 'info' field of the status report, if needed.
 Machine.prototype.setState = function(source, newstate, stateinfo) {
 	this.fireButtonDebounce = false ;
-	log.debug("... {setState} for a runtime");
-	log.debug(source);
 	if ((source === this) || (source === this.current_runtime)) {
-		log.info("... {setState} change to: " + newstate)
 		// Set the info field
 		// status.info.id is the info field id - it helps the dash with display of dialogs
 		if(stateinfo) {
@@ -824,8 +815,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				// is done regularly, so that if the machine is powered down it retains the current position
 				if(this.status.state != 'idle') {
 					log.debug("call final lines from machine");
-                    //log.stack();
-                    //this.driver.command("M100 ({out4:0})\n M30"); // Permissive relay
 					this.driver.command({"out4":0}); // Permissive relay
 					this.driver.command({"gc":"m30"}); // Generate End
 					// A switch to the 'idle' state means we change to the idle runtime
@@ -861,9 +850,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 			case 'paused':
                 if(this.status.state != newstate) {
                 	//set driver in paused state
-                	// log.debug('paused state: pause_hold is:  ' + this.driver.pause_hold);
                 	this.driver.pause_hold = true;
-                	// log.debug('paused state: pause_hold set to:  ' + this.driver.pause_hold);
                 	// Save the position to the instance configuration.  See note above.
                     this.driver.get('mpo', function(err, mpo) {
 					    if(config.instance) {
@@ -882,7 +869,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
                 }
 				break;
 			case 'dead':
-				// Sadness
 				log.error('G2 is dead!');
 				break;
 			default:
@@ -909,7 +895,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 };
 
 // Pause the machine
-// This is pretty much passed through to whatever runtime is currently in control
 Machine.prototype.pause = function(callback) {
 		if(this.status.state === "running") {
 			if(this.current_runtime) {
@@ -976,9 +961,7 @@ Machine.prototype.quit = function(callback) {
 Machine.prototype.resume = function(callback, input=false) {
 	if (this.driver.pause_hold) {
 		//Release driver pause hold
-		// log.debug("Resume from pause: pause_hold is:  " + this.driver.pause_hold);
 		this.driver.pause_hold = false;
-		// log.debug("Resume from pause: pause_hold set to:  " + this.driver.pause_hold);
 	}
 	if (this.current_runtime && this.status.inFeedHold){
 		this._resume();
@@ -1114,8 +1097,6 @@ Machine.prototype._runNextJob = function(force, callback) {
 		if(this.status.state === 'armed' || force) {
 			log.info("Running next job");
 			db.Job.dequeue(function(err, result) {
-log.debug("@_runNextJob in machine")
-				log.info("result- " + result);
 				if(err) {
 					log.error(err);
 					callback(err, null);
