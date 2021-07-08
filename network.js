@@ -3,7 +3,7 @@
 //  * 
 //  * TODO : This seems like a relic.  This code has all been moved to the updater.  Delete it?
 //  */
-// var log = require('./log').logger('network');
+var log = require('./log').logger('network');
 // var async = require('async');
 // var fs = require('fs');
 // var doshell = require('./util').doshell
