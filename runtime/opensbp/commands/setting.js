@@ -6,7 +6,6 @@ var openSBP = require('../opensbp.js');
 
 /* SETTINGS */
 
-////## testing making SA and SR be stack-breaking as they should be
 // Set to Absolute coordinates
 exports.SA = function(args, callback) {
 	this.absoluteMode = true;
@@ -54,16 +53,6 @@ exports.SR = function(args, callback) {
 	this.emit_gcode("M0"); ////## seems needed for multiple stack-break commands at start 
 	callback();
 };
-
-// Set to MOVE mode
-// exports.SM = function(args) {
-
-// };
-
-// Set to PREVIEW mode
-// exports.SP = function(args) {
-
-// };
 
 // Set to table base coordinates
 exports.ST = function(args, callback) {

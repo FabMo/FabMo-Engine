@@ -30,9 +30,8 @@ ManualRuntime.prototype.toString = function() {
 	return "[ManualRuntime]";
 }
 
-// Check if auth is neeeded to execute code
+// pass through function for compatibility with opensbp runtime
 ManualRuntime.prototype.needsAuth = function(s) {
-	//all manual needs auth (check) so just return true
 	return true;
 }
 
@@ -62,11 +61,7 @@ ManualRuntime.prototype.connect = function(machine) {
 ManualRuntime.prototype.disconnect = function() {
 	if(this.ok_to_disconnect && !this.stream) {
 		this.driver.removeListener('status', this.status_handler);
-
-		////##
 		log.info('Disconnected MANUAL runtime.')
-
-		//this.machine.setState(this, 'idle');
 	} else {
 		throw new Error("Cannot disconnect while manually driving the tool.");
 	}
@@ -87,6 +82,7 @@ ManualRuntime.prototype.enter = function(mode, hideKeypad) {
 
 	// Create a helper that is used to do the pumping of commands.
 	this.helper = new ManualDriver(this.driver, this.stream, mode);
+	// TODO: Determine if this is needed it currently does nothing
 	this.helper.enter().then(function() {
 		log.debug('** Resolving enter promise **')
 ////##		this.driver.quit();  ////## removed because sending a delayed kill to next routine???
@@ -107,11 +103,8 @@ ManualRuntime.prototype.enter = function(mode, hideKeypad) {
 // {cmd:"goto",move:{X:1,Y:2,Z:3}} - Go to x,y,z = 1,2,3
 // {cmd:"set", move:{X:1,Y:2,Z:3}} - Set current x,y,z to 1,2,3 (No movement)
 // 
-////## ManualRuntime.prototype.executeCode = function(code, callback) {
 ManualRuntime.prototype.executeCode = function(code) {
 	currentCmd = code.cmd;
-////##	this.completeCallback = callback;
-
 	// Don't honor commands if we're not in a position to do so
 	switch(this.machine.status.state) {
 		case 'stopped':

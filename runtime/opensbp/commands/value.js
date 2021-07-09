@@ -77,9 +77,6 @@ exports.VA = function(args, callback) {
 };
 
 exports.VC = function(args, callback) {
-
-//	log.debug( "VC - args = " + args );
-
 	var sbp_values = {};
 
 	if (args[0] !== undefined) { 	//args[0] = sbp_settings.cutterDia	// Cutter Diameter
@@ -90,8 +87,8 @@ exports.VC = function(args, callback) {
 	if (args[3] !== undefined) { 	//Safe Z Pull Up
 		sbp_values.safeZpullUp = args[3];
 	}
-//	if (args[4] !== undefined) { 	// Plunge Direction
-//	}
+	//	if (args[4] !== undefined) { 	// Plunge Direction
+	//	}
 	if (args[5] !== undefined) { 	// % Pocket Overlap for CR and CG commands
 		sbp_values.pocketOverlap = args[5];
 	}

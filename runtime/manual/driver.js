@@ -103,7 +103,6 @@ ManualDriver.prototype.enter = function() {
 
 // Exit the machining cycle
 // This stops motion if it is in progress, and restores the settings changed in enter()
-////## Exiting from normal and raw now done the same; but left stubbed separately for potential divergence
 ManualDriver.prototype.exit = function() {
 	if(this.isMoving()) {
 		// Don't exit yet - just pend.
@@ -117,8 +116,7 @@ ManualDriver.prototype.exit = function() {
 			case 'normal':
 				config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
 				    this._done();
-		        }.bind(this));			
-				log.debug("===> setting to exact path")
+		        }.bind(this));	
 		        this.stream.write('G61\n'); ////## making sure not left in exact stop mode
 				this.stream.write('M30\n');
 				////## added to maintain line number priming in all scenarios ...
@@ -129,8 +127,7 @@ ManualDriver.prototype.exit = function() {
 			case 'raw':
 				config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
 				    this._done();
-		        }.bind(this));			
-				log.debug("===> setting to exact path; raw stop?")
+		        }.bind(this));
 		        this.stream.write('G61\n'); ////## making sure not left in exact stop mode
 				this.stream.write('M30\n');
 				////## added to maintain line number priming in all scenarios ...
@@ -162,7 +159,6 @@ ManualDriver.prototype.startMotion = function(axis,  speed, second_axis, second_
 	if(this.mode != 'normal') {
 		throw new Error('Cannot start movement in ' + this.mode + ' mode.');
 	}
-
 	// Don't start motion if we're in the middle of stopping (can do it from stopped, though)
 	if(this.stop_pending || this.omg_stop) {
 		return;
@@ -196,8 +192,6 @@ ManualDriver.prototype.startMotion = function(axis,  speed, second_axis, second_
 		// Length of the moves we pump the queue with, based on speed vector
 		this.renewDistance = speed*(T_RENEW/60000)*SAFETY_FACTOR;                
 		// Make sure we're in relative moves and the speed is set
-////##		this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n');
-		log.debug("===> setting to exact path")
 		this.stream.write('G91 F' + this.currentSpeed.toFixed(3) + '\n' + 'G61' + '\n');
 
 		// Start pumping moves
@@ -255,8 +249,6 @@ ManualDriver.prototype.runGCode = function(code) {
 			log.debug('writing gcode while static')
 			this.moving = true;
 
-			////## To debug G2 action; this kludge allows easy multiple lines with an "&" placed after each cmd
-			//      in betaINSERT function of Sb4; try a "^" to kill; and a "#" to restart G2.
 			log.debug("... possibly converting special codes in betaInsert");
 			code = code.replace(/&/g,'\n');
 			code = code.replace(/^/, '\x04\n');
@@ -288,8 +280,8 @@ ManualDriver.prototype.goto = function(pos) {
 }
 
 // Set the machine position to the specified vector ////## meaning "location" here not move vector?
-// ////## Is it possible that timing could produce an inaccurate position update here???
-// ////##        ** pretty scary to reset location after zeroing and not do it by offset???
+// TODO: Is it possible that timing could produce an inaccurate position update here???
+// TODO: ** pretty scary to reset location after zeroing and not do it by offset???
 //   pos - New position vector as an object,  eg: {"X":10, "Y":5}
 ManualDriver.prototype.set = function(pos) {
 	var toSet = {};
@@ -357,7 +349,6 @@ ManualDriver.prototype._handleNudges = function() {
 			var axis = move.axis.toUpperCase();
 
 			if('XYZABCUVW'.indexOf(axis) >= 0) {
-////##				var moves = ['G91'];
 				log.debug("===> setting to exact distance")
 				var moves = ['G91 G61.1'];  ////## setting exact distance for fixed-moves/nudges so g2 does not build longer vector
 				if(move.second_axis) {
@@ -410,7 +401,6 @@ ManualDriver.prototype.nudge = function(axis, speed, distance, second_axis, seco
 	}
 
     if(this.moving) {
-	//	this.fixedQueue.push({axis: axis, speed: speed, distance: distance});
 		log.warn("fixedMove(): Queueing move, due to already moving.");
 	} else {
 		this._handleNudges();
@@ -455,6 +445,7 @@ ManualDriver.prototype._renewMoves = function(reason) {
 		}
 	} else {
 		if(!(this.moving && this.keep_moving)) {
+			// TODO:  Why is this disabled?
 			//this.stopMotion();
 		} else {
 			this.renew_timer = setTimeout(function() {

@@ -69,10 +69,10 @@ EngineConfig.prototype.update = function(data, callback) {
 		logger.warn('Engine profile changed - engine will be restarted.')
 		profiles.apply(newProfile, function(err, data) {
 			if(err) {
-				console.log(err);
+				log.error(err);
 				callback(err);
 			} else {
-				console.log('shutting down');
+				log.info('shutting down');
 				process.exit(1);
 			}
 		});
