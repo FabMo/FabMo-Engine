@@ -302,6 +302,11 @@ G2.prototype.connect = function(path, callback) {
 	// recieve g-codes and JSON commands.  We don't want to do anything until we get that.
 	this.once('ready', function() {
 		this.connected = true;
+
+////## Have tested both reset and end-file during this start-up to clear "alarm"
+////##    a reset works, but disconnects G2 and requires new manual fabmo start
+////##		this._write('\x18\n', function() {   ////## try reset not a kill
+////##		this._write('M30\n', function() {    ////## try end file
 		this._write('\x04\n', function() {
 			this.requestStatusReport(function() {
 				callback(null, this);
