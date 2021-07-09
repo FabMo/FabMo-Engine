@@ -94,7 +94,6 @@ G2Config.prototype.reverseUpdate = function(keys, callback) {
 //       data - Object mapping keys to update to values
 //   callback - Called with an object mapping keys to all values updated (after sync with G2)
 G2Config.prototype.update = function(data, callback) {
-////##log.stack();
 	keys = Object.keys(data);
 	// TODO: We can probably replace this with a `setMany()`
 	async.mapSeries(

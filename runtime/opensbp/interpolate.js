@@ -30,12 +30,12 @@ log.debug("lineInterpolate: EndPt = " + JSON.stringify(EndPt));
   }    
   var speed = EndPt.F;
   var segLen = config.opensbp.get('cRes');
-log.debug("segLen = " + segLen);
+  log.debug("segLen = " + segLen);
   //distance = sqrt[width^2 + length^2 + height^2]
-log.debug("startX = " + startX + " startY = " + startY + " startZ = " + startZ );  
-log.debug("endX = " + endX + " endY = " + endY + " endZ = " + endZ );  
+  log.debug("startX = " + startX + " startY = " + startY + " startZ = " + startZ );  
+  log.debug("endX = " + endX + " endY = " + endY + " endZ = " + endZ );  
   var lineLen = Math.sqrt(Math.pow((endX-startX),2)+Math.pow((endY-startY),2)+Math.pow((endZ-startZ),2));
-log.debug("lineLen = " + lineLen);
+  log.debug("lineLen = " + lineLen);
   if ( lineLen === 0 ) { throw( "lineInterpolate: line length zero" ); }
   var steps = Math.floor(lineLen/segLen);
   var stepX = (endX-startX)/steps;
@@ -46,10 +46,8 @@ log.debug("lineLen = " + lineLen);
   var PtFilename = runtime.transforms.level.ptDataFile;
   var PtData = "";
   if(level === true){
-//    log.debug("lineInterpolation: readPtData");
     PtData = fs.readFileSync(PtFilename);
     PtData = JSON.parse(PtData);
-//    log.debug("lineInterpolate: PtData = " + JSON.stringify(PtData));
   }
   for ( i=1; i<steps+1; i++){
       nextPt = {};
@@ -115,6 +113,7 @@ function leveler(PtNew, data){
     }
     else{
       log.debug("leveler_multi-point: num keys = " + count);
+      //TODO: unmarked TODO
 // **************Move to higher level so that the objcet only has to be 
 // created once for the file run.
       // Read point data
@@ -179,8 +178,6 @@ log.debug("circleInterpolate: CGParams = " + JSON.stringify(CGParams));
   var Bang = Math.abs(Math.atan2(centerY, centerX));
   var Eang = Math.abs(Math.atan2((endY-centerPtY),(endX-centerPtX)));
 
-//log.debug("1Bang = " + Bang + "  Eang = " + Eang);
-
   var inclAng;
 
   if (code === "G2") {
@@ -191,10 +188,6 @@ log.debug("circleInterpolate: CGParams = " + JSON.stringify(CGParams));
       if (Bang < Eang) { inclAng = Eang + Bang; }
       if (Bang > Eang) { inclAng = 6.28318530717959 - (Bang - Eang); }
   }
-
-//log.debug("inclAng = " + inclAng);
-//log.debug("2Bang = " + Bang + "  Eang = " + Eang);
-
   if ( Math.abs(inclAng) < 0.005 ) { 
 //      log.debug("Returning from interpolation - arc too small to cut!");
       return;
@@ -228,8 +221,6 @@ log.debug("circleInterpolate: CGParams = " + JSON.stringify(CGParams));
   for ( i=1; i<steps; i++) {
     gcode = "G1";
     nextAng = Bang + (i*theta);
-//    log.debug("nextAng = " + nextAng);    
-//    log.debug("radius = " + radius);
     runtime.cmd_posx = nextX = centerPtX + (radius * Math.cos(nextAng)); //* propX;
     runtime.cmd_posy = nextY = centerPtY + (radius * Math.sin(nextAng)); //* propY;
     gcode += "X" + nextX.toFixed(5) + "Y" + nextY.toFixed(5);
@@ -238,7 +229,6 @@ log.debug("circleInterpolate: CGParams = " + JSON.stringify(CGParams));
       gcode += "Z" + nextZ.toFixed(5); 
     }
     gcode += "F" + speed;
-//    log.debug("circleInterpolation: gcode = " + gcode);
     runtime.emit_gcode(gcode);
   }
   

@@ -158,5 +158,4 @@ module.exports = function(server) {
   server.get('/authentication/user/:id',passport.authenticate('local'), getUser);
   server.post('/authentication/user/:id',passport.authenticate('local'), modifyUser);
   server.del('/authentication/user/:id',passport.authenticate('local'), deleteUser);
-
 };

@@ -209,7 +209,7 @@ var get_info = function(req, res, next) {
 };
 
 
-// TODO ////## Don't think this needed anymore
+// TODO: verify this isn't needed and remove.
 // var profile = function(req, res, next) {
 //   profiles.apply('ShopBot Desktop', function(err, data) {
 //     res.json({

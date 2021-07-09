@@ -15,14 +15,8 @@ var flashFirmWare = function(req, res, next) {
         }    
         var filePath = upload.files[0].file.path;
         var fileName = upload.files[0].file.name;
-        console.log(filePath);
-        console.log(fileName);
-        // res.json({
-        //     status: 'success',
-        //     data:{
-        //         status: 'complete'
-        //     }
-        // });
+        log.info(filePath);
+        log.info(fileName);
         try {
 	        if (fileName.match(/.*\.bin/i)) {
                 engine.stop('firmware',function(){

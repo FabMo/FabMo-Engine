@@ -30,9 +30,6 @@ exports.ZX = function(args, callback) {
 			callback();
 		}.bind(this));
 	}.bind(this));
-
-	//this.emit_gcode("G10 L20 P2 X0");
-	//callback()
 };
 
 exports.ZY = function(args, callback) {
@@ -50,9 +47,6 @@ exports.ZY = function(args, callback) {
 				callback();
 		}.bind(this));
 	}.bind(this));
-	//this.emit_gcode("G10 L20 P2 Y0");
-	//callback()
-
 };
 
 exports.ZZ = function(args, callback) {
@@ -68,9 +62,6 @@ exports.ZZ = function(args, callback) {
 			callback();
 		}.bind(this));
 	}.bind(this));
-
-	//this.emit_gcode("G10 L20 P2 Z0");
-	//callback()
 };
 
 exports.ZA = function(args, callback) {
@@ -78,6 +69,7 @@ exports.ZA = function(args, callback) {
 		if(err) { return callback(err); }
 		var zaObj = {};
 		var unitConv = 1.0;
+		// TODO: ?
 		/*??????????????????????????????????????????????????????????
 		              How is unit conversion handled
 		              if the A is a linear axis?

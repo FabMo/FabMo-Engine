@@ -128,8 +128,7 @@ Engine.prototype.setTime = function(time) {
         t = m.utc().format('YYYY-MM-DD HH:mm:ss');
         cmd = 'timedatectl set-time ' + t + '; timedatectl';
         util.doshell(cmd, function(stdout) {
-            console.log('time thing');
-            log.debug("  @setTime- " + stdout);
+            log.debug("Time Set To:  " + stdout);
             this.time_synced = true;
         });
     }
@@ -160,16 +159,15 @@ Engine.prototype.stop = function(reason, callback) {
  * (See: example-version.json)
  */
 Engine.prototype.getVersion = function(callback) {
-    ////## grab the version and abbreviated SHA (if one)
+    // grab the version and abbreviated SHA (if one)
     util.doshell('git describe', function(data) {
-        // util.doshell('git rev-parse --verify HEAD', function(data) {
         this.version = {};
         this.version.number = (data || "").trim();
         // this.version.hash = (data || "").trim();
         this.version.debug = ('debug' in argv);
-    ////## then see if we have an official release version# in json file
-    // see: version-example.json
-    fs.readFile('version.json', 'utf8', function(err, data) {
+        // then see if we have an official release version# in json file
+        // see: version-example.json
+        fs.readFile('version.json', 'utf8', function(err, data) {
             if(err) {
                 log.debug(" ... no version file ... using git and dev info")
                 this.version.type = 'dev';
@@ -342,19 +340,20 @@ Engine.prototype.start = function(callback) {
                 config.clearAppRoot(function(err, stdout) {
                     log.info("Clearing the approot ...");
                     config.engine.set('version', this_time_version);
-                    if(err) { log.error(err); }
-                    else {
+                    if(err) {
+                        log.error(err);
+                    } else {
                         log.debug("   @flg_cr_approot- " + stdout);  
                     }
                 callback();
                 });
-            } else {        ////##
-                callback(); ////##
-            }               ////##
+            } else {
+                callback();
+            }
         }.bind(this),
 
         function create_data_directories(callback) {
-log.debug('Create_data_directories ...')
+            log.debug('Create_data_directories ...')
             config.createDataDirectories(callback);
         }.bind(this),
 
@@ -391,13 +390,6 @@ log.debug('Create_data_directories ...')
                 callback(null);
             });
         }.bind(this),
-
-        ////## obsolete
-        // function launch_detection_daemon(callback){
-        //     log.info("Launching detection daemon...");
-        //     detection_daemon();
-        //     callback(null);
-        // }.bind(this),
 
         // Apply the "machine" configuration - see config/machine_config.js for details
         function load_machine_config(callback) {
@@ -468,21 +460,6 @@ log.debug('Create_data_directories ...')
         //        installation process.  It is typical for such processes to "migrate" config files to latest version.
         function g2_shim(callback) {
           log.debug("Running G2 Shim...");
-////##
-          // var entries = [
-          //   '1sa','1tr','1mi',
-          //   '2sa','2tr','2mi',
-          //   '3sa','3tr','3mi',
-          //   '4sa','4tr','4mi',
-          //   '5sa','5tr','5mi',
-          //   '6sa','6tr','6mi',
-          //   'ja',
-          //   '6ma',
-          //   '6po',
-          //   '6su',
-          //   '6pm',
-          //   '6pl'
-          // ]
           var entries = [
             '1sa','1tr','1mi',
             '2sa','2tr','2mi',
@@ -603,37 +580,23 @@ log.debug('Create_data_directories ...')
           }.bind(this))
         }.bind(this),
 
-////##
         // Initialize the network module
         function setup_network(callback) {
-////##
-log.debug("### Getting this far in START-ENGINE ###  <======================")
             var OS = config.platform;
             var name = config.engine.get('name');
             log.info( 'name is ' + name);
             network.createNetworkManager(name, function(err, nm){
-////##
-                // if(err) {
-                //     log.error(err);
-                //     this.networkManager = new GenericNetworkManager(OS, PLATFORM);
-                // } else {
-                     this.networkManager = nm
-                // }
-   
-                // Listen to the network manager's "network" event (which is emitted each time a new network is joined)
-                // and when the event is encountered, initiate beacon reporting and update package checks
-
-////## REMOVE???
+                this.networkManager = nm
                 this.networkManager.on('network', function(evt) {
                     if(evt.mode === 'station' || evt.mode === 'ethernet') {
                         // 30 Second delay is used here to make sure timesyncd has enough time to update network time
                         // before trying to pull an update (https requests will fail with an inaccurate system time)
                         log.info('Network is possibly available:  Going to check for packages in ' + PACKAGE_CHECK_DELAY + ' seconds.')
                         setTimeout(function() {
+                            //TODO re-imlpement for dashboard only updates?
                             //log.info('Doing beacon report due to network change');
                             //this.beacon.setLocalAddresses(this.networkManager.getLocalAddresses());
                             //this.beacon.once('network');
-                            //TODO re-imlpement for dashboard only updates
                             // log.info('Running package check due to network change');
                             // this.runAllPackageChecks();
                         }.bind(this), PACKAGE_CHECK_DELAY*1000);
@@ -642,7 +605,6 @@ log.debug("### Getting this far in START-ENGINE ###  <======================")
     
                 // Call the network manager init function, which actually starts looking for networks, etc.
                 log.info('Setting up the network...');
-////##
                 try {
                     this.networkManager.init();
                     log.info('Network manager started.')
@@ -650,25 +612,12 @@ log.debug("### Getting this far in START-ENGINE ###  <======================")
                     log.error(e);
                     log.error('Problem starting network manager:' + e);
                 }
-    
-                // // Setup a recurring function that checks to see that the updater is online
-                // var onlineCheck = function() {
-                //     console.log('update check');
-                //     this.networkManager.isOnline(function(err, online) {
-                //         if(online != this.status.online) {
-                //             this.setOnline(online);
-                //         }
-                //     }.bind(this));
-                // }.bind(this);
-                // onlineCheck();
-                // setInterval(onlineCheck,3000); // TODO - magic number, should factor out
-                 return callback(null);
+                return callback(null);
             }.bind(this));
 
 
 
          }.bind(this),
-////##
 
 
         function setup_config_events(callback) {
@@ -732,8 +681,8 @@ log.debug("### Getting this far in START-ENGINE ###  <======================")
             if('debug' in argv) {
                 server.use(
                     function debug(req, res, next) {
-////## temporarily removed because making hard to read manual mode action                        
-////##                        log.debug(req.method + ' ' + req.url);
+                        // temporarily removed because making hard to read manual mode action                        
+                        // log.debug(req.method + ' ' + req.url);
                         next();
                     });
             }
@@ -801,7 +750,6 @@ log.debug("### Getting this far in START-ENGINE ###  <======================")
                 // how long the session will stay valid in ms
                 duration: (31 * 24 * 60 * 60 * 1000),
                 cookie: {
-                  //: '/api', // cookie will only be sent to requests under '/api'
                   maxAge: (31 * 24 * 60 * 60 * 1000),  // duration of the cookie in milliseconds, defaults to duration above
                   ephemeral: false, 
                   httpOnly: false, // when true, cookie is not accessible from javascript
@@ -835,6 +783,8 @@ log.debug("### Getting this far in START-ENGINE ###  <======================")
             authentication.configure();
 
         }.bind(this)
+
+        // TODO:  IS Beacon still in use or supported?
         // Start the beacon service
         // function start_beacon(callback) {
         //     var url = config.engine.get('beacon_url');

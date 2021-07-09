@@ -71,7 +71,7 @@ function configureUser(callback){
 				log.warn('Configuration file ' + userFile + ' not found. Setting up first user');
 				exports.user.setUpFile(function(err){
 					if(err) {
-						console.log(err);
+						log.error(err);
 					} else {
 						configureUser(callback);
 					}
