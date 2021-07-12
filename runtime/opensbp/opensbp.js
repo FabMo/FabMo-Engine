@@ -119,7 +119,8 @@ SBPRuntime.prototype.connect = function(machine) {
     this.cmd_posb = this.posb;
     this.cmd_posc = this.posc;
     this.connected = true;
-    this.ok_to_disconnect = false;
+////##    this.ok_to_disconnect = false;    ////## maybe fix for cannot disconnect
+                                            ////## ... in any case does not seem right place; should be state change
     log.info('Connected OpenSBP runtime.');
 };
 

@@ -584,7 +584,7 @@ Engine.prototype.start = function(callback) {
         function setup_network(callback) {
             var OS = config.platform;
             var name = config.engine.get('name');
-            log.info( 'name is ' + name);
+            log.info('name is - ' + name);
             network.createNetworkManager(name, function(err, nm){
                 this.networkManager = nm
                 this.networkManager.on('network', function(evt) {
