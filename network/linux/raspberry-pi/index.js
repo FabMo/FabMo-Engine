@@ -20,7 +20,6 @@ var udhcpd = require('wireless-tools/udhcpd');
 const commands = require('./commands.js');
 const hostInterface = 'wlan0';  // The WiFi Access Device.
 
-
 const EventEmitter = require('events');
 class MyEmitter extends EventEmitter {}
 const myEmitter = new MyEmitter();
@@ -37,7 +36,6 @@ var apModeGateway= '192.168.42.1';
 var tmpPath = os.tmpdir() + '/';
 
 var last_name ="";
-
 
 var DEFAULT_NETMASK = "255.255.255.0";
 var DEFAULT_BROADCAST = "192.168.1.255"
@@ -73,6 +71,11 @@ RaspberryPiNetworkManager.prototype.set_uuid = function(callback) {
         callback(name);
       })
     } else {
+      ////## Get Serial Number for name and clear out 0's to simplfy; do this here rather than later
+      // At some point, might want to stick to just the first batch of 0's
+      log.debug("At RPI naming from SerialNum - " )
+      result = result.split('0').join('').split('\n').join('').trim(); 
+      log.debug("modifiedSerial- " + result);
       var name = {'name' : "fabmo-" + result }
       config.engine.update(name, function() {
         callback(name);
@@ -240,10 +243,12 @@ RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
   var interfaces = os.networkInterfaces();
   var wlan0Int =interfaces.wlan0;
   var eth0Int = interfaces.eth0;
-  var name = config.engine.get('name').split('0').join('').split('\n').join('').trim();
+  var name = config.engine.get('name'); // should already be simplified
+  //var name = config.engine.get('name').split('0').join('').split('\n').join('').trim();
   var full_name;
   var ext;
 
+   log.debug("At joinAP, name is - " + name)
   // Updating AP-Name
   // Then, restarting AP if we get name change; this should drop AP momentarily!
     ext =":"
@@ -260,7 +265,7 @@ RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
     // 'ted-dev:169.254.225.224:192.168.1.109'
     // So best to prioritize display for ethernet, until a better idea ...
     //     TODO: chop tool names that are too long
-    log.debug("n#### NEW full_name " + full_name); 
+    log.debug("NEW full_name " + full_name); 
     var network_config = config.engine.get('network');
     network_config.wifi.mode = 'ap';
     config.engine.set('network', network_config);
