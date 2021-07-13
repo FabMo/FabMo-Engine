@@ -955,12 +955,12 @@ SBPRuntime.prototype._end = function(error) {
             if(this.machine.status.job) {
                 this.machine.status.job.finish(function(err, job) {
                     this.machine.status.job=null;
-                    this.machine.setState(this, 'idle');
                     cleanup(error);
+                    this.machine.setState(this, 'idle');
                 }.bind(this));
             } else {
-                this.machine.setState(this, 'idle');
                 cleanup(error);
+                this.machine.setState(this, 'idle');
             }
         }.bind(this));
     } else {
