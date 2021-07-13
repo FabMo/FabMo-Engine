@@ -13,8 +13,7 @@ var PLATFORM = require('process').platform;
 var G2 = require('../g2.js');
 var exec = require('child_process').exec;
 var Config = require('./config').Config;
-var log = require('../log');
-var logger = log.logger('config');
+var log = require('../log').logger('config');
 var profiles = require('../profiles');
 var process = require('process');
 
