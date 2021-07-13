@@ -13,8 +13,7 @@ var PLATFORM = require('process').platform;
 var G2 = require('../g2.js');
 var exec = require('child_process').exec;
 var Config = require('./config').Config;
-var log = require('../log');
-var logger = log.logger('config');
+var log = require('../log').logger('config');
 var profiles = require('../profiles');
 var process = require('process');
 
@@ -38,11 +37,11 @@ EngineConfig.prototype.update = function(data, callback) {
 				// Make note if the profile changed.  If so, we want to apply the new profile
 				// (Which will probably make a bunch of sweeping configuration changes)
 				if((key in this._cache) && (data[key] != this._cache[key])) {
-					try { logger.info("Profile changed from " + this._cache[key] + ' to ' + data[key]); }
+					try { log.info("Profile changed from " + this._cache[key] + ' to ' + data[key]); }
 					catch(err) {}
 					profile_changed = true;
 				} else {
-					logger.info('No initial profile changed.');
+					log.info('No initial profile changed.');
 				}
 			}
 			this._cache[key] = data[key];				
@@ -66,7 +65,7 @@ EngineConfig.prototype.update = function(data, callback) {
 	};
 	// If the profile changed above, we apply it, and if that was successful, we abort the process.
 	if(profile_changed) {
-		logger.warn('Engine profile changed - engine will be restarted.')
+		log.warn('Engine profile changed - engine will be restarted.')
 		profiles.apply(newProfile, function(err, data) {
 			if(err) {
 				log.error(err);
@@ -85,7 +84,7 @@ EngineConfig.prototype.update = function(data, callback) {
 //   callback - Called when settings have been applied or with error if error
 EngineConfig.prototype.apply = function(callback) {
 	try {
-		log.setGlobalLevel(this.get('log_level'));
+		//log.setGlobalLevel(this.get('log_level')); ////## from old logging system
 		callback(null, this);
 	}
 	catch (e) {
