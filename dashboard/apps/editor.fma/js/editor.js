@@ -218,8 +218,13 @@ require('./cm-fabmo-modes.js');
         var h = window.innerHeight;
         var h2 = $('#topbar').height();
         $("#editor").css('height',h-h2);
+        // rmackie: All of these result in errors in the browser debugger
+        // rmackie: none of them solve the problem of the original reflow being
+        // rmackie: deprecated. We needed a working "resize"
         // $(document).reflow();
-        $(document).Foundation.reflow();
+        // $(document).Foundation.reflow();
+        // $(document).Foundation.reInit();
+        // Foundation.reInit();
       }
 
       $(window).resize(function(){
