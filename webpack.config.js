@@ -59,7 +59,15 @@ var config = {
             },
             {
                 test: /\.css$/i,
-                use: [MiniCssExtractPlugin.loader, 'css-loader'],
+                use: [
+                        {
+                           loader: MiniCssExtractPlugin.loader, 
+                           options: {
+                              publicPath: "/",
+                           },
+                        },
+                        'css-loader'
+                     ],
             },
             {
                 test: /\.(eot|svg|ttf|woff|woff2|png|jpg|gif)$/,
