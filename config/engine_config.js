@@ -13,7 +13,8 @@ var PLATFORM = require('process').platform;
 var G2 = require('../g2.js');
 var exec = require('child_process').exec;
 var Config = require('./config').Config;
-var log = require('../log').logger('config');
+var LogTool = require('../log');
+var log = LogTool.logger('config');
 var profiles = require('../profiles');
 var process = require('process');
 
@@ -84,7 +85,7 @@ EngineConfig.prototype.update = function(data, callback) {
 //   callback - Called when settings have been applied or with error if error
 EngineConfig.prototype.apply = function(callback) {
 	try {
-		//log.setGlobalLevel(this.get('log_level')); ////## from old logging system
+		LogTool.setGlobalLevel(this.get('log_level'));
 		callback(null, this);
 	}
 	catch (e) {
