@@ -172,7 +172,7 @@ define(function(require) {
 
         }
         //Handle collapse of left
-        $('.colapseLeft').on('click, function(evt) {
+        $('.colapseLeft').on('click', function(evt) {
             evt.preventDefault();
             $('.colapseLeft').hide();
             $('#left-menu').addClass("colapsed");
