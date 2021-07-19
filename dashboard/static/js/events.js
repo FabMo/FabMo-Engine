@@ -172,7 +172,7 @@ define(function(require) {
 
         }
         //Handle collapse of left
-        $('.colapseLeft').click(function(evt) {
+        $('.colapseLeft').on('click, function(evt) {
             evt.preventDefault();
             $('.colapseLeft').hide();
             $('#left-menu').addClass("colapsed");
@@ -254,22 +254,22 @@ define(function(require) {
 
 
     /********** Document Ready Init **********/
-    $(document).ready(function() {
+    function docReady () {
         rightMenuLoad();
         resizedoc();
         //If size of the screen change, we resize the main & app container
         checkifTour();
-        $(window).resize(function() {
+        $(window).on('resize', function() {
             resizedoc();
         });
 
         //Idem if we colapse or un-colapse the right menu
-        $("#icon_colapse").click(function(evt) {
+        $("#icon_colapse").on('click', function(evt) {
           evt.preventDefault();
             colapseMenu();
         });
 
-        $('#left-slide-button').click(function(evt){
+        $('#left-slide-button').on('click', function(evt){
             evt.preventDefault();
             if($('#left-slide-button').hasClass('open')){
                 $('#left-slide-button').removeClass('open');
@@ -291,15 +291,16 @@ define(function(require) {
         slideMenu();
 
         //Remove redirection on forms submit
-        $("button[type='submit']").click(function() {
+        $("button[type='submit']").on('click', function() {
             return false; //Override the action of the button, so the user is not redirected to another page (no data lost)
         });
 
 
     //handle log out
 
-    });
+    };
 
+    $(docReady);
 
 
     return {
