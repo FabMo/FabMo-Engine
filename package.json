@@ -66,34 +66,15 @@
     "mini-css-extract-plugin": "^1.5.0",
     "node-gyp": "^8.0.0",
     "passport-restify": "^1.0.1",
-    "source-map-loader": "^1.0.0",
-    "style-loader": "^0.13.1",
-    "webpack": "5.44.0",
-    "webpack-cli": "^4.6.0",
-    "webpack-dev-server": "^3.11.2"
+    "style-loader": "^0.13.1"
   },
   "engine": "node 15.14.0",
-  "apidoc": {
-    "name": "FabMo Engine",
-    "version": "0.0.0",
-    "description": "FabMo-Engine",
-    "title": "FabMo-Engine API Documentation"
-  },
   "scripts": {
     "start": "node server.js",
     "debug": "node server.js --debug ",
-    "webpack": "node_modules/.bin/webpack",
-    "postinstall": "node_modules/.bin/webpack --mode=development",
-    "prod": "node_modules/.bin/webpack --mode=development",
-    "dev": "npm run stopdaemon && npm run build && npm run debugserver",
+    "dev": "npm run stopdaemon && npm run debug",
     "stopdaemon": "sudo systemctl stop fabmo",
-    "build": "webpack --mode=development && npm run copybuiltfiles",
-    "copybuiltfiles": "/bin/mkdir /fabmo/dashboard/build/css; cp /fabmo/dashboard/build/dashboard.css /fabmo/dashboard/build/css/dashboard.css; cp -R /fabmo/dashboard/static/img/favicon /fabmo/dashboard/build/favicon",
-    "debugserver": "node server.js --debug",
-    "build:dev": "webpack --mode=development",
-    "build:prod": "webpack --mode=development",
-    "watch": "webpack --watch",
-    "serve": "webpack serve"
+    "copybuiltfiles": "/bin/mkdir /fabmo/dashboard/build/css; cp /fabmo/dashboard/build/dashboard.css /fabmo/dashboard/build/css/dashboard.css; cp -R /fabmo/dashboard/static/img/favicon /fabmo/dashboard/build/favicon"
   },
   "version": "1.0.0"
 }
