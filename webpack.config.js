@@ -57,6 +57,11 @@ var config = {
                 test: /\\.(js|jsx)$/,
                 loader: 'babel-loader',
             },
+			{
+			    test: /\.js$/,
+			    enforce: 'pre',
+			    use: ['source-map-loader'],
+			},
             {
                 test: /\.css$/i,
                 use: [
