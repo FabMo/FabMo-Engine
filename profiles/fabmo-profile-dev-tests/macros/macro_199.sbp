@@ -1,0 +1,119 @@
+'!FABMO!name: STANDARD FABMO MACRO VARIABLES
+'!FABMO!description: Values for variables used in many Macros
+'   2021/02/25 - Refactored (th)
+'   Standard Macro Variables are defined and read from Macro #199 (variables are stored as persistent)
+'   Macro #199 is specific to tool and provided in the tool profile 
+'
+'Standard variables for ShopBot-FabMo "Macros" are a defined subset of "persistant" variables available within FabMo.
+'- They are tool-specific and are included in the tool default profile.
+'- All Macros are written in OpenSBP so all variables are SBP "variant" type (numbers and strings).
+'- The idea here is to keep the Macros themselves the same for all tools, only adjusting the variables per tool type.
+'
+'Naming System is: "$sb_" as identifier and camelCase with _X(axis letters) for axis specific items. 
+'- UNDERSCORES need to be used as spacers as hyphen's don't currently work in SBP files.
+'
+'- These variables allow use of same CNC macros across all tools with variables providing the specific settings for each tool.
+'- Variables are saved in FabMo's 'persistent variable' system and are permanent unless specifically modified or the profile of a tool is changed.
+'- Profiles for each tool should provide definitions for the full set of variables.
+
+'Shipping:
+'- Only ship a tool with one profile -- it's own appropriate profile (installed at the final test of tool)! 
+'* - FUTURE: Default profile not offered as an option and will be used only if no profile present.
+'* - FUTURE: Default should only be used by FabMo developers and as template for specific tools.
+'* - FUTURE: A VariableManager app should allow inspection and editing of variables in profiles and will allow saving of custom profile. For the moment, just edit or run this macro. 
+'
+'But Note! These variables can be used and modified in any OpenSBP format part file or Macro
+'-   They are only immutable in the sense that they are initially defined when the profile is installed and persist from session to session (i.e. not constants).
+'* - QUESTION: Should these be re-read before every macro, and/or read at startup?
+'     ... stored and potentially re-read as macro #199
+'* - QUESTION: How to handle if not present; check for variables and report using macro defaults if not present; or should we just not run? 
+'
+
+
+' ----------------------------------------------------------------
+$sb_varTableUNITS        = IN       '- (everywhere) IN;MM Table can be in INCHEs or MMs
+                                    '-  but distance and speed values must be a consistent UNIT !!!
+
+$sb_proxNum_X            = 3        '- (m3,?)  ... usually input 2 or 3; if using as system var; number = Input# + 50 
+$sb_proxNum_Y            = 3        '- (m3,?)  ... usually input 2 or 3
+$sb_proxNum_Z            = 3        '- (m2,m3,?) ... usually input 2 or 5
+'$sb_proxNum_A
+'$sb_proxNum_B
+'$sb_proxNum_C
+'$sb_laserOnNum
+'$sb_laserPWMnum
+$sb_proxType             = 0        '- 0=normally-open; 1=normally-closed
+
+$sb_homeOff_X            = 0.5      '- (m2,m3) back off a prox to Home location 
+$sb_homeOff_Y            = 0.5      '- (m2,m3) back off a prox to Home location
+$sb_homeOff_Z            = 0.5      '- (m2,m3) back off a prox to Home location
+'$sb_homeOff_A
+'$sb_homeOff_B
+'$sb_homeOff_C
+
+$sb_searchSpeed_XY       = 2.0      '- (m2,m3,?)
+$sb_searchSpeed_Z        = 1.0      '- (m2,m3,?)
+'$sb_searchSpeed_A
+'$sb_searchSpeed_B
+'$sb_searchSpeed_C
+$sb_slowSearchSpeed_XY   = 0.5      '- (m2,m3,?)
+$sb_slowSearchSpeed_Z    = 0.25     '- (m2,m3,?)
+'$sb_slowSearchSpeed_A
+'$sb_slowSearchSpeed_B
+'$sb_slowSearchSpeed_C
+$sb_searchDist_X         = 26       '- (m2,m3,?)
+$sb_searchDist_Y         = 20       '- (m2,m3,?)
+$sb_searchDist_Z         = 6        '- (m2,m3,?)
+'$sb_searchDist_A
+'$sb_searchDist_B
+'$sb_searchDist_C
+
+$sb_zZeroNum             = 1        '- (m2,?) ... usually 1; if using as system var; number = Input# + 50
+$sb_zPlateOff            = 0.5      '- (m2) offset for move from plate distinguishing pull back from Zprox and ZeroPlate
+$sb_zPlateThick          = 0.118    '- (m2,?)
+$sb_zPlateType           = STD      '- PRESS; 3D; STD ... use this eventually to select type
+'  - 0.118" for std plate, your plate may be slightly different
+'  - To instead use ShopBot/Handibot pressure plate, change $sb_ZZeroNum to 5, and
+'    ... adjust plate thickness to 0.57, and
+'    ... and change %(51) to %(55) in check_input subroutine
+
+$sb_MTCmode              = MTC      '- (m9) IGNORE; QUIT; MTC ... defaulting to MTC (currently for DT-Utility App)
+$sb_MTC_XY_mode          = FIXED    '- (m9) FIXED; ? where to do tool change
+$sb_MTC_Z_mode           = FIXED    '- (m9) MAX; FIXED method pull-up
+$sb_MTC_Zero_mode        = MACRO    '- (m9) MACRO; DRO method of tool change
+$sb_MTC_skip_first       = 0        '- (m9) value implemented? Check DT Util
+$sb_changePos_X          = 4        '- (m9) for fixed location of a change
+$sb_changePos_Y          = 4        '- (m9) for fixed location of a change
+$sb_changePos_Z          = 1        '- (m9) for fixed location of a change; going to need to do a height check to prevent crashes here
+
+'$sb_ATCtype       - our macros have been using ...?
+'$sb_TOOLtype      - DT types were 2=DTMAX 3=DT3 need todefine others
+'$sb_TOOLcurrent   - for manual and ATC changes
+'... other ATC needed variables, like: ?
+'$sb_tool_change_x
+'$sb_tool_change_y
+'sb_tool_change_safe_z
+'sb_tool_change_z
+
+'DO we need a separate home when using C3?
+$sb_home_X               = 0         '- (m3) this would be a parking offset from 0,0; only a value if doing it
+$sb_home_Y               = 0         '- (m3) this would be a parking offset from 0,0; only a value if doing it
+
+$sb_varREAD              = 1         '- for testing a recent read
+
+
+'*** There will also be persistent variables used by macros that do not need to be pre-defined and are modified by in macro use:
+'$current_cutter_Zoffset  - (m2,m3,m78) ... this is the one case where := may be useful, but only for the using macro
+'$current_cutter_Zoffset_Units  - (m2,m3,m78) 
+
+
+'* - FUTURE: ShopBot V-Carve posts currently write an IF statement at the top of file that tests whether file measurement UNITS match current measurement UNITS of tool>
+'        ... If not, it sends control to Macro#91 for user Notification, and ends file.
+'        ... We may want to consider something more generic, and or, built-in that would also check g-code files.
+'* - FUTURE: We may want to have a "Restore Default Standard Variables for this Profile in case the table gets messed up"; or restore a custom variable table (subset of custome profile).
+'        ... for moment, just run the #199 macro
+'* - FUTURE: Need method for user to save custom versions and modify profile or access additional profiles from github; store outside FabMo on server?
+'* - FUTURE: Should macros/sbp have access to config var's as well as system var's, e.g. tool size?
+'* - FUTURE: SD-Image could have tool info. Use it to get correct tool profile from SbWebsite w/serial number or QR code?
+'* - FUTURE: Should we have a safe_Z variable that is consistent with VC? Just read it here?
+'* - FUTURE: Allow hyphens in sbp var names?

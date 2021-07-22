@@ -1,0 +1,83 @@
+'!FABMO!name: Square Tool
+'!FABMO!description: Squares Deskop Tool
+' Name: Square Tool
+' Description: Squares Deskop Tool [C10]
+' Platform: Desktop
+' Author: Ryan Sturmer, Brendan Collins
+' History: 2018/04/3 - created
+' 2019/10/25 refactored (th)
+
+SU,0                   ' Set to Inches; Units will auto-revert to current starting units at end of file
+
+'--- Settings ---      ' Initializing permanent variables; ##:=## if not already set
+$z_backoff := .25
+$tool_change_z := 1
+$dt_type := 3          ' 2=DTmax; 3=DT3
+
+'--- Local Variables ---
+&homing_input = 3      ' Input # for prox switch; all DT switches are in series on inp3
+&xy_search_speed = 2
+&z_search_speed = 1.5
+&z_search = 8.0
+&small_move = .75  
+
+MS, 2, 2               ' Speeds will auto-revert back to current values at end of file
+JS, 4, 4
+
+'--- Main Program ---
+PAUSE "This routine will Square Gantry by pushing it into End Stops (loudly). Resume to Continue."
+
+Z3
+GOSUB clear_z
+IF $dt_type = 3 then GOTO dt3
+    &x_search = 38.0
+	GOSUB square_x_gantry
+	GOTO now_home_tool
+dt3:
+    &y_search = 20.0
+    GOSUB square_y_gantry
+    
+now_home_tool:
+	GOSUB run_C3
+
+END
+
+'--- 'Subroutines ---
+clear_z: 
+    PZ, &z_search, &z_search_speed, &homing_input          ' Search for prox switch
+    Pause .5
+    'VR, 150
+    JZ, %(3) - $z_backoff
+    RETURN
+
+square_y_gantry:
+    PY, &y_search, &xy_search_speed, &homing_input        ' Search for prox switch
+	VA,,0,,,,,,0,,,,                                      ' Set 0 location
+    PAUSE 1
+    VR,1000
+    MY, &small_move				  ' Move Y axis .75 inches past prox switch, which will force it into end stop  
+    VA,,0,,,,,,0,,,,              ' Zero Y again so we know where we are at
+    PAUSE .5
+    VR,150
+    MY, (&small_move * -1)
+    VA,,18,,,,,,0,,,,
+    RETURN
+
+square_x_gantry:
+    PX, &y_search, &xy_search_speed, &homing_input        ' Search for prox switch
+	VA,0,,,,,,0,,,,,                                      ' Set 0 location
+    PAUSE 1
+    VR,1000
+    MX, &small_move				  ' Move Y axis .75 inches past prox switch, which will force it into end stop  
+    VA,0,,,,,,0,,,,,              ' Zero Y again so we know where we are at
+    PAUSE .5
+    VR,150
+    MX, (&small_move * -1)
+    VA,36,,,,,,0,,,,,
+    RETURN
+
+run_C3: 
+    PAUSE "Tool is squared.You should run the Homing Macro now? Press RESUME to Run; QUIT to Skip."
+    C3
+
+END
