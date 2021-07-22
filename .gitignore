@@ -17,5 +17,11 @@ config/data/*.json
 *.sublime*
 *.orig
 dashboard/build/*
+profiles/*
+profiles/.*
+!dashboard/build/index.html
+!profiles/fabmo-profile-dev-tests
+!profiles/default
+!profiles/README.md
 install_token
 runtime/opensbp/test.sbp
