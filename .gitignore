@@ -18,8 +18,6 @@ config/data/*.json
 *.orig
 dashboard/build/*
 !dashboard/build/index.html
-profiles/*
-profiles/.*
 !profiles/fabmo-profile-dev-tests
 !profiles/default
 !profiles/README.md
