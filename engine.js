@@ -824,8 +824,6 @@ log.debug("### Getting this far in START-ENGINE ###  <======================")
             log.info("Loading routes...");
 
             server.io = require('socket.io')(server.server);
-            //server.io = socketio.listen(server.server);
-
             var routes = require('./routes')(server);
 
             // Kick off the server listening for connections

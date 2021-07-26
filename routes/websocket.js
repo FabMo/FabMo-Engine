@@ -58,36 +58,40 @@ function setupAuthentication(svr) {
     });
 }
 
-function setupStatusBroadcasts(server){
+function setupStatusBroadcasts(server) {
 	var previous_status = {'state':null}
-	machine.on('status',function(status){
-//		console.log('Status broadcast');
-//		console.log(JSON.stringify(status));
-		Object.keys(server.io.of('/private').sockets).forEach(function (socketId) { // rmackie
-			if(status.state === 'idle' || status.state != previous_status.state) {
-				server.io.to(socketId).emit('status',status);
-			} else {
-				server.io.to(socketId).volatile.emit('status', status);
-			}
-		});
+	machine.on('status', function(status) {
+/*
+  decoding the "emit" statements below because it can be confusing:
+    server is a websocket object that has been passed in
+    server.io is the socket.io member of server
+    server.io.of('/someString') returns a server.io NameSpace object
+      associated with "/someString" where '/' is the default namespace.
+    NameSpace objects can "emit" to all the sockets that are in their space
+*/
+		if(status.state === 'idle' || status.state != previous_status.state) {
+			server.io.of('/private').emit('status', status);
+		} else {
+			server.io.of('/private').volatile.emit('status', status);
+		}
 
-		Object.keys(server.io.sockets.sockets).forEach(function (socketId) { // rmackie
-			if(status.state === 'idle' || status.state != previous_status.state) {
-				server.io.to(socketId).emit('status',status);
-			} else {
-				server.io.to(socketId).volatile.emit('status', status);
-			}
-		});
+		if(status.state === 'idle' || status.state != previous_status.state) {
+			console.log("rmackie: socket emit status");
+			server.io.of('/').emit('status', status);
+		} else {
+			console.log("rmackie: socket volatile emit status");
+			server.io.of('/').volatile.emit('status', status);
+		}
+
 		previous_status.state = status.state;
 	});
 
 	machine.on('change', function(topic) {
-		server.io.of('/private').sockets.forEach(function (socket) {
-			socket.emit('change',topic);
-		});
-		server.io.sockets.sockets.forEach(function (socket) {
-			socket.emit('change',topic);
-		});
+		console.log("rmackie:" + 'Change broadcast');
+		console.log("rmackie:" + JSON.stringify(status));
+
+		server.io.of('/private').emit('change', topic);
+		server.io.of('/').emit('change', topic);
 	});
 } 
 
@@ -101,10 +105,12 @@ var onPublicConnect = function(socket) {
 	});
 
 	socket.on('status', function(data) {
+        console.log("!!! \n rmackie: PUBLIC CONNECT status sent \n !!!");
 		socket.emit('status', machine.status);
 	});
 
 	socket.on('ping', function(data) {
+		console.log("rmackie: pong sent");
 		socket.emit('pong');
 	});
 

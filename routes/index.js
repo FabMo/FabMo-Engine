@@ -49,7 +49,7 @@ module.exports = function(server) {
 	log.info("rmackie: 5000 " + server);
 	server.get("*", 
 		function(req, res, next) {
-			log.info("rmackie: GET GLOB(*): "+ req.url);
+		//	log.info("rmackie: GET GLOB(*): "+ req.url);
 			var current_hash = config.engine.get('version');
 			var url_arr = req.url.split('/');
             // if the browser requested "/" then we need to add "app/home"

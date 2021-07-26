@@ -11,7 +11,9 @@ var mime = require('mime-types');
 var errors = require('restify-errors');
 var config = require('./config');
 
-
+function robsDebug(msg) {
+    // console.log("static rmackie: " + msg);
+}
 
 ///--- Globals
 
@@ -56,7 +58,7 @@ function serveStatic(options) {
             (req.connectionState() === 'close' ||
             req.connectionState() === 'aborted')) {
             next(false);
-			console.log("rmackie: serveFileFromStats Abort " + file );
+			robsDebug("serveFileFromStats Abort " + file );
             return;
         }
 
@@ -66,12 +68,12 @@ function serveStatic(options) {
             return;
         } else if (!stats.isFile()) {
             next(new ResourceNotFoundError('%s does not exist', req.path()));
-			console.log("rmackie: serveFileFromStats resource not a file: " + file);
+			robsDebug("serveFileFromStats resource not a file: " + file);
             return;
         }
 
         if (res.handledGzip && isGzip) {
-			console.log("rmackie: serveFileFromStats gzip: " + file);
+			robsDebug("serveFileFromStats gzip: " + file);
             res.handledGzip();
         }
 
@@ -97,12 +99,12 @@ function serveStatic(options) {
             fstream.once('close', function () {
                 next(false);
             });
-			console.log("rmackie: serveFileFromStats streamed: " + file);
+			robsDebug("serveFileFromStats streamed: " + file);
         });
 
         res.once('close', function () {
             fstream.close();
-			console.log("rmackie: serveFileFromStats stream closed: " + file);
+			robsDebug("serveFileFromStats stream closed: " + file);
         });
     }
 
@@ -111,7 +113,7 @@ function serveStatic(options) {
             if (!err && stats.isDirectory() && opts.default) {
                 // Serve an index.html page or similar
                 var filePath = path.join(file, opts.default);
-				console.log("rmackie: serveNormal - static load default file: " + file);
+				robsDebug("serveNormal - static load default file: " + file);
                 fs.stat(filePath, function (dirErr, dirStats) {
                     serveFileFromStats(filePath,
                         dirErr,
@@ -122,7 +124,7 @@ function serveStatic(options) {
                         next);
                 });
             } else {
-				console.log("rmackie: serveNormal - static load file: " + file);
+				robsDebug("serveNormal - static load file: " + file);
                 serveFileFromStats(file,
                     err,
                     stats,
@@ -177,21 +179,21 @@ function serveStatic(options) {
                 }
             }
         }
-		console.log("rmackie: static open 1: " + file);
+		robsDebug("static open 1: " + file);
         if (req.method !== 'GET' && req.method !== 'HEAD') {
-		    console.log("rmackie: static open 1 bad method: " + file);
+		    robsDebug("static open 1 bad method: " + file);
             next(new MethodNotAllowedError(req.method));
             return;
         }
 
         if (!re.test(file.replace(/\\/g, '/'))) {
-		    console.log("rmackie: static open 1 could not replace slashes: " + file);
+		    robsDebug("static open 1 could not replace slashes: " + file);
             next(new NotAuthorizedError('%s', req.path()));
             return;
         }
 
         if (opts.match && !opts.match.test(file)) {
-		    console.log("rmackie: static open 1 could not authorized: " + file);
+		    robsDebug("static open 1 could not authorized: " + file);
             next(new NotAuthorizedError('%s', req.path()));
             return;
         }
@@ -200,7 +202,7 @@ function serveStatic(options) {
             fs.stat(file + '.gz', function (err, stats) {
                 if (!err) {
                     res.setHeader('Content-Encoding', 'gzip');
-					console.log("rmackie: serve static open zip: " + file);
+					robsDebug("serve static open zip: " + file);
                     serveFileFromStats(file,
                         err,
                         stats,
@@ -209,12 +211,12 @@ function serveStatic(options) {
                         res,
                         next);
                 } else {
-					console.log("rmackie: serve static open gzip err: " + file);
+					robsDebug("serve static open gzip err: " + file);
                     serveNormal(file, req, res, next);
                 }
             });
         } else {
-			console.log("rmackie: serve static open normal: " + file);
+			robsDebug("serve static open normal: " + file);
             serveNormal(file, req, res, next);
         }
 
