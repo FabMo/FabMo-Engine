@@ -134,7 +134,7 @@ Beacon.prototype.createMessage = function(reason) {
 				log.warn("Engine version could not be determined");
 				log.warn(err);
 			} else {
-				console.log('version gotten');
+				log.info('version gotten');
 				msg.engine_version = version;
 			}
 			deferred.resolve(msg);
@@ -155,14 +155,14 @@ Beacon.prototype.createMessage = function(reason) {
 //            if the reason is set to "retry" this will send a report to this.retry_url rather than this.url -
 //            this.retry_url is nominally undefined, but will be set by this function in the case of a 301 or 307 response (URL Changed)
 Beacon.prototype.report = function(reason) {
-	console.log('doing the report')
+	log.info('doing the report')
 	deferred = Q.defer()
 	if(this.url) {
 		// Create the message that contains all the IP Address/Version/OS information
 		return this.createMessage(reason)
 		.then(function(message) {
 			// If this is a retry, send to the retry URL instead of the normal url 
-			console.log(message)
+			log.info(message)
 			var url = reason == 'retry' ? this.retry_url : this.url;
 
 			// Reset the retry URL to the normal URL after this attempt
@@ -211,7 +211,6 @@ Beacon.prototype.report = function(reason) {
 			deferred.reject(err);
 		}.bind(this))
 	} else {
-		console.log('did I go here?');
 		deferred.resolve();
 	}
 

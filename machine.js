@@ -128,7 +128,8 @@ function Machine(control_path, callback) {
 		line : null,
 		nb_lines : null,
 		auth : false,
-		hideKeypad : false
+		hideKeypad : false,
+		inFeedHold : false
 	};
 
 	this.fireButtonDebounce = false;
@@ -393,17 +394,18 @@ Machine.prototype.die = function(err_msg) {
 // It is typically used after, for instance, a running file has altered the configuration in memory.
 // This is used to ensure that when the machine returns to idle the driver is in a "known" configuration
 Machine.prototype.restoreDriverState = function(callback) {
-	callback = callback || function() {};
 	this.driver.setUnits(config.machine.get('units'), function() {
 		this.driver.requestStatusReport(function(status) {
 			for (var key in this.status) {
 				if(key in status) {
 					this.status[key] = status[key];
 				}
-			}			
+			}
 			config.driver.restore(function() {
-				callback();
-			});			
+				if(callback) {
+					callback();
+				}
+			});
 		}.bind(this));
 	}.bind(this));
 }
@@ -434,7 +436,6 @@ Machine.prototype.arm = function(action, timeout) {
 		case 'paused':
 		case 'stopped':
 			if(action.type != 'resume') {
-				log.debug("===>In machine at case stopped, over-ride here???")
 				throw new Error('Cannot arm the machine for ' + action.type + ' when ' + this.status.state);
 			}
 			break;
@@ -578,7 +579,6 @@ Machine.prototype.fire = function(force) {
 Machine.prototype.authorize = function(timeout) {
 	var timeout = timeout || config.machine.get('auth_timeout');
 
-	// 
 	if(config.machine.get('auth_required') && timeout) {
 		log.info("Machine is authorized for the next " + timeout + " seconds.");
 		if(this._authTimer) { clearTimeout(this._authTimer);}
@@ -610,8 +610,6 @@ Machine.prototype.deauthorize = function() {
 	}
 	log.info('Machine is deauthorized.');
 	this.status.auth = false;
-	// Not needed and causes back to back pauses to behave irregularly.
-	// this.emit('status', this.status);
 }
 
 Machine.prototype.isConnected = function() {
@@ -754,14 +752,12 @@ Machine.prototype.setRuntime = function(runtime, callback) {
 				}
 				this.current_runtime = runtime;
 				runtime.connect(this);
-global.CUR_RUNTIME = runtime;
-
+				global.CUR_RUNTIME = runtime;
 			}
 		} else {
 			this.current_runtime = this.idle_runtime;
 			this.current_runtime.connect(this);
 		}
-
 	} catch(e) {
 		log.error(e)
 		setImmediate(callback, e);
@@ -800,10 +796,7 @@ Machine.prototype.getRuntime = function(name) {
 // stateinfo - The contents of the 'info' field of the status report, if needed.
 Machine.prototype.setState = function(source, newstate, stateinfo) {
 	this.fireButtonDebounce = false ;
-	log.debug("... {setState} for a runtime");
-	log.debug(source);
 	if ((source === this) || (source === this.current_runtime)) {
-		log.info("... {setState} change to: " + newstate)
 		// Set the info field
 		// status.info.id is the info field id - it helps the dash with display of dialogs
 		if(stateinfo) {
@@ -821,14 +814,12 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				// Go ahead and request the current machine position and write it to disk.  This 
 				// is done regularly, so that if the machine is powered down it retains the current position
 				if(this.status.state != 'idle') {
-log.debug("call final lines from machine");
-//log.stack();
-////##					this.driver.command("M100 ({out4:0})\n M30"); // Permissive relay
+					log.debug("call final lines from machine");
 					this.driver.command({"out4":0}); // Permissive relay
 					this.driver.command({"gc":"m30"}); // Generate End
 					// A switch to the 'idle' state means we change to the idle runtime
 
-log.debug("call MPO from machine");
+					log.debug("call MPO from machine");
                     this.driver.get('mpo', function(err, mpo) {
 					    if(config.instance) {
 						    config.instance.update({'position' : mpo});
@@ -859,11 +850,7 @@ log.debug("call MPO from machine");
 			case 'paused':
                 if(this.status.state != newstate) {
                 	//set driver in paused state
-                	// log.debug('paused state: pause_hold is:  ' + this.driver.pause_hold);
                 	this.driver.pause_hold = true;
-                	// log.debug('paused state: pause_hold set to:  ' + this.driver.pause_hold);
-				////## tested source of extra stat:6 by removing mpo call >> no effect
-				////## ... does seem being applied later than intended
                 	// Save the position to the instance configuration.  See note above.
                     this.driver.get('mpo', function(err, mpo) {
 					    if(config.instance) {
@@ -873,16 +860,15 @@ log.debug("call MPO from machine");
 				    // Check the interlock and switch to the interlock state if it's engaged
 				    var interlockRequired = config.machine.get('interlock_required');
 					var interlockInput = 'in' + config.machine.get('interlock_input');
-					
+
 				    if(interlockRequired && this.driver.status[interlockInput] && !interlockBypass) {
 						this.interlock_action = null;
-						this.setState(this, 'interlock')		
+						this.setState(this, 'interlock')
 						return
 					}
-                } 
+                }
 				break;
 			case 'dead':
-				// Sadness
 				log.error('G2 is dead!');
 				break;
 			default:
@@ -909,7 +895,6 @@ log.debug("call MPO from machine");
 };
 
 // Pause the machine
-// This is pretty much passed through to whatever runtime is currently in control
 Machine.prototype.pause = function(callback) {
 		if(this.status.state === "running") {
 			if(this.current_runtime) {
@@ -918,15 +903,26 @@ Machine.prototype.pause = function(callback) {
 			} else {
 				callback("Not pausing because no runtime provided");
 			}
+		} else if (this.status.state === "paused") {
+			//clear any timed pause
+			if (this.pauseTimer) {
+				clearTimeout(this.pauseTimer);
+				this.pauseTimer = false;
+				this.setState(this, 'paused', {'message': "Paused by user."});
+			} else {
+				this.current_runtime.pause();
+			}
+			callback(null, 'paused');
 		} else {
 			callback("Not pausing because machine is not running");
 		}
 };
 
-// Quit 
+// Quit
 Machine.prototype.quit = function(callback) {
 	// Release Pause hold if present
 	this.driver.pause_hold = false;
+	this.status.inFeedHold = false;
 	this.disarm();
 
 	// Quitting from the idle state dismisses the 'info' data
@@ -947,31 +943,27 @@ Machine.prototype.quit = function(callback) {
 		this.status.job.pending_cancel = true;
 	}
 	if(this.current_runtime) {
-log.debug("ppp... job.pending_quit!")			
 		log.info("Quitting the current runtime...")
 		this.current_runtime.quit();
-log.debug("ppp... quit_pending?")
 		if (callback) {
 			callback(null, 'quit');
 		}
-			alreadyQuiting = false;
+		alreadyQuiting = false;
 	} else {
 		log.warn("No current runtime!")
-		if (callback) {	
+		if (callback) {
 			callback("Not quiting because no current runtime")
 		}
-	}    
+	}
 };
 
 // Resume from the paused state.
 Machine.prototype.resume = function(callback, input=false) {
 	if (this.driver.pause_hold) {
 		//Release driver pause hold
-		// log.debug("Resume from pause: pause_hold is:  " + this.driver.pause_hold);
 		this.driver.pause_hold = false;
-		// log.debug("Resume from pause: pause_hold set to:  " + this.driver.pause_hold);
 	}
-	if (this.current_runtime && this.current_runtime.inFeedHold){
+	if (this.current_runtime && this.status.inFeedHold){
 		this._resume();
 	} else {
 		//clear any timed pause
@@ -1105,8 +1097,6 @@ Machine.prototype._runNextJob = function(force, callback) {
 		if(this.status.state === 'armed' || force) {
 			log.info("Running next job");
 			db.Job.dequeue(function(err, result) {
-log.debug("@_runNextJob in machine")
-				log.info("result- " + result);
 				if(err) {
 					log.error(err);
 					callback(err, null);

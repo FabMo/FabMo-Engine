@@ -80,28 +80,6 @@ function setupDropTarget() {
   });
 }
 
-// function synchJobSubmit(files) {
-//   fabmo.submitJob(files[x], {
-//     compressed: files[x].size > 2000000 ? true : false
-//   }, function(err, data) {
-//     if (err) {
-//       console.log(err);
-//       fabmo.notify('error', err);
-
-//       return
-//     } else {
-//       x++;
-//       if (x < files.length) {
-//         synchJobSubmit(files);
-//       } else {
-//         updateQueue();
-//         x = 0;
-//       }
-//     }
-
-//   });
-// }
-
 function updateQueue(callback) {
   callback = callback || function() {};
   // Update the queue display.

@@ -328,8 +328,8 @@ var run = function(idx) {
 	var machine = require('./machine').machine;
 	var bypassInterlock = false;
 	info = macros[idx];
-	console.log(idx);
-	console.log(info);
+	log.debug(idx);
+	log.debug(info);
 	if(parseInt(idx) === 2 ){
 		bypassInterlock = true;
 	}

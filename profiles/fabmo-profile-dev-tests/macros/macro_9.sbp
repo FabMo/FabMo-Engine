@@ -1,0 +1,118 @@
+'!FABMO!name: Tool Change
+'!FABMO!description: Handles Manual Tool Change -- MTC
+' Name: Manual Tool Change
+' Description: Handles Manual Tool Change (MTC) from current Vectric posts and tracks tool# [C9]
+' Platform: Desktop/Desktop MAX
+' Author: Ted Hall, Ryan Sturmer
+' History:
+'   2017/09/13 - Refactored (th)
+'   2018/06/07 - Expanded to support desktop preferences (rs)
+'   2018/06/29 - Minor bugfixes - add support for FAIL command (rs)
+'   2019/11/10 - Refactored for latest FabMo (th)
+
+'--- Settings ---      ' Initializing permanent variables; ##:=## if not already set
+$current_tool := 0        
+$tool_change_x := 4
+$tool_change_y := 4
+$tool_change_z := .5
+$mtc_mode := "MTC"
+$mtc_z_mode := "MAX"
+$mtc_xy_mode := "FIXED"
+$mtc_zero_mode := "DRO"
+$mtc_skip_first_tool_change := 0
+
+'--- Local Variables ---
+&Tool := -1
+
+'--- Main Program ---
+IF $mtc_mode == "IGNORE" THEN GOSUB MTCIgnore
+IF $mtc_mode == "MTC" THEN GOSUB MTCRun
+IF $mtc_mode == "QUIT" THEN GOSUB MTCQuit
+
+END
+
+'--- Subroutines ---
+MTCIgnore:
+    ' This option is dedicated to Bill Young - just pretend like we didn't even see this tool change.
+    RETURN
+
+MTCQuit:
+    FAIL "A tool change has been encountered.  The file will now quit.  You can change this behavior in the desktop preferences."
+
+MTCRun:
+    
+    ' No need to execute the change if we're already carrying the right tool
+    IF &Tool == $current_tool THEN GOTO DoneMTCRun
+        
+    ' If no &Tool was specified, that's an error
+    IF &Tool == -1 THEN GOTO NoToolError
+    
+    ' Save the current XY position
+    Pause .5
+    &xpos = %(1)
+    &ypos = %(2)
+    
+    ' Move the Z out of the way
+    if $mtc_z_mode == "MAX" THEN GOSUB GotoMaxZ
+    if $mtc_z_mode == "FIXED" THEN GOSUB GotoFixedZ
+    
+    ' Turn the spindle off
+    C7
+    
+    ' Move to the tool change location
+    if $mtc_xy_mode == "FIXED" THEN GOSUB GotoFixedXY
+
+    'Change tools using the specified method
+    if $mtc_zero_mode == "MACRO" THEN GOSUB ZZeroWithMacro
+    if $mtc_zero_mode == "DRO" THEN GOSUB ZZeroWithDRO
+
+    ' Pull up
+    if $mtc_z_mode == "MAX" THEN GOSUB GotoMaxZ
+    if $mtc_z_mode == "FIXED" THEN GOSUB GotoFixedZ
+
+    ' Return to the XY position we started from
+    J2,&xpos,&ypos
+    
+    ' Set the current tool to the tool requested  (assume if we got this far that the tool change was made successfully)
+    $current_tool = &Tool
+    
+    ' Spindle back on
+    C6
+    
+    DoneMTCRun:
+    RETURN
+    
+' --- Subroutines ---
+
+GotoMaxZ:
+    JZ, (-1 * $current_cutter_Zoffset)
+    RETURN
+    
+GotoFixedZ:
+    JZ, $tool_change_z
+    RETURN
+    
+GotoFixedXY:
+    J2, $tool_change_x, $tool_change_y
+    RETURN
+    
+ZZeroWithMacro:
+    'SC,1
+    SK, "Change to tool " + &Tool + " and position the it above the Z-Zero plate"
+    C2
+    PAUSE "Press resume to continue with this tool, or quit to exit."
+    'SC,0
+    RETURN
+
+ZZeroWithDRO:
+    'SC,1
+    SK, "Change to tool " + &Tool + " and set the the zero position of the new tool."
+    'SC,0
+    C78  ' Set Current Z offset
+    RETURN
+
+NoToolError:
+    FAIL "A tool change was encountered, but no tool was specified."
+    
+NoChange:
+    END

@@ -28,22 +28,6 @@ module.exports = function(server) {
 	}
 	});
 
-	
-
-	// var authentication_handler = function(req,res,next){
-	// 	res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
-	// 	passport.authenticate('local', {
-	//     failureRedirect: '',
-	//   })(req,res,next);
-	// }
-
-/**
- *  // protect only the / endpoint (dashboard)
- * 	server.get("/", restify.plugins.serveStatic({
- * 		directory: './dashboard/static',
- * 		default: 'index.html'
- * 	}));
-**/
 	// Define a route for serving static files
 	// This has to be defined after all the other routes, or it plays havoc with things
 	log.info("rmackie: 5000 " + server);

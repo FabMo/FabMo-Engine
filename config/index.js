@@ -71,17 +71,17 @@ function configureUser(callback){
 				log.warn('Configuration file ' + userFile + ' not found. Setting up first user');
 				exports.user.setUpFile(function(err){
 					if(err) {
-						console.log(err);
+						log.error(err);
 					} else {
 						configureUser(callback);
 					}
 				});
 			} else {
-				log.warn('Problem loading the user configuration file "' + userFile + '": ' + err.message);
+				log.warn('Problem loading the user configuration file INDEX "' + userFile + '": ' + err.message);
 			}
 		} else {
 			exports.user.initUsers(data, function(msg){
-				log.info(msg);
+				log.info(" user message -  " + msg);
 				callback();
 			});	
 		}

@@ -60,15 +60,18 @@ function setupAuthentication(svr) {
 
 function setupStatusBroadcasts(server) {
 	var previous_status = {'state':null}
+
 	machine.on('status', function(status) {
-/*
-  decoding the "emit" statements below because it can be confusing:
-    server is a websocket object that has been passed in
-    server.io is the socket.io member of server
-    server.io.of('/someString') returns a server.io NameSpace object
-      associated with "/someString" where '/' is the default namespace.
-    NameSpace objects can "emit" to all the sockets that are in their space
-*/
+		/*
+		  decoding the "emit" statements below due how many layers there are:
+			e.g.: server.io.of('/private').emit('status', status);
+			* "server" is a websocket object that has been passed in
+			* "io" is the socket.io data member of server
+			* "server.io.of('/someString')" is a function on socket.io that returns
+				a server.io NameSpace object associated with "/someString"
+					where the string: '/' is the default namespace.
+			NameSpace objects use "emit" to send to all the sockets that are in their space
+		*/
 		if(status.state === 'idle' || status.state != previous_status.state) {
 			server.io.of('/private').emit('status', status);
 		} else {
@@ -93,7 +96,7 @@ function setupStatusBroadcasts(server) {
 		server.io.of('/private').emit('change', topic);
 		server.io.of('/').emit('change', topic);
 	});
-} 
+}
 
 
 var onPublicConnect = function(socket) {
@@ -135,7 +138,6 @@ var onPrivateConnect = function(socket) {
 
 	authentication.eventEmitter.on('user_kickout',function user_kickout_listener(user){
 		authentication.eventEmitter.removeListener('user_kickout',user_kickout_listener);
-		//console.log("user kickout event");
 		if(user.username == userId){
 			socket.emit('authentication_failed','kicked out');
             log.info("disconnect - kickedout auth");
@@ -198,13 +200,12 @@ var onPrivateConnect = function(socket) {
 					break;
 
 				default:
-					// Meh?
+					// TODO: Logging needed?  Error handling?
 					log.debug("command switch hit default");
 					break;
 			}
 		} catch(e) {
 			log.error(e);
-			// pass
 		}
 	});
 
@@ -219,9 +220,8 @@ var onPrivateConnect = function(socket) {
 module.exports = function(svr) {
 	server = svr
 	setupAuthentication(server);
-	server.io.on('connection', onPublicConnect);
-	var namespace = server.io.of('/private');
-    namespace.on('connection', onPrivateConnect);
+	server.io.of('/').on('connection', onPublicConnect);
+	server.io.of('/private').on('connection', onPrivateConnect);
 	setupStatusBroadcasts(server);
 };
 

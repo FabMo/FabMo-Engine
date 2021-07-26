@@ -209,14 +209,15 @@ var get_info = function(req, res, next) {
 };
 
 
-var profile = function(req, res, next) {
-  profiles.apply('ShopBot Desktop', function(err, data) {
-    res.json({
-      status : "success",
-      data : {}
-    })
-  })
-};
+// TODO: verify this isn't needed and remove.
+// var profile = function(req, res, next) {
+//   profiles.apply('ShopBot Desktop', function(err, data) {
+//     res.json({
+//       status : "success",
+//       data : {}
+//     })
+//   })
+// };
 
 var getProfiles = function(req, res, next) {
     res.json(  {

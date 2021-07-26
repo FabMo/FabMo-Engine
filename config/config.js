@@ -132,7 +132,6 @@ Config.prototype.load = function(filename, callback) {
 //   callback - Called with null once the configuration is saved (or with error if error)
 Config.prototype.save = function(callback) {
 	var config_file = this.getConfigFile();
-	//log.stack(); ////## maybe use this to get at logic for config reporting after some file runs
 	if(this._loaded && config_file) {
 		log.debug("Saving config to " + config_file);
 		fs.open(config_file, 'w', function(err, fd) {
@@ -156,6 +155,7 @@ Config.prototype.save = function(callback) {
 								log.info('config fsync succeeded: ' + config_file);
 							}
 							fs.closeSync(fd); // no error reporting
+							log.debug('  fsync done ' + config_file);
 							callback(err);
 						}.bind(this));
 					}
@@ -190,7 +190,7 @@ Config.prototype.init = function(callback) {
                             this._loaded = true;
 							this.save(callback, true);
 						} else {
-							log.warn('Problem loading the user configuration file "' + config_file + '": ' + err.message);
+							log.warn('Problem loading the user configuration file CONFIG "' + config_file + '": ' + err.message);
 							this._loaded = true;
 							this.userConfigLoaded = true;
 							this.save(callback);

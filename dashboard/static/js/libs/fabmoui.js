@@ -271,7 +271,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 
 	//Current File or job
 	if(status.job) {
-	    var time_in_ms = Date.now()-status.job.started_at;
+	    var time_in_ms = status.server_ts-status.job.started_at;
         var time_elapsed_ms = time_in_ms % 1000;
         var time_in_s = Math.floor(time_in_ms /1000);
         var time_elapsed_s = time_in_s % 60;
@@ -444,14 +444,14 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(".tools-current > li a").removeClass('paus disc err').addClass('paus');
 		$(that.state_selector).html(statename);
 				$(".exit-button").hide();
-
 		if(that.file_control)
 		{
-			$(that.stop_button_selector).show();
-			$(that.pause_button_selector).hide();
-			$(that.resume_button_selector).show();
+			if (status.inFeedHold) {
+				$(that.stop_button_selector).show();
+				$(that.pause_button_selector).hide();
+				$(that.resume_button_selector).show();
+			}
 			$(that.pause_button_selector+" div div:first-child").removeClass('spinner red');
-
 		}
 	}
 	else if(status.state === 'passthrough') {

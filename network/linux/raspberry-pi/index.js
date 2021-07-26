@@ -8,7 +8,7 @@ var exec = child_process.exec;
 var util = require('util');
 var NetworkManager = require('../../../network_manager').NetworkManager;
 var tmp = require('tmp');
-
+// TODO:  Add networking logging instead of useing console.log
 
 var ifconfig = require('wireless-tools/ifconfig');
 var iwconfig = require('wireless-tools/iwconfig');
@@ -19,7 +19,6 @@ var udhcpd = require('wireless-tools/udhcpd');
 
 const commands = require('./commands.js');
 const hostInterface = 'wlan0';  // The WiFi Access Device.
-
 
 const EventEmitter = require('events');
 class MyEmitter extends EventEmitter {}
@@ -37,7 +36,6 @@ var apModeGateway= '192.168.42.1';
 var tmpPath = os.tmpdir() + '/';
 
 var last_name ="";
-
 
 var DEFAULT_NETMASK = "255.255.255.0";
 var DEFAULT_BROADCAST = "192.168.1.255"
@@ -65,8 +63,6 @@ util.inherits(RaspberryPiNetworkManager, NetworkManager);
 
 RaspberryPiNetworkManager.prototype.set_uuid = function(callback) {
   var uuid = ""
-////##
-log.debug('SETTING UUID')
   log.info('SETTING UUID');
   exec("cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2",function(err,result){
     if (err) {
@@ -75,6 +71,11 @@ log.debug('SETTING UUID')
         callback(name);
       })
     } else {
+      ////## Get Serial Number for name and clear out 0's to simplfy; do this here rather than later
+      // At some point, might want to stick to just the first batch of 0's
+      log.debug("At RPI naming from SerialNum - " )
+      result = result.split('0').join('').split('\n').join('').trim(); 
+      log.debug("modifiedSerial- " + result);
       var name = {'name' : "fabmo-" + result }
       config.engine.update(name, function() {
         callback(name);
@@ -87,8 +88,6 @@ log.debug('SETTING UUID')
 //   interface - Interface name to get the info for
 //    callback - Called back with the info or error if there was an error
 RaspberryPiNetworkManager.prototype.getInfo = function(interface, callback) {
-////##
-//log.debug("netDebug#### GETTING INFO")
   ifconfig.status(interface,function(err,ifstatus){
     if(err)return callback(err);
     iwconfig.status(interface,function(err,iwstatus){
@@ -102,33 +101,23 @@ RaspberryPiNetworkManager.prototype.getInfo = function(interface, callback) {
 RaspberryPiNetworkManager.prototype.getLocalAddresses = function() {
   var interfaces = os.networkInterfaces();
   var retval = [];
-////##
-//log.debug("netDebug#### GETTING ADDRESS")
   interface.array.forEach(interface => {
     retval.push(interface[0].address);
   });
   retval.shift()
-
   return retval;
-
 }
 
-////## REPORTING
 // Get the current "scan results"
 // (A list of wifi networks that are visible to this client)
 //   callback - Called with the network list or with an error if error
 RaspberryPiNetworkManager.prototype.getNetworks = function(callback) {
-////##
-//log.debug("netDebug#### GETTING RESULTS OF SCAN")
   wpa_cli.scan_results(wifiInterface, callback);
 }
 
-////## REPORTING
 // Intiate a wifi network scan (site survey)
 //   callback - Called when scan is complete (may take a while) or with error if error
 RaspberryPiNetworkManager.prototype.scan = function(callback) {
-////##
-//log.debug("netDebug#### SCANNING")
   wpa_cli.scan(wifiInterface, callback);
 }
 
@@ -143,20 +132,16 @@ RaspberryPiNetworkManager.prototype.returnWifiNetworks= function() {
             var ssid = data[i].ssid;
             var found = false;
             for(var j in this.networks) {
-                if(this.networks[j].ssid === ssid) {
-                    found = true;
-                    break;
-                }
+              if(this.networks[j].ssid === ssid) {
+                found = true;
+                break;
+              }
             }
             if(!found) {
               new_networks += 1;
               new_network_names.push(ssid);
               this.networks.push(data[i]);
-             }
-          }
-          if(new_networks > 0) {
-          ////## 
-          //    log.debug('Found ' + new_networks + ' new networks. (' + new_network_names.join(',') + ')')
+            }
           }
         }
       }.bind(this));
@@ -164,14 +149,11 @@ RaspberryPiNetworkManager.prototype.returnWifiNetworks= function() {
   }.bind(this));
 }
 
-////## REPORTING AND SETTING IP in AP-name
 RaspberryPiNetworkManager.prototype.checkWifiHealth = function() {
   var interfaces = os.networkInterfaces();
   var wlan0Int =interfaces.wlan0;
   var apInt = interfaces.uap0;
   this.network_history = {};
-////##
-//log.debug("netDebug#### GETTING HEALTH")
   Object.keys(interfaces).forEach(function (interface) {
      if(interface !== "lo") {
        if(interfaces[interface]) {
@@ -194,8 +176,6 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function() {
     }
   } else {
     if(!apInt){
-////##
-      //log.info('NetDebug wifi is on at : ' + wlan0Int[0].address +' AP is down, rejoin AP');
       this._joinAP(function(err, res){
         if(err){
           log.warn("Could not bring back up AP");
@@ -204,8 +184,6 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function() {
         }
       });
     } else {
-////##
-      //log.info('NetDebug wifi is on at : ' + wlan0Int[0].address +' and Checking AP NAME');
       this._joinAP(function(err, res){
         if(err){
           log.warn("Could not bring back up AP");
@@ -213,7 +191,6 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function() {
           log.info("AP back up")
         }
       });
-////##
     }
   }
 }
@@ -221,20 +198,18 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function() {
 
 RaspberryPiNetworkManager.prototype.checkEthernetHealth = function(){
   var interfaces = os.networkInterfaces();
-  console.log(interfaces);
-  console.log('now ')
   ifconfig.status(ethernetInterface,function(err,status){
     if(err){
-      console.log(err);
+      log.error(err);
     } else {
-      console.log(status);
+      log.info(status);
     }
   })
 }
 
 
 
-////## REPORTING
+
 RaspberryPiNetworkManager.prototype.confirmIP = function(callback) {
   var wlan0Int;
   var attempts = 60;
@@ -242,8 +217,6 @@ RaspberryPiNetworkManager.prototype.confirmIP = function(callback) {
   var interval = setInterval(function() { 
     var interfaces = os.networkInterfaces();
     wlan0Int  = interfaces.wlan0;
-////##
-//log.debug("netDebug#### GETTING IP", wlan0Int)
 
     if (counter == attempts || wlan0Int) { 
       if(counter == attempts) {
@@ -264,17 +237,18 @@ RaspberryPiNetworkManager.prototype.confirmIP = function(callback) {
  }, 1000);
 }
 
-////##
+
 // Actually do the work of joining AP mode AND updating AP name
 RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
-//  log.info("netDebug#### PROCESSING AP mode...");
   var interfaces = os.networkInterfaces();
   var wlan0Int =interfaces.wlan0;
   var eth0Int = interfaces.eth0;
-  var name = config.engine.get('name').split('0').join('').split('\n').join('').trim();
+  var name = config.engine.get('name'); // should already be simplified
+  //var name = config.engine.get('name').split('0').join('').split('\n').join('').trim();
   var full_name;
   var ext;
 
+   log.debug("At joinAP, name is - " + name)
   // Updating AP-Name
   // Then, restarting AP if we get name change; this should drop AP momentarily!
     ext =":"
@@ -286,13 +260,12 @@ RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
       ext = "";
     }
     full_name = name + ext;
-//  log.debug("netDebug#### NAME-TEST " + full_name + " vs " + last_name) 
   if (full_name !== last_name) {
     // SSID is limited to 32 char; so makes long names challenging, as in:
     // 'ted-dev:169.254.225.224:192.168.1.109'
     // So best to prioritize display for ethernet, until a better idea ...
     //     TODO: chop tool names that are too long
-    log.debug("n#### NEW full_name " + full_name); 
+    log.debug("NEW full_name " + full_name); 
     var network_config = config.engine.get('network');
     network_config.wifi.mode = 'ap';
     config.engine.set('network', network_config);
@@ -332,9 +305,6 @@ RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
 
 RaspberryPiNetworkManager.prototype._disableWifi = function(callback){
   log.info("Disabling wifi...");
-  //var network_config = config.engine.get('network');
-  //network_config.mode = 'off';
-  //config.engine.set('network', network_config);
   exec("systemctl stop hostapd wpa_supplicant",function(err,result){
     if(err)log.warn(err);
     ifconfig.down(wifiInterface,function(err, result){
@@ -347,13 +317,8 @@ RaspberryPiNetworkManager.prototype._disableWifi = function(callback){
 }
 
 
-
-////## REPORTING
 RaspberryPiNetworkManager.prototype._joinWifi = function(ssid, password, callback) {
   var self = this;
-  ////##
-log.debug("netDebug#### ATTEMPTING JOIN WIFI")
-log.debug("netDebug Attempting to join wifi network: " + ssid + " with password: " + password);
   var network_config = config.engine.get('network');
   network_config.wifi.mode = 'station';
   network_config.wifi.wifi_networks = [{'ssid' : ssid, 'password' : password}];
@@ -441,15 +406,6 @@ log.debug("netDebug Attempting to join wifi network: " + ssid + " with password:
 }
 
 
-
-// Issue the command to drop out of AP (and implicitly join the last remembered network)
-// Function returns immediately
-// RaspberryPiNetworkManager.prototype.unjoinAP = function() {
-//   this.command = {
-//     'cmd' : 'noap'
-//   }
-// }
-
 // Do the actual work of dropping out of AP mode
 //   callback - Callback called when AP mode has been exited or with error if error
 RaspberryPiNetworkManager.prototype._unjoinAP = function(callback) {
@@ -496,9 +452,7 @@ RaspberryPiNetworkManager.prototype.applyWifiConfig = function() {
 
 // Initialize the network manager.  This kicks off the state machines that process commands from here on out
 RaspberryPiNetworkManager.prototype.init = function() {
-////##
   commands.startWpaSupplicant((err, result) => {
-//log.debug("netDebug#### START WPA")
     if(err){
       log.error('RIGHT HERE!!! wpa errored with: ' + err)
     } else {
@@ -511,6 +465,7 @@ RaspberryPiNetworkManager.prototype.init = function() {
       }, 10000);
     }
   });
+  // TODO: should this be used?
   // setInterval(() => {
   //   this.returnWifiNetworks();
   //   this.checkWifiHealth();
@@ -536,13 +491,10 @@ RaspberryPiNetworkManager.prototype.init = function() {
 }
 
 
-////## REPORTING
 // Get a list of the available wifi networks.  (The "scan results")
 //   callback - Called with list of wifi networks or error if error
 RaspberryPiNetworkManager.prototype.getAvailableWifiNetworks = function(callback) {
   // TODO should use setImmediate here
-////##
-//log.debug("netDebug#### GET AVAILABLE NET")
   callback(null, this.networks);
 }
 
@@ -558,22 +510,20 @@ RaspberryPiNetworkManager.prototype.connectToAWifiNetwork= function(ssid,key,cal
 // Enable the wifi
 //   callback - Called when wifi is enabled or with error if error
 RaspberryPiNetworkManager.prototype.turnWifiOn=function(callback){
-  //callback(new Error('Not available on the edison wifi manager.'));
-    ifconfig.status(wifiInterface,function(err,status){
-        if(!status.up){
-            ifconfig.up(wifiInterface,function(err, data) {
-                callback(err);
-            }.bind(this));
-        } else {
-            callback();
-        }
+  ifconfig.status(wifiInterface,function(err,status){
+    if(!status.up){
+      ifconfig.up(wifiInterface,function(err, data) {
+          callback(err);
+      }.bind(this));
+    } else {
+      callback();
+    }
   }.bind(this));
 }
 
 // Disable the wifi
 //   callback - Called when wifi is disabled or with error if error
 RaspberryPiNetworkManager.prototype.turnWifiOff=function(callback){
-  //callback(new Error('Not available on the edison wifi manager.'));
   this.disableWifi();
 }
 
@@ -594,10 +544,7 @@ RaspberryPiNetworkManager.prototype.turnWifiHotspotOn=function(callback){
 // Get network status
 //   callback - Called with network status or with error if error
 RaspberryPiNetworkManager.prototype.getStatus = function(callback) {
-////##
-//log.debug("netDebug#### GETTING STATUS")
   ifconfig.status(callback);
-  //var status = {'wifi' : {}}
 }
 
 // Set the network identity
@@ -676,8 +623,8 @@ RaspberryPiNetworkManager.prototype.turnEthernetOff=function(callback) {
 //   interface - The interface to update
 //   callback - Called when complete, or with error if error
 RaspberryPiNetworkManager.prototype.enableDHCP=function(interface, callback) {
-log.debug('Enabling DHCP on ' + interface);
-udhcpc.enable({interface: interface},callback)
+  log.debug('Enabling DHCP on ' + interface);
+  udhcpc.enable({interface: interface},callback)
 }
 
 // Disable DHCP for the provided interface
@@ -765,7 +712,7 @@ RaspberryPiNetworkManager.prototype.setGateway=function(gateway, callback) {
 RaspberryPiNetworkManager.prototype.applyNetworkConfig=function(){
   this.applyWifiConfig();
   // TODO - Why is this commented out?
-//  this.applyEthernetConfig();
+  // this.applyEthernetConfig();
 }
 
 // Take the ethernet configuration stored in the network config and apply it to the currently running instance

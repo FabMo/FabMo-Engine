@@ -42,7 +42,6 @@ IdleRuntime.prototype._changeState = function(newstate) {
 };
 
 // This function is called internally when G2 hits a software limit.
-////##
 // TODO - There is work to be done here.  I wouldn't trust anything here.
 IdleRuntime.prototype._limit = function() {
 	var er = this.driver.getLastException();
@@ -97,7 +96,6 @@ IdleRuntime.prototype._onG2Status = function(status) {
 				break;
 			}
 			if((status.stat === this.driver.STAT_STOP || status.stat === this.driver.STAT_END) && status.hold === 0) {
-				debug.log("===>in Idle ... changing to idle on --  ", status.stat);
 				this._changeState("idle");
 				break;
 			}
