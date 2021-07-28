@@ -38,12 +38,60 @@
 
 </head>
 <body>
+<div class="top-bar">
+ <div class="top-bar-left">
+
+   <ul class="title-area">
+      <li class="name">
+        <h1><a id="app-header" class="noselect">Editor</a></h1>
+      </li>
+      <!-- rmackie <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li> -->
+    </ul>
+
+    <ul class="dropdown menu" data-dropdown-menu>
+		<li> 
+			<a href="#"> Language </a>
+			<ul class="sub menu vertical">
+				<li> <a id="lang-gcode" 
+						href="#languagegcode"> 
+							G-Code 
+					 </a> 
+				</li>
+				<li> <a id="lang-opensbp" 
+						href="#languageopensbp""> 
+							OpenSBP 
+					 </a> 
+				</li>
+
+			</ul>
+		</li>
+		<li class="has-submenu"> 
+			<a href="#"> Execute </a>
+			<ul class="menu vertical">
+				<li> <a id="submit-immediate" 
+	                    href="#submitimmediate"> 
+	                        Run Immediately (Ctrl+Enter) 
+	                 </a> 
+	            </li>
+				<li> <a id="submit-job" 
+	                  href="#"> 
+	                        Submit as Job 
+	                 </a> 
+	            </li>
+			</ul>
+		</li>
+
+	</ul> <!-- end of full menu set -->
+  </div> <!-- end top-bar-left -->
+  <div class="top-bar-right">
+  </div> <!-- end top-bar-right -->
+</div> <!-- end of top-bar -->
+<!--
   <nav id="topbar" class="top-bar" data-topbar role="navigation">
     <ul class="title-area">
       <li class="name">
         <h1><a id="app-header" class="noselect">Editor</a></h1>
       </li>
-      <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
     </ul>
 
     <section class="top-bar-section">
@@ -60,24 +108,9 @@
             <li><a id="macro-save-and-close" href="#macrosaveandclose">Save and Close</a></li>          
           </ul>        
         </li>
-        <li class="has-dropdown language-dropdown"> 
-          <a href="#languagemenu">Language</a>
-          <ul class="dropdown">
-            <li><a id="lang-opensbp" href="#languageopensbp">OpenSBP</a></li>
-            <li><a id="lang-gcode" href="#languagegcode">G-Code</a></li>
-          </ul>
-        </li>
-        <li class="has-dropdown" id="execute-menu"> 
-          <a href="#executemenu" class="success">Execute</a>
-          <ul class="dropdown"> 
-            <li><a id="submit-immediate" href="#submitimmediate">Run Immediately (Ctrl+Enter)</a></li>
-            <li><a id="submit-job" href="#submitasjob">Submit as Job</a></li>
-          </ul>
-        </li> 
       </ul>
     </section>
   </nav>
-
   <div id="editor"></div>
 
   <script src="../../editor.js"></script>
