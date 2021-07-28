@@ -975,7 +975,11 @@ Machine.prototype.resume = function(callback, input=false) {
 			'type' : 'resume',
 			'input' : input
 		}, config.machine.get('auth_timeout'));
-    	callback(null, 'resumed');
+		if (callback) {
+	    	callback(null, 'resumed');
+	    } else {
+	    	log.debug('Undefined callback passed to resume');
+	    }
 	}
 }
 
