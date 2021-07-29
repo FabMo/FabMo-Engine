@@ -38,6 +38,7 @@
 
 </head>
 <body>
+<!-- START HERE -->
 <nav class="top-bar" data-topbar role="navigation" data-options="is_hover: false">
  <div class="top-bar-left">
     <ul class="dropdown menu" data-dropdown-menu data-click-open="true" data-close-on-click="true">
@@ -46,21 +47,21 @@
 		</li>
 		<li>
 			<a href "#"> Macro </a>
-			<ul class="menu vertical">
+			<ul class="dropdown menu" data-dropdown-menu>
             	<li><a id="macro-save" href="#macrosave">Save</a></li>
             	<li><a id="macro-save-and-close" href="#macrosaveandclose">Save and Close</a></li>
 			</ul>
 		</li>
 		<li> 
 			<a href="#"> Language </a>
-			<ul class="menu vertical">
+			<ul class="dropdown menu" data-dropdown-menu>
 				<li> <a id="lang-opensbp" href="#languageopensbp"> OpenSBP </a> </li>
 				<li> <a id="lang-gcode" href="#languagegcode"> G-Code </a> </li>
 			</ul>
 		</li>
 		<li id="#execute-menu" class="#execute-menu"> 
 			<a href="#"> Execute </a>
-			<ul class="menu vertical">
+			<ul class="dropdown menu" data-dropdown-menu>
 				<li> <a id="submit-immediate" href="#submitimmediate"> Run Immediately (Ctrl+Enter) </a> </li>
 				<li> <a id="submit-job" href="#submitjob"> Submit as Job </a> </li>
 			</ul>
