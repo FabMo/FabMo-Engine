@@ -200,11 +200,14 @@ require("../css/toastr.min.css");
                         case 'running':
                         case 'paused':
                         case 'stopped':
+                            console.log("50769 runnning/paused/stop switch hit");
+                            console.log("50769 modal is shown:  "+modalIsShown);
                             if(modalIsShown === false) {
                                 dashboard.handlers.showFooter();
                             }
                             break;
                         default:
+                            console.log("50769 state switch default");
                             dashboard.handlers.hideFooter();
                             break;
                     }
@@ -218,6 +221,7 @@ require("../css/toastr.min.css");
                     }
 
                     if (status['info'] && status['info']['id'] != lastInfoSeen) {
+                        console.log("50769 status.info:  "+status['info']);
                         lastInfoSeen = status['info']['id'];
                         if (status.info['message']) {
                             if(status.state ==="manual"){
