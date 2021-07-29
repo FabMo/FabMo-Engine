@@ -38,79 +38,54 @@
 
 </head>
 <body>
-<div class="top-bar">
+<nav class="top-bar" data-topbar role="navigation" data-options="is_hover: false">
  <div class="top-bar-left">
 
    <ul class="title-area">
       <li class="name">
         <h1><a id="app-header" class="noselect">Editor</a></h1>
       </li>
-      <!-- rmackie <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li> -->
+      <!-- rmackie <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>  -->
     </ul>
 
-    <ul class="dropdown menu" data-dropdown-menu>
+    <ul class="dropdown menu" data-dropdown-menu data-click-open="true" data-close-on-click="true">
+<!--		<li class="menu-text"> 
+			<a href="#"> Menu </a>
+		</li> -->
+		<li>
+			<a href "#"> Macro </a>
+			<ul class="menu vertical">
+            	<li><a id="macro-save" href="#macrosave">Save</a></li>
+            	<li><a id="macro-save-and-close" href="#macrosaveandclose">Save and Close</a></li>
+			</ul>
+		</li>
 		<li> 
 			<a href="#"> Language </a>
-			<ul class="sub menu vertical">
-				<li> <a id="lang-gcode" 
-						href="#languagegcode"> 
-							G-Code 
-					 </a> 
-				</li>
-				<li> <a id="lang-opensbp" 
-						href="#languageopensbp""> 
-							OpenSBP 
-					 </a> 
-				</li>
-
+			<ul class="menu vertical">
+				<li> <a id="lang-opensbp" href="#languageopensbp"> OpenSBP </a> </li>
+				<li> <a id="lang-gcode" href="#languagegcode"> G-Code </a> </li>
 			</ul>
 		</li>
-		<li class="has-submenu"> 
+		<li id="#execute-menu" class="#execute-menu"> 
 			<a href="#"> Execute </a>
 			<ul class="menu vertical">
-				<li> <a id="submit-immediate" 
-	                    href="#submitimmediate"> 
-	                        Run Immediately (Ctrl+Enter) 
-	                 </a> 
-	            </li>
-				<li> <a id="submit-job" 
-	                  href="#"> 
-	                        Submit as Job 
-	                 </a> 
-	            </li>
+				<li> <a id="submit-immediate" href="#submitimmediate"> Run Immediately (Ctrl+Enter) </a> </li>
+				<li> <a id="submit-job" href="#submitjob"> Submit as Job </a> </li>
 			</ul>
 		</li>
 
-	</ul> <!-- end of full menu set -->
+	</ul> <!-- end of dropdown menu -->
   </div> <!-- end top-bar-left -->
+
   <div class="top-bar-right">
+	<ul class="menu">
+		<li><input type="search" placeholder="Search"></li>
+		<li> <button type="button" class="button"> Search </button></li>
+	</ul>
   </div> <!-- end top-bar-right -->
-</div> <!-- end of top-bar -->
-<!--
-  <nav id="topbar" class="top-bar" data-topbar role="navigation">
-    <ul class="title-area">
-      <li class="name">
-        <h1><a id="app-header" class="noselect">Editor</a></h1>
-      </li>
-    </ul>
 
-    <section class="top-bar-section">
-      <!-- Right Nav Section -->
-      <ul class="right">
-      </ul>
+</nav> <!-- end of top-bar -->
 
-      <!-- Left Nav Section -->
-      <ul class="left">
-        <li class="has-dropdown hidden" id="macro-menu">
-          <a href="#macromenu">Macro</a>
-          <ul class="dropdown">
-            <li><a id="macro-save" href="#macrosave">Save</a></li>
-            <li><a id="macro-save-and-close" href="#macrosaveandclose">Save and Close</a></li>          
-          </ul>        
-        </li>
-      </ul>
-    </section>
-  </nav>
   <div id="editor"></div>
 
   <script src="../../editor.js"></script>
