@@ -848,7 +848,9 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 
 				break;
 			case 'paused':
+				log.debug("50764 set state paused");
                 if(this.status.state != newstate) {
+                	log.debug("50769 state != newstate");
                 	//set driver in paused state
                 	this.driver.pause_hold = true;
                 	// Save the position to the instance configuration.  See note above.
@@ -879,6 +881,8 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 	} else {
 		log.warn("Got a state change from a runtime that's not the current one. (" + source + ")")
 	}
+	log.debug("50769 emiting state:  " + JSON.stringify(this.status.state));
+	log.debug("50769 emiting info:  " + JSON.stringify(this.status.info));
 	this.emit('status',this.status);
 	if (this.status.info && this.status.info['timer']){
 		this.pauseTimer = setTimeout(function() {

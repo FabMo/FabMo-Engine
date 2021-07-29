@@ -221,7 +221,8 @@ require("../css/toastr.min.css");
                     }
 
                     if (status['info'] && status['info']['id'] != lastInfoSeen) {
-                        console.log("50769 status.info:  "+status['info']);
+                        console.log("50769 status.info ");
+                        console.log(status['info']);
                         lastInfoSeen = status['info']['id'];
                         if (status.info['message']) {
                             if(status.state ==="manual"){

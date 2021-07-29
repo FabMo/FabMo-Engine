@@ -1185,9 +1185,11 @@ SBPRuntime.prototype._execute = function(command, callback) {
             break;
 
         case "pause":
+            log.debug("50764 pause command");
             // PAUSE is somewhat overloaded.  In a perfect world there would be distinct states for pause and feedhold.
             this.pc += 1;
             var arg = this._eval(command.expr);
+            log.debug("50769 arg = "+arg)
             var var_name = command.var;
             if(util.isANumber(arg)) {
                 // If argument is a number set pause with timer and default message.
@@ -1207,7 +1209,9 @@ SBPRuntime.prototype._execute = function(command, callback) {
                 }
                 // If a message is provided, pause with a dialog
                 var message = arg;
+                log.debug("50769 message = "+message);
                 if(!message) {
+                    log.debug("50769 no message");
                     // If a message is not provided, use the comment from the previous line
                     var last_command = this.program[this.pc-2];
                     if(last_command && last_command.type === 'comment') {
