@@ -79,6 +79,8 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 
 	if(this.socket) {
 		this.socket.on('status', function(status) {
+			console.log("50769 on status fabmoapi");
+			console.log(status)
 			this._setStatus(status);
 			this.emit('status', status);
 		}.bind(this));
@@ -160,6 +162,8 @@ FabMoAPI.prototype.emit = function(evt, data) {
 }
 
 FabMoAPI.prototype.on = function(message, func) {
+	console.log("50769 fabmoapi on");
+	console.log(message);
 	if(message in this.events) {
 		this.events[message].push(func);
 	}
