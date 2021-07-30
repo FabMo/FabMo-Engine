@@ -59,20 +59,28 @@ function setupAuthentication(svr) {
 function setupStatusBroadcasts(server){
 	var previous_status = {'state':null}
 	machine.on('status',function(status){
+		log.debug("50769 websocket on status listener");
+		log.debug(JSON.stringify(status));
 		//Add Server Timestamp to status updates
 		status.server_ts = Date.now();
 		server.io.of('/private').sockets.forEach(function (socket) {
+			log.debug("private sockets");
 			if(status.state === 'idle' || status.state != previous_status.state) {
+				log.debug("standard emit");
 				socket.emit('status',status);
 			} else {
+				log.debug("volatile emit");
 				socket.volatile.emit('status', status);
 			}
 		});
 
 		server.io.sockets.sockets.forEach(function (socket) {
+			log.debug("all sockets");
 			if(status.state === 'idle' || status.state != previous_status.state) {
+				log.debug("standard emit");
 				socket.emit('status',status);
 			} else {
+				log.debug("volatile emit");
 				socket.volatile.emit('status', status);
 			}
 		});
