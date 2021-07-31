@@ -62,7 +62,7 @@ function setupStatusBroadcasts(server){
 		//Add Server Timestamp to status updates
 		status.server_ts = Date.now();
 		server.io.of('/private').sockets.forEach(function (socket) {
-			if(status.state === 'idle' || status.state != previous_status.state) {
+			if(status.state === 'idle' || status.state === 'paused' || status.state != previous_status.state) {
 				socket.emit('status',status);
 			} else {
 				socket.volatile.emit('status', status);
@@ -70,7 +70,7 @@ function setupStatusBroadcasts(server){
 		});
 
 		server.io.sockets.sockets.forEach(function (socket) {
-			if(status.state === 'idle' || status.state != previous_status.state) {
+			if(status.state === 'idle' || status.state === 'paused' || status.state != previous_status.state) {
 				socket.emit('status',status);
 			} else {
 				socket.volatile.emit('status', status);

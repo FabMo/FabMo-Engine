@@ -1185,6 +1185,7 @@ SBPRuntime.prototype._execute = function(command, callback) {
             break;
 
         case "pause":
+            log.debug("50764 pause command");
             // PAUSE is somewhat overloaded.  In a perfect world there would be distinct states for pause and feedhold.
             this.pc += 1;
             var arg = this._eval(command.expr);
