@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="./css/foundation.min.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <div id="jobsubmit-modal" class="reveal-modal medium" data-reveal>
+  <div id="jobsubmit-modal" class="reveal" data-reveal>
     <div id="modal-title">Submit Job</div>
     <div id="jobsubmit-form">
         <div class="row">
@@ -29,8 +29,8 @@
 
         <div class="row">
              <div class="right">
-                 <button id="jobsubmit-cancel" class="button radius alert">Cancel</button>
-                 <button id="jobsubmit-submit" class="button radius success">Submit Job</button>
+                 <button id="jobsubmit-cancel" data-close class="button radius alert">Cancel</button>
+                 <button id="jobsubmit-submit" data-close class="button radius success">Submit Job</button>
              </div>
          </div>
      </div>
@@ -64,7 +64,7 @@
                       <li><a id="submit-immediate" 
                              href="#submitimmediate">Run Immediately (Ctrl+Enter)</a>
 					  </li>
-                      <li><a id="submit-job" href="#">Submit as Job</a></li>
+                      <li><a data-open="jobsubmit-modal" id="submit-job" href="#">Submit as Job</a></li>
                   </ul>
              </li>
             </ul>
