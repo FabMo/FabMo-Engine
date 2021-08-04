@@ -57,26 +57,16 @@ function setupAuthentication(svr) {
 }
 
 function setupStatusBroadcasts(server){
-	var previous_status = {'state':null}
 	machine.on('status',function(status){
 		//Add Server Timestamp to status updates
 		status.server_ts = Date.now();
 		server.io.of('/private').sockets.forEach(function (socket) {
-			if(status.state === 'idle' || status.state === 'paused' || status.state != previous_status.state) {
-				socket.emit('status',status);
-			} else {
-				socket.volatile.emit('status', status);
-			}
+			socket.emit('status',status);
 		});
 
 		server.io.sockets.sockets.forEach(function (socket) {
-			if(status.state === 'idle' || status.state === 'paused' || status.state != previous_status.state) {
-				socket.emit('status',status);
-			} else {
-				socket.volatile.emit('status', status);
-			}
+			socket.emit('status',status);
 		});
-		previous_status.state = status.state;
 	});
 
 	machine.on('change', function(topic) {
