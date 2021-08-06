@@ -639,18 +639,18 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 #icon_joystick 		{ 
-	width: 50px;
-	height: 50px;
+/*	width: 50px;
+	height: 50px;  */
+	width: 90%;
+	height: 90%;
+	left: 5%;
 	background-image: url('../img/icon_keypad.png');
 	position: absolute;
-    top: 12%;
-    left: 10%;
 	transform: scale(.9,1);	
 	background-repeat: no-repeat;
 	background-size: 3rem;
 	background-position: center;
 }
-
 
 .left-slide-menu {
 	display: none;
@@ -685,11 +685,9 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .open#left-slide-button {
-/* 	background-image: url('../img/icon_colapse_r.png'); */
 }
 
 #left-slide-button {
-/*	background-image: url('../img/icon_colapse.png'); */
 }
 
 #man-tab {
