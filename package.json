@@ -88,7 +88,7 @@
     "dev": "npm run stopdaemon && npm run build && npm run debugserver",
     "stopdaemon": "sudo systemctl stop fabmo",
     "build": "webpack --mode=development && npm run copybuiltfiles",
-    "copybuiltfiles": "/bin/mkdir /fabmo/dashboard/build/css; cp /fabmo/dashboard/build/dashboard.css /fabmo/dashboard/build/css/dashboard.css; cp -R /fabmo/dashboard/static/img/favicon /fabmo/dashboard/build/favicon; cp /fabmo/dashboard/static/js/libs/socket.io.js /fabmo/dashboard/build/.",
+    "copybuiltfiles": "cp -R /fabmo/dashboard/static/* /fabmo/dashboard/build/; cp /fabmo/dashboard/build/dashboard.css /fabmo/dashboard/build/css/dashboard.css;", 
     "debugserver": "node server.js --debug",
     "build:dev": "webpack --mode=development",
     "build:prod": "webpack --mode=development",

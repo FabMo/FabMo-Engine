@@ -91,13 +91,13 @@ define(function(require) {
             if (colapsed === "false" || undefined){
                 $("#widget-links-general").removeClass("colapsed"); //Show fulll left hand menu on full screen
                 $("#left-menu").removeClass("colapsed"); //Show fulll left hand menu on full screen
-                
-                
+                $("#collapse_icon").attr('src', '/img/icon_colapse_r.png');
             }
         } else if ($(window).width()  <= 640) {
             $("#main").addClass("offcanvas-overlap-right"); //Show Left Menu
             $("#widget-links-general").addClass("colapsed"); //Show fulll left hand menu on full screen
             $("#left-menu").addClass("colapsed"); //Show fulll left hand menu on full screen
+            $("#collapse_icon").attr('src', '/img/icon_colapse.png');
             l = parseInt($("#left-menu").css("width")) + 1; //Save left menu size
             $('#close_menu').css('display', 'none');
         } else {
@@ -154,10 +154,12 @@ define(function(require) {
              
           }
         }
+
         //If menu is colapsed, we remove this property
         if ($("#widget-links-general").hasClass("colapsed")) {
             $("#widget-links-general").removeClass("colapsed");
             $("#left-menu").removeClass("colapsed");
+            $("#collapse_icon").attr('src', '/img/icon_colapse_r.png');
 
             if ($("body").width() < 640) {
                 $('.colapseLeft').show(); // show tinted screen to close menu
@@ -169,6 +171,7 @@ define(function(require) {
             $("#widget-links-general").addClass("colapsed");
             $("#left-menu").addClass("colapsed");
             $('.colapseLeft').hide();
+            $("#collapse_icon").attr('src', '/img/icon_colapse.png');
 
         }
         //Handle collapse of left
