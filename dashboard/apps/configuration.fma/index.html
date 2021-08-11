@@ -21,21 +21,14 @@
         </li>
       </ul>
       <section class="top-bar-section">
-        <ul class="left" role="tablist" data-tab>
-          <li class="tab-title active" role="presentational"><a href="#tabpanel1" role="tab" tabindex="0" aria-selected="true" controls="tabpanel1">General</a>
-          </li>
-          <li class="tab-title" role="presentational"><a href="#tabpanel5" role="tab" tabindex="0" aria-selected="false" controls="tabpanel5">Machine</a>
-          </li>
-          <li class="tab-title" role="presentational"><a href="#tabpanel4" role="tab" tabindex="0" aria-selected="false" controls="tabpanel4">Drivers</a>
-          </li>
-          <li class="tab-title" role="presentational"><a href="#tabpanel2" role="tab" tabindex="0" aria-selected="false" controls="tabpanel2">Axes</a>
-          </li>
-          <li class="tab-title" role="presentational"><a href="#tabpanel3" role="tab" tabindex="0" aria-selected="false" controls="tabpanel3">Inputs</a>
-          </li>
-          <li class="tab-title" role="presentational"><a href="#tabpanel6" role="tab" tabindex="0" aria-selected="false" controls="tabpanel6">Apps</a>
-          </li>
-          <li class="tab-title" role="presentational"><a href="#tabpanel7" role="tab" tabindex="0" aria-selected="false" controls="tabpanel7">Users</a>
-          </li>
+        <ul class="left tabs" data-tabs id="configuration-tab-list">
+          <li class="tabs-title is-active" role="presentational"> <a href="#tabpanelGeneral" aria-selected="true">General</a> </li>
+          <li class="tabs-title"> <a data-tabs-target="tabpanelMachine" href="#tabpanelMachine">Machine</a> </li>
+          <li class="tabs-title"> <a data-tabs-target="tabpanelDrivers" href="#tabpanelDrivers">Drivers</a> </li>
+          <li class="tabs-title"> <a data-tabs-target="tabpanelAxes" href="#tabpanelAxes">Axes</a> </li>
+          <li class="tabs-title"><a data-tabs-target="tabpanelInputs" href="#tabpanelInputs"> Inputs</a> </li>
+          <li class="tabs-title"> <a data-tabs-target="tabpanelApps" href="#tabpanelApps">Apps</a> </li>
+          <li class="tabs-title"> <a data-tabs-target="tabpanelUsers" href="#tabpanelUsers">Users</a> </li>
         </ul>
         <ul class="right">
           <li>
@@ -51,11 +44,8 @@
   <div class="row">
     <!--  <form> -->
 
-    <ul class="tabs" data-tab role="tablist">
-
-    </ul>
-    <div class="tabs-content">
-      <section role="tabpanel" aria-hidden="false" class="content active" id="tabpanel1">
+    <div class="tabs-content" data-tabs-content="configuration-tab-list">
+      <div class="tabs-panel is-active" id="tabpanelGeneral">
         <div class="row">
           <fieldset>
             <legend>General Settings</legend>
@@ -152,34 +142,35 @@
           </fieldset>
         </div>
 
-	<div class="row">
-	  <fieldset>
-		  <legend>Updates</legend>
-      <div class="large-4 columns">
-        <div class="row collapse">
-          <label data-tip="The version of FabMo that is currently running on this tool.">Software Version<div class="tool-tip">i</div></label>
-          <div class="columns">
-              <span class="engine-version"></span>
-          </div>
-          <label data-tip="The version of low-level G2 motion firmware that is currently running on this tool.">G2 Firmware Version<div class="tool-tip">i</div></label>
-          <div class="columns">
-              <span class="firmware-version"></span>
-          </div>
+        <div class="row">
+          <fieldset>
+            <legend>Updates</legend>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label data-tip="The version of FabMo that is currently running on this tool.">Software Version<div class="tool-tip">i</div></label>
+                <div class="columns">
+                    <span class="engine-version"></span>
+                </div>
+                <label data-tip="The version of low-level G2 motion firmware that is currently running on this tool.">G2 Firmware Version<div class="tool-tip">i</div></label>
+                <div class="columns">
+                    <span class="firmware-version"></span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+                <div class="row collapse">
+                  <a id="btn-update"  class="button radius small disabled noselect">No FabMo Software Updates Available!</a>
+                </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <a id="btn-flash-firm"  class="button radius small">Update G2 Firmware from a File</a>
+                <input style="display:none" type="file" id="firmware-input">
+              </div>
+            </div>
+          </fieldset>
         </div>
-      </div>
-      <div class="large-4 columns">
-          <div class="row collapse">
-            <a id="btn-update"  class="button radius small disabled noselect">No FabMo Software Updates Available!</a>
-          </div>
-      </div>
-      <div class="large-4 columns">
-        <div class="row collapse">
-          <a id="btn-flash-firm"  class="button radius small">Update G2 Firmware from a File</a>
-          <input style="display:none" type="file" id="firmware-input">
-        </div>
-      </div>
-	  </fieldset>
-	</div>
+      </div> <!-- end tabpanelGeneral -->
 <!--
         <div class="row">
           <fieldset>
@@ -476,9 +467,8 @@
 </div>
 </fieldset>
 </div> -->
-      </section>
 
-      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel2">
+      <div class="tabs-panel" id="tabpanelAxes">
         <div class="row">
           <fieldset>
             <legend>X-Axis</legend>
@@ -803,13 +793,11 @@
             </div>
           </fieldset>
         </div>
-      </section>
+      </div> <!-- end tabpanelAxes -->
 
-
-      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel3">
+      <div class="tabs-panel" id="tabpanelInputs">
         <div class="row">
           <fieldset>
-
             <legend>Input 1</legend>
             <div class="large-4 columns">
               <div class="row collapse">
@@ -1323,10 +1311,9 @@
             </div>
           </fieldset>
         </div>
-      </section>
+      </div> <!-- end tabpanelInputs -->
 
-
-      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel4">
+      <div class="tabs-panel" id="tabpanelDrivers">
 
         <div class="row">
           <fieldset>
@@ -1734,10 +1721,9 @@
             </div>
           </fieldset>
         </div>
-      </section>
+      </div> <!-- tabpanelDrivers -->
 
-
-      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel5">
+      <div class="tabs-panel" id="tabpanelMachine">
         <div class="row">
           <fieldset>
             <legend>Machine Envelope</legend>
@@ -2037,10 +2023,9 @@
           </fieldset>
 
         </div>
-      </section>
+      </div> <!-- end tabpanelMachine -->
 
-
-      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel6" style="padding: 0px;">
+      <div class="tabs-panel" id="tabpanelApps" style="padding: 0px;">
 
         <form style="display:none;" id="fileform">
           <input type="file" id="file" multiple>
@@ -2068,9 +2053,9 @@
             </div>
           </div>
         </div>
-      </section>
+      </div> <!-- end tabpanelApps -->
 
-      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel7" style="padding: 0px;">
+      <div class="tabs-panel" id="tabpanelUsers" style="padding: 0px;">
         <div class="row">
           <fieldset>
             <legend>Current User Information</legend>
@@ -2138,12 +2123,10 @@
               <button id="add-user" class="button radius small">Add new user</button>
             </div>
           </fieldset>
-      </section>
-
-      </div>
+        </div> 
+      </div> <!-- end tabpanelUsers -->
       <!--</form>-->
-
-    </div>
+    </div> <!-- end of data-tabs-content="configuration-tab-list -->
     <script src="../../configuration.js"></script>
 
 </body>
