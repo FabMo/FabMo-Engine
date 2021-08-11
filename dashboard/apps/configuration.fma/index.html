@@ -12,16 +12,18 @@
 <body>
   <div class="tip-output"><span class="tip-text"></span><div class='commentBox'></div></div>
   <div class="sticky">
-    <nav class="top-bar" data-topbar role="navigation">
-      <ul class="title-area">
+    <!-- START HERE -->
+    <nav class="top-bar" data-topbar role="navigation" style="background-color:rgb(92, 90, 90)">
+        <!-- rmackie -->
+      <ul class="title-area" style="color:white; background-color:rgb(92, 90, 90);list-style-type: none;">
         <li class="name">
-          <h1><a id="app-header">Configuration</a></h1>
+          <a id="app-header" style="color:white" >Configuration</a>
         </li>
-        <li class="toggle-topbar"><a href="#"><span>Menu</span></a>
-        </li>
-      </ul>
-      <section class="top-bar-section">
-        <ul class="left tabs" data-tabs id="configuration-tab-list">
+       <!-- rmackie <li class="toggle-topbar"><a href="#"><span>Menu</span></a>
+        </li> -->
+      </ul> 
+      <div class="top-bar-left" style="color:white; background-color:rgb(92, 90, 90);"> 
+        <ul class="left tabs" data-tabs id="configuration-tab-list" style="background-color:rgb(92, 90, 90);list-style-type: none;">
           <li class="tabs-title is-active" role="presentational"> <a href="#tabpanelGeneral" aria-selected="true">General</a> </li>
           <li class="tabs-title"> <a data-tabs-target="tabpanelMachine" href="#tabpanelMachine">Machine</a> </li>
           <li class="tabs-title"> <a data-tabs-target="tabpanelDrivers" href="#tabpanelDrivers">Drivers</a> </li>
@@ -30,16 +32,14 @@
           <li class="tabs-title"> <a data-tabs-target="tabpanelApps" href="#tabpanelApps">Apps</a> </li>
           <li class="tabs-title"> <a data-tabs-target="tabpanelUsers" href="#tabpanelUsers">Users</a> </li>
         </ul>
-        <ul class="right">
-          <li>
-            <a id="engine-version" class="engine-version" href=""></a>
-          </li>
+      </div>
+      <div class="top-bar-right" style="background-color:rgb(92, 90, 90);list-style-type: none; color:yellow">
+        <ul style="background-color:rgb(92, 90, 90);list-style-type: none; color:white">
+          <li> <a id="engine-version" class="engine-version" href=""> </a> </li>
         </ul>
-      </section>
+      </div>
     </nav>
   </div>
-
-  
 
   <div class="row">
     <!--  <form> -->
