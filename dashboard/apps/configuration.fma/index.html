@@ -122,66 +122,69 @@
               </div>
             </div> <!-- end grid-x -->
           </fieldset>
-        </div>
-      </div> <!-- end grid-container -->
-<!-- end re-formatting efforts, needs to be done from here on down rmackie -->
-        <div class="row">
+          <!-- end re-formatting efforts, needs to be done from here on down rmackie -->
           <fieldset>
-            <legend>Logging</legend>
-            <div class="columns small-4">
-              <div class="row collapse">
-                <label data-tip="Determines how aggressively the tool records diagnostic information in its log.  This should be set to 'Informational' except in certain exceptional tech support situations.  Setting this value to something other than 'Informational' may negatively impact tool performance.">Log Level<div class="tool-tip">i</div></label>
-                  <select id="engine-log_level" class="engine-input">
-                    <option value="g2">G2</option>
-                    <option value="debug">Debug</option>
-                    <option value="info">Informational</option>
-                    <option value="warning">Warnings</option>
-                    <option value="error">Error</option>
-                  </select>
-              </div>
-            </div>
-            <div class="columns small-4">
-              <div class="row collapse">
-                <label data-tip="The minimum interval between tool status reports.  A larger number here means position and status displays that do not update as frequently.">Status Report Interval<div class="tool-tip">i</div></label>
-                <div class="small-9 columns">
-                  <input type="text" id="driver-si" class="driver-input" />
-                </div>
-                <div class="columns small-3">
-                  <span class="postfix">ms</span>
-                </div>
-              </div>
-            </div>
-          </fieldset>
-        </div>
-
-        <div class="row">
-          <fieldset>
-            <legend>Updates</legend>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label data-tip="The version of FabMo that is currently running on this tool.">Software Version<div class="tool-tip">i</div></label>
-                <div class="columns">
-                    <span class="engine-version"></span>
-                </div>
-                <label data-tip="The version of low-level G2 motion firmware that is currently running on this tool.">G2 Firmware Version<div class="tool-tip">i</div></label>
-                <div class="columns">
-                    <span class="firmware-version"></span>
-                </div>
-              </div>
-            </div>
-            <div class="large-4 columns">
+            <div class="grid-x medium-margin-collapse">
+              <legend>Logging</legend>
+              <div class="cell small-3" style="padding-left:10px; padding: right 10px;">
                 <div class="row collapse">
-                  <a id="btn-update"  class="button radius small disabled noselect">No FabMo Software Updates Available!</a>
+                  <label data-tip="Determines how aggressively the tool records diagnostic information in its log.  This should be set to 'Informational' except in certain exceptional tech support situations.  Setting this value to something other than 'Informational' may negatively impact tool performance.">
+                    Log Level<div class="tool-tip">i</div></label>
+                    <select id="engine-log_level" class="engine-input">
+                      <option value="g2">G2</option>
+                      <option value="debug">Debug</option>
+                      <option value="info">Informational</option>
+                      <option value="warning">Warnings</option>
+                      <option value="error">Error</option>
+                    </select>
                 </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <a id="btn-flash-firm"  class="button radius small">Update G2 Firmware from a File</a>
-                <input style="display:none" type="file" id="firmware-input">
               </div>
-            </div>
+              <div class="cell small-3" style="padding-left:10px; padding: right 10px;">
+                <div class="row collapse">
+                  <label data-tip="The minimum interval between tool status reports.  A larger number here means position and status displays that do not update as frequently.">
+                    Status Report Interval (ms)<div class="tool-tip">i</div></label>
+                  <div class="cell small-9">
+                    <input type="text" id="driver-si" class="driver-input" />
+                  </div> 
+                  <!-- rmackie  
+                  <div class="columns small-3">
+                    <span class="postfix">ms</span>
+                  </div>
+                -->
+                </div>
+              </div>
+
+            </div> <!-- end grid-x -->
           </fieldset>
-        </div>
+          <fieldset>
+            <div class="grid-x">
+              <legend>Updates</legend>
+              <div class="large-4 cell">
+                <div class="row collapse">
+                  <label data-tip="The version of FabMo that is currently running on this tool.">Software Version<div class="tool-tip">i</div></label>
+                  <div class="cell">
+                      <span class="engine-version"></span>
+                  </div>
+                  <label data-tip="The version of low-level G2 motion firmware that is currently running on this tool.">G2 Firmware Version<div class="tool-tip">i</div></label>
+                  <div class="cell">
+                      <span class="firmware-version"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="large-4 cell">
+                  <div class="row collapse">
+                    <a id="btn-update"  class="button radius small disabled noselect">No FabMo Software Updates Available!</a>
+                  </div>
+              </div>
+              <div class="large-4 cell">
+                <div class="row collapse">
+                  <a id="btn-flash-firm"  class="button radius small">Update G2 Firmware from a File</a>
+                  <input style="display:none" type="file" id="firmware-input">
+                </div>
+              </div>
+            </div> <!-- grid-x -->
+          </fieldset>
+        </div> <!-- end of grid-container -->
       </div> <!-- end tabpanelGeneral -->
 <!--
         <div class="row">
