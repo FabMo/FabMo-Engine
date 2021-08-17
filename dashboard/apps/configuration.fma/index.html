@@ -5,6 +5,7 @@
   <title>Configuration</title>
   <meta charset="utf-8" />
   <link rel="stylesheet" href="../../css/dashboard.css">
+  <link rel="stylesheet" href="../../css/foundation.min.css">
   <link rel="stylesheet" href="./css/style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -13,29 +14,29 @@
   <div class="tip-output"><span class="tip-text"></span><div class='commentBox'></div></div>
   <div class="sticky">
     <!-- START HERE -->
-    <nav class="top-bar" data-topbar role="navigation" style="background-color:rgb(92, 90, 90)">
+    <nav class="top-bar" data-topbar role="navigation" style="background-color:rgb(92, 90, 90);">
         <!-- rmackie -->
       <ul class="title-area" style="color:white; background-color:rgb(92, 90, 90);list-style-type: none;">
         <li class="name">
-          <a id="app-header" style="color:white" >Configuration</a>
+         <h2> <a id="app-header" style="color:white; padding-right:50px;padding-bottom:0px" >Configuration</a> </h2>
         </li>
        <!-- rmackie <li class="toggle-topbar"><a href="#"><span>Menu</span></a>
         </li> -->
       </ul> 
       <div class="top-bar-left" style="color:white; background-color:rgb(92, 90, 90);"> 
-        <ul class="left tabs" data-tabs id="configuration-tab-list" style="background-color:rgb(92, 90, 90);list-style-type: none;">
+        <ul class="left tabs" data-tabs id="configuration-tab-list" style="border:0px;background-color:rgb(92, 90, 90);list-style-type: none;">
           <li class="tabs-title is-active" role="presentational"> <a href="#tabpanelGeneral" aria-selected="true">General</a> </li>
           <li class="tabs-title"> <a data-tabs-target="tabpanelMachine" href="#tabpanelMachine">Machine</a> </li>
           <li class="tabs-title"> <a data-tabs-target="tabpanelDrivers" href="#tabpanelDrivers">Drivers</a> </li>
           <li class="tabs-title"> <a data-tabs-target="tabpanelAxes" href="#tabpanelAxes">Axes</a> </li>
-          <li class="tabs-title"><a data-tabs-target="tabpanelInputs" href="#tabpanelInputs"> Inputs</a> </li>
+          <li class="tabs-title"><a data-tabs-target="tabpanelInputs" href="#tabpanelInputs">Inputs</a> </li>
           <li class="tabs-title"> <a data-tabs-target="tabpanelApps" href="#tabpanelApps">Apps</a> </li>
           <li class="tabs-title"> <a data-tabs-target="tabpanelUsers" href="#tabpanelUsers">Users</a> </li>
         </ul>
       </div>
-      <div class="top-bar-right" style="background-color:rgb(92, 90, 90);list-style-type: none; color:yellow">
+      <div class="top-bar-right" style="background-color:rgb(92, 90, 90);list-style-type: none;">
         <ul style="background-color:rgb(92, 90, 90);list-style-type: none; color:white">
-          <li> <a id="engine-version" class="engine-version" href=""> </a> </li>
+          <li> <a id="engine-version" class="engine-version" style="color:white" href=""> </a> </li>
         </ul>
       </div>
     </nav>
@@ -46,77 +47,88 @@
 
     <div class="tabs-content" data-tabs-content="configuration-tab-list">
       <div class="tabs-panel is-active" id="tabpanelGeneral">
-        <div class="row">
-          <fieldset>
+        <div class="grid-container medium-margin-collapse">
+          <fieldset> <!-- begin re-formatting efforts  -->
             <legend>General Settings</legend>
-            <div class="large-4 columns" >
-              <div class="row collapse">
-                <label data-tip="The name of your tool.  The tool name will be displayed on the dashboard, and is used as the network name for wireless and wired networking.">Machine Name<div class="tool-tip">i</div></label>
-                <div class="small-12 columns">
-                  <input type="text"  id="engine-name" class="engine-input"/>
+            <div class="grid-x"> <!-- first row -->
+              <div class="cell small-3" style="padding-left:10px; padding-right:10px">
+                <div class="row collapse">
+                  <label data-tip="The name of your tool.  The tool name will be displayed on the dashboard, and is used as the network name for wireless and wired networking.">
+                    Machine Name<div class="tool-tip">i</div></label>
+                  <div class="small-12 columns">
+                    <input type="text"  id="engine-name" class="engine-input" />
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="large-4 columns" id="section-machine-id">
-              <div class="row collapse">
-                <label data-tip="The unique factory ID of your tool.  This ID can be helpful for tech support.  This value cannot be changed.">Machine ID<div class="tool-tip">i</div></label>
-                <div class="small-12 columns">
-                  <input type="text" id="input-machine-id" disabled/>
+              <div class="cell small-3" id="section-machine-id" style="padding-left:10px; padding-right:10px">
+                <div class="row collapse">
+                  <label data-tip="The unique factory ID of your tool.  This ID can be helpful for tech support.  This value cannot be changed.">
+                    Machine ID<div class="tool-tip">i</div></label>
+                  <div class="small-12 columns">
+                    <input type="text" id="input-machine-id" disabled/>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="large-4 columns"> 
-              <div class="row collapse">
-                <label data-tip="The machine profile sets the default values, apps and macros for your tool.  Changing this setting will require you to reboot your tool.">Machine Profile<div class="tool-tip">i</div></label>
-                <select id="profile-listbox">
-                </select>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label data-tip="The distance units that will be used by default for the DRO display and in supported apps.">Default Unit System<div class="tool-tip">i</div></label>
-                <select id="machine-units" class="machine-input">
-                  <option value="mm">mm</option>
-                  <option value="in">in</option>
-                </select>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label data-tip="">Distance Mode</label>
-                <select id="driver-gdi" class="driver-input">
-                  <option value="0">Absolute</option>
-                  <option value="1">Incremental</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label data-tip='Maximum deviation that an arc segment may take from its "ideal" trajectory.  A smaller number here means higher resolution (but possibly slower) arcs.'>Chordal Tolerance<div class="tool-tip">i</div></label>
-                <div class="small-9 columns">
-                  <input type="text" id="driver-ct" class="driver-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
+              <div class="cell small-3" style="padding-left:10px; padding-right:10px">
+                <div class="row collapse">
+                  <label data-tip="The machine profile sets the default values, apps and macros for your tool.  Changing this setting will require you to reboot your tool.">
+                    Machine Profile<div class="tool-tip">i</div></label>
+                  <select id="profile-listbox">
+                  </select>
                 </div>
               </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label data-tip="Determines how aggressively the machine takes corners.  Sensible values are between 0.5 and 2.0.  Higher values mean more aggressive corners.">Junction Integration Time<div class="tool-tip">i</div></label>
-                <div class="small-12 columns">
-                  <input type="text" id="driver-jt" class="driver-input" />
+              <div class="cell small-3" style="padding-left:10px; padding-right:10px">
+                <div class="row collapse">
+                  <label data-tip="The distance units that will be used by default for the DRO display and in supported apps.">
+                    Default Unit System<div class="tool-tip">i</div></label>
+                  <select id="machine-units" class="machine-input">
+                    <option value="mm">mm</option>
+                    <option value="in">in</option>
+                  </select>
                 </div>
               </div>
-            </div>
+            </div> <!-- end grid-x --> <!-- first row -->
+            <div class="grid-x medium-margin-collapse">
+              <div class="cell small-3" style="padding-left:10px; padding-right:10px">
+                <div class="row collapse">
+                  <label data-tip="By default will motion be with respect to the absolute datum or relative from the current position">
+                    Distance Mode<div class="tool-tip">i</div></label>
+                  <select id="driver-gdi" class="driver-input">
+                    <option value="0">Absolute</option>
+                    <option value="1">Incremental</option>
+                  </select>
+                </div>
+              </div>
+              <div class="cell small-3" style="padding-left:10px; padding-right:10px;">
+                <div class="row collapse"> <!-- right here -->
+                  <label data-tip='Maximum deviation that an arc segment may take from its "ideal" trajectory.  A smaller number here means higher resolution (but possibly slower) arcs.'>
+                    Chordal Tolerance<div class="tool-tip">i</div></label>
+                  <div class="small-9 columns">
+                    <input type="text" id="driver-ct" class="driver-input" />
+                  </div>  <!-- rmackie
+                  <div class="small-3 columns" style="padding-left:10%; padding-right:10%">
+                    <span class="postfix in_mm_label">&nbsp;</span>
+                  </div> -->
+                </div>
+              </div>
+              <div class="cell small-3" style="padding-left:10px; padding: right 10px;">
+                <div class="row collapse">
+                  <label data-tip="Determines how aggressively the machine takes corners.  Sensible values are between 0.5 and 2.0.  Higher values mean more aggressive corners.">
+                    Junction Integration Time<div class="tool-tip">i</div></label>
+                  <div class="small-12 cell"> <!-- Rob Here rmackie -->
+                    <input type="text" id="driver-jt" class="driver-input" />
+                  </div>
+                </div>
+              </div>
+            </div> <!-- end grid-x -->
           </fieldset>
         </div>
-
+      </div> <!-- end grid-container -->
+<!-- end re-formatting efforts, needs to be done from here on down rmackie -->
         <div class="row">
           <fieldset>
             <legend>Logging</legend>
-            <div class="large-4 columns">
+            <div class="columns small-4">
               <div class="row collapse">
                 <label data-tip="Determines how aggressively the tool records diagnostic information in its log.  This should be set to 'Informational' except in certain exceptional tech support situations.  Setting this value to something other than 'Informational' may negatively impact tool performance.">Log Level<div class="tool-tip">i</div></label>
                   <select id="engine-log_level" class="engine-input">
@@ -128,13 +140,13 @@
                   </select>
               </div>
             </div>
-            <div class="large-4 columns">
+            <div class="columns small-4">
               <div class="row collapse">
                 <label data-tip="The minimum interval between tool status reports.  A larger number here means position and status displays that do not update as frequently.">Status Report Interval<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="text" id="driver-si" class="driver-input" />
                 </div>
-                <div class="small-3 columns">
+                <div class="columns small-3">
                   <span class="postfix">ms</span>
                 </div>
               </div>
