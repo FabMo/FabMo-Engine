@@ -189,7 +189,7 @@ GCodeRuntime.prototype.runStream = function(st) {
 
 	var manualPrime = this.machine.status.nb_lines < this.driver.primedThreshold;
 	var ln = new LineNumberer();
-	return this.driver.runStream(st.pipe(ln), manualPrime)   ////## this is where you might put prepend RE: Rob
+	return this.driver.runStream(st.pipe(ln), manualPrime)   ////## This is where we might put prepend RE: Rob
 		.on('stat', this._handleStateChange.bind(this))
 		.then(this._handleStop.bind(this));
 }
