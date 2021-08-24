@@ -728,8 +728,11 @@ SBPRuntime.prototype._run = function() {
         }
         switch(stat) {
             case this.driver.STAT_STOP:
-                this.gcodesPending = false;
-                this._executeNext();
+                // Only update and call execute next if we're waiting on pending gcodes.
+                if (this.gcodesPending) {
+                    this.gcodesPending = false;
+                    this._executeNext();
+                }
             break;
             case this.driver.STAT_HOLDING:
                 this.machine.setState(this, 'paused');
