@@ -787,6 +787,7 @@ SBPRuntime.prototype.isInSubProgram = function() {
 // _executeNext() will dispatch the next chunk if appropriate, once the current chunk is finished
 SBPRuntime.prototype._executeNext = function() {
     log.debug('_executeNext called ...');
+    log.debug('_executeNext called pc = ' + this.pc);
     // Copy values from the machine to our local state variables
     this._update();
 
