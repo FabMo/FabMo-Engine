@@ -48,10 +48,10 @@
     <div class="tabs-content" data-tabs-content="configuration-tab-list">
       <div class="tabs-panel is-active" id="tabpanelGeneral">
         <div class="grid-container medium-margin-collapse">
-          <fieldset> <!-- begin re-formatting efforts  -->
+          <fieldset style="border-style:groove; border-width:2px"> <!-- begin re-formatting efforts  -->
             <legend>General Settings</legend>
             <div class="grid-x"> <!-- first row -->
-              <div class="cell small-3" style="padding-left:10px; padding-right:10px">
+              <div class="cell small-3" style="padding-left:5px; padding-right:10px">
                 <div class="row collapse">
                   <label data-tip="The name of your tool.  The tool name will be displayed on the dashboard, and is used as the network name for wireless and wired networking.">
                     Machine Name<div class="tool-tip">i</div></label>
@@ -122,10 +122,9 @@
               </div>
             </div> <!-- end grid-x -->
           </fieldset>
-          <!-- end re-formatting efforts, needs to be done from here on down rmackie -->
-          <fieldset>
-            <div class="grid-x medium-margin-collapse">
-              <legend>Logging</legend>
+          <fieldset style="border-style:groove; border-width:2px">
+            <legend>Logging</legend>
+            <div class="grid-x medium-margin-collapse"> <!-- 2nd row -->
               <div class="cell small-3" style="padding-left:10px; padding: right 10px;">
                 <div class="row collapse">
                   <label data-tip="Determines how aggressively the tool records diagnostic information in its log.  This should be set to 'Informational' except in certain exceptional tech support situations.  Setting this value to something other than 'Informational' may negatively impact tool performance.">
@@ -153,17 +152,17 @@
                 -->
                 </div>
               </div>
-
             </div> <!-- end grid-x -->
           </fieldset>
-          <fieldset>
-            <div class="grid-x">
-              <legend>Updates</legend>
+          <!-- end re-formatting efforts, needs to be done from here on down rmackie -->          
+          <fieldset style="border-style:groove; border-width:2px">
+            <legend>Updates</legend>
+            <div class="grid-x medium-margin-collapse">
               <div class="large-4 cell">
                 <div class="row collapse">
                   <label data-tip="The version of FabMo that is currently running on this tool.">Software Version<div class="tool-tip">i</div></label>
                   <div class="cell">
-                      <span class="engine-version"></span>
+                      <span class="engine-version"></span> 
                   </div>
                   <label data-tip="The version of low-level G2 motion firmware that is currently running on this tool.">G2 Firmware Version<div class="tool-tip">i</div></label>
                   <div class="cell">
@@ -171,12 +170,12 @@
                   </div>
                 </div>
               </div>
-              <div class="large-4 cell">
+              <div class="large-3 cell" style="padding-left:40px;">
                   <div class="row collapse">
                     <a id="btn-update"  class="button radius small disabled noselect">No FabMo Software Updates Available!</a>
                   </div>
               </div>
-              <div class="large-4 cell">
+              <div class="large-3 cell" style="padding-left:30px;">
                 <div class="row collapse">
                   <a id="btn-flash-firm"  class="button radius small">Update G2 Firmware from a File</a>
                   <input style="display:none" type="file" id="firmware-input">
