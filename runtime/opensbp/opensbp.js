@@ -728,8 +728,11 @@ SBPRuntime.prototype._run = function() {
         }
         switch(stat) {
             case this.driver.STAT_STOP:
-                this.gcodesPending = false;
-                this._executeNext();
+                // Only update and call execute next if we're waiting on pending gcodes.
+                if (this.gcodesPending) {
+                    this.gcodesPending = false;
+                    this._executeNext();
+                }
             break;
             case this.driver.STAT_HOLDING:
                 this.machine.setState(this, 'paused');
@@ -786,7 +789,7 @@ SBPRuntime.prototype.isInSubProgram = function() {
 // Continue running the current program (until the next stack break)
 // _executeNext() will dispatch the next chunk if appropriate, once the current chunk is finished
 SBPRuntime.prototype._executeNext = function() {
-    log.debug('_executeNext called ...');
+    log.debug('_executeNext called at pc = ' + this.pc);
     // Copy values from the machine to our local state variables
     this._update();
 
