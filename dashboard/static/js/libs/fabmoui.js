@@ -373,17 +373,22 @@ FabMoUI.prototype.updateStatusContent = function(status){
 			break;
 		}
 	}
-	///update spc on output1
-	if ('spc' in status) {
-		var selector = that.status_div_selector + ' .out1';
-		if(status['spc'] == 1) {
-			$(selector).removeClass('off').addClass('on');
-		} else if(status['spc'] == 0) {
-			$(selector).removeClass('on').addClass('off');
-		} else {
-			$(selector).removeClass('on off').addClass('disabled');
-		}
-	}
+
+//// TODO: How to Handle 2 Spindles via g2
+//// TODO: Consider whether to modify g2 to report spc status during feedhold
+////## -- Currently removing check for spc to just use out1 status for spindle notification
+////##      because g2 not reporting spindle off during feedhold
+	// ///update spc on output1
+	// if ('spc' in status) {
+	// 	var selector = that.status_div_selector + ' .out1';
+	// 	if(status['spc'] == 1) {
+	// 		$(selector).removeClass('off').addClass('on');
+	// 	} else if(status['spc'] == 0) {
+	// 		$(selector).removeClass('on').addClass('off');
+	// 	} else {
+	// 		$(selector).removeClass('on off').addClass('disabled');
+	// 	}
+	// }
 
 	$(that.status_div_selector).trigger('statechange',status.state);
 
