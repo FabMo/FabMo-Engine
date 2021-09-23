@@ -9,8 +9,10 @@ var uuid = require('node-uuid');
 var upload = require('./util').upload;
 
 var submitJob = function(req, res, next) {
+    log.info("rmackie: entering jobs.js:submitJob");
     upload(req, res, next, function(err, upload) {
-        uploads = upload.files
+        log.info("entering submitJob.upload.callback");
+        uploads = upload.files;
         // Single file only, for now
         if(uploads.length > 1) {
             log.warn("Got an upload of " + uploads.length + ' files for a submitted job when only one is allowed.')
@@ -19,6 +21,7 @@ var submitJob = function(req, res, next) {
         async.eachOf(
             uploads,
             function create_job(item, index, callback) {
+                log.info("rmackie - created job");
                 var file = item.file;
                 var filename = item.filename || (!file.name || file.name === 'blob') ? item.filename : file.name;
                 item.filename = filename;
@@ -94,7 +97,7 @@ var clearQueue = function(req, res, next) {
  */
 runNextJob = function(req, res, next) {
     var answer;
-    log.info('Running the next job in the queue');
+    log.info('Running the jobs.js:nextJob in the queue');
     machine.runNextJob(function(err, job) {
         if(err) {
             log.error(err);

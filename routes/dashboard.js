@@ -209,9 +209,20 @@ var updater = function(req, res, next) {
 }
 
 function putAppConfig(req, res, next) {
-	log.error("rmackie: putAppConfig called: " + req);
-	log.error("rmackie: BROKEN MUST FIX: " + req);
-	log.error("rmackie: WHAT SHOULD THIS CODE DO? " + req);
+	log.error("rmackie: BROKEN MUST FIX, WHAT SHOULD CODE DO? putAppConfig called: \n" + req);
+    {
+        let body = [];
+        req.on('error', function (err) {
+            log.info("rmackie: Error Reading BODY of post \n" + err);
+        }).on('data', function (chunk) {
+            log.info("rmackie: handling chunk")
+            body.push(chunk);
+        }).on('end', function () {
+            log.info("rmackie: end called");
+            body = Buffer.concat(body).toString();
+            log.info("rmackie: Payload of putAppConfig\n" + req + "\n" + body);
+        });
+    }
 }
 
 module.exports = function(server) {
@@ -222,10 +233,6 @@ module.exports = function(server) {
     server.post('/apps/:id/config', putAppConfig);
     server.del('/apps/:id', deleteApp);
     server.get('/apps/:id/files', listAppFiles);
-// rmackie: this can't stand - must replace it, but for now it allows a step forward
-//  here is a first attempt. the comment is the old, the rest is the new.
-// have broken it into 2 globs that replace the one regex.
-//    server.get(/\/approot\/?.*/, static({
     server.get("/approot/*", static({
         directory: config.getDataDir('approot'),
     }));
@@ -233,5 +240,4 @@ module.exports = function(server) {
         directory: config.getDataDir('approot'),
     }));
     server.get('/updater', updater);
-
 };

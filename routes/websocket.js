@@ -79,7 +79,7 @@ function setupStatusBroadcasts(server) {
 		}
 
 		if(status.state === 'idle' || status.state != previous_status.state) {
-			console.log("rmackie: socket emit status");
+			log.debug("rmackie: socket emit status");
 			server.io.of('/').emit('status', status);
 		} else {
 			console.log("rmackie: socket volatile emit status");
@@ -90,8 +90,8 @@ function setupStatusBroadcasts(server) {
 	});
 
 	machine.on('change', function(topic) {
-		console.log("rmackie:" + 'Change broadcast');
-		console.log("rmackie:" + JSON.stringify(status));
+		log.debug("rmackie:" + 'Change broadcast');
+		log.debug("rmackie:" + JSON.stringify(status));
 
 		server.io.of('/private').emit('change', topic);
 		server.io.of('/').emit('change', topic);
@@ -108,12 +108,11 @@ var onPublicConnect = function(socket) {
 	});
 
 	socket.on('status', function(data) {
-        console.log("!!! \n rmackie: PUBLIC CONNECT status sent \n !!!");
+        log.debug("rmackie: PUBLIC CONNECT status sent");
 		socket.emit('status', machine.status);
 	});
 
 	socket.on('ping', function(data) {
-		console.log("rmackie: pong sent");
 		socket.emit('pong');
 	});
 

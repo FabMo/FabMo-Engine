@@ -997,8 +997,12 @@ Machine.prototype.runFile = function(filename, bypassInterlock) {
 // Run the next job in the queue
 // callback is called when the tool is armed for the run, NOT when the job is complete.
 Machine.prototype.runNextJob = function(callback) {
+	log.info("rmackie - entering machine.js:nextJob");
+	var stack = new Error().stack;
+	log.info("rmackie trace: " + stack);
 	interlockBypass = false;
 	db.Job.getPending(function(err, pendingJobs) {
+		log.info("rmackie - get getPending callback entered");
 		if(err) {
 			return callback(err);
 		}

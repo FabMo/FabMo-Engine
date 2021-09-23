@@ -1,5 +1,5 @@
-require('./jquery.dragster.js');
 require('jquery');
+require('./jquery.dragster.js');
 var Foundation = require('../../../static/js/libs/foundation.min.js');
 var moment = require('../../../static/js/libs/moment.js');
 var Sortable = require('./Sortable.js');
@@ -36,7 +36,6 @@ function fileUploadProgress(progress) {
     }, 200);
   }
 }
-
 
 function setupDropTarget() {
   $('#tabpending').dragster({
@@ -259,7 +258,7 @@ function setFirstCard() {
   $('.preview').data('id', firstId);
   $('.download').data('id', firstId);
   $('.edit').data('id', firstId);
-
+  el.style.backgroundColor = "Wheat";
 }
 
 /*
@@ -312,9 +311,12 @@ function createHistoryMenu(id) {
   return menu.replace(/JOBID/g, id)
 }
 
-function addHistoryEntries(jobs) {
+  function addHistoryEntries(jobs) {
+    /* Need to condition this on whether we have any jobs queued right now and the "history menu". 
+       commented out because everything overlaps and it's just easier to work without it. 
+       rmackie - CODE MUST COME BACK INTO SERVICE 
   var table = document.getElementById('history_table');
-  jobs.forEach(function(job) {
+  jobs.forEach(function(job) {  //rmackie history noise
     var row = table.insertRow(table.rows.length);
     var menu = row.insertCell(0);
     menu.className += ' actions-control';
@@ -329,8 +331,9 @@ function addHistoryEntries(jobs) {
     name.innerHTML = '<div class="job-' + job.state + '">' + job.name + '</div>';
     done.innerHTML = moment(job.finished_at).fromNow();
     time.innerHTML = moment.utc(job.finished_at - job.started_at).format('HH:mm:ss');
-  });
+  }); // rmackie end of history noise
   bindMenuEvents();
+  */
 }
 
 function hideDropDown() {
@@ -495,18 +498,23 @@ var setProgress = function(status) {
  * ---------
  */
 function handleStatusReport(status) {
+  console.log("rmackie: handleStatusReport");
   // Either we're running a job currently or null
   try {
+    console.log("rmackie: handleStatusReport try in");
     var jobId = status.job._id || null;
     var jobState = status.state;
-
+    console.log("rmackie: handleStatusReport try out");
   } catch (e) {
+    console.log("rmackie: handleStatusReport catch");
     var jobid = null;
   }
 
   if (jobId && jobState === "running") { // Job is currently running
+    console.log("rmackie: handleStatusReport call setProgress");
     setProgress(status);
   }
+  console.log("rmackie: handleStatusReport finish");
 }
 
 function updateOrder(){
@@ -1212,19 +1220,20 @@ $(document).ready(function() {
     updateHistory();
   });
 
-   fabmo.on('job_start',function (cmd, data) {
+  fabmo.on('job_start',function (cmd, data) {
     updateQueue();
     updateHistory();
   });
 
 
   //May need to put back in 
-  // fabmo.on('change',function (change) {
-  //   if(change === "jobs") {
-  //     updateQueue();
-  //     updateHistory();
-  //   }
-  // });
+  fabmo.on('change',function (change) {
+    console.log("rmackie: change event processed");
+    if(change === "jobs") {
+      updateQueue();
+      updateHistory();
+    }
+  });
 
 
   // Request infoes from the tool
@@ -1311,9 +1320,5 @@ $(document).ready(function() {
     e.wrap('<form>').closest('form').get(0).reset();
     e.unwrap();
   }
-
-
-
-
 
 });
