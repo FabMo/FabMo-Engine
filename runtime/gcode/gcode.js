@@ -171,10 +171,10 @@ GCodeRuntime.prototype._handleStateChange = function(stat) {
             // may change someday in the future on the g2core end, so we may end up revisiting this.
             // OTOH, an extra M30 should not cause a problem.
 			this._changeState('stopped');
-            if (this._file_or_stream_in_progress) {
-                this.driver.sendM30();
-                this._file_or_stream_in_progress = false;
-            }
+//            if (this._file_or_stream_in_progress) {
+//                this.driver.sendM30();
+//                this._file_or_stream_in_progress = false;
+//            }
 		default:
 			// TODO:  Logging or error handling?
 			break;

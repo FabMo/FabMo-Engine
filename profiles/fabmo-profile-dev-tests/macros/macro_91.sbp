@@ -1,7 +1,7 @@
-'!FABMO!name: Unit type issue
-'!FABMO!description: Please change to correct units 
-' Name: Change Unit type issue
-' Description: Detect Unit Type Error
+'!FABMO!name: Unit error
+'!FABMO!description: Notification that file Units to not match Tool 
+' Name: Change Unit error
+' Description: Notify of inconsistent Units
 
 ' This Macro is called by Vectric posts in the process of checking Units
 

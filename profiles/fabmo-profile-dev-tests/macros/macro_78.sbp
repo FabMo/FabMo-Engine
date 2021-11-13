@@ -1,25 +1,24 @@
 '!FABMO!name: Set Z-Zero to Current Offset
-'!FABMO!description: Uses a Manual Current Offset for Z Zero Offset
+'!FABMO!description: Use after manually zeroing to record offset
 ' Name: Set Z-Zero to Current Offset
 ' Description: 
-'   Installs Current Value of Z offset to permanent offset for future automatic Zeroing [C78]
-' Platform: Handibot
+'   Installs Current Value of Z offset to permanent offset for future Zeroing. Works even if manually zeroed assuming Macro#3 has been run once. 
 ' Author: Ted Hall, Ryan Sturmer
 ' History:
-'   2/2/17, 3/16/17, 9/13/17, 11/12/19 
+'   2/2/17, 3/16/17, 9/13/17, 11/12/19
+'   9/25/21 Refactored for FabMo (th)
 
-SU, 0                        ' Set to Inches; Units will auto-revert to current starting units at end of file
+ 	PAUSE "Before using this routine you should have run Macro #3, Home Tool"
+	&tempTB_Zoffset = %(8)								' Read in current System Variables for current Z and Z-tablebase-offset 
 
-' --- Main Program ---
-           MX, %(1)          ' Temporary Kludge to make sure Authorize Button not held too long
-           PAUSE 2
-           MX, %(1)
-   
-	PAUSE "Before using this routine you should have run Set XYZ Home"
-
-	&tempTB_Zoffset = %(8)  ' Read in current System Variables for current Z and Z-tablebase-offset 
-
-' Reset current_cutter and Set Table Base Coordinates and Location to 0 for Z
-	$current_cutter_Zoffset = &tempTB_Zoffset * -1
-
-END
+    IF %(25) == 1 THEN GOTO tool_MM   		            ' Read UNIT of Tool; System Variable #25
+      tool_IN:
+        $sb_current_cutter_Zoffset_Units = "IN"
+        GOTO continue_with_variables
+      tool_MM:
+        $sb_current_cutter_Zoffset_Units = "MM"
+        GOTO continue_with_variables
+  'continue adjusting units for current working variables ...
+	continue_with_variables:
+		$sb_current_cutter_Zoffset = &tempTB_Zoffset * -1
+	END

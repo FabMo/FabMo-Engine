@@ -1,127 +1,163 @@
 '!FABMO!name: Home Tool
 '!FABMO!description: Automatically Set Axis Zero for XYZ
-'   2021/02/25 - Refactored (th)
-'   Standard Macro Variables are defined read from Macro #199 (stored as persistent)
+'   Standard Macro Variables are read from Macro #201, only needs to happen once 
+'   2021/09/25 - Refactored (th)
+'   Note that tracking of current_cutter_Zoffset allows automatic zeroing all three axis including Z, even if re-powered
+'   ... as long as cutter is not changed (or, if zeroed at material, material and cutter have not changed)
 '   Existing Move and Jog speeds are used for a few ancillary moves
-'   Note that tracking of current_cutter_Zoffset allows zeroing all three axis, even if re-powered
-'   ... when zeroing to the bed and as long as cutter is not changed (of if zeroed at material and material and cutter have not changed)
-'   " := " Is SBP function to set variable if not previously defined
+'**NOTE:   " := " Is an OpenSBP function to set variable but only if not previously defined 
 '**NOTE Developers: FabMo SBP currently not processing variable on right side of IF ... THEN; nor, variable in system var as  %(&var) 
 '**NOTE Developers: This Macro not yet handling proxType.
 
 '--- Adjust Standard Macro Variables to Current Tool Units if Needed ---
 '    ... also deal with cutter measurement setting if made in different units
-&dist_mult = 1.0
-&Zoff_mult = 1.0
-IF %(25) == 1 THEN GOTO tool_MM                      ' Read UNIT of Tool; System Variable #25
-  tool_IN:
-    &ooch = 0.05                                          ' Set distance for slight target over-run in IN
-    $current_cutter_Zoffset := .25                        ' Initialize variable in IN for case tool cutter not zeroed
-	$current_cutter_Zoffset_Units := 0
-	IF $current_cutter_Zoffset_Units == 0 THEN GOTO ok_IN
-	  &Zoff_mult = 0.0393701
-	ok_IN:
-    IF $sb_varTableUNITS == "IN" THEN GOTO continue_with_variables
-	&dist_mult = 0.0393701                                ' Defined in MM: Multiplier to redefine distances from mm to inches 
-    GOTO continue_with_variables
-  tool_MM:
-    &ooch = 1.27                                          ' Set distance for slight target over-run
-    $current_cutter_Zoffset := 6.35                       ' Initialize variable in MM for case tool cutter not zeroed
-	$current_cutter_Zoffset_Units := 1
-	IF $current_cutter_Zoffset_Units == 1 THEN GOTO ok_MM
-	  &Zoff_mult = 25.4
-	ok_MM:
-    IF $sb_varTableUNITS == "MM" THEN GOTO continue_with_variables
-	&dist_mult = 25.4                                     ' Defined in IN: Multiplier to redefine distances from inches to mm 
-    GOTO continue_with_variables
-'----------------------------------------------------------------
 
-' --- Initializing ---
-continue_with_variables:
-    ' Macro variables are predefined as persistent variables in Macro #199 which should have been previously read
-    '  - An "Undefined Variables" error indicates Macro #199, and potentially others, has not been processed correctly
-    &proxTriggered = 0
-    &shouldBeClear == 1
-    &target_ck = 0
-    &backOff_dist = &ooch * 5
+'--- Check to make sure Standard Macro Variables have been read
+$sb_standard_variables_PRESENT := 0								  ' Define test variable if it does not exist
+IF $sb_standard_variables_PRESENT == 0 THEN GOTO no_variables
 
+' === Main Program ===
+GOSUB initialize_variables
 ' --- Main Program Sequence ---
 Z3    ' zeoring all axes at their current location (sets worst case homing distances)l  ##TABLE BASE?
-PAUSE .5
+GOSUB moveOutFromProx
 GOSUB backOffProx_if_needed
-GOSUB backOffProx_if_needed                                     ' Recheck for full clearance after any moves
 GOSUB home_z
 GOSUB home_x
 GOSUB home_y
-PAUSE 1
 GOSUB offset_z_cutter  ' Adds the offset for Z cutter; ONLY USEFUL if CUTTER and MATERIAL HAVE NOT BEEN CHANGED
 END
-                                                                ' Touch-off twice allows slow consistent second hit
-' --- Subroutines ---                                      
+'==============================
+
+' --- Primary Subroutines ---                                      
 home_z:
-	PZ, ($sb_searchDist_Z * &dist_mult), ($sb_searchSpeed_Z * &dist_mult), $sb_proxNum_Z   ' PZ "probes" for a switch or contact in the Z axis
+	PZ, &searchDist_Z, &searchSpeed_Z, &proxNum_Z				' PZ "probes" for a switch or contact in the Z axis
+    ZZ															' Reset working zero
+    JZ, (-1 * &homeOff_Z)										' Pull back from prox
+    &target_ck = &homeOff_Z + &ooch								' New target for detecting error just past prox
+    PZ, &target_ck, &slowSearchSpeed_Z, &proxNum_Z				' Slowly probe for prox in final accurate check
+	PAUSE .5
+    IF %(3) == &target_ck THEN GOSUB fail_missed_target			' Look at current Z location to see if we went past the target
     ZZ
-    JZ, (-1 * ($sb_homeOff_Z * &dist_mult))
-    &target_ck = ($sb_homeOff_Z * &dist_mult) + &ooch           ' Target just past prox
-    PZ, &target_ck, $sb_slowSearchSpeed_Z, $sb_proxNum_Z        ' Slowly search for prox in accurate check
-    PAUSE .5
-    IF %(3) == &target_ck THEN GOSUB missed_target
-    ZZ
-    JZ, (-1 * $sb_homeOff_Z * &dist_mult)
-    VA,,,0,,,,,,0,,,                                            ' Set 0 location
+    JZ, (-1 * &homeOff_Z)
+    VA,,,0,,,,,,0,,,                                            ' Set 0 location and Table Base Zero
 	RETURN
 
-offset_z_cutter:
-    PAUSE "Click RESUME to continue to set Z offset to last cutter measurement with ZZero; QUIT leaves Z set at Top"
-    VA,,,($current_cutter_Zoffset * &Zoff_mult),,,,,,0,,
-    RETURN
-
 home_x:
-    PX, (-1 * $sb_searchDist_X * &dist_mult), ($sb_searchSpeed_XY * &dist_mult), $sb_proxNum_X        
-    ZX
-    JX, ($sb_homeOff_X * &dist_mult)
-    &target_ck = (-1 * (($sb_homeOff_X * &dist_mult)+ &ooch))               
-    PX, &target_ck, ($sb_slowSearchSpeed_XY * &dist_mult), $sb_proxNum_X 
+    PX, (-1 * &searchDist_X), &searchSpeed_XY, &proxNum_X       ' PX "probes" for a switch or contact in the Z axis 
+    ZX															' Reset working zero
+    JX, &homeOff_X												' Pull back from prox
+    &target_ck = (-1 * (&homeOff_X + &ooch))					' New target for detecting error just past prox
+    PX, &target_ck, &slowSearchSpeed_XY, &proxNum_X				' Slowly probe for prox in final accurate check
     PAUSE .5
-    IF %(1) == &target_ck THEN GOSUB missed_target
+    IF %(1) == &target_ck THEN GOSUB fail_missed_target			' Look at current Z location to see if we went past the target
     ZX
-    JX, ($sb_homeOff_X * &dist_mult)
-	VA,0,,,,,,0,,,,,                                     
+    JX, &homeOff_X
+	VA,0,,,,,,0,,,,,											' Set 0 location and Table Base Zero                                   
 	RETURN
 
 home_y:
-	PY, (-1 * $sb_searchDist_Y * &dist_mult), ($sb_searchSpeed_XY * &dist_mult), $sb_proxNum_Y  
+    PY, (-1 * &searchDist_Y), &searchSpeed_XY, &proxNum_Y        
     ZY
-    JY, ($sb_homeOff_Y * &dist_mult)
-    &target_ck = (-1 * (($sb_homeOff_Y * &dist_mult)+ &ooch))     
-    PY, &target_ck, ($sb_slowSearchSpeed_XY * &dist_mult), $sb_proxNum_Y  
+    JY, &homeOff_Y
+    &target_ck = (-1 * (&homeOff_Y + &ooch))               
+    PY, &target_ck, &slowSearchSpeed_XY, &proxNum_Y 
     PAUSE .5
-    IF %(2) == &target_ck THEN GOTO missed_target
+    IF %(2) == &target_ck THEN GOTO fail_missed_target
     ZY
-    JY, ($sb_homeOff_Y * &dist_mult)
+    JY, &homeOff_Y
 	VA,,0,,,,,,0,,,,                                     
 	RETURN
 
-backOffProx_if_needed:                                             ' Managing prox switches is complicated by multiple arrangements
-    &proxTriggered = 0
-	IF %($sb_proxNum_Z + 50) == 1 THEN GOSUB onProx
-    IF %($sb_proxNum_X + 50) == 1 THEN GOSUB onProx
-    IF %($sb_proxNum_Y + 50) == 1 THEN GOSUB onProx
-    IF &proxTriggered == 1 THEN GOSUB handleBackOff
+offset_z_cutter:
+    PAUSE "Click RESUME to set Z offset to last ZZero cutter measurement; QUIT leaves Z set at Top"
+    VA,,,($sb_current_cutter_Zoffset * &Zoff_mult),,,,,,0,,     ' Set 0 based on previous cutter ZZero
     RETURN
-onProx:
-    &proxTriggered = 1
+
+
+' --- Checks and Failures ---
+  moveOutFromProx:
+  	  M2, (2 * &homeOff_X), (2 * &homeOff_Y)					' To avoid being stuck behind prox, move XY out 3X offset from location	
+      RETURN
+      
+  backOffProx_if_needed:                                        ' Managing prox switches is complicated by multiple arrangements
+      &proxTriggered = 0
+      GOSUB checkProxs
+      IF &proxTriggered == 1 THEN GOSUB handleBackOff
+      &proxTriggered = 0
+      GOSUB checkProxs
+      IF &proxTriggered == 1 THEN GOTO fail_no_clear
+      RETURN
+
+  checkProxs:
+      IF %(&check_prox_Z) == 1 THEN GOSUB onProx
+      IF %(&check_prox_X) == 1 THEN GOSUB onProx
+      IF %(&check_prox_Y) == 1 THEN GOSUB onProx
+      RETURN
+  onProx:
+      &proxTriggered = 1
+      RETURN
+
+  handleBackOff:
+      M3, &backOff_Dist, &backOff_Dist, -1 * &backOff_Dist
+      RETURN    
+
+  fail_no_clear:
+      PAUSE "Proximity Switch Not Clear! (A switch is stuck on.)" ' Could not clear.
+      END
+
+  fail_missed_target:
+      PAUSE "Target Not Triggered! Center and Try C3 again."      ' Did not hit target.
+      END
+
+  no_variables:
+      PAUSE "Macro #201 defining Standard Macro Variables does not seem to have been run. Quit and Run then try Macro again."
+      END
+
+'--- Initialize Variables and Adjust Standard Macro Variables for Current Tool and Conditions as Needed
+initialize_variables:
+    &proxNum_Z = $sb_proxNum_Z
+    &check_prox_Z = $sb_proxCk_Z							  
+    &proxNum_X = $sb_proxNum_X
+    &check_prox_X = $sb_proxCk_X							  
+    &proxNum_Y = $sb_proxNum_Y
+    &check_prox_Y = $sb_proxCk_Y							  
+
+  'Adjust to current UNITS of tool (handles whether tool Macro Variables are for INCHES or MM)
+	&dist_mult = 1.0
+	&Zoff_mult = 1.0
+	IF %(25) == 1 THEN GOTO tool_MM							  ' Read UNIT of Tool; System Variable #25
+	  tool_IN:
+	    $sb_current_cutter_Zoffset := .25                     ' Initialize variable in IN for case tool cutter not zeroed
+		$sb_current_cutter_Zoffset_Units := 0
+		IF $sb_current_cutter_Zoffset_Units == 0 THEN GOTO ok_IN
+		  &Zoff_mult = 0.0393701
+		ok_IN:
+	    IF $sb_varTableUNITS == "IN" THEN GOTO continue_with_variables
+		&dist_mult = 0.0393701                                ' Defined in MM: Multiplier to redefine distances from mm to inches 
+	    GOTO continue_with_variables
+	  tool_MM:
+	    $sb_current_cutter_Zoffset := 6.35                    ' Initialize variable in MM for case tool cutter not zeroed
+		$sb_current_cutter_Zoffset_Units := 1
+		IF $sb_current_cutter_Zoffset_Units == 1 THEN GOTO ok_MM
+		  &Zoff_mult = 25.4
+		ok_MM:
+	    IF $sb_varTableUNITS == "MM" THEN GOTO continue_with_variables
+		&dist_mult = 25.4                                     ' Defined in IN: Multiplier to redefine distances from inches to mm 
+	    GOTO continue_with_variables
+  'continue adjusting units for current working variables ...
+	continue_with_variables:
+		&target_ck = 0
+		&ooch = $sb_ooch * &dist_mult
+		&backOff_dist = &ooch * 5
+ 		&searchDist_Z = $sb_searchDist_Z * &dist_mult
+		&searchSpeed_Z = $sb_searchSpeed_Z * &dist_mult
+		&slowSearchSpeed_Z = $sb_slowSearchSpeed_Z * &dist_mult
+		&searchDist_X = $sb_searchDist_X * &dist_mult
+		&searchDist_Y = $sb_searchDist_Y * &dist_mult
+		&searchSpeed_XY = $sb_searchSpeed_XY * &dist_mult
+		&slowSearchSpeed_XY = $sb_slowSearchSpeed_XY * &dist_mult
+		&homeOff_Z = $sb_homeOff_Z * &dist_mult
+		&homeOff_X = $sb_homeOff_X * &dist_mult
+		&homeOff_Y = $sb_homeOff_Y * &dist_mult
 	RETURN
-handleBackOff:
-    If &shouldBeClear == 1 THEN GOTO no_clear
-	M3, &backOff_Dist, &backOff_Dist, -1 * &backOff_Dist
-    &shouldBeClear = 1                                             ' Set a flag for check for clear
-    RETURN    
-
-missed_target:
-	FAIL "Target Not Triggered! Center and Try C3 again."          ' Did not hit target.
-    END
-
-no_clear:
-    FAIL "Proximity Switch Not Clear! (A switch is stuck on.)"     ' Could not clear.
-    END
