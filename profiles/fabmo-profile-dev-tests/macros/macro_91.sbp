@@ -1,5 +1,5 @@
 '!FABMO!name: Unit error
-'!FABMO!description: Notification that file Units to not match Tool 
+'!FABMO!description: Notification that file Units do not match Tool 
 ' Name: Change Unit error
 ' Description: Notify of inconsistent Units
 
