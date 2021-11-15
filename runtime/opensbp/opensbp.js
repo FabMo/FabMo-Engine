@@ -1188,11 +1188,12 @@ SBPRuntime.prototype._execute = function(command, callback) {
             break;
 
         case "pause":
-            log.debug("50764 pause command");
             // PAUSE is somewhat overloaded.  In a perfect world there would be distinct states for pause and feedhold.
             this.pc += 1;
             var arg = this._eval(command.expr);
             var var_name = command.var;
+            log.debug('#51846 var_name: ' + var_name)
+            log.debug("#51846 pause command: " + JSON.stringify(command));
             if(util.isANumber(arg)) {
                 // If argument is a number set pause with timer and default message.
                 // In simulation, just don't do anything
