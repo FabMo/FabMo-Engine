@@ -1942,7 +1942,7 @@ SBPRuntime.prototype.resume = function(input=false) {
                             this._executeNext();
                         }
                     }).bind(this);
-                    log.debug('#51846 var: ' + input.var + ' val: ' input.val,)
+                    log.debug('#51846 var: ' + input.var + ' val: ' + input.val,)
                     this._assign(input.var, input.val, callback);
                 } else {
                     this.paused = false;
