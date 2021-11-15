@@ -467,6 +467,9 @@ Machine.prototype.arm = function(action, timeout) {
 
 	// Otherwise, arm the machine and set the timer to the provided value
 	log.info("Arming the machine" + (action ? (' for ' + action.type) : '(No action)'));
+	if action.type == 'resume' {
+		log.debug('#51846 arm resume action: ' + JSON.stringify(action))
+	}
 	//log.error(new Error())
 	if(this._armTimer) { clearTimeout(this._armTimer);}
 	this._armTimer = setTimeout(function() {
@@ -959,6 +962,7 @@ Machine.prototype.quit = function(callback) {
 
 // Resume from the paused state.
 Machine.prototype.resume = function(callback, input=false) {
+	log.debug('#52846 machine resume input: ' + JSON.stringify(input))
 	if (this.driver.pause_hold) {
 		//Release driver pause hold
 		this.driver.pause_hold = false;

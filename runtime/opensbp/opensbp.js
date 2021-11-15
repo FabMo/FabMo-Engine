@@ -1930,6 +1930,7 @@ SBPRuntime.prototype.quit = function() {
 // Resume a program from the paused state
 //   TODO - make some indication that this action was successfil (resume is not always allowed, and sometimes it fails)
 SBPRuntime.prototype.resume = function(input=false) {
+        log.debug('#51846 osbp resume input: ' + JSON.stringify(input))
         if(this.resumeAllowed) {
             if(this.paused) {
                 if (input) {
@@ -1941,6 +1942,7 @@ SBPRuntime.prototype.resume = function(input=false) {
                             this._executeNext();
                         }
                     }).bind(this);
+                    log.debug('#51846 var: ' + input.var + ' val: ' input.val,)
                     this._assign(input.var, input.val, callback);
                 } else {
                     this.paused = false;

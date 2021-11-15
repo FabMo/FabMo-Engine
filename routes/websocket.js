@@ -165,6 +165,7 @@ var onPrivateConnect = function(socket) {
 					break;
 
 				case 'resume':
+					log.debug('#51846 websocket resume data: ' + JSON.stringify(data))
 					if (data.args && data.args.var && data.args.val) {
 						machine.resume(callback, {'var':data.args.var, 'val':data.args.val});
 					}
