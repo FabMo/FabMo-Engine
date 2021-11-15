@@ -1063,7 +1063,8 @@ define(function(require) {
     }
 
     if (options['input']) {
-        $('#inputVar').val(options['input']);
+        $('#inputVar').val(options['input']['name']);
+        $('#inputType').val(options['input']['type']);
         $('.modalInput').show();
     } else {
         $('.modalInput').hide();

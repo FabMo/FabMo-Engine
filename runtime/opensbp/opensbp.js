@@ -1191,8 +1191,8 @@ SBPRuntime.prototype._execute = function(command, callback) {
             // PAUSE is somewhat overloaded.  In a perfect world there would be distinct states for pause and feedhold.
             this.pc += 1;
             var arg = this._eval(command.expr);
-            var var_name = command.var;
-            log.debug('#51846 var_name: ' + var_name)
+            var var = command.var;
+            log.debug('#51846 var: ' + var)
             log.debug("#51846 pause command: " + JSON.stringify(command));
             if(util.isANumber(arg)) {
                 // If argument is a number set pause with timer and default message.
@@ -1220,8 +1220,8 @@ SBPRuntime.prototype._execute = function(command, callback) {
                     }
                 }
                 var params = {'message' : message || "Paused." };
-                if(var_name) {
-                    params['input'] = var_name;
+                if(var) {
+                    params['input'] = {'name': var.expr, 'type': var.type};
                 }
                 this.paused = true;
                 //Set driver in paused state
@@ -1944,6 +1944,7 @@ SBPRuntime.prototype.resume = function(input=false) {
                         }
                     }).bind(this);
                     log.debug('#51846 var: ' + input.var + ' val: ' + input.val,)
+
                     this._assign(input.var, input.val, callback);
                 } else {
                     this.paused = false;
