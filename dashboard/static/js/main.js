@@ -247,7 +247,7 @@ require("../css/toastr.min.css");
                                         var inputVar = $('#inputVar').val();
                                         var inputType = $('#inputType').val();
                                         var inputVal = $.trim($('#inputVal').val());
-                                        dashboard.engine.resume({'var': inputVar, 'type': inputType 'val': inputVal});
+                                        dashboard.engine.resume({'var': inputVar, 'type': inputType, 'val': inputVal});
                                         //  TODO: stop modal from closing on click so we can validate.
                                         // if(inputVal != '') {
                                         //     $('.inputError').hide();
