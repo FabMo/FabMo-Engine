@@ -1776,6 +1776,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
     var i;
 
     ['X','Y','Z','A','B','C','I','J','K','F'].forEach(function(key){
+        log.debug('#51846 emit move');
         var c = pt[key];
         if(c !== undefined) {
 
@@ -1805,6 +1806,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
     var opFunction = function(Pt) {  //Find a better name
         // for(key in tPt) {
         ['X','Y','Z','A','B','C','I','J','K','F'].forEach(function(key){
+            log.debug('#51846 key = ' + key)
             var v = Pt[key];
             if(v !== undefined) {
                 if(isNaN(v)) {

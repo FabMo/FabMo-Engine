@@ -75,6 +75,7 @@ log.debug("lineInterpolate: EndPt = " + JSON.stringify(EndPt));
 				    log.error(err);
             throw(err); 
           } 
+          log.debug('#51846 line interpolate: ' + v)
           gcode += (key + v.toFixed(5));
           if(key === "X") { runtime.cmd_posx = v; }
           else if(key === "Y") { runtime.cmd_posy = v; }
