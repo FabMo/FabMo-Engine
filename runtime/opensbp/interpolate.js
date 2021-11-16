@@ -74,8 +74,7 @@ log.debug("lineInterpolate: EndPt = " + JSON.stringify(EndPt));
             var err = new Error("Invalid " + key + " argument: " + v );
 				    log.error(err);
             throw(err); 
-          } 
-          log.debug('#51846 line interpolate: ' + v)
+          }
           gcode += (key + v.toFixed(5));
           if(key === "X") { runtime.cmd_posx = v; }
           else if(key === "Y") { runtime.cmd_posy = v; }

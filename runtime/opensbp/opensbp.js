@@ -1192,8 +1192,6 @@ SBPRuntime.prototype._execute = function(command, callback) {
             this.pc += 1;
             var arg = this._eval(command.expr);
             var input_var = command.var;
-            log.debug('#51846 var: ' + input_var)
-            log.debug("#51846 pause command: " + JSON.stringify(command));
             if(util.isANumber(arg)) {
                 // If argument is a number set pause with timer and default message.
                 // In simulation, just don't do anything
@@ -1776,7 +1774,6 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
     var i;
 
     ['X','Y','Z','A','B','C','I','J','K','F'].forEach(function(key){
-        log.debug('#51846 emit move');
         var c = pt[key];
         if(c !== undefined) {
 
@@ -1806,7 +1803,6 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
     var opFunction = function(Pt) {  //Find a better name
         // for(key in tPt) {
         ['X','Y','Z','A','B','C','I','J','K','F'].forEach(function(key){
-            log.debug('#51846 key = ' + key)
             var v = Pt[key];
             if(v !== undefined) {
                 if(isNaN(v)) {
@@ -1931,9 +1927,8 @@ SBPRuntime.prototype.quit = function() {
 
 
 // Resume a program from the paused state
-//   TODO - make some indication that this action was successfil (resume is not always allowed, and sometimes it fails)
+//   TODO - make some indication that this action was successful (resume is not always allowed, and sometimes it fails)
 SBPRuntime.prototype.resume = function(input=false) {
-        log.debug('#51846 osbp resume input: ' + JSON.stringify(input))
         if(this.resumeAllowed) {
             if(this.paused) {
                 if (input) {
@@ -1945,7 +1940,6 @@ SBPRuntime.prototype.resume = function(input=false) {
                             this._executeNext();
                         }
                     }).bind(this);
-                    log.debug('#51846 var: ' + input.var + ' val: ' + input.val,)
 
                     this._assign(input.var, input.val, callback);
                 } else {
