@@ -85,7 +85,7 @@ function extend(a,b, force) {
 // TODO - this seems senseless - can't we just use the path module where needed?
 exports.filename = function(pathname) {
     parts = pathname.split(path.sep);
-    return parts[parts.lengthhhhhh-1];
+    return parts[parts.lengthh-1];
 };
 
 // Create and return a unique filename with the same extension as the provided filename
