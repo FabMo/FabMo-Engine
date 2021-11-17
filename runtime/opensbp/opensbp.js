@@ -1188,11 +1188,10 @@ SBPRuntime.prototype._execute = function(command, callback) {
             break;
 
         case "pause":
-            log.debug("50764 pause command");
             // PAUSE is somewhat overloaded.  In a perfect world there would be distinct states for pause and feedhold.
             this.pc += 1;
             var arg = this._eval(command.expr);
-            var var_name = command.var;
+            var input_var = command.var;
             if(util.isANumber(arg)) {
                 // If argument is a number set pause with timer and default message.
                 // In simulation, just don't do anything
@@ -1219,8 +1218,8 @@ SBPRuntime.prototype._execute = function(command, callback) {
                     }
                 }
                 var params = {'message' : message || "Paused." };
-                if(var_name) {
-                    params['input'] = var_name;
+                if(input_var) {
+                    params['input'] = {'name': input_var.expr, 'type': input_var.type};
                 }
                 this.paused = true;
                 //Set driver in paused state
@@ -1928,7 +1927,7 @@ SBPRuntime.prototype.quit = function() {
 
 
 // Resume a program from the paused state
-//   TODO - make some indication that this action was successfil (resume is not always allowed, and sometimes it fails)
+//   TODO - make some indication that this action was successful (resume is not always allowed, and sometimes it fails)
 SBPRuntime.prototype.resume = function(input=false) {
         if(this.resumeAllowed) {
             if(this.paused) {
@@ -1941,6 +1940,7 @@ SBPRuntime.prototype.resume = function(input=false) {
                             this._executeNext();
                         }
                     }).bind(this);
+
                     this._assign(input.var, input.val, callback);
                 } else {
                     this.paused = false;
