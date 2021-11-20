@@ -230,6 +230,7 @@ require("../css/toastr.min.css");
                             } else {
                                 keypad.setEnabled(false);
                                 keyboard.setEnabled(false);
+                                // Default modal options for backwards compatibility
                                 modalOptions = {
                                     message: status.info.message,
                                     okText: 'Resume',
@@ -239,6 +240,43 @@ require("../css/toastr.min.css");
                                     },
                                     cancel: function() {
                                         dashboard.engine.quit();
+                                    }
+                                }
+                                if (status.info['buttons']) {
+                                    // Custom button action and text
+                                    if (status.info.buttons['ok']) {
+                                        modalOptions.okText = status.info.buttons.ok['text']
+                                        switch (status.info.buttons.ok['func']) {
+                                            case 'resume':
+                                                modalOptions.ok = function() {
+                                                        dashboard.engine.resume();
+                                                    }
+                                                break;
+                                            case 'quit':
+                                                modalOptions.ok = function() {
+                                                        dashboard.engine.quit();
+                                                    }
+                                                break;
+                                            default:
+                                                modalOptions.ok = false
+                                        }
+                                    }
+                                    if (status.info.buttons['cancel']) {
+                                        modalOptions.okText = status.info.buttons.cancel['text']
+                                        switch (status.info.buttons.cancel['func']) {
+                                            case 'resume':
+                                                modalOptions.cancel = function() {
+                                                        dashboard.engine.resume();
+                                                    }
+                                                break;
+                                            case 'quit':
+                                                modalOptions.cancel = function() {
+                                                        dashboard.engine.quit();
+                                                    }
+                                                break;
+                                            default:
+                                                modalOptions.cancel = false
+                                        }
                                     }
                                 }
                                 if(status['info']['input']) {
