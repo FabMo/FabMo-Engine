@@ -262,7 +262,7 @@ require("../css/toastr.min.css");
                                         }
                                     }
                                     if (status.info.custom['cancel']) {
-                                        modalOptions.okText = status.info.custom.cancel['text']
+                                        modalOptions.cancelText = status.info.custom.cancel['text']
                                         switch (status.info.custom.cancel['func']) {
                                             case 'resume':
                                                 modalOptions.cancel = function() {
