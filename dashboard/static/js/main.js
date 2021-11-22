@@ -242,11 +242,11 @@ require("../css/toastr.min.css");
                                         dashboard.engine.quit();
                                     }
                                 }
-                                if (status.info['buttons']) {
+                                if (status.info['custom']) {
                                     // Custom button action and text
-                                    if (status.info.buttons['ok']) {
-                                        modalOptions.okText = status.info.buttons.ok['text']
-                                        switch (status.info.buttons.ok['func']) {
+                                    if (status.info.custom['ok']) {
+                                        modalOptions.okText = status.info.custom.ok['text']
+                                        switch (status.info.custom.ok['func']) {
                                             case 'resume':
                                                 modalOptions.ok = function() {
                                                         dashboard.engine.resume();
@@ -261,9 +261,9 @@ require("../css/toastr.min.css");
                                                 modalOptions.ok = false
                                         }
                                     }
-                                    if (status.info.buttons['cancel']) {
-                                        modalOptions.okText = status.info.buttons.cancel['text']
-                                        switch (status.info.buttons.cancel['func']) {
+                                    if (status.info.custom['cancel']) {
+                                        modalOptions.okText = status.info.custom.cancel['text']
+                                        switch (status.info.custom.cancel['func']) {
                                             case 'resume':
                                                 modalOptions.cancel = function() {
                                                         dashboard.engine.resume();
@@ -277,6 +277,12 @@ require("../css/toastr.min.css");
                                             default:
                                                 modalOptions.cancel = false
                                         }
+                                    }
+                                    if (status.info.custom['detail']) {
+                                        modalOptions['detail'] = status.info.custom['detail']
+                                    }
+                                    if (status.info.custom['noButton']) {
+                                        modalOptions.noButton = true
                                     }
                                 }
                                 if(status['info']['input']) {
