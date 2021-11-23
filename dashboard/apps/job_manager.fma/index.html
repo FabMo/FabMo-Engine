@@ -1,3 +1,4 @@
+<!doctype html>
 <html>
 <head>
 	<meta charset="utf-8">
@@ -6,31 +7,19 @@
 	<link rel="stylesheet" href="../../css/dashboard.css">
 	<link rel="stylesheet" href="./css/style.css">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	</head>
+</head>
+<!-- START HERE -->
 <body>
-	<div class="filter"></div>
-	<div class="tour-dialogue">
-			<p class="tour-text"></p>
-			<div class="tour-buttons">
-				<div class="next">Next</div>
-				<div class="no">Cancel</div>
-			</div>
-	</div>
-	<div class="tour-pointer"><span>You can preview the job</span><div class="pointer"></div></div>
-  <div class="sticky">
-  <nav class="top-bar" data-topbar role="navigation">
+  <nav class="top-bar" data-topbar role="navigation" style="background-color:rgb(92, 90, 90)">
   <ul class="title-area">
-    <li class="name">
-      <h1><a id="app-header">Job Manager</a></h1>
+    <li class="name" style="list-style-type:none; padding-right:60px">
+      <h4><a id="app-header">Job Manager</a></h4>
     </li>
-    <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
-  </ul>
-  <section class="top-bar-section">
-    <ul class="left" role="tablist" data-tab>
-      <li class="active"><a id="nav-pending" href="#tabpending">Pending</a></li>
-      <li class=""><a id="nav-history" href="#tabhistory">History</a></li>
-    </ul>
-    <ul class="left">
+  </ul> 
+  <section class="top-bar-left">
+	<ul style="background-color:rgb(92, 90, 90);color:white;" class="dropdown menu" data-tabs id="jobs-tab-list">
+      <li class="tabs-title active"><a id="nav-pending" data-tabs-target="tabpending" href="#tabpending">Pending</a></li>
+      <li class="tabs-title"><a id="nav-history" data-tabs-target="tabhistory" href="#tabhistory">History</a></li>
       <li><a id="nav-submit" class="submit-button" href="#">Submit Jobs...</a></li>
     </ul>
   </section>
@@ -43,10 +32,9 @@
 	<input type="file" id="file" multiple>
 </form>
 
-<div class="tabs-content">
+<div class="tabs-content" data-tabs-content="jobs-tab-list">
   <div class="content active dropzone" id="tabpending">
-	  <div id="droptarget">
-  		</div>
+	  <div id="droptarget"> </div>
 			<div class="title jobs-title">
 				<div class="small-12 columns">
 					<h4 class="up-next">Up Next</h4>
@@ -72,57 +60,12 @@
 					</div>
 				</div>
 			</div>
-			<!--<div class="row">
-				<div class="small-8 jobs-wrapper">
-					<div class="small-8 medium-8 columns with-job">
-						<h4 class='nextJobTitle'></h4>
-						<div class="small-12 columns">
-							<h5 class='nextJobDesc'></h5>
-						</div>
-					</div>
-
-				</div>
-
-			<div class="small-8 medium-12 icon-row">
-				<div class="medium-1 small-2 columns">
-					<a class='preview' title='Preview Job'>
-						<img  class='svg' src="css/images/visible9.svg">
-					</a>
-				</div>
-				<div class="medium-1 small-2 columns">
-					<a class='edit' title='Edit Job'>
-						<img class='svg' src="images/edit_icon.png">
-					</a>
-				</div>
-				<div class="medium-1 small-2 columns">
-					<a class='download' title='Download Job'>
-						<img  class='svg' src="css/images/download151.svg">
-					</a>
-				</div>
-				<div class="medium-1 small-2 columns">
-					<a class='cancel' title='Cancel Job'>
-						<img  class='svg' src="css/images/recycling10.svg">
-					</a>
-				</div>
-			  <div class="sm-1 columns"></div>
-			</div>
-			<div class="row"></div>
-            <div class="job-lights-container">
-                <div class="job-status-light one off">
-                    <div class="job-status-indicator"></div>
-                </div>
-                 <div class="job-status-light two off">
-                    <div class="job-status-indicator"></div>
-                </div>
-                 <div class="job-status-light three off">
-                    <div class="job-status-indicator"></div>
-                </div>
-            </div>
-		</div>-->
+		</div>
+	</div>
+</div>
 
 
 <div style="width:98%" id="queue_table"></div>
- </div> <!-- rmackie -->
   <div class="content" id="tabhistory">
 		<!-- JOB HISTORY LISTING -->
 		<table class="small-12 columns" style="width:100%" id="history_table">
@@ -142,9 +85,19 @@
   <div class="dropDownWrapper"></div>
 </div>
 
+<div class="sticky">
+<div class="filter"></div>
+<div class="tour-dialogue">
+		<p class="tour-text"></p>
+		<div class="tour-buttons">
+			<div class="next">Next</div>
+			<div class="no">Cancel</div>
+		</div>
+</div>
+<div class="tour-pointer"><span>You can preview the job</span><div class="pointer"></div></div>
   <!-- Javascript inclusions -->
   <script src="../../job_manager.js"></script>
-  <script> $(window).foundation(); <script>
+  <script> $(window).foundation(); </script>
 
 </body>
 </html>

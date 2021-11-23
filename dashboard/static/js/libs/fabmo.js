@@ -323,6 +323,7 @@ FabMoDashboard.prototype._setupMessageListener = function() {
 				if('id' in message) {
 		 			if(message.id in this._handlers) {
 		 				cb = this._handlers[message.id]
+						 console.log("fabmo cb message:" + message.id +":" + message.status + ":" + JSON.stringify(message.data)); // rmackie
 		 				if(message.status === "success") {
 		 					cb(null, message.data);
 		 				} else {
@@ -336,7 +337,9 @@ FabMoDashboard.prototype._setupMessageListener = function() {
 				if('id' in message) {
 					if(message.id in this._event_listeners) {
 						listeners = this._event_listeners[message.id]
+						//rmackie: event dispatch
 						for(i in listeners) {
+							console.log("fabmo evt message:" + message.id + ":" + JSON.stringify(message.data)); // rmackie
 							listeners[i](message.data);
 						}
 					}

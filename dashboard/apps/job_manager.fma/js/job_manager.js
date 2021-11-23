@@ -314,7 +314,7 @@ function createHistoryMenu(id) {
   function addHistoryEntries(jobs) {
     /* Need to condition this on whether we have any jobs queued right now and the "history menu". 
        commented out because everything overlaps and it's just easier to work without it. 
-       rmackie - CODE MUST COME BACK INTO SERVICE 
+       rmackie - CODE MUST COME BACK INTO SERVICE TODO REMOVE THIS COMMENT  */
   var table = document.getElementById('history_table');
   jobs.forEach(function(job) {  //rmackie history noise
     var row = table.insertRow(table.rows.length);
@@ -333,7 +333,7 @@ function createHistoryMenu(id) {
     time.innerHTML = moment.utc(job.finished_at - job.started_at).format('HH:mm:ss');
   }); // rmackie end of history noise
   bindMenuEvents();
-  */
+  
 }
 
 function hideDropDown() {
@@ -502,8 +502,16 @@ function handleStatusReport(status) {
   // Either we're running a job currently or null
   try {
     console.log("rmackie: handleStatusReport try in");
-    var jobId = status.job._id || null;
-    var jobState = status.state;
+    console.log("status:" + status);
+    console.log("status.job:" + status.job);
+    console.log("status.job.id:" + status.job._id);
+    console.log("status.state:" + status.state);
+    var jobId = null;
+    var jobState = null;
+    if(status) {
+      jobId = status.job._id || null;
+      jobState = status.state;
+    }
     console.log("rmackie: handleStatusReport try out");
   } catch (e) {
     console.log("rmackie: handleStatusReport catch");
