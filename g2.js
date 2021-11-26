@@ -296,10 +296,12 @@ G2.prototype.connect = function(path, callback) {
 	this.once('ready', function() {
 		this.connected = true;
 
-////## Have tested both reset and end-file during this start-up to clear "alarm"
+////## Have tested both reset and end-file during this start-up to clear "alarm" and bad stop
 ////##    a reset works, but disconnects G2 and requires new manual fabmo start
 ////##		this._write('\x18\n', function() {   ////## try reset not a kill
 ////##		this._write('M30\n', function() {    ////## try end file
+////## Kludging 2 kills seems to allow a restart when g2 stuck	
+		this._write('\x04\n', function() {});
 		this._write('\x04\n', function() {
 			this.requestStatusReport(function() {
 				callback(null, this);

@@ -59,9 +59,10 @@ function setupAuthentication(svr) {
 }
 
 function setupStatusBroadcasts(server) {
-	var previous_status = {'state':null}
 
 	machine.on('status', function(status) {
+		//Add Server Timestamp to status updates
+		status.server_ts = Date.now();
 		/*
 		  decoding the "emit" statements below due how many layers there are:
 			e.g.: server.io.of('/private').emit('status', status);
@@ -72,21 +73,11 @@ function setupStatusBroadcasts(server) {
 					where the string: '/' is the default namespace.
 			NameSpace objects use "emit" to send to all the sockets that are in their space
 		*/
-		if(status.state === 'idle' || status.state != previous_status.state) {
+			log.debug("rmackie: /private socket emit status");
 			server.io.of('/private').emit('status', status);
-		} else {
-			server.io.of('/private').volatile.emit('status', status);
-		}
 
-		if(status.state === 'idle' || status.state != previous_status.state) {
-			log.debug("rmackie: socket emit status");
+			log.debug("rmackie: root socket emit status");
 			server.io.of('/').emit('status', status);
-		} else {
-			console.log("rmackie: socket volatile emit status");
-			server.io.of('/').volatile.emit('status', status);
-		}
-
-		previous_status.state = status.state;
 	});
 
 	machine.on('change', function(topic) {
@@ -192,8 +183,8 @@ var onPrivateConnect = function(socket) {
 					break;
 
 				case 'resume':
-					if (data.args && data.args.var && data.args.val) {
-						machine.resume(callback, {'var':data.args.var, 'val':data.args.val});
+					if (data.args && data.args.var && data.args.type && data.args.val) {
+						machine.resume(callback, {'var':{'expr':data.args.var, 'type':data.args.type}, 'val':data.args.val});
 					}
 					machine.resume(callback);
 					break;

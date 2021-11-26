@@ -82,12 +82,12 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 	}
 
 	if(this.socket) {
-		robsDebug("registering websocket cb function to receive status data from socket");
         this.socket.prependAny(function(eventName, ...args) {
 			console.log("websocket cb function currently receiving " + eventName + " data from socket is about to emit");
         });
 		this.socket.on('status', function(status) {
-			robsDebug("websocket cb function currently receiving STATUS data from socket is about to emit");
+			robsDebug("websocket cb function currently receiving STATUS from socket is about to emit");
+			console.log(status)
 			this._setStatus(status);
 			this.emit('status', status);
 		}.bind(this));

@@ -5,6 +5,12 @@
  * manual control of the machine.  It is the real implementation for the ManualRuntime
  * but exists as a helper so that it can be used inside of other runtimes that need to use the
  * manual state, and want to do it in the same way that the manual runtime does.
+ * 
+ * OVER TIME, Manual has gotten a little crazy because it serves many purposes:
+ *  - the Normal Keypad (which is in incremental mode and has relied at different times on
+ *      different types of pumping; many acc commands to support keypad extras)
+ *  - truly manual uses for sending individual commands for other purposes, as well as providing
+ *      the direct calls for developing other manual motion handlers beyond the normal keypad
  */
 var log = require('../../log').logger('manual');
 var config = require('../../config');
@@ -22,7 +28,6 @@ var count;
 var RENEW_SEGMENTS = 10;
 var FIXED_MOVES_QUEUE_SIZE = 3;
 var count = 0;
-
 
 // ManualDriver constructor
 // The manual driver provides functions for managing the state of the G2 driver while "manually"
@@ -241,20 +246,21 @@ ManualDriver.prototype.quitMove = function() {
 ManualDriver.prototype.runGCode = function(code) {
 	if(this.mode == 'raw') {
 		this.driver.mode = 'raw';
+            ////## section for betaInsert
+			log.debug("... possibly converting special codes in betaInsert");
+			code = code.replace(/&/g,'\n');     // for use in creating multiple lines
+			code = code.replace("^","\x04\n");  // to insert a kill
+			code = code.replace("!","\x21\n");  // to insert a hold
+			code = code.replace("~","\x7E\n");  // to insert a resume
+			code = code.replace("#","\x18\n"); // to insert RESET-G2
+            ////## Not really working right yet if you do a hold
 		if(this.moving) {
-			log.debug('writing gcode while moving')
-			this.stream.write(code.trim() + '\n');
+			log.debug('writing gcode while moving') ////##
+      this.stream.write(code.trim() + '\n');
 			this.maintainMotion()			
 		} else {
 			log.debug('writing gcode while static')
 			this.moving = true;
-
-			log.debug("... possibly converting special codes in betaInsert");
-			code = code.replace(/&/g,'\n');
-			code = code.replace(/^/, '\x04\n');
-			code = code.replace(/#/, '\x18\n');
-			log.debug(code);
-
 			this.stream.write(code.trim() + '\n');
 			this.maintainMotion();		
 			this._renewMoves('start')
@@ -450,7 +456,7 @@ ManualDriver.prototype._renewMoves = function(reason) {
 		} else {
 			this.renew_timer = setTimeout(function() {
 				this._renewMoves("timeout")
-			}.bind(this), T_RENEW)			
+			}.bind(this), T_RENEW)
 		}
 	} 
 }
@@ -496,7 +502,7 @@ ManualDriver.prototype._onG2Status = function(status) {
 			}
 		case this.driver.STAT_END:
 		case this.driver.STAT_HOLDING:
-			// Handle nudges once we've come to a stop
+		// Handle nudges once we've come to a stop
 			if(this._handleNudges()) {
 				// Nudges got handled
 			} else {
