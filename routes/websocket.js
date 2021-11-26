@@ -76,7 +76,7 @@ function setupStatusBroadcasts(server) {
 			log.debug("rmackie: /private socket emit status");
 			server.io.of('/private').emit('status', status);
 
-			log.debug("rmackie: root socket emit status");
+			log.debug("rmackie: socket emit status");
 			server.io.of('/').emit('status', status);
 	});
 
