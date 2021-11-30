@@ -585,9 +585,115 @@ var countLineNumbers = function(filename, callback) {
       });
 }
 
+var addTimerParam = function(timer, params={}) {
+    params['timer'] = timer;
+    params['message'] = "Pause " + params['timer'] + " Seconds."
+    return params;
+}
+
+
+var addMessageParam = function(message, params={}) {
+    params['message'] = message;
+    return params;
+}
+
+var addInputParam = function(input_var, params={}) {
+    params['input'] = {'name': input_var.expr, 'type': input_var.type};
+    return params;
+}
+
+var addOkParam = function(ok, params={}) {
+    if (!params.hasOwnProperty('custom')) {
+        params['custom'] = {};
+    }
+    params.custom['ok'] = {
+        'text': ok['text'],
+        'func': ok['func']
+    }
+    return params;
+}
+
+var addCancelParam = function(cancel, params={}) {
+    if (!params.hasOwnProperty('custom')) {
+        params['custom'] = {};
+    }
+    params.custom['cancel'] = {
+        'text': cancel['text'],
+        'func': cancel['func']
+    }
+    return params;
+}
+
+var addTitleParam = function(title, params={}) {
+    if (!params.hasOwnProperty('custom')) {
+        params['custom'] = {};
+    }
+    params.custom['title'] = title;
+    return params;
+}
+
+var addDetailParam = function(detail, params={}) {
+    if (!params.hasOwnProperty('custom')) {
+        params['custom'] = {};
+    }
+    params.custom['detail'] = detail;
+    return params;
+}
+
+var addNoButtonParam = function(noButton, params={}) {
+    if (!params.hasOwnProperty('custom')) {
+        params['custom'] = {};
+    }
+    params.custom['noButton'] = noButton;
+    return params;
+}
+
+var packageModalParams = function(params={}, modalParams={}) {
+    log.debug(JSON.stringify(params));
+    if (params.hasOwnProperty('timer') && params['timer'] && isANumber(params['timer'])) {
+        return addTimerParam(params['timer']);
+    }
+    if (params.hasOwnProperty('message')) {
+        modalParams = addMessageParam(params['message'], modalParams);
+    } else if (!modalParams.hasOwnProperty('message')){
+        modalParams = addMessageParam("Paused.", modalParams);
+    }
+    log.debug(JSON.stringify(modalParams));
+    if (params.hasOwnProperty('input_var')) {
+        modalParams = addInputParam(params['input_var'], modalParams);
+    }
+    log.debug(JSON.stringify(modalParams))
+    if (params.hasOwnProperty('okText')) {
+        if (params.hasOwnProperty('okFunc')) {
+            modalParams = addOkParam({'text': params['okText'], 'func': params['okFunc']}, modalParams);
+        } else {
+            modalParams = addOkParam({'text': params['okText'], 'func': 'resume'}, modalParams);
+        }
+    }
+    log.debug(JSON.stringify(modalParams))
+    if (params.hasOwnProperty('cancelText')) {
+        if (params.hasOwnProperty('cancelFunc')) {
+            modalParams = addCancelParam({'text': params['cancelText'], 'func': params['cancelFunc']}, modalParams);
+        } else {
+            modalParams = addCancelParam({'text': params['cancelText'], 'func': 'quit'}, modalParams);
+        }
+    }
+    if (params.hasOwnProperty('detail')) {
+        modalParams = addDetailParams(params['detail']);
+    }
+    if (params.hasOwnProperty('title')) {
+        modalParams = addTitleParams(params['title']);
+    }
+    if (params.hasOwnProperty('noButton') && params['noButton']) {
+        modalParams = addNoButtonParams(params['noButton']);
+    }
+    log.debug(JSON.stringify(modalParams))
+    return modalParams
+}
+
 exports.countLineNumbers = countLineNumbers;
 exports.LineNumberer = LineNumberer;
-
+exports.packageModalParams = packageModalParams;
 
 exports.serveStatic = serveStatic;
 exports.getSize = getSize;

@@ -230,6 +230,7 @@ require("../css/toastr.min.css");
                             } else {
                                 keypad.setEnabled(false);
                                 keyboard.setEnabled(false);
+                                console.log(status['info'])
                                 // Default modal options for backwards compatibility
                                 modalOptions = {
                                     message: status.info.message
