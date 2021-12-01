@@ -649,7 +649,6 @@ var addNoButtonParam = function(noButton, params={}) {
 }
 
 var packageModalParams = function(params={}, modalParams={}) {
-    log.debug(JSON.stringify(params));
     if (params.hasOwnProperty('timer') && params['timer'] && isANumber(params['timer'])) {
         return addTimerParam(params['timer']);
     }
@@ -658,11 +657,9 @@ var packageModalParams = function(params={}, modalParams={}) {
     } else if (!modalParams.hasOwnProperty('message')){
         modalParams = addMessageParam("Paused.", modalParams);
     }
-    log.debug(JSON.stringify(modalParams));
     if (params.hasOwnProperty('input_var')) {
         modalParams = addInputParam(params['input_var'], modalParams);
     }
-    log.debug(JSON.stringify(modalParams))
     if (params.hasOwnProperty('okText')) {
         if (params.hasOwnProperty('okFunc')) {
             modalParams = addOkParam({'text': params['okText'], 'func': params['okFunc']}, modalParams);
@@ -670,7 +667,6 @@ var packageModalParams = function(params={}, modalParams={}) {
             modalParams = addOkParam({'text': params['okText'], 'func': 'resume'}, modalParams);
         }
     }
-    log.debug(JSON.stringify(modalParams))
     if (params.hasOwnProperty('cancelText')) {
         if (params.hasOwnProperty('cancelFunc')) {
             modalParams = addCancelParam({'text': params['cancelText'], 'func': params['cancelFunc']}, modalParams);
@@ -687,7 +683,6 @@ var packageModalParams = function(params={}, modalParams={}) {
     if (params.hasOwnProperty('noButton') && params['noButton']) {
         modalParams = addNoButtonParams(params['noButton']);
     }
-    log.debug(JSON.stringify(modalParams))
     return modalParams
 }
 
