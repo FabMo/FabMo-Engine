@@ -1224,12 +1224,14 @@ SBPRuntime.prototype._execute = function(command, callback) {
                 if (message) {
                     modalParams = util.packageModalParams({'message': message}, modalParams)
                 }
+                // Example of modal customization. Adds input param, sets ok button text to Submit, removes cancel/quit button.
+                // TODO: This is an example of use for the custom modal.  We may wish to re-enable the cancel button s detailed below.
                 if(input_var) {
                     var inputParams = {
                         'input_var': input_var,
                         'okText': 'Submit',
-                        'cancelText': false,
-                        'cancelFunc': false
+                        'cancelText': false, // remove or set new text to display cancel/quit button.
+                        'cancelFunc': false  // remove to enable quit job onclick
                     }
                     modalParams = util.packageModalParams(inputParams, modalParams)
                 }
