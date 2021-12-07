@@ -959,7 +959,6 @@ Machine.prototype.quit = function(callback) {
 
 // Resume from the paused state.
 Machine.prototype.resume = function(callback, input=false) {
-	log.debug('#52846 machine resume input: ' + JSON.stringify(input))
 	if (this.driver.pause_hold) {
 		//Release driver pause hold
 		this.driver.pause_hold = false;

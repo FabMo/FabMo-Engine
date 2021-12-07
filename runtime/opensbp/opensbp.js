@@ -1810,7 +1810,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
                     log.error(err);
                     throw(err);
                 }
-                gcode += (key + v.toFixed(5));
+                gcode += (key + parseFloat(v).toFixed(5));
             }
         }.bind(this));
         this.emit_gcode(gcode);
