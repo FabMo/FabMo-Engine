@@ -230,20 +230,21 @@ require("../css/toastr.min.css");
                             } else {
                                 keypad.setEnabled(false);
                                 keyboard.setEnabled(false);
+                                console.log(status['info'])
+                                // Default modal options for backwards compatibility
                                 modalOptions = {
-                                    message: status.info.message,
-                                    okText: 'Resume',
-                                    cancelText: 'Quit',
-                                    ok: function() {
-                                        dashboard.engine.resume();
-                                    },
-                                    cancel: function() {
-                                        dashboard.engine.quit();
-                                    }
+                                    message: status.info.message
                                 }
+                                resumeFunction = function() {
+                                                    dashboard.engine.resume();
+                                                }
+                                cancelFunction = function() {
+                                                    dashboard.engine.quit();
+                                                }
+                                //set up input submit
                                 if(status['info']['input']) {
                                     modalOptions['input'] = status['info']['input'];
-                                    modalOptions['ok'] = function() {
+                                    resumeFunction = function() {
                                         var inputVar = $('#inputVar').val();
                                         var inputType = $('#inputType').val();
                                         var inputVal = $.trim($('#inputVal').val());
@@ -255,6 +256,48 @@ require("../css/toastr.min.css");
                                         // } else {
                                         //     $('.inputError').show();
                                         // }
+                                    }
+                                }
+                                modalOptions.okText = 'Resume',
+                                modalOptions.cancelText = 'Quit',
+                                modalOptions.ok = resumeFunction,
+                                modalOptions.cancel = cancelFunction
+                                if (status.info['custom']) {
+                                    // Custom button action and text
+                                    if (status.info.custom['ok']) {
+                                        modalOptions.okText = status.info.custom.ok['text']
+                                        switch (status.info.custom.ok['func']) {
+                                            case 'resume':
+                                                modalOptions.ok = resumeFunction
+                                                break;
+                                            case 'quit':
+                                                modalOptions.ok = cancelFunction
+                                                break;
+                                            default:
+                                                modalOptions.ok = false
+                                        }
+                                    }
+                                    if (status.info.custom['cancel']) {
+                                        modalOptions.cancelText = status.info.custom.cancel['text']
+                                        switch (status.info.custom.cancel['func']) {
+                                            case 'resume':
+                                                modalOptions.cancel = resumeFunction
+                                                break;
+                                            case 'quit':
+                                                modalOptions.cancel = cancelFunction
+                                                break;
+                                            default:
+                                                modalOptions.cancel = false
+                                        }
+                                    }
+                                    if (status.info.custom['detail']) {
+                                        modalOptions['detail'] = status.info.custom['detail']
+                                    }
+                                    if (status.info.custom['title']) {
+                                        modalOptions['title'] = status.info.custom['title']
+                                    }
+                                    if (status.info.custom['noButton']) {
+                                        modalOptions.noButton = true
                                     }
                                 }
                                 dashboard.showModal(modalOptions);
