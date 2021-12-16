@@ -918,6 +918,9 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 			case 'dead':
 				log.error('G2 is dead!');
 				break;
+			case 'stopped':
+				log.debug('Entering stopped state for error report');
+				break;
 			default:
 				break;
 		}
