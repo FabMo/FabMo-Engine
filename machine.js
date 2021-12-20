@@ -240,7 +240,7 @@ function Machine(control_path, callback) {
 		// Handle okay and cancel buttons.
 		// Auth = OK
 		// Quit = Cancel
-		// If okay/cancel 
+		// If okay/cancel
 		if(auth_input === quit_input){
 			this.handleOkayCancelDual(stat, auth_input)
 		}else {
@@ -851,6 +851,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
                 if(this.status.state != newstate) {
                 	//set driver in paused state
                 	this.driver.pause_hold = true;
+					this.status.inFeedHold = true;
                 	// Save the position to the instance configuration.  See note above.
                     this.driver.get('mpo', function(err, mpo) {
 					    if(config.instance) {
