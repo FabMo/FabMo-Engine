@@ -82,7 +82,7 @@ function setupStatusBroadcasts(server) {
 
 	machine.on('change', function(topic) {
 		log.debug("rmackie:" + 'Change broadcast');
-		log.debug("rmackie:" + JSON.stringify(status));
+		log.debug("rmackie:" + JSON.stringify(topic));
 
 		server.io.of('/private').emit('change', topic);
 		server.io.of('/').emit('change', topic);
