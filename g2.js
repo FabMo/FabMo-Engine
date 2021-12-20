@@ -17,7 +17,7 @@ var process = require('process');
 var jsesc = require('jsesc');
 var stream = require('stream');
 var Q = require('q');
-var LineNumberer = require('./util').LineNumberer;
+var LineNumberer = require('./util').LineNumberer
 
 // Values of the **stat** field that is returned from G2 status reports
 var STAT_INIT = 0;
@@ -549,9 +549,9 @@ G2.prototype.handleStatusReport = function(response) {
 				// and pause the cycle context if it exists.
 				switch(response.sr.stat) {
 					case STAT_HOLDING:
-						this.pause_flag = true;	
+						this.pause_flag = true;
 						if(this.context) {
-							this.context.pause();
+							this.context.pause()
 						}
 						break;
 					default:

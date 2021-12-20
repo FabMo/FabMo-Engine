@@ -242,7 +242,7 @@ function Machine(control_path, callback) {
 		// Quit = Cancel
 		// If okay/cancel
 		if(auth_input === quit_input){
-			this.handleOkayCancelDual(stat, auth_input);
+			this.handleOkayCancelDual(stat, auth_input)
 		}else {
 			this.handleOkayButton(stat, auth_input);
 			this.handleCancelButton(stat, quit_input);
@@ -339,7 +339,7 @@ Machine.prototype.handleOkayButton = function(stat, auth_input){
 		
 		if (clickDisabled){
 			log.info("Can't hit okay now");
-			return;
+			return
 		}
 
 		if(this.status.state === 'paused' && canResume) {
@@ -896,7 +896,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 };
 
 // Pause the machine
-Machine.prototype.pause = function(callback) {	
+Machine.prototype.pause = function(callback) {
 		if(this.status.state === "running") {
 			if(this.current_runtime) {
 				this.current_runtime.pause();
