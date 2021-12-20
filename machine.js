@@ -240,9 +240,9 @@ function Machine(control_path, callback) {
 		// Handle okay and cancel buttons.
 		// Auth = OK
 		// Quit = Cancel
-		// If okay/cancel 
+		// If okay/cancel
 		if(auth_input === quit_input){
-			this.handleOkayCancelDual(stat, auth_input)
+			this.handleOkayCancelDual(stat, auth_input);
 		}else {
 			this.handleOkayButton(stat, auth_input);
 			this.handleCancelButton(stat, quit_input);
@@ -339,7 +339,7 @@ Machine.prototype.handleOkayButton = function(stat, auth_input){
 		
 		if (clickDisabled){
 			log.info("Can't hit okay now");
-			return
+			return;
 		}
 
 		if(this.status.state === 'paused' && canResume) {
@@ -851,6 +851,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
                 if(this.status.state != newstate) {
                 	//set driver in paused state
                 	this.driver.pause_hold = true;
+					this.status.inFeedHold = true;
                 	// Save the position to the instance configuration.  See note above.
                     this.driver.get('mpo', function(err, mpo) {
 					    if(config.instance) {
@@ -895,7 +896,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 };
 
 // Pause the machine
-Machine.prototype.pause = function(callback) {
+Machine.prototype.pause = function(callback) {	
 		if(this.status.state === "running") {
 			if(this.current_runtime) {
 				this.current_runtime.pause();
