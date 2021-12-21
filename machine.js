@@ -521,7 +521,7 @@ Machine.prototype.arm = function(action, timeout) {
 
 	let arm_obj = decideNextAction(requireAuth, this.status.state, this.driver.status[interlockInput], interlockRequired, this.interlock_action, action, interlockBypass);
 	// Implement side-effects that the result obj has returned so state is set correctly:
-		if(arm_obj['interlock_required'])         {interlockRequired     = arm_obj['interlock_required']} 
+		if(arm_obj['interlock_required'])         {interlockRequired     = arm_obj['interlock_required']}
 		if(arm_obj['interlock_action'])           {this.interlock_action = arm_obj['interlock_action']};
 		if(arm_obj['current_action'])             {action                = arm_obj['current_action']};
 		if(arm_obj['next_action'])				  {nextAction            = arm_obj['next_action']};
