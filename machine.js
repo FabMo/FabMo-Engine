@@ -412,11 +412,11 @@ Machine.prototype.restoreDriverState = function(callback) {
 }
 
 //This is a decision making function for the arm function. It tells arm the next action to fire.
-//If machine object properties are influenced, they are stored in the result_arm_object and 
+//If machine object properties are influenced, they are stored in the result_arm_object and
 //returned to the arm function along with the next action. if an error should be thrown the error
 // is placed in the result_obj and the next action is set to 'throw'.
 // Note parameters that are simply read and modified as part of the decision making are suffixed with "_in"
-//      parameters that are returned with new values to be used by the caller are suffixed with "_io" 
+//      parameters that are returned with new values to be used by the caller are suffixed with "_io"
 function decideNextAction(require_auth_in, current_state_in, driver_status_interlock_in, interlock_required_io, interlock_action_io, current_action_io, bypass_in){
 	let result_arm_obj = {'interlock_required':       null,
 						  'interlock_action':         null,
@@ -450,7 +450,7 @@ function decideNextAction(require_auth_in, current_state_in, driver_status_inter
 
 	if(current_action_io && current_action_io.payload && current_action_io.payload.name === 'manual' || bypass_in) {
 		result_arm_obj['interlock_required'] = false;
-	} 
+	}
 
 	// Record correct action to take, start with cases that abort action
 	if(result_arm_obj['error_thrown']){
@@ -458,13 +458,13 @@ function decideNextAction(require_auth_in, current_state_in, driver_status_inter
 		return result_arm_obj;
 	}
 	if(result_arm_obj['current_action'] && interlock_required_io && driver_status_interlock_in){
-		result_arm_obj['next_action'] = 'abort_due_to_interlock';	
+		result_arm_obj['next_action'] = 'abort_due_to_interlock';
 		return result_arm_obj;
-	} 
- 
+	}
+
 	// Now we decide what the next action should be if we haven't already aborted for some reason
 	// need to test if for interlock state
-	
+
 		if(current_action_io && current_action_io.payload && current_action_io.payload.name === 'manual'){
 		var cmd = current_action_io.payload.code.cmd;
 		if( cmd == 'set'  ||
@@ -488,10 +488,10 @@ function decideNextAction(require_auth_in, current_state_in, driver_status_inter
 	return result_arm_obj;
 }
 
-//This function sets the timeout and records the state we were in before arming. 
+//This function sets the timeout and records the state we were in before arming.
 //That way we can fall back to it if the timer runs out.
 function recordPriorStateAndSetTimer(thisMachine, armTimeout, status){
-	if(thisMachine._armTimer) { 
+	if(thisMachine._armTimer) {
 		clearTimeout(thisMachine._armTimer);
 	}
 
@@ -507,8 +507,8 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status){
 	thisMachine.preArmedState = status;
 }
 
-// "Arm" the machine with the specified action. The armed state is abandoned after the timeout expires.  
-//   action - The action to execute when fire() is called.  Can be null. 
+// "Arm" the machine with the specified action. The armed state is abandoned after the timeout expires.
+//   action - The action to execute when fire() is called.  Can be null.
 //            If null, the action will be to "authorize" the tool for subsequent actions for the authorization
 //            period which is specified in the settings.
 //   timeout - The number of seconds that the system should remain armed
@@ -518,7 +518,7 @@ Machine.prototype.arm = function(action, timeout) {
 	var interlockRequired = config.machine.get('interlock_required');
 	var interlockInput = 'in' + config.machine.get('interlock_input');
 	var nextAction = null;
-	
+
 	let arm_obj = decideNextAction(requireAuth, this.status.state, this.driver.status[interlockInput], interlockRequired, this.interlock_action, action, interlockBypass);
 	// Implement side-effects that the result obj has returned so state is set correctly:
 		if(arm_obj['interlock_required'])         {interlockRequired     = arm_obj['interlock_required']} 
@@ -528,7 +528,7 @@ Machine.prototype.arm = function(action, timeout) {
 
 	this.action = action;
 	log.info('Arming the machine' + (action ? (' for ' + action.type) : '(No action)'));
-	
+
 	switch(nextAction){
 		case 'throw':
 			throw arm_obj['error_thrown'];
@@ -537,7 +537,7 @@ Machine.prototype.arm = function(action, timeout) {
 			this.setState(this, 'interlock');
 			return;
 		case 'fire':
-			log.info('Firing automatically since authorization is disabled.'); 
+			log.info('Firing automatically since authorization is disabled.');
 			recordPriorStateAndSetTimer(this, timeout, this.status.state);
 			this.fire(true);
 			return;
@@ -545,8 +545,8 @@ Machine.prototype.arm = function(action, timeout) {
 			recordPriorStateAndSetTimer(this, timeout, this.status.state);
 			this.setState(this, 'armed');
 			this.emit('status', this.status);
-			return;  
-		default: 
+			return;
+		default:
 			throw new Error ('Unknown case');
 			return;
 	}
@@ -1166,6 +1166,3 @@ Machine.prototype._runNextJob = function(force, callback) {
 };
 
 exports.connect = connect;
-
-//Any export below this line is for unit testing purposes only
-exports.private_decideNextAction = decideNextAction;
