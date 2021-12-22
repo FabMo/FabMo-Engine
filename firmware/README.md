@@ -1,2 +1,4 @@
 # /firmware
-Currently, this directory contains the previous 'shipping' G2 firmware file for FabMo - which is called `orig_g2.bin` - and it includes the most recent 'development' version of the G2 firmware named with version tag as well as one simply labled `g2.bin` (eventually for auto install/update).
+This directory contains the 'shipping' G2 firmware file for FabMo, g2.bin. It is the most recent at the time of this issue of FabMo.
+
+The name of the accompanying .txt file is the full version name and the file contains 'build' information.
