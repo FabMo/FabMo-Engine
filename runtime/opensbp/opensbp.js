@@ -955,17 +955,16 @@ SBPRuntime.prototype._end = function(error) {
         this.resumeAllowed=false;
         this.machine.restoreDriverState(function(err, result) {
             this.resumeAllowed = true;
-            // if(this.machine.status.job) {
-            //     this.machine.status.job.finish(function(err, job) {
-            //         this.machine.status.job=null;
-            //         cleanup(error);
-            //         this.machine.setState(this, 'idle');
-            //     }.bind(this));
-            // } else {
-            console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            if(this.machine.status.job) {
+                this.machine.status.job.finish(function(err, job) {
+                    this.machine.status.job=null;
+                    cleanup(error);
+                    this.machine.setState(this, 'idle');
+                }.bind(this));
+            } else {
             cleanup(error);
             this.machine.setState(this, 'idle');
-            //}
+            }
         }.bind(this));
     } else {
         cleanup(error);
