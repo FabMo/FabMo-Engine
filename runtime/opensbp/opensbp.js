@@ -952,7 +952,7 @@ SBPRuntime.prototype._end = function(error) {
     }.bind(this);
     //TODO: Is all this needed here? Do we need to reset state? Can this be done without nested callbacks?
     if(this.machine) {
-        this.resumeAllowed=false;
+        this.resumeAllowed=false
         this.machine.restoreDriverState(function(err, result) {
             this.resumeAllowed = true;
             if(this.machine.status.job) {
@@ -962,8 +962,8 @@ SBPRuntime.prototype._end = function(error) {
                     this.machine.setState(this, 'idle');
                 }.bind(this));
             } else {
-            cleanup(error);
-            this.machine.setState(this, 'idle');
+                cleanup(error);
+                this.machine.setState(this, 'idle');
             }
         }.bind(this));
     } else {
