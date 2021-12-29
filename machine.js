@@ -19,6 +19,7 @@
  *
  * The machine model is a singleton.  There is only ever one of them, which is instantiated by the connect() method.
  */
+/*jshint esversion: 6 */
 var g2 = require('./g2');
 var util = require('util');
 var events = require('events');
@@ -410,99 +411,144 @@ Machine.prototype.restoreDriverState = function(callback) {
 	}.bind(this));
 }
 
-// "Arm" the machine with the specified action. The armed state is abandoned after the timeout expires.  
-//   action - The action to execute when fire() is called.  Can be null. 
+//This is a decision making function for the arm function. It tells arm the next action to fire.
+//If machine object properties are influenced, they are stored in the result_arm_object and
+//returned to the arm function along with the next action. if an error should be thrown the error
+// is placed in the result_obj and the next action is set to 'throw'.
+// Note parameters that are simply read and modified as part of the decision making are suffixed with "_in"
+//      parameters that are returned with new values to be used by the caller are suffixed with "_io"
+function decideNextAction(require_auth_in, current_state_in, driver_status_interlock_in, interlock_required_io, interlock_action_io, current_action_io, bypass_in){
+	let result_arm_obj = {'interlock_required':       null,
+						  'interlock_action':         null,
+						  'current_action':           null,
+						  'next_action':              null,
+						  'error_thrown':             null}
+	switch(current_state_in) {
+		case 'idle':
+			result_arm_obj['interlock_action'] = current_action_io;
+			break;
+		case 'interlock':
+			require_auth_in = false;
+			result_arm_obj['current_action'] = interlock_action_io || current_action_io;
+			break;
+		case 'manual':
+			if(current_action_io == null || (current_action_io.type == 'runtimeCode' && current_action_io.payload.name == 'manual')) {
+				break;
+			}
+			result_arm_obj['error_thrown'] = new Error('Cannot arm machine for ' + current_action_io.type + 'from the manual state');
+			break;
+		case 'paused':
+		case 'stopped':
+			if(current_action_io.type != 'resume') {
+				result_arm_obj['error_thrown'] = new Error('Cannot arm the machine for ' + current_action_io.type + ' when ' + current_state_in);
+			}
+			break;
+		default:
+			result_arm_obj['error_thrown'] = new Error('Cannot arm the machine from the ' + current_state_in + ' state.');
+			break;
+	}
+
+	if(current_action_io && current_action_io.payload && current_action_io.payload.name === 'manual' || bypass_in) {
+		result_arm_obj['interlock_required'] = false;
+	}
+
+	// Record correct action to take, start with cases that abort action
+	if(result_arm_obj['error_thrown']){
+		result_arm_obj['next_action'] = 'throw';
+		return result_arm_obj;
+	}
+	if(result_arm_obj['current_action'] && interlock_required_io && driver_status_interlock_in){
+		result_arm_obj['next_action'] = 'abort_due_to_interlock';
+		return result_arm_obj;
+	}
+
+	// Now we decide what the next action should be if we haven't already aborted for some reason
+	// need to test if for interlock state
+
+		if(current_action_io && current_action_io.payload && current_action_io.payload.name === 'manual'){
+		var cmd = current_action_io.payload.code.cmd;
+		if( cmd == 'set'  ||
+			cmd == 'exit' ||
+			cmd == 'start'||
+			cmd == 'fixed'||
+			cmd == 'stop' ||
+			cmd == 'goto' ){
+			result_arm_obj['next_action'] = 'fire';
+			return result_arm_obj;
+		}
+	}
+	if(result_arm_obj['next_action'] == 'abort_due_to_interlock'){
+		return result_arm_obj;
+	}
+	if(require_auth_in) {
+		result_arm_obj['next_action'] = 'set_state_and_emit';
+	} else {
+		result_arm_obj['next_action'] = 'fire';
+	}
+	return result_arm_obj;
+}
+
+//This function sets the timeout and records the state we were in before arming.
+//That way we can fall back to it if the timer runs out.
+function recordPriorStateAndSetTimer(thisMachine, armTimeout, status){
+	if(thisMachine._armTimer) {
+		clearTimeout(thisMachine._armTimer);
+	}
+
+	thisMachine._armTimer = setTimeout(function() {
+		log.info('Arm timeout (' + armTimeout + 's) expired.');
+		thisMachine.disarm();
+	}.bind(thisMachine), armTimeout*1000);
+
+	// The info object contains any dialogs that are displayed in the dash.
+	delete thisMachine.status.info;
+	thisMachine.preArmedInfo = null;
+	// we may need to return to the prior state if the timer pops to disarm.
+	thisMachine.preArmedState = status;
+}
+
+// "Arm" the machine with the specified action. The armed state is abandoned after the timeout expires.
+//   action - The action to execute when fire() is called.  Can be null.
 //            If null, the action will be to "authorize" the tool for subsequent actions for the authorization
 //            period which is specified in the settings.
 //   timeout - The number of seconds that the system should remain armed
 Machine.prototype.arm = function(action, timeout) {
-
 	// It's a real finesse job to get authorize to play nice with interlock, etc.
 	var requireAuth = config.machine.get('auth_required');
-	switch(this.status.state) {
-		case 'idle':
-			this.interlock_action = action;
-		break;
-		case 'interlock':
-			requireAuth = false;
-			action = this.interlock_action || action;
-		break;
-		case 'manual':
-			if(action == null || (action.type == 'runtimeCode' && action.payload.name == 'manual')) {
-				break;
-			}
-			throw new Error('Cannot arm machine for ' + action.type + 'from the manual state')
-			break;
-		case 'paused':
-		case 'stopped':
-			if(action.type != 'resume') {
-				throw new Error('Cannot arm the machine for ' + action.type + ' when ' + this.status.state);
-			}
-			break;
-		default:
-		throw new Error("Cannot arm the machine from the " + this.status.state + " state.");
-		break;
-	}
-
-	// The info object contains any dialogs that are displayed in the dash.
-	delete this.status.info
-
-	// Set the action to be executed when fire() is called
-	this.action = action;
-
-	// Check to see if interlock is required
 	var interlockRequired = config.machine.get('interlock_required');
 	var interlockInput = 'in' + config.machine.get('interlock_input');
-	if(this.action && this.action.payload && this.action.payload.name === 'manual' || interlockBypass) {
-		interlockRequired = false;
-	}
+	var nextAction = null;
 
-	// Refuse the action if the interlock is required and tripped
-	if(this.action) {
-		if(interlockRequired && this.driver.status[interlockInput]) {
-			this.setState(this, 'interlock')
-			return;			
-		}
-	} 
+	let arm_obj = decideNextAction(requireAuth, this.status.state, this.driver.status[interlockInput], interlockRequired, this.interlock_action, action, interlockBypass);
+	// Implement side-effects that the result obj has returned so state is set correctly:
+		if(arm_obj['interlock_required'])         {interlockRequired     = arm_obj['interlock_required']}
+		if(arm_obj['interlock_action'])           {this.interlock_action = arm_obj['interlock_action']};
+		if(arm_obj['current_action'])             {action                = arm_obj['current_action']};
+		if(arm_obj['next_action'])				  {nextAction            = arm_obj['next_action']};
 
-	// Otherwise, arm the machine and set the timer to the provided value
-	log.info("Arming the machine" + (action ? (' for ' + action.type) : '(No action)'));
-	//log.error(new Error())
-	if(this._armTimer) { clearTimeout(this._armTimer);}
-	this._armTimer = setTimeout(function() {
-		log.info('Arm timeout (' + timeout + 's) expired.');
-		this.disarm();
-	}.bind(this), timeout*1000);
+	this.action = action;
+	log.info('Arming the machine' + (action ? (' for ' + action.type) : '(No action)'));
 
-	// Record the state we were in before arming, so we can fall back to it if the timer runs out
-	this.preArmedState = this.status.state;
-	// TODO - we trashed this info above - worth looking at why this is here
-	this.preArmedInfo = this.status.info;
-
-	// Actions related to the manual state get fired immediately
-	if(action.payload)  {
-		if(action.payload.name === "manual"){
-			var cmd = action.payload.code.cmd;
-			switch(cmd) {
-				case 'set':
-				case 'exit':
-				case 'start':
-				case 'fixed':
-				case 'stop':
-				case 'goto':
-					this.fire(true);
-					return;
-					break;
-			}
-		}
-	}
-
-	if(!requireAuth) {
-		log.info("Firing automatically since authorization is disabled.");
-		this.fire(true);
-	} else {
-		this.setState(this, 'armed');
-		this.emit('status', this.status);
+	switch(nextAction){
+		case 'throw':
+			throw arm_obj['error_thrown'];
+			return;
+		case 'abort_due_to_interlock':
+			this.setState(this, 'interlock');
+			return;
+		case 'fire':
+			log.info('Firing automatically since authorization is disabled.');
+			recordPriorStateAndSetTimer(this, timeout, this.status.state);
+			this.fire(true);
+			return;
+		case 'set_state_and_emit':
+			recordPriorStateAndSetTimer(this, timeout, this.status.state);
+			this.setState(this, 'armed');
+			this.emit('status', this.status);
+			return;
+		default:
+			throw new Error ('Unknown case');
+			return;
 	}
 }
 
