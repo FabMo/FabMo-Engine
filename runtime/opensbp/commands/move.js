@@ -39,7 +39,6 @@ exports.MZ = function(args) {
 	var feedrate = this.movespeed_z * 60;
 	this.cmd_posz =  z;
 	this.emit_move('G1',{"Z":z,'F':feedrate});
-	
 };
 
 // Move A axis
