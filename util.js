@@ -585,9 +585,135 @@ var countLineNumbers = function(filename, callback) {
       });
 }
 
+var addTimerParam = function(timer, params={}) {
+    params['timer'] = timer;
+    params['message'] = "Pause " + params['timer'] + " Seconds."
+    return params;
+}
+
+
+var addMessageParam = function(message, params={}) {
+    params['message'] = message;
+    return params;
+}
+
+var addInputParam = function(input_var, params={}) {
+    params['input'] = {'name': input_var.expr, 'type': input_var.type};
+    return params;
+}
+
+var addOkParam = function(ok, params={}) {
+    if (!params.hasOwnProperty('custom')) {
+        params['custom'] = {};
+    }
+    params.custom['ok'] = {
+        'text': ok['text'],
+        'func': ok['func']
+    }
+    return params;
+}
+
+var addCancelParam = function(cancel, params={}) {
+    if (!params.hasOwnProperty('custom')) {
+        params['custom'] = {};
+    }
+    params.custom['cancel'] = {
+        'text': cancel['text'],
+        'func': cancel['func']
+    }
+    return params;
+}
+
+var addTitleParam = function(title, params={}) {
+    if (!params.hasOwnProperty('custom')) {
+        params['custom'] = {};
+    }
+    params.custom['title'] = title;
+    return params;
+}
+
+var addDetailParam = function(detail, params={}) {
+    if (!params.hasOwnProperty('custom')) {
+        params['custom'] = {};
+    }
+    params.custom['detail'] = detail;
+    return params;
+}
+
+var addNoButtonParam = function(noButton, params={}) {
+    if (!params.hasOwnProperty('custom')) {
+        params['custom'] = {};
+    }
+    params.custom['noButton'] = noButton;
+    return params;
+}
+
+// Function packageModalParams(<new parameters>, <current info object>)
+// This function accepts a set of optional new parameters and optional current status['info'] object ready for send to front end.
+// If called without arguments a basic info object with 'message': 'Paused.' will be created.
+// Current functionality is built around use for OpenSBP Pause display on the client but can see expanded use.
+// Current Info Object should be the output of a prior execution of this function or the info section of a status update object prior to transmission.
+// New Parameters is an object with one or more of the available customization parameters defined as below:
+//     timer:  INT Sets Timer param (used to determine if modal should display) and message text to display timer length.
+//         NOTE: if Timer is included only TIMER and Message params will be set. Timer is intended for timed pause and should not be used in conjunction with other customizations.
+//     message: STRING sets the message to be displayed inthe modal to the provided string.
+//     input: FABMO VARIABLE OBJECT object with name and type properties defining a variable to be provided by the user and set to proviided value on resume.
+//     okText: STRING sets the text on the green "ok" button on modal.
+//         NOTE: Defaults to "ok" if set to Falsy value green "ok" button will not display.
+//     okFunc: STRING sets the onclick action for the green "ok" button on modal.
+//         NOTE: To set okFunc okText MUST be defined as well.  Accepts 'resume' or 'quit' other text will result in the button closing modal with no further action.
+//     cancelText: STRING sets the text on the red "cancel" button on modal.
+//         NOTE: Defaults to "cancel" if set to Falsy value red "cancel" button will not display.
+//     cancelFunc: STRING sets the onclick action for the red "cancel" button on modal.
+//         NOTE: To set cancelFunc cancelText MUST be defined as well.  Accepts 'resume' or 'quit' other text will result in the button closing modal with no further action.
+//     detail: STRING HTML String that will be displayed below Message and Input in it's own Div. If ommited nothing is displayed.
+//     title: STRING title of Modal box.  If ommited nothing is displayed.
+//     noButton: BOOLEAN if set to a truthy value will ensure not buttons are displayed on the modal.
+//         NOTE: With No Buttons there is not a way to close the modal.
+// TODO: Implement Image Param?  Image Param is available on modal and parsed by dashboard.showModal() but would require a valid image source provided by this param.
+// TODO: noLogo option can be parsed by dashboard.showModal() but is not implemented by this function, the client status parser, or the modal HTML.
+// TODO: Add packaging for error info on implementation of error handling
+var packageModalParams = function(params={}, modalParams={}) {
+    if (params.hasOwnProperty('timer') && params['timer'] && isANumber(params['timer'])) {
+        return addTimerParam(params['timer']);
+    }
+    if (params.hasOwnProperty('message')) {
+        modalParams = addMessageParam(params['message'], modalParams);
+    } else if (!modalParams.hasOwnProperty('message')){
+        modalParams = addMessageParam("Paused.", modalParams);
+    }
+    if (params.hasOwnProperty('input_var')) {
+        modalParams = addInputParam(params['input_var'], modalParams);
+    }
+    if (params.hasOwnProperty('okText')) {
+        if (params.hasOwnProperty('okFunc')) {
+            modalParams = addOkParam({'text': params['okText'], 'func': params['okFunc']}, modalParams);
+        } else {
+            modalParams = addOkParam({'text': params['okText'], 'func': 'resume'}, modalParams);
+        }
+    }
+    if (params.hasOwnProperty('cancelText')) {
+        if (params.hasOwnProperty('cancelFunc')) {
+            modalParams = addCancelParam({'text': params['cancelText'], 'func': params['cancelFunc']}, modalParams);
+        } else {
+            modalParams = addCancelParam({'text': params['cancelText'], 'func': 'quit'}, modalParams);
+        }
+    }
+    if (params.hasOwnProperty('detail')) {
+        modalParams = addDetailParams(params['detail']);
+    }
+    if (params.hasOwnProperty('title')) {
+        modalParams = addTitleParams(params['title']);
+    }
+    if (params.hasOwnProperty('noButton') && params['noButton']) {
+        modalParams = addNoButtonParams(params['noButton']);
+    }
+    return modalParams
+}
+
 exports.countLineNumbers = countLineNumbers;
 exports.LineNumberer = LineNumberer;
-
+exports.packageModalParams = packageModalParams;
 
 exports.serveStatic = serveStatic;
 exports.getSize = getSize;

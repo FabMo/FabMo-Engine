@@ -10,7 +10,9 @@ var openSBP = require('../opensbp.js');
 exports.SA = function(args, callback) {
 	this.absoluteMode = true;
 	this.emit_gcode("G90");
-	this.emit_gcode("M0"); ////## seems needed for multiple stack-break commands at start 
+	//M0 used to be needed for multiple stack-break commands at start
+	//It does not seem to be needed anymore, leaving comments for documentation
+	//this.emit_gcode("M0");
 	callback();
 };
 
@@ -50,7 +52,9 @@ exports.SK = function(args, callback) {
 exports.SR = function(args, callback) {
 	this.absoluteMode = false;
 	this.emit_gcode("G91");
-	this.emit_gcode("M0"); ////## seems needed for multiple stack-break commands at start 
+	//M0 used to be needed for multiple stack-break commands at start
+	//It does not seem to be needed anymore, leaving comments for documentation
+	//this.emit_gcode("M0");
 	callback();
 };
 

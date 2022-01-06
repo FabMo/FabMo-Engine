@@ -1190,8 +1190,11 @@ SBPRuntime.prototype._execute = function(command, callback) {
         case "pause":
             // PAUSE is somewhat overloaded.  In a perfect world there would be distinct states for pause and feedhold.
             this.pc += 1;
+            log.debug('In pause case')
             var arg = this._eval(command.expr);
+            log.debug(arg)
             var input_var = command.var;
+            log.debug(JSON.stringify(input_var))
             if(util.isANumber(arg)) {
                 // If argument is a number set pause with timer and default message.
                 // In simulation, just don't do anything
@@ -1200,7 +1203,7 @@ SBPRuntime.prototype._execute = function(command, callback) {
                     return true;
                 }
                 this.paused = true;
-                this.machine.setState(this, 'paused', {'message': "Pause " + arg + " Seconds.", 'timer': arg});
+                this.machine.setState(this, 'paused', util.packageModalParams({'timer': arg}));
                 return true;
             } else {
                 // In simulation, just don't do anything
@@ -1217,14 +1220,26 @@ SBPRuntime.prototype._execute = function(command, callback) {
                         message = last_command.comment.join('').trim();
                     }
                 }
-                var params = {'message' : message || "Paused." };
-                if(input_var) {
-                    params['input'] = {'name': input_var.expr, 'type': input_var.type};
+                var modalParams = {};
+                if (message) {
+                    modalParams = util.packageModalParams({'message': message}, modalParams)
                 }
+                // Example of modal customization. Adds input param, sets ok button text to Submit, removes cancel/quit button.
+                // TODO: This is an example of use for the custom modal.  We may wish to re-enable the cancel button s detailed below.
+                if(input_var) {
+                    var inputParams = {
+                        'input_var': input_var,
+                        'okText': 'Submit',
+                        'cancelText': false, // remove or set new text to display cancel/quit button.
+                        'cancelFunc': false  // remove to enable quit job onclick
+                    }
+                    modalParams = util.packageModalParams(inputParams, modalParams)
+                }
+                log.debug(JSON.stringify(modalParams))
                 this.paused = true;
                 //Set driver in paused state
                 this.machine.driver.pause_hold = true;
-                this.machine.setState(this, 'paused', params);
+                this.machine.setState(this, 'paused', modalParams);
                 return true;
             }
             break;
@@ -1810,7 +1825,7 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
                     log.error(err);
                     throw(err);
                 }
-                gcode += (key + v.toFixed(5));
+                gcode += (key + parseFloat(v).toFixed(5));
             }
         }.bind(this));
         this.emit_gcode(gcode);
