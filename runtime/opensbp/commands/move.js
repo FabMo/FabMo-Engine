@@ -17,67 +17,55 @@ exports._A = function (args, callback) {
 // Move X axis
 exports.MX = function(args) {
     var x = args[0];
-	if ( x !== this.cmd_posx ){
-		if(isNaN(x)) { throw( "Invalid MX argument: " + x ); }
-		var feedrate = this.movespeed_xy * 60;
-		this.cmd_posx = x;
-		this.emit_move('G1',{"X":x,'F':feedrate});
-	}
+	if(isNaN(x)) { throw( "Invalid MX argument: " + x ); }
+	var feedrate = this.movespeed_xy * 60;
+	this.cmd_posx = x;
+	this.emit_move('G1',{"X":x,'F':feedrate});
 };
 
 // Move Y axis
 exports.MY = function(args) {
 	var y = args[0];
-	if ( y !== this.cmd_posy ){
-		if(isNaN(y)) { throw( "Invalid MY argument: " + y ); }
-		var feedrate = this.movespeed_xy * 60;
-		this.cmd_posy = y;
-		this.emit_move('G1',{"Y":y,'F':feedrate});
-	}
+	if(isNaN(y)) { throw( "Invalid MY argument: " + y ); }
+	var feedrate = this.movespeed_xy * 60;
+	this.cmd_posy = y;
+	this.emit_move('G1',{"Y":y,'F':feedrate});
 };
 
 // Move Z axis
 exports.MZ = function(args) {
 	var z = args[0];
-	if ( z !== this.cmd_posz ){
-		if(isNaN(z)) { throw( "Invalid MZ argument: " + z ); }
-		var feedrate = this.movespeed_z * 60;
-		this.cmd_posz =  z;
-		this.emit_move('G1',{"Z":z,'F':feedrate});
-	}
+	if(isNaN(z)) { throw( "Invalid MZ argument: " + z ); }
+	var feedrate = this.movespeed_z * 60;
+	this.cmd_posz =  z;
+	this.emit_move('G1',{"Z":z,'F':feedrate});
 };
 
 // Move A axis
 exports.MA = function(args) {
 	var a = args[0];
-	if ( a !== this.cmd_posa ){
-		if(isNaN(a)) { throw( "Invalid MA argument: " + a ); }
-		var feedrate = this.movespeed_a * 60;
-		this.cmd_posa = a;
-		this.emit_move('G1',{"A":a,'F':feedrate});
-	}
+	if(isNaN(a)) { throw( "Invalid MA argument: " + a ); }
+	var feedrate = this.movespeed_a * 60;
+	this.cmd_posa = a;
+	this.emit_move('G1',{"A":a,'F':feedrate});
 };
 
 // Move B axis
 exports.MB = function(args) {
 	var b = args[0];
-	if ( b !== this.cmd_posb ){
-		if(isNaN(b)) { throw( "Invalid MB argument: " + b ); }
-		var feedrate = this.movespeed_b * 60;
-		this.cmd_posb = b;
-		this.emit_move('G1',{"B":b,'F':feedrate});
-	}
+	if(isNaN(b)) { throw( "Invalid MB argument: " + b ); }
+	var feedrate = this.movespeed_b * 60;
+	this.cmd_posb = b;
+	this.emit_move('G1',{"B":b,'F':feedrate});
 };
 
 // Move C axis
 exports.MC = function(args) {
 	var c = args[0];
-	if ( c !== this.cmd_posc ){
-		if(isNaN(c)) { throw( "Invalid MC argument: " + c ); }
-		var feedrate = this.movespeed_c * 60;
-		this.cmd_posc = c;
-		this.emit_move('G1',{"C":c,'F':feedrate});
-	}
+	if(isNaN(c)) { throw( "Invalid MC argument: " + c ); }
+	var feedrate = this.movespeed_c * 60;
+	this.cmd_posc = c;
+	this.emit_move('G1',{"C":c,'F':feedrate});
 };
 
 // Move 2 axes (XY). This is a modal command, any axis location that is left out
