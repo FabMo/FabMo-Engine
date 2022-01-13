@@ -68,7 +68,6 @@ var Engine = function() {
 
 Util.inherits(Engine, events.EventEmitter);
 
-
 /*
  * Configure the engine for the first time.
  * This function is typically called when an engine configuration does not exist.
@@ -77,6 +76,26 @@ Util.inherits(Engine, events.EventEmitter);
  * for different types of machines.
  */
 function EngineConfigFirstTime(callback) {
+
+    // begin callback definitions
+    // *****************************************************************
+        /* note: callback is bound at the time the cb is registered
+         * (err, files) is defined by the api it is registered with  (glob) 
+         */
+        function lcb_darwin_parse_ports_and_configure(callback, err, files) {
+            if(files.length >= 1) {
+                var ports = {
+                    'control_port_osx' : files[0],
+                    'data_port_osx' : files[1] || files[0]
+                }
+                config.engine.update(ports, callback);
+            } else {
+                callback();
+            }
+        }
+    // *****************************************************************
+    //end callback definitions
+
     if(PLATFORM) {
         log.info('Setting platform to ' + PLATFORM)
         config.engine.set('platform', PLATFORM);
@@ -88,25 +107,11 @@ function EngineConfigFirstTime(callback) {
                         'control_port_linux' : '/dev/ttyACM0',
                         'data_port_linux' : '/dev/ttyACM0'
                     }
-                    config.engine.update(ports, function() {
-                        callback();
-                    });
+                    config.engine.update(ports, callback);
             break;
         case 'darwin':
             config.engine.set('server_port', 9876);
-            glob.glob('/dev/cu.usbmodem*', function(err, files) {
-                if(files.length >= 1) {
-                    var ports = {
-                        'control_port_osx' : files[0],
-                        'data_port_osx' : files[1] || files[0]
-                    }
-                    config.engine.update(ports, function() {
-                        callback();
-                    });
-                } else {
-                    callback();
-                }
-            });
+            glob.glob('/dev/cu.usbmodem*', lcb_darwin_parse_ports_and_configure.bind(callback));
         break;
 
         default:
@@ -144,8 +149,40 @@ Engine.prototype.stop = function(reason, callback) {
     callback(null);
 };
 
-/*
- * Get the version of this engine.
+/* This turns details of the file into a version number.
+ * this and callback are bound at the time the function is registered it readFile
+ * (err,data) is defined by the readFile api for callbacks.
+ */
+function lcb_doshell_git_describe_readFile_to_version(callback, err, data) {
+    if(err) {
+        log.debug(" ... no version file ... using git and dev info")
+        this.version.type = 'dev';
+        this.version.number = this.version.number + "-dev";
+        var random = Math.floor(Math.random() * (99999 - 10000)) + 10000;
+        log.info("Adding random prefix to dev engine version");
+        this.version.number = random.toString() + "-" + this.version.number
+        return callback(null, this.version);
+    }
+    try {
+        log.debug(" ... found json version file ... this is a RELEASE VERSION")
+        data = JSON.parse(data);
+        if(data.number) {
+            this.version.number = data.number;
+            this.version.type = 'release';
+        }
+    } catch(e) {
+        log.debug(" ... can't parse version file!")
+        this.version.number = this.version.number +"-dev-fault";
+        this.version.type = 'dev';
+        var random = Math.floor(Math.random() * (99999 - 10000)) + 10000;
+        log.info("Adding random prefix to dev engine version");
+        this.version.number = random.toString() + "-" + this.version.number
+    } finally {
+        callback(null, this.version);
+    }
+}
+
+/* This callback is used wth util.doshell with git describe to get version info
  * Honor semver numbering:
  * For working dev version tag in branch from most recent; use ODD numbers just for redundancy
  * For production builds, tag with the next EVEN number in MASTER. 
@@ -157,57 +194,36 @@ Engine.prototype.stop = function(reason, callback) {
  * If that file exists and can be parsed, return a version object that reflects its contents.
  * If it does not exist, use git (if available on the system) to read out working version information instead
  * (See: example-version.json)
+ * this and callback are bound to this function when it is registered on doshell
+ * (data) is defined by the doshell api for callbacks.
+ */
+function lcb_doshell_git_describe_to_version(callback, data) {
+	this.version = {};
+	this.version.number = (data || "").trim();
+	// this.version.hash = (data || "").trim();
+	this.version.debug = ('debug' in argv);
+	// then see if we have an official release version# in json file
+	// see: version-example.json
+	fs.readFile('version.json', 'utf8', lcb_doshell_git_describe_readFile_to_version.bind(this,callback))
+}
+
+/*
+ * Get the version of this engine.
+ * callback will be invoked with callback(null, version) (so make your signature & finding appropriate
  */
 Engine.prototype.getVersion = function(callback) {
     // grab the version and abbreviated SHA (if one)
-    util.doshell('git describe', function(data) {
-        this.version = {};
-        this.version.number = (data || "").trim();
-        // this.version.hash = (data || "").trim();
-        this.version.debug = ('debug' in argv);
-        // then see if we have an official release version# in json file
-        // see: version-example.json
-        fs.readFile('version.json', 'utf8', function(err, data) {
-            if(err) {
-                log.debug(" ... no version file ... using git and dev info")
-                this.version.type = 'dev';
-                this.version.number = this.version.number + "-dev";
-                var random = Math.floor(Math.random() * (99999 - 10000)) + 10000;
-                log.info("Adding random prefix to dev engine version");
-                this.version.number = random.toString() + "-" + this.version.number
-                return callback(null, this.version);
-            }
-            try {
-                log.debug(" ... found json version file ... this is a RELEASE VERSION")
-                data = JSON.parse(data);
-                if(data.number) {
-                    this.version.number = data.number;
-                    this.version.type = 'release';
-                }
-            } catch(e) {
-                log.debug(" ... can't parse version file!")
-                this.version.number = this.version.number +"-dev-fault";
-                this.version.type = 'dev';
-                var random = Math.floor(Math.random() * (99999 - 10000)) + 10000;
-                log.info("Adding random prefix to dev engine version");
-                this.version.number = random.toString() + "-" + this.version.number
-            } finally {
-                callback(null, this.version);
-            }
-        }.bind(this))
-    }.bind(this));
+    util.doshell('git describe', lcb_doshell_git_describe_to_version.bind(this, callback));
 }
 
 
 /*
  * Return "info" about this engine, which currently is just version data for the engine and the firmware
  */
-Engine.prototype.getInfo = function(callback) {
-    callback(null, {
-        firmware : this.firmware,
-        version : this.version
-    });
+Engine.prototype.getInfo = function() {
+	return {"firmware":this.firmware, "version":this.version};
 }
+
 
 // Set the online flag (indicates whether the engine is online) to the provided value
 //   online - true to indicate that the engine can see the network.  False otherwise.
@@ -273,9 +289,7 @@ Engine.prototype.start = function(callback) {
         // Load users.  See config/user_config.js for what this entails.
         function load_users(callback) {
             log.info('Loading users....')
-            config.configureUser(function(){
-                callback();
-            });
+            config.configureUser(callback);
         },
 
         // Read the selected profile from the engine config.
@@ -431,7 +445,8 @@ Engine.prototype.start = function(callback) {
                 callback(null);
             }
         }.bind(this),
-
+        // ******************************************************************************
+		// appears never to be called:
         // Retrieve the firmware version from G2.  This is done only once, and the value
         // is cached as a property of the Engine object.
         function get_g2_version(callback) {
