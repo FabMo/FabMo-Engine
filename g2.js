@@ -746,18 +746,6 @@ G2.prototype.quit = function() {
 	});
 }
 
-// G2.prototype.endCycle = function() {
-// 	//TODO:  Stub for EOF cycle end should send M30?
-// 	if(this.quit_pending) {
-// 		log.warn("Not ending cycle because a quit is already pending.");
-// 		return;
-// 	}
-// 	this.gcode_queue.enqueue('M30\n');
-// 	this.sendMore();
-// 	// this._write('M30\n');
-// 	return;
-// }
-
 
 // When the gcode runtime asks that an M30 be sent, send it. This is pulled out from the
 //  normal queuing and writing path because of a timing issue with the g2core that needs to be
