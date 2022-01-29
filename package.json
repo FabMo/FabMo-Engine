@@ -62,7 +62,8 @@
     "grunt-available-tasks": "^0.6.3",
     "grunt-gh-pages": "0.10.0",
     "grunt-groc": "0.6.0",
-    "grunt-open": "^0.2.4"
+    "grunt-open": "^0.2.4",
+    "jest": "^27.4.7"
   },
   "engine": "node 0.10.44",
   "apidoc": {
@@ -77,6 +78,7 @@
     "webpack": "node_modules/.bin/webpack",
     "postinstall": "node_modules/.bin/webpack -p",
     "prod": "node_modules/.bin/webpack -p",
-    "dev": "node_modules/.bin/webpack && node server.js --debug "
+    "dev": "node_modules/.bin/webpack && node server.js --debug ",
+    "test": "jest --verbose"
   }
 }
