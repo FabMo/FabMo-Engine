@@ -317,15 +317,15 @@ require("../css/toastr.min.css");
                                 title: 'An Error Occurred!',
                                 message: status.info.error,
                                 detail: detailHTML,
-                                cancelText: status.state === 'dead' ? undefined : 'Quit',
-                                cancel: status.state === 'dead' ? undefined : function() {
-                                    dashboard.engine.quit(function(err, result) {
-                                                            if (err) {
-                                                              console.log("ERRROR: " + err);
-                                                            }
-                                                        }
-                                                    );
-                                }
+                                cancelText: 'Close'//status.state === 'dead' ? undefined : 'Quit',
+                                // cancel: status.state === 'dead' ? undefined : function() {
+                                //     dashboard.engine.quit(function(err, result) {
+                                //                             if (err) {
+                                //                               console.log("ERRROR: " + err);
+                                //                             }
+                                //                         }
+                                //                     );
+                                // }
                             });
                             modalIsShown = true;
                             dashboard.handlers.hideFooter();
