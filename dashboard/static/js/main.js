@@ -317,7 +317,7 @@ require("../css/toastr.min.css");
                                 title: 'An Error Occurred!',
                                 message: status.info.error,
                                 detail: detailHTML,
-                                cancelText: 'Close'//status.state === 'dead' ? undefined : 'Quit',
+                                cancelText: 'Close',//status.state === 'dead' ? undefined : 'Quit',
                                 cancel: function() {
                                     modalIsShown = false;
                                 }
