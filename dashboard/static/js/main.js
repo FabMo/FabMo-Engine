@@ -185,9 +185,10 @@ require("../css/toastr.min.css");
                         keyboard.setEnabled(false);
                     }
 
-                    if ((status.state != "armed" && last_state_seen === "armed") || 
+                    if ((status.state != "armed" && last_state_seen === "armed") ||
                         (status.state != "paused" && last_state_seen === "paused") ||
-                        (status.state != "interlock" && last_state_seen === "interlock")) {
+                        (status.state != "interlock" && last_state_seen === "interlock") ||
+                        (status.state != "stopped" && last_state_seen === "stopped")) {
                         dashboard.hideModal();
                         modalIsShown = false;
                     }
