@@ -185,10 +185,9 @@ require("../css/toastr.min.css");
                         keyboard.setEnabled(false);
                     }
 
-                    if ((status.state != "armed" && last_state_seen === "armed") ||
+                    if ((status.state != "armed" && last_state_seen === "armed") || 
                         (status.state != "paused" && last_state_seen === "paused") ||
-                        (status.state != "interlock" && last_state_seen === "interlock") ||
-                        (status.state != "stopped" && last_state_seen === "stopped")) {
+                        (status.state != "interlock" && last_state_seen === "interlock")) {
                         dashboard.hideModal();
                         modalIsShown = false;
                     }
@@ -319,14 +318,9 @@ require("../css/toastr.min.css");
                                 message: status.info.error,
                                 detail: detailHTML,
                                 cancelText: 'Close'//status.state === 'dead' ? undefined : 'Quit',
-                                // cancel: status.state === 'dead' ? undefined : function() {
-                                //     dashboard.engine.quit(function(err, result) {
-                                //                             if (err) {
-                                //                               console.log("ERRROR: " + err);
-                                //                             }
-                                //                         }
-                                //                     );
-                                // }
+                                cancel: function() {
+                                    modalIsShown = false;
+                                }
                             });
                             modalIsShown = true;
                             dashboard.handlers.hideFooter();
