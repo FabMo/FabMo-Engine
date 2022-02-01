@@ -287,7 +287,9 @@ require("../css/toastr.min.css");
                                                 modalOptions.cancel = cancelFunction
                                                 break;
                                             default:
-                                                modalOptions.cancel = false
+                                                modalOptions.cancel = function() {
+                                                                        modalIsShown = false;
+                                                                    }
                                         }
                                     }
                                     if (status.info.custom['detail']) {
@@ -318,10 +320,9 @@ require("../css/toastr.min.css");
                                 message: status.info.error,
                                 detail: detailHTML,
                                 cancelText: 'Close',
-                                cancel: false
-                                // cancel: function() {
-                                //     modalIsShown = false;
-                                // }
+                                cancel: function() {
+                                    modalIsShown = false;
+                                }
                             });
                             modalIsShown = true;
                             dashboard.handlers.hideFooter();

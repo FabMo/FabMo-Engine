@@ -1058,7 +1058,6 @@ define(function(require) {
       $('.modalCancel').on('click', function() {
         $('.newModal').hide();
         $('.modalDim').hide();
-        modalIsShown = false;
       });
     }
 
