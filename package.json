@@ -90,7 +90,6 @@
     "start": "node server.js",
     "debug": "node server.js --debug ",
     "webpack": "node_modules/.bin/webpack",
-<<<<<<< HEAD
     "postinstall": "node_modules/.bin/webpack --mode=development",
     "prod": "node_modules/.bin/webpack --mode=development",
     "dev": "npm run stopdaemon && npm run build && npm run debugserver",
@@ -102,13 +101,7 @@
     "build:prod": "webpack --mode=development",
     "watch": "webpack --watch",
     "serve": "webpack serve"
+    "test": "jest --verbose"
   },
   "version": "1.0.0"
-=======
-    "postinstall": "node_modules/.bin/webpack -p",
-    "prod": "node_modules/.bin/webpack -p",
-    "dev": "node_modules/.bin/webpack && node server.js --debug ",
-    "test": "jest --verbose"
-  }
->>>>>>> master
 }
