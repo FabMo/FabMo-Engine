@@ -918,6 +918,9 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 			case 'dead':
 				log.error('G2 is dead!');
 				break;
+			case 'stopped':
+				log.debug('Entering stopped state for error report');
+				break;
 			default:
 				break;
 		}
@@ -1170,3 +1173,6 @@ Machine.prototype._runNextJob = function(force, callback) {
 };
 
 exports.connect = connect;
+
+//Any export below this line is for unit testing purposes only
+exports.private_decideNextAction = decideNextAction;
