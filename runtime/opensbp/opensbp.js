@@ -264,7 +264,7 @@ SBPRuntime.prototype.runString = function(s) {
         try {
             this.program = parser.parse(s);
         } catch(e) {
-            return this._end(e.message + " (Line " + e.line + ")");
+            return this._abort(e.message + " (Line " + e.line + ")");
         } finally {
             log.tock('Parse file')
         }
@@ -299,7 +299,7 @@ SBPRuntime.prototype.runString = function(s) {
     } catch(e) {
         // A failure at any stage (except parsing) will land us here 
         log.error(e);
-        return this._end(e.message);
+        return this._abort(e.message);
     }
 };
 
@@ -369,12 +369,12 @@ SBPRuntime.prototype.runStream = function(text_stream) {
 
         } catch(e) {
             log.error(e)
-            return this._end(e.message + " (Line " + e.line + ")");
+            return this._abort(e.message + " (Line " + e.line + ")");
         }
         return st;
     } catch(e) {
         log.error(e);
-        return this._end(e.message + " (Line " + e.line + ")");
+        return this._abort(e.message + " (Line " + e.line + ")");
     }
 }
 
@@ -516,6 +516,7 @@ SBPRuntime.prototype._onG2Status = function(status) {
 
     // If we die then we are dead.
     // The first rule of tautology club is the first rule of tautology club.
+    //TODO: Should Interlock be treated as Dead?
     switch(status.stat) {
         case this.driver.STAT_INTERLOCK:
         case this.driver.STAT_SHUTDOWN:
@@ -525,6 +526,7 @@ SBPRuntime.prototype._onG2Status = function(status) {
     }
 
     // Update the machine of the driver status
+    // TODO: separation of concerns dictates this should be part of an update method on the machine.
     for (var key in this.machine.status) {
         if(key in status) {
             this.machine.status[key] = status[key];
@@ -539,6 +541,7 @@ SBPRuntime.prototype._onG2Status = function(status) {
         var keys = ['posx','posy','posz','posa','posb','posc'];
     }
 
+    // TODO: separation of concerns dictates this should be part of an update method on the machine.
     this.machine.emit('status',this.machine.status);
 };
 
@@ -733,10 +736,11 @@ SBPRuntime.prototype._run = function() {
                     this.gcodesPending = false;
                     this._executeNext();
                 }
-            break;
+                break;
             case this.driver.STAT_HOLDING:
+                // TODO: Possibly set this.paused = true to catch pause state from mechanical pause
                 this.machine.setState(this, 'paused');
-            break;
+                break;
             case this.driver.STAT_PROBE:
             case this.driver.STAT_RUNNING:
                 if(!this.inManualMode) {
@@ -746,12 +750,17 @@ SBPRuntime.prototype._run = function() {
                             this.pendingFeedhold = false;
                             this.driver.feedHold();
                             this.machine.status.inFeedHold = true;
-                        }               
+                        }
                     }
-                } 
-            break;
+                }
+                break;
+            // TODO: Can we rely on STAT_END only showing up when ending a cycle and always showing up when ending a cycle.
+            //      Enabaling this appears to lead to extra and pre-mature attempts to activate _end().
+            // case this.driver.STAT_END:
+            //     this._end();
+            //     break;
             default:
-                //TODO: Add error handling or logging to this case?                
+                log.warn('OpenSBP Runtime Unhandled Stat: ' + stat);
         }
     }
 
@@ -768,8 +777,9 @@ SBPRuntime.prototype._run = function() {
             .on('stat', onStat.bind(this))
             .on('status', this._onG2Status.bind(this))
             .then(function() {
+                // This ensures we run _end on driver stream end
                 this.file_stack = []
-                this._end(this.pending_error);
+                this._end();
             }.bind(this));
         }
 
@@ -799,9 +809,10 @@ SBPRuntime.prototype._executeNext = function() {
         return;
     }
 
-    // TODO: pending_error is actually set by _abort, so this is possibly called twice
-    if(this.pending_error) {
-        return this._abort(this.pending_error);
+    // do not continue execution if there is a pending error
+    if(this.pending_error || this.end_message) {
+        log.warn("got a _execute next with pending Error or in Fail condition");
+        return;
     }
 
     // If _executeNext is called but we're paused, stay paused. (We'll call _executeNext again on resume)
@@ -838,22 +849,20 @@ SBPRuntime.prototype._executeNext = function() {
         } else {
             log.debug("This is not a nested end.  No stack.");
             // This ends the machining cycle
-            this.emit_gcode('M30');
 
             // If no driver, we just go straight to the _end() (as in simulation)
             if(!this.driver) {
                 this._end();
             } else {
-                // prime so that M30 actually gets sent
-                this.prime();
+                // EOF send M30.
+                this.emit_gcode('M30');
             }
             return;
         }
     }
 
-    // Below here we're NOT at the end of the program, 
+    // Below here we're NOT at the end of the program,
     // so it's time to actually execute the next instruction
-    
     // Pull the current line of the program from the list
     var line = this.program[this.pc];
     var breaksTheStack = this._breaksStack(line);
@@ -878,6 +887,8 @@ SBPRuntime.prototype._executeNext = function() {
                 this._execute(line, this._executeNext.bind(this));
                 return;
             } catch(e) {
+                // log error and trigger abort
+                log.error(e)
                 return this._abort(e);
             }
         }
@@ -891,16 +902,9 @@ SBPRuntime.prototype._executeNext = function() {
             // Keep on executing!  No reason not to.
             setImmediate(this._executeNext.bind(this));
         } catch(e) {
-            // A stack breaker that caused an error will trigger an abort of the program
+            // log error and trigger abort
             log.error(e)
-            if(this.driver.status.stat != this.driver.STAT_STOP) {
-                // There's been an error, but there's still stuff executing
-                // pend a program ending, which will execute when the motion controller stops
-                return this._abort(e);
-            } else {
-                // We're stopped and there's been an error, just end the program.
-                return this._end(e);
-            }
+            return this._abort(e);
         }
     }
 };
@@ -917,7 +921,7 @@ SBPRuntime.prototype.prime = function() {
 //   error - The error message
 SBPRuntime.prototype._abort = function(error) {
     this.pending_error = error;
-    this.stream.end();
+    this.driver.quit();
 }
 
 
@@ -925,10 +929,22 @@ SBPRuntime.prototype._abort = function(error) {
 // This restores the state of both the runtime and the driver, and sets the machine state appropriately
 //   error - (optional) If the program is ending due to an error, this is it.  Can be string or error object.
 SBPRuntime.prototype._end = function(error) {
+    // No Error populate with any pending error
+    if (!error && this.pending_error) {
+        error = this.pending_error;
+    }
     // Normalize the error and ending state
-    error = error ? error.message || error : null;
-    if(!error) {
-        error = this.end_message || null;
+    let error_msg = null;
+    if (error) {
+        if (error.hasOwnProperty('message')) {
+            error_msg = error.message;
+        } else {
+            error_msg = error;
+        }
+    }
+    // Fail command message
+    if(!error_msg && this.end_message) {
+        error_msg = this.end_message;
     }
 
     log.debug("Calling the non-nested (toplevel) end");
@@ -947,7 +963,8 @@ SBPRuntime.prototype._end = function(error) {
 	    // Clear the internal state of the runtime (restore it to its initial state)
     	//TODO: Refactor to new reset function that both init and _end can call? Break out what needs to be initialized vs. reset.
         this.ok_to_disconnect = true; ////## removed in disconnect
-        this.init(); 
+        this.init();
+        //TODO: G2 stream should be closed when this triggers keep as safety?
         this.emit('end', this);
     }.bind(this);
     //TODO: Is all this needed here? Do we need to reset state? Can this be done without nested callbacks?
@@ -1054,7 +1071,6 @@ SBPRuntime.prototype.runCustomCut = function(number, callback) {
 //   command - A single parsed line of OpenSBP code
 
 SBPRuntime.prototype._execute = function(command, callback) {
-
     // Just skip over blank lines, undefined, etc.
     if(!command) {
         this.pc += 1;
@@ -1190,11 +1206,8 @@ SBPRuntime.prototype._execute = function(command, callback) {
         case "pause":
             // PAUSE is somewhat overloaded.  In a perfect world there would be distinct states for pause and feedhold.
             this.pc += 1;
-            log.debug('In pause case')
             var arg = this._eval(command.expr);
-            log.debug(arg)
             var input_var = command.var;
-            log.debug(JSON.stringify(input_var))
             if(util.isANumber(arg)) {
                 // If argument is a number set pause with timer and default message.
                 // In simulation, just don't do anything
@@ -1206,6 +1219,7 @@ SBPRuntime.prototype._execute = function(command, callback) {
                 this.machine.setState(this, 'paused', util.packageModalParams({'timer': arg}));
                 return true;
             } else {
+
                 // In simulation, just don't do anything
                 if(!this.machine) {
                     setImmediate(callback);
@@ -1218,6 +1232,9 @@ SBPRuntime.prototype._execute = function(command, callback) {
                     var last_command = this.program[this.pc-2];
                     if(last_command && last_command.type === 'comment') {
                         message = last_command.comment.join('').trim();
+                    }
+                    if(!message) {
+                        message = "Pause Command No Message."
                     }
                 }
                 var modalParams = {};
@@ -1235,7 +1252,6 @@ SBPRuntime.prototype._execute = function(command, callback) {
                     }
                     modalParams = util.packageModalParams(inputParams, modalParams)
                 }
-                log.debug(JSON.stringify(modalParams))
                 this.paused = true;
                 //Set driver in paused state
                 this.machine.driver.pause_hold = true;
@@ -1922,6 +1938,7 @@ SBPRuntime.prototype.transformation = function(TranPt){
 // Pause the currently running program
 SBPRuntime.prototype.pause = function() {
     // TODO: Pending feedholds appear to be broken and may no longer be desired functionality.
+    // TODO: Should this be handled by g2.js behavior?
     if(this.machine.driver.status.stat == this.machine.driver.STAT_END ||
        this.machine.driver.status.stat == this.machine.driver.STAT_STOP) {
         this.pendingFeedhold = true;
@@ -1934,8 +1951,6 @@ SBPRuntime.prototype.pause = function() {
 // Quit the currently running program
 // If the machine is currently moving it will be stopped immediately and the program abandoned
 SBPRuntime.prototype.quit = function() {
-    // Teardown runtime.
-    this._end();
     // Send Quit to g2.js driver.
     this.driver.quit();
 }

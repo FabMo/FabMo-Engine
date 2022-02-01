@@ -197,7 +197,8 @@ G2.prototype._createCycleContext = function() {
 	var st = new stream.PassThrough();
 	st.setEncoding('utf8');
 	this._streamDone = false;
-	this.lineBuffer = []
+	this.lineBuffer = [];
+	this.flushcallback = null;
 
 	// Handle data coming in on the stream
 	st.on('data', function(chunk) {
@@ -300,7 +301,7 @@ G2.prototype.connect = function(path, callback) {
 ////##    a reset works, but disconnects G2 and requires new manual fabmo start
 ////##		this._write('\x18\n', function() {   ////## try reset not a kill
 ////##		this._write('M30\n', function() {    ////## try end file
-////## Kludging 2 kills seems to allow a restart when g2 stuck	
+////## Kludging 2 kills seems to allow a restart when g2 stuck
 		this._write('\x04\n', function() {});
 		this._write('\x04\n', function() {
 			this.requestStatusReport(function() {
@@ -465,7 +466,7 @@ G2.prototype.clearLastException = function() {
  * This function handles status reports that are returned by the tool.
  * Status reports contain position, velocity, status, input/output data, etc.
  * When they arrive, we update internal state, fire events, etc.
- * 
+ *
  * 0	machine is initializing
  * 1	machine is ready for use
  * 2	machine is in alarm state (shut down)
@@ -653,7 +654,6 @@ G2.prototype.onMessage = function(response) {
 G2.prototype.manualFeedHold = function(callback) {
 
 	this.pause_flag = true;
-
 	this._write('\x04\n');
 }
 
@@ -676,11 +676,13 @@ G2.prototype.feedHold = function(callback) {
 // Clears the queue, this means both the queue of g-codes in the engine to send,
 // and whatever gcodes have been received but not yet executed in the g2 firmware context
 G2.prototype.queueFlush = function(callback) {
+	//TODO: is this the correct way to flush the g2Core queue currently
 	log.debug('Sending FabMo Queue Clear, first!');
 	this.flushcallback = callback;
 	this.lines_to_send = 4;
 	this.gcode_queue.clear();
 	this.command({'clr':null});
+	// TODO: It looks like this kill will go off before the command above is sent in some cases preventing the clr from sending.
 	this._write('\x04\n');
 };
 
@@ -736,6 +738,7 @@ G2.prototype.quit = function() {
 	}
 	// Clear queues then issue kill.
 	this.queueFlush(function() {
+		// TODO: is a kill needed in the callback?
 		this._write('\x04\n');
 		//Finally clear context and _reset primed flag so we're not reliant on getting a stat 4 to clear the context.
 		this.context = null;
