@@ -317,10 +317,11 @@ require("../css/toastr.min.css");
                                 title: 'An Error Occurred!',
                                 message: status.info.error,
                                 detail: detailHTML,
-                                cancelText: 'Close',//status.state === 'dead' ? undefined : 'Quit',
-                                cancel: function() {
-                                    modalIsShown = false;
-                                }
+                                cancelText: 'Close',
+                                cancel: false
+                                // cancel: function() {
+                                //     modalIsShown = false;
+                                // }
                             });
                             modalIsShown = true;
                             dashboard.handlers.hideFooter();
