@@ -1169,3 +1169,6 @@ Machine.prototype._runNextJob = function(force, callback) {
 };
 
 exports.connect = connect;
+
+//Any export below this line is for unit testing purposes only
+exports.private_decideNextAction = decideNextAction;

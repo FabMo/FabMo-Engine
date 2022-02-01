@@ -733,3 +733,9 @@ exports.in2mm = in2mm;
 exports.mm2in = mm2in;
 exports.unitType = unitType;
 exports.diskSync = diskSync;
+
+//For unit testing, anything labeled private is for unit testing only
+exports.private_listify = listify;
+exports.private_mm2in = mm2in;
+exports.private_in2mm = in2mm;
+exports.private_unitType = unitType;
