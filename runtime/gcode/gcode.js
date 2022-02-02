@@ -27,14 +27,17 @@ GCodeRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;
 	this.status_handler =  this._onDriverStatus.bind(this);
+	this.error_handler =  this._onErrorStatus.bind(this);
 	this.status_report = {};
 	this.driver.on('status',this.status_handler);
+	this.driver.on('error',this.error_handler);
 	log.info("Connected G-Code Runtime");
 };
 
 GCodeRuntime.prototype.disconnect = function() {
 	if(this.ok_to_disconnect) {
 		this.driver.removeListener('status', this.status_handler);
+		this.driver.removeListener('error', this.error_handler);
 		log.info("Disconnected G-Code Runtime");
 	} else {
 		throw new Error("Cannot disconnect GCode Runtime")
@@ -90,6 +93,9 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 	this.machine.emit('status',this.machine.status);
 };
 
+GCodeRuntime.prototype._onErrorStatus = function(error) {
+	this._fail(error);
+};
 
 GCodeRuntime.prototype._die = function() {
 	this.machine.status.current_file = null;
@@ -115,7 +121,7 @@ GCodeRuntime.prototype._fail = function(message) {
  		log.error(e);
  	} finally {
 		this.machine.status.job=null;
- 		this.machine.setState(this, 'stopped', {error : message});
+ 		this.machine.setState(this, 'stopped', {error : message[2]});
  	}
 }
 
