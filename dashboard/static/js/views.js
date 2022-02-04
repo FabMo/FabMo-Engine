@@ -32,7 +32,8 @@ define(function(require) {
 		render : function(hard_refresh, callback) {
 			var url = this.model.get('app_url') || "about:blank";
 			var client_container = jQuery(this.el);
-			var src = '<iframe class="app-iframe" id="app-iframe" sandbox="allow-scripts allow-same-origin" allowfullscreen></iframe>'
+////##			var src = '<iframe class="app-iframe" id="app-iframe" sandbox="allow-scripts allow-same-origin" allowfullscreen></iframe>'
+			var src = '<iframe class="app-iframe" id="app-iframe" sandbox="allow-scripts allow-same-origin allow-downloads" allowfullscreen></iframe>'
 			client_container.html(src);
 			this.iframe = $(client_container.children()[0]);
 			if(hard_refresh) {

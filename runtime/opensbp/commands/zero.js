@@ -234,17 +234,24 @@ exports.Z6 = function(args,callback) {
 	}.bind(this));
 };
 
+////## update ZT to cover all axes 2/4/22, will still need to attend to U,V,W
 exports.ZT = function(args, callback) {
 	ztObj = {};
 	ztObj.g55x = 0.0;
 	ztObj.g55y = 0.0;
 	ztObj.g55z = 0.0;
-    this.emit_gcode("G28.3 X0 Y0 Z0");
+	ztObj.g55a = 0.0;
+	ztObj.g55b = 0.0;
+	ztObj.g55c = 0.0;
+    this.emit_gcode("G28.3 X0 Y0 Z0 A0 B0 C0");
 	config.driver.setMany(ztObj, function(err, value) {
 		if(err) { return callback(err); }
 		this.cmd_posx = this.posx = 0.0;
 		this.cmd_posy = this.posy = 0.0;
 		this.cmd_posz = this.posz = 0.0;
+		this.cmd_posa = this.posa = 0.0;
+		this.cmd_posb = this.posb = 0.0;
+		this.cmd_posc = this.posc = 0.0;
 		this.driver.requestStatusReport(function(report) {
 			log.debug("report = " + JSON.stringify(report));
 			callback();

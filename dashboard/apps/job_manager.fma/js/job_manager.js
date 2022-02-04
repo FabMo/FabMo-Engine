@@ -1,5 +1,6 @@
 require('./jquery.dragster.js');
 require('jquery');
+require('./transform_config.js')  // kludged in stuff for Transforms
 var Foundation = require('../../../static/js/libs/foundation.min.js');
 var moment = require('../../../static/js/libs/moment.js');
 var Sortable = require('./Sortable.js');
@@ -243,7 +244,7 @@ function addQueueEntries(jobs) {
       }
     });
   }
-  setStep(tour);
+//  setStep(tour);
 }
 
 function setFirstCard() {
@@ -532,7 +533,6 @@ function updateOrder(){
 }
 
 
-
 var el = document.getElementById('queue_table');
 var sortable = Sortable.create(el, {
   ghostClass: 'ghost',
@@ -615,9 +615,8 @@ var sortable = Sortable.create(el, {
 
 var current_job_id = 0;
 
-
+/*
 ////TOUR LOGIC //////
-
 
 function setStep(callback) {
   fabmo.getAppConfig(function(err, data) {
@@ -1162,6 +1161,8 @@ function tour(data) {
   }
 }
 
+*/
+
 function runNext() {
   $('#queue_table').on('click touchstart', '.play', function(e) {
     if ($('.play').hasClass('active')) {
@@ -1311,9 +1312,5 @@ $(document).ready(function() {
     e.wrap('<form>').closest('form').get(0).reset();
     e.unwrap();
   }
-
-
-
-
 
 });

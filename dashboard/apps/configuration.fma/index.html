@@ -2140,7 +2140,313 @@
           </fieldset>
       </section>
 
-      </div>
+
+<!--       <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel8" style="padding: 0px;">
+        <div class="row">
+          <fieldset>
+            <legend>Scale</legend>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Scale</label>
+                <select id="opensbp-transforms-scale-apply" class="opensbp-input">
+                  <option value="false">Disabled</option>
+                  <option value="true">Enabled</option>
+                </select>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Scale X</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-scale-scalex" class="opensbp-input"/>
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix"></span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Scale Y</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-scale-scaley" class="opensbp-input"/>
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix"></span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Scale Z</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-scale-scalez" class="opensbp-input"/>
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix"></span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>X Scale Point</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-scale-x" class="opensbp-input"/>
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Y Scale Point</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-scale-y" class="opensbp-input"/>
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Z Scale Point</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-scale-z" class="opensbp-input"/>
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+        </div> 
+
+
+        <div class="row">
+          <fieldset>
+            <legend>Offset</legend>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Offset
+                  <select id="opensbp-transforms-move-apply" class="opensbp-input">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Offset X</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-move-x" class="opensbp-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Offset Y</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-move-y" class="opensbp-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Offset Z</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-move-z" class="opensbp-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="row">
+          <fieldset>
+            <legend>Rotation</legend>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Rotate
+                  <select id="opensbp-transforms-rotate-apply" class="opensbp-input">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Rotation Angle</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-rotate-angle" class="opensbp-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix">degrees</span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>X Rotation Point</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-rotate-x" class="opensbp-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Y Rotation Point</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-rotate-y" class="opensbp-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
+      
+
+ -->
+        <!--     <div class="row">
+<fieldset>
+<legend>Shear X</legend>
+<div class="large-4 columns">
+<div class="row collapse">
+<label>Shear X
+<select id="opensbp-transforms-shearx-apply" class="opensbp-input">
+<option value="false">Disabled</option>
+<option value="true">Enabled</option>
+</select>
+</label>
+</div>
+</div>
+<div class="large-4 columns">
+<div class="row collapse">
+<label>Shear Angle X</label>
+<div class="small-9 columns">
+<input type="number" id="opensbp-transforms-shearx-angle" class="opensbp-input"/>
+</div>
+<div class="small-3 columns">
+<span class="postfix">degrees</span>
+</div>
+</div>
+</div>
+</fieldset>
+</div> -->
+
+        <!--     <div class="row">
+<fieldset>
+<legend>Shear Y</legend>
+<div class="large-4 columns">
+<div class="row collapse">
+<label>Shear Y
+<select id="opensbp-transforms-sheary-apply" class="opensbp-input">
+<option value="false">Disabled</option>
+<option value="true">Enabled</option>
+</select>
+</label>
+</div>
+</div> -->
+
+        <!--         <div class="large-4 columns">
+<div class="row collapse">
+<label>Shear Angle Y</label>
+<div class="small-9 columns">
+<input type="number" id="opensbp-transforms-sheary-angle" class="opensbp-input"/>
+</div>
+<div class="small-3 columns">
+<span class="postfix">degrees</span>
+</div>
+</div>
+</div>
+</fieldset>
+</div>
+
+<div class="row">
+<fieldset>
+<legend>Interpolation</legend>
+<div class="large-4 columns">
+<div class="row collapse">
+<label>Interpolate
+<select id="opensbp-transforms-interpolate-apply" class="opensbp-input">
+<option value="false">Disabled</option>
+<option value="true">Enabled</option>
+</select>
+</label>
+</div>
+</div>
+</fieldset>
+</div> -->
+
+        <!--     <div class="row">
+<fieldset>
+<legend>Leveling</legend>
+<div class="large-4 columns">
+<div class="row collapse">
+<label>Level
+<select id="opensbp-transforms-level-apply" class="opensbp-input">
+<option value="false">Disabled</option>
+<option value="true">Enabled</option>
+</select>
+</label>
+</div>
+</div>
+<div class="large-4 columns">
+<div class="row collapse">
+<label>Leveling Data File</label>
+<div class="small-9 columns">
+<input type="text" id="opensbp-transforms-level-ptDataFile" class="opensbp-input"/>
+</div>
+<div class="small-3 columns">
+<span class="postfix">browse</span>
+</div>
+</div>
+</div>
+</fieldset>
+</div> -->
+
+
+<!-- TEST BACKUP & RESTORE SECTION -->
+
+          <div class="row">
+              <fieldset>
+                <legend>Backup & Restore Configuration</legend>
+          <!--      <legend>Backup</legend>     -->
+                <div class="large-3 columns">
+                  <div class="row collapse">
+                    <a id="btn-backup" class="button radius small">Backup the configuration</a>
+                  </div>
+                </div>
+            <div class="large-7 columns">
+                <div class="row collapse">
+                    <input type="file" id="restore_conf_file" class="hidden">
+                    <a id="btn-restore"  class="button radius small">Restore the configuration</a>
+                </div>
+            </div>
+            
+              </fieldset>
+          </div>
+            
+      </section>
+
       <!--</form>-->
 
     </div>
