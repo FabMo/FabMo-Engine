@@ -8,6 +8,7 @@ var fabmo = new Fabmo;
 $('body').bind('focusin focus', function(e){
   e.preventDefault();
 })
+
 var unit_label_index = {}
 
 var registerUnitLabel = function(label, in_label, mm_label) {
@@ -138,16 +139,6 @@ var notifyChange = function(err,id){
 
 var configData = null;
 
-$('#btn-backup').click(function(evt) {
-    fabmo.getConfig(function(err,conf){
-        if(err){
-            fabmo.notify('error','cannot backup the config !');
-        }else{
-            fabmo._download(JSON.stringify(conf), 'fabmo_config_backup.fmc','text/json');
-        }
-    });
-});
-
 
 $(document).ready(function() {
     $(document).foundation();
@@ -216,35 +207,6 @@ $('body').click(function(event){
         // How to send G90 or G91 from here?
     });
 
-    $('#engine-version').click(function(evt) {
-        evt.preventDefault();
-        fabmo.navigate('/updater');
-    });
-
-    $('.engine-input').change( function() {
-        setConfig(this.id, this.value);
-    });
-
-    $("#machine-auth_required").on('change', function() {
-        if ($(this).is(':checked')) {
-            $(this).attr('value', 'true');
-        } else {
-            $(this).attr('value', 'false');
-        }
-    });
-
-    $("#machine-interlock_required").on('change', function() {
-        if ($(this).is(':checked')) {
-            $(this).attr('value', 'true');
-        } else {
-            $(this).attr('value', 'false');
-        }
-    });
-
-    $('.machine-input').change( function() {
-        setConfig(this.id, this.value);
-    });
-
     $('.opensbp-input').change( function() {
         setConfig(this.id, this.value);
     });
@@ -290,18 +252,5 @@ $('body').click(function(event){
         update();
     });
 
-    $('#profile-listbox').on('change', function(evt) {
-      evt.preventDefault();
-      fabmo.showModal({
-        title : 'Change Profiles?',
-        message : 'Changing your machine profile will reset all of your apps and settings. Are you sure you want to change profiles?',
-        okText : 'Yes',
-        cancelText : 'No',
-        ok : function() {
-          fabmo.setConfig({engine : {profile : $("#profile-listbox option:checked").val()}});
-        },
-        cancel : function() {}
-      });
-    });
 
 });

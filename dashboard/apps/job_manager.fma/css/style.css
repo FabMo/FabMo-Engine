@@ -984,7 +984,9 @@ table {
     transition: all .3s;
 }
 
-
+#tabpanel8 {
+    background-color: transparent;
+}
 
 #history_page_prev:hover, #history_page_next:hover{
   background-color: #999;
