@@ -288,8 +288,8 @@ require("../css/toastr.min.css");
                                                 break;
                                             default:
                                                 modalOptions.cancel = function() {
-                                                    modalIsShown = false;
-                                                }
+                                                                        modalIsShown = false;
+                                                                    }
                                         }
                                     }
                                     if (status.info.custom['detail']) {
@@ -319,7 +319,7 @@ require("../css/toastr.min.css");
                                 title: 'An Error Occurred!',
                                 message: status.info.error,
                                 detail: detailHTML,
-                                cancelText: 'close',
+                                cancelText: 'Close',
                                 cancel: function() {
                                     modalIsShown = false;
                                 }

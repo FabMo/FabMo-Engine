@@ -121,7 +121,7 @@ GCodeRuntime.prototype._fail = function(message) {
  		log.error(e);
  	} finally {
 		this.machine.status.job=null;
- 		this.machine.setState(this, 'stopped', {error : message[2]});
+		this.machine.setState(this, 'stopped', {error : message[2]});
  	}
 }
 
