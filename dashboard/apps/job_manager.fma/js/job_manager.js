@@ -5,15 +5,15 @@ var moment = require('../../../static/js/libs/moment.js');
 var Sortable = require('./Sortable.js');
 var Fabmo = require('../../../static/js/libs/fabmo.js');
 var fabmo = new Fabmo;
-var step;
-var testFileSubmitted = "false";
-var cameFromTour = false;
-var firstRun = true;
-var jobLoading = false; 
-var isTestJob = '';
-var tourComplete = false;
-var numberJobs = 0;
-var x = 0;
+// var step;
+// var testFileSubmitted = "false";
+// var cameFromTour = false;
+// var firstRun = true;
+// var jobLoading = false; 
+// var isTestJob = '';
+// var tourComplete = false;
+// var numberJobs = 0;
+// var x = 0;
 
 // Current position in the history browser
 var historyStart = 0;
@@ -204,7 +204,7 @@ function addQueueEntries(jobs) {
       start: 0,
       count: 0
     }, function(err, jobs) {
-      console.log(jobs);
+//console.log(jobs);
       var arr = jobs.data;
       var i = 0;
       for (var a = 0; a < arr.length; a++) {
@@ -339,7 +339,6 @@ function hideDropDown() {
   $('.commentBox').hide();
 }
 
-
 function bindMenuEvents() {
 
   $('.resubmitJob').off('click');
@@ -355,9 +354,6 @@ function bindMenuEvents() {
     });
     hideDropDown();
   });
-
-
-
 
   $('.previewJob').off('click');
   $('.previewJob').click(function(e) {
@@ -408,6 +404,7 @@ function bindMenuEvents() {
     dd.show();
     //  hideDropDown(); ////## removed this from #48395 moved above
   });
+
 }
 
 
@@ -531,7 +528,6 @@ function updateOrder(){
   });
 }
 
-
 var el = document.getElementById('queue_table');
 var sortable = Sortable.create(el, {
   ghostClass: 'ghost',
@@ -611,12 +607,7 @@ var sortable = Sortable.create(el, {
   }
 });
 
-
 var current_job_id = 0;
-
-/*
-////TOUR LOGIC //////
-*/
 
 function runNext() {
   $('#queue_table').on('click touchstart', '.play', function(e) {
@@ -644,14 +635,177 @@ function findUpTag(el, id) {
   return null;
 }
 
+//---------------------------------- pasted in for TRANFORMS
+
+var unit_label_index = {}
+
+var registerUnitLabel = function(label, in_label, mm_label) {
+  var labels = {
+    'in' : in_label,
+    'mm' : mm_label
+  }
+  unit_label_index[label] = labels;
+}
+
+var updateLabels = function(unit) {
+	$.each(unit_label_index, function(key, value) {
+		$(key).html(value[unit]);
+	});
+}
+
+var flattenObject = function(ob) {
+  var toReturn = {};
+  for (var i in ob) {
+    if (!ob.hasOwnProperty(i)) continue;
+
+    if ((typeof ob[i]) == 'object') {
+      var flatObject = flattenObject(ob[i]);
+      for (var x in flatObject) {
+        if (!flatObject.hasOwnProperty(x)) continue;
+
+        toReturn[i + '-' + x] = flatObject[x];
+      }
+    } else {
+      toReturn[i] = ob[i];
+    }
+  }
+  return toReturn;
+};
+
+function update() {
+  fabmo.getVersion(function(err, version) {
+    switch(version.type) {
+      case 'dev':
+        ////## updated display of dev verisons
+        $('.engine-version').text(version.number); 
+        //$('.engine-version').text(version.hash.substring(0,9) + '-' + version.number);
+        break;
+      case 'release':
+        $('.engine-version').text(version.number);
+        break;
+    }
+  });
+  fabmo.getInfo(function(err, info) {
+    if(err) {
+      console.error(err);
+    } else {
+      $('.firmware-version').text(info.firmware.version.replace("-dirty","")) 
+    }
+  });
+  fabmo.getConfig(function(err, data) {
+    var ckTransform = false;  // for TRANSFORM state test below
+    if(err) {
+      console.error(err);
+    } else {
+      configData = data;
+        ['driver', 'engine', 'opensbp', 'machine'].forEach(function(branchname) {
+          branch = flattenObject(data[branchname]);
+          for(key in branch) {
+            v = branch[key];
+
+            // Quick Display of TRANSFORM STATE in Job-manager nav bar
+            if (key === "transforms-rotate-apply") {
+                if (v===true) {ckTransform = true};
+            }
+            if (key === "transforms-scale-apply") {
+                if (v===true) {ckTransform = true};
+            }
+            if (key === "transforms-move-apply") {
+                if (v===true) {ckTransform = true};
+            }
+            if (key === "transforms-shearx-apply") {
+                if (v===true) {ckTransform = true};
+            }
+            if (key === "transforms-sheary-apply") {
+                if (v===true) {ckTransform = true};
+            }
+            if (key === "transforms-interpolate-apply") {
+                if (v===true) {ckTransform = true};
+            }
+            if (key === "transforms-level-apply") {
+                if (v===true) {ckTransform = true};
+            }
+            if (ckTransform === true) {
+                $('#nav-transforms').text('TRANSFORMS - ON');
+                $('#nav-transforms').css('color', '#FF4013');
+            } else {
+                $('#nav-transforms').text('TRANSFORMS - OFF');
+                $('#nav-transforms').css('color', 'grey')
+            }
+
+            input = $('#' + branchname + '-' + key);
+            if(input.length) {
+                if (input.is(':checkbox')){
+                  if (v){
+                      input.prop( "checked", true );
+                  } else {
+                      input.prop( "checked", false );
+                  }
+                } else {
+                  input.val(String(v));
+                }
+            }
+          }
+      });
+
+      var profiles = data['profiles'] || {}
+      var profilesList = $('#profile-listbox');
+      profilesList.empty();
+      if(profiles) {
+        for(var name in profiles) {
+          profilesList.append(
+              $('<option></option>').val(name).html(name)
+          );
+        }
+      } else {
+        console.error("No profiles!")
+      }
+      // Shim
+      if(data.engine.profile === 'default') {
+        data.engine.profile = 'Default';
+      }
+      profilesList.val(data.engine.profile);
+    }
+  });
+}
+
+function setConfig(id, value) {
+	var parts = id.split("-");
+	var o = {};
+	var co = o;
+	var i=0;
+
+	do {
+	  co[parts[i]] = {};
+	  if(i < parts.length-1) {
+	    co = co[parts[i]];
+	  }
+	} while(i++ < parts.length-1 );
+	co[parts[parts.length-1]] = value;
+	fabmo.setConfig(o, function(err, data) {
+    notifyChange(err,id);
+    update();
+	});
+}
+
+var notifyChange = function(err,id){
+  if(err){
+    $('#'+id).addClass("flash-red");
+  }else{
+    $('#'+id).addClass("flash-green");
+  }
+  setTimeout(function(){$('#'+id).removeClass("flash-red flash-green")},500);
+};
+
+var configData = null;
+
+
+//----------------------------^^^
 
 $(document).ready(function() {
   //Foundation Init
 
-  setup();
-
   $(document).foundation();
-
 
   fabmo.on('job_end',function (cmd) {
     updateQueue();
@@ -663,7 +817,6 @@ $(document).ready(function() {
     updateHistory();
   });
 
-
   //May need to put back in 
   // fabmo.on('change',function (change) {
   //   if(change === "jobs") {
@@ -671,9 +824,6 @@ $(document).ready(function() {
   //     updateHistory();
   //   }
   // });
-
-
-  // Request infoes from the tool
 
   // The queue will update when the status report comes in
   // But the history needs to be updated manually
@@ -733,23 +883,6 @@ $(document).ready(function() {
 
   //-----------------------------------------------------------------------------
   // ADDING FOR TRANSFORMS ... KLUDGE!
-
-  var unit_label_index = {}
-
-  var registerUnitLabel = function(label, in_label, mm_label) {
-    var labels = {
-      'in' : in_label,
-      'mm' : mm_label
-    }
-    unit_label_index[label] = labels;
-  }
-  
-  var updateLabels = function(unit) {
-      $.each(unit_label_index, function(key, value) {
-          $(key).html(value[unit]);
-      });
-  }
-  
     // Setup Unit Labels
     registerUnitLabel('.in_mm_label', 'in', 'mm');
     registerUnitLabel('.ipm_mmpm_label', 'in/min', 'mm/min');
@@ -758,42 +891,139 @@ $(document).ready(function() {
     registerUnitLabel('.inrev_mmrev_label', 'in/rev', 'mm/rev');
     registerUnitLabel('.inpm3_mmpm3_label', 'in/min<sup>3</sup>', 'mm/min<sup>3</sup>');
 
-    fabmo.on('status', function(status) {
-        updateLabels(status.unit);
-    });
-    fabmo.requestStatus();
-
-
-//   $('.nav-transforms').click(function(evt) {
-//       jQuery('#file').trigger('click');
-//       console.log('got button transform');
-//     });
     $('#nav-transforms').click(function(evt) {
         evt.preventDefault();
       });
-        
-    
 
     // Populate Settings
-//    update();
+    update();
+
+    // tool tip stuff follows ...
+    $('.tool-tip').click(function(){
+    var tip =$(this).parent().data('tip');
+    var eTop = $(this).offset().top;
+    var eLeft = $(this).offset().left;
+    
+    var realTop = eTop - 10;
+    $('.tip-output').show();
+    var eWidth = $('.tip-output').width();
+    var realLeft = eLeft - eWidth - 40;
+    $('.tip-text').text(tip);
+    $('.tip-output').css('top', realTop + 'px');
+    $('.tip-output').css('left', realLeft + 'px');
+});
+
+$('body').bind('focusin focus', function(e){
+    e.preventDefault();
+  })
+  
+
+$('body').scroll(function(){
+   $('.tip-output').hide();
+});
+
+$('body').click(function(event){   
+      if($(event.target).attr('class') == "tool-tip"){
+         return
+      } else {
+          $('.tip-output').hide();
+      }
+});
+   // Update settings on change
+   $('.driver-input').change( function() {
+       var parts = this.id.split("-");
+       var new_config = {};
+       new_config.driver = {};
+       var v = parts[1];
+       if(v === "gdi") {
+           new_config.driver.gdi = this.value;
+           if (this.value == 0) { fabmo.runGCode("G90"); }
+           else { fabmo.runGCode("G91"); }
+           fabmo.setConfig(new_config, function(err, data) {
+               notifyChange(err, data.driver.gid);
+               setTimeout(update, 500);
+           });
+       }
+       else {
+           setConfig(this.id, this.value);
+       }
+       // How to send G90 or G91 from here?
+   });
+
+   $('.opensbp-input').change( function() {
+       setConfig(this.id, this.value);
+   });
+
+   $('.opensbp-values').change( function() {
+       var parts = this.id.split("-");
+       var new_config = {};
+       new_config.driver = {};
+       var v = parts[1];
+
+       if (!configData) { return; }
+       if(v !== undefined) {
+           if(v === "units1"){
+               new_config.driver['1tr']=(360/configData.driver["1sa"])*configData.driver["1mi"]/this.value;
+           }
+           else if(v === "units2"){
+               new_config.driver['2tr']=(360/configData.driver["2sa"])*configData.driver["2mi"]/this.value;
+           }
+           else if(v === "units3"){
+               new_config.driver['3tr']=(360/configData.driver["3sa"])*configData.driver["3mi"]/this.value;
+           }
+           else if(v === "units4"){
+               new_config.driver['4tr']=(360/configData.driver["4sa"])*configData.driver["4mi"]/this.value;
+           }
+           else if(v === "units5"){
+               new_config.driver['5tr']=(360/configData.driver["5sa"])*configData.driver["5mi"]/this.value;
+           }
+           else if(v === "units6"){
+               new_config.driver['6tr']=(360/configData.driver["6sa"])*configData.driver["6mi"]/this.value;
+           }
+           fabmo.setConfig(new_config, function(err, data) {
+               notifyChange(err,id);
+               setTimeout(update, 500);
+           });
+       }
+   });
+
+   var cachedConfig = null;
+
+//    // Function we call to get the configuration from the tool and update information on the page
+//    var updateConfig = function() {
+//        dashboard.getConfig(function(err, config) {
+//            cachedConfig = config;
+//            // Update the tool info statement
+//            document.getElementById('tool-name').innerHTML = config.engine.profile;
+//            document.getElementById('envelope-x').innerHTML = config.machine.envelope.xmax - config.machine.envelope.xmin;
+//            document.getElementById('envelope-y').innerHTML = config.machine.envelope.ymax - config.machine.envelope.ymin;
+//            document.getElementById('tool-version').innerHTML = config.engine.version;
+//            document.getElementById('tool-units').innerHTML = config.machine.units;
+
+//            // Update the configuration 
+//            document.getElementById('full-config').innerHTML = JSON.stringify(config, null, '   ');
+//        });			
+//    }
 
 
 
-//-----------------------------------------------------------------------------------
 
+
+
+   //-----------------------------------------------------------------------------------
 
   // $( window ).resize(function() {
   // 	setJobheight();
   // }).resize();
   fabmo.on('reconnect', function() {
+    update();  // for transforms
     updateQueue();
     updateOrder();
     updateHistory();
   });
 
-
-
   fabmo.on('status', function(status) {
+    updateLabels(status.unit);     // for trnasforms
     handleStatusReport(status);
     if (status.job == null && status.state != 'idle') {
       $('.play-button').hide();
@@ -801,7 +1031,6 @@ $(document).ready(function() {
     } else if (status.state == 'idle' && el.firstChild) {
       $('.play-button').show();
     } 
-
   });
 
   function resetFormElement(e) {

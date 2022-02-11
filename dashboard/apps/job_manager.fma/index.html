@@ -6,13 +6,12 @@
 	<title>Job Manager</title>
 	<link rel="stylesheet" href="../../css/dashboard.css">
 	<link rel="stylesheet" href="./css/style.css">
-
-
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	</head>
+</head>
+
 <body>
 
-	<div class="filter"></div>
+    <div class="filter"></div>
 
 <!-- 	<div class="tour-dialogue">
 			<p class="tour-text"></p>
@@ -169,7 +168,10 @@
 
 <!--    <div class="tabs-content">  -->
   <div class="content" id="tabpanel8">
-<!--    <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel8" style="padding: 0px;">
+
+    <div class="tip-output"><span class="tip-text"></span><div class='commentBox'></div></div>
+
+    <!--    <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel8" style="padding: 0px;">
 -->
         <div class="row">
           <fieldset>
@@ -354,11 +356,13 @@
 
         <div class="row">
         	<fieldset>
-              <h4>Shear X</h4>
+                <h4>Shear X</h4>
 <!--         		<legend>Shear X</legend> -->
         		<div class="large-4 columns">
         			<div class="row collapse">
-        				<label>Shear X
+                        <label data-tip="test: Example of tool tip text to explain each transform.">Shear X<div class="tool-tip">i</div>
+
+<!--                        <label>Shear X   -->
         					<select id="opensbp-transforms-shearx-apply" class="opensbp-input">
         						<option value="false">Disabled</option>
         						<option value="true">Enabled</option>
