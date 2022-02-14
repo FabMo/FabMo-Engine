@@ -287,9 +287,7 @@ require("../css/toastr.min.css");
                                                 modalOptions.cancel = cancelFunction
                                                 break;
                                             default:
-                                                modalOptions.cancel = function() {
-                                                                        modalIsShown = false;
-                                                                    }
+                                                modalOptions.cancel = false
                                         }
                                     }
                                     if (status.info.custom['detail']) {
@@ -319,9 +317,14 @@ require("../css/toastr.min.css");
                                 title: 'An Error Occurred!',
                                 message: status.info.error,
                                 detail: detailHTML,
-                                cancelText: 'Close',
-                                cancel: function() {
-                                    modalIsShown = false;
+                                cancelText: status.state === 'dead' ? undefined : 'Quit',
+                                cancel: status.state === 'dead' ? undefined : function() {
+                                    dashboard.engine.quit(function(err, result) {
+                                                            if (err) {
+                                                              console.log("ERRROR: " + err);
+                                                            }
+                                                        }
+                                                    );
                                 }
                             });
                             modalIsShown = true;
@@ -667,6 +670,7 @@ require("../css/toastr.min.css");
             $('.posz').val($('.posz').val());
             $('.posa').val($('.posa').val());
             $('.posb').val($('.posb').val());
+            $('.posc').val($('.posc').val());
             $('#keypad').show();
             $('.go-to-container').hide();
             if($(event.target).hasClass('fixed-step-value')){
@@ -696,6 +700,7 @@ require("../css/toastr.min.css");
         var axi = $(this).parent('div').find('input').attr('id');
         var obj = {};
         obj[axi] = 0;
+console.log('zero- ',axi,obj,obj[axi]);        
         dashboard.engine.set(obj)
     });
 

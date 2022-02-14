@@ -231,7 +231,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		that.updateText($(that.units_selector), unit)
 	}
 
-	['x','y','z','a','b'].forEach(function(axis) {
+    ////## key DRO display stuff
+	['x','y','z','a','b','c'].forEach(function(axis) {
 		var pos = 'pos' + axis;
 		if(pos in status) {
 			if(axis === "b") {
