@@ -201,10 +201,9 @@ function Machine(control_path, callback) {
 	// If any of the axes in G2s configuration become enabled or disabled, we want to show or hide
 	// them accordingly.  These change events happen even during the initial configuration load, so
 	// right from the beginning, we will be displaying the correct axes.
-	////## TODO - extra axes
 	// TODO - I think it's good to used named callbacks, to make the code more self-documenting
     config.driver.on('change', function(update) {
-    	['x','y','z','a','b'].forEach(function(axis) {
+    	['x','y','z','a','b','c'].forEach(function(axis) {
     		var mode = axis + 'am';
     		var pos = 'pos' + axis;
     		if(mode in update) {
@@ -917,9 +916,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				break;
 			case 'dead':
 				log.error('G2 is dead!');
-				break;
-			case 'stopped':
-				log.debug('Entering stopped state for error report');
 				break;
 			default:
 				break;
