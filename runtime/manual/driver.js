@@ -318,6 +318,9 @@ ManualDriver.prototype.set = function(pos) {
 					case "B": 
 						toSet.g55b = Number(((MPO.b* 1) - pos[key]).toFixed(5));
 						break;
+                    case "C": 
+						toSet.g55c = Number(((MPO.c* 1) - pos[key]).toFixed(5));
+						break;
 					default:
 						log.error("don't understand axis");
 				}

@@ -97,7 +97,7 @@ exports.PB = function(args) {
 
 
 exports.PC = function(args) {
-	this.cmd_pos
+	this.cmd_posc = undefined
 	probe(this, {
 		inp : args[2],
 		feed : args[1],
