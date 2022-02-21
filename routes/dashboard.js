@@ -208,29 +208,12 @@ var updater = function(req, res, next) {
     res.redirect(303, url, next);   
 }
 
-function putAppConfig(req, res, next) {
-	log.error("rmackie: BROKEN MUST FIX, WHAT SHOULD CODE DO? putAppConfig called: \n" + req);
-    {
-        let body = [];
-        req.on('error', function (err) {
-            log.info("rmackie: Error Reading BODY of post \n" + err);
-        }).on('data', function (chunk) {
-            log.info("rmackie: handling chunk")
-            body.push(chunk);
-        }).on('end', function () {
-            log.info("rmackie: end called");
-            body = Buffer.concat(body).toString();
-            log.info("rmackie: Payload of putAppConfig\n" + req + "\n" + body);
-        });
-    }
-}
-
 module.exports = function(server) {
     server.post('/apps', submitApp);
     server.get('/apps', getApps);
     server.get('/apps/:id', getAppInfo);
     server.get('/apps/:id/config', getAppConfig);
-    server.post('/apps/:id/config', putAppConfig);
+    server.post('/apps/:id/config', postAppConfig);
     server.del('/apps/:id', deleteApp);
     server.get('/apps/:id/files', listAppFiles);
     server.get("/approot/*", static({
