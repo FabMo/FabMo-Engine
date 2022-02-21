@@ -172,6 +172,7 @@ SBPRuntime.prototype.executeCode = function(s, callback) {
                     }
                     switch(s.cmd) {
                         case 'exit':
+                            this.helper.fromFile = true;   // flag that this is SK invoked in file; will surpress M30/stat:4
                             this.helper.exit();
                             break;
         
