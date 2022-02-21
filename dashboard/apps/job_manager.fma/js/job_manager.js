@@ -1302,9 +1302,7 @@ $(document).ready(function() {
     });
   });
 
-  // $( window ).resize(function() {
-  // 	setJobheight();
-  // }).resize();
+ 
   fabmo.on('reconnect', function() {
     updateQueue();
     updateOrder();

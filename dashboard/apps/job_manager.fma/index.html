@@ -10,93 +10,95 @@
 </head>
 <!-- START HERE -->
 <body>
-  <nav class="top-bar" data-topbar role="navigation" style="background-color:rgb(92, 90, 90)">
-  <ul class="title-area">
-    <li class="name" style="list-style-type:none; padding-right:60px">
-      <h4><a id="app-header">Job Manager</a></h4>
-    </li>
-  </ul> 
-  <section class="top-bar-left">
-	<ul style="background-color:rgb(92, 90, 90);color:white;" class="dropdown menu" data-tabs id="jobs-tab-list">
-      <li class="tabs-title active"><a id="nav-pending" data-tabs-target="tabpending" href="#tabpending">Pending</a></li>
-      <li class="tabs-title"><a id="nav-history" data-tabs-target="tabhistory" href="#tabhistory">History</a></li>
-      <li><a id="nav-submit" class="submit-button" href="#">Submit Jobs...</a></li>
-    </ul>
-  </section>
-</nav>
-</div>
-<span class="progressbar hide">
-  <div class="bar-fill"></div>
-</span>
-<form style="display:none;" id="fileform">
-	<input type="file" id="file" multiple>
-</form>
+	<div class="sticky">
+		<nav class="top-bar" data-topbar role="navigation" style="background-color:rgb(92, 90, 90)">
+			<ul class="title-area">
+				<li class="name" style="list-style-type:none; padding-right:60px">
+				<h4><a id="app-header">Job Manager</a></h4>
+				</li>
+			</ul> 
+			<section class="top-bar-left">
+				<ul class="left tabs" data-tabs id="jobs-tab-list" style="border:0px;background-color:rgb(92, 90, 90);list-style-type: none;">	
+					<li class="tabs-title is-active"> <a href="#tabpending" aria-selected="true">Pending</a> </li>
+					<li class="tabs-title"> <a data-tabs-target="tabhistory" href="#tabhistory">History</a> </li>
+					<li><a id="nav-submit" class="submit-button" href="#">Submit Jobs...</a></li>
+				</ul>
+			</section>
+		</nav>
+	</div>
+	<span class="progressbar hide">
+	<div class="bar-fill"></div>
+	</span>
+	<form style="display:none;" id="fileform">
+		<input type="file" id="file" multiple>
+	</form>
 
-<div class="tabs-content" data-tabs-content="jobs-tab-list">
-  <div class="content active dropzone" id="tabpending">
-	  <div id="droptarget"> </div>
-			<div class="title jobs-title">
-				<div class="small-12 columns">
-					<h4 class="up-next">Up Next</h4>
-					<h4 class="now-running">Now Running</h4>
-                    <div class="no-jobs">
-						<h4>No Jobs</h4>
-						<div class="without-job">
-							<div class="submitWrapper">
-								<div class="submitActions">
-									<h5 class='no-job'>Click To Browse</h5>
-									<p>or</p>
-									<h5 class='no-job'>Drag files here</h5>
+	<div class="tabs-content" data-tabs-content="jobs-tab-list">
+		<div class="tabs-panel is-active dropzone" id="tabpending">
+			<div id="droptarget"> </div>
+				<div class="title jobs-title">
+					<div class="small-12 columns">
+						<h4 class="up-next">Up Next</h4>
+						<h4 class="now-running">Now Running</h4>
+						<div class="no-jobs">
+							<h4>No Jobs</h4>
+							<div class="without-job">
+								<div class="submitWrapper">
+									<div class="submitActions">
+										<h5 class='no-job'>Click To Browse</h5>
+										<p>or</p>
+										<h5 class='no-job'>Drag files here</h5>
+									</div>
+								</div>
+								<div class="small-11 columns">
+									<h5 class='add-job-please'></h5>
 								</div>
 							</div>
-							<div class="small-11 columns">
-								<h5 class='add-job-please'></h5>
+							<hr>
+							<h5 class='no-job'>Recent Jobs</h5>
+							<div id="recent">
 							</div>
-						</div>
-						<hr>
-						<h5 class='no-job'>Recent Jobs</h5>
-						<div id="recent">
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
-	</div>
-</div>
-
-
-<div style="width:98%" id="queue_table"></div>
-  <div class="content" id="tabhistory">
-		<!-- JOB HISTORY LISTING -->
-		<table class="small-12 columns" style="width:100%" id="history_table">
-		<thead>
-	    <tr>
-	        <th>&nbsp;</th>
-	        <th>Name</th>
-	        <th>Run At</th>
-	        <th>Duration</th>
-	    </tr>
-		</thead>
-		<tbody><tr></tr></tbody>
-		</table>
-		<div href="#" class="noselect" id="history_page_prev"><p>&lt;&lt; Prev</p></div>
-        <div href="#" class="noselect" id="history_page_next"><p>Next &gt;&gt;</p></div>
-  </div>
-  <div class="dropDownWrapper"></div>
-</div>
-
-<div class="sticky">
-<div class="filter"></div>
-<div class="tour-dialogue">
-		<p class="tour-text"></p>
-		<div class="tour-buttons">
-			<div class="next">Next</div>
-			<div class="no">Cancel</div>
+		<div style="width:98%" id="queue_table"></div>
+		<div class="tabs-panel" id="tabhistory">
+			<!-- JOB HISTORY LISTING -->
+			<table class="small-12 columns" style="width:100%" id="history_table">
+			<thead>
+			<tr>
+				<th>&nbsp;</th>
+				<th>Name</th>
+				<th>Run At</th>
+				<th>Duration</th>
+			</tr>
+			</thead>
+			<tbody><tr></tr></tbody>
+			</table>
+			<div href="#" class="noselect" id="history_page_prev"><p>&lt;&lt; Prev</p></div>
+			<div href="#" class="noselect" id="history_page_next"><p>Next &gt;&gt;</p></div>
 		</div>
-</div>
-<div class="tour-pointer"><span>You can preview the job</span><div class="pointer"></div></div>
-  <!-- Javascript inclusions -->
-  <script src="../../job_manager.js"></script>
+		<div class="dropDownWrapper"></div>
+	</div>
 
+	<div class="sticky">
+	<div class="filter"></div>
+	<div class="tour-dialogue">
+			<p class="tour-text"></p>
+			<div class="tour-buttons">
+				<div class="next">Next</div>
+				<div class="no">Cancel</div>
+			</div>
+	</div>
+	<div class="tour-pointer"><span>You can preview the job</span><div class="pointer"></div></div>
+	<!-- Javascript inclusions -->
+	<script src="../../js/libs/jquery.min.js"></script>
+	<script src="../../job_manager.js"></script>
+	<script src="../../js/libs/foundation.min.js"></script>
+	<script>
+        $(document).foundation();
+    </script>
 </body>
 </html>
