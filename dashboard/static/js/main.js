@@ -288,8 +288,8 @@ require("../css/toastr.min.css");
                                                 break;
                                             default:
                                                 modalOptions.cancel = function() {
-                                                                        modalIsShown = false;
-                                                                    }
+                                                    modalIsShown = false;
+                                                }
                                         }
                                     }
                                     if (status.info.custom['detail']) {
@@ -667,6 +667,7 @@ require("../css/toastr.min.css");
             $('.posz').val($('.posz').val());
             $('.posa').val($('.posa').val());
             $('.posb').val($('.posb').val());
+            $('.posc').val($('.posc').val());
             $('#keypad').show();
             $('.go-to-container').hide();
             if($(event.target).hasClass('fixed-step-value')){
@@ -696,6 +697,7 @@ require("../css/toastr.min.css");
         var axi = $(this).parent('div').find('input').attr('id');
         var obj = {};
         obj[axi] = 0;
+console.log('zero- ',axi,obj,obj[axi]);        
         dashboard.engine.set(obj)
     });
 

@@ -144,12 +144,12 @@ initialize_variables:
         GOTO continue_with_variables
   'continue adjusting units for current working variables ...
 	continue_with_variables:
-    IF %(25) == 1 THEN GOTO tool_MM   		                  ' Read UNIT of Tool; System Variable #25
-      tool_IN:
+    IF %(25) == 1 THEN GOTO tool_MM_zoff   		                  ' Read UNIT of Tool; System Variable #25
+      tool_IN_zoff:
         IF $current_cutter_Zoffset_Units == "IN" THEN GOTO continue_with_zoff_variables
         &current_cutter_Zoffset = 0.0393701 * $current_cutter_Zoffset      ' Defined in MM: Multiplier to redefine distances from mm to inches 
         GOTO continue_with_zoff_variables
-      tool_MM:
+      tool_MM_zoff:
         $current_cutter_Zoffset := 6.35                       ' Initialize this variable in MM for case tool cutter not zeroed
         $current_cutter_Zoffset_Units := 1
         IF $current_cutter_Zoffset_Units == "MM" THEN GOTO continue_with_zoff_variables
