@@ -267,6 +267,7 @@ function setFirstCard() {
  * -----------
  */
 function updateHistory(callback) {
+  console.log("rmackie: updateHistory called");
   fabmo.getJobHistory({
     start: historyStart,
     count: historyCount
@@ -282,6 +283,7 @@ function updateHistory(callback) {
     clearHistory();
     addHistoryEntries(jobs.data);
     typeof callback === 'function' && callback();
+    console.log("rmackie: history retrieved and updated");
   });
 }
 
@@ -311,12 +313,13 @@ function createHistoryMenu(id) {
   return menu.replace(/JOBID/g, id)
 }
 
-  function addHistoryEntries(jobs) {
-    /* Need to condition this on whether we have any jobs queued right now and the "history menu". 
-       commented out because everything overlaps and it's just easier to work without it. 
-       rmackie - CODE MUST COME BACK INTO SERVICE TODO REMOVE THIS COMMENT  */
+// rmackie
+function addHistoryEntries(jobs) {
+  var counter = 0;
   var table = document.getElementById('history_table');
-  jobs.forEach(function(job) {  //rmackie history noise
+  console.log("Added row:" + counter);
+  jobs.forEach(function(job) {  
+    counter++; console.log("Added row:" + counter);
     var row = table.insertRow(table.rows.length);
     var menu = row.insertCell(0);
     menu.className += ' actions-control';
@@ -331,7 +334,7 @@ function createHistoryMenu(id) {
     name.innerHTML = '<div class="job-' + job.state + '">' + job.name + '</div>';
     done.innerHTML = moment(job.finished_at).fromNow();
     time.innerHTML = moment.utc(job.finished_at - job.started_at).format('HH:mm:ss');
-  }); // rmackie end of history noise
+  }); 
   bindMenuEvents();
   
 }

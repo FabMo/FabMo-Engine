@@ -34,6 +34,22 @@
 	</form>
 
 	<div class="tabs-content" data-tabs-content="jobs-tab-list">
+		<div class="tabs-panel" id="tabhistory">
+			<!-- JOB HISTORY LISTING -->
+			<table class="small-12 columns" style="width:100%" id="history_table">
+			<thead>
+			<tr>
+				<th>&nbsp;</th>
+				<th>Name</th>
+				<th>Run At</th>
+				<th>Duration</th>
+			</tr>
+			</thead>
+			<tbody><tr></tr></tbody>
+			</table>
+			<div href="#" class="noselect" id="history_page_prev"><p>&lt;&lt; Prev</p></div>
+			<div href="#" class="noselect" id="history_page_next"><p>Next &gt;&gt;</p></div>
+		</div>
 		<div class="tabs-panel is-active dropzone" id="tabpending">
 			<div id="droptarget"> </div>
 				<div class="title jobs-title">
@@ -56,30 +72,13 @@
 							</div>
 							<hr>
 							<h5 class='no-job'>Recent Jobs</h5>
-							<div id="recent">
-							</div>
+							<div id="recent"></div>
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
 		<div style="width:98%" id="queue_table"></div>
-		<div class="tabs-panel" id="tabhistory">
-			<!-- JOB HISTORY LISTING -->
-			<table class="small-12 columns" style="width:100%" id="history_table">
-			<thead>
-			<tr>
-				<th>&nbsp;</th>
-				<th>Name</th>
-				<th>Run At</th>
-				<th>Duration</th>
-			</tr>
-			</thead>
-			<tbody><tr></tr></tbody>
-			</table>
-			<div href="#" class="noselect" id="history_page_prev"><p>&lt;&lt; Prev</p></div>
-			<div href="#" class="noselect" id="history_page_next"><p>Next &gt;&gt;</p></div>
-		</div>
 		<div class="dropDownWrapper"></div>
 	</div>
 
