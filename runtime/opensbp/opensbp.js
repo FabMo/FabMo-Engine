@@ -248,7 +248,7 @@ SBPRuntime.prototype.runString = function(s) {
     try {
         // Break the string into lines
         var lines =  s.split('\n');
-        
+
         // The machine status `nb_lines` indicates the total number of lines in the currently running file
         // If this is a "top level" file (that is, the file being directly run and not a macro being called) set that value
         // TODO I've never liked nb_lines as a name
@@ -265,7 +265,8 @@ SBPRuntime.prototype.runString = function(s) {
         try {
             this.program = parser.parse(s);
         } catch(e) {
-            return this._abort(e.message + " (Line " + e.line + ")");
+            log.error(e);
+            this._end(e.message);
         } finally {
             log.tock('Parse file')
         }
@@ -287,20 +288,20 @@ SBPRuntime.prototype.runString = function(s) {
 
         // Build a map of labels to line numbers
         // This step unfortunately requires the whole file
-        this._analyzeLabels();  
+        this._analyzeLabels();
         log.debug("Labels analyzed...")
 
         // Check all the GOTO/GOSUBs against the label table
-        this._analyzeGOTOs();   
+        this._analyzeGOTOs();
         log.debug("GOTOs analyzed...")
-        
+
         // Start running the actual code, now that everything is prepped
         return this._run();
 
     } catch(e) {
-        // A failure at any stage (except parsing) will land us here 
+        // A failure at any stage (except parsing) will land us here
         log.error(e);
-        return this._abort(e.message);
+        this._end(e.message);
     }
 };
 
@@ -312,7 +313,6 @@ SBPRuntime.prototype.runStream = function(text_stream) {
         try {
             // Initialize the program
             this.program = []
-
             // Even though we're "streaming" in this function, we still have to parse
             // the entire body of data before we can continue processing the file.
             // That's why the business end of this function occurs in the 'end' handler
@@ -326,56 +326,61 @@ SBPRuntime.prototype.runStream = function(text_stream) {
 
             // Stream is fully processed
             st.on('end', function() {
+                log.debug('#780 runstream program:  ' + JSON.stringify(this.program))
+                try {
+                    log.tock('Parse file')
 
-                log.tock('Parse file')
-
-                // The machine status `nb_lines` indicates the total number of lines in the currently running file
-                // If this is a "top level" file (that is, the file being directly run and not a macro being called) set that value
-                // TODO I've never liked nb_lines as a name
-                var lines = this.program.length;
-                if(this.machine) {
-                    if(this.file_stack.length === 0) {
-                        this.machine.status.nb_lines = lines - 1;
+                    // The machine status `nb_lines` indicates the total number of lines in the currently running file
+                    // If this is a "top level" file (that is, the file being directly run and not a macro being called) set that value
+                    // TODO I've never liked nb_lines as a name
+                    var lines = this.program.length;
+                    if(this.machine) {
+                        if(this.file_stack.length === 0) {
+                            this.machine.status.nb_lines = lines - 1;
+                        }
                     }
+
+                    // Configure affine transformations on the file
+                    this._setupTransforms();
+                    log.debug("Transforms configured...")
+
+                    // Initialize the runtime state
+                    this.init();
+
+                    // Copy the general config and driver settings into runtime memory
+                    this._loadConfig();
+                    this._loadDriverSettings();
+
+
+                    log.tick();
+                    // Build a map of labels to line numbers
+                    // This step unfortunately requires the whole file
+                    this._analyzeLabels();
+                    log.tock('Labels analyzed...')
+
+                    // Check all the GOTO/GOSUBs against the label table
+                    this._analyzeGOTOs();
+                    log.debug("GOTOs analyzed...")
+                    log.tock('Analyzed GOTOs')
+
+                    // Start running the actual code, now that everything is prepped
+                    return this._run();
+                } catch(e) {
+                    log.error(e)
+                    this._end(e.message);
                 }
-                
-                // Configure affine transformations on the file
-                this._setupTransforms();
-                log.debug("Transforms configured...")
-                
-                // Initialize the runtime state
-                this.init();
-
-                // Copy the general config and driver settings into runtime memory
-                this._loadConfig();
-                this._loadDriverSettings();
-                
-
-                log.tick();
-                // Build a map of labels to line numbers
-                // This step unfortunately requires the whole file
-                this._analyzeLabels(); 
-                log.tock('Labels analyzed...')
-
-                // Check all the GOTO/GOSUBs against the label table
-                this._analyzeGOTOs();   
-                log.debug("GOTOs analyzed...")
-                log.tock('Analyzed GOTOs')
-
-                // Start running the actual code, now that everything is prepped
-                return this._run();
 
             }.bind(this));
             return undefined;
 
         } catch(e) {
             log.error(e)
-            return this._abort(e.message + " (Line " + e.line + ")");
+            this._end(e.message);
         }
         return st;
     } catch(e) {
         log.error(e);
-        return this._abort(e.message + " (Line " + e.line + ")");
+        this._end(e.message);
     }
 }
 
@@ -1057,7 +1062,7 @@ SBPRuntime.prototype.runCustomCut = function(number, callback) {
             this._pushFileStack();
             this.runFile(macro.filename);
         } else {
-            throw new Error("Can't run custom cut (macro) C" + number + ": Macro not found.")
+            throw new Error("Can't run custom cut (macro) C" + number + ": Macro not found at " + (this.pc+1))
         }
     } else {
         this.pc +=1;
@@ -1264,7 +1269,7 @@ SBPRuntime.prototype._execute = function(command, callback) {
         case "event":
             // Throw a useful exception for the no-longer-supported ON INPUT command
             this.pc += 1;
-            throw new Error("ON INPUT is no longer a supported command.  Make sure the program you are using is up to date.");
+            throw new Error("ON INPUT is no longer a supported command.  Make sure the program you are using is up to date.  Line: " + (this.pc+1));
             break;
 
         default:
@@ -1482,7 +1487,7 @@ SBPRuntime.prototype._analyzeLabels = function() {
             switch(line.type) {
                 case "label":
                     if (line.value in this.label_index) {
-                        throw new Error("Duplicate label.");
+                        throw new Error("Duplicate labels on lines " + this.label_index[line.value] + " and " + (i+1));
                     }
                     this.label_index[line.value] = i;
                     break;
@@ -1674,7 +1679,7 @@ SBPRuntime.prototype.evaluateSystemVariable = function(v) {
         break;
 
         default:
-            throw new Error("Unknown System Variable: " + JSON.stringify(v));
+            throw new Error("Unknown System Variable: " + JSON.stringify(v) + " on line " + (this.pc + 1));
         break;
     }
 };

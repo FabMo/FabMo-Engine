@@ -96,7 +96,12 @@ parseLine = function(line) {
     
     // Deal with full-line comments
     if(Array.isArray(obj) || obj === null) {
-        obj = {"type":"comment", "comment":comment};
+        //TODO: Parser should ID header Metadata and comment distinctly
+        if (comment.indexOf('!FABMO!') !== -1) {
+            obj = {"type":"metadata"};
+        } else {
+            obj = {"type":"comment", "comment":comment};
+        }
     } else {
         if(comment != '') {obj.comment = comment}
     }
@@ -163,7 +168,11 @@ Parser.prototype._transform = function(chunk, enc, cb) {
       for(var i=0; i<str.length; i++) {
             if(str[i] === '\n') {
                 var substr = str.substring(start, i)
-                this.push(parseLine(substr));
+                let parsedline = parseLine(substr)
+                //Skip entries that are metadata (Used to prune header metadata on macros)
+                if (parsedline.type != 'metadata') {
+                    this.push(parsedline);
+                }
                 start = i+1;
             }
         }
