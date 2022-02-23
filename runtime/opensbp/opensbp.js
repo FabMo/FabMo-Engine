@@ -976,16 +976,16 @@ SBPRuntime.prototype._end = function(error) {
             if(this.machine.status.job) {
                 this.machine.status.job.finish(function(err, job) {
                     this.machine.status.job=null;
-                    cleanup(error);
+                    cleanup(error_msg);
                     this.machine.setState(this, 'idle');
                 }.bind(this));
             } else {
-                cleanup(error);
+                cleanup(error_msg);
                 this.machine.setState(this, 'idle');
             }
         }.bind(this));
     } else {
-        cleanup(error);
+        cleanup(error_msg);
     }
 };
 
