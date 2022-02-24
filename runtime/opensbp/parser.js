@@ -69,7 +69,10 @@ fastParse = function(statement) {
 // Tries to fast parse first, falls back on the more thorough pegjs parser
 parseLine = function(line) {
     line = line.replace(/\r/g,'');
-
+    //Check for metadata
+    if (line.includes('!FABMO!')) {
+        return {"type":"metadata"};
+    }
     // Extract end-of-line comments
     parts = line.split("'");
     statement = parts[0]
@@ -96,12 +99,7 @@ parseLine = function(line) {
     
     // Deal with full-line comments
     if(Array.isArray(obj) || obj === null) {
-        //TODO: Parser should ID header Metadata and comment distinctly
-        if (comment.indexOf('!FABMO!') !== -1) {
-            obj = {"type":"metadata"};
-        } else {
             obj = {"type":"comment", "comment":comment};
-        }
     } else {
         if(comment != '') {obj.comment = comment}
     }

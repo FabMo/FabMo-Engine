@@ -326,7 +326,7 @@ SBPRuntime.prototype.runStream = function(text_stream) {
 
             // Stream is fully processed
             st.on('end', function() {
-                log.debug('#780 runstream program:  ' + JSON.stringify(this.program))
+
                 try {
                     log.tock('Parse file')
 
