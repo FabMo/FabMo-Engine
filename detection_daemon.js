@@ -57,7 +57,7 @@ var start = function(port) {
 		if(data.toString() == REQ) 
 		{
 			// Respond indicating that we are a FabMo system
-			socket.send(new Buffer(OK), 0, OK.length, rinfo.port, rinfo.address, function (err) {
+			socket.send(Buffer.from(OK), 0, OK.length, rinfo.port, rinfo.address, function (err) {
 				if (err) {
 					log.error(err);
 				}
@@ -69,7 +69,8 @@ var start = function(port) {
 
 			result = getMachineInfo();
 			// advertise an HTTP server on port 80
-			socket.send(new Buffer(JSON.stringify(result)), 0, JSON.stringify(result).length, rinfo.port, rinfo.address, function (err) {
+			let resultString = JSON.stringify(result);
+			socket.send(Buffer.from(resultString), 0, resultString.length, rinfo.port, rinfo.address, function (err) {
 				if (err) log.error(err);
 				});
 		}

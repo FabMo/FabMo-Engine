@@ -412,10 +412,12 @@ G2.prototype.onData = function(data) {
 				var obj = JSON.parse(json_string);
 				this.onMessage(obj);
 			}catch(e){
-				throw e
-				this.emit('error', [-1, 'JSON_PARSE_ERROR', "Could not parse response: '" + jsesc(json_string) + "' (" + e.toString() + ")"]);
+				throw e;
+			} finally {
+				// if we hit a linefeed, we try to parse, if we succeed we clear the line and start anew
+				// and if we fail to parse, we still clear the line and start anew.
+				this._currentData = [];
 			}
-			this._currentData = [];
 		} else {
 			this._currentData.push(c);
 		}
@@ -431,8 +433,6 @@ G2.prototype.handleFooter = function(response) {
 		if(response.f[1] !== 0) {
 			var err_code = response.f[1];
 			var err_msg = G2_ERRORS[err_code] || ['ERR_UNKNOWN', 'Unknown Error'];
-			// TODO we'll have to go back and clean up alarms later
-			// For now, let's not emit a bunch of errors into the log that don't mean anything to us
 			this.emit('error', [err_code, err_msg[0], err_msg[1]]);
 			return new Error(err_msg[1]);
 		}

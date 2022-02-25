@@ -5,7 +5,7 @@ var restify = require('restify');
 var util = require('../util');
 var authentication = require('../authentication');
 var config = require('../config');
-var static = require('../static');
+var getStaticServeFunction = require('../static');
 
 // Load all the files in the 'routes' directory and process them as route-producing modules
 module.exports = function(server) {
@@ -30,27 +30,31 @@ module.exports = function(server) {
 
 	// Define a route for serving static files
 	// This has to be defined after all the other routes, or it plays havoc with things
-
-	server.get(/.*/, function(req, res, next) {
-		var current_hash = config.engine.get('version');
-		var url_arr = req.url.split('/');
-		if(url_arr[1] != current_hash){
-			url_arr.splice(1,0, current_hash);
-			var newPath = url_arr.join('/');
-			res.redirect(newPath , next);
-		} else {
-			next();
-		} 
-	},
-		static({
+	server.get("*",
+		function(req, res, next) {
+			var current_hash = config.engine.get('version');
+			var url_arr = req.url.split('/');
+            // if the browser requested "/" then we need to add "app/home"
+			if (url_arr[0] == "" && url_arr[1] == "") {
+               url_arr.push("app");
+               url_arr.push("home");
+            }
+            // if this was first access or an old url, then the first entry
+            // will not match the current hash which is what makes sure that
+            // we don't run into caching problems. Fix the hash by overwriting
+            // or prepending the correct hash.
+			if(url_arr[1] != current_hash){
+				url_arr.splice(1,0, current_hash);
+				var newPath = url_arr.join('/');
+				res.redirect(newPath , next);
+			} else {
+				next();
+			}
+		},
+	    getStaticServeFunction ({
 			//directory: './static'
 			directory: './dashboard/build',
 			default: 'index.html'
-		})
+	    })
 	);
-
-
-
-
-
 };

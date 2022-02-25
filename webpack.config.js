@@ -1,87 +1,117 @@
-var lib = 'dashboard/static/js/libs';
-var js = 'dashboard/static/js';
-var webpack = require("webpack");
-var ProvidePlugin = require('webpack').ProvidePlugin;
-var path = require('path');
-var ExtractTextPlugin = require('extract-text-webpack-plugin');
-var CleanWebpackPlugin = require('clean-webpack-plugin');
-var Promise = require('es6-promise').Promise;
-require('es6-promise').polyfill();
+// Generated using webpack-cli http://github.com/webpack-cli
+const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const lib = 'dashboard/static/js/libs';
+const js = 'dashboard/static/js';
+const webpack = require("webpack");
+const ProvidePlugin = require('webpack').ProvidePlugin;
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const Promise = require('es6-promise').Promise;
+const es6_promise = require('es6-promise').polyfill();
 
+process.traceDeprecation = true;
 
 var cleanOptions = {
   exclude:  ['index.html'],
 }
 
 var config = {
-  entry: {
-    home:'./dashboard/apps/home.fma/js/home.js',
-    dashboard:'./dashboard/static/js/main.js',
-    job_manager:'./dashboard/apps/job_manager.fma/js/job_manager.js',
-    editor: './dashboard/apps/editor.fma/js/editor.js',
-    configuration: './dashboard/apps/configuration.fma/js/configuration.js',
-    macro_manager: './dashboard/apps/macro_manager.fma/js/macro_manager.js',
-    network_manager: './dashboard/apps/network_manager.fma/js/network_manager.js',
-    preview: './dashboard/apps/previewer.fma/js/app.js',
-    selftest: './dashboard/apps/selftest.fma/js/selftest.js'
-  },
-  output: {
-    path: 'dashboard/build',
-    publicPath: "/",
-    filename: "[name].js"
-    // filename: "[name].[chunkhash].js"
-  },
-  resolve: {
-  // modulesDirectories: [lib],
-   extensions: ['', '.js'],
+    mode: 'development',
+    entry: {
+      home:'./dashboard/apps/home.fma/js/home.js',
+      dashboard:'./dashboard/static/js/main.js',
+      job_manager:'./dashboard/apps/job_manager.fma/js/job_manager.js',
+      editor: './dashboard/apps/editor.fma/js/editor.js',
+      configuration: './dashboard/apps/configuration.fma/js/configuration.js',
+      macro_manager: './dashboard/apps/macro_manager.fma/js/macro_manager.js',
+      network_manager: './dashboard/apps/network_manager.fma/js/network_manager.js',
+      preview: './dashboard/apps/previewer.fma/js/app.js',
+      selftest: './dashboard/apps/selftest.fma/js/selftest.js'
+    },
 
- },
-  module: {
-    loaders: [
-      {test: /\.js$/,
-      include :[
-          path.resolve(__dirname, 'src'),
-          path.resolve(__dirname, 'node_modules', 'camelcase'),
-          path.resolve(__dirname, 'node_modules', 'camelcase-keys'),
-          path.resolve(__dirname, 'node_modules', 'decamelize-keys'),
-          path.resolve(__dirname, 'node_modules', 'quick-lru'),
+    output: {
+      path: '/fabmo/dashboard/build',
+      publicPath: "/",
+      filename: "[name].js"
+      // filename: "[name].[chunkhash].js"
+      //  path: path.resolve(__dirname, 'dist'),
+    },
+
+    resolve: {
+      // modulesDirectories: [lib],
+      extensions: ['', '.js'],
+
+    },
+/*
+	optimization: {
+		splitChunks: {
+		  // include all types of chunks
+		  chunks: 'all',
+		},
+	},
+*/
+    module: {
+        rules: [
+            {
+                test: /\\.(js|jsx)$/,
+                loader: 'babel-loader',
+            },
+			{
+			    test: /\.js$/,
+			    enforce: 'pre',
+			    use: ['source-map-loader'],
+			},
+            {
+                test: /\.css$/i,
+                use: [
+                        {
+                           loader: MiniCssExtractPlugin.loader,
+                           options: {
+                              publicPath: "/",
+                           },
+                        },
+                        'css-loader'
+                     ],
+            },
+            {
+                test: /\.(eot|svg|ttf|woff|woff2|png|jpg|gif)$/,
+                type: 'asset',
+            },
+
+            // Add your rules for custom modules here
+            // Learn more about loaders from https://webpack.js.org/loaders/
         ],
-      loader: 'babel-loader',
-      query: {
-        "presets": [
-          ["env", {
-            "targets": {
-              "node": "0.10.44"
-            }
-          }]
-        ]
-      
-      }
-      },
-      { test: /\.css$/, loader: ExtractTextPlugin.extract("style-loader", "css-loader")},
-      { test: /\.(ttf|eot|svg|woff|woff2)(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'file-loader?limit=100000' },
-      { test: /\.(png|jpg)$/, loader: 'url-loader?name=img/[name].[ext]&limit=100000' },
-    ]
-  },
-  plugins: [
-      new CleanWebpackPlugin('./dashboard/build', cleanOptions),
+    },
+    plugins: [
+		new CleanWebpackPlugin({
+            dry: false,
+            verbose: true,
+            cleanOnceBeforeBuildPatterns: [
+               '**/*',
+               '!index.html',
+           ],
+        }),
 
-        
         new ProvidePlugin({
             $: 'jquery',
             jQuery: 'jquery',
             "window.jQuery": 'jquery',
             "windows.jQuery": 'jquery'
         }),
-       
-        
-        new webpack.optimize.CommonsChunkPlugin({
-          name: "common"
-        }),
-        new ExtractTextPlugin('css/[name].css', {
-            allChunks: true
-        })
-    ],
+
+
+		//new HtmlWebpackPlugin(
+			//{
+				//template: 'index.html',
+			//}
+		//),
+
+        // Add your plugins here
+        // Learn more obout plugins from https://webpack.js.org/configuration/plugins/
+
+		new MiniCssExtractPlugin(),
+    ]
 
 };
 

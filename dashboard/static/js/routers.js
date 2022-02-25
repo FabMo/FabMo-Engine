@@ -60,7 +60,7 @@ define(function(require) {
 			}
 			/*
 			initialize: function(options) {
-				$('a[href^="#"]').click(function(e) { this.navigate('/'); }.bind(this));
+				$('a[href^="#"]').on('click', function(e) { this.navigate('/'); }.bind(this));
 			}*/
 		});
 	

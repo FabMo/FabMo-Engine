@@ -154,7 +154,7 @@ var listAppFiles = function(req, res, next) {
 
 	add_urls(files);
 
-		var answer = {
+	var answer = {
 		status:"success",
 		data : {files : files}
 	};
@@ -206,9 +206,11 @@ module.exports = function(server) {
     server.post('/apps/:id/config', postAppConfig);
     server.del('/apps/:id', deleteApp);
     server.get('/apps/:id/files', listAppFiles);
-    server.get(/\/approot\/?.*/, static({
+    server.get("/approot/*", static({
+        directory: config.getDataDir('approot'),
+    }));
+    server.get("/approot*", static({
         directory: config.getDataDir('approot'),
     }));
     server.get('/updater', updater);
-
 };
