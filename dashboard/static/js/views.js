@@ -8,7 +8,7 @@ define(function(require) {
 
 	views.Authentication = Backbone.View.extend({
 		el : '#mainContent',
-		template: _.template(require('text!./templates/authentication.html')),
+		template: _.template(require('text-loader!./templates/authentication.html')),
 		initialize : function (){
 			this.render();
 		},

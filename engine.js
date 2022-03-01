@@ -9,7 +9,7 @@
 var restify = require('restify');
 var util = require('./util');
 var events = require('events');
-var socketio = require('socket.io');
+//var socketio = require('socket.io');
 var async = require('async');
 var process = require('process');
 var machine = require('./machine');
@@ -769,7 +769,8 @@ Engine.prototype.start = function(callback) {
             // Import the routes module and apply the routes to the server
             // Routes are loaded dynamically. See routes/routes.js for details.
             log.info("Loading routes...");
-            server.io = socketio.listen(server.server);
+
+            server.io = require('socket.io')(server.server);
             var routes = require('./routes')(server);
 
             // Kick off the server listening for connections

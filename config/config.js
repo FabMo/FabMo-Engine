@@ -139,17 +139,22 @@ Config.prototype.save = function(callback) {
 				log.error(err);
 				callback(err);
 			} else {
-				var cfg = new Buffer(JSON.stringify(this._cache, null, 4));
+				var cfg = Buffer.from(JSON.stringify(this._cache, null, 4));
 				fs.write(fd, cfg, 0, cfg.length, 0, function(err, written, string) {
 					if(err) {
+						log.info("config write failed");
 						log.error(err);
+						fs.closeSync(fd); // no error reporting
 						callback(err);
 					} else {
 						fs.fsync(fd, function(err) {
 							if(err) {
+								log.info("config sync failed");
 								log.error(err);
+							} else {
+								log.info('config fsync succeeded: ' + config_file);
 							}
-							fs.closeSync(fd);
+							fs.closeSync(fd); // no error reporting
 							log.debug('  fsync done ' + config_file);
 							callback(err);
 						}.bind(this));

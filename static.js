@@ -7,11 +7,9 @@ var path = require('path');
 var escapeRE = require('escape-regexp-component');
 
 var assert = require('assert-plus');
-var mime = require('mime');
+var mime = require('mime-types');
 var errors = require('restify-errors');
 var config = require('./config');
-
-
 
 ///--- Globals
 
@@ -61,6 +59,7 @@ function serveStatic(options) {
 
         if (err) {
             next(new ResourceNotFoundError(err, '%s', req.path()));
+            console.log("resource not found: " + file);
             return;
         } else if (!stats.isFile()) {
             next(new ResourceNotFoundError('%s does not exist', req.path()));
@@ -169,18 +168,20 @@ function serveStatic(options) {
                 }
             }
         }
-
         if (req.method !== 'GET' && req.method !== 'HEAD') {
+            console.log("static open 1 bad method: " + file);
             next(new MethodNotAllowedError(req.method));
             return;
         }
 
         if (!re.test(file.replace(/\\/g, '/'))) {
+            console.log("static open 1 could not replace slashes: " + file);
             next(new NotAuthorizedError('%s', req.path()));
             return;
         }
 
         if (opts.match && !opts.match.test(file)) {
+            console.log("static open 1 could not authorized: " + file);
             next(new NotAuthorizedError('%s', req.path()));
             return;
         }

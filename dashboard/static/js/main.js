@@ -480,13 +480,13 @@ require("../css/toastr.min.css");
         return keypad;
     }
 
-    $('.manual-drive-exit').click(function(){
+    $('.manual-drive-exit').on('click', function(){
         $('.manual-drive-message').html('');
         $('.manual-drive-message').hide();
         dashboard.engine.manualExit();
     })
 
-    $('.manual-drive-enter').click(function(){
+    $('.manual-drive-enter').on('click', function(){
         setUpManual();
         dashboard.engine.manualEnter();
     })
@@ -693,7 +693,7 @@ require("../css/toastr.min.css");
         }
     });
 
-    $('.zero-button').click(function() {
+    $('.zero-button').on('click', function() {
         var axi = $(this).parent('div').find('input').attr('id');
         var obj = {};
         obj[axi] = 0;
@@ -702,7 +702,7 @@ console.log('zero- ',axi,obj,obj[axi]);
     });
 
 
-    $('#connection-strength-indicator').click(function(evt) {
+    $('#connection-strength-indicator').on('click', function(evt) {
         dashboard.launchApp('network-manager');
     });
 
