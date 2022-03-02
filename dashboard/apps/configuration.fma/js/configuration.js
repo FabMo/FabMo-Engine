@@ -110,6 +110,11 @@ function update() {
   });
 }
 
+/* setConfig - creates a heirarchical object out of a string using "-" as the delimiter
+   setConfig("engine-units", "inches") results in {"engine":{"units":"inches"}}
+   and
+   setConfig("big-engine-units", "inches") results in {"big":{"engine":{"units":"inches"}}}
+*/
 function setConfig(id, value) {
 	var parts = id.split("-");
 	var o = {};

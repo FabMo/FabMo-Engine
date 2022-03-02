@@ -5,10 +5,20 @@
 
         <link rel="stylesheet" href="../../css/dashboard.css">
 	    <link rel="stylesheet" href="./css/style.css">
+        <link rel="stylesheet" href="./css/foundation.min.css">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+           .fabmo-menu:hover {
+                color:white;
+                background-color:rgb(72, 70, 70);
+            }
+            .fabmo-menu {
+                color:white;
+                background-color:rgb(92, 90, 90);
+            }
+        </style>
 
-
-    <div id="passwd-modal" class="reveal-modal medium" data-reveal>
+    <div id="passwd-modal" class="reveal" data-reveal>
     <div id="modal-title"></div>
       <div class="row">
           <label for="wifi-password">Passphrase</label>
@@ -19,16 +29,16 @@
                <button class="button radius success" id="btn-connect">Connect</button>
            </div>
        </div>
-       <a class="close-reveal-modal" id="close-password-modal">&#215;</a>
+       <a class="close-reveal-modal" data-close id="close-password-modal">&#215;</a>
     </div>
 
-    <div id="confirm-modal" class="reveal-modal medium" data-reveal>
+    <div id="confirm-modal" class="reveal" data-reveal>
     <div id="confirm-modal-title"></div>
     <div id="confirm-modal-description"></div>
     <div class="row">
          <div class="right">
-             <button id="confirm-modal-cancel" class="button radius alert">Cancel</button>
-             <button id="confirm-modal-ok" class="button radius success">Ok</button>
+             <button id="confirm-modal-cancel" data-close class="button radius alert">Cancel</button>
+             <button id="confirm-modal-ok" data-close class="button radius success">Ok</button>
          </div>
      </div>
     </div>
@@ -37,13 +47,10 @@
 <body>
 
     <section class="top-bar-section">
-        <nav class="top-bar" data-topbar role="navigation">
-          <ul class="title-area">
-            <li class="name">
-              <h1><a id="app-header" >Wifi Networks</a></h1>
-            </li>
-            <li><a id="ap-mode-button" href="#">Enter AP Mode</a></li>
-            <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
+        <nav class="top-bar" data-topbar role="navigation" style="background-color:rgb(92, 90, 90)">
+          <ul class="menu" style="background-color:rgb(92, 90, 90)">
+            <a id="app-header" class="fabmo-menu"> Wifi Networks </a>
+            <li><a id="ap-mode-button" class="fabmo-menu" href="#">Enter AP Mode</a></li>
           </ul>
           <section class="top-bar-section">
           </section>
@@ -82,7 +89,7 @@
     </section>
 
   <!-- Javascript inclusions -->
-    <script src="../../common.js"></script>
     <script src="../../network_manager.js"></script>
+    <script> $(window).foundation(); <script>
 </body>
 </html>

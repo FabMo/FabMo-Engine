@@ -5,6 +5,7 @@
   <title>Configuration</title>
   <meta charset="utf-8" />
   <link rel="stylesheet" href="../../css/dashboard.css">
+  <link rel="stylesheet" href="../../css/foundation.min.css">
   <link rel="stylesheet" href="./css/style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -12,174 +13,166 @@
 <body>
   <div class="tip-output"><span class="tip-text"></span><div class='commentBox'></div></div>
   <div class="sticky">
-    <nav class="top-bar" data-topbar role="navigation">
-      <ul class="title-area">
+    <!-- START HERE -->
+    <nav class="top-bar" data-topbar role="navigation" style="background-color:rgb(92, 90, 90);">
+      <ul class="title-area" style="color:white; background-color:rgb(92, 90, 90);list-style-type: none;">
         <li class="name">
-          <h1><a id="app-header">Configuration</a></h1>
-        </li>
-        <li class="toggle-topbar"><a href="#"><span>Menu</span></a>
+         <h2> <a id="app-header" style="color:white; padding-right:50px;padding-bottom:0px" >Configuration</a> </h2>
         </li>
       </ul>
-      <section class="top-bar-section">
-        <ul class="left" role="tablist" data-tab>
-          <li class="tab-title active" role="presentational"><a href="#tabpanel1" role="tab" tabindex="0" aria-selected="true" controls="tabpanel1">General</a>
-          </li>
-          <li class="tab-title" role="presentational"><a href="#tabpanel5" role="tab" tabindex="0" aria-selected="false" controls="tabpanel5">Machine</a>
-          </li>
-          <li class="tab-title" role="presentational"><a href="#tabpanel4" role="tab" tabindex="0" aria-selected="false" controls="tabpanel4">Drivers</a>
-          </li>
-          <li class="tab-title" role="presentational"><a href="#tabpanel2" role="tab" tabindex="0" aria-selected="false" controls="tabpanel2">Axes</a>
-          </li>
-          <li class="tab-title" role="presentational"><a href="#tabpanel3" role="tab" tabindex="0" aria-selected="false" controls="tabpanel3">Inputs</a>
-          </li>
-          <li class="tab-title" role="presentational"><a href="#tabpanel6" role="tab" tabindex="0" aria-selected="false" controls="tabpanel6">Apps</a>
-          </li>
-          <li class="tab-title" role="presentational"><a href="#tabpanel7" role="tab" tabindex="0" aria-selected="false" controls="tabpanel7">Users</a>
-          </li>
+      <div class="top-bar-left" style="color:white; background-color:rgb(92, 90, 90);">
+        <ul class="left tabs" data-tabs id="configuration-tab-list" style="border:0px;background-color:rgb(92, 90, 90);list-style-type: none;">
+          <li class="tabs-title is-active" role="presentational"> <a href="#tabpanelGeneral" aria-selected="true">General</a> </li>
+          <li class="tabs-title"> <a data-tabs-target="tabpanelMachine" href="#tabpanelMachine">Machine</a> </li>
+          <li class="tabs-title"> <a data-tabs-target="tabpanelDrivers" href="#tabpanelDrivers">Drivers</a> </li>
+          <li class="tabs-title"> <a data-tabs-target="tabpanelAxes" href="#tabpanelAxes">Axes</a> </li>
+          <li class="tabs-title"><a data-tabs-target="tabpanelInputs" href="#tabpanelInputs">Inputs</a> </li>
+          <li class="tabs-title"> <a data-tabs-target="tabpanelApps" href="#tabpanelApps">Apps</a> </li>
+          <li class="tabs-title"> <a data-tabs-target="tabpanelUsers" href="#tabpanelUsers">Users</a> </li>
         </ul>
-        <ul class="right">
-          <li>
-            <a id="engine-version" class="engine-version" href=""></a>
-          </li>
+      </div>
+      <div class="top-bar-right" style="background-color:rgb(92, 90, 90);list-style-type: none;">
+        <ul style="background-color:rgb(92, 90, 90);list-style-type: none; color:white">
+          <li> <a id="engine-version" class="engine-version" style="color:white" href=""> </a> </li>
         </ul>
-      </section>
+      </div>
     </nav>
   </div>
-
-  
 
   <div class="row">
     <!--  <form> -->
 
-    <ul class="tabs" data-tab role="tablist">
-
-    </ul>
-    <div class="tabs-content">
-      <section role="tabpanel" aria-hidden="false" class="content active" id="tabpanel1">
-        <div class="row">
-          <fieldset>
+    <div class="tabs-content" data-tabs-content="configuration-tab-list">
+      <div class="tabs-panel is-active" id="tabpanelGeneral">
+        <div class="grid-container medium-margin-collapse">
+          <fieldset style="border-style:groove; border-width:2px"> <!-- begin re-formatting efforts  -->
             <legend>General Settings</legend>
-            <div class="large-4 columns" >
-              <div class="row collapse">
-                <label data-tip="The name of your tool.  The tool name will be displayed on the dashboard, and is used as the network name for wireless and wired networking.">Machine Name<div class="tool-tip">i</div></label>
-                <div class="small-12 columns">
-                  <input type="text"  id="engine-name" class="engine-input"/>
+            <div class="grid-x"> <!-- first row -->
+              <div class="cell small-3" style="padding-left:5px; padding-right:10px">
+                <div class="row collapse">
+                  <label data-tip="The name of your tool.  The tool name will be displayed on the dashboard, and is used as the network name for wireless and wired networking.">
+                    Machine Name<div class="tool-tip">i</div></label>
+                  <div class="small-12 columns">
+                    <input type="text"  id="engine-name" class="engine-input" />
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="large-4 columns" id="section-machine-id">
-              <div class="row collapse">
-                <label data-tip="The unique factory ID of your tool.  This ID can be helpful for tech support.  This value cannot be changed.">Machine ID<div class="tool-tip">i</div></label>
-                <div class="small-12 columns">
-                  <input type="text" id="input-machine-id" disabled/>
+              <div class="cell small-3" id="section-machine-id" style="padding-left:10px; padding-right:10px">
+                <div class="row collapse">
+                  <label data-tip="The unique factory ID of your tool.  This ID can be helpful for tech support.  This value cannot be changed.">
+                    Machine ID<div class="tool-tip">i</div></label>
+                  <div class="small-12 columns">
+                    <input type="text" id="input-machine-id" disabled/>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="large-4 columns"> 
-              <div class="row collapse">
-                <label data-tip="The machine profile sets the default values, apps and macros for your tool.  Changing this setting will require you to reboot your tool.">Machine Profile<div class="tool-tip">i</div></label>
-                <select id="profile-listbox">
-                </select>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label data-tip="The distance units that will be used by default for the DRO display and in supported apps.">Default Unit System<div class="tool-tip">i</div></label>
-                <select id="machine-units" class="machine-input">
-                  <option value="mm">mm</option>
-                  <option value="in">in</option>
-                </select>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label data-tip="">Distance Mode</label>
-                <select id="driver-gdi" class="driver-input">
-                  <option value="0">Absolute</option>
-                  <option value="1">Incremental</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label data-tip='Maximum deviation that an arc segment may take from its "ideal" trajectory.  A smaller number here means higher resolution (but possibly slower) arcs.'>Chordal Tolerance<div class="tool-tip">i</div></label>
-                <div class="small-9 columns">
-                  <input type="text" id="driver-ct" class="driver-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
-                </div>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label data-tip="Determines how aggressively the machine takes corners.  Sensible values are between 0.5 and 2.0.  Higher values mean more aggressive corners.">Junction Integration Time<div class="tool-tip">i</div></label>
-                <div class="small-12 columns">
-                  <input type="text" id="driver-jt" class="driver-input" />
-                </div>
-              </div>
-            </div>
-          </fieldset>
-        </div>
-
-        <div class="row">
-          <fieldset>
-            <legend>Logging</legend>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label data-tip="Determines how aggressively the tool records diagnostic information in its log.  This should be set to 'Informational' except in certain exceptional tech support situations.  Setting this value to something other than 'Informational' may negatively impact tool performance.">Log Level<div class="tool-tip">i</div></label>
-                  <select id="engine-log_level" class="engine-input">
-                    <option value="g2">G2</option>
-                    <option value="debug">Debug</option>
-                    <option value="info">Informational</option>
-                    <option value="warning">Warnings</option>
-                    <option value="error">Error</option>
+              <div class="cell small-3" style="padding-left:10px; padding-right:10px">
+                <div class="row collapse">
+                  <label data-tip="The machine profile sets the default values, apps and macros for your tool.  Changing this setting will require you to reboot your tool.">
+                    Machine Profile<div class="tool-tip">i</div></label>
+                  <select id="profile-listbox">
                   </select>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label data-tip="The minimum interval between tool status reports.  A larger number here means position and status displays that do not update as frequently.">Status Report Interval<div class="tool-tip">i</div></label>
-                <div class="small-9 columns">
-                  <input type="text" id="driver-si" class="driver-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix">ms</span>
                 </div>
               </div>
-            </div>
+              <div class="cell small-3" style="padding-left:10px; padding-right:10px">
+                <div class="row collapse">
+                  <label data-tip="The distance units that will be used by default for the DRO display and in supported apps.">
+                    Default Unit System<div class="tool-tip">i</div></label>
+                  <select id="machine-units" class="machine-input">
+                    <option value="mm">mm</option>
+                    <option value="in">in</option>
+                  </select>
+                </div>
+              </div>
+            </div> <!-- end grid-x --> <!-- first row -->
+            <div class="grid-x medium-margin-collapse">
+              <div class="cell small-3" style="padding-left:10px; padding-right:10px">
+                <div class="row collapse">
+                  <label data-tip="By default will motion be with respect to the absolute datum or relative from the current position">
+                    Distance Mode<div class="tool-tip">i</div></label>
+                  <select id="driver-gdi" class="driver-input">
+                    <option value="0">Absolute</option>
+                    <option value="1">Incremental</option>
+                  </select>
+                </div>
+              </div>
+              <div class="cell small-3" style="padding-left:10px; padding-right:10px;">
+                <div class="row collapse"> <!-- right here -->
+                  <label data-tip='Maximum deviation that an arc segment may take from its "ideal" trajectory.  A smaller number here means higher resolution (but possibly slower) arcs.'>
+                    Chordal Tolerance<div class="tool-tip">i</div></label>
+                  <div class="small-9 columns">
+                    <input type="text" id="driver-ct" class="driver-input" />
+                  </div>
+                </div>
+              </div>
+              <div class="cell small-3" style="padding-left:10px; padding: right 10px;">
+                <div class="row collapse">
+                  <label data-tip="Determines how aggressively the machine takes corners.  Sensible values are between 0.5 and 2.0.  Higher values mean more aggressive corners.">
+                    Junction Integration Time<div class="tool-tip">i</div></label>
+                  <div class="small-12 cell">
+                    <input type="text" id="driver-jt" class="driver-input" />
+                  </div>
+                </div>
+              </div>
+            </div> <!-- end grid-x -->
           </fieldset>
-        </div>
-
-	<div class="row">
-	  <fieldset>
-		  <legend>Updates</legend>
-      <div class="large-4 columns">
-        <div class="row collapse">
-          <label data-tip="The version of FabMo that is currently running on this tool.">Software Version<div class="tool-tip">i</div></label>
-          <div class="columns">
-              <span class="engine-version"></span>
-          </div>
-          <label data-tip="The version of low-level G2 motion firmware that is currently running on this tool.">G2 Firmware Version<div class="tool-tip">i</div></label>
-          <div class="columns">
-              <span class="firmware-version"></span>
-          </div>
-        </div>
-      </div>
-      <div class="large-4 columns">
-          <div class="row collapse">
-            <a id="btn-update"  class="button radius small disabled noselect">No FabMo Software Updates Available!</a>
-          </div>
-      </div>
-      <div class="large-4 columns">
-        <div class="row collapse">
-          <a id="btn-flash-firm"  class="button radius small">Update G2 Firmware from a File</a>
-          <input style="display:none" type="file" id="firmware-input">
-        </div>
-      </div>
-	  </fieldset>
-	</div>
+          <fieldset style="border-style:groove; border-width:2px">
+            <legend>Logging</legend>
+            <div class="grid-x medium-margin-collapse"> <!-- 2nd row -->
+              <div class="cell small-3" style="padding-left:10px; padding: right 10px;">
+                <div class="row collapse">
+                  <label data-tip="Determines how aggressively the tool records diagnostic information in its log.  This should be set to 'Informational' except in certain exceptional tech support situations.  Setting this value to something other than 'Informational' may negatively impact tool performance.">
+                    Log Level<div class="tool-tip">i</div></label>
+                    <select id="engine-log_level" class="engine-input">
+                      <option value="g2">G2</option>
+                      <option value="debug">Debug</option>
+                      <option value="info">Informational</option>
+                      <option value="warning">Warnings</option>
+                      <option value="error">Error</option>
+                    </select>
+                </div>
+              </div>
+              <div class="cell small-3" style="padding-left:10px; padding: right 10px;">
+                <div class="row collapse">
+                  <label data-tip="The minimum interval between tool status reports.  A larger number here means position and status displays that do not update as frequently.">
+                    Status Report Interval (ms)<div class="tool-tip">i</div></label>
+                  <div class="cell small-9">
+                    <input type="text" id="driver-si" class="driver-input" />
+                  </div>
+                </div>
+              </div>
+            </div> <!-- end grid-x -->
+          </fieldset>
+          <fieldset style="border-style:groove; border-width:2px">
+            <legend>Updates</legend>
+            <div class="grid-x medium-margin-collapse">
+              <div class="large-4 cell">
+                <div class="row collapse">
+                  <label data-tip="The version of FabMo that is currently running on this tool.">Software Version<div class="tool-tip">i</div></label>
+                  <div class="cell">
+                      <span class="engine-version"></span>
+                  </div>
+                  <label data-tip="The version of low-level G2 motion firmware that is currently running on this tool.">G2 Firmware Version<div class="tool-tip">i</div></label>
+                  <div class="cell">
+                      <span class="firmware-version"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="large-3 cell" style="padding-left:40px;">
+                  <div class="row collapse">
+                    <a id="btn-update"  class="button radius small disabled noselect">No FabMo Software Updates Available!</a>
+                  </div>
+              </div>
+              <div class="large-3 cell" style="padding-left:30px;">
+                <div class="row collapse">
+                  <a id="btn-flash-firm"  class="button radius small">Update G2 Firmware from a File</a>
+                  <input style="display:none" type="file" id="firmware-input">
+                </div>
+              </div>
+            </div> <!-- grid-x -->
+          </fieldset>
+        </div> <!-- end of grid-container -->
+      </div> <!-- end tabpanelGeneral -->
 <!--
         <div class="row">
           <fieldset>
@@ -476,9 +469,8 @@
 </div>
 </fieldset>
 </div> -->
-      </section>
 
-      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel2">
+      <div class="tabs-panel" id="tabpanelAxes">
         <div class="row">
           <fieldset>
             <legend>X-Axis</legend>
@@ -803,13 +795,11 @@
             </div>
           </fieldset>
         </div>
-      </section>
+      </div> <!-- end tabpanelAxes -->
 
-
-      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel3">
+      <div class="tabs-panel" id="tabpanelInputs">
         <div class="row">
           <fieldset>
-
             <legend>Input 1</legend>
             <div class="large-4 columns">
               <div class="row collapse">
@@ -1323,10 +1313,9 @@
             </div>
           </fieldset>
         </div>
-      </section>
+      </div> <!-- end tabpanelInputs -->
 
-
-      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel4">
+      <div class="tabs-panel" id="tabpanelDrivers">
 
         <div class="row">
           <fieldset>
@@ -1734,10 +1723,9 @@
             </div>
           </fieldset>
         </div>
-      </section>
+      </div> <!-- tabpanelDrivers -->
 
-
-      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel5">
+      <div class="tabs-panel" id="tabpanelMachine">
         <div class="row">
           <fieldset>
             <legend>Machine Envelope</legend>
@@ -2037,10 +2025,9 @@
           </fieldset>
 
         </div>
-      </section>
+      </div> <!-- end tabpanelMachine -->
 
-
-      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel6" style="padding: 0px;">
+      <div class="tabs-panel" id="tabpanelApps" style="padding: 0px;">
 
         <form style="display:none;" id="fileform">
           <input type="file" id="file" multiple>
@@ -2068,9 +2055,9 @@
             </div>
           </div>
         </div>
-      </section>
+      </div> <!-- end tabpanelApps -->
 
-      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel7" style="padding: 0px;">
+      <div class="tabs-panel" id="tabpanelUsers" style="padding: 0px;">
         <div class="row">
           <fieldset>
             <legend>Current User Information</legend>
@@ -2138,13 +2125,10 @@
               <button id="add-user" class="button radius small">Add new user</button>
             </div>
           </fieldset>
-      </section>
-
-      </div>
+        </div>
+      </div> <!-- end tabpanelUsers -->
       <!--</form>-->
-
-    </div>
-    <script src="../../common.js"></script>
+    </div> <!-- end of data-tabs-content="configuration-tab-list -->
     <script src="../../configuration.js"></script>
 
 </body>

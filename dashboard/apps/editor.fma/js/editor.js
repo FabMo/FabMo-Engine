@@ -1,5 +1,5 @@
 
-require('jquery');
+require('./jquery.min.js');
 var Foundation = require('../../../static/js/libs/foundation.min.js');
 var Fabmo = require('../../../static/js/libs/fabmo.js');
 var fabmo = new Fabmo;
@@ -218,7 +218,6 @@ require('./cm-fabmo-modes.js');
         var h = window.innerHeight;
         var h2 = $('#topbar').height();
         $("#editor").css('height',h-h2);
-        $(document).foundation('reflow');
       }
 
       $(window).resize(function(){
@@ -282,7 +281,6 @@ require('./cm-fabmo-modes.js');
             fabmo.notify('warn', 'Unknown file format in editor?!');
             break;
         }
-        $('#jobsubmit-modal').foundation('reveal', 'open');
         $('#jobsubmit-name').focus();
 
         $('#jobsubmit-submit').on('click', function( event ) {
@@ -298,7 +296,7 @@ require('./cm-fabmo-modes.js');
               filename: filename,
               name : name,
               description: description
-            },
+            }, null,
             function(err, result) {
               if(err) {
                 if(err.message) {
@@ -314,7 +312,6 @@ require('./cm-fabmo-modes.js');
             }
           );
 
-          $('#jobsubmit-modal').foundation('reveal', 'close');
           $("#jobsubmit-form").trigger('reset');
         });
 
@@ -333,5 +330,4 @@ require('./cm-fabmo-modes.js');
 
     $('#jobsubmit-cancel').click(function(evt) {
       evt.preventDefault();
-      $('#jobsubmit-modal').foundation('reveal', 'close');
     });
