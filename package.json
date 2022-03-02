@@ -23,7 +23,7 @@
     "file-loader": "0.8.5",
     "fs-extra": "0.23.1",
     "glob": "5.0.15",
-    "jquery": "3.6.0",
+    "jquery": "2.2.4",
     "jsesc": "1.0.0",
     "mime-types": "^2.1.30",
     "minimist": "1.2.5",
