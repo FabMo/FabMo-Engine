@@ -355,8 +355,7 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 #tool-name {
   max-width: 16em;
   overflow: hidden;
-  white-space: nowrap;
-  color: white;
+  white-space: nowrap
 }
 
 #left-position-container {
@@ -503,23 +502,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .widget.colapsed span {	display: none; }
 .widget.colapsed label { display: none; }
 
-.widget ul {
-	list-style-type:none;
-	padding-left: 0px !important;
-}
-
-.widget ul li a {
-	height: 46px;
-	height : 2.875rem;
-	padding-left : 0px !important;
-}
-
-
-.widget.colapsed ul {
-	list-style-type: none;
-	padding-left: 0px !important;
-}
-
 .widget.colapsed ul li a {
 	height: 46px;
 	height : 2.875rem;
@@ -639,19 +621,38 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	}
 }
 
+#icon_home 			{ background-image: url('../img/icon_home.png');}
+#icon_jobs 			{ background-image: url('../img/icon_jobs.png');}
+#icon_global 		{ background-image: url('../img/icon_global.png');}
+#icon_apps 			{ background-image: url('../img/icon_apps.png');}
+#icon_social 		{ background-image: url('../img/icon_social.png');}
+#icon_search 		{ background-image: url('../img/icon_search.png');}
+#icon_folder 		{ background-image: url('../img/icon_folder.png');}
+#icon_settings 		{ background-image: url('../img/icon_settings.png');}
+#icon_colapse 		{ background-image: url('../img/icon_colapse_r.png');}
+#icon_edit 			{ background-image: url('../img/icon_folder.png');}
+#icon_editor 		{ background-image: url('../img/icon_editor.png');}
+#icon_video 		{ background-image: url('../img/icon_video.png');}
+#icon_handwheel 	{ background-image: url('../img/icon_refresh.png');}
+#icon_log 			{ background-image: url('../img/icon_log.png');	}
+#icon_network 		{ background-image: url('../img/icon_network.png');	}
+#icon_sign_out 		{ background-image: url('../img/icon_sign_out.png');	}
 #icon_joystick 		{ 
-/*	width: 50px;
-	height: 50px;  */
-	width: 90%;
-	height: 90%;
-	left: 5%;
+	width: 50px;
+	height: 50px;
 	background-image: url('../img/icon_keypad.png');
 	position: absolute;
+    top: 12%;
+    left: -4%;
 	transform: scale(.9,1);	
 	background-repeat: no-repeat;
 	background-size: 3rem;
 	background-position: center;
 }
+
+.colapsed #icon_colapse { background-image: url('../img/icon_colapse.png');	}
+
+
 
 .left-slide-menu {
 	display: none;
@@ -686,9 +687,11 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .open#left-slide-button {
+	background-image: url('../img/icon_colapse_r.png');
 }
 
 #left-slide-button {
+	background-image: url('../img/icon_colapse.png');
 }
 
 #man-tab {

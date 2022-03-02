@@ -5,13 +5,12 @@
   <meta charset="utf-8"/>
   
   <link rel="stylesheet" href="../../css/dashboard.css">
-  <link rel="stylesheet" href="./css/style.css">
+	<link rel="stylesheet" href="./css/style.css">
   <link rel="stylesheet" href="./css/codemirror.css">
   <link rel="stylesheet" href="./css/syntax.css">
-  <link rel="stylesheet" href="./css/foundation.min.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <div id="jobsubmit-modal" class="reveal" data-reveal>
+  <div id="jobsubmit-modal" class="reveal-modal medium" data-reveal>
     <div id="modal-title">Submit Job</div>
     <div id="jobsubmit-form">
         <div class="row">
@@ -29,8 +28,8 @@
 
         <div class="row">
              <div class="right">
-                 <button id="jobsubmit-cancel" data-close class="button radius alert">Cancel</button>
-                 <button id="jobsubmit-submit" data-close class="button radius success">Submit Job</button>
+                 <button id="jobsubmit-cancel" class="button radius alert">Cancel</button>
+                 <button id="jobsubmit-submit" class="button radius success">Submit Job</button>
              </div>
          </div>
      </div>
@@ -39,42 +38,50 @@
 
 </head>
 <body>
-<!-- START HERE -->
-<nav class="top-bar" data-topbar role="navigation" style="background-color:rgb(92, 90, 90)">
-  <div class="top-bar-left">
-            <ul style="background-color:rgb(92, 90, 90);color:white;" class="dropdown menu" data-dropdown-menu data-click-open>
-              <li id="macro-menu" class="hidden"> <a style="color:white;" href="#macromenu">Macro</a>
-                  <ul class="menu">
-                      <li><a id="macro-save" href="#macrosave">Save</a></li>
-                      <li>
-                          <a id="macro-save-and-close"
-                             href="#macrosaveandclose">Save and Close</a>
-                      </li>
-                  </ul>
-              </li>
-              <li>
-                  <a style="color:white;" href="#languagemenu">Language</a>
-                  <ul class="menu">
-                      <li><a id="lang-opensbp" href="#languageopensbp">OpenSBP</a></li>
-                      <li><a id="lang-gcode" href="#language-gcode">G-Code</a></li>
-                  </ul>
-              </li>
-              <li><a style="color:white;" href="#executemenu">Execute</a>
-                   <ul class="menu">
-                      <li><a id="submit-immediate"
-                             href="#submitimmediate">Run Immediately (Ctrl+Enter)</a>
-					  </li>
-                      <li><a data-open="jobsubmit-modal" id="submit-job" href="#">Submit as Job</a></li>
-                  </ul>
-             </li>
-            </ul>
-  </div>
-  <div class="top-bar-right">
-  </div>
-</nav>
-<h1 id="app-header"> Editor </h1>
-<div id="editor">
-</div>
+  <nav id="topbar" class="top-bar" data-topbar role="navigation">
+    <ul class="title-area">
+      <li class="name">
+        <h1><a id="app-header" class="noselect">Editor</a></h1>
+      </li>
+      <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
+    </ul>
+
+    <section class="top-bar-section">
+      <!-- Right Nav Section -->
+      <ul class="right">
+      </ul>
+
+      <!-- Left Nav Section -->
+      <ul class="left">
+        <li class="has-dropdown hidden" id="macro-menu">
+          <a href="#macromenu">Macro</a>
+          <ul class="dropdown">
+            <li><a id="macro-save" href="#macrosave">Save</a></li>
+            <li><a id="macro-save-and-close" href="#macrosaveandclose">Save and Close</a></li>          
+          </ul>        
+        </li>
+        <li class="has-dropdown language-dropdown"> 
+          <a href="#languagemenu">Language</a>
+          <ul class="dropdown">
+            <li><a id="lang-opensbp" href="#languageopensbp">OpenSBP</a></li>
+            <li><a id="lang-gcode" href="#languagegcode">G-Code</a></li>
+          </ul>
+        </li>
+        <li class="has-dropdown" id="execute-menu"> 
+          <a href="#executemenu" class="success">Execute</a>
+          <ul class="dropdown"> 
+            <li><a id="submit-immediate" href="#submitimmediate">Run Immediately (Ctrl+Enter)</a></li>
+            <li><a id="submit-job" href="#submitasjob">Submit as Job</a></li>
+          </ul>
+        </li> 
+      </ul>
+    </section>
+  </nav>
+
+  <div id="editor"></div>
+
+  <script src="../../common.js"></script>
   <script src="../../editor.js"></script>
+
 </body>
 </html>

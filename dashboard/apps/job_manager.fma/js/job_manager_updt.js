@@ -1,5 +1,5 @@
-require('./jquery.dragster.js');
 require('jquery');
+require('./jquery.dragster.js');
 var Foundation = require('../../../static/js/libs/foundation.min.js');
 var moment = require('../../../static/js/libs/moment.js');
 var Sortable = require('./Sortable.js');
@@ -36,7 +36,6 @@ function fileUploadProgress(progress) {
     }, 200);
   }
 }
-
 
 function setupDropTarget() {
   $('#tabpending').dragster({
@@ -259,7 +258,7 @@ function setFirstCard() {
   $('.preview').data('id', firstId);
   $('.download').data('id', firstId);
   $('.edit').data('id', firstId);
-
+  el.style.backgroundColor = "Wheat";
 }
 
 /*
@@ -313,8 +312,11 @@ function createHistoryMenu(id) {
 }
 
 function addHistoryEntries(jobs) {
+  var counter = 0;
   var table = document.getElementById('history_table');
+  console.log("Added row:" + counter);
   jobs.forEach(function(job) {
+    counter++; console.log("Added row:" + counter);
     var row = table.insertRow(table.rows.length);
     var menu = row.insertCell(0);
     menu.className += ' actions-control';
@@ -331,6 +333,7 @@ function addHistoryEntries(jobs) {
     time.innerHTML = moment.utc(job.finished_at - job.started_at).format('HH:mm:ss');
   });
   bindMenuEvents();
+
 }
 
 function hideDropDown() {
@@ -497,9 +500,16 @@ var setProgress = function(status) {
 function handleStatusReport(status) {
   // Either we're running a job currently or null
   try {
-    var jobId = status.job._id || null;
-    var jobState = status.state;
-
+    console.log("status:" + status);
+    console.log("status.job:" + status.job);
+    console.log("status.job.id:" + status.job._id);
+    console.log("status.state:" + status.state);
+    var jobId = null;
+    var jobState = null;
+    if(status) {
+      jobId = status.job._id || null;
+      jobState = status.state;
+    }
   } catch (e) {
     var jobid = null;
   }
@@ -1212,19 +1222,19 @@ $(document).ready(function() {
     updateHistory();
   });
 
-   fabmo.on('job_start',function (cmd, data) {
+  fabmo.on('job_start',function (cmd, data) {
     updateQueue();
     updateHistory();
   });
 
 
   //May need to put back in 
-  // fabmo.on('change',function (change) {
-  //   if(change === "jobs") {
-  //     updateQueue();
-  //     updateHistory();
-  //   }
-  // });
+  fabmo.on('change',function (change) {
+    if(change === "jobs") {
+      updateQueue();
+      updateHistory();
+    }
+  });
 
 
   // Request infoes from the tool
@@ -1285,16 +1295,11 @@ $(document).ready(function() {
     });
   });
 
-  // $( window ).resize(function() {
-  // 	setJobheight();
-  // }).resize();
   fabmo.on('reconnect', function() {
     updateQueue();
     updateOrder();
     updateHistory();
   });
-
-
 
   fabmo.on('status', function(status) {
     handleStatusReport(status);
@@ -1311,9 +1316,5 @@ $(document).ready(function() {
     e.wrap('<form>').closest('form').get(0).reset();
     e.unwrap();
   }
-
-
-
-
 
 });
