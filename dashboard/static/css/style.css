@@ -638,11 +638,14 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #icon_network 		{ background-image: url('../img/icon_network.png');	}
 #icon_sign_out 		{ background-image: url('../img/icon_sign_out.png');	}
 #icon_joystick 		{ 
-	width: 50px;
-	height: 50px;
+/*	width: 50px;
+	height: 50px;  */
+	width: 105%;
+	height: 90%;
+	left: 5%;
 	background-image: url('../img/icon_keypad.png');
 	position: absolute;
-    top: 12%;
+/*    top: 2%;    */
     left: -4%;
 	transform: scale(.9,1);	
 	background-repeat: no-repeat;
@@ -698,10 +701,11 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	cursor: pointer;
 	position: absolute;
     top: -0.5em;
-    left: 4px;
+    left: 5%;
 	/* right: 80%; */
     height: 0.5em;
-    width: 37px;
+    /*width: 37px;*/
+    width: 90%;
     background-color: #E6CF89;
 	border-radius: 4px 4px 0  0;
 	/* box-shadow: inset -1px 0px 1px 0px rgba(0,0,0,0.75), -2px 0px 3px 0px rgba(0,0,0,0.75); */
