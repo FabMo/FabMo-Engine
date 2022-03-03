@@ -1,6 +1,7 @@
 routes/debug.js
 sandbox
 build
+.vscode
 *.swp
 *~
 *.bak
