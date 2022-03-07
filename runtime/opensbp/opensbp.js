@@ -366,21 +366,36 @@ SBPRuntime.prototype.runStream = function(text_stream) {
                     // Start running the actual code, now that everything is prepped
                     return this._run();
                 } catch(e) {
-                    log.error(e)
-                    this._end(e.message);
+                    if(this.isInSubProgram()) {
+                        log.error(e);
+                        this._abort(e);
+                    } else {
+                        log.error(e)
+                        this._end(e.message);
+                    }
                 }
 
             }.bind(this));
             return undefined;
 
         } catch(e) {
-            log.error(e)
-            this._end(e.message);
+            if(this.isInSubProgram()) {
+                log.error(e);
+                this._abort(e);
+            } else {
+                log.error(e)
+                this._end(e.message);
+            }
         }
         return st;
     } catch(e) {
-        log.error(e);
-        this._end(e.message);
+        if(this.isInSubProgram()) {
+            log.error(e);
+            this._abort(e);
+        } else {
+            log.error(e)
+            this._end(e.message);
+        }
     }
 }
 
