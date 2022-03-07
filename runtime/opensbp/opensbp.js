@@ -300,8 +300,13 @@ SBPRuntime.prototype.runString = function(s) {
 
     } catch(e) {
         // A failure at any stage (except parsing) will land us here
-        log.error(e);
-        this._end(e.message);
+        if(this.isInSubProgram()) {
+            log.error(e);
+            this._abort(e);
+        } else {
+            log.error(e)
+            this._end(e.message);
+        }
     }
 };
 
