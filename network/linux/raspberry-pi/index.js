@@ -153,6 +153,23 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function() {
   var interfaces = os.networkInterfaces();
   var wlan0Int =interfaces.wlan0;
   var apInt = interfaces.uap0;
+  var wiredInt = "eth0";
+  var forceJoinAP = 0;
+  // All of the cases below should force us to update the AP SSID to have
+  // the current IP address
+  if((!this.network_history) ||
+        // ^^ we had never done this before
+     (!this.network_history[wiredInt] && interfaces[wiredInt][0].address) ||
+        //^^  eth0 just showed up            ^^^^^^
+     (this.network_history[wiredInt] &&  !interfaces[wiredInt]) ||
+        //^^ looks like eth0 just disappeared ^^^^^^^
+     (this.network_history[wiredInt] &&  interfaces[wiredInt] &&
+        // we have history and a current value, BUT...
+      this.network_history[wiredInt] != interfaces[wiredInt][0].address)) {
+        //  eth0 address changed     ^^
+        forceSSIDupdate = 1;
+  }
+
   this.network_history = {};
   Object.keys(interfaces).forEach(function (interface) {
      if(interface !== "lo") {
@@ -161,37 +178,53 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function() {
        }
      }
   }.bind(this));
-  if(!wlan0Int){
-    if(!apInt){
-      log.warn('No wifi or AP trying to bring up AP');
-      this._joinAP(function(err, res){
-        if(err){
-          log.warn("Could not bring back up AP");
-        } else {
-          log.info("AP back up")
-        }
-      });
-    } else {
-      log.info('No wifi, currently in AP mode');
+
+
+  /* Commentary on how we might choose to reorganize all this
+     We seem to be combining the funtion of resetting the AP SSID name with
+     the function of joining a wifi network - all in _joinAP().
+     I wonder if it wouldn't make sense to do those things separately.
+     One function to fix the SSID and another to join an external SSID.
+     If we did that the following cases might actually differ in more than
+     just the log messages they emit.  AND we might not need to rejoin
+     the external network so often.  Probably needs more study - rmackie
+  */
+  // The only differences between the following conditions are in the
+  // text messages we log. Here are variables to set that up.
+  var wirelessWarn;
+  var apRecoveryError;
+  var apRecoverySuccess;
+  var apRecoverExecute = false; //flag to record if we should we execute _joinAP()
+  if(wlan0Int) { // don't know why but if the wlan is up we always silently _rejoin() and
+                 // reset the ap name? why?  rmackie question for reviewers.
+     wirelessWarn = "";
+     apRecoveryError = "Could not bring back up AP";
+     apRecoverySuccess = "AP back up";
+     apRecoverExecute = true;
+  } else { // uh oh - no wireless connection
+    if(apInt){ // if the AP is up we only join if the ethernet ip address changed.
+               // otherwisse we just leave things along. rmackie - makes sense to me
+      if(forceSSIDupdate) {
+        wirelessWarn = 'Currently in AP mode, re-writing SSID';
+        apRecoveryError = "Could not re-write SSID";
+        apRecoverySuccess = "AP back up";
+        apRecoverExecute = true;
+      } // no else, because apRecover is already false
+    } else {  // if the ap isn't up, we rejoin.
+      wirelessWarn = 'No wifi or AP trying to bring up AP';
+      apRecoveryError = "Could not bring back up AP";
+      apRecoverySuccess = "AP back up";
+      apRecoverExecute = true;
     }
-  } else {
-    if(!apInt){
-      this._joinAP(function(err, res){
-        if(err){
-          log.warn("Could not bring back up AP");
-        } else {
-          log.info("AP back up")
-        }
-      });
-    } else {
-      this._joinAP(function(err, res){
-        if(err){
-          log.warn("Could not bring back up AP");
-        } else {
-          log.info("AP back up")
-        }
-      });
-    }
+  }
+  if (apRecoverExecute) {
+    this._joinAP(function(err, res){
+      if(err){
+        log.warn("Could not bring back up AP");
+      } else {
+        log.info("AP back up")
+      }
+    });
   }
 }
 
@@ -248,7 +281,6 @@ RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
   var full_name;
   var ext;
 
-   log.debug("At joinAP, name is - " + name)
   // Updating AP-Name
   // Then, restarting AP if we get name change; this should drop AP momentarily!
     ext =":"
@@ -261,11 +293,11 @@ RaspberryPiNetworkManager.prototype._joinAP = function(callback) {
     }
     full_name = name + ext;
   if (full_name !== last_name) {
+    log.debug('Changing SSID from "' + last_name + '" to "' + full_name + '"')
     // SSID is limited to 32 char; so makes long names challenging, as in:
     // 'ted-dev:169.254.225.224:192.168.1.109'
     // So best to prioritize display for ethernet, until a better idea ...
     //     TODO: chop tool names that are too long
-    log.debug("NEW full_name " + full_name); 
     var network_config = config.engine.get('network');
     network_config.wifi.mode = 'ap';
     config.engine.set('network', network_config);
