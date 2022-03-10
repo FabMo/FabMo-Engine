@@ -203,7 +203,7 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function() {
      apRecoverExecute = true;
   } else { // uh oh - no wireless connection
     if(apInt){ // if the AP is up we only join if the ethernet ip address changed.
-               // otherwisse we just leave things along. rmackie - makes sense to me
+               // otherwise we just leave things along. rmackie - makes sense to me
       if(forceSSIDupdate) {
         wirelessWarn = 'Currently in AP mode, re-writing SSID';
         apRecoveryError = "Could not re-write SSID";
