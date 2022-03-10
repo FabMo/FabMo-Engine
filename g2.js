@@ -599,6 +599,14 @@ G2.prototype.handleStatusReport = function(response) {
 			}
 		}
 		this.emit('status', this.status);
+
+		//If an input induced feedhold is received during a resume then adjust so that
+		// another resume can be received and feedhold can be properly reestablished.
+		if(this.hold > 0 && resumePending){
+			resumePending = false;
+			this.pause_flag = true;
+		}
+
 	}
 };
 
@@ -704,7 +712,7 @@ G2.prototype.resume = function() {
 	var deferred = Q.defer();
 	var that = this;
 	var onStat = function(stat) {
-		if(stat !== STAT_RUNNING) {
+		if(stat == STAT_RUNNING) {
 			if(this.quit_pending && stat === STAT_HOLDING) {
 				return;
 			}
