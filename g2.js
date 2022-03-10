@@ -543,6 +543,7 @@ G2.prototype.handleStatusReport = function(response) {
 						this.lines_to_send = 4
 						this.quit_pending = false;
 						this.pause_flag = false;
+						this.status.inFeedHold = false;
 						break;
 				}
 			} else {
@@ -551,12 +552,14 @@ G2.prototype.handleStatusReport = function(response) {
 				switch(response.sr.stat) {
 					case STAT_HOLDING:
 						this.pause_flag = true;
+						this.status.inFeedHold = true;
 						if(this.context) {
 							this.context.pause()
 						}
 						break;
 					default:
 						this.pause_flag = false;
+						this.status.inFeedHold = false;
 						if(this.context) {
 							this.context.resume();
 						}

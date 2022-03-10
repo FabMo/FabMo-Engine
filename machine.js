@@ -896,7 +896,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
                 if(this.status.state != newstate) {
                     //set driver in paused state
                     this.driver.pause_hold = true;
-                    this.status.inFeedHold = true;
+                    //this.status.inFeedHold = true;
                     // Save the position to the instance configuration.  See note above.
                     this.driver.get('mpo', function(err, mpo) {
 					    if(config.instance) {
