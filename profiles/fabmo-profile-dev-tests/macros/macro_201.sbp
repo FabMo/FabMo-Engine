@@ -37,7 +37,7 @@
 '
 
 ' ----------------------------------------------------------------
-$sb_standard_variables_PRESENT = 1  '- flags that this variables table has been read
+$sb_standard_variables_PRESENT = 0  '- flags that this variables table has been read when it is set to 1 at end
 $sb_varTableUNITS        = "IN"     '- (everywhere) IN;MM Table can be in INCHEs or MMs
                                     '-  but distance and speed values must be a consistent UNIT !!!
 $sb_hasBeenZeroed        = 0        '-  flag for whether we have been zeroed since starting or faulting; NEEDS TO BE ENABLED RYAN
@@ -130,6 +130,10 @@ $sb_home_X               = 0         '- (m3) this would be a special offset from
 $sb_home_Y               = 0         '- (m3) this would be a special offset from 0,0; only a value if using it
 
 $sb_safe_Z               = %(28)     'Temporary retreival from system vars ... see note below
+
+$sb_standard_variables_PRESENT = 1   'CONFIRM ALL READ.
+PAUSE "Standard Macro Variables Read  Confirm => " + $sb_standard_variables_PRESENT
+
 
 '* - FUTURE: ShopBot V-Carve posts currently write an IF statement at the top of file that tests whether file measurement UNITS match current measurement UNITS of tool>
 '        ... If not, it sends control to Macro#91 for user Notification, and ends file.
