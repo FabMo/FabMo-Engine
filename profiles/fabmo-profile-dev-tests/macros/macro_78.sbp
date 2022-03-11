@@ -8,7 +8,7 @@
 '   2/2/17, 3/16/17, 9/13/17, 11/12/19
 '   9/25/21 Refactored for FabMo (th)
 
- 	PAUSE "Before using this routine you should have run Macro #3, Home Tool"
+ 	''PAUSE "Before using this routine you should have run Macro #3, Home Tool" ''too much commentary
 	&tempTB_Zoffset = %(8)								' Read in current System Variables for current Z and Z-tablebase-offset 
 
     IF %(25) == 1 THEN GOTO tool_MM   		            ' Read UNIT of Tool; System Variable #25
