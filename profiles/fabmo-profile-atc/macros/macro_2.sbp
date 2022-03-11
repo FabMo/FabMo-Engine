@@ -1,0 +1,39 @@
+'!FABMO!name:ATC Z-Zero
+'!FABMO!description:Zero the Z with the Plate at the Table
+'Added pause to warn user to attach z-zero plate
+'Added pause to inform user on input error
+&ZZeroInput := 1
+
+&ZZeroSearchDistance = -12.0
+&ZZeroSearchSpeedSlow = 0.1
+&ZZeroSearchSpeedFast = 0.5
+&ZZeroPlateThickness = 0.123
+
+&ZZeroBackoffInitial = 0.2
+&ZZeroBackoffFinal = 0.5
+
+Main:
+' -------- Main Program Section --------
+GOSUB CheckInput
+'Attach the Z-Zero plate to tool then click resume or quit to exit.
+pause
+GOSUB FindZZero
+END
+
+FindZZero:
+    PZ,%(3)+&ZZeroSearchDistance,&ZZeroSearchSpeedFast,&ZZeroInput
+    JZ,%(3)+&ZZeroBackoffInitial
+    &reapproach = %(3)-2*&ZZeroBackoffInitial
+    PZ,&reapproach,&ZZeroSearchSpeedSlow,&ZZeroInput
+    JZ,%(3)+&ZZeroBackoffFinal
+    VA,,,&ZZeroBackoffFinal+&ZZeroPlateThickness
+    RETURN
+
+CheckInput:
+    IF %(51) == 1 THEN GOTO check_input_fail
+    RETURN
+
+check_input_fail:
+	FAIL "Input switch is already tripped.  Cannot zero the tool."
+    
+   

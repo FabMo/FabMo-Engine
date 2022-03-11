@@ -1,0 +1,36 @@
+'!FABMO!name:Table Cleanup
+'!FABMO!description:Sweep the leg
+&StartX = 2
+&StartY = 1.375
+&YStep = 3
+&ZHeight = -5.5
+&yMax = 47.0
+
+&SavedTool = $CurrentTool
+' Drop off any tool we might be carrying
+&Tool = 0
+C9
+
+&y = &StartY
+JZ,0
+J2,&StartX,&StartY
+JZ,&ZHeight
+MS,10
+LABEL:
+   MX,96
+   IF &y >= &YMax THEN GOTO ALLDONE 
+   &y = &y + &YStep
+   JY,&y
+   MX,0
+   IF &y >= &YMax THEN GOTO ALLDONE 
+   &y = &y + &YStep
+   JY,&y
+   GOTO LABEL
+   
+ALLDONE:
+	JZ,0
+    J2,0,0
+    SO,8,1
+    PAUSE 3
+    SO,8,0
+	END
