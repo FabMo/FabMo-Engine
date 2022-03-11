@@ -1950,7 +1950,7 @@ SBPRuntime.prototype.pause = function() {
         this.pendingFeedhold = true;
     } else {
         this.machine.driver.feedHold();
-        this.machine.status.inFeedHold = false;
+        this.machine.status.inFeedHold = true;
     }
 }
 
