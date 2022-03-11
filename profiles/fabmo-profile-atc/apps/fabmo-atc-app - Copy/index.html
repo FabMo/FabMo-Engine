@@ -1,0 +1,180 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FabMo Test App</title>
+  <link rel="stylesheet" href="node_modules/font-awesome/css/font-awesome.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" type="text/css" href="node_modules/bulma/css/bulma.css">
+  <style type="text/css">
+    body {
+      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+    }
+  </style>
+</head>
+<body >   
+
+<div class="modal" id="modal">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title" id="txt-modal-title"></p>
+      <button class="delete noselect"></button>
+    </header>
+    <section class="modal-card-body">
+      <div class="card-image" id="modal-image" style="display: none;">
+        <figure class="image">
+        <img id="img-modal" alt="image">
+        </figure>
+      </div>
+      <p  id="txt-modal-message" class="noselect" style="font-size: 1.5rem">
+        &nbsp;
+      </p>
+      <input id="txt-modal-input" class="input" type="text" style="font-size: 1.5rem" autofocus>
+
+    </section>
+    <footer class="modal-card-foot noselect">
+      <a class="noselect button is-danger is-large is-pulled-left" id="btn-modal-cancel">Cancel</a>
+      <a class="noselect button is-success is-large is-pulled-right" id="btn-modal-ok">Ok</a>
+    </footer>
+  </div>
+</div>
+
+<!-- Main menu -->
+<div class="screen" id="screen-home">
+<section class="hero is-fullheight">
+  <div class="hero-body">
+    <div class="container">
+      <div class="columns is-vcentered">
+        <div class="column is-6 is-offset-3">
+          <div class="has-text-centered">
+            <img src="images/shopbot-logo.png" alt="ShopBot" class="logo" />
+          </div>
+          <nav class="panel noselect">
+            <p class="panel-heading">
+              Menu
+            </p>
+            <a class="panel-block" id="menu-tools">
+              <span class="panel-icon">
+                <i class="fa fa-table"></i>
+              </span>
+              Tool List...
+            </a>
+            <a class="panel-block" id="menu-calibrate">
+              <span class="panel-icon">
+                <i class="fa fa-sliders"></i>
+              </span>
+              Calibrate ATC...
+            </a>
+            <a class="panel-block" id="menu-home">
+              <span class="panel-icon is-large">
+                <i class="fa fa-home"></i>
+              </span>
+              Home XYZ (C3)
+            </a>
+            <a class="panel-block" id="menu-zzero">
+              <span class="panel-icon is-large">
+                <img src="images/zzero.png" alt="zz" />
+              </span>
+              Zero Z Axis (C2)
+            </a>
+
+            <a class="panel-block" id="menu-vac">
+              <span class="panel-icon is-large">
+                <img src="images/vac.png" alt="vac" />
+              </span>
+              Cleanup Table
+            </a>
+
+            <a class="panel-block" id="menu-park">
+              <span class="panel-icon is-large">
+                <i class="fa fa-car"></i>
+              </span>
+              Park Tool
+            </a>
+<!--
+            <a class="panel-block" id="menu-zzero">
+              <span class="panel-icon">
+                <i class="fa fa-calculator"></i>
+              </span>
+              Z-Zero (Plate)
+            </a>
+
+             <a class="panel-block" id="menu-settings">
+              <span class="panel-icon">
+                <i class="fa fa-calculator"></i>
+              </span>
+              Z-Zero (Plate)
+            </a>
+          -->
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- Tool list -->
+<div id="screen-tools" class="screen has-fixed-nav" style="margin-top: 52px">
+  <nav class="navbar is-fixed-top" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+        <a class="navbar-item" id="btn-back-tools">
+          <span class="icon">
+          <i class="fa fa-arrow-left"></i>
+          </span>
+          <span class="text">Main Menu</span>
+        </a>
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navmenu">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
+    <div class="navbar-menu" id="navmenu">
+      <a class="navbar-item" id="btn-measure-tool">
+        <span class="icon">
+        <i class="fa fa-tachometer"></i>
+        </span>
+        <span class="text">Measure Current Tool</span>
+        </a>
+      <a class="navbar-item">
+        <b>Current Tool:&nbsp;</b><span id="span-current-tool">Django Bango</span>
+      </a>
+    </div>
+
+  </nav>
+  <table class="table noselect">
+  <thead>
+    <tr>
+      <th>Tool</th>
+      <th>Name</th>
+      <th class="is-hidden-touch">X</th>
+      <th class="is-hidden-touch">Y</th>
+      <th class="is-hidden-touch">Length</th>
+      <th>&nbsp;</th>
+    </tr>
+  </thead>
+  <tfoot></tfoot>
+  <tbody id="table-tools"></tbody>
+  </table>
+</section>
+
+<script type="text/javascript" src="js/lib/fabmo.js"></script>
+<script type="text/javascript" src="js/ui.js"></script>
+<script type="text/javascript" src="js/util.js"></script>
+<script type="text/javascript" src="js/main.js"></script>
+
+
+<script type="text/javascript">
+  (function() {
+    init();
+  })();
+  
+</script>
+
+</body>
+</html>

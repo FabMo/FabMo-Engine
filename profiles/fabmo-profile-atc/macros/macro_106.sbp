@@ -1,0 +1,45 @@
+'!FABMO!name:Surface Table
+'!FABMO!description:Macro Description
+&Diameter = 1.5
+&StepOver = 0.2
+&y = 0
+&Speed = 12
+&CutDepth = -0.125
+&Tool = 6
+
+C9
+MS,&Speed
+
+J2,0,0
+JZ,0.5
+
+C6
+
+MZ,&CutDepth
+
+loop:
+	MX,96
+	IF &y >= 48 THEN GOTO AllDone
+    
+    &y = &y + (1-&StepOver)*&Diameter
+	IF &y > 48 THEN GOSUB CapY
+    MY,&y
+	
+    MX,0
+	IF &y >= 48 THEN GOTO AllDone
+
+	&y = &y + (1-&StepOver)*&Diameter
+	IF &y > 48 THEN GOSUB CapY
+	MY,&y
+	GOTO loop
+    
+AllDone:
+    ZZ
+    JZ,0.5
+    J2,0,0
+    END
+    
+CapY:
+	&y = 48
+    RETURN
+    
