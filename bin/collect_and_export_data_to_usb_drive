@@ -84,4 +84,6 @@ for my $file (@files) {
         logmsg("No trigger for: $fullpath");
     }
 } 
+sleep(5);
+system("/bin/umount $USB_DRIVE_PATH");
 
