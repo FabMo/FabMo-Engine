@@ -1009,7 +1009,7 @@ Machine.prototype.resume = function(callback, input=false) {
 		this.driver.pause_hold = false;
 	}
 	if (this.current_runtime && this.status.inFeedHold){
-		this._resume();
+		this._resume(input);
 	} else {
 		//clear any timed pause
 		if (this.pauseTimer) {
