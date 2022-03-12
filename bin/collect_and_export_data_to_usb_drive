@@ -72,18 +72,25 @@ sub capture_shopbotsupport_info() {
 ## pseudo main() that loops through the work_index and calls needed functions ##
 
 ## main()
-@files = sort(keys(%work_index));
 
+## If we write to the usb drive, we will end by unmounting it; otherwise, we'll
+## leave it alone. This flag helps manage that.
+my $must_umount_flag = 0;
+
+@files = sort(keys(%work_index));
 for my $file (@files) {
     my $fullpath = "$USB_DRIVE_PATH/$file";
     logmsg("testing trigger: $fullpath");
     if (-e $fullpath) {
         logmsg("processing $fullpath");
         $work_index{$file}("$fullpath", "$USB_DRIVE_PATH");
+	$must_umount_flag = 1;
     } else {
         logmsg("No trigger for: $fullpath");
     }
 } 
 sleep(5);
-system("/bin/umount $USB_DRIVE_PATH");
+if ($must_umount_flag) {
+	system("/bin/umount $USB_DRIVE_PATH");
+}
 
