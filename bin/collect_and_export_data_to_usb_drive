@@ -43,7 +43,12 @@ $work_index{'shopbotsupport.txt'} = \&capture_shopbotsupport_info;
 
 sub capture_network_info() {
 	my $target_file = shift(@_); #grab the parameter:w
-	system("/usr/bin/touch $target_file");
+	my $message = collect_ifconfig();
+	system("echo \"$message\" > $target_file");
+	logmsg("$message");
+}
+
+sub collect_ifconfig () {
 	my $eth0 = `/sbin/ifconfig eth0 | /bin/grep "inet " | /bin/sed "s/inet/ip address/" | /usr/bin/cut -c 9-`;
         my $network =  `/sbin/ifconfig`;
 	my $message ="\\nYour ShopBot Tool's networking information is listed below\\n" .
@@ -53,18 +58,49 @@ sub capture_network_info() {
                      '            ^^^^^^^^^^^\\n' .
 	             '\\n\\n================ Full Network ================\\n'  .
                      $network;
-	system("echo \"$message\" > $target_file");
-	logmsg("$message");
+	return($message);
 }
+
 
 sub capture_shopbotsupport_info() {
 	my $target_file = shift(@_); #grab the full file path parameter
 	my $path_to_file= shift(@_); #grab the path parameter
+
+	# capture networking info to file
+	my $message = collect_ifconfig();
+	system("echo \"$message\" > /home/pi/ifconfig_out.txt");
+
+	#capture df, top, ping, resolve.conf and status
+	$message = "System Status:";
+	$message .= "\n\n/bin/df /dev/mmcblk0p1\n";
+	$message .= `/bin/df /dev/mmcblk0p1`;
+	$message .= "\n\n/usr/bin/top -b -n1\n";
+	$message .= `/usr/bin/top -b -n1`;
+	$message .= "\n\n/bin/ping -c 3 8.8.8.8\n";
+	$message .= `/bin/ping -c 3 8.8.8.8`;
+	$message .= "\n\n/bin/cat /etc/resolv.conf\n";
+	$message .= `/bin/cat /etc/resolv.conf`;
+	$message .= "\n\n /usr/bin/sudo /bin/systemctl status fabmo\n";
+	$message .= `/usr/bin/sudo /bin/systemctl status fabmo`;
+	$message .= "\n\n /usr/bin/sudo systemctl status fabmo-updater\n";
+	$message .= `/usr/bin/sudo systemctl status fabmo-updater`;
+	
+	# put results in a file
+	system("cd /home/pi; echo \"$message\" > system_status.txt");
+	print "message output done\n";
+
+	#capture logs
 	system("/bin/cp /var/log/daemon.log /home/pi/daemon.log; /bin/cp /var/log/syslog /home/pi/syslog");
-	system("cd /home/pi; /usr/bin/zip /home/pi/shopbotsupport.zip daemon.log syslog");
+	system("cd /home/pi; /usr/bin/zip /home/pi/shopbotsupport.zip daemon.log syslog ifconfig_out.txt system_status.txt");
+
+	# zip up files
 	system("/bin/cp /home/pi/shopbotsupport.zip $path_to_file/shopbotsupport.zip");
-	system("cd /home/pi; /bin/rm daemon.log syslog shopbotsupport.zip");
-	my $message = "Your tech support info is recorded in shopbotsupport.zip on this device";
+
+	# cleanup
+	system("cd /home/pi; /bin/rm daemon.log syslog shopbotsupport.zip ifconfig_out.txt system_status.txt");
+
+	# tell the user where to look for zip file
+	$message = "Your tech support info is recorded in shopbotsupport.zip on this device";
 	system("echo \"$message\" > $target_file");
 	logmsg("$message");
 }
