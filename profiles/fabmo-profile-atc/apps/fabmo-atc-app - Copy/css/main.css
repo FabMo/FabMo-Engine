@@ -1,0 +1,46 @@
+.nav { position: fixed !important; top: 0; left: 0; right: 0; }
+
+.padded { padding-top: 55px; }
+
+.logo {
+	margin: 10px;
+	width: 300px;
+}
+
+.is-selected .btn-pickup {
+	background-color: #009e86 !important;
+	border-color: #009e86 !important;
+
+}
+
+.btn-pickup {
+	width: 7em;
+	/*color: black !important;*/
+}
+
+.panel .panel-block {
+	font-size: 1.5rem !important;
+}
+
+.screen {
+	display : none;
+}
+
+.noselect {
+    -webkit-user-select: none; /* Safari, iOS, and Android */
+       -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome and Opera */
+}
+
+
+.clickable {
+    -webkit-user-select: none; /* Safari, iOS, and Android */
+       -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome and Opera */
+cursor: pointer;
+}
+

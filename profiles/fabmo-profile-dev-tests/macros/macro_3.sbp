@@ -103,10 +103,12 @@ offset_z_cutter:
       RETURN    
 
   fail_no_clear:
+      PAUSE 1 ' temporary kludge to make sure next not missed ... th 3/10/22
       PAUSE "Proximity Switch Not Clear! (A switch is stuck on.)" ' Could not clear.
       END
 
   fail_missed_target:
+      PAUSE 1 ' temporary kludge to make sure next not missed ... th 3/10/22
       PAUSE "Target Not Triggered! Center and Try C3 again."      ' Did not hit target.
       END
 

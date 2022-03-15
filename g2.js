@@ -552,7 +552,7 @@ G2.prototype.handleStatusReport = function(response) {
 				switch(response.sr.stat) {
 					case STAT_HOLDING:
 						this.pause_flag = true;
-						this.status.inFeedHold = true;
+						this.status.inFeedHold = true;        // for sensing input-generated-hold
 						if(this.context) {
 							this.context.pause()
 						}
