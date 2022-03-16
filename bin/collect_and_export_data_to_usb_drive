@@ -44,7 +44,7 @@ $work_index{'shopbotsupport.txt'} = \&capture_shopbotsupport_info;
 sub capture_network_info() {
 	my $target_file = shift(@_); #grab the parameter:w
 	my $message = collect_ifconfig();
-	system("echo \"$message\" > $target_file");
+	system("echo \"$message\" > \"$target_file\"");
 	logmsg("$message");
 }
 
@@ -94,14 +94,14 @@ sub capture_shopbotsupport_info() {
 	system("cd /home/pi; /usr/bin/zip /home/pi/shopbotsupport.zip daemon.log syslog ifconfig_out.txt system_status.txt");
 
 	# zip up files
-	system("/bin/cp /home/pi/shopbotsupport.zip $path_to_file/shopbotsupport.zip");
+	system("/bin/cp /home/pi/shopbotsupport.zip \"$path_to_file/shopbotsupport.zip\"");
 
 	# cleanup
 	system("cd /home/pi; /bin/rm daemon.log syslog shopbotsupport.zip ifconfig_out.txt system_status.txt");
 
 	# tell the user where to look for zip file
 	$message = "Your tech support info is recorded in shopbotsupport.zip on this device";
-	system("echo \"$message\" > $target_file");
+	system("echo \"$message\" > \"$target_file\"");
 	logmsg("$message");
 }
 
@@ -127,6 +127,6 @@ for my $file (@files) {
 }
 sleep(5);
 if ($must_umount_flag) {
-	system("/bin/umount $USB_DRIVE_PATH");
+	system("/bin/umount \"$USB_DRIVE_PATH\"");
 }
 
