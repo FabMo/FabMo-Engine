@@ -79,7 +79,6 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 
 	if(this.socket) {
         this.socket.prependAny(function(eventName, ...args) {
-			console.log("websocket cb function currently receiving " + eventName + " data from socket is about to emit");
         });
 		this.socket.on('status', function(status) {
 			console.log(status)
