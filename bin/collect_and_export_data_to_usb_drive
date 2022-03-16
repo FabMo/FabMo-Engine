@@ -22,13 +22,13 @@ system("echo $USB_DRIVE_PATH > /home/pi/testing/path.txt");
 #### This program is meant to be extensible
 #### This program will be invoked once when a usb drive in inserted
 #### This program will receive mount point of the first USB disk
-#### as a parameter. If any function needs to look beyond the first 
-#### USB drive, then it will have to find any other disks it is 
+#### as a parameter. If any function needs to look beyond the first
+#### USB drive, then it will have to find any other disks it is
 #### interested in.
 
 #### Current approach to how this works. There is a dictionary/hash/map
-#### of files that can appear on the usb disk where the "key" is the 
-#### name of the file that should appear on the usb drive to trigger 
+#### of files that can appear on the usb disk where the "key" is the
+#### name of the file that should appear on the usb drive to trigger
 #### some action and the "value" is a reference to the function that
 #### should be executed if that key is present.
 
@@ -54,7 +54,7 @@ sub collect_ifconfig () {
 	my $message ="\\nYour ShopBot Tool's networking information is listed below\\n" .
                      '\\n==================== eth0 ====================\\n\\n' .
                      '            vvvvvvvvvvv\\n' .
-                     $eth0 .  
+                     $eth0 .
                      '            ^^^^^^^^^^^\\n' .
 	             '\\n\\n================ Full Network ================\\n'  .
                      $network;
@@ -84,7 +84,7 @@ sub capture_shopbotsupport_info() {
 	$message .= `/usr/bin/sudo /bin/systemctl status fabmo`;
 	$message .= "\n\n /usr/bin/sudo systemctl status fabmo-updater\n";
 	$message .= `/usr/bin/sudo systemctl status fabmo-updater`;
-	
+
 	# put results in a file
 	system("cd /home/pi; echo \"$message\" > system_status.txt");
 	print "message output done\n";
@@ -124,7 +124,7 @@ for my $file (@files) {
     } else {
         logmsg("No trigger for: $fullpath");
     }
-} 
+}
 sleep(5);
 if ($must_umount_flag) {
 	system("/bin/umount $USB_DRIVE_PATH");

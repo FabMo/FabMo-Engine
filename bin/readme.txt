@@ -20,9 +20,9 @@ When a usb thumb is mounted, a subdirectory appears in /media/pi and
 "export-netcfg-thumbdrive.path" starts the service name
 "export-netcfg-thumbdrive.service". This service wakes up, and launches a
 script in "/home/pi/bin" named "export_network_config_thumb.sh". This script
-figures out the name of the mount point of the usb thumb drive 
+figures out the name of the mount point of the usb thumb drive.
 
-(currently the script just picks the first mount point in "/media/pi". 
+(currently the script just picks the first mount point in "/media/pi".
 It makes no provision for a 2nd thumb drive)
 
 Having found the mount point, the script invokes
@@ -43,10 +43,10 @@ over when a drive is plugged back in.
 If you want to add to what happens when a drive is plugged in, do it by
 editing: "collect_and_export_data_to_usb_drive"
 
-If you have to change either of 
+If you have to change either of
   export-netcfg-thumbdrive.path
   export-netcfg-thumbdrive.service
-then please run: 
+then please run:
 % sudo systemctl daemon-reload
 
 after your edits, and you may need to do:
