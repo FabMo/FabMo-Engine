@@ -14,10 +14,6 @@
 
 var io = require("./socket.io.js");
 
-function robsDebug(msg) {
-	console.log("rmackie: " + msg);
-}
-
 var PING_TIMEOUT = 3000;
 var makePostData = function(obj, options) {
 	var file = null;
@@ -83,51 +79,42 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 
 	if(this.socket) {
         this.socket.prependAny(function(eventName, ...args) {
-			console.log("websocket cb function currently receiving " + eventName + " data from socket is about to emit");
         });
 		this.socket.on('status', function(status) {
-			robsDebug("websocket cb function currently receiving STATUS from socket is about to emit");
 			console.log(status)
 			this._setStatus(status);
 			this.emit('status', status);
 		}.bind(this));
 
 		this.socket.on('change', function(topic) {
-			robsDebug("websocket cb function currently receiving CHANGE from socket is about to emit");
 			this.emit('change', topic);
 		}.bind(this));
 
 		this.socket.on('connect', function() {
-			robsDebug("websocket cb function currently recieving CONNECT from socket is about to emit");
 			console.info("Websocket connected");
 			this.emit('connect');
 			this.requestStatus();
 		}.bind(this));
 
 		this.socket.on('message', function(message) {
-			robsDebug("websocket cb function currently recieving MESSAGE from socket is about to emit");
              console.info("Websocket message: " + JSON.stringify(message))
         });
 
 		this.socket.on('disconnect', function() {
 			console.info("Websocket disconnected");
-			robsDebug("websocket cb function currently recieving DISCONNECT from socket is about to emit");
 			this.emit('disconnect');
 		}.bind(this));
 
         this.socket.on('authentication_failed', function(message) {
-			robsDebug("websocket cb function currently recieving AUTH FAILED from socket is about to emit");
           this.emit('authentication_failed',message);
         }.bind(this));
 
 		this.socket.on('connect_error', function() {
-			robsDebug("websocket cb function currently recieving CONNECT ERROR from socket is about to emit");
 			this.emit('disconnect');
 			console.info("Websocket disconnected (connection error)");
 		}.bind(this));
 
 		this.socket.on('user_change', function(user){
-			robsDebug("websocket cb function currently recieving USER CHANGE from socket is about to emit");
 			this.emit('user_change', user);
 		});
 
