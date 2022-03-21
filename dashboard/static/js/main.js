@@ -42,6 +42,7 @@ require("../css/toastr.min.css");
     var consent = '';
     var disconnected = false;
     var last_state_seen = null;
+    var in_goto_flag = false;
 
     // move timer cutoff to var so it can be set in settings later
     var TIMER_DISPLAY_CUTOFF = 5;
@@ -161,6 +162,7 @@ require("../css/toastr.min.css");
                         if(!status['hideKeypad']) {
                             $('.modalDim').show();
                             $('.manual-drive-modal').show();
+                            // if currently running a goto command in manual keypad
                             if(status.stat === 5 &&  status.currentCmd === "goto"){
                                     $('.manual-stop').show();
                                     $('.go-to, .set-coordinates').hide();
@@ -168,13 +170,22 @@ require("../css/toastr.min.css");
                                     $('#keypad').hide();
                                     $('.go-to-container').show();
                             } else {
-                                $('.manual-stop').hide();
-                                $('.go-to, .set-coordinates').show();
-                                keyboard.setEnabled(true);
-                                $('#keypad').show();
-                                $('.go-to-container').hide();
-
-
+                                // if an axis is selected in go-to or set, then flag is true
+                                if(in_goto_flag) {
+                                    in_goto_flag = false;
+                                    $('.manual-stop').hide();
+                                    $('.go-to, .set-coordinates').show();
+                                    keyboard.setEnabled(false);
+                                    $('#keypad').hide();
+                                    $('.go-to-container').show();
+                                // Otherwise switch to default manual keypad
+                                } else {
+                                    $('.manual-stop').hide();
+                                    $('.go-to, .set-coordinates').show();
+                                    keyboard.setEnabled(true);
+                                    $('#keypad').show();
+                                    $('.go-to-container').hide();
+                                }
                             }
                         }
                     }
@@ -646,6 +657,7 @@ require("../css/toastr.min.css");
     });
 
     $('.axi').on('focus', function(e) {
+        in_goto_flag = true;
         e.stopPropagation();
         $(this).val(parseFloat($(this).val().toString()));
         $(this).select();
@@ -659,15 +671,15 @@ require("../css/toastr.min.css");
     });
 
 
-
+    // manual keypad movement
     $('.manual-drive-modal').not('.fixed-step-value').on('click', function(e) {
-            
             $('.posx').val($('.posx').val());
             $('.posy').val($('.posy').val());
             $('.posz').val($('.posz').val());
             $('.posa').val($('.posa').val());
             $('.posb').val($('.posb').val());
             $('.posc').val($('.posc').val());
+            in_goto_flag = false;
             $('#keypad').show();
             $('.go-to-container').hide();
             if($(event.target).hasClass('fixed-step-value')){
