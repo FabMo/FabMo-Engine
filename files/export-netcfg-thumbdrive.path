@@ -1,0 +1,9 @@
+[Unit]
+Description="Monitor for files to export information to"
+
+[Path]
+PathExistsGlob=/media/pi/*
+Unit=export-netcfg-thumbdrive.service
+
+[Install]
+WantedBy=multi-user.target
