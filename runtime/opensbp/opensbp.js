@@ -93,54 +93,6 @@ SBPRuntime.prototype.toString = function() {
     return "[SBPRuntime]";
 }
 
-// SBPRuntime.prototype.setManyOSBP = async function(input) {
-//     return await new Promise((resolve, reject) => {
-//         config.opensbp.setMany(input, function (err, result) {
-//             if (err) {
-//                 reject(err)
-//             } else {
-//                 resolve(result)
-//             }
-//         })
-//     })
-// }
-
-// SBPRuntime.prototype.setManyDriver = async function(input) {
-//     return await new Promise((resolve, reject) => {
-//         config.driver.setMany(input, function (err, result) {
-//             if (err) {
-//                 reject(err)
-//             } else {
-//                 resolve(result)
-//             }
-//         })
-//     })
-// }
-
-// SBPRuntime.prototype.setTempVariable = async function(expr, value) {
-//     return await new Promise((resolve, reject) => {
-//         config.opensbp.setTempVariable(expr, value, function (err, result) {
-//             if (err) {
-//                 reject(err)
-//             } else {
-//                 resolve(result)
-//             }
-//         })
-//     })
-// }
-
-// SBPRuntime.prototype.setVariable = async function(expr, value) {
-//     return await new Promise((resolve, reject) => {
-//         config.opensbp.setVariable(expr, value, function (err, result) {
-//             if (err) {
-//                 reject(err)
-//             } else {
-//                 resolve(result)
-//             }
-//         })
-//     })
-// }
-
 // This must be called at least once before instantiating an SBPRuntime object
 // TODO Make this a "class method" rather than an instance method
 SBPRuntime.prototype.loadCommands = function(callback) {
