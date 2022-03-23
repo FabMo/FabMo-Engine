@@ -93,53 +93,53 @@ SBPRuntime.prototype.toString = function() {
     return "[SBPRuntime]";
 }
 
-SBPRuntime.prototype.setManyOSBP = async function(input) {
-    return await new Promise((resolve, reject) => {
-        config.opensbp.setMany(input, function (err, result) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(result)
-            }
-        })
-    })
-}
+// SBPRuntime.prototype.setManyOSBP = async function(input) {
+//     return await new Promise((resolve, reject) => {
+//         config.opensbp.setMany(input, function (err, result) {
+//             if (err) {
+//                 reject(err)
+//             } else {
+//                 resolve(result)
+//             }
+//         })
+//     })
+// }
 
-SBPRuntime.prototype.setManyDriver = async function(input) {
-    return await new Promise((resolve, reject) => {
-        config.driver.setMany(input, function (err, result) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(result)
-            }
-        })
-    })
-}
+// SBPRuntime.prototype.setManyDriver = async function(input) {
+//     return await new Promise((resolve, reject) => {
+//         config.driver.setMany(input, function (err, result) {
+//             if (err) {
+//                 reject(err)
+//             } else {
+//                 resolve(result)
+//             }
+//         })
+//     })
+// }
 
-SBPRuntime.prototype.setTempVariable = async function(expr, value) {
-    return await new Promise((resolve, reject) => {
-        config.opensbp.setTempVariable(expr, value, function (err, result) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(result)
-            }
-        })
-    })
-}
+// SBPRuntime.prototype.setTempVariable = async function(expr, value) {
+//     return await new Promise((resolve, reject) => {
+//         config.opensbp.setTempVariable(expr, value, function (err, result) {
+//             if (err) {
+//                 reject(err)
+//             } else {
+//                 resolve(result)
+//             }
+//         })
+//     })
+// }
 
-SBPRuntime.prototype.setVariable = async function(expr, value) {
-    return await new Promise((resolve, reject) => {
-        config.opensbp.setVariable(expr, value, function (err, result) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(result)
-            }
-        })
-    })
-}
+// SBPRuntime.prototype.setVariable = async function(expr, value) {
+//     return await new Promise((resolve, reject) => {
+//         config.opensbp.setVariable(expr, value, function (err, result) {
+//             if (err) {
+//                 reject(err)
+//             } else {
+//                 resolve(result)
+//             }
+//         })
+//     })
+// }
 
 // This must be called at least once before instantiating an SBPRuntime object
 // TODO Make this a "class method" rather than an instance method
@@ -507,7 +507,7 @@ SBPRuntime.prototype._saveConfig = async function(callback) {
     sbp_values.jogc_speed = this.jogspeed_c;
     sbp_values.units = this.units;
     try {
-        let values = await this.setManyOSBP(sbp_values)
+        let values = await config.opensbp.setManyWrapper(sbp_values)
         callback();
     } catch (error) {
         log.error(error);
@@ -535,7 +535,7 @@ SBPRuntime.prototype._saveDriverSettings = async function(callback) {
     g2_values.bjm = this.maxjerk_b;
     g2_values.cjm = this.maxjerk_c;
     try {
-        let values = await this.setManyDriver(g2_values)
+        let values = await config.driver.setManyWrapper(g2_values)
         callback();
     } catch (error) {
         log.error(error);
@@ -1401,7 +1401,7 @@ SBPRuntime.prototype._assign = async function(identifier, value, callback) {
 
         // Assign with persistence using the configuration module
         try {
-            await this.setTempVariable(identifier.expr, value);
+            await config.opensbp.setTempVariableWrapper(identifier.expr, value);
             callback();
         } catch (error) {
             log.error(error)
@@ -1415,7 +1415,7 @@ SBPRuntime.prototype._assign = async function(identifier, value, callback) {
 
         // Assign with persistence using the configuration module
         try {
-            await this.setVariable(identifier.expr, value);
+            await config.opensbp.setVariableWrapper(identifier.expr, value);
             callback();
         } catch (error) {
             log.error(error)
