@@ -336,8 +336,8 @@ exports.createNetworkManager = function(name,callback) {
 	// The platform is defined in the updater configuration - it's something like 'edison' or 'westinghouse' or 'generic'
 	var OS = config.platform;	
 	var PLATFORM = config.engine.get('platform');
-	log.info(OS); 
-	log.info(PLATFORM);
+	log.info("OS is:" + OS);
+	log.info("PLATFORM is:" + PLATFORM);
 	try {
 		var NetworkManager = require('./network/' + OS + '/' + PLATFORM).NetworkManager;
 		var nm = new NetworkManager();
@@ -352,6 +352,7 @@ exports.createNetworkManager = function(name,callback) {
 		}
 
 	} catch(e) {
+		log.error("Network Management configuration failure" + e);
 		callback(new Error("Cannot load network manager for " + OS + "/" + PLATFORM + ": " + e.message));
 	}
 }

@@ -78,14 +78,17 @@ finish:
 		RETURN
 	
 	fail_on_prox:
-	    PAUSE "Z prox switch is already triggered. Cannot clear the tool. Move Off and Retry."
+	    PAUSE 1 ' temporary kludge to make sure next not missed ... th 3/10/22
+		PAUSE "Z prox switch is already triggered. Cannot clear the tool. Move Off and Retry."
 		END
 	
 	fail_on_plate:
+	    PAUSE 1 ' temporary kludge to make sure next not missed ... th 3/10/22
 	    PAUSE "Z-zero is already triggered. Cannot zero the tool. Move Off or Clear, and Retry."
 		END
 	
 	fail_missed_target:
+	    PAUSE 1 ' temporary kludge to make sure next not missed ... th 3/10/22
 	    PAUSE "Target Not Triggered! (Started above prox switch?)"
 		END                           
 

@@ -1,0 +1,21 @@
+'!FABMO!name:Start Spindle
+'!FABMO!description:Start the spindle (and prompt
+' NOTE
+' This routine is dependent on a user variable behavior that is (at the time of this writing) not standard.
+' User variales (&vars) do not persist between runs if their identifier starts with an underscore (_)
+
+&_C6Running := 0
+
+' Set the spindle output on
+SO,1,1
+' Prompt the user if this is the first time in the file that we have turned the spindle on
+IF &_C6Running == 0 THEN GOSUB FirstTime
+
+PAUSE 2
+END
+
+FirstTime:
+	PAUSE "Press the spindle start button."
+    &_C6Running = 1
+    
+    
