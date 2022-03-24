@@ -968,6 +968,10 @@ Machine.prototype.quit = function(callback) {
 	// Release Pause hold if present
 	this.driver.pause_hold = false;
 	this.status.inFeedHold = false;
+	if (this.pauseTimer) {
+		clearTimeout(this.pauseTimer);
+		this.pauseTimer = false;
+	}
 	this.disarm();
 
 	// Quitting from the idle state dismisses the 'info' data
