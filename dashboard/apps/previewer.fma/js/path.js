@@ -40,8 +40,8 @@ function clean_gcode(s) {
     case ')': in_comment = false; break;
     default: if (!in_comment) result.push(c); break;
     }
-  }
 
+}
   return result.join('');
 }
 
@@ -51,7 +51,8 @@ module.exports = function(scene, callbacks) {
 
 
   self.setUnits = function (metric) {
-    self.metric = metric;
+    self.metric = metric;                  // Not sure if we want display in changed-to units or machine units 
+    $('[name="units"]').trigger('change'); // ... remove this line to leave display in machine units 
     callbacks.metric(metric);
   }
 

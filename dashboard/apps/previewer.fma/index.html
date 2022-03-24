@@ -77,9 +77,9 @@
             <option value="16">16x</option>
           </select>
 
-          <label>Units</label>
+          <label>Units (temporarily change Preview display units)</label>
           <select name="units">
-            <option value="auto">auto</option>
+            <!-- <option value="auto">auto</option> -->
             <option value="mm">millimeters</option>
             <option value="in">inches</option>
           </select>
@@ -165,8 +165,8 @@
             </tr>
             <tr>
               <th>Units</th>
-              <td>Selects the display units. "auto" mode uses the machine units
-                as set by the selected program.</td>
+              <td>Temporarily changes display units (inches vs mm) from unit setting that file will
+                   be run in. A unit setting within file, if present, will over-ride machine setting.</td>
             </tr>
             <tr>
               <th>Grid Step</th>

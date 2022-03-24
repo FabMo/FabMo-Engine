@@ -27,6 +27,7 @@ var preview = $('#preview');
 var fabmo = new Fabmo();
 var viewer;
 
+var cached_Config = null;
 
 function resize() {
   var width = window.innerWidth - 4;
@@ -35,12 +36,28 @@ function resize() {
   viewer.resize(width, height);
 }
 
+function getMachineData(err, callback) {
+    fabmo.getConfig(function (err, config) {
+        cached_Config = config;             // Make machineData available to this app (units and dim needed)
+        if (!err) {
+          callback();
+        } else {
+          fabmo.notify('error', 'Could not load machine data!');
+        }
+    });
+}
 
-$(function () {
+
+$(function () {                             // Preview App ENTRY
   if (!util.webGLEnabled()) {
-    fabmo.notify('error', 'WebGL is not enable. Impossible to preview.');
+    fabmo.notify('error', 'WebGL is not enabled. Impossible to preview.');
     return;
   }
+  let err = null;
+  getMachineData(err, nowPreviewJob);       // Need to get tool's units and dimensions before we start
+})
+
+function nowPreviewJob() {
 
   fabmo.getAppArgs(function(err, args) {
     if (err) console.log(err);
@@ -71,6 +88,9 @@ $(function () {
     resize();
     $(window).resize(resize);
 
+    // Units
+    viewer.setUnits(cached_Config.machine.units);
+
     // Fabmo callbacks
     var job_started = false;
     fabmo.on('status', function(status) {
@@ -78,7 +98,6 @@ $(function () {
           status.line !== null) {
         var p = [status.posx, status.posy, status.posz];
         viewer.updateStatus(status.line, p);
-
         if (!job_started) {
           job_started = true;
           viewer.jobStarted();
@@ -108,7 +127,6 @@ $(function () {
           return xhr;
         },
 
-
         success: function (gcode) {
           viewer.gui.showLoadingSize(gcode.length);
           viewer.setGCode(gcode)
@@ -121,4 +139,4 @@ $(function () {
       });
     }
   });
-})
+}

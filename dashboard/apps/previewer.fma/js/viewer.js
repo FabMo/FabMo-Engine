@@ -132,10 +132,9 @@ module.exports = function(container) {
 
 
   self.setUnits = function (units) {
-    if (self.units == units) return;
     self.units = units;
-    cookie.set('units', units);
     self.setMetric(self.isMetric());
+    self.path.metric = (self.isMetric());
   }
 
 
@@ -221,6 +220,5 @@ module.exports = function(container) {
   self.gui = new Gui(callbacks);
 
   // Units
-  self.units = cookie.get('units', 'auto');
   util.connectSetting('units', self.units, self.setUnits);
 }
