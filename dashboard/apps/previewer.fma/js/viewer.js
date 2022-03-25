@@ -191,6 +191,13 @@ module.exports = function(container) {
 
   self.scene.add(new THREE.AmbientLight(0x808080));
 
+  // Table
+  self.table = new THREE.Mesh( new THREE.BoxBufferGeometry(24,18,1), new THREE.MeshBasicMaterial({ color: 0xBBBBBB, transparent: true, opacity: 0.2}));
+  //shift to center
+  self.table.position.set(12,9,-1);
+  //self.table.position.y = y;
+  self.scene.add(self.table)
+
   // Widgets
   self.dims = new Dimensions(self.scene, self.refresh);
   self.grid = new Grid(self.scene, self.refresh);

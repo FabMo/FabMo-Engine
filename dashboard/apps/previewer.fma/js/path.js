@@ -49,6 +49,7 @@ function clean_gcode(s) {
 module.exports = function(scene, callbacks) {
   var self = this;
 
+//  let shift = [-9, -6, 0]                       ////## testing shift offsets to register path on tool
 
   self.setUnits = function (metric) {
     self.metric = metric;                  // Not sure if we want display in changed-to units or machine units 
@@ -115,12 +116,14 @@ module.exports = function(scene, callbacks) {
   }
 
 
-  self.addPoint = function(p) {
+  self.addPoint = function(p) {                        // growing bounds by inspecting all points??? ////##
     var bounds = self.bounds;
     var axes = ['x', 'y', 'z']
 
     for (var i = 0; i < 3; i++) {
       var axis = axes[i];
+
+//      p[i] += shift[i];                               ////## applying shift from center point
 
       if (typeof bounds.min[axis] == 'undefined' || p[i] < bounds.min[axis])
         bounds.min[axis] = p[i];
