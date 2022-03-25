@@ -240,7 +240,8 @@ var save = function(id, callback) {
 				log.error(err);
 				return callback(err);
 			}
-			var contents = new Buffer(header + macro.content);
+			let contentString = header + macro.content;
+			var contents = Buffer.from(contentString);
 			fs.write(fd, contents, 0, contents.length, 0, function(err, written, string) {
 				if(err) {
 					log.error(err);

@@ -231,7 +231,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		that.updateText($(that.units_selector), unit)
 	}
 
-	['x','y','z','a','b'].forEach(function(axis) {
+    ////## key DRO display stuff
+	['x','y','z','a','b','c'].forEach(function(axis) {
 		var pos = 'pos' + axis;
 		if(pos in status) {
 			if(axis === "b") {
@@ -456,6 +457,13 @@ FabMoUI.prototype.updateStatusContent = function(status){
 				$(that.pause_button_selector).hide();
 				$(that.resume_button_selector).show();
 			}
+			//While FabMo is resuming from feedhold, display stop button
+			if(status.resumeFlag) {
+				$(that.stop_button_selector).hide();
+				$(that.pause_button_selector).show();
+				$(that.resume_button_selector).hide();
+			}
+			$(that.resume_button_selector+" div:first-child").removeClass('spinner green');
 			$(that.pause_button_selector+" div div:first-child").removeClass('spinner red');
 		}
 	}

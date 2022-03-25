@@ -44,7 +44,7 @@ var Keyboard = function(id, options) {
 
 Keyboard.prototype.init = function() {
 	if(this.elem) {
-		this.elem.click(this.onClick.bind(this));
+		this.elem.on('click', this.onClick.bind(this));
 		this.elem.on('focus', this.onFocus.bind(this));
 		this.elem.on('mouseenter', this.onMouseEnter.bind(this));
 		this.elem.on('blur', this.onBlur.bind(this));

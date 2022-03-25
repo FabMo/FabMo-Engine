@@ -78,6 +78,8 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 	}
 
 	if(this.socket) {
+        this.socket.prependAny(function(eventName, ...args) {
+        });
 		this.socket.on('status', function(status) {
 			console.log(status)
 			this._setStatus(status);
@@ -94,7 +96,9 @@ FabMoAPI.prototype._initializeWebsocket = function() {
 			this.requestStatus();
 		}.bind(this));
 
-		this.socket.on('message', function(message) {console.info("Websocket message: " + JSON.stringify(message))} );
+		this.socket.on('message', function(message) {
+             console.info("Websocket message: " + JSON.stringify(message))
+        });
 
 		this.socket.on('disconnect', function() {
 			console.info("Websocket disconnected");

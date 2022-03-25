@@ -56,26 +56,28 @@ function setupAuthentication(svr) {
     });
 }
 
-function setupStatusBroadcasts(server){
-	machine.on('status',function(status){
+function setupStatusBroadcasts(server) {
+
+	machine.on('status', function(status) {
 		//Add Server Timestamp to status updates
 		status.server_ts = Date.now();
-		server.io.of('/private').sockets.forEach(function (socket) {
-			socket.emit('status',status);
-		});
-
-		server.io.sockets.sockets.forEach(function (socket) {
-			socket.emit('status',status);
-		});
+		/*
+		  decoding the "emit" statements below due how many layers there are:
+			e.g.: server.io.of('/private').emit('status', status);
+			* "server" is a websocket object that has been passed in
+			* "io" is the socket.io data member of server
+			* "server.io.of('/someString')" is a function on socket.io that returns
+				a server.io NameSpace object associated with "/someString"
+					where the string: '/' is the default namespace.
+			NameSpace objects use "emit" to send to all the sockets that are in their space
+		*/
+			server.io.of('/private').emit('status', status);
+			server.io.of('/').emit('status', status);
 	});
 
 	machine.on('change', function(topic) {
-		server.io.of('/private').sockets.forEach(function (socket) {
-			socket.emit('change',topic);
-		});
-		server.io.sockets.sockets.forEach(function (socket) {
-			socket.emit('change',topic);
-		});
+		server.io.of('/private').emit('change', topic);
+		server.io.of('/').emit('change', topic);
 	});
 }
 
@@ -101,7 +103,9 @@ var onPublicConnect = function(socket) {
 
 
 var onPrivateConnect = function(socket) {	
+
 	if(!socket.request.sessionID.content.passport) {
+        log.info("disconnect - no passport");
 		return socket.disconnect();
 	}
 		
@@ -115,6 +119,7 @@ var onPrivateConnect = function(socket) {
 		authentication.eventEmitter.removeListener('user_kickout',user_kickout_listener);
 		if(user.username == userId){
 			socket.emit('authentication_failed','kicked out');
+            log.info("disconnect - kickedout auth");
 			return socket.disconnect();
 		}
 	});
@@ -135,6 +140,7 @@ var onPrivateConnect = function(socket) {
 			log.error(userId);
 			log.error(authentication.getCurrentUser());
 			socket.emit('authentication_failed','not authenticated');
+			log.info('disconnect: authentication_failed, code');
 			return socket.disconnect();
 		} // make sure that if the user logout, he can't talk through the socket anymore.
 		if('rt' in data) {
@@ -151,6 +157,7 @@ var onPrivateConnect = function(socket) {
 			log.error(userId);
 			log.error(authentication.getCurrentUser());
 			socket.emit('authentication_failed','not authenticated');
+			log.info('disconnect: authentication_failed, cmd');
 			return socket.disconnect();
 		} // make sure that if the user logouts, he can't talk through the socket anymore.
 		log.debug('This Command = ' + data.name);
@@ -185,8 +192,6 @@ var onPrivateConnect = function(socket) {
 		console.error(data);
 	});
 
-
-
 	onPublicConnect(socket); // inherit routes from the public function
 
 };
@@ -194,7 +199,7 @@ var onPrivateConnect = function(socket) {
 module.exports = function(svr) {
 	server = svr
 	setupAuthentication(server);
-	server.io.on('connection', onPublicConnect);
+	server.io.of('/').on('connection', onPublicConnect);
 	server.io.of('/private').on('connection', onPrivateConnect);
 	setupStatusBroadcasts(server);
 };

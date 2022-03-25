@@ -10,7 +10,8 @@ var upload = require('./util').upload;
 
 var submitJob = function(req, res, next) {
     upload(req, res, next, function(err, upload) {
-        uploads = upload.files
+        log.info("entering submitJob.upload.callback");
+        uploads = upload.files;
         // Single file only, for now
         if(uploads.length > 1) {
             log.warn("Got an upload of " + uploads.length + ' files for a submitted job when only one is allowed.')
@@ -94,7 +95,7 @@ var clearQueue = function(req, res, next) {
  */
 runNextJob = function(req, res, next) {
     var answer;
-    log.info('Running the next job in the queue');
+    log.info('Running the jobs.js:nextJob in the queue');
     machine.runNextJob(function(err, job) {
         if(err) {
             log.error(err);

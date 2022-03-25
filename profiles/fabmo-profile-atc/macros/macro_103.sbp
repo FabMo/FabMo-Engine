@@ -1,0 +1,41 @@
+'!FABMO!name:Measure ALL Tools
+'!FABMO!description:Pick up each tool and measure its length
+&Tool = 1
+C9
+C102
+
+&Tool = 2
+C9
+C102
+
+&Tool = 3
+C9
+C102
+
+&Tool = 4
+C9
+C102
+
+&Tool = 5
+C9
+C102
+
+&Tool = 6
+C9
+C102
+
+&Tool = 7
+C9
+C102
+
+&Tool = 8
+C9
+C102
+
+&Tool = 9
+C9
+C102
+
+&Tool = 10
+C9
+C102

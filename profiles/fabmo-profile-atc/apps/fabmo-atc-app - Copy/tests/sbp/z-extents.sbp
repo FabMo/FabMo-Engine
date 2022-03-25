@@ -1,0 +1,46 @@
+' Test routine to check Z travel, proximity switch, and wiring
+
+' Settings
+&zin = 5  				' The input switch that corresponds to the Z prox switch
+&zsearch = 26			' The expected search distance
+
+' Outputs (these are the persistent variables that are read out by the test app)
+$zpcheck = 0			' The output of this routine, which is the fixed distance measured against the switch
+$zp = 0
+
+' Do an initial back off (in case we're already on the switch) 
+' JZ,%(3)-0.5 ' Actually don't do this, because the Z is almost always going to be sitting on the table
+
+' TODO: check to make sure the switch isn't already tripped
+
+' Search for the switch 
+PZ,&zsearch,1,&zin
+PAUSE 0.1
+
+' Back off
+JZ,%(3)-0.5
+PAUSE 0.1
+
+' Approach, slowly
+PZ,%(3)+1,0.1,&zin
+PAUSE 0.1
+
+' Back off
+JZ,%(3)-0.5
+PAUSE 0.1
+
+' Record the initial position
+&zstart = %(3)
+
+' Final approach, slowly this time is a measurement
+PZ,%(3)+1,0.1,&zin
+PAUSE 0.1
+
+' Record final position
+$zp=%(3)
+$zpcheck=$zp-&zstart
+
+' Back off 
+JZ,%(3)-1.0
+
+END

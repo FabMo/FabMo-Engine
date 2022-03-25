@@ -130,7 +130,8 @@ function Machine(control_path, callback) {
 		nb_lines : null,
 		auth : false,
 		hideKeypad : false,
-		inFeedHold : false
+		inFeedHold : false,
+		resumeFlag : false
 	};
 
 	this.fireButtonDebounce = false;
@@ -201,10 +202,9 @@ function Machine(control_path, callback) {
 	// If any of the axes in G2s configuration become enabled or disabled, we want to show or hide
 	// them accordingly.  These change events happen even during the initial configuration load, so
 	// right from the beginning, we will be displaying the correct axes.
-	////## TODO - extra axes
 	// TODO - I think it's good to used named callbacks, to make the code more self-documenting
     config.driver.on('change', function(update) {
-    	['x','y','z','a','b'].forEach(function(axis) {
+    	['x','y','z','a','b','c'].forEach(function(axis) {
     		var mode = axis + 'am';
     		var pos = 'pos' + axis;
     		if(mode in update) {
@@ -344,7 +344,7 @@ Machine.prototype.handleOkayButton = function(stat, auth_input){
 		}
 
 		if(this.status.state === 'paused' && canResume) {
-			log.info("Okay hit, resuming from pause")
+			log.info("Okay hit, resuming from pause");
 			this.resume(function(err, msg){
 				if(err){
 					log.error(err);
@@ -897,7 +897,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
                 if(this.status.state != newstate) {
                     //set driver in paused state
                     this.driver.pause_hold = true;
-                    this.status.inFeedHold = true;
                     // Save the position to the instance configuration.  See note above.
                     this.driver.get('mpo', function(err, mpo) {
 					    if(config.instance) {
@@ -914,6 +913,9 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 						return
 					}
                 }
+				break;
+			case 'running':
+				this.status.resumeFlag = false;
 				break;
 			case 'dead':
 				log.error('G2 is dead!');
@@ -970,6 +972,7 @@ Machine.prototype.quit = function(callback) {
 	// Release Pause hold if present
 	this.driver.pause_hold = false;
 	this.status.inFeedHold = false;
+	this.status.resumeFlag = false;
 	this.disarm();
 
 	// Quitting from the idle state dismisses the 'info' data
@@ -1011,7 +1014,7 @@ Machine.prototype.resume = function(callback, input=false) {
 		this.driver.pause_hold = false;
 	}
 	if (this.current_runtime && this.status.inFeedHold){
-		this._resume();
+		this._resume(input);
 	} else {
 		//clear any timed pause
 		if (this.pauseTimer) {
@@ -1048,6 +1051,7 @@ Machine.prototype.runFile = function(filename, bypassInterlock) {
 // Run the next job in the queue
 // callback is called when the tool is armed for the run, NOT when the job is complete.
 Machine.prototype.runNextJob = function(callback) {
+	var stack = new Error().stack;
 	interlockBypass = false;
 	db.Job.getPending(function(err, pendingJobs) {
 		if(err) {
