@@ -560,6 +560,7 @@ G2.prototype.handleStatusReport = function(response) {
 					default:
 						this.pause_flag = false;
 						this.status.inFeedHold = false;                        
+						this.status.resumeFlag = false;
 						if(this.context) {
 							this.context.resume();
 						}
@@ -599,6 +600,16 @@ G2.prototype.handleStatusReport = function(response) {
 			}
 		}
 		this.emit('status', this.status);
+
+		//If an input induced feedhold is received during a resume then adjust so that
+		// another resume can be received and feedhold can be properly reestablished.
+		if(this.hold > 0 && resumePending){
+			//Set resumeFlag to false so that resume/quit will display in the UI
+			this.status.resumeFlag = false;
+			resumePending = false;
+			this.pause_flag = true;
+		}
+
 	}
 };
 
@@ -694,6 +705,7 @@ G2.prototype.queueFlush = function(callback) {
 // make the system crashy - so we're careful not to do that.
 // This function returns a promise that resolves when the machining cycle has resumed.
 G2.prototype.resume = function() {
+	this.status.resumeFlag = true;
 	var thisPromise = _promiseCounter;
 	if(resumePending){
 		return;
