@@ -246,6 +246,9 @@ SBPRuntime.prototype.needsAuth = function(s) {
 //   callback - Called when the program has ended 
 SBPRuntime.prototype.runString = function(s) {
     try {
+        // Initialize the program
+        this.pc = 0
+        this.program = []
         // Break the string into lines
         var lines =  s.split('\n');
 
@@ -317,6 +320,7 @@ SBPRuntime.prototype.runStream = function(text_stream) {
     try {
         try {
             // Initialize the program
+            this.pc = 0
             this.program = []
             // Even though we're "streaming" in this function, we still have to parse
             // the entire body of data before we can continue processing the file.
