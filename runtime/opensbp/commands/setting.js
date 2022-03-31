@@ -60,7 +60,7 @@ exports.SR = function(args, callback) {
 
 // Set to table base coordinates
 exports.ST = function(args, callback) {
-	this.machine.driver.get('mpo', function(err, MPO) {
+	this.machine.driver.get('mpo', async function(err, MPO) {
 		log.debug("ST-MPO = " + JSON.stringify(MPO));
 		if(err) { return callback(err); }
 		var stObj = {};
@@ -74,8 +74,8 @@ exports.ST = function(args, callback) {
 		stObj.g55a = 0.0;
 		stObj.g55b = 0.0;
 		stObj.g55c = 0.0;
-		config.driver.setMany(stObj, function(err, value) {
-			if(err) { return callback(err); }
+		try {
+			let value = await config.driver.setManyWrapper(stObj);
 			this.cmd_posx = this.posx = stObj.g55x;
 			this.cmd_posy = this.posy = stObj.g55y;
 			this.cmd_posz = this.posz = stObj.g55z;
@@ -83,7 +83,9 @@ exports.ST = function(args, callback) {
 			this.cmd_posb = this.posb = stObj.g55b;
 			this.cmd_posc = this.posc = stObj.g55c;
 			callback();
-		}.bind(this));
+		} catch (error) {
+			callback(error)
+		}
 	}.bind(this));
 };
 

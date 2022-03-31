@@ -7,7 +7,7 @@ var config = require('../../../config');
 exports.VA = function(args, callback) {
 	log.debug("VA Command: " + args);
 
-	this.machine.driver.get('mpo', function(err, MPO) {
+	this.machine.driver.get('mpo', async function(err, MPO) {
 
 		var setVA_G2 = {};
 		var setVA_SBP = {};
@@ -69,10 +69,13 @@ exports.VA = function(args, callback) {
 			setVA_G2.g55c = Number(((MPO.c * 1.0 /*unitConv*/) - args[5]).toFixed(5));
 			this.cmd_posc = this.posc = args[5];
 		}
-		
-		config.driver.setMany(setVA_G2, function(err, value) {
+
+		try {
+			let values = await config.driver.setManyWrapper(setVA_G2);
 			callback();
-		}.bind(this));
+		} catch (error) {
+			callback(error)
+		}
 	}.bind(this));
 };
 
@@ -219,7 +222,7 @@ exports.VD = function(args) {
 //	});
 };
 
-exports.VI = function(args,callback) {
+exports.VI = async function(args,callback) {
 	var g2_VI = {};
 
 	// Driver 1 Channel
@@ -264,21 +267,27 @@ exports.VI = function(args,callback) {
 		else if ( res6 >= 6 && res6 <= 11 ){ g2_VI['6ma'] = res6-6; }
 		else { throw new Error("VI-CH1: parameter " + args[5] + " out of range!"); }
 	}
-	config.driver.setMany(g2_VI, function(err, values) {
+	try {
+		let values = await config.driver.setManyWrapper(g2_VI);
 		callback();
-	});
+	} catch (error) {
+		callback(error)
+	}
 };
 
-exports.VU = function(args,callback) {
+exports.VU = async function(args,callback) {
 	var g2_VU = {}
 	g2_VU[args[0]] = args[1];
-	config.driver.setMany(g2_VU, function(err, values) {
+	try {
+		let values = await config.driver.setManyWrapper(g2_VU);
 		callback();
-	});
+	} catch (error) {
+		callback(error)
+	}
 }
 
 
-exports.VL = function(args,callback) {
+exports.VL = async function(args,callback) {
 
 	var g2_VL = {};
 
@@ -335,9 +344,12 @@ exports.VL = function(args,callback) {
 		g2_VL.ctm = args[13];
 	}
 
-	config.driver.setMany(g2_VL, function(err, values) {
+	try {
+		let values = await config.driver.setManyWrapper(g2_VL);
 		callback();
-	});
+	} catch (error) {
+		callback(error)
+	}
 };
 
 //exports.VN = function(args) {

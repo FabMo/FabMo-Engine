@@ -174,8 +174,9 @@ var onPrivateConnect = function(socket) {
 				case 'resume':
 					if (data.args && data.args.var && data.args.type && data.args.val) {
 						machine.resume(callback, {'var':{'expr':data.args.var, 'type':data.args.type}, 'val':data.args.val});
+					} else {
+						machine.resume(callback);
 					}
-					machine.resume(callback);
 					break;
 
 				default:

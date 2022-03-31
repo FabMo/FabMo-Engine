@@ -457,6 +457,13 @@ FabMoUI.prototype.updateStatusContent = function(status){
 				$(that.pause_button_selector).hide();
 				$(that.resume_button_selector).show();
 			}
+			//While FabMo is resuming from feedhold, display stop button
+			if(status.resumeFlag) {
+				$(that.stop_button_selector).hide();
+				$(that.pause_button_selector).show();
+				$(that.resume_button_selector).hide();
+			}
+			$(that.resume_button_selector+" div:first-child").removeClass('spinner green');
 			$(that.pause_button_selector+" div div:first-child").removeClass('spinner red');
 		}
 	}

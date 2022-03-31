@@ -27,3 +27,4 @@ profiles/.*
 !profiles/README.md
 install_token
 runtime/opensbp/test.sbp
+package-lock.json

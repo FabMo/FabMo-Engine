@@ -130,7 +130,8 @@ function Machine(control_path, callback) {
 		nb_lines : null,
 		auth : false,
 		hideKeypad : false,
-		inFeedHold : false
+		inFeedHold : false,
+		resumeFlag : false
 	};
 
 	this.fireButtonDebounce = false;
@@ -343,7 +344,7 @@ Machine.prototype.handleOkayButton = function(stat, auth_input){
 		}
 
 		if(this.status.state === 'paused' && canResume) {
-			log.info("Okay hit, resuming from pause")
+			log.info("Okay hit, resuming from pause");
 			this.resume(function(err, msg){
 				if(err){
 					log.error(err);
@@ -913,6 +914,9 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 					}
                 }
 				break;
+			case 'running':
+				this.status.resumeFlag = false;
+				break;
 			case 'dead':
 				log.error('G2 is dead!');
 				break;
@@ -968,6 +972,11 @@ Machine.prototype.quit = function(callback) {
 	// Release Pause hold if present
 	this.driver.pause_hold = false;
 	this.status.inFeedHold = false;
+	this.status.resumeFlag = false;
+	if (this.pauseTimer) {
+		clearTimeout(this.pauseTimer);
+		this.pauseTimer = false;
+	}
 	this.disarm();
 
 	// Quitting from the idle state dismisses the 'info' data
