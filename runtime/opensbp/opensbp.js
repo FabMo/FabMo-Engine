@@ -277,7 +277,6 @@ SBPRuntime.prototype.runString = function(s) {
         lines = this.program.length;
         // Configure affine transformations on the file
         this._setupTransforms();
-        log.debug("Transforms configured...")
 
         // Initialize the runtime state
         this.init();
@@ -347,7 +346,6 @@ SBPRuntime.prototype.runStream = function(text_stream) {
 
                     // Configure affine transformations on the file
                     this._setupTransforms();
-                    log.debug("Transforms configured...")
 
                     // Initialize the runtime state
                     this.init();
@@ -1850,6 +1848,8 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 
     // Where to save the start point of an arc that isn't transformed??????????
     var tPt = this.transformation(pt);
+    console.log('call point transform, ')
+    console.log(tPt);
 
     if(this.file_stack.length > 0) {
         var n = this.file_stack[0].pc;
@@ -1912,42 +1912,58 @@ SBPRuntime.prototype._setupTransforms = function() {
     this.transforms = JSON.parse(JSON.stringify(config.opensbp.get('transforms')));
 };
 
-// Transform the specified point
-// TODO - Gordon, docs?
+// Transform the specified points within a motion command for a line or arc
+// - by type of transform
+// - to the tform function we are passing the to-be-transformed object and other parameters needed for calc
+// - the possible presence of gcode arcs (with relative values and absent start point) makes this messy
+
+let prevPt = {   // for rotating an arc we need to have the starting point, the previous EndPt
+    xIni: 0,     // ... these should be initialized to current location
+    yIni: 0,
+    xRot: 0,
+    yRot: 0
+};
 SBPRuntime.prototype.transformation = function(TranPt){
     if (this.transforms.rotate.apply !== false){
-        log.debug("transformation = " + JSON.stringify(TranPt));
-        log.debug("  cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy);
         if ( "X" in TranPt || "Y" in TranPt ){
             if ( !("X" in TranPt) ) { TranPt.X = this.cmd_posx; }
             if ( !("Y" in TranPt) ) { TranPt.Y = this.cmd_posy; }
-            log.debug("transformation TranPt: " + JSON.stringify(TranPt));
+            log.debug("xy rot transformation TranPt: " + JSON.stringify(TranPt));
             var angle = this.transforms.rotate.angle;
-            var x = TranPt.X;
-            var y = TranPt.Y;
+            // var x = TranPt.X;
+            // var y = TranPt.Y;
             var PtRotX = this.transforms.rotate.x;
             var PtRotY = this.transforms.rotate.y;
-            log.debug("transformation: cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy);
-            TranPt = tform.rotate(TranPt,angle,PtRotX,PtRotY,this.cmd_StartX,this.cmd_StartY);
+            TranPt = tform.rotate(TranPt,angle,PtRotX,PtRotY,prevPt);
+           // save these for next pass in case it is an arc
+            prevPt.xIni = this.cmd_posx;
+            prevPt.yIni = this.cmd_posy;
+            prevPt.xRot = TranPt.X;
+            prevPt.yRot = TranPt.Y;
         }
     }
-    ////No angle being passed to shear functions so they return null
     if (this.transforms.shearx.apply != false){
         log.debug("ShearX: " + JSON.stringify(this.transforms.shearx));
-        TranPt = tform.shearX(TranPt);
+        var angle = this.transforms.shearx.angle;
+        TranPt = tform.shearX(TranPt,angle);
     }
     if (this.transforms.sheary.apply != false){
         log.debug("ShearY: " + JSON.stringify(this.transforms.sheary));
-        TranPt = tform.shearY(TranPt);
+        var angle = this.transforms.sheary.angle;
+        TranPt = tform.shearY(TranPt,angle);
     }
     if (this.transforms.scale.apply != false){
         log.debug("Scale: " + JSON.stringify(this.transforms.scale));
         var ScaleX = this.transforms.scale.scalex;
         var ScaleY = this.transforms.scale.scaley;
+        var ScaleZ = this.transforms.scale.scalez;
         var PtX = this.transforms.scale.x;
         var PtY = this.transforms.scale.y;
+        var PtZ = this.transforms.scale.z;
+        var PtI = this.transforms.scale.x;
+        var PtJ = this.transforms.scale.y;
 
-        TranPt = tform.scale(TranPt,ScaleX,ScaleY,PtX,PtY);
+        TranPt = tform.scale(TranPt,ScaleX,ScaleY,ScaleZ,PtX,PtY,PtZ,PtI,PtJ);
     }
     if (this.transforms.move.apply != false){
         log.debug("Move: " + JSON.stringify(this.transforms.move));
@@ -1958,7 +1974,6 @@ SBPRuntime.prototype.transformation = function(TranPt){
     }
 
     return TranPt;
-
 };
 
 // Pause the currently running program

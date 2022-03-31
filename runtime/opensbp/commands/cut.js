@@ -2,9 +2,14 @@ var log = require('../../../log').logger('sbp');
 var g2 = require('../../../g2');
 var sb3_commands = require('../sb3_commands');
 var config = require('../../../config');
+var interpolate = require('../interpolate');
 
 /* CUTS */
-//  The CA command will cut an arc as defined by its cord length, height and angle from start
+// The primary Cut Commands in ShopBot are for Circle/Arcs and for Rectangles. These Commands have many features historically
+//   ... in order to allow a lot of work from the Command Line.
+// Here we convert all the Circle/Arc Commnads to expression as CG, which most resembles a g-code arc instruction.
+
+//  The CA Command cuts an arc defined by its cord length, height, and angle from start
 //      to end.
 //    
 //  Usage: CA,Cord Length,Height off Cord,<I-O-T>,<Direction>,
@@ -59,7 +64,7 @@ exports.CA = function(args) {
 
 };
 
-//  The CC command will cut a circle/arc as defined by its diameter.
+//  The CC Command cuts a circle/arc as defined by its diameter.
 //    
 //  Usage: CC,<Dia>,<I-O-T>,<Direction>,<Begin Angle>,<End Angle>,<Plunge Depth>,
 //            <Repetitions>,<X Prop>,<Y Prop>,<Options-2=Pocket,3=Spiral Plunge,
@@ -169,7 +174,7 @@ exports.CP = function(args) {
   var comp = 0;
   var feedrate = 0;
 
-  // log.debug("CP: " + JSON.stringify(args));
+  log.debug("CP: " + JSON.stringify(args));
   
   if (OIT === 'O') { comp = 1; } 
   else if (OIT === 'I') { comp = -1; }
@@ -248,7 +253,7 @@ exports.CG = function(args) {
   var reps = args[8] !== undefined ? args[8] : 1;
   var propX = args[9] !== undefined ? args[9] : 1;
   var propY = args[10] !== undefined ? args[10] : 1;
-  var optCG = args[11] !== undefined ? args[11] : 0;
+  var optCG = args[11] !== undefined ? args[11] : 0;      // additional CG functions: 1={tabOBS}, 2=pocket, 3=spiral , 4=spiral+bpttom
   var noPullUp = args[12] !== undefined ? args[12] : 0;
   var plgFromZero = args[13] !== undefined ? args[13] : 0;
   var feedrateXY = this.movespeed_xy * 60;
@@ -260,6 +265,8 @@ exports.CG = function(args) {
   var Pocket_StepY = 0;
   var PocketAngle = 0;
   var j = 0;
+
+  log.debug("CG: " + JSON.stringify(args));
 
   this.lastNoZPullup = plgFromZero;
 
@@ -288,7 +295,7 @@ exports.CG = function(args) {
   }
   
   currentZ = CGstartZ;
-  var safeZCG = config.opensbp.get('safeZpullUp');
+////##  var safeZCG = config.opensbp.get('safeZpullUp');
   var spiralPlunge = (optCG === 2 || optCG === 3 || optCG === 4) ? 1 : 0;
 
   if ( optCG == 2 ) {
@@ -312,41 +319,42 @@ exports.CG = function(args) {
   		currentZ += Plg;
       this.emit_move('G1',{ 'Z':currentZ, 'F':feedrateZ });
    	}  
-   	if (optCG === 2) { 	// Pocket circle from the outside inward to center
+   	if (optCG === 2) { 	          // If Pocketing: Pocket circle from the outside inward to center
    		// Loop passes until overlapping the center
    		for (j=0; (Math.abs(Pocket_StepX * j) < circRadius) && (Math.abs(Pocket_StepY * j) < circRadius) ; j++){
-        nextX = (CGstartX + (j*Pocket_StepX));
-        nextY = (CGstartY + (j*Pocket_StepY));
-        if ( j > 0 ) {
-    	   	this.emit_move('G1',{ 'X':nextX, 'Y':nextY, 'F':feedrateXY });
-        }
-        if ( Math.abs(propX) !== Math.abs(propY) ) {      // calculate an interpolated ellipse
-          this.interpolate_circle(CGstartX,CGstartY,CGstartZ,
-                                  endX,endY,Plg,
-                                  centerX,centerY,
-                                  propX,propY,
-                                  optCG );
-        } 
-  	   	else {
-          if ( Dir === 1 ) { outStr = 'G2'; }	  // Clockwise circle/arc
-   			  else { outStr = 'G3'; }	              // CounterClockwise circle/arc
-            this.emit_move(outStr,{ 'X':nextX,
-                                    'I':(centerX - (j*Pocket_StepX)),
-                                    'J':(centerY - (j*Pocket_StepY)),
-                                    'F':feedrateXY });
-        }										
-    	}
+            nextX = (CGstartX + (j*Pocket_StepX));
+            nextY = (CGstartY + (j*Pocket_StepY));
+            if ( j > 0 ) {
+                this.emit_move('G1',{ 'X':nextX, 'Y':nextY, 'F':feedrateXY });
+            }
+            if ( Math.abs(propX) !== Math.abs(propY) ) {      // calculate an interpolated ellipse
+            this.interpolate_circle(CGstartX,CGstartY,CGstartZ,
+                                    endX,endY,Plg,
+                                    centerX,centerY,
+                                    propX,propY,
+                                    optCG );
+            } 
+            else {
+            if ( Dir === 1 ) { outStr = 'G2'; }	  // Clockwise circle/arc
+                else { outStr = 'G3'; }	              // CounterClockwise circle/arc
+                this.emit_move(outStr,{ 'X':nextX,
+                                        'I':(centerX - (j*Pocket_StepX)),
+                                        'J':(centerY - (j*Pocket_StepY)),
+                                        'F':feedrateXY });
+            }										
+            }
     	this.emit_move('G0',{'Z':safeZCG});
-      this.emit_move('G0',{ 'X':CGstartX, 'Y':CGstartY });
+        this.emit_move('G0',{ 'X':CGstartX, 'Y':CGstartY });
     } 
-    else {
-      if ( Math.abs(propX) !== Math.abs(propY) ) {
+    else {                        // If not pocketing
+      if ( Math.abs(propX) !== Math.abs(propY) ) {      // non-uniform using interpolated segments
         // TODO: Why is this commented out?
         // calculate out to an interpolated ellipse
-        // this.interpolate_circle(CGstartX,CGstartY,currentZ,endX,endY,Plg,centerX,centerY,propX,propY);
-        // circleInterpolate(runtime, code, CGParams);
+        this.interpolate_circle(CGstartX,CGstartY,currentZ,endX,endY,Plg,centerX,centerY,propX,propY);
+        ////## what is this other module
+        //interpolate.circleInterpolate(runtime, code, CGParams);
       }
-    	else {
+      else {                                            // normal uniform move using arcs
         var emitObj = {};
         
         if (Dir === 1 ) { 
@@ -357,7 +365,7 @@ exports.CG = function(args) {
         }			// CounterClockwise circle/arc
         emitObj.X = endX;
         emitObj.Y = endY;
-		    emitObj.I = centerX;
+		emitObj.I = centerX;
         emitObj.J = centerY;
         if (Plg !== 0 && optCG > 2 ) { 
           currentZ += Plg;
@@ -366,16 +374,17 @@ exports.CG = function(args) {
         emitObj.F = feedrateXY;
         this.emit_move(outStr,emitObj);
 	    	
-        if( i+1 < reps && ( endX != CGstartX || endY != CGstartY ) ){					//If an arc, pullup and jog back to the start position
+        if( i+1 < reps && ( endX != CGstartX || endY != CGstartY ) ){	//If an arc, pullup and jog back to the start position
           if ( this.cmd_posz != safeZCG ) {
             this.emit_move('G0',{'Z':safeZCG});
           }
           this.emit_move('G0',{ 'X':CGstartX, 'Y':CGstartY });
         }
-		  }
+	  }
     }
   }
 
+  ////** Pocketing final pass not impemented for non-uniform
   if (optCG === 4 ) { // Add bottom circle if spiral with bottom clr is specified
     if( endX != CGstartX || endY != CGstartY ) {	//If an arc, pullup and jog back to the start position
       this.emit_move('G0',{'Z':safeZCG});
@@ -402,7 +411,7 @@ exports.CG = function(args) {
 
 };
 
-//  Interpolate_Circle - is used to interpolate a circle that has uneven proportions as an ellipse.
+//  Interpolate_Circle - is a helper for adding interpolated segments to non-uniform circle/arcs outputting g1 moves as needed
 //    
 //
 //  Usage: interpolate_circle(<CGstartX>,<CGstartY>,<CGstartZ>,<endX>,<endY>,<plunge>,
@@ -422,6 +431,7 @@ exports.interpolate_circle = function(ICstartX,ICstartY,ICstartZ,endX,endY,plung
   var radius = Math.sqrt(Math.pow((centerX),2)+Math.pow((centerY),2));
 
   // Find the beginning and ending angles in radians. We'll use only radians from here on.
+  var Dir = 1;  ////## temp; fix this
   var Bang = Math.atan2(centerX, centerY);
   var Eang = Math.atan2((endX*propX)-(ICstartX-centerX), (endY*propY)-(ICstartY-centerY));
   var inclAng = 0.0;
@@ -436,7 +446,7 @@ exports.interpolate_circle = function(ICstartX,ICstartY,ICstartZ,endX,endY,plung
   }
 
   if ( inclAng < 0.00001 ) { 
-    // end here  
+    ////##?? end here  
   }
 
   var incrAng = 0.05;
@@ -458,8 +468,10 @@ exports.interpolate_circle = function(ICstartX,ICstartY,ICstartZ,endX,endY,plung
   var FirstCircleX = radius * Math.sin(t) * propX;
   var FirstCricleY = radius * Math.cos(t) * propY;
 
-  nextX = Xfactor1 * (Math.sin(Bang + (increment * Dir))) + Xfactor2;
-  nextY = Yfactor1 * (Math.cos(Bang + (increment * Dir))) + Yfactor2;
+//   nextX = Xfactor1 * (Math.sin(Bang + (increment * Dir))) + Xfactor2;
+//   nextY = Yfactor1 * (Math.cos(Bang + (increment * Dir))) + Yfactor2;
+  nextX = Xfactor1 * (Math.sin(Bang + (incrDist * Dir))) + Xfactor2;
+  nextY = Yfactor1 * (Math.cos(Bang + (incrDist * Dir))) + Yfactor2;
 
   var DistA = nextX - ICstartX;
   var DistB = nextY - ICstartY;
@@ -467,7 +479,8 @@ exports.interpolate_circle = function(ICstartX,ICstartY,ICstartZ,endX,endY,plung
   FirstDist = Math.sqrt(Math.pow(DistA,2) + Math.pow(DistB,2));
 
   if ( FirstDist === 0 ) {
-    if ( incrDist === 0 ) { increment = 0.01;}
+//    if ( incrDist === 0 ) { increment = 0.01;}
+    if ( incrDist === 0 ) { incrDist = 0.01;}
     incrDist *= config.opensbp.get('cRes') / FirstDist;
 
     incrZ = Plg/steps;
