@@ -28,6 +28,7 @@ var fabmo = new Fabmo();
 var viewer;
 
 var cached_Config = null;
+var cached_Status = null;
 
 function resize() {
   var width = window.innerWidth - 4;
@@ -47,19 +48,36 @@ function getMachineData(err, callback) {
     });
 }
 
+function getStartStatus(err, callback) {
+    fabmo.requestStatus(function (err, status) {
+        var startPosx = status.posx;
+        cached_Status = status;             // Make initial status available to this app (location needed)
+        if (!err) {
+          callback();
+        } else {
+          fabmo.notify('error', 'Could not load status data!');
+        }
+    });
+}
 
-$(function () {                             // Preview App ENTRY
+
+$(function () {                             // Preview App ENTRY POINT  <<================
   if (!util.webGLEnabled()) {
     fabmo.notify('error', 'WebGL is not enabled. Impossible to preview.');
     return;
   }
   let err = null;
-  getMachineData(err, nowPreviewJob);       // Need to get tool's units and dimensions before we start
+  getMachineData(err, nowGetStatus);       // Need to get tool's units and dimensions before we start
 })
+
+function nowGetStatus() {                  // Need to make sure we have current status data for location
+    let err = null;
+    getStartStatus(err, nowPreviewJob);  
+}
 
 function nowPreviewJob() {
 
-  fabmo.getAppArgs(function(err, args) {
+    fabmo.getAppArgs(function(err, args) {
     if (err) console.log(err);
 
     // Args
@@ -88,16 +106,16 @@ function nowPreviewJob() {
     resize();
     $(window).resize(resize);
 
-    // Units
-    viewer.setUnits(cached_Config.machine.units);
+    // Units (pass units and initial status)
+    viewer.setUnits(cached_Config.machine.units, cached_Status);
 
     // Fabmo callbacks
     var job_started = false;
     fabmo.on('status', function(status) {
       if (status.state == 'running' && status.job && status.job._id == jobID &&
           status.line !== null) {
-        var p = [status.posx, status.posy, status.posz];
-        viewer.updateStatus(status.line, p);
+            var p = [status.posx, status.posy, status.posz];
+            viewer.updateStatus(status.line, p);
         if (!job_started) {
           job_started = true;
           viewer.jobStarted();
