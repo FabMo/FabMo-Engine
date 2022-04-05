@@ -94,6 +94,19 @@ OpenSBPConfig.prototype.setVariable = function(name, value, callback) {
 	this.update(u, callback, true);
 }
 
+// Promise wrapper to allow async/await
+OpenSBPConfig.prototype.setVariableWrapper = async function(expr, value) {
+    return await new Promise((resolve, reject) => {
+        this.setVariable(expr, value, function (err, result) {
+            if (err) {
+                reject(err)
+            } else {
+                resolve(result)
+            }
+        })
+    })
+}
+
 // Return true if the provided variable has been defined (with or without dollar sign)
 OpenSBPConfig.prototype.hasVariable = function(name) {
 	var name = name.replace('$','');
@@ -122,6 +135,19 @@ OpenSBPConfig.prototype.setTempVariable = function(name, value, callback) {
 	var u = {'tempVariables' : {}}
 	u.tempVariables[name] = value;
 	this.update(u, callback, true);
+}
+
+// Promise wrapper to allow async/await
+OpenSBPConfig.prototype.setTempVariableWrapper = async function(expr, value) {
+    return await new Promise((resolve, reject) => {
+        this.setTempVariable(expr, value, function (err, result) {
+            if (err) {
+                reject(err)
+            } else {
+                resolve(result)
+            }
+        })
+    })
 }
 
 // Return true if the provided temp variable has been defined (with or without ampersand)

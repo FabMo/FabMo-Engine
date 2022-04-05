@@ -16,7 +16,7 @@ var config = require('../../../config');
 
 
 exports.ZX = function(args, callback) {
-	this.machine.driver.get('mpox', function(err, MPO) {
+	this.machine.driver.get('mpox', async function(err, MPO) {
 		if(err) { return callback(err); }
 		var zxObj = {};
 		var unitConv = 1.0;
@@ -24,16 +24,18 @@ exports.ZX = function(args, callback) {
 			unitConv = 0.039370079;
 		}
 		zxObj.g55x = Number((MPO * unitConv).toFixed(5));
-		config.driver.setMany(zxObj, function(err, value) {
-			if(err) { return callback(err); }
+		try {
+			let value = await config.driver.setManyWrapper(zxObj)
 			this.cmd_posx = this.posx = 0;
 			callback();
-		}.bind(this));
+		} catch (error) {
+			callback(error)
+		}
 	}.bind(this));
 };
 
 exports.ZY = function(args, callback) {
-	this.machine.driver.get('mpoy', function(err, MPO) {
+	this.machine.driver.get('mpoy', async function(err, MPO) {
 		if(err) { return callback(err); }
 		var zyObj = {};
 		var unitConv = 1.0;
@@ -41,31 +43,36 @@ exports.ZY = function(args, callback) {
 			unitConv = 0.039370079;
 		}
 		zyObj.g55y = Number((MPO * unitConv).toFixed(5));
-		config.driver.setMany(zyObj, function(err, value) {
-			if(err) { return callback(err); }
+		try {
+			let value = await config.driver.setManyWrapper(zyObj)
 			this.cmd_posy = this.posy = 0;
-				callback();
-		}.bind(this));
+			callback();
+		} catch (error) {
+			callback(error)
+		}
 	}.bind(this));
 };
 
 exports.ZZ = function(args, callback) {
-	this.machine.driver.get('mpoz', function(err, MPO) {
+	this.machine.driver.get('mpoz', async function(err, MPO) {
 		var zzObj = {};
 		var unitConv = 1.0;
 		if ( this.machine.driver.status.unit === 'in' ) {  // inches
 			unitConv = 0.039370079;
 		}
 		zzObj.g55z = Number((MPO * unitConv).toFixed(5));
-		config.driver.setMany(zzObj, function(err, value) {
+		try {
+			let value = await config.driver.setManyWrapper(zzObj)
 			this.cmd_posz = this.posz = 0;
 			callback();
-		}.bind(this));
+		} catch (error) {
+			callback(error)
+		}
 	}.bind(this));
 };
 
 exports.ZA = function(args, callback) {
-	this.machine.driver.get('mpoa', function(err, MPO) {
+	this.machine.driver.get('mpoa', async function(err, MPO) {
 		if(err) { return callback(err); }
 		var zaObj = {};
 		var unitConv = 1.0;
@@ -78,42 +85,48 @@ exports.ZA = function(args, callback) {
 		// 	unitConv = 0.039370079;
 		// }
 		zaObj.g55a = Number((MPO * unitConv).toFixed(5));
-		config.driver.setMany(zaObj, function(err, value) {
-			if(err) { return callback(err); }
+		try {
+			let value = await config.driver.setManyWrapper(zaObj)
 			this.cmd_posa = this.posa = 0;
 			callback();
-		}.bind(this));
+		} catch (error) {
+			callback(error)
+		}
 	}.bind(this));
 };
 
 exports.ZB = function(args, callback) {
-	this.machine.driver.get('mpob', function(err, MPO) {
+	this.machine.driver.get('mpob', async function(err, MPO) {
 		if(err) { return callback(err); }
 		var zbObj = {};
 		zbObj.g55b = Number((MPO).toFixed(5));
-		config.driver.setMany(zbObj, function(err, value) {
-			if(err) { return callback(err); }
+		try {
+			let value = await config.driver.setManyWrapper(zbObj)
 			this.cmd_posb = this.posb = 0;
 			callback();
-		}.bind(this));
+		} catch (error) {
+			callback(error)
+		}
 	}.bind(this));
 };
 
 exports.ZC = function(args, callback) {
-	this.machine.driver.get('mpoc', function(err, MPO) {
+	this.machine.driver.get('mpoc', async function(err, MPO) {
 		if(err) { return callback(err); }
 		var zcObj = {};
 		zcObj.g55c = Number((MPO).toFixed(5));
-		config.driver.setMany(zcObj, function(err, value) {
-			if(err) { return callback(err); }
+		try {
+			let value = await config.driver.setManyWrapper(zcObj)
 			this.cmd_posc = this.posc = 0;
 			callback();
-		}.bind(this));
+		} catch (error) {
+			callback(error)
+		}
 	}.bind(this));
 };
 
 exports.Z2 = function(args, callback)  {
-	this.machine.driver.get('mpo', function(err, MPO) {
+	this.machine.driver.get('mpo', async function(err, MPO) {
 		if(err) { return callback(err); }
 		var z2Obj = {};
 		var unitConv = 1.0;
@@ -122,17 +135,19 @@ exports.Z2 = function(args, callback)  {
 		}
 		z2Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
 		z2Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
-		config.driver.setMany(z2Obj, function(err, value) {
-			if(err) { return callback(err); }
+		try {
+			let value = await config.driver.setManyWrapper(z2Obj)
 			this.cmd_posx = this.posx = 0;
 			this.cmd_posy = this.posy = 0;
 			callback();
-		}.bind(this));
+		} catch (error) {
+			callback(error)
+		}
 	}.bind(this));
 };
 
 exports.Z3 = function(args,callback) {
-	this.machine.driver.get('mpo', function(err, MPO) {
+	this.machine.driver.get('mpo', async function(err, MPO) {
 		if(err) { return callback(err); }
 		var z3Obj = {};
 		log.debug(JSON.stringify(MPO));
@@ -144,18 +159,20 @@ exports.Z3 = function(args,callback) {
 		z3Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
 		z3Obj.g55z = Number((MPO.z * unitConv).toFixed(5));
 		log.debug(JSON.stringify(z3Obj));
-		config.driver.setMany(z3Obj, function(err, value) {
-			if(err) { return callback(err); }
+		try {
+			let value = await config.driver.setManyWrapper(z3Obj)
 			this.cmd_posx = this.posx = 0.0;
 			this.cmd_posy = this.posy = 0.0;
 			this.cmd_posz = this.posz = 0.0;
 			callback();
-		}.bind(this));
+		} catch (error) {
+			callback(error)
+		}
 	}.bind(this));
 };
 
 exports.Z4 = function(args,callback) {
-	this.machine.driver.get('mpo', function(err, MPO) {
+	this.machine.driver.get('mpo', async function(err, MPO) {
 		if(err) { return callback(err); }
 		var z4Obj = {};
 		unitConv = 1.0;
@@ -168,19 +185,21 @@ exports.Z4 = function(args,callback) {
 		z4Obj.g55z = Number((MPO.z * unitConv).toFixed(5));
 		// No unit conversion (rotary)
 		z4Obj.g55a = Number((MPO.a).toFixed(5));
-		config.driver.setMany(z4Obj, function(err, value) {
-			if(err) { return callback(err); }
+		try {
+			let value = await config.driver.setManyWrapper(z4Obj)
 			this.cmd_posx = this.posx = 0.0;
 			this.cmd_posy = this.posy = 0.0;
 			this.cmd_posz = this.posz = 0.0;
 		 	this.cmd_posa = this.posa = 0.0;
 			callback();
-		}.bind(this));
+		} catch (error) {
+			callback(error)
+		}
 	}.bind(this));
 };
 
 exports.Z5 = function(args,callback) {
-	this.machine.driver.get('mpo', function(err, MPO) {
+	this.machine.driver.get('mpo', async function(err, MPO) {
 		if(err) { return callback(err); }
 		var z5Obj = {};
 		unitConv = 1.0;
@@ -194,20 +213,22 @@ exports.Z5 = function(args,callback) {
 		// No unit conversion (rotary)
 		z5Obj.g55a = Number((MPO.a).toFixed(5));
 		z5Obj.g55b = Number((MPO.b).toFixed(5));
-		config.driver.setMany(z5Obj, function(err, value) {
-			if(err) { return callback(err); }
+		try {
+			let value = await config.driver.setManyWrapper(z5Obj)
 			this.cmd_posx = this.posx = 0.0;
 			this.cmd_posy = this.posy = 0.0;
 			this.cmd_posz = this.posz = 0.0;
 		 	this.cmd_posa = this.posa = 0.0;
 		 	this.cmd_posb = this.posb = 0.0;
 			callback();
-		}.bind(this));
+		} catch (error) {
+			callback(error)
+		}
 	}.bind(this));
 };
 
 exports.Z6 = function(args,callback) {
-	this.machine.driver.get('mpo', function(err, MPO) {
+	this.machine.driver.get('mpo', async function(err, MPO) {
 		if(err) { return callback(err); }
 		var z6Obj = {};
 		unitConv = 1.0;
@@ -221,8 +242,8 @@ exports.Z6 = function(args,callback) {
 		z6Obj.g55a = Number((MPO.a).toFixed(5));
 		z6Obj.g55b = Number((MPO.b).toFixed(5));
 		z6Obj.g55c = Number((MPO.c).toFixed(5));
-		config.driver.setMany(z6Obj, function(err, value) {
-			if(err) { return callback(err); }
+		try {
+			let value = await config.driver.setManyWrapper(z6Obj)
 			this.cmd_posx = this.posx = 0.0;
 			this.cmd_posy = this.posy = 0.0;
 			this.cmd_posz = this.posz = 0.0;
@@ -230,12 +251,14 @@ exports.Z6 = function(args,callback) {
 			this.cmd_posb = this.posb = 0.0;
 			this.cmd_posc = this.posc = 0.0;
 			callback();
-		}.bind(this));
+		} catch (error) {
+			callback(error)
+		}
 	}.bind(this));
 };
 
 ////## update ZT to cover all axes 2/4/22, will still need to attend to U,V,W
-exports.ZT = function(args, callback) {
+exports.ZT = async function(args, callback) {
 	ztObj = {};
 	ztObj.g55x = 0.0;
 	ztObj.g55y = 0.0;
@@ -244,17 +267,21 @@ exports.ZT = function(args, callback) {
 	ztObj.g55b = 0.0;
 	ztObj.g55c = 0.0;
     this.emit_gcode("G28.3 X0 Y0 Z0 A0 B0 C0");
-	config.driver.setMany(ztObj, function(err, value) {
-		if(err) { return callback(err); }
+	try {
+		let value = await config.driver.setManyWrapper(ztObj)
 		this.cmd_posx = this.posx = 0.0;
 		this.cmd_posy = this.posy = 0.0;
 		this.cmd_posz = this.posz = 0.0;
 		this.cmd_posa = this.posa = 0.0;
 		this.cmd_posb = this.posb = 0.0;
 		this.cmd_posc = this.posc = 0.0;
-		this.driver.requestStatusReport(function(report) {
-			log.debug("report = " + JSON.stringify(report));
-			callback();
-		});
-	}.bind(this));
+		// TODO: Do we need this report on ZT CMD?  If so and callback should follow report we will need to async/await wrapper that as well.
+		// this.driver.requestStatusReport(function(report) {
+		// 	log.debug("report = " + JSON.stringify(report));
+		// 	callback();
+		// });
+		callback()
+	} catch (error) {
+		callback(error)
+	}
 };

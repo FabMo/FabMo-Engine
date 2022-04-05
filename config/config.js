@@ -86,6 +86,19 @@ Config.prototype.setMany = function(data, callback) {
 	}.bind(this));
 }
 
+// Promise wrapper to allow async/await
+Config.prototype.setManyWrapper = async function(input) {
+    return await new Promise((resolve, reject) => {
+        this.setMany(input, function (err, result) {
+            if (err) {
+                reject(err)
+            } else {
+                resolve(result)
+            }
+        })
+    })
+}
+
 // Delete all of the provided keys from this configuration object
 //   keys - List of keys to remove
 Config.prototype.deleteMany = function(keys, callback) {
