@@ -12,6 +12,7 @@
 // THREE.js
 window.THREE = require('./three');
 require('./OrbitControls');
+require('./XgridHelper');
 
 var font = require('./helvetiker_regular.typeface.js');
 THREE.__font__ = (new THREE.FontLoader()).parse(font);
@@ -101,6 +102,9 @@ function nowPreviewJob() {
 
     // Viewer
     viewer = new Viewer(preview);
+
+    // Setup grid and table
+    viewer.setTable(cached_Config.machine.envelope, cached_Config.driver.g55x, cached_Config.driver.g55y, -1);
 
     // Resize
     resize();

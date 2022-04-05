@@ -49,11 +49,10 @@ function clean_gcode(s) {
 module.exports = function(scene, callbacks) {
   var self = this;
 
-//  let shift = [-9, -6, 0]                       ////## testing shift offsets to register path on tool
 
   self.setUnits = function (metric) {
     self.metric = metric;                  // Not sure if we want display in changed-to units or machine units 
-    $('[name="units"]').trigger('change'); // ... remove this line to leave display in machine units 
+//    $('[name="units"]').trigger('change'); // ... remove this line to leave display in machine units 
     callbacks.metric(metric);
   }
 
@@ -116,14 +115,12 @@ module.exports = function(scene, callbacks) {
   }
 
 
-  self.addPoint = function(p) {                        // growing bounds by inspecting all points??? ////##
+  self.addPoint = function(p) {                        // growing bounds by inspecting all points
     var bounds = self.bounds;
     var axes = ['x', 'y', 'z']
 
     for (var i = 0; i < 3; i++) {
       var axis = axes[i];
-
-//      p[i] += shift[i];                               ////## applying shift from center point
 
       if (typeof bounds.min[axis] == 'undefined' || p[i] < bounds.min[axis])
         bounds.min[axis] = p[i];
@@ -444,7 +441,6 @@ module.exports = function(scene, callbacks) {
     else {
       if (!self.commands) self.addError('error', 'No commands.');
       self.flushBuffer();
-      self.position = [0, 0, 0];
       self.loaded = true;
       console.log('Path distance:', self.distance.toFixed(2) + '"',
                   'duration:', self.duration.toFixed(2) + 's');
@@ -464,6 +460,7 @@ module.exports = function(scene, callbacks) {
 
     self.gcode = gcode.split('\n');
     self.process(done);
+    self.reset();                            // put cone at starting location
   }
 
 

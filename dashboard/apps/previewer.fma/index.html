@@ -88,9 +88,18 @@
           <input name="grid-step" type="number" min="0" max="1000000"
                  step="1" value="1"/>
 
+          <label>Z-Zero Offset from Table (e.g. zeroed on material surface)</label>
+          <input name="table-zzoff" type="number" min="-10" max="100"
+                 step=".1" value="1"/>
+                 
           <label>
             <input name="show-grid" type="checkbox" checked="true"/>
             Show Grid
+          </label>
+
+          <label>
+            <input name="show-table" type="checkbox" checked="true"/>
+            Show Machine Table
           </label>
 
           <label>
@@ -105,7 +114,7 @@
 
           <label>
             <input name="show-tool" type="checkbox" checked="true"/>
-            Show Tool
+            Show Tool (Yellow Cone)
           </label>
         </div>
         <div class="footer"><button class="close">Ok</button></div>
@@ -183,7 +192,6 @@
       </div>
     </div>
 
-    <script src="../../common.js"></script>
     <script src="../../preview.js"></script>
   </body>
 </html>

@@ -61,6 +61,7 @@ body {
   margin-left: -225px;
   margin-top: -250px;
   border: 1px solid #ddd;
+  scroll-behavior: auto;
 }
 
 #preview .dialog .header {

@@ -8,7 +8,7 @@ includes the following:
   * The dimensions of the bounds of the tool path.
   * X, Y and Z axes indicator at centered (0, 0, 0).
   * A conical representation of the tool and it's current position.
-  * A grid on the XY plane with user configurable spacing.
+  * A grid of the machine space on the XY plane at Z=zero with user configurable spacing.
   * The path it self color coded by move type.
 
 ## Live Mode
