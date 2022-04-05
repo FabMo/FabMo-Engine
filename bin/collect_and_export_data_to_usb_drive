@@ -90,7 +90,7 @@ sub capture_shopbotsupport_info() {
 	print "message output done\n";
 
 	#capture logs
-	my $currentFabmoLogFileName = "`cd /opt/fabmo/log; ls -lt *.txt | head -1 | cut -c 44-`";
+	my $currentFabmoLogFileName = "`cd /opt/fabmo/log; /bin/ls -lt *.txt | /usr/bin/head -1 | /usr/bin/cut -c 44-`";
 	system("/bin/cp /var/log/daemon.log /home/pi/daemon.log; /bin/cp /var/log/syslog /home/pi/syslog; /bin/cp \"/opt/fabmo/log/$currentFabmoLogFileName\" \"/home/pi/$currentFabmoLogFileName\"");
 	system("cd /home/pi; /usr/bin/zip /home/pi/shopbotsupport.zip daemon.log syslog ifconfig_out.txt system_status.txt $currentFabmoLogFileName");
 
