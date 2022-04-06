@@ -20,12 +20,6 @@ var Gui           = require('./gui');
 
 module.exports = function(container) {
   var self = this;
-  var startStatus = null;
-  var tabX = null;
-  var tabY = null;
-  var locTabX = null;
-  var locTabY = null;
-  var locTabZ = null;
 
   const tableBounds = {    // Desktop for example
     max: {
@@ -161,6 +155,7 @@ module.exports = function(container) {
     if (self.path && self.path.bounds) {
       self.dims.update(self.path.bounds, metric);
       self.grid.update(tableBounds, metric);
+      self.table.update(tableBounds, metric);
     }
   }
 
@@ -232,29 +227,6 @@ module.exports = function(container) {
 
   self.scene.add(new THREE.AmbientLight(0x808080));
 
-//   // Table (the simulated 3d table under grid)
-//   self.tableUpdate = function () {
-//     var zzoff = self.zzoff;
-//     self.zzoff_setting.val(self.zzoff);
-//     // var zzoff = (self.zzoff_metric ? 25.4 : 1) * self.zzoff;
-//     // if (self.zzoff_metric == self.path.metric) self.zzoff_setting.val(self.zzoff);
-//     // else if (self.path.metric) self.zzoff_setting.val(self.zzoff * 25.4);
-//     // else self.zzoff_setting.val((self.zzoff / 25.4).toFixed(3));
-// //    self.setZZoff(zzoff);
-
-//     var material = new THREE.MeshPhongMaterial({
-//         shininess: 30,
-//         specular: 0x888888,
-//         color: 0xBBBBBB,
-//         opacity: 0.2,
-//         transparent: true
-//       });
-//     var geometry = new THREE.BoxBufferGeometry(tabX, tabY, .5);
-//     self.table = new THREE.Mesh(geometry, material);
-//     self.table.position.set(locTabX, locTabY, -1.0);
-//     self.scene.add(self.table)
-//   }
-   
   // Widgets
   self.dims = new Dimensions(self.scene, self.refresh);
   self.grid = new Grid(self.scene, self.refresh);
@@ -268,27 +240,6 @@ module.exports = function(container) {
     progress: pathProgress,
     position: updatePosition
   });
-
-// //--------------------------------------
-
-//   self.setZZoff = function(off) {
-//         self.zzoff = off <= 0 ? 1 : (off || 1);
-//         self.zzoff = off;
-//         locTabZ = self.zzoff;
-//         self.zzoff_metric = self.metric;
-//         cookie.set('zz-off', self.zzoff);
-//         cookie.set('grid-zzoff-metric', self.metric ? 1 : 0);
-//         self.tableUpdate();
-//   }
-
-  
-//   // Table Z-zero Offset
-//   self.zzoff = parseFloat(cookie.get('zz-offset', 1));
-//   self.zzoff_metric = parseInt(cookie.get('zz-offset-metric', 0));
-//   self.zzoff_setting = $('#preview .settings [name="zz-offset"]');
-//   util.connectSetting('zz-offset', self.zzoff, self.setZZoff);
-
-// //------------------------------[]
 
   self.showISO();
   self.refresh();
