@@ -15,8 +15,6 @@ if (scalar(@ARGV) < 1) {
 }
 my $USB_DRIVE_PATH = $ARGV[0];
 
-system("echo $USB_DRIVE_PATH > /home/pi/testing/path.txt");
-
 ### https://www.perltutorial.org/
 
 #### This program is meant to be extensible
@@ -90,14 +88,15 @@ sub capture_shopbotsupport_info() {
 	print "message output done\n";
 
 	#capture logs
-	system("/bin/cp /var/log/daemon.log /home/pi/daemon.log; /bin/cp /var/log/syslog /home/pi/syslog");
-	system("cd /home/pi; /usr/bin/zip /home/pi/shopbotsupport.zip daemon.log syslog ifconfig_out.txt system_status.txt");
+	my $currentFabmoLogFileName = "`cd /opt/fabmo/log; /bin/ls -lt *.txt | /usr/bin/head -1 | /usr/bin/cut -c 43-`";
+	system("/bin/cp /var/log/daemon.log /home/pi/daemon.log; /bin/cp /var/log/syslog /home/pi/syslog; /bin/cp \"/opt/fabmo/log/$currentFabmoLogFileName\" \"/home/pi/$currentFabmoLogFileName\"");
+	system("cd /home/pi; /usr/bin/zip /home/pi/shopbotsupport.zip daemon.log syslog ifconfig_out.txt system_status.txt $currentFabmoLogFileName");
 
 	# zip up files
 	system("/bin/cp /home/pi/shopbotsupport.zip \"$path_to_file/shopbotsupport.zip\"");
 
 	# cleanup
-	system("cd /home/pi; /bin/rm daemon.log syslog shopbotsupport.zip ifconfig_out.txt system_status.txt");
+	system("cd /home/pi; /bin/rm daemon.log syslog shopbotsupport.zip ifconfig_out.txt system_status.txt $currentFabmoLogFileName");
 
 	# tell the user where to look for zip file
 	$message = "Your tech support info is recorded in shopbotsupport.zip on this device";
