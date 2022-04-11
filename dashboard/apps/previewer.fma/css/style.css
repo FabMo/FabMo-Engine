@@ -8,8 +8,8 @@ body {
 
 #preview .code-line {
   position: absolute;
-  left: 50%;
-  width: 150px;
+  left: 15%;
+  width: 600px;
   margin-left: -75px;
   font-size: 150%;
 }
@@ -50,8 +50,8 @@ body {
 #preview .dialog {
   display: none;
   position: absolute;
-  left: 50%;
-  top: 50%;
+  right: 1em;
+  top: 12em;
   background: #fff;
   z-index: 10;
   padding: 0;
@@ -61,7 +61,6 @@ body {
   margin-left: -225px;
   margin-top: -250px;
   border: 1px solid #ddd;
-  scroll-behavior: auto;
 }
 
 #preview .dialog .header {
@@ -73,9 +72,9 @@ body {
 
 #preview .dialog .content {
   padding: 10px 40px;
-  overflow-y: auto;
+  overflow-y: auto ! important;
   height: 368px;
-}
+  }
 
 #preview .dialog h2, #preview .dialog h3 {
   color: #444;

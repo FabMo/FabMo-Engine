@@ -21,7 +21,7 @@ var Gui           = require('./gui');
 module.exports = function(container) {
   var self = this;
 
-  const tableBounds = {    // Desktop for example
+  const tableBounds = {   // Manages pushing and pulling around; Desktop for example
     max: {
         x: 24,
         y: 18,
@@ -33,6 +33,11 @@ module.exports = function(container) {
         z: 0
     },
     loc: {
+        x: 0,
+        y: 0,
+        z: 0
+    },
+    offloc: {
         x: 0,
         y: 0,
         z: 0
@@ -50,20 +55,20 @@ module.exports = function(container) {
   }
 
 
-  self.setTable = function(envelope, xoff, yoff, zoff) {   // getting data for table, grid, and offset from machine 0
+  self.setTable = function(envelope, xoff, yoff, zoff) {    // getting data for table, grid, and offset from machine 0
       tableBounds.max.x = envelope.xmax;
       tableBounds.min.x = envelope.xmin;
       tableBounds.max.y = envelope.ymax;
       tableBounds.min.y = envelope.ymin;
-      var tabX = tableBounds.max.x - tableBounds.min.x;
-      var tabY = tableBounds.max.y - tableBounds.min.y;
-      tableBounds.loc.x = (tabX/2) - xoff;                 // keeping it simple by offsetting table not scene
-      tableBounds.loc.y = (tabY/2) - yoff;
-      tableBounds.loc.z = zoff;
+      tableBounds.loc.x = (tableBounds.max.x - tableBounds.min.x) / 2;
+      tableBounds.loc.y = (tableBounds.max.y - tableBounds.min.y) / 2;
+      tableBounds.offloc.x = tableBounds.loc.x - xoff;      // keeping it simple by offsetting table not scene
+      tableBounds.offloc.y = tableBounds.loc.y - yoff;
+      tableBounds.offloc.z = zoff;
   }
 
 
-  // Called when the canvas or container has resized.
+  // Called when the canvas or container has resized; scaling to available window.
   self.resize = function(width, height) {
     self.renderer.setSize(width, height);
     self.camera.aspect = width / height;
@@ -105,11 +110,11 @@ module.exports = function(container) {
   function updateLights(bounds) {
     var dims = util.getDims(bounds);
 
-    var lx = dims[0] / 2;
+    var lx = dims[0] / 2;    //2
     var ly = dims[1] / 2;
     var lz = dims[2] / 2;
 
-    self.light1.position.set(lx, ly, lz - 10);
+//    self.light1.position.set(lx, ly, lz - 10);
     self.light2.position.set(lx, ly, lz + 10);
   }
 
@@ -123,8 +128,6 @@ module.exports = function(container) {
 
     updateLights(bounds);
     self.dims.update(bounds, self.isMetric());
-    self.grid.update(tableBounds, self.isMetric());
-    self.table.update(tableBounds, self.isMetric);
     self.axes.update(size);
     self.tool.update(size, self.path.position);
     self.showISO();
@@ -139,6 +142,7 @@ module.exports = function(container) {
   }
 
 
+  // Get the file path that will be displayed; "bounds" comes from this work
   self.setGCode = function (gcode) {self.path.load(gcode, pathLoaded)}
 
 
@@ -159,9 +163,9 @@ module.exports = function(container) {
     }
   }
 
-
+  // Setting from within file here
   self.setPathMetric = function (metric) {
-    if (self.units == 'auto') self.setMetric(metric);
+    self.setMetric(metric);
   }
 
 
@@ -170,7 +174,7 @@ module.exports = function(container) {
     self.units = units;
     self.setMetric(self.isMetric());
     self.path.metric = (self.isMetric());
-    self.path.position = [status.posx, status.posy, status.posz];
+    if (status) {self.path.position = [status.posx, status.posy, status.posz]};
   }
 
 
@@ -216,13 +220,14 @@ module.exports = function(container) {
   self.controls.addEventListener('change', render);
 
   // Lights
-  self.light1 = new THREE.PointLight(0xffffff, 1, 100);
-  self.light1.position.set(0, 0, -10);
-  self.scene.add(self.light1);
+//  self.light1 = new THREE.PointLight(0xffffff, 1, 100);
+//  self.light1.position.set(0, 0, -10);
+//  self.scene.add(self.light1);
 
-  self.light2 = new THREE.PointLight(0xffffff, 1, 100);
-  self.light2.position.set(0, 0, 10);
+//   self.light2 = new THREE.PointLight(0xffffff, 1, 100);
+//   self.light2.position.set(0, 0, 10);
 
+  self.light2 = new THREE.DirectionalLight(0xffffff, 1);
   self.scene.add(self.light2);
 
   self.scene.add(new THREE.AmbientLight(0x808080));

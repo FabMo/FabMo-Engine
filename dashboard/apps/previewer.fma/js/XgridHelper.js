@@ -16,14 +16,6 @@
 
 THREE.XgridHelper = function ( sizeX, stepX, sizeZ, stepZ) {
 
-	var x = Math.round( sizeX / stepX );
-	var y = Math.round( sizeZ / stepZ );
-	
-	sizeX = x * stepX;
-	sizeZ = y * stepZ;
-	
-	console.log( "Grid sizeX: " + sizeX );
-	console.log( "Grid sizeZ: " + sizeZ );
 	var halfsizeX = sizeX / 2;
 	var halfsizeZ = sizeZ / 2;
 	
@@ -42,8 +34,8 @@ THREE.XgridHelper = function ( sizeX, stepX, sizeZ, stepZ) {
 	//	var color = i === 0 ? this.color1 : this.color2;
 		geometry.colors.push( color, color, color, color );
 	}
-		for ( var i = - 1 * halfsizeZ; i <= halfsizeZ; i += stepZ ) {
-			geometry.vertices.push(
+        for ( var i = halfsizeZ; i >= -1 * halfsizeZ; i -= stepZ ) {
+                geometry.vertices.push(
 			new THREE.Vector3( - 1 * halfsizeX, 0, i ),
 			new THREE.Vector3( halfsizeX, 0, i )
 		);
@@ -52,7 +44,7 @@ THREE.XgridHelper = function ( sizeX, stepX, sizeZ, stepZ) {
 	}
 	
 	THREE.Line.call( this, geometry, material, THREE.LineSegments );
-};
+    };
 	
 	THREE.XgridHelper.prototype = Object.create( THREE.LineSegments.prototype );
 	THREE.XgridHelper.prototype.constructor = THREE.XgridHelper;

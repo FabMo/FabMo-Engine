@@ -18,23 +18,17 @@ module.exports = function(scene, update) {
 
 
   self.update = function (bounds, metric) {
+//    var d = metric ? 25.4 : 1
     self.bounds = bounds = typeof bounds == 'undefined' ? self.bounds : bounds;
-    self.metric = metric = typeof metric == 'undefined' ? self.metric : metric;
+//    self.metric = metric = typeof metric == 'undefined' ? self.metric : metric;
 
     scene.remove(self.grid);
 
     var gridX = bounds.max.x - bounds.min.x; 
     var gridY = bounds.max.y - bounds.min.y;
-    // var gridXstart = bounds.min.x;
-    // var gridYstart = bounds.min.y;
-
-    if (self.step_metric == metric) self.step_setting.val(self.step);
-    else if (metric) self.step_setting.val(self.step * 25.4);
-    else self.step_setting.val((self.step / 25.4).toFixed(3));
-
-//    var dims = util.getDims(bounds);
-    var step = (self.step_metric ? 25.4 : 1) / self.step;
-
+    var locGridX = bounds.loc.x;
+    var locGridY = bounds.loc.y;
+    var step = self.step;
 
     var material = new THREE.MeshPhongMaterial({
       shininess: 0,
@@ -47,7 +41,7 @@ module.exports = function(scene, update) {
     self.grid = new THREE.XgridHelper(gridX,step,gridY,step);  // Use modified "gridHelper" for rectangular X & Y
     //self.grid = new THREE.GridHelper(size, divs);
     self.grid.material = material;
-    self.grid.position.set((gridX/2), (gridY/2), 0.0);
+    self.grid.position.set((locGridX), (locGridY), 0.0);
     self.grid.rotation.x = Math.PI / 2;
     self.grid.visible = !!self.show;
     scene.add(self.grid);

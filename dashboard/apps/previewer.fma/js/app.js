@@ -40,7 +40,7 @@ function resize() {
 
 function getMachineData(err, callback) {
     fabmo.getConfig(function (err, config) {
-        cached_Config = config;             // Make machineData available to this app (units and dim needed)
+        cached_Config = config;             // Make machineData available to this app (units, dim, and offsets needed)
         if (!err) {
           callback();
         } else {

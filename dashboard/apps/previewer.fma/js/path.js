@@ -15,13 +15,15 @@ var Move   = require('./move');
 
 var buffer_size = 10000;
 var max_errors = 100;
-var max_arc_error = 0.001;
+var max_arc_error = 0.0001;    // a little more resolution for mm
+// var max_arc_error = 0.001;
 var rapid_feed = 120;
 
 var red     = [1, 0, 0];
 var green   = [0, 1, 0];
 var magenta = [1, 0, 1];
 
+var infoLine = "Line: ";
 
 function vertArray(v) {return [v.x, v.y, v.z]}
 function vertVector3(v) {return new THREE.Vector3(v.x, v.y, v.z)}
@@ -48,11 +50,16 @@ function clean_gcode(s) {
 
 module.exports = function(scene, callbacks) {
   var self = this;
+  var unitSetInFile = false;
 
 
-  self.setUnits = function (metric) {
-    self.metric = metric;                  // Not sure if we want display in changed-to units or machine units 
-//    $('[name="units"]').trigger('change'); // ... remove this line to leave display in machine units 
+  self.setUnits = function (metric) {      // For changing to New Unit from inside file
+    if(self.metric != metric) {            // ... check if different than what we have for machine
+      self.metric = metric;
+      unitSetInFile = true;
+      infoLine = ("File Units Differ from Machine (Display) Units! -- Line: ");
+    }                                      // Not sure if we want display in changed-to units or machine units 
+//  $('[name="units"]').trigger('change'); // ... remove this line to leave display in machine units 
     callbacks.metric(metric);
   }
 
@@ -311,7 +318,8 @@ module.exports = function(scene, callbacks) {
 
   self.nextPosition = function (words) {
     var axes  = ['x', 'y', 'z'];
-    var scale = self.metric ? 25.4 : 1;
+    var scale = 1;
+    if (unitSetInFile) scale = self.metric ? 25.4 : .03937;
     var next  = [];
 
     for (var i = 0; i < 3; i++) {
@@ -329,7 +337,8 @@ module.exports = function(scene, callbacks) {
   self.arcOffset = function (words) {
     var axes    = ['x', 'y', 'z'];
     var offsets = ['i', 'j', 'k'];
-    var scale   = self.metric ? 25.4 : 1;
+    var scale = 1;
+    if (unitSetInFile) scale = self.metric ? 25.4 : .03937;
     var result  = [];
 
     for (var i = 0; i < 3; i++) {
@@ -378,7 +387,9 @@ module.exports = function(scene, callbacks) {
     }
 
     if (typeof line.words.f != 'undefined')
-      self.feed = line.words.f / (self.metric ? 25.4 : 1);
+      self.feed = line.words.f ;
+    if (unitSetInFile) self.feed = line.words.f / (self.metric ? 25.4 : .03937);
+
     var next = self.nextPosition(line.words);
 
     for (var j = 0; j < line.cmds.length; j++) {
@@ -503,7 +514,7 @@ module.exports = function(scene, callbacks) {
 
 
   function setCurrentLine(line) {
-    self.codeLine.text('Line: ' + line.toLocaleString());
+    self.codeLine.text(infoLine + line.toLocaleString());
   }
 
 
@@ -626,8 +637,8 @@ module.exports = function(scene, callbacks) {
       self.moves[i].setDone(false);
 
     self.setMoveTime(0);
-    self.currentLine.visible = false;
-    self.codeLine.text('');
+//    self.currentLine.visible = false;    //  don't hide notes on file unit
+//    self.codeLine.text('');
   }
 
 

@@ -11,6 +11,7 @@
 
 var util   = require('./util');
 var cookie = require('./cookie');
+var machineDim = null;
 
 
 // Class to create the meshes showing the measure of the path
@@ -53,10 +54,10 @@ module.exports = function(scene, update) {
     return size;
   }
 
-
   self.update = function(bounds, metric) {
     if (bounds === undefined) return;
-
+    if (!machineDim) machineDim = metric ? 'mm' : 'in';
+    
     scene.remove(self.group);
     self.group = new THREE.Group();
     self.group.visible = !!self.show;
@@ -65,7 +66,9 @@ module.exports = function(scene, update) {
     var color = 0x000000;
     var margin = 0.25;
     var type = metric ? 'mm' : 'in';
-    var d = metric ? 25.4 : 1;
+    var d = 1;
+    if (machineDim==="in" && metric) d = 25.4;
+    if (machineDim==="mm" && !metric) d = 0.03937;
     var width = Math.abs(bounds.max.x - bounds.min.x);
     var length = Math.abs(bounds.max.y - bounds.min.y);
     var height = Math.abs(bounds.max.z - bounds.min.z);
