@@ -246,6 +246,9 @@ SBPRuntime.prototype.needsAuth = function(s) {
 //   callback - Called when the program has ended 
 SBPRuntime.prototype.runString = function(s) {
     try {
+        // Initialize the program
+        this.pc = 0
+        this.program = []
         // Break the string into lines
         var lines =  s.split('\n');
 
@@ -316,6 +319,7 @@ SBPRuntime.prototype.runStream = function(text_stream) {
     try {
         try {
             // Initialize the program
+            this.pc = 0
             this.program = []
             // Even though we're "streaming" in this function, we still have to parse
             // the entire body of data before we can continue processing the file.
@@ -443,7 +447,7 @@ SBPRuntime.prototype._loadDriverSettings = function() {
 
 // Save runtime configuration settings to the opensbp settings file
 //   callback - Called when config has been written
-SBPRuntime.prototype._saveConfig = function(callback) {
+SBPRuntime.prototype._saveConfig = async function(callback) {
     var sbp_values = {};
     sbp_values.movexy_speed = this.movespeed_xy;
     sbp_values.movez_speed = this.movespeed_z;
@@ -456,14 +460,17 @@ SBPRuntime.prototype._saveConfig = function(callback) {
     sbp_values.jogb_speed = this.jogspeed_b;
     sbp_values.jogc_speed = this.jogspeed_c;
     sbp_values.units = this.units;
-    config.opensbp.setMany(sbp_values, function(err, result) {
+    try {
+        let values = await config.opensbp.setManyWrapper(sbp_values)
         callback();
-    });
+    } catch (error) {
+        log.error(error);
+    }
 }
 
 // Save runtime driver settings to the opensbp settings file
 //   callback - Called when config has been written
-SBPRuntime.prototype._saveDriverSettings = function(callback) {
+SBPRuntime.prototype._saveDriverSettings = async function(callback) {
     var g2_values = {};
 
     // Permanently set jog speeds
@@ -481,9 +488,12 @@ SBPRuntime.prototype._saveDriverSettings = function(callback) {
     g2_values.ajm = this.maxjerk_a;
     g2_values.bjm = this.maxjerk_b;
     g2_values.cjm = this.maxjerk_c;
-    config.driver.setMany(g2_values, function(err, values) {
-                callback();
-    }.bind(this));
+    try {
+        let values = await config.driver.setManyWrapper(g2_values)
+        callback();
+    } catch (error) {
+        log.error(error);
+    }
 }
 
 // Run a file on disk.
@@ -1334,7 +1344,7 @@ SBPRuntime.prototype._varExists = function(identifier) {
 //   identifier - The variable to assign
 //        value - The new value
 //     callback - Called once the assignment has been made
-SBPRuntime.prototype._assign = function(identifier, value, callback) {
+SBPRuntime.prototype._assign = async function(identifier, value, callback) {
     if(identifier.type == "user_variable") {
         // User Variable
 
@@ -1344,7 +1354,12 @@ SBPRuntime.prototype._assign = function(identifier, value, callback) {
         }
 
         // Assign with persistence using the configuration module
-        config.opensbp.setTempVariable(identifier.expr, value, callback)
+        try {
+            await config.opensbp.setTempVariableWrapper(identifier.expr, value);
+            callback();
+        } catch (error) {
+            log.error(error)
+        }
         return
     }
     log.debug(identifier.expr + ' is not a user variable');
@@ -1353,7 +1368,12 @@ SBPRuntime.prototype._assign = function(identifier, value, callback) {
         // Persistent variable
 
         // Assign with persistence using the configuration module
-        config.opensbp.setVariable(identifier.expr, value, callback)
+        try {
+            await config.opensbp.setVariableWrapper(identifier.expr, value);
+            callback();
+        } catch (error) {
+            log.error(error)
+        }
         return
     }
     log.debug(identifier.expr + ' is not a persistent variable');
@@ -2000,28 +2020,27 @@ SBPRuntime.prototype.quit = function() {
 // Resume a program from the paused state
 //   TODO - make some indication that this action was successful (resume is not always allowed, and sometimes it fails)
 SBPRuntime.prototype.resume = function(input=false) {
-        if(this.resumeAllowed) {
-            if(this.paused) {
-                if (input) {
-                    var callback = (function(err, data) {
-                        if (err) {
-                            log.error(err)
-                        } else {
-                            this.paused = false;
-                            this._executeNext();
-                        }
-                    }).bind(this);
-
-                    this._assign(input.var, input.val, callback);
-                } else {
-                    this.paused = false;
-                    this._executeNext();
-                }
+    if(this.resumeAllowed) {
+        if(this.paused) {
+            if (input) {
+                var callback = (function(err, data) {
+                    if (err) {
+                        log.error(err)
+                    } else {
+                        this.paused = false;
+                        this._executeNext();
+                    }
+                }).bind(this);
+                this._assign(input.var, input.val, callback);
             } else {
-                this.driver.resume();
-                this.machine.status.inFeedHold = false;
+                this.paused = false;
+                this._executeNext();
             }
+        } else {
+            this.driver.resume();
+            this.machine.status.inFeedHold = false;
         }
+    }
 }
 
 // Enter the manual state

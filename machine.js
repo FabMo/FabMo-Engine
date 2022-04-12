@@ -973,6 +973,10 @@ Machine.prototype.quit = function(callback) {
 	this.driver.pause_hold = false;
 	this.status.inFeedHold = false;
 	this.status.resumeFlag = false;
+	if (this.pauseTimer) {
+		clearTimeout(this.pauseTimer);
+		this.pauseTimer = false;
+	}
 	this.disarm();
 
 	// Quitting from the idle state dismisses the 'info' data
