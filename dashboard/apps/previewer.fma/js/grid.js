@@ -18,9 +18,7 @@ module.exports = function(scene, update) {
 
 
   self.update = function (bounds, metric) {
-//    var d = metric ? 25.4 : 1
     self.bounds = bounds = typeof bounds == 'undefined' ? self.bounds : bounds;
-//    self.metric = metric = typeof metric == 'undefined' ? self.metric : metric;
 
     scene.remove(self.grid);
 

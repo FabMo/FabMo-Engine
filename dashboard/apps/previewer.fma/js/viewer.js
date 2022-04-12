@@ -114,7 +114,6 @@ module.exports = function(container) {
     var ly = dims[1] / 2;
     var lz = dims[2] / 2;
 
-//    self.light1.position.set(lx, ly, lz - 10);
     self.light2.position.set(lx, ly, lz + 10);
   }
 
@@ -220,16 +219,8 @@ module.exports = function(container) {
   self.controls.addEventListener('change', render);
 
   // Lights
-//  self.light1 = new THREE.PointLight(0xffffff, 1, 100);
-//  self.light1.position.set(0, 0, -10);
-//  self.scene.add(self.light1);
-
-//   self.light2 = new THREE.PointLight(0xffffff, 1, 100);
-//   self.light2.position.set(0, 0, 10);
-
   self.light2 = new THREE.DirectionalLight(0xffffff, 1);
   self.scene.add(self.light2);
-
   self.scene.add(new THREE.AmbientLight(0x808080));
 
   // Widgets
