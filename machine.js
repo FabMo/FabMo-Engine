@@ -756,7 +756,11 @@ Machine.prototype.getGCodeForFile = function(filename, callback) {
 
 				//this.setRuntime(null, function() {});
 
-				(new SBPRuntime()).simulateString(data, callback);
+                // Because preview is not a real runtime, we need to insert and track start points for SBP commands
+				var tx = this.driver.status.posx;
+                var ty = this.driver.status.posy;
+                var tz = this.driver.status.posz;
+                (new SBPRuntime()).simulateString(data, tx, ty, tz, callback);
 			} else {
 				fs.readFile(filename, callback);
 			}

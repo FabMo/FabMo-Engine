@@ -49,7 +49,7 @@ function SBPRuntime() {
     this.running = false;
     this.quit_pending = false;
     this.cmd_result = 0;
-    this.cmd_posx = undefined;
+    this.cmd_posx = undefined;          // tracker for new commanded positions as file is processed
     this.cmd_posy = undefined;
     this.cmd_posz = undefined;
     this.cmd_posa = undefined;
@@ -118,6 +118,13 @@ SBPRuntime.prototype.connect = function(machine) {
     this.cmd_posa = this.posa;
     this.cmd_posb = this.posb;
     this.cmd_posc = this.posc;
+    this.cmd_StartX = this.posx;
+    this.cmd_StartY = this.posy;
+    this.cmd_StartZ = this.posz;
+    this.cmd_StartA = this.posa;
+    this.cmd_StartB = this.posb;
+    this.cmd_StartC = this.posc;
+
     this.connected = true;
     this.ok_to_disconnect = false;          ////## removing was temp fix for cannot-disconnect
                                             ////## ... in any case does not seem right place; should be state change
@@ -505,10 +512,14 @@ SBPRuntime.prototype.runFile = function(filename) {
 }
 
 // Simulate the provided file, returning the result as g-code string
+////## A primary spot for preview enhancement ???
 // TODO - this function could return a stream, and you could stream this back to the client to speed up simulation
 //          s - OpenSBP string to run
 //   callback - Called with the g-code output or with error if error 
-SBPRuntime.prototype.simulateString = function(s, callback) {
+SBPRuntime.prototype.simulateString = function(s, x, y, z, callback) {
+    this.cmd_StartX = x; // need to capture these for processing commands outside of runtime
+    this.cmd_StartY = y;
+    this.cmd_StartZ = z;
     if(this.ok_to_disconnect) {
         var saved_machine = this.machine;
         this.disconnect();
@@ -592,6 +603,13 @@ SBPRuntime.prototype._update = function() {
     this.posa = status.posa || 0.0;
     this.posb = status.posb || 0.0;
     this.posc = status.posc || 0.0;
+    this.cmd_StartX = status.posx || 0.0;
+    this.cmd_StartY = status.posy || 0.0;
+    this.cmd_StartZ = status.posz || 0.0;
+    this.cmd_StartA = status.posa || 0.0;
+    this.cmd_StartB = status.posb || 0.0;
+    this.cmd_StartC = status.posc || 0.0;
+
 };
 
 // Evaluate a list of arguments provided (for commands)
@@ -748,7 +766,6 @@ SBPRuntime.prototype._run = function() {
     this.started = true;
     this.waitingForStackBreak = false;
     this.gcodesPending = false;
-
     log.info("Starting OpenSBP program {SBPRuntime.proto._run}");
     if(this.machine) {
         this.machine.setState(this, "running");
@@ -1963,14 +1980,18 @@ SBPRuntime.prototype.transformation = function(TranPt){
         }
     }
     if (this.transforms.shearx.apply != false){
-        log.debug("ShearX: " + JSON.stringify(this.transforms.shearx));
-        var angle = this.transforms.shearx.angle;
-        TranPt = tform.shearX(TranPt,angle);
+        if ( "X" in TranPt && "Y" in TranPt ){
+            log.debug("ShearX: " + JSON.stringify(this.transforms.shearx));
+            var angle = this.transforms.shearx.angle;
+            TranPt = tform.shearX(TranPt,angle);
+        }    
     }
     if (this.transforms.sheary.apply != false){
-        log.debug("ShearY: " + JSON.stringify(this.transforms.sheary));
-        var angle = this.transforms.sheary.angle;
-        TranPt = tform.shearY(TranPt,angle);
+        if ( "X" in TranPt && "Y" in TranPt ){
+            log.debug("ShearY: " + JSON.stringify(this.transforms.sheary));
+            var angle = this.transforms.sheary.angle;
+            TranPt = tform.shearY(TranPt,angle);
+        }    
     }
     if (this.transforms.scale.apply != false){
         log.debug("Scale: " + JSON.stringify(this.transforms.scale));
