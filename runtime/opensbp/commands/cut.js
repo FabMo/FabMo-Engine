@@ -301,7 +301,7 @@ exports.CG = function(args) {    // note extensive parameter list; see OpenSBP C
   }
   
   currentZ = CGstartZ;
-////##  var safeZCG = config.opensbp.get('safeZpullUp');
+  var safeZCG = config.opensbp.get('safeZpullUp');
   
   var spiralPlunge = (optCG === 2 || optCG === 3 || optCG === 4) ? 1 : 0;
 
@@ -324,6 +324,7 @@ exports.CG = function(args) {    // note extensive parameter list; see OpenSBP C
         stepOver = config.opensbp.get('cutterDia') * ((100 - config.opensbp.get('pocketOverlap')) / 100);
         Pocket_StepX = stepOver * Math.cos(PocketAngle);
         Pocket_StepY = stepOver * Math.sin(PocketAngle);
+
         for (j=0; (Math.abs(Pocket_StepX * j) < circRadius) && (Math.abs(Pocket_StepY * j) < circRadius) ; j++){
             nextX = (CGstartX + (j*Pocket_StepX));
             nextY = (CGstartY + (j*Pocket_StepY));
@@ -331,18 +332,20 @@ exports.CG = function(args) {    // note extensive parameter list; see OpenSBP C
                 this.emit_move('G1',{ 'X':nextX, 'Y':nextY, 'F':feedrateXY });
             }
             if ( forceInterpolation ) {                 //  -- interpolated pocket
-                this.interpolate_circle(CGstartX,CGstartY,CGstartZ,endX,endY,Plg,centerX,centerY,propX,propY,Dir,optCG );
+                this.interpolate_circle(nextX,nextY,currentZ,endX,endY,Plg,(centerX - (j*Pocket_StepX)),(centerY - (j*Pocket_StepY)),propX,propY,Dir,optCG );
             } 
             else {                                      //  -- normal pocket 
                 if ( Dir === 1 ) { outStr = 'G2'; }	    // clockwise circle/arc
                 else { outStr = 'G3'; }	                // counterClockwise circle/arc
                 this.emit_move(outStr,{ 'X':nextX,
+                                        'Y':nextY,
                                         'I':(centerX - (j*Pocket_StepX)),
                                         'J':(centerY - (j*Pocket_StepY)),
                                         'F':feedrateXY });
             }										
         }                                               // ... end pocketing loop
-    	this.emit_move('G0',{'Z':safeZCG});
+
+        this.emit_move('G0',{'Z':safeZCG});
         this.emit_move('G0',{ 'X':CGstartX, 'Y':CGstartY });
     } 
     else {                                              // If not pocketing
@@ -415,9 +418,10 @@ exports.interpolate_circle = function(ICstartX,ICstartY,ICstartZ,endX,endY,plung
   var nextX = ICstartX;
   var nextY = ICstartY;
   var nextZ = ICstartZ;
- 
   var spiralPlunge = 0;
-  if ( plunge !== 0 ) { spiralPlunge = 1; }
+
+  if (opt === 3 || opt === 4) {spiralPlunge = 1};
+  if (plunge === 0) {spiralPlunge = 0};
 
   var radius = Math.sqrt(Math.pow((centerX),2)+Math.pow((centerY),2));
   centerX *= propX;
@@ -488,8 +492,10 @@ exports.interpolate_circle = function(ICstartX,ICstartY,ICstartZ,endX,endY,plung
         if (spiralPlunge) {
         //    incrAng *= config.opensbp.get('cRes') / FirstDist;
 
-           incrZ = plunge * (complAng / inclAng);
+            incrZ = plunge * (complAng / inclAng);
            nextZ = ICstartZ + incrZ;    
+        } else {
+            nextZ = ICstartZ + plunge;
         }
 
         // log.debug( " Interpolate - Next Point: " + JSON.stringify(args));
