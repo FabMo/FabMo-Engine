@@ -5,6 +5,7 @@ var moment = require('../../../static/js/libs/moment.js');
 var Sortable = require('./Sortable.js');
 var Fabmo = require('../../../static/js/libs/fabmo.js');
 var fabmo = new Fabmo;
+// ... there remains lots of old "tour" stuff here, needs to be carefully cleaned
 // var step;
 // var testFileSubmitted = "false";
 // var cameFromTour = false;
@@ -25,6 +26,11 @@ var blinkTimer = null;
 // The currently running Job ID
 var currentJobId = -1;
 var currentStatus = {};
+
+
+$('body').bind('focusin focus', function(e){
+    e.preventDefault();
+})
 
 function fileUploadProgress(progress) {
   var pg = (progress * 100).toFixed(0) + '%';
@@ -79,6 +85,7 @@ function setupDropTarget() {
     }
   });
 }
+
 
 function updateQueue(callback) {
   callback = callback || function() {};
@@ -137,7 +144,7 @@ function createRecentMenu(id) {
 }
 
 function makeActions() {
-  var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="perecent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><span></span></div> </div></div></div></div><div class="small-8 medium-12 icon-row" sortable="false"><div class="medium-1 small-2 columns"><a class="preview" title="Preview Job"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="Edit Job"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="Download Job"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="Cancel Job"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
+  var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="percent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><span></span></div> </div></div></div></div><div class="small-8 medium-12 icon-row" sortable="false"><div class="medium-1 small-2 columns"><a class="preview" title="Preview Job"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="Edit Job"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="Download Job"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="Cancel Job"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
   return actions;
 }
 
@@ -204,7 +211,6 @@ function addQueueEntries(jobs) {
       start: 0,
       count: 0
     }, function(err, jobs) {
-//console.log(jobs);
       var arr = jobs.data;
       var i = 0;
       for (var a = 0; a < arr.length; a++) {
@@ -246,6 +252,7 @@ function addQueueEntries(jobs) {
 //  setStep(tour);
 }
 
+
 function setFirstCard() {
   var firstId = $('.job_item').first().attr('id');
   var el = document.getElementById(firstId);
@@ -262,11 +269,13 @@ function setFirstCard() {
 
 }
 
+
 /*
  * -----------
  *   HISTORY
  * -----------
  */
+
 function updateHistory(callback) {
   fabmo.getJobHistory({
     start: historyStart,
@@ -402,7 +411,6 @@ function bindMenuEvents() {
     $('.dropDownWrapper').show();
     var dd = $(this).nextAll();
     dd.show();
-    //  hideDropDown(); ////## removed this from #48395 moved above
   });
 
 }
@@ -486,11 +494,13 @@ var setProgress = function(status) {
   }
 }
 
+
 /*
  * ---------
  *  STATUS
  * ---------
  */
+
 function handleStatusReport(status) {
   // Either we're running a job currently or null
   try {
@@ -635,10 +645,9 @@ function findUpTag(el, id) {
   return null;
 }
 
-//---------------------------------- pasted in for TRANFORMS
+//   ... generally modified to include transforms page from here on 
 
 var unit_label_index = {}
-
 var registerUnitLabel = function(label, in_label, mm_label) {
   var labels = {
     'in' : in_label,
@@ -673,33 +682,14 @@ var flattenObject = function(ob) {
 };
 
 function update() {
-  fabmo.getVersion(function(err, version) {
-    switch(version.type) {
-      case 'dev':
-        ////## updated display of dev verisons
-        $('.engine-version').text(version.number); 
-        //$('.engine-version').text(version.hash.substring(0,9) + '-' + version.number);
-        break;
-      case 'release':
-        $('.engine-version').text(version.number);
-        break;
-    }
-  });
-  fabmo.getInfo(function(err, info) {
-    if(err) {
-      console.error(err);
-    } else {
-      $('.firmware-version').text(info.firmware.version.replace("-dirty","")) 
-    }
-  });
   fabmo.getConfig(function(err, data) {
     var ckTransform = false;  // for TRANSFORM state test below
     if(err) {
       console.error(err);
     } else {
       configData = data;
-        ['driver', 'engine', 'opensbp', 'machine'].forEach(function(branchname) {
-          branch = flattenObject(data[branchname]);
+        ['opensbp'].forEach(function(branchname) {
+                branch = flattenObject(data[branchname]);
           for(key in branch) {
             v = branch[key];
 
@@ -747,24 +737,6 @@ function update() {
             }
           }
       });
-
-      var profiles = data['profiles'] || {}
-      var profilesList = $('#profile-listbox');
-      profilesList.empty();
-      if(profiles) {
-        for(var name in profiles) {
-          profilesList.append(
-              $('<option></option>').val(name).html(name)
-          );
-        }
-      } else {
-        console.error("No profiles!")
-      }
-      // Shim
-      if(data.engine.profile === 'default') {
-        data.engine.profile = 'Default';
-      }
-      profilesList.val(data.engine.profile);
     }
   });
 }
@@ -800,11 +772,7 @@ var notifyChange = function(err,id){
 var configData = null;
 
 
-//----------------------------^^^
-
 $(document).ready(function() {
-  //Foundation Init
-
   $(document).foundation();
 
   fabmo.on('job_end',function (cmd) {
@@ -882,7 +850,8 @@ $(document).ready(function() {
   });
 
   //-----------------------------------------------------------------------------
-  // ADDING FOR TRANSFORMS ... KLUDGE!
+  // ADDING AND MODIFYING FOR TRANSFORMS ... after document.ready
+
     // Setup Unit Labels
     registerUnitLabel('.in_mm_label', 'in', 'mm');
     registerUnitLabel('.ipm_mmpm_label', 'in/min', 'mm/min');
@@ -898,38 +867,33 @@ $(document).ready(function() {
     // Populate Settings
     update();
 
-    // tool tip stuff follows ...
+    ///tool tip logic
     $('.tool-tip').click(function(){
-    var tip =$(this).parent().data('tip');
-    var eTop = $(this).offset().top;
-    var eLeft = $(this).offset().left;
-    
-    var realTop = eTop - 10;
-    $('.tip-output').show();
-    var eWidth = $('.tip-output').width();
-    var realLeft = eLeft - eWidth - 40;
-    $('.tip-text').text(tip);
-    $('.tip-output').css('top', realTop + 'px');
-    $('.tip-output').css('left', realLeft + 'px');
-});
+        var tip =$(this).parent().data('tip');
+        var eTop = $(this).offset().top;
+        var eLeft = $(this).offset().left;
+        var realTop = eTop - 10;
+        $('.tip-output').show();
+        var eWidth = $('.tip-output').width();
+        var realLeft = eLeft - eWidth - 40;
+        $('.tip-text').text(tip);
+        $('.tip-output').css('top', realTop + 'px');
+        $('.tip-output').css('left', realLeft + 'px');
+    });
 
-$('body').bind('focusin focus', function(e){
-    e.preventDefault();
-  })
-  
+    $('body').scroll(function(){
+        $('.tip-output').hide();
+    });
 
-$('body').scroll(function(){
-   $('.tip-output').hide();
-});
+    $('body').click(function(event){   
+        if($(event.target).attr('class') == "tool-tip"){
+            return
+        } else {
+            $('.tip-output').hide();
+        }
+    });
 
-$('body').click(function(event){   
-      if($(event.target).attr('class') == "tool-tip"){
-         return
-      } else {
-          $('.tip-output').hide();
-      }
-});
-   // Update settings on change
+    // Update settings on change
    $('.driver-input').change( function() {
        var parts = this.id.split("-");
        var new_config = {};
@@ -987,31 +951,6 @@ $('body').click(function(event){
        }
    });
 
-   var cachedConfig = null;
-
-//    // Function we call to get the configuration from the tool and update information on the page
-//    var updateConfig = function() {
-//        dashboard.getConfig(function(err, config) {
-//            cachedConfig = config;
-//            // Update the tool info statement
-//            document.getElementById('tool-name').innerHTML = config.engine.profile;
-//            document.getElementById('envelope-x').innerHTML = config.machine.envelope.xmax - config.machine.envelope.xmin;
-//            document.getElementById('envelope-y').innerHTML = config.machine.envelope.ymax - config.machine.envelope.ymin;
-//            document.getElementById('tool-version').innerHTML = config.engine.version;
-//            document.getElementById('tool-units').innerHTML = config.machine.units;
-
-//            // Update the configuration 
-//            document.getElementById('full-config').innerHTML = JSON.stringify(config, null, '   ');
-//        });			
-//    }
-
-
-
-
-
-
-   //-----------------------------------------------------------------------------------
-
   // $( window ).resize(function() {
   // 	setJobheight();
   // }).resize();
@@ -1032,10 +971,12 @@ $('body').click(function(event){
       $('.play-button').show();
     } 
   });
+  fabmo.requestStatus(); ////##right place for this status?
 
   function resetFormElement(e) {
     e.wrap('<form>').closest('form').get(0).reset();
     e.unwrap();
   }
+  update();  
 
 });

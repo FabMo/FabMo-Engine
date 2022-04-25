@@ -1159,7 +1159,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     border-radius: 50%;
 }
 
-.perecent_circle .mask {
+.percent_circle .mask {
       clip: rect(0px,50px,50px,25px);
       height: 50px;
       width: 50px;

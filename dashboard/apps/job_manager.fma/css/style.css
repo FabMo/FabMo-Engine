@@ -3,6 +3,12 @@ body {
   height: 100%;
 }
 
+html, body {
+    height: 100%;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 .filter {
     display: none;
      position: fixed;
@@ -436,12 +442,12 @@ td.actions-control {
 
 }
 
-.job_item .jobactions{
+.job_item .jobactions {
      margin-left: 0.3em;
      line-height: 1.5em;
 }
 
-.job_item .commentBox{
+.job_item .commentBox {
   position: absolute;
   left: 17px;
   margin-top: 0.7em;
@@ -525,6 +531,22 @@ td.actions-control {
   border-left:   1px solid  #dddddd;
   z-index: 10;
   display: none;
+}
+
+.tipCommentBox{
+    position: absolute;
+    top: 10px;
+    right: -0.5em;
+    width: 1em;
+    height: 1em;
+  
+    background-color: #ffffff;
+    -ms-transform: rotate(45deg); /* IE 9 */
+      -webkit-transform: rotate(45deg); /* Chrome, Safari, Opera */
+      transform: rotate(45deg);
+    border-top:    1px solid  #dddddd;
+    border-right:   1px solid  #dddddd;
+    z-index: 10;
 }
 
 .dropDown a:hover{
@@ -782,7 +804,7 @@ table {
     border-radius: 50%;
 }
 
-.perecent_circle .mask {
+.percent_circle .mask {
     /* rect(<top>, <right>, <bottom>, <left>) */
       clip: rect(0px,100px,100px,50px);
       height: 100px;
@@ -1003,7 +1025,7 @@ table {
 
 .hidden, .hide { display:none; }
 
-  .tip-output {
+.tip-output {
     position: fixed;
     min-width: 200px;
     max-width: 350px;
@@ -1017,9 +1039,9 @@ table {
     border-radius: 5px;
     font-family: source_sans_proextralight;
     display: none;
-  }
+}
     
-  .tool-tip {
+.tool-tip {
     background-color: #313366;
     float: right;
     border-radius: 50%;
@@ -1033,5 +1055,5 @@ table {
     -webkit-box-shadow: 1px 1px 1px 0px #aaaaaa;
     -moz-box-shadow:    1px 1px 1px 0px #aaaaaa;
     box-shadow:         1px 1px 1px 0px #aaaaaa;
-  }
+}
   

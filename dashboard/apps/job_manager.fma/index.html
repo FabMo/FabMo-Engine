@@ -10,7 +10,6 @@
 </head>
 
 <body>
-
     <div class="filter"></div>
 
 <!-- 	<div class="tour-dialogue">
@@ -19,7 +18,7 @@
 				<div class="next">Next</div>
 				<div class="no">Cancel</div>
 			</div>
-	</div>
+	    </div>
 	<div class="tour-pointer"><span>You can preview the job</span><div class="pointer"></div></div>
  -->
 
@@ -34,19 +33,13 @@
   </ul>
   <section class="top-bar-section">
     <ul class="left">
-        <li><a id="nav-submit" class="submit-button" href="#">Submit Jobs...</a></li>
-      </ul>
+      <li><a id="nav-submit" class="submit-button" href="#">Submit Jobs...</a></li>
+    </ul>
     <ul class="left" role="tablist" data-tab>
       <li class="active"><a id="nav-pending" href="#tabpending">Pending</a></li>
       <li class=""><a id="nav-history" href="#tabhistory">History</a></li>
       <li class=""><a id="nav-transforms" href="#tabpanel8"  text-align="right">TRANSFORMS - OFF</a></li>
     </ul>
-<!--     <ul class="left">
-      <li><a id="nav-submit" class="submit-button" href="#">Submit Jobs...</a></li>
-    </ul> -->
-<!--     <ul class="left" role="tablist" data-tab>
-      <li class=""><a id="nav-transforms" href="#tabpanel8">TRANSFORMS-OFF</a></li>
-    </ul> -->
   </section>
 </nav>
 </div>
@@ -57,10 +50,15 @@
 	<input type="file" id="file" multiple>
 </form>
 
+
+<div class="row">
+    <!--  <form> -->
+    <ul class="tabs" data-tab role="tablist">
+    </ul>
+
 <div class="tabs-content">
   <div class="content active dropzone" id="tabpending">
-	  <div id="droptarget">
-  		</div>
+	  <div id="droptarget"></div>
 			<div class="title jobs-title">
 				<div class="small-12 columns">
 					<h4 class="up-next">Up Next</h4>
@@ -96,8 +94,7 @@
 					</div>
 
 				</div>
-
-			<div class="small-8 medium-12 icon-row">
+    			<div class="small-8 medium-12 icon-row">
 				<div class="medium-1 small-2 columns">
 					<a class='preview' title='Preview Job'>
 						<img  class='svg' src="css/images/visible9.svg">
@@ -139,7 +136,8 @@
 
 
 		<!-- JOB HISTORY LISTING -->
-  <div class="content" id="tabhistory">
+
+    <div class="content" id="tabhistory">
 		<table class="small-12 columns" style="width:100%" id="history_table">
 		<thead>
 	    <tr>
@@ -153,31 +151,22 @@
 		</table>
 		<div href="#" class="noselect" id="history_page_prev"><p>&lt;&lt; Prev</p></div>
         <div href="#" class="noselect" id="history_page_next"><p>Next &gt;&gt;</p></div>
-  </div>
+    </div>
 
 
 
 		<!-- TEST TRANSFORM SECTION -->
 
-    <!--  <div class="row">   -->
-    <!--  <form> -->
+      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel8">
+      <div class="tip-output"><span class="tip-text"></span><div class='tipCommentBox'></div></div>
 
-<!--    <ul class="tabs" data-tab role="tablist">
-
-    </ul> -->
-
-<!--    <div class="tabs-content">  -->
-  <div class="content" id="tabpanel8">
-
-    <div class="tip-output"><span class="tip-text"></span><div class='commentBox'></div></div>
-
-    <!--    <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel8" style="padding: 0px;">
--->
+    
         <div class="row">
           <fieldset>
             <h4>Scale</h4>
             <div class="large-4 columns">
               <div class="row collapse">
+                <label data-tip="testing: Example of tool tip text to explain each transform."><div class="tool-tip">i</div></label>
                 <label>Scale</label>
                 <select id="opensbp-transforms-scale-apply" class="opensbp-input">
                   <option value="false">Disabled</option>
@@ -187,6 +176,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
+                <label data-tip="testing: Example of tool tip text to explain each transform."><div class="tool-tip">i</div></label>
                 <label>Scale X</label>
                 <div class="small-9 columns">
                   <input type="number" id="opensbp-transforms-scale-scalex" class="opensbp-input"/>
@@ -242,6 +232,7 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
+                <label data-tip="testing: Example of tool tip text to explain each transform."><div class="tool-tip">i</div></label>
                 <label>Z Scale Point</label>
                 <div class="small-9 columns">
                   <input type="number" id="opensbp-transforms-scale-z" class="opensbp-input"/>
@@ -352,17 +343,13 @@
           </fieldset>
         </div>
 
-    <!-- ADDITIONAL TRANSFORMS needing work -->    
-
         <div class="row">
         	<fieldset>
                 <h4>Shear X</h4>
-<!--         		<legend>Shear X</legend> -->
         		<div class="large-4 columns">
         			<div class="row collapse">
-                        <label data-tip="test: Example of tool tip text to explain each transform.">Shear X<div class="tool-tip">i</div>
-
-<!--                        <label>Shear X   -->
+                        <label data-tip="testing: Example of tool tip text to explain each transform."><div class="tool-tip">i</div></label>
+                        <label>Shear X
         					<select id="opensbp-transforms-shearx-apply" class="opensbp-input">
         						<option value="false">Disabled</option>
         						<option value="true">Enabled</option>
@@ -372,6 +359,7 @@
         		</div>
         		<div class="large-4 columns">
         			<div class="row collapse">
+                        <label data-tip="testing: Example of tool tip text to explain each transform."><div class="tool-tip">i</div></label>
         				<label>Shear Angle X</label>
         				<div class="small-9 columns">
         					<input type="number" id="opensbp-transforms-shearx-angle" class="opensbp-input"/>
@@ -412,6 +400,7 @@
         	</fieldset>
         </div>
 
+        <!--
         <div class="row">
         	<fieldset>
         		<h4>Interpolation</h4>
@@ -454,11 +443,14 @@
         		</div>
         	</fieldset>
         </div>
-	</div>
-
+        -->
+      </section>
+    </div>
+   
 
 
   <div class="dropDownWrapper"></div>
+</div>
 
   <!-- Javascript inclusions -->
   <script src="../../job_manager.js"></script>
