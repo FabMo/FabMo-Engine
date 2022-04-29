@@ -1,28 +1,29 @@
 #!/usr/bin/env python3
+
 ################################################################################
 #                                                                              #
-#                This file is part of the Buildbotics firmware.                #
+#                 This file is part of the Buildbotics firmware.               #
 #                                                                              #
-#                  Copyright (c) 2015 - 2018, Buildbotics LLC                  #
-#                             All rights reserved.                             #
+#        Copyright (c) 2015 - 2021, Buildbotics LLC, All rights reserved.      #
 #                                                                              #
-#     This file ("the software") is free software: you can redistribute it     #
-#     and/or modify it under the terms of the GNU General Public License,      #
-#      version 2 as published by the Free Software Foundation. You should      #
-#      have received a copy of the GNU General Public License, version 2       #
-#     along with the software. If not, see <http://www.gnu.org/licenses/>.     #
+#         This Source describes Open Hardware and is licensed under the        #
+#                                 CERN-OHL-S v2.                               #
 #                                                                              #
-#     The software is distributed in the hope that it will be useful, but      #
-#          WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU       #
-#               Lesser General Public License for more details.                #
+#         You may redistribute and modify this Source and make products        #
+#    using it under the terms of the CERN-OHL-S v2 (https:/cern.ch/cern-ohl).  #
+#           This Source is distributed WITHOUT ANY EXPRESS OR IMPLIED          #
+#    WARRANTY, INCLUDING OF MERCHANTABILITY, SATISFACTORY QUALITY AND FITNESS  #
+#     FOR A PARTICULAR PURPOSE. Please see the CERN-OHL-S v2 for applicable    #
+#                                  conditions.                                 #
 #                                                                              #
-#       You should have received a copy of the GNU Lesser General Public       #
-#                License along with the software.  If not, see                 #
-#                       <http://www.gnu.org/icenses/>.                         #
+#                Source location: https://github.com/buildbotics               #
 #                                                                              #
-#                For information regarding this software email:                #
-#                  "Joseph Coffland" <joseph@buildbotics.com>                  #
+#      As per CERN-OHL-S v2 section 4, should You produce hardware based on    #
+#    these sources, You must maintain the Source Location clearly visible on   #
+#    the external case of the CNC Controller or other product you make using   #
+#                                  this Source.                                #
+#                                                                              #
+#                For more information, email info@buildbotics.com              #
 #                                                                              #
 ################################################################################
 
@@ -36,7 +37,11 @@ import base64
 import socket
 import ctypes
 from tornado import gen, web, iostream
-import v4l2
+
+try:
+    import v4l2
+except:
+    import bbctrl.v4l2 as v4l2
 
 
 def array_to_string(a):
@@ -61,8 +66,8 @@ def string_to_fourcc(s): return v4l2.v4l2_fourcc(s[0], s[1], s[2], s[3])
 
 def format_frame(frame):
     frame = [b'--', VideoHandler.boundary.encode('utf8'), b'\r\n',
-             b'Content-Type: image/jpeg\r\n',
-             b'Content-Length: %d\r\n\r\n' % len(frame), frame, b'\r\n']
+             b'Content-type: image/jpeg\r\n',
+             b'Content-length: %d\r\n\r\n' % len(frame), frame]
     return b''.join(frame)
 
 
@@ -155,9 +160,9 @@ class VideoDevice(object):
     def create_buffers(self, count):
         # Create buffers
         rbuf = v4l2.v4l2_requestbuffers()
-        rbuf.count = count
-        rbuf.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE
-        rbuf.memory = v4l2.V4L2_MEMORY_MMAP
+        rbuf.count = count;
+        rbuf.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        rbuf.memory = v4l2.V4L2_MEMORY_MMAP;
 
         fcntl.ioctl(self, v4l2.VIDIOC_REQBUFS, rbuf)
 
@@ -171,7 +176,8 @@ class VideoDevice(object):
 
             # Mem map buffer
             mm = mmap.mmap(self.fileno(), buf.length, mmap.MAP_SHARED,
-                           mmap.PROT_READ, offset = buf.m.offset)
+                           mmap.PROT_READ | mmap.PROT_WRITE,
+                           offset = buf.m.offset)
             self.buffers.append(mm)
 
             # Queue the buffer for capture
@@ -195,8 +201,8 @@ class VideoDevice(object):
         buf = self._dqbuf()
         mm = self.buffers[buf.index]
 
-        mm.seek(0)
         frame = mm.read(buf.bytesused)
+        mm.seek(0)
         self._qbuf(buf)
 
         return frame
@@ -241,7 +247,7 @@ class VideoDevice(object):
 
     def set_fps(self, fps):
         setfps = v4l2.v4l2_streamparm()
-        setfps.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE
+        setfps.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE;
         setfps.parm.capture.timeperframe.numerator = 1
         setfps.parm.capture.timeperframe.denominator = fps
         fcntl.ioctl(self, v4l2.VIDIOC_S_PARM, setfps)
@@ -336,7 +342,7 @@ class Camera(object):
         except Exception as e:
             if isinstance(e, BlockingIOError): return
 
-            self.log.warning('Failed to read from camera.')
+            self.log.info('Failed to read from camera.  Unplugged?')
             self.ioloop.remove_handler(fd)
             self.close()
 
@@ -417,7 +423,7 @@ class Camera(object):
             except: pass
 
             self._close_dev()
-            self.log.info('Closed camera\n')
+            self.log.info('Closed camera')
 
         except: self.log.exception('Exception while closing camera')
         finally: self.dev = None
@@ -450,7 +456,7 @@ class Camera(object):
 
 
 class VideoHandler(web.RequestHandler):
-    boundary = 'f36a3a39e5c955484390e0e3a6b031d1'
+    boundary = '-f36a3a39e5c955484390e0e3a6b031d1---'
 
 
     def __init__(self, app, request, **kwargs):
@@ -459,7 +465,9 @@ class VideoHandler(web.RequestHandler):
         self.camera = app.camera
 
 
-    @web.asynchronous
+    def finish(self): pass # Don't let it finish and end the response
+
+
     def get(self):
         self.request.connection.stream.max_write_buffer_size = 10000
 
@@ -468,7 +476,7 @@ class VideoHandler(web.RequestHandler):
         self.set_header('Connection', 'close')
         self.set_header('Content-Type', 'multipart/x-mixed-replace;boundary=' +
                         self.boundary)
-        self.set_header('Expires', 'Mon, 3 Jan 2000 12:34:56 GMT')
+        self.set_header('Expires', 'Tue, 01 Jan 1980 1:00:00 GMT')
         self.set_header('Pragma', 'no-cache')
 
         if self.camera is None: self.write_img('offline')
@@ -515,7 +523,7 @@ def parse_args():
                         type = int, help = 'HTTP port')
     parser.add_argument('-a', '--addr', metavar = 'IP', default = '127.0.0.1',
                         help = 'HTTP address to bind')
-    parser.add_argument('--width', default = 960, type = int,
+    parser.add_argument('--width', default = 1280, type = int,
                         help = 'Camera width')
     parser.add_argument('--height', default = 720, type = int,
                         help = 'Camera height')
@@ -550,10 +558,7 @@ if __name__ == '__main__':
             print('Listening on http://%s:%d/' % (args.addr, args.port))
 
 
-        def get_image_resource(self, name):
-            base = os.path.dirname(os.path.abspath(__file__))
-            path = base + '/images/%s.jpg' % name
-            if os.path.exists(path): return path
+        def get_image_resource(self, name): return None
 
 
     args = parse_args()
