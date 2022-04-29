@@ -49,7 +49,7 @@ function SBPRuntime() {
     this.running = false;
     this.quit_pending = false;
     this.cmd_result = 0;
-    this.cmd_posx = undefined;
+    this.cmd_posx = undefined;          // tracker for new commanded positions as file is processed
     this.cmd_posy = undefined;
     this.cmd_posz = undefined;
     this.cmd_posa = undefined;
@@ -118,6 +118,13 @@ SBPRuntime.prototype.connect = function(machine) {
     this.cmd_posa = this.posa;
     this.cmd_posb = this.posb;
     this.cmd_posc = this.posc;
+    this.cmd_StartX = this.posx;
+    this.cmd_StartY = this.posy;
+    this.cmd_StartZ = this.posz;
+    this.cmd_StartA = this.posa;
+    this.cmd_StartB = this.posb;
+    this.cmd_StartC = this.posc;
+
     this.connected = true;
     this.ok_to_disconnect = false;          ////## removing was temp fix for cannot-disconnect
                                             ////## ... in any case does not seem right place; should be state change
@@ -280,7 +287,6 @@ SBPRuntime.prototype.runString = function(s) {
         lines = this.program.length;
         // Configure affine transformations on the file
         this._setupTransforms();
-        log.debug("Transforms configured...")
 
         // Initialize the runtime state
         this.init();
@@ -351,7 +357,6 @@ SBPRuntime.prototype.runStream = function(text_stream) {
 
                     // Configure affine transformations on the file
                     this._setupTransforms();
-                    log.debug("Transforms configured...")
 
                     // Initialize the runtime state
                     this.init();
@@ -507,10 +512,14 @@ SBPRuntime.prototype.runFile = function(filename) {
 }
 
 // Simulate the provided file, returning the result as g-code string
+////## A primary spot for preview enhancement ???
 // TODO - this function could return a stream, and you could stream this back to the client to speed up simulation
 //          s - OpenSBP string to run
 //   callback - Called with the g-code output or with error if error 
-SBPRuntime.prototype.simulateString = function(s, callback) {
+SBPRuntime.prototype.simulateString = function(s, x, y, z, callback) {
+    this.cmd_StartX = x; // need to capture these for processing commands outside of runtime
+    this.cmd_StartY = y;
+    this.cmd_StartZ = z;
     if(this.ok_to_disconnect) {
         var saved_machine = this.machine;
         this.disconnect();
@@ -594,6 +603,13 @@ SBPRuntime.prototype._update = function() {
     this.posa = status.posa || 0.0;
     this.posb = status.posb || 0.0;
     this.posc = status.posc || 0.0;
+    this.cmd_StartX = status.posx || 0.0;
+    this.cmd_StartY = status.posy || 0.0;
+    this.cmd_StartZ = status.posz || 0.0;
+    this.cmd_StartA = status.posa || 0.0;
+    this.cmd_StartB = status.posb || 0.0;
+    this.cmd_StartC = status.posc || 0.0;
+
 };
 
 // Evaluate a list of arguments provided (for commands)
@@ -750,7 +766,6 @@ SBPRuntime.prototype._run = function() {
     this.started = true;
     this.waitingForStackBreak = false;
     this.gcodesPending = false;
-
     log.info("Starting OpenSBP program {SBPRuntime.proto._run}");
     if(this.machine) {
         this.machine.setState(this, "running");
@@ -1870,6 +1885,8 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
 
     // Where to save the start point of an arc that isn't transformed??????????
     var tPt = this.transformation(pt);
+    console.log('call point transform, ')
+    console.log(tPt);
 
     if(this.file_stack.length > 0) {
         var n = this.file_stack[0].pc;
@@ -1932,42 +1949,62 @@ SBPRuntime.prototype._setupTransforms = function() {
     this.transforms = JSON.parse(JSON.stringify(config.opensbp.get('transforms')));
 };
 
-// Transform the specified point
-// TODO - Gordon, docs?
+// Transform the specified points within a motion command for a line or arc
+// - by type of transform
+// - to the tform function we are passing the to-be-transformed object and other parameters needed for calc
+// - the possible presence of gcode arcs (with relative values and absent start point) makes this messy
+
+let prevPt = {   // for rotating an arc we need to have the starting point, the previous EndPt
+    xIni: 0,     // ... these should be initialized to current location
+    yIni: 0,
+    xRot: 0,
+    yRot: 0
+};
 SBPRuntime.prototype.transformation = function(TranPt){
     if (this.transforms.rotate.apply !== false){
-        log.debug("transformation = " + JSON.stringify(TranPt));
-        log.debug("  cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy);
         if ( "X" in TranPt || "Y" in TranPt ){
             if ( !("X" in TranPt) ) { TranPt.X = this.cmd_posx; }
             if ( !("Y" in TranPt) ) { TranPt.Y = this.cmd_posy; }
-            log.debug("transformation TranPt: " + JSON.stringify(TranPt));
+            log.debug("xy rot transformation TranPt: " + JSON.stringify(TranPt));
             var angle = this.transforms.rotate.angle;
-            var x = TranPt.X;
-            var y = TranPt.Y;
+            // var x = TranPt.X;
+            // var y = TranPt.Y;
             var PtRotX = this.transforms.rotate.x;
             var PtRotY = this.transforms.rotate.y;
-            log.debug("transformation: cmd_posx = " + this.cmd_posx + "  cmd_posy = " + this.cmd_posy);
-            TranPt = tform.rotate(TranPt,angle,PtRotX,PtRotY,this.cmd_StartX,this.cmd_StartY);
+            TranPt = tform.rotate(TranPt,angle,PtRotX,PtRotY,prevPt);
+           // save these for next pass in case it is an arc
+            prevPt.xIni = this.cmd_posx;
+            prevPt.yIni = this.cmd_posy;
+            prevPt.xRot = TranPt.X;
+            prevPt.yRot = TranPt.Y;
         }
     }
-    ////No angle being passed to shear functions so they return null
     if (this.transforms.shearx.apply != false){
-        log.debug("ShearX: " + JSON.stringify(this.transforms.shearx));
-        TranPt = tform.shearX(TranPt);
+        if ( "X" in TranPt && "Y" in TranPt ){
+            log.debug("ShearX: " + JSON.stringify(this.transforms.shearx));
+            var angle = this.transforms.shearx.angle;
+            TranPt = tform.shearX(TranPt,angle);
+        }    
     }
     if (this.transforms.sheary.apply != false){
-        log.debug("ShearY: " + JSON.stringify(this.transforms.sheary));
-        TranPt = tform.shearY(TranPt);
+        if ( "X" in TranPt && "Y" in TranPt ){
+            log.debug("ShearY: " + JSON.stringify(this.transforms.sheary));
+            var angle = this.transforms.sheary.angle;
+            TranPt = tform.shearY(TranPt,angle);
+        }    
     }
     if (this.transforms.scale.apply != false){
         log.debug("Scale: " + JSON.stringify(this.transforms.scale));
         var ScaleX = this.transforms.scale.scalex;
         var ScaleY = this.transforms.scale.scaley;
+        var ScaleZ = this.transforms.scale.scalez;
         var PtX = this.transforms.scale.x;
         var PtY = this.transforms.scale.y;
+        var PtZ = this.transforms.scale.z;
+        var PtI = this.transforms.scale.x;
+        var PtJ = this.transforms.scale.y;
 
-        TranPt = tform.scale(TranPt,ScaleX,ScaleY,PtX,PtY);
+        TranPt = tform.scale(TranPt,ScaleX,ScaleY,ScaleZ,PtX,PtY,PtZ,PtI,PtJ);
     }
     if (this.transforms.move.apply != false){
         log.debug("Move: " + JSON.stringify(this.transforms.move));
@@ -1978,7 +2015,6 @@ SBPRuntime.prototype.transformation = function(TranPt){
     }
 
     return TranPt;
-
 };
 
 // Pause the currently running program

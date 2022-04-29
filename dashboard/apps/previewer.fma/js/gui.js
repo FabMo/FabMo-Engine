@@ -43,6 +43,7 @@ module.exports = function(callbacks) {
     place(self.buttons.showX, x, y);
     place(self.buttons.showY, x, y + size + margin);
     place(self.buttons.showZ, x, y + (size + margin) * 2);
+    place(self.buttons.help, x + 25, y + (size + margin) * 3.2);
 
     place(self.buttons.settings, margin, self.height - margin - size);
 
@@ -51,8 +52,7 @@ module.exports = function(callbacks) {
     place(self.buttons.play, x, y);
     place(self.buttons.pause, x, y);
     place(self.buttons.reset, (self.width / 2) + margin / 2, y);
-
-    place(self.buttons.help, self.width - size - margin, y);
+    $('#preview #button-help').show();
   }
 
 
