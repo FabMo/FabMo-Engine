@@ -154,7 +154,7 @@ var Leveler = function(file, callback) {
     }
 
     /**
-     * The date must be in the format of an XYZ file.  Which means each line
+     * The data must be in the format of an XYZ file.  Which means each line
      * contains the x, y, z coordinates of a point separated by spaces.
      * Example:
      *     12.05 5.4 1.0
