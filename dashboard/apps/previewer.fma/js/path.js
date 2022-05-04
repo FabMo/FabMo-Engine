@@ -453,7 +453,7 @@ module.exports = function(scene, callbacks) {
       if (!self.commands) self.addError('error', 'No commands.');
       self.flushBuffer();
       self.loaded = true;
-      console.log('Path distance:', self.distance.toFixed(2) + '"',
+      console.log('Path distance:', self.distance.toFixed(2),
                   'duration:', self.duration.toFixed(2) + 's');
       done();
     }

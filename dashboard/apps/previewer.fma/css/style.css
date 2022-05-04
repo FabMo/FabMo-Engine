@@ -6,6 +6,23 @@ body {
   position: relative;
 }
 
+#preview #button-help {
+    position: absolute;
+    background-color: #313366;
+    float: left;
+    border-radius: 50%;
+    height: 20px;
+    width: 20px;
+    line-height: 130%;
+    color: #eee;
+    text-align: center;
+    font-size: 1rem;
+    font-family: serif;
+    -webkit-box-shadow: 1px 1px 1px 0px #aaaaaa;
+    -moz-box-shadow:    1px 1px 1px 0px #aaaaaa;
+    box-shadow:         1px 1px 1px 0px #aaaaaa;
+}
+
 #preview .code-line {
   position: absolute;
   left: 15%;

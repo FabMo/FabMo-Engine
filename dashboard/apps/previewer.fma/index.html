@@ -37,11 +37,14 @@
              title="Snap to view down the Y axis."/>
         <img id="button-z"      src="images/z.png"
              title="Snap to view down the Z axis."/>
-        <img id="button-help"   src="images/help.png"
+<!--        
+            <img id="button-help"   src="images/help.png"
              title="Show Help"/>
+-->
         <img id="button-settings" src="images/settings.png"
              title="Open previewer settings."/>
       </div>
+      <a id="button-help" title="Show Help" hidden> i </a>
 
       <div class="loading dialog"></div>
 
@@ -84,13 +87,13 @@
             <option value="in">inches</option>
           </select>
 
-          <label>Grid Step (in current display units)</label>
+          <label>Grid Step (in current machine display units)</label>
           <input name="grid-step" type="number" min="0" max="1000000"
                  step="1" value="1"/>
 
-          <label>Z-Zero Offset from Table (e.g. zeroed on material surface)</label>
-          <input name="table-zzoff" type="number" min="-10" max="100"
-                 step=".1" value="1"/>
+          <label>Table Offset from Z-Zero (in current machine display units)</label>
+          <input name="table-zzoff" type="number" min="-100" max="100"
+                 step=".1" value="-1"/>
                  
           <label>
             <input name="show-grid" type="checkbox" checked="true"/>
@@ -160,11 +163,13 @@
               <th><img src="images/settings.png"/></th>
               <td>Open previewer settings.</td>
             </tr>
+<!--
             <tr>
               <th><img src="images/help.png"/></th>
               <td>Show this help screen.</td>
             </tr>
-          </table>
+-->
+        </table>
           <h3>Settings</h3>
           <table>
             <tr>
@@ -179,10 +184,15 @@
                   for motion units, but not change the machine unit display here.</td>
             </tr>
             <tr>
-              <th>Grid Step</th>
-              <td>Sets the grid step size in current machine units.</td>
+              <th>Table Offset from Z-Zero</th>
+              <td>Sets how far the table is below the Z-zero plane. If you zero at the table, then
+                  set the table at 0. If your material is 0.75" thick, set the offset to -0.75.
             </tr>
             <tr>
+                <th>Grid Step</th>
+                <td>Sets the grid step size in current machine units.</td>
+              </tr>
+              <tr>
               <th>Checkboxes</th>
               <td>The check boxes show or hide the grid, dimensions, axes and
                 tool</td>
