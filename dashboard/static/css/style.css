@@ -1066,7 +1066,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	margin-left: 2em;
 	float: left;
 	overflow: hidden;
-    max-width: 200px;
+/*    max-width: 200px; */
+    max-width: 250px;
 	max-height: 100px;
 }
 
@@ -1203,15 +1204,13 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .load_container {
 	margin-top: 65px;
-    width: 200px;
+    width: 25%;
 	float: right;
-	margin-right: 15px;
+	padding-right: 25px;
 
 }
 .load_container .loading_bar {
-    float: left;
     background-color: #444444;
-    width: 150px;
     height: 30px;
     border-radius: 5px;
 /*    box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.5) inset,
@@ -1232,16 +1231,15 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 .percent_comp {
 	float: right;
-	margin: 3px;
-	font-size: 17px;
+	margin-right: 5px;
 	color: #F0F0F0;
 	font-family: 'source_sans_proextralight';
+    display: inline-flex;
 }
 
 .elapsed_time{
 	font-family: 'source_sans_proextralight';
     display: inline-flex;
-    width: 200px;
     margin-right: auto;
     margin-left: auto;
     text-align: center;
