@@ -805,11 +805,9 @@ SBPRuntime.prototype._run = function() {
                     }
                 }
                 break;
-            // TODO: Can we rely on STAT_END only showing up when ending a cycle and always showing up when ending a cycle.
-            //      Enabaling this appears to lead to extra and pre-mature attempts to activate _end().
-            // case this.driver.STAT_END:
-            //     this._end();
-            //     break;
+            case this.driver.STAT_END:
+                this.machine.setState(this, 'idle');
+                break;
             default:
                 log.warn('OpenSBP Runtime Unhandled Stat: ' + stat);
         }
