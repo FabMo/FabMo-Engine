@@ -558,7 +558,7 @@ Machine.prototype.disarm = function() {
 	this.action = null;
 	this.fireButtonDebounce = false;
 	if(this.status.state === 'armed') {
-		this.setState(this, this.preArmedState || 'idle', this.preArmedInfo);
+		this.setState(this, 'idle', this.preArmedInfo);
 	}
 }
 
