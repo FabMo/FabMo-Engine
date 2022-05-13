@@ -47,7 +47,7 @@ sub capture_network_info() {
 	my ($message,  $html_file) = collect_ifconfig();
 
 	# file creation
-	system("echo \'$message\' > \'$target_file\'");
+	system("echo \"$message\" > \"$target_file\"");
 	system("echo \'$html_file\' > \'$path_to_file/fabmo.html\'");
 }
 
