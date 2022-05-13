@@ -40,34 +40,40 @@ $work_index{'shopbotsupport.txt'} = \&capture_shopbotsupport_info;
 ## Work functions ##########################################
 
 sub capture_network_info() {
+
+	# parameter processing
 	my $target_file = shift(@_); #grab the parameter:w
 	my $path_to_file= shift(@_); #grab the path parameter
 	my ($message,  $html_file) = collect_ifconfig();
-	system("echo \"$message\" > \"$target_file\"");
-	logmsg("html_file 2: == $html_file");
+
+	# file creation
+	system("echo \'$message\' > \'$target_file\'");
 	system("echo \'$html_file\' > \'$path_to_file/fabmo.html\'");
-	logmsg("$message");
-	logmsg("$html_file");
 }
 
 sub collect_ifconfig () {
+
+	# gather info from system
 	my $eth0 = `/sbin/ifconfig eth0 | /bin/grep "inet " | /bin/sed "s/inet/ip address/" | /usr/bin/cut -c 9-`;
 	$eth0 =~ s/[^\d]*(\d+\.\d+\.\d+\.\d+).*/$1/;
-	chomp($eth0);
-        my $network =  `/sbin/ifconfig`;
+	chomp($eth0); # $eth0 should now be a simple IP Address with no other text 
+        my $network =  `/sbin/ifconfig`;  # this will be the full network config dump
+
+	# Build messages
 	my $message ="\\n\\n\\nYour ShopBot Tool's IP Address is: $eth0\\n" .
 		     "\\n" .
 	             "\\n\\n================ Full Network ================\\n"  .
 	             "      Useful for tech support and debugging\\n\\n"  .
                      $network;
+
 	my $html_file_contents =
-        "<html> <body> <p> <br/> " .
-        "<h1> Click on this link in your browser to access FabMo: " .
-        "<a href=\"http://$eth0\"> FabMo </a> </h1>" .
-	"or copy and paste this to your browser address bar: <b> http://$eth0 </b> </p>" .
-        "<p> Once you have FabMo open on your tool, you will probably want to create a bookmark " .
-        "in your browser to make returning to FabMo easier.  </p> </body> </html>";
-	logmsg("html file == $html_file_contents");
+		"<html> <body> <p> <br/> " .
+		"<h1> Click on this link in your browser to access FabMo: " .
+		"<a href=\"http://$eth0\"> FabMo </a> </h1>" .
+		"or copy and paste this to your browser address bar: <b> http://$eth0 </b> </p>" .
+		"<p> Once you have FabMo open on your tool, you will probably want to create a " .
+		"bookmark in your browser to make returning to FabMo easier.  </p> </body> </html>";
+
 	return($message, $html_file_contents);
 }
 
