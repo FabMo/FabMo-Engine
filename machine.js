@@ -463,9 +463,8 @@ function decideNextAction(require_auth_in, current_state_in, driver_status_inter
 	}
 
 	// Now we decide what the next action should be if we haven't already aborted for some reason
-	// need to test if for interlock state
 
-		if(current_action_io && current_action_io.payload && current_action_io.payload.name === 'manual'){
+	if(current_action_io && current_action_io.payload && current_action_io.payload.name === 'manual'){
 		var cmd = current_action_io.payload.code.cmd;
 		if( cmd == 'set'  ||
 			cmd == 'exit' ||
@@ -476,6 +475,7 @@ function decideNextAction(require_auth_in, current_state_in, driver_status_inter
 			result_arm_obj['next_action'] = 'fire';
 			return result_arm_obj;
 		}
+
 	}
 	if(result_arm_obj['next_action'] == 'abort_due_to_interlock'){
 		return result_arm_obj;
