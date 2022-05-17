@@ -232,7 +232,7 @@ module.exports = function(server) {
   server.post('/config', post_config);
   server.get('/version', get_version);
   server.get('/info', get_info);
-  server.get('/profile', profile);
+  // server.get('/profile', profile); // TODO - This is paired with "var profile" above and should be removed along with it.
   server.get('/profiles', getProfiles);
 
 };
