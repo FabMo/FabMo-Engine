@@ -39,6 +39,9 @@ $work_index{'shopbotsupport.txt'} = \&capture_shopbotsupport_info;
 
 ## Work functions ##########################################
 
+# this function gets the pi's network interface info in formatted form, and then dumps it into 2 files
+#   the file that triggered the function to be called  ($target_file) which will be overwritten
+#   a file named fabmo.html in the same directory which will also be overwritten
 sub capture_network_info() {
 
 	# parameter processing
@@ -69,8 +72,8 @@ sub collect_ifconfig () {
 	my $html_file_contents =
 		"<html> <body> <p> <br/> " .
 		"<h1> Click on this link in your browser to access FabMo: " .
-		"<a href=\"http://$eth0\"> FabMo </a> </h1>" .
-		"or copy and paste this to your browser address bar: <b> http://$eth0 </b> </p>" .
+		"<a href=\"http://$eth0\"> FabMo </a> </h1> \n\n" .
+		"or copy and paste this to your browser address bar: <b> http://$eth0 </b> </p>\n\n" .
 		"<p> Once you have FabMo open on your tool, you will probably want to create a " .
 		"bookmark in your browser to make returning to FabMo easier.  </p> </body> </html>";
 
