@@ -213,7 +213,6 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
     width: 0.5em;
     background-color: #E6CF89;
 	border-radius: 4px 0 0 4px;
-	/* box-shadow: inset -1px 0px 1px 0px rgba(0,0,0,0.75), -2px 0px 3px 0px rgba(0,0,0,0.75); */
 	transition: all 0.2s;
 }
 
@@ -222,7 +221,6 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	background-color: #931B14;
 	height: 100%;
     position: absolute;
-    /* color: #eee; */
     color: #fdfdfd;
     right: 0;
     top: 0;
@@ -230,13 +228,8 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	font-family: 'source_sans_proextralight';
 	font-size: 14px;
 	line-height: 15px;
-	/* padding-left: 0.5rem; */
 	padding-left: 5.0rem;
 
-}
-
-#right-position-container.dropped{
-	/* box-shadow: 0px 1px 0.5px 0px rgba(0,0,0,0.75); */
 }
 
 #right-position-container span {
@@ -295,24 +288,6 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	transition: right 0.5s;
 }
 
-/* .dro-dropdown {
-	transition: all 0.4s;
-	top: -1000px;
-	padding: 0.5em;
-    background: #931B14;
-    display: flex;
-    position: absolute;
-    flex-direction: column;
-    justify-content: center;
-    width: 100%;
-	left: 0;
-	z-index: -1;
-
-} */
-/* 
-.dro-dropdown.dropped{
-	top: 56px;
-} */
 
 .input, .output, .inoutLabel, .inOutSwitch {
 	/* width: 1rem; */
@@ -364,7 +339,7 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 
 #connection-strength-indicator {
 	height: 30px;
-   max-width:30px;
+    max-width:30px;
 }
 
 .svg-container {
@@ -570,12 +545,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	width: 80.25%;
 }
 
-.widget .tool a:hover {
-	/*
-	background-color: rgba(0, 0, 0, 0);
-	*/
-}
-
 .widget .tool span {
 	-webkit-transition: opacity .15s;
 	transition: opacity .15s;
@@ -708,7 +677,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     width: 90%;
     background-color: #E6CF89;
 	border-radius: 4px 4px 0  0;
-	/* box-shadow: inset -1px 0px 1px 0px rgba(0,0,0,0.75), -2px 0px 3px 0px rgba(0,0,0,0.75); */
 	transition: all 0.2s;
 }
 
@@ -1066,8 +1034,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	margin-left: 2em;
 	float: left;
 	overflow: hidden;
-/*    max-width: 200px; */
-    max-width: 250px;
+    max-width: 28%;
 	max-height: 100px;
 }
 
@@ -1076,7 +1043,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	font-size: 20px;
 	font-family: 'source_sans_proextralight';
     /*white-space: nowrap;*/
-	text-align: center;
+	text-align: left;
 
 }
 
@@ -1099,7 +1066,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 		height: 100px;
     }
 	.currentContainer {
-		max-width: 100px;
+		max-width: 28%;
 		margin-left: 1em;
 	}
 
@@ -1108,7 +1075,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	}
 }
 
-@media only screen and (max-width: 400px){
+@media only screen and (max-width: 450px){
 	.pauseJob div {
 		font-size: 2em;
 	}
@@ -1213,9 +1180,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     background-color: #444444;
     height: 30px;
     border-radius: 5px;
-/*    box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.5) inset,
-        0px 0.3px 0px 0px rgba(200, 200, 200, 0.5);
-*/
 }
 .loading_bar .horizontal_fill {
     background-color: #5DA423;
@@ -1225,9 +1189,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     top: 1px;
     left: 1px;
     border-radius: 5px;
-/*    box-shadow: 0px 1px 1px 0px rgba(0, 0, 0, 0.5) inset,
-        0px 0.1px 0px 0px rgba(200, 200, 200, 0.5);
-*/	transition: all 1s;
+	transition: all 1s;
 }
 .percent_comp {
 	float: right;
@@ -2127,57 +2089,6 @@ input[type='range']:focus {
 		padding-left: 10px;
 	}
 
-	/* .read-out-container {
-		width: 70%;
-		display: block;
-		position: relative;
-		top: 0%;
-		transform: translateY(0%);
-		margin-left: auto;
-		margin-right: auto;
-	}
-
-	#keypad, .go-to-container {
-		position: relative;
-		transform: translateY(0%);
-		width: 250px;
-		height: 200px;
-		margin-top: 1.2rem;
-		margin-left: auto;
-		margin-right: auto;
-		top: 0;
-		text-align: center;
-	}
-
-	.go-to-container {
-		margin-top: 0d;
-		position: absolute;
-		top: 170px;
-	}
-
-	.read-out-container input, .zero-button{
-		font-size: 20px;
-	}
-
-	.zero-button{
-		right: -29px;
-	}
-
-	.go-to-container div {
-		display: inline-block !important;
-		margin: 0px  !important;
-		width: auto;
-	}
-
-	.go-to{
-		width: 60% !important;
-	}
-	
-
-	.set-coordinates {
-		width: 25% !important;
-		height: 50%;
-	} */
 }
 
 @media (max-height: 539px) {
