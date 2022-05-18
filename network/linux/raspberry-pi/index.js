@@ -159,7 +159,7 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function() {
   // the current IP address
   if((!this.network_history) ||
         // ^^ we had never done this before
-     (!this.network_history[wiredInt] && interfaces[wiredInt][0].address) ||
+     (!this.network_history[wiredInt] && interfaces[wiredInt]?.[0]?.address) ||
         //^^  eth0 just showed up            ^^^^^^
      (this.network_history[wiredInt] &&  !interfaces[wiredInt]) ||
         //^^ looks like eth0 just disappeared ^^^^^^^
