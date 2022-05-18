@@ -49,9 +49,10 @@ function update() {
   fabmo.getVersion(function(err, version) {
     switch(version.type) {
       case 'dev':
-        ////## updated display of dev verisons
-        $('.engine-version').text(version.number); 
-        //$('.engine-version').text(version.hash.substring(0,9) + '-' + version.number);
+        // We want the version prefix for cache-busting during development,
+        // but don't need to display it as part of the version string
+        const VERSION_STRING_START_INDEX = 6;
+        $('.engine-version').text(version.number.substring(VERSION_STRING_START_INDEX));
         break;
       case 'release':
         $('.engine-version').text(version.number);
