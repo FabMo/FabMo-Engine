@@ -647,7 +647,7 @@ require("../css/toastr.min.css");
             } else {
                 engine.config.machine.manual.z_increment = newDefault;
             }
-        });   
+        });
     });   
 
     $('.axi').on('click', function(e) {
