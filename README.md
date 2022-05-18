@@ -14,7 +14,7 @@ The FabMo engine is host software that connects to a G2 motion control platform 
 [API Documentation](http://fabmo.github.io/FabMo-Engine/api)
 
 ## Quick Start
-1. Install nodejs - The officially supported version is v0.12.7  - Newer versions *do not work at this time*
+1. Install nodejs - The officially supported version is v16.14.0  - Newer versions *may not work at this time*
 1. Check out the source code https://github.com/ShopBotTools/FabMo-Engine.git
 1. From inside the source directory, install all of the engine dependencies with `npm install`
 1. Create the engine data directory at `/opt/fabmo` or `C:\opt\fabmo` if you're on windows.  Set the permissions on this directory so that the user running the engine can read/write to it.
@@ -60,8 +60,8 @@ To install the engine in the "standard" location on the Raspberry Pi 3, perform 
 
 To install the engine in the standard location on a Mac, follow the steps below.  This method is used by the FabMo team for development in the OSX environment.
 
-1. Install Node.js - You'll need an older version: 0.12.7 to be compatible with FabMo.  To install an older version through homebrew (homebrew is highly recommended) do this: http://apple.stackexchange.com/a/207883/67692
-1. Install npm - you can also do this with homebrew
+1. Install Node.js 16.14 with homebrew: `brew install node@16`
+1. Install npm: `brew install npm`
 1. Create the fabmo directory: `mkdir -p /fabmo`
 1. Create the fabmo data directory: `mkdir -p /opt/fabmo`
 1. Clone the engine source `/fabmo/engine` with `git clone https://github.com/FabMo/FabMo-Engine /fabmo/engine`
