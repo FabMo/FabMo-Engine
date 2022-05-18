@@ -9,8 +9,9 @@ sleep(2);
 
 logmsg("collect_and_export_data_to_usb_drive entering collection");
 
-if (scalar(@ARGV) < 1) {
-    print(STDERR "ERROR:\tmissing parameter\n\tUsage: $0 {path to usb disk}\n\n");
+if ( scalar(@ARGV) < 1 ) {
+    print( STDERR
+          "ERROR:\tmissing parameter\n\tUsage: $0 {path to usb disk}\n\n" );
     exit(-1);
 }
 my $USB_DRIVE_PATH = $ARGV[0];
@@ -32,76 +33,87 @@ my $USB_DRIVE_PATH = $ARGV[0];
 
 ## Data to drive what we do. ##########################################
 my %work_index;
-#            filename      = workfunction reference
-$work_index{'network.txt'} = \&capture_network_info;
-$work_index{'shopbotsupport.txt'} = \&capture_shopbotsupport_info;
 
+#            filename      = workfunction reference
+$work_index{'network.txt'}        = \&capture_network_info;
+$work_index{'shopbotsupport.txt'} = \&capture_shopbotsupport_info;
 
 ## Work functions ##########################################
 
 sub capture_network_info() {
-	my $target_file = shift(@_); #grab the parameter:w
-	my $message = collect_ifconfig();
-	system("echo \"$message\" > \"$target_file\"");
-	logmsg("$message");
+    my $target_file = shift(@_);            #grab the parameter:w
+    my $message     = collect_ifconfig();
+    system("echo \"$message\" > \"$target_file\"");
+    logmsg("$message");
 }
 
 sub collect_ifconfig () {
-	my $eth0 = `/sbin/ifconfig eth0 | /bin/grep "inet " | /bin/sed "s/inet/ip address/" | /usr/bin/cut -c 9-`;
-        my $network =  `/sbin/ifconfig`;
-	my $message ="\\nYour ShopBot Tool's networking information is listed below\\n" .
-                     '\\n==================== eth0 ====================\\n\\n' .
-                     '            vvvvvvvvvvv\\n' .
-                     $eth0 .
-                     '            ^^^^^^^^^^^\\n' .
-	             '\\n\\n================ Full Network ================\\n'  .
-                     $network;
-	return($message);
+    my $eth0 =
+`/sbin/ifconfig eth0 | /bin/grep "inet " | /bin/sed "s/inet/ip address/" | /usr/bin/cut -c 9-`;
+    my $network = `/sbin/ifconfig`;
+    my $message =
+        "\\nYour ShopBot Tool's networking information is listed below\\n"
+      . '\\n==================== eth0 ====================\\n\\n'
+      . '            vvvvvvvvvvv\\n'
+      . $eth0
+      . '            ^^^^^^^^^^^\\n'
+      . '\\n\\n================ Full Network ================\\n'
+      . $network;
+    return ($message);
 }
 
-
 sub capture_shopbotsupport_info() {
-	my $target_file = shift(@_); #grab the full file path parameter
-	my $path_to_file= shift(@_); #grab the path parameter
+    my $target_file  = shift(@_);    #grab the full file path parameter
+    my $path_to_file = shift(@_);    #grab the path parameter
 
-	# capture networking info to file
-	my $message = collect_ifconfig();
-	system("echo \"$message\" > /home/pi/ifconfig_out.txt");
+    # capture networking info to file
+    my $message = collect_ifconfig();
+    system("echo \"$message\" > /home/pi/ifconfig_out.txt");
 
-	#capture df, top, ping, resolve.conf and status
-	$message = "System Status:";
-	$message .= "\n\n/bin/df /dev/mmcblk0p1\n";
-	$message .= `/bin/df /dev/mmcblk0p1`;
-	$message .= "\n\n/usr/bin/top -b -n1\n";
-	$message .= `/usr/bin/top -b -n1`;
-	$message .= "\n\n/bin/ping -c 3 8.8.8.8\n";
-	$message .= `/bin/ping -c 3 8.8.8.8`;
-	$message .= "\n\n/bin/cat /etc/resolv.conf\n";
-	$message .= `/bin/cat /etc/resolv.conf`;
-	$message .= "\n\n /usr/bin/sudo /bin/systemctl status fabmo\n";
-	$message .= `/usr/bin/sudo /bin/systemctl status fabmo`;
-	$message .= "\n\n /usr/bin/sudo systemctl status fabmo-updater\n";
-	$message .= `/usr/bin/sudo systemctl status fabmo-updater`;
+    #capture df, top, ping, resolve.conf and status
+    $message = "System Status:";
+    $message .= "\n\n/bin/df /dev/mmcblk0p1\n";
+    $message .= `/bin/df /dev/mmcblk0p1`;
+    $message .= "\n\n/usr/bin/top -b -n1\n";
+    $message .= `/usr/bin/top -b -n1`;
+    $message .= "\n\n/bin/ping -c 3 8.8.8.8\n";
+    $message .= `/bin/ping -c 3 8.8.8.8`;
+    $message .= "\n\n/bin/cat /etc/resolv.conf\n";
+    $message .= `/bin/cat /etc/resolv.conf`;
+    $message .= "\n\n /usr/bin/sudo /bin/systemctl status fabmo\n";
+    $message .= `/usr/bin/sudo /bin/systemctl status fabmo`;
+    $message .= "\n\n /usr/bin/sudo systemctl status fabmo-updater\n";
+    $message .= `/usr/bin/sudo systemctl status fabmo-updater`;
 
-	# put results in a file
-	system("cd /home/pi; echo \"$message\" > system_status.txt");
-	print "message output done\n";
+    # put results in a file
+    system("cd /home/pi; echo \"$message\" > system_status.txt");
+    print "message output done\n";
 
-	#capture logs
-	my $currentFabmoLogFileName = "`cd /opt/fabmo/log; /bin/ls -lt *.txt | /usr/bin/head -1 | /usr/bin/cut -c 43-`";
-	system("/bin/cp /var/log/daemon.log /home/pi/daemon.log; /bin/cp /var/log/syslog /home/pi/syslog; /bin/cp \"/opt/fabmo/log/$currentFabmoLogFileName\" \"/home/pi/$currentFabmoLogFileName\"");
-	system("cd /home/pi; /usr/bin/zip /home/pi/shopbotsupport.zip daemon.log syslog ifconfig_out.txt system_status.txt $currentFabmoLogFileName");
+    #capture logs
+    my $currentFabmoLogFileName =
+"`cd /opt/fabmo/log; /bin/ls -lt *.txt | /usr/bin/head -1 | /usr/bin/cut -c 43-`";
+    system(
+"/bin/cp /var/log/daemon.log /home/pi/daemon.log; /bin/cp /var/log/syslog /home/pi/syslog; /bin/cp \"/opt/fabmo/log/$currentFabmoLogFileName\" \"/home/pi/$currentFabmoLogFileName\""
+    );
+    system(
+"cd /home/pi; /usr/bin/zip /home/pi/shopbotsupport.zip daemon.log syslog ifconfig_out.txt system_status.txt $currentFabmoLogFileName"
+    );
 
-	# zip up files
-	system("/bin/cp /home/pi/shopbotsupport.zip \"$path_to_file/shopbotsupport.zip\"");
+    # zip up files
+    system(
+"/bin/cp /home/pi/shopbotsupport.zip \"$path_to_file/shopbotsupport.zip\""
+    );
 
-	# cleanup
-	system("cd /home/pi; /bin/rm daemon.log syslog shopbotsupport.zip ifconfig_out.txt system_status.txt $currentFabmoLogFileName");
+    # cleanup
+    system(
+"cd /home/pi; /bin/rm daemon.log syslog shopbotsupport.zip ifconfig_out.txt system_status.txt $currentFabmoLogFileName"
+    );
 
-	# tell the user where to look for zip file
-	$message = "Your tech support info is recorded in shopbotsupport.zip on this device";
-	system("echo \"$message\" > \"$target_file\"");
-	logmsg("$message");
+    # tell the user where to look for zip file
+    $message =
+      "Your tech support info is recorded in shopbotsupport.zip on this device";
+    system("echo \"$message\" > \"$target_file\"");
+    logmsg("$message");
 }
 
 ## pseudo main() that loops through the work_index and calls needed functions ##
@@ -112,20 +124,21 @@ sub capture_shopbotsupport_info() {
 ## leave it alone. This flag helps manage that.
 my $must_umount_flag = 0;
 
-@files = sort(keys(%work_index));
+@files = sort( keys(%work_index) );
 for my $file (@files) {
     my $fullpath = "$USB_DRIVE_PATH/$file";
     logmsg("testing trigger: $fullpath");
-    if (-e $fullpath) {
+    if ( -e $fullpath ) {
         logmsg("processing $fullpath");
-        $work_index{$file}("$fullpath", "$USB_DRIVE_PATH");
-	$must_umount_flag = 1;
-    } else {
+        $work_index{$file}( "$fullpath", "$USB_DRIVE_PATH" );
+        $must_umount_flag = 1;
+    }
+    else {
         logmsg("No trigger for: $fullpath");
     }
 }
 sleep(5);
 if ($must_umount_flag) {
-	system("/bin/umount \"$USB_DRIVE_PATH\"");
+    system("/bin/umount \"$USB_DRIVE_PATH\"");
 }
 
