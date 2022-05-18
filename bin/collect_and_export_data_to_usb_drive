@@ -2,11 +2,14 @@
 
 use warnings;
 use strict;
+use File::Temp;
 
-sub logmsg {
-    $arg = shift;
-    system("/usr/bin/logger \"$arg\"");
-}
+my $TEMP = File::Temp->newdir();
+my $REPORT_ID =
+  "fabmo-" . `cat /etc/machine-id` . "-" . `date +%Y.%-m.%-d%H%M%S`;
+my $REPORT_BUILD_DIR = $TEMP . "/" . $REPORT_ID;
+mkdir($REPORT_BUILD_DIR);
+
 logmsg("collect_and_export_data_to_usb_drive launched");
 sleep(2);
 
@@ -44,104 +47,149 @@ $work_index{'shopbotsupport.txt'} = \&capture_shopbotsupport_info;
 ## Work functions ##########################################
 
 sub capture_network_info() {
-    my $target_file = shift(@_);            #grab the parameter:w
-    my $message     = collect_ifconfig();
-    system("echo \"$message\" > \"$target_file\"");
-    logmsg("$message");
+    my $target_file    = shift;
+    my $usb_drive_path = shift;
+    my $data           = collect_ifconfig();
+    write_file( $data => $target_file );
+
+    logmsg($data);
+    write_fabmo_html($usb_drive_path);
+}
+
+sub write_fabmo_html {
+    my $usb_drive_path = shift;
+    my $ip             = get_my_ip();
+    my $fabmo_html     = <<"EOF";
+<html>
+<body>
+<p>
+<br/>
+<h1> Click on this link in your browser to access FabMo: <a href="http://@{[$ip]}"> FabMo </a> </h1>
+or copy and paste this to your browser address bar: <b>http://@{[$ip]}</b>
+</p>
+<p>
+Once you have FabMo open on your tool, you will probably want to create a bookmark in your browser to make returning to FabMo easier.
+</p>
+</body>
+</html>
+EOF
+
+    write_file( $fabmo_html => "$usb_drive_path/fabmo.html" );
+}
+
+sub get_my_ip {
+    my $ip = `/bin/ip -f inet addr show eth0`;
+
+    # Grab the first IP out of the results.
+    $ip =~ s/^.*?inet ([0-9.]+).*$/$1/ms;
+    return $ip;
 }
 
 sub collect_ifconfig () {
-    my $eth0 =
-`/sbin/ifconfig eth0 | /bin/grep "inet " | /bin/sed "s/inet/ip address/" | /usr/bin/cut -c 9-`;
     my $network = `/sbin/ifconfig`;
-    my $message =
-        "\\nYour ShopBot Tool's networking information is listed below\\n"
-      . '\\n==================== eth0 ====================\\n\\n'
-      . '            vvvvvvvvvvv\\n'
-      . $eth0
-      . '            ^^^^^^^^^^^\\n'
-      . '\\n\\n================ Full Network ================\\n'
-      . $network;
+    my $eth0    = get_my_ip();
+
+    my $message = <<"EOF";
+Your ShopBot Tool's networking information is listed below
+
+Your FabMo Network Address is:
+
+@{[$eth0]}
+
+================ Full Network ================
+@{[$network]}
+EOF
     return ($message);
 }
 
 sub capture_shopbotsupport_info() {
-    my $target_file  = shift(@_);    #grab the full file path parameter
-    my $path_to_file = shift(@_);    #grab the path parameter
+    my $target_file  = shift;
+    my $path_to_file = shift;
 
     # capture networking info to file
-    my $message = collect_ifconfig();
-    system("echo \"$message\" > /home/pi/ifconfig_out.txt");
+    write_file( collect_ifconfig() => "$REPORT_BUILD_DIR/ifconfig_out.txt" );
 
-    #capture df, top, ping, resolve.conf and status
-    $message = "System Status:";
-    $message .= "\n\n/bin/df /dev/mmcblk0p1\n";
-    $message .= `/bin/df /dev/mmcblk0p1`;
-    $message .= "\n\n/usr/bin/top -b -n1\n";
-    $message .= `/usr/bin/top -b -n1`;
-    $message .= "\n\n/bin/ping -c 3 8.8.8.8\n";
-    $message .= `/bin/ping -c 3 8.8.8.8`;
-    $message .= "\n\n/bin/cat /etc/resolv.conf\n";
-    $message .= `/bin/cat /etc/resolv.conf`;
-    $message .= "\n\n /usr/bin/sudo /bin/systemctl status fabmo\n";
-    $message .= `/usr/bin/sudo /bin/systemctl status fabmo`;
-    $message .= "\n\n /usr/bin/sudo systemctl status fabmo-updater\n";
-    $message .= `/usr/bin/sudo systemctl status fabmo-updater`;
+    my $message  = "System Status:";
+    my @commands = (
+        '/bin/df /dev/mmcblk0p1',
+        '/usr/bin/top -b -n1',
+        '/bin/ping -c 3 8.8.8.8',
+        '/bin/cat /etc/resolv.conf',
+        '/usr/bin/sudo /bin/systemctl status fabmo',
+        '/usr/bin/sudo systemctl status fabmo-updater',
+        '/usr/bin/sudo apt list --installed',
+    );
 
-    # put results in a file
-    system("cd /home/pi; echo \"$message\" > system_status.txt");
-    print "message output done\n";
+    foreach my $cmd (@commands) {
+        $message .= "\n$cmd\n" . "=" x length($cmd) . "\n\n";
+        $message .= `$cmd 2>&1`;
+        $message .= "\n\n\n";
+    }
+    write_file( $message => "$REPORT_BUILD_DIR/system_status.txt" );
 
     #capture logs
     my $currentFabmoLogFileName =
-"`cd /opt/fabmo/log; /bin/ls -lt *.txt | /usr/bin/head -1 | /usr/bin/cut -c 43-`";
-    system(
-"/bin/cp /var/log/daemon.log /home/pi/daemon.log; /bin/cp /var/log/syslog /home/pi/syslog; /bin/cp \"/opt/fabmo/log/$currentFabmoLogFileName\" \"/home/pi/$currentFabmoLogFileName\""
-    );
-    system(
-"cd /home/pi; /usr/bin/zip /home/pi/shopbotsupport.zip daemon.log syslog ifconfig_out.txt system_status.txt $currentFabmoLogFileName"
-    );
+      `ls -t /opt/fabmo/log/*.txt | /usr/bin/head -1`;
+    chomp($currentFabmoLogFileName);
+    my @logfiles =
+      ( "/var/log/daemon.log", "/var/log/syslog", $currentFabmoLogFileName );
+    foreach my $logfile (@logfiles) {
+        system( "/bin/cp", $logfile, $REPORT_BUILD_DIR );
+    }
 
-    # zip up files
-    system(
-"/bin/cp /home/pi/shopbotsupport.zip \"$path_to_file/shopbotsupport.zip\""
-    );
+    my $dmesg = `/usr/bin/sudo /bin/dmesg`;
+    write_file( $dmesg => "$REPORT_BUILD_DIR/dmesg" );
 
-    # cleanup
-    system(
-"cd /home/pi; /bin/rm daemon.log syslog shopbotsupport.zip ifconfig_out.txt system_status.txt $currentFabmoLogFileName"
-    );
+    chdir($TEMP);
+    system( "/usr/bin/zip", "--recurse-paths", "--quiet", "shopbotsupport.zip",
+        $REPORT_ID );
+    system( "/bin/cp", "shopbotsupport.zip",
+        "$path_to_file/shopbotsupport.zip" );
 
     # tell the user where to look for zip file
-    $message =
+    my $readme_info =
       "Your tech support info is recorded in shopbotsupport.zip on this device";
-    system("echo \"$message\" > \"$target_file\"");
-    logmsg("$message");
+    write_file( $readme_info => $target_file );
+    logmsg($readme_info);
 }
 
 ## pseudo main() that loops through the work_index and calls needed functions ##
 
-## main()
-
 ## If we write to the usb drive, we will end by unmounting it; otherwise, we'll
-## leave it alone. This flag helps manage that.
-my $must_umount_flag = 0;
+## leave it alone.
+my $unmount_when_done = 0;
 
-@files = sort( keys(%work_index) );
+my @files = sort( keys(%work_index) );
 for my $file (@files) {
     my $fullpath = "$USB_DRIVE_PATH/$file";
     logmsg("testing trigger: $fullpath");
     if ( -e $fullpath ) {
         logmsg("processing $fullpath");
-        $work_index{$file}( "$fullpath", "$USB_DRIVE_PATH" );
-        $must_umount_flag = 1;
+        $work_index{$file}( $fullpath, $USB_DRIVE_PATH );
+        $unmount_when_done = 1;
     }
     else {
         logmsg("No trigger for: $fullpath");
     }
 }
 sleep(5);
-if ($must_umount_flag) {
-    system("/bin/umount \"$USB_DRIVE_PATH\"");
+
+if ($unmount_when_done) {
+    system( "/bin/umount", $USB_DRIVE_PATH );
+}
+chdir("/");
+
+exit(0);
+
+sub write_file() {
+    my $data = shift;
+    my $file = shift;
+    open( my $fh, ">", $file );
+    print $fh $data;
+    close $fh;
 }
 
+sub logmsg {
+    my $arg = shift;
+    system( "/usr/bin/logger", $arg );
+}
