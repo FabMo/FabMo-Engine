@@ -131,7 +131,8 @@ function Machine(control_path, callback) {
 		auth : false,
 		hideKeypad : false,
 		inFeedHold : false,
-		resumeFlag : false
+		resumeFlag : false,
+		quitFlag: false
 	};
 
 	this.fireButtonDebounce = false;
@@ -557,9 +558,6 @@ Machine.prototype.disarm = function() {
 	if(this._armTimer) { clearTimeout(this._armTimer);}
 	this.action = null;
 	this.fireButtonDebounce = false;
-	if(this.status.state === 'armed') {
-		this.setState(this, 'idle', this.preArmedInfo);
-	}
 }
 
 // Execute the action in the chamber (the one passed to the arm() method)
@@ -895,6 +893,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 					}
 				}
 				this.action = null;
+				this.status.quitFlag = false;
 
 				break;
 			case 'paused':
@@ -977,6 +976,7 @@ Machine.prototype.quit = function(callback) {
 	this.driver.pause_hold = false;
 	this.status.inFeedHold = false;
 	this.status.resumeFlag = false;
+	this.status.quitFlag = true;
 	if (this.pauseTimer) {
 		clearTimeout(this.pauseTimer);
 		this.pauseTimer = false;
