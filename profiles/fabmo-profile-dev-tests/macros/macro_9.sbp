@@ -1,5 +1,5 @@
 '!FABMO!name: Tool Change
-'!FABMO!description: Handles Manual Tool Change -- MTC
+'!FABMO!description: Handles Manual Tool Change -- MTC (settings in #201)
 ' Name: Manual Tool Change
 ' Description: Handles Manual Tool Change (MTC) from current Vectric posts and tracks tool# [C9]
 ' Platform: Desktop/Desktop MAX
@@ -31,8 +31,9 @@ MTCIgnore:
 
 MTCQuit:
     'FAIL "A tool change has been encountered in Quit Mode.  The file will now quit.  You can change this behavior in the desktop preferences."
-    PAUSE "A Tool Change request has been encountered in Quit Mode.  The file will now quit.  You can change this behavior in the Desktop-HELP app or by editing Macro#201."
-	END
+    PAUSE "A Tool Change request has been encountered in Quit Mode. You can Quit now. You can change this behavior in the Desktop-HELP app or by editing Macro#201."
+	' This will work more appropriately and force a quit when embedded files are set to work with END and EXIT.
+    END
     
 MTCSkip:
 	' Skip the first MTC call because this is usally a new cutter at betinning of file.
