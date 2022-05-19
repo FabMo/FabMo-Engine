@@ -1,0 +1,7 @@
+'!FABMO!name: Stop Spindle
+'!FABMO!description: Turns spindle OFF in file; SBP convention for managing tools
+' Name: Stop Spindle
+' Description: Turns spindle OFF in files, SBP convention for managing tools [C7]. (See Macro #6)
+' Spindle is automatically turned off when a file ends, but this macro can be used to turn spindle on and off withing files
+
+SO, 1,0 ' Make OUTPUT #1 INACTIVE (low) [Spindle channel]
