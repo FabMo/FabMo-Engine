@@ -464,7 +464,7 @@ module.exports = function(scene, callbacks) {
     console.log('Path loading');
 
     if (typeof gcode !== 'string' || gcode  === '') {
-      self.addError('error', 'No commands.');
+      self.addError('error', 'No commands; or, Vectric file with mis-matched Units.');
       done();
       return;
     }

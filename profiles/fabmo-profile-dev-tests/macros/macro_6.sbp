@@ -1,5 +1,5 @@
 '!FABMO!name: Start Spindle
-'!FABMO!description: Turns spindle ON, SBP convention for managing tools
+'!FABMO!description: Turns spindle ON in file; SBP convention for managing tools
 ' Name: Start Spindle
 ' Description: Turns spindle ON in files, SBP convention for managing tools [C6] used in Vectric Posts.
 ' ... also called in files with Manual or Automatic Tool Changes
