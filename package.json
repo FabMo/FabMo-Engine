@@ -105,7 +105,8 @@
 		"watch": "webpack --watch",
 		"serve": "webpack serve",
 		"test": "jest --verbose",
-		"lint": "eslint ."
+		"lint": "eslint .",
+    "prettier": "prettier --write ."
 	},
 	"version": "1.0.0"
 }
