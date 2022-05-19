@@ -3,14 +3,15 @@ module.exports = {
         commonjs: true,
         es2021: true,
     },
-    plugins: ["jest"],
+    plugins: ["jest", "prettier"],
 
-    extends: "eslint:recommended",
+    extends: ["eslint:recommended", "prettier"],
     parserOptions: {
         ecmaVersion: 12,
     },
     rules: {
         "no-mixed-spaces-and-tabs": "off",
+        "prettier/prettier": ["error"]
     },
     ignorePatterns: [
         "dashboard/static/js/libs/socket.io.js",
