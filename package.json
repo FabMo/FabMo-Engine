@@ -34,6 +34,7 @@
 		"pako": "1.0.4",
 		"passport-local": "jlucidar/passport-restify-local",
 		"path-is-inside": "1.0.1",
+		"prettier": "^2.6.2",
 		"process": "0.11.8",
 		"q": "^1.0.1",
 		"request": "2.74.0",
@@ -63,7 +64,9 @@
 		"chokidar": "3.5.1",
 		"clean-webpack-plugin": "3.0.0",
 		"css-loader": "^5.2.4",
+		"eslint-config-prettier": "^8.5.0",
 		"eslint-plugin-jquery": "^1.5.1",
+		"eslint-plugin-prettier": "^4.0.0",
 		"grunt": "0.4.5",
 		"grunt-apidoc": "0.10.0",
 		"grunt-available-tasks": "^0.6.3",
@@ -105,7 +108,8 @@
 		"watch": "webpack --watch",
 		"serve": "webpack serve",
 		"test": "jest --verbose",
-		"lint": "eslint ."
+		"lint": "eslint .",
+		"prettier": "prettier --write ."
 	},
 	"version": "1.0.0"
 }
