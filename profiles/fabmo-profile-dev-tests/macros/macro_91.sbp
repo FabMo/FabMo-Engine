@@ -1,5 +1,5 @@
 '!FABMO!name: Unit error
-'!FABMO!description: Notification that file Units do not match Tool 
+'!FABMO!description: Notification that file Units do not match machine
 ' Name: Change Unit error
 ' Description: Notify of inconsistent Units
 
@@ -11,12 +11,14 @@
    IF %(25)=1 THEN GOTO METRIC_ERROR
 
   'Deal with Metric file in Inch Mode ------------------------ 
-   'The file you are running is written for use in metric mode but your tool is set for inches.  Please Quit and Reset your tool for metric in the Configuration Manager (left panel).
+   'The file you are running is written for use in metric mode but your tool is set for inches.  Quit and Reset your tool for metric in the Configuration Manager (left panel).
    PAUSE
+   ' We could allow a better option here by putting the action at the beginning of the file and making use of END/EXIT.
    END
 
   'Deal with Inch file in Metric Mode ------------------------
    METRIC_ERROR:
-   'The file you are running is written for use in inch mode but your tool is set for metric.  Please Quit and reset your tool for inches in the Configuration Manager (left panel).
+   'The file you are running is written for use in inch mode but your tool is set for metric.  Quit and reset your tool for inches in the Configuration Manager (left panel).
    PAUSE
+   ' We could allow a better option here by putting the action at the beginning of the file and making use of END/EXIT.
    END

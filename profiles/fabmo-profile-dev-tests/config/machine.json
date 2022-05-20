@@ -8,16 +8,8 @@
 		"ymax" : 18.0
 	},
 	"manual" : {
-        "xy_speed": 4.5,
+        "xy_speed": 3.0,
         "xy_min": 0.1,
-        "xy_max": 6,
-        "z_fast_speed": 1,
-        "z_slow_speed": 0.1,
-        "xy_increment": 0.001,
-        "z_increment": 0.01,
-        "ab_increment": 1,
-        "xy_jerk": 50,
-        "z_jerk": 50,
-        "z_speed": 1
+        "xy_max": 6
 	}
 }
