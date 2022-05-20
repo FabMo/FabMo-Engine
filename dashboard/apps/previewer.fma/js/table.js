@@ -42,7 +42,7 @@
         specular: 0xDDDDDD,
         color: 0xFFFFFF,
         opacity: 0.5,
-        relfectivity: .2,
+        reflectivity: .2,
         transparent: true
       });
  

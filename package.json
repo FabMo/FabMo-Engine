@@ -84,7 +84,7 @@
 		"webpack-cli": "^4.6.0",
 		"webpack-dev-server": "^3.11.2"
 	},
-	"engine": "node 15.14.0",
+	"engine": "node 16.14.0",
 	"apidoc": {
 		"name": "FabMo Engine",
 		"version": "0.0.0",
