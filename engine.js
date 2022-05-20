@@ -163,7 +163,14 @@ Engine.prototype.getVersion = function(callback) {
     util.doshell('git describe', function(data) {
         this.version = {};
         this.version.number = (data || "").trim();
-        // this.version.hash = (data || "").trim();
+
+	// Our version tags in git are prefixed with "v",
+	// The rrequirement is to display without the "v"
+	// We have old versions without the "v" prefix
+	if (this.version.number.substring(0,1) === 'v') {
+		this.version.number = this.version.number.substring(1);
+	}
+
         this.version.debug = ('debug' in argv);
         // then see if we have an official release version# in json file
         // see: version-example.json
@@ -445,6 +452,13 @@ Engine.prototype.start = function(callback) {
                         this.firmware.build = value[0];
                         this.firmware.version = value[1];
                         this.firmware.config = value[2];
+
+                        // Our version tags in git are prefixed with "v",
+                        // The rrequirement is to display without the "v"
+                        // We have old versions without the "v" prefix
+                        if (this.firmware.version.substring(0,1) === 'v') {
+                            this.firmware.version = this.firmware.version.substring(1);
+                        }
                     }
                     callback(null);
                 }.bind(this));
