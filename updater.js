@@ -6,24 +6,16 @@
  * Currently, this is just the AP collapse.  All other functions are handled through the router.
  * 
  */
-
-var request = require('request');
+var got = require('got');
 var config = require('./config');
 var log = require('./log').logger('updater');
 
-function postJSON(url, obj) {
-    request({
-            url: url,
-            method: "POST",
-            json: true,
-            body: obj
-        }, 
-        function(err, response, body) {
-            if(err) {
-                log.error(err);
-            }
-        }
-    );
+async function postJSON(url, obj) {
+    try {
+	await got.post(url, obj);
+    } catch (err) {
+        log.error(err);
+    }
 }
 
 exports.APModeCollapse = function() {

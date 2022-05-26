@@ -38,7 +38,6 @@ var Util = require('util');
 
 
 var GenericNetworkManager = require('./network_manager').NetworkManager;
-var Beacon = require('./beacon');
 
 var BEACON_INTERVAL = 1*60*60*1000 // 1 Hour (in milliseconds)
 var TASK_TIMEOUT = 10800000;    // 3 hours (in milliseconds)
@@ -799,38 +798,6 @@ Engine.prototype.start = function(callback) {
 
         }.bind(this)
 
-        // TODO:  IS Beacon still in use or supported?
-        // Start the beacon service
-        // function start_beacon(callback) {
-        //     var url = config.engine.get('beacon_url');
-        //     var consent = config.engine.get('consent_for_beacon');
-
-        //     log.info("Starting beacon service");
-        //     this.beacon = new Beacon({
-        //         url : url,
-        //         interval : BEACON_INTERVAL
-        //     });
-        //     switch(consent) {
-        //         case "true":
-        //         case true:
-        //                     log.info("Beacon is enabled");
-        //                     this.beacon.set("consent_for_beacon", "true");
-        //             break;
-
-        //         case "false":
-        //         case false:
-        //             log.info("Beacon is disabled");
-        //                     this.beacon.set("consent_for_beacon", "false");
-        //             break;
-        //         default:
-        //             log.info("Beacon consent is unspecified");
-        //                     this.beacon.set("consent_for_beacon", "true");
-        //             break;
-        //     }
-
-        //     //this.beacon.start();
-
-        // }.bind(this)
         ],
         // Print some kind of sane debugging information if anything above fails
         function(err, results) {
