@@ -69,6 +69,18 @@ To install the engine in the standard location on a Mac, follow the steps below.
 1. Install dependencies using npm: `cd /fabmo/engine; npm install`
 1. Run the engine using the instructions below.  Make sure that the G2 motion control board is connected the first time you run the engine.  The engine auto-detects the USB port and saves this setting on first run, and if the motion controller is absent, it won't be properly detected.  If you need to change ports later on, the port settings are located in `/opt/fabmo/config/engine.json`
 
+
+## In Docker
+
+If you have Docker installed locally, you can run the FabMo interface inside a Docker container rather than running it locally.
+
+1. Check out the source code on your workstation
+1.`npm run docker:dev` will build your docker container, install dependencies, and run the `npm dev` target in the docker container. The first time you run it, it may take a bit of time to build the container.
+
+If everything goes right, you'll find the fabmo dashboard running on http://localhost:8411
+
+If you need to log into the docker machine, you can use the command `npm run docker:bash`
+
 ## Running the Engine
 For debugging the engine, you can run it directly from the command prompt with `npm start` or `node server.js` - make sure you have built the dashboard with `npm run webpack` - alternatively, you can run `npm run dev` which will run the system in debug mode (which adds some logging and more aggressively reloads apps) as well as run the webpack first.  If you want to run in debug mode, but skip the webpack step, run `npm run debug`
 

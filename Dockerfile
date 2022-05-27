@@ -1,17 +1,7 @@
-FROM node:10 AS node
+FROM navikey/raspbian-bullseye
 
-WORKDIR /
-
-COPY package*.json ./
-
-RUN npm install
-
-FROM raspbian/stretch
-
-COPY ./BOSSA /workspace
-
-RUN DEBIAN_FRONTEND=noninteractive apt-get update --fix-missing \
-&& apt-get install -y \
+RUN apt-get -qq update && \
+    DEBIAN_FRONTEND=noninteractive apt-get -qq install -y \
     curl \ 
     hostapd \ 
     dnsmasq \
@@ -21,35 +11,19 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update --fix-missing \
     net-tools \ 
     isc-dhcp-server \
     build-essential \
-    openocd \
-    libwxgtk3.0-dev \
-    libreadline-dev \
-    usbutils \
-&& make -C /workspace \
-&& mkdir -p /etc/wpa_supplicant/ \
-&& cp /workspace/bin/* \
-    /usr/local/bin/ \
-&& rm -rf workspace \  
-&& apt-get purge -y \
-    build-essential \
-	libreadline-dev \
-	libwxgtk3.0-dev \
-    && apt-get autoremove -y \
-&& rm -rf /var/lib/apt \
-&& curl -sL https://deb.nodesource.com/setup_10.x | bash - \
-&& apt-get install -y nodejs \
-&& mkdir -p /etc/wpa_supplicant/
+    libreadline-dev
 
 
-WORKDIR /usr/src/app
+RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && apt-get install -y nodejs
 
-
-COPY --from=node ./node_modules ./node_modules
-
-COPY . . 
+VOLUME ["/opt/fabmo", "/fabmo"]
 
 COPY ./dockerconfigs/wpa_supplicant.conf /etc/wpa_supplicant/wpa_supplicant.conf
 
 EXPOSE 80
-# CMD ["/lib/systemd/systemd"]
-CMD ["npm", "start"]
+
+RUN useradd --create-home --shell  /bin/bash  -G sudo -p "$(openssl passwd -1 shopbot)" pi 
+
+WORKDIR /fabmo
+
+USER root
