@@ -98,7 +98,7 @@
 		"postinstall": "node_modules/.bin/webpack --mode=development",
 		"prod": "node_modules/.bin/webpack --mode=development",
 		"dev": "npm run build && npm run stopdaemon && npm run debugserver",
-		"stopdaemon": "sudo systemctl stop fabmo",
+		"stopdaemon": "sh build_scripts/stop_fabmo.sh",
 		"build": "webpack --mode=development && npm run copybuiltfiles && npm run initSystemFiles",
 		"copybuiltfiles": "sh build_scripts/copy_built_files.sh",
 		"initSystemFiles": "sh build_scripts/init_system_files.sh",
