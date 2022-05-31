@@ -893,7 +893,6 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 					}
 				}
 				this.action = null;
-				this.status.quitFlag = false;
 
 				break;
 			case 'paused':
@@ -995,6 +994,11 @@ Machine.prototype.quit = function(callback) {
 			this.action = null;
 			this.setState(this, 'idle');
 			break;
+		
+		case "armed":
+			this.action = null;
+			this.setState(this, 'idle');
+			break;
 	}
 	// Cancel the currently running job, if there is one
 	if(this.status.job) {
@@ -1013,6 +1017,7 @@ Machine.prototype.quit = function(callback) {
 			callback("Not quiting because no current runtime")
 		}
 	}
+	this.status.quitFlag = false;
 };
 
 // Resume from the paused state.

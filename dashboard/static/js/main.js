@@ -340,7 +340,7 @@ require("../css/toastr.min.css");
                         }
                         // quitFlag prevents authorize dialog from popping up
                         // after quitting from authorize dialog
-                    } else if (status.state === 'armed' && status.quitFlag == false) {
+                    } else if (status.state === 'armed' && status.quitFlag === false) {
                         authorizeDialog = true;
                             keypad.setEnabled(false);
                             keyboard.setEnabled(false);
