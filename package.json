@@ -94,9 +94,9 @@
 	"scripts": {
 		"start": "node server.js",
 		"debug": "node server.js --debug ",
-		"webpack": "node_modules/.bin/webpack",
-		"postinstall": "node_modules/.bin/webpack --mode=development",
-		"prod": "node_modules/.bin/webpack --mode=development",
+		"webpack": "npx webpack",
+		"postinstall": "npx webpack --mode=development",
+		"prod": "npx webpack --mode=development",
 		"dev": "npm run build && npm run stopdaemon && npm run debugserver",
 		"stopdaemon": "sh build_scripts/stop_fabmo.sh",
 		"install-and-dev": "npm install && npm run dev",
@@ -106,13 +106,13 @@
 		"copybuiltfiles": "sh build_scripts/copy_built_files.sh",
 		"initSystemFiles": "sh build_scripts/init_system_files.sh",
 		"debugserver": "node server.js --debug",
-		"build:dev": "webpack --mode=development",
-		"build:prod": "webpack --mode=development",
-		"watch": "webpack --watch",
-		"serve": "webpack serve",
-		"test": "jest --verbose",
-		"lint": "eslint .",
-		"prettier": "prettier --write ."
+		"build:dev": "npx webpack --mode=development",
+		"build:prod": "npx webpack --mode=development",
+		"watch": "npx webpack --watch",
+		"serve": "npx webpack serve",
+		"test": "npx jest --verbose",
+		"lint": "npx eslint .",
+		"prettier": "npx prettier --write ."
 	},
 	"version": "1.0.0"
 }
