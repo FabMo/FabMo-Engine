@@ -458,8 +458,9 @@ function decideNextAction(require_auth_in, current_state_in, driver_status_inter
 		result_arm_obj['next_action'] = 'throw';
 		return result_arm_obj;
 	}
-	if(result_arm_obj['current_action'] && interlock_required_io && driver_status_interlock_in){
-		result_arm_obj['next_action'] = 'abort_due_to_interlock';
+//####	if(result_arm_obj['current_action'] && interlock_required_io && driver_status_interlock_in){
+    if(interlock_required_io && driver_status_interlock_in){
+            result_arm_obj['next_action'] = 'abort_due_to_interlock';
 		return result_arm_obj;
 	}
 
@@ -516,8 +517,20 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status){
 Machine.prototype.arm = function(action, timeout) {
 	// It's a real finesse job to get authorize to play nice with interlock, etc.
 	var requireAuth = config.machine.get('auth_required');
-	var interlockRequired = config.machine.get('interlock_required');
-	var interlockInput = 'in' + config.machine.get('interlock_input');
+
+// Make an array of inputs set to "interlock"
+    let interlockInput = 'in2';
+    let interlockPins = ["2", "3"];     
+    log.debug('interlocks- ', interlockPins);
+    interlockPins.forEach(function(pin) {
+//        let pinState = this.driver.status['in' + pin];
+//        let pinState = this.driver.status['in2'];
+//        if(pinState) {interlockInput = 1};
+    });
+    log.debug('Lock =', interlockInput);
+
+    var interlockRequired = config.machine.get('interlock_required');
+	//var interlockInput = 'in' + config.machine.get('interlock_input');
 	var nextAction = null;
 
 	let arm_obj = decideNextAction(requireAuth, this.status.state, this.driver.status[interlockInput], interlockRequired, this.interlock_action, action, interlockBypass);
