@@ -1026,23 +1026,20 @@ Machine.prototype.resume = function(callback, input=false) {
 		//Release driver pause hold
 		this.driver.pause_hold = false;
 	}
-	if (this.current_runtime && this.status.inFeedHold){
-		this._resume(input);
+	
+	//clear any timed pause
+	if (this.pauseTimer) {
+		clearTimeout(this.pauseTimer);
+		this.pauseTimer = false;
+	}
+	this.arm({
+		'type' : 'resume',
+		'input' : input
+	}, config.machine.get('auth_timeout'));
+	if (callback) {
+		callback(null, 'resumed');
 	} else {
-		//clear any timed pause
-		if (this.pauseTimer) {
-			clearTimeout(this.pauseTimer);
-			this.pauseTimer = false;
-		}
-		this.arm({
-			'type' : 'resume',
-			'input' : input
-		}, config.machine.get('auth_timeout'));
-		if (callback) {
-	    	callback(null, 'resumed');
-	    } else {
-	    	log.debug('Undefined callback passed to resume');
-	    }
+		log.debug('Undefined callback passed to resume');
 	}
 }
 
