@@ -131,7 +131,8 @@ function Machine(control_path, callback) {
 		auth : false,
 		hideKeypad : false,
 		inFeedHold : false,
-		resumeFlag : false
+		resumeFlag : false,
+		quitFlag: false
 	};
 
 	this.fireButtonDebounce = false;
@@ -557,9 +558,6 @@ Machine.prototype.disarm = function() {
 	if(this._armTimer) { clearTimeout(this._armTimer);}
 	this.action = null;
 	this.fireButtonDebounce = false;
-	if(this.status.state === 'armed') {
-		this.setState(this, this.preArmedState || 'idle', this.preArmedInfo);
-	}
 }
 
 // Execute the action in the chamber (the one passed to the arm() method)
@@ -977,6 +975,7 @@ Machine.prototype.quit = function(callback) {
 	this.driver.pause_hold = false;
 	this.status.inFeedHold = false;
 	this.status.resumeFlag = false;
+	this.status.quitFlag = true;
 	if (this.pauseTimer) {
 		clearTimeout(this.pauseTimer);
 		this.pauseTimer = false;
@@ -992,6 +991,11 @@ Machine.prototype.quit = function(callback) {
 			break;
 
 		case "interlock":
+			this.action = null;
+			this.setState(this, 'idle');
+			break;
+		
+		case "armed":
 			this.action = null;
 			this.setState(this, 'idle');
 			break;
@@ -1013,6 +1017,7 @@ Machine.prototype.quit = function(callback) {
 			callback("Not quiting because no current runtime")
 		}
 	}
+	this.status.quitFlag = false;
 };
 
 // Resume from the paused state.
@@ -1021,23 +1026,20 @@ Machine.prototype.resume = function(callback, input=false) {
 		//Release driver pause hold
 		this.driver.pause_hold = false;
 	}
-	if (this.current_runtime && this.status.inFeedHold){
-		this._resume(input);
+	
+	//clear any timed pause
+	if (this.pauseTimer) {
+		clearTimeout(this.pauseTimer);
+		this.pauseTimer = false;
+	}
+	this.arm({
+		'type' : 'resume',
+		'input' : input
+	}, config.machine.get('auth_timeout'));
+	if (callback) {
+		callback(null, 'resumed');
 	} else {
-		//clear any timed pause
-		if (this.pauseTimer) {
-			clearTimeout(this.pauseTimer);
-			this.pauseTimer = false;
-		}
-		this.arm({
-			'type' : 'resume',
-			'input' : input
-		}, config.machine.get('auth_timeout'));
-		if (callback) {
-	    	callback(null, 'resumed');
-	    } else {
-	    	log.debug('Undefined callback passed to resume');
-	    }
+		log.debug('Undefined callback passed to resume');
 	}
 }
 

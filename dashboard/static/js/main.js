@@ -338,7 +338,9 @@ require("../css/toastr.min.css");
                             modalIsShown = true;
                             dashboard.handlers.hideFooter();
                         }
-                    } else if (status.state === 'armed') {
+                        // quitFlag prevents authorize dialog from popping up
+                        // after quitting from authorize dialog
+                    } else if (status.state === 'armed' && status.quitFlag === false) {
                         authorizeDialog = true;
                             keypad.setEnabled(false);
                             keyboard.setEnabled(false);
@@ -647,7 +649,7 @@ require("../css/toastr.min.css");
             } else {
                 engine.config.machine.manual.z_increment = newDefault;
             }
-        });   
+        });
     });   
 
     $('.axi').on('click', function(e) {
