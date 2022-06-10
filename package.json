@@ -9,7 +9,7 @@
 		"unsafe-perm": true
 	},
 	"dependencies": {
-		"adm-zip": "^0.4.14",
+		"adm-zip": "0.5.9",
 		"async": "1.4.x",
 		"backbone": "1.4.0",
 		"bonjour": "jlucidar/bonjour",
