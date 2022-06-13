@@ -518,22 +518,40 @@ Machine.prototype.arm = function(action, timeout) {
 	// It's a real finesse job to get authorize to play nice with interlock, etc.
 	var requireAuth = config.machine.get('auth_required');
 
-// Make an array of inputs set to "interlock"
-    let interlockInput = 'in2';
-    let interlockPins = ["2", "3"];     
-    log.debug('interlocks- ', interlockPins);
-    interlockPins.forEach(function(pin) {
-//        let pinState = this.driver.status['in' + pin];
-//        let pinState = this.driver.status['in2'];
-//        if(pinState) {interlockInput = 1};
-    });
-    log.debug('Lock =', interlockInput);
+    // Before beginning or resuming any runtime action check for "locking" inputs that may be active
+    // These are defined in the FabMo Input Definitions (machine: didef#):
+    //   --type  --action--  --locking?--  --message      --G2 di#ac Set 
+    //      0  -  none            -             -               0
+    //      1  -  Stop           YES         Stop ON            1
+    //      2  -  Interlock      YES        Interlock ON        1
+    //      3  -  FastStop       YES         Stop On            2   *not implemented in G2 yet
+    //      4  -  InterruptStop   NO            -               3   *not implemented in G2 yet
+    //      5  -  Limit           NO         Limit Hit          1
 
-    var interlockRequired = config.machine.get('interlock_required');
+log.debug(config.machine.get('didef' + 2));
+log.debug(config.machine.get('didef' + "2"));
+
+    let isInterlocked = 0;
+    for (let pin = 1; pin < 13; pin++) {
+        if ( config.machine.get('didef' + pin) ) {
+            if ( this.driver.status['in' + pin] ) {isInterlocked = 1}
+        };
+    };
+
+//    }, this;
+//     ^^^^^
+//     you can make the "this" reference inside the function be whatever you want.
+//     In this case we want it to be the same "this" that it was without a loop,
+//     so it works great to just provide "this", but you could provide any object.
+//     If you specify nothing, it defaults to the "global object" which is not what 
+//     you wanted. 
+//
+    var interlockRequired = true;  // config.machine.get('interlock_required');
 	//var interlockInput = 'in' + config.machine.get('interlock_input');
 	var nextAction = null;
 
-	let arm_obj = decideNextAction(requireAuth, this.status.state, this.driver.status[interlockInput], interlockRequired, this.interlock_action, action, interlockBypass);
+//	let arm_obj = decideNextAction(requireAuth, this.status.state, this.driver.status[interlockInput], interlockRequired, this.interlock_action, action, interlockBypass);
+	let arm_obj = decideNextAction(requireAuth, this.status.state, isInterlocked, interlockRequired, this.interlock_action, action, interlockBypass);
 	// Implement side-effects that the result obj has returned so state is set correctly:
 		if(arm_obj['interlock_required'])         {interlockRequired     = arm_obj['interlock_required']}
 		if(arm_obj['interlock_action'])           {this.interlock_action = arm_obj['interlock_action']};
