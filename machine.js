@@ -932,7 +932,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 						    config.instance.update({'position' : mpo});
 					    }
 				    });
-				    // Check the interlock and switch to the interlock state if it's engaged
+				    // Check for interlocks and switch to the interlock state if it's engaged
 //				    var interlockRequired = config.machine.get('interlock_required');
 				    var interlockRequired = true;
 					var interlockInput = 'in' + config.machine.get('interlock_input');
