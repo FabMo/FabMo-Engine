@@ -315,8 +315,17 @@ Machine.prototype.handleOkayCancelDual = function(stat, quit_input) {
 				log.info(msg);
 			}
 		});
-	}
-	this.quit_pressed = stat[quit_input];
+    } else if(this.status.state === 'lock' && this.quit_pressed) {
+        log.info("Okay hit, resuming from lock")
+        this.resume(function(err, msg){
+            if(err){
+                log.error(err);
+            } else {
+                log.info(msg);
+            }
+        });
+    }
+    this.quit_pressed = stat[quit_input];
 }
 
 // Given the status report and specified input, process the "fire" behavior
@@ -364,7 +373,16 @@ Machine.prototype.handleOkayButton = function(stat, auth_input){
 					log.info(msg);
 				}
 			});
-		}
+        } else if(this.status.state === 'lock') {
+            log.info("Okay hit, resuming from lock")
+            this.resume(function(err, msg){
+                if(err){
+                    log.error(err);
+                } else {
+                    log.info(msg);
+                }
+            });
+        }
 
 	}
 }
@@ -432,7 +450,11 @@ function decideNextAction(require_auth_in, current_state_in, driver_status_inter
 			require_auth_in = false;
 			result_arm_obj['current_action'] = interlock_action_io || current_action_io;
 			break;
-		case 'manual':
+        case 'lock':
+            require_auth_in = false;
+            result_arm_obj['current_action'] = interlock_action_io || current_action_io;
+            break;
+        case 'manual':
 			if(current_action_io == null || (current_action_io.type == 'runtimeCode' && current_action_io.payload.name == 'manual')) {
 				break;
 			}
@@ -508,41 +530,45 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status){
 	thisMachine.preArmedState = status;
 }
 
+// Before beginning or resuming any runtime action also check for "locking" inputs that may be active
+// A "Stop" input is fucntionally the same as an active "Interlocked" input; thus, interlock = locked w/different display priority
+// Input definitions are configured in => machine: di#_def
+// TABLE:
+//   --type  --action--  --locking?--  --message      --G2 di#ac Setting (1=stop[feedhold], 2=faststop[feedhold]) 
+//      0  -  none            -             -               0
+//      1  -  Stop           YES         Stop ON            1
+//      2  -  FastStop       YES         Stop ON            2   *not implemented in G2 yet ???
+//      3  -  Interlock      YES        Interlock ON        1
+//      4  -  ImmediateStop   NO            -               3   *not implemented in G2 yet; to be used for OpenSBP "Interrupt"
+//      5  -  Limit           NO         Limit Hit          1    
+function checkForInterlocks (thisMachine) {
+    let getInterlockState = 0;
+    for (let pin = 1; pin < 13; pin++) {
+        let checkInput = config.machine.get('di' + pin + '_def');
+        if ( 0 < checkInput && checkInput < 4 ) {
+            if ( thisMachine.driver.status['in' + pin] ) {                                     // IF a defined input pin is active, Set INTERLOCKED
+                if ( checkInput > getInterlockState ) {getInterlockState = checkInput}  // ... use highest lock priority if multiples
+            }
+        };
+    };
+    return getInterlockState;    
+};
+
+
 // "Arm" the machine with the specified action. The armed state is abandoned after the timeout expires.
+//  The "Interlocked" or "locked" status of an input is checked at start of this process 
 //   action - The action to execute when fire() is called.  Can be null.
 //            If null, the action will be to "authorize" the tool for subsequent actions for the authorization
 //            period which is specified in the settings.
 //   timeout - The number of seconds that the system should remain armed
-//   *interlocked or locked status of an input is also checked in this process 
-//            "Stop" input is fucntionally the same as an active "Interlocked" input; thus, interlock = locked w/different display priority
 Machine.prototype.arm = function(action, timeout) {
 	// It's a real finesse job to get authorize to play nice with interlock, etc. ...auth:R.Sturmer
 	var requireAuth = config.machine.get('auth_required');
 
-    // Before beginning or resuming any runtime action also check for "locking" inputs that may be active
-    // These are defined in the FabMo Input Definitions (machine: di#_def):
-    //   --type  --action--  --locking?--  --message      --G2 di#ac Setting (1=stop[feedhold]) 
-    //      0  -  none            -             -               0
-    //      1  -  Stop           YES         Stop ON            1
-    //      2  -  FastStop       YES         Stop On            2   *not implemented in G2 yet
-    //      3  -  Interlock      YES        Interlock ON        1
-    //      4  -  InterruptStop   NO            -               3   *not implemented in G2 yet
-    //      5  -  Limit           NO         Limit Hit          1
+    var interlockRequired = true;                 // ... hard coded here; may need to manipulate at some point (no longer in configs)
+    let isInterlocked = checkForInterlocks(this);
 
-    let isInterlocked = 0;
-    for (let pin = 1; pin < 13; pin++) {
-        let checkInput = config.machine.get('di' + pin + '_def');
-        if ( 0 < checkInput && checkInput < 4 ) {
-            if ( this.driver.status['in' + pin] ) {                             // IF a defined pin is active, set lock here
-                if ( checkInput > isInterlocked ) {isInterlocked = checkInput}  // ... getting highest lock priority
-            }
-        };
-    };
-
-    var interlockRequired = true;  // config.machine.get('interlock_required');
-	//var interlockInput = 'in' + config.machine.get('interlock_input');
-	var nextAction = null;
-
+    var nextAction = null;
 	let arm_obj = decideNextAction(requireAuth, this.status.state, isInterlocked, interlockRequired, this.interlock_action, action, interlockBypass);
 	// Implement side-effects that the result obj has returned so state is set correctly:
 		if(arm_obj['interlock_required'])         {interlockRequired     = arm_obj['interlock_required']}
@@ -561,7 +587,7 @@ Machine.prototype.arm = function(action, timeout) {
             if (isInterlocked > 2) {
                 this.setState(this, 'interlock')
             } else {
-                this.setState(this, 'interlock');
+                this.setState(this, 'lock');
             }
 			return;
 		case 'fire':
@@ -933,28 +959,15 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 					    }
 				    });
 				    // Check for interlocks and switch to the interlock state if it's engaged
-//				    var interlockRequired = config.machine.get('interlock_required');
-				    var interlockRequired = true;
-					var interlockInput = 'in' + config.machine.get('interlock_input');
-
-
-                    let isInterlocked = 0;
-                    for ( let pin = 1; pin < 13; pin++ ) {
-                        let checkInput = config.machine.get('di' + pin + '_def');
-                        if ( 0 < checkInput && checkInput < 4 ) {
-                            if ( this.driver.status['in' + pin] ) {                             // IF a defined pin is active, set lock here
-                                if ( checkInput > isInterlocked ) {isInterlocked = checkInput}  // ... getting highest lock priority
-                            }
-                        };
-                    };
-
+                    var interlockRequired = true;                 // ... hard coded here; may need to manipulate at some point (no longer in configs)
+                    let isInterlocked = checkForInterlocks(this);
+                
 				    if(interlockRequired && isInterlocked && !interlockBypass) {
-//				    if(interlockRequired && this.driver.status[interlockInput] && !interlockBypass) {
 						this.interlock_action = null;
                         if ( isInterlocked > 2 ) {
                             this.setState(this, 'interlock')
                         } else {
-                 			this.setState(this, 'interlock');
+                 			this.setState(this, 'lock');
                         }
         				return;                                  //??
 					}
@@ -1039,7 +1052,12 @@ Machine.prototype.quit = function(callback) {
 			this.setState(this, 'idle');
 			break;
 		
-		case "armed":
+        case "lock":
+            this.action = null;
+            this.setState(this, 'idle');
+            break;
+            
+        case "armed":
 			this.action = null;
 			this.setState(this, 'idle');
 			break;
@@ -1194,7 +1212,13 @@ Machine.prototype._resume = function(input) {
 				this.interlock_action = null;
 				return;
 			}
-		break;
+		case 'lock':
+			if(this.interlock_action) {
+				this.arm(this.interlock_action);
+				this.interlock_action = null;
+				return;
+			}
+        break;
 	}
 	if(this.current_runtime) {
 		this.current_runtime.resume(input)
