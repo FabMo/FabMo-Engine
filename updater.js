@@ -12,7 +12,9 @@ var log = require('./log').logger('updater');
 
 async function postJSON(url, obj) {
     try {
-	await got.post(url, obj);
+	await got.post(url,  {
+		json: obj
+              }).json();
     } catch (err) {
         log.error(err);
     }
