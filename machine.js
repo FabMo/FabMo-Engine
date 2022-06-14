@@ -466,7 +466,6 @@ function decideNextAction(require_auth_in, current_state_in, driver_status_inter
 
 	// Now we decide what the next action should be if we haven't already aborted for some reason
 	// need to test if for interlock state
-
 		if(current_action_io && current_action_io.payload && current_action_io.payload.name === 'manual'){
 		var cmd = current_action_io.payload.code.cmd;
 		if( cmd == 'set'  ||
@@ -514,43 +513,36 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status){
 //            If null, the action will be to "authorize" the tool for subsequent actions for the authorization
 //            period which is specified in the settings.
 //   timeout - The number of seconds that the system should remain armed
+//   *interlocked or locked status of an input is also checked in this process 
+//            "Stop" input is fucntionally the same as an active "Interlocked" input; thus, interlock = locked w/different display priority
 Machine.prototype.arm = function(action, timeout) {
-	// It's a real finesse job to get authorize to play nice with interlock, etc.
+	// It's a real finesse job to get authorize to play nice with interlock, etc. ...auth:R.Sturmer
 	var requireAuth = config.machine.get('auth_required');
 
-    // Before beginning or resuming any runtime action check for "locking" inputs that may be active
-    // These are defined in the FabMo Input Definitions (machine: didef#):
-    //   --type  --action--  --locking?--  --message      --G2 di#ac Set 
+    // Before beginning or resuming any runtime action also check for "locking" inputs that may be active
+    // These are defined in the FabMo Input Definitions (machine: di#_def):
+    //   --type  --action--  --locking?--  --message      --G2 di#ac Setting (1=stop[feedhold]) 
     //      0  -  none            -             -               0
     //      1  -  Stop           YES         Stop ON            1
-    //      2  -  Interlock      YES        Interlock ON        1
-    //      3  -  FastStop       YES         Stop On            2   *not implemented in G2 yet
+    //      2  -  FastStop       YES         Stop On            2   *not implemented in G2 yet
+    //      3  -  Interlock      YES        Interlock ON        1
     //      4  -  InterruptStop   NO            -               3   *not implemented in G2 yet
     //      5  -  Limit           NO         Limit Hit          1
 
-log.debug(config.machine.get('didef' + 2));
-log.debug(config.machine.get('didef' + "2"));
-
     let isInterlocked = 0;
     for (let pin = 1; pin < 13; pin++) {
-        if ( config.machine.get('didef' + pin) ) {
-            if ( this.driver.status['in' + pin] ) {isInterlocked = 1}
+        let checkInput = config.machine.get('di' + pin + '_def');
+        if ( 0 < checkInput && checkInput < 4 ) {
+            if ( this.driver.status['in' + pin] ) {                             // IF a defined pin is active, set lock here
+                if ( checkInput > isInterlocked ) {isInterlocked = checkInput}  // ... getting highest lock priority
+            }
         };
     };
 
-//    }, this;
-//     ^^^^^
-//     you can make the "this" reference inside the function be whatever you want.
-//     In this case we want it to be the same "this" that it was without a loop,
-//     so it works great to just provide "this", but you could provide any object.
-//     If you specify nothing, it defaults to the "global object" which is not what 
-//     you wanted. 
-//
     var interlockRequired = true;  // config.machine.get('interlock_required');
 	//var interlockInput = 'in' + config.machine.get('interlock_input');
 	var nextAction = null;
 
-//	let arm_obj = decideNextAction(requireAuth, this.status.state, this.driver.status[interlockInput], interlockRequired, this.interlock_action, action, interlockBypass);
 	let arm_obj = decideNextAction(requireAuth, this.status.state, isInterlocked, interlockRequired, this.interlock_action, action, interlockBypass);
 	// Implement side-effects that the result obj has returned so state is set correctly:
 		if(arm_obj['interlock_required'])         {interlockRequired     = arm_obj['interlock_required']}
@@ -566,7 +558,11 @@ log.debug(config.machine.get('didef' + "2"));
 			throw arm_obj['error_thrown'];
 			return;
 		case 'abort_due_to_interlock':
-			this.setState(this, 'interlock');
+            if (isInterlocked > 2) {
+                this.setState(this, 'interlock')
+            } else {
+                this.setState(this, 'interlock');
+            }
 			return;
 		case 'fire':
 			log.info('Firing automatically since authorization is disabled.');
@@ -937,13 +933,30 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 					    }
 				    });
 				    // Check the interlock and switch to the interlock state if it's engaged
-				    var interlockRequired = config.machine.get('interlock_required');
+//				    var interlockRequired = config.machine.get('interlock_required');
+				    var interlockRequired = true;
 					var interlockInput = 'in' + config.machine.get('interlock_input');
 
-				    if(interlockRequired && this.driver.status[interlockInput] && !interlockBypass) {
+
+                    let isInterlocked = 0;
+                    for ( let pin = 1; pin < 13; pin++ ) {
+                        let checkInput = config.machine.get('di' + pin + '_def');
+                        if ( 0 < checkInput && checkInput < 4 ) {
+                            if ( this.driver.status['in' + pin] ) {                             // IF a defined pin is active, set lock here
+                                if ( checkInput > isInterlocked ) {isInterlocked = checkInput}  // ... getting highest lock priority
+                            }
+                        };
+                    };
+
+				    if(interlockRequired && isInterlocked && !interlockBypass) {
+//				    if(interlockRequired && this.driver.status[interlockInput] && !interlockBypass) {
 						this.interlock_action = null;
-						this.setState(this, 'interlock')
-						return
+                        if ( isInterlocked > 2 ) {
+                            this.setState(this, 'interlock')
+                        } else {
+                 			this.setState(this, 'interlock');
+                        }
+        				return;                                  //??
 					}
                 }
 				break;
