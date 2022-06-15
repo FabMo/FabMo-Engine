@@ -920,6 +920,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				this.status.resumeFlag = false;
 				break;
 			case 'dead':
+				this.status.out4 = 0;
 				log.error('G2 is dead!');
 				break;
 			default:
