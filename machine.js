@@ -1085,6 +1085,11 @@ Machine.prototype.runNextJob = function(callback) {
 Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
 	interlockBypass = false;
 	runtime = this.getRuntime(runtimeName);
+  if (runtime === undefined) {
+      log.debug("Rejecting attempt to execute runtime code with no defined runtime.");
+      log.debug(JSON.stringify(code));
+      return;
+  }
 	var needsAuth = runtime.needsAuth(code);
 	if (needsAuth){
 		if(this.status.auth) {
