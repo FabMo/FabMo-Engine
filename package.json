@@ -56,6 +56,7 @@
 		"udev": "0.6.0"
 	},
 	"devDependencies": {
+		"assert-plus": "1.0.0",
 		"@babel/core": "^7.13.16",
 		"@babel/preset-env": "^7.13.15",
 		"@mapbox/node-pre-gyp": "^1.0.4",
