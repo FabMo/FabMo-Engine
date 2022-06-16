@@ -140,7 +140,7 @@ th {
     -webkit-appearance: textfield; 
     -moz-appearance: textfield;
      margin: 0; 
-     text-align: center;
+     text-align: left;
 }
 
 .number input {
