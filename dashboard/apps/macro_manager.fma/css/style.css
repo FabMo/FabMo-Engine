@@ -133,7 +133,8 @@ input[type=number] {
 }
 
 th {
-    text-align: center !important;
+    text-align: left !important;
+    font-weight: bold;
 }
 
 .number input, .name input, .description input{
