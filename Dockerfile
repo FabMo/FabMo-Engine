@@ -11,6 +11,7 @@ RUN apt-get -qq update && \
     net-tools \ 
     isc-dhcp-server \
     build-essential \
+    zip \
     libreadline-dev
 
 
