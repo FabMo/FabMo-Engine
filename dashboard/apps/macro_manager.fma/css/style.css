@@ -133,14 +133,15 @@ input[type=number] {
 }
 
 th {
-    text-align: center !important;
+    text-align: left !important;
+    font-weight: bold;
 }
 
 .number input, .name input, .description input{
     -webkit-appearance: textfield; 
     -moz-appearance: textfield;
      margin: 0; 
-     text-align: center;
+     text-align: left;
 }
 
 .number input {
