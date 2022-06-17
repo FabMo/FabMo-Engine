@@ -9,7 +9,7 @@
 		"unsafe-perm": true
 	},
 	"dependencies": {
-		"adm-zip": "^0.4.14",
+		"adm-zip": "0.5.9",
 		"async": "1.4.x",
 		"backbone": "1.4.0",
 		"bonjour": "jlucidar/bonjour",
@@ -22,7 +22,7 @@
 		"escape-regexp-component": "1.0.2",
 		"eslint": "^8.15.0",
 		"eslint-plugin-jest": "^26.2.2",
-		"file-loader": "0.8.5",
+		"file-loader": "^6.2.0",
 		"fs-extra": "0.23.1",
 		"glob": "5.0.15",
 		"got": "11.8.3",
@@ -74,7 +74,7 @@
 		"grunt-groc": "0.6.0",
 		"grunt-open": "^0.2.4",
 		"html-webpack-plugin": "^5.3.1",
-		"jest": "^27.4.7",
+		"jest": "^28.1.1",
 		"mini-css-extract-plugin": "^1.5.0",
 		"node-gyp": "^8.0.0",
 		"passport-restify": "^1.0.1",
