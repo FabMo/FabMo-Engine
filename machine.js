@@ -592,6 +592,7 @@ Machine.prototype.arm = function(action, timeout) {
 			return;
 		case 'fire':
 			log.info('Firing automatically since authorization is disabled.');
+			this.setState(this, 'running');                 // clears a stuck pause or lock display on otherwise good resume
 			recordPriorStateAndSetTimer(this, timeout, this.status.state);
 			this.fire(true);
 			return;
