@@ -464,9 +464,8 @@ function decideNextAction(require_auth_in, current_state_in, driver_status_inter
 	}
 
 	// Now we decide what the next action should be if we haven't already aborted for some reason
-	// need to test if for interlock state
 
-		if(current_action_io && current_action_io.payload && current_action_io.payload.name === 'manual'){
+	if(current_action_io && current_action_io.payload && current_action_io.payload.name === 'manual'){
 		var cmd = current_action_io.payload.code.cmd;
 		if( cmd == 'set'  ||
 			cmd == 'exit' ||
@@ -477,6 +476,7 @@ function decideNextAction(require_auth_in, current_state_in, driver_status_inter
 			result_arm_obj['next_action'] = 'fire';
 			return result_arm_obj;
 		}
+
 	}
 	if(result_arm_obj['next_action'] == 'abort_due_to_interlock'){
 		return result_arm_obj;
@@ -920,6 +920,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				this.status.resumeFlag = false;
 				break;
 			case 'dead':
+				this.status.out4 = 0;
 				log.error('G2 is dead!');
 				break;
 			default:
@@ -1085,6 +1086,11 @@ Machine.prototype.runNextJob = function(callback) {
 Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
 	interlockBypass = false;
 	runtime = this.getRuntime(runtimeName);
+  if (runtime === undefined) {
+      log.debug("Rejecting attempt to execute runtime code with no defined runtime.");
+      log.debug(JSON.stringify(code));
+      return;
+  }
 	var needsAuth = runtime.needsAuth(code);
 	if (needsAuth){
 		if(this.status.auth) {
