@@ -4,9 +4,8 @@ use warnings;
 use strict;
 use File::Temp;
 
-my $TEMP = File::Temp->newdir();
-my $REPORT_ID =
-  "fabmo-" . `cat /etc/machine-id` . "-" . `date +%Y.%-m.%-d%H%M%S`;
+my $TEMP             = File::Temp->newdir();
+my $REPORT_ID        = build_report_id();
 my $REPORT_BUILD_DIR = $TEMP . "/" . $REPORT_ID;
 mkdir($REPORT_BUILD_DIR);
 
@@ -193,3 +192,14 @@ sub logmsg {
     my $arg = shift;
     system( "/usr/bin/logger", $arg );
 }
+
+sub build_report_id {
+    my $machine_id = `cat /etc/machine-id`;
+    chomp $machine_id;
+
+    my $datestamp = `date +%Y.%-m.%-d%H%M%S`;
+    chomp $datestamp;
+
+    return join( "-", "fabmo", $machine_id, $datestamp );
+}
+
