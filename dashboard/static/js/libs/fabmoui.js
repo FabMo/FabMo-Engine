@@ -311,7 +311,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 			$('.percent_comp').text(percent + '%');
 			$('.horizontal_fill').css('width', percent + '%');
             $('.elapsed_time_text').text(time_elapsed_text);
-			$('.line_number_text').text(status.line);
+			$('.line_number_text').text(status.line - 19);
 		$(that.progress_selector).css("width",prog.toString() + "%");
 	}
 	else {

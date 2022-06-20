@@ -1202,11 +1202,10 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .elapsed_time{
 	font-family: 'source_sans_proextralight';
     display: inline-flex;
-    margin-right: auto;
+    margin-right: 50px;
     margin-left: auto;
     text-align: center;
     color:#F0F0F0;
-	margin-right: 50px;
 }
 
 .elapsed_time_small{
