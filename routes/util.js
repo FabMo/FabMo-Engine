@@ -1,6 +1,6 @@
 var log = require('../log').logger('routes');
 var fs = require('fs');
-var uuid = require('node-uuid');
+var uuid = require('uuid');
 var pako = require('pako');
 
 UPLOAD_INDEX = {};

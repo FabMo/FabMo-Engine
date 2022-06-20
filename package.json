@@ -31,7 +31,6 @@
 		"mime-types": "^2.1.30",
 		"minimist": "1.2.5",
 		"ncp": "2.0.0",
-		"node-uuid": "1.4.8",
 		"pako": "1.0.4",
 		"passport-local": "jlucidar/passport-restify-local",
 		"path-is-inside": "1.0.1",
@@ -48,7 +47,7 @@
 		"toastr": "^2.1.4",
 		"underscore": "1.8.3",
 		"url-loader": "^4.1.1",
-		"uuid": "3.4.0",
+		"uuid": "8.3.2",
 		"wireless-tools": "jlucidar/nodejs-network-tools",
 		"xml2js": "0.4.17"
 	},
