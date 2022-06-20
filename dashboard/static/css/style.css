@@ -1205,7 +1205,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     margin-right: auto;
     margin-left: auto;
     text-align: center;
-    color:#F0F0F0
+    color:#F0F0F0;
+	margin-right: 50px;
 }
 
 .elapsed_time_small{
@@ -1225,6 +1226,15 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	font-size: 12px;
 	margin: 0;
 	display: inline;
+}
+
+.line_number{
+	font-family: 'source_sans_proextralight';
+    display: inline-flex;
+    margin-right: auto;
+    margin-left: auto;
+    text-align: center;
+    color:#F0F0F0
 }
 
 
