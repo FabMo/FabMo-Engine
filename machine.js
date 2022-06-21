@@ -14,8 +14,8 @@
  * 
  * This module also sort of "meta manages" the motion systems state.  An example
  * of this is that G2 has digital inputs defined, and can specify their input mode and basic function, but the 
- * machine model might layer some additional function on top of them, such as their higher-level application
- * - perhaps acting as a door interlock, a tool release button, etc.
+ * machine model layers some additional function on top of them, such as their higher-level application
+ * - perhaps acting as a door interlock, a tool stop button, etc.
  *
  * The machine model is a singleton.  There is only ever one of them, which is instantiated by the connect() method.
  */
@@ -225,7 +225,6 @@ function Machine(control_path, callback) {
 		var auth_input = 'in' + config.machine.get('auth_input');
 		var quit_input = 'in' + config.machine.get('quit_input');
 		var ap_input = 'in' + config.machine.get('ap_input');
-		var interlock_input = 'in' + config.machine.get('interlock_input');
 		
 		// If you press a button to pause, you're not allowed to resume or quit for at least a second
 		// (To eliminate the chance of a double-tap doing something you didn't intend.)
@@ -436,7 +435,7 @@ Machine.prototype.restoreDriverState = function(callback) {
 // is placed in the result_obj and the next action is set to 'throw'.
 // Note parameters that are simply read and modified as part of the decision making are suffixed with "_in"
 //      parameters that are returned with new values to be used by the caller are suffixed with "_io"
-function decideNextAction(require_auth_in, current_state_in, driver_status_interlock_in, interlock_required_io, interlock_action_io, current_action_io, bypass_in){
+function decideNextAction(require_auth_in, current_state_in, driver_status_interlock_in, interlock_required_io, driver_status_inFeedHold, current_action_io, bypass_in){
 	let result_arm_obj = {'interlock_required':       null,
 						  'interlock_action':         null,
 						  'current_action':           null,
@@ -448,11 +447,13 @@ function decideNextAction(require_auth_in, current_state_in, driver_status_inter
 			break;
 		case 'interlock':
 			require_auth_in = false;
-			result_arm_obj['current_action'] = interlock_action_io || current_action_io;
+            result_arm_obj['current_action'] = current_action_io;
+            if ( driver_status_inFeedHold === true ) {result_arm_obj['interlock_action'] = current_action_io};    // handle interlock after software pause
 			break;
         case 'lock':
             require_auth_in = false;
-            result_arm_obj['current_action'] = interlock_action_io || current_action_io;
+            result_arm_obj['current_action'] = current_action_io;
+            if ( driver_status_inFeedHold === true ) {result_arm_obj['interlock_action'] = current_action_io};    // handle lock after software pause
             break;
         case 'manual':
 			if(current_action_io == null || (current_action_io.type == 'runtimeCode' && current_action_io.payload.name == 'manual')) {
@@ -460,7 +461,7 @@ function decideNextAction(require_auth_in, current_state_in, driver_status_inter
 			}
 			result_arm_obj['error_thrown'] = new Error('Cannot arm machine for ' + current_action_io.type + 'from the manual state');
 			break;
-		case 'paused':
+        case 'paused':
 		case 'stopped':
 			if(current_action_io.type != 'resume') {
 				result_arm_obj['error_thrown'] = new Error('Cannot arm the machine for ' + current_action_io.type + ' when ' + current_state_in);
@@ -480,7 +481,6 @@ function decideNextAction(require_auth_in, current_state_in, driver_status_inter
 		result_arm_obj['next_action'] = 'throw';
 		return result_arm_obj;
 	}
-//####	if(result_arm_obj['current_action'] && interlock_required_io && driver_status_interlock_in){
     if(interlock_required_io && driver_status_interlock_in){
             result_arm_obj['next_action'] = 'abort_due_to_interlock';
 		return result_arm_obj;
@@ -530,23 +530,25 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status){
 	thisMachine.preArmedState = status;
 }
 
-// Before beginning or resuming any runtime action also check for "locking" inputs that may be active
-// A "Stop" input is fucntionally the same as an active "Interlocked" input; thus, interlock = locked w/different display priority
-// Input definitions are configured in => machine: di#_def
+// Before beginning or resuming any runtime action also check for "locking/interlocking" inputs that may be ACTIVE
+// Locking/Interlocking Inputs are inputs defined as Stop(1), FastStop(2), or Interlock(3)
+// These inputs are fucntionally similar in producing a feedhold in G2 when activated, BUT have different user displays -- so are distinct
+// Input definitions are stored in machine.json and = "machine: di#_def" in the configuration tree
+// ... but these input defs also need to be passed to G2 as current di#ac settings for feedhold 
 // TABLE:
-//   --type  --action--  --locking?--  --message      --G2 di#ac Setting (1=stop[feedhold], 2=faststop[feedhold]) 
+//   --def  --action--  --locking?--     --message   --G2 di#ac settings (digital input actions) 
 //      0  -  none            -             -               0
-//      1  -  Stop           YES         Stop ON            1
-//      2  -  FastStop       YES         Stop ON            2   *not implemented in G2 yet ???
-//      3  -  Interlock      YES        Interlock ON        1
-//      4  -  ImmediateStop   NO            -               3   *not implemented in G2 yet; to be used for OpenSBP "Interrupt"
-//      5  -  Limit           NO         Limit Hit          1    
+//      1  -  Stop           YES          Stop ON           1   [feedhold]
+//      2  -  FastStop       YES          Stop ON           2   [feedhold] *not implemented in G2 yet ???
+//      3  -  Interlock      YES        Interlock ON        1   [feedhold]
+//      4  -  ImmediateStop   NO            -               3   [feedhold] *not implemented in G2 yet; to be used for OpenSBP "Interrupt"
+//      5  -  Limit           NO         Limit Hit          1   [feedhold] 
 function checkForInterlocks (thisMachine) {
     let getInterlockState = 0;
     for (let pin = 1; pin < 13; pin++) {
         let checkInput = config.machine.get('di' + pin + '_def');
         if ( 0 < checkInput && checkInput < 4 ) {
-            if ( thisMachine.driver.status['in' + pin] ) {                                     // IF a defined input pin is active, Set INTERLOCKED
+            if ( thisMachine.driver.status['in' + pin] ) {                              // IF "locking" input pin is active, Set to INTERLOCKED
                 if ( checkInput > getInterlockState ) {getInterlockState = checkInput}  // ... use highest lock priority if multiples
             }
         };
@@ -569,7 +571,7 @@ Machine.prototype.arm = function(action, timeout) {
     let isInterlocked = checkForInterlocks(this);
 
     var nextAction = null;
-	let arm_obj = decideNextAction(requireAuth, this.status.state, isInterlocked, interlockRequired, this.interlock_action, action, interlockBypass);
+    let arm_obj = decideNextAction(requireAuth, this.status.state, isInterlocked, interlockRequired, this.status.inFeedHold, action, interlockBypass);
 	// Implement side-effects that the result obj has returned so state is set correctly:
 		if(arm_obj['interlock_required'])         {interlockRequired     = arm_obj['interlock_required']}
 		if(arm_obj['interlock_action'])           {this.interlock_action = arm_obj['interlock_action']};
@@ -577,7 +579,7 @@ Machine.prototype.arm = function(action, timeout) {
 		if(arm_obj['next_action'])				  {nextAction            = arm_obj['next_action']};
 
 	this.action = action;
-	log.info('Arming the machine' + (action ? (' for ' + action.type) : '(No action)'));
+	log.info('ARMING the machine' + (action ? (' for ' + action.type) : '(No action)'));
 
 	switch(nextAction){
 		case 'throw':
@@ -585,21 +587,20 @@ Machine.prototype.arm = function(action, timeout) {
 			return;
 		case 'abort_due_to_interlock':
             if (isInterlocked > 2) {
-                this.setState(this, 'interlock')
+                this.setState(this, 'interlock');
             } else {
                 this.setState(this, 'lock');
             }
 			return;
 		case 'fire':
-			log.info('Firing automatically since authorization is disabled.');
-			this.setState(this, 'running');                 // clears a stuck pause or lock display on otherwise good resume
-			recordPriorStateAndSetTimer(this, timeout, this.status.state);
+			log.info('FIRING automatically since authorization is disabled.');
+            recordPriorStateAndSetTimer(this, timeout, this.status.state);
 			this.fire(true);
 			return;
 		case 'set_state_and_emit':
 			recordPriorStateAndSetTimer(this, timeout, this.status.state);
 			this.setState(this, 'armed');
-			this.emit('status', this.status);
+			this.emit('status', this.status);                               ////## TRIGGERS auth message !
 			return;
 		default:
 			throw new Error ('Unknown case');
@@ -649,6 +650,11 @@ Machine.prototype.fire = function(force) {
 	
 	var action = this.action;
 	this.action = null;
+    
+    // Handle display in exit from lock/interlock if activated in FeedHold
+    if ( this.status.state === "lock" || this.status.state === "interlock") {   
+        if ( this.status.inFeedHold === true ) { this.setState(this, 'running') };
+    };
 
 	// Actually execute the action (finally!)
 	switch(action.type) {
@@ -843,7 +849,6 @@ Machine.prototype._runFile = function(filename) {
 // Set the active runtime
 // If the selected runtime is different than the current one,
 // disconnect the current one, and connect the new one.
-////##
 Machine.prototype.setRuntime = function(runtime, callback) {
 	runtime = runtime || this.idle_runtime;
 	try {
@@ -970,7 +975,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
                         } else {
                  			this.setState(this, 'lock');
                         }
-        				return;                                  //??
+        				return;                                  
 					}
                 }
 				break;
@@ -1206,20 +1211,20 @@ Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 }
 
 Machine.prototype._resume = function(input) {
-	switch(this.status.state) {
-		case 'interlock':
-			if(this.interlock_action) {
-				this.arm(this.interlock_action);
-				this.interlock_action = null;
-				return;
-			}
-		case 'lock':
-			if(this.interlock_action) {
-				this.arm(this.interlock_action);
-				this.interlock_action = null;
-				return;
-			}
-        break;
+    switch(this.status.state) {
+	 	case 'interlock':
+            if( this.interlock_action && this.interlock_action.type != 'resume') {
+                this.arm(this.interlock_action);
+	 			this.interlock_action = null;
+	 			return;
+	 		}
+	 	case 'lock':
+	 		if( this.interlock_action && this.interlock_action.type != 'resume') {
+	 			this.arm(this.interlock_action);
+	 			this.interlock_action = null;
+	 			return;
+	 		}
+         break;
 	}
 	if(this.current_runtime) {
 		this.current_runtime.resume(input)
