@@ -333,7 +333,7 @@ Machine.prototype.handleOkayCancelDual = function(stat, quit_input) {
 // puts the system in an authorized state for the authorization period.
 Machine.prototype.handleFireButton = function(stat, auth_input) {
 	if(this.fireButtonPressed && !stat[auth_input] && this.status.state === 'armed') {
-		log.info("Fire button hit!")
+		log.info("FIRE button hit!")
 		this.fire();
 	}
 	this.fireButtonPressed = stat[auth_input]
@@ -435,7 +435,7 @@ Machine.prototype.restoreDriverState = function(callback) {
 // is placed in the result_obj and the next action is set to 'throw'.
 // Note parameters that are simply read and modified as part of the decision making are suffixed with "_in"
 //      parameters that are returned with new values to be used by the caller are suffixed with "_io"
-function decideNextAction(require_auth_in, current_state_in, driver_status_interlock_in, interlock_required_io, driver_status_inFeedHold, current_action_io, bypass_in){
+function decideNextAction(require_auth_in, current_state_in, driver_status_interlock_in, interlock_required_io, interlock_action_io, driver_status_inFeedHold, current_action_io, bypass_in){
 	let result_arm_obj = {'interlock_required':       null,
 						  'interlock_action':         null,
 						  'current_action':           null,
@@ -445,15 +445,13 @@ function decideNextAction(require_auth_in, current_state_in, driver_status_inter
 		case 'idle':
 			result_arm_obj['interlock_action'] = current_action_io;
 			break;
-		case 'interlock':
-			require_auth_in = false;
-            result_arm_obj['current_action'] = current_action_io;
-            if ( driver_status_inFeedHold === true ) {result_arm_obj['interlock_action'] = current_action_io};    // handle interlock after software pause
-			break;
-        case 'lock':
-            require_auth_in = false;
-            result_arm_obj['current_action'] = current_action_io;
-            if ( driver_status_inFeedHold === true ) {result_arm_obj['interlock_action'] = current_action_io};    // handle lock after software pause
+		case 'lock':
+        case 'interlock':
+            if ( driver_status_inFeedHold === true ) {    // handle lock/interlock after software pause; in FeedHold
+                result_arm_obj['interlock_action'] = current_action_io
+            } else {
+                result_arm_obj['current_action'] = interlock_action_io || current_action_io
+            }
             break;
         case 'manual':
 			if(current_action_io == null || (current_action_io.type == 'runtimeCode' && current_action_io.payload.name == 'manual')) {
@@ -463,7 +461,8 @@ function decideNextAction(require_auth_in, current_state_in, driver_status_inter
 			break;
         case 'paused':
 		case 'stopped':
-			if(current_action_io.type != 'resume') {
+            if ( current_action_io.type === 'resume' && this.status.inFeedHold === false ) {require_auth_in = false};    // Rules out Auth request on Timed Pause; no FeedHold
+            if(current_action_io.type != 'resume') {
 				result_arm_obj['error_thrown'] = new Error('Cannot arm the machine for ' + current_action_io.type + ' when ' + current_state_in);
 			}
 			break;
@@ -571,7 +570,7 @@ Machine.prototype.arm = function(action, timeout) {
     let isInterlocked = checkForInterlocks(this);
 
     var nextAction = null;
-    let arm_obj = decideNextAction(requireAuth, this.status.state, isInterlocked, interlockRequired, this.status.inFeedHold, action, interlockBypass);
+    let arm_obj = decideNextAction(requireAuth, this.status.state, isInterlocked, interlockRequired, this.interlock_action, this.status.inFeedHold, action, interlockBypass);
 	// Implement side-effects that the result obj has returned so state is set correctly:
 		if(arm_obj['interlock_required'])         {interlockRequired     = arm_obj['interlock_required']}
 		if(arm_obj['interlock_action'])           {this.interlock_action = arm_obj['interlock_action']};
@@ -600,7 +599,7 @@ Machine.prototype.arm = function(action, timeout) {
 		case 'set_state_and_emit':
 			recordPriorStateAndSetTimer(this, timeout, this.status.state);
 			this.setState(this, 'armed');
-			this.emit('status', this.status);                               ////## TRIGGERS auth message !
+			this.emit('status', this.status);
 			return;
 		default:
 			throw new Error ('Unknown case');
@@ -647,12 +646,12 @@ Machine.prototype.fire = function(force) {
 	//        many actions take less than the authorization timeout, though, so in those cases, this causes
 	//        incessant authorization prompts.
 	this.deauthorize();
-	
+
 	var action = this.action;
 	this.action = null;
     
-    // Handle display in exit from lock/interlock if activated in FeedHold
-    if ( this.status.state === "lock" || this.status.state === "interlock") {   
+    // Handle removing modal display in exit from lock/interlock/authorize having been activated in a FeedHold
+    if ( this.status.state === "lock" || this.status.state === "interlock" || this.status.state === 'armed') {   
         if ( this.status.inFeedHold === true ) { this.setState(this, 'running') };
     };
 
