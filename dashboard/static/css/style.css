@@ -228,8 +228,8 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	font-family: 'source_sans_proextralight';
 	font-size: 14px;
 	line-height: 15px;
-	padding-left: 5.0rem;
-
+/*	padding-left: 5.0rem; */
+	padding-left: 0.5rem;
 }
 
 #right-position-container span {
@@ -288,6 +288,7 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	transition: right 0.5s;
 }
 
+/**       Input / Output Display       **/
 
 .input, .output, .inoutLabel, .inOutSwitch {
 	/* width: 1rem; */
@@ -298,7 +299,6 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	/* border: 0.5px solid transparent; */
 }
 
-
 .input.off, .output.off {
 	color: #bbb;
 }
@@ -306,8 +306,35 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 .input.on {
 	/* border: 0.5px solid #32B433; */
 	/* background-color: #eee; */
+	color: #bcebfe;      /*#ffe217; */
+	font-weight: bold;
+}
+
+.input.stopOn {
+	/* border: 0.5px solid #32B433; */
+	/* background-color: #eee; */
+	color: #ff4235;
+	font-weight: bolder;
+}
+
+.input.interlockOn {
+	/* border: 0.5px solid #32B433; */
+	/* background-color: #eee; */
 	color: #ffe217;
 	font-weight: bold;
+}
+
+.inpalert {
+    font-weight: bolder;
+    display:inline;
+}
+
+#inp-interlock {
+	color: #ffe217;
+}
+
+#inp-stop {
+	color: #ff4235;
 }
 
 .output.on {
@@ -1123,6 +1150,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
     transition: transform 1s;
     position: absolute;
     clip: rect(0px, 25px, 50px, 0px);
+    backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     border-radius: 50%;
 }
@@ -1865,6 +1893,7 @@ input[type='range']:focus {
     height: 100%;
     display: table;
     table-layout: fixed;
+    box-sizing: border-box;
     -moz-box-sizing: border-box;
 }
 
