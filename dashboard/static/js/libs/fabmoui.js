@@ -306,11 +306,20 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		}
 		this.progress = percent;
 
+		//Status.line does not show the line being ran, it is off by 19 lines for some reason
+		var comped_line = status.line - 19;
+
+		//If the comp makes line go below zero, say its 0
+		if(comped_line <= 0){
+			comped_line = 0;
+		}
+
 			$('.radial_progress').hide();
    			$('.load_container').show();
 			$('.percent_comp').text(percent + '%');
 			$('.horizontal_fill').css('width', percent + '%');
             $('.elapsed_time_text').text(time_elapsed_text);
+			$('.line_number_text').text(comped_line);
 		$(that.progress_selector).css("width",prog.toString() + "%");
 	}
 	else {
