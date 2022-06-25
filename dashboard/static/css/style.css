@@ -288,7 +288,8 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	transition: right 0.5s;
 }
 
-/**       Input / Output Display       **/
+
+/**       Input / Output Display         ## DEAL WITH varied Input DEFINITIONS in Display **/
 
 .input, .output, .inoutLabel, .inOutSwitch {
 	/* width: 1rem; */
@@ -303,6 +304,10 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	color: #bbb;
 }
 
+.input.disabled, .output.disabled {
+	color: rgb(98, 83, 83);
+}
+
 .input.on {
 	/* border: 0.5px solid #32B433; */
 	/* background-color: #eee; */
@@ -313,8 +318,8 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 .input.stopOn {
 	/* border: 0.5px solid #32B433; */
 	/* background-color: #eee; */
-	color: #ff4235;
-	font-weight: bolder;
+	color: #ff5335;
+	font-weight: 900;
 }
 
 .input.interlockOn {
@@ -324,18 +329,21 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	font-weight: bold;
 }
 
-.inpalert {
-    font-weight: bolder;
-    display:inline;
+.inp-alert {
+    display: inline;
+    visibility: hidden;
 }
 
 #inp-interlock {
 	color: #ffe217;
+    font-weight: bold;
 }
 
 #inp-stop {
-	color: #ff4235;
+	color: #ff5335;
+	font-weight: 900;
 }
+
 
 .output.on {
 	/* border: 0.5px solid #32B433; */

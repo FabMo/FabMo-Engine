@@ -11,8 +11,8 @@
 }(this, function () {
   "use strict"
 
-var MAX_INPUTS = 16;
-var MAX_OUTPUTS = 16;
+var MAX_INPUTS = 12;
+var MAX_OUTPUTS = 12;
 var currentUnits = null;
 var mouseX;
 var mouseY;
@@ -324,22 +324,36 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$('.horizontal_fill').css('width', '0%');
 		this.progress = 0;
 	}
-	///update inputs
-	for(var i=1; i<MAX_INPUTS+1; i++) {
-		var iname = 'in' + i;
-		if(iname in status) {
-			var selector = that.status_div_selector + ' .in' + i;
-			if(status[iname] == 1) {
-				$(selector).removeClass('off').addClass('on');
-			} else if(status[iname] == 0) {
-				$(selector).removeClass('on').addClass('off');
-			} else {
-				$(selector).removeClass('on off').addClass('disabled');
+
+    ///update inputs and set the small DRO display depending on input definitions
+	for ( var i=1; i<MAX_INPUTS+1; i++ ) {
+        let iname = 'in' + i;
+        if ( iname in status ) {
+            let idisp = 'off';
+            let selector = that.status_div_selector + ' .in' + i;
+			let ival = status[iname];
+            if ( ival & 1 ) {                                      // input is ON
+                idisp = 'on'
+                if ( ival & 2 || ival & 4 ) {
+                    idisp = 'stopOn'; 
+                    $('#inp-stop').css("visibility", "visible");
+                };
+                if ( ival & 8 ) {
+                    idisp = 'interlockOn';
+                    $('#inp-interlock').css("visibility", "visible");
+                };     
+				$(selector).removeClass('off').addClass(idisp);
+			} else if ( (ival & 1) === 0 ) {                       // input is OFF
+                if ( ival & 2 || ival & 4 ) {$('#inp-stop').css("visibility", "hidden")};
+                if ( ival & 8 ) {$('#inp-interlock').css("visibility", "hidden")};     
+				$(selector).removeClass('on stopOn interlockOn').addClass('off');
+			} else {                                               // input is disabled  ... not picking up at moment because all reported
+				$(selector).removeClass('on off stopOn interlockOn').addClass('disabled');
 			}
 		} else {
 			break;
 		}
-	}
+    }
 
 	///update outputs
 	for(var i=1; i<MAX_OUTPUTS+1; i++) {

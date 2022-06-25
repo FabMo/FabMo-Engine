@@ -1883,10 +1883,10 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
         }
     }.bind(this));
 
-    // Where to save the start point of an arc that isn't transformed??????????
+    ////## Should probably depend on transforms being active; evaluate ???
     var tPt = this.transformation(pt);
-    console.log('call point transform, ')
-    console.log(tPt);
+    //console.log('call point transform, ')
+    //console.log(tPt);
 
     if(this.file_stack.length > 0) {
         var n = this.file_stack[0].pc;

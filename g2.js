@@ -37,6 +37,8 @@ var STAT_PANIC = 13;
 // Should take no longer than CMD_TIMEOUT to do a get or a set operation
 var CMD_TIMEOUT = 100000;
 var EXPECT_TIMEOUT = 300000;
+var MAX_INPUTS = 12;                                                // Need these in a common storeage
+var MAX_OUTPUTS = 12;
 
 var _promiseCounter = 1;
 var resumePending = false;
@@ -495,6 +497,16 @@ G2.prototype.handleStatusReport = function(response) {
 			line = response.sr.line;
 			lines_left = this.lines_sent - line;
 		}
+
+        // check for inputs and reset to bitwise value for DRO display in Dashboard
+        for (let i=1; i<MAX_INPUTS+1; i++) {                                     
+            if ( ('in' + i) in response.sr ) {
+            let ibval = config.machine.get('di' + i + '_def');
+                if ( 0 < ibval &&  ibval < 17 ) { 
+                    this.status['in' + i] |= ibval;  // Set input value to cur value + bitwise def; for small DRO display
+                }
+            }
+        }
 
 		// stat is the system state (detailed in the list above) 
 		if('stat' in response.sr) {

@@ -530,24 +530,24 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status){
 }
 
 // Before beginning or resuming any runtime action also check for "locking/interlocking" inputs that may be ACTIVE
-// Locking/Interlocking Inputs are inputs defined as Stop(1), FastStop(2), or Interlock(3)
+// Locking/Interlocking Inputs are inputs defined as Stop(2), FastStop(4), or Interlock(8)  {bitwise comparison used to set display}
 // These inputs are fucntionally similar in producing a feedhold in G2 when activated, BUT have different user displays -- so are distinct
 // Input definitions are stored in machine.json and = "machine: di#_def" in the configuration tree
 // ... but these input defs also need to be passed to G2 as current di#ac settings for feedhold 
 // TABLE:
-//   --def  --action--  --locking?--     --message   --G2 di#ac settings (digital input actions) 
+//   -bitdef  --action--  --locking?--     --message   --G2 di#ac settings (digital input actions) 
 //      0  -  none            -             -               0
-//      1  -  Stop           YES          Stop ON           1   [feedhold]
-//      2  -  FastStop       YES          Stop ON           2   [feedhold] *not implemented in G2 yet ???
-//      3  -  Interlock      YES        Interlock ON        1   [feedhold]
-//      4  -  ImmediateStop   NO            -               3   [feedhold] *not implemented in G2 yet; to be used for OpenSBP "Interrupt"
-//      5  -  Limit           NO         Limit Hit          1   [feedhold] 
+//      2  -  Stop           YES          Stop ON           1   [feedhold]
+//      4  -  FastStop       YES          Stop ON           2   [feedhold] *not implemented in G2 yet ???
+//      8  -  Interlock      YES        Interlock ON        1   [feedhold]
+//      -  -  ImmediateStop   NO            -               3   [feedhold] *not implemented in G2 yet; to be used for OpenSBP "Interrupt"
+//      16 -  Limit           NO         Limit Hit          1   [feedhold] 
 function checkForInterlocks (thisMachine) {
     let getInterlockState = 0;
     for (let pin = 1; pin < 13; pin++) {
         let checkInput = config.machine.get('di' + pin + '_def');
         if ( 0 < checkInput && checkInput < 4 ) {
-            if ( thisMachine.driver.status['in' + pin] ) {                              // IF "locking" input pin is active, Set to INTERLOCKED
+            if ( thisMachine.driver.status['in' + pin] & 1 ) {                          // IF "locking" input pin is active, Set to INTERLOCKED
                 if ( checkInput > getInterlockState ) {getInterlockState = checkInput}  // ... use highest lock priority if multiples
             }
         };
