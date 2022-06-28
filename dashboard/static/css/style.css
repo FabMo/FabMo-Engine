@@ -216,15 +216,6 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	transition: all 0.2s;
 }
 
-#display-units {
-	position: absolute;
-	top: 2px;
-	left: 5px;
-	width: 0;
-	text-align: left;
-	font-weight: bold;
-	font-size: 17px;
-}
 
 #right-position-container {
 	cursor: pointer;
@@ -283,6 +274,29 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 .machine-pos-large span {
 	float: right;
 }
+
+#display-units {
+/*	position: absolute;
+	top: 2px;
+	left: 5px;
+	width: 0;
+	text-align: left;
+	font-weight: bold;
+	font-size: 17px; */
+	color: #ffe217;
+	font-weight: bold;
+    margin-left: -8px;
+    padding-right: 0.25rem;
+}
+
+.unit-display {
+    padding-left: -5px;
+    color: #ffe217;
+	font-weight: bold;
+    margin-left: -8px;
+    padding-right: 0.25rem;
+}
+
 
 .DRO {
 	position: fixed;

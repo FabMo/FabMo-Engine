@@ -125,7 +125,7 @@ function Machine(control_path, callback) {
 		out12 :0,
 		job : null,
 		info : null,
-		unit : 'mm',
+		unit : 'in',   ////## 'mm'
 		line : null,
 		nb_lines : null,
 		auth : false,
@@ -141,7 +141,7 @@ function Machine(control_path, callback) {
 	this.fireButtonPressed =0; 
 	this.info_id = 0;
 	this.action = null;
-	this.interlock_action = null;
+	this.interlock_action = null;  // Continuing to use this as interlock/lock flag after allowing mult interlock defs
 	this.pauseTimer = false;
 	
 	// Instantiate and connect to the G2 driver using the port specified in the constructor
@@ -540,13 +540,13 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status){
 //      2  -  Stop           YES          Stop ON           1   [feedhold]
 //      4  -  FastStop       YES          Stop ON           2   [feedhold] *not implemented in G2 yet ???
 //      8  -  Interlock      YES        Interlock ON        1   [feedhold]
-//      -  -  ImmediateStop   NO            -               3   [feedhold] *not implemented in G2 yet; to be used for OpenSBP "Interrupt"
 //      16 -  Limit           NO         Limit Hit          1   [feedhold] 
+//      -  -  ImmediateStop   NO            -               3   [feedhold] *not implemented in G2 yet; to be used for OpenSBP "Interrupt"
 function checkForInterlocks (thisMachine) {
     let getInterlockState = 0;
     for (let pin = 1; pin < 13; pin++) {
         let checkInput = config.machine.get('di' + pin + '_def');
-        if ( 0 < checkInput && checkInput < 4 ) {
+        if ( 0 < checkInput && checkInput < 17 ) {
             if ( thisMachine.driver.status['in' + pin] & 1 ) {                          // IF "locking" input pin is active, Set to INTERLOCKED
                 if ( checkInput > getInterlockState ) {getInterlockState = checkInput}  // ... use highest lock priority if multiples
             }
