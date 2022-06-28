@@ -131,7 +131,8 @@ function Machine(control_path, callback) {
 		auth : false,
 		hideKeypad : false,
 		inFeedHold : false,
-		resumeFlag : false
+		resumeFlag : false,
+		quitFlag: false
 	};
 
 	this.fireButtonDebounce = false;
@@ -463,9 +464,8 @@ function decideNextAction(require_auth_in, current_state_in, driver_status_inter
 	}
 
 	// Now we decide what the next action should be if we haven't already aborted for some reason
-	// need to test if for interlock state
 
-		if(current_action_io && current_action_io.payload && current_action_io.payload.name === 'manual'){
+	if(current_action_io && current_action_io.payload && current_action_io.payload.name === 'manual'){
 		var cmd = current_action_io.payload.code.cmd;
 		if( cmd == 'set'  ||
 			cmd == 'exit' ||
@@ -476,6 +476,7 @@ function decideNextAction(require_auth_in, current_state_in, driver_status_inter
 			result_arm_obj['next_action'] = 'fire';
 			return result_arm_obj;
 		}
+
 	}
 	if(result_arm_obj['next_action'] == 'abort_due_to_interlock'){
 		return result_arm_obj;
@@ -557,9 +558,6 @@ Machine.prototype.disarm = function() {
 	if(this._armTimer) { clearTimeout(this._armTimer);}
 	this.action = null;
 	this.fireButtonDebounce = false;
-	if(this.status.state === 'armed') {
-		this.setState(this, this.preArmedState || 'idle', this.preArmedInfo);
-	}
 }
 
 // Execute the action in the chamber (the one passed to the arm() method)
@@ -922,6 +920,7 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 				this.status.resumeFlag = false;
 				break;
 			case 'dead':
+				this.status.out4 = 0;
 				log.error('G2 is dead!');
 				break;
 			default:
@@ -977,6 +976,7 @@ Machine.prototype.quit = function(callback) {
 	this.driver.pause_hold = false;
 	this.status.inFeedHold = false;
 	this.status.resumeFlag = false;
+	this.status.quitFlag = true;
 	if (this.pauseTimer) {
 		clearTimeout(this.pauseTimer);
 		this.pauseTimer = false;
@@ -992,6 +992,11 @@ Machine.prototype.quit = function(callback) {
 			break;
 
 		case "interlock":
+			this.action = null;
+			this.setState(this, 'idle');
+			break;
+		
+		case "armed":
 			this.action = null;
 			this.setState(this, 'idle');
 			break;
@@ -1013,6 +1018,7 @@ Machine.prototype.quit = function(callback) {
 			callback("Not quiting because no current runtime")
 		}
 	}
+	this.status.quitFlag = false;
 };
 
 // Resume from the paused state.
@@ -1021,23 +1027,20 @@ Machine.prototype.resume = function(callback, input=false) {
 		//Release driver pause hold
 		this.driver.pause_hold = false;
 	}
-	if (this.current_runtime && this.status.inFeedHold){
-		this._resume(input);
+	
+	//clear any timed pause
+	if (this.pauseTimer) {
+		clearTimeout(this.pauseTimer);
+		this.pauseTimer = false;
+	}
+	this.arm({
+		'type' : 'resume',
+		'input' : input
+	}, config.machine.get('auth_timeout'));
+	if (callback) {
+		callback(null, 'resumed');
 	} else {
-		//clear any timed pause
-		if (this.pauseTimer) {
-			clearTimeout(this.pauseTimer);
-			this.pauseTimer = false;
-		}
-		this.arm({
-			'type' : 'resume',
-			'input' : input
-		}, config.machine.get('auth_timeout'));
-		if (callback) {
-	    	callback(null, 'resumed');
-	    } else {
-	    	log.debug('Undefined callback passed to resume');
-	    }
+		log.debug('Undefined callback passed to resume');
 	}
 }
 
@@ -1083,6 +1086,11 @@ Machine.prototype.runNextJob = function(callback) {
 Machine.prototype.executeRuntimeCode = function(runtimeName, code) {
 	interlockBypass = false;
 	runtime = this.getRuntime(runtimeName);
+  if (runtime === undefined) {
+      log.debug("Rejecting attempt to execute runtime code with no defined runtime.");
+      log.debug(JSON.stringify(code));
+      return;
+  }
 	var needsAuth = runtime.needsAuth(code);
 	if (needsAuth){
 		if(this.status.auth) {
