@@ -326,10 +326,10 @@ FabMoUI.prototype.updateStatusContent = function(status){
 	}
 
     ///update inputs and set the small DRO display depending on input definitions
-	for ( var i=1; i<MAX_INPUTS+1; i++ ) {
+    let stopIsOn = false;                                           // ... at least one is already on
+    let intIsOn = false;
+    for ( var i=1; i<MAX_INPUTS+1; i++ ) {
         let iname = 'in' + i;
-        let stopIsOn = false;                                      // ... at least one is already on
-        let intIsOn = false;
         if ( iname in status ) {
             let idisp = 'off';
             let selector = that.status_div_selector + ' .in' + i;
@@ -347,9 +347,9 @@ FabMoUI.prototype.updateStatusContent = function(status){
                     $('#inp-interlock').css("visibility", "visible");
                 };     
 				$(selector).removeClass('off').addClass(idisp);
-			} else if ( (ival & 1) === 0 ) {                       // input is OFF
-                if ( ival & 2 || ival & 4 && !stopIsOn ) {$('#inp-stop').css("visibility", "hidden")};
-                if ( ival & 8 && !intIsOn ) {$('#inp-interlock').css("visibility", "hidden")};     
+			} else if ( (ival & 1) === 0 ) {                       // input is OFF ... cleanup
+                if ( (ival & 2 || ival & 4) && !stopIsOn ) {$('#inp-stop').css("visibility", "hidden")};
+                if ( (ival & 8) && !intIsOn ) {$('#inp-interlock').css("visibility", "hidden")};     
 				$(selector).removeClass('on stopOn interlockOn').addClass('off');
 			} else {                                               // input is disabled  ... not picking up at moment because all reported
 				$(selector).removeClass('on off stopOn interlockOn').addClass('disabled');

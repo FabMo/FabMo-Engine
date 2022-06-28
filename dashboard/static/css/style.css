@@ -255,8 +255,17 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	padding-right: 10px;
 }
 
-.machine-pos-large {
+.machine-pos .rotunits {
+    font-size: 10px;
+    text-transform: lowercase;
+    vertical-align: text-top;
+    margin-top: -5px;
+    position: absolute;
+    color: #fff;
+    width: 10px;
+}
 
+.machine-pos-large {
 	text-align: left;
 	display: block;
 	background-color: #323564;
@@ -365,7 +374,7 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 
 #inp-stop {
 	color: #ff5335;
-	font-weight: 900;
+	font-weight: bolder;
 }
 
 
