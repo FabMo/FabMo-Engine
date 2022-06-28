@@ -265,7 +265,7 @@ util.inherits(Machine, events.EventEmitter);
 Machine.prototype.handleAPCollapseButton = function(stat, ap_input) {
 
 	// If the button has been pressed
-	if(stat[ap_input]) {
+	if ( (stat[ap_input] & 1) ) {
 		var ap_collapse_time = config.machine.get('ap_time');
 		// For the first time
 		if(!this.APCollapseTimer) {
@@ -296,7 +296,7 @@ Machine.prototype.handleAPCollapseButton = function(stat, ap_input) {
 Machine.prototype.handleOkayCancelDual = function(stat, quit_input) {
 
 	//this may be changed to user select wether to continue or to cancel
-	if(!stat[quit_input] && this.status.state === 'paused' && canQuit && this.quit_pressed) {
+	if ( !(stat[quit_input] & 1) && this.status.state === 'paused' && canQuit && this.quit_pressed ) {
 		log.info("Cancel hit!")
 		this.quit(function(err, msg){
 			if(err){
@@ -324,7 +324,7 @@ Machine.prototype.handleOkayCancelDual = function(stat, quit_input) {
             }
         });
     }
-    this.quit_pressed = stat[quit_input];
+    this.quit_pressed = (stat[quit_input] & 1);
 }
 
 // Given the status report and specified input, process the "fire" behavior
@@ -332,7 +332,7 @@ Machine.prototype.handleOkayCancelDual = function(stat, quit_input) {
 // go into an authorized state.  Pressing "fire" while armed either executes the action, or
 // puts the system in an authorized state for the authorization period.
 Machine.prototype.handleFireButton = function(stat, auth_input) {
-	if(this.fireButtonPressed && !stat[auth_input] && this.status.state === 'armed') {
+	if ( this.fireButtonPressed && !(stat[auth_input] & 1) && this.status.state === 'armed' ) {
 		log.info("FIRE button hit!")
 		this.fire();
 	}
@@ -345,7 +345,7 @@ Machine.prototype.handleFireButton = function(stat, auth_input) {
 // having to return to the dashboard just to confirm an action at the tool.
 Machine.prototype.handleOkayButton = function(stat, auth_input){
 	
-	if(stat[auth_input]){
+	if( (stat[auth_input] & 1) ){
 		
 		if (clickDisabled){
 			log.info("Can't hit okay now");
@@ -388,7 +388,7 @@ Machine.prototype.handleOkayButton = function(stat, auth_input){
 
 Machine.prototype.handleCancelButton = function(stat, quit_input){
 
-	if(stat[quit_input] && this.status.state === 'paused' && canQuit) {
+	if ( (stat[quit_input] & 1) && this.status.state === 'paused' && canQuit ) {
 		log.info("Cancel hit!")
 		this.quit(function(err, msg){
 			if(err){
