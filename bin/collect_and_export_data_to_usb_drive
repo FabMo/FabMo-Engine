@@ -19,6 +19,7 @@ if ( scalar(@ARGV) < 1 ) {
           "ERROR:\tmissing parameter\n\tUsage: $0 {path to usb disk}\n\n" );
     exit(-1);
 }
+
 my $USB_DRIVE_PATH = $ARGV[0];
 
 ### https://www.perltutorial.org/
@@ -183,7 +184,10 @@ exit(0);
 sub write_file() {
     my $data = shift;
     my $file = shift;
-    open( my $fh, ">", $file );
+    my $fh;
+    logmsg("data == " . $data);
+    logmsg("file == " . $file);
+    open( $fh, ">", $file ) || logmsg("collect_and_export_data_to_usb_drive failed to open: $fh");
     print $fh $data;
     close $fh;
 }
