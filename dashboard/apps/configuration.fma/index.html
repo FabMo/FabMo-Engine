@@ -86,8 +86,8 @@
               <div class="row collapse">
                 <label data-tip="The distance units that will be used by default for the DRO display and in supported apps.">Default Unit System<div class="tool-tip">i</div></label>
                 <select id="machine-units" class="machine-input">
-                  <option value="mm">mm</option>
-                  <option value="in">in</option>
+                    <option value="in">in</option>
+                    <option value="mm">mm</option>
                 </select>
               </div>
             </div>
@@ -180,303 +180,9 @@
       </div>
 	  </fieldset>
 	</div>
-<!--
-        <div class="row">
-          <fieldset>
-            <legend>Rotation</legend>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Rotate
-                  <select id="opensbp-transforms-rotate-apply" class="opensbp-input">
-                    <option value="false">Disabled</option>
-                    <option value="true">Enabled</option>
-                  </select>
-                </label>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Rotation Angle</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-rotate-angle" class="opensbp-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix">degrees</span>
-                </div>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>X Rotation Point</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-rotate-x" class="opensbp-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
-                </div>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Y Rotation Point</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-rotate-y" class="opensbp-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
-                </div>
-              </div>
-            </div>
-          </fieldset>
-        </div>
-                <div class="row">
-                <fieldset>
-                <legend>Scale</legend>
-                <div class="large-4 columns">
-                <div class="row collapse">
-                <label>Scale</label>
-                <select id="opensbp-transforms-scale-apply" class="opensbp-input">
-                <option value="false">Disabled</option>
-                <option value="true">Enabled</option>
-            </select>
-        </div>
-    </div>
-    <div class="large-4 columns">
-    <div class="row collapse">
-    <label>Scale X</label>
-    <div class="small-9 columns">
-    <input type="number" id="opensbp-transforms-scale-scalex" class="opensbp-input"/>
-</div>
-<div class="small-3 columns">
-<span class="postfix"></span>
-</div>
-</div>
-</div>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>Scale Y</label>
-<div class="small-9 columns">
-<input type="number" id="opensbp-transforms-scale-scaley" class="opensbp-input"/>
-</div>
-<div class="small-3 columns">
-<span class="postfix"></span>
-</div>
-</div>
-</div>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>Scale Z</label>
-<div class="small-9 columns">
-<input type="number" id="opensbp-transforms-scale-scalez" class="opensbp-input"/>
-</div>
-<div class="small-3 columns">
-<span class="postfix"></span>
-</div>
-</div>
-</div>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>X Scale Point</label>
-<div class="small-9 columns">
-<input type="number" id="opensbp-transforms-scale-x" class="opensbp-input"/>
-</div>
-<div class="small-3 columns">
-<span class="postfix">mm</span>
-</div>
-</div>
-</div>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>Y Scale Point</label>
-<div class="small-9 columns">
-<input type="number" id="opensbp-transforms-scale-y" class="opensbp-input"/>
-</div>
-<div class="small-3 columns">
-<span class="postfix">mm</span>
-</div>
-</div>
-</div>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>Z Scale Point</label>
-<div class="small-9 columns">
-<input type="number" id="opensbp-transforms-scale-z" class="opensbp-input"/>
-</div>
-<div class="small-3 columns">
-<span class="postfix">mm</span>
-</div>
-</div>
-</div>
-</fieldset>
-</div> 
+    </section>
 
-        <div class="row">
-          <fieldset>
-            <legend>Offset</legend>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Offset
-                  <select id="opensbp-transforms-move-apply" class="opensbp-input">
-                    <option value="false">Disabled</option>
-                    <option value="true">Enabled</option>
-                  </select>
-                </label>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Offset X</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-move-x" class="opensbp-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
-                </div>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Offset Y</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-move-y" class="opensbp-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
-                </div>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Offset Z</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-move-z" class="opensbp-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
-                </div>
-              </div>
-            </div>
-        
-          </fieldset>
-
-          <fieldset>
-            <legend>Backup & Restore</legend>
-            <legend>Backup</legend>
-            <div class="large-3 columns">
-              <div class="row collapse">
-                <a id="btn-backup" class="button radius small">Backup the configuration</a>
-              </div>
-            </div>
-        <div class="large-7 columns">
-            <div class="row collapse">
-                <input type="file" id="restore_conf_file" class="hidden">
-                <a id="btn-restore"  class="button radius small">Restore the configuration</a>
-            </div>
-        </div>
-        
-          </fieldset>
-        
-
-        </div>
--->
-        <!--     <div class="row">
-<fieldset>
-<legend>Shear X</legend>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>Shear X
-<select id="opensbp-transforms-shearx-apply" class="opensbp-input">
-<option value="false">Disabled</option>
-<option value="true">Enabled</option>
-</select>
-</label>
-</div>
-</div>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>Shear Angle X</label>
-<div class="small-9 columns">
-<input type="number" id="opensbp-transforms-shearx-angle" class="opensbp-input"/>
-</div>
-<div class="small-3 columns">
-<span class="postfix">degrees</span>
-</div>
-</div>
-</div>
-</fieldset>
-</div> -->
-
-        <!--     <div class="row">
-<fieldset>
-<legend>Shear Y</legend>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>Shear Y
-<select id="opensbp-transforms-sheary-apply" class="opensbp-input">
-<option value="false">Disabled</option>
-<option value="true">Enabled</option>
-</select>
-</label>
-</div>
-</div> -->
-
-        <!--         <div class="large-4 columns">
-<div class="row collapse">
-<label>Shear Angle Y</label>
-<div class="small-9 columns">
-<input type="number" id="opensbp-transforms-sheary-angle" class="opensbp-input"/>
-</div>
-<div class="small-3 columns">
-<span class="postfix">degrees</span>
-</div>
-</div>
-</div>
-</fieldset>
-</div>
-
-<div class="row">
-<fieldset>
-<legend>Interpolation</legend>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>Interpolate
-<select id="opensbp-transforms-interpolate-apply" class="opensbp-input">
-<option value="false">Disabled</option>
-<option value="true">Enabled</option>
-</select>
-</label>
-</div>
-</div>
-</fieldset>
-</div> -->
-
-        <!--     <div class="row">
-<fieldset>
-<legend>Leveling</legend>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>Level
-<select id="opensbp-transforms-level-apply" class="opensbp-input">
-<option value="false">Disabled</option>
-<option value="true">Enabled</option>
-</select>
-</label>
-</div>
-</div>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>Leveling Data File</label>
-<div class="small-9 columns">
-<input type="text" id="opensbp-transforms-level-ptDataFile" class="opensbp-input"/>
-</div>
-<div class="small-3 columns">
-<span class="postfix">browse</span>
-</div>
-</div>
-</div>
-</fieldset>
-</div> -->
-      </section>
+<!-- Removed to Job Manager the TRANSFORM management previously shown here -->
 
       <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel2">
         <div class="row">
@@ -1693,6 +1399,7 @@
         <div class="row">
           <fieldset>
             <legend>Machine Envelope</legend>
+
             <div class="large-6 columns">
               <div class="row collapse">
                 <label data-tip="The minimum position on the X axis that is still inside the physical envelope of the tool.  This number should probably be a zero.">X Min <div class="tool-tip">i</div></label>
@@ -1740,7 +1447,32 @@
                 </div>
               </div>
             </div>
-          </fieldset>
+
+            <div class="large-6 columns">
+                <div class="row collapse">
+                  <label data-tip="The minimum position on the Z axis that is still inside the physical envelope of the tool. ">Z Min <div class="tool-tip">i</div></label>
+                  <div class="small-9 columns">
+                    <input type="number" id="machine-envelope-zmin" class="machine-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix in_mm_label"></span>
+                  </div>
+                </div>
+              </div>
+  
+              <div class="large-6 columns">
+                <div class="row collapse">
+                  <label data-tip="The maximum position on the Z axis that is still inside the physical envelope of the tool.">Z Max <div class="tool-tip">i</div></label>
+                  <div class="small-9 columns">
+                    <input type="number" id="machine-envelope-zmax" class="machine-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix in_mm_label"></span>
+                  </div>
+                </div>
+              </div>
+  
+        </fieldset>
         </div>
 
         <div class="row">
@@ -1748,7 +1480,7 @@
             <legend>Z-Lift</legend>
             <div class="large-6 columns">
               <div class="row collapse">
-                <label>Height</label>
+                <label data-tip="The pull-up height automatically moved to when tool is stopped our paused.">Height <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="number" id="driver-zl" class="driver-input" />
                 </div>
@@ -1758,7 +1490,7 @@
               </div>
 
               <div class="row collapse">
-                <label>Spindle Delay</label>
+                <label data-tip="The amount of allowed for spindle spin-up before motion starts.">Spindle Delay <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="number" id="driver-spde" class="driver-input" />
                 </div>
@@ -1916,33 +1648,6 @@
                 <div class="small-3 columns">
                   <span class="postfix">seconds</span>
                 </div>
-              </div>
-              <div class="row collapse">
-                <label data-tip="Whether or not the machine can be locked out with an input.">
-                	Use Interlock
-                  <div class="tool-tip">i</div>
-                </label>
-                <input id="machine-interlock_required" class="machine-input" type="checkbox" checked>
-              </div>
-                <div class="row collapse">
-                <label data-tip="The input to which the authorization button is connected.">Interlock Input
-                  <div class="tool-tip">i</div>
-                </label>
-                  <select id="machine-interlock_input" class="machine-input">
-                    <option value="0">none</option>
-                    <option value="1">Input 1</option>
-                    <option value="2">Input 2</option>
-                    <option value="3">Input 3</option>
-                    <option value="4">Input 4</option>
-                    <option value="5">Input 5</option>
-                    <option value="6">Input 6</option>
-                    <option value="7">Input 7</option>
-                    <option value="8">Input 8</option>
-                    <option value="9">Input 9</option>
-                    <option value="10">Input 10</option>
-                    <option value="11">Input 11</option>
-                    <option value="12">Input 12</option>
-                  </select>
               </div>
             </div>
           </fieldset>

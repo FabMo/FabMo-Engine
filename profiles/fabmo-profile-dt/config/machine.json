@@ -19,7 +19,9 @@
 		"xmin" : 0.0,
 		"xmax" : 24.0,
 		"ymin" : 0.0,
-		"ymax" : 18.0
+		"ymax" : 18.0,
+		"zmin" : -2.0,
+		"zmax" : 6.0
 	},
 	"manual" : {
         "xy_speed": 3.0,

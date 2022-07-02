@@ -47,14 +47,33 @@ OpenSBPConfig.prototype.load = function(filename, callback) {
 	}.bind(this));
 };
 
-// Update the tree with the provided data.  Nothing special here.
+// Update the tree with the provided data. Deal with values shared by runtime with G2
+// ... as for case of 'harmonizing' machine values with G2
 OpenSBPConfig.prototype.update = function(data, callback, force) {
 	try {
 		extend(this._cache, data, force);
 	} catch (e) {
 		return callback(e);
 	}
-		this.save(function(err, result) {
+        // Update Jerk Values
+        // if ( 'jerk_xy' in this._cache ) {G2.command({'xjm':this._cache['jerk_xy']})};
+        // if ( 'jerk_xy' in this._cache ) {this.driver.command({'yjm':this._cache['jerk_xy']})};
+        // if ( 'jerk_z' in this._cache ) {this.accessG2.command({'zjm':this._cache['jerk_z']})};
+        // if ( 'jerk_a' in this._cache ) {this.machine.driver.command({'ajm':this._cache['jerk_a']})};
+        // if ( 'jerk_b' in this._cache ) {this.machine.driver.command({'bjm':this._cache['jerk_b']})};
+        // if ( 'jerk_c' in this._cache ) {this.machine.driver.command({'cjm':this._cache['jerk_c']})};
+        // // Update Jog Speed (this is the equivalent of velocity max for G2)
+        // let temp = (this._cache['jogxy_speed']) * 60;
+        // if ( 'jogxy_speed' in this._cache ) {this.machine.driver.command({'xvm':temp})};
+//        if ( 'jogxy_speed' in this._cache ) {this.machine.driver.command({'yvm':(this._cache['jogxy_speed']) * 60})};
+        // if ( 'movez_speed' in this._cache ) {this.machine.driver.command({'zvm':(this._cache['movexy_speed']) * 60})};
+        // if ( 'movea_speed' in this._cache ) {this.machine.driver.command({'avm':this._cache['movea_speed']*60})};
+        // if ( 'moveb_speed' in this._cache ) {this.machine.driver.command({'bvm':this._cache['moveb_speed']*60})};
+        // if ( 'movec_speed' in this._cache ) {this.machine.driver.command({'cvm':this._cache['movec_speed']*60})};
+        // // Update Safe Z Pull Up (feed hold lift in G2){not done for A, B, or C axis ... should be if not rotary}
+//        if ( 'safeZpullUp' in this._cache ) {this.machine.driver.command({'zl':this._cache['safeZpullUp']})};
+
+        this.save(function(err, result) {
 		if(err) {
 			callback(err);
 		} else {
