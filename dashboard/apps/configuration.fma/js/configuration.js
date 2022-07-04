@@ -87,6 +87,10 @@ function update() {
                   input.val(String(v));
                 }
             }
+            // Handle special case of representing jogs in config manager display as dist/min
+            if ( key.substring(0,3) === 'jog') {
+                input.val(String(v) * 60);
+            }
           }
       });
       var profiles = data['profiles'] || {}
@@ -370,6 +374,10 @@ $('body').click(function(event){
     });
 
     $('.opensbp-input').change( function() {
+        // Handle special case of representing jogs in config manager display as dist/min
+        if ( this.id.substring(8,11) === 'jog' ) {
+            this.value = this.value / 60;
+        }
         setConfig(this.id, this.value);
     });
 

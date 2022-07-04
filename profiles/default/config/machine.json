@@ -1,10 +1,10 @@
 {
 	"units" : "in",
 	"time_units" : "s",
-	"quit_input": "none",
+	"quit_input": 0,
 	"auth_timeout" : 30,
 	"auth_required": true,
-	"auth_input" : "none",
+	"auth_input" : 0,
 	"ap_input" : 0,
 	"ap_time" : 8,
     "di1_def": 0,

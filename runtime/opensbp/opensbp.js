@@ -291,9 +291,9 @@ SBPRuntime.prototype.runString = function(s) {
         // Initialize the runtime state
         this.init();
 
-        // Copy the general config and driver settings into runtime memory
+        // Copy the general config settings into runtime memory
         this._loadConfig();
-        this._loadDriverSettings();
+//        this._loadDriverSettings();
 
         // Build a map of labels to line numbers
         // This step unfortunately requires the whole file
@@ -361,9 +361,9 @@ SBPRuntime.prototype.runStream = function(text_stream) {
                     // Initialize the runtime state
                     this.init();
 
-                    // Copy the general config and driver settings into runtime memory
+                    // Copy the general config settings into runtime memory
                     this._loadConfig();
-                    this._loadDriverSettings();
+//                    this._loadDriverSettings();
 
 
                     log.tick();
@@ -423,7 +423,19 @@ SBPRuntime.prototype._loadConfig = function() {
         'movez_speed',
         'movea_speed',
         'moveb_speed',
-        'movec_speed'
+        'movec_speed',
+        'jogxy_speed',
+        'jogy_speed',
+        'jogz_speed',
+        'joga_speed',
+        'jogb_speed',
+        'jogc_speed',
+        'xy_maxjerk',
+        'y_maxjerk',
+        'z_maxjerk',
+        'a_maxjerk',
+        'b_maxjerk',
+        'c_maxjerk'
     ]);
     this.units = settings.units
     this.movespeed_xy = settings.movexy_speed;
@@ -431,26 +443,40 @@ SBPRuntime.prototype._loadConfig = function() {
     this.movespeed_a = settings.movea_speed;
     this.movespeed_b = settings.moveb_speed;
     this.movespeed_c = settings.movec_speed;
+    this.jogspeed_xy = settings.jogxy_speed;
+    this.jogspeed_y = settings.jogxy_speed;
+    this.jogspeed_z = settings.jogz_speed;
+    this.jogspeed_a = settings.joga_speed;
+    this.jogspeed_b = settings.jogb_speed;
+    this.jogspeed_c = settings.jogc_speed;
+    this.maxjerk_xy = settings.xy_maxjerk;
+    this.maxjerk_y = settings.y_maxjerkjerk;  
+    this.maxjerk_z = settings.z_maxjerk;
+    this.maxjerk_a = settings.a_maxjerk;
+    this.maxjerk_b = settings.b_maxjerk;
+    this.maxjerk_c = settings.c_maxjerk;
 }
 
-// Internal function to copy driver settings to local fields of this runtime
-// We consult/update local fields rather than manipulating the configuration directly
-// This prevents changes made to critical settings in files from being permanent (unless we want them to be)
-SBPRuntime.prototype._loadDriverSettings = function() {
-    var settings = config.driver.getMany([
-        'xvm','yvm','zvm','avm','bvm','cvm',
-        'xjm','yjm','zjm','ajm','bjm','cjm' ]);
-    this.jogspeed_xy = settings.xvm/60;
-    this.jogspeed_z = settings.zvm/60;
-    this.jogspeed_a = settings.avm/60;
-    this.jogspeed_b = settings.bvm/60;
-    this.jogspeed_c = settings.cvm/60;
-    this.maxjerk_xy = settings.xjm;
-    this.maxjerk_z = settings.zjm;
-    this.maxjerk_a = settings.ajm;
-    this.maxjerk_b = settings.bjm;
-    this.maxjerk_c = settings.cjm;
-}
+// // Internal function to copy driver settings to local fields of this runtime
+// // We consult/update local fields rather than manipulating the configuration directly
+// // This prevents changes made to critical settings in files from being permanent (unless we want them to be)
+// SBPRuntime.prototype._loadDriverSettings = function() {
+//     // var settings = config.driver.getMany([
+//     //     'xvm','yvm','zvm','avm','bvm','cvm',
+//     //     'xjm','yjm','zjm','ajm','bjm','cjm' ]);
+//     // this.jogspeed_x = settings.xvm/60;
+//     // this.jogspeed_y = settings.yvm/60;
+//     // this.jogspeed_z = settings.zvm/60;
+//     // this.jogspeed_a = settings.avm/60;
+//     // this.jogspeed_b = settings.bvm/60;
+//     // this.jogspeed_c = settings.cvm/60;
+//     // this.maxjerk_x = settings.xjm;
+//     // this.maxjerk_y = settings.yjm;
+//     // this.maxjerk_z = settings.zjm;
+//     // this.maxjerk_a = settings.ajm;
+//     // this.maxjerk_b = settings.bjm;
+//     // this.maxjerk_c = settings.cjm;
+// }
 
 // Save runtime configuration settings to the opensbp settings file
 //   callback - Called when config has been written
@@ -461,11 +487,18 @@ SBPRuntime.prototype._saveConfig = async function(callback) {
     sbp_values.movea_speed = this.movespeed_a;
     sbp_values.moveb_speed = this.movespeed_b;
     sbp_values.movec_speed = this.movespeed_c;
-    sbp_values.jogxy_speed = this.jogspeed_xy;
+    sbp_values.jogxy_speed = this.jogspeed_xy;  // nb special case
+    sbp_values.jogy_speed = this.jogspeed_xy;
     sbp_values.jogz_speed = this.jogspeed_z;
     sbp_values.joga_speed = this.jogspeed_a;
     sbp_values.jogb_speed = this.jogspeed_b;
     sbp_values.jogc_speed = this.jogspeed_c;
+    sbp_values.xy_maxjerk = this.maxjerk_xy;    // nb special case
+    sbp_values.y_maxjerk = this.maxjerk_xy;
+    sbp_values.z_maxjerk = this.maxjerk_z;
+    sbp_values.a_maxjerk = this.maxjerk_a;
+    sbp_values.b_maxjerk = this.maxjerk_b;
+    sbp_values.c_maxjerk = this.maxjerk_c;
     sbp_values.units = this.units;
     try {
         let values = await config.opensbp.setManyWrapper(sbp_values)
@@ -475,33 +508,33 @@ SBPRuntime.prototype._saveConfig = async function(callback) {
     }
 }
 
-// Save runtime driver settings to the opensbp settings file
-//   callback - Called when config has been written
-SBPRuntime.prototype._saveDriverSettings = async function(callback) {
-    var g2_values = {};
+// // Save runtime driver settings to the opensbp settings file
+// //   callback - Called when config has been written
+// SBPRuntime.prototype._saveDriverSettings = async function(callback) {
+//     var g2_values = {};
 
-    // Permanently set jog speeds
-    g2_values.xvm = (60 * this.jogspeed_xy);
-    g2_values.yvm = (60 * this.jogspeed_xy);
-    g2_values.zvm = (60 * this.jogspeed_z);
-    g2_values.avm = (60 * this.jogspeed_a);
-    g2_values.bvm = (60 * this.jogspeed_b);
-    g2_values.cvm = (60 * this.jogspeed_c);
+//     // Permanently set jog speeds
+//     g2_values.xvm = (60 * this.jogspeed_xy);
+//     g2_values.yvm = (60 * this.jogspeed_xy);
+//     g2_values.zvm = (60 * this.jogspeed_z);
+//     g2_values.avm = (60 * this.jogspeed_a);
+//     g2_values.bvm = (60 * this.jogspeed_b);
+//     g2_values.cvm = (60 * this.jogspeed_c);
 
-    // Permanently set ramp max (jerk)
-    g2_values.xjm = this.maxjerk_xy;
-    g2_values.yjm = this.maxjerk_xy;
-    g2_values.zjm = this.maxjerk_z;
-    g2_values.ajm = this.maxjerk_a;
-    g2_values.bjm = this.maxjerk_b;
-    g2_values.cjm = this.maxjerk_c;
-    try {
-        let values = await config.driver.setManyWrapper(g2_values)
-        callback();
-    } catch (error) {
-        log.error(error);
-    }
-}
+//     // Permanently set ramp max (jerk)
+//     g2_values.xjm = this.maxjerk_xy;
+//     g2_values.yjm = this.maxjerk_xy;
+//     g2_values.zjm = this.maxjerk_z;
+//     g2_values.ajm = this.maxjerk_a;
+//     g2_values.bjm = this.maxjerk_b;
+//     g2_values.cjm = this.maxjerk_c;
+//     try {
+//         let values = await config.driver.setManyWrapper(g2_values)
+//         callback();
+//     } catch (error) {
+//         log.error(error);
+//     }
+// }
 
 // Run a file on disk.
 //   filename - Full path to file on disk

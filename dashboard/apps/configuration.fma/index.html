@@ -203,7 +203,7 @@
               <div class="row collapse">
                 <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-xvm" class="driver-input" />
+                  <input type="text" id="opensbp-jogxy_speed" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix ipm_mmpm_label">&nbsp;</span>
@@ -214,7 +214,7 @@
               <div class="row collapse">
                 <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.'>Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-xjm" class="driver-input" />
+                  <input type="text" id="opensbp-xy_maxjerk" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
@@ -262,7 +262,7 @@
               <div class="row collapse">
                 <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-yvm" class="driver-input" />
+                  <input type="text" id="opensbp-jogy_speed" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix ipm_mmpm_label">&nbsp;</span>
@@ -273,7 +273,7 @@
               <div class="row collapse">
                 <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.'>Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-yjm" class="driver-input" />
+                  <input type="text" id="opensbp-y_maxjerk" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
@@ -322,7 +322,7 @@
               <div class="row collapse">
                 <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-zvm" class="driver-input" />
+                  <input type="text" id="opensbp-jogz_speed" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix ipm_mmpm_label">&nbsp;</span>
@@ -333,7 +333,7 @@
               <div class="row collapse">
                 <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.'>Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-zjm" class="driver-input" />
+                  <input type="text" id="opensbp-z_maxjerk" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
@@ -382,7 +382,7 @@
               <div class="row collapse">
                 <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-avm" class="driver-input" />
+                  <input type="text" id="opensbp-joga_speed" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg/min</span>
@@ -393,13 +393,24 @@
               <div class="row collapse">
                 <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.'>Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-ajm" class="driver-input" />
+                  <input type="text" id="opensbp-a_maxjerk" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg/min<sup>3</sup></span>
                 </div>
               </div>
             </div>
+            <div class="large-4 columns">
+                <div class="row collapse">
+                  <label data-tip="">High Speed Jerk</label>
+                  <div class="small-9 columns">
+                    <input type="text" id="driver-ajh" class="driver-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
+                  </div>
+                </div>
+              </div>
             <div class="large-4 columns">
               <div class="row collapse">
                 <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.  Rotary axes are controlled in degrees.">Axis Mode<div class="tool-tip">i</div></label>
@@ -431,7 +442,7 @@
               <div class="row collapse">
                 <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-bvm" class="driver-input" />
+                  <input type="text" id="opensbp-jogb_speed" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg/min</span>
@@ -442,13 +453,24 @@
               <div class="row collapse">
                 <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.'>Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-bjm" class="driver-input" />
+                  <input type="text" id="opensbp-b_maxjerk" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg/min<sup>3</sup></span>
                 </div>
               </div>
             </div>
+            <div class="large-4 columns">
+                <div class="row collapse">
+                  <label data-tip="">High Speed Jerk</label>
+                  <div class="small-9 columns">
+                    <input type="text" id="driver-bjh" class="driver-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
+                  </div>
+                </div>
+              </div>
             <div class="large-4 columns">
               <div class="row collapse">
                 <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.  Rotary axes are controlled in degrees.">Axis Mode<div class="tool-tip">i</div></label>
@@ -480,7 +502,7 @@
               <div class="row collapse">
                 <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-cvm" class="driver-input" />
+                  <input type="text" id="opensbp-jogc_speed" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg/min</span>
@@ -491,13 +513,24 @@
               <div class="row collapse">
                <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.'>Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-cjm" class="driver-input" />
+                  <input type="text" id="opensbp-c_maxjerk" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg/min</span>
                 </div>
               </div>
             </div>
+            <div class="large-4 columns">
+                <div class="row collapse">
+                  <label data-tip="">High Speed Jerk</label>
+                  <div class="small-9 columns">
+                    <input type="text" id="driver-cjh" class="driver-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
+                  </div>
+                </div>
+              </div>
             <div class="large-4 columns">
               <div class="row collapse">
                 <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.  Rotary axes are controlled in degrees.">Axis Mode<div class="tool-tip">i</div></label>
@@ -1482,7 +1515,7 @@
               <div class="row collapse">
                 <label data-tip="The pull-up height automatically moved to when tool is stopped our paused.">Height <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="number" id="driver-zl" class="driver-input" />
+                  <input type="number" id="opensbp-safeZpullUp" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix in_mm_label">&nbsp;</span>
