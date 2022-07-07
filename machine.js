@@ -125,7 +125,7 @@ function Machine(control_path, callback) {
 		out12 :0,
 		job : null,
 		info : null,
-		unit : 'in',   ////## 'mm'
+		unit : null,
 		line : null,
 		nb_lines : null,
 		auth : false,

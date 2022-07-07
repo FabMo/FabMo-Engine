@@ -48,8 +48,8 @@ OpenSBPConfig.prototype.load = function(filename, callback) {
 };
 
 // Update the tree with the provided data. Deal with values shared by runtime with G2
-////## xy version of values is kludge for SBP legacy compatibility TODO: Perhaps update ?
-////## ... currently default config>opensbp.json must contain a def for xy versions and y versions (y is dummy)
+////## xy version of values is kludge for SBP legacy compatibility with dummy 'y' entry
+////## TODO: Perhaps modify to individual x and Y axes in opensbp ?
 OpenSBPConfig.prototype.update = function(data, callback, force) {
 	try {
 		extend(this._cache, data, force);

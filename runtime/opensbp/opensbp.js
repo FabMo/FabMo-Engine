@@ -57,11 +57,13 @@ function SBPRuntime() {
     this.cmd_posc = undefined;
 
     this.jogspeed_xy = 0;
+    this.jogspeed_y = 0;
     this.jogspeed_z = 0;
     this.jogspeed_a = 0;
     this.jogspeed_b = 0;
     this.jogspeed_c = 0;
     this.maxjerk_xy = 100;
+    this.maxjerk_y = 100;
     this.maxjerk_z = 50;
     this.maxjerk_a = 20;
     this.maxjerk_b = 20;
@@ -435,7 +437,8 @@ SBPRuntime.prototype._loadConfig = function() {
         'z_maxjerk',
         'a_maxjerk',
         'b_maxjerk',
-        'c_maxjerk'
+        'c_maxjerk',
+        'safeZpullUp'
     ]);
     this.units = settings.units
     this.movespeed_xy = settings.movexy_speed;
@@ -450,11 +453,12 @@ SBPRuntime.prototype._loadConfig = function() {
     this.jogspeed_b = settings.jogb_speed;
     this.jogspeed_c = settings.jogc_speed;
     this.maxjerk_xy = settings.xy_maxjerk;
-    this.maxjerk_y = settings.y_maxjerkjerk;  
+    this.maxjerk_y = settings.xy_maxjerk;  
     this.maxjerk_z = settings.z_maxjerk;
     this.maxjerk_a = settings.a_maxjerk;
     this.maxjerk_b = settings.b_maxjerk;
     this.maxjerk_c = settings.c_maxjerk;
+    this.safeZpullUp = settings.safeZpullUp;
 }
 
 // // Internal function to copy driver settings to local fields of this runtime
@@ -499,6 +503,7 @@ SBPRuntime.prototype._saveConfig = async function(callback) {
     sbp_values.a_maxjerk = this.maxjerk_a;
     sbp_values.b_maxjerk = this.maxjerk_b;
     sbp_values.c_maxjerk = this.maxjerk_c;
+    sbp_values.safeZpullUp = this.safeZpullUp;
     sbp_values.units = this.units;
     try {
         let values = await config.opensbp.setManyWrapper(sbp_values)
@@ -1542,21 +1547,25 @@ SBPRuntime.prototype._setUnits = function(units) {
     units = u.unitType(units);
     if(units === this.units) { return; }
     var convert = units === 'in' ? u.mm2in : u.in2mm;
-    this.movespeed_xy = convert(this.movespeed_xy);
-    this.movespeed_z = convert(this.movespeed_z);
-    this.movespeed_a = convert(this.movespeed_a);
-    this.movespeed_b = convert(this.movespeed_b);
-    this.movespeed_c = convert(this.movespeed_c);
-    this.jogspeed_xy = convert(this.jogspeed_xy);
-    this.jogspeed_z = convert(this.jogspeed_z);
-    this.jogspeed_a = convert(this.jogspeed_a);
-    this.jogspeed_b = convert(this.jogspeed_b);
-    this.jogspeed_c = convert(this.jogspeed_c);
-    this.maxjerk_xy = convert(this.jogspeed_xy);
-    this.maxjerk_z = convert(this.jogspeed_z);
-    this.maxjerk_a = convert(this.jogspeed_a);
-    this.maxjerk_b = convert(this.jogspeed_b);
-    this.maxjerk_c = convert(this.jogspeed_c);
+    var convertR = units === 'in' ? u.mm2inR : u.in2mmR;  // Round to keep display of speeds clean
+    this.movespeed_xy = convertR(this.movespeed_xy);
+    this.movespeed_z = convertR(this.movespeed_z);
+    this.movespeed_a = convertR(this.movespeed_a);
+    this.movespeed_b = convertR(this.movespeed_b);
+    this.movespeed_c = convertR(this.movespeed_c);
+    this.jogspeed_xy = convertR(this.jogspeed_xy);
+    this.jogspeed_y = convertR(this.jogspeed_xy);
+    this.jogspeed_z = convertR(this.jogspeed_z);
+    this.jogspeed_a = convertR(this.jogspeed_a);
+    this.jogspeed_b = convertR(this.jogspeed_b);
+    this.jogspeed_c = convertR(this.jogspeed_c);
+    this.maxjerk_xy = convertR(this.maxjerk_xy);
+    this.maxjerk_y = convertR(this.maxjerk_xy);
+    this.maxjerk_z = convertR(this.maxjerk_z);
+    this.maxjerk_a = convertR(this.maxjerk_a);
+    this.maxjerk_b = convertR(this.maxjerk_b);
+    this.maxjerk_c = convertR(this.maxjerk_c);
+    this.safeZpullUp = convertR(this.safeZpullUp);
     this.cmd_posx = convert(this.cmd_posx);
     this.cmd_posy = convert(this.cmd_posy);
     this.cmd_posz = convert(this.cmd_posz);

@@ -73,7 +73,9 @@ function update() {
       configData = data;
       ['driver', 'engine', 'opensbp', 'machine'].forEach(function(branchname) {
           branch = flattenObject(data[branchname]);
+          let decimals = ''; 
           for(key in branch) {
+            if ( key === 'units') {decimals = input.val == "mm" ? 100 : 1000};
             v = branch[key];
             input = $('#' + branchname + '-' + key);
             if(input.length) {
@@ -89,7 +91,7 @@ function update() {
             }
             // Handle special case of representing jogs in config manager display as dist/min
             if ( key.substring(0,3) === 'jog') {
-                input.val(String(v) * 60);
+                input.val((Math.round(String(v) * 60 * decimals) / decimals));
             }
           }
       });
