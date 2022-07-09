@@ -22,7 +22,7 @@ var registerUnitLabel = function(label, in_label, mm_label) {
 
 var updateLabels = function(unit) {
 	$.each(unit_label_index, function(key, value) {
-		$(key).html(value[unit]);
+        $(key).html(value[unit]);
 	});
 }
 
@@ -86,12 +86,21 @@ function update() {
                       input.prop( "checked", false );
                   }
                 } else {
-                  input.val(String(v));
+                  if ( key != 'jogy_speed' &&  key != 'y_maxjerk' ) {    // ...ugly way to handle, per below
+                    input.val(String(v));                                // Most values updated here    
+                  }
                 }
             }
-            // Handle special case of representing jogs in config manager display as dist/min
-            if ( key.substring(0,3) === 'jog') {
+            // Handle special case of representing jogs in config manager display in dist/min
+            if ( key.substring(0,3) === 'jog' && key != 'jogy_speed') {
                 input.val((Math.round(String(v) * 60 * decimals) / decimals));
+            }    
+            // Handle special case that some Y axis values are linked to X axis in FabMo
+            if ( key === 'jogxy_speed' ) {
+                $('#' + branchname + '-' + 'jogy_speed').val((Math.round(String(v) * 60 * decimals) / decimals));
+            }
+            if ( key === 'xy_maxjerk' ) {
+                $('#' + branchname + '-' + 'y_maxjerk').val(String(v));
             }
           }
       });
@@ -341,38 +350,7 @@ $('body').click(function(event){
     });
 
     $('.machine-input').change( function() {
-        // // Manage update of some SPECIAL CASES of joint config settings between 'Machine' and 'G2'; TODO: systematize this ???
-        // // Inputs -- these have additional functionality in FabMo than G2 (where they either 'Stop' or 'Fast-Stop')
-        // let parts = this.id.split("-");    // new array split on '-' between machine and the input name'
-        // let in_def = parts[1].substring(0,2);
-        // if ( in_def === 'di' ) {
-        //     let diNum = parts[1].substring(2,4);
-        //     diNum = diNum.replace('_','');
-        //     diNum = 'di' + diNum + 'ac';
-        //     let g2inpAction = '0';
-        //     switch (this.value) {
-        //         case '2':
-        //         case '8':
-        //         case '16':        
-        //             g2inpAction = '1';                                                  // G2 regular stop behavior
-        //             break;
-        //         case '4':
-        //             g2inpAction = '2';                                                  // G2 fast stop behavior
-        //             break;
-        //         }
-        //     setConfig(this.id, this.value);                                             // set the new FabMo action for input
-        //     fabmo.setConfig({"driver":{[diNum]: g2inpAction}}, function(err, data) {    // set the new G2 Action for input (vs FabMo function)                 
-        //         if (err){
-        //             console.log(err);
-        //         } else {
-        //             console.log(data);
-        //         }
-        //     });
-
-        // // Manage NORMAL config value update ...    
-        // } else {
             setConfig(this.id, this.value);
-//        }    
     });
 
     $('.opensbp-input').change( function() {

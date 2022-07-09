@@ -1067,20 +1067,18 @@ G2.prototype.sendMore = function() {
 	}
 };
 
-// Set the position of the motion system using the G28.3 code
+// Set the position of the motion system using the G28.3 code (on start)
 // position - An object mapping axes to position values. Axes that are not included will not be updated.
 G2.prototype.setMachinePosition = function(position, callback) {
 ////## until uvw enabled	var axes = ['x','y','z','a','b','c','u','v','w']
 	var axes = ['x','y','z','a','b','c']
 	var gcodes = new stream.Readable();
-	gcodes.push('G21\n');
+    let mult = (this.status.unit === 'mm' ? 1 : 1/25.4)  // Convert saved position from mm to current for restore
 	axes.forEach(function(axis) {
 		if(position[axis] != undefined) {
-			gcodes.push('G28.3 ' + axis + position[axis].toFixed(5) + "\n");
+			gcodes.push('G28.3 ' + axis + (position[axis] * mult).toFixed(5) + "\n");
 		}
 	});
-
-	gcodes.push(this.status.unit === 'in' ? 'G20\n' : 'G21\n');
 	gcodes.push(null);
 	//TODO: Set manualPrime false once uvw enabled
 	this.runStream(gcodes, true).then(function() {callback && callback()})

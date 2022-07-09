@@ -128,7 +128,7 @@ SBPRuntime.prototype.connect = function(machine) {
     this.cmd_StartC = this.posc;
 
     this.connected = true;
-    this.ok_to_disconnect = false;          ////## removing was temp fix for cannot-disconnect
+    this.ok_to_disconnect = false;          ////## remove was temp fix for cannot-disconnect ?
                                             ////## ... in any case does not seem right place; should be state change
     log.info('Connected OpenSBP runtime.');
 };
@@ -295,7 +295,6 @@ SBPRuntime.prototype.runString = function(s) {
 
         // Copy the general config settings into runtime memory
         this._loadConfig();
-//        this._loadDriverSettings();
 
         // Build a map of labels to line numbers
         // This step unfortunately requires the whole file
@@ -365,8 +364,6 @@ SBPRuntime.prototype.runStream = function(text_stream) {
 
                     // Copy the general config settings into runtime memory
                     this._loadConfig();
-//                    this._loadDriverSettings();
-
 
                     log.tick();
                     // Build a map of labels to line numbers
@@ -461,27 +458,6 @@ SBPRuntime.prototype._loadConfig = function() {
     this.safeZpullUp = settings.safeZpullUp;
 }
 
-// // Internal function to copy driver settings to local fields of this runtime
-// // We consult/update local fields rather than manipulating the configuration directly
-// // This prevents changes made to critical settings in files from being permanent (unless we want them to be)
-// SBPRuntime.prototype._loadDriverSettings = function() {
-//     // var settings = config.driver.getMany([
-//     //     'xvm','yvm','zvm','avm','bvm','cvm',
-//     //     'xjm','yjm','zjm','ajm','bjm','cjm' ]);
-//     // this.jogspeed_x = settings.xvm/60;
-//     // this.jogspeed_y = settings.yvm/60;
-//     // this.jogspeed_z = settings.zvm/60;
-//     // this.jogspeed_a = settings.avm/60;
-//     // this.jogspeed_b = settings.bvm/60;
-//     // this.jogspeed_c = settings.cvm/60;
-//     // this.maxjerk_x = settings.xjm;
-//     // this.maxjerk_y = settings.yjm;
-//     // this.maxjerk_z = settings.zjm;
-//     // this.maxjerk_a = settings.ajm;
-//     // this.maxjerk_b = settings.bjm;
-//     // this.maxjerk_c = settings.cjm;
-// }
-
 // Save runtime configuration settings to the opensbp settings file
 //   callback - Called when config has been written
 SBPRuntime.prototype._saveConfig = async function(callback) {
@@ -512,34 +488,6 @@ SBPRuntime.prototype._saveConfig = async function(callback) {
         log.error(error);
     }
 }
-
-// // Save runtime driver settings to the opensbp settings file
-// //   callback - Called when config has been written
-// SBPRuntime.prototype._saveDriverSettings = async function(callback) {
-//     var g2_values = {};
-
-//     // Permanently set jog speeds
-//     g2_values.xvm = (60 * this.jogspeed_xy);
-//     g2_values.yvm = (60 * this.jogspeed_xy);
-//     g2_values.zvm = (60 * this.jogspeed_z);
-//     g2_values.avm = (60 * this.jogspeed_a);
-//     g2_values.bvm = (60 * this.jogspeed_b);
-//     g2_values.cvm = (60 * this.jogspeed_c);
-
-//     // Permanently set ramp max (jerk)
-//     g2_values.xjm = this.maxjerk_xy;
-//     g2_values.yjm = this.maxjerk_xy;
-//     g2_values.zjm = this.maxjerk_z;
-//     g2_values.ajm = this.maxjerk_a;
-//     g2_values.bjm = this.maxjerk_b;
-//     g2_values.cjm = this.maxjerk_c;
-//     try {
-//         let values = await config.driver.setManyWrapper(g2_values)
-//         callback();
-//     } catch (error) {
-//         log.error(error);
-//     }
-// }
 
 // Run a file on disk.
 //   filename - Full path to file on disk
