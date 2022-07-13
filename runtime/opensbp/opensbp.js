@@ -489,6 +489,18 @@ SBPRuntime.prototype._saveConfig = async function(callback) {
     }
 }
 
+// Save runtime driver settings to the opensbp settings file
+//   callback - Called when config has been written
+SBPRuntime.prototype._saveDriverSettings = async function(callback) {
+    var g2_values = {};
+    try {
+        let values = await config.driver.setManyWrapper(g2_values)
+        callback();
+    } catch (error) {
+        log.error(error);
+    }
+}
+
 // Run a file on disk.
 //   filename - Full path to file on disk
 //   callback - Called when file is done running or with error if error
