@@ -70,6 +70,31 @@ Config.prototype.set = function(k,v, callback) {
 	this.setMany(u, callback);
 };
 
+
+
+// Typical update function for a config object
+Config.prototype.update = function(data, callback) {
+  try {
+    for(var key in data) {
+      this._cache[key] = data[key];
+    }
+  } catch (e) {
+    if(callback) {
+      return setImmediate(callback, e);
+    }
+  }
+  this.save(function(err, result) {
+    if(err) {
+      typeof callback === 'function' && callback(e);
+    } else {
+      typeof callback === 'function' && callback(null, data);
+    }
+  });
+};
+
+
+
+
 // Set the key value pairs supplied by `data` on this config object
 // This causes the configuration to be saved to disk.
 //       data - Object containing the keys/values to update

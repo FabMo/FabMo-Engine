@@ -96,6 +96,7 @@
           <!-- ***** Tool Position Section ***** -->
           
           <section class="right DRO-button show-for-small-up fabmo-status" id="right-position-container">
+            <div id="display-units">Units:&nbsp;<span class="units"></span> </div>
             <div id="dro-tab" title="Click to toggle large Location Display"></div>
             <div  class="sm-axes"><strong>
               <div class="xaxis machine-pos" ><label>X : &nbsp;<span class="posx">X.XXX</span></label></div>
@@ -260,7 +261,7 @@
                 <label class="noselect">
                     X
                 </label>
-                <input id="X" class="posx pos doselect modal-axi axi" maxlength="6" type="number" step="any">
+                <input id="X" class="posx pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="units">&nbsp;</span>
                 <div class="zero-button zero-x">zero</div>
             </div>
@@ -268,7 +269,7 @@
                 <label class="noselect">
                     Y
                 </label>
-                <input id="Y" class="posy pos doselect modal-axi axi" maxlength="6" type="number" step="any">
+                <input id="Y" class="posy pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="units">&nbsp;</span>
                 <div class="zero-button zero-y">zero</div>
             </div>
@@ -276,7 +277,7 @@
                 <label class="noselect">
                 Z
                 </label>
-                <input id="Z" class="posz pos doselect modal-axi axi" maxlength="6" type="number" step="any">
+                <input id="Z" class="posz pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="units">&nbsp;</span>
                 <div class="zero-button zero-z">zero</div>
             </div>
@@ -284,7 +285,7 @@
                 <label class="noselect">
                 A
                 </label>
-                <input id="A" class="posa pos doselect modal-axi axi" maxlength="6" type="number" step="any">
+                <input id="A" class="posa pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="rotunits">o&nbsp;</span>
                 <div class="zero-button zero-a">zero</div>
             </div>
@@ -292,7 +293,7 @@
                 <label class="noselect">
                 B
                 </label>
-                <input id="B" class="posb pos doselect modal-axi axi" maxlength="6" type="number" step="any">
+                <input id="B" class="posb pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="rotunits">o&nbsp;</span>
                 <div class="zero-button zero-b">zero</div>
             </div>
@@ -300,7 +301,7 @@
                 <label class="noselect">
                 C
                 </label>
-                <input id="C" class="posc pos doselect modal-axi axi" maxlength="6" type="number" step="any">
+                <input id="C" class="posc pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="rotunits">o&nbsp;</span>
                 <div class="zero-button zero-c">zero</div>
             </div>
@@ -458,6 +459,11 @@
           <p class="elapsed_time_text">0s</p>
         </div>
         <div class="percent_comp">10%</div>
+        <div class="line_number">
+          <p class="line_number_label">line:
+          <p>
+          <p class="line_number_text">0</p>
+        </div>
       </div>
       <div class='pauseJob-wrapper'>
         <div class='pauseJob fabmo-pause-button '>

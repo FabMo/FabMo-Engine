@@ -14,18 +14,20 @@ FABMO_BIN="/fabmo/bin"
 ## get the mount point of the new thumb drive ##################
 MEDIA_MOUNT="/media/pi"
 THUMB_DIR_MOUNT=`$LS $MEDIA_MOUNT | $HEAD -1`
-logger "Test export script"
+
+
 
 ###### Get the work of exporting things done ###################
 # Invoke the fabmo data collector
 
-logger "Invoking data collector"
+logger "Invoking data collector with args: $MEDIA_MOUNT and $THUMB_DIR_MOUNT"
 if [ -e $FABMO_BIN/collect_and_export_data_to_usb_drive ]
 	then $FABMO_BIN/collect_and_export_data_to_usb_drive "$MEDIA_MOUNT/$THUMB_DIR_MOUNT" &
 fi
-logger "post data collector"
+logger "post data collector launch, data collector running async now"
 
 ###### Finished with body of work to do ########################
+
 
 
 
