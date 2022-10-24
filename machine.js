@@ -652,9 +652,10 @@ Machine.prototype.fire = function(force) {
 	this.action = null;
     
     // Handle removing modal display in exit from lock/interlock/authorize having been activated in a FeedHold
-    if ( this.status.state === "lock" || this.status.state === "interlock" || this.status.state === 'armed') {   
-        if ( this.status.inFeedHold === true ) { this.setState(this, 'running') };
-    };
+    // if ( this.status.state === "lock" || this.status.state === "interlock" || this.status.state === 'armed') {   
+    //     if ( this.status.inFeedHold === true ) { this.setState(this, 'running') };
+
+    // };
 
 	// Actually execute the action (finally!)
 	switch(action.type) {
