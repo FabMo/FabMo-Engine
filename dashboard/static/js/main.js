@@ -382,7 +382,7 @@ require("../css/toastr.min.css");
                             }
           
                         });
-                    } else if (status.state === 'lock') {
+                    } else if (status.state === 'lock' && status.resumeFlag === false) {
                         interlockDialog = true;
                             keypad.setEnabled(false);
                             keyboard.setEnabled(false);
