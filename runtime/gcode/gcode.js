@@ -168,6 +168,7 @@ GCodeRuntime.prototype._handleStateChange = function(stat) {
 			this._changeState('paused');
 			break;
 		case this.driver.STAT_RUNNING:
+			this.machine.status.inFeedHold = false;
 			this._changeState('running');
 			break;
         case this.driver.STAT_STOP:
