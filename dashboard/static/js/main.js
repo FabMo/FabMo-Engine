@@ -359,7 +359,7 @@ require("../css/toastr.min.css");
                                                     );
                             }
                         });
-                    } else if (status.state === 'interlock' && status.resumeFlag === false) {
+                    } else if (status.state === 'interlock' && status.resumeFlag === false  && status.inFeedHold === true) {
                         interlockDialog = true;
                             keypad.setEnabled(false);
                             keyboard.setEnabled(false);
