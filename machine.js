@@ -457,11 +457,11 @@ function decideNextAction(require_auth_in, current_state_in, driver_status_inter
 			if(current_action_io == null || (current_action_io.type == 'runtimeCode' && current_action_io.payload.name == 'manual')) {
 				break;
 			}
-			result_arm_obj['error_thrown'] = new Error('Cannot arm machine for ' + current_action_io.type + 'from the manual state');
+			result_arm_obj['error_thrown'] = new Error('Cannot arm machine for ' + current_action_io.type + ' from the manual state');
 			break;
         case 'paused':
 		case 'stopped':
-            if ( current_action_io.type === 'resume' && this.status.inFeedHold === false ) {require_auth_in = false};    // Rules out Auth request on Timed Pause; no FeedHold
+            if ( current_action_io.type === 'resume' && driver_status_inFeedHold === false ) {require_auth_in = false};    // Rules out Auth request on Timed Pause; no FeedHold
             if(current_action_io.type != 'resume') {
 				result_arm_obj['error_thrown'] = new Error('Cannot arm the machine for ' + current_action_io.type + ' when ' + current_state_in);
 			}
