@@ -291,34 +291,34 @@ test("if current_state_in is stopped and current_action.type == resume then set_
         "error_thrown":             null});
 });
 
-// test("if current_action and current_action.payload exist and current_action.payload.name equals manual then interlock required = false, check while bypass false", () => {
-//     current_action = {};
-//     current_action.payload = {};
-//     current_action.payload.name = "manual";
-//     current_action.payload.code = {};
-//     current_action.payload.code.cmd = 'set';
-//     expect(machine.private_decideNextAction('auth_required', 'idle', null, 'interlock_required', null, current_action, null, 'bypass_in')).toStrictEqual(
-//         {
-//         "interlock_required":       false,
-//         "interlock_action":         current_action,
-//         "current_action":           null,
-//         "next_action":              'fire',
-//         "error_thrown":             null});
-// });
+test("if current_action_io and current_action_io.payload exist and current_action_io.payload.name equals manual then interlock_required = false, check while bypass false", () => {
+    current_action_io = {};
+    current_action_io.payload = {};
+    current_action_io.payload.name = "manual";
+    current_action_io.payload.code = {};
+    current_action_io.payload.code.cmd = 'set';
+    expect(machine.private_decideNextAction('auth_required', 'idle', null, 'interlock_required', null, null, current_action_io, 'bypass_in')).toStrictEqual(
+        {
+        "interlock_required":       false,
+        "interlock_action":         current_action_io,
+        "current_action":           null,
+        "next_action":              'fire',
+        "error_thrown":             null});
+});
 
-// test("if current_action and current_action.payload exist and current_action.payload.name equals manual then interlock required = false, check while bypass true", () => {
-//     current_action = {};
-//     current_action.payload = {};
-//     current_action.payload.name = "manual";
-//     current_action.payload.code = {};
-//     current_action.payload.code.cmd = 'set';
-//     expect(machine.private_decideNextAction('auth_required', 'idle', null, 'interlock_required', null, current_action, null, 'bypass_in')).toStrictEqual(
-//         {
-//         "interlock_required":       false,
-//         "interlock_action":         current_action,
-//         "current_action":           null,
-//         "next_action":              'fire',
-//         "error_thrown":             null});
-// });
+test("if current_action_io and current_action_io.payload exist and current_action_io.payload.name equals manual then interlock required = false, check while bypass true", () => {
+    current_action_io = {};
+    current_action_io.payload = {};
+    current_action_io.payload.name = "manual";
+    current_action_io.payload.code = {};
+    current_action_io.payload.code.cmd = 'set';
+    expect(machine.private_decideNextAction('auth_required', 'idle', null, 'interlock_required', null, null, current_action_io, 'bypass_in')).toStrictEqual(
+        {
+        "interlock_required":       false,
+        "interlock_action":         current_action_io,
+        "current_action":           null,
+        "next_action":              'fire',
+        "error_thrown":             null});
+});
 
 //<--------------------------------------------------------------------------------------------------------->
