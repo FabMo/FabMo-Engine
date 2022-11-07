@@ -145,6 +145,7 @@ SBPRuntime.prototype.disconnect = function() {
     }
 
     if(this.ok_to_disconnect) {
+        this.driver.removeListener('status', this.status_handler);
         this.machine = null;
         this.driver = null;
         this.connected = false;
