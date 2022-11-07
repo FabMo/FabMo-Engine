@@ -22,7 +22,7 @@ var registerUnitLabel = function(label, in_label, mm_label) {
 
 var updateLabels = function(unit) {
 	$.each(unit_label_index, function(key, value) {
-		$(key).html(value[unit]);
+        $(key).html(value[unit]);
 	});
 }
 
@@ -73,7 +73,9 @@ function update() {
       configData = data;
       ['driver', 'engine', 'opensbp', 'machine'].forEach(function(branchname) {
           branch = flattenObject(data[branchname]);
+          let decimals = ''; 
           for(key in branch) {
+            if ( key === 'units') {decimals = input.val == "mm" ? 100 : 1000};
             v = branch[key];
             input = $('#' + branchname + '-' + key);
             if(input.length) {
@@ -84,8 +86,21 @@ function update() {
                       input.prop( "checked", false );
                   }
                 } else {
-                  input.val(String(v));
+                  if ( key != 'jogy_speed' &&  key != 'y_maxjerk' ) {    // ...ugly way to handle, per below
+                    input.val(String(v));                                // Most values updated here    
+                  }
                 }
+            }
+            // Handle special case of representing jogs in config manager display in dist/min
+            if ( key.substring(0,3) === 'jog' && key != 'jogy_speed') {
+                input.val((Math.round(String(v) * 60 * decimals) / decimals));
+            }    
+            // Handle special case that some Y axis values are linked to X axis in FabMo
+            if ( key === 'jogxy_speed' ) {
+                $('#' + branchname + '-' + 'jogy_speed').val((Math.round(String(v) * 60 * decimals) / decimals));
+            }
+            if ( key === 'xy_maxjerk' ) {
+                $('#' + branchname + '-' + 'y_maxjerk').val(String(v));
             }
           }
       });
@@ -335,10 +350,14 @@ $('body').click(function(event){
     });
 
     $('.machine-input').change( function() {
-        setConfig(this.id, this.value);
+            setConfig(this.id, this.value);
     });
 
     $('.opensbp-input').change( function() {
+        // Handle special case of representing jogs in config manager display as dist/min
+        if ( this.id.substring(8,11) === 'jog' ) {
+            this.value = this.value / 60;
+        }
         setConfig(this.id, this.value);
     });
 

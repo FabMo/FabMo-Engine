@@ -198,7 +198,8 @@ require("../css/toastr.min.css");
 
                     if ((status.state != "armed" && last_state_seen === "armed") || 
                         (status.state != "paused" && last_state_seen === "paused") ||
-                        (status.state != "interlock" && last_state_seen === "interlock")) {
+                        (status.state != "interlock" && last_state_seen === "interlock") ||
+                        (status.state != "lock" && last_state_seen === "lock")) {
                         dashboard.hideModal();
                         modalIsShown = false;
                     }
@@ -358,7 +359,7 @@ require("../css/toastr.min.css");
                                                     );
                             }
                         });
-                    } else if (status.state === 'interlock') {
+                    } else if (status.state === 'interlock' && status.resumeFlag === false) {
                         interlockDialog = true;
                             keypad.setEnabled(false);
                             keyboard.setEnabled(false);
@@ -381,7 +382,30 @@ require("../css/toastr.min.css");
                             }
           
                         });
-                    }
+                    } else if (status.state === 'lock' && status.resumeFlag === false) {
+                        interlockDialog = true;
+                            keypad.setEnabled(false);
+                            keyboard.setEnabled(false);
+                        dashboard.showModal({
+                            title: 'Stop Input Activated!',
+                            message: 'Please release any Stop Input before continuing.',
+                            cancelText: 'Quit',
+                            cancel: function() {
+                                interlockDialog = false;
+                                dashboard.engine.quit(function(err, result) {
+                                                            if (err) {
+                                                            console.log("ERRROR: " + err);
+                                                            }
+                                                        }
+                                                    );
+                            },
+                            okText: 'Resume',
+                            ok: function() {
+                                dashboard.engine.resume();
+                            }
+        
+                        });
+                    } 
 
                 });
 

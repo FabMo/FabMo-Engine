@@ -500,6 +500,16 @@ var isANumber = function(n) {
     }
 }
 
+// Unit conversion, Rounded
+var mm2inR = function(mm) {
+    return Math.round((mm/25.4)*1000)/1000;
+}
+  
+// Unit conversion, Rounded
+var in2mmR = function(inch) {
+    return Math.round((inch*25.4)*100)/100;
+}
+
 // Unit conversion
 var mm2in = function(mm) {
   return mm/25.4;
@@ -731,6 +741,8 @@ exports.getClientAddress = getClientAddress;
 exports.isANumber = isANumber;
 exports.in2mm = in2mm;
 exports.mm2in = mm2in;
+exports.in2mmR = in2mmR;
+exports.mm2inR = mm2inR;
 exports.unitType = unitType;
 exports.diskSync = diskSync;
 

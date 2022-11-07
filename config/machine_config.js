@@ -2,9 +2,17 @@
  * machine_config.js
  *
  * Covers "machine" settings.  Separate from engine settings, which are settings related to how
- * the server software works specifically, the machine configuration stores information about the tool
- * as a CNC machine - settings related to speeds, tool dimensions, how things are setup.
+ *  the server software works specifically.
+ * The MACHINE configuration stores information about the tool as a CNC machine - settings related
+ *  to speeds, tool dimensions, how things are setup. Some of this information is shared with and used by
+ *  the G2 firmware and must be kept "harmonized". In some cases, the shared data is just copied (e.g. envelope values);
+ *  in other cases, it is modified for use in G2 (e.g. input definitions in machine {di#_def} are converted to action
+ *  definitions {di#ac} in G2). This action all happens in: MachineConfig.prototype.update.
+ *  [Note that there are a few similar shares between the openSBP runtime and G2].
  */
+
+let MAX_INPUTS = 12;
+
 var config = require('../config');
 var Config = require('./config').Config;
 var log = require('../log').logger('machine_config');
@@ -43,7 +51,7 @@ MachineConfig.prototype.update = function(data, callback, force) {
 		if(!force && current_units && current_units != new_units) {
 			var conv = (new_units == 'mm') ? 25.4 : 1/25.4;
 
-			['xmin','xmax','ymin','ymax'].forEach(function(key) {
+			['xmin','xmax','ymin','ymax','zmin','zmax'].forEach(function(key) {
 				this._cache.envelope[key] = round(this._cache.envelope[key]*conv, new_units);
 			}.bind(this));
 
@@ -61,6 +69,36 @@ MachineConfig.prototype.update = function(data, callback, force) {
 			}.bind(this));
 		}
 	}
+
+    ////## Re: Rob's 'Harmonize' Project -- These are 'machine' settings that are shared to G2 and maintained here
+
+    //  Define Inputs for G2 -- Input functionality in FabMo and G2 overlap but differ in detail.
+    //      For G2 use, the actions are simplified as none, stop, or fast-stop and current G2 values are set here.
+    for ( let i=1; i<MAX_INPUTS+1; i++ ) {
+        let diDef = ('di' + i + '_def'); 
+        if ( diDef in this._cache) {
+            let g2inpAction = 0;                   // G2 action defaults to none
+            switch (this._cache[diDef]) {
+                case 2:
+                case 8:
+                case 16:        
+                    g2inpAction = 1;               // G2 regular stop action
+                    break;
+                case 4:
+                    g2inpAction = 2;               // G2 fast-stop action
+                    break;
+            }
+            this.machine.driver.command({['di' + i + 'ac']:g2inpAction});
+        }
+    }
+
+    //  Define Envelope for G2
+    if ( 'xmin' in this._cache.envelope ) {this.machine.driver.command({'xtn':this._cache.envelope['xmin']})};
+    if ( 'xmax' in this._cache.envelope ) {this.machine.driver.command({'xtm':this._cache.envelope['xmax']})};
+    if ( 'ymin' in this._cache.envelope ) {this.machine.driver.command({'ytn':this._cache.envelope['ymin']})};
+    if ( 'ymax' in this._cache.envelope ) {this.machine.driver.command({'ytm':this._cache.envelope['ymax']})};
+    if ( 'zmin' in this._cache.envelope ) {this.machine.driver.command({'ztn':this._cache.envelope['zmin']})};
+    if ( 'zmax' in this._cache.envelope ) {this.machine.driver.command({'ztm':this._cache.envelope['zmax']})};
 
 	this.save(function(err, result) {
 		if(err) {

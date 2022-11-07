@@ -47,14 +47,36 @@ OpenSBPConfig.prototype.load = function(filename, callback) {
 	}.bind(this));
 };
 
-// Update the tree with the provided data.  Nothing special here.
+// Update the tree with the provided data. Deal with values shared by runtime with G2
+////## xy version of values is kludge for SBP legacy compatibility with dummy 'y' entry
+////## TODO: Perhaps modify to individual x and Y axes in opensbp ?
 OpenSBPConfig.prototype.update = function(data, callback, force) {
 	try {
 		extend(this._cache, data, force);
 	} catch (e) {
 		return callback(e);
 	}
-		this.save(function(err, result) {
+        // Update Jerk Values to current G2, no longer saved in g2.json
+        if ( 'xy_maxjerk' in this._cache ) {config.machine.machine.driver.command({'xjm':this._cache['xy_maxjerk']})};
+        if ( 'xy_maxjerk' in this._cache ) {config.machine.machine.driver.command({'yjm':this._cache['xy_maxjerk']})};
+        if ( 'z_maxjerk' in this._cache ) {config.machine.machine.driver.command({'zjm':this._cache['z_maxjerk']})};
+        if ( 'a_maxjerk' in this._cache ) {config.machine.machine.driver.command({'ajm':this._cache['a_maxjerk']})};
+        if ( 'b_maxjerk' in this._cache ) {config.machine.machine.driver.command({'bjm':this._cache['b_maxjerk']})};
+        if ( 'c_maxjerk' in this._cache ) {config.machine.machine.driver.command({'cjm':this._cache['c_maxjerk']})};
+
+        // Update Jog Speed to current G2, no longer saved in g2.json (this is called velocity max for G2)
+        if ( 'jogxy_speed' in this._cache ) {config.machine.machine.driver.command({'xvm':(this._cache['jogxy_speed']) * 60})};
+        if ( 'jogxy_speed' in this._cache ) {config.machine.machine.driver.command({'yvm':(this._cache['jogxy_speed']) * 60})};
+        if ( 'jogz_speed' in this._cache ) {config.machine.machine.driver.command({'zvm':(this._cache['jogz_speed']) * 60})};
+        if ( 'joga_speed' in this._cache ) {config.machine.machine.driver.command({'avm':(this._cache['joga_speed']) * 60})};
+        if ( 'jogb_speed' in this._cache ) {config.machine.machine.driver.command({'bvm':(this._cache['jogb_speed']) * 60})};
+        if ( 'jogc_speed' in this._cache ) {config.machine.machine.driver.command({'cvm':(this._cache['jogc_speed']) * 60})};
+
+        // Update Safe Z Pull Up as feed hold lift in G2, not done for A, B, or C axis ... should be if made linear
+        ////##  TODO: also implement turning safeZ completely off via G2 feed hold parameter (e.g. for 5 axis)
+        if ( 'safeZpullUp' in this._cache ) {config.machine.machine.driver.command({'zl':this._cache['safeZpullUp']})};
+
+        this.save(function(err, result) {
 		if(err) {
 			callback(err);
 		} else {

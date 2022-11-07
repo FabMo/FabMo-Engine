@@ -57,11 +57,13 @@ function SBPRuntime() {
     this.cmd_posc = undefined;
 
     this.jogspeed_xy = 0;
+    this.jogspeed_y = 0;
     this.jogspeed_z = 0;
     this.jogspeed_a = 0;
     this.jogspeed_b = 0;
     this.jogspeed_c = 0;
     this.maxjerk_xy = 100;
+    this.maxjerk_y = 100;
     this.maxjerk_z = 50;
     this.maxjerk_a = 20;
     this.maxjerk_b = 20;
@@ -109,6 +111,9 @@ SBPRuntime.prototype.loadCommands = function(callback) {
 SBPRuntime.prototype.connect = function(machine) {
     this.machine = machine;
     this.driver = machine.driver;
+    this.status_handler =  this._onG2Status.bind(this);
+    this.driver.on('status',this.status_handler);
+    this.status_report = {};
     this.machine.status.line=null;
     this.machine.status.nb_lines=null;
     this._update();
@@ -126,7 +131,7 @@ SBPRuntime.prototype.connect = function(machine) {
     this.cmd_StartC = this.posc;
 
     this.connected = true;
-    this.ok_to_disconnect = false;          ////## removing was temp fix for cannot-disconnect
+    this.ok_to_disconnect = false;          ////## remove was temp fix for cannot-disconnect ?
                                             ////## ... in any case does not seem right place; should be state change
     log.info('Connected OpenSBP runtime.');
 };
@@ -140,6 +145,7 @@ SBPRuntime.prototype.disconnect = function() {
     }
 
     if(this.ok_to_disconnect) {
+        this.driver.removeListener('status', this.status_handler);
         this.machine = null;
         this.driver = null;
         this.connected = false;
@@ -291,9 +297,8 @@ SBPRuntime.prototype.runString = function(s) {
         // Initialize the runtime state
         this.init();
 
-        // Copy the general config and driver settings into runtime memory
+        // Copy the general config settings into runtime memory
         this._loadConfig();
-        this._loadDriverSettings();
 
         // Build a map of labels to line numbers
         // This step unfortunately requires the whole file
@@ -361,10 +366,8 @@ SBPRuntime.prototype.runStream = function(text_stream) {
                     // Initialize the runtime state
                     this.init();
 
-                    // Copy the general config and driver settings into runtime memory
+                    // Copy the general config settings into runtime memory
                     this._loadConfig();
-                    this._loadDriverSettings();
-
 
                     log.tick();
                     // Build a map of labels to line numbers
@@ -423,7 +426,20 @@ SBPRuntime.prototype._loadConfig = function() {
         'movez_speed',
         'movea_speed',
         'moveb_speed',
-        'movec_speed'
+        'movec_speed',
+        'jogxy_speed',
+        'jogy_speed',
+        'jogz_speed',
+        'joga_speed',
+        'jogb_speed',
+        'jogc_speed',
+        'xy_maxjerk',
+        'y_maxjerk',
+        'z_maxjerk',
+        'a_maxjerk',
+        'b_maxjerk',
+        'c_maxjerk',
+        'safeZpullUp'
     ]);
     this.units = settings.units
     this.movespeed_xy = settings.movexy_speed;
@@ -431,25 +447,19 @@ SBPRuntime.prototype._loadConfig = function() {
     this.movespeed_a = settings.movea_speed;
     this.movespeed_b = settings.moveb_speed;
     this.movespeed_c = settings.movec_speed;
-}
-
-// Internal function to copy driver settings to local fields of this runtime
-// We consult/update local fields rather than manipulating the configuration directly
-// This prevents changes made to critical settings in files from being permanent (unless we want them to be)
-SBPRuntime.prototype._loadDriverSettings = function() {
-    var settings = config.driver.getMany([
-        'xvm','yvm','zvm','avm','bvm','cvm',
-        'xjm','yjm','zjm','ajm','bjm','cjm' ]);
-    this.jogspeed_xy = settings.xvm/60;
-    this.jogspeed_z = settings.zvm/60;
-    this.jogspeed_a = settings.avm/60;
-    this.jogspeed_b = settings.bvm/60;
-    this.jogspeed_c = settings.cvm/60;
-    this.maxjerk_xy = settings.xjm;
-    this.maxjerk_z = settings.zjm;
-    this.maxjerk_a = settings.ajm;
-    this.maxjerk_b = settings.bjm;
-    this.maxjerk_c = settings.cjm;
+    this.jogspeed_xy = settings.jogxy_speed;
+    this.jogspeed_y = settings.jogxy_speed;
+    this.jogspeed_z = settings.jogz_speed;
+    this.jogspeed_a = settings.joga_speed;
+    this.jogspeed_b = settings.jogb_speed;
+    this.jogspeed_c = settings.jogc_speed;
+    this.maxjerk_xy = settings.xy_maxjerk;
+    this.maxjerk_y = settings.xy_maxjerk;  
+    this.maxjerk_z = settings.z_maxjerk;
+    this.maxjerk_a = settings.a_maxjerk;
+    this.maxjerk_b = settings.b_maxjerk;
+    this.maxjerk_c = settings.c_maxjerk;
+    this.safeZpullUp = settings.safeZpullUp;
 }
 
 // Save runtime configuration settings to the opensbp settings file
@@ -461,11 +471,19 @@ SBPRuntime.prototype._saveConfig = async function(callback) {
     sbp_values.movea_speed = this.movespeed_a;
     sbp_values.moveb_speed = this.movespeed_b;
     sbp_values.movec_speed = this.movespeed_c;
-    sbp_values.jogxy_speed = this.jogspeed_xy;
+    sbp_values.jogxy_speed = this.jogspeed_xy;  // nb special case
+    sbp_values.jogy_speed = this.jogspeed_xy;
     sbp_values.jogz_speed = this.jogspeed_z;
     sbp_values.joga_speed = this.jogspeed_a;
     sbp_values.jogb_speed = this.jogspeed_b;
     sbp_values.jogc_speed = this.jogspeed_c;
+    sbp_values.xy_maxjerk = this.maxjerk_xy;    // nb special case
+    sbp_values.y_maxjerk = this.maxjerk_xy;
+    sbp_values.z_maxjerk = this.maxjerk_z;
+    sbp_values.a_maxjerk = this.maxjerk_a;
+    sbp_values.b_maxjerk = this.maxjerk_b;
+    sbp_values.c_maxjerk = this.maxjerk_c;
+    sbp_values.safeZpullUp = this.safeZpullUp;
     sbp_values.units = this.units;
     try {
         let values = await config.opensbp.setManyWrapper(sbp_values)
@@ -479,22 +497,6 @@ SBPRuntime.prototype._saveConfig = async function(callback) {
 //   callback - Called when config has been written
 SBPRuntime.prototype._saveDriverSettings = async function(callback) {
     var g2_values = {};
-
-    // Permanently set jog speeds
-    g2_values.xvm = (60 * this.jogspeed_xy);
-    g2_values.yvm = (60 * this.jogspeed_xy);
-    g2_values.zvm = (60 * this.jogspeed_z);
-    g2_values.avm = (60 * this.jogspeed_a);
-    g2_values.bvm = (60 * this.jogspeed_b);
-    g2_values.cvm = (60 * this.jogspeed_c);
-
-    // Permanently set ramp max (jerk)
-    g2_values.xjm = this.maxjerk_xy;
-    g2_values.yjm = this.maxjerk_xy;
-    g2_values.zjm = this.maxjerk_z;
-    g2_values.ajm = this.maxjerk_a;
-    g2_values.bjm = this.maxjerk_b;
-    g2_values.cjm = this.maxjerk_c;
     try {
         let values = await config.driver.setManyWrapper(g2_values)
         callback();
@@ -577,7 +579,10 @@ SBPRuntime.prototype._onG2Status = function(status) {
             this.machine.status[key] = status[key];
         }
     }
-
+    // Update the machine copy of g2 status variables
+	for (key in status) {
+		this.status_report[key] = status[key];
+	}
     // TODO - this seems not to be used.
     //        It was probably an attempt to smooth over the fact that probing operations are *always* in metric, regardless of machine units
     //        That would actually be easy to clean up, and is probably worth pursuing - customers have been confused by the behavior.
@@ -826,7 +831,6 @@ SBPRuntime.prototype._run = function() {
         if(this.driver) {
             this.driver.runStream(this.stream)
             .on('stat', onStat.bind(this))
-            .on('status', this._onG2Status.bind(this))
             .then(function() {
                 // This ensures we run _end on driver stream end
                 this.file_stack = []
@@ -1509,21 +1513,25 @@ SBPRuntime.prototype._setUnits = function(units) {
     units = u.unitType(units);
     if(units === this.units) { return; }
     var convert = units === 'in' ? u.mm2in : u.in2mm;
-    this.movespeed_xy = convert(this.movespeed_xy);
-    this.movespeed_z = convert(this.movespeed_z);
-    this.movespeed_a = convert(this.movespeed_a);
-    this.movespeed_b = convert(this.movespeed_b);
-    this.movespeed_c = convert(this.movespeed_c);
-    this.jogspeed_xy = convert(this.jogspeed_xy);
-    this.jogspeed_z = convert(this.jogspeed_z);
-    this.jogspeed_a = convert(this.jogspeed_a);
-    this.jogspeed_b = convert(this.jogspeed_b);
-    this.jogspeed_c = convert(this.jogspeed_c);
-    this.maxjerk_xy = convert(this.jogspeed_xy);
-    this.maxjerk_z = convert(this.jogspeed_z);
-    this.maxjerk_a = convert(this.jogspeed_a);
-    this.maxjerk_b = convert(this.jogspeed_b);
-    this.maxjerk_c = convert(this.jogspeed_c);
+    var convertR = units === 'in' ? u.mm2inR : u.in2mmR;  // Round to keep display of speeds clean
+    this.movespeed_xy = convertR(this.movespeed_xy);
+    this.movespeed_z = convertR(this.movespeed_z);
+    this.movespeed_a = convertR(this.movespeed_a);
+    this.movespeed_b = convertR(this.movespeed_b);
+    this.movespeed_c = convertR(this.movespeed_c);
+    this.jogspeed_xy = convertR(this.jogspeed_xy);
+    this.jogspeed_y = convertR(this.jogspeed_xy);
+    this.jogspeed_z = convertR(this.jogspeed_z);
+    this.jogspeed_a = convertR(this.jogspeed_a);
+    this.jogspeed_b = convertR(this.jogspeed_b);
+    this.jogspeed_c = convertR(this.jogspeed_c);
+    this.maxjerk_xy = convertR(this.maxjerk_xy);
+    this.maxjerk_y = convertR(this.maxjerk_xy);
+    this.maxjerk_z = convertR(this.maxjerk_z);
+    this.maxjerk_a = convertR(this.maxjerk_a);
+    this.maxjerk_b = convertR(this.maxjerk_b);
+    this.maxjerk_c = convertR(this.maxjerk_c);
+    this.safeZpullUp = convertR(this.safeZpullUp);
     this.cmd_posx = convert(this.cmd_posx);
     this.cmd_posy = convert(this.cmd_posy);
     this.cmd_posz = convert(this.cmd_posz);
@@ -1883,10 +1891,10 @@ SBPRuntime.prototype.emit_move = function(code, pt) {
         }
     }.bind(this));
 
-    // Where to save the start point of an arc that isn't transformed??????????
+    ////## Should probably depend on transforms being active; evaluate ???
     var tPt = this.transformation(pt);
-    console.log('call point transform, ')
-    console.log(tPt);
+    //console.log('call point transform, ')
+    //console.log(tPt);
 
     if(this.file_stack.length > 0) {
         var n = this.file_stack[0].pc;

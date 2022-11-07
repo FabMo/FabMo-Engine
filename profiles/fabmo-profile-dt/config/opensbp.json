@@ -1,6 +1,6 @@
 {
     "units":"in",
-    "movexy_speed": 2,
+    "movexy_speed": 3,
     "movez_speed": 1,
     "movea_speed": 1,
     "moveb_speed": 1,
@@ -12,8 +12,8 @@
     "jogc_speed" : 250,
     "cutterDia": 0.25,
     "pocketOverlap": 50,
-    "safeZpullUp": 0.25,
-    "safeApullUp": 0.25,
+    "safeZpullUp": 0.5,
+    "safeApullUp": 0.5,
     "variables" : {
         "example_variable": 999
     },

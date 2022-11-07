@@ -100,7 +100,6 @@ Config.prototype.update = function(data, callback) {
 //       data - Object containing the keys/values to update
 //   callback - Called with updated values on success or with error if error
 Config.prototype.setMany = function(data, callback) {
-	log.debug("==> call Set Many with:  ", data, callback)  ////##
 	this.update(data, function(err, result) {
 		if(callback && typeof callback === 'function') {
 			callback(err, result);

@@ -37,6 +37,8 @@ var STAT_PANIC = 13;
 // Should take no longer than CMD_TIMEOUT to do a get or a set operation
 var CMD_TIMEOUT = 100000;
 var EXPECT_TIMEOUT = 300000;
+var MAX_INPUTS = 12;                                                // Need these in a common storeage
+var MAX_OUTPUTS = 12;
 
 var _promiseCounter = 1;
 var resumePending = false;
@@ -495,6 +497,16 @@ G2.prototype.handleStatusReport = function(response) {
 			line = response.sr.line;
 			lines_left = this.lines_sent - line;
 		}
+
+        // check for inputs and reset to bitwise value for DRO display in Dashboard
+        for (let i=1; i<MAX_INPUTS+1; i++) {                                     
+            if ( ('in' + i) in response.sr ) {
+            let ibval = config.machine.get('di' + i + '_def');
+                if ( 0 < ibval &&  ibval < 17 ) { 
+                    this.status['in' + i] |= ibval;  // Set input value to cur value + bitwise def; for small DRO display
+                }
+            }
+        }
 
 		// stat is the system state (detailed in the list above) 
 		if('stat' in response.sr) {
@@ -1055,20 +1067,18 @@ G2.prototype.sendMore = function() {
 	}
 };
 
-// Set the position of the motion system using the G28.3 code
+// Set the position of the motion system using the G28.3 code (on start)
 // position - An object mapping axes to position values. Axes that are not included will not be updated.
 G2.prototype.setMachinePosition = function(position, callback) {
 ////## until uvw enabled	var axes = ['x','y','z','a','b','c','u','v','w']
 	var axes = ['x','y','z','a','b','c']
 	var gcodes = new stream.Readable();
-	gcodes.push('G21\n');
+    let mult = (this.status.unit === 'mm' ? 1 : 1/25.4)  // Convert saved position from mm to current for restore
 	axes.forEach(function(axis) {
 		if(position[axis] != undefined) {
-			gcodes.push('G28.3 ' + axis + position[axis].toFixed(5) + "\n");
+			gcodes.push('G28.3 ' + axis + (position[axis] * mult).toFixed(5) + "\n");
 		}
 	});
-
-	gcodes.push(this.status.unit === 'in' ? 'G20\n' : 'G21\n');
 	gcodes.push(null);
 	//TODO: Set manualPrime false once uvw enabled
 	this.runStream(gcodes, true).then(function() {callback && callback()})

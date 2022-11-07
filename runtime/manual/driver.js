@@ -90,11 +90,13 @@ ManualDriver.prototype.enter = function() {
 		    this.stream.write('M100.1 ({zjm:'+jerkZ+'})\n');	
 			// Turn off z-lift, set incremental mode, and send a 
 			// "dummy" move to prod the machine into issuing a status report
-			this.stream.write('M100.1 ({zl:0})\nM0\nG91\n G0 X0 Y0 Z0\n');	
+			this.stream.write('M0\nG91\n G0 X0 Y0 Z0\n');	
+//			this.stream.write('M100.1 ({zl:0})\nM0\nG91\n G0 X0 Y0 Z0\n'); ////## no longer need to turn off z-lift? 
 			this.driver.prime();		
 		    break;
 		case 'raw':
-			this.stream.write('M100.1 ({zl:0})\nM0\n');
+            this.stream.write('M0\n')
+//			this.stream.write('M100.1 ({zl:0})\nM0\n');                    ////## no longer need to turn off z-lift?
 			this.driver.prime();		
 		    break;
 		default:
@@ -129,9 +131,12 @@ ManualDriver.prototype.exit = function() {
 				log.warn('Unknown manual drive mode on exit: ' + this.mode);
 				break;
 		}
-        config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
-            this._done();
-        }.bind(this));	
+        config.driver.restoreSome(['xjm','yjm','zjm'], function() {   ////##
+//      config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
+        ////## Hopefully we no longer need to manage zl in here in manual as the lift now comes from safeZ and 
+        //       we don't have a parallel way to simply 'restoreSome' values in opensbp.json config.	
+                this._done();
+        }.bind(this));
         this.stream.write('G61\n');     // don't leave in exact stop mode from nudge
         if(this.fromFile) {
             this.stream.write('M0\n');  // avoid triggering stat:4 when in file

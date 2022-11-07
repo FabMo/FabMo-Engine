@@ -14,8 +14,8 @@
  * 
  * This module also sort of "meta manages" the motion systems state.  An example
  * of this is that G2 has digital inputs defined, and can specify their input mode and basic function, but the 
- * machine model might layer some additional function on top of them, such as their higher-level application
- * - perhaps acting as a door interlock, a tool release button, etc.
+ * machine model layers some additional function on top of them, such as their higher-level application
+ * - perhaps acting as a door interlock, a tool stop button, etc.
  *
  * The machine model is a singleton.  There is only ever one of them, which is instantiated by the connect() method.
  */
@@ -125,7 +125,7 @@ function Machine(control_path, callback) {
 		out12 :0,
 		job : null,
 		info : null,
-		unit : 'mm',
+		unit : null,
 		line : null,
 		nb_lines : null,
 		auth : false,
@@ -141,7 +141,7 @@ function Machine(control_path, callback) {
 	this.fireButtonPressed =0; 
 	this.info_id = 0;
 	this.action = null;
-	this.interlock_action = null;
+	this.interlock_action = null;  // Continuing to use this as interlock/lock flag after allowing mult interlock defs
 	this.pauseTimer = false;
 	
 	// Instantiate and connect to the G2 driver using the port specified in the constructor
@@ -225,7 +225,6 @@ function Machine(control_path, callback) {
 		var auth_input = 'in' + config.machine.get('auth_input');
 		var quit_input = 'in' + config.machine.get('quit_input');
 		var ap_input = 'in' + config.machine.get('ap_input');
-		var interlock_input = 'in' + config.machine.get('interlock_input');
 		
 		// If you press a button to pause, you're not allowed to resume or quit for at least a second
 		// (To eliminate the chance of a double-tap doing something you didn't intend.)
@@ -266,7 +265,7 @@ util.inherits(Machine, events.EventEmitter);
 Machine.prototype.handleAPCollapseButton = function(stat, ap_input) {
 
 	// If the button has been pressed
-	if(stat[ap_input]) {
+	if ( (stat[ap_input] & 1) ) {
 		var ap_collapse_time = config.machine.get('ap_time');
 		// For the first time
 		if(!this.APCollapseTimer) {
@@ -297,7 +296,7 @@ Machine.prototype.handleAPCollapseButton = function(stat, ap_input) {
 Machine.prototype.handleOkayCancelDual = function(stat, quit_input) {
 
 	//this may be changed to user select wether to continue or to cancel
-	if(!stat[quit_input] && this.status.state === 'paused' && canQuit && this.quit_pressed) {
+	if ( !(stat[quit_input] & 1) && this.status.state === 'paused' && canQuit && this.quit_pressed ) {
 		log.info("Cancel hit!")
 		this.quit(function(err, msg){
 			if(err){
@@ -315,8 +314,17 @@ Machine.prototype.handleOkayCancelDual = function(stat, quit_input) {
 				log.info(msg);
 			}
 		});
-	}
-	this.quit_pressed = stat[quit_input];
+    } else if(this.status.state === 'lock' && this.quit_pressed) {
+        log.info("Okay hit, resuming from lock")
+        this.resume(function(err, msg){
+            if(err){
+                log.error(err);
+            } else {
+                log.info(msg);
+            }
+        });
+    }
+    this.quit_pressed = (stat[quit_input] & 1);
 }
 
 // Given the status report and specified input, process the "fire" behavior
@@ -324,8 +332,8 @@ Machine.prototype.handleOkayCancelDual = function(stat, quit_input) {
 // go into an authorized state.  Pressing "fire" while armed either executes the action, or
 // puts the system in an authorized state for the authorization period.
 Machine.prototype.handleFireButton = function(stat, auth_input) {
-	if(this.fireButtonPressed && !stat[auth_input] && this.status.state === 'armed') {
-		log.info("Fire button hit!")
+	if ( this.fireButtonPressed && !(stat[auth_input] & 1) && this.status.state === 'armed' ) {
+		log.info("FIRE button hit!")
 		this.fire();
 	}
 	this.fireButtonPressed = stat[auth_input]
@@ -337,7 +345,7 @@ Machine.prototype.handleFireButton = function(stat, auth_input) {
 // having to return to the dashboard just to confirm an action at the tool.
 Machine.prototype.handleOkayButton = function(stat, auth_input){
 	
-	if(stat[auth_input]){
+	if( (stat[auth_input] & 1) ){
 		
 		if (clickDisabled){
 			log.info("Can't hit okay now");
@@ -364,14 +372,23 @@ Machine.prototype.handleOkayButton = function(stat, auth_input){
 					log.info(msg);
 				}
 			});
-		}
+        } else if(this.status.state === 'lock') {
+            log.info("Okay hit, resuming from lock")
+            this.resume(function(err, msg){
+                if(err){
+                    log.error(err);
+                } else {
+                    log.info(msg);
+                }
+            });
+        }
 
 	}
 }
 
 Machine.prototype.handleCancelButton = function(stat, quit_input){
 
-	if(stat[quit_input] && this.status.state === 'paused' && canQuit) {
+	if ( (stat[quit_input] & 1) && this.status.state === 'paused' && canQuit ) {
 		log.info("Cancel hit!")
 		this.quit(function(err, msg){
 			if(err){
@@ -418,7 +435,7 @@ Machine.prototype.restoreDriverState = function(callback) {
 // is placed in the result_obj and the next action is set to 'throw'.
 // Note parameters that are simply read and modified as part of the decision making are suffixed with "_in"
 //      parameters that are returned with new values to be used by the caller are suffixed with "_io"
-function decideNextAction(require_auth_in, current_state_in, driver_status_interlock_in, interlock_required_io, interlock_action_io, current_action_io, bypass_in){
+function decideNextAction(require_auth_in, current_state_in, driver_status_interlock_in, interlock_required_io, interlock_action_io, driver_status_inFeedHold, current_action_io, bypass_in){
 	let result_arm_obj = {'interlock_required':       null,
 						  'interlock_action':         null,
 						  'current_action':           null,
@@ -428,19 +445,24 @@ function decideNextAction(require_auth_in, current_state_in, driver_status_inter
 		case 'idle':
 			result_arm_obj['interlock_action'] = current_action_io;
 			break;
-		case 'interlock':
-			require_auth_in = false;
-			result_arm_obj['current_action'] = interlock_action_io || current_action_io;
-			break;
-		case 'manual':
+		case 'lock':
+        case 'interlock':
+            if ( driver_status_inFeedHold === true ) {    // handle lock/interlock after software pause; in FeedHold
+                result_arm_obj['interlock_action'] = current_action_io
+            } else {
+                result_arm_obj['current_action'] = interlock_action_io || current_action_io
+            }
+            break;
+        case 'manual':
 			if(current_action_io == null || (current_action_io.type == 'runtimeCode' && current_action_io.payload.name == 'manual')) {
 				break;
 			}
-			result_arm_obj['error_thrown'] = new Error('Cannot arm machine for ' + current_action_io.type + 'from the manual state');
+			result_arm_obj['error_thrown'] = new Error('Cannot arm machine for ' + current_action_io.type + ' from the manual state');
 			break;
-		case 'paused':
+        case 'paused':
 		case 'stopped':
-			if(current_action_io.type != 'resume') {
+            if ( current_action_io.type === 'resume' && driver_status_inFeedHold === false ) {require_auth_in = false};    // Rules out Auth request on Timed Pause; no FeedHold
+            if(current_action_io.type != 'resume') {
 				result_arm_obj['error_thrown'] = new Error('Cannot arm the machine for ' + current_action_io.type + ' when ' + current_state_in);
 			}
 			break;
@@ -458,8 +480,8 @@ function decideNextAction(require_auth_in, current_state_in, driver_status_inter
 		result_arm_obj['next_action'] = 'throw';
 		return result_arm_obj;
 	}
-	if(result_arm_obj['current_action'] && interlock_required_io && driver_status_interlock_in){
-		result_arm_obj['next_action'] = 'abort_due_to_interlock';
+    if(interlock_required_io && driver_status_interlock_in){
+            result_arm_obj['next_action'] = 'abort_due_to_interlock';
 		return result_arm_obj;
 	}
 
@@ -508,19 +530,48 @@ function recordPriorStateAndSetTimer(thisMachine, armTimeout, status){
 	thisMachine.preArmedState = status;
 }
 
+// Before beginning or resuming any runtime action also check for "locking/interlocking" inputs that may be ACTIVE
+// Locking/Interlocking Inputs are inputs defined as Stop(2), FastStop(4), or Interlock(8)  {bitwise comparison used to set display}
+// These inputs are fucntionally similar in producing a feedhold in G2 when activated, BUT have different user displays -- so are distinct
+// Input definitions are stored in machine.json and = "machine: di#_def" in the configuration tree
+// ... but these input defs also need to be passed to G2 as current di#ac settings for feedhold 
+// TABLE:
+//   -bitdef  --action--  --locking?--     --message   --G2 di#ac settings (digital input actions) 
+//      0  -  none            -             -               0
+//      2  -  Stop           YES          Stop ON           1   [feedhold]
+//      4  -  FastStop       YES          Stop ON           2   [feedhold] *not implemented in G2 yet ???
+//      8  -  Interlock      YES        Interlock ON        1   [feedhold]
+//      16 -  Limit           NO         Limit Hit          1   [feedhold] 
+//      -  -  ImmediateStop   NO            -               3   [feedhold] *not implemented in G2 yet; to be used for OpenSBP "Interrupt"
+function checkForInterlocks (thisMachine) {
+    let getInterlockState = 0;
+    for (let pin = 1; pin < 13; pin++) {
+        let checkInput = config.machine.get('di' + pin + '_def');
+        if ( 0 < checkInput && checkInput < 17 ) {
+            if ( thisMachine.driver.status['in' + pin] & 1 ) {                          // IF "locking" input pin is active, Set to INTERLOCKED
+                if ( checkInput > getInterlockState ) {getInterlockState = checkInput}  // ... use highest lock priority if multiples
+            }
+        };
+    };
+    return getInterlockState;    
+};
+
+
 // "Arm" the machine with the specified action. The armed state is abandoned after the timeout expires.
+//  The "Interlocked" or "locked" status of an input is checked at start of this process 
 //   action - The action to execute when fire() is called.  Can be null.
 //            If null, the action will be to "authorize" the tool for subsequent actions for the authorization
 //            period which is specified in the settings.
 //   timeout - The number of seconds that the system should remain armed
 Machine.prototype.arm = function(action, timeout) {
-	// It's a real finesse job to get authorize to play nice with interlock, etc.
+	// It's a real finesse job to get authorize to play nice with interlock, etc. ...auth:R.Sturmer
 	var requireAuth = config.machine.get('auth_required');
-	var interlockRequired = config.machine.get('interlock_required');
-	var interlockInput = 'in' + config.machine.get('interlock_input');
-	var nextAction = null;
 
-	let arm_obj = decideNextAction(requireAuth, this.status.state, this.driver.status[interlockInput], interlockRequired, this.interlock_action, action, interlockBypass);
+    var interlockRequired = true;                 // ... hard coded here; may need to manipulate at some point (no longer in configs)
+    let isInterlocked = checkForInterlocks(this);
+
+    var nextAction = null;
+    let arm_obj = decideNextAction(requireAuth, this.status.state, isInterlocked, interlockRequired, this.interlock_action, this.status.inFeedHold, action, interlockBypass);
 	// Implement side-effects that the result obj has returned so state is set correctly:
 		if(arm_obj['interlock_required'])         {interlockRequired     = arm_obj['interlock_required']}
 		if(arm_obj['interlock_action'])           {this.interlock_action = arm_obj['interlock_action']};
@@ -528,18 +579,22 @@ Machine.prototype.arm = function(action, timeout) {
 		if(arm_obj['next_action'])				  {nextAction            = arm_obj['next_action']};
 
 	this.action = action;
-	log.info('Arming the machine' + (action ? (' for ' + action.type) : '(No action)'));
+	log.info('ARMING the machine' + (action ? (' for ' + action.type) : '(No action)'));
 
 	switch(nextAction){
 		case 'throw':
 			throw arm_obj['error_thrown'];
 			return;
 		case 'abort_due_to_interlock':
-			this.setState(this, 'interlock');
+            if (isInterlocked > 2) {
+                this.setState(this, 'interlock');
+            } else {
+                this.setState(this, 'lock');
+            }
 			return;
 		case 'fire':
-			log.info('Firing automatically since authorization is disabled.');
-			recordPriorStateAndSetTimer(this, timeout, this.status.state);
+			log.info('FIRING automatically since authorization is disabled.');
+            recordPriorStateAndSetTimer(this, timeout, this.status.state);
 			this.fire(true);
 			return;
 		case 'set_state_and_emit':
@@ -592,7 +647,7 @@ Machine.prototype.fire = function(force) {
 	//        many actions take less than the authorization timeout, though, so in those cases, this causes
 	//        incessant authorization prompts.
 	this.deauthorize();
-	
+
 	var action = this.action;
 	this.action = null;
 
@@ -789,7 +844,6 @@ Machine.prototype._runFile = function(filename) {
 // Set the active runtime
 // If the selected runtime is different than the current one,
 // disconnect the current one, and connect the new one.
-////##
 Machine.prototype.setRuntime = function(runtime, callback) {
 	runtime = runtime || this.idle_runtime;
 	try {
@@ -905,14 +959,18 @@ Machine.prototype.setState = function(source, newstate, stateinfo) {
 						    config.instance.update({'position' : mpo});
 					    }
 				    });
-				    // Check the interlock and switch to the interlock state if it's engaged
-				    var interlockRequired = config.machine.get('interlock_required');
-					var interlockInput = 'in' + config.machine.get('interlock_input');
-
-				    if(interlockRequired && this.driver.status[interlockInput] && !interlockBypass) {
+				    // Check for interlocks and switch to the interlock state if it's engaged
+                    var interlockRequired = true;                 // ... hard coded here; may need to manipulate at some point (no longer in configs)
+                    let isInterlocked = checkForInterlocks(this);
+                
+				    if(interlockRequired && isInterlocked && !interlockBypass) {
 						this.interlock_action = null;
-						this.setState(this, 'interlock')
-						return
+                        if ( isInterlocked > 2 ) {
+                            this.setState(this, 'interlock')
+                        } else {
+                 			this.setState(this, 'lock');
+                        }
+        				return;                                  
 					}
                 }
 				break;
@@ -996,7 +1054,12 @@ Machine.prototype.quit = function(callback) {
 			this.setState(this, 'idle');
 			break;
 		
-		case "armed":
+        case "lock":
+            this.action = null;
+            this.setState(this, 'idle');
+            break;
+            
+        case "armed":
 			this.action = null;
 			this.setState(this, 'idle');
 			break;
@@ -1149,14 +1212,20 @@ Machine.prototype._executeRuntimeCode = function(runtimeName, code, callback) {
 }
 
 Machine.prototype._resume = function(input) {
-	switch(this.status.state) {
-		case 'interlock':
-			if(this.interlock_action) {
-				this.arm(this.interlock_action);
-				this.interlock_action = null;
-				return;
-			}
-		break;
+    switch(this.status.state) {
+	 	case 'interlock':
+            if( this.interlock_action && this.interlock_action.type != 'resume') {
+                this.arm(this.interlock_action);
+	 			this.interlock_action = null;
+	 			return;
+	 		}
+	 	case 'lock':
+	 		if( this.interlock_action && this.interlock_action.type != 'resume') {
+	 			this.arm(this.interlock_action);
+	 			this.interlock_action = null;
+	 			return;
+	 		}
+         break;
 	}
 	if(this.current_runtime) {
 		this.current_runtime.resume(input)
