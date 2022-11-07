@@ -111,6 +111,9 @@ SBPRuntime.prototype.loadCommands = function(callback) {
 SBPRuntime.prototype.connect = function(machine) {
     this.machine = machine;
     this.driver = machine.driver;
+    this.status_handler =  this._onG2Status.bind(this);
+    this.driver.on('status',this.status_handler);
+    this.status_report = {};
     this.machine.status.line=null;
     this.machine.status.nb_lines=null;
     this._update();
@@ -575,7 +578,10 @@ SBPRuntime.prototype._onG2Status = function(status) {
             this.machine.status[key] = status[key];
         }
     }
-
+    // Update the machine copy of g2 status variables
+	for (key in status) {
+		this.status_report[key] = status[key];
+	}
     // TODO - this seems not to be used.
     //        It was probably an attempt to smooth over the fact that probing operations are *always* in metric, regardless of machine units
     //        That would actually be easy to clean up, and is probably worth pursuing - customers have been confused by the behavior.
@@ -824,7 +830,6 @@ SBPRuntime.prototype._run = function() {
         if(this.driver) {
             this.driver.runStream(this.stream)
             .on('stat', onStat.bind(this))
-            .on('status', this._onG2Status.bind(this))
             .then(function() {
                 // This ensures we run _end on driver stream end
                 this.file_stack = []
