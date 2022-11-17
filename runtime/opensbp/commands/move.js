@@ -71,7 +71,7 @@ exports.MC = function(args) {
 // Move 2 axes (XY). This is a modal command, any axis location that is left out
 //   of the command will default to it's current position and not move
 exports.M2 = function(args) {
-	log.debug("  X param = " + args[0] + "  Y param = " + args[1]);
+////##	log.debug("  X param = " + args[0] + "  Y param = " + args[1]);
     var params = process_move.bind(this)(args);
     if ( this.cmd_result < 2 ){
 		this.emit_move('G1',params);

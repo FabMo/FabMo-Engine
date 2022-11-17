@@ -2071,8 +2071,8 @@ input[type='range']:focus {
     transform: translate(-50%, -50%);
     padding: 1rem 2rem 2rem 2rem;
     z-index: 3001;
-    background-color: #333333;
-    border-radius: 5px;
+    background-color: #fff38d;
+    border-radius: 25px;
     -webkit-font-smoothing: antialiased;
     overflow: hidden;
 }
