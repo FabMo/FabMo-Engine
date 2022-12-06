@@ -2034,7 +2034,7 @@ SBPRuntime.prototype.pause = function() {
         this.pendingFeedhold = true;
     } else {
         this.machine.driver.feedHold();
-        this.machine.status.inFeedHold = true;
+        //this.machine.status.inFeedHold = true;
     }
 }
 
@@ -2049,6 +2049,11 @@ SBPRuntime.prototype.quit = function() {
 // Resume a program from the paused state
 //   TODO - make some indication that this action was successful (resume is not always allowed, and sometimes it fails)
 SBPRuntime.prototype.resume = function(input=false) {
+    if(this.machine.status.state != 'lock' && this.machine.status.state != 'interlock' && this.machine.status.inFeedHold == true){
+        this.machine.status.inFeedHold = false;
+        this.machine.setState(this, 'paused', {'message': "A stop input was triggered during SBP pause."});
+        return;
+    }
     if(this.resumeAllowed) {
         if(this.paused) {
             if (input) {
@@ -2058,12 +2063,14 @@ SBPRuntime.prototype.resume = function(input=false) {
                     } else {
                         this.paused = false;
                         this._executeNext();
+                        this.driver.resume();
                     }
                 }).bind(this);
                 this._assign(input.var, input.val, callback);
             } else {
                 this.paused = false;
                 this._executeNext();
+                this.driver.resume();
             }
         } else {
             this.driver.resume();
