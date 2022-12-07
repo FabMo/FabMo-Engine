@@ -794,8 +794,14 @@ SBPRuntime.prototype._run = function() {
                 }
                 break;
             case this.driver.STAT_HOLDING:
-                // TODO: Possibly set this.paused = true to catch pause state from mechanical pause
-                this.machine.setState(this, 'paused');
+                if(this.machine.pauseTimer){
+                    clearTimeout(this.machine.pauseTimer);
+                    this.machine.pauseTimer = false;
+                    this.machine.setState(this, 'paused', {'message': "Paused by user."});
+                }
+                else{
+                    this.machine.setState(this, 'paused');
+                }
                 break;
             case this.driver.STAT_PROBE:
             case this.driver.STAT_RUNNING:
@@ -2034,7 +2040,7 @@ SBPRuntime.prototype.pause = function() {
         this.pendingFeedhold = true;
     } else {
         this.machine.driver.feedHold();
-        //this.machine.status.inFeedHold = true;
+        this.machine.status.inFeedHold = true;
     }
 }
 
@@ -2049,11 +2055,6 @@ SBPRuntime.prototype.quit = function() {
 // Resume a program from the paused state
 //   TODO - make some indication that this action was successful (resume is not always allowed, and sometimes it fails)
 SBPRuntime.prototype.resume = function(input=false) {
-    if(this.machine.status.state != 'lock' && this.machine.status.state != 'interlock' && this.machine.status.inFeedHold == true){
-        this.machine.status.inFeedHold = false;
-        this.machine.setState(this, 'paused', {'message': "A stop input was triggered during SBP pause."});
-        return;
-    }
     if(this.resumeAllowed) {
         if(this.paused) {
             if (input) {
