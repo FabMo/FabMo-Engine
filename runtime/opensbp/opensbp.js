@@ -794,8 +794,14 @@ SBPRuntime.prototype._run = function() {
                 }
                 break;
             case this.driver.STAT_HOLDING:
-                // TODO: Possibly set this.paused = true to catch pause state from mechanical pause
-                this.machine.setState(this, 'paused');
+                if(this.machine.pauseTimer){
+                    clearTimeout(this.machine.pauseTimer);
+                    this.machine.pauseTimer = false;
+                    this.machine.setState(this, 'paused', {'message': "Paused by user."});
+                }
+                else{
+                    this.machine.setState(this, 'paused');
+                }
                 break;
             case this.driver.STAT_PROBE:
             case this.driver.STAT_RUNNING:
@@ -2058,12 +2064,14 @@ SBPRuntime.prototype.resume = function(input=false) {
                     } else {
                         this.paused = false;
                         this._executeNext();
+                        this.driver.resume();
                     }
                 }).bind(this);
                 this._assign(input.var, input.val, callback);
             } else {
                 this.paused = false;
                 this._executeNext();
+                this.driver.resume();
             }
         } else {
             this.driver.resume();
