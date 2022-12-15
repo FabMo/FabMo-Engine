@@ -24,7 +24,6 @@ var g2 = require("./g2");
 var util = require("util");
 var events = require("events");
 var PLATFORM = require("process").platform;
-var assert = require("assert");
 var fs = require("fs");
 var path = require("path");
 var db = require("./db");
@@ -37,6 +36,7 @@ var canQuit = false;
 var canResume = false;
 var clickDisabled = false;
 var interlockBypass = false;
+var runtime = null;
 
 ////## total temp KLUDGE
 global.CUR_RUNTIME;
@@ -54,27 +54,24 @@ var IdleRuntime = require("./runtime/idle").IdleRuntime;
 //       does its first-time config platform-detecting magic (See engine.js) these ports are likely to
 //       be filled with sensible defaults
 function connect(callback) {
+  var control_path = null;
   // TODO: These are hardwired for a time when there were two USB channels - there is only one, now.
   switch (PLATFORM) {
     case "linux":
       control_path = config.engine.get("control_port_linux");
-      gcode_path = config.engine.get("data_port_linux");
       break;
 
     case "darwin":
       control_path = config.engine.get("control_port_osx");
-      gcode_path = config.engine.get("data_port_osx");
       break;
 
     case "win32":
     case "win64":
       control_path = config.engine.get("control_port_windows");
-      gcode_path = config.engine.get("data_port_windows");
       break;
 
     default:
       control_path = null;
-      gcode_path = null;
       break;
   }
   if (control_path) {
@@ -150,7 +147,7 @@ function Machine(control_path, callback) {
 
   this.driver.connect(
     control_path,
-    function (err, data) {
+    function (err) {
       // Most of the setup of the machine happens here, AFTER we've successfully connected to G2
       if (err) {
         log.error(JSON.stringify(err));
@@ -687,7 +684,7 @@ Machine.prototype.arm = function (action, timeout) {
   switch (nextAction) {
     case "throw":
       throw arm_obj["error_thrown"];
-      return;
+
     case "abort_due_to_interlock":
       if (isInterlocked > 2) {
         this.setState(this, "interlock");
@@ -707,7 +704,6 @@ Machine.prototype.arm = function (action, timeout) {
       return;
     default:
       throw new Error("Unknown case");
-      return;
   }
 };
 
@@ -785,7 +781,7 @@ Machine.prototype.fire = function (force) {
 
 // Authorize the machine for the specified period of time (or the default time if unspecified)
 Machine.prototype.authorize = function (timeout) {
-  var timeout = timeout || config.machine.get("auth_timeout");
+  timeout = timeout || config.machine.get("auth_timeout");
 
   if (config.machine.get("auth_required") && timeout) {
     log.info("Machine is authorized for the next " + timeout + " seconds.");
@@ -874,14 +870,16 @@ Machine.prototype.setPreferredUnits = function (units, callback) {
           break;
 
         default:
-          log.warn('Invalid units "' + gc + '"found in machine configuration.');
+          log.warn(
+            'Invalid units "' + units + '" found in machine configuration.'
+          );
           break;
       }
       if (uv !== null) {
         // Change units on the driver
         config.driver.changeUnits(
           uv,
-          function (err, data) {
+          function () {
             log.info("Done setting driver units");
             // Change units on each runtime in turn
             async.eachSeries(
@@ -916,6 +914,7 @@ Machine.prototype.setPreferredUnits = function (units, callback) {
 // If the file is a g-code file, just return its contents.
 // If the file is a shopbot file, instantiate a SBPRuntime, run it in simulation, and return the result
 Machine.prototype.getGCodeForFile = function (filename, callback) {
+  var ext = null;
   fs.readFile(
     filename,
     "utf8",
@@ -925,7 +924,6 @@ Machine.prototype.getGCodeForFile = function (filename, callback) {
         log.error(err);
         return;
       } else {
-        parts = filename.split(path.sep);
         ext = path.extname(filename).toLowerCase();
 
         if (ext == ".sbp") {
@@ -951,7 +949,6 @@ Machine.prototype.getGCodeForFile = function (filename, callback) {
 
 // Run a file given a filename on disk.  Choose the runtime that is appropriate for that file.
 Machine.prototype._runFile = function (filename) {
-  var parts = filename.split(path.sep);
   var ext = path.extname(filename).toLowerCase();
 
   // Choose the appropriate runtime based on the file extension
@@ -1004,19 +1001,15 @@ Machine.prototype.getRuntime = function (name) {
     case "nc":
     case "g":
       return this.gcode_runtime;
-      break;
 
     case "opensbp":
     case "sbp":
       return this.sbp_runtime;
-      break;
 
     case "manual":
       return this.manual_runtime;
-      break;
     default:
       return null;
-      break;
   }
 };
 
@@ -1208,7 +1201,6 @@ Machine.prototype.quit = function (callback) {
     if (callback) {
       callback(null, "quit");
     }
-    alreadyQuiting = false;
   } else {
     log.warn("No current runtime!");
     if (callback) {
@@ -1265,7 +1257,6 @@ Machine.prototype.runFile = function (filename, bypassInterlock) {
 // Run the next job in the queue
 // callback is called when the tool is armed for the run, NOT when the job is complete.
 Machine.prototype.runNextJob = function (callback) {
-  var stack = new Error().stack;
   interlockBypass = false;
   db.Job.getPending(
     function (err, pendingJobs) {
@@ -1343,7 +1334,7 @@ Machine.prototype.gcode = function (string) {
  * For documentation of these functions, see their corresponding "public" methods above.
  */
 
-Machine.prototype._executeRuntimeCode = function (runtimeName, code, callback) {
+Machine.prototype._executeRuntimeCode = function (runtimeName, code) {
   runtime = this.getRuntime(runtimeName);
   if (runtime) {
     if (this.current_runtime == this.idle_runtime) {
@@ -1371,6 +1362,7 @@ Machine.prototype._resume = function (input) {
         this.interlock_action = null;
         return;
       }
+      break;
     case "lock":
       if (this.interlock_action && this.interlock_action.type != "resume") {
         this.arm(this.interlock_action);
