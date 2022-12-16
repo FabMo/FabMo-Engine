@@ -112,7 +112,7 @@
 		"watch": "npx webpack --watch",
 		"serve": "npx webpack serve",
 		"test": "npx jest --verbose",
-		"lint": "npx eslint .",
+		"lint": "npx eslint --fix machine.js",
 		"prettier": "npx prettier --write ."
 	},
 	"version": "1.0.0"

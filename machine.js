@@ -55,7 +55,6 @@ var IdleRuntime = require("./runtime/idle").IdleRuntime;
 //       be filled with sensible defaults
 function connect(callback) {
     var control_path = null;
-    // TODO: These are hardwired for a time when there were two USB channels - there is only one, now.
     switch (PLATFORM) {
         case "linux":
             control_path = config.engine.get("control_port_linux");
@@ -156,7 +155,7 @@ function Machine(control_path, callback) {
                 log.warn("Setting the disconnected state");
                 this.die(
                     "An internal error has occurred. You must reboot your tool."
-                ); // RealBad (tm) Error
+                );
                 if (typeof callback === "function") {
                     return callback(new Error("No connection to G2"));
                 } else {
