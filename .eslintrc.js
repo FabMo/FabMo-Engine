@@ -3,6 +3,11 @@ module.exports = {
         commonjs: true,
         es2021: true,
     },
+    globals: {
+        "setTimeout": true,
+        "clearTimeout": true,
+        "setImmediate": true
+    },
     plugins: ["jest", "prettier"],
 
     extends: ["eslint:recommended", "prettier"],
