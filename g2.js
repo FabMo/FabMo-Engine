@@ -11,13 +11,10 @@ var events = require("events");
 var async = require("async");
 var util = require("util");
 var Queue = require("./util").Queue;
-var Watchdog = require("./util").Watchdog;
 var log = require("./log").logger("g2");
 var process = require("process");
-var jsesc = require("jsesc");
 var stream = require("stream");
 var Q = require("q");
-var LineNumberer = require("./util").LineNumberer;
 
 // Values of the **stat** field that is returned from G2 status reports
 var STAT_INIT = 0;
@@ -38,7 +35,7 @@ var STAT_PANIC = 13;
 var CMD_TIMEOUT = 100000;
 var EXPECT_TIMEOUT = 300000;
 var MAX_INPUTS = 12; // Need these in a common storeage
-var MAX_OUTPUTS = 12;
+// var MAX_OUTPUTS = 12; Not used yet
 
 var _promiseCounter = 1;
 var resumePending = false;
@@ -46,7 +43,7 @@ var intendedClose = false;
 var THRESH = 1;
 var PRIMED_THRESHOLD = 10;
 
-var pat = /s*(G(28|38)\.\d|G2(0|1))/g;
+// var pat = /s*(G(28|38)\.\d|G2(0|1))/g; Not used yet
 
 // Error codes defined by G2
 // See https://github.com/synthetos/g2/blob/edge/TinyG2/tinyg2.h for the latest error codes and messages
@@ -55,7 +52,7 @@ try {
         fs.readFileSync("./data/g2_errors.json", "utf8")
     );
 } catch (e) {
-    var G2_ERRORS = {};
+    G2_ERRORS = {};
 }
 
 // A cycle context is created when you run a stream, and is a way to access driver events in the context of the current run
@@ -68,7 +65,7 @@ function CycleContext(driver, st, promise) {
     this._stream = st;
     this._paused = false;
     this._promise = promise.then(
-        function (value) {
+        function () {
             this.firm(); // Firm the tool
             this.finish();
         }.bind(this)
@@ -219,7 +216,7 @@ G2.prototype._createCycleContext = function () {
             var newLines = false;
             // Repartition incoming "chunked" data as lines
             for (var i = 0; i < chunk.length; i++) {
-                ch = chunk[i];
+                var ch = chunk[i];
                 this.lineBuffer.push(ch);
                 if (ch === "\n") {
                     newLines = true;
@@ -278,7 +275,8 @@ G2.prototype._createCycleContext = function () {
     );
 
     // Handle a stream being piped into this context (currently do nothing)
-    st.on("pipe", function (chunk) {
+    // chunk is defined but never used
+    st.on("pipe", function (/* chunk */) {
         log.debug("Stream PIPE event");
     });
     // Create the promise that resolves when the machining cycle ends.
@@ -387,7 +385,7 @@ G2.prototype.onSerialError = function (data) {
 // When the serial link to G2 is closed, exit the engine with an error
 // In a production environment, the system service manager (usually systemd)
 // will simply restart the process and attempt to reconnect
-G2.prototype.onSerialClose = function (data) {
+G2.prototype.onSerialClose = function () {
     this.connected = false;
     log.error("G2 Core serial link was lost.");
     if (!intendedClose) {
@@ -419,9 +417,10 @@ G2.prototype.clearAlarm = function () {
 
 // Units are sort of weird, and our fork of the g2 firmware hijacks the "gun" command
 // to set the system units.  (Conventionally, you have to use a G-code to do this)
+// stat is defined but never used
 G2.prototype.setUnits = function (units, callback) {
     this.command({ gun: units === 0 || units == "in" ? 0 : 1 });
-    this.requestStatusReport(function (stat) {
+    this.requestStatusReport(function (/* stat */) {
         callback();
     });
 };
@@ -436,7 +435,7 @@ G2.prototype.requestStatusReport = function (callback) {
 
 // Called for every chunk of data returned from G2
 G2.prototype.onData = function (data) {
-    t = new Date().getTime(); // Get current time for logging
+    var t = new Date().getTime(); // Get current time for logging
     // raw_data event for listeners that want to snoop on all data.
     // Not usually used except for debugging
     this.emit("raw_data", data);
@@ -446,9 +445,11 @@ G2.prototype.onData = function (data) {
     var s = data.toString("ascii");
     var len = s.length;
     for (var i = 0; i < len; i++) {
-        c = s[i];
+        var c = s[i];
         if (c === "\n") {
             var json_string = this._currentData.join("");
+            // t is assigned a value but never used
+            //**** is this code ever used?
             t = new Date().getTime();
             log.g2("S", "in", json_string);
             try {
@@ -456,6 +457,8 @@ G2.prototype.onData = function (data) {
                 var obj = JSON.parse(json_string);
                 this.onMessage(obj);
             } catch (e) {
+                //**** is this code ever used?
+                this.handleExceptionReport(e);
                 throw e;
             } finally {
                 // if we hit a linefeed, we try to parse, if we succeed we clear the line and start anew
@@ -528,23 +531,25 @@ G2.prototype.handleStatusReport = function (response) {
     if (response.sr) {
         // Update our copy of the system status
         for (var key in response.sr) {
-            value = response.sr[key];
+            var value = response.sr[key];
             if (key === "unit") {
                 value = value === 0 ? "in" : "mm";
             }
             this.status[key] = value;
         }
 
+        //**** is this code ever used?
         // Send more g-codes if warranted
         if ("line" in response.sr) {
-            line = response.sr.line;
-            lines_left = this.lines_sent - line;
+            var line = response.sr.line;
+            var lines_left = this.lines_sent - line;
         }
 
         // check for inputs and reset to bitwise value for DRO display in Dashboard
         for (let i = 1; i < MAX_INPUTS + 1; i++) {
             if ("in" + i in response.sr) {
-                let ibval = config.machine.get("di" + i + "_def");
+                //**** is this the correct way to access config?
+                let ibval = this.config.machine.get("di" + i + "_def");
                 if (0 < ibval && ibval < 17) {
                     this.status["in" + i] |= ibval; // Set input value to cur value + bitwise def; for small DRO display
                 }
@@ -690,7 +695,7 @@ G2.prototype.onMessage = function (response) {
             this.lines_to_send += 1;
             this.sendMore();
         }
-        r = response.r;
+        var r = response.r;
         this.emit("response", false, response.r);
     } else {
         r = response;
@@ -714,7 +719,7 @@ G2.prototype.onMessage = function (response) {
                 typeof this.readers[key][this.readers[key].length - 1] ===
                 "function"
             ) {
-                callback = this.readers[key].shift();
+                var callback = this.readers[key].shift();
                 if (err) {
                     callback(err);
                 } else {
@@ -727,6 +732,7 @@ G2.prototype.onMessage = function (response) {
 
 // Interrupt motion in manual run-time; now using "kill" rather than G2-hold
 ////## Handling normal and raw now the same
+// Seems like callback is needed, check it out
 G2.prototype.manualFeedHold = function (callback) {
     this.pause_flag = true;
     this._write("\x04\n");
@@ -796,7 +802,7 @@ G2.prototype.resume = function () {
     }
 
     this.requestStatusReport(
-        function (sr) {
+        function () {
             this.pause_flag = false;
         }.bind(this)
     );
@@ -859,7 +865,7 @@ G2.prototype.get = function (key, callback) {
     var keys;
     if (key instanceof Array) {
         keys = key;
-        is_array = true;
+        var is_array = true;
     } else {
         is_array = false;
         keys = [key];
@@ -871,7 +877,7 @@ G2.prototype.get = function (key, callback) {
         // Function called for each item in the keys array
         function (k, cb) {
             cb = cb.bind(this);
-            cmd = {};
+            var cmd = {};
             cmd[k] = null;
 
             // this.readers contains the key values that we're expecting to read back, and maps them
@@ -886,8 +892,8 @@ G2.prototype.get = function (key, callback) {
             setTimeout(
                 function () {
                     if (k in this.readers) {
-                        callbacks = this.readers[k];
-                        stored_cb = callbacks[callbacks.length - 1];
+                        var callbacks = this.readers[k];
+                        var stored_cb = callbacks[callbacks.length - 1];
                         // TODO - using the right equals here?
                         if (cb == stored_cb) {
                             if (typeof cb == "function") {
@@ -932,7 +938,7 @@ G2.prototype.setMany = function (obj, callback) {
         keys,
         // Function called for each item in the keys array
         function (k, cb) {
-            cmd = {};
+            var cmd = {};
             cmd[k] = obj[k];
             if (k in this.readers) {
                 this.readers[k].push(cb.bind(this));
@@ -949,7 +955,7 @@ G2.prototype.setMany = function (obj, callback) {
             } else {
                 var retval = {};
                 try {
-                    for (i = 0; i < keys.length; i++) {
+                    for (var i = 0; i < keys.length; i++) {
                         retval[keys[i]] = result[i];
                     }
                 } catch (e) {
@@ -967,7 +973,7 @@ G2.prototype.set = function (key, value, callback) {
     if (value === undefined) {
         return callback(new Error("Undefined value passed to G2"));
     }
-    cmd = {};
+    var cmd = {};
     cmd[key] = value;
     if (key in this.readers) {
         this.readers[key].push(callback);
@@ -979,8 +985,8 @@ G2.prototype.set = function (key, value, callback) {
     setTimeout(
         function () {
             if (key in this.readers) {
-                callbacks = this.readers[key];
-                stored_cb = callbacks[callbacks.length - 1];
+                var callbacks = this.readers[key];
+                var stored_cb = callbacks[callbacks.length - 1];
                 if (callback == stored_cb) {
                     if (typeof callback == "function") {
                         this.readers[key].shift();
@@ -1112,12 +1118,12 @@ G2.prototype.sendMore = function () {
 
     // If we're primed, go ahead and send more g-codes
     if (this._primed) {
-        var count = this.gcode_queue.getLength();
+        count = this.gcode_queue.getLength();
         if (this.lines_to_send >= THRESH) {
             if (count >= THRESH || this._streamDone) {
                 // Send some lines, but no more than we are allowed per linemode protocol
-                var to_send = Math.min(this.lines_to_send, count);
-                var codes = this.gcode_queue.multiDequeue(to_send);
+                to_send = Math.min(this.lines_to_send, count);
+                codes = this.gcode_queue.multiDequeue(to_send);
                 // Ensures that when we join below that we get a \n on the end
                 codes.push("");
                 if (codes.length > 1) {
@@ -1203,9 +1209,6 @@ var states = {
     11: "interlock",
     12: "shutdown",
     13: "panic",
-};
-var state = function (s) {
-    return states[s];
 };
 
 // export the class
