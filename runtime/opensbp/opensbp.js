@@ -14,14 +14,13 @@
 var parser = require("./parser");
 var fs = require("fs");
 var log = require("../../log").logger("sbp");
-var g2 = require("../../g2");
 var sb3_commands = require("./sb3_commands");
 var events = require("events");
 var tform = require("./transformation");
 var macros = require("../../macros");
-var interp = require("./interpolate");
 var Leveler = require("./commands/leveler").Leveler;
 var u = require("../../util");
+var util = require("util");
 var config = require("../../config");
 var stream = require("stream");
 var ManualDriver = require("../manual").ManualDriver;
@@ -97,8 +96,8 @@ SBPRuntime.prototype.toString = function () {
 // This must be called at least once before instantiating an SBPRuntime object
 // TODO Make this a "class method" rather than an instance method
 SBPRuntime.prototype.loadCommands = function (callback) {
-    commands = require("./commands").load();
-    proto = Object.getPrototypeOf(this);
+    var commands = require("./commands").load();
+    var proto = Object.getPrototypeOf(this);
     for (var attr in commands) {
         proto[attr] = commands[attr];
     }
@@ -504,7 +503,7 @@ SBPRuntime.prototype._saveConfig = async function (callback) {
     sbp_values.safeZpullUp = this.safeZpullUp;
     sbp_values.units = this.units;
     try {
-        let values = await config.opensbp.setManyWrapper(sbp_values);
+        await config.opensbp.setManyWrapper(sbp_values);
         callback();
     } catch (error) {
         log.error(error);
@@ -516,7 +515,7 @@ SBPRuntime.prototype._saveConfig = async function (callback) {
 SBPRuntime.prototype._saveDriverSettings = async function (callback) {
     var g2_values = {};
     try {
-        let values = await config.driver.setManyWrapper(g2_values);
+        await config.driver.setManyWrapper(g2_values);
         callback();
     } catch (error) {
         log.error(error);
@@ -541,7 +540,6 @@ SBPRuntime.prototype.simulateString = function (s, x, y, z, callback) {
     this.cmd_StartY = y;
     this.cmd_StartZ = z;
     if (this.ok_to_disconnect) {
-        var saved_machine = this.machine;
         this.disconnect();
         var st = this.runString(s);
         var chunks = [];
@@ -561,7 +559,7 @@ SBPRuntime.prototype.simulateString = function (s, x, y, z, callback) {
 SBPRuntime.prototype._limit = function () {
     var er = this.driver.getLastException();
     if (er && er.st == 203) {
-        var msg = er.msg.replace(/\[[^\[\]]*\]/, "");
+        var msg = er.msg.replace(/\[[^[\]]*\]/, "");
         this.driver.clearLastException();
         this._abort(msg);
         return true;
@@ -588,7 +586,6 @@ SBPRuntime.prototype._onG2Status = function (status) {
             return this.machine.die(
                 "A G2 exception has occurred. You must reboot your tool."
             );
-            break;
     }
 
     // Update the machine of the driver status
@@ -602,13 +599,6 @@ SBPRuntime.prototype._onG2Status = function (status) {
     for (key in status) {
         this.status_report[key] = status[key];
     }
-    // TODO - this seems not to be used.
-    //        It was probably an attempt to smooth over the fact that probing operations are *always* in metric, regardless of machine units
-    //        That would actually be easy to clean up, and is probably worth pursuing - customers have been confused by the behavior.
-    //        (The better solution is to fix it in the firmware, though)
-    if (this.driver.status.stat == this.driver.STAT_PROBE) {
-        var keys = ["posx", "posy", "posz", "posa", "posb", "posc"];
-    }
 
     // TODO: separation of concerns dictates this should be part of an update method on the machine.
     this.machine.emit("status", this.machine.status);
@@ -617,7 +607,7 @@ SBPRuntime.prototype._onG2Status = function (status) {
 // Update the internal state of the runtime with data from the tool
 SBPRuntime.prototype._update = function () {
     if (this.machine) {
-        status = this.machine.status || {};
+        var status = this.machine.status || {};
     } else {
         status = {};
     }
@@ -643,9 +633,9 @@ SBPRuntime.prototype._evaluateArguments = function (command, args) {
     // Scrub the argument list:  extend to the correct length, mark undefined values as undefined
     // Previously, the "prm" file (sb3_commands.json) was used to substitute default values for commands, but now, that is mostly done by
     // the command handlers themselves.  Still, this is a good place to throw an exception if an argument doesn't pass a sanity check.
-    scrubbed_args = [];
+    var scrubbed_args = [];
     if (command in sb3_commands) {
-        params = sb3_commands[command].params || [];
+        var params = sb3_commands[command].params || [];
 
         // This is a possibly helpful warning, but is spuriously issued in some cases where commands take no arguments (depending on whitespace, etc.)
         // TODO - fix that
@@ -669,10 +659,7 @@ SBPRuntime.prototype._evaluateArguments = function (command, args) {
             }
         }
 
-        for (i = 0; i < params.length; i++) {
-            prm_param = params[i]; // prm_param is the parameter description object from the "prm" file (sb3_commands.json) (unused, currently)
-            user_param = args[i]; // user_param is the actual parameter from args
-
+        for (var i = 0; i < params.length; i++) {
             if (args[i] !== undefined && args[i] !== "") {
                 // Arguments that have meat to them are added into the scrubbed list
                 scrubbed_args.push(args[i]);
@@ -687,7 +674,7 @@ SBPRuntime.prototype._evaluateArguments = function (command, args) {
     }
 
     // Actually evaluate the arguments and return the list
-    retval = [];
+    var retval = [];
     for (i = 0; i < scrubbed_args.length; i++) {
         retval.push(this._eval(scrubbed_args[i]));
     }
@@ -728,7 +715,7 @@ SBPRuntime.prototype._breaksStack = function (cmd) {
             // accepts a second argument (presumed to be a callback) in addition to their argument list, they are stack breaking.
             var name = cmd.cmd;
             if (name in this && typeof this[name] == "function") {
-                f = this[name];
+                var f = this[name];
                 if (f && f.length > 1) {
                     return true;
                 }
@@ -738,12 +725,10 @@ SBPRuntime.prototype._breaksStack = function (cmd) {
 
         case "pause":
             return true;
-            break;
 
         case "cond":
             //TODO , we should check the expression for a stack break, as well as the .stmt
             return true;
-            break;
         case "weak_assign":
         case "assign":
             // TODO: These should only break the stack if they assign to or read from expressions that break the stack
@@ -995,7 +980,6 @@ SBPRuntime.prototype._executeNext = function () {
                 return this._abort(e);
             }
         }
-        return;
     } else {
         // If this is a non-stack-breaking command, go ahead and execute it.
         // Mostly, these commands will call emit_gcode, which will push instructions into the stream
@@ -1075,10 +1059,12 @@ SBPRuntime.prototype._end = function (error) {
     if (this.machine) {
         this.resumeAllowed = false;
         this.machine.restoreDriverState(
+            // eslint-disable-next-line no-unused-vars
             function (err, result) {
                 this.resumeAllowed = true;
                 if (this.machine.status.job) {
                     this.machine.status.job.finish(
+                        // eslint-disable-next-line no-unused-vars
                         function (err, job) {
                             this.machine.status.job = null;
                             cleanup(error_msg);
@@ -1104,8 +1090,8 @@ SBPRuntime.prototype._executeCommand = function (command, callback) {
         // Command is valid and has a registered handler
 
         // Evaluate the command arguments and extract the handler
-        args = this._evaluateArguments(command.cmd, command.args);
-        f = this[command.cmd].bind(this);
+        var args = this._evaluateArguments(command.cmd, command.args);
+        var f = this[command.cmd].bind(this);
 
         if (f.length > 1) {
             // Stack breakers have the callback passed in, to be called when done.
@@ -1204,13 +1190,11 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 }
             }
             return broke;
-            break;
 
         // A C# command (custom cut)
         case "custom":
             this.runCustomCut(command.index, callback);
             return true;
-            break;
 
         // A line of raw g-code
         case "gcode":
@@ -1219,7 +1203,6 @@ SBPRuntime.prototype._execute = function (command, callback) {
             this.emit_gcode(command.gcode);
             this.pc += 1;
             return false;
-            break;
 
         case "return":
             if (this.stack.length) {
@@ -1231,13 +1214,11 @@ SBPRuntime.prototype._execute = function (command, callback) {
                     "Runtime Error: Return with no GOSUB at " + (this.pc + 1)
                 );
             }
-            break;
 
         case "end":
             this.pc = this.program.length;
             setImmediate(callback);
             return true;
-            break;
 
         case "fail":
             this.pc = this.program.length;
@@ -1247,7 +1228,6 @@ SBPRuntime.prototype._execute = function (command, callback) {
             }
             setImmediate(callback);
             return true;
-            break;
 
         case "goto":
             if (command.label in this.label_index) {
@@ -1270,7 +1250,6 @@ SBPRuntime.prototype._execute = function (command, callback) {
                         (this.pc + 1)
                 );
             }
-            break;
 
         case "gosub":
             if (command.label in this.label_index) {
@@ -1291,7 +1270,6 @@ SBPRuntime.prototype._execute = function (command, callback) {
                         (this.pc + 1)
                 );
             }
-            break;
 
         case "assign":
             this.pc += 1;
@@ -1300,11 +1278,11 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 callback();
             });
             return true;
-            break;
 
         case "weak_assign":
             this.pc += 1;
             if (!this._varExists(command.var)) {
+                // eslint-disable-next-line no-redeclare
                 var value = this._eval(command.expr);
                 this._assign(command.var, value, function () {
                     callback();
@@ -1313,7 +1291,6 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 setImmediate(callback);
             }
             return true;
-            break;
 
         case "cond":
             if (this._eval(command.cmp)) {
@@ -1323,7 +1300,6 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 setImmediate(callback);
                 return true;
             }
-            break;
 
         case "comment":
             var comment = command.comment.join("").trim();
@@ -1332,20 +1308,18 @@ SBPRuntime.prototype._execute = function (command, callback) {
             }
             this.pc += 1;
             return false;
-            break;
 
         case "label":
         case undefined:
             this.pc += 1;
             return false;
-            break;
 
         case "pause":
             // PAUSE is somewhat overloaded.  In a perfect world there would be distinct states for pause and feedhold.
             this.pc += 1;
             var arg = this._eval(command.expr);
             var input_var = command.var;
-            if (util.isANumber(arg)) {
+            if (u.isANumber(arg)) {
                 // If argument is a number set pause with timer and default message.
                 // In simulation, just don't do anything
                 if (!this.machine) {
@@ -1356,7 +1330,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 this.machine.setState(
                     this,
                     "paused",
-                    util.packageModalParams({ timer: arg })
+                    u.packageModalParams({ timer: arg })
                 );
                 return true;
             } else {
@@ -1379,7 +1353,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 }
                 var modalParams = {};
                 if (message) {
-                    modalParams = util.packageModalParams(
+                    modalParams = u.packageModalParams(
                         { message: message },
                         modalParams
                     );
@@ -1393,7 +1367,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
                         cancelText: false, // remove or set new text to display cancel/quit button.
                         cancelFunc: false, // remove to enable quit job onclick
                     };
-                    modalParams = util.packageModalParams(
+                    modalParams = u.packageModalParams(
                         inputParams,
                         modalParams
                     );
@@ -1404,7 +1378,6 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 this.machine.setState(this, "paused", modalParams);
                 return true;
             }
-            break;
 
         case "event":
             // Throw a useful exception for the no-longer-supported ON INPUT command
@@ -1413,7 +1386,6 @@ SBPRuntime.prototype._execute = function (command, callback) {
                 "ON INPUT is no longer a supported command.  Make sure the program you are using is up to date.  Line: " +
                     (this.pc + 1)
             );
-            break;
 
         default:
             // Just skip over commands we don't recognize
@@ -1425,11 +1397,7 @@ SBPRuntime.prototype._execute = function (command, callback) {
             }
             this.pc += 1;
             return false;
-            break;
     }
-    throw new Error(
-        "An error occurred in the command processor.  Please report this issue."
-    );
 };
 
 // Return true if the provided variable exists in the current program context
@@ -1533,36 +1501,26 @@ SBPRuntime.prototype._eval = function (expr) {
         switch (expr.op) {
             case "+":
                 return this._eval(expr.left) + this._eval(expr.right);
-                break;
             case "-":
                 return this._eval(expr.left) - this._eval(expr.right);
-                break;
             case "*":
                 return this._eval(expr.left) * this._eval(expr.right);
-                break;
             case "/":
                 return this._eval(expr.left) / this._eval(expr.right);
-                break;
             case ">":
                 return this._eval(expr.left) > this._eval(expr.right);
-                break;
             case "<":
                 return this._eval(expr.left) < this._eval(expr.right);
-                break;
             case ">=":
                 return this._eval(expr.left) >= this._eval(expr.right);
-                break;
             case "<=":
                 return this._eval(expr.left) <= this._eval(expr.right);
-                break;
             case "==":
             case "=":
                 return this._eval(expr.left) == this._eval(expr.right);
-                break;
             case "<>":
             case "!=":
                 return this._eval(expr.left) != this._eval(expr.right);
-                break;
 
             default:
                 throw "Unhandled operation: " + expr.op;
@@ -1642,8 +1600,8 @@ SBPRuntime.prototype._setUnits = function (units) {
 // An error is thrown on duplicate labels
 SBPRuntime.prototype._analyzeLabels = function () {
     this.label_index = {};
-    for (i = 0; i < this.program.length; i++) {
-        line = this.program[i];
+    for (var i = 0; i < this.program.length; i++) {
+        var line = this.program[i];
         if (line && line.type) {
             switch (line.type) {
                 case "label":
@@ -1666,7 +1624,7 @@ SBPRuntime.prototype._analyzeLabels = function () {
 // Throw an error for undefined labels.
 // TODO: Adress Macro Line Numbering issue
 SBPRuntime.prototype._analyzeGOTOs = function () {
-    for (i = 0; i < this.program.length; i++) {
+    for (var i = 0; i < this.program.length; i++) {
         var line = this.program[i];
         if (line) {
             switch (line.type) {
@@ -1700,6 +1658,7 @@ SBPRuntime.prototype._analyzeGOTOs = function () {
 // Return the value of the provided system variable.
 //   v - System variable as a string, eg: "%(1)"
 SBPRuntime.prototype.evaluateSystemVariable = function (v) {
+    var envelope = config.machine.get("envelope");
     if (v === undefined) {
         return undefined;
     }
@@ -1711,70 +1670,48 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
     switch (n) {
         case 1: // X Location
             return this.machine.status.posx;
-            break;
 
         case 2: // Y Location
             return this.machine.status.posy;
-            break;
 
         case 3: // Z Location
             return this.machine.status.posz;
-            break;
 
         case 4: // A Location
             return this.machine.status.posa;
-            break;
 
         case 5: // B Location
             return this.machine.status.posb;
-            break;
 
         case 6: // X Table Base
             return config.driver.get("g55x");
-            break;
 
         case 7: // Y Table Base
             return config.driver.get("g55y");
-            break;
 
         case 8: // Z Table Base
             return config.driver.get("g55z");
-            break;
 
         case 9: // A Table Base
             return config.driver.get("g55a");
-            break;
 
         case 10: // B Table Base
             return config.driver.get("g55b");
-            break;
 
         case 11: //Min Table limit X
-            var envelope = config.machine.get("envelope");
             return envelope.xmin;
-            break;
 
         case 12: //Max Table limit X
-            var envelope = config.machine.get("envelope");
             return envelope.xmax;
-            break;
 
         case 13: //Min Table limit Y
-            var envelope = config.machine.get("envelope");
             return envelope.ymin;
-            break;
 
         case 14: //Max Table limit Y
-            var envelope = config.machine.get("envelope");
             return envelope.ymax;
-            break;
-
-        case 28:
-            return config.opensbp.get("safeZpullUp");
-            break;
 
         case 25:
-            units = config.machine.get("units");
+            var units = config.machine.get("units");
             if (units === "in") {
                 return 0;
             } else if (units === "mm") {
@@ -1782,11 +1719,9 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
             } else {
                 return -1;
             }
-            break;
 
         case 28:
-            return;
-            break;
+            return config.opensbp.get("safeZpullUp");
 
         case 51:
         case 52:
@@ -1797,59 +1732,45 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
         case 57:
         case 58:
             return this.machine.status["in" + (n - 50)];
-            break;
 
         case 71: // XY Move Speed
             return config.opensbp.get("movexy_speed");
-            break;
 
         case 72: // XY Move Speed
             return config.opensbp.get("movexy_speed");
-            break;
 
         case 73:
             return config.opensbp.get("movez_speed");
-            break;
 
         case 74:
             return config.opensbp.get("movea_speed");
-            break;
 
         case 75:
             return config.opensbp.get("moveb_speed");
-            break;
 
         case 76:
             return config.opensbp.get("movec_speed");
-            break;
 
         case 81:
             return config.driver.get("xjm");
-            break;
 
         case 82:
             return config.driver.get("yjm");
-            break;
 
         case 83:
             return config.driver.get("zjm");
-            break;
 
         case 84:
             return config.driver.get("ajm");
-            break;
 
         case 85:
             return config.driver.get("bjm");
-            break;
 
         case 86:
             return config.driver.get("cjm");
-            break;
 
         case 144:
             return this.machine.status.posc;
-            break;
 
         default:
             throw new Error(
@@ -1858,7 +1779,6 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
                     " on line " +
                     (this.pc + 1)
             );
-            break;
     }
 };
 
@@ -1950,7 +1870,7 @@ SBPRuntime.prototype._unhandledCommand = function (command) {
 // Create an execution frame for the current program context and push it onto this.file_stack
 // The program context here means things like which coordinate system, speeds, the current PC, etc.
 SBPRuntime.prototype._pushFileStack = function () {
-    frame = {};
+    var frame = {};
     frame.coordinateSystem = this.coordinateSystem;
     frame.movespeed_xy = this.movespeed_xy;
     frame.movespeed_z = this.movespeed_z;
@@ -1966,7 +1886,7 @@ SBPRuntime.prototype._pushFileStack = function () {
 // Retrieve the execution frame on top of this.file_stack and restore the program context from it
 // The program context here means things like which coordinate system, speeds, the current PC, etc.
 SBPRuntime.prototype._popFileStack = function () {
-    frame = this.file_stack.pop();
+    var frame = this.file_stack.pop();
     this.movespeed_xy = frame.movespeed_xy;
     this.movespeed_z = frame.movespeed_z;
     this.pc = frame.pc;
@@ -1986,6 +1906,7 @@ SBPRuntime.prototype.emit_gcode = function (s) {
     if (this.file_stack.length > 0) {
         var n = this.file_stack[0].pc;
     } else {
+        // eslint-disable-next-line no-redeclare
         var n = this.pc;
     }
     this.gcodesPending = true;
@@ -2001,7 +1922,6 @@ SBPRuntime.prototype.emit_gcode = function (s) {
 // TODO - Gordon, provide some documentation here?
 SBPRuntime.prototype.emit_move = function (code, pt) {
     var gcode = code;
-    var i;
 
     ["X", "Y", "Z", "A", "B", "C", "I", "J", "K", "F"].forEach(
         function (key) {
@@ -2033,12 +1953,6 @@ SBPRuntime.prototype.emit_move = function (code, pt) {
     var tPt = this.transformation(pt);
     //console.log('call point transform, ')
     //console.log(tPt);
-
-    if (this.file_stack.length > 0) {
-        var n = this.file_stack[0].pc;
-    } else {
-        var n = this.pc;
-    }
 
     var opFunction = function (Pt) {
         //Find a better name
@@ -2142,14 +2056,14 @@ SBPRuntime.prototype.transformation = function (TranPt) {
     if (this.transforms.shearx.apply != false) {
         if ("X" in TranPt && "Y" in TranPt) {
             log.debug("ShearX: " + JSON.stringify(this.transforms.shearx));
-            var angle = this.transforms.shearx.angle;
+            angle = this.transforms.shearx.angle;
             TranPt = tform.shearX(TranPt, angle);
         }
     }
     if (this.transforms.sheary.apply != false) {
         if ("X" in TranPt && "Y" in TranPt) {
             log.debug("ShearY: " + JSON.stringify(this.transforms.sheary));
-            var angle = this.transforms.sheary.angle;
+            angle = this.transforms.sheary.angle;
             TranPt = tform.shearY(TranPt, angle);
         }
     }
