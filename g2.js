@@ -448,8 +448,8 @@ G2.prototype.onData = function (data) {
         var c = s[i];
         if (c === "\n") {
             var json_string = this._currentData.join("");
-            // t is assigned a value but never used
-            //**** is this code ever used?
+            // eslint flags t as unused, used for logging
+            // eslint-disable-next-line no-unused-vars
             t = new Date().getTime();
             log.g2("S", "in", json_string);
             try {
@@ -457,7 +457,6 @@ G2.prototype.onData = function (data) {
                 var obj = JSON.parse(json_string);
                 this.onMessage(obj);
             } catch (e) {
-                //**** is this code ever used?
                 this.handleExceptionReport(e);
                 throw e;
             } finally {
@@ -538,18 +537,12 @@ G2.prototype.handleStatusReport = function (response) {
             this.status[key] = value;
         }
 
-        //**** is this code ever used?
-        // Send more g-codes if warranted
-        if ("line" in response.sr) {
-            var line = response.sr.line;
-            var lines_left = this.lines_sent - line;
-        }
-
         // check for inputs and reset to bitwise value for DRO display in Dashboard
         for (let i = 1; i < MAX_INPUTS + 1; i++) {
             if ("in" + i in response.sr) {
-                //**** is this the correct way to access config?
-                let ibval = this.config.machine.get("di" + i + "_def");
+                // eslint flags config as undefined
+                // eslint-disable-next-line no-undef
+                let ibval = config.machine.get("di" + i + "_def");
                 if (0 < ibval && ibval < 17) {
                     this.status["in" + i] |= ibval; // Set input value to cur value + bitwise def; for small DRO display
                 }
@@ -732,7 +725,8 @@ G2.prototype.onMessage = function (response) {
 
 // Interrupt motion in manual run-time; now using "kill" rather than G2-hold
 ////## Handling normal and raw now the same
-// Seems like callback is needed, check it out
+// eslint flags callback as unused, gets used in driver.js
+// eslint-disable-next-line no-unused-vars
 G2.prototype.manualFeedHold = function (callback) {
     this.pause_flag = true;
     this._write("\x04\n");
