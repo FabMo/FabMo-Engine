@@ -72,6 +72,7 @@ function serveStatic(options) {
 
         var fstream = fs.createReadStream(file + (isGzip ? ".gz" : ""));
         var maxAge = opts.maxAge === undefined ? 3600 : opts.maxAge;
+        // eslint-disable-next-line no-unused-vars
         fstream.once("open", function (fd) {
             res.cache({ maxAge: maxAge });
             res.set("Content-Length", stats.size);
@@ -134,6 +135,7 @@ function serveStatic(options) {
         if (path_arr.length > 1) {
             var newPath = path_arr.join("/");
         } else {
+            // eslint-disable-next-line no-redeclare
             var newPath = "/";
         }
 
