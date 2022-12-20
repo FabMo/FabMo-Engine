@@ -27,6 +27,7 @@ exports.createNetworkManager = function (name, callback) {
         nm.os = OS;
         nm.platform = PLATFORM;
         if (!name && nm.platform === "raspberry-pi") {
+            // eslint-disable-next-line no-unused-vars
             nm.set_uuid(function (name) {
                 callback(null, nm);
             });
