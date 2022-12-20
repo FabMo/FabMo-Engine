@@ -17,6 +17,7 @@
  * is able to edit those fields, but only as exposed through the UI in the macro manager.  This prevents
  * users from corrupting the headers and creating a bunch of edge cases when editing macros.
  */
+var Buffer = require("buffer");
 var fs = require("fs-extra");
 var path = require("path");
 var async = require("async");
@@ -37,9 +38,9 @@ var macros = {};
 //      enabled - Whether or not the macro is enabled (TODO: Is this used?)
 
 var _createGCodeHeader = function (options) {
-    name = options.name || "Untitled Macro";
-    description = options.description || "";
-    enabled = options.enabled || true;
+    var name = options.name || "Untitled Macro";
+    var description = options.description || "";
+    var enabled = options.enabled || true;
     return (
         "(" +
         MARKER +
@@ -60,9 +61,8 @@ var _createGCodeHeader = function (options) {
 };
 
 var _createOpenSBPHeader = function (options) {
-    name = options.name || "Untitled Macro";
-    description = options.description || "";
-    enabled = options.enabled || true;
+    var name = options.name || "Untitled Macro";
+    var description = options.description || "";
     return (
         "'" +
         MARKER +
@@ -75,14 +75,15 @@ var _createOpenSBPHeader = function (options) {
         description +
         "\n"
     );
-    "'" + MARKER + "enabled:" + enabled + "\n";
 };
 
 var _deleteMacroFile = function (index, callback) {
     var macro_path = config.getDataDir("macros");
     var opensbp = path.join(macro_path, "macro_" + index + ".sbp");
     var gcode = path.join(macro_path, "macro_" + index + ".nc");
+    // eslint-disable-next-line no-unused-vars
     fs.unlink(opensbp, function (err) {
+        // eslint-disable-next-line no-unused-vars
         fs.unlink(gcode, function (err) {
             callback(null);
         });
@@ -95,15 +96,12 @@ var _createMacroFilename = function (id, type) {
     switch (type) {
         case "nc":
             return path.join(macro_path, "macro_" + id + ".nc");
-            break;
 
         case "sbp":
             return path.join(macro_path, "macro_" + id + ".sbp");
-            break;
 
         default:
             throw new Error("Invalid macro type: " + type);
-            break;
     }
 };
 
@@ -114,16 +112,13 @@ var _createMacroDefaultContent = function (macro) {
         case "nc":
             //return 	'( ' + macro.name + ' )\n( ' + macro.description + ' )\n\n';
             return "";
-            break;
 
         case "sbp":
             //return 	"' " + macro.name + "\n' " + macro.description + "\n\n";
             return "";
-            break;
 
         default:
-            throw new Error("Invalid macro type: " + type);
-            break;
+            throw new Error("Invalid macro type: " + macro.type);
     }
 };
 
@@ -132,15 +127,15 @@ var _createMacroDefaultContent = function (macro) {
 // callback - called with the parsed contents of the macro file, eg:
 //            {name : 'My Macro', description:'Move to X=10',content : 'MZ,0.5\nMX,10'}
 var _parseMacroFile = function (filename, callback) {
-    var re = /[\(']!FABMO!(\w+):([^\)]*)\)?/;
+    var re = /[(']!FABMO!(\w+):([^)]*)\)?/;
     var obj = {};
     var ok = false;
     fs.readFile(filename, function (err, data) {
         if (err) {
             log.error(err);
         } else {
-            lines = data.toString().split("\n");
-            i = 0;
+            var lines = data.toString().split("\n");
+            var i = 0;
             while (i < lines.length) {
                 var line = lines[i];
                 var groups = line.match(re);
@@ -181,27 +176,26 @@ var _parseMacroFile = function (filename, callback) {
 var update = function (id, macro, callback) {
     // Get the old macro data
     var old_macro = get(id);
+    // This function takes an id, and the macro can carry an index as well
+    // If the incoming macros index is different than the id that was passed,
+    // we interpret that as an intent to move that macro to a new index.
+    function savemacro(id, callback) {
+        old_macro.name = macro.name || old_macro.name;
+        old_macro.description = macro.description || old_macro.description;
+        old_macro.content = macro.content || old_macro.content;
+        old_macro.index = macro.index || old_macro.index;
+        old_macro.type = macro.type || old_macro.type;
+        old_macro.filename = _createMacroFilename(
+            old_macro.index,
+            old_macro.type
+        );
+        save(id, callback);
+    }
 
     if (old_macro) {
         // Here, we're updating an existing macro
         // We only update fields that were provided in the macro passed in
         // Other fields, we leave alone.
-        function savemacro(id, callback) {
-            old_macro.name = macro.name || old_macro.name;
-            old_macro.description = macro.description || old_macro.description;
-            old_macro.content = macro.content || old_macro.content;
-            old_macro.index = macro.index || old_macro.index;
-            old_macro.type = macro.type || old_macro.type;
-            old_macro.filename = _createMacroFilename(
-                old_macro.index,
-                old_macro.type
-            );
-            save(id, callback);
-        }
-
-        // This function takes an id, and the macro can carry an index as well
-        // If the incoming macros index is different than the id that was passed,
-        // we interpret that as an intent to move that macro to a new index.
         if (macro.index) {
             var new_index = parseInt(macro.index);
             // If there's already a macro at the index that we're moving to, that's an error.
@@ -218,6 +212,7 @@ var update = function (id, macro, callback) {
             if (new_index != old_macro.index) {
                 macros[new_index] = old_macro;
                 delete macros[old_macro.index];
+                // eslint-disable-next-line no-unused-vars
                 _deleteMacroFile(old_macro.index, function (err) {
                     savemacro(new_index, callback);
                 });
@@ -232,7 +227,7 @@ var update = function (id, macro, callback) {
     } else {
         // In this case, we're "updating" a macro that doesn't exist, so create a new one
         // (filling in any attributes that were not provided by the update)
-        new_macro = {
+        var new_macro = {
             name: macro.name || "Untitled Macro",
             description: macro.description || "Macro Description",
             type: macro.type || "sbp",
@@ -250,7 +245,7 @@ var update = function (id, macro, callback) {
 // Commit the provided macro id to disk.
 // callback is called with the macro object that was saved (or error)
 var save = function (id, callback) {
-    macro = get(id);
+    var macro = get(id);
     if (macro) {
         var macro_path = config.getDataDir("macros");
         var file_path = path.join(
@@ -262,6 +257,7 @@ var save = function (id, callback) {
                 var header = _createGCodeHeader(macro);
                 break;
             case "sbp":
+                // eslint-disable-next-line no-redeclare
                 var header = _createOpenSBPHeader(macro);
                 break;
             default:
@@ -284,6 +280,7 @@ var save = function (id, callback) {
                 0,
                 contents.length,
                 0,
+                // eslint-disable-next-line no-unused-vars
                 function (err, written, string) {
                     if (err) {
                         log.error(err);
@@ -314,16 +311,16 @@ var load = function (callback) {
         if (err) {
             callback(err);
         } else {
-            for (i = 0; i < files.length; i++) {
+            for (var i = 0; i < files.length; i++) {
                 files[i] = path.join(macro_path, files[i]);
             }
             async.map(files, _parseMacroFile, function (err, results) {
                 results.forEach(function (info) {
                     if (info) {
-                        groups = info.filename.match(re);
+                        var groups = info.filename.match(re);
                         if (groups) {
-                            idx = parseInt(groups[1]);
-                            ext = groups[2];
+                            var idx = parseInt(groups[1]);
+                            var ext = groups[2];
                             info.index = idx;
                             info.type = ext;
                             macros[idx] = info;
@@ -338,8 +335,8 @@ var load = function (callback) {
 
 // Return the full list of macros (scrubbed)
 var list = function () {
-    retval = [];
-    for (key in macros) {
+    var retval = [];
+    for (var key in macros) {
         retval.push(getInfo(key));
     }
     return retval;
@@ -370,7 +367,7 @@ var get = function (idx) {
 var run = function (idx) {
     var machine = require("./machine").machine;
     var bypassInterlock = false;
-    info = macros[idx];
+    var info = macros[idx];
     log.debug(idx);
     log.debug(info);
     if (parseInt(idx) === 2) {
@@ -386,7 +383,7 @@ var run = function (idx) {
 // Delete a macro by index
 // callback returns an error only
 var del = function (idx, callback) {
-    info = macros[idx];
+    var info = macros[idx];
     if (info) {
         _deleteMacroFile(idx, function (err) {
             if (err) {
@@ -427,6 +424,7 @@ var loadProfileMacros = function (callback) {
                         b +
                         " because it doesnt already exist."
                 );
+                // eslint-disable-next-line no-unused-vars
                 fs.copy(a, b, function (err, data) {
                     callback(err);
                 });
