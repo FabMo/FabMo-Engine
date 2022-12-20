@@ -11,21 +11,18 @@ var log = require("./log").logger("util");
 var fs = require("fs");
 var q = require("q");
 var uuid = require("uuid");
-var fs = require("fs");
 var escapeRE = require("escape-regexp-component");
 var exec = require("child_process").exec;
 var stream = require("stream");
 var util = require("util");
 var mime = require("mime");
-var restify = require("restify");
 var errors = require("restify");
 
 // These are consulted by various upload functions
-ALLOWED_EXTENSIONS = [".nc", ".g", ".sbp", ".gc", ".gcode"];
-ALLOWED_APP_EXTENSIONS = [".zip", ".fma"];
+const ALLOWED_APP_EXTENSIONS = [".zip", ".fma"];
 
-GCODE_EXTENSIONS = [".nc", ".g", ".gc", ".gcode"];
-OPENSBP_EXTENSIONS = [".sbp", ".sbc"];
+const GCODE_EXTENSIONS = [".nc", ".g", ".gc", ".gcode"];
+const OPENSBP_EXTENSIONS = [".sbp", ".sbc"];
 
 var MethodNotAllowedError = errors.MethodNotAllowedError;
 var NotAuthorizedError = errors.NotAuthorizedError;
@@ -42,6 +39,7 @@ function listify(x) {
 // Execute a command in the shell
 //   callback - gets the output of the command (stdout)
 function doshell(command, callback) {
+    // eslint-disable-next-line no-unused-vars
     exec(command, function (error, stdout, stderr) {
         callback(stdout);
     });
@@ -62,8 +60,8 @@ function diskSync(callback) {
 // Example:
 //   extend( {a:1,b:2,c:{d:3}}, {a:2,c:{d:4}}) = {a:2,b:2,c:{d:4}}
 function extend(a, b, force) {
-    for (k in b) {
-        if (a.hasOwnProperty(k) || force) {
+    for (var k in b) {
+        if (Object.prototype.hasOwnProperty.call(a, k) || force) {
             if (typeof b[k] === "object" && b[k] !== null) {
                 if (typeof a[k] === "object" && a[k] !== null) {
                     extend(a[k], b[k], force);
@@ -84,7 +82,7 @@ function extend(a, b, force) {
 // Return the filename given a full path
 // TODO - this seems senseless - can't we just use the path module where needed?
 exports.filename = function (pathname) {
-    parts = pathname.split(path.sep);
+    var parts = pathname.split(path.sep);
     return parts[parts.length - 1];
 };
 
@@ -290,6 +288,7 @@ function serveStatic(opts) {
 
         var fstream = fs.createReadStream(file + (isGzip ? ".gz" : ""));
         var maxAge = opts.maxAge === undefined ? 3600 : opts.maxAge;
+        // eslint-disable-next-line no-unused-vars
         fstream.once("open", function (fd) {
             res.cache({ maxAge: maxAge });
             res.set("Content-Length", stats.size);
@@ -425,6 +424,7 @@ function fixJSON(json) {
         if (typeof json[key] === "object") {
             var value = fixJSON(json[key]);
         } else {
+            // eslint-disable-next-line no-redeclare
             var value = Number(json[key]);
             if (typeof value === "undefined" || isNaN(value)) {
                 if (json[key] === "true") {
@@ -453,16 +453,16 @@ function fixJSON(json) {
 //        I think a more useful watchdog would accept a callback in its constructor, and simply call that
 //        in the case that it expires.
 function Watchdog(timeout, exit_code) {
-    var watchdog_flag;
-    var watchdog_timeout = timeout || 1000;
-    var watchdog_exit_code = exit_code || 20;
+    this.watchdog_flag;
+    this.watchdog_timeout = timeout || 1000;
+    this.watchdog_exit_code = exit_code || 20;
 
-    watchdog_exit = function () {
+    var watchdog_exit = function () {
         //throw new Error("G2 is not responding");
         //process.exit(this.watchdog_exit_code);
     };
 
-    this.start = function () {
+    this.start = function (watchdog_timeout) {
         if (this.watchdog_flag === undefined) {
             this.watchdog_flag = setTimeout(watchdog_exit, watchdog_timeout);
         } else {
@@ -477,7 +477,7 @@ function Watchdog(timeout, exit_code) {
         }
     };
 
-    this.reset = function () {
+    this.reset = function (watchdog_timeout) {
         if (this.watchdog_flag) {
             clearTimeout(this.watchdog_flag);
             this.watchdog_flag = setTimeout(watchdog_exit, watchdog_timeout);
@@ -496,7 +496,7 @@ var getClientAddress = function (req) {
 // Check to see if something is a number (strings that parse to numbers, for example)
 var isANumber = function (n) {
     try {
-        var n = Number(n);
+        n = Number(n);
         return n == n;
     } catch (e) {
         return false;
@@ -530,14 +530,11 @@ var unitType = function (u) {
         case "0":
         case "in":
             return "in";
-            break;
         case "1":
         case "mm":
             return "mm";
-            break;
         default:
             throw new Error("Invalid unit type specifier: " + u);
-            break;
     }
 };
 
@@ -613,7 +610,7 @@ var addInputParam = function (input_var, params = {}) {
 };
 
 var addOkParam = function (ok, params = {}) {
-    if (!params.hasOwnProperty("custom")) {
+    if (!Object.prototype.hasOwnProperty.call(params, "custom")) {
         params["custom"] = {};
     }
     params.custom["ok"] = {
@@ -624,7 +621,7 @@ var addOkParam = function (ok, params = {}) {
 };
 
 var addCancelParam = function (cancel, params = {}) {
-    if (!params.hasOwnProperty("custom")) {
+    if (!Object.prototype.hasOwnProperty.call(params, "custom")) {
         params["custom"] = {};
     }
     params.custom["cancel"] = {
@@ -635,7 +632,7 @@ var addCancelParam = function (cancel, params = {}) {
 };
 
 var addTitleParam = function (title, params = {}) {
-    if (!params.hasOwnProperty("custom")) {
+    if (!Object.prototype.hasOwnProperty.call(params, "custom")) {
         params["custom"] = {};
     }
     params.custom["title"] = title;
@@ -643,7 +640,7 @@ var addTitleParam = function (title, params = {}) {
 };
 
 var addDetailParam = function (detail, params = {}) {
-    if (!params.hasOwnProperty("custom")) {
+    if (!Object.prototype.hasOwnProperty.call(params, "custom")) {
         params["custom"] = {};
     }
     params.custom["detail"] = detail;
@@ -651,7 +648,7 @@ var addDetailParam = function (detail, params = {}) {
 };
 
 var addNoButtonParam = function (noButton, params = {}) {
-    if (!params.hasOwnProperty("custom")) {
+    if (!Object.prototype.hasOwnProperty.call(params, "custom")) {
         params["custom"] = {};
     }
     params.custom["noButton"] = noButton;
@@ -685,22 +682,22 @@ var addNoButtonParam = function (noButton, params = {}) {
 // TODO: Add packaging for error info on implementation of error handling
 var packageModalParams = function (params = {}, modalParams = {}) {
     if (
-        params.hasOwnProperty("timer") &&
+        Object.prototype.hasOwnProperty.call(params, "timer") &&
         params["timer"] &&
         isANumber(params["timer"])
     ) {
         return addTimerParam(params["timer"]);
     }
-    if (params.hasOwnProperty("message")) {
+    if (Object.prototype.hasOwnProperty.call(params, "message")) {
         modalParams = addMessageParam(params["message"], modalParams);
-    } else if (!modalParams.hasOwnProperty("message")) {
+    } else if (!Object.prototype.hasOwnProperty.call(modalParams, "message")) {
         modalParams = addMessageParam("Paused.", modalParams);
     }
-    if (params.hasOwnProperty("input_var")) {
+    if (Object.prototype.hasOwnProperty.call(params, "input_var")) {
         modalParams = addInputParam(params["input_var"], modalParams);
     }
-    if (params.hasOwnProperty("okText")) {
-        if (params.hasOwnProperty("okFunc")) {
+    if (Object.prototype.hasOwnProperty.call(params, "okText")) {
+        if (Object.prototype.hasOwnProperty.call(params, "okFunc")) {
             modalParams = addOkParam(
                 { text: params["okText"], func: params["okFunc"] },
                 modalParams
@@ -712,8 +709,8 @@ var packageModalParams = function (params = {}, modalParams = {}) {
             );
         }
     }
-    if (params.hasOwnProperty("cancelText")) {
-        if (params.hasOwnProperty("cancelFunc")) {
+    if (Object.prototype.hasOwnProperty.call(params, "cancelText")) {
+        if (Object.prototype.hasOwnProperty.call(params, "cancelFunc")) {
             modalParams = addCancelParam(
                 { text: params["cancelText"], func: params["cancelFunc"] },
                 modalParams
@@ -725,14 +722,14 @@ var packageModalParams = function (params = {}, modalParams = {}) {
             );
         }
     }
-    if (params.hasOwnProperty("detail")) {
-        modalParams = addDetailParams(params["detail"]);
+    if (Object.prototype.hasOwnProperty.call(params, "detail")) {
+        modalParams = addDetailParam(params["detail"]);
     }
-    if (params.hasOwnProperty("title")) {
-        modalParams = addTitleParams(params["title"]);
+    if (Object.prototype.hasOwnProperty.call(params, "title")) {
+        modalParams = addTitleParam(params["title"]);
     }
-    if (params.hasOwnProperty("noButton") && params["noButton"]) {
-        modalParams = addNoButtonParams(params["noButton"]);
+    if (Object.prototype.hasOwnProperty.call(params, "noButton")) {
+        modalParams = addNoButtonParam(params["noButton"]);
     }
     return modalParams;
 };
