@@ -1022,7 +1022,7 @@ SBPRuntime.prototype._end = function (error) {
     // Normalize the error and ending state
     let error_msg = null;
     if (error) {
-        if (error.hasOwnProperty("message")) {
+        if (Object.prototype.hasOwnProperty.call(error, "message")) {
             error_msg = error.message;
         } else {
             error_msg = error;
@@ -1470,7 +1470,7 @@ SBPRuntime.prototype._assign = async function (identifier, value, callback) {
 // variables or constant numeric/string values.
 //   expr - String that represents the leaf of an expression tree
 SBPRuntime.prototype._eval_value = function (expr) {
-    if (expr.hasOwnProperty("type")) {
+    if (Object.prototype.hasOwnProperty.call(expr, "type")) {
         switch (expr.type) {
             case "user_variable":
                 return this.evaluateUserVariable(expr);
@@ -1547,7 +1547,7 @@ SBPRuntime.prototype.init = function () {
     this.pendingFeedhold = false;
 
     if (this.transforms != null && this.transforms.level.apply === true) {
-        leveler = new Leveler(this.transforms.level.ptDataFile);
+        this.leveler = new Leveler(this.transforms.level.ptDataFile);
     }
 };
 
@@ -1976,13 +1976,12 @@ SBPRuntime.prototype.emit_move = function (code, pt) {
     }.bind(this);
 
     if (this.transforms.level.apply === true) {
-        if (leveler.triangulationFailed() === true) {
+        if (this.leveler.triangulationFailed() === true) {
             log.error(
                 "Point cloud not triangulated, impossible to do levelling."
             );
             return;
         }
-        var previousHeight = leveler.foundHeight;
         var X = tPt.X === undefined ? this.cmd_posx : tPt.X;
         var Y = tPt.Y === undefined ? this.cmd_posy : tPt.Y;
         if (X === undefined) {
@@ -1996,7 +1995,7 @@ SBPRuntime.prototype.emit_move = function (code, pt) {
             theoriticalZ = 0;
         }
 
-        var relativeHeight = leveler.findHeight(X, Y);
+        var relativeHeight = this.leveler.findHeight(X, Y);
         if (relativeHeight === false) {
             log.info("[Leveler] Point outside of point cloud boundaries.");
             relativeHeight = 0;
@@ -2131,6 +2130,7 @@ SBPRuntime.prototype.resume = function (input = false) {
     if (this.resumeAllowed) {
         if (this.paused) {
             if (input) {
+                // eslint-disable-next-line no-unused-vars
                 var callback = function (err, data) {
                     if (err) {
                         log.error(err);
