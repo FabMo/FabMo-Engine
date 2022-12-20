@@ -18,6 +18,7 @@ GCodeRuntime.prototype.toString = function () {
 };
 
 // pass through function for compatibility with opensbp runtime
+// eslint-disable-next-line no-unused-vars
 GCodeRuntime.prototype.needsAuth = function (s) {
     return true;
 };
@@ -69,7 +70,7 @@ GCodeRuntime.prototype._changeState = function (newstate) {
 GCodeRuntime.prototype._limit = function () {
     var er = this.driver.getLastException();
     if (er && er.st == 203) {
-        var msg = er.msg.replace(/\[[^\[\]]*\]/, "");
+        var msg = er.msg.replace(/\[[^[\]]*\]/, "");
         this.driver.clearLastException();
         this._fail(msg);
         return true;
@@ -148,6 +149,7 @@ GCodeRuntime.prototype._idle = function () {
     if (job) {
         if (job.pending_cancel) {
             this.machine.status.job.cancel(
+                // eslint-disable-next-line no-unused-vars
                 function (err, job) {
                     this.machine.status.job = null;
                     finishUp();
@@ -155,6 +157,7 @@ GCodeRuntime.prototype._idle = function () {
             );
         } else {
             this.machine.status.job.finish(
+                // eslint-disable-next-line no-unused-vars
                 function (err, job) {
                     this.machine.status.job = null;
                     finishUp();
@@ -196,6 +199,7 @@ GCodeRuntime.prototype._handleStateChange = function (stat) {
                 //this.driver.sendM30();
                 this._file_or_stream_in_progress = false;
             }
+            break;
         default:
             // TODO:  Logging or error handling?
             break;
