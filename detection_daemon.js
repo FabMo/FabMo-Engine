@@ -14,8 +14,6 @@
  * often blocked on networks, particularly in schools and businesses.
  */
 var os = require("os");
-var util = require("util");
-var EventEmitter = require("events").EventEmitter;
 var dgram = require("dgram");
 var log = require("./log").logger("detection");
 var config = require("./config");
@@ -23,6 +21,7 @@ var bonjour = require("bonjour")();
 
 // Direct socket messages
 var OK = "YES I M !\0";
+// eslint-disable-next-line no-unused-vars
 var ERR = "I DNT UNDRSTND !\0";
 var HOSTNAME = "U NAME ?\0";
 var REQ = "R U A SBT ?\0";
@@ -76,7 +75,7 @@ var start = function (port) {
         }
         // Respond properly to continued dialog in the autodetect process
         else if (data.toString() == HOSTNAME) {
-            result = getMachineInfo();
+            var result = getMachineInfo();
             // advertise an HTTP server on port 80
             let resultString = JSON.stringify(result);
             socket.send(
@@ -115,11 +114,14 @@ function getMachineInfo() {
     try {
         Object.keys(os.networkInterfaces() || {}).forEach(function (
             key,
+            // eslint-disable-next-line no-unused-vars
             index,
+            // eslint-disable-next-line no-unused-vars
             arr
         ) {
             //val = ip adresses , key = name of interface
             var networks_list = this;
+            // eslint-disable-next-line no-unused-vars
             (networks_list[key] || {}).forEach(function (val2, key2, arr2) {
                 if (val2.internal === false && val2.family === "IPv4") {
                     result.networks.push({
@@ -128,8 +130,7 @@ function getMachineInfo() {
                     });
                 }
             });
-        },
-        os.networkInterfaces());
+        }, os.networkInterfaces());
     } catch (e) {
         log.warn(e);
     }
