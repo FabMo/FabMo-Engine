@@ -1,12 +1,13 @@
 module.exports = {
     env: {
+        node: true,
         commonjs: true,
         es2021: true,
     },
     globals: {
-        "setTimeout": true,
-        "clearTimeout": true,
-        "setImmediate": true
+        setTimeout: true,
+        clearTimeout: true,
+        setImmediate: true,
     },
     plugins: ["jest", "prettier"],
 
@@ -16,7 +17,7 @@ module.exports = {
     },
     rules: {
         "no-mixed-spaces-and-tabs": "off",
-        "prettier/prettier": ["error"]
+        "prettier/prettier": ["error"],
     },
     ignorePatterns: [
         "dashboard/static/js/libs/socket.io.js",
