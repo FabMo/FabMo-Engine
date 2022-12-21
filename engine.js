@@ -13,7 +13,6 @@ var events = require("events");
 var async = require("async");
 var process = require("process");
 var machine = require("./machine");
-var detection_daemon = require("./detection_daemon");
 var config = require("./config");
 var OS = process.platform;
 var PLATFORM = process.env.PLATFORM;
@@ -29,16 +28,10 @@ var sessions = require("client-sessions");
 var authentication = require("./authentication");
 var profiles = require("./profiles");
 var crypto = require("crypto");
-var child_process = require("child_process");
 var moment = require("moment");
-var exec = child_process.exec;
 //other util
 var Util = require("util");
 
-var GenericNetworkManager = require("./network_manager").NetworkManager;
-
-var BEACON_INTERVAL = 1 * 60 * 60 * 1000; // 1 Hour (in milliseconds)
-var TASK_TIMEOUT = 10800000; // 3 hours (in milliseconds)
 var PACKAGE_CHECK_DELAY = 30; // Seconds
 
 // The engine object has a few high level properties and some key methods that define the application lifecycle
@@ -122,8 +115,8 @@ Engine.prototype.setTime = function (time) {
         return;
     } else {
         var m = moment.unix(time / 1000.0);
-        t = m.utc().format("YYYY-MM-DD HH:mm:ss");
-        cmd = "timedatectl set-time " + t + "; timedatectl";
+        var t = m.utc().format("YYYY-MM-DD HH:mm:ss");
+        var cmd = "timedatectl set-time " + t + "; timedatectl";
         util.doshell(cmd, function (stdout) {
             log.debug("Time Set To:  " + stdout);
             this.time_synced = true;
@@ -204,6 +197,7 @@ Engine.prototype.getVersion = function (callback) {
                         this.version.number =
                             this.version.number + "-dev-fault";
                         this.version.type = "dev";
+                        // eslint-disable-next-line no-redeclare
                         var random =
                             Math.floor(Math.random() * (99999 - 10000)) + 10000;
                         log.info("Adding random prefix to dev engine version");
@@ -282,6 +276,7 @@ Engine.prototype.start = function (callback) {
 
             // Load profiles.  See the profiles module for what this entails.
             function load_profiles(callback) {
+                // eslint-disable-next-line no-unused-vars
                 profiles.load(function (err, profiles) {
                     if (err) {
                         log.error(err);
@@ -419,6 +414,7 @@ Engine.prototype.start = function (callback) {
             // Connect to G2 and initialize machine runtimes.  See machine.js for what this entails.
             function connect(callback) {
                 log.info("Connecting to G2...");
+                // eslint-disable-next-line no-unused-vars
                 machine.connect(function (err, machine) {
                     if (err) {
                         log.error("!!!!!!!!!!!!!!!!!!!!!!!!");
@@ -434,6 +430,7 @@ Engine.prototype.start = function (callback) {
             function load_machine_config(callback) {
                 this.machine = machine.machine;
                 log.info("Loading the machine configuration...");
+                // eslint-disable-next-line no-unused-vars
                 config.configureMachine(this.machine, function (err, result) {
                     if (err) {
                         log.warn(err);
@@ -461,6 +458,7 @@ Engine.prototype.start = function (callback) {
                     log.info("Configuring G2...");
                     config.configureDriver(
                         machine.machine.driver,
+                        // eslint-disable-next-line no-unused-vars
                         function (err, data) {
                             if (err) {
                                 log.error(
@@ -472,6 +470,7 @@ Engine.prototype.start = function (callback) {
                     );
                 } else {
                     log.warn("Skipping G2 configuration due to no connection.");
+                    // eslint-disable-next-line no-unused-vars
                     config.configureDriver(null, function (err, data) {
                         callback(null);
                     });
@@ -556,6 +555,7 @@ Engine.prototype.start = function (callback) {
                 }
                 if (do_shim) {
                     log.debug("Deleting obsolete entries in G2 config");
+                    // eslint-disable-next-line no-unused-vars
                     config.driver.deleteMany(entries, function (err, data) {
                         config.driver.restore(function () {
                             callback();
@@ -667,6 +667,7 @@ Engine.prototype.start = function (callback) {
                         fs.writeFile(
                             secret_file,
                             this.auth_secret,
+                            // eslint-disable-next-line no-unused-vars
                             function (err, data) {
                                 callback();
                             }.bind(this)
@@ -677,11 +678,11 @@ Engine.prototype.start = function (callback) {
 
             // Initialize the network module
             function setup_network(callback) {
-                var OS = config.platform;
                 var name = config.engine.get("name");
                 log.info("name is - " + name);
                 network.createNetworkManager(
                     name,
+                    // eslint-disable-next-line no-unused-vars
                     function (err, nm) {
                         this.networkManager = nm;
                         this.networkManager.on(
@@ -764,13 +765,6 @@ Engine.prototype.start = function (callback) {
             function start_server(callback) {
                 log.info("Setting up the webserver...");
 
-                // TODO: Is this used any longer?  Maybe remove it.
-                var fmt = {
-                    "application/json": function (req, res, body) {
-                        return cb(null, JSON.stringify(body, null, "\t"));
-                    },
-                };
-
                 // Initialize a server and attach it to the application
                 var server = restify.createServer({ name: "FabMo Engine" });
                 this.server = server;
@@ -817,7 +811,7 @@ Engine.prototype.start = function (callback) {
                  * URL is revised, and the cache is thus busted.
                  * 404 errors are handled in two different ways depending on their content:
                  */
-                server.on("NotFound", function (req, res, cb) {
+                server.on("NotFound", function (req, res) {
                     var current_hash = config.engine.get("version");
                     var url_arr = req.url.split("/");
                     // If a URL contains a hash that doesn't match the current version hash:
@@ -838,9 +832,9 @@ Engine.prototype.start = function (callback) {
                 });
 
                 // Catch-all handler that responds gracefully when an internal server error occurs.
-                server.on("uncaughtException", function (req, res, route, err) {
+                server.on("uncaughtException", function (res, err) {
                     log.uncaught(err);
-                    answer = {
+                    var answer = {
                         status: "error",
                         message: err.message,
                     };
@@ -897,8 +891,9 @@ Engine.prototype.start = function (callback) {
                 log.info("Loading routes...");
 
                 server.io = require("socket.io")(server.server);
+                // eslint says routes is unused, but removing it breaks fabmo
+                // eslint-disable-next-line no-unused-vars
                 var routes = require("./routes")(server);
-
                 // Kick off the server listening for connections
                 // 0.0.0.0 causes us to listen on ALL interfaces (so the engine can be seen over ethernet, wifi, etc.)
                 server.listen(
@@ -915,6 +910,7 @@ Engine.prototype.start = function (callback) {
             }.bind(this),
         ],
         // Print some kind of sane debugging information if anything above fails
+        // eslint-disable-next-line no-unused-vars
         function (err, results) {
             if (err) {
                 log.stack();
