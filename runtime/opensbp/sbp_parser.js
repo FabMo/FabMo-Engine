@@ -21,11 +21,13 @@ module.exports = (function () {
             s
                 .replace(/\\/g, "\\\\") // backslash
                 .replace(/"/g, '\\"') // closing quote character
+                // eslint-disable-next-line no-control-regex
                 .replace(/\x08/g, "\\b") // backspace
                 .replace(/\t/g, "\\t") // horizontal tab
                 .replace(/\n/g, "\\n") // line feed
                 .replace(/\f/g, "\\f") // form feed
                 .replace(/\r/g, "\\r") // carriage return
+                // eslint-disable-next-line no-control-regex
                 .replace(/[\x00-\x07\x0B\x0E-\x1F\x80-\uFFFF]/g, escape) +
             '"'
         );
@@ -106,6 +108,7 @@ module.exports = (function () {
                 return result;
             }
 
+            // eslint-disable-next-line no-unused-vars
             function escape(ch) {
                 var charCode = ch.charCodeAt(0);
                 var escapeChar;
@@ -1017,8 +1020,8 @@ module.exports = (function () {
                 }
                 if (result0 !== null) {
                     result0 = (function (offset, name, arg, arg2) {
-                        var arg = arg || {};
-                        var arg2 = arg2 || {};
+                        arg = arg || {};
+                        arg2 = arg2 || {};
                         if (arg["expr"] && arg2["var"]) {
                             return {
                                 type: "pause",
