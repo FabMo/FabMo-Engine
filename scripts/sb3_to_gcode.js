@@ -7,7 +7,7 @@ var output_file = process.argv[3];
 
 config.configureOpenSBP(function () {
     config.configureDriver(null, function () {
-        runtime = new SBPRuntime();
+        var runtime = new SBPRuntime();
         runtime.loadCommands(function (err) {
             if (!err) {
                 fs.readFile(input_file, function (err, data) {
