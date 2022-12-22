@@ -34,9 +34,6 @@ var appReloader = function (event, pth, details) {
 
 // This function is called (if enabled) at application startup.
 // Nominally, it sets up a "watcher" that live-reloads system apps if they are edited while the system is running.
-// The code the actually performs the copy operation was commented out above, however, so it really does nothing.
-//
-// TODO : Figure out why the code above is commented out - do we still need this module?
 function startDebug() {
     log.info("Starting debug watcher...");
     var chokidar = require("chokidar");
