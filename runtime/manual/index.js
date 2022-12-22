@@ -5,15 +5,8 @@
  * control over the tool, such as would be used by a pendant, or interactive control app.
  */
 var log = require("../../log").logger("manual");
-var config = require("../../config");
 var stream = require("stream");
 var ManualDriver = require("./driver");
-
-// TODO - these should probably all be taken out - I don't believe they are used
-var T_RENEW = 200;
-var SAFETY_FACTOR = 2.0;
-var RENEW_SEGMENTS = 10;
-var FIXED_MOVES_QUEUE_SIZE = 3;
 
 // TODO - member of the instance rather than global to this file?!
 var currentCmd;
@@ -30,6 +23,7 @@ ManualRuntime.prototype.toString = function () {
 };
 
 // pass through function for compatibility with opensbp runtime
+// eslint-disable-next-line no-unused-vars
 ManualRuntime.prototype.needsAuth = function (s) {
     return true;
 };

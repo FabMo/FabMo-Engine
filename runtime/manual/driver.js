@@ -14,7 +14,6 @@
  */
 var log = require("../../log").logger("manual");
 var config = require("../../config");
-var stream = require("stream");
 var util = require("util");
 var events = require("events");
 var Q = require("q");
@@ -24,10 +23,9 @@ var Q = require("q");
 var T_RENEW = 300;
 var SAFETY_FACTOR = 4.0;
 // TODO should be in the ManualDriver instance?!
-var count;
+var count = 0;
 var RENEW_SEGMENTS = 10;
 var FIXED_MOVES_QUEUE_SIZE = 3;
-var count = 0;
 
 // ManualDriver constructor
 // The manual driver provides functions for managing the state of the G2 driver while "manually"
@@ -294,7 +292,7 @@ ManualDriver.prototype.runGCode = function (code) {
 ManualDriver.prototype.goto = function (pos) {
     var move = "G90\nG0 ";
     for (var key in pos) {
-        if (pos.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(pos, key)) {
             move += key + pos[key] + " ";
         }
     }
@@ -309,6 +307,7 @@ ManualDriver.prototype.goto = function (pos) {
 //   pos - New position vector as an object,  eg: {"X":10, "Y":5}
 ManualDriver.prototype.set = function (pos) {
     var toSet = {};
+    var unitConv;
     if (this.driver.status.unit === "in") {
         // inches
         unitConv = 0.039370079;
@@ -361,12 +360,14 @@ ManualDriver.prototype.set = function (pos) {
                 );
                 config.driver.setMany(
                     toSet,
+                    // eslint-disable-next-line no-unused-vars
                     function (err, value) {
                         //total hack to update the positions
                         this.stream.write("G91\nG0\nX0\nG91");
                         this.driver.prime();
                         config.driver.reverseUpdate(
                             ["g55x", "g55y", "g55z", "g55a", "g55b"],
+                            // eslint-disable-next-line no-unused-vars
                             function (err, data) {}
                         );
                     }.bind(this)
@@ -500,9 +501,11 @@ ManualDriver.prototype.isMoving = function () {
 };
 
 // Internal function called to "pump" moves into the queue
-// This function is called periodically until a stop is requested, or the users intent to continue moving evaporates.
+// This function is called periodically until a stop is requested,
+// or the users intent to continue moving evaporates.
 // The idea behind this function is that it is called at an interval that outpaces the
-//   reason - The reason this functon is being called (used for debug purposes)
+// reason - The reason this functon is being called (used for debug purposes)
+// eslint-disable-next-line no-unused-vars
 ManualDriver.prototype._renewMoves = function (reason) {
     if (this.mode === "normal") {
         if (this.moving && this.keep_moving) {
@@ -525,7 +528,9 @@ ManualDriver.prototype._renewMoves = function (reason) {
                     moves.push(move);
                 }
             } else {
+                // eslint-disable-next-line no-redeclare
                 for (var i = 0; i < RENEW_SEGMENTS; i++) {
+                    // eslint-disable-next-line no-redeclare
                     var move =
                         "G1" + this.currentAxis + segment.toFixed(4) + "\n";
                     moves.push(move);
@@ -601,6 +606,7 @@ ManualDriver.prototype._onG2Status = function (status) {
                     }.bind(this)
                 );
             }
+            break;
         case this.driver.STAT_END:
         case this.driver.STAT_HOLDING:
             // Handle nudges once we've come to a stop
@@ -623,7 +629,7 @@ ManualDriver.prototype._onG2Status = function (status) {
 ManualDriver.prototype._limit = function () {
     var er = this.driver.getLastException();
     if (er && er.st == 203) {
-        var msg = er.msg.replace(/\[[^\[\]]*\]/, "");
+        var msg = er.msg.replace(/\[[^[\]]*\]/, "");
         this.keep_moving = false;
         this.moving = false;
         this.driver.clearLastException();
