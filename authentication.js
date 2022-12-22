@@ -7,7 +7,6 @@ var passport = require("passport-restify");
 var LocalStrategy = require("passport-local").Strategy;
 var config = require("./config");
 var machine = require("./machine");
-var util = require("util");
 var events = require("events");
 var eventEmitter = new events.EventEmitter();
 
@@ -19,7 +18,7 @@ var isCurrentUserKickeable = false;
 var userToKickout = undefined;
 
 function startUserTimer() {
-    var currentUserTimer = setTimeout(userTimeout, userTimer);
+    currentUserTimer = setTimeout(userTimeout, userTimer);
 }
 
 function resetUserTimer() {
@@ -31,17 +30,18 @@ function userTimeout() {
     isCurrentUserKickeable = true;
 }
 
-function logOutUser(user) {
-    var property = "user";
-    if (this._passport && this._passport.instance) {
-        property = this._passport.instance._userProperty || "user";
-    }
+// This function is never called, do we need it? Commenting out to observe result
+// function logOutUser(user) {
+//     var property = "user";
+//     if (this._passport && this._passport.instance) {
+//         property = this._passport.instance._userProperty || "user";
+//     }
 
-    this[property] = null;
-    if (this._passport && this._passport.session) {
-        delete this._passport.session.user;
-    }
-}
+//     this[property] = null;
+//     if (this._passport && this._passport.session) {
+//         delete this._passport.session.user;
+//     }
+// }
 
 exports.configure = function () {
     passport.use(
@@ -162,7 +162,7 @@ var addUser = function (username, password, callback) {
             callback(err);
             return;
         } else {
-            var user = {
+            user = {
                 username: username,
                 password: user.password,
                 isAdmin: user.isAdmin,
@@ -177,7 +177,7 @@ var addUser = function (username, password, callback) {
 var getUsers = function (callback) {
     var users = [];
     config.user.getAll(function (data) {
-        for (key in data) {
+        for (var key in data) {
             var user = {
                 username: key,
                 password: undefined,
@@ -225,7 +225,7 @@ var modifyUser = function (username, user_fields, callback) {
             if (user_fields.username !== undefined) {
                 delete user_fields.username;
             }
-            for (field in user_fields) {
+            for (var field in user_fields) {
                 switch (field) {
                     case "_id":
                     case "created_at":
@@ -236,9 +236,8 @@ var modifyUser = function (username, user_fields, callback) {
                             null
                         );
                         return;
-                        break;
                     case "password":
-                        password = config.user.verifyAndEncryptPassword(
+                        var password = config.user.verifyAndEncryptPassword(
                             user_fields["password"]
                         );
                         if (!password) {
@@ -330,6 +329,7 @@ exports.getUserById = function (username, cb) {
     });
 };
 
+// eslint-disable-next-line no-unused-vars
 exports.getCurrentUser = function (u) {
     return currentUser;
 };
