@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // Generated using webpack-cli http://github.com/webpack-cli
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
@@ -35,22 +36,11 @@ var config = {
         path: "/fabmo/dashboard/build",
         publicPath: "/",
         filename: "[name].js",
-        // filename: "[name].[chunkhash].js"
-        //  path: path.resolve(__dirname, 'dist'),
     },
 
     resolve: {
-        // modulesDirectories: [lib],
         extensions: ["", ".js"],
     },
-    /*
-	optimization: {
-		splitChunks: {
-		  // include all types of chunks
-		  chunks: 'all',
-		},
-	},
-*/
     module: {
         rules: [
             {
