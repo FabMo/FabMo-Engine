@@ -7,7 +7,6 @@
  *   - job data
  *   - file thumbnails (currently unused)
  */
-var assert = require("assert");
 var async = require("async");
 var fs = require("fs-extra");
 var crypto = require("crypto");
@@ -15,6 +14,7 @@ var log = require("./log").logger("db");
 var config = require("./config");
 var util = require("./util");
 var ncp = require("ncp").ncp;
+var path = require("path");
 var process = require("process");
 var cnctosvg = require("cnctosvg");
 
@@ -54,7 +54,7 @@ function notifyChange() {
  *     'failed' - Job failed due to error
  *     'trash' - Job is marked for deletion from the history
  */
-Job = function (options) {
+var Job = function (options) {
     this.file_id = options.file_id || null;
     this.name = options.name || "Untitled Job";
     this.description = options.description || "";
@@ -75,7 +75,6 @@ Job.prototype.clone = function (callback) {
     job.save(callback);
 };
 
-// TODO @brendan
 Job.prototype.update_order = function (order, callback) {
     log.info("Upating " + this._id ? this._id : "<volatile job>");
     this.order = order;
@@ -187,16 +186,21 @@ Job.getRunning = function (callback) {
 };
 
 /*
- * Retrieve the "history" which includes jobs that are in one of the completed states; finished, cancelled, or failed
+ * Retrieve the "history" which includes jobs that are in one of
+ * the completed states; finished, cancelled, or failed
  * options:
  *   - start : The starting index for retrieval.
  *   - count : The number of files to retrieve from the history (sorted by creation date)
  *
  * example:
- *    getHistory({count : 10})  will retrieve the 10 most recent jobs in the history. (Ordered by creation date)
- *    getHistory({start : 10, count : 5}) will retrieve 5 jobs from the history, starting with the tenth one.
+ *    getHistory({count : 10})  will retrieve the 10 most
+ *    recent jobs in the history. (Ordered by creation date)
+ *
+ *    getHistory({start : 10, count : 5}) will retrieve 5 jobs from the history,
+ *    starting with the tenth one.
  */
 Job.getHistory = function (options, callback) {
+    // eslint-disable-next-line no-unused-vars
     var total = jobs.count(
         {
             state: { $in: ["finished", "cancelled", "failed"] },
@@ -319,8 +323,8 @@ Job.deletePending = function (callback) {
 // The File class represents a fabrication file on disk
 // In addition to the filename and path, file statistics such as
 // The run count, last time run, etc. are stored in the database.
+// eslint-disable-next-line no-unused-vars
 function File(filename, path, callback) {
-    var that = this;
     this.filename = filename;
     this.path = path;
     this.created = Date.now();
@@ -435,6 +439,7 @@ File.clearTrash = function (callback) {
                 }
             }
             async.each(toTrash, function (_file, callback) {
+                // eslint-disable-next-line no-unused-vars
                 File.obliterate(_file, function (err, msg) {
                     if (err) {
                         throw err;
@@ -450,6 +455,7 @@ File.clearTrash = function (callback) {
 };
 
 // Retrieve the total size of all files on disk (used to determine how much to prune if we hit max file size)
+// eslint-disable-next-line no-unused-vars
 File.getTotalFileSize = function (callback) {
     files.find().toArray(function (err, result) {
         if (err) {
@@ -457,6 +463,7 @@ File.getTotalFileSize = function (callback) {
         } else {
             result.forEach(function (file) {
                 if (file.size === undefined) {
+                    // eslint-disable-next-line no-unused-vars
                     var size2b = new Promise(function (resolve, reject) {
                         util.getSize(file.path, function (err, fileSize) {
                             resolve(fileSize);
@@ -664,7 +671,7 @@ var createJob = function (file, options, callback) {
 // (in G-Code or OpenSBP).
 //
 // @param {Document} [thumbnailDocument] - The thumbnail stored in the database.
-Thumbnail = function (thumbnailDocument) {
+function Thumbnail(thumbnailDocument) {
     if (thumbnailDocument) {
         this.file_id = thumbnailDocument.file_id;
         this.version = thumbnailDocument.version;
@@ -674,7 +681,7 @@ Thumbnail = function (thumbnailDocument) {
         this.version = 0;
         this.image = "";
     }
-};
+}
 
 // Checks if needs update.
 // @return {boolean} If needs update.
@@ -701,7 +708,7 @@ Thumbnail.prototype.update = function (callback) {
             if (err) {
                 callback(
                     new Error(
-                        "Cannot find G-Code for file with id = " + fileId
+                        "Cannot find G-Code for file with id = " + file.fileId
                     ),
                     that
                 );
@@ -713,6 +720,7 @@ Thumbnail.prototype.update = function (callback) {
                 version: cnctosvg.VERSION,
             };
             var query = { file_id: that.file_id };
+            // eslint-disable-next-line no-unused-vars
             thumbnails.update(query, modifications, function (err, thumbnail) {
                 if (err) {
                     callback(
@@ -799,6 +807,7 @@ Thumbnail.generate = function (fileId, callback) {
                     gcodeString,
                     file.filename
                 );
+                // eslint-disable-next-line no-unused-vars
                 thumbnails.insert(newThumbnail, function (err, records) {
                     if (err) {
                         callback(
@@ -852,7 +861,8 @@ function isDirectory(path, callback) {
     });
 }
 
-checkCollection = function (collection, callback) {
+function checkCollection(collection, callback) {
+    // eslint-disable-next-line no-unused-vars
     collection.find().toArray(function (err, data) {
         if (err) {
             log.error(
@@ -866,11 +876,12 @@ checkCollection = function (collection, callback) {
             callback(null);
         }
     });
-};
+}
 
-backupDB = function (callback) {
-    src = config.getDataDir("db");
-    dest = config.getDataDir("backup") + "/db/";
+// eslint-disable-next-line no-unused-vars
+function backupDB(callback) {
+    var src = config.getDataDir("db");
+    var dest = config.getDataDir("backup") + "/db/";
     isDirectory(dest, function (isdir) {
         if (!isdir) {
             //Replace with new copy of DB
@@ -901,10 +912,10 @@ backupDB = function (callback) {
             });
         }
     });
-};
+}
 
-reConfig = function (callback) {
-    db = new Engine.Db(config.getDataDir("db"), {});
+function reConfig(callback) {
+    var db = new Engine.Db(config.getDataDir("db"), {});
     files = db.collection("files");
     jobs = db.collection("jobs");
     thumbnails = db.collection("thumbnails");
@@ -912,6 +923,7 @@ reConfig = function (callback) {
     async.parallel(
         [
             function (cb) {
+                // eslint-disable-next-line no-undef
                 checkCollection(users, cb);
             },
             function (cb) {
@@ -924,6 +936,7 @@ reConfig = function (callback) {
                 checkCollection(thumbnails, cb);
             },
         ],
+        // eslint-disable-next-line no-undef, no-unused-vars
         function (err, results) {
             if (err) {
                 log.error("There was a database corruption issue!");
@@ -966,10 +979,10 @@ reConfig = function (callback) {
             }
         }
     );
-};
+}
 
 exports.configureDB = function (callback) {
-    db = new Engine.Db(config.getDataDir("db"), {});
+    var db = new Engine.Db(config.getDataDir("db"), {});
     files = db.collection("files");
     jobs = db.collection("jobs");
     thumbnails = db.collection("thumbnails");
@@ -986,6 +999,7 @@ exports.configureDB = function (callback) {
                 checkCollection(thumbnails, cb);
             },
         ],
+        // eslint-disable-next-line no-unused-vars
         function (err, results) {
             if (err) {
                 log.error("There was a database corruption issue!");
