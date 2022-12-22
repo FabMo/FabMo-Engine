@@ -13,7 +13,7 @@ var path = require("path");
 var watch_semaphore = 0;
 
 // App reloader
-var appReloader = function (pth, details) {
+var appReloader = function (event, pth, details) {
     pth = path.normalize(details.watchedPath || details.path);
 
     // Don't watch for changes if there is an update in progress
@@ -35,7 +35,8 @@ var appReloader = function (pth, details) {
 // This function is called (if enabled) at application startup.
 // Nominally, it sets up a "watcher" that live-reloads system apps if they are edited while the system is running.
 // The code the actually performs the copy operation was commented out above, however, so it really does nothing.
-// Do we still need this module?
+//
+// TODO : Figure out why the code above is commented out - do we still need this module?
 function startDebug() {
     log.info("Starting debug watcher...");
     var chokidar = require("chokidar");
