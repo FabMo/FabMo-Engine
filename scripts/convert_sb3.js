@@ -1,27 +1,26 @@
 var csv = require("csv"); // Requires this at 0.3.7: npm install csv@0.3.7
 var fs = require("fs");
 
-prm = fs.readFileSync("../data/shopbotw.prm", "utf8");
-cmd = fs.readFileSync("../data/shopbotw.cmd", "utf8");
+var prm = fs.readFileSync("../data/shopbotw.prm", "utf8");
+var cmd = fs.readFileSync("../data/shopbotw.cmd", "utf8");
 
 function scrubName(name) {
-    name = name.replace(/\[\&([A-Za-z0-9#])\]/, "$1"); // Normalize [&H]otkeys
+    name = name.replace(/\[&([A-Za-z0-9#])\]/, "$1"); // Normalize [&H]otkeys
     name = name.replace(/\s*\*\s*/, ""); // Remove astrixes
     return name;
 }
 
 function parseDefault(dflt) {
-    parts = dflt.split(/[-=](?![0-9])/);
+    var parts = dflt.split(/[-=](?![0-9])/);
     return new Array(parts[0].trim(), parts[1].trim());
 }
 
 // Deal with commands
 var commands = {};
-
-var cmd_done = false;
-row_count = 0;
+var row_count = 0;
 csv()
     .from.string(cmd)
+    // eslint-disable-next-line no-unused-vars
     .on("record", function (record, idx) {
         if (row_count < 9) {
             row_count += 1;
@@ -47,6 +46,7 @@ csv()
             commands[cmd] = command;
         }
     })
+    // eslint-disable-next-line no-unused-vars
     .on("end", function (count) {
         var row_count = 0;
         var param_list = [];
@@ -57,6 +57,7 @@ csv()
 
         csv()
             .from.string(prm)
+            // eslint-disable-next-line no-unused-vars
             .on("record", function (record, idx) {
                 if (row_count < 2) {
                     row_count += 1;
@@ -78,8 +79,8 @@ csv()
                     case "opt":
                     case "ck":
                         if (record[6] === "") {
-                            df = parseDefault(record[10]);
-                            opt = {};
+                            var df = parseDefault(record[10]);
+                            var opt = {};
                             opt.value = df[0];
                             opt.desc = df[1];
                             current_param.opts.push({
@@ -122,6 +123,7 @@ csv()
                         break;
                 }
             })
+            // eslint-disable-next-line no-unused-vars
             .on("end", function (count) {
                 fs.writeFile(
                     "../data/sb3_commands.json",
