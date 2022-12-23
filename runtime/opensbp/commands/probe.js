@@ -1,8 +1,3 @@
-var log = require("../../../log").logger("sbp");
-var g2 = require("../../../g2");
-var sb3_commands = require("../sb3_commands");
-var config = require("../../../config");
-
 // Generic probe function
 // opts:
 //  inp : input number (int)
@@ -23,7 +18,7 @@ function probe(runtime, opts) {
 
     var cmd2 = ["G38.3"]; // no fault on miss for testing
     ////##	var cmd2 = ['G38.2']
-    for (word in opts.dist) {
+    for (var word in opts.dist) {
         cmd2.push(word + opts.dist[word].toFixed(5));
     }
 
