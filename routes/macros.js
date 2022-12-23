@@ -1,9 +1,9 @@
-var ncp = require("ncp").ncp;
 var macros = require("../macros");
 
+// eslint-disable-next-line no-unused-vars
 var updateMacro = function (req, res, next) {
     var id = req.params.id;
-    macro = macros.get(id);
+    var macro = macros.get(id);
     var updated_macro = {};
     if (macro) {
         updated_macro.name = req.params.name || macro.name;
@@ -21,7 +21,7 @@ var updateMacro = function (req, res, next) {
     }
     macros.update(id, updated_macro, function (err, macro) {
         if (err) {
-            response = { status: "error", message: err.message };
+            var response = { status: "error", message: err.message };
         } else {
             response = { status: "success", data: macro };
         }
@@ -34,8 +34,9 @@ var updateMacro = function (req, res, next) {
  * @api {get} /macros List all macros
  * @apiDescription Returns a listing with information about all macros
  */
+// eslint-disable-next-line no-unused-vars
 var getMacros = function (req, res, next) {
-    response = { status: "success", data: { macros: macros.list() } };
+    var response = { status: "success", data: { macros: macros.list() } };
     res.json(response);
 };
 
@@ -51,9 +52,10 @@ var getMacros = function (req, res, next) {
  * @apiSuccess {String} macro.filename Local filename where the macro is stored
  * @apiSuccess {Number} macro.index Macro numeric index
  */
+// eslint-disable-next-line no-unused-vars
 var getMacro = function (req, res, next) {
-    id = req.params.id;
-    macro = macros.get(id);
+    var id = req.params.id;
+    var macro = macros.get(id);
     if (macro) {
         res.json({
             status: "success",
@@ -78,9 +80,10 @@ var getMacro = function (req, res, next) {
  * @apiSuccess {String} macro.filename Local filename where the macro is stored
  * @apiSuccess {Number} macro.index Macro numeric index
  */
+// eslint-disable-next-line no-unused-vars
 var getMacroInfo = function (req, res, next) {
-    id = req.params.id;
-    info = macros.getInfo(id);
+    var id = req.params.id;
+    var info = macros.getInfo(id);
     if (info) {
         res.json({
             status: "success",
@@ -94,9 +97,10 @@ var getMacroInfo = function (req, res, next) {
     }
 };
 
+// eslint-disable-next-line no-unused-vars
 var runMacro = function (req, res, next) {
     var id = req.params.id;
-    macro = macros.get(id);
+    var macro = macros.get(id);
     if (macro) {
         macros.run(id);
         res.json({
@@ -111,6 +115,7 @@ var runMacro = function (req, res, next) {
     }
 };
 
+// eslint-disable-next-line no-unused-vars
 var deleteMacro = function (req, res, next) {
     var id = req.params.id;
     macros.del(id, function (err) {
