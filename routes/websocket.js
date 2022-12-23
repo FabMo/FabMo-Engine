@@ -1,15 +1,12 @@
-var fs = require("fs");
 var util = require("../util");
 var machine = require("../machine").machine;
 var log = require("../log").logger("websocket");
 var authentication = require("../authentication");
-var passport = authentication.passport;
 var sessions = require("client-sessions");
 var parseCookie = require("./util").parseCookie;
 var server = null;
-var clients_limit = 5;
-var nb_clients = 0;
 
+// eslint-disable-next-line no-unused-vars
 function setupAuthentication(svr) {
     server.io.of("/private").use(function (socket, next) {
         var handshakeData = socket.request;
@@ -37,7 +34,7 @@ function setupAuthentication(svr) {
             var user = handshakeData.sessionID.content.passport.user;
             authentication.getUserById(user, function (err, data) {
                 if (err) {
-                    var err = new Error(err);
+                    err = new Error(err);
                     log.error(err);
                     // delete socket.request.headers.cookie;
                     return next(err);
@@ -48,7 +45,7 @@ function setupAuthentication(svr) {
             });
             // authentication.configure();
             if (!handshakeData.sessionID) {
-                var err = new Error("Wrong session.");
+                err = new Error("Wrong session.");
 
                 return next(err);
             }
@@ -90,10 +87,12 @@ var onPublicConnect = function (socket) {
         log.debug("Client disconnected");
     });
 
+    // eslint-disable-next-line no-unused-vars
     socket.on("status", function (data) {
         socket.emit("status", machine.status);
     });
 
+    // eslint-disable-next-line no-unused-vars
     socket.on("ping", function (data) {
         socket.emit("pong");
     });
@@ -139,7 +138,6 @@ var onPrivateConnect = function (socket) {
             },
             cookie["session"]
         );
-        var user = handshakeData.sessionID;
 
         if (
             !authentication.getCurrentUser() ||
