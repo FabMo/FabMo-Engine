@@ -9,6 +9,7 @@
 
 var engine = require("../engine");
 
+// eslint-disable-next-line no-unused-vars
 var setTime = function (req, res, next) {
     if (req.params.ms) {
         engine.setTime(req.params.ms);
