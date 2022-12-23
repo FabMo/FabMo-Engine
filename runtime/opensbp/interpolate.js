@@ -2,10 +2,7 @@
 
 var fs = require("fs");
 var log = require("../../log").logger("sbp");
-var g2 = require("../../g2");
-var sb3_commands = require("./sb3_commands");
 var config = require("../../config");
-var opensbp = require("./opensbp");
 
 //  Interpolate_Line - is used to interpolate a line into smaller segments.
 //
@@ -16,9 +13,6 @@ exports.lineInterpolate = function (runtime, EndPt) {
     var startX = runtime.cmd_posx;
     var startY = runtime.cmd_posy;
     var startZ = runtime.cmd_posz;
-    var nextX = startX;
-    var nextY = startY;
-    var nextZ = startZ;
     var endX = startX;
     if ("X" in EndPt && EndPt.X !== undefined) {
         endX = EndPt.X;
@@ -61,8 +55,8 @@ exports.lineInterpolate = function (runtime, EndPt) {
         PtData = fs.readFileSync(PtFilename);
         PtData = JSON.parse(PtData);
     }
-    for (i = 1; i < steps + 1; i++) {
-        nextPt = {};
+    for (var i = 1; i < steps + 1; i++) {
+        var nextPt = {};
         gcode = "G1";
 
         if (stepX !== 0) {
@@ -160,7 +154,7 @@ function leveler(PtNew, data) {
         var pX = PtNew.X;
         var pY = PtNew.Y;
         //Search for the triangle that the point intersects
-        for (key in triangles) {
+        for (var key in triangles) {
             if (
                 (triangles[key].Y1 > pY ||
                     triangles[key].Y2 > pY ||
@@ -281,14 +275,15 @@ exports.circleInterpolate = function (runtime, code, CGParams) {
     var nextAng = Bang;
     var gcode = "";
 
-    for (i = 1; i < steps; i++) {
+    for (var i = 1; i < steps; i++) {
         gcode = "G1";
         nextAng = Bang + i * theta;
         runtime.cmd_posx = nextX = centerPtX + radius * Math.cos(nextAng); //* propX;
         runtime.cmd_posy = nextY = centerPtY + radius * Math.sin(nextAng); //* propY;
         gcode += "X" + nextX.toFixed(5) + "Y" + nextY.toFixed(5);
         if (SpiralPlunge === 1) {
-            runtime.cmd_posz = params.Z = zStep * i;
+            // eslint-disable-next-line no-undef
+            runtime.cmd_posz = params.Z = zStep * i; // params is undefined
             gcode += "Z" + nextZ.toFixed(5);
         }
         gcode += "F" + speed;
