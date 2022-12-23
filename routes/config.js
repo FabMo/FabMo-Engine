@@ -1,6 +1,6 @@
+var util = require("./util");
 var machine = require("../machine").machine;
 var config = require("../config");
-var log = require("../log").logger("routes");
 var engine = require("../engine");
 var profiles = require("../profiles");
 
@@ -26,6 +26,7 @@ var profiles = require("../profiles");
  * @apiSuccess {Number} data.status.job.started_at Time job was started (UNIX timestamp)
  * @apiSuccess {Number} data.status.job.finished_at Time job was finished (UNIX timestamp)
  */
+// eslint-disable-next-line no-unused-vars
 var get_status = function (req, res, next) {
     var answer = {
         status: "success",
@@ -44,6 +45,7 @@ var get_status = function (req, res, next) {
  * @apiSuccess {Object} data.driver Key-value map of all G2 driver settings
  * @apiSuccess {Object} data.opensbp Key-value map of all OpenSBP runtime settings
  */
+// eslint-disable-next-line no-unused-vars
 var get_config = function (req, res, next) {
     var retval = {};
     retval.engine = config.engine.getData();
@@ -67,12 +69,12 @@ var get_config = function (req, res, next) {
  * @apiParam {Object} opensbp Key-value map of updates to OpenSBP settings
  * @apiParam {Object} machine Key-value map of updates to Machine settings
  */
+// eslint-disable-next-line no-unused-vars
 var post_config = function (req, res, next) {
-    var new_config = {};
     var answer;
     var final_result = {};
     console.log(req.params);
-    setMany_remaining = 0;
+    var setMany_remaining = 0;
     ["engine", "driver", "opensbp", "machine"].forEach(function (each) {
         if (each in req.params) {
             setMany_remaining += 1;
@@ -82,6 +84,7 @@ var post_config = function (req, res, next) {
     if ("engine" in req.params) {
         config.engine.setMany(
             util.fixJSON(req.params.engine),
+            // eslint-disable-next-line no-unused-vars
             function (err, result) {
                 if (!setMany_remaining) return;
                 config.engine.apply(function (err, result) {
@@ -177,6 +180,7 @@ var post_config = function (req, res, next) {
         if (!setMany_remaining) return;
         config.machine.setMany(
             util.fixJSON(req.params.machine),
+            // eslint-disable-next-line no-unused-vars
             function (err, result) {
                 if (!setMany_remaining) return;
                 config.machine.apply(function (err, result) {
@@ -207,8 +211,8 @@ var post_config = function (req, res, next) {
     }
 };
 
+// eslint-disable-next-line no-unused-vars
 var get_version = function (req, res, next) {
-    var retval = {};
     var answer = {
         status: "success",
         data: { version: engine.version },
@@ -216,6 +220,7 @@ var get_version = function (req, res, next) {
     res.json(answer);
 };
 
+// eslint-disable-next-line no-unused-vars
 var get_info = function (req, res, next) {
     engine.getInfo(function (err, info) {
         res.json({
@@ -225,16 +230,7 @@ var get_info = function (req, res, next) {
     });
 };
 
-// TODO: verify this isn't needed and remove.
-// var profile = function(req, res, next) {
-//   profiles.apply('ShopBot Desktop', function(err, data) {
-//     res.json({
-//       status : "success",
-//       data : {}
-//     })
-//   })
-// };
-
+// eslint-disable-next-line no-unused-vars
 var getProfiles = function (req, res, next) {
     res.json({
         status: "success",
@@ -248,6 +244,5 @@ module.exports = function (server) {
     server.post("/config", post_config);
     server.get("/version", get_version);
     server.get("/info", get_info);
-    // server.get('/profile', profile); // TODO - This is paired with "var profile" above and should be removed along with it.
     server.get("/profiles", getProfiles);
 };
