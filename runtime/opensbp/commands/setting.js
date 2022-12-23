@@ -1,8 +1,5 @@
 var log = require("../../../log").logger("sbp");
-var g2 = require("../../../g2");
-var sb3_commands = require("../sb3_commands");
 var config = require("../../../config");
-var openSBP = require("../opensbp.js");
 
 /* SETTINGS */
 
@@ -10,9 +7,6 @@ var openSBP = require("../opensbp.js");
 exports.SA = function (args, callback) {
     this.absoluteMode = true;
     this.emit_gcode("G90");
-    //M0 used to be needed for multiple stack-break commands at start
-    //It does not seem to be needed anymore, leaving comments for documentation
-    //this.emit_gcode("M0");
     callback();
 };
 
@@ -20,7 +14,7 @@ exports.SC = function (args, callback) {
     try {
         switch (args[0]) {
             case 0:
-                cs = "G54";
+                var cs = "G54";
                 break;
             case 1:
                 cs = "G55";
@@ -29,7 +23,6 @@ exports.SC = function (args, callback) {
                 throw new Error(
                     "Invalid coordinate system specified: " + args[0]
                 );
-                break;
         }
         this.emit_gcode(cs);
         this.coordinateSystem = cs;
@@ -54,9 +47,6 @@ exports.SK = function (args, callback) {
 exports.SR = function (args, callback) {
     this.absoluteMode = false;
     this.emit_gcode("G91");
-    //M0 used to be needed for multiple stack-break commands at start
-    //It does not seem to be needed anymore, leaving comments for documentation
-    //this.emit_gcode("M0");
     callback();
 };
 
@@ -70,11 +60,6 @@ exports.ST = function (args, callback) {
                 return callback(err);
             }
             var stObj = {};
-            unitConv = 1.0;
-            if (this.machine.driver.status.unit === "in") {
-                // inches
-                unitConv = 0.039370079;
-            }
             stObj.g55x = 0.0;
             stObj.g55y = 0.0;
             stObj.g55z = 0.0;
@@ -82,7 +67,7 @@ exports.ST = function (args, callback) {
             stObj.g55b = 0.0;
             stObj.g55c = 0.0;
             try {
-                let value = await config.driver.setManyWrapper(stObj);
+                await config.driver.setManyWrapper(stObj);
                 this.cmd_posx = this.posx = stObj.g55x;
                 this.cmd_posy = this.posy = stObj.g55y;
                 this.cmd_posz = this.posz = stObj.g55z;
@@ -98,8 +83,8 @@ exports.ST = function (args, callback) {
 };
 
 exports.SO = function (args) {
-    outnum = parseInt(args[0]);
-    state = parseInt(args[1]);
+    var outnum = parseInt(args[0]);
+    var state = parseInt(args[1]);
     if (outnum >= 1 && outnum <= 12) {
         if (state == 1 || state == 0) {
             if (outnum === 1) {
@@ -118,8 +103,8 @@ exports.SO = function (args) {
 };
 
 exports.SP = function (args) {
-    outnum = parseInt(args[0]);
-    state = parseFloat(args[1]);
+    var outnum = parseInt(args[0]);
+    var state = parseFloat(args[1]);
     if (outnum >= 0 && outnum <= 1) {
         outnum += 11;
         if (state >= 0.0 && state <= 1.0) {
@@ -158,11 +143,13 @@ exports.SU = function (args) {
 
 exports.SV = function (args, callback) {
     this._saveDriverSettings(
+        // eslint-disable-next-line no-unused-vars
         function (err, values) {
             if (err) {
                 log.error(err);
             }
             this._saveConfig(
+                // eslint-disable-next-line no-unused-vars
                 function (err, values) {
                     if (err) {
                         log.error(err);
@@ -170,6 +157,7 @@ exports.SV = function (args, callback) {
                     config.machine.set(
                         "units",
                         this.units,
+                        // eslint-disable-next-line no-unused-vars
                         function (err, data) {
                             callback();
                         }
