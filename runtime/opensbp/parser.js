@@ -7,6 +7,7 @@
  * This module wraps the parsing functions with convenience methods and objects and provides some additional
  * parsing functionality (sanitizing inputs, optimized parsing for certain commands, working with streams, etc)
  */
+var fs = require("fs");
 var stream = require("stream");
 var util = require("util");
 
@@ -14,7 +15,7 @@ var sbp_parser = require("./sbp_parser");
 var log = require("../../log").logger("sbp");
 var CMD_SPACE_RE = /(\w\w)([ \t]+)([^\s\t,].*)/i;
 var CMD_RE = /^\s*(\w\w)(((\s*,\s*)([+-]?[0-9]+(\.[0-9]+)?)?)+)\s*$/i;
-var STUPID_STRING_RE = /(\&[A-Za-z]\w*)\s*=([^\n]*)/i;
+var STUPID_STRING_RE = /(&[A-Za-z]\w*)\s*=([^\n]*)/i;
 
 // Parse the provided statement
 // Return the parsed statement
@@ -23,7 +24,7 @@ var STUPID_STRING_RE = /(\&[A-Za-z]\w*)\s*=([^\n]*)/i;
 // it will return null.  Since the majority of all OpenSBP commands are simple ones, this function will
 // usually work, and will save a bunch of time over using the pegjs parser for everything.
 //   statement - The string statement to parse
-fastParse = function (statement) {
+function fastParse(statement) {
     var match = statement.match(CMD_RE);
     if (match) {
         // 2 character mnemonic commands (IF is an exception)
@@ -53,11 +54,12 @@ fastParse = function (statement) {
         return retval;
     }
 
-    var match = statement.match(CMD_SPACE_RE);
+    match = statement.match(CMD_SPACE_RE);
     if (match) {
         if (match[1] != "IF") {
             statement = statement.replace(
                 CMD_SPACE_RE,
+                // eslint-disable-next-line no-unused-vars
                 function (match, cmd, space, rest, offset, string) {
                     return cmd + "," + rest;
                 }
@@ -65,21 +67,21 @@ fastParse = function (statement) {
         }
     }
     return null;
-};
+}
 
 // Parse the provided line
 // Returns an object representing the parsed statement
 // Tries to fast parse first, falls back on the more thorough pegjs parser
-parseLine = function (line) {
+function parseLine(line) {
     line = line.replace(/\r/g, "");
     //Check for metadata
     if (line.includes("!FABMO!")) {
         return { type: "metadata" };
     }
     // Extract end-of-line comments
-    parts = line.split("'");
-    statement = parts[0];
-    comment = parts.slice(1, parts.length);
+    var parts = line.split("'");
+    var statement = parts[0];
+    var comment = parts.slice(1, parts.length);
 
     try {
         // Use parse optimization
@@ -113,22 +115,22 @@ parseLine = function (line) {
     }
 
     return obj;
-};
+}
 
 // Parse a string or array of strings
 // Returns a list of parsed statements
 //   data - The string or array input to parse
-parse = function (data) {
-    output = [];
+function parse(data) {
+    var output = [];
     // Parse from a string or an array of strings
     if (Array.isArray(data)) {
-        lines = data;
+        var lines = data;
     } else {
         lines = data.split("\n");
     }
 
     // Iterate over lines and parse one by one.  Throw an error if any don't parse.
-    for (i = 0; i < lines.length; i++) {
+    for (var i = 0; i < lines.length; i++) {
         try {
             output.push(parseLine(lines[i]));
         } catch (err) {
@@ -149,12 +151,12 @@ parse = function (data) {
         }
     }
     return output;
-};
+}
 
 // Constructor for Parser object
 // Parser is a transform stream that accepts string input and streams out parsed statement objects
 function Parser(options) {
-    var options = options || {};
+    options = options || {};
     options.objectMode = true;
 
     // allow use without new
@@ -205,15 +207,15 @@ Parser.prototype._flush = function (done) {
 // Return a stream whose output is a stream of parsed statements
 //         s - The input stream
 //   options - parser options
-parseStream = function (s, options) {
+function parseStream(s, options) {
     var parser = new Parser(options);
     return s.pipe(parser);
-};
+}
 
 // Parse the specified file
 //   filename - Full path of file to be parsed
 //   callback - Called with parsed data, or with error if error
-parseFile = function (filename, callback) {
+function parseFile(filename, callback) {
     var st = fs.createReadStream(filename);
     var obj = [];
     return parseStream(st)
@@ -226,14 +228,14 @@ parseFile = function (filename, callback) {
         .on("error", function (err) {
             callback(err);
         });
-};
+}
 
 // Below here are some functions for testing the parser functions
 // --------------------------------------------------------------
 
+// eslint-disable-next-line no-unused-vars
 var main = function () {
     var argv = require("minimist")(process.argv);
-    var fs = require("fs");
     var filename = argv["_"][2];
 
     if (filename) {
@@ -243,6 +245,7 @@ var main = function () {
                 return log.error(err);
             }
 
+            // eslint-disable-next-line no-unused-vars
             var obj = parse(data);
             log.tock("parse");
         });
