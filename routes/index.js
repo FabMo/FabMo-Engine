@@ -1,9 +1,6 @@
 var fs = require("fs");
 var path = require("path");
 var log = require("../log").logger("routes");
-var restify = require("restify");
-var util = require("../util");
-var authentication = require("../authentication");
 var config = require("../config");
 var getStaticServeFunction = require("../static");
 
@@ -12,13 +9,13 @@ module.exports = function (server) {
     var routeDir = __dirname;
     var files = fs.readdirSync(routeDir);
     files.forEach(function (file) {
-        filePath = path.resolve("./", routeDir, file);
+        var filePath = path.resolve("./", routeDir, file);
         if (
             path.extname(filePath) == ".js" &&
             path.basename(filePath) != "index.js"
         ) {
             try {
-                routes = require(filePath);
+                var routes = require(filePath);
                 if (typeof routes == "function") {
                     routes(server);
                     log.debug('  Loaded routes from "' + filePath + '"');
