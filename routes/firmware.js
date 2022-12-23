@@ -1,7 +1,5 @@
 var upload = require("./util").upload;
-var util = require("../util");
 var exec = require("child_process").exec;
-var fs = require("fs-extra");
 var engine = require("../engine");
 
 var flashFirmWare = function (req, res, next) {
@@ -64,6 +62,7 @@ var flashFirmWare = function (req, res, next) {
                                                                     "bossac -R",
                                                                     function (
                                                                         err,
+                                                                        // eslint-disable-next-line no-unused-vars
                                                                         result
                                                                     ) {
                                                                         if (

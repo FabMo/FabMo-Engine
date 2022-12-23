@@ -5,10 +5,11 @@ module.exports = {
         es2021: true,
     },
     globals: {
-        setTimeout: true,
         clearTimeout: true,
-        setImmediate: true,
+        log: true,
         process: true,
+        setImmediate: true,
+        setTimeout: true,
     },
     plugins: ["jest", "prettier"],
 
