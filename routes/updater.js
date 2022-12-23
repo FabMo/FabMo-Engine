@@ -1,11 +1,6 @@
 var log = require("../log").logger("wifi");
-var config = require("../config");
-var network = require("../network");
 var upload = require("./util").upload;
-var util = require("../util");
 var exec = require("child_process").exec;
-var fs = require("fs-extra");
-var engine = require("../engine");
 
 // function redirect(req, res, next) {
 //     switch(req.method) {
@@ -51,6 +46,7 @@ var updateFabmo = function (req, res, next) {
         // });
         try {
             if (fileName.match(/.*\.tar/i)) {
+                // eslint-disable-next-line no-unused-vars
                 exec("docker load < " + filePath, function (err, result) {
                     if (err) {
                         console.log("hey there was an error loading fabmo");
