@@ -8,6 +8,7 @@ module.exports = {
         setTimeout: true,
         clearTimeout: true,
         setImmediate: true,
+        process: true,
     },
     plugins: ["jest", "prettier"],
 
