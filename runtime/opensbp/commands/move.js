@@ -1,6 +1,4 @@
 var log = require("../../../log").logger("sbp");
-// var g2 = require('../../../g2');
-// var sb3_commands = require('../sb3_commands');
 var config = require("../../../config");
 
 // ...TESTING::th aliased macros concept ... Bender: commands (hardcoded here at moment)
@@ -134,7 +132,7 @@ exports.M6 = function (args) {
     }
 };
 
-process_move = function (args) {
+function process_move(args) {
     this.cmd_result = 0;
     var params = {};
     var feedrate = this.movespeed_xy * 60;
@@ -180,9 +178,10 @@ process_move = function (args) {
     params.F = feedrate;
 
     return params;
-};
+}
 
 // Move to the XY home position (0,0)
+// eslint-disable-next-line no-unused-vars
 exports.MH = function (args) {
     var x = 0;
     var y = 0;
@@ -248,8 +247,4 @@ exports.MS = function (args, callback) {
     this.vs_change = 1;
     //    log.debug("  MS: vs_change = " + this.vs_change);
     callback();
-};
-
-exports.MO = function (args) {
-    //?????????????????????????????????????????????
 };
