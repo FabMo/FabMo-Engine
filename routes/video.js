@@ -3,7 +3,6 @@ var config = require("../config");
 var log = require("../log").logger("routes");
 
 // Try to import udev - if it doesn't work, we don't have video support
-var udev = null;
 try {
     var udev = require("udev");
 } catch (e) {
@@ -36,8 +35,8 @@ var args = [
 ];
 
 if (udev) {
-    dev_list = udev.list();
-    for (i in dev_list) {
+    var dev_list = udev.list();
+    for (var i in dev_list) {
         if (dev_list[i].DEVNAME === video_settings.path) {
             log.info("Video device connected.");
             gstreamer = ps.spawn("gst-launch", args);
@@ -69,6 +68,7 @@ function configure_listener(gstreamer) {
     if (gstreamer) {
         gstreamer.stdout.on("data", function (data) {
             var frame = Buffer.alloc(data.length).toString("base64");
+            // eslint-disable-next-line no-undef
             server.io.of("/video").emit("frame", frame);
         });
 
@@ -86,15 +86,10 @@ function configure_listener(gstreamer) {
     }
 }
 
-// pulling this out to its own function to
-// solve a silly syntax problem
-function video_callback_function() {
-    log.debug("client connected to video endpoint");
-}
-
 // writing this as a placeholder for now
 // without it, the upgraded packages fail
 // because there is no route
+// eslint-disable-next-line no-unused-vars
 function video_now(req, res, next) {
     var answer = {
         status: "success",
