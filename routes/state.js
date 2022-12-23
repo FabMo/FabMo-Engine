@@ -1,11 +1,4 @@
-var fs = require("fs");
 var machine = require("../machine").machine;
-var db = require("../db");
-var File = db.File;
-
-// These are the only file extensions that are allowed for upload.
-// File extension filtering is not case sensitive
-ALLOWED_EXTENSIONS = [".nc", ".g", ".sbp", ".gc", ".gcode"];
 
 /**
  * @api {get} /quit Quit
@@ -16,14 +9,15 @@ ALLOWED_EXTENSIONS = [".nc", ".g", ".sbp", ".gc", ".gcode"];
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
-quit = function (req, res, next) {
+// eslint-disable-next-line no-unused-vars
+function quit(req, res, next) {
     machine.quit();
     var answer = {
         status: "success",
         data: null,
     };
     res.json(answer);
-};
+}
 
 /**
  * @api {get} /pause Pause
@@ -34,14 +28,15 @@ quit = function (req, res, next) {
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
-pause = function (req, res, next) {
+// eslint-disable-next-line no-unused-vars
+function pause(req, res, next) {
     machine.pause();
     var answer = {
         status: "success",
         data: null,
     };
     res.json(answer);
-};
+}
 
 /**
  * @api {get} /resume Resume
@@ -52,14 +47,15 @@ pause = function (req, res, next) {
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
-resume = function (req, res, next) {
+// eslint-disable-next-line no-unused-vars
+function resume(req, res, next) {
     machine.resume();
     var answer = {
         status: "success",
         data: null,
     };
     res.json(answer);
-};
+}
 
 module.exports = function (server) {
     //server.get('/run/:id',run); //OK
