@@ -28,8 +28,9 @@ var login = function (req, res, next) {
     })(req, res, next);
 };
 
+// eslint-disable-next-line no-unused-vars
 var addUser = function (req, res, next) {
-    currentUser = authentication.getCurrentUser();
+    var currentUser = authentication.getCurrentUser();
     if (currentUser && currentUser.isAdmin) {
         if (
             req.params.user === undefined ||
@@ -74,8 +75,9 @@ var logout = function (req, res, next) {
     return;
 };
 
+// eslint-disable-next-line no-unused-vars
 var getUsers = function (req, res, next) {
-    currentUser = authentication.getCurrentUser();
+    var currentUser = authentication.getCurrentUser();
     if (currentUser && currentUser.isAdmin) {
         // if admin
         authentication.getUsers(function (err, users) {
@@ -95,8 +97,9 @@ var getUsers = function (req, res, next) {
     }
 };
 
+// eslint-disable-next-line no-unused-vars
 var getUser = function (req, res, next) {
-    currentUser = authentication.getCurrentUser();
+    var currentUser = authentication.getCurrentUser();
     if (
         currentUser &&
         (currentUser.username == req.params.id || currentUser.isAdmin)
@@ -120,8 +123,9 @@ var getUser = function (req, res, next) {
     }
 };
 
+// eslint-disable-next-line no-unused-vars
 var getCurrentUser = function (req, res, next) {
-    currentUser = authentication.getCurrentUser();
+    var currentUser = authentication.getCurrentUser();
     if (currentUser) {
         // if current user
         authentication.getUser(currentUser.username, function (err, user) {
@@ -141,8 +145,9 @@ var getCurrentUser = function (req, res, next) {
     }
 };
 
+// eslint-disable-next-line no-unused-vars
 var modifyUser = function (req, res, next) {
-    currentUser = authentication.getCurrentUser();
+    var currentUser = authentication.getCurrentUser();
     if (!req.params.id) {
         res.send(200, { status: "error", message: "no username provided" });
         return;
@@ -181,11 +186,13 @@ var modifyUser = function (req, res, next) {
     }
 };
 
+// eslint-disable-next-line no-unused-vars
 var deleteUser = function (req, res, next) {
     // if admin
-    currentUser = authentication.getCurrentUser();
+    var currentUser = authentication.getCurrentUser();
     if (currentUser && currentUser.isAdmin) {
         // if admin
+        // eslint-disable-next-line no-unused-vars
         authentication.deleteUser(req.params.id, function (err, user) {
             if (err) {
                 res.send(200, { status: "error", message: err });
