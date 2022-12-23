@@ -1,34 +1,32 @@
 var log = require("../../../log").logger("sbp");
-var g2 = require("../../../g2");
-var sb3_commands = require("../sb3_commands");
 var config = require("../../../config");
-var interpolate = require("../interpolate");
-
-var tform = require("../transformation"); // need to know about transforms that may require circle interpolation
 
 /* CUTS */
-// The primary Cut Commands in ShopBot are for Circle/Arcs and for Rectangles. These Commands have many features historically
-//   ... in order to allow a lot of work from the Command Line.
-// Here we convert all the Circle/Arc Commnads to expression as CG, which most resembles a g-code arc instruction.
+// The primary Cut Commands in ShopBot are for Circle/Arcs and for Rectangles.
+// These Commands have many features historically
+// ... in order to allow a lot of work from the Command Line.
+// Here we convert all the Circle/Arc Commnads to expression as CG,
+// which most resembles a g-code arc instruction.
 
-//  The CA Command cuts an arc defined by its cord length, height, and angle from start
-//      to end.
-//
+// The CA Command cuts an arc defined by its cord length,
+// height, and angle from start to end.
+
 exports.CA = function (args) {
     var startX = this.cmd_posx;
     var startY = this.cmd_posy;
-    var startZ = this.cmd_posz;
     var len = args[0] !== undefined ? Math.abs(args[0]) : undefined;
     var ht = args[1] !== undefined ? Math.abs(args[1]) : undefined;
     var inStr = args[2] !== undefined ? args[2].toUpperCase() : "T";
     var OIT = inStr === "O" || inStr === "I" || inStr === "T" ? inStr : "T";
     var Dir = args[3] !== undefined ? args[3] : 1;
-    var angle = args[4] !== undefined ? args[4] : undefined;
+    // Currently not used
+    // var angle = args[4] !== undefined ? args[4] : undefined;
     var Plg = args[5] !== undefined ? args[5] : undefined;
     var reps = args[6] !== undefined ? args[6] : 1;
     var propX = args[7] !== undefined ? args[7] : 1;
     var propY = args[8] !== undefined ? args[8] : 1;
-    var tabs = args[9] !== undefined ? args[9] : undefined;
+    // Currently not used
+    // var tabs = args[9] !== undefined ? args[9] : undefined;
     var noPullUp = args[10] !== undefined ? [10] : 0;
     var plgFromZero = args[11] !== undefined ? args[11] : 0;
     var comp = 0;
@@ -190,7 +188,6 @@ exports.CP = function (args) {
     var optCP = args[11] !== undefined ? args[11] : undefined;
     var noPullUp = args[12] !== undefined ? args[12] : undefined;
     var plgFromZero = args[13] !== undefined ? args[13] : undefined;
-    var res = 5;
     var comp = 0;
     var feedrate = 0;
 
@@ -292,8 +289,6 @@ exports.CG = function (args) {
     var endY = args[2] !== undefined ? args[2] : undefined;
     var centerX = args[3] !== undefined ? args[3] : undefined;
     var centerY = args[4] !== undefined ? args[4] : undefined;
-    var inStr = args[5] !== undefined ? args[5].toUpperCase() : "T";
-    var OIT = inStr === "O" || inStr === "I" || inStr === "T" ? inStr : "T";
     var Dir = args[6] !== undefined ? args[6] : 1;
     var Plg = args[7] !== undefined ? args[7] : 0;
     var reps = args[8] !== undefined ? args[8] : 1;
@@ -307,7 +302,6 @@ exports.CG = function (args) {
     var feedrateZ = this.movespeed_z * 60;
     var currentZ;
     var outStr;
-    var tolerance = 0.000001;
     var Pocket_StepX = 0;
     var Pocket_StepY = 0;
     var PocketAngle = 0;
@@ -375,8 +369,6 @@ exports.CG = function (args) {
     currentZ = CGstartZ;
     var safeZCG = config.opensbp.get("safeZpullUp");
 
-    var spiralPlunge = optCG === 2 || optCG === 3 || optCG === 4 ? 1 : 0;
-
     if (plgFromZero == 1 && currentZ !== 0) {
         // If plunge depth is a specified move to that depth
         currentZ = 0;
@@ -394,9 +386,9 @@ exports.CG = function (args) {
         }
         if (optCG === 2) {
             // If Pocketing: Pocket circle from the outside inward to center
-            circRadius = Math.sqrt(centerX * centerX + centerY * centerY);
+            var circRadius = Math.sqrt(centerX * centerX + centerY * centerY);
             PocketAngle = Math.atan2(centerY, centerX);
-            stepOver =
+            var stepOver =
                 config.opensbp.get("cutterDia") *
                 ((100 - config.opensbp.get("pocketOverlap")) / 100);
             Pocket_StepX = stepOver * Math.cos(PocketAngle);
@@ -633,14 +625,9 @@ exports.interpolate_circle = function (
         nextX = Xfactor1 * Math.sin(t + incrAng * Dir) + Xfactor2;
         nextY = Yfactor1 * Math.cos(t + incrAng * Dir) + Yfactor2;
 
-        var incrDist = Math.sqrt(
-            Math.pow(nextX - ICstartX, 2) + Math.pow(nextY - ICstartY, 2)
-        );
-        var circRes = config.opensbp.get("cRes");
-
         var DistA = nextX - ICstartX;
         var DistB = nextY - ICstartY;
-        FirstDist = Math.sqrt(Math.pow(DistA, 2) + Math.pow(DistB, 2));
+        var FirstDist = Math.sqrt(Math.pow(DistA, 2) + Math.pow(DistB, 2));
 
         if (FirstDist === 0) {
             if (incrAng === 0) {
@@ -652,7 +639,7 @@ exports.interpolate_circle = function (
         if (spiralPlunge) {
             //    incrAng *= config.opensbp.get('cRes') / FirstDist;
 
-            incrZ = plunge * (complAng / inclAng);
+            var incrZ = plunge * (complAng / inclAng);
             nextZ = ICstartZ + incrZ;
         } else {
             nextZ = ICstartZ + plunge;
@@ -708,7 +695,7 @@ exports.CR = function (args) {
     var optCR = args[7] !== undefined ? args[7] : 0; // Options - 1-Tab, 2-Pocket Outside-In, 3-Pocket Inside-Out
     var plgFromZero = args[8] !== undefined ? args[8] : 0; // Start Plunge from Zero <0-NO, 1-YES>
     var RotationAngle = args[9] !== undefined ? args[9] : 0.0; // Angle to rotate rectangle around starting point
-    var PlgAxis = args[10] !== undefined ? args[10] : "Z"; // Axis to plunge <Z or A>
+    //var PlgAxis = args[10] !== undefined ? args[10] : "Z"; // Axis to plunge <Z or A>
     var spiralPlg = args[11] !== undefined ? args[11] : 0; // Turn spiral plunge ON for first pass (0=OFF, 1=ON)
     var xCenter = args[12] !== undefined ? args[12] : undefined; // X center coordinate
     var yCenter = args[13] !== undefined ? args[13] : undefined; // Y center coordinate
@@ -795,7 +782,7 @@ exports.CR = function (args) {
             this.emit_move("G0", { Z: safeZCR });
         }
         if (RotationAngle === 0.0) {
-            outStr = "G0X" + nextX + "Y" + nextY;
+            var outStr = "G0X" + nextX + "Y" + nextY;
         } else {
             outStr =
                 "G0X" +
@@ -910,7 +897,7 @@ exports.CR = function (args) {
         this.emit_gcode(outStr);
     }
 
-    for (i = 0; i < reps; i++) {
+    for (var i = 0; i < reps; i++) {
         if (spiralPlg != 1) {
             // If plunge depth is specified move to that depth * number of reps
             currentZ += Plg;
@@ -919,13 +906,14 @@ exports.CR = function (args) {
             this.emit_gcode("G1Z" + currentZ + "F" + feedrateZ);
         }
 
-        pass = cnt = 0;
+        var pass = 0;
+        var cnt = pass;
         var nextX = 0.0;
         var nextY = 0.0;
 
-        for (j = 0; j < steps; j++) {
+        for (var j = 0; j < steps; j++) {
             do {
-                for (k = 0; k < 4; k++) {
+                for (var k = 0; k < 4; k++) {
                     n = order[k];
                     switch (n) {
                         case 1:
@@ -1035,7 +1023,7 @@ exports.CR = function (args) {
                             }
 
                             if (spiralPlg == 1 && pass === 0) {
-                                plgSp = currentZ + Plg * 0.75;
+                                PlgSp = currentZ + Plg * 0.75;
                                 outStr += "Z" + PlgSp.toFixed(4);
                             }
 
@@ -1083,7 +1071,7 @@ exports.CR = function (args) {
                             break;
 
                         default:
-                            throw "Unhandled operation: " + expr.op;
+                            throw "Unhandled CR operation";
                     }
                 }
             } while (cnt < 1);
