@@ -1,17 +1,14 @@
 var db = require("../db");
-var path = require("path");
-var config = require("../config");
 var util = require("../util");
 var log = require("../log").logger("routes");
 var machine = require("../machine").machine;
 var fs = require("fs");
-var uuid = require("uuid");
 var upload = require("./util").upload;
 
 var submitJob = function (req, res, next) {
     upload(req, res, next, function (err, upload) {
         log.info("entering submitJob.upload.callback");
-        uploads = upload.files;
+        var uploads = upload.files;
         // Single file only, for now
         if (uploads.length > 1) {
             log.warn(
@@ -21,6 +18,7 @@ var submitJob = function (req, res, next) {
             );
         }
 
+        // eslint-disable-next-line no-undef
         async.eachOf(
             uploads,
             function create_job(item, index, callback) {
@@ -77,6 +75,8 @@ var submitJob = function (req, res, next) {
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
+
+// eslint-disable-next-line no-unused-vars
 var clearQueue = function (req, res, next) {
     var answer;
     db.Job.deletePending(function (err) {
@@ -105,7 +105,8 @@ var clearQueue = function (req, res, next) {
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
-runNextJob = function (req, res, next) {
+// eslint-disable-next-line no-unused-vars
+var runNextJob = function (req, res, next) {
     var answer;
     log.info("Running the jobs.js:nextJob in the queue");
     machine.runNextJob(function (err, job) {
@@ -136,6 +137,7 @@ runNextJob = function (req, res, next) {
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
+// eslint-disable-next-line no-unused-vars
 var resubmitJob = function (req, res, next) {
     var answer;
     log.debug("Resubmitting job " + req.params.id);
@@ -185,6 +187,7 @@ var resubmitJob = function (req, res, next) {
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
+// eslint-disable-next-line no-unused-vars
 var getQueue = function (req, res, next) {
     db.Job.getPending(function (err, pending) {
         if (err) {
@@ -234,6 +237,7 @@ var getQueue = function (req, res, next) {
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
+// eslint-disable-next-line no-unused-vars
 var getAllJobs = function (req, res, next) {
     var answer;
     db.Job.getAll(function (err, result) {
@@ -271,6 +275,7 @@ var getAllJobs = function (req, res, next) {
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
+// eslint-disable-next-line no-unused-vars
 var getJobHistory = function (req, res, next) {
     var answer;
     var options = {
@@ -313,6 +318,7 @@ var getJobHistory = function (req, res, next) {
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
+// eslint-disable-next-line no-unused-vars
 var getJobById = function (req, res, next) {
     var answer;
     db.Job.getById(req.params.id, function (err, job) {
@@ -348,6 +354,7 @@ var getJobById = function (req, res, next) {
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
+// eslint-disable-next-line no-unused-vars
 var cancelJob = function (req, res, next) {
     var answer;
     db.Job.getById(req.params.id, function (err, result) {
@@ -379,6 +386,7 @@ var cancelJob = function (req, res, next) {
     });
 };
 
+// eslint-disable-next-line no-unused-vars
 var updateOrder = function (req, res, next) {
     var answer;
     var order = parseInt(req.params.order);
@@ -411,6 +419,7 @@ var updateOrder = function (req, res, next) {
     });
 };
 
+// eslint-disable-next-line no-unused-vars
 var getJobFile = function (req, res, next) {
     db.Job.getFileForJobId(req.params.id, function (err, file) {
         if (err) {
@@ -435,6 +444,7 @@ var getJobFile = function (req, res, next) {
     });
 };
 
+// eslint-disable-next-line no-unused-vars
 var getJobGCode = function (req, res, next) {
     db.Job.getFileForJobId(req.params.id, function (err, file) {
         if (err) {
@@ -457,18 +467,6 @@ var getJobGCode = function (req, res, next) {
                 );
                 res.send(gcode);
             });
-        }
-    });
-};
-
-var getThumbnailImage = function (req, res, next) {
-    db.Thumbnail.getFromJobId(req.params.id, function (err, thumbnail) {
-        if (err) {
-            res.send(404);
-        } else {
-            res.setHeader("content-type", "image/svg+xml");
-            res.write(thumbnail.image);
-            res.end();
         }
     });
 };
