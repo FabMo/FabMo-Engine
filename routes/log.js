@@ -1,5 +1,3 @@
-var machine = require("../machine").machine;
-var config = require("../config");
 var log = require("../log");
 
 /**
@@ -7,8 +5,9 @@ var log = require("../log");
  * @api {get} /log Get log
  * @apiDescription Get the contents of the debug log
  */
+// eslint-disable-next-line no-unused-vars
 var getLog = function (req, res, next) {
-    body = log.getLogBuffer();
+    var body = log.getLogBuffer();
     res.setHeader("content-type", "text/plain");
     res.send(body);
 };
@@ -18,6 +17,7 @@ var getLog = function (req, res, next) {
  * @api {get} /flight Get log
  * @apiDescription Get the contents of the debug log
  */
+// eslint-disable-next-line no-unused-vars
 var getFlightLog = function (req, res, next) {
     try {
         res.json(log.getFlightLog());
@@ -33,6 +33,7 @@ var getFlightLog = function (req, res, next) {
  * @apiSuccess {String} status `success`
  * @apiSuccess {Object} data null
  */
+// eslint-disable-next-line no-unused-vars
 var clearLog = function (req, res, next) {
     var answer = {
         status: "success",
