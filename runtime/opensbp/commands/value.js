@@ -1,6 +1,4 @@
 var log = require("../../../log").logger("sbp");
-var g2 = require("../../../g2");
-var sb3_commands = require("../sb3_commands");
 var config = require("../../../config");
 /* VALUES */
 
@@ -11,10 +9,7 @@ exports.VA = function (args, callback) {
         "mpo",
         async function (err, MPO) {
             var setVA_G2 = {};
-            var setVA_SBP = {};
-            var newLocation = 0;
             var unitConv = 1;
-            var offset = 0;
 
             if (this.machine.driver.status.unit === "in") {
                 // inches
@@ -105,7 +100,7 @@ exports.VA = function (args, callback) {
             }
 
             try {
-                let values = await config.driver.setManyWrapper(setVA_G2);
+                await config.driver.setManyWrapper(setVA_G2);
                 callback();
             } catch (error) {
                 callback(error);
@@ -143,6 +138,7 @@ exports.VC = function (args, callback) {
     // args[10] = vertAxisMonitor		// vertical axis monitored
     // args[11] = triggerOutputNum		// triggered output switch #
 
+    // eslint-disable-next-line no-unused-vars
     config.opensbp.setMany(sbp_values, function (err, values) {
         log.debug("VC-sbp_values = " + JSON.stringify(sbp_values));
         callback();
@@ -154,7 +150,6 @@ exports.VD = function (args) {
     //    0=Disable; 1=Standard Mode; 2=Inhibited; 3=Radius Mode
     // XYZ Unit type
     if (args[2] !== undefined) {
-        var unitType = args[2];
         log.debug("VD:Current X = " + this.cmd_posx);
         log.debug("VD:Current Y = " + this.cmd_posy);
         log.debug("VD:Current Z = " + this.cmd_posz);
@@ -172,92 +167,11 @@ exports.VD = function (args) {
                 break;
             default:
                 throw new Error("Invalid unit setting: " + args[2]);
-                break;
         }
         log.debug("VD:Converted X = " + this.cmd_posx);
         log.debug("VD:Converted Y = " + this.cmd_posy);
         log.debug("VD:Converted Z = " + this.cmd_posz);
     }
-    // A Unit type
-    // 	if ( args[3] !== undefined ) {
-    // 		var unitType = args[3];
-    // 		if ( unitType === 0 || unitType === 1 ){
-    // 			if ( unitType === 0 ){
-    // 				this.emit_gcode("G20"); // inches
-    // 				log.debug("Changing units to inch");
-    // 			}
-    // 			else if ( unitType == 1 ){
-    // 				this.emit_gcode=("G21"); // mm
-    // 				log.debug("Changing units to mm");
-    // 			}
-    // 			else if ( unitType === 3 ){
-    // // *************** Need output to set to degrees *************
-    // 				this.emit_gcode("G21"); // deg
-    // 				log.debug("Changing units to mm");
-    // 			}
-    // 		}
-    // 	}
-    // B Unit type
-    // 	if ( args[4] !== undefined ) {
-    // 		var unitType = args[4];
-    // 		if ( unitType === 0 || unitType === 1 ){
-    // 			if ( unitType === 0 ){
-    // 				this.emit_gcode("G20"); // inches
-    // 				log.debug("Changing units to inch");
-    // 			}
-    // 			else if ( unitType === 1 ){
-    // 				this.emit_gcode("G21"); // mm
-    // 				log.debug("Changing units to mm");
-    // 			}
-    // 			else if ( unitType === 3 ){
-    // // *************** Need output to set to degrees *************
-    // 				this.emit_gcode("G21"); // deg
-    // 				log.debug("Changing units to mm");
-    // 			}
-    // 		}
-    // 	}
-    // C Unit type
-    // 	if ( args[5] !== undefined ) {
-    // 		var unitType = args[5];
-    // 		if ( unitType === 0 || unitType === 1 ){
-    // 			if ( unitType === 0 ){
-    // 				this.emit_gcode("G20"); // inches
-    // 				log.debug("Changing units to inch");
-    // 			}
-    // 			else if ( unitType === 1 ){
-    // 				this.emit_gcode("G21"); // mm
-    // 				log.debug("Changing units to mm");
-    // 			}
-    // 			else if ( unitType === 3 ){
-    // // *************** Need output to set to degrees *************
-    // 				this.emit_gcode("G21"); // deg
-    // 				log.debug("Changing units to mm");
-    // 			}
-    // 		}
-    // 	}
-
-    // Show control console
-    // Display File Comments
-    // Keypad fixed distance
-    // 	if ( args[8] !== undefined ){
-    // 		var fDist = args[8];
-    // //		log.debug("Keypad fixed distance set to: " + fDist );
-    // 		log.debug("Fixed Distance setting not implemented" );
-    // 	}
-    // Keypad remote
-    // Keypad Switch AutoOff
-    // Write Part File Log
-    // Write System File Log
-    // Message Screen Location X
-    // Message Screen Location Y
-    // Message Screen Size X
-    // Message Screen Size Y
-    // Keypad outputs Auto-Off
-    // Show file Progress
-    // Main Display Type
-    //	config.driver.setMany(g2_VD, function(err, values) {
-    //		callback();
-    //	});
 };
 
 exports.VI = async function (args, callback) {
@@ -330,7 +244,7 @@ exports.VI = async function (args, callback) {
         }
     }
     try {
-        let values = await config.driver.setManyWrapper(g2_VI);
+        await config.driver.setManyWrapper(g2_VI);
         callback();
     } catch (error) {
         callback(error);
@@ -341,7 +255,7 @@ exports.VU = async function (args, callback) {
     var g2_VU = {};
     g2_VU[args[0]] = args[1];
     try {
-        let values = await config.driver.setManyWrapper(g2_VU);
+        await config.driver.setManyWrapper(g2_VU);
         callback();
     } catch (error) {
         callback(error);
@@ -405,55 +319,11 @@ exports.VL = async function (args, callback) {
     }
 
     try {
-        let values = await config.driver.setManyWrapper(g2_VL);
+        await config.driver.setManyWrapper(g2_VL);
         callback();
     } catch (error) {
         callback(error);
     }
-};
-
-//exports.VN = function(args) {
-// Limits 0-OFF, 1-ON
-// Input #4 Switch mode 0-Nrm Closed Stop, 1-Nrm Open Stop, 2-Not Used
-// Enable Torch Height Controller, Laser or Analog Control
-//		0-Off, 1-Torch, 2-Laser, 3-An1 Control, 4-An2 Control, 5-An1 & An2 Control
-
-// Input Switch Modes = 0-Standard Switch, 1-Nrm Open Limit, 2-Nrm Closed Limit, 3-Nrm Open Stop, 4-Nrm Closed Stop
-// Input #1 Switch mode
-// Input #2 Switch mode
-// Input #3 Switch mode
-// Input #5 Switch mode
-// Input #6 Switch mode
-// Input #7 Switch mode
-// Input #8 Switch mode
-// Input #9 Switch mode
-// Input #10 Switch mode
-// Input #11 Switch mode
-// Input #12 Switch mode
-// Output Switch Modes = 0-StdON/FileOFF, 1-StdON/NoOFF, 2-StdON/LIStpOFF, 3-AutoON/FileOFF, 4-AutoON/NoOFF, 5-AutoON/FIStpOFF
-// Output #1 Mode
-// Output #2 Mode
-// Output #3 Mode
-// Output #5 Mode
-// Output #6 Mode
-// Output #7 Mode
-// Output #8 Mode
-// Output #9 Mode
-// Output #10 Mode
-// Output #11 Mode
-// Output #12 Mode
-
-//};
-
-exports.VP = function (args) {
-    // Grid
-    // Table Size X
-    // Table Size Y
-    // Table Size Z
-    // Simulate Cutting
-    // Draw Tool
-    // Start Actual Location
-    // Show Jugs
 };
 
 exports.VR = function (args, callback) {
@@ -493,14 +363,10 @@ exports.VR = function (args, callback) {
         this.chordalTol = args[6];
         this.machine.driver.command({ ct: this.chordalTol });
     }
-    vs_change = 1;
     callback();
 };
 
-// exports.VS = function(args,callback) {
 exports.VS = function (args) {
-    var speed_change = 0.0;
-
     //Set XY move speed
     if (args[0] !== undefined) {
         this.movespeed_xy = args[0];
@@ -544,82 +410,3 @@ exports.VS = function (args) {
 
     this.vs_change = 1;
 };
-
-//exports.VU = function(args,callback) {
-
-//	var G2_2get = [	'1sa','1mi',
-//					'2sa','2mi',
-//					'3sa','3mi',
-//					'4sa','4mi',
-//					'5sa','5mi',
-//					'6sa','6mi' ];
-
-//	var SBP_2get = ['gearBoxRatio1',
-//				    'gearBoxRatio2',
-//				    'gearBoxRatio3',
-//				    'gearBoxRatio4',
-//				    'gearBoxRatio5',
-//				    'gearBoxRatio6' ];
-
-//	var SBunitVal = 0.0;
-//	var g2_VU = {};
-//	var sbp_VU = {};
-//	var getG2_VU = config.driver.getMany(G2_2get);
-//	var getSBP_VU = config.opensbp.getMany(SBP_2get);
-
-//	log.debug("getG2_VU: " + JSON.stringify(getG2_VU));
-//	log.debug("getSBP_VU: " + JSON.stringify(getSBP_VU));
-
-// Channel 1 unit value
-//	if (args[0] !== undefined){
-//		sbp_VU.units1 = args[0];
-//		g2_VU['1tr'] = ((360/getG2_VU['1sa']) * getG2_VU['1mi']) / sbp_VU.units1;
-//	}
-//	// Channel 2 unit value
-//	if (args[1] !== undefined){
-//		sbp_VU.units2 = args[1];
-//		g2_VU['2tr'] = ((360/getG2_VU['2sa']) * getG2_VU['2mi']) / sbp_VU.units2;
-//	}
-// Channel 3 unit value
-//	if (args[2] !== undefined){
-//		sbp_VU.units3 = args[2];
-//		g2_VU['3tr'] = ((360/getG2_VU['3sa']) * getG2_VU['3mi']) / sbp_VU.units3;
-//	}
-// Channel 4 unit value
-//	if (args[3] !== undefined){
-//		sbp_VU.units4 = args[3];
-//		g2_VU['4tr'] = ((360/getG2_VU['4sa']) * getG2_VU['4mi']) / sbp_VU.units4;
-//	}
-// Channel 5 unit value
-//	if (args[4] !== undefined){
-//		sbp_VU.units5 = args[4];
-//		g2_VU['5tr'] = ((360/getG2_VU['5sa']) * getG2_VU['5mi']) / sbp_VU.units5;
-//	}
-// Channel 6 unit value
-// if (args[5] !== undefined){
-// 	sbp_VU.units6 = args[5];
-// 	g2_VU['6tr'] = ((360/getG2_VU['6sa']) * getG2_VU['6mi']) / sbp_VU.units6;
-// }
-// // Channel 1 multiplier
-// if (args[6] !== undefined){}
-// // Channel 2 multiplier
-// if (args[7] !== undefined){}
-// // Channel 3 multiplier
-// if (args[8] !== undefined){}
-// // Channel 4 multiplier
-// if (args[9] !== undefined){}
-// // Channel 5 multiplier
-// if (args[10] !== undefined){}
-// // Channel 6 multiplier
-// if (args[11] !== undefined){}
-
-// log.debug(JSON.stringify(sbp_VU));
-// log.debug(JSON.stringify(g2_VU));
-
-// We set the g2 config (Which updates the g2 hardware but also our persisted copy of its settings)
-// 	config.opensbp.setMany(sbp_VU, function(err, values) {
-// 		config.driver.setMany(g2_VU, function(err, values) {
-// 			callback();
-// 		});
-// 	});
-// };
