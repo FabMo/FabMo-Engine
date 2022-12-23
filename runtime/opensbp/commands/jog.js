@@ -1,6 +1,4 @@
 var log = require("../../../log").logger("sbp");
-var g2 = require("../../../g2");
-var sb3_commands = require("../sb3_commands");
 var config = require("../../../config");
 
 // Note that jogs don't need to be stack breakers, they only are to be consistent with sb3 behavior
@@ -124,7 +122,7 @@ exports.J6 = function (args) {
     }
 };
 
-process_jog = function (args) {
+function process_jog(args) {
     //    log.debug(" process_jog: " + JSON.stringify(args));
     var params = {};
     this.cmd_result = 0;
@@ -168,9 +166,10 @@ process_jog = function (args) {
     }
 
     return params;
-};
+}
 
 // Jog (rapid) XY to the Home position (0,0)
+// eslint-disable-next-line no-unused-vars
 exports.JH = function (args) {
     var x = 0;
     var y = 0;
