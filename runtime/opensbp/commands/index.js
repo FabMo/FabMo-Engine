@@ -8,13 +8,13 @@ exports.load = function () {
     var files = fs.readdirSync(commandDir);
     var retval = {};
     files.forEach(function (file) {
-        filePath = path.resolve("./", commandDir, file);
+        var filePath = path.resolve("./", commandDir, file);
         if (
             path.extname(filePath) == ".js" &&
             path.basename(filePath) != "index.js"
         ) {
             try {
-                commands = require(filePath);
+                var commands = require(filePath);
                 for (var attr in commands) {
                     retval[attr] = commands[attr];
                 }
