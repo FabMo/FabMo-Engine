@@ -9,6 +9,7 @@ var machine = require("../machine").machine;
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
+// eslint-disable-next-line no-unused-vars
 var code = function (req, res, next) {
     var answer = {
         status: "success",
