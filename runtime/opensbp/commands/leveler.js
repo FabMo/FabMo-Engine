@@ -1,6 +1,3 @@
-/*jslint todo: true, browser: true, continue: true, white: true*/
-/*global define*/
-
 var log = require("../../../log").logger("sbp");
 var fs = require("fs");
 var triangulate = require("delaunay-triangulate");
