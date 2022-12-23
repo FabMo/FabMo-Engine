@@ -1,10 +1,11 @@
+var config = require("../config");
 var log = require("../log").logger("routes");
 var fs = require("fs");
 var uuid = require("uuid");
 var pako = require("pako");
 
-UPLOAD_INDEX = {};
-UPLOAD_TIMEOUT = 3600000;
+var UPLOAD_INDEX = {};
+var UPLOAD_TIMEOUT = 3600000;
 
 /*
  * Incoming metadata looks like this:
@@ -162,7 +163,7 @@ function upload(req, res, next, callback) {
         /* Metadata type POST */
 
         try {
-            var key = createUpload(req.body, callback);
+            key = createUpload(req.body, callback);
         } catch (e) {
             log.error(e);
             return res.json({
@@ -198,9 +199,9 @@ function updaterRedirect(req, res, next) {
             break;
 
         case "POST":
-            var host = req.headers.host.split(":")[0].trim("/");
-            var path = req.params[0];
-            var url =
+            host = req.headers.host.split(":")[0].trim("/");
+            path = req.params[0];
+            url =
                 "http://" +
                 host +
                 ":" +
