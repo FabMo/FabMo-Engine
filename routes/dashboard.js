@@ -1,8 +1,6 @@
 var config = require("../config");
-var restify = require("restify");
 var dashboard = require("../dashboard");
 var util = require("../util");
-var fs = require("fs");
 var upload = require("./util").upload;
 var static = require("../static");
 
@@ -20,6 +18,7 @@ var static = require("../static");
  * @apiSuccess {String} data.apps.icon_background_color CSS color value of the app icon
  * @apiSuccess {String} data.apps.id Unique ID of this app (used in app URLs)
  */
+// eslint-disable-next-line no-unused-vars
 var getApps = function (req, res, next) {
     var answer = {
         status: "success",
@@ -43,6 +42,7 @@ var getApps = function (req, res, next) {
  * @apiSuccess {String} data.app.icon_background_color CSS color value of the app icon
  * @apiSuccess {String} data.app.id Unique ID of this app (used in app URLs)
  */
+// eslint-disable-next-line no-unused-vars
 var getAppInfo = function (req, res, next) {
     log.info("Getting app " + req.params.id);
     var answer = {
@@ -61,6 +61,7 @@ var getAppInfo = function (req, res, next) {
  * @apiSuccess {Object} data Response data
  * @apiSuccess {Object} data.config App configuration data object
  */
+// eslint-disable-next-line no-unused-vars
 var getAppConfig = function (req, res, next) {
     try {
         var answer = {
@@ -68,7 +69,7 @@ var getAppConfig = function (req, res, next) {
             data: { config: dashboard.getAppConfig(req.params.id) },
         };
     } catch (e) {
-        var answer = {
+        answer = {
             status: "error",
             message: String(e),
         };
@@ -82,12 +83,12 @@ var getAppConfig = function (req, res, next) {
  * @apiDescription Replace the specified app configuration with the POSTed object into the engine configuration.  Configuration updates take effect immediately.
  * @apiParam {Object} config Generic JSON formatted object to store as the apps configuration.
  */
+// eslint-disable-next-line no-unused-vars
 var postAppConfig = function (req, res, next) {
-    var new_config = {};
-    var answer;
     dashboard.setAppConfig(
         req.params.id,
         req.params.config,
+        // eslint-disable-next-line no-unused-vars
         function (err, result) {
             if (err) {
                 var answer = {
@@ -95,7 +96,7 @@ var postAppConfig = function (req, res, next) {
                     message: String(err),
                 };
             } else {
-                var answer = {
+                answer = {
                     status: "success",
                     data: {},
                 };
@@ -110,6 +111,7 @@ var postAppConfig = function (req, res, next) {
  * @apiDescription Delete the specified app
  * @apiGroup Dashboard
  */
+// eslint-disable-next-line no-unused-vars
 var deleteApp = function (req, res, next) {
     log.info("Deleting app " + req.params.id);
     dashboard.deleteApp(req.params.id, function (err, result) {
@@ -135,11 +137,12 @@ var deleteApp = function (req, res, next) {
  * @apiParam {String} id ID of requested app
  * @apiSuccess {Object} root Root of directory tree
  */
+// eslint-disable-next-line no-unused-vars
 var listAppFiles = function (req, res, next) {
     log.info("Listing files");
-    id = req.params.id;
+    var id = req.params.id;
 
-    files = dashboard.getAppFiles(id);
+    var files = dashboard.getAppFiles(id);
     // Add URL attributes to all of the leaves of the file tree
     function add_urls(node) {
         if (node.type === "file") {

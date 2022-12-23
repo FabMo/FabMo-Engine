@@ -5,6 +5,7 @@ module.exports = {
         es2021: true,
     },
     globals: {
+        async: true,
         clearTimeout: true,
         log: true,
         process: true,
