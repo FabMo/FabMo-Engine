@@ -3,48 +3,59 @@
  *
  * This module provides the functions for managing FabMo apps.
  *
- * FabMo apps are single-page web applications that have special authority to communicate back to
- * the server that hosts them.  They communicate through a websocket and REST API via a client
- * side javascript library called fabmo.js.  The engine provides the means (by way of this module)
- * for the user to upload and manage apps on the tool, and these apps are hosted and managed in such
- * a way that the FabMo client (dashboard) can display them, retrieve information about them, etc.
+ * FabMo apps are single-page web applications that have special authority to
+ * communicate back to the server that hosts them.  They communicate through a
+ * websocket and REST API via a client side javascript library called fabmo.js.
+ * The engine provides the means (by way of this module) for the user to upload
+ * and manage apps on the tool, and these apps are hosted and managed in such
+ * a way that the FabMo client (dashboard) can display them,
+ * retrieve information about them, etc.
  *
  * # App Storage
- * Apps are packaged as .zip archives, usually (but not necessarily) with the extension .fma (fabmo app)
- * They are stored (typically) in /opt/fabmo/apps when uploaded, and kept in their archive format in this location.
+ * Apps are packaged as .zip archives, usually (but not necessarily) with
+ * the extension .fma (fabmo app) They are stored (typically) in
+ * /opt/fabmo/apps when uploaded, and kept in their archive format in this location.
  *
  * # App Hosting
- * Apps are expanded so that their files can be hosted by the engine.  The hosted location for the apps is
- * (typically) in /opt/fabmo/approot/approot (See code below to explain the need for the double-approot hierarchy)
- * When expanded, apps are placed in directories with names that are either supplied by their package.json, or
- * generated automatically.  Using auto generated names both ensures name uniqueness, and is
- * a cache-busting measure.  Apps are copied/expanded into the approot when they are installed, or on
- * system startup, only in cases where the engine detects that an app exists as an archive, but not in the approot.
+ * Apps are expanded so that their files can be hosted by the engine.
+ * The hosted location for the apps is (typically) in /opt/fabmo/approot/approot
+ * (See code below to explain the need for the double-approot hierarchy)
+ * When expanded, apps are placed in directories with names that are either
+ * supplied by their package.json, or generated automatically.
+ * Using auto generated names both ensures name uniqueness, and is a cache-busting measure.
+ * Apps are copied/expanded into the approot when they are installed, or on
+ * system startup, only in cases where the engine detects that an app exists as
+ * an archive, but not in the approot.
  *
  * # System Apps
- * System apps are stored in the engine source tree (/dashboard/apps) in their expanded form, but follow the
- * same rules as user supplied apps.  They are copied to the approot directory just the same as user supplied
- * apps.
+ * System apps are stored in the engine source tree (/dashboard/apps) in their 
+ * expanded form, but follow the same rules as user supplied apps.  They are copied to the
+ * approot directory just the same as user supplied apps.
  *
  * # Notes
  * Here are some additional notes about apps that might be useful:
- *   - Because apps (particularly system apps) are subject to change (in an engine update for example)
- *     the approot directory is "cleared" strategically in order to provoke a most up-to-date version of
- *     all the apps to be expanded into the approot directory. The approot is cleared on engine updates,
- *      and perhaps at other times.
- *   - The only thing an app technically needs to be an app is a package.json, and an index file
- *     See the source below for readAppPackageInfo for information about what the package.json contains
- *   - `app_info` is a typical argument in this file - it is the object that represents information about
- *     an app.  All functions that take this argument are expecting the same type of argument.
+ *   - Because apps (particularly system apps) are subject to change
+ *     (in an engine update for example) the approot directory is "cleared"
+ *     strategically in order to provoke a most up-to-date version of
+ *     all the apps to be expanded into the approot directory. The approot is
+ *     cleared on engine updates,and perhaps at other times.
+ *   - The only thing an app technically needs to be an app is a package.json,
+ *     and an index file. See the source below for readAppPackageInfo for
+ *     information about what the package.json contains
+ *   - `app_info` is a typical argument in this file - it is the object that
+ *     represents information about an app.  All functions that take this argument
+ *     are expecting the same type of argument.
  *     TODO: Arguments like this should be changed to camelCase to keep with coding convention
- *   - Apps are all managed in an internal index that maps an "App ID" to the app object itself (see
- *     app_info above) - apps can specify their own ID in the package.json - if they don't, one will be
- *     automatically supplied by the engine.  The advantage of supplying your own id is that no two apps
- *     in the system may have the same ID, so if you upload a second copy of an app whose id already exists,
- *     the first app will be overwritten.  This is useful while developing apps, so that you don't end up with
- *     many copies of the same app cluttering up your dash, but carries the burden of having to create
- *     globally-unique app names yourself.  Possible candidates might be something like they do for java
- *     packages:  companyname.domainname.version.appname or similar.
+ *   - Apps are all managed in an internal index that maps an "App ID" to the app
+ *     object itself (see app_info above) - apps can specify their own ID in
+ *     the package.json - if they don't, one will be automatically supplied by the engine.
+ *     The advantage of supplying your own id is that no two apps in the system
+ *     may have the same ID, so if you upload a second copy of an app whose id
+ *     already exists,the first app will be overwritten. This is useful while developing apps,
+ *     so that you don't end up with many copies of the same app cluttering up your dash,
+ *     but carries the burden of having to create globally-unique app names yourself.
+ *     Possible candidates might be something like they do for java packages:
+ *     companyname.domainname.version.appname or similar.
  */
 var zip = require("adm-zip");
 var path = require("path");
