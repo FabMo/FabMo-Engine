@@ -1,4 +1,4 @@
-var util = require("./util");
+var util = require("../util");
 var machine = require("../machine").machine;
 var config = require("../config");
 var engine = require("../engine");
