@@ -26,8 +26,6 @@ class commands {
 
     static startWpaSupplicant(callback) {
         console.log("should be starting the wpa thing");
-        // TODO: should this be removed?
-        // exec('wpa_supplicant -B -Dnl80211 -iwlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf', callback)
         exec("wpa_cli status", callback);
     }
 

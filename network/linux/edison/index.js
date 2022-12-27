@@ -7,21 +7,16 @@ var log = require("../../../log").logger("network");
 var os = require("os");
 var config = require("../../../config");
 var async = require("async");
-var fs = require("fs");
 var doshell = require("../../../util").doshell;
 var util = require("util");
 var NetworkManager = require("../../manager").NetworkManager;
 
 var ifconfig = require("wireless-tools/ifconfig");
 var iwconfig = require("wireless-tools/iwconfig");
-var iwlist = require("wireless-tools/iwlist");
 var wpa_cli = require("wireless-tools/wpa_cli");
 var udhcpc = require("wireless-tools/udhcpc");
 var udhcpd = require("wireless-tools/udhcpd");
 
-var events = require("events");
-
-var wifi;
 var WIFI_SCAN_INTERVAL = 5000;
 var WIFI_SCAN_RETRIES = 3;
 
@@ -43,10 +38,10 @@ var NETWORK_HEALTH_RETRY_INTERVAL = 1500;
 // and prints all of its outputs in JSON format.  It is located in the /scripts directory.
 // TODO : Thanks to `wpa_cli` - this function (and the script it calls) might be obsolete?  Good riddance if so.
 function jedison(cmdline, callback) {
-    var callback = callback || function () {};
+    callback = callback || function () {};
     doshell("./scripts/jedison " + cmdline, function (s) {
         try {
-            j = JSON.parse(s);
+            var j = JSON.parse(s);
             if (j.status == "success") {
                 callback(null, j.data || {});
             } else {
@@ -137,6 +132,7 @@ EdisonNetworkManager.prototype.runWifi = function () {
                 this._joinWifi(
                     ssid,
                     pw,
+                    // eslint-disable-next-line no-unused-vars
                     function (err, data) {
                         this.runWifi();
                     }.bind(this)
@@ -148,6 +144,7 @@ EdisonNetworkManager.prototype.runWifi = function () {
                 this.wifiState = "idle";
                 this.mode = "unknown";
                 this._joinAP(
+                    // eslint-disable-next-line no-unused-vars
                     function (err, data) {
                         this.runWifi();
                     }.bind(this)
@@ -158,6 +155,7 @@ EdisonNetworkManager.prototype.runWifi = function () {
                 this.wifiState = "idle";
                 this.mode = "unknown";
                 this._unjoinAP(
+                    // eslint-disable-next-line no-unused-vars
                     function (err, data) {
                         this.runWifi();
                     }.bind(this)
@@ -169,6 +167,7 @@ EdisonNetworkManager.prototype.runWifi = function () {
                 this.mode = "off";
                 if (this.wifiStatus != "disabled") {
                     this._disableWifi(
+                        // eslint-disable-next-line no-unused-vars
                         function (err, data) {
                             if (err) {
                                 log.error(err);
@@ -245,6 +244,7 @@ EdisonNetworkManager.prototype.runWifiStation = function () {
         // Fall through
         case "scan":
             this.scan(
+                // eslint-disable-next-line no-unused-vars
                 function (err, data) {
                     this.wifiState = "done_scanning";
                     setTimeout(this.runWifi.bind(this), WIFI_SCAN_INTERVAL);
@@ -422,6 +422,7 @@ EdisonNetworkManager.prototype._disableWifi = function (callback) {
     //var network_config = config.updater.get('network');
     //network_config.mode = 'off';
     //config.updater.set('network', network_config);
+    // eslint-disable-next-line no-unused-vars
     doshell("systemctl stop hostapd wpa_supplicant", function (err, result) {
         if (err) log.warn(err);
         ifconfig.down(wifiInterface, function (err, result) {
@@ -467,6 +468,7 @@ EdisonNetworkManager.prototype._joinWifi = function (ssid, password, callback) {
             '" --password="' +
             password.replace("$", "\\$") +
             '"',
+        // eslint-disable-next-line no-unused-vars
         function (err, result) {
             if (err) {
                 log.error(err);
@@ -539,6 +541,7 @@ EdisonNetworkManager.prototype.init = function () {
             "' --password='" +
             config.updater.get("password").replace("$", "\\$") +
             "'",
+        // eslint-disable-next-line no-unused-vars
         function (err, data) {
             log.info("Applying network configuration...");
             this.applyNetworkConfig();
@@ -578,6 +581,7 @@ EdisonNetworkManager.prototype.turnWifiOn = function (callback) {
             if (!status.up) {
                 ifconfig.up(
                     wifiInterface,
+                    // eslint-disable-next-line no-unused-vars
                     function (err, data) {
                         this.mode = undefined;
                         this.wifiStatus = "enabled";
@@ -593,6 +597,7 @@ EdisonNetworkManager.prototype.turnWifiOn = function (callback) {
 
 // Disable the wifi
 //   callback - Called when wifi is disabled or with error if error
+// eslint-disable-next-line no-unused-vars
 EdisonNetworkManager.prototype.turnWifiOff = function (callback) {
     //callback(new Error('Not available on the edison wifi manager.'));
     this.disableWifi();
@@ -666,7 +671,7 @@ EdisonNetworkManager.prototype.setIdentity = function (identity, callback) {
                 }
             }.bind(this),
         ],
-
+        // eslint-disable-next-line no-unused-vars
         function (err, results) {
             if (err) {
                 log.error(err);
@@ -792,6 +797,7 @@ EdisonNetworkManager.prototype.setNetmask = function (
 //     gateway - The gateway, eg: '255.255.255.0'
 //    callback - Called when the gateway has been set or with error if error
 EdisonNetworkManager.prototype.setGateway = function (gateway, callback) {
+    // eslint-disable-next-line no-unused-vars
     doshell("route add default gw " + gateway, function (s) {
         callback(null);
     });
@@ -820,6 +826,7 @@ EdisonNetworkManager.prototype.applyEthernetConfig = function () {
                         self.disableDHCP.bind(this, ethernetInterface),
                         self.stopDHCPServer.bind(this, ethernetInterface),
                     ],
+                    // eslint-disable-next-line no-unused-vars
                     function (err, results) {
                         if (err) {
                             log.warn(err);
@@ -850,6 +857,7 @@ EdisonNetworkManager.prototype.applyEthernetConfig = function () {
                                                 .gateway
                                         ),
                                     ],
+                                    // eslint-disable-next-line no-unused-vars
                                     function (err, results) {
                                         if (err) log.warn(err);
                                         else
@@ -875,6 +883,7 @@ EdisonNetworkManager.prototype.applyEthernetConfig = function () {
                             case "magic":
                                 self.enableDHCP(
                                     ethernetInterface,
+                                    // eslint-disable-next-line no-unused-vars
                                     function (err) {
                                         setTimeout(
                                             function () {
@@ -929,6 +938,7 @@ EdisonNetworkManager.prototype.applyEthernetConfig = function () {
                                                                 ],
                                                                 function (
                                                                     err,
+                                                                    // eslint-disable-next-line no-unused-vars
                                                                     results
                                                                 ) {
                                                                     if (err)
@@ -963,11 +973,9 @@ EdisonNetworkManager.prototype.applyEthernetConfig = function () {
 };
 
 // This function is the main process for ethernet.
-// TODO - cleanup indentation below
 // Basically, it looks for media to be plugged or unplugged, and applies the correct
 // configuration accordingly.
 EdisonNetworkManager.prototype.runEthernet = function () {
-    var self = this;
     function checkEthernetState() {
         var oldState = this.ethernetState;
         ifconfig.status(

@@ -5,7 +5,6 @@
  *
  * It can at least scan for networks.
  */
-var log = require("../../../log").logger("network");
 var doshell = require("../../../util").doshell;
 var parseString = require("xml2js").parseString;
 var config = require("../../../config");
@@ -15,9 +14,7 @@ var AIRPORT =
 var util = require("util");
 var NetworkManager = require("../../../network_manager").NetworkManager;
 
-var wifi;
 var WIFI_SCAN_INTERVAL = 5000;
-var WIFI_SCAN_RETRIES = 3;
 
 var DarwinNetworkManager = function () {
     this.networks = [];
@@ -31,7 +28,6 @@ DarwinNetworkManager.prototype._scan = function (callback) {
             parseString(
                 result,
                 function (err, result) {
-                    var networks = [];
                     if (result) {
                         var data = result.plist.array[0].dict;
                         for (var i in data) {

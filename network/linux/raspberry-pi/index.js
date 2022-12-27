@@ -2,37 +2,22 @@ var log = require("../../../log").logger("network");
 var os = require("os");
 var config = require("../../../config");
 var async = require("async");
-var fs = require("fs");
 var child_process = require("child_process");
 var exec = child_process.exec;
 var util = require("util");
 var NetworkManager = require("../../../network_manager").NetworkManager;
-var tmp = require("tmp");
 // TODO:  Add networking logging instead of useing console.log
 
 var ifconfig = require("wireless-tools/ifconfig");
 var iwconfig = require("wireless-tools/iwconfig");
-var iwlist = require("wireless-tools/iwlist");
 var wpa_cli = require("wireless-tools/wpa_cli");
 var udhcpc = require("wireless-tools/udhcpc");
 var udhcpd = require("wireless-tools/udhcpd");
 
 const commands = require("./commands.js");
-const hostInterface = "wlan0"; // The WiFi Access Device.
-
-const EventEmitter = require("events");
-class MyEmitter extends EventEmitter {}
-const myEmitter = new MyEmitter();
-
-var wifi;
-var WIFI_SCAN_INTERVAL = 5000;
-var WIFI_SCAN_RETRIES = 3;
-var WIFI_SCAN_COUNT = 0;
 
 var wifiInterface = "wlan0";
-var apInterface = "uap0";
 var ethernetInterface = "eth0";
-var apModeGateway = "192.168.42.1";
 var tmpPath = os.tmpdir() + "/";
 
 var last_name = "";
@@ -43,7 +28,6 @@ var DEFAULT_BROADCAST = "192.168.1.255";
 var DHCP_MAGIC_TTL = 5000;
 var ETHERNET_SCAN_INTERVAL = 2000;
 var NETWORK_HEALTH_RETRIES = 8;
-var NETWORK_HEALTH_RETRY_INTERVAL = 10000;
 
 var RaspberryPiNetworkManager = function () {
     this.mode = "unknown";
@@ -61,7 +45,6 @@ var RaspberryPiNetworkManager = function () {
 util.inherits(RaspberryPiNetworkManager, NetworkManager);
 
 RaspberryPiNetworkManager.prototype.set_uuid = function (callback) {
-    var uuid = "";
     log.info("SETTING UUID");
     exec(
         "cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2",
@@ -77,7 +60,7 @@ RaspberryPiNetworkManager.prototype.set_uuid = function (callback) {
                 log.debug("At RPI naming from SerialNum - ");
                 result = result.split("0").join("").split("\n").join("").trim();
                 log.debug("modifiedSerial- " + result);
-                var name = { name: "fabmo-" + result };
+                name = { name: "fabmo-" + result };
                 config.engine.update(name, function () {
                     callback(name);
                 });
@@ -105,8 +88,8 @@ RaspberryPiNetworkManager.prototype.getInfo = function (interface, callback) {
 
 // Return a list of IP addresses (the local IP for all interfaces)
 RaspberryPiNetworkManager.prototype.getLocalAddresses = function () {
-    var interfaces = os.networkInterfaces();
     var retval = [];
+    // eslint-disable-next-line no-undef
     interface.array.forEach((interface) => {
         retval.push(interface[0].address);
     });
@@ -129,12 +112,12 @@ RaspberryPiNetworkManager.prototype.scan = function (callback) {
 
 RaspberryPiNetworkManager.prototype.returnWifiNetworks = function () {
     this.scan(
+        // eslint-disable-next-line no-unused-vars
         function (err, data) {
             if (!err) {
                 this.getNetworks(
                     function (err, data) {
                         if (!err) {
-                            var new_networks = 0;
                             var new_network_names = [];
                             for (var i in data) {
                                 var ssid = data[i].ssid;
@@ -146,7 +129,6 @@ RaspberryPiNetworkManager.prototype.returnWifiNetworks = function () {
                                     }
                                 }
                                 if (!found) {
-                                    new_networks += 1;
                                     new_network_names.push(ssid);
                                     this.networks.push(data[i]);
                                 }
@@ -164,7 +146,6 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
     var wlan0Int = interfaces.wlan0;
     var apInt = interfaces.uap0;
     var wiredInt = "eth0";
-    var forceJoinAP = 0;
     // All of the cases below should force us to update the AP SSID to have
     // the current IP address
     if (
@@ -181,7 +162,7 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
             this.network_history[wiredInt] != interfaces[wiredInt][0].address)
     ) {
         //  eth0 address changed     ^^
-        forceSSIDupdate = 1;
+        var forceSSIDupdate = 1;
     }
 
     this.network_history = {};
@@ -231,13 +212,17 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
             } // no else, because apRecover is already false
         } else {
             // if the ap isn't up, we rejoin.
+            // eslint-disable-next-line no-unused-vars
             wirelessWarn = "No wifi or AP trying to bring up AP";
+            // eslint-disable-next-line no-unused-vars
             apRecoveryError = "Could not bring back up AP";
+            // eslint-disable-next-line no-unused-vars
             apRecoverySuccess = "AP back up";
             apRecoverExecute = true;
         }
     }
     if (apRecoverExecute) {
+        // eslint-disable-next-line no-unused-vars
         this._joinAP(function (err, res) {
             if (err) {
                 log.warn("Could not bring back up AP");
@@ -249,7 +234,6 @@ RaspberryPiNetworkManager.prototype.checkWifiHealth = function () {
 };
 
 RaspberryPiNetworkManager.prototype.checkEthernetHealth = function () {
-    var interfaces = os.networkInterfaces();
     ifconfig.status(ethernetInterface, function (err, status) {
         if (err) {
             log.error(err);
@@ -356,6 +340,7 @@ RaspberryPiNetworkManager.prototype._joinAP = function (callback) {
 
 RaspberryPiNetworkManager.prototype._disableWifi = function (callback) {
     log.info("Disabling wifi...");
+    // eslint-disable-next-line no-unused-vars
     exec("systemctl stop hostapd wpa_supplicant", function (err, result) {
         if (err) log.warn(err);
         ifconfig.down(wifiInterface, function (err, result) {
@@ -372,7 +357,6 @@ RaspberryPiNetworkManager.prototype._joinWifi = function (
     password,
     callback
 ) {
-    var self = this;
     var network_config = config.engine.get("network");
     network_config.wifi.mode = "station";
     network_config.wifi.wifi_networks = [{ ssid: ssid, password: password }];
@@ -381,6 +365,7 @@ RaspberryPiNetworkManager.prototype._joinWifi = function (
     var SSID = ssid;
     exec(
         "wpa_cli -i wlan0 add_network",
+        // eslint-disable-next-line no-unused-vars
         function (error, stdout, stderr) {
             if (error !== null) {
                 console.log("error: " + error);
@@ -448,10 +433,12 @@ RaspberryPiNetworkManager.prototype._joinWifi = function (
                             );
                         },
                     ],
+                    // eslint-disable-next-line no-unused-vars
                     function (errs, results) {
                         if (errs) throw errs; // errs = [err1, err2, err3]
                         exec(
                             "wpa_cli -i wlan0 reconfigure",
+                            // eslint-disable-next-line no-unused-vars
                             function (error, stdout) {
                                 if (error) {
                                     log.error(error);
@@ -481,6 +468,7 @@ RaspberryPiNetworkManager.prototype._joinWifi = function (
 //   callback - Callback called when AP mode has been exited or with error if error
 RaspberryPiNetworkManager.prototype._unjoinAP = function (callback) {
     log.info("Turning off AP mode...");
+    // eslint-disable-next-line no-unused-vars
     commands.stopAP((err, result) => {
         if (err) {
             callback(err);
@@ -591,6 +579,7 @@ RaspberryPiNetworkManager.prototype.turnWifiOn = function (callback) {
             if (!status.up) {
                 ifconfig.up(
                     wifiInterface,
+                    // eslint-disable-next-line no-unused-vars
                     function (err, data) {
                         callback(err);
                     }.bind(this)
@@ -604,6 +593,7 @@ RaspberryPiNetworkManager.prototype.turnWifiOn = function (callback) {
 
 // Disable the wifi
 //   callback - Called when wifi is disabled or with error if error
+// eslint-disable-next-line no-unused-vars
 RaspberryPiNetworkManager.prototype.turnWifiOff = function (callback) {
     this.disableWifi();
 };
@@ -642,6 +632,7 @@ RaspberryPiNetworkManager.prototype.setIdentity = function (
             function set_name(callback) {
                 if (identity.name) {
                     log.info("Setting network name to " + identity.name);
+                    // eslint-disable-next-line no-undef
                     jedison("set name '" + identity.name + "'", callback);
                 } else {
                     callback(null);
@@ -661,6 +652,7 @@ RaspberryPiNetworkManager.prototype.setIdentity = function (
                     log.info(
                         "Setting network password to " + identity.password
                     );
+                    // eslint-disable-next-line no-undef
                     jedison(
                         "set password '" + identity.password + "'",
                         callback
@@ -679,6 +671,7 @@ RaspberryPiNetworkManager.prototype.setIdentity = function (
             }.bind(this),
         ],
 
+        // eslint-disable-next-line no-unused-vars
         function (err, results) {
             if (err) {
                 log.error(err);
@@ -813,6 +806,7 @@ RaspberryPiNetworkManager.prototype.setNetmask = function (
 //     gateway - The gateway, eg: '255.255.255.0'
 //    callback - Called when the gateway has been set or with error if error
 RaspberryPiNetworkManager.prototype.setGateway = function (gateway, callback) {
+    // eslint-disable-next-line no-unused-vars
     exec("route add default gw " + gateway, function (s) {
         callback(null);
     });
@@ -841,6 +835,7 @@ RaspberryPiNetworkManager.prototype.applyEthernetConfig = function () {
                         self.disableDHCP.bind(this, ethernetInterface),
                         self.stopDHCPServer.bind(this, ethernetInterface),
                     ],
+                    // eslint-disable-next-line no-unused-vars
                     function (err, results) {
                         if (err) {
                             log.warn(err);
@@ -871,6 +866,7 @@ RaspberryPiNetworkManager.prototype.applyEthernetConfig = function () {
                                                 .gateway
                                         ),
                                     ],
+                                    // eslint-disable-next-line no-unused-vars
                                     function (err, results) {
                                         if (err) log.warn(err);
                                         else
@@ -896,6 +892,7 @@ RaspberryPiNetworkManager.prototype.applyEthernetConfig = function () {
                             case "magic":
                                 self.enableDHCP(
                                     ethernetInterface,
+                                    // eslint-disable-next-line no-unused-vars
                                     function (err) {
                                         setTimeout(
                                             function () {
@@ -950,6 +947,7 @@ RaspberryPiNetworkManager.prototype.applyEthernetConfig = function () {
                                                                 ],
                                                                 function (
                                                                     err,
+                                                                    // eslint-disable-next-line no-unused-vars
                                                                     results
                                                                 ) {
                                                                     if (err)
@@ -984,11 +982,9 @@ RaspberryPiNetworkManager.prototype.applyEthernetConfig = function () {
 };
 
 // This function is the main process for ethernet.
-// TODO - cleanup indentation below
 // Basically, it looks for media to be plugged or unplugged, and applies the correct
 // configuration accordingly.
 RaspberryPiNetworkManager.prototype.runEthernet = function () {
-    var self = this;
     function checkEthernetState() {
         var oldState = this.ethernetState;
         ifconfig.status(
