@@ -37,12 +37,7 @@ module.exports = {
         "dashboard/static/js/libs/foundation.min.js",
         "dashboard/static/js/libs/backbone.js",
         "dashboard/static/js/events.js",
-        "dashboard/apps/previewer.fma/js/three.js",
-        "dashboard/apps/job_manager.fma/js/moment.js",
-        "dashboard/apps/job_manager.fma/js/Sortable.js",
-        "dashboard/apps/home.fma/js/Sortable.js",
-        "dashboard/apps/editor.fma/js/codemirror.js",
-        "dashboard/apps/editor.fma/js/cm-addon/**",
+        "dashboard/apps/",
     ],
     overrides: [
         {
