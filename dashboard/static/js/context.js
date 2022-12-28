@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 /*
  * This is the application context, which maintains all of the prototypes for all of the models and views
  * as well as instances of some of these which are needed by the application in general.  The context provides

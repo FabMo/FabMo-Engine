@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 define(function (require) {
     var Backbone = require("backbone");
     models = {};

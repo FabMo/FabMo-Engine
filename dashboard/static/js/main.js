@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+/* eslint-disable no-unused-vars */
 /*
  * main.js is the entry point for the application.
  */
@@ -71,7 +73,7 @@ engine.getCurrentUser(function (err, user) {
 //    return consent;
 // });
 
-setUpManual = function () {
+var setUpManual = function () {
     engine.getConfig(function (err, config) {
         if (err) {
             console.log(err);
@@ -244,10 +246,10 @@ engine.getVersion(function (err, version) {
                             modalOptions = {
                                 message: status.info.message,
                             };
-                            resumeFunction = function () {
+                            var resumeFunction = function () {
                                 dashboard.engine.resume();
                             };
-                            cancelFunction = function () {
+                            var cancelFunction = function () {
                                 dashboard.engine.quit();
                             };
                             //set up input submit
@@ -336,7 +338,7 @@ engine.getVersion(function (err, version) {
                                 dashboard.engine.status.job.description +
                                 "</p>";
                         } else {
-                            var detailHTML =
+                            detailHTML =
                                 '<p>Check the <a style="text-decoration: underline;" href="/log">debug log</a> for more information.</p>';
                         }
                         dashboard.showModal({
@@ -615,7 +617,7 @@ function showDaisy(callback) {
 }
 
 function hideDaisy(callback) {
-    var callback = callback || function () {};
+    callback = callback || function () {};
     if (!daisyIsShown) {
         return callback();
     }
@@ -636,7 +638,7 @@ $(document).on("keydown", function (e) {
 
 //goto this location
 var axisValues = [];
-getAxis = function () {
+var getAxis = function () {
     $(".axi").each(function () {
         var strings = this.getAttribute("class").split(" ")[0];
         var axis = strings.slice(-1).toUpperCase();

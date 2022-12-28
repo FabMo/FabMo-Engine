@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-undef */
 /*
  * routers.js defines the application routers which map URLs to application functions.
  */

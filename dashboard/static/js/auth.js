@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-undef */
 module.exports = function auth() {
     runAuth();
     function getUrlParameter(sParam) {

@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-undef */
 /*
  * This is where the application context that we will expose to the "apps" will go
  * This will include the currently selected machine (if any) as well as functions to interact with the dashboard itself.
@@ -193,7 +195,7 @@ define(function (require) {
                                 }
                             });
                         } catch (e) {
-                            var msg = {
+                            msg = {
                                 status: "error",
                                 type: "cb",
                                 message: JSON.stringify(e),
@@ -209,7 +211,7 @@ define(function (require) {
                     }
                 } else if ("on" in evt.data) {
                     var name = evt.data.on;
-                    var source = evt.source;
+                    source = evt.source;
                     this._registerEventListener(name, source);
                 }
             }.bind(this)

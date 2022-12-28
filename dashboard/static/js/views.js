@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-undef */
 define(function (require) {
     var models = require("./models.js");
     var Backbone = require("backbone");
