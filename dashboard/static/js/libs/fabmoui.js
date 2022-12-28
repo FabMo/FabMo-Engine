@@ -1,3 +1,6 @@
+/* eslint-disable no-redeclare */
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-undef */
 (function (root, factory) {
     /* CommonJS */
     if (typeof module == "object" && module.exports) module.exports = factory();
@@ -560,8 +563,7 @@
                 $(that.resume_button_selector).hide();
                 $(that.stop_button_selector).hide();
             }
-        } else if (status.state === "armed") {
-        } else {
+        } /*else if (status.state === "armed") {}*/ else {
             $(".tools-current > li a").removeClass("paus err").addClass("disc");
             console.warn("Unknown status" + JSON.stringify(status));
         }
@@ -641,7 +643,6 @@
             that.tool.resume(function (err, data) {
                 if (err) {
                     console.error(err);
-                } else {
                 }
             });
         });
@@ -653,7 +654,6 @@
             that.tool.quit(function (err, data) {
                 if (err) {
                     console.error(err);
-                } else {
                 }
             });
         });

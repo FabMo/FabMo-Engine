@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+/* eslint-disable no-unused-vars */
 (function (root, factory) {
     /* CommonJS */
     if (typeof module == "object" && module.exports) module.exports = factory();
@@ -168,7 +170,7 @@
                 second_dir: second_direction,
             };
         } else {
-            var nudge = { axis: axis, dir: direction };
+            nudge = { axis: axis, dir: direction };
         }
 
         this.emit("nudge", nudge);

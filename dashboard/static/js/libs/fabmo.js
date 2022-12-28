@@ -1,3 +1,6 @@
+/* eslint-disable no-redeclare */
+/* eslint-disable no-undef */
+/* eslint-disable no-unused-vars */
 /**
  * @module fabmo.js
  */
@@ -209,7 +212,7 @@
 
             if (typeof safari !== "undefined") {
                 // handle non-a[download] safari as best we can:
-                url = "data:" + url.replace(/^data:([\w\/\-\+]+)/, u);
+                url = "data:" + url.replace(/^data:([\w/\-+]+)/, u);
                 if (!window.open(url)) {
                     // popup blocked, offer direct download:
                     if (
@@ -229,7 +232,7 @@
 
             if (!winMode) {
                 // force a mime that will download:
-                url = "data:" + url.replace(/^data:([\w\/\-\+]+)/, u);
+                url = "data:" + url.replace(/^data:([\w/\-+]+)/, u);
             }
             f.src = url;
             setTimeout(function () {
@@ -584,14 +587,16 @@
 
         try {
             file = _makeFile(obj);
-        } catch (e) {}
+        } catch (e) {
+            console.warn("_makeJob failed.");
+        }
 
         if (file) {
             return { file: file };
         } else {
             var job = {};
             for (var key in obj) {
-                if (obj.hasOwnProperty(key)) {
+                if (Object.prototype.hasOwnProperty.call(obj, key)) {
                     if (key === "file") {
                         job["file"] = _makeFile(obj.file);
                     } else {
@@ -701,8 +706,6 @@
     FabMoDashboard.prototype.deleteJob = function (id, callback) {
         this._call("deleteJob", id, callback);
     };
-
-    FabMoDashboard.prototype.cancelJob = FabMoDashboard.prototype.cancelJob;
 
     /**
      * Get information about a job.  This works for jobs that are pending, currently running, or in the history.
