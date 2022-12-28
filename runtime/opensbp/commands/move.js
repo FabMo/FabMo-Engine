@@ -132,7 +132,7 @@ exports.M6 = function (args) {
     }
 };
 
-function process_move(args) {
+var process_move = function (args) {
     this.cmd_result = 0;
     var params = {};
     var feedrate = this.movespeed_xy * 60;
@@ -178,7 +178,7 @@ function process_move(args) {
     params.F = feedrate;
 
     return params;
-}
+};
 
 // Move to the XY home position (0,0)
 // eslint-disable-next-line no-unused-vars

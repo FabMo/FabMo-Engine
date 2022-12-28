@@ -122,7 +122,7 @@ exports.J6 = function (args) {
     }
 };
 
-function process_jog(args) {
+var process_jog = function (args) {
     //    log.debug(" process_jog: " + JSON.stringify(args));
     var params = {};
     this.cmd_result = 0;
@@ -166,7 +166,7 @@ function process_jog(args) {
     }
 
     return params;
-}
+};
 
 // Jog (rapid) XY to the Home position (0,0)
 // eslint-disable-next-line no-unused-vars

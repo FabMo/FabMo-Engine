@@ -25,7 +25,7 @@ var scan = function (req, res, next) {
 
 // Connect to the wifi network specified in the request body
 // eslint-disable-next-line no-unused-vars
-function connectWifi(req, res, next) {
+var connectWifi = function (req, res, next) {
     var ssid = req.params.ssid;
     var key = req.params.key;
     var network = require("../engine").networkManager;
@@ -42,11 +42,11 @@ function connectWifi(req, res, next) {
         log.error("Not joining a network because no SSID provided.");
         res.json({ status: "error", message: "No SSID provided" });
     }
-}
+};
 
 // Disconnect from the current wifi network
 // eslint-disable-next-line no-unused-vars
-function disconnectWifi(req, res, next) {
+var disconnectWifi = function (req, res, next) {
     var state = req.params.disconnect;
     var network = require("../engine").networkManager;
     if (state === true) {
@@ -63,11 +63,11 @@ function disconnectWifi(req, res, next) {
         // TODO this could be more informative
         res.json({ status: "error", message: "wrong POST command sent !" });
     }
-}
+};
 
 // Forget the wifi network with the SSID provided in the post body
 // eslint-disable-next-line no-unused-vars
-function forgetWifi(req, res, next) {
+var forgetWifi = function (req, res, next) {
     var ssid = req.params.ssid;
     var network = require("../engine").networkManager;
 
@@ -83,11 +83,11 @@ function forgetWifi(req, res, next) {
     } else {
         res.json({ status: "error", message: "No SSID provided" });
     }
-}
+};
 
 // Enable or disable the wifi, depending on the value of the `enabled` attribute in the POST body
 // eslint-disable-next-line no-unused-vars
-function wifiState(req, res, next) {
+var wifiState = function (req, res, next) {
     var state = req.params.enabled;
 
     var network = require("../engine").networkManager;
@@ -111,11 +111,11 @@ function wifiState(req, res, next) {
         // TODO this could be more informative
         res.json({ status: "error", message: "wrong POST command sent !" });
     }
-}
+};
 
 // Enable or disable AP mode, depending on the value of the `enabled` attribute in the POST body
 // eslint-disable-next-line no-unused-vars
-function hotspotState(req, res, next) {
+var hotspotState = function (req, res, next) {
     var state = req.params.enabled;
     var network = require("../engine").networkManager;
 
@@ -138,12 +138,12 @@ function hotspotState(req, res, next) {
     } else {
         res.json({ status: "error", message: "wrong POST command sent !" });
     }
-}
+};
 
 // Set the network ID name and password
 // This is the AP SSID/Hostname
 // eslint-disable-next-line no-unused-vars
-function setNetworkIdentity(req, res, next) {
+var setNetworkIdentity = function (req, res, next) {
     var name = req.params.name;
     var password = req.params.password;
 
@@ -158,7 +158,7 @@ function setNetworkIdentity(req, res, next) {
             res.json({ status: "success" });
         }
     );
-}
+};
 
 // Retrieve the network ID (but only return the name, not password)
 // This is the AP SSID/Hostname
@@ -172,7 +172,7 @@ function getNetworkIdentity(req, res, next) {
 
 // Retrieve the history of joined networks
 // eslint-disable-next-line no-unused-vars
-function getWifiHistory(req, res, next) {
+var getWifiHistory = function (req, res, next) {
     var network = require("../engine").networkManager;
     network.getWifiHistory(function (err, data) {
         if (err) {
@@ -183,11 +183,11 @@ function getWifiHistory(req, res, next) {
             data: { history: data },
         });
     });
-}
+};
 
 // Return true if this machine can see the internet, false otherwise
 // eslint-disable-next-line no-unused-vars
-function isOnline(req, res, next) {
+var isOnline = function (req, res, next) {
     var network = require("../engine").networkManager;
     network.isOnline(function (err, online) {
         if (err) {
@@ -195,12 +195,12 @@ function isOnline(req, res, next) {
         }
         return res.json({ status: "success", data: { online: online } });
     });
-}
+};
 
 // Get network status (???)
 // TODO : What actually is the network status
 // eslint-disable-next-line no-unused-vars
-function getStatus(req, res, next) {
+var getStatus = function (req, res, next) {
     var network = require("../engine").networkManager;
 
     network.getStatus(function (err, status) {
@@ -209,11 +209,11 @@ function getStatus(req, res, next) {
         }
         return res.json({ status: "success", data: { status: status } });
     });
-}
+};
 
 // Set the ethernet configuration to params provided in the POST body
 // eslint-disable-next-line no-unused-vars
-function setEthernetConfig(req, res, next) {
+var setEthernetConfig = function (req, res, next) {
     var network = require("../engine").networkManager;
     var netConfig = config.engine.get("network");
     var ethernetConfig = netConfig.ethernet;
@@ -226,22 +226,22 @@ function setEthernetConfig(req, res, next) {
         status: "success",
         data: config.engine.get("network").ethernet,
     });
-}
+};
 
 // Retrieve the ethernet config
 // eslint-disable-next-line no-unused-vars
-function getEthernetConfig(req, res, next) {
+var getEthernetConfig = function (req, res, next) {
     var netConfig = config.engine.get("network");
     var ethernetConfig = netConfig.ethernet;
     res.json({
         status: "success",
         data: ethernetConfig,
     });
-}
+};
 
 // Set the wifi configuration to params provided in the POST body
 // eslint-disable-next-line no-unused-vars
-function setWifiConfig(req, res, next) {
+var setWifiConfig = function (req, res, next) {
     var network = require("../engine").networkManager;
     var netConfig = config.engine.get("network");
     var wifiConfig = netConfig.wifi;
@@ -254,18 +254,18 @@ function setWifiConfig(req, res, next) {
         status: "success",
         data: config.engine.get("network").wifi,
     });
-}
+};
 
 // Retrieve the ethernet config
 // eslint-disable-next-line no-unused-vars
-function getWifiConfig(req, res, next) {
+var getWifiConfig = function (req, res, next) {
     var netConfig = config.engine.get("network");
     var wifiConfig = netConfig.wifi;
     res.json({
         status: "success",
         data: wifiConfig,
     });
-}
+};
 
 module.exports = function (server) {
     server.post("/network/wifi/state", wifiState);

@@ -10,14 +10,14 @@ var machine = require("../machine").machine;
  * @apiError {Object} message Error message
  */
 // eslint-disable-next-line no-unused-vars
-function quit(req, res, next) {
+var quit = function (req, res, next) {
     machine.quit();
     var answer = {
         status: "success",
         data: null,
     };
     res.json(answer);
-}
+};
 
 /**
  * @api {get} /pause Pause
@@ -29,14 +29,14 @@ function quit(req, res, next) {
  * @apiError {Object} message Error message
  */
 // eslint-disable-next-line no-unused-vars
-function pause(req, res, next) {
+var pause = function (req, res, next) {
     machine.pause();
     var answer = {
         status: "success",
         data: null,
     };
     res.json(answer);
-}
+};
 
 /**
  * @api {get} /resume Resume
@@ -48,14 +48,14 @@ function pause(req, res, next) {
  * @apiError {Object} message Error message
  */
 // eslint-disable-next-line no-unused-vars
-function resume(req, res, next) {
+var resume = function (req, res, next) {
     machine.resume();
     var answer = {
         status: "success",
         data: null,
     };
     res.json(answer);
-}
+};
 
 module.exports = function (server) {
     //server.get('/run/:id',run); //OK
