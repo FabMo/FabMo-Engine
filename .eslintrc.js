@@ -12,6 +12,10 @@ module.exports = {
         process: true,
         setImmediate: true,
         setTimeout: true,
+        setTimeout: true,
+        clearTimeout: true,
+        setImmediate: true,
+        console: true,
     },
     plugins: ["jest", "prettier"],
 
