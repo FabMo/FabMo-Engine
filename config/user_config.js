@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+/* eslint-disable no-unused-vars */
 /*
  * user_config.js
  *
@@ -18,7 +20,6 @@ var util = require("util");
 var extend = require("../util").extend;
 var fs = require("fs-extra");
 var Config = require("./config").Config;
-var log = require("../log");
 var log = require("../log").logger("config");
 var profiles = require("../profiles");
 
@@ -26,7 +27,7 @@ var profiles = require("../profiles");
 var DEFAULT_ADMIN_PASSWORD = "go2fabmo";
 var DEFAULT_ADMIN_USER = "admin";
 
-UserConfig = function (driver) {
+var UserConfig = function (driver) {
     Config.call(this, "user");
 };
 util.inherits(UserConfig, Config);
@@ -208,6 +209,7 @@ UserConfig.prototype.add = function (username, password, callback) {
                 callback(err, password);
                 return;
             }
+            // eslint-disable-next-line no-prototype-builtins
             if (this._cache.hasOwnProperty(username)) {
                 log.info("User already exists!!!!");
                 callback("Username already taken !", null);

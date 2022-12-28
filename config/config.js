@@ -1,3 +1,6 @@
+/* eslint-disable no-undef */
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-prototype-builtins */
 /*
  * config.js
  *
@@ -50,9 +53,9 @@ Config.prototype.has = function (k) {
 // Returns an object mapping keys to values.
 //   arr - list of keys
 Config.prototype.getMany = function (arr) {
-    retval = {};
+    var retval = {};
     for (var i in arr) {
-        key = arr[i];
+        var key = arr[i];
         retval[key] = this._cache[key];
     }
     return retval;

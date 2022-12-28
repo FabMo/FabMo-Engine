@@ -6,12 +6,7 @@
  * When the profile is changed, the new profile is applied as needed.
  * When the log level changes, apply that change immediately to the logging system.
  */
-var path = require("path");
 var util = require("util");
-var fs = require("fs-extra");
-var PLATFORM = require("process").platform;
-var G2 = require("../g2.js");
-var exec = require("child_process").exec;
 var Config = require("./config").Config;
 var LogTool = require("../log");
 var log = LogTool.logger("config");
@@ -19,7 +14,7 @@ var profiles = require("../profiles");
 var process = require("process");
 
 // The EngineConfig object keeps track of engine-specific settings
-EngineConfig = function () {
+var EngineConfig = function () {
     Config.call(this, "engine");
 };
 util.inherits(EngineConfig, Config);
@@ -45,7 +40,9 @@ EngineConfig.prototype.update = function (data, callback) {
                                 " to " +
                                 data[key]
                         );
-                    } catch (err) {}
+                    } catch (err) {
+                        console.warn("EngineConfig update failed");
+                    }
                     profile_changed = true;
                 } else {
                     log.info("No initial profile changed.");
@@ -62,8 +59,10 @@ EngineConfig.prototype.update = function (data, callback) {
     // TODO - fix the that=this pattern - it's obnoxious.  Bind, or eventually arrow function
     var that = this;
     function save(callback) {
+        // eslint-disable-next-line no-unused-vars
         that.save(function (err, result) {
             if (err) {
+                // eslint-disable-next-line no-undef
                 typeof callback === "function" && callback(e);
             } else {
                 typeof callback === "function" && callback(null, data);
@@ -73,6 +72,7 @@ EngineConfig.prototype.update = function (data, callback) {
     // If the profile changed above, we apply it, and if that was successful, we abort the process.
     if (profile_changed) {
         log.warn("Engine profile changed - engine will be restarted.");
+        // eslint-disable-next-line no-unused-vars
         profiles.apply(newProfile, function (err, data) {
             if (err) {
                 log.error(err);

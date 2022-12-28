@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+/* eslint-disable no-unused-vars */
 /*
  * config/index.js
  *
@@ -155,7 +157,6 @@ function getLockFile() {
         case "win32":
         case "win64":
             return path.join(Config.getDataDir(), lockfile_name);
-            break;
         default:
             lockfile_dir = "/var/run";
             if (canWriteTo(lockfile_dir)) {
@@ -164,7 +165,6 @@ function getLockFile() {
                 log.warn("Lockfile not in /var/run on POSIX platform");
                 return path.join(Config.getDataDir(), lockfile_name);
             }
-            break;
     }
 }
 

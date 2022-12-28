@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+/* eslint-disable no-unused-vars */
 /*
  * opensbp_config.js
  *
@@ -21,7 +23,7 @@ var Config = require("./config").Config;
 // that correspond to the persistent (dollar-sign) variables in OpenSBP - The OpenSBP runtime
 // consults this configuration whenever persistent variables are read or written - it is what
 // lends the persistence to those variables.
-OpenSBPConfig = function () {
+var OpenSBPConfig = function () {
     Config.call(this, "opensbp");
 };
 util.inherits(OpenSBPConfig, Config);
@@ -43,7 +45,7 @@ OpenSBPConfig.prototype.load = function (filename, callback) {
                 log.error(e);
                 return callback(e);
             }
-            if (data.hasOwnProperty("tempVariables")) {
+            if (Object.prototype.hasOwnProperty.call(data, "tempVariables")) {
                 delete data["tempVariables"];
             }
             this.update(
@@ -172,7 +174,7 @@ OpenSBPConfig.prototype.getVariable = function (name) {
 //      value - The value to assign
 //   callback - Called with an object mapping key to value, or error if error.
 OpenSBPConfig.prototype.setVariable = function (name, value, callback) {
-    var name = name.replace("$", "");
+    name = name.replace("$", "");
     var u = { variables: {} };
     u.variables[name] = value;
     this.update(u, callback, true);
@@ -193,7 +195,7 @@ OpenSBPConfig.prototype.setVariableWrapper = async function (expr, value) {
 
 // Return true if the provided variable has been defined (with or without dollar sign)
 OpenSBPConfig.prototype.hasVariable = function (name) {
-    var name = name.replace("$", "");
+    name = name.replace("$", "");
     return name in this._cache.variables;
 };
 
@@ -215,7 +217,7 @@ OpenSBPConfig.prototype.getTempVariable = function (name) {
 //      value - The value to assign
 //   callback - Called with an object mapping key to value, or error if error.
 OpenSBPConfig.prototype.setTempVariable = function (name, value, callback) {
-    var name = name.replace("&", "");
+    name = name.replace("&", "");
     var u = { tempVariables: {} };
     u.tempVariables[name] = value;
     this.update(u, callback, true);
@@ -236,7 +238,7 @@ OpenSBPConfig.prototype.setTempVariableWrapper = async function (expr, value) {
 
 // Return true if the provided temp variable has been defined (with or without ampersand)
 OpenSBPConfig.prototype.hasTempVariable = function (name) {
-    var name = name.replace("&", "");
+    name = name.replace("&", "");
     return name in this._cache.tempVariables;
 };
 
