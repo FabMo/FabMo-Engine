@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 /*
  * app_manager.js
  *
@@ -28,7 +29,7 @@
  * an archive, but not in the approot.
  *
  * # System Apps
- * System apps are stored in the engine source tree (/dashboard/apps) in their 
+ * System apps are stored in the engine source tree (/dashboard/apps) in their
  * expanded form, but follow the same rules as user supplied apps.  They are copied to the
  * approot directory just the same as user supplied apps.
  *
@@ -59,11 +60,9 @@
  */
 var zip = require("adm-zip");
 var path = require("path");
-var os = require("os");
 var ncp = require("ncp").ncp;
 var fs = require("fs-extra");
 var async = require("async");
-var uuid = require("uuid");
 var log = require("../log").logger("app_manager");
 var util = require("../util");
 var glob = require("glob");
