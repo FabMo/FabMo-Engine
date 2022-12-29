@@ -606,7 +606,7 @@ ManualDriver.prototype._onG2Status = function (status) {
                     }.bind(this)
                 );
             }
-            break;
+        // Fall through is intended here, do not add a break
         case this.driver.STAT_END:
         case this.driver.STAT_HOLDING:
             // Handle nudges once we've come to a stop
