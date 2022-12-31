@@ -8,6 +8,7 @@ User=root
 Restart=always
 StandardOutput=syslog
 StandardError=syslog
+SyslogIdentifier=FBMO
 WorkingDirectory = /fabmo/
 
 [Install]

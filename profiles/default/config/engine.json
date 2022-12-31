@@ -7,8 +7,6 @@
     "name" : null,
 	"password" : "go2fabmo",
     "platform" : "raspberry-pi",
-    "consent_for_beacon" : "false",
-    "beacon_url" : "",
     "network" : {
         "wifi":{
             "mode" : "ap",

@@ -37,6 +37,8 @@ var STAT_PANIC = 13;
 // Should take no longer than CMD_TIMEOUT to do a get or a set operation
 var CMD_TIMEOUT = 100000;
 var EXPECT_TIMEOUT = 300000;
+var MAX_INPUTS = 12;                                                // Need these in a common storeage
+var MAX_OUTPUTS = 12;
 
 var _promiseCounter = 1;
 var resumePending = false;
@@ -197,7 +199,8 @@ G2.prototype._createCycleContext = function() {
 	var st = new stream.PassThrough();
 	st.setEncoding('utf8');
 	this._streamDone = false;
-	this.lineBuffer = []
+	this.lineBuffer = [];
+	this.flushcallback = null;
 
 	// Handle data coming in on the stream
 	st.on('data', function(chunk) {
@@ -300,7 +303,7 @@ G2.prototype.connect = function(path, callback) {
 ////##    a reset works, but disconnects G2 and requires new manual fabmo start
 ////##		this._write('\x18\n', function() {   ////## try reset not a kill
 ////##		this._write('M30\n', function() {    ////## try end file
-////## Kludging 2 kills seems to allow a restart when g2 stuck	
+////## Kludging 2 kills seems to allow a restart when g2 stuck
 		this._write('\x04\n', function() {});
 		this._write('\x04\n', function() {
 			this.requestStatusReport(function() {
@@ -411,16 +414,8 @@ G2.prototype.onData = function(data) {
 				var obj = JSON.parse(json_string);
 				this.onMessage(obj);
 			}catch(e){
-				//rmackie: we have never emitted this before. It used to be below the throw. 
-				// risking put it here, because someone thought it was a good idea once upon a time
-				// and it is an error case. Not really sure. I suspect we should discard this next line
-				// and keep the throw.
-				// TODO: RMACKIE rmackie - make a decision (requires testing)
-				//this.emit('error', [-1, 'JSON_PARSE_ERROR', "Could not parse response: '" + jsesc(json_string) + "' (" + e.toString() + ")"]);
 				throw e;
 			} finally {
-				// rmackie: this was not in a finally block. So if we threw an error, we left crud
-				// in the buffer and then parsing failed forever more, worse and worse. this way,
 				// if we hit a linefeed, we try to parse, if we succeed we clear the line and start anew
 				// and if we fail to parse, we still clear the line and start anew.
 				this._currentData = [];
@@ -440,8 +435,6 @@ G2.prototype.handleFooter = function(response) {
 		if(response.f[1] !== 0) {
 			var err_code = response.f[1];
 			var err_msg = G2_ERRORS[err_code] || ['ERR_UNKNOWN', 'Unknown Error'];
-			// TODO we'll have to go back and clean up alarms later
-			// For now, let's not emit a bunch of errors into the log that don't mean anything to us
 			this.emit('error', [err_code, err_msg[0], err_msg[1]]);
 			return new Error(err_msg[1]);
 		}
@@ -475,7 +468,7 @@ G2.prototype.clearLastException = function() {
  * This function handles status reports that are returned by the tool.
  * Status reports contain position, velocity, status, input/output data, etc.
  * When they arrive, we update internal state, fire events, etc.
- * 
+ *
  * 0	machine is initializing
  * 1	machine is ready for use
  * 2	machine is in alarm state (shut down)
@@ -504,6 +497,16 @@ G2.prototype.handleStatusReport = function(response) {
 			line = response.sr.line;
 			lines_left = this.lines_sent - line;
 		}
+
+        // check for inputs and reset to bitwise value for DRO display in Dashboard
+        for (let i=1; i<MAX_INPUTS+1; i++) {                                     
+            if ( ('in' + i) in response.sr ) {
+            let ibval = config.machine.get('di' + i + '_def');
+                if ( 0 < ibval &&  ibval < 17 ) { 
+                    this.status['in' + i] |= ibval;  // Set input value to cur value + bitwise def; for small DRO display
+                }
+            }
+        }
 
 		// stat is the system state (detailed in the list above) 
 		if('stat' in response.sr) {
@@ -552,6 +555,7 @@ G2.prototype.handleStatusReport = function(response) {
 						this.lines_to_send = 4
 						this.quit_pending = false;
 						this.pause_flag = false;
+						this.status.inFeedHold = false;                        
 						break;
 				}
 			} else {
@@ -560,12 +564,15 @@ G2.prototype.handleStatusReport = function(response) {
 				switch(response.sr.stat) {
 					case STAT_HOLDING:
 						this.pause_flag = true;
+						this.status.inFeedHold = true;        // for sensing input-generated-hold                
 						if(this.context) {
 							this.context.pause()
 						}
 						break;
 					default:
 						this.pause_flag = false;
+						this.status.inFeedHold = false;                        
+						this.status.resumeFlag = false;
 						if(this.context) {
 							this.context.resume();
 						}
@@ -605,6 +612,16 @@ G2.prototype.handleStatusReport = function(response) {
 			}
 		}
 		this.emit('status', this.status);
+
+		//If an input induced feedhold is received during a resume then adjust so that
+		// another resume can be received and feedhold can be properly reestablished.
+		if(this.hold > 0 && resumePending){
+			//Set resumeFlag to false so that resume/quit will display in the UI
+			this.status.resumeFlag = false;
+			resumePending = false;
+			this.pause_flag = true;
+		}
+
 	}
 };
 
@@ -663,7 +680,6 @@ G2.prototype.onMessage = function(response) {
 G2.prototype.manualFeedHold = function(callback) {
 
 	this.pause_flag = true;
-
 	this._write('\x04\n');
 }
 
@@ -686,11 +702,13 @@ G2.prototype.feedHold = function(callback) {
 // Clears the queue, this means both the queue of g-codes in the engine to send,
 // and whatever gcodes have been received but not yet executed in the g2 firmware context
 G2.prototype.queueFlush = function(callback) {
+	//TODO: is this the correct way to flush the g2Core queue currently
 	log.debug('Sending FabMo Queue Clear, first!');
 	this.flushcallback = callback;
 	this.lines_to_send = 4;
 	this.gcode_queue.clear();
 	this.command({'clr':null});
+	// TODO: It looks like this kill will go off before the command above is sent in some cases preventing the clr from sending.
 	this._write('\x04\n');
 };
 
@@ -699,6 +717,7 @@ G2.prototype.queueFlush = function(callback) {
 // make the system crashy - so we're careful not to do that.
 // This function returns a promise that resolves when the machining cycle has resumed.
 G2.prototype.resume = function() {
+	this.status.resumeFlag = true;
 	var thisPromise = _promiseCounter;
 	if(resumePending){
 		return;
@@ -746,6 +765,7 @@ G2.prototype.quit = function() {
 	}
 	// Clear queues then issue kill.
 	this.queueFlush(function() {
+		// TODO: is a kill needed in the callback?
 		this._write('\x04\n');
 		//Finally clear context and _reset primed flag so we're not reliant on getting a stat 4 to clear the context.
 		this.context = null;
@@ -1047,20 +1067,18 @@ G2.prototype.sendMore = function() {
 	}
 };
 
-// Set the position of the motion system using the G28.3 code
+// Set the position of the motion system using the G28.3 code (on start)
 // position - An object mapping axes to position values. Axes that are not included will not be updated.
 G2.prototype.setMachinePosition = function(position, callback) {
 ////## until uvw enabled	var axes = ['x','y','z','a','b','c','u','v','w']
 	var axes = ['x','y','z','a','b','c']
 	var gcodes = new stream.Readable();
-	gcodes.push('G21\n');
+    let mult = (this.status.unit === 'mm' ? 1 : 1/25.4)  // Convert saved position from mm to current for restore
 	axes.forEach(function(axis) {
 		if(position[axis] != undefined) {
-			gcodes.push('G28.3 ' + axis + position[axis].toFixed(5) + "\n");
+			gcodes.push('G28.3 ' + axis + (position[axis] * mult).toFixed(5) + "\n");
 		}
 	});
-
-	gcodes.push(this.status.unit === 'in' ? 'G20\n' : 'G21\n');
 	gcodes.push(null);
 	//TODO: Set manualPrime false once uvw enabled
 	this.runStream(gcodes, true).then(function() {callback && callback()})

@@ -29,7 +29,7 @@ var config = {
       preview: './dashboard/apps/previewer.fma/js/app.js',
       selftest: './dashboard/apps/selftest.fma/js/selftest.js'
     },
-  
+
     output: {
       path: '/fabmo/dashboard/build',
       publicPath: "/",
@@ -37,12 +37,12 @@ var config = {
       // filename: "[name].[chunkhash].js"
       //  path: path.resolve(__dirname, 'dist'),
     },
- 
+
     resolve: {
       // modulesDirectories: [lib],
       extensions: ['', '.js'],
 
-    }, 
+    },
 /*
 	optimization: {
 		splitChunks: {
@@ -66,7 +66,7 @@ var config = {
                 test: /\.css$/i,
                 use: [
                         {
-                           loader: MiniCssExtractPlugin.loader, 
+                           loader: MiniCssExtractPlugin.loader,
                            options: {
                               publicPath: "/",
                            },

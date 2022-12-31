@@ -1,6 +1,9 @@
 routes/debug.js
 sandbox
 build
+.vscode
+.vscode/.*
+.vscode/*
 *.swp
 *~
 *.bak
@@ -21,7 +24,10 @@ profiles/*
 profiles/.*
 !dashboard/build/index.html
 !profiles/fabmo-profile-dev-tests
+!profiles/fabmo-profile-atc
+!profiles/fabmo-profile-dt
 !profiles/default
 !profiles/README.md
 install_token
 runtime/opensbp/test.sbp
+package-lock.json

@@ -15,23 +15,30 @@ var cookie = require('./cookie');
 
 module.exports = function(scene, update) {
   var self = this;
-
+  var readingMachineUnit = true;
+  var iniMetric; 
+  var step;
 
   self.update = function (bounds, metric) {
     self.bounds = bounds = typeof bounds == 'undefined' ? self.bounds : bounds;
-    self.metric = metric = typeof metric == 'undefined' ? self.metric : metric;
-
+    var defaultStep_metric = 25;                                        
+    var defaultStep_in = 1;                             
+    if (bounds.max.x >= 48 || bounds.max.y >= 48) {                   // ... adjust grid steps depending on size
+        defaultStep_metric = 250;
+        defaultStep_in = 12;
+    }    
+    self.step = parseFloat(cookie.get('grid-step', defaultStep_in));
+    self.step_metric = parseFloat(cookie.get('grid-step-metric', defaultStep_metric));
+    
     scene.remove(self.grid);
-
-    if (self.step_metric == metric) self.step_setting.val(self.step);
-    else if (metric) self.step_setting.val(self.step * 25.4);
-    else self.step_setting.val((self.step / 25.4).toFixed(3));
-
-    var dims = util.getDims(bounds);
-    var size = Math.max(dims[0], dims[1]) * 16;
-    var step = (self.step_metric ? 25.4 : 1) / self.step;
-    var divs = Math.ceil(size * step);
-    size = divs / step;
+    if (readingMachineUnit) {
+        readingMachineUnit = false;                                   // ... keep track of machine unit type; that initially passed
+        iniMetric = metric;
+     }
+    var gridX = bounds.max.x - bounds.min.x; 
+    var gridY = bounds.max.y - bounds.min.y;
+    var locGridX = bounds.loc.x;
+    var locGridY = bounds.loc.y;
 
     var material = new THREE.MeshPhongMaterial({
       shininess: 0,
@@ -41,10 +48,21 @@ module.exports = function(scene, update) {
       transparent: true
     });
 
-    self.grid = new THREE.GridHelper(size, divs);
-    self.grid.material = material;
-    self.grid.rotation.x = Math.PI / 2;
+    if (iniMetric) {
+        step = self.step_metric;
+        self.step_setting = $('#preview .settings [name="grid-step"]');
+        util.connectSetting('grid-step', self.step_metric, self.setStep);
+    } else {
+        step = self.step;
+        self.step_setting = $('#preview .settings [name="grid-step"]');
+        util.connectSetting('grid-step', self.step, self.setStep);
+    }
 
+    self.grid = new THREE.XgridHelper(gridX,step,gridY,step);  // Use modified "gridHelper" for rectangular X & Y
+    //self.grid = new THREE.GridHelper(size, divs);
+    self.grid.material = material;
+    self.grid.position.set((locGridX), (locGridY), 0.0);
+    self.grid.rotation.x = Math.PI / 2;
     self.grid.visible = !!self.show;
     scene.add(self.grid);
     update();
@@ -58,12 +76,14 @@ module.exports = function(scene, update) {
     update();
   }
 
-
   self.setStep = function(step) {
-    self.step = step <= 0 ? 1 : (step || 1);
-    self.step_metric = self.metric;
-    cookie.set('grid-step', self.step);
-    cookie.set('grid-step-metric', self.metric ? 1 : 0);
+    if (iniMetric) {
+        self.step_metric = step;
+        cookie.set('grid-step-metric', self.step_metric);
+    } else {
+        self.step = step;
+        cookie.set('grid-step', self.step);
+    }
     self.update();
   }
 
@@ -72,9 +92,4 @@ module.exports = function(scene, update) {
   self.show = parseInt(cookie.get('show-grid', 1));
   util.connectSetting('show-grid', self.show, self.setShow);
 
-  // Step
-  self.step = parseFloat(cookie.get('grid-step', 1));
-  self.step_metric = parseInt(cookie.get('grid-step-metric', 0));
-  self.step_setting = $('#preview .settings [name="grid-step"]');
-  util.connectSetting('grid-step', self.step, self.setStep);
 }

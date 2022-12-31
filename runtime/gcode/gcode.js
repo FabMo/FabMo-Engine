@@ -27,14 +27,17 @@ GCodeRuntime.prototype.connect = function(machine) {
 	this.machine = machine;
 	this.driver = machine.driver;
 	this.status_handler =  this._onDriverStatus.bind(this);
+	this.error_handler =  this._onErrorStatus.bind(this);
 	this.status_report = {};
 	this.driver.on('status',this.status_handler);
+	this.driver.on('error',this.error_handler);
 	log.info("Connected G-Code Runtime");
 };
 
 GCodeRuntime.prototype.disconnect = function() {
 	if(this.ok_to_disconnect) {
 		this.driver.removeListener('status', this.status_handler);
+		this.driver.removeListener('error', this.error_handler);
 		log.info("Disconnected G-Code Runtime");
 	} else {
 		throw new Error("Cannot disconnect GCode Runtime")
@@ -90,6 +93,9 @@ GCodeRuntime.prototype._onDriverStatus = function(status) {
 	this.machine.emit('status',this.machine.status);
 };
 
+GCodeRuntime.prototype._onErrorStatus = function(error) {
+	this._fail(error);
+};
 
 GCodeRuntime.prototype._die = function() {
 	this.machine.status.current_file = null;
@@ -115,7 +121,7 @@ GCodeRuntime.prototype._fail = function(message) {
  		log.error(e);
  	} finally {
 		this.machine.status.job=null;
- 		this.machine.setState(this, 'stopped', {error : message});
+		this.machine.setState(this, 'stopped', {error : message[2]});
  	}
 }
 
@@ -162,6 +168,7 @@ GCodeRuntime.prototype._handleStateChange = function(stat) {
 			this._changeState('paused');
 			break;
 		case this.driver.STAT_RUNNING:
+			this.machine.status.inFeedHold = false;
 			this._changeState('running');
 			break;
         case this.driver.STAT_STOP:
@@ -170,11 +177,17 @@ GCodeRuntime.prototype._handleStateChange = function(stat) {
             // There may have been an M30 in the file but the g2core will have ignored it, this
             // may change someday in the future on the g2core end, so we may end up revisiting this.
             // OTOH, an extra M30 should not cause a problem.
+
+			// As of 04/04/2022 the extra m30 seems to be a problem.
+			// Before commenting out this.driver.sendM30, files would end whenever a stat 3 was received
+			// which is not always at the end of the file. If the operator forgets to add an m30
+			// to the end of their file then FabMo will stall and show an empty footer, requiring ESC key to be hit.
+			// I am writing that up as a seperate enhancement issue
 			this._changeState('stopped');
-//            if (this._file_or_stream_in_progress) {
-//                this.driver.sendM30();
-//                this._file_or_stream_in_progress = false;
-//            }
+            if (this._file_or_stream_in_progress) {
+			    //this.driver.sendM30();
+                this._file_or_stream_in_progress = false;
+            }
 		default:
 			// TODO:  Logging or error handling?
 			break;

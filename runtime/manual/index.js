@@ -154,6 +154,9 @@ ManualRuntime.prototype.executeCode = function(code) {
 					break;
 
 				case 'fixed':
+					if(code.dist == null){
+						break;
+					}
 					if(!this.helper) {
 						this.enter();
 					}

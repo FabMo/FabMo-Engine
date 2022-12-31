@@ -11,9 +11,7 @@ var clients_limit = 5;
 var nb_clients=0;
 
 function setupAuthentication(svr) {
-	log.info("setup of /private setupAuthentication function invoked"); //rmackie
 	server.io.of('/private').use(function(socket, next) {
-		log.info("/private authentication callback function invoked");      //rmackie
 		var handshakeData = socket.request;
         // Check that the cookie header is present
         if (!handshakeData.headers.cookie) {
@@ -73,17 +71,11 @@ function setupStatusBroadcasts(server) {
 					where the string: '/' is the default namespace.
 			NameSpace objects use "emit" to send to all the sockets that are in their space
 		*/
-			log.debug("rmackie: /private socket emit status");
 			server.io.of('/private').emit('status', status);
-
-			log.debug("rmackie: socket emit status");
 			server.io.of('/').emit('status', status);
 	});
 
 	machine.on('change', function(topic) {
-		log.debug("rmackie:" + 'Change broadcast');
-		log.debug("rmackie:" + JSON.stringify(topic));
-
 		server.io.of('/private').emit('change', topic);
 		server.io.of('/').emit('change', topic);
 	});
@@ -99,7 +91,6 @@ var onPublicConnect = function(socket) {
 	});
 
 	socket.on('status', function(data) {
-        log.debug("rmackie: PUBLIC CONNECT status sent");
 		socket.emit('status', machine.status);
 	});
 
@@ -112,8 +103,6 @@ var onPublicConnect = function(socket) {
 
 
 var onPrivateConnect = function(socket) {	
-
-	log.info("Private client connected."); //rmackie
 
 	if(!socket.request.sessionID.content.passport) {
         log.info("disconnect - no passport");
@@ -185,8 +174,9 @@ var onPrivateConnect = function(socket) {
 				case 'resume':
 					if (data.args && data.args.var && data.args.type && data.args.val) {
 						machine.resume(callback, {'var':{'expr':data.args.var, 'type':data.args.type}, 'val':data.args.val});
+					} else {
+						machine.resume(callback);
 					}
-					machine.resume(callback);
 					break;
 
 				default:
@@ -214,4 +204,3 @@ module.exports = function(svr) {
 	server.io.of('/private').on('connection', onPrivateConnect);
 	setupStatusBroadcasts(server);
 };
-

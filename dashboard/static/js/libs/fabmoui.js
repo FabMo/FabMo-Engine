@@ -11,8 +11,8 @@
 }(this, function () {
   "use strict"
 
-var MAX_INPUTS = 16;
-var MAX_OUTPUTS = 16;
+var MAX_INPUTS = 12;
+var MAX_OUTPUTS = 12;
 var currentUnits = null;
 var mouseX;
 var mouseY;
@@ -231,7 +231,8 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		that.updateText($(that.units_selector), unit)
 	}
 
-	['x','y','z','a','b'].forEach(function(axis) {
+    ////## key DRO display stuff
+	['x','y','z','a','b','c'].forEach(function(axis) {
 		var pos = 'pos' + axis;
 		if(pos in status) {
 			if(axis === "b") {
@@ -305,28 +306,20 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		}
 		this.progress = percent;
 
-		var cc = 255 - Math.round(255*(percent/100));
-		var rotation = Math.round(180*(percent/100));
- 		var fill_rotation = rotation;
- 		var fix_rotation = rotation * 2;
-		if ($(window).width() < 700) {
-   			$('.radial_progress').show();
-			$('.inset .percentage').css('color', 'rgba('+cc+', 255, '+cc+', 1)');
-			$('.mask .fill').css('background-color', 'rgba('+cc+', 255, '+cc+', 1)');
-			$('.inset .percentage').text(percent + '%');
-            $('.elapsed_time_text').text(time_elapsed_text);
-			for(i in transform_styles) {
-			$('.fill, .mask.full').css(transform_styles[i], 'rotate(' + fill_rotation + 'deg)');
-			$('.fill.fix').css(transform_styles[i], 'rotate(' + fix_rotation + 'deg)');
-			$('.load_container').hide();
+		//Status.line does not show the line being ran, it is off by 19 lines for some reason
+		var comped_line = status.line - 19;
+
+		//If the comp makes line go below zero, say its 0
+		if(comped_line <= 0){
+			comped_line = 0;
 		}
-		} else {
+
 			$('.radial_progress').hide();
    			$('.load_container').show();
 			$('.percent_comp').text(percent + '%');
 			$('.horizontal_fill').css('width', percent + '%');
             $('.elapsed_time_text').text(time_elapsed_text);
-		}
+			$('.line_number_text').text(comped_line);
 		$(that.progress_selector).css("width",prog.toString() + "%");
 	}
 	else {
@@ -340,22 +333,40 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$('.horizontal_fill').css('width', '0%');
 		this.progress = 0;
 	}
-	///update inputs
-	for(var i=1; i<MAX_INPUTS+1; i++) {
-		var iname = 'in' + i;
-		if(iname in status) {
-			var selector = that.status_div_selector + ' .in' + i;
-			if(status[iname] == 1) {
-				$(selector).removeClass('off').addClass('on');
-			} else if(status[iname] == 0) {
-				$(selector).removeClass('on').addClass('off');
-			} else {
-				$(selector).removeClass('on off').addClass('disabled');
+
+    ///update inputs and set the small DRO display depending on input definitions
+    let stopIsOn = false;                                           // ... at least one is already on
+    let intIsOn = false;
+    for ( var i=1; i<MAX_INPUTS+1; i++ ) {
+        let iname = 'in' + i;
+        if ( iname in status ) {
+            let idisp = 'off';
+            let selector = that.status_div_selector + ' .in' + i;
+			let ival = status[iname];
+            if ( ival & 1 ) {                                      // input is ON
+                idisp = 'on'
+                if ( ival & 2 || ival & 4 ) {
+                    idisp = 'stopOn';
+                    stopIsOn = true; 
+                    $('#inp-stop').css("visibility", "visible");
+                };
+                if ( ival & 8 ) {
+                    idisp = 'interlockOn';
+                    intIsOn = true;
+                    $('#inp-interlock').css("visibility", "visible");
+                };     
+				$(selector).removeClass('off').addClass(idisp);
+			} else if ( (ival & 1) === 0 ) {                       // input is OFF ... cleanup
+                if ( (ival & 2 || ival & 4) && !stopIsOn ) {$('#inp-stop').css("visibility", "hidden")};
+                if ( (ival & 8) && !intIsOn ) {$('#inp-interlock').css("visibility", "hidden")};     
+				$(selector).removeClass('on stopOn interlockOn').addClass('off');
+			} else {                                               // input is disabled  ... not picking up at moment because all reported
+				$(selector).removeClass('on off stopOn interlockOn').addClass('disabled');
 			}
 		} else {
 			break;
 		}
-	}
+    }
 
 	///update outputs
 	for(var i=1; i<MAX_OUTPUTS+1; i++) {
@@ -419,8 +430,7 @@ FabMoUI.prototype.updateStatusContent = function(status){
 		$(that.status_div_selector).removeClass('fabmo-status-running');
 		$(".tools-current > li a").removeClass('paus disc').addClass('err');
 		$(that.state_selector).html(statename);
-		if(that.file_control)
-		{
+		if(that.file_control) {
 			$(that.stop_button_selector).hide();
 			$(that.pause_button_selector).show();
 			$(that.resume_button_selector).hide();
@@ -456,6 +466,13 @@ FabMoUI.prototype.updateStatusContent = function(status){
 				$(that.pause_button_selector).hide();
 				$(that.resume_button_selector).show();
 			}
+			//While FabMo is resuming from feedhold, display stop button
+			if(status.resumeFlag) {
+				$(that.stop_button_selector).hide();
+				$(that.pause_button_selector).show();
+				$(that.resume_button_selector).hide();
+			}
+			$(that.resume_button_selector+" div:first-child").removeClass('spinner green');
 			$(that.pause_button_selector+" div div:first-child").removeClass('spinner red');
 		}
 	}

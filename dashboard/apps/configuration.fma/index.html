@@ -5,7 +5,6 @@
   <title>Configuration</title>
   <meta charset="utf-8" />
   <link rel="stylesheet" href="../../css/dashboard.css">
-  <link rel="stylesheet" href="../../css/foundation.min.css">
   <link rel="stylesheet" href="./css/style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -13,476 +12,179 @@
 <body>
   <div class="tip-output"><span class="tip-text"></span><div class='commentBox'></div></div>
   <div class="sticky">
-    <!-- START HERE -->
-    <nav class="top-bar" data-topbar role="navigation" style="background-color:rgb(92, 90, 90);">
-        <!-- rmackie -->
-      <ul class="title-area" style="color:white; background-color:rgb(92, 90, 90);list-style-type: none;">
+    <nav class="top-bar" data-topbar role="navigation">
+      <ul class="title-area">
         <li class="name">
-         <h2> <a id="app-header" style="color:white; padding-right:50px;padding-bottom:0px" >Configuration</a> </h2>
+          <h1><a id="app-header">Configuration</a></h1>
         </li>
-       <!-- rmackie <li class="toggle-topbar"><a href="#"><span>Menu</span></a>
-        </li> -->
-      </ul> 
-      <div class="top-bar-left" style="color:white; background-color:rgb(92, 90, 90);"> 
-        <ul class="left tabs" data-tabs id="configuration-tab-list" style="border:0px;background-color:rgb(92, 90, 90);list-style-type: none;">
-          <li class="tabs-title is-active" role="presentational"> <a href="#tabpanelGeneral" aria-selected="true">General</a> </li>
-          <li class="tabs-title"> <a data-tabs-target="tabpanelMachine" href="#tabpanelMachine">Machine</a> </li>
-          <li class="tabs-title"> <a data-tabs-target="tabpanelDrivers" href="#tabpanelDrivers">Drivers</a> </li>
-          <li class="tabs-title"> <a data-tabs-target="tabpanelAxes" href="#tabpanelAxes">Axes</a> </li>
-          <li class="tabs-title"><a data-tabs-target="tabpanelInputs" href="#tabpanelInputs">Inputs</a> </li>
-          <li class="tabs-title"> <a data-tabs-target="tabpanelApps" href="#tabpanelApps">Apps</a> </li>
-          <li class="tabs-title"> <a data-tabs-target="tabpanelUsers" href="#tabpanelUsers">Users</a> </li>
+        <li class="toggle-topbar"><a href="#"><span>Menu</span></a>
+        </li>
+      </ul>
+      <section class="top-bar-section">
+        <ul class="left" role="tablist" data-tab>
+          <li class="tab-title active" role="presentational"><a href="#tabpanel1" role="tab" tabindex="0" aria-selected="true" controls="tabpanel1">General</a>
+          </li>
+          <li class="tab-title" role="presentational"><a href="#tabpanel5" role="tab" tabindex="0" aria-selected="false" controls="tabpanel5">Machine</a>
+          </li>
+          <li class="tab-title" role="presentational"><a href="#tabpanel4" role="tab" tabindex="0" aria-selected="false" controls="tabpanel4">Drivers</a>
+          </li>
+          <li class="tab-title" role="presentational"><a href="#tabpanel2" role="tab" tabindex="0" aria-selected="false" controls="tabpanel2">Axes</a>
+          </li>
+          <li class="tab-title" role="presentational"><a href="#tabpanel3" role="tab" tabindex="0" aria-selected="false" controls="tabpanel3">Inputs</a>
+          </li>
+          <li class="tab-title" role="presentational"><a href="#tabpanel6" role="tab" tabindex="0" aria-selected="false" controls="tabpanel6">Apps</a>
+          </li>
+          <li class="tab-title" role="presentational"><a href="#tabpanel7" role="tab" tabindex="0" aria-selected="false" controls="tabpanel7">Users</a>
+          </li>
         </ul>
-      </div>
-      <div class="top-bar-right" style="background-color:rgb(92, 90, 90);list-style-type: none;">
-        <ul style="background-color:rgb(92, 90, 90);list-style-type: none; color:white">
-          <li> <a id="engine-version" class="engine-version" style="color:white" href=""> </a> </li>
+        <ul class="right">
+          <li>
+            <a id="engine-version" class="engine-version" href=""></a>
+          </li>
         </ul>
-      </div>
+      </section>
     </nav>
   </div>
+
+  
 
   <div class="row">
     <!--  <form> -->
 
-    <div class="tabs-content" data-tabs-content="configuration-tab-list">
-      <div class="tabs-panel is-active" id="tabpanelGeneral">
-        <div class="grid-container medium-margin-collapse">
-          <fieldset style="border-style:groove; border-width:2px"> <!-- begin re-formatting efforts  -->
+    <ul class="tabs" data-tab role="tablist">
+
+    </ul>
+    <div class="tabs-content">
+      <section role="tabpanel" aria-hidden="false" class="content active" id="tabpanel1">
+        <div class="row">
+          <fieldset>
             <legend>General Settings</legend>
-            <div class="grid-x"> <!-- first row -->
-              <div class="cell small-3" style="padding-left:5px; padding-right:10px">
-                <div class="row collapse">
-                  <label data-tip="The name of your tool.  The tool name will be displayed on the dashboard, and is used as the network name for wireless and wired networking.">
-                    Machine Name<div class="tool-tip">i</div></label>
-                  <div class="small-12 columns">
-                    <input type="text"  id="engine-name" class="engine-input" />
-                  </div>
+            <div class="large-4 columns" >
+              <div class="row collapse">
+                <label data-tip="The name of your tool.  The tool name will be displayed on the dashboard, and is used as the network name for wireless and wired networking.">Machine Name<div class="tool-tip">i</div></label>
+                <div class="small-12 columns">
+                  <input type="text"  id="engine-name" class="engine-input"/>
                 </div>
               </div>
-              <div class="cell small-3" id="section-machine-id" style="padding-left:10px; padding-right:10px">
-                <div class="row collapse">
-                  <label data-tip="The unique factory ID of your tool.  This ID can be helpful for tech support.  This value cannot be changed.">
-                    Machine ID<div class="tool-tip">i</div></label>
-                  <div class="small-12 columns">
-                    <input type="text" id="input-machine-id" disabled/>
-                  </div>
+            </div>
+            <div class="large-4 columns" id="section-machine-id">
+              <div class="row collapse">
+                <label data-tip="The unique factory ID of your tool.  This ID can be helpful for tech support.  This value cannot be changed.">Machine ID<div class="tool-tip">i</div></label>
+                <div class="small-12 columns">
+                  <input type="text" id="input-machine-id" disabled/>
                 </div>
               </div>
-              <div class="cell small-3" style="padding-left:10px; padding-right:10px">
-                <div class="row collapse">
-                  <label data-tip="The machine profile sets the default values, apps and macros for your tool.  Changing this setting will require you to reboot your tool.">
-                    Machine Profile<div class="tool-tip">i</div></label>
-                  <select id="profile-listbox">
-                  </select>
-                </div>
+            </div>
+            <div class="large-4 columns"> 
+              <div class="row collapse">
+                <label data-tip="The machine profile sets the default values, apps and macros for your tool.  Changing this setting will require you to reboot your tool.">Machine Profile<div class="tool-tip">i</div></label>
+                <select id="profile-listbox">
+                </select>
               </div>
-              <div class="cell small-3" style="padding-left:10px; padding-right:10px">
-                <div class="row collapse">
-                  <label data-tip="The distance units that will be used by default for the DRO display and in supported apps.">
-                    Default Unit System<div class="tool-tip">i</div></label>
-                  <select id="machine-units" class="machine-input">
-                    <option value="mm">mm</option>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label data-tip="The distance units that will be used by default for the DRO display and in supported apps.">Default Unit System<div class="tool-tip">i</div></label>
+                <select id="machine-units" class="machine-input">
                     <option value="in">in</option>
-                  </select>
+                    <option value="mm">mm</option>
+                </select>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label data-tip="">Distance Mode</label>
+                <select id="driver-gdi" class="driver-input">
+                  <option value="0">Absolute</option>
+                  <option value="1">Incremental</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label data-tip='Maximum deviation that an arc segment may take from its "ideal" trajectory.  A smaller number here means higher resolution (but possibly slower) arcs.'>Chordal Tolerance<div class="tool-tip">i</div></label>
+                <div class="small-9 columns">
+                  <input type="text" id="driver-ct" class="driver-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
                 </div>
               </div>
-            </div> <!-- end grid-x --> <!-- first row -->
-            <div class="grid-x medium-margin-collapse">
-              <div class="cell small-3" style="padding-left:10px; padding-right:10px">
-                <div class="row collapse">
-                  <label data-tip="By default will motion be with respect to the absolute datum or relative from the current position">
-                    Distance Mode<div class="tool-tip">i</div></label>
-                  <select id="driver-gdi" class="driver-input">
-                    <option value="0">Absolute</option>
-                    <option value="1">Incremental</option>
-                  </select>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label data-tip="Determines how aggressively the machine takes corners.  Sensible values are between 0.5 and 2.0.  Higher values mean more aggressive corners.">Junction Integration Time<div class="tool-tip">i</div></label>
+                <div class="small-12 columns">
+                  <input type="text" id="driver-jt" class="driver-input" />
                 </div>
               </div>
-              <div class="cell small-3" style="padding-left:10px; padding-right:10px;">
-                <div class="row collapse"> <!-- right here -->
-                  <label data-tip='Maximum deviation that an arc segment may take from its "ideal" trajectory.  A smaller number here means higher resolution (but possibly slower) arcs.'>
-                    Chordal Tolerance<div class="tool-tip">i</div></label>
-                  <div class="small-9 columns">
-                    <input type="text" id="driver-ct" class="driver-input" />
-                  </div>  <!-- rmackie
-                  <div class="small-3 columns" style="padding-left:10%; padding-right:10%">
-                    <span class="postfix in_mm_label">&nbsp;</span>
-                  </div> -->
-                </div>
-              </div>
-              <div class="cell small-3" style="padding-left:10px; padding: right 10px;">
-                <div class="row collapse">
-                  <label data-tip="Determines how aggressively the machine takes corners.  Sensible values are between 0.5 and 2.0.  Higher values mean more aggressive corners.">
-                    Junction Integration Time<div class="tool-tip">i</div></label>
-                  <div class="small-12 cell"> <!-- Rob Here rmackie -->
-                    <input type="text" id="driver-jt" class="driver-input" />
-                  </div>
-                </div>
-              </div>
-            </div> <!-- end grid-x -->
+            </div>
           </fieldset>
-          <fieldset style="border-style:groove; border-width:2px">
+        </div>
+
+        <div class="row">
+          <fieldset>
             <legend>Logging</legend>
-            <div class="grid-x medium-margin-collapse"> <!-- 2nd row -->
-              <div class="cell small-3" style="padding-left:10px; padding: right 10px;">
-                <div class="row collapse">
-                  <label data-tip="Determines how aggressively the tool records diagnostic information in its log.  This should be set to 'Informational' except in certain exceptional tech support situations.  Setting this value to something other than 'Informational' may negatively impact tool performance.">
-                    Log Level<div class="tool-tip">i</div></label>
-                    <select id="engine-log_level" class="engine-input">
-                      <option value="g2">G2</option>
-                      <option value="debug">Debug</option>
-                      <option value="info">Informational</option>
-                      <option value="warning">Warnings</option>
-                      <option value="error">Error</option>
-                    </select>
-                </div>
-              </div>
-              <div class="cell small-3" style="padding-left:10px; padding: right 10px;">
-                <div class="row collapse">
-                  <label data-tip="The minimum interval between tool status reports.  A larger number here means position and status displays that do not update as frequently.">
-                    Status Report Interval (ms)<div class="tool-tip">i</div></label>
-                  <div class="cell small-9">
-                    <input type="text" id="driver-si" class="driver-input" />
-                  </div> 
-                  <!-- rmackie  
-                  <div class="columns small-3">
-                    <span class="postfix">ms</span>
-                  </div>
-                -->
-                </div>
-              </div>
-            </div> <!-- end grid-x -->
-          </fieldset>
-          <!-- end re-formatting efforts, needs to be done from here on down rmackie -->          
-          <fieldset style="border-style:groove; border-width:2px">
-            <legend>Updates</legend>
-            <div class="grid-x medium-margin-collapse">
-              <div class="large-4 cell">
-                <div class="row collapse">
-                  <label data-tip="The version of FabMo that is currently running on this tool.">Software Version<div class="tool-tip">i</div></label>
-                  <div class="cell">
-                      <span class="engine-version"></span> 
-                  </div>
-                  <label data-tip="The version of low-level G2 motion firmware that is currently running on this tool.">G2 Firmware Version<div class="tool-tip">i</div></label>
-                  <div class="cell">
-                      <span class="firmware-version"></span>
-                  </div>
-                </div>
-              </div>
-              <div class="large-3 cell" style="padding-left:40px;">
-                  <div class="row collapse">
-                    <a id="btn-update"  class="button radius small disabled noselect">No FabMo Software Updates Available!</a>
-                  </div>
-              </div>
-              <div class="large-3 cell" style="padding-left:30px;">
-                <div class="row collapse">
-                  <a id="btn-flash-firm"  class="button radius small">Update G2 Firmware from a File</a>
-                  <input style="display:none" type="file" id="firmware-input">
-                </div>
-              </div>
-            </div> <!-- grid-x -->
-          </fieldset>
-        </div> <!-- end of grid-container -->
-      </div> <!-- end tabpanelGeneral -->
-<!--
-        <div class="row">
-          <fieldset>
-            <legend>Rotation</legend>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Rotate
-                  <select id="opensbp-transforms-rotate-apply" class="opensbp-input">
-                    <option value="false">Disabled</option>
-                    <option value="true">Enabled</option>
+                <label data-tip="Determines how aggressively the tool records diagnostic information in its log.  This should be set to 'Informational' except in certain exceptional tech support situations.  Setting this value to something other than 'Informational' may negatively impact tool performance.">Log Level<div class="tool-tip">i</div></label>
+                  <select id="engine-log_level" class="engine-input">
+                    <option value="g2">G2</option>
+                    <option value="debug">Debug</option>
+                    <option value="info">Informational</option>
+                    <option value="warning">Warnings</option>
+                    <option value="error">Error</option>
                   </select>
-                </label>
               </div>
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label>Rotation Angle</label>
+                <label data-tip="The minimum interval between tool status reports.  A larger number here means position and status displays that do not update as frequently.">Status Report Interval<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-rotate-angle" class="opensbp-input" />
+                  <input type="text" id="driver-si" class="driver-input" />
                 </div>
                 <div class="small-3 columns">
-                  <span class="postfix">degrees</span>
-                </div>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>X Rotation Point</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-rotate-x" class="opensbp-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
-                </div>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Y Rotation Point</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-rotate-y" class="opensbp-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
+                  <span class="postfix">ms</span>
                 </div>
               </div>
             </div>
           </fieldset>
         </div>
-                <div class="row">
-                <fieldset>
-                <legend>Scale</legend>
-                <div class="large-4 columns">
-                <div class="row collapse">
-                <label>Scale</label>
-                <select id="opensbp-transforms-scale-apply" class="opensbp-input">
-                <option value="false">Disabled</option>
-                <option value="true">Enabled</option>
-            </select>
+
+	<div class="row">
+	  <fieldset>
+		  <legend>Updates</legend>
+      <div class="large-4 columns">
+        <div class="row collapse">
+          <label data-tip="The version of FabMo that is currently running on this tool.">Software Version<div class="tool-tip">i</div></label>
+          <div class="columns">
+              <span class="engine-version"></span>
+          </div>
+          <label data-tip="The version of low-level G2 motion firmware that is currently running on this tool.">G2 Firmware Version<div class="tool-tip">i</div></label>
+          <div class="columns">
+              <span class="firmware-version"></span>
+          </div>
         </div>
-    </div>
-    <div class="large-4 columns">
-    <div class="row collapse">
-    <label>Scale X</label>
-    <div class="small-9 columns">
-    <input type="number" id="opensbp-transforms-scale-scalex" class="opensbp-input"/>
-</div>
-<div class="small-3 columns">
-<span class="postfix"></span>
-</div>
-</div>
-</div>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>Scale Y</label>
-<div class="small-9 columns">
-<input type="number" id="opensbp-transforms-scale-scaley" class="opensbp-input"/>
-</div>
-<div class="small-3 columns">
-<span class="postfix"></span>
-</div>
-</div>
-</div>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>Scale Z</label>
-<div class="small-9 columns">
-<input type="number" id="opensbp-transforms-scale-scalez" class="opensbp-input"/>
-</div>
-<div class="small-3 columns">
-<span class="postfix"></span>
-</div>
-</div>
-</div>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>X Scale Point</label>
-<div class="small-9 columns">
-<input type="number" id="opensbp-transforms-scale-x" class="opensbp-input"/>
-</div>
-<div class="small-3 columns">
-<span class="postfix">mm</span>
-</div>
-</div>
-</div>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>Y Scale Point</label>
-<div class="small-9 columns">
-<input type="number" id="opensbp-transforms-scale-y" class="opensbp-input"/>
-</div>
-<div class="small-3 columns">
-<span class="postfix">mm</span>
-</div>
-</div>
-</div>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>Z Scale Point</label>
-<div class="small-9 columns">
-<input type="number" id="opensbp-transforms-scale-z" class="opensbp-input"/>
-</div>
-<div class="small-3 columns">
-<span class="postfix">mm</span>
-</div>
-</div>
-</div>
-</fieldset>
-</div> 
-
-        <div class="row">
-          <fieldset>
-            <legend>Offset</legend>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Offset
-                  <select id="opensbp-transforms-move-apply" class="opensbp-input">
-                    <option value="false">Disabled</option>
-                    <option value="true">Enabled</option>
-                  </select>
-                </label>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Offset X</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-move-x" class="opensbp-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
-                </div>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Offset Y</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-move-y" class="opensbp-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
-                </div>
-              </div>
-            </div>
-            <div class="large-4 columns">
-              <div class="row collapse">
-                <label>Offset Z</label>
-                <div class="small-9 columns">
-                  <input type="number" id="opensbp-transforms-move-z" class="opensbp-input" />
-                </div>
-                <div class="small-3 columns">
-                  <span class="postfix in_mm_label">&nbsp;</span>
-                </div>
-              </div>
-            </div>
-        
-          </fieldset>
-
-          <fieldset>
-            <legend>Backup & Restore</legend>
-            <legend>Backup</legend>
-            <div class="large-3 columns">
-              <div class="row collapse">
-                <a id="btn-backup" class="button radius small">Backup the configuration</a>
-              </div>
-            </div>
-        <div class="large-7 columns">
-            <div class="row collapse">
-                <input type="file" id="restore_conf_file" class="hidden">
-                <a id="btn-restore"  class="button radius small">Restore the configuration</a>
-            </div>
+      </div>
+      <div class="large-4 columns">
+          <div class="row collapse">
+            <a id="btn-update"  class="button radius small disabled noselect">No FabMo Software Updates Available!</a>
+          </div>
+      </div>
+      <div class="large-4 columns">
+        <div class="row collapse">
+          <a id="btn-flash-firm"  class="button radius small">Update G2 Firmware from a File</a>
+          <input style="display:none" type="file" id="firmware-input">
         </div>
-        
-          </fieldset>
-        
+      </div>
+	  </fieldset>
+	</div>
+    </section>
 
-        </div>
--->
-        <!--     <div class="row">
-<fieldset>
-<legend>Shear X</legend>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>Shear X
-<select id="opensbp-transforms-shearx-apply" class="opensbp-input">
-<option value="false">Disabled</option>
-<option value="true">Enabled</option>
-</select>
-</label>
-</div>
-</div>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>Shear Angle X</label>
-<div class="small-9 columns">
-<input type="number" id="opensbp-transforms-shearx-angle" class="opensbp-input"/>
-</div>
-<div class="small-3 columns">
-<span class="postfix">degrees</span>
-</div>
-</div>
-</div>
-</fieldset>
-</div> -->
+<!-- Removed to Job Manager the TRANSFORM management previously shown here -->
 
-        <!--     <div class="row">
-<fieldset>
-<legend>Shear Y</legend>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>Shear Y
-<select id="opensbp-transforms-sheary-apply" class="opensbp-input">
-<option value="false">Disabled</option>
-<option value="true">Enabled</option>
-</select>
-</label>
-</div>
-</div> -->
-
-        <!--         <div class="large-4 columns">
-<div class="row collapse">
-<label>Shear Angle Y</label>
-<div class="small-9 columns">
-<input type="number" id="opensbp-transforms-sheary-angle" class="opensbp-input"/>
-</div>
-<div class="small-3 columns">
-<span class="postfix">degrees</span>
-</div>
-</div>
-</div>
-</fieldset>
-</div>
-
-<div class="row">
-<fieldset>
-<legend>Interpolation</legend>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>Interpolate
-<select id="opensbp-transforms-interpolate-apply" class="opensbp-input">
-<option value="false">Disabled</option>
-<option value="true">Enabled</option>
-</select>
-</label>
-</div>
-</div>
-</fieldset>
-</div> -->
-
-        <!--     <div class="row">
-<fieldset>
-<legend>Leveling</legend>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>Level
-<select id="opensbp-transforms-level-apply" class="opensbp-input">
-<option value="false">Disabled</option>
-<option value="true">Enabled</option>
-</select>
-</label>
-</div>
-</div>
-<div class="large-4 columns">
-<div class="row collapse">
-<label>Leveling Data File</label>
-<div class="small-9 columns">
-<input type="text" id="opensbp-transforms-level-ptDataFile" class="opensbp-input"/>
-</div>
-<div class="small-3 columns">
-<span class="postfix">browse</span>
-</div>
-</div>
-</div>
-</fieldset>
-</div> -->
-
-      <div class="tabs-panel" id="tabpanelAxes">
+      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel2">
         <div class="row">
           <fieldset>
             <legend>X-Axis</legend>
@@ -501,7 +203,7 @@
               <div class="row collapse">
                 <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-xvm" class="driver-input" />
+                  <input type="text" id="opensbp-jogxy_speed" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix ipm_mmpm_label">&nbsp;</span>
@@ -512,7 +214,7 @@
               <div class="row collapse">
                 <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.'>Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-xjm" class="driver-input" />
+                  <input type="text" id="opensbp-xy_maxjerk" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
@@ -558,9 +260,9 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
+                <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP). This value yoked to to X Axis setting.">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-yvm" class="driver-input" />
+                  <input type="text" disabled="disabled" id="opensbp-jogy_speed" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix ipm_mmpm_label">&nbsp;</span>
@@ -569,9 +271,9 @@
             </div>
             <div class="large-4 columns">
               <div class="row collapse">
-                <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.'>Maximum Jerk<div class="tool-tip">i</div></label>
+                <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads. This value yoked to to X Axis setting.'>Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-yjm" class="driver-input" />
+                  <input type="text" disabled="disabled" id="opensbp-y_maxjerk" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
@@ -620,7 +322,7 @@
               <div class="row collapse">
                 <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-zvm" class="driver-input" />
+                  <input type="text" id="opensbp-jogz_speed" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix ipm_mmpm_label">&nbsp;</span>
@@ -631,7 +333,7 @@
               <div class="row collapse">
                 <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.'>Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-zjm" class="driver-input" />
+                  <input type="text" id="opensbp-z_maxjerk" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
@@ -680,7 +382,7 @@
               <div class="row collapse">
                 <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-avm" class="driver-input" />
+                  <input type="text" id="opensbp-joga_speed" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg/min</span>
@@ -691,13 +393,24 @@
               <div class="row collapse">
                 <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.'>Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-ajm" class="driver-input" />
+                  <input type="text" id="opensbp-a_maxjerk" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg/min<sup>3</sup></span>
                 </div>
               </div>
             </div>
+            <div class="large-4 columns">
+                <div class="row collapse">
+                  <label data-tip="">High Speed Jerk</label>
+                  <div class="small-9 columns">
+                    <input type="text" id="driver-ajh" class="driver-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
+                  </div>
+                </div>
+              </div>
             <div class="large-4 columns">
               <div class="row collapse">
                 <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.  Rotary axes are controlled in degrees.">Axis Mode<div class="tool-tip">i</div></label>
@@ -729,7 +442,7 @@
               <div class="row collapse">
                 <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-bvm" class="driver-input" />
+                  <input type="text" id="opensbp-jogb_speed" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg/min</span>
@@ -740,13 +453,24 @@
               <div class="row collapse">
                 <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.'>Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-bjm" class="driver-input" />
+                  <input type="text" id="opensbp-b_maxjerk" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg/min<sup>3</sup></span>
                 </div>
               </div>
             </div>
+            <div class="large-4 columns">
+                <div class="row collapse">
+                  <label data-tip="">High Speed Jerk</label>
+                  <div class="small-9 columns">
+                    <input type="text" id="driver-bjh" class="driver-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
+                  </div>
+                </div>
+              </div>
             <div class="large-4 columns">
               <div class="row collapse">
                 <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.  Rotary axes are controlled in degrees.">Axis Mode<div class="tool-tip">i</div></label>
@@ -778,7 +502,7 @@
               <div class="row collapse">
                 <label data-tip="The velocity of traverse comands (G0 in g-code, or Jog commands in OpenSBP)">Jog Velocity<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-cvm" class="driver-input" />
+                  <input type="text" id="opensbp-jogc_speed" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg/min</span>
@@ -789,13 +513,24 @@
               <div class="row collapse">
                <label data-tip='The upper limit on axis "jerk" which determines how quickly the tool is able to accelerate/decelerate.  A higher value here means that the tool changes speeds more aggressively, which may degrade positional accuracy at large speed changes or under heavy loads.'>Maximum Jerk<div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="text" id="driver-cjm" class="driver-input" />
+                  <input type="text" id="opensbp-c_maxjerk" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix">deg/min</span>
                 </div>
               </div>
             </div>
+            <div class="large-4 columns">
+                <div class="row collapse">
+                  <label data-tip="">High Speed Jerk</label>
+                  <div class="small-9 columns">
+                    <input type="text" id="driver-cjh" class="driver-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix inpm3_mmpm3_label">&nbsp;</span>
+                  </div>
+                </div>
+              </div>
             <div class="large-4 columns">
               <div class="row collapse">
                 <label data-tip="The movement mode for this axis.  Linear axes are controlled in the default linear unit system.  Rotary axes are controlled in degrees.">Axis Mode<div class="tool-tip">i</div></label>
@@ -807,11 +542,13 @@
             </div>
           </fieldset>
         </div>
-      </div> <!-- end tabpanelAxes -->
+      </section>
 
-      <div class="tabs-panel" id="tabpanelInputs">
+
+      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel3">
         <div class="row">
           <fieldset>
+
             <legend>Input 1</legend>
             <div class="large-4 columns">
               <div class="row collapse">
@@ -826,16 +563,12 @@
             <div class="large-4 columns">
               <div class="row collapse">
                 <label>Action
-                  <select id="driver-di1ac" class="driver-input">
+                  <select id="machine-di1_def" class="machine-input">
                     <option value="0">None</option>
-                    <option value="1">Stop</option>
-                    <option value="2">Fast Stop</option>
-                    <option value="3">Halt</option>
-                    <option value="4">Cycle Start-Restart</option>
-                    <option value="5">Set G2 Alarm State</option>
-                    <option value="6">G2 System Shutdown</option>
-                    <option value="7">Set Panic</option>
-                    <option value="8">Reset G2 Controller</option>
+                    <option value="2">Stop</option>
+                    <option value="4">Stop-Fast</option>
+                    <option value="8">Interlock</option>
+                    <option value="16">Limit</option>
                   </select>
                 </label>
               </div>
@@ -869,16 +602,12 @@
             <div class="large-4 columns">
               <div class="row collapse">
                 <label>Action
-                  <select id="driver-di2ac" class="driver-input">
+                  <select id="machine-di2_def" class="machine-input">
                     <option value="0">None</option>
-                    <option value="1">Stop</option>
-                    <option value="2">Fast Stop</option>
-                    <option value="3">Halt</option>
-                    <option value="4">Cycle Start-Restart</option>
-                    <option value="5">Set G2 Alarm State</option>
-                    <option value="6">G2 System Shutdown</option>
-                    <option value="7">Set Panic</option>
-                    <option value="8">Reset G2 Controller</option>
+                    <option value="2">Stop</option>
+                    <option value="4">Stop-Fast</option>
+                    <option value="8">Interlock</option>
+                    <option value="16">Limit</option>
                   </select>
                 </label>
               </div>
@@ -912,16 +641,12 @@
             <div class="large-4 columns">
               <div class="row collapse">
                 <label>Action
-                  <select id="driver-di3ac" class="driver-input">
+                  <select id="machine-di3_def" class="machine-input">
                     <option value="0">None</option>
-                    <option value="1">Stop</option>
-                    <option value="2">Fast Stop</option>
-                    <option value="3">Halt</option>
-                    <option value="4">Cycle Start-Restart</option>
-                    <option value="5">Set G2 Alarm State</option>
-                    <option value="6">G2 System Shutdown</option>
-                    <option value="7">Set Panic</option>
-                    <option value="8">Reset G2 Controller</option>
+                    <option value="2">Stop</option>
+                    <option value="4">Stop-Fast</option>
+                    <option value="8">Interlock</option>
+                    <option value="16">Limit</option>
                   </select>
                 </label>
               </div>
@@ -955,16 +680,12 @@
             <div class="large-4 columns">
               <div class="row collapse">
                 <label>Action
-                  <select id="driver-di4ac" class="driver-input">
+                  <select id="machine-di4_def" class="machine-input">
                     <option value="0">None</option>
-                    <option value="1">Stop</option>
-                    <option value="2">Fast Stop</option>
-                    <option value="3">Halt</option>
-                    <option value="4">Cycle Start-Restart</option>
-                    <option value="5">Set G2 Alarm State</option>
-                    <option value="6">G2 System Shutdown</option>
-                    <option value="7">Set Panic</option>
-                    <option value="8">Reset G2 Controller</option>
+                    <option value="2">Stop</option>
+                    <option value="4">Stop-Fast</option>
+                    <option value="8">Interlock</option>
+                    <option value="16">Limit</option>
                   </select>
                 </label>
               </div>
@@ -998,16 +719,12 @@
             <div class="large-4 columns">
               <div class="row collapse">
                 <label>Action
-                  <select id="driver-di5ac" class="driver-input">
+                  <select id="machine-di5_def" class="machine-input">
                     <option value="0">None</option>
-                    <option value="1">Stop</option>
-                    <option value="2">Fast Stop</option>
-                    <option value="3">Halt</option>
-                    <option value="4">Cycle Start-Restart</option>
-                    <option value="5">Set G2 Alarm State</option>
-                    <option value="6">G2 System Shutdown</option>
-                    <option value="7">Set Panic</option>
-                    <option value="8">Reset G2 Controller</option>
+                    <option value="2">Stop</option>
+                    <option value="4">Stop-Fast</option>
+                    <option value="8">Interlock</option>
+                    <option value="16">Limit</option>
                   </select>
                 </label>
               </div>
@@ -1041,16 +758,12 @@
             <div class="large-4 columns">
               <div class="row collapse">
                 <label>Action
-                  <select id="driver-di6ac" class="driver-input">
+                  <select id="machine-di6_def" class="machine-input">
                     <option value="0">None</option>
-                    <option value="1">Stop</option>
-                    <option value="2">Fast Stop</option>
-                    <option value="3">Halt</option>
-                    <option value="4">Cycle Start-Restart</option>
-                    <option value="5">Set G2 Alarm State</option>
-                    <option value="6">G2 System Shutdown</option>
-                    <option value="7">Set Panic</option>
-                    <option value="8">Reset G2 Controller</option>
+                    <option value="2">Stop</option>
+                    <option value="4">Stop-Fast</option>
+                    <option value="8">Interlock</option>
+                    <option value="16">Limit</option>
                   </select>
                 </label>
               </div>
@@ -1084,16 +797,12 @@
             <div class="large-4 columns">
               <div class="row collapse">
                 <label>Action
-                  <select id="driver-di7ac" class="driver-input">
+                  <select id="machine-di7_def" class="machine-input">
                     <option value="0">None</option>
-                    <option value="1">Stop</option>
-                    <option value="2">Fast Stop</option>
-                    <option value="3">Halt</option>
-                    <option value="4">Cycle Start-Restart</option>
-                    <option value="5">Set G2 Alarm State</option>
-                    <option value="6">G2 System Shutdown</option>
-                    <option value="7">Set Panic</option>
-                    <option value="8">Reset G2 Controller</option>
+                    <option value="2">Stop</option>
+                    <option value="4">Stop-Fast</option>
+                    <option value="8">Interlock</option>
+                    <option value="16">Limit</option>
                   </select>
                 </label>
               </div>
@@ -1127,16 +836,12 @@
             <div class="large-4 columns">
               <div class="row collapse">
                 <label>Action
-                  <select id="driver-di8ac" class="driver-input">
+                  <select id="machine-di8_def" class="machine-input">
                     <option value="0">None</option>
-                    <option value="1">Stop</option>
-                    <option value="2">Fast Stop</option>
-                    <option value="3">Halt</option>
-                    <option value="4">Cycle Start-Restart</option>
-                    <option value="5">Set G2 Alarm State</option>
-                    <option value="6">G2 System Shutdown</option>
-                    <option value="7">Set Panic</option>
-                    <option value="8">Reset G2 Controller</option>
+                    <option value="2">Stop</option>
+                    <option value="4">Stop-Fast</option>
+                    <option value="8">Interlock</option>
+                    <option value="16">Limit</option>
                   </select>
                 </label>
               </div>
@@ -1170,16 +875,12 @@
             <div class="large-4 columns">
               <div class="row collapse">
                 <label>Action
-                  <select id="driver-di9ac" class="driver-input">
+                  <select id="machine-di9_def" class="machine-input">
                     <option value="0">None</option>
-                    <option value="1">Stop</option>
-                    <option value="2">Fast Stop</option>
-                    <option value="3">Halt</option>
-                    <option value="4">Cycle Start-Restart</option>
-                    <option value="5">Set G2 Alarm State</option>
-                    <option value="6">G2 System Shutdown</option>
-                    <option value="7">Set Panic</option>
-                    <option value="8">Reset G2 Controller</option>
+                    <option value="2">Stop</option>
+                    <option value="4">Stop-Fast</option>
+                    <option value="8">Interlock</option>
+                    <option value="16">Limit</option>
                   </select>
                 </label>
               </div>
@@ -1213,16 +914,12 @@
             <div class="large-4 columns">
               <div class="row collapse">
                 <label>Action
-                  <select id="driver-di10ac" class="driver-input">
+                  <select id="machine-di10_def" class="machine-input">
                     <option value="0">None</option>
-                    <option value="1">Stop</option>
-                    <option value="2">Fast Stop</option>
-                    <option value="3">Halt</option>
-                    <option value="4">Cycle Start-Restart</option>
-                    <option value="5">Set G2 Alarm State</option>
-                    <option value="6">G2 System Shutdown</option>
-                    <option value="7">Set Panic</option>
-                    <option value="8">Reset G2 Controller</option>
+                    <option value="2">Stop</option>
+                    <option value="4">Stop-Fast</option>
+                    <option value="8">Interlock</option>
+                    <option value="16">Limit</option>
                   </select>
                 </label>
               </div>
@@ -1256,16 +953,12 @@
             <div class="large-4 columns">
               <div class="row collapse">
                 <label>Action
-                  <select id="driver-di11ac" class="driver-input">
+                  <select id="machine-di11_def" class="machine-input">
                     <option value="0">None</option>
-                    <option value="1">Stop</option>
-                    <option value="2">Fast Stop</option>
-                    <option value="3">Halt</option>
-                    <option value="4">Cycle Start-Restart</option>
-                    <option value="5">Set G2 Alarm State</option>
-                    <option value="6">G2 System Shutdown</option>
-                    <option value="7">Set Panic</option>
-                    <option value="8">Reset G2 Controller</option>
+                    <option value="2">Stop</option>
+                    <option value="4">Stop-Fast</option>
+                    <option value="8">Interlock</option>
+                    <option value="16">Limit</option>
                   </select>
                 </label>
               </div>
@@ -1299,16 +992,12 @@
             <div class="large-4 columns">
               <div class="row collapse">
                 <label>Action
-                  <select id="driver-di12ac" class="driver-input">
+                  <select id="machine-di12_def" class="machine-input">
                     <option value="0">None</option>
-                    <option value="1">Stop</option>
-                    <option value="2">Fast Stop</option>
-                    <option value="3">Halt</option>
-                    <option value="4">Cycle Start-Restart</option>
-                    <option value="5">Set G2 Alarm State</option>
-                    <option value="6">G2 System Shutdown</option>
-                    <option value="7">Set Panic</option>
-                    <option value="8">Reset G2 Controller</option>
+                    <option value="2">Stop</option>
+                    <option value="4">Stop-Fast</option>
+                    <option value="8">Interlock</option>
+                    <option value="16">Limit</option>
                   </select>
                 </label>
               </div>
@@ -1325,9 +1014,10 @@
             </div>
           </fieldset>
         </div>
-      </div> <!-- end tabpanelInputs -->
+      </section>
 
-      <div class="tabs-panel" id="tabpanelDrivers">
+
+      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel4">
 
         <div class="row">
           <fieldset>
@@ -1735,12 +1425,14 @@
             </div>
           </fieldset>
         </div>
-      </div> <!-- tabpanelDrivers -->
+      </section>
 
-      <div class="tabs-panel" id="tabpanelMachine">
+
+      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel5">
         <div class="row">
           <fieldset>
             <legend>Machine Envelope</legend>
+
             <div class="large-6 columns">
               <div class="row collapse">
                 <label data-tip="The minimum position on the X axis that is still inside the physical envelope of the tool.  This number should probably be a zero.">X Min <div class="tool-tip">i</div></label>
@@ -1788,7 +1480,32 @@
                 </div>
               </div>
             </div>
-          </fieldset>
+
+            <div class="large-6 columns">
+                <div class="row collapse">
+                  <label data-tip="The minimum position on the Z axis that is still inside the physical envelope of the tool. ">Z Min <div class="tool-tip">i</div></label>
+                  <div class="small-9 columns">
+                    <input type="number" id="machine-envelope-zmin" class="machine-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix in_mm_label"></span>
+                  </div>
+                </div>
+              </div>
+  
+              <div class="large-6 columns">
+                <div class="row collapse">
+                  <label data-tip="The maximum position on the Z axis that is still inside the physical envelope of the tool.">Z Max <div class="tool-tip">i</div></label>
+                  <div class="small-9 columns">
+                    <input type="number" id="machine-envelope-zmax" class="machine-input" />
+                  </div>
+                  <div class="small-3 columns">
+                    <span class="postfix in_mm_label"></span>
+                  </div>
+                </div>
+              </div>
+  
+        </fieldset>
         </div>
 
         <div class="row">
@@ -1796,9 +1513,9 @@
             <legend>Z-Lift</legend>
             <div class="large-6 columns">
               <div class="row collapse">
-                <label>Height</label>
+                <label data-tip="The pull-up height automatically moved to when tool is stopped our paused.">Height <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
-                  <input type="number" id="driver-zl" class="driver-input" />
+                  <input type="number" id="opensbp-safeZpullUp" class="opensbp-input" />
                 </div>
                 <div class="small-3 columns">
                   <span class="postfix in_mm_label">&nbsp;</span>
@@ -1806,7 +1523,7 @@
               </div>
 
               <div class="row collapse">
-                <label>Spindle Delay</label>
+                <label data-tip="The amount of allowed for spindle spin-up before motion starts.">Spindle Delay <div class="tool-tip">i</div></label>
                 <div class="small-9 columns">
                   <input type="number" id="driver-spde" class="driver-input" />
                 </div>
@@ -1941,6 +1658,7 @@
                   <div class="tool-tip">i</div>
                 </label>
                   <select id="machine-auth_input" class="machine-input">
+                    <option value="0">none</option>
                     <option value="1">Input 1</option>
                     <option value="2">Input 2</option>
                     <option value="3">Input 3</option>
@@ -1949,6 +1667,10 @@
                     <option value="6">Input 6</option>
                     <option value="7">Input 7</option>
                     <option value="8">Input 8</option>
+                    <option value="9">Input 9</option>
+                    <option value="10">Input 10</option>
+                    <option value="11">Input 11</option>
+                    <option value="12">Input 12</option>
                   </select>
               </div>
               <div class="row collapse">
@@ -1959,28 +1681,6 @@
                 <div class="small-3 columns">
                   <span class="postfix">seconds</span>
                 </div>
-              </div>
-              <div class="row collapse">
-                <label data-tip="Whether or not the machine can be locked out with an input.">
-                	Use Interlock
-                  <div class="tool-tip">i</div>
-                </label>
-                <input id="machine-interlock_required" class="machine-input" type="checkbox" checked>
-              </div>
-                <div class="row collapse">
-                <label data-tip="The input to which the authorization button is connected.">Interlock Input
-                  <div class="tool-tip">i</div>
-                </label>
-                  <select id="machine-interlock_input" class="machine-input">
-                    <option value="1">Input 1</option>
-                    <option value="2">Input 2</option>
-                    <option value="3">Input 3</option>
-                    <option value="4">Input 4</option>
-                    <option value="5">Input 5</option>
-                    <option value="6">Input 6</option>
-                    <option value="7">Input 7</option>
-                    <option value="8">Input 8</option>
-                  </select>
               </div>
             </div>
           </fieldset>
@@ -2000,6 +1700,10 @@
                     <option value="6">Input 6</option>
                     <option value="7">Input 7</option>
                     <option value="8">Input 8</option>
+                    <option value="9">Input 9</option>
+                    <option value="10">Input 10</option>
+                    <option value="11">Input 11</option>
+                    <option value="12">Input 12</option>
                   </select>
 
               </div>
@@ -2021,6 +1725,7 @@
                 <label data-tip="The input to which the quit button is connected.">Quit Button Input<div class="tool-tip">i</div>
                 </label>
                   <select id="machine-quit_input" class="machine-input">
+                    <option value="0">none</option>
                     <option value="1">Input 1</option>
                     <option value="2">Input 2</option>
                     <option value="3">Input 3</option>
@@ -2029,6 +1734,10 @@
                     <option value="6">Input 6</option>
                     <option value="7">Input 7</option>
                     <option value="8">Input 8</option>
+                    <option value="9">Input 9</option>
+                    <option value="10">Input 10</option>
+                    <option value="11">Input 11</option>
+                    <option value="12">Input 12</option>
                   </select>
 
               </div>
@@ -2037,9 +1746,10 @@
           </fieldset>
 
         </div>
-      </div> <!-- end tabpanelMachine -->
+      </section>
 
-      <div class="tabs-panel" id="tabpanelApps" style="padding: 0px;">
+
+      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel6" style="padding: 0px;">
 
         <form style="display:none;" id="fileform">
           <input type="file" id="file" multiple>
@@ -2067,9 +1777,9 @@
             </div>
           </div>
         </div>
-      </div> <!-- end tabpanelApps -->
+      </section>
 
-      <div class="tabs-panel" id="tabpanelUsers" style="padding: 0px;">
+      <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel7" style="padding: 0px;">
         <div class="row">
           <fieldset>
             <legend>Current User Information</legend>
@@ -2137,10 +1847,321 @@
               <button id="add-user" class="button radius small">Add new user</button>
             </div>
           </fieldset>
+      </section>
+
+
+<!--       <section role="tabpanel" aria-hidden="true" class="content" id="tabpanel8" style="padding: 0px;">
+        <div class="row">
+          <fieldset>
+            <legend>Scale</legend>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Scale</label>
+                <select id="opensbp-transforms-scale-apply" class="opensbp-input">
+                  <option value="false">Disabled</option>
+                  <option value="true">Enabled</option>
+                </select>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Scale X</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-scale-scalex" class="opensbp-input"/>
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix"></span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Scale Y</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-scale-scaley" class="opensbp-input"/>
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix"></span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Scale Z</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-scale-scalez" class="opensbp-input"/>
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix"></span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>X Scale Point</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-scale-x" class="opensbp-input"/>
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Y Scale Point</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-scale-y" class="opensbp-input"/>
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Z Scale Point</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-scale-z" class="opensbp-input"/>
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+          </fieldset>
         </div> 
-      </div> <!-- end tabpanelUsers -->
+
+
+        <div class="row">
+          <fieldset>
+            <legend>Offset</legend>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Offset
+                  <select id="opensbp-transforms-move-apply" class="opensbp-input">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Offset X</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-move-x" class="opensbp-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Offset Y</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-move-y" class="opensbp-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Offset Z</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-move-z" class="opensbp-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="row">
+          <fieldset>
+            <legend>Rotation</legend>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Rotate
+                  <select id="opensbp-transforms-rotate-apply" class="opensbp-input">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Rotation Angle</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-rotate-angle" class="opensbp-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix">degrees</span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>X Rotation Point</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-rotate-x" class="opensbp-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+            <div class="large-4 columns">
+              <div class="row collapse">
+                <label>Y Rotation Point</label>
+                <div class="small-9 columns">
+                  <input type="number" id="opensbp-transforms-rotate-y" class="opensbp-input" />
+                </div>
+                <div class="small-3 columns">
+                  <span class="postfix in_mm_label">&nbsp;</span>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
+      
+
+ -->
+        <!--     <div class="row">
+<fieldset>
+<legend>Shear X</legend>
+<div class="large-4 columns">
+<div class="row collapse">
+<label>Shear X
+<select id="opensbp-transforms-shearx-apply" class="opensbp-input">
+<option value="false">Disabled</option>
+<option value="true">Enabled</option>
+</select>
+</label>
+</div>
+</div>
+<div class="large-4 columns">
+<div class="row collapse">
+<label>Shear Angle X</label>
+<div class="small-9 columns">
+<input type="number" id="opensbp-transforms-shearx-angle" class="opensbp-input"/>
+</div>
+<div class="small-3 columns">
+<span class="postfix">degrees</span>
+</div>
+</div>
+</div>
+</fieldset>
+</div> -->
+
+        <!--     <div class="row">
+<fieldset>
+<legend>Shear Y</legend>
+<div class="large-4 columns">
+<div class="row collapse">
+<label>Shear Y
+<select id="opensbp-transforms-sheary-apply" class="opensbp-input">
+<option value="false">Disabled</option>
+<option value="true">Enabled</option>
+</select>
+</label>
+</div>
+</div> -->
+
+        <!--         <div class="large-4 columns">
+<div class="row collapse">
+<label>Shear Angle Y</label>
+<div class="small-9 columns">
+<input type="number" id="opensbp-transforms-sheary-angle" class="opensbp-input"/>
+</div>
+<div class="small-3 columns">
+<span class="postfix">degrees</span>
+</div>
+</div>
+</div>
+</fieldset>
+</div>
+
+<div class="row">
+<fieldset>
+<legend>Interpolation</legend>
+<div class="large-4 columns">
+<div class="row collapse">
+<label>Interpolate
+<select id="opensbp-transforms-interpolate-apply" class="opensbp-input">
+<option value="false">Disabled</option>
+<option value="true">Enabled</option>
+</select>
+</label>
+</div>
+</div>
+</fieldset>
+</div> -->
+
+        <!--     <div class="row">
+<fieldset>
+<legend>Leveling</legend>
+<div class="large-4 columns">
+<div class="row collapse">
+<label>Level
+<select id="opensbp-transforms-level-apply" class="opensbp-input">
+<option value="false">Disabled</option>
+<option value="true">Enabled</option>
+</select>
+</label>
+</div>
+</div>
+<div class="large-4 columns">
+<div class="row collapse">
+<label>Leveling Data File</label>
+<div class="small-9 columns">
+<input type="text" id="opensbp-transforms-level-ptDataFile" class="opensbp-input"/>
+</div>
+<div class="small-3 columns">
+<span class="postfix">browse</span>
+</div>
+</div>
+</div>
+</fieldset>
+</div> -->
+
+
+<!-- TEST BACKUP & RESTORE SECTION -->
+
+          <div class="row">
+              <fieldset>
+                <legend>Backup & Restore Configuration</legend>
+          <!--      <legend>Backup</legend>     -->
+                <div class="large-3 columns">
+                  <div class="row collapse">
+                    <a id="btn-backup" class="button radius small">Backup the configuration</a>
+                  </div>
+                </div>
+            <div class="large-7 columns">
+                <div class="row collapse">
+                    <input type="file" id="restore_conf_file" class="hidden">
+                    <a id="btn-restore"  class="button radius small">Restore the configuration</a>
+                </div>
+            </div>
+            
+              </fieldset>
+          </div>
+            
+      </section>
+
       <!--</form>-->
-    </div> <!-- end of data-tabs-content="configuration-tab-list -->
+
+    </div>
+
+    </div>
+
     <script src="../../configuration.js"></script>
 
 </body>

@@ -42,6 +42,7 @@ require("../css/toastr.min.css");
     var consent = '';
     var disconnected = false;
     var last_state_seen = null;
+    var in_goto_flag = false;
 
     // move timer cutoff to var so it can be set in settings later
     var TIMER_DISPLAY_CUTOFF = 5;
@@ -161,6 +162,7 @@ require("../css/toastr.min.css");
                         if(!status['hideKeypad']) {
                             $('.modalDim').show();
                             $('.manual-drive-modal').show();
+                            // if currently running a goto command in manual keypad
                             if(status.stat === 5 &&  status.currentCmd === "goto"){
                                     $('.manual-stop').show();
                                     $('.go-to, .set-coordinates').hide();
@@ -168,13 +170,22 @@ require("../css/toastr.min.css");
                                     $('#keypad').hide();
                                     $('.go-to-container').show();
                             } else {
-                                $('.manual-stop').hide();
-                                $('.go-to, .set-coordinates').show();
-                                keyboard.setEnabled(true);
-                                $('#keypad').show();
-                                $('.go-to-container').hide();
-
-
+                                // if an axis is selected in go-to or set, then flag is true
+                                if(in_goto_flag) {
+                                    in_goto_flag = false;
+                                    $('.manual-stop').hide();
+                                    $('.go-to, .set-coordinates').show();
+                                    keyboard.setEnabled(false);
+                                    $('#keypad').hide();
+                                    $('.go-to-container').show();
+                                // Otherwise switch to default manual keypad
+                                } else {
+                                    $('.manual-stop').hide();
+                                    $('.go-to, .set-coordinates').show();
+                                    keyboard.setEnabled(true);
+                                    $('#keypad').show();
+                                    $('.go-to-container').hide();
+                                }
                             }
                         }
                     }
@@ -187,7 +198,8 @@ require("../css/toastr.min.css");
 
                     if ((status.state != "armed" && last_state_seen === "armed") || 
                         (status.state != "paused" && last_state_seen === "paused") ||
-                        (status.state != "interlock" && last_state_seen === "interlock")) {
+                        (status.state != "interlock" && last_state_seen === "interlock") ||
+                        (status.state != "lock" && last_state_seen === "lock")) {
                         dashboard.hideModal();
                         modalIsShown = false;
                     }
@@ -230,20 +242,21 @@ require("../css/toastr.min.css");
                             } else {
                                 keypad.setEnabled(false);
                                 keyboard.setEnabled(false);
+                                console.log(status['info'])
+                                // Default modal options for backwards compatibility
                                 modalOptions = {
-                                    message: status.info.message,
-                                    okText: 'Resume',
-                                    cancelText: 'Quit',
-                                    ok: function() {
-                                        dashboard.engine.resume();
-                                    },
-                                    cancel: function() {
-                                        dashboard.engine.quit();
-                                    }
+                                    message: status.info.message
                                 }
+                                resumeFunction = function() {
+                                                    dashboard.engine.resume();
+                                                }
+                                cancelFunction = function() {
+                                                    dashboard.engine.quit();
+                                                }
+                                //set up input submit
                                 if(status['info']['input']) {
                                     modalOptions['input'] = status['info']['input'];
-                                    modalOptions['ok'] = function() {
+                                    resumeFunction = function() {
                                         var inputVar = $('#inputVar').val();
                                         var inputType = $('#inputType').val();
                                         var inputVal = $.trim($('#inputVal').val());
@@ -255,6 +268,50 @@ require("../css/toastr.min.css");
                                         // } else {
                                         //     $('.inputError').show();
                                         // }
+                                    }
+                                }
+                                modalOptions.okText = 'Resume',
+                                modalOptions.cancelText = 'Quit',
+                                modalOptions.ok = resumeFunction,
+                                modalOptions.cancel = cancelFunction
+                                if (status.info['custom']) {
+                                    // Custom button action and text
+                                    if (status.info.custom['ok']) {
+                                        modalOptions.okText = status.info.custom.ok['text']
+                                        switch (status.info.custom.ok['func']) {
+                                            case 'resume':
+                                                modalOptions.ok = resumeFunction
+                                                break;
+                                            case 'quit':
+                                                modalOptions.ok = cancelFunction
+                                                break;
+                                            default:
+                                                modalOptions.ok = false
+                                        }
+                                    }
+                                    if (status.info.custom['cancel']) {
+                                        modalOptions.cancelText = status.info.custom.cancel['text']
+                                        switch (status.info.custom.cancel['func']) {
+                                            case 'resume':
+                                                modalOptions.cancel = resumeFunction
+                                                break;
+                                            case 'quit':
+                                                modalOptions.cancel = cancelFunction
+                                                break;
+                                            default:
+                                                modalOptions.cancel = function() {
+                                                    modalIsShown = false;
+                                                }
+                                        }
+                                    }
+                                    if (status.info.custom['detail']) {
+                                        modalOptions['detail'] = status.info.custom['detail']
+                                    }
+                                    if (status.info.custom['title']) {
+                                        modalOptions['title'] = status.info.custom['title']
+                                    }
+                                    if (status.info.custom['noButton']) {
+                                        modalOptions.noButton = true
                                     }
                                 }
                                 dashboard.showModal(modalOptions);
@@ -274,20 +331,17 @@ require("../css/toastr.min.css");
                                 title: 'An Error Occurred!',
                                 message: status.info.error,
                                 detail: detailHTML,
-                                cancelText: status.state === 'dead' ? undefined : 'Quit',
-                                cancel: status.state === 'dead' ? undefined : function() {
-                                    dashboard.engine.quit(function(err, result) {
-                                                            if (err) {
-                                                              console.log("ERRROR: " + err);
-                                                            }
-                                                        }
-                                                    );
+                                cancelText: 'Close',
+                                cancel: function() {
+                                    modalIsShown = false;
                                 }
                             });
                             modalIsShown = true;
                             dashboard.handlers.hideFooter();
                         }
-                    } else if (status.state === 'armed') {
+                        // quitFlag prevents authorize dialog from popping up
+                        // after quitting from authorize dialog
+                    } else if (status.state === 'armed' && status.quitFlag === false) {
                         authorizeDialog = true;
                             keypad.setEnabled(false);
                             keyboard.setEnabled(false);
@@ -305,7 +359,7 @@ require("../css/toastr.min.css");
                                                     );
                             }
                         });
-                    } else if (status.state === 'interlock') {
+                    } else if (status.state === 'interlock' && status.resumeFlag === false) {
                         interlockDialog = true;
                             keypad.setEnabled(false);
                             keyboard.setEnabled(false);
@@ -328,7 +382,30 @@ require("../css/toastr.min.css");
                             }
           
                         });
-                    }
+                    } else if (status.state === 'lock' && status.resumeFlag === false) {
+                        interlockDialog = true;
+                            keypad.setEnabled(false);
+                            keyboard.setEnabled(false);
+                        dashboard.showModal({
+                            title: 'Stop Input Activated!',
+                            message: 'Please release any Stop Input before continuing.',
+                            cancelText: 'Quit',
+                            cancel: function() {
+                                interlockDialog = false;
+                                dashboard.engine.quit(function(err, result) {
+                                                            if (err) {
+                                                            console.log("ERRROR: " + err);
+                                                            }
+                                                        }
+                                                    );
+                            },
+                            okText: 'Resume',
+                            ok: function() {
+                                dashboard.engine.resume();
+                            }
+        
+                        });
+                    } 
 
                 });
 
@@ -596,7 +673,7 @@ require("../css/toastr.min.css");
             } else {
                 engine.config.machine.manual.z_increment = newDefault;
             }
-        });   
+        });
     });   
 
     $('.axi').on('click', function(e) {
@@ -606,6 +683,7 @@ require("../css/toastr.min.css");
     });
 
     $('.axi').on('focus', function(e) {
+        in_goto_flag = true;
         e.stopPropagation();
         $(this).val(parseFloat($(this).val().toString()));
         $(this).select();
@@ -619,14 +697,15 @@ require("../css/toastr.min.css");
     });
 
 
-
+    // manual keypad movement
     $('.manual-drive-modal').not('.fixed-step-value').on('click', function(e) {
-            
             $('.posx').val($('.posx').val());
             $('.posy').val($('.posy').val());
             $('.posz').val($('.posz').val());
             $('.posa').val($('.posa').val());
             $('.posb').val($('.posb').val());
+            $('.posc').val($('.posc').val());
+            in_goto_flag = false;
             $('#keypad').show();
             $('.go-to-container').hide();
             if($(event.target).hasClass('fixed-step-value')){
@@ -656,6 +735,7 @@ require("../css/toastr.min.css");
         var axi = $(this).parent('div').find('input').attr('id');
         var obj = {};
         obj[axi] = 0;
+console.log('zero- ',axi,obj,obj[axi]);        
         dashboard.engine.set(obj)
     });
 

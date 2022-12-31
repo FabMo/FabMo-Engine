@@ -5,7 +5,7 @@ var util = require('../util');
 var log = require('../log').logger('routes');
 var machine = require('../machine').machine;
 var fs = require('fs');
-var uuid = require('node-uuid');
+var uuid = require('uuid');
 var upload = require('./util').upload;
 
 var submitJob = function(req, res, next) {

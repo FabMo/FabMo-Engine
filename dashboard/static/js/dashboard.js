@@ -1006,6 +1006,12 @@ define(function(require) {
       $('.modalDialogue').hide();
     }
 
+    if (options['detail']) {
+      $('.modalDetail').html(options.detail).show();
+    } else {
+      $('.modalDetail').hide();
+    }
+
     if (options['image']) {
       $('.modalImage img').attr('src', options.image);
       $('.modalImage').show();

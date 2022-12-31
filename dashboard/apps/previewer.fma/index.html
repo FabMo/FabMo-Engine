@@ -20,7 +20,7 @@
     </nav>
 
     <div id="preview" style="display: inline-block;">
-      <div class="code-line" title="Current GCode line."></div>
+      <div class="code-line" title="Current File Line"></div>
 
       <div class="actions">
         <div class="run-now">Run This Job</div>
@@ -37,11 +37,14 @@
              title="Snap to view down the Y axis."/>
         <img id="button-z"      src="images/z.png"
              title="Snap to view down the Z axis."/>
-        <img id="button-help"   src="images/help.png"
-             title="Show help."/>
+<!--        
+            <img id="button-help"   src="images/help.png"
+             title="Show Help"/>
+-->
         <img id="button-settings" src="images/settings.png"
              title="Open previewer settings."/>
       </div>
+      <a id="button-help" title="Show Help" hidden> i </a>
 
       <div class="loading dialog"></div>
 
@@ -62,7 +65,7 @@
       </div>
 
       <div class="settings dialog">
-        <div class="header">Settings</div>
+        <div class="header">Preview Settings</div>
         <div class="content">
           <label>Simulation Speed</label>
           <select name="speed">
@@ -77,20 +80,29 @@
             <option value="16">16x</option>
           </select>
 
-          <label>Units</label>
+          <label>Temporarily Change File-Boundary Indicator Units </label>
           <select name="units">
-            <option value="auto">auto</option>
+            <!-- <option value="auto">auto</option> -->
             <option value="mm">millimeters</option>
             <option value="in">inches</option>
           </select>
 
-          <label>Grid Step</label>
+          <label>Grid Step (in current machine display units)</label>
           <input name="grid-step" type="number" min="0" max="1000000"
                  step="1" value="1"/>
 
+          <label>Table Offset from Z-Zero (in current machine display units)</label>
+          <input name="table-zzoff" type="number" min="-100" max="100"
+                 step=".1" value="-1"/>
+                 
           <label>
             <input name="show-grid" type="checkbox" checked="true"/>
             Show Grid
+          </label>
+
+          <label>
+            <input name="show-table" type="checkbox" checked="true"/>
+            Show Machine Table
           </label>
 
           <label>
@@ -105,14 +117,14 @@
 
           <label>
             <input name="show-tool" type="checkbox" checked="true"/>
-            Show Tool
+            Show Tool (Yellow Cone)
           </label>
         </div>
         <div class="footer"><button class="close">Ok</button></div>
       </div>
 
       <div class="help dialog">
-        <div class="header">Help</div>
+        <div class="header">Preview Help</div>
         <div class="content">
           <h3>Mouse Controls</h3>
           <table>
@@ -151,11 +163,13 @@
               <th><img src="images/settings.png"/></th>
               <td>Open previewer settings.</td>
             </tr>
+<!--
             <tr>
               <th><img src="images/help.png"/></th>
               <td>Show this help screen.</td>
             </tr>
-          </table>
+-->
+        </table>
           <h3>Settings</h3>
           <table>
             <tr>
@@ -164,15 +178,21 @@
               </td>
             </tr>
             <tr>
-              <th>Units</th>
-              <td>Selects the display units. "auto" mode uses the machine units
-                as set by the selected program.</td>
+              <th>Temp Change Boundary Units</th>
+              <td>Temporarily changes units (inches vs mm) for the file boundary indicators. 
+                  Note that a unit setting within file, if present, will over-ride machine setting 
+                  for motion units, but not change the machine unit display here.</td>
             </tr>
             <tr>
-              <th>Grid Step</th>
-              <td>Sets the grid step size in the currently selected units.</td>
+              <th>Table Offset from Z-Zero</th>
+              <td>Sets how far the table is below the Z-zero plane. If you zero at the table, then
+                  set the table at 0. If your material is 0.75" thick, set the offset to -0.75.
             </tr>
             <tr>
+                <th>Grid Step</th>
+                <td>Sets the grid step size in current machine units.</td>
+              </tr>
+              <tr>
               <th>Checkboxes</th>
               <td>The check boxes show or hide the grid, dimensions, axes and
                 tool</td>

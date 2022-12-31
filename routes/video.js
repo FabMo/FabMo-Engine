@@ -77,14 +77,14 @@ function configure_listener(gstreamer){
   }
 }
 
-// pulling this out to its own function to 
+// pulling this out to its own function to
 // solve a silly syntax problem
 function video_callback_function() {
     log.debug("client connected to video endpoint");
 }
 
 // writing this as a placeholder for now
-// without it, the upgraded packages fail 
+// without it, the upgraded packages fail
 // because there is no route
 function video_now(req, res, next) {
   var answer = {
@@ -97,9 +97,9 @@ function video_now(req, res, next) {
 module.exports = function(server) {
   if (udev === null) {
 	console.log("Video not enabled, no udev");
-  } 
+  }
   this.server=server;
-  // rmackie - this isn't right, it's just to move things forward until things are updated.
+  // TODO: rmackie - Not sure this is correctly updated, test
   //server.io.of('/video').on('connection', video_call_back_function);
   server.get('/video/now', video_now);
 };

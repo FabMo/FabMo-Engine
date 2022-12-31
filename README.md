@@ -14,8 +14,8 @@ The FabMo engine is host software that connects to a G2 motion control platform 
 [API Documentation](http://fabmo.github.io/FabMo-Engine/api)
 
 ## Quick Start
-1. Install nodejs - The officially supported version is v0.12.7  - Newer versions *do not work at this time*
-1. Check out the source code https://github.com/ShopBotTools/FabMo-Engine.git
+1. Install nodejs - The officially supported version is v16.14.0  - Newer versions *may not work at this time*
+1. Check out the source code https://github.com/FabMo/FabMo-Engine
 1. From inside the source directory, install all of the engine dependencies with `npm install`
 1. Create the engine data directory at `/opt/fabmo` or `C:\opt\fabmo` if you're on windows.  Set the permissions on this directory so that the user running the engine can read/write to it.
 1. Start the engine with `npm run debug` for development mode or `npm start` for production mode.
@@ -60,14 +60,26 @@ To install the engine in the "standard" location on the Raspberry Pi 3, perform 
 
 To install the engine in the standard location on a Mac, follow the steps below.  This method is used by the FabMo team for development in the OSX environment.
 
-1. Install Node.js - You'll need an older version: 0.12.7 to be compatible with FabMo.  To install an older version through homebrew (homebrew is highly recommended) do this: http://apple.stackexchange.com/a/207883/67692
-1. Install npm - you can also do this with homebrew
+1. Install Node.js 16.14 with homebrew: `brew install node@16`
+1. Install npm: `brew install npm`
 1. Create the fabmo directory: `mkdir -p /fabmo`
 1. Create the fabmo data directory: `mkdir -p /opt/fabmo`
 1. Clone the engine source `/fabmo/engine` with `git clone https://github.com/FabMo/FabMo-Engine /fabmo/engine`
 1. Checkout the appropriate branch of the source tree.  The `release` branch is the most recent stable release.  (`git checkout release` from the `/fabmo/engine` directory)
 1. Install dependencies using npm: `cd /fabmo/engine; npm install`
 1. Run the engine using the instructions below.  Make sure that the G2 motion control board is connected the first time you run the engine.  The engine auto-detects the USB port and saves this setting on first run, and if the motion controller is absent, it won't be properly detected.  If you need to change ports later on, the port settings are located in `/opt/fabmo/config/engine.json`
+
+
+## In Docker
+
+If you have Docker installed locally, you can run the FabMo interface inside a Docker container rather than running it locally.
+
+1. Check out the source code on your workstation
+1.`npm run docker:dev` will build your docker container, install dependencies, and run the `npm dev` target in the docker container. The first time you run it, it may take a bit of time to build the container.
+
+If everything goes right, you'll find the fabmo dashboard running on http://localhost:8411
+
+If you need to log into the docker machine, you can use the command `npm run docker:bash`
 
 ## Running the Engine
 For debugging the engine, you can run it directly from the command prompt with `npm start` or `node server.js` - make sure you have built the dashboard with `npm run webpack` - alternatively, you can run `npm run dev` which will run the system in debug mode (which adds some logging and more aggressively reloads apps) as well as run the webpack first.  If you want to run in debug mode, but skip the webpack step, run `npm run debug`

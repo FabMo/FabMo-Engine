@@ -70,12 +70,36 @@ Config.prototype.set = function(k,v, callback) {
 	this.setMany(u, callback);
 };
 
+
+
+// Typical update function for a config object
+Config.prototype.update = function(data, callback) {
+  try {
+    for(var key in data) {
+      this._cache[key] = data[key];
+    }
+  } catch (e) {
+    if(callback) {
+      return setImmediate(callback, e);
+    }
+  }
+  this.save(function(err, result) {
+    if(err) {
+      typeof callback === 'function' && callback(e);
+    } else {
+      typeof callback === 'function' && callback(null, data);
+    }
+  });
+};
+
+
+
+
 // Set the key value pairs supplied by `data` on this config object
 // This causes the configuration to be saved to disk.
 //       data - Object containing the keys/values to update
 //   callback - Called with updated values on success or with error if error
 Config.prototype.setMany = function(data, callback) {
-	log.debug("==> call Set Many with:  ", data, callback)  ////##
 	this.update(data, function(err, result) {
 		if(callback && typeof callback === 'function') {
 			callback(err, result);
@@ -84,6 +108,19 @@ Config.prototype.setMany = function(data, callback) {
 		}
 		this.emit('change', data);
 	}.bind(this));
+}
+
+// Promise wrapper to allow async/await
+Config.prototype.setManyWrapper = async function(input) {
+    return await new Promise((resolve, reject) => {
+        this.setMany(input, function (err, result) {
+            if (err) {
+                reject(err)
+            } else {
+                resolve(result)
+            }
+        })
+    })
 }
 
 // Delete all of the provided keys from this configuration object

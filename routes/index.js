@@ -30,10 +30,8 @@ module.exports = function(server) {
 
 	// Define a route for serving static files
 	// This has to be defined after all the other routes, or it plays havoc with things
-	log.info("rmackie: 5000 " + server);
-	server.get("*", 
+	server.get("*",
 		function(req, res, next) {
-		//	log.info("rmackie: GET GLOB(*): "+ req.url);
 			var current_hash = config.engine.get('version');
 			var url_arr = req.url.split('/');
             // if the browser requested "/" then we need to add "app/home"
@@ -42,7 +40,7 @@ module.exports = function(server) {
                url_arr.push("home");
             }
             // if this was first access or an old url, then the first entry
-            // will not match the current hash which is what makes sure that 
+            // will not match the current hash which is what makes sure that
             // we don't run into caching problems. Fix the hash by overwriting
             // or prepending the correct hash.
 			if(url_arr[1] != current_hash){

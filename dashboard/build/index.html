@@ -88,6 +88,7 @@
               </div>
               <div id="tool-name" style="padding-left: 10px" class="noselect show-for-medium-up">
                 &nbsp;
+                &nbsp;
               </div>
             </div>
           </section>
@@ -100,14 +101,17 @@
               <div class="xaxis machine-pos" ><label>X : &nbsp;<span class="posx">X.XXX</span></label></div>
               <div class="yaxis machine-pos" ><label>Y : &nbsp;<span class="posy">Y.YYY</span></label></div>
               <div class="zaxis machine-pos" ><label>Z : &nbsp;<span class="posz">Z.ZZZ</span></label></div>
-              <div class="aaxis machine-pos" ><label>A : <span class="posa">A.AAA</span></label></div>
-              <div class="baxis machine-pos" ><label>B : <span class="posb">B.BBB</span></label></div>
-              <!--<div class="caxis machine-pos" style="display:none" ><label>C : <span class="posc">C.CCC</span></label></div> -->
-              <!-- ////## could not figure how C display controlled -->
+              <div class="unit-display" id="display-units" style="display:inline" style="margin-left:-8px"><span style="color: #ffe217" class="units"></span></div>
+              <div class="aaxis machine-pos" ><label>A : <span class="posa">A.AAA</span><span class="rotunits">o&nbsp;</span></label></div>
+              <div class="baxis machine-pos" ><label>B : <span class="posb">B.BBB</span><span class="rotunits">o&nbsp;</span></label></div>
+              <div class="caxis machine-pos" ><label>C : <span class="posc">C.CCC</span><span class="rotunits">o&nbsp;</span></label></div>
               
               <!-- <div class="fabmo-status machine-pos" ><label><span class="state"></label></div> -->
+
             </strong></div>
             <div >
+              <div class="inp-alert" id="inp-interlock">INTERLOCK </div>
+              <div class="inp-alert" id="inp-stop">STOP </div>
               <div class="inoutLabel ">In:</div>
               <div class="space input"> </div>
               <div class="space input"> </div>
@@ -203,7 +207,7 @@
               <div class="zaxis machine-pos-large" ><label>Z : <span class="posz">Z.ZZZ</span></label></div>
               <div class="aaxis machine-pos-large" ><label>A : <span class="posa">A.AAA</span></label></div>
               <div class="baxis machine-pos-large" ><label>B : <span class="posb">B.BBB</span></label></div>
-            <!--  <div class="caxis machine-pos-large" ><label>C : <span class="posc">C.CCC</span></label></div> -->
+              <div class="caxis machine-pos-large" ><label>C : <span class="posc">C.CCC</span></label></div>
             </div>
         <!-- ********** Tool Position Widget ********** -->
 
@@ -251,19 +255,20 @@
       <div class="manual-drive-container">
         <div class="read-out-container">
           <div class="read-out-wrapper">
+            <!-- 'step' for XY and Z is controlled by the fixed distance move size and set in main.js -->
             <div class="axis xaxis">
-              <label>
-              X
-              </label>
-              <input id="X" class="posx pos doselect modal-axi axi" maxlength="6" type="number">
-              <span class="units">&nbsp;</span>
-              <div class="zero-button zero-x">zero</div>
+                <label class="noselect">
+                    X
+                </label>
+                <input id="X" class="posx pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
+                <span class="units">&nbsp;</span>
+                <div class="zero-button zero-x">zero</div>
             </div>
             <div class="axis yaxis">
-                <label>
-                Y
+                <label class="noselect">
+                    Y
                 </label>
-                <input id="Y" class="posy pos doselect modal-axi axi"  maxlength="6" type="number">
+                <input id="Y" class="posy pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="units">&nbsp;</span>
                 <div class="zero-button zero-y">zero</div>
             </div>
@@ -271,7 +276,7 @@
                 <label class="noselect">
                 Z
                 </label>
-                <input id="Z" class="posz pos doselect modal-axi axi" maxlength="6" type="number">
+                <input id="Z" class="posz pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="units">&nbsp;</span>
                 <div class="zero-button zero-z">zero</div>
             </div>
@@ -279,7 +284,7 @@
                 <label class="noselect">
                 A
                 </label>
-                <input id="A" class="posa pos doselect modal-axi axi" maxlength="6" type="number">
+                <input id="A" class="posa pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="rotunits">o&nbsp;</span>
                 <div class="zero-button zero-a">zero</div>
             </div>
@@ -287,20 +292,18 @@
                 <label class="noselect">
                 B
                 </label>
-                <input id="B" class="posb pos doselect modal-axi axi" maxlength="6" type="number">
+                <input id="B" class="posb pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="rotunits">o&nbsp;</span>
                 <div class="zero-button zero-b">zero</div>
             </div>
-<!--
             <div class="axis caxis">
                 <label class="noselect">
                 C
                 </label>
-                <input id="C" class="posc pos doselect modal-axi axi" maxlength="6" type="number">
+                <input id="C" class="posc pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="rotunits">o&nbsp;</span>
                 <div class="zero-button zero-c">zero</div>
             </div>
--->
           </div>
         </div>
         <div class="manual-right-side-container">
@@ -418,16 +421,6 @@
         </div>
       </div>
     </div>
-    <div id="beacon_consent_container">
-      <div id="beacon_consent_inner">
-        <span id="consent_dialogue">
-        FabMo reports anonymised device information. You can disable this in the configuration.
-        </span>
-      </div>
-      <div id="beacon_sub_container">
-        <div id="beacon_consent_button">Proceed</div>
-      </div>
-    </div>
     <div class="newModal">
       <div class="modalContent">
         <h3 class="modalTitle">Title</h3>
@@ -442,6 +435,7 @@
             <input type="text" id="inputVal" class="inputVal" />
             <p class="inputError">Please Enter a Valid Value.</p>
           </div>
+          <div class="modalDetail">&nbsp</div>
         </div>
         <div class="modalButtons">
           <div class="modalCancel"><span>Cancel</span></div>
@@ -453,36 +447,21 @@
       <div class="currentContainer">
         <p class="currentJobTitle" ></p>
       </div>
-      <div class="radial_progress">
-        <div class="perecent_circle">
-          <div class="mask full">
-            <div class="fill"></div>
-          </div>
-          <div class="mask half">
-            <div class="fill"></div>
-            <div class="fill fix"></div>
-          </div>
-          <div class="shadow"></div>
-        </div>
-        <div class="inset">
-          <div class="percentage"></div>
-        </div>
-        <div class="elapsed_time_small">
-          <p class="elapsed_time_label"><i class="fa fa-clock-o" aria-hidden="true"></i>:
-          <p class="elapsed_time_text">0s</p>
-          </p>
-        </div>
-      </div>
       <div class="load_container">
         <div class="loading_bar">
           <div class="horizontal_fill">
           </div>
         </div>
-        <div class="percent_comp">10%</div>
         <div class="elapsed_time">
           <p class="elapsed_time_label"><i class="fa fa-clock-o" aria-hidden="true"></i> :  
           <p>
           <p class="elapsed_time_text">0s</p>
+        </div>
+        <div class="percent_comp">10%</div>
+        <div class="line_number">
+          <p class="line_number_label">line:
+          <p>
+          <p class="line_number_text">0</p>
         </div>
       </div>
       <div class='pauseJob-wrapper'>

@@ -42,6 +42,7 @@ function ManualDriver(drv, st, mode) {
 	this.fixedQueue = [];
 	this.entered = false;
 	this.exited = false;
+    this.fromFile = false;
 
 	// True while the tool is known to be in motion
 	this.moving = false;
@@ -89,16 +90,18 @@ ManualDriver.prototype.enter = function() {
 		    this.stream.write('M100.1 ({zjm:'+jerkZ+'})\n');	
 			// Turn off z-lift, set incremental mode, and send a 
 			// "dummy" move to prod the machine into issuing a status report
-			this.stream.write('M100.1 ({zl:0})\nM0\nG91\n G0 X0 Y0 Z0\n');	
+			this.stream.write('M0\nG91\n G0 X0 Y0 Z0\n');	
+//			this.stream.write('M100.1 ({zl:0})\nM0\nG91\n G0 X0 Y0 Z0\n'); ////## no longer need to turn off z-lift? 
 			this.driver.prime();		
-			break;
+		    break;
 		case 'raw':
-			this.stream.write('M100.1 ({zl:0})\nM0\n');
+            this.stream.write('M0\n')
+//			this.stream.write('M100.1 ({zl:0})\nM0\n');                    ////## no longer need to turn off z-lift?
 			this.driver.prime();		
-		break;
+		    break;
 		default:
 			log.warn('Unknown manual drive mode on enter: ' + this.mode);
-		break;
+		    break;
 	}
 	this.entered = true;
 	this.deferred = Q.defer();
@@ -116,35 +119,31 @@ ManualDriver.prototype.exit = function() {
 		this.stopMotion();
 	} else {
 		log.debug('Executing immediate exit')
-		this.driver.manual_hold = false;
+		this.driver.manual_hold = false;    ////## PROBLEM area for exiting SK when used in file
 		switch(this.mode) {
 			case 'normal':
-				config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
-				    this._done();
-		        }.bind(this));	
-		        this.stream.write('G61\n'); ////## making sure not left in exact stop mode
-				this.stream.write('M30\n');
-				////## added to maintain line number priming in all scenarios ...
-				this.driver.queueFlush(function() {
-					this.driver.resume();		
-				}.bind(this));
+                // Potential additional Manual Keypad post-pend commands 
 		        break;
 			case 'raw':
-				config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
-				    this._done();
-		        }.bind(this));
-		        this.stream.write('G61\n'); ////## making sure not left in exact stop mode
-				this.stream.write('M30\n');
-				////## added to maintain line number priming in all scenarios ...
-				this.driver.queueFlush(function() {
-					this.driver.resume();		
-				}.bind(this));
+                // Potential additional Manual 'raw' post-pend commands 
 				break;
 			default:
 				log.warn('Unknown manual drive mode on exit: ' + this.mode);
 				break;
 		}
-		this.driver.removeListener('status', this.status_handler);
+        config.driver.restoreSome(['xjm','yjm','zjm'], function() {   ////##
+//      config.driver.restoreSome(['xjm','yjm','zjm', 'zl'], function() {
+        ////## Hopefully we no longer need to manage zl in here in manual as the lift now comes from safeZ and 
+        //       we don't have a parallel way to simply 'restoreSome' values in opensbp.json config.	
+                this._done();
+        }.bind(this));
+        this.stream.write('G61\n');     // don't leave in exact stop mode from nudge
+        if(this.fromFile) {
+            this.stream.write('M0\n');  // avoid triggering stat:4 when in file
+        } else {
+            this.stream.write('M30\n');    
+        }
+        this.driver.removeListener('status', this.status_handler);
 		this.exited = true;
 		this._done();
 	}
@@ -274,7 +273,6 @@ ManualDriver.prototype.runGCode = function(code) {
 //   pos - Position vector as an object, eg: {"X":10, "Y":5}
 ManualDriver.prototype.goto = function(pos) {
 	var move = "G90\nG0 ";
-
 	for (var key in pos) {
 		if (pos.hasOwnProperty(key)) {
 			move += key + pos[key] + " ";
@@ -285,7 +283,7 @@ ManualDriver.prototype.goto = function(pos) {
 	this.stream.write(move);
 }
 
-// Set the machine position to the specified vector ////## meaning "location" here not move vector?
+// Set the machine position to the specified "location"
 // TODO: Is it possible that timing could produce an inaccurate position update here???
 // TODO: ** pretty scary to reset location after zeroing and not do it by offset???
 //   pos - New position vector as an object,  eg: {"X":10, "Y":5}
@@ -318,6 +316,9 @@ ManualDriver.prototype.set = function(pos) {
 					case "B": 
 						toSet.g55b = Number(((MPO.b* 1) - pos[key]).toFixed(5));
 						break;
+                    case "C": 
+						toSet.g55c = Number(((MPO.c* 1) - pos[key]).toFixed(5));
+						break;
 					default:
 						log.error("don't understand axis");
 				}
@@ -337,11 +338,12 @@ ManualDriver.prototype.set = function(pos) {
 
 }
 
-// Internal function for handling nudges.
+// Internal function for handling nudges. (This function called "Fixed" moves in Sb3; there, nudges were 
+// moves inserted at a Stop in the middle of a file; G2 would allow implementation of this behavior.)
 // Nudges are little fixed incremental moves that are usually initiated by a short tap on one of the
 // direction keys on a pendant display, or by pressing the direction keys in a specified "fixed" mode
-// If the machine is currently in the middle of a nudge or is moving in a long move, the nudge is queued,
 // and executed at the end of the current move.  This is the function that dequeues and executes them.
+// Nudges are made fixed and individual by G61.1.
 // TODO: Like start above, nudges should be arbritrary vectors rather than axis, second_axis
 // Returns the number of nudges
 ManualDriver.prototype._handleNudges = function() {
@@ -355,8 +357,7 @@ ManualDriver.prototype._handleNudges = function() {
 			var axis = move.axis.toUpperCase();
 
 			if('XYZABCUVW'.indexOf(axis) >= 0) {
-				log.debug("===> setting to exact distance")
-				var moves = ['G91 G61.1'];  ////## setting exact distance for fixed-moves/nudges so g2 does not build longer vector
+				var moves = ['G91 G61.1'];  // set to exact fixed distance
 				if(move.second_axis) {
 					var second_axis = move.second_axis.toUpperCase();
 					if(move.speed) {
@@ -371,9 +372,6 @@ ManualDriver.prototype._handleNudges = function() {
 						moves.push('G0 ' + axis + move.distance.toFixed(5) + ' F' + move.speed.toFixed(3))
 					}
 				}
-				
-				// You can't put an M0 or a G4 in here to break up the nudges.
-				// Don't do it. Doooon't do it.
 				moves.forEach(function(move) {
 					this.stream.write(move + '\n');
 				}.bind(this));
@@ -386,15 +384,15 @@ ManualDriver.prototype._handleNudges = function() {
 	return count;
 }
 
-// Issue a nudge (small fixed move)  If the machine is already moving, queue up the nudge.
+// Issue a nudge (small fixed move).
 // Don't queue more than FIXED_MOVES_QUEUE_SIZE, though, to keep the machines behavior from running away.
+// (TODO: Might consider making this a typematic sort of thing where after a time you get a machine gun effect.)
 // ie: You shoudln't be allowed to queue 50 nudges during a long slow move, and see them execute at the end.
 //              axis - The first axis to move (eg "X")
 //             speed - The speed in current units
 //          distance - The length of the nudge
 //       second_axis - The second axis to move
 //   second_distance - The second axis speed
-
 ManualDriver.prototype.nudge = function(axis, speed, distance, second_axis, second_distance) {
     if(this.fixedQueue.length >= FIXED_MOVES_QUEUE_SIZE) {
 	log.warn('fixedMove(): Move queue is already full!');
@@ -405,7 +403,6 @@ ManualDriver.prototype.nudge = function(axis, speed, distance, second_axis, seco
 	} else {
 		this.fixedQueue.push({axis: axis, speed: speed, distance: distance});
 	}
-
     if(this.moving) {
 		log.warn("fixedMove(): Queueing move, due to already moving.");
 	} else {
