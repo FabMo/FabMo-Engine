@@ -1,5 +1,5 @@
 process = require("process");
-var log = require("../log").logger("routes");
+log = require("../log").logger("routes");
 
 /**
  * @api {get} /restart  Kill the engine
