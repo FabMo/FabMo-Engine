@@ -1,12 +1,18 @@
 module.exports = {
     env: {
+        amd: true,
+        node: true,
         commonjs: true,
         es2021: true,
     },
     globals: {
-        "setTimeout": true,
-        "clearTimeout": true,
-        "setImmediate": true
+        async: true,
+        log: true,
+        process: true,
+        setImmediate: true,
+        setTimeout: true,
+        clearTimeout: true,
+        console: true,
     },
     plugins: ["jest", "prettier"],
 
@@ -16,7 +22,7 @@ module.exports = {
     },
     rules: {
         "no-mixed-spaces-and-tabs": "off",
-        "prettier/prettier": ["error"]
+        "prettier/prettier": ["error"],
     },
     ignorePatterns: [
         "dashboard/static/js/libs/socket.io.js",
@@ -32,12 +38,7 @@ module.exports = {
         "dashboard/static/js/libs/foundation.min.js",
         "dashboard/static/js/libs/backbone.js",
         "dashboard/static/js/events.js",
-        "dashboard/apps/previewer.fma/js/three.js",
-        "dashboard/apps/job_manager.fma/js/moment.js",
-        "dashboard/apps/job_manager.fma/js/Sortable.js",
-        "dashboard/apps/home.fma/js/Sortable.js",
-        "dashboard/apps/editor.fma/js/codemirror.js",
-        "dashboard/apps/editor.fma/js/cm-addon/**",
+        "dashboard/apps/",
     ],
     overrides: [
         {

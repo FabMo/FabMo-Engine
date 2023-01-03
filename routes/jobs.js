@@ -1,60 +1,70 @@
-var db = require('../db');
-var path = require('path');
-var config = require('../config');
-var util = require('../util');
-var log = require('../log').logger('routes');
-var machine = require('../machine').machine;
-var fs = require('fs');
-var uuid = require('uuid');
-var upload = require('./util').upload;
+var db = require("../db");
+var util = require("../util");
+var log = require("../log").logger("routes");
+var machine = require("../machine").machine;
+var fs = require("fs");
+var upload = require("./util").upload;
 
-var submitJob = function(req, res, next) {
-    upload(req, res, next, function(err, upload) {
+var submitJob = function (req, res, next) {
+    upload(req, res, next, function (err, upload) {
         log.info("entering submitJob.upload.callback");
-        uploads = upload.files;
+        var uploads = upload.files;
         // Single file only, for now
-        if(uploads.length > 1) {
-            log.warn("Got an upload of " + uploads.length + ' files for a submitted job when only one is allowed.')
+        if (uploads.length > 1) {
+            log.warn(
+                "Got an upload of " +
+                    uploads.length +
+                    " files for a submitted job when only one is allowed."
+            );
         }
 
+        // eslint-disable-next-line no-undef
         async.eachOf(
             uploads,
             function create_job(item, index, callback) {
                 var file = item.file;
-                var filename = item.filename || (!file.name || file.name === 'blob') ? item.filename : file.name;
+                var filename =
+                    item.filename || !file.name || file.name === "blob"
+                        ? item.filename
+                        : file.name;
                 item.filename = filename;
                 item.name = item.name || filename;
                 item.index = index;
 
                 // Reject disallowed files
-                if(!util.allowed_file(filename)) {
-                    return callback(new Error("File " + filename + " is not allowed."));
+                if (!util.allowed_file(filename)) {
+                    return callback(
+                        new Error("File " + filename + " is not allowed.")
+                    );
                 }
 
                 // Create a job and respond
-                db.createJob(file, item, function(err, job) {
+                db.createJob(file, item, function (err, job) {
                     callback(err, job);
                 });
             }, // create_job
             function on_complete(err, jobs) {
-                log.info("Just completed upload of " + uploads.length + " jobs.");
-                    if(err) {
-                        log.error(err.message);
-                        return res.json({
-                            status:"error",
-                            message:err.message
-                        });
-                    }
+                log.info(
+                    "Just completed upload of " + uploads.length + " jobs."
+                );
+                if (err) {
+                    log.error(err.message);
                     return res.json({
-                        status:"success",
-                        data : {
-                            status : 'complete',
-                            data : {'jobs':jobs}
-                        }
+                        status: "error",
+                        message: err.message,
                     });
-            }); // on_complete
-        }); // async.map
-} // submitJob
+                }
+                return res.json({
+                    status: "success",
+                    data: {
+                        status: "complete",
+                        data: { jobs: jobs },
+                    },
+                });
+            }
+        ); // on_complete
+    }); // async.map
+}; // submitJob
 
 /**
  * @api {delete} /jobs/queue Clear job queue
@@ -65,19 +75,21 @@ var submitJob = function(req, res, next) {
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
-var clearQueue = function(req, res, next) {
+
+// eslint-disable-next-line no-unused-vars
+var clearQueue = function (req, res, next) {
     var answer;
-    db.Job.deletePending(function(err) {
-        if(err) {
+    db.Job.deletePending(function (err) {
+        if (err) {
             answer = {
-                status:"error",
-                message:err
+                status: "error",
+                message: err,
             };
             res.json(answer);
         } else {
             answer = {
-                status:"success",
-                data : null
+                status: "success",
+                data: null,
             };
             res.json(answer);
         }
@@ -93,21 +105,22 @@ var clearQueue = function(req, res, next) {
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
-runNextJob = function(req, res, next) {
+// eslint-disable-next-line no-unused-vars
+var runNextJob = function (req, res, next) {
     var answer;
-    log.info('Running the jobs.js:nextJob in the queue');
-    machine.runNextJob(function(err, job) {
-        if(err) {
+    log.info("Running the jobs.js:nextJob in the queue");
+    machine.runNextJob(function (err, job) {
+        if (err) {
             log.error(err);
             answer = {
-                status:"failed",
-                data:{job:err}
+                status: "failed",
+                data: { job: err },
             };
             res.json(answer);
         } else {
             answer = {
-                status:"success",
-                data : {job:job}
+                status: "success",
+                data: { job: job },
             };
             res.json(answer);
         }
@@ -124,31 +137,32 @@ runNextJob = function(req, res, next) {
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
-var resubmitJob = function(req, res, next) {
+// eslint-disable-next-line no-unused-vars
+var resubmitJob = function (req, res, next) {
     var answer;
     log.debug("Resubmitting job " + req.params.id);
-    db.Job.getById(req.params.id, function(err, result) {
-        if(err) {
+    db.Job.getById(req.params.id, function (err, result) {
+        if (err) {
             log.error(JSON.stringify(err));
             answer = {
-                status:"error",
-                message:err
+                status: "error",
+                message: err,
             };
             return res.json(answer);
         }
-        result.clone(function(err, result) {
+        result.clone(function (err, result) {
             log.debug("Cloned!");
-            if(err) {
+            if (err) {
                 log.error(err);
                 answer = {
-                    status:"failed",
-                    data:{job:err}
+                    status: "failed",
+                    data: { job: err },
                 };
                 res.json(answer);
             } else {
                 answer = {
-                    status:"success",
-                    data : {job:result}
+                    status: "success",
+                    data: { job: result },
                 };
                 res.json(answer);
             }
@@ -173,33 +187,34 @@ var resubmitJob = function(req, res, next) {
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
-var getQueue = function(req, res, next) {
-    db.Job.getPending(function(err, pending) {
-        if(err) {
+// eslint-disable-next-line no-unused-vars
+var getQueue = function (req, res, next) {
+    db.Job.getPending(function (err, pending) {
+        if (err) {
             log.error(err);
             return res.json({
-                status:"error",
-                message:"failed to get pending jobs from DB"
+                status: "error",
+                message: "failed to get pending jobs from DB",
             });
         }
 
-        db.Job.getRunning(function(err, running) {
-            if(err) {
+        db.Job.getRunning(function (err, running) {
+            if (err) {
                 log.error(err);
                 return res.json({
-                    status:"error",
-                    message:"failed to get running jobs from DB"
+                    status: "error",
+                    message: "failed to get running jobs from DB",
                 });
             }
 
             return res.json({
-                status:"success",
-                data : {
-                    jobs:{
-                        pending : pending,
-                        running : running
-                    }
-                }
+                status: "success",
+                data: {
+                    jobs: {
+                        pending: pending,
+                        running: running,
+                    },
+                },
             });
         });
     });
@@ -222,20 +237,21 @@ var getQueue = function(req, res, next) {
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
-var getAllJobs = function(req, res, next) {
+// eslint-disable-next-line no-unused-vars
+var getAllJobs = function (req, res, next) {
     var answer;
-    db.Job.getAll(function(err, result) {
-        if(err) {
+    db.Job.getAll(function (err, result) {
+        if (err) {
             log.error(err);
             answer = {
-                status:"error",
-                message:"failed to get jobs from DB"
+                status: "error",
+                message: "failed to get jobs from DB",
             };
             res.json(answer);
         } else {
             answer = {
-                status:"success",
-                data : {jobs:result}
+                status: "success",
+                data: { jobs: result },
             };
             res.json(answer);
         }
@@ -259,25 +275,26 @@ var getAllJobs = function(req, res, next) {
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
-var getJobHistory = function(req, res, next) {
+// eslint-disable-next-line no-unused-vars
+var getJobHistory = function (req, res, next) {
     var answer;
     var options = {
-        start : req.params.start || 0,
-        count : req.params.count || 0
-    }
+        start: req.params.start || 0,
+        count: req.params.count || 0,
+    };
 
-    db.Job.getHistory(options, function(err, result) {
-        if(err) {
+    db.Job.getHistory(options, function (err, result) {
+        if (err) {
             log.error(err);
             answer = {
-                status:"error",
-                message:"failed to get jobs from DB"
+                status: "error",
+                message: "failed to get jobs from DB",
             };
             res.json(answer);
         } else {
             answer = {
-                status:"success",
-                data : {jobs:result}
+                status: "success",
+                data: { jobs: result },
             };
             res.json(answer);
         }
@@ -301,25 +318,26 @@ var getJobHistory = function(req, res, next) {
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
-var getJobById = function(req, res, next) {
+// eslint-disable-next-line no-unused-vars
+var getJobById = function (req, res, next) {
     var answer;
-    db.Job.getById(req.params.id, function(err, job) {
-        if(err) {
+    db.Job.getById(req.params.id, function (err, job) {
+        if (err) {
             answer = {
-                    status:"fail",
-                    data:{job:err}
+                status: "fail",
+                data: { job: err },
             };
             return res.json(answer);
         }
-        db.File.getByID(job.file_id, function(err, file) {
-            if(err) {
+        db.File.getByID(job.file_id, function (err, file) {
+            if (err) {
                 job.file = {};
             } else {
                 job.file = file;
             }
             answer = {
-                status:"success",
-                data : {job:job}
+                status: "success",
+                data: { job: job },
             };
             res.json(answer);
         });
@@ -336,29 +354,30 @@ var getJobById = function(req, res, next) {
  * @apiError {String} status `error`
  * @apiError {Object} message Error message
  */
-var cancelJob = function(req, res, next) {
+// eslint-disable-next-line no-unused-vars
+var cancelJob = function (req, res, next) {
     var answer;
-    db.Job.getById(req.params.id, function(err, result) {
-        if(err) {
+    db.Job.getById(req.params.id, function (err, result) {
+        if (err) {
             log.error(err);
             answer = {
-                    status:"fail",
-                    data:{job:err}
+                status: "fail",
+                data: { job: err },
             };
             res.json(answer);
         } else {
-            result.cancelOrTrash(function(err, result) {
-                if(err) {
+            result.cancelOrTrash(function (err, result) {
+                if (err) {
                     log.error(err);
                     answer = {
-                            status:"fail",
-                            data:{job:err}
+                        status: "fail",
+                        data: { job: err },
                     };
                     res.json(answer);
                 } else {
                     answer = {
-                        status:"success",
-                        data : {job:result}
+                        status: "success",
+                        data: { job: result },
                     };
                     res.json(answer);
                 }
@@ -367,30 +386,31 @@ var cancelJob = function(req, res, next) {
     });
 };
 
+// eslint-disable-next-line no-unused-vars
 var updateOrder = function (req, res, next) {
     var answer;
     var order = parseInt(req.params.order);
     var id = parseInt(req.params.id);
-    db.Job.getById(id, function(err,result) {
-        if(err) {
+    db.Job.getById(id, function (err, result) {
+        if (err) {
             answer = {
-                    status:"fail",
-                    data:{job:err}
+                status: "fail",
+                data: { job: err },
             };
             return res.json(answer);
         } else {
-            result.update_order(order, function(err, result){
-                 if(err) {
+            result.update_order(order, function (err, result) {
+                if (err) {
                     log.error(err);
                     answer = {
-                            status:"fail",
-                            data:{job:err}
+                        status: "fail",
+                        data: { job: err },
                     };
                     res.json(answer);
                 } else {
                     answer = {
-                        status:"success",
-                        data : {job:result}
+                        status: "success",
+                        data: { job: result },
                     };
                     res.json(answer);
                 }
@@ -399,19 +419,23 @@ var updateOrder = function (req, res, next) {
     });
 };
 
-var getJobFile = function(req, res, next) {
-    db.Job.getFileForJobId(req.params.id, function(err, file) {
-        if(err) {
+// eslint-disable-next-line no-unused-vars
+var getJobFile = function (req, res, next) {
+    db.Job.getFileForJobId(req.params.id, function (err, file) {
+        if (err) {
             log.error(err);
             var answer = {
-                    status:"fail",
-                    data:{file:err}
+                status: "fail",
+                data: { file: err },
             };
             res.json(answer);
         } else {
-            fs.readFile(file.path, function(err, data) {
-                res.header('Content-Type', 'text/plain');
-                res.header('Content-Disposition', 'attachment; filename="' + file.filename + '"');
+            fs.readFile(file.path, function (err, data) {
+                res.header("Content-Type", "text/plain");
+                res.header(
+                    "Content-Disposition",
+                    'attachment; filename="' + file.filename + '"'
+                );
                 res.status(200);
                 res.write(data);
                 res.end();
@@ -420,57 +444,46 @@ var getJobFile = function(req, res, next) {
     });
 };
 
-
-
-var getJobGCode = function(req, res, next) {
-    db.Job.getFileForJobId(req.params.id, function(err, file) {
-        if(err) {
+// eslint-disable-next-line no-unused-vars
+var getJobGCode = function (req, res, next) {
+    db.Job.getFileForJobId(req.params.id, function (err, file) {
+        if (err) {
             log.error(err);
             var answer = {
-                    status:"fail",
-                    data:{file:err}
+                status: "fail",
+                data: { file: err },
             };
             res.json(answer);
         } else {
-            var gcode_filename = 'gcode.nc';
-            machine.getGCodeForFile(file.path, function(err, gcode) {
-              if(err) {
-                return res.send(403, err.message)
-              }
-		      res.setHeader('content-type', 'applications/octet-stream');
-              res.setHeader('content-disposition', 'filename="' + gcode_filename + '"');
-              res.send(gcode);
+            var gcode_filename = "gcode.nc";
+            machine.getGCodeForFile(file.path, function (err, gcode) {
+                if (err) {
+                    return res.send(403, err.message);
+                }
+                res.setHeader("content-type", "applications/octet-stream");
+                res.setHeader(
+                    "content-disposition",
+                    'filename="' + gcode_filename + '"'
+                );
+                res.send(gcode);
             });
         }
     });
 };
 
-var getThumbnailImage = function(req, res, next) {
-    db.Thumbnail.getFromJobId(req.params.id, function(err, thumbnail) {
-        if(err) {
-            res.send(404);
-        } else {
-            res.setHeader('content-type', 'image/svg+xml');
-            res.write(thumbnail.image);
-            res.end();
-        }
-    });
-}
-
-module.exports = function(server) {
-    server.post('/job', submitJob);
-    server.get('/jobs', getAllJobs);
-    server.get('/job/:id', getJobById);
-    server.del('/job/:id', cancelJob);
-    server.patch('/job/:id', updateOrder);
-    server.post('/job/:id', resubmitJob);
-    server.get('/job/:id/file', getJobFile);
-    server.get('/job/:id/gcode', getJobGCode);
+module.exports = function (server) {
+    server.post("/job", submitJob);
+    server.get("/jobs", getAllJobs);
+    server.get("/job/:id", getJobById);
+    server.del("/job/:id", cancelJob);
+    server.patch("/job/:id", updateOrder);
+    server.post("/job/:id", resubmitJob);
+    server.get("/job/:id/file", getJobFile);
+    server.get("/job/:id/gcode", getJobGCode);
     //server.get('/job/:id/thumbnail', getThumbnailImage);
 
-    server.get('/jobs/queue', getQueue);
-    server.del('/jobs/queue', clearQueue);
-    server.post('/jobs/queue/run', runNextJob);
-    server.get('/jobs/history', getJobHistory);
-
+    server.get("/jobs/queue", getQueue);
+    server.del("/jobs/queue", clearQueue);
+    server.post("/jobs/queue/run", runNextJob);
+    server.get("/jobs/history", getJobHistory);
 };

@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+/* eslint-disable no-unused-vars */
 /*
  * machine_config.js
  *
@@ -13,115 +15,140 @@
 
 let MAX_INPUTS = 12;
 
-var config = require('../config');
-var Config = require('./config').Config;
-var log = require('../log').logger('machine_config');
-var u = require('../util');
+var config = require("../config");
+var Config = require("./config").Config;
+var log = require("../log").logger("machine_config");
+var u = require("../util");
 
-var MachineConfig = function() {
-	Config.call(this, 'machine');
+var MachineConfig = function () {
+    Config.call(this, "machine");
 };
 util.inherits(MachineConfig, Config);
 
-MachineConfig.prototype.init = function(machine, callback) {
-	this.machine = machine;
-	Config.prototype.init.call(this, callback);
-}
+MachineConfig.prototype.init = function (machine, callback) {
+    this.machine = machine;
+    Config.prototype.init.call(this, callback);
+};
 
 // Convenience function that rounds a number to the appropriate number of decimals for the current unit type.
 function round(number, units) {
-	var decimals = units == 'mm' ? 100 : 1000;
-	return Math.round(number*decimals)/decimals
+    var decimals = units == "mm" ? 100 : 1000;
+    return Math.round(number * decimals) / decimals;
 }
 
-// 
-MachineConfig.prototype.update = function(data, callback, force) {
-	var current_units = this.get('units');
+//
+MachineConfig.prototype.update = function (data, callback, force) {
+    var current_units = this.get("units");
 
-	try {
-		u.extend(this._cache, data, force);
-	} catch (e) {
-		return callback(e);
-	}
+    try {
+        u.extend(this._cache, data, force);
+    } catch (e) {
+        return callback(e);
+    }
 
-	// Convert internal values that are in length units back and forth between the two unit
-	// systems if the unit systems has changed.
-	if('units' in data) {
-		new_units = data.units;
-		if(!force && current_units && current_units != new_units) {
-			var conv = (new_units == 'mm') ? 25.4 : 1/25.4;
+    // Convert internal values that are in length units back and forth between the two unit
+    // systems if the unit systems has changed.
+    if ("units" in data) {
+        new_units = data.units;
+        if (!force && current_units && current_units != new_units) {
+            var conv = new_units == "mm" ? 25.4 : 1 / 25.4;
 
-			['xmin','xmax','ymin','ymax','zmin','zmax'].forEach(function(key) {
-				this._cache.envelope[key] = round(this._cache.envelope[key]*conv, new_units);
-			}.bind(this));
+            ["xmin", "xmax", "ymin", "ymax", "zmin", "zmax"].forEach(
+                function (key) {
+                    this._cache.envelope[key] = round(
+                        this._cache.envelope[key] * conv,
+                        new_units
+                    );
+                }.bind(this)
+            );
 
-			['xy_speed',
-			 'z_speed',
-			 'xy_increment',
-			 'z_increment', 
-			 'xy_min', 
-			 'xy_max', 
-			 'xy_jerk', 
-			 'z_jerk',
-			 'z_fast_speed',
-			 'z_slow_speed'].forEach(function(key) {
-				this._cache.manual[key] = round(this._cache.manual[key]*conv, new_units);
-			}.bind(this));
-		}
-	}
+            [
+                "xy_speed",
+                "z_speed",
+                "xy_increment",
+                "z_increment",
+                "xy_min",
+                "xy_max",
+                "xy_jerk",
+                "z_jerk",
+                "z_fast_speed",
+                "z_slow_speed",
+            ].forEach(
+                function (key) {
+                    this._cache.manual[key] = round(
+                        this._cache.manual[key] * conv,
+                        new_units
+                    );
+                }.bind(this)
+            );
+        }
+    }
 
     ////## Re: Rob's 'Harmonize' Project -- These are 'machine' settings that are shared to G2 and maintained here
 
     //  Define Inputs for G2 -- Input functionality in FabMo and G2 overlap but differ in detail.
     //      For G2 use, the actions are simplified as none, stop, or fast-stop and current G2 values are set here.
-    for ( let i=1; i<MAX_INPUTS+1; i++ ) {
-        let diDef = ('di' + i + '_def'); 
-        if ( diDef in this._cache) {
-            let g2inpAction = 0;                   // G2 action defaults to none
+    for (let i = 1; i < MAX_INPUTS + 1; i++) {
+        let diDef = "di" + i + "_def";
+        if (diDef in this._cache) {
+            let g2inpAction = 0; // G2 action defaults to none
             switch (this._cache[diDef]) {
                 case 2:
                 case 8:
-                case 16:        
-                    g2inpAction = 1;               // G2 regular stop action
+                case 16:
+                    g2inpAction = 1; // G2 regular stop action
                     break;
                 case 4:
-                    g2inpAction = 2;               // G2 fast-stop action
+                    g2inpAction = 2; // G2 fast-stop action
                     break;
             }
-            this.machine.driver.command({['di' + i + 'ac']:g2inpAction});
+            this.machine.driver.command({ ["di" + i + "ac"]: g2inpAction });
         }
     }
 
     //  Define Envelope for G2
-    if ( 'xmin' in this._cache.envelope ) {this.machine.driver.command({'xtn':this._cache.envelope['xmin']})};
-    if ( 'xmax' in this._cache.envelope ) {this.machine.driver.command({'xtm':this._cache.envelope['xmax']})};
-    if ( 'ymin' in this._cache.envelope ) {this.machine.driver.command({'ytn':this._cache.envelope['ymin']})};
-    if ( 'ymax' in this._cache.envelope ) {this.machine.driver.command({'ytm':this._cache.envelope['ymax']})};
-    if ( 'zmin' in this._cache.envelope ) {this.machine.driver.command({'ztn':this._cache.envelope['zmin']})};
-    if ( 'zmax' in this._cache.envelope ) {this.machine.driver.command({'ztm':this._cache.envelope['zmax']})};
+    if ("xmin" in this._cache.envelope) {
+        this.machine.driver.command({ xtn: this._cache.envelope["xmin"] });
+    }
+    if ("xmax" in this._cache.envelope) {
+        this.machine.driver.command({ xtm: this._cache.envelope["xmax"] });
+    }
+    if ("ymin" in this._cache.envelope) {
+        this.machine.driver.command({ ytn: this._cache.envelope["ymin"] });
+    }
+    if ("ymax" in this._cache.envelope) {
+        this.machine.driver.command({ ytm: this._cache.envelope["ymax"] });
+    }
+    if ("zmin" in this._cache.envelope) {
+        this.machine.driver.command({ ztn: this._cache.envelope["zmin"] });
+    }
+    if ("zmax" in this._cache.envelope) {
+        this.machine.driver.command({ ztm: this._cache.envelope["zmax"] });
+    }
 
-	this.save(function(err, result) {
-		if(err) {
-			callback(err);
-		} else {
-			callback(null, data);
-		}
-	});
+    this.save(function (err, result) {
+        if (err) {
+            callback(err);
+        } else {
+            callback(null, data);
+        }
+    });
 };
 
 // Apply this configuration.
 //   callback - Called once everything has been applied, or with error.
-MachineConfig.prototype.apply = function(callback) {
+MachineConfig.prototype.apply = function (callback) {
+    // If we disable authorization, authorize indefinitely.  If we enabled it, revoke it.
+    if (this.get("auth_timeout") === 0) {
+        this.machine.authorize();
+    } else {
+        this.machine.deauthorize();
+    }
 
-	// If we disable authorization, authorize indefinitely.  If we enabled it, revoke it.
-	if(this.get('auth_timeout') === 0) {
-		this.machine.authorize();
-	} else {
-		this.machine.deauthorize();
-	}
-
-	// Apply units (The machine will only apply these if there was an actual change)
-	this.machine.setPreferredUnits(this.get('units'), function() {callback(); });
+    // Apply units (The machine will only apply these if there was an actual change)
+    this.machine.setPreferredUnits(this.get("units"), function () {
+        callback();
+    });
 };
 
 exports.MachineConfig = MachineConfig;

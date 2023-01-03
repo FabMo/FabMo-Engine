@@ -1,17 +1,15 @@
-var machine = require('../machine').machine;
-var config = require('../config');
-var log = require('../log');
-
+var log = require("../log");
 
 /**
  * @apiGroup Log
  * @api {get} /log Get log
  * @apiDescription Get the contents of the debug log
  */
-var getLog = function(req, res, next) {
-  body = log.getLogBuffer();
-  res.setHeader('content-type', 'text/plain');
-  res.send(body);
+// eslint-disable-next-line no-unused-vars
+var getLog = function (req, res, next) {
+    var body = log.getLogBuffer();
+    res.setHeader("content-type", "text/plain");
+    res.send(body);
 };
 
 /**
@@ -19,12 +17,13 @@ var getLog = function(req, res, next) {
  * @api {get} /flight Get log
  * @apiDescription Get the contents of the debug log
  */
-var getFlightLog = function(req, res, next) {
-  try {
-    res.json(log.getFlightLog());
-  } catch(e) {
-    res.send(503, e.message);
-  }
+// eslint-disable-next-line no-unused-vars
+var getFlightLog = function (req, res, next) {
+    try {
+        res.json(log.getFlightLog());
+    } catch (e) {
+        res.send(503, e.message);
+    }
 };
 
 /**
@@ -34,17 +33,18 @@ var getFlightLog = function(req, res, next) {
  * @apiSuccess {String} status `success`
  * @apiSuccess {Object} data null
  */
-var clearLog = function(req, res, next) {
+// eslint-disable-next-line no-unused-vars
+var clearLog = function (req, res, next) {
     var answer = {
-        status:"success",
-        data : null
-    }
+        status: "success",
+        data: null,
+    };
     log.clearLogBuffer();
     res.json(answer);
 };
 
-module.exports = function(server) {
-  server.get('/log', getLog);
-  server.del('/log', clearLog)
-  server.get('/flight', getFlightLog)
+module.exports = function (server) {
+    server.get("/log", getLog);
+    server.del("/log", clearLog);
+    server.get("/flight", getFlightLog);
 };

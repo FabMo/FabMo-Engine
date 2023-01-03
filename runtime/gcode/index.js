@@ -1,1 +1,1 @@
-exports.GCodeRuntime = require('./gcode').GCodeRuntime;
+exports.GCodeRuntime = require("./gcode").GCodeRuntime;

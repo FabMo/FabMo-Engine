@@ -1,5 +1,6 @@
-process = require('process');
-log = require('../log').logger('routes');
+/* eslint-disable no-undef */
+process = require("process");
+log = require("../log").logger("routes");
 
 /**
  * @api {get} /restart  Kill the engine
@@ -8,16 +9,17 @@ log = require('../log').logger('routes');
  * @apiSuccess {String} status success
  * @apiSuccess {Object} data null
  */
-kill = function(req, res, next) {
-    log.warn('Killing the engine by user request...');
+// eslint-disable-next-line no-unused-vars
+function kill(req, res, next) {
+    log.warn("Killing the engine by user request...");
     var answer = {
-			status:"success",
-			data : null
-		};
-		res.json(answer);
+        status: "success",
+        data: null,
+    };
+    res.json(answer);
     process.exit(1);
-};
+}
 
-module.exports = function(server) {
-   server.get('/kill', kill); 
+module.exports = function (server) {
+    server.get("/kill", kill);
 };

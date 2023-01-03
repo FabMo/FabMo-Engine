@@ -1,1 +1,1 @@
-exports.SBPRuntime = require('./opensbp').SBPRuntime
+exports.SBPRuntime = require("./opensbp").SBPRuntime;

@@ -1,5 +1,1 @@
-require('./libs/fabmo.js');
-
-
-
-
+require("./libs/fabmo.js");
