@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 process = require("process");
 log = require("../log").logger("routes");
 
