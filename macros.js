@@ -17,7 +17,6 @@
  * is able to edit those fields, but only as exposed through the UI in the macro manager.  This prevents
  * users from corrupting the headers and creating a bunch of edge cases when editing macros.
  */
-var Buffer = require("buffer");
 var fs = require("fs-extra");
 var path = require("path");
 var async = require("async");
@@ -63,6 +62,7 @@ var _createGCodeHeader = function (options) {
 var _createOpenSBPHeader = function (options) {
     var name = options.name || "Untitled Macro";
     var description = options.description || "";
+    var enabled = options.enabled || true;
     return (
         "'" +
         MARKER +
@@ -73,6 +73,11 @@ var _createOpenSBPHeader = function (options) {
         MARKER +
         "description:" +
         description +
+        "\n" +
+        "'" +
+        MARKER +
+        "enabled:" +
+        enabled +
         "\n"
     );
 };
@@ -176,26 +181,27 @@ var _parseMacroFile = function (filename, callback) {
 var update = function (id, macro, callback) {
     // Get the old macro data
     var old_macro = get(id);
-    // This function takes an id, and the macro can carry an index as well
-    // If the incoming macros index is different than the id that was passed,
-    // we interpret that as an intent to move that macro to a new index.
-    function savemacro(id, callback) {
-        old_macro.name = macro.name || old_macro.name;
-        old_macro.description = macro.description || old_macro.description;
-        old_macro.content = macro.content || old_macro.content;
-        old_macro.index = macro.index || old_macro.index;
-        old_macro.type = macro.type || old_macro.type;
-        old_macro.filename = _createMacroFilename(
-            old_macro.index,
-            old_macro.type
-        );
-        save(id, callback);
-    }
 
     if (old_macro) {
         // Here, we're updating an existing macro
         // We only update fields that were provided in the macro passed in
         // Other fields, we leave alone.
+        // eslint-disable-next-line no-inner-declarations
+        function savemacro(id, callback) {
+            old_macro.name = macro.name || old_macro.name;
+            old_macro.description = macro.description || old_macro.description;
+            old_macro.content = macro.content || old_macro.content;
+            old_macro.index = macro.index || old_macro.index;
+            old_macro.type = macro.type || old_macro.type;
+            old_macro.filename = _createMacroFilename(
+                old_macro.index,
+                old_macro.type
+            );
+            save(id, callback);
+        }
+        // This function takes an id, and the macro can carry an index as well
+        // If the incoming macros index is different than the id that was passed,
+        // we interpret that as an intent to move that macro to a new index.
         if (macro.index) {
             var new_index = parseInt(macro.index);
             // If there's already a macro at the index that we're moving to, that's an error.
