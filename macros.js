@@ -186,6 +186,8 @@ var update = function (id, macro, callback) {
         // Here, we're updating an existing macro
         // We only update fields that were provided in the macro passed in
         // Other fields, we leave alone.
+        // Tried moving this function to outer scope but it caused issues with
+        // saving macros, will address later
         // eslint-disable-next-line no-inner-declarations
         function savemacro(id, callback) {
             old_macro.name = macro.name || old_macro.name;
