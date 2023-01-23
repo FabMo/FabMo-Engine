@@ -14,13 +14,12 @@
 
 '--- Check to make sure Standard Macro Variables have been read
 $sb_standard_variables_PRESENT := 0								  ' Define test variable if it does not exist
-IF $sb_standard_variables_PRESENT == 0 THEN GOTO no_variables
+IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
 
 ' === Main Program ===
 GOSUB initialize_variables
 ' --- Main Program Sequence ---
 Z3    ' zeoring all axes at their current location (sets worst case homing distances)l  ##TABLE BASE?
-GOSUB moveOutFromProx
 GOSUB backOffProx_if_needed
 GOSUB home_z
 GOSUB home_x
@@ -76,10 +75,7 @@ offset_z_cutter:
 
 
 ' --- Checks and Failures ---
-  moveOutFromProx:
-  	  M2, (2 * &homeOff_X), (2 * &homeOff_Y)					' To avoid being stuck behind prox, move XY out 3X offset from location	
-      RETURN
-      
+
   backOffProx_if_needed:                                        ' Managing prox switches is complicated by multiple arrangements
       &proxTriggered = 0
       GOSUB checkProxs
@@ -113,8 +109,8 @@ offset_z_cutter:
       END
 
   no_variables:
-      PAUSE "Macro #201 defining Standard Macro Variables does not seem to have been run. Quit and Run then try Macro again."
-      END
+        C201
+        RETURN
 
 '--- Initialize Variables and Adjust Standard Macro Variables for Current Tool and Conditions as Needed
 initialize_variables:
