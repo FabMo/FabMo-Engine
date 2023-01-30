@@ -1114,6 +1114,8 @@ Machine.prototype.setState = function (source, newstate, stateinfo) {
                 }
                 break;
             case "running":
+            case "lock":
+            case "interlock":
                 this.status.resumeFlag = false;
                 break;
             case "dead":
