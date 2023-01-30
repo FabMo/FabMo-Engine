@@ -1,5 +1,5 @@
 {
-	"name":"Home",
+	"name":"Apps",
 	"main":"./index.html",
 	"icon":"icon.png",
 	"icon_color":"#313366",
@@ -8,5 +8,5 @@
 	"author":"Brendan Collins",
 	"website":"http://shopbottools.com",
 	"id":"home",
-    "description":"System app for submitting CAM files to the tool and managing the job queue"
+    "description":"System app for managing optionally installed apps"
 }
