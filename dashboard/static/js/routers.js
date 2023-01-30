@@ -14,7 +14,7 @@ define(function (require) {
     // Make defaultApp choice available here and elsewhere
     engine.getConfig(function (err, data) {
         defaultApp = data.machine.default_app;
-        localStorage.setItem("defaultapp", newDefault);
+        localStorage.setItem("defaultapp", defaultApp);
     });
 
     var Router = Backbone.Router.extend({
