@@ -58,7 +58,7 @@
 		"@babel/core": "^7.13.16",
 		"@babel/preset-env": "^7.13.15",
 		"@mapbox/node-pre-gyp": "^1.0.4",
-		"@webpack-cli/generators": "^2.0.0",
+		"@webpack-cli/generators": "^3.0.1",
 		"assert-plus": "1.0.0",
 		"babel-loader": "^8.2.2",
 		"chokidar": "3.5.1",
