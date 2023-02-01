@@ -11,7 +11,7 @@
 
 '--- Check to make sure Standard Macro Variables have been read
 $sb_standard_variables_PRESENT := 0								  ' Define test variable if it does not exist
-IF $sb_standard_variables_PRESENT == 0 THEN GOTO no_variables
+IF $sb_standard_variables_PRESENT == 0 THEN GOSUB no_variables
 
 ' === Main Program ===
 GOSUB initialize_variables
@@ -21,7 +21,6 @@ GOSUB backOffProx_if_needed
 GOSUB check_plate_clearance
 GOSUB first_home_z_toProx
 GOSUB find_z_zero_plate
-PAUSE .5
 GOSUB finish
 END
 '==============================
@@ -58,8 +57,6 @@ find_z_zero_plate:                                              ' Now Offset to 
     RETURN
 
 finish:
-	MZ, &safeZ_pullup - .05										' Trigger location update with a little "finish-wiggle" acknowledgement
-    MZ, &safeZ_pullup
 	PAUSE "Remember to Remove Clip! The following value will be used for Cutter Offset in Homing:  " + $sb_current_cutter_Zoffset
     RETURN
 
@@ -93,8 +90,8 @@ finish:
 		END                           
 
 	no_variables:
-    	PAUSE "Macro #201 defining Standard Macro Variables does not seem to have been run. Quit and Run then try Macro again."
-        END
+        C201
+        RETURN
 
 
 '--- Initialize Variables and Adjust Standard Macro Variables for Current Tool and Conditions as Needed
