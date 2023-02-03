@@ -21,7 +21,6 @@
 		"escape-regexp-component": "1.0.2",
 		"eslint": "^8.15.0",
 		"eslint-plugin-jest": "^26.2.2",
-		"file-loader": "^6.2.0",
 		"fs-extra": "0.23.1",
 		"glob": "5.0.15",
 		"got": "11.8.3",
