@@ -133,7 +133,6 @@ $sb_home_Y               = 0         '- (m3) this would be a special offset from
 $sb_safe_Z               = %(28)     'Temporary retreival from system vars ... see note below
 
 $sb_standard_variables_PRESENT = 1   'CONFIRM ALL READ.
-PAUSE "Standard Macro Variables Read  Confirm => " + $sb_standard_variables_PRESENT
 
 
 '* - FUTURE: ShopBot V-Carve posts currently write an IF statement at the top of file that tests whether file measurement UNITS match current measurement UNITS of tool>
