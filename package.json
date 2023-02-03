@@ -2,7 +2,7 @@
 	"name": "fabmo-engine",
 	"description": "The Engine for running the FabMo platform",
 	"author": "ShopBotTools",
-	"repository": "https://github.com/ShopBotTools/FabMo-Engine.git",
+	"repository": "https://github.com/FabMo/FabMo-Engine.git",
 	"license": "MIT",
 	"main": "dashboard/static/test.js",
 	"config": {
