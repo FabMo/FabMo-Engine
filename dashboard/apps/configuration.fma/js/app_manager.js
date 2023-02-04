@@ -86,7 +86,7 @@ function refreshApps() {
                     newDefault = $(this).val();
                     localStorage.setItem('defaultapp',newDefault);
                     data.machine.default_app = newDefault;
-                    fabmo.setConfig({"machine":{"default_app":newDefault}}, function(err, data){
+                    fabmo.setConfig({machine: {default_app: newDefault}}, function(err, data){
                         if (err){
                             console.log(err);
                         } else {

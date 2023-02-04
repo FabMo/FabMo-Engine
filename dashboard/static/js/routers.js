@@ -14,6 +14,22 @@ define(function (require) {
     // Make defaultApp choice available here and elsewhere
     engine.getConfig(function (err, data) {
         defaultApp = data.machine.default_app;
+        if (typeof defaultApp != "string") {
+            defaultApp = "";
+        }
+        if (defaultApp === "") {
+            defaultApp = "apps";
+            engine.setConfig(
+                { machine: { default_app: defaultApp } },
+                function (err, data) {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        console.log("Config Updated");
+                    }
+                }
+            );
+        }
         localStorage.setItem("defaultapp", defaultApp);
     });
 
@@ -26,10 +42,6 @@ define(function (require) {
         },
         launchApp: function (id, args, callback) {
             defaultApp = localStorage.getItem("defaultapp"); // get latest
-            if (defaultApp === "") {
-                defaultApp = "apps";
-                localStorage.setItem("defaultapp", "apps");
-            }
             callback = callback || function () {};
             if (id === "def") {
                 id = defaultApp;
