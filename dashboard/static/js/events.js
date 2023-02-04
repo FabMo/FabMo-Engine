@@ -82,16 +82,6 @@ define(function(require) {
             $("#left-menu").css({'height' :$(window).height() - 56, 'top' : 56 } );
         }
 
-        //Adjust display and links per default app
-        defaultApp = localStorage.getItem('defaultapp');
-        let defAppHref = "#/app/" + defaultApp;
-        if (defaultApp != "home") {
-            $('#icon_home').attr('href', defAppHref);
-            $('#icon_apps').attr('style','display:flex');
-            $('#icon_home, .left-side-menu a').attr('href', defAppHref);
-            $('#icon_apps, .left-side-menu a').attr('style','display:flex');
-        }
-
         colapsed = localStorage.getItem('colapsed');
 
         if ($(window).width() > 640) {

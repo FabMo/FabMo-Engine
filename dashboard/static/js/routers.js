@@ -25,7 +25,15 @@ define(function (require) {
             "authentication(?message=:message)": "show_auth",
         },
         launchApp: function (id, args, callback) {
+            defaultApp = localStorage.getItem("defaultapp"); // get latest
+            if (defaultApp === "") {
+                defaultApp = "apps";
+                localStorage.setItem("defaultapp", "apps");
+            }
             callback = callback || function () {};
+            if (id === "def") {
+                id = defaultApp;
+            }
 
             // Manage highlight on left-side menus: full, colapsed, & slide-out
             $(".left-off-canvas-menu a").css("background-color", ""); // restore style sheet settings non-highlight
@@ -47,15 +55,11 @@ define(function (require) {
                 case "video":
                     activeNow = "#icon_video";
                     break;
-                case "home":
-                    if (defaultApp != "home") {
-                        activeNow = "#icon_apps";
-                    } else {
-                        activeNow = "#icon_home";
-                    }
+                case "apps":
+                    activeNow = "#icon_apps";
                     break;
                 case defaultApp:
-                    activeNow = "#icon_home";
+                    activeNow = "#icon_def";
                     break;
             }
             if (activeNow != "") {

@@ -91,7 +91,6 @@ function refreshApps() {
                             console.log(err);
                         } else {
                             console.log(data);
-                            window.top.location.reload();
                         }
                     });
                 });
