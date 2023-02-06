@@ -81,7 +81,6 @@ define(function(require) {
         } else {
             $("#left-menu").css({'height' :$(window).height() - 56, 'top' : 56 } );
         }
-        
 
         colapsed = localStorage.getItem('colapsed');
 

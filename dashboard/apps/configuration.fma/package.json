@@ -1,5 +1,5 @@
 {
-	"name":"Configuration Editor",
+	"name":"Configuration",
 	"main":"./index.html",
 	"icon":"icon.png",
 	"icon_color":"#313366",
@@ -8,5 +8,5 @@
 	"author":"Ryan Sturmer",
 	"website":"http://shopbottools.com",
 	"id":"config",
-	"description":"System app for editing tool configuration"
+	"description":"System app for editing tool configuration and settings"
 }

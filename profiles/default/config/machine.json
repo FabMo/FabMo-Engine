@@ -19,7 +19,7 @@
     "di10_def": 0,
     "di11_def": 0,
     "di12_def": 0,
-	"default_app" : "home",
+	"default_app" : "apps",
 	"envelope" : {
 		"xmin" : 0,
 		"xmax" : 24,

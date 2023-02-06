@@ -1,5 +1,5 @@
 {
-	"name":"NC Editor",
+	"name":"Editor",
 	"main":"./index.html",
 	"icon":"icon.png",
 	"icon_color":"#313366",
@@ -8,5 +8,5 @@
 	"author":"Ryan Sturmer",
 	"website":"http://shopbottools.com",
 	"id":"editor",
-    "description":"System app for editing and running machining files"
+    "description":"System app for editing and running machining code"
 }
