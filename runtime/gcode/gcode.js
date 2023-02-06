@@ -189,11 +189,6 @@ GCodeRuntime.prototype._handleStateChange = function (stat) {
             // may change someday in the future on the g2core end, so we may end up revisiting this.
             // OTOH, an extra M30 should not cause a problem.
 
-            // As of 04/04/2022 the extra m30 seems to be a problem.
-            // Before commenting out this.driver.sendM30, files would end whenever a stat 3 was received
-            // which is not always at the end of the file. If the operator forgets to add an m30
-            // to the end of their file then FabMo will stall and show an empty footer, requiring ESC key to be hit.
-            // I am writing that up as a seperate enhancement issue
             this._changeState("stopped");
             if (this._file_or_stream_in_progress) {
                 this._file_or_stream_in_progress = false;
