@@ -196,8 +196,10 @@ GCodeRuntime.prototype._handleStateChange = function (stat) {
             // I am writing that up as a seperate enhancement issue
             this._changeState("stopped");
             if (this._file_or_stream_in_progress) {
-                //this.driver.sendM30();
                 this._file_or_stream_in_progress = false;
+            }
+            if (this.machine.status.line >= this.machine.status.nb_lines) {
+                this.driver.sendM30();
             }
             break;
         default:
@@ -211,7 +213,7 @@ GCodeRuntime.prototype.runStream = function (st) {
     if (this.machine) {
         this.machine.setState(this, "running");
     }
-
+    this.machine.status.line = 1;
     var manualPrime =
         this.machine.status.nb_lines < this.driver.primedThreshold;
     var ln = new LineNumberer();
