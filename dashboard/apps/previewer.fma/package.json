@@ -8,5 +8,5 @@
   "author":"Joseph Coffland, Alex Canales, Ted Hall",
   "website":"http://shopbottools.com",
   "id":"previewer",
-  "description":"FabMo app for previewing GCode"
+  "description":"System app for previewing machining code"
 }

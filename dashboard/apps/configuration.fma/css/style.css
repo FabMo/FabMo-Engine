@@ -191,6 +191,10 @@ table {
   max-width: none;
 }
 
+.defaultRadio {
+  margin: 18px !important;
+}
+
 .delete-button {
   background-size: 100% 100%;
   width: 40px;

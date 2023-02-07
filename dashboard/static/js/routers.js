@@ -11,6 +11,28 @@ define(function (require) {
     var engine = new FabMoAPI();
     var defaultApp = "";
 
+    // Make defaultApp choice available here and elsewhere
+    engine.getConfig(function (err, data) {
+        defaultApp = data.machine.default_app;
+        if (typeof defaultApp != "string") {
+            defaultApp = "";
+        }
+        if (defaultApp === "") {
+            defaultApp = "apps";
+            engine.setConfig(
+                { machine: { default_app: defaultApp } },
+                function (err, data) {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        console.log("Config Updated");
+                    }
+                }
+            );
+        }
+        localStorage.setItem("defaultapp", defaultApp);
+    });
+
     var Router = Backbone.Router.extend({
         routes: {
             "app/:id": "_launchApp",
@@ -19,7 +41,52 @@ define(function (require) {
             "authentication(?message=:message)": "show_auth",
         },
         launchApp: function (id, args, callback) {
+            defaultApp = localStorage.getItem("defaultapp"); // get latest
             callback = callback || function () {};
+            if (id === "def") {
+                id = defaultApp;
+            }
+
+            // Manage highlight on left-side menus: full, colapsed, & slide-out
+            $(".left-off-canvas-menu a").css("background-color", ""); // restore style sheet settings non-highlight
+            $(".left-off-canvas-menu a").parent().css("background-color", "");
+            let activeNow = "";
+            switch (id) {
+                case "job-manager":
+                    activeNow = "#icon_jobs";
+                    break;
+                case "editor":
+                    activeNow = "#icon_editor";
+                    break;
+                case "config":
+                    activeNow = "#icon_settings";
+                    break;
+                case "macros":
+                    activeNow = "#icon_folder";
+                    break;
+                case "video":
+                    activeNow = "#icon_video";
+                    break;
+                case "apps":
+                    activeNow = "#icon_apps";
+                    break;
+                case defaultApp:
+                    activeNow = "#icon_def";
+                    break;
+            }
+            if (activeNow != "") {
+                let st = $("#left-menu").css("height");
+                let stnum = parseInt(st.replace(/^\D+/g, ""), 10);
+                if (stnum <= 500) {
+                    // slide-out used
+                    activeNow = "#util-menu-wide " + activeNow;
+                    $(activeNow).parent().css("background-color", "#777");
+                    $(activeNow).css("background-color", "#777");
+                } else {
+                    activeNow = "#util-menu-small " + activeNow;
+                    $(activeNow).css("background-color", "#777");
+                }
+            }
             this.context.launchApp(
                 id,
                 args || {},
@@ -35,12 +102,7 @@ define(function (require) {
             this.launchApp(id);
         },
         show_menu: function () {
-            engine.getConfig(
-                function (err, data) {
-                    defaultApp = data.machine.default_app;
-                    this.launchApp(defaultApp);
-                }.bind(this)
-            );
+            this.launchApp(defaultApp);
         },
         show_auth: function (message) {
             if (message) {

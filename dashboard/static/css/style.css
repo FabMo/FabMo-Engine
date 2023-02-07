@@ -144,7 +144,7 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 #tools-container button {
 	padding: 0px;
 	margin-right: 20px;
-	margin-right: 1,25rem;
+	margin-right: 1.25rem;
 	margin-bottom: 0px;
 	height: 100%;
 	max-width: inherit;
@@ -408,6 +408,7 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 #connection-strength-indicator {
 	height: 30px;
     max-width:30px;
+    cursor: pointer;
 }
 
 .svg-container {
@@ -446,6 +447,8 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	background-color: #444;
 	width: 182px;
 	width: 11.375rem;
+    height: 2.5rem;
+    line-height: 1.15rem;
 }
 
 
@@ -487,6 +490,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	color : rgb(240,240,240);
 	padding: 11px;
 	padding: 0.6875rem;
+    line-height: 1.13rem;
 }
 
 .offcanvas-overlap-left .exit-off-canvas :hover,
@@ -546,8 +550,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 .widget.colapsed label { display: none; }
 
 .widget.colapsed ul li a {
-	height: 46px;
-	height : 2.875rem;
+	height : 2.5rem;   
 	padding-left : 0px !important;
 }
 
@@ -621,8 +624,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	cursor: pointer;
 	color: #c00;
 	width: 19.75%;
-	height: 46px;
-	height: 2.875rem;
+	height: 2.5rem;
 	background: url('../img/icon_details.png') center no-repeat;
 	background-size: 20px;
 	background-size: 1.25rem;
@@ -658,7 +660,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 	}
 }
 
-#icon_home 			{ background-image: url('../img/icon_home.png');}
+#icon_def 			{ background-image: url('../img/icon_home.png');}
 #icon_jobs 			{ background-image: url('../img/icon_jobs.png');}
 #icon_global 		{ background-image: url('../img/icon_global.png');}
 #icon_apps 			{ background-image: url('../img/icon_apps.png');}
