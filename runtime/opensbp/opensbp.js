@@ -831,6 +831,10 @@ SBPRuntime.prototype._run = function () {
             case this.driver.STAT_RUNNING:
                 if (!this.inManualMode) {
                     if (this.machine.status.state != "running") {
+                        //Do not set state to running until opensbp pause is complete
+                        if (this.paused) {
+                            return;
+                        }
                         this.machine.setState(this, "running");
                         if (this.pendingFeedhold) {
                             this.pendingFeedhold = false;
