@@ -769,89 +769,103 @@ var notifyChange = function(err,id){
   setTimeout(function(){$('#'+id).removeClass("flash-red flash-green")},500);
 };
 
+
 var configData = null;
-
-
 $(document).ready(function() {
-  $(document).foundation();
+    $(document).foundation();
 
-  fabmo.on('job_end',function (cmd) {
+    fabmo.on('job_end',function (cmd) {
+        updateQueue();
+        updateHistory();
+    });
+
+    fabmo.on('job_start',function (cmd, data) {
+        updateQueue();
+        updateHistory();
+    });
+
+    // The queue will update when the status report comes in
+    // But the history needs to be updated manually
+    fabmo.requestStatus();
     updateQueue();
     updateHistory();
-  });
 
-   fabmo.on('job_start',function (cmd, data) {
-    updateQueue();
-    updateHistory();
-  });
+    setupDropTarget();
+    runNext();
 
-  //May need to put back in 
-  // fabmo.on('change',function (change) {
-  //   if(change === "jobs") {
-  //     updateQueue();
-  //     updateHistory();
-  //   }
-  // });
+    //#### th -working area for FLOW
+    // - should these be done with move back to current default instead
 
-  // The queue will update when the status report comes in
-  // But the history needs to be updated manually
-  fabmo.requestStatus();
-  updateQueue();
-  updateHistory();
-
-  setupDropTarget();
-  runNext();
-
-  $('#history_page_next').click(function(evt) {
-    evt.preventDefault();
-    historyNextPage();
-  });
-
-  $('#history_page_prev').click(function(evt) {
-    evt.preventDefault();
-    historyPreviousPage();
-  });
-
-  $('.no-jobs-item').click(function(e) {
-    $('#job_selector').click();
-  });
-
-  $('#clear-jobs').click(function(e) {
-    fabmo.clearJobQueue(function(err, data) {
-      updateQueue();
+    $(".exit-button").click(function(evt){
+        evt.preventDefault();
+        window.top.history.back();
+        //fabmo.launchApp("fabmo-sb4");
     });
-  });
 
-  $('.submit-button').click(function(evt) {
-    jQuery('#file').trigger('click');
-  });
-
-  $('.without-job').click(function(evt) {
-    jQuery('#file').trigger('click');
-  });
-
-  $('#file').change(function(evt) {
-    var file_size = $('#fileform').find('input:file')[0].files[0].size;
-    $('.progressbar').removeClass('hide');
-    fabmo.on('upload_progress', function(progress) {
-      fileUploadProgress(progress.value);
+    $("#exit_small").click(function(evt){
+        //evt.preventDefault();
+        //fabmo.launchApp("fabmo-sb4");
+        window.top.history.back();
     });
-    fabmo.submitJob($('#fileform'), {
-      compressed: file_size > 2000000 ? true : false
-    }, function(err, data) {
-      if (err) {
-        fabmo.notify('error', err);
-      }
-      resetFormElement($('#file'));
-      updateQueue();
-      updateOrder();
-      $('#nav-pending').click();
+
+    // Also listen for escape key press for back
+    document.onkeyup = function (e) {
+        if (e.keyCode === 27) {
+            console.warn("ESC key pressed - backing out.");
+            window.top.history.back();
+        }
+    };
+
+    //####
+
+    $('#history_page_next').click(function(evt) {
+        evt.preventDefault();
+        historyNextPage();
     });
-  });
 
-  //-----------------------------------------------------------------------------
-  // ADDING AND MODIFYING FOR TRANSFORMS ... after document.ready
+    $('#history_page_prev').click(function(evt) {
+        evt.preventDefault();
+        historyPreviousPage();
+    });
 
+    $('.no-jobs-item').click(function(e) {
+        $('#job_selector').click();
+    });
+
+    $('#clear-jobs').click(function(e) {
+        fabmo.clearJobQueue(function(err, data) {
+        updateQueue();
+        });
+    });
+
+    $('.submit-button').click(function(evt) {
+        jQuery('#file').trigger('click');
+    });
+
+    $('.without-job').click(function(evt) {
+        jQuery('#file').trigger('click');
+    });
+
+    $('#file').change(function(evt) {
+        var file_size = $('#fileform').find('input:file')[0].files[0].size;
+        $('.progressbar').removeClass('hide');
+        fabmo.on('upload_progress', function(progress) {
+        fileUploadProgress(progress.value);
+        });
+        fabmo.submitJob($('#fileform'), {
+        compressed: file_size > 2000000 ? true : false
+        }, function(err, data) {
+        if (err) {
+            fabmo.notify('error', err);
+        }
+        resetFormElement($('#file'));
+        updateQueue();
+        updateOrder();
+        $('#nav-pending').click();
+        });
+    });
+
+    // FOR TRANSFORMS 
     // Setup Unit Labels
     registerUnitLabel('.in_mm_label', 'in', 'mm');
     registerUnitLabel('.ipm_mmpm_label', 'in/min', 'mm/min');
@@ -894,7 +908,7 @@ $(document).ready(function() {
     });
 
     // Update settings on change
-   $('.driver-input').change( function() {
+    $('.driver-input').change( function() {
        var parts = this.id.split("-");
        var new_config = {};
        new_config.driver = {};
@@ -912,13 +926,13 @@ $(document).ready(function() {
            setConfig(this.id, this.value);
        }
        // How to send G90 or G91 from here?
-   });
+    });
 
-   $('.opensbp-input').change( function() {
+    $('.opensbp-input').change( function() {
        setConfig(this.id, this.value);
-   });
+    });
 
-   $('.opensbp-values').change( function() {
+    $('.opensbp-values').change( function() {
        var parts = this.id.split("-");
        var new_config = {};
        new_config.driver = {};
@@ -949,34 +963,32 @@ $(document).ready(function() {
                setTimeout(update, 500);
            });
        }
-   });
+    });
 
-  // $( window ).resize(function() {
-  // 	setJobheight();
-  // }).resize();
-  fabmo.on('reconnect', function() {
-    update();  // for transforms
-    updateQueue();
-    updateOrder();
-    updateHistory();
-  });
+    fabmo.on('reconnect', function() {
+        update();  // for transforms
+        updateQueue();
+        updateOrder();
+        updateHistory();
+    });
 
-  fabmo.on('status', function(status) {
-    updateLabels(status.unit);     // for trnasforms
-    handleStatusReport(status);
-    if (status.job == null && status.state != 'idle') {
-      $('.play-button').hide();
-      $('.play').removeClass('loading');
-    } else if (status.state == 'idle' && el.firstChild) {
-      $('.play-button').show();
-    } 
-  });
-  fabmo.requestStatus(); ////##right place for this status?
+    fabmo.on('status', function(status) {
+        updateLabels(status.unit);     // for trnasforms
+        handleStatusReport(status);
+        if (status.job == null && status.state != 'idle') {
+        $('.play-button').hide();
+        $('.play').removeClass('loading');
+        } else if (status.state == 'idle' && el.firstChild) {
+        $('.play-button').show();
+        } 
+    });
+    fabmo.requestStatus(); ////##right place for this status?
 
-  function resetFormElement(e) {
-    e.wrap('<form>').closest('form').get(0).reset();
-    e.unwrap();
-  }
-  update();  
+    function resetFormElement(e) {
+        e.wrap('<form>').closest('form').get(0).reset();
+        e.unwrap();
+    }
+
+    update();  
 
 });

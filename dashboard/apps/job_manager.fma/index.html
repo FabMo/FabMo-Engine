@@ -10,39 +10,37 @@
 </head>
 
 <body>
-    <div class="filter"></div>
-
-<!-- 	<div class="tour-dialogue">
-			<p class="tour-text"></p>
-			<div class="tour-buttons">
-				<div class="next">Next</div>
-				<div class="no">Cancel</div>
-			</div>
-	    </div>
-	<div class="tour-pointer"><span>You can preview the job</span><div class="pointer"></div></div>
- -->
+  <div class="filter"></div>
 
   <div class="sticky">
-
   <nav class="top-bar" data-topbar role="navigation">
+
   <ul class="title-area">
     <li class="name">
       <h1><a id="app-header">Job Manager</a></h1>
     </li>
-    <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
+    <li class="toggle-topbar">
+        <a href="#" id="little_menu"><span>Menu </span><img id="hbg" src=" ../../img/icon_details.min.png" height="15" width="15">
+        <span id="exit_small">X</span></a>
+    </li>
   </ul>
-  <section class="top-bar-section">
-    <ul class="left">
-      <li><a id="nav-submit" class="submit-button" href="#">Submit Jobs...</a></li>
-    </ul>
-    <ul class="left" role="tablist" data-tab>
-      <li class="active"><a id="nav-pending" href="#tabpending">Pending</a></li>
-      <li class=""><a id="nav-history" href="#tabhistory">History</a></li>
-      <li class=""><a id="nav-transforms" href="#tabpanel8"  text-align="right">TRANSFORMS - OFF</a></li>
-    </ul>
-  </section>
-</nav>
-</div>
+    <section class="top-bar-section">
+        <ul class="left">
+        <li><a id="nav-submit" class="submit-button" href="#">Submit Jobs...</a></li>
+        </ul>
+        <ul class="left" role="tablist" data-tab>
+        <li class="active"><a id="nav-pending" href="#tabpending">Pending</a></li>
+        <li class=""><a id="nav-history" href="#tabhistory">History</a></li>
+        <li class=""><a id="nav-transforms" href="#tabpanel8"  text-align="right">TRANSFORMS - OFF</a></li>
+        </ul>
+        <ul class="right">    
+        <h2 class="exit-button"  id="exit_btn">X</h2>
+        </ul>
+    </section>
+
+  </nav>
+  </div>
+
 <span class="progressbar hide">
   <div class="bar-fill"></div>
 </span>
