@@ -1518,8 +1518,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .slidecontainer {
-	margin-bottom: 10px;
-
+    margin-top: -0.8rem;
+	margin-bottom: 20px;
 }
 
 .slidecontainer label {
@@ -1938,7 +1938,10 @@ input[type='range']:focus {
     transform: translate(-50%, -50%);
 }
 
-
+#title_goto {
+    font-size: 1.2rem;
+    margin-top: 1.5rem;
+}
 
 
 .read-out-container {
