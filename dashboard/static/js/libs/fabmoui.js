@@ -77,15 +77,6 @@
             }
         });
 
-        $("#man-start").on("click", function () {
-            $("#man-tab").css("top", "-1em");
-            $("#man-tab").css("height", "1em");
-            setTimeout(function () {
-                $("#man-tab").css("top", "-0.5em");
-                $("#man-tab").css("height", "0.5em");
-            }, 200);
-        });
-
         if (options) {
             this.prefix = options.prefix ? options.prefix + "-" : "";
             this.refresh = options.refresh || 100;

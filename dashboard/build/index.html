@@ -94,16 +94,16 @@
               </div>
             </div>
           </section>
-          <section class="manual-drive-enter show-for-small-up fabmo-status right">
-            <div id="man-start" title="Click for Motion Keypad"">
-                <img src="../img/icon_keypad.png" id="icon_keypad"></img>
-              </div>
-          </section>
 
           <!-- ***** Tool Position Section ***** -->
           
-          <section class="right DRO-button show-for-small-up fabmo-status" id="right-position-container">
-            <div id="dro-tab" title="Click to toggle large Location Display"></div>
+          <section class="right show-for-small-up fabmo-status" id="right-position-container">
+            <div class="manual-drive-enter show-for-small-up fabmo-status right" id="man-start" title="Click to open Motion Keypad"">
+                <img src="../img/icon_keypad.png" id="icon_keypad"></img>
+            </div>
+
+              <div class="DRO-button" id="dro-tab" title="Click to toggle large Location Display"></div>
+            
             <div  class="sm-axes"><strong>
               <div class="xaxis machine-pos" ><label>X : &nbsp;<span class="posx">X.XXX</span></label></div>
               <div class="yaxis machine-pos" ><label>Y : &nbsp;<span class="posy">Y.YYY</span></label></div>
@@ -199,7 +199,7 @@
       </aside>
 
         <!-- ********** Tool Position Widget ********** -->
-        <aside class="DRO" id="right-menu">
+      <aside class="DRO" id="right-menu">
           <div class="dro-dropdown">
               <div class="xaxis machine-pos-large" ><label>X : <span class="posx">X.XXX</span></label></div>
               <div class="yaxis machine-pos-large" ><label>Y : <span class="posy">Y.YYY</span></label></div>
@@ -307,7 +307,7 @@
           <div id="keypad" class="fabmo-manual-control keypad " style="text-align: center;">
             <div class="slidecontainer">
               <input type="range"  step="0.1" class="slider" id="manual-move-speed">
-              <label >Move Speed</label>
+              <label >XY Move Speed</label>
             </div>
             <div class="fixed-input-container ">
               <div>

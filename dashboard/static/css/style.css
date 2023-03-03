@@ -78,15 +78,15 @@ body {
 	size: 1rem;
 }
 
-#icon_keypadt5 {
-    right: 22rem;
+#icon_keypad {
+    right: 105%;
     top: -.5rem;
     height: 4rem;
     position: absolute;
     opacity: 90%;
 }
 
-#icon_keypadt5:hover {
+#icon_keypad:hover {
     opacity: 100%;
 }
 
@@ -690,24 +690,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 #icon_network 		{ background-image: url('../img/icon_network.png');	}
 #icon_sign_out 		{ background-image: url('../img/icon_sign_out.png');	}
 
-
-#icon_joystick 		{ 
-/*	width: 50px;
-	height: 50px;  */
-	width: 105%;
-	height: 90%;
-	left: 5%;
-/*	background-image: url('../img/icon_keypad.png');  */
-	background-image: url('../img/icon_keypadt3.png');
-	position: absolute;
-/*    top: 2%;    */
-    left: -4%;
-	transform: scale(.9,1);	
-	background-repeat: no-repeat;
-	background-size: 3rem;
-	background-position: center;
-}
-
 .colapsed #icon_colapse { background-image: url('../img/icon_colapse.png');	}
 
 
@@ -750,20 +732,6 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 #left-slide-button {
 	background-image: url('../img/icon_colapse.png');
-}
-
-#man-tab {
-	cursor: pointer;
-	position: absolute;
-    top: -0.5em;
-    left: 5%;
-	/* right: 80%; */
-    height: 0.5em;
-    /*width: 37px;*/
-    width: 90%;
-    background-color: #E6CF89;
-	border-radius: 4px 4px 0  0;
-	transition: all 0.2s;
 }
 
 #icon_drive:before {
