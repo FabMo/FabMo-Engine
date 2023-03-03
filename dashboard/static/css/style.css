@@ -220,15 +220,14 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 #dro-tab {
 	cursor: pointer;
 	position: absolute;
-    top: 5px;
-	right: 100%;
-    height: 45px;
-    width: 0.5em;
-    background-color: #E6CF89;
-	border-radius: 4px 0 0 4px;
-	transition: all 0.2s;
+    top: 25px;
+    transition: all 0.2s;
 }
 
+#icon_DROin-out {
+    height: 25px;
+    opacity: 90%;
+}
 
 #right-position-container {
 	cursor: pointer;
