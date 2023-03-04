@@ -1716,8 +1716,7 @@ input[type='range']:focus {
 	display: flex;
 	justify-content: space-evenly;
 	display: none;
-	padding-top: 20px;
-	margin-bottom: 10px;
+	margin-bottom: 9px;
 	text-align: left;
 	min-height: 60px;
 }
@@ -1939,8 +1938,8 @@ input[type='range']:focus {
 }
 
 #title_goto {
-    font-size: 1.2rem;
-    margin-top: 1.5rem;
+    font-size: 1rem;
+    margin-top: 2rem;
 }
 
 

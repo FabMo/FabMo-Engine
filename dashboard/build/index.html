@@ -254,7 +254,7 @@
       <div class="manual-drive-container">
         <div class="read-out-container">
             <label class="noselect" id="title_goto" title="Click to enter a GoTo Location or Set a new Value for Current location.">
-                GoTo a Location or Set a New Location Value
+                GoTo a Location or Set Location Value
             </label>
           <div class="read-out-wrapper">
             <!-- 'step' for XY and Z is controlled by the fixed distance move size and set in main.js -->
@@ -336,12 +336,12 @@
                   </div>
                 </div>
                 <div class="keypad-cell">
-                  <div class="y_pos keypad-button drive-button square">
+                  <div id="keyboardArrow_y_pos" class="y_pos keypad-button drive-button square">
                     <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
                   </div>
                 </div>
                 <div class="keypad-cell">
-                  <div  class="x_pos y_pos keypad-button drive-button square">
+                  <div class="x_pos y_pos keypad-button drive-button square">
                     <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
                   </div>
                   <div class="rot_button b_pos keypad-button drive-button square">
@@ -349,7 +349,7 @@
                   </div>
                 </div>
                 <div class="keypad-cell">
-                  <div class="x_neg keypad-button drive-button square">
+                  <div id="keyboardArrow_x_neg" class="x_neg keypad-button drive-button square">
                     <i class="fa fa-keypad fa-lg fa-arrow-left"></i>
                   </div>
                 </div>
@@ -357,7 +357,7 @@
 
                 </div>
                 <div class="keypad-cell">
-                  <div class="x_pos keypad-button drive-button square">
+                  <div id="keyboardArrow_x_pos" class="x_pos keypad-button drive-button square">
                     <i class="fa fa-keypad fa-lg fa-arrow-right"></i>
                   </div>
                 </div>
@@ -370,7 +370,7 @@
                   </div>
                 </div>
                 <div class="keypad-cell">
-                  <div class="y_neg keypad-button drive-button square">
+                  <div id="keyboardArrow_y_neg" class="y_neg keypad-button drive-button square">
                     <i class="fa fa-keypad fa-lg fa-arrow-down"></i>
                   </div>
                 </div>
@@ -388,10 +388,10 @@
                   <div class="z_pos_fast keypad-button drive-button bar"><i class="fa fa-caret-up z-fa-double"></i><i class="fa fa-caret-up z-fa-double"></i></div>
                 </div>
                 <div class="keypad-bar top">
-                  <div class="z_pos_slow keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-up"></i></div>
+                  <div id="keyboardArrow_z_pos" class="z_pos_slow keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-up"></i></div>
                 </div>
                 <div class="keypad-bar bottom">
-                  <div class="z_neg_slow keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-down"></i></div>
+                  <div id="keyboardArrow_z_neg" class="z_neg_slow keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-down"></i></div>
                 </div>
                 <div class="keypad-bar-small bottom">
                   <div class="z_neg_fast keypad-button drive-button bar"><i class="fa fa-caret-down z-fa-double"></i><i class="fa  fa-caret-down z-fa-double"></i></div>
