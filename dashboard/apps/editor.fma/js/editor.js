@@ -212,6 +212,13 @@ require('./cm-fabmo-modes.js');
           }
         });
 
+      document.onkeyup = function (e) {
+          if (e.keyCode === 27) {
+              console.warn("ESC key pressed - backing out.");
+              window.top.history.back();
+          }
+      };
+
       setup();
 
       function resize() {
