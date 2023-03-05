@@ -252,10 +252,12 @@
 
       <div class="manual-drive-message">This is where a message will go</div>
       <div class="manual-drive-container">
+        <div>
+          <label class="noselect" id="title_goto" title="Click to enter a Go-To Location or Set a new Value for Current location.">
+              Go To a Location or Set Location
+          </label>
+        </div>
         <div class="read-out-container">
-            <label class="noselect" id="title_goto" title="Click to enter a GoTo Location or Set a new Value for Current location.">
-                GoTo a Location or Set Location Value
-            </label>
           <div class="read-out-wrapper">
             <!-- 'step' for XY and Z is controlled by the fixed distance move size and set in main.js -->
             <div class="axis xaxis">
@@ -410,10 +412,10 @@
             <div class="manual-stop">
                 <span>STOP</span>
             </div>
-            <div class="go-to">
+            <div class="go-to" title="Move to a new location in one or more axes.">
               <span>Go To</span>
             </div>
-            <div class="set-coordinates">
+            <div class="set-coordinates" title="Set a new value for the current location of one or more axes.">
               <span>Set</span> 
             </div>
           </div>
