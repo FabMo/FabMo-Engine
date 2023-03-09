@@ -19,6 +19,7 @@ html, body {
 }
 
 #exit_btn:hover {
+    cursor: pointer;
     color: #ddd;
     background-color:#555;
 }
@@ -57,6 +58,7 @@ html, body {
 }
 
 #exit_small:hover {
+    cursor: pointer;
     color: #ddd;
     background-color:#555;
 }

@@ -2,6 +2,54 @@ body {
   overflow: hidden;
 }
 
+#little_menu {
+    padding-right: 2.5rem;
+    top: -.05rem;
+}
+
+#exit_btn:hover {
+    color: #ddd;
+    background-color:#555;
+}
+
+#exit_btn {
+    color: #999;
+    padding: .4rem;
+    border-radius: 2rem;
+    font-size: 1.2rem;
+    float: right;
+    margin-right: 10px;
+}
+
+/*.expanded #exit_btn {
+    display: none;
+}*/
+
+/*.toggle-topbar.exit-button a {
+    color: #ddd;
+    padding: .4rem;
+    border-radius: 2rem;
+    position: relative;
+    right: 1rem;
+    top: -0.6rem;
+    font-size: x-large;
+}*/
+
+#exit_small {
+    color: #999;
+    padding: .3rem;
+    border-radius: 2rem;
+    position: relative;
+    top: .4rem;
+    margin-right: 10px;
+    font-size: 1.2rem;
+}
+
+#exit_small:hover {
+    color: #ddd;
+    background-color:#555;
+}
+
 #preview {
   position: relative;
 }

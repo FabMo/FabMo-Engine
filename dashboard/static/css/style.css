@@ -1934,11 +1934,14 @@ input[type='range']:focus {
     width: 90%;
     top: 50%;
     left: 50%;
+    font-size: xx-large;
     transform: translate(-50%, -50%);
 }
 
 #title_goto {
     font-size: 1rem;
+    position: absolute;
+    top: 3rem;
     margin-top: -1.3rem;
     margin-left: 2rem;
     margin-bottom: 0.5rem;
@@ -2116,7 +2119,7 @@ input[type='range']:focus {
 }
 
 
-@media (max-width: 1100px) and (min-height: 500px)   {
+@media (max-width: 1175px) and (min-height: 500px)   {
 	.manual-drive-modal {
 		width: 80%; 
 	}
@@ -2192,7 +2195,7 @@ input[type='range']:focus {
 @media (max-width: 650px) {
     #icon_keypad {
         cursor: pointer;
-        right: 80%;
+        right: 50%;
         top: 3.25rem;
         height: 3rem;
         position: absolute;

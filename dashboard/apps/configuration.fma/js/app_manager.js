@@ -8,6 +8,9 @@ function refreshApps() {
         if (err) {
             return console.error(err);
         }
+        // clear app usage history
+        localStorage.setItem("currentapp","");
+        localStorage.setItem("backapp","");
         fabmo.getConfig(function(err, data) {
             if (err){
                 console.log(err);
@@ -75,9 +78,19 @@ function refreshApps() {
 
                     $('#' + appid).click(function() {
                         fabmo.launchApp(id);
+                        if (id==="macros") {
+                            localStorage.setItem("currentapp", "macros")
+                        } else {
+                            localStorage.setItem("currentapp", "")
+                        }
                     });
                     $('#' + appiconid).click(function() {
                         fabmo.launchApp(id);
+                        if (id==="macros") {
+                            localStorage.setItem("currentapp", "macros")
+                        } else {
+                            localStorage.setItem("currentapp", "")
+                        }
                     });
 
                 }); // each

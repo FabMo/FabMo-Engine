@@ -134,7 +134,7 @@ function clearRecent() {
 }
 
 function createQueueMenu(id) {
-  var menu = "<div data-jobid='JOBID' class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job</a></li><li><a class='deleteJob' data-jobid='JOBID'>Delete Job</a></li></ul></div>";
+  var menu = "<div data-jobid='JOBID' class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job as CNC File</a></li><li><a class='deleteJob' data-jobid='JOBID'>Delete Job</a></li></ul></div>";
   return menu.replace(/JOBID/g, id);
 }
 
@@ -144,7 +144,7 @@ function createRecentMenu(id) {
 }
 
 function makeActions() {
-  var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="percent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><span></span></div> </div></div></div></div><div class="small-8 medium-12 icon-row" sortable="false"><div class="medium-1 small-2 columns"><a class="preview" title="Preview Job"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="Edit Job"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="Download Job"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="Cancel Job"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
+  var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="percent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><span></span></div> </div></div></div></div><div class="small-8 medium-12 icon-row" sortable="false"><div class="medium-1 small-2 columns"><a class="preview" title="Preview Job"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="Edit Job"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="Download Job as CNC File"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="Cancel Job"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
   return actions;
 }
 
@@ -317,7 +317,7 @@ function clearHistory() {
 }
 
 function createHistoryMenu(id) {
-  var menu = "<div class='ellipses' title='More Actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='resubmitJob' data-jobid='JOBID'>Add To Queue</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job</a></li><li><a class='deleteJob' data-jobid='JOBID'>Delete Job</a></li></ul></div>"
+  var menu = "<div class='ellipses' title='More Actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='resubmitJob' data-jobid='JOBID'>Add To Queue</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job as CNC File</a></li><li><a class='deleteJob' data-jobid='JOBID'>Delete Job</a></li></ul></div>"
   return menu.replace(/JOBID/g, id)
 }
 
@@ -793,30 +793,39 @@ $(document).ready(function() {
     setupDropTarget();
     runNext();
 
-    //#### th -working area for FLOW
-    // - should these be done with move back to current default instead
 
-    $(".exit-button").click(function(evt){
-        evt.preventDefault();
-        window.top.history.back();
-        //fabmo.launchApp("fabmo-sb4");
+////## th - experiment on FLOW back re: Sb4 and similar apps
+
+    // get info for setting up exit-back behavior
+    let this_App = "job-manager";
+    let default_App = localStorage.getItem("defaultapp");
+    let back_App = localStorage.getItem("backapp");
+    let current_App = localStorage.getItem("currentapp");
+    // do nothing if current (e.g. refreshes and returns)
+    if (this_App != current_App) {
+        back_App = current_App;
+        if (back_App === null || back_App === "") {back_App = default_App};
+        back_App = default_App; // * > always to here for job-manager
+        current_App = this_App;
+        localStorage.setItem("currentapp", current_App);
+        localStorage.setItem("backapp", back_App);
+    } 
+
+    $(".exit-button").on("click", function(){
+        fabmo.launchApp(back_App);
     });
-
-    $("#exit_small").click(function(evt){
-        //evt.preventDefault();
-        //fabmo.launchApp("fabmo-sb4");
-        window.top.history.back();
-    });
-
-    // Also listen for escape key press for back
-    document.onkeyup = function (e) {
-        if (e.keyCode === 27) {
-            console.warn("ESC key pressed - backing out.");
-            window.top.history.back();
+ 
+    document.onkeyup = function (evt) {
+        if (evt.key === "Escape") {
+            evt.preventDefault();
+            fabmo.launchApp(back_App);
         }
     };
 
-    //####
+    // set focus at the end of 'ready'.
+
+////##
+
 
     $('#history_page_next').click(function(evt) {
         evt.preventDefault();
@@ -990,5 +999,6 @@ $(document).ready(function() {
     }
 
     update();  
+    $(window).trigger("focus");
 
 });

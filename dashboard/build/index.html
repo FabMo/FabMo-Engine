@@ -174,7 +174,7 @@
         <aside class="left-off-canvas-menu colapsed" id="left-menu">
         <div id="widget-links-general" class="widget colapsed">
           <ul class="off-canvas-list" id="util-menu-small">
-            <li><a href="#/app/def" id="icon_def" title="Def"><span>Home</span></a></li>
+            <li><a href="#/app/def" id="icon_def" title="Default App"><span>Default App</span></a></li>
             <li><a href="#/app/job-manager" id="icon_jobs" title="Job Manager"><span>Job Manager</span></a></li>
             <li><a href="#/app/editor" id="icon_editor" title="Editor"><span>Editor</span></a></li>
             <li><a href="#/app/macros" id="icon_folder" title="Macros"><span>Macros</span></a></li>
@@ -188,7 +188,7 @@
         <div>
           <ul class="left-slide-menu" id="util-menu-wide">
             <li><a href="#"  id="left-slide-button" title="Expand/Collapse"></a></li>
-            <li><a href="#/app/def" id="icon_def" title="Def"></a></li>
+            <li><a href="#/app/def" id="icon_def" title="Default App"></a></li>
             <li><a href="#/app/job-manager" id="icon_jobs" title="Job Manager"></a></li>
             <li><a href="#/app/editor" id="icon_editor" title="Editor"></a></li>
             <li><a href="#/app/macros" id="icon_folder" title="Macros"></a></li>
@@ -253,7 +253,7 @@
       <div class="manual-drive-message">This is where a message will go</div>
       <div class="manual-drive-container">
         <div>
-          <label class="noselect" id="title_goto" title="Click to enter a Go-To Location or Set a new Value for Current location.">
+          <label class="noselect" id="title_goto" title="Click to set axis location to send tool, or to set a new value for the current location. Zero button sets the current axis location to 0.000">
               Go To a Location or Set Location
           </label>
         </div>
@@ -266,7 +266,7 @@
                 </label>
                 <input id="X" class="posx pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="units">&nbsp;</span>
-                <div class="zero-button zero-x">zero</div>
+                <div class="zero-button zero-x" title="set this axis to zero">zero</div>
             </div>
             <div class="axis yaxis">
                 <label class="noselect">
@@ -274,7 +274,7 @@
                 </label>
                 <input id="Y" class="posy pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="units">&nbsp;</span>
-                <div class="zero-button zero-y">zero</div>
+                <div class="zero-button zero-y" title="set this axis to zero">zero</div>
             </div>
             <div class="axis zaxis">
                 <label class="noselect">
@@ -282,7 +282,7 @@
                 </label>
                 <input id="Z" class="posz pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="units">&nbsp;</span>
-                <div class="zero-button zero-z">zero</div>
+                <div class="zero-button zero-z" title="set this axis to zero">zero</div>
             </div>
             <div class="axis aaxis">
                 <label class="noselect">
@@ -290,7 +290,7 @@
                 </label>
                 <input id="A" class="posa pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="rotunits">o&nbsp;</span>
-                <div class="zero-button zero-a">zero</div>
+                <div class="zero-button zero-a" title="set this axis to zero">zero</div>
             </div>
             <div class="axis baxis">
                 <label class="noselect">
@@ -298,7 +298,7 @@
                 </label>
                 <input id="B" class="posb pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="rotunits">o&nbsp;</span>
-                <div class="zero-button zero-b">zero</div>
+                <div class="zero-button zero-b" title="set this axis to zero">zero</div>
             </div>
             <div class="axis caxis">
                 <label class="noselect">
@@ -306,7 +306,7 @@
                 </label>
                 <input id="C" class="posc pos doselect modal-axi axi" maxlength="6" inputmode="decimal" step="any">
                 <span class="rotunits">o&nbsp;</span>
-                <div class="zero-button zero-c">zero</div>
+                <div class="zero-button zero-c" title="set this axis to zero">zero</div>
             </div>
           </div>
         </div>
