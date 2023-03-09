@@ -63,7 +63,9 @@
     <div class="colapseLeft"></div>
     <div id="main">
       <div class="inner-wrap">
+
         <!-- Nav-Bar & Buttons for sliding menus -->
+
         <nav class="tab-bar">
           <section class="show-for-small-up fabmo-status" id="left-position-container">
             <div class="svg-container" style="display: table;">
@@ -95,8 +97,13 @@
 
           <!-- ***** Tool Position Section ***** -->
           
-          <section class="right DRO-button show-for-small-up fabmo-status" id="right-position-container">
-            <div id="dro-tab" title="Click to toggle large Location Display"></div>
+          <section class="right show-for-small-up fabmo-status" id="right-position-container">
+            <div class="manual-drive-enter show-for-small-up fabmo-status right" id="man-start" title="Click to open Motion Keypad"">
+                <img src="../img/icon_keypad.png" id="icon_keypad"></img>
+            </div>
+
+              <div class="DRO-button" id="dro-tab" title="Click to toggle large Location Display"></div>
+            
             <div  class="sm-axes"><strong>
               <div class="xaxis machine-pos" ><label>X : &nbsp;<span class="posx">X.XXX</span></label></div>
               <div class="yaxis machine-pos" ><label>Y : &nbsp;<span class="posy">Y.YYY</span></label></div>
@@ -105,10 +112,8 @@
               <div class="aaxis machine-pos" ><label>A : <span class="posa">A.AAA</span><span class="rotunits">o&nbsp;</span></label></div>
               <div class="baxis machine-pos" ><label>B : <span class="posb">B.BBB</span><span class="rotunits">o&nbsp;</span></label></div>
               <div class="caxis machine-pos" ><label>C : <span class="posc">C.CCC</span><span class="rotunits">o&nbsp;</span></label></div>
-              
-              <!-- <div class="fabmo-status machine-pos" ><label><span class="state"></label></div> -->
-
-            </strong></div>
+            </strong>
+            </div>
             <div >
               <div class="inp-alert" id="inp-interlock">INTERLOCK </div>
               <div class="inp-alert" id="inp-stop">STOP </div>
@@ -155,17 +160,16 @@
               <div class="out12 output off"> 12 </div>
               <div class="space input"> </div>
             </div>
-
-
           </section>
-
+        </nav>
       </div>
+
       <!-- ***** Right-Menu Button Section ***** -->
-      </nav>
-      <!-- Sliding Wiget Menu (fix for large screen) -->
-      <aside class="left-off-canvas-menu colapsed" id="left-menu">
-        <div class="tour-filter"></div>
-        <!-- ********** Links Widget ********** -->
+
+      <!-- Sliding Wiget Menus -->
+
+        <!-- ********** Apps Links Widget ********** -->
+        <aside class="left-off-canvas-menu colapsed" id="left-menu">
         <div id="widget-links-general" class="widget colapsed">
           <ul class="off-canvas-list" id="util-menu-small">
             <li><a href="#/app/def" id="icon_def" title="Def"><span>Home</span></a></li>
@@ -175,12 +179,10 @@
             <li><a href="#/app/apps" id="icon_apps" title="Apps"><span>Apps</span></a></li>
             <li><a href="#/app/video" id="icon_video" title="Video"><span>Video</span></a></li>
             <li><a href="#/app/config" id="icon_settings" title="Configuration"><span>Configuration</span></a></li>
-        <!--    <li><a href="#/app/network-manager" id="icon_network" title="Network"><span>Network</span></a></li>  -->
             <li><a id="icon_sign_out" class="icon_sign_out" title="Sign Out"><span>Sign Out</span></a></li>
             <li><a href="#" id="icon_colapse" title="Expand/Collapse"><span>Collapse</span></a></li>
           </ul>
         </div>
-
         <div>
           <ul class="left-slide-menu" id="util-menu-wide">
             <li><a href="#"  id="left-slide-button" title="Expand/Collapse"></a></li>
@@ -191,18 +193,12 @@
             <li><a href="#/app/apps" id="icon_apps" title="Apps"></a></li>
             <li><a href="#/app/video" id="icon_video" title="Video"></a></li>
             <li><a href="#/app/config" id="icon_settings" title="Configuration"></a></li>
-        <!--    <li><a href="#/app/network-manager" id="icon_network" title="Network"></a></li>  -->
             <li><a id="icon_sign_out" class="icon_sign_out" title="Sign Out"></a></li>
           </ul>
         </div>
-
-        <div id="man-start" class="drive-enter manual-drive-enter" >
-          <div id="man-tab" title="Click to use Motion Keypad"></div>
-          <div id="icon_joystick" title="Click to use Motion Keypad"></div>
-        </div>
-
       </aside>
 
+        <!-- ********** Tool Position Widget ********** -->
       <aside class="DRO" id="right-menu">
           <div class="dro-dropdown">
               <div class="xaxis machine-pos-large" ><label>X : <span class="posx">X.XXX</span></label></div>
@@ -212,12 +208,9 @@
               <div class="baxis machine-pos-large" ><label>B : <span class="posb">B.BBB</span></label></div>
               <div class="caxis machine-pos-large" ><label>C : <span class="posc">C.CCC</span></label></div>
             </div>
-        <!-- ********** Tool Position Widget ********** -->
-
       </aside>
 
-      <!-- App Menu -->
-      <section class="main-section">
+        <section class="main-section">
         <div id="modal_container" style="display:none;"></div>
         <div id="waiting_container">
           <svg width="20%" height="20%" viewBox="0 0 550 550">
@@ -249,6 +242,7 @@
     </section>
     </div>
     </div>
+
     <!-- The Dialog -->
     <div class="modalDim"></div>
     <div class="manual-drive-modal" oncontextmenu="return false;">
@@ -313,7 +307,7 @@
           <div id="keypad" class="fabmo-manual-control keypad " style="text-align: center;">
             <div class="slidecontainer">
               <input type="range"  step="0.1" class="slider" id="manual-move-speed">
-              <label >Move Speed</label>
+              <label >XY Move Speed</label>
             </div>
             <div class="fixed-input-container ">
               <div>
@@ -326,7 +320,6 @@
               </div>
 
             </div>
-            <!-- <div class='button-border bottom'></div> -->
             <div class="pad-container">
               <div class="keypad-table">
                 <div class="keypad-cell">
@@ -363,7 +356,6 @@
                     <i class="fa fa-keypad fa-lg fa-arrow-right"></i>
                   </div>
                 </div>
-                <!--<div class="keypad-cell"><div class="keypad-button drive-button exit-button square"><i class="fa fa-keypad fa-lg fa-close"></i></div></div>-->
                 <div class="keypad-cell">
                   <div class="x_neg y_neg keypad-button drive-button square">
                     <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
@@ -393,7 +385,6 @@
                 <div class="keypad-bar top">
                   <div class="z_pos_slow keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-up"></i></div>
                 </div>
-                <!-- <div class='button-border top'></div> -->
                 <div class="keypad-bar bottom">
                   <div class="z_neg_slow keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-down"></i></div>
                 </div>
@@ -403,7 +394,7 @@
               </div>
             </div>
             <div class="switch-container">
-              <span class="fixed-label">Fixed </span>
+              <span class="fixed-label">Fixed Distance </span>
               <label class="fixed-switch">
               <input type="checkbox">
               <span class="slider-toggle round"></span>
@@ -424,6 +415,7 @@
         </div>
       </div>
     </div>
+
     <div class="newModal">
       <div class="modalContent">
         <h3 class="modalTitle">Title</h3>
@@ -446,6 +438,7 @@
         </div>
       </div>
     </div>
+
     <div class="footBar fabmo-file-control">
       <div class="currentContainer">
         <p class="currentJobTitle" ></p>
@@ -481,7 +474,9 @@
         </div>
       </span>
     </div>
+
     <script src="/js/libs/socket.io.js"></script>
     <script src="/dashboard.js"></script>
+
   </body>
 </html>
