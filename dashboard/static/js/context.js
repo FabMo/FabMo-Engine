@@ -29,6 +29,7 @@ define(function (require) {
             el: "#app-client-container",
         });
         this.current_app_id = null;
+        this.last_loaded_app_id = null;
         this.reload_on_demand = false;
         this.app_reload_index = {};
         this.menuShown = true;
@@ -94,6 +95,9 @@ define(function (require) {
         Lockr.set("fabmo_app_reload_index", this.app_reload_index);
 
         current_app = this.getCurrentApp();
+
+        this.last_loaded_app_id = current_app.id;
+
         if (current_app.id != id) {
             app = this.apps.get(id);
             if (app) {

@@ -134,7 +134,7 @@ function clearRecent() {
 }
 
 function createQueueMenu(id) {
-  var menu = "<div data-jobid='JOBID' class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job</a></li><li><a class='deleteJob' data-jobid='JOBID'>Delete Job</a></li></ul></div>";
+  var menu = "<div data-jobid='JOBID' class='ellipses' title='more actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job as CNC File</a></li><li><a class='deleteJob' data-jobid='JOBID'>Delete Job</a></li></ul></div>";
   return menu.replace(/JOBID/g, id);
 }
 
@@ -144,7 +144,7 @@ function createRecentMenu(id) {
 }
 
 function makeActions() {
-  var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="percent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><span></span></div> </div></div></div></div><div class="small-8 medium-12 icon-row" sortable="false"><div class="medium-1 small-2 columns"><a class="preview" title="Preview Job"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="Edit Job"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="Download Job"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="Cancel Job"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
+  var actions = '<div> <div class="small-2 medium-4 columns play-button" style="text-align:right;"> <div class="radial_progress"> <div class="percent_circle"> <div class="mask full"><div class="fill"></div></div><div class="mask half"><div class="fill"></div><div class="fill fix"> </div> </div> <div class="shadow"> </div> </div> <div class="inset"> <div id="run-next" class="play"><span></span></div> </div></div></div></div><div class="small-8 medium-12 icon-row" sortable="false"><div class="medium-1 small-2 columns"><a class="preview" title="Preview Job"><img  class="svg" src="css/images/visible9.svg"></a></div><div class="medium-1 small-2 columns"><a class="edit" title="Edit Job"><img class="svg" src="images/edit_icon.png"></a></div><div class="medium-1 small-2 columns"><a class="download" title="Download Job as CNC File"><img  class="svg" src="css/images/download151.svg"></a></div><div class="medium-1 small-2 columns"><a class="cancel" title="Cancel Job"><img  class="svg" src="css/images/recycling10.svg"></a></div><div class="sm-1 columns"></div></div><div class="row"></div><div class="job-lights-container"><div class="job-status-light one off"><div class="job-status-indicator"></div></div><div class="job-status-light two off"><div class="job-status-indicator"></div></div><div class="job-status-light three off"><div class="job-status-indicator"></div></div></div>'
   return actions;
 }
 
@@ -317,7 +317,7 @@ function clearHistory() {
 }
 
 function createHistoryMenu(id) {
-  var menu = "<div class='ellipses' title='More Actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='resubmitJob' data-jobid='JOBID'>Add To Queue</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job</a></li><li><a class='deleteJob' data-jobid='JOBID'>Delete Job</a></li></ul></div>"
+  var menu = "<div class='ellipses' title='More Actions'><span>...</span></div><div class='commentBox'></div><div class='dropDown'><ul class='jobActions'><li><a class='previewJob' data-jobid='JOBID'>Preview Job</a></li><li><a class='editJob' data-jobid='JOBID'>Edit Job</a></li><li><a class='resubmitJob' data-jobid='JOBID'>Add To Queue</a></li><li><a class='downloadJob' data-jobid='JOBID'>Download Job as CNC File</a></li><li><a class='deleteJob' data-jobid='JOBID'>Delete Job</a></li></ul></div>"
   return menu.replace(/JOBID/g, id)
 }
 
@@ -769,89 +769,112 @@ var notifyChange = function(err,id){
   setTimeout(function(){$('#'+id).removeClass("flash-red flash-green")},500);
 };
 
+
 var configData = null;
-
-
 $(document).ready(function() {
-  $(document).foundation();
+    $(document).foundation();
 
-  fabmo.on('job_end',function (cmd) {
+    fabmo.on('job_end',function (cmd) {
+        updateQueue();
+        updateHistory();
+    });
+
+    fabmo.on('job_start',function (cmd, data) {
+        updateQueue();
+        updateHistory();
+    });
+
+    // The queue will update when the status report comes in
+    // But the history needs to be updated manually
+    fabmo.requestStatus();
     updateQueue();
     updateHistory();
-  });
 
-   fabmo.on('job_start',function (cmd, data) {
-    updateQueue();
-    updateHistory();
-  });
+    setupDropTarget();
+    runNext();
 
-  //May need to put back in 
-  // fabmo.on('change',function (change) {
-  //   if(change === "jobs") {
-  //     updateQueue();
-  //     updateHistory();
-  //   }
-  // });
 
-  // The queue will update when the status report comes in
-  // But the history needs to be updated manually
-  fabmo.requestStatus();
-  updateQueue();
-  updateHistory();
+////## th - experiment on FLOW back re: Sb4 and similar apps
 
-  setupDropTarget();
-  runNext();
+    // get info for setting up exit-back behavior
+    let this_App = "job-manager";
+    let default_App = localStorage.getItem("defaultapp");
+    let back_App = localStorage.getItem("backapp");
+    let current_App = localStorage.getItem("currentapp");
+    // do nothing if current (e.g. refreshes and returns)
+    if (this_App != current_App) {
+        back_App = current_App;
+        if (back_App === null || back_App === "") {back_App = default_App};
+        back_App = default_App; // * > always to here for job-manager
+        current_App = this_App;
+        localStorage.setItem("currentapp", current_App);
+        localStorage.setItem("backapp", back_App);
+    } 
 
-  $('#history_page_next').click(function(evt) {
-    evt.preventDefault();
-    historyNextPage();
-  });
-
-  $('#history_page_prev').click(function(evt) {
-    evt.preventDefault();
-    historyPreviousPage();
-  });
-
-  $('.no-jobs-item').click(function(e) {
-    $('#job_selector').click();
-  });
-
-  $('#clear-jobs').click(function(e) {
-    fabmo.clearJobQueue(function(err, data) {
-      updateQueue();
+    $(".exit-button").on("click", function(){
+        fabmo.launchApp(back_App);
     });
-  });
+ 
+    document.onkeyup = function (evt) {
+        if (evt.key === "Escape") {
+            evt.preventDefault();
+            fabmo.launchApp(back_App);
+        }
+    };
 
-  $('.submit-button').click(function(evt) {
-    jQuery('#file').trigger('click');
-  });
+    // set focus at the end of 'ready'.
 
-  $('.without-job').click(function(evt) {
-    jQuery('#file').trigger('click');
-  });
+////##
 
-  $('#file').change(function(evt) {
-    var file_size = $('#fileform').find('input:file')[0].files[0].size;
-    $('.progressbar').removeClass('hide');
-    fabmo.on('upload_progress', function(progress) {
-      fileUploadProgress(progress.value);
+
+    $('#history_page_next').click(function(evt) {
+        evt.preventDefault();
+        historyNextPage();
     });
-    fabmo.submitJob($('#fileform'), {
-      compressed: file_size > 2000000 ? true : false
-    }, function(err, data) {
-      if (err) {
-        fabmo.notify('error', err);
-      }
-      resetFormElement($('#file'));
-      updateQueue();
-      updateOrder();
-      $('#nav-pending').click();
+
+    $('#history_page_prev').click(function(evt) {
+        evt.preventDefault();
+        historyPreviousPage();
     });
-  });
 
-  //-----------------------------------------------------------------------------
-  // ADDING AND MODIFYING FOR TRANSFORMS ... after document.ready
+    $('.no-jobs-item').click(function(e) {
+        $('#job_selector').click();
+    });
 
+    $('#clear-jobs').click(function(e) {
+        fabmo.clearJobQueue(function(err, data) {
+        updateQueue();
+        });
+    });
+
+    $('.submit-button').click(function(evt) {
+        jQuery('#file').trigger('click');
+    });
+
+    $('.without-job').click(function(evt) {
+        jQuery('#file').trigger('click');
+    });
+
+    $('#file').change(function(evt) {
+        var file_size = $('#fileform').find('input:file')[0].files[0].size;
+        $('.progressbar').removeClass('hide');
+        fabmo.on('upload_progress', function(progress) {
+        fileUploadProgress(progress.value);
+        });
+        fabmo.submitJob($('#fileform'), {
+        compressed: file_size > 2000000 ? true : false
+        }, function(err, data) {
+        if (err) {
+            fabmo.notify('error', err);
+        }
+        resetFormElement($('#file'));
+        updateQueue();
+        updateOrder();
+        $('#nav-pending').click();
+        });
+    });
+
+    // FOR TRANSFORMS 
     // Setup Unit Labels
     registerUnitLabel('.in_mm_label', 'in', 'mm');
     registerUnitLabel('.ipm_mmpm_label', 'in/min', 'mm/min');
@@ -894,7 +917,7 @@ $(document).ready(function() {
     });
 
     // Update settings on change
-   $('.driver-input').change( function() {
+    $('.driver-input').change( function() {
        var parts = this.id.split("-");
        var new_config = {};
        new_config.driver = {};
@@ -912,13 +935,13 @@ $(document).ready(function() {
            setConfig(this.id, this.value);
        }
        // How to send G90 or G91 from here?
-   });
+    });
 
-   $('.opensbp-input').change( function() {
+    $('.opensbp-input').change( function() {
        setConfig(this.id, this.value);
-   });
+    });
 
-   $('.opensbp-values').change( function() {
+    $('.opensbp-values').change( function() {
        var parts = this.id.split("-");
        var new_config = {};
        new_config.driver = {};
@@ -949,34 +972,33 @@ $(document).ready(function() {
                setTimeout(update, 500);
            });
        }
-   });
+    });
 
-  // $( window ).resize(function() {
-  // 	setJobheight();
-  // }).resize();
-  fabmo.on('reconnect', function() {
-    update();  // for transforms
-    updateQueue();
-    updateOrder();
-    updateHistory();
-  });
+    fabmo.on('reconnect', function() {
+        update();  // for transforms
+        updateQueue();
+        updateOrder();
+        updateHistory();
+    });
 
-  fabmo.on('status', function(status) {
-    updateLabels(status.unit);     // for trnasforms
-    handleStatusReport(status);
-    if (status.job == null && status.state != 'idle') {
-      $('.play-button').hide();
-      $('.play').removeClass('loading');
-    } else if (status.state == 'idle' && el.firstChild) {
-      $('.play-button').show();
-    } 
-  });
-  fabmo.requestStatus(); ////##right place for this status?
+    fabmo.on('status', function(status) {
+        updateLabels(status.unit);     // for trnasforms
+        handleStatusReport(status);
+        if (status.job == null && status.state != 'idle') {
+        $('.play-button').hide();
+        $('.play').removeClass('loading');
+        } else if (status.state == 'idle' && el.firstChild) {
+        $('.play-button').show();
+        } 
+    });
+    fabmo.requestStatus(); ////##right place for this status?
 
-  function resetFormElement(e) {
-    e.wrap('<form>').closest('form').get(0).reset();
-    e.unwrap();
-  }
-  update();  
+    function resetFormElement(e) {
+        e.wrap('<form>').closest('form').get(0).reset();
+        e.unwrap();
+    }
+
+    update();  
+    $(window).trigger("focus");
 
 });

@@ -10,13 +10,19 @@
 
   <body>
     <nav class="top-bar" data-topbar role="navigation" id="topbar">
-      <ul class="title-area">
-        <li class="name">
-          <h1><a id="app-header">Tool Path Preview</a></h1>
-        </li>
-        <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
-      </ul>
-      <section class="top-bar-section"></section>
+        <ul class="title-area">
+            <li class="name">
+            <h1><a id="app-header">Tool Path Preview</a></h1>
+            </li>
+            <li class="toggle-topbar">
+                <a></a><span class="exit-button"id="exit_small">X</span></a>
+            </li>
+        </ul>
+      <section class="top-bar-section">
+        <ul>    
+            <li class="exit-button" id="exit_btn">X</li>
+        </ul>
+      </section>
     </nav>
 
     <div id="preview" style="display: inline-block;">
@@ -37,10 +43,6 @@
              title="Snap to view down the Y axis."/>
         <img id="button-z"      src="images/z.png"
              title="Snap to view down the Z axis."/>
-<!--        
-            <img id="button-help"   src="images/help.png"
-             title="Show Help"/>
--->
         <img id="button-settings" src="images/settings.png"
              title="Open previewer settings."/>
       </div>

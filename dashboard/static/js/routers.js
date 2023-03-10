@@ -63,6 +63,7 @@ define(function (require) {
                     break;
                 case "macros":
                     activeNow = "#icon_folder";
+                    localStorage.setItem("currentapp", id);
                     break;
                 case "video":
                     activeNow = "#icon_video";
@@ -72,6 +73,7 @@ define(function (require) {
                     break;
                 case defaultApp:
                     activeNow = "#icon_def";
+                    localStorage.setItem("currentapp", id);
                     break;
             }
             if (activeNow != "") {

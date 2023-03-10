@@ -53,7 +53,7 @@ require('./cm-fabmo-modes.js');
     function set_language(language, save) {
       switch(language) {
         case 'opensbp':
-          $("#app-header").text("Editor (OpenSBP)");
+          $("#app-header-language").text(" (OpenSBP)");
           $("#lang-gcode").parent().removeClass("active");
           $("#lang-opensbp").parent().addClass("active");
           lang='opensbp';
@@ -61,7 +61,7 @@ require('./cm-fabmo-modes.js');
         break;
 
         case 'gcode':
-          $("#app-header").text("Editor (G-Code)");
+          $("#app-header-language").text(" (G-Code)");
           $("#lang-opensbp").parent().removeClass("active");
           $("#lang-gcode").parent().addClass("active");
           lang = 'gcode';
@@ -79,9 +79,11 @@ require('./cm-fabmo-modes.js');
         set_language(language);
         var content = localStorage.fabmo_editor_content || '';
         if((content !== content) || (content === undefined)) {
-          console.warn("No saved content to load.");
+          console.warn("No saved content in scratchpad.");
         } else {
-          editor.setValue(content);
+            $('#app-content').text("[ editor scratchpad ]");
+            $(".exit-button").css("visibility", "hidden");
+            editor.setValue(content);
         }
         var pos;
         try {
@@ -99,6 +101,7 @@ require('./cm-fabmo-modes.js');
         if('job' in args) {
           var url = '/job/' + args.job + '/file';
           $.get(url,function(data, status) {
+            $('#app-content').text("[job: ");
               editor.setValue(data, -1);
               //editor.clearSelection();
               source = "job";
@@ -107,9 +110,13 @@ require('./cm-fabmo-modes.js');
                     job_title = info.name || info.file.filename || null;
                     job_description = info.description || null;
                     job_filename = info.file.filename;
+                    $('#edit-filename').text(info.name + " ]");
                   if(info.file.filename.endsWith('sbp')) {
                     set_language('opensbp');
-                  } else {
+
+                    $('.language-dropdown').hide();
+
+                } else {
                     set_language('gcode');
                   }
                 }
@@ -122,7 +129,8 @@ require('./cm-fabmo-modes.js');
           var url = '/macros/' + args.macro;
           $.get(url,function(response, status) {
             var macro = response.data.macro;
-            $('#app-header').text("Editor - " + macro.name + " (Macro)");
+            $('#app-content').text("[macro: #" + args.macro);
+            $('#edit-filename').text("{" + macro.name + " } ]");
             editor.setValue(macro.content, -1);
             //editor.clearSelection();
             source = "macro";
@@ -212,6 +220,38 @@ require('./cm-fabmo-modes.js');
           }
         });
 
+
+////## th - experiment on FLOW back re: Sb4 and similar apps
+
+    // get info for setting up exit-back behavior
+    let this_App = "editor";
+    let default_App = localStorage.getItem("defaultapp");
+    let back_App = localStorage.getItem("backapp");
+    let current_App = localStorage.getItem("currentapp");
+    // do nothing if current (e.g. refreshes and returns)
+    if (this_App != current_App) {
+        back_App = current_App;
+        if (back_App === null || back_App === "") {back_App = default_App};
+        current_App = this_App;
+        localStorage.setItem("currentapp", current_App);
+        localStorage.setItem("backapp", back_App);
+    } 
+
+    $(".exit-button").on("click", function(){
+        fabmo.launchApp(back_App);
+    });
+ 
+    document.onkeyup = function (evt) {
+        if (evt.key === "Escape") {
+            evt.preventDefault();
+            fabmo.launchApp(back_App);
+        }
+    };
+
+    // set focus at the end of 'ready'.
+
+////##
+
       setup();
 
       function resize() {
@@ -225,6 +265,7 @@ require('./cm-fabmo-modes.js');
         resize();
       });
       resize();
+      $(window).trigger("focus");
 
     }); // document.ready
 
@@ -265,17 +306,19 @@ require('./cm-fabmo-modes.js');
       return false;
     });
 
+    
+    ////## modified to test idea of only using having a file name and showing or not the extension ... as opposed to 2 names
     function submitJob(){
         $('#modal-title').text('Submit Job');
         switch(lang) {
           case 'gcode':
-            $('#jobsubmit-name').val(job_title || 'G-Code (Editor)');
-            $('#jobsubmit-description').val(job_description || 'A G-Code job from the editor');
+            $('#jobsubmit-name').val(job_filename || 'editor.nc');
+            $('#jobsubmit-description').val(job_description || 'G-Code job from the editor');
             $('#jobsubmit-filename').val(job_filename || 'editor.nc');
             break;
           case 'opensbp':
-            $('#jobsubmit-name').val(job_title || 'OpenSBP (Editor)');
-            $('#jobsubmit-description').val(job_description || 'An OpenSBP job from the editor');
+            $('#jobsubmit-name').val(job_filename || 'editor.sbp');
+            $('#jobsubmit-description').val(job_description || 'OpenSBP job from the editor');
             $('#jobsubmit-filename').val(job_filename || 'editor.sbp');
             break;
           default:
@@ -289,14 +332,14 @@ require('./cm-fabmo-modes.js');
           event.preventDefault();
           var name = $('#jobsubmit-name').val();
           var description = $('#jobsubmit-description').val();
-          var filename = $('#jobsubmit-filename').val();
+          var filename = $('#jobsubmit-name').val();
 
           var text = editor.getValue();
 
           fabmo.submitJob({
               file : text,
               filename: filename,
-              name : name,
+              name : name,    // just letting this float for the moment, make name without ext to be easily available
               description: description
             },
             function(err, result) {

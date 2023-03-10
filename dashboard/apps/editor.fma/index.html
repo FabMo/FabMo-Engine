@@ -14,16 +14,12 @@
     <div id="modal-title">Submit Job</div>
     <div id="jobsubmit-form">
         <div class="row">
-            <label for="jobsubmit-name">Name:</label>
+            <label for="jobsubmit-name">Job Name:</label>
             <input autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" id="jobsubmit-name" type="text" name="jobsubmit-name" value="" />
         </div>
         <div class="row">
             <label for="jobsubmit-name">Description:</label>
             <input autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" id="jobsubmit-description" type="text" name="jobsubmit-name" value="" />
-        </div>
-        <div class="row">
-            <label for="jobsubmit-filename">Filename:</label>
-            <input autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" id="jobsubmit-filename" type="text" name="jobsubmit-filename" value="" />
         </div>
 
         <div class="row">
@@ -40,10 +36,12 @@
 <body>
   <nav id="topbar" class="top-bar" data-topbar role="navigation">
     <ul class="title-area">
-      <li class="name">
+      <li class="name noselect no-hover">
         <h1><a id="app-header" class="noselect">Editor</a></h1>
       </li>
-      <li class="toggle-topbar"><a href="#"><span>Menu</span></a></li>
+      <li class="toggle-topbar"><a href="#" id="small_menu"><span>Menu</span>
+        <span class="exit-button" id="exit_small">X</span></a>
+      </li>
     </ul>
 
     <section class="top-bar-section">
@@ -53,11 +51,22 @@
 
       <!-- Left Nav Section -->
       <ul class="left">
+
+        <li class="noselect no-hover">
+            <a id="app-content" class="noselect show-for-medium-up">[]</a>
+        </li>
+        <li class="noselect no-hover">
+            <a id="edit-filename" class="noselect show-for-medium-up"></a>
+        </li>
+        <li class="noselect no-hover">
+            <a id="app-header-language" class="noselect show-for-medium-up">()</a>
+        </li>
+
         <li class="has-dropdown hidden" id="macro-menu">
-          <a href="#macromenu">Macro</a>
+          <a href="#macromenu">Save</a>
           <ul class="dropdown">
-            <li><a id="macro-save" href="#macrosave">Save</a></li>
-            <li><a id="macro-save-and-close" href="#macrosaveandclose">Save and Close</a></li>          
+            <li><a id="macro-save" href="#macrosave">Save Macro</a></li>
+            <li><a id="macro-save-and-close" href="#macrosaveandclose">Save Macro and Close</a></li>          
           </ul>        
         </li>
         <li class="has-dropdown language-dropdown"> 
@@ -70,15 +79,21 @@
         <li class="has-dropdown" id="execute-menu"> 
           <a href="#executemenu" class="success">Execute</a>
           <ul class="dropdown"> 
-            <li><a id="submit-immediate" href="#submitimmediate">Run Immediately (Ctrl+Enter)</a></li>
-            <li><a id="submit-job" href="#submitasjob">Submit as Job</a></li>
+            <li><a id="submit-immediate" href="#submitimmediate">Run Code Immediately (Ctrl+Enter)</a></li>
+            <li><a id="submit-job" href="#submitasjob">Save and Submit as Separate New Job</a></li>
           </ul>
-        </li> 
+        </li>
       </ul>
+        <ul class="right">
+        <li>
+            <a class="exit-button"  id="exit_btn">X</a>
+        </li>
+      </ul>
+
     </section>
   </nav>
 
-  <div id="editor"></div>
+  <div class="left" id="editor"></div>
 
   <script src="../../editor.js"></script>
 
