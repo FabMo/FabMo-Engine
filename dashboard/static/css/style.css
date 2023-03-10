@@ -79,6 +79,7 @@ body {
 }
 
 #icon_keypad {
+    cursor: pointer;
     right: 105%;
     top: -.5rem;
     height: 4rem;
@@ -220,19 +221,22 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 #dro-tab {
 	cursor: pointer;
 	position: absolute;
-    top: 5px;
-	right: 100%;
-    height: 45px;
-    width: 0.5em;
-    background-color: #E6CF89;
-	border-radius: 4px 0 0 4px;
-	transition: all 0.2s;
+    top: 25px;
+    transition: all 0.2s;
 }
 
+#icon_DROin-out {
+    height: 25px;
+    opacity: 90%;
+}
+
+.small-axes {
+    cursor: default;
+}
 
 #right-position-container {
-	cursor: pointer;
-	background-color: #931B14;
+    cursor: default;
+    background-color: #931B14;
 	height: 100%;
     position: absolute;
     color: #fdfdfd;
@@ -242,18 +246,17 @@ box-shadow: 0px 2px 3px 0px rgba(235,228,235,1);
 	font-family: 'source_sans_proextralight';
 	font-size: 14px;
 	line-height: 15px;
-/*	padding-left: 5.0rem; */
 	padding-left: 0.5rem;
 }
 
 #right-position-container span {
 	color: #fff;
-	cursor: text;
+	cursor: default;
 }
 
 #right-position-container label {
 	color: #fff;
-	cursor: text;
+	cursor: default;
 }
 
 .sm-axes label {
