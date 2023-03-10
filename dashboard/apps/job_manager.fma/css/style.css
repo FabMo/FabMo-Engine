@@ -9,6 +9,60 @@ html, body {
     -webkit-overflow-scrolling: touch;
 }
 
+#little_menu {
+    padding-right: 2.5rem;
+    top: -.05rem;
+}
+
+#hbg {
+    filter: brightness(1.5)
+}
+
+#exit_btn:hover {
+    cursor: pointer;
+    color: #ddd;
+    background-color:#555;
+}
+
+#exit_btn {
+    color: #999;
+    padding: .4rem;
+    border-radius: 2rem;
+    position: relative;
+    right: 1rem;
+    font-size: 1.2rem;
+}
+
+.expanded #exit_btn {
+    display: none;
+}
+
+/*.toggle-topbar.exit-button a {
+    color: #ddd;
+    padding: .4rem;
+    border-radius: 2rem;
+    position: relative;
+    right: 1rem;
+    top: -0.6rem;
+    font-size: x-large;
+}*/
+
+#exit_small {
+    color: #999;
+    padding: .3rem;
+    border-radius: 2rem;
+    position: relative;
+    top: .1rem;
+    left: 1.75rem;
+    font-size: 1.2rem;
+}
+
+#exit_small:hover {
+    cursor: pointer;
+    color: #ddd;
+    background-color:#555;
+}
+
 .filter {
     display: none;
      position: fixed;
@@ -19,80 +73,10 @@ html, body {
      z-index: 2000;
      background: #000;
      opacity: 0.8;
-
-}
-
-.tour-dialogue{
-  width: 50%;
-  max-width: 500px;
-  min-width: 300px;
-  padding: 2rem;
-  position: absolute;
-  z-index: 2001;
-  background-color: #eee;
-  color: #222;
-  display: none;
-  top: 30%;
-  left: 50%;
-  margin-right: -50%;
-  transform: translate(-50%, -50%) 
-}
-
-.tour-text {
-  margin-bottom: 0;
-}
-
-.next{
-  width: 100px;
-  padding: 1rem;
-  text-align: center;
-  color: #fff;
-  border-radius: 5px;
-  background-color: #32B433;
-  cursor: pointer;
-  margin-left: auto;
-  margin-right: auto;
-  display: inline-block;
-}
-
-.no{
-  width: 100px;
-  padding: 1rem;
-  text-align: center;
-  color: #fff;
-  border-radius: 5px;
-  background-color: #9C210C;
-  cursor: pointer;
-  margin-left: auto;
-  margin-right: auto;
-  display: inline-block;
-  margin-left: 1rem;
-}
-
-.tour-buttons {
-  margin-top: 1rem;
-  width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-  text-align: center;
 }
 
 
-.tour-pointer {
-  position: absolute;
-    left: 7px;
-    max-width: 250px;
-    text-align: left;
-    background-color: #ffffff;
-    border: 1px solid #dddddd;
-    box-shadow: 0px 2px 5px -1px rgba(0,0,0,0.75);
-    z-index: 2002;
-    padding: 0.5rem;
-    display: none;
-    border-radius: 2px;
-}
-
-.pointer{
+.pointer {
   position: absolute;
     left: 5px;
     width: 1rem;

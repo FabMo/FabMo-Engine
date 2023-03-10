@@ -1,5 +1,5 @@
 {
-	"name":"Macros",
+	"name":"Custom Macros",
 	"main":"./index.html",
 	"icon":"icon.png",
 	"icon_color":"#313366",
@@ -8,5 +8,5 @@
 	"author":"Ryan Sturmer",
 	"website":"http://shopbottools.com",
 	"id":"macros",
-    "description":"System app for managing and running macros"
+    "description":"System app for managing and running custom macros"
 }

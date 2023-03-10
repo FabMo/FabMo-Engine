@@ -62,28 +62,19 @@
         });
 
         $("#right-position-container").on("click", function () {
-            $("#dro-tab").css("width", "1em");
-            setTimeout(function () {
-                $("#dro-tab").css("width", "0.5em");
-            }, 200);
             if (!$("#right-position-container").hasClass("dropped")) {
                 $(".dro-dropdown").removeClass("dropped");
                 setTimeout(function () {
                     $("#right-position-container").removeClass("dropped");
                 }, 200);
+                $("#icon_DROin-out").attr("src", "../img/icon_DROout.png");
+                $("#dro-tab").attr("title", "Click to open larger Display");
             } else {
                 $(".dro-dropdown").addClass("dropped");
                 $("#right-position-container").addClass("dropped");
+                $("#icon_DROin-out").attr("src", "../img/icon_DROin.png");
+                $("#dro-tab").attr("title", "Click to close large Display");
             }
-        });
-
-        $("#man-start").on("click", function () {
-            $("#man-tab").css("top", "-1em");
-            $("#man-tab").css("height", "1em");
-            setTimeout(function () {
-                $("#man-tab").css("top", "-0.5em");
-                $("#man-tab").css("height", "0.5em");
-            }, 200);
         });
 
         if (options) {

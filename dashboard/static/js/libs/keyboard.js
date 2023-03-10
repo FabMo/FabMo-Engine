@@ -38,7 +38,15 @@
     /* Keyboard keys and mouse-keypad keys work similarly, but not identically. Idea is that presses up to a threshold
      length will trigger a "fixed move" (via nudge process) as will any presses with "fixed" button on. Presses longer
      will trigger longer moves, with refresh pumping new moves to engine/g2. Stop now triggers stop via g2 "kill" from
-     engine. */
+     engine. from 2020 */
+    /* th 3/3/23 Per the note above keyboard.js seems intended to micmick keypad.js in how the visuals on the keypad work.
+    Before changes, setEnabled did not appear to be setting any visuals for keyboard arrow keys when they were pressed in 
+    modal-keypad (classes are mislabled but action never gets to the call in anycase). I could not figure how "elem", the key
+    to the designed functionality was ever supposed to be handled for the keyboard case (vs the keypad case). I also went back
+    a bit in time and did not find evidence that this system ever worked to set a visual indicators that an axis button was
+    being pushed from the device keyboard arrows. There may be other "intended" features that also fail here. I have created a
+    system for handling the display for now. Don't know if it's as efficient as it could be. 
+    */
 
     Keyboard.prototype.init = function () {
         if (this.elem) {
@@ -60,7 +68,6 @@
         options = options || {};
         this.refreshInterval =
             options.refreshInterval || this.refreshInterval || 50; // from 100 to make more responsive like pad
-
         console.log("refreshInterval now=" + this.refreshInterval);
     };
 
@@ -125,11 +132,15 @@
         }
     };
 
+    // Get keypad icons to light when keyboard arrow keys are used; see note above; see note above
     Keyboard.prototype.start = function (axis, direction) {
         if (this.going) {
             return;
         }
         this.move = { axis: axis, dir: direction };
+        let activeArrowStr =
+            "#keyboardArrow_" + axis + (direction === 1 ? "_pos" : "_neg");
+        $(activeArrowStr).addClass("drive-button-active");
         this.going = true;
         this.refresh();
     };
@@ -141,6 +152,7 @@
             this.interval = null;
         }
         this.emit("stop", null);
+        $(".drive-button").removeClass("drive-button-active");
     };
 
     Keyboard.prototype.onClick = function (evt) {
