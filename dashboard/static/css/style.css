@@ -1518,8 +1518,8 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 }
 
 .slidecontainer {
-	margin-bottom: 10px;
-
+    margin-top: -0.8rem;
+	margin-bottom: 20px;
 }
 
 .slidecontainer label {
@@ -1541,7 +1541,7 @@ ul.off-canvas-list li a, ul.off-canvas-list li.no-link {
 
 .speed_read_out {
 	position: absolute;
-	color: #DB8635;
+	color: #422001;
 	display: none;
 	z-index: 10000;
 }
@@ -1569,8 +1569,8 @@ input[type='range']::-webkit-slider-runnable-track {
     width: 100%;
     height: 2em;
     border-radius: 1.25em;
-    box-shadow: inset 0 1px 0.125em #272727, inset 0 -1px 0.125em #272727, inset 0 0 0 0.75em #ffda29;
-    background: linear-gradient(#1c1c1c, #333) content-box;
+    box-shadow: inset 0 1px 0.125em #d0c265, inset 0 -1px 0.125em #969161, inset 0 0 0 0.75em #ffda29;
+    background-color: #897827;
 }
 .js input[type='range']::-webkit-slider-runnable-track {
   background: linear-gradient(#e38928, #DB8635) no-repeat content-box, linear-gradient(#1c1c1c, #fd2) content-box;
@@ -1620,7 +1620,7 @@ input[type='range']::-webkit-slider-thumb {
   height: 2em;
   border-radius: 50%;
   box-shadow: 0 1px 0.125em #232323, inset 0 1px 1px #444444;
-  background: radial-gradient(#db7e0d 35%, #cb8037 71%) content-box, linear-gradient(#333333, #272727) border-box;
+  background: radial-gradient(#db7e0d 35%, #cb8037 71%) content-box, linear-gradient(#666666, #555555) border-box;
   cursor: ew-resize;
 }
 input[type='range']::-moz-range-thumb {
@@ -1716,8 +1716,7 @@ input[type='range']:focus {
 	display: flex;
 	justify-content: space-evenly;
 	display: none;
-	padding-top: 20px;
-	margin-bottom: 10px;
+	margin-bottom: 9px;
 	text-align: left;
 	min-height: 60px;
 }
@@ -1938,7 +1937,12 @@ input[type='range']:focus {
     transform: translate(-50%, -50%);
 }
 
-
+#title_goto {
+    font-size: 1rem;
+    margin-top: -1.3rem;
+    margin-left: 2rem;
+    margin-bottom: 0.5rem;
+}
 
 
 .read-out-container {
@@ -1995,10 +1999,11 @@ input[type='range']:focus {
     text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
     border: 1px solid rgba(0,0,0,0.3);
     border-radius: 4px 0 0 4px;
-    box-shadow: inset 0 -5px 45px rgba(100,100,100,0.2), 0 1px 1px rgba(255,255,255,0.2);
+   /* box-shadow: inset 0 -5px 45px rgba(100,100,100,0.2), 0 1px 1px rgba(255,255,255,0.2); */
 }
 .zero-button{
-	color: #eee;
+	cursor: pointer;
+    color: #eee;
     display: inline-block;
     font-size: 23px;
     margin: 0;
@@ -2006,7 +2011,7 @@ input[type='range']:focus {
     padding: 3px 5px 3px;
     background-color: #877b56;
     border-radius: 0 4px 4px 0;
-    box-shadow: 0px 2px 0px #534f41, 0px 2px 4px rgba(0,0,0,.2);
+    box-shadow: 0px 2px 0px #84743d, 0px 2px 4px rgba(0,0,0,.2);
     text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
     font-family: 'source_sans_proextralight';
 	transition: all .1s ease;
@@ -2111,15 +2116,15 @@ input[type='range']:focus {
 }
 
 
-@media (max-width: 1160px) and (min-height: 538px)   {
+@media (max-width: 1100px) and (min-height: 500px)   {
 	.manual-drive-modal {
 		width: 80%; 
 	}
 }
 
-@media (max-width: 650px  ) and (min-height: 538px)  {
+@media (max-width: 750px  ) and (min-height: 500px)  {
 	.manual-drive-modal {
-		width: 100%; 
+		width: 90%; 
 		height: 100%;
 		max-height: none;
 		padding-top: 0;
@@ -2132,7 +2137,8 @@ input[type='range']:focus {
 
 	.read-out-container, .manual-right-side-container{
 		width: 100%;
-		height: 220px;
+		height: 100%;
+        scale: 85%
 	}
 
 	.read-out-wrapper{
@@ -2141,7 +2147,11 @@ input[type='range']:focus {
 		width: 80%;
 	}
 
-
+    #title_goto {
+        margin-top: 0rem;
+        margin-left: 25%;
+        margin-bottom: -0.5rem;    
+    }
 
 	.manual-stop {
 		width: 80%;
@@ -2169,14 +2179,28 @@ input[type='range']:focus {
 		padding: 0.5em;
 	}
 
+    .slidecontainer {
+        margin-top: -2rem;
+    }
+
 	.speed_read_out {
 		padding-top: 35px;
-		padding-left: 10px;
+		padding-left: 35px;
 	}
 
 }
+@media (max-width: 650px) {
+    #icon_keypad {
+        cursor: pointer;
+        right: 80%;
+        top: 3.25rem;
+        height: 3rem;
+        position: absolute;
+        opacity: 90%;
+    }
+}
 
-@media (max-height: 539px) {
+@media (max-height: 500px) {
 	#widget-links-general{
 		display:none
 	}

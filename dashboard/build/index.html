@@ -252,6 +252,11 @@
 
       <div class="manual-drive-message">This is where a message will go</div>
       <div class="manual-drive-container">
+        <div>
+          <label class="noselect" id="title_goto" title="Click to enter a Go-To Location or Set a new Value for Current location.">
+              Go To a Location or Set Location
+          </label>
+        </div>
         <div class="read-out-container">
           <div class="read-out-wrapper">
             <!-- 'step' for XY and Z is controlled by the fixed distance move size and set in main.js -->
@@ -333,12 +338,12 @@
                   </div>
                 </div>
                 <div class="keypad-cell">
-                  <div class="y_pos keypad-button drive-button square">
+                  <div id="keyboardArrow_y_pos" class="y_pos keypad-button drive-button square">
                     <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
                   </div>
                 </div>
                 <div class="keypad-cell">
-                  <div  class="x_pos y_pos keypad-button drive-button square">
+                  <div class="x_pos y_pos keypad-button drive-button square">
                     <i class="fa fa-keypad fa-lg fa-arrow-up"></i>
                   </div>
                   <div class="rot_button b_pos keypad-button drive-button square">
@@ -346,7 +351,7 @@
                   </div>
                 </div>
                 <div class="keypad-cell">
-                  <div class="x_neg keypad-button drive-button square">
+                  <div id="keyboardArrow_x_neg" class="x_neg keypad-button drive-button square">
                     <i class="fa fa-keypad fa-lg fa-arrow-left"></i>
                   </div>
                 </div>
@@ -354,7 +359,7 @@
 
                 </div>
                 <div class="keypad-cell">
-                  <div class="x_pos keypad-button drive-button square">
+                  <div id="keyboardArrow_x_pos" class="x_pos keypad-button drive-button square">
                     <i class="fa fa-keypad fa-lg fa-arrow-right"></i>
                   </div>
                 </div>
@@ -367,7 +372,7 @@
                   </div>
                 </div>
                 <div class="keypad-cell">
-                  <div class="y_neg keypad-button drive-button square">
+                  <div id="keyboardArrow_y_neg" class="y_neg keypad-button drive-button square">
                     <i class="fa fa-keypad fa-lg fa-arrow-down"></i>
                   </div>
                 </div>
@@ -385,10 +390,10 @@
                   <div class="z_pos_fast keypad-button drive-button bar"><i class="fa fa-caret-up z-fa-double"></i><i class="fa fa-caret-up z-fa-double"></i></div>
                 </div>
                 <div class="keypad-bar top">
-                  <div class="z_pos_slow keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-up"></i></div>
+                  <div id="keyboardArrow_z_pos" class="z_pos_slow keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-up"></i></div>
                 </div>
                 <div class="keypad-bar bottom">
-                  <div class="z_neg_slow keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-down"></i></div>
+                  <div id="keyboardArrow_z_neg" class="z_neg_slow keypad-button drive-button bar"><i class="fa fa-lg fa-keypad fa-caret-down"></i></div>
                 </div>
                 <div class="keypad-bar-small bottom">
                   <div class="z_neg_fast keypad-button drive-button bar"><i class="fa fa-caret-down z-fa-double"></i><i class="fa  fa-caret-down z-fa-double"></i></div>
@@ -407,10 +412,10 @@
             <div class="manual-stop">
                 <span>STOP</span>
             </div>
-            <div class="go-to">
+            <div class="go-to" title="Move to a new location in one or more axes.">
               <span>Go To</span>
             </div>
-            <div class="set-coordinates">
+            <div class="set-coordinates" title="Set a new value for the current location of one or more axes.">
               <span>Set</span> 
             </div>
           </div>
