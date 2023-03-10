@@ -30,7 +30,7 @@ var quit = function (req, res, next) {
  */
 // eslint-disable-next-line no-unused-vars
 var pause = function (req, res, next) {
-    machine.pause();
+    machine.pause(next);
     var answer = {
         status: "success",
         data: null,
