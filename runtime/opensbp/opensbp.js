@@ -2116,8 +2116,12 @@ SBPRuntime.prototype.pause = function () {
     ) {
         this.pendingFeedhold = true;
     } else {
+        //Send feedhold to driver
         this.machine.driver.feedHold();
+        //Alert machine that we are in feedhold
         this.machine.status.inFeedHold = true;
+        //Internal opensbp flag indicating we are paused
+        this.paused = true;
     }
 };
 
