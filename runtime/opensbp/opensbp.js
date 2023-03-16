@@ -74,6 +74,7 @@ function SBPRuntime() {
     this.cmd_StartB = 0;
     this.cmd_StartC = 0;
     this.paused = false;
+    this.feedhold = false;
     this.resumeAllowed = true;
     this.lastNoZPullup = 0;
     this.continue_callback = null;
@@ -913,6 +914,11 @@ SBPRuntime.prototype._executeNext = function () {
         return;
     }
 
+    if (this.feedhold) {
+        log.info("Program is in feedhold.");
+        return;
+    }
+
     if (this.pc >= this.program.length) {
         log.info("End of program reached. (pc = " + this.pc + ")");
         // Here we've reached the end of the program, but there's possibly not enough
@@ -1546,6 +1552,7 @@ SBPRuntime.prototype.init = function () {
     this.quit_pending = false;
     this.end_message = null;
     this.paused = false;
+    this.feedhold = false;
     this.units = config.machine.get("units");
     this.pending_error = null;
     this.pendingFeedhold = false;
@@ -2120,8 +2127,8 @@ SBPRuntime.prototype.pause = function () {
         this.machine.driver.feedHold();
         //Alert machine that we are in feedhold
         this.machine.status.inFeedHold = true;
-        //Internal opensbp flag indicating we are paused
-        this.paused = true;
+        //Internal opensbp flag indicating we are in feedhold
+        this.feedhold = true;
     }
 };
 
@@ -2157,6 +2164,7 @@ SBPRuntime.prototype.resume = function (input = false) {
         } else {
             this.driver.resume();
             this.machine.status.inFeedHold = false;
+            this.feedhold = false;
         }
     }
 };
