@@ -818,6 +818,7 @@ SBPRuntime.prototype._run = function () {
                 }
                 break;
             case this.driver.STAT_HOLDING:
+                this.feedhold = true;
                 if (this.machine.pauseTimer) {
                     clearTimeout(this.machine.pauseTimer);
                     this.machine.pauseTimer = false;
