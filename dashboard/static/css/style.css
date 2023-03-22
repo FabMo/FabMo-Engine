@@ -10,8 +10,6 @@ body {
     font-family: 'source_sans_proregular';
     height: 100%;
     width: 100%;
-    overflow-x: hidden;
-    overflow-y: hidden;
     background-color: #eee;
 }
 
