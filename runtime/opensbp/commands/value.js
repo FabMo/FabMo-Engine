@@ -2,6 +2,7 @@ var log = require("../../../log").logger("sbp");
 var config = require("../../../config");
 
 const { offsets } = require("./location");
+const { machineLoc } = require("./location");
 
 /* VALUES */
 
@@ -19,119 +20,123 @@ exports.VA = function (args, callback) {
     //   g55 offsets will persist.
     //
 
-    this.machine.driver.get(
-        "mpo",
-        async function (err, MPO) {
-            var setVA_G2 = {};
-            var unitConv = 1;
-            var updtG55axes = "";
+    // this.machine.driver.get(
+    //     "mpo",
+    //     async function (err, MPO) {
+    //         var setVA_G2 = {};
+    //         var unitConv = 1;
+    //         var updtG55axes = "";
 
-            const axes = [];
+    //         const axes = [];
 
-            if (this.machine.driver.status.unit === "in") {
-                // inches
-                unitConv = 0.039370079;
-            }
-            // Process Upper Register for Setting Machine Location
-            if (args[6] !== undefined) {
-                //X Base Coordinate
-                this.emit_gcode("G28.3 X" + args[6]);
-                MPO.x = args[6] / unitConv;
-            }
-            if (args[7] !== undefined) {
-                //Y Base Coordinate
-                this.emit_gcode("G28.3 Y" + args[7]);
-                MPO.y = args[7] / unitConv;
-            }
-            if (args[8] !== undefined) {
-                //Z Base Coordinate
-                this.emit_gcode("G28.3 Z" + args[8]);
-                MPO.z = args[8] / unitConv;
-            }
-            if (args[9] !== undefined) {
-                //A Base Coordinate
-                this.emit_gcode("G28.3 A" + args[9]);
-                MPO.a = args[9]; // / unitConv; // No unit conversion for rotary
-            }
-            if (args[10] !== undefined) {
-                //B Base Coordinate
-                this.emit_gcode("G28.3 B" + args[10]);
-                MPO.b = args[10]; // / unitConv; // No unit conversion for rotary
-            }
-            if (args[11] !== undefined) {
-                //C Base Coordinate
-                this.emit_gcode("G28.3 C" + args[11]);
-                MPO.c = args[11]; // / unitConv; // No unit conversion for rotary
-            }
-            //Process Lower Register for Required G55 Offset
-            if (args[0] !== undefined) {
-                // //X location
-                axes[0] = args[0];
-                offsets.call(this, axes, callback);
+    //         if (this.machine.driver.status.unit === "in") {
+    //             // inches
+    //             unitConv = 0.039370079;
+    //         }
 
-                // setVA_G2.g55x = Number((MPO.x * unitConv - args[0]).toFixed(5));
-                // log.debug(
-                //     "    g55X" +
-                //         JSON.stringify(setVA_G2.g55x) +
-                //         "  MPO.x = " +
-                //         MPO.x +
-                //         " args[0] = " +
-                //         args[0]
-                // );
-                // updtG55axes += "X" + setVA_G2.g55x + " ";    // start building axis request for G10 call
-                // this.cmd_posx = this.posx = args[0];
-            }
-            if (args[1] !== undefined) {
-                //Y location
-                setVA_G2.g55y = Number((MPO.y * unitConv - args[1]).toFixed(5));
-                updtG55axes += "Y" + setVA_G2.g55y + " ";
-                this.cmd_posy = this.posy = args[1];
-            }
-            if (args[2] !== undefined) {
-                //Z location
-                setVA_G2.g55z = Number((MPO.z * unitConv - args[2]).toFixed(5));
-                updtG55axes += "Z" + setVA_G2.g55z + " ";
-                this.cmd_posz = this.posz = args[2];
-            }
-            if (args[3] !== undefined) {
-                //A location
-                setVA_G2.g55a = Number(
-                    (MPO.a * 1.0 /*unitConv*/ - args[3]).toFixed(5)
-                );
-                updtG55axes += "A" + setVA_G2.g55a + " ";
-                this.cmd_posa = this.posa = args[3];
-            }
-            if (args[4] !== undefined) {
-                //B location
-                setVA_G2.g55b = Number(
-                    (MPO.b * 1.0 /*unitConv*/ - args[4]).toFixed(5)
-                );
-                updtG55axes += "B" + setVA_G2.g55b + " ";
-                this.cmd_posb = this.posb = args[4];
-            }
-            if (args[5] !== undefined) {
-                //C location
-                setVA_G2.g55c = Number(
-                    (MPO.c * 1.0 /*unitConv*/ - args[5]).toFixed(5)
-                );
-                updtG55axes += "C" + setVA_G2.g55c + " ";
-                this.cmd_posc = this.posc = args[5];
-            }
+    // Process Upper Register for Setting Machine Location
 
-            if (updtG55axes != "") {
-                // Make G10 update request if values present
-                log.debug("G10 L2 P2 " + updtG55axes);
-                this.emit_gcode("G10 L2 P2 " + updtG55axes);
-            }
+    if (args[6] !== undefined) {
+        //X Base Coordinate
+        machineLoc.call(this, args, callback);
+        //    this.emit_gcode("G28.3 X" + args[6]);
+        //    MPO.x = args[6] / unitConv;
+    }
 
-            try {
-                await config.driver.setManyWrapper(setVA_G2);
-                callback();
-            } catch (error) {
-                callback(error);
-            }
-        }.bind(this)
-    );
+    // if (args[7] !== undefined) {
+    //     //Y Base Coordinate
+    //     this.emit_gcode("G28.3 Y" + args[7]);
+    //     MPO.y = args[7] / unitConv;
+    // }
+    // if (args[8] !== undefined) {
+    //     //Z Base Coordinate
+    //     this.emit_gcode("G28.3 Z" + args[8]);
+    //     MPO.z = args[8] / unitConv;
+    // }
+    // if (args[9] !== undefined) {
+    //     //A Base Coordinate
+    //     this.emit_gcode("G28.3 A" + args[9]);
+    //     MPO.a = args[9]; // / unitConv; // No unit conversion for rotary
+    // }
+    // if (args[10] !== undefined) {
+    //     //B Base Coordinate
+    //     this.emit_gcode("G28.3 B" + args[10]);
+    //     MPO.b = args[10]; // / unitConv; // No unit conversion for rotary
+    // }
+    // if (args[11] !== undefined) {
+    //     //C Base Coordinate
+    //     this.emit_gcode("G28.3 C" + args[11]);
+    //     MPO.c = args[11]; // / unitConv; // No unit conversion for rotary
+    // }
+    //Process Lower Register for Required G55 Offset
+    if (args[0] !== undefined) {
+        // //X location
+        //    axes[0] = args[0];
+        offsets.call(this, args, callback);
+
+        // setVA_G2.g55x = Number((MPO.x * unitConv - args[0]).toFixed(5));
+        // log.debug(
+        //     "    g55X" +
+        //         JSON.stringify(setVA_G2.g55x) +
+        //         "  MPO.x = " +
+        //         MPO.x +
+        //         " args[0] = " +
+        //         args[0]
+        // );
+        // updtG55axes += "X" + setVA_G2.g55x + " ";    // start building axis request for G10 call
+        // this.cmd_posx = this.posx = args[0];
+    }
+    // if (args[1] !== undefined) {
+    //     //Y location
+    //     setVA_G2.g55y = Number((MPO.y * unitConv - args[1]).toFixed(5));
+    //     updtG55axes += "Y" + setVA_G2.g55y + " ";
+    //     this.cmd_posy = this.posy = args[1];
+    // }
+    // if (args[2] !== undefined) {
+    //     //Z location
+    //     setVA_G2.g55z = Number((MPO.z * unitConv - args[2]).toFixed(5));
+    //     updtG55axes += "Z" + setVA_G2.g55z + " ";
+    //     this.cmd_posz = this.posz = args[2];
+    // }
+    // if (args[3] !== undefined) {
+    //     //A location
+    //     setVA_G2.g55a = Number(
+    //         (MPO.a * 1.0 /*unitConv*/ - args[3]).toFixed(5)
+    //     );
+    //     updtG55axes += "A" + setVA_G2.g55a + " ";
+    //     this.cmd_posa = this.posa = args[3];
+    // }
+    // if (args[4] !== undefined) {
+    //     //B location
+    //     setVA_G2.g55b = Number(
+    //         (MPO.b * 1.0 /*unitConv*/ - args[4]).toFixed(5)
+    //     );
+    //     updtG55axes += "B" + setVA_G2.g55b + " ";
+    //     this.cmd_posb = this.posb = args[4];
+    // }
+    // if (args[5] !== undefined) {
+    //     //C location
+    //     setVA_G2.g55c = Number(
+    //         (MPO.c * 1.0 /*unitConv*/ - args[5]).toFixed(5)
+    //     );
+    //     updtG55axes += "C" + setVA_G2.g55c + " ";
+    //     this.cmd_posc = this.posc = args[5];
+    // }
+
+    // if (updtG55axes != "") {
+    //     // Make G10 update request if values present
+    //     log.debug("G10 L2 P2 " + updtG55axes);
+    //     this.emit_gcode("G10 L2 P2 " + updtG55axes);
+    // }
+
+    //         try {
+    //             await config.driver.setManyWrapper(setVA_G2);
+    //             callback();
+    //         } catch (error) {
+    //             callback(error);
+    //         }
+    //     }.bind(this)
+    // );
 };
 
 exports.VC = function (args, callback) {

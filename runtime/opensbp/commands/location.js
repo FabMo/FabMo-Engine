@@ -17,12 +17,15 @@ var config = require("../../../config");
 // {"g55":""}  returns the current offset to the UCS origin
 //              In mm or inches depending on G20 or G21
 
+// Process Lower Register for G55 Offset
+//   *This function called second if Machine Base Location is also being set (upper register)
 function offsets(args, callback) {
     this.driver.get(
         //machine.driver??
         "mpo",
 
-        async function (err, MPO) {
+        function (err, MPO) {
+            //async function (err, MPO) {
             var setVA_G2 = {};
             var unitConv = 1;
             var updtG55axes = "";
@@ -31,7 +34,7 @@ function offsets(args, callback) {
                 // inches
                 unitConv = 0.039370079;
             }
-            // Process Lower Register for Required G55 Offset
+
             if (args[0] !== undefined) {
                 // //X location
                 setVA_G2.g55x = Number((MPO.x * unitConv - args[0]).toFixed(5));
@@ -44,7 +47,7 @@ function offsets(args, callback) {
                         args[0]
                 );
                 updtG55axes += "X" + setVA_G2.g55x + " "; // start building axis request for G10 call
-                this.cmd_posx = this.posx = args[0];
+                //this.cmd_posx = this.posx = args[0];
             }
             if (args[1] !== undefined) {
                 //Y location
@@ -61,7 +64,7 @@ function offsets(args, callback) {
             if (args[3] !== undefined) {
                 //A location
                 setVA_G2.g55a = Number(
-                    (MPO.a * 1.0 /*unitConv*/ - args[3]).toFixed(5) // no units for ABC
+                    (MPO.a * 1.0 /*unitConv*/ - args[3]).toFixed(5) // no units for rotary
                 );
                 updtG55axes += "A" + setVA_G2.g55a + " ";
                 this.cmd_posa = this.posa = args[3];
@@ -91,6 +94,75 @@ function offsets(args, callback) {
             }
             // Update the FabMo config system including redundant post to G2
             try {
+                config.driver.setManyWrapper(setVA_G2);
+                //await config.driver.setManyWrapper(setVA_G2);
+                if (callback) {
+                    // kludge to deal with calls coming from manual driver
+                    callback();
+                }
+            } catch (error) {
+                callback(error);
+            }
+        }.bind(this)
+    );
+}
+
+// Process Upper Register for Setting Machine Base Location
+//   * This function called first in case of also using G55 Offsets (lower register)
+function machineLoc(args, callback) {
+    this.driver.get(
+        //machine.driver??
+        "mpo",
+
+        async function (err, MPO) {
+            var setVA_G2 = {};
+            var unitConv = 1;
+            var updtMachineLoc = "";
+            if (this.driver.status.unit === "in") {
+                //machine.driver
+                // inches
+                unitConv = 0.039370079;
+            }
+
+            if (args[6] !== undefined) {
+                //X Machine Base Coordinate
+                updtMachineLoc += "X" + args[6];
+                MPO.x = args[6] / unitConv;
+            }
+            if (args[7] !== undefined) {
+                //Y Machine Base Coordinate
+                updtMachineLoc += "Y" + args[7];
+                MPO.y = args[7] / unitConv;
+            }
+            if (args[8] !== undefined) {
+                //Z Machine Base Coordinate
+                updtMachineLoc += "Z" + args[8];
+                MPO.z = args[8] / unitConv;
+            }
+            if (args[9] !== undefined) {
+                //A Machine Base Coordinate
+                updtMachineLoc += "A" + args[9];
+                MPO.a = args[9]; // / unitConv; // No unit conversion for rotary
+            }
+            if (args[10] !== undefined) {
+                //B Machine Base Coordinate
+                updtMachineLoc += "B" + args[10];
+                MPO.b = args[10];
+            }
+            if (args[11] !== undefined) {
+                //C Machine Base Coordinate
+                updtMachineLoc += "C" + args[11];
+                MPO.c = args[11];
+            }
+
+            // Make G28.3 update request for G2 if values present
+            if (updtMachineLoc != "") {
+                log.debug("G28.3 " + updtMachineLoc);
+                this.stream.write("G28.3 " + updtMachineLoc);
+            }
+
+            // Update the FabMo config system including redundant post to G2
+            try {
                 await config.driver.setManyWrapper(setVA_G2);
                 if (callback) {
                     // kludge to deal with calls coming from manual driver
@@ -104,3 +176,4 @@ function offsets(args, callback) {
 }
 
 exports.offsets = offsets;
+exports.machineLoc = machineLoc;

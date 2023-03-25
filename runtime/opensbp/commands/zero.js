@@ -8,45 +8,54 @@ const { offsets } = require("./location");
 // See Notes in location.js for offsetting and zeroing commands and functions
 // U,V,W not yet covered!
 
-const axes = []; // X=0
+//const axes = []; // X=0
 
 exports.ZX = function (args, callback) {
+    // x=0
+    const axes = [];
     axes[0] = 0;
     offsets.call(this, axes, callback);
 };
 
 exports.ZY = function (args, callback) {
+    const axes = [];
     axes[1] = 0;
     offsets.call(this, axes, callback);
 };
 
 exports.ZZ = function (args, callback) {
+    const axes = [];
     axes[2] = 0;
     offsets.call(this, axes, callback);
 };
 
 exports.ZA = function (args, callback) {
+    const axes = [];
     axes[3] = 0;
     offsets.call(this, axes, callback);
 };
 
 exports.ZB = function (args, callback) {
+    const axes = [];
     axes[4] = 0;
     offsets.call(this, axes, callback);
 };
 
 exports.ZC = function (args, callback) {
+    const axes = [];
     axes[5] = 0;
     offsets.call(this, axes, callback);
 };
 
 exports.Z2 = function (args, callback) {
+    const axes = [];
     axes[0] = 0;
     axes[1] = 0;
     offsets.call(this, axes, callback);
 };
 
 exports.Z3 = function (args, callback) {
+    const axes = [];
     axes[0] = 0;
     axes[1] = 0;
     axes[2] = 0;
@@ -54,6 +63,7 @@ exports.Z3 = function (args, callback) {
 };
 
 exports.Z4 = function (args, callback) {
+    const axes = [];
     axes[0] = 0;
     axes[1] = 0;
     axes[2] = 0;
@@ -62,6 +72,7 @@ exports.Z4 = function (args, callback) {
 };
 
 exports.Z5 = function (args, callback) {
+    const axes = [];
     axes[0] = 0;
     axes[1] = 0;
     axes[2] = 0;
@@ -71,6 +82,7 @@ exports.Z5 = function (args, callback) {
 };
 
 exports.Z6 = function (args, callback) {
+    const axes = [];
     axes[0] = 0;
     axes[1] = 0;
     axes[2] = 0;
@@ -80,169 +92,7 @@ exports.Z6 = function (args, callback) {
     offsets.call(this, axes, callback);
 };
 
-// exports.Z2 = function (args, callback) {
-//     this.machine.driver.get(
-//         "mpo",
-//         async function (err, MPO) {
-//             if (err) {
-//                 return callback(err);
-//             }
-//             var z2Obj = {};
-//             var unitConv = 1.0;
-//             if (this.machine.driver.status.unit === "in") {
-//                 // inches
-//                 unitConv = 0.039370079;
-//             }
-//             z2Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
-//             z2Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
-//             try {
-//                 await config.driver.setManyWrapper(z2Obj);
-//                 this.cmd_posx = this.posx = 0;
-//                 this.cmd_posy = this.posy = 0;
-//                 callback();
-//             } catch (error) {
-//                 callback(error);
-//             }
-//         }.bind(this)
-//     );
-// };
-
-// exports.Z3 = function (args, callback) {
-//     this.machine.driver.get(
-//         "mpo",
-//         async function (err, MPO) {
-//             if (err) {
-//                 return callback(err);
-//             }
-//             var z3Obj = {};
-//             log.debug(JSON.stringify(MPO));
-//             var unitConv = 1.0;
-//             if (this.machine.driver.status.unit === "in") {
-//                 // inches
-//                 unitConv = 0.039370079;
-//             }
-//             z3Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
-//             z3Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
-//             z3Obj.g55z = Number((MPO.z * unitConv).toFixed(5));
-//             log.debug(JSON.stringify(z3Obj));
-//             try {
-//                 await config.driver.setManyWrapper(z3Obj);
-//                 this.cmd_posx = this.posx = 0.0;
-//                 this.cmd_posy = this.posy = 0.0;
-//                 this.cmd_posz = this.posz = 0.0;
-//                 callback();
-//             } catch (error) {
-//                 callback(error);
-//             }
-//         }.bind(this)
-//     );
-// };
-
-// exports.Z4 = function (args, callback) {
-//     this.machine.driver.get(
-//         "mpo",
-//         async function (err, MPO) {
-//             if (err) {
-//                 return callback(err);
-//             }
-//             var z4Obj = {};
-//             var unitConv = 1.0;
-//             if (this.machine.driver.status.unit === "in") {
-//                 // inches
-//                 unitConv = 0.039370079;
-//             }
-//             // Unit conversion
-//             z4Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
-//             z4Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
-//             z4Obj.g55z = Number((MPO.z * unitConv).toFixed(5));
-//             // No unit conversion (rotary)
-//             z4Obj.g55a = Number(MPO.a.toFixed(5));
-//             try {
-//                 await config.driver.setManyWrapper(z4Obj);
-//                 this.cmd_posx = this.posx = 0.0;
-//                 this.cmd_posy = this.posy = 0.0;
-//                 this.cmd_posz = this.posz = 0.0;
-//                 this.cmd_posa = this.posa = 0.0;
-//                 callback();
-//             } catch (error) {
-//                 callback(error);
-//             }
-//         }.bind(this)
-//     );
-// };
-
-// exports.Z5 = function (args, callback) {
-//     this.machine.driver.get(
-//         "mpo",
-//         async function (err, MPO) {
-//             if (err) {
-//                 return callback(err);
-//             }
-//             var z5Obj = {};
-//             var unitConv = 1.0;
-//             if (this.machine.driver.status.unit === "in") {
-//                 // inches
-//                 unitConv = 0.039370079;
-//             }
-//             // Unit conversion
-//             z5Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
-//             z5Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
-//             z5Obj.g55z = Number((MPO.z * unitConv).toFixed(5));
-//             // No unit conversion (rotary)
-//             z5Obj.g55a = Number(MPO.a.toFixed(5));
-//             z5Obj.g55b = Number(MPO.b.toFixed(5));
-//             try {
-//                 await config.driver.setManyWrapper(z5Obj);
-//                 this.cmd_posx = this.posx = 0.0;
-//                 this.cmd_posy = this.posy = 0.0;
-//                 this.cmd_posz = this.posz = 0.0;
-//                 this.cmd_posa = this.posa = 0.0;
-//                 this.cmd_posb = this.posb = 0.0;
-//                 callback();
-//             } catch (error) {
-//                 callback(error);
-//             }
-//         }.bind(this)
-//     );
-// };
-
-// exports.Z6 = function (args, callback) {
-//     this.machine.driver.get(
-//         "mpo",
-//         async function (err, MPO) {
-//             if (err) {
-//                 return callback(err);
-//             }
-//             var z6Obj = {};
-//             var unitConv = 1.0;
-//             if (this.machine.driver.status.unit === "in") {
-//                 // inches
-//                 unitConv = 0.039370079;
-//             }
-//             z6Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
-//             z6Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
-//             z6Obj.g55z = Number((MPO.z * unitConv).toFixed(5));
-//             // No unit conversion
-//             z6Obj.g55a = Number(MPO.a.toFixed(5));
-//             z6Obj.g55b = Number(MPO.b.toFixed(5));
-//             z6Obj.g55c = Number(MPO.c.toFixed(5));
-//             try {
-//                 await config.driver.setManyWrapper(z6Obj);
-//                 this.cmd_posx = this.posx = 0.0;
-//                 this.cmd_posy = this.posy = 0.0;
-//                 this.cmd_posz = this.posz = 0.0;
-//                 this.cmd_posa = this.posa = 0.0;
-//                 this.cmd_posb = this.posb = 0.0;
-//                 this.cmd_posc = this.posc = 0.0;
-//                 callback();
-//             } catch (error) {
-//                 callback(error);
-//             }
-//         }.bind(this)
-//     );
-// };
-
-////## update ZT to cover all axes 2/4/22, will still need to attend to U,V,W
+// Will need to attend to U,V,W at some point
 exports.ZT = async function (args, callback) {
     var ztObj = {};
     ztObj.g55x = 0.0;
