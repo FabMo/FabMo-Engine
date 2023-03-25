@@ -1,21 +1,38 @@
 var log = require("../../../log").logger("sbp");
 var config = require("../../../config");
+
+const { offsets } = require("./location");
+
 /* VALUES */
 
 exports.VA = function (args, callback) {
     log.debug("VA Command: " + args);
+    // VA Command is complex because in gcode terms it is two commands: the lower register of 6 parameters emits a
+    //   G10 L2 P2 (setting g55 offsets) and the upper register emits a G28.3 (setting axes to absolute locations,
+    //   optionally zero). The upper register is executed first, then changes to the g55 values are applied, if they exist
+    //   or if they are included in the command. New values included in the command replace existing G55 values.
+    // Note that the number entered into the first register is not the new g55 value, but is the desired location,
+    //   from which the new g55 is computed.
+    // We do this with gcodes rather than just passing new G2 JSON configuration values to in order to allow G2 to update
+    //   related variables and axis locations. These location changes are subsequently posted to FabMo as G2 status reports.
+    // However, we also update FabMo's configuration tree so that changes to configuration values such as new
+    //   g55 offsets will persist.
+    //
 
     this.machine.driver.get(
         "mpo",
         async function (err, MPO) {
             var setVA_G2 = {};
             var unitConv = 1;
+            var updtG55axes = "";
+
+            const axes = [];
 
             if (this.machine.driver.status.unit === "in") {
                 // inches
                 unitConv = 0.039370079;
             }
-
+            // Process Upper Register for Setting Machine Location
             if (args[6] !== undefined) {
                 //X Base Coordinate
                 this.emit_gcode("G28.3 X" + args[6]);
@@ -46,35 +63,34 @@ exports.VA = function (args, callback) {
                 this.emit_gcode("G28.3 C" + args[11]);
                 MPO.c = args[11]; // / unitConv; // No unit conversion for rotary
             }
+            //Process Lower Register for Required G55 Offset
             if (args[0] !== undefined) {
-                //X location
-                setVA_G2.g55x = Number((MPO.x * unitConv - args[0]).toFixed(5));
-                log.debug(
-                    "    g55X" +
-                        JSON.stringify(setVA_G2.g55x) +
-                        "  MPO.x = " +
-                        MPO.x +
-                        " args[0] = " +
-                        args[0]
-                );
-                this.cmd_posx = this.posx = args[0];
+                // //X location
+                axes[0] = args[0];
+                offsets.call(this, axes, callback);
+
+                // setVA_G2.g55x = Number((MPO.x * unitConv - args[0]).toFixed(5));
+                // log.debug(
+                //     "    g55X" +
+                //         JSON.stringify(setVA_G2.g55x) +
+                //         "  MPO.x = " +
+                //         MPO.x +
+                //         " args[0] = " +
+                //         args[0]
+                // );
+                // updtG55axes += "X" + setVA_G2.g55x + " ";    // start building axis request for G10 call
+                // this.cmd_posx = this.posx = args[0];
             }
             if (args[1] !== undefined) {
                 //Y location
                 setVA_G2.g55y = Number((MPO.y * unitConv - args[1]).toFixed(5));
-                log.debug(
-                    "    g55Y" +
-                        JSON.stringify(setVA_G2.g55y) +
-                        "  MPO.y = " +
-                        MPO.y +
-                        " args[1] = " +
-                        args[1]
-                );
+                updtG55axes += "Y" + setVA_G2.g55y + " ";
                 this.cmd_posy = this.posy = args[1];
             }
             if (args[2] !== undefined) {
                 //Z location
                 setVA_G2.g55z = Number((MPO.z * unitConv - args[2]).toFixed(5));
+                updtG55axes += "Z" + setVA_G2.g55z + " ";
                 this.cmd_posz = this.posz = args[2];
             }
             if (args[3] !== undefined) {
@@ -82,6 +98,7 @@ exports.VA = function (args, callback) {
                 setVA_G2.g55a = Number(
                     (MPO.a * 1.0 /*unitConv*/ - args[3]).toFixed(5)
                 );
+                updtG55axes += "A" + setVA_G2.g55a + " ";
                 this.cmd_posa = this.posa = args[3];
             }
             if (args[4] !== undefined) {
@@ -89,6 +106,7 @@ exports.VA = function (args, callback) {
                 setVA_G2.g55b = Number(
                     (MPO.b * 1.0 /*unitConv*/ - args[4]).toFixed(5)
                 );
+                updtG55axes += "B" + setVA_G2.g55b + " ";
                 this.cmd_posb = this.posb = args[4];
             }
             if (args[5] !== undefined) {
@@ -96,7 +114,14 @@ exports.VA = function (args, callback) {
                 setVA_G2.g55c = Number(
                     (MPO.c * 1.0 /*unitConv*/ - args[5]).toFixed(5)
                 );
+                updtG55axes += "C" + setVA_G2.g55c + " ";
                 this.cmd_posc = this.posc = args[5];
+            }
+
+            if (updtG55axes != "") {
+                // Make G10 update request if values present
+                log.debug("G10 L2 P2 " + updtG55axes);
+                this.emit_gcode("G10 L2 P2 " + updtG55axes);
             }
 
             try {

@@ -1,319 +1,246 @@
-var log = require("../../../log").logger("sbp");
+//var log = require("../../../log").logger("sbp");
 var config = require("../../../config");
+
+const { offsets } = require("./location");
 
 /* ZERO */
 
-// {"mpo":""}  return absolute machine positions fox XYZABC axes.
-// !!!!!!!!!!!! Always in mm, regardless of G20/G21 setting
+// See Notes in location.js for offsetting and zeroing commands and functions
+// U,V,W not yet covered!
 
-// {"pos":""}  return work coordinate positions fox XYZABC axes.
-//              In mm or inches depending on G20 or G21
-
-// {"g55":""}  returns the current offset to the UCS origin
-//              In mm or inches depending on G20 or G21
+const axes = []; // X=0
 
 exports.ZX = function (args, callback) {
-    this.machine.driver.get(
-        "mpox",
-        async function (err, MPO) {
-            if (err) {
-                return callback(err);
-            }
-            var zxObj = {};
-            var unitConv = 1.0;
-            if (this.machine.driver.status.unit === "in") {
-                // inches
-                unitConv = 0.039370079;
-            }
-            zxObj.g55x = Number((MPO * unitConv).toFixed(5));
-            try {
-                await config.driver.setManyWrapper(zxObj);
-                this.cmd_posx = this.posx = 0;
-                callback();
-            } catch (error) {
-                callback(error);
-            }
-        }.bind(this)
-    );
+    axes[0] = 0;
+    offsets.call(this, axes, callback);
 };
 
 exports.ZY = function (args, callback) {
-    this.machine.driver.get(
-        "mpoy",
-        async function (err, MPO) {
-            if (err) {
-                return callback(err);
-            }
-            var zyObj = {};
-            var unitConv = 1.0;
-            if (this.machine.driver.status.unit === "in") {
-                // inches
-                unitConv = 0.039370079;
-            }
-            zyObj.g55y = Number((MPO * unitConv).toFixed(5));
-            try {
-                await config.driver.setManyWrapper(zyObj);
-                this.cmd_posy = this.posy = 0;
-                callback();
-            } catch (error) {
-                callback(error);
-            }
-        }.bind(this)
-    );
+    axes[1] = 0;
+    offsets.call(this, axes, callback);
 };
 
 exports.ZZ = function (args, callback) {
-    this.machine.driver.get(
-        "mpoz",
-        async function (err, MPO) {
-            var zzObj = {};
-            var unitConv = 1.0;
-            if (this.machine.driver.status.unit === "in") {
-                // inches
-                unitConv = 0.039370079;
-            }
-            zzObj.g55z = Number((MPO * unitConv).toFixed(5));
-            try {
-                await config.driver.setManyWrapper(zzObj);
-                this.cmd_posz = this.posz = 0;
-                callback();
-            } catch (error) {
-                callback(error);
-            }
-        }.bind(this)
-    );
+    axes[2] = 0;
+    offsets.call(this, axes, callback);
 };
 
 exports.ZA = function (args, callback) {
-    this.machine.driver.get(
-        "mpoa",
-        async function (err, MPO) {
-            if (err) {
-                return callback(err);
-            }
-            var zaObj = {};
-            var unitConv = 1.0;
-            // TODO: ?
-            /*??????????????????????????????????????????????????????????
-		              How is unit conversion handled
-		              if the A is a linear axis?
-		????????????????????????????????????????????????????????????*/
-            // if ( this.machine.driver.status.unit === 'in' ) {  // inches
-            // 	unitConv = 0.039370079;
-            // }
-            zaObj.g55a = Number((MPO * unitConv).toFixed(5));
-            try {
-                await config.driver.setManyWrapper(zaObj);
-                this.cmd_posa = this.posa = 0;
-                callback();
-            } catch (error) {
-                callback(error);
-            }
-        }.bind(this)
-    );
+    axes[3] = 0;
+    offsets.call(this, axes, callback);
 };
 
 exports.ZB = function (args, callback) {
-    this.machine.driver.get(
-        "mpob",
-        async function (err, MPO) {
-            if (err) {
-                return callback(err);
-            }
-            var zbObj = {};
-            zbObj.g55b = Number(MPO.toFixed(5));
-            try {
-                await config.driver.setManyWrapper(zbObj);
-                this.cmd_posb = this.posb = 0;
-                callback();
-            } catch (error) {
-                callback(error);
-            }
-        }.bind(this)
-    );
+    axes[4] = 0;
+    offsets.call(this, axes, callback);
 };
 
 exports.ZC = function (args, callback) {
-    this.machine.driver.get(
-        "mpoc",
-        async function (err, MPO) {
-            if (err) {
-                return callback(err);
-            }
-            var zcObj = {};
-            zcObj.g55c = Number(MPO.toFixed(5));
-            try {
-                await config.driver.setManyWrapper(zcObj);
-                this.cmd_posc = this.posc = 0;
-                callback();
-            } catch (error) {
-                callback(error);
-            }
-        }.bind(this)
-    );
+    axes[5] = 0;
+    offsets.call(this, axes, callback);
 };
 
 exports.Z2 = function (args, callback) {
-    this.machine.driver.get(
-        "mpo",
-        async function (err, MPO) {
-            if (err) {
-                return callback(err);
-            }
-            var z2Obj = {};
-            var unitConv = 1.0;
-            if (this.machine.driver.status.unit === "in") {
-                // inches
-                unitConv = 0.039370079;
-            }
-            z2Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
-            z2Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
-            try {
-                await config.driver.setManyWrapper(z2Obj);
-                this.cmd_posx = this.posx = 0;
-                this.cmd_posy = this.posy = 0;
-                callback();
-            } catch (error) {
-                callback(error);
-            }
-        }.bind(this)
-    );
+    axes[0] = 0;
+    axes[1] = 0;
+    offsets.call(this, axes, callback);
 };
 
 exports.Z3 = function (args, callback) {
-    this.machine.driver.get(
-        "mpo",
-        async function (err, MPO) {
-            if (err) {
-                return callback(err);
-            }
-            var z3Obj = {};
-            log.debug(JSON.stringify(MPO));
-            var unitConv = 1.0;
-            if (this.machine.driver.status.unit === "in") {
-                // inches
-                unitConv = 0.039370079;
-            }
-            z3Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
-            z3Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
-            z3Obj.g55z = Number((MPO.z * unitConv).toFixed(5));
-            log.debug(JSON.stringify(z3Obj));
-            try {
-                await config.driver.setManyWrapper(z3Obj);
-                this.cmd_posx = this.posx = 0.0;
-                this.cmd_posy = this.posy = 0.0;
-                this.cmd_posz = this.posz = 0.0;
-                callback();
-            } catch (error) {
-                callback(error);
-            }
-        }.bind(this)
-    );
+    axes[0] = 0;
+    axes[1] = 0;
+    axes[2] = 0;
+    offsets.call(this, axes, callback);
 };
 
 exports.Z4 = function (args, callback) {
-    this.machine.driver.get(
-        "mpo",
-        async function (err, MPO) {
-            if (err) {
-                return callback(err);
-            }
-            var z4Obj = {};
-            var unitConv = 1.0;
-            if (this.machine.driver.status.unit === "in") {
-                // inches
-                unitConv = 0.039370079;
-            }
-            // Unit conversion
-            z4Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
-            z4Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
-            z4Obj.g55z = Number((MPO.z * unitConv).toFixed(5));
-            // No unit conversion (rotary)
-            z4Obj.g55a = Number(MPO.a.toFixed(5));
-            try {
-                await config.driver.setManyWrapper(z4Obj);
-                this.cmd_posx = this.posx = 0.0;
-                this.cmd_posy = this.posy = 0.0;
-                this.cmd_posz = this.posz = 0.0;
-                this.cmd_posa = this.posa = 0.0;
-                callback();
-            } catch (error) {
-                callback(error);
-            }
-        }.bind(this)
-    );
+    axes[0] = 0;
+    axes[1] = 0;
+    axes[2] = 0;
+    axes[3] = 0;
+    offsets.call(this, axes, callback);
 };
 
 exports.Z5 = function (args, callback) {
-    this.machine.driver.get(
-        "mpo",
-        async function (err, MPO) {
-            if (err) {
-                return callback(err);
-            }
-            var z5Obj = {};
-            var unitConv = 1.0;
-            if (this.machine.driver.status.unit === "in") {
-                // inches
-                unitConv = 0.039370079;
-            }
-            // Unit conversion
-            z5Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
-            z5Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
-            z5Obj.g55z = Number((MPO.z * unitConv).toFixed(5));
-            // No unit conversion (rotary)
-            z5Obj.g55a = Number(MPO.a.toFixed(5));
-            z5Obj.g55b = Number(MPO.b.toFixed(5));
-            try {
-                await config.driver.setManyWrapper(z5Obj);
-                this.cmd_posx = this.posx = 0.0;
-                this.cmd_posy = this.posy = 0.0;
-                this.cmd_posz = this.posz = 0.0;
-                this.cmd_posa = this.posa = 0.0;
-                this.cmd_posb = this.posb = 0.0;
-                callback();
-            } catch (error) {
-                callback(error);
-            }
-        }.bind(this)
-    );
+    axes[0] = 0;
+    axes[1] = 0;
+    axes[2] = 0;
+    axes[3] = 0;
+    axes[4] = 0;
+    offsets.call(this, axes, callback);
 };
 
 exports.Z6 = function (args, callback) {
-    this.machine.driver.get(
-        "mpo",
-        async function (err, MPO) {
-            if (err) {
-                return callback(err);
-            }
-            var z6Obj = {};
-            var unitConv = 1.0;
-            if (this.machine.driver.status.unit === "in") {
-                // inches
-                unitConv = 0.039370079;
-            }
-            z6Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
-            z6Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
-            z6Obj.g55z = Number((MPO.z * unitConv).toFixed(5));
-            // No unit conversion
-            z6Obj.g55a = Number(MPO.a.toFixed(5));
-            z6Obj.g55b = Number(MPO.b.toFixed(5));
-            z6Obj.g55c = Number(MPO.c.toFixed(5));
-            try {
-                await config.driver.setManyWrapper(z6Obj);
-                this.cmd_posx = this.posx = 0.0;
-                this.cmd_posy = this.posy = 0.0;
-                this.cmd_posz = this.posz = 0.0;
-                this.cmd_posa = this.posa = 0.0;
-                this.cmd_posb = this.posb = 0.0;
-                this.cmd_posc = this.posc = 0.0;
-                callback();
-            } catch (error) {
-                callback(error);
-            }
-        }.bind(this)
-    );
+    axes[0] = 0;
+    axes[1] = 0;
+    axes[2] = 0;
+    axes[3] = 0;
+    axes[4] = 0;
+    axes[5] = 0;
+    offsets.call(this, axes, callback);
 };
+
+// exports.Z2 = function (args, callback) {
+//     this.machine.driver.get(
+//         "mpo",
+//         async function (err, MPO) {
+//             if (err) {
+//                 return callback(err);
+//             }
+//             var z2Obj = {};
+//             var unitConv = 1.0;
+//             if (this.machine.driver.status.unit === "in") {
+//                 // inches
+//                 unitConv = 0.039370079;
+//             }
+//             z2Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
+//             z2Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
+//             try {
+//                 await config.driver.setManyWrapper(z2Obj);
+//                 this.cmd_posx = this.posx = 0;
+//                 this.cmd_posy = this.posy = 0;
+//                 callback();
+//             } catch (error) {
+//                 callback(error);
+//             }
+//         }.bind(this)
+//     );
+// };
+
+// exports.Z3 = function (args, callback) {
+//     this.machine.driver.get(
+//         "mpo",
+//         async function (err, MPO) {
+//             if (err) {
+//                 return callback(err);
+//             }
+//             var z3Obj = {};
+//             log.debug(JSON.stringify(MPO));
+//             var unitConv = 1.0;
+//             if (this.machine.driver.status.unit === "in") {
+//                 // inches
+//                 unitConv = 0.039370079;
+//             }
+//             z3Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
+//             z3Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
+//             z3Obj.g55z = Number((MPO.z * unitConv).toFixed(5));
+//             log.debug(JSON.stringify(z3Obj));
+//             try {
+//                 await config.driver.setManyWrapper(z3Obj);
+//                 this.cmd_posx = this.posx = 0.0;
+//                 this.cmd_posy = this.posy = 0.0;
+//                 this.cmd_posz = this.posz = 0.0;
+//                 callback();
+//             } catch (error) {
+//                 callback(error);
+//             }
+//         }.bind(this)
+//     );
+// };
+
+// exports.Z4 = function (args, callback) {
+//     this.machine.driver.get(
+//         "mpo",
+//         async function (err, MPO) {
+//             if (err) {
+//                 return callback(err);
+//             }
+//             var z4Obj = {};
+//             var unitConv = 1.0;
+//             if (this.machine.driver.status.unit === "in") {
+//                 // inches
+//                 unitConv = 0.039370079;
+//             }
+//             // Unit conversion
+//             z4Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
+//             z4Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
+//             z4Obj.g55z = Number((MPO.z * unitConv).toFixed(5));
+//             // No unit conversion (rotary)
+//             z4Obj.g55a = Number(MPO.a.toFixed(5));
+//             try {
+//                 await config.driver.setManyWrapper(z4Obj);
+//                 this.cmd_posx = this.posx = 0.0;
+//                 this.cmd_posy = this.posy = 0.0;
+//                 this.cmd_posz = this.posz = 0.0;
+//                 this.cmd_posa = this.posa = 0.0;
+//                 callback();
+//             } catch (error) {
+//                 callback(error);
+//             }
+//         }.bind(this)
+//     );
+// };
+
+// exports.Z5 = function (args, callback) {
+//     this.machine.driver.get(
+//         "mpo",
+//         async function (err, MPO) {
+//             if (err) {
+//                 return callback(err);
+//             }
+//             var z5Obj = {};
+//             var unitConv = 1.0;
+//             if (this.machine.driver.status.unit === "in") {
+//                 // inches
+//                 unitConv = 0.039370079;
+//             }
+//             // Unit conversion
+//             z5Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
+//             z5Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
+//             z5Obj.g55z = Number((MPO.z * unitConv).toFixed(5));
+//             // No unit conversion (rotary)
+//             z5Obj.g55a = Number(MPO.a.toFixed(5));
+//             z5Obj.g55b = Number(MPO.b.toFixed(5));
+//             try {
+//                 await config.driver.setManyWrapper(z5Obj);
+//                 this.cmd_posx = this.posx = 0.0;
+//                 this.cmd_posy = this.posy = 0.0;
+//                 this.cmd_posz = this.posz = 0.0;
+//                 this.cmd_posa = this.posa = 0.0;
+//                 this.cmd_posb = this.posb = 0.0;
+//                 callback();
+//             } catch (error) {
+//                 callback(error);
+//             }
+//         }.bind(this)
+//     );
+// };
+
+// exports.Z6 = function (args, callback) {
+//     this.machine.driver.get(
+//         "mpo",
+//         async function (err, MPO) {
+//             if (err) {
+//                 return callback(err);
+//             }
+//             var z6Obj = {};
+//             var unitConv = 1.0;
+//             if (this.machine.driver.status.unit === "in") {
+//                 // inches
+//                 unitConv = 0.039370079;
+//             }
+//             z6Obj.g55x = Number((MPO.x * unitConv).toFixed(5));
+//             z6Obj.g55y = Number((MPO.y * unitConv).toFixed(5));
+//             z6Obj.g55z = Number((MPO.z * unitConv).toFixed(5));
+//             // No unit conversion
+//             z6Obj.g55a = Number(MPO.a.toFixed(5));
+//             z6Obj.g55b = Number(MPO.b.toFixed(5));
+//             z6Obj.g55c = Number(MPO.c.toFixed(5));
+//             try {
+//                 await config.driver.setManyWrapper(z6Obj);
+//                 this.cmd_posx = this.posx = 0.0;
+//                 this.cmd_posy = this.posy = 0.0;
+//                 this.cmd_posz = this.posz = 0.0;
+//                 this.cmd_posa = this.posa = 0.0;
+//                 this.cmd_posb = this.posb = 0.0;
+//                 this.cmd_posc = this.posc = 0.0;
+//                 callback();
+//             } catch (error) {
+//                 callback(error);
+//             }
+//         }.bind(this)
+//     );
+// };
 
 ////## update ZT to cover all axes 2/4/22, will still need to attend to U,V,W
 exports.ZT = async function (args, callback) {

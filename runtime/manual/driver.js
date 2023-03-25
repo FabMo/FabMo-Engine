@@ -18,6 +18,8 @@ var util = require("util");
 var events = require("events");
 var Q = require("q");
 
+const { offsets } = require("../opensbp/commands/location");
+
 // Parameters related to filling the queue, motion, etc.
 // These are fussy.
 var T_RENEW = 300;
@@ -308,6 +310,7 @@ ManualDriver.prototype.goto = function (pos) {
 ManualDriver.prototype.set = function (pos) {
     var toSet = {};
     var unitConv;
+    const axes = []; // X=0
     if (this.driver.status.unit === "in") {
         // inches
         unitConv = 0.039370079;
@@ -324,9 +327,11 @@ ManualDriver.prototype.set = function (pos) {
                         console.log(key);
                         switch (key) {
                             case "X":
-                                toSet.g55x = Number(
-                                    (MPO.x * unitConv - pos[key]).toFixed(5)
-                                );
+                                axes[0] = pos[key];
+                                offsets.call(this, axes);
+                                // toSet.g55x = Number(
+                                //     (MPO.x * unitConv - pos[key]).toFixed(5)
+                                // );
                                 break;
                             case "Y":
                                 toSet.g55y = Number(
