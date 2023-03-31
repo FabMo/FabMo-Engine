@@ -40,9 +40,10 @@ my $USB_DRIVE_PATH = $ARGV[0];
 ## Data to drive what we do. ##########################################
 my %work_index;
 
-#            filename      = workfunction reference
+#    filename      = workfunction reference
 $work_index{'network.txt'}        = \&capture_network_info;
 $work_index{'shopbotsupport.txt'} = \&capture_shopbotsupport_info;
+$work_index{'backup_profile.txt'}  = \&capture_profile_info;
 
 ## Work functions ##########################################
 
@@ -153,6 +154,25 @@ sub capture_shopbotsupport_info() {
     logmsg($readme_info);
 }
 
+
+sub capture_profile_info() {
+    my $target_file  = shift;
+    my $path_to_file = shift;
+    chdir("/opt");
+    system( "/usr/bin/zip", "--recurse-paths", "--quiet", "$TEMP/backup_of_profile.zip",
+        "./fabmo" );
+    my $date_time = `date | sed "s/ /_/g" | sed "s/:/_/g"`;
+    chomp($date_time);
+    my $filename_w_date = "fabmo_profile_backup_left_" . $date_time . ".zip";
+    system( "/bin/cp", "$TEMP/backup_of_profile.zip", "$path_to_file/$filename_w_date" );
+
+    # tell the user where to look for zip file
+    my $readme_info =
+      "Your \"backup_profile\" info is recorded in $filename_w_date on this device\n";
+    write_file( $readme_info => $target_file );
+    logmsg($readme_info);
+}
+
 ## pseudo main() that loops through the work_index and calls needed functions ##
 
 ## If we write to the usb drive, we will end by unmounting it; otherwise, we'll
@@ -176,6 +196,7 @@ sleep(5);
 
 if ($unmount_when_done) {
     system( "/bin/umount", $USB_DRIVE_PATH );
+    logmsg("USB thumbdrive unmounted");
 }
 chdir("/");
 
