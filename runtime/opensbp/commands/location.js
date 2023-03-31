@@ -17,37 +17,38 @@ var config = require("../../../config");
 // {"g55":""}  returns the current offset to the UCS origin
 //              In mm or inches depending on G20 or G21
 
-// Process Lower Register for G55 Offset
-//   *This function called second if Machine Base Location is also being set (upper register)
+// Process for G55 Offsets
+//   *This function called second in VA if Machine Base Location is also being set (upper register)
+//   ... because the G55 needs to be applied after; full zeroing (ZT) requires both
 function offsets(args, callback) {
+    log.debug("##-> GETTING CONFIG.MPO FIRST");
     this.driver.get(
         //machine.driver??
         "mpo",
-
-        function (err, MPO) {
-            //async function (err, MPO) {
+        async function (err, MPO) {
+            log.debug("##->RETURNING this work from LOWER AS ASYNC FUNCTION");
             var setVA_G2 = {};
             var unitConv = 1;
             var updtG55axes = "";
-            if (this.driver.status.unit === "in") {
-                //machine.driver
-                // inches
+            if (this.CUR_RUNTIME.units === "in") {
+                // kludge for machine.driver
+                // to inches
                 unitConv = 0.039370079;
             }
 
             if (args[0] !== undefined) {
-                // //X location
+                // offset X location
                 setVA_G2.g55x = Number((MPO.x * unitConv - args[0]).toFixed(5));
-                log.debug(
+                /*log.debug(
                     "    g55X" +
                         JSON.stringify(setVA_G2.g55x) +
                         "  MPO.x = " +
                         MPO.x +
                         " args[0] = " +
                         args[0]
-                );
+                );*/
                 updtG55axes += "X" + setVA_G2.g55x + " "; // start building axis request for G10 call
-                //this.cmd_posx = this.posx = args[0];
+                this.cmd_posx = this.posx = args[0];
             }
             if (args[1] !== undefined) {
                 //Y location
@@ -86,46 +87,59 @@ function offsets(args, callback) {
                 this.cmd_posc = this.posc = args[5];
             }
 
-            // Make G10 update request for G2 if values present
             if (updtG55axes != "") {
-                log.debug("G10 L2 P2 " + updtG55axes);
-                this.stream.write("G10 L2 P2 " + updtG55axes);
-                //this.emit_gcode("G10 L2 P2 " + updtG55axes);
-            }
-            // Update the FabMo config system including redundant post to G2
-            try {
-                config.driver.setManyWrapper(setVA_G2);
-                //await config.driver.setManyWrapper(setVA_G2);
-                if (callback) {
-                    // kludge to deal with calls coming from manual driver
-                    callback();
+                try {
+                    //this.CUR_RUNTIME.machine.executeRuntimeCode("gcode", ("G10 L2 P2 " + updtG55axes));
+                    await this.CUR_RUNTIME.emit_gcode(
+                        "G10 L2 P2 " + updtG55axes
+                    );
+                    log.debug("##-> FINISHED AWAIT G10");
+                    //await this.CUR_RUNTIME.driver._write("G10 L2 P2 " + updtG55axes);
+                    await config.driver.setManyWrapper(setVA_G2); // syncs FabMo and G2 configs
+                    log.debug("##-> FINISHED AWAIT CONFIG - LOWER");
+                    // This command updates G55 settings in FabMo and makes sure they are synced with G2.
+                    // ... They have already been redundantly (temporarily) set in G2 by the G10 call.
+                    //await this.CUR_RUNTIME.driver.requestStatusReport("stat");
+                    if (callback) {
+                        log.debug("##-> at CALLBACK at END OF OFFSET");
+                        // kludge to deal with calls coming from manual driver
+                        callback(
+                            log.debug(
+                                "##-> CALLBACK at return to call for OFFSET"
+                            )
+                        );
+                    }
+                } catch (error) {
+                    log.error(error);
                 }
-            } catch (error) {
-                callback(error);
+                return;
             }
-        }.bind(this)
+        }
     );
 }
 
-// Process Upper Register for Setting Machine Base Location
-//   * This function called first in case of also using G55 Offsets (lower register)
+// Setting Machine Base Location to Zero or other Value
+//   * This function called first by VA for case of also having G55 Offsets (lower register)
 function machineLoc(args, callback) {
+    log.debug("##-> GETTING CONFIG.MPO - UPPER");
+
     this.driver.get(
         //machine.driver??
         "mpo",
 
         async function (err, MPO) {
+            log.debug("##->RETURNING this work from UPPER AS ASYNC FUNCTION");
             var setVA_G2 = {};
             var unitConv = 1;
             var updtMachineLoc = "";
             if (this.driver.status.unit === "in") {
-                //machine.driver
-                // inches
+                //machine.driver??
+                // to inches
                 unitConv = 0.039370079;
             }
 
             if (args[6] !== undefined) {
-                //X Machine Base Coordinate
+                // set X Machine Base Coordinate
                 updtMachineLoc += "X" + args[6];
                 MPO.x = args[6] / unitConv;
             }
@@ -164,9 +178,13 @@ function machineLoc(args, callback) {
             // Update the FabMo config system including redundant post to G2
             try {
                 await config.driver.setManyWrapper(setVA_G2);
+                log.debug("##-> FINISHED AWAIT CONFIG - UPPER");
+                // await this.driver.requestStatusReport();
                 if (callback) {
                     // kludge to deal with calls coming from manual driver
-                    callback();
+                    log.debug("##-> CALLBACK at return from MACHINELOC");
+                    callback(offsets.call(this, args, callback));
+                    //callback(log.debug("##-> CALLBACK return from MACHINELOC"));
                 }
             } catch (error) {
                 callback(error);

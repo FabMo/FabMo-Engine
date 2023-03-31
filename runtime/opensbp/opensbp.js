@@ -1915,7 +1915,10 @@ SBPRuntime.prototype.emit_gcode = function (s) {
         // eslint-disable-next-line no-redeclare
         var n = this.pc;
     }
-    this.gcodesPending = true;
+    if (!s.includes("G10")) {
+        this.gcodesPending = true;
+    }
+    //this.gcodesPending = true;
     var temp_n = n + 20; ////## save low numbers for prepend/postpend; being done in util for gcode?
     var gcode = "N" + temp_n + " " + s;
     log.debug("emit_gcode: " + gcode);

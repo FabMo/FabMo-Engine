@@ -8,13 +8,13 @@ const { offsets } = require("./location");
 // See Notes in location.js for offsetting and zeroing commands and functions
 // U,V,W not yet covered!
 
-//const axes = []; // X=0
-
 exports.ZX = function (args, callback) {
     // x=0
-    const axes = [];
-    axes[0] = 0;
-    offsets.call(this, axes, callback);
+    //const axes = [];
+    //axes[0] = 0;
+    args = [];
+    args[0] = 0;
+    offsets.call(this, args, callback);
 };
 
 exports.ZY = function (args, callback) {
@@ -55,11 +55,11 @@ exports.Z2 = function (args, callback) {
 };
 
 exports.Z3 = function (args, callback) {
-    const axes = [];
-    axes[0] = 0;
-    axes[1] = 0;
-    axes[2] = 0;
-    offsets.call(this, axes, callback);
+    args = [];
+    args[0] = 0;
+    args[1] = 0;
+    args[2] = 0;
+    offsets.call(this, args, callback);
 };
 
 exports.Z4 = function (args, callback) {
