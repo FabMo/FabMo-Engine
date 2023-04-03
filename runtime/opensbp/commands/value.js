@@ -1,8 +1,8 @@
 var log = require("../../../log").logger("sbp");
 var config = require("../../../config");
 
-//const { offsets } = require("./location");
-const { machineLoc } = require("./location");
+const { offsets } = require("./location");
+//const { machineLoc } = require("./location");
 
 /* VALUES */
 
@@ -16,14 +16,19 @@ exports.VA = function (args, callback) {
     // Note that the number entered into the offset register is not the new g55 value itself, but is the new desired
     //   ... location, from which a new g55 is computed.
 
-    // Process Upper Register for Setting Machine Location (needs to be done before offsets if there are any)
-    const subArgs = args.slice(6, 11); // Check to see if there are any in top of array
-    if (subArgs.some((val) => val !== undefined)) {
-        log.debug("Machine Base Changes being Processed First!");
-        machineLoc.call(this, args, callback);
-    } else {
-        log.debug("--> No Machine Base Value Changes in this VA");
-    }
+    // // Process Upper Register for Setting Machine Location (needs to be done before offsets if there are any)
+    // const subArgs = args.slice(6, 11); // Check to see if there are any in top of array
+    // if (subArgs.some((val) => val !== undefined)) {
+    //     log.debug("Machine Base Changes being Processed First!");
+    //     machineLoc.call(this, args, callback);
+    // } else {
+    //     log.debug("--> No Machine Base Value Changes in this VA");
+    // }
+    //    log.debug("####-> Calling machineLoc for VA");
+    //    machineLoc.call(this, args, callback);
+    log.debug("####-> Calling offsets for VA");
+    offsets.call(this, args, callback);
+    //offsets(args, callback);
 
     // }
     // if (axes !== undefined) {         // then pass this to the location.js functions

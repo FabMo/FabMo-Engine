@@ -22,14 +22,15 @@ var config = require("../../../config");
 //   ... because the G55 needs to be applied after; full zeroing (ZT) requires both
 function offsets(args, callback) {
     log.debug("##-> GETTING CONFIG.MPO FIRST");
+    //  this.driver.get(
     this.driver.get(
         //machine.driver??
         "mpo",
         async function (err, MPO) {
-            log.debug("##->RETURNING this work from LOWER AS ASYNC FUNCTION");
+            log.debug("##->Then Returning Offset Work as AS ASYNC FUNCTION");
             var setVA_G2 = {};
             var unitConv = 1;
-            var updtG55axes = "";
+            let updtG55axes = "";
             if (this.CUR_RUNTIME.units === "in") {
                 // kludge for machine.driver
                 // to inches
@@ -39,14 +40,15 @@ function offsets(args, callback) {
             if (args[0] !== undefined) {
                 // offset X location
                 setVA_G2.g55x = Number((MPO.x * unitConv - args[0]).toFixed(5));
-                /*log.debug(
-                    "    g55X" +
-                        JSON.stringify(setVA_G2.g55x) +
-                        "  MPO.x = " +
-                        MPO.x +
-                        " args[0] = " +
-                        args[0]
-                );*/
+                log.debug(
+                    "   NEW g55X" + JSON.stringify(setVA_G2.g55x)
+
+                    //      +
+                    //      "  MPO.x = " +
+                    //      MPO.x +
+                    //      " args[0] = " +
+                    //      args[0]
+                );
                 updtG55axes += "X" + setVA_G2.g55x + " "; // start building axis request for G10 call
                 this.cmd_posx = this.posx = args[0];
             }
@@ -90,22 +92,41 @@ function offsets(args, callback) {
             if (updtG55axes != "") {
                 try {
                     //this.CUR_RUNTIME.machine.executeRuntimeCode("gcode", ("G10 L2 P2 " + updtG55axes));
-                    await this.CUR_RUNTIME.emit_gcode(
-                        "G10 L2 P2 " + updtG55axes
-                    );
-                    log.debug("##-> FINISHED AWAIT G10");
-                    //await this.CUR_RUNTIME.driver._write("G10 L2 P2 " + updtG55axes);
+                    //            await this.CUR_RUNTIME.emit_gcode(
+                    //                "{" + updtG55axes + "}\nM0"
+                    //            );
+                    //this.CUR_RUNTIME.machine.executeRuntimeCode("gcode", ("G10 L2 P2 " + updtG55axes));
+                    this.CUR_RUNTIME.emit_gcode("G10 L2 P2 " + updtG55axes);
+
+                    //    log.debug("writing > M0");
+                    //    this.CUR_RUNTIME.emit_gcode("M0");
+
+                    //this.CUR_RUNTIME.driver._write("G10 L2 P2 " + updtG55axes); //NOPE here
+                    this.CUR_RUNTIME.gcodesPending = false;
                     await config.driver.setManyWrapper(setVA_G2); // syncs FabMo and G2 configs
-                    log.debug("##-> FINISHED AWAIT CONFIG - LOWER");
+                    log.debug("##-> FINISHED AWAIT CONFIG SYNC - LOWER");
+
+                    log.debug("##-> FINISHED setup for G55 Offseting");
+                    //                log.debug("repreq > pos");
+                    //                this.CUR_RUNTIME.driver._write("{mpo:null}");
+                    //                this.CUR_RUNTIME.driver._write("{pos:null}");
+                    this.CUR_RUNTIME.driver._write("M0");
+                    //this.gcodesPending = true;
+
+                    // log.debug("Ready for Status Report request ... waiting");
+                    // await this.CUR_RUNTIME.driver.requestStatusReportWrapper(function(report) {
+                    //     log.debug("report = " + JSON.stringify(report));
+                    //     callback();
+                    // });
+
                     // This command updates G55 settings in FabMo and makes sure they are synced with G2.
                     // ... They have already been redundantly (temporarily) set in G2 by the G10 call.
                     //await this.CUR_RUNTIME.driver.requestStatusReport("stat");
                     if (callback) {
-                        log.debug("##-> at CALLBACK at END OF OFFSET");
                         // kludge to deal with calls coming from manual driver
                         callback(
                             log.debug(
-                                "##-> CALLBACK at return to call for OFFSET"
+                                "####-> Returning main callback from OFFSETS"
                             )
                         );
                     }
@@ -120,78 +141,98 @@ function offsets(args, callback) {
 
 // Setting Machine Base Location to Zero or other Value
 //   * This function called first by VA for case of also having G55 Offsets (lower register)
-function machineLoc(args, callback) {
-    log.debug("##-> GETTING CONFIG.MPO - UPPER");
+async function machineLoc(args, callback) {
+    log.debug("##-> STARTING machineLoc - UPPER");
 
-    this.driver.get(
-        //machine.driver??
-        "mpo",
-
-        async function (err, MPO) {
-            log.debug("##->RETURNING this work from UPPER AS ASYNC FUNCTION");
-            var setVA_G2 = {};
-            var unitConv = 1;
-            var updtMachineLoc = "";
-            if (this.driver.status.unit === "in") {
-                //machine.driver??
-                // to inches
-                unitConv = 0.039370079;
+    let updtMachineLoc = "X0";
+    if (updtMachineLoc != "") {
+        //try {
+        //    await config.driver.setManyWrapper(setVA_G2);
+        //    log.debug("##-> FINISHED AWAIT CONFIG - UPPER");
+        // await this.driver.requestStatusReport();
+        try {
+            await this.emit_gcode(
+                "G28.3 " + updtMachineLoc,
+                offsets.call(this, args, callback)
+            );
+            if (callback) {
+                callback(offsets.call(this, args, callback));
             }
-
-            if (args[6] !== undefined) {
-                // set X Machine Base Coordinate
-                updtMachineLoc += "X" + args[6];
-                MPO.x = args[6] / unitConv;
-            }
-            if (args[7] !== undefined) {
-                //Y Machine Base Coordinate
-                updtMachineLoc += "Y" + args[7];
-                MPO.y = args[7] / unitConv;
-            }
-            if (args[8] !== undefined) {
-                //Z Machine Base Coordinate
-                updtMachineLoc += "Z" + args[8];
-                MPO.z = args[8] / unitConv;
-            }
-            if (args[9] !== undefined) {
-                //A Machine Base Coordinate
-                updtMachineLoc += "A" + args[9];
-                MPO.a = args[9]; // / unitConv; // No unit conversion for rotary
-            }
-            if (args[10] !== undefined) {
-                //B Machine Base Coordinate
-                updtMachineLoc += "B" + args[10];
-                MPO.b = args[10];
-            }
-            if (args[11] !== undefined) {
-                //C Machine Base Coordinate
-                updtMachineLoc += "C" + args[11];
-                MPO.c = args[11];
-            }
-
-            // Make G28.3 update request for G2 if values present
-            if (updtMachineLoc != "") {
-                log.debug("G28.3 " + updtMachineLoc);
-                this.stream.write("G28.3 " + updtMachineLoc);
-            }
-
-            // Update the FabMo config system including redundant post to G2
-            try {
-                await config.driver.setManyWrapper(setVA_G2);
-                log.debug("##-> FINISHED AWAIT CONFIG - UPPER");
-                // await this.driver.requestStatusReport();
-                if (callback) {
-                    // kludge to deal with calls coming from manual driver
-                    log.debug("##-> CALLBACK at return from MACHINELOC");
-                    callback(offsets.call(this, args, callback));
-                    //callback(log.debug("##-> CALLBACK return from MACHINELOC"));
-                }
-            } catch (error) {
-                callback(error);
-            }
-        }.bind(this)
-    );
+        } catch (error) {
+            log.debug(error);
+            callback(error);
+        }
+    }
 }
+
+//     this.CUR_RUNTIME.driver.get(
+//         //machine.driver??
+//         "mpo",
+
+//         async function (err, MPO) {
+//             log.debug("##->RETURNING this work from UPPER AS ASYNC FUNCTION");
+//             var setVA_G2 = {};
+//             var unitConv = 1;
+//             let updtMachineLoc = "";
+//             if (this.CUR_RUNTIME.units === "in") {
+//                 //machine.driver??
+//                 // to inches
+//                 unitConv = 0.039370079;
+//             }
+
+//             if (args[6] !== undefined) {
+//                 // set X Machine Base Coordinate
+//                 updtMachineLoc += "X" + args[6];
+//                 MPO.x = args[6] / unitConv;
+//             }
+//             if (args[7] !== undefined) {
+//                 //Y Machine Base Coordinate
+//                 updtMachineLoc += "Y" + args[7];
+//                 MPO.y = args[7] / unitConv;
+//             }
+//             if (args[8] !== undefined) {
+//                 //Z Machine Base Coordinate
+//                 updtMachineLoc += "Z" + args[8];
+//                 MPO.z = args[8] / unitConv;
+//             }
+//             if (args[9] !== undefined) {
+//                 //A Machine Base Coordinate
+//                 updtMachineLoc += "A" + args[9];
+//                 MPO.a = args[9]; // / unitConv; // No unit conversion for rotary
+//             }
+//             if (args[10] !== undefined) {
+//                 //B Machine Base Coordinate
+//                 updtMachineLoc += "B" + args[10];
+//                 MPO.b = args[10];
+//             }
+//             if (args[11] !== undefined) {
+//                 //C Machine Base Coordinate
+//                 updtMachineLoc += "C" + args[11];
+//                 MPO.c = args[11];
+//             }
+
+//             // // Make G28.3 update request for G2 if values present
+//             // if (updtMachineLoc != "") {
+//             //     log.debug("G28.3 " + updtMachineLoc);
+//             //     this.CUR_RUNTIME.emit_gcode("G28.3 " + updtMachineLoc);
+//             // }
+
+//             if (updtMachineLoc != "") {
+//                 try {
+//                     await this.CUR_RUNTIME.emit_gcode("G28.3 " + updtMachineLoc);
+//                 //    await config.driver.setManyWrapper(setVA_G2);
+//                 //    log.debug("##-> FINISHED AWAIT CONFIG - UPPER");
+//                     // await this.driver.requestStatusReport();
+//                     if (callback) {
+//                         // kludge to deal with calls coming from manual driver
+//                         //log.debug("##-> CALLBACK at return from MACHINELOC");
+//                         //callback(offsets.call(this, args, callback));
+//                         callback(log.debug("##-> CALLBACK return from MACHINELOC"));
+//                     }
+//                 } catch (error) {
+//                     callback(error);
+//                 }
+//             }
 
 exports.offsets = offsets;
 exports.machineLoc = machineLoc;

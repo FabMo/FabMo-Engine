@@ -9,54 +9,52 @@ const { offsets } = require("./location");
 // U,V,W not yet covered!
 
 exports.ZX = function (args, callback) {
-    // x=0
-    //const axes = [];
-    //axes[0] = 0;
+    log.debug("####-> Calling Offsets for ZX");
     args = [];
     args[0] = 0;
     offsets.call(this, args, callback);
 };
 
 exports.ZY = function (args, callback) {
-    const axes = [];
-    axes[1] = 0;
-    offsets.call(this, axes, callback);
+    args = [];
+    args[1] = 0;
+    offsets.call(this, args, callback);
 };
 
 exports.ZZ = function (args, callback) {
-    //const axes = [];
-    //axes[2] = 0;
+    log.debug("####-> Calling Offsets for ZZ");
     args = [];
     args[2] = 0;
     offsets.call(this, args, callback);
 };
 
 exports.ZA = function (args, callback) {
-    const axes = [];
-    axes[3] = 0;
-    offsets.call(this, axes, callback);
+    args = [];
+    args[3] = 0;
+    offsets.call(this, args, callback);
 };
 
 exports.ZB = function (args, callback) {
-    const axes = [];
-    axes[4] = 0;
-    offsets.call(this, axes, callback);
+    args = [];
+    args[4] = 0;
+    offsets.call(this, args, callback);
 };
 
 exports.ZC = function (args, callback) {
-    const axes = [];
-    axes[5] = 0;
-    offsets.call(this, axes, callback);
+    args = [];
+    args[5] = 0;
+    offsets.call(this, args, callback);
 };
 
 exports.Z2 = function (args, callback) {
-    const axes = [];
-    axes[0] = 0;
-    axes[1] = 0;
-    offsets.call(this, axes, callback);
+    args = [];
+    args[0] = 0;
+    args[1] = 0;
+    offsets.call(this, args, callback);
 };
 
 exports.Z3 = function (args, callback) {
+    log.debug("####-> Calling Offsets for Z3");
     args = [];
     args[0] = 0;
     args[1] = 0;
@@ -65,33 +63,33 @@ exports.Z3 = function (args, callback) {
 };
 
 exports.Z4 = function (args, callback) {
-    const axes = [];
-    axes[0] = 0;
-    axes[1] = 0;
-    axes[2] = 0;
-    axes[3] = 0;
-    offsets.call(this, axes, callback);
+    args = [];
+    args[0] = 0;
+    args[1] = 0;
+    args[2] = 0;
+    args[3] = 0;
+    offsets.call(this, args, callback);
 };
 
 exports.Z5 = function (args, callback) {
-    const axes = [];
-    axes[0] = 0;
-    axes[1] = 0;
-    axes[2] = 0;
-    axes[3] = 0;
-    axes[4] = 0;
-    offsets.call(this, axes, callback);
+    args = [];
+    args[0] = 0;
+    args[1] = 0;
+    args[2] = 0;
+    args[3] = 0;
+    args[4] = 0;
+    offsets.call(this, args, callback);
 };
 
 exports.Z6 = function (args, callback) {
-    const axes = [];
-    axes[0] = 0;
-    axes[1] = 0;
-    axes[2] = 0;
-    axes[3] = 0;
-    axes[4] = 0;
-    axes[5] = 0;
-    offsets.call(this, axes, callback);
+    args = [];
+    args[0] = 0;
+    args[1] = 0;
+    args[2] = 0;
+    args[3] = 0;
+    args[4] = 0;
+    args[5] = 0;
+    offsets.call(this, args, callback);
 };
 
 // // Will need to attend to U,V,W at some point

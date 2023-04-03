@@ -69,6 +69,9 @@ OpenSBPConfig.prototype.update = function (data, callback, force) {
         return callback(e);
     }
     // Update Jerk Values to current G2, no longer saved in g2.json
+    ////## Maybe skip these if just doing temp vars?
+    //     ... not clear why called for a variable updates
+
     if ("xy_maxjerk" in this._cache) {
         config.machine.machine.driver.command({
             xjm: this._cache["xy_maxjerk"],

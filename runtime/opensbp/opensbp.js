@@ -143,6 +143,15 @@ SBPRuntime.prototype.disconnect = function () {
     }
 
     if (this.ok_to_disconnect) {
+        log.debug(
+            "various posx's: global>" +
+                global.posx +
+                " driver>" +
+                this.driver.status.posx +
+                " machine>" +
+                this.machine.status.posx
+        );
+
         this.driver.removeListener("status", this.status_handler);
         this.machine = null;
         this.driver = null;
@@ -1674,14 +1683,27 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
         // To get location data expeditiously these were changed to read driver (G2) status rather than machine
         // or runtime status. This works within files, but may otherwise create issues?
         case 1: // X Location
-            return this.driver.status.posx;
-        //return this.machine.status.posx;
+            log.debug(
+                "various posx's: global>" +
+                    this.posx +
+                    " driver>" +
+                    this.driver.status.posx +
+                    " machine>" +
+                    this.machine.status.posx
+            );
+            //                " runtime>" + CUR_RUNTIME.posx);
+            //            return global.posx;
+            return this.posx;
+        //            return this.driver.status.posx;
+        //            return this.machine.status.posx;
 
         case 2: // Y Location
             return this.driver.status.posy;
 
         case 3: // Z Location
-            return this.driver.status.posz;
+            //  log.debug("my Current GLOBAL Z loc = " + global.posz + "  " + posz);
+            return this.posz;
+        //            return this.driver.status.posz;
 
         case 4: // A Location
             return this.driver.status.posa;
@@ -1915,10 +1937,7 @@ SBPRuntime.prototype.emit_gcode = function (s) {
         // eslint-disable-next-line no-redeclare
         var n = this.pc;
     }
-    if (!s.includes("G10")) {
-        this.gcodesPending = true;
-    }
-    //this.gcodesPending = true;
+    this.gcodesPending = true;
     var temp_n = n + 20; ////## save low numbers for prepend/postpend; being done in util for gcode?
     var gcode = "N" + temp_n + " " + s;
     log.debug("emit_gcode: " + gcode);
