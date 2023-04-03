@@ -1693,8 +1693,8 @@ SBPRuntime.prototype.evaluateSystemVariable = function (v) {
             );
             //                " runtime>" + CUR_RUNTIME.posx);
             //            return global.posx;
-            return this.posx;
-        //            return this.driver.status.posx;
+            //            return this.posx;
+            return this.driver.status.posx;
         //            return this.machine.status.posx;
 
         case 2: // Y Location

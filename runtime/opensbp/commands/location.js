@@ -40,15 +40,7 @@ function offsets(args, callback) {
             if (args[0] !== undefined) {
                 // offset X location
                 setVA_G2.g55x = Number((MPO.x * unitConv - args[0]).toFixed(5));
-                log.debug(
-                    "   NEW g55X" + JSON.stringify(setVA_G2.g55x)
-
-                    //      +
-                    //      "  MPO.x = " +
-                    //      MPO.x +
-                    //      " args[0] = " +
-                    //      args[0]
-                );
+                log.debug("   NEW g55X" + JSON.stringify(setVA_G2.g55x));
                 updtG55axes += "X" + setVA_G2.g55x + " "; // start building axis request for G10 call
                 this.cmd_posx = this.posx = args[0];
             }
@@ -91,37 +83,14 @@ function offsets(args, callback) {
 
             if (updtG55axes != "") {
                 try {
-                    //this.CUR_RUNTIME.machine.executeRuntimeCode("gcode", ("G10 L2 P2 " + updtG55axes));
-                    //            await this.CUR_RUNTIME.emit_gcode(
-                    //                "{" + updtG55axes + "}\nM0"
-                    //            );
-                    //this.CUR_RUNTIME.machine.executeRuntimeCode("gcode", ("G10 L2 P2 " + updtG55axes));
                     this.CUR_RUNTIME.emit_gcode("G10 L2 P2 " + updtG55axes);
-
-                    //    log.debug("writing > M0");
-                    //    this.CUR_RUNTIME.emit_gcode("M0");
-
-                    //this.CUR_RUNTIME.driver._write("G10 L2 P2 " + updtG55axes); //NOPE here
                     this.CUR_RUNTIME.gcodesPending = false;
                     await config.driver.setManyWrapper(setVA_G2); // syncs FabMo and G2 configs
                     log.debug("##-> FINISHED AWAIT CONFIG SYNC - LOWER");
+                    //log.debug("##-> FINISHED setup for G55 Offseting");
+                    log.debug("writing > M0");
+                    this.CUR_RUNTIME.emit_gcode("M0");
 
-                    log.debug("##-> FINISHED setup for G55 Offseting");
-                    //                log.debug("repreq > pos");
-                    //                this.CUR_RUNTIME.driver._write("{mpo:null}");
-                    //                this.CUR_RUNTIME.driver._write("{pos:null}");
-                    this.CUR_RUNTIME.driver._write("M0");
-                    //this.gcodesPending = true;
-
-                    // log.debug("Ready for Status Report request ... waiting");
-                    // await this.CUR_RUNTIME.driver.requestStatusReportWrapper(function(report) {
-                    //     log.debug("report = " + JSON.stringify(report));
-                    //     callback();
-                    // });
-
-                    // This command updates G55 settings in FabMo and makes sure they are synced with G2.
-                    // ... They have already been redundantly (temporarily) set in G2 by the G10 call.
-                    //await this.CUR_RUNTIME.driver.requestStatusReport("stat");
                     if (callback) {
                         // kludge to deal with calls coming from manual driver
                         callback(
@@ -151,10 +120,7 @@ async function machineLoc(args, callback) {
         //    log.debug("##-> FINISHED AWAIT CONFIG - UPPER");
         // await this.driver.requestStatusReport();
         try {
-            await this.emit_gcode(
-                "G28.3 " + updtMachineLoc,
-                offsets.call(this, args, callback)
-            );
+            await this.emit_gcode("G28.3 " + updtMachineLoc);
             if (callback) {
                 callback(offsets.call(this, args, callback));
             }
